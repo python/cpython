@@ -172,13 +172,11 @@ PyTuple_GET_SIZE:atomic:
 PyTuple_GetItem:compatible:
 PyTuple_GET_ITEM:compatible:
 
-# Slice - creates a new tuple from an immutable source
+# Slice - creates a new tuple from an existing tuple
 PyTuple_GetSlice:atomic:
 
 # SetItem - only usable on tuples with refcount 1
 PyTuple_SetItem:compatible:
-
-# SET_ITEM - no synchronization; only for filling in brand new tuples
 PyTuple_SET_ITEM:compatible:
 
 # Resize - only usable on tuples with refcount 1
