@@ -44,6 +44,8 @@ BARE_KEY_CHARS: Final = frozenset(
 KEY_INITIAL_CHARS: Final = BARE_KEY_CHARS | frozenset("\"'")
 HEXDIGIT_CHARS: Final = frozenset("abcdef" "ABCDEF" "0123456789")
 _DECDIGIT_CHARS: Final = frozenset("0123456789")
+_NUMBER_INITIAL_CHARS: Final = _DECDIGIT_CHARS | frozenset("+-")
+_NUMBER_END_CHARS: Final = frozenset(",]}") | TOML_WS_AND_NEWLINE
 
 BASIC_STR_ESCAPE_REPLACEMENTS: Final = MappingProxyType(
     {
@@ -672,19 +674,29 @@ def _parse_simple_number(
     src: str, pos: Pos
 ) -> None | tuple[Pos, int]:
     start = pos
-    src = src.rstrip()
     end = len(src)
+    end_chars = _NUMBER_END_CHARS
+    if src[pos] in '+-':
+        pos += 1
+        if pos >= end:
+            return None
+        if src[pos] not in _DECDIGIT_CHARS:
+            return None
+
+    if src[pos] == '0':
+        pos += 1
+        if pos < end and src[pos] not in end_chars:
+            return None
+        return pos, 0
+
     while src[pos] in _DECDIGIT_CHARS:
         pos += 1
         if pos >= end:
             break
     else:
-        if src[pos] != "\n":
+        if src[pos] not in end_chars:
             return None
-    digits = src[start:pos]
-    if digits.startswith("0") and len(digits) > 1:
-        return None
-    return pos, int(digits)
+    return pos, int(src[start:pos])
 
 
 def parse_value(
@@ -725,8 +737,9 @@ def parse_value(
     if char == "{":
         return parse_inline_table(src, pos, parse_float)
 
-    # Simple number parser avoiding regex
-    if char in _DECDIGIT_CHARS:
+    # First try a simple number parser which defers import tomllib._re
+    # to speed up tomllib import time
+    if char in _NUMBER_INITIAL_CHARS:
         res = _parse_simple_number(src, pos)
         if res is not None:
             return res
