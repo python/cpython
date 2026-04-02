@@ -605,9 +605,10 @@ compute_branch_penalty(uint16_t history, bool branch_taken)
     int taken_count = _Py_popcount32((uint32_t)history);
     int on_trace_count = branch_taken ? taken_count : 16 - taken_count;
     int off_trace = 16 - on_trace_count;
-    /* Quadratic scaling: off_trace^2 ranges from 0 (fully biased our way)
-     * to 256 (fully biased against us, e.g. 15/16 left but traced right). */
-    return FITNESS_BRANCH_BASE + off_trace * off_trace;
+    /* Linear scaling: off_trace ranges from 0 (fully biased our way)
+     * to 16 (fully biased against us), so the penalty ranges from
+     * FITNESS_BRANCH_BASE to FITNESS_BRANCH_BASE + 48. */
+    return FITNESS_BRANCH_BASE + off_trace * 2;
 }
 
 /* Compute exit quality for the current trace position.
