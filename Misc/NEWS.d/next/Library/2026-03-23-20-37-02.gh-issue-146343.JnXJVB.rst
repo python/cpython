@@ -21,3 +21,5 @@ Add the following MIME types with file extensions:
   - ``.gv``     for ``text/vnd.graphviz``
   - ``.wgsl``   for ``text/wgsl``
   - ``.ent``    for ``text/xml-external-parsed-entity``
+
+(Contributed by Charlie Lin in :gh:`146342`.)
