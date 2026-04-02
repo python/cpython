@@ -128,37 +128,37 @@ class TestMiscellaneous(unittest.TestCase):
         """
         importlib.import_module(f"{tomllib.__name__}._types")
 
-    def test_parse_simple_number(self):
-        parse_simple_number = tomllib._parser.parse_simple_number
-        self.assertEqual(parse_simple_number("123", 0), (3, 123))
-        self.assertEqual(parse_simple_number("123\n", 0), (3, 123))
-        self.assertEqual(parse_simple_number("123 456", 0), (3, 123))
-        self.assertEqual(parse_simple_number("+123\n", 0), (4, 123))
-        self.assertEqual(parse_simple_number("-123\n", 0), (4, -123))
-        self.assertEqual(parse_simple_number("0\n", 0), (1, 0))
-        self.assertEqual(parse_simple_number("+0\n", 0), (2, 0))
-        self.assertEqual(parse_simple_number("-0\n", 0), (2, 0))
-        self.assertEqual(parse_simple_number("[23]\n", 1), (3, 23))
-        self.assertEqual(parse_simple_number("[23, 24]\n", 1), (3, 23))
-        self.assertEqual(parse_simple_number("{x = 42}\n", 5), (7, 42))
+    def test_try_simple_decimal(self):
+        try_simple_decimal = tomllib._parser.try_simple_decimal
+        self.assertEqual(try_simple_decimal("123", 0), (3, 123))
+        self.assertEqual(try_simple_decimal("123\n", 0), (3, 123))
+        self.assertEqual(try_simple_decimal("123 456", 0), (3, 123))
+        self.assertEqual(try_simple_decimal("+123\n", 0), (4, 123))
+        self.assertEqual(try_simple_decimal("-123\n", 0), (4, -123))
+        self.assertEqual(try_simple_decimal("0\n", 0), (1, 0))
+        self.assertEqual(try_simple_decimal("+0\n", 0), (2, 0))
+        self.assertEqual(try_simple_decimal("-0\n", 0), (2, 0))
+        self.assertEqual(try_simple_decimal("[23]\n", 1), (3, 23))
+        self.assertEqual(try_simple_decimal("[23, 24]\n", 1), (3, 23))
+        self.assertEqual(try_simple_decimal("{x = 42}\n", 5), (7, 42))
 
-        self.assertIsNone(parse_simple_number("+", 0), None)
-        self.assertIsNone(parse_simple_number("-", 0), None)
-        self.assertIsNone(parse_simple_number("+\n", 0), None)
-        self.assertIsNone(parse_simple_number("-\n", 0), None)
-        self.assertIsNone(parse_simple_number("+inf\n", 0), None)
-        self.assertIsNone(parse_simple_number("-nan\n", 0), None)
-        self.assertIsNone(parse_simple_number("0123\n", 0))
-        self.assertIsNone(parse_simple_number("1979-05-27\n", 0))
-        self.assertIsNone(parse_simple_number("12:32:00\n", 0))
-        self.assertIsNone(parse_simple_number("1.0\n", 0))
-        self.assertIsNone(parse_simple_number("1_000\n", 0))
-        self.assertIsNone(parse_simple_number("0x123\n", 0))
-        self.assertIsNone(parse_simple_number("0o123\n", 0))
-        self.assertIsNone(parse_simple_number("0b100\n", 0))
+        self.assertIsNone(try_simple_decimal("+", 0), None)
+        self.assertIsNone(try_simple_decimal("-", 0), None)
+        self.assertIsNone(try_simple_decimal("+\n", 0), None)
+        self.assertIsNone(try_simple_decimal("-\n", 0), None)
+        self.assertIsNone(try_simple_decimal("+inf\n", 0), None)
+        self.assertIsNone(try_simple_decimal("-nan\n", 0), None)
+        self.assertIsNone(try_simple_decimal("0123\n", 0))
+        self.assertIsNone(try_simple_decimal("1979-05-27\n", 0))
+        self.assertIsNone(try_simple_decimal("12:32:00\n", 0))
+        self.assertIsNone(try_simple_decimal("1.0\n", 0))
+        self.assertIsNone(try_simple_decimal("1_000\n", 0))
+        self.assertIsNone(try_simple_decimal("0x123\n", 0))
+        self.assertIsNone(try_simple_decimal("0o123\n", 0))
+        self.assertIsNone(try_simple_decimal("0b100\n", 0))
 
     def test_lazy_import(self):
-        # Test that parse_simple_number() can parse the TOML file without
+        # Test that try_simple_decimal() can parse the TOML file without
         # importing regular expressions (tomllib._re)
         filename = os_helper.TESTFN
         self.addCleanup(os_helper.unlink, filename)

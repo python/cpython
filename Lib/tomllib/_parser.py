@@ -669,7 +669,7 @@ def parse_basic_str(src: str, pos: Pos, *, multiline: bool) -> tuple[Pos, str]:
 
 
 # Sub-set of RE_NUMBER: only support decimal integer without "_" separator
-def parse_simple_number(
+def try_simple_decimal(
     src: str, pos: Pos
 ) -> None | tuple[Pos, int]:
     start = pos
@@ -739,7 +739,7 @@ def parse_value(
     # First try a simple number parser which defers import tomllib._re
     # to speed up tomllib import time
     if char in NUMBER_INITIAL_CHARS:
-        res = parse_simple_number(src, pos)
+        res = try_simple_decimal(src, pos)
         if res is not None:
             return res
 
