@@ -128,6 +128,8 @@ PyDoc_STRVAR(binascii_a2b_base64__doc__,
 "    When set to true, bytes that are not part of the base64 standard are\n"
 "    not allowed.  The same applies to excess data after padding (= / ==).\n"
 "    Set to True by default if ignorechars is specified, False otherwise.\n"
+"  padded\n"
+"    When set to false, padding in input is not required.\n"
 "  ignorechars\n"
 "    A byte string containing characters to ignore from the input when\n"
 "    strict_mode is true.");
@@ -241,7 +243,10 @@ PyDoc_STRVAR(binascii_b2a_base64__doc__,
 "           alphabet=BASE64_ALPHABET)\n"
 "--\n"
 "\n"
-"Base64-code line of data.");
+"Base64-code line of data.\n"
+"\n"
+"  padded\n"
+"    When set to false, omit padding in the output.");
 
 #define BINASCII_B2A_BASE64_METHODDEF    \
     {"b2a_base64", _PyCFunction_CAST(binascii_b2a_base64), METH_FASTCALL|METH_KEYWORDS, binascii_b2a_base64__doc__},
@@ -768,6 +773,8 @@ PyDoc_STRVAR(binascii_a2b_base32__doc__,
 "\n"
 "Decode a line of base32 data.\n"
 "\n"
+"  padded\n"
+"    When set to false, padding in input is not required.\n"
 "  ignorechars\n"
 "    A byte string containing characters to ignore from the input.");
 
@@ -869,7 +876,10 @@ PyDoc_STRVAR(binascii_b2a_base32__doc__,
 "           alphabet=BASE32_ALPHABET)\n"
 "--\n"
 "\n"
-"Base32-code line of data.");
+"Base32-code line of data.\n"
+"\n"
+"  padded\n"
+"    When set to false, omit padding in the output.");
 
 #define BINASCII_B2A_BASE32_METHODDEF    \
     {"b2a_base32", _PyCFunction_CAST(binascii_b2a_base32), METH_FASTCALL|METH_KEYWORDS, binascii_b2a_base32__doc__},
@@ -1624,4 +1634,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=1d7ea3dc19859415 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=2acab1ceb0058b1a input=a9049054013a1b77]*/

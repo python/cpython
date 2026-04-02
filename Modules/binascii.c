@@ -724,6 +724,7 @@ binascii.a2b_base64
         not allowed.  The same applies to excess data after padding (= / ==).
         Set to True by default if ignorechars is specified, False otherwise.
     padded: bool = True
+        When set to false, padding in input is not required.
     alphabet: PyBytesObject(c_default="NULL") = BASE64_ALPHABET
     ignorechars: Py_buffer = NULL
         A byte string containing characters to ignore from the input when
@@ -736,7 +737,7 @@ static PyObject *
 binascii_a2b_base64_impl(PyObject *module, Py_buffer *data, int strict_mode,
                          int padded, PyBytesObject *alphabet,
                          Py_buffer *ignorechars)
-/*[clinic end generated code: output=525d840a299ff132 input=d2d22b68a527a1db]*/
+/*[clinic end generated code: output=525d840a299ff132 input=74a53dd3b23474b3]*/
 {
     assert(data->len >= 0);
 
@@ -924,6 +925,7 @@ binascii.b2a_base64
     /
     *
     padded: bool = True
+        When set to false, omit padding in the output.
     wrapcol: size_t = 0
     newline: bool = True
     alphabet: Py_buffer(c_default="{NULL, NULL}") = BASE64_ALPHABET
@@ -934,7 +936,7 @@ Base64-code line of data.
 static PyObject *
 binascii_b2a_base64_impl(PyObject *module, Py_buffer *data, int padded,
                          size_t wrapcol, int newline, Py_buffer *alphabet)
-/*[clinic end generated code: output=a2057b906dc201ab input=3b2f528e4eaa3bdb]*/
+/*[clinic end generated code: output=a2057b906dc201ab input=cfa33ad73051d3f7]*/
 {
     const unsigned char *table_b2a = table_b2a_base64;
     const unsigned char *bin_data = data->buf;
@@ -1528,6 +1530,7 @@ binascii.a2b_base32
     /
     *
     padded: bool = True
+        When set to false, padding in input is not required.
     alphabet: PyBytesObject(c_default="NULL") = BASE32_ALPHABET
     ignorechars: Py_buffer = b''
         A byte string containing characters to ignore from the input.
@@ -1538,7 +1541,7 @@ Decode a line of base32 data.
 static PyObject *
 binascii_a2b_base32_impl(PyObject *module, Py_buffer *data, int padded,
                          PyBytesObject *alphabet, Py_buffer *ignorechars)
-/*[clinic end generated code: output=7dbbaa816d956b1c input=88edb4e84a5988c5]*/
+/*[clinic end generated code: output=7dbbaa816d956b1c input=07a3721acdf9b688]*/
 {
     const unsigned char *ascii_data = data->buf;
     Py_ssize_t ascii_len = data->len;
@@ -1734,6 +1737,7 @@ binascii.b2a_base32
     /
     *
     padded: bool = True
+        When set to false, omit padding in the output.
     wrapcol: size_t = 0
     alphabet: Py_buffer(c_default="{NULL, NULL}") = BASE32_ALPHABET
 
@@ -1743,7 +1747,7 @@ Base32-code line of data.
 static PyObject *
 binascii_b2a_base32_impl(PyObject *module, Py_buffer *data, int padded,
                          size_t wrapcol, Py_buffer *alphabet)
-/*[clinic end generated code: output=acc09e685569aab9 input=c3c0bb816fb5bd75]*/
+/*[clinic end generated code: output=acc09e685569aab9 input=1889b0c497a1d3c2]*/
 {
     const unsigned char *table_b2a = table_b2a_base32;
     const unsigned char *bin_data = data->buf;

@@ -53,6 +53,8 @@ def b64encode(s, altchars=None, *, padded=True, wrapcol=0):
     alternative alphabet for the '+' and '/' characters.  This allows an
     application to e.g. generate url or filesystem safe Base64 strings.
 
+    If padded is false, omit padding in the output.
+
     If wrapcol is non-zero, insert a newline (b'\\n') character after at most
     every wrapcol characters.
     """
@@ -72,6 +74,8 @@ def b64decode(s, altchars=None, validate=_NOT_SPECIFIED,
     Optional altchars must be a bytes-like object or ASCII string of length 2
     which specifies the alternative alphabet used instead of the '+' and '/'
     characters.
+
+    If padded is false, padding in input is not required.
 
     The result is returned as a bytes object.  A binascii.Error is raised if
     s is incorrectly padded.
@@ -152,6 +156,8 @@ def urlsafe_b64encode(s, *, padded=True):
     Argument s is a bytes-like object to encode.  The result is returned as a
     bytes object.  The alphabet uses '-' instead of '+' and '_' instead of
     '/'.
+
+    If padded is false, omit padding in the output.
     """
     return binascii.b2a_base64(s, padded=padded, newline=False,
                                alphabet=binascii.URLSAFE_BASE64_ALPHABET)
@@ -164,6 +170,8 @@ def urlsafe_b64decode(s, *, padded=False):
     is incorrectly padded.  Characters that are not in the URL-safe base-64
     alphabet, and are not a plus '+' or slash '/', are discarded prior to the
     padding check.
+
+    If padded is false, padding in input is not required.
 
     The alphabet uses '-' instead of '+' and '_' instead of '/'.
     """
@@ -188,6 +196,8 @@ def urlsafe_b64decode(s, *, padded=False):
 _B32_ENCODE_DOCSTRING = '''
 Encode the bytes-like objects using {encoding} and return a bytes object.
 
+If padded is false, omit padding in the output.
+
 If wrapcol is non-zero, insert a newline (b'\\n') character after at most
 every wrapcol characters.
 '''
@@ -196,6 +206,8 @@ Decode the {encoding} encoded bytes-like object or ASCII string s.
 
 Optional casefold is a flag specifying whether a lowercase alphabet is
 acceptable as input.  For security purposes, the default is False.
+
+If padded is false, padding in input is not required.
 
 ignorechars should be a byte string containing characters to ignore
 from the input.
