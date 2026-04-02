@@ -76,6 +76,12 @@ Dictionary objects
 
    The first argument can be a :class:`dict` or a :class:`frozendict`.
 
+   .. note::
+
+      The operation is atomic in the :term:`free-threaded build`, if *key*
+      is a builtin type (e.g. :class:`str`, :class:`int`, :class:`float`) or any
+      other object which does not define :meth:`~object.__hash__` and :meth:`~object.__eq__` methods.
+
    .. versionchanged:: next
       Also accept :class:`frozendict`.
 
@@ -107,12 +113,9 @@ Dictionary objects
 
    .. note::
 
-      In the :term:`free-threaded build`, key hashing via
-      :meth:`~object.__hash__` and key comparison via :meth:`~object.__eq__`
-      can execute arbitrary Python code, during which the :term:`per-object
-      lock` may be temporarily released. For built-in key types
-      (:class:`str`, :class:`int`, :class:`float`), the lock is not released
-      during comparison.
+      The operation is atomic in the :term:`free-threaded build`, if *key*
+      is a builtin type (e.g. :class:`str`, :class:`int`, :class:`float`) or any
+      other object which does not define :meth:`~object.__hash__` and :meth:`~object.__eq__` methods.
 
 
 .. c:function:: int PyDict_SetItemString(PyObject *p, const char *key, PyObject *val)
@@ -120,15 +123,6 @@ Dictionary objects
    This is the same as :c:func:`PyDict_SetItem`, but *key* is
    specified as a :c:expr:`const char*` UTF-8 encoded bytes string,
    rather than a :c:expr:`PyObject*`.
-
-   .. note::
-
-      In the :term:`free-threaded build`, key hashing via
-      :meth:`~object.__hash__` and key comparison via :meth:`~object.__eq__`
-      can execute arbitrary Python code, during which the :term:`per-object
-      lock` may be temporarily released. For built-in key types
-      (:class:`str`, :class:`int`, :class:`float`), the lock is not released
-      during comparison.
 
 
 .. c:function:: int PyDict_DelItem(PyObject *p, PyObject *key)
@@ -140,12 +134,9 @@ Dictionary objects
 
    .. note::
 
-      In the :term:`free-threaded build`, key hashing via
-      :meth:`~object.__hash__` and key comparison via :meth:`~object.__eq__`
-      can execute arbitrary Python code, during which the :term:`per-object
-      lock` may be temporarily released. For built-in key types
-      (:class:`str`, :class:`int`, :class:`float`), the lock is not released
-      during comparison.
+      The operation is atomic in the :term:`free-threaded build`, if *key*
+      is a builtin type (e.g. :class:`str`, :class:`int`, :class:`float`) or any
+      other object which does not define :meth:`~object.__hash__` and :meth:`~object.__eq__` methods.
 
 
 .. c:function:: int PyDict_DelItemString(PyObject *p, const char *key)
@@ -153,15 +144,6 @@ Dictionary objects
    This is the same as :c:func:`PyDict_DelItem`, but *key* is
    specified as a :c:expr:`const char*` UTF-8 encoded bytes string,
    rather than a :c:expr:`PyObject*`.
-
-   .. note::
-
-      In the :term:`free-threaded build`, key hashing via
-      :meth:`~object.__hash__` and key comparison via :meth:`~object.__eq__`
-      can execute arbitrary Python code, during which the :term:`per-object
-      lock` may be temporarily released. For built-in key types
-      (:class:`str`, :class:`int`, :class:`float`), the lock is not released
-      during comparison.
 
 
 .. c:function:: int PyDict_GetItemRef(PyObject *p, PyObject *key, PyObject **result)
@@ -175,6 +157,12 @@ Dictionary objects
    * On error, raise an exception and return ``-1``.
 
    The first argument can be a :class:`dict` or a :class:`frozendict`.
+
+   .. note::
+
+      The operation is atomic in the :term:`free-threaded build`, if *key*
+      is a builtin type (e.g. :class:`str`, :class:`int`, :class:`float`) or any
+      other object which does not define :meth:`~object.__hash__` and :meth:`~object.__eq__` methods.
 
    .. versionadded:: 3.13
 
@@ -305,6 +293,12 @@ Dictionary objects
    These may refer to the same object: in that case you hold two separate
    references to it.
 
+   .. note::
+
+      The operation is atomic in the :term:`free-threaded build`, if *key*
+      is a builtin type (e.g. :class:`str`, :class:`int`, :class:`float`) or any
+      other object which does not define :meth:`~object.__hash__` and :meth:`~object.__eq__` methods.
+
    .. versionadded:: 3.13
 
 
@@ -322,16 +316,13 @@ Dictionary objects
    Similar to :meth:`dict.pop`, but without the default value and
    not raising :exc:`KeyError` if the key is missing.
 
-   .. versionadded:: 3.13
-
    .. note::
 
-      In the :term:`free-threaded build`, key hashing via
-      :meth:`~object.__hash__` and key comparison via :meth:`~object.__eq__`
-      can execute arbitrary Python code, during which the :term:`per-object
-      lock` may be temporarily released. For built-in key types
-      (:class:`str`, :class:`int`, :class:`float`), the lock is not released
-      during comparison.
+      The operation is atomic in the :term:`free-threaded build`, if *key*
+      is a builtin type (e.g. :class:`str`, :class:`int`, :class:`float`) or any
+      other object which does not define :meth:`~object.__hash__` and :meth:`~object.__eq__` methods.
+
+   .. versionadded:: 3.13
 
 
 .. c:function:: int PyDict_PopString(PyObject *p, const char *key, PyObject **result)
@@ -341,15 +332,6 @@ Dictionary objects
    :c:expr:`PyObject*`.
 
    .. versionadded:: 3.13
-
-   .. note::
-
-      In the :term:`free-threaded build`, key hashing via
-      :meth:`~object.__hash__` and key comparison via :meth:`~object.__eq__`
-      can execute arbitrary Python code, during which the :term:`per-object
-      lock` may be temporarily released. For built-in key types
-      (:class:`str`, :class:`int`, :class:`float`), the lock is not released
-      during comparison.
 
 
 .. c:function:: PyObject* PyDict_Items(PyObject *p)

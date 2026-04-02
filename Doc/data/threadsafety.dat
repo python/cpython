@@ -29,9 +29,10 @@ PyDict_CheckExact:atomic:
 PyDict_New:atomic:
 
 # Lock-free lookups - use _Py_dict_lookup_threadsafe(), no locking
-PyDict_Contains:atomic:
+# atomic with simple types
+PyDict_Contains:shared:
 PyDict_ContainsString:atomic:
-PyDict_GetItemRef:atomic:
+PyDict_GetItemRef:shared:
 PyDict_GetItemStringRef:atomic:
 PyDict_Size:atomic:
 PyDict_GET_SIZE:atomic:
@@ -49,12 +50,12 @@ PyDict_Next:compatible:
 
 # Single-item mutations - protected by per-object critical section
 PyDict_SetItem:shared:
-PyDict_SetItemString:shared:
+PyDict_SetItemString:atomic:
 PyDict_DelItem:shared:
-PyDict_DelItemString:shared:
+PyDict_DelItemString:atomic:
 PyDict_SetDefaultRef:shared:
 PyDict_Pop:shared:
-PyDict_PopString:shared:
+PyDict_PopString:atomic:
 
 # Bulk reads - hold per-object lock for duration
 PyDict_Clear:atomic:
