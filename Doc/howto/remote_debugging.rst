@@ -642,29 +642,28 @@ code.
 The following principles define what is, and is not, considered a security
 vulnerability in this feature:
 
-**Attaching requires OS-level privileges.**
-  On every supported platform the operating system gates cross-process
-  memory access behind privilege checks (``CAP_SYS_PTRACE``, root, or
-  administrator rights).  A report that demonstrates an issue only after
-  these privileges have already been obtained is **not** a vulnerability in
-  CPython, since the OS security boundary was already crossed.
+Attaching requires OS-level privileges
+   On every supported platform the operating system gates cross-process
+   memory access behind privilege checks (``CAP_SYS_PTRACE``, root, or
+   administrator rights).  A report that demonstrates an issue only after
+   these privileges have already been obtained is **not** a vulnerability in
+   CPython, since the OS security boundary was already crossed.
 
-**Crashes or memory errors when reading a compromised process are not
-vulnerabilities.**
-  A tool that reads internal interpreter state from a target process must
-  trust that memory to be well-formed.  If the target process has been
-  corrupted or is controlled by an attacker, the debugger or profiler may
-  crash, produce garbage output, or behave unpredictably.  This is the same
-  risk accepted by every ``ptrace``-based debugger.  Bugs in this category
-  (buffer overflows, segmentation faults, or undefined behaviour triggered
-  by reading corrupted state) are **not** treated as security issues, though
-  fixes that improve robustness are welcome.
+Crashes or memory errors when reading a compromised process are not vulnerabilities
+   A tool that reads internal interpreter state from a target process must
+   trust that memory to be well-formed.  If the target process has been
+   corrupted or is controlled by an attacker, the debugger or profiler may
+   crash, produce garbage output, or behave unpredictably.  This is the same
+   risk accepted by every ``ptrace``-based debugger.  Bugs in this category
+   (buffer overflows, segmentation faults, or undefined behaviour triggered
+   by reading corrupted state) are **not** treated as security issues, though
+   fixes that improve robustness are welcome.
 
-**Vulnerabilities in the target process are not in scope.**
-  If the Python process being debugged has already been compromised, the
-  attacker already controls execution in that process.  Demonstrating further
-  impact from that starting point does not constitute a vulnerability in the
-  remote debugging protocol.
+Vulnerabilities in the target process are not in scope
+   If the Python process being debugged has already been compromised, the
+   attacker already controls execution in that process.  Demonstrating further
+   impact from that starting point does not constitute a vulnerability in the
+   remote debugging protocol.
 
 When to use ``PYTHON_DISABLE_REMOTE_DEBUG``
 -------------------------------------------
