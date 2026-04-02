@@ -211,16 +211,16 @@ extern void _PyEval_DeactivateOpCache(void);
 
 /* --- _Py_EnterRecursiveCall() ----------------------------------------- */
 
-static inline int _Py_ReachedRecursionLimit(PyThreadState *tstate)  {
+static inline int _Py_MakeRecCheck(PyThreadState *tstate)  {
     uintptr_t here_addr = _Py_get_machine_stack_pointer();
     _PyThreadStateImpl *_tstate = (_PyThreadStateImpl *)tstate;
-    // Possible overflow if stack pointer is beyond the soft limit.
-    // _Py_CheckRecursiveCall will check for corner cases and
-    // report an error if there is an overflow.
+    // Overflow if stack pointer is between soft limit and the base of the hardware stack.
+    // If it is below the hardware stack base, assume that we have the wrong stack limits, and do nothing.
+    // We could have the wrong stack limits because of limited platform support, or user-space threads.
 #if _Py_STACK_GROWS_DOWN
-    return here_addr < _tstate->c_stack_soft_limit;
+    return here_addr < _tstate->c_stack_soft_limit && here_addr >= _tstate->c_stack_soft_limit - 2 * _PyOS_STACK_MARGIN_BYTES;
 #else
-    return here_addr > _tstate->c_stack_soft_limit;
+    return here_addr > _tstate->c_stack_soft_limit && here_addr <= _tstate->c_stack_soft_limit + 2 * _PyOS_STACK_MARGIN_BYTES;
 #endif
 }
 
@@ -235,7 +235,7 @@ PyAPI_FUNC(int) _Py_CheckRecursiveCallPy(
 
 static inline int _Py_EnterRecursiveCallTstate(PyThreadState *tstate,
                                                const char *where) {
-    return (_Py_ReachedRecursionLimit(tstate) && _Py_CheckRecursiveCall(tstate, where));
+    return (_Py_MakeRecCheck(tstate) && _Py_CheckRecursiveCall(tstate, where));
 }
 
 static inline int _Py_EnterRecursiveCall(const char *where) {
@@ -248,6 +248,8 @@ static inline void _Py_LeaveRecursiveCallTstate(PyThreadState *tstate) {
 }
 
 PyAPI_FUNC(void) _Py_InitializeRecursionLimits(PyThreadState *tstate);
+
+PyAPI_FUNC(int) _Py_ReachedRecursionLimit(PyThreadState *tstate);
 
 // Export for test_peg_generator
 PyAPI_FUNC(int) _Py_ReachedRecursionLimitWithMargin(
