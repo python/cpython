@@ -142,7 +142,7 @@ PySet_Contains:shared:
 PySet_Add:shared:
 PySet_Discard:shared:
 
-# Pop - hold per-object lock for duration;
+# Pop - hold per-object lock for duration
 PySet_Pop:atomic:
 
 # Clear - empties the set before clearing
