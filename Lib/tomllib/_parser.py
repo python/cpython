@@ -751,9 +751,9 @@ def parse_value(
     # Try a simple parser for decimal numbers. If it's able to parse all
     # numbers, it avoids importing tomllib._re which has an impact on
     # the tomllib startup time.
-    res = try_simple_decimal(src, pos)
-    if res is not None:
-        return res
+    number = try_simple_decimal(src, pos)
+    if number is not None:
+        return number
 
     # Dates and times
     datetime_match = RE_DATETIME.match(src, pos)
