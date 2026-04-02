@@ -299,6 +299,8 @@ instantiation, of which this module provides three different variants:
       buffered and sent directly the output stream.If the *message* is not
       specified, the HTTP message corresponding the response *code*  is sent.
 
+      This method does not reject *message* containing CRLF sequences.
+
       .. versionadded:: 3.2
 
    .. method:: end_headers()
@@ -557,7 +559,8 @@ Security considerations
 requests, this makes it possible for files outside of the specified directory
 to be served.
 
-The :meth:`BaseHTTPRequestHandler.send_header` method assumes sanitized input
+Methods :meth:`BaseHTTPRequestHandler.send_header` and
+:meth:`BaseHTTPRequestHandler.send_response_only` assume sanitized input
 and does not perform input validation such as checking for the presence of CRLF
 sequences. Untrusted input may result in HTTP Header injection attacks.
 
