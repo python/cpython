@@ -3759,15 +3759,17 @@ _PyStackRef _PyForIter_VirtualIteratorNext(PyThreadState* tstate, _PyInterpreter
     if (PyStackRef_IsTaggedInt(index)) {
         intptr_t i = PyStackRef_UntagInt(index);
         assert(i >= 0);
-        PyObject *next = Py_TYPE(iter_o)->tp_iteritem(iter_o, &i);
+        PyObjectIndexPair next_index = Py_TYPE(iter_o)->tp_iteritem(iter_o, i);
+        i = next_index.index;
+        PyObject *next = next_index.object;
         if (next == NULL) {
             return i < 0 ? PyStackRef_ERROR : PyStackRef_NULL;
         }
         *index_ptr = PyStackRef_TagInt(i);
         return PyStackRef_FromPyObjectSteal(next);
     }
-    PyObject *next_o = (*Py_TYPE(iter_o)->tp_iternext)(iter_o);
-    if (next_o == NULL) {
+    PyObject *next = (*Py_TYPE(iter_o)->tp_iternext)(iter_o);
+    if (next == NULL) {
         if (_PyErr_Occurred(tstate)) {
             if (_PyErr_ExceptionMatches(tstate, PyExc_StopIteration)) {
                 _PyEval_MonitorRaise(tstate, frame, frame->instr_ptr);
@@ -3779,7 +3781,7 @@ _PyStackRef _PyForIter_VirtualIteratorNext(PyThreadState* tstate, _PyInterpreter
         }
         return PyStackRef_NULL;
     }
-    return PyStackRef_FromPyObjectSteal(next_o);
+    return PyStackRef_FromPyObjectSteal(next);
 }
 
 /* Check if a 'cls' provides the given special method. */

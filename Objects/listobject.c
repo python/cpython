@@ -3913,13 +3913,11 @@ list_ass_subscript(PyObject *self, PyObject *item, PyObject *value)
     return res;
 }
 
-static PyObject *
-list_iteritem(PyObject *obj, Py_ssize_t *index)
+static PyObjectIndexPair
+list_iteritem(PyObject *obj, Py_ssize_t index)
 {
-    Py_ssize_t i = *index;
-    PyObject *result = list_get_item_ref((PyListObject *)obj, i);
-    *index = i+1;
-    return result;
+    PyObject *result = list_get_item_ref((PyListObject *)obj, index);
+    return (PyObjectIndexPair) { .object = result, .index = index + 1 };
 }
 
 static PyMappingMethods list_as_mapping = {

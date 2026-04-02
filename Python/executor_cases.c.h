@@ -12757,8 +12757,10 @@
             stack_pointer += 2;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
             _PyFrame_SetStackPointer(frame, stack_pointer);
-            PyObject *next_o = Py_TYPE(iter_o)->tp_iteritem(iter_o, &index);
+            PyObjectIndexPair next_index = Py_TYPE(iter_o)->tp_iteritem(iter_o, index);
             stack_pointer = _PyFrame_GetStackPointer(frame);
+            PyObject *next_o = next_index.object;
+            index = next_index.index;
             if (next_o == NULL) {
                 if (index < 0) {
                     SET_CURRENT_CACHED_VALUES(0);

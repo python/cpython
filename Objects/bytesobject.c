@@ -3206,16 +3206,15 @@ Construct an immutable array of bytes from:\n\
 static PyObject *bytes_iter(PyObject *seq);
 
 
-static PyObject *
-bytes_iteritem(PyObject *obj, Py_ssize_t *index)
+static PyObjectIndexPair
+bytes_iteritem(PyObject *obj, Py_ssize_t index)
 {
-    Py_ssize_t i = *index;
     PyBytesObject *a = _PyBytes_CAST(obj);
-    if (i >= Py_SIZE(a)) {
-        return NULL;
+    if (index >= Py_SIZE(a)) {
+        return (PyObjectIndexPair) { .object = NULL, .index = index };
     }
-    *index = i+1;
-    return _PyLong_FromUnsignedChar((unsigned char)a->ob_sval[i]);
+    PyObject *l = _PyLong_FromUnsignedChar((unsigned char)a->ob_sval[index]);
+    return (PyObjectIndexPair) { .object = l, .index = index + 1 };
 }
 
 PyTypeObject PyBytes_Type = {

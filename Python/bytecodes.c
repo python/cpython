@@ -3643,12 +3643,9 @@ dummy_func(
         replaced op(_FOR_ITER_VIRTUAL, (iter, null_or_index -- iter, null_or_index, next)) {
             PyObject *iter_o = PyStackRef_AsPyObjectBorrow(iter);
             Py_ssize_t index = PyStackRef_UntagInt(null_or_index);
-            PyObject *next_o;
-            { // Make it clear that index doesn't escape; for MSVC tailcall
-                Py_ssize_t tmp = index;
-                next_o = Py_TYPE(iter_o)->tp_iteritem(iter_o, &tmp);
-                index = tmp;
-            }
+            PyObjectIndexPair next_index = Py_TYPE(iter_o)->tp_iteritem(iter_o, index);
+            PyObject *next_o = next_index.object;
+            index = next_index.index;
             if (next_o == NULL) {
                 if (index < 0) {
                     ERROR_NO_POP();
@@ -3669,7 +3666,9 @@ dummy_func(
         op(_FOR_ITER_VIRTUAL_TIER_TWO, (iter, null_or_index -- iter, null_or_index, next)) {
             PyObject *iter_o = PyStackRef_AsPyObjectBorrow(iter);
             Py_ssize_t index = PyStackRef_UntagInt(null_or_index);
-            PyObject *next_o = Py_TYPE(iter_o)->tp_iteritem(iter_o, &index);
+            PyObjectIndexPair next_index = Py_TYPE(iter_o)->tp_iteritem(iter_o, index);
+            PyObject *next_o = next_index.object;
+            index = next_index.index;
             if (next_o == NULL) {
                 if (index < 0) {
                     ERROR_NO_POP();

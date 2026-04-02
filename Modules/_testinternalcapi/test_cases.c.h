@@ -6293,14 +6293,11 @@
                 null_or_index = stack_pointer[-1];
                 PyObject *iter_o = PyStackRef_AsPyObjectBorrow(iter);
                 Py_ssize_t index = PyStackRef_UntagInt(null_or_index);
-                PyObject *next_o;
-                {
-                    Py_ssize_t tmp = index;
-                    _PyFrame_SetStackPointer(frame, stack_pointer);
-                    next_o = Py_TYPE(iter_o)->tp_iteritem(iter_o, &tmp);
-                    stack_pointer = _PyFrame_GetStackPointer(frame);
-                    index = tmp;
-                }
+                _PyFrame_SetStackPointer(frame, stack_pointer);
+                PyObjectIndexPair next_index = Py_TYPE(iter_o)->tp_iteritem(iter_o, index);
+                stack_pointer = _PyFrame_GetStackPointer(frame);
+                PyObject *next_o = next_index.object;
+                index = next_index.index;
                 if (next_o == NULL) {
                     if (index < 0) {
                         JUMP_TO_LABEL(error);

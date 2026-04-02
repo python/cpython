@@ -873,17 +873,16 @@ static PySequenceMethods tuple_as_sequence = {
     tuple_contains,                             /* sq_contains */
 };
 
-static PyObject *
-tuple_iteritem(PyObject *obj, Py_ssize_t *index)
+static PyObjectIndexPair
+tuple_iteritem(PyObject *obj, Py_ssize_t index)
 {
-    Py_ssize_t i = *index;
-    if (i >= PyTuple_GET_SIZE(obj)) {
-        return NULL;
+    ;
+    if (index >= PyTuple_GET_SIZE(obj)) {
+        return (PyObjectIndexPair) { .object = NULL, index = index };
     }
-    PyObject *result = PyTuple_GET_ITEM(obj, i);
+    PyObject *result = PyTuple_GET_ITEM(obj, index);
     Py_INCREF(result);
-    *index = i+1;
-    return result;
+    return (PyObjectIndexPair) { .object = result, .index = index + 1 };
 }
 
 static PyObject*
