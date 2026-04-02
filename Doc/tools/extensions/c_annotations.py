@@ -377,7 +377,8 @@ class VersionHexCheatsheet(SphinxDirective):
     """Show results of Py_PACK_VERSION(3, x) for a few relevant Python versions
 
     This is useful for defining version before Python.h is included.
-    It should auto-update to the version being documented, hence the extension.
+    It should auto-update with the version being documented, so it must be an
+    extension.
     """
     has_content = False
     required_arguments = 0

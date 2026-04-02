@@ -387,15 +387,15 @@ agen() for x in a)``.
 :pep:`903`: ``abi3t`` -- Stable ABI for Free-Threaded Builds
 ------------------------------------------------------------
 
-C extensions that target the :ref:`Stable ABI <stable-abi>`
-can now be compiled to be compatible with
-both :term:`free-threaded build <free-threaded build>` builds of CPython
-and "traditional" builds with the :term:`GIL` enabled.
-This mode usually requires some non-trivial changes to the source code;
+C extensions that target the :ref:`Stable ABI <stable-abi>` can now be
+compiled for the new *Stable ABI for Free-Threaded Builds* (also known
+as ``abi3t``), which makes them compatible with
+:term:`free-threaded build <free-threaded build>` builds of CPython.
+This usually requires some non-trivial changes to the source code;
 specifically:
 
 - Switching to API introduced in :pep:`697` (Python 3.12), such as
-  negative :c:member:`~PyType_Spec.basicsize` and
+  negative :c:member:`~PyType_Spec.basicsize`
   :c:func:`PyObject_GetTypeData`, rather than making :c:type:`PyObject`
   part of the instance struct; and
 - Switching from a ``PyInit_`` function to a new export hook,
@@ -406,6 +406,15 @@ Note that Stable ABI does not offer all functionality CPython has to offer.
 Extensions that cannot switch to ``abi3t`` should continue to build for
 the existing Stable ABI (``abi3``) and the version-specific ABI for
 free-threading (``cp315t``) separately.
+
+Stable ABI for Free-Threaded Builds should typically
+be selected in a build tool (such as Setuptools, ``meson-python``, Cython,
+Scikit-build-core, Maturin, and similar).
+At the time of writing this entry, these tools did **not** support ``abi3t``.
+If this is the case for "your" tool, compile for ``cp315t`` separately.
+If not using a build tool -- or when writing such a tool -- you can select
+``abi3t`` by setting the macro :c:macro:`!Py_TARGET_ABI3T` as discussed
+in :ref:`abi3-compiling`.
 
 
 .. _whatsnew315-improved-error-messages:

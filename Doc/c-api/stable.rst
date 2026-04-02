@@ -62,18 +62,13 @@ versions of Python, without recompilation.
 
 .. note::
 
-   For simplicity, this document talks about *extensions*, but the Stable ABI
+   For simplicity, this document talks about *extensions*, but Stable ABI
    works the same way for all uses of the API – for example, embedding Python.
-
-A Stable ABI is *versioned* using the first two numbers of the Python version.
-For example, Stable ABI 3.14 corresponds to Python 3.14.
-An extension compiled for Stable ABI 3.x is ABI-compatible with Python 3.x
-and above.
 
 There are two Stable ABIs:
 
 - ``abi3``, introduced in Pyton 3.2, is compatible with
-  non-:term:`free threaded <free-threaded build>` builds of CPython.
+  **non**-:term:`free threaded <free-threaded build>` builds of CPython.
 
 - ``abi3t``, introduced in Pyton 3.15, is compatible with
   :term:`free threaded <free-threaded build>` builds of CPython.
@@ -84,24 +79,18 @@ There are two Stable ABIs:
       ``abi3t`` was added in :pep:`803`
 
 It is possible for an extension to be compiled for *both* ``abi3`` and
-``abi3t`` at the same time.
+``abi3t`` at the same time; the result will be compatible with
+both free-threaded and non-free-threaded builds of Python.
 Currently, this has no downsides compared to compiling for ``abi3t`` only.
 
-The Stable ABIs come with several caveats:
+Each Stable ABI is versioned using the first two numbers of the Python version.
+For example, Stable ABI 3.14 corresponds to Python 3.14.
+An extension compiled for Stable ABI 3.x is ABI-compatible with Python 3.x
+and above.
 
-- Extensions that target a stable ABI must only use a limited subset of
-  the C API. This subset is known as the :dfn:`Limited API`; its contents
-  are :ref:`listed below <limited-api-list>`.
-
-- Compiling for a Stable ABI will disable some optimizations.
-  In particular, common functions cannot be inlined to take advantage of the
-  internal implementation details.
-
-- Stable ABI prevents *ABI* issues, like linker errors due to missing
-  symbols or data corruption due to changes in structure layouts or function
-  signatures.
-  However, other changes in Python can change the *behavior* of extensions.
-  See Python's Backwards Compatibility Policy (:pep:`387`) for details.
+Extensions that target a stable ABI must only use a limited subset of
+the C API. This subset is known as the :dfn:`Limited API`; its contents
+are :ref:`listed below <limited-api-list>`.
 
 On Windows, extensions that use a Stable ABI should be linked against
 ``python3.dll`` rather than a version-specific library such as
@@ -109,24 +98,27 @@ On Windows, extensions that use a Stable ABI should be linked against
 This library only exposes the relevant symbols.
 
 On some platforms, Python will look for and load shared library files named
-with the ``abi3`` or ``abi3t`` tag (e.g. ``mymodule.abi3.so``).
+with the ``abi3`` or ``abi3t`` tag (for example, ``mymodule.abi3.so``).
 :term:`Free threaded <free-threaded build>` interpreters only recognize the
 ``abi3t`` tag, while non-free threaded ones will prefer ``abi3`` but fall back
 to ``abi3t``.
-Thus, extensions compatible with both flavors should use the ``abi3t`` tag.
+Thus, extensions compatible with both ABIs should use the ``abi3t`` tag.
 
-Python does not check if such extensions conform to a Stable ABI.
-Extension authors are encouraged to check using the :c:macro:`Py_mod_abi`
-slot or the :c:func:`PyABIInfo_Check` function, but, the user
+Python does not necessarily check that extensions it loads
+have compatible ABI.
+Extension authors are encouraged to add a check using the :c:macro:`Py_mod_abi`
+slot or the :c:func:`PyABIInfo_Check` function, but the user
 (or their packaging tool) is ultimately responsible for ensuring that,
 for example, extensions built for Stable ABI 3.10 are not installed for lower
 versions of Python.
 
-All functions in the Stable ABI are present as functions in Python's shared
+All functions in Stable ABI are present as functions in Python's shared
 library, not solely as macros.
-They are usable from languages that don't use the C preprocessor,
-such as Python via :py:mod:`ctypes`.
+This makes them usable are usable from languages that don't use the C
+preprocessor, including Python's :py:mod:`ctypes`.
 
+
+.. _abi3-compiling:
 
 Compiling for Stable ABI
 ------------------------
@@ -138,22 +130,23 @@ Compiling for Stable ABI
    extension filenames and other metadata.
    Prefer using the tool's options over defining the macros manually.
 
-   The rest of this section is relevant for tool authors, and for people who
-   compile extensions manually.
+   The rest of this section is mainly relevant for tool authors, and for
+   people who compile extensions manually.
 
    .. seealso:: `list of recommended tools`_ in the Python Packaging User Guide
 
       .. _list of recommended tools: https://packaging.python.org/en/latest/guides/tool-recommendations/#build-backends-for-extension-modules
 
 To compile for a Stable ABI, define one or both of the following macros
-before including ``Python.h`` to the lowest Python version your extension
-should support, in :c:macro:`Py_PACK_VERSION` format.
+to the lowest Python version your extension should support, in
+:c:macro:`Py_PACK_VERSION` format.
 Typically, you should choose a specific value rather than the version of
 the Python headers you are compiling against.
 
-Since the :c:macro:`Py_PACK_VERSION` is not available before including
-``Python.h``, you will need to use the number directly.
-For reference, the values for a few Python versions are:
+The macro(s) must be defined before including ``Python.h``.
+Since :c:macro:`Py_PACK_VERSION` is not available at this point, you
+will need to use the numeric value directly.
+For reference, the values for a few recent Python versions are:
 
 .. version-hex-cheatsheet::
 
@@ -166,16 +159,18 @@ visible to the compiler but should not be used directly.
 
    Target ``abi3``, that is,
    non-:term:`free threaded <free-threaded build>` builds of CPython.
+   See :ref:`above <abi3-compiling>` for common information.
 
 .. c:macro:: Py_TARGET_ABI3T
 
    Target ``abi3t``, that is,
    :term:`free threaded <free-threaded build>` builds of CPython.
+   See :ref:`above <abi3-compiling>` for common information.
 
    .. versionadded:: next
 
-Despite the different naming, the macros are similar;
-the name :c:macro:`!Py_LIMITED_API` is kept for backwards compatibility.
+Both macros specify a target ABI; the different naming style is due to
+backwards compatibility.
 
 .. admonition:: Historical note
 
@@ -212,29 +207,32 @@ functions are inlined or replaced by macros.
 Compiling for Stable ABI disables this inlining, allowing stability as
 Python's data structures are improved, but possibly reducing performance.
 
-By leaving out the :c:macro:`!Py_LIMITED_API`` or :c:macro:`!Py_TARGET_ABI3T`
+By leaving out the :c:macro:`!Py_LIMITED_API` or :c:macro:`!Py_TARGET_ABI3T`
 definition, it is possible to compile Stable-ABI-compatible source
-for a version-specific ABI, possibly improving performance for a specific
-Python version.
+for a version-specific ABI.
+A potentially faster version-specific extension can then be distributed
+alongside a version compiled for Stable ABI -- a slower but more compatible
+fallback.
 
 
-Limited API Caveats
--------------------
+Stable ABI Caveats
+------------------
 
-Note that compiling with :c:macro:`Py_LIMITED_API` or :c:macro:`Py_TARGET_ABI3T`
-is *not* a complete guarantee that code will be compatible with the
-expected Python versions.
-The macros only cover definitions, not other issues such as expected semantics.
+Note that compiling for Stable ABI is *not* a complete guarantee that code will
+be compatible with the expected Python versions.
+Stable ABI prevents *ABI* issues, like linker errors due to missing
+symbols or data corruption due to changes in structure layouts or function
+signatures.
+However, other changes in Python can change the *behavior* of extensions.
+See Python's Backwards Compatibility Policy (:pep:`387`) for details.
 
-One issue that the macros do not guard against is calling a function
-with arguments that are invalid in a lower Python version.
+One issue that the :c:macro:`Py_TARGET_ABI3T` and :c:macro:`Py_LIMITED_API`
+macros do not guard against is calling a function with arguments that are
+invalid in a lower Python version.
 For example, consider a function that starts accepting ``NULL`` for an
 argument. In Python 3.9, ``NULL`` now selects a default behavior, but in
 Python 3.8, the argument will be used directly, causing a ``NULL`` dereference
 and crash. A similar argument works for fields of structs.
-
-Another issue is that some struct fields are currently not hidden when
-the macros are defined, even though they're part of the Limited API.
 
 For these reasons, we recommend testing an extension with *all* minor Python
 versions it supports.
@@ -245,11 +243,11 @@ defined, a few private declarations are exposed for technical reasons (or
 even unintentionally, as bugs).
 
 Also note that while compiling with ``Py_LIMITED_API`` 3.8 means that the
-extension will *load* on Python 3.12, and *compile* with Python 3.12,
+extension should *load* on Python 3.12, and *compile* with Python 3.12,
 the same source will not necessarily compile with ``Py_LIMITED_API``
 set to 3.12.
-In general: parts of the Limited API may be deprecated and removed,
-provided that the Stable ABI stays stable.
+In general, parts of the Limited API may be deprecated and removed,
+provided that Stable ABI stays stable.
 
 
 .. _stable-abi-platform:
@@ -372,7 +370,7 @@ The full API is described below for advanced use cases.
 
          .. c:macro:: PyABIInfo_STABLE
 
-            Specifies that the stable ABI is used.
+            Specifies that Stable ABI is used.
 
          .. c:macro:: PyABIInfo_INTERNAL
 
@@ -383,14 +381,21 @@ The full API is described below for advanced use cases.
 
          .. c:macro:: PyABIInfo_FREETHREADED
 
-            Specifies ABI compatible with free-threading builds of CPython.
+            Specifies ABI compatible with :term:`free-threaded builds
+            <free-threaded build>` of CPython.
             (That is, ones compiled with :option:`--disable-gil`; with ``t``
             in :py:data:`sys.abiflags`)
 
          .. c:macro:: PyABIInfo_GIL
 
-            Specifies ABI compatible with non-free-threading builds of CPython
+            Specifies ABI compatible with non-free-threaded builds of CPython
             (ones compiled *without* :option:`--disable-gil`).
+
+         .. c:macro:: PyABIInfo_FREETHREADING_AGNOSTIC
+
+            Specifies ABI compatible with both free-threaded and
+            non-free-threaded builds of CPython, that is, both
+            ``abi3`` and ``abi3t``.
 
    .. c:member:: uint32_t build_version
 
@@ -405,10 +410,11 @@ The full API is described below for advanced use cases.
 
       The ABI version.
 
-      For the Stable ABI, this field should be the value of
-      :c:macro:`Py_LIMITED_API`
-      (except if :c:macro:`Py_LIMITED_API` is ``3``; use
-      :c:expr:`Py_PACK_VERSION(3, 2)` in that case).
+      For Stable ABI, this field should be the value of
+      :c:macro:`Py_LIMITED_API` or :c:macro:`Py_TARGET_ABI3T`.
+      If both are defined, use the smaller value.
+      (If :c:macro:`Py_LIMITED_API` is ``3``; use
+      :c:expr:`Py_PACK_VERSION(3, 2)` instead of ``3``.)
 
       Otherwise, it should be set to :c:macro:`PY_VERSION_HEX`.
 
