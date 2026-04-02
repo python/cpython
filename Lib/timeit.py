@@ -7,7 +7,7 @@ the Python Cookbook, published by O'Reilly.
 Library usage: see the Timer class.
 
 Command line usage:
-    python timeit.py [-n N] [-r N] [-s S] [-p] [-h] [--] [statement]
+    python timeit.py [-n N] [-r N] [-s S] [-p] [-h] [-t T] [--] [statement]
 
 Options:
   -n/--number N: how many times to execute 'statement' (default: see below)
