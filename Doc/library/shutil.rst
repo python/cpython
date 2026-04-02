@@ -101,6 +101,21 @@ Directory and files operations
 
    .. versionadded:: 3.4
 
+.. exception:: ReadError
+
+   This exception is raised when an archive cannot be read or is not recognized
+   as a supported archive format.  It is raised by :func:`unpack_archive`.
+
+   .. versionadded:: 3.2
+
+.. exception:: RegistryError
+
+   This exception is raised when a registry operation with the archiving
+   and unpacking registries fails, such as registering a duplicate archive
+   format extension.  It is raised by :func:`register_unpack_format`.
+
+   .. versionadded:: 3.2
+
 
 .. function:: copymode(src, dst, *, follow_symlinks=True)
 
@@ -736,6 +751,8 @@ provided.  They rely on the :mod:`zipfile` and :mod:`tarfile` modules.
    will use the archive file name extension and see if an unpacker was
    registered for that extension.  In case none is found,
    a :exc:`ValueError` is raised.
+
+   If the archive file cannot be read, a :exc:`ReadError` is raised.
 
    The keyword-only *filter* argument is passed to the underlying unpacking
    function. For zip files, *filter* is not accepted.
