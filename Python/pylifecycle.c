@@ -1218,6 +1218,54 @@ pyinit_main_reconfigure(PyThreadState *tstate)
 
 
 #ifdef Py_DEBUG
+// Equivalent to the Python code:
+//
+//     for part in attr.split('.'):
+//         obj = getattr(obj, part)
+static PyObject*
+presite_resolve_name(PyObject *obj, PyObject *attr)
+{
+    obj = Py_NewRef(obj);
+    attr = Py_NewRef(attr);
+    PyObject *res;
+
+    while (1) {
+        Py_ssize_t len = PyUnicode_GET_LENGTH(attr);
+        Py_ssize_t pos = PyUnicode_FindChar(attr, '.', 0, len, 1);
+        if (pos < 0) {
+            break;
+        }
+
+        PyObject *name = PyUnicode_Substring(attr, 0, pos);
+        if (name == NULL) {
+            goto error;
+        }
+        res = PyObject_GetAttr(obj, name);
+        Py_DECREF(name);
+        if (res == NULL) {
+            goto error;
+        }
+        Py_SETREF(obj, res);
+
+        PyObject *suffix = PyUnicode_Substring(attr, pos + 1, len);
+        if (suffix == NULL) {
+            goto error;
+        }
+        Py_SETREF(attr, suffix);
+    }
+
+    res = PyObject_GetAttr(obj, attr);
+    Py_DECREF(obj);
+    Py_DECREF(attr);
+    return res;
+
+error:
+    Py_XDECREF(obj);
+    Py_DECREF(attr);
+    return NULL;
+}
+
+
 static void
 run_presite(PyThreadState *tstate)
 {
@@ -1256,13 +1304,14 @@ run_presite(PyThreadState *tstate)
         mod_name = Py_NewRef(presite);
     }
 
+    // mod_name can contain dots (ex: "math.integer")
     module = PyImport_Import(mod_name);
     if (module == NULL) {
         goto error;
     }
 
     if (func_name != NULL) {
-        PyObject *func = PyObject_GetAttr(module, func_name);
+        PyObject *func = presite_resolve_name(module, func_name);
         if (func == NULL) {
             goto error;
         }
