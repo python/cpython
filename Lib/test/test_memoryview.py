@@ -718,10 +718,10 @@ class OtherTest(unittest.TestCase):
         self.assertEqual(m2.hex(':', -2), '6564:6362:61')
         self.assertEqual(m2.hex(sep=':', bytes_per_sep=2), '65:6463:6261')
         self.assertEqual(m2.hex(sep=':', bytes_per_sep=-2), '6564:6362:61')
-        for bytes_per_sep in 5, -5, 2**31-1, -(2**31-1):
+        for bytes_per_sep in 5, -5, sys.maxsize, -sys.maxsize:
             with self.subTest(bytes_per_sep=bytes_per_sep):
                 self.assertEqual(m2.hex(':', bytes_per_sep), '6564636261')
-        for bytes_per_sep in 2**31, -2**31, 2**1000, -2**1000:
+        for bytes_per_sep in sys.maxsize+1, -sys.maxsize-1, 2**1000, -2**1000:
             with self.subTest(bytes_per_sep=bytes_per_sep):
                 try:
                     self.assertEqual(m2.hex(':', bytes_per_sep), '6564636261')
