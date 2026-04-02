@@ -107,13 +107,13 @@ make_tuple(PyObject *object, Py_ssize_t len)
         return NULL;
     }
 
-    PyObject* w = PyLong_FromSsize_t(len);
-    if (w == NULL) {
+    PyObject* len_obj = PyLong_FromSsize_t(len);
+    if (len_obj == NULL) {
         Py_DECREF(object);
         return NULL;
     }
 
-    return _PyTuple_FromPairSteal(object, w);
+    return _PyTuple_FromPairSteal(object, len_obj);
 }
 
 static PyObject *
