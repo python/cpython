@@ -92,7 +92,7 @@ the constructor functions work with any iterable Python object.
    .. note::
 
       The operation is atomic in the :term:`free-threaded build`, if *iterable* is a set,
-      frozenset or dict.
+      frozenset, dict or frozendict.
 
 
 .. c:function:: PyObject* PyFrozenSet_New(PyObject *iterable)
@@ -105,7 +105,7 @@ the constructor functions work with any iterable Python object.
    .. note::
 
       The operation is atomic in the :term:`free-threaded build`, if *iterable* is a set,
-      frozenset or dict.
+      frozenset, dict or frozendict.
 
 
 The following functions and macros are available for instances of :class:`set`

@@ -126,7 +126,7 @@ PyByteArray_AsString:compatible:
 PyByteArray_AS_STRING:compatible:
 
 # Creation - may iterate the iterable argument, calling arbitrary code
-# atomic for sets, dicts, and frozendicts.
+# atomic for sets, frozensets, dicts, and frozendicts.
 PySet_New:shared:
 PyFrozenSet_New:shared:
 
