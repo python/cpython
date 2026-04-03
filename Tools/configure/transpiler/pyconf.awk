@@ -1670,8 +1670,20 @@ function pyconf_parse_args(    i, arg, key, val, opt_key, eq_pos, config_args) {
                                 V[_pyconf_normalize_opt(key)] = val
                         }
                 } else {
-                        # Positional args (e.g. VAR=value) — record in CONFIG_ARGS
+                        # Positional args: VAR=value sets environment + V[],
+                        # mirroring Python's pyconf.parse_args() which does
+                        # os.environ[name] = value.
                         config_args = config_args (config_args != "" ? " " : "") _shell_quote(arg)
+                        eq_pos = index(arg, "=")
+                        if (eq_pos > 0) {
+                                key = substr(arg, 1, eq_pos - 1)
+                                if (match(key, /^[A-Za-z_][A-Za-z0-9_]*$/)) {
+                                        val = substr(arg, eq_pos + 1)
+                                        V[key] = val
+                                        ENV[key] = val
+                                        MODIFIED_ENV[key] = 1
+                                }
+                        }
                 }
                 # Clear ARGV so awk doesn't try to read as files
                 ARGV[i] = ""
