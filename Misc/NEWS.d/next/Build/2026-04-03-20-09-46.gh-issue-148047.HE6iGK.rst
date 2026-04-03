@@ -1,0 +1,2 @@
+Check early whether tail-calling is possible for MSVC builds on Windows.
+Patch by Chris Eibl.
