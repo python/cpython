@@ -96,7 +96,7 @@ class AwkWriter:
         if not line:
             self.lines.append("")
         else:
-            self.lines.append("\t" * self.indent_level + line)
+            self.lines.append("    " * self.indent_level + line)
 
     def emit_raw(self, text: str) -> None:
         for ln in text.split("\n"):

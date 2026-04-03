@@ -288,78 +288,78 @@ function _arr_join_quoted(arr, sep, n, i, result) {
 # vars= parameter: the command template contains shell-style variable
 # references that must be resolved before execution.
 function _expand_cmd_vars(cmd, n, i, c, varname, brace, parts, pc) {
-	# Accumulate expanded command in array to avoid mawk string concatenation corruption
-	# (character-by-character concatenation in a large loop causes memory issues in mawk).
-	n = length(cmd)
-	i = 1
-	pc = 0  # parts count
-	while (i <= n) {
-		c = substr(cmd, i, 1)
-		if (c == "$" && i < n) {
-			# Check for ${VAR} or $VAR
-			if (substr(cmd, i + 1, 1) == "{") {
-				brace = 1
-				i += 2
-				varname = ""
-				while (i <= n && substr(cmd, i, 1) != "}") {
-					varname = varname substr(cmd, i, 1)
-					i++
-				}
-				if (i <= n) i++  # skip closing }
-			} else {
-				brace = 0
-				i++
-				varname = ""
-				while (i <= n && substr(cmd, i, 1) ~ /[A-Za-z0-9_]/) {
-					varname = varname substr(cmd, i, 1)
-					i++
-				}
-			}
-			if (varname == "") {
-				parts[++pc] = "$"
-				if (brace) parts[++pc] = "{"
-			} else if (varname in V) {
-				parts[++pc] = V[varname]
-			} else if (varname in ENVIRON) {
-				parts[++pc] = ENVIRON[varname]
-			}
-			# else: unknown var expands to empty (matches shell behaviour)
-		} else {
-			parts[++pc] = c
-			i++
-		}
-	}
-	# Join all parts once at the end
-	return _join_parts(parts, pc)
+    # Accumulate expanded command in array to avoid mawk string concatenation corruption
+    # (character-by-character concatenation in a large loop causes memory issues in mawk).
+    n = length(cmd)
+    i = 1
+    pc = 0  # parts count
+    while (i <= n) {
+        c = substr(cmd, i, 1)
+        if (c == "$" && i < n) {
+            # Check for ${VAR} or $VAR
+            if (substr(cmd, i + 1, 1) == "{") {
+                brace = 1
+                i += 2
+                varname = ""
+                while (i <= n && substr(cmd, i, 1) != "}") {
+                    varname = varname substr(cmd, i, 1)
+                    i++
+                }
+                if (i <= n) i++  # skip closing }
+            } else {
+                brace = 0
+                i++
+                varname = ""
+                while (i <= n && substr(cmd, i, 1) ~ /[A-Za-z0-9_]/) {
+                    varname = varname substr(cmd, i, 1)
+                    i++
+                }
+            }
+            if (varname == "") {
+                parts[++pc] = "$"
+                if (brace) parts[++pc] = "{"
+            } else if (varname in V) {
+                parts[++pc] = V[varname]
+            } else if (varname in ENVIRON) {
+                parts[++pc] = ENVIRON[varname]
+            }
+            # else: unknown var expands to empty (matches shell behaviour)
+        } else {
+            parts[++pc] = c
+            i++
+        }
+    }
+    # Join all parts once at the end
+    return _join_parts(parts, pc)
 }
 
 function _join_parts(arr, n,    i, result) {
-	# Join array elements into a single string. Called once at end of
-	# _expand_cmd_vars to avoid character-by-character concatenation.
-	result = ""
-	for (i = 1; i <= n; i++)
-		result = result arr[i]
-	return result
+    # Join array elements into a single string. Called once at end of
+    # _expand_cmd_vars to avoid character-by-character concatenation.
+    result = ""
+    for (i = 1; i <= n; i++)
+        result = result arr[i]
+    return result
 }
 
 function _cmd_output(cmd, line, lines, ln) {
-	# Accumulate command output lines in array to avoid mawk string concatenation
-	# corruption (large concatenation in loop causes memory issues in mawk).
-	ln = 0
-	while ((cmd | getline line) > 0)
-		lines[++ln] = line
-	close(cmd)
-	# Join all lines once at the end
-	return _join_lines(lines, ln)
+    # Accumulate command output lines in array to avoid mawk string concatenation
+    # corruption (large concatenation in loop causes memory issues in mawk).
+    ln = 0
+    while ((cmd | getline line) > 0)
+        lines[++ln] = line
+    close(cmd)
+    # Join all lines once at the end
+    return _join_lines(lines, ln)
 }
 
 function _join_lines(arr, n,    i, result) {
-	# Join array of lines with newline separators. Called once at end of
-	# _cmd_output to avoid repeated string concatenation in loop.
-	result = ""
-	for (i = 1; i <= n; i++)
-		result = result (i > 1 ? "\n" : "") arr[i]
-	return result
+    # Join array of lines with newline separators. Called once at end of
+    # _cmd_output to avoid repeated string concatenation in loop.
+    result = ""
+    for (i = 1; i <= n; i++)
+        result = result (i > 1 ? "\n" : "") arr[i]
+    return result
 }
 
 function _cmd_output_oneline(cmd, line) {
