@@ -297,11 +297,11 @@ class StencilGroup:
                 hole.addend = ordinal
                 hole.symbol = None
             # aarch64 trampolines for operand-based call targets (e.g. inlined cfunc)
-            elif (
-                hole.kind
-                in {"R_AARCH64_CALL26", "R_AARCH64_JUMP26", "ARM64_RELOC_BRANCH26"}
-                and hole.value in {HoleValue.OPERAND0, HoleValue.OPERAND1}
-            ):
+            elif hole.kind in {
+                "R_AARCH64_CALL26",
+                "R_AARCH64_JUMP26",
+                "ARM64_RELOC_BRANCH26",
+            } and hole.value in {HoleValue.OPERAND0, HoleValue.OPERAND1}:
                 value_expr = _HOLE_EXPRS[hole.value]
                 ordinal = len(known_symbols)
                 synth_name = f"_JIT_TRAMPOLINE_{hole.value.name}_{ordinal}"
