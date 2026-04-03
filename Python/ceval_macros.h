@@ -562,3 +562,46 @@ gen_try_set_executing(PyGenObject *gen)
         ((PyFloatObject *)PyStackRef_AsPyObjectBorrow(TARGET))           \
             ->ob_fval = _dres;                                           \
     } while (0)
+
+// Inplace compact int operation. TARGET is expected to be uniquely
+// referenced at the optimizer level, but at runtime it may be a
+// cached small int singleton. We check _Py_IsImmortal on TARGET
+// to decide whether inplace mutation is safe.
+//
+// After the macro, _int_inplace_res holds the result (may be NULL
+// on allocation failure). On success, TARGET was mutated in place
+// and _int_inplace_res is a DUP'd reference to it. On fallback
+// (small int target, small int result, or overflow), _int_inplace_res
+// is from FUNC (_PyCompactLong_Add etc.).
+// FUNC is the fallback function (_PyCompactLong_Add etc.)
+#define INT_INPLACE_OP(left, right, TARGET, OP, FUNC)                    \
+    _PyStackRef _int_inplace_res = PyStackRef_NULL;                      \
+    do {                                                                 \
+        PyObject *target_o = PyStackRef_AsPyObjectBorrow(TARGET);        \
+        if (_Py_IsImmortal(target_o)) {                                  \
+            break;                                                       \
+        }                                                                \
+        assert(_PyObject_IsUniquelyReferenced(target_o));                \
+        Py_ssize_t left_val = _PyLong_CompactValue(                      \
+            (PyLongObject *)PyStackRef_AsPyObjectBorrow(left));          \
+        Py_ssize_t right_val = _PyLong_CompactValue(                     \
+            (PyLongObject *)PyStackRef_AsPyObjectBorrow(right));         \
+        Py_ssize_t result = left_val OP right_val;                       \
+        if (!_PY_IS_SMALL_INT(result)                                    \
+            && ((twodigits)((stwodigits)result) + PyLong_MASK            \
+                < (twodigits)PyLong_MASK + PyLong_BASE))                 \
+        {                                                                \
+            _PyLong_SetSignAndDigitCount(                                \
+                (PyLongObject *)target_o, result < 0 ? -1 : 1, 1);       \
+            ((PyLongObject *)target_o)->long_value.ob_digit[0] =         \
+                (digit)(result < 0 ? -result : result);                  \
+            _int_inplace_res = PyStackRef_DUP(TARGET);                   \
+            break;                                                       \
+        }                                                                \
+    } while (0);                                                         \
+    if (PyStackRef_IsNull(_int_inplace_res)) {                           \
+        _int_inplace_res = FUNC(                                         \
+            (PyLongObject *)PyStackRef_AsPyObjectBorrow(left),           \
+            (PyLongObject *)PyStackRef_AsPyObjectBorrow(right));         \
+    }
+
