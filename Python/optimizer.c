@@ -675,6 +675,7 @@ _PyJit_translate_single_bytecode_to_trace(
     _Py_CODEUNIT *this_instr =  tracer->prev_state.instr;
     _Py_CODEUNIT *target_instr = this_instr;
     uint32_t target = 0;
+    int end_trace_opcode = _DEOPT;
 
     target = Py_IsNone((PyObject *)old_code)
         ? (uint32_t)(target_instr - _Py_INTERPRETER_TRAMPOLINE_INSTRUCTIONS_PTR)
@@ -768,7 +769,6 @@ _PyJit_translate_single_bytecode_to_trace(
         goto unsupported;
     }
 
-    int end_trace_opcode = _DEOPT;
     if (oparg > 0xFFFF) {
         DPRINTF(2, "Unsupported: oparg too large\n");
         unsupported:
