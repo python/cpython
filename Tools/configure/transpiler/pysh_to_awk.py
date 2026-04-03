@@ -2860,12 +2860,71 @@ class PyshToAwk:
         else:
             desc = checking_kw or A.StringLit("")
             source = A.StringLit("")
-        args: list[A.Expr] = [desc, source]
-        if extra_cflags is not None:
-            args.append(extra_cflags)
-        if extra_libs is not None:
-            args.append(extra_libs)
+        # Compute cross_val: the value pyconf_run_check returns when
+        # cross-compiling.  Must account for callers that invert the
+        # boolean via on_success_return=False (ternary ? "no" : "yes").
+        cross_val = self._run_check_cross_val(call)
+        # Always pass all 5 positional args (desc, source, extra_cflags,
+        # extra_libs, cross_val) so cross_val lands in the right slot.
+        args: list[A.Expr] = [
+            desc,
+            source,
+            extra_cflags or A.StringLit(""),
+            extra_libs or A.StringLit(""),
+            A.NumLit(cross_val),
+        ]
         return A.FuncCall("pyconf_run_check", args)
+
+    def _run_check_cross_val(self, call: Call) -> int:
+        """Compute the cross-compiling return value for pyconf_run_check.
+
+        When cross-compiling, run_check cannot execute the test binary.
+        The Python version uses cross_compiling_default (or cross_default,
+        default) to supply a fallback value.  Callers that invert the
+        boolean with on_success_return=False generate a ternary like
+        ``(run_check(...) ? "no" : "yes")``, so the cross_val we pass
+        must be chosen so the ternary produces the correct result.
+
+        Formula: cross_val = 1 iff cross_mapped == success_val, else 0.
+
+        If the cross default is a non-constant expression (runtime value),
+        we cannot compute cross_val at transpile time and return 0 to
+        preserve the previous behavior.
+        """
+        # Find a constant cross-compiling default value.  The Python
+        # run_check resolves these in order:
+        #   default > cross_compiling_result > cross_compiling_default > cross_default
+        # We look for the last constant one (later keys override earlier).
+        cross_default: bool | None = None
+        for k in (
+            "default",
+            "cross_compiling_result",
+            "cross_compiling_default",
+            "cross_default",
+        ):
+            if k in call.kwargs:
+                match call.kwargs[k]:
+                    case Const(value=val):
+                        cross_default = bool(val)
+                    case _:
+                        # Non-constant: can't resolve at transpile time.
+                        cross_default = None
+
+        if cross_default is None:
+            # No constant cross default found; return 0 (old behavior).
+            return 0
+
+        # Determine whether the caller inverts the boolean.
+        inverted = False
+        for k, v in call.kwargs.items():
+            match k:
+                case "on_success_return" | "success":
+                    match v:
+                        case Const(value=val) if not val:
+                            inverted = True
+        success_val = "no" if inverted else "yes"
+        cross_mapped = "yes" if cross_default else "no"
+        return 1 if cross_mapped == success_val else 0
 
     def _build_stdlib_module_call(self, call: Call) -> A.FuncCall:
         name = self._expr(call.args[0]) if call.args else A.StringLit("")

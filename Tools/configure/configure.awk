@@ -615,12 +615,13 @@ function pyconf_compile_link_check(desc, source, extra_flags, compiler, rc, resu
         return result
 }
 
-function pyconf_run_check(desc, source, extra_cflags, extra_libs, rc, result) {
+function pyconf_run_check(desc, source, extra_cflags, extra_libs, cross_val, rc, result) {
         if (desc != "") pyconf_checking(desc)
-        # AC_RUN_IFELSE equivalent: skip when cross-compiling (return false)
+        # AC_RUN_IFELSE equivalent: skip when cross-compiling.
+        # Return cross_val (caller-supplied cross-compiling default).
         if (pyconf_cross_compiling == "yes" || pyconf_cross_compiling == "maybe") {
-                if (desc != "") pyconf_result("no")
-                return 0
+                if (desc != "") pyconf_result((cross_val + 0) ? "yes" : "no")
+                return (cross_val + 0)
         }
         result = _pyconf_run_test(source, extra_cflags " " extra_libs, 1)
         rc = _pyconf_run_test_rc
@@ -3062,13 +3063,13 @@ function u_setup_stack_direction() {
 function u_check_compiler_bugs(    have_o2, ipa_result, memmove_cflags, memmove_result) {
 	have_o2 = (pyconf_compile_check("", "", "-O2") ? "yes" : "no")
 	memmove_cflags = (((have_o2 != "") && (have_o2 != "no")) ? "-O2 -D_FORTIFY_SOURCE=2" : "")
-	memmove_result = (pyconf_run_check("for glibc _FORTIFY_SOURCE/memmove bug", "\n#include <stdio.h>\n#include <stdlib.h>\n#include <string.h>\nvoid foo(void *p, void *q) { memmove(p, q, 19); }\nint main(void) {\n  char a[32] = \"123456789000000000\";\n  foo(&a[9], a);\n  if (strcmp(a, \"123456789123456789000000000\") != 0)\n    return 1;\n  foo(a, &a[9]);\n  if (strcmp(a, \"123456789000000000\") != 0)\n    return 1;\n  return 0;\n}\n", memmove_cflags) ? "no" : "yes")
+	memmove_result = (pyconf_run_check("for glibc _FORTIFY_SOURCE/memmove bug", "\n#include <stdio.h>\n#include <stdlib.h>\n#include <string.h>\nvoid foo(void *p, void *q) { memmove(p, q, 19); }\nint main(void) {\n  char a[32] = \"123456789000000000\";\n  foo(&a[9], a);\n  if (strcmp(a, \"123456789123456789000000000\") != 0)\n    return 1;\n  foo(a, &a[9]);\n  if (strcmp(a, \"123456789000000000\") != 0)\n    return 1;\n  return 0;\n}\n", memmove_cflags, "", 0) ? "no" : "yes")
 	if ((memmove_result == "yes")) {
 		pyconf_define("HAVE_GLIBC_MEMMOVE_BUG", 1, 0, "Define if glibc has incorrect _FORTIFY_SOURCE wrappers for memmove and bcopy.")
 	}
 	if ((V["ac_cv_gcc_asm_for_x87"] == "yes")) {
 		if ((V["ac_cv_cc_name"] == "gcc")) {
-			ipa_result = (pyconf_run_check("for gcc ipa-pure-const bug", "\n__attribute__((noinline)) int\nfoo(int *p) {\n  int r;\n  asm ( \"movl $6, (%1)\\n\\t\"\n        \"xorl %0, %0\\n\\t\"\n        : \"=r\" (r) : \"r\" (p) : \"memory\"\n  );\n  return r;\n}\nint main(void) {\n  int p = 8;\n  if ((foo(&p) ? : p) != 6)\n    return 1;\n  return 0;\n}\n", "-O2") ? "no" : "yes")
+			ipa_result = (pyconf_run_check("for gcc ipa-pure-const bug", "\n__attribute__((noinline)) int\nfoo(int *p) {\n  int r;\n  asm ( \"movl $6, (%1)\\n\\t\"\n        \"xorl %0, %0\\n\\t\"\n        : \"=r\" (r) : \"r\" (p) : \"memory\"\n  );\n  return r;\n}\nint main(void) {\n  int p = 8;\n  if ((foo(&p) ? : p) != 6)\n    return 1;\n  return 0;\n}\n", "-O2", "", 0) ? "no" : "yes")
 			if ((ipa_result == "yes")) {
 				pyconf_define("HAVE_IPA_PURE_CONST_BUG", 1, 0, "Define if gcc has the ipa-pure-const bug.")
 			}
@@ -3078,7 +3079,7 @@ function u_check_compiler_bugs(    have_o2, ipa_result, memmove_cflags, memmove_
 
 function u_check_sign_extension_and_getc(    ac_cv_have_getc_unlocked, ac_cv_rshift_extends_sign) {
 	pyconf_checking("whether right shift extends the sign bit")
-	ac_cv_rshift_extends_sign = (pyconf_run_check("", "int main(void) { return (((-1)>>3 == -1) ? 0 : 1); }") ? "yes" : "no")
+	ac_cv_rshift_extends_sign = (pyconf_run_check("", "int main(void) { return (((-1)>>3 == -1) ? 0 : 1); }", "", "", 1) ? "yes" : "no")
 	pyconf_result(ac_cv_rshift_extends_sign)
 	if ((!((ac_cv_rshift_extends_sign != "") && (ac_cv_rshift_extends_sign != "no")))) {
 		pyconf_define("SIGNED_RIGHT_SHIFT_ZERO_FILLS", 1, 0, "Define if i>>j for signed int i does not extend the sign bit when i < 0")
@@ -3299,7 +3300,7 @@ function u_check_compiler_characteristics(    ac_cv_function_prototypes, ac_cv_s
 }
 
 function u_check_mbstowcs() {
-	if ((!pyconf_run_check("for broken mbstowcs", "\n#include <stddef.h>\n#include <stdio.h>\n#include <stdlib.h>\nint main(void) {\n    size_t len = -1;\n    const char *str = \"text\";\n    len = mbstowcs(NULL, str, 0);\n    return (len != 4);\n}\n"))) {
+	if ((!pyconf_run_check("for broken mbstowcs", "\n#include <stddef.h>\n#include <stdio.h>\n#include <stdlib.h>\nint main(void) {\n    size_t len = -1;\n    const char *str = \"text\";\n    len = mbstowcs(NULL, str, 0);\n    return (len != 4);\n}\n", "", "", 1))) {
 		pyconf_define("HAVE_BROKEN_MBSTOWCS", 1, 0, "Define if mbstowcs(NULL, \"text\", 0) does not return the number of wide chars that would be converted.")
 	}
 }
@@ -3310,7 +3311,7 @@ function u_check_computed_gotos(    cg_result) {
 	} else if (pyconf_option_is_no("with_computed_gotos")) {
 		pyconf_define("USE_COMPUTED_GOTOS", 0, 0, "Define if you want to use computed gotos in ceval.c.")
 	}
-	cg_result = (pyconf_run_check("whether " V["CC"] " supports computed gotos", "\nint main(int argc, char **argv) {\n    static void *targets[1] = { &&LABEL1 };\n    goto LABEL2;\nLABEL1:\n    return 0;\nLABEL2:\n    goto *targets[0];\n    return 1;\n}\n") ? "yes" : "no")
+	cg_result = (pyconf_run_check("whether " V["CC"] " supports computed gotos", "\nint main(int argc, char **argv) {\n    static void *targets[1] = { &&LABEL1 };\n    goto LABEL2;\nLABEL1:\n    return 0;\nLABEL2:\n    goto *targets[0];\n    return 1;\n}\n", "", "", 0) ? "yes" : "no")
 	if (((cg_result != "") && (cg_result != "no"))) {
 		pyconf_define("HAVE_COMPUTED_GOTOS", 1, 0, "Define if the C compiler supports computed gotos.")
 	}
@@ -3498,7 +3499,7 @@ function u_detect_libffi(    ac_cv_ffi_complex_double_supported, ctypes_malloc_c
 	v_export("LIBFFI_CFLAGS")
 	v_export("LIBFFI_LIBS")
 	pyconf_checking("libffi has complex type support")
-	ac_cv_ffi_complex_double_supported = (pyconf_run_check("", "\n        #include <complex.h>\n        #include <ffi.h>\n        int z_is_expected(double complex z) {\n            const double complex expected = 1.25 - 0.5 * I;\n            return z == expected;\n        }\n        int main(void) {\n            double complex z = 1.25 - 0.5 * I;\n            ffi_type *args[1] = {&ffi_type_complex_double};\n            void *values[1] = {&z};\n            ffi_cif cif;\n            if (ffi_prep_cif(&cif, FFI_DEFAULT_ABI, 1,\n                &ffi_type_sint, args) != FFI_OK)\n                return 2;\n            ffi_arg rc;\n            ffi_call(&cif, FFI_FN(z_is_expected), &rc, values);\n            return !rc;\n        }\n        ", V["LIBFFI_CFLAGS"], V["LIBFFI_LIBS"]) ? "yes" : "no")
+	ac_cv_ffi_complex_double_supported = (pyconf_run_check("", "\n        #include <complex.h>\n        #include <ffi.h>\n        int z_is_expected(double complex z) {\n            const double complex expected = 1.25 - 0.5 * I;\n            return z == expected;\n        }\n        int main(void) {\n            double complex z = 1.25 - 0.5 * I;\n            ffi_type *args[1] = {&ffi_type_complex_double};\n            void *values[1] = {&z};\n            ffi_cif cif;\n            if (ffi_prep_cif(&cif, FFI_DEFAULT_ABI, 1,\n                &ffi_type_sint, args) != FFI_OK)\n                return 2;\n            ffi_arg rc;\n            ffi_call(&cif, FFI_FN(z_is_expected), &rc, values);\n            return !rc;\n        }\n        ", V["LIBFFI_CFLAGS"], V["LIBFFI_LIBS"], 0) ? "yes" : "no")
 	pyconf_result(ac_cv_ffi_complex_double_supported)
 	if (((ac_cv_ffi_complex_double_supported != "") && (ac_cv_ffi_complex_double_supported != "no"))) {
 		pyconf_define("_Py_FFI_SUPPORT_C_COMPLEX", 1, 0, "Defined if _Complex C type can be used with libffi.")
@@ -5054,7 +5055,7 @@ function u_check_gcc_asm_and_floating_point(    ac_cv_gcc_asm_for_mc68881, ac_cv
 	pyconf_checking("for x87-style double rounding")
 	saved_cc = V["CC"]
 	V["CC"] = _str_strip(V["CC"] " " V["BASECFLAGS"])
-	ac_cv_x87_double_rounding = (pyconf_run_check("", "\n    #include <stdlib.h>\n    #include <math.h>\n    int main(void) {\n        volatile double x, y, z;\n        x = 0.99999999999999989; /* 1-2**-53 */\n        y = 1./x;\n        if (y != 1.)\n            exit(0);\n        x = 1e16;\n        y = 2.99999;\n        z = x + y;\n        if (z != 1e16+4.)\n            exit(0);\n        exit(1);\n    }\n    ") ? "no" : "yes")
+	ac_cv_x87_double_rounding = (pyconf_run_check("", "\n    #include <stdlib.h>\n    #include <math.h>\n    int main(void) {\n        volatile double x, y, z;\n        x = 0.99999999999999989; /* 1-2**-53 */\n        y = 1./x;\n        if (y != 1.)\n            exit(0);\n        x = 1e16;\n        y = 2.99999;\n        z = x + y;\n        if (z != 1e16+4.)\n            exit(0);\n        exit(1);\n    }\n    ", "", "", 1) ? "no" : "yes")
 	V["CC"] = saved_cc
 	pyconf_result(ac_cv_x87_double_rounding)
 	if (((ac_cv_x87_double_rounding != "") && (ac_cv_x87_double_rounding != "no"))) {
@@ -5116,7 +5117,7 @@ function u_check_wchar(    _i_line, _n_line, ac_cv_wchar_t_signed, line, os_name
 	if (((V["wchar_h"] != "") && (V["wchar_h"] != "no"))) {
 		pyconf_check_sizeof("wchar_t", 4, "wchar.h")
 		pyconf_checking("whether wchar_t is signed")
-		ac_cv_wchar_t_signed = (pyconf_run_check("", "\n    #include <wchar.h>\n    int main()\n    {\n        return ((((wchar_t) -1) < ((wchar_t) 0)) ? 0 : 1);\n    }\n    ") ? "yes" : "no")
+		ac_cv_wchar_t_signed = (pyconf_run_check("", "\n    #include <wchar.h>\n    int main()\n    {\n        return ((((wchar_t) -1) < ((wchar_t) 0)) ? 0 : 1);\n    }\n    ", "", "", 1) ? "yes" : "no")
 		pyconf_result(ac_cv_wchar_t_signed)
 		pyconf_checking("whether wchar_t is usable")
 		wchar_size = ((V["ac_cv_sizeof_wchar_t"] != "") ? V["ac_cv_sizeof_wchar_t"] : "0")
@@ -5747,7 +5748,7 @@ function u_check_getaddrinfo(    GETADDRINFO_TEST, ac_cv_buggy_getaddrinfo, ac_c
 					ac_cv_buggy_getaddrinfo = "yes"
 				}
 			} else {
-				ok = (pyconf_run_check("", GETADDRINFO_TEST) ? "yes" : "no")
+				ok = (pyconf_run_check("", GETADDRINFO_TEST, "", "", 0) ? "yes" : "no")
 				ac_cv_buggy_getaddrinfo = (((ok != "") && (ok != "no")) ? "no" : "yes")
 			}
 			pyconf_cache_store("ac_cv_buggy_getaddrinfo", ac_cv_buggy_getaddrinfo)
@@ -6182,19 +6183,19 @@ function u_setup_install_paths(    platform_triplet, with_platlibdir, with_wheel
 
 function u_check_misc_runtime(    ac_cv_broken_nice, ac_cv_broken_poll, ac_cv_working_tzset) {
 	pyconf_checking("for broken nice()")
-	ac_cv_broken_nice = (pyconf_run_check("", "\n    #include <stdlib.h>\n    #include <unistd.h>\n    int main(void)\n    {\n        int val1 = nice(1);\n        if (val1 != -1 && val1 == nice(2))\n            exit(0);\n        exit(1);\n    }\n    ") ? "yes" : "no")
+	ac_cv_broken_nice = (pyconf_run_check("", "\n    #include <stdlib.h>\n    #include <unistd.h>\n    int main(void)\n    {\n        int val1 = nice(1);\n        if (val1 != -1 && val1 == nice(2))\n            exit(0);\n        exit(1);\n    }\n    ", "", "", 0) ? "yes" : "no")
 	pyconf_result(ac_cv_broken_nice)
 	if (((ac_cv_broken_nice != "") && (ac_cv_broken_nice != "no"))) {
 		pyconf_define("HAVE_BROKEN_NICE", 1, 0, "Define if nice() returns success/failure instead of the new priority.")
 	}
 	pyconf_checking("for broken poll()")
-	ac_cv_broken_poll = (pyconf_run_check("", "\n    #include <poll.h>\n    #include <unistd.h>\n\n    int main(void)\n    {\n        struct pollfd poll_struct = { 42, POLLIN|POLLPRI|POLLOUT, 0 };\n        int poll_test;\n        close (42);\n        poll_test = poll(&poll_struct, 1, 0);\n        if (poll_test < 0)\n            return 0;\n        else if (poll_test == 0 && poll_struct.revents != POLLNVAL)\n            return 0;\n        else\n            return 1;\n    }\n    ") ? "yes" : "no")
+	ac_cv_broken_poll = (pyconf_run_check("", "\n    #include <poll.h>\n    #include <unistd.h>\n\n    int main(void)\n    {\n        struct pollfd poll_struct = { 42, POLLIN|POLLPRI|POLLOUT, 0 };\n        int poll_test;\n        close (42);\n        poll_test = poll(&poll_struct, 1, 0);\n        if (poll_test < 0)\n            return 0;\n        else if (poll_test == 0 && poll_struct.revents != POLLNVAL)\n            return 0;\n        else\n            return 1;\n    }\n    ", "", "", 0) ? "yes" : "no")
 	pyconf_result(ac_cv_broken_poll)
 	if (((ac_cv_broken_poll != "") && (ac_cv_broken_poll != "no"))) {
 		pyconf_define("HAVE_BROKEN_POLL", 1, 0, "Define if poll() sets errno on invalid file descriptors.")
 	}
 	pyconf_checking("for working tzset()")
-	ac_cv_working_tzset = (pyconf_run_check("", "\n    #include <stdlib.h>\n    #include <time.h>\n    #include <string.h>\n\n    #if HAVE_TZNAME\n    extern char *tzname[];\n    #endif\n\n    int main(void)\n    {\n        time_t groundhogday = 1044144000; /* GMT-based */\n        time_t midyear = groundhogday + (365 * 24 * 3600 / 2);\n\n        putenv(\"TZ=UTC+0\");\n        tzset();\n        if (localtime(&groundhogday)->tm_hour != 0)\n            exit(1);\n    #if HAVE_TZNAME\n        /* For UTC, tzname[1] is sometimes \"\", sometimes \"   \" */\n        if (strcmp(tzname[0], \"UTC\") ||\n            (tzname[1][0] != 0 && tzname[1][0] != ' '))\n            exit(1);\n    #endif\n\n        putenv(\"TZ=EST+5EDT,M4.1.0,M10.5.0\");\n        tzset();\n        if (localtime(&groundhogday)->tm_hour != 19)\n            exit(1);\n    #if HAVE_TZNAME\n        if (strcmp(tzname[0], \"EST\") || strcmp(tzname[1], \"EDT\"))\n            exit(1);\n    #endif\n\n        putenv(\"TZ=AEST-10AEDT-11,M10.5.0,M3.5.0\");\n        tzset();\n        if (localtime(&groundhogday)->tm_hour != 11)\n            exit(1);\n    #if HAVE_TZNAME\n        if (strcmp(tzname[0], \"AEST\") || strcmp(tzname[1], \"AEDT\"))\n            exit(1);\n    #endif\n\n    #if HAVE_STRUCT_TM_TM_ZONE\n        if (strcmp(localtime(&groundhogday)->tm_zone, \"AEDT\"))\n            exit(1);\n        if (strcmp(localtime(&midyear)->tm_zone, \"AEST\"))\n            exit(1);\n    #endif\n\n        exit(0);\n    }\n    ") ? "yes" : "no")
+	ac_cv_working_tzset = (pyconf_run_check("", "\n    #include <stdlib.h>\n    #include <time.h>\n    #include <string.h>\n\n    #if HAVE_TZNAME\n    extern char *tzname[];\n    #endif\n\n    int main(void)\n    {\n        time_t groundhogday = 1044144000; /* GMT-based */\n        time_t midyear = groundhogday + (365 * 24 * 3600 / 2);\n\n        putenv(\"TZ=UTC+0\");\n        tzset();\n        if (localtime(&groundhogday)->tm_hour != 0)\n            exit(1);\n    #if HAVE_TZNAME\n        /* For UTC, tzname[1] is sometimes \"\", sometimes \"   \" */\n        if (strcmp(tzname[0], \"UTC\") ||\n            (tzname[1][0] != 0 && tzname[1][0] != ' '))\n            exit(1);\n    #endif\n\n        putenv(\"TZ=EST+5EDT,M4.1.0,M10.5.0\");\n        tzset();\n        if (localtime(&groundhogday)->tm_hour != 19)\n            exit(1);\n    #if HAVE_TZNAME\n        if (strcmp(tzname[0], \"EST\") || strcmp(tzname[1], \"EDT\"))\n            exit(1);\n    #endif\n\n        putenv(\"TZ=AEST-10AEDT-11,M10.5.0,M3.5.0\");\n        tzset();\n        if (localtime(&groundhogday)->tm_hour != 11)\n            exit(1);\n    #if HAVE_TZNAME\n        if (strcmp(tzname[0], \"AEST\") || strcmp(tzname[1], \"AEDT\"))\n            exit(1);\n    #endif\n\n    #if HAVE_STRUCT_TM_TM_ZONE\n        if (strcmp(localtime(&groundhogday)->tm_zone, \"AEDT\"))\n            exit(1);\n        if (strcmp(localtime(&midyear)->tm_zone, \"AEST\"))\n            exit(1);\n    #endif\n\n        exit(0);\n    }\n    ", "", "", 0) ? "yes" : "no")
 	pyconf_result(ac_cv_working_tzset)
 	if (((ac_cv_working_tzset != "") && (ac_cv_working_tzset != "no"))) {
 		pyconf_define("HAVE_WORKING_TZSET", 1, 0, "Define if tzset() actually switches the local timezone in a meaningful way.")
@@ -6854,7 +6855,7 @@ function u_check_special_functions(    _pyconf_cond_sys_eventfd_h, _pyconf_cond_
 	}
 	v_export("SOCKET_LIBS")
 	pyconf_checking("for chflags")
-	ac_cv_have_chflags = (pyconf_run_check("", "#include <sys/stat.h>\n#include <unistd.h>\nint main(int argc, char *argv[]) {\n  if(chflags(argv[0], 0) != 0) return 1;\n  return 0;\n}\n") ? "yes" : "no")
+	ac_cv_have_chflags = (pyconf_run_check("", "#include <sys/stat.h>\n#include <unistd.h>\nint main(int argc, char *argv[]) {\n  if(chflags(argv[0], 0) != 0) return 1;\n  return 0;\n}\n", "", "", 1) ? "yes" : "no")
 	if ((ac_cv_have_chflags == "cross")) {
 		ac_cv_have_chflags = (pyconf_check_func("chflags", "", "HAVE_CHFLAGS") ? "yes" : "no")
 	}
@@ -6863,7 +6864,7 @@ function u_check_special_functions(    _pyconf_cond_sys_eventfd_h, _pyconf_cond_
 		pyconf_define("HAVE_CHFLAGS", 1, 0, "Define to 1 if you have the 'chflags' function.")
 	}
 	pyconf_checking("for lchflags")
-	ac_cv_have_lchflags = (pyconf_run_check("", "#include <sys/stat.h>\n#include <unistd.h>\nint main(int argc, char *argv[]) {\n  if(lchflags(argv[0], 0) != 0) return 1;\n  return 0;\n}\n") ? "yes" : "no")
+	ac_cv_have_lchflags = (pyconf_run_check("", "#include <sys/stat.h>\n#include <unistd.h>\nint main(int argc, char *argv[]) {\n  if(lchflags(argv[0], 0) != 0) return 1;\n  return 0;\n}\n", "", "", 1) ? "yes" : "no")
 	if ((ac_cv_have_lchflags == "cross")) {
 		ac_cv_have_lchflags = (pyconf_check_func("lchflags", "", "HAVE_LCHFLAGS") ? "yes" : "no")
 	}
@@ -7841,7 +7842,7 @@ function u_check_remaining_libs(    AIX_BUILDDATE, ac_cv_aligned_required) {
 		pyconf_define_unquoted("AIX_BUILDDATE", AIX_BUILDDATE, "BUILD_GNU_TYPE + AIX_BUILDDATE are used to construct the PEP425 tag of the build system.")
 		pyconf_result(AIX_BUILDDATE)
 	}
-	ac_cv_aligned_required = (pyconf_run_check("aligned memory access is required", "\n    int main(void) {\n        char s[16];\n        int i, *p1, *p2;\n        for (i=0; i < 16; i++) s[i] = i;\n        p1 = (int*)(s+1);\n        p2 = (int*)(s+2);\n        if (*p1 == *p2) return 1;\n        return 0;\n    }\n    ") ? "no" : "yes")
+	ac_cv_aligned_required = (pyconf_run_check("aligned memory access is required", "\n    int main(void) {\n        char s[16];\n        int i, *p1, *p2;\n        for (i=0; i < 16; i++) s[i] = i;\n        p1 = (int*)(s+1);\n        p2 = (int*)(s+2);\n        if (*p1 == *p2) return 1;\n        return 0;\n    }\n    ", "", "", 0) ? "no" : "yes")
 	if (((ac_cv_aligned_required != "") && (ac_cv_aligned_required != "no"))) {
 		pyconf_define("HAVE_ALIGNED_REQUIRED", 1, 0, "Define if aligned memory access is required")
 	}
@@ -8231,7 +8232,7 @@ function u_setup_build_tools() {
 
 # --- conf_threads ---
 function u_check_pthreads(    ac_cv_cxx_thread, ac_cv_kpthread, ac_cv_kthread, ac_cv_pthread, ac_cv_pthread_is_default, cxx_flag) {
-	ac_cv_pthread_is_default = (pyconf_run_check("whether pthreads are available without options", _PTHREAD_TEST_SRC) ? "yes" : "no")
+	ac_cv_pthread_is_default = (pyconf_run_check("whether pthreads are available without options", _PTHREAD_TEST_SRC, "", "", 0) ? "yes" : "no")
 	V["ac_cv_pthread_is_default"] = ac_cv_pthread_is_default
 	if (((ac_cv_pthread_is_default != "") && (ac_cv_pthread_is_default != "no"))) {
 		ac_cv_kpthread = "no"
@@ -8360,7 +8361,7 @@ function u_setup_pthreads(    ac_cv_cxx_thread, ac_cv_kpthread, ac_cv_kthread, a
 			pyconf_define("HAVE_BROKEN_POSIX_SEMAPHORES", 1, 0, "Define if the Posix semaphores do not work on your system")
 		}
 		pyconf_checking("if PTHREAD_SCOPE_SYSTEM is supported")
-		ac_cv_pthread_system_supported = (pyconf_run_check("", "#include <stdio.h>\n#include <pthread.h>\nvoid *foo(void *parm) { return NULL; }\nint main(void) {\n  pthread_attr_t attr; pthread_t id;\n  if (pthread_attr_init(&attr)) return -1;\n  if (pthread_attr_setscope(&attr, PTHREAD_SCOPE_SYSTEM)) return -1;\n  if (pthread_create(&id, &attr, foo, NULL)) return -1;\n  if (pthread_join(id, NULL)) return -1;\n  return 0;\n}\n") ? "yes" : "no")
+		ac_cv_pthread_system_supported = (pyconf_run_check("", "#include <stdio.h>\n#include <pthread.h>\nvoid *foo(void *parm) { return NULL; }\nint main(void) {\n  pthread_attr_t attr; pthread_t id;\n  if (pthread_attr_init(&attr)) return -1;\n  if (pthread_attr_setscope(&attr, PTHREAD_SCOPE_SYSTEM)) return -1;\n  if (pthread_create(&id, &attr, foo, NULL)) return -1;\n  if (pthread_join(id, NULL)) return -1;\n  return 0;\n}\n", "", "", 0) ? "yes" : "no")
 		pyconf_result(ac_cv_pthread_system_supported)
 		if (((ac_cv_pthread_system_supported != "") && (ac_cv_pthread_system_supported != "no"))) {
 			pyconf_define("PTHREAD_SYSTEM_SCHED_SUPPORTED", 1, 0, "Defined if PTHREAD_SCOPE_SYSTEM supported.")
@@ -8379,13 +8380,13 @@ function u_setup_pthreads(    ac_cv_cxx_thread, ac_cv_kpthread, ac_cv_kthread, a
 
 function u_check_posix_semaphores(    ac_cv_broken_sem_getvalue, ac_cv_posix_semaphores_enabled) {
 	pyconf_checking("whether POSIX semaphores are enabled")
-	ac_cv_posix_semaphores_enabled = (pyconf_run_check("", "\n    #include <unistd.h>\n    #include <fcntl.h>\n    #include <stdio.h>\n    #include <semaphore.h>\n    #include <sys/stat.h>\n\n    int main(void) {\n        sem_t *a = sem_open(\"/autoconf\", O_CREAT, S_IRUSR|S_IWUSR, 0);\n        if (a == SEM_FAILED) {\n            perror(\"sem_open\");\n            return 1;\n        }\n        sem_close(a);\n        sem_unlink(\"/autoconf\");\n        return 0;\n    }\n    ") ? "yes" : "no")
+	ac_cv_posix_semaphores_enabled = (pyconf_run_check("", "\n    #include <unistd.h>\n    #include <fcntl.h>\n    #include <stdio.h>\n    #include <semaphore.h>\n    #include <sys/stat.h>\n\n    int main(void) {\n        sem_t *a = sem_open(\"/autoconf\", O_CREAT, S_IRUSR|S_IWUSR, 0);\n        if (a == SEM_FAILED) {\n            perror(\"sem_open\");\n            return 1;\n        }\n        sem_close(a);\n        sem_unlink(\"/autoconf\");\n        return 0;\n    }\n    ", "", "", 1) ? "yes" : "no")
 	pyconf_result(ac_cv_posix_semaphores_enabled)
 	if ((!((ac_cv_posix_semaphores_enabled != "") && (ac_cv_posix_semaphores_enabled != "no")))) {
 		pyconf_define("POSIX_SEMAPHORES_NOT_ENABLED", 1, 0, "Define if POSIX semaphores aren't enabled on your system")
 	}
 	pyconf_checking("for broken sem_getvalue")
-	ac_cv_broken_sem_getvalue = (pyconf_run_check("", "\n    #include <unistd.h>\n    #include <fcntl.h>\n    #include <stdio.h>\n    #include <semaphore.h>\n    #include <sys/stat.h>\n\n    int main(void){\n        sem_t *a = sem_open(\"/autocftw\", O_CREAT, S_IRUSR|S_IWUSR, 0);\n        int count;\n        int res;\n        if(a==SEM_FAILED){\n            perror(\"sem_open\");\n            return 1;\n        }\n        res = sem_getvalue(a, &count);\n        sem_close(a);\n        sem_unlink(\"/autocftw\");\n        return res==-1 ? 1 : 0;\n    }\n    ") ? "no" : "yes")
+	ac_cv_broken_sem_getvalue = (pyconf_run_check("", "\n    #include <unistd.h>\n    #include <fcntl.h>\n    #include <stdio.h>\n    #include <semaphore.h>\n    #include <sys/stat.h>\n\n    int main(void){\n        sem_t *a = sem_open(\"/autocftw\", O_CREAT, S_IRUSR|S_IWUSR, 0);\n        int count;\n        int res;\n        if(a==SEM_FAILED){\n            perror(\"sem_open\");\n            return 1;\n        }\n        res = sem_getvalue(a, &count);\n        sem_close(a);\n        sem_unlink(\"/autocftw\");\n        return res==-1 ? 1 : 0;\n    }\n    ", "", "", 0) ? "no" : "yes")
 	pyconf_result(ac_cv_broken_sem_getvalue)
 	if (((ac_cv_broken_sem_getvalue != "") && (ac_cv_broken_sem_getvalue != "no"))) {
 		pyconf_define("HAVE_BROKEN_SEM_GETVALUE", 1, 0, "define to 1 if your sem_getvalue is broken.")
