@@ -1,6 +1,7 @@
+import io
+import os
 import webbrowser
 import unittest
-import os
 import sys
 import subprocess
 from unittest import mock
@@ -49,6 +50,14 @@ class CommandTestMixin:
             popen_args.pop(popen_args.index(option))
         self.assertEqual(popen_args, arguments)
 
+    def test_reject_dash_prefixes(self):
+        browser = self.browser_class(name=CMD_NAME)
+        with self.assertRaisesRegex(
+            ValueError,
+            r"^Invalid URL \(leading dash disallowed\): '--key=val http.*'$"
+        ):
+            browser.open(f"--key=val {URL}")
+
 
 class GenericBrowserCommandTest(CommandTestMixin, unittest.TestCase):
 
@@ -58,11 +67,6 @@ class GenericBrowserCommandTest(CommandTestMixin, unittest.TestCase):
         self._test('open',
                    options=[],
                    arguments=[URL])
-
-    def test_reject_dash_prefixes(self):
-        browser = self.browser_class(name=CMD_NAME)
-        with self.assertRaises(ValueError):
-            browser.open(f"--key=val {URL}")
 
 
 class BackgroundBrowserCommandTest(CommandTestMixin, unittest.TestCase):
@@ -222,6 +226,71 @@ class ELinksCommandTest(CommandTestMixin, unittest.TestCase):
         self._test('open_new_tab',
                    options=['-remote'],
                    arguments=['openURL({},new-tab)'.format(URL)])
+
+
+class MockPopenPipe:
+    def __init__(self, cmd, mode):
+        self.cmd = cmd
+        self.mode = mode
+        self.pipe = io.StringIO()
+        self._closed = False
+
+    def write(self, buf):
+        self.pipe.write(buf)
+
+    def close(self):
+        self._closed = True
+        return None
+
+
+@unittest.skipUnless(sys.platform == "darwin", "macOS specific test")
+class MacOSXOSAScriptTest(unittest.TestCase):
+    def setUp(self):
+        # Ensure that 'BROWSER' is not set to 'open' or something else.
+        # See: https://github.com/python/cpython/issues/131254.
+        env = self.enterContext(os_helper.EnvironmentVarGuard())
+        env.unset("BROWSER")
+
+        support.patch(self, os, "popen", self.mock_popen)
+        self.browser = webbrowser.MacOSXOSAScript("default")
+
+    def mock_popen(self, cmd, mode):
+        self.popen_pipe = MockPopenPipe(cmd, mode)
+        return self.popen_pipe
+
+    def test_default(self):
+        browser = webbrowser.get()
+        assert isinstance(browser, webbrowser.MacOSXOSAScript)
+        self.assertEqual(browser.name, "default")
+
+    def test_default_open(self):
+        url = "https://python.org"
+        self.browser.open(url)
+        self.assertTrue(self.popen_pipe._closed)
+        self.assertEqual(self.popen_pipe.cmd, "osascript")
+        script = self.popen_pipe.pipe.getvalue()
+        self.assertEqual(script.strip(), f'open location "{url}"')
+
+    def test_url_quote(self):
+        self.browser.open('https://python.org/"quote"')
+        script = self.popen_pipe.pipe.getvalue()
+        self.assertEqual(
+            script.strip(), 'open location "https://python.org/%22quote%22"'
+        )
+
+    def test_explicit_browser(self):
+        browser = webbrowser.MacOSXOSAScript("safari")
+        browser.open("https://python.org")
+        script = self.popen_pipe.pipe.getvalue()
+        self.assertIn('tell application "safari"', script)
+        self.assertIn('open location "https://python.org"', script)
+
+    def test_reject_dash_prefixes(self):
+        with self.assertRaisesRegex(
+            ValueError,
+            r"^Invalid URL \(leading dash disallowed\): '--key=val http.*'$"
+        ):
+            self.browser.open(f"--key=val {URL}")
 
 
 class BrowserRegistrationTest(unittest.TestCase):
