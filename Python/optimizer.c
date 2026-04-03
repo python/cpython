@@ -768,6 +768,7 @@ _PyJit_translate_single_bytecode_to_trace(
         goto unsupported;
     }
 
+    int end_trace_opcode = _DEOPT;
     if (oparg > 0xFFFF) {
         DPRINTF(2, "Unsupported: oparg too large\n");
         unsupported:
@@ -779,7 +780,7 @@ _PyJit_translate_single_bytecode_to_trace(
             }
             if (curr->opcode == _SET_IP) {
                 int32_t old_target = (int32_t)uop_get_target(curr);
-                curr->opcode = _DEOPT;
+                curr->opcode = end_trace_opcode;
                 curr->format = UOP_FORMAT_TARGET;
                 curr->target = old_target;
             }
@@ -1015,6 +1016,7 @@ _PyJit_translate_single_bytecode_to_trace(
                         // so there's no point continuing the trace.
                         DPRINTF(2, "Unsupported: frame depth %d >= MAX_ABSTRACT_FRAME_DEPTH\n",
                                 ts_depth->frame_depth);
+                        end_trace_opcode = _EXIT_TRACE;
                         goto unsupported;
                     }
                     int32_t frame_penalty = compute_frame_penalty(&tstate->interp->opt_config);
