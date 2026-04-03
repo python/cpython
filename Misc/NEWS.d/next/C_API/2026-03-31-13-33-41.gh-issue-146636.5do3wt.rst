@@ -1,0 +1,3 @@
+The :c:data:`Py_mod_abi` slot is now mandatory for modules created from a
+slots array (using :c:func:`PyModule_FromSlotsAndSpec` or the
+:c:func:`PyModExport_* <PyModExport_modulename>` export hook).
