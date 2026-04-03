@@ -1680,12 +1680,12 @@ fastpath:
     if (octa_pos == 1 || octa_pos == 3 || octa_pos == 6) {
         state = get_binascii_state(module);
         if (state) {
-            const unsigned char *ascii_data_start = data->buf;
+            unsigned char *bin_data_start = PyBytesWriter_GetData(writer);
             PyErr_Format(state->Error,
                          "Invalid base32-encoded string: "
                          "number of data characters (%zd) "
                          "cannot be 1, 3, or 6 more than a multiple of 8",
-                         ascii_data - ascii_data_start);
+                         (bin_data - bin_data_start) / 5 * 8 + octa_pos);
         }
         goto error;
     }
