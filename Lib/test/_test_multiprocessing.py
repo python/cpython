@@ -3071,6 +3071,7 @@ class _TestPool(BaseTestCase):
                 p.close()
                 p.join()
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     def test_change_notifier_no_semaphore(self):
         # gh-134634: The pool's change notifier uses a pipe instead of
         # a multiprocessing.SimpleQueue to avoid depending on sem_open(),
@@ -3087,6 +3088,7 @@ class _TestPool(BaseTestCase):
             p.close()
             p.join()
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     def test_change_notifier_drain(self):
         # gh-134634: Verify that multiple rapid notifications (from many
         # tasks completing and cache emptying) are properly drained and
@@ -3369,6 +3371,7 @@ class _TestPoolWorkerLifetime(BaseTestCase):
         for (j, res) in enumerate(results):
             self.assertEqual(res.get(), sqr(j))
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     def test_pool_worker_killed_mid_task(self):
         # gh-134634: Verify the worker handler detects a killed worker
         # via its sentinel fd and replaces it, keeping the pool functional.
