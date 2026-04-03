@@ -7671,6 +7671,9 @@ function u_detect_dbm(    _i_db, _n_db, _tmp_split, ac_cv_have_libdb, ac_cv_head
 		pyconf_define("HAVE_GDBM_NDBM_H", 1, 0, "Define to 1 if you have the <gdbm/ndbm.h> header file.")
 	}
 	ac_cv_header_gdbm_dash_ndbm_h = (pyconf_check_header("gdbm-ndbm.h") ? "yes" : "no")
+	if (((ac_cv_header_gdbm_dash_ndbm_h != "") && (ac_cv_header_gdbm_dash_ndbm_h != "no"))) {
+		pyconf_define("HAVE_GDBM_DASH_NDBM_H", 1, 0, "Define to 1 if you have the <gdbm-ndbm.h> header file.")
+	}
 	if ((((ac_cv_header_gdbm_slash_ndbm_h != "") && (ac_cv_header_gdbm_slash_ndbm_h != "no")) || ((ac_cv_header_gdbm_dash_ndbm_h != "") && (ac_cv_header_gdbm_dash_ndbm_h != "no")))) {
 		pyconf_save_env()
 		r = pyconf_search_libs("dbm_open", "gdbm_compat")

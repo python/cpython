@@ -73,9 +73,11 @@ def detect_dbm(v):
         else:
             v.have_ndbm = False
 
-    # Check for gdbm/ndbm.h and gdbm-ndbm.h
+    # Check for gdbm/ndbm.h and gdbm-ndbm.h (matches configure.ac AC_CACHE_CHECK pattern)
     # "gdbm-ndbm.h" and "gdbm/ndbm.h" are both normalized to "gdbm_ndbm_h"
-    ac_cv_header_gdbm_slash_ndbm_h = pyconf.check_header("gdbm/ndbm.h")
+    ac_cv_header_gdbm_slash_ndbm_h = pyconf.check_header(
+        "gdbm/ndbm.h", autodefine=False
+    )
     if ac_cv_header_gdbm_slash_ndbm_h:
         pyconf.define(
             "HAVE_GDBM_NDBM_H",
@@ -83,7 +85,15 @@ def detect_dbm(v):
             "Define to 1 if you have the <gdbm/ndbm.h> header file.",
         )
 
-    ac_cv_header_gdbm_dash_ndbm_h = pyconf.check_header("gdbm-ndbm.h")
+    ac_cv_header_gdbm_dash_ndbm_h = pyconf.check_header(
+        "gdbm-ndbm.h", autodefine=False
+    )
+    if ac_cv_header_gdbm_dash_ndbm_h:
+        pyconf.define(
+            "HAVE_GDBM_DASH_NDBM_H",
+            1,
+            "Define to 1 if you have the <gdbm-ndbm.h> header file.",
+        )
 
     if ac_cv_header_gdbm_slash_ndbm_h or ac_cv_header_gdbm_dash_ndbm_h:
         with pyconf.save_env():
