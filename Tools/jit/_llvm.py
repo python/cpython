@@ -44,15 +44,12 @@ async def _run(tool: str, args: typing.Iterable[str], echo: bool = False) -> str
             print(shlex.join(command))
 
         if os.name == "nt":
+            # When building with /p:PlatformToolset=ClangCL, the VS build
+            # system puts that clang's include path into INCLUDE. The JIT's
+            # clang may be a different version, and mismatched headers cause
+            # build errors. See https://github.com/python/cpython/issues/146210.
             env = os.environ.copy()
-            try:
-                # When building with /p:PlatformToolset=ClangCL, the VS build
-                # system puts that clang's include path into INCLUDE. The JIT's
-                # clang may be a different version, and mismatched headers cause
-                # build errors. See https://github.com/python/cpython/issues/146210
-                del env["INCLUDE"]
-            except KeyError:
-                pass
+            env.pop("INCLUDE", None)
         else:
             env = None
         try:
