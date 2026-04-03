@@ -572,6 +572,17 @@ refcount_file = 'data/refcounts.dat'
 stable_abi_file = 'data/stable_abi.dat'
 threadsafety_file = 'data/threadsafety.dat'
 
+# Options for notfound.extension
+# -------------------------------
+
+if not os.getenv("READTHEDOCS"):
+    if language_code:
+        notfound_urls_prefix = (
+            f'/{language_code.replace("_", "-").lower()}/{version}/'
+        )
+    else:
+        notfound_urls_prefix = f'/{version}/'
+
 # Options for sphinxext-opengraph
 # -------------------------------
 
