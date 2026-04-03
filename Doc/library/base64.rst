@@ -146,13 +146,20 @@ POST request.
       Accepting the ``+`` and ``/`` characters is now deprecated.
 
 
-.. function:: b32encode(s)
+.. function:: b32encode(s, *, wrapcol=0)
 
    Encode the :term:`bytes-like object` *s* using Base32 and return the
    encoded :class:`bytes`.
 
+   If *wrapcol* is non-zero, insert a newline (``b'\n'``) character
+   after at most every *wrapcol* characters.
+   If *wrapcol* is zero (default), do not add any newlines.
 
-.. function:: b32decode(s, casefold=False, map01=None)
+   .. versionchanged:: next
+      Added the *wrapcol* parameter.
+
+
+.. function:: b32decode(s, casefold=False, map01=None, *, ignorechars=b'')
 
    Decode the Base32 encoded :term:`bytes-like object` or ASCII string *s* and
    return the decoded :class:`bytes`.
@@ -168,20 +175,29 @@ POST request.
    digit 0 is always mapped to the letter O).  For security purposes the default is
    ``None``, so that 0 and 1 are not allowed in the input.
 
+   *ignorechars* should be a :term:`bytes-like object` containing characters
+   to ignore from the input.
+
    A :exc:`binascii.Error` is raised if *s* is
    incorrectly padded or if there are non-alphabet characters present in the
    input.
 
+   .. versionchanged:: next
+      Added the *ignorechars* parameter.
 
-.. function:: b32hexencode(s)
+
+.. function:: b32hexencode(s, *, wrapcol=0)
 
    Similar to :func:`b32encode` but uses the Extended Hex Alphabet, as defined in
    :rfc:`4648`.
 
    .. versionadded:: 3.10
 
+   .. versionchanged:: next
+      Added the *wrapcol* parameter.
 
-.. function:: b32hexdecode(s, casefold=False)
+
+.. function:: b32hexdecode(s, casefold=False, *, ignorechars=b'')
 
    Similar to :func:`b32decode` but uses the Extended Hex Alphabet, as defined in
    :rfc:`4648`.
@@ -193,14 +209,24 @@ POST request.
 
    .. versionadded:: 3.10
 
+   .. versionchanged:: next
+      Added the *ignorechars* parameter.
 
-.. function:: b16encode(s)
+
+.. function:: b16encode(s, *, wrapcol=0)
 
    Encode the :term:`bytes-like object` *s* using Base16 and return the
    encoded :class:`bytes`.
 
+   If *wrapcol* is non-zero, insert a newline (``b'\n'``) character
+   after at most every *wrapcol* characters.
+   If *wrapcol* is zero (default), do not add any newlines.
 
-.. function:: b16decode(s, casefold=False)
+   .. versionchanged:: next
+      Added the *wrapcol* parameter.
+
+
+.. function:: b16decode(s, casefold=False, *, ignorechars=b'')
 
    Decode the Base16 encoded :term:`bytes-like object` or ASCII string *s* and
    return the decoded :class:`bytes`.
@@ -209,9 +235,16 @@ POST request.
    lowercase alphabet is acceptable as input.  For security purposes, the default
    is ``False``.
 
+   *ignorechars* should be a :term:`bytes-like object` containing characters
+   to ignore from the input.
+
    A :exc:`binascii.Error` is raised if *s* is
    incorrectly padded or if there are non-alphabet characters present in the
    input.
+
+   .. versionchanged:: next
+      Added the *ignorechars* parameter.
+
 
 .. _base64-base-85:
 
@@ -277,7 +310,7 @@ Refer to the documentation of the individual functions for more information.
    .. versionadded:: 3.4
 
 
-.. function:: b85encode(b, pad=False)
+.. function:: b85encode(b, pad=False, *, wrapcol=0)
 
    Encode the :term:`bytes-like object` *b* using base85 (as used in e.g.
    git-style binary diffs) and return the encoded :class:`bytes`.
@@ -285,19 +318,32 @@ Refer to the documentation of the individual functions for more information.
    If *pad* is true, the input is padded with ``b'\0'`` so its length is a
    multiple of 4 bytes before encoding.
 
+   If *wrapcol* is non-zero, insert a newline (``b'\n'``) character
+   after at most every *wrapcol* characters.
+   If *wrapcol* is zero (default), do not add any newlines.
+
    .. versionadded:: 3.4
 
+   .. versionchanged:: next
+      Added the *wrapcol* parameter.
 
-.. function:: b85decode(b)
+
+.. function:: b85decode(b, *, ignorechars=b'')
 
    Decode the base85-encoded :term:`bytes-like object` or ASCII string *b* and
    return the decoded :class:`bytes`.  Padding is implicitly removed, if
    necessary.
 
+   *ignorechars* should be a :term:`bytes-like object` containing characters
+   to ignore from the input.
+
    .. versionadded:: 3.4
 
+   .. versionchanged:: next
+      Added the *ignorechars* parameter.
 
-.. function:: z85encode(s, pad=False)
+
+.. function:: z85encode(s, pad=False, *, wrapcol=0)
 
    Encode the :term:`bytes-like object` *s* using Z85 (as used in ZeroMQ)
    and return the encoded :class:`bytes`.  See `Z85  specification
@@ -306,19 +352,32 @@ Refer to the documentation of the individual functions for more information.
    If *pad* is true, the input is padded with ``b'\0'`` so its length is a
    multiple of 4 bytes before encoding.
 
+   If *wrapcol* is non-zero, insert a newline (``b'\n'``) character
+   after at most every *wrapcol* characters.
+   If *wrapcol* is zero (default), do not add any newlines.
+
    .. versionadded:: 3.13
 
    .. versionchanged:: 3.15
       The *pad* parameter was added.
 
+   .. versionchanged:: next
+      Added the *wrapcol* parameter.
 
-.. function:: z85decode(s)
+
+.. function:: z85decode(s, *, ignorechars=b'')
 
    Decode the Z85-encoded :term:`bytes-like object` or ASCII string *s* and
    return the decoded :class:`bytes`.  See `Z85  specification
    <https://rfc.zeromq.org/spec/32/>`_ for more information.
 
+   *ignorechars* should be a :term:`bytes-like object` containing characters
+   to ignore from the input.
+
    .. versionadded:: 3.13
+
+   .. versionchanged:: next
+      Added the *ignorechars* parameter.
 
 
 .. _base64-legacy:
