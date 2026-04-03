@@ -1,0 +1,3 @@
+Fix a crash in :meth:`~object.__get__` for :c:expr:`METH_METHOD` descriptors
+when an invalid (non-type) object is passed as the second argument.
+Patch by Steven Sun.
