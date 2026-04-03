@@ -246,7 +246,9 @@ class MacOSXOSAScriptTest(unittest.TestCase):
     def setUp(self):
         # Ensure that 'BROWSER' is not set to 'open' or something else.
         # See: https://github.com/python/cpython/issues/131254.
-        env = self.enterContext(os_helper.EnvironmentVarGuard())
+        ctx = os_helper.EnvironmentVarGuard()
+        env = ctx.__enter__()
+        self.addCleanup(ctx.__exit__)
         env.unset("BROWSER")
 
         support.patch(self, os, "popen", self.mock_popen)
@@ -259,7 +261,7 @@ class MacOSXOSAScriptTest(unittest.TestCase):
     def test_default(self):
         browser = webbrowser.get()
         assert isinstance(browser, webbrowser.MacOSXOSAScript)
-        self.assertEqual(browser.name, "default")
+        self.assertEqual(browser._name, "default")
 
     def test_default_open(self):
         url = "https://python.org"
