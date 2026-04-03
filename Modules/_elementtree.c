@@ -3699,6 +3699,8 @@ ignore_attribute_error(PyObject *value)
     return 0;
 }
 
+static int xmlparser_gc_clear(PyObject *op);
+
 /*[clinic input]
 _elementtree.XMLParser.__init__
 
@@ -3713,6 +3715,10 @@ _elementtree_XMLParser___init___impl(XMLParserObject *self, PyObject *target,
                                      const char *encoding)
 /*[clinic end generated code: output=3ae45ec6cdf344e4 input=7e716dd6e4f3e439]*/
 {
+    if (self->parser != NULL) {
+        (void)xmlparser_gc_clear((PyObject *)self);
+    }
+
     self->entity = PyDict_New();
     if (!self->entity)
         return -1;
