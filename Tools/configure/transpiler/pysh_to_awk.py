@@ -3333,7 +3333,9 @@ def transform_program(program: PyshProgram) -> A.Program:
         begin_stmts.append(
             A.ExprStmt(A.FuncCall(_USER_FUNC_PREFIX + func_name, []))
         )
-    begin_stmts.append(A.ExprStmt(A.FuncCall("pyconf_output", [])))
+    # Note: pyconf_output() is NOT appended here — it is already called
+    # inside u_generate_output() (transpiled from conf_output.generate_output
+    # which calls pyconf.output()).
     begin_stmts.append(A.Exit(A.NumLit(0)))
     parts.append(A.BeginBlock(A.Block(begin_stmts)))
 

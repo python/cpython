@@ -1810,7 +1810,7 @@ function pyconf_output(    i) {
         pyconf_cleanup()
 }
 
-function _pyconf_build_module_block(    i, key, uname, state) {
+function _pyconf_build_module_block(    i, key, uname, state, block) {
         # Populate _module_block_lines array instead of concatenating into a string.
         # This avoids building a large concatenated string in AWK memory, which causes
         # memory corruption in mawk when many modules have CFLAGS/LDFLAGS.
@@ -1827,6 +1827,15 @@ function _pyconf_build_module_block(    i, key, uname, state) {
                         _module_block_lines[++_module_block_n] = key "_LDFLAGS=" SUBST[key "_LDFLAGS"]
                 }
         }
+        # Also populate SUBST["MODULE_BLOCK"] so config.status / regen_status.awk
+        # can regenerate Makefile.pre correctly (it uses plain @VAR@ substitution
+        # from serialized SUBST data, not _module_block_lines[]).
+        block = ""
+        for (i = 1; i <= _module_block_n; i++) {
+                if (i > 1) block = block "\n"
+                block = block _module_block_lines[i]
+        }
+        SUBST["MODULE_BLOCK"] = block
 }
 
 function _pyconf_resolve_exports(    k) {
@@ -8679,7 +8688,6 @@ BEGIN {
 	u_setup_remaining_modules()
 	u_check_jit_stencils()
 	u_generate_output()
-	pyconf_output()
 	exit 0
 }
 
