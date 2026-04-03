@@ -2977,6 +2977,11 @@ class TestParser(TestParserMixin, TestEmailBase):
             local_part="example example",
             ),
 
+        # This is intentionally a weird one: first there is a quoted string
+        # consisting of a single quoted pair resolving to a single backslash.
+        # Then there is unquoted atext and an invalid quoted pair that
+        # therefore gets interpreted as two backslashes.  Then there is a
+        # quoted string containing 'example' with a leading space.
         valid_and_invalid_qp_in_atom_list = C(
             r'"\\"example\\" example"@example.com',
             value=r'\example\\ example',
@@ -2987,6 +2992,62 @@ class TestParser(TestParserMixin, TestEmailBase):
             remainder='@example.com',
             local_part=r'\example\\ example',
             ),
+
+        # We do want to check that it raises on an empty input, even
+        # though it should never be called with one.
+        empty = C(
+            '',
+            exception=(errors.HeaderParseError, '(?i)expected'),
+            ),
+
+        quoted_words_but_no_ws = C(
+            '"words"."separated".by.dots',
+            value='words.separated.by.dots',
+            local_part='words.separated.by.dots',
+            ),
+
+        backlashes_in_various_places = C(
+            r"\invali\d\.\really" + '\\',
+            local_part=r'\invali\d\.\really' + '\\',
+            defects=[
+                *[misplaced_backslash_defect]*5,
+                *[missing_dot_in_local_part_defect]*3,
+                ],
+            ),
+
+        double_dot_no_ws = C(
+            ' borris..natasha@python.org',
+            value=' borris..natasha',
+            defects=[repeated_dot_in_local_part_defect],
+            remainder='@python.org',
+            local_part='borris..natasha',
+            ),
+
+        # The end of this is treated as a quoted string, so the stringified
+        # version has a trailing quote added, but the local_part attribute
+        # does not include the quotes.
+        looks_like_qp_quote_but_quote_is_respected = C(
+            r'invalid.\"for.sure',
+            stringified=r'invalid.\"for.sure"',
+            value=r'invalid.\for.sure',
+            local_part=r'invalid.\for.sure',
+            defects=[
+                end_inside_quoted_string_defect,
+                misplaced_backslash_defect,
+                missing_dot_in_local_part_defect,
+                ],
+            ),
+
+        # obs_local_part parses anything that can be in a phrase (cfws
+        # atoms and quoted strings), plus \ and dots.
+        **for_each_character(RFC_SPECIALS, skip=CFWS_LEADER + r'\."')(
+            ends_at_phrase_ends = C(
+                'doted.words. and . space{char}',
+                local_part='doted.words.and.space',
+                remainder='{char}',
+                ),
+            ),
+
 
         )
 
