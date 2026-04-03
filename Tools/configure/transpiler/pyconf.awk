@@ -1552,6 +1552,11 @@ function pyconf_option_process_value(key) {
 # ---------------------------------------------------------------------------
 
 function pyconf_pkg_check_modules(pkg, spec, cmd, rc) {
+        # If CFLAGS/LIBS are already set (by check_emscripten_port or the
+        # user), honour them without querying pkg-config — matches autoconf
+        # PKG_CHECK_MODULES and the Python pyconf.pkg_check_modules.
+        if (V[pkg "_CFLAGS"] != "" || V[pkg "_LIBS"] != "")
+                return 1
         cmd = "pkg-config --exists " _shell_quote(spec) " 2>/dev/null"
         rc = (system(cmd) == 0)
         if (rc) {
