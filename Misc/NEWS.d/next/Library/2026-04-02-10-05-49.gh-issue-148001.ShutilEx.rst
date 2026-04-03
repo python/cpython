@@ -1,2 +1,1 @@
-Add :exc:`shutil.ReadError` and :exc:`shutil.RegistryError` to
-``shutil.__all__`` and document them.
+Publicly expose :exc:`shutil.ReadError` and :exc:`shutil.RegistryError`.
