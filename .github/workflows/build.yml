@@ -357,8 +357,7 @@ jobs:
         run: ./Android/android.py ci --fast-ci ${{ matrix.arch }}-linux-android
 
       # FIXME
-      - if: ${{ failure() }}
-        uses: mxschmitt/action-tmate@v3
+      - uses: mxschmitt/action-tmate@v3
 
   build-ios:
     name: iOS
