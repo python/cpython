@@ -99,14 +99,11 @@ jobs:
           mkdir -p extract windows-zip
           tar -xjf "$TARBALL" -C extract
 
-          # Find the python binary — it's at sysroot/bin/python3.12
-          PYTHON_ELF=$(find extract -path "*/bin/python3.12" -type f | head -1)
-          if [[ -z "$PYTHON_ELF" ]]; then
-            PYTHON_ELF=$(find extract -name "python.elf" -type f | head -1)
-          fi
+          # Find the python binary — it's at bin/python.elf
+          PYTHON_ELF=$(find extract -name "python.elf" -type f | head -1)
 
           if [[ -z "$PYTHON_ELF" ]]; then
-            echo "::error::Could not find python binary in standalone tarball"
+            echo "::error::Could not find python.elf binary in standalone tarball"
             echo "Files in tarball:"
             find extract -type f | head -20 || true
             exit 1

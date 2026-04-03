@@ -422,31 +422,14 @@ endif
 	done
 	@test -d "$(RELEASE_STAGING)/sysroot/share" && \
 		cp -a "$(RELEASE_STAGING)/sysroot/share" "$(RELEASE_STAGING)/buildroot-pkg/share" || true
-	@# ---------- sysroot: runtime dependencies ----------
-	@mkdir -p $(RELEASE_STAGING)/sysroot-pkg/bin $(RELEASE_STAGING)/sysroot-pkg/lib
-	@test -x "$(RELEASE_STAGING)/sysroot/bin/python3.12" || \
-		{ echo "Error: python3.12 binary not found in staging"; exit 1; }
-	@cp -a "$(RELEASE_STAGING)/sysroot/bin/python3.12" "$(RELEASE_STAGING)/sysroot-pkg/bin/"
-	@test -L "$(RELEASE_STAGING)/sysroot/bin/python3" && \
-		cp -a "$(RELEASE_STAGING)/sysroot/bin/python3" "$(RELEASE_STAGING)/sysroot-pkg/bin/" || true
+	@# ---------- sysroot: runtime dependencies (stdlib only, no interpreter) ----------
+	@mkdir -p $(RELEASE_STAGING)/sysroot-pkg/lib
 	@test -d "$(RELEASE_STAGING)/sysroot/lib/python3.12" && \
 		cp -a "$(RELEASE_STAGING)/sysroot/lib/python3.12" "$(RELEASE_STAGING)/sysroot-pkg/lib/python3.12" || true
 	@rm -rf "$(RELEASE_STAGING)/sysroot-pkg/lib/python3.12/config-3.12"*
 	@rm -rf "$(RELEASE_STAGING)/sysroot-pkg/lib/libpython3"*
 	@rm -rf "$(RELEASE_STAGING)/sysroot-pkg/lib/pkgconfig"
 	@rm -rf "$(RELEASE_STAGING)/sysroot-pkg/include"
-	@# Strip debug symbols
-ifdef CONFIG_NANVIX_DOCKER
-	$(DOCKER_RUN) sh -c '\
-		if [ -x "$(DOCKER_TOOLCHAIN_PATH)/bin/i686-nanvix-strip" ]; then \
-			find "$(DOCKER_WORKSPACE_PATH)/.nanvix/release/sysroot-pkg" -name "python3.*" -type f -executable \
-				-exec "$(DOCKER_TOOLCHAIN_PATH)/bin/i686-nanvix-strip" --strip-debug {} \; 2>/dev/null || true; \
-		fi'
-else
-	$(if $(wildcard $(TOOLCHAIN_PREFIX)/bin/i686-nanvix-strip),\
-		find $(RELEASE_STAGING)/sysroot-pkg -name 'python3.*' -type f -executable \
-			-exec $(TOOLCHAIN_PREFIX)/bin/i686-nanvix-strip --strip-debug {} \; 2>/dev/null || true)
-endif
 	@# Clean runtime tree (keep __pycache__ cleanup until after precompilation)
 	@find "$(RELEASE_STAGING)/sysroot-pkg" -type d -name 'test' -path '*/lib/python3.12/*' -exec rm -rf {} + 2>/dev/null || true
 	@find "$(RELEASE_STAGING)/sysroot-pkg" -type d -name 'tests' -path '*/lib/python3.12/*' -exec rm -rf {} + 2>/dev/null || true
@@ -515,9 +498,9 @@ verify-package:
 		{ echo "Error: sysroot tarball is corrupt"; exit 1; }
 	@tar -tjf "$(CURDIR)/dist/$(ARTIFACT_BASE)-buildroot.tar.bz2" > /dev/null || \
 		{ echo "Error: buildroot tarball is corrupt"; exit 1; }
-	@# Verify sysroot contains the python binary
-	@tar -tjf "$(CURDIR)/dist/$(ARTIFACT_BASE).tar.bz2" | grep -q 'sysroot/bin/python3.12' || \
-		{ echo "Error: sysroot tarball missing python3.12 binary"; exit 1; }
+	@# Verify tarball contains the python.elf binary
+	@tar -tjf "$(CURDIR)/dist/$(ARTIFACT_BASE).tar.bz2" | grep -q 'bin/python.elf' || \
+		{ echo "Error: sysroot tarball missing python.elf binary"; exit 1; }
 	@echo "		*** Package verification PASSED ***"
 
 .PHONY: all configure build clean distclean test install package verify-package
