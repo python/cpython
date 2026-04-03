@@ -34,38 +34,62 @@ catch {
 function Bootstrap {
     # Pin nanvix-zutil version for reproducible bootstrapping.
     # Override with NANVIX_ZUTIL_VERSION env var if needed.
-    Write-Host "nanvix-zutil not found — bootstrapping nanvix-zutil==${zutilVersion}..." -ForegroundColor Yellow
+    Write-Information "nanvix-zutil not found -- bootstrapping nanvix-zutil==${zutilVersion}..." -InformationAction Continue
 
     $wheelUrl = "https://github.com/nanvix/zutils/releases/download/v${zutilVersion}/nanvix_zutil-${zutilVersion}-py3-none-any.whl"
 
     # Discover a Python 3 interpreter.
+    $venvArgs = @("-m", "venv")
+    if (Test-Path $venvDir) { $venvArgs += "--clear" }
+    $venvArgs += $venvDir
+
     if (Get-Command py -ErrorAction SilentlyContinue) {
-        & py -3 -m venv $venvDir
+        & py -3 @venvArgs
     }
     elseif (Get-Command python -ErrorAction SilentlyContinue) {
-        & python -m venv $venvDir
+        & python @venvArgs
     }
     elseif (Get-Command python3 -ErrorAction SilentlyContinue) {
-        & python3 -m venv $venvDir
+        & python3 @venvArgs
     }
     else {
         throw "Python 3 not found. Install Python 3 and ensure py, python, or python3 is on PATH."
     }
+    if ($LASTEXITCODE -and $LASTEXITCODE -ne 0) {
+        throw "venv creation failed (exit code $LASTEXITCODE)"
+    }
     & $venvPython -m pip install --quiet $wheelUrl
+    if ($LASTEXITCODE -and $LASTEXITCODE -ne 0) {
+        throw "pip install failed (exit code $LASTEXITCODE)"
+    }
 }
 
 # Prefer the venv copy if it exists; otherwise use the global install.
 $bin = $null
 if ((-not (Test-Path $venvDir)) -and (-not $zutilGlobalVersion)) {
     Bootstrap
+    if (-not (Test-Path $venvZutil)) {
+        throw "Bootstrap completed but $venvZutil not found."
+    }
     $bin = $venvZutil
 }
 elseif (Test-Path $venvZutil) {
+    $venvVersion = try { & $venvZutil --version 2>$null } catch { $null }
+    if ($venvVersion -ne "nanvix-zutil ${zutilVersion}") {
+        Write-Warning "Venv nanvix-zutil version mismatch. Expected ${zutilVersion}, found ${venvVersion}. Re-bootstrapping..."
+        Bootstrap
+        if (-not (Test-Path $venvZutil)) {
+            throw "Bootstrap completed but $venvZutil not found."
+        }
+    }
     $bin = $venvZutil
 }
 elseif ((Test-Path $venvDir) -and (-not $zutilGlobalVersion)) {
     Write-Warning "Incomplete venv detected (binary missing). Re-running bootstrap..."
     Bootstrap
+    if (-not (Test-Path $venvZutil)) {
+        throw "Bootstrap completed but $venvZutil not found."
+    }
     $bin = $venvZutil
 }
 else {

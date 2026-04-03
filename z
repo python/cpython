@@ -10,7 +10,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 case "$(uname -s)" in
-    CYGWIN*|MINGW*|MSYS*)
+    CYGWIN* | MINGW* | MSYS*)
         exec powershell.exe -NoProfile -ExecutionPolicy Bypass \
             -File "$SCRIPT_DIR/z.ps1" "$@"
         ;;

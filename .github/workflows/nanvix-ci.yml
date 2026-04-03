@@ -25,7 +25,7 @@ jobs:
   ci:
     uses: nanvix/workflows/.github/workflows/nanvix-ci.yml@v1.2.0
     with:
-      zutil-version: "v0.5.1"
+      zutil-version: "v0.6.0"
       platforms: '["microvm"]'
       memory-sizes: '["128mb","256mb"]'
       skip-full-test-modes: '[]'
