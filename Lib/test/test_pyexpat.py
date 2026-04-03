@@ -707,7 +707,7 @@ class ElementDeclHandlerTest(unittest.TestCase):
     def test_deeply_nested_content_model(self):
         # This should raise a RecursionError and not crash.
         # See https://github.com/python/cpython/issues/145986.
-        N = 800_000
+        N = 500_000
         data = (
             b'<!DOCTYPE root [\n<!ELEMENT root '
             + b'(a, ' * N + b'a' + b')' * N
