@@ -1401,11 +1401,27 @@ also :func:`os.popen`, :func:`os.fdopen`, and the
 :meth:`~socket.socket.makefile` method of socket objects (and perhaps by
 other functions or methods provided by extension modules).
 
+File objects implement common methods, listed below, to simplify usage in
+generic code. They are expected to be :ref:`context-managers`.
+
 The objects ``sys.stdin``, ``sys.stdout`` and ``sys.stderr`` are
 initialized to file objects corresponding to the interpreter's standard
 input, output and error streams; they are all open in text mode and
 therefore follow the interface defined by the :class:`io.TextIOBase`
 abstract class.
+
+.. method:: file.read(size=-1, /)
+
+   Retrieve up to *size* data from the file. As a convenience if *size* is
+   unspecified or -1 retrieve all data available.
+
+.. method:: file.write(data, /)
+
+   Store *data* to the file.
+
+.. method:: file.close()
+
+   Flush any buffers and close the underlying file.
 
 
 Internal types
@@ -3621,12 +3637,25 @@ implement the protocol in Python.
    provides a convenient way to interpret the flags. The method must return
    a :class:`memoryview` object.
 
+   **Thread safety:** In :term:`free-threaded <free threading>` Python,
+   implementations must manage any internal export counter using atomic
+   operations. The method must be safe to call concurrently from multiple
+   threads, and the returned buffer's underlying data must remain valid
+   until the corresponding :meth:`~object.__release_buffer__` call
+   completes. See :ref:`thread-safety-memoryview` for details.
+
 .. method:: object.__release_buffer__(self, buffer)
 
    Called when a buffer is no longer needed. The *buffer* argument is a
    :class:`memoryview` object that was previously returned by
    :meth:`~object.__buffer__`. The method must release any resources associated
    with the buffer. This method should return ``None``.
+
+   **Thread safety:** In :term:`free-threaded <free threading>` Python,
+   any export counter decrement must use atomic operations. Resource
+   cleanup must be thread-safe, as the final release may race with
+   concurrent releases from other threads.
+
    Buffer objects that do not need to perform any cleanup are not required
    to implement this method.
 

@@ -463,6 +463,17 @@ General Options
 
    ``pkg-config`` options.
 
+.. option:: --disable-epoll
+
+   Build without ``epoll``, meaning that :py:func:`select.epoll` will not be
+   present even if the system provides an
+   :manpage:`epoll_create <epoll_create(2)>` function.
+   This may be used on systems where :manpage:`!epoll_create` or
+   :manpage:`epoll_create1 <epoll_create1(2)>` is available
+   but incompatible with Linux semantics.
+
+   .. versionadded:: next
+
 
 C compiler options
 ------------------
@@ -774,6 +785,9 @@ also be used to improve performance.
    Disable the fast :ref:`mimalloc <mimalloc>` allocator
    (enabled by default).
 
+   This option cannot be used together with :option:`--disable-gil`
+   because the :term:`free-threaded <free threading>` build requires mimalloc.
+
    See also :envvar:`PYTHONMALLOC` environment variable.
 
 .. option:: --without-pymalloc
@@ -792,9 +806,18 @@ also be used to improve performance.
 
    Even when compiled with this option, huge pages are **not** used at runtime
    unless the :envvar:`PYTHON_PYMALLOC_HUGEPAGES` environment variable is set
-   to ``1``. This opt-in is required because huge pages carry risks on Linux:
-   if the huge-page pool is exhausted, page faults (including copy-on-write
-   faults after :func:`os.fork`) deliver ``SIGBUS`` and kill the process.
+   to ``1``. This opt-in is required because huge pages
+
+   * carry risks on Linux: if the huge-page pool is exhausted, page faults
+     (including copy-on-write faults after :func:`os.fork`) deliver ``SIGBUS``
+     and kill the process.
+
+   * need a special privilege on Windows. See the `Windows documentation for large pages
+     <https://learn.microsoft.com/windows/win32/memory/large-page-support>`_
+     for details. Python will fail on startup if the required privilege
+     `SeLockMemoryPrivilege
+     <https://learn.microsoft.com/previous-versions/windows/it-pro/windows-10/security/threat-protection/security-policy-settings/lock-pages-in-memory>`_
+     is not held by the user.
 
    The configure script checks that the platform supports ``MAP_HUGETLB``
    and emits a warning if it is not available.
@@ -883,9 +906,11 @@ See also the :ref:`Python Development Mode <devmode>` and the
 :option:`--with-trace-refs` configure option.
 
 .. versionchanged:: 3.8
-   Release builds and debug builds are now ABI compatible: defining the
+   Release builds are now ABI compatible with debug builds: defining the
    ``Py_DEBUG`` macro no longer implies the ``Py_TRACE_REFS`` macro (see the
-   :option:`--with-trace-refs` option).
+   :option:`--with-trace-refs` option). However, debug builds still expose
+   more symbols than release builds and code built against a debug build is not
+   necessarily compatible with a release build.
 
 
 Debug options

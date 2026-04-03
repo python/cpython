@@ -1,0 +1,3 @@
+Fix a race condition in regrtest: make sure that the temporary directory is
+created in the worker process. Previously, temp_cwd() could fail on Windows if
+the "build" directory was not created.  Patch by Victor Stinner.
