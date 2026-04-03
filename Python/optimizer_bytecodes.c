@@ -165,6 +165,11 @@ dummy_func(void) {
     }
 
     op(_STORE_SUBSCR_DICT, (value, dict_st, sub -- st)) {
+        PyObject *sub_o = sym_get_const(ctx, sub);
+        if (sub_o != NULL) {
+            optimize_dict_known_hash(ctx, dependencies, this_instr,
+                                     sub_o, _STORE_SUBSCR_DICT_KNOWN_HASH);
+        }
         (void)value;
         st = dict_st;
     }
@@ -324,21 +329,41 @@ dummy_func(void) {
     }
 
     op(_BINARY_OP_ADD_INT, (left, right -- res, l, r)) {
-        res = sym_new_compact_int(ctx);
+        if (PyJitRef_IsUnique(left)) {
+            REPLACE_OP(this_instr, _BINARY_OP_ADD_INT_INPLACE, 0, 0);
+        }
+        else if (PyJitRef_IsUnique(right)) {
+            REPLACE_OP(this_instr, _BINARY_OP_ADD_INT_INPLACE_RIGHT, 0, 0);
+        }
+        // Result may be a unique compact int or a cached small int
+        // at runtime. Mark as unique; inplace ops verify at runtime.
+        res = PyJitRef_MakeUnique(sym_new_compact_int(ctx));
         l = left;
         r = right;
         REPLACE_OPCODE_IF_EVALUATES_PURE(left, right, res);
     }
 
     op(_BINARY_OP_SUBTRACT_INT, (left, right -- res, l, r)) {
-        res = sym_new_compact_int(ctx);
+        if (PyJitRef_IsUnique(left)) {
+            REPLACE_OP(this_instr, _BINARY_OP_SUBTRACT_INT_INPLACE, 0, 0);
+        }
+        else if (PyJitRef_IsUnique(right)) {
+            REPLACE_OP(this_instr, _BINARY_OP_SUBTRACT_INT_INPLACE_RIGHT, 0, 0);
+        }
+        res = PyJitRef_MakeUnique(sym_new_compact_int(ctx));
         l = left;
         r = right;
         REPLACE_OPCODE_IF_EVALUATES_PURE(left, right, res);
     }
 
     op(_BINARY_OP_MULTIPLY_INT, (left, right -- res, l, r)) {
-        res = sym_new_compact_int(ctx);
+        if (PyJitRef_IsUnique(left)) {
+            REPLACE_OP(this_instr, _BINARY_OP_MULTIPLY_INT_INPLACE, 0, 0);
+        }
+        else if (PyJitRef_IsUnique(right)) {
+            REPLACE_OP(this_instr, _BINARY_OP_MULTIPLY_INT_INPLACE_RIGHT, 0, 0);
+        }
+        res = PyJitRef_MakeUnique(sym_new_compact_int(ctx));
         l = left;
         r = right;
         REPLACE_OPCODE_IF_EVALUATES_PURE(left, right, res);
@@ -502,6 +527,11 @@ dummy_func(void) {
     }
 
     op(_BINARY_OP_SUBSCR_DICT, (dict_st, sub_st -- res, ds, ss)) {
+        PyObject *sub = sym_get_const(ctx, sub_st);
+        if (sub != NULL) {
+            optimize_dict_known_hash(ctx, dependencies, this_instr,
+                                     sub, _BINARY_OP_SUBSCR_DICT_KNOWN_HASH);
+        }
         res = sym_new_not_null(ctx);
         ds = dict_st;
         ss = sub_st;

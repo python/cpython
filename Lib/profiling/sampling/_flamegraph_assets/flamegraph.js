@@ -40,42 +40,72 @@ function getOpcodeInfo(opcode) {
 // String Resolution
 // ============================================================================
 
-function resolveString(index) {
+function resolveString(index, table = stringTable) {
   if (index === null || index === undefined) {
     return null;
   }
-  if (typeof index === 'number' && index >= 0 && index < stringTable.length) {
-    return stringTable[index];
+  if (typeof index === 'number' && index >= 0 && index < table.length) {
+    return table[index];
   }
   return String(index);
 }
 
-function resolveStringIndices(node) {
+function resolveStringIndices(node, table) {
   if (!node) return node;
 
   const resolved = { ...node };
 
   if (typeof resolved.name === 'number') {
-    resolved.name = resolveString(resolved.name);
+    resolved.name = resolveString(resolved.name, table);
   }
   if (typeof resolved.filename === 'number') {
-    resolved.filename = resolveString(resolved.filename);
+    resolved.filename = resolveString(resolved.filename, table);
   }
   if (typeof resolved.funcname === 'number') {
-    resolved.funcname = resolveString(resolved.funcname);
+    resolved.funcname = resolveString(resolved.funcname, table);
   }
 
   if (Array.isArray(resolved.source)) {
     resolved.source = resolved.source.map(index =>
-      typeof index === 'number' ? resolveString(index) : index
+      typeof index === 'number' ? resolveString(index, table) : index
     );
   }
 
   if (Array.isArray(resolved.children)) {
-    resolved.children = resolved.children.map(child => resolveStringIndices(child));
+    resolved.children = resolved.children.map(child => resolveStringIndices(child, table));
   }
 
   return resolved;
+}
+
+function selectFlamegraphData() {
+  const baseData = isShowingElided ? elidedFlamegraphData : normalData;
+
+  if (!isInverted) {
+    return baseData;
+  }
+
+  if (isShowingElided) {
+    if (!invertedElidedData) {
+      invertedElidedData = generateInvertedFlamegraph(baseData);
+    }
+    return invertedElidedData;
+  }
+
+  if (!invertedData) {
+    invertedData = generateInvertedFlamegraph(baseData);
+  }
+  return invertedData;
+}
+
+function updateFlamegraphView() {
+  const selectedData = selectFlamegraphData();
+  const selectedThreadId = currentThreadFilter !== 'all' ? parseInt(currentThreadFilter, 10) : null;
+  const filteredData = selectedThreadId !== null ? filterDataByThread(selectedData, selectedThreadId) : selectedData;
+  const tooltip = createPythonTooltip(filteredData);
+  const chart = createFlamegraph(tooltip, filteredData.value, filteredData);
+  renderFlamegraph(chart, filteredData);
+  populateThreadStats(selectedData, selectedThreadId);
 }
 
 // ============================================================================
@@ -87,10 +117,7 @@ function toggleTheme() {
 
   // Re-render flamegraph with new theme colors
   if (window.flamegraphData && normalData) {
-    const currentData = isInverted ? invertedData : normalData;
-    const tooltip = createPythonTooltip(currentData);
-    const chart = createFlamegraph(tooltip, currentData.value);
-    renderFlamegraph(chart, window.flamegraphData);
+    updateFlamegraphView();
   }
 }
 
@@ -342,6 +369,34 @@ function createPythonTooltip(data) {
     const fileLocationHTML = isSpecialFrame ? "" : `
       <div class="tooltip-location">${filename}${d.data.lineno ? ":" + d.data.lineno : ""}</div>`;
 
+    // Differential stats section
+    let diffSection = "";
+    if (d.data.diff !== undefined && d.data.baseline !== undefined) {
+      const baselineSelf = (d.data.baseline / 1000).toFixed(2);
+      const currentSelf = ((d.data.self_time || 0) / 1000).toFixed(2);
+      const diffMs = (d.data.diff / 1000).toFixed(2);
+      const diffPct = d.data.diff_pct;
+      const sign = d.data.diff >= 0 ? "+" : "";
+      const diffClass = d.data.diff > 0 ? "regression" : (d.data.diff < 0 ? "improvement" : "neutral");
+
+      diffSection = `
+        <div class="tooltip-diff">
+          <div class="tooltip-diff-title">Self-Time Comparison:</div>
+          <div class="tooltip-diff-row">
+            <span class="tooltip-stat-label">Baseline Self:</span>
+            <span class="tooltip-stat-value">${baselineSelf} ms</span>
+          </div>
+          <div class="tooltip-diff-row">
+            <span class="tooltip-stat-label">Current Self:</span>
+            <span class="tooltip-stat-value">${currentSelf} ms</span>
+          </div>
+          <div class="tooltip-diff-row ${diffClass}">
+            <span class="tooltip-stat-label">Difference:</span>
+            <span class="tooltip-stat-value">${sign}${diffMs} ms (${sign}${diffPct.toFixed(1)}%)</span>
+          </div>
+        </div>`;
+    }
+
     const tooltipHTML = `
       <div class="tooltip-header">
         <div class="tooltip-title">${funcname}</div>
@@ -364,6 +419,7 @@ function createPythonTooltip(data) {
           <span class="tooltip-stat-value">${childCount}</span>
         ` : ''}
       </div>
+      ${diffSection}
       ${sourceSection}
       ${opcodeSection}
       <div class="tooltip-hint">
@@ -458,10 +514,63 @@ function getHeatColors() {
   return colors;
 }
 
-function createFlamegraph(tooltip, rootValue) {
+function getDiffColors() {
+  const style = getComputedStyle(document.documentElement);
+  return {
+    elided: style.getPropertyValue('--diff-elided').trim(),
+    new: style.getPropertyValue('--diff-new').trim(),
+    neutral: style.getPropertyValue('--diff-neutral').trim(),
+    regressionDeep: style.getPropertyValue('--diff-regression-deep').trim(),
+    regressionMedium: style.getPropertyValue('--diff-regression-medium').trim(),
+    regressionLight: style.getPropertyValue('--diff-regression-light').trim(),
+    regressionVerylight: style.getPropertyValue('--diff-regression-verylight').trim(),
+    improvementDeep: style.getPropertyValue('--diff-improvement-deep').trim(),
+    improvementMedium: style.getPropertyValue('--diff-improvement-medium').trim(),
+    improvementLight: style.getPropertyValue('--diff-improvement-light').trim(),
+    improvementVerylight: style.getPropertyValue('--diff-improvement-verylight').trim(),
+  };
+}
+
+function getDiffColorForNode(node, diffColors) {
+  if (isShowingElided) {
+    return diffColors.elided;
+  }
+
+  const diff_pct = node.data.diff_pct || 0;
+  const diff_samples = node.data.diff || 0;
+  const self_time = node.data.self_time || 0;
+
+  if (diff_pct === 100 && self_time > 0 && Math.abs(diff_samples - self_time) < 0.1) {
+    return diffColors.new;
+  }
+
+  // Neutral zone: small percentage change
+  if (Math.abs(diff_pct) < 15) {
+    return diffColors.neutral;
+  }
+
+  // Regression (red scale)
+  if (diff_pct > 0) {
+    if (diff_pct >= 100) return diffColors.regressionDeep;
+    if (diff_pct > 50) return diffColors.regressionMedium;
+    if (diff_pct > 30) return diffColors.regressionLight;
+    return diffColors.regressionVerylight;
+  }
+
+  // Improvement (blue scale)
+  if (diff_pct <= -100) return diffColors.improvementDeep;
+  if (diff_pct < -50) return diffColors.improvementMedium;
+  if (diff_pct < -30) return diffColors.improvementLight;
+  return diffColors.improvementVerylight;
+}
+
+function createFlamegraph(tooltip, rootValue, data) {
   const chartArea = document.querySelector('.chart-area');
   const width = chartArea ? chartArea.clientWidth - 32 : window.innerWidth - 320;
   const heatColors = getHeatColors();
+
+  const isDifferential = data && data.stats && data.stats.is_differential;
+  const diffColors = isDifferential ? getDiffColors() : null;
 
   let chart = flamegraph()
     .width(width)
@@ -471,8 +580,11 @@ function createFlamegraph(tooltip, rootValue) {
     .tooltip(tooltip)
     .inverted(true)
     .setColorMapper(function (d) {
-      // Root node should be transparent
       if (d.depth === 0) return 'transparent';
+
+      if (isDifferential) {
+        return getDiffColorForNode(d, diffColors);
+      }
 
       const percentage = d.data.value / rootValue;
       const level = getHeatLevel(percentage);
@@ -858,6 +970,37 @@ function populateProfileSummary(data) {
 }
 
 // ============================================================================
+// Elided Stacks (Differential)
+// ============================================================================
+
+let elidedFlamegraphData = null;
+let invertedElidedData = null;
+let isShowingElided = false;
+
+function setupElidedToggle(data) {
+  const stats = data.stats || {};
+  const elidedCount = stats.elided_count || 0;
+  const elidedFlamegraph = stats.elided_flamegraph;
+
+  if (!elidedCount || !elidedFlamegraph) {
+    return;
+  }
+
+  elidedFlamegraphData = resolveStringIndices(elidedFlamegraph, elidedFlamegraph.strings);
+
+  const toggleElided = document.getElementById('toggle-elided');
+  if (toggleElided) {
+    toggleElided.style.display = 'flex';
+
+    toggleElided.onclick = function() {
+      isShowingElided = !isShowingElided;
+      updateToggleUI('toggle-elided', isShowingElided);
+      updateFlamegraphView();
+    };
+  }
+}
+
+// ============================================================================
 // Hotspot Stats
 // ============================================================================
 
@@ -867,6 +1010,9 @@ function populateStats(data) {
 
   // Populate thread statistics if available
   populateThreadStats(data);
+
+  // Setup elided stacks toggle if this is a differential flamegraph
+  setupElidedToggle(data);
 
   // For hotspots: use normal (non-inverted) tree structure, but respect thread filtering.
   // In inverted view, the tree structure changes but the hottest functions remain the same.
@@ -1040,28 +1186,8 @@ function filterByThread() {
 
   const selectedThread = threadFilter.value;
   currentThreadFilter = selectedThread;
-  const baseData = isInverted ? invertedData : normalData;
 
-  let filteredData;
-  let selectedThreadId = null;
-
-  if (selectedThread === 'all') {
-    filteredData = baseData;
-  } else {
-    selectedThreadId = parseInt(selectedThread, 10);
-    filteredData = filterDataByThread(baseData, selectedThreadId);
-
-    if (filteredData.strings) {
-      stringTable = filteredData.strings;
-      filteredData = resolveStringIndices(filteredData);
-    }
-  }
-
-  const tooltip = createPythonTooltip(filteredData);
-  const chart = createFlamegraph(tooltip, filteredData.value);
-  renderFlamegraph(chart, filteredData);
-
-  populateThreadStats(baseData, selectedThreadId);
+  updateFlamegraphView();
 }
 
 function filterDataByThread(data, threadId) {
@@ -1138,11 +1264,11 @@ function getInvertNodeKey(node) {
   return `${node.filename || '~'}|${node.lineno || 0}|${node.funcname || node.name}`;
 }
 
-function accumulateInvertedNode(parent, stackFrame, leaf) {
+function accumulateInvertedNode(parent, stackFrame, leaf, isDifferential) {
   const key = getInvertNodeKey(stackFrame);
 
   if (!parent.children[key]) {
-    parent.children[key] = {
+    const newNode = {
       name: stackFrame.name,
       value: 0,
       children: {},
@@ -1150,8 +1276,19 @@ function accumulateInvertedNode(parent, stackFrame, leaf) {
       lineno: stackFrame.lineno,
       funcname: stackFrame.funcname,
       source: stackFrame.source,
+      opcodes: null,
       threads: new Set()
     };
+
+    if (isDifferential) {
+      newNode.baseline = 0;
+      newNode.baseline_total = 0;
+      newNode.self_time = 0;
+      newNode.diff = 0;
+      newNode.diff_pct = 0;
+    }
+
+    parent.children[key] = newNode;
   }
 
   const node = parent.children[key];
@@ -1159,33 +1296,55 @@ function accumulateInvertedNode(parent, stackFrame, leaf) {
   if (leaf.threads) {
     leaf.threads.forEach(t => node.threads.add(t));
   }
+  if (stackFrame.opcodes) {
+    if (!node.opcodes) {
+      node.opcodes = { ...stackFrame.opcodes };
+    } else {
+      for (const [op, count] of Object.entries(stackFrame.opcodes)) {
+        node.opcodes[op] = (node.opcodes[op] || 0) + count;
+      }
+    }
+  }
+
+  if (isDifferential) {
+    node.baseline += stackFrame.baseline || 0;
+    node.baseline_total += stackFrame.baseline_total || 0;
+    node.self_time += stackFrame.self_time || 0;
+    node.diff += stackFrame.diff || 0;
+
+    if (node.baseline > 0) {
+      node.diff_pct = (node.diff / node.baseline) * 100.0;
+    } else if (node.self_time > 0) {
+      node.diff_pct = 100.0;
+    }
+  }
 
   return node;
 }
 
-function processLeaf(invertedRoot, path, leafNode) {
+function processLeaf(invertedRoot, path, leafNode, isDifferential) {
   if (!path || path.length === 0) {
     return;
   }
 
-  let invertedParent = accumulateInvertedNode(invertedRoot, leafNode, leafNode);
+  let invertedParent = accumulateInvertedNode(invertedRoot, leafNode, leafNode, isDifferential);
 
   // Walk backwards through the call stack
   for (let i = path.length - 2; i >= 0; i--) {
-    invertedParent = accumulateInvertedNode(invertedParent, path[i], leafNode);
+    invertedParent = accumulateInvertedNode(invertedParent, path[i], leafNode, isDifferential);
   }
 }
 
-function traverseInvert(path, currentNode, invertedRoot) {
+function traverseInvert(path, currentNode, invertedRoot, isDifferential) {
   const children = currentNode.children || [];
   const childThreads = new Set(children.flatMap(c => c.threads || []));
   const selfThreads = (currentNode.threads || []).filter(t => !childThreads.has(t));
 
   if (selfThreads.length > 0) {
-    processLeaf(invertedRoot, path, { ...currentNode, threads: selfThreads });
+    processLeaf(invertedRoot, path, { ...currentNode, threads: selfThreads }, isDifferential);
   }
 
-  children.forEach(child => traverseInvert(path.concat([child]), child, invertedRoot));
+  children.forEach(child => traverseInvert(path.concat([child]), child, invertedRoot, isDifferential));
 }
 
 function convertInvertDictToArray(node) {
@@ -1203,6 +1362,8 @@ function convertInvertDictToArray(node) {
 }
 
 function generateInvertedFlamegraph(data) {
+  const isDifferential = data && data.stats && data.stats.is_differential;
+
   const invertedRoot = {
     name: data.name,
     value: data.value,
@@ -1214,9 +1375,9 @@ function generateInvertedFlamegraph(data) {
   const children = data.children || [];
   if (children.length === 0) {
     // Single-frame tree: the root is its own leaf
-    processLeaf(invertedRoot, [data], data);
+    processLeaf(invertedRoot, [data], data, isDifferential);
   } else {
-    children.forEach(child => traverseInvert([child], child, invertedRoot));
+    children.forEach(child => traverseInvert([child], child, invertedRoot, isDifferential));
   }
 
   convertInvertDictToArray(invertedRoot);
@@ -1226,21 +1387,7 @@ function generateInvertedFlamegraph(data) {
 function toggleInvert() {
   isInverted = !isInverted;
   updateToggleUI('toggle-invert', isInverted);
-
-  // Build inverted data on first use
-  if (isInverted && !invertedData) {
-    invertedData = generateInvertedFlamegraph(normalData);
-  }
-
-  let dataToRender = isInverted ? invertedData : normalData;
-
-  if (currentThreadFilter !== 'all') {
-    dataToRender = filterDataByThread(dataToRender, parseInt(currentThreadFilter));
-  }
-
-  const tooltip = createPythonTooltip(dataToRender);
-  const chart = createFlamegraph(tooltip, dataToRender.value);
-  renderFlamegraph(chart, dataToRender);
+  updateFlamegraphView();
 }
 
 // ============================================================================
@@ -1254,7 +1401,7 @@ function initFlamegraph() {
 
   if (EMBEDDED_DATA.strings) {
     stringTable = EMBEDDED_DATA.strings;
-    normalData = resolveStringIndices(EMBEDDED_DATA);
+    normalData = resolveStringIndices(EMBEDDED_DATA, EMBEDDED_DATA.strings);
   } else {
     normalData = EMBEDDED_DATA;
   }
@@ -1267,8 +1414,20 @@ function initFlamegraph() {
 
   initThreadFilter(normalData);
 
+  // Toggle legend based on differential mode
+  const isDifferential = normalData && normalData.stats && normalData.stats.is_differential;
+  const heatmapLegend = document.getElementById('heatmap-legend-section');
+  const diffLegend = document.getElementById('diff-legend-section');
+  if (isDifferential) {
+    if (heatmapLegend) heatmapLegend.style.display = 'none';
+    if (diffLegend) diffLegend.style.display = 'block';
+  } else {
+    if (heatmapLegend) heatmapLegend.style.display = 'block';
+    if (diffLegend) diffLegend.style.display = 'none';
+  }
+
   const tooltip = createPythonTooltip(normalData);
-  const chart = createFlamegraph(tooltip, normalData.value);
+  const chart = createFlamegraph(tooltip, normalData.value, normalData);
   renderFlamegraph(chart, normalData);
   initSearchHandlers();
   initSidebarResize();

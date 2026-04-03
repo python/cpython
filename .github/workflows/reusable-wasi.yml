@@ -16,12 +16,12 @@ jobs:
       CROSS_BUILD_PYTHON: cross-build/build
       CROSS_BUILD_WASI: cross-build/wasm32-wasip1
     steps:
-    - uses: actions/checkout@v6
+    - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       with:
         persist-credentials: false
     # No problem resolver registered as one doesn't currently exist for Clang.
     - name: "Install wasmtime"
-      uses: bytecodealliance/actions/wasmtime/setup@v1
+      uses: bytecodealliance/actions/wasmtime/setup@9152e710e9f7182e4c29ad218e4f335a7b203613 # v1.1.3
       with:
         version: ${{ env.WASMTIME_VERSION }}
     - name: "Read WASI SDK version"
@@ -42,7 +42,7 @@ jobs:
         version: ${{ steps.wasi-sdk-version.outputs.version }}
         add-to-path: false
     - name: "Install Python"
-      uses: actions/setup-python@v6
+      uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
       with:
         python-version: '3.x'
     - name: "Runner image version"
