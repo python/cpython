@@ -1377,7 +1377,7 @@ dummy_func(void) {
     op(_CALL_METHOD_DESCRIPTOR_NOARGS, (callable, self_or_null, args[oparg] -- res)) {
         PyObject *callable_o = sym_get_const(ctx, callable);
         if (callable_o && Py_IS_TYPE(callable_o, &PyMethodDescr_Type)
-            && !sym_is_null(self_or_null)) {
+            && sym_is_not_null(self_or_null)) {
             PyMethodDescrObject *method = (PyMethodDescrObject *)callable_o;
             PyCFunction cfunc = method->d_method->ml_meth;
             ADD_OP(_CALL_METHOD_DESCRIPTOR_NOARGS_INLINE, oparg + 1, (uintptr_t)cfunc);
@@ -1388,7 +1388,7 @@ dummy_func(void) {
     op(_CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS, (callable, self_or_null, args[oparg] -- res)) {
         PyObject *callable_o = sym_get_const(ctx, callable);
         if (callable_o && Py_IS_TYPE(callable_o, &PyMethodDescr_Type)
-            && !sym_is_null(self_or_null)) {
+            && sym_is_not_null(self_or_null)) {
             PyMethodDescrObject *method = (PyMethodDescrObject *)callable_o;
             PyCFunction cfunc = method->d_method->ml_meth;
             ADD_OP(_CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS_INLINE, oparg + 1, (uintptr_t)cfunc);
@@ -1399,7 +1399,7 @@ dummy_func(void) {
     op(_CALL_METHOD_DESCRIPTOR_FAST, (callable, self_or_null, args[oparg] -- res)) {
         PyObject *callable_o = sym_get_const(ctx, callable);
         if (callable_o && Py_IS_TYPE(callable_o, &PyMethodDescr_Type)
-            && !sym_is_null(self_or_null)) {
+            && sym_is_not_null(self_or_null)) {
             PyMethodDescrObject *method = (PyMethodDescrObject *)callable_o;
             PyCFunction cfunc = method->d_method->ml_meth;
             ADD_OP(_CALL_METHOD_DESCRIPTOR_FAST_INLINE, oparg + 1, (uintptr_t)cfunc);
