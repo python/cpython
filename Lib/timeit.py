@@ -221,7 +221,7 @@ class Timer:
         total time >= target_time (default is 0.2 seconds).
 
         Calls the timeit method with increasing numbers from the sequence
-        1, 2, 5, 10, 20, 50, ... until the target_time is reached.
+        1, 2, 5, 10, 20, 50, ... until the target time is reached.
         Returns (number, time_taken).
 
         If *callback* is given and is not None, it will be called after
