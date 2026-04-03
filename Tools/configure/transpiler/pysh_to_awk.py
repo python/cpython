@@ -2904,8 +2904,15 @@ class PyshToAwk:
         ):
             if k in call.kwargs:
                 match call.kwargs[k]:
-                    case Const(value=val):
-                        cross_default = bool(val)
+                    case Const(value=bool() as val):
+                        cross_default = val
+                    case Const(value=str()):
+                        # String sentinel (e.g. "cross", "undefined") —
+                        # these are neither True nor False in Python;
+                        # callers compare with == or `is True`.  Treat
+                        # as False so the AWK ternary produces the
+                        # non-triggering ("no") result.
+                        cross_default = False
                     case _:
                         # Non-constant: can't resolve at transpile time.
                         cross_default = None

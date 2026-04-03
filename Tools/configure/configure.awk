@@ -3063,13 +3063,13 @@ function u_setup_stack_direction() {
 function u_check_compiler_bugs(    have_o2, ipa_result, memmove_cflags, memmove_result) {
 	have_o2 = (pyconf_compile_check("", "", "-O2") ? "yes" : "no")
 	memmove_cflags = (((have_o2 != "") && (have_o2 != "no")) ? "-O2 -D_FORTIFY_SOURCE=2" : "")
-	memmove_result = (pyconf_run_check("for glibc _FORTIFY_SOURCE/memmove bug", "\n#include <stdio.h>\n#include <stdlib.h>\n#include <string.h>\nvoid foo(void *p, void *q) { memmove(p, q, 19); }\nint main(void) {\n  char a[32] = \"123456789000000000\";\n  foo(&a[9], a);\n  if (strcmp(a, \"123456789123456789000000000\") != 0)\n    return 1;\n  foo(a, &a[9]);\n  if (strcmp(a, \"123456789000000000\") != 0)\n    return 1;\n  return 0;\n}\n", memmove_cflags, "", 0) ? "no" : "yes")
+	memmove_result = (pyconf_run_check("for glibc _FORTIFY_SOURCE/memmove bug", "\n#include <stdio.h>\n#include <stdlib.h>\n#include <string.h>\nvoid foo(void *p, void *q) { memmove(p, q, 19); }\nint main(void) {\n  char a[32] = \"123456789000000000\";\n  foo(&a[9], a);\n  if (strcmp(a, \"123456789123456789000000000\") != 0)\n    return 1;\n  foo(a, &a[9]);\n  if (strcmp(a, \"123456789000000000\") != 0)\n    return 1;\n  return 0;\n}\n", memmove_cflags, "", 1) ? "no" : "yes")
 	if ((memmove_result == "yes")) {
 		pyconf_define("HAVE_GLIBC_MEMMOVE_BUG", 1, 0, "Define if glibc has incorrect _FORTIFY_SOURCE wrappers for memmove and bcopy.")
 	}
 	if ((V["ac_cv_gcc_asm_for_x87"] == "yes")) {
 		if ((V["ac_cv_cc_name"] == "gcc")) {
-			ipa_result = (pyconf_run_check("for gcc ipa-pure-const bug", "\n__attribute__((noinline)) int\nfoo(int *p) {\n  int r;\n  asm ( \"movl $6, (%1)\\n\\t\"\n        \"xorl %0, %0\\n\\t\"\n        : \"=r\" (r) : \"r\" (p) : \"memory\"\n  );\n  return r;\n}\nint main(void) {\n  int p = 8;\n  if ((foo(&p) ? : p) != 6)\n    return 1;\n  return 0;\n}\n", "-O2", "", 0) ? "no" : "yes")
+			ipa_result = (pyconf_run_check("for gcc ipa-pure-const bug", "\n__attribute__((noinline)) int\nfoo(int *p) {\n  int r;\n  asm ( \"movl $6, (%1)\\n\\t\"\n        \"xorl %0, %0\\n\\t\"\n        : \"=r\" (r) : \"r\" (p) : \"memory\"\n  );\n  return r;\n}\nint main(void) {\n  int p = 8;\n  if ((foo(&p) ? : p) != 6)\n    return 1;\n  return 0;\n}\n", "-O2", "", 1) ? "no" : "yes")
 			if ((ipa_result == "yes")) {
 				pyconf_define("HAVE_IPA_PURE_CONST_BUG", 1, 0, "Define if gcc has the ipa-pure-const bug.")
 			}
@@ -6855,7 +6855,7 @@ function u_check_special_functions(    _pyconf_cond_sys_eventfd_h, _pyconf_cond_
 	}
 	v_export("SOCKET_LIBS")
 	pyconf_checking("for chflags")
-	ac_cv_have_chflags = (pyconf_run_check("", "#include <sys/stat.h>\n#include <unistd.h>\nint main(int argc, char *argv[]) {\n  if(chflags(argv[0], 0) != 0) return 1;\n  return 0;\n}\n", "", "", 1) ? "yes" : "no")
+	ac_cv_have_chflags = (pyconf_run_check("", "#include <sys/stat.h>\n#include <unistd.h>\nint main(int argc, char *argv[]) {\n  if(chflags(argv[0], 0) != 0) return 1;\n  return 0;\n}\n", "", "", 0) ? "yes" : "no")
 	if ((ac_cv_have_chflags == "cross")) {
 		ac_cv_have_chflags = (pyconf_check_func("chflags", "", "HAVE_CHFLAGS") ? "yes" : "no")
 	}
@@ -6864,7 +6864,7 @@ function u_check_special_functions(    _pyconf_cond_sys_eventfd_h, _pyconf_cond_
 		pyconf_define("HAVE_CHFLAGS", 1, 0, "Define to 1 if you have the 'chflags' function.")
 	}
 	pyconf_checking("for lchflags")
-	ac_cv_have_lchflags = (pyconf_run_check("", "#include <sys/stat.h>\n#include <unistd.h>\nint main(int argc, char *argv[]) {\n  if(lchflags(argv[0], 0) != 0) return 1;\n  return 0;\n}\n", "", "", 1) ? "yes" : "no")
+	ac_cv_have_lchflags = (pyconf_run_check("", "#include <sys/stat.h>\n#include <unistd.h>\nint main(int argc, char *argv[]) {\n  if(lchflags(argv[0], 0) != 0) return 1;\n  return 0;\n}\n", "", "", 0) ? "yes" : "no")
 	if ((ac_cv_have_lchflags == "cross")) {
 		ac_cv_have_lchflags = (pyconf_check_func("lchflags", "", "HAVE_LCHFLAGS") ? "yes" : "no")
 	}
