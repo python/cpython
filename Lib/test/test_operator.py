@@ -160,6 +160,12 @@ class OperatorTestCase:
         self.assertEqual(operator.concat(Seq1([5, 6]), Seq1([7])), [5, 6, 7])
         self.assertEqual(operator.concat(Seq2([5, 6]), Seq2([7])), [5, 6, 7])
         self.assertRaises(TypeError, operator.concat, 13, 29)
+        class A:
+            pass
+        a = A()
+        a.__getitem__ = lambda: "spam"
+        self.assertRaisesRegex(TypeError, "object can't be concatenated",
+                               operator.concat, a, a)
 
     def test_countOf(self):
         operator = self.module
@@ -550,6 +556,13 @@ class OperatorTestCase:
         msg = "'int' object can't be concatenated"
         with self.assertRaisesRegex(TypeError, msg):
             operator.iconcat(1, 0.5)
+
+        class A:
+            pass
+        a = A()
+        a.__getitem__ = lambda: "spam"
+        self.assertRaisesRegex(TypeError, "object can't be concatenated",
+                               operator.iconcat, a, a)
 
     def test_index(self):
         operator = self.module
