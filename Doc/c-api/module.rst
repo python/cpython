@@ -685,7 +685,7 @@ remove it.
    Usually, there is only one variable of this type for each extension module
    defined this way.
 
-   In the :ref:`Stable ABI <stable-abi>` for Free-Threaded Builds (``abi3t``),
+   In the :ref:`Stable ABI <stable-abi>` for free-threaded builds (``abi3t``),
    this struct is opaque, and unusable in practice.
    The struct, including all members, is part of Stable ABI for
    non-free-threaded builds (``abi3``).

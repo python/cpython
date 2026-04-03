@@ -68,10 +68,10 @@ versions of Python, without recompilation.
 There are two Stable ABIs:
 
 - ``abi3``, introduced in Pyton 3.2, is compatible with
-  **non**-:term:`free threaded <free-threaded build>` builds of CPython.
+  **non**-:term:`free-threaded <free-threaded build>` builds of CPython.
 
 - ``abi3t``, introduced in Pyton 3.15, is compatible with
-  :term:`free threaded <free-threaded build>` builds of CPython.
+  :term:`free-threaded <free-threaded build>` builds of CPython.
   It has stricter API limitations than ``abi3``.
 
    .. versionadded:: next
@@ -99,8 +99,8 @@ This library only exposes the relevant symbols.
 
 On some platforms, Python will look for and load shared library files named
 with the ``abi3`` or ``abi3t`` tag (for example, ``mymodule.abi3.so``).
-:term:`Free threaded <free-threaded build>` interpreters only recognize the
-``abi3t`` tag, while non-free threaded ones will prefer ``abi3`` but fall back
+:term:`Free-threaded <free-threaded build>` interpreters only recognize the
+``abi3t`` tag, while non-free-threaded ones will prefer ``abi3`` but fall back
 to ``abi3t``.
 Thus, extensions compatible with both ABIs should use the ``abi3t`` tag.
 
@@ -158,13 +158,13 @@ visible to the compiler but should not be used directly.
 .. c:macro:: Py_LIMITED_API
 
    Target ``abi3``, that is,
-   non-:term:`free threaded <free-threaded build>` builds of CPython.
+   non-:term:`free-threaded <free-threaded build>` builds of CPython.
    See :ref:`above <abi3-compiling>` for common information.
 
 .. c:macro:: Py_TARGET_ABI3T
 
    Target ``abi3t``, that is,
-   :term:`free threaded <free-threaded build>` builds of CPython.
+   :term:`free-threaded <free-threaded build>` builds of CPython.
    See :ref:`above <abi3-compiling>` for common information.
 
    .. versionadded:: next
@@ -188,6 +188,8 @@ This means that there are two ways to build for both ``abi3`` and ``abi3t``:
 - define both :c:macro:`!Py_LIMITED_API` and :c:macro:`!Py_TARGET_ABI3T`, or
 - define only :c:macro:`!Py_LIMITED_API` and build for free-threaded Python.
 
+
+.. _limited-api-scope-and-performance:
 
 Stable ABI Scope and Performance
 --------------------------------
@@ -215,6 +217,8 @@ alongside a version compiled for Stable ABI -- a slower but more compatible
 fallback.
 
 
+.. _limited-api-caveats:
+
 Stable ABI Caveats
 ------------------
 
@@ -224,7 +228,6 @@ Stable ABI prevents *ABI* issues, like linker errors due to missing
 symbols or data corruption due to changes in structure layouts or function
 signatures.
 However, other changes in Python can change the *behavior* of extensions.
-See Python's Backwards Compatibility Policy (:pep:`387`) for details.
 
 One issue that the :c:macro:`Py_TARGET_ABI3T` and :c:macro:`Py_LIMITED_API`
 macros do not guard against is calling a function with arguments that are
