@@ -646,6 +646,31 @@ class TestGetAnnotations(unittest.TestCase):
             get_annotations(foo, format=Format.FORWARDREF, eval_str=True)
             get_annotations(foo, format=Format.STRING, eval_str=True)
 
+    def test_eval_str_wrapped_cycle_self(self):
+        # gh-146556: self-referential __wrapped__ cycle must not hang.
+        def f(x: 'int') -> 'str': ...
+        f.__wrapped__ = f
+        # Cycle is detected and broken; globals from f itself are used.
+        result = get_annotations(f, eval_str=True)
+        self.assertEqual(result, {'x': int, 'return': str})
+
+    def test_eval_str_wrapped_cycle_mutual(self):
+        # gh-146556: mutual __wrapped__ cycle (a -> b -> a) must not hang.
+        def a(x: 'int'): ...
+        def b(): ...
+        a.__wrapped__ = b
+        b.__wrapped__ = a
+        result = get_annotations(a, eval_str=True)
+        self.assertEqual(result, {'x': int})
+
+    def test_eval_str_wrapped_chain_no_cycle(self):
+        # gh-146556: a valid (non-cyclic) __wrapped__ chain must still work.
+        def inner(x: 'int'): ...
+        def outer(x: 'int'): ...
+        outer.__wrapped__ = inner
+        result = get_annotations(outer, eval_str=True)
+        self.assertEqual(result, {'x': int})
+
     def test_stock_annotations(self):
         def foo(a: int, b: str):
             pass

@@ -27,8 +27,10 @@ static const PyTime_t TIME_TO_BE_FAIR_NS = 1000*1000;
 // enabled.
 #if Py_GIL_DISABLED
 static const int MAX_SPIN_COUNT = 40;
+static const int RELOAD_SPIN_MASK = 3;
 #else
 static const int MAX_SPIN_COUNT = 0;
+static const int RELOAD_SPIN_MASK = 1;
 #endif
 
 struct mutex_entry {
@@ -79,6 +81,16 @@ _PyMutex_LockTimed(PyMutex *m, PyTime_t timeout, _PyLockFlags flags)
     };
 
     Py_ssize_t spin_count = 0;
+#ifdef Py_GIL_DISABLED
+    // Using thread-id as a way of reducing contention further in the reload below.
+    // It adds a pseudo-random starting offset to the recurrence, so that threads
+    // are less likely to try and run compare-exchange at the same time.
+    // The lower bits of platform thread ids are likely to not be random,
+    // hence the right shift.
+    const Py_ssize_t tid = (Py_ssize_t)(_Py_ThreadId() >> 12);
+#else
+    const Py_ssize_t tid = 0;
+#endif
     for (;;) {
         if ((v & _Py_LOCKED) == 0) {
             // The lock is unlocked. Try to grab it.
@@ -92,6 +104,9 @@ _PyMutex_LockTimed(PyMutex *m, PyTime_t timeout, _PyLockFlags flags)
             // Spin for a bit.
             _Py_yield();
             spin_count++;
+            if (((spin_count + tid) & RELOAD_SPIN_MASK) == 0) {
+                v = _Py_atomic_load_uint8_relaxed(&m->_bits);
+            }
             continue;
         }
 

@@ -1,0 +1,58 @@
+name: Reusable check HTML IDs
+
+on:
+  workflow_call:
+
+permissions:
+  contents: read
+
+env:
+  FORCE_COLOR: 1
+
+jobs:
+  check-html-ids:
+    name: 'Check for removed HTML IDs'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: 'Check out base commit'
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+          ref: ${{ github.event.pull_request.base.sha }}
+      - name: 'Set up Python'
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+        with:
+          python-version: '3'
+          cache: 'pip'
+          cache-dependency-path: 'Doc/requirements.txt'
+      - name: 'Install build dependencies'
+        run: make -C Doc/ venv
+      - name: 'Build HTML documentation'
+        run: make -C Doc/ SPHINXOPTS="--quiet" html
+      - name: 'Check out PR head tools'
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+          sparse-checkout: |
+            Doc/tools/check-html-ids.py
+            Doc/tools/removed-ids.txt
+          sparse-checkout-cone-mode: false
+          path: pr-head
+      - name: 'Use PR head tools'
+        run: |
+          cp pr-head/Doc/tools/check-html-ids.py Doc/tools/check-html-ids.py
+          [ -f pr-head/Doc/tools/removed-ids.txt ] && cp pr-head/Doc/tools/removed-ids.txt Doc/tools/removed-ids.txt
+      - name: 'Collect HTML IDs'
+        run: python Doc/tools/check-html-ids.py collect Doc/build/html -o /tmp/html-ids-base.json.gz
+      - name: 'Download PR head HTML IDs'
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: html-ids-head.json.gz
+          path: /tmp
+      - name: 'Check for removed HTML IDs'
+        run: |
+          # shellcheck disable=SC2046
+          python Doc/tools/check-html-ids.py -v check \
+            /tmp/html-ids-base.json.gz /tmp/html-ids-head.json.gz \
+            $([ -f Doc/tools/removed-ids.txt ] && echo "--exclude-file Doc/tools/removed-ids.txt")

@@ -484,8 +484,8 @@ class SysLazyImportsAPITests(unittest.TestCase):
         sys.set_lazy_imports_filter(my_filter)
         self.assertIs(sys.get_lazy_imports_filter(), my_filter)
 
-    def test_lazy_modules_attribute_is_set(self):
-        """sys.lazy_modules should be a set per PEP 810."""
+    def test_lazy_modules_attribute_is_dict(self):
+        """sys.lazy_modules should be a dict per PEP 810."""
         self.assertIsInstance(sys.lazy_modules, dict)
 
     @support.requires_subprocess()
@@ -966,8 +966,23 @@ class SysLazyModulesTrackingTests(unittest.TestCase):
 
     def test_lazy_modules_is_per_interpreter(self):
         """Each interpreter should have independent sys.lazy_modules."""
-        # Basic test that sys.lazy_modules exists and is a set
+        # Basic test that sys.lazy_modules exists and is a dict
         self.assertIsInstance(sys.lazy_modules, dict)
+
+    def test_lazy_module_without_children_is_tracked(self):
+        code = textwrap.dedent("""
+            import sys
+            lazy import json
+            assert "json" in sys.lazy_modules, (
+                f"expected 'json' in sys.lazy_modules, got {set(sys.lazy_modules)}"
+            )
+            assert sys.lazy_modules["json"] == set(), (
+                f"expected empty set for sys.lazy_modules['json'], "
+                f"got {sys.lazy_modules['json']!r}"
+            )
+            print("OK")
+        """)
+        assert_python_ok("-c", code)
 
 
 @support.requires_subprocess()
@@ -1084,6 +1099,49 @@ class CommandLineAndEnvVarTests(unittest.TestCase):
             capture_output=True,
             text=True,
             env=env
+        )
+        self.assertEqual(result.returncode, 0, f"stderr: {result.stderr}")
+        self.assertIn("EAGER", result.stdout)
+
+    def test_cli_lazy_imports_none_disables_dunder_lazy_modules(self):
+        """-X lazy_imports=none should override __lazy_modules__."""
+        code = textwrap.dedent("""
+            import sys
+            __lazy_modules__ = ["json"]
+            import json
+            if 'json' in sys.modules:
+                print("EAGER")
+            else:
+                print("LAZY")
+        """)
+        result = subprocess.run(
+            [sys.executable, "-X", "lazy_imports=none", "-c", code],
+            capture_output=True,
+            text=True,
+        )
+        self.assertEqual(result.returncode, 0, f"stderr: {result.stderr}")
+        self.assertIn("EAGER", result.stdout)
+
+    def test_env_var_lazy_imports_none_disables_dunder_lazy_modules(self):
+        """PYTHON_LAZY_IMPORTS=none should override __lazy_modules__."""
+        code = textwrap.dedent("""
+            import sys
+            __lazy_modules__ = ["json"]
+            import json
+            if 'json' in sys.modules:
+                print("EAGER")
+            else:
+                print("LAZY")
+        """)
+        import os
+
+        env = os.environ.copy()
+        env["PYTHON_LAZY_IMPORTS"] = "none"
+        result = subprocess.run(
+            [sys.executable, "-c", code],
+            capture_output=True,
+            text=True,
+            env=env,
         )
         self.assertEqual(result.returncode, 0, f"stderr: {result.stderr}")
         self.assertIn("EAGER", result.stdout)
@@ -1532,7 +1590,7 @@ class ThreadSafetyTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, f"stdout: {result.stdout}, stderr: {result.stderr}")
         self.assertIn("OK", result.stdout)
 
-    def test_concurrent_lazy_modules_set_updates(self):
+    def test_concurrent_lazy_modules_dict_updates(self):
         """Multiple threads creating lazy imports should safely update sys.lazy_modules."""
         code = textwrap.dedent("""
             import sys

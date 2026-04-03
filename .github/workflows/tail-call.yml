@@ -23,41 +23,6 @@ env:
   LLVM_VERSION: 21
 
 jobs:
-  windows:
-    name: ${{ matrix.target }}
-    runs-on: ${{ matrix.runner }}
-    timeout-minutes: 60
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - target: x86_64-pc-windows-msvc/msvc
-            architecture: x64
-            runner: windows-2025-vs2026
-            build_flags: ""
-            run_tests: true
-          - target: x86_64-pc-windows-msvc/msvc-free-threading
-            architecture: x64
-            runner: windows-2025-vs2026
-            build_flags: --disable-gil
-            run_tests: false
-    steps:
-      - uses: actions/checkout@v6
-        with:
-          persist-credentials: false
-      - uses: actions/setup-python@v6
-        with:
-          python-version: '3.11'
-      - name: Build
-        shell: pwsh
-        run: |
-          ./PCbuild/build.bat --tail-call-interp ${{ matrix.build_flags }} -c Release -p ${{ matrix.architecture }}
-      - name: Test
-        if: matrix.run_tests
-        shell: pwsh
-        run: |
-          ./PCbuild/rt.bat -p ${{ matrix.architecture }} -q --multiprocess 0 --timeout 4500 --verbose2 --verbose3
-
   macos:
     name: ${{ matrix.target }}
     runs-on: ${{ matrix.runner }}
@@ -67,14 +32,14 @@ jobs:
       matrix:
         include:
           - target: x86_64-apple-darwin/clang
-            runner: macos-15-intel
+            runner: macos-26-intel
           - target: aarch64-apple-darwin/clang
-            runner: macos-14
+            runner: macos-26
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           persist-credentials: false
-      - uses: actions/setup-python@v6
+      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
         with:
           python-version: '3.11'
       - name: Install dependencies
@@ -110,10 +75,10 @@ jobs:
             runner: ubuntu-24.04-arm
             configure_flags: --with-pydebug
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           persist-credentials: false
-      - uses: actions/setup-python@v6
+      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
         with:
           python-version: '3.11'
       - name: Build
