@@ -1620,6 +1620,24 @@ function pyconf_stdlib_module_set_na(names, n, i, key, uname) {
 # Argument parsing
 # ---------------------------------------------------------------------------
 
+function _pyconf_is_dir_arg(key) {
+        # These flags accept a space-separated value (--prefix /path),
+        # matching autoconf behaviour.  The list corresponds to _DIR_VARS
+        # in pyconf.py plus "srcdir".
+        return (key == "prefix" || key == "exec-prefix" || \
+                key == "bindir" || key == "sbindir" || \
+                key == "libexecdir" || key == "sysconfdir" || \
+                key == "sharedstatedir" || key == "localstatedir" || \
+                key == "runstatedir" || key == "libdir" || \
+                key == "includedir" || key == "oldincludedir" || \
+                key == "datarootdir" || key == "datadir" || \
+                key == "infodir" || key == "localedir" || \
+                key == "mandir" || key == "docdir" || \
+                key == "htmldir" || key == "dvidir" || \
+                key == "pdfdir" || key == "psdir" || \
+                key == "srcdir")
+}
+
 function pyconf_parse_args(    i, arg, key, val, opt_key, eq_pos, config_args) {
         config_args = ""
         for (i = 1; i < ARGC; i++) {
@@ -1638,7 +1656,19 @@ function pyconf_parse_args(    i, arg, key, val, opt_key, eq_pos, config_args) {
                                 val = substr(arg, eq_pos + 1)
                         } else {
                                 key = arg
-                                val = "yes"
+                                # Directory args and --srcdir accept a
+                                # space-separated value (--prefix /path),
+                                # matching autoconf behaviour.
+                                if (_pyconf_is_dir_arg(key) && (i + 1) < ARGC) {
+                                        i++
+                                        val = ARGV[i]
+                                        # Record the value in config_args too
+                                        if (key != "srcdir")
+                                                config_args = config_args " " _shell_quote(val)
+                                        ARGV[i] = ""
+                                } else {
+                                        val = "yes"
+                                }
                         }
 
                         # --enable-X / --disable-X
