@@ -30,7 +30,7 @@ _awk=$(_find_awk)
 _tmpf=$(mktemp "${TMPDIR:-/tmp}/configure.XXXXXXXXXX") || exit 1
 trap 'rm -f "$_tmpf"' EXIT
 sed '1,/^#---AWK-START---$/d' "$0" > "$_tmpf"
-exec "$_awk" -f "$_tmpf" -- "$@"
+"$_awk" -f "$_tmpf" -- "$@"
 #---AWK-START---
 # === pyconf.awk runtime ===
 # pyconf.awk — AWK runtime library for the configure transpiler.
