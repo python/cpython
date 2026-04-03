@@ -150,6 +150,7 @@ cache_file: str = ""  # --cache-file=FILE / -C
 disable_option_checking: bool = False  # --disable-option-checking
 _help_requested: bool = False  # deferred --help flag
 _dir_args: dict[str, str] = {}  # standard dir args: --prefix, --bindir, etc.
+_system_type_args: dict[str, str] = {}  # --host, --build, --target triplets
 _srcdir_arg: str = ""  # --srcdir value from argv (empty = not set)
 _original_config_args: list[str] = []  # original user-facing args
 
@@ -253,7 +254,7 @@ def init_args() -> None:
         disable_option_checking, \
         _help_requested, \
         _srcdir_arg
-    global _dir_args
+    global _dir_args, _system_type_args
 
     global _original_config_args
     # Save user-facing args (exclude --srcdir which is internal to the wrapper)
@@ -346,6 +347,22 @@ def init_args() -> None:
                 matched_dir = True
                 break
         if matched_dir:
+            continue
+
+        # System type triplets: --host, --build, --target
+        matched_type = False
+        for stype in ("host", "build", "target"):
+            if arg == f"--{stype}":
+                if i < len(sys.argv):
+                    _system_type_args[stype] = sys.argv[i]
+                    i += 1
+                matched_type = True
+                break
+            if arg.startswith(f"--{stype}="):
+                _system_type_args[stype] = arg.split("=", 1)[1]
+                matched_type = True
+                break
+        if matched_type:
             continue
 
         new_argv.append(arg)
@@ -1641,14 +1658,9 @@ def canonical_host() -> None:
                 pass
         return triplet
 
-    # Parse --host and --build from sys.argv
-    host_arg = None
-    build_arg = None
-    for arg in sys.argv[1:]:
-        if arg.startswith("--host="):
-            host_arg = arg.split("=", 1)[1]
-        elif arg.startswith("--build="):
-            build_arg = arg.split("=", 1)[1]
+    # --host and --build are parsed by init_args() into _system_type_args
+    host_arg = _system_type_args.get("host")
+    build_arg = _system_type_args.get("build")
 
     # Determine build triplet
     if build_arg:

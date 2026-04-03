@@ -1620,10 +1620,11 @@ function pyconf_stdlib_module_set_na(names, n, i, key, uname) {
 # Argument parsing
 # ---------------------------------------------------------------------------
 
-function _pyconf_is_dir_arg(key) {
+function _pyconf_arg_takes_value(key) {
         # These flags accept a space-separated value (--prefix /path),
-        # matching autoconf behaviour.  The list corresponds to _DIR_VARS
-        # in pyconf.py plus "srcdir".
+        # matching autoconf behaviour.  Covers standard directory vars
+        # (_DIR_VARS in pyconf.py), srcdir, cache-file, and system type
+        # triplets (host, build, target).
         return (key == "prefix" || key == "exec-prefix" || \
                 key == "bindir" || key == "sbindir" || \
                 key == "libexecdir" || key == "sysconfdir" || \
@@ -1635,7 +1636,8 @@ function _pyconf_is_dir_arg(key) {
                 key == "mandir" || key == "docdir" || \
                 key == "htmldir" || key == "dvidir" || \
                 key == "pdfdir" || key == "psdir" || \
-                key == "srcdir")
+                key == "srcdir" || key == "cache-file" || \
+                key == "host" || key == "build" || key == "target")
 }
 
 function pyconf_parse_args(    i, arg, key, val, opt_key, eq_pos, config_args) {
@@ -1659,7 +1661,7 @@ function pyconf_parse_args(    i, arg, key, val, opt_key, eq_pos, config_args) {
                                 # Directory args and --srcdir accept a
                                 # space-separated value (--prefix /path),
                                 # matching autoconf behaviour.
-                                if (_pyconf_is_dir_arg(key) && (i + 1) < ARGC) {
+                                if (_pyconf_arg_takes_value(key) && (i + 1) < ARGC) {
                                         i++
                                         val = ARGV[i]
                                         # Record the value in config_args too
