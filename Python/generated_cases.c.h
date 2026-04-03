@@ -5605,12 +5605,14 @@
                 PyObject *callable_o = PyStackRef_AsPyObjectBorrow(callable);
                 PyObject *dict_o = PyStackRef_AsPyObjectBorrow(dict);
                 PyObject *update_o = PyStackRef_AsPyObjectBorrow(update);
+                PyObject *dupkey = NULL;
                 _PyFrame_SetStackPointer(frame, stack_pointer);
-                int err = _PyDict_MergeEx(dict_o, update_o, 2);
+                int err = _PyDict_MergeUniq(dict_o, update_o, &dupkey);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
                 if (err < 0) {
                     _PyFrame_SetStackPointer(frame, stack_pointer);
-                    _PyEval_FormatKwargsError(tstate, callable_o, update_o);
+                    _PyEval_FormatKwargsError(tstate, callable_o, update_o, dupkey);
+                    Py_XDECREF(dupkey);
                     stack_pointer = _PyFrame_GetStackPointer(frame);
                     JUMP_TO_LABEL(error);
                 }

@@ -23,6 +23,11 @@ GLOBAL_136154 = 42
 # For frozendict JIT tests
 FROZEN_DICT_CONST = frozendict(x=1, y=2)
 
+class _GenericKey:
+    pass
+
+_GENERIC_KEY = _GenericKey()
+
 
 @contextlib.contextmanager
 def clear_executors(func):
@@ -2007,8 +2012,8 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
         self.assertEqual(uops.count("_GUARD_NOS_DICT"), 0)
-        self.assertEqual(uops.count("_STORE_SUBSCR_DICT"), 1)
-        self.assertEqual(uops.count("_BINARY_OP_SUBSCR_DICT"), 1)
+        self.assertEqual(uops.count("_STORE_SUBSCR_DICT_KNOWN_HASH"), 1)
+        self.assertEqual(uops.count("_BINARY_OP_SUBSCR_DICT_KNOWN_HASH"), 1)
 
     def test_remove_guard_for_known_type_list(self):
         def f(n):
@@ -2312,8 +2317,45 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertEqual(res, TIER2_THRESHOLD)
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
-        self.assertIn("_BINARY_OP_SUBSCR_DICT", uops)
+        self.assertIn("_BINARY_OP_SUBSCR_DICT_KNOWN_HASH", uops)
         self.assertLessEqual(count_ops(ex, "_POP_TOP"), 2)
+
+    def test_binary_op_subscr_dict_known_hash(self):
+        # str, int, bytes, float, complex, tuple and any python object which has generic hash
+        def testfunc(n):
+            x = 0
+            d = {'a': 1, 1: 2, b'b': 3, (1, 2): 4, _GENERIC_KEY: 5, 1.5: 6, 1+2j: 7}
+            for _ in range(n):
+                x += d['a'] + d[1] + d[b'b'] + d[(1, 2)] + d[_GENERIC_KEY] + d[1.5] + d[1+2j]
+            return x
+
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, 28 * TIER2_THRESHOLD)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertIn("_BINARY_OP_SUBSCR_DICT_KNOWN_HASH", uops)
+        self.assertNotIn("_BINARY_OP_SUBSCR_DICT", uops)
+
+    def test_store_subscr_dict_known_hash(self):
+        # str, int, bytes, float, complex, tuple and any python object which has generic hash
+        def testfunc(n):
+            d = {'a': 0, 1: 0, b'b': 0, (1, 2): 0, _GENERIC_KEY: 0, 1.5: 0, 1+2j: 0}
+            for _ in range(n):
+                d['a'] += 1
+                d[1] += 2
+                d[b'b'] += 3
+                d[(1, 2)] += 4
+                d[_GENERIC_KEY] += 5
+                d[1.5] += 6
+                d[1+2j] += 7
+            return d['a'] + d[1] + d[b'b'] + d[(1, 2)] + d[_GENERIC_KEY] + d[1.5] + d[1+2j]
+
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, 28 * TIER2_THRESHOLD)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertIn("_STORE_SUBSCR_DICT_KNOWN_HASH", uops)
+        self.assertNotIn("_STORE_SUBSCR_DICT", uops)
 
     def test_contains_op(self):
         def testfunc(n):
@@ -3348,6 +3390,154 @@ class TestUopsOptimization(unittest.TestCase):
         uops = get_opnames(ex)
         self.assertNotIn("_UNARY_NEGATIVE_FLOAT_INPLACE", uops)
 
+    def test_int_add_inplace_unique_lhs(self):
+        # a * b produces a unique compact int; adding c reuses it in place
+        def testfunc(args):
+            a, b, c, n = args
+            total = 0
+            for _ in range(n):
+                total += a * b + c
+            return total
+
+        res, ex = self._run_with_optimizer(testfunc, (2000, 3, 4000, TIER2_THRESHOLD))
+        self.assertEqual(res, TIER2_THRESHOLD * 10000)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertIn("_BINARY_OP_ADD_INT_INPLACE", uops)
+
+    def test_int_add_inplace_unique_rhs(self):
+        # a * b produces a unique compact int on the right side of +
+        def testfunc(args):
+            a, b, c, n = args
+            total = 0
+            for _ in range(n):
+                total += c + a * b
+            return total
+
+        res, ex = self._run_with_optimizer(testfunc, (2000, 3, 4000, TIER2_THRESHOLD))
+        self.assertEqual(res, TIER2_THRESHOLD * 10000)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertIn("_BINARY_OP_ADD_INT_INPLACE_RIGHT", uops)
+
+    def test_int_add_no_inplace_non_unique(self):
+        # Both operands of a + b are locals — neither is unique,
+        # so the first add uses the regular op. But total += (a+b)
+        # has a unique RHS (result of a+b), so it uses _INPLACE_RIGHT.
+        def testfunc(args):
+            a, b, n = args
+            total = 0
+            for _ in range(n):
+                total += a + b
+            return total
+
+        res, ex = self._run_with_optimizer(testfunc, (2000, 3000, TIER2_THRESHOLD))
+        self.assertEqual(res, TIER2_THRESHOLD * 5000)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        # a + b: both are locals, no inplace
+        self.assertIn("_BINARY_OP_ADD_INT", uops)
+        # total += result: result is unique RHS
+        self.assertIn("_BINARY_OP_ADD_INT_INPLACE_RIGHT", uops)
+        # No LHS inplace variant for the first add
+        self.assertNotIn("_BINARY_OP_ADD_INT_INPLACE", uops)
+
+    def test_int_add_inplace_small_int_result(self):
+        # When the result is a small int, the inplace path falls back
+        # to _PyCompactLong_Add. Verify correctness (no singleton corruption).
+        def testfunc(args):
+            a, b, n = args
+            total = 0
+            for _ in range(n):
+                total += a * b + 1  # a*b=6, +1=7, small int
+            return total
+
+        res, ex = self._run_with_optimizer(testfunc, (2, 3, TIER2_THRESHOLD))
+        self.assertEqual(res, TIER2_THRESHOLD * 7)
+        # Verify small int singletons are not corrupted
+        self.assertEqual(7, 3 + 4)
+
+    def test_int_subtract_inplace_unique_lhs(self):
+        # a * b produces a unique compact int; subtracting c reuses it
+        def testfunc(args):
+            a, b, c, n = args
+            total = 0
+            for _ in range(n):
+                total += a * b - c
+            return total
+
+        res, ex = self._run_with_optimizer(testfunc, (2000, 3, 1000, TIER2_THRESHOLD))
+        self.assertEqual(res, TIER2_THRESHOLD * 5000)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertIn("_BINARY_OP_SUBTRACT_INT_INPLACE", uops)
+
+    def test_int_subtract_inplace_unique_rhs(self):
+        # a * b produces a unique compact int on the right of -
+        def testfunc(args):
+            a, b, c, n = args
+            total = 0
+            for _ in range(n):
+                total += c - a * b
+            return total
+
+        res, ex = self._run_with_optimizer(testfunc, (2000, 3, 10000, TIER2_THRESHOLD))
+        self.assertEqual(res, TIER2_THRESHOLD * 4000)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertIn("_BINARY_OP_SUBTRACT_INT_INPLACE_RIGHT", uops)
+
+    def test_int_multiply_inplace_unique_lhs(self):
+        # (a + b) produces a unique compact int; multiplying by c reuses it
+        def testfunc(args):
+            a, b, c, n = args
+            total = 0
+            for _ in range(n):
+                total += (a + b) * c
+            return total
+
+        res, ex = self._run_with_optimizer(testfunc, (2000, 3000, 4, TIER2_THRESHOLD))
+        self.assertEqual(res, TIER2_THRESHOLD * 20000)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertIn("_BINARY_OP_MULTIPLY_INT_INPLACE", uops)
+
+    def test_int_multiply_inplace_unique_rhs(self):
+        # (a + b) produces a unique compact int on the right side of *
+        def testfunc(args):
+            a, b, c, n = args
+            total = 0
+            for _ in range(n):
+                total += c * (a + b)
+            return total
+
+        res, ex = self._run_with_optimizer(testfunc, (2000, 3000, 4, TIER2_THRESHOLD))
+        self.assertEqual(res, TIER2_THRESHOLD * 20000)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertIn("_BINARY_OP_MULTIPLY_INT_INPLACE_RIGHT", uops)
+
+    def test_int_inplace_chain_propagation(self):
+        # a * b + c * d: both products are unique, the + reuses one;
+        # result of + is also unique for the subsequent +=
+        def testfunc(args):
+            a, b, c, d, n = args
+            total = 0
+            for _ in range(n):
+                total += a * b + c * d
+            return total
+
+        res, ex = self._run_with_optimizer(testfunc, (2000, 3, 4000, 5, TIER2_THRESHOLD))
+        self.assertEqual(res, TIER2_THRESHOLD * 26000)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        inplace_add = (
+            "_BINARY_OP_ADD_INT_INPLACE" in uops
+            or "_BINARY_OP_ADD_INT_INPLACE_RIGHT" in uops
+        )
+        self.assertTrue(inplace_add,
+            "Expected an inplace add for unique intermediate results")
+
     def test_load_attr_instance_value(self):
         def testfunc(n):
             class C():
@@ -3701,7 +3891,7 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertEqual(res, 10)
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
-        self.assertIn("_STORE_SUBSCR_DICT", uops)
+        self.assertIn("_STORE_SUBSCR_DICT_KNOWN_HASH", uops)
         self.assertLessEqual(count_ops(ex, "_POP_TOP"), 1)
         self.assertIn("_POP_TOP_NOP", uops)
 
