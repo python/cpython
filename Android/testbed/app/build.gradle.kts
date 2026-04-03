@@ -278,6 +278,10 @@ abstract class CreateEmulatorTask : DefaultTask() {
         if (!File(avdDir.parentFile.parentFile, iniName).renameTo(
             File(avdDir.parentFile, iniName)
         )) {
+            // FIXME
+            execOps.exec {
+                commandLine("ls", "-lR", avdDir.parentFile.parentFile)
+            }
             throw GradleException("Failed to rename $iniName")
         }
     }
