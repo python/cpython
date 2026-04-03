@@ -533,10 +533,12 @@ There are three different types of interpreters to choose from based on compiler
    In addition, compilers must do [escape analysis](https://gcc.gnu.org/onlinedocs/gcc/Common-Attributes.html#index-musttail)
    of the lifetimes of automatic variables, function parameters, and temporaries to ensure proper tail-calls. They
    emit a compile error in case of a violation or detection failure. The ability to detect this varies depending on the compiler and
-   also on the optimization level. [Introducing additional scopes](https://github.com/python/cpython/blob/3908593039bde9d4b591ab09919003ee57418d64/Python/bytecodes.c#L2526)
+   also on the optimization level. [Introducing additional scopes](https://github.com/python/cpython/blob/3908593039bde9d4b591ab09919003ee57418d64/Python/bytecodes.c#L2526),
+   [extracting problematic code paths into a separate function]
+   (https://github.com/python/cpython/pull/143068/files#diff-729a985b0cb8b431cb291f1edb561bbbfea22e3f8c262451cd83328a0936a342R3724)
    or [returning a pointer instead of taking it as an output parameter](https://github.com/python/cpython/blob/3908593039bde9d4b591ab09919003ee57418d64/Include/internal/pycore_ceval.h#L489-L492)
-   is particularly helpful to the MSVC compiler in this regard.
-   
+   is particularly helpful to the MSVC compiler in this regard. Using `restrict` is another (currently unused) remedy.
+
 Additional resources
 --------------------
 
