@@ -465,6 +465,7 @@ PYCONF_STDOUT_FUNCS: frozenset[str] = frozenset(
         "pkg_config",
         "run_program_output",
         "get_dir_arg",
+        "cache_check",
     }
 )
 
