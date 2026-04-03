@@ -1,0 +1,5 @@
+:class:`multiprocessing.pool.Pool` and :class:`multiprocessing.pool.ThreadPool`
+no longer require POSIX named semaphores for the internal change notification
+mechanism.  This fixes ``Pool`` and ``ThreadPool`` on platforms where
+``sem_open()`` is unavailable, such as AWS Lambda (no ``/dev/shm``), Android,
+and iOS.

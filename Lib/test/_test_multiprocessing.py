@@ -2828,6 +2828,9 @@ def raise_large_valuerror(wait):
 def identity(x):
     return x
 
+def _kill_self():
+    os.kill(os.getpid(), signal.SIGKILL)
+
 class CountedObject(object):
     n_instances = 0
 
@@ -3067,6 +3070,41 @@ class _TestPool(BaseTestCase):
             finally:
                 p.close()
                 p.join()
+
+    def test_change_notifier_no_semaphore(self):
+        # gh-134634: The pool's change notifier uses a pipe instead of
+        # a multiprocessing.SimpleQueue to avoid depending on sem_open(),
+        # which requires /dev/shm.
+        if self.TYPE == 'manager':
+            return
+        from multiprocessing.pool import _ChangeNotifier
+        p = self.Pool(2)
+        try:
+            self.assertIsInstance(p._change_notifier, _ChangeNotifier)
+            result = p.map(sqr, list(range(10)))
+            self.assertEqual(result, list(map(sqr, range(10))))
+        finally:
+            p.close()
+            p.join()
+
+    def test_change_notifier_drain(self):
+        # gh-134634: Verify that multiple rapid notifications (from many
+        # tasks completing and cache emptying) are properly drained and
+        # the pool shuts down without hanging.
+        if self.TYPE == 'manager':
+            return
+        p = self.Pool(4)
+        try:
+            # Submit many short tasks so notifications pile up faster
+            # than the worker handler can drain them.
+            results = [p.apply_async(sqr, (i,)) for i in range(200)]
+            for i, r in enumerate(results):
+                self.assertEqual(r.get(timeout=support.SHORT_TIMEOUT), sqr(i))
+        finally:
+            # close() adds another notification on top of the cache-empty
+            # ones.  If draining is broken, join() hangs.
+            p.close()
+            p.join()
 
     @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     def test_terminate(self):
@@ -3330,6 +3368,33 @@ class _TestPoolWorkerLifetime(BaseTestCase):
         # check the results
         for (j, res) in enumerate(results):
             self.assertEqual(res.get(), sqr(j))
+
+    def test_pool_worker_killed_mid_task(self):
+        # gh-134634: Verify the worker handler detects a killed worker
+        # via its sentinel fd and replaces it, keeping the pool functional.
+        p = multiprocessing.Pool(3)
+        orig_count = len(p._pool)
+        self.assertEqual(orig_count, 3)
+
+        # Kill one worker.  The task will never return a result.
+        p.apply_async(_kill_self)
+
+        # Give the worker handler time to detect the death and replace.
+        deadline = time.monotonic() + support.SHORT_TIMEOUT
+        while time.monotonic() < deadline:
+            alive = [w for w in p._pool if w.is_alive()]
+            if len(alive) >= orig_count:
+                break
+            time.sleep(0.1)
+        self.assertEqual(len(p._pool), orig_count,
+                         "worker handler did not replace the killed worker")
+
+        # Pool should still be functional with the replacement worker.
+        result = p.map(sqr, list(range(5)))
+        self.assertEqual(result, list(map(sqr, range(5))))
+
+        p.terminate()
+        p.join()
 
     def test_pool_maxtasksperchild_invalid(self):
         for value in [0, -1, 0.5, "12"]:

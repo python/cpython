@@ -147,6 +147,30 @@ def _helper_reraises_exception(ex):
 # Class representing a process pool
 #
 
+class _ChangeNotifier:
+    """Pipe-based notifier that does not depend on POSIX named semaphores.
+
+    Replaces the use of multiprocessing.SimpleQueue for the pool's change
+    notification mechanism.  SimpleQueue's internal locks require sem_open(),
+    which fails on platforms without /dev/shm (AWS Lambda, Android, iOS).
+    The change notifier never crosses a process boundary, so named semaphores
+    were never needed.
+    """
+
+    def __init__(self):
+        from .connection import Pipe
+        self._reader, self._writer = Pipe(duplex=False)
+
+    def put(self, obj):
+        self._writer.send_bytes(b'\0')
+
+    def get(self):
+        self._reader.recv_bytes()
+
+    def empty(self):
+        return not self._reader.poll(0)
+
+
 class _PoolCache(dict):
     """
     Class that implements a cache for the Pool class that will notify
@@ -190,10 +214,7 @@ class Pool(object):
         self._ctx = context or get_context()
         self._setup_queues()
         self._taskqueue = queue.SimpleQueue()
-        # The _change_notifier queue exist to wake up self._handle_workers()
-        # when the cache (self._cache) is empty or when there is a change in
-        # the _state variable of the thread that runs _handle_workers.
-        self._change_notifier = self._ctx.SimpleQueue()
+        self._change_notifier = _ChangeNotifier()
         self._cache = _PoolCache(notifier=self._change_notifier)
         self._maxtasksperchild = maxtasksperchild
         self._initializer = initializer
