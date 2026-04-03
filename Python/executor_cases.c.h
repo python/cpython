@@ -16595,10 +16595,11 @@
                 JUMP_TO_JUMP_TARGET();
             }
             STAT_INC(CALL, hit);
+            volatile PyCFunction cfunc_v = (PyCFunction)cfunc;
             _PyFrame_SetStackPointer(frame, stack_pointer);
             PyObject *res_o = _PyCallMethodDescriptorO_StackRef(
                 callable,
-                (PyCFunction)cfunc,
+                cfunc_v,
                 args[0],
                 args[1]
             );
@@ -16730,9 +16731,10 @@
             assert(self != NULL);
             STAT_INC(CALL, hit);
             _PyFrame_SetStackPointer(frame, stack_pointer);
+            volatile PyCFunctionFastWithKeywords cfunc_v = _PyCFunctionFastWithKeywords_CAST(cfunc);
             PyObject *res_o = _PyCallMethodDescriptorFastWithKeywords_StackRefSteal(
                 callable,
-                _PyCFunctionFastWithKeywords_CAST(cfunc),
+                cfunc_v,
                 self,
                 args,
                 oparg
@@ -16869,8 +16871,9 @@
                 JUMP_TO_JUMP_TARGET();
             }
             STAT_INC(CALL, hit);
+            volatile PyCFunction cfunc_v = (PyCFunction)cfunc;
             _PyFrame_SetStackPointer(frame, stack_pointer);
-            PyObject *res_o = _PyCFunction_TrampolineCall((PyCFunction)cfunc, self, NULL);
+            PyObject *res_o = _PyCFunction_TrampolineCall(cfunc_v, self, NULL);
             stack_pointer = _PyFrame_GetStackPointer(frame);
             _Py_LeaveRecursiveCallTstate(tstate);
             assert((res_o != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
@@ -17001,9 +17004,10 @@
             assert(self != NULL);
             STAT_INC(CALL, hit);
             _PyFrame_SetStackPointer(frame, stack_pointer);
+            volatile PyCFunctionFast cfunc_v = _PyCFunctionFast_CAST(cfunc);
             PyObject *res_o = _PyCallMethodDescriptorFast_StackRefSteal(
                 callable,
-                _PyCFunctionFast_CAST(cfunc),
+                cfunc_v,
                 self,
                 args,
                 oparg

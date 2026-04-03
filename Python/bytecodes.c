@@ -4779,9 +4779,10 @@ dummy_func(
             assert(oparg == 2);
             EXIT_IF(_Py_ReachedRecursionLimit(tstate));
             STAT_INC(CALL, hit);
+            volatile PyCFunction cfunc_v = (PyCFunction)cfunc;
             PyObject *res_o = _PyCallMethodDescriptorO_StackRef(
                 callable,
-                (PyCFunction)cfunc,
+                cfunc_v,
                 args[0],
                 args[1]
             );
@@ -4855,9 +4856,10 @@ dummy_func(
             PyObject *self = PyStackRef_AsPyObjectBorrow(args[0]);
             assert(self != NULL);
             STAT_INC(CALL, hit);
+            volatile PyCFunctionFastWithKeywords cfunc_v = _PyCFunctionFastWithKeywords_CAST(cfunc);
             PyObject *res_o = _PyCallMethodDescriptorFastWithKeywords_StackRefSteal(
                 callable,
-                _PyCFunctionFastWithKeywords_CAST(cfunc),
+                cfunc_v,
                 self,
                 args,
                 oparg
@@ -4922,7 +4924,8 @@ dummy_func(
             PyObject *self = PyStackRef_AsPyObjectBorrow(self_stackref);
             EXIT_IF(_Py_ReachedRecursionLimit(tstate));
             STAT_INC(CALL, hit);
-            PyObject *res_o = _PyCFunction_TrampolineCall((PyCFunction)cfunc, self, NULL);
+            volatile PyCFunction cfunc_v = (PyCFunction)cfunc;
+            PyObject *res_o = _PyCFunction_TrampolineCall(cfunc_v, self, NULL);
             _Py_LeaveRecursiveCallTstate(tstate);
             assert((res_o != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
             PyStackRef_CLOSE(self_stackref);
@@ -4988,9 +4991,10 @@ dummy_func(
             PyObject *self = PyStackRef_AsPyObjectBorrow(args[0]);
             assert(self != NULL);
             STAT_INC(CALL, hit);
+            volatile PyCFunctionFast cfunc_v = _PyCFunctionFast_CAST(cfunc);
             PyObject *res_o = _PyCallMethodDescriptorFast_StackRefSteal(
                 callable,
-                _PyCFunctionFast_CAST(cfunc),
+                cfunc_v,
                 self,
                 args,
                 oparg
