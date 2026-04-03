@@ -871,7 +871,7 @@ cleanup:
     return res;
 }
 
-PyObject *
+Py_NO_INLINE PyObject *
 _PyCallMethodDescriptorO_StackRef(
     _PyStackRef callable,
     PyCFunction cfunc,
