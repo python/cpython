@@ -4756,14 +4756,14 @@ dummy_func(
             }
             // CPython promises to check all non-vectorcall function calls.
             EXIT_IF(_Py_ReachedRecursionLimit(tstate));
-            _PyStackRef arg_stackref = arguments[1];
-            _PyStackRef self_stackref = arguments[0];
             STAT_INC(CALL, hit);
             PyCFunction cfunc = method->d_method->ml_meth;
-            PyObject *res_o = _PyCFunction_TrampolineCall(cfunc,
-                                  PyStackRef_AsPyObjectBorrow(self_stackref),
-                                  PyStackRef_AsPyObjectBorrow(arg_stackref));
-            _Py_LeaveRecursiveCallTstate(tstate);
+            PyObject *res_o = _PyCallMethodDescriptorO_StackRef(
+                callable,
+                cfunc,
+                arguments[0],
+                arguments[1]
+            );
             assert((res_o != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
             if (res_o == NULL) {
                 ERROR_NO_POP();
@@ -4779,11 +4779,12 @@ dummy_func(
             assert(oparg == 2);
             EXIT_IF(_Py_ReachedRecursionLimit(tstate));
             STAT_INC(CALL, hit);
-            PyObject *res_o = _PyCFunction_TrampolineCall(
-                                  (PyCFunction)cfunc,
-                                  PyStackRef_AsPyObjectBorrow(args[0]),
-                                  PyStackRef_AsPyObjectBorrow(args[1]));
-            _Py_LeaveRecursiveCallTstate(tstate);
+            PyObject *res_o = _PyCallMethodDescriptorO_StackRef(
+                callable,
+                (PyCFunction)cfunc,
+                args[0],
+                args[1]
+            );
             assert((res_o != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
             if (res_o == NULL) {
                 ERROR_NO_POP();

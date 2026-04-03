@@ -554,9 +554,7 @@ patch_x86_64_32rx(unsigned char *location, uint64_t value)
 
 void patch_got_symbol(jit_state *state, int ordinal);
 void patch_aarch64_trampoline(unsigned char *location, int ordinal, jit_state *state);
-void patch_aarch64_trampoline_addr(unsigned char *location, int ordinal, uint64_t value, jit_state *state);
 void patch_x86_64_trampoline(unsigned char *location, int ordinal, jit_state *state);
-void patch_x86_64_trampoline_addr(unsigned char *location, int ordinal, uint64_t value, jit_state *state);
 
 #include "jit_stencils.h"
 
@@ -587,27 +585,28 @@ patch_got_symbol(jit_state *state, int ordinal)
 void
 patch_aarch64_trampoline(unsigned char *location, int ordinal, jit_state *state)
 {
+
     uint64_t value = (uintptr_t)symbols_map[ordinal];
-    patch_aarch64_trampoline_addr(location, ordinal, value, state);
-}
+    int64_t range = value - (uintptr_t)location;
 
-// Generate and patch AArch64 trampolines for dynamic addresses (e.g. operands).
-// Unlike patch_aarch64_trampoline, the target address is passed directly rather
-// than looked up from symbols_map. The ordinal is used to allocate a trampoline slot.
-void
-patch_aarch64_trampoline_addr(unsigned char *location, int ordinal, uint64_t value, jit_state *state)
-{
-    int64_t range = (int64_t)value - (int64_t)(uintptr_t)location;
-
+    // If we are in range of 28 signed bits, we patch the instruction with
+    // the address of the symbol.
     if (range >= -(1 << 27) && range < (1 << 27)) {
-        patch_aarch64_26r(location, value);
+        patch_aarch64_26r(location, (uintptr_t)value);
         return;
     }
 
+    // Out of range - need a trampoline
     uint32_t *p = (uint32_t *)get_symbol_slot(ordinal, &state->trampolines, TRAMPOLINE_SIZE);
 
-    p[0] = 0x58000048; // ldr x8, 8
-    p[1] = 0xD61F0100; // br x8
+    /* Generate the trampoline
+       0: 58000048      ldr     x8, 8
+       4: d61f0100      br      x8
+       8: 00000000      // The next two words contain the 64-bit address to jump to.
+       c: 00000000
+    */
+    p[0] = 0x58000048;
+    p[1] = 0xD61F0100;
     p[2] = value & 0xffffffff;
     p[3] = value >> 32;
 
@@ -619,13 +618,7 @@ void
 patch_x86_64_trampoline(unsigned char *location, int ordinal, jit_state *state)
 {
     uint64_t value = (uintptr_t)symbols_map[ordinal];
-    patch_x86_64_trampoline_addr(location, ordinal, value, state);
-}
-
-void
-patch_x86_64_trampoline_addr(unsigned char *location, int ordinal, uint64_t value, jit_state *state)
-{
-    int64_t range = (int64_t)value - 4 - (int64_t)(uintptr_t)location;
+    int64_t range = (int64_t)value - 4 - (int64_t)location;
 
     // If we are in range of 32 signed bits, we can patch directly
     if (range >= -(1LL << 31) && range < (1LL << 31)) {
