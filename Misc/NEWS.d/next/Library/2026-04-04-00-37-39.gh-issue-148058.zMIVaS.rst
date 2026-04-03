@@ -1,0 +1,3 @@
+Fix reference leak in :class:`xml.etree.ElementTree.XMLParser` when
+:meth:`~object.__init__` is called many times. Patch by Maurycy
+Pawłowski-Wieroński.
