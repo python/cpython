@@ -20,6 +20,7 @@ from test.support import cpython_only
 from test.support import is_emscripten, is_wasi, is_wasm32
 from test.support import infinite_recursion
 from test.support import os_helper
+from test.support import requires_root_user
 from test.support.os_helper import TESTFN, FS_NONASCII, FakePath
 try:
     import fcntl
@@ -33,11 +34,6 @@ try:
     import posix
 except ImportError:
     posix = None
-
-
-root_in_posix = False
-if hasattr(os, 'geteuid'):
-    root_in_posix = (os.geteuid() == 0)
 
 
 def patch_replace(old_test):
@@ -1554,7 +1550,7 @@ class PathTest(PurePathTest):
             self.assertRaises(FileNotFoundError, source.copy, target)
 
     @unittest.skipIf(sys.platform == "win32" or sys.platform == "wasi", "directories are always readable on Windows and WASI")
-    @unittest.skipIf(root_in_posix, "test fails with root privilege")
+    @requires_root_user
     def test_copy_dir_no_read_permission(self):
         base = self.cls(self.base)
         source = base / 'dirE'
@@ -2027,7 +2023,7 @@ class PathTest(PurePathTest):
         self.assertEqual(expected_name, p.owner())
 
     @unittest.skipUnless(pwd, "the pwd module is needed for this test")
-    @unittest.skipUnless(root_in_posix, "test needs root privilege")
+    @requires_root_user
     def test_owner_no_follow_symlinks(self):
         all_users = [u.pw_uid for u in pwd.getpwall()]
         if len(all_users) < 2:
@@ -2062,7 +2058,7 @@ class PathTest(PurePathTest):
         self.assertEqual(expected_name, p.group())
 
     @unittest.skipUnless(grp, "the grp module is needed for this test")
-    @unittest.skipUnless(root_in_posix, "test needs root privilege")
+    @requires_root_user
     def test_group_no_follow_symlinks(self):
         all_groups = [g.gr_gid for g in grp.getgrall()]
         if len(all_groups) < 2:

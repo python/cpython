@@ -27,7 +27,7 @@ jobs:
       refspec_pr: '+${{ github.event.pull_request.head.sha }}:remotes/origin/${{ github.event.pull_request.head.ref }}'
     steps:
     - name: 'Check out latest PR branch commit'
-      uses: actions/checkout@v6
+      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       with:
         persist-credentials: false
         ref: >-
@@ -52,7 +52,7 @@ jobs:
         git fetch origin "${refspec_base}" --shallow-since="${DATE}" \
           --no-tags --prune --no-recurse-submodules
     - name: 'Set up Python'
-      uses: actions/setup-python@v6
+      uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
       with:
         python-version: '3'
         cache: 'pip'
@@ -75,6 +75,22 @@ jobs:
           --fail-if-regression \
           --fail-if-improved \
           --fail-if-new-news-nit
+    - name: 'Collect HTML IDs'
+      if: github.event_name == 'pull_request'
+      run: python Doc/tools/check-html-ids.py collect Doc/build/html -o Doc/build/html-ids-head.json.gz
+    - name: 'Upload HTML IDs'
+      if: github.event_name == 'pull_request'
+      uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
+      with:
+        name: html-ids-head
+        path: Doc/build/html-ids-head.json.gz
+        archive: false
+
+  check-html-ids:
+    name: 'Check for removed HTML IDs'
+    needs: build-doc
+    if: github.event_name == 'pull_request'
+    uses: ./.github/workflows/reusable-check-html-ids.yml
 
   # Run "doctest" on HEAD as new syntax doesn't exist in the latest stable release
   doctest:
@@ -82,10 +98,10 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 60
     steps:
-    - uses: actions/checkout@v6
+    - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       with:
         persist-credentials: false
-    - uses: actions/cache@v5
+    - uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5.0.4
       with:
         path: ~/.cache/pip
         key: ubuntu-doc-${{ hashFiles('Doc/requirements.txt') }}
@@ -108,11 +124,11 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
-    - uses: actions/checkout@v6
+    - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       with:
         persist-credentials: false
     - name: 'Set up Python'
-      uses: actions/setup-python@v6
+      uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
       with:
         python-version: '3'
         cache: 'pip'
