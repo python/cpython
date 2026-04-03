@@ -2760,9 +2760,20 @@ class PyshToAwk:
         elif len(positional) == 1:
             if _is_complete_program(positional[0]):
                 source = self._expr(positional[0])
-            else:
+            elif isinstance(positional[0], Const):
                 source = self._build_check_source(
                     inc_lines, self._expr(positional[0]), None
+                )
+            else:
+                # Variable — might be a complete program at runtime.
+                # Emit a runtime check mirroring Python link_check's
+                # prologue_is_source detection.
+                var_expr = self._expr(positional[0])
+                wrapped = self._build_check_source(inc_lines, var_expr, None)
+                source = A.Ternary(
+                    A.FuncCall("index", [var_expr, A.StringLit("int main")]),
+                    var_expr,
+                    wrapped,
                 )
 
         # If includes was a variable, prepend runtime-generated #include lines

@@ -8325,7 +8325,7 @@ function u_setup_pthreads(    ac_cv_cxx_thread, ac_cv_kpthread, ac_cv_kthread, a
 		pyconf_result(unistd_defines_pthreads)
 		prog = "#include <stdio.h>\n#include <stdlib.h>\n#include <pthread.h>\nvoid *start_routine(void *arg) { exit(0); }\nint main(void) { pthread_create(NULL, NULL, start_routine, NULL); return 0; }\n"
 		pyconf_checking("for pthread_create in -lpthread")
-		if (pyconf_link_check("", prog "\nint main(void) {  return 0; }", "-lpthread")) {
+		if (pyconf_link_check("", (index(prog, "int main") ? prog : prog "\nint main(void) {  return 0; }"), "-lpthread")) {
 			pyconf_result("yes")
 			V["LIBS"] = V["LIBS"] " -lpthread"
 			V["posix_threads"] = "yes"
