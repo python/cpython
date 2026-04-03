@@ -12,6 +12,10 @@ from __future__ import annotations
 
 import pyconf
 
+DISABLE_EPOLL = pyconf.arg_enable(
+    "epoll", help="disable epoll (default is yes if supported)"
+)
+
 
 def setup_machdep(v):
     """Detect MACHDEP from uname or cross-compile host triplet."""
@@ -830,10 +834,14 @@ def check_special_functions(v):
     pyconf.check_func("fchdir", headers=["unistd.h"])
     pyconf.check_func("fsync", headers=["unistd.h"])
     pyconf.check_func("fdatasync", headers=["unistd.h"])
-    pyconf.check_func(
-        "epoll_create", headers=["sys/epoll.h"], define="HAVE_EPOLL"
-    )
-    pyconf.check_func("epoll_create1", headers=["sys/epoll.h"])
+    disable_epoll = DISABLE_EPOLL.is_no()
+    pyconf.checking("for --disable-epoll")
+    pyconf.result("yes" if disable_epoll else "no")
+    if not disable_epoll:
+        pyconf.check_func(
+            "epoll_create", headers=["sys/epoll.h"], define="HAVE_EPOLL"
+        )
+        pyconf.check_func("epoll_create1", headers=["sys/epoll.h"])
     pyconf.check_func("kqueue", headers=["sys/types.h", "sys/event.h"])
     pyconf.check_func("prlimit", headers=["sys/time.h", "sys/resource.h"])
     pyconf.check_func(

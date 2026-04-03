@@ -2588,6 +2588,7 @@ function _pyconf_register_options() {
 	pyconf_arg_enable("bolt", "", "enable usage of the llvm-bolt post-link optimizer (default is no)", "", "", "no")
 	pyconf_arg_with("platlibdir", "", "Python library directory name (default is \"lib\")", "", "", "")
 	pyconf_arg_with("wheel_pkg_dir", "", "Directory of wheel packages used by ensurepip (default: none)", "", "", "")
+	pyconf_arg_enable("epoll", "", "disable epoll (default is yes if supported)", "", "", "")
 	pyconf_arg_with("c_locale_coercion", "yes", "enable C locale coercion to a UTF-8 based locale (default is yes)", "", "", "")
 	pyconf_arg_with("openssl", "", "root of the OpenSSL directory", "DIR", "", "")
 	pyconf_arg_with("openssl_rpath", "", "Set runtime library directory (rpath) for OpenSSL libraries, no (default): don't set rpath, auto: auto-detect from --with-openssl and pkg-config, DIR: set an explicit rpath", "DIR|auto|no", "", "")
@@ -6784,7 +6785,7 @@ function u_check_posix_functions(    ANDROID_API_LEVEL, _i_name, blocked_len, ma
 	}
 }
 
-function u_check_special_functions(    _pyconf_cond_sys_eventfd_h, _pyconf_cond_sys_memfd_h, _pyconf_cond_sys_mman_h, _pyconf_cond_sys_timerfd_h, ac_cv_have_chflags, ac_cv_have_lchflags) {
+function u_check_special_functions(    _pyconf_cond_sys_eventfd_h, _pyconf_cond_sys_memfd_h, _pyconf_cond_sys_mman_h, _pyconf_cond_sys_timerfd_h, ac_cv_have_chflags, ac_cv_have_lchflags, disable_epoll) {
 	pyconf_checking("whether dirfd is declared")
 	if (pyconf_check_decl("dirfd", "sys/types.h dirent.h", "HAVE_DIRFD")) {
 		pyconf_result("yes")
@@ -6797,8 +6798,13 @@ function u_check_special_functions(    _pyconf_cond_sys_eventfd_h, _pyconf_cond_
 	pyconf_check_func("fchdir", "unistd.h", "HAVE_FCHDIR")
 	pyconf_check_func("fsync", "unistd.h", "HAVE_FSYNC")
 	pyconf_check_func("fdatasync", "unistd.h", "HAVE_FDATASYNC")
-	pyconf_check_func("epoll_create", "sys/epoll.h", "HAVE_EPOLL")
-	pyconf_check_func("epoll_create1", "sys/epoll.h", "HAVE_EPOLL_CREATE1")
+	disable_epoll = (pyconf_option_is_no("enable_epoll") ? "yes" : "no")
+	pyconf_checking("for --disable-epoll")
+	pyconf_result((((disable_epoll != "") && (disable_epoll != "no")) ? "yes" : "no"))
+	if ((!((disable_epoll != "") && (disable_epoll != "no")))) {
+		pyconf_check_func("epoll_create", "sys/epoll.h", "HAVE_EPOLL")
+		pyconf_check_func("epoll_create1", "sys/epoll.h", "HAVE_EPOLL_CREATE1")
+	}
 	pyconf_check_func("kqueue", "sys/types.h sys/event.h", "HAVE_KQUEUE")
 	pyconf_check_func("prlimit", "sys/time.h sys/resource.h", "HAVE_PRLIMIT")
 	pyconf_check_func("_dyld_shared_cache_contains_path", "mach-o/dyld.h", "HAVE_DYLD_SHARED_CACHE_CONTAINS_PATH")
