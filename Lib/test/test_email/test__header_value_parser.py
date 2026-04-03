@@ -14,6 +14,7 @@ from test.test_email import (
     parameterize,
     )
 from test.test_email.params import (
+    add_label,
     C,
     include_unless,
     params,
@@ -2884,6 +2885,112 @@ class TestParser(TestParserMixin, TestEmailBase):
        )
 
 
+    # get_obs_local_part
+
+    @params
+    def test_get_obs_local_part(self, s, *args, local_part=None, **kw):
+        lp = self._test_parse(parser.get_obs_local_part, C(s), *args, **kw)
+        if 'exception' in kw:
+            return
+        self.verify_terminal_types(
+            lp,
+            'dot',
+            'atext',
+            'ptext',
+            'fws',
+            'vtext',
+            'misplaced-special',
+            )
+
+    # This function should only get called when the non-obs expressions have
+    # already been checked for, so we are only testing the obs syntax handling,
+    # not what it does with non-obs syntax.  Anything else is "don't care".
+    # The 'local_part' specs are checked by the get_local_part tests, since the
+    # token list returned by get_obs_local_part doesn't have that attribute.
+    params_test_get_obs_local_part = old_api_only(
+
+        simple_obsolete = C(
+            'Fred. A.Johnson@python.org',
+            remainder='@python.org',
+            local_part='Fred.A.Johnson',
+            ),
+
+        complex_obsolete_1 = C(
+            ' (foo )Fred (bar).(bird) A.(sheep)Johnson."and  dogs "@python.org',
+            value=' Fred . A. Johnson.and  dogs ',
+            remainder='@python.org',
+            comments=['foo ', 'bar', 'bird', 'sheep'],
+            local_part='Fred.A.Johnson.and  dogs ',
+            ),
+
+        complex_obsolete_invalid = C(
+            ' (foo )Fred (bar).(bird) A.(sheep)Johnson "and  dogs"@python.org',
+            value=' Fred . A. Johnson and  dogs',
+            defects=[missing_dot_in_local_part_defect],
+            remainder='@python.org',
+            comments=['foo ', 'bar', 'bird', 'sheep'],
+            local_part='Fred.A.Johnson and  dogs',
+            ),
+
+        trailing_dot = C(
+            ' borris.@python.org',
+            defects=[trailing_dot_in_local_part_defect],
+            remainder='@python.org',
+            local_part='borris.',
+            ),
+
+        trailing_dot_with_ws = C(
+            ' borris. @python.org',
+            defects=[trailing_dot_in_local_part_defect],
+            remainder='@python.org',
+            local_part='borris.',
+            ),
+
+        leading_dot = C(
+            '.borris@python.org',
+            defects=[leading_dot_in_local_part_defect],
+            remainder='@python.org',
+            local_part='.borris',
+            ),
+
+        leading_dot_after_ws = C(
+            ' .borris@python.org',
+            defects=[leading_dot_in_local_part_defect],
+            remainder='@python.org',
+            local_part='.borris',
+            ),
+
+        dots_around_comment = C(
+            ' borris.(foo).natasha@python.org',
+            value=' borris. .natasha',
+            defects=[repeated_dot_in_local_part_defect],
+            remainder='@python.org',
+            comments=['foo'],
+            local_part='borris..natasha',
+            ),
+
+        quoted_strings_in_atom_list = C(
+            '""example" example"@example.com',
+            value='example example',
+            defects=[*[missing_dot_in_local_part_defect]*2],
+            remainder='@example.com',
+            local_part="example example",
+            ),
+
+        valid_and_invalid_qp_in_atom_list = C(
+            r'"\\"example\\" example"@example.com',
+            value=r'\example\\ example',
+            defects=[
+                *[missing_dot_in_local_part_defect]*2,
+                *[misplaced_backslash_defect]*2,
+                ],
+            remainder='@example.com',
+            local_part=r'\example\\ example',
+            ),
+
+        )
+
+
     # get_local_part
 
     @params
@@ -2925,6 +3032,27 @@ class TestParser(TestParserMixin, TestEmailBase):
         if 'exception' not in kw:
             kw['local_part'] = kw.pop('content')
         yield '', C(*args, **kw)
+
+    @params_map
+    def adapt_get_obs_local_part_tests_for_get_local_part(
+            *args,
+            defects=[],
+            **kw,
+        ):
+        defects = list(defects)
+        if any(
+            x in (
+                repeated_dot_in_local_part_defect,
+                misplaced_backslash_defect,
+                missing_dot_in_local_part_defect,
+                leading_dot_in_local_part_defect,
+                trailing_dot_in_local_part_defect,
+                ) for x in defects
+            ):
+            defects.append(not_even_obs_local_part_defect)
+        else:
+            defects.append(non_dot_atom_local_part_obs_defect)
+        yield '', C(*args, defects=defects, **kw)
 
     params_test_get_local_part = old_api_only(
 
@@ -2986,6 +3114,12 @@ class TestParser(TestParserMixin, TestEmailBase):
                 )(params_test_get_quoted_string),
             ),
 
+        add_label('from_test_get_obs_local_part')(
+            adapt_get_obs_local_part_tests_for_get_local_part(
+                params_test_get_obs_local_part,
+                ),
+            ),
+
         simple = C(
             'dinsdale@python.org',
             remainder='@python.org',
@@ -3040,35 +3174,6 @@ class TestParser(TestParserMixin, TestEmailBase):
             local_part=' Fred A. Johnson ',
             ),
 
-
-        simple_obsolete = C(
-            'Fred. A.Johnson@python.org',
-            defects=[non_dot_atom_local_part_obs_defect],
-            remainder='@python.org',
-            local_part='Fred.A.Johnson',
-            ),
-
-        complex_obsolete_1 = C(
-            ' (foo )Fred (bar).(bird) A.(sheep)Johnson."and  dogs "@python.org',
-            value=' Fred . A. Johnson.and  dogs ',
-            defects=[non_dot_atom_local_part_obs_defect],
-            remainder='@python.org',
-            comments=['foo ', 'bar', 'bird', 'sheep'],
-            local_part='Fred.A.Johnson.and  dogs ',
-            ),
-
-        complex_obsolete_invalid = C(
-            ' (foo )Fred (bar).(bird) A.(sheep)Johnson "and  dogs"@python.org',
-            value=' Fred . A. Johnson and  dogs',
-            defects=[
-                not_even_obs_local_part_defect,
-                missing_dot_in_local_part_defect,
-                ],
-            remainder='@python.org',
-            comments=['foo ', 'bar', 'bird', 'sheep'],
-            local_part='Fred.A.Johnson and  dogs',
-            ),
-
         empty_raises = C(
             '',
             exception=(errors.HeaderParseError, '.*'),
@@ -3082,81 +3187,6 @@ class TestParser(TestParserMixin, TestEmailBase):
         special_instead_raises = C(
             ' (foo) @python.org',
             exception=(errors.HeaderParseError, '.*'),
-            ),
-
-        trailing_dot = C(
-            ' borris.@python.org',
-            defects=[
-                not_even_obs_local_part_defect,
-                trailing_dot_in_local_part_defect,
-                ],
-            remainder='@python.org',
-            local_part='borris.',
-            ),
-
-        trailing_dot_with_ws = C(
-            ' borris. @python.org',
-            defects=[
-                not_even_obs_local_part_defect,
-                trailing_dot_in_local_part_defect,
-                ],
-            remainder='@python.org',
-            local_part='borris.',
-            ),
-
-        leading_dot = C(
-            '.borris@python.org',
-            defects=[
-                not_even_obs_local_part_defect,
-                leading_dot_in_local_part_defect,
-                ],
-            remainder='@python.org',
-            local_part='.borris',
-            ),
-
-        leading_dot_after_ws = C(
-            ' .borris@python.org',
-            defects=[
-                not_even_obs_local_part_defect,
-                leading_dot_in_local_part_defect,
-                ],
-            remainder='@python.org',
-            local_part='.borris',
-            ),
-
-        dots_around_comment = C(
-            ' borris.(foo).natasha@python.org',
-            value=' borris. .natasha',
-            defects=[
-                not_even_obs_local_part_defect,
-                repeated_dot_in_local_part_defect,
-                ],
-            remainder='@python.org',
-            comments=['foo'],
-            local_part='borris..natasha',
-            ),
-
-        quoted_strings_in_atom_list = C(
-            '""example" example"@example.com',
-            value='example example',
-            defects=[
-                not_even_obs_local_part_defect,
-                *[missing_dot_in_local_part_defect]*2,
-                ],
-            remainder='@example.com',
-            local_part="example example",
-            ),
-
-        valid_and_invalid_qp_in_atom_list = C(
-            r'"\\"example\\" example"@example.com',
-            value=r'\example\\ example',
-            defects=[
-                not_even_obs_local_part_defect,
-                *[missing_dot_in_local_part_defect]*2,
-                *[misplaced_backslash_defect]*2,
-                ],
-            remainder='@example.com',
-            local_part=r'\example\\ example',
             ),
 
         )

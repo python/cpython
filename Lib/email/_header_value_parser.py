@@ -1540,6 +1540,7 @@ def get_obs_local_part(value):
             value = value[1:]
             continue
         elif value[0]=='\\':
+            # RFC 5322 doesn't allow \, but the old email code parsed it.
             obs_local_part.append(ValueTerminal(value[0],
                                                 'misplaced-special'))
             value = value[1:]
