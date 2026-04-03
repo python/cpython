@@ -633,7 +633,7 @@ compute_exit_quality(_Py_CODEUNIT *target_instr, int opcode,
 static inline int32_t
 compute_frame_penalty(const _PyOptimizationConfig *cfg)
 {
-    return (int32_t)cfg->fitness_initial / 5 + 1;
+    return (int32_t)cfg->fitness_initial / 10 + 1;
 }
 
 static int
