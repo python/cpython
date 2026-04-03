@@ -10,8 +10,8 @@ SCRIPT_DIR="$(dirname "$0")"
 if false; then
     echo "Using configure.py..."
     export PYTHONPATH=$SCRIPT_DIR/Tools/configure
-    python3 "$SCRIPT_DIR/Tools/configure/configure.py" --srcdir="$SCRIPT_DIR" "$@"
+    exec python3 "$SCRIPT_DIR/Tools/configure/configure.py" --srcdir="$SCRIPT_DIR" "$@"
 else
     echo "Using configure.awk..."
-    "$SCRIPT_DIR/Tools/configure/configure.awk" --srcdir="$SCRIPT_DIR" "$@"
+    exec "$SCRIPT_DIR/Tools/configure/configure.awk" --srcdir="$SCRIPT_DIR" "$@"
 fi
