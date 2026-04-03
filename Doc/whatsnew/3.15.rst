@@ -1090,6 +1090,11 @@ timeit
   :ref:`environment variables <using-on-controlling-color>`.
   (Contributed by Yi Hong in :gh:`139374`.)
 
+* Make the target time of :meth:`timeit.Timer.autorange` configurable
+  and add ``--target-time`` option to the command-line interface.
+  (Contributed by Alessandro Cucci and Miikka Koskinen in :gh:`140283`.)
+
+
 tkinter
 -------
 
