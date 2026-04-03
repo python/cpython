@@ -977,7 +977,7 @@ function pyconf_check_c_const(    source) {
                 pyconf_define("const", "", 1, "Define to empty if const does not conform to ANSI C.")
 }
 
-function pyconf_check_define(macro, headers, source, inc, cv, rc, n, arr, i) {
+function pyconf_check_define(headers, macro, source, inc, cv, rc, n, arr, i) {
         cv = "ac_cv_define_" macro
         if (cv in CACHE)
                 return (CACHE[cv] == "yes")
