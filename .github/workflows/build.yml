@@ -350,12 +350,15 @@ jobs:
 
     runs-on: ${{ matrix.runs-on }}
     steps:
-      - uses: mxschmitt/action-tmate@v3  # FIXME
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           persist-credentials: false
       - name: Build and test
         run: ./Android/android.py ci --fast-ci ${{ matrix.arch }}-linux-android
+
+      # FIXME
+      - if: ${{ failure() }}
+        uses: mxschmitt/action-tmate@v3
 
   build-ios:
     name: iOS

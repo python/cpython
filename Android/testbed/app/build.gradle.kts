@@ -243,9 +243,11 @@ abstract class CreateEmulatorTask : DefaultTask() {
     }
 
     private val avdDir by lazy {
-        val userHome =
-            System.getenv("ANDROID_USER_HOME") ?:
-            (System.getProperty("user.home")!! + "/.android")
+        // XDG_CONFIG_HOME is respected by both avdmanager and Gradle.
+        val userHome = System.getenv("ANDROID_USER_HOME") ?: (
+            (System.getenv("XDG_CONFIG_HOME") ?: System.getProperty("user.home")!!)
+            + "/.android"
+        )
         File("$userHome/avd/gradle-managed", "$avdName.avd")
     }
 
@@ -278,10 +280,6 @@ abstract class CreateEmulatorTask : DefaultTask() {
         if (!File(avdDir.parentFile.parentFile, iniName).renameTo(
             File(avdDir.parentFile, iniName)
         )) {
-            // FIXME
-            execOps.exec {
-                commandLine("ls", "-lR", avdDir.parentFile.parentFile)
-            }
             throw GradleException("Failed to rename $iniName")
         }
     }
