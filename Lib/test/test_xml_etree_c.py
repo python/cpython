@@ -1,6 +1,7 @@
 # xml.etree test for cElementTree
 import io
 import struct
+import sys
 from test import support
 from test.support.import_helper import import_fresh_module
 import types
@@ -170,6 +171,15 @@ class MiscTests(unittest.TestCase):
         parser.feed(XML)
         del parser
         support.gc_collect()
+
+    @support.refcount_test
+    def test_xmlparser_refleaks_in___init__(self):
+        gettotalrefcount = support.get_attribute(sys, 'gettotalrefcount')
+        parser = cET.XMLParser()
+        refs_before = gettotalrefcount()
+        for _ in range(100):
+            parser.__init__()
+        self.assertAlmostEqual(gettotalrefcount() - refs_before, 0, delta=10)
 
     def test_dict_disappearing_during_get_item(self):
         # test fix for seg fault reported in issue 27946
