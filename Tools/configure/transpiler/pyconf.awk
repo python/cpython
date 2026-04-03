@@ -1428,44 +1428,32 @@ function pyconf_use_system_extensions() {
 # Environment save/restore
 # ---------------------------------------------------------------------------
 
-function pyconf_save_env(    k, keys, kc) {
-	_saved_env_depth++
-	for (k in V)
-		_saved_env_stack[_saved_env_depth, k] = V[k]
-	# Store the set of keys so we can restore exactly.
-	# Accumulate keys in array, then concatenate once to avoid mawk string
-	# concatenation corruption (repeated concatenation in loop causes memory issues).
-	kc = 0
-	for (k in V)
-		keys[++kc] = k
-	# Join keys with \036 separator
-	_saved_env_keys[_saved_env_depth] = _join_keys(keys, kc)
+function pyconf_save_env(    k) {
+        _saved_env_depth++
+        # Store values and keys using indexed arrays only — no string
+        # concatenation.  Building a long key-list string by repeated
+        # concatenation triggers memory corruption in mawk when V[]
+        # has hundreds of entries (as on CI runners with large ENVIRONs).
+        _saved_env_key_n[_saved_env_depth] = 0
+        for (k in V) {
+                _saved_env_stack[_saved_env_depth, k] = V[k]
+                _saved_env_key_n[_saved_env_depth]++
+                _saved_env_key_name[_saved_env_depth, _saved_env_key_n[_saved_env_depth]] = k
+        }
 }
 
-function _join_keys(arr, n,    i, result) {
-	# Join keys with \036 separator for environment save/restore.
-	# Called once per save to avoid repeated string concatenation in loop.
-	result = ""
-	for (i = 1; i <= n; i++)
-		result = result arr[i] "\036"
-	return result
-}
-
-function pyconf_restore_env(    k, n, keys, i) {
+function pyconf_restore_env(    k, n, i) {
         if (_saved_env_depth < 1) return
         for (k in V)
                 delete V[k]
-        n = split(_saved_env_keys[_saved_env_depth], keys, "\036")
+        n = _saved_env_key_n[_saved_env_depth]
         for (i = 1; i <= n; i++) {
-                if (keys[i] != "")
-                        V[keys[i]] = _saved_env_stack[_saved_env_depth, keys[i]]
+                k = _saved_env_key_name[_saved_env_depth, i]
+                V[k] = _saved_env_stack[_saved_env_depth, k]
+                delete _saved_env_stack[_saved_env_depth, k]
+                delete _saved_env_key_name[_saved_env_depth, i]
         }
-        # Clean up this level
-        for (i = 1; i <= n; i++) {
-                if (keys[i] != "")
-                        delete _saved_env_stack[_saved_env_depth, keys[i]]
-        }
-        delete _saved_env_keys[_saved_env_depth]
+        delete _saved_env_key_n[_saved_env_depth]
         _saved_env_depth--
 }
 
