@@ -871,22 +871,6 @@ cleanup:
     return res;
 }
 
-Py_NO_INLINE PyObject *
-_PyCallMethodDescriptorO_StackRef(
-    _PyStackRef callable,
-    PyCFunction cfunc,
-    _PyStackRef self_stackref,
-    _PyStackRef arg_stackref)
-{
-    PyObject *self = PyStackRef_AsPyObjectBorrow(self_stackref);
-    PyObject *arg = PyStackRef_AsPyObjectBorrow(arg_stackref);
-
-    PyObject *res = _PyCFunction_TrampolineCall(cfunc, self, arg);
-    _Py_LeaveRecursiveCallTstate(_PyThreadState_GET());
-    assert((res != NULL) ^ (PyErr_Occurred() != NULL));
-    return res;
-}
-
 PyObject *
 _PyCallMethodDescriptorFast_StackRefSteal(
     _PyStackRef callable,

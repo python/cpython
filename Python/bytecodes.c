@@ -4758,12 +4758,10 @@ dummy_func(
             EXIT_IF(_Py_ReachedRecursionLimit(tstate));
             STAT_INC(CALL, hit);
             PyCFunction cfunc = method->d_method->ml_meth;
-            PyObject *res_o = _PyCallMethodDescriptorO_StackRef(
-                callable,
-                cfunc,
-                arguments[0],
-                arguments[1]
-            );
+            PyObject *self = PyStackRef_AsPyObjectBorrow(arguments[0]);
+            PyObject *arg = PyStackRef_AsPyObjectBorrow(arguments[1]);
+            PyObject *res_o = _PyCFunction_TrampolineCall(cfunc, self, arg);
+            _Py_LeaveRecursiveCallTstate(tstate);
             assert((res_o != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
             if (res_o == NULL) {
                 ERROR_NO_POP();
@@ -4780,12 +4778,10 @@ dummy_func(
             EXIT_IF(_Py_ReachedRecursionLimit(tstate));
             STAT_INC(CALL, hit);
             volatile PyCFunction cfunc_v = (PyCFunction)cfunc;
-            PyObject *res_o = _PyCallMethodDescriptorO_StackRef(
-                callable,
-                cfunc_v,
-                args[0],
-                args[1]
-            );
+            PyObject *self = PyStackRef_AsPyObjectBorrow(args[0]);
+            PyObject *arg = PyStackRef_AsPyObjectBorrow(args[1]);
+            PyObject *res_o = _PyCFunction_TrampolineCall(cfunc_v, self, arg);
+            _Py_LeaveRecursiveCallTstate(tstate);
             assert((res_o != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
             if (res_o == NULL) {
                 ERROR_NO_POP();
