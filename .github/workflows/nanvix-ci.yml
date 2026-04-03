@@ -27,6 +27,7 @@ jobs:
     with:
       zutil-version: "v0.5.1"
       platforms: '["microvm"]'
+      memory-sizes: '["128mb","256mb"]'
       skip-full-test-modes: '[]'
       caller-event-name: ${{ github.event_name }}
     secrets:
