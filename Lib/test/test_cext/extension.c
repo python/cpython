@@ -119,8 +119,10 @@ _Py_COMP_DIAG_PUSH
 #endif
 
 PyDoc_STRVAR(_testcext_doc, "C test extension.");
+PyABIInfo_VAR(abi_info);
 
 static PyModuleDef_Slot _testcext_slots[] = {
+    {Py_mod_abi, &abi_info},
     {Py_mod_name, STR(MODULE_NAME)},
     {Py_mod_doc, (void*)(char*)_testcext_doc},
     {Py_mod_exec, (void*)_testcext_exec},

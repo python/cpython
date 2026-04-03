@@ -20,6 +20,15 @@ from _testinternalcapi import _PY_NSMALLPOSINTS, TIER2_THRESHOLD, TIER2_RESUME_T
 #For test of issue 136154
 GLOBAL_136154 = 42
 
+# For frozendict JIT tests
+FROZEN_DICT_CONST = frozendict(x=1, y=2)
+
+class _GenericKey:
+    pass
+
+_GENERIC_KEY = _GenericKey()
+
+
 @contextlib.contextmanager
 def clear_executors(func):
     # Clear executors in func before and after running a block
@@ -2003,8 +2012,8 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
         self.assertEqual(uops.count("_GUARD_NOS_DICT"), 0)
-        self.assertEqual(uops.count("_STORE_SUBSCR_DICT"), 1)
-        self.assertEqual(uops.count("_BINARY_OP_SUBSCR_DICT"), 1)
+        self.assertEqual(uops.count("_STORE_SUBSCR_DICT_KNOWN_HASH"), 1)
+        self.assertEqual(uops.count("_BINARY_OP_SUBSCR_DICT_KNOWN_HASH"), 1)
 
     def test_remove_guard_for_known_type_list(self):
         def f(n):
@@ -2308,8 +2317,45 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertEqual(res, TIER2_THRESHOLD)
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
-        self.assertIn("_BINARY_OP_SUBSCR_DICT", uops)
+        self.assertIn("_BINARY_OP_SUBSCR_DICT_KNOWN_HASH", uops)
         self.assertLessEqual(count_ops(ex, "_POP_TOP"), 2)
+
+    def test_binary_op_subscr_dict_known_hash(self):
+        # str, int, bytes, float, complex, tuple and any python object which has generic hash
+        def testfunc(n):
+            x = 0
+            d = {'a': 1, 1: 2, b'b': 3, (1, 2): 4, _GENERIC_KEY: 5, 1.5: 6, 1+2j: 7}
+            for _ in range(n):
+                x += d['a'] + d[1] + d[b'b'] + d[(1, 2)] + d[_GENERIC_KEY] + d[1.5] + d[1+2j]
+            return x
+
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, 28 * TIER2_THRESHOLD)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertIn("_BINARY_OP_SUBSCR_DICT_KNOWN_HASH", uops)
+        self.assertNotIn("_BINARY_OP_SUBSCR_DICT", uops)
+
+    def test_store_subscr_dict_known_hash(self):
+        # str, int, bytes, float, complex, tuple and any python object which has generic hash
+        def testfunc(n):
+            d = {'a': 0, 1: 0, b'b': 0, (1, 2): 0, _GENERIC_KEY: 0, 1.5: 0, 1+2j: 0}
+            for _ in range(n):
+                d['a'] += 1
+                d[1] += 2
+                d[b'b'] += 3
+                d[(1, 2)] += 4
+                d[_GENERIC_KEY] += 5
+                d[1.5] += 6
+                d[1+2j] += 7
+            return d['a'] + d[1] + d[b'b'] + d[(1, 2)] + d[_GENERIC_KEY] + d[1.5] + d[1+2j]
+
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, 28 * TIER2_THRESHOLD)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertIn("_STORE_SUBSCR_DICT_KNOWN_HASH", uops)
+        self.assertNotIn("_STORE_SUBSCR_DICT", uops)
 
     def test_contains_op(self):
         def testfunc(n):
@@ -3697,7 +3743,7 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertEqual(res, 10)
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
-        self.assertIn("_STORE_SUBSCR_DICT", uops)
+        self.assertIn("_STORE_SUBSCR_DICT_KNOWN_HASH", uops)
         self.assertLessEqual(count_ops(ex, "_POP_TOP"), 1)
         self.assertIn("_POP_TOP_NOP", uops)
 
@@ -4155,11 +4201,40 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertLessEqual(count_ops(ex, "_POP_TOP_INT"), 1)
         self.assertIn("_POP_TOP_NOP", uops)
 
-    def test_binary_subscr_list_slice(self):
+    def test_binary_subscr_frozendict_lowering(self):
         def testfunc(n):
             x = 0
             for _ in range(n):
-                l = [1, 2, 3]
+                x += FROZEN_DICT_CONST['x']
+            return x
+
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, TIER2_THRESHOLD)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertIn("_INSERT_2_LOAD_CONST_INLINE_BORROW", uops)
+        self.assertNotIn("_BINARY_OP_SUBSCR_DICT", uops)
+
+    def test_binary_subscr_frozendict_const_fold(self):
+        def testfunc(n):
+            x = 0
+            for _ in range(n):
+                if FROZEN_DICT_CONST['x'] == 1:
+                    x += 1
+            return x
+
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, TIER2_THRESHOLD)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        # lookup result is folded to constant 1, so comparison is optimized away
+        self.assertNotIn("_COMPARE_OP_INT", uops)
+
+    def test_binary_subscr_list_slice(self):
+        def testfunc(n):
+            x = 0
+            l = [1, 2, 3]
+            for _ in range(n):
                 x += l[0:1][0]
             return x
 
@@ -4169,7 +4244,7 @@ class TestUopsOptimization(unittest.TestCase):
 
         self.assertIn("_BINARY_OP_SUBSCR_LIST_SLICE", uops)
         self.assertNotIn("_GUARD_TOS_LIST", uops)
-        self.assertEqual(count_ops(ex, "_POP_TOP"), 3)
+        self.assertEqual(count_ops(ex, "_POP_TOP"), 2)
         self.assertEqual(count_ops(ex, "_POP_TOP_NOP"), 4)
 
     def test_is_op(self):
@@ -4466,6 +4541,21 @@ class TestUopsOptimization(unittest.TestCase):
         uops = get_opnames(ex)
 
         self.assertIn("_DICT_MERGE", uops)
+        self.assertGreaterEqual(count_ops(ex, "_POP_TOP_NOP"), 1)
+        self.assertLessEqual(count_ops(ex, "_POP_TOP"), 2)
+
+    def test_list_extend(self):
+        def testfunc(n):
+            a = [1, 2, 3]
+            for _ in range(n):
+                x = [*a]
+            return x
+
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, [1, 2, 3])
+        uops = get_opnames(ex)
+
+        self.assertIn("_LIST_EXTEND", uops)
         self.assertGreaterEqual(count_ops(ex, "_POP_TOP_NOP"), 1)
         self.assertLessEqual(count_ops(ex, "_POP_TOP"), 2)
 

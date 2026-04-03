@@ -1316,6 +1316,22 @@
             break;
         }
 
+        case _BINARY_OP_SUBSCR_DICT_KNOWN_HASH: {
+            JitOptRef res;
+            JitOptRef ds;
+            JitOptRef ss;
+            res = sym_new_not_null(ctx);
+            ds = sym_new_not_null(ctx);
+            ss = sym_new_not_null(ctx);
+            CHECK_STACK_BOUNDS(1);
+            stack_pointer[-2] = res;
+            stack_pointer[-1] = ds;
+            stack_pointer[0] = ss;
+            stack_pointer += 1;
+            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+            break;
+        }
+
         case _BINARY_OP_SUBSCR_DICT: {
             JitOptRef sub_st;
             JitOptRef dict_st;
@@ -1324,9 +1340,62 @@
             JitOptRef ss;
             sub_st = stack_pointer[-1];
             dict_st = stack_pointer[-2];
+            PyObject *sub = sym_get_const(ctx, sub_st);
+            if (sub != NULL) {
+                optimize_dict_known_hash(ctx, dependencies, this_instr,
+                                     sub, _BINARY_OP_SUBSCR_DICT_KNOWN_HASH);
+            }
             res = sym_new_not_null(ctx);
             ds = dict_st;
             ss = sub_st;
+            if (sym_matches_type(dict_st, &PyFrozenDict_Type)) {
+                if (
+                    sym_is_safe_const(ctx, dict_st) &&
+                    sym_is_safe_const(ctx, sub_st)
+                ) {
+                    JitOptRef dict_st_sym = dict_st;
+                    JitOptRef sub_st_sym = sub_st;
+                    _PyStackRef dict_st = sym_get_const_as_stackref(ctx, dict_st_sym);
+                    _PyStackRef sub_st = sym_get_const_as_stackref(ctx, sub_st_sym);
+                    _PyStackRef res_stackref;
+                    _PyStackRef ds_stackref;
+                    _PyStackRef ss_stackref;
+                    /* Start of uop copied from bytecodes for constant evaluation */
+                    PyObject *sub = PyStackRef_AsPyObjectBorrow(sub_st);
+                    PyObject *dict = PyStackRef_AsPyObjectBorrow(dict_st);
+                    assert(PyAnyDict_CheckExact(dict));
+                    STAT_INC(BINARY_OP, hit);
+                    PyObject *res_o;
+                    int rc = PyDict_GetItemRef(dict, sub, &res_o);
+                    if (rc == 0) {
+                        _PyErr_SetKeyError(sub);
+                    }
+                    if (rc <= 0) {
+                        JUMP_TO_LABEL(error);
+                    }
+                    res_stackref = PyStackRef_FromPyObjectSteal(res_o);
+                    ds_stackref = dict_st;
+                    ss_stackref = sub_st;
+                    /* End of uop copied from bytecodes for constant evaluation */
+                    (void)ds_stackref;
+                    (void)ss_stackref;
+                    res = sym_new_const_steal(ctx, PyStackRef_AsPyObjectSteal(res_stackref));
+                    if (sym_is_const(ctx, res)) {
+                        PyObject *result = sym_get_const(ctx, res);
+                        if (_Py_IsImmortal(result)) {
+                            // Replace with _INSERT_2_LOAD_CONST_INLINE_BORROW since we have two inputs and an immortal result
+                            ADD_OP(_INSERT_2_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)result);
+                        }
+                    }
+                    CHECK_STACK_BOUNDS(1);
+                    stack_pointer[-2] = res;
+                    stack_pointer[-1] = ds;
+                    stack_pointer[0] = ss;
+                    stack_pointer += 1;
+                    ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+                    break;
+                }
+            }
             CHECK_STACK_BOUNDS(1);
             stack_pointer[-2] = res;
             stack_pointer[-1] = ds;
@@ -1423,13 +1492,30 @@
         }
 
         case _STORE_SUBSCR_DICT: {
+            JitOptRef sub;
             JitOptRef dict_st;
             JitOptRef value;
             JitOptRef st;
+            sub = stack_pointer[-1];
             dict_st = stack_pointer[-2];
             value = stack_pointer[-3];
+            PyObject *sub_o = sym_get_const(ctx, sub);
+            if (sub_o != NULL) {
+                optimize_dict_known_hash(ctx, dependencies, this_instr,
+                                     sub_o, _STORE_SUBSCR_DICT_KNOWN_HASH);
+            }
             (void)value;
             st = dict_st;
+            CHECK_STACK_BOUNDS(-2);
+            stack_pointer[-3] = st;
+            stack_pointer += -2;
+            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+            break;
+        }
+
+        case _STORE_SUBSCR_DICT_KNOWN_HASH: {
+            JitOptRef st;
+            st = sym_new_not_null(ctx);
             CHECK_STACK_BOUNDS(-2);
             stack_pointer[-3] = st;
             stack_pointer += -2;
@@ -2043,9 +2129,14 @@
         }
 
         case _LIST_EXTEND: {
-            CHECK_STACK_BOUNDS(-1);
-            stack_pointer += -1;
-            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+            JitOptRef iterable_st;
+            JitOptRef list_st;
+            JitOptRef i;
+            iterable_st = stack_pointer[-1];
+            list_st = stack_pointer[-2 - (oparg-1)];
+            (void)list_st;
+            i = iterable_st;
+            stack_pointer[-1] = i;
             break;
         }
 

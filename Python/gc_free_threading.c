@@ -2383,6 +2383,21 @@ gc_collect_internal(PyInterpreterState *interp, struct collection_state *state, 
     handle_legacy_finalizers(state);
 }
 
+static struct gc_generation_stats *
+get_stats(GCState *gcstate, int gen)
+{
+    if (gen == 0) {
+        struct gc_young_stats_buffer *buffer = &gcstate->generation_stats.young;
+        struct gc_generation_stats *stats = &buffer->items[buffer->index];
+        return stats;
+    }
+    else {
+        struct gc_old_stats_buffer *buffer = &gcstate->generation_stats.old[gen - 1];
+        struct gc_generation_stats *stats = &buffer->items[buffer->index];
+        return stats;
+    }
+}
+
 /* This is the main function.  Read this to understand how the
  * collection process works. */
 static Py_ssize_t
@@ -2471,7 +2486,7 @@ gc_collect_main(PyThreadState *tstate, int generation, _PyGC_Reason reason)
     }
 
     /* Update stats */
-    struct gc_generation_stats *stats = &gcstate->generation_stats[generation];
+    struct gc_generation_stats *stats = get_stats(gcstate, generation);
     stats->collections++;
     stats->collected += m;
     stats->uncollectable += n;

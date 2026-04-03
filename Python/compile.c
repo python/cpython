@@ -1100,18 +1100,22 @@ _PyCompile_TweakInlinedComprehensionScopes(compiler *c, location loc,
                 assert(orig == NULL || orig == Py_True || orig == Py_False);
                 if (orig != Py_True) {
                     if (PyDict_SetItem(c->u->u_metadata.u_fasthidden, k, Py_True) < 0) {
+                        Py_XDECREF(orig);
                         return ERROR;
                     }
                     if (state->fast_hidden == NULL) {
                         state->fast_hidden = PySet_New(NULL);
                         if (state->fast_hidden == NULL) {
+                            Py_XDECREF(orig);
                             return ERROR;
                         }
                     }
                     if (PySet_Add(state->fast_hidden, k) < 0) {
+                        Py_XDECREF(orig);
                         return ERROR;
                     }
                 }
+                Py_XDECREF(orig);
             }
         }
     }
