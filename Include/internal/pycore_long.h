@@ -82,8 +82,6 @@ static inline PyObject* _PyLong_FromUnsignedChar(unsigned char i)
     return (PyObject *)&_PyLong_SMALL_INTS[_PY_NSMALLNEGINTS+i];
 }
 
-
-
 // _PyLong_Frexp returns a double x and an exponent e such that the
 // true value is approximately equal to x * 2**e.  x is
 // 0.0 if and only if the input is 0 (in which case, e and x are both
