@@ -778,6 +778,41 @@ codegen_leave_annotations_scope(compiler *c, location loc)
 }
 
 static int
+codegen_deferred_annotations_entry(compiler *c, location loc,
+    PyObject *conditional_annotation_indices, int scope_type, stmt_ty st, PyObject *mangled, Py_ssize_t i)
+{
+    PyObject *cond_index = PyList_GET_ITEM(conditional_annotation_indices, i);
+    assert(PyLong_CheckExact(cond_index));
+    long idx = PyLong_AS_LONG(cond_index);
+    NEW_JUMP_TARGET_LABEL(c, not_set);
+
+    if (idx != -1) {
+        ADDOP_LOAD_CONST(c, LOC(st), cond_index);
+        if (scope_type == COMPILE_SCOPE_CLASS) {
+            ADDOP_NAME(
+                c, LOC(st), LOAD_DEREF, &_Py_ID(__conditional_annotations__), freevars);
+        }
+        else {
+            ADDOP_NAME(
+                c, LOC(st), LOAD_GLOBAL, &_Py_ID(__conditional_annotations__), names);
+        }
+
+        ADDOP_I(c, LOC(st), CONTAINS_OP, 0);
+        ADDOP_JUMP(c, LOC(st), POP_JUMP_IF_FALSE, not_set);
+    }
+
+    VISIT(c, expr, st->v.AnnAssign.annotation);
+    ADDOP_I(c, LOC(st), COPY, 2);
+    ADDOP_LOAD_CONST(c, LOC(st), mangled);
+    // stack now contains <annos> <name> <annos> <value>
+    ADDOP(c, loc, STORE_SUBSCR);
+    // stack now contains <annos>
+
+    USE_LABEL(c, not_set);
+    return SUCCESS;
+}
+
+static int
 codegen_deferred_annotations_body(compiler *c, location loc,
     PyObject *deferred_anno, PyObject *conditional_annotation_indices, int scope_type)
 {
@@ -798,37 +833,11 @@ codegen_deferred_annotations_body(compiler *c, location loc,
         if (!mangled) {
             return ERROR;
         }
-        // NOTE: ref of mangled can be leaked on ADDOP* and VISIT macros due to early returns
-        // fixing would require an overhaul of these macros
 
-        PyObject *cond_index = PyList_GET_ITEM(conditional_annotation_indices, i);
-        assert(PyLong_CheckExact(cond_index));
-        long idx = PyLong_AS_LONG(cond_index);
-        NEW_JUMP_TARGET_LABEL(c, not_set);
-
-        if (idx != -1) {
-            ADDOP_LOAD_CONST(c, LOC(st), cond_index);
-            if (scope_type == COMPILE_SCOPE_CLASS) {
-                ADDOP_NAME(
-                    c, LOC(st), LOAD_DEREF, &_Py_ID(__conditional_annotations__), freevars);
-            }
-            else {
-                ADDOP_NAME(
-                    c, LOC(st), LOAD_GLOBAL, &_Py_ID(__conditional_annotations__), names);
-            }
-
-            ADDOP_I(c, LOC(st), CONTAINS_OP, 0);
-            ADDOP_JUMP(c, LOC(st), POP_JUMP_IF_FALSE, not_set);
-        }
-
-        VISIT(c, expr, st->v.AnnAssign.annotation);
-        ADDOP_I(c, LOC(st), COPY, 2);
-        ADDOP_LOAD_CONST_NEW(c, LOC(st), mangled);
-        // stack now contains <annos> <name> <annos> <value>
-        ADDOP(c, loc, STORE_SUBSCR);
-        // stack now contains <annos>
-
-        USE_LABEL(c, not_set);
+        int ret = codegen_deferred_annotations_entry(c, loc, conditional_annotation_indices,
+                                                         scope_type, st, mangled, i);
+        Py_DECREF(mangled);
+        RETURN_IF_ERROR(ret);
     }
     return SUCCESS;
 }
