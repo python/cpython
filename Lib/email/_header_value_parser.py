@@ -1549,6 +1549,7 @@ def get_local_part(value):
 
     """
     local_part = LocalPart()
+    orig_value = value
     leader = None
     if value and value[0] in CFWS_LEADER:
         leader, value = get_cfws(value)
@@ -1568,7 +1569,7 @@ def get_local_part(value):
         token[:0] = [leader]
     local_part.append(token)
     if value and (value[0]=='\\' or value[0] not in PHRASE_ENDS):
-        obs_local_part, value = get_obs_local_part(str(local_part) + value)
+        obs_local_part, value = get_obs_local_part(orig_value)
         if obs_local_part.token_type == 'invalid-obs-local-part':
             local_part.defects.append(errors.InvalidHeaderDefect(
                 "local-part is not dot-atom, quoted-string, or obs-local-part"))

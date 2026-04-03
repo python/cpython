@@ -3048,6 +3048,25 @@ class TestParser(TestParserMixin, TestEmailBase):
                 ),
             ),
 
+        # Encoded words are not legitimate in local-part, but we decode
+        # them anyway.
+
+        invalid_ew_atoms = C(
+            '=?utf-8?q?foo_?="=?utf-8?q?_bar?=".bird',
+            # It's not clear this str is the best choice.  It's
+            # a consequence of the underlying parsed structures.
+            stringified='foo " bar".bird',
+            value="foo  bar.bird",
+            local_part="foo  bar.bird",
+            defects=[
+                # XXX XXX There should be exactly one ew whitespace defect
+                # here, but the number generated will change during refactor,
+                # until it is fixed when get_obs_local_part is refactored.
+                *[missing_whitespace_after_ew_defect]*2,
+                missing_dot_in_local_part_defect,
+                ew_inside_quoted_string_defect,
+                ],
+            ),
 
         )
 
