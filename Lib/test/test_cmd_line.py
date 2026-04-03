@@ -1281,11 +1281,11 @@ class CmdLineTest(unittest.TestCase):
                          '-X presite requires a Python debug build')
     def test_presite(self):
         entrypoint = "test.test_cmd_line:presite_func"
-        proc = assert_python_ok("-X", f"presite={entrypoint}")
+        proc = assert_python_ok("-X", f"presite={entrypoint}", "-c", "pass")
         self.assertEqual(proc.out.rstrip(), b"presite func")
 
         entrypoint = "test.test_cmd_line:presite.attr.func"
-        proc = assert_python_ok("-X", f"presite={entrypoint}")
+        proc = assert_python_ok("-X", f"presite={entrypoint}", "-c", "pass")
         self.assertEqual(proc.out.rstrip(), b"presite func")
 
 
