@@ -26,6 +26,7 @@ _find_awk() {
     echo awk
 }
 _awk=$(_find_awk)
+echo "Configure script using AWK found at $_awk"
 
 _tmpf=$(mktemp "${TMPDIR:-/tmp}/configure.XXXXXXXXXX") || exit 1
 trap 'rm -f "$_tmpf"' EXIT

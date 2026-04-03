@@ -1,7 +1,7 @@
 #!/bin/sh
 #
 # This runs the Python-based configure.py script.
-# Or, if python3 doesn't exist, runs configure-new.
+# Or, if python3 doesn't exist, runs configure.awk.
 
 SCRIPT_DIR="$(dirname "$0")"
 
@@ -12,6 +12,6 @@ if false; then
     export PYTHONPATH=$SCRIPT_DIR/Tools/configure
     python3 "$SCRIPT_DIR/Tools/configure/configure.py" --srcdir="$SCRIPT_DIR" "$@"
 else
-    echo "Using AWK/sh configure-new..."
-    "$SCRIPT_DIR/configure-new" --srcdir="$SCRIPT_DIR" "$@"
+    echo "Using configure.awk..."
+    "$SCRIPT_DIR/Tools/configure/configure.awk" --srcdir="$SCRIPT_DIR" "$@"
 fi
