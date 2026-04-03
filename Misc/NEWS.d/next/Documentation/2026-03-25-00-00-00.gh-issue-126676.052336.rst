@@ -1,0 +1,2 @@
+Expand :mod:`argparse` documentation for ``type=bool`` with a demonstration
+of the surprising behavior and pointers to common alternatives.
