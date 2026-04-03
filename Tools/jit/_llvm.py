@@ -46,14 +46,10 @@ async def _run(tool: str, args: typing.Iterable[str], echo: bool = False) -> str
         if os.name == "nt":
             env = os.environ.copy()
             try:
-                # https://github.com/python/cpython/issues/146210
-                # When the Python iterpreter is built with
-                # "/p:PlatformToolset=ClangCL" "/p:LLVMInstallDir=...""
-                # msbuild populates the INCLUDE variable based on this
-                # clang version, which might be different to the one used
-                # for building the jit stencils. Mixing those include paths
-                # can cause mysterious build errors, so we remove the
-                # variable from the environment when invoking LLVM tools.
+                # When building with /p:PlatformToolset=ClangCL, the VS build
+                # system puts that clang's include path into INCLUDE. The JIT's
+                # clang may be a different version, and mismatched headers cause
+                # build errors. See https://github.com/python/cpython/issues/146210
                 del env["INCLUDE"]
             except KeyError:
                 pass
