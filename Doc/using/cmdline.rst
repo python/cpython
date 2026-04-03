@@ -481,9 +481,9 @@ Miscellaneous options
 
    The *message* field must match the start of the warning message;
    this match is case-insensitive.
-   If it is at least two characters long and starts and ends with a forward
-   slash (``/``), it specifies a regular expression, otherwise it specifies a
-   literal string.
+   If it starts and ends with a forward slash (``/``), it specifies a regular
+   expression (a single ``/`` on its own is treated as a literal string),
+   otherwise it specifies a literal string.
 
    The *category* field matches the warning category
    (ex: ``DeprecationWarning``). This must be a class name; the match test
@@ -492,10 +492,11 @@ Miscellaneous options
 
    The *module* field matches the (fully qualified) module name; this match is
    case-sensitive.
-   If it is at least two characters long and starts and ends with a forward
-   slash (``/``), it specifies a regular expression that the start of the fully
-   qualified module name must match, otherwise it specifies a literal string
-   that the fully qualified module name must be equal to.
+   If it starts and ends with a forward slash (``/``), it specifies a regular
+   expression (a single ``/`` on its own is treated as a literal string) that
+   the start of the fully qualified module name must match, otherwise it
+   specifies a literal string that the fully qualified module name must be
+   equal to.
 
    The *lineno* field matches the line number, where zero matches all line
    numbers and is thus equivalent to an omitted line number.
