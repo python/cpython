@@ -778,11 +778,8 @@ codegen_leave_annotations_scope(compiler *c, location loc)
 }
 
 static int
-codegen_deferred_annotations_entry(compiler *c, location loc,
-    PyObject *conditional_annotation_indices, int scope_type, stmt_ty st, PyObject *mangled, Py_ssize_t i)
+codegen_deferred_annotations_entry(compiler *c, location loc, int scope_type, stmt_ty st, PyObject *mangled, PyObject *cond_index)
 {
-    PyObject *cond_index = PyList_GET_ITEM(conditional_annotation_indices, i);
-    assert(PyLong_CheckExact(cond_index));
     long idx = PyLong_AS_LONG(cond_index);
     NEW_JUMP_TARGET_LABEL(c, not_set);
 
@@ -829,13 +826,16 @@ codegen_deferred_annotations_body(compiler *c, location loc,
         if (st == NULL) {
             return ERROR;
         }
+
+        PyObject *cond_index = PyList_GET_ITEM(conditional_annotation_indices, i);
+        assert(PyLong_CheckExact(cond_index));
+
         PyObject *mangled = _PyCompile_Mangle(c, st->v.AnnAssign.target->v.Name.id);
         if (!mangled) {
             return ERROR;
         }
 
-        int ret = codegen_deferred_annotations_entry(c, loc, conditional_annotation_indices,
-                                                         scope_type, st, mangled, i);
+        int ret = codegen_deferred_annotations_entry(c, loc, scope_type, st, mangled, cond_index);
         Py_DECREF(mangled);
         RETURN_IF_ERROR(ret);
     }
