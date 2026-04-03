@@ -1,2 +1,1 @@
-Guarantees that the CPython implementation of :meth:`collections.UserDict.popitem` will pop in the same order as the wrapped dictionary rather than an arbitrary order.
-This change will make :class:`UserDict` instances behave more similarly to :class:`dict` (or whichever mapping type the instance is customized to use).
+Guarantees that :meth:`collections.UserDict.popitem` will pop in the same order as the wrapped dictionary rather than an arbitrary order.
