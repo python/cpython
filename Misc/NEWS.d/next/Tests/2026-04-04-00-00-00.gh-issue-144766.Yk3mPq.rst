@@ -1,0 +1,4 @@
+Fix flaky :func:`test_trampoline_works_with_forks` by using ``os._exit(0)``
+in the fork child to avoid fragile Python finalization, and by flushing
+stdout before exit. Also fix the parent's wait status handling to use
+``os.WEXITSTATUS()``.

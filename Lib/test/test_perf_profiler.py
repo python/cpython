@@ -116,7 +116,7 @@ class TestPerfTrampoline(unittest.TestCase):
                 def foo():
                     pid = os.fork()
                     if pid == 0:
-                        print(os.getpid())
+                        print(os.getpid(), flush=True)
                         baz_fork()
                         os._exit(0)
                     else:
