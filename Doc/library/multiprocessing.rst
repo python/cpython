@@ -921,6 +921,10 @@ For an example of the usage of queues for interprocess communication see
 
 .. class:: Queue([maxsize])
 
+   .. note::
+      Unlike :class:`queue.Queue`, :class:`multiprocessing.Queue` does not
+      implement the :meth:`~queue.Queue.shutdown` method.
+
    Returns a process shared queue implemented using a pipe and a few
    locks/semaphores.  When a process first puts an item on the queue a feeder
    thread is started which transfers objects from a buffer into the pipe.
