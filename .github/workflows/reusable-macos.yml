@@ -12,6 +12,8 @@ on:
         required: true
         type: string
 
+permissions: {}
+
 env:
   FORCE_COLOR: 1
 
