@@ -15,6 +15,8 @@ val inSourceTree = (
 
 val KNOWN_ABIS = mapOf(
     "aarch64-linux-android" to "arm64-v8a",
+    "arm-linux-androideabi" to "armeabi-v7a",
+    "i686-linux-android" to "x86",
     "x86_64-linux-android" to "x86_64",
 )
 
