@@ -2958,8 +2958,6 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertEqual(res, sum(range(TIER2_THRESHOLD)))
         uops = get_opnames(ex)
         self.assertIn("_CALL_LIST_APPEND", uops)
-        # _GUARD_TYPE_VERSION resolves the list type from recorded type
-        # info, so these redundant guards are eliminated:
         self.assertNotIn("_GUARD_NOS_LIST", uops)
         self.assertNotIn("_GUARD_CALLABLE_LIST_APPEND", uops)
 
