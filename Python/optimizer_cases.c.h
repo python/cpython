@@ -4135,6 +4135,10 @@
             break;
         }
 
+        case _CHECK_RECURSION_LIMIT: {
+            break;
+        }
+
         case _CALL_METHOD_DESCRIPTOR_O_INLINE: {
             JitOptRef res;
             JitOptRef c;
