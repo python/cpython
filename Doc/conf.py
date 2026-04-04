@@ -69,7 +69,7 @@ manpages_url = 'https://manpages.debian.org/{path}'
 
 # General substitutions.
 project = 'Python'
-copyright = "2001 Python Software Foundation"
+copyright = "2001-%Y, Python Software Foundation"
 _doc_authors = 'Python documentation authors'
 
 # We look for the Include/patchlevel.h file in the current Python source tree
