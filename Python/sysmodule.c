@@ -2796,7 +2796,7 @@ The filter is a callable which disables lazy imports when they
 would otherwise be enabled. Returns True if the import is still enabled
 or False to disable it. The callable is called with:
 
-(importing_module_name, imported_module_name, [fromlist])
+(importing_module_name, resolved_imported_module_name, [fromlist])
 
 Pass None to clear the filter.
 [clinic start generated code]*/
