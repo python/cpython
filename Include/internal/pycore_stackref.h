@@ -615,6 +615,24 @@ PyStackRef_FromPyObjectBorrow(PyObject *obj)
     return (_PyStackRef){ .bits = (uintptr_t)obj | Py_TAG_REFCNT};
 }
 
+/* Create a stackref from a pre-tagged operand (tag bits already set).
+   Used by _LOAD_CONST_INLINE_BORROW variants where the operand is
+   tagged at trace creation time to avoid tagging on every execution. */
+static inline _PyStackRef
+PyStackRef_FromPreTagged(uintptr_t tagged)
+{
+    assert(tagged & Py_TAG_REFCNT);
+    return (_PyStackRef){ .bits = tagged };
+}
+
+/* Tag a PyObject pointer as a borrowed operand for BORROW variants. */
+#define PyStackRef_TagBorrow(ptr) \
+    ((uintptr_t)(ptr) | Py_TAG_REFCNT)
+
+/* Strip tag bits from a pre-tagged operand to recover the PyObject pointer. */
+#define PyStackRef_UntagBorrow(tagged) \
+    ((PyObject *)((uintptr_t)(tagged) & ~Py_TAG_BITS))
+
 /* WARNING: This macro evaluates its argument more than once */
 #ifdef _WIN32
 #define PyStackRef_DUP(REF) \

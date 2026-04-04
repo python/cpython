@@ -5874,7 +5874,7 @@ dummy_func(
         }
 
         tier2 pure op(_LOAD_CONST_INLINE_BORROW, (ptr/4 -- value)) {
-            value = PyStackRef_FromPyObjectBorrow(ptr);
+            value = PyStackRef_FromPreTagged((uintptr_t)ptr);
         }
 
         tier2 op(_POP_CALL, (callable, null --)) {
@@ -5900,20 +5900,20 @@ dummy_func(
 
         tier2 op(_POP_TOP_LOAD_CONST_INLINE_BORROW, (ptr/4, pop -- value)) {
             PyStackRef_CLOSE(pop);
-            value = PyStackRef_FromPyObjectBorrow(ptr);
+            value = PyStackRef_FromPreTagged((uintptr_t)ptr);
         }
 
         tier2 op(_POP_TWO_LOAD_CONST_INLINE_BORROW, (ptr/4, pop1, pop2 -- value)) {
             PyStackRef_CLOSE(pop2);
             PyStackRef_CLOSE(pop1);
-            value = PyStackRef_FromPyObjectBorrow(ptr);
+            value = PyStackRef_FromPreTagged((uintptr_t)ptr);
         }
 
         tier2 op(_POP_CALL_LOAD_CONST_INLINE_BORROW, (ptr/4, callable, null -- value)) {
             (void)null; // Silence compiler warnings about unused variables
             DEAD(null);
             PyStackRef_CLOSE(callable);
-            value = PyStackRef_FromPyObjectBorrow(ptr);
+            value = PyStackRef_FromPreTagged((uintptr_t)ptr);
         }
 
         tier2 op(_POP_CALL_ONE_LOAD_CONST_INLINE_BORROW, (ptr/4, callable, null, pop -- value)) {
@@ -5921,7 +5921,7 @@ dummy_func(
             (void)null; // Silence compiler warnings about unused variables
             DEAD(null);
             PyStackRef_CLOSE(callable);
-            value = PyStackRef_FromPyObjectBorrow(ptr);
+            value = PyStackRef_FromPreTagged((uintptr_t)ptr);
         }
 
         tier2 op(_INSERT_1_LOAD_CONST_INLINE, (ptr/4, left -- res, l)) {
@@ -5931,26 +5931,26 @@ dummy_func(
         }
 
         tier2 op(_INSERT_1_LOAD_CONST_INLINE_BORROW, (ptr/4, left -- res, l)) {
-            res = PyStackRef_FromPyObjectBorrow(ptr);
+            res = PyStackRef_FromPreTagged((uintptr_t)ptr);
             l = left;
             INPUTS_DEAD();
         }
 
         tier2 op(_INSERT_2_LOAD_CONST_INLINE_BORROW, (ptr/4, left, right -- res, l, r)) {
-            res = PyStackRef_FromPyObjectBorrow(ptr);
+            res = PyStackRef_FromPreTagged((uintptr_t)ptr);
             l = left;
             r = right;
             INPUTS_DEAD();
         }
 
         tier2 op(_SHUFFLE_2_LOAD_CONST_INLINE_BORROW, (ptr/4, callable, null, arg -- res, a)) {
-            res = PyStackRef_FromPyObjectBorrow(ptr);
+            res = PyStackRef_FromPreTagged((uintptr_t)ptr);
             a = arg;
             INPUTS_DEAD();
         }
 
         tier2 op(_SHUFFLE_3_LOAD_CONST_INLINE_BORROW, (ptr/4, callable, null, arg -- res, a, c)) {
-            res = PyStackRef_FromPyObjectBorrow(ptr);
+            res = PyStackRef_FromPreTagged((uintptr_t)ptr);
             a = arg;
             c = callable;
             INPUTS_DEAD();
@@ -5962,7 +5962,7 @@ dummy_func(
             (void)null; // Silence compiler warnings about unused variables
             DEAD(null);
             PyStackRef_CLOSE(callable);
-            value = PyStackRef_FromPyObjectBorrow(ptr);
+            value = PyStackRef_FromPreTagged((uintptr_t)ptr);
         }
 
         tier2 op(_LOAD_CONST_UNDER_INLINE, (ptr/4, old -- value, new)) {
@@ -5974,7 +5974,7 @@ dummy_func(
         tier2 op(_LOAD_CONST_UNDER_INLINE_BORROW, (ptr/4, old -- value, new)) {
             new = old;
             DEAD(old);
-            value = PyStackRef_FromPyObjectBorrow(ptr);
+            value = PyStackRef_FromPreTagged((uintptr_t)ptr);
         }
 
         tier2 op(_START_EXECUTOR, (executor/4 --)) {

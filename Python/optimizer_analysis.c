@@ -174,14 +174,15 @@ convert_global_to_const(_PyUOpInstruction *inst, PyObject *obj, bool pop, bool i
     if (res == NULL) {
         return NULL;
     }
+    bool borrow = _Py_IsImmortal(res);
     if (insert) {
-        if (_Py_IsImmortal(res)) {
+        if (borrow) {
             inst->opcode = _INSERT_1_LOAD_CONST_INLINE_BORROW;
         } else {
             inst->opcode = _INSERT_1_LOAD_CONST_INLINE;
         }
     } else {
-        if (_Py_IsImmortal(res)) {
+        if (borrow) {
             inst->opcode = pop ? _POP_TOP_LOAD_CONST_INLINE_BORROW : _LOAD_CONST_INLINE_BORROW;
         } else {
             inst->opcode = pop ? _POP_TOP_LOAD_CONST_INLINE : _LOAD_CONST_INLINE;
@@ -191,7 +192,7 @@ convert_global_to_const(_PyUOpInstruction *inst, PyObject *obj, bool pop, bool i
             assert(inst[1].oparg & 1);
         }
     }
-    inst->operand0 = (uint64_t)res;
+    inst->operand0 = borrow ? PyStackRef_TagBorrow(res) : (uint64_t)res;
     return res;
 }
 
@@ -341,7 +342,7 @@ optimize_to_bool(
         int opcode = insert_mode ?
             _INSERT_1_LOAD_CONST_INLINE_BORROW :
             _POP_TOP_LOAD_CONST_INLINE_BORROW;
-        ADD_OP(opcode, 0, (uintptr_t)load);
+        ADD_OP(opcode, 0, PyStackRef_TagBorrow(load));
         *result_ptr = sym_new_const(ctx, load);
         return 1;
     }
@@ -395,11 +396,13 @@ lookup_attr(JitOptContext *ctx, _PyBloomFilter *dependencies, _PyUOpInstruction 
         PyObject *lookup = _PyType_Lookup(type, name);
         if (lookup) {
             int opcode = mortal;
+            uintptr_t operand = (uintptr_t)lookup;
             // if the object is immortal or the type is immutable, borrowing is safe
             if (_Py_IsImmortal(lookup) || (type->tp_flags & Py_TPFLAGS_IMMUTABLETYPE)) {
                 opcode = immortal;
+                operand = PyStackRef_TagBorrow(lookup);
             }
-            ADD_OP(opcode, 0, (uintptr_t)lookup);
+            ADD_OP(opcode, 0, operand);
             PyType_Watch(TYPE_WATCHER_ID, (PyObject *)type);
             _Py_BloomFilter_Add(dependencies, type);
             return sym_new_const(ctx, lookup);
