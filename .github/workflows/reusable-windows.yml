@@ -6,6 +6,8 @@ on:
         type: boolean
         default: false
 
+permissions: {}
+
 jobs:
   build_win32:
     name: 'build and test (x86)'

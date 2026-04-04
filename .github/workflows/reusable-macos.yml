@@ -9,6 +9,8 @@ on:
         type: boolean
         default: false
 
+permissions: {}
+
 jobs:
   build_macos:
     name: 'build and test'
