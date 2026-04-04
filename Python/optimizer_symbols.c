@@ -283,7 +283,8 @@ _Py_uop_sym_is_safe_const(JitOptContext *ctx, JitOptRef sym)
            (typ == &PyFloat_Type) ||
            (typ == &_PyNone_Type) ||
            (typ == &PyBool_Type) ||
-           (typ == &PyFrozenDict_Type);
+           (typ == &PyFrozenDict_Type) ||
+           (typ == &PyFrozenSet_Type);
 }
 
 void
@@ -1514,6 +1515,7 @@ _Py_uop_frame_new(
     frame->globals_watched = false;
     frame->func = NULL;
     frame->caller = false;
+    frame->is_c_recursion_checked = false;
     if (ctx->locals.used > ctx->locals.end || ctx->stack.used > ctx->stack.end) {
         ctx->done = true;
         ctx->out_of_space = true;

@@ -30,6 +30,7 @@
 #include "pycore_unicodeobject.h"
 #include "pycore_ceval.h"
 #include "pycore_floatobject.h"
+#include "pycore_setobject.h"
 
 #include <stdarg.h>
 #include <stdbool.h>

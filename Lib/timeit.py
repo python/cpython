@@ -7,7 +7,7 @@ the Python Cookbook, published by O'Reilly.
 Library usage: see the Timer class.
 
 Command line usage:
-    python timeit.py [-n N] [-r N] [-s S] [-p] [-h] [--] [statement]
+    python timeit.py [-n N] [-r N] [-s S] [-p] [-h] [-t T] [--] [statement]
 
 Options:
   -n/--number N: how many times to execute 'statement' (default: see below)
@@ -17,6 +17,9 @@ Options:
   -p/--process: use time.process_time() (default is time.perf_counter())
   -v/--verbose: print raw timing results; repeat for more digits precision
   -u/--unit: set the output time unit (nsec, usec, msec, or sec)
+  -t/--target-time T: if --number is 0 the code will run until it
+                      takes *at least* this many seconds
+                      (default: 0.2)
   -h/--help: print this usage message and exit
   --: separate options from statement, use when statement starts with -
   statement: statement to be timed (default 'pass')
@@ -28,7 +31,7 @@ treated similarly.
 
 If -n is not given, a suitable number of loops is calculated by trying
 increasing numbers from the sequence 1, 2, 5, 10, 20, 50, ... until the
-total time is at least 0.2 seconds.
+total time is at least --target-time seconds.
 
 Note: there is a certain baseline overhead associated with executing a
 pass statement.  It differs between versions.  The code here doesn't try
@@ -57,6 +60,7 @@ dummy_src_name = "<timeit-src>"
 default_number = 1000000
 default_repeat = 5
 default_timer = time.perf_counter
+default_target_time = 0.2
 
 _globals = globals
 
@@ -212,12 +216,13 @@ class Timer:
             r.append(t)
         return r
 
-    def autorange(self, callback=None):
-        """Return the number of loops and time taken so that total time >= 0.2.
+    def autorange(self, callback=None, target_time=default_target_time):
+        """Return the number of loops and time taken so that
+        total time >= target_time (default is 0.2 seconds).
 
         Calls the timeit method with increasing numbers from the sequence
-        1, 2, 5, 10, 20, 50, ... until the time taken is at least 0.2
-        second.  Returns (number, time_taken).
+        1, 2, 5, 10, 20, 50, ... until the target time is reached.
+        Returns (number, time_taken).
 
         If *callback* is given and is not None, it will be called after
         each trial with two arguments: ``callback(number, time_taken)``.
@@ -229,7 +234,7 @@ class Timer:
                 time_taken = self.timeit(number)
                 if callback:
                     callback(number, time_taken)
-                if time_taken >= 0.2:
+                if time_taken >= target_time:
                     return (number, time_taken)
             i *= 10
 
@@ -270,9 +275,10 @@ def main(args=None, *, _wrap_timer=None):
     colorize = _colorize.can_colorize()
 
     try:
-        opts, args = getopt.getopt(args, "n:u:s:r:pvh",
+        opts, args = getopt.getopt(args, "n:u:s:r:pt:vh",
                                    ["number=", "setup=", "repeat=",
-                                    "process", "verbose", "unit=", "help"])
+                                    "process", "target-time=",
+                                    "verbose", "unit=", "help"])
     except getopt.error as err:
         print(err)
         print("use -h/--help for command line help")
@@ -281,6 +287,7 @@ def main(args=None, *, _wrap_timer=None):
     timer = default_timer
     stmt = "\n".join(args) or "pass"
     number = 0  # auto-determine
+    target_time = default_target_time
     setup = []
     repeat = default_repeat
     verbose = 0
@@ -305,6 +312,8 @@ def main(args=None, *, _wrap_timer=None):
                 repeat = 1
         if o in ("-p", "--process"):
             timer = time.process_time
+        if o in ("-t", "--target-time"):
+            target_time = float(a)
         if o in ("-v", "--verbose"):
             if verbose:
                 precision += 1
@@ -324,7 +333,7 @@ def main(args=None, *, _wrap_timer=None):
 
     t = Timer(stmt, setup, timer)
     if number == 0:
-        # determine number so that 0.2 <= total time < 2.0
+        # determine number so that total time >= target_time
         callback = None
         if verbose:
             def callback(number, time_taken):
@@ -333,7 +342,7 @@ def main(args=None, *, _wrap_timer=None):
                 print(msg.format(num=number, s='s' if plural else '',
                                  secs=time_taken, prec=precision))
         try:
-            number, _ = t.autorange(callback)
+            number, _ = t.autorange(callback, target_time)
         except:
             t.print_exc(colorize=colorize)
             return 1

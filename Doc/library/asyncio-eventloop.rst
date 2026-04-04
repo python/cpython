@@ -2055,7 +2055,7 @@ Wait until a file descriptor received some data using the
 Set signal handlers for SIGINT and SIGTERM
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-(This ``signals`` example only works on Unix.)
+(This ``signal`` example only works on Unix.)
 
 Register handlers for signals :const:`~signal.SIGINT` and :const:`~signal.SIGTERM`
 using the :meth:`loop.add_signal_handler` method::

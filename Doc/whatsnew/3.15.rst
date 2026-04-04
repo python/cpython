@@ -1090,6 +1090,11 @@ timeit
   :ref:`environment variables <using-on-controlling-color>`.
   (Contributed by Yi Hong in :gh:`139374`.)
 
+* Make the target time of :meth:`timeit.Timer.autorange` configurable
+  and add ``--target-time`` option to the command-line interface.
+  (Contributed by Alessandro Cucci and Miikka Koskinen in :gh:`140283`.)
+
+
 tkinter
 -------
 
@@ -1347,11 +1352,11 @@ Upgraded JIT compiler
 
 Results from the `pyperformance <https://github.com/python/pyperformance>`__
 benchmark suite report
-`5-6% <https://doesjitgobrrr.com/run/2026-03-11>`__
+`6-7% <https://www.doesjitgobrrr.com/run/2026-04-01>`__
 geometric mean performance improvement for the JIT over the standard CPython
 interpreter built with all optimizations enabled on x86-64 Linux. On AArch64
 macOS, the JIT has a
-`8-9% <https://doesjitgobrrr.com/run/2026-03-11>`__
+`12-13% <https://www.doesjitgobrrr.com/run/2026-04-01>`__
 speedup over the :ref:`tail calling interpreter <whatsnew314-tail-call-interpreter>`
 with all optimizations enabled. The speedups for JIT
 builds versus no JIT builds range from roughly 15% slowdown to over
