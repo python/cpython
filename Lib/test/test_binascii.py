@@ -180,8 +180,11 @@ class BinASCIITest(unittest.TestCase):
         def assertExcessPadding(*args):
             _assertRegexTemplate(r'(?i)Excess padding', *args)
 
-        def assertInvalidLength(*args):
-            _assertRegexTemplate(r'(?i)Invalid.+number of data characters', *args)
+        def assertInvalidLength(data, *args, length=None, **kwargs):
+            if length is None:
+                length = len(data.split(b'=', 1)[0].replace(b' ', b''))
+            assert_regex = fr"(?i)Invalid.+number of data characters \({length}\)"
+            _assertRegexTemplate(assert_regex, data, *args, **kwargs)
 
         assertExcessPadding(b'ab===', b'i')
         assertExcessPadding(b'ab====', b'i')
@@ -207,6 +210,9 @@ class BinASCIITest(unittest.TestCase):
         assertInvalidLength(b'a=bc==', b'i\xb7')
         assertInvalidLength(b'a=bcd', b'i\xb7\x1d')
         assertInvalidLength(b'a=bcd=', b'i\xb7\x1d')
+        assertInvalidLength(b' a=b==', b'i', ignorechars=b' ')
+        assertInvalidLength(b'abcde=f==', b'i\xb7\x1dy')
+        assertInvalidLength(b' abcde=f==', b'i\xb7\x1dy', ignorechars=b' ')
 
         assertDiscontinuousPadding(b'ab=c=', b'i\xb7')
         assertDiscontinuousPadding(b'ab=cd', b'i\xb7\x1d')
@@ -764,8 +770,7 @@ class BinASCIITest(unittest.TestCase):
             p = 8 - len_8 if len_8 else 0
             return fixed + b"=" * p
 
-        def _assertRegexTemplate(assert_regex, data, good_padding_result=None,
-                                 **kwargs):
+        def _assertRegexTemplate(assert_regex, data, good_padding_result=None, **kwargs):
             with self.assertRaisesRegex(binascii.Error, assert_regex):
                 binascii.a2b_base32(self.type2test(data), **kwargs)
             if good_padding_result:
@@ -790,8 +795,11 @@ class BinASCIITest(unittest.TestCase):
         def assertDiscontinuousPadding(*args):
             _assertRegexTemplate(r"(?i)Discontinuous padding", *args)
 
-        def assertInvalidLength(*args):
-            _assertRegexTemplate(r"(?i)Invalid.+number of data characters", *args)
+        def assertInvalidLength(data, *args, length=None, **kwargs):
+            if length is None:
+                length = len(data.split(b'=', 1)[0].replace(b' ', b''))
+            assert_regex = fr"(?i)Invalid.+number of data characters \({length}\)"
+            _assertRegexTemplate(assert_regex, data, *args, **kwargs)
 
         assertNonBase32Data(b"a")
         assertNonBase32Data(b"AA-")
@@ -872,6 +880,9 @@ class BinASCIITest(unittest.TestCase):
         assertInvalidLength(b"A")
         assertInvalidLength(b"ABC")
         assertInvalidLength(b"ABCDEF")
+        assertInvalidLength(b"ABCDEFGHI")
+        assertInvalidLength(b"ABCDEFGHIJK")
+        assertInvalidLength(b"ABCDEFGHIJKLMN")
 
         assertInvalidLength(b"A=")
         assertInvalidLength(b"A==")
@@ -891,6 +902,16 @@ class BinASCIITest(unittest.TestCase):
         assertInvalidLength(b"BEE==F==", b"\t\x08")
         assertInvalidLength(b"BEEFCA=K", b"\t\x08Q\x01")
         assertInvalidLength(b"BEEFCA=====K", b"\t\x08Q\x01")
+
+        assertInvalidLength(b" A", ignorechars=b' ')
+        assertInvalidLength(b" ABC", ignorechars=b' ')
+        assertInvalidLength(b" ABCDEF", ignorechars=b' ')
+        assertInvalidLength(b" ABCDEFGHI", ignorechars=b' ')
+        assertInvalidLength(b" ABCDEFGHIJK", ignorechars=b' ')
+        assertInvalidLength(b" ABCDEFGHIJKLMN", ignorechars=b' ')
+        assertInvalidLength(b" A=======", ignorechars=b' ')
+        assertInvalidLength(b" ABC=====", ignorechars=b' ')
+        assertInvalidLength(b" ABCDEF==", ignorechars=b' ')
 
     def test_base32_wrapcol(self):
         self._common_test_wrapcol(binascii.b2a_base32)

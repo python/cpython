@@ -596,7 +596,13 @@
             JitOptRef r;
             right = stack_pointer[-1];
             left = stack_pointer[-2];
-            res = sym_new_compact_int(ctx);
+            if (PyJitRef_IsUnique(left)) {
+                REPLACE_OP(this_instr, _BINARY_OP_MULTIPLY_INT_INPLACE, 0, 0);
+            }
+            else if (PyJitRef_IsUnique(right)) {
+                REPLACE_OP(this_instr, _BINARY_OP_MULTIPLY_INT_INPLACE_RIGHT, 0, 0);
+            }
+            res = PyJitRef_MakeUnique(sym_new_compact_int(ctx));
             l = left;
             r = right;
             if (
@@ -660,7 +666,13 @@
             JitOptRef r;
             right = stack_pointer[-1];
             left = stack_pointer[-2];
-            res = sym_new_compact_int(ctx);
+            if (PyJitRef_IsUnique(left)) {
+                REPLACE_OP(this_instr, _BINARY_OP_ADD_INT_INPLACE, 0, 0);
+            }
+            else if (PyJitRef_IsUnique(right)) {
+                REPLACE_OP(this_instr, _BINARY_OP_ADD_INT_INPLACE_RIGHT, 0, 0);
+            }
+            res = PyJitRef_MakeUnique(sym_new_compact_int(ctx));
             l = left;
             r = right;
             if (
@@ -724,7 +736,13 @@
             JitOptRef r;
             right = stack_pointer[-1];
             left = stack_pointer[-2];
-            res = sym_new_compact_int(ctx);
+            if (PyJitRef_IsUnique(left)) {
+                REPLACE_OP(this_instr, _BINARY_OP_SUBTRACT_INT_INPLACE, 0, 0);
+            }
+            else if (PyJitRef_IsUnique(right)) {
+                REPLACE_OP(this_instr, _BINARY_OP_SUBTRACT_INT_INPLACE_RIGHT, 0, 0);
+            }
+            res = PyJitRef_MakeUnique(sym_new_compact_int(ctx));
             l = left;
             r = right;
             if (
@@ -771,6 +789,102 @@
                 ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
                 break;
             }
+            CHECK_STACK_BOUNDS(1);
+            stack_pointer[-2] = res;
+            stack_pointer[-1] = l;
+            stack_pointer[0] = r;
+            stack_pointer += 1;
+            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+            break;
+        }
+
+        case _BINARY_OP_ADD_INT_INPLACE: {
+            JitOptRef res;
+            JitOptRef l;
+            JitOptRef r;
+            res = sym_new_not_null(ctx);
+            l = sym_new_not_null(ctx);
+            r = sym_new_not_null(ctx);
+            CHECK_STACK_BOUNDS(1);
+            stack_pointer[-2] = res;
+            stack_pointer[-1] = l;
+            stack_pointer[0] = r;
+            stack_pointer += 1;
+            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+            break;
+        }
+
+        case _BINARY_OP_SUBTRACT_INT_INPLACE: {
+            JitOptRef res;
+            JitOptRef l;
+            JitOptRef r;
+            res = sym_new_not_null(ctx);
+            l = sym_new_not_null(ctx);
+            r = sym_new_not_null(ctx);
+            CHECK_STACK_BOUNDS(1);
+            stack_pointer[-2] = res;
+            stack_pointer[-1] = l;
+            stack_pointer[0] = r;
+            stack_pointer += 1;
+            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+            break;
+        }
+
+        case _BINARY_OP_MULTIPLY_INT_INPLACE: {
+            JitOptRef res;
+            JitOptRef l;
+            JitOptRef r;
+            res = sym_new_not_null(ctx);
+            l = sym_new_not_null(ctx);
+            r = sym_new_not_null(ctx);
+            CHECK_STACK_BOUNDS(1);
+            stack_pointer[-2] = res;
+            stack_pointer[-1] = l;
+            stack_pointer[0] = r;
+            stack_pointer += 1;
+            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+            break;
+        }
+
+        case _BINARY_OP_ADD_INT_INPLACE_RIGHT: {
+            JitOptRef res;
+            JitOptRef l;
+            JitOptRef r;
+            res = sym_new_not_null(ctx);
+            l = sym_new_not_null(ctx);
+            r = sym_new_not_null(ctx);
+            CHECK_STACK_BOUNDS(1);
+            stack_pointer[-2] = res;
+            stack_pointer[-1] = l;
+            stack_pointer[0] = r;
+            stack_pointer += 1;
+            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+            break;
+        }
+
+        case _BINARY_OP_SUBTRACT_INT_INPLACE_RIGHT: {
+            JitOptRef res;
+            JitOptRef l;
+            JitOptRef r;
+            res = sym_new_not_null(ctx);
+            l = sym_new_not_null(ctx);
+            r = sym_new_not_null(ctx);
+            CHECK_STACK_BOUNDS(1);
+            stack_pointer[-2] = res;
+            stack_pointer[-1] = l;
+            stack_pointer[0] = r;
+            stack_pointer += 1;
+            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+            break;
+        }
+
+        case _BINARY_OP_MULTIPLY_INT_INPLACE_RIGHT: {
+            JitOptRef res;
+            JitOptRef l;
+            JitOptRef r;
+            res = sym_new_not_null(ctx);
+            l = sym_new_not_null(ctx);
+            r = sym_new_not_null(ctx);
             CHECK_STACK_BOUNDS(1);
             stack_pointer[-2] = res;
             stack_pointer[-1] = l;
@@ -3960,19 +4074,20 @@
             PyObject *callable_o = sym_get_const(ctx, callable);
             if (callable_o && sym_matches_type(callable, &PyMethodDescr_Type)) {
                 int total_args = oparg;
-                if (!sym_is_null(self_or_null)) {
+                if (sym_is_not_null(self_or_null)) {
                     total_args++;
                 }
-                PyObject *self = NULL;
-                if (!sym_is_null(self_or_null)) {
-                    self = sym_get_const(ctx, self_or_null);
-                } else {
-                    self = sym_get_const(ctx, args[0]);
+                PyTypeObject *self_type = NULL;
+                if (sym_is_not_null(self_or_null)) {
+                    self_type = sym_get_type(self_or_null);
+                }
+                else {
+                    self_type = sym_get_type(args[0]);
                 }
                 PyTypeObject *d_type = ((PyMethodDescrObject *)callable_o)->d_common.d_type;
                 if (total_args == 2 &&
                     ((PyMethodDescrObject *)callable_o)->d_method->ml_flags == METH_O &&
-                    self && Py_IS_TYPE(self, d_type)) {
+                    self_type == d_type) {
                     ADD_OP(_NOP, 0, 0);
                 }
             }
@@ -3993,6 +4108,13 @@
             args = &stack_pointer[-oparg];
             self_or_null = stack_pointer[-1 - oparg];
             callable = stack_pointer[-2 - oparg];
+            PyObject *callable_o = sym_get_const(ctx, callable);
+            if (callable_o && Py_IS_TYPE(callable_o, &PyMethodDescr_Type)
+                && sym_is_not_null(self_or_null)) {
+                PyMethodDescrObject *method = (PyMethodDescrObject *)callable_o;
+                PyCFunction cfunc = method->d_method->ml_meth;
+                ADD_OP(_CALL_METHOD_DESCRIPTOR_O_INLINE, oparg + 1, (uintptr_t)cfunc);
+            }
             res = sym_new_not_null(ctx);
             c = callable;
             if (sym_is_not_null(self_or_null)) {
@@ -4014,6 +4136,25 @@
             break;
         }
 
+        case _CALL_METHOD_DESCRIPTOR_O_INLINE: {
+            JitOptRef res;
+            JitOptRef c;
+            JitOptRef s;
+            JitOptRef a;
+            res = sym_new_not_null(ctx);
+            c = sym_new_not_null(ctx);
+            s = sym_new_not_null(ctx);
+            a = sym_new_not_null(ctx);
+            CHECK_STACK_BOUNDS(3 - oparg);
+            stack_pointer[-1 - oparg] = res;
+            stack_pointer[-oparg] = c;
+            stack_pointer[1 - oparg] = s;
+            stack_pointer[2 - oparg] = a;
+            stack_pointer += 3 - oparg;
+            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+            break;
+        }
+
         case _GUARD_CALLABLE_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS: {
             JitOptRef *args;
             JitOptRef self_or_null;
@@ -4024,19 +4165,20 @@
             PyObject *callable_o = sym_get_const(ctx, callable);
             if (callable_o && sym_matches_type(callable, &PyMethodDescr_Type)) {
                 int total_args = oparg;
-                if (!sym_is_null(self_or_null)) {
+                if (sym_is_not_null(self_or_null)) {
                     total_args++;
                 }
-                PyObject *self = NULL;
-                if (!sym_is_null(self_or_null)) {
-                    self = sym_get_const(ctx, self_or_null);
-                } else {
-                    self = sym_get_const(ctx, args[0]);
+                PyTypeObject *self_type = NULL;
+                if (sym_is_not_null(self_or_null)) {
+                    self_type = sym_get_type(self_or_null);
+                }
+                else {
+                    self_type = sym_get_type(args[0]);
                 }
                 PyTypeObject *d_type = ((PyMethodDescrObject *)callable_o)->d_common.d_type;
                 if (total_args != 0 &&
                     ((PyMethodDescrObject *)callable_o)->d_method->ml_flags == (METH_FASTCALL|METH_KEYWORDS) &&
-                    self && Py_IS_TYPE(self, d_type)) {
+                    self_type == d_type) {
                     ADD_OP(_NOP, 0, 0);
                 }
             }
@@ -4047,11 +4189,32 @@
         }
 
         case _CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS: {
+            JitOptRef self_or_null;
+            JitOptRef callable;
             JitOptRef res;
+            self_or_null = stack_pointer[-1 - oparg];
+            callable = stack_pointer[-2 - oparg];
+            PyObject *callable_o = sym_get_const(ctx, callable);
+            if (callable_o && Py_IS_TYPE(callable_o, &PyMethodDescr_Type)
+                && sym_is_not_null(self_or_null)) {
+                PyMethodDescrObject *method = (PyMethodDescrObject *)callable_o;
+                PyCFunction cfunc = method->d_method->ml_meth;
+                ADD_OP(_CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS_INLINE, oparg + 1, (uintptr_t)cfunc);
+            }
             res = sym_new_not_null(ctx);
             CHECK_STACK_BOUNDS(-1 - oparg);
             stack_pointer[-2 - oparg] = res;
             stack_pointer += -1 - oparg;
+            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+            break;
+        }
+
+        case _CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS_INLINE: {
+            JitOptRef res;
+            res = sym_new_not_null(ctx);
+            CHECK_STACK_BOUNDS(-oparg);
+            stack_pointer[-1 - oparg] = res;
+            stack_pointer += -oparg;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
             break;
         }
@@ -4066,19 +4229,20 @@
             PyObject *callable_o = sym_get_const(ctx, callable);
             if (callable_o && sym_matches_type(callable, &PyMethodDescr_Type)) {
                 int total_args = oparg;
-                if (!sym_is_null(self_or_null)) {
+                if (sym_is_not_null(self_or_null)) {
                     total_args++;
                 }
-                PyObject *self = NULL;
-                if (!sym_is_null(self_or_null)) {
-                    self = sym_get_const(ctx, self_or_null);
-                } else {
-                    self = sym_get_const(ctx, args[0]);
+                PyTypeObject *self_type = NULL;
+                if (sym_is_not_null(self_or_null)) {
+                    self_type = sym_get_type(self_or_null);
+                }
+                else {
+                    self_type = sym_get_type(args[0]);
                 }
                 PyTypeObject *d_type = ((PyMethodDescrObject *)callable_o)->d_common.d_type;
                 if (total_args == 1 &&
                     ((PyMethodDescrObject *)callable_o)->d_method->ml_flags == METH_NOARGS &&
-                    self && Py_IS_TYPE(self, d_type)) {
+                    self_type == d_type) {
                     ADD_OP(_NOP, 0, 0);
                 }
             }
@@ -4089,11 +4253,32 @@
         }
 
         case _CALL_METHOD_DESCRIPTOR_NOARGS: {
+            JitOptRef self_or_null;
+            JitOptRef callable;
             JitOptRef res;
+            self_or_null = stack_pointer[-1 - oparg];
+            callable = stack_pointer[-2 - oparg];
+            PyObject *callable_o = sym_get_const(ctx, callable);
+            if (callable_o && Py_IS_TYPE(callable_o, &PyMethodDescr_Type)
+                && sym_is_not_null(self_or_null)) {
+                PyMethodDescrObject *method = (PyMethodDescrObject *)callable_o;
+                PyCFunction cfunc = method->d_method->ml_meth;
+                ADD_OP(_CALL_METHOD_DESCRIPTOR_NOARGS_INLINE, oparg + 1, (uintptr_t)cfunc);
+            }
             res = sym_new_not_null(ctx);
             CHECK_STACK_BOUNDS(-1 - oparg);
             stack_pointer[-2 - oparg] = res;
             stack_pointer += -1 - oparg;
+            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+            break;
+        }
+
+        case _CALL_METHOD_DESCRIPTOR_NOARGS_INLINE: {
+            JitOptRef res;
+            res = sym_new_not_null(ctx);
+            CHECK_STACK_BOUNDS(-oparg);
+            stack_pointer[-1 - oparg] = res;
+            stack_pointer += -oparg;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
             break;
         }
@@ -4108,19 +4293,20 @@
             PyObject *callable_o = sym_get_const(ctx, callable);
             if (callable_o && sym_matches_type(callable, &PyMethodDescr_Type)) {
                 int total_args = oparg;
-                if (!sym_is_null(self_or_null)) {
+                if (sym_is_not_null(self_or_null)) {
                     total_args++;
                 }
-                PyObject *self = NULL;
-                if (!sym_is_null(self_or_null)) {
-                    self = sym_get_const(ctx, self_or_null);
-                } else {
-                    self = sym_get_const(ctx, args[0]);
+                PyTypeObject *self_type = NULL;
+                if (sym_is_not_null(self_or_null)) {
+                    self_type = sym_get_type(self_or_null);
+                }
+                else {
+                    self_type = sym_get_type(args[0]);
                 }
                 PyTypeObject *d_type = ((PyMethodDescrObject *)callable_o)->d_common.d_type;
                 if (total_args != 0 &&
                     ((PyMethodDescrObject *)callable_o)->d_method->ml_flags == METH_FASTCALL &&
-                    self && Py_IS_TYPE(self, d_type)) {
+                    self_type == d_type) {
                     ADD_OP(_NOP, 0, 0);
                 }
             }
@@ -4131,11 +4317,32 @@
         }
 
         case _CALL_METHOD_DESCRIPTOR_FAST: {
+            JitOptRef self_or_null;
+            JitOptRef callable;
             JitOptRef res;
+            self_or_null = stack_pointer[-1 - oparg];
+            callable = stack_pointer[-2 - oparg];
+            PyObject *callable_o = sym_get_const(ctx, callable);
+            if (callable_o && Py_IS_TYPE(callable_o, &PyMethodDescr_Type)
+                && sym_is_not_null(self_or_null)) {
+                PyMethodDescrObject *method = (PyMethodDescrObject *)callable_o;
+                PyCFunction cfunc = method->d_method->ml_meth;
+                ADD_OP(_CALL_METHOD_DESCRIPTOR_FAST_INLINE, oparg + 1, (uintptr_t)cfunc);
+            }
             res = sym_new_not_null(ctx);
             CHECK_STACK_BOUNDS(-1 - oparg);
             stack_pointer[-2 - oparg] = res;
             stack_pointer += -1 - oparg;
+            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+            break;
+        }
+
+        case _CALL_METHOD_DESCRIPTOR_FAST_INLINE: {
+            JitOptRef res;
+            res = sym_new_not_null(ctx);
+            CHECK_STACK_BOUNDS(-oparg);
+            stack_pointer[-1 - oparg] = res;
+            stack_pointer += -oparg;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
             break;
         }
