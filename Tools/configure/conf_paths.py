@@ -1,7 +1,7 @@
 """conf_paths — Install paths.
 
 Handles --with-platlibdir and computes install paths (BINLIBDEST, LIBDEST,
-SCRIPTDIR, etc.) and --with-wheel-pkg-dir; checks miscellaneous runtime
+LIBPL, etc.) and --with-wheel-pkg-dir; checks miscellaneous runtime
 features (broken nice, broken poll, working tzset).
 """
 
@@ -20,6 +20,7 @@ WITH_WHEEL_PKG_DIR = pyconf.arg_with(
 
 
 def setup_install_paths(v):
+    """Set PLATLIBDIR, LIBDEST, BINLIBDEST, LIBPL, and WHEEL_PKG_DIR."""
     # ---------------------------------------------------------------------------
     # --with-platlibdir
     # ---------------------------------------------------------------------------
@@ -69,6 +70,7 @@ def setup_install_paths(v):
 
 
 def check_misc_runtime(v):
+    """Check for broken nice(), broken poll(), and working tzset()."""
     # ---------------------------------------------------------------------------
     # Miscellaneous runtime checks
     # ---------------------------------------------------------------------------
