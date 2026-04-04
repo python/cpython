@@ -1705,15 +1705,21 @@ expressions.
 | ``%x``, ``%X``                 | ``[-+]?(0[xX])?[\dA-Fa-f]+``                |
 +--------------------------------+---------------------------------------------+
 
-To extract the filename and numbers from a string like ::
+To extract the filename and numbers from a string like:
+
+.. code-block:: text
 
    /usr/sbin/sendmail - 0 errors, 4 warnings
 
-you would use a :c:func:`!scanf` format like ::
+you would use a :c:func:`!scanf` format like:
+
+.. code-block:: text
 
    %s - %d errors, %d warnings
 
-The equivalent regular expression would be ::
+The equivalent regular expression would be:
+
+.. code-block:: text
 
    (\S+) - (\d+) errors, (\d+) warnings
 
