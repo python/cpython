@@ -20942,7 +20942,7 @@
             _PyStackRef value;
             PyObject *ptr = (PyObject *)CURRENT_OPERAND0_64();
             _PyFrame_SetStackPointer(frame, stack_pointer);
-            value = PyStackRef_FromPreTagged((uintptr_t)ptr);
+            value = PyStackRef_FromPreTagged(ptr);
             stack_pointer = _PyFrame_GetStackPointer(frame);
             _tos_cache0 = value;
             _tos_cache1 = PyStackRef_ZERO_BITS;
@@ -21056,7 +21056,7 @@
             PyObject *ptr = (PyObject *)CURRENT_OPERAND0_64();
             _PyFrame_SetStackPointer(frame, stack_pointer);
             PyStackRef_CLOSE(pop);
-            value = PyStackRef_FromPreTagged((uintptr_t)ptr);
+            value = PyStackRef_FromPreTagged(ptr);
             stack_pointer = _PyFrame_GetStackPointer(frame);
             _tos_cache0 = value;
             _tos_cache1 = PyStackRef_ZERO_BITS;
@@ -21087,7 +21087,7 @@
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
             _PyFrame_SetStackPointer(frame, stack_pointer);
             PyStackRef_CLOSE(pop1);
-            value = PyStackRef_FromPreTagged((uintptr_t)ptr);
+            value = PyStackRef_FromPreTagged(ptr);
             stack_pointer = _PyFrame_GetStackPointer(frame);
             _tos_cache0 = value;
             _tos_cache1 = PyStackRef_ZERO_BITS;
@@ -21111,7 +21111,7 @@
             (void)null;
             _PyFrame_SetStackPointer(frame, stack_pointer);
             PyStackRef_CLOSE(callable);
-            value = PyStackRef_FromPreTagged((uintptr_t)ptr);
+            value = PyStackRef_FromPreTagged(ptr);
             stack_pointer = _PyFrame_GetStackPointer(frame);
             _tos_cache0 = value;
             _tos_cache1 = PyStackRef_ZERO_BITS;
@@ -21147,7 +21147,7 @@
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
             _PyFrame_SetStackPointer(frame, stack_pointer);
             PyStackRef_CLOSE(callable);
-            value = PyStackRef_FromPreTagged((uintptr_t)ptr);
+            value = PyStackRef_FromPreTagged(ptr);
             stack_pointer = _PyFrame_GetStackPointer(frame);
             _tos_cache0 = value;
             _tos_cache1 = PyStackRef_ZERO_BITS;
@@ -21227,7 +21227,7 @@
             stack_pointer += 1;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
             _PyFrame_SetStackPointer(frame, stack_pointer);
-            res = PyStackRef_FromPreTagged((uintptr_t)ptr);
+            res = PyStackRef_FromPreTagged(ptr);
             stack_pointer = _PyFrame_GetStackPointer(frame);
             l = left;
             _tos_cache1 = l;
@@ -21258,7 +21258,7 @@
             stack_pointer += 2;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
             _PyFrame_SetStackPointer(frame, stack_pointer);
-            res = PyStackRef_FromPreTagged((uintptr_t)ptr);
+            res = PyStackRef_FromPreTagged(ptr);
             stack_pointer = _PyFrame_GetStackPointer(frame);
             l = left;
             r = right;
@@ -21289,7 +21289,7 @@
             stack_pointer += 3;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
             _PyFrame_SetStackPointer(frame, stack_pointer);
-            res = PyStackRef_FromPreTagged((uintptr_t)ptr);
+            res = PyStackRef_FromPreTagged(ptr);
             stack_pointer = _PyFrame_GetStackPointer(frame);
             a = arg;
             _tos_cache1 = a;
@@ -21322,7 +21322,7 @@
             stack_pointer += 3;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
             _PyFrame_SetStackPointer(frame, stack_pointer);
-            res = PyStackRef_FromPreTagged((uintptr_t)ptr);
+            res = PyStackRef_FromPreTagged(ptr);
             stack_pointer = _PyFrame_GetStackPointer(frame);
             a = arg;
             c = callable;
@@ -21369,7 +21369,7 @@
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
             _PyFrame_SetStackPointer(frame, stack_pointer);
             PyStackRef_CLOSE(callable);
-            value = PyStackRef_FromPreTagged((uintptr_t)ptr);
+            value = PyStackRef_FromPreTagged(ptr);
             stack_pointer = _PyFrame_GetStackPointer(frame);
             _tos_cache0 = value;
             _tos_cache1 = PyStackRef_ZERO_BITS;
@@ -21447,7 +21447,7 @@
             PyObject *ptr = (PyObject *)CURRENT_OPERAND0_64();
             new = old;
             _PyFrame_SetStackPointer(frame, stack_pointer);
-            value = PyStackRef_FromPreTagged((uintptr_t)ptr);
+            value = PyStackRef_FromPreTagged(ptr);
             stack_pointer = _PyFrame_GetStackPointer(frame);
             _tos_cache1 = new;
             _tos_cache0 = value;

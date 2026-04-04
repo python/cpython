@@ -619,11 +619,12 @@ PyStackRef_FromPyObjectBorrow(PyObject *obj)
    Used by _LOAD_CONST_INLINE_BORROW variants where the operand is
    tagged at trace creation time to avoid tagging on every execution. */
 static inline _PyStackRef
-PyStackRef_FromPreTagged(uintptr_t tagged)
+_PyStackRef_FromPreTagged(uintptr_t tagged)
 {
     assert(tagged & Py_TAG_REFCNT);
     return (_PyStackRef){ .bits = tagged };
 }
+#define PyStackRef_FromPreTagged(ptr) _PyStackRef_FromPreTagged((uintptr_t)(ptr))
 
 /* Tag a PyObject pointer as a borrowed operand for BORROW variants. */
 #define PyStackRef_TagBorrow(ptr) \
