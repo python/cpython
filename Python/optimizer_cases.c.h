@@ -4074,11 +4074,11 @@
             PyObject *callable_o = sym_get_const(ctx, callable);
             if (callable_o && sym_matches_type(callable, &PyMethodDescr_Type)) {
                 int total_args = oparg;
-                if (!sym_is_null(self_or_null)) {
+                if (sym_is_not_null(self_or_null)) {
                     total_args++;
                 }
                 PyTypeObject *self_type = NULL;
-                if (!sym_is_null(self_or_null)) {
+                if (sym_is_not_null(self_or_null)) {
                     self_type = sym_get_type(self_or_null);
                 }
                 else {
@@ -4165,11 +4165,11 @@
             PyObject *callable_o = sym_get_const(ctx, callable);
             if (callable_o && sym_matches_type(callable, &PyMethodDescr_Type)) {
                 int total_args = oparg;
-                if (!sym_is_null(self_or_null)) {
+                if (sym_is_not_null(self_or_null)) {
                     total_args++;
                 }
                 PyTypeObject *self_type = NULL;
-                if (!sym_is_null(self_or_null)) {
+                if (sym_is_not_null(self_or_null)) {
                     self_type = sym_get_type(self_or_null);
                 }
                 else {
@@ -4229,11 +4229,11 @@
             PyObject *callable_o = sym_get_const(ctx, callable);
             if (callable_o && sym_matches_type(callable, &PyMethodDescr_Type)) {
                 int total_args = oparg;
-                if (!sym_is_null(self_or_null)) {
+                if (sym_is_not_null(self_or_null)) {
                     total_args++;
                 }
                 PyTypeObject *self_type = NULL;
-                if (!sym_is_null(self_or_null)) {
+                if (sym_is_not_null(self_or_null)) {
                     self_type = sym_get_type(self_or_null);
                 }
                 else {
@@ -4293,11 +4293,11 @@
             PyObject *callable_o = sym_get_const(ctx, callable);
             if (callable_o && sym_matches_type(callable, &PyMethodDescr_Type)) {
                 int total_args = oparg;
-                if (!sym_is_null(self_or_null)) {
+                if (sym_is_not_null(self_or_null)) {
                     total_args++;
                 }
                 PyTypeObject *self_type = NULL;
-                if (!sym_is_null(self_or_null)) {
+                if (sym_is_not_null(self_or_null)) {
                     self_type = sym_get_type(self_or_null);
                 }
                 else {
