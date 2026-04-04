@@ -248,7 +248,7 @@ class WindowsConsole(Console):
             if update is not None:
                 line_updates.append(update)
 
-        cleared_lines = tuple(range(len(newscr), len(oldscr)))
+        cleared_lines = tuple(range(offset + len(newscr), offset + len(oldscr)))
         console_rendered_screen = RenderedScreen(tuple(next_lines), c_xy)
         trace(
             "windows.refresh plan grow={grow} offset={offset} scroll_lines={scroll_lines} "
@@ -446,7 +446,7 @@ class WindowsConsole(Console):
 
     def __write(self, text: str) -> None:
         if "\x1a" in text:
-            text = ''.join(["^Z" if x == '\x1a' else x for x in text])
+            text = text.replace("\x1a", "^Z")
 
         if self.out is not None:
             self.out.write(text.encode(self.encoding, "replace"))

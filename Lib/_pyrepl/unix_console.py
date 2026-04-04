@@ -346,7 +346,7 @@ class UnixConsole(Console):
             if update is not None:
                 line_updates.append(update)
 
-        cleared_lines = tuple(range(len(newscr), len(oldscr)))
+        cleared_lines = tuple(range(offset + len(newscr), offset + len(oldscr)))
         console_rendered_screen = RenderedScreen(tuple(next_lines), c_xy)
         trace(
             "unix.refresh plan grow={grow} tall={tall} offset={offset} "

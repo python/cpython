@@ -102,7 +102,6 @@ class WrappedRow:
     suffix: str = ""
     suffix_width: int = 0
     buffer_advance: int = 0
-    line_end_offset: int = 0
 
 
 @dataclass(frozen=True, slots=True)
@@ -132,7 +131,6 @@ def layout_content_lines(
             wrapped_rows.append(
                 WrappedRow(
                     fragments=(leading,),
-                    line_end_offset=offset,
                 )
             )
             layout_rows.append(LayoutRow(0, (), buffer_advance=0))
@@ -152,7 +150,6 @@ def layout_content_lines(
                     fragments=body,
                     layout_widths=body_widths,
                     buffer_advance=len(body) + newline_advance,
-                    line_end_offset=offset,
                 )
             )
             layout_rows.append(
@@ -205,7 +202,6 @@ def layout_content_lines(
                     suffix=suffix,
                     suffix_width=suffix_width,
                     buffer_advance=buffer_advance,
-                    line_end_offset=offset,
                 )
             )
             layout_rows.append(

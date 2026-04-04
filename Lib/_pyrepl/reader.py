@@ -309,10 +309,10 @@ class Reader:
     @dataclass
     class RefreshCache:
         render_lines: list[RenderLine] = field(default_factory=list)
-        layout_rows: list[LayoutRow] = field(init=False)
+        layout_rows: list[LayoutRow] = field(default_factory=list)
         line_end_offsets: list[int] = field(default_factory=list)
-        pos: int = field(init=False)
-        dimensions: Dimensions = field(init=False)
+        pos: int = 0
+        dimensions: Dimensions = (0, 0)
 
         def update_cache(self,
                          reader: Reader,
@@ -338,6 +338,13 @@ class Reader:
             *,
             reuse_full: bool = False,
         ) -> tuple[int, int]:
+            """Return (buffer_offset, num_reusable_lines) for incremental refresh.
+
+            Three paths:
+            - reuse_full (overlay/message-only): reuse all cached lines.
+            - buffer_from_pos=None (full rebuild): rewind to common cursor pos.
+            - explicit buffer_from_pos: reuse lines before that position.
+            """
             if reuse_full:
                 if self.line_end_offsets:
                     last_offset = self.line_end_offsets[-1]
@@ -409,6 +416,9 @@ class Reader:
                     self,
                     reuse_full=True,
                 )
+                assert not self.last_refresh_cache.line_end_offsets or (
+                    self.last_refresh_cache.line_end_offsets[-1] >= len(self.buffer)
+                ), "Buffer modified without invalidate_buffer() call"
             else:
                 offset, num_common_lines = self.last_refresh_cache.get_cached_location(
                     self,
@@ -435,14 +445,7 @@ class Reader:
         if not source_lines:
             # reuse_full path: _build_source_lines didn't run,
             # so lxy wasn't updated. Derive it from the buffer.
-            buf = self.buffer[:self.pos]
-            lineno = buf.count("\n")
-            if lineno:
-                last_nl = len(buf) - 1 - buf[::-1].index("\n")
-                col = self.pos - last_nl - 1
-            else:
-                col = self.pos
-            self.lxy = col, lineno
+            self.lxy = self._compute_lxy()
         self.last_refresh_cache.update_cache(
             self,
             base_render_lines,
@@ -461,12 +464,22 @@ class Reader:
             return buffer_from_pos
         return 0
 
+    def _compute_lxy(self) -> CursorXY:
+        """Derive logical cursor (col, lineno) from the buffer and pos."""
+        text = "".join(self.buffer[:self.pos])
+        lineno = text.count("\n")
+        if lineno:
+            col = self.pos - text.rindex("\n") - 1
+        else:
+            col = self.pos
+        return col, lineno
+
     def _build_source_lines(
         self,
         offset: int,
         first_lineno: int,
     ) -> tuple[SourceLine, ...]:
-        if offset == len(self.buffer) and first_lineno > 0:
+        if offset == len(self.buffer) and offset > 0:
             return ()
 
         pos = self.pos - offset

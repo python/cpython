@@ -59,6 +59,7 @@ def build_body_fragments(
     colors: list[ColorSpan] | None,
     start_index: int,
 ) -> tuple[ContentFragment, ...]:
+    # Two separate loops to avoid the THEME() call in the common uncolored path.
     if colors is None:
         return tuple(
             ContentFragment(

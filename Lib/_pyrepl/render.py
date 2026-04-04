@@ -137,6 +137,11 @@ class RenderLine:
 
 @dataclass(frozen=True, slots=True)
 class ScreenOverlay:
+    """An overlay that replaces or inserts lines at a screen position.
+
+    If insert is True, lines are spliced in (shifting content down);
+    if False (default), lines replace existing content at y.
+    """
     y: int
     lines: tuple[RenderLine, ...]
     insert: bool = False
@@ -153,6 +158,7 @@ class RenderedScreen:
         object.__setattr__(self, "composed_lines", self._compose())
 
     def _compose(self) -> tuple[RenderLine, ...]:
+        """Apply overlays in tuple order; inserts shift subsequent positions."""
         if not self.overlays:
             return self.lines
 
@@ -160,6 +166,10 @@ class RenderedScreen:
         y_offset = 0
         for overlay in self.overlays:
             adjusted_y = overlay.y + y_offset
+            assert adjusted_y >= 0, (
+                f"Overlay y={overlay.y} with offset={y_offset} is negative; "
+                "overlays must be sorted by ascending y"
+            )
             if overlay.insert:
                 lines[adjusted_y:adjusted_y] = overlay.lines
                 y_offset += len(overlay.lines)
@@ -308,6 +318,8 @@ def diff_render_lines(old: RenderLine, new: RenderLine) -> LineDiff | None:
         old_suffix -= 1
         new_suffix -= 1
 
+    # Extend diff range to include trailing zero-width combining characters,
+    # so we never render a combining char without its base character.
     while old_suffix < len(old.cells) and old.cells[old_suffix].width == 0:
         old_suffix += 1
     while new_suffix < len(new.cells) and new.cells[new_suffix].width == 0:
