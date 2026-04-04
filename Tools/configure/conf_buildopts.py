@@ -1,9 +1,12 @@
-"""conf_buildopts — GIL, debug, assertions, optimizations, profile task.
+"""conf_buildopts — GIL, debug, assertions, optimizations, sanitizers, allocators.
 
 Handles --disable-gil (free-threaded build), --with-pydebug (Py_DEBUG),
---with-trace-refs, --enable-pystats, --with-assertions, and
---enable-optimizations (PGO, -fno-semantic-interposition).  Also sets
-the PROFILE_TASK used for PGO training runs and DEF_MAKE_ALL_RULE.
+--with-trace-refs, --enable-pystats, --with-assertions,
+--enable-optimizations (PGO, -fno-semantic-interposition),
+--enable-experimental-jit, sanitizer options (asan/msan/ubsan/tsan),
+--with-tail-call-interp, --with-remote-debug, --with-ensurepip,
+--with-mimalloc, --with-pymalloc, --with-valgrind, --with-dtrace,
+perf trampoline setup, and --with-doc-strings.
 """
 
 from __future__ import annotations
@@ -164,13 +167,17 @@ def setup_pystats(v):
 
 def setup_assertions(v):
     # Check for --with-assertions (allows enabling assertions without Py_DEBUG)
-    assertions_bool = WITH_ASSERTIONS.process_bool()
-    v.assertions = "true" if assertions_bool else "false"
-
-    if not assertions_bool and v.Py_DEBUG is True:
+    pyconf.checking("for --with-assertions")
+    raw = WITH_ASSERTIONS.value
+    if raw is not None and raw != "no":
         v.assertions = "true"
-        pyconf.checking("for --with-assertions")
+        pyconf.result("yes")
+    elif v.Py_DEBUG is True:
+        v.assertions = "true"
         pyconf.result("implied by --with-pydebug")
+    else:
+        v.assertions = "false"
+        pyconf.result("no")
 
 
 def setup_optimizations(v):
@@ -308,6 +315,8 @@ def setup_sanitizers(v):
             f"-fsanitize=address -fno-omit-frame-pointer {v.BASECFLAGS}"
         )
         v.LDFLAGS = f"-fsanitize=address {v.LDFLAGS}"
+        # ASan works by controlling memory allocation; our own malloc interferes.
+        v.with_pymalloc = "no"
 
     if WITH_MEMORY_SANITIZER.process_bool(v):
         if not pyconf.check_compile_flag("-fsanitize=memory"):
@@ -321,6 +330,8 @@ def setup_sanitizers(v):
         v.LDFLAGS = (
             f"-fsanitize=memory -fsanitize-memory-track-origins=2 {v.LDFLAGS}"
         )
+        # MSan works by controlling memory allocation; our own malloc interferes.
+        v.with_pymalloc = "no"
 
     if WITH_UNDEFINED_BEHAVIOR_SANITIZER.process_bool(v):
         v.BASECFLAGS = f"-fsanitize=undefined {v.BASECFLAGS}"
@@ -336,22 +347,28 @@ def setup_sanitizers(v):
 
 def check_tail_call_interp(v):
     # Check for --with-tail-call-interp
+    pyconf.checking("for --with-tail-call-interp")
     if WITH_TAIL_CALL_INTERP.is_yes():
         pyconf.define(
             "_Py_TAIL_CALL_INTERP",
             1,
             "Define if you want to use tail-calling interpreters in CPython.",
         )
+        pyconf.result("yes")
     elif WITH_TAIL_CALL_INTERP.is_no():
         pyconf.define(
             "_Py_TAIL_CALL_INTERP",
             0,
             "Define if you want to use tail-calling interpreters in CPython.",
         )
+        pyconf.result("no")
+    else:
+        pyconf.result("no value specified")
 
 
 def check_remote_debug(v):
     # Check for --with-remote-debug
+    pyconf.checking("for --with-remote-debug")
     with_rd = WITH_REMOTE_DEBUG.value_or("yes")
     if with_rd == "yes":
         pyconf.define(
@@ -359,6 +376,9 @@ def check_remote_debug(v):
             1,
             "Define if you want to enable remote debugging support.",
         )
+        pyconf.result("yes")
+    else:
+        pyconf.result("no")
 
 
 def check_ensurepip(v):
