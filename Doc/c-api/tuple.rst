@@ -100,7 +100,7 @@ Tuple Objects
    Insert a reference to object *o* at position *pos* of the tuple pointed to by
    *p*.  Return ``0`` on success.  If *pos* is out of bounds, return ``-1``
    and set an :exc:`IndexError` exception. This function should only be used to fill in brand new tuples;
-   using it on an existing tuples is thread-unsafe.
+   using it on an existing tuple is thread-unsafe.
 
    .. note::
 
