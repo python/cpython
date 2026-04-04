@@ -1888,6 +1888,13 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
     if (st == NULL) {
         return NULL;
     }
+    if (st->time_strftime == NULL) {
+        st->time_strftime = PyImport_ImportModuleAttrString("time", "strftime");
+        if (st->time_strftime == NULL) {
+            RELEASE_CURRENT_STATE(st, current_mod);
+            return NULL;
+        }
+    }
     PyObject *strftime = st->time_strftime;
 
     /* Scan the input format, looking for %z/%Z/%f escapes, building
@@ -2070,6 +2077,13 @@ time_time(void)
     if (st == NULL) {
         return NULL;
     }
+    if (st->time_time == NULL) {
+        st->time_time = PyImport_ImportModuleAttrString("time", "time");
+        if (st->time_time == NULL) {
+            RELEASE_CURRENT_STATE(st, current_mod);
+            return NULL;
+        }
+    }
     PyObject *result = PyObject_CallNoArgs(st->time_time);
     RELEASE_CURRENT_STATE(st, current_mod);
     return result;
@@ -2085,6 +2099,13 @@ build_struct_time(int y, int m, int d, int hh, int mm, int ss, int dstflag)
     datetime_state *st = GET_CURRENT_STATE(current_mod);
     if (st == NULL) {
         return NULL;
+    }
+    if (st->time_struct_time == NULL) {
+        st->time_struct_time = PyImport_ImportModuleAttrString("time", "struct_time");
+        if (st->time_struct_time == NULL) {
+            RELEASE_CURRENT_STATE(st, current_mod);
+            return NULL;
+        }
     }
 
     PyObject *result = PyObject_CallFunction(st->time_struct_time,
@@ -7419,9 +7440,9 @@ init_state(datetime_state *st, PyObject *module, PyObject *old_module)
             .us_per_week = Py_NewRef(st_old->us_per_week),
             .seconds_per_day = Py_NewRef(st_old->seconds_per_day),
             .epoch = Py_NewRef(st_old->epoch),
-            .time_time = Py_NewRef(st_old->time_time),
-            .time_struct_time = Py_NewRef(st_old->time_struct_time),
-            .time_strftime = Py_NewRef(st_old->time_strftime),
+            .time_time = Py_XNewRef(st_old->time_time),
+            .time_struct_time = Py_XNewRef(st_old->time_struct_time),
+            .time_strftime = Py_XNewRef(st_old->time_strftime),
         };
         return 0;
     }
@@ -7466,18 +7487,9 @@ init_state(datetime_state *st, PyObject *module, PyObject *old_module)
         return -1;
     }
 
-    st->time_time = PyImport_ImportModuleAttrString("time", "time");
-    if (st->time_time == NULL) {
-        return -1;
-    }
-    st->time_struct_time = PyImport_ImportModuleAttrString("time", "struct_time");
-    if (st->time_struct_time == NULL) {
-        return -1;
-    }
-    st->time_strftime = PyImport_ImportModuleAttrString("time", "strftime");
-    if (st->time_strftime == NULL) {
-        return -1;
-    }
+    st->time_time = NULL;
+    st->time_struct_time = NULL;
+    st->time_strftime = NULL;
 
     return 0;
 }
