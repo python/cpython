@@ -210,7 +210,7 @@ this RE against the string ``'abcbd'``.
 |      |           | ``[bcd]*`` is only matching     |
 |      |           | ``bc``.                         |
 +------+-----------+---------------------------------+
-| 6    | ``abcb``  | Try ``b`` again.  This time     |
+| 7    | ``abcb``  | Try ``b`` again.  This time     |
 |      |           | the character at the            |
 |      |           | current position is ``'b'``, so |
 |      |           | it succeeds.                    |
@@ -1388,7 +1388,7 @@ Feedback
 ========
 
 Regular expressions are a complicated topic.  Did this document help you
-understand them?  Were there parts that were unclear, or Problems you
+understand them?  Were there parts that were unclear, or problems you
 encountered that weren't covered here?  If so, please send suggestions for
 improvements to the author.
 
