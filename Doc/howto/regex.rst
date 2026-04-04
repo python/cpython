@@ -369,10 +369,10 @@ for a complete listing.
 |                  | location where this RE matches.               |
 +------------------+-----------------------------------------------+
 | ``findall()``    | Find all substrings where the RE matches, and |
-|                  | returns them as a list.                       |
+|                  | return them as a list.                        |
 +------------------+-----------------------------------------------+
 | ``finditer()``   | Find all substrings where the RE matches, and |
-|                  | returns them as an :term:`iterator`.          |
+|                  | return them as an :term:`iterator`.           |
 +------------------+-----------------------------------------------+
 
 :meth:`~re.Pattern.match` and :meth:`~re.Pattern.search` return ``None`` if no match can be found.  If
