@@ -1435,7 +1435,6 @@ add_stats(GCState *gcstate, int gen, struct gc_generation_stats *stats)
     memcpy(cur_stats, prev_stats, sizeof(struct gc_generation_stats));
 
     cur_stats->ts_start = stats->ts_start;
-    cur_stats->ts_stop = stats->ts_stop;
     cur_stats->heap_size = stats->heap_size;
     cur_stats->work_to_do = stats->work_to_do;
 
@@ -1449,6 +1448,7 @@ add_stats(GCState *gcstate, int gen, struct gc_generation_stats *stats)
     cur_stats->objects_not_transitively_reachable += stats->objects_not_transitively_reachable;
 
     cur_stats->duration += stats->duration;
+    cur_stats->ts_stop = stats->ts_stop;
 }
 
 static void
