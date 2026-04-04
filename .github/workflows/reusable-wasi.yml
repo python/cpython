@@ -3,6 +3,8 @@ name: Reusable WASI
 on:
   workflow_call:
 
+permissions: {}
+
 env:
   FORCE_COLOR: 1
 
