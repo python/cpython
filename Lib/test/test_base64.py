@@ -209,6 +209,25 @@ class BaseXYTestCase(unittest.TestCase):
                                b'\xd3V\xbeo\xf7\x1d', b'01a-b_cd')
         self.check_encode_type_errors(base64.urlsafe_b64encode)
 
+    def test_b64encode_padded(self):
+        b64encode = base64.b64encode
+        self.assertEqual(b64encode(b'', padded=False), b'')
+        self.assertEqual(b64encode(b'a', padded=False), b'YQ')
+        self.assertEqual(b64encode(b'ab', padded=False), b'YWI')
+        self.assertEqual(b64encode(b'abc', padded=False), b'YWJj')
+        self.assertEqual(b64encode(b'\xfb', padded=False, altchars=b'-_'), b'-w')
+        self.assertEqual(b64encode(b'\xfb\xff', padded=False, altchars=b'-_'),
+                         b'-_8')
+        self.assertEqual(b64encode(b'\xfb\xff\xbf', padded=False, altchars=b'-_'),
+                         b'-_-_')
+
+        urlsafe_b64encode = base64.urlsafe_b64encode
+        self.assertEqual(urlsafe_b64encode(b'', padded=False), b'')
+        self.assertEqual(urlsafe_b64encode(b'\xfb', padded=False), b'-w')
+        self.assertEqual(urlsafe_b64encode(b'\xfb\xff', padded=False), b'-_8')
+        self.assertEqual(urlsafe_b64encode(b'\xfb\xff\xbf', padded=False),
+                         b'-_-_')
+
     def _common_test_wrapcol(self, func, data):
         eq = self.assertEqual
         expected = func(data)
@@ -313,6 +332,36 @@ class BaseXYTestCase(unittest.TestCase):
     def test_b64decode_padding_error(self):
         self.assertRaises(binascii.Error, base64.b64decode, b'abc')
         self.assertRaises(binascii.Error, base64.b64decode, 'abc')
+
+    def test_b64decode_padded(self):
+        b64decode = base64.b64decode
+        urlsafe_b64decode = base64.urlsafe_b64decode
+        def check(data, expected, padded=0):
+            if b'=' in data:
+                with self.assertRaisesRegex(binascii.Error, 'Padding not allowed'):
+                    b64decode(data, padded=False, validate=True)
+            self.assertEqual(b64decode(data, padded=False, ignorechars=b'='),
+                             expected)
+            self.assertEqual(urlsafe_b64decode(data, padded=True), expected)
+            self.assertEqual(urlsafe_b64decode(data, padded=False), expected)
+            data = data.replace(b'=', b'')
+            self.assertEqual(b64decode(data, padded=False), expected)
+            self.assertEqual(b64decode(data, padded=False, validate=True),
+                             expected)
+            self.assertEqual(urlsafe_b64decode(data), expected)
+
+        check(b'', b'')
+        check(b'YQ==', b'a')
+        check(b'YWI=', b'ab')
+        check(b'YWJj', b'abc')
+        check(b'Y=WJj', b'abc')
+        check(b'YW=Jj', b'abc')
+        check(b'YWJ=j', b'abc')
+
+        with self.assertRaisesRegex(binascii.Error, 'Incorrect padding'):
+            urlsafe_b64decode(b'YQ', padded=True)
+        with self.assertRaisesRegex(binascii.Error, 'Incorrect padding'):
+            urlsafe_b64decode(b'YWI', padded=True)
 
     def _common_test_ignorechars(self, func):
         eq = self.assertEqual
@@ -487,6 +536,15 @@ class BaseXYTestCase(unittest.TestCase):
         self.check_other_types(base64.b32encode, b'abcd', b'MFRGGZA=')
         self.check_encode_type_errors(base64.b32encode)
 
+    def test_b32encode_padded(self):
+        b32encode = base64.b32encode
+        self.assertEqual(b32encode(b'', padded=False), b'')
+        self.assertEqual(b32encode(b'a', padded=False), b'ME')
+        self.assertEqual(b32encode(b'ab', padded=False), b'MFRA')
+        self.assertEqual(b32encode(b'abc', padded=False), b'MFRGG')
+        self.assertEqual(b32encode(b'abcd', padded=False), b'MFRGGZA')
+        self.assertEqual(b32encode(b'abcde', padded=False), b'MFRGGZDF')
+
     def test_b32encode_wrapcol(self):
         eq = self.assertEqual
         b = b'www.python.org'
@@ -564,6 +622,31 @@ class BaseXYTestCase(unittest.TestCase):
             eq(base64.b32decode(b'M%c023456' % map01, map01=map01), res)
             eq(base64.b32decode(b'M%cO23456' % map01, map01=map01), res)
 
+    def test_b32decode_padded(self):
+        b32decode = base64.b32decode
+        def check(data, expected):
+            if b'=' in data:
+                with self.assertRaisesRegex(binascii.Error, 'Padding not allowed'):
+                    b32decode(data, padded=False)
+            self.assertEqual(b32decode(data, padded=False, ignorechars=b'='),
+                             expected)
+            data = data.replace(b'=', b'')
+            self.assertEqual(b32decode(data, padded=False), expected)
+
+        check(b'', b'')
+        check(b'ME======', b'a')
+        check(b'MFRA====', b'ab')
+        check(b'MFRGG===', b'abc')
+        check(b'MFRGGZA=', b'abcd')
+        check(b'MFRGGZDF', b'abcde')
+        check(b'M=FRGGZDF', b'abcde')
+        check(b'MF=RGGZDF', b'abcde')
+        check(b'MFR=GGZDF', b'abcde')
+        check(b'MFRG=GZDF', b'abcde')
+        check(b'MFRGG=ZDF', b'abcde')
+        check(b'MFRGGZ=DF', b'abcde')
+        check(b'MFRGGZD=F', b'abcde')
+
     def test_b32decode_ignorechars(self):
         self._common_test_ignorechars(base64.b32decode)
         eq = self.assertEqual
@@ -632,6 +715,8 @@ class BaseXYTestCase(unittest.TestCase):
         for to_encode, expected in test_cases:
             with self.subTest(to_decode=to_encode):
                 self.assertEqual(base64.b32hexencode(to_encode), expected)
+                self.assertEqual(base64.b32hexencode(to_encode, padded=False),
+                                 expected.rstrip(b'='))
 
     def test_b32hexencode_other_types(self):
         self.check_other_types(base64.b32hexencode, b'abcd', b'C5H66P0=')
@@ -678,6 +763,31 @@ class BaseXYTestCase(unittest.TestCase):
     def test_b32hexdecode_other_types(self):
         self.check_other_types(base64.b32hexdecode, b'C5H66===', b'abc')
         self.check_decode_type_errors(base64.b32hexdecode)
+
+    def test_b32hexdecode_padded(self):
+        b32hexdecode = base64.b32hexdecode
+        def check(data, expected):
+            if b'=' in data:
+                with self.assertRaisesRegex(binascii.Error, 'Padding not allowed'):
+                    b32hexdecode(data, padded=False)
+            self.assertEqual(b32hexdecode(data, padded=False, ignorechars=b'='),
+                             expected)
+            data = data.replace(b'=', b'')
+            self.assertEqual(b32hexdecode(data, padded=False), expected)
+
+        check(b'', b'')
+        check(b'C4======', b'a')
+        check(b'C5H0====', b'ab')
+        check(b'C5H66===', b'abc')
+        check(b'C5H66P0=', b'abcd')
+        check(b'C5H66P35', b'abcde')
+        check(b'C=5H66P35', b'abcde')
+        check(b'C5=H66P35', b'abcde')
+        check(b'C5H=66P35', b'abcde')
+        check(b'C5H6=6P35', b'abcde')
+        check(b'C5H66=P35', b'abcde')
+        check(b'C5H66P=35', b'abcde')
+        check(b'C5H66P3=5', b'abcde')
 
     def test_b32hexdecode_ignorechars(self):
         self._common_test_ignorechars(base64.b32hexdecode)
