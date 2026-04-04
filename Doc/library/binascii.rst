@@ -48,14 +48,19 @@ The :mod:`!binascii` module defines the following functions:
       Added the *backtick* parameter.
 
 
-.. function:: a2b_base64(string, /, *, alphabet=BASE64_ALPHABET, strict_mode=False)
-              a2b_base64(string, /, *, ignorechars, alphabet=BASE64_ALPHABET, strict_mode=True)
+.. function:: a2b_base64(string, /, *, padded=True, alphabet=BASE64_ALPHABET, strict_mode=False)
+              a2b_base64(string, /, *, ignorechars, padded=True, alphabet=BASE64_ALPHABET, strict_mode=True)
 
    Convert a block of base64 data back to binary and return the binary data. More
    than one line may be passed at a time.
 
    Optional *alphabet* must be a :class:`bytes` object of length 64 which
    specifies an alternative alphabet.
+
+   If *padded* is true, the last group of 4 base 64 alphabet characters must
+   be padded with the '=' character.
+   If *padded* is false, the '=' character is treated as other non-alphabet
+   characters (depending on the value of *strict_mode* and *ignorechars*).
 
    If *ignorechars* is specified, it should be a :term:`bytes-like object`
    containing characters to ignore from the input when *strict_mode* is true.
@@ -79,13 +84,17 @@ The :mod:`!binascii` module defines the following functions:
       Added the *strict_mode* parameter.
 
    .. versionchanged:: 3.15
-      Added the *alphabet* and *ignorechars* parameters.
+      Added the *alphabet*, *ignorechars* and *padded* parameters.
 
 
-.. function:: b2a_base64(data, *, alphabet=BASE64_ALPHABET, wrapcol=0, newline=True)
+.. function:: b2a_base64(data, *, padded=True, alphabet=BASE64_ALPHABET, wrapcol=0, newline=True)
 
    Convert binary data to a line(s) of ASCII characters in base64 coding,
    as specified in :rfc:`4648`.
+
+   If *padded* is true (default), pad the encoded data with the '='
+   character to a size multiple of 4.
+   If *padded* is false, do not add the pad characters.
 
    If *wrapcol* is non-zero, insert a newline (``b'\n'``) character
    after at most every *wrapcol* characters.
@@ -98,7 +107,7 @@ The :mod:`!binascii` module defines the following functions:
       Added the *newline* parameter.
 
    .. versionchanged:: 3.15
-      Added the *alphabet* and *wrapcol* parameters.
+      Added the *alphabet*, *padded* and *wrapcol* parameters.
 
 
 .. function:: a2b_ascii85(string, /, *, foldspaces=False, adobe=False, ignorechars=b'')
@@ -190,7 +199,7 @@ The :mod:`!binascii` module defines the following functions:
    .. versionadded:: 3.15
 
 
-.. function:: a2b_base32(string, /, *, alphabet=BASE32_ALPHABET, ignorechars=b'')
+.. function:: a2b_base32(string, /, *, padded=True, alphabet=BASE32_ALPHABET, ignorechars=b'')
 
    Convert base32 data back to binary and return the binary data.
 
@@ -208,6 +217,11 @@ The :mod:`!binascii` module defines the following functions:
    Optional *alphabet* must be a :class:`bytes` object of length 32 which
    specifies an alternative alphabet.
 
+   If *padded* is true, the last group of 8 base 32 alphabet characters must
+   be padded with the '=' character.
+   If *padded* is false, the '=' character is treated as other non-alphabet
+   characters (depending on the value of *ignorechars*).
+
    *ignorechars* should be a :term:`bytes-like object` containing characters
    to ignore from the input.
    If *ignorechars* contains the pad character ``'='``,  the pad characters
@@ -218,13 +232,17 @@ The :mod:`!binascii` module defines the following functions:
 
    .. versionadded:: next
 
-.. function:: b2a_base32(data, /, *, alphabet=BASE32_ALPHABET, wrapcol=0)
+.. function:: b2a_base32(data, /, *, padded=True, alphabet=BASE32_ALPHABET, wrapcol=0)
 
    Convert binary data to a line of ASCII characters in base32 coding,
    as specified in :rfc:`4648`. The return value is the converted line.
 
    Optional *alphabet* must be a :term:`bytes-like object` of length 32 which
    specifies an alternative alphabet.
+
+   If *padded* is true (default), pad the encoded data with the '='
+   character to a size multiple of 8.
+   If *padded* is false, do not add the pad characters.
 
    If *wrapcol* is non-zero, insert a newline (``b'\n'``) character
    after at most every *wrapcol* characters.
