@@ -42,9 +42,19 @@ async def _run(tool: str, args: typing.Iterable[str], echo: bool = False) -> str
     async with _CORES:
         if echo:
             print(shlex.join(command))
+
+        if os.name == "nt":
+            # When building with /p:PlatformToolset=ClangCL, the VS build
+            # system puts that clang's include path into INCLUDE. The JIT's
+            # clang may be a different version, and mismatched headers cause
+            # build errors. See https://github.com/python/cpython/issues/146210.
+            env = os.environ.copy()
+            env.pop("INCLUDE", None)
+        else:
+            env = None
         try:
             process = await asyncio.create_subprocess_exec(
-                *command, stdout=subprocess.PIPE
+                *command, stdout=subprocess.PIPE, env=env
             )
         except FileNotFoundError:
             return None

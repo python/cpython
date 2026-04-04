@@ -21,12 +21,12 @@ jobs:
     steps:
       - name: Build fuzzers (${{ inputs.sanitizer }})
         id: build
-        uses: google/oss-fuzz/infra/cifuzz/actions/build_fuzzers@master
+        uses: google/oss-fuzz/infra/cifuzz/actions/build_fuzzers@ed23f8af80ff82b25ca67cd9b101e690b8897b3f # master
         with:
           oss-fuzz-project-name: ${{ inputs.oss-fuzz-project-name }}
           sanitizer: ${{ inputs.sanitizer }}
       - name: Run fuzzers (${{ inputs.sanitizer }})
-        uses: google/oss-fuzz/infra/cifuzz/actions/run_fuzzers@master
+        uses: google/oss-fuzz/infra/cifuzz/actions/run_fuzzers@ed23f8af80ff82b25ca67cd9b101e690b8897b3f # master
         with:
           fuzz-seconds: 600
           oss-fuzz-project-name: ${{ inputs.oss-fuzz-project-name }}
@@ -34,13 +34,13 @@ jobs:
           sanitizer: ${{ inputs.sanitizer }}
       - name: Upload crash
         if: failure() && steps.build.outcome == 'success'
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
         with:
           name: ${{ inputs.sanitizer }}-artifacts
           path: ./out/artifacts
       - name: Upload SARIF
         if: always() && steps.build.outcome == 'success'
-        uses: github/codeql-action/upload-sarif@v4
+        uses: github/codeql-action/upload-sarif@38697555549f1db7851b81482ff19f1fa5c4fedc # v4.34.1
         with:
           sarif_file: cifuzz-sarif/results.sarif
           checkout_path: cifuzz-sarif
