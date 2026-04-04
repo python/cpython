@@ -96,7 +96,10 @@ def setup_git_metadata(v):
     """Detect git and set GITVERSION, GITTAG, GITBRANCH."""
     git_dir = pyconf.path_join([v.srcdir_abs, ".git"])
     if pyconf.path_exists(git_dir):
-        HAS_GIT = bool(pyconf.find_prog("git"))
+        pyconf.checking("for git")
+        git_path = pyconf.find_prog("git")
+        pyconf.result("found" if git_path else "not found")
+        HAS_GIT = bool(git_path)
     else:
         HAS_GIT = False
 
@@ -184,12 +187,8 @@ def setup_build_python(v):
         PYTHON_FOR_FREEZE = "./_bootstrap_python"
     v.export("PYTHON_FOR_BUILD")
 
-    pyconf.checking("Python for regen version")
-    if pyconf.find_prog(PYTHON_FOR_REGEN):
-        pyconf.result(pyconf.cmd_output([PYTHON_FOR_REGEN, "-V"]))
-    else:
-        pyconf.result("missing")
-
+    pyconf.checking("for Python interpreter freezing")
+    pyconf.result(PYTHON_FOR_FREEZE)
     v.export("PYTHON_FOR_FREEZE", PYTHON_FOR_FREEZE)
 
     conf_modules.setup_freeze_module(v)
@@ -210,6 +209,12 @@ def setup_build_python(v):
             default="python3",
         )
     v.export("PYTHON_FOR_REGEN", PYTHON_FOR_REGEN)
+
+    pyconf.checking("Python for regen version")
+    if pyconf.find_prog(PYTHON_FOR_REGEN):
+        pyconf.result(pyconf.cmd_output([PYTHON_FOR_REGEN, "-V"]))
+    else:
+        pyconf.result("missing")
 
 
 def setup_prefix_and_dirs(v):
