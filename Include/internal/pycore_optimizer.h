@@ -15,6 +15,23 @@ extern "C" {
 #include "pycore_optimizer_types.h"
 #include <stdbool.h>
 
+/* Default fitness configuration values for trace quality control.
+ * FITNESS_INITIAL and FITNESS_INITIAL_SIDE can be overridden via
+ * PYTHON_JIT_FITNESS_INITIAL and PYTHON_JIT_FITNESS_INITIAL_SIDE */
+#define FITNESS_PER_INSTRUCTION     2
+#define FITNESS_BRANCH_BASE         5
+#define FITNESS_INITIAL             (FITNESS_PER_INSTRUCTION * 1000)
+#define FITNESS_INITIAL_SIDE        (FITNESS_INITIAL / 2)
+#define FITNESS_BACKWARD_EDGE       (FITNESS_INITIAL / 10)
+
+/* Exit quality constants for fitness-based trace termination.
+ * Higher values mean better places to stop the trace. */
+
+#define EXIT_QUALITY_DEFAULT         200
+#define EXIT_QUALITY_CLOSE_LOOP      (4 * EXIT_QUALITY_DEFAULT)
+#define EXIT_QUALITY_ENTER_EXECUTOR  (2 * EXIT_QUALITY_DEFAULT + 100)
+#define EXIT_QUALITY_SPECIALIZABLE   (EXIT_QUALITY_DEFAULT / 4)
+
 
 typedef struct _PyJitUopBuffer {
     _PyUOpInstruction *start;
@@ -101,7 +118,8 @@ typedef struct _PyJitTracerPreviousState {
 } _PyJitTracerPreviousState;
 
 typedef struct _PyJitTracerTranslatorState {
-    int jump_backward_seen;
+    int32_t fitness;              // Current trace fitness, starts high, decrements
+    int frame_depth;              // Current inline depth (0 = root frame)
 } _PyJitTracerTranslatorState;
 
 typedef struct _PyJitTracerState {
