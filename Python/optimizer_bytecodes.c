@@ -1267,6 +1267,19 @@ dummy_func(void) {
         none = sym_new_const(ctx, Py_None);
     }
 
+    op(_GUARD_CALLABLE_BUILTIN_CLASS, (callable, unused, unused[oparg] -- callable, unused, unused[oparg])) {
+        PyObject *callable_o = sym_get_const(ctx, callable);
+        if (callable_o && sym_matches_type(callable, &PyType_Type)) {
+            PyTypeObject *tp = (PyTypeObject *)callable_o;
+            if (tp->tp_vectorcall != NULL) {
+                ADD_OP(_NOP, 0, 0);
+            }
+        }
+        else {
+            sym_set_type(callable, &PyType_Type);
+        }
+    }
+
     op(_GUARD_CALLABLE_BUILTIN_O, (callable, self_or_null, args[oparg] -- callable, self_or_null, args[oparg])) {
         PyObject *callable_o = sym_get_const(ctx, callable);
         if (callable_o && sym_matches_type(callable, &PyCFunction_Type) &&

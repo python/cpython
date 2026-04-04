@@ -16191,6 +16191,29 @@
             break;
         }
 
+        case _GUARD_CALLABLE_BUILTIN_CLASS_r00: {
+            CHECK_CURRENT_CACHED_VALUES(0);
+            assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
+            _PyStackRef callable;
+            oparg = CURRENT_OPARG();
+            callable = stack_pointer[-2 - oparg];
+            PyObject *callable_o = PyStackRef_AsPyObjectBorrow(callable);
+            if (!PyType_Check(callable_o)) {
+                UOP_STAT_INC(uopcode, miss);
+                SET_CURRENT_CACHED_VALUES(0);
+                JUMP_TO_JUMP_TARGET();
+            }
+            PyTypeObject *tp = (PyTypeObject *)callable_o;
+            if (tp->tp_vectorcall == NULL) {
+                UOP_STAT_INC(uopcode, miss);
+                SET_CURRENT_CACHED_VALUES(0);
+                JUMP_TO_JUMP_TARGET();
+            }
+            SET_CURRENT_CACHED_VALUES(0);
+            assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
+            break;
+        }
+
         case _CALL_BUILTIN_CLASS_r01: {
             CHECK_CURRENT_CACHED_VALUES(0);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
@@ -16203,22 +16226,12 @@
             self_or_null = stack_pointer[-1 - oparg];
             callable = stack_pointer[-2 - oparg];
             PyObject *callable_o = PyStackRef_AsPyObjectBorrow(callable);
-            if (!PyType_Check(callable_o)) {
-                UOP_STAT_INC(uopcode, miss);
-                SET_CURRENT_CACHED_VALUES(0);
-                JUMP_TO_JUMP_TARGET();
-            }
             PyTypeObject *tp = (PyTypeObject *)callable_o;
             int total_args = oparg;
             _PyStackRef *arguments = args;
             if (!PyStackRef_IsNull(self_or_null)) {
                 arguments--;
                 total_args++;
-            }
-            if (tp->tp_vectorcall == NULL) {
-                UOP_STAT_INC(uopcode, miss);
-                SET_CURRENT_CACHED_VALUES(0);
-                JUMP_TO_JUMP_TARGET();
             }
             STAT_INC(CALL, hit);
             _PyFrame_SetStackPointer(frame, stack_pointer);
@@ -16293,11 +16306,6 @@
             PyObject *callable_o = PyStackRef_AsPyObjectBorrow(callable);
             if (!PyStackRef_IsNull(self_or_null)) {
                 args--;
-            }
-            if (_Py_ReachedRecursionLimit(tstate)) {
-                UOP_STAT_INC(uopcode, miss);
-                SET_CURRENT_CACHED_VALUES(0);
-                JUMP_TO_JUMP_TARGET();
             }
             STAT_INC(CALL, hit);
             PyCFunction cfunc = PyCFunction_GET_FUNCTION(callable_o);

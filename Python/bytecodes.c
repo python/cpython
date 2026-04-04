@@ -4548,9 +4548,15 @@ dummy_func(
             DEAD(should_be_none);
         }
 
-        op(_CALL_BUILTIN_CLASS, (callable, self_or_null, args[oparg] -- res)) {
+        op(_GUARD_CALLABLE_BUILTIN_CLASS, (callable, unused, unused[oparg] -- callable, unused, unused[oparg])) {
             PyObject *callable_o = PyStackRef_AsPyObjectBorrow(callable);
             EXIT_IF(!PyType_Check(callable_o));
+            PyTypeObject *tp = (PyTypeObject *)callable_o;
+            EXIT_IF(tp->tp_vectorcall == NULL);
+        }
+
+        op(_CALL_BUILTIN_CLASS, (callable, self_or_null, args[oparg] -- res)) {
+            PyObject *callable_o = PyStackRef_AsPyObjectBorrow(callable);
             PyTypeObject *tp = (PyTypeObject *)callable_o;
             int total_args = oparg;
             _PyStackRef *arguments = args;
@@ -4558,7 +4564,6 @@ dummy_func(
                 arguments--;
                 total_args++;
             }
-            EXIT_IF(tp->tp_vectorcall == NULL);
             STAT_INC(CALL, hit);
             PyObject *res_o = _Py_CallBuiltinClass_StackRefSteal(
                 callable,
@@ -4575,6 +4580,7 @@ dummy_func(
             _RECORD_CALLABLE +
             unused/1 +
             unused/2 +
+            _GUARD_CALLABLE_BUILTIN_CLASS +
             _CALL_BUILTIN_CLASS +
             _CHECK_PERIODIC_AT_END;
 
@@ -4596,8 +4602,6 @@ dummy_func(
             if (!PyStackRef_IsNull(self_or_null)) {
                 args--;
             }
-            // CPython promises to check all non-vectorcall function calls.
-            EXIT_IF(_Py_ReachedRecursionLimit(tstate));
             STAT_INC(CALL, hit);
             PyCFunction cfunc = PyCFunction_GET_FUNCTION(callable_o);
             _PyStackRef arg = args[0];
@@ -4618,6 +4622,7 @@ dummy_func(
             unused/1 +
             unused/2 +
             _GUARD_CALLABLE_BUILTIN_O +
+            _CHECK_RECURSION_LIMIT +
             _CALL_BUILTIN_O +
             POP_TOP +
             POP_TOP +
