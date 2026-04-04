@@ -1514,6 +1514,7 @@ _Py_uop_frame_new(
     frame->globals_watched = false;
     frame->func = NULL;
     frame->caller = false;
+    frame->is_c_recursion_checked = false;
     if (ctx->locals.used > ctx->locals.end || ctx->stack.used > ctx->stack.end) {
         ctx->done = true;
         ctx->out_of_space = true;

@@ -21,6 +21,7 @@ from test.support import is_emscripten, is_wasi, is_wasm32
 from test.support import infinite_recursion
 from test.support import os_helper
 from test.support import requires_root_user
+from test.support import requires_non_root_user
 from test.support.os_helper import TESTFN, FS_NONASCII, FakePath
 try:
     import fcntl
@@ -1550,7 +1551,7 @@ class PathTest(PurePathTest):
             self.assertRaises(FileNotFoundError, source.copy, target)
 
     @unittest.skipIf(sys.platform == "win32" or sys.platform == "wasi", "directories are always readable on Windows and WASI")
-    @requires_root_user
+    @requires_non_root_user
     def test_copy_dir_no_read_permission(self):
         base = self.cls(self.base)
         source = base / 'dirE'
