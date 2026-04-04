@@ -205,7 +205,7 @@ The special characters are:
    *without* establishing any backtracking points.
    This is the possessive version of the quantifier above.
    For example, on the 6-character string ``'aaaaaa'``, ``a{3,5}+aa``
-   attempt to match 5 ``'a'`` characters, then, requiring 2 more ``'a'``\ s,
+   attempts to match 5 ``'a'`` characters, then, requiring 2 more ``'a'``\ s,
    will need more characters than available and thus fail, while
    ``a{3,5}aa`` will match with ``a{3,5}`` capturing 5, then 4 ``'a'``\ s
    by backtracking and then the final 2 ``'a'``\ s are matched by the final
@@ -833,8 +833,8 @@ Flags
    will be conditionally ORed with other flags.  Example of use as a default
    value::
 
-      def myfunc(text, flag=re.NOFLAG):
-          return re.search(text, flag)
+      def myfunc(pattern, text, flag=re.NOFLAG):
+          return re.search(pattern, text, flag)
 
    .. versionadded:: 3.11
 
