@@ -2813,6 +2813,23 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertNotIn("_CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS", uops)
         self.assertNotIn("_GUARD_CALLABLE_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS", uops)
 
+    def test_check_recursion_limit_deduplicated(self):
+        def testfunc(n):
+            x = 0
+            for _ in range(n):
+                y = "hello"
+                a = y.upper()
+                b = y.lower()
+                x += len(a)
+                x += len(b)
+            return x
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, TIER2_THRESHOLD * 10)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertIn("_CALL_METHOD_DESCRIPTOR_NOARGS_INLINE", uops)
+        self.assertEqual(count_ops(ex, "_CHECK_RECURSION_LIMIT"), 1)
+
     def test_call_intrinsic_1(self):
         def testfunc(n):
             x = 0
