@@ -3071,13 +3071,17 @@ function u_setup_stack_direction() {
 function u_check_compiler_bugs(    have_o2, ipa_result, memmove_cflags, memmove_result) {
     have_o2 = (pyconf_compile_check("", "", "-O2") ? "yes" : "no")
     memmove_cflags = (((have_o2 != "") && (have_o2 != "no")) ? "-O2 -D_FORTIFY_SOURCE=2" : "")
-    memmove_result = (pyconf_run_check("for glibc _FORTIFY_SOURCE/memmove bug", "\n#include <stdio.h>\n#include <stdlib.h>\n#include <string.h>\nvoid foo(void *p, void *q) { memmove(p, q, 19); }\nint main(void) {\n  char a[32] = \"123456789000000000\";\n  foo(&a[9], a);\n  if (strcmp(a, \"123456789123456789000000000\") != 0)\n    return 1;\n  foo(a, &a[9]);\n  if (strcmp(a, \"123456789000000000\") != 0)\n    return 1;\n  return 0;\n}\n", memmove_cflags, "", 1) ? "no" : "yes")
+    pyconf_checking("for glibc _FORTIFY_SOURCE/memmove bug")
+    memmove_result = (pyconf_run_check("", "\n#include <stdio.h>\n#include <stdlib.h>\n#include <string.h>\nvoid foo(void *p, void *q) { memmove(p, q, 19); }\nint main(void) {\n  char a[32] = \"123456789000000000\";\n  foo(&a[9], a);\n  if (strcmp(a, \"123456789123456789000000000\") != 0)\n    return 1;\n  foo(a, &a[9]);\n  if (strcmp(a, \"123456789000000000\") != 0)\n    return 1;\n  return 0;\n}\n", memmove_cflags, "", 1) ? "no" : "yes")
+    pyconf_result(memmove_result)
     if ((memmove_result == "yes")) {
         pyconf_define("HAVE_GLIBC_MEMMOVE_BUG", 1, 0, "Define if glibc has incorrect _FORTIFY_SOURCE wrappers for memmove and bcopy.")
     }
     if ((V["ac_cv_gcc_asm_for_x87"] == "yes")) {
         if ((V["ac_cv_cc_name"] == "gcc")) {
-            ipa_result = (pyconf_run_check("for gcc ipa-pure-const bug", "\n__attribute__((noinline)) int\nfoo(int *p) {\n  int r;\n  asm ( \"movl $6, (%1)\\n\\t\"\n        \"xorl %0, %0\\n\\t\"\n        : \"=r\" (r) : \"r\" (p) : \"memory\"\n  );\n  return r;\n}\nint main(void) {\n  int p = 8;\n  if ((foo(&p) ? : p) != 6)\n    return 1;\n  return 0;\n}\n", "-O2", "", 1) ? "no" : "yes")
+            pyconf_checking("for gcc ipa-pure-const bug")
+            ipa_result = (pyconf_run_check("", "\n__attribute__((noinline)) int\nfoo(int *p) {\n  int r;\n  asm ( \"movl $6, (%1)\\n\\t\"\n        \"xorl %0, %0\\n\\t\"\n        : \"=r\" (r) : \"r\" (p) : \"memory\"\n  );\n  return r;\n}\nint main(void) {\n  int p = 8;\n  if ((foo(&p) ? : p) != 6)\n    return 1;\n  return 0;\n}\n", "-O2", "", 1) ? "no" : "yes")
+            pyconf_result(ipa_result)
             if ((ipa_result == "yes")) {
                 pyconf_define("HAVE_IPA_PURE_CONST_BUG", 1, 0, "Define if gcc has the ipa-pure-const bug.")
             }
@@ -3085,13 +3089,16 @@ function u_check_compiler_bugs(    have_o2, ipa_result, memmove_cflags, memmove_
     }
 }
 
-function u_check_sign_extension_and_getc(    ac_cv_have_getc_unlocked, ac_cv_rshift_extends_sign) {
+function u_check_sign_extension(    ac_cv_rshift_extends_sign) {
     pyconf_checking("whether right shift extends the sign bit")
     ac_cv_rshift_extends_sign = (pyconf_run_check("", "int main(void) { return (((-1)>>3 == -1) ? 0 : 1); }", "", "", 1) ? "yes" : "no")
     pyconf_result(ac_cv_rshift_extends_sign)
     if ((!((ac_cv_rshift_extends_sign != "") && (ac_cv_rshift_extends_sign != "no")))) {
         pyconf_define("SIGNED_RIGHT_SHIFT_ZERO_FILLS", 1, 0, "Define if i>>j for signed int i does not extend the sign bit when i < 0")
     }
+}
+
+function u_check_getc_unlocked(    ac_cv_have_getc_unlocked) {
     pyconf_checking("for getc_unlocked() and friends")
     ac_cv_have_getc_unlocked = (pyconf_link_check("", "#include <stdio.h>\nint main(void) { \n        FILE *f = fopen(\"/dev/null\", \"r\");\n        flockfile(f);\n        getc_unlocked(f);\n        funlockfile(f); return 0; }") ? "yes" : "no")
     pyconf_result(ac_cv_have_getc_unlocked)
@@ -3307,19 +3314,26 @@ function u_check_compiler_characteristics(    ac_cv_function_prototypes, ac_cv_s
     }
 }
 
-function u_check_mbstowcs() {
-    if ((!pyconf_run_check("for broken mbstowcs", "\n#include <stddef.h>\n#include <stdio.h>\n#include <stdlib.h>\nint main(void) {\n    size_t len = -1;\n    const char *str = \"text\";\n    len = mbstowcs(NULL, str, 0);\n    return (len != 4);\n}\n", "", "", 1))) {
+function u_check_mbstowcs(    ac_cv_broken_mbstowcs) {
+    pyconf_checking("for broken mbstowcs")
+    ac_cv_broken_mbstowcs = (pyconf_run_check("", "\n#include <stddef.h>\n#include <stdio.h>\n#include <stdlib.h>\nint main(void) {\n    size_t len = -1;\n    const char *str = \"text\";\n    len = mbstowcs(NULL, str, 0);\n    return (len != 4);\n}\n", "", "", 1) ? "no" : "yes")
+    pyconf_result(ac_cv_broken_mbstowcs)
+    if (((ac_cv_broken_mbstowcs != "") && (ac_cv_broken_mbstowcs != "no"))) {
         pyconf_define("HAVE_BROKEN_MBSTOWCS", 1, 0, "Define if mbstowcs(NULL, \"text\", 0) does not return the number of wide chars that would be converted.")
     }
 }
 
 function u_check_computed_gotos(    cg_result) {
+    pyconf_checking("for --with-computed-gotos")
     if (pyconf_option_is_yes("with_computed_gotos")) {
         pyconf_define("USE_COMPUTED_GOTOS", 1, 0, "Define if you want to use computed gotos in ceval.c.")
     } else if (pyconf_option_is_no("with_computed_gotos")) {
         pyconf_define("USE_COMPUTED_GOTOS", 0, 0, "Define if you want to use computed gotos in ceval.c.")
     }
-    cg_result = (pyconf_run_check("whether " V["CC"] " supports computed gotos", "\nint main(int argc, char **argv) {\n    static void *targets[1] = { &&LABEL1 };\n    goto LABEL2;\nLABEL1:\n    return 0;\nLABEL2:\n    goto *targets[0];\n    return 1;\n}\n", "", "", 0) ? "yes" : "no")
+    pyconf_result(pyconf_option_value_or("with_computed_gotos", "no value specified"))
+    pyconf_checking("whether " V["CC"] " supports computed gotos")
+    cg_result = (pyconf_run_check("", "\nint main(int argc, char **argv) {\n    static void *targets[1] = { &&LABEL1 };\n    goto LABEL2;\nLABEL1:\n    return 0;\nLABEL2:\n    goto *targets[0];\n    return 1;\n}\n", "", "", 0) ? "yes" : "no")
+    pyconf_result(cg_result)
     if (((cg_result != "") && (cg_result != "no"))) {
         pyconf_define("HAVE_COMPUTED_GOTOS", 1, 0, "Define if the C compiler supports computed gotos.")
     }
@@ -6560,7 +6574,7 @@ function u__define_maxlogname() {
 }
 
 function u__define_ut_namesize() {
-    pyconf_define("HAVE_UT_NAMESIZE", 1, 0, "Define if you have the 'HAVE_UT_NAMESIZE' constant.")
+    pyconf_define("HAVE_UT_NAMESIZE", 1, 0, "Define if you have the 'UT_NAMESIZE' constant.")
 }
 
 function u__define_pr_set_vma_anon_name() {
@@ -6792,12 +6806,12 @@ function u_check_posix_functions(    ANDROID_API_LEVEL, _i_name, blocked_len, ma
     }
 }
 
-function u_check_special_functions(    _pyconf_cond_sys_eventfd_h, _pyconf_cond_sys_memfd_h, _pyconf_cond_sys_mman_h, _pyconf_cond_sys_timerfd_h, ac_cv_have_chflags, ac_cv_have_lchflags, disable_epoll) {
+function u_check_special_functions(    _pyconf_cond_sys_eventfd_h, _pyconf_cond_sys_memfd_h, _pyconf_cond_sys_mman_h, _pyconf_cond_sys_timerfd_h, ac_cv_have_chflags, ac_cv_have_lchflags, disable_epoll, has_dirfd) {
     pyconf_checking("whether dirfd is declared")
-    if (pyconf_check_decl("dirfd", "sys/types.h dirent.h", "HAVE_DIRFD")) {
-        pyconf_result("yes")
-    } else {
-        pyconf_result("no")
+    has_dirfd = (pyconf_check_decl("dirfd", "sys/types.h dirent.h", "HAVE_DECL_DIRFD") ? "yes" : "no")
+    pyconf_result((((has_dirfd != "") && (has_dirfd != "no")) ? "yes" : "no"))
+    if (((has_dirfd != "") && (has_dirfd != "no"))) {
+        pyconf_define("HAVE_DIRFD", 1, 0, "Define if you have the 'dirfd' function or macro.")
     }
     pyconf_check_func("chroot", "unistd.h", "HAVE_CHROOT")
     pyconf_check_func("link", "unistd.h", "HAVE_LINK")
@@ -8709,7 +8723,8 @@ BEGIN {
     u_check_endianness_and_soabi()
     u_setup_module_deps()
     u_setup_install_paths()
-    u_check_sign_extension_and_getc()
+    u_check_sign_extension()
+    u_check_getc_unlocked()
     u_check_readline()
     u_check_misc_runtime()
     u_check_stat_timestamps()

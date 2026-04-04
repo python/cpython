@@ -1,11 +1,12 @@
-"""conf_compiler — Compiler detection, platform triplet, stack direction, PEP 11 tier.
+"""conf_compiler — Compiler detection, flags, and compiler-level checks.
 
-Decides whether to define _XOPEN_SOURCE and related POSIX macros;
-runs AC_PROG_CC (find_compiler), discovers GREP/SED/EGREP,
-CC_BASENAME; selects C++ compiler; detects PLATFORM_TRIPLET,
-MULTIARCH, SOABI_PLATFORM; determines stack growth direction;
-classifies PEP 11 support tier; and checks compiler bugs (glibc
-memmove, ipa-pure-const).
+Runs AC_PROG_CC (find_compiler), discovers GREP/SED/EGREP, CC_BASENAME;
+selects C++ compiler; determines stack growth direction; sets up warning
+flags, strict-overflow, OPT, BASECFLAGS; checks compiler bugs (glibc
+memmove, ipa-pure-const); checks compiler characteristics (const, signed
+char, prototypes, socketpair); checks sizes/alignof; checks stdatomic;
+checks computed gotos; checks sign-extension and getc_unlocked; checks
+mbstowcs.
 """
 
 from __future__ import annotations
@@ -119,8 +120,8 @@ def check_compiler_bugs(v):
     # http://sourceware.org/ml/libc-alpha/2010-12/msg00009.html
 
     memmove_cflags = "-O2 -D_FORTIFY_SOURCE=2" if have_o2 else ""
+    pyconf.checking("for glibc _FORTIFY_SOURCE/memmove bug")
     memmove_result = pyconf.run_check(
-        "for glibc _FORTIFY_SOURCE/memmove bug",
         """
 #include <stdio.h>
 #include <stdlib.h>
@@ -142,6 +143,7 @@ int main(void) {
         on_failure_return=True,
         cross_compiling_result="undefined",
     )
+    pyconf.result(memmove_result)
     if memmove_result is True:
         pyconf.define(
             "HAVE_GLIBC_MEMMOVE_BUG",
@@ -159,8 +161,8 @@ int main(void) {
 
     if v.ac_cv_gcc_asm_for_x87 is True:
         if v.ac_cv_cc_name == "gcc":
+            pyconf.checking("for gcc ipa-pure-const bug")
             ipa_result = pyconf.run_check(
-                "for gcc ipa-pure-const bug",
                 r"""
 __attribute__((noinline)) int
 foo(int *p) {
@@ -183,6 +185,7 @@ int main(void) {
                 on_failure_return=True,
                 cross_compiling_result="undefined",
             )
+            pyconf.result(ipa_result)
             if ipa_result is True:
                 pyconf.define(
                     "HAVE_IPA_PURE_CONST_BUG",
@@ -191,17 +194,13 @@ int main(void) {
                 )
 
 
-def check_sign_extension_and_getc(v):
-    # ---------------------------------------------------------------------------
-    # Sign-extension / right-shift
-    # ---------------------------------------------------------------------------
+def check_sign_extension(v):
     # Check whether right shifting a negative integer extends the sign bit
     # or fills with zeros (like the Cray J90, according to Tim Peters).
 
     pyconf.checking("whether right shift extends the sign bit")
     ac_cv_rshift_extends_sign = pyconf.run_check(
         "int main(void) { return (((-1)>>3 == -1) ? 0 : 1); }",
-        cache_var="ac_cv_rshift_extends_sign",
         cross_compiling_default=True,
     )
     pyconf.result(ac_cv_rshift_extends_sign)
@@ -212,9 +211,8 @@ def check_sign_extension_and_getc(v):
             "Define if i>>j for signed int i does not extend the sign bit when i < 0",
         )
 
-    # ---------------------------------------------------------------------------
-    # getc_unlocked and friends
-    # ---------------------------------------------------------------------------
+
+def check_getc_unlocked(v):
     # check for getc_unlocked and related locking functions
 
     pyconf.checking("for getc_unlocked() and friends")
@@ -465,8 +463,8 @@ def check_mbstowcs(v):
     # ---------------------------------------------------------------------------
     # Check for broken mbstowcs implementation
 
-    if pyconf.run_check(
-        "for broken mbstowcs",
+    pyconf.checking("for broken mbstowcs")
+    ac_cv_broken_mbstowcs = pyconf.run_check(
         """
 #include <stddef.h>
 #include <stdio.h>
@@ -481,7 +479,9 @@ int main(void) {
         on_success_return=False,
         on_failure_return=True,
         cross_compiling_result=False,
-    ):
+    )
+    pyconf.result(ac_cv_broken_mbstowcs)
+    if ac_cv_broken_mbstowcs:
         pyconf.define(
             "HAVE_BROKEN_MBSTOWCS",
             1,
@@ -496,6 +496,7 @@ def check_computed_gotos(v):
     # ---------------------------------------------------------------------------
     # Check for --with-computed-gotos
 
+    pyconf.checking("for --with-computed-gotos")
     if WITH_COMPUTED_GOTOS.is_yes():
         pyconf.define(
             "USE_COMPUTED_GOTOS",
@@ -508,11 +509,11 @@ def check_computed_gotos(v):
             0,
             "Define if you want to use computed gotos in ceval.c.",
         )
+    pyconf.result(WITH_COMPUTED_GOTOS.value_or("no value specified"))
 
     # Runtime probe: does the C compiler support computed gotos?
-    # ac_cv_computed_gotos: check whether the C compiler supports computed gotos
+    pyconf.checking(f"whether {v.CC} supports computed gotos")
     cg_result = pyconf.run_check(
-        f"whether {v.CC} supports computed gotos",
         """
 int main(int argc, char **argv) {
     static void *targets[1] = { &&LABEL1 };
@@ -526,6 +527,7 @@ LABEL2:
 """,
         cross_compiling_result=True if WITH_COMPUTED_GOTOS.is_yes() else False,
     )
+    pyconf.result(cg_result)
     if cg_result:
         pyconf.define(
             "HAVE_COMPUTED_GOTOS",
