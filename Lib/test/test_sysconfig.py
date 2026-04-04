@@ -373,11 +373,12 @@ class TestSysConfig(unittest.TestCase):
         sys.platform = 'android'
         get_config_vars()['ANDROID_API_LEVEL'] = 9
         for machine, abi in {
-            'x86_64': 'x86_64',
-            'i686': 'x86',
             'aarch64': 'arm64_v8a',
+            'arm': 'armeabi_v7a',
             'armv7l': 'armeabi_v7a',
             'armv8l': 'armeabi_v7a',
+            'i686': 'x86',
+            'x86_64': 'x86_64',
         }.items():
             with self.subTest(machine):
                 self._set_uname(('Linux', 'localhost', '3.18.91+',
@@ -586,11 +587,12 @@ class TestSysConfig(unittest.TestCase):
         machine = platform.machine()
         suffix = sysconfig.get_config_var('EXT_SUFFIX')
         expected_triplet = {
-            "x86_64": "x86_64-linux-android",
-            "i686": "i686-linux-android",
             "aarch64": "aarch64-linux-android",
+            "arm": "arm-linux-androideabi",
             "armv7l": "arm-linux-androideabi",
             "armv8l": "arm-linux-androideabi",
+            "i686": "i686-linux-android",
+            "x86_64": "x86_64-linux-android",
         }[machine]
         self.assertTrue(suffix.endswith(f"-{expected_triplet}.so"),
                         f"{machine=}, {suffix=}")
