@@ -4811,8 +4811,6 @@ dummy_func(
             if (!PyStackRef_IsNull(self_or_null)) {
                 arguments--;
             }
-            // CPython promises to check all non-vectorcall function calls.
-            EXIT_IF(_Py_ReachedRecursionLimit(tstate));
             STAT_INC(CALL, hit);
             PyCFunction cfunc = method->d_method->ml_meth;
             PyObject *self = PyStackRef_AsPyObjectBorrow(arguments[0]);
@@ -4830,9 +4828,12 @@ dummy_func(
             res = PyStackRef_FromPyObjectSteal(res_o);
         }
 
+        op(_CHECK_RECURSION_LIMIT, ( -- )) {
+            EXIT_IF(_Py_ReachedRecursionLimit(tstate));
+        }
+
         tier2 op(_CALL_METHOD_DESCRIPTOR_O_INLINE, (callable, args[oparg], cfunc/4 -- res, c, s, a)) {
             assert(oparg == 2);
-            EXIT_IF(_Py_ReachedRecursionLimit(tstate));
             STAT_INC(CALL, hit);
             volatile PyCFunction cfunc_v = (PyCFunction)cfunc;
             PyObject *self = PyStackRef_AsPyObjectBorrow(args[0]);
@@ -4855,6 +4856,7 @@ dummy_func(
             unused/1 +
             unused/2 +
             _GUARD_CALLABLE_METHOD_DESCRIPTOR_O +
+            _CHECK_RECURSION_LIMIT +
             _CALL_METHOD_DESCRIPTOR_O +
             POP_TOP +
             POP_TOP +
@@ -4956,8 +4958,6 @@ dummy_func(
             }
             _PyStackRef self_stackref = args[0];
             PyObject *self = PyStackRef_AsPyObjectBorrow(self_stackref);
-            // CPython promises to check all non-vectorcall function calls.
-            EXIT_IF(_Py_ReachedRecursionLimit(tstate));
             STAT_INC(CALL, hit);
             PyCFunction cfunc = method->d_method->ml_meth;
             PyObject *res_o = _PyCFunction_TrampolineCall(cfunc, self, NULL);
@@ -4975,7 +4975,6 @@ dummy_func(
             assert(oparg == 1);
             _PyStackRef self_stackref = args[0];
             PyObject *self = PyStackRef_AsPyObjectBorrow(self_stackref);
-            EXIT_IF(_Py_ReachedRecursionLimit(tstate));
             STAT_INC(CALL, hit);
             volatile PyCFunction cfunc_v = (PyCFunction)cfunc;
             PyObject *res_o = _PyCFunction_TrampolineCall(cfunc_v, self, NULL);
@@ -4993,6 +4992,7 @@ dummy_func(
             unused/1 +
             unused/2 +
             _GUARD_CALLABLE_METHOD_DESCRIPTOR_NOARGS +
+            _CHECK_RECURSION_LIMIT +
             _CALL_METHOD_DESCRIPTOR_NOARGS +
             _CHECK_PERIODIC_AT_END;
 

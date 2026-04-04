@@ -3565,7 +3565,7 @@
                 if (sym_is_null(self_or_null) || sym_is_not_null(self_or_null)) {
                     PyFunctionObject *func = (PyFunctionObject *)sym_get_const(ctx, callable);
                     PyCodeObject *co = (PyCodeObject *)func->func_code;
-                    if (co->co_argcount == oparg + !sym_is_null(self_or_null)) {
+                    if (co->co_argcount == oparg + sym_is_not_null(self_or_null)) {
                         ADD_OP(_NOP, 0 ,0);
                     }
                 }
@@ -3835,9 +3835,10 @@
             self_or_null = stack_pointer[-1 - oparg];
             callable = stack_pointer[-2 - oparg];
             PyObject *callable_o = sym_get_const(ctx, callable);
-            if (callable_o && sym_matches_type(callable, &PyCFunction_Type)) {
+            if (callable_o && sym_matches_type(callable, &PyCFunction_Type) &&
+                (sym_is_not_null(self_or_null) || sym_is_null(self_or_null))) {
                 int total_args = oparg;
-                if (!sym_is_null(self_or_null)) {
+                if (sym_is_not_null(self_or_null)) {
                     total_args++;
                 }
                 if (total_args == 1 && PyCFunction_GET_FLAGS(callable_o) == METH_O) {
@@ -4072,7 +4073,8 @@
             self_or_null = stack_pointer[-1 - oparg];
             callable = stack_pointer[-2 - oparg];
             PyObject *callable_o = sym_get_const(ctx, callable);
-            if (callable_o && sym_matches_type(callable, &PyMethodDescr_Type)) {
+            if (callable_o && sym_matches_type(callable, &PyMethodDescr_Type) &&
+                (sym_is_not_null(self_or_null) || sym_is_null(self_or_null))) {
                 int total_args = oparg;
                 if (sym_is_not_null(self_or_null)) {
                     total_args++;
@@ -4136,6 +4138,14 @@
             break;
         }
 
+        case _CHECK_RECURSION_LIMIT: {
+            if (ctx->frame->is_c_recursion_checked) {
+                ADD_OP(_NOP, 0, 0);
+            }
+            ctx->frame->is_c_recursion_checked = true;
+            break;
+        }
+
         case _CALL_METHOD_DESCRIPTOR_O_INLINE: {
             JitOptRef res;
             JitOptRef c;
@@ -4163,7 +4173,8 @@
             self_or_null = stack_pointer[-1 - oparg];
             callable = stack_pointer[-2 - oparg];
             PyObject *callable_o = sym_get_const(ctx, callable);
-            if (callable_o && sym_matches_type(callable, &PyMethodDescr_Type)) {
+            if (callable_o && sym_matches_type(callable, &PyMethodDescr_Type) &&
+                (sym_is_not_null(self_or_null) || sym_is_null(self_or_null))) {
                 int total_args = oparg;
                 if (sym_is_not_null(self_or_null)) {
                     total_args++;
@@ -4227,7 +4238,8 @@
             self_or_null = stack_pointer[-1 - oparg];
             callable = stack_pointer[-2 - oparg];
             PyObject *callable_o = sym_get_const(ctx, callable);
-            if (callable_o && sym_matches_type(callable, &PyMethodDescr_Type)) {
+            if (callable_o && sym_matches_type(callable, &PyMethodDescr_Type) &&
+                (sym_is_not_null(self_or_null) || sym_is_null(self_or_null))) {
                 int total_args = oparg;
                 if (sym_is_not_null(self_or_null)) {
                     total_args++;
@@ -4291,7 +4303,8 @@
             self_or_null = stack_pointer[-1 - oparg];
             callable = stack_pointer[-2 - oparg];
             PyObject *callable_o = sym_get_const(ctx, callable);
-            if (callable_o && sym_matches_type(callable, &PyMethodDescr_Type)) {
+            if (callable_o && sym_matches_type(callable, &PyMethodDescr_Type) &&
+                (sym_is_not_null(self_or_null) || sym_is_null(self_or_null))) {
                 int total_args = oparg;
                 if (sym_is_not_null(self_or_null)) {
                     total_args++;
