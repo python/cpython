@@ -642,7 +642,7 @@ of each one.
    whitespace is in a character class or preceded by an unescaped backslash; this
    lets you organize and indent the RE more clearly.  This flag also lets you put
    comments within a RE that will be ignored by the engine; comments are marked by
-   a ``'#'`` that's neither in a character class or preceded by an unescaped
+   a ``'#'`` that's neither in a character class nor preceded by an unescaped
    backslash.
 
    For example, here's a RE that uses :const:`re.VERBOSE`; see how much easier it
