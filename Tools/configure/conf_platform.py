@@ -1,11 +1,13 @@
-"""conf_platform — Platform identity, MACHDEP, framework, host platform.
+"""conf_platform — Platform identity, feature probes, and POSIX function checks.
 
-Detects MACHDEP from uname or cross-compile host triplet; sets up
-host_prefix for cross targets; seeds iOS cross-compilation tools
-(AR/CC/CPP/CXX); handles --enable-universalsdk, --with-universal-archs,
---with-framework-name, --enable-framework (Darwin and iOS variants),
---with-app-store-compliance; and computes _PYTHON_HOST_PLATFORM for
-cross-compilation.
+Detects MACHDEP, ac_sys_system, and ac_sys_release from uname or a
+cross-compile host triplet; sets up host_prefix and _PYTHON_HOST_PLATFORM;
+decides whether to define _XOPEN_SOURCE/_POSIX_C_SOURCE per platform;
+computes PLATFORM_TRIPLET, MULTIARCH, SOABI_PLATFORM, and the PEP 11
+support tier; checks endianness and sets SOABI/EXT_SUFFIX/LDVERSION;
+scans all system headers; checks POSIX functions, declarations, struct
+members, clock functions, PTY helpers, POSIX shared memory, and
+miscellaneous platform quirks (flock, socket libs, chflags, PIPE_BUF).
 """
 
 from __future__ import annotations
@@ -469,7 +471,7 @@ def _define_ut_namesize():
     pyconf.define(
         "HAVE_UT_NAMESIZE",
         1,
-        "Define if you have the 'HAVE_UT_NAMESIZE' constant.",
+        "Define if you have the 'UT_NAMESIZE' constant.",
     )
 
 
@@ -817,15 +819,19 @@ def check_posix_functions(v):
 def check_special_functions(v):
     """Check dirfd, PY_CHECK_FUNC equivalents, flock, unsetenv, socket libs, chflags."""
     # AC_CHECK_DECL([dirfd], [AC_DEFINE([HAVE_DIRFD])], [], [dirent.h])
+    # Uses AC_CHECK_DECL (singular) — only define when found, never define to 0.
     pyconf.checking("whether dirfd is declared")
-    if pyconf.check_decl(
+    has_dirfd = pyconf.check_decl(
         "dirfd",
         includes=["sys/types.h", "dirent.h"],
-        define_name="HAVE_DIRFD",
-    ):
-        pyconf.result("yes")
-    else:
-        pyconf.result("no")
+    )
+    pyconf.result("yes" if has_dirfd else "no")
+    if has_dirfd:
+        pyconf.define(
+            "HAVE_DIRFD",
+            1,
+            "Define if you have the 'dirfd' function or macro.",
+        )
 
     # PY_CHECK_FUNC equivalents — take address to verify usability
     pyconf.check_func("chroot", headers=["unistd.h"])
