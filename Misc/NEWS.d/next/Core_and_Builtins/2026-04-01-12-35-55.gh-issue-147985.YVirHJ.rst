@@ -1,0 +1,3 @@
+Make :c:func:`PySet_Contains` attempt a lock-free lookup, similar to
+:meth:`!set.__contains__`.  This avoids acquiring the set object mutex in the
+normal case.
