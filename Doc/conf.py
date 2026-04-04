@@ -177,6 +177,7 @@ nitpick_ignore = [
     ('c:type', '__int64'),
     ('c:type', 'unsigned __int64'),
     ('c:type', 'double'),
+    ('c:type', '_Float16'),
     # Standard C structures
     ('c:struct', 'in6_addr'),
     ('c:struct', 'in_addr'),
@@ -570,6 +571,17 @@ extlinks_detect_hardcoded_links = True
 refcount_file = 'data/refcounts.dat'
 stable_abi_file = 'data/stable_abi.dat'
 threadsafety_file = 'data/threadsafety.dat'
+
+# Options for notfound.extension
+# -------------------------------
+
+if not os.getenv("READTHEDOCS"):
+    if language_code:
+        notfound_urls_prefix = (
+            f'/{language_code.replace("_", "-").lower()}/{version}/'
+        )
+    else:
+        notfound_urls_prefix = f'/{version}/'
 
 # Options for sphinxext-opengraph
 # -------------------------------

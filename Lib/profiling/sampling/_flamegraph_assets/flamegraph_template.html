@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Tachyon Profiler - Flamegraph Report</title>
+    <title>{{TITLE}}</title>
     <!-- INLINE_VENDOR_D3_JS -->
     <!-- INLINE_VENDOR_FLAMEGRAPH_CSS -->
     <!-- INLINE_VENDOR_FLAMEGRAPH_JS -->
@@ -18,7 +18,7 @@
           <div class="brand-logo" id="navbar-logo"></div>
           <span class="brand-text">Tachyon</span>
           <span class="brand-divider"></span>
-          <span class="brand-subtitle">Flamegraph Report</span>
+          <span class="brand-subtitle">{{SUBTITLE}}</span>
         </div>
         <div class="search-wrapper">
           <input
@@ -110,6 +110,13 @@
                 </svg>
               </button>
               <div class="section-content">
+                <!-- Elided Stacks Toggle (only shown for diff flamegraphs with elided paths) -->
+                <div class="toggle-switch" id="toggle-elided" tabindex="0" style="display: none;">
+                  <span class="toggle-label active" data-text="Differential">Differential</span>
+                  <div class="toggle-track"></div>
+                  <span class="toggle-label" data-text="Elided" title="Code paths that existed in baseline but are missing from current profile">Elided</span>
+                </div>
+
                 <div class="toggle-switch" id="toggle-invert" title="Toggle between standard and inverted flamegraph view" tabindex="0">
                   <span class="toggle-label active" data-text="Flamegraph">Flamegraph</span>
                   <div class="toggle-track"></div>
@@ -294,9 +301,9 @@
               </select>
             </section>
 
-            <!-- Legend Section -->
-            <section class="sidebar-section legend-section collapsible" id="legend-section">
-              <button class="section-header" onclick="toggleSection('legend-section')">
+            <!-- Heat Map Legend (shown for normal flamegraphs) -->
+            <section class="sidebar-section legend-section collapsible" id="heatmap-legend-section">
+              <button class="section-header" onclick="toggleSection('heatmap-legend-section')">
                 <h3 class="section-title">Heat Map</h3>
                 <svg class="section-chevron" width="12" height="12" viewBox="0 0 12 12" fill="none">
                   <path d="M3 4.5L6 7.5L9 4.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
@@ -343,6 +350,70 @@
                   <div class="legend-color" style="background: var(--heat-1)"></div>
                   <span class="legend-label">Coldest</span>
                   <span class="legend-range">&lt;1%</span>
+                </div>
+              </div>
+              </div>
+            </section>
+
+            <!-- Differential Legend (shown for differential flamegraphs) -->
+            <section class="sidebar-section legend-section collapsible" id="diff-legend-section" style="display: none;">
+              <button class="section-header" onclick="toggleSection('diff-legend-section')">
+                <h3 class="section-title">Differential Colors</h3>
+                <svg class="section-chevron" width="12" height="12" viewBox="0 0 12 12" fill="none">
+                  <path d="M3 4.5L6 7.5L9 4.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </button>
+              <div class="section-content">
+              <div class="legend">
+                <div class="legend-item">
+                  <div class="legend-color" style="background: var(--diff-regression-deep)"></div>
+                  <span class="legend-label">Deep Regression</span>
+                  <span class="legend-range">&ge;100%</span>
+                </div>
+                <div class="legend-item">
+                  <div class="legend-color" style="background: var(--diff-regression-medium)"></div>
+                  <span class="legend-label">Medium Regression</span>
+                  <span class="legend-range">50-100%</span>
+                </div>
+                <div class="legend-item">
+                  <div class="legend-color" style="background: var(--diff-regression-light)"></div>
+                  <span class="legend-label">Light Regression</span>
+                  <span class="legend-range">30-50%</span>
+                </div>
+                <div class="legend-item">
+                  <div class="legend-color" style="background: var(--diff-regression-verylight)"></div>
+                  <span class="legend-label">Minor Regression</span>
+                  <span class="legend-range">15-30%</span>
+                </div>
+                <div class="legend-item">
+                  <div class="legend-color" style="background: var(--diff-neutral)"></div>
+                  <span class="legend-label">Neutral</span>
+                  <span class="legend-range">-15% to 15%</span>
+                </div>
+                <div class="legend-item">
+                  <div class="legend-color" style="background: var(--diff-improvement-verylight)"></div>
+                  <span class="legend-label">Minor Improvement</span>
+                  <span class="legend-range">-30% to -15%</span>
+                </div>
+                <div class="legend-item">
+                  <div class="legend-color" style="background: var(--diff-improvement-light)"></div>
+                  <span class="legend-label">Light Improvement</span>
+                  <span class="legend-range">-50% to -30%</span>
+                </div>
+                <div class="legend-item">
+                  <div class="legend-color" style="background: var(--diff-improvement-medium)"></div>
+                  <span class="legend-label">Strong Improvement</span>
+                  <span class="legend-range">&lt;-50%</span>
+                </div>
+                <div class="legend-item">
+                  <div class="legend-color" style="background: var(--diff-new)"></div>
+                  <span class="legend-label">New</span>
+                  <span class="legend-range">No counterpart in baseline</span>
+                </div>
+                <div class="legend-item">
+                  <div class="legend-color" style="background: var(--diff-elided)"></div>
+                  <span class="legend-label">Removed</span>
+                  <span class="legend-range">No counterpart in current</span>
                 </div>
               </div>
               </div>

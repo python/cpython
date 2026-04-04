@@ -3878,20 +3878,38 @@ static PyStructSequence_Desc emscripten_info_desc = {
 
 EM_JS(char *, _Py_emscripten_runtime, (void), {
     var info;
-    if (typeof navigator == 'object') {
+    if (typeof process === "object") {
+        if (process.versions?.bun) {
+            info = `bun v${process.versions.bun}`;
+        } else if (process.versions?.deno) {
+            info = `deno v${process.versions.deno}`;
+        } else {
+            // As far as I can tell, every JavaScript runtime puts "node" in
+            // process.release.name. Pyodide once checked for
+            //
+            // process.release.name === "node"
+            //
+            // and this is apparently part of the reason other runtimes started
+            // lying about it. Similar to the situation with userAgent.
+            //
+            // But just in case some other JS runtime decides to tell us what it
+            // is, we'll pick it up.
+            const name = process.release?.name ?? "node";
+            info = `${name} ${process.version}`;
+        }
+        // Include v8 version if we know it
+        if (process.versions?.v8) {
+            info +=  ` (v8 ${process.versions.v8})`;
+        }
+    } else if (typeof navigator === "object") {
         info = navigator.userAgent;
-    } else if (typeof process == 'object') {
-        info = "Node.js ".concat(process.version);
     } else {
         info = "UNKNOWN";
     }
-    var len = lengthBytesUTF8(info) + 1;
-    var res = _malloc(len);
-    if (res) stringToUTF8(info, res, len);
 #if __wasm64__
-    return BigInt(res);
+    return BigInt(stringToNewUTF8(info));
 #else
-    return res;
+    return stringToNewUTF8(info);
 #endif
 });
 

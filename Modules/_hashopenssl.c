@@ -2899,6 +2899,7 @@ hashlib_constants(PyObject *module)
 }
 
 static PyModuleDef_Slot hashlib_slots[] = {
+    _Py_ABI_SLOT,
     {Py_mod_exec, hashlib_init_hashtable},
     {Py_mod_exec, hashlib_init_HASH_type},
     {Py_mod_exec, hashlib_init_HASHXOF_type},
