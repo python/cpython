@@ -816,8 +816,9 @@ fastpath:
             }
             state = get_binascii_state(module);
             if (state) {
+                unsigned char *bin_data_start = PyBytesWriter_GetData(writer);
                 PyErr_SetString(state->Error,
-                                (quad_pos == 0 && ascii_data == data->buf)
+                                (quad_pos == 0 && bin_data == bin_data_start)
                                 ? "Leading padding not allowed"
                                 : "Excess padding not allowed");
             }
@@ -1601,8 +1602,9 @@ fastpath:
             }
             state = get_binascii_state(module);
             if (state) {
+                unsigned char *bin_data_start = PyBytesWriter_GetData(writer);
                 PyErr_SetString(state->Error,
-                                (octa_pos == 0 && ascii_data == data->buf)
+                                (octa_pos == 0 && bin_data == bin_data_start)
                                 ? "Leading padding not allowed"
                                 : "Excess padding not allowed");
             }
