@@ -1511,11 +1511,9 @@ initialize_tools(PyCodeObject *code)
 }
 
 static void
-initialize_lines(PyCodeObject *code, int bytes_per_entry)
+initialize_lines(_PyCoLineInstrumentationData *line_data, PyCodeObject *code, int bytes_per_entry)
 {
     ASSERT_WORLD_STOPPED_OR_LOCKED(code);
-    _PyCoLineInstrumentationData *line_data = code->_co_monitoring->lines;
-
     assert(line_data != NULL);
     line_data->bytes_per_entry = bytes_per_entry;
     int code_len = (int)Py_SIZE(code);
@@ -1635,6 +1633,7 @@ initialize_lines(PyCodeObject *code, int bytes_per_entry)
             set_original_opcode(line_data, handler, original_opcode);
         }
     }
+    FT_ATOMIC_STORE_PTR_RELEASE(code->_co_monitoring->lines, line_data);
 }
 
 static void
@@ -1656,18 +1655,19 @@ allocate_instrumentation_data(PyCodeObject *code)
     ASSERT_WORLD_STOPPED_OR_LOCKED(code);
 
     if (code->_co_monitoring == NULL) {
-        code->_co_monitoring = PyMem_Malloc(sizeof(_PyCoMonitoringData));
-        if (code->_co_monitoring == NULL) {
+        _PyCoMonitoringData *monitoring = PyMem_Malloc(sizeof(_PyCoMonitoringData));
+        if (monitoring == NULL) {
             PyErr_NoMemory();
             return -1;
         }
-        code->_co_monitoring->local_monitors = (_Py_LocalMonitors){ 0 };
-        code->_co_monitoring->active_monitors = (_Py_LocalMonitors){ 0 };
-        code->_co_monitoring->tools = NULL;
-        code->_co_monitoring->lines = NULL;
-        code->_co_monitoring->line_tools = NULL;
-        code->_co_monitoring->per_instruction_opcodes = NULL;
-        code->_co_monitoring->per_instruction_tools = NULL;
+        monitoring->local_monitors = (_Py_LocalMonitors){ 0 };
+        monitoring->active_monitors = (_Py_LocalMonitors){ 0 };
+        monitoring->tools = NULL;
+        monitoring->lines = NULL;
+        monitoring->line_tools = NULL;
+        monitoring->per_instruction_opcodes = NULL;
+        monitoring->per_instruction_tools = NULL;
+        FT_ATOMIC_STORE_PTR_RELEASE(code->_co_monitoring, monitoring);
     }
     return 0;
 }
@@ -1732,12 +1732,12 @@ update_instrumentation_data(PyCodeObject *code, PyInterpreterState *interp)
             else {
                 bytes_per_entry = 5;
             }
-            code->_co_monitoring->lines = PyMem_Malloc(1 + code_len * bytes_per_entry);
-            if (code->_co_monitoring->lines == NULL) {
+            _PyCoLineInstrumentationData *lines = PyMem_Malloc(1 + code_len * bytes_per_entry);
+            if (lines == NULL) {
                 PyErr_NoMemory();
                 return -1;
             }
-            initialize_lines(code, bytes_per_entry);
+            initialize_lines(lines, code, bytes_per_entry);
         }
         if (multitools && code->_co_monitoring->line_tools == NULL) {
             code->_co_monitoring->line_tools = PyMem_Malloc(code_len);
