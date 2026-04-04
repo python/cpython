@@ -3,8 +3,7 @@ name: Reusable check HTML IDs
 on:
   workflow_call:
 
-permissions:
-  contents: read
+permissions: {}
 
 env:
   FORCE_COLOR: 1
