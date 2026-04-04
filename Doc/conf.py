@@ -434,8 +434,8 @@ latex_appendices = ['glossary', 'about', 'license', 'copyright']
 # Options for Epub output
 # -----------------------
 
-epub_author = 'Python Documentation Authors'
-epub_publisher = doc_authors
+epub_author = doc_authors
+epub_publisher = 'Python Software Foundation'
 epub_exclude_files = (
     'index.xhtml',
     'download.xhtml',
