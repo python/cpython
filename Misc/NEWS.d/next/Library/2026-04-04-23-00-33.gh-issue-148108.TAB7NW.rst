@@ -1,0 +1,2 @@
+Make :exc:`binascii.Incomplete` a subclass of :exc:`binascii.Error` and use
+it for incomplete data errors.

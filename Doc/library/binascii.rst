@@ -349,8 +349,13 @@ The :mod:`!binascii` module defines the following functions:
 
 .. exception:: Incomplete
 
-   Exception raised on incomplete data. These are usually not programming errors,
+   A subclass of :exc:`Error` raised on incomplete data.
+   These are usually not programming errors,
    but may be handled by reading a little more data and trying again.
+
+   .. versionchanged:: next
+      Made :exc:`!Incomplete` a subclass of :exc:`!Error`.
+      It is now raised on incomplete Base16, Base32, and Base64 data.
 
 
 .. data:: BASE64_ALPHABET

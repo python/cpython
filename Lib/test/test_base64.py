@@ -330,8 +330,8 @@ class BaseXYTestCase(unittest.TestCase):
         self.assertRaises(ValueError, base64.b64decode, '', altchars='+/-')
 
     def test_b64decode_padding_error(self):
-        self.assertRaises(binascii.Error, base64.b64decode, b'abc')
-        self.assertRaises(binascii.Error, base64.b64decode, 'abc')
+        self.assertRaises(binascii.Incomplete, base64.b64decode, b'abc')
+        self.assertRaises(binascii.Incomplete, base64.b64decode, 'abc')
 
     def test_b64decode_padded(self):
         b64decode = base64.b64decode
@@ -358,9 +358,9 @@ class BaseXYTestCase(unittest.TestCase):
         check(b'YW=Jj', b'abc')
         check(b'YWJ=j', b'abc')
 
-        with self.assertRaisesRegex(binascii.Error, 'Incorrect padding'):
+        with self.assertRaisesRegex(binascii.Incomplete, 'Incorrect padding'):
             urlsafe_b64decode(b'YQ', padded=True)
-        with self.assertRaisesRegex(binascii.Error, 'Incorrect padding'):
+        with self.assertRaisesRegex(binascii.Incomplete, 'Incorrect padding'):
             urlsafe_b64decode(b'YWI', padded=True)
 
     def _common_test_ignorechars(self, func):
@@ -483,7 +483,7 @@ class BaseXYTestCase(unittest.TestCase):
         self.assertEqual(str(cm.warning),
                          "invalid character '/' in URL-safe Base64 data "
                          "will be discarded in future Python versions")
-        with self.assertRaises(binascii.Error):
+        with self.assertRaises(binascii.Incomplete):
             base64.b64decode(b'+/!', altchars=b'-_')
 
     def _altchars_strategy():
@@ -879,7 +879,7 @@ class BaseXYTestCase(unittest.TestCase):
         # Non-alphabet characters
         self.assertRaises(binascii.Error, base64.b16decode, '0102AG')
         # Incorrect "padding"
-        self.assertRaises(binascii.Error, base64.b16decode, '010')
+        self.assertRaises(binascii.Incomplete, base64.b16decode, '010')
 
     def test_b16decode_ignorechars(self):
         self._common_test_ignorechars(base64.b16decode)
@@ -1226,9 +1226,9 @@ class BaseXYTestCase(unittest.TestCase):
             with self.assertRaises(ValueError, msg=bytes([c])):
                 base64.a85decode(b'<~!!!!' + bytes([c]) + b'~>', adobe=True)
 
-        self.assertRaises(ValueError, base64.a85decode,
+        self.assertRaises(binascii.Incomplete, base64.a85decode,
                                       b"malformed", adobe=True)
-        self.assertRaises(ValueError, base64.a85decode,
+        self.assertRaises(binascii.Incomplete, base64.a85decode,
                                       b"<~still malformed", adobe=True)
 
         # With adobe=False (the default), Adobe framing markers are disallowed
