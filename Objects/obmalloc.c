@@ -131,7 +131,7 @@ _PyMem_mi_page_is_safe_to_free(mi_page_t *page)
 // If we are deferring collection of more than this amount of memory for
 // mimalloc pages, advance the write sequence.  Advancing allows these
 // pages to be re-used in a different thread or for a different size class.
-#define QSBR_PAGE_MEM_LIMIT 4096*20
+#define QSBR_PAGE_MEM_LIMIT (4096*20)
 
 // Return true if the global write sequence should be advanced for a mimalloc
 // page that is deferred from collection.
