@@ -1050,7 +1050,7 @@ binascii.a2b_ascii85
     ignorechars: Py_buffer = b''
         A byte string containing characters to ignore from the input.
     canonical: bool = False
-        When set to true, reject non-canonical encodings per RFC 4648 section 3.5.
+        When set to true, reject non-canonical encodings.
 
 Decode Ascii85 data.
 [clinic start generated code]*/
@@ -1058,7 +1058,7 @@ Decode Ascii85 data.
 static PyObject *
 binascii_a2b_ascii85_impl(PyObject *module, Py_buffer *data, int foldspaces,
                           int adobe, Py_buffer *ignorechars, int canonical)
-/*[clinic end generated code: output=09b35f1eac531357 input=75a0dcab97528ade]*/
+/*[clinic end generated code: output=09b35f1eac531357 input=dd050604ed30199e]*/
 {
     const unsigned char *ascii_data = data->buf;
     Py_ssize_t ascii_len = data->len;
@@ -1178,8 +1178,7 @@ binascii_a2b_ascii85_impl(PyObject *module, Py_buffer *data, int foldspaces,
             *bin_data++ = (leftchar >> (24 - 8 * i)) & 0xff;
         }
 
-        /* https://datatracker.ietf.org/doc/html/rfc4648.html#section-3.5
-         * Decoders MAY reject non-canonical encodings. */
+        /* Reject non-canonical encodings in the final group. */
         if (canonical && chunk_len < 4) {
             if (chunk_len == 0) {
                 state = get_binascii_state(module);
@@ -1367,7 +1366,7 @@ binascii.a2b_base85
     ignorechars: Py_buffer = b''
         A byte string containing characters to ignore from the input.
     canonical: bool = False
-        When set to true, reject non-canonical encodings per RFC 4648 section 3.5.
+        When set to true, reject non-canonical encodings.
 
 Decode a line of Base85 data.
 [clinic start generated code]*/
@@ -1376,7 +1375,7 @@ static PyObject *
 binascii_a2b_base85_impl(PyObject *module, Py_buffer *data,
                          PyBytesObject *alphabet, Py_buffer *ignorechars,
                          int canonical)
-/*[clinic end generated code: output=90dfef0c6b51e5f3 input=fe3bb2d3a66b9842]*/
+/*[clinic end generated code: output=90dfef0c6b51e5f3 input=2819dc8aeffee5a2]*/
 {
     const unsigned char *ascii_data = data->buf;
     Py_ssize_t ascii_len = data->len;
@@ -1462,8 +1461,7 @@ binascii_a2b_base85_impl(PyObject *module, Py_buffer *data,
             *bin_data++ = (leftchar >> (24 - 8 * i)) & 0xff;
         }
 
-        /* https://datatracker.ietf.org/doc/html/rfc4648.html#section-3.5
-         * Decoders MAY reject non-canonical encodings. */
+        /* Reject non-canonical encodings in the final group. */
         if (canonical && chunk_len < 4) {
             if (chunk_len == 0) {
                 /* 1-char partial group is never produced by a conforming

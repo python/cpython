@@ -376,7 +376,7 @@ PyDoc_STRVAR(binascii_a2b_ascii85__doc__,
 "  ignorechars\n"
 "    A byte string containing characters to ignore from the input.\n"
 "  canonical\n"
-"    When set to true, reject non-canonical encodings per RFC 4648 section 3.5.");
+"    When set to true, reject non-canonical encodings.");
 
 #define BINASCII_A2B_ASCII85_METHODDEF    \
     {"a2b_ascii85", _PyCFunction_CAST(binascii_a2b_ascii85), METH_FASTCALL|METH_KEYWORDS, binascii_a2b_ascii85__doc__},
@@ -605,7 +605,7 @@ PyDoc_STRVAR(binascii_a2b_base85__doc__,
 "  ignorechars\n"
 "    A byte string containing characters to ignore from the input.\n"
 "  canonical\n"
-"    When set to true, reject non-canonical encodings per RFC 4648 section 3.5.");
+"    When set to true, reject non-canonical encodings.");
 
 #define BINASCII_A2B_BASE85_METHODDEF    \
     {"a2b_base85", _PyCFunction_CAST(binascii_a2b_base85), METH_FASTCALL|METH_KEYWORDS, binascii_a2b_base85__doc__},
@@ -1684,4 +1684,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=d1e630dd194dfddd input=a9049054013a1b77]*/
+/*[clinic end generated code: output=b41544f39b0ef681 input=a9049054013a1b77]*/
