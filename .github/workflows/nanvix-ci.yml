@@ -27,7 +27,7 @@ jobs:
     with:
       zutil-version: "v0.6.0"
       platforms: '["microvm"]'
-      memory-sizes: '["128mb","256mb"]'
+      memory-sizes: '["256mb"]'
       skip-full-test-modes: '[]'
       caller-event-name: ${{ github.event_name }}
     secrets:
@@ -157,7 +157,7 @@ jobs:
             echo "::warning::No stdlib found in tarball — zip will not contain ramfs"
           fi
 
-          ZIP_NAME="cpython-windows-microvm-standalone-128mb-${GITHUB_SHA::7}.zip"
+          ZIP_NAME="cpython-windows-microvm-standalone-256mb-${GITHUB_SHA::7}.zip"
           (cd windows-zip && zip "../${ZIP_NAME}" *)
           echo "zip_name=$ZIP_NAME" >> "$GITHUB_ENV"
           echo "Created: $ZIP_NAME ($(stat -c%s "$ZIP_NAME") bytes)"
