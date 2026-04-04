@@ -954,9 +954,10 @@ Functions
    :func:`~re.match`.  Use that name when you need to retain compatibility with
    older Python versions.
 
-   .. versionchanged:: 3.15
-      The alternate :func:`~re.prefixmatch` name of this API was added as a
-      more explicitly descriptive name than :func:`~re.match`. Use it to better
+   .. deprecated:: 3.15
+      :func:`~re.match` has been :term:`soft deprecated` in favor of
+      the alternate :func:`~re.prefixmatch` name of this API which is
+      more explicitly descriptive. Use it to better
       express intent. The norm in other languages and regular expression
       implementations is to use the term *match* to refer to the behavior of
       what Python has always called :func:`~re.search`.
@@ -1309,9 +1310,10 @@ Regular expression objects
    :meth:`~Pattern.match`.  Use that name when you need to retain compatibility
    with older Python versions.
 
-   .. versionchanged:: 3.15
-      The alternate :meth:`~Pattern.prefixmatch` name of this API was added as
-      a more explicitly descriptive name than :meth:`~Pattern.match`. Use it to
+   .. deprecated:: 3.15
+      :meth:`~Pattern.match` has been :term:`soft deprecated` in favor of
+      the alternate :meth:`~Pattern.prefixmatch` name of this API which is
+      more explicitly descriptive. Use it to
       better express intent. The norm in other languages and regular expression
       implementations is to use the term *match* to refer to the behavior of
       what Python has always called :meth:`~Pattern.search`.
@@ -1778,16 +1780,22 @@ not familiar with the Python API's divergence from what otherwise become the
 industry norm.
 
 Quoting from the Zen Of Python (``python3 -m this``): *"Explicit is better than
-implicit"*. Anyone reading the name :func:`~re.prefixmatch` is likely to
-understand the intended semantics. When reading :func:`~re.match` there remains
+implicit"*. Anyone reading the name :func:`!prefixmatch` is likely to
+understand the intended semantics. When reading :func:`!match` there remains
 a seed of doubt about the intended behavior to anyone not already familiar with
 this old Python gotcha.
 
-We **do not** plan to deprecate and remove the older *match* name,
+We **do not** plan to remove the older :func:`!match` name,
 as it has been used in code for over 30 years.
-Code supporting older versions of Python should continue to use *match*.
+It has been :term:`soft deprecated`:
+code supporting older versions of Python should continue to use :func:`!match`,
+while new code should prefer :func:`!prefixmatch`.
 
 .. versionadded:: 3.15
+   :func:`!prefixmatch`
+
+.. deprecated:: 3.15
+   :func:`!match` is :term:`soft deprecated`
 
 Making a phonebook
 ^^^^^^^^^^^^^^^^^^
