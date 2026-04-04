@@ -2958,6 +2958,10 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertEqual(res, sum(range(TIER2_THRESHOLD)))
         uops = get_opnames(ex)
         self.assertIn("_CALL_LIST_APPEND", uops)
+        # _GUARD_TYPE_VERSION resolves the list type from recorded type
+        # info, so these redundant guards are eliminated:
+        self.assertNotIn("_GUARD_NOS_LIST", uops)
+        self.assertNotIn("_GUARD_CALLABLE_LIST_APPEND", uops)
 
     def test_call_list_append_pop_top(self):
         def testfunc(n):
@@ -3990,6 +3994,11 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertEqual(count_ops(ex, "_POP_TOP_NOP"), 1)
 
     def test_to_bool_dict(self):
+        # TO_BOOL_GENERIC (tier1) expands to:
+        #   _RECORD_TOS_TYPE + _GUARD_TYPE_VERSION + _TO_BOOL
+        # The optimizer resolves the dict type from recorded type info
+        # via _GUARD_TYPE_VERSION (even if the version cache has a
+        # collision), then specializes _TO_BOOL → _TO_BOOL_DICT.
         def testfunc(n):
             d = {"a": 1}
             count = 0
@@ -4020,31 +4029,6 @@ class TestUopsOptimization(unittest.TestCase):
         uops = get_opnames(ex)
         self.assertIn("_TO_BOOL_DICT", uops)
         self.assertNotIn("_TO_BOOL", uops)
-
-    def test_guard_type_version_resolves_type_for_to_bool(self):
-        # Tests the _GUARD_TYPE_VERSION + _RECORD_TOS_TYPE flow:
-        # TO_BOOL_GENERIC records the type, then _GUARD_TYPE_VERSION
-        # resolves it (even if the version cache has a collision),
-        # enabling the optimizer to specialize _TO_BOOL → _TO_BOOL_DICT.
-        def testfunc(n):
-            d = {"key": "value"}
-            count = 0
-            for _ in range(n):
-                if d:
-                    count += 1
-                d["key"] = "value"  # mutation keeps dict non-trivial
-            return count
-
-        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
-        self.assertEqual(res, TIER2_THRESHOLD)
-        self.assertIsNotNone(ex)
-        uops = get_opnames(ex)
-        # The optimizer should resolve the dict type from recorded type
-        # info and specialize _TO_BOOL into _TO_BOOL_DICT
-        self.assertIn("_TO_BOOL_DICT", uops)
-        self.assertNotIn("_TO_BOOL", uops)
-        # _GUARD_TYPE_VERSION should be present (guards the dict type)
-        self.assertIn("_GUARD_TYPE_VERSION", uops)
 
     def test_attr_promotion_failure(self):
         # We're not testing for any specific uops here, just
