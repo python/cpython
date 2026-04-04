@@ -366,7 +366,8 @@ for a complete listing.
 |                  | location where this RE matches.               |
 +------------------+-----------------------------------------------+
 | ``prefixmatch()``| Determine if the RE matches at the beginning  |
-|                  | of the string.                                |
+|                  | of the string. Previously named :ref:`match() |
+|                  | <prefixmatch-vs-match>`.                      |
 +------------------+-----------------------------------------------+
 | ``findall()``    | Find all substrings where the RE matches, and |
 |                  | returns them as a list.                       |
