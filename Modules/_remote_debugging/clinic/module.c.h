@@ -1301,11 +1301,32 @@ PyDoc_STRVAR(_remote_debugging_get_gc_stats__doc__,
 "get_gc_stats($module, /, pid, *, all_interpreters=False)\n"
 "--\n"
 "\n"
-"Get garbage statistics from external Python process.\n"
+"Get garbage collector statistics from external Python process.\n"
 "\n"
 "  all_interpreters\n"
 "    If True, return GC statistics from all interpreters.\n"
-"    If False, return only from main interpreter.");
+"    If False, return only from main interpreter.\n"
+"\n"
+"Returns:\n"
+"    List of dicts.\n"
+"    dict: A dictionary containing:\n"
+"        - gen:\n"
+"        - iid:\n"
+"        - ts_start:\n"
+"        - ts_stop:\n"
+"        - heap_size:\n"
+"        - work_to_do:\n"
+"        - collections:\n"
+"        - object_visits:\n"
+"        - collected:\n"
+"        - uncollectable:\n"
+"        - candidates:\n"
+"        - objects_transitively_reachable:\n"
+"        - objects_not_transitively_reachable:\n"
+"        - duration:\n"
+"\n"
+"Raises:\n"
+"    RuntimeError:");
 
 #define _REMOTE_DEBUGGING_GET_GC_STATS_METHODDEF    \
     {"get_gc_stats", _PyCFunction_CAST(_remote_debugging_get_gc_stats), METH_FASTCALL|METH_KEYWORDS, _remote_debugging_get_gc_stats__doc__},
@@ -1372,4 +1393,4 @@ skip_optional_kwonly:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=674d05c5ec0e3aca input=a9049054013a1b77]*/
+/*[clinic end generated code: output=bdd3092b9cbc4313 input=a9049054013a1b77]*/
