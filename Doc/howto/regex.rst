@@ -1288,9 +1288,7 @@ misunderstood.
 
 :func:`!prefixmatch` aka :func:`!match` only checks if the RE matches at the
 beginning of the string while :func:`!search` scans forward through the
-string for a match. :func:`!prefixmatch` only reports a successful match which
-starts at zero; if the match wouldn't start at zero, :func:`!prefixmatch` will
-*not* report it. ::
+string for a match. ::
 
    >>> print(re.prefixmatch('super', 'superstition').span())
    (0, 5)
