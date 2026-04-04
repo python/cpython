@@ -176,10 +176,15 @@ class MiscTests(unittest.TestCase):
     def test_xmlparser_refleaks_in___init__(self):
         gettotalrefcount = support.get_attribute(sys, 'gettotalrefcount')
         parser = cET.XMLParser()
-        refs_before = gettotalrefcount()
-        for _ in range(100):
-            parser.__init__()
-        self.assertAlmostEqual(gettotalrefcount() - refs_before, 0, delta=10)
+        lastrc = gettotalrefcount()
+        for i in range(20):
+            support.gc_collect()
+            rc = gettotalrefcount()
+            for _ in range(100):
+                parser.__init__()
+            delta = rc - lastrc
+            lastrc = rc
+        self.assertLess(delta, 3)
 
     def test_dict_disappearing_during_get_item(self):
         # test fix for seg fault reported in issue 27946
