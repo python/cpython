@@ -515,7 +515,7 @@ dummy_func(void) {
         res = sym_new_not_null(ctx);
         ds = dict_st;
         ss = sub_st;
-        if (!sym_is_container(sub_st) &&
+        if (sym_is_not_container(sub_st) &&
             sym_matches_type(dict_st, &PyFrozenDict_Type)) {
             REPLACE_OPCODE_IF_EVALUATES_PURE(dict_st, sub_st, res);
         }
@@ -707,7 +707,7 @@ dummy_func(void) {
         b = sym_new_type(ctx, &PyBool_Type);
         l = left;
         r = right;
-        if (!sym_is_container(left) &&
+        if (sym_is_not_container(left) &&
             sym_matches_type(right, &PyFrozenSet_Type)) {
             REPLACE_OPCODE_IF_EVALUATES_PURE(left, right, b);
         }

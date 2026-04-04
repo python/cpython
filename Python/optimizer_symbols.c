@@ -288,18 +288,17 @@ _Py_uop_sym_is_safe_const(JitOptContext *ctx, JitOptRef sym)
 }
 
 bool
-_Py_uop_sym_is_container(JitOptRef sym)
+_Py_uop_sym_is_not_container(JitOptRef sym)
 {
     PyTypeObject *typ = _Py_uop_sym_get_type(sym);
     if (typ == NULL) {
         return false;
     }
-    return (typ == &PyFrozenSet_Type) ||
-           (typ == &PyFrozenDict_Type) ||
-           (typ == &PySet_Type) ||
-           (typ == &PyDict_Type) ||
-           (typ == &PyList_Type) ||
-           (typ == &PyTuple_Type);
+    return (typ == &PyLong_Type) ||
+           (typ == &PyFloat_Type) ||
+           (typ == &PyUnicode_Type) ||
+           (typ == &_PyNone_Type) ||
+           (typ == &PyBool_Type);
 }
 
 void
