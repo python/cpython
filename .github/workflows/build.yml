@@ -356,9 +356,6 @@ jobs:
       - name: Build and test
         run: ./Android/android.py ci --fast-ci ${{ matrix.arch }}-linux-android
 
-      # FIXME
-      - uses: mxschmitt/action-tmate@v3
-
   build-ios:
     name: iOS
     needs: build-context
