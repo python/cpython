@@ -3537,8 +3537,14 @@ def cmd_output(args: list[str]) -> str:
 
 
 def cmd_status(args: list[str]) -> tuple[int, str]:
-    """Run command and return (exit_status, stripped_stdout)."""
-    r = subprocess.run(args, capture_output=True, text=True)
+    """Run command and return (exit_status, combined stdout+stderr stripped).
+
+    Stderr is merged into stdout (like shell ``2>&1``) to match the AWK
+    runtime (pyconf_cmd_status) and autoconf's typical usage pattern.
+    """
+    r = subprocess.run(
+        args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True
+    )
     return r.returncode, r.stdout.strip()
 
 
