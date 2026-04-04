@@ -1326,16 +1326,17 @@ dummy_func(void) {
             if (!sym_is_null(self_or_null)) {
                 total_args++;
             }
-            PyObject *self = NULL;
+            PyTypeObject *self_type = NULL;
             if (!sym_is_null(self_or_null)) {
-                self = sym_get_const(ctx, self_or_null);
-            } else {
-                self = sym_get_const(ctx, args[0]);
+                self_type = sym_get_type(self_or_null);
+            }
+            else {
+                self_type = sym_get_type(args[0]);
             }
             PyTypeObject *d_type = ((PyMethodDescrObject *)callable_o)->d_common.d_type;
             if (total_args == 2 &&
                 ((PyMethodDescrObject *)callable_o)->d_method->ml_flags == METH_O &&
-                self && Py_IS_TYPE(self, d_type)) {
+                self_type == d_type) {
                 ADD_OP(_NOP, 0, 0);
             }
         }
@@ -1351,16 +1352,17 @@ dummy_func(void) {
             if (!sym_is_null(self_or_null)) {
                 total_args++;
             }
-            PyObject *self = NULL;
+            PyTypeObject *self_type = NULL;
             if (!sym_is_null(self_or_null)) {
-                self = sym_get_const(ctx, self_or_null);
-            } else {
-                self = sym_get_const(ctx, args[0]);
+                self_type = sym_get_type(self_or_null);
+            }
+            else {
+                self_type = sym_get_type(args[0]);
             }
             PyTypeObject *d_type = ((PyMethodDescrObject *)callable_o)->d_common.d_type;
             if (total_args != 0 &&
                 ((PyMethodDescrObject *)callable_o)->d_method->ml_flags == (METH_FASTCALL|METH_KEYWORDS) &&
-                self && Py_IS_TYPE(self, d_type)) {
+                self_type == d_type) {
                 ADD_OP(_NOP, 0, 0);
             }
         }
@@ -1376,16 +1378,17 @@ dummy_func(void) {
             if (!sym_is_null(self_or_null)) {
                 total_args++;
             }
-            PyObject *self = NULL;
+            PyTypeObject *self_type = NULL;
             if (!sym_is_null(self_or_null)) {
-                self = sym_get_const(ctx, self_or_null);
-            } else {
-                self = sym_get_const(ctx, args[0]);
+                self_type = sym_get_type(self_or_null);
+            }
+            else {
+                self_type = sym_get_type(args[0]);
             }
             PyTypeObject *d_type = ((PyMethodDescrObject *)callable_o)->d_common.d_type;
             if (total_args == 1 &&
                 ((PyMethodDescrObject *)callable_o)->d_method->ml_flags == METH_NOARGS &&
-                self && Py_IS_TYPE(self, d_type)) {
+                self_type == d_type) {
                 ADD_OP(_NOP, 0, 0);
             }
         }
@@ -1434,16 +1437,17 @@ dummy_func(void) {
             if (!sym_is_null(self_or_null)) {
                 total_args++;
             }
-            PyObject *self = NULL;
+            PyTypeObject *self_type = NULL;
             if (!sym_is_null(self_or_null)) {
-                self = sym_get_const(ctx, self_or_null);
-            } else {
-                self = sym_get_const(ctx, args[0]);
+                self_type = sym_get_type(self_or_null);
+            }
+            else {
+                self_type = sym_get_type(args[0]);
             }
             PyTypeObject *d_type = ((PyMethodDescrObject *)callable_o)->d_common.d_type;
             if (total_args != 0 &&
                 ((PyMethodDescrObject *)callable_o)->d_method->ml_flags == METH_FASTCALL &&
-                self && Py_IS_TYPE(self, d_type)) {
+                self_type == d_type) {
                 ADD_OP(_NOP, 0, 0);
             }
         }
