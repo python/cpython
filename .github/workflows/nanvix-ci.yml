@@ -23,7 +23,7 @@ concurrency:
 
 jobs:
   ci:
-    uses: nanvix/workflows/.github/workflows/nanvix-ci.yml@v1.3.3
+    uses: nanvix/workflows/.github/workflows/nanvix-ci.yml@v1.4.0
     with:
       zutil-version: "v0.6.0"
       platforms: '["microvm"]'
@@ -42,37 +42,20 @@ jobs:
   # -------------------------------------------------------------------
   windows-zip:
     needs: ci
-    if: ${{ !cancelled() && github.event_name != 'pull_request' }}
+    if: ${{ !cancelled() && needs.ci.result == 'success' && github.event_name != 'pull_request' }}
     runs-on: ubuntu-latest
+    env:
+      RELEASE_TAG: ${{ needs.ci.outputs.package_version }}-nanvix-${{ needs.ci.outputs.nanvix_version }}
     steps:
       - uses: actions/checkout@v5
-
-      - name: Install nanvix-zutil
-        env:
-          GH_TOKEN: ${{ secrets.GH_TOKEN || secrets.GITHUB_TOKEN }}
-        run: |
-          WHEEL_URL=$(gh api repos/nanvix/zutils/releases/tags/v0.5.0 \
-            --jq '.assets[] | select(.name | endswith(".whl")) | .browser_download_url' | head -n 1)
-          python3 -m pip install "$WHEEL_URL"
-
-      - name: Resolve release tag
-        id: meta
-        env:
-          GH_TOKEN: ${{ secrets.GH_TOKEN || secrets.GITHUB_TOKEN }}
-        run: |
-          set -euo pipefail
-          eval "$(nanvix-zutil resolve)"
-          RELEASE_TAG="${package_version}-nanvix-${nanvix_version}"
-          echo "release_tag=$RELEASE_TAG" >> "$GITHUB_OUTPUT"
-          echo "Release tag: $RELEASE_TAG"
 
       - name: Download standalone tarball from release
         env:
           GH_TOKEN: ${{ secrets.GH_TOKEN || secrets.GITHUB_TOKEN }}
-          RELEASE_TAG: ${{ steps.meta.outputs.release_tag }}
         run: |
           set -euo pipefail
           mkdir -p release-download
+          echo "Release tag: $RELEASE_TAG"
 
           # Wait briefly for the release to be fully created
           sleep 5
@@ -168,7 +151,6 @@ jobs:
         if: ${{ env.zip_name != '' }}
         env:
           GH_TOKEN: ${{ secrets.GH_TOKEN || secrets.GITHUB_TOKEN }}
-          RELEASE_TAG: ${{ steps.meta.outputs.release_tag }}
         run: |
           gh release upload "$RELEASE_TAG" "${{ env.zip_name }}" --clobber
           echo "Uploaded ${{ env.zip_name }} to release $RELEASE_TAG"
