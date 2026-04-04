@@ -1390,7 +1390,7 @@ Feedback
 Regular expressions are a complicated topic.  Did this document help you
 understand them?  Were there parts that were unclear, or problems you
 encountered that weren't covered here?  If so, please send suggestions for
-improvements to the author.
+improvements to the :ref:`issue tracker <using-the-tracker>`.
 
 The most complete book on regular expressions is almost certainly Jeffrey
 Friedl's Mastering Regular Expressions, published by O'Reilly.  Unfortunately,
