@@ -23,6 +23,9 @@ GLOBAL_136154 = 42
 # For frozendict JIT tests
 FROZEN_DICT_CONST = frozendict(x=1, y=2)
 
+# For frozenset JIT tests
+FROZEN_SET_CONST = frozenset({1, 2, 3})
+
 class _GenericKey:
     pass
 
@@ -2169,7 +2172,8 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
         self.assertNotIn("_GUARD_TOS_ANY_SET", uops)
-        self.assertIn("_CONTAINS_OP_SET", uops)
+        # _CONTAINS_OP_SET is constant-folded away for frozenset literals
+        self.assertIn("_INSERT_2_LOAD_CONST_INLINE_BORROW", uops)
 
     def test_remove_guard_for_known_type_tuple(self):
         def f(n):
@@ -4398,6 +4402,20 @@ class TestUopsOptimization(unittest.TestCase):
         uops = get_opnames(ex)
         # lookup result is folded to constant 1, so comparison is optimized away
         self.assertNotIn("_COMPARE_OP_INT", uops)
+
+    def test_contains_op_frozenset_const_fold(self):
+        def testfunc(n):
+            x = 0
+            for _ in range(n):
+                if 1 in FROZEN_SET_CONST:
+                    x += 1
+            return x
+
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, TIER2_THRESHOLD)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertNotIn("_CONTAINS_OP_SET", uops)
 
     def test_binary_subscr_list_slice(self):
         def testfunc(n):

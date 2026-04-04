@@ -706,6 +706,9 @@ dummy_func(void) {
         b = sym_new_type(ctx, &PyBool_Type);
         l = left;
         r = right;
+        if (sym_matches_type(right, &PyFrozenSet_Type)) {
+            REPLACE_OPCODE_IF_EVALUATES_PURE(left, right, b);
+        }
     }
 
     op(_CONTAINS_OP_DICT, (left, right -- b, l, r)) {
