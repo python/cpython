@@ -1,3 +1,4 @@
 Cache ``time.time``, ``time.struct_time``, and ``time.strftime`` imports,
-speeding :meth:`~datetime.timetuple` and :meth:`~datetime.strftime` up to 2x.
-Patch by Maurycy Pawłowski-Wieroński.
+speeding up :meth:`~datetime.date.timetuple` and
+:meth:`~datetime.date.strftime` by up to 2x.  Patch by Maurycy
+Pawłowski-Wieroński.
