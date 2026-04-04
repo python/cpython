@@ -4136,6 +4136,14 @@
             break;
         }
 
+        case _CHECK_RECURSION_LIMIT: {
+            if (ctx->frame->is_c_recursion_checked) {
+                ADD_OP(_NOP, 0, 0);
+            }
+            ctx->frame->is_c_recursion_checked = true;
+            break;
+        }
+
         case _CALL_METHOD_DESCRIPTOR_O_INLINE: {
             JitOptRef res;
             JitOptRef c;
