@@ -3068,6 +3068,34 @@ class TestParser(TestParserMixin, TestEmailBase):
                 ],
             ),
 
+        less_invalid_ew_atoms = C(
+            '=?utf-8?q?foo_?= . (=?utf-8?q?test?=) =?utf-8?q?_bar?= .bird',
+            # XXX XXX after refactoring the comment ew will also be decoded.
+            #stringified='foo  . (test)  bar .bird',
+            stringified='foo  . (=?utf-8?q?test?=)  bar .bird',
+            value="foo  .  bar .bird",
+            local_part="foo . bar.bird",
+            # XXX XXX after refactoring the comment ew will also be decoded.
+            # comments=['test']
+            comments=['=?utf-8?q?test?='],
+            ),
+
+        # XXX XXX Since we've decided to decode encoded words, this becomes a
+        # "valid" dot-atom, which it will be treated as after the refactoring.
+        # But if you clear up the whitespace defects by adding whitespace, it
+        # turns into an obs_local_part because of the whitespace.
+        sort_of_valid_ew_dot_atom = C(
+            '=?utf-8?q?foo_?=.=?utf-8?q?_bar?=.bird',
+            stringified='foo . bar.bird',
+            value="foo . bar.bird",
+            local_part="foo . bar.bird",
+            defects=[
+                # XXX XXX the whitespace defects will change during refactoring
+                missing_whitespace_after_ew_defect,
+                missing_whitespace_after_ew_defect,
+                ],
+            ),
+
         )
 
 
