@@ -1281,18 +1281,23 @@ can be solved with a faster and simpler string method.
 prefixmatch() versus search()
 -----------------------------
 
-The :func:`~re.prefixmatch` function only checks if the RE matches at the beginning of the
-string while :func:`~re.search` will scan forward through the string for a match.
-It's important to keep this distinction in mind.  Remember,  :func:`!prefixmatch` will
-only report a successful match which will start at 0; if the match wouldn't
-start at zero,  :func:`!prefixmatch` will *not* report it. ::
+:func:`~re.prefixmatch` was added in Python 3.15 as the :ref:`preferred name
+<prefixmatch-vs-match>` for :func:`~re.match`. Before this, it was only known
+as :func:`!match` and the distinction with :func:`~re.search` was often
+misunderstood.
+
+:func:`!prefixmatch` aka :func:`!match` only checks if the RE matches at the
+beginning of the string while :func:`!search` scans forward through the
+string for a match. :func:`!prefixmatch` only reports a successful match which
+starts at zero; if the match wouldn't start at zero, :func:`!prefixmatch` will
+*not* report it. ::
 
    >>> print(re.prefixmatch('super', 'superstition').span())
    (0, 5)
    >>> print(re.prefixmatch('super', 'insuperable'))
    None
 
-On the other hand, :func:`~re.search` will scan forward through the string,
+On the other hand, :func:`~re.search` scans forward through the string,
 reporting the first match it finds. ::
 
    >>> print(re.search('super', 'superstition').span())
@@ -1300,18 +1305,8 @@ reporting the first match it finds. ::
    >>> print(re.search('super', 'insuperable').span())
    (2, 7)
 
-Sometimes you'll be tempted to keep using :func:`re.prefixmatch`, and just add ``.*``
-to the front of your RE.  Resist this temptation and use :func:`re.search`
-instead.  The regular expression compiler does some analysis of REs in order to
-speed up the process of looking for a match.  One such analysis figures out what
-the first character of a match must be; for example, a pattern starting with
-``Crow`` must match starting with a ``'C'``.  The analysis lets the engine
-quickly scan through the string looking for the starting character, only trying
-the full match if a ``'C'`` is found.
-
-Adding ``.*`` defeats this optimization, requiring scanning to the end of the
-string and then backtracking to find a match for the rest of the RE.  Use
-:func:`re.search` instead.
+This distinction is important to remember when using the old :func:`~re.match`
+name in code requiring compatibility with older Python versions.
 
 
 Greedy versus Non-Greedy
