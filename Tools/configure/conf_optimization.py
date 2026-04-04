@@ -82,7 +82,7 @@ def setup_lto(v):
             v.Py_LTO = "false"
             pyconf.result("no")
         else:
-            pyconf.error(f"error: unknown lto option: '{lto_val}'")
+            pyconf.error(f"unknown lto option: '{lto_val}'")
     else:
         pyconf.result("no")
 
@@ -99,14 +99,12 @@ def _setup_lto_flags(v):
         _setup_lto_clang(v)
     elif v.ac_cv_cc_name == "emcc":
         if v.Py_LTO_POLICY != "default":
-            pyconf.error("error: emcc supports only default lto.")
+            pyconf.error("emcc supports only default lto.")
         v.LTOFLAGS = "-flto"
         v.LTOCFLAGS = "-flto"
     elif v.ac_cv_cc_name == "gcc":
         if v.Py_LTO_POLICY == "thin":
-            pyconf.error(
-                "error: thin lto is not supported under gcc compiler."
-            )
+            pyconf.error("thin lto is not supported under gcc compiler.")
         # flag to disable lto during linking
         v.LDFLAGS_NOLTO = "-fno-lto"
         if v.ac_sys_system.startswith("Darwin"):
@@ -155,7 +153,7 @@ def _setup_lto_clang(v):
 
     if LLVM_AR_FOUND == "not-found":
         pyconf.error(
-            "error: llvm-ar is required for a --with-lto build with clang "
+            "llvm-ar is required for a --with-lto build with clang "
             "but could not be found."
         )
 
@@ -241,7 +239,7 @@ def setup_pgo_flags(v):
             v.LLVM_PROF_ERR = True
             if v.REQUIRE_PGO:
                 pyconf.error(
-                    "error: llvm-profdata is required for a --enable-optimizations "
+                    "llvm-profdata is required for a --enable-optimizations "
                     "build but could not be found."
                 )
     elif v.ac_cv_cc_name == "gcc":
@@ -302,7 +300,7 @@ def _setup_bolt_tools(v):
         pyconf.result("Found llvm-bolt")
     else:
         pyconf.error(
-            "error: llvm-bolt is required for a --enable-bolt build but could not be found."
+            "llvm-bolt is required for a --enable-bolt build but could not be found."
         )
 
     v.MERGE_FDATA = pyconf.check_prog(
@@ -312,7 +310,7 @@ def _setup_bolt_tools(v):
         pyconf.result("Found merge-fdata")
     else:
         pyconf.error(
-            "error: merge-fdata is required for a --enable-bolt build but could not be found."
+            "merge-fdata is required for a --enable-bolt build but could not be found."
         )
 
 
