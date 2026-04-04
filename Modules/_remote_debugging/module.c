@@ -1847,28 +1847,29 @@ Get garbage collector statistics from external Python process.
 Returns:
     List of dicts.
     dict: A dictionary containing:
-        - total_samples: Total number of get_stack_trace calls
-        - frame_cache_hits: Full cache hits (entire stack unchanged)
-        - frame_cache_misses: Cache misses requiring full walk
-        - frame_cache_partial_hits: Partial hits (stopped at cached frame)
-        - frames_read_from_cache: Total frames retrieved from cache
-        - frames_read_from_memory: Total frames read from remote memory
-        - memory_reads: Total remote memory read operations
-        - memory_bytes_read: Total bytes read from remote memory
-        - code_object_cache_hits: Code object cache hits
-        - code_object_cache_misses: Code object cache misses
-        - stale_cache_invalidations: Times stale cache entries were cleared
-        - frame_cache_hit_rate: Percentage of samples that hit the cache
-        - code_object_cache_hit_rate: Percentage of code object lookups that hit cache
+        - gen:
+        - iid:
+        - ts_start:
+        - ts_stop:
+        - heap_size:
+        - work_to_do:
+        - collections:
+        - object_visits:
+        - collected:
+        - uncollectable:
+        - candidates:
+        - objects_transitively_reachable:
+        - objects_not_transitively_reachable:
+        - duration:
 
 Raises:
-    RuntimeError: If stats collection was not enabled (stats=False)
+    RuntimeError:
 [clinic start generated code]*/
 
 static PyObject *
 _remote_debugging_get_gc_stats_impl(PyObject *module, int pid,
                                     int all_interpreters)
-/*[clinic end generated code: output=d9dce5f7add149bb input=82045b510b1a849c]*/
+/*[clinic end generated code: output=d9dce5f7add149bb input=8f05aee4d4230428]*/
 {
     RuntimeOffsets offsets;
 
