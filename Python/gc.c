@@ -1405,7 +1405,6 @@ add_stats(GCState *gcstate, int gen, struct gc_generation_stats *stats)
     memcpy(cur_stats, prev_stats, sizeof(struct gc_generation_stats));
 
     cur_stats->ts_start = stats->ts_start;
-    cur_stats->ts_stop = stats->ts_stop;
 
     cur_stats->collections += 1;
     cur_stats->collected += stats->collected;
@@ -1413,6 +1412,7 @@ add_stats(GCState *gcstate, int gen, struct gc_generation_stats *stats)
     cur_stats->candidates += stats->candidates;
 
     cur_stats->duration += stats->duration;
+    cur_stats->ts_stop = stats->ts_stop;
 }
 
 /* This is the main function.  Read this to understand how the
