@@ -1,7 +1,6 @@
-"""conf_targets — Android, WASM, shared options, library names, ldlibrary.
+"""conf_targets — Android, shared options, library names, ldlibrary.
 
 Checks --no-as-needed linker flag and detects Android API level;
-handles --enable-wasm-dynamic-linking and --enable-wasm-pthreads;
 determines executable suffix (--with-suffix, BUILDEXEEXT); sets
 LIBRARY, LDLIBRARY, BLDLIBRARY, LINKCC, EXPORTSYMS, GNULD; handles
 --enable-shared, --with-static-libpython, --enable-profiling; computes
