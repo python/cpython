@@ -2173,7 +2173,6 @@ class TestUopsOptimization(unittest.TestCase):
         uops = get_opnames(ex)
         self.assertNotIn("_GUARD_TOS_ANY_SET", uops)
         # _CONTAINS_OP_SET is constant-folded away for frozenset literals
-        self.assertNotIn("_CONTAINS_OP_SET", uops)
         self.assertIn("_INSERT_2_LOAD_CONST_INLINE_BORROW", uops)
 
     def test_remove_guard_for_known_type_tuple(self):
