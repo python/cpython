@@ -4021,6 +4021,31 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertIn("_TO_BOOL_DICT", uops)
         self.assertNotIn("_TO_BOOL", uops)
 
+    def test_guard_type_version_resolves_type_for_to_bool(self):
+        # Tests the _GUARD_TYPE_VERSION + _RECORD_TOS_TYPE flow:
+        # TO_BOOL_GENERIC records the type, then _GUARD_TYPE_VERSION
+        # resolves it (even if the version cache has a collision),
+        # enabling the optimizer to specialize _TO_BOOL → _TO_BOOL_DICT.
+        def testfunc(n):
+            d = {"key": "value"}
+            count = 0
+            for _ in range(n):
+                if d:
+                    count += 1
+                d["key"] = "value"  # mutation keeps dict non-trivial
+            return count
+
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, TIER2_THRESHOLD)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        # The optimizer should resolve the dict type from recorded type
+        # info and specialize _TO_BOOL into _TO_BOOL_DICT
+        self.assertIn("_TO_BOOL_DICT", uops)
+        self.assertNotIn("_TO_BOOL", uops)
+        # _GUARD_TYPE_VERSION should be present (guards the dict type)
+        self.assertIn("_GUARD_TYPE_VERSION", uops)
+
     def test_attr_promotion_failure(self):
         # We're not testing for any specific uops here, just
         # testing it doesn't crash.

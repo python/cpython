@@ -557,8 +557,9 @@ dummy_func(
         tier2 pure op(_TO_BOOL_DICT, (value -- res)) {
             PyObject *value_o = PyStackRef_AsPyObjectBorrow(value);
             assert(PyAnyDict_CheckExact(value_o));
-            PyStackRef_CLOSE(value);
+            STAT_INC(TO_BOOL, hit);
             res = ((PyDictObject *)value_o)->ma_used ? PyStackRef_True : PyStackRef_False;
+            PyStackRef_CLOSE(value);
         }
 
         inst(TO_BOOL_NONE, (unused/1, unused/2, value -- res)) {

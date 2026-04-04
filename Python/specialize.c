@@ -2699,7 +2699,7 @@ to_bool_fail_kind(PyObject *value)
 #endif  // Py_STATS
 
 static int
-check_type_always_succeeds(PyTypeObject *ty)
+check_type_noop(PyTypeObject *ty)
 {
     (void)ty;
     return 0;
@@ -2771,7 +2771,7 @@ _Py_Specialize_ToBool(_PyStackRef value_o, _Py_CODEUNIT *instr)
         unsigned int version;
         if (PyType_HasFeature(tp, Py_TPFLAGS_HEAPTYPE)) {
             version = 0;
-            int err = _PyType_Validate(tp, check_type_always_succeeds, &version);
+            int err = _PyType_Validate(tp, check_type_noop, &version);
             if (err < 0) {
                 SPECIALIZATION_FAIL(TO_BOOL, SPEC_FAIL_OUT_OF_VERSIONS);
                 goto failure;
