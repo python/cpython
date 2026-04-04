@@ -1275,6 +1275,8 @@ In short, before turning to the :mod:`re` module, consider whether your problem
 can be solved with a faster and simpler string method.
 
 
+.. _match-versus-search:
+
 prefixmatch() versus search()
 -----------------------------
 
