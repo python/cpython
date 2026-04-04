@@ -76,8 +76,8 @@ POST request.
       Added the *padded* and *wrapcol* parameters.
 
 
-.. function:: b64decode(s, altchars=None, validate=False, *, padded=True)
-              b64decode(s, altchars=None, validate=True, *, ignorechars, padded=True)
+.. function:: b64decode(s, altchars=None, validate=False, *, padded=True, canonical=False)
+              b64decode(s, altchars=None, validate=True, *, ignorechars, padded=True, canonical=False)
 
    Decode the Base64 encoded :term:`bytes-like object` or ASCII string
    *s* and return the decoded :class:`bytes`.
@@ -112,10 +112,13 @@ POST request.
    If *validate* is true, these non-alphabet characters in the input
    result in a :exc:`binascii.Error`.
 
+   If *canonical* is true, non-zero padding bits are rejected.
+   See :func:`binascii.a2b_base64` for details.
+
    For more information about the strict base64 check, see :func:`binascii.a2b_base64`
 
    .. versionchanged:: 3.15
-      Added the *ignorechars* and *padded* parameters.
+      Added the *ignorechars*, *padded*, and *canonical* parameters.
 
    .. deprecated:: 3.15
       Accepting the ``+`` and ``/`` characters with an alternative alphabet
@@ -179,7 +182,7 @@ POST request.
       Added the *padded* and *wrapcol* parameters.
 
 
-.. function:: b32decode(s, casefold=False, map01=None, *, padded=True, ignorechars=b'')
+.. function:: b32decode(s, casefold=False, map01=None, *, padded=True, ignorechars=b'', canonical=False)
 
    Decode the Base32 encoded :term:`bytes-like object` or ASCII string *s* and
    return the decoded :class:`bytes`.
@@ -203,12 +206,15 @@ POST request.
    *ignorechars* should be a :term:`bytes-like object` containing characters
    to ignore from the input.
 
+   If *canonical* is true, non-zero padding bits are rejected.
+   See :func:`binascii.a2b_base32` for details.
+
    A :exc:`binascii.Error` is raised if *s* is
    incorrectly padded or if there are non-alphabet characters present in the
    input.
 
    .. versionchanged:: next
-      Added the *ignorechars* and *padded* parameters.
+      Added the *ignorechars*, *padded*, and *canonical* parameters.
 
 
 .. function:: b32hexencode(s, *, padded=True, wrapcol=0)
@@ -222,7 +228,7 @@ POST request.
       Added the *padded* and *wrapcol* parameters.
 
 
-.. function:: b32hexdecode(s, casefold=False, *, padded=True, ignorechars=b'')
+.. function:: b32hexdecode(s, casefold=False, *, padded=True, ignorechars=b'', canonical=False)
 
    Similar to :func:`b32decode` but uses the Extended Hex Alphabet, as defined in
    :rfc:`4648`.
@@ -235,7 +241,7 @@ POST request.
    .. versionadded:: 3.10
 
    .. versionchanged:: next
-      Added the *ignorechars* and *padded* parameters.
+      Added the *ignorechars*, *padded*, and *canonical* parameters.
 
 
 .. function:: b16encode(s, *, wrapcol=0)
@@ -315,7 +321,7 @@ Refer to the documentation of the individual functions for more information.
    .. versionadded:: 3.4
 
 
-.. function:: a85decode(b, *, foldspaces=False, adobe=False, ignorechars=b' \t\n\r\v')
+.. function:: a85decode(b, *, foldspaces=False, adobe=False, ignorechars=b' \t\n\r\v', canonical=False)
 
    Decode the Ascii85 encoded :term:`bytes-like object` or ASCII string *b* and
    return the decoded :class:`bytes`.
@@ -332,7 +338,13 @@ Refer to the documentation of the individual functions for more information.
    This should only contain whitespace characters, and by
    default contains all whitespace characters in ASCII.
 
+   If *canonical* is true, non-canonical encodings are rejected.
+   See :func:`binascii.a2b_ascii85` for details.
+
    .. versionadded:: 3.4
+
+   .. versionchanged:: next
+      Added the *canonical* parameter.
 
 
 .. function:: b85encode(b, pad=False, *, wrapcol=0)
@@ -353,7 +365,7 @@ Refer to the documentation of the individual functions for more information.
       Added the *wrapcol* parameter.
 
 
-.. function:: b85decode(b, *, ignorechars=b'')
+.. function:: b85decode(b, *, ignorechars=b'', canonical=False)
 
    Decode the base85-encoded :term:`bytes-like object` or ASCII string *b* and
    return the decoded :class:`bytes`.  Padding is implicitly removed, if
@@ -362,10 +374,13 @@ Refer to the documentation of the individual functions for more information.
    *ignorechars* should be a :term:`bytes-like object` containing characters
    to ignore from the input.
 
+   If *canonical* is true, non-canonical encodings are rejected.
+   See :func:`binascii.a2b_base85` for details.
+
    .. versionadded:: 3.4
 
    .. versionchanged:: next
-      Added the *ignorechars* parameter.
+      Added the *ignorechars* and *canonical* parameters.
 
 
 .. function:: z85encode(s, pad=False, *, wrapcol=0)
@@ -390,7 +405,7 @@ Refer to the documentation of the individual functions for more information.
       Added the *wrapcol* parameter.
 
 
-.. function:: z85decode(s, *, ignorechars=b'')
+.. function:: z85decode(s, *, ignorechars=b'', canonical=False)
 
    Decode the Z85-encoded :term:`bytes-like object` or ASCII string *s* and
    return the decoded :class:`bytes`.  See `Z85  specification
@@ -399,10 +414,13 @@ Refer to the documentation of the individual functions for more information.
    *ignorechars* should be a :term:`bytes-like object` containing characters
    to ignore from the input.
 
+   If *canonical* is true, non-canonical encodings are rejected.
+   See :func:`binascii.a2b_base85` for details.
+
    .. versionadded:: 3.13
 
    .. versionchanged:: next
-      Added the *ignorechars* parameter.
+      Added the *ignorechars* and *canonical* parameters.
 
 
 .. _base64-legacy:

@@ -729,6 +729,8 @@ binascii.a2b_base64
     ignorechars: Py_buffer = NULL
         A byte string containing characters to ignore from the input when
         strict_mode is true.
+    canonical: bool = False
+        When set to true, reject non-zero padding bits per RFC 4648 section 3.5.
 
 Decode a line of base64 data.
 [clinic start generated code]*/
@@ -736,8 +738,8 @@ Decode a line of base64 data.
 static PyObject *
 binascii_a2b_base64_impl(PyObject *module, Py_buffer *data, int strict_mode,
                          int padded, PyBytesObject *alphabet,
-                         Py_buffer *ignorechars)
-/*[clinic end generated code: output=525d840a299ff132 input=74a53dd3b23474b3]*/
+                         Py_buffer *ignorechars, int canonical)
+/*[clinic end generated code: output=77c46dcbf4239527 input=c99096d071deeec8]*/
 {
     assert(data->len >= 0);
 
@@ -911,7 +913,7 @@ fastpath:
 
     /* https://datatracker.ietf.org/doc/html/rfc4648.html#section-3.5
      * Decoders MAY reject non-zero padding bits. */
-    if (strict_mode && leftchar != 0) {
+    if (canonical && leftchar != 0) {
         state = get_binascii_state(module);
         if (state) {
             PyErr_SetString(state->Error, "Non-zero padding bits");
@@ -1047,14 +1049,16 @@ binascii.a2b_ascii85
         Expect data to be wrapped in '<~' and '~>' as in Adobe Ascii85.
     ignorechars: Py_buffer = b''
         A byte string containing characters to ignore from the input.
+    canonical: bool = False
+        When set to true, reject non-canonical encodings per RFC 4648 section 3.5.
 
 Decode Ascii85 data.
 [clinic start generated code]*/
 
 static PyObject *
 binascii_a2b_ascii85_impl(PyObject *module, Py_buffer *data, int foldspaces,
-                          int adobe, Py_buffer *ignorechars)
-/*[clinic end generated code: output=599aa3e41095a651 input=f39abd11eab4bac0]*/
+                          int adobe, Py_buffer *ignorechars, int canonical)
+/*[clinic end generated code: output=09b35f1eac531357 input=75a0dcab97528ade]*/
 {
     const unsigned char *ascii_data = data->buf;
     Py_ssize_t ascii_len = data->len;
@@ -1172,6 +1176,43 @@ binascii_a2b_ascii85_impl(PyObject *module, Py_buffer *data, int foldspaces,
         Py_ssize_t chunk_len = ascii_len < 1 ? 3 + ascii_len : 4;
         for (Py_ssize_t i = 0; i < chunk_len; i++) {
             *bin_data++ = (leftchar >> (24 - 8 * i)) & 0xff;
+        }
+
+        /* https://datatracker.ietf.org/doc/html/rfc4648.html#section-3.5
+         * Decoders MAY reject non-canonical encodings. */
+        if (canonical && chunk_len < 4) {
+            if (chunk_len == 0) {
+                state = get_binascii_state(module);
+                if (state != NULL) {
+                    PyErr_SetString(state->Error,
+                                    "Non-canonical Ascii85 group size");
+                }
+                goto error;
+            }
+            uint32_t canon = 0;
+            for (Py_ssize_t i = chunk_len; i > 0; i--) {
+                canon = (canon << 8) | bin_data[-i];
+            }
+            canon <<= (4 - chunk_len) * 8;
+            unsigned char digits[5];
+            uint32_t tmp = canon;
+            for (int i = 4; i >= 0; i--) {
+                digits[i] = tmp % 85;
+                tmp /= 85;
+            }
+            uint32_t expected = 0;
+            for (int i = 0; i < 5; i++) {
+                expected = expected * 85
+                           + (i <= chunk_len ? digits[i] : 84);
+            }
+            if (expected != leftchar) {
+                state = get_binascii_state(module);
+                if (state != NULL) {
+                    PyErr_SetString(state->Error,
+                                    "Non-zero padding bits");
+                }
+                goto error;
+            }
         }
 
         group_pos = 0;
@@ -1325,14 +1366,17 @@ binascii.a2b_base85
     alphabet: PyBytesObject(c_default="NULL") = BASE85_ALPHABET
     ignorechars: Py_buffer = b''
         A byte string containing characters to ignore from the input.
+    canonical: bool = False
+        When set to true, reject non-canonical encodings per RFC 4648 section 3.5.
 
 Decode a line of Base85 data.
 [clinic start generated code]*/
 
 static PyObject *
 binascii_a2b_base85_impl(PyObject *module, Py_buffer *data,
-                         PyBytesObject *alphabet, Py_buffer *ignorechars)
-/*[clinic end generated code: output=6a8d6eae798818d7 input=04d72a319712bdf3]*/
+                         PyBytesObject *alphabet, Py_buffer *ignorechars,
+                         int canonical)
+/*[clinic end generated code: output=90dfef0c6b51e5f3 input=fe3bb2d3a66b9842]*/
 {
     const unsigned char *ascii_data = data->buf;
     Py_ssize_t ascii_len = data->len;
@@ -1416,6 +1460,49 @@ binascii_a2b_base85_impl(PyObject *module, Py_buffer *data,
         Py_ssize_t chunk_len = ascii_len < 1 ? 3 + ascii_len : 4;
         for (Py_ssize_t i = 0; i < chunk_len; i++) {
             *bin_data++ = (leftchar >> (24 - 8 * i)) & 0xff;
+        }
+
+        /* https://datatracker.ietf.org/doc/html/rfc4648.html#section-3.5
+         * Decoders MAY reject non-canonical encodings. */
+        if (canonical && chunk_len < 4) {
+            if (chunk_len == 0) {
+                /* 1-char partial group is never produced by a conforming
+                 * encoder. */
+                state = get_binascii_state(module);
+                if (state != NULL) {
+                    PyErr_SetString(state->Error,
+                                    "Non-canonical Base85 group size");
+                }
+                goto error;
+            }
+            /* Re-encode the output bytes to verify canonical form.
+             * Build the canonical uint32 from output bytes (zero-padded). */
+            uint32_t canon = 0;
+            for (Py_ssize_t i = chunk_len; i > 0; i--) {
+                canon = (canon << 8) | bin_data[-i];
+            }
+            canon <<= (4 - chunk_len) * 8;
+            /* Extract first (chunk_len + 1) base85 digits. */
+            unsigned char digits[5];
+            uint32_t tmp = canon;
+            for (int i = 4; i >= 0; i--) {
+                digits[i] = tmp % 85;
+                tmp /= 85;
+            }
+            /* Reconstruct expected value: canonical digits + 84-padding. */
+            uint32_t expected = 0;
+            for (int i = 0; i < 5; i++) {
+                expected = expected * 85
+                           + (i <= chunk_len ? digits[i] : 84);
+            }
+            if (expected != leftchar) {
+                state = get_binascii_state(module);
+                if (state != NULL) {
+                    PyErr_SetString(state->Error,
+                                    "Non-zero padding bits");
+                }
+                goto error;
+            }
         }
 
         group_pos = 0;
@@ -1545,14 +1632,17 @@ binascii.a2b_base32
     alphabet: PyBytesObject(c_default="NULL") = BASE32_ALPHABET
     ignorechars: Py_buffer = b''
         A byte string containing characters to ignore from the input.
+    canonical: bool = False
+        When set to true, reject non-zero padding bits per RFC 4648 section 3.5.
 
 Decode a line of base32 data.
 [clinic start generated code]*/
 
 static PyObject *
 binascii_a2b_base32_impl(PyObject *module, Py_buffer *data, int padded,
-                         PyBytesObject *alphabet, Py_buffer *ignorechars)
-/*[clinic end generated code: output=7dbbaa816d956b1c input=07a3721acdf9b688]*/
+                         PyBytesObject *alphabet, Py_buffer *ignorechars,
+                         int canonical)
+/*[clinic end generated code: output=bc70f2bb6001fb55 input=5bfe6d1ea2f30e3b]*/
 {
     const unsigned char *ascii_data = data->buf;
     Py_ssize_t ascii_len = data->len;
@@ -1735,7 +1825,7 @@ fastpath:
 
     /* https://datatracker.ietf.org/doc/html/rfc4648.html#section-3.5
      * Decoders MAY reject non-zero padding bits. */
-    if (leftchar != 0) {
+    if (canonical && leftchar != 0) {
         state = get_binascii_state(module);
         if (state) {
             PyErr_SetString(state->Error, "Non-zero padding bits");
