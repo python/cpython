@@ -282,6 +282,22 @@ _Py_uop_sym_is_safe_const(JitOptContext *ctx, JitOptRef sym)
     return (typ == &PyUnicode_Type) ||
            (typ == &PyFloat_Type) ||
            (typ == &_PyNone_Type) ||
+           (typ == &PyBool_Type) ||
+           (typ == &PyFrozenDict_Type) ||
+           (typ == &PyFrozenSet_Type);
+}
+
+bool
+_Py_uop_sym_is_not_container(JitOptRef sym)
+{
+    PyTypeObject *typ = _Py_uop_sym_get_type(sym);
+    if (typ == NULL) {
+        return false;
+    }
+    return (typ == &PyLong_Type) ||
+           (typ == &PyFloat_Type) ||
+           (typ == &PyUnicode_Type) ||
+           (typ == &_PyNone_Type) ||
            (typ == &PyBool_Type);
 }
 
@@ -1513,6 +1529,7 @@ _Py_uop_frame_new(
     frame->globals_watched = false;
     frame->func = NULL;
     frame->caller = false;
+    frame->is_c_recursion_checked = false;
     if (ctx->locals.used > ctx->locals.end || ctx->stack.used > ctx->stack.end) {
         ctx->done = true;
         ctx->out_of_space = true;
@@ -1684,6 +1701,9 @@ static JitOptSymbol *
 make_bottom(JitOptContext *ctx)
 {
     JitOptSymbol *sym = sym_new(ctx);
+    if (sym == NULL) {
+        return out_of_space(ctx);
+    }
     sym->tag = JIT_SYM_BOTTOM_TAG;
     return sym;
 }

@@ -44,6 +44,10 @@ try:
     import pty
 except ImportError:
     pty = None
+try:
+    import readline as readline_module
+except ImportError:
+    readline_module = None
 
 
 class ReplTestCase(TestCase):
@@ -1947,9 +1951,12 @@ class TestMain(ReplTestCase):
         commands = "print('Something pretty long', end='')\nexit()\n"
         expected_output_sequence = "Something pretty long>>> exit()"
 
-        basic_output, basic_exit_code = self.run_repl(commands, env=env)
-        self.assertEqual(basic_exit_code, 0)
-        self.assertIn(expected_output_sequence, basic_output)
+        # gh-143394: The basic REPL needs the readline module to turn off
+        # ECHO terminal attribute.
+        if readline_module is not None:
+            basic_output, basic_exit_code = self.run_repl(commands, env=env)
+            self.assertEqual(basic_exit_code, 0)
+            self.assertIn(expected_output_sequence, basic_output)
 
         output, exit_code = self.run_repl(commands)
         self.assertEqual(exit_code, 0)

@@ -12,6 +12,7 @@ from test.support import os_helper
 from importlib.metadata import (
     Distribution,
     EntryPoint,
+    MetadataNotFound,
     PackageNotFoundError,
     _unique,
     distributions,
@@ -159,13 +160,15 @@ class InvalidMetadataTests(fixtures.OnSysPath, fixtures.SiteDir, unittest.TestCa
 
     def test_missing_metadata(self):
         """
-        Dists with a missing metadata file should return None.
+        Dists with a missing metadata file should raise ``MetadataNotFound``.
 
-        Ref python/importlib_metadata#493.
+        Ref python/importlib_metadata#493 and python/cpython#143387.
         """
         fixtures.build_files(self.make_pkg('foo-4.3', files={}), self.site_dir)
-        assert Distribution.from_name('foo').metadata is None
-        assert metadata('foo') is None
+        with self.assertRaises(MetadataNotFound):
+            Distribution.from_name('foo').metadata
+        with self.assertRaises(MetadataNotFound):
+            metadata('foo')
 
 
 class NonASCIITests(fixtures.OnSysPath, fixtures.SiteDir, unittest.TestCase):
