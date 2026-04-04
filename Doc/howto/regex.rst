@@ -7,7 +7,6 @@
 :Author: A.M. Kuchling <amk@amk.ca>
 
 .. TODO:
-   Document lookbehind assertions
    Better way of displaying a RE, a string, and what it matches
    Mention optional argument to match.groups()
    Unicode (at least a reference)
@@ -1059,6 +1058,73 @@ alternative inside the assertion.  The following pattern excludes filenames that
 end in either ``bat`` or ``exe``:
 
 ``.*[.](?!bat$|exe$)[^.]*$``
+
+
+Lookbehind Assertions
+---------------------
+
+Lookbehind assertions work similarly to lookahead assertions, but they look
+backwards in the string instead of forwards.  They are available in both
+positive and negative form, and look like this:
+
+``(?<=...)``
+   Positive lookbehind assertion.  This succeeds if the contained regular
+   expression, represented here by ``...``, successfully matches ending at the
+   current location, and fails otherwise. The matching engine doesn't advance;
+   the rest of the pattern is tried right where the assertion started.
+
+``(?<!...)``
+   Negative lookbehind assertion.  This is the opposite of the positive assertion;
+   it succeeds if the contained expression *doesn't* match ending at the current
+   position in the string.
+
+Here's a comparison of lookahead and lookbehind assertions:
+
++------------------+------------------+------------------+
+| Type             | Lookahead        | Lookbehind       |
++==================+==================+==================+
+| Positive         | ``(?=...)``      | ``(?<=...)``     |
++------------------+------------------+------------------+
+| Negative         | ``(?!...)``      | ``(?<!...)``     |
++------------------+------------------+------------------+
+| Direction        | Forward          | Backward         |
++------------------+------------------+------------------+
+| Checks           | What comes after | What came before |
++------------------+------------------+------------------+
+
+Examples
+~~~~~~~~
+
+*Positive assertions:*
+- Lookahead: ``Python(?= )`` matches "Python" only when followed by a space
+- Lookbehind: ``(?<=Hello )Python`` matches "Python" only when preceded by "Hello "
+
+*Negative assertions:*
+- Lookahead: ``Python(?! )`` matches "Python" only when NOT followed by a space
+- Lookbehind: ``(?<!Hello )Python`` matches "Python" only when NOT preceded by "Hello "
+
+*Practical examples:*
+- Lookahead: ``\d+(?=\$)`` matches digits that are followed by a dollar sign
+- Lookbehind: ``(?<=\$)\d+`` matches digits that are preceded by a dollar sign
+
+Key differences
+~~~~~~~~~~~~~~~
+
+1. **Direction**: Lookahead checks forward in the string, lookbehind checks backward
+2. **Limitations**: Lookbehind assertions must match fixed-width strings (no
+   variable quantifiers like ``*``, ``+``, or ``{m,n}``)
+3. **Performance**: Lookahead is generally more efficient because it follows the
+   natural left-to-right parsing of strings. Lookbehind, especially when emulated
+   or extended with variable-width support (as in some advanced regex engines),
+   can be computationally expensive.
+
+For example, this is valid for lookahead but not for lookbehind:
+- Lookahead: ``(?=a*)def`` ✓ (valid)
+- Lookbehind: ``(?<=a*)def`` ✗ (error: variable-width lookbehind)
+
+This limitation exists because the regex engine processes the string from left to
+right, and variable-width lookbehind would require the engine to look back an
+unknown distance, which is computationally expensive and not supported.
 
 
 Modifying Strings
