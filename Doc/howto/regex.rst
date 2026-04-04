@@ -1278,7 +1278,7 @@ can be solved with a faster and simpler string method.
 
 .. _match-versus-search:
 
-prefixmatch() versus search()
+prefixmatch() (aka match) versus search()
 -----------------------------
 
 :func:`~re.prefixmatch` was added in Python 3.15 as the :ref:`preferred name
