@@ -1395,10 +1395,10 @@ dummy_func(void) {
     }
 
     op(_CHECK_RECURSION_LIMIT, ( -- )) {
-        if (ctx->frame->is_recursion_checked) {
+        if (ctx->frame->is_c_recursion_checked) {
             ADD_OP(_NOP, 0, 0);
         }
-        ctx->frame->is_recursion_checked = true;
+        ctx->frame->is_c_recursion_checked = true;
     }
 
     op(_CALL_METHOD_DESCRIPTOR_NOARGS, (callable, self_or_null, args[oparg] -- res)) {
