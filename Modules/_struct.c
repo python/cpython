@@ -763,14 +763,13 @@ np_halffloat(_structmodulestate *state, char *p, PyObject *v, const formatdef *f
 static int
 np_float(_structmodulestate *state, char *p, PyObject *v, const formatdef *f)
 {
-    float x = (float)PyFloat_AsDouble(v);
+    double x = PyFloat_AsDouble(v);
     if (x == -1 && PyErr_Occurred()) {
         PyErr_SetString(state->StructError,
                         "required argument is not a float");
         return -1;
     }
-    memcpy(p, &x, sizeof x);
-    return 0;
+    return PyFloat_Pack4(x, p, PY_LITTLE_ENDIAN);
 }
 
 static int
@@ -1535,10 +1534,6 @@ init_endian_tables(void *Py_UNUSED(arg))
                 /* Only use the trick if the
                     size matches */
                 if (ptr->size != native->size)
-                    break;
-                /* Skip float and double, could be
-                    "unknown" float format */
-                if (ptr->format == 'd' || ptr->format == 'f')
                     break;
                 /* Skip _Bool, semantics are different for standard size */
                 if (ptr->format == '?')

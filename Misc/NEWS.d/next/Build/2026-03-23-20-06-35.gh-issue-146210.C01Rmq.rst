@@ -1,0 +1,2 @@
+Fix building the jit stencils on Windows when the interpreter is built with
+a different clang version. Patch by Chris Eibl.

@@ -803,7 +803,7 @@ fastpath:
             if (quad_pos >= 2 && quad_pos + pads <= 4) {
                 continue;
             }
-            // See RFC 4648, section-3.3: "specifications MAY ignore the
+            // See RFC 4648, section 3.3: "specifications MAY ignore the
             // pad character, "=", treating it as non-alphabet data, if
             // it is present before the end of the encoded data" and
             // "the excess pad characters MAY also be ignored."
@@ -816,8 +816,9 @@ fastpath:
             }
             state = get_binascii_state(module);
             if (state) {
+                unsigned char *bin_data_start = PyBytesWriter_GetData(writer);
                 PyErr_SetString(state->Error,
-                                (quad_pos == 0 && ascii_data == data->buf)
+                                (quad_pos == 0 && bin_data == bin_data_start)
                                 ? "Leading padding not allowed"
                                 : "Excess padding not allowed");
             }
@@ -826,7 +827,7 @@ fastpath:
 
         unsigned char v = table_a2b[this_ch];
         if (v >= 64) {
-            // See RFC 4648, section-3.3.
+            // See RFC 4648, section 3.3.
             if (strict_mode && !ignorechar(this_ch, ignorechars, ignorecache)) {
                 state = get_binascii_state(module);
                 if (state) {
@@ -838,7 +839,7 @@ fastpath:
         }
 
         // Characters that are not '=', in the middle of the padding, are
-        // not allowed (except when they are). See RFC 4648, section-3.3.
+        // not allowed (except when they are). See RFC 4648, section 3.3.
         if (pads && strict_mode &&
             !ignorechar(BASE64_PAD, ignorechars, ignorecache))
         {
@@ -1294,14 +1295,16 @@ binascii.a2b_base85
     /
     *
     alphabet: PyBytesObject(c_default="NULL") = BASE85_ALPHABET
+    ignorechars: Py_buffer = b''
+        A byte string containing characters to ignore from the input.
 
 Decode a line of Base85 data.
 [clinic start generated code]*/
 
 static PyObject *
 binascii_a2b_base85_impl(PyObject *module, Py_buffer *data,
-                         PyBytesObject *alphabet)
-/*[clinic end generated code: output=3e114af53812e8ff input=0b6b83b38ad4497c]*/
+                         PyBytesObject *alphabet, Py_buffer *ignorechars)
+/*[clinic end generated code: output=6a8d6eae798818d7 input=04d72a319712bdf3]*/
 {
     const unsigned char *ascii_data = data->buf;
     Py_ssize_t ascii_len = data->len;
@@ -1316,6 +1319,14 @@ binascii_a2b_base85_impl(PyObject *module, Py_buffer *data,
             return NULL;
         }
         table_a2b = (const unsigned char *)PyBytes_AS_STRING(table_obj);
+    }
+
+    if (ignorechars->len == 0) {
+        ignorechars = NULL;
+    }
+    ignorecache_t ignorecache;
+    if (ignorechars != NULL) {
+        memset(ignorecache, 0, sizeof(ignorecache));
     }
 
     assert(ascii_len >= 0);
@@ -1333,9 +1344,10 @@ binascii_a2b_base85_impl(PyObject *module, Py_buffer *data,
     int group_pos = 0;
     for (; ascii_len > 0 || group_pos != 0; ascii_len--, ascii_data++) {
         /* Shift (in radix-85) data or padding into our buffer. */
+        unsigned char this_ch;
         unsigned char this_digit;
         if (ascii_len > 0) {
-            unsigned char this_ch = *ascii_data;
+            this_ch = *ascii_data;
             this_digit = table_a2b[this_ch];
         }
         else {
@@ -1350,7 +1362,7 @@ binascii_a2b_base85_impl(PyObject *module, Py_buffer *data,
                 state = get_binascii_state(module);
                 if (state != NULL) {
                     PyErr_Format(state->Error,
-                                 "Base85 overflow in hunk starting at byte %d",
+                                 "Base85 overflow in hunk starting at byte %zd",
                                  (data->len - ascii_len) / 5 * 5);
                 }
                 goto error;
@@ -1358,10 +1370,10 @@ binascii_a2b_base85_impl(PyObject *module, Py_buffer *data,
             leftchar = leftchar * 85 + this_digit;
             group_pos++;
         }
-        else {
+        else if (!ignorechar(this_ch, ignorechars, ignorecache)) {
             state = get_binascii_state(module);
             if (state != NULL) {
-                PyErr_Format(state->Error, "bad Base85 character at position %d",
+                PyErr_Format(state->Error, "bad Base85 character at position %zd",
                              data->len - ascii_len);
             }
             goto error;
@@ -1399,6 +1411,7 @@ binascii.b2a_base85
     *
     pad: bool = False
         Pad input to a multiple of 4 before encoding.
+    wrapcol: size_t = 0
     alphabet: Py_buffer(c_default="{NULL, NULL}") = BASE85_ALPHABET
 
 Base85-code line of data.
@@ -1406,8 +1419,8 @@ Base85-code line of data.
 
 static PyObject *
 binascii_b2a_base85_impl(PyObject *module, Py_buffer *data, int pad,
-                         Py_buffer *alphabet)
-/*[clinic end generated code: output=a59f4f2ff6f0e69f input=30f545c6ff554db7]*/
+                         size_t wrapcol, Py_buffer *alphabet)
+/*[clinic end generated code: output=98b962ed52c776a4 input=1b20b0bd6572691b]*/
 {
     const unsigned char *bin_data = data->buf;
     Py_ssize_t bin_len = data->len;
@@ -1427,6 +1440,11 @@ binascii_b2a_base85_impl(PyObject *module, Py_buffer *data, int pad,
     size_t out_len = ((size_t)bin_len + 3) / 4 * 5;
     if (!pad && (bin_len % 4)) {
         out_len -= 4 - (bin_len % 4);
+    }
+    if (wrapcol && out_len) {
+        /* Each line should encode a whole number of bytes. */
+        wrapcol = wrapcol < 5 ? 5 : wrapcol / 5 * 5;
+        out_len += (out_len - 1u) / wrapcol;
     }
     if (out_len > PY_SSIZE_T_MAX) {
         binascii_state *state = get_binascii_state(module);
@@ -1480,6 +1498,11 @@ binascii_b2a_base85_impl(PyObject *module, Py_buffer *data, int pad,
         ascii_data += group_len;
     }
 
+    if (wrapcol && out_len) {
+        unsigned char *start = PyBytesWriter_GetData(writer);
+        ascii_data = start + wraplines(start, ascii_data - start, wrapcol);
+    }
+
     return PyBytesWriter_FinishWithPointer(writer, ascii_data);
 }
 
@@ -1490,14 +1513,16 @@ binascii.a2b_base32
     /
     *
     alphabet: PyBytesObject(c_default="NULL") = BASE32_ALPHABET
+    ignorechars: Py_buffer = b''
+        A byte string containing characters to ignore from the input.
 
 Decode a line of base32 data.
 [clinic start generated code]*/
 
 static PyObject *
 binascii_a2b_base32_impl(PyObject *module, Py_buffer *data,
-                         PyBytesObject *alphabet)
-/*[clinic end generated code: output=12cb58bf547237e2 input=426055ea49ac147e]*/
+                         PyBytesObject *alphabet, Py_buffer *ignorechars)
+/*[clinic end generated code: output=2cf7c8c9e6e98b88 input=b0333508aad1b3ac]*/
 {
     const unsigned char *ascii_data = data->buf;
     Py_ssize_t ascii_len = data->len;
@@ -1516,6 +1541,14 @@ binascii_a2b_base32_impl(PyObject *module, Py_buffer *data,
         table_a2b = (const unsigned char *)PyBytes_AS_STRING(table_obj);
     }
 
+    if (ignorechars->len == 0) {
+        ignorechars = NULL;
+    }
+    ignorecache_t ignorecache;
+    if (ignorechars != NULL) {
+        memset(ignorecache, 0, sizeof(ignorecache));
+    }
+
     /* Allocate output buffer. */
     size_t bin_len = ((size_t)ascii_len + 7) / 8 * 5;
     PyBytesWriter *writer = PyBytesWriter_Create(bin_len);
@@ -1525,6 +1558,7 @@ binascii_a2b_base32_impl(PyObject *module, Py_buffer *data,
     }
     unsigned char *bin_data = PyBytesWriter_GetData(writer);
 
+fastpath:
     /*
      * Fast path: use optimized decoder for complete octas (groups of 8 bytes).
      * The fast path stops at padding, invalid chars, or incomplete octas.
@@ -1555,14 +1589,22 @@ binascii_a2b_base32_impl(PyObject *module, Py_buffer *data,
             {
                 continue;
             }
+            // See RFC 4648, section 3.3: "specifications MAY ignore the
+            // pad character, "=", treating it as non-alphabet data, if
+            // it is present before the end of the encoded data" and
+            // "the excess pad characters MAY also be ignored."
+            if (ignorechar(BASE32_PAD, ignorechars, ignorecache)) {
+                continue;
+            }
             if (octa_pos == 1 || octa_pos == 3 || octa_pos == 6) {
                 /* Set an error below. */
                 break;
             }
             state = get_binascii_state(module);
             if (state) {
+                unsigned char *bin_data_start = PyBytesWriter_GetData(writer);
                 PyErr_SetString(state->Error,
-                                (octa_pos == 0 && ascii_data == data->buf)
+                                (octa_pos == 0 && bin_data == bin_data_start)
                                 ? "Leading padding not allowed"
                                 : "Excess padding not allowed");
             }
@@ -1571,15 +1613,20 @@ binascii_a2b_base32_impl(PyObject *module, Py_buffer *data,
 
         unsigned char v = table_a2b[this_ch];
         if (v >= 32) {
-            state = get_binascii_state(module);
-            if (state) {
-                PyErr_SetString(state->Error, "Only base32 data is allowed");
+            // See RFC 4648, section 3.3.
+            if (!ignorechar(this_ch, ignorechars, ignorecache)) {
+                state = get_binascii_state(module);
+                if (state) {
+                    PyErr_SetString(state->Error, "Only base32 data is allowed");
+                }
+                goto error;
             }
-            goto error;
+            continue;
         }
 
-        /* Data in the middle of/after the padding is not allowed. */
-        if (pads) {
+        // Characters that are not '=', in the middle of the padding, are
+        // not allowed (except when they are). See RFC 4648, section 3.3.
+        if (pads && !ignorechar(BASE32_PAD, ignorechars, ignorecache)) {
             state = get_binascii_state(module);
             if (state) {
                 PyErr_SetString(state->Error, (octa_pos + pads == 8)
@@ -1626,25 +1673,26 @@ binascii_a2b_base32_impl(PyObject *module, Py_buffer *data,
                 octa_pos = 0;
                 *bin_data++ = (leftchar << 5) | v;
                 leftchar = 0;
+                ascii_data++;
+                ascii_len--;
+                goto fastpath;
         }
     }
 
     if (octa_pos == 1 || octa_pos == 3 || octa_pos == 6) {
         state = get_binascii_state(module);
         if (state) {
-            const unsigned char *ascii_data_start = data->buf;
+            unsigned char *bin_data_start = PyBytesWriter_GetData(writer);
             PyErr_Format(state->Error,
                          "Invalid base32-encoded string: "
                          "number of data characters (%zd) "
                          "cannot be 1, 3, or 6 more than a multiple of 8",
-                         ascii_data - ascii_data_start);
+                         (bin_data - bin_data_start) / 5 * 8 + octa_pos);
         }
         goto error;
     }
 
-    if ((octa_pos != 0 && octa_pos + pads != 8)
-        || (octa_pos == 0 && pads != 0))
-    {
+    if (octa_pos != 0 && octa_pos + pads < 8) {
         state = get_binascii_state(module);
         if (state) {
             PyErr_SetString(state->Error, "Incorrect padding");
@@ -1667,15 +1715,16 @@ binascii.b2a_base32
     data: Py_buffer
     /
     *
+    wrapcol: size_t = 0
     alphabet: Py_buffer(c_default="{NULL, NULL}") = BASE32_ALPHABET
 
 Base32-code line of data.
 [clinic start generated code]*/
 
 static PyObject *
-binascii_b2a_base32_impl(PyObject *module, Py_buffer *data,
+binascii_b2a_base32_impl(PyObject *module, Py_buffer *data, size_t wrapcol,
                          Py_buffer *alphabet)
-/*[clinic end generated code: output=058d0d1aeb014d3b input=99cbe7194799d368]*/
+/*[clinic end generated code: output=d41fafbdaf29e280 input=a3d93b73836f2879]*/
 {
     const unsigned char *table_b2a = table_b2a_base32;
     const unsigned char *bin_data = data->buf;
@@ -1697,6 +1746,11 @@ binascii_b2a_base32_impl(PyObject *module, Py_buffer *data,
      * Use unsigned integer arithmetic to avoid signed integer overflow.
      */
     size_t ascii_len = ((size_t)bin_len + 4u) / 5u * 8u;
+    if (wrapcol && ascii_len) {
+        /* Each line should encode a whole number of bytes. */
+        wrapcol = wrapcol < 8 ? 8 : wrapcol / 8 * 8;
+        ascii_len += (ascii_len - 1u) / wrapcol;
+    }
     if (ascii_len > PY_SSIZE_T_MAX) {
         state = get_binascii_state(module);
         if (state) {
@@ -1770,6 +1824,11 @@ binascii_b2a_base32_impl(PyObject *module, Py_buffer *data,
         *ascii_data++ = table_b2a[(val >> 2) & 0x1f];
         *ascii_data++ = table_b2a[(val << 3) & 0x1f];
         *ascii_data++ = BASE32_PAD;
+    }
+
+    if (wrapcol && ascii_len) {
+        unsigned char *start = PyBytesWriter_GetData(writer);
+        ascii_data = start + wraplines(start, ascii_data - start, wrapcol);
     }
 
     return PyBytesWriter_FinishWithPointer(writer, ascii_data);
@@ -2010,7 +2069,7 @@ binascii.b2a_hex
     data: Py_buffer
     sep: object = NULL
         An optional single character or byte to separate hex bytes.
-    bytes_per_sep: int = 1
+    bytes_per_sep: Py_ssize_t = 1
         How many bytes between separators.  Positive values count from the
         right, negative values count from the left.
 
@@ -2030,8 +2089,8 @@ b'b9_01ef'
 
 static PyObject *
 binascii_b2a_hex_impl(PyObject *module, Py_buffer *data, PyObject *sep,
-                      int bytes_per_sep)
-/*[clinic end generated code: output=a26937946a81d2c7 input=ec0ade6ba2e43543]*/
+                      Py_ssize_t bytes_per_sep)
+/*[clinic end generated code: output=7d703f866f74a813 input=6a1606f01a87118c]*/
 {
     return _Py_strhex_bytes_with_sep((const char *)data->buf, data->len,
                                      sep, bytes_per_sep);
@@ -2048,8 +2107,8 @@ available as "b2a_hex()".
 
 static PyObject *
 binascii_hexlify_impl(PyObject *module, Py_buffer *data, PyObject *sep,
-                      int bytes_per_sep)
-/*[clinic end generated code: output=d12aa1b001b15199 input=bc317bd4e241f76b]*/
+                      Py_ssize_t bytes_per_sep)
+/*[clinic end generated code: output=b99b3b39d234a3d4 input=bc317bd4e241f76b]*/
 {
     return _Py_strhex_bytes_with_sep((const char *)data->buf, data->len,
                                      sep, bytes_per_sep);
@@ -2060,6 +2119,9 @@ binascii.a2b_hex
 
     hexstr: ascii_buffer
     /
+    *
+    ignorechars: Py_buffer = b''
+        A byte string containing characters to ignore from the input.
 
 Binary data of hexadecimal representation.
 
@@ -2068,53 +2130,68 @@ This function is also available as "unhexlify()".
 [clinic start generated code]*/
 
 static PyObject *
-binascii_a2b_hex_impl(PyObject *module, Py_buffer *hexstr)
-/*[clinic end generated code: output=0cc1a139af0eeecb input=9e1e7f2f94db24fd]*/
+binascii_a2b_hex_impl(PyObject *module, Py_buffer *hexstr,
+                      Py_buffer *ignorechars)
+/*[clinic end generated code: output=021a7ed5a742cb20 input=6154b3f4e6e2c0c3]*/
 {
-    const char* argbuf;
-    Py_ssize_t arglen;
-    Py_ssize_t i, j;
-    binascii_state *state;
+    const unsigned char *ascii_data = hexstr->buf;
+    size_t ascii_len = hexstr->len;
+    binascii_state *state = NULL;
 
-    argbuf = hexstr->buf;
-    arglen = hexstr->len;
-
-    assert(arglen >= 0);
-
-    /* XXX What should we do about strings with an odd length?  Should
-     * we add an implicit leading zero, or a trailing zero?  For now,
-     * raise an exception.
-     */
-    if (arglen % 2) {
-        state = get_binascii_state(module);
-        if (state == NULL) {
-            return NULL;
-        }
-        PyErr_SetString(state->Error, "Odd-length string");
-        return NULL;
+    if (ignorechars->len == 0) {
+        ignorechars = NULL;
+    }
+    ignorecache_t ignorecache;
+    if (ignorechars != NULL) {
+        memset(ignorecache, 0, sizeof(ignorecache));
     }
 
-    PyBytesWriter *writer = PyBytesWriter_Create(arglen/2);
+    /* Allocate the buffer */
+    Py_ssize_t bin_len = ascii_len/2;
+    PyBytesWriter *writer = PyBytesWriter_Create(bin_len);
     if (writer == NULL) {
         return NULL;
     }
-    char *retbuf = PyBytesWriter_GetData(writer);
+    unsigned char *bin_data = PyBytesWriter_GetData(writer);
 
-    for (i=j=0; i < arglen; i += 2) {
-        unsigned int top = _PyLong_DigitValue[Py_CHARMASK(argbuf[i])];
-        unsigned int bot = _PyLong_DigitValue[Py_CHARMASK(argbuf[i+1])];
-        if (top >= 16 || bot >= 16) {
-            state = get_binascii_state(module);
-            if (state == NULL) {
+    int pair_pos = 0;
+    unsigned char leftchar = 0;
+    for (; ascii_len; ascii_data++, ascii_len--) {
+        unsigned char this_ch = *ascii_data;
+
+        unsigned char this_digit = _PyLong_DigitValue[this_ch];
+        if (this_digit >= 16) {
+            // See RFC 4648, section 3.3.
+            if (!ignorechar(this_ch, ignorechars, ignorecache)) {
+                state = get_binascii_state(module);
+                if (state) {
+                    PyErr_SetString(state->Error,
+                                    "Non-hexadecimal digit found");
+                }
                 goto error;
             }
-            PyErr_SetString(state->Error,
-                            "Non-hexadecimal digit found");
-            goto error;
+            continue;
         }
-        retbuf[j++] = (top << 4) + bot;
+
+        if (!pair_pos) {
+            pair_pos = 1;
+            leftchar = this_digit;
+        }
+        else {
+            pair_pos = 0;
+            *bin_data++ = (leftchar << 4) | this_digit;
+        }
     }
-    return PyBytesWriter_Finish(writer);
+
+    if (pair_pos) {
+        state = get_binascii_state(module);
+        if (state) {
+            PyErr_SetString(state->Error, "Odd number of hexadecimal digits");
+        }
+        goto error;
+    }
+
+    return PyBytesWriter_FinishWithPointer(writer, bin_data);
 
 error:
     PyBytesWriter_Discard(writer);
@@ -2130,10 +2207,11 @@ hexstr must contain an even number of hex digits (upper or lower case).
 [clinic start generated code]*/
 
 static PyObject *
-binascii_unhexlify_impl(PyObject *module, Py_buffer *hexstr)
-/*[clinic end generated code: output=51a64c06c79629e3 input=dd8c012725f462da]*/
+binascii_unhexlify_impl(PyObject *module, Py_buffer *hexstr,
+                        Py_buffer *ignorechars)
+/*[clinic end generated code: output=40e87f8a0ded5880 input=dd8c012725f462da]*/
 {
-    return binascii_a2b_hex_impl(module, hexstr);
+    return binascii_a2b_hex_impl(module, hexstr, ignorechars);
 }
 
 #define MAXLINESIZE 76

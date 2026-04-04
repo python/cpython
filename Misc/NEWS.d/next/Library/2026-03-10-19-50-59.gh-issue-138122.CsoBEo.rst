@@ -1,0 +1,4 @@
+The ``profiling.sampling`` module now supports differential flamegraph
+visualization via ``--diff-flamegraph`` to compare two profiling runs.
+Functions are colored red (regressions), blue (improvements), gray (neutral),
+or purple (new). Elided stacks show code paths that disappeared between runs.

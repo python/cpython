@@ -38,15 +38,15 @@ class BaseTests:
         self.check_build('_test_cext')
 
     def check_build(self, extension_name, std=None, limited=False,
-                    opaque_pyobject=False):
+                    abi3t=False):
         venv_dir = 'env'
         with support.setup_venv_with_pip_setuptools(venv_dir) as python_exe:
             self._check_build(extension_name, python_exe,
                               std=std, limited=limited,
-                              opaque_pyobject=opaque_pyobject)
+                              abi3t=abi3t)
 
     def _check_build(self, extension_name, python_exe, std, limited,
-                     opaque_pyobject):
+                     abi3t):
         pkg_dir = 'pkg'
         os.mkdir(pkg_dir)
         shutil.copy(SETUP, os.path.join(pkg_dir, os.path.basename(SETUP)))
@@ -60,8 +60,8 @@ class BaseTests:
                 env['CPYTHON_TEST_STD'] = std
             if limited:
                 env['CPYTHON_TEST_LIMITED'] = '1'
-            if opaque_pyobject:
-                env['CPYTHON_TEST_OPAQUE_PYOBJECT'] = '1'
+            if abi3t:
+                env['CPYTHON_TEST_ABI3T'] = '1'
             env['CPYTHON_TEST_EXT_NAME'] = extension_name
             env['TEST_INTERNAL_C_API'] = str(int(self.TEST_INTERNAL_C_API))
             if support.verbose:
@@ -116,10 +116,9 @@ class TestPublicCAPI(BaseTests, unittest.TestCase):
     def test_build_c11(self):
         self.check_build('_test_c11_cext', std='c11')
 
-    def test_build_opaque_pyobject(self):
-        # Test with _Py_OPAQUE_PYOBJECT
-        self.check_build('_test_limited_opaque_cext', limited=True,
-                         opaque_pyobject=True)
+    def test_build_abi3t(self):
+        # Test with Py_TARGET_ABI3T
+        self.check_build('_test_abi3t', abi3t=True)
 
     @unittest.skipIf(support.MS_WINDOWS, "MSVC doesn't support /std:c99")
     def test_build_c99(self):
