@@ -52,7 +52,7 @@ fine-tuning parameters.
 
 .. _re-syntax:
 
-Regular Expression Syntax
+Regular expression syntax
 -------------------------
 
 A regular expression (or RE) specifies a set of strings that matches it; the
@@ -717,7 +717,7 @@ three digits in length.
 
 .. _contents-of-module-re:
 
-Module Contents
+Module contents
 ---------------
 
 The module defines several functions, constants, and an exception. Some of the
@@ -1246,7 +1246,7 @@ Exceptions
 
 .. _re-objects:
 
-Regular Expression Objects
+Regular expression objects
 --------------------------
 
 .. class:: Pattern
@@ -1396,7 +1396,7 @@ Regular Expression Objects
 
 .. _match-objects:
 
-Match Objects
+Match objects
 -------------
 
 Match objects always have a boolean value of ``True``.
@@ -1615,11 +1615,11 @@ when there is no match, you can test whether there was a match with a simple
 
 .. _re-examples:
 
-Regular Expression Examples
+Regular expression examples
 ---------------------------
 
 
-Checking for a Pair
+Checking for a pair
 ^^^^^^^^^^^^^^^^^^^
 
 In this example, we'll use the following helper function to display match
@@ -1783,7 +1783,7 @@ Code supporting older versions of Python should continue to use *match*.
 
 .. versionadded:: 3.15
 
-Making a Phonebook
+Making a phonebook
 ^^^^^^^^^^^^^^^^^^
 
 :func:`split` splits a string into a list delimited by the passed pattern.  The
@@ -1844,7 +1844,7 @@ house number from the street name:
    ['Heather', 'Albrecht', '548.326.4584', '919', 'Park Place']]
 
 
-Text Munging
+Text munging
 ^^^^^^^^^^^^
 
 :func:`sub` replaces every occurrence of a pattern with a string or the
@@ -1864,7 +1864,7 @@ in each word of a sentence except for the first and last characters::
    'Pofsroser Aodlambelk, plasee reoprt yuor asnebces potlmrpy.'
 
 
-Finding all Adverbs
+Finding all adverbs
 ^^^^^^^^^^^^^^^^^^^
 
 :func:`findall` matches *all* occurrences of a pattern, not just the first
@@ -1877,7 +1877,7 @@ the following manner::
    ['carefully', 'quickly']
 
 
-Finding all Adverbs and their Positions
+Finding all adverbs and their positions
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 If one wants more information about all matches of a pattern than the matched
@@ -1893,7 +1893,7 @@ to find all of the adverbs *and their positions* in some text, they would use
    40-47: quickly
 
 
-Raw String Notation
+Raw string notation
 ^^^^^^^^^^^^^^^^^^^
 
 Raw string notation (``r"text"``) keeps regular expressions sane.  Without it,
@@ -1917,7 +1917,7 @@ functionally identical::
    <re.Match object; span=(0, 1), match='\\'>
 
 
-Writing a Tokenizer
+Writing a tokenizer
 ^^^^^^^^^^^^^^^^^^^
 
 A `tokenizer or scanner <https://en.wikipedia.org/wiki/Lexical_analysis>`_
