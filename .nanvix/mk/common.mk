@@ -139,9 +139,9 @@ CONFIGURE_ENV = \
 	LD="$(TOOLCHAIN_PREFIX)/bin/i686-nanvix-ld" \
 	AR="$(TOOLCHAIN_PREFIX)/bin/i686-nanvix-ar" \
 	RANLIB="$(TOOLCHAIN_PREFIX)/bin/i686-nanvix-ranlib" \
-	CFLAGS="-L$(SYSROOT_PATH)/lib -I$(SYSROOT_PATH)/include" \
+	CFLAGS="-O3 -fomit-frame-pointer -fno-unwind-tables -fno-asynchronous-unwind-tables -I$(SYSROOT_PATH)/include" \
 	CFLAGS_NODIST="-fno-semantic-interposition" \
-	LDFLAGS="-T$(SYSROOT_PATH)/lib/user.ld -Wl,--allow-multiple-definition -no-pie -Wl,--export-dynamic -Wl,--no-dynamic-linker" \
+	LDFLAGS="-L$(SYSROOT_PATH)/lib -T$(SYSROOT_PATH)/lib/user.ld -Wl,--allow-multiple-definition -no-pie -Wl,--export-dynamic -Wl,--no-dynamic-linker" \
 	LIBS="-Wl,--start-group $(LIBPOSIX) $(LIBC) $(LIBM) -lsqlite3 -lssl -lcrypto -lz -lbz2 -lffi -Wl,--end-group" \
 	LIBSQLITE3_LIBS="-L$(SYSROOT_PATH)/lib -lsqlite3" \
 	LIBSQLITE3_CFLAGS="-I$(SYSROOT_PATH)/include" \
@@ -154,7 +154,6 @@ CONFIGURE_ENV = \
 
 # Configure options for Nanvix
 CONFIGURE_OPTS = \
-	--with-lto \
 	--disable-shared \
 	--build=x86_64-pc-linux-gnux32 \
 	--host=i686-nanvix \
@@ -168,6 +167,8 @@ CONFIGURE_OPTS = \
 	--with-pkg-config=no \
 	--with-openssl="$(SYSROOT_PATH)" \
 	--disable-ipv6 \
+	$(if $(filter yes,$(NANVIX_RELEASE)),--without-doc-strings,) \
+	--with-computed-gotos \
 	ac_cv_file__dev_ptmx=no \
 	ac_cv_file__dev_ptc=no \
 	ac_cv_pthread_is_default=yes \
