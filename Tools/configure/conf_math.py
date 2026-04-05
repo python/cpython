@@ -31,9 +31,15 @@ def check_math_library(v):
     # Math library: --with-libm and --with-libc
     # ---------------------------------------------------------------------------
 
+    # Linux: __fpu_control (AC_CHECK_FUNC with custom action → no HAVE_ define)
+    pyconf.checking("for __fpu_control")
+    found = pyconf.check_func("__fpu_control", autodefine=False)
+    pyconf.result(found)
+    if not found:
+        pyconf.check_lib("ieee", "__fpu_control")
+
     v.export("LIBM")  # registered for Makefile substitution
     # Linux requires this for correct floating-point operations
-    # (Note: AC_CHECK_FUNC with custom action, no HAVE_ define)
 
     if v.ac_sys_system != "Darwin":
         v.LIBM = "-lm"
@@ -69,13 +75,6 @@ def check_math_library(v):
             pyconf.error("proper usage is --with-libc=STRING")
     else:
         pyconf.result(f'default LIBC="{v.LIBC}"')
-
-    # Linux: __fpu_control (AC_CHECK_FUNC with custom action → no HAVE_ define)
-    pyconf.checking("for __fpu_control")
-    found = pyconf.check_func("__fpu_control", autodefine=False)
-    pyconf.result(found)
-    if not found:
-        pyconf.check_lib("ieee", "__fpu_control")
 
 
 def _define_float_big():
@@ -295,7 +294,10 @@ def check_wchar(v):
 
     # Check for wchar.h
     pyconf.checking("for wchar.h")
-    has_wchar = pyconf.check_header("wchar.h")
+    has_wchar = pyconf.check_header(
+        "wchar.h",
+        autodefine=False,
+    )
     pyconf.result(has_wchar)
     if has_wchar:
         pyconf.define(
@@ -503,16 +505,16 @@ def detect_libmpdec(v):
         elif libmpdec_machine == "unknown":
             pyconf.fatal("_decimal: unsupported architecture")
 
-        if v.have_ipa_pure_const_bug:
-            # Some versions of gcc miscompile inline asm:
-            # https://gcc.gnu.org/bugzilla/show_bug.cgi?id=46491
-            # https://gcc.gnu.org/ml/gcc/2010-11/msg00366.html
-            v.LIBMPDEC_CFLAGS += " -fno-ipa-pure-const"
+    if v.have_ipa_pure_const_bug:
+        # Some versions of gcc miscompile inline asm:
+        # https://gcc.gnu.org/bugzilla/show_bug.cgi?id=46491
+        # https://gcc.gnu.org/ml/gcc/2010-11/msg00366.html
+        v.LIBMPDEC_CFLAGS += " -fno-ipa-pure-const"
 
-        if v.have_glibc_memmove_bug:
-            # _FORTIFY_SOURCE wrappers for memmove and bcopy are incorrect:
-            # https://sourceware.org/ml/libc-alpha/2010-12/msg00009.html
-            v.LIBMPDEC_CFLAGS += " -U_FORTIFY_SOURCE"
+    if v.have_glibc_memmove_bug:
+        # _FORTIFY_SOURCE wrappers for memmove and bcopy are incorrect:
+        # https://sourceware.org/ml/libc-alpha/2010-12/msg00009.html
+        v.LIBMPDEC_CFLAGS += " -U_FORTIFY_SOURCE"
 
     v.export("LIBMPDEC_CFLAGS")
     v.export("LIBMPDEC_LIBS")
