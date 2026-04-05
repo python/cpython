@@ -36,7 +36,7 @@ fi
 
 echo "=== Running ./configure $* ==="
 rm -f config.cache
-./configure "$@" > "$NEW_DIR/stdout" 2> "$NEW_DIR/stderr" || true
+PYTHON_FOR_CONFIGURE=python3 ./configure "$@" > "$NEW_DIR/stdout" 2> "$NEW_DIR/stderr" || true
 for f in $FILES; do
     mkdir -p "$NEW_DIR/$(dirname "$f")"
     [ -f "$f" ] && cp "$f" "$NEW_DIR/$f" || touch "$NEW_DIR/$f"
