@@ -122,23 +122,25 @@ class ModuleCompleter:
                                    if self.is_suggestion_match(module.name, prefix)]
             return sorted(builtin_modules + third_party_modules)
 
-        if path.startswith('.'):
-            # Convert relative path to absolute path
-            package = self.namespace.get('__package__', '')
-            path = self.resolve_relative_name(path, package)  # type: ignore[assignment]
-            if path is None:
-                return []
+        path = self._resolve_relative_path(path)  # type: ignore[assignment]
+        if path is None:
+            return []
 
         modules: Iterable[pkgutil.ModuleInfo] = self.global_cache
         imported_module = sys.modules.get(path.split('.')[0])
         if imported_module:
-            # Filter modules to those who name and specs match the
+            # Filter modules to those whose name and specs match the
             # imported module to avoid invalid suggestions
             spec = imported_module.__spec__
             if spec:
+                def _safe_find_spec(mod: pkgutil.ModuleInfo) -> bool:
+                    try:
+                        return mod.module_finder.find_spec(mod.name, None) == spec
+                    except Exception:
+                        return False
                 modules = [mod for mod in modules
                            if mod.name == spec.name
-                           and mod.module_finder.find_spec(mod.name, None) == spec]
+                           and _safe_find_spec(mod)]
             else:
                 modules = []
 
@@ -171,12 +173,9 @@ class ModuleCompleter:
         return [attr for attr in attributes if attr.isidentifier()], action
 
     def _find_attributes(self, path: str, prefix: str) -> tuple[list[str], CompletionAction | None]:
-        if path.startswith('.'):
-            # Convert relative path to absolute path
-            package = self.namespace.get('__package__', '')
-            path = self.resolve_relative_name(path, package)  # type: ignore[assignment]
-            if path is None:
-                return [], None
+        path = self._resolve_relative_path(path)  # type: ignore[assignment]
+        if path is None:
+            return [], None
 
         imported_module = sys.modules.get(path)
         if not imported_module:
@@ -236,6 +235,13 @@ class ModuleCompleter:
             return f'{path}{module}'
         return f'{path}.{module}'
 
+    def _resolve_relative_path(self, path: str) -> str | None:
+        """Resolve a relative import path to absolute. Returns None if unresolvable."""
+        if path.startswith('.'):
+            package = self.namespace.get('__package__', '')
+            return self.resolve_relative_name(path, package)
+        return path
+
     def resolve_relative_name(self, name: str, package: str) -> str | None:
         """Resolve a relative module name to an absolute name.
 
@@ -260,6 +266,7 @@ class ModuleCompleter:
         if not self._global_cache or self._curr_sys_path != sys.path:
             self._curr_sys_path = sys.path[:]
             self._global_cache = list(pkgutil.iter_modules())
+            self._failed_imports.clear()  # retry on sys.path change
         return self._global_cache
 
     def _maybe_import_module(self, fqname: str) -> ModuleType | None:

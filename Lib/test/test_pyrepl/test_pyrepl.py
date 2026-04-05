@@ -1190,8 +1190,8 @@ class TestPyReplModuleCompleter(TestCase):
         with (tempfile.TemporaryDirectory() as _dir1,
               patch.object(sys, "path", [_dir1, *sys.path])):
             dir1 = pathlib.Path(_dir1)
-            (dir1 / "mod_aa.py").mkdir()
-            (dir1 / "mod_bb.py").mkdir()
+            (dir1 / "mod_aa.py").touch()
+            (dir1 / "mod_bb.py").touch()
             events = code_to_events("import mod_a\t\nimport mod_b\t\n")
             reader = self.prepare_reader(events, namespace={})
             output_1, output_2 = reader.readline(), reader.readline()
@@ -1559,7 +1559,7 @@ class TestPyReplModuleCompleter(TestCase):
         # more unitary tests checking the exact suggestions provided
         # (sorting, de-duplication, import action...)
         _prompt = ("[ module not imported, press again to import it "
-                          "and propose attributes ]")
+                   "and propose attributes ]")
         _error = "[ error during import: division by zero ]"
         with tempfile.TemporaryDirectory() as _dir:
             dir = pathlib.Path(_dir)
@@ -1572,6 +1572,9 @@ class TestPyReplModuleCompleter(TestCase):
             sys.modules.pop("string.templatelib", None)
             with patch.object(sys, "path", [_dir, *sys.path]):
                 pkgutil.get_importer(_dir).invalidate_caches()
+                # NOTE: Cases are intentionally sequential and share completer
+                # state. Earlier cases may import modules that later cases
+                # depend on. Do NOT reorder without understanding dependencies.
                 cases = (
                     # no match != not an import
                     ("import nope", ([], None), set()),
@@ -1619,6 +1622,8 @@ class TestPyReplModuleCompleter(TestCase):
 # Audit hook used to check for stdlib modules import side-effects
 # Defined globally to avoid adding one hook per test run (refleak)
 _audit_events: set[str] | None = None
+
+
 def _hook(name: str, _args: tuple):
     if _audit_events is not None:  # No-op when not activated
         _audit_events.add(name)

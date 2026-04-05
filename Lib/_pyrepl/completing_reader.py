@@ -172,6 +172,7 @@ class complete(commands.Command):
         if r.cmpltn_action:
             if last_is_completer:  # double-tab: execute action
                 msg = r.cmpltn_action[1]()
+                r.cmpltn_action = None  # consumed
                 if msg:
                     r.msg = msg
             else:  # other input since last tab: cancel action
