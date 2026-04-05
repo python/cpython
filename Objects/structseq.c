@@ -38,7 +38,6 @@ get_type_attr_as_size(PyTypeObject *tp, PyObject *name)
                      name, tp->tp_name);
         return -1;
     }
-
     return PyLong_AsSsize_t(v);
 }
 
