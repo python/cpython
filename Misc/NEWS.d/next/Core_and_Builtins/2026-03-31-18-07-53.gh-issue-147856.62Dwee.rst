@@ -1,0 +1,1 @@
+Allow the *count* argument of :meth:`bytes.replace` to be a keyword.

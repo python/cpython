@@ -1133,6 +1133,7 @@ with_pymalloc_hugepages
 with_c_locale_coercion
 with_valgrind
 with_dtrace
+enable_epoll
 with_libm
 with_libc
 enable_big_digits
@@ -1856,6 +1857,7 @@ Optional Features:
                           see Doc/library/sqlite3.rst (default is no)
   --enable-ipv6           enable ipv6 (with ipv4) support, see
                           Doc/library/socket.rst (default is yes if supported)
+  --disable-epoll         disable epoll (default is yes if supported)
   --enable-big-digits[=15|30]
                           use big digits (30 or 15 bits) for Python longs
                           (default is 30)]
@@ -9696,7 +9698,7 @@ fi
         as_fn_append LDFLAGS_NODIST " -sWASM_BIGINT"
 
         as_fn_append LINKFORSHARED " -sFORCE_FILESYSTEM -lidbfs.js -lnodefs.js -lproxyfs.js -lworkerfs.js"
-    as_fn_append LINKFORSHARED " -sEXPORTED_RUNTIME_METHODS=FS,callMain,ENV,HEAPU32,TTY"
+    as_fn_append LINKFORSHARED " -sEXPORTED_RUNTIME_METHODS=FS,callMain,ENV,HEAPU32,TTY,ERRNO_CODES"
     as_fn_append LINKFORSHARED " -sEXPORTED_FUNCTIONS=_main,_Py_Version,__PyRuntime,_PyGILState_GetThisThreadState,__Py_DumpTraceback,__PyEM_EMSCRIPTEN_TRAMPOLINE_OFFSET"
     as_fn_append LINKFORSHARED " -sSTACK_SIZE=5MB"
         as_fn_append LINKFORSHARED " -sTEXTDECODER=2"
@@ -21006,6 +21008,29 @@ fi
 
 
 
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for --disable-epoll" >&5
+printf %s "checking for --disable-epoll... " >&6; }
+# Check whether --enable-epoll was given.
+if test ${enable_epoll+y}
+then :
+  enableval=$enable_epoll; if test "x$enable_epoll" = xno
+then :
+  disable_epoll=yes
+else case e in #(
+  e) disable_epoll=no ;;
+esac
+fi
+else case e in #(
+  e) disable_epoll=no
+ ;;
+esac
+fi
+
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $disable_epoll" >&5
+printf "%s\n" "$disable_epoll" >&6; }
+if test "$disable_epoll" = "no"
+then
+
 
   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for epoll_create" >&5
 printf %s "checking for epoll_create... " >&6; }
@@ -21086,6 +21111,8 @@ printf "%s\n" "#define HAVE_EPOLL_CREATE1 1" >>confdefs.h
 fi
 
 
+
+fi
 
 
 
