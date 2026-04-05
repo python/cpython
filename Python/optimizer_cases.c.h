@@ -1391,15 +1391,22 @@
             JitOptRef nos;
             nos = stack_pointer[-2];
             PyTypeObject *tp = sym_get_type(nos);
+            bool definite = true;
             if (!tp) {
                 tp = sym_get_probable_type(nos);
+                definite = false;
             }
             if (tp && tp->tp_as_mapping &&
                 tp->tp_as_mapping->mp_subscript == _PyDict_Subscript)
             {
-                PyType_Watch(TYPE_WATCHER_ID, (PyObject *)tp);
-                _Py_BloomFilter_Add(dependencies, tp);
-                ADD_OP(_NOP, 0, 0);
+                if (definite){
+                    ADD_OP(_NOP, 0, 0);
+                }
+                else {
+                    PyType_Watch(TYPE_WATCHER_ID, (PyObject *)tp);
+                    _Py_BloomFilter_Add(dependencies, tp);
+                    sym_set_type(nos, tp);
+                }
             }
             break;
         }
@@ -1408,15 +1415,22 @@
             JitOptRef nos;
             nos = stack_pointer[-2];
             PyTypeObject *tp = sym_get_type(nos);
+            bool definite = true;
             if (!tp) {
                 tp = sym_get_probable_type(nos);
+                definite = false;
             }
             if (tp && tp->tp_as_mapping &&
                 tp->tp_as_mapping->mp_ass_subscript == _PyDict_StoreSubscript)
             {
-                PyType_Watch(TYPE_WATCHER_ID, (PyObject *)tp);
-                _Py_BloomFilter_Add(dependencies, tp);
-                ADD_OP(_NOP, 0, 0);
+                if (definite){
+                    ADD_OP(_NOP, 0, 0);
+                }
+                else {
+                    PyType_Watch(TYPE_WATCHER_ID, (PyObject *)tp);
+                    _Py_BloomFilter_Add(dependencies, tp);
+                    sym_set_type(nos, tp);
+                }
             }
             break;
         }
