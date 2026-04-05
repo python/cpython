@@ -3027,7 +3027,7 @@
                         PyObject *result = sym_get_const(ctx, b);
                         if (_Py_IsImmortal(result)) {
                             // Replace with _INSERT_2_LOAD_CONST_INLINE_BORROW since we have two inputs and an immortal result
-                            ADD_OP(_INSERT_2_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)result);
+                            ADD_OP(_INSERT_2_LOAD_CONST_INLINE_BORROW, 0, PyStackRef_TagBorrow(result));
                         }
                     }
                     CHECK_STACK_BOUNDS(1);
