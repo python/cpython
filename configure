@@ -1,15 +1,46 @@
 #!/bin/sh
 #
-# This runs the Python-based configure.py script.
-# Or, if python3 doesn't exist, runs configure.awk.
+# Runs build configure script.  This prefers to run the awk,
+# Tools/configure/configure.awk, version, if suitable awk is
+# found.  If PYTHON_FOR_CONFIGURE is set, it runs the Python version,
+# Tools/configure/configure.py.
 
-SCRIPT_DIR="$(dirname "$0")"
+if test -z "${PYTHON_FOR_CONFIGURE:-}"; then
+    # Check if a non-gawk awk is available.
+    working_awk=no
+    for cmd in mawk nawk awk; do
+        IFS=:
+        for dn in $PATH; do
+            if test -x "${dn}/${cmd}"; then
+                # Reject gawk — it has a crash bug with this script.
+                case $("${dn}/${cmd}" -V < /dev/null 2>&1) in
+                    *"GNU Awk"*) ;;
+                    *) working_awk=yes; break 2 ;;
+                esac
+            fi
+        done
+        unset IFS
+    done
+
+    if test "$working_awk" = no; then
+        # Only gawk found — try python3 as fallback.
+        if python3 -c "from __future__ import annotations" > /dev/null 2>&1; then
+            PYTHON_FOR_CONFIGURE=python3
+        else
+            echo "Error: gawk is not supported (crashes with this script)." >&2
+            echo "Please install mawk, or install Python 3.8 or newer." >&2
+            exit 1
+        fi
+    fi
+fi
+
+srcdir="$(dirname "$0")"
 
 if test -n "${PYTHON_FOR_CONFIGURE:-}"; then
     echo "Using configure.py..."
-    export PYTHONPATH=$SCRIPT_DIR/Tools/configure
-    exec "$PYTHON_FOR_CONFIGURE" "$SCRIPT_DIR/Tools/configure/configure.py" --srcdir="$SCRIPT_DIR" "$@"
+    export PYTHONPATH=${srcdir}/Tools/configure
+    exec "$PYTHON_FOR_CONFIGURE" "${srcdir}/Tools/configure/configure.py" --srcdir="${srcdir}" "$@"
 else
     echo "Using configure.awk..."
-    exec "$SCRIPT_DIR/Tools/configure/configure.awk" --srcdir="$SCRIPT_DIR" "$@"
+    exec "${srcdir}/Tools/configure/configure.awk" --srcdir="${srcdir}" "$@"
 fi
