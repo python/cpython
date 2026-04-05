@@ -1,11 +1,10 @@
-"""conf_security — OpenSSL, ensurepip, hashlib, test modules.
+"""conf_security — getrandom, OpenSSL, hash algorithm, and HACL* modules.
 
-Handles --with-ensurepip (install/upgrade/no); checks dirent d_type
-and Linux getrandom() syscall/function; checks POSIX shared memory
-(shm_open, shm_unlink); handles --with-openssl and --with-openssl-rpath
-including pkg-config detection and version validation; handles
---with-ssl-default-suites; handles --with-builtin-hashlib-hashes;
-and handles --disable-test-modules.
+Checks for the Linux getrandom() syscall and getrandom() libc function;
+handles --with-openssl and --with-openssl-rpath including pkg-config
+detection and version validation; handles --with-ssl-default-suites;
+handles --with-builtin-hashlib-hashes; handles --with-hash-algorithm;
+and sets up HACL* compilation flags and HACL*-based hash modules.
 """
 
 from __future__ import annotations
@@ -179,6 +178,7 @@ def check_openssl(v):
     else:
         rpath_arg = "-Wl,-rpath="
 
+    pyconf.checking("for --with-openssl-rpath")
     openssl_rpath_opt = WITH_OPENSSL_RPATH.value_or("no")
     v.OPENSSL_LDFLAGS_RPATH = ""
     if openssl_rpath_opt in ("auto", "yes"):
@@ -199,12 +199,14 @@ def check_openssl(v):
             pyconf.error(
                 f'--with-openssl-rpath "{openssl_rpath_opt}" is not a directory'
             )
+    pyconf.result(v.OPENSSL_RPATH)
 
     v.export("OPENSSL_RPATH")
     v.export("OPENSSL_LDFLAGS_RPATH")
 
     # Static OpenSSL build (unsupported, not advertised)
     if v.PY_UNSUPPORTED_OPENSSL_BUILD == "static":
+        pyconf.checking("for unsupported static openssl build")
         new_ssl_libs = []
         for arg in v.OPENSSL_LIBS.split():
             if arg.startswith("-l"):
@@ -215,6 +217,7 @@ def check_openssl(v):
             else:
                 new_ssl_libs.append(arg)
         v.OPENSSL_LIBS = " ".join(new_ssl_libs) + f" {v.ZLIB_LIBS}".rstrip()
+        pyconf.result(v.OPENSSL_LIBS)
 
     # libcrypto-only libs (exclude -lssl/-Wl*ssl*)
     LIBCRYPTO_LIBS = []
@@ -299,7 +302,9 @@ def check_ssl_cipher_suites(v):
         "Cipher suite string for PY_SSL_DEFAULT_CIPHERS=0",
     )
 
+    pyconf.checking("for --with-ssl-default-suites")
     ssl_suites = WITH_SSL_DEFAULT_SUITES.value_or("python")
+    pyconf.result(ssl_suites)
     if ssl_suites == "python":
         pyconf.define("PY_SSL_DEFAULT_CIPHERS", 1)
     elif ssl_suites == "openssl":
@@ -318,6 +323,7 @@ def check_builtin_hashlib_hashes(v):
 
     default_hashlib_hashes = "md5,sha1,sha2,sha3,blake2"
 
+    pyconf.checking("for --with-builtin-hashlib-hashes")
     bh_raw = WITH_BUILTIN_HASHLIB_HASHES.value
     if bh_raw is None or bh_raw == "yes":
         builtin_hashes = default_hashlib_hashes
@@ -325,6 +331,7 @@ def check_builtin_hashlib_hashes(v):
         builtin_hashes = ""
     else:
         builtin_hashes = bh_raw
+    pyconf.result(builtin_hashes)
 
     pyconf.define_unquoted(
         "PY_BUILTIN_HASHLIB_HASHES",
