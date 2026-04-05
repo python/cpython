@@ -381,9 +381,17 @@ class Reader:
         self.screeninfo = screeninfo
         self.cxy = self.pos2xy()
         if self.msg:
+            width = self.console.width
             for mline in self.msg.split("\n"):
-                screen.append(mline)
-                screeninfo.append((0, []))
+                # If self.msg is larger than console width, make it fit
+                # TODO: try to split between words?
+                if not mline:
+                    screen.append("")
+                    screeninfo.append((0, []))
+                    continue
+                for r in range((len(mline) - 1) // width + 1):
+                    screen.append(mline[r * width : (r + 1) * width])
+                    screeninfo.append((0, []))
 
         self.last_refresh_cache.update_cache(self, screen, screeninfo)
         return screen
@@ -627,7 +635,6 @@ class Reader:
             yield
         finally:
             self.can_colorize = old_can_colorize
-
 
     def finish(self) -> None:
         """Called when a command signals that we're finished."""
