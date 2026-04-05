@@ -21,6 +21,7 @@
 
 from __future__ import annotations
 
+import itertools
 import sys
 import _colorize
 
@@ -28,17 +29,22 @@ from contextlib import contextmanager
 from dataclasses import dataclass, field, fields
 
 from . import commands, console, input
+from . import vi_commands
 from .utils import wlen, unbracket, disp_str, gen_colors, THEME
 from .trace import trace
 
 
 # types
 Command = commands.Command
-from .types import Callback, SimpleContextManager, KeySpec, CommandName
+from .types import Callback, SimpleContextManager, KeySpec, CommandName, ViUndoState
 
 
 # syntax classes
 SYNTAX_WHITESPACE, SYNTAX_WORD, SYNTAX_SYMBOL = range(3)
+MAX_VI_UNDO_STACK_SIZE = 100
+
+
+from .types import VI_MODE_INSERT, VI_MODE_NORMAL, ViFindState
 
 
 def make_default_syntax_table() -> dict[str, int]:
@@ -54,10 +60,11 @@ def make_default_syntax_table() -> dict[str, int]:
 
 def make_default_commands() -> dict[CommandName, type[Command]]:
     result: dict[CommandName, type[Command]] = {}
-    for v in vars(commands).values():
-        if isinstance(v, type) and issubclass(v, Command) and v.__name__[0].islower():
-            result[v.__name__] = v
-            result[v.__name__.replace("_", "-")] = v
+    all_commands = itertools.chain(vars(commands).values(), vars(vi_commands).values())
+    for cmd in all_commands:
+        if isinstance(cmd, type) and issubclass(cmd, Command) and cmd.__name__[0].islower():
+            result[cmd.__name__] = cmd
+            result[cmd.__name__.replace("_", "-")] = cmd
     return result
 
 
@@ -127,6 +134,96 @@ default_keymap: tuple[tuple[KeySpec, CommandName], ...] = tuple(
         (r"\EOF", "end"),  # the entries in the terminfo database for xterms
         (r"\EOH", "home"),  # seem to be wrong.  this is a less than ideal
         # workaround
+    ]
+)
+
+
+vi_insert_keymap: tuple[tuple[KeySpec, CommandName], ...] = tuple(
+    [binding for binding in default_keymap if not binding[0].startswith((r"\M-", r"\x1b", r"\EOF", r"\EOH"))] +
+    [(r"\<escape>", "vi-normal-mode")]
+)
+
+
+vi_normal_keymap: tuple[tuple[KeySpec, CommandName], ...] = tuple(
+    [
+        # Basic motions
+        (r"h", "left"),
+        (r"j", "down"),
+        (r"k", "up"),
+        (r"l", "right"),
+        (r"0", "beginning-of-line"),
+        (r"$", "end-of-line"),
+        (r"w", "vi-forward-word"),
+        (r"W", "vi-forward-word-ws"),
+        (r"b", "vi-backward-word"),
+        (r"B", "vi-backward-word-ws"),
+        (r"e", "end-of-word"),
+        (r"^", "first-non-whitespace-character"),
+
+        # Find motions
+        (r"f", "vi-find-char"),
+        (r"F", "vi-find-char-back"),
+        (r"t", "vi-till-char"),
+        (r"T", "vi-till-char-back"),
+        (r";", "vi-repeat-find"),
+        (r",", "vi-repeat-find-opposite"),
+
+        # Edit commands
+        (r"x", "vi-delete"),
+        (r"i", "vi-insert-mode"),
+        (r"a", "vi-append-mode"),
+        (r"A", "vi-append-eol"),
+        (r"I", "vi-insert-bol"),
+        (r"o", "vi-open-below"),
+        (r"O", "vi-open-above"),
+
+        # Delete commands
+        (r"dw", "vi-delete-word"),
+        (r"dd", "vi-delete-line"),
+        (r"d0", "vi-delete-to-bol"),
+        (r"d$", "vi-delete-to-eol"),
+        (r"D", "vi-delete-to-eol"),
+        (r"X", "vi-delete-char-before"),
+
+        # Change commands
+        (r"cw", "vi-change-word"),
+        (r"C", "vi-change-to-eol"),
+        (r"s", "vi-substitute-char"),
+
+        # Replace commands
+        (r"r", "vi-replace-char"),
+
+        # Undo commands
+        (r"u", "vi-undo"),
+
+        # Special keys still work in normal mode
+        (r"\<left>", "left"),
+        (r"\<right>", "right"),
+        (r"\<up>", "up"),
+        (r"\<down>", "down"),
+        (r"\<home>", "beginning-of-line"),
+        (r"\<end>", "end-of-line"),
+        (r"\<delete>", "vi-delete"),
+        (r"\<backspace>", "left"),
+
+        # Control keys (important ones that work in both modes)
+        (r"\C-c", "interrupt"),
+        (r"\C-d", "vi-delete"),
+        (r"\C-l", "clear-screen"),
+        (r"\C-r", "reverse-history-isearch"),
+
+        # Digit args for counts (1-9, not 0 which is BOL)
+        (r"1", "digit-arg"),
+        (r"2", "digit-arg"),
+        (r"3", "digit-arg"),
+        (r"4", "digit-arg"),
+        (r"5", "digit-arg"),
+        (r"6", "digit-arg"),
+        (r"7", "digit-arg"),
+        (r"8", "digit-arg"),
+        (r"9", "digit-arg"),
+
+        (r"\<escape>", "invalid-key"),
     ]
 )
 
@@ -214,6 +311,10 @@ class Reader:
     scheduled_commands: list[str] = field(default_factory=list)
     can_colorize: bool = False
     threading_hook: Callback | None = None
+    use_vi_mode: bool = False
+    vi_mode: int = VI_MODE_INSERT
+    vi_find: ViFindState = field(default_factory=ViFindState)
+    undo_stack: list[ViUndoState] = field(default_factory=list)
 
     ## cached metadata to speed up screen refreshes
     @dataclass
@@ -281,6 +382,11 @@ class Reader:
         self.last_refresh_cache.dimensions = (0, 0)
 
     def collect_keymap(self) -> tuple[tuple[KeySpec, CommandName], ...]:
+        if self.use_vi_mode:
+            if self.vi_mode == VI_MODE_INSERT:
+                return vi_insert_keymap
+            elif self.vi_mode == VI_MODE_NORMAL:
+                return vi_normal_keymap
         return default_keymap
 
     def calc_screen(self) -> list[str]:
@@ -458,6 +564,18 @@ class Reader:
             p += 1
         return p
 
+    def first_non_whitespace(self, p: int | None = None) -> int:
+        """Return the 0-based index of the first non-whitespace character
+        on the current line.
+
+        p defaults to self.pos."""
+        bol_pos = self.bol(p)
+        eol_pos = self.eol(p)
+        pos = bol_pos
+        while pos < eol_pos and self.buffer[pos].isspace() and self.buffer[pos] != '\n':
+            pos += 1
+        return pos
+
     def max_column(self, y: int) -> int:
         """Return the last x-offset for line y"""
         return self.screeninfo[y][0] + sum(self.screeninfo[y][1])
@@ -481,9 +599,15 @@ class Reader:
         elif self.paste_mode:
             prompt = "(paste) "
         elif "\n" in self.buffer:
+            newline_count = self.buffer.count("\n")
+            ends_with_newline = bool(self.buffer) and self.buffer[-1] == "\n"
             if lineno == 0:
-                prompt = self.ps2
-            elif self.ps4 and lineno == self.buffer.count("\n"):
+                prompt = self.ps1
+            elif lineno < newline_count:
+                prompt = self.ps3
+            elif ends_with_newline and lineno == newline_count:
+                prompt = self.ps3
+            elif self.ps4 and lineno == newline_count:
                 prompt = self.ps4
             else:
                 prompt = self.ps3
@@ -589,6 +713,9 @@ class Reader:
             self.pos = 0
             self.dirty = True
             self.last_command = None
+            if self.use_vi_mode:
+                self.enter_insert_mode()
+                self.undo_stack.clear()
             self.calc_screen()
         except BaseException:
             self.restore()
@@ -663,6 +790,14 @@ class Reader:
             return  # nothing to do
 
         command = command_type(self, *cmd)  # type: ignore[arg-type]
+        # Save undo state in vi mode if the command modifies the buffer
+        if self.use_vi_mode and getattr(command_type, 'modifies_buffer', False):
+            if len(self.undo_stack) > MAX_VI_UNDO_STACK_SIZE:
+                self.undo_stack.pop(0)
+            self.undo_stack.append(ViUndoState(
+                buffer_snapshot=self.buffer.copy(),
+                pos_snapshot=self.pos,
+            ))
         command.do()
 
         self.after_command(command)
@@ -770,3 +905,46 @@ class Reader:
     def get_unicode(self) -> str:
         """Return the current buffer as a unicode string."""
         return "".join(self.buffer)
+
+    def enter_insert_mode(self) -> None:
+        if self.vi_mode == VI_MODE_INSERT:
+            return
+
+        self.vi_mode = VI_MODE_INSERT
+
+        if len(self.undo_stack) >= MAX_VI_UNDO_STACK_SIZE:
+            self.undo_stack.pop(0)
+
+        self.undo_stack.append(ViUndoState(
+            buffer_snapshot=self.buffer.copy(),
+            pos_snapshot=self.pos,
+        ))
+
+        # Switch translator to insert mode keymap
+        self.keymap = self.collect_keymap()
+        self.input_trans = input.KeymapTranslator(
+            self.keymap, invalid_cls="invalid-key", character_cls="self-insert"
+        )
+
+        self.dirty = True
+
+    def enter_normal_mode(self) -> None:
+        if self.vi_mode == VI_MODE_NORMAL:
+            return
+
+        self.vi_mode = VI_MODE_NORMAL
+
+        # Switch translator to normal mode keymap
+        self.keymap = self.collect_keymap()
+        self.input_trans = input.KeymapTranslator(
+            self.keymap, invalid_cls="invalid-key", character_cls="invalid-key"
+        )
+
+        # In vi normal mode, cursor should be ON a character, not after the last one
+        # If we're past the end of line, move back to the last character
+        bol_pos = self.bol()
+        eol_pos = self.eol()
+        if self.pos >= eol_pos and eol_pos > bol_pos:
+            self.pos = eol_pos - 1
+
+        self.dirty = True
