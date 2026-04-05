@@ -244,6 +244,9 @@ static const _Py_ALIGNED_DEF(64, unsigned char) table_b2a_base85_a85[]  =
 #define BASE85_A85_Z 0x00000000
 #define BASE85_A85_Y 0x20202020
 
+/* 85**0 through 85**4, used for canonical encoding checks. */
+static const uint32_t pow85[] = {1, 85, 7225, 614125, 52200625};
+
 
 static const _Py_ALIGNED_DEF(64, unsigned char) table_a2b_base32[] = {
     -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1,
@@ -1178,7 +1181,20 @@ binascii_a2b_ascii85_impl(PyObject *module, Py_buffer *data, int foldspaces,
             *bin_data++ = (leftchar >> (24 - 8 * i)) & 0xff;
         }
 
-        /* Reject non-canonical encodings in the final group. */
+        /* Reject non-canonical encodings in the final group.
+         *
+         * A partial group of N chars (2-4) encodes N-1 bytes.  The
+         * decoder pads missing chars with digit 84 (the maximum).
+         * The encoder produces the unique N chars for those bytes by
+         * zero-padding the bytes to a uint32 and taking the leading
+         * N base-85 digits.  Two encodings are equivalent iff they
+         * yield the same leading digits, i.e. the same quotient when
+         * the decoded uint32 is divided by 85**(5-N).
+         *
+         * So we zero the bottom (4-chunk_len) bytes of leftchar to
+         * get the canonical uint32 ("canonical_top") and compare
+         * quotients.  A 1-char group (chunk_len==0) is always
+         * non-canonical since no conforming encoder produces it. */
         if (canonical && chunk_len < 4) {
             if (chunk_len == 0) {
                 state = get_binascii_state(module);
@@ -1188,23 +1204,12 @@ binascii_a2b_ascii85_impl(PyObject *module, Py_buffer *data, int foldspaces,
                 }
                 goto error;
             }
-            uint32_t canon = 0;
-            for (Py_ssize_t i = chunk_len; i > 0; i--) {
-                canon = (canon << 8) | bin_data[-i];
-            }
-            canon <<= (4 - chunk_len) * 8;
-            unsigned char digits[5];
-            uint32_t tmp = canon;
-            for (int i = 4; i >= 0; i--) {
-                digits[i] = tmp % 85;
-                tmp /= 85;
-            }
-            uint32_t expected = 0;
-            for (int i = 0; i < 5; i++) {
-                expected = expected * 85
-                           + (i <= chunk_len ? digits[i] : 84);
-            }
-            if (expected != leftchar) {
+            int n_pad = 4 - chunk_len;
+            uint32_t canonical_top =
+                (leftchar >> (n_pad * 8)) << (n_pad * 8);
+            if (canonical_top / pow85[n_pad]
+                    != leftchar / pow85[n_pad])
+            {
                 state = get_binascii_state(module);
                 if (state != NULL) {
                     PyErr_SetString(state->Error,
@@ -1461,11 +1466,10 @@ binascii_a2b_base85_impl(PyObject *module, Py_buffer *data,
             *bin_data++ = (leftchar >> (24 - 8 * i)) & 0xff;
         }
 
-        /* Reject non-canonical encodings in the final group. */
+        /* Reject non-canonical encodings in the final group.
+         * See the comment in a2b_ascii85 for the full explanation. */
         if (canonical && chunk_len < 4) {
             if (chunk_len == 0) {
-                /* 1-char partial group is never produced by a conforming
-                 * encoder. */
                 state = get_binascii_state(module);
                 if (state != NULL) {
                     PyErr_SetString(state->Error,
@@ -1473,27 +1477,12 @@ binascii_a2b_base85_impl(PyObject *module, Py_buffer *data,
                 }
                 goto error;
             }
-            /* Re-encode the output bytes to verify canonical form.
-             * Build the canonical uint32 from output bytes (zero-padded). */
-            uint32_t canon = 0;
-            for (Py_ssize_t i = chunk_len; i > 0; i--) {
-                canon = (canon << 8) | bin_data[-i];
-            }
-            canon <<= (4 - chunk_len) * 8;
-            /* Extract first (chunk_len + 1) base85 digits. */
-            unsigned char digits[5];
-            uint32_t tmp = canon;
-            for (int i = 4; i >= 0; i--) {
-                digits[i] = tmp % 85;
-                tmp /= 85;
-            }
-            /* Reconstruct expected value: canonical digits + 84-padding. */
-            uint32_t expected = 0;
-            for (int i = 0; i < 5; i++) {
-                expected = expected * 85
-                           + (i <= chunk_len ? digits[i] : 84);
-            }
-            if (expected != leftchar) {
+            int n_pad = 4 - chunk_len;
+            uint32_t canonical_top =
+                (leftchar >> (n_pad * 8)) << (n_pad * 8);
+            if (canonical_top / pow85[n_pad]
+                    != leftchar / pow85[n_pad])
+            {
                 state = get_binascii_state(module);
                 if (state != NULL) {
                     PyErr_SetString(state->Error,
