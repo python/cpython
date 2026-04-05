@@ -4,14 +4,11 @@
 .. module:: webbrowser
    :synopsis: Easy-to-use controller for web browsers.
 
-.. moduleauthor:: Fred L. Drake, Jr. <fdrake@acm.org>
-.. sectionauthor:: Fred L. Drake, Jr. <fdrake@acm.org>
-
 **Source code:** :source:`Lib/webbrowser.py`
 
 --------------
 
-The :mod:`webbrowser` module provides a high-level interface to allow displaying
+The :mod:`!webbrowser` module provides a high-level interface to allow displaying
 web-based documents to users. Under most circumstances, simply calling the
 :func:`.open` function from this module will do the right thing.
 
@@ -46,7 +43,7 @@ On iOS, the :envvar:`BROWSER` environment variable, as well as any arguments
 controlling autoraise, browser preference, and new tab/window creation will be
 ignored. Web pages will *always* be opened in the user's preferred browser, in
 a new tab, with the browser being brought to the foreground. The use of the
-:mod:`webbrowser` module on iOS requires the :mod:`ctypes` module. If
+:mod:`!webbrowser` module on iOS requires the :mod:`ctypes` module. If
 :mod:`ctypes` isn't available, calls to :func:`.open` will fail.
 
 .. _webbrowser-cli:

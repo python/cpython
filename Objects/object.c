@@ -10,6 +10,7 @@
 #include "pycore_descrobject.h"   // _PyMethodWrapper_Type
 #include "pycore_dict.h"          // _PyObject_MaterializeManagedDict()
 #include "pycore_floatobject.h"   // _PyFloat_DebugMallocStats()
+#include "pycore_function.h"      // _PyClassMethod_GetFunc()
 #include "pycore_freelist.h"      // _PyObject_ClearFreeLists()
 #include "pycore_genobject.h"     // _PyAsyncGenAThrow_Type
 #include "pycore_hamt.h"          // _PyHamtItems_Type
@@ -17,6 +18,7 @@
 #include "pycore_instruction_sequence.h" // _PyInstructionSequence_Type
 #include "pycore_interpframe.h"   // _PyFrame_Stackbase()
 #include "pycore_interpolation.h" // _PyInterpolation_Type
+#include "pycore_lazyimportobject.h" // PyLazyImport_Type
 #include "pycore_list.h"          // _PyList_DebugMallocStats()
 #include "pycore_long.h"          // _PyLong_GetZero()
 #include "pycore_memoryobject.h"  // _PyManagedBuffer_Type
@@ -31,6 +33,7 @@
 #include "pycore_tuple.h"         // _PyTuple_DebugMallocStats()
 #include "pycore_typeobject.h"    // _PyBufferWrapper_Type
 #include "pycore_typevarobject.h" // _PyTypeAlias_Type
+#include "pycore_stackref.h"      // PyStackRef_FromPyObjectSteal
 #include "pycore_unionobject.h"   // _PyUnion_Type
 
 
@@ -57,7 +60,7 @@ _PyObject_CheckConsistency(PyObject *op, int check_content)
     if (PyUnicode_Check(op)) {
         _PyUnicode_CheckConsistency(op, check_content);
     }
-    else if (PyDict_Check(op)) {
+    else if (PyAnyDict_Check(op)) {
         _PyDict_CheckConsistency(op, check_content);
     }
     return 1;
@@ -711,9 +714,9 @@ _PyObject_IsFreed(PyObject *op)
 }
 
 
-/* For debugging convenience.  See Misc/gdbinit for some useful gdb hooks */
+/* For debugging convenience. */
 void
-PyUnstable_Object_Dump(PyObject* op)
+PyObject_Dump(PyObject* op)
 {
     if (_PyObject_IsFreed(op)) {
         /* It seems like the object memory has been freed:
@@ -1293,6 +1296,7 @@ _PyObject_SetAttributeErrorContext(PyObject* v, PyObject* name)
     // Augment the exception with the name and object
     if (PyObject_SetAttr(exc, &_Py_ID(name), name) ||
         PyObject_SetAttr(exc, &_Py_ID(obj), v)) {
+        Py_DECREF(exc);
         return 1;
     }
 restore:
@@ -1332,6 +1336,54 @@ PyObject_GetAttr(PyObject *v, PyObject *name)
         _PyObject_SetAttributeErrorContext(v, name);
     }
     return result;
+}
+
+/* Like PyObject_GetAttr but returns a _PyStackRef.
+   For types (tp_getattro == _Py_type_getattro), this can return
+   a deferred reference to reduce reference count contention. */
+_PyStackRef
+_PyObject_GetAttrStackRef(PyObject *v, PyObject *name)
+{
+    PyTypeObject *tp = Py_TYPE(v);
+    if (!PyUnicode_Check(name)) {
+        PyErr_Format(PyExc_TypeError,
+                     "attribute name must be string, not '%.200s'",
+                     Py_TYPE(name)->tp_name);
+        return PyStackRef_NULL;
+    }
+
+    /* Fast path for types - can return deferred references */
+    if (tp->tp_getattro == _Py_type_getattro) {
+        _PyStackRef result = _Py_type_getattro_stackref((PyTypeObject *)v, name, NULL);
+        if (PyStackRef_IsNull(result)) {
+            _PyObject_SetAttributeErrorContext(v, name);
+        }
+        return result;
+    }
+
+    /* Fall back to regular PyObject_GetAttr and convert to stackref */
+    PyObject *result = NULL;
+    if (tp->tp_getattro != NULL) {
+        result = (*tp->tp_getattro)(v, name);
+    }
+    else if (tp->tp_getattr != NULL) {
+        const char *name_str = PyUnicode_AsUTF8(name);
+        if (name_str == NULL) {
+            return PyStackRef_NULL;
+        }
+        result = (*tp->tp_getattr)(v, (char *)name_str);
+    }
+    else {
+        PyErr_Format(PyExc_AttributeError,
+                    "'%.100s' object has no attribute '%U'",
+                    tp->tp_name, name);
+    }
+
+    if (result == NULL) {
+        _PyObject_SetAttributeErrorContext(v, name);
+        return PyStackRef_NULL;
+    }
+    return PyStackRef_FromPyObjectSteal(result);
 }
 
 int
@@ -1690,27 +1742,39 @@ _PyObject_GetMethod(PyObject *obj, PyObject *name, PyObject **method)
     return 0;
 }
 
+// Look up a method on `self` by `name`.
+//
+// On success, `*method` is set and the function returns 0 or 1. If the
+// return value is 1, the call is an unbound method and `*self` is the
+// "self" or "cls" argument to pass. If the return value is 0, the call is
+// a regular function and `*self` is cleared.
+//
+// On error, returns -1, clears `*self`, and sets an exception.
 int
-_PyObject_GetMethodStackRef(PyThreadState *ts, PyObject *obj,
+_PyObject_GetMethodStackRef(PyThreadState *ts, _PyStackRef *self,
                             PyObject *name, _PyStackRef *method)
 {
     int meth_found = 0;
+    PyObject *obj = PyStackRef_AsPyObjectBorrow(*self);
 
     assert(PyStackRef_IsNull(*method));
 
     PyTypeObject *tp = Py_TYPE(obj);
     if (!_PyType_IsReady(tp)) {
         if (PyType_Ready(tp) < 0) {
-            return 0;
+            PyStackRef_CLEAR(*self);
+            return -1;
         }
     }
 
     if (tp->tp_getattro != PyObject_GenericGetAttr || !PyUnicode_CheckExact(name)) {
         PyObject *res = PyObject_GetAttr(obj, name);
+        PyStackRef_CLEAR(*self);
         if (res != NULL) {
             *method = PyStackRef_FromPyObjectSteal(res);
+            return 0;
         }
-        return 0;
+        return -1;
     }
 
     _PyType_LookupStackRefAndVersion(tp, name, method);
@@ -1725,10 +1789,12 @@ _PyObject_GetMethodStackRef(PyThreadState *ts, PyObject *obj,
             if (f != NULL && PyDescr_IsData(descr)) {
                 PyObject *value = f(descr, obj, (PyObject *)Py_TYPE(obj));
                 PyStackRef_CLEAR(*method);
+                PyStackRef_CLEAR(*self);
                 if (value != NULL) {
                     *method = PyStackRef_FromPyObjectSteal(value);
+                    return 0;
                 }
-                return 0;
+                return -1;
             }
         }
     }
@@ -1736,9 +1802,9 @@ _PyObject_GetMethodStackRef(PyThreadState *ts, PyObject *obj,
     if ((tp->tp_flags & Py_TPFLAGS_INLINE_VALUES) &&
          _PyObject_TryGetInstanceAttribute(obj, name, &attr)) {
         if (attr != NULL) {
-           PyStackRef_CLEAR(*method);
-           *method = PyStackRef_FromPyObjectSteal(attr);
-           return 0;
+            PyStackRef_XSETREF(*method, PyStackRef_FromPyObjectSteal(attr));
+            PyStackRef_CLEAR(*self);
+            return 0;
         }
         dict = NULL;
     }
@@ -1759,9 +1825,11 @@ _PyObject_GetMethodStackRef(PyThreadState *ts, PyObject *obj,
         int found = _PyDict_GetMethodStackRef((PyDictObject *)dict, name, method);
         if (found < 0) {
             assert(PyStackRef_IsNull(*method));
+            PyStackRef_CLEAR(*self);
             return -1;
         }
         else if (found) {
+            PyStackRef_CLEAR(*self);
             return 0;
         }
     }
@@ -1772,16 +1840,31 @@ _PyObject_GetMethodStackRef(PyThreadState *ts, PyObject *obj,
     }
 
     if (f != NULL) {
-        PyObject *value = f(descr, obj, (PyObject *)Py_TYPE(obj));
+        if (Py_IS_TYPE(descr, &PyClassMethod_Type)) {
+            PyObject *callable = _PyClassMethod_GetFunc(descr);
+            PyStackRef_XSETREF(*method, PyStackRef_FromPyObjectNew(callable));
+            PyStackRef_XSETREF(*self, PyStackRef_FromPyObjectNew((PyObject *)tp));
+            return 1;
+        }
+        else if (Py_IS_TYPE(descr, &PyStaticMethod_Type)) {
+            PyObject *callable = _PyStaticMethod_GetFunc(descr);
+            PyStackRef_XSETREF(*method, PyStackRef_FromPyObjectNew(callable));
+            PyStackRef_CLEAR(*self);
+            return 0;
+        }
+        PyObject *value = f(descr, obj, (PyObject *)tp);
         PyStackRef_CLEAR(*method);
+        PyStackRef_CLEAR(*self);
         if (value) {
             *method = PyStackRef_FromPyObjectSteal(value);
+            return 0;
         }
-        return 0;
+        return -1;
     }
 
     if (descr != NULL) {
         assert(!PyStackRef_IsNull(*method));
+        PyStackRef_CLEAR(*self);
         return 0;
     }
 
@@ -1791,7 +1874,8 @@ _PyObject_GetMethodStackRef(PyThreadState *ts, PyObject *obj,
 
     _PyObject_SetAttributeErrorContext(obj, name);
     assert(PyStackRef_IsNull(*method));
-    return 0;
+    PyStackRef_CLEAR(*self);
+    return -1;
 }
 
 
@@ -1948,7 +2032,7 @@ _PyObject_GenericSetAttrWithDict(PyObject *obj, PyObject *name,
     }
 
     Py_INCREF(name);
-    Py_INCREF(tp);
+    _Py_INCREF_TYPE(tp);
 
     PyThreadState *tstate = _PyThreadState_GET();
     _PyCStackRef cref;
@@ -2023,7 +2107,7 @@ _PyObject_GenericSetAttrWithDict(PyObject *obj, PyObject *name,
     }
   done:
     _PyThreadState_PopCStackRef(tstate, &cref);
-    Py_DECREF(tp);
+    _Py_DECREF_TYPE(tp);
     Py_DECREF(name);
     return res;
 }
@@ -2446,13 +2530,17 @@ static PyTypeObject* static_types[] = {
     &PyBaseObject_Type,
     &PyType_Type,
 
+    // PyStaticMethod_Type and PyCFunction_Type are used by PyType_Ready()
+    // on other types and so must be initialized first.
+    &PyStaticMethod_Type,
+    &PyCFunction_Type,
+
     // Static types with base=&PyBaseObject_Type
     &PyAsyncGen_Type,
     &PyByteArrayIter_Type,
     &PyByteArray_Type,
     &PyBytesIter_Type,
     &PyBytes_Type,
-    &PyCFunction_Type,
     &PyCallIter_Type,
     &PyCapsule_Type,
     &PyCell_Type,
@@ -2479,13 +2567,15 @@ static PyTypeObject* static_types[] = {
     &PyEnum_Type,
     &PyFilter_Type,
     &PyFloat_Type,
-    &PyFrame_Type,
     &PyFrameLocalsProxy_Type,
+    &PyFrame_Type,
+    &PyFrozenDict_Type,
     &PyFrozenSet_Type,
     &PyFunction_Type,
     &PyGen_Type,
     &PyGetSetDescr_Type,
     &PyInstanceMethod_Type,
+    &PyLazyImport_Type,
     &PyListIter_Type,
     &PyListRevIter_Type,
     &PyList_Type,
@@ -2509,7 +2599,6 @@ static PyTypeObject* static_types[] = {
     &PySetIter_Type,
     &PySet_Type,
     &PySlice_Type,
-    &PyStaticMethod_Type,
     &PyStdPrinter_Type,
     &PySuper_Type,
     &PyTraceBack_Type,
@@ -2672,13 +2761,6 @@ _Py_NewReferenceNoTotal(PyObject *op)
 void
 _Py_SetImmortalUntracked(PyObject *op)
 {
-#ifdef Py_DEBUG
-    // For strings, use _PyUnicode_InternImmortal instead.
-    if (PyUnicode_CheckExact(op)) {
-        assert(PyUnicode_CHECK_INTERNED(op) == SSTATE_INTERNED_IMMORTAL
-            || PyUnicode_CHECK_INTERNED(op) == SSTATE_INTERNED_IMMORTAL_STATIC);
-    }
-#endif
     // Check if already immortal to avoid degrading from static immortal to plain immortal
     if (_Py_IsImmortal(op)) {
         return;
@@ -2785,6 +2867,17 @@ PyUnstable_EnableTryIncRef(PyObject *op)
 #ifdef Py_GIL_DISABLED
     _PyObject_SetMaybeWeakref(op);
 #endif
+}
+
+int
+PyUnstable_SetImmortal(PyObject *op)
+{
+    assert(op != NULL);
+    if (!_PyObject_IsUniquelyReferenced(op) || PyUnicode_Check(op)) {
+        return 0;
+    }
+    _Py_SetImmortal(op);
+    return 1;
 }
 
 void
@@ -3011,9 +3104,9 @@ Py_ReprEnter(PyObject *obj)
         list = PyList_New(0);
         if (list == NULL)
             return -1;
-        if (PyDict_SetItem(dict, &_Py_ID(Py_Repr), list) < 0)
+        if (_PyDict_SetItem_Take2((PyDictObject *)dict, &_Py_ID(Py_Repr), list) < 0) {
             return -1;
-        Py_DECREF(list);
+        }
     }
     i = PyList_GET_SIZE(list);
     while (--i >= 0) {
@@ -3157,7 +3250,7 @@ _PyObject_AssertFailed(PyObject *obj, const char *expr, const char *msg,
 
         /* This might succeed or fail, but we're about to abort, so at least
            try to provide any extra info we can: */
-        PyUnstable_Object_Dump(obj);
+        PyObject_Dump(obj);
 
         fprintf(stderr, "\n");
         fflush(stderr);

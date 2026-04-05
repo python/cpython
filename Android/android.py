@@ -15,6 +15,7 @@ import sysconfig
 from asyncio import wait_for
 from contextlib import asynccontextmanager
 from datetime import datetime, timezone
+from enum import IntEnum, auto
 from glob import glob
 from os.path import abspath, basename, relpath
 from pathlib import Path
@@ -33,7 +34,12 @@ ENV_SCRIPT = ANDROID_DIR / "android-env.sh"
 TESTBED_DIR = ANDROID_DIR / "testbed"
 CROSS_BUILD_DIR = PYTHON_DIR / "cross-build"
 
-HOSTS = ["aarch64-linux-android", "x86_64-linux-android"]
+HOSTS = [
+    "aarch64-linux-android",
+    "arm-linux-androideabi",
+    "i686-linux-android",
+    "x86_64-linux-android",
+]
 APP_ID = "org.python.testbed"
 DECODE_ARGS = ("UTF-8", "backslashreplace")
 
@@ -59,6 +65,19 @@ python_started = False
 # Buffer for verbose output which will be displayed only if a test fails and
 # there has been no output from Python.
 hidden_output = []
+
+
+# Based on android/log.h in the NDK.
+class LogPriority(IntEnum):
+    UNKNOWN = 0
+    DEFAULT = auto()
+    VERBOSE = auto()
+    DEBUG = auto()
+    INFO = auto()
+    WARN = auto()
+    ERROR = auto()
+    FATAL = auto()
+    SILENT = auto()
 
 
 def log_verbose(context, line, stream=sys.stdout):
@@ -191,38 +210,48 @@ def make_build_python(context):
 #
 # If you're a member of the Python core team, and you'd like to be able to push
 # these tags yourself, please contact Malcolm Smith or Russell Keith-Magee.
-def unpack_deps(host, prefix_dir):
+def unpack_deps(host, prefix_dir, cache_dir):
     os.chdir(prefix_dir)
     deps_url = "https://github.com/beeware/cpython-android-source-deps/releases/download"
-    for name_ver in ["bzip2-1.0.8-3", "libffi-3.4.4-3", "openssl-3.0.18-0",
-                     "sqlite-3.50.4-0", "xz-5.4.6-1", "zstd-1.5.7-1"]:
+    for name_ver in ["bzip2-1.0.8-3", "libffi-3.4.4-3", "openssl-3.5.5-0",
+                     "sqlite-3.50.4-0", "xz-5.4.6-1", "zstd-1.5.7-2"]:
         filename = f"{name_ver}-{host}.tar.gz"
-        download(f"{deps_url}/{name_ver}/{filename}")
-        shutil.unpack_archive(filename)
-        os.remove(filename)
+        out_path = download(f"{deps_url}/{name_ver}/{filename}", cache_dir)
+        shutil.unpack_archive(out_path)
 
 
-def download(url, target_dir="."):
-    out_path = f"{target_dir}/{basename(url)}"
-    run(["curl", "-Lf", "--retry", "5", "--retry-all-errors", "-o", out_path, url])
+def download(url, cache_dir):
+    out_path = cache_dir / basename(url)
+    cache_dir.mkdir(parents=True, exist_ok=True)
+    if not out_path.is_file():
+        run(["curl", "-Lf", "--retry", "5", "--retry-all-errors", "-o", out_path, url])
+    else:
+        print(f"Using cached version of {basename(url)}")
     return out_path
 
 
-def configure_host_python(context):
+def configure_host_python(context, host=None):
+    if host is None:
+        host = context.host
     if context.clean:
-        clean(context.host)
+        clean(host)
 
-    host_dir = subdir(context.host, create=True)
+    host_dir = subdir(host, create=True)
     prefix_dir = host_dir / "prefix"
     if not prefix_dir.exists():
         prefix_dir.mkdir()
-        unpack_deps(context.host, prefix_dir)
+        cache_dir = (
+            Path(context.cache_dir).resolve()
+            if context.cache_dir
+            else CROSS_BUILD_DIR / "downloads"
+        )
+        unpack_deps(host, prefix_dir, cache_dir)
 
     os.chdir(host_dir)
     command = [
         # Basic cross-compiling configuration
         relpath(PYTHON_DIR / "configure"),
-        f"--host={context.host}",
+        f"--host={host}",
         f"--build={sysconfig.get_config_var('BUILD_GNU_TYPE')}",
         f"--with-build-python={build_python_path()}",
         "--without-ensurepip",
@@ -238,14 +267,16 @@ def configure_host_python(context):
 
     if context.args:
         command.extend(context.args)
-    run(command, host=context.host)
+    run(command, host=host)
 
 
-def make_host_python(context):
+def make_host_python(context, host=None):
+    if host is None:
+        host = context.host
     # The CFLAGS and LDFLAGS set in android-env include the prefix dir, so
     # delete any previous Python installation to prevent it being used during
     # the build.
-    host_dir = subdir(context.host)
+    host_dir = subdir(host)
     prefix_dir = host_dir / "prefix"
     for pattern in ("include/python*", "lib/libpython*", "lib/python*"):
         delete_glob(f"{prefix_dir}/{pattern}")
@@ -264,20 +295,28 @@ def make_host_python(context):
     )
 
 
-def build_all(context):
-    steps = [configure_build_python, make_build_python, configure_host_python,
-             make_host_python]
-    for step in steps:
-        step(context)
+def build_targets(context):
+    if context.target in {"all", "build"}:
+        configure_build_python(context)
+        make_build_python(context)
+
+    for host in HOSTS:
+        if context.target in {"all", "hosts", host}:
+            configure_host_python(context, host)
+            make_host_python(context, host)
 
 
 def clean(host):
     delete_glob(CROSS_BUILD_DIR / host)
 
 
-def clean_all(context):
-    for host in HOSTS + ["build"]:
-        clean(host)
+def clean_targets(context):
+    if context.target in {"all", "build"}:
+        clean("build")
+
+    for host in HOSTS:
+        if context.target in {"all", "hosts", host}:
+            clean(host)
 
 
 def setup_ci():
@@ -505,21 +544,23 @@ async def logcat_task(context, initial_devices):
     pid = await wait_for(find_pid(serial), startup_timeout)
 
     # `--pid` requires API level 24 or higher.
-    args = [adb, "-s", serial, "logcat", "--pid", pid,  "--format", "tag"]
+    #
+    # `--binary` mode is used in order to detect which messages end with a
+    # newline, which most of the other modes don't indicate (except `--format
+    # long`). For example, every time pytest runs a test, it prints a "." and
+    # flushes the stream. Each "." becomes a separate log message, but we should
+    # show them all on the same line.
+    args = [adb, "-s", serial, "logcat", "--pid", pid,  "--binary"]
     logcat_started = False
     async with async_process(
-        *args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+        *args, stdout=subprocess.PIPE, stderr=None
     ) as process:
-        while line := (await process.stdout.readline()).decode(*DECODE_ARGS):
-            if match := re.fullmatch(r"([A-Z])/(.*)", line, re.DOTALL):
+        while True:
+            try:
+                priority, tag, message = await read_logcat(process.stdout)
                 logcat_started = True
-                level, message = match.groups()
-            else:
-                # If the regex doesn't match, this is either a logcat startup
-                # error, or the second or subsequent line of a multi-line
-                # message. Python won't produce multi-line messages, but other
-                # components might.
-                level, message = None, line
+            except asyncio.IncompleteReadError:
+                break
 
             # Exclude high-volume messages which are rarely useful.
             if context.verbose < 2 and "from python test_syslog" in message:
@@ -527,25 +568,23 @@ async def logcat_task(context, initial_devices):
 
             # Put high-level messages on stderr so they're highlighted in the
             # buildbot logs. This will include Python's own stderr.
-            stream = (
-                sys.stderr
-                if level in ["W", "E", "F"]  # WARNING, ERROR, FATAL (aka ASSERT)
-                else sys.stdout
-            )
+            stream = sys.stderr if priority >= LogPriority.WARN else sys.stdout
 
-            # To simplify automated processing of the output, e.g. a buildbot
-            # posting a failure notice on a GitHub PR, we strip the level and
-            # tag indicators from Python's stdout and stderr.
-            for prefix in ["python.stdout: ", "python.stderr: "]:
-                if message.startswith(prefix):
-                    global python_started
-                    python_started = True
-                    stream.write(message.removeprefix(prefix))
-                    break
+            # The app's stdout and stderr should be passed through transparently
+            # to our own corresponding streams.
+            if tag in ["python.stdout", "python.stderr"]:
+                global python_started
+                python_started = True
+                stream.write(message)
+                stream.flush()
             else:
                 # Non-Python messages add a lot of noise, but they may
-                # sometimes help explain a failure.
-                log_verbose(context, line, stream)
+                # sometimes help explain a failure. Format them in the same way
+                # as `logcat --format tag`.
+                formatted = f"{priority.name[0]}/{tag}: {message}"
+                if not formatted.endswith("\n"):
+                    formatted += "\n"
+                log_verbose(context, formatted, stream)
 
         # If the device disconnects while logcat is running, which always
         # happens in --managed mode, some versions of adb return non-zero.
@@ -554,6 +593,44 @@ async def logcat_task(context, initial_devices):
         status = await wait_for(process.wait(), timeout=1)
         if status != 0 and not logcat_started:
             raise CalledProcessError(status, args)
+
+
+# Read one binary log message from the given StreamReader. The message format is
+# described at https://android.stackexchange.com/a/74660. All supported versions
+# of Android use format version 2 or later.
+async def read_logcat(stream):
+    async def read_bytes(size):
+        return await stream.readexactly(size)
+
+    async def read_int(size):
+        return int.from_bytes(await read_bytes(size), "little")
+
+    payload_len = await read_int(2)
+    if payload_len < 2:
+        # 1 byte for priority, 1 byte for null terminator of tag.
+        raise ValueError(f"payload length {payload_len} is too short")
+
+    header_len = await read_int(2)
+    if header_len < 4:
+        raise ValueError(f"header length {header_len} is too short")
+    await read_bytes(header_len - 4)  # Ignore other header fields.
+
+    priority_int = await read_int(1)
+    try:
+        priority = LogPriority(priority_int)
+    except ValueError:
+        priority = LogPriority.UNKNOWN
+
+    payload_fields = (await read_bytes(payload_len - 1)).split(b"\0")
+    if len(payload_fields) < 2:
+        raise ValueError(
+            f"payload {payload!r} does not contain at least 2 "
+            f"null-separated fields"
+        )
+    tag, message, *_ = [
+        field.decode(*DECODE_ARGS) for field in payload_fields
+    ]
+    return priority, tag, message
 
 
 def stop_app(serial):
@@ -576,7 +653,8 @@ async def gradle_task(context):
             # Randomization is disabled because order-dependent failures are
             # much less likely to pass on a rerun in single-process mode.
             "-m", "test",
-            f"--{context.ci_mode}-ci", "--single-process", "--no-randomize"
+            f"--{context.ci_mode}-ci", "--single-process", "--no-randomize",
+            "--pythoninfo",
         ]
 
     if not any(arg in context.args for arg in ["-c", "-m"]):
@@ -801,18 +879,23 @@ def parse_args():
 
     # Subcommands
     build = add_parser(
-        "build", help="Run configure-build, make-build, configure-host and "
-        "make-host")
+        "build",
+        help="Run configure and make for the selected target"
+    )
     configure_build = add_parser(
         "configure-build", help="Run `configure` for the build Python")
-    add_parser(
+    make_build = add_parser(
         "make-build", help="Run `make` for the build Python")
     configure_host = add_parser(
         "configure-host", help="Run `configure` for Android")
     make_host = add_parser(
         "make-host", help="Run `make` for Android")
 
-    add_parser("clean", help="Delete all build directories")
+    clean = add_parser(
+        "clean",
+        help="Delete build directories for the selected target"
+    )
+
     add_parser("build-testbed", help="Build the testbed app")
     test = add_parser("test", help="Run the testbed app")
     package = add_parser("package", help="Make a release package")
@@ -820,12 +903,61 @@ def parse_args():
     env = add_parser("env", help="Print environment variables")
 
     # Common arguments
+    # --cross-build-dir argument
+    for cmd in [
+        clean,
+        configure_build,
+        make_build,
+        configure_host,
+        make_host,
+        build,
+        package,
+        test,
+        ci,
+    ]:
+        cmd.add_argument(
+            "--cross-build-dir",
+            action="store",
+            default=os.environ.get("CROSS_BUILD_DIR"),
+            dest="cross_build_dir",
+            type=Path,
+            help=(
+                "Path to the cross-build directory "
+                f"(default: {CROSS_BUILD_DIR}). Can also be set "
+                "with the CROSS_BUILD_DIR environment variable."
+            ),
+        )
+
+    # --cache-dir option
+    for cmd in [configure_host, build, ci]:
+        cmd.add_argument(
+            "--cache-dir",
+            default=os.environ.get("CACHE_DIR"),
+            help="The directory to store cached downloads.",
+        )
+
+    # --clean option
     for subcommand in [build, configure_build, configure_host, ci]:
         subcommand.add_argument(
             "--clean", action="store_true", default=False, dest="clean",
             help="Delete the relevant build directories first")
 
-    host_commands = [build, configure_host, make_host, package, ci]
+    # Allow "all", "build" and "hosts" targets for some commands
+    for subcommand in [clean, build]:
+        subcommand.add_argument(
+            "target",
+            nargs="?",
+            default="all",
+            choices=["all", "build", "hosts"] + HOSTS,
+            help=(
+                "The host triplet (e.g., aarch64-linux-android), "
+                "or 'build' for just the build platform, or 'hosts' for all "
+                "host platforms, or 'all' for the build platform and all "
+                "hosts. Defaults to 'all'"
+            ),
+        )
+
+    host_commands = [configure_host, make_host, package, ci]
     if in_source_tree:
         host_commands.append(env)
     for subcommand in host_commands:
@@ -887,13 +1019,19 @@ def main():
         stream.reconfigure(line_buffering=True)
 
     context = parse_args()
+
+    # Set the CROSS_BUILD_DIR if an argument was provided
+    if context.cross_build_dir:
+        global CROSS_BUILD_DIR
+        CROSS_BUILD_DIR = context.cross_build_dir.resolve()
+
     dispatch = {
         "configure-build": configure_build_python,
         "make-build": make_build_python,
         "configure-host": configure_host_python,
         "make-host": make_host_python,
-        "build": build_all,
-        "clean": clean_all,
+        "build": build_targets,
+        "clean": clean_targets,
         "build-testbed": build_testbed,
         "test": run_testbed,
         "package": package,

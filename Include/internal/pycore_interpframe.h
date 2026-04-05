@@ -102,10 +102,10 @@ static inline _PyStackRef *_PyFrame_Stackbase(_PyInterpreterFrame *f) {
     return (f->localsplus + _PyFrame_GetCode(f)->co_nlocalsplus);
 }
 
-static inline _PyStackRef _PyFrame_StackPeek(_PyInterpreterFrame *f) {
+static inline _PyStackRef _PyFrame_StackPeek(_PyInterpreterFrame *f, int depth) {
     assert(f->stackpointer > _PyFrame_Stackbase(f));
-    assert(!PyStackRef_IsNull(f->stackpointer[-1]));
-    return f->stackpointer[-1];
+    assert(!PyStackRef_IsNull(f->stackpointer[-depth]));
+    return f->stackpointer[-depth];
 }
 
 static inline _PyStackRef _PyFrame_StackPop(_PyInterpreterFrame *f) {
@@ -279,7 +279,7 @@ _PyThreadState_GetFrame(PyThreadState *tstate)
 
 /* For use by _PyFrame_GetFrameObject
   Do not call directly. */
-PyFrameObject *
+PyAPI_FUNC(PyFrameObject *)
 _PyFrame_MakeAndSetFrameObject(_PyInterpreterFrame *frame);
 
 /* Gets the PyFrameObject for this frame, lazily

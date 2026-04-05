@@ -1,3 +1,0 @@
-:meth:`mmap.mmap.set_name` method added to annotate an anonymous memory map
-if Linux kernel supports ``PR_SET_VMA_ANON_NAME`` (Linux 5.17 or newer).
-Patch by Donghee Na.

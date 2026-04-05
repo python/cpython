@@ -88,6 +88,16 @@ Contents of the Limited API are :ref:`listed below <limited-api-list>`.
    You can also define ``Py_LIMITED_API`` to ``3``. This works the same as
    ``0x03020000`` (Python 3.2, the version that introduced Limited API).
 
+.. c:macro:: Py_TARGET_ABI3T
+
+   Define this macro before including ``Python.h`` to opt in to only use
+   the Limited API for :term:`free-threaded builds <free-threaded build>`,
+   and to select the Limited API version.
+
+   .. seealso:: :pep:`803`
+
+   .. versionadded:: next
+
 
 .. _stable-abi:
 

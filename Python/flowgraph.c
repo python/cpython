@@ -850,7 +850,7 @@ calculate_stackdepth(cfg_builder *g)
             int new_depth = depth + effects.net;
             if (new_depth < 0) {
                 PyErr_Format(PyExc_ValueError,
-                             "Invalid CFG, stack underflow");
+                             "Invalid CFG, stack underflow at line %d", instr->i_loc.lineno);
                 goto error;
             }
             maxdepth = Py_MAX(maxdepth, depth);
@@ -970,6 +970,9 @@ label_exception_targets(basicblock *entryblock) {
                     }
                     last_yield_except_depth = -1;
                 }
+            }
+            else if (instr->i_opcode == RETURN_GENERATOR) {
+                instr->i_except = NULL;
             }
             else {
                 instr->i_except = handler;
@@ -1408,7 +1411,7 @@ maybe_instr_make_load_smallint(cfg_instr *instr, PyObject *newconst,
         if (val == -1 && PyErr_Occurred()) {
             return -1;
         }
-        if (!overflow && _PY_IS_SMALL_INT(val)) {
+        if (!overflow && _PY_IS_SMALL_INT(val) && 0 <= val && val <= 255) {
             assert(_Py_IsImmortal(newconst));
             INSTR_SET_OP1(instr, LOAD_SMALL_INT, (int)val);
             return 1;
@@ -2881,7 +2884,6 @@ optimize_load_fast(cfg_builder *g)
                 case GET_ANEXT:
                 case GET_ITER:
                 case GET_LEN:
-                case GET_YIELD_FROM_ITER:
                 case IMPORT_FROM:
                 case MATCH_KEYS:
                 case MATCH_MAPPING:
@@ -2916,7 +2918,16 @@ optimize_load_fast(cfg_builder *g)
                     break;
                 }
 
-                case END_SEND:
+                case END_SEND: {
+                    assert(_PyOpcode_num_popped(opcode, oparg) == 3);
+                    assert(_PyOpcode_num_pushed(opcode, oparg) == 1);
+                    ref tos = ref_stack_pop(&refs);
+                    ref_stack_pop(&refs);
+                    ref_stack_pop(&refs);
+                    PUSH_REF(tos.instr, tos.local);
+                    break;
+                }
+
                 case SET_FUNCTION_ATTRIBUTE: {
                     assert(_PyOpcode_num_popped(opcode, oparg) == 2);
                     assert(_PyOpcode_num_pushed(opcode, oparg) == 1);
@@ -3718,35 +3729,9 @@ error:
 
 static int
 insert_prefix_instructions(_PyCompile_CodeUnitMetadata *umd, basicblock *entryblock,
-                           int *fixed, int nfreevars, int code_flags)
+                           int *fixed, int nfreevars)
 {
     assert(umd->u_firstlineno > 0);
-
-    /* Add the generator prefix instructions. */
-    if (IS_GENERATOR(code_flags)) {
-        /* Note that RETURN_GENERATOR + POP_TOP have a net stack effect
-         * of 0. This is because RETURN_GENERATOR pushes an element
-         * with _PyFrame_StackPush before switching stacks.
-         */
-
-        location loc = LOCATION(umd->u_firstlineno, umd->u_firstlineno, -1, -1);
-        cfg_instr make_gen = {
-            .i_opcode = RETURN_GENERATOR,
-            .i_oparg = 0,
-            .i_loc = loc,
-            .i_target = NULL,
-            .i_except = NULL,
-        };
-        RETURN_IF_ERROR(basicblock_insert_instruction(entryblock, 0, &make_gen));
-        cfg_instr pop_top = {
-            .i_opcode = POP_TOP,
-            .i_oparg = 0,
-            .i_loc = loc,
-            .i_target = NULL,
-            .i_except = NULL,
-        };
-        RETURN_IF_ERROR(basicblock_insert_instruction(entryblock, 1, &pop_top));
-    }
 
     /* Set up cells for any variable that escapes, to be put in a closure. */
     const int ncellvars = (int)PyDict_GET_SIZE(umd->u_cellvars);
@@ -3845,7 +3830,7 @@ fix_cell_offsets(_PyCompile_CodeUnitMetadata *umd, basicblock *entryblock, int *
 }
 
 static int
-prepare_localsplus(_PyCompile_CodeUnitMetadata *umd, cfg_builder *g, int code_flags)
+prepare_localsplus(_PyCompile_CodeUnitMetadata *umd, cfg_builder *g)
 {
     assert(PyDict_GET_SIZE(umd->u_varnames) < INT_MAX);
     assert(PyDict_GET_SIZE(umd->u_cellvars) < INT_MAX);
@@ -3862,7 +3847,7 @@ prepare_localsplus(_PyCompile_CodeUnitMetadata *umd, cfg_builder *g, int code_fl
     }
 
     // This must be called before fix_cell_offsets().
-    if (insert_prefix_instructions(umd, g->g_entryblock, cellfixedoffsets, nfreevars, code_flags)) {
+    if (insert_prefix_instructions(umd, g->g_entryblock, cellfixedoffsets, nfreevars)) {
         PyMem_Free(cellfixedoffsets);
         return ERROR;
     }
@@ -3983,7 +3968,7 @@ _PyCfg_ToInstructionSequence(cfg_builder *g, _PyInstructionSequence *seq)
 
 int
 _PyCfg_OptimizedCfgToInstructionSequence(cfg_builder *g,
-                                     _PyCompile_CodeUnitMetadata *umd, int code_flags,
+                                     _PyCompile_CodeUnitMetadata *umd,
                                      int *stackdepth, int *nlocalsplus,
                                      _PyInstructionSequence *seq)
 {
@@ -3994,16 +3979,7 @@ _PyCfg_OptimizedCfgToInstructionSequence(cfg_builder *g,
         return ERROR;
     }
 
-    /* prepare_localsplus adds instructions for generators that push
-     * and pop an item on the stack. This assertion makes sure there
-     * is space on the stack for that.
-     * It should always be true, because a generator must have at
-     * least one expression or call to INTRINSIC_STOPITERATION_ERROR,
-     * which requires stackspace.
-     */
-    assert(!(IS_GENERATOR(code_flags) && *stackdepth == 0));
-
-    *nlocalsplus = prepare_localsplus(umd, g, code_flags);
+    *nlocalsplus = prepare_localsplus(umd, g);
     if (*nlocalsplus < 0) {
         return ERROR;
     }

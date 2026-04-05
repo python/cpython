@@ -156,6 +156,19 @@
 #  define LEAVE_TRACING() tracing_mode = 0
 #endif
 
+#if _Py_TIER2
+#define STOP_TRACING() \
+    do { \
+        if (IS_JIT_TRACING()) { \
+            LEAVE_TRACING(); \
+            _PyJit_FinalizeTracing(tstate, 0); \
+        } \
+    } while (0);
+#else
+#define STOP_TRACING() ((void)(0));
+#endif
+
+
 /* PRE_DISPATCH_GOTO() does lltrace if enabled. Normally a no-op */
 #ifdef Py_DEBUG
 #define PRE_DISPATCH_GOTO() if (frame->lltrace >= 5) { \
@@ -338,7 +351,7 @@ GETITEM(PyObject *v, Py_ssize_t i) {
         (COUNTER) = pause_backoff_counter((COUNTER)); \
     } while (0);
 
-#ifdef ENABLE_SPECIALIZATION_FT
+#ifdef ENABLE_SPECIALIZATION
 /* Multiple threads may execute these concurrently if thread-local bytecode is
  * disabled and they all execute the main copy of the bytecode. Specialization
  * is disabled in that case so the value is unused, but the RMW cycle should be
@@ -420,7 +433,7 @@ do {                                                   \
         JUMP_TO_LABEL(error);                          \
     }                                                  \
     if (keep_tracing_bit) { \
-        assert(((_PyThreadStateImpl *)tstate)->jit_tracer_state.prev_state.code_curr_size == 2); \
+        assert(uop_buffer_length(&((_PyThreadStateImpl *)tstate)->jit_tracer_state->code_buffer)); \
         ENTER_TRACING(); \
         DISPATCH_NON_TRACING(); \
     } \
@@ -509,20 +522,86 @@ gen_try_set_executing(PyGenObject *gen)
 #ifdef Py_GIL_DISABLED
     if (!_PyObject_IsUniquelyReferenced((PyObject *)gen)) {
         int8_t frame_state = _Py_atomic_load_int8_relaxed(&gen->gi_frame_state);
-        while (frame_state < FRAME_EXECUTING) {
+        while (frame_state < FRAME_SUSPENDED_YIELD_FROM_LOCKED) {
             if (_Py_atomic_compare_exchange_int8(&gen->gi_frame_state,
                                                  &frame_state,
                                                  FRAME_EXECUTING)) {
                 return true;
             }
         }
+        // NB: We return false for FRAME_SUSPENDED_YIELD_FROM_LOCKED as well.
+        // That case is rare enough that we can just handle it in the deopt.
+        return false;
     }
 #endif
     // Use faster non-atomic modifications in the GIL-enabled build and when
     // the object is uniquely referenced in the free-threaded build.
     if (gen->gi_frame_state < FRAME_EXECUTING) {
+        assert(gen->gi_frame_state != FRAME_SUSPENDED_YIELD_FROM_LOCKED);
         gen->gi_frame_state = FRAME_EXECUTING;
         return true;
     }
     return false;
 }
+
+// Macro for inplace float binary ops (tier 2 only).
+// Mutates the uniquely-referenced TARGET operand in place.
+// TARGET must be either left or right.
+#define FLOAT_INPLACE_OP(left, right, TARGET, OP)                        \
+    do {                                                                 \
+        PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);            \
+        PyObject *right_o = PyStackRef_AsPyObjectBorrow(right);          \
+        assert(PyFloat_CheckExact(left_o));                              \
+        assert(PyFloat_CheckExact(right_o));                             \
+        assert(_PyObject_IsUniquelyReferenced(                           \
+            PyStackRef_AsPyObjectBorrow(TARGET)));                       \
+        STAT_INC(BINARY_OP, hit);                                        \
+        double _dres =                                                   \
+            ((PyFloatObject *)left_o)->ob_fval                           \
+            OP ((PyFloatObject *)right_o)->ob_fval;                      \
+        ((PyFloatObject *)PyStackRef_AsPyObjectBorrow(TARGET))           \
+            ->ob_fval = _dres;                                           \
+    } while (0)
+
+// Inplace compact int operation. TARGET is expected to be uniquely
+// referenced at the optimizer level, but at runtime it may be a
+// cached small int singleton. We check _Py_IsImmortal on TARGET
+// to decide whether inplace mutation is safe.
+//
+// After the macro, _int_inplace_res holds the result (may be NULL
+// on allocation failure). On success, TARGET was mutated in place
+// and _int_inplace_res is a DUP'd reference to it. On fallback
+// (small int target, small int result, or overflow), _int_inplace_res
+// is from FUNC (_PyCompactLong_Add etc.).
+// FUNC is the fallback function (_PyCompactLong_Add etc.)
+#define INT_INPLACE_OP(left, right, TARGET, OP, FUNC)                    \
+    _PyStackRef _int_inplace_res = PyStackRef_NULL;                      \
+    do {                                                                 \
+        PyObject *target_o = PyStackRef_AsPyObjectBorrow(TARGET);        \
+        if (_Py_IsImmortal(target_o)) {                                  \
+            break;                                                       \
+        }                                                                \
+        assert(_PyObject_IsUniquelyReferenced(target_o));                \
+        Py_ssize_t left_val = _PyLong_CompactValue(                      \
+            (PyLongObject *)PyStackRef_AsPyObjectBorrow(left));          \
+        Py_ssize_t right_val = _PyLong_CompactValue(                     \
+            (PyLongObject *)PyStackRef_AsPyObjectBorrow(right));         \
+        Py_ssize_t result = left_val OP right_val;                       \
+        if (!_PY_IS_SMALL_INT(result)                                    \
+            && ((twodigits)((stwodigits)result) + PyLong_MASK            \
+                < (twodigits)PyLong_MASK + PyLong_BASE))                 \
+        {                                                                \
+            _PyLong_SetSignAndDigitCount(                                \
+                (PyLongObject *)target_o, result < 0 ? -1 : 1, 1);       \
+            ((PyLongObject *)target_o)->long_value.ob_digit[0] =         \
+                (digit)(result < 0 ? -result : result);                  \
+            _int_inplace_res = PyStackRef_DUP(TARGET);                   \
+            break;                                                       \
+        }                                                                \
+    } while (0);                                                         \
+    if (PyStackRef_IsNull(_int_inplace_res)) {                           \
+        _int_inplace_res = FUNC(                                         \
+            (PyLongObject *)PyStackRef_AsPyObjectBorrow(left),           \
+            (PyLongObject *)PyStackRef_AsPyObjectBorrow(right));         \
+    }
+

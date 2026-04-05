@@ -144,7 +144,7 @@ static inline void _Py_RefcntAdd(PyObject* op, Py_ssize_t n)
         new_refcnt = _Py_IMMORTAL_INITIAL_REFCNT;
     }
 #  if SIZEOF_VOID_P > 4
-    op->ob_refcnt = (PY_UINT32_T)new_refcnt;
+    op->ob_refcnt = (uint32_t)new_refcnt;
 #  else
     op->ob_refcnt = new_refcnt;
 #  endif
@@ -895,8 +895,12 @@ extern PyObject *_PyType_LookupRefAndVersion(PyTypeObject *, PyObject *,
 extern unsigned int
 _PyType_LookupStackRefAndVersion(PyTypeObject *type, PyObject *name, _PyStackRef *out);
 
-PyAPI_FUNC(int) _PyObject_GetMethodStackRef(PyThreadState *ts, PyObject *obj,
+extern int _PyObject_GetMethodStackRef(PyThreadState *ts, _PyStackRef *self,
                                        PyObject *name, _PyStackRef *method);
+
+// Like PyObject_GetAttr but returns a _PyStackRef. For types, this can
+// return a deferred reference to reduce reference count contention.
+PyAPI_FUNC(_PyStackRef) _PyObject_GetAttrStackRef(PyObject *obj, PyObject *name);
 
 // Cache the provided init method in the specialization cache of type if the
 // provided type version matches the current version of the type.

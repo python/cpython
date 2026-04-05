@@ -1,5 +1,6 @@
 #include "parts.h"
 #include "util.h"
+#include <stdbool.h>
 
 // Test PyModule_* API
 
@@ -7,10 +8,22 @@
  * Lib/test/test_capi/test_module.py
  */
 
+PyABIInfo_VAR(abi_info);
+
 static PyObject *
 module_from_slots_empty(PyObject *self, PyObject *spec)
 {
     PyModuleDef_Slot slots[] = {
+        {0},
+    };
+    return PyModule_FromSlotsAndSpec(slots, spec);
+}
+
+static PyObject *
+module_from_slots_minimal(PyObject *self, PyObject *spec)
+{
+    PyModuleDef_Slot slots[] = {
+        {Py_mod_abi, &abi_info},
         {0},
     };
     return PyModule_FromSlotsAndSpec(slots, spec);
@@ -26,6 +39,7 @@ static PyObject *
 module_from_slots_name(PyObject *self, PyObject *spec)
 {
     PyModuleDef_Slot slots[] = {
+        {Py_mod_abi, &abi_info},
         {Py_mod_name, "currently ignored..."},
         {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
         {Py_mod_gil, Py_MOD_GIL_NOT_USED},
@@ -38,6 +52,7 @@ static PyObject *
 module_from_slots_doc(PyObject *self, PyObject *spec)
 {
     PyModuleDef_Slot slots[] = {
+        {Py_mod_abi, &abi_info},
         {Py_mod_doc, "the docstring"},
         {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
         {Py_mod_gil, Py_MOD_GIL_NOT_USED},
@@ -50,6 +65,7 @@ static PyObject *
 module_from_slots_size(PyObject *self, PyObject *spec)
 {
     PyModuleDef_Slot slots[] = {
+        {Py_mod_abi, &abi_info},
         {Py_mod_state_size, (void*)123},
         {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
         {Py_mod_gil, Py_MOD_GIL_NOT_USED},
@@ -77,6 +93,7 @@ static PyObject *
 module_from_slots_methods(PyObject *self, PyObject *spec)
 {
     PyModuleDef_Slot slots[] = {
+        {Py_mod_abi, &abi_info},
         {Py_mod_methods, a_methoddef_array},
         {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
         {Py_mod_gil, Py_MOD_GIL_NOT_USED},
@@ -95,6 +112,7 @@ static PyObject *
 module_from_slots_gc(PyObject *self, PyObject *spec)
 {
     PyModuleDef_Slot slots[] = {
+        {Py_mod_abi, &abi_info},
         {Py_mod_state_traverse, noop_traverse},
         {Py_mod_state_clear, noop_clear},
         {Py_mod_state_free, noop_free},
@@ -127,6 +145,7 @@ static PyObject *
 module_from_slots_token(PyObject *self, PyObject *spec)
 {
     PyModuleDef_Slot slots[] = {
+        {Py_mod_abi, &abi_info},
         {Py_mod_token, (void*)&test_token},
         {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
         {Py_mod_gil, Py_MOD_GIL_NOT_USED},
@@ -155,6 +174,7 @@ static PyObject *
 module_from_slots_exec(PyObject *self, PyObject *spec)
 {
     PyModuleDef_Slot slots[] = {
+        {Py_mod_abi, &abi_info},
         {Py_mod_exec, simple_exec},
         {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
         {Py_mod_gil, Py_MOD_GIL_NOT_USED},
@@ -178,7 +198,7 @@ module_from_slots_exec(PyObject *self, PyObject *spec)
 }
 
 static PyObject *
-create_attr_from_spec(PyObject *spec, PyObject *def)
+create_attr_from_spec(PyObject *spec, PyModuleDef *def)
 {
     assert(!def);
     return PyObject_GetAttrString(spec, "_gimme_this");
@@ -188,6 +208,7 @@ static PyObject *
 module_from_slots_create(PyObject *self, PyObject *spec)
 {
     PyModuleDef_Slot slots[] = {
+        {Py_mod_abi, &abi_info},
         {Py_mod_create, create_attr_from_spec},
         {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
         {Py_mod_gil, Py_MOD_GIL_NOT_USED},
@@ -219,6 +240,7 @@ module_from_slots_repeat_slot(PyObject *self, PyObject *spec)
         return NULL;
     }
     PyModuleDef_Slot slots[] = {
+        {Py_mod_abi, &abi_info},
         {slot_id, "anything"},
         {slot_id, "anything else"},
         {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
@@ -237,6 +259,7 @@ module_from_slots_null_slot(PyObject *self, PyObject *spec)
     }
     PyModuleDef_Slot slots[] = {
         {slot_id, NULL},
+        {Py_mod_abi, &abi_info},
         {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
         {Py_mod_gil, Py_MOD_GIL_NOT_USED},
         {0},
@@ -253,6 +276,7 @@ module_from_def_slot(PyObject *self, PyObject *spec)
     }
     PyModuleDef_Slot slots[] = {
         {slot_id, "anything"},
+        {Py_mod_abi, &abi_info},
         {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
         {Py_mod_gil, Py_MOD_GIL_NOT_USED},
         {0},
@@ -268,6 +292,87 @@ module_from_def_slot(PyObject *self, PyObject *spec)
     PyObject *result = PyModule_FromDefAndSpec(&def, spec);
     assert(result == NULL);
     return result;
+}
+
+static const char parrot_name[] = "test_capi/parrot";
+static const char parrot_doc[] = "created from redundant information";
+static PyModuleDef parrot_def = {
+    PyModuleDef_HEAD_INIT,
+    .m_name = (void*)parrot_name,
+    .m_doc = (void*)parrot_doc,
+    .m_size = 123,
+    .m_methods = a_methoddef_array,
+    .m_traverse = noop_traverse,
+    .m_clear = noop_clear,
+    .m_free = (void*)noop_free,
+    .m_slots = NULL /* set below */,
+};
+static PyModuleDef_Slot parrot_slots[] = {
+    {Py_mod_abi, &abi_info},
+    {Py_mod_name, (void*)parrot_name},
+    {Py_mod_doc, (void*)parrot_doc},
+    {Py_mod_state_size, (void*)123},
+    {Py_mod_methods, a_methoddef_array},
+    {Py_mod_state_traverse, noop_traverse},
+    {Py_mod_state_clear, noop_clear},
+    {Py_mod_state_free, (void*)noop_free},
+    {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+    {Py_mod_token, &parrot_def},
+    {Py_mod_gil, Py_MOD_GIL_NOT_USED},
+    {0},
+};
+
+static PyObject *
+module_from_def_slot_parrot(PyObject *self, PyObject *spec)
+{
+    parrot_def.m_slots = parrot_slots;
+    PyObject *module = PyModule_FromDefAndSpec(&parrot_def, spec);
+    if (!module || (PyModule_Exec(module) < 0)) {
+        return NULL;
+    }
+    Py_ssize_t size;
+    assert(PyModule_GetStateSize(module, &size) == 0);
+    assert(size == 123);
+    PyModuleDef *def = PyModule_GetDef(module);
+    assert(def == &parrot_def);
+    return module;
+}
+
+static PyObject *
+module_from_bad_abiinfo(PyObject *self, PyObject *spec)
+{
+    PyABIInfo bad_abi_info = {
+        1, 0,
+        .abi_version=0x02080000,
+    };
+    PyModuleDef_Slot slots[] = {
+        {Py_mod_abi, &abi_info},
+        {Py_mod_abi, &bad_abi_info},
+        {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+        {Py_mod_gil, Py_MOD_GIL_NOT_USED},
+        {0},
+    };
+    return PyModule_FromSlotsAndSpec(slots, spec);
+}
+
+static PyObject *
+module_from_multiple_abiinfo(PyObject *self, PyObject *spec)
+{
+    PyABIInfo extra_abi_info = {
+        1, 0,
+        .flags=PyABIInfo_STABLE | PyABIInfo_FREETHREADING_AGNOSTIC,
+        .abi_version=0x03040000,
+    };
+    PyModuleDef_Slot slots[] = {
+        {Py_mod_abi, &abi_info},
+        {Py_mod_abi, &abi_info},
+        {Py_mod_abi, &extra_abi_info},
+        {Py_mod_abi, &extra_abi_info},
+        {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+        {Py_mod_gil, Py_MOD_GIL_NOT_USED},
+        {0},
+    };
+    return PyModule_FromSlotsAndSpec(slots, spec);
 }
 
 static int
@@ -300,6 +405,7 @@ static PyObject *
 module_from_def_multiple_exec(PyObject *self, PyObject *spec)
 {
     static PyModuleDef_Slot slots[] = {
+        {Py_mod_abi, &abi_info},
         {Py_mod_exec, simple_exec},
         {Py_mod_exec, another_exec},
         {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
@@ -355,6 +461,7 @@ pymodule_get_state_size(PyObject *self, PyObject *module)
 
 static PyMethodDef test_methods[] = {
     {"module_from_slots_empty", module_from_slots_empty, METH_O},
+    {"module_from_slots_minimal", module_from_slots_minimal, METH_O},
     {"module_from_slots_null", module_from_slots_null, METH_O},
     {"module_from_slots_name", module_from_slots_name, METH_O},
     {"module_from_slots_doc", module_from_slots_doc, METH_O},
@@ -368,6 +475,9 @@ static PyMethodDef test_methods[] = {
     {"module_from_slots_null_slot", module_from_slots_null_slot, METH_O},
     {"module_from_def_multiple_exec", module_from_def_multiple_exec, METH_O},
     {"module_from_def_slot", module_from_def_slot, METH_O},
+    {"module_from_def_slot_parrot", module_from_def_slot_parrot, METH_O},
+    {"module_from_bad_abiinfo", module_from_bad_abiinfo, METH_O},
+    {"module_from_multiple_abiinfo", module_from_multiple_abiinfo, METH_O},
     {"pymodule_get_token", pymodule_get_token, METH_O},
     {"pymodule_get_def", pymodule_get_def, METH_O},
     {"pymodule_get_state_size", pymodule_get_state_size, METH_O},

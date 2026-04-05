@@ -1,0 +1,5 @@
+Fix :func:`annotationlib.get_annotations` hanging indefinitely when called
+with ``eval_str=True`` on a callable that has a circular ``__wrapped__``
+chain (e.g. ``f.__wrapped__ = f``). Cycle detection using an id-based
+visited set now stops the traversal and falls back to the globals found
+so far, mirroring the approach of :func:`inspect.unwrap`.
