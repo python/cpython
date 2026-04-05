@@ -39,12 +39,7 @@ get_type_attr_as_size(PyTypeObject *tp, PyObject *name)
         return -1;
     }
 
-    Py_ssize_t result = PyLong_AsSsize_t(v);
-    if (result == -1 && PyErr_Occurred()) {
-        return -1;
-    }
-
-    return result;
+    return PyLong_AsSsize_t(v);
 }
 
 #define VISIBLE_SIZE(op) Py_SIZE(op)
