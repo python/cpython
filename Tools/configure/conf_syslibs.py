@@ -26,7 +26,10 @@ def detect_gdbm(v):
     pyconf.env_var("GDBM_CFLAGS", "C compiler flags for gdbm")
     pyconf.env_var("GDBM_LIBS", "additional linker flags for gdbm")
 
-    if pyconf.check_header("gdbm.h", extra_cflags=v.GDBM_CFLAGS):
+    pyconf.checking("for gdbm.h")
+    found = pyconf.check_header("gdbm.h", extra_cflags=v.GDBM_CFLAGS)
+    pyconf.result(found)
+    if found:
         if pyconf.check_lib(
             "gdbm",
             "gdbm_open",
@@ -55,7 +58,10 @@ def detect_dbm(v):
     # (matches autoconf's WITH_SAVE_ENV).
     # Check for _dbmmodule.c dependencies: ndbm, gdbm_compat, libdb
     ac_cv_search_dbm_open = False
-    if pyconf.check_header("ndbm.h"):
+    pyconf.checking("for ndbm.h")
+    found_ndbm = pyconf.check_header("ndbm.h")
+    pyconf.result(found_ndbm)
+    if found_ndbm:
         with pyconf.save_env():
             ac_cv_search_dbm_open = pyconf.search_libs(
                 "dbm_open", ["ndbm", "gdbm_compat"], required=False
@@ -75,9 +81,11 @@ def detect_dbm(v):
 
     # Check for gdbm/ndbm.h and gdbm-ndbm.h (matches configure.ac AC_CACHE_CHECK pattern)
     # "gdbm-ndbm.h" and "gdbm/ndbm.h" are both normalized to "gdbm_ndbm_h"
+    pyconf.checking("for gdbm/ndbm.h")
     ac_cv_header_gdbm_slash_ndbm_h = pyconf.check_header(
         "gdbm/ndbm.h", autodefine=False
     )
+    pyconf.result(ac_cv_header_gdbm_slash_ndbm_h)
     if ac_cv_header_gdbm_slash_ndbm_h:
         pyconf.define(
             "HAVE_GDBM_NDBM_H",
@@ -85,9 +93,11 @@ def detect_dbm(v):
             "Define to 1 if you have the <gdbm/ndbm.h> header file.",
         )
 
+    pyconf.checking("for gdbm-ndbm.h")
     ac_cv_header_gdbm_dash_ndbm_h = pyconf.check_header(
         "gdbm-ndbm.h", autodefine=False
     )
+    pyconf.result(ac_cv_header_gdbm_dash_ndbm_h)
     if ac_cv_header_gdbm_dash_ndbm_h:
         pyconf.define(
             "HAVE_GDBM_DASH_NDBM_H",
@@ -106,7 +116,10 @@ def detect_dbm(v):
     # Check for libdb >= 5 with dbm_open()
     # db.h re-defines the name of the function
     ac_cv_have_libdb = False
-    if pyconf.check_header("db.h"):
+    pyconf.checking("for db.h")
+    found_db_h = pyconf.check_header("db.h")
+    pyconf.result(found_db_h)
+    if found_db_h:
         if pyconf.link_check(
             "#define DB_DBM_HSEARCH 1\n"
             "#include <db.h>\n"

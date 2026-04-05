@@ -717,7 +717,6 @@ function pyconf_check_header(header, prologue, default_inc, define, cache_key, e
         if (cache_key in CACHE) {
                 rc = (CACHE[cache_key] == "yes")
         } else {
-                pyconf_checking("for " header)
                 if (prologue != "")
                         source = prologue "\n#include <" header ">\nint main(void) { return 0; }"
                 else if (default_inc != "")
@@ -727,7 +726,6 @@ function pyconf_check_header(header, prologue, default_inc, define, cache_key, e
                 rc = _pyconf_compile_test_cd(source, extra_cflags)
                 CACHE[cache_key] = rc ? "yes" : "no"
                 V[cache_key] = rc ? "yes" : "no"
-                pyconf_result(rc ? "yes" : "no")
         }
 
         if (rc)
@@ -735,12 +733,15 @@ function pyconf_check_header(header, prologue, default_inc, define, cache_key, e
         return rc
 }
 
-function pyconf_check_headers(headers, n, i, all_found) {
+function pyconf_check_headers(headers, n, i, all_found, rc) {
         all_found = 1
         n = headers[0] + 0
         for (i = 1; i <= n; i++)
                 if (headers[i] != "") {
-                        if (!pyconf_check_header(headers[i]))
+                        pyconf_checking("for " headers[i])
+                        rc = pyconf_check_header(headers[i])
+                        pyconf_result(rc ? "yes" : "no")
+                        if (!rc)
                                 all_found = 0
                 }
         return all_found
@@ -760,7 +761,6 @@ function pyconf_check_func(fname, headers, define, source, inc, cv, rc, cache_ke
                 return rc
         }
 
-        pyconf_checking("for " fname)
         inc = ""
         has_headers = 0
         if (headers != "") {
@@ -793,26 +793,31 @@ function pyconf_check_func(fname, headers, define, source, inc, cv, rc, cache_ke
         }
         CACHE[cache_key] = rc ? "yes" : "no"
         V[cache_key] = rc ? "yes" : "no"
-        pyconf_result(rc ? "yes" : "no")
 
         if (rc)
                 pyconf_define(define, 1, 0, "Define to 1 if you have the `" fname "` function.")
         return rc
 }
 
-function pyconf_check_funcs(funcs, n, i) {
+function pyconf_check_funcs(funcs, n, i, rc) {
         n = funcs[0] + 0
         for (i = 1; i <= n; i++)
-                if (funcs[i] != "")
-                        pyconf_check_func(funcs[i])
+                if (funcs[i] != "") {
+                        pyconf_checking("for " funcs[i])
+                        rc = pyconf_check_func(funcs[i])
+                        pyconf_result(rc ? "yes" : "no")
+                }
 }
 
-function pyconf_replace_funcs(funcs, n, i) {
+function pyconf_replace_funcs(funcs, n, i, rc) {
         # AC_REPLACE_FUNCS — check each function; add missing ones to LIBOBJS.
         n = funcs[0] + 0
         for (i = 1; i <= n; i++) {
                 if (funcs[i] != "") {
-                        if (!pyconf_check_func(funcs[i])) {
+                        pyconf_checking("for " funcs[i])
+                        rc = pyconf_check_func(funcs[i])
+                        pyconf_result(rc ? "yes" : "no")
+                        if (!rc) {
                                 if (SUBST["LIBOBJS"] != "")
                                         SUBST["LIBOBJS"] = SUBST["LIBOBJS"] " ${LIBOBJDIR}" funcs[i] "$U.o"
                                 else
@@ -847,7 +852,6 @@ function pyconf_check_sizeof(type_name, default_val, headers, source, inc, resul
                 return result
         }
 
-        pyconf_checking("for sizeof " type_name)
         inc = _pyconf_ac_includes_default()
         if (headers != "") {
                 n = split(headers, arr, " ")
@@ -873,7 +877,6 @@ function pyconf_check_sizeof(type_name, default_val, headers, source, inc, resul
         }
         CACHE[cv] = result
         V[cv] = result
-        pyconf_result(result)
         pyconf_define(define, result, 0, "The size of `" type_name "`, as computed by sizeof.")
         return result
 }
@@ -891,7 +894,6 @@ function pyconf_check_alignof(type_name, default_val, headers, source, inc, resu
                 return result
         }
 
-        pyconf_checking("for alignof " type_name)
         inc = _pyconf_ac_includes_default()
         if (headers != "") {
                 n = split(headers, arr, " ")
@@ -912,7 +914,6 @@ function pyconf_check_alignof(type_name, default_val, headers, source, inc, resu
         if (result == "") result = (default_val != "" ? default_val : "0")
         CACHE[cv] = result
         V[cv] = result
-        pyconf_result(result)
         pyconf_define(define, result, 0, "")
         return result
 }
@@ -929,7 +930,6 @@ function pyconf_check_type(type_name, headers, source, inc, cv, rc, define, n, a
         if (cv in CACHE)
                 return (CACHE[cv] == "yes")
 
-        pyconf_checking("for " type_name)
         inc = _pyconf_ac_includes_default()
         if (headers != "") {
                 n = split(headers, arr, " ")
@@ -942,7 +942,6 @@ function pyconf_check_type(type_name, headers, source, inc, cv, rc, define, n, a
         rc = _pyconf_compile_test_cd(source, "")
         CACHE[cv] = rc ? "yes" : "no"
         V[cv] = rc ? "yes" : "no"
-        pyconf_result(rc ? "yes" : "no")
 
         if (rc)
                 pyconf_define(define, 1, 0, "Define to 1 if the system has the type `" type_name "`.")
@@ -963,7 +962,6 @@ function pyconf_check_member(member, headers, define, struct_name, field, source
         if (cv in CACHE)
                 return (CACHE[cv] == "yes")
 
-        pyconf_checking("for " member)
         # Match Python version: use custom headers if provided, else use default headers
         if (headers != "") {
                 n = split(headers, arr, " ")
@@ -979,18 +977,20 @@ function pyconf_check_member(member, headers, define, struct_name, field, source
         rc = _pyconf_compile_test_cd(source, "")
         CACHE[cv] = rc ? "yes" : "no"
         V[cv] = rc ? "yes" : "no"
-        pyconf_result(rc ? "yes" : "no")
 
         if (rc)
                 pyconf_define(define, 1, 0, "")
         return rc
 }
 
-function pyconf_check_members(members, n, arr, i) {
+function pyconf_check_members(members, n, arr, i, rc) {
         n = split(members, arr, " ")
         for (i = 1; i <= n; i++)
-                if (arr[i] != "")
-                        pyconf_check_member(arr[i])
+                if (arr[i] != "") {
+                        pyconf_checking("for " arr[i])
+                        rc = pyconf_check_member(arr[i])
+                        pyconf_result(rc ? "yes" : "no")
+                }
 }
 
 function pyconf_check_struct_tm() {
@@ -1019,7 +1019,6 @@ function pyconf_check_define(headers, macro, source, inc, cv, rc, n, arr, i) {
         if (cv in CACHE)
                 return (CACHE[cv] == "yes")
 
-        pyconf_checking("for " macro)
         inc = _pyconf_ac_includes_default()
         if (headers != "") {
                 n = split(headers, arr, " ")
@@ -1031,7 +1030,6 @@ function pyconf_check_define(headers, macro, source, inc, cv, rc, n, arr, i) {
         rc = _pyconf_compile_test_cd(source, "")
         CACHE[cv] = rc ? "yes" : "no"
         V[cv] = rc ? "yes" : "no"
-        pyconf_result(rc ? "yes" : "no")
         return rc
 }
 
@@ -1044,7 +1042,6 @@ function pyconf_check_decl(name, includes, define, source, inc, cv, rc, _darr, _
                 return rc
         }
 
-        pyconf_checking("whether " name " is declared")
         inc = ""
         if (includes != "") {
                 _dn = split(includes, _darr, " ")
@@ -1056,7 +1053,6 @@ function pyconf_check_decl(name, includes, define, source, inc, cv, rc, _darr, _
         rc = _pyconf_compile_test_cd(source, "")
         CACHE[cv] = rc ? "yes" : "no"
         V[cv] = rc ? "yes" : "no"
-        pyconf_result(rc ? "yes" : "no")
         pyconf_define(define, rc ? 1 : 0, 0, "")
         return rc
 }
@@ -1080,8 +1076,10 @@ function pyconf_check_decls(decls, n, i, sep, headers) {
                 n = sep - 1
         }
         for (i = 1; i <= n; i++)
-                if (decls[i] != "")
-                        pyconf_check_decl(decls[i], headers)
+                if (decls[i] != "") {
+                        pyconf_checking("whether " decls[i] " is declared")
+                        pyconf_result(pyconf_check_decl(decls[i], headers) ? "yes" : "no")
+                }
 }
 
 # ---------------------------------------------------------------------------
@@ -2654,14 +2652,18 @@ function u_setup_pystats(    _opt_result) {
     }
 }
 
-function u_setup_assertions(    _opt_result, assertions_bool) {
-    _opt_result = pyconf_option_process_bool("with_assertions")
-    assertions_bool = _opt_result
-    V["assertions"] = (((assertions_bool != "") && (assertions_bool != "no")) ? "true" : "false")
-    if (((!((assertions_bool != "") && (assertions_bool != "no"))) && (V["Py_DEBUG"] == "yes"))) {
+function u_setup_assertions(    raw) {
+    pyconf_checking("for --with-assertions")
+    raw = pyconf_option_value("with_assertions")
+    if (((raw != "") && (raw != "no"))) {
         V["assertions"] = "true"
-        pyconf_checking("for --with-assertions")
+        pyconf_result("yes")
+    } else if ((V["Py_DEBUG"] == "yes")) {
+        V["assertions"] = "true"
         pyconf_result("implied by --with-pydebug")
+    } else {
+        V["assertions"] = "false"
+        pyconf_result("no")
     }
 }
 
@@ -2785,6 +2787,7 @@ function u_setup_sanitizers(    _opt_result) {
     if (((_opt_result != "") && (_opt_result != "no"))) {
         V["BASECFLAGS"] = "-fsanitize=address -fno-omit-frame-pointer " V["BASECFLAGS"]
         V["LDFLAGS"] = "-fsanitize=address " V["LDFLAGS"]
+        V["with_pymalloc"] = "no"
     }
     _opt_result = pyconf_option_process_bool("with_memory_sanitizer")
     if (((_opt_result != "") && (_opt_result != "no"))) {
@@ -2793,6 +2796,7 @@ function u_setup_sanitizers(    _opt_result) {
         }
         V["BASECFLAGS"] = "-fsanitize=memory -fsanitize-memory-track-origins=2 -fno-omit-frame-pointer " V["BASECFLAGS"]
         V["LDFLAGS"] = "-fsanitize=memory -fsanitize-memory-track-origins=2 " V["LDFLAGS"]
+        V["with_pymalloc"] = "no"
     }
     _opt_result = pyconf_option_process_bool("with_undefined_behavior_sanitizer")
     if (((_opt_result != "") && (_opt_result != "no"))) {
@@ -2810,17 +2814,26 @@ function u_setup_sanitizers(    _opt_result) {
 }
 
 function u_check_tail_call_interp() {
+    pyconf_checking("for --with-tail-call-interp")
     if (pyconf_option_is_yes("with_tail_call_interp")) {
         pyconf_define("_Py_TAIL_CALL_INTERP", 1, 0, "Define if you want to use tail-calling interpreters in CPython.")
+        pyconf_result("yes")
     } else if (pyconf_option_is_no("with_tail_call_interp")) {
         pyconf_define("_Py_TAIL_CALL_INTERP", 0, 0, "Define if you want to use tail-calling interpreters in CPython.")
+        pyconf_result("no")
+    } else {
+        pyconf_result("no value specified")
     }
 }
 
 function u_check_remote_debug(    with_rd) {
+    pyconf_checking("for --with-remote-debug")
     with_rd = pyconf_option_value_or("with_remote_debug", "yes")
     if ((with_rd == "yes")) {
         pyconf_define("Py_REMOTE_DEBUG", 1, 0, "Define if you want to enable remote debugging support.")
+        pyconf_result("yes")
+    } else {
+        pyconf_result("no")
     }
 }
 
@@ -2898,11 +2911,14 @@ function u_setup_pymalloc(    with_pymalloc, with_pymalloc_hugepages) {
     pyconf_result(with_pymalloc_hugepages)
 }
 
-function u_setup_valgrind(    _opt_result, with_valgrind) {
+function u_setup_valgrind(    _opt_result, found, with_valgrind) {
     _opt_result = pyconf_option_process_value("with_valgrind")
     with_valgrind = _opt_result
     if ((with_valgrind != "no")) {
-        if (pyconf_check_header("valgrind/valgrind.h")) {
+        pyconf_checking("for valgrind/valgrind.h")
+        found = (pyconf_check_header("valgrind/valgrind.h") ? "yes" : "no")
+        pyconf_result(found)
+        if (((found != "") && (found != "no"))) {
             pyconf_define("WITH_VALGRIND", 1, 0, "Define if you want pymalloc to be disabled when running under valgrind")
         } else {
             pyconf_fatal("Valgrind support requested but headers not available")
@@ -3305,7 +3321,8 @@ function u_check_compiler_characteristics(    ac_cv_function_prototypes, ac_cv_s
     if (((ac_cv_function_prototypes != "") && (ac_cv_function_prototypes != "no"))) {
         pyconf_define("HAVE_PROTOTYPES", 1, 0, "Define if your compiler supports function prototype")
     }
-    pyconf_check_func("socketpair", "sys/types.h sys/socket.h", "HAVE_SOCKETPAIR")
+    pyconf_checking("for socketpair")
+    pyconf_result((pyconf_check_func("socketpair", "sys/types.h sys/socket.h", "HAVE_SOCKETPAIR") ? "yes" : "no"))
     pyconf_checking("if sockaddr has sa_len member")
     ac_cv_struct_sockaddr_sa_len = (pyconf_compile_check("", "#include <sys/types.h>\n#include <sys/socket.h>\nint main(void) { struct sockaddr x;\nx.sa_len = 0; return 0; }") ? "yes" : "no")
     pyconf_result(ac_cv_struct_sockaddr_sa_len)
@@ -3362,26 +3379,43 @@ function u_check_stdatomic(    ac_cv_builtin_atomic, ac_cv_efficient_builtin_shu
 }
 
 function u_check_sizes(    ac_cv_have_pthread_t, save_CC) {
-    pyconf_check_sizeof("int", 4, "")
-    pyconf_check_sizeof("long", 4, "")
-    pyconf_check_alignof("long")
-    pyconf_check_sizeof("long long", 8, "")
-    pyconf_check_sizeof("void *", 4, "")
-    pyconf_check_sizeof("short", 2, "")
-    pyconf_check_sizeof("float", 4, "")
-    pyconf_check_sizeof("double", 8, "")
-    pyconf_check_sizeof("fpos_t", 4, "")
-    pyconf_check_sizeof("size_t", 4, "")
-    pyconf_check_alignof("size_t")
-    pyconf_check_sizeof("pid_t", 4, "")
-    pyconf_check_sizeof("uintptr_t", "", "")
-    pyconf_check_alignof("max_align_t")
+    pyconf_checking("for sizeof int")
+    pyconf_result(pyconf_check_sizeof("int", 4, ""))
+    pyconf_checking("for sizeof long")
+    pyconf_result(pyconf_check_sizeof("long", 4, ""))
+    pyconf_checking("for alignof long")
+    pyconf_result(pyconf_check_alignof("long"))
+    pyconf_checking("for sizeof long long")
+    pyconf_result(pyconf_check_sizeof("long long", 8, ""))
+    pyconf_checking("for sizeof void *")
+    pyconf_result(pyconf_check_sizeof("void *", 4, ""))
+    pyconf_checking("for sizeof short")
+    pyconf_result(pyconf_check_sizeof("short", 2, ""))
+    pyconf_checking("for sizeof float")
+    pyconf_result(pyconf_check_sizeof("float", 4, ""))
+    pyconf_checking("for sizeof double")
+    pyconf_result(pyconf_check_sizeof("double", 8, ""))
+    pyconf_checking("for sizeof fpos_t")
+    pyconf_result(pyconf_check_sizeof("fpos_t", 4, ""))
+    pyconf_checking("for sizeof size_t")
+    pyconf_result(pyconf_check_sizeof("size_t", 4, ""))
+    pyconf_checking("for alignof size_t")
+    pyconf_result(pyconf_check_alignof("size_t"))
+    pyconf_checking("for sizeof pid_t")
+    pyconf_result(pyconf_check_sizeof("pid_t", 4, ""))
+    pyconf_checking("for sizeof uintptr_t")
+    pyconf_result(pyconf_check_sizeof("uintptr_t", "", ""))
+    pyconf_checking("for alignof max_align_t")
+    pyconf_result(pyconf_check_alignof("max_align_t"))
     if (pyconf_compile_check("", "\nint main(void) { typedef int test_array[1 - 2 * !(sizeof(double) <= sizeof(long double))]; return 0; }")) {
         pyconf_define("HAVE_LONG_DOUBLE", 1, 0, "Define to 1 if the C compiler supports long double.")
     }
-    pyconf_check_sizeof("long double", 16, "")
-    pyconf_check_sizeof("_Bool", 1, "")
-    pyconf_check_sizeof("off_t", "", "sys/types.h")
+    pyconf_checking("for sizeof long double")
+    pyconf_result(pyconf_check_sizeof("long double", 16, ""))
+    pyconf_checking("for sizeof _Bool")
+    pyconf_result(pyconf_check_sizeof("_Bool", 1, ""))
+    pyconf_checking("for sizeof off_t")
+    pyconf_result(pyconf_check_sizeof("off_t", "", "sys/types.h"))
     pyconf_checking("whether to enable large file support")
     if (((pyconf_sizeof("off_t") > pyconf_sizeof("long")) && (pyconf_sizeof("long long") >= pyconf_sizeof("off_t")))) {
         pyconf_define("HAVE_LARGEFILE_SUPPORT", 1, 0, "Defined to enable large file support when an off_t is bigger than a long and long long is at least as big as an off_t.")
@@ -3389,7 +3423,8 @@ function u_check_sizes(    ac_cv_have_pthread_t, save_CC) {
     } else {
         pyconf_result("no")
     }
-    pyconf_check_sizeof("time_t", "", "sys/types.h time.h")
+    pyconf_checking("for sizeof time_t")
+    pyconf_result(pyconf_check_sizeof("time_t", "", "sys/types.h time.h"))
     save_CC = V["CC"]
     if (((V["ac_cv_kpthread"] != "") && (V["ac_cv_kpthread"] != "no"))) {
         V["CC"] = V["CC"] " -Kpthread"
@@ -3400,9 +3435,11 @@ function u_check_sizes(    ac_cv_have_pthread_t, save_CC) {
     }
     ac_cv_have_pthread_t = (pyconf_compile_check("", "#include <pthread.h>\nint main(void) { pthread_t x; x = *(pthread_t*)0; return 0; }") ? "yes" : "no")
     if (((ac_cv_have_pthread_t != "") && (ac_cv_have_pthread_t != "no"))) {
-        pyconf_check_sizeof("pthread_t", "", "pthread.h")
+        pyconf_checking("for sizeof pthread_t")
+        pyconf_result(pyconf_check_sizeof("pthread_t", "", "pthread.h"))
     }
-    pyconf_check_sizeof("pthread_key_t", "", "pthread.h")
+    pyconf_checking("for sizeof pthread_key_t")
+    pyconf_result(pyconf_check_sizeof("pthread_key_t", "", "pthread.h"))
     if (((pyconf_sizeof("pthread_key_t") == pyconf_sizeof("int")) && pyconf_compile_check("", "#include <pthread.h>\nint main(void) { pthread_key_t k; k * 1; return 0; }"))) {
         pyconf_define("PTHREAD_KEY_T_IS_COMPATIBLE_WITH_INT", 1, 0, "Define if pthread_key_t is compatible with int.")
     }
@@ -3449,7 +3486,7 @@ function u_setup_expat(    _opt_result, with_system_expat) {
     v_export("LIBEXPAT_INTERNAL")
 }
 
-function u_detect_libffi(    ac_cv_ffi_complex_double_supported, ctypes_malloc_closure, ffi_h, output, parts, pkg, sdkroot, status, _ar_4, _ar_5) {
+function u_detect_libffi(    ac_cv_ffi_complex_double_supported, ctypes_malloc_closure, ffi_h, found_ffi_h, output, parts, pkg, sdkroot, status, _ar_4, _ar_5) {
     delete _ar_4
     delete _ar_5
     V["have_libffi"] = "missing"
@@ -3486,7 +3523,10 @@ function u_detect_libffi(    ac_cv_ffi_complex_double_supported, ctypes_malloc_c
             }
         }
         if ((V["have_libffi"] == "missing")) {
-            if ((pyconf_check_header("ffi.h") && pyconf_check_lib("ffi", "ffi_call", "", ""))) {
+            pyconf_checking("for ffi.h")
+            found_ffi_h = (pyconf_check_header("ffi.h") ? "yes" : "no")
+            pyconf_result(found_ffi_h)
+            if ((((found_ffi_h != "") && (found_ffi_h != "no")) && pyconf_check_lib("ffi", "ffi_call", "", ""))) {
                 V["have_libffi"] = "yes"
                 V["LIBFFI_CFLAGS"] = ""
                 V["LIBFFI_LIBS"] = "-lffi"
@@ -3512,9 +3552,12 @@ function u_detect_libffi(    ac_cv_ffi_complex_double_supported, ctypes_malloc_c
         pyconf_save_env()
         V["CFLAGS"] = _str_strip(V["CFLAGS"] " " V["LIBFFI_CFLAGS"])
         V["LIBS"] = _str_strip(V["LIBS"] " " V["LIBFFI_LIBS"])
-        pyconf_check_func("ffi_prep_cif_var", "ffi.h", "HAVE_FFI_PREP_CIF_VAR")
-        pyconf_check_func("ffi_prep_closure_loc", "ffi.h", "HAVE_FFI_PREP_CLOSURE_LOC")
-        pyconf_check_func("ffi_closure_alloc", "ffi.h", "HAVE_FFI_CLOSURE_ALLOC")
+        pyconf_checking("for ffi_prep_cif_var")
+        pyconf_result((pyconf_check_func("ffi_prep_cif_var", "ffi.h", "HAVE_FFI_PREP_CIF_VAR") ? "yes" : "no"))
+        pyconf_checking("for ffi_prep_closure_loc")
+        pyconf_result((pyconf_check_func("ffi_prep_closure_loc", "ffi.h", "HAVE_FFI_PREP_CLOSURE_LOC") ? "yes" : "no"))
+        pyconf_checking("for ffi_closure_alloc")
+        pyconf_result((pyconf_check_func("ffi_closure_alloc", "ffi.h", "HAVE_FFI_CLOSURE_ALLOC") ? "yes" : "no"))
         pyconf_restore_env()
     }
     v_export("MODULE__CTYPES_MALLOC_CLOSURE")
@@ -3528,7 +3571,7 @@ function u_detect_libffi(    ac_cv_ffi_complex_double_supported, ctypes_malloc_c
     }
 }
 
-function u_detect_sqlite3(    _i_f, _n_f, check_cflags, enable_loadable_sqlite_extensions, f, output, parts, pkg, required_funcs, sqlite_inc, status, _ar_6, _ar_7, _as_8) {
+function u_detect_sqlite3(    _i_f, _n_f, check_cflags, enable_loadable_sqlite_extensions, f, found_sqlite3_h, output, parts, pkg, required_funcs, sqlite_inc, status, _ar_6, _ar_7, _as_8) {
     delete _ar_6
     delete _ar_7
     delete _as_8
@@ -3569,7 +3612,10 @@ function u_detect_sqlite3(    _i_f, _n_f, check_cflags, enable_loadable_sqlite_e
     sqlite_inc = " -I" pyconf_srcdir "/Modules/_sqlite"
     check_cflags = V["LIBSQLITE3_CFLAGS"] sqlite_inc
     V["LIBSQLITE3_CFLAGS"] = V["LIBSQLITE3_CFLAGS"] " -I$(srcdir)/Modules/_sqlite"
-    if (pyconf_check_header("sqlite3.h", "", "", "", "", check_cflags)) {
+    pyconf_checking("for sqlite3.h")
+    found_sqlite3_h = (pyconf_check_header("sqlite3.h", "", "", "", "", check_cflags) ? "yes" : "no")
+    pyconf_result(found_sqlite3_h)
+    if (((found_sqlite3_h != "") && (found_sqlite3_h != "no"))) {
         V["have_sqlite3"] = "yes"
         if (pyconf_compile_check("", "#include <sqlite3.h>\n#if SQLITE_VERSION_NUMBER < 3015002\n#  error \"SQLite 3.15.2 or higher required\"\n#endif\nint main(void) {  return 0; }", check_cflags)) {
             V["have_supported_sqlite3"] = "yes"
@@ -3613,7 +3659,7 @@ function u_detect_sqlite3(    _i_f, _n_f, check_cflags, enable_loadable_sqlite_e
     v_export("LIBSQLITE3_LIBS")
 }
 
-function u_detect_tcltk(    _i_q, _x11_cflags, _x11_libs, output, parts, pkg, q, status, _al_11, _ar_10, _ar_12, _ar_13, _ar_9) {
+function u_detect_tcltk(    _i_q, output, parts, pkg, q, status, x11_cflags, x11_libs, _al_11, _ar_10, _ar_12, _ar_13, _ar_9) {
     delete _al_11
     delete _ar_10
     delete _ar_12
@@ -3675,10 +3721,10 @@ function u_detect_tcltk(    _i_q, _x11_cflags, _x11_libs, output, parts, pkg, q,
             if ((status == 0)) {
                 parts = output
                 u__split_pkg_flags(parts, _ar_13)
-                _x11_cflags = _ar_13[0]
-                _x11_libs = _ar_13[1]
-                V["TCLTK_CFLAGS"] = V["TCLTK_CFLAGS"] " " _x11_cflags
-                V["TCLTK_LIBS"] = V["TCLTK_LIBS"] " " _x11_libs
+                x11_cflags = _ar_13[0]
+                x11_libs = _ar_13[1]
+                V["TCLTK_CFLAGS"] = V["TCLTK_CFLAGS"] " " x11_cflags
+                V["TCLTK_LIBS"] = V["TCLTK_LIBS"] " " x11_libs
             }
         }
     }
@@ -3690,7 +3736,7 @@ function u_detect_tcltk(    _i_q, _x11_cflags, _x11_libs, output, parts, pkg, q,
     v_export("TCLTK_LIBS")
 }
 
-function u_detect_uuid(    LIBUUID_CFLAGS, LIBUUID_LIBS, ac_cv_have_uuid_generate_time_safe, ac_cv_have_uuid_h, ac_cv_have_uuid_uuid_h, has_create, has_enc_be, have_uuid, node1, node2, pkg, save_CPPFLAGS, save_LIBS, uuid_node_src) {
+function u_detect_uuid(    LIBUUID_CFLAGS, LIBUUID_LIBS, ac_cv_have_uuid_generate_time_safe, ac_cv_have_uuid_h, ac_cv_have_uuid_uuid_h, found, has_create, has_enc_be, have_uuid, node1, node2, pkg, save_CPPFLAGS, save_LIBS, uuid_node_src) {
     ac_cv_have_uuid_h = "no"
     ac_cv_have_uuid_uuid_h = "no"
     ac_cv_have_uuid_generate_time_safe = "no"
@@ -3701,8 +3747,12 @@ function u_detect_uuid(    LIBUUID_CFLAGS, LIBUUID_LIBS, ac_cv_have_uuid_generat
     _va21[1] = "uuid.h"
     _va21[0] = 1
     if (pyconf_check_headers(_va21)) {
+        pyconf_checking("for uuid_create")
         has_create = (pyconf_check_func("uuid_create", "", "HAVE_UUID_CREATE") ? "yes" : "no")
+        pyconf_result(has_create)
+        pyconf_checking("for uuid_enc_be")
         has_enc_be = (pyconf_check_func("uuid_enc_be", "", "HAVE_UUID_ENC_BE") ? "yes" : "no")
+        pyconf_result(has_enc_be)
         if ((((has_create != "") && (has_create != "no")) && ((has_enc_be != "") && (has_enc_be != "no")))) {
             have_uuid = "yes"
             ac_cv_have_uuid_h = "yes"
@@ -3746,7 +3796,10 @@ function u_detect_uuid(    LIBUUID_CFLAGS, LIBUUID_LIBS, ac_cv_have_uuid_generat
         _va23[1] = "uuid/uuid.h"
         _va23[0] = 1
         if (pyconf_check_headers(_va23)) {
-            if (pyconf_check_func("uuid_generate_time", "", "HAVE_UUID_GENERATE_TIME")) {
+            pyconf_checking("for uuid_generate_time")
+            found = (pyconf_check_func("uuid_generate_time", "", "HAVE_UUID_GENERATE_TIME") ? "yes" : "no")
+            pyconf_result(found)
+            if (((found != "") && (found != "no"))) {
                 have_uuid = "yes"
                 ac_cv_have_uuid_uuid_h = "yes"
             }
@@ -3787,7 +3840,7 @@ function u_detect_uuid(    LIBUUID_CFLAGS, LIBUUID_LIBS, ac_cv_have_uuid_generat
     }
 }
 
-function u_check_readline(    _i_h, _n_h, ac_cv_rl_append_history, ac_cv_rl_completion_display, ac_cv_rl_completion_matches, ac_cv_rl_pre_input_hook, ac_cv_rl_resize_terminal, ac_cv_rl_startup_hook_args, edit_cflags, edit_found, edit_libs, h, librl, pkg, preamble, preamble_parts_len, rl_cflags, rl_found, rl_includes, rl_libs, rl_raw, use_editline, with_readline, _as_14, preamble_parts) {
+function u_check_readline(    _i_h, _n_h, ac_cv_rl_append_history, ac_cv_rl_completion_display, ac_cv_rl_completion_matches, ac_cv_rl_pre_input_hook, ac_cv_rl_resize_terminal, ac_cv_rl_startup_hook_args, edit_cflags, edit_found, edit_libs, found, found_edit_h, found_rl_h, h, librl, pkg, preamble, preamble_parts_len, rl_cflags, rl_found, rl_includes, rl_libs, rl_raw, use_editline, with_readline, _as_14, preamble_parts) {
     delete _as_14
     delete preamble_parts
     pyconf_define_template("WITH_EDITLINE", "Define to build the readline module against libedit.")
@@ -3812,7 +3865,10 @@ function u_check_readline(    _i_h, _n_h, ac_cv_rl_append_history, ac_cv_rl_comp
             pyconf_save_env()
             V["CPPFLAGS"] = _str_strip(V["CPPFLAGS"] " " V["LIBREADLINE_CFLAGS"])
             V["LIBS"] = _str_strip(V["LIBS"] " " V["LIBREADLINE_LIBS"])
-            if (pyconf_check_header("readline/readline.h")) {
+            pyconf_checking("for readline/readline.h")
+            found_rl_h = (pyconf_check_header("readline/readline.h") ? "yes" : "no")
+            pyconf_result(found_rl_h)
+            if (((found_rl_h != "") && (found_rl_h != "no"))) {
                 if (pyconf_check_lib("readline", "readline", "", "")) {
                     rl_found = "yes"
                     rl_cflags = ((V["LIBREADLINE_CFLAGS"] != "") ? V["LIBREADLINE_CFLAGS"] : "")
@@ -3841,7 +3897,10 @@ function u_check_readline(    _i_h, _n_h, ac_cv_rl_append_history, ac_cv_rl_comp
             pyconf_save_env()
             V["CPPFLAGS"] = _str_strip(V["CPPFLAGS"] " " V["LIBEDIT_CFLAGS"])
             V["LIBS"] = _str_strip(V["LIBS"] " " V["LIBEDIT_LIBS"])
-            if (pyconf_check_header("editline/readline.h")) {
+            pyconf_checking("for editline/readline.h")
+            found_edit_h = (pyconf_check_header("editline/readline.h") ? "yes" : "no")
+            pyconf_result(found_edit_h)
+            if (((found_edit_h != "") && (found_edit_h != "no"))) {
                 if (pyconf_check_lib("edit", "readline", "", "")) {
                     edit_found = "yes"
                     edit_cflags = ((V["LIBEDIT_CFLAGS"] != "") ? V["LIBEDIT_CFLAGS"] : "")
@@ -3878,10 +3937,16 @@ function u_check_readline(    _i_h, _n_h, ac_cv_rl_append_history, ac_cv_rl_comp
         } else {
             rl_includes = "stdio.h" " " "readline/readline.h" " " "readline/history.h"
         }
-        if (pyconf_check_decl("rl_completion_append_character", rl_includes, "HAVE_DECL_RL_COMPLETION_APPEND_CHARACTER")) {
+        pyconf_checking("whether rl_completion_append_character is declared")
+        found = (pyconf_check_decl("rl_completion_append_character", rl_includes, "HAVE_DECL_RL_COMPLETION_APPEND_CHARACTER") ? "yes" : "no")
+        pyconf_result(found)
+        if (((found != "") && (found != "no"))) {
             pyconf_define("HAVE_RL_COMPLETION_APPEND_CHARACTER", 1, 0, "Define if you have readline 2.2")
         }
-        if (pyconf_check_decl("rl_completion_suppress_append", rl_includes, "HAVE_DECL_RL_COMPLETION_SUPPRESS_APPEND")) {
+        pyconf_checking("whether rl_completion_suppress_append is declared")
+        found = (pyconf_check_decl("rl_completion_suppress_append", rl_includes, "HAVE_DECL_RL_COMPLETION_SUPPRESS_APPEND") ? "yes" : "no")
+        pyconf_result(found)
+        if (((found != "") && (found != "no"))) {
             pyconf_define("HAVE_RL_COMPLETION_SUPPRESS_APPEND", 1, 0, "Define if you have rl_completion_suppress_append")
         }
         librl = ((V["LIBREADLINE"] != "") ? V["LIBREADLINE"] : "readline")
@@ -3909,7 +3974,10 @@ function u_check_readline(    _i_h, _n_h, ac_cv_rl_append_history, ac_cv_rl_comp
         if (((ac_cv_rl_completion_matches != "") && (ac_cv_rl_completion_matches != "no"))) {
             pyconf_define("HAVE_RL_COMPLETION_MATCHES", 1, 0, "Define if you have readline 4.2")
         }
-        if (pyconf_check_decl("rl_catch_signals", rl_includes, "HAVE_DECL_RL_CATCH_SIGNALS")) {
+        pyconf_checking("whether rl_catch_signals is declared")
+        found = (pyconf_check_decl("rl_catch_signals", rl_includes, "HAVE_DECL_RL_CATCH_SIGNALS") ? "yes" : "no")
+        pyconf_result(found)
+        if (((found != "") && (found != "no"))) {
             pyconf_define("HAVE_RL_CATCH_SIGNAL", 1, 0, "Define if you can turn off readline's signal handling.")
         }
         pyconf_checking("for append_history in -l" librl)
@@ -3918,7 +3986,8 @@ function u_check_readline(    _i_h, _n_h, ac_cv_rl_append_history, ac_cv_rl_comp
         if (((ac_cv_rl_append_history != "") && (ac_cv_rl_append_history != "no"))) {
             pyconf_define("HAVE_RL_APPEND_HISTORY", 1, 0, "Define if readline supports append_history")
         }
-        pyconf_check_type("rl_compdisp_func_t", rl_includes)
+        pyconf_checking("for rl_compdisp_func_t")
+        pyconf_result((pyconf_check_type("rl_compdisp_func_t", rl_includes) ? "yes" : "no"))
         pyconf_checking("if rl_startup_hook takes arguments")
         _n_h = split(rl_includes, _as_14, " ")
         for (_i_h = 1; (_i_h <= _n_h); _i_h = (_i_h + 1)) {
@@ -3937,7 +4006,7 @@ function u_check_readline(    _i_h, _n_h, ac_cv_rl_append_history, ac_cv_rl_comp
     }
 }
 
-function u_check_compression_libraries(    _found_bz2, _found_lzma, _found_zstd, have_zlib, ok, pkg, zlib_cflags, zlib_libs) {
+function u_check_compression_libraries(    found_bz2, found_bz2_h, found_lzma, found_lzma_h, found_zlib_h, found_zstd, have_zlib, ok, pkg, zlib_cflags, zlib_libs) {
     pyconf_define_template("HAVE_ZLIB_COPY", "Define if the zlib library has inflateCopy")
     pyconf_check_emscripten_port("ZLIB", "-sUSE_ZLIB")
     pkg = (pyconf_pkg_check_modules("ZLIB", "zlib >= 1.2.2.1") ? "yes" : "no")
@@ -3950,7 +4019,10 @@ function u_check_compression_libraries(    _found_bz2, _found_lzma, _found_zstd,
         pyconf_save_env()
         V["CPPFLAGS"] = _str_strip(V["CPPFLAGS"] " " V["ZLIB_CFLAGS"])
         V["LIBS"] = _str_strip(V["LIBS"] " " V["ZLIB_LIBS"])
-        if (pyconf_check_header("zlib.h")) {
+        pyconf_checking("for zlib.h")
+        found_zlib_h = (pyconf_check_header("zlib.h") ? "yes" : "no")
+        pyconf_result(found_zlib_h)
+        if (((found_zlib_h != "") && (found_zlib_h != "no"))) {
             if (pyconf_check_lib("z", "gzread", "", "")) {
                 have_zlib = "yes"
             } else {
@@ -3991,9 +4063,12 @@ function u_check_compression_libraries(    _found_bz2, _found_lzma, _found_zstd,
         pyconf_save_env()
         V["CPPFLAGS"] = _str_strip(V["CPPFLAGS"] " " V["BZIP2_CFLAGS"])
         V["LIBS"] = _str_strip(V["LIBS"] " " V["BZIP2_LIBS"])
-        _found_bz2 = ((pyconf_check_header("bzlib.h") && pyconf_check_lib("bz2", "BZ2_bzCompress", "", "")) ? "yes" : "no")
+        pyconf_checking("for bzlib.h")
+        found_bz2_h = (pyconf_check_header("bzlib.h") ? "yes" : "no")
+        pyconf_result(found_bz2_h)
+        found_bz2 = ((((found_bz2_h != "") && (found_bz2_h != "no")) && pyconf_check_lib("bz2", "BZ2_bzCompress", "", "")) ? "yes" : "no")
         pyconf_restore_env()
-        V["have_bzip2"] = _found_bz2
+        V["have_bzip2"] = found_bz2
         if (((V["have_bzip2"] != "") && (V["have_bzip2"] != "no"))) {
             V["BZIP2_CFLAGS"] = ((V["BZIP2_CFLAGS"] != "") ? V["BZIP2_CFLAGS"] : "")
             V["BZIP2_LIBS"] = ((V["BZIP2_LIBS"] != "") ? V["BZIP2_LIBS"] : "-lbz2")
@@ -4010,9 +4085,12 @@ function u_check_compression_libraries(    _found_bz2, _found_lzma, _found_zstd,
         pyconf_save_env()
         V["CPPFLAGS"] = _str_strip(V["CPPFLAGS"] " " V["LIBLZMA_CFLAGS"])
         V["LIBS"] = _str_strip(V["LIBS"] " " V["LIBLZMA_LIBS"])
-        _found_lzma = ((pyconf_check_header("lzma.h") && pyconf_check_lib("lzma", "lzma_easy_encoder", "", "")) ? "yes" : "no")
+        pyconf_checking("for lzma.h")
+        found_lzma_h = (pyconf_check_header("lzma.h") ? "yes" : "no")
+        pyconf_result(found_lzma_h)
+        found_lzma = ((((found_lzma_h != "") && (found_lzma_h != "no")) && pyconf_check_lib("lzma", "lzma_easy_encoder", "", "")) ? "yes" : "no")
         pyconf_restore_env()
-        V["have_liblzma"] = _found_lzma
+        V["have_liblzma"] = found_lzma
         if (((V["have_liblzma"] != "") && (V["have_liblzma"] != "no"))) {
             V["LIBLZMA_CFLAGS"] = ((V["LIBLZMA_CFLAGS"] != "") ? V["LIBLZMA_CFLAGS"] : "")
             V["LIBLZMA_LIBS"] = ((V["LIBLZMA_LIBS"] != "") ? V["LIBLZMA_LIBS"] : "-llzma")
@@ -4030,7 +4108,7 @@ function u_check_compression_libraries(    _found_bz2, _found_lzma, _found_zstd,
         V["CPPFLAGS"] = _str_strip(V["CPPFLAGS"] " " V["LIBZSTD_CFLAGS"])
         V["CFLAGS"] = _str_strip(V["CFLAGS"] " " V["LIBZSTD_CFLAGS"])
         V["LIBS"] = _str_strip(V["LIBS"] " " V["LIBZSTD_LIBS"])
-        _found_zstd = "no"
+        found_zstd = "no"
         if ((pyconf_search_libs("ZDICT_finalizeDictionary", "zstd") != "")) {
             pyconf_checking("ZSTD_VERSION_NUMBER >= 1.4.5")
             ok = (pyconf_compile_check("", "#include <zstd.h>\n\nint main(void) { \n    #if ZSTD_VERSION_NUMBER < 10405\n    #  error \"zstd version is too old\"\n    #endif; return 0; }") ? "yes" : "no")
@@ -4041,14 +4119,14 @@ function u_check_compression_libraries(    _found_bz2, _found_lzma, _found_zstd,
                 _va24[2] = "zdict.h"
                 _va24[0] = 2
                 if (pyconf_check_headers(_va24)) {
-                    _found_zstd = "yes"
+                    found_zstd = "yes"
                 }
             } else {
                 pyconf_result("no")
             }
         }
         pyconf_restore_env()
-        V["have_libzstd"] = _found_zstd
+        V["have_libzstd"] = found_zstd
         if (((V["have_libzstd"] != "") && (V["have_libzstd"] != "no"))) {
             V["LIBZSTD_CFLAGS"] = ((V["LIBZSTD_CFLAGS"] != "") ? V["LIBZSTD_CFLAGS"] : "")
             V["LIBZSTD_LIBS"] = ((V["LIBZSTD_LIBS"] != "") ? V["LIBZSTD_LIBS"] : "-lzstd")
@@ -4086,7 +4164,7 @@ function u__check_curses(lib, panel_lib,    lib_upper, panel_upper, pkg, pkg2) {
     }
 }
 
-function u_check_curses(    CURSES_INCLUDES, _have_any_curses_h, _i_fn, _i_h, _n_fn, ac_cv_search_initscr, ac_cv_search_update_panels, curses_cflags, curses_funcs, curses_have, curses_libs, fn, h, panel_cflags, panel_have, panel_libs, _al_15, _as_16) {
+function u_check_curses(    CURSES_INCLUDES, _i_fn, _i_h, _n_fn, ac_cv_search_initscr, ac_cv_search_update_panels, curses_cflags, curses_funcs, curses_have, curses_libs, fn, h, have_any_curses_h, panel_cflags, panel_have, panel_libs, _al_15, _as_16) {
     delete _al_15
     delete _as_16
     u__check_curses("ncursesw", "panelw")
@@ -4129,7 +4207,7 @@ function u_check_curses(    CURSES_INCLUDES, _have_any_curses_h, _i_fn, _i_h, _n
     panel_libs = V["PANEL_LIBS"]
     curses_cflags = V["CURSES_CFLAGS"]
     panel_cflags = V["PANEL_CFLAGS"]
-    _have_any_curses_h = "no"
+    have_any_curses_h = "no"
     _al_15[1] = "HAVE_NCURSESW_NCURSES_H"
     _al_15[2] = "HAVE_NCURSESW_CURSES_H"
     _al_15[3] = "HAVE_NCURSES_NCURSES_H"
@@ -4139,18 +4217,19 @@ function u_check_curses(    CURSES_INCLUDES, _have_any_curses_h, _i_fn, _i_h, _n
     for (_i_h = 1; (_i_h <= 6); _i_h = (_i_h + 1)) {
         h = _al_15[_i_h]
         if (pyconf_is_defined(h)) {
-            _have_any_curses_h = "yes"
+            have_any_curses_h = "yes"
             break
         }
     }
-    if (((_have_any_curses_h != "") && (_have_any_curses_h != "no"))) {
+    if (((have_any_curses_h != "") && (have_any_curses_h != "no"))) {
         curses_cflags = _str_strip(_str_replace(curses_cflags, "-D_XOPEN_SOURCE=600", ""))
         panel_cflags = _str_strip(_str_replace(panel_cflags, "-D_XOPEN_SOURCE=600", ""))
         if ((V["ac_sys_system"] == "Darwin")) {
             curses_cflags = _str_strip(curses_cflags " -D_XOPEN_SOURCE_EXTENDED=1")
         }
         CURSES_INCLUDES = "#define NCURSES_OPAQUE 0\n#if defined(HAVE_NCURSESW_NCURSES_H)\n#  include <ncursesw/ncurses.h>\n#elif defined(HAVE_NCURSESW_CURSES_H)\n#  include <ncursesw/curses.h>\n#elif defined(HAVE_NCURSES_NCURSES_H)\n#  include <ncurses/ncurses.h>\n#elif defined(HAVE_NCURSES_CURSES_H)\n#  include <ncurses/curses.h>\n#elif defined(HAVE_NCURSES_H)\n#  include <ncurses.h>\n#elif defined(HAVE_CURSES_H)\n#  include <curses.h>\n#endif\n"
-        pyconf_check_header("term.h", "", "", "HAVE_TERM_H", "ac_cv_header_term_h")
+        pyconf_checking("for term.h")
+        pyconf_result((pyconf_check_header("term.h") ? "yes" : "no"))
         if (pyconf_compile_check("", CURSES_INCLUDES "\nint main(void) { int rtn; rtn = mvwdelch(0,0,0); return 0; }")) {
             pyconf_define("MVWDELCH_IS_EXPRESSION", 1, 0, "Define if mvwdelch in curses.h is an expression.")
         }
@@ -4989,7 +5068,7 @@ function u__setup_macos_deployment_target(    _tmp_split, arch, cur_target, cur_
 }
 
 # --- conf_math ---
-function u_check_math_library(    with_libc, with_libm) {
+function u_check_math_library(    found, with_libc, with_libm) {
     v_export("LIBM")
     if ((V["ac_sys_system"] != "Darwin")) {
         V["LIBM"] = "-lm"
@@ -5027,7 +5106,10 @@ function u_check_math_library(    with_libc, with_libm) {
     } else {
         pyconf_result("default LIBC=\"" V["LIBC"] "\"")
     }
-    if ((!pyconf_check_func("__fpu_control", "", "HAVE___FPU_CONTROL"))) {
+    pyconf_checking("for __fpu_control")
+    found = (pyconf_check_func("__fpu_control", "", "HAVE___FPU_CONTROL") ? "yes" : "no")
+    pyconf_result(found)
+    if ((!((found != "") && (found != "no")))) {
         pyconf_check_lib("ieee", "__fpu_control")
     }
 }
@@ -5090,7 +5172,7 @@ function u_check_gcc_asm_and_floating_point(    ac_cv_gcc_asm_for_mc68881, ac_cv
     }
 }
 
-function u_check_c99_math(    _i_mfunc, libs_save, mfunc, _al_18) {
+function u_check_c99_math(    _i_mfunc, found, libs_save, mfunc, _al_18) {
     delete _al_18
     libs_save = V["LIBS"]
     V["LIBS"] = _str_strip(V["LIBS"] " " V["LIBM"])
@@ -5104,7 +5186,10 @@ function u_check_c99_math(    _i_mfunc, libs_save, mfunc, _al_18) {
     _al_18[8] = "log2"
     for (_i_mfunc = 1; (_i_mfunc <= 8); _i_mfunc = (_i_mfunc + 1)) {
         mfunc = _al_18[_i_mfunc]
-        if ((!pyconf_check_func(mfunc, "", ""))) {
+        pyconf_checking("for " mfunc)
+        found = (pyconf_check_func(mfunc, "", "") ? "yes" : "no")
+        pyconf_result(found)
+        if ((!((found != "") && (found != "no")))) {
             pyconf_error("Python requires C99 compatible libm")
         }
     }
@@ -5132,17 +5217,21 @@ function u_check_big_digits(    big_digits_raw, enable_big_digits) {
     }
 }
 
-function u_check_wchar(    _i_line, _n_line, ac_cv_wchar_t_signed, line, os_name, os_release_content, wchar_size, wchar_unsigned, _as_19, _split_tmp) {
+function u_check_wchar(    _i_line, _n_line, ac_cv_wchar_t_signed, has_wchar, line, os_name, os_release_content, wchar_size, wchar_unsigned, _as_19, _split_tmp) {
     delete _as_19
     delete _split_tmp
-    if (pyconf_check_header("wchar.h")) {
+    pyconf_checking("for wchar.h")
+    has_wchar = (pyconf_check_header("wchar.h") ? "yes" : "no")
+    pyconf_result(has_wchar)
+    if (((has_wchar != "") && (has_wchar != "no"))) {
         pyconf_define("HAVE_WCHAR_H", 1, 0, "Define if the compiler provides a wchar.h header file.")
         V["wchar_h"] = "yes"
     } else {
         V["wchar_h"] = "no"
     }
     if (((V["wchar_h"] != "") && (V["wchar_h"] != "no"))) {
-        pyconf_check_sizeof("wchar_t", 4, "wchar.h")
+        pyconf_checking("for sizeof wchar_t")
+        pyconf_result(pyconf_check_sizeof("wchar_t", 4, "wchar.h"))
         pyconf_checking("whether wchar_t is signed")
         ac_cv_wchar_t_signed = (pyconf_run_check("", "\n    #include <wchar.h>\n    int main()\n    {\n        return ((((wchar_t) -1) < ((wchar_t) 0)) ? 0 : 1);\n    }\n    ", "", "", 1) ? "yes" : "no")
         pyconf_result(ac_cv_wchar_t_signed)
@@ -5714,14 +5803,16 @@ function u_check_can_sockets() {
 }
 
 function u__check_netdb_func(_func_) {
-    pyconf_check_func(_func_, "netdb.h", "")
+    pyconf_checking("for " _func_)
+    pyconf_result((pyconf_check_func(_func_, "netdb.h", "") ? "yes" : "no"))
 }
 
 function u__check_socket_func(_func_) {
-    pyconf_check_func(_func_, "sys/types.h sys/socket.h netinet/in.h arpa/inet.h", "")
+    pyconf_checking("for " _func_)
+    pyconf_result((pyconf_check_func(_func_, "sys/types.h sys/socket.h netinet/in.h arpa/inet.h", "") ? "yes" : "no"))
 }
 
-function u_check_netdb_socket_funcs(    _i_f, _pyconf_cond_grp_h, f, _al_23, _al_24) {
+function u_check_netdb_socket_funcs(    _i_f, f, _al_23, _al_24) {
     delete _al_23
     delete _al_24
     _al_23[1] = "hstrerror"
@@ -5751,11 +5842,8 @@ function u_check_netdb_socket_funcs(    _i_f, _pyconf_cond_grp_h, f, _al_23, _al
         f = _al_24[_i_f]
         u__check_socket_func(f)
     }
-    _pyconf_cond_grp_h = ""
-    if ((CACHE["ac_cv_header_grp_h"] == "yes")) {
-        _pyconf_cond_grp_h = "grp.h"
-    }
-    pyconf_check_func("setgroups", "unistd.h" " " _pyconf_cond_grp_h, "HAVE_SETGROUPS")
+    pyconf_checking("for setgroups")
+    pyconf_result((pyconf_check_func("setgroups", "unistd.h" " " ((CACHE["ac_cv_header_grp_h"] == "yes") ? "grp.h" : ""), "HAVE_SETGROUPS") ? "yes" : "no"))
 }
 
 function u_check_getaddrinfo(    GETADDRINFO_TEST, ac_cv_buggy_getaddrinfo, ac_cv_func_getaddrinfo, ok) {
@@ -5791,12 +5879,16 @@ function u_check_getaddrinfo(    GETADDRINFO_TEST, ac_cv_buggy_getaddrinfo, ac_c
     } else {
         pyconf_define("HAVE_GETADDRINFO", 1, 0, "Define if you have the getaddrinfo function.")
     }
-    pyconf_check_func("getnameinfo", "", "HAVE_GETNAMEINFO")
+    pyconf_checking("for getnameinfo")
+    pyconf_result((pyconf_check_func("getnameinfo", "", "HAVE_GETNAMEINFO") ? "yes" : "no"))
 }
 
-function u_check_gethostbyname_r(    old_cflags) {
+function u_check_gethostbyname_r(    found, old_cflags) {
     pyconf_define_template("HAVE_GETHOSTBYNAME_R", "Define this if you have some version of gethostbyname_r()")
-    if (pyconf_check_func("gethostbyname_r", "", "HAVE_GETHOSTBYNAME_R")) {
+    pyconf_checking("for gethostbyname_r")
+    found = (pyconf_check_func("gethostbyname_r", "", "HAVE_GETHOSTBYNAME_R") ? "yes" : "no")
+    pyconf_result(found)
+    if (((found != "") && (found != "no"))) {
         pyconf_define("HAVE_GETHOSTBYNAME_R", 1, 0, "")
         old_cflags = V["CFLAGS"]
         V["CFLAGS"] = _str_strip(V["CFLAGS"] " " V["MY_CPPFLAGS"] " " V["MY_THREAD_CPPFLAGS"] " " V["MY_CFLAGS"])
@@ -5826,7 +5918,8 @@ function u_check_gethostbyname_r(    old_cflags) {
         }
         V["CFLAGS"] = old_cflags
     } else {
-        pyconf_check_func("gethostbyname", "", "HAVE_GETHOSTBYNAME")
+        pyconf_checking("for gethostbyname")
+        pyconf_result((pyconf_check_func("gethostbyname", "", "HAVE_GETHOSTBYNAME") ? "yes" : "no"))
     }
     v_export("HAVE_GETHOSTBYNAME_R_6_ARG")
     v_export("HAVE_GETHOSTBYNAME_R_5_ARG")
@@ -5835,8 +5928,11 @@ function u_check_gethostbyname_r(    old_cflags) {
     v_export("HAVE_GETHOSTBYNAME")
 }
 
-function u_check_socklen_t() {
-    if ((!pyconf_check_type("socklen_t", "sys/types.h sys/socket.h"))) {
+function u_check_socklen_t(    found) {
+    pyconf_checking("for socklen_t")
+    found = (pyconf_check_type("socklen_t", "sys/types.h sys/socket.h") ? "yes" : "no")
+    pyconf_result(found)
+    if ((!((found != "") && (found != "no")))) {
         pyconf_define("socklen_t", "int", 1, "Define to 'int' if <sys/socket.h> does not define.")
     }
 }
@@ -5894,7 +5990,7 @@ function u_setup_lto(    lto_val) {
             V["Py_LTO"] = "false"
             pyconf_result("no")
         } else {
-            pyconf_error("error: unknown lto option: '" lto_val "'")
+            pyconf_error("unknown lto option: '" lto_val "'")
         }
     } else {
         pyconf_result("no")
@@ -5911,13 +6007,13 @@ function u__setup_lto_flags() {
         u__setup_lto_clang()
     } else if ((V["ac_cv_cc_name"] == "emcc")) {
         if ((V["Py_LTO_POLICY"] != "default")) {
-            pyconf_error("error: emcc supports only default lto.")
+            pyconf_error("emcc supports only default lto.")
         }
         V["LTOFLAGS"] = "-flto"
         V["LTOCFLAGS"] = "-flto"
     } else if ((V["ac_cv_cc_name"] == "gcc")) {
         if ((V["Py_LTO_POLICY"] == "thin")) {
-            pyconf_error("error: thin lto is not supported under gcc compiler.")
+            pyconf_error("thin lto is not supported under gcc compiler.")
         }
         V["LDFLAGS_NOLTO"] = "-fno-lto"
         if (_str_startswith(V["ac_sys_system"], "Darwin")) {
@@ -5962,7 +6058,7 @@ function u__setup_lto_clang(    LLVM_AR, LLVM_AR_FOUND, xcrun_out, xcrun_status,
         }
     }
     if ((LLVM_AR_FOUND == "not-found")) {
-        pyconf_error("error: llvm-ar is required for a --with-lto build with clang but could not be found.")
+        pyconf_error("llvm-ar is required for a --with-lto build with clang but could not be found.")
     }
     V["AR"] = LLVM_AR
     if (_str_startswith(V["ac_sys_system"], "Darwin")) {
@@ -6029,7 +6125,7 @@ function u_setup_pgo_flags(    LLVM_PROF_FOUND, xcrun_out, xcrun_status, _ar_26)
         if ((LLVM_PROF_FOUND == "not-found")) {
             V["LLVM_PROF_ERR"] = "yes"
             if (((V["REQUIRE_PGO"] != "") && (V["REQUIRE_PGO"] != "no"))) {
-                pyconf_error("error: llvm-profdata is required for a --enable-optimizations build but could not be found.")
+                pyconf_error("llvm-profdata is required for a --enable-optimizations build but could not be found.")
             }
         }
     } else if ((V["ac_cv_cc_name"] == "gcc")) {
@@ -6079,13 +6175,13 @@ function u__setup_bolt_tools() {
     if ((((V["LLVM_BOLT"] != "") && (V["LLVM_BOLT"] != "no")) && pyconf_is_executable(V["LLVM_BOLT"]))) {
         pyconf_result("Found llvm-bolt")
     } else {
-        pyconf_error("error: llvm-bolt is required for a --enable-bolt build but could not be found.")
+        pyconf_error("llvm-bolt is required for a --enable-bolt build but could not be found.")
     }
     V["MERGE_FDATA"] = pyconf_check_prog("merge-fdata", V["llvm_path"], "")
     if ((((V["MERGE_FDATA"] != "") && (V["MERGE_FDATA"] != "no")) && pyconf_is_executable(V["MERGE_FDATA"]))) {
         pyconf_result("Found merge-fdata")
     } else {
-        pyconf_error("error: merge-fdata is required for a --enable-bolt build but could not be found.")
+        pyconf_error("merge-fdata is required for a --enable-bolt build but could not be found.")
     }
 }
 
@@ -6581,22 +6677,34 @@ function u__define_pr_set_vma_anon_name() {
     pyconf_define("HAVE_PR_SET_VMA_ANON_NAME", 1, 0, "Define if you have the 'PR_SET_VMA_ANON_NAME' constant.")
 }
 
-function u_check_declarations() {
-    if (pyconf_check_decl("MAXLOGNAME", "sys/param.h", "HAVE_DECL_MAXLOGNAME")) {
+function u_check_declarations(    found) {
+    pyconf_checking("whether MAXLOGNAME is declared")
+    found = (pyconf_check_decl("MAXLOGNAME", "sys/param.h", "HAVE_DECL_MAXLOGNAME") ? "yes" : "no")
+    pyconf_result(found)
+    if (((found != "") && (found != "no"))) {
         u__define_maxlogname()
     }
-    if (pyconf_check_decl("UT_NAMESIZE", "utmp.h", "HAVE_DECL_UT_NAMESIZE")) {
+    pyconf_checking("whether UT_NAMESIZE is declared")
+    found = (pyconf_check_decl("UT_NAMESIZE", "utmp.h", "HAVE_DECL_UT_NAMESIZE") ? "yes" : "no")
+    pyconf_result(found)
+    if (((found != "") && (found != "no"))) {
         u__define_ut_namesize()
     }
     if ((V["ac_cv_libc"] != "musl")) {
-        if (pyconf_check_decl("PR_SET_VMA_ANON_NAME", "linux/prctl.h sys/prctl.h", "HAVE_DECL_PR_SET_VMA_ANON_NAME")) {
+        pyconf_checking("whether PR_SET_VMA_ANON_NAME is declared")
+        found = (pyconf_check_decl("PR_SET_VMA_ANON_NAME", "linux/prctl.h sys/prctl.h", "HAVE_DECL_PR_SET_VMA_ANON_NAME") ? "yes" : "no")
+        pyconf_result(found)
+        if (((found != "") && (found != "no"))) {
             u__define_pr_set_vma_anon_name()
         }
     }
 }
 
-function u_check_pty_and_misc_funcs() {
-    if ((!pyconf_check_func("openpty", "", "HAVE_OPENPTY"))) {
+function u_check_pty_and_misc_funcs(    found) {
+    pyconf_checking("for openpty")
+    found = (pyconf_check_func("openpty", "", "HAVE_OPENPTY") ? "yes" : "no")
+    pyconf_result(found)
+    if ((!((found != "") && (found != "no")))) {
         if (pyconf_check_lib("util", "openpty", "", "")) {
             pyconf_define("HAVE_OPENPTY", 1, 0, "")
             V["LIBS"] = V["LIBS"] " -lutil"
@@ -6608,7 +6716,10 @@ function u_check_pty_and_misc_funcs() {
     if ((pyconf_search_libs("login_tty", "util") != "")) {
         pyconf_define("HAVE_LOGIN_TTY", 1, 0, "Define to 1 if you have the `login_tty' function.")
     }
-    if ((!pyconf_check_func("forkpty", "", "HAVE_FORKPTY"))) {
+    pyconf_checking("for forkpty")
+    found = (pyconf_check_func("forkpty", "", "HAVE_FORKPTY") ? "yes" : "no")
+    pyconf_result(found)
+    if ((!((found != "") && (found != "no")))) {
         if (pyconf_check_lib("util", "forkpty", "", "")) {
             pyconf_define("HAVE_FORKPTY", 1, 0, "")
             V["LIBS"] = V["LIBS"] " -lutil"
@@ -6635,20 +6746,29 @@ function u_check_pty_and_misc_funcs() {
     _va70[1] = "dup2"
     _va70[0] = 1
     pyconf_replace_funcs(_va70)
-    if (pyconf_check_func("getpgrp", "", "HAVE_GETPGRP")) {
+    pyconf_checking("for getpgrp")
+    found = (pyconf_check_func("getpgrp", "", "HAVE_GETPGRP") ? "yes" : "no")
+    pyconf_result(found)
+    if (((found != "") && (found != "no"))) {
         if (pyconf_compile_check("", "#include <unistd.h>\n\nint main(void) { getpgrp(0); return 0; }")) {
             pyconf_define("GETPGRP_HAVE_ARG", 1, 0, "Define if getpgrp() must be called as getpgrp(0).")
         }
     }
-    if (pyconf_check_func("setpgrp", "", "HAVE_SETPGRP")) {
+    pyconf_checking("for setpgrp")
+    found = (pyconf_check_func("setpgrp", "", "HAVE_SETPGRP") ? "yes" : "no")
+    pyconf_result(found)
+    if (((found != "") && (found != "no"))) {
         if (pyconf_compile_check("", "#include <unistd.h>\n\nint main(void) { setpgrp(0,0); return 0; }")) {
             pyconf_define("SETPGRP_HAVE_ARG", 1, 0, "Define if setpgrp() must be called as setpgrp(0, 0).")
         }
     }
 }
 
-function u_check_clock_functions(    android_api, skip_clock_nanosleep) {
-    if ((!pyconf_check_func("clock_gettime", "", "HAVE_CLOCK_GETTIME"))) {
+function u_check_clock_functions(    android_api, found, skip_clock_nanosleep) {
+    pyconf_checking("for clock_gettime")
+    found = (pyconf_check_func("clock_gettime", "", "HAVE_CLOCK_GETTIME") ? "yes" : "no")
+    pyconf_result(found)
+    if ((!((found != "") && (found != "no")))) {
         if (pyconf_check_lib("rt", "clock_gettime", "", "")) {
             V["LIBS"] = V["LIBS"] " -lrt"
             pyconf_define("HAVE_CLOCK_GETTIME", 1, 0, "")
@@ -6657,13 +6777,19 @@ function u_check_clock_functions(    android_api, skip_clock_nanosleep) {
         }
     }
     v_export("TIMEMODULE_LIB")
-    if ((!pyconf_check_func("clock_getres", "", "HAVE_CLOCK_GETRES"))) {
+    pyconf_checking("for clock_getres")
+    found = (pyconf_check_func("clock_getres", "", "HAVE_CLOCK_GETRES") ? "yes" : "no")
+    pyconf_result(found)
+    if ((!((found != "") && (found != "no")))) {
         if (pyconf_check_lib("rt", "clock_getres", "", "")) {
             pyconf_define("HAVE_CLOCK_GETRES", 1, 0, "")
         }
     }
     if ((!((V["ac_sys_system"] == "Linux-android") || (V["ac_sys_system"] == "iOS")))) {
-        if ((!pyconf_check_func("clock_settime", "", "HAVE_CLOCK_SETTIME"))) {
+        pyconf_checking("for clock_settime")
+        found = (pyconf_check_func("clock_settime", "", "HAVE_CLOCK_SETTIME") ? "yes" : "no")
+        pyconf_result(found)
+        if ((!((found != "") && (found != "no")))) {
             if (pyconf_check_lib("rt", "clock_settime", "", "")) {
                 pyconf_define("HAVE_CLOCK_SETTIME", 1, 0, "")
             }
@@ -6672,20 +6798,26 @@ function u_check_clock_functions(    android_api, skip_clock_nanosleep) {
     android_api = ((V["ANDROID_API_LEVEL"] != "") ? V["ANDROID_API_LEVEL"] : "0")
     skip_clock_nanosleep = (((V["ac_sys_system"] == "Linux-android") && (android_api < 23)) ? "yes" : "no")
     if ((!((skip_clock_nanosleep != "") && (skip_clock_nanosleep != "no")))) {
-        if ((!pyconf_check_func("clock_nanosleep", "", "HAVE_CLOCK_NANOSLEEP"))) {
+        pyconf_checking("for clock_nanosleep")
+        found = (pyconf_check_func("clock_nanosleep", "", "HAVE_CLOCK_NANOSLEEP") ? "yes" : "no")
+        pyconf_result(found)
+        if ((!((found != "") && (found != "no")))) {
             if (pyconf_check_lib("rt", "clock_nanosleep", "", "")) {
                 pyconf_define("HAVE_CLOCK_NANOSLEEP", 1, 0, "")
             }
         }
     }
-    if ((!pyconf_check_func("nanosleep", "", "HAVE_NANOSLEEP"))) {
+    pyconf_checking("for nanosleep")
+    found = (pyconf_check_func("nanosleep", "", "HAVE_NANOSLEEP") ? "yes" : "no")
+    pyconf_result(found)
+    if ((!((found != "") && (found != "no")))) {
         if (pyconf_check_lib("rt", "nanosleep", "", "")) {
             pyconf_define("HAVE_NANOSLEEP", 1, 0, "")
         }
     }
 }
 
-function u_check_structs(    _i_m, ac_cv_header_time_altzone, ac_cv_struct_addrinfo, ac_cv_struct_sockaddr_alg, ac_cv_struct_sockaddr_storage, m, _al_29, _al_30) {
+function u_check_structs(    _i_m, ac_cv_header_time_altzone, ac_cv_struct_addrinfo, ac_cv_struct_sockaddr_alg, ac_cv_struct_sockaddr_storage, found, m, _al_29, _al_30) {
     delete _al_29
     delete _al_30
     pyconf_check_struct_tm()
@@ -6698,11 +6830,15 @@ function u_check_structs(    _i_m, ac_cv_header_time_altzone, ac_cv_struct_addri
     _al_29[6] = "struct stat.st_blocks"
     for (_i_m = 1; (_i_m <= 6); _i_m = (_i_m + 1)) {
         m = _al_29[_i_m]
-        pyconf_check_member(m, "sys/types.h sys/stat.h")
+        pyconf_checking("for " m)
+        found = (pyconf_check_member(m, "sys/types.h sys/stat.h") ? "yes" : "no")
+        pyconf_result(found)
     }
     pyconf_check_member("struct passwd.pw_gecos", "sys/types.h pwd.h", "HAVE_STRUCT_PASSWD_PW_GECOS")
     pyconf_check_member("struct passwd.pw_passwd", "sys/types.h pwd.h", "HAVE_STRUCT_PASSWD_PW_PASSWD")
-    pyconf_check_member("siginfo_t.si_band", "signal.h")
+    pyconf_checking("for siginfo_t.si_band")
+    found = (pyconf_check_member("siginfo_t.si_band", "signal.h") ? "yes" : "no")
+    pyconf_result(found)
     if ((V["ac_cv_func_statx"] == "yes")) {
         _al_30[1] = "struct statx.stx_mnt_id"
         _al_30[2] = "struct statx.stx_dio_mem_align"
@@ -6712,7 +6848,8 @@ function u_check_structs(    _i_m, ac_cv_header_time_altzone, ac_cv_struct_addri
         _al_30[6] = "struct statx.stx_atomic_write_unit_max_opt"
         for (_i_m = 1; (_i_m <= 6); _i_m = (_i_m + 1)) {
             m = _al_30[_i_m]
-            pyconf_check_member(m, "")
+            pyconf_checking("for " m)
+            pyconf_result((pyconf_check_member(m, "") ? "yes" : "no"))
         }
     }
     pyconf_checking("for time.h that defines altzone")
@@ -6747,13 +6884,19 @@ function u_check_aix_pipe_buf() {
     }
 }
 
-function u_check_posix_shmem(    have_posix_shmem, posixshmem_libs, shm_open_result) {
+function u_check_posix_shmem(    have_posix_shmem, posixshmem_libs, shm_open, shm_open_result, shm_unlink) {
     V["POSIXSHMEM_CFLAGS"] = "-I$(srcdir)/Modules/_multiprocessing"
     V["POSIXSHMEM_LIBS"] = ""
     pyconf_save_env()
     shm_open_result = pyconf_search_libs("shm_open", "rt")
     posixshmem_libs = ((shm_open_result == "-lrt") ? "-lrt" : "")
-    have_posix_shmem = ((pyconf_check_func("shm_open", "sys/mman.h", "HAVE_SHM_OPEN") && pyconf_check_func("shm_unlink", "sys/mman.h", "HAVE_SHM_UNLINK")) ? "yes" : "no")
+    pyconf_checking("for shm_open")
+    shm_open = (pyconf_check_func("shm_open", "sys/mman.h", "HAVE_SHM_OPEN") ? "yes" : "no")
+    pyconf_result(shm_open)
+    pyconf_checking("for shm_unlink")
+    shm_unlink = (pyconf_check_func("shm_unlink", "sys/mman.h", "HAVE_SHM_UNLINK") ? "yes" : "no")
+    pyconf_result(shm_unlink)
+    have_posix_shmem = ((((shm_open != "") && (shm_open != "no")) && ((shm_unlink != "") && (shm_unlink != "no"))) ? "yes" : "no")
     pyconf_restore_env()
     V["POSIXSHMEM_LIBS"] = posixshmem_libs
     V["have_posix_shmem"] = have_posix_shmem
@@ -6790,11 +6933,13 @@ function u_check_posix_functions(    ANDROID_API_LEVEL, _i_name, blocked_len, ma
     posix_funcs[0] = posix_funcs_len
     pyconf_check_funcs(posix_funcs)
     if (_str_startswith(V["ac_sys_system"], "Linux")) {
-        pyconf_check_func("statx", "", "HAVE_STATX")
+        pyconf_checking("for statx")
+        pyconf_result((pyconf_check_func("statx", "", "HAVE_STATX") ? "yes" : "no"))
     }
     machdep = V["MACHDEP"]
     if ((machdep != "linux")) {
-        pyconf_check_func("lchmod", "", "HAVE_LCHMOD")
+        pyconf_checking("for lchmod")
+        pyconf_result((pyconf_check_func("lchmod", "", "HAVE_LCHMOD") ? "yes" : "no"))
     }
     if ((V["ac_sys_system"] != "iOS")) {
         delete _va71
@@ -6806,54 +6951,57 @@ function u_check_posix_functions(    ANDROID_API_LEVEL, _i_name, blocked_len, ma
     }
 }
 
-function u_check_special_functions(    _pyconf_cond_sys_eventfd_h, _pyconf_cond_sys_memfd_h, _pyconf_cond_sys_mman_h, _pyconf_cond_sys_timerfd_h, ac_cv_have_chflags, ac_cv_have_lchflags, disable_epoll, has_dirfd) {
+function u_check_special_functions(    _func, _i__func, ac_cv_have_chflags, ac_cv_have_lchflags, disable_epoll, has_dirfd, have_flock, _al_31) {
+    delete _al_31
     pyconf_checking("whether dirfd is declared")
     has_dirfd = (pyconf_check_decl("dirfd", "sys/types.h dirent.h", "HAVE_DECL_DIRFD") ? "yes" : "no")
     pyconf_result((((has_dirfd != "") && (has_dirfd != "no")) ? "yes" : "no"))
     if (((has_dirfd != "") && (has_dirfd != "no"))) {
         pyconf_define("HAVE_DIRFD", 1, 0, "Define if you have the 'dirfd' function or macro.")
     }
-    pyconf_check_func("chroot", "unistd.h", "HAVE_CHROOT")
-    pyconf_check_func("link", "unistd.h", "HAVE_LINK")
-    pyconf_check_func("symlink", "unistd.h", "HAVE_SYMLINK")
-    pyconf_check_func("fchdir", "unistd.h", "HAVE_FCHDIR")
-    pyconf_check_func("fsync", "unistd.h", "HAVE_FSYNC")
-    pyconf_check_func("fdatasync", "unistd.h", "HAVE_FDATASYNC")
+    _al_31[1] = "chroot"
+    _al_31[2] = "link"
+    _al_31[3] = "symlink"
+    _al_31[4] = "fchdir"
+    _al_31[5] = "fsync"
+    _al_31[6] = "fdatasync"
+    for (_i__func = 1; (_i__func <= 6); _i__func = (_i__func + 1)) {
+        _func = _al_31[_i__func]
+        pyconf_checking("for " _func)
+        pyconf_result((pyconf_check_func(_func, "unistd.h", "") ? "yes" : "no"))
+    }
     disable_epoll = (pyconf_option_is_no("enable_epoll") ? "yes" : "no")
     pyconf_checking("for --disable-epoll")
     pyconf_result((((disable_epoll != "") && (disable_epoll != "no")) ? "yes" : "no"))
     if ((!((disable_epoll != "") && (disable_epoll != "no")))) {
-        pyconf_check_func("epoll_create", "sys/epoll.h", "HAVE_EPOLL")
-        pyconf_check_func("epoll_create1", "sys/epoll.h", "HAVE_EPOLL_CREATE1")
+        pyconf_checking("for epoll_create")
+        pyconf_result((pyconf_check_func("epoll_create", "sys/epoll.h", "HAVE_EPOLL") ? "yes" : "no"))
+        pyconf_checking("for epoll_create1")
+        pyconf_result((pyconf_check_func("epoll_create1", "sys/epoll.h", "HAVE_EPOLL_CREATE1") ? "yes" : "no"))
     }
-    pyconf_check_func("kqueue", "sys/types.h sys/event.h", "HAVE_KQUEUE")
-    pyconf_check_func("prlimit", "sys/time.h sys/resource.h", "HAVE_PRLIMIT")
-    pyconf_check_func("_dyld_shared_cache_contains_path", "mach-o/dyld.h", "HAVE_DYLD_SHARED_CACHE_CONTAINS_PATH")
-    _pyconf_cond_sys_mman_h = ""
-    if ((CACHE["ac_cv_header_sys_mman_h"] == "yes")) {
-        _pyconf_cond_sys_mman_h = "sys/mman.h"
-    }
-    _pyconf_cond_sys_memfd_h = ""
-    if ((CACHE["ac_cv_header_sys_memfd_h"] == "yes")) {
-        _pyconf_cond_sys_memfd_h = "sys/memfd.h"
-    }
-    pyconf_check_func("memfd_create", " " _pyconf_cond_sys_mman_h " " _pyconf_cond_sys_memfd_h, "HAVE_MEMFD_CREATE")
-    _pyconf_cond_sys_eventfd_h = ""
-    if ((CACHE["ac_cv_header_sys_eventfd_h"] == "yes")) {
-        _pyconf_cond_sys_eventfd_h = "sys/eventfd.h"
-    }
-    pyconf_check_func("eventfd", " " _pyconf_cond_sys_eventfd_h, "HAVE_EVENTFD")
-    _pyconf_cond_sys_timerfd_h = ""
-    if ((CACHE["ac_cv_header_sys_timerfd_h"] == "yes")) {
-        _pyconf_cond_sys_timerfd_h = "sys/timerfd.h"
-    }
-    pyconf_check_func("timerfd_create", " " _pyconf_cond_sys_timerfd_h, "HAVE_TIMERFD_CREATE")
-    pyconf_check_func("ctermid_r", "stdio.h", "HAVE_CTERMID_R")
-    pyconf_check_func("getpagesize", "unistd.h", "HAVE_GETPAGESIZE")
+    pyconf_checking("for kqueue")
+    pyconf_result((pyconf_check_func("kqueue", "sys/types.h sys/event.h", "HAVE_KQUEUE") ? "yes" : "no"))
+    pyconf_checking("for prlimit")
+    pyconf_result((pyconf_check_func("prlimit", "sys/time.h sys/resource.h", "HAVE_PRLIMIT") ? "yes" : "no"))
+    pyconf_checking("for _dyld_shared_cache_contains_path")
+    pyconf_result((pyconf_check_func("_dyld_shared_cache_contains_path", "mach-o/dyld.h", "HAVE_DYLD_SHARED_CACHE_CONTAINS_PATH") ? "yes" : "no"))
+    pyconf_checking("for memfd_create")
+    pyconf_result((pyconf_check_func("memfd_create", " " ((CACHE["ac_cv_header_sys_mman_h"] == "yes") ? "sys/mman.h" : "") " " ((CACHE["ac_cv_header_sys_memfd_h"] == "yes") ? "sys/memfd.h" : ""), "HAVE_MEMFD_CREATE") ? "yes" : "no"))
+    pyconf_checking("for eventfd")
+    pyconf_result((pyconf_check_func("eventfd", " " ((CACHE["ac_cv_header_sys_eventfd_h"] == "yes") ? "sys/eventfd.h" : ""), "HAVE_EVENTFD") ? "yes" : "no"))
+    pyconf_checking("for timerfd_create")
+    pyconf_result((pyconf_check_func("timerfd_create", " " ((CACHE["ac_cv_header_sys_timerfd_h"] == "yes") ? "sys/timerfd.h" : ""), "HAVE_TIMERFD_CREATE") ? "yes" : "no"))
+    pyconf_checking("for ctermid_r")
+    pyconf_result((pyconf_check_func("ctermid_r", "stdio.h", "HAVE_CTERMID_R") ? "yes" : "no"))
+    pyconf_checking("for getpagesize")
+    pyconf_result((pyconf_check_func("getpagesize", "unistd.h", "HAVE_GETPAGESIZE") ? "yes" : "no"))
     pyconf_checking("for flock declaration")
     if (pyconf_compile_check("", "#include <sys/file.h>\nint main(void) { void *p = flock; return 0; }")) {
         pyconf_result("yes")
-        if ((!pyconf_check_func("flock", "", "HAVE_FLOCK"))) {
+        pyconf_checking("for flock")
+        have_flock = (pyconf_check_func("flock", "", "HAVE_FLOCK") ? "yes" : "no")
+        pyconf_result(have_flock)
+        if ((!((have_flock != "") && (have_flock != "no")))) {
             if (pyconf_check_lib("bsd", "flock", "", "")) {
                 V["FCNTL_LIBS"] = "-lbsd"
             }
@@ -6889,7 +7037,9 @@ function u_check_special_functions(    _pyconf_cond_sys_eventfd_h, _pyconf_cond_
     pyconf_checking("for chflags")
     ac_cv_have_chflags = (pyconf_run_check("", "#include <sys/stat.h>\n#include <unistd.h>\nint main(int argc, char *argv[]) {\n  if(chflags(argv[0], 0) != 0) return 1;\n  return 0;\n}\n", "", "", 0) ? "yes" : "no")
     if ((ac_cv_have_chflags == "cross")) {
+        pyconf_checking("for chflags")
         ac_cv_have_chflags = (pyconf_check_func("chflags", "", "HAVE_CHFLAGS") ? "yes" : "no")
+        pyconf_result(ac_cv_have_chflags)
     }
     pyconf_result(ac_cv_have_chflags)
     if (((ac_cv_have_chflags != "") && (ac_cv_have_chflags != "no"))) {
@@ -6898,7 +7048,9 @@ function u_check_special_functions(    _pyconf_cond_sys_eventfd_h, _pyconf_cond_
     pyconf_checking("for lchflags")
     ac_cv_have_lchflags = (pyconf_run_check("", "#include <sys/stat.h>\n#include <unistd.h>\nint main(int argc, char *argv[]) {\n  if(lchflags(argv[0], 0) != 0) return 1;\n  return 0;\n}\n", "", "", 0) ? "yes" : "no")
     if ((ac_cv_have_lchflags == "cross")) {
+        pyconf_checking("for lchflags")
         ac_cv_have_lchflags = (pyconf_check_func("lchflags", "", "HAVE_LCHFLAGS") ? "yes" : "no")
+        pyconf_result(ac_cv_have_lchflags)
     }
     pyconf_result(ac_cv_have_lchflags)
     if (((ac_cv_have_lchflags != "") && (ac_cv_have_lchflags != "no"))) {
@@ -6906,7 +7058,7 @@ function u_check_special_functions(    _pyconf_cond_sys_eventfd_h, _pyconf_cond_
     }
 }
 
-function u_check_headers(    has_i_push, save_CFLAGS) {
+function u_check_headers(    found, has_i_push, save_CFLAGS) {
     pyconf_define("STDC_HEADERS", 1, 0, "Define to 1 if you have the ANSI C header files.")
     pyconf_check_header("stdio.h", "", "", "HAVE_STDIO_H", "ac_cv_header_stdio_h")
     pyconf_check_header("stdlib.h", "", "", "HAVE_STDLIB_H", "ac_cv_header_stdlib_h")
@@ -7006,10 +7158,18 @@ function u_check_headers(    has_i_push, save_CFLAGS) {
         pyconf_define("HAVE_STROPTS_H", 1, 0, "Define to 1 if you have the <stropts.h> header file.")
     }
     pyconf_check_header("dirent.h", "", "", "HAVE_DIRENT_H", "ac_cv_header_dirent_h")
-    if (pyconf_check_header("sys/mkdev.h")) {
+    pyconf_checking("for sys/mkdev.h")
+    found = (pyconf_check_header("sys/mkdev.h") ? "yes" : "no")
+    pyconf_result(found)
+    if (((found != "") && (found != "no"))) {
         pyconf_define("MAJOR_IN_MKDEV", 1, 0, "Define to 1 if major, minor, and makedev are declared in <sys/mkdev.h>.")
-    } else if (pyconf_check_header("sys/sysmacros.h")) {
-        pyconf_define("MAJOR_IN_SYSMACROS", 1, 0, "Define to 1 if major, minor, and makedev are declared in <sys/sysmacros.h>.")
+    } else {
+        pyconf_checking("for sys/sysmacros.h")
+        found = (pyconf_check_header("sys/sysmacros.h") ? "yes" : "no")
+        pyconf_result(found)
+        if (((found != "") && (found != "no"))) {
+            pyconf_define("MAJOR_IN_SYSMACROS", 1, 0, "Define to 1 if major, minor, and makedev are declared in <sys/sysmacros.h>.")
+        }
     }
     save_CFLAGS = V["CFLAGS"]
     V["CFLAGS"] = "-std=c99 " V["CFLAGS"]
@@ -7028,10 +7188,9 @@ function u_check_headers(    has_i_push, save_CFLAGS) {
     pyconf_check_header("netcan/can.h", "", "\n    #ifdef HAVE_SYS_SOCKET_H\n    #include <sys/socket.h>\n    #endif\n    ")
 }
 
-function u_check_types_and_macros(    use_lfs) {
-    if ((!pyconf_check_type("clock_t", "time.h"))) {
-        pyconf_define("clock_t", "long", 1, "Define to 'long' if <time.h> does not define clock_t.")
-    }
+function u_check_types_and_macros(    found, use_lfs) {
+    pyconf_checking("for clock_t")
+    pyconf_result((pyconf_check_type("clock_t", "time.h") ? "yes" : "no"))
     if (pyconf_link_check("for makedev", "\n    #if defined(MAJOR_IN_MKDEV)\n    #include <sys/mkdev.h>\n    #elif defined(MAJOR_IN_SYSMACROS)\n    #include <sys/sysmacros.h>\n    #else\n    #include <sys/types.h>\n    #endif\n    \nint main(void) { makedev(0, 0); return 0; }")) {
         pyconf_define("HAVE_MAKEDEV", 1, 0, "Define this if you have the makedev macro.")
     }
@@ -7056,8 +7215,12 @@ function u_check_types_and_macros(    use_lfs) {
     pyconf_define_unquoted("RETSIGTYPE", "void", "assume C89 semantics that RETSIGTYPE is always void")
     pyconf_macro("AC_TYPE_SIZE_T")
     pyconf_macro("AC_TYPE_UID_T")
-    pyconf_check_type("ssize_t", "sys/types.h")
-    if (pyconf_check_type("__uint128_t", "")) {
+    pyconf_checking("for ssize_t")
+    pyconf_result((pyconf_check_type("ssize_t", "sys/types.h") ? "yes" : "no"))
+    pyconf_checking("for __uint128_t")
+    found = (pyconf_check_type("__uint128_t", "") ? "yes" : "no")
+    pyconf_result(found)
+    if (((found != "") && (found != "no"))) {
         pyconf_define("HAVE_GCC_UINT128_T", 1, 0, "Define if your compiler provides __uint128_t")
     }
 }
@@ -7072,17 +7235,17 @@ function u_check_getrandom() {
     }
 }
 
-function u_check_openssl(    LIBCRYPTO_LIBS_len, _i_arg, _i_f, _i_p, _n_arg, _n_f, _n_p, arg, f, found_ssl, inc_flags, inc_parts_len, lib_flags, lib_parts_len, libname, new_ssl_libs_len, openssl_rpath_opt, p, pc_cflags, pc_ldflags, pc_libs, pkg_config, rpath_arg, s1, s2, s3, ssl_dir, ssl_h_paths, with_openssl, working_hashlib, working_ssl, LIBCRYPTO_LIBS, _ar_31, _ar_32, _ar_33, _as_34, _as_35, _as_36, _as_37, _as_38, _as_39, inc_parts, lib_parts, new_ssl_libs) {
+function u_check_openssl(    LIBCRYPTO_LIBS_len, _i_arg, _i_f, _i_p, _n_arg, _n_f, _n_p, arg, f, found_ssl, inc_flags, inc_parts_len, lib_flags, lib_parts_len, libname, new_ssl_libs_len, openssl_rpath_opt, p, pc_cflags, pc_ldflags, pc_libs, pkg_config, rpath_arg, s1, s2, s3, ssl_dir, ssl_h_paths, with_openssl, working_hashlib, working_ssl, LIBCRYPTO_LIBS, _ar_32, _ar_33, _ar_34, _as_35, _as_36, _as_37, _as_38, _as_39, _as_40, inc_parts, lib_parts, new_ssl_libs) {
     delete LIBCRYPTO_LIBS
-    delete _ar_31
     delete _ar_32
     delete _ar_33
-    delete _as_34
+    delete _ar_34
     delete _as_35
     delete _as_36
     delete _as_37
     delete _as_38
     delete _as_39
+    delete _as_40
     delete inc_parts
     delete lib_parts
     delete new_ssl_libs
@@ -7107,29 +7270,29 @@ function u_check_openssl(    LIBCRYPTO_LIBS_len, _i_arg, _i_f, _i_p, _n_arg, _n_
             _va73[2] = "--cflags"
             _va73[3] = "openssl"
             _va73[0] = 3
-            pyconf_cmd_status(_va73, _ar_31)
-            s1 = _ar_31[0]
-            pc_cflags = _ar_31[1]
+            pyconf_cmd_status(_va73, _ar_32)
+            s1 = _ar_32[0]
+            pc_cflags = _ar_32[1]
             delete _va74
             _va74[1] = pkg_config
             _va74[2] = "--libs"
             _va74[3] = "openssl"
             _va74[0] = 3
-            pyconf_cmd_status(_va74, _ar_32)
-            s2 = _ar_32[0]
-            pc_libs = _ar_32[1]
+            pyconf_cmd_status(_va74, _ar_33)
+            s2 = _ar_33[0]
+            pc_libs = _ar_33[1]
             delete _va75
             _va75[1] = pkg_config
             _va75[2] = "--libs-only-L"
             _va75[3] = "openssl"
             _va75[0] = 3
-            pyconf_cmd_status(_va75, _ar_33)
-            s3 = _ar_33[0]
-            pc_ldflags = _ar_33[1]
+            pyconf_cmd_status(_va75, _ar_34)
+            s3 = _ar_34[0]
+            pc_ldflags = _ar_34[1]
             if ((((s1 == 0) && (s2 == 0)) && (s3 == 0))) {
-                _n_f = split(pc_cflags, _as_34, " ")
+                _n_f = split(pc_cflags, _as_35, " ")
                 for (_i_f = 1; (_i_f <= _n_f); _i_f = (_i_f + 1)) {
-                    f = _as_34[_i_f]
+                    f = _as_35[_i_f]
                     if (_str_startswith(f, "-I")) {
                         inc_parts[(inc_parts_len + 1)] = f
                         inc_parts_len = (inc_parts_len + 1)
@@ -7137,9 +7300,9 @@ function u_check_openssl(    LIBCRYPTO_LIBS_len, _i_arg, _i_f, _i_p, _n_arg, _n_
                     }
                 }
                 inc_flags = _arr_join(inc_parts, " ")
-                _n_f = split(pc_libs, _as_35, " ")
+                _n_f = split(pc_libs, _as_36, " ")
                 for (_i_f = 1; (_i_f <= _n_f); _i_f = (_i_f + 1)) {
-                    f = _as_35[_i_f]
+                    f = _as_36[_i_f]
                     if ((!_str_startswith(f, "-L"))) {
                         lib_parts[(lib_parts_len + 1)] = f
                         lib_parts_len = (lib_parts_len + 1)
@@ -7160,9 +7323,9 @@ function u_check_openssl(    LIBCRYPTO_LIBS_len, _i_arg, _i_f, _i_p, _n_arg, _n_
         } else {
             ssl_h_paths = "/usr/include" " " "/usr/local/include" " " "/usr/include/openssl" " " "/usr/local/include/openssl"
             found_ssl = "no"
-            _n_p = split(ssl_h_paths, _as_36, " ")
+            _n_p = split(ssl_h_paths, _as_37, " ")
             for (_i_p = 1; (_i_p <= _n_p); _i_p = (_i_p + 1)) {
-                p = _as_36[_i_p]
+                p = _as_37[_i_p]
                 delete _va76
                 _va76[1] = p
                 _va76[2] = "openssl/ssl.h"
@@ -7191,13 +7354,14 @@ function u_check_openssl(    LIBCRYPTO_LIBS_len, _i_arg, _i_f, _i_p, _n_arg, _n_
     } else {
         rpath_arg = "-Wl,-rpath="
     }
+    pyconf_checking("for --with-openssl-rpath")
     openssl_rpath_opt = pyconf_option_value_or("with_openssl_rpath", "no")
     V["OPENSSL_LDFLAGS_RPATH"] = ""
     if (((openssl_rpath_opt == "auto") || (openssl_rpath_opt == "yes"))) {
         V["OPENSSL_RPATH"] = "auto"
-        _n_arg = split(V["OPENSSL_LDFLAGS"], _as_37, " ")
+        _n_arg = split(V["OPENSSL_LDFLAGS"], _as_38, " ")
         for (_i_arg = 1; (_i_arg <= _n_arg); _i_arg = (_i_arg + 1)) {
-            arg = _as_37[_i_arg]
+            arg = _as_38[_i_arg]
             if (_str_startswith(arg, "-L")) {
                 V["OPENSSL_LDFLAGS_RPATH"] = V["OPENSSL_LDFLAGS_RPATH"] " " rpath_arg _str_removeprefix(arg, "-L")
             }
@@ -7211,12 +7375,14 @@ function u_check_openssl(    LIBCRYPTO_LIBS_len, _i_arg, _i_f, _i_p, _n_arg, _n_
     } else {
         pyconf_error("--with-openssl-rpath \"" openssl_rpath_opt "\" is not a directory")
     }
+    pyconf_result(V["OPENSSL_RPATH"])
     v_export("OPENSSL_RPATH")
     v_export("OPENSSL_LDFLAGS_RPATH")
     if ((V["PY_UNSUPPORTED_OPENSSL_BUILD"] == "static")) {
-        _n_arg = split(V["OPENSSL_LIBS"], _as_38, " ")
+        pyconf_checking("for unsupported static openssl build")
+        _n_arg = split(V["OPENSSL_LIBS"], _as_39, " ")
         for (_i_arg = 1; (_i_arg <= _n_arg); _i_arg = (_i_arg + 1)) {
-            arg = _as_38[_i_arg]
+            arg = _as_39[_i_arg]
             if (_str_startswith(arg, "-l")) {
                 libname = _str_removeprefix(arg, "-l")
                 new_ssl_libs[(new_ssl_libs_len + 1)] = "-l:lib" libname ".a -Wl,--exclude-libs,lib" libname ".a"
@@ -7229,10 +7395,11 @@ function u_check_openssl(    LIBCRYPTO_LIBS_len, _i_arg, _i_f, _i_p, _n_arg, _n_
             }
         }
         V["OPENSSL_LIBS"] = _arr_join(new_ssl_libs, " ") _str_rstrip(" " V["ZLIB_LIBS"])
+        pyconf_result(V["OPENSSL_LIBS"])
     }
-    _n_arg = split(V["OPENSSL_LIBS"], _as_39, " ")
+    _n_arg = split(V["OPENSSL_LIBS"], _as_40, " ")
     for (_i_arg = 1; (_i_arg <= _n_arg); _i_arg = (_i_arg + 1)) {
-        arg = _as_39[_i_arg]
+        arg = _as_40[_i_arg]
         if ((!(index(arg, "ssl") > 0))) {
             LIBCRYPTO_LIBS[(LIBCRYPTO_LIBS_len + 1)] = arg
             LIBCRYPTO_LIBS_len = (LIBCRYPTO_LIBS_len + 1)
@@ -7263,7 +7430,9 @@ function u_check_openssl(    LIBCRYPTO_LIBS_len, _i_arg, _i_f, _i_p, _n_arg, _n_
 function u_check_ssl_cipher_suites(    ssl_suites) {
     pyconf_define_template("PY_SSL_DEFAULT_CIPHERS", "Default cipher suites list for ssl module. 1: Python's preferred selection, 2: leave OpenSSL defaults untouched, 0: custom string")
     pyconf_define_template("PY_SSL_DEFAULT_CIPHER_STRING", "Cipher suite string for PY_SSL_DEFAULT_CIPHERS=0")
+    pyconf_checking("for --with-ssl-default-suites")
     ssl_suites = pyconf_option_value_or("with_ssl_default_suites", "python")
+    pyconf_result(ssl_suites)
     if ((ssl_suites == "python")) {
         pyconf_define("PY_SSL_DEFAULT_CIPHERS", 1, 0, "")
     } else if ((ssl_suites == "openssl")) {
@@ -7276,6 +7445,7 @@ function u_check_ssl_cipher_suites(    ssl_suites) {
 
 function u_check_builtin_hashlib_hashes(    _tmp_split, bh_raw, builtin_hashes, default_hashlib_hashes) {
     default_hashlib_hashes = "md5,sha1,sha2,sha3,blake2"
+    pyconf_checking("for --with-builtin-hashlib-hashes")
     bh_raw = pyconf_option_value("with_builtin_hashlib_hashes")
     if (((bh_raw == "") || (bh_raw == "yes"))) {
         builtin_hashes = default_hashlib_hashes
@@ -7284,6 +7454,7 @@ function u_check_builtin_hashlib_hashes(    _tmp_split, bh_raw, builtin_hashes, 
     } else {
         builtin_hashes = bh_raw
     }
+    pyconf_result(builtin_hashes)
     pyconf_define_unquoted("PY_BUILTIN_HASHLIB_HASHES", "\"" builtin_hashes "\"", "enabled builtin hash modules")
     V["with_builtin_md5"] = ((index(_str_replace(builtin_hashes, ",", " "), "md5") > 0) ? "yes" : "no")
     V["with_builtin_sha1"] = ((index(_str_replace(builtin_hashes, ",", " "), "sha1") > 0) ? "yes" : "no")
@@ -7570,8 +7741,8 @@ function u_setup_ccshared() {
     pyconf_result(V["CCSHARED"])
 }
 
-function u_setup_linkforshared(    _, has_elf, has_elf__elf_out, help_out, sr, stack_size, _ar_40) {
-    delete _ar_40
+function u_setup_linkforshared(    _, has_elf, has_elf__elf_out, help_out, sr, stack_size, _ar_41) {
+    delete _ar_41
     pyconf_checking("LINKFORSHARED")
     if ((!((V["LINKFORSHARED"] != "") && (V["LINKFORSHARED"] != "no")))) {
         sr = V["ac_sys_system"] "/" V["ac_sys_release"]
@@ -7613,9 +7784,9 @@ function u_setup_linkforshared(    _, has_elf, has_elf__elf_out, help_out, sr, s
                 _va81[2] = "-Xlinker"
                 _va81[3] = "--help"
                 _va81[0] = 3
-                pyconf_cmd_status(_va81, _ar_40)
-                _ = _ar_40[0]
-                help_out = _ar_40[1]
+                pyconf_cmd_status(_va81, _ar_41)
+                _ = _ar_41[0]
+                help_out = _ar_41[1]
                 if ((index(help_out, "export-dynamic") > 0)) {
                     V["LINKFORSHARED"] = "-Xlinker --export-dynamic"
                 }
@@ -7664,7 +7835,8 @@ function u_setup_shared_lib_exports() {
 function u_setup_dynload(    ac_cv_func_dlopen, extra_machdep_objs, sys_rel) {
     V["DLINCLDIR"] = "."
     v_export("DLINCLDIR")
-    pyconf_check_func("dlopen", "", "HAVE_DLOPEN")
+    pyconf_checking("for dlopen")
+    pyconf_result((pyconf_check_func("dlopen", "", "HAVE_DLOPEN") ? "yes" : "no"))
     ac_cv_func_dlopen = (("ac_cv_func_dlopen" in CACHE) ? CACHE["ac_cv_func_dlopen"] : "no")
     if ((!("ac_cv_func_dlopen" in V))) {
         V["ac_cv_func_dlopen"] = ac_cv_func_dlopen
@@ -7699,11 +7871,14 @@ function u_setup_dynload(    ac_cv_func_dlopen, extra_machdep_objs, sys_rel) {
 }
 
 # --- conf_syslibs ---
-function u_detect_gdbm() {
+function u_detect_gdbm(    found) {
     V["have_gdbm"] = "no"
     pyconf_env_var("GDBM_CFLAGS", "C compiler flags for gdbm")
     pyconf_env_var("GDBM_LIBS", "additional linker flags for gdbm")
-    if (pyconf_check_header("gdbm.h", "", "", "", "", V["GDBM_CFLAGS"])) {
+    pyconf_checking("for gdbm.h")
+    found = (pyconf_check_header("gdbm.h", "", "", "", "", V["GDBM_CFLAGS"]) ? "yes" : "no")
+    pyconf_result(found)
+    if (((found != "") && (found != "no"))) {
         if (pyconf_check_lib("gdbm", "gdbm_open", V["GDBM_CFLAGS"], V["GDBM_LIBS"])) {
             V["have_gdbm"] = "yes"
             V["GDBM_LIBS"] = ((V["GDBM_LIBS"] != "") ? V["GDBM_LIBS"] : "-lgdbm")
@@ -7717,14 +7892,17 @@ function u_detect_gdbm() {
     v_export("GDBM_LIBS")
 }
 
-function u_detect_dbm(    _i_db, _n_db, _tmp_split, ac_cv_have_libdb, ac_cv_header_gdbm_dash_ndbm_h, ac_cv_header_gdbm_slash_ndbm_h, ac_cv_search_dbm_open, db, dbm_raw, have_dbm, r, with_dbmliborder, _as_41, _as_42) {
-    delete _as_41
+function u_detect_dbm(    _i_db, _n_db, _tmp_split, ac_cv_have_libdb, ac_cv_header_gdbm_dash_ndbm_h, ac_cv_header_gdbm_slash_ndbm_h, ac_cv_search_dbm_open, db, dbm_raw, found_db_h, found_ndbm, have_dbm, r, with_dbmliborder, _as_42, _as_43) {
     delete _as_42
+    delete _as_43
     V["have_ndbm"] = "no"
     V["dbm_ndbm"] = ""
     V["have_gdbm_compat"] = "no"
     ac_cv_search_dbm_open = "no"
-    if (pyconf_check_header("ndbm.h")) {
+    pyconf_checking("for ndbm.h")
+    found_ndbm = (pyconf_check_header("ndbm.h") ? "yes" : "no")
+    pyconf_result(found_ndbm)
+    if (((found_ndbm != "") && (found_ndbm != "no"))) {
         pyconf_save_env()
         ac_cv_search_dbm_open = pyconf_search_libs("dbm_open", "ndbm gdbm_compat")
         pyconf_restore_env()
@@ -7740,11 +7918,15 @@ function u_detect_dbm(    _i_db, _n_db, _tmp_split, ac_cv_have_libdb, ac_cv_head
             V["have_ndbm"] = "no"
         }
     }
+    pyconf_checking("for gdbm/ndbm.h")
     ac_cv_header_gdbm_slash_ndbm_h = (pyconf_check_header("gdbm/ndbm.h") ? "yes" : "no")
+    pyconf_result(ac_cv_header_gdbm_slash_ndbm_h)
     if (((ac_cv_header_gdbm_slash_ndbm_h != "") && (ac_cv_header_gdbm_slash_ndbm_h != "no"))) {
         pyconf_define("HAVE_GDBM_NDBM_H", 1, 0, "Define to 1 if you have the <gdbm/ndbm.h> header file.")
     }
+    pyconf_checking("for gdbm-ndbm.h")
     ac_cv_header_gdbm_dash_ndbm_h = (pyconf_check_header("gdbm-ndbm.h") ? "yes" : "no")
+    pyconf_result(ac_cv_header_gdbm_dash_ndbm_h)
     if (((ac_cv_header_gdbm_dash_ndbm_h != "") && (ac_cv_header_gdbm_dash_ndbm_h != "no"))) {
         pyconf_define("HAVE_GDBM_DASH_NDBM_H", 1, 0, "Define to 1 if you have the <gdbm-ndbm.h> header file.")
     }
@@ -7759,7 +7941,10 @@ function u_detect_dbm(    _i_db, _n_db, _tmp_split, ac_cv_have_libdb, ac_cv_head
         }
     }
     ac_cv_have_libdb = "no"
-    if (pyconf_check_header("db.h")) {
+    pyconf_checking("for db.h")
+    found_db_h = (pyconf_check_header("db.h") ? "yes" : "no")
+    pyconf_result(found_db_h)
+    if (((found_db_h != "") && (found_db_h != "no"))) {
         if (pyconf_link_check("", "#define DB_DBM_HSEARCH 1\n#include <db.h>\n#if DB_VERSION_MAJOR < 5\n#  error \"DB_VERSION_MAJOR < 5 is not supported.\"\n#endif\nint main(void) { DBM *dbm = dbm_open(NULL, 0, 0); return 0; }\n", "-ldb")) {
             ac_cv_have_libdb = "yes"
             pyconf_define("HAVE_LIBDB", 1, 0, "Define to 1 if you have the `db' library (-ldb).")
@@ -7768,9 +7953,9 @@ function u_detect_dbm(    _i_db, _n_db, _tmp_split, ac_cv_have_libdb, ac_cv_head
     dbm_raw = pyconf_option_value("with_dbmliborder")
     with_dbmliborder = ((((dbm_raw != "") && (dbm_raw != "no")) && (dbm_raw != "yes")) ? dbm_raw : "gdbm:ndbm:bdb")
     pyconf_checking("for --with-dbmliborder")
-    _n_db = split(_str_replace(with_dbmliborder, ":", " "), _as_41, " ")
+    _n_db = split(_str_replace(with_dbmliborder, ":", " "), _as_42, " ")
     for (_i_db = 1; (_i_db <= _n_db); _i_db = (_i_db + 1)) {
-        db = _as_41[_i_db]
+        db = _as_42[_i_db]
         if ((!(((db == "ndbm") || (db == "gdbm")) || (db == "bdb")))) {
             pyconf_fatal("proper usage is --with-dbmliborder=db1:db2:... (gdbm:ndbm:bdb)")
         }
@@ -7780,9 +7965,9 @@ function u_detect_dbm(    _i_db, _n_db, _tmp_split, ac_cv_have_libdb, ac_cv_head
     V["DBM_CFLAGS"] = ""
     V["DBM_LIBS"] = ""
     have_dbm = "no"
-    _n_db = split(_str_replace(with_dbmliborder, ":", " "), _as_42, " ")
+    _n_db = split(_str_replace(with_dbmliborder, ":", " "), _as_43, " ")
     for (_i_db = 1; (_i_db <= _n_db); _i_db = (_i_db + 1)) {
-        db = _as_42[_i_db]
+        db = _as_43[_i_db]
         if (((db == "ndbm") && ((V["have_ndbm"] != "") && (V["have_ndbm"] != "no")))) {
             V["DBM_CFLAGS"] = "-DUSE_NDBM"
             V["DBM_LIBS"] = V["dbm_ndbm"]
@@ -7808,8 +7993,8 @@ function u_detect_dbm(    _i_db, _n_db, _tmp_split, ac_cv_have_libdb, ac_cv_head
     v_export("DBM_LIBS")
 }
 
-function u_check_base_libraries(    _i_h, ac_cv_require_ldl, eh_results_len, h, _al_43, eh_results) {
-    delete _al_43
+function u_check_base_libraries(    _i_h, ac_cv_require_ldl, eh_results_len, h, _al_44, eh_results) {
+    delete _al_44
     delete eh_results
     if (pyconf_check_lib("sendfile", "sendfile", "", "")) {
         V["LIBS"] = "-lsendfile " V["LIBS"]
@@ -7822,11 +8007,11 @@ function u_check_base_libraries(    _i_h, ac_cv_require_ldl, eh_results_len, h, 
         V["LIBS"] = "-ldld " V["LIBS"]
     }
     ac_cv_require_ldl = "no"
-    _al_43[1] = "execinfo.h"
-    _al_43[2] = "link.h"
-    _al_43[3] = "dlfcn.h"
+    _al_44[1] = "execinfo.h"
+    _al_44[2] = "link.h"
+    _al_44[3] = "dlfcn.h"
     for (_i_h = 1; (_i_h <= 3); _i_h = (_i_h + 1)) {
-        h = _al_43[_i_h]
+        h = _al_44[_i_h]
         delete _va82
         _va82[1] = h
         _va82[0] = 1
@@ -7909,14 +8094,14 @@ function u_check_stat_timestamps(    ac_cv_stat_tv_nsec, ac_cv_stat_tv_nsec2) {
     V["have_panel"] = "no"
 }
 
-function u__validate_tzpath(tzpath,    _i_part, _n_part, _tmp_split, part, _as_44) {
-    delete _as_44
+function u__validate_tzpath(tzpath,    _i_part, _n_part, _tmp_split, part, _as_45) {
+    delete _as_45
     if ((!((tzpath != "") && (tzpath != "no")))) {
         return
     }
-    _n_part = split(_str_replace(tzpath, ":", " "), _as_44, " ")
+    _n_part = split(_str_replace(tzpath, ":", " "), _as_45, " ")
     for (_i_part = 1; (_i_part <= _n_part); _i_part = (_i_part + 1)) {
-        part = _as_44[_i_part]
+        part = _as_45[_i_part]
         if ((!_str_startswith(part, "/"))) {
             pyconf_error("--with-tzpath must contain only absolute paths, not " tzpath)
         }
@@ -7952,8 +8137,8 @@ function u__runshared(envvar,    cwd, existing) {
     return envvar "=" cwd
 }
 
-function u_setup_android_api(    _i_line, _n_line, android_out, android_out_returncode, android_out_stderr, android_out_stdout, arm_arch, line, _as_45) {
-    delete _as_45
+function u_setup_android_api(    _i_line, _n_line, android_out, android_out_returncode, android_out_stderr, android_out_stdout, arm_arch, line, _as_46) {
+    delete _as_46
     V["NO_AS_NEEDED"] = pyconf_check_linker_flag("-Wl,--no-as-needed", "-Wl,--no-as-needed")
     v_export("NO_AS_NEEDED")
     pyconf_checking("for the Android API level")
@@ -7963,9 +8148,9 @@ function u_setup_android_api(    _i_line, _n_line, android_out, android_out_retu
     V["ANDROID_API_LEVEL"] = ""
     arm_arch = ""
     if ((android_out_returncode == 0)) {
-        _n_line = split(android_out_stdout, _as_45, "\n")
+        _n_line = split(android_out_stdout, _as_46, "\n")
         for (_i_line = 1; (_i_line <= _n_line); _i_line = (_i_line + 1)) {
-            line = _as_45[_i_line]
+            line = _as_46[_i_line]
             if ((!_str_startswith(line, "#"))) {
                 if (_str_startswith(line, "android_api = ")) {
                     V["ANDROID_API_LEVEL"] = _str_strip(_str_removeprefix(line, "android_api = "))
@@ -8029,8 +8214,8 @@ function u_setup_exe_suffix(    casedir) {
     }
 }
 
-function u_setup_library_names(    _, ld_prog, ld_ver, _ar_46) {
-    delete _ar_46
+function u_setup_library_names(    _, ld_prog, ld_ver, _ar_47) {
+    delete _ar_47
     v_export("LIBRARY")
     pyconf_checking("LIBRARY")
     V["LIBRARY"] = ((V["LIBRARY"] != "") ? V["LIBRARY"] : "libpython$(VERSION)$(ABIFLAGS).a")
@@ -8084,9 +8269,9 @@ function u_setup_library_names(    _, ld_prog, ld_ver, _ar_46) {
     _va86[1] = ld_prog
     _va86[2] = "-V"
     _va86[0] = 2
-    pyconf_cmd_status(_va86, _ar_46)
-    _ = _ar_46[0]
-    ld_ver = _ar_46[1]
+    pyconf_cmd_status(_va86, _ar_47)
+    _ = _ar_47[0]
+    ld_ver = _ar_47[1]
     V["GNULD"] = ((index(ld_ver, "GNU") > 0) ? "yes" : "no")
     pyconf_result(V["GNULD"])
 }
@@ -8312,7 +8497,7 @@ function u_check_pthreads(    ac_cv_cxx_thread, ac_cv_kpthread, ac_cv_kthread, a
     V["ac_cv_cxx_thread"] = ac_cv_cxx_thread
 }
 
-function u_setup_pthreads(    ac_cv_cxx_thread, ac_cv_kpthread, ac_cv_kthread, ac_cv_pthread, ac_cv_pthread_is_default, ac_cv_pthread_system_supported, prog, sr, unistd_defines_pthreads) {
+function u_setup_pthreads(    ac_cv_cxx_thread, ac_cv_kpthread, ac_cv_kthread, ac_cv_pthread, ac_cv_pthread_is_default, ac_cv_pthread_system_supported, found, prog, sr, unistd_defines_pthreads) {
     V["posix_threads"] = "no"
     ac_cv_pthread_is_default = V["ac_cv_pthread_is_default"]
     ac_cv_kpthread = V["ac_cv_kpthread"]
@@ -8358,7 +8543,10 @@ function u_setup_pthreads(    ac_cv_cxx_thread, ac_cv_kpthread, ac_cv_kthread, a
             V["posix_threads"] = "yes"
         } else {
             pyconf_result("no")
-            if (pyconf_check_func("pthread_detach", "", "HAVE_PTHREAD_DETACH")) {
+            pyconf_checking("for pthread_detach")
+            found = (pyconf_check_func("pthread_detach", "", "HAVE_PTHREAD_DETACH") ? "yes" : "no")
+            pyconf_result(found)
+            if (((found != "") && (found != "no"))) {
                 V["posix_threads"] = "yes"
             } else if (pyconf_check_lib("pthreads", "pthread_create", "", "")) {
                 V["posix_threads"] = "yes"
@@ -8398,12 +8586,16 @@ function u_setup_pthreads(    ac_cv_cxx_thread, ac_cv_kpthread, ac_cv_kthread, a
         if (((ac_cv_pthread_system_supported != "") && (ac_cv_pthread_system_supported != "no"))) {
             pyconf_define("PTHREAD_SYSTEM_SCHED_SUPPORTED", 1, 0, "Defined if PTHREAD_SCOPE_SYSTEM supported.")
         }
-        if (pyconf_check_func("pthread_sigmask", "", "HAVE_PTHREAD_SIGMASK")) {
+        pyconf_checking("for pthread_sigmask")
+        found = (pyconf_check_func("pthread_sigmask", "", "HAVE_PTHREAD_SIGMASK") ? "yes" : "no")
+        pyconf_result(found)
+        if (((found != "") && (found != "no"))) {
             if (_str_startswith(V["ac_sys_system"], "CYGWIN")) {
                 pyconf_define("HAVE_BROKEN_PTHREAD_SIGMASK", 1, 0, "Define if pthread_sigmask() does not work on your system.")
             }
         }
-        pyconf_check_func("pthread_getcpuclockid", "", "HAVE_PTHREAD_GETCPUCLOCKID")
+        pyconf_checking("for pthread_getcpuclockid")
+        pyconf_result((pyconf_check_func("pthread_getcpuclockid", "", "HAVE_PTHREAD_GETCPUCLOCKID") ? "yes" : "no"))
     }
     if ((V["posix_threads"] == "stub")) {
         pyconf_define("HAVE_PTHREAD_STUBS", 1, 0, "Define if platform requires stubbed pthreads support")
@@ -8438,9 +8630,9 @@ function u_check_posix_semaphores(    ac_cv_broken_sem_getvalue, ac_cv_posix_sem
     pyconf_check_decls(_va89)
 }
 
-function u_setup_thread_headers_and_srcdirs(    _i_dir, _i_h, _n_dir, _n_h, dir, h, header_refs_len, thread_headers, _as_47, _as_48, header_refs) {
-    delete _as_47
+function u_setup_thread_headers_and_srcdirs(    _i_dir, _i_h, _n_dir, _n_h, dir, h, header_refs_len, thread_headers, _as_48, _as_49, header_refs) {
     delete _as_48
+    delete _as_49
     delete header_refs
     delete _va90
     _va90[1] = pyconf_srcdir
@@ -8448,9 +8640,9 @@ function u_setup_thread_headers_and_srcdirs(    _i_dir, _i_h, _n_dir, _n_h, dir,
     _va90[3] = "thread_*.h"
     _va90[0] = 3
     thread_headers = pyconf_glob_files(pyconf_path_join(_va90))
-    _n_h = split(thread_headers, _as_47, " ")
+    _n_h = split(thread_headers, _as_48, " ")
     for (_i_h = 1; (_i_h <= _n_h); _i_h = (_i_h + 1)) {
-        h = _as_47[_i_h]
+        h = _as_48[_i_h]
         header_refs[(header_refs_len + 1)] = "$(srcdir)/" pyconf_relpath(h, pyconf_srcdir)
         header_refs_len = (header_refs_len + 1)
         header_refs[0] = header_refs_len
@@ -8460,9 +8652,9 @@ function u_setup_thread_headers_and_srcdirs(    _i_dir, _i_h, _n_dir, _n_h, dir,
     V["SRCDIRS"] = "  Modules  Modules/_ctypes  Modules/_decimal  Modules/_decimal/libmpdec  Modules/_hacl  Modules/_io  Modules/_multiprocessing  Modules/_remote_debugging  Modules/_sqlite  Modules/_sre  Modules/_testcapi  Modules/_testinternalcapi  Modules/_testlimitedcapi  Modules/_xxtestfuzz  Modules/_zstd  Modules/cjkcodecs  Modules/expat  Objects  Objects/mimalloc  Objects/mimalloc/prim  Parser  Parser/tokenizer  Parser/lexer  Programs  Python  Python/frozen_modules"
     v_export("SRCDIRS")
     pyconf_checking("for build directories")
-    _n_dir = split(V["SRCDIRS"], _as_48, " ")
+    _n_dir = split(V["SRCDIRS"], _as_49, " ")
     for (_i_dir = 1; (_i_dir <= _n_dir); _i_dir = (_i_dir + 1)) {
-        dir = _as_48[_i_dir]
+        dir = _as_49[_i_dir]
         pyconf_mkdir_p(dir)
     }
     pyconf_result("done")

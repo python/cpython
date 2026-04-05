@@ -220,18 +220,22 @@ def check_can_sockets(v):
 def _check_netdb_func(func):
     # On some systems (e.g. Solaris), hstrerror and inet_aton are in -lresolv
     # On others, they are in the C library, so we take no action
-    pyconf.check_func(func, includes=["netdb.h"])
+    pyconf.checking(f"for {func}")
+    pyconf.result(pyconf.check_func(func, includes=["netdb.h"]))
 
 
 def _check_socket_func(func):
-    pyconf.check_func(
-        func,
-        includes=[
-            "sys/types.h",
-            "sys/socket.h",
-            "netinet/in.h",
-            "arpa/inet.h",
-        ],
+    pyconf.checking(f"for {func}")
+    pyconf.result(
+        pyconf.check_func(
+            func,
+            includes=[
+                "sys/types.h",
+                "sys/socket.h",
+                "netinet/in.h",
+                "arpa/inet.h",
+            ],
+        )
     )
 
 
@@ -269,8 +273,13 @@ def check_netdb_socket_funcs(v):
         _check_socket_func(f)
 
     # On some systems, setgroups is in unistd.h, on others, in grp.h
-    pyconf.check_func(
-        "setgroups", includes=["unistd.h"], conditional_headers=["HAVE_GRP_H"]
+    pyconf.checking("for setgroups")
+    pyconf.result(
+        pyconf.check_func(
+            "setgroups",
+            includes=["unistd.h"],
+            conditional_headers=["HAVE_GRP_H"],
+        )
     )
 
 
@@ -400,7 +409,8 @@ def check_getaddrinfo(v):
             "Define if you have the getaddrinfo function.",
         )
 
-    pyconf.check_func("getnameinfo")
+    pyconf.checking("for getnameinfo")
+    pyconf.result(pyconf.check_func("getnameinfo"))
 
 
 # ---------------------------------------------------------------------------
@@ -419,7 +429,10 @@ def check_gethostbyname_r(v):
         "Define this if you have some version of gethostbyname_r()",
     )
 
-    if pyconf.check_func("gethostbyname_r"):
+    pyconf.checking("for gethostbyname_r")
+    found = pyconf.check_func("gethostbyname_r")
+    pyconf.result(found)
+    if found:
         pyconf.define("HAVE_GETHOSTBYNAME_R")
         old_cflags = v.CFLAGS
         v.CFLAGS = f"{v.CFLAGS} {v.MY_CPPFLAGS} {v.MY_THREAD_CPPFLAGS} {v.MY_CFLAGS}".strip()
@@ -488,7 +501,8 @@ def check_gethostbyname_r(v):
 
         v.CFLAGS = old_cflags
     else:
-        pyconf.check_func("gethostbyname")
+        pyconf.checking("for gethostbyname")
+        pyconf.result(pyconf.check_func("gethostbyname"))
 
     v.export("HAVE_GETHOSTBYNAME_R_6_ARG")
     v.export("HAVE_GETHOSTBYNAME_R_5_ARG")
@@ -507,9 +521,12 @@ def check_socklen_t(v):
     # socklen_t
     # ---------------------------------------------------------------------------
 
-    if not pyconf.check_type(
+    pyconf.checking("for socklen_t")
+    found = pyconf.check_type(
         "socklen_t", headers=["sys/types.h", "sys/socket.h"]
-    ):
+    )
+    pyconf.result(found)
+    if not found:
         pyconf.define(
             "socklen_t",
             "int",

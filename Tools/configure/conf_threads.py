@@ -177,7 +177,10 @@ def setup_pthreads(v):
             v.posix_threads = True
         else:
             pyconf.result("no")
-            if pyconf.check_func("pthread_detach"):
+            pyconf.checking("for pthread_detach")
+            found = pyconf.check_func("pthread_detach")
+            pyconf.result(found)
+            if found:
                 v.posix_threads = True
             elif pyconf.check_lib("pthreads", "pthread_create"):
                 v.posix_threads = True
@@ -253,14 +256,18 @@ def setup_pthreads(v):
                 "Defined if PTHREAD_SCOPE_SYSTEM supported.",
             )
 
-        if pyconf.check_func("pthread_sigmask"):
+        pyconf.checking("for pthread_sigmask")
+        found = pyconf.check_func("pthread_sigmask")
+        pyconf.result(found)
+        if found:
             if v.ac_sys_system.startswith("CYGWIN"):
                 pyconf.define(
                     "HAVE_BROKEN_PTHREAD_SIGMASK",
                     1,
                     "Define if pthread_sigmask() does not work on your system.",
                 )
-        pyconf.check_func("pthread_getcpuclockid")
+        pyconf.checking("for pthread_getcpuclockid")
+        pyconf.result(pyconf.check_func("pthread_getcpuclockid"))
 
     if v.posix_threads == "stub":
         pyconf.define(

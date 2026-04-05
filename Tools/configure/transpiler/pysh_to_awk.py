@@ -2118,6 +2118,8 @@ class PyshToAwk:
                     return self._build_check_prog_call(call)
                 case "check_decl":
                     return self._build_check_decl_expr(call)
+                case "check_member":
+                    return self._build_check_member_expr(call)
                 case "check_type":
                     return self._build_check_type_expr(call)
                 case "check_lib":
@@ -2286,15 +2288,22 @@ class PyshToAwk:
         func_name = self._expr(func_arg)
         headers_parts: list[str] = []
         define: A.Expr = A.StringLit("")
+        cond_headers: list[str] = []
+        raw_headers: list[str] = []
         for k, v in call.kwargs.items():
             if k in ("headers", "includes"):
                 if isinstance(v, PyshList):
-                    headers_parts.extend(
-                        str(elt.value) if isinstance(elt, Const) else "..."
-                        for elt in v.elts
-                    )
+                    for elt in v.elts:
+                        h = str(elt.value) if isinstance(elt, Const) else "..."
+                        headers_parts.append(h)
+                        raw_headers.append(h)
             elif k == "define":
                 define = self._expr(v)
+            elif k == "conditional_headers":
+                if isinstance(v, PyshList):
+                    for elt in v.elts:
+                        if isinstance(elt, Const) and isinstance(elt.value, str):
+                            cond_headers.append(elt.value)
         if (
             isinstance(define, A.StringLit)
             and not define.value
@@ -2302,11 +2311,45 @@ class PyshToAwk:
             and isinstance(func_arg.value, str)
         ):
             define = A.StringLit(_precompute_func_define(func_arg.value))
-        headers: A.Expr = (
-            A.StringLit(" ".join(headers_parts))
-            if headers_parts
-            else A.StringLit("")
-        )
+        # Build headers expression; for conditional_headers, emit inline ternary
+        # (CACHE["ac_cv_header_X"] == "yes" ? "header.h" : "") to avoid needing
+        # setup statements (which are not available in expression context).
+        define_to_header: dict[str, str] = {}
+        for h in raw_headers:
+            define_to_header[_precompute_header_define(h)] = h
+        header_parts_expr: list[A.Expr] = []
+        for cond_define in cond_headers:
+            header = define_to_header.get(
+                cond_define, _define_to_header(cond_define)
+            )
+            if header in headers_parts:
+                headers_parts.remove(header)
+            cache_var = _precompute_header_cache_key(header)
+            header_parts_expr.append(
+                A.Concat(
+                    [
+                        A.StringLit(" "),
+                        A.Ternary(
+                            A.BinOp(
+                                A.ArrayRef("CACHE", A.StringLit(cache_var)),
+                                "==",
+                                A.StringLit("yes"),
+                            ),
+                            A.StringLit(header),
+                            A.StringLit(""),
+                        ),
+                    ]
+                )
+            )
+        if headers_parts:
+            header_parts_expr.insert(0, A.StringLit(" ".join(headers_parts)))
+        headers: A.Expr
+        if not header_parts_expr:
+            headers = A.StringLit("")
+        elif len(header_parts_expr) == 1:
+            headers = header_parts_expr[0]
+        else:
+            headers = A.Concat(header_parts_expr)
         return A.FuncCall("pyconf_check_func", [func_name, headers, define])
 
     def _check_func_stmts(self, call: Call) -> list[A.Stmt]:
@@ -2479,6 +2522,12 @@ class PyshToAwk:
                 A.StringLit(_precompute_decl_define(decl_arg.value))
             ]
         return A.FuncCall("pyconf_check_decl", [decl, includes] + define_args)
+
+    def _build_check_member_expr(self, call: Call) -> A.FuncCall:
+        """Build pyconf_check_member() call for use as an expression."""
+        member = self._expr(call.args[0]) if call.args else A.StringLit("")
+        headers = self._extract_includes_expr(call)
+        return A.FuncCall("pyconf_check_member", [member, headers])
 
     def _build_check_type_expr(self, call: Call) -> A.FuncCall:
         """Build pyconf_check_type() call for use as an expression."""

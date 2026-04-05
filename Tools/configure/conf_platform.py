@@ -488,28 +488,37 @@ def check_declarations(v):
     # Declaration / constant checks
     # ---------------------------------------------------------------------------
 
-    pyconf.check_decl(
+    pyconf.checking("whether MAXLOGNAME is declared")
+    found = pyconf.check_decl(
         "MAXLOGNAME",
-        on_found=_define_maxlogname,
         extra_includes=["sys/param.h"],
     )
+    pyconf.result(found)
+    if found:
+        _define_maxlogname()
 
     # AC_CHECK_DECLS always defines HAVE_DECL_<NAME> to 0 or 1.
-    pyconf.check_decl(
+    pyconf.checking("whether UT_NAMESIZE is declared")
+    found = pyconf.check_decl(
         "UT_NAMESIZE",
         define_name="HAVE_DECL_UT_NAMESIZE",
-        on_found=_define_ut_namesize,
         extra_includes=["utmp.h"],
     )
+    pyconf.result(found)
+    if found:
+        _define_ut_namesize()
 
     # musl libc redefines struct prctl_mm_map and conflicts with linux/prctl.h
     if v.ac_cv_libc != "musl":
-        pyconf.check_decl(
+        pyconf.checking("whether PR_SET_VMA_ANON_NAME is declared")
+        found = pyconf.check_decl(
             "PR_SET_VMA_ANON_NAME",
             define_name="HAVE_DECL_PR_SET_VMA_ANON_NAME",
-            on_found=_define_pr_set_vma_anon_name,
             extra_includes=["linux/prctl.h", "sys/prctl.h"],
         )
+        pyconf.result(found)
+        if found:
+            _define_pr_set_vma_anon_name()
 
 
 def check_pty_and_misc_funcs(v):
@@ -517,7 +526,10 @@ def check_pty_and_misc_funcs(v):
     # PTY functions: openpty, login_tty, forkpty
     # ---------------------------------------------------------------------------
 
-    if not pyconf.check_func("openpty"):
+    pyconf.checking("for openpty")
+    found = pyconf.check_func("openpty")
+    pyconf.result(found)
+    if not found:
         if pyconf.check_lib("util", "openpty"):
             pyconf.define("HAVE_OPENPTY")
             v.LIBS = f"{v.LIBS} -lutil"
@@ -532,7 +544,10 @@ def check_pty_and_misc_funcs(v):
             "Define to 1 if you have the `login_tty' function.",
         )
 
-    if not pyconf.check_func("forkpty"):
+    pyconf.checking("for forkpty")
+    found = pyconf.check_func("forkpty")
+    pyconf.result(found)
+    if not found:
         if pyconf.check_lib("util", "forkpty"):
             pyconf.define("HAVE_FORKPTY")
             v.LIBS = f"{v.LIBS} -lutil"
@@ -551,7 +566,10 @@ def check_pty_and_misc_funcs(v):
     pyconf.replace_funcs(["dup2"])
 
     # getpgrp / setpgrp argument style
-    if pyconf.check_func("getpgrp"):
+    pyconf.checking("for getpgrp")
+    found = pyconf.check_func("getpgrp")
+    pyconf.result(found)
+    if found:
         if pyconf.compile_check(includes=["unistd.h"], body="getpgrp(0);"):
             pyconf.define(
                 "GETPGRP_HAVE_ARG",
@@ -559,7 +577,10 @@ def check_pty_and_misc_funcs(v):
                 "Define if getpgrp() must be called as getpgrp(0).",
             )
 
-    if pyconf.check_func("setpgrp"):
+    pyconf.checking("for setpgrp")
+    found = pyconf.check_func("setpgrp")
+    pyconf.result(found)
+    if found:
         if pyconf.compile_check(includes=["unistd.h"], body="setpgrp(0,0);"):
             pyconf.define(
                 "SETPGRP_HAVE_ARG",
@@ -573,7 +594,10 @@ def check_clock_functions(v):
     # Clock functions
     # ---------------------------------------------------------------------------
 
-    if not pyconf.check_func("clock_gettime"):
+    pyconf.checking("for clock_gettime")
+    found = pyconf.check_func("clock_gettime")
+    pyconf.result(found)
+    if not found:
         if pyconf.check_lib("rt", "clock_gettime"):
             v.LIBS = f"{v.LIBS} -lrt"
             pyconf.define("HAVE_CLOCK_GETTIME", 1)
@@ -585,13 +609,19 @@ def check_clock_functions(v):
             v.TIMEMODULE_LIB = "-lrt"
     v.export("TIMEMODULE_LIB")
 
-    if not pyconf.check_func("clock_getres"):
+    pyconf.checking("for clock_getres")
+    found = pyconf.check_func("clock_getres")
+    pyconf.result(found)
+    if not found:
         if pyconf.check_lib("rt", "clock_getres"):
             pyconf.define("HAVE_CLOCK_GETRES", 1)
 
     # clock_settime: avoid on Android and iOS (crashes when unprivileged)
     if v.ac_sys_system not in ("Linux-android", "iOS"):
-        if not pyconf.check_func("clock_settime"):
+        pyconf.checking("for clock_settime")
+        found = pyconf.check_func("clock_settime")
+        pyconf.result(found)
+        if not found:
             if pyconf.check_lib("rt", "clock_settime"):
                 pyconf.define("HAVE_CLOCK_SETTIME", 1)
 
@@ -601,11 +631,17 @@ def check_clock_functions(v):
         v.ac_sys_system == "Linux-android" and android_api < 23
     )
     if not skip_clock_nanosleep:
-        if not pyconf.check_func("clock_nanosleep"):
+        pyconf.checking("for clock_nanosleep")
+        found = pyconf.check_func("clock_nanosleep")
+        pyconf.result(found)
+        if not found:
             if pyconf.check_lib("rt", "clock_nanosleep"):
                 pyconf.define("HAVE_CLOCK_NANOSLEEP", 1)
 
-    if not pyconf.check_func("nanosleep"):
+    pyconf.checking("for nanosleep")
+    found = pyconf.check_func("nanosleep")
+    pyconf.result(found)
+    if not found:
         if pyconf.check_lib("rt", "nanosleep"):
             pyconf.define("HAVE_NANOSLEEP", 1)
 
@@ -625,7 +661,9 @@ def check_structs(v):
         "struct stat.st_birthtime",
         "struct stat.st_blocks",
     ):
-        pyconf.check_member(m, includes=["sys/types.h", "sys/stat.h"])
+        pyconf.checking(f"for {m}")
+        found = pyconf.check_member(m, includes=["sys/types.h", "sys/stat.h"])
+        pyconf.result(found)
 
     pyconf.check_members(
         ["struct passwd.pw_gecos", "struct passwd.pw_passwd"],
@@ -633,7 +671,9 @@ def check_structs(v):
     )
 
     # Issue #21085: In Cygwin, siginfo_t does not have si_band field.
-    pyconf.check_member("siginfo_t.si_band", includes=["signal.h"])
+    pyconf.checking("for siginfo_t.si_band")
+    found = pyconf.check_member("siginfo_t.si_band", includes=["signal.h"])
+    pyconf.result(found)
 
     # Some systems have the definitions of the mask bits without having the
     # corresponding members in struct statx.  Check for members added after Linux
@@ -647,7 +687,8 @@ def check_structs(v):
             "struct statx.stx_dio_read_offset_align",
             "struct statx.stx_atomic_write_unit_max_opt",
         ):
-            pyconf.check_member(m)
+            pyconf.checking(f"for {m}")
+            pyconf.result(pyconf.check_member(m))
 
     # altzone in time.h
     pyconf.checking("for time.h that defines altzone")
@@ -727,9 +768,13 @@ def check_posix_shmem(v):
             "shm_open", ["rt"], required=False
         )
         posixshmem_libs = "-lrt" if shm_open_result == "-lrt" else ""
-        have_posix_shmem = pyconf.check_func(
-            "shm_open", headers=["sys/mman.h"]
-        ) and pyconf.check_func("shm_unlink", headers=["sys/mman.h"])
+        pyconf.checking("for shm_open")
+        shm_open = pyconf.check_func("shm_open", headers=["sys/mman.h"])
+        pyconf.result(shm_open)
+        pyconf.checking("for shm_unlink")
+        shm_unlink = pyconf.check_func("shm_unlink", headers=["sys/mman.h"])
+        pyconf.result(shm_unlink)
+        have_posix_shmem = shm_open and shm_unlink
     v.POSIXSHMEM_LIBS = posixshmem_libs
     v.have_posix_shmem = have_posix_shmem
     v.export("POSIXSHMEM_CFLAGS")
@@ -799,14 +844,16 @@ def check_posix_functions(v):
 
     # Linux-only: statx
     if v.ac_sys_system.startswith("Linux"):
-        pyconf.check_func("statx")
+        pyconf.checking("for statx")
+        pyconf.result(pyconf.check_func("statx"))
 
     # Force lchmod off for Linux. Linux disallows changing the mode of symbolic
     # links. Some libc implementations have a stub lchmod implementation that always
     # returns an error.
     machdep = v.MACHDEP
     if machdep != "linux":
-        pyconf.check_func("lchmod")
+        pyconf.checking("for lchmod")
+        pyconf.result(pyconf.check_func("lchmod"))
 
     # iOS defines some system methods that can be linked (so they are
     # found by configure), but either raise a compilation error (because the
@@ -834,45 +881,68 @@ def check_special_functions(v):
         )
 
     # PY_CHECK_FUNC equivalents — take address to verify usability
-    pyconf.check_func("chroot", headers=["unistd.h"])
-    pyconf.check_func("link", headers=["unistd.h"])
-    pyconf.check_func("symlink", headers=["unistd.h"])
-    pyconf.check_func("fchdir", headers=["unistd.h"])
-    pyconf.check_func("fsync", headers=["unistd.h"])
-    pyconf.check_func("fdatasync", headers=["unistd.h"])
+    for _func in ("chroot", "link", "symlink", "fchdir", "fsync", "fdatasync"):
+        pyconf.checking(f"for {_func}")
+        pyconf.result(pyconf.check_func(_func, headers=["unistd.h"]))
     disable_epoll = DISABLE_EPOLL.is_no()
     pyconf.checking("for --disable-epoll")
     pyconf.result("yes" if disable_epoll else "no")
     if not disable_epoll:
-        pyconf.check_func(
-            "epoll_create", headers=["sys/epoll.h"], define="HAVE_EPOLL"
+        pyconf.checking("for epoll_create")
+        pyconf.result(
+            pyconf.check_func(
+                "epoll_create", headers=["sys/epoll.h"], define="HAVE_EPOLL"
+            )
         )
-        pyconf.check_func("epoll_create1", headers=["sys/epoll.h"])
-    pyconf.check_func("kqueue", headers=["sys/types.h", "sys/event.h"])
-    pyconf.check_func("prlimit", headers=["sys/time.h", "sys/resource.h"])
-    pyconf.check_func(
-        "_dyld_shared_cache_contains_path",
-        headers=["mach-o/dyld.h"],
-        define="HAVE_DYLD_SHARED_CACHE_CONTAINS_PATH",
+        pyconf.checking("for epoll_create1")
+        pyconf.result(
+            pyconf.check_func("epoll_create1", headers=["sys/epoll.h"])
+        )
+    pyconf.checking("for kqueue")
+    pyconf.result(
+        pyconf.check_func("kqueue", headers=["sys/types.h", "sys/event.h"])
     )
-    pyconf.check_func(
-        "memfd_create",
-        headers=["sys/mman.h", "sys/memfd.h"],
-        conditional_headers=["HAVE_SYS_MMAN_H", "HAVE_SYS_MEMFD_H"],
+    pyconf.checking("for prlimit")
+    pyconf.result(
+        pyconf.check_func("prlimit", headers=["sys/time.h", "sys/resource.h"])
     )
-    pyconf.check_func(
-        "eventfd",
-        headers=["sys/eventfd.h"],
-        conditional_headers=["HAVE_SYS_EVENTFD_H"],
+    pyconf.checking("for _dyld_shared_cache_contains_path")
+    pyconf.result(
+        pyconf.check_func(
+            "_dyld_shared_cache_contains_path",
+            headers=["mach-o/dyld.h"],
+            define="HAVE_DYLD_SHARED_CACHE_CONTAINS_PATH",
+        )
     )
-    pyconf.check_func(
-        "timerfd_create",
-        headers=["sys/timerfd.h"],
-        conditional_headers=["HAVE_SYS_TIMERFD_H"],
-        define="HAVE_TIMERFD_CREATE",
+    pyconf.checking("for memfd_create")
+    pyconf.result(
+        pyconf.check_func(
+            "memfd_create",
+            headers=["sys/mman.h", "sys/memfd.h"],
+            conditional_headers=["HAVE_SYS_MMAN_H", "HAVE_SYS_MEMFD_H"],
+        )
     )
-    pyconf.check_func("ctermid_r", headers=["stdio.h"])
-    pyconf.check_func("getpagesize", headers=["unistd.h"])
+    pyconf.checking("for eventfd")
+    pyconf.result(
+        pyconf.check_func(
+            "eventfd",
+            headers=["sys/eventfd.h"],
+            conditional_headers=["HAVE_SYS_EVENTFD_H"],
+        )
+    )
+    pyconf.checking("for timerfd_create")
+    pyconf.result(
+        pyconf.check_func(
+            "timerfd_create",
+            headers=["sys/timerfd.h"],
+            conditional_headers=["HAVE_SYS_TIMERFD_H"],
+            define="HAVE_TIMERFD_CREATE",
+        )
+    )
+    pyconf.checking("for ctermid_r")
+    pyconf.result(pyconf.check_func("ctermid_r", headers=["stdio.h"]))
+    pyconf.checking("for getpagesize")
+    pyconf.result(pyconf.check_func("getpagesize", headers=["unistd.h"]))
 
     # flock: check declaration then library
     # Linking with libbsd may be necessary on AIX for flock function.
@@ -882,7 +952,10 @@ def check_special_functions(v):
         body="void *p = flock;",
     ):
         pyconf.result("yes")
-        if not pyconf.check_func("flock"):
+        pyconf.checking("for flock")
+        have_flock = pyconf.check_func("flock")
+        pyconf.result(have_flock)
+        if not have_flock:
             if pyconf.check_lib("bsd", "flock"):
                 v.FCNTL_LIBS = "-lbsd"
     else:
@@ -931,7 +1004,9 @@ def check_special_functions(v):
         default="cross",
     )
     if ac_cv_have_chflags == "cross":
+        pyconf.checking("for chflags")
         ac_cv_have_chflags = pyconf.check_func("chflags")
+        pyconf.result(ac_cv_have_chflags)
     pyconf.result(ac_cv_have_chflags)
     if ac_cv_have_chflags:
         pyconf.define(
@@ -950,7 +1025,9 @@ def check_special_functions(v):
         default="cross",
     )
     if ac_cv_have_lchflags == "cross":
+        pyconf.checking("for lchflags")
         ac_cv_have_lchflags = pyconf.check_func("lchflags")
+        pyconf.result(ac_cv_have_lchflags)
     pyconf.result(ac_cv_have_lchflags)
     if ac_cv_have_lchflags:
         pyconf.define(
@@ -1084,18 +1161,25 @@ def check_headers(v):
     pyconf.check_headers("dirent.h")
 
     # AC_HEADER_MAJOR: check sys/mkdev.h then sys/sysmacros.h for major/minor/makedev
-    if pyconf.check_header("sys/mkdev.h"):
+    pyconf.checking("for sys/mkdev.h")
+    found = pyconf.check_header("sys/mkdev.h")
+    pyconf.result(found)
+    if found:
         pyconf.define(
             "MAJOR_IN_MKDEV",
             1,
             "Define to 1 if major, minor, and makedev are declared in <sys/mkdev.h>.",
         )
-    elif pyconf.check_header("sys/sysmacros.h"):
-        pyconf.define(
-            "MAJOR_IN_SYSMACROS",
-            1,
-            "Define to 1 if major, minor, and makedev are declared in <sys/sysmacros.h>.",
-        )
+    else:
+        pyconf.checking("for sys/sysmacros.h")
+        found = pyconf.check_header("sys/sysmacros.h")
+        pyconf.result(found)
+        if found:
+            pyconf.define(
+                "MAJOR_IN_SYSMACROS",
+                1,
+                "Define to 1 if major, minor, and makedev are declared in <sys/sysmacros.h>.",
+            )
 
     # bluetooth/bluetooth.h has been known to not compile with -std=c99.
     # http://permalink.gmane.org/gmane.linux.bluez.kernel/22294
@@ -1173,14 +1257,17 @@ def check_headers(v):
 
 def check_types_and_macros(v):
     """Check clock_t, makedev, le64toh, large-file support, and standard type macros."""
-    pyconf.check_type(
-        "clock_t",
-        fallback_define=(
+    pyconf.checking("for clock_t")
+    pyconf.result(
+        pyconf.check_type(
             "clock_t",
-            "long",
-            "Define to 'long' if <time.h> does not define clock_t.",
-        ),
-        headers=["time.h"],
+            fallback_define=(
+                "clock_t",
+                "long",
+                "Define to 'long' if <time.h> does not define clock_t.",
+            ),
+            headers=["time.h"],
+        )
     )
 
     if pyconf.link_check(
@@ -1252,8 +1339,12 @@ def check_types_and_macros(v):
     pyconf.macro("AC_TYPE_SIZE_T", [])
     pyconf.macro("AC_TYPE_UID_T", [])
 
-    pyconf.check_type("ssize_t", headers=["sys/types.h"])
-    if pyconf.check_type("__uint128_t"):
+    pyconf.checking("for ssize_t")
+    pyconf.result(pyconf.check_type("ssize_t", headers=["sys/types.h"]))
+    pyconf.checking("for __uint128_t")
+    found = pyconf.check_type("__uint128_t")
+    pyconf.result(found)
+    if found:
         pyconf.define(
             "HAVE_GCC_UINT128_T",
             1,

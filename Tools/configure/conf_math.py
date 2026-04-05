@@ -71,7 +71,10 @@ def check_math_library(v):
         pyconf.result(f'default LIBC="{v.LIBC}"')
 
     # Linux: __fpu_control (AC_CHECK_FUNC with custom action → no HAVE_ define)
-    if not pyconf.check_func("__fpu_control", autodefine=False):
+    pyconf.checking("for __fpu_control")
+    found = pyconf.check_func("__fpu_control", autodefine=False)
+    pyconf.result(found)
+    if not found:
         pyconf.check_lib("ieee", "__fpu_control")
 
 
@@ -245,7 +248,10 @@ def check_c99_math(v):
         "log1p",
         "log2",
     ):
-        if not pyconf.check_func(mfunc):
+        pyconf.checking(f"for {mfunc}")
+        found = pyconf.check_func(mfunc)
+        pyconf.result(found)
+        if not found:
             pyconf.error("Python requires C99 compatible libm")
     v.LIBS = libs_save
 
@@ -288,7 +294,10 @@ def check_wchar(v):
     # ---------------------------------------------------------------------------
 
     # Check for wchar.h
-    if pyconf.check_header("wchar.h"):
+    pyconf.checking("for wchar.h")
+    has_wchar = pyconf.check_header("wchar.h")
+    pyconf.result(has_wchar)
+    if has_wchar:
         pyconf.define(
             "HAVE_WCHAR_H",
             1,
@@ -300,7 +309,10 @@ def check_wchar(v):
 
     if v.wchar_h:
         # Determine wchar_t size
-        pyconf.check_sizeof("wchar_t", default=4, includes=["wchar.h"])
+        pyconf.checking("for sizeof wchar_t")
+        pyconf.result(
+            pyconf.check_sizeof("wchar_t", default=4, includes=["wchar.h"])
+        )
 
         # Check whether wchar_t is signed or not
         pyconf.checking("whether wchar_t is signed")

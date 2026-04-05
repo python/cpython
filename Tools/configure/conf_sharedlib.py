@@ -325,7 +325,8 @@ def setup_dynload(v):
 
     # the dlopen() function means we might want to use dynload_shlib.o. some
     # platforms have dlopen(), but don't want to use it.
-    pyconf.check_func("dlopen")
+    pyconf.checking("for dlopen")
+    pyconf.result(pyconf.check_func("dlopen"))
     ac_cv_func_dlopen = pyconf.cache.get("ac_cv_func_dlopen", False)
     # Also update v in case Part 5 didn't set it
     if not v.is_set("ac_cv_func_dlopen"):

@@ -441,7 +441,12 @@ def check_compiler_characteristics(v):
         )
 
     # check for socketpair
-    pyconf.check_func("socketpair", includes=["sys/types.h", "sys/socket.h"])
+    pyconf.checking("for socketpair")
+    pyconf.result(
+        pyconf.check_func(
+            "socketpair", includes=["sys/types.h", "sys/socket.h"]
+        )
+    )
 
     # check if sockaddr has sa_len member
     pyconf.checking("if sockaddr has sa_len member")
@@ -614,20 +619,34 @@ def check_stdatomic(v):
 
 def check_sizes(v):
     """Check sizeof/alignof for fundamental types and pthread types."""
-    pyconf.check_sizeof("int", default=4)
-    pyconf.check_sizeof("long", default=4)
-    pyconf.check_alignof("long")
-    pyconf.check_sizeof("long long", default=8)
-    pyconf.check_sizeof("void *", default=4)
-    pyconf.check_sizeof("short", default=2)
-    pyconf.check_sizeof("float", default=4)
-    pyconf.check_sizeof("double", default=8)
-    pyconf.check_sizeof("fpos_t", default=4)
-    pyconf.check_sizeof("size_t", default=4)
-    pyconf.check_alignof("size_t")
-    pyconf.check_sizeof("pid_t", default=4)
-    pyconf.check_sizeof("uintptr_t")
-    pyconf.check_alignof("max_align_t")
+    pyconf.checking("for sizeof int")
+    pyconf.result(pyconf.check_sizeof("int", default=4))
+    pyconf.checking("for sizeof long")
+    pyconf.result(pyconf.check_sizeof("long", default=4))
+    pyconf.checking("for alignof long")
+    pyconf.result(pyconf.check_alignof("long"))
+    pyconf.checking("for sizeof long long")
+    pyconf.result(pyconf.check_sizeof("long long", default=8))
+    pyconf.checking("for sizeof void *")
+    pyconf.result(pyconf.check_sizeof("void *", default=4))
+    pyconf.checking("for sizeof short")
+    pyconf.result(pyconf.check_sizeof("short", default=2))
+    pyconf.checking("for sizeof float")
+    pyconf.result(pyconf.check_sizeof("float", default=4))
+    pyconf.checking("for sizeof double")
+    pyconf.result(pyconf.check_sizeof("double", default=8))
+    pyconf.checking("for sizeof fpos_t")
+    pyconf.result(pyconf.check_sizeof("fpos_t", default=4))
+    pyconf.checking("for sizeof size_t")
+    pyconf.result(pyconf.check_sizeof("size_t", default=4))
+    pyconf.checking("for alignof size_t")
+    pyconf.result(pyconf.check_alignof("size_t"))
+    pyconf.checking("for sizeof pid_t")
+    pyconf.result(pyconf.check_sizeof("pid_t", default=4))
+    pyconf.checking("for sizeof uintptr_t")
+    pyconf.result(pyconf.check_sizeof("uintptr_t"))
+    pyconf.checking("for alignof max_align_t")
+    pyconf.result(pyconf.check_alignof("max_align_t"))
     # AC_TYPE_LONG_DOUBLE: check that long double exists (sizeof >= sizeof(double))
     # autoconf uses <=, not >: "sizeof(double) <= sizeof(long double)"
     # Check that the C compiler supports long double.
@@ -641,9 +660,12 @@ def check_sizes(v):
             1,
             "Define to 1 if the C compiler supports long double.",
         )
-    pyconf.check_sizeof("long double", default=16)
-    pyconf.check_sizeof("_Bool", default=1)
-    pyconf.check_sizeof("off_t", headers=["sys/types.h"])
+    pyconf.checking("for sizeof long double")
+    pyconf.result(pyconf.check_sizeof("long double", default=16))
+    pyconf.checking("for sizeof _Bool")
+    pyconf.result(pyconf.check_sizeof("_Bool", default=1))
+    pyconf.checking("for sizeof off_t")
+    pyconf.result(pyconf.check_sizeof("off_t", headers=["sys/types.h"]))
 
     pyconf.checking("whether to enable large file support")
     if pyconf.sizeof("off_t") > pyconf.sizeof("long") and pyconf.sizeof(
@@ -659,7 +681,10 @@ def check_sizes(v):
     else:
         pyconf.result("no")
 
-    pyconf.check_sizeof("time_t", headers=["sys/types.h", "time.h"])
+    pyconf.checking("for sizeof time_t")
+    pyconf.result(
+        pyconf.check_sizeof("time_t", headers=["sys/types.h", "time.h"])
+    )
 
     save_CC = v.CC
     if v.ac_cv_kpthread:
@@ -675,9 +700,11 @@ def check_sizes(v):
         body="pthread_t x; x = *(pthread_t*)0;",
     )
     if ac_cv_have_pthread_t:
-        pyconf.check_sizeof("pthread_t", headers=["pthread.h"])
+        pyconf.checking("for sizeof pthread_t")
+        pyconf.result(pyconf.check_sizeof("pthread_t", headers=["pthread.h"]))
 
-    pyconf.check_sizeof("pthread_key_t", headers=["pthread.h"])
+    pyconf.checking("for sizeof pthread_key_t")
+    pyconf.result(pyconf.check_sizeof("pthread_key_t", headers=["pthread.h"]))
     # Check if pthread_key_t is compatible with int
     if pyconf.sizeof("pthread_key_t") == pyconf.sizeof(
         "int"

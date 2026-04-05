@@ -2269,12 +2269,12 @@ def run_check(
     """
     code = source if source else description_or_source
     # Resolve alias params; default to True/False so callers can use `if result:`
-    _success = (
+    success = (
         True
         if on_success_return is None and success is None
         else (on_success_return if on_success_return is not None else success)
     )
-    _failure = (
+    failure = (
         False
         if on_failure_return is None and failure is None
         else (on_failure_return if on_failure_return is not None else failure)
@@ -2308,14 +2308,14 @@ def run_check(
             f.write(_confdefs_preamble() + code)
         try:
             if not _run_cc(src, exe, cflags=all_cflags, libs=all_libs):
-                return _failure
+                return failure
             run = subprocess.run(
                 [exe], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
             )
-            ret = _success if run.returncode == 0 else _failure
+            ret = success if run.returncode == 0 else failure
             return ret
         except OSError:
-            return _failure
+            return failure
 
 
 def run_check_with_cc_flag(
@@ -2510,10 +2510,6 @@ def check_header(
         "/", "_"
     ).replace(".", "_")
     define_name = _header_name_to_define(header)
-    # Print "checking for <header>..." unless the caller already started one.
-    own_checking = not _result_pending
-    if own_checking:
-        checking(f"for {header}")
     if cache_key in cache and not extra_cflags and not extra_includes:
         _print_cached()
         found = cache[cache_key]
@@ -2525,8 +2521,6 @@ def check_header(
                 1,
                 f"Define to 1 if you have the <{header}> header file.",
             )
-        if own_checking:
-            result(found)
         return found
     # Use AC_INCLUDES_DEFAULT preamble when no custom extra_includes given.
     preamble = extra_includes if extra_includes else _ac_includes_default()
@@ -2544,8 +2538,6 @@ def check_header(
             1,
             f"Define to 1 if you have the <{header}> header file.",
         )
-    if own_checking:
-        result(found)
     return found
 
 
@@ -2567,7 +2559,9 @@ def check_headers(
             flat.append(h)
     all_found = True
     for h in flat:
+        checking(f"for {h}")
         found = check_header(h, extra_includes=prologue)
+        result(found)
         all_found = all_found and found
         if defines is not None:
             defines[h] = found
@@ -2636,7 +2630,9 @@ def check_members(
         else:
             flat.append(m)
     for m in flat:
-        check_member(m, includes=includes)
+        checking(f"for {m}")
+        found = check_member(m, includes=includes)
+        result(found)
 
 
 def check_struct_tm() -> None:
@@ -2686,9 +2682,6 @@ def check_sizeof(
     Defines SIZEOF_<TYPE> as a side-effect.
     """
     cache_key = "ac_cv_sizeof_" + _type_to_define(type_).lower()
-    own_checking = not _result_pending
-    if own_checking:
-        checking(f"for sizeof {type_}")
     if cache_key in cache:
         _print_cached()
         size = int(cache[cache_key])
@@ -2696,8 +2689,6 @@ def check_sizeof(
         define(
             define_name, size, f"The size of `{type_}', as computed by sizeof."
         )
-        if own_checking:
-            result(str(size))
         return size
     extra_includes = "".join(
         f"#include <{h}>\n" for h in (headers or includes or [])
@@ -2726,8 +2717,6 @@ def check_sizeof(
     cache[cache_key] = str(size)
     define_name = "SIZEOF_" + _type_to_define(type_)
     define(define_name, size, f"The size of `{type_}', as computed by sizeof.")
-    if own_checking:
-        result(str(size))
     return size
 
 
@@ -2740,9 +2729,6 @@ def check_alignof(type_: str) -> int:
     Returns alignment as int; defines ALIGNOF_<TYPE> as a side-effect.
     """
     cache_key = "ac_cv_alignof_" + _type_to_define(type_).lower()
-    own_checking = not _result_pending
-    if own_checking:
-        checking(f"for alignof {type_}")
     if cache_key in cache:
         _print_cached()
         alignment = int(cache[cache_key])
@@ -2752,8 +2738,6 @@ def check_alignof(type_: str) -> int:
             alignment,
             f"The alignment of `{type_}', as computed by _Alignof.",
         )
-        if own_checking:
-            result(str(alignment))
         return alignment
     alignment = None
     if not cross_compiling:
@@ -2783,8 +2767,6 @@ def check_alignof(type_: str) -> int:
         alignment,
         f"The alignment of `{type_}', as computed by _Alignof.",
     )
-    if own_checking:
-        result(str(alignment))
     return alignment
 
 
@@ -3044,9 +3026,6 @@ def check_func(
             f"(must match [a-z_][a-z0-9_]*)"
         )
     cache_key = f"ac_cv_func_{func}"
-    own_checking = not _result_pending
-    if own_checking:
-        checking(f"for {func}")
     if cache_key in cache:
         _print_cached()
         found = cache[cache_key]
@@ -3058,8 +3037,6 @@ def check_func(
                 1,
                 f"Define to 1 if you have the `{func}' function.",
             )
-        if own_checking:
-            result(found)
         return found
     all_headers = list(headers or []) + list(includes or [])
     # Build the set of headers that are covered by conditional_headers, so we
@@ -3148,15 +3125,15 @@ def check_func(
         define_unquoted(
             define_name, 1, f"Define to 1 if you have the `{func}' function."
         )
-    if own_checking:
-        result(found)
     return found
 
 
 def check_funcs(funcs: list[str], headers: list[str] | None = None) -> None:
     """AC_CHECK_FUNCS — check multiple functions; define HAVE_<FUNC> for each found."""
     for f in funcs:
-        check_func(f, headers=headers)
+        checking(f"for {f}")
+        found = check_func(f, headers=headers)
+        result(found)
 
 
 def check_decl(
@@ -3218,12 +3195,14 @@ def check_decls(
     names = [decls] if isinstance(decls, str) else decls
     all_includes = list(includes or []) + list(extra_includes or [])
     for d in names:
+        checking(f"whether {d} is declared")
         # AC_CHECK_DECLS defines HAVE_DECL_<NAME> as 1 or 0 (always defined)
-        check_decl(
+        found = check_decl(
             d,
             includes=all_includes,
             define_name="HAVE_DECL_" + d.upper(),
         )
+        result(found)
 
 
 # ---------------------------------------------------------------------------
@@ -3294,7 +3273,10 @@ def replace_funcs(funcs: list[str]) -> None:
     """
     missing = substs.get("LIBOBJS", "").split()
     for func in funcs:
-        if not check_func(func):
+        checking(f"for {func}")
+        found = check_func(func)
+        result(found)
+        if not found:
             # Match autoconf's final LIBOBJS fixup: prepend ${LIBOBJDIR}
             # and insert $U before the extension so Makefile.pre.in can
             # locate the replacement source under Python/.

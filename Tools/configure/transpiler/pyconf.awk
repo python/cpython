@@ -680,7 +680,6 @@ function pyconf_check_header(header, prologue, default_inc, define, cache_key, e
         if (cache_key in CACHE) {
                 rc = (CACHE[cache_key] == "yes")
         } else {
-                pyconf_checking("for " header)
                 if (prologue != "")
                         source = prologue "\n#include <" header ">\nint main(void) { return 0; }"
                 else if (default_inc != "")
@@ -690,7 +689,6 @@ function pyconf_check_header(header, prologue, default_inc, define, cache_key, e
                 rc = _pyconf_compile_test_cd(source, extra_cflags)
                 CACHE[cache_key] = rc ? "yes" : "no"
                 V[cache_key] = rc ? "yes" : "no"
-                pyconf_result(rc ? "yes" : "no")
         }
 
         if (rc)
@@ -698,12 +696,15 @@ function pyconf_check_header(header, prologue, default_inc, define, cache_key, e
         return rc
 }
 
-function pyconf_check_headers(headers, n, i, all_found) {
+function pyconf_check_headers(headers, n, i, all_found, rc) {
         all_found = 1
         n = headers[0] + 0
         for (i = 1; i <= n; i++)
                 if (headers[i] != "") {
-                        if (!pyconf_check_header(headers[i]))
+                        pyconf_checking("for " headers[i])
+                        rc = pyconf_check_header(headers[i])
+                        pyconf_result(rc ? "yes" : "no")
+                        if (!rc)
                                 all_found = 0
                 }
         return all_found
@@ -723,7 +724,6 @@ function pyconf_check_func(fname, headers, define, source, inc, cv, rc, cache_ke
                 return rc
         }
 
-        pyconf_checking("for " fname)
         inc = ""
         has_headers = 0
         if (headers != "") {
@@ -756,26 +756,31 @@ function pyconf_check_func(fname, headers, define, source, inc, cv, rc, cache_ke
         }
         CACHE[cache_key] = rc ? "yes" : "no"
         V[cache_key] = rc ? "yes" : "no"
-        pyconf_result(rc ? "yes" : "no")
 
         if (rc)
                 pyconf_define(define, 1, 0, "Define to 1 if you have the `" fname "` function.")
         return rc
 }
 
-function pyconf_check_funcs(funcs, n, i) {
+function pyconf_check_funcs(funcs, n, i, rc) {
         n = funcs[0] + 0
         for (i = 1; i <= n; i++)
-                if (funcs[i] != "")
-                        pyconf_check_func(funcs[i])
+                if (funcs[i] != "") {
+                        pyconf_checking("for " funcs[i])
+                        rc = pyconf_check_func(funcs[i])
+                        pyconf_result(rc ? "yes" : "no")
+                }
 }
 
-function pyconf_replace_funcs(funcs, n, i) {
+function pyconf_replace_funcs(funcs, n, i, rc) {
         # AC_REPLACE_FUNCS — check each function; add missing ones to LIBOBJS.
         n = funcs[0] + 0
         for (i = 1; i <= n; i++) {
                 if (funcs[i] != "") {
-                        if (!pyconf_check_func(funcs[i])) {
+                        pyconf_checking("for " funcs[i])
+                        rc = pyconf_check_func(funcs[i])
+                        pyconf_result(rc ? "yes" : "no")
+                        if (!rc) {
                                 if (SUBST["LIBOBJS"] != "")
                                         SUBST["LIBOBJS"] = SUBST["LIBOBJS"] " ${LIBOBJDIR}" funcs[i] "$U.o"
                                 else
@@ -810,7 +815,6 @@ function pyconf_check_sizeof(type_name, default_val, headers, source, inc, resul
                 return result
         }
 
-        pyconf_checking("for sizeof " type_name)
         inc = _pyconf_ac_includes_default()
         if (headers != "") {
                 n = split(headers, arr, " ")
@@ -836,7 +840,6 @@ function pyconf_check_sizeof(type_name, default_val, headers, source, inc, resul
         }
         CACHE[cv] = result
         V[cv] = result
-        pyconf_result(result)
         pyconf_define(define, result, 0, "The size of `" type_name "`, as computed by sizeof.")
         return result
 }
@@ -854,7 +857,6 @@ function pyconf_check_alignof(type_name, default_val, headers, source, inc, resu
                 return result
         }
 
-        pyconf_checking("for alignof " type_name)
         inc = _pyconf_ac_includes_default()
         if (headers != "") {
                 n = split(headers, arr, " ")
@@ -875,7 +877,6 @@ function pyconf_check_alignof(type_name, default_val, headers, source, inc, resu
         if (result == "") result = (default_val != "" ? default_val : "0")
         CACHE[cv] = result
         V[cv] = result
-        pyconf_result(result)
         pyconf_define(define, result, 0, "")
         return result
 }
@@ -892,7 +893,6 @@ function pyconf_check_type(type_name, headers, source, inc, cv, rc, define, n, a
         if (cv in CACHE)
                 return (CACHE[cv] == "yes")
 
-        pyconf_checking("for " type_name)
         inc = _pyconf_ac_includes_default()
         if (headers != "") {
                 n = split(headers, arr, " ")
@@ -905,7 +905,6 @@ function pyconf_check_type(type_name, headers, source, inc, cv, rc, define, n, a
         rc = _pyconf_compile_test_cd(source, "")
         CACHE[cv] = rc ? "yes" : "no"
         V[cv] = rc ? "yes" : "no"
-        pyconf_result(rc ? "yes" : "no")
 
         if (rc)
                 pyconf_define(define, 1, 0, "Define to 1 if the system has the type `" type_name "`.")
@@ -926,7 +925,6 @@ function pyconf_check_member(member, headers, define, struct_name, field, source
         if (cv in CACHE)
                 return (CACHE[cv] == "yes")
 
-        pyconf_checking("for " member)
         # Match Python version: use custom headers if provided, else use default headers
         if (headers != "") {
                 n = split(headers, arr, " ")
@@ -942,18 +940,20 @@ function pyconf_check_member(member, headers, define, struct_name, field, source
         rc = _pyconf_compile_test_cd(source, "")
         CACHE[cv] = rc ? "yes" : "no"
         V[cv] = rc ? "yes" : "no"
-        pyconf_result(rc ? "yes" : "no")
 
         if (rc)
                 pyconf_define(define, 1, 0, "")
         return rc
 }
 
-function pyconf_check_members(members, n, arr, i) {
+function pyconf_check_members(members, n, arr, i, rc) {
         n = split(members, arr, " ")
         for (i = 1; i <= n; i++)
-                if (arr[i] != "")
-                        pyconf_check_member(arr[i])
+                if (arr[i] != "") {
+                        pyconf_checking("for " arr[i])
+                        rc = pyconf_check_member(arr[i])
+                        pyconf_result(rc ? "yes" : "no")
+                }
 }
 
 function pyconf_check_struct_tm() {
@@ -982,7 +982,6 @@ function pyconf_check_define(headers, macro, source, inc, cv, rc, n, arr, i) {
         if (cv in CACHE)
                 return (CACHE[cv] == "yes")
 
-        pyconf_checking("for " macro)
         inc = _pyconf_ac_includes_default()
         if (headers != "") {
                 n = split(headers, arr, " ")
@@ -994,7 +993,6 @@ function pyconf_check_define(headers, macro, source, inc, cv, rc, n, arr, i) {
         rc = _pyconf_compile_test_cd(source, "")
         CACHE[cv] = rc ? "yes" : "no"
         V[cv] = rc ? "yes" : "no"
-        pyconf_result(rc ? "yes" : "no")
         return rc
 }
 
@@ -1007,7 +1005,6 @@ function pyconf_check_decl(name, includes, define, source, inc, cv, rc, _darr, _
                 return rc
         }
 
-        pyconf_checking("whether " name " is declared")
         inc = ""
         if (includes != "") {
                 _dn = split(includes, _darr, " ")
@@ -1019,7 +1016,6 @@ function pyconf_check_decl(name, includes, define, source, inc, cv, rc, _darr, _
         rc = _pyconf_compile_test_cd(source, "")
         CACHE[cv] = rc ? "yes" : "no"
         V[cv] = rc ? "yes" : "no"
-        pyconf_result(rc ? "yes" : "no")
         pyconf_define(define, rc ? 1 : 0, 0, "")
         return rc
 }
@@ -1043,8 +1039,10 @@ function pyconf_check_decls(decls, n, i, sep, headers) {
                 n = sep - 1
         }
         for (i = 1; i <= n; i++)
-                if (decls[i] != "")
-                        pyconf_check_decl(decls[i], headers)
+                if (decls[i] != "") {
+                        pyconf_checking("whether " decls[i] " is declared")
+                        pyconf_result(pyconf_check_decl(decls[i], headers) ? "yes" : "no")
+                }
 }
 
 # ---------------------------------------------------------------------------

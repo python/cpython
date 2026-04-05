@@ -487,7 +487,10 @@ def setup_valgrind(v):
     """Handle --with-valgrind option."""
     with_valgrind = WITH_VALGRIND.process_value(None)
     if with_valgrind != "no":
-        if pyconf.check_header("valgrind/valgrind.h"):
+        pyconf.checking("for valgrind/valgrind.h")
+        found = pyconf.check_header("valgrind/valgrind.h")
+        pyconf.result(found)
+        if found:
             pyconf.define(
                 "WITH_VALGRIND",
                 1,

@@ -87,9 +87,10 @@ def detect_libffi(v):
                 v.LIBFFI_CFLAGS, v.LIBFFI_LIBS = _split_pkg_flags(parts)
         if v.have_libffi == "missing":
             # Fall back: check header + lib directly
-            if pyconf.check_header("ffi.h") and pyconf.check_lib(
-                "ffi", "ffi_call"
-            ):
+            pyconf.checking("for ffi.h")
+            found_ffi_h = pyconf.check_header("ffi.h")
+            pyconf.result(found_ffi_h)
+            if found_ffi_h and pyconf.check_lib("ffi", "ffi_call"):
                 v.have_libffi = True
                 v.LIBFFI_CFLAGS = ""
                 v.LIBFFI_LIBS = "-lffi"
@@ -117,9 +118,18 @@ def detect_libffi(v):
         with pyconf.save_env():
             v.CFLAGS = f"{v.CFLAGS} {v.LIBFFI_CFLAGS}".strip()
             v.LIBS = f"{v.LIBS} {v.LIBFFI_LIBS}".strip()
-            pyconf.check_func("ffi_prep_cif_var", headers=["ffi.h"])
-            pyconf.check_func("ffi_prep_closure_loc", headers=["ffi.h"])
-            pyconf.check_func("ffi_closure_alloc", headers=["ffi.h"])
+            pyconf.checking("for ffi_prep_cif_var")
+            pyconf.result(
+                pyconf.check_func("ffi_prep_cif_var", headers=["ffi.h"])
+            )
+            pyconf.checking("for ffi_prep_closure_loc")
+            pyconf.result(
+                pyconf.check_func("ffi_prep_closure_loc", headers=["ffi.h"])
+            )
+            pyconf.checking("for ffi_closure_alloc")
+            pyconf.result(
+                pyconf.check_func("ffi_closure_alloc", headers=["ffi.h"])
+            )
 
     v.export("MODULE__CTYPES_MALLOC_CLOSURE")
     v.export("LIBFFI_CFLAGS")
@@ -202,9 +212,12 @@ def detect_sqlite3(v):
     check_cflags = v.LIBSQLITE3_CFLAGS + sqlite_inc
     v.LIBSQLITE3_CFLAGS += r" -I$(srcdir)/Modules/_sqlite"
 
-    if pyconf.check_header(
+    pyconf.checking("for sqlite3.h")
+    found_sqlite3_h = pyconf.check_header(
         "sqlite3.h", extra_cflags=check_cflags, autodefine=False
-    ):
+    )
+    pyconf.result(found_sqlite3_h)
+    if found_sqlite3_h:
         v.have_sqlite3 = True
         if pyconf.compile_check(
             preamble="#include <sqlite3.h>\n"
@@ -320,9 +333,9 @@ def detect_tcltk(v):
             )
             if status == 0:
                 parts = output.split()
-                _x11_cflags, _x11_libs = _split_pkg_flags(parts)
-                v.TCLTK_CFLAGS += " " + _x11_cflags
-                v.TCLTK_LIBS += " " + _x11_libs
+                x11_cflags, x11_libs = _split_pkg_flags(parts)
+                v.TCLTK_CFLAGS += " " + x11_cflags
+                v.TCLTK_LIBS += " " + x11_libs
 
     # Try to link against Tcl/Tk (enforces minimum version 8.5.12)
     # Also try pkg-config if available to get flags.
@@ -365,8 +378,12 @@ def detect_uuid(v):
     have_uuid = "missing"
 
     if pyconf.check_headers("uuid.h"):
+        pyconf.checking("for uuid_create")
         has_create = pyconf.check_func("uuid_create")
+        pyconf.result(has_create)
+        pyconf.checking("for uuid_enc_be")
         has_enc_be = pyconf.check_func("uuid_enc_be")
+        pyconf.result(has_enc_be)
         if has_create and has_enc_be:
             have_uuid = True
             ac_cv_have_uuid_h = True
@@ -398,7 +415,10 @@ def detect_uuid(v):
 
     if have_uuid == "missing":
         if pyconf.check_headers("uuid/uuid.h"):
-            if pyconf.check_func("uuid_generate_time"):
+            pyconf.checking("for uuid_generate_time")
+            found = pyconf.check_func("uuid_generate_time")
+            pyconf.result(found)
+            if found:
                 have_uuid = True
                 ac_cv_have_uuid_uuid_h = True
 
@@ -507,7 +527,10 @@ def check_readline(v):
             with pyconf.save_env():
                 v.CPPFLAGS = f"{v.CPPFLAGS} {v.LIBREADLINE_CFLAGS}".strip()
                 v.LIBS = f"{v.LIBS} {v.LIBREADLINE_LIBS}".strip()
-                if pyconf.check_header("readline/readline.h"):
+                pyconf.checking("for readline/readline.h")
+                found_rl_h = pyconf.check_header("readline/readline.h")
+                pyconf.result(found_rl_h)
+                if found_rl_h:
                     if pyconf.check_lib("readline", "readline"):
                         rl_found = True
                         rl_cflags = v.LIBREADLINE_CFLAGS or ""
@@ -531,7 +554,10 @@ def check_readline(v):
             with pyconf.save_env():
                 v.CPPFLAGS = f"{v.CPPFLAGS} {v.LIBEDIT_CFLAGS}".strip()
                 v.LIBS = f"{v.LIBS} {v.LIBEDIT_LIBS}".strip()
-                if pyconf.check_header("editline/readline.h"):
+                pyconf.checking("for editline/readline.h")
+                found_edit_h = pyconf.check_header("editline/readline.h")
+                pyconf.result(found_edit_h)
+                if found_edit_h:
                     if pyconf.check_lib("edit", "readline"):
                         edit_found = True
                         edit_cflags = v.LIBEDIT_CFLAGS or ""
@@ -578,18 +604,28 @@ def check_readline(v):
                 ]
 
             # check for readline 2.2
-            if pyconf.check_decl(
+            pyconf.checking(
+                "whether rl_completion_append_character is declared"
+            )
+            found = pyconf.check_decl(
                 "rl_completion_append_character", extra_includes=rl_includes
-            ):
+            )
+            pyconf.result(found)
+            if found:
                 pyconf.define(
                     "HAVE_RL_COMPLETION_APPEND_CHARACTER",
                     1,
                     "Define if you have readline 2.2",
                 )
 
-            if pyconf.check_decl(
+            pyconf.checking(
+                "whether rl_completion_suppress_append is declared"
+            )
+            found = pyconf.check_decl(
                 "rl_completion_suppress_append", extra_includes=rl_includes
-            ):
+            )
+            pyconf.result(found)
+            if found:
                 pyconf.define(
                     "HAVE_RL_COMPLETION_SUPPRESS_APPEND",
                     1,
@@ -660,9 +696,12 @@ def check_readline(v):
                 )
 
             # also in readline 4.2
-            if pyconf.check_decl(
+            pyconf.checking("whether rl_catch_signals is declared")
+            found = pyconf.check_decl(
                 "rl_catch_signals", extra_includes=rl_includes
-            ):
+            )
+            pyconf.result(found)
+            if found:
                 pyconf.define(
                     "HAVE_RL_CATCH_SIGNAL",
                     1,
@@ -684,7 +723,12 @@ def check_readline(v):
                 )
 
             # in readline as well as newer editline (April 2023)
-            pyconf.check_type("rl_compdisp_func_t", extra_includes=rl_includes)
+            pyconf.checking("for rl_compdisp_func_t")
+            pyconf.result(
+                pyconf.check_type(
+                    "rl_compdisp_func_t", extra_includes=rl_includes
+                )
+            )
 
             # Some editline versions declare rl_startup_hook as taking no args, others
             # declare it as taking 2.
@@ -727,7 +771,10 @@ def check_compression_libraries(v):
         with pyconf.save_env():
             v.CPPFLAGS = f"{v.CPPFLAGS} {v.ZLIB_CFLAGS}".strip()
             v.LIBS = f"{v.LIBS} {v.ZLIB_LIBS}".strip()
-            if pyconf.check_header("zlib.h"):
+            pyconf.checking("for zlib.h")
+            found_zlib_h = pyconf.check_header("zlib.h")
+            pyconf.result(found_zlib_h)
+            if found_zlib_h:
                 if pyconf.check_lib("z", "gzread"):
                     have_zlib = True
                 else:
@@ -765,10 +812,13 @@ def check_compression_libraries(v):
         with pyconf.save_env():
             v.CPPFLAGS = f"{v.CPPFLAGS} {v.BZIP2_CFLAGS}".strip()
             v.LIBS = f"{v.LIBS} {v.BZIP2_LIBS}".strip()
-            _found_bz2 = pyconf.check_header("bzlib.h") and pyconf.check_lib(
+            pyconf.checking("for bzlib.h")
+            found_bz2_h = pyconf.check_header("bzlib.h")
+            pyconf.result(found_bz2_h)
+            found_bz2 = found_bz2_h and pyconf.check_lib(
                 "bz2", "BZ2_bzCompress"
             )
-        v.have_bzip2 = _found_bz2
+        v.have_bzip2 = found_bz2
         if v.have_bzip2:
             v.BZIP2_CFLAGS = v.BZIP2_CFLAGS or ""
             v.BZIP2_LIBS = v.BZIP2_LIBS or "-lbz2"
@@ -785,10 +835,13 @@ def check_compression_libraries(v):
         with pyconf.save_env():
             v.CPPFLAGS = f"{v.CPPFLAGS} {v.LIBLZMA_CFLAGS}".strip()
             v.LIBS = f"{v.LIBS} {v.LIBLZMA_LIBS}".strip()
-            _found_lzma = pyconf.check_header("lzma.h") and pyconf.check_lib(
+            pyconf.checking("for lzma.h")
+            found_lzma_h = pyconf.check_header("lzma.h")
+            pyconf.result(found_lzma_h)
+            found_lzma = found_lzma_h and pyconf.check_lib(
                 "lzma", "lzma_easy_encoder"
             )
-        v.have_liblzma = _found_lzma
+        v.have_liblzma = found_lzma
         if v.have_liblzma:
             v.LIBLZMA_CFLAGS = v.LIBLZMA_CFLAGS or ""
             v.LIBLZMA_LIBS = v.LIBLZMA_LIBS or "-llzma"
@@ -806,7 +859,7 @@ def check_compression_libraries(v):
             v.CPPFLAGS = f"{v.CPPFLAGS} {v.LIBZSTD_CFLAGS}".strip()
             v.CFLAGS = f"{v.CFLAGS} {v.LIBZSTD_CFLAGS}".strip()
             v.LIBS = f"{v.LIBS} {v.LIBZSTD_LIBS}".strip()
-            _found_zstd = False
+            found_zstd = False
             if pyconf.search_libs(
                 "ZDICT_finalizeDictionary", ["zstd"], required=False
             ):
@@ -823,10 +876,10 @@ def check_compression_libraries(v):
                 if ok:
                     pyconf.result("yes")
                     if pyconf.check_headers(["zstd.h", "zdict.h"]):
-                        _found_zstd = True
+                        found_zstd = True
                 else:
                     pyconf.result("no")
-        v.have_libzstd = _found_zstd
+        v.have_libzstd = found_zstd
         if v.have_libzstd:
             v.LIBZSTD_CFLAGS = v.LIBZSTD_CFLAGS or ""
             v.LIBZSTD_LIBS = v.LIBZSTD_LIBS or "-lzstd"
@@ -942,7 +995,7 @@ def check_curses(v):
         # structs since version 5.7.  If the macro is defined as zero before including
         # [n]curses.h, ncurses will expose fields of the structs regardless of the
         # configuration.
-        _have_any_curses_h = False
+        have_any_curses_h = False
         for h in (
             "HAVE_NCURSESW_NCURSES_H",
             "HAVE_NCURSESW_CURSES_H",
@@ -952,9 +1005,9 @@ def check_curses(v):
             "HAVE_CURSES_H",
         ):
             if pyconf.is_defined(h):
-                _have_any_curses_h = True
+                have_any_curses_h = True
                 break
-        if _have_any_curses_h:
+        if have_any_curses_h:
             # remove _XOPEN_SOURCE macro from curses cflags. pyconfig.h sets
             # the macro to 700.
             curses_cflags = curses_cflags.replace(
@@ -995,7 +1048,10 @@ def check_curses(v):
 """
 
             # On Solaris, term.h requires curses.h
-            pyconf.check_header("term.h", extra_includes=CURSES_INCLUDES)
+            pyconf.checking("for term.h")
+            pyconf.result(
+                pyconf.check_header("term.h", extra_includes=CURSES_INCLUDES)
+            )
 
             # On HP/UX 11.0, mvwdelch is a block with a return statement
             if pyconf.compile_check(
