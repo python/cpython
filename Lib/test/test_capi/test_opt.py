@@ -4684,6 +4684,41 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertIn("_MATCH_CLASS", uops)
         self.assertEqual(count_ops(ex, "_POP_TOP_NOP"), 4)
 
+    def test_match_mapping(self):
+        def testfunc(n):
+            x = {}
+            ret = 0
+            for _ in range(n):
+                x["a"] = 1
+                match x:
+                    case {}:
+                        ret += 1
+            return ret
+
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, TIER2_THRESHOLD)
+        uops = get_opnames(ex)
+
+        self.assertIn("_MATCH_MAPPING", uops)
+        self.assertNotIn("_GUARD_BIT_IS_SET_POP", uops)
+
+    def test_match_sequence(self):
+        def testfunc(n):
+            ret = 0
+            for _ in range(n):
+                x = 1, 2
+                match x:
+                    case a, b:
+                        ret += 1
+            return ret
+
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, TIER2_THRESHOLD)
+        uops = get_opnames(ex)
+
+        self.assertIn("_MATCH_SEQUENCE", uops)
+        self.assertNotIn("_GUARD_BIT_IS_SET_POP", uops)
+
     def test_dict_update(self):
         def testfunc(n):
             d = {1: 2, 3: 4}

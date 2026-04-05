@@ -2071,6 +2071,22 @@ dummy_func(void) {
         n = names;
     }
 
+    op(_MATCH_MAPPING, (subject -- subject, res)) {
+        if (sym_has_type(subject)) {
+            PyTypeObject *type = sym_get_type(subject);
+            int match = type->tp_flags & Py_TPFLAGS_MAPPING;
+            res = match ? sym_new_const(ctx, Py_True) : sym_new_const(ctx, Py_False);
+        }
+    }
+
+    op(_MATCH_SEQUENCE, (subject -- subject, res)) {
+        if (sym_has_type(subject)) {
+            PyTypeObject *type = sym_get_type(subject);
+            int match = type->tp_flags & Py_TPFLAGS_SEQUENCE;
+            res = match ? sym_new_const(ctx, Py_True) : sym_new_const(ctx, Py_False);
+        }
+    }
+
     op(_DICT_UPDATE, (dict, unused[oparg - 1], update -- dict, unused[oparg - 1], upd)) {
         (void)dict;
         upd = update;
