@@ -178,12 +178,14 @@ class complete(commands.Command):
         if not completions:
             r.error("no matches")
         elif len(completions) == 1:
-            if completions_unchangable and len(completions[0]) == len(stem):
+            completion = stripcolor(completions[0])
+            if completions_unchangable and len(completion) == len(stem):
                 r.msg = "[ sole completion ]"
                 r.dirty = True
-            r.insert(completions[0][len(stem):])
+            r.insert(completion[len(stem):])
         else:
-            p = prefix(completions, len(stem))
+            clean_completions = [stripcolor(word) for word in completions]
+            p = prefix(clean_completions, len(stem))
             if p:
                 r.insert(p)
             if last_is_completer:
@@ -195,7 +197,7 @@ class complete(commands.Command):
                 r.dirty = True
             elif not r.cmpltn_menu_visible:
                 r.cmpltn_message_visible = True
-                if stem + p in completions:
+                if stem + p in clean_completions:
                     r.msg = "[ complete but not unique ]"
                     r.dirty = True
                 else:
@@ -215,7 +217,7 @@ class self_insert(commands.self_insert):
                 r.cmpltn_reset()
             else:
                 completions = [w for w in r.cmpltn_menu_choices
-                               if w.startswith(stem)]
+                               if stripcolor(w).startswith(stem)]
                 if completions:
                     r.cmpltn_menu, r.cmpltn_menu_end = build_menu(
                         r.console, completions, 0,

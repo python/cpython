@@ -40,6 +40,7 @@ from . import commands, historical_reader
 from .completing_reader import CompletingReader
 from .console import Console as ConsoleType
 from ._module_completer import ModuleCompleter, make_default_module_completer
+from .fancycompleter import Completer as FancyCompleter
 
 Console: type[ConsoleType]
 _error: tuple[type[Exception], ...] | type[Exception]
@@ -609,7 +610,12 @@ def _setup(namespace: Mapping[str, Any]) -> None:
     if not isinstance(namespace, dict):
         namespace = dict(namespace)
     _wrapper.config.module_completer = ModuleCompleter(namespace)
-    _wrapper.config.readline_completer = RLCompleter(namespace).complete
+    use_basic_completer = (
+        not sys.flags.ignore_environment
+        and os.getenv("PYTHON_BASIC_COMPLETER")
+    )
+    completer_cls = RLCompleter if use_basic_completer else FancyCompleter
+    _wrapper.config.readline_completer = completer_cls(namespace).complete
 
     # this is not really what readline.c does.  Better than nothing I guess
     import builtins
