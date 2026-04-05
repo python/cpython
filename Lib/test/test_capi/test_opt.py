@@ -2033,9 +2033,10 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertEqual(res, TIER2_THRESHOLD)
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
-        self.assertIn("_BINARY_OP_SUBSCR_DICT_KNOWN_HASH", uops)
-        self.assertNotIn("_GUARD_NOS_DICT_SUBSCRIPT", uops)
-        self.assertNotIn("_GUARD_NOS_DICT_STORE_SUBSCRIPT", uops)
+        self.assertEqual(uops.count("_BINARY_OP_SUBSCR_DICT_KNOWN_HASH"), 1)
+        self.assertEqual(uops.count("_STORE_SUBSCR_DICT_KNOWN_HASH"), 1)
+        self.assertEqual(uops.count("_GUARD_NOS_DICT_SUBSCRIPT"), 0)
+        self.assertEqual(uops.count("_GUARD_NOS_DICT_STORE_SUBSCRIPT"), 0)
 
     def test_dict_subclass_subscr_with_override(self):
         class MyDict(dict):
@@ -2053,7 +2054,7 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertEqual(res, 42 * TIER2_THRESHOLD)
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
-        self.assertNotIn("_BINARY_OP_SUBSCR_DICT", uops)
+        self.assertEqual(uops.count("_BINARY_OP_SUBSCR_INIT_CALL"), 1)
 
     def test_remove_guard_for_known_type_list(self):
         def f(n):
