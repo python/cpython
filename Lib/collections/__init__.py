@@ -32,6 +32,8 @@ import sys as _sys
 _sys.modules['collections.abc'] = _collections_abc
 abc = _collections_abc
 
+lazy from copy import copy as _copy
+lazy from heapq import nlargest as _nlargest
 from itertools import chain as _chain
 from itertools import repeat as _repeat
 from itertools import starmap as _starmap
@@ -58,8 +60,6 @@ try:
     from _collections import defaultdict
 except ImportError:
     pass
-
-heapq = None  # Lazily imported
 
 
 ################################################################################
@@ -328,14 +328,14 @@ class OrderedDict(dict):
         return self
 
     def __or__(self, other):
-        if not isinstance(other, dict):
+        if not isinstance(other, (dict, frozendict)):
             return NotImplemented
         new = self.__class__(self)
         new.update(other)
         return new
 
     def __ror__(self, other):
-        if not isinstance(other, dict):
+        if not isinstance(other, (dict, frozendict)):
             return NotImplemented
         new = self.__class__(other)
         new.update(self)
@@ -634,12 +634,7 @@ class Counter(dict):
         if n is None:
             return sorted(self.items(), key=_itemgetter(1), reverse=True)
 
-        # Lazy import to speedup Python startup time
-        global heapq
-        if heapq is None:
-            import heapq
-
-        return heapq.nlargest(n, self.items(), key=_itemgetter(1))
+        return _nlargest(n, self.items(), key=_itemgetter(1))
 
     def elements(self):
         '''Iterator over elements repeating each as many times as its count.
@@ -1221,14 +1216,14 @@ class UserDict(_collections_abc.MutableMapping):
     def __or__(self, other):
         if isinstance(other, UserDict):
             return self.__class__(self.data | other.data)
-        if isinstance(other, dict):
+        if isinstance(other, (dict, frozendict)):
             return self.__class__(self.data | other)
         return NotImplemented
 
     def __ror__(self, other):
         if isinstance(other, UserDict):
             return self.__class__(other.data | self.data)
-        if isinstance(other, dict):
+        if isinstance(other, (dict, frozendict)):
             return self.__class__(other | self.data)
         return NotImplemented
 
@@ -1249,11 +1244,10 @@ class UserDict(_collections_abc.MutableMapping):
     def copy(self):
         if self.__class__ is UserDict:
             return UserDict(self.data.copy())
-        import copy
         data = self.data
         try:
             self.data = {}
-            c = copy.copy(self)
+            c = _copy(self)
         finally:
             self.data = data
         c.update(self)

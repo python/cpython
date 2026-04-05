@@ -1524,6 +1524,35 @@ These can be used as types in annotations. They all support subscription using
    .. versionadded:: 3.9
 
 
+.. data:: TypeForm
+
+   A special form representing the value that results from evaluating a
+   type expression.
+
+   This value encodes the information supplied in the type expression, and
+   it represents the type described by that type expression.
+
+   When used in a type expression, ``TypeForm`` describes a set of type form
+   objects. It accepts a single type argument, which must be a valid type
+   expression. ``TypeForm[T]`` describes the set of all type form objects that
+   represent the type ``T`` or types assignable to ``T``.
+
+   ``TypeForm(obj)`` simply returns ``obj`` unchanged. This is useful for
+   explicitly marking a value as a type form for static type checkers.
+
+   Example::
+
+      from typing import Any, TypeForm
+
+      def cast[T](typ: TypeForm[T], value: Any) -> T: ...
+
+      reveal_type(cast(int, "x"))  # Revealed type is "int"
+
+   See :pep:`747` for details.
+
+   .. versionadded:: 3.15
+
+
 .. data:: TypeIs
 
    Special typing construct for marking user-defined type predicate functions.
@@ -3353,8 +3382,8 @@ Introspection helpers
 
 .. function:: get_type_hints(obj, globalns=None, localns=None, include_extras=False)
 
-   Return a dictionary containing type hints for a function, method, module
-   or class object.
+   Return a dictionary containing type hints for a function, method, module,
+   class object, or other callable object.
 
    This is often the same as ``obj.__annotations__``, but this function makes
    the following changes to the annotations dictionary:
@@ -3395,6 +3424,13 @@ Introspection helpers
       :ref:`type aliases <type-aliases>` that include forward references,
       or with names imported under :data:`if TYPE_CHECKING <TYPE_CHECKING>`.
 
+   .. note::
+
+      Calling :func:`get_type_hints` on an instance is not supported.
+      To retrieve annotations for an instance, call
+      :func:`get_type_hints` on the instance's class instead
+      (for example, ``get_type_hints(type(obj))``).
+
    .. versionchanged:: 3.9
       Added ``include_extras`` parameter as part of :pep:`593`.
       See the documentation on :data:`Annotated` for more information.
@@ -3403,6 +3439,11 @@ Introspection helpers
       Previously, ``Optional[t]`` was added for function and method annotations
       if a default value equal to ``None`` was set.
       Now the annotation is returned unchanged.
+
+   .. versionchanged:: 3.14
+      Calling :func:`get_type_hints` on instances is no longer supported.
+      Some instances were accepted in earlier versions as an undocumented
+      implementation detail.
 
 .. function:: get_origin(tp)
 

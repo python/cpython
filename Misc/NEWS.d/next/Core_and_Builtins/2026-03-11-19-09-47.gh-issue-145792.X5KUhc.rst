@@ -1,0 +1,2 @@
+Fix out-of-bounds access when invoking faulthandler on a CPython build
+compiled without support for VLAs.

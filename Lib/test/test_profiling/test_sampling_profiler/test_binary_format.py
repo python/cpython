@@ -18,9 +18,11 @@ try:
         THREAD_STATUS_UNKNOWN,
         THREAD_STATUS_GIL_REQUESTED,
         THREAD_STATUS_HAS_EXCEPTION,
+        THREAD_STATUS_MAIN_THREAD,
     )
     from profiling.sampling.binary_collector import BinaryCollector
     from profiling.sampling.binary_reader import BinaryReader
+    from profiling.sampling.gecko_collector import GeckoCollector
 
     ZSTD_AVAILABLE = _remote_debugging.zstd_available()
 except ImportError:
@@ -318,6 +320,7 @@ class TestBinaryRoundTrip(BinaryFormatTestBase):
             THREAD_STATUS_UNKNOWN,
             THREAD_STATUS_GIL_REQUESTED,
             THREAD_STATUS_HAS_EXCEPTION,
+            THREAD_STATUS_MAIN_THREAD,
             THREAD_STATUS_HAS_GIL | THREAD_STATUS_ON_CPU,
             THREAD_STATUS_HAS_GIL | THREAD_STATUS_HAS_EXCEPTION,
             THREAD_STATUS_HAS_GIL
@@ -341,6 +344,35 @@ class TestBinaryRoundTrip(BinaryFormatTestBase):
         collector, count = self.roundtrip(samples)
         self.assertEqual(count, len(statuses))
         self.assert_samples_equal(samples, collector)
+
+    def test_binary_replay_preserves_main_thread_for_gecko(self):
+        """Binary replay preserves main thread identity for GeckoCollector."""
+        samples = [
+            [
+                make_interpreter(
+                    0,
+                    [
+                        make_thread(
+                            1,
+                            [make_frame("main.py", 10, "main")],
+                            THREAD_STATUS_MAIN_THREAD,
+                        ),
+                        make_thread(2, [make_frame("worker.py", 20, "worker")]),
+                    ],
+                )
+            ]
+        ]
+        filename = self.create_binary_file(samples)
+        collector = GeckoCollector(1000)
+
+        with BinaryReader(filename) as reader:
+            count = reader.replay_samples(collector)
+
+        self.assertEqual(count, 2)
+        profile = collector._build_profile()
+        threads = {thread["tid"]: thread for thread in profile["threads"]}
+        self.assertTrue(threads[1]["isMainThread"])
+        self.assertFalse(threads[2]["isMainThread"])
 
     def test_multiple_threads_per_sample(self):
         """Multiple threads in one sample roundtrip exactly."""

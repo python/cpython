@@ -576,6 +576,7 @@ sanity_check_instrumentation(PyCodeObject *code)
             CHECK(opcode != END_FOR);
             CHECK(opcode != RESUME);
             CHECK(opcode != RESUME_CHECK);
+            CHECK(opcode != RESUME_CHECK_JIT);
             CHECK(opcode != INSTRUMENTED_RESUME);
             if (!is_instrumented(opcode)) {
                 CHECK(_PyOpcode_Deopt[opcode] == opcode);
@@ -1785,7 +1786,6 @@ force_instrument_lock_held(PyCodeObject *code, PyInterpreterState *interp)
         _PyCode_Clear_Executors(code);
     }
     _Py_Executors_InvalidateDependency(interp, code, 1);
-    _PyJit_Tracer_InvalidateDependency(PyThreadState_GET(), code);
 #endif
     int code_len = (int)Py_SIZE(code);
     /* Exit early to avoid creating instrumentation
@@ -2115,6 +2115,9 @@ int _PyMonitoring_ClearToolId(int tool_id)
     // Set the new global version so all the code objects can refresh the
     // instrumentation.
     set_global_version(_PyThreadState_GET(), version);
+#ifdef _Py_TIER2
+    _Py_Executors_InvalidateAll(interp, 1);
+#endif
     int res = instrument_all_executing_code_objects(interp);
     _PyEval_StartTheWorld(interp);
     return res;
@@ -2457,6 +2460,9 @@ monitoring_restart_events_impl(PyObject *module)
     }
     interp->last_restart_version = restart_version;
     set_global_version(tstate, new_version);
+#ifdef _Py_TIER2
+    _Py_Executors_InvalidateAll(interp, 1);
+#endif
     int res = instrument_all_executing_code_objects(interp);
     _PyEval_StartTheWorld(interp);
 
