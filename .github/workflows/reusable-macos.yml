@@ -26,7 +26,7 @@ jobs:
       matrix:
         os: [
           "macos-26",  # Apple Silicon
-          "macos-26-intel",  # Intel
+          "macos-15-intel",  # Intel
         ]
     runs-on: ${{ matrix.os }}
     steps:
