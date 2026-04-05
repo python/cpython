@@ -2124,18 +2124,21 @@ dummy_func(void) {
     }
 
     op(_GUARD_CODE_VERSION_RETURN_VALUE, (version/2 -- )) {
+        (void)version;
         if (ctx->frame->caller) {
             REPLACE_OP(this_instr, _NOP, 0, 0);
         }
     }
 
     op(_GUARD_CODE_VERSION_YIELD_VALUE, (version/2 -- )) {
+        (void)version;
         if (ctx->frame->caller) {
             REPLACE_OP(this_instr, _NOP, 0, 0);
         }
     }
 
     op(_GUARD_CODE_VERSION_RETURN_GENERATOR, (version/2 -- )) {
+        (void)version;
         if (ctx->frame->caller) {
             REPLACE_OP(this_instr, _NOP, 0, 0);
         }

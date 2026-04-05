@@ -33,6 +33,8 @@ from _pyrepl._module_completer import (
     ModuleCompleter,
     HARDCODED_SUBMODULES,
 )
+from _pyrepl.fancycompleter import Completer as FancyCompleter
+import _pyrepl.readline as pyrepl_readline
 from _pyrepl.readline import (
     ReadlineAlikeReader,
     ReadlineConfig,
@@ -941,6 +943,92 @@ class TestPyReplCompleter(TestCase):
         self.assertEqual(mock_stderr.getvalue(), "")
 
 
+class TestPyReplFancyCompleter(TestCase):
+    def prepare_reader(self, events, namespace, *, use_colors):
+        console = FakeConsole(events)
+        config = ReadlineConfig()
+        config.readline_completer = FancyCompleter(
+            namespace, use_colors=use_colors
+        ).complete
+        reader = ReadlineAlikeReader(console=console, config=config)
+        return reader
+
+    def test_simple_completion_preserves_callable_postfix(self):
+        events = code_to_events("os.getpid\t\n")
+
+        namespace = {"os": os}
+        reader = self.prepare_reader(events, namespace, use_colors=False)
+
+        output = multiline_input(reader, namespace)
+        self.assertEqual(output, "os.getpid()")
+
+    def test_attribute_menu_tracks_typed_stem(self):
+        class Obj:
+            apple = 1
+            apricot = 2
+            banana = 3
+
+        namespace = {"obj": Obj}
+        reader = self.prepare_reader(
+            code_to_events("obj.\t\ta"),
+            namespace,
+            use_colors=True,
+        )
+
+        with self.assertRaises(StopIteration):
+            while True:
+                reader.handle1()
+
+        self.assertEqual("".join(reader.buffer), "obj.a")
+        self.assertTrue(reader.cmpltn_menu_visible)
+        menu = "\n".join(reader.cmpltn_menu)
+        self.assertIn("apple", menu)
+        self.assertIn("apricot", menu)
+        self.assertNotIn("banana", menu)
+        self.assertNotIn("mro", menu)
+
+
+class TestPyReplReadlineSetup(TestCase):
+    def test_setup_ignores_basic_completer_env_when_env_is_disabled(self):
+        class FakeFancyCompleter:
+            def __init__(self, namespace):
+                self.namespace = namespace
+
+            def complete(self, text, state):
+                return None
+
+        class FakeBasicCompleter(FakeFancyCompleter):
+            pass
+
+        wrapper = Mock()
+        wrapper.config = ReadlineConfig()
+        stdin = Mock()
+        stdout = Mock()
+        stdin.fileno.return_value = 0
+        stdout.fileno.return_value = 1
+
+        with (
+            patch.object(pyrepl_readline, "_wrapper", wrapper),
+            patch.object(pyrepl_readline, "raw_input", None),
+            patch.object(pyrepl_readline, "FancyCompleter", FakeFancyCompleter),
+            patch.object(pyrepl_readline, "RLCompleter", FakeBasicCompleter),
+            patch.object(pyrepl_readline.sys, "stdin", stdin),
+            patch.object(pyrepl_readline.sys, "stdout", stdout),
+            patch.object(pyrepl_readline.sys, "flags", Mock(ignore_environment=True)),
+            patch.object(pyrepl_readline.os, "isatty", return_value=True),
+            patch.object(pyrepl_readline.os, "getenv") as mock_getenv,
+            patch("builtins.input", lambda prompt="": prompt),
+        ):
+            mock_getenv.return_value = "1"
+            pyrepl_readline._setup({})
+
+        self.assertIsInstance(
+            wrapper.config.readline_completer.__self__,
+            FakeFancyCompleter,
+        )
+        mock_getenv.assert_not_called()
+
+
 class TestPyReplModuleCompleter(TestCase):
     def setUp(self):
         # Make iter_modules() search only the standard library.
@@ -1099,6 +1187,7 @@ class TestPyReplModuleCompleter(TestCase):
         cases = (
             ("import collections.\t\n", "import collections.abc"),
             ("from os import \t\n", "from os import path"),
+            ("import math.\t\n", "import math.integer"),
             ("import xml.parsers.expat.\t\te\t\n\n", "import xml.parsers.expat.errors"),
             ("from xml.parsers.expat import \t\tm\t\n\n", "from xml.parsers.expat import model"),
         )
