@@ -18,8 +18,7 @@ on:
       - '!**/*.ini'
   workflow_dispatch:
 
-permissions:
-  contents: read
+permissions: {}
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
@@ -82,7 +81,7 @@ jobs:
             compiler: msvc
           - target: x86_64-apple-darwin/clang
             architecture: x86_64
-            runner: macos-26-intel
+            runner: macos-15-intel
             compiler: clang
           - target: aarch64-apple-darwin/clang
             architecture: aarch64

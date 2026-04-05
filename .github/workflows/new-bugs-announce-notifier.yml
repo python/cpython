@@ -5,12 +5,13 @@ on:
     types:
       - opened
 
-permissions:
-  issues: read
+permissions: {}
 
 jobs:
   notify-new-bugs-announce:
     runs-on: ubuntu-latest
+    permissions:
+      issues: read
     timeout-minutes: 10
     steps:
       - uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
