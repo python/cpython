@@ -1,9 +1,11 @@
-"""conf_extlibs — Expat, FFI, sqlite3, Tcl/Tk detection.
+"""conf_extlibs — external library detection for Expat, FFI, sqlite3, Tcl/Tk,
+UUID, readline/libedit, compression (zlib, bzip2, lzma, zstd), and curses.
 
-Handles --with-system-expat; detects libffi via pkg-config or manual
-probing (including Apple-specific libffi); detects sqlite3 via pkg-config
-or manual probing with --enable-loadable-sqlite-extensions; and detects
-Tcl/Tk libraries and headers via pkg-config or manual search.
+Handles --with-system-expat; detects libffi via pkg-config or manual probing
+(including Apple SDK libffi); detects sqlite3 via pkg-config or manual probing
+with --enable-loadable-sqlite-extensions; detects Tcl/Tk via pkg-config or
+manual search; detects UUID libraries; checks readline/libedit; probes
+compression libraries (zlib, bzip2, lzma, zstd); and detects ncurses/panel.
 """
 
 from __future__ import annotations
@@ -61,18 +63,17 @@ def detect_libffi(v):
 
     if v.ac_sys_system == "Darwin":
         sdkroot = v.SDKROOT
-        ffi_h = (
-            f"{sdkroot}/usr/include/ffi/ffi.h"
-            if sdkroot
-            else "/usr/include/ffi/ffi.h"
+        ffi_inc = (
+            f"{sdkroot}/usr/include/ffi" if sdkroot else "/usr/include/ffi"
         )
-        if pyconf.path_is_file(ffi_h):
-            # use ffi from SDK root
-            v.have_libffi = True
-            v.LIBFFI_CFLAGS = (
-                f"-I{sdkroot}/usr/include/ffi -DUSING_APPLE_OS_LIBFFI=1"
-            )
-            v.LIBFFI_LIBS = "-lffi"
+        with pyconf.save_env():
+            v.CFLAGS = f"-I{ffi_inc} {v.CFLAGS}".strip()
+            if pyconf.check_header("ffi.h"):
+                if pyconf.check_lib("ffi", "ffi_call"):
+                    # use ffi from SDK root
+                    v.have_libffi = True
+                    v.LIBFFI_CFLAGS = f"-I{ffi_inc} -DUSING_APPLE_OS_LIBFFI=1"
+                    v.LIBFFI_LIBS = "-lffi"
 
     if v.have_libffi == "missing":
         # Try pkg-config
@@ -397,21 +398,18 @@ def detect_uuid(v):
             LIBUUID_CFLAGS = pkg.cflags
             LIBUUID_LIBS = pkg.libs
         else:
-            save_CPPFLAGS = v.CPPFLAGS
-            save_LIBS = v.LIBS
-            v.CPPFLAGS = f"{v.CPPFLAGS} {LIBUUID_CFLAGS}".strip()
-            v.LIBS = f"{v.LIBS} {LIBUUID_LIBS}".strip()
-            if pyconf.check_headers("uuid/uuid.h"):
-                ac_cv_have_uuid_uuid_h = True
-                if pyconf.check_lib("uuid", "uuid_generate_time"):
-                    have_uuid = True
-                if pyconf.check_lib("uuid", "uuid_generate_time_safe"):
-                    have_uuid = True
-                    ac_cv_have_uuid_generate_time_safe = True
-            if have_uuid is True:
-                LIBUUID_LIBS = LIBUUID_LIBS or "-luuid"
-            v.CPPFLAGS = save_CPPFLAGS
-            v.LIBS = save_LIBS
+            with pyconf.save_env():
+                v.CPPFLAGS = f"{v.CPPFLAGS} {LIBUUID_CFLAGS}".strip()
+                v.LIBS = f"{v.LIBS} {LIBUUID_LIBS}".strip()
+                if pyconf.check_headers("uuid/uuid.h"):
+                    ac_cv_have_uuid_uuid_h = True
+                    if pyconf.check_lib("uuid", "uuid_generate_time"):
+                        have_uuid = True
+                    if pyconf.check_lib("uuid", "uuid_generate_time_safe"):
+                        have_uuid = True
+                        ac_cv_have_uuid_generate_time_safe = True
+                if have_uuid is True:
+                    LIBUUID_LIBS = LIBUUID_LIBS or "-luuid"
 
     if have_uuid == "missing":
         if pyconf.check_headers("uuid/uuid.h"):
