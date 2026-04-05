@@ -13,7 +13,6 @@ from test.support import (
     cpython_only,
     has_subprocess_support,
     os_helper,
-    subTests,
     SuppressCrashReport,
     SHORT_TIMEOUT,
 )
@@ -462,7 +461,8 @@ class TestAsyncioREPL(unittest.TestCase):
         self.assertEqual(p.returncode, 0)
         self.assertEqual(output[:3], ">>>")
 
-    @subTests(
+    @support.force_not_colorized
+    @support.subTests(
         ("startup_code", "expected_error"),
         [
             ("some invalid syntax\n", "SyntaxError: invalid syntax"),
