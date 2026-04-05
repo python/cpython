@@ -5092,6 +5092,7 @@
 
         case _GUARD_CODE_VERSION_YIELD_VALUE: {
             uint32_t version = (uint32_t)this_instr->operand0;
+            (void)version;
             if (ctx->frame->caller) {
                 REPLACE_OP(this_instr, _NOP, 0, 0);
             }
@@ -5100,6 +5101,7 @@
 
         case _GUARD_CODE_VERSION_RETURN_VALUE: {
             uint32_t version = (uint32_t)this_instr->operand0;
+            (void)version;
             if (ctx->frame->caller) {
                 REPLACE_OP(this_instr, _NOP, 0, 0);
             }
@@ -5108,6 +5110,7 @@
 
         case _GUARD_CODE_VERSION_RETURN_GENERATOR: {
             uint32_t version = (uint32_t)this_instr->operand0;
+            (void)version;
             if (ctx->frame->caller) {
                 REPLACE_OP(this_instr, _NOP, 0, 0);
             }

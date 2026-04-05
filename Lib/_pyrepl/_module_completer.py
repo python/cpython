@@ -26,6 +26,7 @@ HARDCODED_SUBMODULES = {
     # Standard library submodules that are not detected by pkgutil.iter_modules
     # but can be imported, so should be proposed in completion
     "collections": ["abc"],
+    "math": ["integer"],
     "os": ["path"],
     "xml.parsers.expat": ["errors", "model"],
 }
