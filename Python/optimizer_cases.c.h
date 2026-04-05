@@ -1168,8 +1168,13 @@
             right = stack_pointer[-1];
             left = stack_pointer[-2];
             PyObject *descr = (PyObject *)this_instr->operand0;
-            (void)descr;
-            res = sym_new_not_null(ctx);
+            _PyBinaryOpSpecializationDescr *d = (_PyBinaryOpSpecializationDescr *)descr;
+            if (d != NULL && d->result_type != NULL) {
+                res = sym_new_type(ctx, d->result_type);
+            }
+            else {
+                res = sym_new_not_null(ctx);
+            }
             l = left;
             r = right;
             CHECK_STACK_BOUNDS(1);

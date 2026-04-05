@@ -3813,6 +3813,48 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertIn("_UNPACK_SEQUENCE_TWO_TUPLE", uops)
         self.assertNotIn("_GUARD_TOS_TUPLE", uops)
 
+    def test_binary_op_extend_list_concat_type_propagation(self):
+        # list + list is specialized via BINARY_OP_EXTEND. The tier 2 optimizer
+        # should learn that the result is a list and eliminate subsequent
+        # list-type guards.
+        def testfunc(n):
+            a = [1, 2]
+            b = [3, 4]
+            x = True
+            for _ in range(n):
+                c = a + b
+                if c[0]:
+                    x = False
+            return x
+
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, False)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertIn("_BINARY_OP_EXTEND", uops)
+        # The c[0] subscript emits _GUARD_NOS_LIST before _BINARY_OP_SUBSCR_LIST_INT;
+        # since _BINARY_OP_EXTEND now propagates PyList_Type, that guard is gone.
+        self.assertIn("_BINARY_OP_SUBSCR_LIST_INT", uops)
+        self.assertNotIn("_GUARD_NOS_LIST", uops)
+
+    def test_binary_op_extend_tuple_concat_type_propagation(self):
+        # tuple + tuple is specialized via BINARY_OP_EXTEND. The tier 2 optimizer
+        # should learn the result is a tuple and eliminate subsequent tuple guards.
+        def testfunc(n):
+            t1 = (1, 2)
+            t2 = (3, 4)
+            for _ in range(n):
+                a, b, c, d = t1 + t2
+            return a + b + c + d
+
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, 10)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertIn("_BINARY_OP_EXTEND", uops)
+        self.assertIn("_UNPACK_SEQUENCE_TUPLE", uops)
+        self.assertNotIn("_GUARD_TOS_TUPLE", uops)
+
     def test_unary_invert_long_type(self):
         def testfunc(n):
             for _ in range(n):

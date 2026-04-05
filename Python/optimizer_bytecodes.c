@@ -410,8 +410,13 @@ dummy_func(void) {
     }
 
     op(_BINARY_OP_EXTEND, (descr/4, left, right -- res, l, r)) {
-        (void)descr;
-        res = sym_new_not_null(ctx);
+        _PyBinaryOpSpecializationDescr *d = (_PyBinaryOpSpecializationDescr *)descr;
+        if (d != NULL && d->result_type != NULL) {
+            res = sym_new_type(ctx, d->result_type);
+        }
+        else {
+            res = sym_new_not_null(ctx);
+        }
         l = left;
         r = right;
     }

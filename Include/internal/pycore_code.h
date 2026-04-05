@@ -496,6 +496,9 @@ typedef struct {
     int oparg;
     binaryopguardfunc guard;
     binaryopactionfunc action;
+    /* Static type of the result, or NULL if unknown. Used by the tier 2
+       optimizer to propagate type information through _BINARY_OP_EXTEND. */
+    PyTypeObject *result_type;
 } _PyBinaryOpSpecializationDescr;
 
 /* Comparison bit masks. */

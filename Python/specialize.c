@@ -9,7 +9,8 @@
 #include "pycore_function.h"      // _PyFunction_GetVersionForCurrentState()
 #include "pycore_interpframe.h"   // FRAME_SPECIALS_SIZE
 #include "pycore_lazyimportobject.h" // PyLazyImport_CheckExact
-#include "pycore_list.h"          // _PyListIterObject
+#include "pycore_list.h"          // _PyListIterObject, _PyList_Concat
+#include "pycore_tuple.h"         // _PyTuple_Concat
 #include "pycore_long.h"          // _PyLong_IsNonNegativeCompact()
 #include "pycore_moduleobject.h"
 #include "pycore_object.h"
@@ -2112,12 +2113,10 @@ list_list_guard(PyObject *lhs, PyObject *rhs)
     return PyList_CheckExact(lhs) && PyList_CheckExact(rhs);
 }
 
-extern PyObject *list_concat(PyObject *aa, PyObject *bb);
-
 static PyObject *
 list_list_add(PyObject *lhs, PyObject *rhs)
 {
-    return list_concat(lhs, rhs);
+    return _PyList_Concat(lhs, rhs);
 }
 
 /* tuple-tuple */
@@ -2128,12 +2127,10 @@ tuple_tuple_guard(PyObject *lhs, PyObject *rhs)
     return PyTuple_CheckExact(lhs) && PyTuple_CheckExact(rhs);
 }
 
-extern PyObject *tuple_concat(PyObject *aa, PyObject *bb);
-
 static PyObject *
 tuple_tuple_add(PyObject *lhs, PyObject *rhs)
 {
-    return tuple_concat(lhs, rhs);
+    return _PyTuple_Concat(lhs, rhs);
 }
 
 static int
@@ -2227,28 +2224,28 @@ LONG_FLOAT_ACTION(compactlong_float_true_div, /)
 
 static _PyBinaryOpSpecializationDescr binaryop_extend_descrs[] = {
     /* long-long arithmetic */
-    {NB_OR, compactlongs_guard, compactlongs_or},
-    {NB_AND, compactlongs_guard, compactlongs_and},
-    {NB_XOR, compactlongs_guard, compactlongs_xor},
-    {NB_INPLACE_OR, compactlongs_guard, compactlongs_or},
-    {NB_INPLACE_AND, compactlongs_guard, compactlongs_and},
-    {NB_INPLACE_XOR, compactlongs_guard, compactlongs_xor},
+    {NB_OR, compactlongs_guard, compactlongs_or, &PyLong_Type},
+    {NB_AND, compactlongs_guard, compactlongs_and, &PyLong_Type},
+    {NB_XOR, compactlongs_guard, compactlongs_xor, &PyLong_Type},
+    {NB_INPLACE_OR, compactlongs_guard, compactlongs_or, &PyLong_Type},
+    {NB_INPLACE_AND, compactlongs_guard, compactlongs_and, &PyLong_Type},
+    {NB_INPLACE_XOR, compactlongs_guard, compactlongs_xor, &PyLong_Type},
 
     /* float-long arithemetic */
-    {NB_ADD, float_compactlong_guard, float_compactlong_add},
-    {NB_SUBTRACT, float_compactlong_guard, float_compactlong_subtract},
-    {NB_TRUE_DIVIDE, nonzero_float_compactlong_guard, float_compactlong_true_div},
-    {NB_MULTIPLY, float_compactlong_guard, float_compactlong_multiply},
+    {NB_ADD, float_compactlong_guard, float_compactlong_add, &PyFloat_Type},
+    {NB_SUBTRACT, float_compactlong_guard, float_compactlong_subtract, &PyFloat_Type},
+    {NB_TRUE_DIVIDE, nonzero_float_compactlong_guard, float_compactlong_true_div, &PyFloat_Type},
+    {NB_MULTIPLY, float_compactlong_guard, float_compactlong_multiply, &PyFloat_Type},
 
     /* float-float arithmetic */
-    {NB_ADD, compactlong_float_guard, compactlong_float_add},
-    {NB_SUBTRACT, compactlong_float_guard, compactlong_float_subtract},
-    {NB_TRUE_DIVIDE, nonzero_compactlong_float_guard, compactlong_float_true_div},
-    {NB_MULTIPLY, compactlong_float_guard, compactlong_float_multiply},
+    {NB_ADD, compactlong_float_guard, compactlong_float_add, &PyFloat_Type},
+    {NB_SUBTRACT, compactlong_float_guard, compactlong_float_subtract, &PyFloat_Type},
+    {NB_TRUE_DIVIDE, nonzero_compactlong_float_guard, compactlong_float_true_div, &PyFloat_Type},
+    {NB_MULTIPLY, compactlong_float_guard, compactlong_float_multiply, &PyFloat_Type},
 
     /* list-list and tuple-tuple concatenation */
-    {NB_ADD, list_list_guard, list_list_add},
-    {NB_ADD, tuple_tuple_guard, tuple_tuple_add},
+    {NB_ADD, list_list_guard, list_list_add, &PyList_Type},
+    {NB_ADD, tuple_tuple_guard, tuple_tuple_add, &PyTuple_Type},
 };
 
 static int
