@@ -10,10 +10,10 @@ from test.support.hypothesis_helper import hypothesis
 
 
 # Note: "*_hex" functions are aliases for "(un)hexlify"
-b2a_functions = ['b2a_ascii85', 'b2a_base64', 'b2a_base85', 'b2a_z85',
+b2a_functions = ['b2a_ascii85', 'b2a_base32', 'b2a_base64', 'b2a_base85',
                  'b2a_hex', 'b2a_qp', 'b2a_uu',
                  'hexlify']
-a2b_functions = ['a2b_ascii85', 'a2b_base64', 'a2b_base85', 'a2b_z85',
+a2b_functions = ['a2b_ascii85', 'a2b_base32', 'a2b_base64', 'a2b_base85',
                  'a2b_hex', 'a2b_qp', 'a2b_uu',
                  'unhexlify']
 all_functions = a2b_functions + b2a_functions + ['crc32', 'crc_hqx']
@@ -45,6 +45,40 @@ class BinASCIITest(unittest.TestCase):
         # Check module exceptions
         self.assertIsSubclass(binascii.Error, Exception)
         self.assertIsSubclass(binascii.Incomplete, Exception)
+
+    def test_constants(self):
+        self.assertEqual(binascii.BASE64_ALPHABET,
+                         b'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+                         b'abcdefghijklmnopqrstuvwxyz'
+                         b'0123456789+/')
+        self.assertEqual(binascii.URLSAFE_BASE64_ALPHABET,
+                         binascii.BASE64_ALPHABET[:-2] + b'-_')
+        self.assertEqual(binascii.UU_ALPHABET, bytes(range(32, 32+64)))
+        self.assertEqual(binascii.CRYPT_ALPHABET,
+                         b'./0123456789'
+                         b'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+                         b'abcdefghijklmnopqrstuvwxyz')
+        self.assertEqual(binascii.BINHEX_ALPHABET,
+                         b'!"#$%&\'()*+,-012345689'
+                         b'@ABCDEFGHIJKLMNPQRSTUVXYZ['
+                         b'`abcdefhijklmpqr')
+
+        self.assertEqual(binascii.BASE85_ALPHABET,
+                         b'0123456789'
+                         b'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+                         b'abcdefghijklmnopqrstuvwxyz'
+                         b'!#$%&()*+-;<=>?@^_`{|}~')
+        self.assertEqual(binascii.ASCII85_ALPHABET, bytes(range(33, 33+85)))
+        self.assertEqual(binascii.Z85_ALPHABET,
+                         b'0123456789'
+                         b'abcdefghijklmnopqrstuvwxyz'
+                         b'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+                         b'.-:+=^!/*?&<>()[]{}@%$#')
+
+        self.assertEqual(binascii.BASE32_ALPHABET,
+                         b'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567')
+        self.assertEqual(binascii.BASE32HEX_ALPHABET,
+                         b'0123456789ABCDEFGHIJKLMNOPQRSTUV')
 
     def test_functions(self):
         # Check presence of all functions
@@ -125,20 +159,20 @@ class BinASCIITest(unittest.TestCase):
     def test_base64_bad_padding(self):
         # Test malformed padding
         def _assertRegexTemplate(assert_regex, data,
-                                 non_strict_mode_expected_result):
+                                 non_strict_mode_expected_result, **kwargs):
             data = self.type2test(data)
             with self.assertRaisesRegex(binascii.Error, assert_regex):
-                binascii.a2b_base64(data, strict_mode=True)
+                binascii.a2b_base64(data, strict_mode=True, **kwargs)
             self.assertEqual(binascii.a2b_base64(data, strict_mode=False),
                              non_strict_mode_expected_result)
             self.assertEqual(binascii.a2b_base64(data, strict_mode=True,
-                                                 ignorechars=b'='),
+                                                 ignorechars=b' ='),
                              non_strict_mode_expected_result)
             self.assertEqual(binascii.a2b_base64(data),
                              non_strict_mode_expected_result)
 
-        def assertLeadingPadding(*args):
-            _assertRegexTemplate(r'(?i)Leading padding', *args)
+        def assertLeadingPadding(*args, **kwargs):
+            _assertRegexTemplate(r'(?i)Leading padding', *args, **kwargs)
 
         def assertDiscontinuousPadding(*args):
             _assertRegexTemplate(r'(?i)Discontinuous padding', *args)
@@ -146,8 +180,11 @@ class BinASCIITest(unittest.TestCase):
         def assertExcessPadding(*args):
             _assertRegexTemplate(r'(?i)Excess padding', *args)
 
-        def assertInvalidLength(*args):
-            _assertRegexTemplate(r'(?i)Invalid.+number of data characters', *args)
+        def assertInvalidLength(data, *args, length=None, **kwargs):
+            if length is None:
+                length = len(data.split(b'=', 1)[0].replace(b' ', b''))
+            assert_regex = fr"(?i)Invalid.+number of data characters \({length}\)"
+            _assertRegexTemplate(assert_regex, data, *args, **kwargs)
 
         assertExcessPadding(b'ab===', b'i')
         assertExcessPadding(b'ab====', b'i')
@@ -166,12 +203,16 @@ class BinASCIITest(unittest.TestCase):
         assertLeadingPadding(b'===abcd', b'i\xb7\x1d')
         assertLeadingPadding(b'====abcd', b'i\xb7\x1d')
         assertLeadingPadding(b'=====abcd', b'i\xb7\x1d')
+        assertLeadingPadding(b' =abcd', b'i\xb7\x1d', ignorechars=b' ')
 
         assertInvalidLength(b'a=b==', b'i')
         assertInvalidLength(b'a=bc=', b'i\xb7')
         assertInvalidLength(b'a=bc==', b'i\xb7')
         assertInvalidLength(b'a=bcd', b'i\xb7\x1d')
         assertInvalidLength(b'a=bcd=', b'i\xb7\x1d')
+        assertInvalidLength(b' a=b==', b'i', ignorechars=b' ')
+        assertInvalidLength(b'abcde=f==', b'i\xb7\x1dy')
+        assertInvalidLength(b' abcde=f==', b'i\xb7\x1dy', ignorechars=b' ')
 
         assertDiscontinuousPadding(b'ab=c=', b'i\xb7')
         assertDiscontinuousPadding(b'ab=cd', b'i\xb7\x1d')
@@ -192,8 +233,52 @@ class BinASCIITest(unittest.TestCase):
         assertExcessPadding(b'abcd====efgh', b'i\xb7\x1dy\xf8!')
         assertExcessPadding(b'abcd=====efgh', b'i\xb7\x1dy\xf8!')
 
+    def test_a2b_base64_padded(self):
+        a2b_base64 = binascii.a2b_base64
+        t = self.type2test
+        def check(data, expected):
+            if b'=' in data:
+                with self.assertRaisesRegex(binascii.Error, 'Padding not allowed'):
+                    a2b_base64(t(data), padded=False, strict_mode=True)
+            self.assertEqual(a2b_base64(t(data), padded=False, ignorechars=b'='),
+                             expected)
+            data = data.replace(b'=', b'')
+            self.assertEqual(a2b_base64(t(data), padded=False), expected)
+            self.assertEqual(a2b_base64(t(data), padded=False, strict_mode=True),
+                             expected)
+
+        check(b'', b'')
+        check(b'YQ==', b'a')
+        check(b'YWI=', b'ab')
+        check(b'YWJj', b'abc')
+        check(b'Y=WJj', b'abc')
+        check(b'YW=Jj', b'abc')
+        check(b'YWJ=j', b'abc')
+
+    def _common_test_ignorechars(self, func):
+        eq = self.assertEqual
+        empty = self.type2test(b'')
+        data = self.type2test(b'\n \n')
+        ignorechars = self.type2test(b' \n')
+        eq(func(empty, ignorechars=ignorechars), b'')
+        eq(func(empty, ignorechars=empty), b'')
+        eq(func(data, ignorechars=ignorechars), b'')
+        with self.assertRaises(binascii.Error):
+            func(data, ignorechars=empty)
+        with self.assertRaises(binascii.Error):
+            func(data, ignorechars=ignorechars[1:])
+        with self.assertRaises(binascii.Error):
+            func(data, ignorechars=ignorechars[:-1])
+        with self.assertRaises(TypeError):
+            func(empty, ignorechars='')
+        with self.assertRaises(TypeError):
+            func(empty, ignorechars=[])
+        with self.assertRaises(TypeError):
+            func(empty, ignorechars=None)
+
     def test_base64_invalidchars(self):
         # Test non-base64 data exceptions
+        self._common_test_ignorechars(binascii.a2b_base64)
         def assertNonBase64Data(data, expected, ignorechars):
             data = self.type2test(data)
             assert_regex = r'(?i)Only base64 data'
@@ -219,6 +304,12 @@ class BinASCIITest(unittest.TestCase):
         assertNonBase64Data(b'a\nb==', b'i', ignorechars=bytearray(b'\n'))
         assertNonBase64Data(b'a\nb==', b'i', ignorechars=memoryview(b'\n'))
 
+        self.assertEqual(binascii.a2b_base64(b'+A-/B_', ignorechars=b'+/-_'),
+                         b'\xf8\x0f\xc1')
+        self.assertEqual(binascii.a2b_base64(b'+A-/B_', ignorechars=b'+/-_',
+                                alphabet=binascii.URLSAFE_BASE64_ALPHABET),
+                         b'\x03\xe0\x7f')
+
         # Same cell in the cache: '\r' >> 3 == '\n' >> 3.
         data = self.type2test(b'\r\n')
         with self.assertRaises(binascii.Error):
@@ -230,33 +321,23 @@ class BinASCIITest(unittest.TestCase):
             binascii.a2b_base64(data, ignorechars=b'*')
         self.assertEqual(binascii.a2b_base64(data, ignorechars=b'*\n'), b'')
 
-        data = self.type2test(b'a\nb==')
-        with self.assertRaises(TypeError):
-            binascii.a2b_base64(data, ignorechars='')
-        with self.assertRaises(TypeError):
-            binascii.a2b_base64(data, ignorechars=[])
-        with self.assertRaises(TypeError):
-            binascii.a2b_base64(data, ignorechars=None)
-
     def test_base64_excess_data(self):
         # Test excess data exceptions
-        def assertExcessData(data, non_strict_expected,
-                             ignore_padchar_expected=None):
+        def assertExcessData(data, expected):
             assert_regex = r'(?i)Excess data'
             data = self.type2test(data)
             with self.assertRaisesRegex(binascii.Error, assert_regex):
                 binascii.a2b_base64(data, strict_mode=True)
             self.assertEqual(binascii.a2b_base64(data, strict_mode=False),
-                             non_strict_expected)
-            if ignore_padchar_expected is not None:
-                self.assertEqual(binascii.a2b_base64(data, strict_mode=True,
-                                                     ignorechars=b'='),
-                                 ignore_padchar_expected)
-            self.assertEqual(binascii.a2b_base64(data), non_strict_expected)
+                             expected)
+            self.assertEqual(binascii.a2b_base64(data, strict_mode=True,
+                                                 ignorechars=b'='),
+                             expected)
+            self.assertEqual(binascii.a2b_base64(data), expected)
 
-        assertExcessData(b'ab==c', b'i')
-        assertExcessData(b'ab==cd', b'i', b'i\xb7\x1d')
-        assertExcessData(b'abc=d', b'i\xb7', b'i\xb7\x1d')
+        assertExcessData(b'ab==c=', b'i\xb7')
+        assertExcessData(b'ab==cd', b'i\xb7\x1d')
+        assertExcessData(b'abc=d', b'i\xb7\x1d')
 
     def test_base64errors(self):
         # Test base64 with invalid padding
@@ -301,6 +382,33 @@ class BinASCIITest(unittest.TestCase):
         assertInvalidLength(b'a' * (4 * 87 + 1))
         assertInvalidLength(b'A\tB\nC ??DE', # only 5 valid characters
                             strict_mode=False)
+
+    def test_base64_alphabet(self):
+        alphabet = (b'!"#$%&\'()*+,-012345689@'
+                    b'ABCDEFGHIJKLMNPQRSTUVXYZ[`abcdefhijklmpqr')
+        data = self.type2test(self.rawdata)
+        encoded = binascii.b2a_base64(data, alphabet=alphabet)
+        trans = bytes.maketrans(binascii.BASE64_ALPHABET, alphabet)
+        expected = binascii.b2a_base64(data).translate(trans)
+        self.assertEqual(encoded, expected)
+        self.assertEqual(binascii.a2b_base64(encoded, alphabet=alphabet), self.rawdata)
+        self.assertEqual(binascii.b2a_base64(data, alphabet=self.type2test(alphabet)), expected)
+
+        data = self.type2test(b'')
+        self.assertEqual(binascii.b2a_base64(data, alphabet=alphabet), b'\n')
+        self.assertEqual(binascii.a2b_base64(data, alphabet=alphabet), b'')
+
+        for func in binascii.b2a_base64, binascii.a2b_base64:
+            with self.assertRaises(TypeError):
+                func(data, alphabet=None)
+            with self.assertRaises(TypeError):
+                func(data, alphabet=alphabet.decode())
+            with self.assertRaises(ValueError):
+                func(data, alphabet=alphabet[:-1])
+            with self.assertRaises(ValueError):
+                func(data, alphabet=alphabet+b'?')
+        with self.assertRaises(TypeError):
+            binascii.a2b_base64(data, alphabet=bytearray(alphabet))
 
     def test_ascii85_valid(self):
         # Test Ascii85 with valid data
@@ -436,8 +544,32 @@ class BinASCIITest(unittest.TestCase):
         assertInvalidChar(b"\tFCb", ignorechars=b"\n")
         assertInvalidChar(b"xxxB\nP\thU'D v/F+", ignorechars=b" \n\tv")
 
+    def _common_test_wrapcol(self, func):
+        eq = self.assertEqual
+        data = self.data
+        expected = func(data)
+        eq(func(data, wrapcol=0), expected)
+        eq(func(data, wrapcol=8000), expected)
+        eq(func(b'', wrapcol=0), func(b''))
+        eq(func(b'', wrapcol=1), func(b''))
+        eq(func(data, wrapcol=sys.maxsize), expected)
+        if check_impl_detail():
+            eq(func(data, wrapcol=sys.maxsize*2), expected)
+            with self.assertRaises(OverflowError):
+                func(data, wrapcol=2**1000)
+        with self.assertRaises(ValueError):
+            func(data, wrapcol=-80)
+        with self.assertRaises(TypeError):
+            func(data, wrapcol=80.0)
+        with self.assertRaises(TypeError):
+            func(data, wrapcol='80')
+        with self.assertRaises(TypeError):
+            func(data, wrapcol=None)
+
     def test_ascii85_wrapcol(self):
         # Test Ascii85 splitting lines
+        self._common_test_wrapcol(binascii.b2a_ascii85)
+
         def assertEncode(a_expected, data, n, adobe=False):
             b = self.type2test(data)
             a = binascii.b2a_ascii85(b, adobe=adobe, wrapcol=n)
@@ -576,6 +708,16 @@ class BinASCIITest(unittest.TestCase):
         assertOverflow(b"|NsC0~")
         assertOverflow(b"|NsC0|NsC0|NsD0")
 
+    def test_base85_wrapcol(self):
+        self._common_test_wrapcol(binascii.b2a_base85)
+        b = self.type2test(b'www.python.org')
+        self.assertEqual(binascii.b2a_base85(b, wrapcol=10),
+                         b'cXxL#aCvlS\nZ*DGca%T')
+        self.assertEqual(binascii.b2a_base85(b, wrapcol=14),
+                         b'cXxL#aCvlS\nZ*DGca%T')
+        self.assertEqual(binascii.b2a_base85(b, wrapcol=1),
+                         b'cXxL#\naCvlS\nZ*DGc\na%T')
+
     def test_base85_pad(self):
         # Test base85 with encode padding
         rawdata = b"n1n3Tee\n ch@rAc\te\r$"
@@ -587,73 +729,303 @@ class BinASCIITest(unittest.TestCase):
             b_pad_expected = b + b"\0" * padding
             self.assertEqual(b_pad, b_pad_expected)
 
-    def test_z85_valid(self):
-        # Test Z85 with valid data
-        lines, i = [], 0
-        for k in range(1, len(self.rawdata) + 1):
-            b = self.type2test(self.rawdata[i:i + k])
-            a = binascii.b2a_z85(b)
+    def test_base85_ignorechars(self):
+        a2b_base85 = binascii.a2b_base85
+        self._common_test_ignorechars(a2b_base85)
+        eq = self.assertEqual
+        eq(a2b_base85(b'VPa\n !s\n', ignorechars=b' \n'), b'abcd')
+        eq(a2b_base85(b'VPa\n !s\n', ignorechars=bytearray(b' \n')), b'abcd')
+
+        eq(a2b_base85(b'A~[B];C', ignorechars=b';[]~'), b'"1\xa3\x15')
+        eq(a2b_base85(b'A~[B];C', ignorechars=b';[]~',
+                      alphabet=binascii.Z85_ALPHABET), b'r\xd8dv')
+
+    def test_base85_alphabet(self):
+        alphabet = (b'0123456789abcdefghijklmnopqrstuvwxyz'
+                    b'ABCDEFGHIJKLMNOPQRSTUVWXYZ.-:+=^!/*?&<>()[]{}@%$#')
+        data = self.type2test(self.rawdata)
+        encoded = binascii.b2a_base85(data, alphabet=alphabet)
+        trans = bytes.maketrans(binascii.BASE85_ALPHABET, alphabet)
+        expected = binascii.b2a_base85(data).translate(trans)
+        self.assertEqual(encoded, expected)
+        self.assertEqual(binascii.a2b_base85(encoded, alphabet=alphabet), self.rawdata)
+        self.assertEqual(binascii.b2a_base85(data, alphabet=self.type2test(alphabet)), expected)
+
+        data = self.type2test(b'')
+        self.assertEqual(binascii.b2a_base85(data, alphabet=alphabet), b'')
+        self.assertEqual(binascii.a2b_base85(data, alphabet=alphabet), b'')
+
+        for func in binascii.b2a_base85, binascii.a2b_base85:
+            with self.assertRaises(TypeError):
+                func(data, alphabet=None)
+            with self.assertRaises(TypeError):
+                func(data, alphabet=alphabet.decode())
+            with self.assertRaises(ValueError):
+                func(data, alphabet=alphabet[:-1])
+            with self.assertRaises(ValueError):
+                func(data, alphabet=alphabet+b'?')
+        with self.assertRaises(TypeError):
+            binascii.a2b_base64(data, alphabet=bytearray(alphabet))
+
+    def test_base32_valid(self):
+        # Test base32 with valid data
+        lines = []
+        step = 0
+        i = 0
+        while i < len(self.rawdata):
+            b = self.type2test(self.rawdata[i:i + step])
+            a = binascii.b2a_base32(b)
             lines.append(a)
-            i += k
-            if i >= len(self.rawdata):
-                break
+            i += step
+            step += 1
         res = bytes()
         for line in lines:
             a = self.type2test(line)
-            b = binascii.a2b_z85(a)
+            b = binascii.a2b_base32(a)
             res += b
         self.assertEqual(res, self.rawdata)
 
-        # Test decoding inputs with different length
-        self.assertEqual(binascii.a2b_z85(self.type2test(b'')), b'')
-        self.assertEqual(binascii.a2b_z85(self.type2test(b'a')), b'')
-        self.assertEqual(binascii.a2b_z85(self.type2test(b'ab')), b'\x1f')
-        self.assertEqual(binascii.a2b_z85(self.type2test(b'abc')),
-                         b'\x1f\x85')
-        self.assertEqual(binascii.a2b_z85(self.type2test(b'abcd')),
-                         b'\x1f\x85\x9a')
-        self.assertEqual(binascii.a2b_z85(self.type2test(b'abcde')),
-                         b'\x1f\x85\x9a$')
-        self.assertEqual(binascii.a2b_z85(self.type2test(b'abcdef')),
-                         b'\x1f\x85\x9a$')
-        self.assertEqual(binascii.a2b_z85(self.type2test(b'abcdefg')),
-                         b'\x1f\x85\x9a$/')
+    def test_base32_errors(self):
+        def _fixPadding(data):
+            fixed = data.replace(b"=", b"")
+            len_8 = len(fixed) % 8
+            p = 8 - len_8 if len_8 else 0
+            return fixed + b"=" * p
 
-    def test_z85_errors(self):
-        def _assertRegexTemplate(assert_regex, data, **kwargs):
+        def _assertRegexTemplate(assert_regex, data, good_padding_result=None, **kwargs):
             with self.assertRaisesRegex(binascii.Error, assert_regex):
-                binascii.a2b_z85(self.type2test(data), **kwargs)
+                binascii.a2b_base32(self.type2test(data), **kwargs)
+            if good_padding_result:
+                fixed = self.type2test(_fixPadding(data))
+                self.assertEqual(binascii.a2b_base32(fixed), good_padding_result)
 
-        def assertNonZ85Data(data):
-            _assertRegexTemplate(r"(?i)bad z85 character", data)
+        def assertNonBase32Data(*args):
+            _assertRegexTemplate(r"(?i)Only base32 data", *args)
 
-        def assertOverflow(data):
-            _assertRegexTemplate(r"(?i)z85 overflow", data)
+        def assertExcessData(*args):
+            _assertRegexTemplate(r"(?i)Excess data", *args)
 
-        assertNonZ85Data(b"\xda")
-        assertNonZ85Data(b"00\0\0")
-        assertNonZ85Data(b"z !/")
-        assertNonZ85Data(b"By/JnB0hYQ\n")
+        def assertExcessPadding(*args):
+            _assertRegexTemplate(r"(?i)Excess padding", *args)
 
-        # Test Z85 with out-of-range encoded value
-        assertOverflow(b"%")
-        assertOverflow(b"%n")
-        assertOverflow(b"%nS")
-        assertOverflow(b"%nSc")
-        assertOverflow(b"%nSc1")
-        assertOverflow(b"%nSc0$")
-        assertOverflow(b"%nSc0%nSc0%nSD0")
+        def assertLeadingPadding(*args, **kwargs):
+            _assertRegexTemplate(r"(?i)Leading padding", *args, **kwargs)
 
-    def test_z85_pad(self):
-        # Test Z85 with encode padding
-        rawdata = b"n1n3Tee\n ch@rAc\te\r$"
-        for i in range(1, len(rawdata) + 1):
-            padding = -i % 4
-            b = rawdata[:i]
-            a_pad = binascii.b2a_z85(self.type2test(b), pad=True)
-            b_pad = binascii.a2b_z85(self.type2test(a_pad))
-            b_pad_expected = b + b"\0" * padding
-            self.assertEqual(b_pad, b_pad_expected)
+        def assertIncorrectPadding(*args):
+            _assertRegexTemplate(r"(?i)Incorrect padding", *args)
+
+        def assertDiscontinuousPadding(*args):
+            _assertRegexTemplate(r"(?i)Discontinuous padding", *args)
+
+        def assertInvalidLength(data, *args, length=None, **kwargs):
+            if length is None:
+                length = len(data.split(b'=', 1)[0].replace(b' ', b''))
+            assert_regex = fr"(?i)Invalid.+number of data characters \({length}\)"
+            _assertRegexTemplate(assert_regex, data, *args, **kwargs)
+
+        assertNonBase32Data(b"a")
+        assertNonBase32Data(b"AA-")
+        assertNonBase32Data(b"ABCDE==!")
+        assertNonBase32Data(b"ab:(){:|:&};:==")
+
+        assertExcessData(b"AB======C")
+        assertExcessData(b"AB======CD")
+        assertExcessData(b"ABCD====E")
+        assertExcessData(b"ABCDE===FGH")
+        assertExcessData(b"ABCDEFG=H")
+        assertExcessData(b"432Z====55555555")
+
+        assertExcessData(b"BE======EF", b"\t\x08")
+        assertExcessData(b"BEEF====C", b"\t\x08Q")
+        assertExcessData(b"BEEFC===AK", b"\t\x08Q\x01")
+        assertExcessData(b"BEEFCAK=E", b"\t\x08Q\x01D")
+
+        assertExcessPadding(b"BE=======", b"\t")
+        assertExcessPadding(b"BE========", b"\t")
+        assertExcessPadding(b"BEEF=====", b"\t\x08")
+        assertExcessPadding(b"BEEF======", b"\t\x08")
+        assertExcessPadding(b"BEEFC====", b"\t\x08Q")
+        assertExcessPadding(b"BEEFC=====", b"\t\x08Q")
+        assertExcessPadding(b"BEEFCAK==", b"\t\x08Q\x01")
+        assertExcessPadding(b"BEEFCAK===", b"\t\x08Q\x01")
+        assertExcessPadding(b"BEEFCAKE=", b"\t\x08Q\x01D")
+        assertExcessPadding(b"BEEFCAKE==", b"\t\x08Q\x01D")
+        assertExcessPadding(b"BEEFCAKE===", b"\t\x08Q\x01D")
+        assertExcessPadding(b"BEEFCAKE====", b"\t\x08Q\x01D")
+        assertExcessPadding(b"BEEFCAKE=====", b"\t\x08Q\x01D")
+        assertExcessPadding(b"BEEFCAKE======", b"\t\x08Q\x01D")
+        assertExcessPadding(b"BEEFCAKE=======", b"\t\x08Q\x01D")
+        assertExcessPadding(b"BEEFCAKE========", b"\t\x08Q\x01D")
+        assertExcessPadding(b"BEEFCAKE=========", b"\t\x08Q\x01D")
+
+        assertLeadingPadding(b"=", b"")
+        assertLeadingPadding(b"==", b"")
+        assertLeadingPadding(b"===", b"")
+        assertLeadingPadding(b"====", b"")
+        assertLeadingPadding(b"=====", b"")
+        assertLeadingPadding(b"======", b"")
+        assertLeadingPadding(b"=======", b"")
+        assertLeadingPadding(b"========", b"")
+        assertLeadingPadding(b"=========", b"")
+        assertLeadingPadding(b"=BEEFCAKE", b"\t\x08Q\x01D")
+        assertLeadingPadding(b"==BEEFCAKE", b"\t\x08Q\x01D")
+        assertLeadingPadding(b"===BEEFCAKE", b"\t\x08Q\x01D")
+        assertLeadingPadding(b"====BEEFCAKE", b"\t\x08Q\x01D")
+        assertLeadingPadding(b"=====BEEFCAKE", b"\t\x08Q\x01D")
+        assertLeadingPadding(b"======BEEFCAKE", b"\t\x08Q\x01D")
+        assertLeadingPadding(b"=======BEEFCAKE", b"\t\x08Q\x01D")
+        assertLeadingPadding(b"========BEEFCAKE", b"\t\x08Q\x01D")
+        assertLeadingPadding(b"=========BEEFCAKE", b"\t\x08Q\x01D")
+        assertLeadingPadding(b" =BEEFCAKE", ignorechars=b' ')
+
+        assertIncorrectPadding(b"AB")
+        assertIncorrectPadding(b"ABCD")
+        assertIncorrectPadding(b"ABCDE")
+        assertIncorrectPadding(b"ABCDEFG")
+
+        assertIncorrectPadding(b"BE=", b"\t")
+        assertIncorrectPadding(b"BE==", b"\t")
+        assertIncorrectPadding(b"BE===", b"\t")
+        assertIncorrectPadding(b"BE====", b"\t")
+        assertIncorrectPadding(b"BE=====", b"\t")
+        assertIncorrectPadding(b"BEEF=", b"\t\x08")
+        assertIncorrectPadding(b"BEEF==", b"\t\x08")
+        assertIncorrectPadding(b"BEEF===", b"\t\x08")
+        assertIncorrectPadding(b"BEEFC=", b"\t\x08Q")
+        assertIncorrectPadding(b"BEEFC==", b"\t\x08Q")
+
+        assertDiscontinuousPadding(b"BE=EF===", b"\t\x08")
+        assertDiscontinuousPadding(b"BE==EF==", b"\t\x08")
+        assertDiscontinuousPadding(b"BEEF=C==", b"\t\x08Q")
+        assertDiscontinuousPadding(b"BEEFC=AK", b"\t\x08Q\x01")
+
+        assertInvalidLength(b"A")
+        assertInvalidLength(b"ABC")
+        assertInvalidLength(b"ABCDEF")
+        assertInvalidLength(b"ABCDEFGHI")
+        assertInvalidLength(b"ABCDEFGHIJK")
+        assertInvalidLength(b"ABCDEFGHIJKLMN")
+
+        assertInvalidLength(b"A=")
+        assertInvalidLength(b"A==")
+        assertInvalidLength(b"A===")
+        assertInvalidLength(b"A====")
+        assertInvalidLength(b"A=====")
+        assertInvalidLength(b"A======")
+        assertInvalidLength(b"ABC=")
+        assertInvalidLength(b"ABC==")
+        assertInvalidLength(b"ABC===")
+        assertInvalidLength(b"ABC====")
+        assertInvalidLength(b"ABCDEF=")
+
+        assertInvalidLength(b"B=E=====", b"\t")
+        assertInvalidLength(b"B==E====", b"\t")
+        assertInvalidLength(b"BEE=F===", b"\t\x08")
+        assertInvalidLength(b"BEE==F==", b"\t\x08")
+        assertInvalidLength(b"BEEFCA=K", b"\t\x08Q\x01")
+        assertInvalidLength(b"BEEFCA=====K", b"\t\x08Q\x01")
+
+        assertInvalidLength(b" A", ignorechars=b' ')
+        assertInvalidLength(b" ABC", ignorechars=b' ')
+        assertInvalidLength(b" ABCDEF", ignorechars=b' ')
+        assertInvalidLength(b" ABCDEFGHI", ignorechars=b' ')
+        assertInvalidLength(b" ABCDEFGHIJK", ignorechars=b' ')
+        assertInvalidLength(b" ABCDEFGHIJKLMN", ignorechars=b' ')
+        assertInvalidLength(b" A=======", ignorechars=b' ')
+        assertInvalidLength(b" ABC=====", ignorechars=b' ')
+        assertInvalidLength(b" ABCDEF==", ignorechars=b' ')
+
+    def test_a2b_base32_padded(self):
+        a2b_base32 = binascii.a2b_base32
+        t = self.type2test
+        def check(data, expected):
+            if b'=' in data:
+                with self.assertRaisesRegex(binascii.Error, 'Padding not allowed'):
+                    a2b_base32(t(data), padded=False)
+            self.assertEqual(a2b_base32(t(data), padded=False, ignorechars=b'='),
+                             expected)
+            data = data.replace(b'=', b'')
+            self.assertEqual(a2b_base32(t(data), padded=False), expected)
+
+        check(b'', b'')
+        check(b'ME======', b'a')
+        check(b'MFRA====', b'ab')
+        check(b'MFRGG===', b'abc')
+        check(b'MFRGGZA=', b'abcd')
+        check(b'MFRGGZDF', b'abcde')
+        check(b'M=FRGGZDF', b'abcde')
+        check(b'MF=RGGZDF', b'abcde')
+        check(b'MFR=GGZDF', b'abcde')
+        check(b'MFRG=GZDF', b'abcde')
+        check(b'MFRGG=ZDF', b'abcde')
+        check(b'MFRGGZ=DF', b'abcde')
+        check(b'MFRGGZD=F', b'abcde')
+
+    def test_b2a_base32_padded(self):
+        b2a_base32 = binascii.b2a_base32
+        t = self.type2test
+        self.assertEqual(b2a_base32(t(b''), padded=False), b'')
+        self.assertEqual(b2a_base32(t(b'a'), padded=False), b'ME')
+        self.assertEqual(b2a_base32(t(b'ab'), padded=False), b'MFRA')
+        self.assertEqual(b2a_base32(t(b'abc'), padded=False), b'MFRGG')
+        self.assertEqual(b2a_base32(t(b'abcd'), padded=False), b'MFRGGZA')
+        self.assertEqual(b2a_base32(t(b'abcde'), padded=False), b'MFRGGZDF')
+
+    def test_base32_wrapcol(self):
+        self._common_test_wrapcol(binascii.b2a_base32)
+        b = self.type2test(b'www.python.org')
+        self.assertEqual(binascii.b2a_base32(b, wrapcol=16),
+                         b'O53XOLTQPF2GQ33O\nFZXXEZY=')
+        self.assertEqual(binascii.b2a_base32(b, wrapcol=23),
+                         b'O53XOLTQPF2GQ33O\nFZXXEZY=')
+        self.assertEqual(binascii.b2a_base32(b, wrapcol=1),
+                         b'O53XOLTQ\nPF2GQ33O\nFZXXEZY=')
+
+    def test_base32_ignorechars(self):
+        a2b_base32 = binascii.a2b_base32
+        self._common_test_ignorechars(a2b_base32)
+        eq = self.assertEqual
+        eq(a2b_base32(b'MFRG\n GZDF\n', ignorechars=b' \n'), b'abcde')
+        eq(a2b_base32(b'MFRG\n GZDF\n', ignorechars=bytearray(b' \n')), b'abcde')
+        eq(a2b_base32(b'M=======FRGGZDF', ignorechars=b'='), b'abcde')
+        eq(a2b_base32(b'MF======RGGZDF', ignorechars=b'='), b'abcde')
+        eq(a2b_base32(b'MFR=====GGZDF', ignorechars=b'='), b'abcde')
+        eq(a2b_base32(b'MFRG====GZDF', ignorechars=b'='), b'abcde')
+        eq(a2b_base32(b'MFRGG===ZDF', ignorechars=b'='), b'abcde')
+        eq(a2b_base32(b'MFRGGZ==DF', ignorechars=b'='), b'abcde')
+        eq(a2b_base32(b'MFRGGZD=F', ignorechars=b'='), b'abcde')
+        eq(a2b_base32(b'MFRGGZDF=', ignorechars=b'='), b'abcde')
+        eq(a2b_base32(b'MFRA======', ignorechars=b'='), b'ab')
+
+        eq(a2b_base32(b'A1B3C5W7Z9', ignorechars=b'19WZ'), b'\x00v.\xdb\xf9')
+        eq(a2b_base32(b'A1B3C5W7Z9', ignorechars=b'19WZ',
+                      alphabet=binascii.BASE32HEX_ALPHABET), b'PV6\x14\xe9')
+
+    def test_base32_alphabet(self):
+        alphabet = b'0Aa1Bb2Cc3Dd4Ee5Ff6Gg7Hh8Ii9JjKk'
+        data = self.type2test(self.rawdata)
+        encoded = binascii.b2a_base32(data, alphabet=alphabet)
+        trans = bytes.maketrans(binascii.BASE32_ALPHABET, alphabet)
+        expected = binascii.b2a_base32(data).translate(trans)
+        self.assertEqual(encoded, expected)
+        self.assertEqual(binascii.a2b_base32(encoded, alphabet=alphabet), self.rawdata)
+        self.assertEqual(binascii.b2a_base32(data, alphabet=self.type2test(alphabet)), expected)
+
+        data = self.type2test(b'')
+        self.assertEqual(binascii.b2a_base32(data, alphabet=alphabet), b'')
+        self.assertEqual(binascii.a2b_base32(data, alphabet=alphabet), b'')
+
+        for func in binascii.b2a_base32, binascii.a2b_base32:
+            with self.assertRaises(TypeError):
+                func(data, alphabet=None)
+            with self.assertRaises(TypeError):
+                func(data, alphabet=alphabet.decode())
+            with self.assertRaises(ValueError):
+                func(data, alphabet=alphabet[:-1])
+            with self.assertRaises(ValueError):
+                func(data, alphabet=alphabet+b'?')
+        with self.assertRaises(TypeError):
+            binascii.a2b_base32(data, alphabet=bytearray(alphabet))
 
     def test_uu(self):
         MAX_UU = 45
@@ -755,6 +1127,15 @@ class BinASCIITest(unittest.TestCase):
         self.assertEqual(binascii.hexlify(self.type2test(s), '.', 8), expected8)
         expected1 = s.hex(':').encode('ascii')
         self.assertEqual(binascii.b2a_hex(self.type2test(s), ':'), expected1)
+
+    def test_hex_ignorechars(self):
+        a2b_hex = binascii.a2b_hex
+        self._common_test_ignorechars(a2b_hex)
+        self._common_test_ignorechars(binascii.unhexlify)
+        eq = self.assertEqual
+        eq(a2b_hex(b'A B\nC D\n', ignorechars=b' \n'), b'\xab\xcd')
+        eq(a2b_hex(b'A B\nC D\n', ignorechars=bytearray(b' \n')), b'\xab\xcd')
+        eq(a2b_hex(b'aBcD', ignorechars=b'ac'), b'\xab\xcd')
 
     def test_qp(self):
         type2test = self.type2test
@@ -932,39 +1313,26 @@ class BinASCIITest(unittest.TestCase):
         self.assertEqual(binascii.b2a_base64(b, newline=True), b'\n')
         self.assertEqual(binascii.b2a_base64(b, newline=False), b'')
 
+    def test_b2a_base64_padded(self):
+        b2a_base64 = binascii.b2a_base64
+        t = self.type2test
+        self.assertEqual(b2a_base64(t(b''), padded=False), b'\n')
+        self.assertEqual(b2a_base64(t(b'a'), padded=False), b'YQ\n')
+        self.assertEqual(b2a_base64(t(b'ab'), padded=False), b'YWI\n')
+        self.assertEqual(b2a_base64(t(b'abc'), padded=False), b'YWJj\n')
+
     def test_b2a_base64_wrapcol(self):
+        self._common_test_wrapcol(binascii.b2a_base64)
         b = self.type2test(b'www.python.org')
-        self.assertEqual(binascii.b2a_base64(b),
-                         b'd3d3LnB5dGhvbi5vcmc=\n')
-        self.assertEqual(binascii.b2a_base64(b, wrapcol=0),
-                         b'd3d3LnB5dGhvbi5vcmc=\n')
         self.assertEqual(binascii.b2a_base64(b, wrapcol=8),
                          b'd3d3LnB5\ndGhvbi5v\ncmc=\n')
         self.assertEqual(binascii.b2a_base64(b, wrapcol=11),
                          b'd3d3LnB5\ndGhvbi5v\ncmc=\n')
-        self.assertEqual(binascii.b2a_base64(b, wrapcol=76),
-                         b'd3d3LnB5dGhvbi5vcmc=\n')
         self.assertEqual(binascii.b2a_base64(b, wrapcol=8, newline=False),
                          b'd3d3LnB5\ndGhvbi5v\ncmc=')
         self.assertEqual(binascii.b2a_base64(b, wrapcol=1),
                          b'd3d3\nLnB5\ndGhv\nbi5v\ncmc=\n')
-        self.assertEqual(binascii.b2a_base64(b, wrapcol=sys.maxsize),
-                         b'd3d3LnB5dGhvbi5vcmc=\n')
-        if check_impl_detail():
-            self.assertEqual(binascii.b2a_base64(b, wrapcol=sys.maxsize*2),
-                             b'd3d3LnB5dGhvbi5vcmc=\n')
-            with self.assertRaises(OverflowError):
-                binascii.b2a_base64(b, wrapcol=2**1000)
-        with self.assertRaises(ValueError):
-            binascii.b2a_base64(b, wrapcol=-8)
-        with self.assertRaises(TypeError):
-            binascii.b2a_base64(b, wrapcol=8.0)
-        with self.assertRaises(TypeError):
-            binascii.b2a_base64(b, wrapcol='8')
         b = self.type2test(b'')
-        self.assertEqual(binascii.b2a_base64(b), b'\n')
-        self.assertEqual(binascii.b2a_base64(b, wrapcol=0), b'\n')
-        self.assertEqual(binascii.b2a_base64(b, wrapcol=8), b'\n')
         self.assertEqual(binascii.b2a_base64(b, wrapcol=8, newline=False), b'')
 
     @hypothesis.given(

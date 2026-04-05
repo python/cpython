@@ -116,8 +116,8 @@ test_sizeof_c_types(PyObject *self, PyObject *Py_UNUSED(ignored))
     do { \
         if (EXPECTED != sizeof(TYPE)) { \
             PyErr_Format(get_testerror(self),               \
-                         "sizeof(%s) = %u instead of %u",   \
-                         #TYPE, sizeof(TYPE), EXPECTED);    \
+                         "sizeof(%s) = %zu instead of %u",   \
+                         #TYPE, sizeof(TYPE), (unsigned)(EXPECTED));    \
             return (PyObject*)NULL; \
         } \
     } while (0)
@@ -224,6 +224,18 @@ pycompilestring(PyObject* self, PyObject *obj) {
         return NULL;
     }
     return Py_CompileString(the_string, "<string>", Py_file_input);
+}
+
+static PyObject*
+pycompilestringexflags(PyObject *self, PyObject *args) {
+    const char *the_string, *filename;
+    int start, flags;
+    if (!PyArg_ParseTuple(args, "ysii", &the_string, &filename, &start, &flags)) {
+        return NULL;
+    }
+    PyCompilerFlags cf = _PyCompilerFlags_INIT;
+    cf.cf_flags = flags;
+    return Py_CompileStringExFlags(the_string, filename, start, &cf, -1);
 }
 
 static PyObject*
@@ -2595,6 +2607,41 @@ create_managed_weakref_nogc_type(PyObject *self, PyObject *Py_UNUSED(args))
 }
 
 
+static PyObject*
+test_soft_deprecated_macros(PyObject *Py_UNUSED(self), PyObject *Py_UNUSED(args))
+{
+    // Test soft-deprecated macros
+    Py_ALIGNED(64) char buf[4];
+    #ifdef __GNUC__
+        // Py_ALIGNED must compile everywhere, but only does something
+        // on "supported" compilers, i.e. GCC
+        Py_BUILD_ASSERT(__extension__ __alignof__(buf) >= 64);
+    #endif
+    assert(strcmp(PY_FORMAT_SIZE_T, "z") == 0);
+    Py_BUILD_ASSERT(Py_LL(123) == 123LL);
+    Py_BUILD_ASSERT(sizeof(Py_LL(123)) == sizeof(long long));
+    Py_BUILD_ASSERT(sizeof(Py_ULL(123)) == sizeof(unsigned long long));
+    Py_BUILD_ASSERT(sizeof(PY_LONG_LONG) == sizeof(long long));
+    Py_BUILD_ASSERT(sizeof(PY_INT32_T) == sizeof(int32_t));
+    Py_BUILD_ASSERT(sizeof(PY_UINT32_T) == sizeof(uint32_t));
+    Py_BUILD_ASSERT(sizeof(PY_INT64_T) == sizeof(int64_t));
+    Py_BUILD_ASSERT(sizeof(PY_UINT64_T) == sizeof(uint64_t));
+    Py_BUILD_ASSERT(PY_LLONG_MIN == LLONG_MIN);
+    Py_BUILD_ASSERT(PY_LLONG_MAX == LLONG_MAX);
+    Py_BUILD_ASSERT(PY_ULLONG_MAX == ULLONG_MAX);
+    Py_BUILD_ASSERT(PY_SIZE_MAX == SIZE_MAX);
+    Py_BUILD_ASSERT(PY_LLONG_MIN == LLONG_MIN);
+    Py_MEMCPY(buf, "abc", 4);
+    assert(strcmp(buf, "abc") == 0);
+    Py_BUILD_ASSERT(Py_UNICODE_SIZE == sizeof(wchar_t));
+    #ifdef Py_UNICODE_WIDE
+        Py_BUILD_ASSERT(sizeof(wchar_t) >= 4);
+    #else
+        Py_BUILD_ASSERT(sizeof(wchar_t) < 4);
+    #endif
+    Py_RETURN_NONE;
+}
+
 static PyMethodDef TestMethods[] = {
     {"set_errno",               set_errno,                       METH_VARARGS},
     {"test_config",             test_config,                     METH_NOARGS},
@@ -2659,6 +2706,7 @@ static PyMethodDef TestMethods[] = {
     {"return_result_with_error", return_result_with_error, METH_NOARGS},
     {"getitem_with_error", getitem_with_error, METH_VARARGS},
     {"Py_CompileString",     pycompilestring, METH_O},
+    {"Py_CompileStringExFlags", pycompilestringexflags, METH_VARARGS},
     {"raise_SIGINT_then_send_None", raise_SIGINT_then_send_None, METH_VARARGS},
     {"stack_pointer", stack_pointer, METH_NOARGS},
 #ifdef W_STOPCODE
@@ -2691,6 +2739,7 @@ static PyMethodDef TestMethods[] = {
     {"toggle_reftrace_printer", toggle_reftrace_printer, METH_O},
     {"create_managed_weakref_nogc_type",
         create_managed_weakref_nogc_type, METH_NOARGS},
+    {"test_soft_deprecated_macros", test_soft_deprecated_macros, METH_NOARGS},
     {NULL, NULL} /* sentinel */
 };
 

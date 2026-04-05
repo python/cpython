@@ -9,13 +9,18 @@
 --------------
 
 The :mod:`!wave` module provides a convenient interface to the Waveform Audio
-"WAVE" (or "WAV") file format. Only uncompressed PCM encoded wave files are
-supported.
+"WAVE" (or "WAV") file format.
+
+The module supports uncompressed PCM and IEEE floating-point WAV formats.
 
 .. versionchanged:: 3.12
 
    Support for ``WAVE_FORMAT_EXTENSIBLE`` headers was added, provided that the
    extended format is ``KSDATAFORMAT_SUBTYPE_PCM``.
+
+.. versionchanged:: next
+
+   Support for reading and writing ``WAVE_FORMAT_IEEE_FLOAT`` files was added.
 
 The :mod:`!wave` module defines the following function and exception:
 
@@ -60,6 +65,21 @@ The :mod:`!wave` module defines the following function and exception:
    specification or hits an implementation deficiency.
 
 
+.. data:: WAVE_FORMAT_PCM
+
+   Format code for uncompressed PCM audio.
+
+
+.. data:: WAVE_FORMAT_IEEE_FLOAT
+
+   Format code for IEEE floating-point audio.
+
+
+.. data:: WAVE_FORMAT_EXTENSIBLE
+
+   Format code for WAVE extensible headers.
+
+
 .. _wave-read-objects:
 
 Wave_read Objects
@@ -98,6 +118,14 @@ Wave_read Objects
       Returns number of audio frames.
 
 
+   .. method:: getformat()
+
+      Returns the frame format code.
+
+      This is one of :data:`WAVE_FORMAT_PCM`,
+      :data:`WAVE_FORMAT_IEEE_FLOAT`, or :data:`WAVE_FORMAT_EXTENSIBLE`.
+
+
    .. method:: getcomptype()
 
       Returns compression type (``'NONE'`` is the only supported type).
@@ -112,8 +140,8 @@ Wave_read Objects
    .. method:: getparams()
 
       Returns a :func:`~collections.namedtuple` ``(nchannels, sampwidth,
-      framerate, nframes, comptype, compname)``, equivalent to output of the
-      ``get*()`` methods.
+      framerate, nframes, comptype, compname)``, equivalent to output
+      of the ``get*()`` methods.
 
 
    .. method:: readframes(n)
@@ -181,9 +209,22 @@ Wave_write Objects
       Set the number of channels.
 
 
+   .. method:: getnchannels()
+
+      Return the number of channels.
+
+
    .. method:: setsampwidth(n)
 
       Set the sample width to *n* bytes.
+
+      For :data:`WAVE_FORMAT_IEEE_FLOAT`, only 4-byte (32-bit) and
+      8-byte (64-bit) sample widths are supported.
+
+
+   .. method:: getsampwidth()
+
+      Return the sample width in bytes.
 
 
    .. method:: setframerate(n)
@@ -195,11 +236,21 @@ Wave_write Objects
          integer.
 
 
+   .. method:: getframerate()
+
+      Return the frame rate.
+
+
    .. method:: setnframes(n)
 
       Set the number of frames to *n*.  This will be changed later if the number
       of frames actually written is different (this update attempt will
       raise an error if the output stream is not seekable).
+
+
+   .. method:: getnframes()
+
+      Return the number of audio frames written so far.
 
 
    .. method:: setcomptype(type, name)
@@ -208,11 +259,49 @@ Wave_write Objects
       ``NONE`` is supported, meaning no compression.
 
 
+   .. method:: getcomptype()
+
+      Return the compression type (``'NONE'``).
+
+
+   .. method:: getcompname()
+
+      Return the human-readable compression type name.
+
+
+   .. method:: setformat(format)
+
+      Set the frame format code.
+
+      Supported values are :data:`WAVE_FORMAT_PCM` and
+      :data:`WAVE_FORMAT_IEEE_FLOAT`.
+
+      When setting :data:`WAVE_FORMAT_IEEE_FLOAT`, the sample width must be
+      4 or 8 bytes.
+
+
+   .. method:: getformat()
+
+      Return the current frame format code.
+
+
    .. method:: setparams(tuple)
 
-      The *tuple* should be ``(nchannels, sampwidth, framerate, nframes, comptype,
-      compname)``, with values valid for the ``set*()`` methods.  Sets all
-      parameters.
+      The *tuple* should be
+      ``(nchannels, sampwidth, framerate, nframes, comptype, compname, format)``,
+      with values valid for the ``set*()`` methods. Sets all parameters.
+
+      For backwards compatibility, a 6-item tuple without *format* is also
+      accepted and defaults to :data:`WAVE_FORMAT_PCM`.
+
+      For ``format=WAVE_FORMAT_IEEE_FLOAT``, *sampwidth* must be 4 or 8.
+
+
+   .. method:: getparams()
+
+      Return a :func:`~collections.namedtuple`
+      ``(nchannels, sampwidth, framerate, nframes, comptype, compname)``
+      containing the current output parameters.
 
 
    .. method:: tell()
@@ -242,3 +331,6 @@ Wave_write Objects
       Note that it is invalid to set any parameters after calling :meth:`writeframes`
       or :meth:`writeframesraw`, and any attempt to do so will raise
       :exc:`wave.Error`.
+
+      For :data:`WAVE_FORMAT_IEEE_FLOAT` output, a ``fact`` chunk is written as
+      required by the WAVE specification for non-PCM formats.

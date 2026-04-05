@@ -111,6 +111,7 @@ Local naming conventions:
 #include "pycore_moduleobject.h"  // _PyModule_GetState
 #include "pycore_object.h"        // _PyObject_VisitType()
 #include "pycore_time.h"          // _PyTime_AsMilliseconds()
+#include "pycore_tuple.h"         // _PyTuple_FromPairSteal
 #include "pycore_pystate.h"       // _Py_AssertHoldsTstate()
 
 #ifdef _Py_MEMORY_SANITIZER
@@ -151,7 +152,7 @@ listen([n]) -- start listening for incoming connections\n\
 recv(buflen[, flags]) -- receive data\n\
 recv_into(buffer[, nbytes[, flags]]) -- receive data (into a buffer)\n\
 recvfrom(buflen[, flags]) -- receive data and sender\'s address\n\
-recvfrom_into(buffer[, nbytes, [, flags])\n\
+recvfrom_into(buffer[, nbytes, [, flags]])\n\
   -- receive data and sender\'s address (into a buffer)\n\
 sendall(data[, flags]) -- send all data\n\
 send(data[, flags]) -- send data, may not send all of it\n\
@@ -3076,7 +3077,6 @@ sock_accept(PyObject *self, PyObject *Py_UNUSED(ignored))
     socklen_t addrlen;
     PyObject *sock = NULL;
     PyObject *addr = NULL;
-    PyObject *res = NULL;
     struct sock_accept ctx;
 
     if (!getsockaddrlen(s, &addrlen))
@@ -3102,7 +3102,7 @@ sock_accept(PyObject *self, PyObject *Py_UNUSED(ignored))
     if (!SetHandleInformation((HANDLE)newfd, HANDLE_FLAG_INHERIT, 0)) {
         PyErr_SetFromWindowsErr(0);
         SOCKETCLOSE(newfd);
-        goto finally;
+        goto error;
     }
 #endif
 #else
@@ -3113,7 +3113,7 @@ sock_accept(PyObject *self, PyObject *Py_UNUSED(ignored))
     {
         if (_Py_set_inheritable(newfd, 0, NULL) < 0) {
             SOCKETCLOSE(newfd);
-            goto finally;
+            goto error;
         }
     }
 #endif
@@ -3121,20 +3121,20 @@ sock_accept(PyObject *self, PyObject *Py_UNUSED(ignored))
     sock = PyLong_FromSocket_t(newfd);
     if (sock == NULL) {
         SOCKETCLOSE(newfd);
-        goto finally;
+        goto error;
     }
 
     addr = makesockaddr(get_sock_fd(s), SAS2SA(&addrbuf),
                         addrlen, s->sock_proto);
     if (addr == NULL)
-        goto finally;
+        goto error;
 
-    res = PyTuple_Pack(2, sock, addr);
+    return _PyTuple_FromPairSteal(sock, addr);
 
-finally:
+error:
     Py_XDECREF(sock);
     Py_XDECREF(addr);
-    return res;
+    return NULL;
 }
 
 PyDoc_STRVAR(accept_doc,
@@ -3357,8 +3357,7 @@ sock_setsockopt(PyObject *self, PyObject *args)
     arglen = PyTuple_Size(args);
     if (arglen == 3 && optval == Py_None) {
         PyErr_Format(PyExc_TypeError,
-                     "setsockopt() requires 4 arguments when the third argument is None",
-                     arglen);
+                     "setsockopt() requires 4 arguments when the third argument is None");
         return NULL;
     }
     if (arglen == 4 && optval != Py_None) {
@@ -4167,7 +4166,6 @@ sock_recvfrom(PyObject *self, PyObject *args)
     PySocketSockObject *s = _PySocketSockObject_CAST(self);
 
     PyObject *addr = NULL;
-    PyObject *ret = NULL;
     int flags = 0;
     Py_ssize_t recvlen, outlen;
 
@@ -4189,20 +4187,19 @@ sock_recvfrom(PyObject *self, PyObject *args)
                                 recvlen, flags, &addr);
     if (outlen < 0) {
         PyBytesWriter_Discard(writer);
-        goto finally;
+        goto error;
     }
 
     PyObject *buf = PyBytesWriter_FinishWithSize(writer, outlen);
     if (buf == NULL) {
-        goto finally;
+        goto error;
     }
 
-    ret = PyTuple_Pack(2, buf, addr);
-    Py_DECREF(buf);
+    return _PyTuple_FromPairSteal(buf, addr);
 
-finally:
+error:
     Py_XDECREF(addr);
-    return ret;
+    return NULL;
 }
 
 PyDoc_STRVAR(recvfrom_doc,
@@ -4808,6 +4805,7 @@ sock_sendto(PyObject *self, PyObject *args)
     }
 
     if (PySys_Audit("socket.sendto", "OO", s, addro) < 0) {
+        PyBuffer_Release(&pbuf);
         return NULL;
     }
 
@@ -6261,7 +6259,7 @@ socket_gethostbyaddr(PyObject *self, PyObject *args)
        gethostbyaddr_r is 8-byte aligned, which at least llvm-gcc
        does not ensure. The attribute below instructs the compiler
        to maintain this alignment. */
-    char buf[16384] Py_ALIGNED(8);
+    _Py_ALIGNED_DEF(8, char) buf[16384];
     int buf_len = (sizeof buf) - 1;
     int errnop;
 #endif
@@ -6543,7 +6541,6 @@ socket_socketpair(PyObject *self, PyObject *args)
     PySocketSockObject *s0 = NULL, *s1 = NULL;
     SOCKET_T sv[2];
     int family, type = SOCK_STREAM, proto = 0;
-    PyObject *res = NULL;
     socket_state *state = get_module_state(self);
 #ifdef SOCK_CLOEXEC
     int *atomic_flag_works = &sock_cloexec_works;
@@ -6588,28 +6585,26 @@ socket_socketpair(PyObject *self, PyObject *args)
         return set_error();
 
     if (_Py_set_inheritable(sv[0], 0, atomic_flag_works) < 0)
-        goto finally;
+        goto error;
     if (_Py_set_inheritable(sv[1], 0, atomic_flag_works) < 0)
-        goto finally;
+        goto error;
 
     s0 = new_sockobject(state, sv[0], family, type, proto);
     if (s0 == NULL)
-        goto finally;
+        goto error;
     s1 = new_sockobject(state, sv[1], family, type, proto);
     if (s1 == NULL)
-        goto finally;
-    res = PyTuple_Pack(2, s0, s1);
+        goto error;
+    return _PyTuple_FromPairSteal((PyObject *)s0, (PyObject *)s1);
 
-finally:
-    if (res == NULL) {
-        if (s0 == NULL)
-            SOCKETCLOSE(sv[0]);
-        if (s1 == NULL)
-            SOCKETCLOSE(sv[1]);
-    }
+error:
+    if (s0 == NULL)
+        SOCKETCLOSE(sv[0]);
+    if (s1 == NULL)
+        SOCKETCLOSE(sv[1]);
     Py_XDECREF(s0);
     Py_XDECREF(s1);
-    return res;
+    return NULL;
 }
 
 PyDoc_STRVAR(socketpair_doc,
@@ -6982,7 +6977,7 @@ socket_getaddrinfo(PyObject *self, PyObject *args, PyObject* kwargs)
 
     if (PySys_Audit("socket.getaddrinfo", "OOiii",
                     hobj, pobj, family, socktype, protocol) < 0) {
-        return NULL;
+        goto err;
     }
 
     memset(&hints, 0, sizeof(hints));
@@ -9305,6 +9300,7 @@ error:
 }
 
 static struct PyModuleDef_Slot socket_slots[] = {
+    _Py_ABI_SLOT,
     {Py_mod_exec, socket_exec},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {Py_mod_gil, Py_MOD_GIL_NOT_USED},

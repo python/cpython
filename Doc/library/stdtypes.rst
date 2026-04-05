@@ -1163,13 +1163,13 @@ Sequence types also support the following methods:
 
    Return the total number of occurrences of *value* in *sequence*.
 
-.. method:: list.index(value[, start[, stop])
-            range.index(value[, start[, stop])
-            tuple.index(value[, start[, stop])
+.. method:: list.index(value[, start[, stop]])
+            range.index(value[, start[, stop]])
+            tuple.index(value[, start[, stop]])
    :no-contents-entry:
    :no-index-entry:
    :no-typesetting:
-.. method:: sequence.index(value[, start[, stop])
+.. method:: sequence.index(value[, start[, stop]])
 
    Return the index of the first occurrence of *value* in *sequence*.
 
@@ -1286,7 +1286,7 @@ Mutable sequence types also support the following methods:
    :no-typesetting:
 .. method:: sequence.append(value, /)
 
-   Append *value* to the end of the sequence
+   Append *value* to the end of the sequence.
    This is equivalent to writing ``seq[len(seq):len(seq)] = [value]``.
 
 .. method:: bytearray.clear()
@@ -2247,16 +2247,33 @@ expression support in the :mod:`re` module).
       >>> '\t'.isprintable(), '\n'.isprintable()
       (False, False)
 
+   See also :meth:`isspace`.
+
 
 .. method:: str.isspace()
 
    Return ``True`` if there are only whitespace characters in the string and there is
    at least one character, ``False`` otherwise.
 
+   For example:
+
+   .. doctest::
+
+      >>> ''.isspace()
+      False
+      >>> ' '.isspace()
+      True
+      >>> '\t\n'.isspace() # TAB and BREAK LINE
+      True
+      >>> '\u3000'.isspace() # IDEOGRAPHIC SPACE
+      True
+
    A character is *whitespace* if in the Unicode character database
    (see :mod:`unicodedata`), either its general category is ``Zs``
    ("Separator, space"), or its bidirectional class is one of ``WS``,
    ``B``, or ``S``.
+
+   See also :meth:`isprintable`.
 
 
 .. method:: str.istitle()
@@ -2384,6 +2401,10 @@ expression support in the :mod:`re` module).
    resulting dictionary, each character in *from* will be mapped to the character at
    the same position in *to*.  If there is a third argument, it must be a string,
    whose characters will be mapped to ``None`` in the result.
+
+   .. versionchanged:: 3.15
+
+      *dict* can now be a :class:`frozendict`.
 
 
 .. method:: str.partition(sep, /)
@@ -3181,6 +3202,10 @@ The conversion types are:
 |            | character in the result.                            |       |
 +------------+-----------------------------------------------------+-------+
 
+For floating-point formats, the result should be correctly rounded to a given
+precision ``p`` of digits after the decimal point.  The rounding mode matches
+that of the :func:`round` builtin.
+
 Notes:
 
 (1)
@@ -3489,6 +3514,11 @@ The representation of bytearray objects uses the bytes literal format
 ``bytearray([46, 46, 46])``.  You can always convert a bytearray object into
 a list of integers using ``list(b)``.
 
+.. seealso::
+
+   For detailed information on thread-safety guarantees for :class:`bytearray`
+   objects, see :ref:`thread-safety-bytearray`.
+
 
 .. _bytes-methods:
 
@@ -3705,12 +3735,13 @@ arbitrary binary data.
    The separator to search for may be any :term:`bytes-like object`.
 
 
-.. method:: bytes.replace(old, new, count=-1, /)
-            bytearray.replace(old, new, count=-1, /)
+.. method:: bytes.replace(old, new, /, count=-1)
+            bytearray.replace(old, new, /, count=-1)
 
    Return a copy of the sequence with all occurrences of subsequence *old*
-   replaced by *new*.  If the optional argument *count* is given, only the
-   first *count* occurrences are replaced.
+   replaced by *new*.  If *count* is given, only the first *count* occurrences
+   are replaced.  If *count* is not specified or ``-1``, then all occurrences
+   are replaced.
 
    The subsequence to search for and its replacement may be any
    :term:`bytes-like object`.
@@ -3719,6 +3750,9 @@ arbitrary binary data.
 
       The bytearray version of this method does *not* operate in place - it
       always produces a new object, even if no changes were made.
+
+   .. versionchanged:: next
+      *count* is now supported as a keyword argument.
 
 
 .. method:: bytes.rfind(sub[, start[, end]])
@@ -4536,7 +4570,7 @@ copying.
    types such as :class:`bytes` and :class:`bytearray`, an element is a single
    byte, but other types such as :class:`array.array` may have bigger elements.
 
-   ``len(view)`` is equal to the length of :class:`~memoryview.tolist`, which
+   ``len(view)`` is equal to the length of :meth:`~memoryview.tolist`, which
    is the nested list representation of the view. If ``view.ndim = 1``,
    this is equal to the number of elements in the view.
 
@@ -5015,6 +5049,9 @@ copying.
 
       .. versionadded:: 3.3
 
+For information on the thread safety of :class:`memoryview` objects in
+the :term:`free-threaded build`, see :ref:`thread-safety-memoryview`.
+
 
 .. _types-set:
 
@@ -5225,6 +5262,11 @@ Note, the *elem* argument to the :meth:`~object.__contains__`,
 :meth:`~set.remove`, and
 :meth:`~set.discard` methods may be a set.  To support searching for an equivalent
 frozenset, a temporary one is created from *elem*.
+
+.. seealso::
+
+   For detailed information on thread-safety guarantees for :class:`set`
+   objects, see :ref:`thread-safety-set`.
 
 
 .. _typesmapping:
@@ -5661,7 +5703,7 @@ Frozen dictionaries
    :class:`!frozendict` is not a :class:`!dict` subclass but inherits directly
    from ``object``.
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
 
 .. _typecontextmanager:

@@ -698,6 +698,8 @@ The add_argument() method
 
    * deprecated_ - Whether or not use of the argument is deprecated.
 
+   The method returns an :class:`Action` object representing the argument.
+
 The following sections describe how each of these are used.
 
 
@@ -739,9 +741,9 @@ By default, :mod:`!argparse` automatically handles the internal naming and
 display names of arguments, simplifying the process without requiring
 additional configuration.
 As such, you do not need to specify the dest_ and metavar_ parameters.
-The dest_ parameter defaults to the argument name with underscores ``_``
-replacing hyphens ``-`` . The metavar_ parameter defaults to the
-upper-cased name. For example::
+For optional arguments, the dest_ parameter defaults to the argument name, with
+underscores ``_`` replacing hyphens ``-``. The metavar_ parameter defaults to
+the upper-cased name. For example::
 
    >>> parser = argparse.ArgumentParser(prog='PROG')
    >>> parser.add_argument('--foo-bar')
@@ -1116,7 +1118,15 @@ User defined functions can be used as well:
 
 The :func:`bool` function is not recommended as a type converter.  All it does
 is convert empty strings to ``False`` and non-empty strings to ``True``.
-This is usually not what is desired.
+This is usually not what is desired::
+
+   >>> parser = argparse.ArgumentParser()
+   >>> _ = parser.add_argument('--verbose', type=bool)
+   >>> parser.parse_args(['--verbose', 'False'])
+   Namespace(verbose=True)
+
+See :class:`BooleanOptionalAction` or ``action='store_true'`` for common
+alternatives.
 
 In general, the ``type`` keyword is a convenience that should only be used for
 simple conversions that can only raise one of the three supported exceptions.

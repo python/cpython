@@ -12,7 +12,7 @@ import sys
 import tempfile
 from pkgutil import ModuleInfo
 from unittest import TestCase, skipUnless, skipIf, SkipTest
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 from test.support import force_not_colorized, make_clean_env, Py_DEBUG
 from test.support import has_subprocess_support, SHORT_TIMEOUT, STDLIB_DIR
 from test.support.import_helper import import_module
@@ -33,6 +33,8 @@ from _pyrepl._module_completer import (
     ModuleCompleter,
     HARDCODED_SUBMODULES,
 )
+from _pyrepl.fancycompleter import Completer as FancyCompleter
+import _pyrepl.readline as pyrepl_readline
 from _pyrepl.readline import (
     ReadlineAlikeReader,
     ReadlineConfig,
@@ -44,6 +46,10 @@ try:
     import pty
 except ImportError:
     pty = None
+try:
+    import readline as readline_module
+except ImportError:
+    readline_module = None
 
 
 class ReplTestCase(TestCase):
@@ -935,6 +941,92 @@ class TestPyReplCompleter(TestCase):
         output = readline_multiline_input(more_lines, ">>>", "...")
         self.assertEqual(output, "dummy.test_func.__")
         self.assertEqual(mock_stderr.getvalue(), "")
+
+
+class TestPyReplFancyCompleter(TestCase):
+    def prepare_reader(self, events, namespace, *, use_colors):
+        console = FakeConsole(events)
+        config = ReadlineConfig()
+        config.readline_completer = FancyCompleter(
+            namespace, use_colors=use_colors
+        ).complete
+        reader = ReadlineAlikeReader(console=console, config=config)
+        return reader
+
+    def test_simple_completion_preserves_callable_postfix(self):
+        events = code_to_events("os.getpid\t\n")
+
+        namespace = {"os": os}
+        reader = self.prepare_reader(events, namespace, use_colors=False)
+
+        output = multiline_input(reader, namespace)
+        self.assertEqual(output, "os.getpid()")
+
+    def test_attribute_menu_tracks_typed_stem(self):
+        class Obj:
+            apple = 1
+            apricot = 2
+            banana = 3
+
+        namespace = {"obj": Obj}
+        reader = self.prepare_reader(
+            code_to_events("obj.\t\ta"),
+            namespace,
+            use_colors=True,
+        )
+
+        with self.assertRaises(StopIteration):
+            while True:
+                reader.handle1()
+
+        self.assertEqual("".join(reader.buffer), "obj.a")
+        self.assertTrue(reader.cmpltn_menu_visible)
+        menu = "\n".join(reader.cmpltn_menu)
+        self.assertIn("apple", menu)
+        self.assertIn("apricot", menu)
+        self.assertNotIn("banana", menu)
+        self.assertNotIn("mro", menu)
+
+
+class TestPyReplReadlineSetup(TestCase):
+    def test_setup_ignores_basic_completer_env_when_env_is_disabled(self):
+        class FakeFancyCompleter:
+            def __init__(self, namespace):
+                self.namespace = namespace
+
+            def complete(self, text, state):
+                return None
+
+        class FakeBasicCompleter(FakeFancyCompleter):
+            pass
+
+        wrapper = Mock()
+        wrapper.config = ReadlineConfig()
+        stdin = Mock()
+        stdout = Mock()
+        stdin.fileno.return_value = 0
+        stdout.fileno.return_value = 1
+
+        with (
+            patch.object(pyrepl_readline, "_wrapper", wrapper),
+            patch.object(pyrepl_readline, "raw_input", None),
+            patch.object(pyrepl_readline, "FancyCompleter", FakeFancyCompleter),
+            patch.object(pyrepl_readline, "RLCompleter", FakeBasicCompleter),
+            patch.object(pyrepl_readline.sys, "stdin", stdin),
+            patch.object(pyrepl_readline.sys, "stdout", stdout),
+            patch.object(pyrepl_readline.sys, "flags", Mock(ignore_environment=True)),
+            patch.object(pyrepl_readline.os, "isatty", return_value=True),
+            patch.object(pyrepl_readline.os, "getenv") as mock_getenv,
+            patch("builtins.input", lambda prompt="": prompt),
+        ):
+            mock_getenv.return_value = "1"
+            pyrepl_readline._setup({})
+
+        self.assertIsInstance(
+            wrapper.config.readline_completer.__self__,
+            FakeFancyCompleter,
+        )
+        mock_getenv.assert_not_called()
 
 
 class TestPyReplModuleCompleter(TestCase):
@@ -1947,9 +2039,12 @@ class TestMain(ReplTestCase):
         commands = "print('Something pretty long', end='')\nexit()\n"
         expected_output_sequence = "Something pretty long>>> exit()"
 
-        basic_output, basic_exit_code = self.run_repl(commands, env=env)
-        self.assertEqual(basic_exit_code, 0)
-        self.assertIn(expected_output_sequence, basic_output)
+        # gh-143394: The basic REPL needs the readline module to turn off
+        # ECHO terminal attribute.
+        if readline_module is not None:
+            basic_output, basic_exit_code = self.run_repl(commands, env=env)
+            self.assertEqual(basic_exit_code, 0)
+            self.assertIn(expected_output_sequence, basic_output)
 
         output, exit_code = self.run_repl(commands)
         self.assertEqual(exit_code, 0)
@@ -2105,3 +2200,47 @@ class TestPyReplCtrlD(TestCase):
         )
         reader, _ = handle_all_events(events)
         self.assertEqual("hello", "".join(reader.buffer))
+
+
+@skipUnless(sys.platform == "win32", "windows console only")
+class TestWindowsConsoleEolWrap(TestCase):
+    def _make_mock_console(self, width=80):
+        from _pyrepl import windows_console as wc
+
+        console = object.__new__(wc.WindowsConsole)
+
+        console.width = width
+        console.posxy = (0, 0)
+        console.screen = [""]
+
+        console._hide_cursor = Mock()
+        console._show_cursor = Mock()
+        console._erase_to_end = Mock()
+        console._move_relative = Mock()
+        console.move_cursor = Mock()
+        console._WindowsConsole__write = Mock()
+
+        return console, wc
+
+    def test_short_line_sets_posxy_normally(self):
+        width = 10
+        y = 3
+        console, wc = self._make_mock_console(width=width)
+        old_line = ""
+        new_line = "a" * 3
+        wc.WindowsConsole._WindowsConsole__write_changed_line(
+            console, y, old_line, new_line, 0
+        )
+        self.assertEqual(console.posxy, (3, y))
+
+    def test_exact_width_line_does_not_wrap(self):
+        width = 10
+        y = 3
+        console, wc = self._make_mock_console(width=width)
+        old_line = ""
+        new_line = "a" * width
+
+        wc.WindowsConsole._WindowsConsole__write_changed_line(
+            console, y, old_line, new_line, 0
+        )
+        self.assertEqual(console.posxy, (width - 1, y))
