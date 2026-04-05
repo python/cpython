@@ -2224,8 +2224,12 @@ def try_link(source: str, extra_flags: list[str] | None = None) -> bool:
 def compile_link_check(description: str, compiler: str, source: str) -> str:
     """Compile-and-link *source* using the given *compiler* command.
 
+    Prints "checking <description>..." and the result when description is given,
+    matching AC_CACHE_CHECK behaviour in configure.ac.
     Returns 'yes' on success, 'no' on failure.
     """
+    if description:
+        checking(description)
     with tempfile.TemporaryDirectory() as tmp:
         src = os.path.join(tmp, "conftest.c")
         exe = os.path.join(tmp, "conftest")
@@ -2239,8 +2243,13 @@ def compile_link_check(description: str, compiler: str, source: str) -> str:
                 stdout=subprocess.DEVNULL,
                 stderr=subprocess.DEVNULL,
             )
-            return "yes" if result_proc.returncode == 0 else "no"
+            ret = "yes" if result_proc.returncode == 0 else "no"
+            if description:
+                result(ret)
+            return ret
         except OSError:
+            if description:
+                result("no")
             return "no"
 
 
@@ -2260,14 +2269,19 @@ def run_check(
     extra_libs: str = "",
     cache_var: str = "",
 ) -> Any:
-    """AC_RUN_IFELSE — compile, link, and run a C program.
+    """AC_RUN_IFELSE / AC_CACHE_CHECK — compile, link, and run a C program.
 
     May be called as run_check(source) or run_check(description, source).
+    When called as run_check(description, source), prints "checking <description>..."
+    and the result, matching AC_CACHE_CHECK behaviour in configure.ac.
     Returns *success* if the program exits 0, *failure* otherwise.
     Returns *cross_default* (or *default* if given) when cross-compiling.
     *extra_cflags* and *extra_libs* are added to the compile/link command.
     """
+    desc = description_or_source if source else ""
     code = source if source else description_or_source
+    if desc:
+        checking(desc)
     # Resolve alias params; default to True/False so callers can use `if result:`
     success = (
         True
@@ -2290,6 +2304,8 @@ def run_check(
         default, cross_compiling_result, cross_compiling_default, cross_default
     )
     if cross_compiling:
+        if desc:
+            result(xdefault)
         return xdefault
     # Include vars.CFLAGS, vars.LIBS etc. to match autoconf's AC_RUN_IFELSE
     # which inherits the accumulated compiler/linker flags (e.g. -pthread).
@@ -2308,13 +2324,19 @@ def run_check(
             f.write(_confdefs_preamble() + code)
         try:
             if not _run_cc(src, exe, cflags=all_cflags, libs=all_libs):
+                if desc:
+                    result(failure)
                 return failure
             run = subprocess.run(
                 [exe], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
             )
             ret = success if run.returncode == 0 else failure
+            if desc:
+                result(ret)
             return ret
         except OSError:
+            if desc:
+                result(failure)
             return failure
 
 
@@ -2323,9 +2345,15 @@ def run_check_with_cc_flag(
 ) -> bool:
     """Compile+run *source* with an extra CC *flag*. Returns bool.
 
+    Prints "checking <description>..." and the result, matching
+    AC_CACHE_CHECK behaviour in configure.ac.
     Returns *cross_default* when cross-compiling.
     """
+    if description:
+        checking(description)
     if cross_compiling:
+        if description:
+            result(cross_default)
         return cross_default
     with tempfile.TemporaryDirectory() as tmp:
         src = os.path.join(tmp, "conftest.c")
@@ -2334,13 +2362,19 @@ def run_check_with_cc_flag(
             f.write(_confdefs_preamble() + source)
         try:
             if not _run_cc(src, exe, cflags=shlex.quote(flag)):
+                if description:
+                    result(False)
                 return False
             run = subprocess.run(
                 [exe], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
             )
             ok = run.returncode == 0
+            if description:
+                result(ok)
             return ok
         except OSError:
+            if description:
+                result(False)
             return False
 
 

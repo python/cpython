@@ -8530,11 +8530,11 @@ function u_setup_pthreads(    ac_cv_cxx_thread, ac_cv_kpthread, ac_cv_kthread, a
         }
         V["posix_threads"] = "yes"
     } else {
-        pyconf_define("_REENTRANT", 1, 0, "")
         unistd_defines_pthreads = "no"
         pyconf_checking("for _POSIX_THREADS in unistd.h")
         unistd_defines_pthreads = (pyconf_check_define("unistd.h", "_POSIX_THREADS") ? "yes" : "no")
         pyconf_result(unistd_defines_pthreads)
+        pyconf_define("_REENTRANT", 1, 0, "")
         prog = "#include <stdio.h>\n#include <stdlib.h>\n#include <pthread.h>\nvoid *start_routine(void *arg) { exit(0); }\nint main(void) { pthread_create(NULL, NULL, start_routine, NULL); return 0; }\n"
         pyconf_checking("for pthread_create in -lpthread")
         if (pyconf_link_check("", (index(prog, "int main") ? prog : prog "\nint main(void) {  return 0; }"), "-lpthread")) {

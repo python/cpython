@@ -1,4 +1,4 @@
-"""Checked related to threading libraries."""
+"""Checks related to threading libraries."""
 
 from __future__ import annotations
 
@@ -150,7 +150,6 @@ def setup_pthreads(v):
         v.posix_threads = True
     else:
         # Full fallback: probe pthread_create in various libs
-        pyconf.define("_REENTRANT")
 
         # According to the POSIX spec, a pthreads implementation must
         # define _POSIX_THREADS in unistd.h. Some apparently don't
@@ -161,6 +160,8 @@ def setup_pthreads(v):
             "unistd.h", "_POSIX_THREADS"
         )
         pyconf.result(unistd_defines_pthreads)
+
+        pyconf.define("_REENTRANT")
 
         prog = (
             "#include <stdio.h>\n#include <stdlib.h>\n#include <pthread.h>\n"
@@ -278,10 +279,7 @@ def setup_pthreads(v):
 
 
 def check_posix_semaphores(v):
-    # ---------------------------------------------------------------------------
-    # POSIX semaphores
-    # ---------------------------------------------------------------------------
-
+    """Check POSIX semaphore functionality and RTLD flag declarations."""
     # For multiprocessing module, check that sem_open
     # actually works.  For FreeBSD versions <= 7.2,
     # the kernel module that provides POSIX semaphores
