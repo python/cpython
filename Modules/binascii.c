@@ -1124,6 +1124,7 @@ binascii_a2b_ascii85_impl(PyObject *module, Py_buffer *data, int foldspaces,
 
     uint32_t leftchar = 0;
     int group_pos = 0;
+    int from_z = 0;  /* true when current group came from 'z' shorthand */
     for (; ascii_len > 0 || group_pos != 0; ascii_len--, ascii_data++) {
         /* Shift (in radix-85) data or padding into our buffer. */
         unsigned char this_digit;
@@ -1159,6 +1160,7 @@ binascii_a2b_ascii85_impl(PyObject *module, Py_buffer *data, int foldspaces,
                 goto error;
             }
             leftchar = this_ch == 'y' ? BASE85_A85_Y : BASE85_A85_Z;
+            from_z = (this_ch == 'z');
             group_pos = 5;
         }
         else if (!ignorechar(this_ch, ignorechars, ignorecache)) {
@@ -1193,35 +1195,45 @@ binascii_a2b_ascii85_impl(PyObject *module, Py_buffer *data, int foldspaces,
             *bin_data++ = (leftchar >> (24 - 8 * i)) & 0xff;
         }
 
-        /* Reject non-canonical encodings in the final group.
-         *
-         * A partial group of N chars (2-4) encodes N-1 bytes.  The
-         * decoder pads missing chars with digit 84 (the maximum).
-         * The encoder produces the unique N chars for those bytes by
-         * zero-padding the bytes to a uint32 and taking the leading
-         * N base-85 digits.  Two encodings are equivalent iff they
-         * yield the same leading digits, i.e. the same quotient when
-         * the decoded uint32 is divided by 85**(5-N).
-         *
-         * So we zero the bottom (4-chunk_len) bytes of leftchar to
-         * get the canonical uint32 ("canonical_top") and compare
-         * quotients. */
-        if (canonical && chunk_len < 4) {
-            int n_pad = 4 - chunk_len;
-            uint32_t canonical_top =
-                (leftchar >> (n_pad * 8)) << (n_pad * 8);
-            if (canonical_top / pow85[n_pad]
-                    != leftchar / pow85[n_pad])
-            {
+        if (canonical) {
+            /* The PLRM spec requires all-zero groups to use the 'z'
+             * abbreviation.  Reject '!!!!!' (five zero digits). */
+            if (chunk_len == 4 && leftchar == 0 && !from_z) {
                 state = get_binascii_state(module);
                 if (state != NULL) {
                     PyErr_SetString(state->Error,
-                                    "Non-zero padding bits");
+                                    "Non-canonical encoding, "
+                                    "use 'z' for all-zero groups");
                 }
                 goto error;
             }
+            /* Reject non-canonical partial groups.
+             *
+             * A partial group of N chars (2-4) encodes N-1 bytes.
+             * The decoder pads missing chars with digit 84 (the max).
+             * The encoder produces the unique N chars for those bytes
+             * by zero-padding the bytes to a uint32 and taking the
+             * leading N base-85 digits.  Two encodings are equivalent
+             * iff they yield the same quotient when divided by
+             * 85**(5-N). */
+            if (chunk_len < 4) {
+                int n_pad = 4 - chunk_len;
+                uint32_t canonical_top =
+                    (leftchar >> (n_pad * 8)) << (n_pad * 8);
+                if (canonical_top / pow85[n_pad]
+                        != leftchar / pow85[n_pad])
+                {
+                    state = get_binascii_state(module);
+                    if (state != NULL) {
+                        PyErr_SetString(state->Error,
+                                        "Non-zero padding bits");
+                    }
+                    goto error;
+                }
+            }
         }
 
+        from_z = 0;
         group_pos = 0;
         leftchar = 0;
     }

@@ -924,6 +924,21 @@ class BinASCIITest(unittest.TestCase):
         self.assertEqual(
             binascii.a2b_ascii85(b'@:E_W', canonical=True), b'abcd')
 
+        # 'z' is the canonical form for all-zero groups per the PLRM.
+        # '!!!!!' decodes identically but is non-canonical.
+        self.assertEqual(binascii.a2b_ascii85(b'!!!!!'), b'\x00' * 4)
+        self.assertEqual(binascii.a2b_ascii85(b'z'), b'\x00' * 4)
+        self.assertEqual(
+            binascii.a2b_ascii85(b'z', canonical=True), b'\x00' * 4)
+        with self.assertRaises(binascii.Error):
+            binascii.a2b_ascii85(b'!!!!!', canonical=True)
+        # Multiple groups: z + !!!!! should fail
+        with self.assertRaises(binascii.Error):
+            binascii.a2b_ascii85(b'z!!!!!', canonical=True)
+        # Multiple z groups are fine
+        self.assertEqual(
+            binascii.a2b_ascii85(b'zz', canonical=True), b'\x00' * 8)
+
         # Empty input is valid
         self.assertEqual(binascii.a2b_ascii85(b'', canonical=True), b'')
 
@@ -935,6 +950,7 @@ class BinASCIITest(unittest.TestCase):
     @hypothesis.given(payload=hypothesis.strategies.binary())
     @hypothesis.example(b'')
     @hypothesis.example(b'\x00')
+    @hypothesis.example(b'\x00\x00\x00\x00')  # triggers z abbreviation
     @hypothesis.example(b'\xff\xff')
     @hypothesis.example(b'abc')
     def test_ascii85_canonical_roundtrip(self, payload):
