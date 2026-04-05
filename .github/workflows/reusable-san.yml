@@ -12,6 +12,8 @@ on:
         type: boolean
         default: false
 
+permissions: {}
+
 env:
   FORCE_COLOR: 1
 
