@@ -148,7 +148,7 @@ enumerate_vectorcall(PyObject *type, PyObject *const *args,
     }
 
     PyErr_Format(PyExc_TypeError,
-        "enumerate() takes at most 2 arguments (%d given)", nargs + nkwargs);
+        "enumerate() takes at most 2 arguments (%zd given)", nargs + nkwargs);
     return NULL;
 }
 

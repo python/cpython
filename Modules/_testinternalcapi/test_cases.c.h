@@ -3825,9 +3825,10 @@
                 assert(self != NULL);
                 STAT_INC(CALL, hit);
                 _PyFrame_SetStackPointer(frame, stack_pointer);
+                PyCFunctionFast cfunc = _PyCFunctionFast_CAST(method->d_method->ml_meth);
                 PyObject *res_o = _PyCallMethodDescriptorFast_StackRefSteal(
                     callable,
-                    method->d_method,
+                    cfunc,
                     self,
                     arguments,
                     total_args
@@ -3921,9 +3922,10 @@
                 assert(self != NULL);
                 STAT_INC(CALL, hit);
                 _PyFrame_SetStackPointer(frame, stack_pointer);
+                PyCFunctionFastWithKeywords cfunc = _PyCFunctionFastWithKeywords_CAST(method->d_method->ml_meth);
                 PyObject *res_o = _PyCallMethodDescriptorFastWithKeywords_StackRefSteal(
                     callable,
-                    method->d_method,
+                    cfunc,
                     self,
                     arguments,
                     total_args
@@ -4002,6 +4004,14 @@
                     JUMP_TO_PREDICTED(CALL);
                 }
             }
+            // _CHECK_RECURSION_LIMIT
+            {
+                if (_Py_ReachedRecursionLimit(tstate)) {
+                    UPDATE_MISS_STATS(CALL);
+                    assert(_PyOpcode_Deopt[opcode] == (CALL));
+                    JUMP_TO_PREDICTED(CALL);
+                }
+            }
             // _CALL_METHOD_DESCRIPTOR_NOARGS
             {
                 PyObject *callable_o = PyStackRef_AsPyObjectBorrow(callable);
@@ -4012,11 +4022,6 @@
                 }
                 _PyStackRef self_stackref = args[0];
                 PyObject *self = PyStackRef_AsPyObjectBorrow(self_stackref);
-                if (_Py_ReachedRecursionLimit(tstate)) {
-                    UPDATE_MISS_STATS(CALL);
-                    assert(_PyOpcode_Deopt[opcode] == (CALL));
-                    JUMP_TO_PREDICTED(CALL);
-                }
                 STAT_INC(CALL, hit);
                 PyCFunction cfunc = method->d_method->ml_meth;
                 _PyFrame_SetStackPointer(frame, stack_pointer);
@@ -4107,6 +4112,14 @@
                     JUMP_TO_PREDICTED(CALL);
                 }
             }
+            // _CHECK_RECURSION_LIMIT
+            {
+                if (_Py_ReachedRecursionLimit(tstate)) {
+                    UPDATE_MISS_STATS(CALL);
+                    assert(_PyOpcode_Deopt[opcode] == (CALL));
+                    JUMP_TO_PREDICTED(CALL);
+                }
+            }
             // _CALL_METHOD_DESCRIPTOR_O
             {
                 PyObject *callable_o = PyStackRef_AsPyObjectBorrow(callable);
@@ -4115,19 +4128,12 @@
                 if (!PyStackRef_IsNull(self_or_null)) {
                     arguments--;
                 }
-                if (_Py_ReachedRecursionLimit(tstate)) {
-                    UPDATE_MISS_STATS(CALL);
-                    assert(_PyOpcode_Deopt[opcode] == (CALL));
-                    JUMP_TO_PREDICTED(CALL);
-                }
-                _PyStackRef arg_stackref = arguments[1];
-                _PyStackRef self_stackref = arguments[0];
                 STAT_INC(CALL, hit);
                 PyCFunction cfunc = method->d_method->ml_meth;
+                PyObject *self = PyStackRef_AsPyObjectBorrow(arguments[0]);
+                PyObject *arg = PyStackRef_AsPyObjectBorrow(arguments[1]);
                 _PyFrame_SetStackPointer(frame, stack_pointer);
-                PyObject *res_o = _PyCFunction_TrampolineCall(cfunc,
-                    PyStackRef_AsPyObjectBorrow(self_stackref),
-                    PyStackRef_AsPyObjectBorrow(arg_stackref));
+                PyObject *res_o = _PyCFunction_TrampolineCall(cfunc, self, arg);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
                 _Py_LeaveRecursiveCallTstate(tstate);
                 assert((res_o != NULL) ^ (_PyErr_Occurred(tstate) != NULL));

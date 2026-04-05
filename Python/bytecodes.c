@@ -708,6 +708,63 @@ dummy_func(
         macro(BINARY_OP_SUBTRACT_INT) =
             _GUARD_TOS_INT + _GUARD_NOS_INT + unused/5 + _BINARY_OP_SUBTRACT_INT + _POP_TOP_INT + _POP_TOP_INT;
 
+        // Inplace compact int ops: mutate the uniquely-referenced operand
+        // when possible. The op handles decref of TARGET internally so
+        // the following _POP_TOP_INT becomes _POP_TOP_NOP. Tier 2 only.
+        tier2 op(_BINARY_OP_ADD_INT_INPLACE, (left, right -- res, l, r)) {
+            INT_INPLACE_OP(left, right, left, +, _PyCompactLong_Add);
+            EXIT_IF(PyStackRef_IsNull(_int_inplace_res));
+            res = _int_inplace_res;
+            l = left;
+            r = right;
+            INPUTS_DEAD();
+        }
+
+        tier2 op(_BINARY_OP_SUBTRACT_INT_INPLACE, (left, right -- res, l, r)) {
+            INT_INPLACE_OP(left, right, left, -, _PyCompactLong_Subtract);
+            EXIT_IF(PyStackRef_IsNull(_int_inplace_res));
+            res = _int_inplace_res;
+            l = left;
+            r = right;
+            INPUTS_DEAD();
+        }
+
+        tier2 op(_BINARY_OP_MULTIPLY_INT_INPLACE, (left, right -- res, l, r)) {
+            INT_INPLACE_OP(left, right, left, *, _PyCompactLong_Multiply);
+            EXIT_IF(PyStackRef_IsNull(_int_inplace_res));
+            res = _int_inplace_res;
+            l = left;
+            r = right;
+            INPUTS_DEAD();
+        }
+
+        tier2 op(_BINARY_OP_ADD_INT_INPLACE_RIGHT, (left, right -- res, l, r)) {
+            INT_INPLACE_OP(left, right, right, +, _PyCompactLong_Add);
+            EXIT_IF(PyStackRef_IsNull(_int_inplace_res));
+            res = _int_inplace_res;
+            l = left;
+            r = right;
+            INPUTS_DEAD();
+        }
+
+        tier2 op(_BINARY_OP_SUBTRACT_INT_INPLACE_RIGHT, (left, right -- res, l, r)) {
+            INT_INPLACE_OP(left, right, right, -, _PyCompactLong_Subtract);
+            EXIT_IF(PyStackRef_IsNull(_int_inplace_res));
+            res = _int_inplace_res;
+            l = left;
+            r = right;
+            INPUTS_DEAD();
+        }
+
+        tier2 op(_BINARY_OP_MULTIPLY_INT_INPLACE_RIGHT, (left, right -- res, l, r)) {
+            INT_INPLACE_OP(left, right, right, *, _PyCompactLong_Multiply);
+            EXIT_IF(PyStackRef_IsNull(_int_inplace_res));
+            res = _int_inplace_res;
+            l = left;
+            r = right;
+            INPUTS_DEAD();
+        }
+
         op(_GUARD_NOS_FLOAT, (left, unused -- left, unused)) {
             PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);
             EXIT_IF(!PyFloat_CheckExact(left_o));
@@ -1188,6 +1245,26 @@ dummy_func(
             _RECORD_NOS_TYPE +
             _GUARD_NOS_DICT_SUBSCRIPT + unused/5 + _BINARY_OP_SUBSCR_DICT + POP_TOP + POP_TOP;
 
+        tier2 op(_BINARY_OP_SUBSCR_DICT_KNOWN_HASH, (dict_st, sub_st, hash/4 -- res, ds, ss)) {
+            PyObject *sub = PyStackRef_AsPyObjectBorrow(sub_st);
+            PyObject *dict = PyStackRef_AsPyObjectBorrow(dict_st);
+
+            assert(PyAnyDict_CheckExact(dict));
+            STAT_INC(BINARY_OP, hit);
+            PyObject *res_o;
+            int rc = _PyDict_GetItemRef_KnownHash((PyDictObject *)dict, sub, (Py_hash_t)hash, &res_o);
+            if (rc == 0) {
+                _PyErr_SetKeyError(sub);
+            }
+            if (rc <= 0) {
+                ERROR_NO_POP();
+            }
+            res = PyStackRef_FromPyObjectSteal(res_o);
+            ds = dict_st;
+            ss = sub_st;
+            INPUTS_DEAD();
+        }
+
         op(_BINARY_OP_SUBSCR_DICT, (dict_st, sub_st -- res, ds, ss)) {
             PyObject *sub = PyStackRef_AsPyObjectBorrow(sub_st);
             PyObject *dict = PyStackRef_AsPyObjectBorrow(dict_st);
@@ -1319,6 +1396,24 @@ dummy_func(
             int err = _PyDict_SetItem_Take2((PyDictObject *)dict,
                                             PyStackRef_AsPyObjectSteal(sub),
                                             PyStackRef_AsPyObjectSteal(value));
+            if (err) {
+                PyStackRef_CLOSE(dict_st);
+                ERROR_IF(1);
+            }
+            DEAD(dict_st);
+            st = dict_st;
+        }
+
+        tier2 op(_STORE_SUBSCR_DICT_KNOWN_HASH, (value, dict_st, sub, hash/4 -- st)) {
+            PyObject *dict = PyStackRef_AsPyObjectBorrow(dict_st);
+
+            assert(PyDict_CheckExact(dict));
+            STAT_INC(STORE_SUBSCR, hit);
+            int err = _PyDict_SetItem_Take2_KnownHash((PyDictObject *)dict,
+                                                PyStackRef_AsPyObjectSteal(sub),
+                                                PyStackRef_AsPyObjectSteal(value),
+                                                (Py_hash_t)hash);
+
             if (err) {
                 PyStackRef_CLOSE(dict_st);
                 ERROR_IF(1);
@@ -4724,15 +4819,11 @@ dummy_func(
             if (!PyStackRef_IsNull(self_or_null)) {
                 arguments--;
             }
-            // CPython promises to check all non-vectorcall function calls.
-            EXIT_IF(_Py_ReachedRecursionLimit(tstate));
-            _PyStackRef arg_stackref = arguments[1];
-            _PyStackRef self_stackref = arguments[0];
             STAT_INC(CALL, hit);
             PyCFunction cfunc = method->d_method->ml_meth;
-            PyObject *res_o = _PyCFunction_TrampolineCall(cfunc,
-                                  PyStackRef_AsPyObjectBorrow(self_stackref),
-                                  PyStackRef_AsPyObjectBorrow(arg_stackref));
+            PyObject *self = PyStackRef_AsPyObjectBorrow(arguments[0]);
+            PyObject *arg = PyStackRef_AsPyObjectBorrow(arguments[1]);
+            PyObject *res_o = _PyCFunction_TrampolineCall(cfunc, self, arg);
             _Py_LeaveRecursiveCallTstate(tstate);
             assert((res_o != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
             if (res_o == NULL) {
@@ -4745,11 +4836,35 @@ dummy_func(
             res = PyStackRef_FromPyObjectSteal(res_o);
         }
 
+        op(_CHECK_RECURSION_LIMIT, ( -- )) {
+            EXIT_IF(_Py_ReachedRecursionLimit(tstate));
+        }
+
+        tier2 op(_CALL_METHOD_DESCRIPTOR_O_INLINE, (callable, args[oparg], cfunc/4 -- res, c, s, a)) {
+            assert(oparg == 2);
+            STAT_INC(CALL, hit);
+            volatile PyCFunction cfunc_v = (PyCFunction)cfunc;
+            PyObject *self = PyStackRef_AsPyObjectBorrow(args[0]);
+            PyObject *arg = PyStackRef_AsPyObjectBorrow(args[1]);
+            PyObject *res_o = _PyCFunction_TrampolineCall(cfunc_v, self, arg);
+            _Py_LeaveRecursiveCallTstate(tstate);
+            assert((res_o != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
+            if (res_o == NULL) {
+                ERROR_NO_POP();
+            }
+            c = callable;
+            s = args[0];
+            a = args[1];
+            INPUTS_DEAD();
+            res = PyStackRef_FromPyObjectSteal(res_o);
+        }
+
         macro(CALL_METHOD_DESCRIPTOR_O) =
             _RECORD_CALLABLE +
             unused/1 +
             unused/2 +
             _GUARD_CALLABLE_METHOD_DESCRIPTOR_O +
+            _CHECK_RECURSION_LIMIT +
             _CALL_METHOD_DESCRIPTOR_O +
             POP_TOP +
             POP_TOP +
@@ -4785,15 +4900,34 @@ dummy_func(
             PyObject *self = PyStackRef_AsPyObjectBorrow(arguments[0]);
             assert(self != NULL);
             STAT_INC(CALL, hit);
+            PyCFunctionFastWithKeywords cfunc = _PyCFunctionFastWithKeywords_CAST(method->d_method->ml_meth);
             PyObject *res_o = _PyCallMethodDescriptorFastWithKeywords_StackRefSteal(
                 callable,
-                method->d_method,
+                cfunc,
                 self,
                 arguments,
                 total_args
             );
             DEAD(args);
             DEAD(self_or_null);
+            DEAD(callable);
+            ERROR_IF(res_o == NULL);
+            res = PyStackRef_FromPyObjectSteal(res_o);
+        }
+
+        tier2 op(_CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS_INLINE, (callable, args[oparg], cfunc/4 -- res)) {
+            PyObject *self = PyStackRef_AsPyObjectBorrow(args[0]);
+            assert(self != NULL);
+            STAT_INC(CALL, hit);
+            volatile PyCFunctionFastWithKeywords cfunc_v = _PyCFunctionFastWithKeywords_CAST(cfunc);
+            PyObject *res_o = _PyCallMethodDescriptorFastWithKeywords_StackRefSteal(
+                callable,
+                cfunc_v,
+                self,
+                args,
+                oparg
+            );
+            DEAD(args);
             DEAD(callable);
             ERROR_IF(res_o == NULL);
             res = PyStackRef_FromPyObjectSteal(res_o);
@@ -4832,8 +4966,6 @@ dummy_func(
             }
             _PyStackRef self_stackref = args[0];
             PyObject *self = PyStackRef_AsPyObjectBorrow(self_stackref);
-            // CPython promises to check all non-vectorcall function calls.
-            EXIT_IF(_Py_ReachedRecursionLimit(tstate));
             STAT_INC(CALL, hit);
             PyCFunction cfunc = method->d_method->ml_meth;
             PyObject *res_o = _PyCFunction_TrampolineCall(cfunc, self, NULL);
@@ -4847,11 +4979,28 @@ dummy_func(
             res = PyStackRef_FromPyObjectSteal(res_o);
         }
 
+        tier2 op(_CALL_METHOD_DESCRIPTOR_NOARGS_INLINE, (callable, args[oparg], cfunc/4 -- res)) {
+            assert(oparg == 1);
+            _PyStackRef self_stackref = args[0];
+            PyObject *self = PyStackRef_AsPyObjectBorrow(self_stackref);
+            STAT_INC(CALL, hit);
+            volatile PyCFunction cfunc_v = (PyCFunction)cfunc;
+            PyObject *res_o = _PyCFunction_TrampolineCall(cfunc_v, self, NULL);
+            _Py_LeaveRecursiveCallTstate(tstate);
+            assert((res_o != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
+            PyStackRef_CLOSE(self_stackref);
+            DEAD(args);
+            PyStackRef_CLOSE(callable);
+            ERROR_IF(res_o == NULL);
+            res = PyStackRef_FromPyObjectSteal(res_o);
+        }
+
         macro(CALL_METHOD_DESCRIPTOR_NOARGS) =
             _RECORD_CALLABLE +
             unused/1 +
             unused/2 +
             _GUARD_CALLABLE_METHOD_DESCRIPTOR_NOARGS +
+            _CHECK_RECURSION_LIMIT +
             _CALL_METHOD_DESCRIPTOR_NOARGS +
             _CHECK_PERIODIC_AT_END;
 
@@ -4884,15 +5033,34 @@ dummy_func(
             PyObject *self = PyStackRef_AsPyObjectBorrow(arguments[0]);
             assert(self != NULL);
             STAT_INC(CALL, hit);
+            PyCFunctionFast cfunc = _PyCFunctionFast_CAST(method->d_method->ml_meth);
             PyObject *res_o = _PyCallMethodDescriptorFast_StackRefSteal(
                 callable,
-                method->d_method,
+                cfunc,
                 self,
                 arguments,
                 total_args
             );
             DEAD(args);
             DEAD(self_or_null);
+            DEAD(callable);
+            ERROR_IF(res_o == NULL);
+            res = PyStackRef_FromPyObjectSteal(res_o);
+        }
+
+        tier2 op(_CALL_METHOD_DESCRIPTOR_FAST_INLINE, (callable, args[oparg], cfunc/4 -- res)) {
+            PyObject *self = PyStackRef_AsPyObjectBorrow(args[0]);
+            assert(self != NULL);
+            STAT_INC(CALL, hit);
+            volatile PyCFunctionFast cfunc_v = _PyCFunctionFast_CAST(cfunc);
+            PyObject *res_o = _PyCallMethodDescriptorFast_StackRefSteal(
+                callable,
+                cfunc_v,
+                self,
+                args,
+                oparg
+            );
+            DEAD(args);
             DEAD(callable);
             ERROR_IF(res_o == NULL);
             res = PyStackRef_FromPyObjectSteal(res_o);

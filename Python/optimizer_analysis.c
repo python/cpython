@@ -30,6 +30,7 @@
 #include "pycore_unicodeobject.h"
 #include "pycore_ceval.h"
 #include "pycore_floatobject.h"
+#include "pycore_setobject.h"
 
 #include <stdarg.h>
 #include <stdbool.h>
@@ -251,6 +252,7 @@ add_op(JitOptContext *ctx, _PyUOpInstruction *this_instr,
 #define sym_is_not_null _Py_uop_sym_is_not_null
 #define sym_is_const _Py_uop_sym_is_const
 #define sym_is_safe_const _Py_uop_sym_is_safe_const
+#define sym_is_not_container _Py_uop_sym_is_not_container
 #define sym_get_const _Py_uop_sym_get_const
 #define sym_new_const_steal _Py_uop_sym_new_const_steal
 #define sym_get_const_as_stackref _Py_uop_sym_get_const_as_stackref
@@ -346,6 +348,33 @@ optimize_to_bool(
         return 1;
     }
     return 0;
+}
+
+static void
+optimize_dict_known_hash(
+    JitOptContext *ctx, _PyBloomFilter *dependencies, _PyUOpInstruction *this_instr,
+    PyObject *sub, uint16_t opcode)
+{
+    if (PyUnicode_CheckExact(sub) || PyLong_CheckExact(sub) || PyBytes_CheckExact(sub)
+            || PyFloat_CheckExact(sub) || PyComplex_CheckExact(sub)) {
+        // PyObject_Hash can't fail on these types
+        ADD_OP(opcode, 0, PyObject_Hash(sub));
+    }
+    else if (PyTuple_CheckExact(sub)) {
+        // only use known hash variant when hash of tuple is already computed
+        // since computing it can call arbitrary code
+        Py_hash_t hash = ((PyTupleObject *)sub)->ob_hash;
+        if (hash != -1) {
+            ADD_OP(opcode, 0, hash);
+        }
+    }
+    else if (Py_TYPE(sub)->tp_hash == PyBaseObject_Type.tp_hash) {
+        // for user-defined objects which don't override tp_hash
+        Py_hash_t hash = PyObject_Hash(sub);
+        ADD_OP(opcode, 0, hash);
+        PyType_Watch(TYPE_WATCHER_ID, (PyObject *)Py_TYPE(sub));
+        _Py_BloomFilter_Add(dependencies, Py_TYPE(sub));
+    }
 }
 
 static void

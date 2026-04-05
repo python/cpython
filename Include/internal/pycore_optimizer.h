@@ -394,6 +394,7 @@ extern JitOptRef _Py_uop_sym_new_type(
 extern JitOptRef _Py_uop_sym_new_const(JitOptContext *ctx, PyObject *const_val);
 extern JitOptRef _Py_uop_sym_new_const_steal(JitOptContext *ctx, PyObject *const_val);
 bool _Py_uop_sym_is_safe_const(JitOptContext *ctx, JitOptRef sym);
+bool _Py_uop_sym_is_not_container(JitOptRef sym);
 _PyStackRef _Py_uop_sym_get_const_as_stackref(JitOptContext *ctx, JitOptRef sym);
 extern JitOptRef _Py_uop_sym_new_null(JitOptContext *ctx);
 extern bool _Py_uop_sym_has_type(JitOptRef sym);
