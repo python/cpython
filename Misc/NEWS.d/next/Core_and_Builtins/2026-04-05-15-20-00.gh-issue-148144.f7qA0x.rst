@@ -1,0 +1,3 @@
+Initialize ``_PyInterpreterFrame.visited`` when copying interpreter frames so
+incremental GC does not read an uninitialized byte from generator and
+frame-object copies.
