@@ -1194,6 +1194,10 @@ function pyconf_find_mkdir_p(    result, ver, dirs, n, i, p, prog, progs, cmd) {
 # String / path utilities
 # ---------------------------------------------------------------------------
 
+function pyconf_is_digit(s) {
+        return s ~ /^[0-9]+$/
+}
+
 function pyconf_fnmatch(string, pattern) {
         # Simple glob match using case
         # For exact match patterns, use == comparison

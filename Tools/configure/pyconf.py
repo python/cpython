@@ -3548,6 +3548,11 @@ def macro(name: str, args: list | None = None) -> None:
 # The transpiler maps each to a corresponding shell function or built-in.
 
 
+def is_digit(s: str) -> bool:
+    """Return True if *s* is non-empty and all characters are ASCII digits."""
+    return s.isdigit()
+
+
 def fnmatch(string: str, pattern: str) -> bool:
     """Glob-style pattern match (shell: case "$string" in pattern) ...)."""
     return _fnmatch.fnmatch(string, pattern)

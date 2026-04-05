@@ -1,10 +1,10 @@
-"""conf_sharedlib — Shared-lib linking, perf trampoline.
+"""conf_sharedlib — Shared-lib linking and dynamic loading.
 
 Determines shared library extension (SHLIB_SUFFIX); computes LDSHARED,
 LDCXXSHARED, BLDSHARED for each platform; sets CCSHARED (-fPIC etc.);
 determines LINKFORSHARED for the main executable; exports shared-lib
-variables (CFLAGSFORSHARED, SHLIBS); and configures perf trampoline
-support.
+variables (CFLAGSFORSHARED, SHLIBS); selects DYNLOADFILE; and sets
+MACHDEP_OBJS.
 """
 
 from __future__ import annotations
@@ -87,8 +87,16 @@ def setup_ldshared(v):
             # This allows an extension to be used in any Python
             dt = v.MACOSX_DEPLOYMENT_TARGET or ""
             dt_parts = dt.split(".")
-            dt_major = int(dt_parts[0]) if dt_parts else 0
-            dt_minor = int(dt_parts[1]) if len(dt_parts) > 1 else 0
+            dt_major = (
+                int(dt_parts[0])
+                if dt_parts and pyconf.is_digit(dt_parts[0])
+                else 0
+            )
+            dt_minor = (
+                int(dt_parts[1])
+                if len(dt_parts) > 1 and pyconf.is_digit(dt_parts[1])
+                else 0
+            )
             if dt_major == 10 and dt_minor <= 2:
                 pyconf.error(
                     f"MACOSX_DEPLOYMENT_TARGET too old ({dt}), "

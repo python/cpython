@@ -799,14 +799,18 @@ function pyconf_check_func(fname, headers, define, source, inc, cv, rc, cache_ke
         return rc
 }
 
-function pyconf_check_funcs(funcs, n, i, rc) {
+function pyconf_check_funcs(funcs,    n, i, rc, any_found) {
+        # Returns 1 if any function was found (mirrors AC_CHECK_FUNCS action-if-found).
         n = funcs[0] + 0
+        any_found = 0
         for (i = 1; i <= n; i++)
                 if (funcs[i] != "") {
                         pyconf_checking("for " funcs[i])
                         rc = pyconf_check_func(funcs[i])
                         pyconf_result(rc ? "yes" : "no")
+                        if (rc) any_found = 1
                 }
+        return any_found
 }
 
 function pyconf_replace_funcs(funcs, n, i, rc) {
@@ -1226,6 +1230,10 @@ function pyconf_find_mkdir_p(    result, ver, dirs, n, i, p, prog, progs, cmd) {
 # ---------------------------------------------------------------------------
 # String / path utilities
 # ---------------------------------------------------------------------------
+
+function pyconf_is_digit(s) {
+        return s ~ /^[0-9]+$/
+}
 
 function pyconf_fnmatch(string, pattern) {
         # Simple glob match using case
@@ -7624,8 +7632,8 @@ function u_setup_ldshared(    _tmp_split, dt, dt_major, dt_minor, dt_parts, has_
         } else if (_str_startswith(sr, "Darwin/")) {
             dt = ((V["MACOSX_DEPLOYMENT_TARGET"] != "") ? V["MACOSX_DEPLOYMENT_TARGET"] : "")
             dt_parts = _str_replace(dt, ".", " ")
-            dt_major = (((dt_parts != "") && (dt_parts != "no")) ? _split_index(dt_parts, " ", 1) : 0)
-            dt_minor = ((length(dt_parts) > 1) ? _split_index(dt_parts, " ", 2) : 0)
+            dt_major = ((((dt_parts != "") && (dt_parts != "no")) && pyconf_is_digit(_split_index(dt_parts, " ", 1))) ? _split_index(dt_parts, " ", 1) : 0)
+            dt_minor = (((length(dt_parts) > 1) && pyconf_is_digit(_split_index(dt_parts, " ", 2))) ? _split_index(dt_parts, " ", 2) : 0)
             if (((dt_major == 10) && (dt_minor <= 2))) {
                 pyconf_error("MACOSX_DEPLOYMENT_TARGET too old (" dt "), only 10.3 or later is supported")
             }
@@ -7931,6 +7939,7 @@ function u_detect_dbm(    _i_db, _n_db, _tmp_split, ac_cv_have_libdb, ac_cv_head
         pyconf_define("HAVE_GDBM_DASH_NDBM_H", 1, 0, "Define to 1 if you have the <gdbm-ndbm.h> header file.")
     }
     if ((((ac_cv_header_gdbm_slash_ndbm_h != "") && (ac_cv_header_gdbm_slash_ndbm_h != "no")) || ((ac_cv_header_gdbm_dash_ndbm_h != "") && (ac_cv_header_gdbm_dash_ndbm_h != "no")))) {
+        r = ""
         pyconf_save_env()
         r = pyconf_search_libs("dbm_open", "gdbm_compat")
         pyconf_restore_env()
@@ -8066,6 +8075,7 @@ function u_check_remaining_libs(    AIX_BUILDDATE, ac_cv_aligned_required) {
 }
 
 function u_check_libatomic(    libatomic_needed) {
+    libatomic_needed = "no"
     pyconf_save_env()
     V["CPPFLAGS"] = _str_strip(V["BASECPPFLAGS"] " -I. -I" pyconf_srcdir "/Include " V["CPPFLAGS"])
     libatomic_needed = ((!pyconf_link_check("whether libatomic is needed by <pyatomic.h>", "\n// pyatomic.h needs uint64_t and Py_ssize_t types\n#include <stdint.h>\n#ifdef HAVE_SYS_TYPES_H\n#  include <sys/types.h>\n#endif\n#if HAVE_SSIZE_T\ntypedef ssize_t Py_ssize_t;\n#elif SIZEOF_VOID_P == SIZEOF_SIZE_T\ntypedef intptr_t Py_ssize_t;\n#else\n#  error \"unable to define Py_ssize_t\"\n#endif\n#include \"pyatomic.h\"\nint main() {\n    uint64_t value;\n    _Py_atomic_store_uint64(&value, 2);\n    if (_Py_atomic_or_uint64(&value, 8) != 2) return 1;\n    if (_Py_atomic_load_uint64(&value) != 10) return 1;\n    uint8_t byte = 0xb8;\n    if (_Py_atomic_or_uint8(&byte, 0x2d) != 0xb8) return 1;\n    if (_Py_atomic_load_uint8(&byte) != 0xbd) return 1;\n    return 0;\n}\n")) ? "yes" : "no")

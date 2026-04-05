@@ -135,9 +135,10 @@ ALLOWED_PYCONF_CALLS = frozenset(
         "cmd_status",
         "run_program_output",
         "shell",
-        # Pattern matching (pyconf wrapper)
+        # Pattern matching and string predicates (pyconf wrappers)
         "fnmatch",
         "fnmatch_any",
+        "is_digit",
         "sed",
         # Environment save/restore
         "save_env",
