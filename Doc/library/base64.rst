@@ -345,6 +345,8 @@ Refer to the documentation of the individual functions for more information.
 
    .. versionchanged:: next
       Added the *canonical* parameter.
+      Single-character final groups are now always rejected as encoding
+      violations.
 
 
 .. function:: b85encode(b, pad=False, *, wrapcol=0)
@@ -381,6 +383,8 @@ Refer to the documentation of the individual functions for more information.
 
    .. versionchanged:: next
       Added the *ignorechars* and *canonical* parameters.
+      Single-character final groups are now always rejected as encoding
+      violations.
 
 
 .. function:: z85encode(s, pad=False, *, wrapcol=0)
@@ -421,6 +425,8 @@ Refer to the documentation of the individual functions for more information.
 
    .. versionchanged:: next
       Added the *ignorechars* and *canonical* parameters.
+      Single-character final groups are now always rejected as encoding
+      violations.
 
 
 .. _base64-legacy:

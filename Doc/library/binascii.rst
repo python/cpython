@@ -119,11 +119,12 @@ The :mod:`!binascii` module defines the following functions:
    Convert Ascii85 data back to binary and return the binary data.
 
    Valid Ascii85 data contains characters from the Ascii85 alphabet in groups
-   of five (except for the final group, which may have from two to five
+   of five (except for the final group, which may have from two to four
    characters). Each group encodes 32 bits of binary data in the range from
    ``0`` to ``2 ** 32 - 1``, inclusive. The special character ``z`` is
    accepted as a short form of the group ``!!!!!``, which encodes four
-   consecutive null bytes.
+   consecutive null bytes. A single-character final group is always rejected
+   as an encoding violation.
 
    *foldspaces* is a flag that specifies whether the 'y' short sequence
    should be accepted as shorthand for 4 consecutive spaces (ASCII 0x20).
@@ -136,14 +137,19 @@ The :mod:`!binascii` module defines the following functions:
    to ignore from the input.
    This should only contain whitespace characters.
 
-   If *canonical* is true, non-canonical encodings in the final group are
-   rejected with :exc:`binascii.Error`.  This includes single-character
-   final groups (which no conforming encoder produces) and final groups whose
-   padding digits are not what the encoder would produce.
+   If *canonical* is true, non-canonical encodings are rejected with
+   :exc:`binascii.Error`.  This enforces that the ``z`` abbreviation is used
+   for all-zero groups (rather than ``!!!!!``), and that partial final groups
+   use the same padding digits the encoder would produce.
 
    Invalid Ascii85 data will raise :exc:`binascii.Error`.
 
    .. versionadded:: 3.15
+
+   .. versionchanged:: next
+      Single-character final groups are now always rejected as encoding
+      violations. Previously they were silently ignored, producing no output
+      bytes.
 
 
 .. function:: b2a_ascii85(data, /, *, foldspaces=False, wrapcol=0, pad=False, adobe=False)
@@ -175,9 +181,10 @@ The :mod:`!binascii` module defines the following functions:
    More than one line may be passed at a time.
 
    Valid Base85 data contains characters from the Base85 alphabet in groups
-   of five (except for the final group, which may have from two to five
+   of five (except for the final group, which may have from two to four
    characters). Each group encodes 32 bits of binary data in the range from
-   ``0`` to ``2 ** 32 - 1``, inclusive.
+   ``0`` to ``2 ** 32 - 1``, inclusive. A single-character final group is
+   always rejected as an encoding violation.
 
    Optional *alphabet* must be a :class:`bytes` object of length 85 which
    specifies an alternative alphabet.
@@ -185,14 +192,18 @@ The :mod:`!binascii` module defines the following functions:
    *ignorechars* should be a :term:`bytes-like object` containing characters
    to ignore from the input.
 
-   If *canonical* is true, non-canonical encodings in the final group are
-   rejected with :exc:`binascii.Error`.  This includes single-character
-   final groups (which no conforming encoder produces) and final groups whose
-   padding digits are not what the encoder would produce.
+   If *canonical* is true, non-canonical encodings in partial final groups
+   are rejected with :exc:`binascii.Error`.  This enforces that the padding
+   digits match what the encoder would produce.
 
    Invalid Base85 data will raise :exc:`binascii.Error`.
 
    .. versionadded:: 3.15
+
+   .. versionchanged:: next
+      Single-character final groups are now always rejected as encoding
+      violations. Previously they were silently ignored, producing no output
+      bytes.
 
 
 .. function:: b2a_base85(data, /, *, alphabet=BASE85_ALPHABET, wrapcol=0, pad=False)
