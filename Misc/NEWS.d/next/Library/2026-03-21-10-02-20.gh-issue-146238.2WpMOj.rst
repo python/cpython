@@ -1,0 +1,2 @@
+Support half-floats (type code ``'e'`` of the :mod:`struct` module) in the
+:mod:`array` module.  Patch by Sergey B Kirpichev.

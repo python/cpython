@@ -1,5 +1,0 @@
-The :py:class:`importlib.metadata.PackageNotFoundError` traceback raised when
-``importlib.metadata.Distribution.from_name`` cannot discover a
-distribution no longer includes a transient :exc:`StopIteration` exception trace.
-
-Contributed by Bartosz Sławecki in :gh:`140142`.

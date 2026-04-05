@@ -81,7 +81,7 @@ instruction dispatch a bit.
 .. bpo: 40645
 .. date: 2021-03-29-11-55-06
 .. nonce: PhaT-B
-.. section: Core and Builtins
+.. section: Library
 
 Fix reference leak in the :mod:`!_hashopenssl` extension. Patch by Pablo
 Galindo.

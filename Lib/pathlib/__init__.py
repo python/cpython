@@ -611,11 +611,20 @@ class PureWindowsPath(PurePath):
     __slots__ = ()
 
 
-class _Info:
-    __slots__ = ('_path',)
+_STAT_RESULT_ERROR = []  # falsy sentinel indicating stat() failed.
 
-    def __init__(self, path):
+
+class _Info:
+    """Implementation of pathlib.types.PathInfo that provides status
+    information by querying a wrapped os.stat_result object. Don't try to
+    construct it yourself."""
+    __slots__ = ('_path', '_entry', '_stat_result', '_lstat_result')
+
+    def __init__(self, path, entry=None):
         self._path = path
+        self._entry = entry
+        self._stat_result = None
+        self._lstat_result = None
 
     def __repr__(self):
         path_type = "WindowsPath" if os.name == "nt" else "PosixPath"
@@ -623,7 +632,94 @@ class _Info:
 
     def _stat(self, *, follow_symlinks=True):
         """Return the status as an os.stat_result."""
-        raise NotImplementedError
+        if self._entry:
+            return self._entry.stat(follow_symlinks=follow_symlinks)
+        if follow_symlinks:
+            if not self._stat_result:
+                try:
+                    self._stat_result = os.stat(self._path)
+                except (OSError, ValueError):
+                    self._stat_result = _STAT_RESULT_ERROR
+                    raise
+            return self._stat_result
+        else:
+            if not self._lstat_result:
+                try:
+                    self._lstat_result = os.lstat(self._path)
+                except (OSError, ValueError):
+                    self._lstat_result = _STAT_RESULT_ERROR
+                    raise
+            return self._lstat_result
+
+    def exists(self, *, follow_symlinks=True):
+        """Whether this path exists."""
+        if self._entry:
+            if not follow_symlinks:
+                return True
+        if follow_symlinks:
+            if self._stat_result is _STAT_RESULT_ERROR:
+                return False
+        else:
+            if self._lstat_result is _STAT_RESULT_ERROR:
+                return False
+        try:
+            self._stat(follow_symlinks=follow_symlinks)
+        except (OSError, ValueError):
+            return False
+        return True
+
+    def is_dir(self, *, follow_symlinks=True):
+        """Whether this path is a directory."""
+        if self._entry:
+            try:
+                return self._entry.is_dir(follow_symlinks=follow_symlinks)
+            except OSError:
+                return False
+        if follow_symlinks:
+            if self._stat_result is _STAT_RESULT_ERROR:
+                return False
+        else:
+            if self._lstat_result is _STAT_RESULT_ERROR:
+                return False
+        try:
+            st = self._stat(follow_symlinks=follow_symlinks)
+        except (OSError, ValueError):
+            return False
+        return S_ISDIR(st.st_mode)
+
+    def is_file(self, *, follow_symlinks=True):
+        """Whether this path is a regular file."""
+        if self._entry:
+            try:
+                return self._entry.is_file(follow_symlinks=follow_symlinks)
+            except OSError:
+                return False
+        if follow_symlinks:
+            if self._stat_result is _STAT_RESULT_ERROR:
+                return False
+        else:
+            if self._lstat_result is _STAT_RESULT_ERROR:
+                return False
+        try:
+            st = self._stat(follow_symlinks=follow_symlinks)
+        except (OSError, ValueError):
+            return False
+        return S_ISREG(st.st_mode)
+
+    def is_symlink(self):
+        """Whether this path is a symbolic link."""
+        if self._entry:
+            try:
+                return self._entry.is_symlink()
+            except OSError:
+                return False
+        if self._lstat_result is _STAT_RESULT_ERROR:
+            return False
+        try:
+            st = self._stat(follow_symlinks=False)
+        except (OSError, ValueError):
+            return False
+        return S_ISLNK(st.st_mode)
 
     def _posix_permissions(self, *, follow_symlinks=True):
         """Return the POSIX file permissions."""
@@ -659,138 +755,6 @@ class _Info:
                 if err.errno not in (EPERM, ENOTSUP, ENODATA, EINVAL, EACCES):
                     raise
                 return []
-
-
-_STAT_RESULT_ERROR = []  # falsy sentinel indicating stat() failed.
-
-
-class _StatResultInfo(_Info):
-    """Implementation of pathlib.types.PathInfo that provides status
-    information by querying a wrapped os.stat_result object. Don't try to
-    construct it yourself."""
-    __slots__ = ('_stat_result', '_lstat_result')
-
-    def __init__(self, path):
-        super().__init__(path)
-        self._stat_result = None
-        self._lstat_result = None
-
-    def _stat(self, *, follow_symlinks=True):
-        """Return the status as an os.stat_result."""
-        if follow_symlinks:
-            if not self._stat_result:
-                try:
-                    self._stat_result = os.stat(self._path)
-                except (OSError, ValueError):
-                    self._stat_result = _STAT_RESULT_ERROR
-                    raise
-            return self._stat_result
-        else:
-            if not self._lstat_result:
-                try:
-                    self._lstat_result = os.lstat(self._path)
-                except (OSError, ValueError):
-                    self._lstat_result = _STAT_RESULT_ERROR
-                    raise
-            return self._lstat_result
-
-    def exists(self, *, follow_symlinks=True):
-        """Whether this path exists."""
-        if follow_symlinks:
-            if self._stat_result is _STAT_RESULT_ERROR:
-                return False
-        else:
-            if self._lstat_result is _STAT_RESULT_ERROR:
-                return False
-        try:
-            self._stat(follow_symlinks=follow_symlinks)
-        except (OSError, ValueError):
-            return False
-        return True
-
-    def is_dir(self, *, follow_symlinks=True):
-        """Whether this path is a directory."""
-        if follow_symlinks:
-            if self._stat_result is _STAT_RESULT_ERROR:
-                return False
-        else:
-            if self._lstat_result is _STAT_RESULT_ERROR:
-                return False
-        try:
-            st = self._stat(follow_symlinks=follow_symlinks)
-        except (OSError, ValueError):
-            return False
-        return S_ISDIR(st.st_mode)
-
-    def is_file(self, *, follow_symlinks=True):
-        """Whether this path is a regular file."""
-        if follow_symlinks:
-            if self._stat_result is _STAT_RESULT_ERROR:
-                return False
-        else:
-            if self._lstat_result is _STAT_RESULT_ERROR:
-                return False
-        try:
-            st = self._stat(follow_symlinks=follow_symlinks)
-        except (OSError, ValueError):
-            return False
-        return S_ISREG(st.st_mode)
-
-    def is_symlink(self):
-        """Whether this path is a symbolic link."""
-        if self._lstat_result is _STAT_RESULT_ERROR:
-            return False
-        try:
-            st = self._stat(follow_symlinks=False)
-        except (OSError, ValueError):
-            return False
-        return S_ISLNK(st.st_mode)
-
-
-class _DirEntryInfo(_Info):
-    """Implementation of pathlib.types.PathInfo that provides status
-    information by querying a wrapped os.DirEntry object. Don't try to
-    construct it yourself."""
-    __slots__ = ('_entry',)
-
-    def __init__(self, entry):
-        super().__init__(entry.path)
-        self._entry = entry
-
-    def _stat(self, *, follow_symlinks=True):
-        """Return the status as an os.stat_result."""
-        return self._entry.stat(follow_symlinks=follow_symlinks)
-
-    def exists(self, *, follow_symlinks=True):
-        """Whether this path exists."""
-        if not follow_symlinks:
-            return True
-        try:
-            self._stat(follow_symlinks=follow_symlinks)
-        except OSError:
-            return False
-        return True
-
-    def is_dir(self, *, follow_symlinks=True):
-        """Whether this path is a directory."""
-        try:
-            return self._entry.is_dir(follow_symlinks=follow_symlinks)
-        except OSError:
-            return False
-
-    def is_file(self, *, follow_symlinks=True):
-        """Whether this path is a regular file."""
-        try:
-            return self._entry.is_file(follow_symlinks=follow_symlinks)
-        except OSError:
-            return False
-
-    def is_symlink(self):
-        """Whether this path is a symbolic link."""
-        try:
-            return self._entry.is_symlink()
-        except OSError:
-            return False
 
 
 def _copy_info(info, target, follow_symlinks=True):
@@ -877,7 +841,7 @@ class Path(PurePath):
         try:
             return self._info
         except AttributeError:
-            self._info = _StatResultInfo(str(self))
+            self._info = _Info(str(self))
             return self._info
 
     def stat(self, *, follow_symlinks=True):
@@ -1057,7 +1021,7 @@ class Path(PurePath):
     def _from_dir_entry(self, dir_entry, path_str):
         path = self.with_segments(path_str)
         path._str = path_str
-        path._info = _DirEntryInfo(dir_entry)
+        path._info = _Info(dir_entry.path, dir_entry)
         return path
 
     def iterdir(self):

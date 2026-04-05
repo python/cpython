@@ -7,6 +7,7 @@ import sys
 import unittest
 import webbrowser
 from test import support
+from test.support import force_not_colorized_test_class
 from test.support import import_helper
 from test.support import is_apple_mobile
 from test.support import os_helper
@@ -55,6 +56,14 @@ class CommandTestMixin:
             self.assertIn(option, popen_args)
             popen_args.pop(popen_args.index(option))
         self.assertEqual(popen_args, arguments)
+
+    def test_reject_dash_prefixes(self):
+        browser = self.browser_class(name=CMD_NAME)
+        with self.assertRaisesRegex(
+            ValueError,
+            r"^Invalid URL \(leading dash disallowed\): '--key=val http.*'$"
+        ):
+            browser.open(f"--key=val {URL}")
 
 
 class GenericBrowserCommandTest(CommandTestMixin, unittest.TestCase):
@@ -320,7 +329,6 @@ class MockPopenPipe:
 @unittest.skipUnless(sys.platform == "darwin", "macOS specific test")
 @requires_subprocess()
 class MacOSXOSAScriptTest(unittest.TestCase):
-
     def setUp(self):
         # Ensure that 'BROWSER' is not set to 'open' or something else.
         # See: https://github.com/python/cpython/issues/131254.
@@ -369,6 +377,13 @@ class MacOSXOSAScriptTest(unittest.TestCase):
         script = self.popen_pipe.pipe.getvalue()
         self.assertIn('tell application "safari"', script)
         self.assertIn('open location "https://python.org"', script)
+
+    def test_reject_dash_prefixes(self):
+        with self.assertRaisesRegex(
+            ValueError,
+            r"^Invalid URL \(leading dash disallowed\): '--key=val http.*'$"
+        ):
+            self.browser.open(f"--key=val {URL}")
 
 
 class BrowserRegistrationTest(unittest.TestCase):
@@ -503,6 +518,7 @@ class ImportTest(unittest.TestCase):
             self.assertEqual(webbrowser.get().name, sys.executable)
 
 
+@force_not_colorized_test_class
 class CliTest(unittest.TestCase):
     def test_parse_args(self):
         for command, url, new_win in [

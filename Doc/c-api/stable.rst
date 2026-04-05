@@ -88,6 +88,16 @@ Contents of the Limited API are :ref:`listed below <limited-api-list>`.
    You can also define ``Py_LIMITED_API`` to ``3``. This works the same as
    ``0x03020000`` (Python 3.2, the version that introduced Limited API).
 
+.. c:macro:: Py_TARGET_ABI3T
+
+   Define this macro before including ``Python.h`` to opt in to only use
+   the Limited API for :term:`free-threaded builds <free-threaded build>`,
+   and to select the Limited API version.
+
+   .. seealso:: :pep:`803`
+
+   .. versionadded:: next
+
 
 .. _stable-abi:
 
@@ -279,7 +289,7 @@ The full API is described below for advanced use cases.
 
    .. c:member:: uint8_t abiinfo_minor_version
 
-      The major version of :c:struct:`PyABIInfo`.
+      The minor version of :c:struct:`PyABIInfo`.
       Must be set to ``0``; larger values are reserved for backwards-compatible
       future versions of :c:struct:`!PyABIInfo`.
 
@@ -294,7 +304,7 @@ The full API is described below for advanced use cases.
          Default flags, based on current values of macros such as
          :c:macro:`Py_LIMITED_API` and :c:macro:`Py_GIL_DISABLED`.
 
-      Alternately, the field can be set to to the following flags, combined
+      Alternately, the field can be set to the following flags, combined
       by bitwise OR.
       Unused bits must be set to zero.
 
