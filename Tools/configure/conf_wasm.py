@@ -74,7 +74,7 @@ def setup_wasm_flags(v):
     # Force/suppress ac_cv_func_dlopen for WASM dynamic linking
     if v.enable_wasm_dynamic_linking == "yes":
         v.ac_cv_func_dlopen = True
-    elif v.enable_wasm_dynamic_linking is False:
+    elif v.enable_wasm_dynamic_linking == "no":
         v.ac_cv_func_dlopen = False
 
     # Ensure variables exist even on non-WASM builds
@@ -115,7 +115,7 @@ def _setup_emscripten_flags(v):
         " -sFORCE_FILESYSTEM -lidbfs.js -lnodefs.js -lproxyfs.js -lworkerfs.js"
     )
     v.LINKFORSHARED += (
-        " -sEXPORTED_RUNTIME_METHODS=FS,callMain,ENV,HEAPU32,TTY"
+        " -sEXPORTED_RUNTIME_METHODS=FS,callMain,ENV,HEAPU32,TTY,ERRNO_CODES"
     )
     v.LINKFORSHARED += (
         " -sEXPORTED_FUNCTIONS=_main,_Py_Version,__PyRuntime,"
@@ -173,6 +173,7 @@ def _setup_wasi_flags(v):
         # Note: wasi requires --export-memory.
         # Note: --export-memory is implicit unless --import-memory is given
         # Note: this requires LLVM >= 16.
+        v.CFLAGS += " -target wasm32-wasi-threads -pthread"
         v.CFLAGS_NODIST += " -target wasm32-wasi-threads -pthread"
         v.LDFLAGS_NODIST += (
             " -target wasm32-wasi-threads -pthread"

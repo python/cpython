@@ -8762,7 +8762,7 @@ function u__setup_emscripten_flags(    WASM_LINKFORSHARED_DEBUG) {
     V["LINKFORSHARED"] = V["LINKFORSHARED"] " -sALLOW_MEMORY_GROWTH -sINITIAL_MEMORY=20971520"
     V["LDFLAGS_NODIST"] = V["LDFLAGS_NODIST"] " -sWASM_BIGINT"
     V["LINKFORSHARED"] = V["LINKFORSHARED"] " -sFORCE_FILESYSTEM -lidbfs.js -lnodefs.js -lproxyfs.js -lworkerfs.js"
-    V["LINKFORSHARED"] = V["LINKFORSHARED"] " -sEXPORTED_RUNTIME_METHODS=FS,callMain,ENV,HEAPU32,TTY"
+    V["LINKFORSHARED"] = V["LINKFORSHARED"] " -sEXPORTED_RUNTIME_METHODS=FS,callMain,ENV,HEAPU32,TTY,ERRNO_CODES"
     V["LINKFORSHARED"] = V["LINKFORSHARED"] " -sEXPORTED_FUNCTIONS=_main,_Py_Version,__PyRuntime,_PyGILState_GetThisThreadState,__Py_DumpTraceback,__PyEM_EMSCRIPTEN_TRAMPOLINE_OFFSET"
     V["LINKFORSHARED"] = V["LINKFORSHARED"] " -sSTACK_SIZE=5MB"
     V["LINKFORSHARED"] = V["LINKFORSHARED"] " -sTEXTDECODER=2"
@@ -8790,6 +8790,7 @@ function u__setup_wasi_flags() {
     pyconf_define("_WASI_EMULATED_PROCESS_CLOCKS", 1, 0, "Define to 1 if you want to emulate process clocks on WASI")
     V["LIBS"] = V["LIBS"] " -lwasi-emulated-signal -lwasi-emulated-getpid -lwasi-emulated-process-clocks"
     if ((V["enable_wasm_pthreads"] == "yes")) {
+        V["CFLAGS"] = V["CFLAGS"] " -target wasm32-wasi-threads -pthread"
         V["CFLAGS_NODIST"] = V["CFLAGS_NODIST"] " -target wasm32-wasi-threads -pthread"
         V["LDFLAGS_NODIST"] = V["LDFLAGS_NODIST"] " -target wasm32-wasi-threads -pthread -Wl,--import-memory -Wl,--export-memory -Wl,--max-memory=10485760"
     }
