@@ -1,0 +1,2 @@
+Support :class:`frozendict` in :mod:`plistlib`, for serialization only.
+Patch by Hugo van Kemenade.

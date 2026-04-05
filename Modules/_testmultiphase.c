@@ -435,6 +435,7 @@ static int execfunc(PyObject *m)
 }
 
 static PyModuleDef_Slot main_slots[] = {
+    _Py_ABI_SLOT,
     {Py_mod_exec, execfunc},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {Py_mod_gil, Py_MOD_GIL_NOT_USED},
@@ -481,6 +482,7 @@ createfunc_nonmodule(PyObject *spec, PyModuleDef *def)
 }
 
 static PyModuleDef_Slot slots_create_nonmodule[] = {
+    _Py_ABI_SLOT,
     {Py_mod_create, createfunc_nonmodule},
     {0, NULL},
 };
@@ -527,6 +529,7 @@ PyInit__testmultiphase_nonmodule_with_methods(void)
 /**** Non-ASCII-named modules ****/
 
 static PyModuleDef_Slot nonascii_slots[] = {
+    _Py_ABI_SLOT,
     {Py_mod_gil, Py_MOD_GIL_NOT_USED},
     {0, NULL},
 };
@@ -689,6 +692,7 @@ createfunc_noop(PyObject *spec, PyModuleDef *def)
 }
 
 static PyModuleDef_Slot slots_multiple_create_slots[] = {
+    _Py_ABI_SLOT,
     {Py_mod_create, createfunc_noop},
     {Py_mod_create, createfunc_noop},
     {0, NULL},
@@ -710,6 +714,7 @@ createfunc_null(PyObject *spec, PyModuleDef *def)
 }
 
 static PyModuleDef_Slot slots_create_null[] = {
+    _Py_ABI_SLOT,
     {Py_mod_create, createfunc_null},
     {0, NULL},
 };
@@ -752,6 +757,7 @@ createfunc_unreported_exception(PyObject *spec, PyModuleDef *def)
 }
 
 static PyModuleDef_Slot slots_create_unreported_exception[] = {
+    _Py_ABI_SLOT,
     {Py_mod_create, createfunc_unreported_exception},
     {0, NULL},
 };
@@ -766,6 +772,7 @@ PyInit__testmultiphase_create_unreported_exception(void)
 }
 
 static PyModuleDef_Slot slots_nonmodule_with_exec_slots[] = {
+    _Py_ABI_SLOT,
     {Py_mod_create, createfunc_nonmodule},
     {Py_mod_exec, execfunc},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
@@ -789,6 +796,7 @@ execfunc_err(PyObject *mod)
 }
 
 static PyModuleDef_Slot slots_exec_err[] = {
+    _Py_ABI_SLOT,
     {Py_mod_exec, execfunc_err},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {Py_mod_gil, Py_MOD_GIL_NOT_USED},
@@ -812,6 +820,7 @@ execfunc_raise(PyObject *spec)
 }
 
 static PyModuleDef_Slot slots_exec_raise[] = {
+    _Py_ABI_SLOT,
     {Py_mod_exec, execfunc_raise},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {Py_mod_gil, Py_MOD_GIL_NOT_USED},
@@ -835,6 +844,7 @@ execfunc_unreported_exception(PyObject *mod)
 }
 
 static PyModuleDef_Slot slots_exec_unreported_exception[] = {
+    _Py_ABI_SLOT,
     {Py_mod_exec, execfunc_unreported_exception},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {Py_mod_gil, Py_MOD_GIL_NOT_USED},
@@ -893,6 +903,7 @@ meth_state_access_exec(PyObject *m)
 }
 
 static PyModuleDef_Slot meth_state_access_slots[] = {
+    _Py_ABI_SLOT,
     {Py_mod_exec, meth_state_access_exec},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {Py_mod_gil, Py_MOD_GIL_NOT_USED},
@@ -943,6 +954,7 @@ PyInit__test_module_state_shared(void)
 /* multiple interpreters support */
 
 static PyModuleDef_Slot slots_multiple_multiple_interpreters_slots[] = {
+    _Py_ABI_SLOT,
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {Py_mod_gil, Py_MOD_GIL_NOT_USED},
@@ -961,6 +973,7 @@ PyInit__testmultiphase_multiple_multiple_interpreters_slots(void)
 }
 
 static PyModuleDef_Slot non_isolated_slots[] = {
+    _Py_ABI_SLOT,
     {Py_mod_exec, execfunc},
     {Py_mod_multiple_interpreters, Py_MOD_MULTIPLE_INTERPRETERS_NOT_SUPPORTED},
     {Py_mod_gil, Py_MOD_GIL_NOT_USED},
@@ -979,6 +992,7 @@ PyInit__test_non_isolated(void)
 
 
 static PyModuleDef_Slot shared_gil_only_slots[] = {
+    _Py_ABI_SLOT,
     {Py_mod_exec, execfunc},
     /* Note that Py_MOD_MULTIPLE_INTERPRETERS_SUPPORTED is the default.
        We put it here explicitly to draw attention to the contrast
@@ -1000,6 +1014,7 @@ PyInit__test_shared_gil_only(void)
 
 
 static PyModuleDef_Slot no_multiple_interpreter_slot_slots[] = {
+    _Py_ABI_SLOT,
     {Py_mod_exec, execfunc},
     {Py_mod_gil, Py_MOD_GIL_NOT_USED},
     {0, NULL},
@@ -1019,10 +1034,13 @@ PyInit__test_no_multiple_interpreter_slot(void)
 
 /* PyModExport_* hooks */
 
+PyABIInfo_VAR(abi_info);
+
 PyMODEXPORT_FUNC
 PyModExport__test_from_modexport(void)
 {
     static PyModuleDef_Slot slots[] = {
+        {Py_mod_abi, &abi_info},
         {Py_mod_name, "_test_from_modexport"},
         {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
         {Py_mod_gil, Py_MOD_GIL_NOT_USED},
@@ -1035,6 +1053,7 @@ PyMODEXPORT_FUNC
 PyModExport__test_from_modexport_gil_used(void)
 {
     static PyModuleDef_Slot slots[] = {
+        {Py_mod_abi, &abi_info},
         {Py_mod_name, "_test_from_modexport_gil_used"},
         {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
         {Py_mod_gil, Py_MOD_GIL_USED},
@@ -1085,6 +1104,7 @@ PyMODEXPORT_FUNC
 PyModExport__test_from_modexport_create_nonmodule(void)
 {
     static PyModuleDef_Slot slots[] = {
+        {Py_mod_abi, &abi_info},
         {Py_mod_name, "_test_from_modexport_create_nonmodule"},
         {Py_mod_create, modexport_create_string},
         {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
@@ -1098,6 +1118,7 @@ PyMODEXPORT_FUNC
 PyModExport__test_from_modexport_create_nonmodule_gil_used(void)
 {
     static PyModuleDef_Slot slots[] = {
+        {Py_mod_abi, &abi_info},
         {Py_mod_name, "_test_from_modexport_create_nonmodule"},
         {Py_mod_create, modexport_create_string},
         {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
@@ -1115,6 +1136,18 @@ PyMODEXPORT_FUNC
 PyModExport__test_from_modexport_empty_slots(void)
 {
     return modexport_empty_slots;
+}
+
+
+static PyModuleDef_Slot modexport_minimal_slots[] = {
+    {Py_mod_abi, &abi_info},
+    {0},
+};
+
+PyMODEXPORT_FUNC
+PyModExport__test_from_modexport_minimal_slots(void)
+{
+    return modexport_minimal_slots;
 }
 
 static int
@@ -1157,13 +1190,13 @@ modexport_smoke_get_test_token(PyObject *mod, PyObject *arg)
 }
 
 static PyObject *
-modexport_get_empty_slots(PyObject *mod, PyObject *arg)
+modexport_get_minimal_slots(PyObject *mod, PyObject *arg)
 {
     /* Get the address of modexport_empty_slots.
-     * This method would be in the `_test_from_modexport_empty_slots` module,
+     * This method would be in the `_test_from_modexport_minimal_slots` module,
      * if it had a methods slot.
      */
-    return PyLong_FromVoidPtr(&modexport_empty_slots);
+    return PyLong_FromVoidPtr(&modexport_minimal_slots);
 }
 
 static void
@@ -1183,10 +1216,11 @@ PyModExport__test_from_modexport_smoke(void)
     static PyMethodDef methods[] = {
         {"get_state_int", modexport_smoke_get_state_int, METH_NOARGS},
         {"get_test_token", modexport_smoke_get_test_token, METH_NOARGS},
-        {"get_modexport_empty_slots", modexport_get_empty_slots, METH_NOARGS},
+        {"get_modexport_minimal_slots", modexport_get_minimal_slots, METH_NOARGS},
         {0},
     };
     static PyModuleDef_Slot slots[] = {
+        {Py_mod_abi, &abi_info},
         {Py_mod_name, "_test_from_modexport_smoke"},
         {Py_mod_doc, "the expected docstring"},
         {Py_mod_exec, modexport_smoke_exec},
