@@ -2014,16 +2014,9 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertEqual(res, TIER2_THRESHOLD)
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
-<<<<<<< HEAD
         self.assertEqual(uops.count("_GUARD_NOS_DICT_SUBSCRIPT"), 0)
         self.assertEqual(uops.count("_GUARD_NOS_DICT_STORE_SUBSCRIPT"), 0)
-        self.assertEqual(uops.count("_STORE_SUBSCR_DICT"), 1)
-        self.assertEqual(uops.count("_BINARY_OP_SUBSCR_DICT"), 1)
-=======
-        self.assertEqual(uops.count("_GUARD_NOS_DICT"), 0)
-        self.assertEqual(uops.count("_STORE_SUBSCR_DICT_KNOWN_HASH"), 1)
         self.assertEqual(uops.count("_BINARY_OP_SUBSCR_DICT_KNOWN_HASH"), 1)
->>>>>>> 77fc2f5a5e4ca92c609b87425a4080b71c5fa188
 
     def test_dict_subclass_subscr(self):
         import collections
@@ -2040,8 +2033,7 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertEqual(res, TIER2_THRESHOLD)
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
-        self.assertIn("_STORE_SUBSCR_DICT", uops)
-        self.assertIn("_BINARY_OP_SUBSCR_DICT", uops)
+        self.assertIn("_BINARY_OP_SUBSCR_DICT_KNOWN_HASH", uops)
         self.assertNotIn("_GUARD_NOS_DICT_SUBSCRIPT", uops)
         self.assertNotIn("_GUARD_NOS_DICT_STORE_SUBSCRIPT", uops)
 
