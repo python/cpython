@@ -101,17 +101,16 @@ class REPLThread(threading.Thread):
 
             if not sys.flags.isolated and (startup_path := os.getenv("PYTHONSTARTUP")):
                 sys.audit("cpython.run_startup", startup_path)
-
-                import tokenize
-                with tokenize.open(startup_path) as f:
-                    startup_code = compile(f.read(), startup_path, "exec")
-                    try:
+                try:
+                    import tokenize
+                    with tokenize.open(startup_path) as f:
+                        startup_code = compile(f.read(), startup_path, "exec")
                         exec(startup_code, console.locals)
-                    # TODO: Revisit in GH-143023
-                    except SystemExit:
-                        raise
-                    except BaseException:
-                        console.showtraceback()
+                # TODO: Revisit in GH-143023
+                except SystemExit:
+                    raise
+                except BaseException:
+                    console.showtraceback()
 
             ps1 = getattr(sys, "ps1", ">>> ")
             if CAN_USE_PYREPL:

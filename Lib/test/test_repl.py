@@ -13,6 +13,7 @@ from test.support import (
     cpython_only,
     has_subprocess_support,
     os_helper,
+    subTests,
     SuppressCrashReport,
     SHORT_TIMEOUT,
 )
@@ -461,8 +462,14 @@ class TestAsyncioREPL(unittest.TestCase):
         self.assertEqual(p.returncode, 0)
         self.assertEqual(output[:3], ">>>")
 
-    def test_pythonstartup_failure(self):
-        startup_code = "1/0\n"
+    @subTests(
+        ("startup_code", "expected_error"),
+        [
+            ("some invalid syntax\n", "SyntaxError: invalid syntax"),
+            ("1/0\n", "ZeroDivisionError: division by zero"),
+        ],
+    )
+    def test_pythonstartup_failure(self, startup_code, expected_error):
         startup_env = self.enterContext(
             new_pythonstartup_env(code=startup_code, histfile=".asyncio_history"))
 
@@ -471,16 +478,14 @@ class TestAsyncioREPL(unittest.TestCase):
             env=os.environ | startup_env,
             isolated=False,
             custom=True)
-        p.stdin.write("print('executed user code anyway')")
+        p.stdin.write("print('user code', 'executed')\n")
         output = kill_python(p)
-        expected = dedent(f"""\
-          File "{startup_env['PYTHONSTARTUP']}", line 1, in <module>
-            1/0
-            ~^~
-        ZeroDivisionError: division by zero
-        """)
-        self.assertIn(expected, output)
-        self.assertIn("executed user code anyway", output)
+
+        tb_hint = f'File "{startup_env["PYTHONSTARTUP"]}", line 1'
+        self.assertIn(tb_hint, output)
+        self.assertIn(expected_error, output)
+
+        self.assertIn("user code executed", output)
 
 
 if __name__ == "__main__":
