@@ -1176,8 +1176,20 @@ binascii_a2b_ascii85_impl(PyObject *module, Py_buffer *data, int foldspaces,
         }
 
         /* Write current chunk. */
-        Py_ssize_t chunk_len = ascii_len < 1 ? 3 + ascii_len : 4;
-        for (Py_ssize_t i = 0; i < chunk_len; i++) {
+        int chunk_len = ascii_len < 1 ? 3 + (int)ascii_len : 4;
+
+        /* A final partial 5-tuple containing only one character is an
+         * encoding violation per the PLRM spec; reject unconditionally. */
+        if (chunk_len == 0) {
+            state = get_binascii_state(module);
+            if (state != NULL) {
+                PyErr_SetString(state->Error,
+                                "Incomplete Ascii85 group");
+            }
+            goto error;
+        }
+
+        for (int i = 0; i < chunk_len; i++) {
             *bin_data++ = (leftchar >> (24 - 8 * i)) & 0xff;
         }
 
@@ -1193,17 +1205,8 @@ binascii_a2b_ascii85_impl(PyObject *module, Py_buffer *data, int foldspaces,
          *
          * So we zero the bottom (4-chunk_len) bytes of leftchar to
          * get the canonical uint32 ("canonical_top") and compare
-         * quotients.  A 1-char group (chunk_len==0) is always
-         * non-canonical since no conforming encoder produces it. */
+         * quotients. */
         if (canonical && chunk_len < 4) {
-            if (chunk_len == 0) {
-                state = get_binascii_state(module);
-                if (state != NULL) {
-                    PyErr_SetString(state->Error,
-                                    "Non-canonical Ascii85 group size");
-                }
-                goto error;
-            }
             int n_pad = 4 - chunk_len;
             uint32_t canonical_top =
                 (leftchar >> (n_pad * 8)) << (n_pad * 8);
@@ -1461,22 +1464,26 @@ binascii_a2b_base85_impl(PyObject *module, Py_buffer *data,
         }
 
         /* Write current chunk. */
-        Py_ssize_t chunk_len = ascii_len < 1 ? 3 + ascii_len : 4;
-        for (Py_ssize_t i = 0; i < chunk_len; i++) {
+        int chunk_len = ascii_len < 1 ? 3 + (int)ascii_len : 4;
+
+        /* A 1-char final group is an encoding violation (no conforming
+         * encoder produces it); reject unconditionally. */
+        if (chunk_len == 0) {
+            state = get_binascii_state(module);
+            if (state != NULL) {
+                PyErr_SetString(state->Error,
+                                "Incomplete Base85 group");
+            }
+            goto error;
+        }
+
+        for (int i = 0; i < chunk_len; i++) {
             *bin_data++ = (leftchar >> (24 - 8 * i)) & 0xff;
         }
 
         /* Reject non-canonical encodings in the final group.
          * See the comment in a2b_ascii85 for the full explanation. */
         if (canonical && chunk_len < 4) {
-            if (chunk_len == 0) {
-                state = get_binascii_state(module);
-                if (state != NULL) {
-                    PyErr_SetString(state->Error,
-                                    "Non-canonical Base85 group size");
-                }
-                goto error;
-            }
             int n_pad = 4 - chunk_len;
             uint32_t canonical_top =
                 (leftchar >> (n_pad * 8)) << (n_pad * 8);

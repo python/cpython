@@ -486,20 +486,22 @@ class BinASCIITest(unittest.TestCase):
                 res += b
             self.assertEqual(res, rawdata)
 
-        # Test decoding inputs with length 1 mod 5
-        params = [
-            (b"a", False, False, b"", b""),
-            (b"xbw", False, False, b"wx", b""),
-            (b"<~c~>", False, True, b"", b""),
-            (b"{d ~>", False, True, b" {", b""),
-            (b"ye", True, False, b"", b"    "),
-            (b"z\x01y\x00f", True, False, b"\x00\x01", b"\x00\x00\x00\x00    "),
-            (b"<~FCfN8yg~>", True, True, b"", b"test    "),
-            (b"FE;\x03#8zFCf\x02N8yh~>", True, True, b"\x02\x03", b"tset\x00\x00\x00\x00test    "),
+        # Inputs with length 1 mod 5 end with a 1-char group, which is
+        # an encoding violation per the PLRM spec.
+        error_params = [
+            (b"a", False, False, b""),
+            (b"xbw", False, False, b"wx"),
+            (b"<~c~>", False, True, b""),
+            (b"{d ~>", False, True, b" {"),
+            (b"ye", True, False, b""),
+            (b"z\x01y\x00f", True, False, b"\x00\x01"),
+            (b"<~FCfN8yg~>", True, True, b""),
+            (b"FE;\x03#8zFCf\x02N8yh~>", True, True, b"\x02\x03"),
         ]
-        for a, foldspaces, adobe, ignorechars, b in params:
+        for a, foldspaces, adobe, ignorechars in error_params:
             kwargs = {"foldspaces": foldspaces, "adobe": adobe, "ignorechars": ignorechars}
-            self.assertEqual(binascii.a2b_ascii85(self.type2test(a), **kwargs), b)
+            with self.assertRaises(binascii.Error):
+                binascii.a2b_ascii85(self.type2test(a), **kwargs)
 
     def test_ascii85_invalid(self):
         # Test Ascii85 with invalid characters interleaved
@@ -713,16 +715,18 @@ class BinASCIITest(unittest.TestCase):
         self.assertEqual(res, self.rawdata)
 
         # Test decoding inputs with different length
-        self.assertEqual(binascii.a2b_base85(self.type2test(b'a')), b'')
-        self.assertEqual(binascii.a2b_base85(self.type2test(b'a')), b'')
+        # 1-char groups are rejected (encoding violation)
+        with self.assertRaises(binascii.Error):
+            binascii.a2b_base85(self.type2test(b'a'))
         self.assertEqual(binascii.a2b_base85(self.type2test(b'ab')), b'q')
         self.assertEqual(binascii.a2b_base85(self.type2test(b'abc')), b'qa')
         self.assertEqual(binascii.a2b_base85(self.type2test(b'abcd')),
                          b'qa\x9e')
         self.assertEqual(binascii.a2b_base85(self.type2test(b'abcde')),
                          b'qa\x9e\xb6')
-        self.assertEqual(binascii.a2b_base85(self.type2test(b'abcdef')),
-                         b'qa\x9e\xb6')
+        # 6-char input = full 5-char group + trailing 1-char group (rejected)
+        with self.assertRaises(binascii.Error):
+            binascii.a2b_base85(self.type2test(b'abcdef'))
         self.assertEqual(binascii.a2b_base85(self.type2test(b'abcdefg')),
                          b'qa\x9e\xb6\x81')
 
@@ -813,15 +817,13 @@ class BinASCIITest(unittest.TestCase):
     def test_base85_canonical(self):
         # Non-canonical encodings are accepted without canonical=True
         self.assertEqual(binascii.a2b_base85(b'VF'), b'a')
-        self.assertEqual(binascii.a2b_base85(b'V'), b'')
 
-        # 1-char partial groups are never produced by a conforming encoder
+        # 1-char partial groups are always rejected (encoding violation:
+        # no conforming encoder produces them)
         with self.assertRaises(binascii.Error):
-            binascii.a2b_base85(b'V', canonical=True)
-        # Digit 0 in a 1-char group exercises the explicit chunk_len==0
-        # guard (without it the division check would see 0/P == 0/P).
+            binascii.a2b_base85(b'V')
         with self.assertRaises(binascii.Error):
-            binascii.a2b_base85(b'0', canonical=True)
+            binascii.a2b_base85(b'0')
 
         # Verify round-trip: encode then decode with canonical=True works
         for data in [b'a', b'ab', b'abc', b'abcd', b'abcde',
@@ -894,14 +896,12 @@ class BinASCIITest(unittest.TestCase):
     def test_ascii85_canonical(self):
         # Non-canonical encodings are accepted without canonical=True
         self.assertEqual(binascii.a2b_ascii85(b'@0'), b'a')
-        self.assertEqual(binascii.a2b_ascii85(b'@'), b'')
 
-        # 1-char partial groups are never produced by a conforming encoder
+        # 1-char partial groups are always rejected (PLRM encoding violation)
         with self.assertRaises(binascii.Error):
-            binascii.a2b_ascii85(b'@', canonical=True)
-        # Digit 0 ('!' in ascii85) exercises the explicit chunk_len==0 guard
+            binascii.a2b_ascii85(b'@')
         with self.assertRaises(binascii.Error):
-            binascii.a2b_ascii85(b'!', canonical=True)
+            binascii.a2b_ascii85(b'!')
 
         # Verify round-trip: encode then decode with canonical=True works
         for data in [b'a', b'ab', b'abc', b'abcd', b'abcde',
