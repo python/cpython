@@ -1,7 +1,12 @@
+import importlib
+import os
+import types
 import unittest
 
 from _colorize import ANSIColors, get_theme
+from _pyrepl.completing_reader import stripcolor
 from _pyrepl.fancycompleter import Completer, commonprefix
+from test.support.import_helper import ready_to_import
 
 class MockPatch:
     def __init__(self):
@@ -35,9 +40,11 @@ class FancyCompleterTests(unittest.TestCase):
         compl = Completer({'a': None}, use_colors=False)
         self.assertEqual(compl.attr_matches('a.'), ['a.__'])
         matches = compl.attr_matches('a.__')
-        self.assertNotIn('a.__class__', matches)
-        self.assertIn('__class__', matches)
-        self.assertEqual(compl.attr_matches('a.__class'), ['a.__class__'])
+        self.assertNotIn('__class__', matches)
+        self.assertIn('a.__class__', matches)
+        match = compl.attr_matches('a.__class')
+        self.assertEqual(len(match), 1)
+        self.assertTrue(match[0].startswith('a.__class__'))
 
     def test_complete_attribute_prefix(self):
         class C(object):
@@ -45,12 +52,17 @@ class FancyCompleterTests(unittest.TestCase):
             _attr = 2
             __attr__attr = 3
         compl = Completer({'a': C}, use_colors=False)
-        self.assertEqual(compl.attr_matches('a.'), ['attr', 'mro'])
-        self.assertEqual(compl.attr_matches('a._'), ['_C__attr__attr', '_attr', ' '])
+        self.assertEqual(compl.attr_matches('a.'), ['a.attr', 'a.mro'])
+        self.assertEqual(
+            compl.attr_matches('a._'),
+            ['a._C__attr__attr', 'a._attr', ' '],
+        )
         matches = compl.attr_matches('a.__')
-        self.assertNotIn('a.__class__', matches)
-        self.assertIn('__class__', matches)
-        self.assertEqual(compl.attr_matches('a.__class'), ['a.__class__'])
+        self.assertNotIn('__class__', matches)
+        self.assertIn('a.__class__', matches)
+        match = compl.attr_matches('a.__class')
+        self.assertEqual(len(match), 1)
+        self.assertTrue(match[0].startswith('a.__class__'))
 
         compl = Completer({'a': None}, use_colors=False)
         self.assertEqual(compl.attr_matches('a._'), ['a.__'])
@@ -61,13 +73,63 @@ class FancyCompleterTests(unittest.TestCase):
         matches = compl.attr_matches('a.__')
         self.assertGreater(len(matches), 2)
         expected_color = theme.fancycompleter.type
-        expected_part = f'{expected_color}__class__{ANSIColors.RESET}'
+        expected_part = f'{expected_color}a.__class__{ANSIColors.RESET}'
         for match in matches:
             if expected_part in match:
                 break
         else:
             self.assertFalse(True, matches)
         self.assertIn(' ', matches)
+
+    def test_preserves_callable_postfix_for_single_attribute_match(self):
+        compl = Completer({'os': os}, use_colors=False)
+        self.assertEqual(compl.attr_matches('os.getpid'), ['os.getpid()'])
+
+    def test_property_method_not_called(self):
+        class Foo:
+            property_called = False
+
+            @property
+            def bar(self):
+                self.property_called = True
+                return 1
+
+        foo = Foo()
+        compl = Completer({'foo': foo}, use_colors=False)
+        self.assertEqual(compl.attr_matches('foo.b'), ['foo.bar'])
+        self.assertFalse(foo.property_called)
+
+    def test_excessive_getattr(self):
+        class Foo:
+            calls = 0
+            bar = ''
+
+            def __getattribute__(self, name):
+                if name == 'bar':
+                    self.calls += 1
+                    return None
+                return super().__getattribute__(name)
+
+        foo = Foo()
+        compl = Completer({'foo': foo}, use_colors=False)
+        self.assertEqual(compl.complete('foo.b', 0), 'foo.bar')
+        self.assertEqual(foo.calls, 1)
+
+    def test_uncreated_attr(self):
+        class Foo:
+            __slots__ = ('bar',)
+
+        compl = Completer({'foo': Foo()}, use_colors=False)
+        self.assertEqual(compl.complete('foo.', 0), 'foo.bar')
+
+    def test_module_attributes_do_not_reify_lazy_imports(self):
+        with ready_to_import("test_pyrepl_lazy_mod", "lazy import json\n") as (name, _):
+            module = importlib.import_module(name)
+            self.assertIs(type(module.__dict__["json"]), types.LazyImportType)
+
+            compl = Completer({name: module}, use_colors=False)
+            self.assertEqual(compl.attr_matches(f"{name}.j"), [f"{name}.json"])
+            self.assertIs(type(module.__dict__["json"]), types.LazyImportType)
 
     def test_complete_colored_single_match(self):
         """No coloring, via commonprefix."""
@@ -100,7 +162,7 @@ class FancyCompleterTests(unittest.TestCase):
         # these are the fake escape sequences which are needed so that
         # readline displays the matches in the proper order
         N0 = f"\x1b[000;00m"
-        N1 = f"\x1b[001;00m"
+        N1 = f"\x1b[000;01m"
         int_color = theme.fancycompleter.int
         self.assertEqual(set(matches), {
             ' ',
@@ -110,13 +172,20 @@ class FancyCompleterTests(unittest.TestCase):
         self.assertEqual(compl.global_matches('foobaz'), ['foobazzz'])
         self.assertEqual(compl.global_matches('nothing'), [])
 
+    def test_large_color_sort_prefix_is_stripped(self):
+        compl = Completer({'a': 42}, use_colors=True)
+        match = compl._color_for_obj(1000, 'spam', 1)
+        self.assertEqual(stripcolor(match), 'spam')
+
     def test_complete_with_indexer(self):
         compl = Completer({'lst': [None, 2, 3]}, use_colors=False)
         self.assertEqual(compl.attr_matches('lst[0].'), ['lst[0].__'])
         matches = compl.attr_matches('lst[0].__')
-        self.assertNotIn('lst[0].__class__', matches)
-        self.assertIn('__class__', matches)
-        self.assertEqual(compl.attr_matches('lst[0].__class'), ['lst[0].__class__'])
+        self.assertNotIn('__class__', matches)
+        self.assertIn('lst[0].__class__', matches)
+        match = compl.attr_matches('lst[0].__class')
+        self.assertEqual(len(match), 1)
+        self.assertTrue(match[0].startswith('lst[0].__class__'))
 
     def test_autocomplete(self):
         class A:
@@ -132,7 +201,10 @@ class FancyCompleterTests(unittest.TestCase):
         # automatically insert the common prefix (which will the the ANSI escape
         # sequence if we use colors).
         matches = compl.attr_matches('A.a')
-        self.assertEqual(sorted(matches), [' ', 'aaa', 'abc_1', 'abc_2', 'abc_3'])
+        self.assertEqual(
+            sorted(matches),
+            [' ', 'A.aaa', 'A.abc_1', 'A.abc_2', 'A.abc_3'],
+        )
         #
         # If there is an actual common prefix, we return just it, so that readline
         # will insert it into place
@@ -143,7 +215,10 @@ class FancyCompleterTests(unittest.TestCase):
         # for this common prefix. Again, we insert a spurious space to prevent the
         # automatic completion of ANSI sequences.
         matches = compl.attr_matches('A.abc_')
-        self.assertEqual(sorted(matches), [' ', 'abc_1', 'abc_2', 'abc_3'])
+        self.assertEqual(
+            sorted(matches),
+            [' ', 'A.abc_1', 'A.abc_2', 'A.abc_3'],
+        )
 
     def test_complete_exception(self):
         compl = Completer({}, use_colors=False)
@@ -164,7 +239,7 @@ class FancyCompleterTests(unittest.TestCase):
 
         compl = Completer({'a': Foo()}, use_colors=False)
         matches = compl.attr_matches('a.')
-        self.assertEqual(matches, ['hello', 'world'])
+        self.assertEqual(matches, ['a.hello', 'a.world'])
         self.assertIs(type(matches[0]), str)
 
 

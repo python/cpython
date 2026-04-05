@@ -5,13 +5,13 @@
 """Colorful tab completion for Python prompt"""
 from _colorize import ANSIColors, get_colors, get_theme
 import rlcompleter
-import types
 import keyword
+import types
 
 class Completer(rlcompleter.Completer):
     """
-    When doing someting like a.b.<tab>, display only the attributes of
-    b instead of the full a.b.attr string.
+    When doing something like a.b.<tab>, keep the full a.b.attr completion
+    stem so readline-style completion can keep refining the menu as you type.
 
     Optionally, display the various completions in different colors
     depending on the type.
@@ -32,6 +32,10 @@ class Completer(rlcompleter.Completer):
         self.consider_getitems = consider_getitems
 
         if self.use_colors:
+            # In GNU readline, this prevents escaping of ANSI control
+            # characters in completion results. pyrepl's parse_and_bind()
+            # is a no-op, but pyrepl handles ANSI sequences natively
+            # via real_len()/stripcolor().
             readline.parse_and_bind('set dont-escape-ctrl-chars on')
             self.theme = get_theme()
         else:
@@ -55,6 +59,9 @@ class Completer(rlcompleter.Completer):
         # disable automatic insertion of '(' for global callables
         return word
 
+    def _callable_attr_postfix(self, val, word):
+        return rlcompleter.Completer._callable_postfix(self, val, word)
+
     def global_matches(self, text):
         names = rlcompleter.Completer.global_matches(self, text)
         prefix = commonprefix(names)
@@ -65,25 +72,52 @@ class Completer(rlcompleter.Completer):
         values = []
         for name in names:
             clean_name = name.rstrip(': ')
-            if clean_name in keyword.kwlist:
+            if keyword.iskeyword(clean_name) or keyword.issoftkeyword(clean_name):
                 values.append(None)
             else:
                 try:
                     values.append(eval(name, self.namespace))
-                except Exception as exc:
+                except Exception:
                     values.append(None)
         if self.use_colors and names:
             return self.colorize_matches(names, values)
         return names
 
     def attr_matches(self, text):
+        try:
+            expr, attr, names, values = self._attr_matches(text)
+        except ValueError:
+            return []
+
+        if not names:
+            return []
+
+        if len(names) == 1:
+            # No coloring: when returning a single completion, readline
+            # inserts it directly into the prompt, so ANSI codes would
+            # appear as literal characters.
+            return [self._callable_attr_postfix(values[0], f'{expr}.{names[0]}')]
+
+        prefix = commonprefix(names)
+        if prefix and prefix != attr:
+            return [f'{expr}.{prefix}']  # autocomplete prefix
+
+        names = [f'{expr}.{name}' for name in names]
+        if self.use_colors:
+            return self.colorize_matches(names, values)
+
+        if prefix:
+            names.append(' ')
+        return names
+
+    def _attr_matches(self, text):
         expr, attr = text.rsplit('.', 1)
         if '(' in expr or ')' in expr:  # don't call functions
-            return []
+            return expr, attr, [], []
         try:
             thisobject = eval(expr, self.namespace)
         except Exception:
-            return []
+            return expr, attr, [], []
 
         # get the content of the object, except __builtins__
         words = set(dir(thisobject)) - {'__builtins__'}
@@ -112,13 +146,23 @@ class Completer(rlcompleter.Completer):
                     word[:n] == attr
                     and not (noprefix and word[:n+1] == noprefix)
                 ):
-                    try:
-                        val = getattr(thisobject, word)
-                    except Exception:
-                        val = None  # Include even if attribute not set
+                    # Mirror rlcompleter's safeguards so completion does not
+                    # call properties or reify lazy module attributes.
+                    if isinstance(getattr(type(thisobject), word, None), property):
+                        value = None
+                    elif (
+                        isinstance(thisobject, types.ModuleType)
+                        and isinstance(
+                            thisobject.__dict__.get(word),
+                            types.LazyImportType,
+                        )
+                    ):
+                        value = thisobject.__dict__.get(word)
+                    else:
+                        value = getattr(thisobject, word, None)
 
                     names.append(word)
-                    values.append(val)
+                    values.append(value)
             if names or not noprefix:
                 break
             if noprefix == '_':
@@ -126,25 +170,10 @@ class Completer(rlcompleter.Completer):
             else:
                 noprefix = None
 
-        if not names:
-            return []
-
-        if len(names) == 1:
-            return [f'{expr}.{names[0]}']  # only option, no coloring.
-
-        prefix = commonprefix(names)
-        if prefix and prefix != attr:
-            return [f'{expr}.{prefix}']  # autocomplete prefix
-
-        if self.use_colors:
-            return self.colorize_matches(names, values)
-
-        if prefix:
-            names.append(' ')
-        return names
+        return expr, attr, names, values
 
     def colorize_matches(self, names, values):
-        matches = [self.color_for_obj(i, name, obj)
+        matches = [self._color_for_obj(i, name, obj)
                    for i, (name, obj)
                    in enumerate(zip(names, values))]
         # We add a space at the end to prevent the automatic completion of the
@@ -152,15 +181,15 @@ class Completer(rlcompleter.Completer):
         matches.append(' ')
         return matches
 
-    def color_for_obj(self, i, name, value):
+    def _color_for_obj(self, i, name, value):
         t = type(value)
-        color = self.color_by_type(t)
-        # hack: prepend an (increasing) fake escape sequence,
-        # so that readline can sort the matches correctly.
-        N = f"\x1b[{i:03d};00m"
+        color = self._color_by_type(t)
+        # Encode the match index into a fake escape sequence that
+        # stripcolor() can still remove once i reaches four digits.
+        N = f"\x1b[{i // 100:03d};{i % 100:02d}m"
         return f"{N}{color}{name}{ANSIColors.RESET}"
 
-    def color_by_type(self, t):
+    def _color_by_type(self, t):
         typename = t.__name__
         # this is needed e.g. to turn method-wrapper into method_wrapper,
         # because if we want _colorize.FancyCompleter to be "dataclassable"
