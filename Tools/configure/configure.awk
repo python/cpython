@@ -3540,7 +3540,7 @@ function u_setup_expat(    _opt_result, with_system_expat) {
     v_export("LIBEXPAT_INTERNAL")
 }
 
-function u_detect_libffi(    ac_cv_ffi_complex_double_supported, ctypes_malloc_closure, ffi_inc, found_ffi_h, output, parts, pkg, sdkroot, status, _ar_4, _ar_5) {
+function u_detect_libffi(    ac_cv_ffi_complex_double_supported, ctypes_malloc_closure, ffi_inc, found_darwin_ffi, found_ffi_h, output, parts, pkg, sdkroot, status, _ar_4, _ar_5) {
     delete _ar_4
     delete _ar_5
     V["have_libffi"] = "missing"
@@ -3550,16 +3550,20 @@ function u_detect_libffi(    ac_cv_ffi_complex_double_supported, ctypes_malloc_c
     if ((V["ac_sys_system"] == "Darwin")) {
         sdkroot = V["SDKROOT"]
         ffi_inc = (((sdkroot != "") && (sdkroot != "no")) ? sdkroot "/usr/include/ffi" : "/usr/include/ffi")
+        found_darwin_ffi = "no"
         pyconf_save_env()
         V["CFLAGS"] = _str_strip("-I" ffi_inc " " V["CFLAGS"])
         if (pyconf_check_header("ffi.h")) {
             if (pyconf_check_lib("ffi", "ffi_call", "", "")) {
-                V["have_libffi"] = "yes"
-                V["LIBFFI_CFLAGS"] = "-I" ffi_inc " -DUSING_APPLE_OS_LIBFFI=1"
-                V["LIBFFI_LIBS"] = "-lffi"
+                found_darwin_ffi = "yes"
             }
         }
         pyconf_restore_env()
+        if (((found_darwin_ffi != "") && (found_darwin_ffi != "no"))) {
+            V["have_libffi"] = "yes"
+            V["LIBFFI_CFLAGS"] = "-I" ffi_inc " -DUSING_APPLE_OS_LIBFFI=1"
+            V["LIBFFI_LIBS"] = "-lffi"
+        }
     }
     if ((V["have_libffi"] == "missing")) {
         pkg = pyconf_find_prog("pkg-config")

@@ -66,14 +66,17 @@ def detect_libffi(v):
         ffi_inc = (
             f"{sdkroot}/usr/include/ffi" if sdkroot else "/usr/include/ffi"
         )
+        found_darwin_ffi = False
         with pyconf.save_env():
             v.CFLAGS = f"-I{ffi_inc} {v.CFLAGS}".strip()
             if pyconf.check_header("ffi.h"):
                 if pyconf.check_lib("ffi", "ffi_call"):
-                    # use ffi from SDK root
-                    v.have_libffi = True
-                    v.LIBFFI_CFLAGS = f"-I{ffi_inc} -DUSING_APPLE_OS_LIBFFI=1"
-                    v.LIBFFI_LIBS = "-lffi"
+                    found_darwin_ffi = True
+        if found_darwin_ffi:
+            # use ffi from SDK root
+            v.have_libffi = True
+            v.LIBFFI_CFLAGS = f"-I{ffi_inc} -DUSING_APPLE_OS_LIBFFI=1"
+            v.LIBFFI_LIBS = "-lffi"
 
     if v.have_libffi == "missing":
         # Try pkg-config
