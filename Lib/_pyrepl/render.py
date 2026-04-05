@@ -141,6 +141,8 @@ class ScreenOverlay:
 
     If insert is True, lines are spliced in (shifting content down);
     if False (default), lines replace existing content at y.
+
+    Overlays are used to display tab completion menus and status messages.
     """
     y: int
     lines: tuple[RenderLine, ...]

@@ -432,7 +432,6 @@ class Reader:
         source_lines = self._build_source_lines(offset, num_common_lines)
         content_lines = self._build_content_lines(
             source_lines,
-            offset,
             prompt_from_cache=bool(offset and self.buffer[offset - 1] != "\n"),
         )
         layout_result = self._layout_content(content_lines, offset)
@@ -479,7 +478,7 @@ class Reader:
         offset: int,
         first_lineno: int,
     ) -> tuple[SourceLine, ...]:
-        if offset == len(self.buffer) and offset > 0:
+        if offset == len(self.buffer) and (offset > 0 or first_lineno > 0):
             return ()
 
         pos = self.pos - offset
@@ -520,7 +519,6 @@ class Reader:
     def _build_content_lines(
         self,
         source_lines: tuple[SourceLine, ...],
-        offset: int,
         *,
         prompt_from_cache: bool,
     ) -> tuple[ContentLine, ...]:
