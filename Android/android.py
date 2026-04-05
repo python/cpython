@@ -34,7 +34,12 @@ ENV_SCRIPT = ANDROID_DIR / "android-env.sh"
 TESTBED_DIR = ANDROID_DIR / "testbed"
 CROSS_BUILD_DIR = PYTHON_DIR / "cross-build"
 
-HOSTS = ["aarch64-linux-android", "x86_64-linux-android"]
+HOSTS = [
+    "aarch64-linux-android",
+    "arm-linux-androideabi",
+    "i686-linux-android",
+    "x86_64-linux-android",
+]
 APP_ID = "org.python.testbed"
 DECODE_ARGS = ("UTF-8", "backslashreplace")
 
