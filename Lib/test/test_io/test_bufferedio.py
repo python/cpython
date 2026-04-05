@@ -642,6 +642,16 @@ class CBufferedReaderTest(BufferedReaderTest, SizeofTest, CTestCase):
             # Used to crash before gh-143689:
             self.assertEqual(bufio.read1(1), b"h")
 
+    def test_gh_143375(self):
+        bufio = self.tp(self.MockRawIO())
+
+        class EvilIndex:
+            def __index__(self):
+                bufio.close()
+                return 0
+
+        with self.assertRaisesRegex(ValueError, "seek of closed file"):
+            bufio.seek(EvilIndex())
 
 class PyBufferedReaderTest(BufferedReaderTest, PyTestCase):
     tp = pyio.BufferedReader
@@ -1503,6 +1513,17 @@ class CBufferedRandomTest(BufferedRandomTest, SizeofTest, CTestCase):
         # Issue #17275
         with self.assertRaisesRegex(TypeError, "BufferedRandom"):
             self.tp(self.BytesIO(), 1024, 1024, 1024)
+
+    def test_gh_143375(self):
+        bufio = self.tp(self.MockRawIO())
+
+        class EvilIndex:
+            def __index__(self):
+                bufio.close()
+                return 0
+
+        with self.assertRaisesRegex(ValueError, "seek of closed file"):
+            bufio.seek(EvilIndex())
 
 
 class PyBufferedRandomTest(BufferedRandomTest, PyTestCase):
