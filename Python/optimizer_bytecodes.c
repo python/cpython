@@ -761,7 +761,7 @@ dummy_func(void) {
     }
 
     op(_SHUFFLE_2_LOAD_CONST_INLINE_BORROW, (ptr/4, unused, unused, arg -- res, a)) {
-        res = PyJitRef_Borrow(sym_new_const(ctx, (PyObject *)((uintptr_t)ptr & ~Py_TAG_BITS)));
+        res = PyJitRef_Borrow(sym_new_const(ctx, PyStackRef_UntagBorrow(ptr)));
         a = arg;
     }
 

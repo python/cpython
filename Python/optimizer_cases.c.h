@@ -4928,7 +4928,7 @@
             JitOptRef a;
             arg = stack_pointer[-1];
             PyObject *ptr = (PyObject *)this_instr->operand0;
-            res = PyJitRef_Borrow(sym_new_const(ctx, (PyObject *)((uintptr_t)ptr & ~Py_TAG_BITS)));
+            res = PyJitRef_Borrow(sym_new_const(ctx, PyStackRef_UntagBorrow(ptr)));
             a = arg;
             CHECK_STACK_BOUNDS(-1);
             stack_pointer[-3] = res;
