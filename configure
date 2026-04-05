@@ -5,12 +5,10 @@
 
 SCRIPT_DIR="$(dirname "$0")"
 
-# Check for python3 by trying to run it
-#if python3 -c 'from __future__ import annotations' >/dev/null 2>&1; then
-if false; then
+if test -n "${PYTHON_FOR_CONFIGURE:-}"; then
     echo "Using configure.py..."
     export PYTHONPATH=$SCRIPT_DIR/Tools/configure
-    exec python3 "$SCRIPT_DIR/Tools/configure/configure.py" --srcdir="$SCRIPT_DIR" "$@"
+    exec "$PYTHON_FOR_CONFIGURE" "$SCRIPT_DIR/Tools/configure/configure.py" --srcdir="$SCRIPT_DIR" "$@"
 else
     echo "Using configure.awk..."
     exec "$SCRIPT_DIR/Tools/configure/configure.awk" --srcdir="$SCRIPT_DIR" "$@"
