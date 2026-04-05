@@ -12,6 +12,7 @@ on:
       # Only ever run once
       - opened
 
+permissions: {}
 
 jobs:
   add-header:

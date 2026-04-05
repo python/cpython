@@ -33,8 +33,7 @@ on:
       - "Tools/requirements-dev.txt"
   workflow_dispatch:
 
-permissions:
-  contents: read
+permissions: {}
 
 env:
   PIP_DISABLE_PIP_VERSION_CHECK: 1
