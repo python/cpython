@@ -4,15 +4,15 @@ on:
   pull_request:
     types: [opened, reopened, labeled, unlabeled, synchronize]
 
-permissions:
-  issues: write
-  pull-requests: write
+permissions: {}
 
 jobs:
   label:
     name: DO-NOT-MERGE / unresolved review
     if: github.repository_owner == 'python'
     runs-on: ubuntu-latest
+    permissions:
+      pull-requests: read
     timeout-minutes: 10
 
     steps:

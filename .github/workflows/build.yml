@@ -11,8 +11,7 @@ on:
     - 'main'
     - '3.*'
 
-permissions:
-  contents: read
+permissions: {}
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}-reusable

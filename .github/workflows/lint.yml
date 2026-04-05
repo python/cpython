@@ -2,8 +2,7 @@ name: Lint
 
 on: [push, pull_request, workflow_dispatch]
 
-permissions:
-  contents: read
+permissions: {}
 
 env:
   FORCE_COLOR: 1
