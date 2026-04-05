@@ -13,8 +13,7 @@ on:
       - '.github/workflows/verify-ensurepip-wheels.yml'
       - 'Tools/build/verify_ensurepip_wheels.py'
 
-permissions:
-  contents: read
+permissions: {}
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}

@@ -118,7 +118,8 @@ exit:
 
 PyDoc_STRVAR(binascii_a2b_base64__doc__,
 "a2b_base64($module, data, /, *, strict_mode=<unrepresentable>,\n"
-"           alphabet=BASE64_ALPHABET, ignorechars=<unrepresentable>)\n"
+"           padded=True, alphabet=BASE64_ALPHABET,\n"
+"           ignorechars=<unrepresentable>)\n"
 "--\n"
 "\n"
 "Decode a line of base64 data.\n"
@@ -127,6 +128,8 @@ PyDoc_STRVAR(binascii_a2b_base64__doc__,
 "    When set to true, bytes that are not part of the base64 standard are\n"
 "    not allowed.  The same applies to excess data after padding (= / ==).\n"
 "    Set to True by default if ignorechars is specified, False otherwise.\n"
+"  padded\n"
+"    When set to false, padding in input is not required.\n"
 "  ignorechars\n"
 "    A byte string containing characters to ignore from the input when\n"
 "    strict_mode is true.");
@@ -136,7 +139,8 @@ PyDoc_STRVAR(binascii_a2b_base64__doc__,
 
 static PyObject *
 binascii_a2b_base64_impl(PyObject *module, Py_buffer *data, int strict_mode,
-                         PyBytesObject *alphabet, Py_buffer *ignorechars);
+                         int padded, PyBytesObject *alphabet,
+                         Py_buffer *ignorechars);
 
 static PyObject *
 binascii_a2b_base64(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
@@ -144,7 +148,7 @@ binascii_a2b_base64(PyObject *module, PyObject *const *args, Py_ssize_t nargs, P
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 
-    #define NUM_KEYWORDS 3
+    #define NUM_KEYWORDS 4
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
@@ -153,7 +157,7 @@ binascii_a2b_base64(PyObject *module, PyObject *const *args, Py_ssize_t nargs, P
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
         .ob_hash = -1,
-        .ob_item = { &_Py_ID(strict_mode), &_Py_ID(alphabet), &_Py_ID(ignorechars), },
+        .ob_item = { &_Py_ID(strict_mode), &_Py_ID(padded), &_Py_ID(alphabet), &_Py_ID(ignorechars), },
     };
     #undef NUM_KEYWORDS
     #define KWTUPLE (&_kwtuple.ob_base.ob_base)
@@ -162,17 +166,18 @@ binascii_a2b_base64(PyObject *module, PyObject *const *args, Py_ssize_t nargs, P
     #  define KWTUPLE NULL
     #endif  // !Py_BUILD_CORE
 
-    static const char * const _keywords[] = {"", "strict_mode", "alphabet", "ignorechars", NULL};
+    static const char * const _keywords[] = {"", "strict_mode", "padded", "alphabet", "ignorechars", NULL};
     static _PyArg_Parser _parser = {
         .keywords = _keywords,
         .fname = "a2b_base64",
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[4];
+    PyObject *argsbuf[5];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     Py_buffer data = {NULL, NULL};
     int strict_mode = -1;
+    int padded = 1;
     PyBytesObject *alphabet = NULL;
     Py_buffer ignorechars = {NULL, NULL};
 
@@ -197,20 +202,29 @@ binascii_a2b_base64(PyObject *module, PyObject *const *args, Py_ssize_t nargs, P
         }
     }
     if (args[2]) {
-        if (!PyBytes_Check(args[2])) {
-            _PyArg_BadArgument("a2b_base64", "argument 'alphabet'", "bytes", args[2]);
+        padded = PyObject_IsTrue(args[2]);
+        if (padded < 0) {
             goto exit;
         }
-        alphabet = (PyBytesObject *)args[2];
         if (!--noptargs) {
             goto skip_optional_kwonly;
         }
     }
-    if (PyObject_GetBuffer(args[3], &ignorechars, PyBUF_SIMPLE) != 0) {
+    if (args[3]) {
+        if (!PyBytes_Check(args[3])) {
+            _PyArg_BadArgument("a2b_base64", "argument 'alphabet'", "bytes", args[3]);
+            goto exit;
+        }
+        alphabet = (PyBytesObject *)args[3];
+        if (!--noptargs) {
+            goto skip_optional_kwonly;
+        }
+    }
+    if (PyObject_GetBuffer(args[4], &ignorechars, PyBUF_SIMPLE) != 0) {
         goto exit;
     }
 skip_optional_kwonly:
-    return_value = binascii_a2b_base64_impl(module, &data, strict_mode, alphabet, &ignorechars);
+    return_value = binascii_a2b_base64_impl(module, &data, strict_mode, padded, alphabet, &ignorechars);
 
 exit:
     /* Cleanup for data */
@@ -225,18 +239,21 @@ exit:
 }
 
 PyDoc_STRVAR(binascii_b2a_base64__doc__,
-"b2a_base64($module, data, /, *, wrapcol=0, newline=True,\n"
+"b2a_base64($module, data, /, *, padded=True, wrapcol=0, newline=True,\n"
 "           alphabet=BASE64_ALPHABET)\n"
 "--\n"
 "\n"
-"Base64-code line of data.");
+"Base64-code line of data.\n"
+"\n"
+"  padded\n"
+"    When set to false, omit padding in the output.");
 
 #define BINASCII_B2A_BASE64_METHODDEF    \
     {"b2a_base64", _PyCFunction_CAST(binascii_b2a_base64), METH_FASTCALL|METH_KEYWORDS, binascii_b2a_base64__doc__},
 
 static PyObject *
-binascii_b2a_base64_impl(PyObject *module, Py_buffer *data, size_t wrapcol,
-                         int newline, Py_buffer *alphabet);
+binascii_b2a_base64_impl(PyObject *module, Py_buffer *data, int padded,
+                         size_t wrapcol, int newline, Py_buffer *alphabet);
 
 static PyObject *
 binascii_b2a_base64(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
@@ -244,7 +261,7 @@ binascii_b2a_base64(PyObject *module, PyObject *const *args, Py_ssize_t nargs, P
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 
-    #define NUM_KEYWORDS 3
+    #define NUM_KEYWORDS 4
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
@@ -253,7 +270,7 @@ binascii_b2a_base64(PyObject *module, PyObject *const *args, Py_ssize_t nargs, P
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
         .ob_hash = -1,
-        .ob_item = { &_Py_ID(wrapcol), &_Py_ID(newline), &_Py_ID(alphabet), },
+        .ob_item = { &_Py_ID(padded), &_Py_ID(wrapcol), &_Py_ID(newline), &_Py_ID(alphabet), },
     };
     #undef NUM_KEYWORDS
     #define KWTUPLE (&_kwtuple.ob_base.ob_base)
@@ -262,16 +279,17 @@ binascii_b2a_base64(PyObject *module, PyObject *const *args, Py_ssize_t nargs, P
     #  define KWTUPLE NULL
     #endif  // !Py_BUILD_CORE
 
-    static const char * const _keywords[] = {"", "wrapcol", "newline", "alphabet", NULL};
+    static const char * const _keywords[] = {"", "padded", "wrapcol", "newline", "alphabet", NULL};
     static _PyArg_Parser _parser = {
         .keywords = _keywords,
         .fname = "b2a_base64",
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[4];
+    PyObject *argsbuf[5];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     Py_buffer data = {NULL, NULL};
+    int padded = 1;
     size_t wrapcol = 0;
     int newline = 1;
     Py_buffer alphabet = {NULL, NULL};
@@ -288,7 +306,8 @@ binascii_b2a_base64(PyObject *module, PyObject *const *args, Py_ssize_t nargs, P
         goto skip_optional_kwonly;
     }
     if (args[1]) {
-        if (!_PyLong_Size_t_Converter(args[1], &wrapcol)) {
+        padded = PyObject_IsTrue(args[1]);
+        if (padded < 0) {
             goto exit;
         }
         if (!--noptargs) {
@@ -296,7 +315,15 @@ binascii_b2a_base64(PyObject *module, PyObject *const *args, Py_ssize_t nargs, P
         }
     }
     if (args[2]) {
-        newline = PyObject_IsTrue(args[2]);
+        if (!_PyLong_Size_t_Converter(args[2], &wrapcol)) {
+            goto exit;
+        }
+        if (!--noptargs) {
+            goto skip_optional_kwonly;
+        }
+    }
+    if (args[3]) {
+        newline = PyObject_IsTrue(args[3]);
         if (newline < 0) {
             goto exit;
         }
@@ -304,11 +331,11 @@ binascii_b2a_base64(PyObject *module, PyObject *const *args, Py_ssize_t nargs, P
             goto skip_optional_kwonly;
         }
     }
-    if (PyObject_GetBuffer(args[3], &alphabet, PyBUF_SIMPLE) != 0) {
+    if (PyObject_GetBuffer(args[4], &alphabet, PyBUF_SIMPLE) != 0) {
         goto exit;
     }
 skip_optional_kwonly:
-    return_value = binascii_b2a_base64_impl(module, &data, wrapcol, newline, &alphabet);
+    return_value = binascii_b2a_base64_impl(module, &data, padded, wrapcol, newline, &alphabet);
 
 exit:
     /* Cleanup for data */
@@ -740,12 +767,14 @@ exit:
 }
 
 PyDoc_STRVAR(binascii_a2b_base32__doc__,
-"a2b_base32($module, data, /, *, alphabet=BASE32_ALPHABET,\n"
+"a2b_base32($module, data, /, *, padded=True, alphabet=BASE32_ALPHABET,\n"
 "           ignorechars=b\'\')\n"
 "--\n"
 "\n"
 "Decode a line of base32 data.\n"
 "\n"
+"  padded\n"
+"    When set to false, padding in input is not required.\n"
 "  ignorechars\n"
 "    A byte string containing characters to ignore from the input.");
 
@@ -753,7 +782,7 @@ PyDoc_STRVAR(binascii_a2b_base32__doc__,
     {"a2b_base32", _PyCFunction_CAST(binascii_a2b_base32), METH_FASTCALL|METH_KEYWORDS, binascii_a2b_base32__doc__},
 
 static PyObject *
-binascii_a2b_base32_impl(PyObject *module, Py_buffer *data,
+binascii_a2b_base32_impl(PyObject *module, Py_buffer *data, int padded,
                          PyBytesObject *alphabet, Py_buffer *ignorechars);
 
 static PyObject *
@@ -762,7 +791,7 @@ binascii_a2b_base32(PyObject *module, PyObject *const *args, Py_ssize_t nargs, P
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 
-    #define NUM_KEYWORDS 2
+    #define NUM_KEYWORDS 3
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
@@ -771,7 +800,7 @@ binascii_a2b_base32(PyObject *module, PyObject *const *args, Py_ssize_t nargs, P
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
         .ob_hash = -1,
-        .ob_item = { &_Py_ID(alphabet), &_Py_ID(ignorechars), },
+        .ob_item = { &_Py_ID(padded), &_Py_ID(alphabet), &_Py_ID(ignorechars), },
     };
     #undef NUM_KEYWORDS
     #define KWTUPLE (&_kwtuple.ob_base.ob_base)
@@ -780,16 +809,17 @@ binascii_a2b_base32(PyObject *module, PyObject *const *args, Py_ssize_t nargs, P
     #  define KWTUPLE NULL
     #endif  // !Py_BUILD_CORE
 
-    static const char * const _keywords[] = {"", "alphabet", "ignorechars", NULL};
+    static const char * const _keywords[] = {"", "padded", "alphabet", "ignorechars", NULL};
     static _PyArg_Parser _parser = {
         .keywords = _keywords,
         .fname = "a2b_base32",
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[3];
+    PyObject *argsbuf[4];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     Py_buffer data = {NULL, NULL};
+    int padded = 1;
     PyBytesObject *alphabet = NULL;
     Py_buffer ignorechars = {.buf = "", .obj = NULL, .len = 0};
 
@@ -805,20 +835,29 @@ binascii_a2b_base32(PyObject *module, PyObject *const *args, Py_ssize_t nargs, P
         goto skip_optional_kwonly;
     }
     if (args[1]) {
-        if (!PyBytes_Check(args[1])) {
-            _PyArg_BadArgument("a2b_base32", "argument 'alphabet'", "bytes", args[1]);
+        padded = PyObject_IsTrue(args[1]);
+        if (padded < 0) {
             goto exit;
         }
-        alphabet = (PyBytesObject *)args[1];
         if (!--noptargs) {
             goto skip_optional_kwonly;
         }
     }
-    if (PyObject_GetBuffer(args[2], &ignorechars, PyBUF_SIMPLE) != 0) {
+    if (args[2]) {
+        if (!PyBytes_Check(args[2])) {
+            _PyArg_BadArgument("a2b_base32", "argument 'alphabet'", "bytes", args[2]);
+            goto exit;
+        }
+        alphabet = (PyBytesObject *)args[2];
+        if (!--noptargs) {
+            goto skip_optional_kwonly;
+        }
+    }
+    if (PyObject_GetBuffer(args[3], &ignorechars, PyBUF_SIMPLE) != 0) {
         goto exit;
     }
 skip_optional_kwonly:
-    return_value = binascii_a2b_base32_impl(module, &data, alphabet, &ignorechars);
+    return_value = binascii_a2b_base32_impl(module, &data, padded, alphabet, &ignorechars);
 
 exit:
     /* Cleanup for data */
@@ -833,17 +872,21 @@ exit:
 }
 
 PyDoc_STRVAR(binascii_b2a_base32__doc__,
-"b2a_base32($module, data, /, *, wrapcol=0, alphabet=BASE32_ALPHABET)\n"
+"b2a_base32($module, data, /, *, padded=True, wrapcol=0,\n"
+"           alphabet=BASE32_ALPHABET)\n"
 "--\n"
 "\n"
-"Base32-code line of data.");
+"Base32-code line of data.\n"
+"\n"
+"  padded\n"
+"    When set to false, omit padding in the output.");
 
 #define BINASCII_B2A_BASE32_METHODDEF    \
     {"b2a_base32", _PyCFunction_CAST(binascii_b2a_base32), METH_FASTCALL|METH_KEYWORDS, binascii_b2a_base32__doc__},
 
 static PyObject *
-binascii_b2a_base32_impl(PyObject *module, Py_buffer *data, size_t wrapcol,
-                         Py_buffer *alphabet);
+binascii_b2a_base32_impl(PyObject *module, Py_buffer *data, int padded,
+                         size_t wrapcol, Py_buffer *alphabet);
 
 static PyObject *
 binascii_b2a_base32(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
@@ -851,7 +894,7 @@ binascii_b2a_base32(PyObject *module, PyObject *const *args, Py_ssize_t nargs, P
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 
-    #define NUM_KEYWORDS 2
+    #define NUM_KEYWORDS 3
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
@@ -860,7 +903,7 @@ binascii_b2a_base32(PyObject *module, PyObject *const *args, Py_ssize_t nargs, P
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
         .ob_hash = -1,
-        .ob_item = { &_Py_ID(wrapcol), &_Py_ID(alphabet), },
+        .ob_item = { &_Py_ID(padded), &_Py_ID(wrapcol), &_Py_ID(alphabet), },
     };
     #undef NUM_KEYWORDS
     #define KWTUPLE (&_kwtuple.ob_base.ob_base)
@@ -869,16 +912,17 @@ binascii_b2a_base32(PyObject *module, PyObject *const *args, Py_ssize_t nargs, P
     #  define KWTUPLE NULL
     #endif  // !Py_BUILD_CORE
 
-    static const char * const _keywords[] = {"", "wrapcol", "alphabet", NULL};
+    static const char * const _keywords[] = {"", "padded", "wrapcol", "alphabet", NULL};
     static _PyArg_Parser _parser = {
         .keywords = _keywords,
         .fname = "b2a_base32",
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[3];
+    PyObject *argsbuf[4];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     Py_buffer data = {NULL, NULL};
+    int padded = 1;
     size_t wrapcol = 0;
     Py_buffer alphabet = {NULL, NULL};
 
@@ -894,18 +938,27 @@ binascii_b2a_base32(PyObject *module, PyObject *const *args, Py_ssize_t nargs, P
         goto skip_optional_kwonly;
     }
     if (args[1]) {
-        if (!_PyLong_Size_t_Converter(args[1], &wrapcol)) {
+        padded = PyObject_IsTrue(args[1]);
+        if (padded < 0) {
             goto exit;
         }
         if (!--noptargs) {
             goto skip_optional_kwonly;
         }
     }
-    if (PyObject_GetBuffer(args[2], &alphabet, PyBUF_SIMPLE) != 0) {
+    if (args[2]) {
+        if (!_PyLong_Size_t_Converter(args[2], &wrapcol)) {
+            goto exit;
+        }
+        if (!--noptargs) {
+            goto skip_optional_kwonly;
+        }
+    }
+    if (PyObject_GetBuffer(args[3], &alphabet, PyBUF_SIMPLE) != 0) {
         goto exit;
     }
 skip_optional_kwonly:
-    return_value = binascii_b2a_base32_impl(module, &data, wrapcol, &alphabet);
+    return_value = binascii_b2a_base32_impl(module, &data, padded, wrapcol, &alphabet);
 
 exit:
     /* Cleanup for data */
@@ -1581,4 +1634,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=197a0f70aa392d39 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=2acab1ceb0058b1a input=a9049054013a1b77]*/
