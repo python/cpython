@@ -664,6 +664,7 @@ class CBufferedReaderTest(BufferedReaderTest, SizeofTest, CTestCase):
         with self.assertRaisesRegex(ValueError, "raw stream has been detached"):
             bufio.seek(EvilIndex())
 
+
 class PyBufferedReaderTest(BufferedReaderTest, PyTestCase):
     tp = pyio.BufferedReader
 
