@@ -1,2 +1,2 @@
-Rename `_Py_DumpTraceback` and `_Py_DumpTracebackThreads` to
-`PyUnstable_DumpTraceback` and `PyUnstable_DumpTracebackThreads`.
+Rename ``_Py_DumpTraceback`` and ``_Py_DumpTracebackThreads`` to
+c:func:`PyUnstable_DumpTraceback` and c:func`PyUnstable_DumpTracebackThreads`.
