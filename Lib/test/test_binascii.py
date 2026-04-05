@@ -807,6 +807,8 @@ class BinASCIITest(unittest.TestCase):
         # 1-char partial groups are never produced by a conforming encoder
         with self.assertRaises(binascii.Error):
             binascii.a2b_base85(b'V', canonical=True)
+        # Digit 0 in a 1-char group exercises the explicit chunk_len==0
+        # guard (without it the division check would see 0/P == 0/P).
         with self.assertRaises(binascii.Error):
             binascii.a2b_base85(b'0', canonical=True)
 
@@ -817,22 +819,27 @@ class BinASCIITest(unittest.TestCase):
             decoded = binascii.a2b_base85(encoded, canonical=True)
             self.assertEqual(decoded, data)
 
-        # Non-canonical 2-char group (1 output byte)
-        canonical_enc = binascii.b2a_base85(b'a')
-        self.assertEqual(canonical_enc, b'VE')
-        # VF decodes to b'a' but is not canonical
-        with self.assertRaises(binascii.Error):
-            binascii.a2b_base85(b'VF', canonical=True)
+        # Test non-canonical rejection for each partial group size
+        # (2-char/1-byte, 3-char/2-byte, 4-char/3-byte).
+        # Incrementing the last digit by 1 produces a non-canonical
+        # encoding.  For 4-char groups (n_pad=1) a +1 can change the
+        # output byte, so we use b'ab\x00' whose canonical form allows
+        # a +1 that still decodes to the same 3 bytes.
+        for data in [b'a', b'ab', b'ab\x00']:
+            canonical_enc = binascii.b2a_base85(data)
+            non_canonical = (canonical_enc[:-1]
+                             + bytes([canonical_enc[-1] + 1]))
+            # Same decoded output without canonical check
+            self.assertEqual(binascii.a2b_base85(non_canonical), data)
+            # Rejected with canonical=True
+            with self.assertRaises(binascii.Error):
+                binascii.a2b_base85(non_canonical, canonical=True)
 
-        # Non-canonical 3-char group (2 output bytes)
-        canonical_enc = binascii.b2a_base85(b'ab')
-        decoded_canonical = binascii.a2b_base85(canonical_enc, canonical=True)
-        self.assertEqual(decoded_canonical, b'ab')
-        # Increment last digit to make non-canonical
-        non_canonical = canonical_enc[:-1] + bytes([canonical_enc[-1] + 1])
-        self.assertEqual(binascii.a2b_base85(non_canonical), b'ab')
-        with self.assertRaises(binascii.Error):
-            binascii.a2b_base85(non_canonical, canonical=True)
+        # Boundary bytes: \x00 and \xff for each partial group size
+        for data in [b'\x00', b'\x00\x00', b'\x00\x00\x00',
+                     b'\xff', b'\xff\xff', b'\xff\xff\xff']:
+            canonical_enc = binascii.b2a_base85(data)
+            binascii.a2b_base85(canonical_enc, canonical=True)
 
         # Full 5-char groups are always canonical (no padding bits)
         self.assertEqual(
@@ -849,6 +856,9 @@ class BinASCIITest(unittest.TestCase):
         # 1-char partial groups are never produced by a conforming encoder
         with self.assertRaises(binascii.Error):
             binascii.a2b_ascii85(b'@', canonical=True)
+        # Digit 0 ('!' in ascii85) exercises the explicit chunk_len==0 guard
+        with self.assertRaises(binascii.Error):
+            binascii.a2b_ascii85(b'!', canonical=True)
 
         # Verify round-trip: encode then decode with canonical=True works
         for data in [b'a', b'ab', b'abc', b'abcd', b'abcde',
@@ -857,11 +867,15 @@ class BinASCIITest(unittest.TestCase):
             decoded = binascii.a2b_ascii85(encoded, canonical=True)
             self.assertEqual(decoded, data)
 
-        # Non-canonical 2-char group
-        canonical_enc = binascii.b2a_ascii85(b'a')
-        self.assertEqual(canonical_enc, b'@/')
-        with self.assertRaises(binascii.Error):
-            binascii.a2b_ascii85(b'@0', canonical=True)
+        # Test non-canonical rejection for each partial group size.
+        # See test_base85_canonical for why b'ab\x00' is used for 3 bytes.
+        for data in [b'a', b'ab', b'ab\x00']:
+            canonical_enc = binascii.b2a_ascii85(data)
+            non_canonical = (canonical_enc[:-1]
+                             + bytes([canonical_enc[-1] + 1]))
+            self.assertEqual(binascii.a2b_ascii85(non_canonical), data)
+            with self.assertRaises(binascii.Error):
+                binascii.a2b_ascii85(non_canonical, canonical=True)
 
         # Full 5-char groups are always canonical
         self.assertEqual(
