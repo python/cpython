@@ -1511,6 +1511,24 @@ function pyconf_env_var(name, help_text) {
         # Python's Vars.__getattr__ fallback to os.environ.
         if (!(name in V) && name in ENV)
                 V[name] = ENV[name]
+        # Record in _pyconf_env_args if the variable is in the environment
+        # and not already recorded (matching autoconf precious-variable behaviour).
+        # Kept separate from _pyconf_config_args (command-line flags) so that
+        # _pyconf_resolve_exports() can combine them in the correct order:
+        # flags, then aliases (build_alias/host_alias), then env vars.
+        if (name in ENV && !_pyconf_config_args_has_var(name, _pyconf_env_args))
+                _pyconf_env_args = _pyconf_env_args \
+                        (_pyconf_env_args != "" ? " " : "") \
+                        _shell_quote(name "=" ENV[name])
+}
+
+function _pyconf_config_args_has_var(name, haystack) {
+        # Return 1 if haystack (or _pyconf_config_args) already contains a
+        # "name=..." entry.  _shell_quote wraps entries in single quotes, so
+        # each entry starts with "'name=".  Checking _pyconf_config_args as well
+        # prevents duplicates when a var is both an env var and a positional arg.
+        return index(haystack, "'" name "=") > 0 || \
+               index(_pyconf_config_args, "'" name "=") > 0
 }
 
 function pyconf_option_value(key) {
@@ -1652,7 +1670,7 @@ function _pyconf_arg_takes_value(key) {
                 key == "host" || key == "build" || key == "target")
 }
 
-function pyconf_parse_args(    i, arg, key, val, opt_key, eq_pos, config_args) {
+function pyconf_parse_args(    i, arg, key, val, opt_key, eq_pos, config_args, bp, n_bp) {
         config_args = ""
         for (i = 1; i < ARGC; i++) {
                 arg = ARGV[i]
@@ -1733,6 +1751,13 @@ function pyconf_parse_args(    i, arg, key, val, opt_key, eq_pos, config_args) {
                 ARGV[i] = ""
         }
         _pyconf_config_args = config_args
+        # Register built-in autoconf precious variables in the same order as
+        # configure.ac's ac_precious_vars.  Done after the arg loop so that
+        # positional VAR=VALUE args (already in _pyconf_config_args) prevent
+        # duplicates via _pyconf_config_args_has_var().
+        n_bp = split("PKG_CONFIG PKG_CONFIG_PATH PKG_CONFIG_LIBDIR CC CFLAGS LDFLAGS LIBS CPPFLAGS CPP", bp, " ")
+        for (i = 1; i <= n_bp; i++)
+                pyconf_env_var(bp[i])
 }
 
 function pyconf_check_help() {
@@ -1847,10 +1872,18 @@ function _pyconf_build_module_block(    i, key, uname, state, block) {
         SUBST["MODULE_BLOCK"] = block
 }
 
-function _pyconf_resolve_exports(    k) {
-        # Finalize CONFIG_ARGS from parsed command-line arguments
-        if (_pyconf_config_args != "")
-                V["CONFIG_ARGS"] = _pyconf_config_args
+function _pyconf_resolve_exports(    k, all_args, sep) {
+        # Build CONFIG_ARGS in the same order as autoconf's ac_configure_args:
+        #   1. explicit command-line flags (_pyconf_config_args)
+        #   2. build_alias / host_alias (_pyconf_alias_args)
+        #   3. precious env vars (CC, PKG_CONFIG_PATH, …) (_pyconf_env_args)
+        all_args = _pyconf_config_args
+        if (_pyconf_alias_args != "")
+                all_args = all_args (all_args != "" ? " " : "") _pyconf_alias_args
+        if (_pyconf_env_args != "")
+                all_args = all_args (all_args != "" ? " " : "") _pyconf_env_args
+        if (all_args != "")
+                V["CONFIG_ARGS"] = all_args
         for (k in V) {
                 if (!(k in SUBST))
                         SUBST[k] = V[k]
@@ -2255,6 +2288,19 @@ function pyconf_canonical_host(    result, guess, csub, parts, n, host_arg, buil
                 pyconf_host_cpu = parts[1]
                 pyconf_cross_compiling = "no"
         }
+
+        # Record build_alias / host_alias when --build/--host were given
+        # (matching autoconf's precious-variable behaviour).  Use a separate
+        # accumulator so _pyconf_resolve_exports() can order them after the
+        # explicit flags but before the env-var entries.
+        if (build_arg != "" && !_pyconf_config_args_has_var("build_alias", _pyconf_alias_args))
+                _pyconf_alias_args = _pyconf_alias_args \
+                        (_pyconf_alias_args != "" ? " " : "") \
+                        _shell_quote("build_alias=" build_arg)
+        if (host_arg != "" && !_pyconf_config_args_has_var("host_alias", _pyconf_alias_args))
+                _pyconf_alias_args = _pyconf_alias_args \
+                        (_pyconf_alias_args != "" ? " " : "") \
+                        _shell_quote("host_alias=" host_arg)
 }
 
 function pyconf_find_compiler(user_cc, user_cpp, cc, cpp, ver) {

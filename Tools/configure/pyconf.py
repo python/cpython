@@ -261,21 +261,21 @@ def init_args() -> None:
     _original_config_args = [
         a for a in sys.argv[1:] if not a.startswith("--srcdir")
     ]
-    # Register built-in autoconf precious variables.  User-level precious
-    # variables (MACHDEP, PROFILE_TASK, GDBM_CFLAGS, …) are registered via
-    # env_var() calls in the configure_*.py files instead.
+    # Register built-in autoconf precious variables in the same order as
+    # configure.ac's ac_precious_vars list (PKG_CONFIG before CC, no CXX/CXXFLAGS
+    # since configure.ac does not call AC_ARG_VAR for those).  User-level
+    # precious variables (MACHDEP, PROFILE_TASK, GDBM_CFLAGS, …) are registered
+    # via env_var() calls in the configure_*.py files instead.
     for pvar in [
+        "PKG_CONFIG",
+        "PKG_CONFIG_PATH",
+        "PKG_CONFIG_LIBDIR",
         "CC",
         "CFLAGS",
-        "CXX",
-        "CXXFLAGS",
-        "CPP",
-        "CPPFLAGS",
         "LDFLAGS",
         "LIBS",
-        "PKG_CONFIG",
-        "PKG_CONFIG_LIBDIR",
-        "PKG_CONFIG_PATH",
+        "CPPFLAGS",
+        "CPP",
     ]:
         env_var(pvar)
 
@@ -1704,6 +1704,40 @@ def canonical_host() -> None:
         host = build
         host_cpu = build_cpu
         cross_compiling = False
+
+    # Record build_alias / host_alias in CONFIG_ARGS when --build/--host were
+    # given on the command line (matching autoconf's precious-variable behaviour).
+    # Insert before the first VAR=VALUE env-var entry so the order matches
+    # autoconf: flags first, then aliases, then env vars.
+    present = {
+        a.split("=", 1)[0]
+        for a in _original_config_args
+        if "=" in a and not a.startswith("-")
+    }
+    if build_arg and "build_alias" not in present:
+        # Find insertion point: just before the first NAME=VALUE entry.
+        insert_pos = next(
+            (
+                i
+                for i, a in enumerate(_original_config_args)
+                if "=" in a and not a.startswith("-")
+            ),
+            len(_original_config_args),
+        )
+        _original_config_args.insert(insert_pos, f"build_alias={build_arg}")
+        insert_pos += 1
+        if host_arg and "host_alias" not in present:
+            _original_config_args.insert(insert_pos, f"host_alias={host_arg}")
+    elif host_arg and "host_alias" not in present:
+        insert_pos = next(
+            (
+                i
+                for i, a in enumerate(_original_config_args)
+                if "=" in a and not a.startswith("-")
+            ),
+            len(_original_config_args),
+        )
+        _original_config_args.insert(insert_pos, f"host_alias={host_arg}")
 
 
 def _fallback_triplet() -> str:

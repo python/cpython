@@ -1548,6 +1548,24 @@ function pyconf_env_var(name, help_text) {
         # Python's Vars.__getattr__ fallback to os.environ.
         if (!(name in V) && name in ENV)
                 V[name] = ENV[name]
+        # Record in _pyconf_env_args if the variable is in the environment
+        # and not already recorded (matching autoconf precious-variable behaviour).
+        # Kept separate from _pyconf_config_args (command-line flags) so that
+        # _pyconf_resolve_exports() can combine them in the correct order:
+        # flags, then aliases (build_alias/host_alias), then env vars.
+        if (name in ENV && !_pyconf_config_args_has_var(name, _pyconf_env_args))
+                _pyconf_env_args = _pyconf_env_args \
+                        (_pyconf_env_args != "" ? " " : "") \
+                        _shell_quote(name "=" ENV[name])
+}
+
+function _pyconf_config_args_has_var(name, haystack) {
+        # Return 1 if haystack (or _pyconf_config_args) already contains a
+        # "name=..." entry.  _shell_quote wraps entries in single quotes, so
+        # each entry starts with "'name=".  Checking _pyconf_config_args as well
+        # prevents duplicates when a var is both an env var and a positional arg.
+        return index(haystack, "'" name "=") > 0 || \
+               index(_pyconf_config_args, "'" name "=") > 0
 }
 
 function pyconf_option_value(key) {
@@ -1689,7 +1707,7 @@ function _pyconf_arg_takes_value(key) {
                 key == "host" || key == "build" || key == "target")
 }
 
-function pyconf_parse_args(    i, arg, key, val, opt_key, eq_pos, config_args) {
+function pyconf_parse_args(    i, arg, key, val, opt_key, eq_pos, config_args, bp, n_bp) {
         config_args = ""
         for (i = 1; i < ARGC; i++) {
                 arg = ARGV[i]
@@ -1770,6 +1788,13 @@ function pyconf_parse_args(    i, arg, key, val, opt_key, eq_pos, config_args) {
                 ARGV[i] = ""
         }
         _pyconf_config_args = config_args
+        # Register built-in autoconf precious variables in the same order as
+        # configure.ac's ac_precious_vars.  Done after the arg loop so that
+        # positional VAR=VALUE args (already in _pyconf_config_args) prevent
+        # duplicates via _pyconf_config_args_has_var().
+        n_bp = split("PKG_CONFIG PKG_CONFIG_PATH PKG_CONFIG_LIBDIR CC CFLAGS LDFLAGS LIBS CPPFLAGS CPP", bp, " ")
+        for (i = 1; i <= n_bp; i++)
+                pyconf_env_var(bp[i])
 }
 
 function pyconf_check_help() {
@@ -1884,10 +1909,18 @@ function _pyconf_build_module_block(    i, key, uname, state, block) {
         SUBST["MODULE_BLOCK"] = block
 }
 
-function _pyconf_resolve_exports(    k) {
-        # Finalize CONFIG_ARGS from parsed command-line arguments
-        if (_pyconf_config_args != "")
-                V["CONFIG_ARGS"] = _pyconf_config_args
+function _pyconf_resolve_exports(    k, all_args, sep) {
+        # Build CONFIG_ARGS in the same order as autoconf's ac_configure_args:
+        #   1. explicit command-line flags (_pyconf_config_args)
+        #   2. build_alias / host_alias (_pyconf_alias_args)
+        #   3. precious env vars (CC, PKG_CONFIG_PATH, …) (_pyconf_env_args)
+        all_args = _pyconf_config_args
+        if (_pyconf_alias_args != "")
+                all_args = all_args (all_args != "" ? " " : "") _pyconf_alias_args
+        if (_pyconf_env_args != "")
+                all_args = all_args (all_args != "" ? " " : "") _pyconf_env_args
+        if (all_args != "")
+                V["CONFIG_ARGS"] = all_args
         for (k in V) {
                 if (!(k in SUBST))
                         SUBST[k] = V[k]
@@ -2292,6 +2325,19 @@ function pyconf_canonical_host(    result, guess, csub, parts, n, host_arg, buil
                 pyconf_host_cpu = parts[1]
                 pyconf_cross_compiling = "no"
         }
+
+        # Record build_alias / host_alias when --build/--host were given
+        # (matching autoconf's precious-variable behaviour).  Use a separate
+        # accumulator so _pyconf_resolve_exports() can order them after the
+        # explicit flags but before the env-var entries.
+        if (build_arg != "" && !_pyconf_config_args_has_var("build_alias", _pyconf_alias_args))
+                _pyconf_alias_args = _pyconf_alias_args \
+                        (_pyconf_alias_args != "" ? " " : "") \
+                        _shell_quote("build_alias=" build_arg)
+        if (host_arg != "" && !_pyconf_config_args_has_var("host_alias", _pyconf_alias_args))
+                _pyconf_alias_args = _pyconf_alias_args \
+                        (_pyconf_alias_args != "" ? " " : "") \
+                        _shell_quote("host_alias=" host_arg)
 }
 
 function pyconf_find_compiler(user_cc, user_cpp, cc, cpp, ver) {
@@ -3494,7 +3540,7 @@ function u_setup_expat(    _opt_result, with_system_expat) {
     v_export("LIBEXPAT_INTERNAL")
 }
 
-function u_detect_libffi(    ac_cv_ffi_complex_double_supported, ctypes_malloc_closure, ffi_h, found_ffi_h, output, parts, pkg, sdkroot, status, _ar_4, _ar_5) {
+function u_detect_libffi(    ac_cv_ffi_complex_double_supported, ctypes_malloc_closure, ffi_inc, found_ffi_h, output, parts, pkg, sdkroot, status, _ar_4, _ar_5) {
     delete _ar_4
     delete _ar_5
     V["have_libffi"] = "missing"
@@ -3503,12 +3549,17 @@ function u_detect_libffi(    ac_cv_ffi_complex_double_supported, ctypes_malloc_c
     V["MODULE__CTYPES_MALLOC_CLOSURE"] = ""
     if ((V["ac_sys_system"] == "Darwin")) {
         sdkroot = V["SDKROOT"]
-        ffi_h = (((sdkroot != "") && (sdkroot != "no")) ? sdkroot "/usr/include/ffi/ffi.h" : "/usr/include/ffi/ffi.h")
-        if (pyconf_path_is_file(ffi_h)) {
-            V["have_libffi"] = "yes"
-            V["LIBFFI_CFLAGS"] = "-I" sdkroot "/usr/include/ffi -DUSING_APPLE_OS_LIBFFI=1"
-            V["LIBFFI_LIBS"] = "-lffi"
+        ffi_inc = (((sdkroot != "") && (sdkroot != "no")) ? sdkroot "/usr/include/ffi" : "/usr/include/ffi")
+        pyconf_save_env()
+        V["CFLAGS"] = _str_strip("-I" ffi_inc " " V["CFLAGS"])
+        if (pyconf_check_header("ffi.h")) {
+            if (pyconf_check_lib("ffi", "ffi_call", "", "")) {
+                V["have_libffi"] = "yes"
+                V["LIBFFI_CFLAGS"] = "-I" ffi_inc " -DUSING_APPLE_OS_LIBFFI=1"
+                V["LIBFFI_LIBS"] = "-lffi"
+            }
         }
+        pyconf_restore_env()
     }
     if ((V["have_libffi"] == "missing")) {
         pkg = pyconf_find_prog("pkg-config")
@@ -3744,7 +3795,7 @@ function u_detect_tcltk(    _i_q, output, parts, pkg, q, status, x11_cflags, x11
     v_export("TCLTK_LIBS")
 }
 
-function u_detect_uuid(    LIBUUID_CFLAGS, LIBUUID_LIBS, ac_cv_have_uuid_generate_time_safe, ac_cv_have_uuid_h, ac_cv_have_uuid_uuid_h, found, has_create, has_enc_be, have_uuid, node1, node2, pkg, save_CPPFLAGS, save_LIBS, uuid_node_src) {
+function u_detect_uuid(    LIBUUID_CFLAGS, LIBUUID_LIBS, ac_cv_have_uuid_generate_time_safe, ac_cv_have_uuid_h, ac_cv_have_uuid_uuid_h, found, has_create, has_enc_be, have_uuid, node1, node2, pkg, uuid_node_src) {
     ac_cv_have_uuid_h = "no"
     ac_cv_have_uuid_uuid_h = "no"
     ac_cv_have_uuid_generate_time_safe = "no"
@@ -3775,8 +3826,7 @@ function u_detect_uuid(    LIBUUID_CFLAGS, LIBUUID_LIBS, ac_cv_have_uuid_generat
             LIBUUID_CFLAGS = V["LIBUUID_CFLAGS"]
             LIBUUID_LIBS = V["LIBUUID_LIBS"]
         } else {
-            save_CPPFLAGS = V["CPPFLAGS"]
-            save_LIBS = V["LIBS"]
+            pyconf_save_env()
             V["CPPFLAGS"] = _str_strip(V["CPPFLAGS"] " " LIBUUID_CFLAGS)
             V["LIBS"] = _str_strip(V["LIBS"] " " LIBUUID_LIBS)
             delete _va22
@@ -3795,8 +3845,7 @@ function u_detect_uuid(    LIBUUID_CFLAGS, LIBUUID_LIBS, ac_cv_have_uuid_generat
             if ((have_uuid == "yes")) {
                 LIBUUID_LIBS = ((LIBUUID_LIBS != "") ? LIBUUID_LIBS : "-luuid")
             }
-            V["CPPFLAGS"] = save_CPPFLAGS
-            V["LIBS"] = save_LIBS
+            pyconf_restore_env()
         }
     }
     if ((have_uuid == "missing")) {
@@ -6242,10 +6291,12 @@ function u_generate_output(    cc, host, srcdir_rel) {
     pyconf_config_files_x(_va57)
     pyconf_output()
     if ((!((pyconf_no_create != "") && (pyconf_no_create != "no")))) {
+        pyconf_notice("creating Modules/Setup.local")
         if ((!pyconf_path_exists("Modules/Setup.local"))) {
             pyconf_write_file("Modules/Setup.local", "# Edit this file for local setup changes\n")
         }
         srcdir_rel = ((V["srcdir"] != "") ? V["srcdir"] : ".")
+        pyconf_notice("creating Makefile")
         delete _va58
         _va58[1] = "/bin/sh"
         _va58[2] = srcdir_rel "/Modules/makesetup"
@@ -6264,7 +6315,7 @@ function u_generate_output(    cc, host, srcdir_rel) {
         pyconf_rename_file("config.c", "Modules/config.c")
     }
     if ((!((V["PKG_CONFIG"] != "") && (V["PKG_CONFIG"] != "no")))) {
-        print "pkg-config is missing. Some dependencies may not be detected correctly." > "/dev/stderr"
+        pyconf_warn("pkg-config is missing. Some dependencies may not be detected correctly.")
     }
     if (((V["Py_OPT"] != "yes") && (V["Py_DEBUG"] != "yes"))) {
         pyconf_notice("\nIf you want a release build with all stable optimizations active (PGO, etc),\nplease run ./configure --enable-optimizations\n")
@@ -6272,10 +6323,10 @@ function u_generate_output(    cc, host, srcdir_rel) {
     if ((V["PY_SUPPORT_TIER"] == 0)) {
         cc = V["ac_cv_cc_name"]
         host = V["host"]
-        print "Platform \"" host "\" with compiler \"" cc "\" is not supported by the CPython core team, see https://peps.python.org/pep-0011/ for more information." > "/dev/stderr"
+        pyconf_warn("Platform \"" host "\" with compiler \"" cc "\" is not supported by the CPython core team, see https://peps.python.org/pep-0011/ for more information.")
     }
     if ((!((V["ac_cv_header_stdatomic_h"] != "") && (V["ac_cv_header_stdatomic_h"] != "no")))) {
-        print "Your compiler or platform does not have a working C11 stdatomic.h. A future version of Python may require stdatomic.h."
+        pyconf_notice("Your compiler or platform does not have a working C11 stdatomic.h. A future version of Python may require stdatomic.h.")
     }
 }
 
@@ -7247,7 +7298,7 @@ function u_check_getrandom() {
     }
 }
 
-function u_check_openssl(    LIBCRYPTO_LIBS_len, _i_arg, _i_f, _i_p, _n_arg, _n_f, _n_p, arg, f, found_ssl, inc_flags, inc_parts_len, lib_flags, lib_parts_len, libname, new_ssl_libs_len, openssl_rpath_opt, p, pc_cflags, pc_ldflags, pc_libs, pkg_config, rpath_arg, s1, s2, s3, ssl_dir, ssl_h_paths, with_openssl, working_hashlib, working_ssl, LIBCRYPTO_LIBS, _ar_33, _ar_34, _ar_35, _as_36, _as_37, _as_38, _as_39, _as_40, _as_41, inc_parts, lib_parts, new_ssl_libs) {
+function u_check_openssl(    LIBCRYPTO_LIBS_len, _i_arg, _i_f, _i_ssldir, _n_arg, _n_f, _n_ssldir, arg, f, found_ssl, inc_flags, inc_parts_len, lib_flags, lib_parts_len, libname, new_ssl_libs_len, openssl_rpath_opt, pc_cflags, pc_ldflags, pc_libs, pkg_config, rpath_arg, s1, s2, s3, ssl_dir, ssl_dirs, ssldir, with_openssl, working_hashlib, working_ssl, LIBCRYPTO_LIBS, _ar_33, _ar_34, _ar_35, _as_36, _as_37, _as_38, _as_39, _as_40, _as_41, inc_parts, lib_parts, new_ssl_libs) {
     delete LIBCRYPTO_LIBS
     delete _ar_33
     delete _ar_34
@@ -7333,26 +7384,26 @@ function u_check_openssl(    LIBCRYPTO_LIBS_len, _i_arg, _i_f, _i_p, _n_arg, _n_
                 pyconf_result("no")
             }
         } else {
-            ssl_h_paths = "/usr/include" " " "/usr/local/include" " " "/usr/include/openssl" " " "/usr/local/include/openssl"
+            ssl_dirs = "/usr/local/ssl" " " "/usr/lib/ssl" " " "/usr/ssl" " " "/usr/pkg" " " "/usr/local" " " "/usr"
             found_ssl = "no"
-            _n_p = split(ssl_h_paths, _as_38, " ")
-            for (_i_p = 1; (_i_p <= _n_p); _i_p = (_i_p + 1)) {
-                p = _as_38[_i_p]
+            _n_ssldir = split(ssl_dirs, _as_38, " ")
+            for (_i_ssldir = 1; (_i_ssldir <= _n_ssldir); _i_ssldir = (_i_ssldir + 1)) {
+                ssldir = _as_38[_i_ssldir]
                 delete _va76
-                _va76[1] = p
-                _va76[2] = "openssl/ssl.h"
+                _va76[1] = ssldir
+                _va76[2] = "include/openssl/ssl.h"
                 _va76[0] = 2
                 if (pyconf_path_exists(pyconf_path_join(_va76))) {
+                    V["OPENSSL_INCLUDES"] = "-I" ssldir "/include"
+                    V["OPENSSL_LDFLAGS"] = "-L" ssldir "/lib"
+                    V["OPENSSL_LIBS"] = "-lssl -lcrypto"
+                    V["have_openssl"] = "yes"
                     found_ssl = "yes"
                     break
                 }
             }
             pyconf_checking("whether compiling and linking against OpenSSL works")
             if (((found_ssl != "") && (found_ssl != "no"))) {
-                V["OPENSSL_INCLUDES"] = ""
-                V["OPENSSL_LIBS"] = "-lssl -lcrypto"
-                V["OPENSSL_LDFLAGS"] = ""
-                V["have_openssl"] = "yes"
                 pyconf_result("yes")
             } else {
                 pyconf_result("no")

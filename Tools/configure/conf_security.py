@@ -146,26 +146,32 @@ def check_openssl(v):
                 )
                 pyconf.result("no")
         else:
-            # Try default system paths
-            ssl_h_paths = [
-                "/usr/include",
-                "/usr/local/include",
-                "/usr/include/openssl",
-                "/usr/local/include/openssl",
+            # No pkg-config: search default ssldirs (matching AX_CHECK_OPENSSL).
+            # For each candidate root, check $ssldir/include/openssl/ssl.h and
+            # set OPENSSL_INCLUDES / OPENSSL_LDFLAGS accordingly.
+            ssl_dirs = [
+                "/usr/local/ssl",
+                "/usr/lib/ssl",
+                "/usr/ssl",
+                "/usr/pkg",
+                "/usr/local",
+                "/usr",
             ]
             found_ssl = False
-            for p in ssl_h_paths:
-                if pyconf.path_exists(pyconf.path_join([p, "openssl/ssl.h"])):
+            for ssldir in ssl_dirs:
+                if pyconf.path_exists(
+                    pyconf.path_join([ssldir, "include/openssl/ssl.h"])
+                ):
+                    v.OPENSSL_INCLUDES = f"-I{ssldir}/include"
+                    v.OPENSSL_LDFLAGS = f"-L{ssldir}/lib"
+                    v.OPENSSL_LIBS = "-lssl -lcrypto"
+                    v.have_openssl = True
                     found_ssl = True
                     break
             pyconf.checking(
                 "whether compiling and linking against OpenSSL works"
             )
             if found_ssl:
-                v.OPENSSL_INCLUDES = ""
-                v.OPENSSL_LIBS = "-lssl -lcrypto"
-                v.OPENSSL_LDFLAGS = ""
-                v.have_openssl = True
                 pyconf.result("yes")
             else:
                 pyconf.result("no")

@@ -54,10 +54,27 @@ echo ""
 DIFFS=0
 for f in $FILES; do
     echo "=== diff $f ==="
-    if diff $DIFF_OPTS "$OLD_DIR/$f" "$NEW_DIR/$f"; then
-        echo "(no differences)"
+    # For Makefile.pre, strip blank lines before comparing.  configure-old (the
+    # autoconf-generated script) sometimes emits spurious blank lines between
+    # module entries as an m4/_AS_QUOTE expansion artifact; configure.py does
+    # not.  Use temp files so the approach works on OpenBSD (no diff -B).
+    if [ "$f" = "Makefile.pre" ]; then
+        _old_tmp=$(mktemp)
+        _new_tmp=$(mktemp)
+        grep -v '^$' "$OLD_DIR/$f" > "$_old_tmp" || true
+        grep -v '^$' "$NEW_DIR/$f" > "$_new_tmp" || true
+        if diff $DIFF_OPTS "$_old_tmp" "$_new_tmp"; then
+            echo "(no differences)"
+        else
+            DIFFS=$((DIFFS + 1))
+        fi
+        rm -f "$_old_tmp" "$_new_tmp"
     else
-        DIFFS=$((DIFFS + 1))
+        if diff $DIFF_OPTS "$OLD_DIR/$f" "$NEW_DIR/$f"; then
+            echo "(no differences)"
+        else
+            DIFFS=$((DIFFS + 1))
+        fi
     fi
     echo ""
 done
