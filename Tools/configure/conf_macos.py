@@ -101,7 +101,9 @@ def setup_universalsdk(v):
     if usdk_raw is not None:
         if usdk_raw == "yes":
             # Locate the best usable SDK, see Mac/README for more information
-            val = pyconf.cmd_output(
+            # Use cmd_status so xcodebuild failure is ignored (matches
+            # configure.ac: /usr/bin/xcodebuild ... 2>/dev/null).
+            _, val = pyconf.cmd_status(
                 ["/usr/bin/xcodebuild", "-version", "-sdk", "macosx", "Path"]
             )
             if ".sdk" not in val:
@@ -471,6 +473,7 @@ def _setup_darwin_flags(v):
     """Darwin-specific compiler flags, universal SDK, and deployment target."""
     # -Wno-long-double, -no-cpp-precomp, and -mno-fused-madd
     # used to be here, but non-Apple gcc doesn't accept them.
+    pyconf.checking("which compiler should be used")
     if v.UNIVERSALSDK.endswith("/MacOSX10.4u.sdk"):
         # Build using 10.4 SDK, force usage of gcc when the compiler is gcc,
         # otherwise the user will get very confusing error messages when building on OSX 10.6

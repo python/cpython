@@ -4571,8 +4571,9 @@ function u_setup_ios_cross_tools() {
     }
 }
 
-function u_setup_universalsdk(    _, dylib, enable_universalsdk, file_out, usdk_raw, val, _ar_17) {
+function u_setup_universalsdk(    _, dylib, enable_universalsdk, file_out, usdk_raw, val, _ar_17, _ar_18) {
     delete _ar_17
+    delete _ar_18
     pyconf_checking("for --enable-universalsdk")
     usdk_raw = pyconf_option_value("enable_universalsdk")
     V["UNIVERSALSDK"] = ""
@@ -4586,7 +4587,9 @@ function u_setup_universalsdk(    _, dylib, enable_universalsdk, file_out, usdk_
             _va29[4] = "macosx"
             _va29[5] = "Path"
             _va29[0] = 5
-            val = pyconf_cmd_output(_va29)
+            pyconf_cmd_status(_va29, _ar_17)
+            _ = _ar_17[0]
+            val = _ar_17[1]
             if ((!(index(val, ".sdk") > 0))) {
                 val = "/Developer/SDKs/MacOSX10.4u.sdk"
                 if ((!pyconf_path_is_dir(val))) {
@@ -4630,9 +4633,9 @@ function u_setup_universalsdk(    _, dylib, enable_universalsdk, file_out, usdk_
         _va31[2] = "-L"
         _va31[3] = dylib
         _va31[0] = 3
-        pyconf_cmd_status(_va31, _ar_17)
-        _ = _ar_17[0]
-        file_out = _ar_17[1]
+        pyconf_cmd_status(_va31, _ar_18)
+        _ = _ar_18[0]
+        file_out = _ar_18[1]
         if ((!(index(file_out, "ppc") > 0))) {
             V["UNIVERSAL_ARCHS"] = "intel"
         }
@@ -4950,6 +4953,7 @@ function u_check_dyld() {
 }
 
 function u__setup_darwin_flags() {
+    pyconf_checking("which compiler should be used")
     if (_str_endswith(V["UNIVERSALSDK"], "/MacOSX10.4u.sdk")) {
         V["CC"] = "gcc-4.0"
         V["CPP"] = "cpp-4.0"
@@ -5180,20 +5184,20 @@ function u_check_gcc_asm_and_floating_point(    ac_cv_gcc_asm_for_mc68881, ac_cv
     }
 }
 
-function u_check_c99_math(    _i_mfunc, found, libs_save, mfunc, _al_18) {
-    delete _al_18
+function u_check_c99_math(    _i_mfunc, found, libs_save, mfunc, _al_19) {
+    delete _al_19
     libs_save = V["LIBS"]
     V["LIBS"] = _str_strip(V["LIBS"] " " V["LIBM"])
-    _al_18[1] = "acosh"
-    _al_18[2] = "asinh"
-    _al_18[3] = "atanh"
-    _al_18[4] = "erf"
-    _al_18[5] = "erfc"
-    _al_18[6] = "expm1"
-    _al_18[7] = "log1p"
-    _al_18[8] = "log2"
+    _al_19[1] = "acosh"
+    _al_19[2] = "asinh"
+    _al_19[3] = "atanh"
+    _al_19[4] = "erf"
+    _al_19[5] = "erfc"
+    _al_19[6] = "expm1"
+    _al_19[7] = "log1p"
+    _al_19[8] = "log2"
     for (_i_mfunc = 1; (_i_mfunc <= 8); _i_mfunc = (_i_mfunc + 1)) {
-        mfunc = _al_18[_i_mfunc]
+        mfunc = _al_19[_i_mfunc]
         pyconf_checking("for " mfunc)
         found = (pyconf_check_func(mfunc, "", "") ? "yes" : "no")
         pyconf_result(found)
@@ -5225,8 +5229,8 @@ function u_check_big_digits(    big_digits_raw, enable_big_digits) {
     }
 }
 
-function u_check_wchar(    _i_line, _n_line, ac_cv_wchar_t_signed, has_wchar, line, os_name, os_release_content, wchar_size, wchar_unsigned, _as_19, _split_tmp) {
-    delete _as_19
+function u_check_wchar(    _i_line, _n_line, ac_cv_wchar_t_signed, has_wchar, line, os_name, os_release_content, wchar_size, wchar_unsigned, _as_20, _split_tmp) {
+    delete _as_20
     delete _split_tmp
     pyconf_checking("for wchar.h")
     has_wchar = (pyconf_check_header("wchar.h") ? "yes" : "no")
@@ -5257,9 +5261,9 @@ function u_check_wchar(    _i_line, _n_line, ac_cv_wchar_t_signed, has_wchar, li
         if (pyconf_path_is_file("/etc/os-release")) {
             os_release_content = pyconf_read_file("/etc/os-release")
             os_name = ""
-            _n_line = split(os_release_content, _as_19, "\n")
+            _n_line = split(os_release_content, _as_20, "\n")
             for (_i_line = 1; (_i_line <= _n_line); _i_line = (_i_line + 1)) {
-                line = _as_19[_i_line]
+                line = _as_20[_i_line]
                 if (_str_startswith(line, "NAME=")) {
                     os_name = _str_strip(_str_strip(_split_index(line, "=", 2)))
                     break
@@ -5279,9 +5283,9 @@ function u__use_bundled_libmpdec() {
     V["have_mpdec"] = "yes"
 }
 
-function u_detect_libmpdec(    _i_p, _n_p, _opt_result, ac_cv_gcc_asm_for_x64, ac_cv_gcc_asm_for_x87, ac_cv_sizeof_size_t, ac_cv_type___uint128_t, cc_name, cflags_parts_len, found_pkg, libmpdec_machine, libmpdec_system, libs_parts_len, output, p, parts, pkg, status, with_decimal_contextvar, with_pydebug, with_system_libmpdec, _ar_20, _as_21, cflags_parts, libs_parts, mflags) {
-    delete _ar_20
-    delete _as_21
+function u_detect_libmpdec(    _i_p, _n_p, _opt_result, ac_cv_gcc_asm_for_x64, ac_cv_gcc_asm_for_x87, ac_cv_sizeof_size_t, ac_cv_type___uint128_t, cc_name, cflags_parts_len, found_pkg, libmpdec_machine, libmpdec_system, libs_parts_len, output, p, parts, pkg, status, with_decimal_contextvar, with_pydebug, with_system_libmpdec, _ar_21, _as_22, cflags_parts, libs_parts, mflags) {
+    delete _ar_21
+    delete _as_22
     delete cflags_parts
     delete libs_parts
     delete mflags
@@ -5310,14 +5314,14 @@ function u_detect_libmpdec(    _i_p, _n_p, _opt_result, ac_cv_gcc_asm_for_x64, a
                 _va43[3] = "--libs"
                 _va43[4] = "libmpdec"
                 _va43[0] = 4
-                pyconf_cmd_status(_va43, _ar_20)
-                status = _ar_20[0]
-                output = _ar_20[1]
+                pyconf_cmd_status(_va43, _ar_21)
+                status = _ar_21[0]
+                output = _ar_21[1]
                 if ((status == 0)) {
                     parts = output
-                    _n_p = split(parts, _as_21, " ")
+                    _n_p = split(parts, _as_22, " ")
                     for (_i_p = 1; (_i_p <= _n_p); _i_p = (_i_p + 1)) {
-                        p = _as_21[_i_p]
+                        p = _as_22[_i_p]
                         if ((_str_startswith(p, "-I") || _str_startswith(p, "-D"))) {
                             cflags_parts[(cflags_parts_len + 1)] = p
                             cflags_parts_len = (cflags_parts_len + 1)
@@ -5683,8 +5687,8 @@ function u_check_network_libs(    libs_val) {
     }
 }
 
-function u_check_ipv6(    BASECFLAGS, _i_i, i, ipv6lib, ipv6libdir, ipv6trylibc, ipv6type, libpath, netconfig_content, _al_22) {
-    delete _al_22
+function u_check_ipv6(    BASECFLAGS, _i_i, i, ipv6lib, ipv6libdir, ipv6trylibc, ipv6type, libpath, netconfig_content, _al_23) {
+    delete _al_23
     pyconf_checking("if --enable-ipv6 is specified")
     if (pyconf_option_is_no("enable_ipv6")) {
         pyconf_result("no")
@@ -5722,16 +5726,16 @@ function u_check_ipv6(    BASECFLAGS, _i_i, i, ipv6lib, ipv6libdir, ipv6trylibc,
     ipv6trylibc = "no"
     BASECFLAGS = V["BASECFLAGS"]
     if ((((V["ipv6"] != "") && (V["ipv6"] != "no")) && (!((pyconf_cross_compiling != "") && (pyconf_cross_compiling != "no"))))) {
-        _al_22[1] = "inria"
-        _al_22[2] = "kame"
-        _al_22[3] = "linux-glibc"
-        _al_22[4] = "linux-inet6"
-        _al_22[5] = "solaris"
-        _al_22[6] = "toshiba"
-        _al_22[7] = "v6d"
-        _al_22[8] = "zeta"
+        _al_23[1] = "inria"
+        _al_23[2] = "kame"
+        _al_23[3] = "linux-glibc"
+        _al_23[4] = "linux-inet6"
+        _al_23[5] = "solaris"
+        _al_23[6] = "toshiba"
+        _al_23[7] = "v6d"
+        _al_23[8] = "zeta"
         for (_i_i = 1; (_i_i <= 8); _i_i = (_i_i + 1)) {
-            i = _al_22[_i_i]
+            i = _al_23[_i_i]
             if (((i == "kame") && pyconf_check_define("netinet/in.h", "__KAME__"))) {
                 ipv6type = i
                 ipv6lib = "inet6"
@@ -5820,34 +5824,34 @@ function u__check_socket_func(_func_) {
     pyconf_result((pyconf_check_func(_func_, "sys/types.h sys/socket.h netinet/in.h arpa/inet.h", "") ? "yes" : "no"))
 }
 
-function u_check_netdb_socket_funcs(    _i_f, f, _al_23, _al_24) {
-    delete _al_23
+function u_check_netdb_socket_funcs(    _i_f, f, _al_24, _al_25) {
     delete _al_24
-    _al_23[1] = "hstrerror"
-    _al_23[2] = "getservbyname"
-    _al_23[3] = "getservbyport"
-    _al_23[4] = "gethostbyname"
-    _al_23[5] = "gethostbyaddr"
-    _al_23[6] = "getprotobyname"
+    delete _al_25
+    _al_24[1] = "hstrerror"
+    _al_24[2] = "getservbyname"
+    _al_24[3] = "getservbyport"
+    _al_24[4] = "gethostbyname"
+    _al_24[5] = "gethostbyaddr"
+    _al_24[6] = "getprotobyname"
     for (_i_f = 1; (_i_f <= 6); _i_f = (_i_f + 1)) {
-        f = _al_23[_i_f]
+        f = _al_24[_i_f]
         u__check_netdb_func(f)
     }
-    _al_24[1] = "inet_aton"
-    _al_24[2] = "inet_ntoa"
-    _al_24[3] = "inet_pton"
-    _al_24[4] = "getpeername"
-    _al_24[5] = "getsockname"
-    _al_24[6] = "accept"
-    _al_24[7] = "bind"
-    _al_24[8] = "connect"
-    _al_24[9] = "listen"
-    _al_24[10] = "recvfrom"
-    _al_24[11] = "sendto"
-    _al_24[12] = "setsockopt"
-    _al_24[13] = "socket"
+    _al_25[1] = "inet_aton"
+    _al_25[2] = "inet_ntoa"
+    _al_25[3] = "inet_pton"
+    _al_25[4] = "getpeername"
+    _al_25[5] = "getsockname"
+    _al_25[6] = "accept"
+    _al_25[7] = "bind"
+    _al_25[8] = "connect"
+    _al_25[9] = "listen"
+    _al_25[10] = "recvfrom"
+    _al_25[11] = "sendto"
+    _al_25[12] = "setsockopt"
+    _al_25[13] = "socket"
     for (_i_f = 1; (_i_f <= 13); _i_f = (_i_f + 1)) {
-        f = _al_24[_i_f]
+        f = _al_25[_i_f]
         u__check_socket_func(f)
     }
     pyconf_checking("for setgroups")
@@ -6038,8 +6042,8 @@ function u__setup_lto_flags() {
     V["LDFLAGS_NODIST"] = V["LDFLAGS_NODIST"] " " V["LTOFLAGS"]
 }
 
-function u__setup_lto_clang(    LLVM_AR, LLVM_AR_FOUND, xcrun_out, xcrun_status, _ar_25) {
-    delete _ar_25
+function u__setup_lto_clang(    LLVM_AR, LLVM_AR_FOUND, xcrun_out, xcrun_status, _ar_26) {
+    delete _ar_26
     V["LDFLAGS_NOLTO"] = "-fno-lto"
     if (pyconf_check_compile_flag("-flto=thin")) {
         V["LDFLAGS_NOLTO"] = "-flto=thin"
@@ -6056,9 +6060,9 @@ function u__setup_lto_clang(    LLVM_AR, LLVM_AR_FOUND, xcrun_out, xcrun_status,
         _va54[2] = "-find"
         _va54[3] = "ar"
         _va54[0] = 3
-        pyconf_cmd_status(_va54, _ar_25)
-        xcrun_status = _ar_25[0]
-        xcrun_out = _ar_25[1]
+        pyconf_cmd_status(_va54, _ar_26)
+        xcrun_status = _ar_26[0]
+        xcrun_out = _ar_26[1]
         if (((xcrun_status == 0) && ((xcrun_out != "") && (xcrun_out != "no")))) {
             LLVM_AR = "/usr/bin/xcrun ar"
             LLVM_AR_FOUND = "found"
@@ -6093,8 +6097,8 @@ function u__setup_lto_clang(    LLVM_AR, LLVM_AR_FOUND, xcrun_out, xcrun_status,
     }
 }
 
-function u_setup_pgo_flags(    LLVM_PROF_FOUND, xcrun_out, xcrun_status, _ar_26) {
-    delete _ar_26
+function u_setup_pgo_flags(    LLVM_PROF_FOUND, xcrun_out, xcrun_status, _ar_27) {
+    delete _ar_27
     v_export("PGO_PROF_GEN_FLAG")
     v_export("PGO_PROF_USE_FLAG")
     v_export("LLVM_PROF_MERGER")
@@ -6111,9 +6115,9 @@ function u_setup_pgo_flags(    LLVM_PROF_FOUND, xcrun_out, xcrun_status, _ar_26)
         _va55[2] = "-find"
         _va55[3] = "llvm-profdata"
         _va55[0] = 3
-        pyconf_cmd_status(_va55, _ar_26)
-        xcrun_status = _ar_26[0]
-        xcrun_out = _ar_26[1]
+        pyconf_cmd_status(_va55, _ar_27)
+        xcrun_status = _ar_27[0]
+        xcrun_out = _ar_27[1]
         if (((xcrun_status == 0) && ((xcrun_out != "") && (xcrun_out != "no")))) {
             V["LLVM_PROFDATA"] = "/usr/bin/xcrun llvm-profdata"
             LLVM_PROF_FOUND = "found"
@@ -6565,9 +6569,9 @@ function u_setup_xopen_source(    sys_rel) {
     }
 }
 
-function u_setup_platform_triplet(    MULTIARCH, _i_line, _n_line, line, rc, triplet_result, triplet_result_returncode, triplet_result_stderr, triplet_result_stdout, _ar_28, _as_27, _split_tmp) {
-    delete _ar_28
-    delete _as_27
+function u_setup_platform_triplet(    MULTIARCH, _i_line, _n_line, line, rc, triplet_result, triplet_result_returncode, triplet_result_stderr, triplet_result_stdout, _ar_29, _as_28, _split_tmp) {
+    delete _ar_29
+    delete _as_28
     delete _split_tmp
     pyconf_checking("for the platform triplet based on compiler characteristics")
     delete _va66
@@ -6579,9 +6583,9 @@ function u_setup_platform_triplet(    MULTIARCH, _i_line, _n_line, line, rc, tri
     triplet_result_stderr = _pyconf_run_cmd_stderr
     V["PLATFORM_TRIPLET"] = ""
     if ((triplet_result_returncode == 0)) {
-        _n_line = split(triplet_result_stdout, _as_27, "\n")
+        _n_line = split(triplet_result_stdout, _as_28, "\n")
         for (_i_line = 1; (_i_line <= _n_line); _i_line = (_i_line + 1)) {
-            line = _as_27[_i_line]
+            line = _as_28[_i_line]
             if (_str_startswith(line, "PLATFORM_TRIPLET=")) {
                 V["PLATFORM_TRIPLET"] = _str_strip(_str_removeprefix(line, "PLATFORM_TRIPLET="))
                 break
@@ -6597,9 +6601,9 @@ function u_setup_platform_triplet(    MULTIARCH, _i_line, _n_line, line, rc, tri
         _va67[1] = V["CC"]
         _va67[2] = "--print-multiarch"
         _va67[0] = 2
-        pyconf_cmd_status(_va67, _ar_28)
-        rc = _ar_28[0]
-        MULTIARCH = _ar_28[1]
+        pyconf_cmd_status(_va67, _ar_29)
+        rc = _ar_29[0]
+        MULTIARCH = _ar_29[1]
         if ((rc != 0)) {
             V["MULTIARCH"] = ""
         }
@@ -6825,19 +6829,19 @@ function u_check_clock_functions(    android_api, found, skip_clock_nanosleep) {
     }
 }
 
-function u_check_structs(    _i_m, ac_cv_header_time_altzone, ac_cv_struct_addrinfo, ac_cv_struct_sockaddr_alg, ac_cv_struct_sockaddr_storage, found, m, _al_29, _al_30) {
-    delete _al_29
+function u_check_structs(    _i_m, ac_cv_header_time_altzone, ac_cv_struct_addrinfo, ac_cv_struct_sockaddr_alg, ac_cv_struct_sockaddr_storage, found, m, _al_30, _al_31) {
     delete _al_30
+    delete _al_31
     pyconf_check_struct_tm()
     pyconf_check_struct_timezone()
-    _al_29[1] = "struct stat.st_rdev"
-    _al_29[2] = "struct stat.st_blksize"
-    _al_29[3] = "struct stat.st_flags"
-    _al_29[4] = "struct stat.st_gen"
-    _al_29[5] = "struct stat.st_birthtime"
-    _al_29[6] = "struct stat.st_blocks"
+    _al_30[1] = "struct stat.st_rdev"
+    _al_30[2] = "struct stat.st_blksize"
+    _al_30[3] = "struct stat.st_flags"
+    _al_30[4] = "struct stat.st_gen"
+    _al_30[5] = "struct stat.st_birthtime"
+    _al_30[6] = "struct stat.st_blocks"
     for (_i_m = 1; (_i_m <= 6); _i_m = (_i_m + 1)) {
-        m = _al_29[_i_m]
+        m = _al_30[_i_m]
         pyconf_checking("for " m)
         found = (pyconf_check_member(m, "sys/types.h sys/stat.h") ? "yes" : "no")
         pyconf_result(found)
@@ -6848,14 +6852,14 @@ function u_check_structs(    _i_m, ac_cv_header_time_altzone, ac_cv_struct_addri
     found = (pyconf_check_member("siginfo_t.si_band", "signal.h") ? "yes" : "no")
     pyconf_result(found)
     if ((V["ac_cv_func_statx"] == "yes")) {
-        _al_30[1] = "struct statx.stx_mnt_id"
-        _al_30[2] = "struct statx.stx_dio_mem_align"
-        _al_30[3] = "struct statx.stx_subvol"
-        _al_30[4] = "struct statx.stx_atomic_write_unit_min"
-        _al_30[5] = "struct statx.stx_dio_read_offset_align"
-        _al_30[6] = "struct statx.stx_atomic_write_unit_max_opt"
+        _al_31[1] = "struct statx.stx_mnt_id"
+        _al_31[2] = "struct statx.stx_dio_mem_align"
+        _al_31[3] = "struct statx.stx_subvol"
+        _al_31[4] = "struct statx.stx_atomic_write_unit_min"
+        _al_31[5] = "struct statx.stx_dio_read_offset_align"
+        _al_31[6] = "struct statx.stx_atomic_write_unit_max_opt"
         for (_i_m = 1; (_i_m <= 6); _i_m = (_i_m + 1)) {
-            m = _al_30[_i_m]
+            m = _al_31[_i_m]
             pyconf_checking("for " m)
             pyconf_result((pyconf_check_member(m, "") ? "yes" : "no"))
         }
@@ -6959,22 +6963,22 @@ function u_check_posix_functions(    ANDROID_API_LEVEL, _i_name, blocked_len, ma
     }
 }
 
-function u_check_special_functions(    _func, _i__func, ac_cv_have_chflags, ac_cv_have_lchflags, disable_epoll, has_dirfd, have_flock, _al_31) {
-    delete _al_31
+function u_check_special_functions(    _func, _i__func, ac_cv_have_chflags, ac_cv_have_lchflags, disable_epoll, has_dirfd, have_flock, _al_32) {
+    delete _al_32
     pyconf_checking("whether dirfd is declared")
     has_dirfd = (pyconf_check_decl("dirfd", "sys/types.h dirent.h", "HAVE_DECL_DIRFD") ? "yes" : "no")
     pyconf_result((((has_dirfd != "") && (has_dirfd != "no")) ? "yes" : "no"))
     if (((has_dirfd != "") && (has_dirfd != "no"))) {
         pyconf_define("HAVE_DIRFD", 1, 0, "Define if you have the 'dirfd' function or macro.")
     }
-    _al_31[1] = "chroot"
-    _al_31[2] = "link"
-    _al_31[3] = "symlink"
-    _al_31[4] = "fchdir"
-    _al_31[5] = "fsync"
-    _al_31[6] = "fdatasync"
+    _al_32[1] = "chroot"
+    _al_32[2] = "link"
+    _al_32[3] = "symlink"
+    _al_32[4] = "fchdir"
+    _al_32[5] = "fsync"
+    _al_32[6] = "fdatasync"
     for (_i__func = 1; (_i__func <= 6); _i__func = (_i__func + 1)) {
-        _func = _al_31[_i__func]
+        _func = _al_32[_i__func]
         pyconf_checking("for " _func)
         pyconf_result((pyconf_check_func(_func, "unistd.h", "") ? "yes" : "no"))
     }
@@ -7243,17 +7247,17 @@ function u_check_getrandom() {
     }
 }
 
-function u_check_openssl(    LIBCRYPTO_LIBS_len, _i_arg, _i_f, _i_p, _n_arg, _n_f, _n_p, arg, f, found_ssl, inc_flags, inc_parts_len, lib_flags, lib_parts_len, libname, new_ssl_libs_len, openssl_rpath_opt, p, pc_cflags, pc_ldflags, pc_libs, pkg_config, rpath_arg, s1, s2, s3, ssl_dir, ssl_h_paths, with_openssl, working_hashlib, working_ssl, LIBCRYPTO_LIBS, _ar_32, _ar_33, _ar_34, _as_35, _as_36, _as_37, _as_38, _as_39, _as_40, inc_parts, lib_parts, new_ssl_libs) {
+function u_check_openssl(    LIBCRYPTO_LIBS_len, _i_arg, _i_f, _i_p, _n_arg, _n_f, _n_p, arg, f, found_ssl, inc_flags, inc_parts_len, lib_flags, lib_parts_len, libname, new_ssl_libs_len, openssl_rpath_opt, p, pc_cflags, pc_ldflags, pc_libs, pkg_config, rpath_arg, s1, s2, s3, ssl_dir, ssl_h_paths, with_openssl, working_hashlib, working_ssl, LIBCRYPTO_LIBS, _ar_33, _ar_34, _ar_35, _as_36, _as_37, _as_38, _as_39, _as_40, _as_41, inc_parts, lib_parts, new_ssl_libs) {
     delete LIBCRYPTO_LIBS
-    delete _ar_32
     delete _ar_33
     delete _ar_34
-    delete _as_35
+    delete _ar_35
     delete _as_36
     delete _as_37
     delete _as_38
     delete _as_39
     delete _as_40
+    delete _as_41
     delete inc_parts
     delete lib_parts
     delete new_ssl_libs
@@ -7278,29 +7282,29 @@ function u_check_openssl(    LIBCRYPTO_LIBS_len, _i_arg, _i_f, _i_p, _n_arg, _n_
             _va73[2] = "--cflags"
             _va73[3] = "openssl"
             _va73[0] = 3
-            pyconf_cmd_status(_va73, _ar_32)
-            s1 = _ar_32[0]
-            pc_cflags = _ar_32[1]
+            pyconf_cmd_status(_va73, _ar_33)
+            s1 = _ar_33[0]
+            pc_cflags = _ar_33[1]
             delete _va74
             _va74[1] = pkg_config
             _va74[2] = "--libs"
             _va74[3] = "openssl"
             _va74[0] = 3
-            pyconf_cmd_status(_va74, _ar_33)
-            s2 = _ar_33[0]
-            pc_libs = _ar_33[1]
+            pyconf_cmd_status(_va74, _ar_34)
+            s2 = _ar_34[0]
+            pc_libs = _ar_34[1]
             delete _va75
             _va75[1] = pkg_config
             _va75[2] = "--libs-only-L"
             _va75[3] = "openssl"
             _va75[0] = 3
-            pyconf_cmd_status(_va75, _ar_34)
-            s3 = _ar_34[0]
-            pc_ldflags = _ar_34[1]
+            pyconf_cmd_status(_va75, _ar_35)
+            s3 = _ar_35[0]
+            pc_ldflags = _ar_35[1]
             if ((((s1 == 0) && (s2 == 0)) && (s3 == 0))) {
-                _n_f = split(pc_cflags, _as_35, " ")
+                _n_f = split(pc_cflags, _as_36, " ")
                 for (_i_f = 1; (_i_f <= _n_f); _i_f = (_i_f + 1)) {
-                    f = _as_35[_i_f]
+                    f = _as_36[_i_f]
                     if (_str_startswith(f, "-I")) {
                         inc_parts[(inc_parts_len + 1)] = f
                         inc_parts_len = (inc_parts_len + 1)
@@ -7308,9 +7312,9 @@ function u_check_openssl(    LIBCRYPTO_LIBS_len, _i_arg, _i_f, _i_p, _n_arg, _n_
                     }
                 }
                 inc_flags = _arr_join(inc_parts, " ")
-                _n_f = split(pc_libs, _as_36, " ")
+                _n_f = split(pc_libs, _as_37, " ")
                 for (_i_f = 1; (_i_f <= _n_f); _i_f = (_i_f + 1)) {
-                    f = _as_36[_i_f]
+                    f = _as_37[_i_f]
                     if ((!_str_startswith(f, "-L"))) {
                         lib_parts[(lib_parts_len + 1)] = f
                         lib_parts_len = (lib_parts_len + 1)
@@ -7331,9 +7335,9 @@ function u_check_openssl(    LIBCRYPTO_LIBS_len, _i_arg, _i_f, _i_p, _n_arg, _n_
         } else {
             ssl_h_paths = "/usr/include" " " "/usr/local/include" " " "/usr/include/openssl" " " "/usr/local/include/openssl"
             found_ssl = "no"
-            _n_p = split(ssl_h_paths, _as_37, " ")
+            _n_p = split(ssl_h_paths, _as_38, " ")
             for (_i_p = 1; (_i_p <= _n_p); _i_p = (_i_p + 1)) {
-                p = _as_37[_i_p]
+                p = _as_38[_i_p]
                 delete _va76
                 _va76[1] = p
                 _va76[2] = "openssl/ssl.h"
@@ -7367,9 +7371,9 @@ function u_check_openssl(    LIBCRYPTO_LIBS_len, _i_arg, _i_f, _i_p, _n_arg, _n_
     V["OPENSSL_LDFLAGS_RPATH"] = ""
     if (((openssl_rpath_opt == "auto") || (openssl_rpath_opt == "yes"))) {
         V["OPENSSL_RPATH"] = "auto"
-        _n_arg = split(V["OPENSSL_LDFLAGS"], _as_38, " ")
+        _n_arg = split(V["OPENSSL_LDFLAGS"], _as_39, " ")
         for (_i_arg = 1; (_i_arg <= _n_arg); _i_arg = (_i_arg + 1)) {
-            arg = _as_38[_i_arg]
+            arg = _as_39[_i_arg]
             if (_str_startswith(arg, "-L")) {
                 V["OPENSSL_LDFLAGS_RPATH"] = V["OPENSSL_LDFLAGS_RPATH"] " " rpath_arg _str_removeprefix(arg, "-L")
             }
@@ -7388,9 +7392,9 @@ function u_check_openssl(    LIBCRYPTO_LIBS_len, _i_arg, _i_f, _i_p, _n_arg, _n_
     v_export("OPENSSL_LDFLAGS_RPATH")
     if ((V["PY_UNSUPPORTED_OPENSSL_BUILD"] == "static")) {
         pyconf_checking("for unsupported static openssl build")
-        _n_arg = split(V["OPENSSL_LIBS"], _as_39, " ")
+        _n_arg = split(V["OPENSSL_LIBS"], _as_40, " ")
         for (_i_arg = 1; (_i_arg <= _n_arg); _i_arg = (_i_arg + 1)) {
-            arg = _as_39[_i_arg]
+            arg = _as_40[_i_arg]
             if (_str_startswith(arg, "-l")) {
                 libname = _str_removeprefix(arg, "-l")
                 new_ssl_libs[(new_ssl_libs_len + 1)] = "-l:lib" libname ".a -Wl,--exclude-libs,lib" libname ".a"
@@ -7405,9 +7409,9 @@ function u_check_openssl(    LIBCRYPTO_LIBS_len, _i_arg, _i_f, _i_p, _n_arg, _n_
         V["OPENSSL_LIBS"] = _arr_join(new_ssl_libs, " ") _str_rstrip(" " V["ZLIB_LIBS"])
         pyconf_result(V["OPENSSL_LIBS"])
     }
-    _n_arg = split(V["OPENSSL_LIBS"], _as_40, " ")
+    _n_arg = split(V["OPENSSL_LIBS"], _as_41, " ")
     for (_i_arg = 1; (_i_arg <= _n_arg); _i_arg = (_i_arg + 1)) {
-        arg = _as_40[_i_arg]
+        arg = _as_41[_i_arg]
         if ((!(index(arg, "ssl") > 0))) {
             LIBCRYPTO_LIBS[(LIBCRYPTO_LIBS_len + 1)] = arg
             LIBCRYPTO_LIBS_len = (LIBCRYPTO_LIBS_len + 1)
@@ -7749,8 +7753,8 @@ function u_setup_ccshared() {
     pyconf_result(V["CCSHARED"])
 }
 
-function u_setup_linkforshared(    _, has_elf, has_elf__elf_out, help_out, sr, stack_size, _ar_41) {
-    delete _ar_41
+function u_setup_linkforshared(    _, has_elf, has_elf__elf_out, help_out, sr, stack_size, _ar_42) {
+    delete _ar_42
     pyconf_checking("LINKFORSHARED")
     if ((!((V["LINKFORSHARED"] != "") && (V["LINKFORSHARED"] != "no")))) {
         sr = V["ac_sys_system"] "/" V["ac_sys_release"]
@@ -7792,9 +7796,9 @@ function u_setup_linkforshared(    _, has_elf, has_elf__elf_out, help_out, sr, s
                 _va81[2] = "-Xlinker"
                 _va81[3] = "--help"
                 _va81[0] = 3
-                pyconf_cmd_status(_va81, _ar_41)
-                _ = _ar_41[0]
-                help_out = _ar_41[1]
+                pyconf_cmd_status(_va81, _ar_42)
+                _ = _ar_42[0]
+                help_out = _ar_42[1]
                 if ((index(help_out, "export-dynamic") > 0)) {
                     V["LINKFORSHARED"] = "-Xlinker --export-dynamic"
                 }
@@ -7900,9 +7904,9 @@ function u_detect_gdbm(    found) {
     v_export("GDBM_LIBS")
 }
 
-function u_detect_dbm(    _i_db, _n_db, _tmp_split, ac_cv_have_libdb, ac_cv_header_gdbm_dash_ndbm_h, ac_cv_header_gdbm_slash_ndbm_h, ac_cv_search_dbm_open, db, dbm_raw, found_db_h, found_ndbm, have_dbm, r, with_dbmliborder, _as_42, _as_43) {
-    delete _as_42
+function u_detect_dbm(    _i_db, _n_db, _tmp_split, ac_cv_have_libdb, ac_cv_header_gdbm_dash_ndbm_h, ac_cv_header_gdbm_slash_ndbm_h, ac_cv_search_dbm_open, db, dbm_raw, found_db_h, found_ndbm, have_dbm, r, with_dbmliborder, _as_43, _as_44) {
     delete _as_43
+    delete _as_44
     V["have_ndbm"] = "no"
     V["dbm_ndbm"] = ""
     V["have_gdbm_compat"] = "no"
@@ -7962,9 +7966,9 @@ function u_detect_dbm(    _i_db, _n_db, _tmp_split, ac_cv_have_libdb, ac_cv_head
     dbm_raw = pyconf_option_value("with_dbmliborder")
     with_dbmliborder = ((((dbm_raw != "") && (dbm_raw != "no")) && (dbm_raw != "yes")) ? dbm_raw : "gdbm:ndbm:bdb")
     pyconf_checking("for --with-dbmliborder")
-    _n_db = split(_str_replace(with_dbmliborder, ":", " "), _as_42, " ")
+    _n_db = split(_str_replace(with_dbmliborder, ":", " "), _as_43, " ")
     for (_i_db = 1; (_i_db <= _n_db); _i_db = (_i_db + 1)) {
-        db = _as_42[_i_db]
+        db = _as_43[_i_db]
         if ((!(((db == "ndbm") || (db == "gdbm")) || (db == "bdb")))) {
             pyconf_fatal("proper usage is --with-dbmliborder=db1:db2:... (gdbm:ndbm:bdb)")
         }
@@ -7974,9 +7978,9 @@ function u_detect_dbm(    _i_db, _n_db, _tmp_split, ac_cv_have_libdb, ac_cv_head
     V["DBM_CFLAGS"] = ""
     V["DBM_LIBS"] = ""
     have_dbm = "no"
-    _n_db = split(_str_replace(with_dbmliborder, ":", " "), _as_43, " ")
+    _n_db = split(_str_replace(with_dbmliborder, ":", " "), _as_44, " ")
     for (_i_db = 1; (_i_db <= _n_db); _i_db = (_i_db + 1)) {
-        db = _as_43[_i_db]
+        db = _as_44[_i_db]
         if (((db == "ndbm") && ((V["have_ndbm"] != "") && (V["have_ndbm"] != "no")))) {
             V["DBM_CFLAGS"] = "-DUSE_NDBM"
             V["DBM_LIBS"] = V["dbm_ndbm"]
@@ -8002,8 +8006,8 @@ function u_detect_dbm(    _i_db, _n_db, _tmp_split, ac_cv_have_libdb, ac_cv_head
     v_export("DBM_LIBS")
 }
 
-function u_check_base_libraries(    _i_h, ac_cv_require_ldl, eh_results_len, h, _al_44, eh_results) {
-    delete _al_44
+function u_check_base_libraries(    _i_h, ac_cv_require_ldl, eh_results_len, h, _al_45, eh_results) {
+    delete _al_45
     delete eh_results
     if (pyconf_check_lib("sendfile", "sendfile", "", "")) {
         V["LIBS"] = "-lsendfile " V["LIBS"]
@@ -8016,11 +8020,11 @@ function u_check_base_libraries(    _i_h, ac_cv_require_ldl, eh_results_len, h, 
         V["LIBS"] = "-ldld " V["LIBS"]
     }
     ac_cv_require_ldl = "no"
-    _al_44[1] = "execinfo.h"
-    _al_44[2] = "link.h"
-    _al_44[3] = "dlfcn.h"
+    _al_45[1] = "execinfo.h"
+    _al_45[2] = "link.h"
+    _al_45[3] = "dlfcn.h"
     for (_i_h = 1; (_i_h <= 3); _i_h = (_i_h + 1)) {
-        h = _al_44[_i_h]
+        h = _al_45[_i_h]
         delete _va82
         _va82[1] = h
         _va82[0] = 1
@@ -8104,14 +8108,14 @@ function u_check_stat_timestamps(    ac_cv_stat_tv_nsec, ac_cv_stat_tv_nsec2) {
     V["have_panel"] = "no"
 }
 
-function u__validate_tzpath(tzpath,    _i_part, _n_part, _tmp_split, part, _as_45) {
-    delete _as_45
+function u__validate_tzpath(tzpath,    _i_part, _n_part, _tmp_split, part, _as_46) {
+    delete _as_46
     if ((!((tzpath != "") && (tzpath != "no")))) {
         return
     }
-    _n_part = split(_str_replace(tzpath, ":", " "), _as_45, " ")
+    _n_part = split(_str_replace(tzpath, ":", " "), _as_46, " ")
     for (_i_part = 1; (_i_part <= _n_part); _i_part = (_i_part + 1)) {
-        part = _as_45[_i_part]
+        part = _as_46[_i_part]
         if ((!_str_startswith(part, "/"))) {
             pyconf_error("--with-tzpath must contain only absolute paths, not " tzpath)
         }
@@ -8147,8 +8151,8 @@ function u__runshared(envvar,    cwd, existing) {
     return envvar "=" cwd
 }
 
-function u_setup_android_api(    _i_line, _n_line, android_out, android_out_returncode, android_out_stderr, android_out_stdout, arm_arch, line, _as_46) {
-    delete _as_46
+function u_setup_android_api(    _i_line, _n_line, android_out, android_out_returncode, android_out_stderr, android_out_stdout, arm_arch, line, _as_47) {
+    delete _as_47
     V["NO_AS_NEEDED"] = pyconf_check_linker_flag("-Wl,--no-as-needed", "-Wl,--no-as-needed")
     v_export("NO_AS_NEEDED")
     pyconf_checking("for the Android API level")
@@ -8158,9 +8162,9 @@ function u_setup_android_api(    _i_line, _n_line, android_out, android_out_retu
     V["ANDROID_API_LEVEL"] = ""
     arm_arch = ""
     if ((android_out_returncode == 0)) {
-        _n_line = split(android_out_stdout, _as_46, "\n")
+        _n_line = split(android_out_stdout, _as_47, "\n")
         for (_i_line = 1; (_i_line <= _n_line); _i_line = (_i_line + 1)) {
-            line = _as_46[_i_line]
+            line = _as_47[_i_line]
             if ((!_str_startswith(line, "#"))) {
                 if (_str_startswith(line, "android_api = ")) {
                     V["ANDROID_API_LEVEL"] = _str_strip(_str_removeprefix(line, "android_api = "))
@@ -8224,8 +8228,8 @@ function u_setup_exe_suffix(    casedir) {
     }
 }
 
-function u_setup_library_names(    _, ld_prog, ld_ver, _ar_47) {
-    delete _ar_47
+function u_setup_library_names(    _, ld_prog, ld_ver, _ar_48) {
+    delete _ar_48
     v_export("LIBRARY")
     pyconf_checking("LIBRARY")
     V["LIBRARY"] = ((V["LIBRARY"] != "") ? V["LIBRARY"] : "libpython$(VERSION)$(ABIFLAGS).a")
@@ -8279,9 +8283,9 @@ function u_setup_library_names(    _, ld_prog, ld_ver, _ar_47) {
     _va86[1] = ld_prog
     _va86[2] = "-V"
     _va86[0] = 2
-    pyconf_cmd_status(_va86, _ar_47)
-    _ = _ar_47[0]
-    ld_ver = _ar_47[1]
+    pyconf_cmd_status(_va86, _ar_48)
+    _ = _ar_48[0]
+    ld_ver = _ar_48[1]
     V["GNULD"] = ((index(ld_ver, "GNU") > 0) ? "yes" : "no")
     pyconf_result(V["GNULD"])
 }
@@ -8640,9 +8644,9 @@ function u_check_posix_semaphores(    ac_cv_broken_sem_getvalue, ac_cv_posix_sem
     pyconf_check_decls(_va89)
 }
 
-function u_setup_thread_headers_and_srcdirs(    _i_dir, _i_h, _n_dir, _n_h, dir, h, header_refs_len, thread_headers, _as_48, _as_49, header_refs) {
-    delete _as_48
+function u_setup_thread_headers_and_srcdirs(    _i_dir, _i_h, _n_dir, _n_h, dir, h, header_refs_len, thread_headers, _as_49, _as_50, header_refs) {
     delete _as_49
+    delete _as_50
     delete header_refs
     delete _va90
     _va90[1] = pyconf_srcdir
@@ -8650,9 +8654,9 @@ function u_setup_thread_headers_and_srcdirs(    _i_dir, _i_h, _n_dir, _n_h, dir,
     _va90[3] = "thread_*.h"
     _va90[0] = 3
     thread_headers = pyconf_glob_files(pyconf_path_join(_va90))
-    _n_h = split(thread_headers, _as_48, " ")
+    _n_h = split(thread_headers, _as_49, " ")
     for (_i_h = 1; (_i_h <= _n_h); _i_h = (_i_h + 1)) {
-        h = _as_48[_i_h]
+        h = _as_49[_i_h]
         header_refs[(header_refs_len + 1)] = "$(srcdir)/" pyconf_relpath(h, pyconf_srcdir)
         header_refs_len = (header_refs_len + 1)
         header_refs[0] = header_refs_len
@@ -8662,9 +8666,9 @@ function u_setup_thread_headers_and_srcdirs(    _i_dir, _i_h, _n_dir, _n_h, dir,
     V["SRCDIRS"] = "  Modules  Modules/_ctypes  Modules/_decimal  Modules/_decimal/libmpdec  Modules/_hacl  Modules/_io  Modules/_multiprocessing  Modules/_remote_debugging  Modules/_sqlite  Modules/_sre  Modules/_testcapi  Modules/_testinternalcapi  Modules/_testlimitedcapi  Modules/_xxtestfuzz  Modules/_zstd  Modules/cjkcodecs  Modules/expat  Objects  Objects/mimalloc  Objects/mimalloc/prim  Parser  Parser/tokenizer  Parser/lexer  Programs  Python  Python/frozen_modules"
     v_export("SRCDIRS")
     pyconf_checking("for build directories")
-    _n_dir = split(V["SRCDIRS"], _as_49, " ")
+    _n_dir = split(V["SRCDIRS"], _as_50, " ")
     for (_i_dir = 1; (_i_dir <= _n_dir); _i_dir = (_i_dir + 1)) {
-        dir = _as_49[_i_dir]
+        dir = _as_50[_i_dir]
         pyconf_mkdir_p(dir)
     }
     pyconf_result("done")
