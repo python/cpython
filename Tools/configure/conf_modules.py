@@ -1,10 +1,9 @@
-"""conf_modules — Stdlib module definitions, HACL.
+"""conf_modules — Stdlib module definitions.
 
-Sets up platform-specific not-available module lists; declares
-MODULE_BUILDTYPE for ~60 stdlib extension modules (always-builtin,
-shared, disabled, n/a); configures HACL* cryptographic library
-flags (libHacl_Hash_SHA2, etc.); and sets up remaining module
-variables (LIBHACL_*, MODULE_*_LDFLAGS).
+Sets MODULE_DEPS_SHARED and LIBPYTHON; sets FREEZE_MODULE* variables;
+sets platform-specific not-available module lists and MODULE_BUILDTYPE;
+declares ~60 stdlib extension modules (always-builtin, shared, disabled,
+n/a); and handles --disable-test-modules.
 """
 
 from __future__ import annotations
@@ -127,6 +126,7 @@ def setup_platform_na_modules(v):
                 "pwd",
                 "resource",
                 "syslog",
+                # readline is not particularly useful in browsers
                 "readline",
             ]
         )
