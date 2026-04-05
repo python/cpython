@@ -2077,6 +2077,9 @@ dummy_func(void) {
             int match = type->tp_flags & Py_TPFLAGS_MAPPING;
             res = match ? sym_new_const(ctx, Py_True) : sym_new_const(ctx, Py_False);
         }
+        else {
+            res = sym_new_type(ctx, &PyBool_Type);
+        }
     }
 
     op(_MATCH_SEQUENCE, (subject -- subject, res)) {
@@ -2084,6 +2087,9 @@ dummy_func(void) {
             PyTypeObject *type = sym_get_type(subject);
             int match = type->tp_flags & Py_TPFLAGS_SEQUENCE;
             res = match ? sym_new_const(ctx, Py_True) : sym_new_const(ctx, Py_False);
+        }
+        else {
+            res = sym_new_type(ctx, &PyBool_Type);
         }
     }
 
