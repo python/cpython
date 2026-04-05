@@ -13,9 +13,10 @@ import tempfile
 import textwrap
 import types
 import unittest
-from test.support import (captured_stdout, requires_debug_ranges,
-                          requires_specialization, cpython_only,
-                          os_helper, import_helper, reset_code)
+from test.support import (captured_stdout, force_not_colorized_test_class,
+                          force_colorized_test_class, requires_debug_ranges,
+                          requires_specialization, cpython_only, os_helper,
+                          import_helper, reset_code)
 from test.support.bytecode_helper import BytecodeTestCase
 
 
@@ -35,6 +36,8 @@ def get_tb():
     return tb
 
 TRACEBACK_CODE = get_tb().tb_frame.f_code
+
+theme = dis._get_dis_theme()
 
 class _C:
     def __init__(self, x):
@@ -995,6 +998,7 @@ class DisTestBase(unittest.TestCase):
         self.assertEqual(got, expected)
 
 
+@force_not_colorized_test_class
 class DisTests(DisTestBase):
 
     maxDiff = None
@@ -1480,6 +1484,7 @@ class DisTests(DisTestBase):
         self.assertEqual(assem_op, assem_cache)
 
 
+@force_not_colorized_test_class
 class DisWithFileTests(DisTests):
 
     # Run the tests again, using the file arg instead of print
@@ -2002,6 +2007,7 @@ class InstructionTestCase(BytecodeTestCase):
         instrs_2 = [instr_2._replace(positions=None, cache_info=None) for instr_2 in instrs_2]
         self.assertEqual(instrs_1, instrs_2)
 
+@force_not_colorized_test_class
 class InstructionTests(InstructionTestCase):
 
     def __init__(self, *args):
@@ -2323,6 +2329,7 @@ class InstructionTests(InstructionTestCase):
 
 # get_instructions has its own tests above, so can rely on it to validate
 # the object oriented API
+@force_not_colorized_test_class
 class BytecodeTests(InstructionTestCase, DisTestBase):
 
     def test_instantiation(self):
@@ -2456,6 +2463,7 @@ class TestFinderMethods(unittest.TestCase):
         self.assertEqual(offsets, [0, 4])
 
 
+@force_not_colorized_test_class
 class TestDisTraceback(DisTestBase):
     def setUp(self) -> None:
         try:  # We need to clean up existing tracebacks
@@ -2493,6 +2501,7 @@ class TestDisTraceback(DisTestBase):
         self.do_disassembly_compare(self.get_disassembly(tb), dis_traceback)
 
 
+@force_not_colorized_test_class
 class TestDisTracebackWithFile(TestDisTraceback):
     # Run the `distb` tests again, using the file arg instead of print
     def get_disassembly(self, tb):
@@ -2527,6 +2536,7 @@ def _unroll_caches_as_Instructions(instrs, show_caches=False):
                                 False, None, None, instr.positions)
 
 
+@force_not_colorized_test_class
 class TestDisCLI(unittest.TestCase):
 
     def setUp(self):
@@ -2641,6 +2651,65 @@ class TestDisCLI(unittest.TestCase):
         for flag in ['-S', '--specialized']:
             self.check_output(source, expect, flag)
 
+@force_colorized_test_class
+class DisColoredTests(unittest.TestCase):
+    def get_colored_output(self, func):
+        output = io.StringIO()
+
+        with contextlib.redirect_stdout(output):
+            dis.dis(func)
+
+        return output.getvalue()
+
+    def assertOpColored(self, output, opname, color):
+        self.assertIn(
+            f"{color}{opname}", output,
+            f"{opname} should be colored with {color!r}"
+        )
+
+    def test_load_ops_colored(self):
+        def f(a):
+            return a
+        out = self.get_colored_output(f)
+        self.assertOpColored(out, "LOAD_FAST", theme.op_load)
+
+    def test_call_return_ops_colored(self):
+        def f():
+            return 1
+        out = self.get_colored_output(f)
+        self.assertOpColored(out, "RETURN_VALUE", theme.op_call_return)
+        self.assertOpColored(out, "RESUME", theme.op_call_return)
+
+    def test_pop_ops_colored(self):
+        def f(a):
+            print(a)
+        out = self.get_colored_output(f)
+        self.assertOpColored(out, "POP_TOP", theme.op_pop)
+
+    def test_control_flow_ops_colored(self):
+        def f(a):
+            for _ in a:
+                pass
+        out = self.get_colored_output(f)
+        self.assertOpColored(out, "FOR_ITER", theme.op_control_flow)
+        self.assertOpColored(out, "JUMP_BACKWARD", theme.op_control_flow)
+
+    def test_argrepr_colored(self):
+        def f(a):
+            print(a)
+        out = self.get_colored_output(f)
+        self.assertIn(f"{theme.argument_detail}(", out)
+
+    def test_color_by_opname_coverage(self):
+        self.assertEqual(theme.color_by_opname("LOAD_FAST"), theme.op_load)
+        self.assertEqual(theme.color_by_opname("LOAD_GLOBAL"), theme.op_load)
+        self.assertEqual(theme.color_by_opname("POP_TOP"), theme.op_pop)
+        self.assertEqual(theme.color_by_opname("CALL"), theme.op_call_return)
+        self.assertEqual(theme.color_by_opname("RETURN_VALUE"), theme.op_call_return)
+        self.assertEqual(theme.color_by_opname("RESUME"), theme.op_call_return)
+        self.assertEqual(theme.color_by_opname("FOR_ITER"), theme.op_control_flow)
+        self.assertEqual(theme.color_by_opname("JUMP_BACKWARD"), theme.op_control_flow)
+        self.assertEqual(theme.color_by_opname("BINARY_OP"), theme.reset)  # uncolored
 
 if __name__ == "__main__":
     unittest.main()
