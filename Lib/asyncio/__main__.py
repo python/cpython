@@ -105,7 +105,7 @@ class REPLThread(threading.Thread):
                     import tokenize
                     with tokenize.open(startup_path) as f:
                         startup_code = compile(f.read(), startup_path, "exec")
-                        exec(startup_code, console.locals)
+                    exec(startup_code, console.locals)
                 # TODO: Revisit in GH-143023
                 except SystemExit:
                     raise
