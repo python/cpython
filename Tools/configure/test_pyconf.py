@@ -32,6 +32,10 @@ def _reset():
     pyconf.substs.clear()
     pyconf.env.clear()
     pyconf.cache.clear()
+    # Clear user-set attributes on the Vars instance (but keep _exports).
+    for _k in list(pyconf.vars.__dict__):
+        if not _k.startswith("_"):
+            delattr(pyconf.vars, _k)
 
 
 @pytest.fixture(autouse=True)
@@ -1483,6 +1487,55 @@ class TestInitArgsCache:
         pyconf.init_args()
         captured = capsys.readouterr()
         assert f"loading cache {cache_path}" in captured.out
+
+
+# ---------------------------------------------------------------------------
+# init_args VAR=VALUE → vars.is_set() and truthiness
+# ---------------------------------------------------------------------------
+
+
+class TestInitArgsVarValue:
+    """Command-line VAR=VALUE must be detectable via is_set() and must have
+    correct bool truthiness, matching AWK where VAR=val populates V[]."""
+
+    def test_ac_cv_var_sets_is_set(self, monkeypatch):
+        monkeypatch.setattr(sys, "argv", ["configure", "ac_cv_foo=yes"])
+        monkeypatch.delenv("ac_cv_foo", raising=False)
+        pyconf.init_args()
+        assert pyconf.vars.is_set("ac_cv_foo")
+
+    def test_ac_cv_yes_converts_to_true(self, monkeypatch):
+        monkeypatch.setattr(sys, "argv", ["configure", "ac_cv_foo=yes"])
+        monkeypatch.delenv("ac_cv_foo", raising=False)
+        pyconf.init_args()
+        assert pyconf.vars.ac_cv_foo is True
+
+    def test_ac_cv_no_converts_to_false(self, monkeypatch):
+        # Bug: before the fix, "no" stayed as a string in os.environ and
+        # `if v.ac_cv_foo:` would be True ("no" is a truthy non-empty string).
+        monkeypatch.setattr(sys, "argv", ["configure", "ac_cv_foo=no"])
+        monkeypatch.delenv("ac_cv_foo", raising=False)
+        pyconf.init_args()
+        assert pyconf.vars.ac_cv_foo is False
+        assert not pyconf.vars.ac_cv_foo
+
+    def test_ac_cv_populates_cache(self, monkeypatch):
+        monkeypatch.setattr(sys, "argv", ["configure", "ac_cv_foo=yes"])
+        monkeypatch.delenv("ac_cv_foo", raising=False)
+        pyconf.init_args()
+        assert pyconf.cache.get("ac_cv_foo") is True
+
+    def test_non_ac_cv_sets_is_set(self, monkeypatch):
+        monkeypatch.setattr(sys, "argv", ["configure", "MYVAR=hello"])
+        monkeypatch.delenv("MYVAR", raising=False)
+        pyconf.init_args()
+        assert pyconf.vars.is_set("MYVAR")
+
+    def test_non_ac_cv_not_in_cache(self, monkeypatch):
+        monkeypatch.setattr(sys, "argv", ["configure", "MYVAR=hello"])
+        monkeypatch.delenv("MYVAR", raising=False)
+        pyconf.init_args()
+        assert "MYVAR" not in pyconf.cache
 
 
 # ---------------------------------------------------------------------------

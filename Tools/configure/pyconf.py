@@ -291,6 +291,14 @@ def init_args() -> None:
         ):
             name, value = arg.split("=", 1)
             os.environ[name] = value
+            # Also set on vars so is_set() detects it and bool truthiness
+            # works correctly, mirroring what _load_config_site() does.
+            # Convert yes/no → True/False so ac_cv_* checks behave the same
+            # whether the value came from CONFIG_SITE or the command line.
+            converted = _cache_deserialize(value)
+            setattr(vars, name, converted)
+            if name.startswith("ac_cv_"):
+                cache[name] = converted
             continue
 
         # Early-exit flags
