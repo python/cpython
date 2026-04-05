@@ -70,12 +70,12 @@ spawn_asyncio_repl = partial(spawn_repl, "-m", "asyncio", custom=True)
 
 
 @contextmanager
-def temp_pythonstartup(*, code: str, histfile: str = ".pythonhist"):
+def temp_pythonstartup(*, source: str, histfile: str = ".pythonhist"):
     """Create environment variables for a PYTHONSTARTUP script in a temporary directory."""
     with os_helper.temp_dir() as tmpdir:
         filename = os.path.join(tmpdir, "pythonstartup.py")
         with open(filename, "w") as f:
-            f.write(code)
+            f.write(source)
         yield {
             "PYTHONSTARTUP": filename,
             "PYTHON_HISTORY": os.path.join(tmpdir, histfile)
@@ -471,7 +471,7 @@ class TestAsyncioREPL(unittest.TestCase):
     )
     def test_pythonstartup_failure(self, startup_code, expected_error):
         startup_env = self.enterContext(
-            temp_pythonstartup(code=startup_code, histfile=".asyncio_history"))
+            temp_pythonstartup(source=startup_code, histfile=".asyncio_history"))
 
         p = spawn_repl(
             "-qm", "asyncio",
