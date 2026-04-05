@@ -35,7 +35,7 @@ def check_network_libs(v):
     # Most SVR4 platforms (e.g. Solaris) need -lsocket and -lnsl.
     if pyconf.check_lib("nsl", "t_open"):
         v.LIBS = f"-lnsl {v.LIBS}"
-    if pyconf.check_lib("socket", "socket"):
+    if pyconf.check_lib("socket", "socket", extra_libs=v.LIBS):
         v.LIBS = f"-lsocket {v.LIBS}"
     if f"{v.ac_sys_system}/{v.ac_sys_release}".startswith("Haiku"):
         if pyconf.check_lib("network", "socket"):
@@ -380,7 +380,7 @@ def check_getaddrinfo(v):
             if pyconf.cross_compiling:
                 if v.ac_sys_system in ("Linux-android", "iOS"):
                     ac_cv_buggy_getaddrinfo = False
-                elif v.enable_ipv6 != "":
+                elif ENABLE_IPV6.given:
                     ac_cv_buggy_getaddrinfo = (
                         "no -- configured with --(en|dis)able-ipv6"
                     )

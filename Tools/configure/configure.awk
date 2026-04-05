@@ -5069,6 +5069,12 @@ function u__setup_macos_deployment_target(    _tmp_split, arch, cur_target, cur_
 
 # --- conf_math ---
 function u_check_math_library(    found, with_libc, with_libm) {
+    pyconf_checking("for __fpu_control")
+    found = (pyconf_check_func("__fpu_control", "", "HAVE___FPU_CONTROL") ? "yes" : "no")
+    pyconf_result(found)
+    if ((!((found != "") && (found != "no")))) {
+        pyconf_check_lib("ieee", "__fpu_control")
+    }
     v_export("LIBM")
     if ((V["ac_sys_system"] != "Darwin")) {
         V["LIBM"] = "-lm"
@@ -5105,12 +5111,6 @@ function u_check_math_library(    found, with_libc, with_libm) {
         }
     } else {
         pyconf_result("default LIBC=\"" V["LIBC"] "\"")
-    }
-    pyconf_checking("for __fpu_control")
-    found = (pyconf_check_func("__fpu_control", "", "HAVE___FPU_CONTROL") ? "yes" : "no")
-    pyconf_result(found)
-    if ((!((found != "") && (found != "no")))) {
-        pyconf_check_lib("ieee", "__fpu_control")
     }
 }
 
@@ -5391,12 +5391,12 @@ function u_detect_libmpdec(    _i_p, _n_p, _opt_result, ac_cv_gcc_asm_for_x64, a
         } else if ((libmpdec_machine == "unknown")) {
             pyconf_fatal("_decimal: unsupported architecture")
         }
-        if (((V["have_ipa_pure_const_bug"] != "") && (V["have_ipa_pure_const_bug"] != "no"))) {
-            V["LIBMPDEC_CFLAGS"] = V["LIBMPDEC_CFLAGS"] " -fno-ipa-pure-const"
-        }
-        if (((V["have_glibc_memmove_bug"] != "") && (V["have_glibc_memmove_bug"] != "no"))) {
-            V["LIBMPDEC_CFLAGS"] = V["LIBMPDEC_CFLAGS"] " -U_FORTIFY_SOURCE"
-        }
+    }
+    if (((V["have_ipa_pure_const_bug"] != "") && (V["have_ipa_pure_const_bug"] != "no"))) {
+        V["LIBMPDEC_CFLAGS"] = V["LIBMPDEC_CFLAGS"] " -fno-ipa-pure-const"
+    }
+    if (((V["have_glibc_memmove_bug"] != "") && (V["have_glibc_memmove_bug"] != "no"))) {
+        V["LIBMPDEC_CFLAGS"] = V["LIBMPDEC_CFLAGS"] " -U_FORTIFY_SOURCE"
     }
     v_export("LIBMPDEC_CFLAGS")
     v_export("LIBMPDEC_LIBS")
@@ -5657,7 +5657,7 @@ function u_check_network_libs(    libs_val) {
     if (pyconf_check_lib("nsl", "t_open", "", "")) {
         V["LIBS"] = "-lnsl " V["LIBS"]
     }
-    if (pyconf_check_lib("socket", "socket", "", "")) {
+    if (pyconf_check_lib("socket", "socket", "", V["LIBS"])) {
         V["LIBS"] = "-lsocket " V["LIBS"]
     }
     if (_str_startswith(V["ac_sys_system"] "/" V["ac_sys_release"], "Haiku")) {
@@ -5857,7 +5857,7 @@ function u_check_getaddrinfo(    GETADDRINFO_TEST, ac_cv_buggy_getaddrinfo, ac_c
             if (((pyconf_cross_compiling != "") && (pyconf_cross_compiling != "no"))) {
                 if (((V["ac_sys_system"] == "Linux-android") || (V["ac_sys_system"] == "iOS"))) {
                     ac_cv_buggy_getaddrinfo = "no"
-                } else if ((V["enable_ipv6"] != "")) {
+                } else if (pyconf_option_given("enable_ipv6")) {
                     ac_cv_buggy_getaddrinfo = "no -- configured with --(en|dis)able-ipv6"
                 } else {
                     ac_cv_buggy_getaddrinfo = "yes"
