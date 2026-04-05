@@ -8,12 +8,11 @@ optimizations, platform support tier).
 
 from __future__ import annotations
 
-import warnings
-
 import pyconf
 
 
 def generate_output(v):
+    """Generate all output files and emit post-configuration warnings."""
     # ---------------------------------------------------------------------------
     # Generate output files  (AC_CONFIG_FILES / AC_OUTPUT)
     # ---------------------------------------------------------------------------
@@ -41,6 +40,7 @@ def generate_output(v):
     # ---------------------------------------------------------------------------
 
     if not pyconf.no_create:
+        pyconf.notice("creating Modules/Setup.local")
         if not pyconf.path_exists("Modules/Setup.local"):
             pyconf.write_file(
                 "Modules/Setup.local",
@@ -50,7 +50,7 @@ def generate_output(v):
         # Use the srcdir substitution value (e.g. "." for in-place,
         # absolute path for out-of-tree) to match autoconf behaviour.
         srcdir_rel = v.srcdir or "."
-        # creating Makefile (via makesetup)
+        pyconf.notice("creating Makefile")
         if not pyconf.cmd(
             [
                 "/bin/sh",
@@ -70,7 +70,7 @@ def generate_output(v):
         pyconf.rename_file("config.c", "Modules/config.c")
 
     if not v.PKG_CONFIG:
-        warnings.warn(
+        pyconf.warn(
             "pkg-config is missing. Some dependencies may not be detected correctly."
         )
 
@@ -83,13 +83,13 @@ please run ./configure --enable-optimizations
     if v.PY_SUPPORT_TIER == 0:
         cc = v.ac_cv_cc_name
         host = v.host
-        warnings.warn(
+        pyconf.warn(
             f'Platform "{host}" with compiler "{cc}" is not supported by the '
             "CPython core team, see https://peps.python.org/pep-0011/ for more information."
         )
 
     if not v.ac_cv_header_stdatomic_h:
-        print(
+        pyconf.notice(
             "Your compiler or platform does not have a working C11 stdatomic.h. "
             "A future version of Python may require stdatomic.h."
         )
