@@ -413,6 +413,9 @@ dummy_func(void) {
         _PyBinaryOpSpecializationDescr *d = (_PyBinaryOpSpecializationDescr *)descr;
         if (d != NULL && d->result_type != NULL) {
             res = sym_new_type(ctx, d->result_type);
+            if (d->result_unique) {
+                res = PyJitRef_MakeUnique(res);
+            }
         }
         else {
             res = sym_new_not_null(ctx);

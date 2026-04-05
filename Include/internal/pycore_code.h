@@ -499,6 +499,10 @@ typedef struct {
     /* Static type of the result, or NULL if unknown. Used by the tier 2
        optimizer to propagate type information through _BINARY_OP_EXTEND. */
     PyTypeObject *result_type;
+    /* Nonzero iff `action` always returns a freshly allocated object (not
+       aliased to either operand). Used by the tier 2 optimizer to enable
+       inplace follow-up ops. */
+    int result_unique;
 } _PyBinaryOpSpecializationDescr;
 
 /* Comparison bit masks. */
