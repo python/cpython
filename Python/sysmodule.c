@@ -2803,7 +2803,7 @@ Pass None to clear the filter.
 
 static PyObject *
 sys_set_lazy_imports_filter_impl(PyObject *module, PyObject *filter)
-/*[clinic end generated code: output=10251d49469c278c input=2eb48786bdd4ee42]*/
+/*[clinic end generated code: output=10251d49469c278c input=fd51ed8df6ab54b7]*/
 {
     if (PyImport_SetLazyImportsFilter(filter) < 0) {
         return NULL;
