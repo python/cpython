@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
-
+from docutils import nodes
+from sphinx import addnodes
 from sphinx.domains.changeset import (
     VersionChange,
     versionlabel_classes,
@@ -11,6 +11,7 @@ from sphinx.domains.changeset import (
 )
 from sphinx.locale import _ as sphinx_gettext
 
+TYPE_CHECKING = False
 if TYPE_CHECKING:
     from docutils.nodes import Node
     from sphinx.application import Sphinx
@@ -73,6 +74,77 @@ class DeprecatedRemoved(VersionChange):
             versionlabel_classes[self.name] = ""
 
 
+class SoftDeprecated(PyVersionChange):
+    """Directive for soft deprecations that auto-links to the glossary term.
+
+    Usage::
+
+        .. soft-deprecated:: 3.15
+
+           Use :func:`new_thing` instead.
+
+    Renders as: "Soft deprecated since version 3.15: Use new_thing() instead."
+    with "Soft deprecated" linking to the glossary definition.
+    """
+
+    def run(self) -> list[Node]:
+        versionlabels[self.name] = sphinx_gettext(
+            "Soft deprecated since version %s"
+        )
+        versionlabel_classes[self.name] = "softdeprecated"
+        try:
+            result = super().run()
+        finally:
+            versionlabels[self.name] = ""
+            versionlabel_classes[self.name] = ""
+
+        for node in result:
+            # Add "versionchanged" class so existing theme CSS applies
+            node["classes"] = node.get("classes", []) + ["versionchanged"]
+            # Replace the plain-text "Soft deprecated" with a glossary reference
+            for inline in node.findall(nodes.inline):
+                if "versionmodified" in inline.get("classes", []):
+                    self._add_glossary_link(inline)
+
+        return result
+
+    @staticmethod
+    def _add_glossary_link(inline: nodes.inline) -> None:
+        """Replace 'Soft deprecated' text with a cross-reference to the
+        :term:`soft deprecated` glossary entry."""
+        marker = "Soft deprecated"
+        ref = addnodes.pending_xref(
+            "",
+            nodes.Text(marker),
+            refdomain="std",
+            reftype="term",
+            reftarget="soft deprecated",
+            refwarn=True,
+        )
+
+        for child in inline.children:
+            if not isinstance(child, nodes.Text):
+                continue
+
+            text = str(child)
+            idx = text.find(marker)
+            if idx < 0:
+                continue
+
+            # Replace the text node with the split parts using docutils API
+            new_nodes: list[nodes.Node] = []
+            if idx > 0:
+                new_nodes.append(nodes.Text(text[:idx]))
+
+            new_nodes.append(ref)
+            remainder = text[idx + len(marker) :]
+            if remainder:
+                new_nodes.append(nodes.Text(remainder))
+
+            child.parent.replace(child, new_nodes)
+            break
+
+
 def setup(app: Sphinx) -> ExtensionMetadata:
     # Override Sphinx's directives with support for 'next'
     app.add_directive("versionadded", PyVersionChange, override=True)
@@ -82,6 +154,9 @@ def setup(app: Sphinx) -> ExtensionMetadata:
 
     # Register the ``.. deprecated-removed::`` directive
     app.add_directive("deprecated-removed", DeprecatedRemoved)
+
+    # Register the ``.. soft-deprecated::`` directive
+    app.add_directive("soft-deprecated", SoftDeprecated)
 
     return {
         "version": "1.0",
