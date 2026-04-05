@@ -149,6 +149,11 @@ static inline void _PyFrame_Copy(_PyInterpreterFrame *src, _PyInterpreterFrame *
     int stacktop = (int)(src->stackpointer - src->localsplus);
     assert(stacktop >= 0);
     dest->stackpointer = dest->localsplus + stacktop;
+    // visited is GC bookkeeping for the current stack walk, not frame state.
+    dest->visited = 0;
+#ifdef Py_DEBUG
+    dest->lltrace = src->lltrace;
+#endif
     for (int i = 0; i < stacktop; i++) {
         dest->localsplus[i] = PyStackRef_MakeHeapSafe(src->localsplus[i]);
     }
