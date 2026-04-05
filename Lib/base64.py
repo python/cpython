@@ -46,12 +46,14 @@ def _bytes_from_decode_data(s):
 
 # Base64 encoding/decoding uses binascii
 
-def b64encode(s, altchars=None, *, wrapcol=0):
+def b64encode(s, altchars=None, *, padded=True, wrapcol=0):
     """Encode the bytes-like object s using Base64 and return a bytes object.
 
     Optional altchars should be a byte string of length 2 which specifies an
     alternative alphabet for the '+' and '/' characters.  This allows an
     application to e.g. generate url or filesystem safe Base64 strings.
+
+    If padded is false, omit padding in the output.
 
     If wrapcol is non-zero, insert a newline (b'\\n') character after at most
     every wrapcol characters.
@@ -60,17 +62,20 @@ def b64encode(s, altchars=None, *, wrapcol=0):
         if len(altchars) != 2:
             raise ValueError(f'invalid altchars: {altchars!r}')
         alphabet = binascii.BASE64_ALPHABET[:-2] + altchars
-        return binascii.b2a_base64(s, wrapcol=wrapcol, newline=False,
+        return binascii.b2a_base64(s, padded=padded, wrapcol=wrapcol, newline=False,
                                    alphabet=alphabet)
-    return binascii.b2a_base64(s, wrapcol=wrapcol, newline=False)
+    return binascii.b2a_base64(s, padded=padded, wrapcol=wrapcol, newline=False)
 
 
-def b64decode(s, altchars=None, validate=_NOT_SPECIFIED, *, ignorechars=_NOT_SPECIFIED):
+def b64decode(s, altchars=None, validate=_NOT_SPECIFIED,
+              *, padded=True, ignorechars=_NOT_SPECIFIED):
     """Decode the Base64 encoded bytes-like object or ASCII string s.
 
     Optional altchars must be a bytes-like object or ASCII string of length 2
     which specifies the alternative alphabet used instead of the '+' and '/'
     characters.
+
+    If padded is false, padding in input is not required.
 
     The result is returned as a bytes object.  A binascii.Error is raised if
     s is incorrectly padded.
@@ -105,11 +110,11 @@ def b64decode(s, altchars=None, validate=_NOT_SPECIFIED, *, ignorechars=_NOT_SPE
             alphabet = binascii.BASE64_ALPHABET[:-2] + altchars
             return binascii.a2b_base64(s, strict_mode=validate,
                                        alphabet=alphabet,
-                                       ignorechars=ignorechars)
+                                       padded=padded, ignorechars=ignorechars)
     if ignorechars is _NOT_SPECIFIED:
         ignorechars = b''
     result = binascii.a2b_base64(s, strict_mode=validate,
-                                 ignorechars=ignorechars)
+                                 padded=padded, ignorechars=ignorechars)
     if badchar is not None:
         import warnings
         if validate:
@@ -145,17 +150,19 @@ def standard_b64decode(s):
 
 _urlsafe_decode_translation = bytes.maketrans(b'-_', b'+/')
 
-def urlsafe_b64encode(s):
+def urlsafe_b64encode(s, *, padded=True):
     """Encode bytes using the URL- and filesystem-safe Base64 alphabet.
 
     Argument s is a bytes-like object to encode.  The result is returned as a
     bytes object.  The alphabet uses '-' instead of '+' and '_' instead of
     '/'.
+
+    If padded is false, omit padding in the output.
     """
-    return binascii.b2a_base64(s, newline=False,
+    return binascii.b2a_base64(s, padded=padded, newline=False,
                                alphabet=binascii.URLSAFE_BASE64_ALPHABET)
 
-def urlsafe_b64decode(s):
+def urlsafe_b64decode(s, *, padded=False):
     """Decode bytes using the URL- and filesystem-safe Base64 alphabet.
 
     Argument s is a bytes-like object or ASCII string to decode.  The result
@@ -163,6 +170,8 @@ def urlsafe_b64decode(s):
     is incorrectly padded.  Characters that are not in the URL-safe base-64
     alphabet, and are not a plus '+' or slash '/', are discarded prior to the
     padding check.
+
+    If padded is false, padding in input is not required.
 
     The alphabet uses '-' instead of '+' and '_' instead of '/'.
     """
@@ -173,7 +182,7 @@ def urlsafe_b64decode(s):
             badchar = b
             break
     s = s.translate(_urlsafe_decode_translation)
-    result = binascii.a2b_base64(s, strict_mode=False)
+    result = binascii.a2b_base64(s, strict_mode=False, padded=padded)
     if badchar is not None:
         import warnings
         warnings.warn(f'invalid character {chr(badchar)!a} in URL-safe Base64 data '
@@ -187,6 +196,8 @@ def urlsafe_b64decode(s):
 _B32_ENCODE_DOCSTRING = '''
 Encode the bytes-like objects using {encoding} and return a bytes object.
 
+If padded is false, omit padding in the output.
+
 If wrapcol is non-zero, insert a newline (b'\\n') character after at most
 every wrapcol characters.
 '''
@@ -195,6 +206,8 @@ Decode the {encoding} encoded bytes-like object or ASCII string s.
 
 Optional casefold is a flag specifying whether a lowercase alphabet is
 acceptable as input.  For security purposes, the default is False.
+
+If padded is false, padding in input is not required.
 
 ignorechars should be a byte string containing characters to ignore
 from the input.
@@ -213,11 +226,11 @@ the letter O).  For security purposes the default is None, so that
 0 and 1 are not allowed in the input.
 '''
 
-def b32encode(s, *, wrapcol=0):
-    return binascii.b2a_base32(s, wrapcol=wrapcol)
+def b32encode(s, *, padded=True, wrapcol=0):
+    return binascii.b2a_base32(s, padded=padded, wrapcol=wrapcol)
 b32encode.__doc__ = _B32_ENCODE_DOCSTRING.format(encoding='base32')
 
-def b32decode(s, casefold=False, map01=None, *, ignorechars=b''):
+def b32decode(s, casefold=False, map01=None, *, padded=True, ignorechars=b''):
     s = _bytes_from_decode_data(s)
     # Handle section 2.4 zero and one mapping.  The flag map01 will be either
     # False, or the character to map the digit 1 (one) to.  It should be
@@ -228,22 +241,22 @@ def b32decode(s, casefold=False, map01=None, *, ignorechars=b''):
         s = s.translate(bytes.maketrans(b'01', b'O' + map01))
     if casefold:
         s = s.upper()
-    return binascii.a2b_base32(s, ignorechars=ignorechars)
+    return binascii.a2b_base32(s, padded=padded, ignorechars=ignorechars)
 b32decode.__doc__ = _B32_DECODE_DOCSTRING.format(encoding='base32',
                                         extra_args=_B32_DECODE_MAP01_DOCSTRING)
 
-def b32hexencode(s, *, wrapcol=0):
-    return binascii.b2a_base32(s, wrapcol=wrapcol,
+def b32hexencode(s, *, padded=True, wrapcol=0):
+    return binascii.b2a_base32(s, padded=padded, wrapcol=wrapcol,
                                alphabet=binascii.BASE32HEX_ALPHABET)
 b32hexencode.__doc__ = _B32_ENCODE_DOCSTRING.format(encoding='base32hex')
 
-def b32hexdecode(s, casefold=False, *, ignorechars=b''):
+def b32hexdecode(s, casefold=False, *, padded=True, ignorechars=b''):
     s = _bytes_from_decode_data(s)
     # base32hex does not have the 01 mapping
     if casefold:
         s = s.upper()
     return binascii.a2b_base32(s, alphabet=binascii.BASE32HEX_ALPHABET,
-                               ignorechars=ignorechars)
+                               padded=padded, ignorechars=ignorechars)
 b32hexdecode.__doc__ = _B32_DECODE_DOCSTRING.format(encoding='base32hex',
                                                     extra_args='')
 
