@@ -3170,12 +3170,20 @@ def check_func(
     return found
 
 
-def check_funcs(funcs: list[str], headers: list[str] | None = None) -> None:
-    """AC_CHECK_FUNCS — check multiple functions; define HAVE_<FUNC> for each found."""
+def check_funcs(funcs: list[str], headers: list[str] | None = None) -> bool:
+    """AC_CHECK_FUNCS — check multiple functions; define HAVE_<FUNC> for each found.
+
+    Returns True if any function was found (matches AC_CHECK_FUNCS action-if-found
+    semantics, where the action runs for each found function).
+    """
+    any_found = False
     for f in funcs:
         checking(f"for {f}")
         found = check_func(f, headers=headers)
         result(found)
+        if found:
+            any_found = True
+    return any_found
 
 
 def check_decl(

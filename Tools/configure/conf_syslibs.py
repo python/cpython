@@ -1,12 +1,11 @@
-"""conf_syslibs — GDBM, DBM, pthreads setup, base libraries, libatomic.
+"""conf_syslibs — GDBM, DBM, base libraries, libatomic, stat timestamps, tzpath.
 
 Detects GDBM library and headers; handles --with-dbmliborder and
 detects DBM backends (gdbm, ndbm, bdb) in the specified order;
-configures POSIX threads (THREADOBJ, thread CFLAGS/LDFLAGS,
-PTHREAD_SYSTEM_SCHED_SUPPORTED); probes for sendfile, dl, dld
-libraries and backtrace/dladdr1 support; checks sem_init, intl,
-AIX-specific extensions, and aligned memory access; and probes
-whether libatomic is needed for <pyatomic.h>.
+probes for sendfile, dl, dld libraries and backtrace/dladdr1 support;
+checks sem_init, intl, AIX-specific extensions, and aligned memory access;
+probes whether libatomic is needed for <pyatomic.h>; checks for subsecond
+timestamps in struct stat; and handles --with-tzpath.
 """
 
 from __future__ import annotations
@@ -106,6 +105,7 @@ def detect_dbm(v):
         )
 
     if ac_cv_header_gdbm_slash_ndbm_h or ac_cv_header_gdbm_dash_ndbm_h:
+        r = ""
         with pyconf.save_env():
             r = pyconf.search_libs("dbm_open", ["gdbm_compat"], required=False)
         if r and r is not False:
@@ -298,6 +298,7 @@ def check_libatomic(v):
     # anymore.  <pyport.h> cannot be included alone, it's designed to be included
     # by <Python.h>: it expects other includes and macros to be defined.
 
+    libatomic_needed = False
     with pyconf.save_env():
         v.CPPFLAGS = f"{v.BASECPPFLAGS} -I. -I{pyconf.srcdir}/Include {v.CPPFLAGS}".strip()
         libatomic_needed = not pyconf.link_check(

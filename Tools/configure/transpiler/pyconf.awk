@@ -762,14 +762,18 @@ function pyconf_check_func(fname, headers, define, source, inc, cv, rc, cache_ke
         return rc
 }
 
-function pyconf_check_funcs(funcs, n, i, rc) {
+function pyconf_check_funcs(funcs,    n, i, rc, any_found) {
+        # Returns 1 if any function was found (mirrors AC_CHECK_FUNCS action-if-found).
         n = funcs[0] + 0
+        any_found = 0
         for (i = 1; i <= n; i++)
                 if (funcs[i] != "") {
                         pyconf_checking("for " funcs[i])
                         rc = pyconf_check_func(funcs[i])
                         pyconf_result(rc ? "yes" : "no")
+                        if (rc) any_found = 1
                 }
+        return any_found
 }
 
 function pyconf_replace_funcs(funcs, n, i, rc) {
