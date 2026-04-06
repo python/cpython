@@ -61,7 +61,7 @@ jobs:
               || ''
             }}.txt handle_segv=0" >> "$GITHUB_ENV"
         else
-          echo "UBSAN_OPTIONS=${SAN_LOG_OPTION}" >> "$GITHUB_ENV"
+          echo "UBSAN_OPTIONS=${SAN_LOG_OPTION} halt_on_error=1 suppressions=${GITHUB_WORKSPACE}/Tools/ubsan/suppressions.txt" >> "$GITHUB_ENV"
         fi
         echo "CC=clang" >> "$GITHUB_ENV"
         echo "CXX=clang++" >> "$GITHUB_ENV"

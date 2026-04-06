@@ -1,0 +1,2 @@
+null:Objects/object.c
+bool:Objects/memoryobject.c
