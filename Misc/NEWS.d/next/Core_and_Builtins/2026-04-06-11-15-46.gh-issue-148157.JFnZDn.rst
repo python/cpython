@@ -1,0 +1,2 @@
+Fix an unlikely crash when parsing an invalid type comments for function
+parameters.
