@@ -105,9 +105,6 @@ class Completer(rlcompleter.Completer):
         names = [f'{expr}.{name}' for name in names]
         if self.use_colors:
             return self.colorize_matches(names, values)
-
-        if prefix:
-            names.append(' ')
         return names
 
     def _attr_matches(self, text):
@@ -173,21 +170,15 @@ class Completer(rlcompleter.Completer):
         return expr, attr, names, values
 
     def colorize_matches(self, names, values):
-        matches = [self._color_for_obj(i, name, obj)
-                   for i, (name, obj)
-                   in enumerate(zip(names, values))]
-        # We add a space at the end to prevent the automatic completion of the
-        # common prefix, which is the ANSI escape sequence.
-        matches.append(' ')
-        return matches
+        return [
+            self._color_for_obj(name, obj)
+            for name, obj in zip(names, values)
+        ]
 
-    def _color_for_obj(self, i, name, value):
+    def _color_for_obj(self, name, value):
         t = type(value)
         color = self._color_by_type(t)
-        # Encode the match index into a fake escape sequence that
-        # stripcolor() can still remove once i reaches four digits.
-        N = f"\x1b[{i // 100:03d};{i % 100:02d}m"
-        return f"{N}{color}{name}{ANSIColors.RESET}"
+        return f"{color}{name}{ANSIColors.RESET}"
 
     def _color_by_type(self, t):
         typename = t.__name__
