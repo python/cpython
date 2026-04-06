@@ -1,0 +1,2 @@
+The Android build script was modified to improve parity with other platform
+build scripts.

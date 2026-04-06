@@ -15,6 +15,7 @@
 #include "pycore_pybuffer.h"      // _PyBuffer_ReleaseInInterpreterAndRawFree()
 #include "pycore_pylifecycle.h"   // _PyInterpreterConfig_AsDict()
 #include "pycore_pystate.h"       // _PyInterpreterState_IsRunningMain()
+#include "pycore_tuple.h"         // _PyTuple_FromPairSteal
 
 #include "marshal.h"              // PyMarshal_ReadObjectFromString()
 
@@ -796,10 +797,7 @@ get_summary(PyInterpreterState *interp)
         Py_DECREF(idobj);
         return NULL;
     }
-    PyObject *res = PyTuple_Pack(2, idobj, whenceobj);
-    Py_DECREF(idobj);
-    Py_DECREF(whenceobj);
-    return res;
+    return _PyTuple_FromPairSteal(idobj, whenceobj);
 }
 
 
