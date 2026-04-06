@@ -15,7 +15,6 @@ if False:
 
 class ANSIColors:
     RESET = "\x1b[0m"
-
     BLACK = "\x1b[30m"
     BLUE = "\x1b[34m"
     CYAN = "\x1b[36m"
@@ -200,6 +199,29 @@ class Difflib(ThemeSection):
     reset: str = ANSIColors.RESET
 
 
+class FancyCompleter(ThemeSection):
+    # functions and methods
+    function: str = ANSIColors.BOLD_BLUE
+    builtin_function_or_method: str = ANSIColors.BOLD_BLUE
+    method: str = ANSIColors.BOLD_CYAN
+    method_wrapper: str = ANSIColors.BOLD_CYAN
+    wrapper_descriptor: str = ANSIColors.BOLD_CYAN
+    method_descriptor: str = ANSIColors.BOLD_CYAN
+
+    # numbers
+    int: str = ANSIColors.BOLD_YELLOW
+    float: str = ANSIColors.BOLD_YELLOW
+    complex: str = ANSIColors.BOLD_YELLOW
+    bool: str = ANSIColors.BOLD_YELLOW
+
+    # others
+    type: str = ANSIColors.BOLD_MAGENTA
+    module: str = ANSIColors.CYAN
+    NoneType: str = ANSIColors.GREY
+    bytes: str = ANSIColors.BOLD_GREEN
+    str: str = ANSIColors.BOLD_GREEN
+
+
 @dataclass(frozen=True, kw_only=True)
 class HttpServer(ThemeSection):
     error: str = ANSIColors.YELLOW
@@ -370,6 +392,7 @@ class Theme:
     """
     argparse: Argparse = field(default_factory=Argparse)
     difflib: Difflib = field(default_factory=Difflib)
+    fancycompleter: FancyCompleter = field(default_factory=FancyCompleter)
     http_server: HttpServer = field(default_factory=HttpServer)
     live_profiler: LiveProfiler = field(default_factory=LiveProfiler)
     syntax: Syntax = field(default_factory=Syntax)
@@ -381,6 +404,7 @@ class Theme:
         *,
         argparse: Argparse | None = None,
         difflib: Difflib | None = None,
+        fancycompleter: FancyCompleter | None = None,
         http_server: HttpServer | None = None,
         live_profiler: LiveProfiler | None = None,
         syntax: Syntax | None = None,
@@ -395,6 +419,7 @@ class Theme:
         return type(self)(
             argparse=argparse or self.argparse,
             difflib=difflib or self.difflib,
+            fancycompleter=fancycompleter or self.fancycompleter,
             http_server=http_server or self.http_server,
             live_profiler=live_profiler or self.live_profiler,
             syntax=syntax or self.syntax,
@@ -413,6 +438,7 @@ class Theme:
         return cls(
             argparse=Argparse.no_colors(),
             difflib=Difflib.no_colors(),
+            fancycompleter=FancyCompleter.no_colors(),
             http_server=HttpServer.no_colors(),
             live_profiler=LiveProfiler.no_colors(),
             syntax=Syntax.no_colors(),

@@ -1,0 +1,1 @@
+Fixed a memory leak in :exc:`SyntaxError` when re-initializing it.

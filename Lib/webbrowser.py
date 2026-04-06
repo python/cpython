@@ -167,7 +167,7 @@ class BaseBrowser:
     def _check_url(url):
         """Ensures that the URL is safe to pass to subprocesses as a parameter"""
         if url and url.lstrip().startswith("-"):
-            raise ValueError(f"Invalid URL: {url}")
+            raise ValueError(f"Invalid URL (leading dash disallowed): {url!r}")
 
 
 class GenericBrowser(BaseBrowser):

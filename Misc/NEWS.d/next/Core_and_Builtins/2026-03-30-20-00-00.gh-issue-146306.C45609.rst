@@ -1,0 +1,3 @@
+Optimize compact integer arithmetic in the JIT by mutating
+uniquely-referenced operands in place, avoiding allocation of a new int
+object. Speeds up the pyperformance ``spectral_norm`` benchmark by ~10%.
