@@ -708,7 +708,7 @@ if sys.platform == 'darwin':
             'safari':         'com.apple.Safari',
             'chromium':       'org.chromium.Chromium',
             'opera':          'com.operasoftware.Opera',
-            'microsoft edge': 'com.microsoft.Edge',
+            'microsoft edge': 'com.microsoft.edgemac',
         }
 
         def open(self, url, new=0, autoraise=True):
