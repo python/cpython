@@ -655,14 +655,14 @@ if sys.platform == 'darwin':
         to -a.
         """
 
-        _BUNDLE_IDS = {
+        _BUNDLE_IDS = frozendict({
             'google chrome':  'com.google.Chrome',
             'firefox':        'org.mozilla.firefox',
             'safari':         'com.apple.Safari',
             'chromium':       'org.chromium.Chromium',
             'opera':          'com.operasoftware.Opera',
             'microsoft edge': 'com.microsoft.edgemac',
-        }
+        })
 
         def open(self, url, new=0, autoraise=True):
             sys.audit("webbrowser.open", url)
