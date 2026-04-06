@@ -1629,7 +1629,7 @@ class TestPyReplModuleCompleter(TestCase):
                         result = completer.get_completions(code)
                         self.assertEqual(result is None, expected is None)
                         if result:
-                            compl, act = result
+                            compl, _values, act = result
                             self.assertEqual(compl, expected[0])
                             self.assertEqual(act is None, expected[1] is None)
                             if act:
