@@ -167,7 +167,7 @@ class FancyCompleterTests(unittest.TestCase):
         self.assertEqual(compl.global_matches('foobaz'), ['foobazzz'])
         self.assertEqual(compl.global_matches('nothing'), [])
 
-    def test_large_color_sort_prefix_is_stripped(self):
+    def test_colorized_match_is_stripped(self):
         theme = get_theme()
         match = _color_for_obj('spam', 1, theme)
         self.assertEqual(stripcolor(match), 'spam')
