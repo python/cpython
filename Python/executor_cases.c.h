@@ -2525,7 +2525,7 @@
             break;
         }
 
-        case _POP_TOS_OPARG_r00: {
+        case _POP_TOP_OPARG_r00: {
             CHECK_CURRENT_CACHED_VALUES(0);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             _PyStackRef *args;

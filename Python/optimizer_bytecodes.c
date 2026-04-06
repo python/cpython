@@ -778,8 +778,8 @@ dummy_func(void) {
         a = arg;
     }
 
-    // This is expanded into _POP_NOS in the trace recorder/translator.
-    op(_POP_TOS_OPARG, (args[oparg] --)) {
+    // This is expanded into POP_TOP, POP_TOP, POP_TOP, POP_TOP (...oparg times) in the trace recorder/translator.
+    op(_POP_TOP_OPARG, (args[oparg] --)) {
         (void)args;
         Py_FatalError("Forbidden uop seeen in trace.\n");
     }

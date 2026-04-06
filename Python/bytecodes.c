@@ -387,7 +387,7 @@ dummy_func(
         }
 
         // This is expanded to POP_TOP + POP_TOP + POP_TOP + ... (oparg times) in the JIT trace.
-        op(_POP_TOS_OPARG, (args[oparg] -- )) {
+        op(_POP_TOP_OPARG, (args[oparg] -- )) {
             _PyStackRef_CloseStack(args, oparg);
             DEAD(args);
         }
@@ -4670,7 +4670,7 @@ dummy_func(
             unused/2 +
             _GUARD_CALLABLE_BUILTIN_FAST +
             _CALL_BUILTIN_FAST +
-            _POP_TOS_OPARG +
+            _POP_TOP_OPARG +
             POP_TOP +
             POP_TOP +
             _ERROR_IF_TOS_NULL +

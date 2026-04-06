@@ -186,7 +186,7 @@
             break;
         }
 
-        case _POP_TOS_OPARG: {
+        case _POP_TOP_OPARG: {
             JitOptRef *args;
             args = &stack_pointer[-oparg];
             (void)args;

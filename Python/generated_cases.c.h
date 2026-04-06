@@ -2389,7 +2389,7 @@
                 args[oparg] = args[0];
                 res = res_o == NULL ? PyStackRef_NULL : PyStackRef_FromPyObjectSteal(res_o);
             }
-            // _POP_TOS_OPARG
+            // _POP_TOP_OPARG
             {
                 args = &stack_pointer[1 - oparg];
                 stack_pointer[-2 - oparg] = res;
