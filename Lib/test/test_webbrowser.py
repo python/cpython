@@ -412,7 +412,7 @@ class MacOSXOSAScriptDeprecationTest(unittest.TestCase):
 
     def test_deprecation_warning(self):
         with self.assertWarns(DeprecationWarning):
-            webbrowser.MacOSOSAScript('default')
+            webbrowser.MacOSXOSAScript('default')
 
 
 @unittest.skipUnless(sys.platform == "darwin", "macOS specific test")
@@ -428,7 +428,7 @@ class MacOSXOSAScriptTest(unittest.TestCase):
         support.patch(self, os, "popen", self.mock_popen)
         self.enterContext(warnings.catch_warnings())
         warnings.simplefilter("ignore", DeprecationWarning)
-        self.browser = webbrowser.MacOSOSAScript("default")
+        self.browser = webbrowser.MacOSXOSAScript("default")
 
     def mock_popen(self, cmd, mode):
         self.popen_pipe = MockPopenPipe(cmd, mode)
@@ -462,7 +462,7 @@ class MacOSXOSAScriptTest(unittest.TestCase):
     def test_explicit_browser(self):
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", DeprecationWarning)
-            browser = webbrowser.MacOSOSAScript("safari")
+            browser = webbrowser.MacOSXOSAScript("safari")
         browser.open("https://python.org")
         script = self.popen_pipe.pipe.getvalue()
         self.assertIn('tell application "safari"', script)
