@@ -75,7 +75,7 @@ jobs:
         ${{
           inputs.sanitizer == 'TSan'
           && '--with-thread-sanitizer'
-          || '--with-undefined-behavior-sanitizer'
+          || '--with-undefined-behavior-sanitizer --with-strict-overflow'
         }}
         --with-pydebug
         ${{ fromJSON(inputs.free-threading) && '--disable-gil' || '' }}
