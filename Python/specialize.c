@@ -1220,13 +1220,14 @@ specialize_class_load_attr(PyObject *owner, _Py_CODEUNIT *instr,
 #ifdef Py_GIL_DISABLED
             maybe_enable_deferred_ref_count(descr);
 #endif
-            write_u32(cache->type_version, tp_version);
             write_ptr(cache->descr, descr);
             if (metaclass_check) {
-                write_u32(cache->keys_version, meta_version);
+                write_u32(cache->keys_version, tp_version);
+                write_u32(cache->type_version, meta_version);
                 specialize(instr, LOAD_ATTR_CLASS_WITH_METACLASS_CHECK);
             }
             else {
+                write_u32(cache->type_version, tp_version);
                 specialize(instr, LOAD_ATTR_CLASS);
             }
             Py_XDECREF(descr);
