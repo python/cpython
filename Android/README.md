@@ -103,14 +103,6 @@ require adding your user to a group, or changing your udev rules. On GitHub
 Actions, the test script will do this automatically using the commands shown
 [here](https://github.blog/changelog/2024-04-02-github-actions-hardware-accelerated-android-virtualization-now-available/).
 
-The test suite can usually be run on a device with 2 GB of RAM, but this is
-borderline, so you may need to increase it to 4 GB. As of Android
-Studio Koala, 2 GB is the default for all emulators, although the user interface
-may indicate otherwise. Locate the emulator's directory under `~/.android/avd`,
-and find `hw.ramSize` in both config.ini and hardware-qemu.ini. Either set these
-manually to the same value, or use the Android Studio Device Manager, which will
-update both files.
-
 You can run the test suite either:
 
 * Within the CPython repository, after doing a build as described above. On
