@@ -8,6 +8,19 @@ import rlcompleter
 import keyword
 import types
 
+
+def safe_getattr(obj, name):
+    # Mirror rlcompleter's safeguards so completion does not
+    # call properties or reify lazy module attributes.
+    if isinstance(getattr(type(obj), name, None), property):
+        return None
+    if (isinstance(obj, types.ModuleType)
+        and isinstance(obj.__dict__.get(name), types.LazyImportType)
+    ):
+        return obj.__dict__.get(name)
+    return getattr(obj, name, None)
+
+
 class Completer(rlcompleter.Completer):
     """
     When doing something like a.b.<tab>, keep the full a.b.attr completion
@@ -143,21 +156,7 @@ class Completer(rlcompleter.Completer):
                     word[:n] == attr
                     and not (noprefix and word[:n+1] == noprefix)
                 ):
-                    # Mirror rlcompleter's safeguards so completion does not
-                    # call properties or reify lazy module attributes.
-                    if isinstance(getattr(type(thisobject), word, None), property):
-                        value = None
-                    elif (
-                        isinstance(thisobject, types.ModuleType)
-                        and isinstance(
-                            thisobject.__dict__.get(word),
-                            types.LazyImportType,
-                        )
-                    ):
-                        value = thisobject.__dict__.get(word)
-                    else:
-                        value = getattr(thisobject, word, None)
-
+                    value = safe_getattr(thisobject, word)
                     names.append(word)
                     values.append(value)
             if names or not noprefix:
