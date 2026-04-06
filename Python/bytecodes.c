@@ -386,47 +386,10 @@ dummy_func(
             PyStackRef_CLOSE(nos);
         }
 
-        // This is expanded to _POP_NOS + _POP_NOS + _POP_NOS + ... (oparg times) in the JIT trace.
-        op(_POP_NOS_OPARG, (args[oparg], res_i -- res_o)) {
+        // This is expanded to POP_TOP + POP_TOP + POP_TOP + ... (oparg times) in the JIT trace.
+        op(_POP_TOS_OPARG, (args[oparg] -- )) {
             _PyStackRef_CloseStack(args, oparg);
             DEAD(args);
-            res_o = res_i;
-            DEAD(res_i);
-        }
-
-        op(_POP_NOS, (value, res_i -- res_o)) {
-            res_o = res_i;
-            DEAD(res_i);
-            PyStackRef_XCLOSE(value);
-        }
-
-        op(_POP_NOS_NOP, (value, res_i -- res_o)) {
-            assert(PyStackRef_IsNull(value) || (!PyStackRef_RefcountOnObject(value)) ||
-                _Py_IsImmortal((PyStackRef_AsPyObjectBorrow(value))));
-            DEAD(value);
-            res_o = res_i;
-            DEAD(res_i);
-        }
-
-        op(_POP_NOS_INT, (value, res_i -- res_o)) {
-            assert(PyLong_CheckExact(PyStackRef_AsPyObjectBorrow(value)));
-            PyStackRef_CLOSE_SPECIALIZED(value, _PyLong_ExactDealloc);
-            res_o = res_i;
-            DEAD(res_i);
-        }
-
-        op(_POP_NOS_FLOAT, (value, res_i -- res_o)) {
-            assert(PyFloat_CheckExact(PyStackRef_AsPyObjectBorrow(value)));
-            PyStackRef_CLOSE_SPECIALIZED(value, _PyFloat_ExactDealloc);
-            res_o = res_i;
-            DEAD(res_i);
-        }
-
-        op(_POP_NOS_UNICODE, (value, res_i -- res_o)) {
-            assert(PyUnicode_CheckExact(PyStackRef_AsPyObjectBorrow(value)));
-            PyStackRef_CLOSE_SPECIALIZED(value, _PyUnicode_ExactDealloc);
-            res_o = res_i;
-            DEAD(res_i);
         }
 
         pure inst(PUSH_NULL, (-- res)) {
@@ -4672,7 +4635,7 @@ dummy_func(
             EXIT_IF(PyCFunction_GET_FLAGS(callable_o) != METH_FASTCALL);
         }
 
-        op(_CALL_BUILTIN_FAST, (callable, self_or_null, args[oparg] -- callable, self_or_null, args[oparg], res)) {
+        op(_CALL_BUILTIN_FAST, (callable, self_or_null, args[oparg] -- res, c, s, a[oparg])) {
             /* Builtin METH_FASTCALL functions, without keywords */
             int total_args = oparg;
             _PyStackRef *arguments = args;
@@ -4686,6 +4649,14 @@ dummy_func(
                 arguments,
                 total_args
             );
+            c = callable;
+            s = self_or_null;
+            // Swap the first argument with the first empty slot after args to allows space for res.
+            // We are guaranteed by the bytecode compiler to have as spare stack slot.
+            args[oparg] = args[0];
+            DEAD(self_or_null);
+            DEAD(callable);
+            DEAD(args);
             res = res_o == NULL ? PyStackRef_NULL : PyStackRef_FromPyObjectSteal(res_o);
         }
 
@@ -4699,9 +4670,9 @@ dummy_func(
             unused/2 +
             _GUARD_CALLABLE_BUILTIN_FAST +
             _CALL_BUILTIN_FAST +
-            _POP_NOS_OPARG +
-            _POP_NOS +
-            _POP_NOS +
+            _POP_TOS_OPARG +
+            POP_TOP +
+            POP_TOP +
             _ERROR_IF_TOS_NULL +
             _CHECK_PERIODIC_AT_END;
 

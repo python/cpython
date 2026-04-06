@@ -779,29 +779,9 @@ dummy_func(void) {
     }
 
     // This is expanded into _POP_NOS in the trace recorder/translator.
-    op(_POP_NOS_OPARG, (args[oparg], res_i -- res_o)) {
+    op(_POP_TOS_OPARG, (args[oparg] --)) {
         (void)args;
-        res_o = res_i;
         Py_FatalError("Forbidden uop seeen in trace.\n");
-    }
-
-    op(_POP_NOS, (value, res_i -- res_o)) {
-        res_o = res_i;
-        PyTypeObject *typ = sym_get_type(value);
-        if (PyJitRef_IsBorrowed(value) ||
-            sym_is_immortal(PyJitRef_Unwrap(value)) ||
-            sym_is_null(value)) {
-            ADD_OP(_POP_NOS_NOP, 0, 0);
-        }
-        else if (typ == &PyLong_Type) {
-            ADD_OP(_POP_NOS_INT, 0, 0);
-        }
-        else if (typ == &PyFloat_Type) {
-            ADD_OP(_POP_NOS_FLOAT, 0, 0);
-        }
-        else if (typ == &PyUnicode_Type) {
-            ADD_OP(_POP_NOS_UNICODE, 0, 0);
-        }
     }
 
     op(_POP_TOP, (value -- )) {
@@ -1357,6 +1337,15 @@ dummy_func(void) {
         else {
             s = sym_new_unknown(ctx);
         }
+    }
+
+    op(_CALL_BUILTIN_FAST, (callable, self_or_null, args[oparg] -- res, c, s, a[oparg])) {
+        c = callable;
+        s = self_or_null;
+        // Swap the first argument with the first empty slot after args to allows space for res.
+        // We are guaranteed by the bytecode compiler to have as spare stack slot.
+        args[oparg] = args[0];
+        res = sym_new_unknown(ctx);
     }
 
     op(_GUARD_CALLABLE_METHOD_DESCRIPTOR_O, (callable, self_or_null, args[oparg] -- callable, self_or_null, args[oparg])) {

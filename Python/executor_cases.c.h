@@ -2525,372 +2525,21 @@
             break;
         }
 
-        case _POP_NOS_OPARG_r11: {
-            CHECK_CURRENT_CACHED_VALUES(1);
+        case _POP_TOS_OPARG_r00: {
+            CHECK_CURRENT_CACHED_VALUES(0);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
-            _PyStackRef res_i;
             _PyStackRef *args;
-            _PyStackRef res_o;
-            _PyStackRef _stack_item_0 = _tos_cache0;
             oparg = CURRENT_OPARG();
-            res_i = _stack_item_0;
             args = &stack_pointer[-oparg];
-            stack_pointer[0] = res_i;
-            stack_pointer += 1;
-            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
             _PyFrame_SetStackPointer(frame, stack_pointer);
             _PyStackRef_CloseStack(args, oparg);
             stack_pointer = _PyFrame_GetStackPointer(frame);
-            res_o = res_i;
-            _tos_cache0 = res_o;
+            _tos_cache0 = PyStackRef_ZERO_BITS;
             _tos_cache1 = PyStackRef_ZERO_BITS;
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            SET_CURRENT_CACHED_VALUES(1);
-            stack_pointer += -1 - oparg;
+            SET_CURRENT_CACHED_VALUES(0);
+            stack_pointer += -oparg;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
-            assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
-            break;
-        }
-
-        case _POP_NOS_r21: {
-            CHECK_CURRENT_CACHED_VALUES(2);
-            assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
-            _PyStackRef res_i;
-            _PyStackRef value;
-            _PyStackRef res_o;
-            _PyStackRef _stack_item_0 = _tos_cache0;
-            _PyStackRef _stack_item_1 = _tos_cache1;
-            res_i = _stack_item_1;
-            value = _stack_item_0;
-            res_o = res_i;
-            stack_pointer[0] = res_o;
-            stack_pointer += 1;
-            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
-            _PyFrame_SetStackPointer(frame, stack_pointer);
-            PyStackRef_XCLOSE(value);
-            stack_pointer = _PyFrame_GetStackPointer(frame);
-            _tos_cache0 = res_o;
-            _tos_cache1 = PyStackRef_ZERO_BITS;
-            _tos_cache2 = PyStackRef_ZERO_BITS;
-            SET_CURRENT_CACHED_VALUES(1);
-            stack_pointer += -1;
-            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
-            assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
-            break;
-        }
-
-        case _POP_NOS_NOP_r01: {
-            CHECK_CURRENT_CACHED_VALUES(0);
-            assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
-            _PyStackRef res_i;
-            _PyStackRef value;
-            _PyStackRef res_o;
-            res_i = stack_pointer[-1];
-            value = stack_pointer[-2];
-            assert(PyStackRef_IsNull(value) || (!PyStackRef_RefcountOnObject(value)) ||
-                   _Py_IsImmortal((PyStackRef_AsPyObjectBorrow(value))));
-            res_o = res_i;
-            _tos_cache0 = res_o;
-            SET_CURRENT_CACHED_VALUES(1);
-            stack_pointer += -2;
-            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
-            assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
-            break;
-        }
-
-        case _POP_NOS_NOP_r11: {
-            CHECK_CURRENT_CACHED_VALUES(1);
-            assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
-            _PyStackRef res_i;
-            _PyStackRef value;
-            _PyStackRef res_o;
-            _PyStackRef _stack_item_0 = _tos_cache0;
-            res_i = _stack_item_0;
-            value = stack_pointer[-1];
-            assert(PyStackRef_IsNull(value) || (!PyStackRef_RefcountOnObject(value)) ||
-                   _Py_IsImmortal((PyStackRef_AsPyObjectBorrow(value))));
-            res_o = res_i;
-            _tos_cache0 = res_o;
-            SET_CURRENT_CACHED_VALUES(1);
-            stack_pointer += -1;
-            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
-            assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
-            break;
-        }
-
-        case _POP_NOS_NOP_r21: {
-            CHECK_CURRENT_CACHED_VALUES(2);
-            assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
-            _PyStackRef res_i;
-            _PyStackRef value;
-            _PyStackRef res_o;
-            _PyStackRef _stack_item_0 = _tos_cache0;
-            _PyStackRef _stack_item_1 = _tos_cache1;
-            res_i = _stack_item_1;
-            value = _stack_item_0;
-            assert(PyStackRef_IsNull(value) || (!PyStackRef_RefcountOnObject(value)) ||
-                   _Py_IsImmortal((PyStackRef_AsPyObjectBorrow(value))));
-            res_o = res_i;
-            _tos_cache0 = res_o;
-            SET_CURRENT_CACHED_VALUES(1);
-            assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
-            break;
-        }
-
-        case _POP_NOS_NOP_r32: {
-            CHECK_CURRENT_CACHED_VALUES(3);
-            assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
-            _PyStackRef res_i;
-            _PyStackRef value;
-            _PyStackRef res_o;
-            _PyStackRef _stack_item_0 = _tos_cache0;
-            _PyStackRef _stack_item_1 = _tos_cache1;
-            _PyStackRef _stack_item_2 = _tos_cache2;
-            res_i = _stack_item_2;
-            value = _stack_item_1;
-            assert(PyStackRef_IsNull(value) || (!PyStackRef_RefcountOnObject(value)) ||
-                   _Py_IsImmortal((PyStackRef_AsPyObjectBorrow(value))));
-            res_o = res_i;
-            _tos_cache1 = res_o;
-            _tos_cache0 = _stack_item_0;
-            SET_CURRENT_CACHED_VALUES(2);
-            assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
-            break;
-        }
-
-        case _POP_NOS_INT_r01: {
-            CHECK_CURRENT_CACHED_VALUES(0);
-            assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
-            _PyStackRef res_i;
-            _PyStackRef value;
-            _PyStackRef res_o;
-            res_i = stack_pointer[-1];
-            value = stack_pointer[-2];
-            assert(PyLong_CheckExact(PyStackRef_AsPyObjectBorrow(value)));
-            PyStackRef_CLOSE_SPECIALIZED(value, _PyLong_ExactDealloc);
-            res_o = res_i;
-            _tos_cache0 = res_o;
-            SET_CURRENT_CACHED_VALUES(1);
-            stack_pointer += -2;
-            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
-            assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
-            break;
-        }
-
-        case _POP_NOS_INT_r11: {
-            CHECK_CURRENT_CACHED_VALUES(1);
-            assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
-            _PyStackRef res_i;
-            _PyStackRef value;
-            _PyStackRef res_o;
-            _PyStackRef _stack_item_0 = _tos_cache0;
-            res_i = _stack_item_0;
-            value = stack_pointer[-1];
-            assert(PyLong_CheckExact(PyStackRef_AsPyObjectBorrow(value)));
-            PyStackRef_CLOSE_SPECIALIZED(value, _PyLong_ExactDealloc);
-            res_o = res_i;
-            _tos_cache0 = res_o;
-            SET_CURRENT_CACHED_VALUES(1);
-            stack_pointer += -1;
-            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
-            assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
-            break;
-        }
-
-        case _POP_NOS_INT_r21: {
-            CHECK_CURRENT_CACHED_VALUES(2);
-            assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
-            _PyStackRef res_i;
-            _PyStackRef value;
-            _PyStackRef res_o;
-            _PyStackRef _stack_item_0 = _tos_cache0;
-            _PyStackRef _stack_item_1 = _tos_cache1;
-            res_i = _stack_item_1;
-            value = _stack_item_0;
-            assert(PyLong_CheckExact(PyStackRef_AsPyObjectBorrow(value)));
-            PyStackRef_CLOSE_SPECIALIZED(value, _PyLong_ExactDealloc);
-            res_o = res_i;
-            _tos_cache0 = res_o;
-            SET_CURRENT_CACHED_VALUES(1);
-            assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
-            break;
-        }
-
-        case _POP_NOS_INT_r32: {
-            CHECK_CURRENT_CACHED_VALUES(3);
-            assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
-            _PyStackRef res_i;
-            _PyStackRef value;
-            _PyStackRef res_o;
-            _PyStackRef _stack_item_0 = _tos_cache0;
-            _PyStackRef _stack_item_1 = _tos_cache1;
-            _PyStackRef _stack_item_2 = _tos_cache2;
-            res_i = _stack_item_2;
-            value = _stack_item_1;
-            assert(PyLong_CheckExact(PyStackRef_AsPyObjectBorrow(value)));
-            PyStackRef_CLOSE_SPECIALIZED(value, _PyLong_ExactDealloc);
-            res_o = res_i;
-            _tos_cache1 = res_o;
-            _tos_cache0 = _stack_item_0;
-            SET_CURRENT_CACHED_VALUES(2);
-            assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
-            break;
-        }
-
-        case _POP_NOS_FLOAT_r01: {
-            CHECK_CURRENT_CACHED_VALUES(0);
-            assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
-            _PyStackRef res_i;
-            _PyStackRef value;
-            _PyStackRef res_o;
-            res_i = stack_pointer[-1];
-            value = stack_pointer[-2];
-            assert(PyFloat_CheckExact(PyStackRef_AsPyObjectBorrow(value)));
-            PyStackRef_CLOSE_SPECIALIZED(value, _PyFloat_ExactDealloc);
-            res_o = res_i;
-            _tos_cache0 = res_o;
-            SET_CURRENT_CACHED_VALUES(1);
-            stack_pointer += -2;
-            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
-            assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
-            break;
-        }
-
-        case _POP_NOS_FLOAT_r11: {
-            CHECK_CURRENT_CACHED_VALUES(1);
-            assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
-            _PyStackRef res_i;
-            _PyStackRef value;
-            _PyStackRef res_o;
-            _PyStackRef _stack_item_0 = _tos_cache0;
-            res_i = _stack_item_0;
-            value = stack_pointer[-1];
-            assert(PyFloat_CheckExact(PyStackRef_AsPyObjectBorrow(value)));
-            PyStackRef_CLOSE_SPECIALIZED(value, _PyFloat_ExactDealloc);
-            res_o = res_i;
-            _tos_cache0 = res_o;
-            SET_CURRENT_CACHED_VALUES(1);
-            stack_pointer += -1;
-            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
-            assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
-            break;
-        }
-
-        case _POP_NOS_FLOAT_r21: {
-            CHECK_CURRENT_CACHED_VALUES(2);
-            assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
-            _PyStackRef res_i;
-            _PyStackRef value;
-            _PyStackRef res_o;
-            _PyStackRef _stack_item_0 = _tos_cache0;
-            _PyStackRef _stack_item_1 = _tos_cache1;
-            res_i = _stack_item_1;
-            value = _stack_item_0;
-            assert(PyFloat_CheckExact(PyStackRef_AsPyObjectBorrow(value)));
-            PyStackRef_CLOSE_SPECIALIZED(value, _PyFloat_ExactDealloc);
-            res_o = res_i;
-            _tos_cache0 = res_o;
-            SET_CURRENT_CACHED_VALUES(1);
-            assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
-            break;
-        }
-
-        case _POP_NOS_FLOAT_r32: {
-            CHECK_CURRENT_CACHED_VALUES(3);
-            assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
-            _PyStackRef res_i;
-            _PyStackRef value;
-            _PyStackRef res_o;
-            _PyStackRef _stack_item_0 = _tos_cache0;
-            _PyStackRef _stack_item_1 = _tos_cache1;
-            _PyStackRef _stack_item_2 = _tos_cache2;
-            res_i = _stack_item_2;
-            value = _stack_item_1;
-            assert(PyFloat_CheckExact(PyStackRef_AsPyObjectBorrow(value)));
-            PyStackRef_CLOSE_SPECIALIZED(value, _PyFloat_ExactDealloc);
-            res_o = res_i;
-            _tos_cache1 = res_o;
-            _tos_cache0 = _stack_item_0;
-            SET_CURRENT_CACHED_VALUES(2);
-            assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
-            break;
-        }
-
-        case _POP_NOS_UNICODE_r01: {
-            CHECK_CURRENT_CACHED_VALUES(0);
-            assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
-            _PyStackRef res_i;
-            _PyStackRef value;
-            _PyStackRef res_o;
-            res_i = stack_pointer[-1];
-            value = stack_pointer[-2];
-            assert(PyUnicode_CheckExact(PyStackRef_AsPyObjectBorrow(value)));
-            PyStackRef_CLOSE_SPECIALIZED(value, _PyUnicode_ExactDealloc);
-            res_o = res_i;
-            _tos_cache0 = res_o;
-            SET_CURRENT_CACHED_VALUES(1);
-            stack_pointer += -2;
-            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
-            assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
-            break;
-        }
-
-        case _POP_NOS_UNICODE_r11: {
-            CHECK_CURRENT_CACHED_VALUES(1);
-            assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
-            _PyStackRef res_i;
-            _PyStackRef value;
-            _PyStackRef res_o;
-            _PyStackRef _stack_item_0 = _tos_cache0;
-            res_i = _stack_item_0;
-            value = stack_pointer[-1];
-            assert(PyUnicode_CheckExact(PyStackRef_AsPyObjectBorrow(value)));
-            PyStackRef_CLOSE_SPECIALIZED(value, _PyUnicode_ExactDealloc);
-            res_o = res_i;
-            _tos_cache0 = res_o;
-            SET_CURRENT_CACHED_VALUES(1);
-            stack_pointer += -1;
-            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
-            assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
-            break;
-        }
-
-        case _POP_NOS_UNICODE_r21: {
-            CHECK_CURRENT_CACHED_VALUES(2);
-            assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
-            _PyStackRef res_i;
-            _PyStackRef value;
-            _PyStackRef res_o;
-            _PyStackRef _stack_item_0 = _tos_cache0;
-            _PyStackRef _stack_item_1 = _tos_cache1;
-            res_i = _stack_item_1;
-            value = _stack_item_0;
-            assert(PyUnicode_CheckExact(PyStackRef_AsPyObjectBorrow(value)));
-            PyStackRef_CLOSE_SPECIALIZED(value, _PyUnicode_ExactDealloc);
-            res_o = res_i;
-            _tos_cache0 = res_o;
-            SET_CURRENT_CACHED_VALUES(1);
-            assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
-            break;
-        }
-
-        case _POP_NOS_UNICODE_r32: {
-            CHECK_CURRENT_CACHED_VALUES(3);
-            assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
-            _PyStackRef res_i;
-            _PyStackRef value;
-            _PyStackRef res_o;
-            _PyStackRef _stack_item_0 = _tos_cache0;
-            _PyStackRef _stack_item_1 = _tos_cache1;
-            _PyStackRef _stack_item_2 = _tos_cache2;
-            res_i = _stack_item_2;
-            value = _stack_item_1;
-            assert(PyUnicode_CheckExact(PyStackRef_AsPyObjectBorrow(value)));
-            PyStackRef_CLOSE_SPECIALIZED(value, _PyUnicode_ExactDealloc);
-            res_o = res_i;
-            _tos_cache1 = res_o;
-            _tos_cache0 = _stack_item_0;
-            SET_CURRENT_CACHED_VALUES(2);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
         }
@@ -16716,13 +16365,15 @@
             break;
         }
 
-        case _CALL_BUILTIN_FAST_r01: {
+        case _CALL_BUILTIN_FAST_r00: {
             CHECK_CURRENT_CACHED_VALUES(0);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             _PyStackRef *args;
             _PyStackRef self_or_null;
             _PyStackRef callable;
             _PyStackRef res;
+            _PyStackRef c;
+            _PyStackRef s;
             oparg = CURRENT_OPARG();
             args = &stack_pointer[-oparg];
             self_or_null = stack_pointer[-1 - oparg];
@@ -16741,11 +16392,19 @@
                 total_args
             );
             stack_pointer = _PyFrame_GetStackPointer(frame);
+            c = callable;
+            s = self_or_null;
+            args[oparg] = args[0];
             res = res_o == NULL ? PyStackRef_NULL : PyStackRef_FromPyObjectSteal(res_o);
-            _tos_cache0 = res;
+            _tos_cache0 = PyStackRef_ZERO_BITS;
             _tos_cache1 = PyStackRef_ZERO_BITS;
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            SET_CURRENT_CACHED_VALUES(1);
+            SET_CURRENT_CACHED_VALUES(0);
+            stack_pointer[-2 - oparg] = res;
+            stack_pointer[-1 - oparg] = c;
+            stack_pointer[-oparg] = s;
+            stack_pointer += 1;
+            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
         }

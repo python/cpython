@@ -186,87 +186,13 @@
             break;
         }
 
-        case _POP_NOS_OPARG: {
-            JitOptRef res_i;
+        case _POP_TOS_OPARG: {
             JitOptRef *args;
-            JitOptRef res_o;
-            res_i = stack_pointer[-1];
-            args = &stack_pointer[-1 - oparg];
+            args = &stack_pointer[-oparg];
             (void)args;
-            res_o = res_i;
             Py_FatalError("Forbidden uop seeen in trace.\n");
             CHECK_STACK_BOUNDS(-oparg);
-            stack_pointer[-1 - oparg] = res_o;
             stack_pointer += -oparg;
-            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
-            break;
-        }
-
-        case _POP_NOS: {
-            JitOptRef res_i;
-            JitOptRef value;
-            JitOptRef res_o;
-            res_i = stack_pointer[-1];
-            value = stack_pointer[-2];
-            res_o = res_i;
-            PyTypeObject *typ = sym_get_type(value);
-            if (PyJitRef_IsBorrowed(value) ||
-                sym_is_immortal(PyJitRef_Unwrap(value)) ||
-                sym_is_null(value)) {
-                ADD_OP(_POP_NOS_NOP, 0, 0);
-            }
-            else if (typ == &PyLong_Type) {
-                ADD_OP(_POP_NOS_INT, 0, 0);
-            }
-            else if (typ == &PyFloat_Type) {
-                ADD_OP(_POP_NOS_FLOAT, 0, 0);
-            }
-            else if (typ == &PyUnicode_Type) {
-                ADD_OP(_POP_NOS_UNICODE, 0, 0);
-            }
-            CHECK_STACK_BOUNDS(-1);
-            stack_pointer[-2] = res_o;
-            stack_pointer += -1;
-            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
-            break;
-        }
-
-        case _POP_NOS_NOP: {
-            JitOptRef res_o;
-            res_o = sym_new_not_null(ctx);
-            CHECK_STACK_BOUNDS(-1);
-            stack_pointer[-2] = res_o;
-            stack_pointer += -1;
-            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
-            break;
-        }
-
-        case _POP_NOS_INT: {
-            JitOptRef res_o;
-            res_o = sym_new_not_null(ctx);
-            CHECK_STACK_BOUNDS(-1);
-            stack_pointer[-2] = res_o;
-            stack_pointer += -1;
-            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
-            break;
-        }
-
-        case _POP_NOS_FLOAT: {
-            JitOptRef res_o;
-            res_o = sym_new_not_null(ctx);
-            CHECK_STACK_BOUNDS(-1);
-            stack_pointer[-2] = res_o;
-            stack_pointer += -1;
-            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
-            break;
-        }
-
-        case _POP_NOS_UNICODE: {
-            JitOptRef res_o;
-            res_o = sym_new_not_null(ctx);
-            CHECK_STACK_BOUNDS(-1);
-            stack_pointer[-2] = res_o;
-            stack_pointer += -1;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
             break;
         }
@@ -4037,10 +3963,24 @@
         }
 
         case _CALL_BUILTIN_FAST: {
+            JitOptRef *args;
+            JitOptRef self_or_null;
+            JitOptRef callable;
             JitOptRef res;
-            res = sym_new_not_null(ctx);
+            JitOptRef c;
+            JitOptRef s;
+            JitOptRef *a;
+            args = &stack_pointer[-oparg];
+            self_or_null = stack_pointer[-1 - oparg];
+            callable = stack_pointer[-2 - oparg];
+            c = callable;
+            s = self_or_null;
+            args[oparg] = args[0];
+            res = sym_new_unknown(ctx);
             CHECK_STACK_BOUNDS(1);
-            stack_pointer[0] = res;
+            stack_pointer[-2 - oparg] = res;
+            stack_pointer[-1 - oparg] = c;
+            stack_pointer[-oparg] = s;
             stack_pointer += 1;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
             break;

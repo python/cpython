@@ -945,9 +945,9 @@ _PyJit_translate_single_bytecode_to_trace(
                     assert(next->op.code == STORE_FAST);
                     operand = next->op.arg;
                 }
-                else if (uop == _POP_NOS_OPARG) {
+                else if (uop == _POP_TOS_OPARG) {
                     for (int i = 0; i < oparg; i++) {
-                        ADD_TO_TRACE(_POP_NOS, 0, operand, target);
+                        ADD_TO_TRACE(_POP_TOP, 0, operand, target);
                     }
                     continue;
                 }
