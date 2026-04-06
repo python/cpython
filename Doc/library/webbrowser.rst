@@ -172,13 +172,15 @@ for the controller classes, all defined in this module.
 +------------------------+-----------------------------------------+-------+
 | ``'windows-default'``  | ``WindowsDefault``                      | \(2)  |
 +------------------------+-----------------------------------------+-------+
-| ``'macosx'``           | ``MacOSXOSAScript('default')``          | \(3)  |
+| ``'MacOS'``            | ``MacOS('default')``                    | \(3)  |
 +------------------------+-----------------------------------------+-------+
-| ``'safari'``           | ``MacOSXOSAScript('safari')``           | \(3)  |
+| ``'safari'``           | ``MacOS('safari')``                     | \(3)  |
++------------------------+-----------------------------------------+-------+
+| ``'chrome'``           | ``MacOS('google chrome')``              | \(3)  |
++------------------------+-----------------------------------------+-------+
+| ``'firefox'``          | ``MacOS('firefox')``                    | \(3)  |
 +------------------------+-----------------------------------------+-------+
 | ``'google-chrome'``    | ``Chrome('google-chrome')``             |       |
-+------------------------+-----------------------------------------+-------+
-| ``'chrome'``           | ``Chrome('chrome')``                    |       |
 +------------------------+-----------------------------------------+-------+
 | ``'chromium'``         | ``Chromium('chromium')``                |       |
 +------------------------+-----------------------------------------+-------+
@@ -205,13 +207,6 @@ Notes:
 (4)
    Only on iOS.
 
-.. deprecated:: 3.14
-   :class:`!MacOSXOSAScript` is deprecated in favour of :class:`!MacOS`.
-   Using :program:`/usr/bin/open` instead of :program:`osascript` is a
-   security and usability improvement: :program:`osascript` may be blocked
-   on managed systems due to its abuse potential as a general-purpose
-   scripting interpreter.
-
 .. versionadded:: 3.2
    A new :class:`!MacOSXOSAScript` class has been added
    and is used on Mac instead of the previous :class:`!MacOS` class.
@@ -227,6 +222,17 @@ Notes:
 
 .. versionchanged:: 3.13
    Support for iOS has been added.
+
+.. versionadded:: next
+   :class:`!MacOS` has been added as a replacement for :class:`!MacOSXOSAScript`,
+   opening browsers via :program:`/usr/bin/open` instead of :program:`osascript`.
+
+.. deprecated:: next
+   :class:`!MacOSXOSAScript` is deprecated in favour of :class:`!MacOS`.
+   Using :program:`/usr/bin/open` instead of :program:`osascript` is a
+   security and usability improvement: :program:`osascript` may be blocked
+   on managed systems due to its abuse potential as a general-purpose
+   scripting interpreter.
 
 Here are some simple examples::
 
