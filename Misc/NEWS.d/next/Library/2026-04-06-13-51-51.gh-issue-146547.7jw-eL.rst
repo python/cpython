@@ -1,0 +1,1 @@
+Use lazy imports for :mod:`shutil`, :mod:`warnings`, :mod:`sysconfig` and :mod:`subprocess` in :mod:`ctypes` and submodules. Contributed by Jonathan Dung.
