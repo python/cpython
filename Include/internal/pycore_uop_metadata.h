@@ -80,6 +80,12 @@ const uint32_t _PyUop_Flags[MAX_UOP_ID+1] = {
     [_POP_TOP_FLOAT] = 0,
     [_POP_TOP_UNICODE] = 0,
     [_POP_TWO] = HAS_ESCAPES_FLAG,
+    [_POP_NOS_OPARG] = HAS_ARG_FLAG | HAS_ESCAPES_FLAG,
+    [_POP_NOS] = HAS_ESCAPES_FLAG,
+    [_POP_NOS_NOP] = 0,
+    [_POP_NOS_INT] = 0,
+    [_POP_NOS_FLOAT] = 0,
+    [_POP_NOS_UNICODE] = 0,
     [_PUSH_NULL] = HAS_PURE_FLAG,
     [_END_FOR] = HAS_ESCAPES_FLAG | HAS_NO_SAVE_IP_FLAG,
     [_POP_ITER] = HAS_ESCAPES_FLAG,
@@ -308,7 +314,8 @@ const uint32_t _PyUop_Flags[MAX_UOP_ID+1] = {
     [_GUARD_CALLABLE_BUILTIN_O] = HAS_ARG_FLAG | HAS_EXIT_FLAG,
     [_CALL_BUILTIN_O] = HAS_ARG_FLAG | HAS_EXIT_FLAG | HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG,
     [_GUARD_CALLABLE_BUILTIN_FAST] = HAS_ARG_FLAG | HAS_EXIT_FLAG,
-    [_CALL_BUILTIN_FAST] = HAS_ARG_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
+    [_CALL_BUILTIN_FAST] = HAS_ARG_FLAG | HAS_ESCAPES_FLAG,
+    [_ERROR_IF_TOS_NULL] = HAS_ERROR_FLAG,
     [_GUARD_CALLABLE_BUILTIN_FAST_WITH_KEYWORDS] = HAS_ARG_FLAG | HAS_EXIT_FLAG,
     [_CALL_BUILTIN_FAST_WITH_KEYWORDS] = HAS_ARG_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
     [_GUARD_CALLABLE_LEN] = HAS_EXIT_FLAG,
@@ -841,6 +848,60 @@ const _PyUopCachingInfo _PyUop_Caching[MAX_UOP_ID+1] = {
             { -1, -1, -1 },
             { 0, 2, _POP_TWO_r20 },
             { -1, -1, -1 },
+        },
+    },
+    [_POP_NOS_OPARG] = {
+        .best = { 1, 1, 1, 1 },
+        .entries = {
+            { -1, -1, -1 },
+            { 1, 1, _POP_NOS_OPARG_r11 },
+            { -1, -1, -1 },
+            { -1, -1, -1 },
+        },
+    },
+    [_POP_NOS] = {
+        .best = { 2, 2, 2, 2 },
+        .entries = {
+            { -1, -1, -1 },
+            { -1, -1, -1 },
+            { 1, 2, _POP_NOS_r21 },
+            { -1, -1, -1 },
+        },
+    },
+    [_POP_NOS_NOP] = {
+        .best = { 0, 1, 2, 3 },
+        .entries = {
+            { 1, 0, _POP_NOS_NOP_r01 },
+            { 1, 1, _POP_NOS_NOP_r11 },
+            { 1, 2, _POP_NOS_NOP_r21 },
+            { 2, 3, _POP_NOS_NOP_r32 },
+        },
+    },
+    [_POP_NOS_INT] = {
+        .best = { 0, 1, 2, 3 },
+        .entries = {
+            { 1, 0, _POP_NOS_INT_r01 },
+            { 1, 1, _POP_NOS_INT_r11 },
+            { 1, 2, _POP_NOS_INT_r21 },
+            { 2, 3, _POP_NOS_INT_r32 },
+        },
+    },
+    [_POP_NOS_FLOAT] = {
+        .best = { 0, 1, 2, 3 },
+        .entries = {
+            { 1, 0, _POP_NOS_FLOAT_r01 },
+            { 1, 1, _POP_NOS_FLOAT_r11 },
+            { 1, 2, _POP_NOS_FLOAT_r21 },
+            { 2, 3, _POP_NOS_FLOAT_r32 },
+        },
+    },
+    [_POP_NOS_UNICODE] = {
+        .best = { 0, 1, 2, 3 },
+        .entries = {
+            { 1, 0, _POP_NOS_UNICODE_r01 },
+            { 1, 1, _POP_NOS_UNICODE_r11 },
+            { 1, 2, _POP_NOS_UNICODE_r21 },
+            { 2, 3, _POP_NOS_UNICODE_r32 },
         },
     },
     [_PUSH_NULL] = {
@@ -2904,6 +2965,15 @@ const _PyUopCachingInfo _PyUop_Caching[MAX_UOP_ID+1] = {
             { -1, -1, -1 },
         },
     },
+    [_ERROR_IF_TOS_NULL] = {
+        .best = { 0, 1, 2, 3 },
+        .entries = {
+            { 1, 0, _ERROR_IF_TOS_NULL_r01 },
+            { 1, 1, _ERROR_IF_TOS_NULL_r11 },
+            { 2, 2, _ERROR_IF_TOS_NULL_r22 },
+            { 3, 3, _ERROR_IF_TOS_NULL_r33 },
+        },
+    },
     [_GUARD_CALLABLE_BUILTIN_FAST_WITH_KEYWORDS] = {
         .best = { 0, 0, 0, 0 },
         .entries = {
@@ -3985,6 +4055,24 @@ const uint16_t _PyUop_Uncached[MAX_UOP_REGS_ID+1] = {
     [_POP_TOP_UNICODE_r21] = _POP_TOP_UNICODE,
     [_POP_TOP_UNICODE_r32] = _POP_TOP_UNICODE,
     [_POP_TWO_r20] = _POP_TWO,
+    [_POP_NOS_OPARG_r11] = _POP_NOS_OPARG,
+    [_POP_NOS_r21] = _POP_NOS,
+    [_POP_NOS_NOP_r01] = _POP_NOS_NOP,
+    [_POP_NOS_NOP_r11] = _POP_NOS_NOP,
+    [_POP_NOS_NOP_r21] = _POP_NOS_NOP,
+    [_POP_NOS_NOP_r32] = _POP_NOS_NOP,
+    [_POP_NOS_INT_r01] = _POP_NOS_INT,
+    [_POP_NOS_INT_r11] = _POP_NOS_INT,
+    [_POP_NOS_INT_r21] = _POP_NOS_INT,
+    [_POP_NOS_INT_r32] = _POP_NOS_INT,
+    [_POP_NOS_FLOAT_r01] = _POP_NOS_FLOAT,
+    [_POP_NOS_FLOAT_r11] = _POP_NOS_FLOAT,
+    [_POP_NOS_FLOAT_r21] = _POP_NOS_FLOAT,
+    [_POP_NOS_FLOAT_r32] = _POP_NOS_FLOAT,
+    [_POP_NOS_UNICODE_r01] = _POP_NOS_UNICODE,
+    [_POP_NOS_UNICODE_r11] = _POP_NOS_UNICODE,
+    [_POP_NOS_UNICODE_r21] = _POP_NOS_UNICODE,
+    [_POP_NOS_UNICODE_r32] = _POP_NOS_UNICODE,
     [_PUSH_NULL_r01] = _PUSH_NULL,
     [_PUSH_NULL_r12] = _PUSH_NULL,
     [_PUSH_NULL_r23] = _PUSH_NULL,
@@ -4464,6 +4552,10 @@ const uint16_t _PyUop_Uncached[MAX_UOP_REGS_ID+1] = {
     [_CALL_BUILTIN_O_r03] = _CALL_BUILTIN_O,
     [_GUARD_CALLABLE_BUILTIN_FAST_r00] = _GUARD_CALLABLE_BUILTIN_FAST,
     [_CALL_BUILTIN_FAST_r01] = _CALL_BUILTIN_FAST,
+    [_ERROR_IF_TOS_NULL_r01] = _ERROR_IF_TOS_NULL,
+    [_ERROR_IF_TOS_NULL_r11] = _ERROR_IF_TOS_NULL,
+    [_ERROR_IF_TOS_NULL_r22] = _ERROR_IF_TOS_NULL,
+    [_ERROR_IF_TOS_NULL_r33] = _ERROR_IF_TOS_NULL,
     [_GUARD_CALLABLE_BUILTIN_FAST_WITH_KEYWORDS_r00] = _GUARD_CALLABLE_BUILTIN_FAST_WITH_KEYWORDS,
     [_CALL_BUILTIN_FAST_WITH_KEYWORDS_r01] = _CALL_BUILTIN_FAST_WITH_KEYWORDS,
     [_GUARD_CALLABLE_LEN_r03] = _GUARD_CALLABLE_LEN,
@@ -5083,6 +5175,11 @@ const char *const _PyOpcode_uop_name[MAX_UOP_REGS_ID+1] = {
     [_END_FOR_r10] = "_END_FOR_r10",
     [_END_SEND] = "_END_SEND",
     [_END_SEND_r31] = "_END_SEND_r31",
+    [_ERROR_IF_TOS_NULL] = "_ERROR_IF_TOS_NULL",
+    [_ERROR_IF_TOS_NULL_r01] = "_ERROR_IF_TOS_NULL_r01",
+    [_ERROR_IF_TOS_NULL_r11] = "_ERROR_IF_TOS_NULL_r11",
+    [_ERROR_IF_TOS_NULL_r22] = "_ERROR_IF_TOS_NULL_r22",
+    [_ERROR_IF_TOS_NULL_r33] = "_ERROR_IF_TOS_NULL_r33",
     [_ERROR_POP_N] = "_ERROR_POP_N",
     [_ERROR_POP_N_r00] = "_ERROR_POP_N_r00",
     [_EXIT_INIT_CHECK] = "_EXIT_INIT_CHECK",
@@ -5765,6 +5862,30 @@ const char *const _PyOpcode_uop_name[MAX_UOP_REGS_ID+1] = {
     [_POP_EXCEPT_r10] = "_POP_EXCEPT_r10",
     [_POP_ITER] = "_POP_ITER",
     [_POP_ITER_r20] = "_POP_ITER_r20",
+    [_POP_NOS] = "_POP_NOS",
+    [_POP_NOS_r21] = "_POP_NOS_r21",
+    [_POP_NOS_FLOAT] = "_POP_NOS_FLOAT",
+    [_POP_NOS_FLOAT_r01] = "_POP_NOS_FLOAT_r01",
+    [_POP_NOS_FLOAT_r11] = "_POP_NOS_FLOAT_r11",
+    [_POP_NOS_FLOAT_r21] = "_POP_NOS_FLOAT_r21",
+    [_POP_NOS_FLOAT_r32] = "_POP_NOS_FLOAT_r32",
+    [_POP_NOS_INT] = "_POP_NOS_INT",
+    [_POP_NOS_INT_r01] = "_POP_NOS_INT_r01",
+    [_POP_NOS_INT_r11] = "_POP_NOS_INT_r11",
+    [_POP_NOS_INT_r21] = "_POP_NOS_INT_r21",
+    [_POP_NOS_INT_r32] = "_POP_NOS_INT_r32",
+    [_POP_NOS_NOP] = "_POP_NOS_NOP",
+    [_POP_NOS_NOP_r01] = "_POP_NOS_NOP_r01",
+    [_POP_NOS_NOP_r11] = "_POP_NOS_NOP_r11",
+    [_POP_NOS_NOP_r21] = "_POP_NOS_NOP_r21",
+    [_POP_NOS_NOP_r32] = "_POP_NOS_NOP_r32",
+    [_POP_NOS_OPARG] = "_POP_NOS_OPARG",
+    [_POP_NOS_OPARG_r11] = "_POP_NOS_OPARG_r11",
+    [_POP_NOS_UNICODE] = "_POP_NOS_UNICODE",
+    [_POP_NOS_UNICODE_r01] = "_POP_NOS_UNICODE_r01",
+    [_POP_NOS_UNICODE_r11] = "_POP_NOS_UNICODE_r11",
+    [_POP_NOS_UNICODE_r21] = "_POP_NOS_UNICODE_r21",
+    [_POP_NOS_UNICODE_r32] = "_POP_NOS_UNICODE_r32",
     [_POP_TOP] = "_POP_TOP",
     [_POP_TOP_r10] = "_POP_TOP_r10",
     [_POP_TOP_FLOAT] = "_POP_TOP_FLOAT",
@@ -6122,6 +6243,18 @@ int _PyUop_num_popped(int opcode, int oparg)
         case _POP_TOP_UNICODE:
             return 1;
         case _POP_TWO:
+            return 2;
+        case _POP_NOS_OPARG:
+            return 1 + oparg;
+        case _POP_NOS:
+            return 2;
+        case _POP_NOS_NOP:
+            return 2;
+        case _POP_NOS_INT:
+            return 2;
+        case _POP_NOS_FLOAT:
+            return 2;
+        case _POP_NOS_UNICODE:
             return 2;
         case _PUSH_NULL:
             return 0;
@@ -6580,7 +6713,9 @@ int _PyUop_num_popped(int opcode, int oparg)
         case _GUARD_CALLABLE_BUILTIN_FAST:
             return 0;
         case _CALL_BUILTIN_FAST:
-            return 2 + oparg;
+            return 0;
+        case _ERROR_IF_TOS_NULL:
+            return 0;
         case _GUARD_CALLABLE_BUILTIN_FAST_WITH_KEYWORDS:
             return 0;
         case _CALL_BUILTIN_FAST_WITH_KEYWORDS:
