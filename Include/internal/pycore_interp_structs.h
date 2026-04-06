@@ -248,7 +248,7 @@ struct _gc_runtime_state {
     struct gc_generation old[2];
     /* a permanent generation which won't be collected */
     struct gc_generation permanent_generation;
-    struct gc_stats generation_stats;
+    struct gc_stats *generation_stats;
     /* true if we are currently running the collector */
     int collecting;
     // The frame that started the current collection. It might be NULL even when

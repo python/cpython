@@ -73,6 +73,7 @@ manpages_url = 'https://manpages.debian.org/{path}'
 # General substitutions.
 project = 'Python'
 copyright = "2001 Python Software Foundation"
+_doc_authors = 'Python documentation authors'
 
 # We look for the Include/patchlevel.h file in the current Python source tree
 # and replace the values accordingly.
@@ -361,69 +362,74 @@ latex_elements = {
 
 # Grouping the document tree into LaTeX files. List of tuples
 # (source start file, target name, title, author, document class [howto/manual]).
-_stdauthor = 'The Python development team'
 latex_documents = [
-    ('c-api/index', 'c-api.tex', 'The Python/C API', _stdauthor, 'manual'),
+    ('c-api/index', 'c-api.tex', 'The Python/C API', _doc_authors, 'manual'),
     (
         'extending/index',
         'extending.tex',
         'Extending and Embedding Python',
-        _stdauthor,
+        _doc_authors,
         'manual',
     ),
     (
         'installing/index',
         'installing.tex',
         'Installing Python Modules',
-        _stdauthor,
+        _doc_authors,
         'manual',
     ),
     (
         'library/index',
         'library.tex',
         'The Python Library Reference',
-        _stdauthor,
+        _doc_authors,
         'manual',
     ),
     (
         'reference/index',
         'reference.tex',
         'The Python Language Reference',
-        _stdauthor,
+        _doc_authors,
         'manual',
     ),
     (
         'tutorial/index',
         'tutorial.tex',
         'Python Tutorial',
-        _stdauthor,
+        _doc_authors,
         'manual',
     ),
     (
         'using/index',
         'using.tex',
         'Python Setup and Usage',
-        _stdauthor,
+        _doc_authors,
         'manual',
     ),
     (
         'faq/index',
         'faq.tex',
         'Python Frequently Asked Questions',
-        _stdauthor,
+        _doc_authors,
         'manual',
     ),
     (
         'whatsnew/' + version,
         'whatsnew.tex',
         'What\'s New in Python',
-        'A. M. Kuchling',
+        _doc_authors,
         'howto',
     ),
 ]
 # Collect all HOWTOs individually
 latex_documents.extend(
-    ('howto/' + fn[:-4], 'howto-' + fn[:-4] + '.tex', '', _stdauthor, 'howto')
+    (
+        'howto/' + fn[:-4],
+        'howto-' + fn[:-4] + '.tex',
+        '',
+        _doc_authors,
+        'howto',
+    )
     for fn in os.listdir('howto')
     if fn.endswith('.rst') and fn != 'index.rst'
 )
@@ -434,7 +440,7 @@ latex_appendices = ['glossary', 'about', 'license', 'copyright']
 # Options for Epub output
 # -----------------------
 
-epub_author = 'Python Documentation Authors'
+epub_author = _doc_authors
 epub_publisher = 'Python Software Foundation'
 epub_exclude_files = (
     'index.xhtml',
