@@ -929,7 +929,7 @@ static PyObject *
 set_eval_frame_default(PyObject *self, PyObject *Py_UNUSED(args))
 {
     module_state *state = get_module_state(self);
-    _PyInterpreterState_SetEvalFrameFunc(_PyInterpreterState_GET(), _PyEval_EvalFrameDefault, 0);
+    _PyInterpreterState_SetEvalFrameFunc(_PyInterpreterState_GET(), _PyEval_EvalFrameDefault);
     Py_CLEAR(state->record_list);
     Py_RETURN_NONE;
 }
@@ -961,7 +961,7 @@ set_eval_frame_record(PyObject *self, PyObject *list)
         return NULL;
     }
     Py_XSETREF(state->record_list, Py_NewRef(list));
-    _PyInterpreterState_SetEvalFrameFunc(_PyInterpreterState_GET(), record_eval, 0);
+    _PyInterpreterState_SetEvalFrameFunc(_PyInterpreterState_GET(), record_eval);
     Py_RETURN_NONE;
 }
 
@@ -1024,9 +1024,11 @@ set_eval_frame_interp(PyObject *self, PyObject *args)
             return NULL;
         }
         Py_XSETREF(state->record_list, Py_NewRef(list));
-        _PyInterpreterState_SetEvalFrameFunc(_PyInterpreterState_GET(), record_eval_interp, 1);
+        _PyInterpreterState_SetEvalFrameFunc(_PyInterpreterState_GET(), record_eval_interp);
+        _PyInterpreterState_SetEvalFrameAllowSpecialization(_PyInterpreterState_GET(), 1);
     } else {
-        _PyInterpreterState_SetEvalFrameFunc(_PyInterpreterState_GET(), Test_EvalFrame, 1);
+        _PyInterpreterState_SetEvalFrameFunc(_PyInterpreterState_GET(), Test_EvalFrame);
+        _PyInterpreterState_SetEvalFrameAllowSpecialization(_PyInterpreterState_GET(), 1);
     }
 
     Py_RETURN_NONE;

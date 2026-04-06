@@ -2921,12 +2921,10 @@ class Test_Pep523AllowSpecialization(unittest.TestCase):
 
         # With specialization enabled, calls to inner() will dispatch
         # through the installed frame evaluator
-        func_calls = [c for c in actual_calls if c == "func"]
-        self.assertEqual(len(func_calls), 0)
+        self.assertEqual(actual_calls.count("func"), 0)
 
         # But the normal interpreter loop still shouldn't be inlining things
-        func_outer_calls = [c for c in actual_calls if c == "func_outer"]
-        self.assertNotEqual(len(func_outer_calls), 0)
+        self.assertNotEqual(actual_calls.count("func_outer"), 0)
 
     def test_no_specialization_call(self):
         # Without allow_specialization, ALL calls go through the eval frame.

@@ -222,8 +222,7 @@ do { \
 
 #define DISPATCH_INLINED(NEW_FRAME)                              \
     do {                                                         \
-        assert(tstate->interp->eval_frame == NULL ||             \
-               tstate->interp->eval_frame_allow_specialization); \
+        assert(!IS_PEP523_HOOKED(tstate));                       \
         _PyFrame_SetStackPointer(frame, stack_pointer);          \
         assert((NEW_FRAME)->previous == frame);                  \
         frame = tstate->current_frame = (NEW_FRAME);             \
