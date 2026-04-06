@@ -3816,7 +3816,6 @@ fix_cell_offsets(_PyCompile_CodeUnitMetadata *umd, basicblock *entryblock, int *
                 case LOAD_CLOSURE:
                 case LOAD_DEREF:
                 case STORE_DEREF:
-                case DELETE_DEREF:
                 case LOAD_FROM_DICT_OR_DEREF:
                     assert(oldoffset >= 0);
                     assert(oldoffset < noffsets);

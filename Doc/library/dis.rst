@@ -1547,17 +1547,6 @@ iterations of the loop.
       ``i`` is no longer offset by the length of :attr:`~codeobject.co_varnames`.
 
 
-.. opcode:: DELETE_DEREF (i)
-
-   Empties the cell contained in slot ``i`` of the "fast locals" storage.
-   Used by the :keyword:`del` statement.
-
-   .. versionadded:: 3.2
-
-   .. versionchanged:: 3.11
-      ``i`` is no longer offset by the length of :attr:`~codeobject.co_varnames`.
-
-
 .. opcode:: COPY_FREE_VARS (n)
 
    Copies the ``n`` :term:`free (closure) variables <closure variable>` from the closure

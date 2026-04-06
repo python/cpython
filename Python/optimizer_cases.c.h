@@ -2157,10 +2157,6 @@
             break;
         }
 
-        case _DELETE_DEREF: {
-            break;
-        }
-
         case _LOAD_FROM_DICT_OR_DEREF: {
             JitOptRef value;
             value = sym_new_not_null(ctx);
