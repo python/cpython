@@ -199,6 +199,7 @@ class Difflib(ThemeSection):
     reset: str = ANSIColors.RESET
 
 
+@dataclass(frozen=True, kw_only=True)
 class FancyCompleter(ThemeSection):
     # functions and methods
     function: str = ANSIColors.BOLD_BLUE
