@@ -493,8 +493,11 @@ def register_standard_browsers():
     if sys.platform == 'darwin':
         register("MacOSX", None, MacOSX('default'))
         register("chrome", None, MacOSX('google chrome'))
+        register("chromium", None, MacOSX('chromium'))
         register("firefox", None, MacOSX('firefox'))
         register("safari", None, MacOSX('safari'))
+        register("opera", None, MacOSX('opera'))
+        register("microsoft-edge", None, MacOSX('microsoft edge'))
         # macOS can use below Unix support (but we prefer using the macOS
         # specific stuff)
 
