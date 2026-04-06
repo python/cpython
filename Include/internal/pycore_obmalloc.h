@@ -691,7 +691,11 @@ struct _obmalloc_state {
 
 
 /* Allocate memory directly from the O/S virtual memory system,
- * where supported. Otherwise fallback on malloc */
+ * where supported. Otherwise fallback on malloc.
+ *
+ * Large-page and huge-page backends may round the mapped size up
+ * internally, so pass the original requested size back to
+ * _PyObject_VirtualFree(). */
 void *_PyObject_VirtualAlloc(size_t size);
 void _PyObject_VirtualFree(void *, size_t size);
 

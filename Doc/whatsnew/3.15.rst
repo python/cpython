@@ -657,6 +657,13 @@ base64
 * Added the *pad* parameter in :func:`~base64.z85encode`.
   (Contributed by Hauke Dämpfling in :gh:`143103`.)
 
+* Added the *padded* parameter in
+  :func:`~base64.b32encode`, :func:`~base64.b32decode`,
+  :func:`~base64.b32hexencode`, :func:`~base64.b32hexdecode`,
+  :func:`~base64.b64encode`, :func:`~base64.b64decode`,
+  :func:`~base64.urlsafe_b64encode`, and :func:`~base64.urlsafe_b64decode`.
+  (Contributed by Serhiy Storchaka in :gh:`73613`.)
+
 * Added the *wrapcol* parameter in :func:`~base64.b16encode`,
   :func:`~base64.b32encode`, :func:`~base64.b32hexencode`,
   :func:`~base64.b64encode`, :func:`~base64.b85encode`, and
@@ -685,6 +692,11 @@ binascii
   - :func:`~binascii.b2a_base85` and :func:`~binascii.a2b_base85`
 
   (Contributed by James Seo and Serhiy Storchaka in :gh:`101178`.)
+
+* Added the *padded* parameter in
+  :func:`~binascii.b2a_base32`, :func:`~binascii.a2b_base32`,
+  :func:`~binascii.b2a_base64`, and :func:`~binascii.a2b_base64`.
+  (Contributed by Serhiy Storchaka in :gh:`73613`.)
 
 * Added the *wrapcol* parameter in :func:`~binascii.b2a_base64`.
   (Contributed by Serhiy Storchaka in :gh:`143214`.)
@@ -2027,3 +2039,9 @@ that may require changes to your code.
   *dest* is now ``'foo'`` instead of ``'f'``.
   Pass an explicit *dest* argument to preserve the old behavior.
   (Contributed by Serhiy Storchaka in :gh:`138697`.)
+
+* Padding of input no longer required in :func:`base64.urlsafe_b64decode`.
+  Pass a new argument ``padded=True`` or use :func:`base64.b64decode`
+  with argument ``altchars=b'-_'`` (this works with older Python versions)
+  to make padding required.
+  (Contributed by Serhiy Storchaka in :gh:`73613`.)

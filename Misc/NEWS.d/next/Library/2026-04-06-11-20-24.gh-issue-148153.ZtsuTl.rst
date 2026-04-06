@@ -1,0 +1,2 @@
+:func:`base64.b32encode` now always raises :exc:`ValueError` instead of
+:exc:`AssertionError` for the value of *map01* with invalid length.
