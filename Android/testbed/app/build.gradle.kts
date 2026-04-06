@@ -20,6 +20,14 @@ val KNOWN_ABIS = mapOf(
     "x86_64-linux-android" to "x86_64",
 )
 
+val osArch = System.getProperty("os.arch")
+val NATIVE_ABI = mapOf(
+    "aarch64" to "arm64-v8a",
+    "amd64" to "x86_64",
+    "arm64" to "arm64-v8a",
+    "x86_64" to "x86_64",
+)[osArch] ?: throw GradleException("Unknown os.arch '$osArch'")
+
 // Discover prefixes.
 val prefixes = ArrayList<File>()
 if (inSourceTree) {
@@ -151,6 +159,9 @@ android {
     testOptions {
         managedDevices {
             localDevices {
+                // systemImageSource should use what its documentation calls an
+                // "explicit source", i.e. the sdkmanager package name format, because
+                // that will be required in CreateEmulatorTask below.
                 create("minVersion") {
                     device = "Small Phone"
 
@@ -159,13 +170,13 @@ android {
 
                     // ATD devices are smaller and faster, but have a minimum
                     // API level of 30.
-                    systemImageSource = if (apiLevel >= 30) "aosp-atd" else "aosp"
+                    systemImageSource = if (apiLevel >= 30) "aosp_atd" else "default"
                 }
 
                 create("maxVersion") {
                     device = "Small Phone"
                     apiLevel = defaultConfig.targetSdk!!
-                    systemImageSource = "aosp-atd"
+                    systemImageSource = "aosp_atd"
                 }
             }
 
@@ -188,6 +199,138 @@ dependencies {
     implementation("androidx.constraintlayout:constraintlayout:2.1.4")
     androidTestImplementation("androidx.test.ext:junit:1.1.5")
     androidTestImplementation("androidx.test:rules:1.5.0")
+}
+
+
+afterEvaluate {
+    // Every new emulator has a maximum of 2 GB RAM, regardless of its hardware profile
+    // (https://cs.android.com/android-studio/platform/tools/base/+/refs/tags/studio-2025.3.2:sdklib/src/main/java/com/android/sdklib/internal/avd/EmulatedProperties.java;l=68).
+    // This is barely enough to test Python, and not enough to test Pandas
+    // (https://github.com/python/cpython/pull/137186#issuecomment-3136301023,
+    // https://github.com/pandas-dev/pandas/pull/63405#issuecomment-3667846159).
+    // So we'll increase it by editing the emulator configuration files.
+    //
+    // If the emulator doesn't exist yet, we want to edit it after it's created, but
+    // before it starts for the first time. Otherwise it'll need to be cold-booted
+    // again, which would slow down the first run, which is likely the only run in CI
+    // environments. But the Setup task both creates and starts the emulator if it
+    // doesn't already exist. So we create it ourselves before the Setup task runs.
+    for (device in android.testOptions.managedDevices.localDevices) {
+        val createTask = tasks.register<CreateEmulatorTask>("${device.name}Create") {
+            this.device = device.device
+            apiLevel = device.apiLevel
+            systemImageSource = device.systemImageSource
+            abi = NATIVE_ABI
+        }
+        tasks.named("${device.name}Setup") {
+            dependsOn(createTask)
+        }
+    }
+}
+
+abstract class CreateEmulatorTask : DefaultTask() {
+    @get:Input abstract val device: Property<String>
+    @get:Input abstract val apiLevel: Property<Int>
+    @get:Input abstract val systemImageSource: Property<String>
+    @get:Input abstract val abi: Property<String>
+    @get:Inject abstract val execOps: ExecOperations
+
+    private val avdName by lazy {
+        listOf(
+            "dev${apiLevel.get()}",
+            systemImageSource.get(),
+            abi.get(),
+            device.get().replace(' ', '_'),
+        ).joinToString("_")
+    }
+
+    private val avdDir by lazy {
+        // XDG_CONFIG_HOME is respected by both avdmanager and Gradle.
+        val userHome = System.getenv("ANDROID_USER_HOME") ?: (
+            (System.getenv("XDG_CONFIG_HOME") ?: System.getProperty("user.home")!!)
+            + "/.android"
+        )
+        File("$userHome/avd/gradle-managed", "$avdName.avd")
+    }
+
+    @TaskAction
+    fun run() {
+        if (!avdDir.exists()) {
+            createAvd()
+        }
+        updateAvd()
+    }
+
+    fun createAvd() {
+        val systemImage = listOf(
+            "system-images",
+            "android-${apiLevel.get()}",
+            systemImageSource.get(),
+            abi.get(),
+        ).joinToString(";")
+
+        runCmdlineTool("sdkmanager", systemImage)
+        runCmdlineTool(
+            "avdmanager", "create", "avd",
+            "--name", avdName,
+            "--path", avdDir,
+            "--device", device.get().lowercase().replace(" ", "_"),
+            "--package", systemImage,
+        )
+
+        val iniName = "$avdName.ini"
+        if (!File(avdDir.parentFile.parentFile, iniName).renameTo(
+            File(avdDir.parentFile, iniName)
+        )) {
+            throw GradleException("Failed to rename $iniName")
+        }
+    }
+
+    fun updateAvd() {
+        for (filename in listOf(
+            "config.ini",  // Created by avdmanager; always exists
+            "hardware-qemu.ini",  // Created on first run; might not exist
+        )) {
+            val iniFile = File(avdDir, filename)
+            if (!iniFile.exists()) {
+                if (filename == "config.ini") {
+                    throw GradleException("$iniFile does not exist")
+                }
+                continue
+            }
+
+            val iniText = iniFile.readText()
+            val pattern = Regex(
+                """^\s*hw.ramSize\s*=\s*(.+?)\s*$""", RegexOption.MULTILINE
+            )
+            val matches = pattern.findAll(iniText).toList()
+            if (matches.size != 1) {
+                throw GradleException(
+                    "Found ${matches.size} instances of $pattern in $iniFile; expected 1"
+                )
+            }
+
+            val expectedRam = "4096"
+            if (matches[0].groupValues[1] != expectedRam) {
+                iniFile.writeText(
+                    iniText.replace(pattern, "hw.ramSize = $expectedRam")
+                )
+            }
+        }
+    }
+
+    fun runCmdlineTool(tool: String, vararg args: Any) {
+        val androidHome = System.getenv("ANDROID_HOME")!!
+        val exeSuffix =
+            if (System.getProperty("os.name").lowercase().startsWith("win")) ".exe"
+            else ""
+        val command =
+            listOf("$androidHome/cmdline-tools/latest/bin/$tool$exeSuffix", *args)
+        println(command.joinToString(" "))
+        execOps.exec {
+            commandLine(command)
+        }
+    }
 }
 
 
