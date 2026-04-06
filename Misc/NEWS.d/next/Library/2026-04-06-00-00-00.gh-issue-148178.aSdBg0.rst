@@ -1,0 +1,5 @@
+Harden :mod:`!_remote_debugging` against malformed asyncio debug offset
+tables in the target process.  The size and member offsets read from the
+remote ``AsyncioDebug`` section are now validated before use so that
+out-of-range values raise :exc:`RuntimeError` instead of being consumed
+by the unwinder.
