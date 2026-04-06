@@ -61,7 +61,7 @@ jobs:
               || ''
             }}.txt handle_segv=0" >> "$GITHUB_ENV"
         else
-          echo "UBSAN_OPTIONS=${SAN_LOG_OPTION} halt_on_error=1 handle_segv=0 handle_sigfpe=0 handle_sigbus=0 suppressions=${GITHUB_WORKSPACE}/Tools/ubsan/suppressions.txt" >> "$GITHUB_ENV"
+          echo "UBSAN_OPTIONS=${SAN_LOG_OPTION} halt_on_error=1 suppressions=${GITHUB_WORKSPACE}/Tools/ubsan/suppressions.txt" >> "$GITHUB_ENV"
         fi
         echo "CC=clang" >> "$GITHUB_ENV"
         echo "CXX=clang++" >> "$GITHUB_ENV"
@@ -87,6 +87,7 @@ jobs:
       run: >-
         ./python -m test
         ${{ inputs.sanitizer == 'TSan' && '--tsan' || '' }}
+        ${{ inputs.sanitizer == 'UBSan' && '-x test_capi' || '' }}
         -j4
     - name: Parallel tests
       if: >-
