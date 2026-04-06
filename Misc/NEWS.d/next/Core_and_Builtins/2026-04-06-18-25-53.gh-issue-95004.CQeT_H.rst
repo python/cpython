@@ -1,1 +1,1 @@
-The specializing interpreter now specializes for :class:`enum.Enum` improving performance and better scaling in free-threading. Patch by Kumar Aditya.
+The specializing interpreter now specializes for :class:`enum.Enum` improving performance and scaling in free-threading. Patch by Kumar Aditya.
