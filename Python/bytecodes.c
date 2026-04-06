@@ -4652,7 +4652,7 @@ dummy_func(
             c = callable;
             s = self_or_null;
             // Swap the first argument with the first empty slot after args to allows space for res.
-            // We are guaranteed by the bytecode compiler to have as spare stack slot.
+            // We are guaranteed by the bytecode compiler to have a spare stack slot.
             args[oparg] = args[0];
             DEAD(self_or_null);
             DEAD(callable);
