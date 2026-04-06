@@ -16,9 +16,9 @@ typedef unsigned int pymem_uint;  /* assuming >= 16 bits */
 
 /* NOTE: the following overviews were in the initial checkin, in 1998. In
  * 2026, they're still helpful, but some details have changed. For example,
- * we now use 32 size clesses 16 bytes apart, and an arena is generally at
- * last 1MB. Use sys._debugmallocstats() to see exact current details for
- * the specific version of CPython is use.
+ * we now use 32 size classes 16 bytes apart, and an arena is generally at
+ * least 1MB. Use sys._debugmallocstats() to see exact current details for
+ * the specific version of CPython used.
  */
 
 /* An object allocator for Python.
