@@ -1210,7 +1210,7 @@ specialize_class_load_attr(PyObject *owner, _Py_CODEUNIT *instr,
                 return -1;
             }
             if (Py_TYPE(descr)->tp_descr_get || Py_TYPE(descr)->tp_descr_set) {
-                SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_ATTR_MUTABLE_CLASS);
+                SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_ATTR_OVERRIDING_DESCRIPTOR);
                 Py_XDECREF(descr);
                 return -1;
             }

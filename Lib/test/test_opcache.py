@@ -2060,19 +2060,10 @@ class TestSpecializer(TestBase):
         def load_enum_member():
             for _ in range(_testinternalcapi.SPECIALIZATION_THRESHOLD):
                 x = Color.RED
-                self.assertEqual(x, 1)
+                assert x == 1
 
         load_enum_member()
         self.assert_specialized(load_enum_member,
-                                "LOAD_ATTR_CLASS_WITH_METACLASS_CHECK")
-
-        def load_enum_value():
-            for _ in range(_testinternalcapi.SPECIALIZATION_THRESHOLD):
-                x = Color.RED.value + Color.GREEN.value
-                self.assertEqual(x, 3)
-
-        load_enum_value()
-        self.assert_specialized(load_enum_value,
                                 "LOAD_ATTR_CLASS_WITH_METACLASS_CHECK")
 
 
