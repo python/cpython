@@ -21,6 +21,27 @@ def safe_getattr(obj, name):
     return getattr(obj, name, None)
 
 
+def colorize_matches(names, values, theme):
+    return [
+        _color_for_obj(name, obj, theme)
+        for name, obj in zip(names, values)
+    ]
+
+def _color_for_obj(name, value, theme):
+    t = type(value)
+    color = _color_by_type(t, theme)
+    return f"{color}{name}{ANSIColors.RESET}"
+
+
+def _color_by_type(t, theme):
+    typename = t.__name__
+    # this is needed e.g. to turn method-wrapper into method_wrapper,
+    # because if we want _colorize.FancyCompleter to be "dataclassable"
+    # our keys need to be valid identifiers.
+    typename = typename.replace('-', '_').replace('.', '_')
+    return getattr(theme.fancycompleter, typename, ANSIColors.RESET)
+
+
 class Completer(rlcompleter.Completer):
     """
     When doing something like a.b.<tab>, keep the full a.b.attr completion
@@ -169,23 +190,7 @@ class Completer(rlcompleter.Completer):
         return expr, attr, names, values
 
     def colorize_matches(self, names, values):
-        return [
-            self._color_for_obj(name, obj)
-            for name, obj in zip(names, values)
-        ]
-
-    def _color_for_obj(self, name, value):
-        t = type(value)
-        color = self._color_by_type(t)
-        return f"{color}{name}{ANSIColors.RESET}"
-
-    def _color_by_type(self, t):
-        typename = t.__name__
-        # this is needed e.g. to turn method-wrapper into method_wrapper,
-        # because if we want _colorize.FancyCompleter to be "dataclassable"
-        # our keys need to be valid identifiers.
-        typename = typename.replace('-', '_').replace('.', '_')
-        return getattr(self.theme.fancycompleter, typename, ANSIColors.RESET)
+        return colorize_matches(names, values, self.theme)
 
 
 def commonprefix(names):
