@@ -3878,6 +3878,30 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertIn("_UNPACK_SEQUENCE_TUPLE", uops)
         self.assertNotIn("_GUARD_TOS_TUPLE", uops)
 
+    def test_binary_op_extend_guard_elimination(self):
+        # When both operands have known types (e.g., from a prior
+        # _BINARY_OP_EXTEND result), the _GUARD_BINARY_OP_EXTEND
+        # should be eliminated.
+        def testfunc(n):
+            a = [1, 2]
+            b = [3, 4]
+            total = 0
+            for _ in range(n):
+                c = a + b    # first: guard stays, result type = list
+                d = c + c    # second: both operands are list -> guard eliminated
+                total += d[0]
+            return total
+
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, TIER2_THRESHOLD)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        # Both list additions use _BINARY_OP_EXTEND
+        self.assertEqual(uops.count("_BINARY_OP_EXTEND"), 2)
+        # But the second guard is eliminated because both operands
+        # are known to be lists from the first _BINARY_OP_EXTEND.
+        self.assertEqual(uops.count("_GUARD_BINARY_OP_EXTEND"), 1)
+
     def test_unary_invert_long_type(self):
         def testfunc(n):
             for _ in range(n):

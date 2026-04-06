@@ -409,6 +409,16 @@ dummy_func(void) {
         r = right;
     }
 
+    op(_GUARD_BINARY_OP_EXTEND, (descr/4, left, right -- left, right)) {
+        _PyBinaryOpSpecializationDescr *d = (_PyBinaryOpSpecializationDescr *)descr;
+        if (d != NULL && d->lhs_type != NULL && d->rhs_type != NULL) {
+            if (sym_matches_type(left, d->lhs_type) &&
+                sym_matches_type(right, d->rhs_type)) {
+                REPLACE_OP(this_instr, _NOP, 0, 0);
+            }
+        }
+    }
+
     op(_BINARY_OP_EXTEND, (descr/4, left, right -- res, l, r)) {
         _PyBinaryOpSpecializationDescr *d = (_PyBinaryOpSpecializationDescr *)descr;
         if (d != NULL && d->result_type != NULL) {
