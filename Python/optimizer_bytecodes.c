@@ -305,7 +305,7 @@ dummy_func(void) {
             }
             else if (lhs_float) {
                 // Case C:
-                res = sym_new_type(ctx, &PyFloat_Type);
+                res = PyJitRef_MakeUnique(sym_new_type(ctx, &PyFloat_Type));
             }
             else if (!sym_is_const(ctx, rhs)) {
                 // Case A or B... can't know without the sign of the RHS:
@@ -313,7 +313,7 @@ dummy_func(void) {
             }
             else if (_PyLong_IsNegative((PyLongObject *)sym_get_const(ctx, rhs))) {
                 // Case B:
-                res = sym_new_type(ctx, &PyFloat_Type);
+                res = PyJitRef_MakeUnique(sym_new_type(ctx, &PyFloat_Type));
             }
             else {
                 // Case A:
@@ -324,7 +324,7 @@ dummy_func(void) {
             res = sym_new_type(ctx, &PyLong_Type);
         }
         else {
-            res = sym_new_type(ctx, &PyFloat_Type);
+            res = PyJitRef_MakeUnique(sym_new_type(ctx, &PyFloat_Type));
         }
     }
 
