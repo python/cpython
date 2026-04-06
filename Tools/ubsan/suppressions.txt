@@ -12,6 +12,7 @@ shift-base:Modules/binascii.c
 
 # Modules/_ctypes/cfield.c:644:1: runtime error: left shift of 1 by 63 places cannot be represented in type 'int64_t' (aka 'long')
 shift-base:Modules/_ctypes/cfield.c
+signed-integer-overflow:Modules/_ctypes/cfield.c
 
 # Modules/_zstd/decompressor.c:598:56: runtime error: applying non-zero offset 18446744073709551615 to null pointer
 pointer-overflow:Modules/_zstd/decompressor.c
