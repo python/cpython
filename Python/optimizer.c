@@ -675,7 +675,6 @@ _PyJit_translate_single_bytecode_to_trace(
     _Py_CODEUNIT *this_instr =  tracer->prev_state.instr;
     _Py_CODEUNIT *target_instr = this_instr;
     uint32_t target = 0;
-    int end_trace_opcode = _DEOPT;
 
     target = Py_IsNone((PyObject *)old_code)
         ? (uint32_t)(target_instr - _Py_INTERPRETER_TRAMPOLINE_INSTRUCTIONS_PTR)
@@ -780,7 +779,7 @@ _PyJit_translate_single_bytecode_to_trace(
             }
             if (curr->opcode == _SET_IP) {
                 int32_t old_target = (int32_t)uop_get_target(curr);
-                curr->opcode = end_trace_opcode;
+                curr->opcode = _DEOPT;
                 curr->format = UOP_FORMAT_TARGET;
                 curr->target = old_target;
             }
@@ -843,12 +842,7 @@ _PyJit_translate_single_bytecode_to_trace(
     trace->end -= needs_guard_ip;
 
     int space_needed = expansion->nuops + needs_guard_ip + 2 + (!OPCODE_HAS_NO_SAVE_IP(opcode));
-    if (uop_buffer_remaining_space(trace) < space_needed) {
-        DPRINTF(2, "No room for expansions and guards (need %d, got %d)\n",
-                space_needed, uop_buffer_remaining_space(trace));
-        OPT_STAT_INC(trace_too_long);
-        goto done;
-    }
+    assert(uop_buffer_remaining_space(trace) > space_needed);
 
     ADD_TO_TRACE(_CHECK_VALIDITY, 0, 0, target);
 
@@ -1011,14 +1005,7 @@ _PyJit_translate_single_bytecode_to_trace(
                 else if (uop == _PUSH_FRAME) {
                     _PyJitTracerTranslatorState *ts_depth = &tracer->translator_state;
                     ts_depth->frame_depth++;
-                    if (ts_depth->frame_depth >= MAX_ABSTRACT_FRAME_DEPTH) {
-                        // The optimizer can't handle frames this deep,
-                        // so there's no point continuing the trace.
-                        DPRINTF(2, "Unsupported: frame depth %d >= MAX_ABSTRACT_FRAME_DEPTH\n",
-                                ts_depth->frame_depth);
-                        end_trace_opcode = _EXIT_TRACE;
-                        goto unsupported;
-                    }
+                    assert(ts_depth->frame_depth < MAX_ABSTRACT_FRAME_DEPTH);
                     int32_t frame_penalty = compute_frame_penalty(&tstate->interp->opt_config);
                     int32_t cost = frame_penalty * ts_depth->frame_depth;
                     ts_depth->fitness -= cost;
