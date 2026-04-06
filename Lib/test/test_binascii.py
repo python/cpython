@@ -233,6 +233,28 @@ class BinASCIITest(unittest.TestCase):
         assertExcessPadding(b'abcd====efgh', b'i\xb7\x1dy\xf8!')
         assertExcessPadding(b'abcd=====efgh', b'i\xb7\x1dy\xf8!')
 
+    def test_a2b_base64_padded(self):
+        a2b_base64 = binascii.a2b_base64
+        t = self.type2test
+        def check(data, expected):
+            if b'=' in data:
+                with self.assertRaisesRegex(binascii.Error, 'Padding not allowed'):
+                    a2b_base64(t(data), padded=False, strict_mode=True)
+            self.assertEqual(a2b_base64(t(data), padded=False, ignorechars=b'='),
+                             expected)
+            data = data.replace(b'=', b'')
+            self.assertEqual(a2b_base64(t(data), padded=False), expected)
+            self.assertEqual(a2b_base64(t(data), padded=False, strict_mode=True),
+                             expected)
+
+        check(b'', b'')
+        check(b'YQ==', b'a')
+        check(b'YWI=', b'ab')
+        check(b'YWJj', b'abc')
+        check(b'Y=WJj', b'abc')
+        check(b'YW=Jj', b'abc')
+        check(b'YWJ=j', b'abc')
+
     def _common_test_ignorechars(self, func):
         eq = self.assertEqual
         empty = self.type2test(b'')
@@ -913,6 +935,42 @@ class BinASCIITest(unittest.TestCase):
         assertInvalidLength(b" ABC=====", ignorechars=b' ')
         assertInvalidLength(b" ABCDEF==", ignorechars=b' ')
 
+    def test_a2b_base32_padded(self):
+        a2b_base32 = binascii.a2b_base32
+        t = self.type2test
+        def check(data, expected):
+            if b'=' in data:
+                with self.assertRaisesRegex(binascii.Error, 'Padding not allowed'):
+                    a2b_base32(t(data), padded=False)
+            self.assertEqual(a2b_base32(t(data), padded=False, ignorechars=b'='),
+                             expected)
+            data = data.replace(b'=', b'')
+            self.assertEqual(a2b_base32(t(data), padded=False), expected)
+
+        check(b'', b'')
+        check(b'ME======', b'a')
+        check(b'MFRA====', b'ab')
+        check(b'MFRGG===', b'abc')
+        check(b'MFRGGZA=', b'abcd')
+        check(b'MFRGGZDF', b'abcde')
+        check(b'M=FRGGZDF', b'abcde')
+        check(b'MF=RGGZDF', b'abcde')
+        check(b'MFR=GGZDF', b'abcde')
+        check(b'MFRG=GZDF', b'abcde')
+        check(b'MFRGG=ZDF', b'abcde')
+        check(b'MFRGGZ=DF', b'abcde')
+        check(b'MFRGGZD=F', b'abcde')
+
+    def test_b2a_base32_padded(self):
+        b2a_base32 = binascii.b2a_base32
+        t = self.type2test
+        self.assertEqual(b2a_base32(t(b''), padded=False), b'')
+        self.assertEqual(b2a_base32(t(b'a'), padded=False), b'ME')
+        self.assertEqual(b2a_base32(t(b'ab'), padded=False), b'MFRA')
+        self.assertEqual(b2a_base32(t(b'abc'), padded=False), b'MFRGG')
+        self.assertEqual(b2a_base32(t(b'abcd'), padded=False), b'MFRGGZA')
+        self.assertEqual(b2a_base32(t(b'abcde'), padded=False), b'MFRGGZDF')
+
     def test_base32_wrapcol(self):
         self._common_test_wrapcol(binascii.b2a_base32)
         b = self.type2test(b'www.python.org')
@@ -1254,6 +1312,14 @@ class BinASCIITest(unittest.TestCase):
         self.assertEqual(binascii.b2a_base64(b), b'\n')
         self.assertEqual(binascii.b2a_base64(b, newline=True), b'\n')
         self.assertEqual(binascii.b2a_base64(b, newline=False), b'')
+
+    def test_b2a_base64_padded(self):
+        b2a_base64 = binascii.b2a_base64
+        t = self.type2test
+        self.assertEqual(b2a_base64(t(b''), padded=False), b'\n')
+        self.assertEqual(b2a_base64(t(b'a'), padded=False), b'YQ\n')
+        self.assertEqual(b2a_base64(t(b'ab'), padded=False), b'YWI\n')
+        self.assertEqual(b2a_base64(t(b'abc'), padded=False), b'YWJj\n')
 
     def test_b2a_base64_wrapcol(self):
         self._common_test_wrapcol(binascii.b2a_base64)
