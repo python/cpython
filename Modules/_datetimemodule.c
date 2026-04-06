@@ -53,7 +53,6 @@ typedef struct {
     /* The interned Unix epoch datetime instance */
     PyObject *epoch;
 
-    PyObject *time_time;
     PyObject *time_struct_time;
     PyObject *time_strftime;
 } datetime_state;
@@ -2068,27 +2067,6 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
  * from C.  Perhaps they should be.
  */
 
-/* Call time.time() and return its result (a Python float). */
-static PyObject *
-time_time(void)
-{
-    PyObject *current_mod = NULL;
-    datetime_state *st = GET_CURRENT_STATE(current_mod);
-    if (st == NULL) {
-        return NULL;
-    }
-    if (st->time_time == NULL) {
-        st->time_time = PyImport_ImportModuleAttrString("time", "time");
-        if (st->time_time == NULL) {
-            RELEASE_CURRENT_STATE(st, current_mod);
-            return NULL;
-        }
-    }
-    PyObject *result = PyObject_CallNoArgs(st->time_time);
-    RELEASE_CURRENT_STATE(st, current_mod);
-    return result;
-}
-
 /* Build a time.struct_time.  The weekday and day number are automatically
  * computed from the y,m,d args.
  */
@@ -3337,14 +3315,18 @@ datetime_date_today_impl(PyTypeObject *type)
                            type);
     }
 
-    PyObject *time = time_time();
-    if (time == NULL) {
+    PyTime_t ts;
+    if (PyTime_Time(&ts) < 0) {
         return NULL;
     }
 
     /* Note well: since today() is a class method, it may not call
      * date.fromtimestamp, e.g., it may call datetime.fromtimestamp.
      */
+    PyObject *time = PyFloat_FromDouble(PyTime_AsSecondsDouble(ts));
+    if (time == NULL) {
+        return NULL;
+    }
     PyObject *result = PyObject_CallMethodOneArg((PyObject*)type, &_Py_ID(fromtimestamp), time);
     Py_DECREF(time);
     return result;
@@ -7440,7 +7422,6 @@ init_state(datetime_state *st, PyObject *module, PyObject *old_module)
             .us_per_week = Py_NewRef(st_old->us_per_week),
             .seconds_per_day = Py_NewRef(st_old->seconds_per_day),
             .epoch = Py_NewRef(st_old->epoch),
-            .time_time = Py_XNewRef(st_old->time_time),
             .time_struct_time = Py_XNewRef(st_old->time_struct_time),
             .time_strftime = Py_XNewRef(st_old->time_strftime),
         };
@@ -7487,7 +7468,6 @@ init_state(datetime_state *st, PyObject *module, PyObject *old_module)
         return -1;
     }
 
-    st->time_time = NULL;
     st->time_struct_time = NULL;
     st->time_strftime = NULL;
 
@@ -7500,7 +7480,6 @@ traverse_state(datetime_state *st, visitproc visit, void *arg)
     /* heap types */
     Py_VISIT(st->isocalendar_date_type);
 
-    Py_VISIT(st->time_time);
     Py_VISIT(st->time_struct_time);
     Py_VISIT(st->time_strftime);
 
@@ -7519,7 +7498,6 @@ clear_state(datetime_state *st)
     Py_CLEAR(st->us_per_week);
     Py_CLEAR(st->seconds_per_day);
     Py_CLEAR(st->epoch);
-    Py_CLEAR(st->time_time);
     Py_CLEAR(st->time_struct_time);
     Py_CLEAR(st->time_strftime);
     return 0;
