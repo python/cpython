@@ -5041,7 +5041,7 @@ dict___sizeof___impl(PyDictObject *self)
     return PyLong_FromSsize_t(_PyDict_SizeOf(self));
 }
 
-PyObject *
+static PyObject *
 dict_or(PyObject *self, PyObject *other)
 {
     if (!PyAnyDict_Check(self) || !PyAnyDict_Check(other)) {
@@ -5081,7 +5081,7 @@ frozendict_or(PyObject *self, PyObject *other)
 }
 
 
-PyObject *
+static PyObject *
 dict_ior(PyObject *self, PyObject *other)
 {
     if (dict_update_arg(self, other)) {

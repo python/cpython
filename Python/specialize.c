@@ -2136,13 +2136,6 @@ tuple_tuple_add(PyObject *lhs, PyObject *rhs)
 /* sequence * int helpers: bypass PyNumber_Multiply dispatch overhead
    by calling sq_repeat directly with PyLong_AsSsize_t. */
 
-extern PyObject *unicode_repeat(PyObject *str, Py_ssize_t n);
-extern PyObject *bytes_repeat(PyObject *self, Py_ssize_t n);
-extern PyObject *bytes_concat(PyObject *a, PyObject *b);
-extern PyObject *tuple_repeat(PyObject *self, Py_ssize_t n);
-extern PyObject *dict_or(PyObject *self, PyObject *other);
-extern PyObject *dict_ior(PyObject *self, PyObject *other);
-
 static inline PyObject *
 seq_int_multiply(PyObject *seq, PyObject *n,
                  ssizeargfunc repeat)
@@ -2171,13 +2164,15 @@ int_str_guard(PyObject *lhs, PyObject *rhs)
 static PyObject *
 str_int_multiply(PyObject *lhs, PyObject *rhs)
 {
-    return seq_int_multiply(lhs, rhs, unicode_repeat);
+    return seq_int_multiply(lhs, rhs,
+                            PyUnicode_Type.tp_as_sequence->sq_repeat);
 }
 
 static PyObject *
 int_str_multiply(PyObject *lhs, PyObject *rhs)
 {
-    return seq_int_multiply(rhs, lhs, unicode_repeat);
+    return seq_int_multiply(rhs, lhs,
+                            PyUnicode_Type.tp_as_sequence->sq_repeat);
 }
 
 /* bytes-bytes */
@@ -2186,6 +2181,12 @@ static int
 bytes_bytes_guard(PyObject *lhs, PyObject *rhs)
 {
     return PyBytes_CheckExact(lhs) && PyBytes_CheckExact(rhs);
+}
+
+static PyObject *
+bytes_bytes_add(PyObject *lhs, PyObject *rhs)
+{
+    return PyBytes_Type.tp_as_sequence->sq_concat(lhs, rhs);
 }
 
 /* bytes-int and int-bytes */
@@ -2205,13 +2206,15 @@ int_bytes_guard(PyObject *lhs, PyObject *rhs)
 static PyObject *
 bytes_int_multiply(PyObject *lhs, PyObject *rhs)
 {
-    return seq_int_multiply(lhs, rhs, bytes_repeat);
+    return seq_int_multiply(lhs, rhs,
+                            PyBytes_Type.tp_as_sequence->sq_repeat);
 }
 
 static PyObject *
 int_bytes_multiply(PyObject *lhs, PyObject *rhs)
 {
-    return seq_int_multiply(rhs, lhs, bytes_repeat);
+    return seq_int_multiply(rhs, lhs,
+                            PyBytes_Type.tp_as_sequence->sq_repeat);
 }
 
 /* tuple-int and int-tuple */
@@ -2231,13 +2234,15 @@ int_tuple_guard(PyObject *lhs, PyObject *rhs)
 static PyObject *
 tuple_int_multiply(PyObject *lhs, PyObject *rhs)
 {
-    return seq_int_multiply(lhs, rhs, tuple_repeat);
+    return seq_int_multiply(lhs, rhs,
+                            PyTuple_Type.tp_as_sequence->sq_repeat);
 }
 
 static PyObject *
 int_tuple_multiply(PyObject *lhs, PyObject *rhs)
 {
-    return seq_int_multiply(rhs, lhs, tuple_repeat);
+    return seq_int_multiply(rhs, lhs,
+                            PyTuple_Type.tp_as_sequence->sq_repeat);
 }
 
 /* dict-dict */
@@ -2246,6 +2251,18 @@ static int
 dict_dict_guard(PyObject *lhs, PyObject *rhs)
 {
     return PyDict_CheckExact(lhs) && PyDict_CheckExact(rhs);
+}
+
+static PyObject *
+dict_dict_or(PyObject *lhs, PyObject *rhs)
+{
+    return PyDict_Type.tp_as_number->nb_or(lhs, rhs);
+}
+
+static PyObject *
+dict_dict_ior(PyObject *lhs, PyObject *rhs)
+{
+    return PyDict_Type.tp_as_number->nb_inplace_or(lhs, rhs);
 }
 
 static int
@@ -2373,10 +2390,10 @@ static _PyBinaryOpSpecializationDescr binaryop_extend_descrs[] = {
     {NB_INPLACE_MULTIPLY, str_int_guard, str_int_multiply, &PyUnicode_Type, 0, &PyUnicode_Type, &PyLong_Type},
     {NB_INPLACE_MULTIPLY, int_str_guard, int_str_multiply, &PyUnicode_Type, 0, &PyLong_Type, &PyUnicode_Type},
 
-    /* bytes + bytes: call bytes_concat directly. bytes_concat may return
-       an operand when one side is empty, so result is not always unique. */
-    {NB_ADD, bytes_bytes_guard, bytes_concat, &PyBytes_Type, 0, &PyBytes_Type, &PyBytes_Type},
-    {NB_INPLACE_ADD, bytes_bytes_guard, bytes_concat, &PyBytes_Type, 0, &PyBytes_Type, &PyBytes_Type},
+    /* bytes + bytes: bytes_concat may return an operand when one side
+       is empty, so result is not always unique. */
+    {NB_ADD, bytes_bytes_guard, bytes_bytes_add, &PyBytes_Type, 0, &PyBytes_Type, &PyBytes_Type},
+    {NB_INPLACE_ADD, bytes_bytes_guard, bytes_bytes_add, &PyBytes_Type, 0, &PyBytes_Type, &PyBytes_Type},
 
     /* bytes * int / int * bytes: call bytes_repeat directly.
        bytes_repeat returns the original when n == 1. */
@@ -2392,9 +2409,9 @@ static _PyBinaryOpSpecializationDescr binaryop_extend_descrs[] = {
     {NB_INPLACE_MULTIPLY, tuple_int_guard, tuple_int_multiply, &PyTuple_Type, 0, &PyTuple_Type, &PyLong_Type},
     {NB_INPLACE_MULTIPLY, int_tuple_guard, int_tuple_multiply, &PyTuple_Type, 0, &PyLong_Type, &PyTuple_Type},
 
-    /* dict | dict: call dict_or directly */
-    {NB_OR, dict_dict_guard, dict_or, &PyDict_Type, 1, &PyDict_Type, &PyDict_Type},
-    {NB_INPLACE_OR, dict_dict_guard, dict_ior, &PyDict_Type, 0, &PyDict_Type, &PyDict_Type},
+    /* dict | dict */
+    {NB_OR, dict_dict_guard, dict_dict_or, &PyDict_Type, 1, &PyDict_Type, &PyDict_Type},
+    {NB_INPLACE_OR, dict_dict_guard, dict_dict_ior, &PyDict_Type, 0, &PyDict_Type, &PyDict_Type},
 };
 
 static int

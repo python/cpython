@@ -12494,7 +12494,7 @@ unicode_rstrip_impl(PyObject *self, PyObject *chars)
 }
 
 
-PyObject*
+static PyObject*
 unicode_repeat(PyObject *str, Py_ssize_t len)
 {
     PyObject *u;

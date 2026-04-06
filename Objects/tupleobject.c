@@ -594,7 +594,7 @@ _PyTuple_Concat(PyObject *aa, PyObject *bb)
     return (PyObject *)np;
 }
 
-PyObject *
+static PyObject *
 tuple_repeat(PyObject *self, Py_ssize_t n)
 {
     PyTupleObject *a = _PyTuple_CAST(self);

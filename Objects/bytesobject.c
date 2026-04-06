@@ -1536,8 +1536,8 @@ bytes_length(PyObject *self)
     return Py_SIZE(a);
 }
 
-/* This is also used by PyBytes_Concat() and BINARY_OP_EXTEND */
-PyObject *
+/* This is also used by PyBytes_Concat() */
+static PyObject *
 bytes_concat(PyObject *a, PyObject *b)
 {
     Py_buffer va, vb;
@@ -1581,7 +1581,7 @@ bytes_concat(PyObject *a, PyObject *b)
     return result;
 }
 
-PyObject *
+static PyObject *
 bytes_repeat(PyObject *self, Py_ssize_t n)
 {
     PyBytesObject *a = _PyBytes_CAST(self);
