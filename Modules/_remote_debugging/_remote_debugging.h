@@ -417,6 +417,7 @@ extern void cached_code_metadata_destroy(void *ptr);
 /* Validation */
 extern int is_prerelease_version(uint64_t version);
 extern int validate_debug_offsets(struct _Py_DebugOffsets *debug_offsets);
+#define PY_REMOTE_DEBUG_INVALID_ASYNC_DEBUG_OFFSETS (-2)
 
 /* ============================================================================
  * MEMORY READING FUNCTION DECLARATIONS
