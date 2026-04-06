@@ -175,7 +175,7 @@ class ReadlineAlikeReader(historical_reader.HistoricalReader, CompletingReader):
         if result is None:
             return None
         names, values, action = result
-        if len(names) > 1 and self.config.colorize_completions:
+        if self.config.colorize_completions:
             names = self.config.colorize_completions(names, values)
         return names, action
 
