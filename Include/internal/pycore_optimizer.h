@@ -20,8 +20,8 @@ extern "C" {
  * PYTHON_JIT_FITNESS_INITIAL and PYTHON_JIT_FITNESS_INITIAL_SIDE */
 #define FITNESS_PER_INSTRUCTION     2
 #define FITNESS_BRANCH_BASE         5
-#define FITNESS_INITIAL             (FITNESS_PER_INSTRUCTION * 1000)
-#define FITNESS_INITIAL_SIDE        (FITNESS_INITIAL / 2)
+#define FITNESS_INITIAL             (UOP_MAX_TRACE_LENGTH * FITNESS_PER_INSTRUCTION)
+#define FITNESS_INITIAL_SIDE        (FITNESS_INITIAL * 3 / 5)
 #define FITNESS_BACKWARD_EDGE       (FITNESS_INITIAL / 10)
 
 /* Exit quality constants for fitness-based trace termination.

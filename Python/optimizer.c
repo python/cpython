@@ -633,7 +633,7 @@ compute_exit_quality(_Py_CODEUNIT *target_instr, int opcode,
 static inline int32_t
 compute_frame_penalty(const _PyOptimizationConfig *cfg)
 {
-    return (int32_t)cfg->fitness_initial / 10 + 1;
+    return (int32_t)cfg->fitness_initial / 30 + 1;
 }
 
 static int
@@ -2219,7 +2219,11 @@ _PyDumpExecutors(FILE *out)
     fprintf(out, "    node [colorscheme=greys9]\n");
     PyInterpreterState *interp = PyInterpreterState_Get();
     for (size_t i = 0; i < interp->executor_count; i++) {
-        executor_to_gv(interp->executor_ptrs[i], out);
+        _PyExecutorObject *exec = interp->executor_ptrs[i];
+        if (exec->vm_data.code == NULL) {
+            continue;
+        }
+        executor_to_gv(exec, out);
     }
     fprintf(out, "}\n\n");
     return 0;
