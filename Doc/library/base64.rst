@@ -69,9 +69,6 @@ POST request.
    after at most every *wrapcol* characters.
    If *wrapcol* is zero (default), do not insert any newlines.
 
-   May assert or raise a :exc:`ValueError` if the length of *altchars* is not 2.  Raises a
-   :exc:`TypeError` if *altchars* is not a :term:`bytes-like object`.
-
    .. versionchanged:: 3.15
       Added the *padded* and *wrapcol* parameters.
 
