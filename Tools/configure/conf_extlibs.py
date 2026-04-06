@@ -440,7 +440,7 @@ def detect_uuid(v):
     v.export("LIBUUID_CFLAGS", LIBUUID_CFLAGS)
     v.export("LIBUUID_LIBS", LIBUUID_LIBS)
 
-    # configure_5.ac checks "$HAVE_UUID_GENERATE_TIME_SAFE" = "1" which is a shell var
+    # configure.ac checks "$HAVE_UUID_GENERATE_TIME_SAFE" = "1" which is a shell var
     # that is never assigned (AC_DEFINE only writes to confdefs.h, not shell vars),
     # so this block never executes in the old configure.  Match that behaviour.
     if False and have_uuid is True and ac_cv_have_uuid_generate_time_safe:
@@ -901,6 +901,8 @@ def check_compression_libraries(v):
 
 def _check_curses(v, lib, panel_lib):
     """Detect a curses library pair via pkg-config, with link-test fallback."""
+    v.have_curses = False
+    v.have_panel = False
     lib_upper = lib.upper()
     panel_upper = panel_lib.upper()
     pkg = pyconf.pkg_check_modules("CURSES", lib)
@@ -1030,7 +1032,7 @@ def check_curses(v):
                 )
 
             # _CURSES_INCLUDES: conditionally include the right curses header
-            # (mirrors the _CURSES_INCLUDES M4 macro in configure_8.ac lines 47-63)
+            # (mirrors the _CURSES_INCLUDES M4 macro in configure.ac)
             CURSES_INCLUDES = """\
 #define NCURSES_OPAQUE 0
 #if defined(HAVE_NCURSESW_NCURSES_H)

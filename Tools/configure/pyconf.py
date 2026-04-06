@@ -265,7 +265,7 @@ def init_args() -> None:
     # configure.ac's ac_precious_vars list (PKG_CONFIG before CC, no CXX/CXXFLAGS
     # since configure.ac does not call AC_ARG_VAR for those).  User-level
     # precious variables (MACHDEP, PROFILE_TASK, GDBM_CFLAGS, …) are registered
-    # via env_var() calls in the configure_*.py files instead.
+    # via env_var() calls in the conf_*.py files instead.
     for pvar in [
         "PKG_CONFIG",
         "PKG_CONFIG_PATH",

@@ -370,13 +370,6 @@ def check_stat_timestamps(v):
             "Define if you have struct stat.st_mtimensec",
         )
 
-    # ---------------------------------------------------------------------------
-    # Initialize curses/panel state -- detection happens in configure_8.py
-    # (configure_7.ac lines 1429-1430)
-    # ---------------------------------------------------------------------------
-    v.have_curses = False
-    v.have_panel = False
-
 
 WITH_TZPATH = pyconf.arg_with(
     "tzpath",
