@@ -617,74 +617,27 @@ if sys.platform[:3] == "win":
 
 if sys.platform == 'darwin':
     def _macos_default_browser_bundle_id():
-        """Return the bundle ID of the default web browser via NSWorkspace.
+        """Return the bundle ID of the default web browser.
 
-        Uses the Objective-C runtime directly to call
-        NSWorkspace.sharedWorkspace().URLForApplicationToOpenURL() with a
-        probe https:// URL, then reads the bundle identifier from the
-        resulting NSBundle.  Returns None if ctypes is unavailable or the
-        lookup fails for any reason.
+        Reads the LaunchServices preferences file that macOS maintains
+        when the user sets a default browser. Returns None if the file
+        is absent or no https handler is recorded.
         """
+        import plistlib, os
+        plist = os.path.expanduser(
+            '~/Library/Preferences/com.apple.LaunchServices/'
+            'com.apple.launchservices.secure.plist'
+        )
         try:
-            from ctypes import cdll, c_void_p, c_char_p
-            from ctypes.util import find_library
-
-            # NSWorkspace is an AppKit class; load AppKit to register it.
-            cdll.LoadLibrary(
-                '/System/Library/Frameworks/AppKit.framework/AppKit'
-            )
-            objc = cdll.LoadLibrary(find_library('objc'))
-            objc.objc_getClass.restype = c_void_p
-            objc.sel_registerName.restype = c_void_p
-            objc.objc_msgSend.restype = c_void_p
-
-            def cls(name):
-                return objc.objc_getClass(name)
-
-            def sel(name):
-                return objc.sel_registerName(name)
-
-            # Build probe NSURL for "https://python.org"
-            NSString = cls(b'NSString')
-            objc.objc_msgSend.argtypes = [c_void_p, c_void_p, c_char_p]
-            ns_str = objc.objc_msgSend(
-                NSString, sel(b'stringWithUTF8String:'), b'https://python.org'
-            )
-
-            NSURL = cls(b'NSURL')
-            objc.objc_msgSend.argtypes = [c_void_p, c_void_p, c_void_p]
-            probe_url = objc.objc_msgSend(NSURL, sel(b'URLWithString:'), ns_str)
-
-            # Ask NSWorkspace which app handles https://
-            NSWorkspace = cls(b'NSWorkspace')
-            objc.objc_msgSend.argtypes = [c_void_p, c_void_p]
-            workspace = objc.objc_msgSend(NSWorkspace, sel(b'sharedWorkspace'))
-            if not workspace:
-                return None
-
-            objc.objc_msgSend.argtypes = [c_void_p, c_void_p, c_void_p]
-            app_url = objc.objc_msgSend(
-                workspace, sel(b'URLForApplicationToOpenURL:'), probe_url
-            )
-            if not app_url:
-                return None
-
-            # Get bundle identifier from that app's NSBundle
-            NSBundle = cls(b'NSBundle')
-            bundle = objc.objc_msgSend(NSBundle, sel(b'bundleWithURL:'), app_url)
-            if not bundle:
-                return None
-
-            objc.objc_msgSend.argtypes = [c_void_p, c_void_p]
-            bundle_id_ns = objc.objc_msgSend(bundle, sel(b'bundleIdentifier'))
-            if not bundle_id_ns:
-                return None
-
-            objc.objc_msgSend.restype = c_char_p
-            bundle_id_bytes = objc.objc_msgSend(bundle_id_ns, sel(b'UTF8String'))
-            return bundle_id_bytes.decode() if bundle_id_bytes else None
+            with open(plist, 'rb') as f:
+                data = plistlib.load(f)
+            for handler in data.get('LSHandlers', []):
+                if handler.get('LSHandlerURLScheme') == 'https':
+                    return (handler.get('LSHandlerRoleAll')
+                            or handler.get('LSHandlerRoleViewer'))
         except Exception:
-            return None
+            pass
+        return None
 
     class MacOSX(BaseBrowser):
         """Launcher class for macOS browsers, using /usr/bin/open.
