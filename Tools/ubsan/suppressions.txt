@@ -8,10 +8,10 @@ null:Objects/object.c
 bool:Objects/memoryobject.c
 
 # Modules/binascii.c:1243:42: runtime error: left shift of 128 by 24 places cannot be represented in type 'int'
-shift:Modules/binascii.c
+shift-base:Modules/binascii.c
 
 # Modules/_ctypes/cfield.c:644:1: runtime error: left shift of 1 by 63 places cannot be represented in type 'int64_t' (aka 'long')
-shift:Modules/_ctypes/cfield.c
+shift-base:Modules/_ctypes/cfield.c
 
 # Modules/_zstd/decompressor.c:598:56: runtime error: applying non-zero offset 18446744073709551615 to null pointer
 pointer-overflow:Modules/_zstd/decompressor.c

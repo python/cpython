@@ -61,7 +61,7 @@ jobs:
               || ''
             }}.txt handle_segv=0" >> "$GITHUB_ENV"
         else
-          echo "UBSAN_OPTIONS=${SAN_LOG_OPTION} suppressions=${GITHUB_WORKSPACE}/Tools/ubsan/suppressions.txt" >> "$GITHUB_ENV"
+          echo "UBSAN_OPTIONS=${SAN_LOG_OPTION} halt_on_error=1 suppressions=${GITHUB_WORKSPACE}/Tools/ubsan/suppressions.txt" >> "$GITHUB_ENV"
         fi
         echo "CC=clang" >> "$GITHUB_ENV"
         echo "CXX=clang++" >> "$GITHUB_ENV"
@@ -85,7 +85,6 @@ jobs:
       run: make pythoninfo
     - name: Tests
       run: >-
-        UBSAN_OPTIONS="${UBSAN_OPTIONS} halt_on_error=1"
         ./python -m test
         ${{ inputs.sanitizer == 'TSan' && '--tsan' || '' }}
         ${{ inputs.sanitizer == 'UBSan' && '-x test_capi' || '' }}
