@@ -120,6 +120,10 @@ class ChromeCommandTest(CommandTestMixin, unittest.TestCase):
         browser = self.browser_class(name=CMD_NAME)
         with self.assertRaises(ValueError):
             browser.open('%action--incognito')
+        # new=1: action is "--new-window", so "%action" itself expands to
+        # a dash-prefixed flag even with no dash in the original URL.
+        with self.assertRaises(ValueError):
+            browser.open('%action', new=1)
 
 
 class EdgeCommandTest(CommandTestMixin, unittest.TestCase):

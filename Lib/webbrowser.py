@@ -289,7 +289,7 @@ class UnixBrowser(BaseBrowser):
 
         self._check_url(url.replace("%action", action))
 
-        args = [arg.replace("%s", url).replace("%action", action)
+        args = [arg.replace("%action", action).replace("%s", url)
                 for arg in self.remote_args]
         args = [arg for arg in args if arg]
         success = self._invoke(args, True, autoraise, url)
