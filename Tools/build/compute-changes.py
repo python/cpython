@@ -130,14 +130,7 @@ def compute_changes() -> None:
     else:
         # Otherwise, just run the tests
         outputs = Outputs(
-            run_android=True,
-            run_emscripten=True,
-            run_ios=True,
-            run_macos=True,
-            run_tests=True,
             run_ubuntu=True,
-            run_wasi=True,
-            run_windows_tests=True,
         )
     target_branch = target_ref.removeprefix("origin/")
     outputs = process_target_branch(outputs, target_branch)
