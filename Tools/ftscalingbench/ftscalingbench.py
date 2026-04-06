@@ -295,6 +295,27 @@ def setattr_non_interned():
         setattr(obj, f"{prefix}_c", None)
 
 
+from enum import Enum
+class MyEnum(Enum):
+    X = 1
+    Y = 2
+    Z = 3
+
+@register_benchmark
+def enum_attr():
+    for _ in range(1000 * WORK_SCALE):
+        MyEnum.X
+        MyEnum.Y
+        MyEnum.Z
+
+@register_benchmark
+def enum_value():
+    for _ in range(1000 * WORK_SCALE):
+        MyEnum.X.value
+        MyEnum.Y.value
+        MyEnum.Z.value
+
+
 def bench_one_thread(func):
     t0 = time.perf_counter_ns()
     func()
