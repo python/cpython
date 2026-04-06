@@ -67,10 +67,10 @@ versions of Python, without recompilation.
 
 There are two Stable ABIs:
 
-- ``abi3``, introduced in Pyton 3.2, is compatible with
+- ``abi3``, introduced in Python 3.2, is compatible with
   **non**-:term:`free-threaded <free-threaded build>` builds of CPython.
 
-- ``abi3t``, introduced in Pyton 3.15, is compatible with
+- ``abi3t``, introduced in Python 3.15, is compatible with
   :term:`free-threaded <free-threaded build>` builds of CPython.
   It has stricter API limitations than ``abi3``.
 
@@ -125,7 +125,7 @@ Compiling for Stable ABI
 
 .. note::
 
-   When using a build tool (for example, ``setuptools``), the tool is
+   When using a build tool (for example, Setuptools), the tool is
    generally responsible for setting macros and synchronizing them with
    extension filenames and other metadata.
    Prefer using the tool's options over defining the macros manually.
@@ -143,7 +143,7 @@ to the lowest Python version your extension should support, in
 Typically, you should choose a specific value rather than the version of
 the Python headers you are compiling against.
 
-The macro(s) must be defined before including ``Python.h``.
+The macros must be defined before including ``Python.h``.
 Since :c:macro:`Py_PACK_VERSION` is not available at this point, you
 will need to use the numeric value directly.
 For reference, the values for a few recent Python versions are:
@@ -158,13 +158,13 @@ visible to the compiler but should not be used directly.
 .. c:macro:: Py_LIMITED_API
 
    Target ``abi3``, that is,
-   non-:term:`free-threaded <free-threaded build>` builds of CPython.
+   non-:term:`free-threaded builds <free-threaded build>` of CPython.
    See :ref:`above <abi3-compiling>` for common information.
 
 .. c:macro:: Py_TARGET_ABI3T
 
    Target ``abi3t``, that is,
-   :term:`free-threaded <free-threaded build>` builds of CPython.
+   :term:`free-threaded builds <free-threaded build>` of CPython.
    See :ref:`above <abi3-compiling>` for common information.
 
    .. versionadded:: next
@@ -180,7 +180,7 @@ backwards compatibility.
 When both are defined, ``Python.h`` may, or may not, redefine
 :c:macro:`!Py_LIMITED_API` to match :c:macro:`!Py_TARGET_ABI3T`.
 
-On a a :term:`free-threaded build` -- that is, when
+On a :term:`free-threaded build` -- that is, when
 :c:macro:`Py_GIL_DISABLED` is defined -- :c:macro:`!Py_TARGET_ABI3T`
 defaults to the value of :c:macro:`!Py_TARGET_ABI3T`.
 This means that there are two ways to build for both ``abi3`` and ``abi3t``:

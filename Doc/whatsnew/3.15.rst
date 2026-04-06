@@ -390,7 +390,7 @@ agen() for x in a)``.
 C extensions that target the :ref:`Stable ABI <stable-abi>` can now be
 compiled for the new *Stable ABI for Free-Threaded Builds* (also known
 as ``abi3t``), which makes them compatible with
-:term:`free-threaded <free-threaded build>` builds of CPython.
+:term:`free-threaded builds <free-threaded build>` of CPython.
 This usually requires some non-trivial changes to the source code;
 specifically:
 
@@ -410,8 +410,8 @@ free-threading (``cp315t``) separately.
 
 Stable ABI for Free-Threaded Builds should typically
 be selected in a build tool (such as Setuptools, meson-python, Cython,
-Scikit-build-core, Maturin, and similar).
-At the time of writing this entry, these tools did **not** support ``abi3t``.
+scikit-build-core, Maturin).
+At the time of writing, these tools did **not** support ``abi3t``.
 If this is the case for your tool, compile for ``cp315t`` separately.
 If not using a build tool -- or when writing such a tool -- you can select
 ``abi3t`` by setting the macro :c:macro:`!Py_TARGET_ABI3T` as discussed
