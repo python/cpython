@@ -491,13 +491,13 @@ def register_standard_browsers():
     _tryorder = []
 
     if sys.platform == 'darwin':
-        register("MacOSX", None, MacOSX('default'))
-        register("chrome", None, MacOSX('google chrome'))
-        register("chromium", None, MacOSX('chromium'))
-        register("firefox", None, MacOSX('firefox'))
-        register("safari", None, MacOSX('safari'))
-        register("opera", None, MacOSX('opera'))
-        register("microsoft-edge", None, MacOSX('microsoft edge'))
+        register("MacOS", None, MacOS('default'))
+        register("chrome", None, MacOS('google chrome'))
+        register("chromium", None, MacOS('chromium'))
+        register("firefox", None, MacOS('firefox'))
+        register("safari", None, MacOS('safari'))
+        register("opera", None, MacOS('opera'))
+        register("microsoft-edge", None, MacOS('microsoft edge'))
         # macOS can use below Unix support (but we prefer using the macOS
         # specific stuff)
 
@@ -639,7 +639,7 @@ if sys.platform == 'darwin':
             pass
         return None
 
-    class MacOSX(BaseBrowser):
+    class MacOS(BaseBrowser):
         """Launcher class for macOS browsers, using /usr/bin/open.
 
         For http/https URLs with the default browser, /usr/bin/open is called
@@ -690,7 +690,7 @@ if sys.platform == 'darwin':
         def __init__(self, name='default'):
             import warnings
             warnings.warn(
-                "MacOSXOSAScript is deprecated, use MacOSX instead.",
+                "MacOSXOSAScript is deprecated, use MacOS instead.",
                 DeprecationWarning,
                 stacklevel=2,
             )
