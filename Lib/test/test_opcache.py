@@ -2047,5 +2047,34 @@ class TestSpecializer(TestBase):
             sys.modules.pop("test_module_with_getattr", None)
 
 
+    @cpython_only
+    @requires_specialization
+    def test_load_attr_enum(self):
+        import enum
+
+        class Color(enum.IntEnum):
+            RED = 1
+            GREEN = 2
+            BLUE = 3
+
+        def load_enum_member():
+            for _ in range(_testinternalcapi.SPECIALIZATION_THRESHOLD):
+                x = Color.RED
+                self.assertEqual(x, 1)
+
+        load_enum_member()
+        self.assert_specialized(load_enum_member,
+                                "LOAD_ATTR_CLASS_WITH_METACLASS_CHECK")
+
+        def load_enum_value():
+            for _ in range(_testinternalcapi.SPECIALIZATION_THRESHOLD):
+                x = Color.RED.value + Color.GREEN.value
+                self.assertEqual(x, 3)
+
+        load_enum_value()
+        self.assert_specialized(load_enum_value,
+                                "LOAD_ATTR_CLASS_WITH_METACLASS_CHECK")
+
+
 if __name__ == "__main__":
     unittest.main()
