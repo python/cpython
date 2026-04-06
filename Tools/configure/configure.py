@@ -20,10 +20,12 @@ import conf_optimization
 import conf_output
 import conf_paths
 import conf_platform
+import conf_probes
 import conf_security
 import conf_sharedlib
 import conf_syslibs
 import conf_targets
+import conf_terminal
 import conf_threads
 import conf_wasm
 
@@ -89,8 +91,8 @@ def _run(v):
 
     conf_buildopts.setup_experimental_jit(v)
     conf_threads.check_pthreads(v)
-    conf_platform.check_headers(v)
-    conf_platform.check_types_and_macros(v)
+    conf_probes.check_headers(v)
+    conf_probes.check_types_and_macros(v)
     conf_compiler.check_sizes(v)
     conf_macos.setup_next_framework(v)
     conf_macos.setup_dsymutil(v)
@@ -123,22 +125,22 @@ def _run(v):
     conf_compiler.check_stdatomic(v)
     conf_buildopts.setup_mimalloc(v)
     conf_buildopts.setup_pymalloc(v)
-    conf_platform.setup_c_locale_coercion()
+    conf_probes.setup_c_locale_coercion()
     conf_buildopts.setup_valgrind(v)
     conf_buildopts.setup_dtrace(v)
     conf_wasm.setup_platform_objects(v)
     conf_sharedlib.setup_dynload(v)
-    conf_platform.check_posix_functions(v)
-    conf_platform.check_special_functions(v)
+    conf_probes.check_posix_functions(v)
+    conf_probes.check_special_functions(v)
 
     conf_extlibs.check_compression_libraries(v)
     conf_net.check_netdb_socket_funcs(v)
-    conf_platform.check_declarations(v)
-    conf_platform.check_pty_and_misc_funcs(v)
-    conf_platform.check_clock_functions(v)
+    conf_probes.check_declarations(v)
+    conf_syslibs.check_pty_and_misc_funcs(v)
+    conf_syslibs.check_clock_functions(v)
     conf_filesystem.check_device_macros(v)
     conf_net.check_getaddrinfo(v)
-    conf_platform.check_structs(v)
+    conf_probes.check_structs(v)
     conf_compiler.check_compiler_characteristics(v)
     conf_net.check_gethostbyname_r(v)
     conf_math.check_math_library(v)
@@ -152,24 +154,24 @@ def _run(v):
     conf_paths.setup_install_paths(v)
     conf_compiler.check_sign_extension(v)
     conf_compiler.check_getc_unlocked(v)
-    conf_extlibs.check_readline(v)
+    conf_terminal.check_readline(v)
     conf_paths.check_misc_runtime(v)
     conf_syslibs.check_stat_timestamps(v)
 
-    conf_extlibs.check_curses(v)
+    conf_terminal.check_curses(v)
     conf_filesystem.check_device_files(v)
     conf_net.check_socklen_t(v)
     conf_compiler.check_mbstowcs(v)
     conf_compiler.check_computed_gotos(v)
     conf_buildopts.check_tail_call_interp(v)
     conf_buildopts.check_remote_debug(v)
-    conf_platform.check_aix_pipe_buf(v)
+    conf_probes.check_aix_pipe_buf(v)
     conf_threads.setup_thread_headers_and_srcdirs(v)
     conf_compiler.check_compiler_bugs(v)
     conf_buildopts.check_ensurepip(v)
     conf_filesystem.check_dirent(v)
     conf_security.check_getrandom(v)
-    conf_platform.check_posix_shmem(v)
+    conf_syslibs.check_posix_shmem(v)
     conf_security.check_openssl(v)
     conf_security.check_ssl_cipher_suites(v)
     conf_security.check_builtin_hashlib_hashes(v)

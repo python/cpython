@@ -5,7 +5,9 @@ detects DBM backends (gdbm, ndbm, bdb) in the specified order;
 probes for sendfile, dl, dld libraries and backtrace/dladdr1 support;
 checks sem_init, intl, AIX-specific extensions, and aligned memory access;
 probes whether libatomic is needed for <pyatomic.h>; checks for subsecond
-timestamps in struct stat; and handles --with-tzpath.
+timestamps in struct stat; handles --with-tzpath; checks PTY functions
+(openpty, login_tty, forkpty) in -lutil/-lbsd; checks clock functions
+(clock_gettime, clock_getres, etc.) in -lrt; checks POSIX shared memory.
 """
 
 from __future__ import annotations
@@ -403,3 +405,153 @@ def setup_tzpath(v):
         _validate_tzpath(TZPATH)
         pyconf.result(f'"{TZPATH}"')
     v.export("TZPATH", TZPATH)
+
+
+def check_pty_and_misc_funcs(v):
+    # ---------------------------------------------------------------------------
+    # PTY functions: openpty, login_tty, forkpty
+    # ---------------------------------------------------------------------------
+
+    pyconf.checking("for openpty")
+    found = pyconf.check_func("openpty")
+    pyconf.result(found)
+    if not found:
+        if pyconf.check_lib("util", "openpty"):
+            pyconf.define("HAVE_OPENPTY")
+            v.LIBS = f"{v.LIBS} -lutil"
+        elif pyconf.check_lib("bsd", "openpty"):
+            pyconf.define("HAVE_OPENPTY")
+            v.LIBS = f"{v.LIBS} -lbsd"
+
+    if pyconf.search_libs("login_tty", ["util"], required=False):
+        pyconf.define(
+            "HAVE_LOGIN_TTY",
+            1,
+            "Define to 1 if you have the `login_tty' function.",
+        )
+
+    pyconf.checking("for forkpty")
+    found = pyconf.check_func("forkpty")
+    pyconf.result(found)
+    if not found:
+        if pyconf.check_lib("util", "forkpty"):
+            pyconf.define("HAVE_FORKPTY")
+            v.LIBS = f"{v.LIBS} -lutil"
+        elif pyconf.check_lib("bsd", "forkpty"):
+            pyconf.define("HAVE_FORKPTY")
+            v.LIBS = f"{v.LIBS} -lbsd"
+
+    # namespace functions
+    pyconf.check_funcs(["setns", "unshare"])
+
+    # long file support
+    pyconf.check_funcs(
+        ["fseek64", "fseeko", "fstatvfs", "ftell64", "ftello", "statvfs"]
+    )
+
+    pyconf.replace_funcs(["dup2"])
+
+    # getpgrp / setpgrp argument style
+    pyconf.checking("for getpgrp")
+    found = pyconf.check_func("getpgrp")
+    pyconf.result(found)
+    if found:
+        if pyconf.compile_check(includes=["unistd.h"], body="getpgrp(0);"):
+            pyconf.define(
+                "GETPGRP_HAVE_ARG",
+                1,
+                "Define if getpgrp() must be called as getpgrp(0).",
+            )
+
+    pyconf.checking("for setpgrp")
+    found = pyconf.check_func("setpgrp")
+    pyconf.result(found)
+    if found:
+        if pyconf.compile_check(includes=["unistd.h"], body="setpgrp(0,0);"):
+            pyconf.define(
+                "SETPGRP_HAVE_ARG",
+                1,
+                "Define if setpgrp() must be called as setpgrp(0, 0).",
+            )
+
+
+def check_clock_functions(v):
+    # ---------------------------------------------------------------------------
+    # Clock functions
+    # ---------------------------------------------------------------------------
+
+    pyconf.checking("for clock_gettime")
+    found = pyconf.check_func("clock_gettime")
+    pyconf.result(found)
+    if not found:
+        if pyconf.check_lib("rt", "clock_gettime"):
+            v.LIBS = f"{v.LIBS} -lrt"
+            pyconf.define("HAVE_CLOCK_GETTIME", 1)
+            pyconf.define(
+                "TIMEMODULE_LIB",
+                "rt",
+                "Library needed by timemodule.c: librt may be needed for clock_gettime()",
+            )
+            v.TIMEMODULE_LIB = "-lrt"
+    v.export("TIMEMODULE_LIB")
+
+    pyconf.checking("for clock_getres")
+    found = pyconf.check_func("clock_getres")
+    pyconf.result(found)
+    if not found:
+        if pyconf.check_lib("rt", "clock_getres"):
+            pyconf.define("HAVE_CLOCK_GETRES", 1)
+
+    # clock_settime: avoid on Android and iOS (crashes when unprivileged)
+    if v.ac_sys_system not in ("Linux-android", "iOS"):
+        pyconf.checking("for clock_settime")
+        found = pyconf.check_func("clock_settime")
+        pyconf.result(found)
+        if not found:
+            if pyconf.check_lib("rt", "clock_settime"):
+                pyconf.define("HAVE_CLOCK_SETTIME", 1)
+
+    # clock_nanosleep: avoid on Android < API 23 (wrong return value on signal)
+    android_api = int(v.ANDROID_API_LEVEL or "0")
+    skip_clock_nanosleep = (
+        v.ac_sys_system == "Linux-android" and android_api < 23
+    )
+    if not skip_clock_nanosleep:
+        pyconf.checking("for clock_nanosleep")
+        found = pyconf.check_func("clock_nanosleep")
+        pyconf.result(found)
+        if not found:
+            if pyconf.check_lib("rt", "clock_nanosleep"):
+                pyconf.define("HAVE_CLOCK_NANOSLEEP", 1)
+
+    pyconf.checking("for nanosleep")
+    found = pyconf.check_func("nanosleep")
+    pyconf.result(found)
+    if not found:
+        if pyconf.check_lib("rt", "nanosleep"):
+            pyconf.define("HAVE_NANOSLEEP", 1)
+
+
+def check_posix_shmem(v):
+    # ---------------------------------------------------------------------------
+    # POSIX shared memory (_posixshmem)
+    # ---------------------------------------------------------------------------
+
+    v.POSIXSHMEM_CFLAGS = "-I$(srcdir)/Modules/_multiprocessing"
+    v.POSIXSHMEM_LIBS = ""
+    with pyconf.save_env():
+        shm_open_result = pyconf.search_libs(
+            "shm_open", ["rt"], required=False
+        )
+        posixshmem_libs = "-lrt" if shm_open_result == "-lrt" else ""
+        pyconf.checking("for shm_open")
+        shm_open = pyconf.check_func("shm_open", headers=["sys/mman.h"])
+        pyconf.result(shm_open)
+        pyconf.checking("for shm_unlink")
+        shm_unlink = pyconf.check_func("shm_unlink", headers=["sys/mman.h"])
+        pyconf.result(shm_unlink)
+        have_posix_shmem = shm_open and shm_unlink
+    v.POSIXSHMEM_LIBS = posixshmem_libs
+    v.have_posix_shmem = have_posix_shmem
+    v.export("POSIXSHMEM_CFLAGS")
+    v.export("POSIXSHMEM_LIBS")
