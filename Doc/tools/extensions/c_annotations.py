@@ -380,6 +380,7 @@ class VersionHexCheatsheet(SphinxDirective):
     It should auto-update with the version being documented, so it must be an
     extension.
     """
+
     has_content = False
     required_arguments = 0
     optional_arguments = 0

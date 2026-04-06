@@ -409,8 +409,8 @@ the existing Stable ABI (``abi3``) and the version-specific ABI for
 free-threading (``cp315t``) separately.
 
 Stable ABI for Free-Threaded Builds should typically
-be selected in a build tool (such as Setuptools, meson-python, Cython,
-scikit-build-core, Maturin).
+be selected in a build tool (such as, for example, Setuptools, meson-python,
+scikit-build-core, or Maturin).
 At the time of writing, these tools did **not** support ``abi3t``.
 If this is the case for your tool, compile for ``cp315t`` separately.
 If not using a build tool -- or when writing such a tool -- you can select

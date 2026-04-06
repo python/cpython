@@ -125,10 +125,11 @@ Compiling for Stable ABI
 
 .. note::
 
-   When using a build tool (for example, Setuptools), the tool is
-   generally responsible for setting macros and synchronizing them with
-   extension filenames and other metadata.
-   Prefer using the tool's options over defining the macros manually.
+   Build tools (such as, for example, meson-python, scikit-build-core,
+   or Setuptools) often have a mechanism for setting macros and synchronizing
+   them with extension filenames and other metadata.
+   Prefer using such a mechanism, if it exists, over defining the
+   macros manually.
 
    The rest of this section is mainly relevant for tool authors, and for
    people who compile extensions manually.
@@ -150,10 +151,12 @@ For reference, the values for a few recent Python versions are:
 
 .. version-hex-cheatsheet::
 
-When the macro(s) are defined, ``Python.h`` will only expose API that is
+When one of the macros is defined, ``Python.h`` will only expose API that is
 compatible with the given Stable ABI -- that is, the
 :ref:`Limited API <limited-api-list>` plus some definitions that need to be
 visible to the compiler but should not be used directly.
+When both are defined, ``Python.h`` will only expose API compatible with
+both Stable ABIs.
 
 .. c:macro:: Py_LIMITED_API
 
@@ -186,7 +189,10 @@ defaults to the value of :c:macro:`!Py_TARGET_ABI3T`.
 This means that there are two ways to build for both ``abi3`` and ``abi3t``:
 
 - define both :c:macro:`!Py_LIMITED_API` and :c:macro:`!Py_TARGET_ABI3T`, or
-- define only :c:macro:`!Py_LIMITED_API` and build for free-threaded Python.
+- define only :c:macro:`!Py_LIMITED_API` and:
+
+  - on Windows, define :c:macro:`!Py_GIL_DISABLED`;
+  - on other systems, use the headers of free-threaded build of Python.
 
 
 .. _limited-api-scope-and-performance:
