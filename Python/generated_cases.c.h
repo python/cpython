@@ -367,6 +367,7 @@
                 if (res_o == NULL) {
                     JUMP_TO_LABEL(error);
                 }
+                assert(!PyFloat_CheckExact(res_o) || Py_REFCNT(res_o) == 1);
                 res = PyStackRef_FromPyObjectSteal(res_o);
                 l = left;
                 r = right;

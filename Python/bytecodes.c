@@ -1030,6 +1030,11 @@ dummy_func(
             if (res_o == NULL) {
                 ERROR_NO_POP();
             }
+            // The JIT and tier 2 optimizer assume that float results from
+            // binary operations are always uniquely referenced (refcount == 1).
+            // If this assertion fails, update the optimizer to stop marking
+            // float results as unique in optimizer_bytecodes.c.
+            assert(!PyFloat_CheckExact(res_o) || Py_REFCNT(res_o) == 1);
             res = PyStackRef_FromPyObjectSteal(res_o);
             l = left;
             r = right;

@@ -6474,6 +6474,7 @@
                 SET_CURRENT_CACHED_VALUES(0);
                 JUMP_TO_ERROR();
             }
+            assert(!PyFloat_CheckExact(res_o) || Py_REFCNT(res_o) == 1);
             res = PyStackRef_FromPyObjectSteal(res_o);
             l = left;
             r = right;
