@@ -1641,6 +1641,40 @@ class TestPyReplModuleCompleter(TestCase):
                         new_imports = sys.modules.keys() - _imported
                         self.assertSetEqual(new_imports, expected_imports)
 
+    def test_colorize_import_completions(self) -> None:
+        from _colorize import get_theme
+        from _pyrepl.fancycompleter import colorize_matches
+        from _pyrepl.completing_reader import stripcolor
+
+        theme = get_theme()
+        colorize = lambda names, values: colorize_matches(names, values, theme)
+        config = ReadlineConfig(colorize_completions=colorize)
+
+        reader = ReadlineAlikeReader(
+            console=FakeConsole(events=[]),
+            config=config,
+        )
+
+        # Multiple completions should be colorized (contain ANSI codes)
+        reader.buffer = list("from collections import d")
+        reader.pos = len(reader.buffer)
+        result = reader.get_module_completions()
+        self.assertIsNotNone(result)
+        names, action = result
+        self.assertTrue(len(names) > 1)
+        # Colorized names contain ANSI escape sequences
+        self.assertTrue(any(name != stripcolor(name) for name in names
+                            if name.strip()))
+
+        # Single completion should NOT be colorized
+        reader.buffer = list("from collections import Order")
+        reader.pos = len(reader.buffer)
+        result = reader.get_module_completions()
+        self.assertIsNotNone(result)
+        names, action = result
+        self.assertEqual(len(names), 1)
+        self.assertEqual(names[0], stripcolor(names[0]))
+
 
 # Audit hook used to check for stdlib modules import side-effects
 # Defined globally to avoid adding one hook per test run (refleak)
