@@ -2343,18 +2343,28 @@
             break;
         }
 
+        case _GUARD_NOS_TYPE_VERSION: {
+            break;
+        }
+
         case _GUARD_LOAD_SUPER_ATTR_METHOD: {
             JitOptRef class_st;
             JitOptRef global_super_st;
             class_st = stack_pointer[-2];
             global_super_st = stack_pointer[-3];
-            if (sym_get_const(ctx, global_super_st) == (PyObject *)&PySuper_Type
-                && sym_matches_type(class_st, &PyType_Type))
-            {
-                ADD_OP(_NOP, 0, 0);
+            if (sym_get_const(ctx, global_super_st) == (PyObject *)&PySuper_Type) {
+                PyTypeObject *probable = (PyTypeObject *)sym_get_probable_value(class_st);
+                PyTypeObject *known = (PyTypeObject *)sym_get_const(ctx, class_st);
+                if (known == NULL && probable != NULL && PyType_Check(probable)) {
+                    ADD_OP(_GUARD_NOS_TYPE_VERSION, 0, probable->tp_version_tag);
+                    known = probable;
+                }
+                sym_set_const(class_st, (PyObject *)known);
             }
-            sym_set_const(global_super_st, (PyObject *)&PySuper_Type);
-            sym_set_type(class_st, &PyType_Type);
+            else {
+                sym_set_const(global_super_st, (PyObject *)&PySuper_Type);
+                sym_set_type(class_st, &PyType_Type);
+            }
             break;
         }
 
@@ -2367,8 +2377,7 @@
             class_st = stack_pointer[-2];
             attr = sym_new_not_null(ctx);
             self_or_null = self_st;
-            PyObject *class_o = sym_get_probable_value(class_st);
-            PyTypeObject *su_type = (PyTypeObject *)(class_o && PyType_Check(class_o) ? class_o : NULL);
+            PyTypeObject *su_type = (PyTypeObject *)sym_get_const(ctx, class_st);
             PyTypeObject *obj_type = sym_get_type(self_st);
             CHECK_STACK_BOUNDS(-1);
             stack_pointer[-3] = attr;

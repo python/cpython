@@ -951,20 +951,26 @@ dummy_func(void) {
     }
 
     op(_GUARD_LOAD_SUPER_ATTR_METHOD, (global_super_st, class_st, unused -- global_super_st, class_st, unused)) {
-        if (sym_get_const(ctx, global_super_st) == (PyObject *)&PySuper_Type
-            && sym_matches_type(class_st, &PyType_Type))
-        {
-            ADD_OP(_NOP, 0, 0);
+        if (sym_get_const(ctx, global_super_st) == (PyObject *)&PySuper_Type) {
+            PyTypeObject *probable = (PyTypeObject *)sym_get_probable_value(class_st);
+            PyTypeObject *known = (PyTypeObject *)sym_get_const(ctx, class_st);
+            // not known, but has a probable type, promote the probable type
+            if (known == NULL && probable != NULL && PyType_Check(probable)) {
+                ADD_OP(_GUARD_NOS_TYPE_VERSION, 0, probable->tp_version_tag);
+                known = probable;
+            }
+            sym_set_const(class_st, (PyObject *)known);
         }
-        sym_set_const(global_super_st, (PyObject *)&PySuper_Type);
-        sym_set_type(class_st, &PyType_Type);
+        else {
+            sym_set_const(global_super_st, (PyObject *)&PySuper_Type);
+            sym_set_type(class_st, &PyType_Type);
+        }
     }
 
     op(_LOAD_SUPER_ATTR_METHOD, (global_super_st, class_st, self_st -- attr, self_or_null)) {
         attr = sym_new_not_null(ctx);
         self_or_null = self_st;
-        PyObject *class_o = sym_get_probable_value(class_st);
-        PyTypeObject *su_type = (PyTypeObject *)(class_o && PyType_Check(class_o) ? class_o : NULL);
+        PyTypeObject *su_type = (PyTypeObject *)sym_get_const(ctx, class_st);
         PyTypeObject *obj_type = sym_get_type(self_st);
         PyObject *name = get_co_name(ctx, oparg >> 2);
         attr = lookup_super_attr(ctx, dependencies, this_instr,

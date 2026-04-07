@@ -2636,6 +2636,13 @@ dummy_func(
             _GUARD_LOAD_SUPER_ATTR_METHOD +
             _LOAD_SUPER_ATTR_METHOD;
 
+        op(_GUARD_NOS_TYPE_VERSION, (type_version/2, nos, unused -- nos, unused)) {
+            PyTypeObject *tp = (PyTypeObject *)PyStackRef_AsPyObjectBorrow(nos);
+            assert(type_version != 0);
+            EXIT_IF(!PyType_Check(tp));
+            EXIT_IF(FT_ATOMIC_LOAD_UINT_RELAXED(tp->tp_version_tag) != type_version);
+        }
+
         op(_GUARD_LOAD_SUPER_ATTR_METHOD, (global_super_st, class_st, unused -- global_super_st, class_st, unused)) {
             PyObject *global_super = PyStackRef_AsPyObjectBorrow(global_super_st);
             PyObject *class = PyStackRef_AsPyObjectBorrow(class_st);
