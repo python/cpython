@@ -135,7 +135,7 @@ def _grapheme_break(prev_gcb, curr_gcb, ep_state, ri_flag, incb_state):
     return True
 
 
-def iter_graphemes(string, start=0, end=sys.maxsize):
+def iter_graphemes(string, /, start=0, end=sys.maxsize):
     """Iterate over grapheme clusters in a string.
 
     Uses extended grapheme cluster rules from TR29.
