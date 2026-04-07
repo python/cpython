@@ -654,12 +654,16 @@ Miscellaneous options
 
      .. versionadded:: 3.13
 
-   * :samp:`-X presite={package.module}` specifies a module that should be
-     imported before the :mod:`site` module is executed and before the
+   * :samp:`-X presite={module}` or :samp:`-X presite={module:func}` specifies
+     an entry point that should be executed before the :mod:`site` module is
+     executed and before the
      :mod:`__main__` module exists.  Therefore, the imported module isn't
      :mod:`__main__`. This can be used to execute code early during Python
      initialization. Python needs to be :ref:`built in debug mode <debug-build>`
      for this option to exist.  See also :envvar:`PYTHON_PRESITE`.
+
+     .. versionchanged:: next
+        Accept also ``module:func`` entry point format.
 
      .. versionadded:: 3.13
 
@@ -1457,5 +1461,8 @@ Debug-mode variables
    which takes precedence over this variable.
 
    Needs Python configured with the :option:`--with-pydebug` build option.
+
+   .. versionchanged:: next
+      Accept also ``module:func`` entry point format.
 
    .. versionadded:: 3.13
