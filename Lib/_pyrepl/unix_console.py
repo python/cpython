@@ -151,6 +151,21 @@ except AttributeError:
 
 @dataclass(frozen=True, slots=True)
 class UnixRefreshPlan:
+    """Instructions for updating the terminal after a screen change.
+
+    After the user types ``e`` to complete ``name``::
+
+        Before: >>> def greet(nam|):   
+                                 ▲
+                        LineUpdate here: insert_char "e"
+
+         After: >>> def greet(name|):
+                                  ▲
+
+    Only the changed cells are sent to the terminal; unchanged rows
+    are skipped entirely.
+    """
+
     grow_lines: int
     """Number of blank lines to append at the bottom to accommodate new content."""
     use_tall_mode: bool

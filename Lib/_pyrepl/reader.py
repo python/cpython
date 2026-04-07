@@ -157,7 +157,13 @@ default_keymap: Keymap = tuple(
 
 @dataclass(frozen=True, slots=True)
 class RefreshInvalidation:
-    """Parts of the screen state that have changed and need to be refreshed."""
+    """Which parts of the screen need to be recomputed on the next refresh.
+
+    Typing a character sets ``buffer_from_pos`` (rebuild from that offset).
+    Moving the cursor without editing sets ``cursor_only``.
+    Resizing the terminal sets ``layout`` (reflow all lines).
+    Opening a completion menu sets ``overlay``.
+    """
 
     cursor_only: bool = False
     buffer_from_pos: int | None = None
@@ -310,7 +316,12 @@ class Reader:
     ## cached metadata to speed up screen refreshes
     @dataclass
     class RefreshCache:
-        """Previously computed render/layout data for incremental refresh."""
+        """Previously computed render/layout data for incremental refresh.
+
+        Stores the output of the last ``calc_screen`` so that the next
+        refresh can reuse unchanged rows (e.g. only re-render from the
+        edited line onward instead of the whole screen).
+        """
 
         render_lines: list[RenderLine] = field(default_factory=list)
         layout_rows: list[LayoutRow] = field(default_factory=list)

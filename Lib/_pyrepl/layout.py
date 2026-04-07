@@ -11,7 +11,16 @@ from .types import CursorXY, ScreenInfoRow
 
 @dataclass(frozen=True, slots=True)
 class LayoutRow:
-    """Metadata for one physical screen row."""
+    """Metadata for one physical screen row.
+
+    For the row ``>>> def greet(name):``::
+
+        >>> def greet(name):
+        ╰─╯ ╰──────────────╯
+         4    char_widths=(1,1,1,…)  ← 16 entries
+              buffer_advance=17      ← includes the newline
+    """
+
     prompt_width: int
     char_widths: tuple[int, ...]
     suffix_width: int = 0
@@ -33,7 +42,13 @@ class LayoutRow:
 class LayoutMap:
     """Mapping between buffer positions and screen coordinates.
 
-    Single source of truth for cursor placement.
+    Single source of truth for cursor placement.  Given::
+
+        >>> def greet(name):     ← row 0, buffer_advance=17
+        ...     return name      ← row 1, buffer_advance=15
+                       ▲cursor
+
+    ``pos_to_xy(31)`` → ``(18, 1)``:  prompt width 4 + 14 body chars.
     """
     rows: tuple[LayoutRow, ...]
 
@@ -102,7 +117,14 @@ class LayoutMap:
 
 @dataclass(frozen=True, slots=True)
 class WrappedRow:
-    """One physical screen row after wrapping, with all metadata needed for rendering."""
+    """One physical screen row after wrapping, ready for rendering.
+
+    When a line overflows the terminal width, it splits into
+    multiple rows with a ``\\`` continuation marker::
+
+        >>> x = "a very long li\\   ← suffix="\\", suffix_width=1
+        ne that wraps"              ← prompt_text="" (continuation)
+    """
     prompt_text: str = ""
     prompt_width: int = 0
     fragments: tuple[ContentFragment, ...] = ()
@@ -125,8 +147,13 @@ def layout_content_lines(
     start_offset: int,
 ) -> LayoutResult:
     """Wrap content lines to fit *width* columns.
-    
-    Line boundaries are marked with ``\\``.
+
+    A short line passes through as one ``WrappedRow``; a long line is
+    split at the column boundary with ``\\`` markers::
+
+        >>> short = 1           ← one WrappedRow
+        >>> x = "a long stri\\  ← two WrappedRows, first has suffix="\\"
+        ng"
     """
     if width <= 0:
         return LayoutResult((), LayoutMap(()), ())

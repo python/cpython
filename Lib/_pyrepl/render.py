@@ -24,6 +24,14 @@ class _ThemeSyntax(Protocol):
 
 @dataclass(frozen=True, slots=True)
 class RenderCell:
+    """One terminal cell: a character, its column width, and SGR style.
+
+    A screen row like ``>>> def`` is a sequence of cells::
+
+        >  >  >     d  e  f
+                    ╰──┴──╯ styled with keyword SGR escape
+    """
+
     text: str
     width: int
     style: StyleRef = field(default_factory=StyleRef)
@@ -95,6 +103,12 @@ def _cells_from_rendered_text(text: str) -> tuple[RenderCell, ...]:
 
 @dataclass(frozen=True, slots=True)
 class RenderLine:
+    """One physical screen row as a tuple of :class:`RenderCell` objects.
+
+    ``text`` is the pre-rendered terminal string (characters + SGR escapes);
+    ``width`` is the total visible column count.
+    """
+
     cells: tuple[RenderCell, ...]
     text: str
     width: int
@@ -140,10 +154,15 @@ class RenderLine:
 class ScreenOverlay:
     """An overlay that replaces or inserts lines at a screen position.
 
-    If insert is True, lines are spliced in (shifting content down);
-    if False (default), lines replace existing content at y.
+    If *insert* is True, lines are spliced in (shifting content down);
+    if False (default), lines replace existing content at *y*.
 
-    Overlays are used to display tab completion menus and status messages.
+    For example, a tab-completion menu inserted below the input::
+
+        >>> os.path.j           ← line 0 (base content)
+                     join       ← ScreenOverlay(y=1, insert=True)
+                     junction   ←   (pushes remaining lines down)
+        ...                     ← line 1 (shifted down by 2)
     """
     y: int
     lines: tuple[RenderLine, ...]
@@ -152,6 +171,19 @@ class ScreenOverlay:
 
 @dataclass(frozen=True, slots=True)
 class RenderedScreen:
+    """The complete screen state: content lines, cursor, and overlays.
+
+    ``lines`` holds the base content; ``composed_lines`` is the final
+    result after overlays (completion menus, messages) are applied::
+
+        lines:                     composed_lines:
+        ┌──────────────────┐       ┌──────────────────┐
+        │>>> os.path.j     │       │>>> os.path.j     │
+        │...               │  ──►  │             join  │ ← overlay
+        └──────────────────┘       │...               │
+                                   └──────────────────┘
+    """
+
     lines: tuple[RenderLine, ...]
     cursor: CursorXY
     overlays: tuple[ScreenOverlay, ...] = ()
@@ -220,6 +252,17 @@ class RenderedScreen:
 
 @dataclass(frozen=True, slots=True)
 class LineDiff:
+    """The changed region between an old and new version of one screen row.
+
+    When the user types ``e`` so the row changes from
+    ``>>> nam`` to ``>>> name``::
+
+        >>> n a m       old
+        >>> n a m e     new
+                  ╰─╯
+                  start_cell=7, new_cells=("m","e"), old_cells=("m",)
+    """
+
     start_cell: int
     start_x: int
     old_cells: tuple[RenderCell, ...]

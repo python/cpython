@@ -7,6 +7,17 @@ from .utils import ColorSpan, StyleRef, THEME, iter_display_chars, unbracket, wl
 
 @dataclass(frozen=True, slots=True)
 class ContentFragment:
+    """A single display character with its visual width and style.
+
+    The body of ``>>> def greet`` becomes one fragment per character::
+
+        d  e  f     g  r  e  e  t
+        ╰──┴──╯     ╰──┴──┴──┴──╯
+        keyword       (unstyled)
+
+    e.g. ``ContentFragment("d", 1, StyleRef(tag="keyword"))``.
+    """
+
     text: str
     width: int
     style: StyleRef = StyleRef()
@@ -21,7 +32,21 @@ class PromptContent:
 
 @dataclass(frozen=True, slots=True)
 class SourceLine:
-    """One logical line from the editor buffer, before styling."""
+    """One logical line from the editor buffer, before styling.
+
+    Given this two-line input in the REPL::
+
+        >>> def greet(name):
+        ...     return name
+                       ▲ cursor
+
+    The buffer ``"def greet(name):\\n    return name"`` yields::
+
+        SourceLine(lineno=0, text="def greet(name):",
+                   start_offset=0, has_newline=True)
+        SourceLine(lineno=1, text="    return name",
+                   start_offset=17, cursor_index=14)
+    """
 
     lineno: int
     text: str
@@ -36,6 +61,15 @@ class SourceLine:
 
 @dataclass(frozen=True, slots=True)
 class ContentLine:
+    """A logical line paired with its prompt and styled body.
+
+    For ``>>> def greet(name):``::
+
+        >>> def greet(name):
+        ╰─╯ ╰──────────────╯
+        prompt       body: one ContentFragment per character
+    """
+
     source: SourceLine
     prompt: PromptContent
     body: tuple[ContentFragment, ...]
