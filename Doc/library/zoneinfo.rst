@@ -1,21 +1,20 @@
-:mod:`zoneinfo` --- IANA time zone support
-==========================================
+:mod:`!zoneinfo` --- IANA time zone support
+===========================================
 
 .. module:: zoneinfo
     :synopsis: IANA time zone support
 
 .. versionadded:: 3.9
 
-.. moduleauthor:: Paul Ganssle <paul@ganssle.io>
-.. sectionauthor:: Paul Ganssle <paul@ganssle.io>
+**Source code:** :source:`Lib/zoneinfo`
 
 --------------
 
-The :mod:`zoneinfo` module provides a concrete time zone implementation to
+The :mod:`!zoneinfo` module provides a concrete time zone implementation to
 support the IANA time zone database as originally specified in :pep:`615`. By
-default, :mod:`zoneinfo` uses the system's time zone data if available; if no
+default, :mod:`!zoneinfo` uses the system's time zone data if available; if no
 system time zone data is available, the library will fall back to using the
-first-party `tzdata`_ package available on PyPI.
+first-party :pypi:`tzdata` package available on PyPI.
 
 .. seealso::
 
@@ -23,10 +22,11 @@ first-party `tzdata`_ package available on PyPI.
         Provides the :class:`~datetime.time` and :class:`~datetime.datetime`
         types with which the :class:`ZoneInfo` class is designed to be used.
 
-    Package `tzdata`_
+    Package :pypi:`tzdata`
         First-party package maintained by the CPython core developers to supply
         time zone data via PyPI.
 
+.. include:: ../includes/wasm-notavail.rst
 
 Using ``ZoneInfo``
 ------------------
@@ -37,24 +37,24 @@ the constructor, the :meth:`datetime.replace <datetime.datetime.replace>`
 method or :meth:`datetime.astimezone <datetime.datetime.astimezone>`::
 
     >>> from zoneinfo import ZoneInfo
-    >>> from datetime import datetime, timedelta
+    >>> import datetime as dt
 
-    >>> dt = datetime(2020, 10, 31, 12, tzinfo=ZoneInfo("America/Los_Angeles"))
-    >>> print(dt)
+    >>> when = dt.datetime(2020, 10, 31, 12, tzinfo=ZoneInfo("America/Los_Angeles"))
+    >>> print(when)
     2020-10-31 12:00:00-07:00
 
-    >>> dt.tzname()
+    >>> when.tzname()
     'PDT'
 
 Datetimes constructed in this way are compatible with datetime arithmetic and
 handle daylight saving time transitions with no further intervention::
 
-    >>> dt_add = dt + timedelta(days=1)
+    >>> when_add = when + dt.timedelta(days=1)
 
-    >>> print(dt_add)
+    >>> print(when_add)
     2020-11-01 12:00:00-08:00
 
-    >>> dt_add.tzname()
+    >>> when_add.tzname()
     'PST'
 
 These time zones also support the :attr:`~datetime.datetime.fold` attribute
@@ -63,26 +63,25 @@ times (such as a daylight saving time to standard time transition), the offset
 from *before* the transition is used when ``fold=0``, and the offset *after*
 the transition is used when ``fold=1``, for example::
 
-    >>> dt = datetime(2020, 11, 1, 1, tzinfo=ZoneInfo("America/Los_Angeles"))
-    >>> print(dt)
+    >>> when = dt.datetime(2020, 11, 1, 1, tzinfo=ZoneInfo("America/Los_Angeles"))
+    >>> print(when)
     2020-11-01 01:00:00-07:00
 
-    >>> print(dt.replace(fold=1))
+    >>> print(when.replace(fold=1))
     2020-11-01 01:00:00-08:00
 
 When converting from another time zone, the fold will be set to the correct
 value::
 
-    >>> from datetime import timezone
     >>> LOS_ANGELES = ZoneInfo("America/Los_Angeles")
-    >>> dt_utc = datetime(2020, 11, 1, 8, tzinfo=timezone.utc)
+    >>> when_utc = dt.datetime(2020, 11, 1, 8, tzinfo=dt.timezone.utc)
 
     >>> # Before the PDT -> PST transition
-    >>> print(dt_utc.astimezone(LOS_ANGELES))
+    >>> print(when_utc.astimezone(LOS_ANGELES))
     2020-11-01 01:00:00-07:00
 
     >>> # After the PDT -> PST transition
-    >>> print((dt_utc + timedelta(hours=1)).astimezone(LOS_ANGELES))
+    >>> print((when_utc + dt.timedelta(hours=1)).astimezone(LOS_ANGELES))
     2020-11-01 01:00:00-08:00
 
 Data sources
@@ -90,7 +89,7 @@ Data sources
 
 The ``zoneinfo`` module does not directly provide time zone data, and instead
 pulls time zone information from the system time zone database or the
-first-party PyPI package `tzdata`_, if available. Some systems, including
+first-party PyPI package :pypi:`tzdata`, if available. Some systems, including
 notably Windows systems, do not have an IANA database available, and so for
 projects targeting cross-platform compatibility that require time zone data, it
 is recommended to declare a dependency on tzdata. If neither system data nor
@@ -124,8 +123,9 @@ time zone database (except on Windows, where there are no "well-known"
 locations for time zone data). On POSIX systems, downstream distributors and
 those building Python from source who know where their system
 time zone data is deployed may change the default time zone path by specifying
-the compile-time option ``TZPATH`` (or, more likely, the ``configure`` flag
-``--with-tzpath``), which should be a string delimited by :data:`os.pathsep`.
+the compile-time option ``TZPATH`` (or, more likely, the :option:`configure
+flag --with-tzpath <--with-tzpath>`), which should be a string delimited by
+:data:`os.pathsep`.
 
 On all platforms, the configured value is available as the ``TZPATH`` key in
 :func:`sysconfig.get_config_var`.
@@ -191,7 +191,7 @@ The ``ZoneInfo`` class
 
 The ``ZoneInfo`` class has two alternate constructors:
 
-.. classmethod:: ZoneInfo.from_file(fobj, /, key=None)
+.. classmethod:: ZoneInfo.from_file(file_obj, /, key=None)
 
     Constructs a ``ZoneInfo`` object from a file-like object returning bytes
     (e.g. a file opened in binary mode or an :class:`io.BytesIO` object).
@@ -201,6 +201,9 @@ The ``ZoneInfo`` class has two alternate constructors:
     :py:meth:`~object.__str__` and :py:meth:`~object.__repr__`.
 
     Objects created via this constructor cannot be pickled (see `pickling`_).
+
+    :exc:`ValueError` is raised if the data read from *file_obj* is not a valid
+    TZif file.
 
 .. classmethod:: ZoneInfo.no_cache(key)
 
@@ -237,7 +240,7 @@ The following class methods are also available:
     .. warning::
 
         Invoking this function may change the semantics of datetimes using
-        ``ZoneInfo`` in surprising ways; this modifies process-wide global state
+        ``ZoneInfo`` in surprising ways; this modifies module state
         and thus may have wide-ranging effects. Only use it if you know that you
         need to.
 
@@ -272,8 +275,8 @@ the note on usage in the attribute documentation)::
     >>> str(zone)
     'Pacific/Kwajalein'
 
-    >>> dt = datetime(2020, 4, 1, 3, 15, tzinfo=zone)
-    >>> f"{dt.isoformat()} [{dt.tzinfo}]"
+    >>> when = dt.datetime(2020, 4, 1, 3, 15, tzinfo=zone)
+    >>> f"{when.isoformat()} [{when.tzinfo}]"
     '2020-04-01T03:15:00+12:00 [Pacific/Kwajalein]'
 
 For objects constructed from a file without specifying a ``key`` parameter,
@@ -295,7 +298,7 @@ The behavior of a ``ZoneInfo`` file depends on how it was constructed:
 1. ``ZoneInfo(key)``: When constructed with the primary constructor, a
    ``ZoneInfo`` object is serialized by key, and when deserialized, the
    deserializing process uses the primary and thus it is expected that these
-   are expected to be the same object as other references to the same time
+   are the same object as other references to the same time
    zone.  For example, if ``europe_berlin_pkl`` is a string containing a pickle
    constructed from ``ZoneInfo("Europe/Berlin")``, one would expect the
    following behavior:
@@ -321,7 +324,7 @@ The behavior of a ``ZoneInfo`` file depends on how it was constructed:
        >>> a is b
        False
 
-3. ``ZoneInfo.from_file(fobj, /, key=None)``: When constructed from a file, the
+3. ``ZoneInfo.from_file(file_obj, /, key=None)``: When constructed from a file, the
    ``ZoneInfo`` object raises an exception on pickling. If an end user wants to
    pickle a ``ZoneInfo`` constructed from a file, it is recommended that they
    use a wrapper type or a custom serialization function: either serializing by
@@ -345,7 +348,7 @@ Functions
 
     This function only includes canonical zone names and does not include
     "special" zones such as those under the ``posix/`` and ``right/``
-    directories, or the ``posixrules`` zone.
+    directories, the ``posixrules``  or the ``localtime`` zone.
 
     .. caution::
 
@@ -409,5 +412,3 @@ Exceptions and warnings
     be filtered out, such as a relative path.
 
 .. Links and references:
-
-.. _tzdata: https://pypi.org/project/tzdata/

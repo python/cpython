@@ -1,13 +1,13 @@
 .. _tut-brieftour:
 
 **********************************
-Brief Tour of the Standard Library
+Brief tour of the standard library
 **********************************
 
 
 .. _tut-os-interface:
 
-Operating System Interface
+Operating system interface
 ==========================
 
 The :mod:`os` module provides dozens of functions for interacting with the
@@ -15,7 +15,7 @@ operating system::
 
    >>> import os
    >>> os.getcwd()      # Return the current working directory
-   'C:\\Python310'
+   'C:\\Python315'
    >>> os.chdir('/server/accesslogs')   # Change current working directory
    >>> os.system('mkdir today')   # Run the command mkdir in the system shell
    0
@@ -24,7 +24,7 @@ Be sure to use the ``import os`` style instead of ``from os import *``.  This
 will keep :func:`os.open` from shadowing the built-in :func:`open` function which
 operates much differently.
 
-.. index:: builtin: help
+.. index:: pair: built-in function; help
 
 The built-in :func:`dir` and :func:`help` functions are useful as interactive
 aids for working with large modules like :mod:`os`::
@@ -47,7 +47,7 @@ a higher level interface that is easier to use::
 
 .. _tut-file-wildcards:
 
-File Wildcards
+File wildcards
 ==============
 
 The :mod:`glob` module provides a function for making file lists from directory
@@ -60,16 +60,20 @@ wildcard searches::
 
 .. _tut-command-line-arguments:
 
-Command Line Arguments
+Command-line arguments
 ======================
 
 Common utility scripts often need to process command line arguments. These
 arguments are stored in the :mod:`sys` module's *argv* attribute as a list.  For
-instance the following output results from running ``python demo.py one two
-three`` at the command line::
+instance, let's take the following :file:`demo.py` file::
 
-   >>> import sys
-   >>> print(sys.argv)
+   # File demo.py
+   import sys
+   print(sys.argv)
+
+Here is the output from running ``python demo.py one two three`` at the command
+line::
+
    ['demo.py', 'one', 'two', 'three']
 
 The :mod:`argparse` module provides a more sophisticated mechanism to process
@@ -78,8 +82,9 @@ and an optional number of lines to be displayed::
 
     import argparse
 
-    parser = argparse.ArgumentParser(prog = 'top',
-        description = 'Show top lines from each file')
+    parser = argparse.ArgumentParser(
+        prog='top',
+        description='Show top lines from each file')
     parser.add_argument('filenames', nargs='+')
     parser.add_argument('-l', '--lines', type=int, default=10)
     args = parser.parse_args()
@@ -92,7 +97,7 @@ to ``['alpha.txt', 'beta.txt']``.
 
 .. _tut-stderr:
 
-Error Output Redirection and Program Termination
+Error output redirection and program termination
 ================================================
 
 The :mod:`sys` module also has attributes for *stdin*, *stdout*, and *stderr*.
@@ -107,7 +112,7 @@ The most direct way to terminate a script is to use ``sys.exit()``.
 
 .. _tut-string-pattern-matching:
 
-String Pattern Matching
+String pattern matching
 =======================
 
 The :mod:`re` module provides regular expression tools for advanced string
@@ -133,7 +138,7 @@ Mathematics
 ===========
 
 The :mod:`math` module gives access to the underlying C library functions for
-floating point math::
+floating-point math::
 
    >>> import math
    >>> math.cos(math.pi / 4)
@@ -148,7 +153,7 @@ The :mod:`random` module provides tools for making random selections::
    'apple'
    >>> random.sample(range(100), 10)   # sampling without replacement
    [30, 83, 16, 4, 8, 81, 41, 50, 18, 33]
-   >>> random.random()    # random float
+   >>> random.random()    # random float from the interval [0.0, 1.0)
    0.17970987693706186
    >>> random.randrange(6)    # random integer chosen from range(6)
    4
@@ -170,7 +175,7 @@ computations.
 
 .. _tut-internet-access:
 
-Internet Access
+Internet access
 ===============
 
 There are a number of modules for accessing the internet and processing internet
@@ -178,13 +183,13 @@ protocols. Two of the simplest are :mod:`urllib.request` for retrieving data
 from URLs and :mod:`smtplib` for sending mail::
 
    >>> from urllib.request import urlopen
-   >>> with urlopen('http://tycho.usno.navy.mil/cgi-bin/timer.pl') as response:
+   >>> with urlopen('https://docs.python.org/3/') as response:
    ...     for line in response:
-   ...         line = line.decode('utf-8')  # Decoding the binary data to text.
-   ...         if 'EST' in line or 'EDT' in line:  # look for Eastern Time
-   ...             print(line)
-
-   <BR>Nov. 25, 09:43:32 PM EST
+   ...         line = line.decode()             # Convert bytes to a str
+   ...         if 'updated' in line:
+   ...             print(line.rstrip())         # Remove trailing newline
+   ...
+         Last updated on Nov 11, 2025 (20:11 UTC).
 
    >>> import smtplib
    >>> server = smtplib.SMTP('localhost')
@@ -201,7 +206,7 @@ from URLs and :mod:`smtplib` for sending mail::
 
 .. _tut-dates-and-times:
 
-Dates and Times
+Dates and times
 ===============
 
 The :mod:`datetime` module supplies classes for manipulating dates and times in
@@ -211,15 +216,15 @@ formatting and manipulation.  The module also supports objects that are timezone
 aware. ::
 
    >>> # dates are easily constructed and formatted
-   >>> from datetime import date
-   >>> now = date.today()
+   >>> import datetime as dt
+   >>> now = dt.date.today()
    >>> now
    datetime.date(2003, 12, 2)
    >>> now.strftime("%m-%d-%y. %d %b %Y is a %A on the %d day of %B.")
    '12-02-03. 02 Dec 2003 is a Tuesday on the 02 day of December.'
 
    >>> # dates support calendar arithmetic
-   >>> birthday = date(1964, 7, 31)
+   >>> birthday = dt.date(1964, 7, 31)
    >>> age = now - birthday
    >>> age.days
    14368
@@ -227,7 +232,7 @@ aware. ::
 
 .. _tut-data-compression:
 
-Data Compression
+Data compression
 ================
 
 Common data archiving and compression formats are directly supported by modules
@@ -249,7 +254,7 @@ including: :mod:`zlib`, :mod:`gzip`, :mod:`bz2`, :mod:`lzma`, :mod:`zipfile` and
 
 .. _tut-performance-measurement:
 
-Performance Measurement
+Performance measurement
 =======================
 
 Some Python users develop a deep interest in knowing the relative performance of
@@ -273,7 +278,7 @@ larger blocks of code.
 
 .. _tut-quality-control:
 
-Quality Control
+Quality control
 ===============
 
 One approach for developing high quality software is to write tests for each
@@ -319,18 +324,18 @@ file::
 
 .. _tut-batteries-included:
 
-Batteries Included
+Batteries included
 ==================
 
 Python has a "batteries included" philosophy.  This is best seen through the
 sophisticated and robust capabilities of its larger packages. For example:
 
 * The :mod:`xmlrpc.client` and :mod:`xmlrpc.server` modules make implementing
-  remote procedure calls into an almost trivial task.  Despite the modules
+  remote procedure calls into an almost trivial task.  Despite the modules'
   names, no direct knowledge or handling of XML is needed.
 
 * The :mod:`email` package is a library for managing email messages, including
-  MIME and other :rfc:`2822`-based message documents. Unlike :mod:`smtplib` and
+  MIME and other :rfc:`5322`-based message documents. Unlike :mod:`smtplib` and
   :mod:`poplib` which actually send and receive messages, the email package has
   a complete toolset for building or decoding complex message structures
   (including attachments) and for implementing internet encoding and header

@@ -8,6 +8,8 @@ import logging
 import threading
 import time
 import types
+import weakref
+from itertools import islice
 
 FIRST_COMPLETED = 'FIRST_COMPLETED'
 FIRST_EXCEPTION = 'FIRST_EXCEPTION'
@@ -22,14 +24,6 @@ CANCELLED = 'CANCELLED'
 # ...and _Waiter.add_cancelled() was called by a worker.
 CANCELLED_AND_NOTIFIED = 'CANCELLED_AND_NOTIFIED'
 FINISHED = 'FINISHED'
-
-_FUTURE_STATES = [
-    PENDING,
-    RUNNING,
-    CANCELLED,
-    CANCELLED_AND_NOTIFIED,
-    FINISHED
-]
 
 _STATE_TO_DESCRIPTION_MAP = {
     PENDING: "pending",
@@ -50,9 +44,7 @@ class CancelledError(Error):
     """The Future was cancelled."""
     pass
 
-class TimeoutError(Error):
-    """The operation exceeded the given deadline."""
-    pass
+TimeoutError = TimeoutError  # make local alias for the standard exception
 
 class InvalidStateError(Error):
     """The operation is not allowed in this state."""
@@ -284,13 +276,14 @@ def wait(fs, timeout=None, return_when=ALL_COMPLETED):
         A named 2-tuple of sets. The first set, named 'done', contains the
         futures that completed (is finished or cancelled) before the wait
         completed. The second set, named 'not_done', contains uncompleted
-        futures.
+        futures. Duplicate futures given to *fs* are removed and will be
+        returned only once.
     """
+    fs = set(fs)
     with _AcquireFutures(fs):
-        done = set(f for f in fs
-                   if f._state in [CANCELLED_AND_NOTIFIED, FINISHED])
-        not_done = set(fs) - done
-
+        done = {f for f in fs
+                   if f._state in [CANCELLED_AND_NOTIFIED, FINISHED]}
+        not_done = fs - done
         if (return_when == FIRST_COMPLETED) and done:
             return DoneAndNotDoneFutures(done, not_done)
         elif (return_when == FIRST_EXCEPTION) and done:
@@ -309,7 +302,19 @@ def wait(fs, timeout=None, return_when=ALL_COMPLETED):
             f._waiters.remove(waiter)
 
     done.update(waiter.finished_futures)
-    return DoneAndNotDoneFutures(done, set(fs) - done)
+    return DoneAndNotDoneFutures(done, fs - done)
+
+
+def _result_or_cancel(fut, timeout=None):
+    try:
+        try:
+            return fut.result(timeout)
+        finally:
+            fut.cancel()
+    finally:
+        # Break a reference cycle with the exception in self._exception
+        del fut
+
 
 class Future(object):
     """Represents the result of an asynchronous computation."""
@@ -380,13 +385,17 @@ class Future(object):
             return self._state == RUNNING
 
     def done(self):
-        """Return True of the future was cancelled or finished executing."""
+        """Return True if the future was cancelled or finished executing."""
         with self._condition:
             return self._state in [CANCELLED, CANCELLED_AND_NOTIFIED, FINISHED]
 
     def __get_result(self):
-        if self._exception:
-            raise self._exception
+        if self._exception is not None:
+            try:
+                raise self._exception
+            finally:
+                # Break a reference cycle with the exception in self._exception
+                self = None
         else:
             return self._result
 
@@ -426,20 +435,24 @@ class Future(object):
                 timeout.
             Exception: If the call raised then that exception will be raised.
         """
-        with self._condition:
-            if self._state in [CANCELLED, CANCELLED_AND_NOTIFIED]:
-                raise CancelledError()
-            elif self._state == FINISHED:
-                return self.__get_result()
+        try:
+            with self._condition:
+                if self._state in [CANCELLED, CANCELLED_AND_NOTIFIED]:
+                    raise CancelledError()
+                elif self._state == FINISHED:
+                    return self.__get_result()
 
-            self._condition.wait(timeout)
+                self._condition.wait(timeout)
 
-            if self._state in [CANCELLED, CANCELLED_AND_NOTIFIED]:
-                raise CancelledError()
-            elif self._state == FINISHED:
-                return self.__get_result()
-            else:
-                raise TimeoutError()
+                if self._state in [CANCELLED, CANCELLED_AND_NOTIFIED]:
+                    raise CancelledError()
+                elif self._state == FINISHED:
+                    return self.__get_result()
+                else:
+                    raise TimeoutError()
+        finally:
+            # Break a reference cycle with the exception in self._exception
+            self = None
 
     def exception(self, timeout=None):
         """Return the exception raised by the call that the future represents.
@@ -545,6 +558,33 @@ class Future(object):
             self._condition.notify_all()
         self._invoke_callbacks()
 
+    def _get_snapshot(self):
+        """Get a snapshot of the future's current state.
+
+        This method atomically retrieves the state in one lock acquisition,
+        which is significantly faster than multiple method calls.
+
+        Returns:
+            Tuple of (done, cancelled, result, exception)
+            - done: True if the future is done (cancelled or finished)
+            - cancelled: True if the future was cancelled
+            - result: The result if available and not cancelled
+            - exception: The exception if available and not cancelled
+        """
+        # Fast path: check if already finished without lock
+        if self._state == FINISHED:
+            return True, False, self._result, self._exception
+
+        # Need lock for other states since they can change
+        with self._condition:
+            # We have to check the state again after acquiring the lock
+            # because it may have changed in the meantime.
+            if self._state == FINISHED:
+                return True, False, self._result, self._exception
+            if self._state in {CANCELLED, CANCELLED_AND_NOTIFIED}:
+                return True, True, None, None
+            return False, False, None, None
+
     __class_getitem__ = classmethod(types.GenericAlias)
 
 class Executor(object):
@@ -561,7 +601,7 @@ class Executor(object):
         """
         raise NotImplementedError()
 
-    def map(self, fn, *iterables, timeout=None, chunksize=1):
+    def map(self, fn, *iterables, timeout=None, chunksize=1, buffersize=None):
         """Returns an iterator equivalent to map(fn, iter).
 
         Args:
@@ -573,6 +613,11 @@ class Executor(object):
                 before being passed to a child process. This argument is only
                 used by ProcessPoolExecutor; it is ignored by
                 ThreadPoolExecutor.
+            buffersize: The number of submitted tasks whose results have not
+                yet been yielded. If the buffer is full, iteration over the
+                iterables pauses until a result is yielded from the buffer.
+                If None, all input elements are eagerly collected, and a task is
+                submitted for each.
 
         Returns:
             An iterator equivalent to: map(func, *iterables) but the calls may
@@ -583,10 +628,25 @@ class Executor(object):
                 before the given timeout.
             Exception: If fn(*args) raises for any values.
         """
+        if buffersize is not None and not isinstance(buffersize, int):
+            raise TypeError("buffersize must be an integer or None")
+        if buffersize is not None and buffersize < 1:
+            raise ValueError("buffersize must be None or > 0")
+
         if timeout is not None:
             end_time = timeout + time.monotonic()
 
-        fs = [self.submit(fn, *args) for args in zip(*iterables)]
+        zipped_iterables = zip(*iterables)
+        if buffersize:
+            fs = collections.deque(
+                self.submit(fn, *args) for args in islice(zipped_iterables, buffersize)
+            )
+        else:
+            fs = [self.submit(fn, *args) for args in zipped_iterables]
+
+        # Use a weak reference to ensure that the executor can be garbage
+        # collected independently of the result_iterator closure.
+        executor_weakref = weakref.ref(self)
 
         # Yield must be hidden in closure so that the futures are submitted
         # before the first iterator value is required.
@@ -595,17 +655,23 @@ class Executor(object):
                 # reverse to keep finishing order
                 fs.reverse()
                 while fs:
+                    if (
+                        buffersize
+                        and (executor := executor_weakref())
+                        and (args := next(zipped_iterables, None))
+                    ):
+                        fs.appendleft(executor.submit(fn, *args))
                     # Careful not to keep a reference to the popped future
                     if timeout is None:
-                        yield fs.pop().result()
+                        yield _result_or_cancel(fs.pop())
                     else:
-                        yield fs.pop().result(end_time - time.monotonic())
+                        yield _result_or_cancel(fs.pop(), end_time - time.monotonic())
             finally:
                 for future in fs:
                     future.cancel()
         return result_iterator()
 
-    def shutdown(self, wait=True):
+    def shutdown(self, wait=True, *, cancel_futures=False):
         """Clean-up the resources associated with the Executor.
 
         It is safe to call this method several times. Otherwise, no other
@@ -615,6 +681,9 @@ class Executor(object):
             wait: If True then shutdown will not return until all running
                 futures have finished executing and the resources used by the
                 executor have been reclaimed.
+            cancel_futures: If True then shutdown will cancel all pending
+                futures. Futures that are completed or running will not be
+                cancelled.
         """
         pass
 

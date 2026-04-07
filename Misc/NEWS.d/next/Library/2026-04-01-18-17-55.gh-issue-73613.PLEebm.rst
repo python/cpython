@@ -1,0 +1,7 @@
+Add the *padded* parameter in functions related to Base32 and Base64 codecs
+in the :mod:`binascii` and :mod:`base64` modules.
+In the encoding functions it controls  whether the pad character can be added
+in the output, in the decoding functions it controls whether padding is
+required in input.
+Padding of input no longer required in :func:`base64.urlsafe_b64decode`
+by default.

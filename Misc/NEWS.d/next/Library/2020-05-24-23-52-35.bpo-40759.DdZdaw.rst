@@ -1,1 +1,0 @@
-Deprecate the :mod:`symbol` module.

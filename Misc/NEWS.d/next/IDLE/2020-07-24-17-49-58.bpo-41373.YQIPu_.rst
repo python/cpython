@@ -1,3 +1,0 @@
-Save files loaded with no line ending, as when blank, or different line
-endings, by setting its line ending to the system default. Fix regression in
-3.8.4 and 3.9.0b4.

@@ -4,8 +4,9 @@ import sys
 import io
 from textwrap import dedent
 
-from test.support import captured_stdout
-from test.support import captured_stderr
+from test.support import (
+    captured_stdout, captured_stderr, force_not_colorized,
+)
 
 # timeit's default number of iterations.
 DEFAULT_NUMBER = 1000000
@@ -77,6 +78,9 @@ class TestTimeit(unittest.TestCase):
         self.assertRaises(SyntaxError, timeit.Timer, stmt='break')
         self.assertRaises(SyntaxError, timeit.Timer, stmt='continue')
         self.assertRaises(SyntaxError, timeit.Timer, stmt='from timeit import *')
+        self.assertRaises(SyntaxError, timeit.Timer, stmt='  pass')
+        self.assertRaises(SyntaxError, timeit.Timer,
+                          setup='while False:\n  pass', stmt='  break')
 
     def test_timer_invalid_setup(self):
         self.assertRaises(ValueError, timeit.Timer, setup=None)
@@ -86,6 +90,12 @@ class TestTimeit(unittest.TestCase):
         self.assertRaises(SyntaxError, timeit.Timer, setup='break')
         self.assertRaises(SyntaxError, timeit.Timer, setup='continue')
         self.assertRaises(SyntaxError, timeit.Timer, setup='from timeit import *')
+        self.assertRaises(SyntaxError, timeit.Timer, setup='  pass')
+
+    def test_timer_empty_stmt(self):
+        timeit.Timer(stmt='')
+        timeit.Timer(stmt=' \n\t\f')
+        timeit.Timer(stmt='# comment')
 
     fake_setup = "import timeit\ntimeit._fake_timer.setup()"
     fake_stmt = "import timeit\ntimeit._fake_timer.inc()"
@@ -213,8 +223,8 @@ class TestTimeit(unittest.TestCase):
     def assert_exc_string(self, exc_string, expected_exc_name):
         exc_lines = exc_string.splitlines()
         self.assertGreater(len(exc_lines), 2)
-        self.assertTrue(exc_lines[0].startswith('Traceback'))
-        self.assertTrue(exc_lines[-1].startswith(expected_exc_name))
+        self.assertStartsWith(exc_lines[0], 'Traceback')
+        self.assertStartsWith(exc_lines[-1], expected_exc_name)
 
     def test_print_exc(self):
         s = io.StringIO()
@@ -288,9 +298,7 @@ class TestTimeit(unittest.TestCase):
     @unittest.skipIf(sys.flags.optimize >= 2, "need __doc__")
     def test_main_help(self):
         s = self.run_main(switches=['-h'])
-        # Note: It's not clear that the trailing space was intended as part of
-        # the help text, but since it's there, check for it.
-        self.assertEqual(s, timeit.__doc__ + ' ')
+        self.assertEqual(s, timeit.__doc__)
 
     def test_main_verbose(self):
         s = self.run_main(switches=['-v'])
@@ -344,20 +352,22 @@ class TestTimeit(unittest.TestCase):
         self.assertEqual(error_stringio.getvalue(),
                     "Unrecognized unit. Please select nsec, usec, msec, or sec.\n")
 
+    @force_not_colorized
     def test_main_exception(self):
         with captured_stderr() as error_stringio:
             s = self.run_main(switches=['1/0'])
         self.assert_exc_string(error_stringio.getvalue(), 'ZeroDivisionError')
 
+    @force_not_colorized
     def test_main_exception_fixed_reps(self):
         with captured_stderr() as error_stringio:
             s = self.run_main(switches=['-n1', '1/0'])
         self.assert_exc_string(error_stringio.getvalue(), 'ZeroDivisionError')
 
-    def autorange(self, seconds_per_increment=1/1024, callback=None):
+    def autorange(self, seconds_per_increment=1/1024, callback=None, target_time=0.2):
         timer = FakeTimer(seconds_per_increment=seconds_per_increment)
         t = timeit.Timer(stmt=self.fake_stmt, setup=self.fake_setup, timer=timer)
-        return t.autorange(callback)
+        return t.autorange(callback, target_time=target_time)
 
     def test_autorange(self):
         num_loops, time_taken = self.autorange()
@@ -368,6 +378,11 @@ class TestTimeit(unittest.TestCase):
         num_loops, time_taken = self.autorange(seconds_per_increment=1.0)
         self.assertEqual(num_loops, 1)
         self.assertEqual(time_taken, 1.0)
+
+    def test_autorange_with_target_time(self):
+        num_loops, time_taken = self.autorange(target_time=1.0)
+        self.assertEqual(num_loops, 2000)
+        self.assertEqual(time_taken, 2000/1024)
 
     def test_autorange_with_callback(self):
         def callback(a, b):

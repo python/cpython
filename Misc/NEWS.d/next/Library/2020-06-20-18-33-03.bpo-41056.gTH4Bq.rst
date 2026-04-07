@@ -1,1 +1,0 @@
-Fixed an instance where a MemoryError within the zoneinfo module might not be reported or not reported at its source. (found by Coverity)

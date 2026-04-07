@@ -1,1 +1,0 @@
-Remove the remaining files from the old parser and the :mod:`symbol` module.

@@ -1,1 +1,0 @@
-Use ncurses extended color functions when available to support terminals with 256 colors, and add the new function :func:`curses.has_extended_color_support` to indicate whether extended color support is provided by the underlying ncurses library.

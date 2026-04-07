@@ -1,5 +1,6 @@
 import unittest
 from test import support
+from test.support.import_helper import import_module
 
 
 class TestMROEntry(unittest.TestCase):
@@ -98,7 +99,7 @@ class TestMROEntry(unittest.TestCase):
                 return ()
         d = C_too_few()
         with self.assertRaises(TypeError):
-            class D(d): ...
+            class E(d): ...
 
     def test_mro_entry_errors_2(self):
         class C_not_callable:
@@ -111,7 +112,7 @@ class TestMROEntry(unittest.TestCase):
                 return object
         c = C_not_tuple()
         with self.assertRaises(TypeError):
-            class D(c): ...
+            class E(c): ...
 
     def test_mro_entry_metaclass(self):
         meta_args = []
@@ -220,6 +221,7 @@ class TestClassGetitem(unittest.TestCase):
                 return None
         with self.assertRaises(TypeError):
             C_too_few[int]
+
         class C_too_many:
             def __class_getitem__(cls, one, two):
                 return None
@@ -232,15 +234,22 @@ class TestClassGetitem(unittest.TestCase):
                 return None
         with self.assertRaises(TypeError):
             C()[int]
+
         class E: ...
         e = E()
         e.__class_getitem__ = lambda cls, item: 'This will not work'
         with self.assertRaises(TypeError):
             e[int]
+
         class C_not_callable:
             __class_getitem__ = "Surprise!"
         with self.assertRaises(TypeError):
             C_not_callable[int]
+
+        class C_is_none(tuple):
+            __class_getitem__ = None
+        with self.assertRaisesRegex(TypeError, "C_is_none"):
+            C_is_none[int]
 
     def test_class_getitem_metaclass(self):
         class Meta(type):
@@ -269,7 +278,9 @@ class TestClassGetitem(unittest.TestCase):
 class CAPITest(unittest.TestCase):
 
     def test_c_class(self):
-        from _testcapi import Generic, GenericAlias
+        _testcapi = import_module("_testcapi")
+        Generic = _testcapi.Generic
+        GenericAlias = _testcapi.GenericAlias
         self.assertIsInstance(Generic.__class_getitem__(int), GenericAlias)
 
         IntGeneric = Generic[int]

@@ -1,0 +1,12 @@
+# Default settings for Ruff in CPython
+
+# PYTHON_FOR_REGEN
+target-version = "py310"
+
+# PEP 8
+line-length = 79
+
+# Enable automatic fixes by default.
+# To override this, use ``fix = false`` in a subdirectory's config file
+# or ``--no-fix`` on the command line.
+fix = true

@@ -1,3 +1,0 @@
-:mod:`webbrowser` now properly finds the default browser in pure Wayland
-systems by checking the WAYLAND_DISPLAY environment variable. Patch
-contributed by Jérémy Attali.

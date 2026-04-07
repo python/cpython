@@ -1,1 +1,0 @@
-The decimal module now requires libmpdec-2.5.0.

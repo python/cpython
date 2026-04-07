@@ -2,13 +2,7 @@
 
 This module provides an implementation of the HeaderRegistry API.
 The implementation is designed to flexibly follow RFC5322 rules.
-
-Eventually HeaderRegistry will be a public API, but it isn't yet,
-and will probably change some before that happens.
-
 """
-from types import MappingProxyType
-
 from email import utils
 from email import errors
 from email import _header_value_parser as parser
@@ -222,7 +216,7 @@ class BaseHeader(str):
                 self.__class__.__bases__,
                 str(self),
             ),
-            self.__dict__)
+            self.__getstate__())
 
     @classmethod
     def _reconstruct(cls, value):
@@ -302,7 +296,14 @@ class DateHeader:
             kwds['parse_tree'] = parser.TokenList()
             return
         if isinstance(value, str):
-            value = utils.parsedate_to_datetime(value)
+            kwds['decoded'] = value
+            try:
+                value = utils.parsedate_to_datetime(value)
+            except ValueError:
+                kwds['defects'].append(errors.InvalidDateDefect('Invalid date value or format'))
+                kwds['datetime'] = None
+                kwds['parse_tree'] = parser.TokenList()
+                return
         kwds['datetime'] = value
         kwds['decoded'] = utils.format_datetime(kwds['datetime'])
         kwds['parse_tree'] = cls.value_parser(kwds['decoded'])
@@ -459,7 +460,7 @@ class ParameterizedMIMEHeader:
 
     @property
     def params(self):
-        return MappingProxyType(self._params)
+        return frozendict(self._params)
 
 
 class ContentTypeHeader(ParameterizedMIMEHeader):
@@ -531,6 +532,18 @@ class MessageIDHeader:
         kwds['defects'].extend(parse_tree.all_defects)
 
 
+class ReferencesHeader:
+
+    max_count = 1
+    value_parser = staticmethod(parser.parse_message_ids)
+
+    @classmethod
+    def parse(cls, value, kwds):
+        kwds['parse_tree'] = parse_tree = cls.value_parser(value)
+        kwds['decoded'] = str(parse_tree)
+        kwds['defects'].extend(parse_tree.all_defects)
+
+
 # The header factory #
 
 _default_header_map = {
@@ -554,6 +567,8 @@ _default_header_map = {
     'content-disposition':          ContentDispositionHeader,
     'content-transfer-encoding':    ContentTransferEncodingHeader,
     'message-id':                   MessageIDHeader,
+    'in-reply-to':                  ReferencesHeader,
+    'references':                   ReferencesHeader,
     }
 
 class HeaderRegistry:

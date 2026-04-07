@@ -43,10 +43,12 @@ PyAPI_FUNC(PyObject *) PyImport_AddModuleObject(
 PyAPI_FUNC(PyObject *) PyImport_AddModule(
     const char *name            /* UTF-8 encoded string */
     );
-PyAPI_FUNC(PyObject *) PyImport_ImportModule(
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030d0000
+PyAPI_FUNC(PyObject *) PyImport_AddModuleRef(
     const char *name            /* UTF-8 encoded string */
     );
-PyAPI_FUNC(PyObject *) PyImport_ImportModuleNoBlock(
+#endif
+PyAPI_FUNC(PyObject *) PyImport_ImportModule(
     const char *name            /* UTF-8 encoded string */
     );
 PyAPI_FUNC(PyObject *) PyImport_ImportModuleLevel(
@@ -67,7 +69,7 @@ PyAPI_FUNC(PyObject *) PyImport_ImportModuleLevelObject(
 #endif
 
 #define PyImport_ImportModuleEx(n, g, l, f) \
-    PyImport_ImportModuleLevel(n, g, l, f, 0)
+    PyImport_ImportModuleLevel((n), (g), (l), (f), 0)
 
 PyAPI_FUNC(PyObject *) PyImport_GetImporter(PyObject *path);
 PyAPI_FUNC(PyObject *) PyImport_Import(PyObject *name);
@@ -86,9 +88,23 @@ PyAPI_FUNC(int) PyImport_AppendInittab(
     PyObject* (*initfunc)(void)
     );
 
+typedef enum {
+    PyImport_LAZY_NORMAL,
+    PyImport_LAZY_ALL,
+    PyImport_LAZY_NONE
+} PyImport_LazyImportsMode;
+
+#ifndef Py_LIMITED_API
+PyAPI_FUNC(int) PyImport_SetLazyImportsMode(PyImport_LazyImportsMode mode);
+PyAPI_FUNC(int) PyImport_SetLazyImportsFilter(PyObject *filter);
+
+PyAPI_FUNC(PyImport_LazyImportsMode) PyImport_GetLazyImportsMode(void);
+PyAPI_FUNC(PyObject *) PyImport_GetLazyImportsFilter(void);
+#endif
+
 #ifndef Py_LIMITED_API
 #  define Py_CPYTHON_IMPORT_H
-#  include  "cpython/import.h"
+#  include "cpython/import.h"
 #  undef Py_CPYTHON_IMPORT_H
 #endif
 

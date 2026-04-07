@@ -1,21 +1,34 @@
 #!/bin/sh
 apt-get update
 
-apt-get -yq install \
+apt-get -yq --no-install-recommends install \
     build-essential \
-    zlib1g-dev \
+    pkg-config \
+    cmake \
+    gdb \
+    lcov \
+    libb2-dev \
     libbz2-dev \
+    libffi-dev \
+    libgdbm-dev \
+    libgdbm-compat-dev \
     liblzma-dev \
     libncurses5-dev \
     libreadline6-dev \
     libsqlite3-dev \
     libssl-dev \
-    libgdbm-dev \
-    tk-dev \
+    libzstd-dev \
     lzma \
     lzma-dev \
-    liblzma-dev \
-    libffi-dev \
+    strace \
+    tk-dev \
     uuid-dev \
     xvfb \
-    lcov
+    zlib1g-dev
+
+# Workaround missing libmpdec-dev on ubuntu 24.04:
+# https://launchpad.net/~ondrej/+archive/ubuntu/php
+# https://deb.sury.org/
+sudo add-apt-repository ppa:ondrej/php
+apt-get update
+apt-get -yq --no-install-recommends install libmpdec-dev

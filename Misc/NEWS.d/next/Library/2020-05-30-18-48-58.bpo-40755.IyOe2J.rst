@@ -1,1 +1,0 @@
-Add rich comparisons to collections.Counter().

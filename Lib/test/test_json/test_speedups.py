@@ -59,6 +59,15 @@ class TestEncode(CTest):
         with self.assertRaises(ZeroDivisionError):
             enc('spam', 4)
 
+    def test_bad_markers_argument_to_encoder(self):
+        # https://bugs.python.org/issue45269
+        with self.assertRaisesRegex(
+            TypeError,
+            r'make_encoder\(\) argument 1 must be dict or None, not int',
+        ):
+            self.json.encoder.c_make_encoder(1, None, None, None, ': ', ', ',
+                                             False, False, False)
+
     def test_bad_bool_args(self):
         def test(name):
             self.json.encoder.JSONEncoder(**{name: BadBool()}).encode({'a': 1})
@@ -71,3 +80,34 @@ class TestEncode(CTest):
     def test_unsortable_keys(self):
         with self.assertRaises(TypeError):
             self.json.encoder.JSONEncoder(sort_keys=True).encode({'a': 1, 1: 'a'})
+
+    def test_current_indent_level(self):
+        enc = self.json.encoder.c_make_encoder(
+            markers=None,
+            default=str,
+            encoder=self.json.encoder.c_encode_basestring,
+            indent='\t',
+            key_separator=': ',
+            item_separator=', ',
+            sort_keys=False,
+            skipkeys=False,
+            allow_nan=False)
+        expected = (
+            '[\n'
+            '\t"spam", \n'
+            '\t{\n'
+            '\t\t"ham": "eggs"\n'
+            '\t}\n'
+            ']')
+        self.assertEqual(enc(['spam', {'ham': 'eggs'}], 0)[0], expected)
+        self.assertEqual(enc(['spam', {'ham': 'eggs'}], -3)[0], expected)
+        expected2 = (
+            '[\n'
+            '\t\t\t\t"spam", \n'
+            '\t\t\t\t{\n'
+            '\t\t\t\t\t"ham": "eggs"\n'
+            '\t\t\t\t}\n'
+            '\t\t\t]')
+        self.assertEqual(enc(['spam', {'ham': 'eggs'}], 3)[0], expected2)
+        self.assertRaises(TypeError, enc, ['spam', {'ham': 'eggs'}], 3.0)
+        self.assertRaises(TypeError, enc, ['spam', {'ham': 'eggs'}])

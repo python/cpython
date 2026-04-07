@@ -24,6 +24,7 @@ return.
 .. c:function:: int PyCoro_CheckExact(PyObject *ob)
 
    Return true if *ob*'s type is :c:type:`PyCoro_Type`; *ob* must not be ``NULL``.
+   This function always succeeds.
 
 
 .. c:function:: PyObject* PyCoro_New(PyFrameObject *frame, PyObject *name, PyObject *qualname)

@@ -145,7 +145,13 @@ class BaseContext(object):
         '''Check whether this is a fake forked process in a frozen executable.
         If so then run code specified by commandline and exit.
         '''
-        if sys.platform == 'win32' and getattr(sys, 'frozen', False):
+        # gh-140814: allow_none=True avoids locking in the default start
+        # method, which would cause a later set_start_method() to fail.
+        # None is safe to pass through: spawn.freeze_support()
+        # independently detects whether this process is a spawned
+        # child, so the start method check here is only an optimization.
+        if (getattr(sys, 'frozen', False)
+                and self.get_start_method(allow_none=True) in ('spawn', None)):
             from .spawn import freeze_support
             freeze_support()
 
@@ -167,7 +173,7 @@ class BaseContext(object):
         '''
         # This is undocumented.  In previous versions of multiprocessing
         # its only effect was to make socket objects inheritable on Windows.
-        from . import connection
+        from . import connection  # noqa: F401
 
     def set_executable(self, executable):
         '''Sets the path to a python.exe or pythonw.exe binary used to run
@@ -177,12 +183,15 @@ class BaseContext(object):
         from .spawn import set_executable
         set_executable(executable)
 
-    def set_forkserver_preload(self, module_names):
+    def set_forkserver_preload(self, module_names, *, on_error='ignore'):
         '''Set list of module names to try to load in forkserver process.
-        This is really just a hint.
+
+        The on_error parameter controls how import failures are handled:
+        "ignore" (default) silently ignores failures, "warn" emits warnings,
+        and "fail" raises exceptions breaking the forkserver context.
         '''
         from .forkserver import set_forkserver_preload
-        set_forkserver_preload(module_names)
+        set_forkserver_preload(module_names, on_error=on_error)
 
     def get_context(self, method=None):
         if method is None:
@@ -223,6 +232,10 @@ class Process(process.BaseProcess):
     def _Popen(process_obj):
         return _default_context.get_context().Process._Popen(process_obj)
 
+    @staticmethod
+    def _after_fork():
+        return _default_context.get_context().Process._after_fork()
+
 class DefaultContext(BaseContext):
     Process = Process
 
@@ -254,13 +267,13 @@ class DefaultContext(BaseContext):
         return self._actual_context._name
 
     def get_all_start_methods(self):
-        if sys.platform == 'win32':
-            return ['spawn']
-        else:
-            methods = ['spawn', 'fork'] if sys.platform == 'darwin' else ['fork', 'spawn']
-            if reduction.HAVE_SEND_HANDLE:
-                methods.append('forkserver')
-            return methods
+        """Returns a list of the supported start methods, default first."""
+        default = self._default_context.get_start_method()
+        start_method_names = [default]
+        start_method_names.extend(
+            name for name in _concrete_contexts if name != default
+        )
+        return start_method_names
 
 
 #
@@ -282,6 +295,11 @@ if sys.platform != 'win32':
         def _Popen(process_obj):
             from .popen_spawn_posix import Popen
             return Popen(process_obj)
+
+        @staticmethod
+        def _after_fork():
+            # process is spawned, nothing to do
+            pass
 
     class ForkServerProcess(process.BaseProcess):
         _start_method = 'forkserver'
@@ -310,14 +328,15 @@ if sys.platform != 'win32':
         'spawn': SpawnContext(),
         'forkserver': ForkServerContext(),
     }
-    if sys.platform == 'darwin':
-        # bpo-33725: running arbitrary code after fork() is no longer reliable
-        # on macOS since macOS 10.14 (Mojave). Use spawn by default instead.
-        _default_context = DefaultContext(_concrete_contexts['spawn'])
+    # bpo-33725: running arbitrary code after fork() is no longer reliable
+    # on macOS since macOS 10.14 (Mojave). Use spawn by default instead.
+    # gh-84559: We changed everyones default to a thread safeish one in 3.14.
+    if reduction.HAVE_SEND_HANDLE and sys.platform != 'darwin':
+        _default_context = DefaultContext(_concrete_contexts['forkserver'])
     else:
-        _default_context = DefaultContext(_concrete_contexts['fork'])
+        _default_context = DefaultContext(_concrete_contexts['spawn'])
 
-else:
+else:  # Windows
 
     class SpawnProcess(process.BaseProcess):
         _start_method = 'spawn'
@@ -325,6 +344,11 @@ else:
         def _Popen(process_obj):
             from .popen_spawn_win32 import Popen
             return Popen(process_obj)
+
+        @staticmethod
+        def _after_fork():
+            # process is spawned, nothing to do
+            pass
 
     class SpawnContext(BaseContext):
         _name = 'spawn'

@@ -8,8 +8,7 @@
 # Licensed to PSF under a Contributor Agreement.
 #
 
-__all__ = [ 'BaseManager', 'SyncManager', 'BaseProxy', 'Token',
-            'SharedMemoryManager' ]
+__all__ = [ 'BaseManager', 'SyncManager', 'BaseProxy', 'Token' ]
 
 #
 # Imports
@@ -19,6 +18,7 @@ import sys
 import threading
 import signal
 import array
+import collections.abc
 import queue
 import time
 import types
@@ -35,9 +35,11 @@ from . import util
 from . import get_context
 try:
     from . import shared_memory
-    HAS_SHMEM = True
 except ImportError:
     HAS_SHMEM = False
+else:
+    HAS_SHMEM = True
+    __all__.append('SharedMemoryManager')
 
 #
 # Register some things for pickling
@@ -48,11 +50,11 @@ def reduce_array(a):
 reduction.register(array.array, reduce_array)
 
 view_types = [type(getattr({}, name)()) for name in ('items','keys','values')]
-if view_types[0] is not list:       # only needed in Py3.0
-    def rebuild_as_list(obj):
-        return list, (list(obj),)
-    for view_type in view_types:
-        reduction.register(view_type, rebuild_as_list)
+def rebuild_as_list(obj):
+    return list, (list(obj),)
+for view_type in view_types:
+    reduction.register(view_type, rebuild_as_list)
+del view_type, view_types
 
 #
 # Type for identifying shared objects
@@ -89,7 +91,10 @@ def dispatch(c, id, methodname, args=(), kwds={}):
     kind, result = c.recv()
     if kind == '#RETURN':
         return result
-    raise convert_to_error(kind, result)
+    try:
+        raise convert_to_error(kind, result)
+    finally:
+        del result  # break reference cycle
 
 def convert_to_error(kind, result):
     if kind == '#ERROR':
@@ -152,7 +157,7 @@ class Server(object):
         Listener, Client = listener_client[serializer]
 
         # do authentication later
-        self.listener = Listener(address=address, backlog=16)
+        self.listener = Listener(address=address, backlog=128)
         self.address = self.listener.address
 
         self.id_to_obj = {'0': (None, ())}
@@ -192,11 +197,8 @@ class Server(object):
             t.daemon = True
             t.start()
 
-    def handle_request(self, c):
-        '''
-        Handle a new connection
-        '''
-        funcname = result = request = None
+    def _handle_request(self, c):
+        request = None
         try:
             connection.deliver_challenge(c, self.authkey)
             connection.answer_challenge(c, self.authkey)
@@ -213,6 +215,7 @@ class Server(object):
                 msg = ('#TRACEBACK', format_exc())
             else:
                 msg = ('#RETURN', result)
+
         try:
             c.send(msg)
         except Exception as e:
@@ -224,7 +227,17 @@ class Server(object):
             util.info(' ... request was %r', request)
             util.info(' ... exception was %r', e)
 
-        c.close()
+    def handle_request(self, conn):
+        '''
+        Handle a new connection
+        '''
+        try:
+            self._handle_request(conn)
+        except SystemExit:
+            # Server.serve_client() calls sys.exit(0) on EOF
+            pass
+        finally:
+            conn.close()
 
     def serve_client(self, conn):
         '''
@@ -424,7 +437,6 @@ class Server(object):
                     self.id_to_refcount[ident] = 1
                     self.id_to_obj[ident] = \
                         self.id_to_local_proxy_obj[ident]
-                    obj, exposed, gettypeid = self.id_to_obj[ident]
                     util.debug('Server re-enabled tracking & INCREF %r', ident)
                 else:
                     raise ke
@@ -488,7 +500,7 @@ class BaseManager(object):
     _Server = Server
 
     def __init__(self, address=None, authkey=None, serializer='pickle',
-                 ctx=None):
+                 ctx=None, *, shutdown_timeout=1.0):
         if authkey is None:
             authkey = process.current_process().authkey
         self._address = address     # XXX not final address if eg ('', 0)
@@ -498,6 +510,7 @@ class BaseManager(object):
         self._serializer = serializer
         self._Listener, self._Client = listener_client[serializer]
         self._ctx = ctx or get_context()
+        self._shutdown_timeout = shutdown_timeout
 
     def get_server(self):
         '''
@@ -561,8 +574,8 @@ class BaseManager(object):
         self._state.value = State.STARTED
         self.shutdown = util.Finalize(
             self, type(self)._finalize_manager,
-            args=(self._process, self._address, self._authkey,
-                  self._state, self._Client),
+            args=(self._process, self._address, self._authkey, self._state,
+                  self._Client, self._shutdown_timeout),
             exitpriority=0
             )
 
@@ -647,7 +660,8 @@ class BaseManager(object):
         self.shutdown()
 
     @staticmethod
-    def _finalize_manager(process, address, authkey, state, _Client):
+    def _finalize_manager(process, address, authkey, state, _Client,
+                          shutdown_timeout):
         '''
         Shutdown the manager process; will be registered as a finalizer
         '''
@@ -662,15 +676,17 @@ class BaseManager(object):
             except Exception:
                 pass
 
-            process.join(timeout=1.0)
+            process.join(timeout=shutdown_timeout)
             if process.is_alive():
                 util.info('manager still alive')
                 if hasattr(process, 'terminate'):
                     util.info('trying to `terminate()` manager process')
                     process.terminate()
-                    process.join(timeout=0.1)
+                    process.join(timeout=shutdown_timeout)
                     if process.is_alive():
                         util.info('manager still alive after terminate')
+                        process.kill()
+                        process.join()
 
         state.value = State.SHUTDOWN
         try:
@@ -743,22 +759,29 @@ class BaseProxy(object):
     _address_to_local = {}
     _mutex = util.ForkAwareThreadLock()
 
+    # Each instance gets a `_serial` number. Unlike `id(...)`, this number
+    # is never reused.
+    _next_serial = 1
+
     def __init__(self, token, serializer, manager=None,
                  authkey=None, exposed=None, incref=True, manager_owned=False):
         with BaseProxy._mutex:
-            tls_idset = BaseProxy._address_to_local.get(token.address, None)
-            if tls_idset is None:
-                tls_idset = util.ForkAwareLocal(), ProcessLocalSet()
-                BaseProxy._address_to_local[token.address] = tls_idset
+            tls_serials = BaseProxy._address_to_local.get(token.address, None)
+            if tls_serials is None:
+                tls_serials = util.ForkAwareLocal(), ProcessLocalSet()
+                BaseProxy._address_to_local[token.address] = tls_serials
+
+            self._serial = BaseProxy._next_serial
+            BaseProxy._next_serial += 1
 
         # self._tls is used to record the connection used by this
         # thread to communicate with the manager at token.address
-        self._tls = tls_idset[0]
+        self._tls = tls_serials[0]
 
-        # self._idset is used to record the identities of all shared
-        # objects for which the current process owns references and
+        # self._all_serials is a set used to record the identities of all
+        # shared objects for which the current process owns references and
         # which are in the manager at token.address
-        self._idset = tls_idset[1]
+        self._all_serials = tls_serials[1]
 
         self._token = token
         self._id = self._token.id
@@ -821,7 +844,10 @@ class BaseProxy(object):
             conn = self._Client(token.address, authkey=self._authkey)
             dispatch(conn, None, 'decref', (token.id,))
             return proxy
-        raise convert_to_error(kind, result)
+        try:
+            raise convert_to_error(kind, result)
+        finally:
+            del result   # break reference cycle
 
     def _getvalue(self):
         '''
@@ -838,20 +864,20 @@ class BaseProxy(object):
         dispatch(conn, None, 'incref', (self._id,))
         util.debug('INCREF %r', self._token.id)
 
-        self._idset.add(self._id)
+        self._all_serials.add(self._serial)
 
         state = self._manager and self._manager._state
 
         self._close = util.Finalize(
             self, BaseProxy._decref,
-            args=(self._token, self._authkey, state,
-                  self._tls, self._idset, self._Client),
+            args=(self._token, self._serial, self._authkey, state,
+                  self._tls, self._all_serials, self._Client),
             exitpriority=10
             )
 
     @staticmethod
-    def _decref(token, authkey, state, tls, idset, _Client):
-        idset.discard(token.id)
+    def _decref(token, serial, authkey, state, tls, idset, _Client):
+        idset.discard(serial)
 
         # check whether manager is still alive
         if state is None or state.value == State.STARTED:
@@ -959,7 +985,7 @@ def MakeProxyType(name, exposed, _cache={}):
 
 
 def AutoProxy(token, serializer, manager=None, authkey=None,
-              exposed=None, incref=True):
+              exposed=None, incref=True, manager_owned=False):
     '''
     Return an auto-proxy for `token`
     '''
@@ -979,7 +1005,7 @@ def AutoProxy(token, serializer, manager=None, authkey=None,
 
     ProxyType = MakeProxyType('AutoProxy[%s]' % token.typeid, exposed)
     proxy = ProxyType(token, serializer, manager=manager, authkey=authkey,
-                      incref=incref)
+                      incref=incref, manager_owned=manager_owned)
     proxy._isauto = True
     return proxy
 
@@ -1033,12 +1059,14 @@ class IteratorProxy(BaseProxy):
 
 
 class AcquirerProxy(BaseProxy):
-    _exposed_ = ('acquire', 'release')
+    _exposed_ = ('acquire', 'release', 'locked')
     def acquire(self, blocking=True, timeout=None):
         args = (blocking,) if timeout is None else (blocking, timeout)
         return self._callmethod('acquire', args)
     def release(self):
         return self._callmethod('release')
+    def locked(self):
+        return self._callmethod('locked')
     def __enter__(self):
         return self._callmethod('acquire')
     def __exit__(self, exc_type, exc_val, exc_tb):
@@ -1046,7 +1074,7 @@ class AcquirerProxy(BaseProxy):
 
 
 class ConditionProxy(AcquirerProxy):
-    _exposed_ = ('acquire', 'release', 'wait', 'notify', 'notify_all')
+    _exposed_ = ('acquire', 'release', 'locked', 'wait', 'notify', 'notify_all')
     def wait(self, timeout=None):
         return self._callmethod('wait', (timeout,))
     def notify(self, n=1):
@@ -1134,10 +1162,10 @@ class ValueProxy(BaseProxy):
 
 
 BaseListProxy = MakeProxyType('BaseListProxy', (
-    '__add__', '__contains__', '__delitem__', '__getitem__', '__len__',
-    '__mul__', '__reversed__', '__rmul__', '__setitem__',
-    'append', 'count', 'extend', 'index', 'insert', 'pop', 'remove',
-    'reverse', 'sort', '__imul__'
+    '__add__', '__contains__', '__delitem__', '__getitem__', '__imul__',
+    '__len__', '__mul__', '__reversed__', '__rmul__', '__setitem__',
+    'append', 'clear', 'copy', 'count', 'extend', 'index', 'insert', 'pop',
+    'remove', 'reverse', 'sort',
     ))
 class ListProxy(BaseListProxy):
     def __iadd__(self, value):
@@ -1147,15 +1175,56 @@ class ListProxy(BaseListProxy):
         self._callmethod('__imul__', (value,))
         return self
 
+    __class_getitem__ = classmethod(types.GenericAlias)
 
-DictProxy = MakeProxyType('DictProxy', (
-    '__contains__', '__delitem__', '__getitem__', '__iter__', '__len__',
-    '__setitem__', 'clear', 'copy', 'get', 'items',
+collections.abc.MutableSequence.register(BaseListProxy)
+
+_BaseDictProxy = MakeProxyType('_BaseDictProxy', (
+    '__contains__', '__delitem__', '__getitem__', '__ior__', '__iter__',
+    '__len__', '__or__', '__reversed__', '__ror__',
+    '__setitem__', 'clear', 'copy', 'fromkeys', 'get', 'items',
     'keys', 'pop', 'popitem', 'setdefault', 'update', 'values'
     ))
-DictProxy._method_to_typeid_ = {
+_BaseDictProxy._method_to_typeid_ = {
     '__iter__': 'Iterator',
     }
+class DictProxy(_BaseDictProxy):
+    def __ior__(self, value):
+        self._callmethod('__ior__', (value,))
+        return self
+
+    __class_getitem__ = classmethod(types.GenericAlias)
+
+collections.abc.MutableMapping.register(_BaseDictProxy)
+
+_BaseSetProxy = MakeProxyType("_BaseSetProxy", (
+    '__and__', '__class_getitem__', '__contains__', '__iand__', '__ior__',
+    '__isub__', '__iter__', '__ixor__', '__len__', '__or__', '__rand__',
+    '__ror__', '__rsub__', '__rxor__', '__sub__', '__xor__',
+    '__ge__', '__gt__', '__le__', '__lt__',
+    'add', 'clear', 'copy', 'difference', 'difference_update', 'discard',
+    'intersection', 'intersection_update', 'isdisjoint', 'issubset',
+    'issuperset', 'pop', 'remove', 'symmetric_difference',
+    'symmetric_difference_update', 'union', 'update',
+))
+
+class SetProxy(_BaseSetProxy):
+    def __ior__(self, value):
+        self._callmethod('__ior__', (value,))
+        return self
+    def __iand__(self, value):
+        self._callmethod('__iand__', (value,))
+        return self
+    def __ixor__(self, value):
+        self._callmethod('__ixor__', (value,))
+        return self
+    def __isub__(self, value):
+        self._callmethod('__isub__', (value,))
+        return self
+
+    __class_getitem__ = classmethod(types.GenericAlias)
+
+collections.abc.MutableMapping.register(_BaseSetProxy)
 
 
 ArrayProxy = MakeProxyType('ArrayProxy', (
@@ -1208,6 +1277,7 @@ SyncManager.register('Barrier', threading.Barrier, BarrierProxy)
 SyncManager.register('Pool', pool.Pool, PoolProxy)
 SyncManager.register('list', list, ListProxy)
 SyncManager.register('dict', dict, DictProxy)
+SyncManager.register('set', set, SetProxy)
 SyncManager.register('Value', Value, ValueProxy)
 SyncManager.register('Array', Array, ArrayProxy)
 SyncManager.register('Namespace', Namespace, NamespaceProxy)
@@ -1329,7 +1399,6 @@ if HAS_SHMEM:
 
         def __del__(self):
             util.debug(f"{self.__class__.__name__}.__del__ by pid {getpid()}")
-            pass
 
         def get_server(self):
             'Better than monkeypatching for now; merge into Server ultimately'

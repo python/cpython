@@ -12,24 +12,23 @@ and adds some new things as well.
 More on Lists
 =============
 
-The list data type has some more methods.  Here are all of the methods of list
-objects:
+The :ref:`list <typesseq-list>` data type has some more methods. Here are all
+of the methods of list objects:
 
-
-.. method:: list.append(x)
+.. method:: list.append(value, /)
    :noindex:
 
-   Add an item to the end of the list.  Equivalent to ``a[len(a):] = [x]``.
+   Add an item to the end of the list.  Similar to ``a[len(a):] = [x]``.
 
 
-.. method:: list.extend(iterable)
+.. method:: list.extend(iterable, /)
    :noindex:
 
-   Extend the list by appending all the items from the iterable.  Equivalent to
+   Extend the list by appending all the items from the iterable.  Similar to
    ``a[len(a):] = iterable``.
 
 
-.. method:: list.insert(i, x)
+.. method:: list.insert(index, value, /)
    :noindex:
 
    Insert an item at a given position.  The first argument is the index of the
@@ -37,33 +36,32 @@ objects:
    the list, and ``a.insert(len(a), x)`` is equivalent to ``a.append(x)``.
 
 
-.. method:: list.remove(x)
+.. method:: list.remove(value, /)
    :noindex:
 
-   Remove the first item from the list whose value is equal to *x*.  It raises a
+   Remove the first item from the list whose value is equal to *value*.  It raises a
    :exc:`ValueError` if there is no such item.
 
 
-.. method:: list.pop([i])
+.. method:: list.pop(index=-1, /)
    :noindex:
 
    Remove the item at the given position in the list, and return it.  If no index
-   is specified, ``a.pop()`` removes and returns the last item in the list.  (The
-   square brackets around the *i* in the method signature denote that the parameter
-   is optional, not that you should type square brackets at that position.  You
-   will see this notation frequently in the Python Library Reference.)
+   is specified, ``a.pop()`` removes and returns the last item in the list.
+   It raises an :exc:`IndexError` if the list is empty or the index is
+   outside the list range.
 
 
 .. method:: list.clear()
    :noindex:
 
-   Remove all items from the list.  Equivalent to ``del a[:]``.
+   Remove all items from the list.  Similar to ``del a[:]``.
 
 
-.. method:: list.index(x[, start[, end]])
+.. method:: list.index(value[, start[, stop]])
    :noindex:
 
-   Return zero-based index in the list of the first item whose value is equal to *x*.
+   Return zero-based index of the first occurrence of *value* in the list.
    Raises a :exc:`ValueError` if there is no such item.
 
    The optional arguments *start* and *end* are interpreted as in the slice
@@ -72,13 +70,13 @@ objects:
    sequence rather than the *start* argument.
 
 
-.. method:: list.count(x)
+.. method:: list.count(value, /)
    :noindex:
 
-   Return the number of times *x* appears in the list.
+   Return the number of times *value* appears in the list.
 
 
-.. method:: list.sort(key=None, reverse=False)
+.. method:: list.sort(*, key=None, reverse=False)
    :noindex:
 
    Sort the items of the list in place (the arguments can be used for sort
@@ -94,7 +92,7 @@ objects:
 .. method:: list.copy()
    :noindex:
 
-   Return a shallow copy of the list.  Equivalent to ``a[:]``.
+   Return a shallow copy of the list.  Similar to ``a[:]``.
 
 
 An example that uses most of the list methods::
@@ -106,7 +104,7 @@ An example that uses most of the list methods::
     0
     >>> fruits.index('banana')
     3
-    >>> fruits.index('banana', 4)  # Find next banana starting a position 4
+    >>> fruits.index('banana', 4)  # Find next banana starting at position 4
     6
     >>> fruits.reverse()
     >>> fruits
@@ -122,12 +120,12 @@ An example that uses most of the list methods::
 
 You might have noticed that methods like ``insert``, ``remove`` or ``sort`` that
 only modify the list have no return value printed -- they return the default
-``None``. [1]_  This is a design principle for all mutable data structures in
+``None``. [#]_  This is a design principle for all mutable data structures in
 Python.
 
 Another thing you might notice is that not all data can be sorted or
 compared.  For instance, ``[None, 'hello', 10]`` doesn't sort because
-integers can't be compared to strings and *None* can't be compared to
+integers can't be compared to strings and ``None`` can't be compared to
 other types.  Also, there are some types that don't have a defined
 ordering relation.  For example, ``3+4j < 5+7j`` isn't a valid
 comparison.
@@ -138,13 +136,10 @@ comparison.
 Using Lists as Stacks
 ---------------------
 
-.. sectionauthor:: Ka-Ping Yee <ping@lfw.org>
-
-
 The list methods make it very easy to use a list as a stack, where the last
 element added is the first element retrieved ("last-in, first-out").  To add an
-item to the top of the stack, use :meth:`append`.  To retrieve an item from the
-top of the stack, use :meth:`pop` without an explicit index.  For example::
+item to the top of the stack, use :meth:`~list.append`.  To retrieve an item from the
+top of the stack, use :meth:`~list.pop` without an explicit index.  For example::
 
    >>> stack = [3, 4, 5]
    >>> stack.append(6)
@@ -167,8 +162,6 @@ top of the stack, use :meth:`pop` without an explicit index.  For example::
 
 Using Lists as Queues
 ---------------------
-
-.. sectionauthor:: Ka-Ping Yee <ping@lfw.org>
 
 It is also possible to use a list as a queue, where the first element added is
 the first element retrieved ("first-in, first-out"); however, lists are not
@@ -268,10 +261,10 @@ it must be parenthesized. ::
    [(0, 0), (1, 1), (2, 4), (3, 9), (4, 16), (5, 25)]
    >>> # the tuple must be parenthesized, otherwise an error is raised
    >>> [x, x**2 for x in range(6)]
-     File "<stdin>", line 1, in <module>
+     File "<stdin>", line 1
        [x, x**2 for x in range(6)]
-                  ^
-   SyntaxError: invalid syntax
+        ^^^^^^^
+   SyntaxError: did you forget parentheses around the comprehension target?
    >>> # flatten a list using a listcomp with two 'for'
    >>> vec = [[1,2,3], [4,5,6], [7,8,9]]
    >>> [num for elem in vec for num in elem]
@@ -303,7 +296,7 @@ The following list comprehension will transpose rows and columns::
    >>> [[row[i] for row in matrix] for i in range(4)]
    [[1, 5, 9], [2, 6, 10], [3, 7, 11], [4, 8, 12]]
 
-As we saw in the previous section, the nested listcomp is evaluated in
+As we saw in the previous section, the inner list comprehension is evaluated in
 the context of the :keyword:`for` that follows it, so this example is
 equivalent to::
 
@@ -335,13 +328,54 @@ The :func:`zip` function would do a great job for this use case::
 
 See :ref:`tut-unpacking-arguments` for details on the asterisk in this line.
 
+Unpacking in Lists and List Comprehensions
+------------------------------------------
+
+The section on :ref:`tut-unpacking-arguments` describes the use of ``*`` to
+"unpack" the elements of an iterable object, providing each one separately as
+an argument to a function.  Unpacking can also be used in other contexts, for
+example, when creating lists.  When specifying elements of a list, prefixing an
+expression by a ``*`` will unpack the result of that expression, adding each of
+its elements to the list we're creating::
+
+   >>> x = [1, 2, 3]
+   >>> [0, *x, 4, 5, 6]
+   [0, 1, 2, 3, 4, 5, 6]
+
+This only works if the expression following the ``*`` evaluates to an iterable
+object; trying to unpack a non-iterable object will raise an exception::
+
+   >>> x = 1
+   >>> [0, *x, 2, 3, 4]
+   Traceback (most recent call last):
+     File "<python-input-1>", line 1, in <module>
+       [0, *x, 2, 3, 4]
+   TypeError: Value after * must be an iterable, not int
+
+Unpacking can also be used in list comprehensions, as a way to build a new list
+representing the concatenation of an arbitrary number of iterables::
+
+   >>> x = [[1, 2, 3], [4, 5, 6], [], [7], [8, 9]]
+   >>> [*element for element in x]
+   [1, 2, 3, 4, 5, 6, 7, 8, 9]
+
+Note that the effect is that each element from ``x`` is unpacked.  This works
+for arbitrary iterable objects, not just lists::
+
+   >>> x = [[1, 2, 3], 'cat', {'spam': 'eggs'}]
+   >>> [*element for element in x]
+   [1, 2, 3, 'c', 'a', 't', 'spam']
+
+But if the objects in ``x`` are not iterable, this expression would again raise
+an exception.
+
 .. _tut-del:
 
 The :keyword:`!del` statement
 =============================
 
 There is a way to remove an item from a list given its index instead of its
-value: the :keyword:`del` statement.  This differs from the :meth:`pop` method
+value: the :keyword:`del` statement.  This differs from the :meth:`~list.pop` method
 which returns a value.  The :keyword:`!del` statement can also be used to remove
 slices from a list or clear the entire list (which we did earlier by assignment
 of an empty list to the slice).  For example::
@@ -384,19 +418,22 @@ A tuple consists of a number of values separated by commas, for instance::
    >>> t
    (12345, 54321, 'hello!')
    >>> # Tuples may be nested:
-   ... u = t, (1, 2, 3, 4, 5)
+   >>> u = t, (1, 2, 3, 4, 5)
    >>> u
    ((12345, 54321, 'hello!'), (1, 2, 3, 4, 5))
    >>> # Tuples are immutable:
-   ... t[0] = 88888
+   >>> t[0] = 88888
    Traceback (most recent call last):
      File "<stdin>", line 1, in <module>
    TypeError: 'tuple' object does not support item assignment
    >>> # but they can contain mutable objects:
-   ... v = ([1, 2, 3], [3, 2, 1])
+   >>> v = ([1, 2, 3], [3, 2, 1])
    >>> v
    ([1, 2, 3], [3, 2, 1])
-
+   >>> # they support unpacking just like lists:
+   >>> x = [1, 2, 3]
+   >>> 0, *x, 4
+   (0, 1, 2, 3, 4)
 
 As you see, on output tuples are always enclosed in parentheses, so that nested
 tuples are interpreted correctly; they may be input with or without surrounding
@@ -446,14 +483,18 @@ packing and sequence unpacking.
 Sets
 ====
 
-Python also includes a data type for *sets*.  A set is an unordered collection
-with no duplicate elements.  Basic uses include membership testing and
-eliminating duplicate entries.  Set objects also support mathematical operations
-like union, intersection, difference, and symmetric difference.
+Python also includes a data type for :ref:`sets <types-set>`.  A set is
+an unordered collection with no duplicate elements.  Basic uses include
+membership testing and eliminating duplicate entries.  Set objects also
+support mathematical operations like union, intersection, difference, and
+symmetric difference.
 
 Curly braces or the :func:`set` function can be used to create sets.  Note: to
 create an empty set you have to use ``set()``, not ``{}``; the latter creates an
 empty dictionary, a data structure that we discuss in the next section.
+
+Because sets are unordered, iterating over them or printing them can
+produce the elements in a different order than you expect.
 
 Here is a brief demonstration::
 
@@ -466,7 +507,7 @@ Here is a brief demonstration::
    False
 
    >>> # Demonstrate set operations on unique letters from two words
-   ...
+   >>>
    >>> a = set('abracadabra')
    >>> b = set('alacazam')
    >>> a                                  # unique letters in a
@@ -481,11 +522,15 @@ Here is a brief demonstration::
    {'r', 'd', 'b', 'm', 'z', 'l'}
 
 Similarly to :ref:`list comprehensions <tut-listcomps>`, set comprehensions
-are also supported::
+are also supported, including comprehensions with unpacking::
 
    >>> a = {x for x in 'abracadabra' if x not in 'abc'}
    >>> a
    {'r', 'd'}
+
+   >>> fruits = [{'apple', 'avocado', 'apricot'}, {'banana', 'blueberry'}]
+   >>> {*fruit for fruit in fruits}
+   {'blueberry', 'banana', 'avocado', 'apple', 'apricot'}
 
 
 .. _tut-dictionaries:
@@ -501,8 +546,8 @@ any immutable type; strings and numbers can always be keys.  Tuples can be used
 as keys if they contain only strings, numbers, or tuples; if a tuple contains
 any mutable object either directly or indirectly, it cannot be used as a key.
 You can't use lists as keys, since lists can be modified in place using index
-assignments, slice assignments, or methods like :meth:`append` and
-:meth:`extend`.
+assignments, slice assignments, or methods like :meth:`~list.append` and
+:meth:`~list.extend`.
 
 It is best to think of a dictionary as a set of *key: value* pairs,
 with the requirement that the keys are unique (within one dictionary). A pair of
@@ -513,8 +558,12 @@ dictionary; this is also the way dictionaries are written on output.
 The main operations on a dictionary are storing a value with some key and
 extracting the value given the key.  It is also possible to delete a key:value
 pair with ``del``. If you store using a key that is already in use, the old
-value associated with that key is forgotten.  It is an error to extract a value
-using a non-existent key.
+value associated with that key is forgotten.
+
+Extracting a value for a non-existent key by subscripting (``d[key]``) raises a
+:exc:`KeyError`. To avoid getting this error when trying to access a possibly
+non-existent key, use the :meth:`~dict.get` method instead, which returns
+``None`` (or a specified default value) if the key is not in the dictionary.
 
 Performing ``list(d)`` on a dictionary returns a list of all the keys
 used in the dictionary, in insertion order (if you want it sorted, just use
@@ -529,6 +578,12 @@ Here is a small example using a dictionary::
    {'jack': 4098, 'sape': 4139, 'guido': 4127}
    >>> tel['jack']
    4098
+   >>> tel['irv']
+   Traceback (most recent call last):
+     File "<stdin>", line 1, in <module>
+   KeyError: 'irv'
+   >>> print(tel.get('irv'))
+   None
    >>> del tel['sape']
    >>> tel['irv'] = 4127
    >>> tel
@@ -554,6 +609,18 @@ arbitrary key and value expressions::
    >>> {x: x**2 for x in (2, 4, 6)}
    {2: 4, 4: 16, 6: 36}
 
+And dictionary unpacking (via ``**``) can be used to merge multiple
+dictionaries::
+
+   >>> odds = {i: i**2 for i in (1, 3, 5)}
+   >>> evens = {i: i**2 for i in (2, 4, 6)}
+   >>> {**odds, **evens}
+   {1: 1, 3: 9, 5: 25, 2: 4, 4: 16, 6: 36}
+
+   >>> all_values = [odds, evens, {0: 0}]
+   >>> {**i for i in all_values}
+   {1: 1, 3: 9, 5: 25, 2: 4, 4: 16, 6: 36, 0: 0}
+
 When the keys are simple strings, it is sometimes easier to specify pairs using
 keyword arguments::
 
@@ -567,7 +634,7 @@ Looping Techniques
 ==================
 
 When looping through dictionaries, the key and corresponding value can be
-retrieved at the same time using the :meth:`items` method. ::
+retrieved at the same time using the :meth:`~dict.items` method. ::
 
    >>> knights = {'gallahad': 'the pure', 'robin': 'the brave'}
    >>> for k, v in knights.items():
@@ -659,11 +726,12 @@ More on Conditions
 The conditions used in ``while`` and ``if`` statements can contain any
 operators, not just comparisons.
 
-The comparison operators ``in`` and ``not in`` check whether a value occurs
-(does not occur) in a sequence.  The operators ``is`` and ``is not`` compare
-whether two objects are really the same object; this only matters for mutable
-objects like lists.  All comparison operators have the same priority, which is
-lower than that of all numerical operators.
+
+The comparison operators ``in`` and ``not in`` are membership tests that
+determine whether a value is in (or not in) a container.  The operators ``is``
+and ``is not`` compare whether two objects are really the same object.  All
+comparison operators have the same priority, which is lower than that of all
+numerical operators.
 
 Comparisons can be chained.  For example, ``a < b == c`` tests whether ``a`` is
 less than ``b`` and moreover ``b`` equals ``c``.
@@ -730,5 +798,5 @@ interpreter will raise a :exc:`TypeError` exception.
 
 .. rubric:: Footnotes
 
-.. [1] Other languages may return the mutated object, which allows method
+.. [#] Other languages may return the mutated object, which allows method
        chaining, such as ``d->insert("a")->remove("b")->sort();``.
