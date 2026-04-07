@@ -1,1 +1,1 @@
-Improve performance of conversion of :class:`dict` to bool by specialization of the `TO_BOOL` opcode.
+Improve performance of conversion of :class:`dict` to bool by specialization of the ``TO_BOOL`` opcode.
