@@ -7,7 +7,7 @@ from _pyrepl.content import (
 )
 from _pyrepl.layout import (
     LayoutMap,
-    WrappedRow,
+    LayoutRow,
     layout_content_lines,
 )
 
