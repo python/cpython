@@ -176,8 +176,9 @@ class _Target(typing.Generic[_S, _R]):
             f"{s}",
             f"{c}",
         ]
+        is_shim = opname == "shim"
         if self.frame_pointers:
-            frame_pointer = "all" if opname == "shim" else "reserved"
+            frame_pointer = "all" if is_shim else "reserved"
             args_s += ["-Xclang", f"-mframe-pointer={frame_pointer}"]
         args_s += self.args
         # Allow user-provided CFLAGS to override any defaults
@@ -185,12 +186,14 @@ class _Target(typing.Generic[_S, _R]):
         await _llvm.run(
             "clang", args_s, echo=self.verbose, llvm_version=self.llvm_version
         )
-        self.optimizer(
-            s,
-            label_prefix=self.label_prefix,
-            symbol_prefix=self.symbol_prefix,
-            re_global=self.re_global,
-        ).run()
+        if not is_shim:
+            self.optimizer(
+                s,
+                label_prefix=self.label_prefix,
+                symbol_prefix=self.symbol_prefix,
+                re_global=self.re_global,
+                frame_pointers=self.frame_pointers,
+            ).run()
         args_o = [f"--target={self.triple}", "-c", "-o", f"{o}", f"{s}"]
         await _llvm.run(
             "clang", args_o, echo=self.verbose, llvm_version=self.llvm_version
@@ -593,7 +596,9 @@ def get_target(host: str) -> _COFF32 | _COFF64 | _ELF | _MachO:
         # -mno-outline-atomics: Keep intrinsics from being emitted.
         args = ["-fpic", "-mno-outline-atomics", "-fno-plt"]
         optimizer = _optimizers.OptimizerAArch64
-        target = _ELF(host, condition, args=args, optimizer=optimizer)
+        target = _ELF(
+            host, condition, args=args, optimizer=optimizer, frame_pointers=True
+        )
     elif re.fullmatch(r"i686-pc-windows-msvc", host):
         host = "i686-pc-windows-msvc"
         condition = "defined(_M_IX86)"

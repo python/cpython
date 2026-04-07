@@ -446,6 +446,7 @@ module_from_def_and_spec(
     bool seen_m_traverse_slot = false;
     bool seen_m_clear_slot = false;
     bool seen_m_free_slot = false;
+    bool seen_m_abi_slot = false;
     for (cur_slot = def_like->m_slots; cur_slot && cur_slot->slot; cur_slot++) {
 
         // Macro to copy a non-NULL, non-repeatable slot.
@@ -555,6 +556,7 @@ module_from_def_and_spec(
                 if (PyABIInfo_Check((PyABIInfo *)cur_slot->value, name) < 0) {
                     goto error;
                 }
+                seen_m_abi_slot = true;
                 break;
             DEF_SLOT_CASE(Py_mod_name, char*, m_name)
             DEF_SLOT_CASE(Py_mod_doc, char*, m_doc)
@@ -586,6 +588,14 @@ module_from_def_and_spec(
 #undef COPY_DEF_SLOT
 #undef COPY_NONDEF_SLOT
 #undef COPY_NONNULL_SLOT
+    }
+    if (!original_def && !seen_m_abi_slot) {
+        PyErr_Format(
+            PyExc_SystemError,
+            "module %s does not define Py_mod_abi,"
+            " which is mandatory for modules defined from slots only.",
+            name);
+        goto error;
     }
 
 #ifdef Py_GIL_DISABLED

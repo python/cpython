@@ -1754,7 +1754,7 @@ are always available.  They are listed here in alphabetical order.
             self.age = age
 
          def __repr__(self):
-            return f"Person('{self.name}', {self.age})"
+            return f"Person({self.name!r}, {self.age!r})"
 
 
 .. function:: reversed(object, /)

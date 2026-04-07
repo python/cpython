@@ -84,7 +84,8 @@ Summary -- Release highlights
   <whatsnew315-pybyteswriter>`
 * :ref:`The JIT compiler has been significantly upgraded <whatsnew315-jit>`
 * :ref:`Improved error messages <whatsnew315-improved-error-messages>`
-
+* :ref:`The official Windows 64-bit binaries now use the tail-calling interpreter
+  <whatsnew315-windows-tail-calling-interpreter>`
 
 New features
 ============
@@ -216,7 +217,8 @@ For example::
 
 The following standard library modules have been updated to accept
 :class:`!frozendict`: :mod:`copy`, :mod:`decimal`, :mod:`json`, :mod:`marshal`,
-:mod:`pickle`, :mod:`pprint` and :mod:`xml.etree.ElementTree`.
+:mod:`plistlib` (only for serialization), :mod:`pickle`, :mod:`pprint` and
+:mod:`xml.etree.ElementTree`.
 
 :func:`eval` and :func:`exec` accept :class:`!frozendict` for *globals*, and
 :func:`type` and :meth:`str.maketrans` accept :class:`!frozendict` for *dict*.
@@ -598,6 +600,14 @@ Other language changes
   making it a :term:`generic type`.
   (Contributed by James Hilton-Balfe in :gh:`128335`.)
 
+* The class :class:`memoryview` now supports the :c:expr:`float complex` and
+  :c:expr:`double complex` C types: formatting characters ``'F'`` and ``'D'``
+  respectively.
+  (Contributed by Sergey B Kirpichev in :gh:`146151`.)
+
+* Allow the *count* argument of :meth:`bytes.replace` to be a keyword.
+  (Contributed by Stan Ulbrych in :gh:`147856`.)
+
 
 New modules
 ===========
@@ -629,21 +639,52 @@ argparse
   (Contributed by Savannah Ostrowski in :gh:`142390`.)
 
 
+array
+-----
+
+* Support the :c:expr:`float complex` and :c:expr:`double complex` C types:
+  formatting characters ``'F'`` and ``'D'`` respectively.
+  (Contributed by Sergey B Kirpichev in :gh:`146151`.)
+
+* Support half-floats (16-bit IEEE 754 binary interchange format): formatting
+  character ``'e'``.
+  (Contributed by Sergey B Kirpichev in :gh:`146238`.)
+
+
 base64
 ------
 
 * Added the *pad* parameter in :func:`~base64.z85encode`.
   (Contributed by Hauke Dämpfling in :gh:`143103`.)
 
-* Added the *wrapcol* parameter in :func:`~base64.b64encode`.
-  (Contributed by Serhiy Storchaka in :gh:`143214`.)
+* Added the *padded* parameter in
+  :func:`~base64.b32encode`, :func:`~base64.b32decode`,
+  :func:`~base64.b32hexencode`, :func:`~base64.b32hexdecode`,
+  :func:`~base64.b64encode`, :func:`~base64.b64decode`,
+  :func:`~base64.urlsafe_b64encode`, and :func:`~base64.urlsafe_b64decode`.
+  (Contributed by Serhiy Storchaka in :gh:`73613`.)
 
-* Added the *ignorechars* parameter in :func:`~base64.b64decode`.
-  (Contributed by Serhiy Storchaka in :gh:`144001`.)
+* Added the *wrapcol* parameter in :func:`~base64.b16encode`,
+  :func:`~base64.b32encode`, :func:`~base64.b32hexencode`,
+  :func:`~base64.b64encode`, :func:`~base64.b85encode`, and
+  :func:`~base64.z85encode`.
+  (Contributed by Serhiy Storchaka in :gh:`143214` and :gh:`146431`.)
+
+* Added the *ignorechars* parameter in :func:`~base64.b16decode`,
+  :func:`~base64.b32decode`,  :func:`~base64.b32hexdecode`,
+  :func:`~base64.b64decode`, :func:`~base64.b85decode`, and
+  :func:`~base64.z85decode`.
+  (Contributed by Serhiy Storchaka in :gh:`144001` and :gh:`146431`.)
 
 
 binascii
 --------
+
+* Added functions for Base32 encoding:
+
+  - :func:`~binascii.b2a_base32` and :func:`~binascii.a2b_base32`
+
+  (Contributed by James Seo in :gh:`146192`.)
 
 * Added functions for Ascii85, Base85, and Z85 encoding:
 
@@ -652,6 +693,11 @@ binascii
 
   (Contributed by James Seo and Serhiy Storchaka in :gh:`101178`.)
 
+* Added the *padded* parameter in
+  :func:`~binascii.b2a_base32`, :func:`~binascii.a2b_base32`,
+  :func:`~binascii.b2a_base64`, and :func:`~binascii.a2b_base64`.
+  (Contributed by Serhiy Storchaka in :gh:`73613`.)
+
 * Added the *wrapcol* parameter in :func:`~binascii.b2a_base64`.
   (Contributed by Serhiy Storchaka in :gh:`143214`.)
 
@@ -659,14 +705,9 @@ binascii
   :func:`~binascii.a2b_base64`.
   (Contributed by Serhiy Storchaka in :gh:`145980`.)
 
-* Added the *ignorechars* parameter in :func:`~binascii.a2b_base64`.
-  (Contributed by Serhiy Storchaka in :gh:`144001`.)
-
-* Added functions for Base32 encoding:
-
-  - :func:`~binascii.b2a_base32` and :func:`~binascii.a2b_base32`
-
-  (Contributed by James Seo in :gh:`146192`.)
+* Added the *ignorechars* parameter in :func:`~binascii.a2b_hex`,
+  :func:`~binascii.unhexlify`, and :func:`~binascii.a2b_base64`.
+  (Contributed by Serhiy Storchaka in :gh:`144001` and :gh:`146431`.)
 
 
 calendar
@@ -787,6 +828,17 @@ inspect
 * Add parameters *inherit_class_doc* and *fallback_to_class_doc*
   for :func:`~inspect.getdoc`.
   (Contributed by Serhiy Storchaka in :gh:`132686`.)
+
+json
+----
+
+* Add the *array_hook* parameter to  :func:`~json.load` and
+  :func:`~json.loads` functions:
+  allow a callback for JSON literal array types to customize Python lists in
+  the resulting decoded object. Passing combined :class:`frozendict` to
+  *object_pairs_hook* param and :class:`tuple` to ``array_hook`` will yield a
+  deeply nested immutable Python structure representing the JSON data.
+  (Contributed by Joao S. O. Bueno in :gh:`146440`)
 
 
 locale
@@ -1015,11 +1067,6 @@ sys
 * Add :data:`sys.abi_info` namespace to improve access to ABI information.
   (Contributed by Klaus Zimmermann in :gh:`137476`.)
 
-* Add :data:`sys.float_info.iec_60559 <sys.float_info>`: a boolean flag,
-  indicating support the IEC 60559 floating-point standard (as specified by the
-  Annex F of C99).
-  (Contributed by Sergey B Kirpichev in :gh:`138580`.)
-
 
 tarfile
 -------
@@ -1054,6 +1101,11 @@ timeit
   by default. This can be controlled with
   :ref:`environment variables <using-on-controlling-color>`.
   (Contributed by Yi Hong in :gh:`139374`.)
+
+* Make the target time of :meth:`timeit.Timer.autorange` configurable
+  and add ``--target-time`` option to the command-line interface.
+  (Contributed by Alessandro Cucci and Miikka Koskinen in :gh:`140283`.)
+
 
 tkinter
 -------
@@ -1275,18 +1327,6 @@ zlib
 Optimizations
 =============
 
-* Builds using Visual Studio 2026 (MSVC 18) may now use the new
-  :ref:`tail-calling interpreter <whatsnew314-tail-call-interpreter>`.
-  Results on Visual Studio 18.1.1 report between
-  `15-20% <https://github.com/faster-cpython/ideas/blob/main/results/5800X-msvc.pgo2-vs-msvc.pgo.tc.svg>`__
-  speedup on the geometric mean of pyperformance on Windows x86-64 over
-  the switch-case interpreter on an AMD Ryzen 7 5800X. We have
-  observed speedups ranging from 14% for large pure-Python libraries
-  to 40% for long-running small pure-Python scripts on Windows.
-  This was made possible by a new feature introduced in MSVC 18.
-  (Contributed by Chris Eibl, Ken Jin, and Brandt Bucher in :gh:`143068`.
-  Special thanks to the MSVC team including Hulon Jenkins.)
-
 * ``mimalloc`` is now used as the default allocator for
   for raw memory allocations such as via :c:func:`PyMem_RawMalloc`
   for better performance on :term:`free-threaded builds <free-threaded build>`.
@@ -1324,11 +1364,11 @@ Upgraded JIT compiler
 
 Results from the `pyperformance <https://github.com/python/pyperformance>`__
 benchmark suite report
-`5-6% <https://doesjitgobrrr.com/run/2026-03-11>`__
+`6-7% <https://www.doesjitgobrrr.com/run/2026-04-01>`__
 geometric mean performance improvement for the JIT over the standard CPython
 interpreter built with all optimizations enabled on x86-64 Linux. On AArch64
 macOS, the JIT has a
-`8-9% <https://doesjitgobrrr.com/run/2026-03-11>`__
+`12-13% <https://www.doesjitgobrrr.com/run/2026-04-01>`__
 speedup over the :ref:`tail calling interpreter <whatsnew314-tail-call-interpreter>`
 with all optimizations enabled. The speedups for JIT
 builds versus no JIT builds range from roughly 15% slowdown to over
@@ -1465,6 +1505,16 @@ platform
 * Removed the :func:`!platform.java_ver` function,
   which was deprecated since Python 3.13.
   (Contributed by Alexey Makridenko in :gh:`133604`.)
+
+
+pprint
+------
+
+* Add an *expand* keyword argument for :func:`pprint.pprint`,
+  :func:`pprint.pformat`, :func:`pprint.pp`. If true, the output will be
+  formatted similar to pretty-printed :func:`json.dumps` when
+  *indent* is supplied.
+  (Contributed by Stefan Todoran and Semyon Moroz in :gh:`112632`.)
 
 
 sre_*
@@ -1954,6 +2004,23 @@ Build changes
   and :option:`-X dev <-X>` is passed to the Python or Python is built in :ref:`debug mode <debug-build>`.
   (Contributed by Donghee Na in :gh:`141770`.)
 
+.. _whatsnew315-windows-tail-calling-interpreter:
+
+* 64-bit builds using Visual Studio 2026 (MSVC 18) may now use the new
+  :ref:`tail-calling interpreter <whatsnew314-tail-call-interpreter>`.
+  Results on Visual Studio 18.1.1 report between
+  `15-20% <https://github.com/faster-cpython/ideas/blob/main/results/5800X-msvc.pgo2-vs-msvc.pgo.tc.svg>`__
+  speedup on the geometric mean of pyperformance on Windows x86-64 over
+  the switch-case interpreter on an AMD Ryzen 7 5800X. We have
+  observed speedups ranging from 14% for large pure-Python libraries
+  to 40% for long-running small pure-Python scripts on Windows.
+  This was made possible by a new feature introduced in MSVC 18,
+  which the official Windows 64-bit binaries on python.org__ now use.
+  (Contributed by Chris Eibl, Ken Jin, and Brandt Bucher in :gh:`143068`.
+  Special thanks to Steve Dower, and the MSVC team including Hulon Jenkins.)
+
+  __ https://www.python.org/downloads/windows/
+
 
 Porting to Python 3.15
 ======================
@@ -1993,3 +2060,9 @@ that may require changes to your code.
   *dest* is now ``'foo'`` instead of ``'f'``.
   Pass an explicit *dest* argument to preserve the old behavior.
   (Contributed by Serhiy Storchaka in :gh:`138697`.)
+
+* Padding of input no longer required in :func:`base64.urlsafe_b64decode`.
+  Pass a new argument ``padded=True`` or use :func:`base64.b64decode`
+  with argument ``altchars=b'-_'`` (this works with older Python versions)
+  to make padding required.
+  (Contributed by Serhiy Storchaka in :gh:`73613`.)

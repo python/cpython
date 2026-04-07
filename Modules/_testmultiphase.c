@@ -1046,10 +1046,13 @@ PyInit__test_no_multiple_interpreter_slot(void)
 
 /* PyModExport_* hooks */
 
+PyABIInfo_VAR(abi_info);
+
 PyMODEXPORT_FUNC
 PyModExport__test_from_modexport(void)
 {
     static PyModuleDef_Slot slots[] = {
+        {Py_mod_abi, &abi_info},
         {Py_mod_name, "_test_from_modexport"},
         {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
         {Py_mod_gil, Py_MOD_GIL_NOT_USED},
@@ -1062,6 +1065,7 @@ PyMODEXPORT_FUNC
 PyModExport__test_from_modexport_gil_used(void)
 {
     static PyModuleDef_Slot slots[] = {
+        {Py_mod_abi, &abi_info},
         {Py_mod_name, "_test_from_modexport_gil_used"},
         {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
         {Py_mod_gil, Py_MOD_GIL_USED},
@@ -1112,6 +1116,7 @@ PyMODEXPORT_FUNC
 PyModExport__test_from_modexport_create_nonmodule(void)
 {
     static PyModuleDef_Slot slots[] = {
+        {Py_mod_abi, &abi_info},
         {Py_mod_name, "_test_from_modexport_create_nonmodule"},
         {Py_mod_create, modexport_create_string},
         {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
@@ -1125,6 +1130,7 @@ PyMODEXPORT_FUNC
 PyModExport__test_from_modexport_create_nonmodule_gil_used(void)
 {
     static PyModuleDef_Slot slots[] = {
+        {Py_mod_abi, &abi_info},
         {Py_mod_name, "_test_from_modexport_create_nonmodule"},
         {Py_mod_create, modexport_create_string},
         {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
@@ -1142,6 +1148,18 @@ PyMODEXPORT_FUNC
 PyModExport__test_from_modexport_empty_slots(void)
 {
     return modexport_empty_slots;
+}
+
+
+static PyModuleDef_Slot modexport_minimal_slots[] = {
+    {Py_mod_abi, &abi_info},
+    {0},
+};
+
+PyMODEXPORT_FUNC
+PyModExport__test_from_modexport_minimal_slots(void)
+{
+    return modexport_minimal_slots;
 }
 
 static int
@@ -1186,13 +1204,13 @@ modexport_smoke_get_test_token(PyObject *mod, PyObject *arg)
 }
 
 static PyObject *
-modexport_get_empty_slots(PyObject *mod, PyObject *arg)
+modexport_get_minimal_slots(PyObject *mod, PyObject *arg)
 {
     /* Get the address of modexport_empty_slots.
-     * This method would be in the `_test_from_modexport_empty_slots` module,
+     * This method would be in the `_test_from_modexport_minimal_slots` module,
      * if it had a methods slot.
      */
-    return PyLong_FromVoidPtr(&modexport_empty_slots);
+    return PyLong_FromVoidPtr(&modexport_minimal_slots);
 }
 
 static void
@@ -1213,10 +1231,11 @@ PyModExport__test_from_modexport_smoke(void)
     static PyMethodDef methods[] = {
         {"get_state_int", modexport_smoke_get_state_int, METH_NOARGS},
         {"get_test_token", modexport_smoke_get_test_token, METH_NOARGS},
-        {"get_modexport_empty_slots", modexport_get_empty_slots, METH_NOARGS},
+        {"get_modexport_minimal_slots", modexport_get_minimal_slots, METH_NOARGS},
         {0},
     };
     static PyModuleDef_Slot slots[] = {
+        {Py_mod_abi, &abi_info},
         {Py_mod_name, "_test_from_modexport_smoke"},
         {Py_mod_doc, "the expected docstring"},
         {Py_mod_exec, modexport_smoke_exec},
