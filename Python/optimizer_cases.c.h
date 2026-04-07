@@ -3179,10 +3179,10 @@
             JitOptRef subject;
             JitOptRef res;
             subject = stack_pointer[-1];
-            if (sym_has_type(subject)) {
-                PyTypeObject *type = sym_get_type(subject);
+            PyTypeObject *type = sym_get_type(subject);
+            if (type != NULL) {
                 int match = type->tp_flags & Py_TPFLAGS_MAPPING;
-                res = match ? sym_new_const(ctx, Py_True) : sym_new_const(ctx, Py_False);
+                res = sym_new_const(ctx, match ? Py_True : Py_False);
             }
             else {
                 res = sym_new_type(ctx, &PyBool_Type);
@@ -3198,10 +3198,10 @@
             JitOptRef subject;
             JitOptRef res;
             subject = stack_pointer[-1];
-            if (sym_has_type(subject)) {
-                PyTypeObject *type = sym_get_type(subject);
+            PyTypeObject *type = sym_get_type(subject);
+            if (type != NULL) {
                 int match = type->tp_flags & Py_TPFLAGS_SEQUENCE;
-                res = match ? sym_new_const(ctx, Py_True) : sym_new_const(ctx, Py_False);
+                res = sym_new_const(ctx, match ? Py_True : Py_False);
             }
             else {
                 res = sym_new_type(ctx, &PyBool_Type);
