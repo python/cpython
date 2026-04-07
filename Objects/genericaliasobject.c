@@ -650,12 +650,12 @@ ga_vectorcall(PyObject *self, PyObject *const *args,
               size_t nargsf, PyObject *kwnames)
 {
     gaobject *alias = (gaobject *) self;
-    vectorcallfunc origin_vectorcall = PyVectorcall_Function(alias->origin); 
-    PyObject *obj; 
-    if (origin_vectorcall != NULL) { 
-        obj = origin_vectorcall(alias->origin, args, nargsf, kwnames); 
-    } else { 
-        /* Fallback to generic call path*/ 
+    vectorcallfunc origin_vectorcall = PyVectorcall_Function(alias->origin);
+    PyObject *obj;
+    if (origin_vectorcall != NULL) {
+        obj = origin_vectorcall(alias->origin, args, nargsf, kwnames);
+    } else {
+        /* Fallback to generic call path*/
         obj = PyObject_Vectorcall(alias->origin, args, nargsf, kwnames);
     }
     return set_orig_class(obj, self);
