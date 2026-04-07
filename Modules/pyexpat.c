@@ -1045,11 +1045,6 @@ pyexpat_xmlparser_ExternalEntityParserCreate_impl(xmlparseobject *self,
         return NULL;
     }
 
-    // The new subparser will make use of the parent XML_Parser inside of Expat.
-    // So we need to take subparsers into account with the reference counting
-    // of their parent parser.
-    Py_INCREF(self);
-
     new_parser->buffer_size = self->buffer_size;
     new_parser->buffer_used = 0;
     new_parser->buffer = NULL;
@@ -1059,7 +1054,10 @@ pyexpat_xmlparser_ExternalEntityParserCreate_impl(xmlparseobject *self,
     new_parser->ns_prefixes = self->ns_prefixes;
     new_parser->itself = XML_ExternalEntityParserCreate(self->itself, context,
                                                         encoding);
-    new_parser->parent = (PyObject *)self;
+    // The new subparser will make use of the parent XML_Parser inside of Expat.
+    // So we need to take subparsers into account with the reference counting
+    // of their parent parser.
+    new_parser->parent = Py_NewRef(self);
     new_parser->handlers = 0;
     new_parser->intern = Py_XNewRef(self->intern);
 
@@ -1067,13 +1065,11 @@ pyexpat_xmlparser_ExternalEntityParserCreate_impl(xmlparseobject *self,
         new_parser->buffer = PyMem_Malloc(new_parser->buffer_size);
         if (new_parser->buffer == NULL) {
             Py_DECREF(new_parser);
-            Py_DECREF(self);
             return PyErr_NoMemory();
         }
     }
     if (!new_parser->itself) {
         Py_DECREF(new_parser);
-        Py_DECREF(self);
         return PyErr_NoMemory();
     }
 
@@ -1086,7 +1082,6 @@ pyexpat_xmlparser_ExternalEntityParserCreate_impl(xmlparseobject *self,
     new_parser->handlers = PyMem_New(PyObject *, i);
     if (!new_parser->handlers) {
         Py_DECREF(new_parser);
-        Py_DECREF(self);
         return PyErr_NoMemory();
     }
     clear_handlers(new_parser, 1);
@@ -2333,11 +2328,13 @@ PyInit_pyexpat(void)
 static void
 clear_handlers(xmlparseobject *self, int initial)
 {
-    int i = 0;
-
-    for (; handler_info[i].name != NULL; i++) {
-        if (initial)
+    if (self->handlers == NULL) {
+        return;
+    }
+    for (size_t i = 0; handler_info[i].name != NULL; i++) {
+        if (initial) {
             self->handlers[i] = NULL;
+        }
         else {
             Py_CLEAR(self->handlers[i]);
             handler_info[i].setter(self->itself, NULL);
