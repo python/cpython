@@ -16,7 +16,9 @@
 #endif
 
 #include "Python.h"
+#include "pycore_dict.h"          // _PyDict_CopyAsDict()
 #include "pycore_pyhash.h"        // _Py_HashSecret
+#include "pycore_tuple.h"         // _PyTuple_FromPair
 #include "pycore_weakref.h"       // FT_CLEAR_WEAKREFS()
 
 #include <stddef.h>               // offsetof()
@@ -382,13 +384,14 @@ get_attrib_from_keywords(PyObject *kwds)
         /* If attrib was found in kwds, copy its value and remove it from
          * kwds
          */
-        if (!PyDict_Check(attrib)) {
-            PyErr_Format(PyExc_TypeError, "attrib must be dict, not %.100s",
-                         Py_TYPE(attrib)->tp_name);
+        if (!PyAnyDict_Check(attrib)) {
+            PyErr_Format(PyExc_TypeError,
+                         "attrib must be dict or frozendict, not %T",
+                         attrib);
             Py_DECREF(attrib);
             return NULL;
         }
-        Py_SETREF(attrib, PyDict_Copy(attrib));
+        Py_SETREF(attrib, _PyDict_CopyAsDict(attrib));
     }
     else {
         attrib = PyDict_New();
@@ -416,12 +419,18 @@ element_init(PyObject *self, PyObject *args, PyObject *kwds)
     PyObject *attrib = NULL;
     ElementObject *self_elem;
 
-    if (!PyArg_ParseTuple(args, "O|O!:Element", &tag, &PyDict_Type, &attrib))
+    if (!PyArg_ParseTuple(args, "O|O:Element", &tag, &attrib))
         return -1;
+    if (attrib != NULL && !PyAnyDict_Check(attrib)) {
+        PyErr_Format(PyExc_TypeError,
+                     "Element() argument 2 must be dict or frozendict, not %T",
+                     attrib);
+        return -1;
+    }
 
     if (attrib) {
         /* attrib passed as positional arg */
-        attrib = PyDict_Copy(attrib);
+        attrib = _PyDict_CopyAsDict(attrib);
         if (!attrib)
             return -1;
         if (kwds) {
@@ -2111,10 +2120,10 @@ static int
 element_attrib_setter(PyObject *op, PyObject *value, void *closure)
 {
     _VALIDATE_ATTR_VALUE(value);
-    if (!PyDict_Check(value)) {
+    if (!PyAnyDict_Check(value)) {
         PyErr_Format(PyExc_TypeError,
-                     "attrib must be dict, not %.200s",
-                     Py_TYPE(value)->tp_name);
+                     "attrib must be dict or frozendict, not %T",
+                     value);
         return -1;
     }
     ElementObject *self = _Element_CAST(op);
@@ -2586,7 +2595,7 @@ _elementtree__set_factories_impl(PyObject *module, PyObject *comment_factory,
         return NULL;
     }
 
-    old = PyTuple_Pack(2,
+    old = _PyTuple_FromPair(
         st->comment_factory ? st->comment_factory : Py_None,
         st->pi_factory ? st->pi_factory : Py_None);
 
@@ -2704,7 +2713,7 @@ treebuilder_append_event(TreeBuilderObject *self, PyObject *action,
 {
     if (action != NULL) {
         PyObject *res;
-        PyObject *event = PyTuple_Pack(2, action, node);
+        PyObject *event = _PyTuple_FromPair(action, node);
         if (event == NULL)
             return -1;
         res = PyObject_CallOneArg(self->events_append, event);
@@ -2832,8 +2841,6 @@ treebuilder_handle_data(TreeBuilderObject* self, PyObject* data)
 LOCAL(PyObject*)
 treebuilder_handle_end(TreeBuilderObject* self, PyObject* tag)
 {
-    PyObject* item;
-
     if (treebuilder_flush_data(self) < 0) {
         return NULL;
     }
@@ -2846,17 +2853,22 @@ treebuilder_handle_end(TreeBuilderObject* self, PyObject* tag)
         return NULL;
     }
 
-    item = self->last;
-    self->last = Py_NewRef(self->this);
-    Py_XSETREF(self->last_for_tail, self->last);
+    PyObject *last = self->last;
+    PyObject *last_for_tail = self->last_for_tail;
+    PyObject *this = self->this;
+    self->last = Py_NewRef(this);
+    self->last_for_tail = Py_NewRef(this);
     self->index--;
     self->this = Py_NewRef(PyList_GET_ITEM(self->stack, self->index));
-    Py_DECREF(item);
+    Py_DECREF(last);
+    Py_XDECREF(last_for_tail);
 
-    if (treebuilder_append_event(self, self->end_event_obj, self->last) < 0)
+    if (treebuilder_append_event(self, self->end_event_obj, self->last) < 0) {
+        Py_DECREF(this);
         return NULL;
+    }
 
-    return Py_NewRef(self->last);
+    return this;
 }
 
 LOCAL(PyObject*)
@@ -2922,7 +2934,7 @@ treebuilder_handle_pi(TreeBuilderObject* self, PyObject* target, PyObject* text)
             Py_XSETREF(self->last_for_tail, Py_NewRef(pi));
         }
     } else {
-        pi = PyTuple_Pack(2, target, text);
+        pi = _PyTuple_FromPair(target, text);
         if (!pi) {
             return NULL;
         }
@@ -2946,7 +2958,7 @@ treebuilder_handle_start_ns(TreeBuilderObject* self, PyObject* prefix, PyObject*
     PyObject* parcel;
 
     if (self->events_append && self->start_ns_event_obj) {
-        parcel = PyTuple_Pack(2, prefix, uri);
+        parcel = _PyTuple_FromPair(prefix, uri);
         if (!parcel) {
             return NULL;
         }
@@ -4522,6 +4534,7 @@ error:
 }
 
 static struct PyModuleDef_Slot elementtree_slots[] = {
+    _Py_ABI_SLOT,
     {Py_mod_exec, module_exec},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {Py_mod_gil, Py_MOD_GIL_NOT_USED},

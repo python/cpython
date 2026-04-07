@@ -41,21 +41,38 @@ do { \
 #  define SPECIALIZATION_FAIL(opcode, kind) ((void)0)
 #endif  // Py_STATS
 
+static void
+fixup_getiter(_Py_CODEUNIT *instruction, int flags)
+{
+    // Compiler can't know if types.coroutine() will be called,
+    // so fix up here
+    if (instruction->op.arg) {
+        if (flags & (CO_COROUTINE | CO_ITERABLE_COROUTINE)) {
+            instruction->op.arg = GET_ITER_YIELD_FROM_NO_CHECK;
+        }
+        else {
+            instruction->op.arg = GET_ITER_YIELD_FROM_CORO_CHECK;
+        }
+    }
+}
+
 // Initialize warmup counters and optimize instructions. This cannot fail.
 void
-_PyCode_Quicken(_Py_CODEUNIT *instructions, Py_ssize_t size, int enable_counters)
+_PyCode_Quicken(_Py_CODEUNIT *instructions, Py_ssize_t size, int enable_counters, int flags)
 {
     #if ENABLE_SPECIALIZATION
-    _Py_BackoffCounter jump_counter, adaptive_counter;
+    _Py_BackoffCounter jump_counter, adaptive_counter, resume_counter;
     if (enable_counters) {
         PyThreadState *tstate = _PyThreadState_GET();
         PyInterpreterState *interp = tstate->interp;
         jump_counter = initial_jump_backoff_counter(&interp->opt_config);
         adaptive_counter = adaptive_counter_warmup();
+        resume_counter = initial_resume_backoff_counter(&interp->opt_config);
     }
     else {
         jump_counter = initial_unreachable_backoff_counter();
         adaptive_counter = initial_unreachable_backoff_counter();
+        resume_counter = initial_unreachable_backoff_counter();
     }
     int opcode = 0;
     int oparg = 0;
@@ -64,11 +81,17 @@ _PyCode_Quicken(_Py_CODEUNIT *instructions, Py_ssize_t size, int enable_counters
         opcode = instructions[i].op.code;
         int caches = _PyOpcode_Caches[opcode];
         oparg = (oparg << 8) | instructions[i].op.arg;
+        if (opcode == GET_ITER) {
+            fixup_getiter(&instructions[i], flags);
+        }
         if (caches) {
             // The initial value depends on the opcode
             switch (opcode) {
                 case JUMP_BACKWARD:
                     instructions[i + 1].counter = jump_counter;
+                    break;
+                case RESUME:
+                    instructions[i + 1].counter = resume_counter;
                     break;
                 case POP_JUMP_IF_FALSE:
                 case POP_JUMP_IF_TRUE:
@@ -85,6 +108,13 @@ _PyCode_Quicken(_Py_CODEUNIT *instructions, Py_ssize_t size, int enable_counters
         if (opcode != EXTENDED_ARG) {
             oparg = 0;
         }
+    }
+    #else
+    for (Py_ssize_t i = 0; i < size-1; i++) {
+        if (instructions[i].op.code == GET_ITER) {
+            fixup_getiter(&instructions[i], flags);
+        }
+        i += _PyOpcode_Caches[opcode];
     }
     #endif /* ENABLE_SPECIALIZATION */
 }
@@ -2100,7 +2130,7 @@ float_compactlong_guard(PyObject *lhs, PyObject *rhs)
 {
     return (
         PyFloat_CheckExact(lhs) &&
-        !isnan(PyFloat_AsDouble(lhs)) &&
+        !isnan(PyFloat_AS_DOUBLE(lhs)) &&
         PyLong_CheckExact(rhs) &&
         _PyLong_IsCompact((PyLongObject *)rhs)
     );
@@ -2110,7 +2140,7 @@ static inline int
 nonzero_float_compactlong_guard(PyObject *lhs, PyObject *rhs)
 {
     return (
-        float_compactlong_guard(lhs, rhs) && !PyLong_IsZero(rhs)
+        float_compactlong_guard(lhs, rhs) && !_PyLong_IsZero((PyLongObject*)rhs)
     );
 }
 
@@ -2118,7 +2148,7 @@ nonzero_float_compactlong_guard(PyObject *lhs, PyObject *rhs)
     static PyObject * \
     (NAME)(PyObject *lhs, PyObject *rhs) \
     { \
-        double lhs_val = PyFloat_AsDouble(lhs); \
+        double lhs_val = PyFloat_AS_DOUBLE(lhs); \
         Py_ssize_t rhs_val = _PyLong_CompactValue((PyLongObject *)rhs); \
         return PyFloat_FromDouble(lhs_val OP rhs_val); \
     }
@@ -2137,7 +2167,7 @@ compactlong_float_guard(PyObject *lhs, PyObject *rhs)
         PyLong_CheckExact(lhs) &&
         _PyLong_IsCompact((PyLongObject *)lhs) &&
         PyFloat_CheckExact(rhs) &&
-        !isnan(PyFloat_AsDouble(rhs))
+        !isnan(PyFloat_AS_DOUBLE(rhs))
     );
 }
 
@@ -2145,7 +2175,7 @@ static inline int
 nonzero_compactlong_float_guard(PyObject *lhs, PyObject *rhs)
 {
     return (
-        compactlong_float_guard(lhs, rhs) && PyFloat_AsDouble(rhs) != 0.0
+        compactlong_float_guard(lhs, rhs) && PyFloat_AS_DOUBLE(rhs) != 0.0
     );
 }
 
@@ -2153,7 +2183,7 @@ nonzero_compactlong_float_guard(PyObject *lhs, PyObject *rhs)
     static PyObject * \
     (NAME)(PyObject *lhs, PyObject *rhs) \
     { \
-        double rhs_val = PyFloat_AsDouble(rhs); \
+        double rhs_val = PyFloat_AS_DOUBLE(rhs); \
         Py_ssize_t lhs_val = _PyLong_CompactValue((PyLongObject *)lhs); \
         return PyFloat_FromDouble(lhs_val OP rhs_val); \
     }
@@ -2165,24 +2195,24 @@ LONG_FLOAT_ACTION(compactlong_float_true_div, /)
 
 static _PyBinaryOpSpecializationDescr binaryop_extend_descrs[] = {
     /* long-long arithmetic */
-    {NB_OR, compactlongs_guard, compactlongs_or},
-    {NB_AND, compactlongs_guard, compactlongs_and},
-    {NB_XOR, compactlongs_guard, compactlongs_xor},
-    {NB_INPLACE_OR, compactlongs_guard, compactlongs_or},
-    {NB_INPLACE_AND, compactlongs_guard, compactlongs_and},
-    {NB_INPLACE_XOR, compactlongs_guard, compactlongs_xor},
+    {NB_OR, compactlongs_guard, compactlongs_or, &PyLong_Type, 1},
+    {NB_AND, compactlongs_guard, compactlongs_and, &PyLong_Type, 1},
+    {NB_XOR, compactlongs_guard, compactlongs_xor, &PyLong_Type, 1},
+    {NB_INPLACE_OR, compactlongs_guard, compactlongs_or, &PyLong_Type, 1},
+    {NB_INPLACE_AND, compactlongs_guard, compactlongs_and, &PyLong_Type, 1},
+    {NB_INPLACE_XOR, compactlongs_guard, compactlongs_xor, &PyLong_Type, 1},
 
     /* float-long arithemetic */
-    {NB_ADD, float_compactlong_guard, float_compactlong_add},
-    {NB_SUBTRACT, float_compactlong_guard, float_compactlong_subtract},
-    {NB_TRUE_DIVIDE, nonzero_float_compactlong_guard, float_compactlong_true_div},
-    {NB_MULTIPLY, float_compactlong_guard, float_compactlong_multiply},
+    {NB_ADD, float_compactlong_guard, float_compactlong_add, &PyFloat_Type, 1},
+    {NB_SUBTRACT, float_compactlong_guard, float_compactlong_subtract, &PyFloat_Type, 1},
+    {NB_TRUE_DIVIDE, nonzero_float_compactlong_guard, float_compactlong_true_div, &PyFloat_Type, 1},
+    {NB_MULTIPLY, float_compactlong_guard, float_compactlong_multiply, &PyFloat_Type, 1},
 
     /* float-float arithmetic */
-    {NB_ADD, compactlong_float_guard, compactlong_float_add},
-    {NB_SUBTRACT, compactlong_float_guard, compactlong_float_subtract},
-    {NB_TRUE_DIVIDE, nonzero_compactlong_float_guard, compactlong_float_true_div},
-    {NB_MULTIPLY, compactlong_float_guard, compactlong_float_multiply},
+    {NB_ADD, compactlong_float_guard, compactlong_float_add, &PyFloat_Type, 1},
+    {NB_SUBTRACT, compactlong_float_guard, compactlong_float_subtract, &PyFloat_Type, 1},
+    {NB_TRUE_DIVIDE, nonzero_compactlong_float_guard, compactlong_float_true_div, &PyFloat_Type, 1},
+    {NB_MULTIPLY, compactlong_float_guard, compactlong_float_multiply, &PyFloat_Type, 1},
 };
 
 static int
@@ -2781,6 +2811,28 @@ _Py_Specialize_ContainsOp(_PyStackRef value_st, _Py_CODEUNIT *instr)
     return;
 }
 
+
+void
+_Py_Specialize_Resume(_Py_CODEUNIT *instr, PyThreadState *tstate, _PyInterpreterFrame *frame)
+{
+    if (tstate->tracing == 0 && instr->op.code == RESUME) {
+        if (tstate->interp->jit) {
+            PyCodeObject *co = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            if (co != NULL &&
+                PyCode_Check(co) &&
+                (co->co_flags & (CO_GENERATOR | CO_COROUTINE | CO_ASYNC_GENERATOR)) == 0) {
+                specialize(instr, RESUME_CHECK_JIT);
+                set_counter((_Py_BackoffCounter *)instr + 1, initial_resume_backoff_counter(&tstate->interp->opt_config));
+                return;
+            }
+        }
+        specialize(instr, RESUME_CHECK);
+        return;
+    }
+    unspecialize(instr);
+    return;
+}
+
 #ifdef Py_STATS
 void
 _Py_GatherStats_GetIter(_PyStackRef iterable)
@@ -2883,5 +2935,6 @@ const struct _PyCode8 _Py_InitCleanup = {
         EXIT_INIT_CHECK, 0,
         RETURN_VALUE, 0,
         RESUME, RESUME_AT_FUNC_START,
+        CACHE, 0, /* RESUME's cache */
     }
 };

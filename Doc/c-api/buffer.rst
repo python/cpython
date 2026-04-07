@@ -10,11 +10,6 @@
 Buffer Protocol
 ---------------
 
-.. sectionauthor:: Greg Stein <gstein@lyra.org>
-.. sectionauthor:: Benjamin Peterson
-.. sectionauthor:: Stefan Krah
-
-
 Certain objects available in Python wrap access to an underlying memory
 array or *buffer*.  Such objects include the built-in :class:`bytes` and
 :class:`bytearray`, and some extension types like :class:`array.array`.
@@ -505,10 +500,11 @@ Buffer-related functions
    *indices* must point to an array of ``view->ndim`` indices.
 
 
-.. c:function:: int PyBuffer_FromContiguous(const Py_buffer *view, const void *buf, Py_ssize_t len, char fort)
+.. c:function:: int PyBuffer_FromContiguous(const Py_buffer *view, const void *buf, Py_ssize_t len, char order)
 
    Copy contiguous *len* bytes from *buf* to *view*.
-   *fort* can be ``'C'`` or ``'F'`` (for C-style or Fortran-style ordering).
+   *order* can be ``'C'`` or ``'F'`` or ``'A'`` (for C-style or Fortran-style
+   ordering or either one).
    ``0`` is returned on success, ``-1`` on error.
 
 

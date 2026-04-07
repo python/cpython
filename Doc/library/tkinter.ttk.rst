@@ -4,8 +4,6 @@
 .. module:: tkinter.ttk
    :synopsis: Tk themed widget set
 
-.. sectionauthor:: Guilherme Polo <ggpolo@gmail.com>
-
 **Source code:** :source:`Lib/tkinter/ttk.py`
 
 .. index:: single: ttk

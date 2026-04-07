@@ -4,7 +4,6 @@
 .. module:: unittest.mock
    :synopsis: Mock object library.
 
-.. moduleauthor:: Michael Foord <michael@python.org>
 .. currentmodule:: unittest.mock
 
 .. versionadded:: 3.3

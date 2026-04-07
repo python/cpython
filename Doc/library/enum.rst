@@ -4,11 +4,6 @@
 .. module:: enum
    :synopsis: Implementation of an enumeration class.
 
-.. moduleauthor:: Ethan Furman <ethan@stoneleaf.us>
-.. sectionauthor:: Barry Warsaw <barry@python.org>
-.. sectionauthor:: Eli Bendersky <eliben@gmail.com>
-.. sectionauthor:: Ethan Furman <ethan@stoneleaf.us>
-
 .. versionadded:: 3.4
 
 **Source code:** :source:`Lib/enum.py`
@@ -61,7 +56,7 @@ are not normal Python classes.  See
 
 ---------------
 
-Module Contents
+Module contents
 ---------------
 
    :class:`EnumType`
@@ -166,7 +161,7 @@ Module Contents
 
 ---------------
 
-Data Types
+Data types
 ----------
 
 
@@ -346,7 +341,7 @@ Data Types
       any public methods defined on *self.__class__*::
 
          >>> from enum import Enum
-         >>> from datetime import date
+         >>> import datetime as dt
          >>> class Weekday(Enum):
          ...     MONDAY = 1
          ...     TUESDAY = 2
@@ -357,7 +352,7 @@ Data Types
          ...     SUNDAY = 7
          ...     @classmethod
          ...     def today(cls):
-         ...         print('today is %s' % cls(date.today().isoweekday()).name)
+         ...         print(f'today is {cls(dt.date.today().isoweekday()).name}')
          ...
          >>> dir(Weekday.SATURDAY)
          ['__class__', '__doc__', '__eq__', '__hash__', '__module__', 'name', 'today', 'value']
@@ -975,7 +970,7 @@ Supported ``_sunder_`` names
 
 ---------------
 
-Utilities and Decorators
+Utilities and decorators
 ------------------------
 
 .. class:: auto

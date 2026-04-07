@@ -1,0 +1,1 @@
+Invoke :program:`osascript` with absolute path in :mod:`webbrowser` and :mod:`!turtledemo`.

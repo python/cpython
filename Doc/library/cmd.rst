@@ -4,8 +4,6 @@
 .. module:: cmd
    :synopsis: Build line-oriented command interpreters.
 
-.. sectionauthor:: Eric S. Raymond <esr@snark.thyrsus.com>
-
 **Source code:** :source:`Lib/cmd.py`
 
 --------------
@@ -242,8 +240,6 @@ Instances of :class:`Cmd` subclasses have some public instance variables:
 
 Cmd Example
 -----------
-
-.. sectionauthor:: Raymond Hettinger <python at rcn dot com>
 
 The :mod:`!cmd` module is mainly useful for building custom shells that let a
 user work with a program interactively.

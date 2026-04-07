@@ -30,6 +30,7 @@
 #include "pycore_unicodeobject.h"
 #include "pycore_ceval.h"
 #include "pycore_floatobject.h"
+#include "pycore_setobject.h"
 
 #include <stdarg.h>
 #include <stdbool.h>
@@ -55,23 +56,21 @@
 static void
 dump_abstract_stack(_Py_UOpsAbstractFrame *frame, JitOptRef *stack_pointer)
 {
-    JitOptRef *stack_base = frame->stack;
-    JitOptRef *locals_base = frame->locals;
     printf("    locals=[");
-    for (JitOptRef *ptr = locals_base; ptr < stack_base; ptr++) {
-        if (ptr != locals_base) {
+    for (int i = 0 ; i < frame->locals_len; i++) {
+        if (i > 0) {
             printf(", ");
         }
-        _PyUOpSymPrint(*ptr);
+        _PyUOpSymPrint(frame->locals[i]);
     }
     printf("]\n");
-    if (stack_pointer < stack_base) {
-        printf("    stack=%d\n", (int)(stack_pointer - stack_base));
+    if (stack_pointer < frame->stack) {
+        printf("    stack=%d\n", (int)(stack_pointer - frame->stack));
     }
     else {
         printf("    stack=[");
-        for (JitOptRef *ptr = stack_base; ptr < stack_pointer; ptr++) {
-            if (ptr != stack_base) {
+        for (JitOptRef *ptr = frame->stack; ptr < stack_pointer; ptr++) {
+            if (ptr != frame->stack) {
                 printf(", ");
             }
             _PyUOpSymPrint(*ptr);
@@ -253,6 +252,7 @@ add_op(JitOptContext *ctx, _PyUOpInstruction *this_instr,
 #define sym_is_not_null _Py_uop_sym_is_not_null
 #define sym_is_const _Py_uop_sym_is_const
 #define sym_is_safe_const _Py_uop_sym_is_safe_const
+#define sym_is_not_container _Py_uop_sym_is_not_container
 #define sym_get_const _Py_uop_sym_get_const
 #define sym_new_const_steal _Py_uop_sym_new_const_steal
 #define sym_get_const_as_stackref _Py_uop_sym_get_const_as_stackref
@@ -264,6 +264,7 @@ add_op(JitOptContext *ctx, _PyUOpInstruction *this_instr,
 #define sym_new_null _Py_uop_sym_new_null
 #define sym_has_type _Py_uop_sym_has_type
 #define sym_get_type _Py_uop_sym_get_type
+#define sym_get_probable_type _Py_uop_sym_get_probable_type
 #define sym_matches_type _Py_uop_sym_matches_type
 #define sym_matches_type_version _Py_uop_sym_matches_type_version
 #define sym_set_null(SYM) _Py_uop_sym_set_null(ctx, SYM)
@@ -291,6 +292,9 @@ add_op(JitOptContext *ctx, _PyUOpInstruction *this_instr,
 #define sym_set_recorded_gen_func(SYM, VAL) _Py_uop_sym_set_recorded_gen_func(ctx, SYM, VAL)
 #define sym_get_probable_func_code _Py_uop_sym_get_probable_func_code
 #define sym_get_probable_value _Py_uop_sym_get_probable_value
+#define sym_set_stack_depth(DEPTH, SP) _Py_uop_sym_set_stack_depth(ctx, DEPTH, SP)
+#define sym_get_func_version _Py_uop_sym_get_func_version
+#define sym_set_func_version _Py_uop_sym_set_func_version
 
 /* Comparison oparg masks */
 #define COMPARE_LT_MASK 2
@@ -347,6 +351,33 @@ optimize_to_bool(
 }
 
 static void
+optimize_dict_known_hash(
+    JitOptContext *ctx, _PyBloomFilter *dependencies, _PyUOpInstruction *this_instr,
+    PyObject *sub, uint16_t opcode)
+{
+    if (PyUnicode_CheckExact(sub) || PyLong_CheckExact(sub) || PyBytes_CheckExact(sub)
+            || PyFloat_CheckExact(sub) || PyComplex_CheckExact(sub)) {
+        // PyObject_Hash can't fail on these types
+        ADD_OP(opcode, 0, PyObject_Hash(sub));
+    }
+    else if (PyTuple_CheckExact(sub)) {
+        // only use known hash variant when hash of tuple is already computed
+        // since computing it can call arbitrary code
+        Py_hash_t hash = ((PyTupleObject *)sub)->ob_hash;
+        if (hash != -1) {
+            ADD_OP(opcode, 0, hash);
+        }
+    }
+    else if (Py_TYPE(sub)->tp_hash == PyBaseObject_Type.tp_hash) {
+        // for user-defined objects which don't override tp_hash
+        Py_hash_t hash = PyObject_Hash(sub);
+        ADD_OP(opcode, 0, hash);
+        PyType_Watch(TYPE_WATCHER_ID, (PyObject *)Py_TYPE(sub));
+        _Py_BloomFilter_Add(dependencies, Py_TYPE(sub));
+    }
+}
+
+static void
 eliminate_pop_guard(_PyUOpInstruction *this_instr, JitOptContext *ctx, bool exit)
 {
     ADD_OP(_POP_TOP, 0, 0);
@@ -365,7 +396,11 @@ lookup_attr(JitOptContext *ctx, _PyBloomFilter *dependencies, _PyUOpInstruction 
     if (type && PyType_Check(type)) {
         PyObject *lookup = _PyType_Lookup(type, name);
         if (lookup) {
-            int opcode = _Py_IsImmortal(lookup) ? immortal : mortal;
+            int opcode = mortal;
+            // if the object is immortal or the type is immutable, borrowing is safe
+            if (_Py_IsImmortal(lookup) || (type->tp_flags & Py_TPFLAGS_IMMUTABLETYPE)) {
+                opcode = immortal;
+            }
             ADD_OP(opcode, 0, (uintptr_t)lookup);
             PyType_Watch(TYPE_WATCHER_ID, (PyObject *)type);
             _Py_BloomFilter_Add(dependencies, type);
@@ -473,14 +508,15 @@ optimize_uops(
         interp->type_watchers[TYPE_WATCHER_ID] = type_watcher_callback;
     }
 
-    _Py_uop_abstractcontext_init(ctx);
-    _Py_UOpsAbstractFrame *frame = _Py_uop_frame_new(ctx, (PyCodeObject *)func->func_code, curr_stacklen, NULL, 0);
+    _Py_uop_abstractcontext_init(ctx, dependencies);
+    _Py_UOpsAbstractFrame *frame = _Py_uop_frame_new(ctx, (PyCodeObject *)func->func_code, NULL, 0);
     if (frame == NULL) {
         return 0;
     }
     frame->func = func;
     ctx->curr_frame_depth++;
     ctx->frame = frame;
+    _Py_uop_sym_set_stack_depth(ctx, curr_stacklen, frame->stack_pointer);
 
     _PyUOpInstruction *this_instr = NULL;
     JitOptRef *stack_pointer = ctx->frame->stack_pointer;
@@ -718,8 +754,7 @@ _Py_uop_analyze_and_optimize(
     OPT_STAT_INC(optimizer_attempts);
 
     length = optimize_uops(
-         tstate, buffer, length, curr_stacklen,
-         output, dependencies);
+        tstate, buffer, length, curr_stacklen, output, dependencies);
 
     if (length == 0) {
         return length;
