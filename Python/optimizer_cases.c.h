@@ -1534,6 +1534,8 @@
                     /* Start of uop copied from bytecodes for constant evaluation */
                     PyObject *sub = PyStackRef_AsPyObjectBorrow(sub_st);
                     PyObject *dict = PyStackRef_AsPyObjectBorrow(dict_st);
+                    assert(PyAnyDict_Check(dict));
+                    assert(Py_TYPE(dict)->tp_as_mapping->mp_subscript == _PyDict_Subscript);
                     STAT_INC(BINARY_OP, hit);
                     PyObject *res_o = _PyDict_Subscript(dict, sub);
                     if (res_o == NULL) {
