@@ -170,9 +170,9 @@ class ForkServer(object):
                 data = spawn.get_preparation_data('ignore')
                 preload_kwargs = {
                     "preload": self._preload_modules,
-                    "sys_path": data["sys_path"],
-                    "main_path": data.get("init_main_from_path", None),
-                    "sys_argv": data["sys_argv"],
+                    "sys_path": data.get("sys_path"),
+                    "main_path": data.get("init_main_from_path"),
+                    "sys_argv": data.get("sys_argv"),
                     "on_error": self._preload_on_error,
                 }
             else:
@@ -208,10 +208,13 @@ class ForkServer(object):
                 # processes we have not shared this key with.
                 try:
                     self._forkserver_authkey = os.urandom(_AUTHKEY_LEN)
-                    os.write(init_w, self._forkserver_authkey)
                     preload_data = json.dumps(preload_kwargs).encode()
-                    os.write(init_w, struct.pack("Q", len(preload_data)))
-                    os.write(init_w, preload_data)
+                    # Use a buffered writer so that payloads larger than
+                    # PIPE_BUF are written fully (os.write may short-write).
+                    with os.fdopen(init_w, 'wb', closefd=False) as f:
+                        f.write(self._forkserver_authkey)
+                        f.write(struct.pack("Q", len(preload_data)))
+                        f.write(preload_data)
                 finally:
                     os.close(init_w)
                 self._forkserver_address = address
@@ -286,14 +289,14 @@ def _handle_preload(preload, main_path=None, sys_path=None, sys_argv=None,
 def main(listener_fd, alive_r, init_r):
     """Run forkserver."""
     try:
-        authkey = os.read(init_r, _AUTHKEY_LEN)
-        assert len(authkey) == _AUTHKEY_LEN, f'{len(authkey)} < {_AUTHKEY_LEN}'
-
-        preload_data_len, = struct.unpack("Q", os.read(init_r, struct.calcsize("Q")))
-        preload_data = b""
-        while len(preload_data) < preload_data_len:
-            preload_data += os.read(init_r, preload_data_len - len(preload_data))
-        preload_kwargs = json.loads(preload_data.decode())
+        # Buffered reader handles short reads on the length prefix and body.
+        with os.fdopen(init_r, 'rb', closefd=False) as f:
+            authkey = f.read(_AUTHKEY_LEN)
+            assert len(authkey) == _AUTHKEY_LEN, (
+                f'{len(authkey)} < {_AUTHKEY_LEN}')
+            preload_data_len, = struct.unpack("Q",
+                                              f.read(struct.calcsize("Q")))
+            preload_kwargs = json.loads(f.read(preload_data_len))
     finally:
         os.close(init_r)
 
