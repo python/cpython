@@ -5011,6 +5011,29 @@ class TestUopsOptimization(unittest.TestCase):
         PYTHON_JIT="1", PYTHON_JIT_STRESS="1")
         self.assertEqual(result[0].rc, 0, result)
 
+    def test_call_super(self):
+        class A:
+            def method(self):
+                return 42
+
+        class B(A):
+            def method(self):
+                return super().method()
+
+        b = B()
+
+        def testfunc(n):
+            x = 0
+            for _ in range(n):
+                x += b.method()
+            return x
+
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, 42 * TIER2_THRESHOLD)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertNotIn("_LOAD_SUPER_ATTR_METHOD", uops)
+
 def global_identity(x):
     return x
 

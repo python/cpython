@@ -950,6 +950,29 @@ dummy_func(void) {
         self = owner;
     }
 
+    op(_GUARD_LOAD_SUPER_ATTR_METHOD, (global_super_st, class_st, unused -- global_super_st, class_st, unused)) {
+        if (sym_get_const(ctx, global_super_st) == (PyObject *)&PySuper_Type
+            && sym_matches_type(class_st, &PyType_Type))
+        {
+            ADD_OP(_NOP, 0, 0);
+        }
+        sym_set_const(global_super_st, (PyObject *)&PySuper_Type);
+        sym_set_type(class_st, &PyType_Type);
+    }
+
+    op(_LOAD_SUPER_ATTR_METHOD, (global_super_st, class_st, self_st -- attr, self_or_null)) {
+        attr = sym_new_not_null(ctx);
+        self_or_null = self_st;
+        PyObject *class_o = sym_get_probable_value(class_st);
+        PyTypeObject *su_type = (PyTypeObject *)(class_o && PyType_Check(class_o) ? class_o : NULL);
+        PyTypeObject *obj_type = sym_get_type(self_st);
+        PyObject *name = get_co_name(ctx, oparg >> 2);
+        attr = lookup_super_attr(ctx, dependencies, this_instr,
+                                 su_type, obj_type, name,
+                                 _LOAD_CONST_UNDER_INLINE_BORROW,
+                                 _LOAD_CONST_UNDER_INLINE);
+    }
+
     op(_LOAD_ATTR_PROPERTY_FRAME, (fget/4, owner -- new_frame)) {
         // + 1 for _SAVE_RETURN_OFFSET
         // FIX ME -- This needs a version check and function watcher
