@@ -95,7 +95,7 @@ function getDisplayName(moduleName, filename) {
   if (useModuleNames) {
     return moduleName || filename;
   }
-  return filename ? filename.split('/').pop() : filename;
+  return filename;
 }
 
 function selectFlamegraphData() {
