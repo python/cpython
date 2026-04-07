@@ -1,1 +1,0 @@
-Support lookup for Tangut Ideographs in :mod:`unicodedata`.

@@ -1,1 +1,0 @@
-Fix null pointer dereference in unusual error scenario in :mod:`hashlib`.

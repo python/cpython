@@ -1,4 +1,4 @@
-This is Python version 3.13.12
+This is Python version 3.13.13
 ==============================
 
 .. image:: https://github.com/python/cpython/workflows/Tests/badge.svg
