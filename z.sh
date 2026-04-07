@@ -7,11 +7,23 @@
 
 set -euo pipefail
 
-PINNED_VERSION="0.7.1"
+PINNED_VERSION="0.7.2"
 ZUTIL_VERSION="${NANVIX_ZUTIL_VERSION:-$PINNED_VERSION}"
 REPO_ROOT="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd -P)"
 VENV="$REPO_ROOT/.nanvix/venv"
-VENV_BIN="$VENV/bin/nanvix-zutil"
+
+# Resolve venv layout (bin/ vs Scripts/) based on what exists on disk.
+# Must be called after venv creation to pick up the correct paths.
+function _resolve_venv_paths() {
+    if [ -d "$VENV/Scripts" ]; then
+        VENV_BIN="$VENV/Scripts/nanvix-zutil.exe"
+        VENV_PYTHON="$VENV/Scripts/python.exe"
+    else
+        VENV_BIN="$VENV/bin/nanvix-zutil"
+        VENV_PYTHON="$VENV/bin/python"
+    fi
+}
+_resolve_venv_paths
 ZUTIL_GLOBAL_VERSION="$(nanvix-zutil --version 2>/dev/null || true)"
 
 function bootstrap() {
@@ -30,7 +42,9 @@ function bootstrap() {
     else
         python3 -m venv "$VENV"
     fi
-    "$VENV/bin/pip" install --quiet "$WHEEL_URL"
+    # Re-resolve paths now that the venv exists (Scripts/ vs bin/).
+    _resolve_venv_paths
+    "$VENV_PYTHON" -m pip install --quiet "$WHEEL_URL"
 }
 
 # Prefer the venv copy if it exists; otherwise use the global install.

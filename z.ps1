@@ -15,7 +15,7 @@ $zutilVersion = if ($env:NANVIX_ZUTIL_VERSION) {
     $env:NANVIX_ZUTIL_VERSION
 }
 else {
-    "0.7.1"
+    "0.7.2"
 }
 
 # z.ps1 lives at the repository root, so use its directory directly
@@ -24,6 +24,12 @@ $repoRoot = $PSScriptRoot
 $venvDir = Join-Path $repoRoot ".nanvix\venv"
 $venvPython = Join-Path $venvDir "Scripts\python.exe"
 $venvZutil = Join-Path $venvDir "Scripts\nanvix-zutil.exe"
+
+# Windows compatibility shim: nanvix-zutil references os.getuid/os.getgid
+# which are unavailable on Windows.  Stub them before importing the package.
+# FIXME: https://github.com/nanvix/zutils/issues/56
+$ShimCode = 'import os,sys;os.getuid=getattr(os,"getuid",lambda:0);os.getgid=getattr(os,"getgid",lambda:0);from nanvix_zutil.__main__ import main;sys.exit(main())'
+
 $zutilGlobalVersion = try {
     & nanvix-zutil --version 2>$null
 }
@@ -76,11 +82,13 @@ if ((-not (Test-Path $venvDir)) -and (-not $zutilGlobalVersion)) {
     $bin = $venvZutil
 }
 elseif (Test-Path $venvZutil) {
+    # Use the shim to check version -- running the exe directly fails on
+    # Windows because os.getuid/os.getgid are unavailable (see FIXME above).
     $venvVersion = try {
-        & $venvZutil --version 2>$null 
+        & $venvPython -c $ShimCode --version 2>$null
     }
     catch {
-        $null 
+        $null
     }
     if ($venvVersion -ne "nanvix-zutil ${zutilVersion}") {
         Write-Warning "Venv nanvix-zutil version mismatch. Expected ${zutilVersion}, found ${venvVersion}. Re-bootstrapping..."
@@ -106,5 +114,10 @@ else {
     }
 }
 
-& $bin @ZArgs
+if ($bin -eq $venvZutil) {
+    & $venvPython -c $ShimCode @ZArgs
+}
+else {
+    & $bin @ZArgs
+}
 exit $LASTEXITCODE
