@@ -334,6 +334,7 @@ LiveProfilerLight = LiveProfiler(
 @dataclass(frozen=True, kw_only=True)
 class Syntax(ThemeSection):
     prompt: str = ANSIColors.BOLD_MAGENTA
+    error: str = ANSIColors.BOLD_RED
     keyword: str = ANSIColors.BOLD_BLUE
     keyword_constant: str = ANSIColors.BOLD_BLUE
     builtin: str = ANSIColors.CYAN

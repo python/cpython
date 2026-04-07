@@ -124,9 +124,6 @@ class ReadlineAlikeReader(historical_reader.HistoricalReader, CompletingReader):
         self.commands["backspace_dedent"] = backspace_dedent
         self.commands["backspace-dedent"] = backspace_dedent
 
-    def error(self, msg: str = "none") -> None:
-        pass  # don't show error messages by default
-
     def get_stem(self) -> str:
         b = self.buffer
         p = self.pos - 1
