@@ -86,8 +86,6 @@ def wlen(s: str) -> int:
     return length - sum(len(i) for i in sequence) + ctrl_z_cnt
 
 
-
-
 def unbracket(s: str, including_content: bool = False) -> str:
     r"""Return `s` with \001 and \002 characters removed.
 
