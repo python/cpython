@@ -249,16 +249,7 @@ static inline void _Py_LeaveRecursiveCallTstate(PyThreadState *tstate) {
 
 PyAPI_FUNC(void) _Py_InitializeRecursionLimits(PyThreadState *tstate);
 
-static inline int _Py_ReachedRecursionLimit(PyThreadState *tstate)  {
-    uintptr_t here_addr = _Py_get_machine_stack_pointer();
-    _PyThreadStateImpl *_tstate = (_PyThreadStateImpl *)tstate;
-    assert(_tstate->c_stack_hard_limit != 0);
-#if _Py_STACK_GROWS_DOWN
-    return here_addr <= _tstate->c_stack_soft_limit;
-#else
-    return here_addr >= _tstate->c_stack_soft_limit;
-#endif
-}
+PyAPI_FUNC(int) _Py_ReachedRecursionLimit(PyThreadState *tstate);
 
 // Export for test_peg_generator
 PyAPI_FUNC(int) _Py_ReachedRecursionLimitWithMargin(
@@ -286,6 +277,9 @@ PyAPI_FUNC(PyObject *)_Py_MakeCoro(PyFunctionObject *func);
    and asynchronous exception */
 PyAPI_FUNC(int) _Py_HandlePending(PyThreadState *tstate);
 
+/* Raise exception set by PyThreadState_SetAsyncExc, if any */
+PyAPI_FUNC(int) _PyEval_RaiseAsyncExc(PyThreadState *tstate);
+
 extern PyObject * _PyEval_GetFrameLocals(void);
 
 typedef PyObject *(*conversion_func)(PyObject *);
@@ -308,9 +302,21 @@ PyAPI_FUNC(int) _PyEval_ExceptionGroupMatch(_PyInterpreterFrame *, PyObject* exc
 PyAPI_FUNC(void) _PyEval_FormatAwaitableError(PyThreadState *tstate, PyTypeObject *type, int oparg);
 PyAPI_FUNC(void) _PyEval_FormatExcCheckArg(PyThreadState *tstate, PyObject *exc, const char *format_str, PyObject *obj);
 PyAPI_FUNC(void) _PyEval_FormatExcUnbound(PyThreadState *tstate, PyCodeObject *co, int oparg);
-PyAPI_FUNC(void) _PyEval_FormatKwargsError(PyThreadState *tstate, PyObject *func, PyObject *kwargs);
+PyAPI_FUNC(void) _PyEval_FormatKwargsError(PyThreadState *tstate, PyObject *func, PyObject *kwargs, PyObject *dupkey);
 PyAPI_FUNC(PyObject *) _PyEval_ImportFrom(PyThreadState *, PyObject *, PyObject *);
-PyAPI_FUNC(PyObject *) _PyEval_ImportName(PyThreadState *, _PyInterpreterFrame *, PyObject *, PyObject *, PyObject *);
+
+PyAPI_FUNC(PyObject *) _PyEval_LazyImportName(
+    PyThreadState *tstate, PyObject *builtins, PyObject *globals,
+    PyObject *locals, PyObject *name, PyObject *fromlist, PyObject *level,
+    int lazy);
+PyAPI_FUNC(PyObject *) _PyEval_LazyImportFrom(
+    PyThreadState *tstate, _PyInterpreterFrame *frame, PyObject *v, PyObject *name);
+PyAPI_FUNC(PyObject *) _PyEval_ImportName(
+    PyThreadState *tstate, PyObject *builtins, PyObject *globals,
+    PyObject *locals, PyObject *name, PyObject *fromlist, PyObject *level);
+PyObject * _PyEval_ImportNameWithImport(
+    PyThreadState *tstate, PyObject *import_func, PyObject *globals,
+    PyObject *locals, PyObject *name, PyObject *fromlist, PyObject *level);
 PyAPI_FUNC(PyObject *)_PyEval_MatchClass(PyThreadState *tstate, PyObject *subject, PyObject *type, Py_ssize_t nargs, PyObject *kwargs);
 PyAPI_FUNC(PyObject *)_PyEval_MatchKeys(PyThreadState *tstate, PyObject *map, PyObject *keys);
 PyAPI_FUNC(void) _PyEval_MonitorRaise(PyThreadState *tstate, _PyInterpreterFrame *frame, _Py_CODEUNIT *instr);
@@ -327,6 +333,7 @@ PyAPI_FUNC(PyObject *) _PyEval_GetAwaitable(PyObject *iterable, int oparg);
 PyAPI_FUNC(PyObject *) _PyEval_LoadName(PyThreadState *tstate, _PyInterpreterFrame *frame, PyObject *name);
 PyAPI_FUNC(int)
 _Py_Check_ArgsIterable(PyThreadState *tstate, PyObject *func, PyObject *args);
+PyAPI_FUNC(_PyStackRef) _PyEval_GetIter(_PyStackRef iterable, _PyStackRef *null_or_index, int yield_from);
 
 /*
  * Indicate whether a special method of given 'oparg' can use the (improved)
@@ -440,7 +447,7 @@ _Py_BuiltinCallFastWithKeywords_StackRefSteal(
 PyAPI_FUNC(PyObject *)
 _PyCallMethodDescriptorFast_StackRefSteal(
     _PyStackRef callable,
-    PyMethodDef *meth,
+    PyCFunctionFast cfunc,
     PyObject *self,
     _PyStackRef *arguments,
     int total_args);
@@ -448,7 +455,7 @@ _PyCallMethodDescriptorFast_StackRefSteal(
 PyAPI_FUNC(PyObject *)
 _PyCallMethodDescriptorFastWithKeywords_StackRefSteal(
     _PyStackRef callable,
-    PyMethodDef *meth,
+    PyCFunctionFastWithKeywords cfunc,
     PyObject *self,
     _PyStackRef *arguments,
     int total_args);
@@ -473,6 +480,11 @@ PyAPI_FUNC(void)
 _Py_assert_within_stack_bounds(
     _PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
     const char *filename, int lineno);
+
+PyAPI_FUNC(_PyStackRef)
+_Py_LoadAttr_StackRefSteal(
+    PyThreadState *tstate, _PyStackRef owner,
+    PyObject *name, _PyStackRef *self_or_null);
 
 // Like PyMapping_GetOptionalItem, but returns the PyObject* instead of taking
 // it as an out parameter. This helps MSVC's escape analysis when used with

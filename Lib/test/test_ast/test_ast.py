@@ -1701,8 +1701,8 @@ Module(
 
         check_text(
             "import _ast as ast; from module import sub",
-            empty="Module(body=[Import(names=[alias(name='_ast', asname='ast')]), ImportFrom(module='module', names=[alias(name='sub')], level=0)])",
-            full="Module(body=[Import(names=[alias(name='_ast', asname='ast')]), ImportFrom(module='module', names=[alias(name='sub')], level=0)], type_ignores=[])",
+            empty="Module(body=[Import(names=[alias(name='_ast', asname='ast')], is_lazy=0), ImportFrom(module='module', names=[alias(name='sub')], level=0, is_lazy=0)])",
+            full="Module(body=[Import(names=[alias(name='_ast', asname='ast')], is_lazy=0), ImportFrom(module='module', names=[alias(name='sub')], level=0, is_lazy=0)], type_ignores=[])",
         )
 
     def test_copy_location(self):

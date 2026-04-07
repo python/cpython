@@ -212,10 +212,38 @@ def only_run_in_spawn_testsuite(reason):
     return decorator
 
 
+def only_run_in_forkserver_testsuite(reason):
+    """Returns a decorator: raises SkipTest unless fork is supported
+    and the current start method is forkserver.
+
+    Combines @support.requires_fork() with the single-run semantics of
+    only_run_in_spawn_testsuite(), but uses the forkserver testsuite as
+    the single-run target.  Appropriate for tests that exercise
+    os.fork() directly (raw fork or mp.set_start_method("fork") in a
+    subprocess) and don't vary by start method, since forkserver is
+    only available on platforms that support fork.
+    """
+
+    def decorator(test_item):
+
+        @functools.wraps(test_item)
+        def forkserver_check_wrapper(*args, **kwargs):
+            if not support.has_fork_support:
+                raise unittest.SkipTest("requires working os.fork()")
+            if (start_method := multiprocessing.get_start_method()) != "forkserver":
+                raise unittest.SkipTest(
+                    f"{start_method=}, not 'forkserver'; {reason}")
+            return test_item(*args, **kwargs)
+
+        return forkserver_check_wrapper
+
+    return decorator
+
+
 class TestInternalDecorators(unittest.TestCase):
     """Logic within a test suite that could errantly skip tests? Test it!"""
 
-    @unittest.skipIf(sys.platform == "win32", "test requires that fork exists.")
+    @support.requires_fork()
     def test_only_run_in_spawn_testsuite(self):
         if multiprocessing.get_start_method() != "spawn":
             raise unittest.SkipTest("only run in test_multiprocessing_spawn.")
@@ -234,6 +262,30 @@ class TestInternalDecorators(unittest.TestCase):
             multiprocessing.set_start_method("fork", force=True)
             with self.assertRaises(unittest.SkipTest) as ctx:
                 return_four_if_spawn()
+            self.assertIn("testing this decorator", str(ctx.exception))
+            self.assertIn("start_method=", str(ctx.exception))
+        finally:
+            multiprocessing.set_start_method(orig_start_method, force=True)
+
+    @support.requires_fork()
+    def test_only_run_in_forkserver_testsuite(self):
+        if multiprocessing.get_start_method() != "forkserver":
+            raise unittest.SkipTest("only run in test_multiprocessing_forkserver.")
+
+        try:
+            @only_run_in_forkserver_testsuite("testing this decorator")
+            def return_four_if_forkserver():
+                return 4
+        except Exception as err:
+            self.fail(f"expected decorated `def` not to raise; caught {err}")
+
+        orig_start_method = multiprocessing.get_start_method(allow_none=True)
+        try:
+            multiprocessing.set_start_method("forkserver", force=True)
+            self.assertEqual(return_four_if_forkserver(), 4)
+            multiprocessing.set_start_method("spawn", force=True)
+            with self.assertRaises(unittest.SkipTest) as ctx:
+                return_four_if_forkserver()
             self.assertIn("testing this decorator", str(ctx.exception))
             self.assertIn("start_method=", str(ctx.exception))
         finally:
@@ -3895,6 +3947,19 @@ class _TestConnection(BaseTestCase):
             self.assertRaises(OSError, a.recv)
             self.assertRaises(OSError, b.recv)
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
+    def test_wait_empty(self):
+        if self.TYPE != 'processes':
+            self.skipTest('test not appropriate for {}'.format(self.TYPE))
+        # gh-145587: wait() with empty list should respect timeout
+        timeout = 0.5
+        start = time.monotonic()
+        res = self.connection.wait([], timeout=timeout)
+        duration = time.monotonic() - start
+
+        self.assertEqual(res, [])
+        self.assertGreaterEqual(duration, timeout - 0.1)
+
 class _TestListener(BaseTestCase):
 
     ALLOWED_TYPES = ('processes',)
@@ -5997,6 +6062,20 @@ class TestStartMethod(unittest.TestCase):
             process.join()
             self.assertIsNone(multiprocessing.get_start_method(allow_none=True))
 
+    @only_run_in_spawn_testsuite("freeze_support is not start method specific")
+    def test_freeze_support_dont_set_context(self):
+        # gh-140814: freeze_support() should not set the start method
+        # as a side effect, so a later set_start_method() still works.
+        multiprocessing.set_start_method(None, force=True)
+        try:
+            multiprocessing.freeze_support()
+            self.assertIsNone(
+                multiprocessing.get_start_method(allow_none=True))
+            # Should not raise "context has already been set"
+            multiprocessing.set_start_method('spawn')
+        finally:
+            multiprocessing.set_start_method(None, force=True)
+
     def test_context_check_module_types(self):
         try:
             ctx = multiprocessing.get_context('forkserver')
@@ -7111,25 +7190,20 @@ class MiscTestCase(unittest.TestCase):
             '',
         ])
 
-    def test_preload_main_sys_argv_limits(self):
-        # gh-144503: Check that sys.argv is set before __main__ is pre-loaded
-        if multiprocessing.get_start_method() != "forkserver":
-            self.skipTest("forkserver specific test")
-
-        max_str_arglen = 32 * resource.getpagesize()
-        argv = ["a" * (max_str_arglen - 1), "b"]
-        name = os.path.join(os.path.dirname(__file__), 'mp_preload_sysargv.py')
-        _, out, err = test.support.script_helper.assert_python_ok(
-            name, *argv)
+    @only_run_in_forkserver_testsuite("forkserver specific test.")
+    def test_preload_main_large_sys_argv(self):
+        # gh-144503: a very large parent sys.argv must not prevent the
+        # forkserver from starting (it previously overflowed the OS
+        # per-argument length limit when repr'd into the -c command string).
+        name = os.path.join(os.path.dirname(__file__),
+                            'mp_preload_large_sysargv.py')
+        _, out, err = test.support.script_helper.assert_python_ok(name)
         self.assertEqual(err, b'')
 
         out = out.decode().split("\n")
-        expected_argv = str(argv)
         self.assertEqual(out, [
-            f"module:{expected_argv}",
-            f"fun:{expected_argv}",
-            f"module:{expected_argv}",
-            f"fun:{expected_argv}",
+            'preload:5002:sentinel',
+            'worker:5002:sentinel',
             '',
         ])
 

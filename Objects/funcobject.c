@@ -7,11 +7,11 @@
 #include "pycore_long.h"          // _PyLong_GetOne()
 #include "pycore_modsupport.h"    // _PyArg_NoKeywords()
 #include "pycore_object.h"        // _PyObject_GC_UNTRACK()
+#include "pycore_object_deferred.h" // _PyObject_SetDeferredRefcount()
 #include "pycore_pyerrors.h"      // _PyErr_Occurred()
 #include "pycore_setobject.h"     // _PySet_NextEntry()
 #include "pycore_stats.h"
 #include "pycore_weakref.h"       // FT_CLEAR_WEAKREFS()
-#include "pycore_optimizer.h"     // _PyJit_Tracer_InvalidateDependency
 
 static const char *
 func_event_name(PyFunction_WatchEvent event) {
@@ -149,7 +149,7 @@ PyObject *
 PyFunction_NewWithQualName(PyObject *code, PyObject *globals, PyObject *qualname)
 {
     assert(globals != NULL);
-    assert(PyDict_Check(globals));
+    assert(PyAnyDict_Check(globals));
     _Py_INCREF_DICT(globals);
 
     PyCodeObject *code_obj = (PyCodeObject *)code;
@@ -369,32 +369,6 @@ _PyFunction_ClearCodeByVersion(uint32_t version)
             slot->func = NULL;
         }
     }
-#endif
-}
-
-PyFunctionObject *
-_PyFunction_LookupByVersion(uint32_t version, PyObject **p_code)
-{
-#ifdef Py_GIL_DISABLED
-    return NULL;
-#else
-    PyInterpreterState *interp = _PyInterpreterState_GET();
-    struct _func_version_cache_item *slot = get_cache_item(interp, version);
-    if (slot->code) {
-        assert(PyCode_Check(slot->code));
-        PyCodeObject *code = (PyCodeObject *)slot->code;
-        if (code->co_version == version) {
-            *p_code = slot->code;
-        }
-    }
-    else {
-        *p_code = NULL;
-    }
-    if (slot->func && slot->func->func_version == version) {
-        assert(slot->func->func_code == slot->code);
-        return slot->func;
-    }
-    return NULL;
 #endif
 }
 
@@ -683,7 +657,7 @@ func_set_code(PyObject *self, PyObject *value, void *Py_UNUSED(ignored))
     if (nclosure != nfree) {
         PyErr_Format(PyExc_ValueError,
                      "%U() requires a code object with %zd free vars,"
-                     " not %zd",
+                     " not %d",
                      op->func_name,
                      nclosure, nfree);
         return -1;
@@ -1070,7 +1044,7 @@ func_new_impl(PyTypeObject *type, PyCodeObject *code, PyObject *globals,
     nclosure = closure == Py_None ? 0 : PyTuple_GET_SIZE(closure);
     if (code->co_nfreevars != nclosure)
         return PyErr_Format(PyExc_ValueError,
-                            "%U requires closure of length %zd, not %zd",
+                            "%U requires closure of length %d, not %zd",
                             code->co_name, code->co_nfreevars, nclosure);
     if (nclosure) {
         Py_ssize_t i;
@@ -1151,10 +1125,6 @@ func_dealloc(PyObject *self)
     if (_PyObject_ResurrectEnd(self)) {
         return;
     }
-#if _Py_TIER2
-    _Py_Executors_InvalidateDependency(_PyInterpreterState_GET(), self, 1);
-    _PyJit_Tracer_InvalidateDependency(_PyThreadState_GET(), self);
-#endif
     _PyObject_GC_UNTRACK(op);
     FT_CLEAR_WEAKREFS(self, op->func_weakreflist);
     (void)func_clear((PyObject*)op);
@@ -1499,6 +1469,7 @@ cm_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     if (cm == NULL) {
         return NULL;
     }
+    _PyObject_SetDeferredRefcount((PyObject *)cm);
     if (cm_set_callable(cm, callable) < 0) {
         Py_DECREF(cm);
         return NULL;
@@ -1760,6 +1731,7 @@ sm_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     if (sm == NULL) {
         return NULL;
     }
+    _PyObject_SetDeferredRefcount((PyObject *)sm);
     if (sm_set_callable(sm, callable) < 0) {
         Py_DECREF(sm);
         return NULL;
@@ -1926,9 +1898,24 @@ PyStaticMethod_New(PyObject *callable)
     if (sm == NULL) {
         return NULL;
     }
+    _PyObject_SetDeferredRefcount((PyObject *)sm);
     if (sm_set_callable(sm, callable) < 0) {
         Py_DECREF(sm);
         return NULL;
     }
     return (PyObject *)sm;
+}
+
+PyObject *
+_PyClassMethod_GetFunc(PyObject *self)
+{
+    classmethod *cm = _PyClassMethod_CAST(self);
+    return cm->cm_callable;
+}
+
+PyObject *
+_PyStaticMethod_GetFunc(PyObject *self)
+{
+    staticmethod *sm = _PyStaticMethod_CAST(self);
+    return sm->sm_callable;
 }

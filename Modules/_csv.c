@@ -315,8 +315,12 @@ _set_char(const char *name, Py_UCS4 *target, PyObject *src, Py_UCS4 dflt)
 static int
 _set_str(const char *name, PyObject **target, PyObject *src, const char *dflt)
 {
-    if (src == NULL)
+    if (src == NULL) {
         *target = PyUnicode_DecodeASCII(dflt, strlen(dflt), NULL);
+        if (*target == NULL) {
+            return -1;
+        }
+    }
     else {
         if (!PyUnicode_Check(src)) {
             PyErr_Format(PyExc_TypeError,
@@ -497,13 +501,13 @@ dialect_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     Py_XINCREF(skipinitialspace);
     Py_XINCREF(strict);
     if (dialect != NULL) {
-#define DIALECT_GETATTR(v, n)                            \
-        do {                                             \
-            if (v == NULL) {                             \
-                v = PyObject_GetAttrString(dialect, n);  \
-                if (v == NULL)                           \
-                    PyErr_Clear();                       \
-            }                                            \
+#define DIALECT_GETATTR(v, n)                                               \
+        do {                                                                \
+            if (v == NULL) {                                                \
+                if (PyObject_GetOptionalAttrString(dialect, n, &v) < 0) {   \
+                    goto err;                                               \
+                }                                                           \
+            }                                                               \
         } while (0)
         DIALECT_GETATTR(delimiter, "delimiter");
         DIALECT_GETATTR(doublequote, "doublequote");
@@ -1829,6 +1833,7 @@ csv_exec(PyObject *module) {
 }
 
 static PyModuleDef_Slot csv_slots[] = {
+    _Py_ABI_SLOT,
     {Py_mod_exec, csv_exec},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {Py_mod_gil, Py_MOD_GIL_NOT_USED},
