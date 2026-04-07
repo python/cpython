@@ -85,6 +85,8 @@ repos:
         exclude: Lib/test/tokenizedata/coding20731.py
       - id: end-of-file-fixer
         files: '^\.github/CODEOWNERS$'
+      - id: file-contents-sorter
+        files: '^\.github/workflows/Brewfile$'
       - id: trailing-whitespace
         types_or: [c, inc, python, rst, yaml]
       - id: trailing-whitespace
