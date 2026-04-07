@@ -7702,6 +7702,7 @@
             PyObject *hash = (PyObject *)CURRENT_OPERAND0_64();
             PyObject *sub = PyStackRef_AsPyObjectBorrow(sub_st);
             PyObject *dict = PyStackRef_AsPyObjectBorrow(dict_st);
+            assert(Py_TYPE(dict)->tp_as_mapping->mp_subscript == _PyDict_Subscript);
             STAT_INC(BINARY_OP, hit);
             stack_pointer[0] = dict_st;
             stack_pointer[1] = sub_st;
@@ -8143,7 +8144,7 @@
             value = _stack_item_0;
             PyObject *hash = (PyObject *)CURRENT_OPERAND0_64();
             PyObject *dict = PyStackRef_AsPyObjectBorrow(dict_st);
-            assert(PyDict_CheckExact(dict));
+            assert(Py_TYPE(dict)->tp_as_mapping->mp_ass_subscript == _PyDict_StoreSubscript);
             STAT_INC(STORE_SUBSCR, hit);
             stack_pointer[0] = value;
             stack_pointer[1] = dict_st;
