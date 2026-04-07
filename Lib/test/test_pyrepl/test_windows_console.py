@@ -115,9 +115,7 @@ class WindowsConsoleTests(TestCase):
         events = code_to_events(code)
         reader, console = self.handle_events_narrow(events)
 
-        console.height = 20
-        console.width = 80
-        console.getheightwidth = MagicMock(lambda _: (20, 80))
+        console.getheightwidth = MagicMock(side_effect=lambda: (20, 80))
 
         def same_reader(_):
             return reader
@@ -143,9 +141,7 @@ class WindowsConsoleTests(TestCase):
         events = code_to_events(code)
         reader, console = self.handle_events(events)
 
-        console.height = 20
-        console.width = 4
-        console.getheightwidth = MagicMock(lambda _: (20, 4))
+        console.getheightwidth = MagicMock(side_effect=lambda: (20, 4))
 
         def same_reader(_):
             return reader
@@ -278,8 +274,7 @@ class WindowsConsoleTests(TestCase):
         events = itertools.chain(code_to_events(code))
         reader, console = self.handle_events_short(events)
 
-        console.height = 2
-        console.getheightwidth = MagicMock(lambda _: (2, 80))
+        console.getheightwidth = MagicMock(side_effect=lambda: (2, 80))
 
         def same_reader(_):
             return reader
@@ -316,8 +311,7 @@ class WindowsConsoleTests(TestCase):
         events = itertools.chain(code_to_events(code))
         reader, console = self.handle_events_height_3(events)
 
-        console.height = 1
-        console.getheightwidth = MagicMock(lambda _: (1, 80))
+        console.getheightwidth = MagicMock(side_effect=lambda: (1, 80))
 
         def same_reader(_):
             return reader
