@@ -77,6 +77,14 @@
 #  define Py_BUILD_CORE
 #endif
 
+#if defined(Py_TARGET_ABI3T)
+#  if !defined(Py_GIL_DISABLED)
+// Define Py_GIL_DISABLED for users' needs. This macro is used to enable
+// locking needed in for free-threaded interpreters builds.
+#    define Py_GIL_DISABLED
+#  endif
+#endif
+
 
 /**************************************************************************
 Symbols and macros to supply platform-independent interfaces to basic
@@ -596,11 +604,6 @@ extern "C" {
 #    if !defined(_Py_THREAD_SANITIZER)
 #      define _Py_THREAD_SANITIZER
 #      define _Py_NO_SANITIZE_THREAD __attribute__((no_sanitize_thread))
-#    endif
-#  endif
-#  if __has_feature(undefined_behavior_sanitizer)
-#    if !defined(_Py_UNDEFINED_BEHAVIOR_SANITIZER)
-#      define _Py_UNDEFINED_BEHAVIOR_SANITIZER
 #    endif
 #  endif
 #elif defined(__GNUC__)

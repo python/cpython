@@ -310,7 +310,7 @@ pairwise_new_impl(PyTypeObject *type, PyObject *iterable)
     }
     po->it = it;
     po->old = NULL;
-    po->result = PyTuple_Pack(2, Py_None, Py_None);
+    po->result = _PyTuple_FromPairSteal(Py_None, Py_None);
     if (po->result == NULL) {
         Py_DECREF(po);
         return NULL;
@@ -389,11 +389,7 @@ pairwise_next(PyObject *op)
         _PyTuple_Recycle(result);
     }
     else {
-        result = PyTuple_New(2);
-        if (result != NULL) {
-            PyTuple_SET_ITEM(result, 0, Py_NewRef(old));
-            PyTuple_SET_ITEM(result, 1, Py_NewRef(new));
-        }
+        result = _PyTuple_FromPair(old, new);
     }
 
     Py_XSETREF(po->old, new);
@@ -533,7 +529,7 @@ groupby_step(groupbyobject *gbo)
 static PyObject *
 groupby_next(PyObject *op)
 {
-    PyObject *r, *grouper;
+    PyObject *grouper;
     groupbyobject *gbo = groupbyobject_CAST(op);
 
     gbo->currgrouper = NULL;
@@ -573,9 +569,7 @@ groupby_next(PyObject *op)
     if (grouper == NULL)
         return NULL;
 
-    r = PyTuple_Pack(2, gbo->currkey, grouper);
-    Py_DECREF(grouper);
-    return r;
+    return _PyTuple_FromPairSteal(Py_NewRef(gbo->currkey), grouper);
 }
 
 static PyType_Slot groupby_slots[] = {
