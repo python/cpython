@@ -443,7 +443,7 @@ _PyDict_DebugMallocStats(FILE *out)
 {
     _PyDebugAllocatorStats(out, "free PyDictObject",
                            _Py_FREELIST_SIZE(dicts),
-                           sizeof(PyDictObject));
+                           _PyType_PreHeaderSize(&PyDict_Type) + sizeof(PyDictObject));
     _PyDebugAllocatorStats(out, "free PyDictKeysObject",
                            _Py_FREELIST_SIZE(dictkeys),
                            sizeof(PyDictKeysObject));
