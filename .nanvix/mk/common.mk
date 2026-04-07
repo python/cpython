@@ -7,9 +7,9 @@
 NANVIX_DOCKER_IMAGE ?= nanvix/toolchain:latest-minimal
 
 # Platform and deployment configuration (passed by nanvix-zutil / z.py)
-PLATFORM ?= hyperlight
-PROCESS_MODE ?= multi-process
-MEMORY_SIZE ?= 128mb
+PLATFORM ?= microvm
+PROCESS_MODE ?= standalone
+MEMORY_SIZE ?= 256mb
 
 # Set to 'yes' for release packaging: disables C test extension modules and
 # skips regrtest.  Dev builds (the default) compile test extensions and run
