@@ -190,12 +190,15 @@ _PyInterpolation_Build(PyObject *value, PyObject *str, int conversion, PyObject 
 {
     interpolationobject *interpolation = PyObject_GC_New(interpolationobject, &_PyInterpolation_Type);
     if (!interpolation) {
+        Py_DECREF(value);
+        Py_DECREF(str);
+        Py_DECREF(format_spec);
         return NULL;
     }
 
-    interpolation->value = Py_NewRef(value);
-    interpolation->expression = Py_NewRef(str);
-    interpolation->format_spec = Py_NewRef(format_spec);
+    interpolation->value = value;
+    interpolation->expression = str;
+    interpolation->format_spec = format_spec;
     interpolation->conversion = NULL;
 
     if (conversion == 0) {
