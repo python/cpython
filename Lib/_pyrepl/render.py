@@ -179,7 +179,7 @@ class RenderedScreen:
         lines:                     composed_lines:
         ┌──────────────────┐       ┌──────────────────┐
         │>>> os.path.j     │       │>>> os.path.j     │
-        │...               │  ──►  │             join  │ ← overlay
+        │...               │  ──►  │            join  │ ← overlay
         └──────────────────┘       │...               │
                                    └──────────────────┘
     """
