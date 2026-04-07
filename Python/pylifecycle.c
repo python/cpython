@@ -1260,7 +1260,7 @@ presite_resolve_name(PyObject *obj, PyObject *attr)
     return res;
 
 error:
-    Py_XDECREF(obj);
+    Py_DECREF(obj);
     Py_DECREF(attr);
     return NULL;
 }
