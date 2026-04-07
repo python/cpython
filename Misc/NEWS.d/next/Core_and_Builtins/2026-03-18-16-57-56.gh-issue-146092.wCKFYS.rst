@@ -1,2 +1,0 @@
-Handle properly memory allocation failures on str and float opcodes. Patch by
-Victor Stinner.
