@@ -69,9 +69,6 @@ POST request.
    after at most every *wrapcol* characters.
    If *wrapcol* is zero (default), do not insert any newlines.
 
-   May assert or raise a :exc:`ValueError` if the length of *altchars* is not 2.  Raises a
-   :exc:`TypeError` if *altchars* is not a :term:`bytes-like object`.
-
    .. versionchanged:: 3.15
       Added the *padded* and *wrapcol* parameters.
 
@@ -88,8 +85,11 @@ POST request.
 
    If *padded* is true, the last group of 4 base 64 alphabet characters must
    be padded with the '=' character.
-   If *padded* is false, the '=' character is treated as other non-alphabet
-   characters (depending on the value of *validate* and *ignorechars*).
+   If *padded* is false, padding is neither required nor recognized:
+   the '=' character is not treated as padding but as a non-alphabet
+   character, which means it is silently discarded when *validate* is false,
+   or causes an :exc:`~binascii.Error` when *validate* is true unless
+   b'=' is included in *ignorechars*.
 
    A :exc:`binascii.Error` exception is raised
    if *s* is incorrectly padded.
@@ -197,8 +197,10 @@ POST request.
 
    If *padded* is true, the last group of 8 base 32 alphabet characters must
    be padded with the '=' character.
-   If *padded* is false, the '=' character is treated as other non-alphabet
-   characters (depending on the value of *ignorechars*).
+   If *padded* is false, padding is neither required nor recognized:
+   the '=' character is not treated as padding but as a non-alphabet
+   character, which means it raises an :exc:`~binascii.Error` unless
+   b'=' is included in *ignorechars*.
 
    *ignorechars* should be a :term:`bytes-like object` containing characters
    to ignore from the input.

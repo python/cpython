@@ -37,7 +37,7 @@ import sys
 from rlcompleter import Completer as RLCompleter
 
 from . import commands, historical_reader
-from .completing_reader import CompletingReader
+from .completing_reader import CompletingReader, stripcolor
 from .console import Console as ConsoleType
 from ._module_completer import ModuleCompleter, make_default_module_completer
 from .fancycompleter import Completer as FancyCompleter
@@ -56,7 +56,7 @@ ENCODING = sys.getdefaultencoding() or "latin1"
 # types
 Command = commands.Command
 from collections.abc import Callable, Collection
-from .types import Callback, Completer, KeySpec, CommandName
+from .types import Callback, Completer, KeySpec, CommandName, CompletionAction
 
 TYPE_CHECKING = False
 
@@ -135,7 +135,7 @@ class ReadlineAlikeReader(historical_reader.HistoricalReader, CompletingReader):
             p -= 1
         return "".join(b[p + 1 : self.pos])
 
-    def get_completions(self, stem: str) -> list[str]:
+    def get_completions(self, stem: str) -> tuple[list[str], CompletionAction | None]:
         module_completions = self.get_module_completions()
         if module_completions is not None:
             return module_completions
@@ -145,7 +145,7 @@ class ReadlineAlikeReader(historical_reader.HistoricalReader, CompletingReader):
             while p > 0 and b[p - 1] != "\n":
                 p -= 1
             num_spaces = 4 - ((self.pos - p) % 4)
-            return [" " * num_spaces]
+            return [" " * num_spaces], None
         result = []
         function = self.config.readline_completer
         if function is not None:
@@ -163,12 +163,12 @@ class ReadlineAlikeReader(historical_reader.HistoricalReader, CompletingReader):
                     break
                 result.append(next)
                 state += 1
-            # emulate the behavior of the standard readline that sorts
-            # the completions before displaying them.
-            result.sort()
-        return result
+            # Emulate readline's sorting using the visible text rather than
+            # the raw ANSI escape sequences used for colorized matches.
+            result.sort(key=stripcolor)
+        return result, None
 
-    def get_module_completions(self) -> list[str] | None:
+    def get_module_completions(self) -> tuple[list[str], CompletionAction | None] | None:
         line = self.get_line()
         return self.config.module_completer.get_completions(line)
 
