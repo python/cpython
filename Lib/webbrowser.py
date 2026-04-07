@@ -619,7 +619,7 @@ if sys.platform == 'darwin':
                    end
                    '''
 
-            osapipe = os.popen("osascript", "w")
+            osapipe = os.popen("/usr/bin/osascript", "w")
             if osapipe is None:
                 return False
 
