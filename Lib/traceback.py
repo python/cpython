@@ -975,8 +975,13 @@ def _extract_caret_anchors_from_line_segment(segment):
 
 
 def _zip_display_width(line, carets):
-    import unicodedata
     carets = iter(carets)
+    if line.isascii() and '\x1a' not in line:
+        for char in line:
+            yield char, next(carets, "")
+        return
+
+    import unicodedata
     for char in unicodedata.iter_graphemes(line):
         char = str(char)
         char_width = _display_width(char)
