@@ -601,10 +601,8 @@ add_to_trace(
 static int
 is_terminator(const _PyUOpInstruction *uop)
 {
-    int opcode = _PyUop_Uncached[uop->opcode];
-    if (opcode == 0) {
-        opcode = uop->opcode;
-    }
+    int opcode = uop->opcode;
+    assert(opcode <= MAX_UOP_ID);
     return (
         opcode == _EXIT_TRACE ||
         opcode == _DEOPT ||
@@ -1348,7 +1346,10 @@ sanity_check(_PyExecutorObject *executor)
             CHECK(inst->format == UOP_FORMAT_JUMP);
             CHECK(inst->error_target < executor->code_size);
         }
-        if (is_terminator(inst)) {
+        if (base_opcode == _EXIT_TRACE ||
+            base_opcode == _DEOPT ||
+            base_opcode == _JUMP_TO_TOP ||
+            base_opcode == _DYNAMIC_EXIT) {
             ended = true;
             i++;
             break;
