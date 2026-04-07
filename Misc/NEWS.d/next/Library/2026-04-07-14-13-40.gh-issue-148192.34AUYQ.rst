@@ -1,2 +1,2 @@
-:func:`email.generator.Generator._make_boundary` now correctly finds the
+``email.generator.Generator._make_boundary`` now correctly finds the
 boundary when using CRLF linesep.
