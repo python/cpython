@@ -212,13 +212,15 @@ class TestCursorPosition(TestCase):
         events = itertools.chain(
             code_to_events(code),
             [
+                # Go left first to avoid end of buffer error.
+                Event(evt="key", data="left", raw=bytearray(b"\x1bOD")),
                 Event(evt="key", data="down", raw=bytearray(b"\x1bOB")),
             ],
         )
 
         reader, console = handle_all_events(events)
         self.assertEqual(reader.cxy, (0, 2))
-        console.move_cursor.assert_called_once_with(0, 2)
+        console.move_cursor.assert_called_with(0, 2)
 
     def test_left_arrow_simple(self):
         events = itertools.chain(
