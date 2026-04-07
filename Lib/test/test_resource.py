@@ -71,7 +71,6 @@ class ResourceTest(unittest.TestCase):
     @unittest.skipIf(sys.platform == "vxworks",
                      "setting RLIMIT_FSIZE is not supported on VxWorks")
     @unittest.skipUnless(hasattr(resource, 'RLIMIT_FSIZE'), 'requires resource.RLIMIT_FSIZE')
-
     def test_fsize_too_big(self):
         # Be sure that setrlimit is checking for really large values
         too_big = 10**50
