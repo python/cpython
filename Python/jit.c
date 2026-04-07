@@ -653,6 +653,86 @@ combine_symbol_mask(const symbol_mask src, symbol_mask dest)
     }
 }
 
+// Manual code emission for _LOAD_FAST_BORROW.
+// Instead of using stencils, we directly encode the load + borrow-tag sequence.
+// This covers ALL oparg values with no data section.
+// See https://godbolt.org/z/P66e5dP3z for reference.
+
+// Decode a _LOAD_FAST_BORROW* opcode into register variant and oparg.
+// Returns 1 if the opcode is a _LOAD_FAST_BORROW variant, 0 otherwise.
+static int
+_decode_load_fast_borrow(uint16_t opcode, uint16_t insn_oparg,
+                         int *reg_variant, int *oparg)
+{
+    if (opcode >= _LOAD_FAST_BORROW_r01 && opcode <= _LOAD_FAST_BORROW_r23) {
+        *reg_variant = opcode - _LOAD_FAST_BORROW_r01;
+        *oparg = insn_oparg;
+        return 1;
+    }
+    return 0;
+}
+
+#if defined(__aarch64__) || defined(_M_ARM64)
+
+// AArch64: ldr x8, [x21, #off] ; orr xDST, x8, #1  (8 bytes, no data)
+// preserve_none CC: x21=frame, x24/x25/x26=cache0/1/2
+#define LOAD_FAST_BORROW_CODE_SIZE 8
+
+static const uint32_t _aarch64_cache_regs[3] = {24, 25, 26};
+
+static void
+_emit_load_fast_borrow(unsigned char *code, int reg_variant, int oparg)
+{
+    uint32_t byte_offset = (uint32_t)(offsetof(_PyInterpreterFrame, localsplus)
+                                      + (unsigned)oparg * sizeof(_PyStackRef));
+    assert(byte_offset % 8 == 0);
+    uint32_t imm12 = byte_offset >> 3;
+    assert(imm12 < 4096);
+
+    // ldr x8, [x21, #byte_offset]
+    uint32_t ldr = 0xF9400000 | (imm12 << 10) | (21 << 5) | 8;
+    // orr xDST, x8, #0x1
+    uint32_t orr = 0xB2400000 | (8 << 5) | _aarch64_cache_regs[reg_variant];
+
+    memcpy(code, &ldr, 4);
+    memcpy(code + 4, &orr, 4);
+}
+
+#elif defined(__x86_64__) || defined(_M_X64)
+
+// x86_64: mov rDST, [r13 + disp32] ; or rDST, 1  (11 bytes, no data)
+// preserve_none CC (Clang 19+): r13=frame, rdi/rsi/rdx=cache0/1/2
+#define LOAD_FAST_BORROW_CODE_SIZE 11
+
+// 3-bit register encodings for ModRM
+static const uint8_t _x86_64_cache_regs[3] = {
+    7,  // RDI (cache0, r01)
+    6,  // RSI (cache1, r12)
+    2,  // RDX (cache2, r23)
+};
+
+static void
+_emit_load_fast_borrow(unsigned char *code, int reg_variant, int oparg)
+{
+    uint32_t byte_offset = (uint32_t)(offsetof(_PyInterpreterFrame, localsplus)
+                                      + (unsigned)oparg * sizeof(_PyStackRef));
+    uint8_t dst = _x86_64_cache_regs[reg_variant];
+
+    // mov rDST, [r13 + disp32]
+    code[0] = 0x49;                    // REX.W=1, REX.B=1 (r13)
+    code[1] = 0x8B;                    // MOV r64, r/m64
+    code[2] = 0x85 | (dst << 3);      // ModRM: mod=10, reg=dst, r/m=101(r13)
+    memcpy(code + 3, &byte_offset, 4); // disp32
+
+    // or rDST, 1
+    code[7] = 0x48;                    // REX.W=1
+    code[8] = 0x83;                    // OR r/m64, imm8
+    code[9] = 0xC8 | dst;             // ModRM: mod=11, reg=001(/1), r/m=dst
+    code[10] = 0x01;                   // imm8 = 1
+}
+
+#endif
+
 // Compiles executor in-place. Don't forget to call _PyJIT_Free later!
 int
 _PyJIT_Compile(_PyExecutorObject *executor, const _PyUOpInstruction trace[], size_t length)
@@ -664,8 +744,14 @@ _PyJIT_Compile(_PyExecutorObject *executor, const _PyUOpInstruction trace[], siz
     jit_state state = {0};
     for (size_t i = 0; i < length; i++) {
         const _PyUOpInstruction *instruction = &trace[i];
-        group = &stencil_groups[instruction->opcode];
         state.instruction_starts[i] = code_size;
+        int _lfb_reg, _lfb_oparg;
+        if (_decode_load_fast_borrow(instruction->opcode, instruction->oparg,
+                                     &_lfb_reg, &_lfb_oparg)) {
+            code_size += LOAD_FAST_BORROW_CODE_SIZE;
+            continue;
+        }
+        group = &stencil_groups[instruction->opcode];
         code_size += group->code_size;
         data_size += group->data_size;
         combine_symbol_mask(group->trampoline_mask, state.trampolines.mask);
@@ -713,6 +799,13 @@ _PyJIT_Compile(_PyExecutorObject *executor, const _PyUOpInstruction trace[], siz
     state.got_symbols.mem = data + data_size;
     for (size_t i = 0; i < length; i++) {
         const _PyUOpInstruction *instruction = &trace[i];
+        int _lfb_reg, _lfb_oparg;
+        if (_decode_load_fast_borrow(instruction->opcode, instruction->oparg,
+                                     &_lfb_reg, &_lfb_oparg)) {
+            _emit_load_fast_borrow(code, _lfb_reg, _lfb_oparg);
+            code += LOAD_FAST_BORROW_CODE_SIZE;
+            continue;
+        }
         group = &stencil_groups[instruction->opcode];
         group->emit(code, data, executor, instruction, &state);
         code += group->code_size;

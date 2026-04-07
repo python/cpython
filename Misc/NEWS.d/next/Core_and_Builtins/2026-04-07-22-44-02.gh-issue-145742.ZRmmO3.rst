@@ -1,0 +1,2 @@
+Manually emit _LOAD_FAST_BORROW and remove replicate(8). Patch by Donghee
+Na.
