@@ -1023,11 +1023,7 @@ def _display_width(line, offset=None):
     width output device. Supports wide unicode characters and emojis."""
 
     if offset is None:
-        offset = len(line)
-
-    # Fast track for ASCII-only strings
-    if line.isascii():
-        return offset
+        return _wlen(line)
 
     return _wlen(line[:offset])
 
