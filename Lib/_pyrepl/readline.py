@@ -37,7 +37,7 @@ import sys
 from rlcompleter import Completer as RLCompleter
 
 from . import commands, historical_reader
-from .completing_reader import CompletingReader
+from .completing_reader import CompletingReader, stripcolor
 from .console import Console as ConsoleType
 from ._module_completer import ModuleCompleter, make_default_module_completer
 from .fancycompleter import Completer as FancyCompleter
@@ -163,9 +163,9 @@ class ReadlineAlikeReader(historical_reader.HistoricalReader, CompletingReader):
                     break
                 result.append(next)
                 state += 1
-            # emulate the behavior of the standard readline that sorts
-            # the completions before displaying them.
-            result.sort()
+            # Emulate readline's sorting using the visible text rather than
+            # the raw ANSI escape sequences used for colorized matches.
+            result.sort(key=stripcolor)
         return result, None
 
     def get_module_completions(self) -> tuple[list[str], CompletionAction | None] | None:

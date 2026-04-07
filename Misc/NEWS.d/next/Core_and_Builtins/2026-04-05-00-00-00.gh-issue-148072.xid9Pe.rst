@@ -1,0 +1,4 @@
+Cache ``pickle.dumps`` and ``pickle.loads`` per interpreter in the XIData
+framework, avoiding repeated module lookups on every cross-interpreter data
+transfer.  This speeds up :class:`~concurrent.futures.InterpreterPoolExecutor`
+for mutable types (``list``, ``dict``) by 1.7x--3.3x.
