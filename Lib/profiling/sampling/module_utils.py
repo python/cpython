@@ -112,8 +112,8 @@ def _path_to_module(path):
     if path.suffix == '.py':
         path = path.with_suffix('')
 
-    # Convert path separators to dots
-    parts = path.parts
+    # Convert path separators to dots, stripping root/drive (e.g. "/" or "C:\")
+    parts = [p for p in path.parts if p != path.root and p != path.drive]
 
     # Handle __init__ files - they represent the package itself
     if parts and parts[-1] == '__init__':
