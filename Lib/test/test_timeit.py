@@ -429,9 +429,13 @@ class TestTimeitColor(unittest.TestCase):
         s = self.run_main(switches=["-v"])
         self.assertEqual(
             s,
-            f"1 loop {t.arrow}-> {t.timing}1 secs{t.reset}\n\n"
+            f"1 loop {t.punctuation}-> {t.timing}1 secs{t.reset}\n\n"
             "raw times: "
-            f"{t.timing}1 sec, 1 sec, 1 sec, 1 sec, 1 sec{t.reset}\n\n"
+            f"{t.timing}1 sec{t.punctuation}, "
+            f"{t.timing}1 sec{t.punctuation}, "
+            f"{t.timing}1 sec{t.punctuation}, "
+            f"{t.timing}1 sec{t.punctuation}, "
+            f"{t.timing}1 sec{t.reset}\n\n"
             f"1 loop, best of 5: {t.best}1 sec{t.reset} "
             f"{t.per_loop}per loop{t.reset}\n",
         )

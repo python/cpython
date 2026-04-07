@@ -328,7 +328,7 @@ class Timeit(ThemeSection):
     timing: str = ANSIColors.CYAN
     best: str = ANSIColors.BOLD_GREEN
     per_loop: str = ANSIColors.GREEN
-    arrow: str = ANSIColors.GREY
+    punctuation: str = ANSIColors.GREY
     warning: str = ANSIColors.YELLOW
     warning_worst: str = ANSIColors.MAGENTA
     warning_best: str = ANSIColors.GREEN

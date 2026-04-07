@@ -342,7 +342,7 @@ def main(args=None, *, _wrap_timer=None):
                 s = "" if number == 1 else "s"
                 print(
                     f"{number} loop{s} "
-                    f"{theme.arrow}-> "
+                    f"{theme.punctuation}-> "
                     f"{theme.timing}{time_taken:.{precision}g} secs{reset}"
                 )
 
@@ -376,8 +376,10 @@ def main(args=None, *, _wrap_timer=None):
         return "%.*g %s" % (precision, dt / scale, unit)
 
     if verbose:
-        raw = ", ".join(map(format_time, raw_timings))
-        print(f"raw times: {theme.timing}{raw}{reset}")
+        raw = f"{theme.punctuation}, ".join(
+            f"{theme.timing}{t}" for t in map(format_time, raw_timings)
+        )
+        print(f"raw times: {raw}{reset}")
         print()
     timings = [dt / number for dt in raw_timings]
 
