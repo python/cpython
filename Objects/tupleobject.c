@@ -1274,6 +1274,7 @@ _PyTuple_DebugMallocStats(FILE *out)
         PyOS_snprintf(buf, sizeof(buf),
                       "free %d-sized PyTupleObject", len);
         _PyDebugAllocatorStats(out, buf, _Py_FREELIST_SIZE(tuples[i]),
-                               _PyObject_VAR_SIZE(&PyTuple_Type, len));
+                                /* If you would like, you could remove the _PyType_PreHeaderSize(&PyTuple_Type) + to make it so that the freelist entries actual memory is calculated */
+                               _PyType_PreHeaderSize(&PyTuple_Type) + _PyObject_VAR_SIZE(&PyTuple_Type, len));
     }
 }
