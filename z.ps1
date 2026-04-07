@@ -15,7 +15,7 @@ $zutilVersion = if ($env:NANVIX_ZUTIL_VERSION) {
     $env:NANVIX_ZUTIL_VERSION
 }
 else {
-    "0.5.1"
+    "0.7.1"
 }
 
 # z.ps1 lives at the repository root, so use its directory directly
@@ -40,7 +40,9 @@ function Bootstrap {
 
     # Discover a Python 3 interpreter.
     $venvArgs = @("-m", "venv")
-    if (Test-Path $venvDir) { $venvArgs += "--clear" }
+    if (Test-Path $venvDir) {
+        $venvArgs += "--clear" 
+    }
     $venvArgs += $venvDir
 
     if (Get-Command py -ErrorAction SilentlyContinue) {
@@ -74,7 +76,12 @@ if ((-not (Test-Path $venvDir)) -and (-not $zutilGlobalVersion)) {
     $bin = $venvZutil
 }
 elseif (Test-Path $venvZutil) {
-    $venvVersion = try { & $venvZutil --version 2>$null } catch { $null }
+    $venvVersion = try {
+        & $venvZutil --version 2>$null 
+    }
+    catch {
+        $null 
+    }
     if ($venvVersion -ne "nanvix-zutil ${zutilVersion}") {
         Write-Warning "Venv nanvix-zutil version mismatch. Expected ${zutilVersion}, found ${venvVersion}. Re-bootstrapping..."
         Bootstrap
