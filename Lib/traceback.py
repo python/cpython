@@ -985,9 +985,11 @@ def _zip_display_width(line, carets):
 
 @functools.cache
 def _str_width(c: str) -> int:
-    import unicodedata
+    # copied from _pyrepl.utils to fix gh-130273
+
     if ord(c) < 128:
         return 1
+    import unicodedata
     # gh-139246 for zero-width joiner and combining characters
     if unicodedata.combining(c):
         return 0
@@ -1000,18 +1002,19 @@ def _str_width(c: str) -> int:
     return 2
 
 
-ANSI_ESCAPE_SEQUENCE = re.compile(r"\x1b\[[ -@]*[A-~]")
+_ANSI_ESCAPE_SEQUENCE = re.compile(r"\x1b\[[ -@]*[A-~]")
 
 
 def _wlen(s: str) -> int:
+    # copied from _pyrepl.utils to fix gh-130273
+
     if len(s) == 1 and s != "\x1a":
         return _str_width(s)
     length = sum(_str_width(i) for i in s)
     # remove lengths of any escape sequences
-    sequence = ANSI_ESCAPE_SEQUENCE.findall(s)
+    sequence = _ANSI_ESCAPE_SEQUENCE.findall(s)
     ctrl_z_cnt = s.count("\x1a")
     return length - sum(len(i) for i in sequence) + ctrl_z_cnt
-
 
 
 def _display_width(line, offset=None):
@@ -1027,6 +1030,7 @@ def _display_width(line, offset=None):
         return offset
 
     return _wlen(line[:offset])
+
 
 def _format_note(note, indent, theme):
     for l in note.split("\n"):

@@ -1,1 +1,1 @@
-Fix traceback color output with unicode characters
+Fix traceback color output with Unicode characters.
