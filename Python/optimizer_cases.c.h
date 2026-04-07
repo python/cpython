@@ -314,8 +314,9 @@
                 if (sym_is_const(ctx, res)) {
                     PyObject *result = sym_get_const(ctx, res);
                     if (_Py_IsImmortal(result)) {
-                        // Replace with _POP_TOP_LOAD_CONST_INLINE_BORROW since we have one input and an immortal result
-                        ADD_OP(_POP_TOP_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)result);
+                        // Replace with _POP_TOP + _LOAD_CONST_INLINE_BORROW since we have one input and an immortal result
+                        ADD_OP(_POP_TOP, 0, 0);
+                        ADD_OP(_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)result);
                     }
                 }
                 stack_pointer[-1] = res;
@@ -2077,7 +2078,7 @@
                         ctx->frame->globals_checked_version = version;
                     }
                     if (ctx->frame->globals_checked_version == version) {
-                        cnst = convert_global_to_const(this_instr, globals, false, false);
+                        cnst = convert_global_to_const(this_instr, globals, false);
                     }
                 }
             }
@@ -2120,7 +2121,7 @@
                     ctx->builtins_watched = true;
                 }
                 if (ctx->frame->globals_checked_version != 0 && ctx->frame->globals_watched) {
-                    cnst = convert_global_to_const(this_instr, builtins, false, false);
+                    cnst = convert_global_to_const(this_instr, builtins, false);
                 }
             }
             if (cnst == NULL) {
@@ -2430,7 +2431,7 @@
                     if (watched_mutations < _Py_MAX_ALLOWED_GLOBALS_MODIFICATIONS) {
                         PyDict_Watch(GLOBALS_WATCHER_ID, dict);
                         _Py_BloomFilter_Add(dependencies, dict);
-                        PyObject *res = convert_global_to_const(this_instr, dict, false, true);
+                        PyObject *res = convert_global_to_const(this_instr, dict, true);
                         if (res == NULL) {
                             attr = sym_new_not_null(ctx);
                         }
@@ -2511,8 +2512,7 @@
             PyTypeObject *type = (PyTypeObject *)sym_get_const(ctx, owner);
             PyObject *name = get_co_name(ctx, oparg >> 1);
             attr = lookup_attr(ctx, dependencies, this_instr, type, name,
-                           _POP_TOP_LOAD_CONST_INLINE_BORROW,
-                           _POP_TOP_LOAD_CONST_INLINE);
+                           true);
             stack_pointer[-1] = attr;
             break;
         }
@@ -3405,8 +3405,7 @@
             PyTypeObject *type = sym_get_type(owner);
             PyObject *name = get_co_name(ctx, oparg >> 1);
             attr = lookup_attr(ctx, dependencies, this_instr, type, name,
-                           _LOAD_CONST_UNDER_INLINE_BORROW,
-                           _LOAD_CONST_UNDER_INLINE);
+                           false);
             self = owner;
             CHECK_STACK_BOUNDS(1);
             stack_pointer[-1] = attr;
@@ -3426,8 +3425,7 @@
             PyTypeObject *type = sym_get_type(owner);
             PyObject *name = get_co_name(ctx, oparg >> 1);
             attr = lookup_attr(ctx, dependencies, this_instr, type, name,
-                           _LOAD_CONST_UNDER_INLINE_BORROW,
-                           _LOAD_CONST_UNDER_INLINE);
+                           false);
             self = owner;
             CHECK_STACK_BOUNDS(1);
             stack_pointer[-1] = attr;
@@ -3446,8 +3444,7 @@
             PyTypeObject *type = sym_get_type(owner);
             PyObject *name = get_co_name(ctx, oparg >> 1);
             attr = lookup_attr(ctx, dependencies, this_instr, type, name,
-                           _POP_TOP_LOAD_CONST_INLINE_BORROW,
-                           _POP_TOP_LOAD_CONST_INLINE);
+                           true);
             stack_pointer[-1] = attr;
             break;
         }
@@ -3461,8 +3458,7 @@
             PyTypeObject *type = sym_get_type(owner);
             PyObject *name = get_co_name(ctx, oparg >> 1);
             attr = lookup_attr(ctx, dependencies, this_instr, type, name,
-                           _POP_TOP_LOAD_CONST_INLINE_BORROW,
-                           _POP_TOP_LOAD_CONST_INLINE);
+                           true);
             stack_pointer[-1] = attr;
             break;
         }
@@ -3481,8 +3477,7 @@
             PyTypeObject *type = sym_get_type(owner);
             PyObject *name = get_co_name(ctx, oparg >> 1);
             attr = lookup_attr(ctx, dependencies, this_instr, type, name,
-                           _LOAD_CONST_UNDER_INLINE_BORROW,
-                           _LOAD_CONST_UNDER_INLINE);
+                           false);
             self = owner;
             CHECK_STACK_BOUNDS(1);
             stack_pointer[-1] = attr;
@@ -4849,8 +4844,7 @@
 
         case _POP_TOP_LOAD_CONST_INLINE: {
             JitOptRef value;
-            PyObject *ptr = (PyObject *)this_instr->operand0;
-            value = sym_new_const(ctx, ptr);
+            value = sym_new_not_null(ctx);
             stack_pointer[-1] = value;
             break;
         }
@@ -4889,8 +4883,7 @@
 
         case _POP_TOP_LOAD_CONST_INLINE_BORROW: {
             JitOptRef value;
-            PyObject *ptr = (PyObject *)this_instr->operand0;
-            value = PyJitRef_Borrow(sym_new_const(ctx, ptr));
+            value = sym_new_not_null(ctx);
             stack_pointer[-1] = value;
             break;
         }

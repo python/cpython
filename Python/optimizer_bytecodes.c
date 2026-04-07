@@ -749,14 +749,6 @@ dummy_func(void) {
         value = PyJitRef_Borrow(sym_new_const(ctx, ptr));
     }
 
-    op(_POP_TOP_LOAD_CONST_INLINE, (ptr/4, pop -- value)) {
-        value = sym_new_const(ctx, ptr);
-    }
-
-    op(_POP_TOP_LOAD_CONST_INLINE_BORROW, (ptr/4, pop -- value)) {
-        value = PyJitRef_Borrow(sym_new_const(ctx, ptr));
-    }
-
     op(_POP_CALL_LOAD_CONST_INLINE_BORROW, (ptr/4, unused, unused -- value)) {
         value = PyJitRef_Borrow(sym_new_const(ctx, ptr));
     }
@@ -837,7 +829,7 @@ dummy_func(void) {
                 if (watched_mutations < _Py_MAX_ALLOWED_GLOBALS_MODIFICATIONS) {
                     PyDict_Watch(GLOBALS_WATCHER_ID, dict);
                     _Py_BloomFilter_Add(dependencies, dict);
-                    PyObject *res = convert_global_to_const(this_instr, dict, false, true);
+                    PyObject *res = convert_global_to_const(this_instr, dict, true);
                     if (res == NULL) {
                         attr = sym_new_not_null(ctx);
                     }
@@ -890,8 +882,7 @@ dummy_func(void) {
         PyTypeObject *type = (PyTypeObject *)sym_get_const(ctx, owner);
         PyObject *name = get_co_name(ctx, oparg >> 1);
         attr = lookup_attr(ctx, dependencies, this_instr, type, name,
-                           _POP_TOP_LOAD_CONST_INLINE_BORROW,
-                           _POP_TOP_LOAD_CONST_INLINE);
+                           true);
     }
 
     op(_LOAD_ATTR_NONDESCRIPTOR_WITH_VALUES, (descr/4, owner -- attr)) {
@@ -899,8 +890,7 @@ dummy_func(void) {
         PyTypeObject *type = sym_get_type(owner);
         PyObject *name = get_co_name(ctx, oparg >> 1);
         attr = lookup_attr(ctx, dependencies, this_instr, type, name,
-                           _POP_TOP_LOAD_CONST_INLINE_BORROW,
-                           _POP_TOP_LOAD_CONST_INLINE);
+                           true);
     }
 
     op(_LOAD_ATTR_NONDESCRIPTOR_NO_DICT, (descr/4, owner -- attr)) {
@@ -908,8 +898,7 @@ dummy_func(void) {
         PyTypeObject *type = sym_get_type(owner);
         PyObject *name = get_co_name(ctx, oparg >> 1);
         attr = lookup_attr(ctx, dependencies, this_instr, type, name,
-                           _POP_TOP_LOAD_CONST_INLINE_BORROW,
-                           _POP_TOP_LOAD_CONST_INLINE);
+                           true);
     }
 
     op(_LOAD_ATTR_METHOD_WITH_VALUES, (descr/4, owner -- attr, self)) {
@@ -917,8 +906,7 @@ dummy_func(void) {
         PyTypeObject *type = sym_get_type(owner);
         PyObject *name = get_co_name(ctx, oparg >> 1);
         attr = lookup_attr(ctx, dependencies, this_instr, type, name,
-                           _LOAD_CONST_UNDER_INLINE_BORROW,
-                           _LOAD_CONST_UNDER_INLINE);
+                           false);
         self = owner;
     }
 
@@ -927,8 +915,7 @@ dummy_func(void) {
         PyTypeObject *type = sym_get_type(owner);
         PyObject *name = get_co_name(ctx, oparg >> 1);
         attr = lookup_attr(ctx, dependencies, this_instr, type, name,
-                           _LOAD_CONST_UNDER_INLINE_BORROW,
-                           _LOAD_CONST_UNDER_INLINE);
+                           false);
         self = owner;
     }
 
@@ -937,8 +924,7 @@ dummy_func(void) {
         PyTypeObject *type = sym_get_type(owner);
         PyObject *name = get_co_name(ctx, oparg >> 1);
         attr = lookup_attr(ctx, dependencies, this_instr, type, name,
-                           _LOAD_CONST_UNDER_INLINE_BORROW,
-                           _LOAD_CONST_UNDER_INLINE);
+                           false);
         self = owner;
     }
 
@@ -2002,7 +1988,7 @@ dummy_func(void) {
                 ctx->builtins_watched = true;
             }
             if (ctx->frame->globals_checked_version != 0 && ctx->frame->globals_watched) {
-                cnst = convert_global_to_const(this_instr, builtins, false, false);
+                cnst = convert_global_to_const(this_instr, builtins, false);
             }
         }
         if (cnst == NULL) {
@@ -2041,7 +2027,7 @@ dummy_func(void) {
                     ctx->frame->globals_checked_version = version;
                 }
                 if (ctx->frame->globals_checked_version == version) {
-                    cnst = convert_global_to_const(this_instr, globals, false, false);
+                    cnst = convert_global_to_const(this_instr, globals, false);
                 }
             }
         }
