@@ -6239,6 +6239,8 @@
                 SET_CURRENT_CACHED_VALUES(0);
                 JUMP_TO_ERROR();
             }
+            assert(d->result_type == NULL || Py_TYPE(res_o) == d->result_type);
+            assert(!d->result_unique || Py_REFCNT(res_o) == 1 || _Py_IsImmortal(res_o));
             res = PyStackRef_FromPyObjectSteal(res_o);
             l = left;
             r = right;

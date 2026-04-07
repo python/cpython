@@ -367,6 +367,8 @@
                 if (res_o == NULL) {
                     JUMP_TO_LABEL(error);
                 }
+                assert(d->result_type == NULL || Py_TYPE(res_o) == d->result_type);
+                assert(!d->result_unique || Py_REFCNT(res_o) == 1 || _Py_IsImmortal(res_o));
                 res = PyStackRef_FromPyObjectSteal(res_o);
                 l = left;
                 r = right;
