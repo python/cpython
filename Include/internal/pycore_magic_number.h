@@ -294,7 +294,7 @@ Known values:
     Python 3.15a4 3661 (Lazy imports IMPORT_NAME opcode changes)
     Python 3.15a8 3662 (Add counter to RESUME)
     Python 3.15a8 3663 (Merge GET_ITER and GET_YIELD_FROM_ITER. Modify SEND to make it a bit more like FOR_ITER)
-    Python 3.15a8 3665 (Add FOR_ITER_VIRTUAL and GET_ITER specializations)
+    Python 3.15a8 3664 (Add FOR_ITER_VIRTUAL and GET_ITER specializations)
 
 
     Python 3.16 will start with 3700

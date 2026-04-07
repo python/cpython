@@ -30,6 +30,7 @@
 #include "pycore_unicodeobject.h"
 #include "pycore_ceval.h"
 #include "pycore_floatobject.h"
+#include "pycore_setobject.h"
 
 #include <stdarg.h>
 #include <stdbool.h>
@@ -251,6 +252,7 @@ add_op(JitOptContext *ctx, _PyUOpInstruction *this_instr,
 #define sym_is_not_null _Py_uop_sym_is_not_null
 #define sym_is_const _Py_uop_sym_is_const
 #define sym_is_safe_const _Py_uop_sym_is_safe_const
+#define sym_is_not_container _Py_uop_sym_is_not_container
 #define sym_get_const _Py_uop_sym_get_const
 #define sym_new_const_steal _Py_uop_sym_new_const_steal
 #define sym_get_const_as_stackref _Py_uop_sym_get_const_as_stackref

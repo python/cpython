@@ -657,6 +657,7 @@ _tuple_shared(PyThreadState *tstate, PyObject *obj, xidata_fallback_t fallback,
     shared->items = (_PyXIData_t **) PyMem_Calloc(shared->len, sizeof(_PyXIData_t *));
     if (shared->items == NULL) {
         PyErr_NoMemory();
+        PyMem_RawFree(shared);
         return -1;
     }
 

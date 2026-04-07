@@ -2195,24 +2195,24 @@ LONG_FLOAT_ACTION(compactlong_float_true_div, /)
 
 static _PyBinaryOpSpecializationDescr binaryop_extend_descrs[] = {
     /* long-long arithmetic */
-    {NB_OR, compactlongs_guard, compactlongs_or},
-    {NB_AND, compactlongs_guard, compactlongs_and},
-    {NB_XOR, compactlongs_guard, compactlongs_xor},
-    {NB_INPLACE_OR, compactlongs_guard, compactlongs_or},
-    {NB_INPLACE_AND, compactlongs_guard, compactlongs_and},
-    {NB_INPLACE_XOR, compactlongs_guard, compactlongs_xor},
+    {NB_OR, compactlongs_guard, compactlongs_or, &PyLong_Type, 1},
+    {NB_AND, compactlongs_guard, compactlongs_and, &PyLong_Type, 1},
+    {NB_XOR, compactlongs_guard, compactlongs_xor, &PyLong_Type, 1},
+    {NB_INPLACE_OR, compactlongs_guard, compactlongs_or, &PyLong_Type, 1},
+    {NB_INPLACE_AND, compactlongs_guard, compactlongs_and, &PyLong_Type, 1},
+    {NB_INPLACE_XOR, compactlongs_guard, compactlongs_xor, &PyLong_Type, 1},
 
     /* float-long arithemetic */
-    {NB_ADD, float_compactlong_guard, float_compactlong_add},
-    {NB_SUBTRACT, float_compactlong_guard, float_compactlong_subtract},
-    {NB_TRUE_DIVIDE, nonzero_float_compactlong_guard, float_compactlong_true_div},
-    {NB_MULTIPLY, float_compactlong_guard, float_compactlong_multiply},
+    {NB_ADD, float_compactlong_guard, float_compactlong_add, &PyFloat_Type, 1},
+    {NB_SUBTRACT, float_compactlong_guard, float_compactlong_subtract, &PyFloat_Type, 1},
+    {NB_TRUE_DIVIDE, nonzero_float_compactlong_guard, float_compactlong_true_div, &PyFloat_Type, 1},
+    {NB_MULTIPLY, float_compactlong_guard, float_compactlong_multiply, &PyFloat_Type, 1},
 
     /* float-float arithmetic */
-    {NB_ADD, compactlong_float_guard, compactlong_float_add},
-    {NB_SUBTRACT, compactlong_float_guard, compactlong_float_subtract},
-    {NB_TRUE_DIVIDE, nonzero_compactlong_float_guard, compactlong_float_true_div},
-    {NB_MULTIPLY, compactlong_float_guard, compactlong_float_multiply},
+    {NB_ADD, compactlong_float_guard, compactlong_float_add, &PyFloat_Type, 1},
+    {NB_SUBTRACT, compactlong_float_guard, compactlong_float_subtract, &PyFloat_Type, 1},
+    {NB_TRUE_DIVIDE, nonzero_compactlong_float_guard, compactlong_float_true_div, &PyFloat_Type, 1},
+    {NB_MULTIPLY, compactlong_float_guard, compactlong_float_multiply, &PyFloat_Type, 1},
 };
 
 static int

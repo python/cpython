@@ -1,0 +1,6 @@
+Fix a regression introduced in 3.14.3 and 3.13.12 where the
+:mod:`multiprocessing` ``forkserver`` start method would fail with
+:exc:`BrokenPipeError` when the parent process had a very large
+:data:`sys.argv`.  The argv is now passed to the forkserver as separate
+command-line arguments rather than being embedded in the ``-c`` command
+string, avoiding the operating system's per-argument length limit.

@@ -1972,6 +1972,7 @@ extern "C" {
     INIT_ID(overlapped), \
     INIT_ID(owner), \
     INIT_ID(pad), \
+    INIT_ID(padded), \
     INIT_ID(pages), \
     INIT_ID(parameter), \
     INIT_ID(parent), \

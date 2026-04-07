@@ -230,6 +230,9 @@ Feature slots
    When creating a module, Python checks the value of this slot
    using :c:func:`PyABIInfo_Check`.
 
+   This slot is required, except for modules created from
+   :c:struct:`PyModuleDef`.
+
    .. versionadded:: 3.15
 
 .. c:macro:: Py_mod_multiple_interpreters
@@ -620,9 +623,9 @@ rather than from an extension's :ref:`export hook <extension-export-hook>`.
    and the :py:class:`~importlib.machinery.ModuleSpec` *spec*.
 
    The *slots* argument must point to an array of :c:type:`PyModuleDef_Slot`
-   structures, terminated by an entry slot with slot ID of 0
+   structures, terminated by an entry with slot ID of 0
    (typically written as ``{0}`` or ``{0, NULL}`` in C).
-   The *slots* argument may not be ``NULL``.
+   The array must include a :c:data:`Py_mod_abi` entry.
 
    The *spec* argument may be any ``ModuleSpec``-like object, as described
    in :c:macro:`Py_mod_create` documentation.
