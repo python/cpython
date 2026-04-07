@@ -1468,38 +1468,20 @@
             format = &stack_pointer[-(oparg & 1)];
             str = stack_pointer[-1 - (oparg & 1)];
             value = stack_pointer[-2 - (oparg & 1)];
-            PyObject *value_o = PyStackRef_AsPyObjectBorrow(value);
-            PyObject *str_o = PyStackRef_AsPyObjectBorrow(str);
+            PyObject *value_o = PyStackRef_AsPyObjectSteal(value);
+            PyObject *str_o = PyStackRef_AsPyObjectSteal(str);
             int conversion = oparg >> 2;
             PyObject *format_o;
             if (oparg & 1) {
-                format_o = PyStackRef_AsPyObjectBorrow(format[0]);
+                format_o = PyStackRef_AsPyObjectSteal(format[0]);
             }
             else {
-                format_o = &_Py_STR(empty);
+                format_o = Py_NewRef(&_Py_STR(empty));
             }
+            stack_pointer += -2 - (oparg & 1);
+            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
             _PyFrame_SetStackPointer(frame, stack_pointer);
             PyObject *interpolation_o = _PyInterpolation_Build(value_o, str_o, conversion, format_o);
-            stack_pointer = _PyFrame_GetStackPointer(frame);
-            if (oparg & 1) {
-                stack_pointer += -(oparg & 1);
-                ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
-                _PyFrame_SetStackPointer(frame, stack_pointer);
-                PyStackRef_CLOSE(format[0]);
-                stack_pointer = _PyFrame_GetStackPointer(frame);
-            }
-            else {
-                stack_pointer += -(oparg & 1);
-            }
-            stack_pointer += -1;
-            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
-            _PyFrame_SetStackPointer(frame, stack_pointer);
-            PyStackRef_CLOSE(str);
-            stack_pointer = _PyFrame_GetStackPointer(frame);
-            stack_pointer += -1;
-            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
-            _PyFrame_SetStackPointer(frame, stack_pointer);
-            PyStackRef_CLOSE(value);
             stack_pointer = _PyFrame_GetStackPointer(frame);
             if (interpolation_o == NULL) {
                 JUMP_TO_LABEL(error);
@@ -1692,20 +1674,12 @@
             _PyStackRef template;
             interpolations = stack_pointer[-1];
             strings = stack_pointer[-2];
-            PyObject *strings_o = PyStackRef_AsPyObjectBorrow(strings);
-            PyObject *interpolations_o = PyStackRef_AsPyObjectBorrow(interpolations);
+            PyObject *strings_o = PyStackRef_AsPyObjectSteal(strings);
+            PyObject *interpolations_o = PyStackRef_AsPyObjectSteal(interpolations);
+            stack_pointer += -2;
+            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
             _PyFrame_SetStackPointer(frame, stack_pointer);
             PyObject *template_o = _PyTemplate_Build(strings_o, interpolations_o);
-            stack_pointer = _PyFrame_GetStackPointer(frame);
-            stack_pointer += -1;
-            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
-            _PyFrame_SetStackPointer(frame, stack_pointer);
-            PyStackRef_CLOSE(interpolations);
-            stack_pointer = _PyFrame_GetStackPointer(frame);
-            stack_pointer += -1;
-            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
-            _PyFrame_SetStackPointer(frame, stack_pointer);
-            PyStackRef_CLOSE(strings);
             stack_pointer = _PyFrame_GetStackPointer(frame);
             if (template_o == NULL) {
                 JUMP_TO_LABEL(error);
