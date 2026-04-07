@@ -1201,22 +1201,33 @@ specialize_class_load_attr(PyObject *owner, _Py_CODEUNIT *instr,
         }
     }
     switch (kind) {
-        case METHOD:
-        case NON_DESCRIPTOR:
-            #ifdef Py_GIL_DISABLED
-            if (!_PyObject_HasDeferredRefcount(descr)) {
-                SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_ATTR_DESCR_NOT_DEFERRED);
+        case MUTABLE:
+            // special case for enums which has Py_TYPE(descr) == cls
+            // so guarding on type version is sufficient
+            if (Py_TYPE(descr) != cls) {
+                SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_ATTR_MUTABLE_CLASS);
                 Py_XDECREF(descr);
                 return -1;
             }
-            #endif
-            write_u32(cache->type_version, tp_version);
+            if (Py_TYPE(descr)->tp_descr_get || Py_TYPE(descr)->tp_descr_set) {
+                SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_ATTR_OVERRIDING_DESCRIPTOR);
+                Py_XDECREF(descr);
+                return -1;
+            }
+            _Py_FALLTHROUGH;
+        case METHOD:
+        case NON_DESCRIPTOR:
+#ifdef Py_GIL_DISABLED
+            maybe_enable_deferred_ref_count(descr);
+#endif
             write_ptr(cache->descr, descr);
             if (metaclass_check) {
-                write_u32(cache->keys_version, meta_version);
+                write_u32(cache->keys_version, tp_version);
+                write_u32(cache->type_version, meta_version);
                 specialize(instr, LOAD_ATTR_CLASS_WITH_METACLASS_CHECK);
             }
             else {
+                write_u32(cache->type_version, tp_version);
                 specialize(instr, LOAD_ATTR_CLASS);
             }
             Py_XDECREF(descr);
