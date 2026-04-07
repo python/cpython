@@ -66,42 +66,22 @@ def extract_module_name(filename, path_info):
         return (str(filename), 'other')
 
     # Check if it's in stdlib
-    if path_info['stdlib'] and _is_subpath(file_path, path_info['stdlib']):
-        try:
-            rel_path = file_path.relative_to(path_info['stdlib'])
-            return (_path_to_module(rel_path), 'stdlib')
-        except ValueError:
-            pass
+    if path_info['stdlib'] and file_path.is_relative_to(path_info['stdlib']):
+        return (_path_to_module(file_path.relative_to(path_info['stdlib'])), 'stdlib')
 
     # Check site-packages
     for site_pkg in path_info['site_packages']:
-        if _is_subpath(file_path, site_pkg):
-            try:
-                rel_path = file_path.relative_to(site_pkg)
-                return (_path_to_module(rel_path), 'site-packages')
-            except ValueError:
-                continue
+        if file_path.is_relative_to(site_pkg):
+            return (_path_to_module(file_path.relative_to(site_pkg)), 'site-packages')
 
     # Check other sys.path entries (project files)
     if not str(file_path).startswith(('<', '[')):  # Skip special files
         for path_entry in path_info['sys_path']:
-            if _is_subpath(file_path, path_entry):
-                try:
-                    rel_path = file_path.relative_to(path_entry)
-                    return (_path_to_module(rel_path), 'project')
-                except ValueError:
-                    continue
+            if file_path.is_relative_to(path_entry):
+                return (_path_to_module(file_path.relative_to(path_entry)), 'project')
 
     # Fallback: just use the filename
     return (_path_to_module(file_path), 'other')
-
-
-def _is_subpath(file_path, parent_path):
-    try:
-        file_path.relative_to(parent_path)
-        return True
-    except (ValueError, OSError):
-        return False
 
 
 def _path_to_module(path):
