@@ -2375,20 +2375,22 @@
             JitOptRef self_or_null;
             self_st = stack_pointer[-1];
             class_st = stack_pointer[-2];
-            attr = sym_new_not_null(ctx);
             self_or_null = self_st;
             PyTypeObject *su_type = (PyTypeObject *)sym_get_const(ctx, class_st);
             PyTypeObject *obj_type = sym_get_type(self_st);
-            CHECK_STACK_BOUNDS(-1);
-            stack_pointer[-3] = attr;
-            stack_pointer[-2] = self_or_null;
-            stack_pointer += -1;
+            CHECK_STACK_BOUNDS(-3);
+            stack_pointer += -3;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
             PyObject *name = get_co_name(ctx, oparg >> 2);
             attr = lookup_super_attr(ctx, dependencies, this_instr,
                                  su_type, obj_type, name,
                                  _LOAD_CONST_UNDER_INLINE_BORROW,
                                  _LOAD_CONST_UNDER_INLINE);
+            CHECK_STACK_BOUNDS(2);
+            stack_pointer[0] = attr;
+            stack_pointer[1] = self_or_null;
+            stack_pointer += 2;
+            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
             break;
         }
 

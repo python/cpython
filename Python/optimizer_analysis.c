@@ -433,7 +433,7 @@ lookup_super_attr(JitOptContext *ctx, _PyBloomFilter *dependencies,
         }
         return sym_new_not_null(ctx);
     }
-    if (_PyType_HasFeature(Py_TYPE(lookup), Py_TPFLAGS_METHOD_DESCRIPTOR)) {
+    if (Py_TYPE(lookup)->tp_flags & Py_TPFLAGS_METHOD_DESCRIPTOR) {
         int opcode = mortal;
         if (_Py_IsImmortal(lookup) || (obj_type->tp_flags & Py_TPFLAGS_IMMUTABLETYPE)) {
             opcode = immortal;

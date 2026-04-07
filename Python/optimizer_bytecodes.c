@@ -968,7 +968,6 @@ dummy_func(void) {
     }
 
     op(_LOAD_SUPER_ATTR_METHOD, (global_super_st, class_st, self_st -- attr, self_or_null)) {
-        attr = sym_new_not_null(ctx);
         self_or_null = self_st;
         PyTypeObject *su_type = (PyTypeObject *)sym_get_const(ctx, class_st);
         PyTypeObject *obj_type = sym_get_type(self_st);
