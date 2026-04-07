@@ -1446,6 +1446,15 @@ Additional optimizations for AArch64 contributed by Mark Shannon and
 Diego Russo in :gh:`140683` and :gh:`142305`.)
 
 
+CPython bytecode changes
+========================
+
+* Removed the :opcode:`!DELETE_DEREF` opcode. Deletion of closure variables
+  is now compiled as :opcode:`LOAD_DEREF`, :opcode:`POP_TOP`,
+  :opcode:`PUSH_NULL`, :opcode:`STORE_DEREF`.
+  (Contributed by Aleksandr Tseluyko in :gh:`145858`.)
+
+
 Removed
 ========
 

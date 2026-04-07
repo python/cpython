@@ -3324,7 +3324,13 @@ codegen_nameop(compiler *c, location loc,
             }
             break;
         case Store: op = STORE_DEREF; break;
-        case Del: op = DELETE_DEREF; break;
+        case Del:
+            Py_DECREF(mangled);
+            ADDOP_I(c, loc, LOAD_DEREF, arg);
+            ADDOP(c, loc, POP_TOP);
+            ADDOP(c, loc, PUSH_NULL);
+            ADDOP_I(c, loc, STORE_DEREF, arg);
+            return SUCCESS;
         }
         break;
     case COMPILE_OP_FAST:

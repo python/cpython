@@ -5453,28 +5453,6 @@
             DISPATCH();
         }
 
-        TARGET(DELETE_DEREF) {
-            #if _Py_TAIL_CALL_INTERP
-            int opcode = DELETE_DEREF;
-            (void)(opcode);
-            #endif
-            frame->instr_ptr = next_instr;
-            next_instr += 1;
-            INSTRUCTION_STATS(DELETE_DEREF);
-            PyObject *cell = PyStackRef_AsPyObjectBorrow(GETLOCAL(oparg));
-            PyObject *oldobj = PyCell_SwapTakeRef((PyCellObject *)cell, NULL);
-            if (oldobj == NULL) {
-                _PyFrame_SetStackPointer(frame, stack_pointer);
-                _PyEval_FormatExcUnbound(tstate, _PyFrame_GetCode(frame), oparg);
-                stack_pointer = _PyFrame_GetStackPointer(frame);
-                JUMP_TO_LABEL(error);
-            }
-            _PyFrame_SetStackPointer(frame, stack_pointer);
-            Py_DECREF(oldobj);
-            stack_pointer = _PyFrame_GetStackPointer(frame);
-            DISPATCH();
-        }
-
         TARGET(DELETE_FAST) {
             #if _Py_TAIL_CALL_INTERP
             int opcode = DELETE_FAST;
@@ -11412,11 +11390,12 @@
             _PyStackRef v;
             v = stack_pointer[-1];
             PyCellObject *cell = (PyCellObject *)PyStackRef_AsPyObjectBorrow(GETLOCAL(oparg));
-            _PyFrame_SetStackPointer(frame, stack_pointer);
-            PyCell_SetTakeRef(cell, PyStackRef_AsPyObjectSteal(v));
-            stack_pointer = _PyFrame_GetStackPointer(frame);
+            PyObject *value_o = PyStackRef_IsNull(v) ? NULL : PyStackRef_AsPyObjectSteal(v);
             stack_pointer += -1;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+            _PyFrame_SetStackPointer(frame, stack_pointer);
+            PyCell_SetTakeRef(cell, value_o);
+            stack_pointer = _PyFrame_GetStackPointer(frame);
             DISPATCH();
         }
 
