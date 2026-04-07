@@ -157,6 +157,8 @@ default_keymap: Keymap = tuple(
 
 @dataclass(frozen=True, slots=True)
 class RefreshInvalidation:
+    """Parts of the screen state that have changed and need to be refreshed."""
+
     cursor_only: bool = False
     buffer_from_pos: int | None = None
     prompt: bool = False
@@ -308,6 +310,8 @@ class Reader:
     ## cached metadata to speed up screen refreshes
     @dataclass
     class RefreshCache:
+        """Previously computed render/layout data for incremental refresh."""
+
         render_lines: list[RenderLine] = field(default_factory=list)
         layout_rows: list[LayoutRow] = field(default_factory=list)
         line_end_offsets: list[int] = field(default_factory=list)
@@ -412,6 +416,7 @@ class Reader:
                 )
                 and (self.invalidation.message or self.invalidation.overlay)
             ):
+                # Fast path: only overlays or messages changed.
                 offset, num_common_lines = self.last_refresh_cache.get_cached_location(
                     self,
                     reuse_full=True,

@@ -437,7 +437,7 @@ def prev_next_window[T](
 
 @dataclass(frozen=True, slots=True)
 class StyleRef:
-    tag: str | None = None
+    tag: str | None = None  # From THEME().syntax, e.g. "keyword", "builtin"
     sgr: str = ""
 
     @classmethod

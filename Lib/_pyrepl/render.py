@@ -18,6 +18,7 @@ type LineUpdateKind = Literal[
 
 
 class _ThemeSyntax(Protocol):
+    """Protocol for theme objects that map tag names to SGR escape strings."""
     def __getitem__(self, key: str, /) -> str: ...
 
 
@@ -173,9 +174,11 @@ class RenderedScreen:
                 "overlays must be sorted by ascending y"
             )
             if overlay.insert:
+                # Splice overlay lines in, pushing existing content down.
                 lines[adjusted_y:adjusted_y] = overlay.lines
                 y_offset += len(overlay.lines)
             else:
+                # Replace existing lines at the overlay position.
                 target_len = adjusted_y + len(overlay.lines)
                 if len(lines) < target_len:
                     lines.extend([EMPTY_RENDER_LINE] * (target_len - len(lines)))
@@ -250,10 +253,13 @@ class LineUpdate:
     y: int
     start_cell: int
     start_x: int
+    """Screen x-coordinate where the update begins. Used for cursor positioning."""
     cells: tuple[RenderCell, ...]
     char_width: int = 0
     clear_eol: bool = False
     reset_to_margin: bool = False
+    """If True, the console must resync the cursor position after writing
+    (needed when cells contain non-SGR escape sequences that may move the cursor)."""
     text: str = field(init=False, default="")
 
     def __post_init__(self) -> None:
@@ -273,6 +279,14 @@ def render_cells(
     cells: Sequence[RenderCell],
     visual_style: str | None = None,
 ) -> str:
+    """Render a sequence of cells into a terminal string with SGR escapes.
+
+    Tracks the active SGR state to emit resets only when the style
+    actually changes, minimizing output bytes.
+
+    If *visual_style* is given (used by redraw visualization), it is appended
+    to every cell's style.
+    """
     rendered: list[str] = []
     active_escape = ""
     for cell in cells:
@@ -305,6 +319,8 @@ def diff_render_lines(old: RenderLine, new: RenderLine) -> LineDiff | None:
     start_x = 0
     max_prefix = min(len(old.cells), len(new.cells))
     while prefix < max_prefix and old.cells[prefix] == new.cells[prefix]:
+        # Stop at any cell with non-SGR controls, since those might affect
+        # cursor position and must be re-emitted.
         if old.cells[prefix].controls:
             break
         start_x += old.cells[prefix].width

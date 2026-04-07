@@ -1,3 +1,5 @@
+"""Wrap content lines to the terminal width before rendering."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -9,6 +11,7 @@ from .types import CursorXY, ScreenInfoRow
 
 @dataclass(frozen=True, slots=True)
 class LayoutRow:
+    """Metadata for one physical screen row."""
     prompt_width: int
     char_widths: tuple[int, ...]
     suffix_width: int = 0
@@ -28,6 +31,10 @@ class LayoutRow:
 
 @dataclass(frozen=True, slots=True)
 class LayoutMap:
+    """Mapping between buffer positions and screen coordinates.
+
+    Single source of truth for cursor placement.
+    """
     rows: tuple[LayoutRow, ...]
 
     @classmethod
@@ -95,6 +102,7 @@ class LayoutMap:
 
 @dataclass(frozen=True, slots=True)
 class WrappedRow:
+    """One physical screen row after wrapping, with all metadata needed for rendering."""
     prompt_text: str = ""
     prompt_width: int = 0
     fragments: tuple[ContentFragment, ...] = ()
@@ -116,6 +124,10 @@ def layout_content_lines(
     width: int,
     start_offset: int,
 ) -> LayoutResult:
+    """Wrap content lines to fit *width* columns.
+    
+    Line boundaries are marked with ``\\``.
+    """
     if width <= 0:
         return LayoutResult((), LayoutMap(()), ())
 
@@ -140,6 +152,7 @@ def layout_content_lines(
         body = tuple(line.body)
         body_widths = tuple(fragment.width for fragment in body)
 
+        # Fast path: line fits on one row.
         if not body_widths or (sum(body_widths) + prompt_width) < width:
             offset += len(body) + newline_advance
             line_end_offsets.append(offset)
@@ -161,11 +174,13 @@ def layout_content_lines(
             )
             continue
 
+        # Slow path: line needs wrapping.
         current_prompt = prompt_text
         current_prompt_width = prompt_width
         start = 0
         total = len(body)
         while True:
+            # Find how many characters fit on this row.
             index_to_wrap_before = 0
             column = 0
             for char_width in body_widths[start:]:

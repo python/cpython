@@ -21,6 +21,8 @@ class PromptContent:
 
 @dataclass(frozen=True, slots=True)
 class SourceLine:
+    """One logical line from the editor buffer, before styling."""
+
     lineno: int
     text: str
     start_offset: int
@@ -59,6 +61,7 @@ def build_body_fragments(
     colors: list[ColorSpan] | None,
     start_index: int,
 ) -> tuple[ContentFragment, ...]:
+    """Convert a line's text into styled content fragments."""
     # Two separate loops to avoid the THEME() call in the common uncolored path.
     if colors is None:
         return tuple(
