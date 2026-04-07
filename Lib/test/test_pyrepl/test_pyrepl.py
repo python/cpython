@@ -238,13 +238,15 @@ class TestCursorPosition(TestCase):
         events = itertools.chain(
             code_to_events("11+11"),
             [
+                # Go left first to avoid end of buffer error.
+                Event(evt="key", data="left", raw=bytearray(b"\x1bOD")),
                 Event(evt="key", data="right", raw=bytearray(b"\x1bOC")),
             ],
         )
 
         reader, console = handle_all_events(events)
         self.assertEqual(reader.cxy, (5, 0))
-        console.move_cursor.assert_called_once_with(5, 0)
+        console.move_cursor.assert_called_with(5, 0)
 
     def test_cursor_position_simple_character(self):
         events = itertools.chain(code_to_events("k"))
