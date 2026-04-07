@@ -63,11 +63,13 @@ class TestPerfTrampoline(unittest.TestCase):
                 """
         with temp_dir() as script_dir:
             script = make_script(script_dir, "perftest", code)
+            env = {**os.environ, "PYTHON_JIT": "0"}
             with subprocess.Popen(
                 [sys.executable, "-Xperf", script],
                 text=True,
                 stderr=subprocess.PIPE,
                 stdout=subprocess.PIPE,
+                env=env,
             ) as process:
                 stdout, stderr = process.communicate()
 
@@ -131,11 +133,13 @@ class TestPerfTrampoline(unittest.TestCase):
                 """
         with temp_dir() as script_dir:
             script = make_script(script_dir, "perftest", code)
+            env = {**os.environ, "PYTHON_JIT": "0"}
             with subprocess.Popen(
                 [sys.executable, "-Xperf", script],
                 text=True,
                 stderr=subprocess.PIPE,
                 stdout=subprocess.PIPE,
+                env=env,
             ) as process:
                 stdout, stderr = process.communicate()
 
@@ -232,11 +236,13 @@ class TestPerfTrampoline(unittest.TestCase):
                 """
         with temp_dir() as script_dir:
             script = make_script(script_dir, "perftest", code)
+            env = {**os.environ, "PYTHON_JIT": "0"}
             with subprocess.Popen(
                 [sys.executable, script],
                 text=True,
                 stderr=subprocess.PIPE,
                 stdout=subprocess.PIPE,
+                env=env,
             ) as process:
                 stdout, stderr = process.communicate()
 
@@ -333,8 +339,9 @@ def perf_command_works():
                 "-c",
                 'print("hello")',
             )
+            env = {**os.environ, "PYTHON_JIT": "0"}
             stdout = subprocess.check_output(
-                cmd, cwd=script_dir, text=True, stderr=subprocess.STDOUT
+                cmd, cwd=script_dir, text=True, stderr=subprocess.STDOUT, env=env
             )
         except (subprocess.SubprocessError, OSError):
             return False
@@ -346,11 +353,10 @@ def perf_command_works():
 
 
 def run_perf(cwd, *args, use_jit=False, **env_vars):
+    env = os.environ.copy()
     if env_vars:
-        env = os.environ.copy()
         env.update(env_vars)
-    else:
-        env = None
+    env["PYTHON_JIT"] = "0"
     output_file = cwd + "/perf_output.perf"
     if not use_jit:
         base_cmd = (
@@ -529,11 +535,13 @@ class TestPerfProfiler(unittest.TestCase, TestPerfProfilerMixin):
 
         with temp_dir() as script_dir:
             script = make_script(script_dir, "perftest", code)
+            env = {**os.environ, "PYTHON_JIT": "0"}
             with subprocess.Popen(
                 [sys.executable, "-Xperf", script],
                 universal_newlines=True,
                 stderr=subprocess.PIPE,
                 stdout=subprocess.PIPE,
+                env=env,
             ) as process:
                 stdout, stderr = process.communicate()
 
