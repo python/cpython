@@ -309,10 +309,11 @@ class FlamegraphCollector(StackTraceCollector):
         # If we only have one root child, make it the root to avoid redundant level
         if len(root_children) == 1:
             main_child = root_children[0]
-            # Update the name to indicate it's the program root
+            # Update name and label to indicate it's the program root
             old_name = self._string_table.get_string(main_child["name"])
-            new_name = f"Program Root: {old_name}"
-            main_child["name"] = self._string_table.intern(new_name)
+            main_child["name"] = self._string_table.intern(f"Program Root: {old_name}")
+            old_label = self._string_table.get_string(main_child["label"])
+            main_child["label"] = self._string_table.intern(f"Program Root: {old_label}")
             main_child["stats"] = {
                 **self.stats,
                 "thread_stats": thread_stats,
@@ -323,8 +324,10 @@ class FlamegraphCollector(StackTraceCollector):
             main_child["opcode_mapping"] = opcode_mapping
             return main_child
 
+        program_root_idx = self._string_table.intern("Program Root")
         return {
-            "name": self._string_table.intern("Program Root"),
+            "name": program_root_idx,
+            "label": program_root_idx,
             "value": total_samples,
             "children": root_children,
             "stats": {
