@@ -157,11 +157,12 @@ class ScreenOverlay:
     If *insert* is True, lines are spliced in (shifting content down);
     if False (default), lines replace existing content at *y*.
 
+    Overlays are used to display tab completion menus and status messages.
     For example, a tab-completion menu inserted below the input::
 
         >>> os.path.j           ← line 0 (base content)
-                     join       ← ScreenOverlay(y=1, insert=True)
-                     junction   ←   (pushes remaining lines down)
+                    join        ← ScreenOverlay(y=1, insert=True)
+                    junction    ←   (pushes remaining lines down)
         ...                     ← line 1 (shifted down by 2)
     """
     y: int
