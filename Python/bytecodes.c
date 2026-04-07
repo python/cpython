@@ -4970,6 +4970,13 @@ dummy_func(
             PyObject **ptr = (PyObject **)(((char *)func) + offset);
             assert(*ptr == NULL);
             *ptr = attr;
+            if (oparg == MAKE_FUNCTION_ANNOTATE && PyFunction_Check(attr)) {
+                // gh-137814: Fix the qualname of __annotate__ functions
+                PyFunctionObject *func_obj = (PyFunctionObject *)attr;
+                PyObject *fixed_qualname = PyUnicode_FromFormat("%U.__annotate__", ((PyFunctionObject *)func)->func_qualname);
+                ERROR_IF(fixed_qualname == NULL);
+                Py_SETREF(func_obj->func_qualname, fixed_qualname);
+            }
         }
 
         inst(RETURN_GENERATOR, (-- res)) {

@@ -6615,6 +6615,22 @@
             PyObject **ptr = (PyObject **)(((char *)func) + offset);
             assert(*ptr == NULL);
             *ptr = attr;
+            if (oparg == MAKE_FUNCTION_ANNOTATE && PyFunction_Check(attr)) {
+                PyFunctionObject *func_obj = (PyFunctionObject *)attr;
+                stack_pointer[-2] = func_out;
+                stack_pointer += -1;
+                assert(WITHIN_STACK_BOUNDS());
+                _PyFrame_SetStackPointer(frame, stack_pointer);
+                PyObject *fixed_qualname = PyUnicode_FromFormat("%U.__annotate__", ((PyFunctionObject *)func)->func_qualname);
+                stack_pointer = _PyFrame_GetStackPointer(frame);
+                if (fixed_qualname == NULL) {
+                    JUMP_TO_ERROR();
+                }
+                _PyFrame_SetStackPointer(frame, stack_pointer);
+                Py_SETREF(func_obj->func_qualname, fixed_qualname);
+                stack_pointer = _PyFrame_GetStackPointer(frame);
+                stack_pointer += 1;
+            }
             stack_pointer[-2] = func_out;
             stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
