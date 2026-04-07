@@ -790,10 +790,12 @@ def makegraphemedata(unicode, trace):
         fprint("# Grapheme_Cluster_Break ranges")
         fprint("# (excludes LV/LVT, computed via Hangul syllable arithmetic)")
         _write_ranges(fprint, "GCB_RANGES", gcb_ranges)
+        fprint()
 
         # ExtPict ranges
         fprint("# Extended_Pictographic ranges")
         _write_ranges(fprint, "EXT_PICT_RANGES", ep_ranges, has_value=False)
+        fprint()
 
         # InCB ranges
         fprint("# Indic_Conjunct_Break ranges")
@@ -829,7 +831,6 @@ def _write_ranges(fprint, name, ranges, has_value=True):
             parts = ["(0x%04X,0x%04X)" % (s, e) for s, e, _v in chunk]
         fprint("    %s," % ",".join(parts))
     fprint(")")
-    fprint()
 
 
 # --------------------------------------------------------------------
