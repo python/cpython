@@ -142,10 +142,17 @@ class ForkServer(object):
                 self._forkserver_alive_fd = None
                 self._forkserver_pid = None
 
-            cmd = ('from multiprocessing.forkserver import main; ' +
-                   'main(%d, %d, %r, **%r)')
+            # gh-144503: sys_argv is passed as real argv elements after the
+            # ``-c cmd`` rather than repr'd into main_kws so that a large
+            # parent sys.argv cannot push the single ``-c`` command string
+            # over the OS per-argument length limit (MAX_ARG_STRLEN on Linux).
+            # The child sees them as sys.argv[1:].
+            cmd = ('import sys; '
+                   'from multiprocessing.forkserver import main; '
+                   'main(%d, %d, %r, sys_argv=sys.argv[1:], **%r)')
 
             main_kws = {}
+            sys_argv = None
             if self._preload_modules:
                 data = spawn.get_preparation_data('ignore')
                 if 'sys_path' in data:
@@ -153,7 +160,7 @@ class ForkServer(object):
                 if 'init_main_from_path' in data:
                     main_kws['main_path'] = data['init_main_from_path']
                 if 'sys_argv' in data:
-                    main_kws['sys_argv'] = data['sys_argv']
+                    sys_argv = data['sys_argv']
 
             with socket.socket(socket.AF_UNIX) as listener:
                 address = connection.arbitrary_address('AF_UNIX')
@@ -175,6 +182,8 @@ class ForkServer(object):
                     exe = spawn.get_executable()
                     args = [exe] + util._args_from_interpreter_flags()
                     args += ['-c', cmd]
+                    if sys_argv is not None:
+                        args += sys_argv
                     pid = util.spawnv_passfds(exe, args, fds_to_pass)
                 except:
                     os.close(alive_w)
