@@ -62,6 +62,7 @@ class ResourceTest(unittest.TestCase):
                 f.write(b"X" * 1024)
                 with self.assertRaises(OSError, msg="f.write() did not raise OSError when exceeding RLIMIT_FSIZE"):
                     f.write(b"Y")
+                    f.flush()
             finally:
                 # Close will attempt to flush the byte we wrote
                 # Restore limit first to avoid getting a spurious error
