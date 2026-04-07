@@ -59,8 +59,11 @@ The :mod:`!binascii` module defines the following functions:
 
    If *padded* is true, the last group of 4 base 64 alphabet characters must
    be padded with the '=' character.
-   If *padded* is false, the '=' character is treated as other non-alphabet
-   characters (depending on the value of *strict_mode* and *ignorechars*).
+   If *padded* is false, padding is neither required nor recognized:
+   the '=' character is not treated as padding but as a non-alphabet
+   character, which means it is silently discarded when *strict_mode* is false,
+   or causes an :exc:`~binascii.Error` when *strict_mode* is true unless
+   b'=' is included in *ignorechars*.
 
    If *ignorechars* is specified, it should be a :term:`bytes-like object`
    containing characters to ignore from the input when *strict_mode* is true.

@@ -186,85 +186,6 @@ typedef struct PyVarObject PyVarObject;
 PyAPI_FUNC(int) Py_Is(PyObject *x, PyObject *y);
 #define Py_Is(x, y) ((x) == (y))
 
-#if defined(Py_GIL_DISABLED) && !defined(Py_LIMITED_API)
-PyAPI_FUNC(uintptr_t) _Py_GetThreadLocal_Addr(void);
-
-static inline uintptr_t
-_Py_ThreadId(void)
-{
-    uintptr_t tid;
-#if defined(_MSC_VER) && defined(_M_X64)
-    tid = __readgsqword(48);
-#elif defined(_MSC_VER) && defined(_M_IX86)
-    tid = __readfsdword(24);
-#elif defined(_MSC_VER) && defined(_M_ARM64)
-    tid = __getReg(18);
-#elif defined(__MINGW32__) && defined(_M_X64)
-    tid = __readgsqword(48);
-#elif defined(__MINGW32__) && defined(_M_IX86)
-    tid = __readfsdword(24);
-#elif defined(__MINGW32__) && defined(_M_ARM64)
-    tid = __getReg(18);
-#elif defined(__i386__)
-    __asm__("{movl %%gs:0, %0|mov %0, dword ptr gs:[0]}" : "=r" (tid));  // 32-bit always uses GS
-#elif defined(__MACH__) && defined(__x86_64__)
-    __asm__("{movq %%gs:0, %0|mov %0, qword ptr gs:[0]}" : "=r" (tid));  // x86_64 macOSX uses GS
-#elif defined(__x86_64__)
-    __asm__("{movq %%fs:0, %0|mov %0, qword ptr fs:[0]}" : "=r" (tid));  // x86_64 Linux, BSD uses FS
-#elif defined(__arm__) && __ARM_ARCH >= 7
-    __asm__ ("mrc p15, 0, %0, c13, c0, 3\nbic %0, %0, #3" : "=r" (tid));
-#elif defined(__aarch64__) && defined(__APPLE__)
-    __asm__ ("mrs %0, tpidrro_el0" : "=r" (tid));
-#elif defined(__aarch64__)
-    __asm__ ("mrs %0, tpidr_el0" : "=r" (tid));
-#elif defined(__powerpc64__)
-    #if defined(__clang__) && _Py__has_builtin(__builtin_thread_pointer)
-    tid = (uintptr_t)__builtin_thread_pointer();
-    #else
-    // r13 is reserved for use as system thread ID by the Power 64-bit ABI.
-    register uintptr_t tp __asm__ ("r13");
-    __asm__("" : "=r" (tp));
-    tid = tp;
-    #endif
-#elif defined(__powerpc__)
-    #if defined(__clang__) && _Py__has_builtin(__builtin_thread_pointer)
-    tid = (uintptr_t)__builtin_thread_pointer();
-    #else
-    // r2 is reserved for use as system thread ID by the Power 32-bit ABI.
-    register uintptr_t tp __asm__ ("r2");
-    __asm__ ("" : "=r" (tp));
-    tid = tp;
-    #endif
-#elif defined(__s390__) && defined(__GNUC__)
-    // Both GCC and Clang have supported __builtin_thread_pointer
-    // for s390 from long time ago.
-    tid = (uintptr_t)__builtin_thread_pointer();
-#elif defined(__riscv)
-    #if defined(__clang__) && _Py__has_builtin(__builtin_thread_pointer)
-    tid = (uintptr_t)__builtin_thread_pointer();
-    #else
-    // tp is Thread Pointer provided by the RISC-V ABI.
-    __asm__ ("mv %0, tp" : "=r" (tid));
-    #endif
-#else
-    // Fallback to a portable implementation if we do not have a faster
-    // platform-specific implementation.
-    tid = _Py_GetThreadLocal_Addr();
-#endif
-  return tid;
-}
-
-static inline Py_ALWAYS_INLINE int
-_Py_IsOwnedByCurrentThread(PyObject *ob)
-{
-#ifdef _Py_THREAD_SANITIZER
-    return _Py_atomic_load_uintptr_relaxed(&ob->ob_tid) == _Py_ThreadId();
-#else
-    return ob->ob_tid == _Py_ThreadId();
-#endif
-}
-#endif
-
 PyAPI_DATA(PyTypeObject) PyLong_Type;
 PyAPI_DATA(PyTypeObject) PyBool_Type;
 
@@ -652,8 +573,10 @@ given type object has a specified feature.
 #define _Py_IMMORTAL_FLAGS (1 << 0)
 #define _Py_LEGACY_ABI_CHECK_FLAG (1 << 1) /* see PyModuleDef_Init() */
 #define _Py_STATICALLY_ALLOCATED_FLAG (1 << 2)
-#if defined(Py_GIL_DISABLED) && defined(Py_DEBUG)
-#define _Py_TYPE_REVEALED_FLAG (1 << 3)
+#if !defined(Py_LIMITED_API)
+#  if defined(Py_GIL_DISABLED) && defined(Py_DEBUG)
+#    define _Py_TYPE_REVEALED_FLAG (1 << 3)
+#  endif
 #endif
 
 #define Py_CONSTANT_NONE 0
