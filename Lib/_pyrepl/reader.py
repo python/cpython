@@ -194,33 +194,33 @@ class RefreshInvalidation:
             return 0
         return self.buffer_from_pos
 
-    def with_cursor(self) -> RefreshInvalidation:
+    def with_cursor(self) -> Self:
         if self.needs_screen_refresh:
             return self
         return replace(self, cursor_only=True)
 
-    def with_buffer(self, from_pos: int) -> RefreshInvalidation:
+    def with_buffer(self, from_pos: int) -> Self:
         current = from_pos
         if self.buffer_from_pos is not None:
             current = min(current, self.buffer_from_pos)
         return replace(self, cursor_only=False, buffer_from_pos=current)
 
-    def with_prompt(self) -> RefreshInvalidation:
+    def with_prompt(self) -> Self:
         return replace(self, cursor_only=False, prompt=True)
 
-    def with_layout(self) -> RefreshInvalidation:
+    def with_layout(self) -> Self:
         return replace(self, cursor_only=False, layout=True)
 
-    def with_theme(self) -> RefreshInvalidation:
+    def with_theme(self) -> Self:
         return replace(self, cursor_only=False, theme=True)
 
-    def with_message(self) -> RefreshInvalidation:
+    def with_message(self) -> Self:
         return replace(self, cursor_only=False, message=True)
 
-    def with_overlay(self) -> RefreshInvalidation:
+    def with_overlay(self) -> Self:
         return replace(self, cursor_only=False, overlay=True)
 
-    def with_full(self) -> RefreshInvalidation:
+    def with_full(self) -> Self:
         return replace(self, cursor_only=False, full=True)
 
 

@@ -464,6 +464,7 @@ class help(Command):
 
         with self.reader.suspend():
             self.reader.msg = _sitebuiltins._Helper()()  # type: ignore[assignment]
+        self.reader.invalidate_prompt()
 
 
 class invalid_key(Command):
