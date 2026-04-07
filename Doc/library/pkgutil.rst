@@ -191,7 +191,7 @@ support.
 
    .. seealso::
 
-      The :mod:`importlib.resources` module provides structures access to
+      The :mod:`importlib.resources` module provides structured access to
       module resources.
 
 .. function:: resolve_name(name)
