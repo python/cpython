@@ -499,6 +499,7 @@ _PyUOp_Replacements[MAX_UOP_ID + 1] = {
     [_FOR_ITER_VIRTUAL] = _FOR_ITER_VIRTUAL_TIER_TWO,
     [_ITER_NEXT_LIST] = _ITER_NEXT_LIST_TIER_TWO,
     [_CHECK_PERIODIC_AT_END] = _TIER2_RESUME_CHECK,
+    [_LOAD_BYTECODE] = _NOP,
 };
 
 static const uint8_t

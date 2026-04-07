@@ -93,7 +93,7 @@
             break;
         }
 
-        /* _LOAD_BYTECODE is not a viable micro-op for tier 2 because it uses the 'this_instr' variable */
+        /* _LOAD_BYTECODE is not a viable micro-op for tier 2 because it is replaced */
 
         case _RESUME_CHECK_r00: {
             CHECK_CURRENT_CACHED_VALUES(0);

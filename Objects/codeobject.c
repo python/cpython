@@ -574,8 +574,12 @@ init_code(PyCodeObject *co, struct _PyCodeConstructor *con)
     co->co_tlbc->entries[0] = co->co_code_adaptive;
 #endif
     int entry_point = 0;
-    while (entry_point < Py_SIZE(co) &&
-        _PyCode_CODE(co)[entry_point].op.code != RESUME) {
+    while (entry_point < Py_SIZE(co)) {
+        if (_PyCode_CODE(co)[entry_point].op.code == RESUME &&
+           (_PyCode_CODE(co)[entry_point].op.arg & RESUME_OPARG_LOCATION_MASK) != RESUME_AT_GEN_EXPR_START
+        ) {
+            break;
+        }
         entry_point++;
     }
     co->_co_firsttraceable = entry_point;

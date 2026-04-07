@@ -199,7 +199,7 @@ dummy_func(
             }
         }
 
-        op(_LOAD_BYTECODE, (--)) {
+        replaced op(_LOAD_BYTECODE, (--)) {
             #ifdef Py_GIL_DISABLED
             if (frame->tlbc_index !=
                 ((_PyThreadStateImpl *)tstate)->tlbc_index) {
