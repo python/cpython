@@ -16,6 +16,7 @@ from typing import Iterable, Iterator, Match, NamedTuple, Self
 from .types import CharBuffer, CharWidths
 from .trace import trace
 
+
 ANSI_ESCAPE_SEQUENCE = re.compile(r"\x1b\[[ -@]*[A-~]")
 ZERO_WIDTH_BRACKET = re.compile(r"\x01.*?\x02")
 ZERO_WIDTH_TRANS = str.maketrans({"\x01": "", "\x02": ""})

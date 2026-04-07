@@ -1168,8 +1168,16 @@
             right = stack_pointer[-1];
             left = stack_pointer[-2];
             PyObject *descr = (PyObject *)this_instr->operand0;
-            (void)descr;
-            res = sym_new_not_null(ctx);
+            _PyBinaryOpSpecializationDescr *d = (_PyBinaryOpSpecializationDescr *)descr;
+            if (d != NULL && d->result_type != NULL) {
+                res = sym_new_type(ctx, d->result_type);
+                if (d->result_unique) {
+                    res = PyJitRef_MakeUnique(res);
+                }
+            }
+            else {
+                res = sym_new_not_null(ctx);
+            }
             l = left;
             r = right;
             CHECK_STACK_BOUNDS(1);
@@ -5135,6 +5143,7 @@
 
         case _GUARD_CODE_VERSION_YIELD_VALUE: {
             uint32_t version = (uint32_t)this_instr->operand0;
+            (void)version;
             if (ctx->frame->caller) {
                 REPLACE_OP(this_instr, _NOP, 0, 0);
             }
@@ -5143,6 +5152,7 @@
 
         case _GUARD_CODE_VERSION_RETURN_VALUE: {
             uint32_t version = (uint32_t)this_instr->operand0;
+            (void)version;
             if (ctx->frame->caller) {
                 REPLACE_OP(this_instr, _NOP, 0, 0);
             }
@@ -5151,6 +5161,7 @@
 
         case _GUARD_CODE_VERSION_RETURN_GENERATOR: {
             uint32_t version = (uint32_t)this_instr->operand0;
+            (void)version;
             if (ctx->frame->caller) {
                 REPLACE_OP(this_instr, _NOP, 0, 0);
             }

@@ -15,8 +15,7 @@ on:
     paths: *paths
   workflow_dispatch:
 
-permissions:
-  contents: read
+permissions: {}
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
@@ -99,9 +98,9 @@ jobs:
           - false
         include:
           - target: x86_64-apple-darwin/clang
-            runner: macos-26-intel
+            runner: macos-15-intel
           - target: aarch64-apple-darwin/clang
-            runner: macos-26
+            runner: macos-15
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
