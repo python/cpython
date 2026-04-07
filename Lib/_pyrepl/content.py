@@ -25,6 +25,22 @@ class ContentFragment:
 
 @dataclass(frozen=True, slots=True)
 class PromptContent:
+    """The prompt split into leading full-width lines and an inline portion.
+
+    For the common ``">>> "`` prompt (no newlines)::
+
+        >>> def greet(name):
+        ╰─╯
+        text=">>> ", width=4, leading_lines=()
+
+    If ``sys.ps1`` contains newlines, e.g. ``"Python 3.13\\n>>> "``::
+
+        Python 3.13              ← leading_lines[0]
+        >>> def greet(name):
+        ╰─╯
+        text=">>> ", width=4
+    """
+
     leading_lines: tuple[ContentFragment, ...]
     text: str
     width: int
