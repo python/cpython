@@ -1495,7 +1495,7 @@ set_replace_body(PySetObject *dst, PySetObject *src)
 
     assert(!PyType_IsSubtype(Py_TYPE(dst), &PyFrozenSet_Type));
     assert(!PyType_IsSubtype(Py_TYPE(src), &PyFrozenSet_Type));
-    assert(Py_REFCNT(src) == 1);
+    assert(_PyObject_IsUniquelyReferenced((PyObject *)src));
 
     setentry *dst_table = dst->table;
     setentry *src_table = src->table;
