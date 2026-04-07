@@ -3,6 +3,12 @@ name = "cpython"
 version = "3.12.3"
 nanvix-version = "latest"
 
+[builds]
+[builds.matrix]
+platforms = ["microvm"]
+modes = ["multi-process", "single-process", "standalone"]
+memory = ["256mb"]
+
 [dependencies]
 zlib = "1.3.1"
 sqlite = "3.49.0"
