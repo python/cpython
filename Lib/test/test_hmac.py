@@ -21,7 +21,6 @@ import functools
 import hmac
 import hashlib
 import random
-import types
 import unittest
 import warnings
 from _operator import _compare_digest as operator_compare_digest
@@ -303,7 +302,7 @@ class AssertersMixin(CreatorMixin, DigestMixin, ObjectCheckerMixin):
 
     def check_hmac_new(
         self, key, msg, hexdigest, hashname, digest_size, block_size,
-        hmac_new_func, hmac_new_kwds=types.MappingProxyType({}),
+        hmac_new_func, hmac_new_kwds=frozendict(),
     ):
         """Check that HMAC(key, msg) == digest.
 
@@ -349,7 +348,7 @@ class AssertersMixin(CreatorMixin, DigestMixin, ObjectCheckerMixin):
 
     def check_hmac_hexdigest(
         self, key, msg, hexdigest, digest_size,
-        hmac_digest_func, hmac_digest_kwds=types.MappingProxyType({}),
+        hmac_digest_func, hmac_digest_kwds=frozendict(),
     ):
         """Check and return a HMAC digest computed by hmac_digest_func().
 
@@ -1075,6 +1074,15 @@ class SanityTestCaseMixin(CreatorMixin):
         self.assertEqual(h.name, f"hmac-{self.digestname}")
         self.assertEqual(h.digest_size, self.digest_size)
         self.assertEqual(h.block_size, self.block_size)
+
+    def test_copy(self):
+        # Test a generic copy() and the attributes it exposes.
+        # See https://github.com/python/cpython/issues/142451.
+        h1 = self.hmac_new(b"my secret key", digestmod=self.digestname)
+        h2 = h1.copy()
+        self.assertEqual(h1.name, h2.name)
+        self.assertEqual(h1.digest_size, h2.digest_size)
+        self.assertEqual(h1.block_size, h2.block_size)
 
     def test_repr(self):
         # HMAC object representation may differ across implementations

@@ -1,0 +1,3 @@
+Properly identify the main thread in the Gecko profiler collector by
+using a status flag from the interpreter state instead of relying on
+:func:`threading.main_thread` in the collector process.

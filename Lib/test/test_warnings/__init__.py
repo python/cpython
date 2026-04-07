@@ -1,5 +1,6 @@
 from contextlib import contextmanager
 import linecache
+import logging
 import os
 import importlib
 import inspect
@@ -509,6 +510,47 @@ class FilterTests(BaseTest):
                     stderr = stderr.getvalue()
                     self.assertIn(error_msg, stderr)
 
+    def test_catchwarnings_with_showwarning(self):
+        # gh-146358: catch_warnings must override warnings.showwarning()
+        # if it's not the default implementation.
+
+        warns = []
+        def custom_showwarning(message, category, filename, lineno,
+                               file=None, line=None):
+            warns.append(message)
+
+        with self.module.catch_warnings():
+            self.module.resetwarnings()
+
+            with support.swap_attr(self.module, 'showwarning',
+                                   custom_showwarning):
+                with self.module.catch_warnings(record=True) as recorded:
+                    self.module.warn("recorded")
+                self.assertEqual(len(recorded), 1)
+                self.assertEqual(str(recorded[0].message), 'recorded')
+                self.assertIs(self.module.showwarning, custom_showwarning)
+
+                self.module.warn("custom")
+
+        self.assertEqual(len(warns), 1)
+        self.assertEqual(str(warns[0]), "custom")
+
+    def test_catchwarnings_logging(self):
+        # gh-146358: catch_warnings(record=True) must replace the
+        # showwarning() function set by logging.captureWarnings(True).
+
+        with self.module.catch_warnings():
+            self.module.resetwarnings()
+            logging.captureWarnings(True)
+
+            with self.module.catch_warnings(record=True) as recorded:
+                self.module.warn("recorded")
+            self.assertEqual(len(recorded), 1)
+            self.assertEqual(str(recorded[0].message), 'recorded')
+
+            logging.captureWarnings(False)
+
+
 class CFilterTests(FilterTests, unittest.TestCase):
     module = c_warnings
 
@@ -727,7 +769,7 @@ class WarnTests(BaseTest):
 
     def check_module_globals_error(self, module_globals, errmsg, errtype=ValueError):
         if self.module is py_warnings:
-            self.check_module_globals(module_globals)
+            self.check_module_globals_deprecated(module_globals, errmsg)
             return
         with self.module.catch_warnings(record=True) as w:
             self.module.filterwarnings('always')
@@ -738,9 +780,6 @@ class WarnTests(BaseTest):
         self.assertEqual(len(w), 0)
 
     def check_module_globals_deprecated(self, module_globals, msg):
-        if self.module is py_warnings:
-            self.check_module_globals(module_globals)
-            return
         with self.module.catch_warnings(record=True) as w:
             self.module.filterwarnings('always')
             self.module.warn_explicit(

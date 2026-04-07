@@ -1,0 +1,11 @@
+Add the *wrapcol* parameter to :mod:`base64` functions
+:func:`~base64.b16encode`, :func:`~base64.b32encode`,
+:func:`~base64.b32hexencode`, :func:`~base64.b85encode` and
+:func:`~base64.z85encode`, and :mod:`binascii` functions
+:func:`~binascii.b2a_base32` and :func:`~binascii.b2a_base85`. Add the
+*ignorechars* parameter to :mod:`base64` functions
+:func:`~base64.b16decode`, :func:`~base64.b32decode`,
+:func:`~base64.b32hexdecode`, :func:`~base64.b85decode` and
+:func:`~base64.z85decode`, and :mod:`binascii` functions
+:func:`~binascii.a2b_hex`, :func:`~binascii.unhexlify`,
+:func:`~binascii.a2b_base32` and :func:`~binascii.a2b_base85`.

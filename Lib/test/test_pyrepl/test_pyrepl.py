@@ -1,8 +1,10 @@
+import contextlib
 import importlib
 import io
 import itertools
 import os
 import pathlib
+import pkgutil
 import re
 import rlcompleter
 import select
@@ -11,8 +13,15 @@ import sys
 import tempfile
 from pkgutil import ModuleInfo
 from unittest import TestCase, skipUnless, skipIf, SkipTest
-from unittest.mock import patch
-from test.support import force_not_colorized, make_clean_env, Py_DEBUG
+from unittest.mock import Mock, patch
+import warnings
+from test.support import (
+    captured_stdout,
+    captured_stderr,
+    force_not_colorized,
+    make_clean_env,
+    Py_DEBUG,
+)
 from test.support import has_subprocess_support, SHORT_TIMEOUT, STDLIB_DIR
 from test.support.import_helper import import_module
 from test.support.os_helper import EnvironmentVarGuard, unlink
@@ -27,11 +36,14 @@ from .support import (
     code_to_events,
 )
 from _pyrepl.console import Event
+from _pyrepl.completing_reader import stripcolor
 from _pyrepl._module_completer import (
     ImportParser,
     ModuleCompleter,
     HARDCODED_SUBMODULES,
 )
+from _pyrepl.fancycompleter import Completer as FancyCompleter
+import _pyrepl.readline as pyrepl_readline
 from _pyrepl.readline import (
     ReadlineAlikeReader,
     ReadlineConfig,
@@ -43,6 +55,14 @@ try:
     import pty
 except ImportError:
     pty = None
+try:
+    import readline as readline_module
+except ImportError:
+    readline_module = None
+try:
+    import tkinter
+except ImportError:
+    tkinter = None
 
 
 class ReplTestCase(TestCase):
@@ -936,6 +956,113 @@ class TestPyReplCompleter(TestCase):
         self.assertEqual(mock_stderr.getvalue(), "")
 
 
+class TestPyReplFancyCompleter(TestCase):
+    def prepare_reader(self, events, namespace, *, use_colors):
+        console = FakeConsole(events)
+        config = ReadlineConfig()
+        config.readline_completer = FancyCompleter(
+            namespace, use_colors=use_colors
+        ).complete
+        reader = ReadlineAlikeReader(console=console, config=config)
+        return reader
+
+    def test_simple_completion_preserves_callable_postfix(self):
+        events = code_to_events("os.getpid\t\n")
+
+        namespace = {"os": os}
+        reader = self.prepare_reader(events, namespace, use_colors=False)
+
+        output = multiline_input(reader, namespace)
+        self.assertEqual(output, "os.getpid()")
+
+    def test_attribute_menu_tracks_typed_stem(self):
+        class Obj:
+            apple = 1
+            apricot = 2
+            banana = 3
+
+        namespace = {"obj": Obj}
+        reader = self.prepare_reader(
+            code_to_events("obj.\t\ta"),
+            namespace,
+            use_colors=True,
+        )
+
+        with self.assertRaises(StopIteration):
+            while True:
+                reader.handle1()
+
+        self.assertEqual("".join(reader.buffer), "obj.a")
+        self.assertTrue(reader.cmpltn_menu_visible)
+        menu = "\n".join(reader.cmpltn_menu)
+        self.assertIn("apple", menu)
+        self.assertIn("apricot", menu)
+        self.assertNotIn("banana", menu)
+        self.assertNotIn("mro", menu)
+
+    def test_get_completions_sorts_colored_matches_by_visible_text(self):
+        console = FakeConsole(iter(()))
+        config = ReadlineConfig()
+        config.readline_completer = FancyCompleter(
+            {
+                "foo_str": "value",
+                "foo_int": 1,
+                "foo_none": None,
+            },
+            use_colors=True,
+        ).complete
+        reader = ReadlineAlikeReader(console=console, config=config)
+
+        matches, action = reader.get_completions("foo_")
+
+        self.assertIsNone(action)
+        self.assertEqual(
+            [stripcolor(match) for match in matches],
+            ["foo_int", "foo_none", "foo_str"],
+        )
+
+
+class TestPyReplReadlineSetup(TestCase):
+    def test_setup_ignores_basic_completer_env_when_env_is_disabled(self):
+        class FakeFancyCompleter:
+            def __init__(self, namespace):
+                self.namespace = namespace
+
+            def complete(self, text, state):
+                return None
+
+        class FakeBasicCompleter(FakeFancyCompleter):
+            pass
+
+        wrapper = Mock()
+        wrapper.config = ReadlineConfig()
+        stdin = Mock()
+        stdout = Mock()
+        stdin.fileno.return_value = 0
+        stdout.fileno.return_value = 1
+
+        with (
+            patch.object(pyrepl_readline, "_wrapper", wrapper),
+            patch.object(pyrepl_readline, "raw_input", None),
+            patch.object(pyrepl_readline, "FancyCompleter", FakeFancyCompleter),
+            patch.object(pyrepl_readline, "RLCompleter", FakeBasicCompleter),
+            patch.object(pyrepl_readline.sys, "stdin", stdin),
+            patch.object(pyrepl_readline.sys, "stdout", stdout),
+            patch.object(pyrepl_readline.sys, "flags", Mock(ignore_environment=True)),
+            patch.object(pyrepl_readline.os, "isatty", return_value=True),
+            patch.object(pyrepl_readline.os, "getenv") as mock_getenv,
+            patch("builtins.input", lambda prompt="": prompt),
+        ):
+            mock_getenv.return_value = "1"
+            pyrepl_readline._setup({})
+
+        self.assertIsInstance(
+            wrapper.config.readline_completer.__self__,
+            FakeFancyCompleter,
+        )
+        mock_getenv.assert_not_called()
+
+
 class TestPyReplModuleCompleter(TestCase):
     def setUp(self):
         # Make iter_modules() search only the standard library.
@@ -957,7 +1084,9 @@ class TestPyReplModuleCompleter(TestCase):
         reader = ReadlineAlikeReader(console=console, config=config)
         return reader
 
-    def test_import_completions(self):
+    @patch.dict(sys.modules,
+                {"importlib.resources": object()})  # don't propose to import it
+    def test_completions(self):
         cases = (
             ("import path\t\n", "import pathlib"),
             ("import importlib.\t\tres\t\n", "import importlib.resources"),
@@ -971,6 +1100,7 @@ class TestPyReplModuleCompleter(TestCase):
             ("from importlib import mac\t\n", "from importlib import machinery"),
             ("from importlib import res\t\n", "from importlib import resources"),
             ("from importlib.res\t import a\t\n", "from importlib.resources import abc"),
+            ("from __phello__ import s\t\n", "from __phello__ import spam"),  # frozen module
         )
         for code, expected in cases:
             with self.subTest(code=code):
@@ -1010,7 +1140,7 @@ class TestPyReplModuleCompleter(TestCase):
             # Return public methods by default
             ("from foo import \t\n", "from foo import public"),
             # Return private methods if explicitly specified
-            ("from foo import _\t\n", "from foo import _private"),
+            ("from foo import _p\t\n", "from foo import _private"),
         )
         for code, expected in cases:
             with self.subTest(code=code):
@@ -1031,12 +1161,15 @@ class TestPyReplModuleCompleter(TestCase):
                 output = reader.readline()
                 self.assertEqual(output, expected)
 
-    def test_relative_import_completions(self):
+    def test_relative_completions(self):
         cases = (
             (None, "from .readl\t\n", "from .readl"),
             (None, "from . import readl\t\n", "from . import readl"),
             ("_pyrepl", "from .readl\t\n", "from .readline"),
             ("_pyrepl", "from . import readl\t\n", "from . import readline"),
+            ("_pyrepl", "from .readline import mul\t\n", "from .readline import multiline_input"),
+            ("_pyrepl", "from .. import toodeep\t\n", "from .. import toodeep"),
+            ("concurrent", "from .futures.i\t\n", "from .futures.interpreter"),
         )
         for package, code, expected in cases:
             with self.subTest(code=code):
@@ -1066,7 +1199,7 @@ class TestPyReplModuleCompleter(TestCase):
         cases = (
             ("import pri\t\n", "import pri"),
             ("from pri\t\n", "from pri"),
-            ("from typing import Na\t\n", "from typing import Na"),
+            ("from typong import Na\t\n", "from typong import Na"),
         )
         for code, expected in cases:
             with self.subTest(code=code):
@@ -1075,10 +1208,23 @@ class TestPyReplModuleCompleter(TestCase):
                 output = reader.readline()
                 self.assertEqual(output, expected)
 
+    def test_global_cache(self):
+        with (tempfile.TemporaryDirectory() as _dir1,
+              patch.object(sys, "path", [_dir1, *sys.path])):
+            dir1 = pathlib.Path(_dir1)
+            (dir1 / "mod_aa.py").touch()
+            (dir1 / "mod_bb.py").touch()
+            events = code_to_events("import mod_a\t\nimport mod_b\t\n")
+            reader = self.prepare_reader(events, namespace={})
+            output_1, output_2 = reader.readline(), reader.readline()
+            self.assertEqual(output_1, "import mod_aa")
+            self.assertEqual(output_2, "import mod_bb")
+
     def test_hardcoded_stdlib_submodules(self):
         cases = (
             ("import collections.\t\n", "import collections.abc"),
-            ("from os import \t\n", "from os import path"),
+            ("import os.\t\n", "import os.path"),
+            ("import math.\t\n", "import math.integer"),
             ("import xml.parsers.expat.\t\te\t\n\n", "import xml.parsers.expat.errors"),
             ("from xml.parsers.expat import \t\tm\t\n\n", "from xml.parsers.expat import model"),
         )
@@ -1090,16 +1236,215 @@ class TestPyReplModuleCompleter(TestCase):
                 self.assertEqual(output, expected)
 
     def test_hardcoded_stdlib_submodules_not_proposed_if_local_import(self):
-        with tempfile.TemporaryDirectory() as _dir:
+        with (tempfile.TemporaryDirectory() as _dir,
+              patch.object(sys, "modules", {})):  # hide imported module
             dir = pathlib.Path(_dir)
             (dir / "collections").mkdir()
             (dir / "collections" / "__init__.py").touch()
             (dir / "collections" / "foo.py").touch()
-            with patch.object(sys, "path", [dir, *sys.path]):
+            with patch.object(sys, "path", [_dir, *sys.path]):
                 events = code_to_events("import collections.\t\n")
                 reader = self.prepare_reader(events, namespace={})
                 output = reader.readline()
                 self.assertEqual(output, "import collections.foo")
+
+    def test_already_imported_stdlib_module_no_other_suggestions(self):
+        with (tempfile.TemporaryDirectory() as _dir,
+              patch.object(sys, "path", [_dir, *sys.path])):
+            dir = pathlib.Path(_dir)
+            (dir / "collections").mkdir()
+            (dir / "collections" / "__init__.py").touch()
+            (dir / "collections" / "foo.py").touch()
+
+            # collections found in dir, but was already imported
+            # from stdlib at startup -> suggest stdlib submodules only
+            events = code_to_events("import collections.\t\n")
+            reader = self.prepare_reader(events, namespace={})
+            output = reader.readline()
+            self.assertEqual(output, "import collections.abc")
+
+    def test_already_imported_custom_module_no_suggestions(self):
+        with (tempfile.TemporaryDirectory() as _dir1,
+              tempfile.TemporaryDirectory() as _dir2,
+              patch.object(sys, "path", [_dir2, _dir1, *sys.path])):
+            dir1 = pathlib.Path(_dir1)
+            (dir1 / "mymodule").mkdir()
+            (dir1 / "mymodule" / "__init__.py").touch()
+            (dir1 / "mymodule" / "foo.py").touch()
+            importlib.import_module("mymodule")
+
+            dir2 = pathlib.Path(_dir2)
+            (dir2 / "mymodule").mkdir()
+            (dir2 / "mymodule" / "__init__.py").touch()
+            (dir2 / "mymodule" / "bar.py").touch()
+            # Purge FileFinder cache after adding files
+            pkgutil.get_importer(_dir2).invalidate_caches()
+            # mymodule found in dir2 before dir1, but it was already imported
+            # from dir1 -> do not suggest dir2 submodules
+            events = code_to_events("import mymodule.\t\n")
+            reader = self.prepare_reader(events, namespace={})
+            output = reader.readline()
+            self.assertEqual(output, "import mymodule.")
+
+            del sys.modules["mymodule"]
+            # mymodule not imported anymore -> suggest dir2 submodules
+            events = code_to_events("import mymodule.\t\n")
+            reader = self.prepare_reader(events, namespace={})
+            output = reader.readline()
+            self.assertEqual(output, "import mymodule.bar")
+
+    def test_already_imported_custom_file_no_suggestions(self):
+        # Same as before, but mymodule from dir1 has no submodules
+        # -> propose nothing
+        with (tempfile.TemporaryDirectory() as _dir1,
+              tempfile.TemporaryDirectory() as _dir2,
+              patch.object(sys, "path", [_dir2, _dir1, *sys.path])):
+            dir1 = pathlib.Path(_dir1)
+            (dir1 / "mymodule").mkdir()
+            (dir1 / "mymodule.py").touch()
+            importlib.import_module("mymodule")
+
+            dir2 = pathlib.Path(_dir2)
+            (dir2 / "mymodule").mkdir()
+            (dir2 / "mymodule" / "__init__.py").touch()
+            (dir2 / "mymodule" / "bar.py").touch()
+            events = code_to_events("import mymodule.\t\n")
+            reader = self.prepare_reader(events, namespace={})
+            output = reader.readline()
+            self.assertEqual(output, "import mymodule.")
+            del sys.modules["mymodule"]
+
+    def test_already_imported_module_without_origin_or_spec(self):
+        with (tempfile.TemporaryDirectory() as _dir1,
+              patch.object(sys, "path", [_dir1, *sys.path])):
+            dir1 = pathlib.Path(_dir1)
+            for mod in ("no_origin", "not_has_location", "no_spec"):
+                (dir1 / mod).mkdir()
+                (dir1 / mod / "__init__.py").touch()
+                (dir1 / mod / "foo.py").touch()
+                pkgutil.get_importer(_dir1).invalidate_caches()
+                module = importlib.import_module(mod)
+                assert module.__spec__
+                if mod == "no_origin":
+                    module.__spec__.origin = None
+                elif mod == "not_has_location":
+                    module.__spec__.has_location = False
+                else:
+                    module.__spec__ = None
+                events = code_to_events(f"import {mod}.\t\n")
+                reader = self.prepare_reader(events, namespace={})
+                output = reader.readline()
+                self.assertEqual(output, f"import {mod}.")
+                del sys.modules[mod]
+
+    @patch.dict(sys.modules)
+    def test_attribute_completion(self):
+        with tempfile.TemporaryDirectory() as _dir:
+            dir = pathlib.Path(_dir)
+            (dir / "foo.py").write_text("bar = 42")
+            (dir / "bar.py").write_text("baz = 42")
+            (dir / "pack").mkdir()
+            (dir / "pack" / "__init__.py").write_text("attr = 42")
+            (dir / "pack" / "foo.py").touch()
+            (dir / "pack" / "bar.py").touch()
+            (dir / "pack" / "baz.py").touch()
+            sys.modules.pop("graphlib", None)  # test modules may have been imported by previous tests
+            sys.modules.pop("antigravity", None)
+            sys.modules.pop("unittest.__main__", None)
+            with patch.object(sys, "path", [_dir, *sys.path]):
+                pkgutil.get_importer(_dir).invalidate_caches()
+                importlib.import_module("bar")
+                cases = (
+                    # needs 2 tabs to import (show prompt, then import)
+                    ("from foo import \t\n", "from foo import ", set()),
+                    ("from foo import \t\t\n", "from foo import bar", {"foo"}),
+                    ("from foo import ba\t\n", "from foo import ba", set()),
+                    ("from foo import ba\t\t\n", "from foo import bar", {"foo"}),
+                    # reset if a character is inserted between tabs
+                    ("from foo import \tb\ta\t\n", "from foo import ba", set()),
+                    # packages: needs 3 tabs ([ not unique ], prompt, import)
+                    ("from pack import \t\t\n", "from pack import ", set()),
+                    ("from pack import \t\t\t\n", "from pack import ", {"pack"}),
+                    ("from pack import \t\t\ta\t\n", "from pack import attr", {"pack"}),
+                    # one match: needs 2 tabs (insert + show prompt, import)
+                    ("from pack import f\t\n", "from pack import foo", set()),
+                    ("from pack import f\t\t\n", "from pack import foo", {"pack"}),
+                    # common prefix: needs 3 tabs (insert + [ not unique ], prompt, import)
+                    ("from pack import b\t\n", "from pack import ba", set()),
+                    ("from pack import b\t\t\n", "from pack import ba", set()),
+                    ("from pack import b\t\t\t\n", "from pack import ba", {"pack"}),
+                    # module already imported
+                    ("from bar import b\t\n", "from bar import baz", set()),
+                    # stdlib modules are automatically imported
+                    ("from graphlib import T\t\n", "from graphlib import TopologicalSorter", {"graphlib"}),
+                    # except those with known side-effects
+                    ("from antigravity import g\t\n", "from antigravity import g", set()),
+                    ("from unittest.__main__ import \t\n", "from unittest.__main__ import ", set()),
+                )
+                for code, expected, expected_imports in cases:
+                    with self.subTest(code=code), patch.dict(sys.modules):
+                        _imported = set(sys.modules.keys())
+                        events = code_to_events(code)
+                        reader = self.prepare_reader(events, namespace={})
+                        output = reader.readline()
+                        self.assertEqual(output, expected)
+                        new_imports = sys.modules.keys() - _imported
+                        self.assertEqual(new_imports, expected_imports)
+
+    @patch.dict(sys.modules)
+    def test_attribute_completion_error_on_import(self):
+        with tempfile.TemporaryDirectory() as _dir:
+            dir = pathlib.Path(_dir)
+            (dir / "foo.py").write_text("bar = 42")
+            (dir / "boom.py").write_text("1 <> 2")
+            with patch.object(sys, "path", [_dir, *sys.path]):
+                cases = (
+                    ("from boom import \t\t\n", "from boom import "),
+                    ("from foo import \t\t\n", "from foo import bar"), # still working
+                )
+                for code, expected in cases:
+                    with self.subTest(code=code):
+                        events = code_to_events(code)
+                        reader = self.prepare_reader(events, namespace={})
+                        output = reader.readline()
+                        self.assertEqual(output, expected)
+                self.assertNotIn("boom", sys.modules)
+
+    @patch.dict(sys.modules)
+    def test_attribute_completion_error_on_attributes_access(self):
+        with tempfile.TemporaryDirectory() as _dir:
+            dir = pathlib.Path(_dir)
+            (dir / "boom").mkdir()
+            (dir / "boom"/"__init__.py").write_text("def __dir__(): raise ValueError()")
+            (dir / "boom"/"submodule.py").touch()
+            with patch.object(sys, "path", [_dir, *sys.path]):
+                events = code_to_events("from boom import \t\t\n")  # trigger import
+                reader = self.prepare_reader(events, namespace={})
+                output = reader.readline()
+                self.assertIn("boom", sys.modules)
+                # ignore attributes, just propose submodule
+                self.assertEqual(output, "from boom import submodule")
+
+    @patch.dict(sys.modules)
+    def test_attribute_completion_private_and_invalid_names(self):
+        with tempfile.TemporaryDirectory() as _dir:
+            dir = pathlib.Path(_dir)
+            (dir / "foo.py").write_text("_secret = 'bar'")
+            with patch.object(sys, "path", [_dir, *sys.path]):
+                mod = importlib.import_module("foo")
+                mod.__dict__["invalid-identifier"] = "baz"
+                cases = (
+                    ("from foo import \t\n", "from foo import "),
+                    ("from foo import _s\t\n", "from foo import _secret"),
+                    ("from foo import inv\t\n", "from foo import inv"),
+                )
+                for code, expected in cases:
+                    with self.subTest(code=code):
+                        events = code_to_events(code)
+                        reader = self.prepare_reader(events, namespace={})
+                        output = reader.readline()
+                        self.assertEqual(output, expected)
+
 
     def test_get_path_and_prefix(self):
         cases = (
@@ -1203,6 +1548,7 @@ class TestPyReplModuleCompleter(TestCase):
             'import ..foo',
             'import .foo.bar',
             'import foo; x = 1',
+            'import foo; 1,',
             'import a.; x = 1',
             'import a.b; x = 1',
             'import a.b.; x = 1',
@@ -1222,6 +1568,8 @@ class TestPyReplModuleCompleter(TestCase):
             'from foo import import',
             'from foo import from',
             'from foo import as',
+            'from \\x',  # _tokenize SyntaxError -> tokenize TokenError
+            'if 1:\n pass\n\tpass',  # _tokenize TabError -> tokenize TabError
         )
         for code in cases:
             parser = ImportParser(code)
@@ -1229,8 +1577,119 @@ class TestPyReplModuleCompleter(TestCase):
             with self.subTest(code=code):
                 self.assertEqual(actual, None)
 
+    @patch.dict(sys.modules)
+    def test_suggestions_and_messages(self) -> None:
+        # more unitary tests checking the exact suggestions provided
+        # (sorting, de-duplication, import action...)
+        _prompt = ("[ module not imported, press again to import it "
+                   "and propose attributes ]")
+        _error = "[ error during import: division by zero ]"
+        with tempfile.TemporaryDirectory() as _dir:
+            dir = pathlib.Path(_dir)
+            (dir / "foo.py").write_text("bar = 42")
+            (dir / "boom.py").write_text("1/0")
+            (dir / "pack").mkdir()
+            (dir / "pack" / "__init__.py").write_text("foo = 1; bar = 2;")
+            (dir / "pack" / "bar.py").touch()
+            sys.modules.pop("graphlib", None)  # test modules may have been imported by previous tests
+            sys.modules.pop("string.templatelib", None)
+            with patch.object(sys, "path", [_dir, *sys.path]):
+                pkgutil.get_importer(_dir).invalidate_caches()
+                # NOTE: Cases are intentionally sequential and share completer
+                # state. Earlier cases may import modules that later cases
+                # depend on. Do NOT reorder without understanding dependencies.
+                cases = (
+                    # no match != not an import
+                    ("import nope", ([], None), set()),
+                    ("improt nope", None, set()),
+                    # names sorting
+                    ("import col", (["collections", "colorsys"], None), set()),
+                    # module auto-import
+                    ("import fo", (["foo"], None), set()),
+                    ("from foo import ", ([], (_prompt, None)), {"foo"}),
+                    ("from foo import ", (["bar"], None), set()), # now imported
+                    ("from foo import ba", (["bar"], None), set()),
+                    # error during import
+                    ("from boom import ", ([], (_prompt, _error)), set()),
+                    ("from boom import ", ([], None), set()), # do not retry
+                    # packages
+                    ("from collections import a", (["abc"], None), set()),
+                    ("from pack import ", (["bar"], (_prompt, None)), {"pack"}),
+                    ("from pack import ", (["bar", "foo"], None), set()),
+                    ("from pack.bar import ", ([], (_prompt, None)), {"pack.bar"}),
+                    ("from pack.bar import ", ([], None), set()),
+                    # stdlib = auto-imported
+                    ("from graphlib import T", (["TopologicalSorter"], None), {"graphlib"}),
+                    ("from string.templatelib import c", (["convert"], None), {"string.templatelib"}),
+                )
+                completer = ModuleCompleter()
+                for i, (code, expected, expected_imports) in enumerate(cases):
+                    with self.subTest(code=code, i=i):
+                        _imported = set(sys.modules.keys())
+                        result = completer.get_completions(code)
+                        self.assertEqual(result is None, expected is None)
+                        if result:
+                            compl, act = result
+                            self.assertEqual(compl, expected[0])
+                            self.assertEqual(act is None, expected[1] is None)
+                            if act:
+                                msg, func = act
+                                self.assertEqual(msg, expected[1][0])
+                                act_result = func()
+                                self.assertEqual(act_result, expected[1][1])
+
+                        new_imports = sys.modules.keys() - _imported
+                        self.assertSetEqual(new_imports, expected_imports)
+
+
+# Audit hook used to check for stdlib modules import side-effects
+# Defined globally to avoid adding one hook per test run (refleak)
+_audit_events: set[str] | None = None
+
+
+def _hook(name: str, _args: tuple):
+    if _audit_events is not None:  # No-op when not activated
+        _audit_events.add(name)
+sys.addaudithook(_hook)
+
+
+@contextlib.contextmanager
+def _capture_audit_events():
+    global _audit_events
+    _audit_events = set()
+    try:
+        yield _audit_events
+    finally:
+        _audit_events = None
+
+
+class TestModuleCompleterAutomaticImports(TestCase):
+    def test_no_side_effects(self):
+        from test.test___all__ import AllTest  # TODO: extract to a helper?
+
+        completer = ModuleCompleter()
+        for _, modname in AllTest().walk_modules(completer._stdlib_path, ""):
+            with self.subTest(modname=modname):
+                with (captured_stdout() as out,
+                      captured_stderr() as err,
+                      _capture_audit_events() as audit_events,
+                      (patch("tkinter._tkinter.create") if tkinter
+                       else contextlib.nullcontext()) as tk_mock,
+                      warnings.catch_warnings(action="ignore")):
+                    completer._maybe_import_module(modname)
+                # Test no module is imported that
+                # 1. prints any text
+                self.assertEqual(out.getvalue(), "")
+                self.assertEqual(err.getvalue(), "")
+                # 2. spawn any subprocess (eg. webbrowser.open)
+                self.assertNotIn("subprocess.Popen", audit_events)
+                # 3. launch a Tk window
+                if tk_mock is not None:
+                    tk_mock.assert_not_called()
+
 
 class TestHardcodedSubmodules(TestCase):
+    @patch.dict(sys.modules)
     def test_hardcoded_stdlib_submodules_are_importable(self):
         for parent_path, submodules in HARDCODED_SUBMODULES.items():
             for module_name in submodules:
@@ -1443,10 +1902,10 @@ class TestMain(ReplTestCase):
         case2 = f"{pre}, '__doc__', '__file__', {post}" in output
 
         # if `__main__` is a cached .pyc file and the .py source exists
-        case3 = f"{pre}, '__cached__', '__doc__', '__file__', {post}" in output
+        case3 = f"{pre}, '__doc__', '__file__', {post}" in output
 
         # if `__main__` is a cached .pyc file but there's no .py source file
-        case4 = f"{pre}, '__cached__', '__doc__', {post}" in output
+        case4 = f"{pre}, '__doc__', {post}" in output
 
         self.assertTrue(case1 or case2 or case3 or case4, output)
 
@@ -1829,6 +2288,94 @@ class TestMain(ReplTestCase):
                 )
                 self.assertIn(hint, output)
 
+    @force_not_colorized
+    def test_no_newline(self):
+        env = os.environ.copy()
+        env.pop("PYTHON_BASIC_REPL", "")
+        env["PYTHON_BASIC_REPL"] = "1"
+
+        commands = "print('Something pretty long', end='')\nexit()\n"
+        expected_output_sequence = "Something pretty long>>> exit()"
+
+        # gh-143394: The basic REPL needs the readline module to turn off
+        # ECHO terminal attribute.
+        if readline_module is not None:
+            basic_output, basic_exit_code = self.run_repl(commands, env=env)
+            self.assertEqual(basic_exit_code, 0)
+            self.assertIn(expected_output_sequence, basic_output)
+
+        output, exit_code = self.run_repl(commands)
+        self.assertEqual(exit_code, 0)
+
+        # Build patterns for escape sequences that don't affect cursor position
+        # or visual output. Use terminfo to get platform-specific sequences,
+        # falling back to hard-coded patterns for capabilities not in terminfo.
+        from _pyrepl.terminfo import TermInfo
+        ti = TermInfo(os.environ.get("TERM", ""))
+
+        safe_patterns = []
+
+        # smkx/rmkx - application cursor keys and keypad mode
+        smkx = ti.get("smkx")
+        rmkx = ti.get("rmkx")
+        if smkx:
+            safe_patterns.append(re.escape(smkx.decode("ascii")))
+        if rmkx:
+            safe_patterns.append(re.escape(rmkx.decode("ascii")))
+        if not smkx and not rmkx:
+            safe_patterns.append(r'\x1b\[\?1[hl]')  # application cursor keys
+            safe_patterns.append(r'\x1b[=>]')  # application keypad mode
+
+        # ich1 - insert character (only safe form that inserts exactly 1 char)
+        ich1 = ti.get("ich1")
+        if ich1:
+            safe_patterns.append(re.escape(ich1.decode("ascii")) + r'(?=[ -~])')
+        else:
+            safe_patterns.append(r'\x1b\[(?:1)?@(?=[ -~])')
+
+        # civis/cnorm - cursor visibility (may include cursor blinking control)
+        civis = ti.get("civis")
+        cnorm = ti.get("cnorm")
+        if civis:
+            safe_patterns.append(re.escape(civis.decode("ascii")))
+        if cnorm:
+            safe_patterns.append(re.escape(cnorm.decode("ascii")))
+        if not civis and not cnorm:
+            safe_patterns.append(r'\x1b\[\?25[hl]')  # cursor visibility
+            safe_patterns.append(r'\x1b\[\?12[hl]')  # cursor blinking
+
+        # rmam / smam - automatic margins
+        rmam = ti.get("rmam")
+        smam = ti.get("smam")
+        if rmam:
+            safe_patterns.append(re.escape(rmam.decode("ascii")))
+        if smam:
+            safe_patterns.append(re.escape(smam.decode("ascii")))
+        if not rmam and not smam:
+            safe_patterns.append(r'\x1b\[\?7l') # turn off automatic margins
+            safe_patterns.append(r'\x1b\[\?7h') # turn on automatic margins
+
+        # Modern extensions not in standard terminfo - always use patterns
+        safe_patterns.append(r'\x1b\[\?2004[hl]')  # bracketed paste mode
+        safe_patterns.append(r'\x1b\[\?12[hl]')  # cursor blinking (may be separate)
+        safe_patterns.append(r'\x1b\[\?[01]c')  # device attributes
+
+        safe_escapes = re.compile('|'.join(safe_patterns))
+        cleaned_output = safe_escapes.sub('', output)
+        self.assertIn(expected_output_sequence, cleaned_output)
+
+
+@skipUnless(sys.platform == "darwin", "macOS only")
+class TestMainAppleTerminal(TestMain):
+    """Test the REPL with Apple Terminal's TERM_PROGRAM set."""
+
+    def run_repl(self, repl_input, env=None, **kwargs):
+        if env is None:
+            env = os.environ.copy()
+        env["TERM_PROGRAM"] = "Apple_Terminal"
+        return super().run_repl(repl_input, env=env, **kwargs)
+
+
 class TestPyReplCtrlD(TestCase):
     """Test Ctrl+D behavior in _pyrepl to match old pre-3.13 REPL behavior.
 
@@ -1911,3 +2458,47 @@ class TestPyReplCtrlD(TestCase):
         )
         reader, _ = handle_all_events(events)
         self.assertEqual("hello", "".join(reader.buffer))
+
+
+@skipUnless(sys.platform == "win32", "windows console only")
+class TestWindowsConsoleEolWrap(TestCase):
+    def _make_mock_console(self, width=80):
+        from _pyrepl import windows_console as wc
+
+        console = object.__new__(wc.WindowsConsole)
+
+        console.width = width
+        console.posxy = (0, 0)
+        console.screen = [""]
+
+        console._hide_cursor = Mock()
+        console._show_cursor = Mock()
+        console._erase_to_end = Mock()
+        console._move_relative = Mock()
+        console.move_cursor = Mock()
+        console._WindowsConsole__write = Mock()
+
+        return console, wc
+
+    def test_short_line_sets_posxy_normally(self):
+        width = 10
+        y = 3
+        console, wc = self._make_mock_console(width=width)
+        old_line = ""
+        new_line = "a" * 3
+        wc.WindowsConsole._WindowsConsole__write_changed_line(
+            console, y, old_line, new_line, 0
+        )
+        self.assertEqual(console.posxy, (3, y))
+
+    def test_exact_width_line_does_not_wrap(self):
+        width = 10
+        y = 3
+        console, wc = self._make_mock_console(width=width)
+        old_line = ""
+        new_line = "a" * width
+
+        wc.WindowsConsole._WindowsConsole__write_changed_line(
+            console, y, old_line, new_line, 0
+        )
+        self.assertEqual(console.posxy, (width - 1, y))

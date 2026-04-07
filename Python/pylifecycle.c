@@ -15,6 +15,7 @@
 #include "pycore_initconfig.h"    // _PyStatus_OK()
 #include "pycore_interpolation.h" // _PyInterpolation_InitTypes()
 #include "pycore_long.h"          // _PyLong_InitTypes()
+#include "pycore_moduleobject.h"  // _PyModule_InitModuleDictWatcher()
 #include "pycore_object.h"        // _PyDebug_PrintTotalRefs()
 #include "pycore_obmalloc.h"      // _PyMem_init_obmalloc()
 #include "pycore_optimizer.h"     // _Py_Executors_InvalidateAll
@@ -26,14 +27,23 @@
 #include "pycore_runtime.h"       // _Py_ID()
 #include "pycore_runtime_init.h"  // _PyRuntimeState_INIT
 #include "pycore_setobject.h"     // _PySet_NextEntry()
+#include "pycore_stats.h"         // _PyStats_InterpInit()
 #include "pycore_sysmodule.h"     // _PySys_ClearAttrString()
 #include "pycore_traceback.h"     // _Py_DumpTracebackThreads()
+#include "pycore_tuple.h"         // _PyTuple_FromPair
 #include "pycore_typeobject.h"    // _PyTypes_InitTypes()
 #include "pycore_typevarobject.h" // _Py_clear_generic_types()
 #include "pycore_unicodeobject.h" // _PyUnicode_InitTypes()
 #include "pycore_uniqueid.h"      // _PyObject_FinalizeUniqueIdPool()
 #include "pycore_warnings.h"      // _PyWarnings_InitState()
 #include "pycore_weakref.h"       // _PyWeakref_GET_REF()
+#ifdef _Py_JIT
+#include "pycore_jit.h"           // _PyJIT_Fini()
+#endif
+
+#if defined(PYMALLOC_USE_HUGEPAGES) && defined(MS_WINDOWS)
+#include <Windows.h>
+#endif
 
 #include "opcode.h"
 
@@ -480,6 +490,41 @@ pyinit_core_reconfigure(_PyRuntimeState *runtime,
     return _PyStatus_OK();
 }
 
+#if defined(PYMALLOC_USE_HUGEPAGES) && defined(MS_WINDOWS)
+static PyStatus
+get_huge_pages_privilege(void)
+{
+    HANDLE hToken;
+    if (!OpenProcessToken(GetCurrentProcess(), TOKEN_ADJUST_PRIVILEGES | TOKEN_QUERY, &hToken))
+    {
+        return _PyStatus_ERR("failed to open process token");
+    }
+    TOKEN_PRIVILEGES tp;
+    if (!LookupPrivilegeValue(NULL, SE_LOCK_MEMORY_NAME, &tp.Privileges[0].Luid))
+    {
+        CloseHandle(hToken);
+        return _PyStatus_ERR("failed to lookup SeLockMemoryPrivilege for huge pages");
+    }
+    tp.PrivilegeCount = 1;
+    tp.Privileges[0].Attributes = SE_PRIVILEGE_ENABLED;
+    // AdjustTokenPrivileges can return with nonzero status (i.e. success)
+    // but without having all privileges adjusted (ERROR_NOT_ALL_ASSIGNED).
+    BOOL status = AdjustTokenPrivileges(hToken, FALSE, &tp, sizeof(TOKEN_PRIVILEGES), NULL, NULL);
+    DWORD error = GetLastError();
+    if (!status || (error != ERROR_SUCCESS))
+    {
+        CloseHandle(hToken);
+        return _PyStatus_ERR(
+            "SeLockMemoryPrivilege not held; "
+            "grant it via Local Security Policy or disable PYTHON_PYMALLOC_HUGEPAGES");
+    }
+    if (!CloseHandle(hToken))
+    {
+        return _PyStatus_ERR("failed to close process token handle");
+    }
+    return _PyStatus_OK();
+}
+#endif
 
 static PyStatus
 pycore_init_runtime(_PyRuntimeState *runtime,
@@ -493,6 +538,15 @@ pycore_init_runtime(_PyRuntimeState *runtime,
     if (_PyStatus_EXCEPTION(status)) {
         return status;
     }
+
+#if defined(PYMALLOC_USE_HUGEPAGES) && defined(MS_WINDOWS)
+    if (runtime->allocators.use_hugepages) {
+        status = get_huge_pages_privilege();
+        if (_PyStatus_EXCEPTION(status)) {
+            return status;
+        }
+    }
+#endif
 
     /* Py_Finalize leaves _Py_Finalizing set in order to help daemon
      * threads behave a little more gracefully at interpreter shutdown.
@@ -628,6 +682,11 @@ pycore_create_interpreter(_PyRuntimeState *runtime,
     _PyInterpreterState_SetWhence(interp, _PyInterpreterState_WHENCE_RUNTIME);
     interp->_ready = 1;
 
+    /* Initialize the module dict watcher early, before any modules are created */
+    if (_PyModule_InitModuleDictWatcher(interp) != 0) {
+        return _PyStatus_ERR("failed to initialize module dict watcher");
+    }
+
     status = _PyConfig_Copy(&interp->config, src_config);
     if (_PyStatus_EXCEPTION(status)) {
         return status;
@@ -655,6 +714,14 @@ pycore_create_interpreter(_PyRuntimeState *runtime,
     if (_PyStatus_EXCEPTION(status)) {
         return status;
     }
+
+#ifdef Py_STATS
+    // initialize pystats.  This must be done after the settings are loaded.
+    status = _PyStats_InterpInit(interp);
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
+    }
+#endif
 
     // initialize the interp->obmalloc state.  This must be done after
     // the settings are loaded (so that feature_flags are set) but before
@@ -687,8 +754,6 @@ static PyStatus
 pycore_init_global_objects(PyInterpreterState *interp)
 {
     PyStatus status;
-
-    _PyFloat_InitState(interp);
 
     status = _PyUnicode_InitGlobalObjects(interp);
     if (_PyStatus_EXCEPTION(status)) {
@@ -820,6 +885,8 @@ pycore_init_builtins(PyThreadState *tstate)
     interp->common_consts[CONSTANT_BUILTIN_TUPLE] = (PyObject*)&PyTuple_Type;
     interp->common_consts[CONSTANT_BUILTIN_ALL] = all;
     interp->common_consts[CONSTANT_BUILTIN_ANY] = any;
+    interp->common_consts[CONSTANT_BUILTIN_LIST] = (PyObject*)&PyList_Type;
+    interp->common_consts[CONSTANT_BUILTIN_SET] = (PyObject*)&PySet_Type;
 
     for (int i=0; i < NUM_COMMON_CONSTANTS; i++) {
         assert(interp->common_consts[i] != NULL);
@@ -1321,6 +1388,22 @@ init_interp_main(PyThreadState *tstate)
         }
     }
 
+    // Initialize lazy imports based on configuration. Do this after site
+    // module is imported to avoid circular imports during startup.
+    if (config->lazy_imports != -1) {
+        PyImport_LazyImportsMode lazy_mode;
+        if (config->lazy_imports == 1) {
+            lazy_mode = PyImport_LAZY_ALL;
+        }
+        else {
+            lazy_mode = PyImport_LAZY_NONE;
+        }
+        if (PyImport_SetLazyImportsMode(lazy_mode) < 0) {
+            return _PyStatus_ERR("failed to set lazy imports mode");
+        }
+    }
+    // If config->lazy_imports == -1, use the default mode, no change needed.
+
     if (is_main_interp) {
 #ifndef MS_WINDOWS
         emit_stderr_warning_for_legacy_locale(interp->runtime);
@@ -1494,6 +1577,18 @@ Py_Initialize(void)
 }
 
 
+PyStatus
+_Py_InitializeMain(void)
+{
+    PyStatus status = _PyRuntime_Initialize();
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
+    }
+    PyThreadState *tstate = _PyThreadState_GET();
+    return pyinit_main(tstate);
+}
+
+
 static void
 finalize_modules_delete_special(PyThreadState *tstate, int verbose)
 {
@@ -1567,7 +1662,7 @@ finalize_remove_modules(PyObject *modules, int verbose)
         if (weaklist != NULL) { \
             PyObject *wr = PyWeakref_NewRef(mod, NULL); \
             if (wr) { \
-                PyObject *tup = PyTuple_Pack(2, name, wr); \
+                PyObject *tup = _PyTuple_FromPair(name, wr); \
                 if (!tup || PyList_Append(weaklist, tup) < 0) { \
                     PyErr_FormatUnraisable("Exception ignored while removing modules"); \
                 } \
@@ -1608,6 +1703,7 @@ finalize_remove_modules(PyObject *modules, int verbose)
                 PyObject *value = PyObject_GetItem(modules, key);
                 if (value == NULL) {
                     PyErr_FormatUnraisable("Exception ignored while removing modules");
+                    Py_DECREF(key);
                     continue;
                 }
                 CLEAR_MODULE(key, value);
@@ -1713,6 +1809,12 @@ finalize_modules(PyThreadState *tstate)
     interp->compiling = false;
 #ifdef _Py_TIER2
     _Py_Executors_InvalidateAll(interp, 0);
+    PyMem_Free(interp->executor_blooms);
+    PyMem_Free(interp->executor_ptrs);
+    interp->executor_blooms = NULL;
+    interp->executor_ptrs = NULL;
+    interp->executor_count = 0;
+    interp->executor_capacity = 0;
 #endif
 
     // Stop watching __builtin__ modifications
@@ -1786,6 +1888,9 @@ finalize_modules(PyThreadState *tstate)
     // clear PyModuleDef.m_base.m_copy (of extensions not using the multi-phase
     // initialization API)
     _PyImport_ClearModulesByIndex(interp);
+
+    // Clear the dict of lazily loaded module nname to submodule names
+    _PyImport_ClearLazyModules(interp);
 
     // Clear and delete the modules directory.  Actual modules will
     // still be there only if imported during the execution of some
@@ -1932,7 +2037,6 @@ finalize_interp_clear(PyThreadState *tstate)
         _PyArg_Fini();
         _Py_ClearFileSystemEncoding();
         _PyPerfTrampoline_Fini();
-        _PyPerfTrampoline_FreeArenas();
     }
 
     finalize_interp_types(tstate->interp);
@@ -2258,6 +2362,7 @@ _Py_Finalize(_PyRuntimeState *runtime)
     /* Print debug stats if any */
     _PyEval_Fini();
 
+
     /* Flush sys.stdout and sys.stderr (again, in case more was printed) */
     if (flush_std_files() < 0) {
         status = -1;
@@ -2337,6 +2442,10 @@ _Py_Finalize(_PyRuntimeState *runtime)
 
     finalize_interp_clear(tstate);
 
+#ifdef _Py_JIT
+    /* Free JIT shim memory */
+    _PyJIT_Fini();
+#endif
 
 #ifdef Py_TRACE_REFS
     /* Display addresses (& refcnts) of all objects still alive.
@@ -2417,7 +2526,7 @@ new_interpreter(PyThreadState **tstate_p,
 
     /* Issue #10915, #15751: The GIL API doesn't work with multiple
        interpreters: disable PyGILState_Check(). */
-    runtime->gilstate.check_enabled = 0;
+    _Py_atomic_store_int_relaxed(&runtime->gilstate.check_enabled, 0);
 
     // XXX Might new_interpreter() have been called without the GIL held?
     PyThreadState *save_tstate = _PyThreadState_GET();
@@ -2429,6 +2538,11 @@ new_interpreter(PyThreadState **tstate_p,
     }
     _PyInterpreterState_SetWhence(interp, whence);
     interp->_ready = 1;
+
+    /* Initialize the module dict watcher early, before any modules are created */
+    if (_PyModule_InitModuleDictWatcher(interp) != 0) {
+        goto error;
+    }
 
     /* From this point until the init_interp_create_gil() call,
        we must not do anything that requires that the GIL be held
@@ -2468,6 +2582,14 @@ new_interpreter(PyThreadState **tstate_p,
     if (_PyStatus_EXCEPTION(status)) {
         return status;
     }
+
+#ifdef Py_STATS
+    // initialize pystats.  This must be done after the settings are loaded.
+    status = _PyStats_InterpInit(interp);
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
+    }
+#endif
 
     // initialize the interp->obmalloc state.  This must be done after
     // the settings are loaded (so that feature_flags are set) but before
@@ -2554,7 +2676,7 @@ Py_EndInterpreter(PyThreadState *tstate)
     if (tstate != _PyThreadState_GET()) {
         Py_FatalError("thread is not current");
     }
-    if (tstate->current_frame != NULL) {
+    if (tstate->current_frame != tstate->base_frame) {
         Py_FatalError("thread still has a frame");
     }
     interp->finalizing = 1;
@@ -2626,7 +2748,7 @@ finalize_subinterpreters(void)
     (void)PyErr_WarnEx(
             PyExc_RuntimeWarning,
             "remaining subinterpreters; "
-            "destroy them with _interpreters.destroy()",
+            "close them with Interpreter.close()",
             0);
 
     /* Swap out the current tstate, which we know must belong
@@ -3366,11 +3488,25 @@ _Py_DumpExtensionModules(int fd, PyInterpreterState *interp)
             Py_hash_t hash;
             // if stdlib_module_names is not NULL, it is always a frozenset.
             while (_PySet_NextEntry(stdlib_module_names, &i, &item, &hash)) {
-                if (PyUnicode_Check(item)
-                    && PyUnicode_Compare(key, item) == 0)
-                {
-                    is_stdlib_ext = 1;
-                    break;
+                if (!PyUnicode_Check(item)) {
+                    continue;
+                }
+                Py_ssize_t len = PyUnicode_GET_LENGTH(item);
+                if (PyUnicode_Tailmatch(key, item, 0, len, -1) == 1) {
+                    Py_ssize_t key_len = PyUnicode_GET_LENGTH(key);
+                    if (key_len == len) {
+                        is_stdlib_ext = 1;
+                        break;
+                    }
+                    assert(key_len > len);
+
+                    // Ignore sub-modules of stdlib packages. For example,
+                    // ignore "math.integer" if key starts with "math.".
+                    Py_UCS4 ch = PyUnicode_ReadChar(key, len);
+                    if (ch == '.') {
+                        is_stdlib_ext = 1;
+                        break;
+                    }
                 }
             }
             if (is_stdlib_ext) {
