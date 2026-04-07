@@ -4319,9 +4319,13 @@
         }
 
         case _CALL_METHOD_DESCRIPTOR_NOARGS: {
+            JitOptRef *args;
             JitOptRef self_or_null;
             JitOptRef callable;
             JitOptRef res;
+            JitOptRef c;
+            JitOptRef s;
+            args = &stack_pointer[-oparg];
             self_or_null = stack_pointer[-1 - oparg];
             callable = stack_pointer[-2 - oparg];
             PyObject *callable_o = sym_get_const(ctx, callable);
@@ -4332,9 +4336,22 @@
                 ADD_OP(_CALL_METHOD_DESCRIPTOR_NOARGS_INLINE, oparg + 1, (uintptr_t)cfunc);
             }
             res = sym_new_not_null(ctx);
-            CHECK_STACK_BOUNDS(-1 - oparg);
+            c = callable;
+            if (sym_is_not_null(self_or_null)) {
+                args--;
+                s = args[0];
+            }
+            else if (sym_is_null(self_or_null)) {
+                s = args[0];
+            }
+            else {
+                s = sym_new_unknown(ctx);
+            }
+            CHECK_STACK_BOUNDS(1 - oparg);
             stack_pointer[-2 - oparg] = res;
-            stack_pointer += -1 - oparg;
+            stack_pointer[-1 - oparg] = c;
+            stack_pointer[-oparg] = s;
+            stack_pointer += 1 - oparg;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
             break;
         }

@@ -1421,7 +1421,7 @@ dummy_func(void) {
         ctx->frame->is_c_recursion_checked = true;
     }
 
-    op(_CALL_METHOD_DESCRIPTOR_NOARGS, (callable, self_or_null, args[oparg] -- res)) {
+    op(_CALL_METHOD_DESCRIPTOR_NOARGS, (callable, self_or_null, args[oparg] -- res, c, s)) {
         PyObject *callable_o = sym_get_const(ctx, callable);
         if (callable_o && Py_IS_TYPE(callable_o, &PyMethodDescr_Type)
             && sym_is_not_null(self_or_null)) {
@@ -1430,6 +1430,17 @@ dummy_func(void) {
             ADD_OP(_CALL_METHOD_DESCRIPTOR_NOARGS_INLINE, oparg + 1, (uintptr_t)cfunc);
         }
         res = sym_new_not_null(ctx);
+        c = callable;
+        if (sym_is_not_null(self_or_null)) {
+            args--;
+            s = args[0];
+        }
+        else if (sym_is_null(self_or_null)) {
+            s = args[0];
+        }
+        else {
+            s = sym_new_unknown(ctx);
+        }
     }
 
     op(_CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS, (callable, self_or_null, args[oparg] -- res)) {
