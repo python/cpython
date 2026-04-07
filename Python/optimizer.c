@@ -602,6 +602,9 @@ static int
 is_terminator(const _PyUOpInstruction *uop)
 {
     int opcode = _PyUop_Uncached[uop->opcode];
+    if (opcode == 0) {
+        opcode = uop->opcode;
+    }
     return (
         opcode == _EXIT_TRACE ||
         opcode == _DEOPT ||
