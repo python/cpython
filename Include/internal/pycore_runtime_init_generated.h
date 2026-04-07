@@ -1993,6 +1993,7 @@ extern "C" {
     INIT_ID(posix), \
     INIT_ID(prec), \
     INIT_ID(preserve_exc), \
+    INIT_ID(pretty), \
     INIT_ID(print_file_and_line), \
     INIT_ID(priority), \
     INIT_ID(progress), \

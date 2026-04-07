@@ -1,6 +1,7 @@
 import unittest
 import sys
 from io import StringIO
+from pprint import PrettyPrinter
 
 from test import support
 
@@ -198,6 +199,55 @@ class TestPy2MigrationHint(unittest.TestCase):
 
         self.assertIn("Missing parentheses in call to 'print'. Did you mean print(...)",
                 str(context.exception))
+
+
+class PPrintable:
+    def __pprint__(self):
+        yield 'I feel pretty'
+
+    def __str__(self):
+        return 'Pretty, pretty, pretty good'
+
+
+class PrettySmart(PrettyPrinter):
+    def pformat(self, obj):
+        if isinstance(obj, str):
+            return obj
+        return super().pformat(obj)
+
+
+class TestPrettyPrinting(unittest.TestCase):
+    """Test the optional `pretty` keyword argument."""
+
+    def setUp(self):
+        self.file = StringIO()
+
+    def test_default_pretty(self):
+        print('one', 2, file=self.file, pretty=None)
+        self.assertEqual(self.file.getvalue(), 'one 2\n')
+
+    def test_default_pretty_printer(self):
+        print('one', 2, file=self.file, pretty=True)
+        self.assertEqual(self.file.getvalue(), "'one' 2\n")
+
+    def test_pprint_magic(self):
+        print('one', PPrintable(), 2, file=self.file, pretty=True)
+        self.assertEqual(self.file.getvalue(), "'one' PPrintable('I feel pretty') 2\n")
+
+    def test_custom_pprinter(self):
+        print('one', PPrintable(), 2, file=self.file, pretty=PrettySmart().pformat)
+        self.assertEqual(self.file.getvalue(), "one PPrintable('I feel pretty') 2\n")
+
+    def test_callable_pprinter(self):
+        print('one', PPrintable(), 2, file=self.file, pretty=str)
+        self.assertEqual(self.file.getvalue(), "one Pretty, pretty, pretty good 2\n")
+
+    def test_bad_pprinter(self):
+        with self.assertRaises(TypeError):
+            print('one', PPrintable(), 2, file=self.file, pretty=object())
+
+    def test_fstring(self):
+        self.assertEqual(f'{PPrintable()!p}', "PPrintable('I feel pretty')")
 
 
 if __name__ == "__main__":

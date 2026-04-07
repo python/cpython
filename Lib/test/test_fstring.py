@@ -1369,7 +1369,7 @@ x = (
         for conv_identifier in 'g', 'A', 'G', 'ä', 'ɐ':
             self.assertAllRaise(SyntaxError,
                                 "f-string: invalid conversion character %r: "
-                                "expected 's', 'r', or 'a'" % conv_identifier,
+                                "expected 's', 'r', 'a', or 'p'" % conv_identifier,
                                 ["f'{3!" + conv_identifier + "}'"])
 
         for conv_non_identifier in '3', '!':
@@ -1385,7 +1385,7 @@ x = (
 
         self.assertAllRaise(SyntaxError,
                             "f-string: invalid conversion character 'ss': "
-                            "expected 's', 'r', or 'a'",
+                            "expected 's', 'r', 'a', or 'p'",
                             ["f'{3!ss}'",
                              "f'{3!ss:}'",
                              "f'{3!ss:s}'",
