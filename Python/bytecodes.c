@@ -1249,14 +1249,9 @@ dummy_func(
             PyObject *sub = PyStackRef_AsPyObjectBorrow(sub_st);
             PyObject *dict = PyStackRef_AsPyObjectBorrow(dict_st);
 
-            assert(PyAnyDict_CheckExact(dict));
             STAT_INC(BINARY_OP, hit);
-            PyObject *res_o;
-            int rc = _PyDict_GetItemRef_KnownHash((PyDictObject *)dict, sub, (Py_hash_t)hash, &res_o);
-            if (rc == 0) {
-                _PyErr_SetKeyError(sub);
-            }
-            if (rc <= 0) {
+            PyObject *res_o = _PyDict_SubscriptKnownHash(dict, sub, (Py_hash_t)hash);
+            if (res_o == NULL) {
                 ERROR_NO_POP();
             }
             res = PyStackRef_FromPyObjectSteal(res_o);
