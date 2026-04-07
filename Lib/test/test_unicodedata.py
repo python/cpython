@@ -1300,16 +1300,103 @@ class NormalizationTest(unittest.TestCase):
                     self.assertIs(type(normalize(form, MyStr(input_str))), str)
 
 
-class GraphemeBreakTest(unittest.TestCase):
+class BaseGraphemeBreakTest:
+    iter_graphemes = staticmethod(unicodedata.iter_graphemes)
+
+    def test_grapheme_break_types(self):
+        self.assertRaises(TypeError, self.iter_graphemes)
+        self.assertRaises(TypeError, self.iter_graphemes, b'x')
+
+    def test_grapheme_break_empty(self):
+        graphemes = self._graphemes
+        self.assertEqual(graphemes(''), [])
+
+    def test_grapheme_break_simple(self):
+        graphemes = self._graphemes
+        self.assertEqual(graphemes('abcd'), ['a', 'b', 'c', 'd'])
+        self.assertEqual(graphemes('abcd', 1), ['b', 'c', 'd'])
+        self.assertEqual(graphemes('abcd', 1, 3), ['b', 'c'])
+        self.assertEqual(graphemes('abcd', -3), ['b', 'c', 'd'])
+        self.assertEqual(graphemes('abcd', 1, -1), ['b', 'c'])
+        self.assertEqual(graphemes('abcd', 3, 1), [])
+        self.assertEqual(graphemes('abcd', 5), [])
+        self.assertEqual(graphemes('abcd', 0, 5), ['a', 'b', 'c', 'd'])
+        self.assertEqual(graphemes('abcd', -5), ['a', 'b', 'c', 'd'])
+        self.assertEqual(graphemes('abcd', 0, -5), [])
+
+    def test_grapheme_break_rules(self):
+        graphemes = self._graphemes
+        # GB3
+        self.assertEqual(graphemes('\r\n'), ['\r\n'])
+        # GB4
+        self.assertEqual(graphemes('\r\u0308'), ['\r', '\u0308'])
+        self.assertEqual(graphemes('\n\u0308'), ['\n', '\u0308'])
+        self.assertEqual(graphemes('\0\u0308'), ['\0', '\u0308'])
+        # GB5
+        self.assertEqual(graphemes('\u06dd\r'), ['\u06dd', '\r'])
+        self.assertEqual(graphemes('\u06dd\n'), ['\u06dd', '\n'])
+        self.assertEqual(graphemes('\u06dd\0'), ['\u06dd', '\0'])
+        # GB6
+        self.assertEqual(graphemes('\u1100\u1160'), ['\u1100\u1160'])
+        self.assertEqual(graphemes('\u1100\uAC00'), ['\u1100\uAC00'])
+        self.assertEqual(graphemes('\u1100\uAC01'), ['\u1100\uAC01'])
+        # GB7
+        self.assertEqual(graphemes('\uAC00\u1160'), ['\uAC00\u1160'])
+        self.assertEqual(graphemes('\uAC00\u11A8'), ['\uAC00\u11A8'])
+        self.assertEqual(graphemes('\u1160\u1160'), ['\u1160\u1160'])
+        self.assertEqual(graphemes('\u1160\u11A8'), ['\u1160\u11A8'])
+        # GB8
+        self.assertEqual(graphemes('\uAC01\u11A8'), ['\uAC01\u11A8'])
+        self.assertEqual(graphemes('\u11A8\u11A8'), ['\u11A8\u11A8'])
+        # GB9
+        self.assertEqual(graphemes('a\u0300'), ['a\u0300'])
+        self.assertEqual(graphemes('a\u200D'), ['a\u200D'])
+        # GB9a
+        self.assertEqual(graphemes('\u0905\u0903'), ['\u0905\u0903'])
+        # GB9b
+        self.assertEqual(graphemes('\u06dd\u0661'), ['\u06dd\u0661'])
+        # GB9c
+        self.assertEqual(graphemes('\u0915\u094d\u0924'),
+                         ['\u0915\u094d\u0924'])
+        self.assertEqual(graphemes('\u0915\u094D\u094D\u0924'),
+                         ['\u0915\u094D\u094D\u0924'])
+        self.assertEqual(graphemes('\u0915\u094D\u0924\u094D\u092F'),
+                         ['\u0915\u094D\u0924\u094D\u092F'])
+        # GB11
+        self.assertEqual(graphemes(
+                '\U0001F9D1\U0001F3FE\u200D\u2764\uFE0F'
+                '\u200D\U0001F48B\u200D\U0001F9D1\U0001F3FC'),
+                ['\U0001F9D1\U0001F3FE\u200D\u2764\uFE0F'
+                '\u200D\U0001F48B\u200D\U0001F9D1\U0001F3FC'])
+        # GB12
+        self.assertEqual(graphemes(
+            '\U0001F1FA\U0001F1E6\U0001F1FA\U0001F1F3'),
+            ['\U0001F1FA\U0001F1E6', '\U0001F1FA\U0001F1F3'])
+        # GB13
+        self.assertEqual(graphemes(
+            'a\U0001F1FA\U0001F1E6\U0001F1FA\U0001F1F3'),
+            ['a', '\U0001F1FA\U0001F1E6', '\U0001F1FA\U0001F1F3'])
+
+    def test_segment_object(self):
+        segments = list(self.iter_graphemes('spa\u0300m'))
+        self.assertEqual(len(segments), 4, segments)
+        segment = segments[2]
+        self.assertEqual(segment.start, 2)
+        self.assertEqual(segment.end, 4)
+        self.assertEqual(str(segment), 'a\u0300')
+
+    def _graphemes(self, *args):
+        return list(map(str, self.iter_graphemes(*args)))
+
     @requires_resource('network')
-    def test_grapheme_break(self):
+    def test_tr29_conformance(self):
         TESTDATAFILE = "GraphemeBreakTest.txt"
         testdata = download_test_data_file(TESTDATAFILE)
 
         with testdata:
-            self.run_grapheme_break_tests(testdata)
+            self._run_grapheme_break_tests(testdata)
 
-    def run_grapheme_break_tests(self, testdata):
+    def _run_grapheme_break_tests(self, testdata):
         for line in testdata:
             line, _, comment = line.partition('#')
             line = line.strip()
@@ -1330,19 +1417,32 @@ class GraphemeBreakTest(unittest.TestCase):
             self.assertEqual(chunks.pop(), '', line)
             input = ''.join(chunks)
             with self.subTest(line):
-                result = list(unicodedata.iter_graphemes(input))
+                result = list(self.iter_graphemes(input))
                 self.assertEqual(list(map(str, result)), chunks, comment)
-                self.assertEqual([x.start for x in result], breaks[:-1], comment)
-                self.assertEqual([x.end for x in result], breaks[1:], comment)
+                self.assertEqual([x.start for x in result],
+                                 breaks[:-1], comment)
+                self.assertEqual([x.end for x in result],
+                                 breaks[1:], comment)
                 for i in range(1, len(breaks) - 1):
-                    result = list(unicodedata.iter_graphemes(input, breaks[i]))
-                    self.assertEqual(list(map(str, result)), chunks[i:], comment)
-                    self.assertEqual([x.start for x in result], breaks[i:-1], comment)
-                    self.assertEqual([x.end for x in result], breaks[i+1:], comment)
+                    result = list(self.iter_graphemes(input, breaks[i]))
+                    self.assertEqual(list(map(str, result)),
+                                     chunks[i:], comment)
+                    self.assertEqual([x.start for x in result],
+                                     breaks[i:-1], comment)
+                    self.assertEqual([x.end for x in result],
+                                     breaks[i+1:], comment)
+
+
+class GraphemeBreakTest(unittest.TestCase, BaseGraphemeBreakTest):
+    iter_graphemes = staticmethod(unicodedata.iter_graphemes)
+
+    def test_segment_repr(self):
+        segment = list(unicodedata.iter_graphemes('spa\u0300m'))[2]
+        self.assertEqual(repr(segment), '<Segment 2:4>')
+        self.assertRaises(TypeError, iter, segment)
+        self.assertRaises(TypeError, len, segment)
 
     def test_reference_loops(self):
-        # Test that reference loops involving GraphemeBreakIterator or
-        # Segment can be broken by the garbage collector.
         class S(str):
             pass
 
@@ -1361,6 +1461,13 @@ class GraphemeBreakTest(unittest.TestCase):
         self.assertIsNotNone(wr())
         gc_collect()
         self.assertIsNone(wr())
+
+
+class PyGraphemeBreakTest(unittest.TestCase, BaseGraphemeBreakTest):
+    @classmethod
+    def setUpClass(cls):
+        from _py_grapheme import iter_graphemes
+        cls.iter_graphemes = staticmethod(iter_graphemes)
 
 
 if __name__ == "__main__":
