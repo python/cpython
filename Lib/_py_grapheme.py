@@ -67,10 +67,8 @@ _INCB_STARTS = tuple(r[0] for r in INCB_RANGES)
 def _get_gcb(cp):
     """Return the Grapheme_Cluster_Break value for a codepoint."""
     idx = bisect_right(_GCB_STARTS, cp) - 1
-    if idx >= 0:
-        entry = GCB_RANGES[idx]
-        if cp <= entry[1]:
-            return entry[2]
+    if idx >= 0 and cp <= GCB_RANGES[idx][1]:
+        return GCB_RANGES[idx][2]
     # Hangul syllables: LV if (cp - S_BASE) % T_COUNT == 0, else LVT
     if _HANGUL_S_BASE <= cp < _HANGUL_S_BASE + _HANGUL_S_COUNT:
         if (cp - _HANGUL_S_BASE) % _HANGUL_T_COUNT == 0:
