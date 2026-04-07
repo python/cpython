@@ -11995,6 +11995,55 @@
             DISPATCH();
         }
 
+        TARGET(TO_BOOL_GENERIC) {
+            #if _Py_TAIL_CALL_INTERP
+            int opcode = TO_BOOL_GENERIC;
+            (void)(opcode);
+            #endif
+            _Py_CODEUNIT* const this_instr = next_instr;
+            (void)this_instr;
+            frame->instr_ptr = next_instr;
+            next_instr += 4;
+            INSTRUCTION_STATS(TO_BOOL_GENERIC);
+            static_assert(INLINE_CACHE_ENTRIES_TO_BOOL == 3, "incorrect cache size");
+            _PyStackRef owner;
+            _PyStackRef value;
+            _PyStackRef res;
+            /* Skip 1 cache entry */
+            // _GUARD_TYPE_VERSION
+            {
+                owner = stack_pointer[-1];
+                uint32_t type_version = read_u32(&this_instr[2].cache);
+                PyTypeObject *tp = Py_TYPE(PyStackRef_AsPyObjectBorrow(owner));
+                assert(type_version != 0);
+                if (FT_ATOMIC_LOAD_UINT_RELAXED(tp->tp_version_tag) != type_version) {
+                    UPDATE_MISS_STATS(TO_BOOL);
+                    assert(_PyOpcode_Deopt[opcode] == (TO_BOOL));
+                    JUMP_TO_PREDICTED(TO_BOOL);
+                }
+            }
+            // _TO_BOOL
+            {
+                value = owner;
+                _PyFrame_SetStackPointer(frame, stack_pointer);
+                int err = PyObject_IsTrue(PyStackRef_AsPyObjectBorrow(value));
+                stack_pointer = _PyFrame_GetStackPointer(frame);
+                stack_pointer += -1;
+                ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+                _PyFrame_SetStackPointer(frame, stack_pointer);
+                PyStackRef_CLOSE(value);
+                stack_pointer = _PyFrame_GetStackPointer(frame);
+                if (err < 0) {
+                    JUMP_TO_LABEL(error);
+                }
+                res = err ? PyStackRef_True : PyStackRef_False;
+            }
+            stack_pointer[0] = res;
+            stack_pointer += 1;
+            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+            DISPATCH();
+        }
+
         TARGET(TO_BOOL_INT) {
             #if _Py_TAIL_CALL_INTERP
             int opcode = TO_BOOL_INT;

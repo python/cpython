@@ -94,6 +94,7 @@ const uint32_t _PyUop_Flags[MAX_UOP_ID+1] = {
     [_GUARD_TOS_LIST] = HAS_EXIT_FLAG,
     [_GUARD_TOS_SLICE] = HAS_EXIT_FLAG,
     [_TO_BOOL_LIST] = 0,
+    [_TO_BOOL_DICT] = HAS_ESCAPES_FLAG | HAS_PURE_FLAG,
     [_TO_BOOL_NONE] = HAS_EXIT_FLAG,
     [_GUARD_NOS_COMPACT_ASCII] = HAS_EXIT_FLAG,
     [_GUARD_NOS_UNICODE] = HAS_EXIT_FLAG,
@@ -966,6 +967,15 @@ const _PyUopCachingInfo _PyUop_Caching[MAX_UOP_ID+1] = {
             { 2, 0, _TO_BOOL_LIST_r02 },
             { 2, 1, _TO_BOOL_LIST_r12 },
             { 3, 2, _TO_BOOL_LIST_r23 },
+            { -1, -1, -1 },
+        },
+    },
+    [_TO_BOOL_DICT] = {
+        .best = { 1, 1, 1, 1 },
+        .entries = {
+            { -1, -1, -1 },
+            { 1, 1, _TO_BOOL_DICT_r11 },
+            { -1, -1, -1 },
             { -1, -1, -1 },
         },
     },
@@ -4022,6 +4032,7 @@ const uint16_t _PyUop_Uncached[MAX_UOP_REGS_ID+1] = {
     [_TO_BOOL_LIST_r02] = _TO_BOOL_LIST,
     [_TO_BOOL_LIST_r12] = _TO_BOOL_LIST,
     [_TO_BOOL_LIST_r23] = _TO_BOOL_LIST,
+    [_TO_BOOL_DICT_r11] = _TO_BOOL_DICT,
     [_TO_BOOL_NONE_r01] = _TO_BOOL_NONE,
     [_TO_BOOL_NONE_r11] = _TO_BOOL_NONE,
     [_TO_BOOL_NONE_r22] = _TO_BOOL_NONE,
@@ -5976,6 +5987,8 @@ const char *const _PyOpcode_uop_name[MAX_UOP_REGS_ID+1] = {
     [_TO_BOOL_BOOL_r11] = "_TO_BOOL_BOOL_r11",
     [_TO_BOOL_BOOL_r22] = "_TO_BOOL_BOOL_r22",
     [_TO_BOOL_BOOL_r33] = "_TO_BOOL_BOOL_r33",
+    [_TO_BOOL_DICT] = "_TO_BOOL_DICT",
+    [_TO_BOOL_DICT_r11] = "_TO_BOOL_DICT_r11",
     [_TO_BOOL_INT] = "_TO_BOOL_INT",
     [_TO_BOOL_INT_r02] = "_TO_BOOL_INT_r02",
     [_TO_BOOL_INT_r12] = "_TO_BOOL_INT_r12",
@@ -6150,6 +6163,8 @@ int _PyUop_num_popped(int opcode, int oparg)
         case _GUARD_TOS_SLICE:
             return 0;
         case _TO_BOOL_LIST:
+            return 1;
+        case _TO_BOOL_DICT:
             return 1;
         case _TO_BOOL_NONE:
             return 1;

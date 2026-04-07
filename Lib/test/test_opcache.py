@@ -1757,6 +1757,72 @@ class TestSpecializer(TestBase):
         self.assert_specialized(to_bool_str, "TO_BOOL_STR")
         self.assert_no_opcode(to_bool_str, "TO_BOOL")
 
+        def to_bool_generic_dict():
+            count = 0
+            for i in range(_testinternalcapi.SPECIALIZATION_THRESHOLD):
+                d = {1: 2} if i else {}
+                if d:
+                    count += 1
+            self.assertEqual(count, _testinternalcapi.SPECIALIZATION_THRESHOLD - 1)
+
+        to_bool_generic_dict()
+        self.assert_specialized(to_bool_generic_dict, "TO_BOOL_GENERIC")
+        self.assert_no_opcode(to_bool_generic_dict, "TO_BOOL")
+
+        def to_bool_generic_tuple():
+            count = 0
+            for i in range(_testinternalcapi.SPECIALIZATION_THRESHOLD):
+                t = (1,) if i else ()
+                if t:
+                    count += 1
+            self.assertEqual(count, _testinternalcapi.SPECIALIZATION_THRESHOLD - 1)
+
+        to_bool_generic_tuple()
+        self.assert_specialized(to_bool_generic_tuple, "TO_BOOL_GENERIC")
+        self.assert_no_opcode(to_bool_generic_tuple, "TO_BOOL")
+
+        def to_bool_generic_float():
+            count = 0
+            for i in range(_testinternalcapi.SPECIALIZATION_THRESHOLD):
+                f = float(i)
+                if f:
+                    count += 1
+            self.assertEqual(count, _testinternalcapi.SPECIALIZATION_THRESHOLD - 1)
+
+        to_bool_generic_float()
+        self.assert_specialized(to_bool_generic_float, "TO_BOOL_GENERIC")
+        self.assert_no_opcode(to_bool_generic_float, "TO_BOOL")
+
+        def to_bool_generic_set():
+            count = 0
+            for i in range(_testinternalcapi.SPECIALIZATION_THRESHOLD):
+                s = {i} if i else set()
+                if s:
+                    count += 1
+            self.assertEqual(count, _testinternalcapi.SPECIALIZATION_THRESHOLD - 1)
+
+        to_bool_generic_set()
+        self.assert_specialized(to_bool_generic_set, "TO_BOOL_GENERIC")
+        self.assert_no_opcode(to_bool_generic_set, "TO_BOOL")
+
+        def to_bool_generic_heap_type_with_bool():
+            class MyObj:
+                def __init__(self, val):
+                    self.val = val
+                def __bool__(self):
+                    return self.val
+
+            count = 0
+            for i in range(_testinternalcapi.SPECIALIZATION_THRESHOLD):
+                obj = MyObj(i > 0)
+                if obj:
+                    count += 1
+            self.assertEqual(count, _testinternalcapi.SPECIALIZATION_THRESHOLD - 1)
+
+        to_bool_generic_heap_type_with_bool()
+        self.assert_specialized(to_bool_generic_heap_type_with_bool, "TO_BOOL_GENERIC")
+        self.assert_no_opcode(to_bool_generic_heap_type_with_bool, "TO_BOOL")
+
     @cpython_only
     @requires_specialization
     def test_unpack_sequence(self):
