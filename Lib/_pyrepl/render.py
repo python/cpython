@@ -29,7 +29,7 @@ class RenderCell:
     A screen row like ``>>> def`` is a sequence of cells::
 
         >  >  >     d  e  f
-                    ╰──┴──╯ styled with keyword SGR escape
+       ╰─╯╰─╯╰─╯╰─╯╰─╯╰─╯╰─╯
     """
 
     text: str
