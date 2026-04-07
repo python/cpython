@@ -3297,6 +3297,25 @@ class TestParser(TestParserMixin, TestEmailBase):
             exception=(errors.HeaderParseError, '.*'),
             ),
 
+        unicode = C(
+            'exámple@example.com',
+            remainder='@example.com',
+            local_part='exámple',
+            ),
+
+        ew_non_ascii = C(
+            '=?utf-8?q?ex=c3=a1mple?=@example.com',
+            stringified='exámple',
+            remainder='@example.com',
+            defects=[
+                # XXX XXX there should be exactly one missing whitespace here,
+                # but it will change until we refactor get_local_part.
+                missing_whitespace_after_ew_defect,
+                # XXX XXX there should be a defect for there being an EW at all.
+                ],
+            local_part='exámple',
+            ),
+
         )
 
 
