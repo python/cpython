@@ -342,10 +342,10 @@ optimize_to_bool(
     if (truthiness >= 0) {
         PyObject *load = truthiness ? Py_True : Py_False;
         if (insert_mode) {
-            ADD_OP(_INSERT_1_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)load);
+            ADD_OP(_INSERT_1_LOAD_CONST_INLINE_BORROW, 0, PyStackRef_TagBorrow(load));
         } else {
             ADD_OP(_POP_TOP, 0, 0);
-            ADD_OP(_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)load);
+            ADD_OP(_LOAD_CONST_INLINE_BORROW, 0, PyStackRef_TagBorrow(load));
         }
         *result_ptr = sym_new_const(ctx, load);
         return 1;
@@ -402,11 +402,11 @@ lookup_attr(JitOptContext *ctx, _PyBloomFilter *dependencies, _PyUOpInstruction 
             if (pop) {
                 ADD_OP(_POP_TOP, 0, 0);
                 ADD_OP(immortal ? _LOAD_CONST_INLINE_BORROW : _LOAD_CONST_INLINE,
-                       0, (uintptr_t)lookup);
+                       0, immortal ? PyStackRef_TagBorrow(lookup) : (uintptr_t)lookup);
             }
             else {
                 ADD_OP(immortal ? _INSERT_1_LOAD_CONST_INLINE_BORROW : _INSERT_1_LOAD_CONST_INLINE,
-                       0, (uintptr_t)lookup);
+                       0, immortal ? PyStackRef_TagBorrow(lookup) : (uintptr_t)lookup);
             }
             PyType_Watch(TYPE_WATCHER_ID, (PyObject *)type);
             _Py_BloomFilter_Add(dependencies, type);
