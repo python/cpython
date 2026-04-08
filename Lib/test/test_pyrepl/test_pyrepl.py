@@ -1028,6 +1028,8 @@ class TestPyReplReadlineSetup(TestCase):
         class FakeFancyCompleter:
             def __init__(self, namespace):
                 self.namespace = namespace
+                self.use_colors = Mock()
+                self.theme = Mock()
 
             def complete(self, text, state):
                 return None
@@ -1672,6 +1674,17 @@ class TestPyReplModuleCompleter(TestCase):
         self.assertEqual(names, [
             f"{module_color}importlib.machinery{R}",
             f"{module_color}importlib.metadata{R}",
+        ])
+        self.assertIsNone(action)
+
+        # Make sure attributes take precedence over submodules when both exist
+        # Here we're using `unittest.main` which happens to be both a module and an attribute
+        reader.buffer = list("from unittest import m")
+        reader.pos = len(reader.buffer)
+        names, action = reader.get_module_completions()
+        self.assertEqual(names, [
+            f"{type_color}main{R}",  # Ensure that `main` is colored as an attribute (class in this case)
+            f"{module_color}mock{R}",
         ])
         self.assertIsNone(action)
 
