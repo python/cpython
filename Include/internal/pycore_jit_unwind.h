@@ -23,6 +23,8 @@ void _PyJitUnwind_GdbRegisterCode(const void *code_addr,
                                   const char *entry,
                                   const char *filename);
 
+void _PyJitUnwind_GdbUnregisterCode(const void *code_addr);
+
 #endif  // PY_HAVE_PERF_TRAMPOLINE
 
 #endif  // Py_CORE_JIT_UNWIND_H

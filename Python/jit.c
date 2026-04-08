@@ -843,6 +843,9 @@ _PyJIT_Free(_PyExecutorObject *executor)
     if (memory) {
         executor->jit_code = NULL;
         executor->jit_size = 0;
+#ifdef PY_HAVE_PERF_TRAMPOLINE
+        _PyJitUnwind_GdbUnregisterCode(memory);
+#endif
         if (jit_free(memory, size)) {
             PyErr_FormatUnraisable("Exception ignored while "
                                    "freeing JIT memory");
@@ -860,6 +863,9 @@ _PyJIT_Fini(void)
     if (size) {
         _Py_jit_entry = _Py_LazyJitShim;
         _Py_jit_shim_size = 0;
+#ifdef PY_HAVE_PERF_TRAMPOLINE
+        _PyJitUnwind_GdbUnregisterCode(memory);
+#endif
         if (jit_free(memory, size)) {
             PyErr_FormatUnraisable("Exception ignored while "
                                    "freeing JIT entry code");

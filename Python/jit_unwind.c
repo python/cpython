@@ -7,6 +7,7 @@
 
 #include "Python.h"
 #include "pycore_jit_unwind.h"
+#include "pycore_lock.h"
 
 #ifdef PY_HAVE_PERF_TRAMPOLINE
 
@@ -579,20 +580,14 @@ static void elf_init_ehframe(ELFObjectContext* ctx, int absolute_addr) {
         DWRF_U8(DWRF_CFA_offset | DWRF_REG_RA);   // x30 (link register) saved
         DWRF_UV(1);                               // At CFA-8 (1 * 8 = 8 bytes from CFA)
         DWRF_U8(DWRF_CFA_advance_loc | 3);        // Advance by 3 instructions (12 bytes)
-        DWRF_U8(DWRF_CFA_restore | DWRF_REG_RA);  // Restore x30 - NO DWRF_UV() after this!
-        DWRF_U8(DWRF_CFA_restore | DWRF_REG_FP);  // Restore x29 - NO DWRF_UV() after this!
-        DWRF_U8(DWRF_CFA_def_cfa_offset);         // CFA = SP + 0 (stack restored)
-        DWRF_UV(0);                               // Back to original stack position
-
-        if (absolute_addr) {
-            DWRF_U8(DWRF_CFA_def_cfa_register);       // CFA = FP (x29)
-            DWRF_UV(DWRF_REG_FP);
-            DWRF_U8(DWRF_CFA_def_cfa_offset);         // CFA = FP + 16
-            DWRF_UV(16);
-            DWRF_U8(DWRF_CFA_offset | DWRF_REG_FP);   // x29 saved
-            DWRF_UV(2);
-            DWRF_U8(DWRF_CFA_offset | DWRF_REG_RA);   // x30 saved
-            DWRF_UV(1);
+        DWRF_U8(DWRF_CFA_def_cfa_register);       // CFA = FP (x29) + 16
+        DWRF_UV(DWRF_REG_FP);
+        if (!absolute_addr) {
+            DWRF_U8(DWRF_CFA_restore | DWRF_REG_RA);  // Restore x30 - NO DWRF_UV() after this!
+            DWRF_U8(DWRF_CFA_restore | DWRF_REG_FP);  // Restore x29 - NO DWRF_UV() after this!
+            DWRF_U8(DWRF_CFA_def_cfa);               // CFA = SP + 0 (stack restored)
+            DWRF_UV(DWRF_REG_SP);
+            DWRF_UV(0);
         }
 
 #else
@@ -666,6 +661,7 @@ struct jit_code_entry {
     struct jit_code_entry *prev;
     const char *symfile_addr;
     uint64_t symfile_size;
+    const void *code_addr;
 };
 
 struct jit_descriptor {
@@ -678,6 +674,7 @@ struct jit_descriptor {
 Py_EXPORTED_SYMBOL volatile struct jit_descriptor __jit_debug_descriptor = {
     1, JIT_NOACTION, NULL, NULL
 };
+static PyMutex gdb_jit_mutex = {0};
 
 Py_EXPORTED_SYMBOL void __attribute__((noinline))
 __jit_debug_register_code(void)
@@ -863,6 +860,9 @@ gdb_jit_register_code(
     }
     entry->symfile_addr = (const char *)buf;
     entry->symfile_size = total_size;
+    entry->code_addr = code_addr;
+
+    PyMutex_Lock(&gdb_jit_mutex);
     entry->prev = NULL;
     entry->next = __jit_debug_descriptor.first_entry;
     if (entry->next != NULL) {
@@ -873,7 +873,8 @@ gdb_jit_register_code(
     __jit_debug_descriptor.action_flag = JIT_REGISTER_FN;
     __jit_debug_register_code();
     __jit_debug_descriptor.action_flag = JIT_NOACTION;
-
+    __jit_debug_descriptor.relevant_entry = NULL;
+    PyMutex_Unlock(&gdb_jit_mutex);
 }
 #endif  // __linux__ && __ELF__
 
@@ -914,6 +915,48 @@ _PyJitUnwind_GdbRegisterCode(const void *code_addr,
     (void)code_size;
     (void)entry;
     (void)filename;
+#endif
+}
+
+void
+_PyJitUnwind_GdbUnregisterCode(const void *code_addr)
+{
+#if defined(__linux__) && defined(__ELF__)
+    if (code_addr == NULL) {
+        return;
+    }
+
+    PyMutex_Lock(&gdb_jit_mutex);
+    struct jit_code_entry *entry = __jit_debug_descriptor.first_entry;
+    while (entry != NULL && entry->code_addr != code_addr) {
+        entry = entry->next;
+    }
+    if (entry == NULL) {
+        PyMutex_Unlock(&gdb_jit_mutex);
+        return;
+    }
+
+    if (entry->prev != NULL) {
+        entry->prev->next = entry->next;
+    }
+    else {
+        __jit_debug_descriptor.first_entry = entry->next;
+    }
+    if (entry->next != NULL) {
+        entry->next->prev = entry->prev;
+    }
+
+    __jit_debug_descriptor.relevant_entry = entry;
+    __jit_debug_descriptor.action_flag = JIT_UNREGISTER_FN;
+    __jit_debug_register_code();
+    __jit_debug_descriptor.action_flag = JIT_NOACTION;
+    __jit_debug_descriptor.relevant_entry = NULL;
+    PyMutex_Unlock(&gdb_jit_mutex);
+
+    PyMem_RawFree((void *)entry->symfile_addr);
+    PyMem_RawFree(entry);
+#else
+    (void)code_addr;
 #endif
 }
 
