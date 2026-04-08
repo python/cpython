@@ -1,2 +1,2 @@
-1. Add Add NULL check and fallback to ga_vectorcall
-2. Add Null check to _Py_make_parameters when_PyTuple_Resize fails and parameter is null
+1. Fix NULL dereference bug in ga_vectorcall by using PyObject_Vectorcall() instead of calling PyVectorcall_Function().
+2. Remove the redundant Py_XDECREF call in _Py_make_parameters
