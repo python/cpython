@@ -155,7 +155,7 @@ class UnixRefreshPlan:
 
     After the user types ``e`` to complete ``name``::
 
-        Before: >>> def greet(nam|):   
+        Before: >>> def greet(nam|):
                                  ▲
                         LineUpdate here: insert_char "e"
 
