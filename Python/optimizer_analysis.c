@@ -433,24 +433,23 @@ lookup_super_attr(JitOptContext *ctx, _PyBloomFilter *dependencies,
         }
         return sym_new_not_null(ctx);
     }
-    if (Py_TYPE(lookup)->tp_flags & Py_TPFLAGS_METHOD_DESCRIPTOR) {
-        int opcode = mortal;
-        if (_Py_IsImmortal(lookup) || (obj_type->tp_flags & Py_TPFLAGS_IMMUTABLETYPE)) {
-            opcode = immortal;
-        }
-        ADD_OP(_SWAP, 3, 0);
-        ADD_OP(_POP_TOP, 0, 0);
-        ADD_OP(_POP_TOP, 0, 0);
-        ADD_OP(opcode, 0, (uintptr_t)lookup);
-        PyType_Watch(TYPE_WATCHER_ID, (PyObject *)su_type);
-        _Py_BloomFilter_Add(dependencies, su_type);
-        PyType_Watch(TYPE_WATCHER_ID, (PyObject *)obj_type);
-        _Py_BloomFilter_Add(dependencies, obj_type);
-        JitOptRef result = sym_new_const(ctx, lookup);
+    if ((Py_TYPE(lookup)->tp_flags & Py_TPFLAGS_METHOD_DESCRIPTOR) == 0) {
         Py_DECREF(lookup);
-        return result;
+        return sym_new_not_null(ctx);
     }
-    return sym_new_not_null(ctx);
+    int opcode = mortal;
+    if (_Py_IsImmortal(lookup) || (obj_type->tp_flags & Py_TPFLAGS_IMMUTABLETYPE)) {
+        opcode = immortal;
+    }
+    ADD_OP(_SWAP, 3, 0);
+    ADD_OP(_POP_TOP, 0, 0);
+    ADD_OP(_POP_TOP, 0, 0);
+    ADD_OP(opcode, 0, (uintptr_t)lookup);
+    PyType_Watch(TYPE_WATCHER_ID, (PyObject *)su_type);
+    _Py_BloomFilter_Add(dependencies, su_type);
+    PyType_Watch(TYPE_WATCHER_ID, (PyObject *)obj_type);
+    _Py_BloomFilter_Add(dependencies, obj_type);
+    return sym_new_const_steal(ctx, lookup);
 }
 
 static

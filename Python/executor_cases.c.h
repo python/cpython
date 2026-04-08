@@ -10245,7 +10245,11 @@
             uint32_t type_version = (uint32_t)CURRENT_OPERAND0_32();
             PyTypeObject *tp = (PyTypeObject *)PyStackRef_AsPyObjectBorrow(nos);
             assert(type_version != 0);
-            assert(PyType_Check(tp));
+            if (!PyType_Check((PyObject *)tp)) {
+                UOP_STAT_INC(uopcode, miss);
+                SET_CURRENT_CACHED_VALUES(0);
+                JUMP_TO_JUMP_TARGET();
+            }
             if (FT_ATOMIC_LOAD_UINT_RELAXED(tp->tp_version_tag) != type_version) {
                 UOP_STAT_INC(uopcode, miss);
                 SET_CURRENT_CACHED_VALUES(0);
@@ -10269,7 +10273,12 @@
             uint32_t type_version = (uint32_t)CURRENT_OPERAND0_32();
             PyTypeObject *tp = (PyTypeObject *)PyStackRef_AsPyObjectBorrow(nos);
             assert(type_version != 0);
-            assert(PyType_Check(tp));
+            if (!PyType_Check((PyObject *)tp)) {
+                UOP_STAT_INC(uopcode, miss);
+                _tos_cache0 = _stack_item_0;
+                SET_CURRENT_CACHED_VALUES(1);
+                JUMP_TO_JUMP_TARGET();
+            }
             if (FT_ATOMIC_LOAD_UINT_RELAXED(tp->tp_version_tag) != type_version) {
                 UOP_STAT_INC(uopcode, miss);
                 _tos_cache0 = _stack_item_0;
@@ -10295,7 +10304,13 @@
             uint32_t type_version = (uint32_t)CURRENT_OPERAND0_32();
             PyTypeObject *tp = (PyTypeObject *)PyStackRef_AsPyObjectBorrow(nos);
             assert(type_version != 0);
-            assert(PyType_Check(tp));
+            if (!PyType_Check((PyObject *)tp)) {
+                UOP_STAT_INC(uopcode, miss);
+                _tos_cache1 = _stack_item_1;
+                _tos_cache0 = nos;
+                SET_CURRENT_CACHED_VALUES(2);
+                JUMP_TO_JUMP_TARGET();
+            }
             if (FT_ATOMIC_LOAD_UINT_RELAXED(tp->tp_version_tag) != type_version) {
                 UOP_STAT_INC(uopcode, miss);
                 _tos_cache1 = _stack_item_1;
@@ -10321,7 +10336,14 @@
             uint32_t type_version = (uint32_t)CURRENT_OPERAND0_32();
             PyTypeObject *tp = (PyTypeObject *)PyStackRef_AsPyObjectBorrow(nos);
             assert(type_version != 0);
-            assert(PyType_Check(tp));
+            if (!PyType_Check((PyObject *)tp)) {
+                UOP_STAT_INC(uopcode, miss);
+                _tos_cache2 = _stack_item_2;
+                _tos_cache1 = nos;
+                _tos_cache0 = _stack_item_0;
+                SET_CURRENT_CACHED_VALUES(3);
+                JUMP_TO_JUMP_TARGET();
+            }
             if (FT_ATOMIC_LOAD_UINT_RELAXED(tp->tp_version_tag) != type_version) {
                 UOP_STAT_INC(uopcode, miss);
                 _tos_cache2 = _stack_item_2;

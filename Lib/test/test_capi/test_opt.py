@@ -5013,23 +5013,30 @@ class TestUopsOptimization(unittest.TestCase):
 
     def test_call_super(self):
         class A:
-            def method(self):
+            def method1(self):
                 return 42
 
+            def method2(self):
+                return 21
+
         class B(A):
-            def method(self):
-                return super().method()
+            def method1(self):
+                return super().method1()
+
+            def method2(self):
+                return super(B, self).method2()
 
         b = B()
 
         def testfunc(n):
             x = 0
             for _ in range(n):
-                x += b.method()
+                x += b.method1()
+                x += b.method2()
             return x
 
         res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
-        self.assertEqual(res, 42 * TIER2_THRESHOLD)
+        self.assertEqual(res, 63 * TIER2_THRESHOLD)
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
         self.assertNotIn("_LOAD_SUPER_ATTR_METHOD", uops)

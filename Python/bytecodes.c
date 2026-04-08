@@ -2639,7 +2639,7 @@ dummy_func(
         op(_GUARD_NOS_TYPE_VERSION, (type_version/2, nos, unused -- nos, unused)) {
             PyTypeObject *tp = (PyTypeObject *)PyStackRef_AsPyObjectBorrow(nos);
             assert(type_version != 0);
-            assert(PyType_Check(tp));
+            EXIT_IF(!PyType_Check((PyObject *)tp));
             EXIT_IF(FT_ATOMIC_LOAD_UINT_RELAXED(tp->tp_version_tag) != type_version);
         }
 
