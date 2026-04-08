@@ -5039,6 +5039,20 @@ class TestUopsOptimization(unittest.TestCase):
         uops = get_opnames(ex)
         self.assertNotIn("_LOAD_SUPER_ATTR_METHOD", uops)
         self.assertEqual(uops.count("_GUARD_NOS_TYPE_VERSION"), 2)
+        exe = get_first_executor(testfunc)
+        self.assertIsNotNone(exe)
+        self.assertTrue(exe.is_valid())
+        # this should change the type version of A, which should invalidate the executor
+        A.method1 = lambda self: 1
+        self.assertFalse(exe.is_valid())
+        # re-running should create a new executor
+        res, ex = self._run_with_optimizer(testfunc, 2 * TIER2_THRESHOLD)
+        self.assertEqual(res, 2 * 22 * TIER2_THRESHOLD)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertNotIn("_LOAD_SUPER_ATTR_METHOD", uops)
+        self.assertEqual(uops.count("_GUARD_NOS_TYPE_VERSION"), 2)
+
 
 def global_identity(x):
     return x
