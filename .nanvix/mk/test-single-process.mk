@@ -8,8 +8,12 @@
 
 include .nanvix/mk/test-common.mk
 
-# test-hello-single-process: run hello test via nanvixd with direct file access
-test-hello-single-process: test-stage
+# test-hello-single-process-prepare: build and install into staging.
+test-hello-single-process-prepare: test-stage
+
+# test-hello-single-process-run: execute hello test via nanvixd.
+# Runs on the host — no cross-toolchain needed.
+test-hello-single-process-run:
 	@echo "Test: Hello world (single-process)..."
 	cd $(TEST_STAGING)/sysroot && \
 		{ \
@@ -26,8 +30,14 @@ test-hello-single-process: test-stage
 		}
 	$(call validate-hello,/tmp/cpython_test.log)
 
-# test-regrtest-single-process: run stdlib regression tests
-test-regrtest-single-process: test-stage
+# test-hello-single-process: combined prepare + run (for native Linux builds)
+test-hello-single-process: test-hello-single-process-prepare test-hello-single-process-run
+
+# test-regrtest-single-process-prepare: build and install into staging.
+test-regrtest-single-process-prepare: test-stage
+
+# test-regrtest-single-process-run: execute stdlib regression tests via nanvixd.
+test-regrtest-single-process-run:
 ifneq ($(NANVIX_RELEASE),yes)
 	@echo "Test: regrtest ($(words $(NANVIX_TEST_LIST)) modules)..."
 	cd $(TEST_STAGING)/sysroot && \
@@ -46,7 +56,10 @@ else
 	@echo "Test: regrtest skipped (NANVIX_RELEASE=yes)"
 endif
 
+# test-regrtest-single-process: combined prepare + run (for native Linux builds)
+test-regrtest-single-process: test-regrtest-single-process-prepare test-regrtest-single-process-run
+
 # Aggregate test target for single-process mode
 test: test-hello-single-process test-regrtest-single-process test-cleanup
 
-.PHONY: test-hello-single-process test-regrtest-single-process test
+.PHONY: test-hello-single-process-prepare test-hello-single-process-run test-hello-single-process test-regrtest-single-process-prepare test-regrtest-single-process-run test-regrtest-single-process test

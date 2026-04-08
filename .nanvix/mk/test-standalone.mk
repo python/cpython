@@ -19,8 +19,9 @@ RAMFS_IMG = /tmp/cpython-rootfs.img
 
 include .nanvix/mk/ramfs.mk
 
-# test-hello-standalone: build ramfs from a trimmed copy, run hello test via nanvixd
-test-hello-standalone: test-stage
+# test-hello-standalone-prepare: build, install, create ramfs, strip binary.
+# Everything that requires the cross-toolchain or Linux tools.
+test-hello-standalone-prepare: test-stage
 	@# Prepare ramfs content: copy sysroot into a separate tree, then trim it.
 	@# This keeps the original staging tree with binaries intact for invocation.
 	@rm -rf $(TEST_RAMFS_CONTENT)
@@ -43,6 +44,10 @@ else
 	$(if $(wildcard $(TOOLCHAIN_PREFIX)/bin/i686-nanvix-strip),\
 		$(TOOLCHAIN_PREFIX)/bin/i686-nanvix-strip --strip-debug $(TEST_STAGING)/sysroot/bin/python3.12 2>/dev/null || true)
 endif
+
+# test-hello-standalone-run: execute hello test via nanvixd.
+# Runs on the host — no cross-toolchain needed.
+test-hello-standalone-run:
 	@echo "Test: Hello world (standalone)..."
 	cd $(TEST_STAGING)/sysroot && \
 		{ \
@@ -65,6 +70,9 @@ endif
 	@rm -f $(RAMFS_IMG)
 	@rm -rf $(TEST_RAMFS_CONTENT)
 
+# test-hello-standalone: combined prepare + run (for native Linux builds)
+test-hello-standalone: test-hello-standalone-prepare test-hello-standalone-run
+
 # test-regrtest-standalone: regrtest is skipped in standalone mode (ramfs memory limit)
 test-regrtest-standalone:
 	@echo "Test: regrtest ($(words $(NANVIX_TEST_LIST)) modules)..."
@@ -73,4 +81,4 @@ test-regrtest-standalone:
 # Aggregate test target for standalone mode
 test: test-hello-standalone test-regrtest-standalone test-cleanup
 
-.PHONY: test-hello-standalone test-regrtest-standalone test
+.PHONY: test-hello-standalone-prepare test-hello-standalone-run test-hello-standalone test-regrtest-standalone test
