@@ -1108,6 +1108,10 @@ tarfile
 timeit
 ------
 
+* The output of the :mod:`timeit` command-line interface is colored by default.
+  This can be controlled with
+  :ref:`environment variables <using-on-controlling-color>`.
+  (Contributed by Hugo van Kemenade in :gh:`146609`.)
 * The command-line interface now colorizes error tracebacks
   by default. This can be controlled with
   :ref:`environment variables <using-on-controlling-color>`.
