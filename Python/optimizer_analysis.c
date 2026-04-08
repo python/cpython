@@ -404,7 +404,7 @@ lookup_attr(JitOptContext *ctx, _PyBloomFilter *dependencies, _PyUOpInstruction 
                        0, (uintptr_t)lookup);
             }
             else {
-                ADD_OP(immortal ? _LOAD_CONST_UNDER_INLINE_BORROW : _LOAD_CONST_UNDER_INLINE,
+                ADD_OP(immortal ? _INSERT_1_LOAD_CONST_INLINE_BORROW : _INSERT_1_LOAD_CONST_INLINE,
                        0, (uintptr_t)lookup);
             }
             PyType_Watch(TYPE_WATCHER_ID, (PyObject *)type);
