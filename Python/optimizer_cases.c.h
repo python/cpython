@@ -4358,10 +4358,16 @@
 
         case _CALL_METHOD_DESCRIPTOR_NOARGS_INLINE: {
             JitOptRef res;
+            JitOptRef c;
+            JitOptRef s;
             res = sym_new_not_null(ctx);
-            CHECK_STACK_BOUNDS(-oparg);
+            c = sym_new_not_null(ctx);
+            s = sym_new_not_null(ctx);
+            CHECK_STACK_BOUNDS(2 - oparg);
             stack_pointer[-1 - oparg] = res;
-            stack_pointer += -oparg;
+            stack_pointer[-oparg] = c;
+            stack_pointer[1 - oparg] = s;
+            stack_pointer += 2 - oparg;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
             break;
         }
