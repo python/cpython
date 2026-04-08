@@ -142,6 +142,7 @@ typedef struct {
                                             */
     char                x_buffer[BUFSIZE]; /* buffer for Py_buffer */
     Py_ssize_t          x_exports;         /* how many buffer are exported */
+    PyThread_type_lock  x_lock;            /* Lock for thread safety */
 } XxoObject_Data;
 
 // Get the `XxoObject_Data` structure for a given instance of our type.
@@ -204,6 +205,15 @@ Xxo_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
         Py_DECREF(self);
         return NULL;
     }
+
+    // Set up a per-instance lock for thread safety.
+    xxo_data->x_lock = PyThread_allocate_lock();
+    if (xxo_data->x_lock == NULL) {
+        PyErr_SetString(PyExc_SystemError, "could not allocate lock");
+        Py_DECREF(self);
+        return NULL;
+    }
+
     xxo_data->x_attr = NULL;
     memset(xxo_data->x_buffer, 0, BUFSIZE);
     xxo_data->x_exports = 0;
@@ -257,13 +267,23 @@ Xxo_finalize(PyObject *self)
 }
 
 // dealloc: drop all remaining references and free memory
-// This function must preserve currently raised exception, if any.
 static void
 Xxo_dealloc(PyObject *self)
 {
+    // This function must preserve currently raised exception, if any.
     PyObject *exc = PyErr_GetRaisedException();
+
     PyObject_GC_UnTrack(self);
     Xxo_finalize(self);
+
+    // Free x_lock. This is not a Python object so it cannot
+    // form reference cycles, so it's only handled here, not in
+    // the traverse, clear and finalize handlers.
+    XxoObject_Data *data = Xxo_get_data(self);
+    if (data && data->x_lock) {
+        PyThread_free_lock(data->x_lock);
+    }
+
     PyTypeObject *tp = Py_TYPE(self);
     freefunc free = PyType_GetSlot(tp, Py_tp_free);
     free(self);
@@ -314,13 +334,23 @@ Xxo_setattro(PyObject *self, PyObject *name, PyObject *v)
     if (data == NULL) {
         return -1;
     }
+
+    // If the attribute dict is not created yet, make one.
+    // This needs to be protected by a lock to avoid another thread
+    // creating a duplicate dict.
+    PyThread_acquire_lock(data->x_lock, 1);
     if (data->x_attr == NULL) {
         // prepare the attribute dict
         data->x_attr = PyDict_New();
+        PyThread_release_lock(data->x_lock);
         if (data->x_attr == NULL) {
             return -1;
         }
     }
+    else {
+        PyThread_release_lock(data->x_lock);
+    }
+
     if (v == NULL) {
         // delete an attribute
         int rv = PyDict_DelItem(data->x_attr, name);
@@ -589,6 +619,11 @@ xx_free(void *module)
 {
     // allow xx_modexec to omit calling xx_clear on error
     (void)xx_clear((PyObject *)module);
+
+    xx_state *state = PyModule_GetState(module);
+    if (state == NULL) {
+        return;
+    }
 }
 
 // Information that CPython uses to prevent loading incompatible extenstions
@@ -625,9 +660,6 @@ static PyModuleDef_Slot xx_slots[] = {
      * Without this slot, free-threaded builds of CPython will enable
      * the GIL when this module is loaded.
      */
-    // TODO: This is not quite true yet: there is a race in Xxo_setattro,
-    // for example.
-    // We include this for CPython's internal testing.
     {Py_mod_gil, Py_MOD_GIL_NOT_USED},
 
     {0, NULL}
