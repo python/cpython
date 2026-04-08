@@ -925,8 +925,8 @@ dummy_func(void) {
         PyTypeObject *type = sym_get_type(owner);
         PyObject *name = get_co_name(ctx, oparg >> 1);
         attr = lookup_attr(ctx, dependencies, this_instr, type, name,
-                           _LOAD_CONST_UNDER_INLINE_BORROW,
-                           _LOAD_CONST_UNDER_INLINE);
+                           _INSERT_1_LOAD_CONST_INLINE_BORROW,
+                           _INSERT_1_LOAD_CONST_INLINE);
         self = owner;
     }
 
@@ -935,8 +935,8 @@ dummy_func(void) {
         PyTypeObject *type = sym_get_type(owner);
         PyObject *name = get_co_name(ctx, oparg >> 1);
         attr = lookup_attr(ctx, dependencies, this_instr, type, name,
-                           _LOAD_CONST_UNDER_INLINE_BORROW,
-                           _LOAD_CONST_UNDER_INLINE);
+                           _INSERT_1_LOAD_CONST_INLINE_BORROW,
+                           _INSERT_1_LOAD_CONST_INLINE);
         self = owner;
     }
 
@@ -945,8 +945,8 @@ dummy_func(void) {
         PyTypeObject *type = sym_get_type(owner);
         PyObject *name = get_co_name(ctx, oparg >> 1);
         attr = lookup_attr(ctx, dependencies, this_instr, type, name,
-                           _LOAD_CONST_UNDER_INLINE_BORROW,
-                           _LOAD_CONST_UNDER_INLINE);
+                           _INSERT_1_LOAD_CONST_INLINE_BORROW,
+                           _INSERT_1_LOAD_CONST_INLINE);
         self = owner;
     }
 
@@ -1610,7 +1610,7 @@ dummy_func(void) {
     }
 
     op(_REPLACE_WITH_TRUE, (value -- res, v)) {
-        ADD_OP(_LOAD_CONST_UNDER_INLINE_BORROW, 0, (uintptr_t)Py_True);
+        ADD_OP(_INSERT_1_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)Py_True);
         res = sym_new_const(ctx, Py_True);
         v = value;
     }
