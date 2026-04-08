@@ -1,2 +1,0 @@
-Ensure ``-X lazy_imports=none``` and ``PYTHON_LAZY_IMPORTS=none``` override
-``__lazy_modules__``. Patch by Hugo van Kemenade.

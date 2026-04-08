@@ -1169,8 +1169,16 @@
             right = stack_pointer[-1];
             left = stack_pointer[-2];
             PyObject *descr = (PyObject *)this_instr->operand0;
-            (void)descr;
-            res = sym_new_not_null(ctx);
+            _PyBinaryOpSpecializationDescr *d = (_PyBinaryOpSpecializationDescr *)descr;
+            if (d != NULL && d->result_type != NULL) {
+                res = sym_new_type(ctx, d->result_type);
+                if (d->result_unique) {
+                    res = PyJitRef_MakeUnique(res);
+                }
+            }
+            else {
+                res = sym_new_not_null(ctx);
+            }
             l = left;
             r = right;
             CHECK_STACK_BOUNDS(1);
@@ -5001,32 +5009,6 @@
             break;
         }
 
-        case _LOAD_CONST_UNDER_INLINE: {
-            JitOptRef value;
-            JitOptRef new;
-            value = sym_new_not_null(ctx);
-            new = sym_new_not_null(ctx);
-            CHECK_STACK_BOUNDS(1);
-            stack_pointer[-1] = value;
-            stack_pointer[0] = new;
-            stack_pointer += 1;
-            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
-            break;
-        }
-
-        case _LOAD_CONST_UNDER_INLINE_BORROW: {
-            JitOptRef value;
-            JitOptRef new;
-            value = sym_new_not_null(ctx);
-            new = sym_new_not_null(ctx);
-            CHECK_STACK_BOUNDS(1);
-            stack_pointer[-1] = value;
-            stack_pointer[0] = new;
-            stack_pointer += 1;
-            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
-            break;
-        }
-
         case _START_EXECUTOR: {
             break;
         }
@@ -5085,6 +5067,7 @@
 
         case _GUARD_CODE_VERSION_YIELD_VALUE: {
             uint32_t version = (uint32_t)this_instr->operand0;
+            (void)version;
             if (ctx->frame->caller) {
                 REPLACE_OP(this_instr, _NOP, 0, 0);
             }
@@ -5093,6 +5076,7 @@
 
         case _GUARD_CODE_VERSION_RETURN_VALUE: {
             uint32_t version = (uint32_t)this_instr->operand0;
+            (void)version;
             if (ctx->frame->caller) {
                 REPLACE_OP(this_instr, _NOP, 0, 0);
             }
@@ -5101,6 +5085,7 @@
 
         case _GUARD_CODE_VERSION_RETURN_GENERATOR: {
             uint32_t version = (uint32_t)this_instr->operand0;
+            (void)version;
             if (ctx->frame->caller) {
                 REPLACE_OP(this_instr, _NOP, 0, 0);
             }

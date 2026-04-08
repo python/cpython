@@ -3751,7 +3751,7 @@ arbitrary binary data.
       The bytearray version of this method does *not* operate in place - it
       always produces a new object, even if no changes were made.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.15
       *count* is now supported as a keyword argument.
 
 
