@@ -601,21 +601,19 @@ dummy_func(void) {
         }
     }
 
-    op(_TO_BOOL_DICT, (value -- res, v)) {
-        int already_bool = optimize_to_bool(this_instr, ctx, value, &res, true);
+    op(_TO_BOOL_DICT, (value -- res)) {
+        int already_bool = optimize_to_bool(this_instr, ctx, value, &res, false);
         if (!already_bool) {
             sym_set_type(value, &PyDict_Type);
             res = sym_new_truthiness(ctx, value, true);
         }
-        v = value;
     }
 
-    op(_TO_BOOL_SIZED, (value -- res, v)) {
-        int already_bool = optimize_to_bool(this_instr, ctx, value, &res, true);
+    op(_TO_BOOL_SIZED, (value -- res)) {
+        int already_bool = optimize_to_bool(this_instr, ctx, value, &res, false);
         if (!already_bool) {
             res = sym_new_truthiness(ctx, value, true);
         }
-        v = value;
     }
 
     op(_UNARY_NOT, (value -- res)) {

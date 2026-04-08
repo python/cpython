@@ -601,23 +601,21 @@ dummy_func(
             _REPLACE_WITH_TRUE +
             POP_TOP;
 
-        tier2 op(_TO_BOOL_DICT, (value -- res, v)) {
+        tier2 op(_TO_BOOL_DICT, (value -- res)) {
             PyObject *value_o = PyStackRef_AsPyObjectBorrow(value);
             assert(PyDict_CheckExact(value_o));
             STAT_INC(TO_BOOL, hit);
             res = PyDict_GET_SIZE(value_o) ? PyStackRef_True : PyStackRef_False;
-            v = value;
-            DEAD(value);
+            PyStackRef_CLOSE(value);
         }
 
-        tier2 op(_TO_BOOL_SIZED, (value -- res, v)) {
+        tier2 op(_TO_BOOL_SIZED, (value -- res)) {
             /* Covers types whose truthiness is Py_SIZE(obj) != 0:
                tuple, set, frozenset, bytes, bytearray. */
             PyObject *value_o = PyStackRef_AsPyObjectBorrow(value);
             STAT_INC(TO_BOOL, hit);
             res = Py_SIZE(value_o) ? PyStackRef_True : PyStackRef_False;
-            v = value;
-            DEAD(value);
+            PyStackRef_CLOSE(value);
         }
 
         macro(UNARY_INVERT) = _UNARY_INVERT + POP_TOP;

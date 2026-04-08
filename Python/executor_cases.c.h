@@ -3800,12 +3800,11 @@
             break;
         }
 
-        case _TO_BOOL_DICT_r12: {
+        case _TO_BOOL_DICT_r11: {
             CHECK_CURRENT_CACHED_VALUES(1);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             _PyStackRef value;
             _PyStackRef res;
-            _PyStackRef v;
             _PyStackRef _stack_item_0 = _tos_cache0;
             value = _stack_item_0;
             PyObject *value_o = PyStackRef_AsPyObjectBorrow(value);
@@ -3817,73 +3816,42 @@
             _PyFrame_SetStackPointer(frame, stack_pointer);
             res = PyDict_GET_SIZE(value_o) ? PyStackRef_True : PyStackRef_False;
             stack_pointer = _PyFrame_GetStackPointer(frame);
-            v = value;
-            _tos_cache1 = v;
+            stack_pointer[-1] = res;
+            _PyFrame_SetStackPointer(frame, stack_pointer);
+            PyStackRef_CLOSE(value);
+            stack_pointer = _PyFrame_GetStackPointer(frame);
             _tos_cache0 = res;
+            _tos_cache1 = PyStackRef_ZERO_BITS;
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            SET_CURRENT_CACHED_VALUES(2);
+            SET_CURRENT_CACHED_VALUES(1);
             stack_pointer += -1;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
         }
 
-        case _TO_BOOL_SIZED_r02: {
-            CHECK_CURRENT_CACHED_VALUES(0);
-            assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
-            _PyStackRef value;
-            _PyStackRef res;
-            _PyStackRef v;
-            value = stack_pointer[-1];
-            PyObject *value_o = PyStackRef_AsPyObjectBorrow(value);
-            STAT_INC(TO_BOOL, hit);
-            res = Py_SIZE(value_o) ? PyStackRef_True : PyStackRef_False;
-            v = value;
-            _tos_cache1 = v;
-            _tos_cache0 = res;
-            SET_CURRENT_CACHED_VALUES(2);
-            stack_pointer += -1;
-            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
-            assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
-            break;
-        }
-
-        case _TO_BOOL_SIZED_r12: {
+        case _TO_BOOL_SIZED_r11: {
             CHECK_CURRENT_CACHED_VALUES(1);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             _PyStackRef value;
             _PyStackRef res;
-            _PyStackRef v;
             _PyStackRef _stack_item_0 = _tos_cache0;
             value = _stack_item_0;
             PyObject *value_o = PyStackRef_AsPyObjectBorrow(value);
             STAT_INC(TO_BOOL, hit);
             res = Py_SIZE(value_o) ? PyStackRef_True : PyStackRef_False;
-            v = value;
-            _tos_cache1 = v;
+            stack_pointer[0] = res;
+            stack_pointer += 1;
+            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+            _PyFrame_SetStackPointer(frame, stack_pointer);
+            PyStackRef_CLOSE(value);
+            stack_pointer = _PyFrame_GetStackPointer(frame);
             _tos_cache0 = res;
-            SET_CURRENT_CACHED_VALUES(2);
-            assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
-            break;
-        }
-
-        case _TO_BOOL_SIZED_r23: {
-            CHECK_CURRENT_CACHED_VALUES(2);
-            assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
-            _PyStackRef value;
-            _PyStackRef res;
-            _PyStackRef v;
-            _PyStackRef _stack_item_0 = _tos_cache0;
-            _PyStackRef _stack_item_1 = _tos_cache1;
-            value = _stack_item_1;
-            PyObject *value_o = PyStackRef_AsPyObjectBorrow(value);
-            STAT_INC(TO_BOOL, hit);
-            res = Py_SIZE(value_o) ? PyStackRef_True : PyStackRef_False;
-            v = value;
-            _tos_cache2 = v;
-            _tos_cache1 = res;
-            _tos_cache0 = _stack_item_0;
-            SET_CURRENT_CACHED_VALUES(3);
+            _tos_cache1 = PyStackRef_ZERO_BITS;
+            _tos_cache2 = PyStackRef_ZERO_BITS;
+            SET_CURRENT_CACHED_VALUES(1);
+            stack_pointer += -1;
+            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
         }

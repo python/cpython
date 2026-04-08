@@ -3964,6 +3964,148 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertIn("_INSERT_1_LOAD_CONST_INLINE_BORROW", uops)
         self.assertEqual(count_ops(ex, "_POP_TOP_NOP"), 1)
 
+    def test_to_bool_kwargs_dict(self):
+        """**kwargs is known to be dict, so TO_BOOL specializes to _TO_BOOL_DICT."""
+        def inner(**kwargs):
+            cnt = 0
+            for i in range(TIER2_THRESHOLD):
+                if kwargs:
+                    cnt += 1
+            return cnt
+
+        def f(n):
+            return inner(a=1, b=2)
+
+        res, ex = self._run_with_optimizer(f, TIER2_THRESHOLD)
+        self.assertEqual(res, TIER2_THRESHOLD)
+        ex_inner = get_first_executor(inner)
+        self.assertIsNotNone(ex_inner)
+        uops = get_opnames(ex_inner)
+        self.assertIn("_TO_BOOL_DICT", uops)
+        self.assertNotIn("_TO_BOOL", uops)
+
+    def test_to_bool_kwargs_empty_dict(self):
+        """**kwargs is known to be dict even when empty."""
+        def inner(**kwargs):
+            cnt = 0
+            for i in range(TIER2_THRESHOLD):
+                if not kwargs:
+                    cnt += 1
+            return cnt
+
+        def f(n):
+            return inner()
+
+        res, ex = self._run_with_optimizer(f, TIER2_THRESHOLD)
+        self.assertEqual(res, TIER2_THRESHOLD)
+        ex_inner = get_first_executor(inner)
+        self.assertIsNotNone(ex_inner)
+        uops = get_opnames(ex_inner)
+        self.assertIn("_TO_BOOL_DICT", uops)
+        self.assertNotIn("_TO_BOOL", uops)
+
+    def test_to_bool_varargs_tuple(self):
+        """*args is known to be tuple, so TO_BOOL specializes to _TO_BOOL_SIZED."""
+        def inner(*args):
+            cnt = 0
+            for i in range(TIER2_THRESHOLD):
+                if args:
+                    cnt += 1
+            return cnt
+
+        def f(n):
+            return inner(1, 2, 3)
+
+        res, ex = self._run_with_optimizer(f, TIER2_THRESHOLD)
+        self.assertEqual(res, TIER2_THRESHOLD)
+        ex_inner = get_first_executor(inner)
+        self.assertIsNotNone(ex_inner)
+        uops = get_opnames(ex_inner)
+        self.assertIn("_TO_BOOL_SIZED", uops)
+        self.assertNotIn("_TO_BOOL", uops)
+
+    def test_to_bool_varargs_empty_tuple(self):
+        """*args is known to be tuple even when empty."""
+        def inner(*args):
+            cnt = 0
+            for i in range(TIER2_THRESHOLD):
+                if not args:
+                    cnt += 1
+            return cnt
+
+        def f(n):
+            return inner()
+
+        res, ex = self._run_with_optimizer(f, TIER2_THRESHOLD)
+        self.assertEqual(res, TIER2_THRESHOLD)
+        ex_inner = get_first_executor(inner)
+        self.assertIsNotNone(ex_inner)
+        uops = get_opnames(ex_inner)
+        self.assertIn("_TO_BOOL_SIZED", uops)
+        self.assertNotIn("_TO_BOOL", uops)
+
+    def test_to_bool_args_and_kwargs(self):
+        """Combined *args and **kwargs both get correct types."""
+        def inner(*args, **kwargs):
+            cnt = 0
+            for i in range(TIER2_THRESHOLD):
+                if args and kwargs:
+                    cnt += 1
+            return cnt
+
+        def f(n):
+            return inner(1, 2, a=3)
+
+        res, ex = self._run_with_optimizer(f, TIER2_THRESHOLD)
+        self.assertEqual(res, TIER2_THRESHOLD)
+        ex_inner = get_first_executor(inner)
+        self.assertIsNotNone(ex_inner)
+        uops = get_opnames(ex_inner)
+        self.assertIn("_TO_BOOL_SIZED", uops)
+        self.assertIn("_TO_BOOL_DICT", uops)
+        self.assertNotIn("_TO_BOOL", uops)
+
+    def test_to_bool_args_kwargs_with_regular_params(self):
+        """*args/**kwargs slot calculation is correct with regular params."""
+        def inner(x, y, *args, key=None, **kwargs):
+            cnt = 0
+            for i in range(TIER2_THRESHOLD):
+                if args and kwargs:
+                    cnt += 1
+            return cnt
+
+        def f(n):
+            return inner(1, 2, 3, 4, key="v", extra=5)
+
+        res, ex = self._run_with_optimizer(f, TIER2_THRESHOLD)
+        self.assertEqual(res, TIER2_THRESHOLD)
+        ex_inner = get_first_executor(inner)
+        self.assertIsNotNone(ex_inner)
+        uops = get_opnames(ex_inner)
+        self.assertIn("_TO_BOOL_SIZED", uops)
+        self.assertIn("_TO_BOOL_DICT", uops)
+        self.assertNotIn("_TO_BOOL", uops)
+
+    def test_to_bool_kwargs_only_no_varargs(self):
+        """**kwargs without *args gets correct dict type."""
+        def inner(x, **kwargs):
+            cnt = 0
+            for i in range(TIER2_THRESHOLD):
+                if kwargs:
+                    cnt += 1
+            return cnt
+
+        def f(n):
+            return inner(1, a=2)
+
+        res, ex = self._run_with_optimizer(f, TIER2_THRESHOLD)
+        self.assertEqual(res, TIER2_THRESHOLD)
+        ex_inner = get_first_executor(inner)
+        self.assertIsNotNone(ex_inner)
+        uops = get_opnames(ex_inner)
+        self.assertIn("_TO_BOOL_DICT", uops)
+        self.assertNotIn("_TO_BOOL", uops)
+
     def test_attr_promotion_failure(self):
         # We're not testing for any specific uops here, just
         # testing it doesn't crash.
