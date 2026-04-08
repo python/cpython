@@ -848,11 +848,6 @@ and :term:`generators <generator>` which incur interpreter overhead.
        # prepend(1, [2, 3, 4]) → 1 2 3 4
        return chain([value], iterable)
 
-   def running_mean(iterable):
-       "Yield the average of all values seen so far."
-       # running_mean([8.5, 9.5, 7.5, 6.5]) → 8.5 9.0 8.5 8.0
-       return map(truediv, accumulate(iterable), count(1))
-
    def repeatfunc(function, times=None, *args):
        "Repeat calls to a function with specified arguments."
        if times is None:
@@ -1148,6 +1143,50 @@ and :term:`generators <generator>` which incur interpreter overhead.
        for prime in set(factor(n)):
            n -= n // prime
        return n
+
+
+   # ==== Running statistics ====
+
+   def running_min(iterable):
+       "Smallest of values seen so far."
+       # running_min([37, 33, 38, 28]) -> 37 33 33 28
+       return accumulate(iterable, func=min)
+
+   def running_median(iterable):
+       "Median of values seen so far."
+       # running_median([37, 33, 38, 28]) -> 37 35 37 35
+       read = iter(iterable).__next__
+       lo = []  # max-heap
+       hi = []  # min-heap (same size as or one smaller than lo)
+
+       with suppress(StopIteration):
+           while True:
+               heappush_max(lo, heappushpop(hi, read()))
+               yield lo[0]
+               heappush(hi, heappushpop_max(lo, read()))
+               yield (lo[0] + hi[0]) / 2
+
+   def running_max(iterable):
+       "Largest of values seen so far."
+       # running_max([37, 33, 38, 28]) -> 37 37 38 38
+       return accumulate(iterable, func=max)
+
+   def running_mean(iterable):
+       "Average of values seen so far."
+       # running_mean([37, 33, 38, 28]) -> 37 35 36 34
+       return map(truediv, accumulate(iterable), count(1))
+
+   def running_statistics(iterable):
+       "Aggregate statistics for values seen so far."
+       # Generate tuples:  (size, minimum, median, maximum, mean)
+       t0, t1, t2, t3 = tee(iterable, 4)
+       return zip(
+           count(1),
+           running_min(t0),
+           running_median(t1),
+           running_max(t2),
+           running_mean(t3),
+       )
 
 
 .. doctest::
