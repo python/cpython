@@ -5982,18 +5982,6 @@ dummy_func(
             value = PyStackRef_FromPyObjectBorrow(ptr);
         }
 
-        tier2 op(_LOAD_CONST_UNDER_INLINE, (ptr/4, old -- value, new)) {
-            new = old;
-            DEAD(old);
-            value = PyStackRef_FromPyObjectNew(ptr);
-        }
-
-        tier2 op(_LOAD_CONST_UNDER_INLINE_BORROW, (ptr/4, old -- value, new)) {
-            new = old;
-            DEAD(old);
-            value = PyStackRef_FromPyObjectBorrow(ptr);
-        }
-
         tier2 op(_START_EXECUTOR, (executor/4 --)) {
 #ifndef _Py_JIT
             assert(current_executor == (_PyExecutorObject*)executor);

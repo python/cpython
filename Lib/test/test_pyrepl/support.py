@@ -88,6 +88,8 @@ def prepare_console(events: Iterable[Event], **kwargs) -> MagicMock | Console:
     console.get_event.side_effect = events
     console.height = 100
     console.width = 80
+    console.getheightwidth = MagicMock(side_effect=lambda: (console.height, console.width))
+
     for key, val in kwargs.items():
         setattr(console, key, val)
     return console
