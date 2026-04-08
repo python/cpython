@@ -529,6 +529,16 @@ dummy_func(void) {
     op(_TO_BOOL, (value -- res)) {
         int already_bool = optimize_to_bool(this_instr, ctx, value, &res, false);
         if (!already_bool) {
+            if (sym_matches_type(value, &PyDict_Type)) {
+                REPLACE_OP(this_instr, _TO_BOOL_DICT, 0, 0);
+            }
+            else if (sym_matches_type(value, &PyTuple_Type) ||
+                     sym_matches_type(value, &PySet_Type) ||
+                     sym_matches_type(value, &PyFrozenSet_Type) ||
+                     sym_matches_type(value, &PyBytes_Type) ||
+                     sym_matches_type(value, &PyByteArray_Type)) {
+                REPLACE_OP(this_instr, _TO_BOOL_SIZED, 0, 0);
+            }
             res = sym_new_truthiness(ctx, value, true);
         }
     }
@@ -589,6 +599,23 @@ dummy_func(void) {
         if (!already_bool) {
             res = sym_new_truthiness(ctx, value, true);
         }
+    }
+
+    op(_TO_BOOL_DICT, (value -- res, v)) {
+        int already_bool = optimize_to_bool(this_instr, ctx, value, &res, true);
+        if (!already_bool) {
+            sym_set_type(value, &PyDict_Type);
+            res = sym_new_truthiness(ctx, value, true);
+        }
+        v = value;
+    }
+
+    op(_TO_BOOL_SIZED, (value -- res, v)) {
+        int already_bool = optimize_to_bool(this_instr, ctx, value, &res, true);
+        if (!already_bool) {
+            res = sym_new_truthiness(ctx, value, true);
+        }
+        v = value;
     }
 
     op(_UNARY_NOT, (value -- res)) {

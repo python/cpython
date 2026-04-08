@@ -333,6 +333,16 @@
             value = stack_pointer[-1];
             int already_bool = optimize_to_bool(this_instr, ctx, value, &res, false);
             if (!already_bool) {
+                if (sym_matches_type(value, &PyDict_Type)) {
+                    REPLACE_OP(this_instr, _TO_BOOL_DICT, 0, 0);
+                }
+                else if (sym_matches_type(value, &PyTuple_Type) ||
+                     sym_matches_type(value, &PySet_Type) ||
+                     sym_matches_type(value, &PyFrozenSet_Type) ||
+                     sym_matches_type(value, &PyBytes_Type) ||
+                     sym_matches_type(value, &PyByteArray_Type)) {
+                    REPLACE_OP(this_instr, _TO_BOOL_SIZED, 0, 0);
+                }
                 res = sym_new_truthiness(ctx, value, true);
             }
             stack_pointer[-1] = res;
@@ -488,6 +498,43 @@
             value = stack_pointer[-1];
             ADD_OP(_INSERT_1_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)Py_True);
             res = sym_new_const(ctx, Py_True);
+            v = value;
+            CHECK_STACK_BOUNDS(1);
+            stack_pointer[-1] = res;
+            stack_pointer[0] = v;
+            stack_pointer += 1;
+            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+            break;
+        }
+
+        case _TO_BOOL_DICT: {
+            JitOptRef value;
+            JitOptRef res;
+            JitOptRef v;
+            value = stack_pointer[-1];
+            int already_bool = optimize_to_bool(this_instr, ctx, value, &res, true);
+            if (!already_bool) {
+                sym_set_type(value, &PyDict_Type);
+                res = sym_new_truthiness(ctx, value, true);
+            }
+            v = value;
+            CHECK_STACK_BOUNDS(1);
+            stack_pointer[-1] = res;
+            stack_pointer[0] = v;
+            stack_pointer += 1;
+            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+            break;
+        }
+
+        case _TO_BOOL_SIZED: {
+            JitOptRef value;
+            JitOptRef res;
+            JitOptRef v;
+            value = stack_pointer[-1];
+            int already_bool = optimize_to_bool(this_instr, ctx, value, &res, true);
+            if (!already_bool) {
+                res = sym_new_truthiness(ctx, value, true);
+            }
             v = value;
             CHECK_STACK_BOUNDS(1);
             stack_pointer[-1] = res;
