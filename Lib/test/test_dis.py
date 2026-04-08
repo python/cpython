@@ -877,6 +877,7 @@ Disassembly of <code object foo at 0x..., file "%s", line %d>:
 dis_nested_2 = """%s
 Disassembly of <code object <genexpr> at 0x..., file "%s", line %d>:
   --           COPY_FREE_VARS           1
+               RESUME                   4
 
 %4d           LOAD_FAST                0 (.0)
                GET_ITER                 0
@@ -889,7 +890,7 @@ Disassembly of <code object <genexpr> at 0x..., file "%s", line %d>:
                LOAD_FAST_BORROW         1 (z)
                BINARY_OP                0 (+)
                YIELD_VALUE              0
-               RESUME                   5
+               RESUME                   9
                POP_TOP
                JUMP_BACKWARD           17 (to L2)
        L3:     END_FOR
