@@ -1534,6 +1534,26 @@ _Py_uop_frame_new(
         frame->locals[i] = local;
     }
 
+    /* CPython guarantees that *args is always a tuple and **kwargs is always
+     * a dict.  Mark their slots with the correct types so the JIT optimizer
+     * can specialise TO_BOOL (and other ops) on them without needing runtime
+     * type guards. */
+    if (co->co_flags & (CO_VARARGS | CO_VARKEYWORDS)) {
+        int total_args = co->co_argcount + co->co_kwonlyargcount;
+        int slot = total_args;
+        if (co->co_flags & CO_VARARGS) {
+            /* *args lives at slot `total_args` and is always a tuple. */
+            assert(slot < co->co_nlocalsplus);
+            frame->locals[slot] = _Py_uop_sym_new_type(ctx, &PyTuple_Type);
+            slot++;
+        }
+        if (co->co_flags & CO_VARKEYWORDS) {
+            /* **kwargs lives at the next slot and is always a dict. */
+            assert(slot < co->co_nlocalsplus);
+            frame->locals[slot] = _Py_uop_sym_new_type(ctx, &PyDict_Type);
+        }
+    }
+
     frame->callable = _Py_uop_sym_new_not_null(ctx);
 
     /* Most optimizations rely on code objects being immutable (including sys._getframe modifications),
