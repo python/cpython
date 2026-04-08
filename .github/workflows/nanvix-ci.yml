@@ -23,7 +23,7 @@ concurrency:
 
 jobs:
   ci:
-    if: github.event_name != 'schedule'
+    if: github.event_name != 'schedule' && github.event_name != 'workflow_dispatch'
     uses: nanvix/workflows/.github/workflows/nanvix-ci.yml@v1.4.0
     with:
       zutil-version: "v0.7.3"
@@ -35,7 +35,7 @@ jobs:
       GH_TOKEN: ${{ secrets.GH_TOKEN || secrets.GITHUB_TOKEN }}
 
   ci-scheduled:
-    if: github.event_name == 'schedule'
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
     permissions:
       contents: write
       actions: write
@@ -47,7 +47,7 @@ jobs:
       platforms: '["microvm"]'
       memory-sizes: '["256mb"]'
       skip-full-test-modes: '[]'
-      caller-event-name: ${{ github.event_name }}
+      caller-event-name: 'schedule'
     secrets:
       GH_TOKEN: ${{ secrets.GH_TOKEN || secrets.GITHUB_TOKEN }}
 
