@@ -104,7 +104,7 @@ class ReadlineConfig:
     readline_completer: Completer | None = None
     completer_delims: frozenset[str] = frozenset(" \t\n`~!@#$%^&*()-=+[{]}\\|;:'\",<>/?")
     module_completer: ModuleCompleter = field(default_factory=make_default_module_completer)
-    colorize_completions: Callable[[list[str], list[object]], list[str]] | None = None
+    colorize_completions: Callable[[list[str], list[Any]], list[str]] | None = None
 
 @dataclass(kw_only=True)
 class ReadlineAlikeReader(historical_reader.HistoricalReader, CompletingReader):
@@ -623,9 +623,10 @@ def _setup(namespace: Mapping[str, Any]) -> None:
     completer_cls = RLCompleter if use_basic_completer else FancyCompleter
     completer = completer_cls(namespace)
     _wrapper.config.readline_completer = completer.complete
-    if getattr(completer, 'use_colors', False):
+    if isinstance(completer, FancyCompleter) and completer.use_colors:
+        theme = completer.theme
         def _colorize(names: list[str], values: list[object]) -> list[str]:
-            return colorize_matches(names, values, completer.theme)
+            return colorize_matches(names, values, theme)
         _wrapper.config.colorize_completions = _colorize
     _wrapper.config.module_completer = ModuleCompleter(namespace)
 
