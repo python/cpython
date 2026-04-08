@@ -161,7 +161,7 @@ class Future:
         return True.
 
         The optional argument *msg* is passed as the argument to the
-        asyncio.CancelledError exception raised when a cancelled Future 
+        asyncio.CancelledError exception raised when a cancelled Future
         is awaited. It can be any object.
         """
         self.__log_traceback = False
