@@ -26,8 +26,18 @@
 #   .nanvix/mk/test-single-process.mk - single-process deployment mode tests
 #   .nanvix/mk/test-hyperlight.mk    - hyperlight machine type overrides
 #   .nanvix/mk/test-microvm.mk       - microvm machine type overrides
+#   .nanvix/mk/docker-host.mk        - Windows Docker host-side re-invocation
 #   .nanvix/mk/package-common.mk     - release packaging
 #   .nanvix/mk/verify-package.mk     - tarball verification
+
+# ---- Windows Docker host-side re-invocation ----
+# When DOCKER_HOST_MODE=windows is set, this overrides build/test/install/package
+# targets to re-invoke make inside a Docker container with tar-based source
+# copying (avoids Docker Desktop bind mount I/O penalty). All subsequent
+# includes are skipped because docker-host.mk provides its own target recipes.
+include .nanvix/mk/docker-host.mk
+
+ifndef DOCKER_HOST_MODE
 
 # ---- Common: variables, toolchain, configure, build, install, clean ----
 include .nanvix/mk/common.mk
@@ -57,3 +67,5 @@ include .nanvix/mk/package-common.mk
 include .nanvix/mk/verify-package.mk
 
 .PHONY: all
+
+endif # DOCKER_HOST_MODE
