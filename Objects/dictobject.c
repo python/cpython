@@ -2881,8 +2881,7 @@ delete_index_from_values(PyDictValues *values, Py_ssize_t ix)
     for (; i < size; i++) {
         array[i] = array[i+1] + 1;
     }
-    /* Zero the vacated slot so that a future insert at this position
-       with delta==0 can safely skip the write. */
+    /* Zero the vacated slot to maintain a clean state. */
     array[size] = 0;
     values->size = size;
 }

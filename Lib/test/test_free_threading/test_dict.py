@@ -290,5 +290,70 @@ class TestDict(TestCase):
         with threading_helper.start_threads([t1, t2]):
             pass
 
+    def test_racing_store_attr_insertion_order(self):
+        """Concurrent STORE_ATTR on shared-key instances must preserve
+        correct insertion order with delta-encoded order arrays (gh-144388)."""
+
+        class C:
+            pass
+
+        THREAD_COUNT = 10
+        ITERS = 1000
+        barrier = Barrier(THREAD_COUNT)
+        results = [None] * THREAD_COUNT
+
+        def worker(idx):
+            barrier.wait()
+            for _ in range(ITERS):
+                obj = C()
+                # Natural order
+                obj.a = 1
+                obj.b = 2
+                obj.c = 3
+                assert list(obj.__dict__) == ["a", "b", "c"], (
+                    f"thread {idx}: {list(obj.__dict__)}")
+                # Non-natural order
+                obj2 = C()
+                obj2.c = 3
+                obj2.a = 1
+                obj2.b = 2
+                assert list(obj2.__dict__) == ["c", "a", "b"], (
+                    f"thread {idx}: {list(obj2.__dict__)}")
+            results[idx] = True
+
+        threads = [Thread(target=worker, args=(i,)) for i in range(THREAD_COUNT)]
+        with threading_helper.start_threads(threads):
+            pass
+
+        self.assertTrue(all(results))
+
+    def test_racing_store_attr_delete_reinsert(self):
+        """Concurrent attribute delete + re-insert must maintain correct
+        insertion order with delta-encoded order arrays (gh-144388)."""
+
+        class C:
+            pass
+
+        THREAD_COUNT = 6
+        ITERS = 1000
+        barrier = Barrier(THREAD_COUNT)
+
+        def worker():
+            barrier.wait()
+            for _ in range(ITERS):
+                obj = C()
+                obj.x = 1
+                obj.y = 2
+                obj.z = 3
+                del obj.__dict__["y"]
+                assert list(obj.__dict__) == ["x", "z"]
+                obj.y = 2
+                assert list(obj.__dict__) == ["x", "z", "y"]
+
+        threads = [Thread(target=worker) for _ in range(THREAD_COUNT)]
+        with threading_helper.start_threads(threads):
+            pass
+
+
 if __name__ == "__main__":
     unittest.main()
