@@ -148,9 +148,7 @@ def main(*args):
             # No SQL provided; start the REPL.
             with completer(con):
                 console = SqliteInteractiveConsole(con, use_color=True)
-                # Keep using basic REPL until completion and syntax
-                # highlighting are adapted for PyREPL.
-                console.interact(banner, exitmsg="", use_pyrepl=False)
+                console.interact(banner, exitmsg="")
     finally:
         con.close()
 
