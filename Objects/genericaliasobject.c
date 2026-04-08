@@ -242,7 +242,6 @@ _Py_make_parameters(PyObject *args)
                     len += needed;
                     if (_PyTuple_Resize(&parameters, len) < 0) {
                         Py_DECREF(subparams);
-                        Py_XDECREF(parameters);
                         Py_XDECREF(tuple_args);
                         return NULL;
                     }
