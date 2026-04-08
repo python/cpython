@@ -14,6 +14,9 @@ PyAPI_FUNC(int) _Py_DisplaySourceLine(PyObject *, PyObject *, int, int, int *, P
 // Export for 'pyexact' shared extension
 PyAPI_FUNC(void) _PyTraceback_Add(const char *, const char *, int);
 
+#include "traceback.h"  /* PyUnstable_FrameInfo, PyUnstable_CollectCallStack,
+                           PyUnstable_PrintCallStack */
+
 /* Write the Python traceback into the file 'fd'. For example:
 
        Traceback (most recent call first):

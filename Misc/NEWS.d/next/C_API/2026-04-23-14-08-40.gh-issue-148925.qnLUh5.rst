@@ -1,0 +1,4 @@
+Add :c:func:`PyUnstable_CollectCallStack` and
+:c:func:`PyUnstable_PrintCallStack`, a new signal-safe C API for collecting
+and printing Python stack frames without acquiring the GIL or allocating
+heap memory.
