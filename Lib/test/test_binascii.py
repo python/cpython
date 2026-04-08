@@ -159,20 +159,20 @@ class BinASCIITest(unittest.TestCase):
     def test_base64_bad_padding(self):
         # Test malformed padding
         def _assertRegexTemplate(assert_regex, data,
-                                 non_strict_mode_expected_result):
+                                 non_strict_mode_expected_result, **kwargs):
             data = self.type2test(data)
             with self.assertRaisesRegex(binascii.Error, assert_regex):
-                binascii.a2b_base64(data, strict_mode=True)
+                binascii.a2b_base64(data, strict_mode=True, **kwargs)
             self.assertEqual(binascii.a2b_base64(data, strict_mode=False),
                              non_strict_mode_expected_result)
             self.assertEqual(binascii.a2b_base64(data, strict_mode=True,
-                                                 ignorechars=b'='),
+                                                 ignorechars=b' ='),
                              non_strict_mode_expected_result)
             self.assertEqual(binascii.a2b_base64(data),
                              non_strict_mode_expected_result)
 
-        def assertLeadingPadding(*args):
-            _assertRegexTemplate(r'(?i)Leading padding', *args)
+        def assertLeadingPadding(*args, **kwargs):
+            _assertRegexTemplate(r'(?i)Leading padding', *args, **kwargs)
 
         def assertDiscontinuousPadding(*args):
             _assertRegexTemplate(r'(?i)Discontinuous padding', *args)
@@ -180,8 +180,11 @@ class BinASCIITest(unittest.TestCase):
         def assertExcessPadding(*args):
             _assertRegexTemplate(r'(?i)Excess padding', *args)
 
-        def assertInvalidLength(*args):
-            _assertRegexTemplate(r'(?i)Invalid.+number of data characters', *args)
+        def assertInvalidLength(data, *args, length=None, **kwargs):
+            if length is None:
+                length = len(data.split(b'=', 1)[0].replace(b' ', b''))
+            assert_regex = fr"(?i)Invalid.+number of data characters \({length}\)"
+            _assertRegexTemplate(assert_regex, data, *args, **kwargs)
 
         assertExcessPadding(b'ab===', b'i')
         assertExcessPadding(b'ab====', b'i')
@@ -200,12 +203,16 @@ class BinASCIITest(unittest.TestCase):
         assertLeadingPadding(b'===abcd', b'i\xb7\x1d')
         assertLeadingPadding(b'====abcd', b'i\xb7\x1d')
         assertLeadingPadding(b'=====abcd', b'i\xb7\x1d')
+        assertLeadingPadding(b' =abcd', b'i\xb7\x1d', ignorechars=b' ')
 
         assertInvalidLength(b'a=b==', b'i')
         assertInvalidLength(b'a=bc=', b'i\xb7')
         assertInvalidLength(b'a=bc==', b'i\xb7')
         assertInvalidLength(b'a=bcd', b'i\xb7\x1d')
         assertInvalidLength(b'a=bcd=', b'i\xb7\x1d')
+        assertInvalidLength(b' a=b==', b'i', ignorechars=b' ')
+        assertInvalidLength(b'abcde=f==', b'i\xb7\x1dy')
+        assertInvalidLength(b' abcde=f==', b'i\xb7\x1dy', ignorechars=b' ')
 
         assertDiscontinuousPadding(b'ab=c=', b'i\xb7')
         assertDiscontinuousPadding(b'ab=cd', b'i\xb7\x1d')
@@ -225,6 +232,28 @@ class BinASCIITest(unittest.TestCase):
         assertExcessPadding(b'abcd===efgh', b'i\xb7\x1dy\xf8!')
         assertExcessPadding(b'abcd====efgh', b'i\xb7\x1dy\xf8!')
         assertExcessPadding(b'abcd=====efgh', b'i\xb7\x1dy\xf8!')
+
+    def test_a2b_base64_padded(self):
+        a2b_base64 = binascii.a2b_base64
+        t = self.type2test
+        def check(data, expected):
+            if b'=' in data:
+                with self.assertRaisesRegex(binascii.Error, 'Padding not allowed'):
+                    a2b_base64(t(data), padded=False, strict_mode=True)
+            self.assertEqual(a2b_base64(t(data), padded=False, ignorechars=b'='),
+                             expected)
+            data = data.replace(b'=', b'')
+            self.assertEqual(a2b_base64(t(data), padded=False), expected)
+            self.assertEqual(a2b_base64(t(data), padded=False, strict_mode=True),
+                             expected)
+
+        check(b'', b'')
+        check(b'YQ==', b'a')
+        check(b'YWI=', b'ab')
+        check(b'YWJj', b'abc')
+        check(b'Y=WJj', b'abc')
+        check(b'YW=Jj', b'abc')
+        check(b'YWJ=j', b'abc')
 
     def _common_test_ignorechars(self, func):
         eq = self.assertEqual
@@ -763,9 +792,9 @@ class BinASCIITest(unittest.TestCase):
             p = 8 - len_8 if len_8 else 0
             return fixed + b"=" * p
 
-        def _assertRegexTemplate(assert_regex, data, good_padding_result=None):
+        def _assertRegexTemplate(assert_regex, data, good_padding_result=None, **kwargs):
             with self.assertRaisesRegex(binascii.Error, assert_regex):
-                binascii.a2b_base32(self.type2test(data))
+                binascii.a2b_base32(self.type2test(data), **kwargs)
             if good_padding_result:
                 fixed = self.type2test(_fixPadding(data))
                 self.assertEqual(binascii.a2b_base32(fixed), good_padding_result)
@@ -779,8 +808,8 @@ class BinASCIITest(unittest.TestCase):
         def assertExcessPadding(*args):
             _assertRegexTemplate(r"(?i)Excess padding", *args)
 
-        def assertLeadingPadding(*args):
-            _assertRegexTemplate(r"(?i)Leading padding", *args)
+        def assertLeadingPadding(*args, **kwargs):
+            _assertRegexTemplate(r"(?i)Leading padding", *args, **kwargs)
 
         def assertIncorrectPadding(*args):
             _assertRegexTemplate(r"(?i)Incorrect padding", *args)
@@ -788,8 +817,11 @@ class BinASCIITest(unittest.TestCase):
         def assertDiscontinuousPadding(*args):
             _assertRegexTemplate(r"(?i)Discontinuous padding", *args)
 
-        def assertInvalidLength(*args):
-            _assertRegexTemplate(r"(?i)Invalid.+number of data characters", *args)
+        def assertInvalidLength(data, *args, length=None, **kwargs):
+            if length is None:
+                length = len(data.split(b'=', 1)[0].replace(b' ', b''))
+            assert_regex = fr"(?i)Invalid.+number of data characters \({length}\)"
+            _assertRegexTemplate(assert_regex, data, *args, **kwargs)
 
         assertNonBase32Data(b"a")
         assertNonBase32Data(b"AA-")
@@ -844,6 +876,7 @@ class BinASCIITest(unittest.TestCase):
         assertLeadingPadding(b"=======BEEFCAKE", b"\t\x08Q\x01D")
         assertLeadingPadding(b"========BEEFCAKE", b"\t\x08Q\x01D")
         assertLeadingPadding(b"=========BEEFCAKE", b"\t\x08Q\x01D")
+        assertLeadingPadding(b" =BEEFCAKE", ignorechars=b' ')
 
         assertIncorrectPadding(b"AB")
         assertIncorrectPadding(b"ABCD")
@@ -869,6 +902,9 @@ class BinASCIITest(unittest.TestCase):
         assertInvalidLength(b"A")
         assertInvalidLength(b"ABC")
         assertInvalidLength(b"ABCDEF")
+        assertInvalidLength(b"ABCDEFGHI")
+        assertInvalidLength(b"ABCDEFGHIJK")
+        assertInvalidLength(b"ABCDEFGHIJKLMN")
 
         assertInvalidLength(b"A=")
         assertInvalidLength(b"A==")
@@ -888,6 +924,52 @@ class BinASCIITest(unittest.TestCase):
         assertInvalidLength(b"BEE==F==", b"\t\x08")
         assertInvalidLength(b"BEEFCA=K", b"\t\x08Q\x01")
         assertInvalidLength(b"BEEFCA=====K", b"\t\x08Q\x01")
+
+        assertInvalidLength(b" A", ignorechars=b' ')
+        assertInvalidLength(b" ABC", ignorechars=b' ')
+        assertInvalidLength(b" ABCDEF", ignorechars=b' ')
+        assertInvalidLength(b" ABCDEFGHI", ignorechars=b' ')
+        assertInvalidLength(b" ABCDEFGHIJK", ignorechars=b' ')
+        assertInvalidLength(b" ABCDEFGHIJKLMN", ignorechars=b' ')
+        assertInvalidLength(b" A=======", ignorechars=b' ')
+        assertInvalidLength(b" ABC=====", ignorechars=b' ')
+        assertInvalidLength(b" ABCDEF==", ignorechars=b' ')
+
+    def test_a2b_base32_padded(self):
+        a2b_base32 = binascii.a2b_base32
+        t = self.type2test
+        def check(data, expected):
+            if b'=' in data:
+                with self.assertRaisesRegex(binascii.Error, 'Padding not allowed'):
+                    a2b_base32(t(data), padded=False)
+            self.assertEqual(a2b_base32(t(data), padded=False, ignorechars=b'='),
+                             expected)
+            data = data.replace(b'=', b'')
+            self.assertEqual(a2b_base32(t(data), padded=False), expected)
+
+        check(b'', b'')
+        check(b'ME======', b'a')
+        check(b'MFRA====', b'ab')
+        check(b'MFRGG===', b'abc')
+        check(b'MFRGGZA=', b'abcd')
+        check(b'MFRGGZDF', b'abcde')
+        check(b'M=FRGGZDF', b'abcde')
+        check(b'MF=RGGZDF', b'abcde')
+        check(b'MFR=GGZDF', b'abcde')
+        check(b'MFRG=GZDF', b'abcde')
+        check(b'MFRGG=ZDF', b'abcde')
+        check(b'MFRGGZ=DF', b'abcde')
+        check(b'MFRGGZD=F', b'abcde')
+
+    def test_b2a_base32_padded(self):
+        b2a_base32 = binascii.b2a_base32
+        t = self.type2test
+        self.assertEqual(b2a_base32(t(b''), padded=False), b'')
+        self.assertEqual(b2a_base32(t(b'a'), padded=False), b'ME')
+        self.assertEqual(b2a_base32(t(b'ab'), padded=False), b'MFRA')
+        self.assertEqual(b2a_base32(t(b'abc'), padded=False), b'MFRGG')
+        self.assertEqual(b2a_base32(t(b'abcd'), padded=False), b'MFRGGZA')
+        self.assertEqual(b2a_base32(t(b'abcde'), padded=False), b'MFRGGZDF')
 
     def test_base32_wrapcol(self):
         self._common_test_wrapcol(binascii.b2a_base32)
@@ -1230,6 +1312,14 @@ class BinASCIITest(unittest.TestCase):
         self.assertEqual(binascii.b2a_base64(b), b'\n')
         self.assertEqual(binascii.b2a_base64(b, newline=True), b'\n')
         self.assertEqual(binascii.b2a_base64(b, newline=False), b'')
+
+    def test_b2a_base64_padded(self):
+        b2a_base64 = binascii.b2a_base64
+        t = self.type2test
+        self.assertEqual(b2a_base64(t(b''), padded=False), b'\n')
+        self.assertEqual(b2a_base64(t(b'a'), padded=False), b'YQ\n')
+        self.assertEqual(b2a_base64(t(b'ab'), padded=False), b'YWI\n')
+        self.assertEqual(b2a_base64(t(b'abc'), padded=False), b'YWJj\n')
 
     def test_b2a_base64_wrapcol(self):
         self._common_test_wrapcol(binascii.b2a_base64)

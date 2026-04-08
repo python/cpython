@@ -207,6 +207,7 @@ class FlamegraphCollector(StackTraceCollector):
                 child_entry = {
                     "name": name_idx,
                     "value": samples,
+                    "self": node.get("self", 0),
                     "children": [],
                     "filename": filename_idx,
                     "lineno": func[1],

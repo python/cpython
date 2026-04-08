@@ -34,7 +34,12 @@ ENV_SCRIPT = ANDROID_DIR / "android-env.sh"
 TESTBED_DIR = ANDROID_DIR / "testbed"
 CROSS_BUILD_DIR = PYTHON_DIR / "cross-build"
 
-HOSTS = ["aarch64-linux-android", "x86_64-linux-android"]
+HOSTS = [
+    "aarch64-linux-android",
+    "arm-linux-androideabi",
+    "i686-linux-android",
+    "x86_64-linux-android",
+]
 APP_ID = "org.python.testbed"
 DECODE_ARGS = ("UTF-8", "backslashreplace")
 
@@ -205,38 +210,48 @@ def make_build_python(context):
 #
 # If you're a member of the Python core team, and you'd like to be able to push
 # these tags yourself, please contact Malcolm Smith or Russell Keith-Magee.
-def unpack_deps(host, prefix_dir):
+def unpack_deps(host, prefix_dir, cache_dir):
     os.chdir(prefix_dir)
     deps_url = "https://github.com/beeware/cpython-android-source-deps/releases/download"
     for name_ver in ["bzip2-1.0.8-3", "libffi-3.4.4-3", "openssl-3.5.5-0",
-                     "sqlite-3.50.4-0", "xz-5.4.6-1", "zstd-1.5.7-1"]:
+                     "sqlite-3.50.4-0", "xz-5.4.6-1", "zstd-1.5.7-2"]:
         filename = f"{name_ver}-{host}.tar.gz"
-        download(f"{deps_url}/{name_ver}/{filename}")
-        shutil.unpack_archive(filename)
-        os.remove(filename)
+        out_path = download(f"{deps_url}/{name_ver}/{filename}", cache_dir)
+        shutil.unpack_archive(out_path)
 
 
-def download(url, target_dir="."):
-    out_path = f"{target_dir}/{basename(url)}"
-    run(["curl", "-Lf", "--retry", "5", "--retry-all-errors", "-o", out_path, url])
+def download(url, cache_dir):
+    out_path = cache_dir / basename(url)
+    cache_dir.mkdir(parents=True, exist_ok=True)
+    if not out_path.is_file():
+        run(["curl", "-Lf", "--retry", "5", "--retry-all-errors", "-o", out_path, url])
+    else:
+        print(f"Using cached version of {basename(url)}")
     return out_path
 
 
-def configure_host_python(context):
+def configure_host_python(context, host=None):
+    if host is None:
+        host = context.host
     if context.clean:
-        clean(context.host)
+        clean(host)
 
-    host_dir = subdir(context.host, create=True)
+    host_dir = subdir(host, create=True)
     prefix_dir = host_dir / "prefix"
     if not prefix_dir.exists():
         prefix_dir.mkdir()
-        unpack_deps(context.host, prefix_dir)
+        cache_dir = (
+            Path(context.cache_dir).resolve()
+            if context.cache_dir
+            else CROSS_BUILD_DIR / "downloads"
+        )
+        unpack_deps(host, prefix_dir, cache_dir)
 
     os.chdir(host_dir)
     command = [
         # Basic cross-compiling configuration
         relpath(PYTHON_DIR / "configure"),
-        f"--host={context.host}",
+        f"--host={host}",
         f"--build={sysconfig.get_config_var('BUILD_GNU_TYPE')}",
         f"--with-build-python={build_python_path()}",
         "--without-ensurepip",
@@ -252,14 +267,16 @@ def configure_host_python(context):
 
     if context.args:
         command.extend(context.args)
-    run(command, host=context.host)
+    run(command, host=host)
 
 
-def make_host_python(context):
+def make_host_python(context, host=None):
+    if host is None:
+        host = context.host
     # The CFLAGS and LDFLAGS set in android-env include the prefix dir, so
     # delete any previous Python installation to prevent it being used during
     # the build.
-    host_dir = subdir(context.host)
+    host_dir = subdir(host)
     prefix_dir = host_dir / "prefix"
     for pattern in ("include/python*", "lib/libpython*", "lib/python*"):
         delete_glob(f"{prefix_dir}/{pattern}")
@@ -278,20 +295,28 @@ def make_host_python(context):
     )
 
 
-def build_all(context):
-    steps = [configure_build_python, make_build_python, configure_host_python,
-             make_host_python]
-    for step in steps:
-        step(context)
+def build_targets(context):
+    if context.target in {"all", "build"}:
+        configure_build_python(context)
+        make_build_python(context)
+
+    for host in HOSTS:
+        if context.target in {"all", "hosts", host}:
+            configure_host_python(context, host)
+            make_host_python(context, host)
 
 
 def clean(host):
     delete_glob(CROSS_BUILD_DIR / host)
 
 
-def clean_all(context):
-    for host in HOSTS + ["build"]:
-        clean(host)
+def clean_targets(context):
+    if context.target in {"all", "build"}:
+        clean("build")
+
+    for host in HOSTS:
+        if context.target in {"all", "hosts", host}:
+            clean(host)
 
 
 def setup_ci():
@@ -854,18 +879,23 @@ def parse_args():
 
     # Subcommands
     build = add_parser(
-        "build", help="Run configure-build, make-build, configure-host and "
-        "make-host")
+        "build",
+        help="Run configure and make for the selected target"
+    )
     configure_build = add_parser(
         "configure-build", help="Run `configure` for the build Python")
-    add_parser(
+    make_build = add_parser(
         "make-build", help="Run `make` for the build Python")
     configure_host = add_parser(
         "configure-host", help="Run `configure` for Android")
     make_host = add_parser(
         "make-host", help="Run `make` for Android")
 
-    add_parser("clean", help="Delete all build directories")
+    clean = add_parser(
+        "clean",
+        help="Delete build directories for the selected target"
+    )
+
     add_parser("build-testbed", help="Build the testbed app")
     test = add_parser("test", help="Run the testbed app")
     package = add_parser("package", help="Make a release package")
@@ -873,12 +903,61 @@ def parse_args():
     env = add_parser("env", help="Print environment variables")
 
     # Common arguments
+    # --cross-build-dir argument
+    for cmd in [
+        clean,
+        configure_build,
+        make_build,
+        configure_host,
+        make_host,
+        build,
+        package,
+        test,
+        ci,
+    ]:
+        cmd.add_argument(
+            "--cross-build-dir",
+            action="store",
+            default=os.environ.get("CROSS_BUILD_DIR"),
+            dest="cross_build_dir",
+            type=Path,
+            help=(
+                "Path to the cross-build directory "
+                f"(default: {CROSS_BUILD_DIR}). Can also be set "
+                "with the CROSS_BUILD_DIR environment variable."
+            ),
+        )
+
+    # --cache-dir option
+    for cmd in [configure_host, build, ci]:
+        cmd.add_argument(
+            "--cache-dir",
+            default=os.environ.get("CACHE_DIR"),
+            help="The directory to store cached downloads.",
+        )
+
+    # --clean option
     for subcommand in [build, configure_build, configure_host, ci]:
         subcommand.add_argument(
             "--clean", action="store_true", default=False, dest="clean",
             help="Delete the relevant build directories first")
 
-    host_commands = [build, configure_host, make_host, package, ci]
+    # Allow "all", "build" and "hosts" targets for some commands
+    for subcommand in [clean, build]:
+        subcommand.add_argument(
+            "target",
+            nargs="?",
+            default="all",
+            choices=["all", "build", "hosts"] + HOSTS,
+            help=(
+                "The host triplet (e.g., aarch64-linux-android), "
+                "or 'build' for just the build platform, or 'hosts' for all "
+                "host platforms, or 'all' for the build platform and all "
+                "hosts. Defaults to 'all'"
+            ),
+        )
+
+    host_commands = [configure_host, make_host, package, ci]
     if in_source_tree:
         host_commands.append(env)
     for subcommand in host_commands:
@@ -940,13 +1019,19 @@ def main():
         stream.reconfigure(line_buffering=True)
 
     context = parse_args()
+
+    # Set the CROSS_BUILD_DIR if an argument was provided
+    if context.cross_build_dir:
+        global CROSS_BUILD_DIR
+        CROSS_BUILD_DIR = context.cross_build_dir.resolve()
+
     dispatch = {
         "configure-build": configure_build_python,
         "make-build": make_build_python,
         "configure-host": configure_host_python,
         "make-host": make_host_python,
-        "build": build_all,
-        "clean": clean_all,
+        "build": build_targets,
+        "clean": clean_targets,
         "build-testbed": build_testbed,
         "test": run_testbed,
         "package": package,
