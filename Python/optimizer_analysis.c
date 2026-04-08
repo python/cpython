@@ -155,7 +155,7 @@ type_watcher_callback(PyTypeObject* type)
 }
 
 static PyObject *
-convert_global_to_const(_PyUOpInstruction *inst, PyObject *obj, bool pop, bool insert)
+convert_global_to_const(_PyUOpInstruction *inst, PyObject *obj, bool insert)
 {
     assert(inst->opcode == _LOAD_GLOBAL_MODULE || inst->opcode == _LOAD_GLOBAL_BUILTINS || inst->opcode == _LOAD_ATTR_MODULE);
     assert(PyDict_CheckExact(obj));
@@ -184,9 +184,9 @@ convert_global_to_const(_PyUOpInstruction *inst, PyObject *obj, bool pop, bool i
         }
     } else {
         if (borrow) {
-            inst->opcode = pop ? _POP_TOP_LOAD_CONST_INLINE_BORROW : _LOAD_CONST_INLINE_BORROW;
+            inst->opcode = _LOAD_CONST_INLINE_BORROW;
         } else {
-            inst->opcode = pop ? _POP_TOP_LOAD_CONST_INLINE : _LOAD_CONST_INLINE;
+            inst->opcode = _LOAD_CONST_INLINE;
         }
         if (inst->oparg & 1) {
             assert(inst[1].opcode == _PUSH_NULL_CONDITIONAL);
@@ -341,10 +341,12 @@ optimize_to_bool(
     int truthiness = sym_truthiness(ctx, value);
     if (truthiness >= 0) {
         PyObject *load = truthiness ? Py_True : Py_False;
-        int opcode = insert_mode ?
-            _INSERT_1_LOAD_CONST_INLINE_BORROW :
-            _POP_TOP_LOAD_CONST_INLINE_BORROW;
-        ADD_OP(opcode, 0, PyStackRef_TagBorrow(load));
+        if (insert_mode) {
+            ADD_OP(_INSERT_1_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)load);
+        } else {
+            ADD_OP(_POP_TOP, 0, 0);
+            ADD_OP(_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)load);
+        }
         *result_ptr = sym_new_const(ctx, load);
         return 1;
     }
@@ -390,21 +392,22 @@ eliminate_pop_guard(_PyUOpInstruction *this_instr, JitOptContext *ctx, bool exit
 
 static JitOptRef
 lookup_attr(JitOptContext *ctx, _PyBloomFilter *dependencies, _PyUOpInstruction *this_instr,
-            PyTypeObject *type, PyObject *name, uint16_t immortal,
-            uint16_t mortal)
+            PyTypeObject *type, PyObject *name, bool pop)
 {
     // The cached value may be dead, so we need to do the lookup again... :(
     if (type && PyType_Check(type)) {
         PyObject *lookup = _PyType_Lookup(type, name);
         if (lookup) {
-            int opcode = mortal;
-            uintptr_t operand = (uintptr_t)lookup;
-            // if the object is immortal or the type is immutable, borrowing is safe
-            if (_Py_IsImmortal(lookup) || (type->tp_flags & Py_TPFLAGS_IMMUTABLETYPE)) {
-                opcode = immortal;
-                operand = PyStackRef_TagBorrow(lookup);
+            bool immortal = _Py_IsImmortal(lookup) || (type->tp_flags & Py_TPFLAGS_IMMUTABLETYPE);
+            if (pop) {
+                ADD_OP(_POP_TOP, 0, 0);
+                ADD_OP(immortal ? _LOAD_CONST_INLINE_BORROW : _LOAD_CONST_INLINE,
+                       0, (uintptr_t)lookup);
             }
-            ADD_OP(opcode, 0, operand);
+            else {
+                ADD_OP(immortal ? _INSERT_1_LOAD_CONST_INLINE_BORROW : _INSERT_1_LOAD_CONST_INLINE,
+                       0, (uintptr_t)lookup);
+            }
             PyType_Watch(TYPE_WATCHER_ID, (PyObject *)type);
             _Py_BloomFilter_Add(dependencies, type);
             return sym_new_const(ctx, lookup);
@@ -614,8 +617,8 @@ const uint16_t op_without_push[MAX_UOP_ID + 1] = {
     [_COPY] = _NOP,
     [_LOAD_CONST_INLINE] = _NOP,
     [_LOAD_CONST_INLINE_BORROW] = _NOP,
-    [_LOAD_CONST_UNDER_INLINE] = _POP_TOP_LOAD_CONST_INLINE,
-    [_LOAD_CONST_UNDER_INLINE_BORROW] = _POP_TOP_LOAD_CONST_INLINE_BORROW,
+    [_INSERT_1_LOAD_CONST_INLINE] = _POP_TOP_LOAD_CONST_INLINE,
+    [_INSERT_1_LOAD_CONST_INLINE_BORROW] = _POP_TOP_LOAD_CONST_INLINE_BORROW,
     [_LOAD_FAST] = _NOP,
     [_LOAD_FAST_BORROW] = _NOP,
     [_LOAD_SMALL_INT] = _NOP,
