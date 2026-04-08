@@ -515,17 +515,17 @@ dummy_func(void) {
     }
 
     op(_BINARY_OP_SUBSCR_DICT, (dict_st, sub_st -- res, ds, ss)) {
-        PyObject *sub = sym_get_const(ctx, sub_st);
-        if (sub != NULL) {
-            optimize_dict_known_hash(ctx, dependencies, this_instr,
-                                     sub, _BINARY_OP_SUBSCR_DICT_KNOWN_HASH);
-        }
         res = sym_new_not_null(ctx);
         ds = dict_st;
         ss = sub_st;
+        PyObject *sub = sym_get_const(ctx, sub_st);
         if (sym_is_not_container(sub_st) &&
             sym_matches_type(dict_st, &PyFrozenDict_Type)) {
             REPLACE_OPCODE_IF_EVALUATES_PURE(dict_st, sub_st, res);
+        }
+        else if (sub != NULL) {
+            optimize_dict_known_hash(ctx, dependencies, this_instr,
+                                     sub, _BINARY_OP_SUBSCR_DICT_KNOWN_HASH);
         }
     }
 

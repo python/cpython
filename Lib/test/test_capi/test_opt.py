@@ -2340,6 +2340,21 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertIn("_BINARY_OP_SUBSCR_DICT_KNOWN_HASH", uops)
         self.assertNotIn("_BINARY_OP_SUBSCR_DICT", uops)
 
+
+    def test_binary_op_subscr_constant_frozendict_known_hash(self):
+        def testfunc(n):
+            x = 0
+            for _ in range(n):
+                x += FROZEN_DICT_CONST['x']
+            return x
+
+        res, ex = self._run_with_optimizer(testfunc, 2 * TIER2_THRESHOLD)
+        self.assertEqual(res, 2 * TIER2_THRESHOLD)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertNotIn("_BINARY_OP_SUBSCR_DICT_KNOWN_HASH", uops)
+        self.assertNotIn("_BINARY_OP_SUBSCR_DICT", uops)
+
     def test_store_subscr_dict_known_hash(self):
         # str, int, bytes, float, complex, tuple and any python object which has generic hash
         def testfunc(n):
