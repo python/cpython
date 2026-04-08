@@ -1882,7 +1882,7 @@ object.
    On error, set an exception, leave the writer unchanged, and return ``-1``.
 
    To write a :class:`str` subclass which overrides the :meth:`~object.__str__`
-   method, :class:`PyUnicode_FromObject` can be used to get the original
+   method, :c:func:`PyUnicode_FromObject` can be used to get the original
    string.
 
 .. c:function:: int PyUnicodeWriter_WriteRepr(PyUnicodeWriter *writer, PyObject *obj)
