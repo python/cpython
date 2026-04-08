@@ -118,8 +118,7 @@ class ModuleCompleter:
         # attributes use their actual value.
         submodule_set = set(submodules)
         attr_map = dict(zip(attr_names, attr_values))
-        all_values = [attr_map.get(n) if n not in submodule_set else sys
-                      for n in all_names]
+        all_values = [attr_map[n] if n in attr_map else sys for n in all_names]
         return all_names, all_values, action
 
     def find_modules(self, path: str, prefix: str) -> list[str]:
