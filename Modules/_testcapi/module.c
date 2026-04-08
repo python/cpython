@@ -161,6 +161,8 @@ module_from_slots_token(PyObject *self, PyObject *spec)
         return NULL;
     }
     assert(got_token == &test_token);
+    assert(PyModule_GetToken_DuringGC(mod, &got_token) >= 0);
+    assert(got_token == &test_token);
     return mod;
 }
 
@@ -433,7 +435,12 @@ static PyObject *
 pymodule_get_token(PyObject *self, PyObject *module)
 {
     void *token;
-    if (PyModule_GetToken(module, &token) < 0) {
+    int res = PyModule_GetToken(module, &token);
+    void *token_duringgc;
+    int res_duringgc = PyModule_GetToken_DuringGC(module, &token_duringgc);
+    assert(res == res_duringgc);
+    assert(token == token_duringgc);
+    if (res < 0) {
         return NULL;
     }
     return PyLong_FromVoidPtr(token);

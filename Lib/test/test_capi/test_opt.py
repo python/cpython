@@ -1539,8 +1539,8 @@ class TestUopsOptimization(unittest.TestCase):
         opnames = list(iter_opnames(ex))
         self.assertEqual(res, TIER2_THRESHOLD * 2 + 2)
         call = opnames.index("_CALL_BUILTIN_FAST")
-        load_attr_top = opnames.index("_POP_TOP_LOAD_CONST_INLINE_BORROW", 0, call)
-        load_attr_bottom = opnames.index("_POP_TOP_LOAD_CONST_INLINE_BORROW", call)
+        load_attr_top = opnames.index("_LOAD_CONST_INLINE_BORROW", 0, call)
+        load_attr_bottom = opnames.index("_LOAD_CONST_INLINE_BORROW", call)
         self.assertEqual(opnames[:load_attr_top].count("_GUARD_TYPE_VERSION"), 1)
         self.assertEqual(opnames[call:load_attr_bottom].count("_CHECK_VALIDITY"), 2)
 
@@ -1562,8 +1562,8 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertIsNotNone(ex)
         self.assertEqual(res, TIER2_THRESHOLD * 2)
         call = opnames.index("_CALL_BUILTIN_FAST_WITH_KEYWORDS")
-        load_attr_top = opnames.index("_POP_TOP_LOAD_CONST_INLINE_BORROW", 0, call)
-        load_attr_bottom = opnames.index("_POP_TOP_LOAD_CONST_INLINE_BORROW", call)
+        load_attr_top = opnames.index("_LOAD_CONST_INLINE_BORROW", 0, call)
+        load_attr_bottom = opnames.index("_LOAD_CONST_INLINE_BORROW", call)
         self.assertEqual(opnames[:load_attr_top].count("_GUARD_TYPE_VERSION"), 1)
         self.assertEqual(opnames[call:load_attr_bottom].count("_CHECK_VALIDITY"), 2)
 
@@ -1915,7 +1915,7 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
         self.assertNotIn("_UNARY_INVERT", uops)
-        self.assertIn("_INSERT_1_LOAD_CONST_INLINE_BORROW", uops)
+        self.assertIn("_LOAD_CONST_INLINE_BORROW", uops)
 
     def test_compare_op_pop_two_load_const_inline_borrow(self):
         def testfunc(n):
@@ -2409,6 +2409,21 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertIn("_BINARY_OP_SUBSCR_DICT_KNOWN_HASH", uops)
         self.assertNotIn("_BINARY_OP_SUBSCR_DICT", uops)
 
+
+    def test_binary_op_subscr_constant_frozendict_known_hash(self):
+        def testfunc(n):
+            x = 0
+            for _ in range(n):
+                x += FROZEN_DICT_CONST['x']
+            return x
+
+        res, ex = self._run_with_optimizer(testfunc, 2 * TIER2_THRESHOLD)
+        self.assertEqual(res, 2 * TIER2_THRESHOLD)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertNotIn("_BINARY_OP_SUBSCR_DICT_KNOWN_HASH", uops)
+        self.assertNotIn("_BINARY_OP_SUBSCR_DICT", uops)
+
     def test_store_subscr_dict_known_hash(self):
         # str, int, bytes, float, complex, tuple and any python object which has generic hash
         def testfunc(n):
@@ -2849,9 +2864,12 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertEqual(res, TIER2_THRESHOLD * 5)
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
+
         self.assertIn("_CALL_METHOD_DESCRIPTOR_NOARGS_INLINE", uops)
         self.assertNotIn("_CALL_METHOD_DESCRIPTOR_NOARGS", uops)
         self.assertNotIn("_GUARD_CALLABLE_METHOD_DESCRIPTOR_NOARGS", uops)
+        self.assertGreaterEqual(count_ops(ex, "_POP_TOP"), 5)
+        self.assertGreaterEqual(count_ops(ex, "_POP_TOP"), 3)
 
     def test_call_method_descriptor_fast(self):
         def testfunc(n):
@@ -3261,8 +3279,8 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertEqual(res, TIER2_THRESHOLD)
         uops = get_opnames(ex)
         self.assertNotIn("_LOAD_ATTR_METHOD_NO_DICT", uops)
-        self.assertNotIn("_LOAD_CONST_UNDER_INLINE", uops)
-        self.assertIn("_LOAD_CONST_UNDER_INLINE_BORROW", uops)
+        self.assertNotIn("_INSERT_1_LOAD_CONST_INLINE", uops)
+        self.assertIn("_INSERT_1_LOAD_CONST_INLINE_BORROW", uops)
 
     def test_store_fast_refcount_elimination(self):
         def foo(x):
@@ -4078,8 +4096,6 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
         self.assertNotIn("_REPLACE_WITH_TRUE", uops)
-        self.assertIn("_INSERT_1_LOAD_CONST_INLINE_BORROW", uops)
-        self.assertEqual(count_ops(ex, "_POP_TOP_NOP"), 1)
 
     def test_attr_promotion_failure(self):
         # We're not testing for any specific uops here, just

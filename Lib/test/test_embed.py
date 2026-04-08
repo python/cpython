@@ -2051,7 +2051,7 @@ class MiscTests(EmbeddingTestsMixin, unittest.TestCase):
     def test_presite(self):
         cmd = [
             sys.executable,
-            "-I", "-X", "presite=test._test_embed_structseq",
+            "-I", "-X", "presite=test._test_embed_structseq:main",
             "-c", "print('unique-python-message')",
         ]
         proc = subprocess.run(
