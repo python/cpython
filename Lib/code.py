@@ -6,6 +6,7 @@
 
 
 import builtins
+import os
 import sys
 import traceback
 from codeop import CommandCompiler, compile_command
@@ -201,7 +202,7 @@ class InteractiveConsole(InteractiveInterpreter):
         """Reset the input buffer."""
         self.buffer = []
 
-    def interact(self, banner=None, exitmsg=None):
+    def interact(self, banner=None, exitmsg=None, *, use_pyrepl=None):
         """Closely emulate the interactive Python console.
 
         The optional banner argument specifies the banner to print
@@ -216,7 +217,29 @@ class InteractiveConsole(InteractiveInterpreter):
         printing an exit message. If exitmsg is not given or None,
         a default message is printed.
 
+        The use_pyrepl argument controls whether to use the pyrepl-based REPL
+        when available. When True, pyrepl is used. When False, the basic
+        readline-based REPL is used. When None (the default), pyrepl is used
+        automatically if available and the PYTHON_BASIC_REPL environment
+        variable is not set.
+
         """
+        if use_pyrepl is None:
+            use_pyrepl = not os.getenv('PYTHON_BASIC_REPL')
+
+        if use_pyrepl:
+            try:
+                from _pyrepl.main import CAN_USE_PYREPL
+                if CAN_USE_PYREPL:
+                    from _pyrepl.simple_interact import (
+                        run_multiline_interactive_console,
+                    )
+                    run_multiline_interactive_console(self)
+                    return
+            except ImportError:
+                pass
+            # Fall through to basic REPL if pyrepl is unavailable
+
         try:
             sys.ps1
             delete_ps1_after = False
@@ -355,7 +378,7 @@ class Quitter:
         raise SystemExit(code)
 
 
-def interact(banner=None, readfunc=None, local=None, exitmsg=None, local_exit=False):
+def interact(banner=None, readfunc=None, local=None, exitmsg=None, local_exit=False, *, use_pyrepl=None):
     """Closely emulate the interactive Python interpreter.
 
     This is a backwards compatible interface to the InteractiveConsole
@@ -369,6 +392,7 @@ def interact(banner=None, readfunc=None, local=None, exitmsg=None, local_exit=Fa
     local -- passed to InteractiveInterpreter.__init__()
     exitmsg -- passed to InteractiveConsole.interact()
     local_exit -- passed to InteractiveConsole.__init__()
+    use_pyrepl -- passed to InteractiveConsole.interact()
 
     """
     console = InteractiveConsole(local, local_exit=local_exit)
@@ -379,7 +403,7 @@ def interact(banner=None, readfunc=None, local=None, exitmsg=None, local_exit=Fa
             import readline  # noqa: F401
         except ImportError:
             pass
-    console.interact(banner, exitmsg)
+    console.interact(banner, exitmsg, use_pyrepl=use_pyrepl)
 
 
 if __name__ == "__main__":
