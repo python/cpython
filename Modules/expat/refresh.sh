@@ -12,9 +12,9 @@ fi
 
 # Update this when updating to a new version after verifying that the changes
 # the update brings in are good. These values are used for verifying the SBOM, too.
-expected_libexpat_tag="R_2_7_4"
-expected_libexpat_version="2.7.4"
-expected_libexpat_sha256="461ecc8aa98ab1a68c2db788175665d1a4db640dc05bf0e289b6ea17122144ec"
+expected_libexpat_tag="R_2_7_5"
+expected_libexpat_version="2.7.5"
+expected_libexpat_sha256="9931f9860d18e6cf72d183eb8f309bfb96196c00e1d40caa978e95bc9aa978b6"
 
 expat_dir="$(realpath "$(dirname -- "${BASH_SOURCE[0]}")")"
 cd ${expat_dir}
