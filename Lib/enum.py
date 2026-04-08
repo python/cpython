@@ -10,14 +10,15 @@ __all__ = [
         'FlagBoundary', 'STRICT', 'CONFORM', 'EJECT', 'KEEP',
         'global_flag_repr', 'global_enum_repr', 'global_str', 'global_enum',
         'EnumCheck', 'CONTINUOUS', 'NAMED_FLAGS', 'UNIQUE',
-        'pickle_by_global_name', 'pickle_by_enum_name',
+        'pickle_by_global_name', 'pickle_by_enum_name', 'show_flag_values',
+        'bin',
         ]
 
 
 # Dummy value for Enum and Flag as there are explicit checks for them
 # before they have been created.
 # This is also why there are checks in EnumType like `if Enum is not None`
-Enum = Flag = EJECT = _stdlib_enums = ReprEnum = None
+Enum = Flag = EJECT = ReprEnum = None
 
 class nonmember(object):
     """
@@ -129,7 +130,7 @@ def show_flag_values(value):
 def bin(num, max_bits=None):
     """
     Like built-in bin(), except negative values are represented in
-    twos-compliment, and the leading bit always indicates sign
+    twos-complement, and the leading bit always indicates sign
     (0=positive, 1=negative).
 
     >>> bin(10)
@@ -138,6 +139,7 @@ def bin(num, max_bits=None):
     '0b1 0101'
     """
 
+    num = num.__index__()
     ceiling = 2 ** (num).bit_length()
     if num >= 0:
         s = bltns.bin(num + ceiling).replace('1', '0', 1)
@@ -773,12 +775,16 @@ class EnumType(type):
         super().__delattr__(attr)
 
     def __dir__(cls):
+        if issubclass(cls, Flag):
+            members = list(cls._member_map_.keys())
+        else:
+            members = cls._member_names_
         interesting = set([
                 '__class__', '__contains__', '__doc__', '__getitem__',
                 '__iter__', '__len__', '__members__', '__module__',
                 '__name__', '__qualname__',
                 ]
-                + cls._member_names_
+                + members
                 )
         if cls._new_member_ is not object.__new__:
             interesting.add('__new__')
@@ -1991,7 +1997,7 @@ class verify:
                         if 2**i not in values:
                             missing.append(2**i)
                 elif enum_type == 'enum':
-                    # check for powers of one
+                    # check for missing consecutive integers
                     for i in range(low+1, high):
                         if i not in values:
                             missing.append(i)
@@ -2189,5 +2195,3 @@ def _old_convert_(etype, name, module, filter, source=None, *, boundary=None):
         members.sort(key=lambda t: t[0])
     cls = etype(name, members, module=module, boundary=boundary or KEEP)
     return cls
-
-_stdlib_enums = IntEnum, StrEnum, IntFlag

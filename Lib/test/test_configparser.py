@@ -2215,6 +2215,16 @@ class SectionlessTestCase(unittest.TestCase):
         cfg.add_section(configparser.UNNAMED_SECTION)
         cfg.set(configparser.UNNAMED_SECTION, 'a', '1')
         self.assertEqual('1', cfg[configparser.UNNAMED_SECTION]['a'])
+        output = io.StringIO()
+        cfg.write(output)
+        self.assertEqual(output.getvalue(), 'a = 1\n\n')
+
+        cfg = configparser.ConfigParser(allow_unnamed_section=True)
+        cfg[configparser.UNNAMED_SECTION] = {'a': '1'}
+        self.assertEqual('1', cfg[configparser.UNNAMED_SECTION]['a'])
+        output = io.StringIO()
+        cfg.write(output)
+        self.assertEqual(output.getvalue(), 'a = 1\n\n')
 
     def test_disabled_error(self):
         with self.assertRaises(configparser.MissingSectionHeaderError):
@@ -2222,6 +2232,9 @@ class SectionlessTestCase(unittest.TestCase):
 
         with self.assertRaises(configparser.UnnamedSectionDisabledError):
             configparser.ConfigParser().add_section(configparser.UNNAMED_SECTION)
+
+        with self.assertRaises(configparser.UnnamedSectionDisabledError):
+            configparser.ConfigParser()[configparser.UNNAMED_SECTION] = {'a': '1'}
 
     def test_multiple_configs(self):
         cfg = configparser.ConfigParser(allow_unnamed_section=True)
@@ -2255,6 +2268,26 @@ class InvalidInputTestCase(unittest.TestCase):
         with self.assertRaises(configparser.InvalidWriteError):
             cfg.write(output)
         output.close()
+
+
+class ReDoSTestCase(unittest.TestCase):
+    """Regression tests for quadratic regex backtracking (gh-146333)."""
+
+    def test_option_regex_does_not_backtrack(self):
+        # A line with many spaces between non-delimiter characters
+        # should be parsed in linear time, not quadratic.
+        parser = configparser.RawConfigParser()
+        content = "[section]\n" + "x" + " " * 40000 + "y" + "\n"
+        # This should complete almost instantly. Before the fix,
+        # it would take over a minute due to catastrophic backtracking.
+        with self.assertRaises(configparser.ParsingError):
+            parser.read_string(content)
+
+    def test_option_regex_no_value_does_not_backtrack(self):
+        parser = configparser.RawConfigParser(allow_no_value=True)
+        content = "[section]\n" + "x" + " " * 40000 + "y" + "\n"
+        parser.read_string(content)
+        self.assertTrue(parser.has_option("section", "x" + " " * 40000 + "y"))
 
 
 class MiscTestCase(unittest.TestCase):

@@ -162,7 +162,6 @@ int _PyPegen_fill_token(Parser *p);
 expr_ty _PyPegen_name_token(Parser *p);
 expr_ty _PyPegen_number_token(Parser *p);
 void *_PyPegen_string_token(Parser *p);
-PyObject *_PyPegen_set_source_in_metadata(Parser *p, Token *t);
 Py_ssize_t _PyPegen_byte_offset_to_character_offset_line(PyObject *line, Py_ssize_t col_offset, Py_ssize_t end_col_offset);
 Py_ssize_t _PyPegen_byte_offset_to_character_offset(PyObject *line, Py_ssize_t col_offset);
 Py_ssize_t _PyPegen_byte_offset_to_character_offset_raw(const char*, Py_ssize_t col_offset);
@@ -351,6 +350,7 @@ expr_ty _PyPegen_collect_call_seqs(Parser *, asdl_expr_seq *, asdl_seq *,
 expr_ty _PyPegen_constant_from_token(Parser* p, Token* tok);
 expr_ty _PyPegen_decoded_constant_from_token(Parser* p, Token* tok);
 expr_ty _PyPegen_constant_from_string(Parser* p, Token* tok);
+expr_ty _PyPegen_concatenate_tstrings(Parser *p, asdl_expr_seq *, int, int, int, int, PyArena *);
 expr_ty _PyPegen_concatenate_strings(Parser *p, asdl_expr_seq *, int, int, int, int, PyArena *);
 expr_ty _PyPegen_FetchRawForm(Parser *p, int, int, int, int);
 expr_ty _PyPegen_ensure_imaginary(Parser *p, expr_ty);
@@ -358,6 +358,7 @@ expr_ty _PyPegen_ensure_real(Parser *p, expr_ty);
 asdl_seq *_PyPegen_join_sequences(Parser *, asdl_seq *, asdl_seq *);
 int _PyPegen_check_barry_as_flufl(Parser *, Token *);
 int _PyPegen_check_legacy_stmt(Parser *p, expr_ty t);
+void *_PyPegen_raise_error_for_missing_comma(Parser *p, expr_ty a, expr_ty b);
 ResultTokenWithMetadata *_PyPegen_check_fstring_conversion(Parser *p, Token *, expr_ty t);
 ResultTokenWithMetadata *_PyPegen_setup_full_format_spec(Parser *, Token *, asdl_expr_seq *, int, int,
                                                          int, int, PyArena *);
@@ -366,7 +367,7 @@ void *_PyPegen_arguments_parsing_error(Parser *, expr_ty);
 expr_ty _PyPegen_get_last_comprehension_item(comprehension_ty comprehension);
 void *_PyPegen_nonparen_genexp_in_call(Parser *p, expr_ty args, asdl_comprehension_seq *comprehensions);
 stmt_ty _PyPegen_checked_future_import(Parser *p, identifier module, asdl_alias_seq *,
-                                       int , int, int , int , int , PyArena *);
+                                       int, expr_ty, int, int, int, int, PyArena *);
 asdl_stmt_seq* _PyPegen_register_stmts(Parser *p, asdl_stmt_seq* stmts);
 stmt_ty _PyPegen_register_stmt(Parser *p, stmt_ty s);
 
@@ -378,7 +379,7 @@ mod_ty _PyPegen_run_parser_from_file_pointer(FILE *, int, PyObject *, const char
                                     const char *, const char *, PyCompilerFlags *, int *, PyObject **,
                                     PyArena *);
 void *_PyPegen_run_parser(Parser *);
-mod_ty _PyPegen_run_parser_from_string(const char *, int, PyObject *, PyCompilerFlags *, PyArena *);
+mod_ty _PyPegen_run_parser_from_string(const char *, int, PyObject *, PyCompilerFlags *, PyArena *, PyObject *);
 asdl_stmt_seq *_PyPegen_interactive_exit(Parser *);
 
 // Generated function in parse.c - function definition in python.gram

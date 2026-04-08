@@ -149,12 +149,17 @@ class Interpreter:
     def __reduce__(self):
         return (type(self), (self._id,))
 
-    def _decref(self):
+    # gh-135729: Globals might be destroyed by the time this is called, so we
+    # need to keep references ourself
+    def _decref(self, *,
+                InterpreterNotFoundError=InterpreterNotFoundError,
+                _interp_decref=_interpreters.decref,
+                ):
         if not self._ownsref:
             return
         self._ownsref = False
         try:
-            _interpreters.decref(self._id)
+            _interp_decref(self._id)
         except InterpreterNotFoundError:
             pass
 

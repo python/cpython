@@ -6,7 +6,7 @@
 
 /* Like PyObject_CallMethod(), but expect a _Py_Identifier*
    as the method name. */
-PyAPI_FUNC(PyObject*) _PyObject_CallMethodId(
+Py_DEPRECATED(3.15) PyAPI_FUNC(PyObject*) _PyObject_CallMethodId(
     PyObject *obj,
     _Py_Identifier *name,
     const char *format, ...);
