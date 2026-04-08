@@ -1351,6 +1351,11 @@ Reading directories
    ``False``, this method follows symlinks except when expanding "``**``"
    wildcards. Set *recurse_symlinks* to ``True`` to always follow symlinks.
 
+   .. note::
+      Any :exc:`OSError` exceptions raised from scanning the filesystem are
+      suppressed. This includes :exc:`PermissionError` when accessing
+      directories without read permission.
+
    .. audit-event:: pathlib.Path.glob self,pattern pathlib.Path.glob
 
    .. versionchanged:: 3.12
@@ -1379,6 +1384,11 @@ Reading directories
 
    .. seealso::
       :ref:`pathlib-pattern-language` and :meth:`Path.glob` documentation.
+
+   .. note::
+      Any :exc:`OSError` exceptions raised from scanning the filesystem are
+      suppressed. This includes :exc:`PermissionError` when accessing
+      directories without read permission.
 
    .. audit-event:: pathlib.Path.rglob self,pattern pathlib.Path.rglob
 
