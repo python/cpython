@@ -2,14 +2,12 @@ import errno
 import itertools
 import os
 import signal
-import subprocess
 import sys
 import threading
 import unittest
 from functools import partial
-from test import support
 from test.support import os_helper, force_not_colorized_test_class
-from test.support import script_helper, threading_helper
+from test.support import threading_helper
 
 from unittest import TestCase
 from unittest.mock import MagicMock, call, patch, ANY, Mock
@@ -102,6 +100,20 @@ handle_events_unix_console_height_3 = partial(
 @patch("os.write")
 @force_not_colorized_test_class
 class TestConsole(TestCase):
+    def test_no_newline(self, _os_write):
+        code = "1"
+        events = code_to_events(code)
+        _, con = handle_events_unix_console(events)
+        self.assertNotIn(call(ANY, b'\n'), _os_write.mock_calls)
+        con.restore()
+
+    def test_newline(self, _os_write):
+        code = "\n"
+        events = code_to_events(code)
+        _, con = handle_events_unix_console(events)
+        _os_write.assert_any_call(ANY, b"\n")
+        con.restore()
+
     def test_simple_addition(self, _os_write):
         code = "12+34"
         events = code_to_events(code)
@@ -238,8 +250,7 @@ class TestConsole(TestCase):
         events = itertools.chain(code_to_events(code))
         reader, console = handle_events_short_unix_console(events)
 
-        console.height = 2
-        console.getheightwidth = MagicMock(lambda _: (2, 80))
+        console.getheightwidth = MagicMock(side_effect=lambda: (2, 80))
 
         def same_reader(_):
             return reader
@@ -274,8 +285,7 @@ class TestConsole(TestCase):
         events = itertools.chain(code_to_events(code))
         reader, console = handle_events_unix_console_height_3(events)
 
-        console.height = 1
-        console.getheightwidth = MagicMock(lambda _: (1, 80))
+        console.getheightwidth = MagicMock(side_effect=lambda: (1, 80))
 
         def same_reader(_):
             return reader
@@ -355,34 +365,3 @@ class TestUnixConsoleEIOHandling(TestCase):
 
         # EIO error should be handled gracefully in restore()
         console.restore()
-
-    @unittest.skipUnless(sys.platform == "linux", "Only valid on Linux")
-    def test_repl_eio(self):
-        # Use the pty-based approach to simulate EIO error
-        script_path = os.path.join(os.path.dirname(__file__), "eio_test_script.py")
-
-        proc = script_helper.spawn_python(
-            "-S", script_path,
-            stderr=subprocess.PIPE,
-            text=True
-        )
-
-        ready_line = proc.stdout.readline().strip()
-        if ready_line != "READY" or proc.poll() is not None:
-            self.fail("Child process failed to start properly")
-
-        os.kill(proc.pid, signal.SIGUSR1)
-        # sleep for pty to settle
-        _, err = proc.communicate(timeout=support.LONG_TIMEOUT)
-        self.assertEqual(
-            proc.returncode,
-            1,
-            f"Expected EIO/ENXIO error, got return code {proc.returncode}",
-        )
-        self.assertTrue(
-            (
-                "Got EIO:" in err
-                or "Got ENXIO:" in err
-            ),
-            f"Expected EIO/ENXIO error message in stderr: {err}",
-        )

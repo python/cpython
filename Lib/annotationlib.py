@@ -279,7 +279,13 @@ class ForwardRef:
             # because dictionaries are not hashable.
             and self.__globals__ is other.__globals__
             and self.__forward_is_class__ == other.__forward_is_class__
-            and self.__cell__ == other.__cell__
+            # Two separate cells are always considered unequal in forward refs.
+            and (
+                {name: id(cell) for name, cell in self.__cell__.items()}
+                == {name: id(cell) for name, cell in other.__cell__.items()}
+                if isinstance(self.__cell__, dict) and isinstance(other.__cell__, dict)
+                else self.__cell__ is other.__cell__
+            )
             and self.__owner__ == other.__owner__
             and (
                 (tuple(sorted(self.__extra_names__.items())) if self.__extra_names__ else None) ==
@@ -293,7 +299,10 @@ class ForwardRef:
             self.__forward_module__,
             id(self.__globals__),  # dictionaries are not hashable, so hash by identity
             self.__forward_is_class__,
-            tuple(sorted(self.__cell__.items())) if isinstance(self.__cell__, dict) else self.__cell__,
+            (  # cells are not hashable as well
+                tuple(sorted([(name, id(cell)) for name, cell in self.__cell__.items()]))
+                if isinstance(self.__cell__, dict) else id(self.__cell__),
+            ),
             self.__owner__,
             tuple(sorted(self.__extra_names__.items())) if self.__extra_names__ else None,
         ))
@@ -910,7 +919,7 @@ def get_annotations(
     does not exist, the __annotate__ function is called. The
     FORWARDREF format uses __annotations__ if it exists and can be
     evaluated, and otherwise falls back to calling the __annotate__ function.
-    The SOURCE format tries __annotate__ first, and falls back to
+    The STRING format tries __annotate__ first, and falls back to
     using __annotations__, stringified using annotations_to_string().
 
     This function handles several details for you:
@@ -1028,13 +1037,26 @@ def get_annotations(
             obj_globals = obj_locals = unwrap = None
 
         if unwrap is not None:
+            # Use an id-based visited set to detect cycles in the __wrapped__
+            # and functools.partial.func chain (e.g. f.__wrapped__ = f).
+            # On cycle detection we stop and use whatever __globals__ we have
+            # found so far, mirroring the approach of inspect.unwrap().
+            _seen_ids = {id(unwrap)}
             while True:
                 if hasattr(unwrap, "__wrapped__"):
-                    unwrap = unwrap.__wrapped__
+                    candidate = unwrap.__wrapped__
+                    if id(candidate) in _seen_ids:
+                        break
+                    _seen_ids.add(id(candidate))
+                    unwrap = candidate
                     continue
                 if functools := sys.modules.get("functools"):
                     if isinstance(unwrap, functools.partial):
-                        unwrap = unwrap.func
+                        candidate = unwrap.func
+                        if id(candidate) in _seen_ids:
+                            break
+                        _seen_ids.add(id(candidate))
+                        unwrap = candidate
                         continue
                 break
             if hasattr(unwrap, "__globals__"):
@@ -1096,7 +1118,7 @@ def _rewrite_star_unpack(arg):
     """If the given argument annotation expression is a star unpack e.g. `'*Ts'`
        rewrite it to a valid expression.
        """
-    if arg.startswith("*"):
+    if arg.lstrip().startswith("*"):
         return f"({arg},)[0]"  # E.g. (*Ts,)[0] or (*tuple[int, int],)[0]
     else:
         return arg

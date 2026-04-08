@@ -33,6 +33,10 @@ from test.test_py_compile import SourceDateEpochTestMeta
 from test.support.os_helper import FakePath
 
 
+if sys.implementation.cache_tag is None:
+    raise unittest.SkipTest('requires sys.implementation.cache_tag is not None')
+
+
 def get_pyc(script, opt):
     if not opt:
         # Replace None and 0 with ''
@@ -625,10 +629,8 @@ class CommandLineTestsBase:
                 ['-m', 'compileall', '-q', self.pkgdir]))
             # Verify the __pycache__ directory contents.
             self.assertTrue(os.path.exists(self.pkgdir_cachedir))
-            expected = ['.gitignore'] + sorted(
-                base.format(sys.implementation.cache_tag, ext)
-                for base in ('__init__.{}.{}', 'bar.{}.{}')
-            )
+            expected = sorted(base.format(sys.implementation.cache_tag, ext)
+                              for base in ('__init__.{}.{}', 'bar.{}.{}'))
             self.assertEqual(sorted(os.listdir(self.pkgdir_cachedir)), expected)
             # Make sure there are no .pyc files in the source directory.
             self.assertFalse([fn for fn in os.listdir(self.pkgdir)

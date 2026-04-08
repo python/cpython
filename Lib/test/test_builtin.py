@@ -246,7 +246,7 @@ class BuiltinTest(ComplexesAreIdenticalMixin, unittest.TestCase):
         S = [10, 20, 30]
         self.assertEqual(any(x > 42 for x in S), False)
 
-    def test_all_any_tuple_optimization(self):
+    def test_all_any_tuple_list_set_optimization(self):
         def f_all():
             return all(x-2 for x in [1,2,3])
 
@@ -256,7 +256,13 @@ class BuiltinTest(ComplexesAreIdenticalMixin, unittest.TestCase):
         def f_tuple():
             return tuple(2*x for x in [1,2,3])
 
-        funcs = [f_all, f_any, f_tuple]
+        def f_list():
+            return list(2*x for x in [1,2,3])
+
+        def f_set():
+            return set(2*x for x in [1,2,3])
+
+        funcs = [f_all, f_any, f_tuple, f_list, f_set]
 
         for f in funcs:
             # check that generator code object is not duplicated
@@ -266,33 +272,35 @@ class BuiltinTest(ComplexesAreIdenticalMixin, unittest.TestCase):
 
         # check the overriding the builtins works
 
-        global all, any, tuple
-        saved = all, any, tuple
+        global all, any, tuple, list, set
+        saved = all, any, tuple, list, set
         try:
             all = lambda x : "all"
             any = lambda x : "any"
             tuple = lambda x : "tuple"
+            list = lambda x : "list"
+            set = lambda x : "set"
 
             overridden_outputs = [f() for f in funcs]
         finally:
-            all, any, tuple = saved
+            all, any, tuple, list, set = saved
 
-        self.assertEqual(overridden_outputs, ['all', 'any', 'tuple'])
-
+        self.assertEqual(overridden_outputs, ['all', 'any', 'tuple', 'list', 'set'])
         # Now repeat, overriding the builtins module as well
-        saved = all, any, tuple
+        saved = all, any, tuple, list, set
         try:
             builtins.all = all = lambda x : "all"
             builtins.any = any = lambda x : "any"
             builtins.tuple = tuple = lambda x : "tuple"
+            builtins.list = list = lambda x : "list"
+            builtins.set = set = lambda x : "set"
 
             overridden_outputs = [f() for f in funcs]
         finally:
-            all, any, tuple = saved
-            builtins.all, builtins.any, builtins.tuple = saved
+            all, any, tuple, list, set = saved
+            builtins.all, builtins.any, builtins.tuple, builtins.list, builtins.set = saved
 
-        self.assertEqual(overridden_outputs, ['all', 'any', 'tuple'])
-
+        self.assertEqual(overridden_outputs, ['all', 'any', 'tuple', 'list', 'set'])
 
     def test_ascii(self):
         self.assertEqual(ascii(''), '\'\'')
@@ -776,6 +784,16 @@ class BuiltinTest(ComplexesAreIdenticalMixin, unittest.TestCase):
                 raise ValueError
         self.assertRaises(ValueError, eval, "foo", {}, X())
 
+    def test_eval_frozendict(self):
+        ns = frozendict(x=1, data=[], __builtins__=__builtins__)
+        eval("data.append(x)", ns, ns)
+        self.assertEqual(ns['data'], [1])
+
+        ns = frozendict()
+        errmsg = "cannot assign __builtins__ to frozendict globals"
+        with self.assertRaisesRegex(TypeError, errmsg):
+            eval("", ns, ns)
+
     def test_eval_kwargs(self):
         data = {"A_GLOBAL_VALUE": 456}
         self.assertEqual(eval("globals()['A_GLOBAL_VALUE']", globals=data), 456)
@@ -873,6 +891,21 @@ class BuiltinTest(ComplexesAreIdenticalMixin, unittest.TestCase):
         if '__builtins__' in l:
             del l['__builtins__']
         self.assertEqual((g, l), ({'a': 1}, {'b': 2}))
+
+    def test_exec_frozendict(self):
+        ns = frozendict(x=1, data=[], __builtins__=__builtins__)
+        exec("data.append(x)", ns, ns)
+        self.assertEqual(ns['data'], [1])
+
+        ns = frozendict(__builtins__=__builtins__)
+        errmsg = "'frozendict' object does not support item assignment"
+        with self.assertRaisesRegex(TypeError, errmsg):
+            exec("x = 1", ns, ns)
+
+        ns = frozendict()
+        errmsg = "cannot assign __builtins__ to frozendict globals"
+        with self.assertRaisesRegex(TypeError, errmsg):
+            exec("", ns, ns)
 
     def test_exec_kwargs(self):
         g = {}
@@ -2984,6 +3017,12 @@ class TestType(unittest.TestCase):
         for doc in 'x', '\xc4', '\U0001f40d', 'x\x00y', 'x\udcdcy', b'x', 42, None:
             A.__doc__ = doc
             self.assertEqual(A.__doc__, doc)
+
+    def test_type_frozendict(self):
+        A = type('A', (), frozendict({'x': 4, 'y': 2}))
+        self.assertEqual(A.x, 4)
+        self.assertEqual(A.y, 2)
+        self.assertEqual(A.__name__, 'A')
 
     def test_bad_args(self):
         with self.assertRaises(TypeError):

@@ -1373,6 +1373,9 @@ and :c:data:`PyType_Type` effectively act as defaults.)
          type structure.
 
 
+   .. c:macro:: _Py_TPFLAGS_HAVE_VECTORCALL
+      :no-typesetting:
+
    .. c:macro:: Py_TPFLAGS_HAVE_VECTORCALL
 
       This bit is set when the class implements
@@ -1384,7 +1387,12 @@ and :c:data:`PyType_Type` effectively act as defaults.)
       This bit is inherited if :c:member:`~PyTypeObject.tp_call` is also
       inherited.
 
-      .. versionadded:: 3.9
+      .. versionadded:: 3.8 as ``_Py_TPFLAGS_HAVE_VECTORCALL``
+
+      .. versionchanged:: 3.9
+
+      Renamed to the current name, without the leading underscore.
+      The old provisional name is :term:`soft deprecated`.
 
       .. versionchanged:: 3.12
 
@@ -1491,6 +1499,52 @@ and :c:data:`PyType_Type` effectively act as defaults.)
          It will be removed in a future version of CPython
 
 
+   .. c:macro:: Py_TPFLAGS_HAVE_VERSION_TAG
+
+      This is a :term:`soft deprecated` macro that does nothing.
+      Historically, this would indicate that the
+      :c:member:`~PyTypeObject.tp_version_tag` field was available and
+      initialized.
+
+
+   .. c:macro:: Py_TPFLAGS_INLINE_VALUES
+
+      This bit indicates that instances of this type will have an "inline values"
+      array (containing the object's attributes) placed directly after the end
+      of the object.
+
+      This requires that :c:macro:`Py_TPFLAGS_HAVE_GC` is set.
+
+      **Inheritance:**
+
+      This flag is not inherited.
+
+      .. versionadded:: 3.13
+
+
+   .. c:macro:: Py_TPFLAGS_IS_ABSTRACT
+
+      This bit indicates that this is an abstract type and therefore cannot
+      be instantiated.
+
+      **Inheritance:**
+
+      This flag is not inherited.
+
+      .. seealso::
+         :mod:`abc`
+
+
+   .. c:macro:: Py_TPFLAGS_HAVE_STACKLESS_EXTENSION
+
+      Internal. Do not set or unset this flag.
+      Historically, this was a reserved flag for use in Stackless Python.
+
+      .. warning::
+            This flag is present in header files, but is not be used.
+            This may be removed in a future version of CPython.
+
+
 .. c:member:: const char* PyTypeObject.tp_doc
 
    .. corresponding-type-slot:: Py_tp_doc
@@ -1509,93 +1563,9 @@ and :c:data:`PyType_Type` effectively act as defaults.)
    .. corresponding-type-slot:: Py_tp_traverse
 
    An optional pointer to a traversal function for the garbage collector.  This is
-   only used if the :c:macro:`Py_TPFLAGS_HAVE_GC` flag bit is set.  The signature is::
+   only used if the :c:macro:`Py_TPFLAGS_HAVE_GC` flag bit is set.
 
-      int tp_traverse(PyObject *self, visitproc visit, void *arg);
-
-   More information about Python's garbage collection scheme can be found
-   in section :ref:`supporting-cycle-detection`.
-
-   The :c:member:`~PyTypeObject.tp_traverse` pointer is used by the garbage collector to detect
-   reference cycles. A typical implementation of a :c:member:`~PyTypeObject.tp_traverse` function
-   simply calls :c:func:`Py_VISIT` on each of the instance's members that are Python
-   objects that the instance owns. For example, this is function :c:func:`!local_traverse` from the
-   :mod:`!_thread` extension module::
-
-      static int
-      local_traverse(PyObject *op, visitproc visit, void *arg)
-      {
-          localobject *self = (localobject *) op;
-          Py_VISIT(self->args);
-          Py_VISIT(self->kw);
-          Py_VISIT(self->dict);
-          return 0;
-      }
-
-   Note that :c:func:`Py_VISIT` is called only on those members that can participate
-   in reference cycles.  Although there is also a ``self->key`` member, it can only
-   be ``NULL`` or a Python string and therefore cannot be part of a reference cycle.
-
-   On the other hand, even if you know a member can never be part of a cycle, as a
-   debugging aid you may want to visit it anyway just so the :mod:`gc` module's
-   :func:`~gc.get_referents` function will include it.
-
-   Heap types (:c:macro:`Py_TPFLAGS_HEAPTYPE`) must visit their type with::
-
-       Py_VISIT(Py_TYPE(self));
-
-   It is only needed since Python 3.9. To support Python 3.8 and older, this
-   line must be conditional::
-
-       #if PY_VERSION_HEX >= 0x03090000
-           Py_VISIT(Py_TYPE(self));
-       #endif
-
-   If the :c:macro:`Py_TPFLAGS_MANAGED_DICT` bit is set in the
-   :c:member:`~PyTypeObject.tp_flags` field, the traverse function must call
-   :c:func:`PyObject_VisitManagedDict` like this::
-
-       PyObject_VisitManagedDict((PyObject*)self, visit, arg);
-
-   .. warning::
-       When implementing :c:member:`~PyTypeObject.tp_traverse`, only the
-       members that the instance *owns* (by having :term:`strong references
-       <strong reference>` to them) must be
-       visited. For instance, if an object supports weak references via the
-       :c:member:`~PyTypeObject.tp_weaklist` slot, the pointer supporting
-       the linked list (what *tp_weaklist* points to) must **not** be
-       visited as the instance does not directly own the weak references to itself
-       (the weakreference list is there to support the weak reference machinery,
-       but the instance has no strong reference to the elements inside it, as they
-       are allowed to be removed even if the instance is still alive).
-
-   .. warning::
-      The traversal function must not have any side effects.  It must not
-      modify the reference counts of any Python objects nor create or destroy
-      any Python objects.
-
-   Note that :c:func:`Py_VISIT` requires the *visit* and *arg* parameters to
-   :c:func:`!local_traverse` to have these specific names; don't name them just
-   anything.
-
-   Instances of :ref:`heap-allocated types <heap-types>` hold a reference to
-   their type. Their traversal function must therefore either visit
-   :c:func:`Py_TYPE(self) <Py_TYPE>`, or delegate this responsibility by
-   calling ``tp_traverse`` of another heap-allocated type (such as a
-   heap-allocated superclass).
-   If they do not, the type object may not be garbage-collected.
-
-   .. note::
-
-      The :c:member:`~PyTypeObject.tp_traverse` function can be called from any
-      thread.
-
-   .. versionchanged:: 3.9
-
-      Heap-allocated types are expected to visit ``Py_TYPE(self)`` in
-      ``tp_traverse``.  In earlier versions of Python, due to
-      `bug 40217 <https://bugs.python.org/issue40217>`_, doing this
-      may lead to crashes in subclasses.
+   See :ref:`gc-traversal` for documentation.
 
    **Inheritance:**
 
@@ -2624,9 +2594,6 @@ This is done by filling a :c:type:`PyType_Spec` structure and calling
 Number Object Structures
 ------------------------
 
-.. sectionauthor:: Amaury Forgeot d'Arc
-
-
 .. c:type:: PyNumberMethods
 
    This structure holds pointers to the functions which an object uses to
@@ -2844,9 +2811,6 @@ Number Object Structures
 Mapping Object Structures
 -------------------------
 
-.. sectionauthor:: Amaury Forgeot d'Arc
-
-
 .. c:type:: PyMappingMethods
 
    This structure holds pointers to the functions which an object uses to
@@ -2886,9 +2850,6 @@ Mapping Object Structures
 
 Sequence Object Structures
 --------------------------
-
-.. sectionauthor:: Amaury Forgeot d'Arc
-
 
 .. c:type:: PySequenceMethods
 
@@ -2983,10 +2944,6 @@ Sequence Object Structures
 Buffer Object Structures
 ------------------------
 
-.. sectionauthor:: Greg J. Stein <greg@lyra.org>
-.. sectionauthor:: Benjamin Peterson
-.. sectionauthor:: Stefan Krah
-
 .. c:type:: PyBufferProcs
 
    This structure holds pointers to the functions required by the
@@ -3015,6 +2972,24 @@ Buffer Object Structures
    (4) Set :c:expr:`view->obj` to *exporter* and increment :c:expr:`view->obj`.
 
    (5) Return ``0``.
+
+   **Thread safety:**
+
+   In the :term:`free-threaded build`, implementations must ensure:
+
+   * The export counter increment in step (3) is atomic.
+
+   * The underlying buffer data remains valid and at a stable memory
+     location for the lifetime of all exports.
+
+   * For objects that support resizing or reallocation (such as
+     :class:`bytearray`), the export counter is checked atomically before
+     such operations, and :exc:`BufferError` is raised if exports exist.
+
+   * The function is safe to call concurrently from multiple threads.
+
+   See also :ref:`thread-safety-memoryview` for the Python-level
+   thread safety guarantees of :class:`memoryview` objects.
 
    If *exporter* is part of a chain or tree of buffer providers, two main
    schemes can be used:
@@ -3061,6 +3036,16 @@ Buffer Object Structures
 
    (2) If the counter is ``0``, free all memory associated with *view*.
 
+   **Thread safety:**
+
+   In the :term:`free-threaded build`:
+
+   * The export counter decrement in step (1) must be atomic.
+
+   * Resource cleanup when the counter reaches zero must be done atomically,
+     as the final release may race with concurrent releases from other
+     threads and dellocation must only happen once.
+
    The exporter MUST use the :c:member:`~Py_buffer.internal` field to keep
    track of buffer-specific resources. This field is guaranteed to remain
    constant, while a consumer MAY pass a copy of the original buffer as the
@@ -3081,8 +3066,6 @@ Buffer Object Structures
 
 Async Object Structures
 -----------------------
-
-.. sectionauthor:: Yury Selivanov <yselivanov@sprymix.com>
 
 .. versionadded:: 3.5
 

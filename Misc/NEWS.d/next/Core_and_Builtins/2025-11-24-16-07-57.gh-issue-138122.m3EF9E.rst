@@ -1,6 +1,0 @@
-Add incomplete sample detection to prevent corrupted profiling data. Each
-thread state now contains an embedded base frame (sentinel at the bottom of
-the frame stack) with owner type ``FRAME_OWNED_BY_INTERPRETER``. The profiler
-validates that stack unwinding terminates at this sentinel frame. Samples that
-fail to reach the base frame (due to race conditions, memory corruption, or
-other errors) are now rejected rather than being included as spurious data.

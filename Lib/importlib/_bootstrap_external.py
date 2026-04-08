@@ -918,7 +918,7 @@ class FileLoader:
 
     def get_data(self, path):
         """Return the data from path as raw bytes."""
-        if isinstance(self, (SourceLoader, ExtensionFileLoader)):
+        if isinstance(self, (SourceLoader, SourcelessFileLoader, ExtensionFileLoader)):
             with _io.open_code(str(path)) as file:
                 return file.read()
         else:
@@ -967,19 +967,6 @@ class SourceFileLoader(FileLoader, SourceLoader):
                 _bootstrap._verbose_message('could not create {!r}: {!r}',
                                             parent, exc)
                 return
-
-            if part == _PYCACHE:
-                gitignore = _path_join(parent, '.gitignore')
-                try:
-                    _path_stat(gitignore)
-                except FileNotFoundError:
-                    gitignore_content = b'# Created by CPython\n*\n'
-                    try:
-                        _write_atomic(gitignore, gitignore_content, _mode)
-                    except OSError:
-                        pass
-                except OSError:
-                    pass
         try:
             _write_atomic(path, data, _mode)
             _bootstrap._verbose_message('created {!r}', path)
@@ -1296,6 +1283,23 @@ class PathFinder:
         else:
             return spec
 
+    @classmethod
+    def discover(cls, parent=None):
+        if parent is None:
+            path = sys.path
+        elif parent.submodule_search_locations is None:
+            raise ValueError(f'{parent} is not a package module')
+        else:
+            path = parent.submodule_search_locations
+
+        for entry in set(path):
+            if not isinstance(entry, str):
+                continue
+            if (finder := cls._path_importer_cache(entry)) is None:
+                continue
+            if discover := getattr(finder, 'discover', None):
+                yield from discover(parent)
+
     @staticmethod
     def find_distributions(*args, **kwargs):
         """
@@ -1444,6 +1448,37 @@ class FileFinder:
             return cls(path, *loader_details)
 
         return path_hook_for_FileFinder
+
+    def _find_children(self):
+        with _os.scandir(self.path) as scan_iterator:
+            while True:
+                try:
+                    entry = next(scan_iterator)
+                    if entry.name == _PYCACHE:
+                        continue
+                    # packages
+                    if entry.is_dir() and '.' not in entry.name:
+                        yield entry.name
+                    # files
+                    if entry.is_file():
+                        yield from {
+                            entry.name.removesuffix(suffix)
+                            for suffix, _ in self._loaders
+                            if entry.name.endswith(suffix)
+                        }
+                except OSError:
+                    pass  # ignore exceptions from next(scan_iterator) and os.DirEntry
+                except StopIteration:
+                    break
+
+    def discover(self, parent=None):
+        if parent and parent.submodule_search_locations is None:
+            raise ValueError(f'{parent} is not a package module')
+
+        module_prefix = f'{parent.name}.' if parent else ''
+        for child_name in self._find_children():
+            if spec := self.find_spec(module_prefix + child_name):
+                yield spec
 
     def __repr__(self):
         return f'FileFinder({self.path!r})'
