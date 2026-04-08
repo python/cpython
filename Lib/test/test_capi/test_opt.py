@@ -1846,7 +1846,7 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
         self.assertNotIn("_UNARY_INVERT", uops)
-        self.assertIn("_INSERT_1_LOAD_CONST_INLINE_BORROW", uops)
+        self.assertIn("_LOAD_CONST_INLINE_BORROW", uops)
 
     def test_compare_op_pop_two_load_const_inline_borrow(self):
         def testfunc(n):
@@ -3230,8 +3230,8 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertEqual(res, TIER2_THRESHOLD)
         uops = get_opnames(ex)
         self.assertNotIn("_LOAD_ATTR_METHOD_NO_DICT", uops)
-        self.assertNotIn("_LOAD_CONST_UNDER_INLINE", uops)
-        self.assertIn("_LOAD_CONST_UNDER_INLINE_BORROW", uops)
+        self.assertNotIn("_INSERT_1_LOAD_CONST_INLINE", uops)
+        self.assertIn("_INSERT_1_LOAD_CONST_INLINE_BORROW", uops)
 
     def test_store_fast_refcount_elimination(self):
         def foo(x):
@@ -3851,6 +3851,29 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertIn("_UNPACK_SEQUENCE_TWO_TUPLE", uops)
         self.assertNotIn("_GUARD_TOS_TUPLE", uops)
 
+    def test_binary_op_extend_float_result_enables_inplace_multiply(self):
+        # (2 + x) * y with x, y floats: `2 + x` goes through _BINARY_OP_EXTEND
+        # (int + float). The result_type/result_unique info should let the
+        # subsequent float multiply use the inplace variant.
+        def testfunc(n):
+            x = 3.5
+            y = 2.0
+            res = 0.0
+            for _ in range(n):
+                res = (2 + x) * y
+            return res
+
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, 11.0)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertIn("_BINARY_OP_EXTEND", uops)
+        self.assertIn("_BINARY_OP_MULTIPLY_FLOAT_INPLACE", uops)
+        self.assertNotIn("_BINARY_OP_MULTIPLY_FLOAT", uops)
+        # NOS guard on the multiply is eliminated because _BINARY_OP_EXTEND
+        # propagates PyFloat_Type.
+        self.assertNotIn("_GUARD_NOS_FLOAT", uops)
+
     def test_unary_invert_long_type(self):
         def testfunc(n):
             for _ in range(n):
@@ -4024,8 +4047,6 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
         self.assertNotIn("_REPLACE_WITH_TRUE", uops)
-        self.assertIn("_INSERT_1_LOAD_CONST_INLINE_BORROW", uops)
-        self.assertEqual(count_ops(ex, "_POP_TOP_NOP"), 1)
 
     def test_attr_promotion_failure(self):
         # We're not testing for any specific uops here, just

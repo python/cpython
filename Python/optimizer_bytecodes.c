@@ -410,8 +410,16 @@ dummy_func(void) {
     }
 
     op(_BINARY_OP_EXTEND, (descr/4, left, right -- res, l, r)) {
-        (void)descr;
-        res = sym_new_not_null(ctx);
+        _PyBinaryOpSpecializationDescr *d = (_PyBinaryOpSpecializationDescr *)descr;
+        if (d != NULL && d->result_type != NULL) {
+            res = sym_new_type(ctx, d->result_type);
+            if (d->result_unique) {
+                res = PyJitRef_MakeUnique(res);
+            }
+        }
+        else {
+            res = sym_new_not_null(ctx);
+        }
         l = left;
         r = right;
     }
@@ -917,8 +925,8 @@ dummy_func(void) {
         PyTypeObject *type = sym_get_type(owner);
         PyObject *name = get_co_name(ctx, oparg >> 1);
         attr = lookup_attr(ctx, dependencies, this_instr, type, name,
-                           _LOAD_CONST_UNDER_INLINE_BORROW,
-                           _LOAD_CONST_UNDER_INLINE);
+                           _INSERT_1_LOAD_CONST_INLINE_BORROW,
+                           _INSERT_1_LOAD_CONST_INLINE);
         self = owner;
     }
 
@@ -927,8 +935,8 @@ dummy_func(void) {
         PyTypeObject *type = sym_get_type(owner);
         PyObject *name = get_co_name(ctx, oparg >> 1);
         attr = lookup_attr(ctx, dependencies, this_instr, type, name,
-                           _LOAD_CONST_UNDER_INLINE_BORROW,
-                           _LOAD_CONST_UNDER_INLINE);
+                           _INSERT_1_LOAD_CONST_INLINE_BORROW,
+                           _INSERT_1_LOAD_CONST_INLINE);
         self = owner;
     }
 
@@ -937,8 +945,8 @@ dummy_func(void) {
         PyTypeObject *type = sym_get_type(owner);
         PyObject *name = get_co_name(ctx, oparg >> 1);
         attr = lookup_attr(ctx, dependencies, this_instr, type, name,
-                           _LOAD_CONST_UNDER_INLINE_BORROW,
-                           _LOAD_CONST_UNDER_INLINE);
+                           _INSERT_1_LOAD_CONST_INLINE_BORROW,
+                           _INSERT_1_LOAD_CONST_INLINE);
         self = owner;
     }
 
@@ -2140,18 +2148,21 @@ dummy_func(void) {
     }
 
     op(_GUARD_CODE_VERSION_RETURN_VALUE, (version/2 -- )) {
+        (void)version;
         if (ctx->frame->caller) {
             REPLACE_OP(this_instr, _NOP, 0, 0);
         }
     }
 
     op(_GUARD_CODE_VERSION_YIELD_VALUE, (version/2 -- )) {
+        (void)version;
         if (ctx->frame->caller) {
             REPLACE_OP(this_instr, _NOP, 0, 0);
         }
     }
 
     op(_GUARD_CODE_VERSION_RETURN_GENERATOR, (version/2 -- )) {
+        (void)version;
         if (ctx->frame->caller) {
             REPLACE_OP(this_instr, _NOP, 0, 0);
         }

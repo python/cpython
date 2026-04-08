@@ -472,7 +472,7 @@ General Options
    :manpage:`epoll_create1 <epoll_create1(2)>` is available
    but incompatible with Linux semantics.
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
 
 C compiler options
