@@ -6,6 +6,8 @@ on:
         type: boolean
         default: false
 
+permissions: {}
+
 jobs:
   build_win32:
     name: 'build and test (x86)'
@@ -14,7 +16,7 @@ jobs:
     env:
       IncludeUwp: 'true'
     steps:
-    - uses: actions/checkout@v6
+    - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
     - name: Build CPython
       run: .\PCbuild\build.bat -e -d -p Win32 ${{ inputs.free-threading && '--disable-gil' || '' }}
     - name: Display build info
@@ -29,7 +31,7 @@ jobs:
     env:
        IncludeUwp: 'true'
     steps:
-    - uses: actions/checkout@v6
+    - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
     - name: Register MSVC problem matcher
       run: echo "::add-matcher::.github/problem-matchers/msvc.json"
     - name: Build CPython
@@ -46,7 +48,7 @@ jobs:
     env:
       IncludeUwp: 'true'
     steps:
-    - uses: actions/checkout@v6
+    - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
     - name: Register MSVC problem matcher
       run: echo "::add-matcher::.github/problem-matchers/msvc.json"
     - name: Build CPython

@@ -9,6 +9,8 @@ on:
         type: boolean
         default: false
 
+permissions: {}
+
 jobs:
   build_macos:
     name: 'build and test'
@@ -23,16 +25,16 @@ jobs:
       fail-fast: false
       matrix:
         os: [
-          "macos-14",  # M1
+          "macos-26",  # Apple Silicon
           "macos-15-intel",  # Intel
         ]
     runs-on: ${{ matrix.os }}
     steps:
-    - uses: actions/checkout@v6
+    - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
     - name: Runner image version
       run: echo "IMAGE_OS_VERSION=${ImageOS}-${ImageVersion}" >> "$GITHUB_ENV"
     - name: Restore config.cache
-      uses: actions/cache@v5
+      uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5.0.4
       with:
         path: config.cache
         key: ${{ github.job }}-${{ env.IMAGE_OS_VERSION }}-${{ inputs.config_hash }}
