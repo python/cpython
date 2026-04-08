@@ -394,8 +394,6 @@ const uint32_t _PyUop_Flags[MAX_UOP_ID+1] = {
     [_SHUFFLE_2_LOAD_CONST_INLINE_BORROW] = HAS_ESCAPES_FLAG,
     [_SHUFFLE_3_LOAD_CONST_INLINE_BORROW] = HAS_ESCAPES_FLAG,
     [_POP_CALL_TWO_LOAD_CONST_INLINE_BORROW] = HAS_ESCAPES_FLAG,
-    [_LOAD_CONST_UNDER_INLINE] = 0,
-    [_LOAD_CONST_UNDER_INLINE_BORROW] = HAS_ESCAPES_FLAG,
     [_START_EXECUTOR] = HAS_DEOPT_FLAG,
     [_MAKE_WARM] = 0,
     [_FATAL_ERROR] = 0,
@@ -3669,24 +3667,6 @@ const _PyUopCachingInfo _PyUop_Caching[MAX_UOP_ID+1] = {
             { 1, 3, _POP_CALL_TWO_LOAD_CONST_INLINE_BORROW_r31 },
         },
     },
-    [_LOAD_CONST_UNDER_INLINE] = {
-        .best = { 0, 1, 2, 2 },
-        .entries = {
-            { 2, 0, _LOAD_CONST_UNDER_INLINE_r02 },
-            { 2, 1, _LOAD_CONST_UNDER_INLINE_r12 },
-            { 3, 2, _LOAD_CONST_UNDER_INLINE_r23 },
-            { -1, -1, -1 },
-        },
-    },
-    [_LOAD_CONST_UNDER_INLINE_BORROW] = {
-        .best = { 1, 1, 1, 1 },
-        .entries = {
-            { -1, -1, -1 },
-            { 2, 1, _LOAD_CONST_UNDER_INLINE_BORROW_r12 },
-            { -1, -1, -1 },
-            { -1, -1, -1 },
-        },
-    },
     [_START_EXECUTOR] = {
         .best = { 0, 0, 0, 0 },
         .entries = {
@@ -4647,10 +4627,6 @@ const uint16_t _PyUop_Uncached[MAX_UOP_REGS_ID+1] = {
     [_SHUFFLE_2_LOAD_CONST_INLINE_BORROW_r32] = _SHUFFLE_2_LOAD_CONST_INLINE_BORROW,
     [_SHUFFLE_3_LOAD_CONST_INLINE_BORROW_r33] = _SHUFFLE_3_LOAD_CONST_INLINE_BORROW,
     [_POP_CALL_TWO_LOAD_CONST_INLINE_BORROW_r31] = _POP_CALL_TWO_LOAD_CONST_INLINE_BORROW,
-    [_LOAD_CONST_UNDER_INLINE_r02] = _LOAD_CONST_UNDER_INLINE,
-    [_LOAD_CONST_UNDER_INLINE_r12] = _LOAD_CONST_UNDER_INLINE,
-    [_LOAD_CONST_UNDER_INLINE_r23] = _LOAD_CONST_UNDER_INLINE,
-    [_LOAD_CONST_UNDER_INLINE_BORROW_r12] = _LOAD_CONST_UNDER_INLINE_BORROW,
     [_START_EXECUTOR_r00] = _START_EXECUTOR,
     [_MAKE_WARM_r00] = _MAKE_WARM,
     [_MAKE_WARM_r11] = _MAKE_WARM,
@@ -5555,12 +5531,6 @@ const char *const _PyOpcode_uop_name[MAX_UOP_REGS_ID+1] = {
     [_LOAD_CONST_INLINE_r23] = "_LOAD_CONST_INLINE_r23",
     [_LOAD_CONST_INLINE_BORROW] = "_LOAD_CONST_INLINE_BORROW",
     [_LOAD_CONST_INLINE_BORROW_r01] = "_LOAD_CONST_INLINE_BORROW_r01",
-    [_LOAD_CONST_UNDER_INLINE] = "_LOAD_CONST_UNDER_INLINE",
-    [_LOAD_CONST_UNDER_INLINE_r02] = "_LOAD_CONST_UNDER_INLINE_r02",
-    [_LOAD_CONST_UNDER_INLINE_r12] = "_LOAD_CONST_UNDER_INLINE_r12",
-    [_LOAD_CONST_UNDER_INLINE_r23] = "_LOAD_CONST_UNDER_INLINE_r23",
-    [_LOAD_CONST_UNDER_INLINE_BORROW] = "_LOAD_CONST_UNDER_INLINE_BORROW",
-    [_LOAD_CONST_UNDER_INLINE_BORROW_r12] = "_LOAD_CONST_UNDER_INLINE_BORROW_r12",
     [_LOAD_DEREF] = "_LOAD_DEREF",
     [_LOAD_DEREF_r01] = "_LOAD_DEREF_r01",
     [_LOAD_FAST] = "_LOAD_FAST",
@@ -6723,10 +6693,6 @@ int _PyUop_num_popped(int opcode, int oparg)
             return 3;
         case _POP_CALL_TWO_LOAD_CONST_INLINE_BORROW:
             return 4;
-        case _LOAD_CONST_UNDER_INLINE:
-            return 1;
-        case _LOAD_CONST_UNDER_INLINE_BORROW:
-            return 1;
         case _START_EXECUTOR:
             return 0;
         case _MAKE_WARM:
