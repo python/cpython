@@ -18,11 +18,20 @@ type LineUpdateKind = Literal[
 
 
 class _ThemeSyntax(Protocol):
+    """Protocol for theme objects that map tag names to SGR escape strings."""
     def __getitem__(self, key: str, /) -> str: ...
 
 
 @dataclass(frozen=True, slots=True)
 class RenderCell:
+    """One terminal cell: a character, its column width, and SGR style.
+
+    A screen row like ``>>> def`` is a sequence of cells::
+
+        >  >  >     d  e  f
+       ╰─╯╰─╯╰─╯╰─╯╰─╯╰─╯╰─╯
+    """
+
     text: str
     width: int
     style: StyleRef = field(default_factory=StyleRef)
@@ -94,6 +103,12 @@ def _cells_from_rendered_text(text: str) -> tuple[RenderCell, ...]:
 
 @dataclass(frozen=True, slots=True)
 class RenderLine:
+    """One physical screen row as a tuple of :class:`RenderCell` objects.
+
+    ``text`` is the pre-rendered terminal string (characters + SGR escapes);
+    ``width`` is the total visible column count.
+    """
+
     cells: tuple[RenderCell, ...]
     text: str
     width: int
@@ -139,10 +154,16 @@ class RenderLine:
 class ScreenOverlay:
     """An overlay that replaces or inserts lines at a screen position.
 
-    If insert is True, lines are spliced in (shifting content down);
-    if False (default), lines replace existing content at y.
+    If *insert* is True, lines are spliced in (shifting content down);
+    if False (default), lines replace existing content at *y*.
 
     Overlays are used to display tab completion menus and status messages.
+    For example, a tab-completion menu inserted below the input::
+
+        >>> os.path.j           ← line 0 (base content)
+                    join        ← ScreenOverlay(y=1, insert=True)
+                    junction    ←   (pushes remaining lines down)
+        ...                     ← line 1 (shifted down by 2)
     """
     y: int
     lines: tuple[RenderLine, ...]
@@ -151,6 +172,19 @@ class ScreenOverlay:
 
 @dataclass(frozen=True, slots=True)
 class RenderedScreen:
+    """The complete screen state: content lines, cursor, and overlays.
+
+    ``lines`` holds the base content; ``composed_lines`` is the final
+    result after overlays (completion menus, messages) are applied::
+
+        lines:                     composed_lines:
+        ┌──────────────────┐       ┌──────────────────┐
+        │>>> os.path.j     │       │>>> os.path.j     │
+        │...               │  ──►  │            join  │ ← overlay
+        └──────────────────┘       │...               │
+                                   └──────────────────┘
+    """
+
     lines: tuple[RenderLine, ...]
     cursor: CursorXY
     overlays: tuple[ScreenOverlay, ...] = ()
@@ -173,9 +207,11 @@ class RenderedScreen:
                 "overlays must be sorted by ascending y"
             )
             if overlay.insert:
+                # Splice overlay lines in, pushing existing content down.
                 lines[adjusted_y:adjusted_y] = overlay.lines
                 y_offset += len(overlay.lines)
             else:
+                # Replace existing lines at the overlay position.
                 target_len = adjusted_y + len(overlay.lines)
                 if len(lines) < target_len:
                     lines.extend([EMPTY_RENDER_LINE] * (target_len - len(lines)))
@@ -217,6 +253,17 @@ class RenderedScreen:
 
 @dataclass(frozen=True, slots=True)
 class LineDiff:
+    """The changed region between an old and new version of one screen row.
+
+    When the user types ``e`` so the row changes from
+    ``>>> nam`` to ``>>> name``::
+
+        >>> n a m       old
+        >>> n a m e     new
+                  ╰─╯
+                  start_cell=7, new_cells=("m","e"), old_cells=("m",)
+    """
+
     start_cell: int
     start_x: int
     old_cells: tuple[RenderCell, ...]
@@ -250,10 +297,13 @@ class LineUpdate:
     y: int
     start_cell: int
     start_x: int
+    """Screen x-coordinate where the update begins. Used for cursor positioning."""
     cells: tuple[RenderCell, ...]
     char_width: int = 0
     clear_eol: bool = False
     reset_to_margin: bool = False
+    """If True, the console must resync the cursor position after writing
+    (needed when cells contain non-SGR escape sequences that may move the cursor)."""
     text: str = field(init=False, default="")
 
     def __post_init__(self) -> None:
@@ -273,6 +323,14 @@ def render_cells(
     cells: Sequence[RenderCell],
     visual_style: str | None = None,
 ) -> str:
+    """Render a sequence of cells into a terminal string with SGR escapes.
+
+    Tracks the active SGR state to emit resets only when the style
+    actually changes, minimizing output bytes.
+
+    If *visual_style* is given (used by redraw visualization), it is appended
+    to every cell's style.
+    """
     rendered: list[str] = []
     active_escape = ""
     for cell in cells:
@@ -305,6 +363,8 @@ def diff_render_lines(old: RenderLine, new: RenderLine) -> LineDiff | None:
     start_x = 0
     max_prefix = min(len(old.cells), len(new.cells))
     while prefix < max_prefix and old.cells[prefix] == new.cells[prefix]:
+        # Stop at any cell with non-SGR controls, since those might affect
+        # cursor position and must be re-emitted.
         if old.cells[prefix].controls:
             break
         start_x += old.cells[prefix].width

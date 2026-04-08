@@ -1,3 +1,5 @@
+"""Wrap content lines to the terminal width before rendering."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -9,6 +11,16 @@ from .types import CursorXY, ScreenInfoRow
 
 @dataclass(frozen=True, slots=True)
 class LayoutRow:
+    """Metadata for one physical screen row.
+
+    For the row ``>>> def greet(name):``::
+
+        >>> def greet(name):
+        ╰─╯ ╰──────────────╯
+         4    char_widths=(1,1,1,…)  ← 16 entries
+              buffer_advance=17      ← includes the newline
+    """
+
     prompt_width: int
     char_widths: tuple[int, ...]
     suffix_width: int = 0
@@ -28,6 +40,16 @@ class LayoutRow:
 
 @dataclass(frozen=True, slots=True)
 class LayoutMap:
+    """Mapping between buffer positions and screen coordinates.
+
+    Single source of truth for cursor placement.  Given::
+
+        >>> def greet(name):     ← row 0, buffer_advance=17
+        ...     return name      ← row 1, buffer_advance=15
+                       ▲cursor
+
+    ``pos_to_xy(31)`` → ``(18, 1)``:  prompt width 4 + 14 body chars.
+    """
     rows: tuple[LayoutRow, ...]
 
     @classmethod
@@ -95,6 +117,14 @@ class LayoutMap:
 
 @dataclass(frozen=True, slots=True)
 class WrappedRow:
+    """One physical screen row after wrapping, ready for rendering.
+
+    When a line overflows the terminal width, it splits into
+    multiple rows with a ``\\`` continuation marker::
+
+        >>> x = "a very long li\\   ← suffix="\\", suffix_width=1
+        ne that wraps"              ← prompt_text="" (continuation)
+    """
     prompt_text: str = ""
     prompt_width: int = 0
     fragments: tuple[ContentFragment, ...] = ()
@@ -116,6 +146,15 @@ def layout_content_lines(
     width: int,
     start_offset: int,
 ) -> LayoutResult:
+    """Wrap content lines to fit *width* columns.
+
+    A short line passes through as one ``WrappedRow``; a long line is
+    split at the column boundary with ``\\`` markers::
+
+        >>> short = 1           ← one WrappedRow
+        >>> x = "a long stri\\  ← two WrappedRows, first has suffix="\\"
+        ng"
+    """
     if width <= 0:
         return LayoutResult((), LayoutMap(()), ())
 
@@ -140,6 +179,7 @@ def layout_content_lines(
         body = tuple(line.body)
         body_widths = tuple(fragment.width for fragment in body)
 
+        # Fast path: line fits on one row.
         if not body_widths or (sum(body_widths) + prompt_width) < width:
             offset += len(body) + newline_advance
             line_end_offsets.append(offset)
@@ -161,11 +201,13 @@ def layout_content_lines(
             )
             continue
 
+        # Slow path: line needs wrapping.
         current_prompt = prompt_text
         current_prompt_width = prompt_width
         start = 0
         total = len(body)
         while True:
+            # Find how many characters fit on this row.
             index_to_wrap_before = 0
             column = 0
             for char_width in body_widths[start:]:

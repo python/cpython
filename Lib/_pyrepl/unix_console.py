@@ -151,13 +151,35 @@ except AttributeError:
 
 @dataclass(frozen=True, slots=True)
 class UnixRefreshPlan:
+    """Instructions for updating the terminal after a screen change.
+
+    After the user types ``e`` to complete ``name``::
+
+        Before: >>> def greet(nam|):   
+                                 ▲
+                        LineUpdate here: insert_char "e"
+
+         After: >>> def greet(name|):
+                                  ▲
+
+    Only the changed cells are sent to the terminal; unchanged rows
+    are skipped entirely.
+    """
+
     grow_lines: int
+    """Number of blank lines to append at the bottom to accommodate new content."""
     use_tall_mode: bool
+    """Use absolute cursor addressing via ``cup`` instead of relative moves.
+    Activated when content exceeds one screen height."""
     offset: int
+    """Vertical scroll offset: the buffer row displayed at the top of the terminal window."""
     reverse_scroll: int
+    """Number of lines to scroll backwards (content moves down)."""
     forward_scroll: int
+    """Number of lines to scroll forwards (content moves up)."""
     line_updates: tuple[LineUpdate, ...]
     cleared_lines: tuple[int, ...]
+    """Row indices to erase (old content with no replacement)."""
     rendered_screen: RenderedScreen
     cursor: tuple[int, int]
 
