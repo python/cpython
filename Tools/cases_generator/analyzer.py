@@ -636,6 +636,7 @@ NON_ESCAPING_FUNCTIONS = (
     "Py_Unicode_GET_LENGTH",
     "_PyCode_CODE",
     "_PyDictValues_AddToInsertionOrder",
+    "_PyDictValues_AddToInsertionOrderDelta",
     "_PyErr_Occurred",
     "_PyFrame_GetBytecode",
     "_PyFrame_GetCode",

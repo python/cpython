@@ -3159,7 +3159,8 @@ dummy_func(
             if (old_value == NULL) {
                 PyDictValues *values = _PyObject_InlineValues(owner_o);
                 Py_ssize_t index = value_ptr - values->values;
-                _PyDictValues_AddToInsertionOrder(values, index);
+                uint8_t delta = (uint8_t)(index - values->size);
+                _PyDictValues_AddToInsertionOrderDelta(values, delta);
             }
             UNLOCK_OBJECT(owner_o);
             o = owner;

@@ -659,7 +659,10 @@ get_index_from_order(PyDictObject *mp, Py_ssize_t i)
     assert(mp->ma_used <= SHARED_KEYS_MAX_SIZE);
     assert(i < mp->ma_values->size);
     uint8_t *array = get_insertion_order_array(mp->ma_values);
-    return array[i];
+    /* The insertion order array stores deltas: actual_index = delta + i.
+       Since SHARED_KEYS_MAX_SIZE <= 255, the result always fits in uint8_t. */
+    Py_BUILD_ASSERT(SHARED_KEYS_MAX_SIZE <= 255);
+    return (uint8_t)(array[i] + i);
 }
 
 #ifdef DEBUG_PYDICT
@@ -2867,14 +2870,20 @@ delete_index_from_values(PyDictValues *values, Py_ssize_t ix)
     int size = values->size;
     assert(size <= values->capacity);
     int i;
-    for (i = 0; array[i] != ix; i++) {
+    /* Search: array stores deltas, so actual index = array[i] + i */
+    for (i = 0; (uint8_t)(array[i] + i) != ix; i++) {
         assert(i < size);
     }
     assert(i < size);
     size--;
+    /* Shift: entry at i+1 with value array[i+1] decodes as array[i+1]+(i+1).
+       Moving it to position i, the new delta is array[i+1]+(i+1)-i = array[i+1]+1. */
     for (; i < size; i++) {
-        array[i] = array[i+1];
+        array[i] = array[i+1] + 1;
     }
+    /* Zero the vacated slot so that a future insert at this position
+       with delta==0 can safely skip the write. */
+    array[size] = 0;
     values->size = size;
 }
 

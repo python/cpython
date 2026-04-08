@@ -1055,6 +1055,54 @@ class DictTest(unittest.TestCase):
         self.assertEqual(list(b), ['x', 'y', 'z'])
 
     @support.cpython_only
+    def test_splittable_insertion_order(self):
+        """Insertion order must be correct for split tables using
+        delta-encoded insertion order arrays (gh-144388)."""
+
+        # Natural order: attrs set in declaration order
+        class A:
+            pass
+        a = A()
+        a.x, a.y, a.z = 1, 2, 3
+        self.assertEqual(list(a.__dict__), ['x', 'y', 'z'])
+
+        # Non-natural order: attrs set in reverse
+        b = A()
+        b.z, b.y, b.x = 3, 2, 1
+        self.assertEqual(list(b.__dict__), ['z', 'y', 'x'])
+
+        # Partial assignment: skip middle attr
+        c = A()
+        c.x = 1
+        c.z = 3
+        self.assertEqual(list(c.__dict__), ['x', 'z'])
+
+        # Delete and re-insert: exercises delete_index_from_values
+        # clearing the vacated slot for correct future delta encoding
+        d = A()
+        d.x, d.y, d.z = 1, 2, 3
+        del d.__dict__['y']
+        self.assertEqual(list(d.__dict__), ['x', 'z'])
+        d.y = 2
+        self.assertEqual(list(d.__dict__), ['x', 'z', 'y'])
+
+        # Delete first, re-insert: re-insert at "natural" position
+        e = A()
+        e.x, e.y = 1, 2
+        del e.__dict__['x']
+        self.assertEqual(list(e.__dict__), ['y'])
+        e.x = 1
+        self.assertEqual(list(e.__dict__), ['y', 'x'])
+
+        # Multiple instances sharing keys with different orders
+        f = A()
+        f.x, f.y, f.z = 1, 2, 3
+        g = A()
+        g.z, g.x, g.y = 3, 1, 2
+        self.assertEqual(list(f.__dict__), ['x', 'y', 'z'])
+        self.assertEqual(list(g.__dict__), ['z', 'x', 'y'])
+
+    @support.cpython_only
     def test_splittable_update(self):
         """dict.update(other) must preserve order in other."""
         class C:
