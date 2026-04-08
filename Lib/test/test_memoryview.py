@@ -575,6 +575,79 @@ class ArrayMemoryviewTest(unittest.TestCase,
         m[:] = new_a
         self.assertEqual(a, new_a)
 
+    def test_compare_equal(self):
+        # A memoryview is equal to itself: there is no need to compare
+        # individual values. This is not true for float values since they can
+        # be NaN, and NaN is not equal to itself.
+
+        def check_equal(view, is_equal):
+            self.assertEqual(view == view, is_equal)
+            self.assertEqual(view != view, not is_equal)
+
+            # Comparison with a different memoryview doesn't use
+            # the optimization and should give the same result.
+            view2 = memoryview(view)
+            self.assertEqual(view2 == view, is_equal)
+            self.assertEqual(view2 != view2, not is_equal)
+
+        # Test integer formats
+        for int_format in 'bBhHiIlLqQ':
+            with self.subTest(format=int_format):
+                a = array.array(int_format, [1, 2, 3])
+                m = memoryview(a)
+                check_equal(m, True)
+
+                if int_format in 'bB':
+                    m2 = m.cast('@' + m.format)
+                    check_equal(m2, True)
+
+        # Test 'c' format
+        a = array.array('B', [1, 2, 3])
+        m = memoryview(a.tobytes()).cast('c')
+        check_equal(m, True)
+
+        # Test 'n' and 'N' formats
+        if struct.calcsize('L') == struct.calcsize('N'):
+            int_format = 'L'
+        elif struct.calcsize('Q') == struct.calcsize('N'):
+            int_format = 'Q'
+        else:
+            int_format = None
+        if int_format:
+            a = array.array(int_format, [1, 2, 3])
+            m = memoryview(a.tobytes()).cast('N')
+            check_equal(m, True)
+            m = memoryview(a.tobytes()).cast('n')
+            check_equal(m, True)
+
+        # Test '?' format
+        m = memoryview(b'\0\1\2').cast('?')
+        check_equal(m, True)
+
+        # Test float formats
+        for float_format in 'fd':
+            with self.subTest(format=float_format):
+                a = array.array(float_format, [1.0, 2.0, float('nan')])
+                m = memoryview(a)
+                # nan is not equal to nan
+                check_equal(m, False)
+
+                a = array.array(float_format, [1.0, 2.0, 3.0])
+                m = memoryview(a)
+                check_equal(m, True)
+
+        # Test complex formats
+        for complex_format in 'FD':
+            with self.subTest(format=complex_format):
+                data = struct.pack(complex_format * 3, 1.0, 2.0, float('nan'))
+                m = memoryview(data).cast(complex_format)
+                # nan is not equal to nan
+                check_equal(m, False)
+
+                data = struct.pack(complex_format * 3, 1.0, 2.0, 3.0)
+                m = memoryview(data).cast(complex_format)
+                check_equal(m, True)
+
 
 class BytesMemorySliceTest(unittest.TestCase,
     BaseMemorySliceTests, BaseBytesMemoryTests):
@@ -621,6 +694,14 @@ class OtherTest(unittest.TestCase):
         self.assertEqual(half_view.nbytes * 2, float_view.nbytes)
         self.assertListEqual(half_view.tolist(), float_view.tolist())
 
+    def test_complex_types(self):
+        float_complex_data = struct.pack('FFF', 0.0, -1.5j, 1+2j)
+        double_complex_data = struct.pack('DDD', 0.0, -1.5j, 1+2j)
+        float_complex_view = memoryview(float_complex_data).cast('F')
+        double_complex_view = memoryview(double_complex_data).cast('D')
+        self.assertEqual(float_complex_view.nbytes * 2, double_complex_view.nbytes)
+        self.assertListEqual(float_complex_view.tolist(), double_complex_view.tolist())
+
     def test_memoryview_hex(self):
         # Issue #9951: memoryview.hex() segfaults with non-contiguous buffers.
         x = b'0' * 200000
@@ -637,10 +718,10 @@ class OtherTest(unittest.TestCase):
         self.assertEqual(m2.hex(':', -2), '6564:6362:61')
         self.assertEqual(m2.hex(sep=':', bytes_per_sep=2), '65:6463:6261')
         self.assertEqual(m2.hex(sep=':', bytes_per_sep=-2), '6564:6362:61')
-        for bytes_per_sep in 5, -5, 2**31-1, -(2**31-1):
+        for bytes_per_sep in 5, -5, sys.maxsize, -sys.maxsize:
             with self.subTest(bytes_per_sep=bytes_per_sep):
                 self.assertEqual(m2.hex(':', bytes_per_sep), '6564636261')
-        for bytes_per_sep in 2**31, -2**31, 2**1000, -2**1000:
+        for bytes_per_sep in sys.maxsize+1, -sys.maxsize-1, 2**1000, -2**1000:
             with self.subTest(bytes_per_sep=bytes_per_sep):
                 try:
                     self.assertEqual(m2.hex(':', bytes_per_sep), '6564636261')

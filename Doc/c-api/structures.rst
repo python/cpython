@@ -48,6 +48,19 @@ under :ref:`reference counting <countingrefs>`.
       Do not use this field directly; use :c:macro:`Py_TYPE` and
       :c:func:`Py_SET_TYPE` instead.
 
+   .. c:member:: PyMutex ob_mutex
+
+      A :ref:`per-object lock <per-object-locks>`, present only in the :term:`free-threaded <free threading>`
+      build (when :c:macro:`Py_GIL_DISABLED` is defined).
+
+      This field is **reserved for use by the critical section API**
+      (:c:macro:`Py_BEGIN_CRITICAL_SECTION` / :c:macro:`Py_END_CRITICAL_SECTION`).
+      Do **not** lock it directly with ``PyMutex_Lock``; doing so can cause
+      deadlocks.  If you need your own lock, add a separate :c:type:`PyMutex`
+      field to your object struct.
+
+      .. versionadded:: 3.13
+
 
 .. c:type:: PyVarObject
 
@@ -410,7 +423,7 @@ There are these calling conventions:
 
 
 These two constants are not used to indicate the calling convention but the
-binding when use with methods of classes.  These may not be used for functions
+binding when used with methods of classes.  These may not be used for functions
 defined for modules.  At most one of these flags may be set for any given
 method.
 

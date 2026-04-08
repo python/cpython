@@ -9,6 +9,7 @@
 #include "pycore_fileutils.h"     // _PyFile_Flush
 #include "pycore_floatobject.h"   // _PyFloat_ExactDealloc()
 #include "pycore_interp.h"        // _PyInterpreterState_GetConfig()
+#include "pycore_import.h"        // _PyImport_LazyImportModuleLevelObject  ()
 #include "pycore_long.h"          // _PyLong_CompactValue
 #include "pycore_modsupport.h"    // _PyArg_NoKwnames()
 #include "pycore_object.h"        // _Py_AddToAllObjects()
@@ -286,6 +287,67 @@ builtin___import___impl(PyObject *module, PyObject *name, PyObject *globals,
                                             fromlist, level);
 }
 
+
+/*[clinic input]
+__lazy_import__ as builtin___lazy_import__
+
+    name: object
+    globals: object(c_default="NULL") = None
+    locals: object(c_default="NULL") = None
+    fromlist: object(c_default="NULL") = ()
+    level: int = 0
+
+Lazily imports a module.
+
+Returns either the module to be imported or a imp.lazy_module object which
+indicates the module to be lazily imported.
+[clinic start generated code]*/
+
+static PyObject *
+builtin___lazy_import___impl(PyObject *module, PyObject *name,
+                             PyObject *globals, PyObject *locals,
+                             PyObject *fromlist, int level)
+/*[clinic end generated code: output=300f1771094b9e8c input=9394874f340b2948]*/
+{
+    PyObject *builtins;
+    PyThreadState *tstate = PyThreadState_GET();
+    if (globals == NULL) {
+        globals = PyEval_GetGlobals();
+    }
+    if (locals == NULL) {
+        locals = globals;
+    }
+
+    if (!PyDict_Check(globals)) {
+        PyErr_Format(PyExc_TypeError,
+                     "expect dict for globals, got %T", globals);
+        return NULL;
+    }
+
+    if (PyDict_GetItemRef(globals, &_Py_ID(__builtins__), &builtins) < 0) {
+        return NULL;
+    }
+    if (builtins == NULL) {
+        PyErr_SetString(PyExc_ValueError,
+                        "unable to get builtins for lazy import");
+        return NULL;
+    }
+    if (PyModule_Check(builtins)) {
+        PyObject *builtins_dict = Py_XNewRef(PyModule_GetDict(builtins));
+        if (builtins_dict == NULL) {
+            Py_DECREF(builtins);
+            PyErr_SetString(PyExc_AttributeError,
+                            "builtins module has no dict");
+            return NULL;
+        }
+        Py_SETREF(builtins, builtins_dict);
+    }
+
+    PyObject *res = _PyImport_LazyImportModuleLevelObject(
+        tstate, name, builtins, globals, locals, fromlist, level);
+    Py_DECREF(builtins);
+    return res;
+}
 
 /*[clinic input]
 abs as builtin_abs
@@ -978,10 +1040,11 @@ builtin_eval_impl(PyObject *module, PyObject *source, PyObject *globals,
         PyErr_SetString(PyExc_TypeError, "locals must be a mapping");
         return NULL;
     }
-    if (globals != Py_None && !PyDict_Check(globals)) {
+    if (globals != Py_None && !PyAnyDict_Check(globals)) {
         PyErr_SetString(PyExc_TypeError, PyMapping_Check(globals) ?
-            "globals must be a real dict; try eval(expr, {}, mapping)"
-            : "globals must be a dict");
+            "globals must be a real dict or a frozendict; "
+            "try eval(expr, {}, mapping)"
+            : "globals must be a dict or a frozendict");
         return NULL;
     }
 
@@ -1135,9 +1198,10 @@ builtin_exec_impl(PyObject *module, PyObject *source, PyObject *globals,
         locals = Py_NewRef(globals);
     }
 
-    if (!PyDict_Check(globals)) {
-        PyErr_Format(PyExc_TypeError, "exec() globals must be a dict, not %.100s",
-                     Py_TYPE(globals)->tp_name);
+    if (!PyAnyDict_Check(globals)) {
+        PyErr_Format(PyExc_TypeError,
+                     "exec() globals must be a dict or a frozendict, not %T",
+                     globals);
         goto error;
     }
     if (!PyMapping_Check(locals)) {
@@ -1543,7 +1607,7 @@ check:
         // ValueError: map() argument 3 is shorter than arguments 1-2
         const char* plural = i == 1 ? " " : "s 1-";
         PyErr_Format(PyExc_ValueError,
-                     "map() argument %d is shorter than argument%s%d",
+                     "map() argument %zd is shorter than argument%s%zd",
                      i + 1, plural, i);
         goto exit_no_result;
     }
@@ -1554,7 +1618,7 @@ check:
             Py_DECREF(val);
             const char* plural = i == 1 ? " " : "s 1-";
             PyErr_Format(PyExc_ValueError,
-                         "map() argument %d is longer than argument%s%d",
+                         "map() argument %zd is longer than argument%s%zd",
                          i + 1, plural, i);
             goto exit_no_result;
         }
@@ -3243,7 +3307,7 @@ check:
         // ValueError: zip() argument 3 is shorter than arguments 1-2
         const char* plural = i == 1 ? " " : "s 1-";
         return PyErr_Format(PyExc_ValueError,
-                            "zip() argument %d is shorter than argument%s%d",
+                            "zip() argument %zd is shorter than argument%s%zd",
                             i + 1, plural, i);
     }
     for (i = 1; i < tuplesize; i++) {
@@ -3253,7 +3317,7 @@ check:
             Py_DECREF(item);
             const char* plural = i == 1 ? " " : "s 1-";
             return PyErr_Format(PyExc_ValueError,
-                                "zip() argument %d is longer than argument%s%d",
+                                "zip() argument %zd is longer than argument%s%zd",
                                 i + 1, plural, i);
         }
         if (PyErr_Occurred()) {
@@ -3277,7 +3341,7 @@ zip_reduce(PyObject *self, PyObject *Py_UNUSED(ignored))
     if (lz->strict) {
         return PyTuple_Pack(3, Py_TYPE(lz), lz->ittuple, Py_True);
     }
-    return PyTuple_Pack(2, Py_TYPE(lz), lz->ittuple);
+    return _PyTuple_FromPair((PyObject *)Py_TYPE(lz), lz->ittuple);
 }
 
 static PyObject *
@@ -3362,6 +3426,7 @@ static PyMethodDef builtin_methods[] = {
     {"__build_class__", _PyCFunction_CAST(builtin___build_class__),
      METH_FASTCALL | METH_KEYWORDS, build_class_doc},
     BUILTIN___IMPORT___METHODDEF
+    BUILTIN___LAZY_IMPORT___METHODDEF
     BUILTIN_ABS_METHODDEF
     BUILTIN_ALL_METHODDEF
     BUILTIN_ANY_METHODDEF
@@ -3479,6 +3544,7 @@ _PyBuiltin_Init(PyInterpreterState *interp)
     SETBUILTIN("enumerate",             &PyEnum_Type);
     SETBUILTIN("filter",                &PyFilter_Type);
     SETBUILTIN("float",                 &PyFloat_Type);
+    SETBUILTIN("frozendict",            &PyFrozenDict_Type);
     SETBUILTIN("frozenset",             &PyFrozenSet_Type);
     SETBUILTIN("property",              &PyProperty_Type);
     SETBUILTIN("int",                   &PyLong_Type);

@@ -230,6 +230,9 @@ Feature slots
    When creating a module, Python checks the value of this slot
    using :c:func:`PyABIInfo_Check`.
 
+   This slot is required, except for modules created from
+   :c:struct:`PyModuleDef`.
+
    .. versionadded:: 3.15
 
 .. c:macro:: Py_mod_multiple_interpreters
@@ -620,9 +623,9 @@ rather than from an extension's :ref:`export hook <extension-export-hook>`.
    and the :py:class:`~importlib.machinery.ModuleSpec` *spec*.
 
    The *slots* argument must point to an array of :c:type:`PyModuleDef_Slot`
-   structures, terminated by an entry slot with slot ID of 0
+   structures, terminated by an entry with slot ID of 0
    (typically written as ``{0}`` or ``{0, NULL}`` in C).
-   The *slots* argument may not be ``NULL``.
+   The array must include a :c:data:`Py_mod_abi` entry.
 
    The *spec* argument may be any ``ModuleSpec``-like object, as described
    in :c:macro:`Py_mod_create` documentation.
@@ -725,10 +728,11 @@ remove it.
 
       An array of additional slots, terminated by a ``{0, NULL}`` entry.
 
-      This array may not contain slots corresponding to :c:type:`PyModuleDef`
-      members.
-      For example, you cannot use :c:macro:`Py_mod_name` in :c:member:`!m_slots`;
-      the module name must be given as :c:member:`PyModuleDef.m_name`.
+      If the array contains slots corresponding to :c:type:`PyModuleDef`
+      members, the values must match.
+      For example, if you use :c:macro:`Py_mod_name` in :c:member:`!m_slots`,
+      :c:member:`PyModuleDef.m_name` must be set to the same pointer
+      (not just an equal string).
 
       .. versionchanged:: 3.5
 
@@ -751,7 +755,12 @@ remove it.
       .. versionchanged:: 3.9
 
          :c:member:`m_traverse`, :c:member:`m_clear` and :c:member:`m_free`
-         functions are longer called before the module state is allocated.
+         functions are no longer called before the module state is allocated.
+
+
+.. c:var:: PyTypeObject PyModuleDef_Type
+
+   The type of ``PyModuleDef`` objects.
 
 
 .. _moduledef-dynamic:

@@ -1506,6 +1506,7 @@ bytearray_removesuffix_impl(PyByteArrayObject *self, Py_buffer *suffix)
 
 
 /*[clinic input]
+@critical_section
 bytearray.resize
     size: Py_ssize_t
         New size to resize to.
@@ -1515,10 +1516,10 @@ Resize the internal buffer of bytearray to len.
 
 static PyObject *
 bytearray_resize_impl(PyByteArrayObject *self, Py_ssize_t size)
-/*[clinic end generated code: output=f73524922990b2d9 input=6c9a260ca7f72071]*/
+/*[clinic end generated code: output=f73524922990b2d9 input=116046316a2b5cfc]*/
 {
     Py_ssize_t start_size = PyByteArray_GET_SIZE(self);
-    int result = PyByteArray_Resize((PyObject *)self, size);
+    int result = bytearray_resize_lock_held((PyObject *)self, size);
     if (result < 0) {
         return NULL;
     }
@@ -1751,27 +1752,26 @@ bytearray_maketrans_impl(Py_buffer *frm, Py_buffer *to)
 
 
 /*[clinic input]
-@permit_long_docstring_body
 @critical_section
 bytearray.replace
 
     old: Py_buffer
     new: Py_buffer
+    /
     count: Py_ssize_t = -1
         Maximum number of occurrences to replace.
         -1 (the default value) means replace all occurrences.
-    /
 
 Return a copy with all occurrences of substring old replaced by new.
 
-If the optional argument count is given, only the first count occurrences are
-replaced.
+If count is given, only the first count occurrences are replaced.
+If count is not specified or -1, then all occurrences are replaced.
 [clinic start generated code]*/
 
 static PyObject *
 bytearray_replace_impl(PyByteArrayObject *self, Py_buffer *old,
                        Py_buffer *new, Py_ssize_t count)
-/*[clinic end generated code: output=d39884c4dc59412a input=66afec32f4e095e0]*/
+/*[clinic end generated code: output=d39884c4dc59412a input=e2591806f954aec3]*/
 {
     return stringlib_replace((PyObject *)self,
                              (const char *)old->buf, old->len,
@@ -2640,7 +2640,7 @@ bytearray.hex
 
     sep: object = NULL
         An optional single character or byte to separate hex bytes.
-    bytes_per_sep: int = 1
+    bytes_per_sep: Py_ssize_t = 1
         How many bytes between separators.  Positive values count from the
         right, negative values count from the left.
 
@@ -2659,8 +2659,9 @@ Example:
 [clinic start generated code]*/
 
 static PyObject *
-bytearray_hex_impl(PyByteArrayObject *self, PyObject *sep, int bytes_per_sep)
-/*[clinic end generated code: output=29c4e5ef72c565a0 input=7784107de7048873]*/
+bytearray_hex_impl(PyByteArrayObject *self, PyObject *sep,
+                   Py_ssize_t bytes_per_sep)
+/*[clinic end generated code: output=c9563921aff1262b input=d2b23ef057cfcad5]*/
 {
     char* argbuf = PyByteArray_AS_STRING(self);
     Py_ssize_t arglen = PyByteArray_GET_SIZE(self);

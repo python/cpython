@@ -10,7 +10,7 @@ from functools import partial
 from test.support import force_not_colorized_test_class
 from typing import Iterable
 from unittest import TestCase
-from unittest.mock import MagicMock, call
+from unittest.mock import MagicMock, call, patch
 
 from .support import handle_all_events, code_to_events
 from .support import prepare_reader as default_prepare_reader
@@ -30,7 +30,21 @@ except ImportError:
     pass
 
 
+def _mock_console_init(self, f_in=0, f_out=1, term="", encoding="utf-8"):
+    """Mock __init__ to avoid real Windows API calls in headless environments."""
+    super(WindowsConsole, self).__init__(f_in, f_out, term, encoding)
+    self.screen = []
+    self.width = 80
+    self.height = 25
+    self._WindowsConsole__offset = 0
+    self.posxy = (0, 0)
+    self._WindowsConsole__vt_support = False
+    self._WindowsConsole_original_input_mode = 0
+    self.event_queue = wc.EventQueue('utf-8')
+
+
 @force_not_colorized_test_class
+@patch.object(WindowsConsole, '__init__', _mock_console_init)
 class WindowsConsoleTests(TestCase):
     def console(self, events, **kwargs) -> Console:
         console = WindowsConsole()
@@ -115,9 +129,7 @@ class WindowsConsoleTests(TestCase):
         events = code_to_events(code)
         reader, console = self.handle_events_narrow(events)
 
-        console.height = 20
-        console.width = 80
-        console.getheightwidth = MagicMock(lambda _: (20, 80))
+        console.getheightwidth = MagicMock(side_effect=lambda: (20, 80))
 
         def same_reader(_):
             return reader
@@ -143,9 +155,7 @@ class WindowsConsoleTests(TestCase):
         events = code_to_events(code)
         reader, console = self.handle_events(events)
 
-        console.height = 20
-        console.width = 4
-        console.getheightwidth = MagicMock(lambda _: (20, 4))
+        console.getheightwidth = MagicMock(side_effect=lambda: (20, 4))
 
         def same_reader(_):
             return reader
@@ -278,8 +288,7 @@ class WindowsConsoleTests(TestCase):
         events = itertools.chain(code_to_events(code))
         reader, console = self.handle_events_short(events)
 
-        console.height = 2
-        console.getheightwidth = MagicMock(lambda _: (2, 80))
+        console.getheightwidth = MagicMock(side_effect=lambda: (2, 80))
 
         def same_reader(_):
             return reader
@@ -316,8 +325,7 @@ class WindowsConsoleTests(TestCase):
         events = itertools.chain(code_to_events(code))
         reader, console = self.handle_events_height_3(events)
 
-        console.height = 1
-        console.getheightwidth = MagicMock(lambda _: (1, 80))
+        console.getheightwidth = MagicMock(side_effect=lambda: (1, 80))
 
         def same_reader(_):
             return reader
@@ -373,6 +381,7 @@ class WindowsConsoleTests(TestCase):
         con.restore()
 
 
+@patch.object(WindowsConsole, '__init__', _mock_console_init)
 class WindowsConsoleGetEventTests(TestCase):
     # Virtual-Key Codes: https://learn.microsoft.com/en-us/windows/win32/inputdev/virtual-key-codes
     VK_BACK = 0x08
