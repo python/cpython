@@ -202,7 +202,7 @@ class InteractiveConsole(InteractiveInterpreter):
         """Reset the input buffer."""
         self.buffer = []
 
-    def interact(self, banner=None, exitmsg=None, *, use_pyrepl=None):
+    def interact(self, banner=None, exitmsg=None, *, use_pyrepl=False):
         """Closely emulate the interactive Python console.
 
         The optional banner argument specifies the banner to print
@@ -218,8 +218,8 @@ class InteractiveConsole(InteractiveInterpreter):
         a default message is printed.
 
         The use_pyrepl argument controls whether to use the pyrepl-based REPL
-        when available. When True, pyrepl is used. When False, the basic
-        readline-based REPL is used. When None (the default), pyrepl is used
+        when available. When True, pyrepl is used. When False (the default),
+        the basic readline-based REPL is used. When None, pyrepl is used
         automatically if available and the PYTHON_BASIC_REPL environment
         variable is not set.
 
@@ -378,7 +378,7 @@ class Quitter:
         raise SystemExit(code)
 
 
-def interact(banner=None, readfunc=None, local=None, exitmsg=None, local_exit=False, *, use_pyrepl=None):
+def interact(banner=None, readfunc=None, local=None, exitmsg=None, local_exit=False, *, use_pyrepl=False):
     """Closely emulate the interactive Python interpreter.
 
     This is a backwards compatible interface to the InteractiveConsole
