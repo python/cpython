@@ -633,16 +633,19 @@ This may be used to override a set of defaults::
    >>> {**defaults, **overrides}
    {'color': 'yellow', 'count': 8}
 
-TODO:
-
-.. productionlist:: python-grammar
-   dict_display: "{" [`dict_item_list` | `dict_comprehension`] "}"
-   dict_item_list: `dict_item` ("," `dict_item`)* [","]
-   dict_comprehension: `dict_item` `comp_for`
-   dict_item: `expression` ":" `expression` | "**" `or_expr`
-
 .. versionadded:: 3.5
    Unpacking into dictionary displays, originally proposed by :pep:`448`.
+
+
+The formal grammar for dict displays is:
+
+.. grammar-snippet::
+   :group: python-grammar
+
+   dict:                   '{' [`double_starred_kvpairs`] '}'
+   double_starred_kvpairs: ','.`double_starred_kvpair`+ [',']
+   double_starred_kvpair:  '**' `or_expr` | `kvpair`
+   kvpair:                 `expression` ':' `expression`
 
 
 .. index::
@@ -659,14 +662,23 @@ where items are computed via a set of looping and filtering instructions
 rather than listed explicitly.
 
 In its simplest form, a comprehension consists of a single expression
-followed by a :keyword:`!for` clause, all enclosed in paired delimiters.
+followed by a :keyword:`!for` clause.
+The :keyword:`!for` clause has the same syntax as the header of a
+:ref:`for statement <for>`, without a trailing colon.
+
 For example, a list of the first ten squares is::
 
    >>> [x**2 for x in range(10)]
    [0, 1, 4, 9, 16, 25, 36, 49, 64, 81]
 
-The comprehension is roughly equivalent to defining and calling the following
-function::
+At run time, a list comprehension creates a new list.
+The expression after :keyword:`!in` must evaluate to an :term:`iterable`.
+For each element of this iterable, the element is bound to the :keyword:`!for`
+clause's target as in a :keyword:`!for` statement, then the expression
+before :keyword:`!for` is evaluated with the target in scope and the result
+is added to the new list.
+Thus, the example above is roughly equivalent to defining and calling
+the following function::
 
    def make_list_of_squares(iterable):
        result = []
@@ -682,11 +694,11 @@ For example, here is a set of lowercase letters::
    >>> {x.lower() for x in ['a', 'A', 'b', 'C']}
    {'c', 'a', 'b'}
 
-This corresponds roughly to calling this function::
+At run time, this corresponds roughly to calling this function::
 
    def make_lowercase_set(iterable):
        result = set(iterable)
-       for x in :
+       for x in iterable:
            result.append(x.lower())
        return result
 
@@ -695,17 +707,17 @@ This corresponds roughly to calling this function::
 Dictionary comprehensions start with a colon-separated key-value pair instead
 of an expression. For example::
 
-   >>> {f.__name__: f for f in [print, hex, any]}
+   >>> {func.__name__: func for func in [print, hex, any]}
    {'print': <built-in function print>,
     'hex': <built-in function hex>,
     'any': <built-in function any>}
 
-This corresponds roughly to::
+At run time, this corresponds roughly to::
 
    def make_dict_mapping_names_to_functions(iterable):
        result = {}
-       for f in iterable:
-           result[f.__name__] = f
+       for func in iterable:
+           result[func.__name__] = func
        return result
 
    iterable([print, hex, any])
@@ -714,9 +726,9 @@ As in other kinds of dictionary displays, the same key may be specified
 multiple times.
 Earlier values are overwritten by ones that are evaluated later.
 
-There are no *tuple comprehensions*, but a similar syntax is instead used
-for :ref:`generator expressions <genexpr>`, from which you can construct
-a tuple like this::
+There are no *tuple comprehensions*.
+A similar syntax is instead used for :ref:`generator expressions <genexpr>`,
+from which you can construct a tuple like this::
 
    >>> tuple(x**2 for x in range(10))
    (0, 1, 4, 9, 16, 25, 36, 49, 64, 81)
@@ -742,7 +754,11 @@ that start with `f` is::
    >>> [name for name in vars(math) if name.startswith('f')]
    ['fabs', 'factorial', 'floor', 'fma', 'fmod', 'frexp', 'fsum']
 
-This roughly corresponds to defining and calling the following function::
+At run time, the expression after :keyword:`!if` is evaluated before
+each element is added to the resulting container.
+If the expression evaluates to false, the element is skipped.
+Thus, the above example roughly corresponds to defining and calling the
+following function::
 
    def get_math_f_names(iterable):
        result = []
@@ -764,11 +780,11 @@ Complex comprehensions
 
 Generally, a comprehension's initial :keyword:`!for` clause may be followed
 zero or more additional :keyword:`!for` or :keyword:`!if` clauses.
-For example, here is a list of names exposed by two Python modules
-that start with ``a``::
+For example, here is a list of names exposed by two Python modules,
+filtered to only include names that start with ``a``::
 
-   >>> import math
    >>> import array
+   >>> import math
    >>> [
    ...     name
    ...     for module in [array, math]
@@ -777,7 +793,7 @@ that start with ``a``::
    ... ]
    ['array', 'acos', 'acosh', 'asin', 'asinh', 'atan', 'atan2', 'atanh']
 
-This roughly corresponds to defining and calling::
+At run time, this roughly corresponds to defining and calling::
 
    def get_a_names(iterable):
        result = []
@@ -789,8 +805,7 @@ This roughly corresponds to defining and calling::
 
    get_a_names([array, math])
 
-In this case, and in the simpler cases in the previous sections,
-the elements of the new container are those that would be produced by
+The elements of the new container are those that would be produced by
 considering each of the :keyword:`!for` or :keyword:`!if` clauses a block,
 nesting from left to right, and evaluating the expression to produce an
 element (or dictionary entry) each time the innermost block is reached.
@@ -802,7 +817,7 @@ the enclosing scope.
 For example::
 
    >>> x = 'old value'
-   >>> [x**2 for x in range(10)]
+   >>> [x**2 for x in range(10)]  # this `x` is local to the comprehension
    >>> x
    'old value'
 
@@ -813,6 +828,9 @@ nested scope.
 Subsequent :keyword:`!for` clauses and any filter condition in the
 leftmost :keyword:`!for` clause cannot be evaluated in the enclosing scope as
 they may depend on the values obtained from the leftmost iterable.
+
+TODO: PEP 572:
+   ..due to a limitation in CPython’s symbol table analysis process, the reference implementation raises SyntaxError for all uses of named expressions inside comprehension iterable expressions, rather than only raising them when the named expression target conflicts with one of the iteration variables in the comprehension. This could be revisited given sufficiently compelling examples, but the extra complexity needed to implement the more selective restriction doesn’t seem worthwhile for purely hypothetical use cases.
 
 To ensure the comprehension always results in a container of the appropriate
 type, ``yield`` and ``yield from`` expressions are prohibited in the implicitly
@@ -837,7 +855,7 @@ This is often used for "flattening" lists, for example::
    >>> [*people for people in lists_of_people]
    ['Petr', 'Blaise', 'Jarka', 'Salim', 'Bartosz']
 
-This comprehension roughly corresponds to::
+At run time, this comprehension roughly corresponds to::
 
    def flatten_names(lists_of_people):
        result = []
@@ -901,6 +919,8 @@ execution of the coroutine function in which it appears.
 
 Formal grammar for comprehensions
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The formal grammar for comprehensions is:
 
 .. grammar-snippet::
    :group: python-grammar
