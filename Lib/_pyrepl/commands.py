@@ -491,13 +491,11 @@ class show_history(Command):
         pager(history, gethistoryfile())
         self.reader.console.prepare()
 
-        # We need to copy over the state so that it's consistent between
-        # console and reader, and console does not overwrite/append stuff
-        trace("command.show_history sync_rendered_screen")
-        self.reader.console.sync_rendered_screen(
-            self.reader.rendered_screen,
-            self.reader.cxy,
-        )
+        # After the pager exits, the screen state is unknown (Unix may
+        # restore via alternate screen, Windows shows pager output).
+        # Clear and force a full redraw for consistency.
+        self.reader.console.clear()
+        self.reader.invalidate_full()
 
 
 class paste_mode(Command):

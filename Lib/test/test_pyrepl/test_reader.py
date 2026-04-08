@@ -20,8 +20,48 @@ overrides = {"reset": "z", "soft_keyword": "K"}
 colors = {overrides.get(k, k[0].lower()): v for k, v in default_theme.syntax.items()}
 
 
+def prepare_reader_multiline_prompt(*args, **kwargs):
+    reader = prepare_reader(*args, **kwargs)
+    del reader.get_prompt
+    reader.ps1 = "Python 3.15\n>>> "
+    reader.ps2 = "Python 3.15\n>>> "
+    reader.ps3 = "Python 3.15\n... "
+    reader.ps4 = "Python 3.15\n... "
+    reader.can_colorize = False
+    reader.paste_mode = False
+    return reader
+
+
 @force_not_colorized_test_class
 class TestReader(ScreenEqualMixin, TestCase):
+    def assert_multiline_prompt_screen(self, code, expected_screen, expected_cxy):
+        reader, _ = handle_all_events(
+            code_to_events(code),
+            prepare_reader=prepare_reader_multiline_prompt,
+        )
+
+        self.assertEqual(reader.screen, expected_screen)
+        self.assertEqual(reader.cxy, expected_cxy)
+
+    def test_multiline_prompt_does_not_duplicate_leading_lines(self):
+        self.assert_multiline_prompt_screen(
+            "abc",
+            ["Python 3.15", ">>> abc"],
+            (7, 1),
+        )
+
+    def test_multiline_prompt_does_not_duplicate_leading_lines_across_buffer_lines(self):
+        self.assert_multiline_prompt_screen(
+            "if x:\n    y",
+            [
+                "Python 3.15",
+                ">>> if x:",
+                "Python 3.15",
+                "...         y",
+            ],
+            (13, 3),
+        )
+
     def test_calc_screen_wrap_simple(self):
         events = code_to_events(10 * "a")
         reader, _ = handle_events_narrow_console(events)

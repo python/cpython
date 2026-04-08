@@ -357,15 +357,21 @@ class Reader:
                 return 0, 0
             if buffer_from_pos is None:
                 buffer_from_pos = min(reader.pos, self.pos)
-            offset = 0
             num_common_lines = len(self.line_end_offsets)
             while num_common_lines > 0:
-                offset = self.line_end_offsets[num_common_lines - 1]
-                if buffer_from_pos > offset:
+                candidate = self.line_end_offsets[num_common_lines - 1]
+                if buffer_from_pos > candidate:
                     break
                 num_common_lines -= 1
-            else:
-                offset = 0
+            # Prompt-only leading rows consume no buffer content. Reusing them
+            # in isolation causes the next incremental rebuild to emit them a
+            # second time.
+            while (
+                num_common_lines > 0
+                and self.layout_rows[num_common_lines - 1].buffer_advance == 0
+            ):
+                num_common_lines -= 1
+            offset = self.line_end_offsets[num_common_lines - 1] if num_common_lines else 0
             return offset, num_common_lines
 
     last_refresh_cache: RefreshCache = field(default_factory=RefreshCache)

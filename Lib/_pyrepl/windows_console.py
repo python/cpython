@@ -686,7 +686,7 @@ class WindowsConsole(Console):
                     # ignore SHIFT_PRESSED and special keys
                     continue
                 if ch == "\r":
-                    ch += "\n"
+                    ch = "\n"
                 e.data += ch
         return e
 
