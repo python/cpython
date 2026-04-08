@@ -468,11 +468,7 @@ class _ctypes.CType_Type "PyObject *" "clinic_state()->CType_Type"
 static int
 CType_Type_traverse(PyObject *self, visitproc visit, void *arg)
 {
-    StgInfo *info = _PyStgInfo_FromType_NoState(self);
-    if (!info) {
-        PyErr_FormatUnraisable("Exception ignored while "
-                               "calling ctypes traverse function %R", self);
-    }
+    StgInfo *info = _PyStgInfo_FromType_DuringGC(self);
     if (info) {
         Py_VISIT(info->proto);
         Py_VISIT(info->argtypes);
@@ -516,11 +512,7 @@ ctype_free_stginfo_members(StgInfo *info)
 static int
 CType_Type_clear(PyObject *self)
 {
-    StgInfo *info = _PyStgInfo_FromType_NoState(self);
-    if (!info) {
-        PyErr_FormatUnraisable("Exception ignored while "
-                               "clearing ctypes %R", self);
-    }
+    StgInfo *info = _PyStgInfo_FromType_DuringGC(self);
     if (info) {
         ctype_clear_stginfo(info);
     }
@@ -530,11 +522,7 @@ CType_Type_clear(PyObject *self)
 static void
 CType_Type_dealloc(PyObject *self)
 {
-    StgInfo *info = _PyStgInfo_FromType_NoState(self);
-    if (!info) {
-        PyErr_FormatUnraisable("Exception ignored while "
-                               "deallocating ctypes %R", self);
-    }
+    StgInfo *info = _PyStgInfo_FromType_DuringGC(self);
     if (info) {
         ctype_free_stginfo_members(info);
     }
