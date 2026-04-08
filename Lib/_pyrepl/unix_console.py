@@ -993,7 +993,6 @@ class UnixConsole(Console):
         self.__write_code(self._cup, y - self.__offset, x)
 
     def __sigwinch(self, signum, frame):
-        self.height, self.width = self.getheightwidth()
         self.event_queue.insert(Event("resize", ""))
 
     def __hide_cursor(self):

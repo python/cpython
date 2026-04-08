@@ -888,6 +888,7 @@ class Reader:
 
     def refresh(self) -> None:
         """Recalculate and refresh the screen."""
+        self.console.height, self.console.width = self.console.getheightwidth()
         # this call sets up self.cxy, so call it first.
         base_screen = self.calc_screen()
         rendered_screen = self.compose_rendered_screen(base_screen)

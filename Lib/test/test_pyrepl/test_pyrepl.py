@@ -37,6 +37,7 @@ from .support import (
     code_to_events,
 )
 from _pyrepl.console import Event
+from _pyrepl.completing_reader import stripcolor
 from _pyrepl._module_completer import (
     ImportParser,
     ModuleCompleter,
@@ -1073,6 +1074,27 @@ class TestPyReplFancyCompleter(TestCase):
         self.assertIn("apricot", menu)
         self.assertNotIn("banana", menu)
         self.assertNotIn("mro", menu)
+
+    def test_get_completions_sorts_colored_matches_by_visible_text(self):
+        console = FakeConsole(iter(()))
+        config = ReadlineConfig()
+        config.readline_completer = FancyCompleter(
+            {
+                "foo_str": "value",
+                "foo_int": 1,
+                "foo_none": None,
+            },
+            use_colors=True,
+        ).complete
+        reader = ReadlineAlikeReader(console=console, config=config)
+
+        matches, action = reader.get_completions("foo_")
+
+        self.assertIsNone(action)
+        self.assertEqual(
+            [stripcolor(match) for match in matches],
+            ["foo_int", "foo_none", "foo_str"],
+        )
 
 
 class TestPyReplReadlineSetup(TestCase):
