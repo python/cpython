@@ -257,15 +257,22 @@ Xxo_finalize(PyObject *self)
 }
 
 // dealloc: drop all remaining references and free memory
+// This function must preserve currently raised exception, if any.
 static void
 Xxo_dealloc(PyObject *self)
 {
+    PyObject *exc = PyErr_GetRaisedException();
     PyObject_GC_UnTrack(self);
     Xxo_finalize(self);
     PyTypeObject *tp = Py_TYPE(self);
     freefunc free = PyType_GetSlot(tp, Py_tp_free);
     free(self);
     Py_DECREF(tp);
+
+    if (PyErr_Occurred()) {
+        PyErr_WriteUnraisable(NULL);
+    }
+    PyErr_SetRaisedException(exc);
 }
 
 
