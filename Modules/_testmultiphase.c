@@ -152,10 +152,13 @@ _testmultiphase_StateAccessType_get_defining_module_impl(StateAccessTypeObject *
 {
     PyObject *retval;
     retval = PyType_GetModule(cls);
+    assert(retval == PyType_GetModule_DuringGC(cls));
     if (retval == NULL) {
         return NULL;
     }
     assert(PyType_GetModuleByDef(Py_TYPE(self), &def_meth_state_access) == retval);
+    assert(PyType_GetModuleByToken_DuringGC(Py_TYPE(self), &def_meth_state_access)
+           == retval);
     return Py_NewRef(retval);
 }
 
@@ -172,9 +175,14 @@ _testmultiphase_StateAccessType_getmodulebydef_bad_def_impl(StateAccessTypeObjec
                                                             PyTypeObject *cls)
 /*[clinic end generated code: output=64509074dfcdbd31 input=edaff09aa4788204]*/
 {
-    PyType_GetModuleByDef(Py_TYPE(self), &def_nonmodule);  // should raise
+    // DuringGC: does not raise
+    assert(PyType_GetModuleByToken_DuringGC(Py_TYPE(self), &def_nonmodule) == NULL);
+    assert(!PyErr_Occurred());
+    // should raise:
+    PyObject *m = PyType_GetModuleByDef(Py_TYPE(self), &def_nonmodule);
     assert(PyErr_Occurred());
-    return NULL;
+    assert(m == NULL);
+    return m;
 }
 
 /*[clinic input]
@@ -200,6 +208,7 @@ _testmultiphase_StateAccessType_increment_count_clinic_impl(StateAccessTypeObjec
 /*[clinic end generated code: output=3b34f86bc5473204 input=551d482e1fe0b8f5]*/
 {
     meth_state *m_state = PyType_GetModuleState(cls);
+    assert(m_state == PyType_GetModuleState_DuringGC(cls));
     if (twice) {
         n *= 2;
     }
@@ -249,6 +258,7 @@ _StateAccessType_increment_count_noclinic(PyObject *self,
         n *= 2;
     }
     meth_state *m_state = PyType_GetModuleState(defining_class);
+    assert(m_state == PyType_GetModuleState_DuringGC(defining_class));
     m_state->counter += n;
 
     Py_RETURN_NONE;
@@ -268,6 +278,7 @@ _testmultiphase_StateAccessType_get_count_impl(StateAccessTypeObject *self,
 /*[clinic end generated code: output=64600f95b499a319 input=d5d181f12384849f]*/
 {
     meth_state *m_state = PyType_GetModuleState(cls);
+    assert(m_state == PyType_GetModuleState_DuringGC(cls));
     return PyLong_FromLong(m_state->counter);
 }
 
@@ -889,6 +900,7 @@ meth_state_access_exec(PyObject *m)
     meth_state *m_state;
 
     m_state = PyModule_GetState(m);
+    assert(m_state == PyModule_GetState_DuringGC(m));
     if (m_state == NULL) {
         return -1;
     }
@@ -1158,6 +1170,7 @@ modexport_smoke_exec(PyObject *mod)
         return 0;
     }
     int *state = PyModule_GetState(mod);
+    assert(state == PyModule_GetState_DuringGC(mod));
     if (!state) {
         return -1;
     }
@@ -1175,6 +1188,7 @@ static PyObject *
 modexport_smoke_get_state_int(PyObject *mod, PyObject *arg)
 {
     int *state = PyModule_GetState(mod);
+    assert(state == PyModule_GetState_DuringGC(mod));
     if (!state) {
         return NULL;
     }
@@ -1204,6 +1218,7 @@ modexport_smoke_free(void *op)
 {
     PyObject *mod = (PyObject *)op;
     int *state = PyModule_GetState(mod);
+    assert(state == PyModule_GetState_DuringGC(mod));
     if (!state) {
         PyErr_FormatUnraisable("Exception ignored in module %R free", mod);
     }

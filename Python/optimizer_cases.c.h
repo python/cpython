@@ -3413,8 +3413,8 @@
             PyTypeObject *type = sym_get_type(owner);
             PyObject *name = get_co_name(ctx, oparg >> 1);
             attr = lookup_attr(ctx, dependencies, this_instr, type, name,
-                           _LOAD_CONST_UNDER_INLINE_BORROW,
-                           _LOAD_CONST_UNDER_INLINE);
+                           _INSERT_1_LOAD_CONST_INLINE_BORROW,
+                           _INSERT_1_LOAD_CONST_INLINE);
             self = owner;
             CHECK_STACK_BOUNDS(1);
             stack_pointer[-1] = attr;
@@ -3434,8 +3434,8 @@
             PyTypeObject *type = sym_get_type(owner);
             PyObject *name = get_co_name(ctx, oparg >> 1);
             attr = lookup_attr(ctx, dependencies, this_instr, type, name,
-                           _LOAD_CONST_UNDER_INLINE_BORROW,
-                           _LOAD_CONST_UNDER_INLINE);
+                           _INSERT_1_LOAD_CONST_INLINE_BORROW,
+                           _INSERT_1_LOAD_CONST_INLINE);
             self = owner;
             CHECK_STACK_BOUNDS(1);
             stack_pointer[-1] = attr;
@@ -3489,8 +3489,8 @@
             PyTypeObject *type = sym_get_type(owner);
             PyObject *name = get_co_name(ctx, oparg >> 1);
             attr = lookup_attr(ctx, dependencies, this_instr, type, name,
-                           _LOAD_CONST_UNDER_INLINE_BORROW,
-                           _LOAD_CONST_UNDER_INLINE);
+                           _INSERT_1_LOAD_CONST_INLINE_BORROW,
+                           _INSERT_1_LOAD_CONST_INLINE);
             self = owner;
             CHECK_STACK_BOUNDS(1);
             stack_pointer[-1] = attr;
@@ -5029,32 +5029,6 @@
             CHECK_STACK_BOUNDS(-3);
             stack_pointer[-4] = value;
             stack_pointer += -3;
-            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
-            break;
-        }
-
-        case _LOAD_CONST_UNDER_INLINE: {
-            JitOptRef value;
-            JitOptRef new;
-            value = sym_new_not_null(ctx);
-            new = sym_new_not_null(ctx);
-            CHECK_STACK_BOUNDS(1);
-            stack_pointer[-1] = value;
-            stack_pointer[0] = new;
-            stack_pointer += 1;
-            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
-            break;
-        }
-
-        case _LOAD_CONST_UNDER_INLINE_BORROW: {
-            JitOptRef value;
-            JitOptRef new;
-            value = sym_new_not_null(ctx);
-            new = sym_new_not_null(ctx);
-            CHECK_STACK_BOUNDS(1);
-            stack_pointer[-1] = value;
-            stack_pointer[0] = new;
-            stack_pointer += 1;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
             break;
         }

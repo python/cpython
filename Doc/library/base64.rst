@@ -142,7 +142,7 @@ POST request.
    standard Base64 alphabet, and return the encoded :class:`bytes`.  The result
    can still contain ``=`` if *padded* is true (default).
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.15
       Added the *padded* parameter.
 
 
@@ -154,7 +154,7 @@ POST request.
    ``/`` in the standard Base64 alphabet, and return the decoded
    :class:`bytes`.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.15
       Added the *padded* parameter.
       Padding of input is no longer required by default.
 
@@ -175,7 +175,7 @@ POST request.
    after at most every *wrapcol* characters.
    If *wrapcol* is zero (default), do not add any newlines.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.15
       Added the *padded* and *wrapcol* parameters.
 
 
@@ -209,7 +209,7 @@ POST request.
    incorrectly padded or if there are non-alphabet characters present in the
    input.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.15
       Added the *ignorechars* and *padded* parameters.
 
 
@@ -220,7 +220,7 @@ POST request.
 
    .. versionadded:: 3.10
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.15
       Added the *padded* and *wrapcol* parameters.
 
 
@@ -236,7 +236,7 @@ POST request.
 
    .. versionadded:: 3.10
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.15
       Added the *ignorechars* and *padded* parameters.
 
 
@@ -249,7 +249,7 @@ POST request.
    after at most every *wrapcol* characters.
    If *wrapcol* is zero (default), do not add any newlines.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.15
       Added the *wrapcol* parameter.
 
 
@@ -269,7 +269,7 @@ POST request.
    incorrectly padded or if there are non-alphabet characters present in the
    input.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.15
       Added the *ignorechars* parameter.
 
 
@@ -351,7 +351,7 @@ Refer to the documentation of the individual functions for more information.
 
    .. versionadded:: 3.4
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.15
       Added the *wrapcol* parameter.
 
 
@@ -366,7 +366,7 @@ Refer to the documentation of the individual functions for more information.
 
    .. versionadded:: 3.4
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.15
       Added the *ignorechars* parameter.
 
 
@@ -388,7 +388,7 @@ Refer to the documentation of the individual functions for more information.
    .. versionchanged:: 3.15
       The *pad* parameter was added.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.15
       Added the *wrapcol* parameter.
 
 
@@ -403,7 +403,7 @@ Refer to the documentation of the individual functions for more information.
 
    .. versionadded:: 3.13
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.15
       Added the *ignorechars* parameter.
 
 

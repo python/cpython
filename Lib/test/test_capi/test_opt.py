@@ -1846,7 +1846,7 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
         self.assertNotIn("_UNARY_INVERT", uops)
-        self.assertIn("_INSERT_1_LOAD_CONST_INLINE_BORROW", uops)
+        self.assertIn("_LOAD_CONST_INLINE_BORROW", uops)
 
     def test_compare_op_pop_two_load_const_inline_borrow(self):
         def testfunc(n):
@@ -3194,8 +3194,8 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertEqual(res, TIER2_THRESHOLD)
         uops = get_opnames(ex)
         self.assertNotIn("_LOAD_ATTR_METHOD_NO_DICT", uops)
-        self.assertNotIn("_LOAD_CONST_UNDER_INLINE", uops)
-        self.assertIn("_LOAD_CONST_UNDER_INLINE_BORROW", uops)
+        self.assertNotIn("_INSERT_1_LOAD_CONST_INLINE", uops)
+        self.assertIn("_INSERT_1_LOAD_CONST_INLINE_BORROW", uops)
 
     def test_store_fast_refcount_elimination(self):
         def foo(x):
@@ -4011,8 +4011,6 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
         self.assertNotIn("_REPLACE_WITH_TRUE", uops)
-        self.assertIn("_INSERT_1_LOAD_CONST_INLINE_BORROW", uops)
-        self.assertEqual(count_ops(ex, "_POP_TOP_NOP"), 1)
 
     def test_attr_promotion_failure(self):
         # We're not testing for any specific uops here, just
