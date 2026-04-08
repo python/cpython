@@ -442,6 +442,7 @@ PyAPI_FUNC(void) _PyTrash_thread_destroy_chain(PyThreadState *tstate);
 
 
 PyAPI_FUNC(void *) PyObject_GetItemData(PyObject *obj);
+PyAPI_FUNC(void *) PyObject_GetItemData_DuringGC(PyObject *obj);
 
 PyAPI_FUNC(int) PyObject_VisitManagedDict(PyObject *obj, visitproc visit, void *arg);
 PyAPI_FUNC(void) PyObject_ClearManagedDict(PyObject *obj);
