@@ -165,6 +165,23 @@ make -f Makefile.nanvix CONFIG_NANVIX=y NANVIX_HOME=/path/to/nanvix/sysroot-debu
 - Use `CONFIG_NANVIX_DOCKER=y` to force Docker usage even when native toolchain exists
 - Use `NANVIX_DOCKER_IMAGE` to specify a custom Docker image (default: `nanvix/toolchain:latest-minimal`)
 
+### Building on Windows
+
+On Windows, cross-compilation is performed entirely inside Docker:
+
+```powershell
+# Prerequisites: Python 3, Make, and Docker Desktop must be installed and running.
+# Avoid GnuWin32 Make 3.81; prefer ezwinports Make 4.4.1 (winget install ezwinports.make).
+docker pull nanvix/toolchain:latest-minimal
+
+.\z.ps1 setup
+.\z.ps1 build
+.\z.ps1 test
+.\z.ps1 release
+```
+
+Set `NANVIX_DOCKER_IMAGE` to override the default Docker image.
+
 ### Using Native Toolchain
 
 ```bash
