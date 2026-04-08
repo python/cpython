@@ -602,7 +602,7 @@ _PyEval_MatchClass(PyThreadState *tstate, PyObject *subject, PyObject *type,
         if (allowed < nargs) {
             const char *plural = (allowed == 1) ? "" : "s";
             _PyErr_Format(tstate, PyExc_TypeError,
-                          "%s() accepts %d positional sub-pattern%s (%d given)",
+                          "%s() accepts %zd positional sub-pattern%s (%zd given)",
                           ((PyTypeObject*)type)->tp_name,
                           allowed, plural, nargs);
             goto fail;
@@ -874,7 +874,7 @@ cleanup:
 PyObject *
 _PyCallMethodDescriptorFast_StackRefSteal(
     _PyStackRef callable,
-    PyMethodDef *meth,
+    PyCFunctionFast cfunc,
     PyObject *self,
     _PyStackRef *arguments,
     int total_args)
@@ -885,10 +885,8 @@ _PyCallMethodDescriptorFast_StackRefSteal(
         res = NULL;
         goto cleanup;
     }
-    assert(((PyMethodDescrObject *)PyStackRef_AsPyObjectBorrow(callable))->d_method == meth);
     assert(self == PyStackRef_AsPyObjectBorrow(arguments[0]));
 
-    PyCFunctionFast cfunc = _PyCFunctionFast_CAST(meth->ml_meth);
     res = cfunc(self, (args_o + 1), total_args - 1);
     STACKREFS_TO_PYOBJECTS_CLEANUP(args_o);
     assert((res != NULL) ^ (PyErr_Occurred() != NULL));
@@ -907,7 +905,7 @@ cleanup:
 PyObject *
 _PyCallMethodDescriptorFastWithKeywords_StackRefSteal(
     _PyStackRef callable,
-    PyMethodDef *meth,
+    PyCFunctionFastWithKeywords cfunc,
     PyObject *self,
     _PyStackRef *arguments,
     int total_args)
@@ -918,11 +916,8 @@ _PyCallMethodDescriptorFastWithKeywords_StackRefSteal(
         res = NULL;
         goto cleanup;
     }
-    assert(((PyMethodDescrObject *)PyStackRef_AsPyObjectBorrow(callable))->d_method == meth);
     assert(self == PyStackRef_AsPyObjectBorrow(arguments[0]));
 
-    PyCFunctionFastWithKeywords cfunc =
-        _PyCFunctionFastWithKeywords_CAST(meth->ml_meth);
     res = cfunc(self, (args_o + 1), total_args-1, NULL);
     STACKREFS_TO_PYOBJECTS_CLEANUP(args_o);
     assert((res != NULL) ^ (PyErr_Occurred() != NULL));
@@ -1200,6 +1195,19 @@ _PyEval_GetIter(_PyStackRef iterable, _PyStackRef *index_or_null, int yield_from
     }
     return PyStackRef_FromPyObjectSteal(iter_o);
 }
+
+Py_NO_INLINE int
+_Py_ReachedRecursionLimit(PyThreadState *tstate)  {
+    uintptr_t here_addr = _Py_get_machine_stack_pointer();
+    _PyThreadStateImpl *_tstate = (_PyThreadStateImpl *)tstate;
+    assert(_tstate->c_stack_hard_limit != 0);
+#if _Py_STACK_GROWS_DOWN
+    return here_addr <= _tstate->c_stack_soft_limit;
+#else
+    return here_addr >= _tstate->c_stack_soft_limit;
+#endif
+}
+
 
 #if (defined(__GNUC__) && __GNUC__ >= 10 && !defined(__clang__)) && defined(__x86_64__)
 /*
@@ -1542,7 +1550,7 @@ format_missing(PyThreadState *tstate, const char *kind,
     if (name_str == NULL)
         return;
     _PyErr_Format(tstate, PyExc_TypeError,
-                  "%U() missing %i required %s argument%s: %U",
+                  "%U() missing %zd required %s argument%s: %U",
                   qualname,
                   len,
                   kind,
@@ -3443,40 +3451,36 @@ _Py_Check_ArgsIterable(PyThreadState *tstate, PyObject *func, PyObject *args)
 }
 
 void
-_PyEval_FormatKwargsError(PyThreadState *tstate, PyObject *func, PyObject *kwargs)
+_PyEval_FormatKwargsError(PyThreadState *tstate, PyObject *func, PyObject *kwargs, PyObject *dupkey)
 {
-    /* _PyDict_MergeEx raises attribute
+    if (dupkey != NULL) {
+        PyObject *funcstr = _PyObject_FunctionStr(func);
+        _PyErr_Format(
+            tstate, PyExc_TypeError,
+            "%V got multiple values for keyword argument '%S'",
+            funcstr, "finction", dupkey);
+        Py_XDECREF(funcstr);
+        return;
+    }
+    /* _PyDict_MergeUniq raises attribute
      * error (percolated from an attempt
      * to get 'keys' attribute) instead of
      * a type error if its second argument
      * is not a mapping.
      */
     if (_PyErr_ExceptionMatches(tstate, PyExc_AttributeError)) {
-        _PyErr_Format(
-            tstate, PyExc_TypeError,
-            "Value after ** must be a mapping, not %.200s",
-            Py_TYPE(kwargs)->tp_name);
-    }
-    else if (_PyErr_ExceptionMatches(tstate, PyExc_KeyError)) {
         PyObject *exc = _PyErr_GetRaisedException(tstate);
-        PyObject *args = PyException_GetArgs(exc);
-        if (PyTuple_Check(args) && PyTuple_GET_SIZE(args) == 1) {
-            _PyErr_Clear(tstate);
-            PyObject *funcstr = _PyObject_FunctionStr(func);
-            if (funcstr != NULL) {
-                PyObject *key = PyTuple_GET_ITEM(args, 0);
-                _PyErr_Format(
-                    tstate, PyExc_TypeError,
-                    "%U got multiple values for keyword argument '%S'",
-                    funcstr, key);
-                Py_DECREF(funcstr);
-            }
-            Py_XDECREF(exc);
+        int has_keys = PyObject_HasAttrWithError(kwargs, &_Py_ID(keys));
+        if (has_keys == 0) {
+            _PyErr_Format(
+                tstate, PyExc_TypeError,
+                "Value after ** must be a mapping, not %T",
+                kwargs);
+            Py_DECREF(exc);
         }
         else {
-            _PyErr_SetRaisedException(tstate, exc);
+            _PyErr_ChainExceptions1Tstate(tstate, exc);
         }
-        Py_DECREF(args);
     }
 }
 

@@ -15,6 +15,7 @@
 #include "Python.h"
 #include "pycore_fileutils.h"     // _Py_set_inheritable()
 #include "pycore_time.h"          // _PyTime_FromSecondsObject()
+#include "pycore_tuple.h"         // _PyTuple_FromPairSteal
 
 #include <stdbool.h>
 #include <stddef.h>               // offsetof()
@@ -1075,9 +1076,7 @@ select_devpoll_poll_impl(devpollObject *self, PyObject *timeout_obj)
             Py_XDECREF(num2);
             goto error;
         }
-        value = PyTuple_Pack(2, num1, num2);
-        Py_DECREF(num1);
-        Py_DECREF(num2);
+        value = _PyTuple_FromPairSteal(num1, num2);
         if (value == NULL)
             goto error;
         PyList_SET_ITEM(result_list, i, value);

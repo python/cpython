@@ -1163,13 +1163,13 @@ Sequence types also support the following methods:
 
    Return the total number of occurrences of *value* in *sequence*.
 
-.. method:: list.index(value[, start[, stop])
-            range.index(value[, start[, stop])
-            tuple.index(value[, start[, stop])
+.. method:: list.index(value[, start[, stop]])
+            range.index(value[, start[, stop]])
+            tuple.index(value[, start[, stop]])
    :no-contents-entry:
    :no-index-entry:
    :no-typesetting:
-.. method:: sequence.index(value[, start[, stop])
+.. method:: sequence.index(value[, start[, stop]])
 
    Return the index of the first occurrence of *value* in *sequence*.
 
@@ -3735,12 +3735,13 @@ arbitrary binary data.
    The separator to search for may be any :term:`bytes-like object`.
 
 
-.. method:: bytes.replace(old, new, count=-1, /)
-            bytearray.replace(old, new, count=-1, /)
+.. method:: bytes.replace(old, new, /, count=-1)
+            bytearray.replace(old, new, /, count=-1)
 
    Return a copy of the sequence with all occurrences of subsequence *old*
-   replaced by *new*.  If the optional argument *count* is given, only the
-   first *count* occurrences are replaced.
+   replaced by *new*.  If *count* is given, only the first *count* occurrences
+   are replaced.  If *count* is not specified or ``-1``, then all occurrences
+   are replaced.
 
    The subsequence to search for and its replacement may be any
    :term:`bytes-like object`.
@@ -3749,6 +3750,9 @@ arbitrary binary data.
 
       The bytearray version of this method does *not* operate in place - it
       always produces a new object, even if no changes were made.
+
+   .. versionchanged:: 3.15
+      *count* is now supported as a keyword argument.
 
 
 .. method:: bytes.rfind(sub[, start[, end]])

@@ -697,6 +697,7 @@ struct _Py_global_strings {
         STRUCT_FOR_ID(overlapped)
         STRUCT_FOR_ID(owner)
         STRUCT_FOR_ID(pad)
+        STRUCT_FOR_ID(padded)
         STRUCT_FOR_ID(pages)
         STRUCT_FOR_ID(parameter)
         STRUCT_FOR_ID(parent)
