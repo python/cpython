@@ -177,9 +177,9 @@ convert_global_to_const(_PyUOpInstruction *inst, PyObject *obj, bool pop, bool i
     }
     if (insert) {
         if (_Py_IsImmortal(res)) {
-            inst->opcode = _INSERT_1_LOAD_CONST_INLINE_BORROW;
+            inst->opcode = _LOAD_CONST_UNDER_INLINE_BORROW;
         } else {
-            inst->opcode = _INSERT_1_LOAD_CONST_INLINE;
+            inst->opcode = _LOAD_CONST_UNDER_INLINE;
         }
     } else {
         if (_Py_IsImmortal(res)) {
@@ -341,7 +341,7 @@ optimize_to_bool(
     if (truthiness >= 0) {
         PyObject *load = truthiness ? Py_True : Py_False;
         int opcode = insert_mode ?
-            _INSERT_1_LOAD_CONST_INLINE_BORROW :
+            _LOAD_CONST_UNDER_INLINE_BORROW :
             _POP_TOP_LOAD_CONST_INLINE_BORROW;
         ADD_OP(opcode, 0, (uintptr_t)load);
         *result_ptr = sym_new_const(ctx, load);

@@ -1610,7 +1610,7 @@ dummy_func(void) {
     }
 
     op(_REPLACE_WITH_TRUE, (value -- res, v)) {
-        ADD_OP(_INSERT_1_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)Py_True);
+        ADD_OP(_LOAD_CONST_UNDER_INLINE_BORROW, 0, (uintptr_t)Py_True);
         res = sym_new_const(ctx, Py_True);
         v = value;
     }
