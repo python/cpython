@@ -574,6 +574,10 @@ static PyObject *
 conv_content_model(XML_Content * const model,
                    PyObject *(*conv_string)(const XML_Char *))
 {
+    if (Py_EnterRecursiveCall(" in conv_content_model")) {
+        return NULL;
+    }
+
     PyObject *result = NULL;
     PyObject *children = PyTuple_New(model->numchildren);
     int i;
@@ -585,7 +589,7 @@ conv_content_model(XML_Content * const model,
                                                  conv_string);
             if (child == NULL) {
                 Py_XDECREF(children);
-                return NULL;
+                goto done;
             }
             PyTuple_SET_ITEM(children, i, child);
         }
@@ -593,6 +597,8 @@ conv_content_model(XML_Content * const model,
                                model->type, model->quant,
                                conv_string,model->name, children);
     }
+done:
+    Py_LeaveRecursiveCall();
     return result;
 }
 
