@@ -8038,8 +8038,8 @@ py_posix_spawn(int use_posix_spawnp, PyObject *module, path_t *path, PyObject *a
     if (err_code) {
         errno = err_code;
 #ifdef HAVE_POSIX_SPAWN_FILE_ACTIONS_ADDCHDIR_NP
-        Py_ssize_t cwd_size = PyList_GET_SIZE(cwd_buffer);
-        if (errno == ENOENT && cwd_size > 0) {
+        Py_ssize_t cwd_size;
+        if (errno == ENOENT && cwd_buffer && (cwd_size = PyList_GET_SIZE(cwd_buffer))) {
             /* ENOENT can occur when either the path of the executable or any of
              * the cwds given via file_actions doesn't exist. Since it's not
              * possible to determine which of those paths caused the problem,
