@@ -11,8 +11,7 @@ on:
       - 'Modules/expat/**'
       - '.github/workflows/verify-expat.yml'
 
-permissions:
-  contents: read
+permissions: {}
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}

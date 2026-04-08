@@ -822,6 +822,17 @@ http.cookies
   (Contributed by Nick Burns and Senthil Kumaran in :gh:`92936`.)
 
 
+http.server
+-----------
+
+* The logging of :mod:`~http.server.BaseHTTPRequestHandler`,
+  as used by the :ref:`command-line interface <http-server-cli>`,
+  is colored by default.
+  This can be controlled with :ref:`environment variables
+  <using-on-controlling-color>`.
+  (Contributed by Hugo van Kemenade in :gh:`146292`.)
+
+
 inspect
 -------
 
@@ -1097,6 +1108,10 @@ tarfile
 timeit
 ------
 
+* The output of the :mod:`timeit` command-line interface is colored by default.
+  This can be controlled with
+  :ref:`environment variables <using-on-controlling-color>`.
+  (Contributed by Hugo van Kemenade in :gh:`146609`.)
 * The command-line interface now colorizes error tracebacks
   by default. This can be controlled with
   :ref:`environment variables <using-on-controlling-color>`.
@@ -1507,6 +1522,16 @@ platform
   (Contributed by Alexey Makridenko in :gh:`133604`.)
 
 
+pprint
+------
+
+* Add an *expand* keyword argument for :func:`pprint.pprint`,
+  :func:`pprint.pformat`, :func:`pprint.pp`. If true, the output will be
+  formatted similar to pretty-printed :func:`json.dumps` when
+  *indent* is supplied.
+  (Contributed by Stefan Todoran and Semyon Moroz in :gh:`112632`.)
+
+
 sre_*
 -----
 
@@ -1770,6 +1795,17 @@ New features
 
 * Add :c:func:`PyTuple_FromArray` to create a :class:`tuple` from an array.
   (Contributed by Victor Stinner in :gh:`111489`.)
+
+* Add functions that are guaranteed to be safe for use in
+  :c:member:`~PyTypeObject.tp_traverse` handlers:
+  :c:func:`PyObject_GetTypeData_DuringGC`,
+  :c:func:`PyObject_GetItemData_DuringGC`,
+  :c:func:`PyType_GetModuleState_DuringGC`,
+  :c:func:`PyModule_GetState_DuringGC`, :c:func:`PyModule_GetToken_DuringGC`,
+  :c:func:`PyType_GetBaseByToken_DuringGC`,
+  :c:func:`PyType_GetModule_DuringGC`,
+  :c:func:`PyType_GetModuleByToken_DuringGC`.
+  (Contributed by Petr Viktorin in :gh:`145925`.)
 
 * Add :c:func:`PyObject_Dump` to dump an object to ``stderr``.
   It should only be used for debugging.

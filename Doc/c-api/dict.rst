@@ -45,7 +45,7 @@ Dictionary objects
    The first argument can be a :class:`dict`, a :class:`frozendict`, or a
    mapping.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.15
       Also accept :class:`frozendict`.
 
 
@@ -76,7 +76,7 @@ Dictionary objects
 
    The first argument can be a :class:`dict` or a :class:`frozendict`.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.15
       Also accept :class:`frozendict`.
 
 
@@ -90,7 +90,7 @@ Dictionary objects
 
    .. versionadded:: 3.13
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.15
       Also accept :class:`frozendict`.
 
 
@@ -142,7 +142,7 @@ Dictionary objects
 
    .. versionadded:: 3.13
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.15
       Also accept :class:`frozendict`.
 
    See also the :c:func:`PyObject_GetItem` function.
@@ -166,7 +166,7 @@ Dictionary objects
       Calling this API without an :term:`attached thread state` had been allowed for historical
       reason. It is no longer allowed.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.15
       Also accept :class:`frozendict`.
 
 
@@ -177,7 +177,7 @@ Dictionary objects
    occurred.  Return ``NULL`` **without** an exception set if the key
    wasn't present.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.15
       Also accept :class:`frozendict`.
 
 
@@ -195,7 +195,7 @@ Dictionary objects
       Prefer using the :c:func:`PyDict_GetItemWithError` function with your own
       :c:func:`PyUnicode_FromString` *key* instead.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.15
       Also accept :class:`frozendict`.
 
 
@@ -207,7 +207,7 @@ Dictionary objects
 
    .. versionadded:: 3.13
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.15
       Also accept :class:`frozendict`.
 
 
@@ -275,7 +275,7 @@ Dictionary objects
 
    The first argument can be a :class:`dict` or a :class:`frozendict`.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.15
       Also accept :class:`frozendict`.
 
 
@@ -285,7 +285,7 @@ Dictionary objects
 
    The first argument can be a :class:`dict` or a :class:`frozendict`.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.15
       Also accept :class:`frozendict`.
 
 
@@ -296,7 +296,7 @@ Dictionary objects
 
    The first argument can be a :class:`dict` or a :class:`frozendict`.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.15
       Also accept :class:`frozendict`.
 
 
@@ -309,7 +309,7 @@ Dictionary objects
 
    The argument can be a :class:`dict` or a :class:`frozendict`.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.15
       Also accept :class:`frozendict`.
 
 
@@ -317,7 +317,7 @@ Dictionary objects
 
    Similar to :c:func:`PyDict_Size`, but without error checking.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.15
       Also accept :class:`frozendict`.
 
 
@@ -391,7 +391,7 @@ Dictionary objects
       :term:`strong reference <strong reference>` (for example, using
       :c:func:`Py_NewRef`).
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.15
       Also accept :class:`frozendict`.
 
 .. c:function:: int PyDict_Merge(PyObject *a, PyObject *b, int override)
