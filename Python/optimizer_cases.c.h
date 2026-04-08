@@ -4934,6 +4934,32 @@
             break;
         }
 
+        case _INSERT_1_LOAD_CONST_INLINE: {
+            JitOptRef res;
+            JitOptRef l;
+            res = sym_new_not_null(ctx);
+            l = sym_new_not_null(ctx);
+            CHECK_STACK_BOUNDS(1);
+            stack_pointer[-1] = res;
+            stack_pointer[0] = l;
+            stack_pointer += 1;
+            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+            break;
+        }
+
+        case _INSERT_1_LOAD_CONST_INLINE_BORROW: {
+            JitOptRef res;
+            JitOptRef l;
+            res = sym_new_not_null(ctx);
+            l = sym_new_not_null(ctx);
+            CHECK_STACK_BOUNDS(1);
+            stack_pointer[-1] = res;
+            stack_pointer[0] = l;
+            stack_pointer += 1;
+            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+            break;
+        }
+
         case _INSERT_2_LOAD_CONST_INLINE_BORROW: {
             JitOptRef res;
             JitOptRef l;
@@ -4986,32 +5012,6 @@
             CHECK_STACK_BOUNDS(-3);
             stack_pointer[-4] = value;
             stack_pointer += -3;
-            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
-            break;
-        }
-
-        case _INSERT_1_LOAD_CONST_INLINE: {
-            JitOptRef res;
-            JitOptRef l;
-            res = sym_new_not_null(ctx);
-            l = sym_new_not_null(ctx);
-            CHECK_STACK_BOUNDS(1);
-            stack_pointer[-1] = res;
-            stack_pointer[0] = l;
-            stack_pointer += 1;
-            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
-            break;
-        }
-
-        case _INSERT_1_LOAD_CONST_INLINE_BORROW: {
-            JitOptRef res;
-            JitOptRef l;
-            res = sym_new_not_null(ctx);
-            l = sym_new_not_null(ctx);
-            CHECK_STACK_BOUNDS(1);
-            stack_pointer[-1] = res;
-            stack_pointer[0] = l;
-            stack_pointer += 1;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
             break;
         }

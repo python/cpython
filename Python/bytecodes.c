@@ -5924,6 +5924,18 @@ dummy_func(
             value = PyStackRef_FromPyObjectBorrow(ptr);
         }
 
+        tier2 op(_INSERT_1_LOAD_CONST_INLINE, (ptr/4, left -- res, l)) {
+            res = PyStackRef_FromPyObjectNew(ptr);
+            l = left;
+            INPUTS_DEAD();
+        }
+
+        tier2 op(_INSERT_1_LOAD_CONST_INLINE_BORROW, (ptr/4, left -- res, l)) {
+            res = PyStackRef_FromPyObjectBorrow(ptr);
+            l = left;
+            INPUTS_DEAD();
+        }
+
         tier2 op(_INSERT_2_LOAD_CONST_INLINE_BORROW, (ptr/4, left, right -- res, l, r)) {
             res = PyStackRef_FromPyObjectBorrow(ptr);
             l = left;
@@ -5951,18 +5963,6 @@ dummy_func(
             DEAD(null);
             PyStackRef_CLOSE(callable);
             value = PyStackRef_FromPyObjectBorrow(ptr);
-        }
-
-        tier2 op(_INSERT_1_LOAD_CONST_INLINE, (ptr/4, left -- res, l)) {
-            res = PyStackRef_FromPyObjectNew(ptr);
-            l = left;
-            INPUTS_DEAD();
-        }
-
-        tier2 op(_INSERT_1_LOAD_CONST_INLINE_BORROW, (ptr/4, left -- res, l)) {
-            res = PyStackRef_FromPyObjectBorrow(ptr);
-            l = left;
-            INPUTS_DEAD();
         }
 
         tier2 op(_START_EXECUTOR, (executor/4 --)) {

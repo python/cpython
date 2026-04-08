@@ -388,12 +388,12 @@ const uint32_t _PyUop_Flags[MAX_UOP_ID+1] = {
     [_POP_TWO_LOAD_CONST_INLINE_BORROW] = HAS_ESCAPES_FLAG,
     [_POP_CALL_LOAD_CONST_INLINE_BORROW] = HAS_ESCAPES_FLAG,
     [_POP_CALL_ONE_LOAD_CONST_INLINE_BORROW] = HAS_ESCAPES_FLAG,
+    [_INSERT_1_LOAD_CONST_INLINE] = 0,
+    [_INSERT_1_LOAD_CONST_INLINE_BORROW] = 0,
     [_INSERT_2_LOAD_CONST_INLINE_BORROW] = 0,
     [_SHUFFLE_2_LOAD_CONST_INLINE_BORROW] = 0,
     [_SHUFFLE_3_LOAD_CONST_INLINE_BORROW] = 0,
     [_POP_CALL_TWO_LOAD_CONST_INLINE_BORROW] = HAS_ESCAPES_FLAG,
-    [_INSERT_1_LOAD_CONST_INLINE] = 0,
-    [_INSERT_1_LOAD_CONST_INLINE_BORROW] = 0,
     [_START_EXECUTOR] = HAS_DEOPT_FLAG,
     [_MAKE_WARM] = 0,
     [_FATAL_ERROR] = 0,
@@ -3613,6 +3613,24 @@ const _PyUopCachingInfo _PyUop_Caching[MAX_UOP_ID+1] = {
             { 1, 3, _POP_CALL_ONE_LOAD_CONST_INLINE_BORROW_r31 },
         },
     },
+    [_INSERT_1_LOAD_CONST_INLINE] = {
+        .best = { 0, 1, 2, 2 },
+        .entries = {
+            { 2, 0, _INSERT_1_LOAD_CONST_INLINE_r02 },
+            { 2, 1, _INSERT_1_LOAD_CONST_INLINE_r12 },
+            { 3, 2, _INSERT_1_LOAD_CONST_INLINE_r23 },
+            { -1, -1, -1 },
+        },
+    },
+    [_INSERT_1_LOAD_CONST_INLINE_BORROW] = {
+        .best = { 0, 1, 2, 2 },
+        .entries = {
+            { 2, 0, _INSERT_1_LOAD_CONST_INLINE_BORROW_r02 },
+            { 2, 1, _INSERT_1_LOAD_CONST_INLINE_BORROW_r12 },
+            { 3, 2, _INSERT_1_LOAD_CONST_INLINE_BORROW_r23 },
+            { -1, -1, -1 },
+        },
+    },
     [_INSERT_2_LOAD_CONST_INLINE_BORROW] = {
         .best = { 0, 1, 2, 2 },
         .entries = {
@@ -3647,24 +3665,6 @@ const _PyUopCachingInfo _PyUop_Caching[MAX_UOP_ID+1] = {
             { -1, -1, -1 },
             { -1, -1, -1 },
             { 1, 3, _POP_CALL_TWO_LOAD_CONST_INLINE_BORROW_r31 },
-        },
-    },
-    [_INSERT_1_LOAD_CONST_INLINE] = {
-        .best = { 0, 1, 2, 2 },
-        .entries = {
-            { 2, 0, _INSERT_1_LOAD_CONST_INLINE_r02 },
-            { 2, 1, _INSERT_1_LOAD_CONST_INLINE_r12 },
-            { 3, 2, _INSERT_1_LOAD_CONST_INLINE_r23 },
-            { -1, -1, -1 },
-        },
-    },
-    [_INSERT_1_LOAD_CONST_INLINE_BORROW] = {
-        .best = { 0, 1, 2, 2 },
-        .entries = {
-            { 2, 0, _INSERT_1_LOAD_CONST_INLINE_BORROW_r02 },
-            { 2, 1, _INSERT_1_LOAD_CONST_INLINE_BORROW_r12 },
-            { 3, 2, _INSERT_1_LOAD_CONST_INLINE_BORROW_r23 },
-            { -1, -1, -1 },
         },
     },
     [_START_EXECUTOR] = {
@@ -4621,6 +4621,12 @@ const uint16_t _PyUop_Uncached[MAX_UOP_REGS_ID+1] = {
     [_POP_TWO_LOAD_CONST_INLINE_BORROW_r21] = _POP_TWO_LOAD_CONST_INLINE_BORROW,
     [_POP_CALL_LOAD_CONST_INLINE_BORROW_r21] = _POP_CALL_LOAD_CONST_INLINE_BORROW,
     [_POP_CALL_ONE_LOAD_CONST_INLINE_BORROW_r31] = _POP_CALL_ONE_LOAD_CONST_INLINE_BORROW,
+    [_INSERT_1_LOAD_CONST_INLINE_r02] = _INSERT_1_LOAD_CONST_INLINE,
+    [_INSERT_1_LOAD_CONST_INLINE_r12] = _INSERT_1_LOAD_CONST_INLINE,
+    [_INSERT_1_LOAD_CONST_INLINE_r23] = _INSERT_1_LOAD_CONST_INLINE,
+    [_INSERT_1_LOAD_CONST_INLINE_BORROW_r02] = _INSERT_1_LOAD_CONST_INLINE_BORROW,
+    [_INSERT_1_LOAD_CONST_INLINE_BORROW_r12] = _INSERT_1_LOAD_CONST_INLINE_BORROW,
+    [_INSERT_1_LOAD_CONST_INLINE_BORROW_r23] = _INSERT_1_LOAD_CONST_INLINE_BORROW,
     [_INSERT_2_LOAD_CONST_INLINE_BORROW_r03] = _INSERT_2_LOAD_CONST_INLINE_BORROW,
     [_INSERT_2_LOAD_CONST_INLINE_BORROW_r13] = _INSERT_2_LOAD_CONST_INLINE_BORROW,
     [_INSERT_2_LOAD_CONST_INLINE_BORROW_r23] = _INSERT_2_LOAD_CONST_INLINE_BORROW,
@@ -4633,12 +4639,6 @@ const uint16_t _PyUop_Uncached[MAX_UOP_REGS_ID+1] = {
     [_SHUFFLE_3_LOAD_CONST_INLINE_BORROW_r23] = _SHUFFLE_3_LOAD_CONST_INLINE_BORROW,
     [_SHUFFLE_3_LOAD_CONST_INLINE_BORROW_r33] = _SHUFFLE_3_LOAD_CONST_INLINE_BORROW,
     [_POP_CALL_TWO_LOAD_CONST_INLINE_BORROW_r31] = _POP_CALL_TWO_LOAD_CONST_INLINE_BORROW,
-    [_INSERT_1_LOAD_CONST_INLINE_r02] = _INSERT_1_LOAD_CONST_INLINE,
-    [_INSERT_1_LOAD_CONST_INLINE_r12] = _INSERT_1_LOAD_CONST_INLINE,
-    [_INSERT_1_LOAD_CONST_INLINE_r23] = _INSERT_1_LOAD_CONST_INLINE,
-    [_INSERT_1_LOAD_CONST_INLINE_BORROW_r02] = _INSERT_1_LOAD_CONST_INLINE_BORROW,
-    [_INSERT_1_LOAD_CONST_INLINE_BORROW_r12] = _INSERT_1_LOAD_CONST_INLINE_BORROW,
-    [_INSERT_1_LOAD_CONST_INLINE_BORROW_r23] = _INSERT_1_LOAD_CONST_INLINE_BORROW,
     [_START_EXECUTOR_r00] = _START_EXECUTOR,
     [_MAKE_WARM_r00] = _MAKE_WARM,
     [_MAKE_WARM_r11] = _MAKE_WARM,
@@ -6705,6 +6705,10 @@ int _PyUop_num_popped(int opcode, int oparg)
             return 2;
         case _POP_CALL_ONE_LOAD_CONST_INLINE_BORROW:
             return 3;
+        case _INSERT_1_LOAD_CONST_INLINE:
+            return 1;
+        case _INSERT_1_LOAD_CONST_INLINE_BORROW:
+            return 1;
         case _INSERT_2_LOAD_CONST_INLINE_BORROW:
             return 2;
         case _SHUFFLE_2_LOAD_CONST_INLINE_BORROW:
@@ -6713,10 +6717,6 @@ int _PyUop_num_popped(int opcode, int oparg)
             return 3;
         case _POP_CALL_TWO_LOAD_CONST_INLINE_BORROW:
             return 4;
-        case _INSERT_1_LOAD_CONST_INLINE:
-            return 1;
-        case _INSERT_1_LOAD_CONST_INLINE_BORROW:
-            return 1;
         case _START_EXECUTOR:
             return 0;
         case _MAKE_WARM:
