@@ -725,7 +725,7 @@ calendar
 code
 ----
 
-* The :meth:`InteractiveConsole.interact` method and the :func:`code.interact`
+* The :meth:`code.InteractiveConsole.interact` method and the :func:`code.interact`
   function now support a *use_pyrepl* parameter to control whether to use the
   pyrepl-based REPL. By default, *use_pyrepl* is ``False``, using the basic
   readline-based REPL. When set to ``True``, pyrepl is used if available.
