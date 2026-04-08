@@ -72,12 +72,12 @@
           pass
    */
 
-// Need limited C API version 3.15 for PyModExport
-#define Py_LIMITED_API 0x030f0000
-
-// experimental: free-threaded build compatibility
-// (for internal tests; this should only appear here in CPython alpha builds)
-#define _Py_OPAQUE_PYOBJECT 0x030f0000
+// Target both flavors of the Stable ABI.
+// Both are set to version 3.15, which adds PyModExport
+// (When using a build tool, check if it has an option to set these
+//  so they do not need to be defined in the source.)
+#define Py_LIMITED_API 0x030f0000   // abi3 (GIL-enabled builds)
+#define Py_TARGET_ABI3T 0x030f0000  // abi3t (free-threaded builds)
 
 
 #include "Python.h"
@@ -156,6 +156,27 @@ Xxo_get_data(PyObject *self)
     return data;
 }
 
+// A variant of Xxo_get_data to be used in the tp_traverse handler.
+// This function cannot have side effects (including reference count
+// manipulation, creating objects, and raising exceptions), and must not
+// call API functions that might have side effects.
+// See: https://docs.python.org/3.15/c-api/gcsupport.html#traversal
+static XxoObject_Data *
+Xxo_get_data_DuringGC(PyObject *self)
+{
+    PyTypeObject *base;
+    PyType_GetBaseByToken_DuringGC(Py_TYPE(self), &Xxo_Type_spec, &base);
+    if (base == NULL) {
+        return NULL;
+    }
+    xx_state *state = PyType_GetModuleState_DuringGC(base);
+    if (state == NULL) {
+        return NULL;
+    }
+    XxoObject_Data *data = PyObject_GetTypeData_DuringGC(self, state->Xxo_Type);
+    return data;
+}
+
 // Xxo initialization
 // This is the implementation of Xxo.__new__
 static PyObject *
@@ -203,7 +224,7 @@ Xxo_traverse(PyObject *self, visitproc visit, void *arg)
     Py_VISIT(Py_TYPE(self));
 
     // Visit the attribute dict
-    XxoObject_Data *data = Xxo_get_data(self);
+    XxoObject_Data *data = Xxo_get_data_DuringGC(self);
     if (data == NULL) {
         return 0;
     }
@@ -535,7 +556,10 @@ xx_modexec(PyObject *m)
 static int
 xx_traverse(PyObject *module, visitproc visit, void *arg)
 {
-    xx_state *state = PyModule_GetState(module);
+    xx_state *state = PyModule_GetState_DuringGC(module);
+    if (state == NULL) {
+        return 0;
+    }
     Py_VISIT(state->Xxo_Type);
     Py_VISIT(state->Error_Type);
     return 0;
@@ -545,6 +569,9 @@ static int
 xx_clear(PyObject *module)
 {
     xx_state *state = PyModule_GetState(module);
+    if (state == NULL) {
+        return 0;
+    }
     Py_CLEAR(state->Xxo_Type);
     Py_CLEAR(state->Error_Type);
     return 0;
