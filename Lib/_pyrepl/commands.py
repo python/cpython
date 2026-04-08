@@ -485,16 +485,17 @@ class show_history(Command):
         from .pager import get_pager
         from site import gethistoryfile
 
+        # After the pager exits, the screen state is unknown (Unix may
+        # restore via alternate screen, Windows shows pager output).
+        # Clear and force a full redraw at the end for consistency.
+        self.reader.console.clear()
+
         history = os.linesep.join(self.reader.history[:])
         self.reader.console.restore()
         pager = get_pager()
         pager(history, gethistoryfile())
         self.reader.console.prepare()
 
-        # After the pager exits, the screen state is unknown (Unix may
-        # restore via alternate screen, Windows shows pager output).
-        # Clear and force a full redraw for consistency.
-        self.reader.console.clear()
         self.reader.invalidate_full()
 
 
