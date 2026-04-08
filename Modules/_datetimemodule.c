@@ -3301,9 +3301,6 @@ datetime_date_today_impl(PyTypeObject *type)
                            type);
     }
 
-    /* Note well: since today() is a class method, it may not call
-     * date.fromtimestamp, e.g., it may call datetime.fromtimestamp.
-     */
     PyTime_t ts;
     if (PyTime_Time(&ts) < 0) {
         return NULL;
@@ -3312,6 +3309,9 @@ datetime_date_today_impl(PyTypeObject *type)
     if (time == NULL) {
         return NULL;
     }
+    /* Note well: since today() is a class method, it may not call
+     * date.fromtimestamp, e.g., it may call datetime.fromtimestamp.
+     */
     PyObject *result = PyObject_CallMethodOneArg((PyObject*)type, &_Py_ID(fromtimestamp), time);
     Py_DECREF(time);
     return result;
