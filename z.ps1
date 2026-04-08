@@ -15,7 +15,7 @@ $zutilVersion = if ($env:NANVIX_ZUTIL_VERSION) {
     $env:NANVIX_ZUTIL_VERSION
 }
 else {
-    "0.7.2"
+    "0.7.3"
 }
 
 # z.ps1 lives at the repository root, so use its directory directly
@@ -27,8 +27,9 @@ $venvZutil = Join-Path $venvDir "Scripts\nanvix-zutil.exe"
 
 # Windows compatibility shim: nanvix-zutil references os.getuid/os.getgid
 # which are unavailable on Windows.  Stub them before importing the package.
-# FIXME: https://github.com/nanvix/zutils/issues/56
-$ShimCode = 'import os,sys;os.getuid=getattr(os,"getuid",lambda:0);os.getgid=getattr(os,"getgid",lambda:0);from nanvix_zutil.__main__ import main;sys.exit(main())'
+$ShimCode = @'
+import os,sys;os.getuid=getattr(os,"getuid",lambda:0);os.getgid=getattr(os,"getgid",lambda:0);from nanvix_zutil.__main__ import main;sys.exit(main())
+'@
 
 $zutilGlobalVersion = try {
     & nanvix-zutil --version 2>$null
@@ -47,7 +48,7 @@ function Bootstrap {
     # Discover a Python 3 interpreter.
     $venvArgs = @("-m", "venv")
     if (Test-Path $venvDir) {
-        $venvArgs += "--clear" 
+        $venvArgs += "--clear"
     }
     $venvArgs += $venvDir
 

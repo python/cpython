@@ -7,13 +7,14 @@
 
 set -euo pipefail
 
-PINNED_VERSION="0.7.2"
+PINNED_VERSION="0.7.3"
 ZUTIL_VERSION="${NANVIX_ZUTIL_VERSION:-$PINNED_VERSION}"
 REPO_ROOT="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd -P)"
 VENV="$REPO_ROOT/.nanvix/venv"
 
 # Resolve venv layout (bin/ vs Scripts/) based on what exists on disk.
-# Must be called after venv creation to pick up the correct paths.
+# Can be called before venv creation to initialize default paths; call it
+# again after venv creation to pick up the actual layout.
 function _resolve_venv_paths() {
     if [ -d "$VENV/Scripts" ]; then
         VENV_BIN="$VENV/Scripts/nanvix-zutil.exe"
