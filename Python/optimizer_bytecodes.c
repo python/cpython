@@ -134,6 +134,21 @@ dummy_func(void) {
         assert(!PyJitRef_IsUnique(value));
     }
 
+    op(_GUARD_TYPE_VERSION_LOCKED, (type_version/2, owner -- owner)) {
+        assert(type_version);
+        if (sym_matches_type_version(owner, type_version)) {
+            ADD_OP(_NOP, 0, 0);
+        } else {
+            PyTypeObject *type = _PyType_LookupByVersion(type_version);
+            if (type) {
+                if (sym_set_type_version(owner, type_version)) {
+                    PyType_Watch(TYPE_WATCHER_ID, (PyObject *)type);
+                    _Py_BloomFilter_Add(dependencies, type);
+                }
+            }
+        }
+    }
+
     op(_STORE_ATTR_INSTANCE_VALUE, (offset/1, value, owner -- o)) {
         (void)offset;
         (void)value;
@@ -1027,9 +1042,25 @@ dummy_func(void) {
     }
 
     op(_CHECK_AND_ALLOCATE_OBJECT, (type_version/2, callable, self_or_null, args[oparg] -- callable, self_or_null, args[oparg])) {
-        (void)type_version;
         (void)args;
-        callable = sym_new_not_null(ctx);
+        PyTypeObject *type = _PyType_LookupByVersion(type_version);
+        if (type) {
+            PyHeapTypeObject *cls = (PyHeapTypeObject *)type;
+            PyObject *init = FT_ATOMIC_LOAD_PTR_ACQUIRE(cls->_spec_cache.init);
+            if (init != NULL && PyFunction_Check(init)) {
+                // Record the __init__ function so _CREATE_INIT_FRAME can
+                // resolve the code object and continue optimizing.
+                callable = sym_new_const(ctx, init);
+                PyType_Watch(TYPE_WATCHER_ID, (PyObject *)type);
+                _Py_BloomFilter_Add(dependencies, type);
+            }
+            else {
+                callable = sym_new_not_null(ctx);
+            }
+        }
+        else {
+            callable = sym_new_not_null(ctx);
+        }
         self_or_null = sym_new_not_null(ctx);
     }
 

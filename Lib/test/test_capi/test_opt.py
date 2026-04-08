@@ -1518,6 +1518,29 @@ class TestUopsOptimization(unittest.TestCase):
         Foo.attr = 0
         self.assertFalse(ex.is_valid())
 
+    def test_guard_type_version_locked_removed(self):
+        """
+        Verify that redundant _GUARD_TYPE_VERSION_LOCKED guards are
+        eliminated for sequential STORE_ATTR_INSTANCE_VALUE in __init__.
+        """
+
+        class Foo:
+            def __init__(self):
+                self.a = 1
+                self.b = 2
+                self.c = 3
+
+        def thing(n):
+            for _ in range(n):
+                Foo()
+
+        res, ex = self._run_with_optimizer(thing, TIER2_THRESHOLD)
+        self.assertIsNotNone(ex)
+        opnames = list(iter_opnames(ex))
+        guard_locked_count = opnames.count("_GUARD_TYPE_VERSION_LOCKED")
+        # Only the first store needs the guard; the rest should be NOPed.
+        self.assertEqual(guard_locked_count, 1)
+
     def test_type_version_doesnt_segfault(self):
         """
         Tests that setting a type version doesn't cause a segfault when later looking at the stack.

@@ -2386,6 +2386,21 @@
         }
 
         case _GUARD_TYPE_VERSION_LOCKED: {
+            JitOptRef owner;
+            owner = stack_pointer[-1];
+            uint32_t type_version = (uint32_t)this_instr->operand0;
+            assert(type_version);
+            if (sym_matches_type_version(owner, type_version)) {
+                ADD_OP(_NOP, 0, 0);
+            } else {
+                PyTypeObject *type = _PyType_LookupByVersion(type_version);
+                if (type) {
+                    if (sym_set_type_version(owner, type_version)) {
+                        PyType_Watch(TYPE_WATCHER_ID, (PyObject *)type);
+                        _Py_BloomFilter_Add(dependencies, type);
+                    }
+                }
+            }
             break;
         }
 
@@ -3776,9 +3791,24 @@
             self_or_null = stack_pointer[-1 - oparg];
             callable = stack_pointer[-2 - oparg];
             uint32_t type_version = (uint32_t)this_instr->operand0;
-            (void)type_version;
             (void)args;
-            callable = sym_new_not_null(ctx);
+            PyTypeObject *type = _PyType_LookupByVersion(type_version);
+            if (type) {
+                PyHeapTypeObject *cls = (PyHeapTypeObject *)type;
+                PyObject *init = FT_ATOMIC_LOAD_PTR_ACQUIRE(cls->_spec_cache.init);
+                if (init != NULL && PyFunction_Check(init)) {
+                    callable = sym_new_const(ctx, init);
+                    stack_pointer[-2 - oparg] = callable;
+                    PyType_Watch(TYPE_WATCHER_ID, (PyObject *)type);
+                    _Py_BloomFilter_Add(dependencies, type);
+                }
+                else {
+                    callable = sym_new_not_null(ctx);
+                }
+            }
+            else {
+                callable = sym_new_not_null(ctx);
+            }
             self_or_null = sym_new_not_null(ctx);
             stack_pointer[-2 - oparg] = callable;
             stack_pointer[-1 - oparg] = self_or_null;
