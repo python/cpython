@@ -1958,10 +1958,18 @@ class TestParser(TestParserMixin, TestEmailBase):
     # get_quoted_string
 
     @params
-    def test_get_quoted_string(self, s, *args, quoted_value=None, **kw):
+    def test_get_quoted_string(
+            self,
+            s,
+            *args,
+            content=None,
+            quoted_value=None,
+            **kw,
+            ):
         qs = self._test_parse(parser.get_quoted_string, C(s), *args, **kw)
         if 'exception' in kw:
             return
+        self.assertEqual(qs.content, content)
         self.assertEqual(qs.quoted_value, quoted_value)
         self.assertIsInstance(qs, parser.QuotedString)
         self.assertEqual(qs.token_type, 'quoted-string')
@@ -1975,6 +1983,9 @@ class TestParser(TestParserMixin, TestEmailBase):
         r = kw.get('remainder', '')
         if s.startswith(tuple(RFC_WSP)) or r.startswith(tuple(RFC_WSP)):
             return
+        if not 'exception' in kw:
+            kw['quoted_value'] = kw.get('stringified', s[:-len(r)] if r else s)
+            kw['content'] = kw['value']
         kw['quoted_value'] = kw.get('stringified', s[:-len(r)] if r else s)
         yield 'from_test_bare_quoted_string', C(s, *args, **kw)
 
@@ -2002,6 +2013,7 @@ class TestParser(TestParserMixin, TestEmailBase):
             kw['stringified'] = f'{stringified} "foo" {stringified}'
         kw['value'] = ' foo '
         kw['quoted_value'] = ' "foo" '
+        kw['content'] = 'foo'
         for k in ('comments', 'commenttree', 'defects'):
             if (v := kw.get(k)):
                 kw[k] = v * 2
@@ -2019,12 +2031,14 @@ class TestParser(TestParserMixin, TestEmailBase):
             '\t "bob"  ',
             value=' bob ',
             quoted_value=' "bob" ',
+            content='bob',
             ),
 
         with_comments_and_wsp = C(
             ' (foo) "bob"(bar)',
             value=' bob ',
             quoted_value=' "bob" ',
+            content='bob',
             comments=['foo', 'bar'],
             commenttree=[['foo'], ['bar']],
             ),
@@ -2033,6 +2047,7 @@ class TestParser(TestParserMixin, TestEmailBase):
             ' (foo) (bar) "bob"(bird)',
             value=' bob ',
             quoted_value=' "bob" ',
+            content='bob',
             comments=['foo', 'bar', 'bird'],
             commenttree=[['foo'], ['bar'], ['bird']],
             ),
@@ -2042,6 +2057,7 @@ class TestParser(TestParserMixin, TestEmailBase):
                 ' ({char}) "bob"',
                 value=' bob',
                 quoted_value=' "bob"',
+                content='bob',
                 defects=[(nonprintable_defect, '{char}')],
                 comments=['{char}'],
                 ),
@@ -2054,6 +2070,7 @@ class TestParser(TestParserMixin, TestEmailBase):
             ' (a) "a\x0B"',
             value=' a\x0B',
             quoted_value=' "a\x0B"',
+            content='a\x0B',
             defects=[nonprintable_defect('\x0b')],
             comments=['a'],
             ),
@@ -2062,6 +2079,7 @@ class TestParser(TestParserMixin, TestEmailBase):
             ' (a) "foo  bar "',
             value=' foo  bar ',
             quoted_value=' "foo  bar "',
+            content='foo  bar ',
             comments=['a'],
             ),
 
@@ -2070,6 +2088,7 @@ class TestParser(TestParserMixin, TestEmailBase):
             stringified=' (a) "bob" (a)',
             value=' bob ',
             quoted_value=' "bob" ',
+            content='bob',
             defects=[end_inside_comment_defect],
             comments=['a', 'a'],
             commenttree=[['a'], ['a']],
@@ -2080,6 +2099,7 @@ class TestParser(TestParserMixin, TestEmailBase):
             stringified=' (a) "bob"',
             value=' bob',
             quoted_value=' "bob"',
+            content='bob',
             defects=[end_inside_quoted_string_defect],
             comments=['a'],
             ),
@@ -2099,6 +2119,7 @@ class TestParser(TestParserMixin, TestEmailBase):
                 '\t "bob" {char}',
                 value=' bob ',
                 quoted_value=' "bob" ',
+                content='bob',
                 remainder='{char}',
                 ),
             ),
@@ -2107,6 +2128,7 @@ class TestParser(TestParserMixin, TestEmailBase):
             '"bob"=?UTF-8?q?foo?=',
             value='bob',
             quoted_value='"bob"',
+            content='bob',
             remainder='=?UTF-8?q?foo?=',
             ),
 
@@ -2114,6 +2136,7 @@ class TestParser(TestParserMixin, TestEmailBase):
             ' (a)  ""  (foo)',
             value='  ',
             quoted_value=' "" ',
+            content='',
             comments=['a', 'foo'],
             ),
 
