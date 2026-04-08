@@ -3390,6 +3390,11 @@ list_remove_impl(PyListObject *self, PyObject *value)
         int cmp = PyObject_RichCompareBool(obj, value, Py_EQ);
         Py_DECREF(obj);
         if (cmp > 0) {
+            if (i >= Py_SIZE(self) || self->ob_item[i] != obj) {
+                PyErr_SetString(PyExc_RuntimeError,
+                                "list mutated during remove");
+                return NULL;
+            }
             if (list_ass_slice_lock_held(self, i, i+1, NULL) == 0)
                 Py_RETURN_NONE;
             return NULL;
