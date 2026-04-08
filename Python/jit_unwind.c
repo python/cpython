@@ -669,12 +669,12 @@ struct jit_descriptor {
     uint32_t action_flag;
     struct jit_code_entry *relevant_entry;
     struct jit_code_entry *first_entry;
+    PyMutex mutex;
 };
 
 Py_EXPORTED_SYMBOL volatile struct jit_descriptor __jit_debug_descriptor = {
     1, JIT_NOACTION, NULL, NULL
 };
-static PyMutex gdb_jit_mutex = {0};
 
 Py_EXPORTED_SYMBOL void __attribute__((noinline))
 __jit_debug_register_code(void)
@@ -862,7 +862,7 @@ gdb_jit_register_code(
     entry->symfile_size = total_size;
     entry->code_addr = code_addr;
 
-    PyMutex_Lock(&gdb_jit_mutex);
+    PyMutex_Lock((PyMutex *)&__jit_debug_descriptor.mutex);
     entry->prev = NULL;
     entry->next = __jit_debug_descriptor.first_entry;
     if (entry->next != NULL) {
@@ -874,7 +874,7 @@ gdb_jit_register_code(
     __jit_debug_register_code();
     __jit_debug_descriptor.action_flag = JIT_NOACTION;
     __jit_debug_descriptor.relevant_entry = NULL;
-    PyMutex_Unlock(&gdb_jit_mutex);
+    PyMutex_Unlock((PyMutex *)&__jit_debug_descriptor.mutex);
 }
 #endif  // __linux__ && __ELF__
 
@@ -926,13 +926,13 @@ _PyJitUnwind_GdbUnregisterCode(const void *code_addr)
         return;
     }
 
-    PyMutex_Lock(&gdb_jit_mutex);
+    PyMutex_Lock((PyMutex *)&__jit_debug_descriptor.mutex);
     struct jit_code_entry *entry = __jit_debug_descriptor.first_entry;
     while (entry != NULL && entry->code_addr != code_addr) {
         entry = entry->next;
     }
     if (entry == NULL) {
-        PyMutex_Unlock(&gdb_jit_mutex);
+        PyMutex_Unlock((PyMutex *)&__jit_debug_descriptor.mutex);
         return;
     }
 
@@ -951,7 +951,7 @@ _PyJitUnwind_GdbUnregisterCode(const void *code_addr)
     __jit_debug_register_code();
     __jit_debug_descriptor.action_flag = JIT_NOACTION;
     __jit_debug_descriptor.relevant_entry = NULL;
-    PyMutex_Unlock(&gdb_jit_mutex);
+    PyMutex_Unlock((PyMutex *)&__jit_debug_descriptor.mutex);
 
     PyMem_RawFree((void *)entry->symfile_addr);
     PyMem_RawFree(entry);
