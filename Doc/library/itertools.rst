@@ -1167,8 +1167,7 @@ and :term:`generators <generator>` which incur interpreter overhead.
        # running_median([37, 33, 38, 28]) -> 37 35 37 35
        read = iter(iterable).__next__
        lo = []  # max-heap
-       hi = []  # min-heap (same size as or one smaller than lo)
-
+       hi = []  # min-heap the same size as or one smaller than lo
        with suppress(StopIteration):
            while True:
                heappush_max(lo, heappushpop(hi, read()))
