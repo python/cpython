@@ -3301,14 +3301,13 @@ datetime_date_today_impl(PyTypeObject *type)
                            type);
     }
 
+    /* Note well: since today() is a class method, it may not call
+     * date.fromtimestamp, e.g., it may call datetime.fromtimestamp.
+     */
     PyTime_t ts;
     if (PyTime_Time(&ts) < 0) {
         return NULL;
     }
-
-    /* Note well: since today() is a class method, it may not call
-     * date.fromtimestamp, e.g., it may call datetime.fromtimestamp.
-     */
     PyObject *time = PyFloat_FromDouble(PyTime_AsSecondsDouble(ts));
     if (time == NULL) {
         return NULL;
