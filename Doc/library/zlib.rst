@@ -311,8 +311,8 @@ Decompression objects support the following methods and attributes:
    For example, the full content could be read like::
 
      process_output(d.decompress(data, max_length))
-     while d.unconsumed_tail:
-         process_output(d.decompress(d.unconsumed_tail, max_length))
+     while chunk := d.decompress(d.unconsumed_tail, max_length):
+         process_output(chunk)
 
    .. versionchanged:: 3.6
       *max_length* can be used as a keyword argument.
