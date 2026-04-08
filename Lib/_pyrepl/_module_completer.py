@@ -72,7 +72,7 @@ class ModuleCompleter:
         self._curr_sys_path: list[str] = sys.path[:]
         self._stdlib_path = os.path.dirname(importlib.__path__[0])
 
-    def get_completions(self, line: str) -> tuple[list[str], list[Any], CompletionAction | None] | None:
+    def get_completions(self, line: str) -> tuple[list[str], list[object], CompletionAction | None] | None:
         """Return the next possible import completions for 'line'.
 
         For attributes completion, if the module to complete from is not
@@ -89,7 +89,7 @@ class ModuleCompleter:
             # no completions are available
             return [], [], None
 
-    def complete(self, from_name: str | None, name: str | None) -> tuple[list[str], list[Any], CompletionAction | None]:
+    def complete(self, from_name: str | None, name: str | None) -> tuple[list[str], list[object], CompletionAction | None]:
         if from_name is None:
             # import x.y.z<tab>
             assert name is not None
@@ -181,7 +181,7 @@ class ModuleCompleter:
         return (isinstance(module_info.module_finder, FileFinder)
                 and module_info.module_finder.path == self._stdlib_path)
 
-    def find_attributes(self, path: str, prefix: str) -> tuple[list[str], list[Any], CompletionAction | None]:
+    def find_attributes(self, path: str, prefix: str) -> tuple[list[str], list[object], CompletionAction | None]:
         """Find all attributes of module 'path' that start with 'prefix'."""
         attributes, values, action = self._find_attributes(path, prefix)
         # Filter out invalid attribute names
@@ -194,7 +194,7 @@ class ModuleCompleter:
                 filtered_values.append(val)
         return filtered_names, filtered_values, action
 
-    def _find_attributes(self, path: str, prefix: str) -> tuple[list[str], list[Any], CompletionAction | None]:
+    def _find_attributes(self, path: str, prefix: str) -> tuple[list[str], list[object], CompletionAction | None]:
         path = self._resolve_relative_path(path)  # type: ignore[assignment]
         if path is None:
             return [], [], None
