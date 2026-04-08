@@ -731,6 +731,54 @@ _emit_load_fast_borrow(unsigned char *code, int reg_variant, int oparg)
     code[10] = 0x01;                   // imm8 = 1
 }
 
+#elif defined(_M_IX86) || defined(__i386__)
+
+// i686: movl 8(%esp),%ecx ; movl off(%ecx),%ecx ; orl $1,%ecx ;
+//       movl %ecx,cache(%esp)  (17 bytes, no data)
+// i686 does not use preserve_none (unsupported by MSVC).
+// Stack layout: 8(%esp)=frame, 20/24/28(%esp)=cache0/1/2
+#define LOAD_FAST_BORROW_CODE_SIZE 17
+
+// Stack offsets for cache slots (from %esp)
+static const uint8_t _i686_cache_offsets[3] = {
+    20,  // c0 (r01)
+    24,  // c1 (r12)
+    28,  // c2 (r23)
+};
+
+static void
+_emit_load_fast_borrow(unsigned char *code, int reg_variant, int oparg)
+{
+    uint32_t byte_offset = (uint32_t)(offsetof(_PyInterpreterFrame, localsplus)
+                                      + (unsigned)oparg * sizeof(_PyStackRef));
+    uint8_t cache_off = _i686_cache_offsets[reg_variant];
+
+    // movl 8(%esp), %ecx              — load frame
+    code[0] = 0x8B;                    // MOV r32, r/m32
+    code[1] = 0x4C;                    // ModRM: mod=01, reg=ecx(001), r/m=100(SIB)
+    code[2] = 0x24;                    // SIB: scale=00, index=100(none), base=100(esp)
+    code[3] = 0x08;                    // disp8 = 8
+
+    // movl byte_offset(%ecx), %ecx    — load localsplus[oparg]
+    code[4] = 0x8B;                    // MOV r32, r/m32
+    code[5] = 0x89;                    // ModRM: mod=10(disp32), reg=ecx(001), r/m=001(ecx)
+    memcpy(code + 6, &byte_offset, 4); // disp32
+
+    // orl $1, %ecx                    — borrow tag
+    code[10] = 0x83;                   // OR r/m32, imm8
+    code[11] = 0xC9;                   // ModRM: mod=11, reg=001(/1), r/m=001(ecx)
+    code[12] = 0x01;                   // imm8 = 1
+
+    // movl %ecx, cache_off(%esp)      — write to cache slot
+    code[13] = 0x89;                   // MOV r/m32, r32
+    code[14] = 0x4C;                   // ModRM: mod=01, reg=ecx(001), r/m=100(SIB)
+    code[15] = 0x24;                   // SIB: scale=00, index=100(none), base=100(esp)
+    code[16] = cache_off;              // disp8
+
+}
+
+#else
+#  error "unsupported architecture for manual _LOAD_FAST_BORROW emission"
 #endif
 
 // Compiles executor in-place. Don't forget to call _PyJIT_Free later!
