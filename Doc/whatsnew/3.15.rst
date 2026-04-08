@@ -822,6 +822,17 @@ http.cookies
   (Contributed by Nick Burns and Senthil Kumaran in :gh:`92936`.)
 
 
+http.server
+-----------
+
+* The logging of :mod:`~http.server.BaseHTTPRequestHandler`,
+  as used by the :ref:`command-line interface <http-server-cli>`,
+  is colored by default.
+  This can be controlled with :ref:`environment variables
+  <using-on-controlling-color>`.
+  (Contributed by Hugo van Kemenade in :gh:`146292`.)
+
+
 inspect
 -------
 
