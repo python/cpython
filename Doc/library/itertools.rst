@@ -1147,10 +1147,20 @@ and :term:`generators <generator>` which incur interpreter overhead.
 
    # ==== Running statistics ====
 
+   def running_mean(iterable):
+       "Average of values seen so far."
+       # running_mean([37, 33, 38, 28]) -> 37 35 36 34
+       return map(truediv, accumulate(iterable), count(1))
+
    def running_min(iterable):
        "Smallest of values seen so far."
        # running_min([37, 33, 38, 28]) -> 37 33 33 28
        return accumulate(iterable, func=min)
+
+   def running_max(iterable):
+       "Largest of values seen so far."
+       # running_max([37, 33, 38, 28]) -> 37 37 38 38
+       return accumulate(iterable, func=max)
 
    def running_median(iterable):
        "Median of values seen so far."
@@ -1165,16 +1175,6 @@ and :term:`generators <generator>` which incur interpreter overhead.
                yield lo[0]
                heappush(hi, heappushpop_max(lo, read()))
                yield (lo[0] + hi[0]) / 2
-
-   def running_max(iterable):
-       "Largest of values seen so far."
-       # running_max([37, 33, 38, 28]) -> 37 37 38 38
-       return accumulate(iterable, func=max)
-
-   def running_mean(iterable):
-       "Average of values seen so far."
-       # running_mean([37, 33, 38, 28]) -> 37 35 36 34
-       return map(truediv, accumulate(iterable), count(1))
 
    def running_statistics(iterable):
        "Aggregate statistics for values seen so far."
