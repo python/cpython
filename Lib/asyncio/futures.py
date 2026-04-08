@@ -160,8 +160,9 @@ class Future:
         change the future's state to cancelled, schedule the callbacks and
         return True.
 
-        The optional argument *msg* is passed as the argument to the asyncio.CancelledError 
-        exception raised when a cancelled Future is awaited. It can be any object.
+        The optional argument *msg* is passed as the argument to the
+        asyncio.CancelledError exception raised when a cancelled Future 
+        is awaited. It can be any object.
         """
         self.__log_traceback = False
         if self._state != _PENDING:
