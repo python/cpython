@@ -5,7 +5,7 @@ name: Nanvix CI
 
 on:
   schedule:
-    - cron: "50 16 * * *"
+    - cron: "0 11 * * *"
   push:
     branches: ["nanvix/**"]
   pull_request:
