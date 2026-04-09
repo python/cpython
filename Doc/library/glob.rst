@@ -83,6 +83,11 @@ The :mod:`!glob` module defines the following functions:
       This function may return duplicate path names if *pathname*
       contains multiple "``**``" patterns and *recursive* is true.
 
+   .. note::
+      Any :exc:`OSError` exceptions raised from scanning the filesystem are
+      suppressed. This includes :exc:`PermissionError` when accessing
+      directories without read permission.
+
    .. versionchanged:: 3.5
       Support for recursive globs using "``**``".
 
@@ -105,6 +110,11 @@ The :mod:`!glob` module defines the following functions:
    .. note::
       This function may return duplicate path names if *pathname*
       contains multiple "``**``" patterns and *recursive* is true.
+
+   .. note::
+      Any :exc:`OSError` exceptions raised from scanning the filesystem are
+      suppressed. This includes :exc:`PermissionError` when accessing
+      directories without read permission.
 
    .. versionchanged:: 3.5
       Support for recursive globs using "``**``".
