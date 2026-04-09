@@ -1142,14 +1142,26 @@ typedef struct {
 } _PyEntryFrame;
 
 /* gh-148284: *Do not* mark this function as _Py_HOT_FUNCTION.
- * On certain compilers (Clang-22 and above), this overrides PGO information
+ * On certain compilers (Clang), this overrides PGO information
  * leading possibly to miss-optimization and over-inlining.
+ * On GCC, _Py_HOT_FUNCTION is ignored when PGO is enabled.
  */
 PyObject* DONT_SLP_VECTORIZE
 _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int throwflag)
 {
     _Py_EnsureTstateNotNULL(tstate);
     CALL_STAT_INC(pyeval_calls);
+
+    /* +1 because vectorcall might use -1 to write self */
+    /* gh-138115: This must not be in individual cases for
+       non-tail-call interpreters, as it results in excessive
+       stack usage in some compilers.
+       This must also be placed before any branches to avoid
+       interaction with other optimization passes.
+    */
+#if !Py_TAIL_CALL_INTERP
+    PyObject *STACKREF_SCRATCH[MAX_STACKREF_SCRATCH+1];
+#endif
 
 #if USE_COMPUTED_GOTOS && !Py_TAIL_CALL_INTERP
 /* Import the static jump table */
@@ -1172,14 +1184,6 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
         return NULL;
     }
 
-    /* +1 because vectorcall might use -1 to write self */
-    /* gh-138115: This must not be in individual cases for
-       non-tail-call interpreters, as it results in excessive
-       stack usage in some compilers.
-    */
-#if !Py_TAIL_CALL_INTERP
-    PyObject *STACKREF_SCRATCH[MAX_STACKREF_SCRATCH+1];
-#endif
 
     /* Local "register" variables.
      * These are cached values from the frame and code object.  */
