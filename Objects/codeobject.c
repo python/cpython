@@ -1014,9 +1014,12 @@ PyCode_Addr2Line(PyCodeObject *co, int addrq)
     if (addrq < 0) {
         return co->co_firstlineno;
     }
-    if (FT_ATOMIC_LOAD_PTR_ACQUIRE(co->_co_monitoring) &&
-        FT_ATOMIC_LOAD_PTR_ACQUIRE(co->_co_monitoring->lines)) {
-        return _Py_Instrumentation_GetLine(co, addrq/sizeof(_Py_CODEUNIT));
+    _PyCoMonitoringData *data = _Py_atomic_load_ptr_acquire(co->_co_monitoring);
+    if (data) {
+        _PyCoLineInstrumentationData *lines = _Py_atomic_load_ptr_acquire(data->lines);
+        if (lines) {
+            return _Py_Instrumentation_GetLine(co, addrq/sizeof(_Py_CODEUNIT));
+        }
     }
     assert(addrq >= 0 && addrq < _PyCode_NBYTES(co));
     PyCodeAddressRange bounds;
