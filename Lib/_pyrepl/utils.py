@@ -307,8 +307,13 @@ def iter_display_chars(
     buffer: str,
     colors: list[ColorSpan] | None = None,
     start_index: int = 0,
+    *,
+    escape: bool = True,
 ) -> Iterator[StyledChar]:
     """Yield visible display characters with widths and semantic color tags.
+
+    With ``escape=True`` (default) ASCII control chars are rewritten to caret
+    notation (``\\n`` -> ``^J``); pass ``escape=False`` to keep them verbatim.
 
     Note: ``colors`` is consumed in place as spans are processed -- callers
     that split a buffer across multiple calls rely on this mutation to track
@@ -331,7 +336,7 @@ def iter_display_chars(
         if colors and color_idx < len(colors) and colors[color_idx].span.start == i:
             active_tag = colors[color_idx].tag
 
-        if control := _ascii_control_repr(c):
+        if escape and (control := _ascii_control_repr(c)):
             text = control
             width = len(control)
         elif ord(c) < 128:
@@ -363,6 +368,8 @@ def disp_str(
     colors: list[ColorSpan] | None = None,
     start_index: int = 0,
     force_color: bool = False,
+    *,
+    escape: bool = True,
 ) -> tuple[CharBuffer, CharWidths]:
     r"""Decompose the input buffer into a printable variant with applied colors.
 
@@ -373,6 +380,9 @@ def disp_str(
       visible character*);
     - the second list is the visible width of each character in the input
       buffer.
+
+    With ``escape=True`` (default) ASCII control chars are rewritten to caret
+    notation (``\\n`` -> ``^J``); pass ``escape=False`` to keep them verbatim.
 
     Note on colors:
     - The `colors` list, if provided, is partially consumed within. We're using
@@ -393,7 +403,9 @@ def disp_str(
     (['\x1b[1;34mw', 'h', 'i', 'l', 'e\x1b[0m', ' ', '1', ':'], [1, 1, 1, 1, 1, 1, 1, 1])
 
     """
-    styled_chars = list(iter_display_chars(buffer, colors, start_index))
+    styled_chars = list(
+        iter_display_chars(buffer, colors, start_index, escape=escape)
+    )
     chars: CharBuffer = []
     char_widths: CharWidths = []
     theme = THEME(force_color=force_color)
