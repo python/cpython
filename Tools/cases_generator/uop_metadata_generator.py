@@ -21,7 +21,7 @@ from generators_common import (
 )
 from stack import Stack
 from cwriter import CWriter
-from typing import TextIO
+from typing import Callable, List, TextIO
 
 DEFAULT_OUTPUT = ROOT / "Include/internal/pycore_uop_metadata.h"
 
@@ -131,7 +131,7 @@ def generate_runtime_metadata(
 
 
 def emit_exact_match_dispatch(
-    out: CWriter, emitter: callable[[int], None]
+    out: CWriter, emitter: Callable[[int], None]
 ) -> None:
     first = True
     for max_cached_register in range(
