@@ -1141,7 +1141,11 @@ typedef struct {
     _PyStackRef stack[1];
 } _PyEntryFrame;
 
-PyObject* _Py_HOT_FUNCTION DONT_SLP_VECTORIZE
+/* gh-148284: *Do not* mark this function as _Py_HOT_FUNCTION.
+ * On certain compilers (Clang-22 and above), this overrides PGO information
+ * leading possibly to miss-optimization and over-inlining.
+ */
+PyObject* DONT_SLP_VECTORIZE
 _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int throwflag)
 {
     _Py_EnsureTstateNotNULL(tstate);
@@ -1173,7 +1177,9 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
        non-tail-call interpreters, as it results in excessive
        stack usage in some compilers.
     */
+#if !Py_TAIL_CALL_INTERP
     PyObject *STACKREF_SCRATCH[MAX_STACKREF_SCRATCH+1];
+#endif
 
     /* Local "register" variables.
      * These are cached values from the frame and code object.  */
