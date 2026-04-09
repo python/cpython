@@ -166,8 +166,10 @@ build: $(CONFIGURED_MARKER)
 ifdef CONFIG_NANVIX_DOCKER
 	@echo "Building inside Docker..."
 	$(DOCKER_RUN) make -j$$(nproc) all
-	@# Rename python to python.elf for consistency (always use the latest build)
-	@if [ -f python ]; then mv -f python python$(EXE); fi
+	@# Copy python to python.elf for consistency (always use the latest build).
+	@# Use cp instead of mv so that the original 'python' remains on disk;
+	@# otherwise Make would see the missing target and re-link on every run.
+	@if [ -f python ]; then cp -f python python$(EXE); fi
 	@# Strip debug symbols from the final binary for size reduction
 	$(DOCKER_RUN) sh -c '\
 		if [ ! -x "$(DOCKER_TOOLCHAIN_PATH)/bin/i686-nanvix-strip" ]; then \
@@ -180,8 +182,10 @@ ifdef CONFIG_NANVIX_DOCKER
 		fi'
 else
 	make -j$$(nproc) all
-	@# Rename python to python.elf for consistency (always use the latest build)
-	@if [ -f python ]; then mv -f python python$(EXE); fi
+	@# Copy python to python.elf for consistency (always use the latest build).
+	@# Use cp instead of mv so that the original 'python' remains on disk;
+	@# otherwise Make would see the missing target and re-link on every run.
+	@if [ -f python ]; then cp -f python python$(EXE); fi
 	@# Strip debug symbols from the final binary for size reduction
 	@if [ -x "$(TOOLCHAIN_PREFIX)/bin/i686-nanvix-strip" ]; then \
 		if [ -f "python$(EXE)" ]; then \
