@@ -40,6 +40,22 @@ _R = typing.TypeVar(
 )
 
 
+def _select_executor_cases_for_target(generated_cases: str) -> str:
+    pattern = re.compile(
+        r"^#if MAX_CACHED_REGISTER == (\d+)\n"
+        r"(?P<body>.*?)"
+        r"(?=^#elif MAX_CACHED_REGISTER == \d+\n|^#else\n|^#endif\n)",
+        flags=re.MULTILINE | re.DOTALL,
+    )
+    for match in pattern.finditer(generated_cases):
+        if int(match.group(1)) == _MAX_CACHED_REGISTER:
+            return match.group("body")
+    raise ValueError(
+        "executor_cases.c.h has no section for "
+        f"MAX_CACHED_REGISTER == {_MAX_CACHED_REGISTER}"
+    )
+
+
 @dataclasses.dataclass
 class _Target(typing.Generic[_S, _R]):
     triple: str
@@ -198,9 +214,10 @@ class _Target(typing.Generic[_S, _R]):
 
     async def _build_stencils(self) -> dict[str, _stencils.StencilGroup]:
         generated_cases = PYTHON_EXECUTOR_CASES_C_H.read_text()
+        generated_cases = _select_executor_cases_for_target(generated_cases)
         cases_and_opnames = sorted(
             re.findall(
-                r"\n((?:#if [^\n]*\n)? {8}case (\w+): \{\n.*?\n {8}\}(?:\n#endif)?)",
+                r"\n( {8}case (\w+): \{\n.*?\n {8}\})",
                 generated_cases, flags=re.DOTALL,
             )
         )
@@ -212,9 +229,6 @@ class _Target(typing.Generic[_S, _R]):
                 tasks.append(group.create_task(coro, name="shim"))
                 template = TOOLS_JIT_TEMPLATE_C.read_text()
                 for case, opname in cases_and_opnames:
-                    guard = re.match(r"#if MAX_CACHED_REGISTER >= (\d+)\n", case)
-                    if guard and int(guard.group(1)) > _MAX_CACHED_REGISTER:
-                        continue
                     # Write out a copy of the template with *only* this case
                     # inserted. This is about twice as fast as #include'ing all
                     # of executor_cases.c.h each time we compile (since the C
