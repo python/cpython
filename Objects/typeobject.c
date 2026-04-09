@@ -12446,8 +12446,8 @@ super_repr(PyObject *self)
 on the super object itself.
 
 May return NULL with or without an exception set, like PyDict_GetItemWithError. */
-static PyObject *
-_super_lookup_descr(PyTypeObject *su_type, PyTypeObject *su_obj_type, PyObject *name)
+PyObject *
+_PySuper_LookupDescr(PyTypeObject *su_type, PyTypeObject *su_obj_type, PyObject *name)
 {
     PyObject *mro, *res;
     Py_ssize_t i, n;
@@ -12506,7 +12506,7 @@ do_super_lookup(superobject *su, PyTypeObject *su_type, PyObject *su_obj,
         goto skip;
     }
 
-    res = _super_lookup_descr(su_type, su_obj_type, name);
+    res = _PySuper_LookupDescr(su_type, su_obj_type, name);
     if (res != NULL) {
         if (method && _PyType_HasFeature(Py_TYPE(res), Py_TPFLAGS_METHOD_DESCRIPTOR)) {
             *method = 1;

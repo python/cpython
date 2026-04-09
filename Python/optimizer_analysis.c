@@ -31,6 +31,7 @@
 #include "pycore_ceval.h"
 #include "pycore_floatobject.h"
 #include "pycore_setobject.h"
+#include "pycore_typeobject.h"
 
 #include <stdarg.h>
 #include <stdbool.h>
@@ -402,6 +403,47 @@ lookup_attr(JitOptContext *ctx, _PyBloomFilter *dependencies, _PyUOpInstruction 
         }
     }
     return sym_new_not_null(ctx);
+}
+
+/* Look up name via super (normal case from supercheck where
+   su_obj_type = Py_TYPE(obj)). */
+static JitOptRef
+lookup_super_attr(JitOptContext *ctx, _PyBloomFilter *dependencies,
+                  _PyUOpInstruction *this_instr,
+                  PyTypeObject *su_type, PyTypeObject *obj_type,
+                  PyObject *name, uint16_t immortal, uint16_t mortal)
+{
+    if (su_type == NULL || obj_type == NULL) {
+        return sym_new_not_null(ctx);
+    }
+    /* Normal case: obj_type must be a subtype of su_type */
+    if (!PyType_IsSubtype(obj_type, su_type)) {
+        return sym_new_not_null(ctx);
+    }
+    PyObject *lookup = _PySuper_LookupDescr(su_type, obj_type, name);
+    if (lookup == NULL) {
+        if (PyErr_Occurred()) {
+            PyErr_Clear();
+        }
+        return sym_new_not_null(ctx);
+    }
+    if ((Py_TYPE(lookup)->tp_flags & Py_TPFLAGS_METHOD_DESCRIPTOR) == 0) {
+        Py_DECREF(lookup);
+        return sym_new_not_null(ctx);
+    }
+    int opcode = mortal;
+    if (_Py_IsImmortal(lookup) || (obj_type->tp_flags & Py_TPFLAGS_IMMUTABLETYPE)) {
+        opcode = immortal;
+    }
+    ADD_OP(_SWAP, 3, 0);
+    ADD_OP(_POP_TOP, 0, 0);
+    ADD_OP(_POP_TOP, 0, 0);
+    ADD_OP(opcode, 0, (uintptr_t)lookup);
+    PyType_Watch(TYPE_WATCHER_ID, (PyObject *)su_type);
+    _Py_BloomFilter_Add(dependencies, su_type);
+    PyType_Watch(TYPE_WATCHER_ID, (PyObject *)obj_type);
+    _Py_BloomFilter_Add(dependencies, obj_type);
+    return sym_new_const_steal(ctx, lookup);
 }
 
 static
