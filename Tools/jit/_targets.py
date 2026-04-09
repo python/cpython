@@ -31,10 +31,28 @@ TOOLS_JIT_TEMPLATE_C = TOOLS_JIT / "template.c"
 
 ASYNCIO_RUNNER = asyncio.Runner()
 
+_MAX_CACHED_REGISTER = 3
+
 _S = typing.TypeVar("_S", _schema.COFFSection, _schema.ELFSection, _schema.MachOSection)
 _R = typing.TypeVar(
     "_R", _schema.COFFRelocation, _schema.ELFRelocation, _schema.MachORelocation
 )
+
+
+def _select_executor_cases_for_target(generated_cases: str) -> str:
+    pattern = re.compile(
+        r"^#if MAX_CACHED_REGISTER == (\d+)\n"
+        r"(?P<body>.*?)"
+        r"(?=^#elif MAX_CACHED_REGISTER == \d+\n|^#else\n|^#endif\n)",
+        flags=re.MULTILINE | re.DOTALL,
+    )
+    for match in pattern.finditer(generated_cases):
+        if int(match.group(1)) == _MAX_CACHED_REGISTER:
+            return match.group("body")
+    raise ValueError(
+        "executor_cases.c.h has no section for "
+        f"MAX_CACHED_REGISTER == {_MAX_CACHED_REGISTER}"
+    )
 
 
 @dataclasses.dataclass
@@ -202,9 +220,12 @@ class _Target(typing.Generic[_S, _R]):
 
     async def _build_stencils(self) -> dict[str, _stencils.StencilGroup]:
         generated_cases = PYTHON_EXECUTOR_CASES_C_H.read_text()
+        generated_cases = _select_executor_cases_for_target(generated_cases)
         cases_and_opnames = sorted(
             re.findall(
-                r"\n {8}(case (\w+): \{\n.*?\n {8}\})", generated_cases, flags=re.DOTALL
+                r"\n( {8}case (\w+): \{\n.*?\n {8}\})",
+                generated_cases,
+                flags=re.DOTALL,
             )
         )
         tasks = []

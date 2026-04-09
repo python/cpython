@@ -16,7 +16,8 @@ from analyzer import (
     analysis_error,
     get_uop_cache_depths,
     is_large,
-    MAX_CACHED_REGISTER,
+    MIN_GENERATED_CACHED_REGISTER,
+    MAX_GENERATED_CACHED_REGISTER,
 )
 
 from generators_common import (
@@ -64,11 +65,18 @@ def declare_variables(uop: Uop, out: CWriter) -> None:
 
 class Tier2Emitter(Emitter):
 
-    def __init__(self, out: CWriter, labels: dict[str, Label], exit_cache_depth: int):
+    def __init__(
+        self,
+        out: CWriter,
+        labels: dict[str, Label],
+        exit_cache_depth: int,
+        max_cached_register: int,
+    ):
         super().__init__(out, labels)
         self._replacers["oparg"] = self.oparg
         self._replacers["IP_OFFSET_OF"] = self.ip_offset_of
         self.exit_cache_depth = exit_cache_depth
+        self.max_cached_register = max_cached_register
 
     def goto_error(self, offset: int, storage: Storage) -> str:
         # To do: Add jump targets for popping values.
@@ -202,7 +210,7 @@ class Tier2Emitter(Emitter):
             # replace this with a "clobber" to tell
             # the compiler that these values are unused
             # without having to emit any code.
-            for i in range(cached_items, MAX_CACHED_REGISTER):
+            for i in range(cached_items, self.max_cached_register):
                 self.out.emit(f"_tos_cache{i} = PyStackRef_ZERO_BITS;\n")
         self.emit(f"SET_CURRENT_CACHED_VALUES({cached_items});\n")
 
@@ -262,37 +270,54 @@ def generate_tier2(
     out = CWriter(outfile, 2, lines)
     out.emit("\n")
 
-    for name, uop in analysis.uops.items():
-        if uop.properties.tier == 1:
-            continue
-        if uop.is_super():
-            continue
-        if uop.properties.records_value:
-            continue
-        why_not_viable = uop.why_not_viable()
-        if why_not_viable is not None:
-            out.emit(
-                f"/* {uop.name} is not a viable micro-op for tier 2 because it {why_not_viable} */\n\n"
-            )
-            continue
-        for inputs, outputs, exit_depth in get_uop_cache_depths(uop):
-            emitter = Tier2Emitter(out, analysis.labels, exit_depth)
-            out.emit(f"case {uop.name}_r{inputs}{outputs}: {{\n")
-            out.emit(f"CHECK_CURRENT_CACHED_VALUES({inputs});\n")
-            out.emit("assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());\n")
-            declare_variables(uop, out)
-            stack = Stack()
-            stack.push_cache([f"_tos_cache{i}" for i in range(inputs)], out)
-            stack._print(out)
-            reachable, stack = write_uop(uop, emitter, stack, outputs)
-            out.start_line()
-            if reachable:
+    first = True
+    for target_depth in range(
+        MIN_GENERATED_CACHED_REGISTER, MAX_GENERATED_CACHED_REGISTER + 1
+    ):
+        directive = "#if" if first else "#elif"
+        out.start_line()
+        out.out.write(f"{directive} MAX_CACHED_REGISTER == {target_depth}\n")
+        for name, uop in analysis.uops.items():
+            if uop.properties.tier == 1:
+                continue
+            if uop.is_super():
+                continue
+            if uop.properties.records_value:
+                continue
+            why_not_viable = uop.why_not_viable()
+            if why_not_viable is not None:
+                out.emit(
+                    f"/* {uop.name} is not a viable micro-op for tier 2 because it {why_not_viable} */\n\n"
+                )
+                continue
+            for inputs, outputs, exit_depth in get_uop_cache_depths(
+                uop, max_cached_register=target_depth
+            ):
+                emitter = Tier2Emitter(
+                    out, analysis.labels, exit_depth, target_depth
+                )
+                opname = f"{uop.name}_r{inputs}{outputs}"
+                out.emit(f"case {opname}: {{\n")
+                out.emit(f"CHECK_CURRENT_CACHED_VALUES({inputs});\n")
                 out.emit("assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());\n")
-                if not uop.properties.always_exits:
-                    out.emit("break;\n")
-            out.start_line()
-            out.emit("}")
-            out.emit("\n\n")
+                declare_variables(uop, out)
+                stack = Stack()
+                stack.push_cache([f"_tos_cache{i}" for i in range(inputs)], out)
+                stack._print(out)
+                reachable, stack = write_uop(uop, emitter, stack, outputs)
+                out.start_line()
+                if reachable:
+                    out.emit("assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());\n")
+                    if not uop.properties.always_exits:
+                        out.emit("break;\n")
+                out.start_line()
+                out.emit("}\n\n")
+        first = False
+    out.start_line()
+    out.out.write("#else\n")
+    out.emit('#error "Unsupported MAX_CACHED_REGISTER value"\n')
+    out.start_line()
+    out.out.write("#endif\n")
     out.emit("\n")
     outfile.write("#undef TIER_TWO\n")
 
