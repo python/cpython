@@ -79,4 +79,19 @@
 #  endif
 #endif
 
+// The internal C API must not be used with the limited C API: make sure
+// that Py_BUILD_CORE* macros are not defined in this case.
+// But, keep the "original" values, under different names, for "exports.h"
+#ifdef Py_BUILD_CORE
+#  define _PyEXPORTS_CORE
+#endif
+#ifdef Py_BUILD_CORE_MODULE
+#  define _PyEXPORTS_CORE_MODULE
+#endif
+#ifdef Py_LIMITED_API
+#  undef Py_BUILD_CORE
+#  undef Py_BUILD_CORE_BUILTIN
+#  undef Py_BUILD_CORE_MODULE
+#endif
+
 #endif // _Py_PYABI_H

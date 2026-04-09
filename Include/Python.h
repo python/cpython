@@ -66,6 +66,7 @@ __pragma(warning(disable: 4201))
 
 // Include Python header files
 #include "pyport.h"
+#include "exports.h"
 #include "pymacro.h"
 #include "pymath.h"
 #include "pymem.h"
