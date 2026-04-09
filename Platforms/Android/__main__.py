@@ -766,7 +766,7 @@ def package(context):
     prefix_dir = subdir(context.host, "prefix")
     version = package_version(prefix_dir)
 
-    with TemporaryDirectory(prefix=SCRIPT_NAME) as temp_dir:
+    with TemporaryDirectory(prefix=SCRIPT_NAME.replace("/", "-")) as temp_dir:
         temp_dir = Path(temp_dir)
 
         # Include all tracked files from the Android directory.
