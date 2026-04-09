@@ -32,6 +32,17 @@ def _kill_python_and_exit_code(p):
     return data, returncode
 
 
+def presite_func():
+    print("presite func")
+
+class Namespace:
+    pass
+
+presite = Namespace()
+presite.attr = Namespace()
+presite.attr.func = presite_func
+
+
 class CmdLineTest(unittest.TestCase):
     def test_directories(self):
         assert_python_failure('.')
@@ -1265,6 +1276,17 @@ class CmdLineTest(unittest.TestCase):
         self.assertIn(b"PYTHON_TLBC=N: N is missing or invalid", err)
         rc, out, err = assert_python_failure(PYTHON_TLBC="2")
         self.assertIn(b"PYTHON_TLBC=N: N is missing or invalid", err)
+
+    @unittest.skipUnless(support.Py_DEBUG,
+                         '-X presite requires a Python debug build')
+    def test_presite(self):
+        entrypoint = "test.test_cmd_line:presite_func"
+        proc = assert_python_ok("-X", f"presite={entrypoint}", "-c", "pass")
+        self.assertEqual(proc.out.rstrip(), b"presite func")
+
+        entrypoint = "test.test_cmd_line:presite.attr.func"
+        proc = assert_python_ok("-X", f"presite={entrypoint}", "-c", "pass")
+        self.assertEqual(proc.out.rstrip(), b"presite func")
 
 
 @unittest.skipIf(interpreter_requires_environment(),
