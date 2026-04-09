@@ -14,8 +14,8 @@
 
 /* Defines to build Python and its standard library:
  *
- * - Py_BUILD_CORE: Build Python core. Give access to Python internals, but
- *   should not be used by third-party modules.
+ * - Py_BUILD_CORE: Build Python core. Gives access to Python internals; should
+ *   not be used by third-party modules.
  * - Py_BUILD_CORE_BUILTIN: Build a Python stdlib module as a built-in module.
  * - Py_BUILD_CORE_MODULE: Build a Python stdlib module as a dynamic library.
  *
@@ -32,17 +32,17 @@
 #endif
 
 /* Stable ABI for free-threaded builds (abi3t, introduced in PEP 803)
-   is enabled by the user setting one of:
-     - Py_TARGET_ABI3T, or
-     - Py_LIMITED_API and Py_GIL_DISABLED.
-
-   These affect set the following, which Python.h should use internally:
-     - Py_LIMITED_API (defines the subset of API we expose)
-     - _Py_OPAQUE_PYOBJECT (additionally hides what's ABI-incompatible between
-       free-threaded & GIL)
-
-    (Don't use Py_TARGET_ABI3T directly. It's currently only used to set these
-     2 macros, and defined for users' convenience.)
+ * is enabled by one of:
+ *   - Py_TARGET_ABI3T, or
+ *   - Py_LIMITED_API and Py_GIL_DISABLED.
+ *
+ * These affect set the following, which Python.h should use internally:
+ *   - Py_LIMITED_API (defines the subset of API we expose)
+ *   - _Py_OPAQUE_PYOBJECT (additionally hides what's ABI-incompatible between
+ *     free-threaded & GIL)
+ *
+ *  (Don't use Py_TARGET_ABI3T directly. It's currently only used to set these
+ *   2 macros, and defined for users' convenience.)
  */
 #if defined(Py_LIMITED_API) && defined(Py_GIL_DISABLED) \
         && !defined(Py_TARGET_ABI3T)
@@ -62,16 +62,16 @@
 
 #if defined(Py_TARGET_ABI3T)
 #  if !defined(Py_GIL_DISABLED)
-// Define Py_GIL_DISABLED for users' needs. Users check this macro to see
-// whether they need extra synchronization.
+     // Define Py_GIL_DISABLED for users' needs. Users check this macro to see
+     // whether they need extra synchronization.
 #    define Py_GIL_DISABLED
 #  endif
 #  if defined(_Py_IS_TESTCEXT)
-// When compiling for  abi3t, contents of Python.h should not depend
-// on Py_GIL_DISABLED.
-// We ask GCC to error if it sees the macro from this point on.
-// Since users are free to the macro, and there's no way to undo the poisoning
-// at the end of Python.h, we only do this in a test module.
+     // When compiling for  abi3t, contents of Python.h should not depend
+     // on Py_GIL_DISABLED.
+     // We ask GCC to error if it sees the macro from this point on.
+     // Since users are free to the macro, and there's no way to undo the
+     // poisoning at the end of Python.h, we only do this in a test module.
 #    ifdef __GNUC__
 #      undef Py_GIL_DISABLED
 #      pragma GCC poison Py_GIL_DISABLED
@@ -79,9 +79,10 @@
 #  endif
 #endif
 
-// The internal C API must not be used with the limited C API: make sure
-// that Py_BUILD_CORE* macros are not defined in this case.
-// But, keep the "original" values, under different names, for "exports.h"
+/* The internal C API must not be used with the limited C API: make sure
+ * that Py_BUILD_CORE* macros are not defined in this case.
+ * But, keep the "original" values, under different names, for "exports.h"
+ */
 #ifdef Py_BUILD_CORE
 #  define _PyEXPORTS_CORE
 #endif
