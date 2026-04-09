@@ -205,9 +205,7 @@ class Tier2Emitter(Emitter):
             # the compiler that these values are unused
             # without having to emit any code.
             for i in range(cached_items, MAX_GENERATED_CACHED_REGISTER):
-                self.out.emit(f"#if MAX_CACHED_REGISTER >= {i + 1}\n")
                 self.out.emit(f"_tos_cache{i} = PyStackRef_ZERO_BITS;\n")
-                self.out.emit("#endif\n")
         self.emit(f"SET_CURRENT_CACHED_VALUES({cached_items});\n")
 
 

@@ -63,21 +63,11 @@
                 SET_CURRENT_CACHED_VALUES(0);
                 JUMP_TO_ERROR();
             }
-            #if MAX_CACHED_REGISTER >= 1
             _tos_cache0 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(0);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -98,21 +88,11 @@
                     JUMP_TO_ERROR();
                 }
             }
-            #if MAX_CACHED_REGISTER >= 1
             _tos_cache0 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(0);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -2278,21 +2258,11 @@
             _PyFrame_SetStackPointer(frame, stack_pointer);
             PyStackRef_XCLOSE(value);
             stack_pointer = _PyFrame_GetStackPointer(frame);
-            #if MAX_CACHED_REGISTER >= 1
             _tos_cache0 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(0);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -2554,21 +2524,11 @@
             _PyFrame_SetStackPointer(frame, stack_pointer);
             PyStackRef_CLOSE(nos);
             stack_pointer = _PyFrame_GetStackPointer(frame);
-            #if MAX_CACHED_REGISTER >= 1
             _tos_cache0 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(0);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -2622,21 +2582,11 @@
             _PyFrame_SetStackPointer(frame, stack_pointer);
             PyStackRef_CLOSE(value);
             stack_pointer = _PyFrame_GetStackPointer(frame);
-            #if MAX_CACHED_REGISTER >= 1
             _tos_cache0 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(0);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -2655,21 +2605,11 @@
             _PyFrame_SetStackPointer(frame, stack_pointer);
             PyStackRef_CLOSE(iter);
             stack_pointer = _PyFrame_GetStackPointer(frame);
-            #if MAX_CACHED_REGISTER >= 1
             _tos_cache0 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(0);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -2697,18 +2637,10 @@
             PyStackRef_CLOSE(receiver);
             stack_pointer = _PyFrame_GetStackPointer(frame);
             _tos_cache0 = val;
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(1);
             stack_pointer += -1;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -2738,15 +2670,9 @@
             v = value;
             _tos_cache1 = v;
             _tos_cache0 = res;
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(2);
             stack_pointer += -1;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -2921,18 +2847,10 @@
             }
             res = err ? PyStackRef_True : PyStackRef_False;
             _tos_cache0 = res;
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(1);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -3923,15 +3841,9 @@
             v = value;
             _tos_cache1 = v;
             _tos_cache0 = res;
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(2);
             stack_pointer += -1;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -6271,18 +6183,10 @@
             }
             res = PyStackRef_FromPyObjectSteal(temp);
             _tos_cache0 = res;
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(1);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -6321,15 +6225,9 @@
             }
             _tos_cache1 = right;
             _tos_cache0 = left;
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(2);
             stack_pointer += -2;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -6372,12 +6270,8 @@
             _tos_cache2 = r;
             _tos_cache1 = l;
             _tos_cache0 = res;
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(3);
             stack_pointer += -2;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -6475,18 +6369,10 @@
             }
             res = PyStackRef_FromPyObjectSteal(res_o);
             _tos_cache0 = res;
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(1);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -6544,21 +6430,11 @@
                 SET_CURRENT_CACHED_VALUES(0);
                 JUMP_TO_ERROR();
             }
-            #if MAX_CACHED_REGISTER >= 1
             _tos_cache0 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(0);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -6621,12 +6497,8 @@
             _tos_cache2 = ss;
             _tos_cache1 = ls;
             _tos_cache0 = res;
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(3);
             stack_pointer += -2;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -6668,12 +6540,8 @@
             _tos_cache2 = ss;
             _tos_cache1 = ls;
             _tos_cache0 = res;
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(3);
             stack_pointer += -2;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -6722,12 +6590,8 @@
             _tos_cache2 = i;
             _tos_cache1 = s;
             _tos_cache0 = res;
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(3);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -6780,12 +6644,8 @@
             _tos_cache2 = i;
             _tos_cache1 = s;
             _tos_cache0 = res;
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(3);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -7671,12 +7531,8 @@
             _tos_cache2 = ss;
             _tos_cache1 = ds;
             _tos_cache0 = res;
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(3);
             stack_pointer += -2;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -7723,12 +7579,8 @@
             _tos_cache2 = ss;
             _tos_cache1 = ds;
             _tos_cache0 = res;
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(3);
             stack_pointer += -2;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -7783,12 +7635,8 @@
             _tos_cache2 = getitem;
             _tos_cache1 = _stack_item_1;
             _tos_cache0 = container;
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(3);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -7936,21 +7784,11 @@
                 SET_CURRENT_CACHED_VALUES(0);
                 JUMP_TO_ERROR();
             }
-            #if MAX_CACHED_REGISTER >= 1
             _tos_cache0 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(0);
             stack_pointer += -1;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -7996,21 +7834,11 @@
                 SET_CURRENT_CACHED_VALUES(0);
                 JUMP_TO_ERROR();
             }
-            #if MAX_CACHED_REGISTER >= 1
             _tos_cache0 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(0);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -8075,15 +7903,9 @@
             stack_pointer = _PyFrame_GetStackPointer(frame);
             _tos_cache1 = ss;
             _tos_cache0 = ls;
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(2);
             stack_pointer += -2;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -8128,18 +7950,10 @@
             }
             st = dict_st;
             _tos_cache0 = st;
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(1);
             stack_pointer += -3;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -8186,18 +8000,10 @@
             }
             st = dict_st;
             _tos_cache0 = st;
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(1);
             stack_pointer += -3;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -8236,21 +8042,11 @@
                 SET_CURRENT_CACHED_VALUES(0);
                 JUMP_TO_ERROR();
             }
-            #if MAX_CACHED_REGISTER >= 1
             _tos_cache0 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(0);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -8280,15 +8076,9 @@
             res = PyStackRef_FromPyObjectSteal(res_o);
             _tos_cache1 = v;
             _tos_cache0 = res;
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(2);
             stack_pointer += -1;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -8329,12 +8119,8 @@
             _tos_cache2 = vs2;
             _tos_cache1 = vs1;
             _tos_cache0 = res;
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(3);
             stack_pointer += -2;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -8421,18 +8207,10 @@
             res = temp;
             LLTRACE_RESUME_FRAME();
             _tos_cache0 = res;
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(1);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -8499,18 +8277,10 @@
             }
             iter = PyStackRef_FromPyObjectSteal(iter_o);
             _tos_cache0 = iter;
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(1);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -8536,15 +8306,9 @@
             awaitable = PyStackRef_FromPyObjectSteal(awaitable_o);
             _tos_cache1 = awaitable;
             _tos_cache0 = aiter;
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(2);
             stack_pointer += -1;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -8577,18 +8341,10 @@
             }
             iter = PyStackRef_FromPyObjectSteal(iter_o);
             _tos_cache0 = iter;
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(1);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -8637,12 +8393,8 @@
             _tos_cache2 = gen_frame;
             _tos_cache1 = _stack_item_1;
             _tos_cache0 = receiver;
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(3);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -8685,18 +8437,10 @@
             value = temp;
             LLTRACE_RESUME_FRAME();
             _tos_cache0 = value;
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(1);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -8717,21 +8461,11 @@
                        PyStackRef_IsNone(exc_value)
                        ? NULL : PyStackRef_AsPyObjectSteal(exc_value));
             stack_pointer = _PyFrame_GetStackPointer(frame);
-            #if MAX_CACHED_REGISTER >= 1
             _tos_cache0 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(0);
             stack_pointer += -1;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -8806,18 +8540,10 @@
             }
             bc = PyStackRef_FromPyObjectSteal(bc_o);
             _tos_cache0 = bc;
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(1);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -8874,21 +8600,11 @@
                 SET_CURRENT_CACHED_VALUES(0);
                 JUMP_TO_ERROR();
             }
-            #if MAX_CACHED_REGISTER >= 1
             _tos_cache0 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(0);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -8921,21 +8637,11 @@
                 SET_CURRENT_CACHED_VALUES(0);
                 JUMP_TO_ERROR();
             }
-            #if MAX_CACHED_REGISTER >= 1
             _tos_cache0 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(0);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -8959,21 +8665,11 @@
                 SET_CURRENT_CACHED_VALUES(0);
                 JUMP_TO_ERROR();
             }
-            #if MAX_CACHED_REGISTER >= 1
             _tos_cache0 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(0);
             stack_pointer += oparg;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -9011,15 +8707,9 @@
             stack_pointer = _PyFrame_GetStackPointer(frame);
             _tos_cache1 = val0;
             _tos_cache0 = val1;
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(2);
             stack_pointer += -2;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -9169,21 +8859,11 @@
             _PyFrame_SetStackPointer(frame, stack_pointer);
             PyStackRef_CLOSE(seq);
             stack_pointer = _PyFrame_GetStackPointer(frame);
-            #if MAX_CACHED_REGISTER >= 1
             _tos_cache0 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(0);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -9253,21 +8933,11 @@
             _PyFrame_SetStackPointer(frame, stack_pointer);
             PyStackRef_CLOSE(seq);
             stack_pointer = _PyFrame_GetStackPointer(frame);
-            #if MAX_CACHED_REGISTER >= 1
             _tos_cache0 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(0);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -9291,21 +8961,11 @@
                 SET_CURRENT_CACHED_VALUES(0);
                 JUMP_TO_ERROR();
             }
-            #if MAX_CACHED_REGISTER >= 1
             _tos_cache0 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(0);
             stack_pointer += 1 + (oparg & 0xFF) + (oparg >> 8);
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -9346,21 +9006,11 @@
                 SET_CURRENT_CACHED_VALUES(0);
                 JUMP_TO_ERROR();
             }
-            #if MAX_CACHED_REGISTER >= 1
             _tos_cache0 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(0);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -9389,21 +9039,11 @@
                 SET_CURRENT_CACHED_VALUES(0);
                 JUMP_TO_ERROR();
             }
-            #if MAX_CACHED_REGISTER >= 1
             _tos_cache0 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(0);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -9432,21 +9072,11 @@
                 SET_CURRENT_CACHED_VALUES(0);
                 JUMP_TO_ERROR();
             }
-            #if MAX_CACHED_REGISTER >= 1
             _tos_cache0 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(0);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -9472,21 +9102,11 @@
                 SET_CURRENT_CACHED_VALUES(0);
                 JUMP_TO_ERROR();
             }
-            #if MAX_CACHED_REGISTER >= 1
             _tos_cache0 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(0);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -9608,18 +9228,10 @@
             }
             v = PyStackRef_FromPyObjectSteal(v_o);
             _tos_cache0 = v;
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(1);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -9639,21 +9251,11 @@
                 SET_CURRENT_CACHED_VALUES(0);
                 JUMP_TO_ERROR();
             }
-            #if MAX_CACHED_REGISTER >= 1
             _tos_cache0 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(0);
             stack_pointer += 1;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -9828,18 +9430,10 @@
             #endif
             STAT_INC(LOAD_GLOBAL, hit);
             _tos_cache0 = res;
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(1);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -9883,18 +9477,10 @@
             #endif
             STAT_INC(LOAD_GLOBAL, hit);
             _tos_cache0 = res;
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(1);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -9920,21 +9506,11 @@
             _PyFrame_SetStackPointer(frame, stack_pointer);
             PyStackRef_XCLOSE(tmp);
             stack_pointer = _PyFrame_GetStackPointer(frame);
-            #if MAX_CACHED_REGISTER >= 1
             _tos_cache0 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(0);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -9955,21 +9531,11 @@
             _PyFrame_SetStackPointer(frame, stack_pointer);
             PyStackRef_XCLOSE(tmp);
             stack_pointer = _PyFrame_GetStackPointer(frame);
-            #if MAX_CACHED_REGISTER >= 1
             _tos_cache0 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(0);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -9991,21 +9557,11 @@
             _PyFrame_SetStackPointer(frame, stack_pointer);
             Py_DECREF(oldobj);
             stack_pointer = _PyFrame_GetStackPointer(frame);
-            #if MAX_CACHED_REGISTER >= 1
             _tos_cache0 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(0);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -10053,18 +9609,10 @@
             stack_pointer = _PyFrame_GetStackPointer(frame);
             value = PyStackRef_FromPyObjectSteal(value_o);
             _tos_cache0 = value;
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(1);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -10090,18 +9638,10 @@
                 JUMP_TO_ERROR();
             }
             _tos_cache0 = value;
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(1);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -10121,21 +9661,11 @@
             _PyFrame_SetStackPointer(frame, stack_pointer);
             PyCell_SetTakeRef(cell, PyStackRef_AsPyObjectSteal(v));
             stack_pointer = _PyFrame_GetStackPointer(frame);
-            #if MAX_CACHED_REGISTER >= 1
             _tos_cache0 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(0);
             stack_pointer += -1;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -10249,18 +9779,10 @@
             }
             str = PyStackRef_FromPyObjectSteal(str_o);
             _tos_cache0 = str;
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(1);
             stack_pointer += -oparg;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -10318,18 +9840,10 @@
             }
             interpolation = PyStackRef_FromPyObjectSteal(interpolation_o);
             _tos_cache0 = interpolation;
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(1);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -10370,18 +9884,10 @@
             }
             template = PyStackRef_FromPyObjectSteal(template_o);
             _tos_cache0 = template;
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(1);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -10424,18 +9930,10 @@
             }
             list = PyStackRef_FromPyObjectStealMortal(list_o);
             _tos_cache0 = list;
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(1);
             stack_pointer += -oparg;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -10481,18 +9979,10 @@
             assert(Py_IsNone(none_val));
             i = iterable_st;
             _tos_cache0 = i;
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(1);
             stack_pointer += -1;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -10523,18 +10013,10 @@
             }
             i = iterable;
             _tos_cache0 = i;
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(1);
             stack_pointer += -1;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -10592,18 +10074,10 @@
             }
             set = PyStackRef_FromPyObjectStealMortal(set_o);
             _tos_cache0 = set;
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(1);
             stack_pointer += -oparg;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -10629,18 +10103,10 @@
             }
             map = PyStackRef_FromPyObjectStealMortal(map_o);
             _tos_cache0 = map;
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(1);
             stack_pointer += -oparg*2;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -10690,21 +10156,11 @@
                 Py_DECREF(ann_dict);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
             }
-            #if MAX_CACHED_REGISTER >= 1
             _tos_cache0 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(0);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -10756,18 +10212,10 @@
             }
             upd = update;
             _tos_cache0 = upd;
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(1);
             stack_pointer += -1;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -10807,18 +10255,10 @@
             }
             u = update;
             _tos_cache0 = u;
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(1);
             stack_pointer += -1;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -10857,21 +10297,11 @@
                 SET_CURRENT_CACHED_VALUES(0);
                 JUMP_TO_ERROR();
             }
-            #if MAX_CACHED_REGISTER >= 1
             _tos_cache0 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(0);
             stack_pointer += -2;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -10943,18 +10373,10 @@
             }
             attr_st = PyStackRef_FromPyObjectSteal(attr);
             _tos_cache0 = attr_st;
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(1);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -11289,15 +10711,9 @@
             attr = PyStackRef_FromPyObjectSteal(attr_o);
             _tos_cache1 = self_or_null;
             _tos_cache0 = attr;
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(2);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -11348,21 +10764,11 @@
                 }
                 stack_pointer += -(oparg&1);
             }
-            #if MAX_CACHED_REGISTER >= 1
             _tos_cache0 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(0);
             stack_pointer[-1] = attr;
             stack_pointer += (oparg&1);
@@ -11842,15 +11248,9 @@
             o = owner;
             _tos_cache1 = o;
             _tos_cache0 = attr;
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(2);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -11938,15 +11338,9 @@
             o = owner;
             _tos_cache1 = o;
             _tos_cache0 = attr;
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(2);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -12209,18 +11603,10 @@
             PyStackRef_CLOSE(tmp);
             stack_pointer = _PyFrame_GetStackPointer(frame);
             _tos_cache0 = attr;
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(1);
             stack_pointer += -1;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -12270,18 +11656,10 @@
             pushed_frame->localsplus[0] = owner;
             new_frame = PyStackRef_Wrap(pushed_frame);
             _tos_cache0 = new_frame;
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(1);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -12429,18 +11807,10 @@
             Py_XDECREF(old_value);
             stack_pointer = _PyFrame_GetStackPointer(frame);
             _tos_cache0 = o;
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(1);
             stack_pointer += -1;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -12611,18 +11981,10 @@
             Py_XDECREF(old_value);
             stack_pointer = _PyFrame_GetStackPointer(frame);
             _tos_cache0 = o;
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(1);
             stack_pointer += -1;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -12662,18 +12024,10 @@
             Py_XDECREF(old_value);
             stack_pointer = _PyFrame_GetStackPointer(frame);
             _tos_cache0 = o;
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(1);
             stack_pointer += -1;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -12731,18 +12085,10 @@
                 res = PyStackRef_FromPyObjectSteal(res_o);
             }
             _tos_cache0 = res;
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(1);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -12868,12 +12214,8 @@
             _tos_cache2 = r;
             _tos_cache1 = l;
             _tos_cache0 = res;
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(3);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -12906,12 +12248,8 @@
             _tos_cache2 = r;
             _tos_cache1 = l;
             _tos_cache0 = res;
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(3);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -13025,12 +12363,8 @@
             _tos_cache2 = r;
             _tos_cache1 = l;
             _tos_cache0 = b;
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(3);
             stack_pointer += -2;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -13327,12 +12661,8 @@
             _tos_cache2 = r;
             _tos_cache1 = l;
             _tos_cache0 = b;
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(3);
             stack_pointer += -2;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -13374,12 +12704,8 @@
             _tos_cache2 = r;
             _tos_cache1 = l;
             _tos_cache0 = b;
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(3);
             stack_pointer += -2;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -13457,15 +12783,9 @@
             match = PyStackRef_FromPyObjectSteal(match_o);
             _tos_cache1 = match;
             _tos_cache0 = rest;
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(2);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -13506,15 +12826,9 @@
             b = res ? PyStackRef_True : PyStackRef_False;
             _tos_cache1 = b;
             _tos_cache0 = left;
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(2);
             stack_pointer += -1;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -13578,18 +12892,10 @@
             }
             res = PyStackRef_FromPyObjectSteal(res_o);
             _tos_cache0 = res;
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(1);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -13631,15 +12937,9 @@
             res = PyStackRef_FromPyObjectSteal(res_o);
             _tos_cache1 = res;
             _tos_cache0 = from;
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(2);
             stack_pointer += -1;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -13675,18 +12975,10 @@
                 stack_pointer += -1;
             }
             _tos_cache0 = b;
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(1);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -13719,15 +13011,9 @@
             len = PyStackRef_FromPyObjectSteal(len_o);
             _tos_cache1 = len;
             _tos_cache0 = obj;
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(2);
             stack_pointer += -1;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -13781,12 +13067,8 @@
             _tos_cache2 = n;
             _tos_cache1 = tp;
             _tos_cache0 = s;
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(3);
             stack_pointer[-3] = attrs;
             stack_pointer += -2;
@@ -13923,12 +13205,8 @@
             _tos_cache2 = values_or_none;
             _tos_cache1 = keys;
             _tos_cache0 = subject;
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(3);
             stack_pointer += -2;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -13963,15 +13241,9 @@
             iter = result;
             _tos_cache1 = index_or_null;
             _tos_cache0 = iter;
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(2);
             stack_pointer += -1;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -14018,12 +13290,8 @@
             _tos_cache2 = next;
             _tos_cache1 = null_or_index;
             _tos_cache0 = iter;
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(3);
             stack_pointer += -2;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -14322,12 +13590,8 @@
             _tos_cache2 = next;
             _tos_cache1 = null_or_index;
             _tos_cache0 = iter;
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(3);
             stack_pointer += -2;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -15090,21 +14354,11 @@
                 SET_CURRENT_CACHED_VALUES(0);
                 JUMP_TO_ERROR();
             }
-            #if MAX_CACHED_REGISTER >= 1
             _tos_cache0 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(0);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -15161,12 +14415,8 @@
             _tos_cache2 = res;
             _tos_cache1 = val;
             _tos_cache0 = _stack_item_1;
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(3);
             stack_pointer += -2;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -15606,18 +14856,10 @@
             stack_pointer = _PyFrame_GetStackPointer(frame);
             attr = PyStackRef_FromPyObjectNew(descr);
             _tos_cache0 = attr;
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(1);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -15641,18 +14883,10 @@
             stack_pointer = _PyFrame_GetStackPointer(frame);
             attr = PyStackRef_FromPyObjectNew(descr);
             _tos_cache0 = attr;
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(1);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -15844,21 +15078,11 @@
                 PyStackRef_CLOSE(temp);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
             }
-            #if MAX_CACHED_REGISTER >= 1
             _tos_cache0 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(0);
             stack_pointer[-2 - oparg] = callable;
             stack_pointer[-1 - oparg] = self_or_null;
@@ -15904,18 +15128,10 @@
             }
             new_frame = PyStackRef_Wrap(temp);
             _tos_cache0 = new_frame;
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(1);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -16087,21 +15303,11 @@
             _PyFrame_SetStackPointer(frame, stack_pointer);
             PyStackRef_CLOSE(temp);
             stack_pointer = _PyFrame_GetStackPointer(frame);
-            #if MAX_CACHED_REGISTER >= 1
             _tos_cache0 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(0);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -16164,18 +15370,10 @@
             }
             res = PyStackRef_FromPyObjectSteal(res_o);
             _tos_cache0 = res;
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(1);
             stack_pointer += -2 - oparg;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -16225,21 +15423,11 @@
             _PyFrame_SetStackPointer(frame, stack_pointer);
             PyStackRef_CLOSE(temp);
             stack_pointer = _PyFrame_GetStackPointer(frame);
-            #if MAX_CACHED_REGISTER >= 1
             _tos_cache0 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(0);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -17194,15 +16382,9 @@
             res = PyStackRef_FromPyObjectSteal(res_o);
             _tos_cache1 = a;
             _tos_cache0 = res;
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(2);
             stack_pointer += -3;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -17334,15 +16516,9 @@
             res = PyStackRef_FromPyObjectSteal(res_o);
             _tos_cache1 = a;
             _tos_cache0 = res;
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(2);
             stack_pointer += -3;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -17403,21 +16579,11 @@
             _PyFrame_SetStackPointer(frame, stack_pointer);
             PyStackRef_CLOSE(temp);
             stack_pointer = _PyFrame_GetStackPointer(frame);
-            #if MAX_CACHED_REGISTER >= 1
             _tos_cache0 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(0);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -17458,18 +16624,10 @@
             tstate->py_recursion_remaining--;
             init_frame = PyStackRef_Wrap(temp);
             _tos_cache0 = init_frame;
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(1);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -17493,21 +16651,11 @@
                 SET_CURRENT_CACHED_VALUES(0);
                 JUMP_TO_ERROR();
             }
-            #if MAX_CACHED_REGISTER >= 1
             _tos_cache0 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(0);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -17557,18 +16705,10 @@
             }
             res = PyStackRef_FromPyObjectSteal(res_o);
             _tos_cache0 = res;
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(1);
             stack_pointer += -2 - oparg;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -17649,12 +16789,8 @@
             _tos_cache2 = s;
             _tos_cache1 = c;
             _tos_cache0 = res;
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(3);
             stack_pointer += -2 - oparg;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -17717,18 +16853,10 @@
             }
             res = PyStackRef_FromPyObjectSteal(res_o);
             _tos_cache0 = res;
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(1);
             stack_pointer += -2 - oparg;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -17787,18 +16915,10 @@
             }
             res = PyStackRef_FromPyObjectSteal(res_o);
             _tos_cache0 = res;
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(1);
             stack_pointer += -2 - oparg;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -17943,12 +17063,8 @@
             _tos_cache2 = c;
             _tos_cache1 = a;
             _tos_cache0 = res;
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(3);
             stack_pointer += -3;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -18103,18 +17219,10 @@
             res = retval ? PyStackRef_True : PyStackRef_False;
             assert((!PyStackRef_IsNull(res)) ^ (_PyErr_Occurred(tstate) != NULL));
             _tos_cache0 = res;
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(1);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -18480,12 +17588,8 @@
             _tos_cache2 = a;
             _tos_cache1 = s;
             _tos_cache0 = c;
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(3);
             stack_pointer[-2 - oparg] = res;
             stack_pointer += -1 - oparg;
@@ -18598,12 +17702,8 @@
             _tos_cache2 = a;
             _tos_cache1 = s;
             _tos_cache0 = c;
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(3);
             stack_pointer[-1 - oparg] = res;
             stack_pointer += -oparg;
@@ -18696,18 +17796,10 @@
             }
             res = PyStackRef_FromPyObjectSteal(res_o);
             _tos_cache0 = res;
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(1);
             stack_pointer += -2 - oparg;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -18746,18 +17838,10 @@
             }
             res = PyStackRef_FromPyObjectSteal(res_o);
             _tos_cache0 = res;
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(1);
             stack_pointer += -1 - oparg;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -18846,12 +17930,8 @@
             _tos_cache2 = s;
             _tos_cache1 = c;
             _tos_cache0 = res;
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(3);
             stack_pointer += -2 - oparg;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -18891,12 +17971,8 @@
             _tos_cache2 = s;
             _tos_cache1 = c;
             _tos_cache0 = res;
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(3);
             stack_pointer += -1 - oparg;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -18987,18 +18063,10 @@
             }
             res = PyStackRef_FromPyObjectSteal(res_o);
             _tos_cache0 = res;
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(1);
             stack_pointer += -2 - oparg;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -19037,18 +18105,10 @@
             }
             res = PyStackRef_FromPyObjectSteal(res_o);
             _tos_cache0 = res;
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(1);
             stack_pointer += -1 - oparg;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -19085,18 +18145,10 @@
                 stack_pointer += -1;
             }
             _tos_cache0 = _stack_item_0;
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(1);
             stack_pointer[-2 - oparg] = callable;
             stack_pointer[-1 - oparg] = self_or_null;
@@ -19154,18 +18206,10 @@
             }
             new_frame = PyStackRef_Wrap(temp);
             _tos_cache0 = new_frame;
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(1);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -19266,18 +18310,10 @@
             PyStackRef_CLOSE(callable_s);
             stack_pointer = _PyFrame_GetStackPointer(frame);
             _tos_cache0 = _stack_item_0;
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(1);
             stack_pointer += -1;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -19352,18 +18388,10 @@
             }
             res = PyStackRef_FromPyObjectSteal(res_o);
             _tos_cache0 = res;
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(1);
             stack_pointer += -3 - oparg;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -19413,12 +18441,8 @@
             _tos_cache2 = _stack_item_2;
             _tos_cache1 = callargs;
             _tos_cache0 = _stack_item_0;
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(3);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -19585,18 +18609,10 @@
             }
             ex_frame = PyStackRef_Wrap(new_frame);
             _tos_cache0 = ex_frame;
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(1);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -19746,18 +18762,10 @@
             }
             result = PyStackRef_FromPyObjectSteal(result_o);
             _tos_cache0 = result;
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(1);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -19789,15 +18797,9 @@
             func = PyStackRef_FromPyObjectSteal((PyObject *)func_obj);
             _tos_cache1 = co;
             _tos_cache0 = func;
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(2);
             stack_pointer += -1;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -19942,18 +18944,10 @@
             res = PyStackRef_FromPyObjectStealMortal((PyObject *)gen);
             LLTRACE_RESUME_FRAME();
             _tos_cache0 = res;
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(1);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -19986,18 +18980,10 @@
             }
             slice = PyStackRef_FromPyObjectStealMortal(slice_o);
             _tos_cache0 = slice;
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(1);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -20031,18 +19017,10 @@
             }
             result = PyStackRef_FromPyObjectSteal(result_o);
             _tos_cache0 = result;
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(1);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -20078,18 +19056,10 @@
                 res = value;
             }
             _tos_cache0 = res;
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(1);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -20128,18 +19098,10 @@
             }
             res = PyStackRef_FromPyObjectSteal(res_o);
             _tos_cache0 = res;
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(1);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -20365,12 +19327,8 @@
             _tos_cache2 = r;
             _tos_cache1 = l;
             _tos_cache0 = res;
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(3);
             stack_pointer += -2;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -21936,21 +20894,11 @@
                 SET_CURRENT_CACHED_VALUES(0);
                 JUMP_TO_JUMP_TARGET();
             }
-            #if MAX_CACHED_REGISTER >= 1
             _tos_cache0 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(0);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -22554,18 +21502,10 @@
             stack_pointer = _PyFrame_GetStackPointer(frame);
             value = PyStackRef_FromPyObjectNew(ptr);
             _tos_cache0 = value;
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(1);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -22626,21 +21566,11 @@
             _PyFrame_SetStackPointer(frame, stack_pointer);
             PyStackRef_CLOSE(callable);
             stack_pointer = _PyFrame_GetStackPointer(frame);
-            #if MAX_CACHED_REGISTER >= 1
             _tos_cache0 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(0);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -22671,21 +21601,11 @@
             _PyFrame_SetStackPointer(frame, stack_pointer);
             PyStackRef_CLOSE(callable);
             stack_pointer = _PyFrame_GetStackPointer(frame);
-            #if MAX_CACHED_REGISTER >= 1
             _tos_cache0 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(0);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -22723,21 +21643,11 @@
             _PyFrame_SetStackPointer(frame, stack_pointer);
             PyStackRef_CLOSE(callable);
             stack_pointer = _PyFrame_GetStackPointer(frame);
-            #if MAX_CACHED_REGISTER >= 1
             _tos_cache0 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(0);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -22756,18 +21666,10 @@
             stack_pointer = _PyFrame_GetStackPointer(frame);
             value = PyStackRef_FromPyObjectBorrow(ptr);
             _tos_cache0 = value;
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(1);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -22797,18 +21699,10 @@
             stack_pointer = _PyFrame_GetStackPointer(frame);
             value = PyStackRef_FromPyObjectBorrow(ptr);
             _tos_cache0 = value;
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(1);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -22831,18 +21725,10 @@
             stack_pointer = _PyFrame_GetStackPointer(frame);
             value = PyStackRef_FromPyObjectBorrow(ptr);
             _tos_cache0 = value;
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(1);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -22877,18 +21763,10 @@
             stack_pointer = _PyFrame_GetStackPointer(frame);
             value = PyStackRef_FromPyObjectBorrow(ptr);
             _tos_cache0 = value;
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(1);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -23297,18 +22175,10 @@
             stack_pointer = _PyFrame_GetStackPointer(frame);
             value = PyStackRef_FromPyObjectBorrow(ptr);
             _tos_cache0 = value;
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(1);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -24687,21 +23557,11 @@
                 SET_CURRENT_CACHED_VALUES(0);
                 JUMP_TO_ERROR();
             }
-            #if MAX_CACHED_REGISTER >= 1
             _tos_cache0 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(0);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -24722,21 +23582,11 @@
                     JUMP_TO_ERROR();
                 }
             }
-            #if MAX_CACHED_REGISTER >= 1
             _tos_cache0 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(0);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -27703,21 +26553,11 @@
             _PyFrame_SetStackPointer(frame, stack_pointer);
             PyStackRef_XCLOSE(value);
             stack_pointer = _PyFrame_GetStackPointer(frame);
-            #if MAX_CACHED_REGISTER >= 1
             _tos_cache0 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(0);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -28055,21 +26895,11 @@
             _PyFrame_SetStackPointer(frame, stack_pointer);
             PyStackRef_CLOSE(nos);
             stack_pointer = _PyFrame_GetStackPointer(frame);
-            #if MAX_CACHED_REGISTER >= 1
             _tos_cache0 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(0);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -28140,21 +26970,11 @@
             _PyFrame_SetStackPointer(frame, stack_pointer);
             PyStackRef_CLOSE(value);
             stack_pointer = _PyFrame_GetStackPointer(frame);
-            #if MAX_CACHED_REGISTER >= 1
             _tos_cache0 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(0);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -28173,21 +26993,11 @@
             _PyFrame_SetStackPointer(frame, stack_pointer);
             PyStackRef_CLOSE(iter);
             stack_pointer = _PyFrame_GetStackPointer(frame);
-            #if MAX_CACHED_REGISTER >= 1
             _tos_cache0 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(0);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -28215,18 +27025,10 @@
             PyStackRef_CLOSE(receiver);
             stack_pointer = _PyFrame_GetStackPointer(frame);
             _tos_cache0 = val;
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(1);
             stack_pointer += -1;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -28256,15 +27058,9 @@
             v = value;
             _tos_cache1 = v;
             _tos_cache0 = res;
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(2);
             stack_pointer += -1;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -28488,18 +27284,10 @@
             }
             res = err ? PyStackRef_True : PyStackRef_False;
             _tos_cache0 = res;
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(1);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -29816,15 +28604,9 @@
             v = value;
             _tos_cache1 = v;
             _tos_cache0 = res;
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(2);
             stack_pointer += -1;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -32980,18 +31762,10 @@
             }
             res = PyStackRef_FromPyObjectSteal(temp);
             _tos_cache0 = res;
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(1);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -33030,15 +31804,9 @@
             }
             _tos_cache1 = right;
             _tos_cache0 = left;
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(2);
             stack_pointer += -2;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -33081,12 +31849,8 @@
             _tos_cache2 = r;
             _tos_cache1 = l;
             _tos_cache0 = res;
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(3);
             stack_pointer += -2;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -33184,18 +31948,10 @@
             }
             res = PyStackRef_FromPyObjectSteal(res_o);
             _tos_cache0 = res;
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(1);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -33255,21 +32011,11 @@
                 SET_CURRENT_CACHED_VALUES(0);
                 JUMP_TO_ERROR();
             }
-            #if MAX_CACHED_REGISTER >= 1
             _tos_cache0 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(0);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -33332,12 +32078,8 @@
             _tos_cache2 = ss;
             _tos_cache1 = ls;
             _tos_cache0 = res;
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(3);
             stack_pointer += -2;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -33379,12 +32121,8 @@
             _tos_cache2 = ss;
             _tos_cache1 = ls;
             _tos_cache0 = res;
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(3);
             stack_pointer += -2;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -33433,12 +32171,8 @@
             _tos_cache2 = i;
             _tos_cache1 = s;
             _tos_cache0 = res;
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(3);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -33491,12 +32225,8 @@
             _tos_cache2 = i;
             _tos_cache1 = s;
             _tos_cache0 = res;
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(3);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -34654,12 +33384,8 @@
             _tos_cache2 = ss;
             _tos_cache1 = ds;
             _tos_cache0 = res;
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(3);
             stack_pointer += -2;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -34706,12 +33432,8 @@
             _tos_cache2 = ss;
             _tos_cache1 = ds;
             _tos_cache0 = res;
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(3);
             stack_pointer += -2;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -34766,12 +33488,8 @@
             _tos_cache2 = getitem;
             _tos_cache1 = _stack_item_1;
             _tos_cache0 = container;
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(3);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -34946,21 +33664,11 @@
                 SET_CURRENT_CACHED_VALUES(0);
                 JUMP_TO_ERROR();
             }
-            #if MAX_CACHED_REGISTER >= 1
             _tos_cache0 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(0);
             stack_pointer += -1;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -35006,21 +33714,11 @@
                 SET_CURRENT_CACHED_VALUES(0);
                 JUMP_TO_ERROR();
             }
-            #if MAX_CACHED_REGISTER >= 1
             _tos_cache0 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(0);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -35085,15 +33783,9 @@
             stack_pointer = _PyFrame_GetStackPointer(frame);
             _tos_cache1 = ss;
             _tos_cache0 = ls;
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(2);
             stack_pointer += -2;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -35138,18 +33830,10 @@
             }
             st = dict_st;
             _tos_cache0 = st;
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(1);
             stack_pointer += -3;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -35196,18 +33880,10 @@
             }
             st = dict_st;
             _tos_cache0 = st;
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(1);
             stack_pointer += -3;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -35246,21 +33922,11 @@
                 SET_CURRENT_CACHED_VALUES(0);
                 JUMP_TO_ERROR();
             }
-            #if MAX_CACHED_REGISTER >= 1
             _tos_cache0 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(0);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -35290,15 +33956,9 @@
             res = PyStackRef_FromPyObjectSteal(res_o);
             _tos_cache1 = v;
             _tos_cache0 = res;
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(2);
             stack_pointer += -1;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -35339,12 +33999,8 @@
             _tos_cache2 = vs2;
             _tos_cache1 = vs1;
             _tos_cache0 = res;
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(3);
             stack_pointer += -2;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -35450,18 +34106,10 @@
             res = temp;
             LLTRACE_RESUME_FRAME();
             _tos_cache0 = res;
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(1);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -35528,18 +34176,10 @@
             }
             iter = PyStackRef_FromPyObjectSteal(iter_o);
             _tos_cache0 = iter;
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(1);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -35565,15 +34205,9 @@
             awaitable = PyStackRef_FromPyObjectSteal(awaitable_o);
             _tos_cache1 = awaitable;
             _tos_cache0 = aiter;
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(2);
             stack_pointer += -1;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -35606,18 +34240,10 @@
             }
             iter = PyStackRef_FromPyObjectSteal(iter_o);
             _tos_cache0 = iter;
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(1);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -35666,12 +34292,8 @@
             _tos_cache2 = gen_frame;
             _tos_cache1 = _stack_item_1;
             _tos_cache0 = receiver;
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(3);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -35714,18 +34336,10 @@
             value = temp;
             LLTRACE_RESUME_FRAME();
             _tos_cache0 = value;
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(1);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -35746,21 +34360,11 @@
                        PyStackRef_IsNone(exc_value)
                        ? NULL : PyStackRef_AsPyObjectSteal(exc_value));
             stack_pointer = _PyFrame_GetStackPointer(frame);
-            #if MAX_CACHED_REGISTER >= 1
             _tos_cache0 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(0);
             stack_pointer += -1;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -35854,18 +34458,10 @@
             }
             bc = PyStackRef_FromPyObjectSteal(bc_o);
             _tos_cache0 = bc;
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(1);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -35922,21 +34518,11 @@
                 SET_CURRENT_CACHED_VALUES(0);
                 JUMP_TO_ERROR();
             }
-            #if MAX_CACHED_REGISTER >= 1
             _tos_cache0 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(0);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -35969,21 +34555,11 @@
                 SET_CURRENT_CACHED_VALUES(0);
                 JUMP_TO_ERROR();
             }
-            #if MAX_CACHED_REGISTER >= 1
             _tos_cache0 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(0);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -36007,21 +34583,11 @@
                 SET_CURRENT_CACHED_VALUES(0);
                 JUMP_TO_ERROR();
             }
-            #if MAX_CACHED_REGISTER >= 1
             _tos_cache0 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(0);
             stack_pointer += oparg;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -36059,15 +34625,9 @@
             stack_pointer = _PyFrame_GetStackPointer(frame);
             _tos_cache1 = val0;
             _tos_cache0 = val1;
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(2);
             stack_pointer += -2;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -36268,21 +34828,11 @@
             _PyFrame_SetStackPointer(frame, stack_pointer);
             PyStackRef_CLOSE(seq);
             stack_pointer = _PyFrame_GetStackPointer(frame);
-            #if MAX_CACHED_REGISTER >= 1
             _tos_cache0 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(0);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -36352,21 +34902,11 @@
             _PyFrame_SetStackPointer(frame, stack_pointer);
             PyStackRef_CLOSE(seq);
             stack_pointer = _PyFrame_GetStackPointer(frame);
-            #if MAX_CACHED_REGISTER >= 1
             _tos_cache0 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(0);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -36390,21 +34930,11 @@
                 SET_CURRENT_CACHED_VALUES(0);
                 JUMP_TO_ERROR();
             }
-            #if MAX_CACHED_REGISTER >= 1
             _tos_cache0 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(0);
             stack_pointer += 1 + (oparg & 0xFF) + (oparg >> 8);
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -36445,21 +34975,11 @@
                 SET_CURRENT_CACHED_VALUES(0);
                 JUMP_TO_ERROR();
             }
-            #if MAX_CACHED_REGISTER >= 1
             _tos_cache0 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(0);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -36488,21 +35008,11 @@
                 SET_CURRENT_CACHED_VALUES(0);
                 JUMP_TO_ERROR();
             }
-            #if MAX_CACHED_REGISTER >= 1
             _tos_cache0 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(0);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -36531,21 +35041,11 @@
                 SET_CURRENT_CACHED_VALUES(0);
                 JUMP_TO_ERROR();
             }
-            #if MAX_CACHED_REGISTER >= 1
             _tos_cache0 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(0);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -36571,21 +35071,11 @@
                 SET_CURRENT_CACHED_VALUES(0);
                 JUMP_TO_ERROR();
             }
-            #if MAX_CACHED_REGISTER >= 1
             _tos_cache0 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(0);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -36738,18 +35228,10 @@
             }
             v = PyStackRef_FromPyObjectSteal(v_o);
             _tos_cache0 = v;
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(1);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -36769,21 +35251,11 @@
                 SET_CURRENT_CACHED_VALUES(0);
                 JUMP_TO_ERROR();
             }
-            #if MAX_CACHED_REGISTER >= 1
             _tos_cache0 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(0);
             stack_pointer += 1;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -36996,18 +35468,10 @@
             #endif
             STAT_INC(LOAD_GLOBAL, hit);
             _tos_cache0 = res;
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(1);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -37051,18 +35515,10 @@
             #endif
             STAT_INC(LOAD_GLOBAL, hit);
             _tos_cache0 = res;
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(1);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -37088,21 +35544,11 @@
             _PyFrame_SetStackPointer(frame, stack_pointer);
             PyStackRef_XCLOSE(tmp);
             stack_pointer = _PyFrame_GetStackPointer(frame);
-            #if MAX_CACHED_REGISTER >= 1
             _tos_cache0 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(0);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -37123,21 +35569,11 @@
             _PyFrame_SetStackPointer(frame, stack_pointer);
             PyStackRef_XCLOSE(tmp);
             stack_pointer = _PyFrame_GetStackPointer(frame);
-            #if MAX_CACHED_REGISTER >= 1
             _tos_cache0 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(0);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -37159,21 +35595,11 @@
             _PyFrame_SetStackPointer(frame, stack_pointer);
             Py_DECREF(oldobj);
             stack_pointer = _PyFrame_GetStackPointer(frame);
-            #if MAX_CACHED_REGISTER >= 1
             _tos_cache0 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(0);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -37221,18 +35647,10 @@
             stack_pointer = _PyFrame_GetStackPointer(frame);
             value = PyStackRef_FromPyObjectSteal(value_o);
             _tos_cache0 = value;
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(1);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -37258,18 +35676,10 @@
                 JUMP_TO_ERROR();
             }
             _tos_cache0 = value;
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(1);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -37289,21 +35699,11 @@
             _PyFrame_SetStackPointer(frame, stack_pointer);
             PyCell_SetTakeRef(cell, PyStackRef_AsPyObjectSteal(v));
             stack_pointer = _PyFrame_GetStackPointer(frame);
-            #if MAX_CACHED_REGISTER >= 1
             _tos_cache0 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(0);
             stack_pointer += -1;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -37444,18 +35844,10 @@
             }
             str = PyStackRef_FromPyObjectSteal(str_o);
             _tos_cache0 = str;
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(1);
             stack_pointer += -oparg;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -37513,18 +35905,10 @@
             }
             interpolation = PyStackRef_FromPyObjectSteal(interpolation_o);
             _tos_cache0 = interpolation;
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(1);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -37565,18 +35949,10 @@
             }
             template = PyStackRef_FromPyObjectSteal(template_o);
             _tos_cache0 = template;
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(1);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -37619,18 +35995,10 @@
             }
             list = PyStackRef_FromPyObjectStealMortal(list_o);
             _tos_cache0 = list;
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(1);
             stack_pointer += -oparg;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -37676,18 +36044,10 @@
             assert(Py_IsNone(none_val));
             i = iterable_st;
             _tos_cache0 = i;
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(1);
             stack_pointer += -1;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -37718,18 +36078,10 @@
             }
             i = iterable;
             _tos_cache0 = i;
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(1);
             stack_pointer += -1;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -37787,18 +36139,10 @@
             }
             set = PyStackRef_FromPyObjectStealMortal(set_o);
             _tos_cache0 = set;
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(1);
             stack_pointer += -oparg;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -37824,18 +36168,10 @@
             }
             map = PyStackRef_FromPyObjectStealMortal(map_o);
             _tos_cache0 = map;
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(1);
             stack_pointer += -oparg*2;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -37885,21 +36221,11 @@
                 Py_DECREF(ann_dict);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
             }
-            #if MAX_CACHED_REGISTER >= 1
             _tos_cache0 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(0);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -37951,18 +36277,10 @@
             }
             upd = update;
             _tos_cache0 = upd;
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(1);
             stack_pointer += -1;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -38002,18 +36320,10 @@
             }
             u = update;
             _tos_cache0 = u;
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(1);
             stack_pointer += -1;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -38052,21 +36362,11 @@
                 SET_CURRENT_CACHED_VALUES(0);
                 JUMP_TO_ERROR();
             }
-            #if MAX_CACHED_REGISTER >= 1
             _tos_cache0 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(0);
             stack_pointer += -2;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -38138,18 +36438,10 @@
             }
             attr_st = PyStackRef_FromPyObjectSteal(attr);
             _tos_cache0 = attr_st;
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(1);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -38565,15 +36857,9 @@
             attr = PyStackRef_FromPyObjectSteal(attr_o);
             _tos_cache1 = self_or_null;
             _tos_cache0 = attr;
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(2);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -38624,21 +36910,11 @@
                 }
                 stack_pointer += -(oparg&1);
             }
-            #if MAX_CACHED_REGISTER >= 1
             _tos_cache0 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(0);
             stack_pointer[-1] = attr;
             stack_pointer += (oparg&1);
@@ -39260,15 +37536,9 @@
             o = owner;
             _tos_cache1 = o;
             _tos_cache0 = attr;
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(2);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -39356,15 +37626,9 @@
             o = owner;
             _tos_cache1 = o;
             _tos_cache0 = attr;
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(2);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -39712,18 +37976,10 @@
             PyStackRef_CLOSE(tmp);
             stack_pointer = _PyFrame_GetStackPointer(frame);
             _tos_cache0 = attr;
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(1);
             stack_pointer += -1;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -39773,18 +38029,10 @@
             pushed_frame->localsplus[0] = owner;
             new_frame = PyStackRef_Wrap(pushed_frame);
             _tos_cache0 = new_frame;
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(1);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -39966,18 +38214,10 @@
             Py_XDECREF(old_value);
             stack_pointer = _PyFrame_GetStackPointer(frame);
             _tos_cache0 = o;
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(1);
             stack_pointer += -1;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -40175,18 +38415,10 @@
             Py_XDECREF(old_value);
             stack_pointer = _PyFrame_GetStackPointer(frame);
             _tos_cache0 = o;
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(1);
             stack_pointer += -1;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -40226,18 +38458,10 @@
             Py_XDECREF(old_value);
             stack_pointer = _PyFrame_GetStackPointer(frame);
             _tos_cache0 = o;
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(1);
             stack_pointer += -1;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -40295,18 +38519,10 @@
                 res = PyStackRef_FromPyObjectSteal(res_o);
             }
             _tos_cache0 = res;
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(1);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -40464,12 +38680,8 @@
             _tos_cache2 = r;
             _tos_cache1 = l;
             _tos_cache0 = res;
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(3);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -40502,12 +38714,8 @@
             _tos_cache2 = r;
             _tos_cache1 = l;
             _tos_cache0 = res;
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(3);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -40648,12 +38856,8 @@
             _tos_cache2 = r;
             _tos_cache1 = l;
             _tos_cache0 = b;
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(3);
             stack_pointer += -2;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -41034,12 +39238,8 @@
             _tos_cache2 = r;
             _tos_cache1 = l;
             _tos_cache0 = b;
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(3);
             stack_pointer += -2;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -41081,12 +39281,8 @@
             _tos_cache2 = r;
             _tos_cache1 = l;
             _tos_cache0 = b;
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(3);
             stack_pointer += -2;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -41164,15 +39360,9 @@
             match = PyStackRef_FromPyObjectSteal(match_o);
             _tos_cache1 = match;
             _tos_cache0 = rest;
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(2);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -41213,15 +39403,9 @@
             b = res ? PyStackRef_True : PyStackRef_False;
             _tos_cache1 = b;
             _tos_cache0 = left;
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(2);
             stack_pointer += -1;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -41285,18 +39469,10 @@
             }
             res = PyStackRef_FromPyObjectSteal(res_o);
             _tos_cache0 = res;
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(1);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -41338,15 +39514,9 @@
             res = PyStackRef_FromPyObjectSteal(res_o);
             _tos_cache1 = res;
             _tos_cache0 = from;
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(2);
             stack_pointer += -1;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -41382,18 +39552,10 @@
                 stack_pointer += -1;
             }
             _tos_cache0 = b;
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(1);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -41426,15 +39588,9 @@
             len = PyStackRef_FromPyObjectSteal(len_o);
             _tos_cache1 = len;
             _tos_cache0 = obj;
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(2);
             stack_pointer += -1;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -41489,9 +39645,7 @@
             _tos_cache2 = tp;
             _tos_cache1 = s;
             _tos_cache0 = attrs;
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(4);
             stack_pointer += -3;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -41667,12 +39821,8 @@
             _tos_cache2 = values_or_none;
             _tos_cache1 = keys;
             _tos_cache0 = subject;
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(3);
             stack_pointer += -2;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -41707,15 +39857,9 @@
             iter = result;
             _tos_cache1 = index_or_null;
             _tos_cache0 = iter;
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(2);
             stack_pointer += -1;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -41762,12 +39906,8 @@
             _tos_cache2 = next;
             _tos_cache1 = null_or_index;
             _tos_cache0 = iter;
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(3);
             stack_pointer += -2;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -42141,12 +40281,8 @@
             _tos_cache2 = next;
             _tos_cache1 = null_or_index;
             _tos_cache0 = iter;
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(3);
             stack_pointer += -2;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -43147,21 +41283,11 @@
                 SET_CURRENT_CACHED_VALUES(0);
                 JUMP_TO_ERROR();
             }
-            #if MAX_CACHED_REGISTER >= 1
             _tos_cache0 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(0);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -43221,9 +41347,7 @@
             _tos_cache2 = val;
             _tos_cache1 = _stack_item_2;
             _tos_cache0 = lasti;
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(4);
             stack_pointer += -3;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -43808,18 +41932,10 @@
             stack_pointer = _PyFrame_GetStackPointer(frame);
             attr = PyStackRef_FromPyObjectNew(descr);
             _tos_cache0 = attr;
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(1);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -43843,18 +41959,10 @@
             stack_pointer = _PyFrame_GetStackPointer(frame);
             attr = PyStackRef_FromPyObjectNew(descr);
             _tos_cache0 = attr;
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(1);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -44103,21 +42211,11 @@
                 PyStackRef_CLOSE(temp);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
             }
-            #if MAX_CACHED_REGISTER >= 1
             _tos_cache0 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(0);
             stack_pointer[-2 - oparg] = callable;
             stack_pointer[-1 - oparg] = self_or_null;
@@ -44163,18 +42261,10 @@
             }
             new_frame = PyStackRef_Wrap(temp);
             _tos_cache0 = new_frame;
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(1);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -44375,21 +42465,11 @@
             _PyFrame_SetStackPointer(frame, stack_pointer);
             PyStackRef_CLOSE(temp);
             stack_pointer = _PyFrame_GetStackPointer(frame);
-            #if MAX_CACHED_REGISTER >= 1
             _tos_cache0 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(0);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -44452,18 +42532,10 @@
             }
             res = PyStackRef_FromPyObjectSteal(res_o);
             _tos_cache0 = res;
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(1);
             stack_pointer += -2 - oparg;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -44513,21 +42585,11 @@
             _PyFrame_SetStackPointer(frame, stack_pointer);
             PyStackRef_CLOSE(temp);
             stack_pointer = _PyFrame_GetStackPointer(frame);
-            #if MAX_CACHED_REGISTER >= 1
             _tos_cache0 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(0);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -45695,15 +43757,9 @@
             res = PyStackRef_FromPyObjectSteal(res_o);
             _tos_cache1 = a;
             _tos_cache0 = res;
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(2);
             stack_pointer += -3;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -45863,15 +43919,9 @@
             res = PyStackRef_FromPyObjectSteal(res_o);
             _tos_cache1 = a;
             _tos_cache0 = res;
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(2);
             stack_pointer += -3;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -45932,21 +43982,11 @@
             _PyFrame_SetStackPointer(frame, stack_pointer);
             PyStackRef_CLOSE(temp);
             stack_pointer = _PyFrame_GetStackPointer(frame);
-            #if MAX_CACHED_REGISTER >= 1
             _tos_cache0 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(0);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -45987,18 +44027,10 @@
             tstate->py_recursion_remaining--;
             init_frame = PyStackRef_Wrap(temp);
             _tos_cache0 = init_frame;
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(1);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -46022,21 +44054,11 @@
                 SET_CURRENT_CACHED_VALUES(0);
                 JUMP_TO_ERROR();
             }
-            #if MAX_CACHED_REGISTER >= 1
             _tos_cache0 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(0);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -46086,18 +44108,10 @@
             }
             res = PyStackRef_FromPyObjectSteal(res_o);
             _tos_cache0 = res;
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(1);
             stack_pointer += -2 - oparg;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -46178,12 +44192,8 @@
             _tos_cache2 = s;
             _tos_cache1 = c;
             _tos_cache0 = res;
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(3);
             stack_pointer += -2 - oparg;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -46246,18 +44256,10 @@
             }
             res = PyStackRef_FromPyObjectSteal(res_o);
             _tos_cache0 = res;
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(1);
             stack_pointer += -2 - oparg;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -46316,18 +44318,10 @@
             }
             res = PyStackRef_FromPyObjectSteal(res_o);
             _tos_cache0 = res;
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(1);
             stack_pointer += -2 - oparg;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -46501,12 +44495,8 @@
             _tos_cache2 = c;
             _tos_cache1 = a;
             _tos_cache0 = res;
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(3);
             stack_pointer += -3;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -46698,18 +44688,10 @@
             res = retval ? PyStackRef_True : PyStackRef_False;
             assert((!PyStackRef_IsNull(res)) ^ (_PyErr_Occurred(tstate) != NULL));
             _tos_cache0 = res;
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(1);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -47157,9 +45139,7 @@
             _tos_cache2 = s;
             _tos_cache1 = c;
             _tos_cache0 = res;
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(4);
             stack_pointer += -2 - oparg;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -47297,9 +45277,7 @@
             _tos_cache2 = s;
             _tos_cache1 = c;
             _tos_cache0 = res;
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(4);
             stack_pointer += -1 - oparg;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -47391,18 +45369,10 @@
             }
             res = PyStackRef_FromPyObjectSteal(res_o);
             _tos_cache0 = res;
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(1);
             stack_pointer += -2 - oparg;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -47441,18 +45411,10 @@
             }
             res = PyStackRef_FromPyObjectSteal(res_o);
             _tos_cache0 = res;
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(1);
             stack_pointer += -1 - oparg;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -47541,12 +45503,8 @@
             _tos_cache2 = s;
             _tos_cache1 = c;
             _tos_cache0 = res;
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(3);
             stack_pointer += -2 - oparg;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -47586,12 +45544,8 @@
             _tos_cache2 = s;
             _tos_cache1 = c;
             _tos_cache0 = res;
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(3);
             stack_pointer += -1 - oparg;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -47682,18 +45636,10 @@
             }
             res = PyStackRef_FromPyObjectSteal(res_o);
             _tos_cache0 = res;
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(1);
             stack_pointer += -2 - oparg;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -47732,18 +45678,10 @@
             }
             res = PyStackRef_FromPyObjectSteal(res_o);
             _tos_cache0 = res;
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(1);
             stack_pointer += -1 - oparg;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -47780,18 +45718,10 @@
                 stack_pointer += -1;
             }
             _tos_cache0 = _stack_item_0;
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(1);
             stack_pointer[-2 - oparg] = callable;
             stack_pointer[-1 - oparg] = self_or_null;
@@ -47849,18 +45779,10 @@
             }
             new_frame = PyStackRef_Wrap(temp);
             _tos_cache0 = new_frame;
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(1);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -47961,18 +45883,10 @@
             PyStackRef_CLOSE(callable_s);
             stack_pointer = _PyFrame_GetStackPointer(frame);
             _tos_cache0 = _stack_item_0;
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(1);
             stack_pointer += -1;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -48047,18 +45961,10 @@
             }
             res = PyStackRef_FromPyObjectSteal(res_o);
             _tos_cache0 = res;
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(1);
             stack_pointer += -3 - oparg;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -48111,9 +46017,7 @@
             _tos_cache2 = callargs;
             _tos_cache1 = _stack_item_1;
             _tos_cache0 = func;
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(4);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -48325,18 +46229,10 @@
             }
             ex_frame = PyStackRef_Wrap(new_frame);
             _tos_cache0 = ex_frame;
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(1);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -48522,18 +46418,10 @@
             }
             result = PyStackRef_FromPyObjectSteal(result_o);
             _tos_cache0 = result;
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(1);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -48565,15 +46453,9 @@
             func = PyStackRef_FromPyObjectSteal((PyObject *)func_obj);
             _tos_cache1 = co;
             _tos_cache0 = func;
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(2);
             stack_pointer += -1;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -48748,18 +46630,10 @@
             res = PyStackRef_FromPyObjectStealMortal((PyObject *)gen);
             LLTRACE_RESUME_FRAME();
             _tos_cache0 = res;
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(1);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -48792,18 +46666,10 @@
             }
             slice = PyStackRef_FromPyObjectStealMortal(slice_o);
             _tos_cache0 = slice;
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(1);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -48837,18 +46703,10 @@
             }
             result = PyStackRef_FromPyObjectSteal(result_o);
             _tos_cache0 = result;
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(1);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -48884,18 +46742,10 @@
                 res = value;
             }
             _tos_cache0 = res;
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(1);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -48934,18 +46784,10 @@
             }
             res = PyStackRef_FromPyObjectSteal(res_o);
             _tos_cache0 = res;
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(1);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -49212,12 +47054,8 @@
             _tos_cache2 = r;
             _tos_cache1 = l;
             _tos_cache0 = res;
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(3);
             stack_pointer += -2;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -51247,21 +49085,11 @@
                 SET_CURRENT_CACHED_VALUES(0);
                 JUMP_TO_JUMP_TARGET();
             }
-            #if MAX_CACHED_REGISTER >= 1
             _tos_cache0 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(0);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -52059,18 +49887,10 @@
             stack_pointer = _PyFrame_GetStackPointer(frame);
             value = PyStackRef_FromPyObjectNew(ptr);
             _tos_cache0 = value;
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(1);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -52149,21 +49969,11 @@
             _PyFrame_SetStackPointer(frame, stack_pointer);
             PyStackRef_CLOSE(callable);
             stack_pointer = _PyFrame_GetStackPointer(frame);
-            #if MAX_CACHED_REGISTER >= 1
             _tos_cache0 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(0);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -52194,21 +50004,11 @@
             _PyFrame_SetStackPointer(frame, stack_pointer);
             PyStackRef_CLOSE(callable);
             stack_pointer = _PyFrame_GetStackPointer(frame);
-            #if MAX_CACHED_REGISTER >= 1
             _tos_cache0 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(0);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -52248,21 +50048,11 @@
             _PyFrame_SetStackPointer(frame, stack_pointer);
             PyStackRef_CLOSE(callable);
             stack_pointer = _PyFrame_GetStackPointer(frame);
-            #if MAX_CACHED_REGISTER >= 1
             _tos_cache0 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(0);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -52281,18 +50071,10 @@
             stack_pointer = _PyFrame_GetStackPointer(frame);
             value = PyStackRef_FromPyObjectBorrow(ptr);
             _tos_cache0 = value;
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(1);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -52322,18 +50104,10 @@
             stack_pointer = _PyFrame_GetStackPointer(frame);
             value = PyStackRef_FromPyObjectBorrow(ptr);
             _tos_cache0 = value;
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(1);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -52356,18 +50130,10 @@
             stack_pointer = _PyFrame_GetStackPointer(frame);
             value = PyStackRef_FromPyObjectBorrow(ptr);
             _tos_cache0 = value;
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(1);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -52402,18 +50168,10 @@
             stack_pointer = _PyFrame_GetStackPointer(frame);
             value = PyStackRef_FromPyObjectBorrow(ptr);
             _tos_cache0 = value;
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(1);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -52943,18 +50701,10 @@
             stack_pointer = _PyFrame_GetStackPointer(frame);
             value = PyStackRef_FromPyObjectBorrow(ptr);
             _tos_cache0 = value;
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(1);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -54839,21 +52589,11 @@
                 SET_CURRENT_CACHED_VALUES(0);
                 JUMP_TO_ERROR();
             }
-            #if MAX_CACHED_REGISTER >= 1
             _tos_cache0 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(0);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -54874,21 +52614,11 @@
                     JUMP_TO_ERROR();
                 }
             }
-            #if MAX_CACHED_REGISTER >= 1
             _tos_cache0 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(0);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -58732,21 +56462,11 @@
             _PyFrame_SetStackPointer(frame, stack_pointer);
             PyStackRef_XCLOSE(value);
             stack_pointer = _PyFrame_GetStackPointer(frame);
-            #if MAX_CACHED_REGISTER >= 1
             _tos_cache0 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(0);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -59168,21 +56888,11 @@
             _PyFrame_SetStackPointer(frame, stack_pointer);
             PyStackRef_CLOSE(nos);
             stack_pointer = _PyFrame_GetStackPointer(frame);
-            #if MAX_CACHED_REGISTER >= 1
             _tos_cache0 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(0);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -59272,21 +56982,11 @@
             _PyFrame_SetStackPointer(frame, stack_pointer);
             PyStackRef_CLOSE(value);
             stack_pointer = _PyFrame_GetStackPointer(frame);
-            #if MAX_CACHED_REGISTER >= 1
             _tos_cache0 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(0);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -59305,21 +57005,11 @@
             _PyFrame_SetStackPointer(frame, stack_pointer);
             PyStackRef_CLOSE(iter);
             stack_pointer = _PyFrame_GetStackPointer(frame);
-            #if MAX_CACHED_REGISTER >= 1
             _tos_cache0 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(0);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -59347,18 +57037,10 @@
             PyStackRef_CLOSE(receiver);
             stack_pointer = _PyFrame_GetStackPointer(frame);
             _tos_cache0 = val;
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(1);
             stack_pointer += -1;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -59388,15 +57070,9 @@
             v = value;
             _tos_cache1 = v;
             _tos_cache0 = res;
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(2);
             stack_pointer += -1;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -59673,18 +57349,10 @@
             }
             res = err ? PyStackRef_True : PyStackRef_False;
             _tos_cache0 = res;
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(1);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -61360,15 +59028,9 @@
             v = value;
             _tos_cache1 = v;
             _tos_cache0 = res;
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(2);
             stack_pointer += -1;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -65409,18 +63071,10 @@
             }
             res = PyStackRef_FromPyObjectSteal(temp);
             _tos_cache0 = res;
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(1);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -65459,15 +63113,9 @@
             }
             _tos_cache1 = right;
             _tos_cache0 = left;
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(2);
             stack_pointer += -2;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -65510,12 +63158,8 @@
             _tos_cache2 = r;
             _tos_cache1 = l;
             _tos_cache0 = res;
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(3);
             stack_pointer += -2;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -65613,18 +63257,10 @@
             }
             res = PyStackRef_FromPyObjectSteal(res_o);
             _tos_cache0 = res;
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(1);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -65684,21 +63320,11 @@
                 SET_CURRENT_CACHED_VALUES(0);
                 JUMP_TO_ERROR();
             }
-            #if MAX_CACHED_REGISTER >= 1
             _tos_cache0 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(0);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -65761,12 +63387,8 @@
             _tos_cache2 = ss;
             _tos_cache1 = ls;
             _tos_cache0 = res;
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(3);
             stack_pointer += -2;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -65808,12 +63430,8 @@
             _tos_cache2 = ss;
             _tos_cache1 = ls;
             _tos_cache0 = res;
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(3);
             stack_pointer += -2;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -65862,12 +63480,8 @@
             _tos_cache2 = i;
             _tos_cache1 = s;
             _tos_cache0 = res;
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(3);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -65920,12 +63534,8 @@
             _tos_cache2 = i;
             _tos_cache1 = s;
             _tos_cache0 = res;
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(3);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -67382,12 +64992,8 @@
             _tos_cache2 = ss;
             _tos_cache1 = ds;
             _tos_cache0 = res;
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(3);
             stack_pointer += -2;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -67434,12 +65040,8 @@
             _tos_cache2 = ss;
             _tos_cache1 = ds;
             _tos_cache0 = res;
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(3);
             stack_pointer += -2;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -67494,12 +65096,8 @@
             _tos_cache2 = getitem;
             _tos_cache1 = _stack_item_1;
             _tos_cache0 = container;
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(3);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -67703,21 +65301,11 @@
                 SET_CURRENT_CACHED_VALUES(0);
                 JUMP_TO_ERROR();
             }
-            #if MAX_CACHED_REGISTER >= 1
             _tos_cache0 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(0);
             stack_pointer += -1;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -67763,21 +65351,11 @@
                 SET_CURRENT_CACHED_VALUES(0);
                 JUMP_TO_ERROR();
             }
-            #if MAX_CACHED_REGISTER >= 1
             _tos_cache0 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(0);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -67842,15 +65420,9 @@
             stack_pointer = _PyFrame_GetStackPointer(frame);
             _tos_cache1 = ss;
             _tos_cache0 = ls;
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(2);
             stack_pointer += -2;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -67895,18 +65467,10 @@
             }
             st = dict_st;
             _tos_cache0 = st;
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(1);
             stack_pointer += -3;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -67953,18 +65517,10 @@
             }
             st = dict_st;
             _tos_cache0 = st;
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(1);
             stack_pointer += -3;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -68003,21 +65559,11 @@
                 SET_CURRENT_CACHED_VALUES(0);
                 JUMP_TO_ERROR();
             }
-            #if MAX_CACHED_REGISTER >= 1
             _tos_cache0 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(0);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -68047,15 +65593,9 @@
             res = PyStackRef_FromPyObjectSteal(res_o);
             _tos_cache1 = v;
             _tos_cache0 = res;
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(2);
             stack_pointer += -1;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -68096,12 +65636,8 @@
             _tos_cache2 = vs2;
             _tos_cache1 = vs1;
             _tos_cache0 = res;
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(3);
             stack_pointer += -2;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -68228,18 +65764,10 @@
             res = temp;
             LLTRACE_RESUME_FRAME();
             _tos_cache0 = res;
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(1);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -68306,18 +65834,10 @@
             }
             iter = PyStackRef_FromPyObjectSteal(iter_o);
             _tos_cache0 = iter;
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(1);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -68343,15 +65863,9 @@
             awaitable = PyStackRef_FromPyObjectSteal(awaitable_o);
             _tos_cache1 = awaitable;
             _tos_cache0 = aiter;
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(2);
             stack_pointer += -1;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -68384,18 +65898,10 @@
             }
             iter = PyStackRef_FromPyObjectSteal(iter_o);
             _tos_cache0 = iter;
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(1);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -68444,12 +65950,8 @@
             _tos_cache2 = gen_frame;
             _tos_cache1 = _stack_item_1;
             _tos_cache0 = receiver;
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(3);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -68492,18 +65994,10 @@
             value = temp;
             LLTRACE_RESUME_FRAME();
             _tos_cache0 = value;
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(1);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -68524,21 +66018,11 @@
                        PyStackRef_IsNone(exc_value)
                        ? NULL : PyStackRef_AsPyObjectSteal(exc_value));
             stack_pointer = _PyFrame_GetStackPointer(frame);
-            #if MAX_CACHED_REGISTER >= 1
             _tos_cache0 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(0);
             stack_pointer += -1;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -68653,18 +66137,10 @@
             }
             bc = PyStackRef_FromPyObjectSteal(bc_o);
             _tos_cache0 = bc;
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(1);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -68721,21 +66197,11 @@
                 SET_CURRENT_CACHED_VALUES(0);
                 JUMP_TO_ERROR();
             }
-            #if MAX_CACHED_REGISTER >= 1
             _tos_cache0 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(0);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -68768,21 +66234,11 @@
                 SET_CURRENT_CACHED_VALUES(0);
                 JUMP_TO_ERROR();
             }
-            #if MAX_CACHED_REGISTER >= 1
             _tos_cache0 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(0);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -68806,21 +66262,11 @@
                 SET_CURRENT_CACHED_VALUES(0);
                 JUMP_TO_ERROR();
             }
-            #if MAX_CACHED_REGISTER >= 1
             _tos_cache0 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(0);
             stack_pointer += oparg;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -68858,15 +66304,9 @@
             stack_pointer = _PyFrame_GetStackPointer(frame);
             _tos_cache1 = val0;
             _tos_cache0 = val1;
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(2);
             stack_pointer += -2;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -69122,21 +66562,11 @@
             _PyFrame_SetStackPointer(frame, stack_pointer);
             PyStackRef_CLOSE(seq);
             stack_pointer = _PyFrame_GetStackPointer(frame);
-            #if MAX_CACHED_REGISTER >= 1
             _tos_cache0 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(0);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -69206,21 +66636,11 @@
             _PyFrame_SetStackPointer(frame, stack_pointer);
             PyStackRef_CLOSE(seq);
             stack_pointer = _PyFrame_GetStackPointer(frame);
-            #if MAX_CACHED_REGISTER >= 1
             _tos_cache0 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(0);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -69244,21 +66664,11 @@
                 SET_CURRENT_CACHED_VALUES(0);
                 JUMP_TO_ERROR();
             }
-            #if MAX_CACHED_REGISTER >= 1
             _tos_cache0 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(0);
             stack_pointer += 1 + (oparg & 0xFF) + (oparg >> 8);
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -69299,21 +66709,11 @@
                 SET_CURRENT_CACHED_VALUES(0);
                 JUMP_TO_ERROR();
             }
-            #if MAX_CACHED_REGISTER >= 1
             _tos_cache0 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(0);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -69342,21 +66742,11 @@
                 SET_CURRENT_CACHED_VALUES(0);
                 JUMP_TO_ERROR();
             }
-            #if MAX_CACHED_REGISTER >= 1
             _tos_cache0 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(0);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -69385,21 +66775,11 @@
                 SET_CURRENT_CACHED_VALUES(0);
                 JUMP_TO_ERROR();
             }
-            #if MAX_CACHED_REGISTER >= 1
             _tos_cache0 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(0);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -69425,21 +66805,11 @@
                 SET_CURRENT_CACHED_VALUES(0);
                 JUMP_TO_ERROR();
             }
-            #if MAX_CACHED_REGISTER >= 1
             _tos_cache0 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(0);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -69626,18 +66996,10 @@
             }
             v = PyStackRef_FromPyObjectSteal(v_o);
             _tos_cache0 = v;
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(1);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -69657,21 +67019,11 @@
                 SET_CURRENT_CACHED_VALUES(0);
                 JUMP_TO_ERROR();
             }
-            #if MAX_CACHED_REGISTER >= 1
             _tos_cache0 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(0);
             stack_pointer += 1;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -69926,18 +67278,10 @@
             #endif
             STAT_INC(LOAD_GLOBAL, hit);
             _tos_cache0 = res;
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(1);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -69981,18 +67325,10 @@
             #endif
             STAT_INC(LOAD_GLOBAL, hit);
             _tos_cache0 = res;
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(1);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -70018,21 +67354,11 @@
             _PyFrame_SetStackPointer(frame, stack_pointer);
             PyStackRef_XCLOSE(tmp);
             stack_pointer = _PyFrame_GetStackPointer(frame);
-            #if MAX_CACHED_REGISTER >= 1
             _tos_cache0 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(0);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -70053,21 +67379,11 @@
             _PyFrame_SetStackPointer(frame, stack_pointer);
             PyStackRef_XCLOSE(tmp);
             stack_pointer = _PyFrame_GetStackPointer(frame);
-            #if MAX_CACHED_REGISTER >= 1
             _tos_cache0 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(0);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -70089,21 +67405,11 @@
             _PyFrame_SetStackPointer(frame, stack_pointer);
             Py_DECREF(oldobj);
             stack_pointer = _PyFrame_GetStackPointer(frame);
-            #if MAX_CACHED_REGISTER >= 1
             _tos_cache0 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(0);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -70151,18 +67457,10 @@
             stack_pointer = _PyFrame_GetStackPointer(frame);
             value = PyStackRef_FromPyObjectSteal(value_o);
             _tos_cache0 = value;
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(1);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -70188,18 +67486,10 @@
                 JUMP_TO_ERROR();
             }
             _tos_cache0 = value;
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(1);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -70219,21 +67509,11 @@
             _PyFrame_SetStackPointer(frame, stack_pointer);
             PyCell_SetTakeRef(cell, PyStackRef_AsPyObjectSteal(v));
             stack_pointer = _PyFrame_GetStackPointer(frame);
-            #if MAX_CACHED_REGISTER >= 1
             _tos_cache0 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(0);
             stack_pointer += -1;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -70403,18 +67683,10 @@
             }
             str = PyStackRef_FromPyObjectSteal(str_o);
             _tos_cache0 = str;
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(1);
             stack_pointer += -oparg;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -70472,18 +67744,10 @@
             }
             interpolation = PyStackRef_FromPyObjectSteal(interpolation_o);
             _tos_cache0 = interpolation;
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(1);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -70524,18 +67788,10 @@
             }
             template = PyStackRef_FromPyObjectSteal(template_o);
             _tos_cache0 = template;
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(1);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -70578,18 +67834,10 @@
             }
             list = PyStackRef_FromPyObjectStealMortal(list_o);
             _tos_cache0 = list;
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(1);
             stack_pointer += -oparg;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -70635,18 +67883,10 @@
             assert(Py_IsNone(none_val));
             i = iterable_st;
             _tos_cache0 = i;
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(1);
             stack_pointer += -1;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -70677,18 +67917,10 @@
             }
             i = iterable;
             _tos_cache0 = i;
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(1);
             stack_pointer += -1;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -70746,18 +67978,10 @@
             }
             set = PyStackRef_FromPyObjectStealMortal(set_o);
             _tos_cache0 = set;
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(1);
             stack_pointer += -oparg;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -70783,18 +68007,10 @@
             }
             map = PyStackRef_FromPyObjectStealMortal(map_o);
             _tos_cache0 = map;
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(1);
             stack_pointer += -oparg*2;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -70844,21 +68060,11 @@
                 Py_DECREF(ann_dict);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
             }
-            #if MAX_CACHED_REGISTER >= 1
             _tos_cache0 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(0);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -70910,18 +68116,10 @@
             }
             upd = update;
             _tos_cache0 = upd;
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(1);
             stack_pointer += -1;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -70961,18 +68159,10 @@
             }
             u = update;
             _tos_cache0 = u;
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(1);
             stack_pointer += -1;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -71011,21 +68201,11 @@
                 SET_CURRENT_CACHED_VALUES(0);
                 JUMP_TO_ERROR();
             }
-            #if MAX_CACHED_REGISTER >= 1
             _tos_cache0 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(0);
             stack_pointer += -2;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -71097,18 +68277,10 @@
             }
             attr_st = PyStackRef_FromPyObjectSteal(attr);
             _tos_cache0 = attr_st;
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(1);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -71613,15 +68785,9 @@
             attr = PyStackRef_FromPyObjectSteal(attr_o);
             _tos_cache1 = self_or_null;
             _tos_cache0 = attr;
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(2);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -71672,21 +68838,11 @@
                 }
                 stack_pointer += -(oparg&1);
             }
-            #if MAX_CACHED_REGISTER >= 1
             _tos_cache0 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(0);
             stack_pointer[-1] = attr;
             stack_pointer += (oparg&1);
@@ -72463,15 +69619,9 @@
             o = owner;
             _tos_cache1 = o;
             _tos_cache0 = attr;
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(2);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -72559,15 +69709,9 @@
             o = owner;
             _tos_cache1 = o;
             _tos_cache0 = attr;
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(2);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -73008,18 +70152,10 @@
             PyStackRef_CLOSE(tmp);
             stack_pointer = _PyFrame_GetStackPointer(frame);
             _tos_cache0 = attr;
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(1);
             stack_pointer += -1;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -73069,18 +70205,10 @@
             pushed_frame->localsplus[0] = owner;
             new_frame = PyStackRef_Wrap(pushed_frame);
             _tos_cache0 = new_frame;
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(1);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -73299,18 +70427,10 @@
             Py_XDECREF(old_value);
             stack_pointer = _PyFrame_GetStackPointer(frame);
             _tos_cache0 = o;
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(1);
             stack_pointer += -1;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -73538,18 +70658,10 @@
             Py_XDECREF(old_value);
             stack_pointer = _PyFrame_GetStackPointer(frame);
             _tos_cache0 = o;
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(1);
             stack_pointer += -1;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -73589,18 +70701,10 @@
             Py_XDECREF(old_value);
             stack_pointer = _PyFrame_GetStackPointer(frame);
             _tos_cache0 = o;
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(1);
             stack_pointer += -1;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -73658,18 +70762,10 @@
                 res = PyStackRef_FromPyObjectSteal(res_o);
             }
             _tos_cache0 = res;
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(1);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -73861,12 +70957,8 @@
             _tos_cache2 = r;
             _tos_cache1 = l;
             _tos_cache0 = res;
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(3);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -73899,12 +70991,8 @@
             _tos_cache2 = r;
             _tos_cache1 = l;
             _tos_cache0 = res;
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(3);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -74074,12 +71162,8 @@
             _tos_cache2 = r;
             _tos_cache1 = l;
             _tos_cache0 = b;
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(3);
             stack_pointer += -2;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -74553,12 +71637,8 @@
             _tos_cache2 = r;
             _tos_cache1 = l;
             _tos_cache0 = b;
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(3);
             stack_pointer += -2;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -74600,12 +71680,8 @@
             _tos_cache2 = r;
             _tos_cache1 = l;
             _tos_cache0 = b;
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(3);
             stack_pointer += -2;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -74683,15 +71759,9 @@
             match = PyStackRef_FromPyObjectSteal(match_o);
             _tos_cache1 = match;
             _tos_cache0 = rest;
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(2);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -74732,15 +71802,9 @@
             b = res ? PyStackRef_True : PyStackRef_False;
             _tos_cache1 = b;
             _tos_cache0 = left;
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(2);
             stack_pointer += -1;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -74804,18 +71868,10 @@
             }
             res = PyStackRef_FromPyObjectSteal(res_o);
             _tos_cache0 = res;
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(1);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -74857,15 +71913,9 @@
             res = PyStackRef_FromPyObjectSteal(res_o);
             _tos_cache1 = res;
             _tos_cache0 = from;
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(2);
             stack_pointer += -1;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -74901,18 +71951,10 @@
                 stack_pointer += -1;
             }
             _tos_cache0 = b;
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(1);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -74945,15 +71987,9 @@
             len = PyStackRef_FromPyObjectSteal(len_o);
             _tos_cache1 = len;
             _tos_cache0 = obj;
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(2);
             stack_pointer += -1;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -75008,9 +72044,7 @@
             _tos_cache2 = tp;
             _tos_cache1 = s;
             _tos_cache0 = attrs;
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(4);
             stack_pointer += -3;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -75230,12 +72264,8 @@
             _tos_cache2 = values_or_none;
             _tos_cache1 = keys;
             _tos_cache0 = subject;
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(3);
             stack_pointer += -2;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -75270,15 +72300,9 @@
             iter = result;
             _tos_cache1 = index_or_null;
             _tos_cache0 = iter;
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(2);
             stack_pointer += -1;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -75325,12 +72349,8 @@
             _tos_cache2 = next;
             _tos_cache1 = null_or_index;
             _tos_cache0 = iter;
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(3);
             stack_pointer += -2;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -75786,12 +72806,8 @@
             _tos_cache2 = next;
             _tos_cache1 = null_or_index;
             _tos_cache0 = iter;
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(3);
             stack_pointer += -2;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -77052,21 +74068,11 @@
                 SET_CURRENT_CACHED_VALUES(0);
                 JUMP_TO_ERROR();
             }
-            #if MAX_CACHED_REGISTER >= 1
             _tos_cache0 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(0);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -77870,18 +74876,10 @@
             stack_pointer = _PyFrame_GetStackPointer(frame);
             attr = PyStackRef_FromPyObjectNew(descr);
             _tos_cache0 = attr;
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(1);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -77905,18 +74903,10 @@
             stack_pointer = _PyFrame_GetStackPointer(frame);
             attr = PyStackRef_FromPyObjectNew(descr);
             _tos_cache0 = attr;
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(1);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -78227,21 +75217,11 @@
                 PyStackRef_CLOSE(temp);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
             }
-            #if MAX_CACHED_REGISTER >= 1
             _tos_cache0 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(0);
             stack_pointer[-2 - oparg] = callable;
             stack_pointer[-1 - oparg] = self_or_null;
@@ -78287,18 +75267,10 @@
             }
             new_frame = PyStackRef_Wrap(temp);
             _tos_cache0 = new_frame;
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(1);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -78531,21 +75503,11 @@
             _PyFrame_SetStackPointer(frame, stack_pointer);
             PyStackRef_CLOSE(temp);
             stack_pointer = _PyFrame_GetStackPointer(frame);
-            #if MAX_CACHED_REGISTER >= 1
             _tos_cache0 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(0);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -78608,18 +75570,10 @@
             }
             res = PyStackRef_FromPyObjectSteal(res_o);
             _tos_cache0 = res;
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(1);
             stack_pointer += -2 - oparg;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -78669,21 +75623,11 @@
             _PyFrame_SetStackPointer(frame, stack_pointer);
             PyStackRef_CLOSE(temp);
             stack_pointer = _PyFrame_GetStackPointer(frame);
-            #if MAX_CACHED_REGISTER >= 1
             _tos_cache0 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(0);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -80087,15 +77031,9 @@
             res = PyStackRef_FromPyObjectSteal(res_o);
             _tos_cache1 = a;
             _tos_cache0 = res;
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(2);
             stack_pointer += -3;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -80286,15 +77224,9 @@
             res = PyStackRef_FromPyObjectSteal(res_o);
             _tos_cache1 = a;
             _tos_cache0 = res;
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(2);
             stack_pointer += -3;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -80355,21 +77287,11 @@
             _PyFrame_SetStackPointer(frame, stack_pointer);
             PyStackRef_CLOSE(temp);
             stack_pointer = _PyFrame_GetStackPointer(frame);
-            #if MAX_CACHED_REGISTER >= 1
             _tos_cache0 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(0);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -80410,18 +77332,10 @@
             tstate->py_recursion_remaining--;
             init_frame = PyStackRef_Wrap(temp);
             _tos_cache0 = init_frame;
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(1);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -80445,21 +77359,11 @@
                 SET_CURRENT_CACHED_VALUES(0);
                 JUMP_TO_ERROR();
             }
-            #if MAX_CACHED_REGISTER >= 1
             _tos_cache0 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(0);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -80509,18 +77413,10 @@
             }
             res = PyStackRef_FromPyObjectSteal(res_o);
             _tos_cache0 = res;
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(1);
             stack_pointer += -2 - oparg;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -80601,12 +77497,8 @@
             _tos_cache2 = s;
             _tos_cache1 = c;
             _tos_cache0 = res;
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(3);
             stack_pointer += -2 - oparg;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -80669,18 +77561,10 @@
             }
             res = PyStackRef_FromPyObjectSteal(res_o);
             _tos_cache0 = res;
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(1);
             stack_pointer += -2 - oparg;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -80739,18 +77623,10 @@
             }
             res = PyStackRef_FromPyObjectSteal(res_o);
             _tos_cache0 = res;
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(1);
             stack_pointer += -2 - oparg;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -80956,12 +77832,8 @@
             _tos_cache2 = c;
             _tos_cache1 = a;
             _tos_cache0 = res;
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(3);
             stack_pointer += -3;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -81185,18 +78057,10 @@
             res = retval ? PyStackRef_True : PyStackRef_False;
             assert((!PyStackRef_IsNull(res)) ^ (_PyErr_Occurred(tstate) != NULL));
             _tos_cache0 = res;
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(1);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -81732,9 +78596,7 @@
             _tos_cache2 = s;
             _tos_cache1 = c;
             _tos_cache0 = res;
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(4);
             stack_pointer += -2 - oparg;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -81900,9 +78762,7 @@
             _tos_cache2 = s;
             _tos_cache1 = c;
             _tos_cache0 = res;
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(4);
             stack_pointer += -1 - oparg;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -81994,18 +78854,10 @@
             }
             res = PyStackRef_FromPyObjectSteal(res_o);
             _tos_cache0 = res;
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(1);
             stack_pointer += -2 - oparg;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -82044,18 +78896,10 @@
             }
             res = PyStackRef_FromPyObjectSteal(res_o);
             _tos_cache0 = res;
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(1);
             stack_pointer += -1 - oparg;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -82144,12 +78988,8 @@
             _tos_cache2 = s;
             _tos_cache1 = c;
             _tos_cache0 = res;
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(3);
             stack_pointer += -2 - oparg;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -82189,12 +79029,8 @@
             _tos_cache2 = s;
             _tos_cache1 = c;
             _tos_cache0 = res;
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(3);
             stack_pointer += -1 - oparg;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -82285,18 +79121,10 @@
             }
             res = PyStackRef_FromPyObjectSteal(res_o);
             _tos_cache0 = res;
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(1);
             stack_pointer += -2 - oparg;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -82335,18 +79163,10 @@
             }
             res = PyStackRef_FromPyObjectSteal(res_o);
             _tos_cache0 = res;
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(1);
             stack_pointer += -1 - oparg;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -82383,18 +79203,10 @@
                 stack_pointer += -1;
             }
             _tos_cache0 = _stack_item_0;
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(1);
             stack_pointer[-2 - oparg] = callable;
             stack_pointer[-1 - oparg] = self_or_null;
@@ -82452,18 +79264,10 @@
             }
             new_frame = PyStackRef_Wrap(temp);
             _tos_cache0 = new_frame;
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(1);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -82564,18 +79368,10 @@
             PyStackRef_CLOSE(callable_s);
             stack_pointer = _PyFrame_GetStackPointer(frame);
             _tos_cache0 = _stack_item_0;
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(1);
             stack_pointer += -1;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -82650,18 +79446,10 @@
             }
             res = PyStackRef_FromPyObjectSteal(res_o);
             _tos_cache0 = res;
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(1);
             stack_pointer += -3 - oparg;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -82714,9 +79502,7 @@
             _tos_cache2 = callargs;
             _tos_cache1 = _stack_item_1;
             _tos_cache0 = func;
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(4);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -82969,18 +79755,10 @@
             }
             ex_frame = PyStackRef_Wrap(new_frame);
             _tos_cache0 = ex_frame;
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(1);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -83197,18 +79975,10 @@
             }
             result = PyStackRef_FromPyObjectSteal(result_o);
             _tos_cache0 = result;
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(1);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -83240,15 +80010,9 @@
             func = PyStackRef_FromPyObjectSteal((PyObject *)func_obj);
             _tos_cache1 = co;
             _tos_cache0 = func;
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(2);
             stack_pointer += -1;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -83455,18 +80219,10 @@
             res = PyStackRef_FromPyObjectStealMortal((PyObject *)gen);
             LLTRACE_RESUME_FRAME();
             _tos_cache0 = res;
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(1);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -83499,18 +80255,10 @@
             }
             slice = PyStackRef_FromPyObjectStealMortal(slice_o);
             _tos_cache0 = slice;
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(1);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -83544,18 +80292,10 @@
             }
             result = PyStackRef_FromPyObjectSteal(result_o);
             _tos_cache0 = result;
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(1);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -83591,18 +80331,10 @@
                 res = value;
             }
             _tos_cache0 = res;
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(1);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -83641,18 +80373,10 @@
             }
             res = PyStackRef_FromPyObjectSteal(res_o);
             _tos_cache0 = res;
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(1);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -83982,12 +80706,8 @@
             _tos_cache2 = r;
             _tos_cache1 = l;
             _tos_cache0 = res;
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(3);
             stack_pointer += -2;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -86525,21 +83245,11 @@
                 SET_CURRENT_CACHED_VALUES(0);
                 JUMP_TO_JUMP_TARGET();
             }
-            #if MAX_CACHED_REGISTER >= 1
             _tos_cache0 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(0);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -87549,18 +84259,10 @@
             stack_pointer = _PyFrame_GetStackPointer(frame);
             value = PyStackRef_FromPyObjectNew(ptr);
             _tos_cache0 = value;
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(1);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -87659,21 +84361,11 @@
             _PyFrame_SetStackPointer(frame, stack_pointer);
             PyStackRef_CLOSE(callable);
             stack_pointer = _PyFrame_GetStackPointer(frame);
-            #if MAX_CACHED_REGISTER >= 1
             _tos_cache0 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(0);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -87704,21 +84396,11 @@
             _PyFrame_SetStackPointer(frame, stack_pointer);
             PyStackRef_CLOSE(callable);
             stack_pointer = _PyFrame_GetStackPointer(frame);
-            #if MAX_CACHED_REGISTER >= 1
             _tos_cache0 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(0);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -87758,21 +84440,11 @@
             _PyFrame_SetStackPointer(frame, stack_pointer);
             PyStackRef_CLOSE(callable);
             stack_pointer = _PyFrame_GetStackPointer(frame);
-            #if MAX_CACHED_REGISTER >= 1
             _tos_cache0 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(0);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -87791,18 +84463,10 @@
             stack_pointer = _PyFrame_GetStackPointer(frame);
             value = PyStackRef_FromPyObjectBorrow(ptr);
             _tos_cache0 = value;
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(1);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -87832,18 +84496,10 @@
             stack_pointer = _PyFrame_GetStackPointer(frame);
             value = PyStackRef_FromPyObjectBorrow(ptr);
             _tos_cache0 = value;
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(1);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -87866,18 +84522,10 @@
             stack_pointer = _PyFrame_GetStackPointer(frame);
             value = PyStackRef_FromPyObjectBorrow(ptr);
             _tos_cache0 = value;
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(1);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -87912,18 +84560,10 @@
             stack_pointer = _PyFrame_GetStackPointer(frame);
             value = PyStackRef_FromPyObjectBorrow(ptr);
             _tos_cache0 = value;
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(1);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -88582,18 +85222,10 @@
             stack_pointer = _PyFrame_GetStackPointer(frame);
             value = PyStackRef_FromPyObjectBorrow(ptr);
             _tos_cache0 = value;
-            #if MAX_CACHED_REGISTER >= 2
             _tos_cache1 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 3
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 4
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            #endif
-            #if MAX_CACHED_REGISTER >= 5
             _tos_cache4 = PyStackRef_ZERO_BITS;
-            #endif
             SET_CURRENT_CACHED_VALUES(1);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
