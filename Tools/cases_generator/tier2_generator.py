@@ -16,7 +16,6 @@ from analyzer import (
     analysis_error,
     get_uop_cache_depths,
     is_large,
-    MAX_CACHED_REGISTER,
     MIN_GENERATED_CACHED_REGISTER,
     MAX_GENERATED_CACHED_REGISTER,
 )

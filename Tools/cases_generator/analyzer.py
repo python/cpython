@@ -9,9 +9,6 @@ from parser import Stmt, SimpleStmt, BlockStmt, IfStmt, WhileStmt, ForStmt, Macr
 
 MIN_GENERATED_CACHED_REGISTER = 3
 MAX_GENERATED_CACHED_REGISTER = 5
-MAX_CACHED_REGISTER = (
-    MIN_GENERATED_CACHED_REGISTER  # Platform-specific; controls compile-time case pruning
-)
 
 @dataclass
 class EscapingCall:

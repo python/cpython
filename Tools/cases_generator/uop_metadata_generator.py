@@ -10,7 +10,6 @@ from analyzer import (
     analyze_files,
     get_uop_cache_depths,
     Uop,
-    MAX_CACHED_REGISTER,
     MIN_GENERATED_CACHED_REGISTER,
     MAX_GENERATED_CACHED_REGISTER,
 )
