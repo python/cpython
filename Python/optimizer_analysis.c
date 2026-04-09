@@ -410,7 +410,8 @@ static JitOptRef
 lookup_super_attr(JitOptContext *ctx, _PyBloomFilter *dependencies,
                   _PyUOpInstruction *this_instr,
                   PyTypeObject *su_type, PyTypeObject *obj_type,
-                  PyObject *name, uint16_t immortal, uint16_t mortal)
+                  PyObject *name,
+                  uint16_t immortal, uint16_t mortal, uint16_t suffix)
 {
     if (su_type == NULL || obj_type == NULL) {
         return sym_new_not_null(ctx);
@@ -438,6 +439,9 @@ lookup_super_attr(JitOptContext *ctx, _PyBloomFilter *dependencies,
     ADD_OP(_POP_TOP, 0, 0);
     ADD_OP(_POP_TOP, 0, 0);
     ADD_OP(opcode, 0, (uintptr_t)lookup);
+    if (suffix != _NOP) {
+        ADD_OP(suffix, 2, 0);
+    }
     PyType_Watch(TYPE_WATCHER_ID, (PyObject *)su_type);
     _Py_BloomFilter_Add(dependencies, su_type);
     PyType_Watch(TYPE_WATCHER_ID, (PyObject *)obj_type);

@@ -970,8 +970,8 @@ dummy_func(void) {
         PyObject *name = get_co_name(ctx, oparg >> 2);
         attr = lookup_super_attr(ctx, dependencies, this_instr,
                                  su_type, obj_type, name,
-                                 _INSERT_1_LOAD_CONST_INLINE_BORROW,
-                                 _INSERT_1_LOAD_CONST_INLINE);
+                                 _LOAD_CONST_INLINE_BORROW,
+                                 _LOAD_CONST_INLINE, _SWAP);
     }
 
     op(_LOAD_ATTR_PROPERTY_FRAME, (fget/4, owner -- new_frame)) {

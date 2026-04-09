@@ -2394,8 +2394,8 @@
             PyObject *name = get_co_name(ctx, oparg >> 2);
             attr = lookup_super_attr(ctx, dependencies, this_instr,
                                  su_type, obj_type, name,
-                                 _INSERT_1_LOAD_CONST_INLINE_BORROW,
-                                 _INSERT_1_LOAD_CONST_INLINE);
+                                 _LOAD_CONST_INLINE_BORROW,
+                                 _LOAD_CONST_INLINE, _SWAP);
             CHECK_STACK_BOUNDS(2);
             stack_pointer[0] = attr;
             stack_pointer[1] = self_or_null;
