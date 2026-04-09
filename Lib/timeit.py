@@ -319,7 +319,7 @@ def main(args=None, *, _wrap_timer=None):
         callback = None
         if verbose:
             def callback(number, time_taken):
-                msg = "{num} loop{s} -> {secs:.{prec}g} secs"
+                msg = "{num} loop{s} -> {secs:.{prec}g} sec"
                 plural = (number != 1)
                 print(msg.format(num=number, s='s' if plural else '',
                                  secs=time_taken, prec=precision))
