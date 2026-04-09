@@ -318,7 +318,7 @@ optimize_to_bool(
     JitOptContext *ctx,
     JitOptRef value,
     JitOptRef *result_ptr,
-    bool insert_mode)
+    uint16_t prefix, uint16_t load_op, uint16_t suffix)
 {
     if (sym_matches_type(value, &PyBool_Type)) {
         ADD_OP(_NOP, 0, 0);
@@ -328,12 +328,12 @@ optimize_to_bool(
     int truthiness = sym_truthiness(ctx, value);
     if (truthiness >= 0) {
         PyObject *load = truthiness ? Py_True : Py_False;
-        if (insert_mode) {
-            ADD_OP(_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)load);
-            ADD_OP(_SWAP, 2, 0);
-        } else {
-            ADD_OP(_POP_TOP, 0, 0);
-            ADD_OP(_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)load);
+        if (prefix != _NOP) {
+            ADD_OP(prefix, 0, 0);
+        }
+        ADD_OP(load_op, 0, (uintptr_t)load);
+        if (suffix != _NOP) {
+            ADD_OP(suffix, 2, 0);
         }
         *result_ptr = sym_new_const(ctx, load);
         return 1;
@@ -380,22 +380,20 @@ eliminate_pop_guard(_PyUOpInstruction *this_instr, JitOptContext *ctx, bool exit
 
 static JitOptRef
 lookup_attr(JitOptContext *ctx, _PyBloomFilter *dependencies, _PyUOpInstruction *this_instr,
-            PyTypeObject *type, PyObject *name, bool pop)
+            PyTypeObject *type, PyObject *name,
+            uint16_t prefix, uint16_t immortal_op, uint16_t mortal_op, uint16_t suffix)
 {
     // The cached value may be dead, so we need to do the lookup again... :(
     if (type && PyType_Check(type)) {
         PyObject *lookup = _PyType_Lookup(type, name);
         if (lookup) {
             bool immortal = _Py_IsImmortal(lookup) || (type->tp_flags & Py_TPFLAGS_IMMUTABLETYPE);
-            if (pop) {
-                ADD_OP(_POP_TOP, 0, 0);
-                ADD_OP(immortal ? _LOAD_CONST_INLINE_BORROW : _LOAD_CONST_INLINE,
-                       0, (uintptr_t)lookup);
+            if (prefix != _NOP) {
+                ADD_OP(prefix, 0, 0);
             }
-            else {
-                ADD_OP(immortal ? _LOAD_CONST_INLINE_BORROW : _LOAD_CONST_INLINE,
-                       0, (uintptr_t)lookup);
-                ADD_OP(_SWAP, 2, 0);
+            ADD_OP(immortal ? immortal_op : mortal_op, 0, (uintptr_t)lookup);
+            if (suffix != _NOP) {
+                ADD_OP(suffix, 2, 0);
             }
             PyType_Watch(TYPE_WATCHER_ID, (PyObject *)type);
             _Py_BloomFilter_Add(dependencies, type);

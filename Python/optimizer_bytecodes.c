@@ -55,7 +55,7 @@ optimize_to_bool(
     JitOptContext *ctx,
     JitOptSymbol *value,
     JitOptSymbol **result_ptr,
-    bool insert_mode);
+    uint16_t prefix, uint16_t load_op, uint16_t suffix);
 
 extern void
 eliminate_pop_guard(_PyUOpInstruction *this_instr, JitOptContext *ctx, bool exit);
@@ -536,21 +536,24 @@ dummy_func(void) {
     }
 
     op(_TO_BOOL, (value -- res)) {
-        int already_bool = optimize_to_bool(this_instr, ctx, value, &res, false);
+        int already_bool = optimize_to_bool(this_instr, ctx, value, &res,
+                                            _POP_TOP, _LOAD_CONST_INLINE_BORROW, _NOP);
         if (!already_bool) {
             res = sym_new_truthiness(ctx, value, true);
         }
     }
 
     op(_TO_BOOL_BOOL, (value -- value)) {
-        int already_bool = optimize_to_bool(this_instr, ctx, value, &value, false);
+        int already_bool = optimize_to_bool(this_instr, ctx, value, &value,
+                                            _POP_TOP, _LOAD_CONST_INLINE_BORROW, _NOP);
         if (!already_bool) {
             sym_set_type(value, &PyBool_Type);
         }
     }
 
     op(_TO_BOOL_INT, (value -- res, v)) {
-        int already_bool = optimize_to_bool(this_instr, ctx, value, &res, true);
+        int already_bool = optimize_to_bool(this_instr, ctx, value, &res,
+                                            _NOP, _LOAD_CONST_INLINE_BORROW, _SWAP);
         if (!already_bool) {
             sym_set_type(value, &PyLong_Type);
             res = sym_new_truthiness(ctx, value, true);
@@ -559,7 +562,8 @@ dummy_func(void) {
     }
 
     op(_TO_BOOL_LIST, (value -- res, v)) {
-        int already_bool = optimize_to_bool(this_instr, ctx, value, &res, true);
+        int already_bool = optimize_to_bool(this_instr, ctx, value, &res,
+                                            _NOP, _LOAD_CONST_INLINE_BORROW, _SWAP);
         if (!already_bool) {
             res = sym_new_type(ctx, &PyBool_Type);
         }
@@ -567,7 +571,8 @@ dummy_func(void) {
     }
 
     op(_TO_BOOL_NONE, (value -- res)) {
-        int already_bool = optimize_to_bool(this_instr, ctx, value, &res, false);
+        int already_bool = optimize_to_bool(this_instr, ctx, value, &res,
+                                            _POP_TOP, _LOAD_CONST_INLINE_BORROW, _NOP);
         if (!already_bool) {
             sym_set_const(value, Py_None);
             res = sym_new_const(ctx, Py_False);
@@ -593,7 +598,8 @@ dummy_func(void) {
     }
 
     op(_TO_BOOL_STR, (value -- res, v)) {
-        int already_bool = optimize_to_bool(this_instr, ctx, value, &res, true);
+        int already_bool = optimize_to_bool(this_instr, ctx, value, &res,
+                                            _NOP, _LOAD_CONST_INLINE_BORROW, _SWAP);
         v = value;
         if (!already_bool) {
             res = sym_new_truthiness(ctx, value, true);
@@ -894,7 +900,7 @@ dummy_func(void) {
         PyTypeObject *type = (PyTypeObject *)sym_get_const(ctx, owner);
         PyObject *name = get_co_name(ctx, oparg >> 1);
         attr = lookup_attr(ctx, dependencies, this_instr, type, name,
-                           true);
+                           _POP_TOP, _LOAD_CONST_INLINE_BORROW, _LOAD_CONST_INLINE, _NOP);
     }
 
     op(_LOAD_ATTR_NONDESCRIPTOR_WITH_VALUES, (descr/4, owner -- attr)) {
@@ -902,7 +908,7 @@ dummy_func(void) {
         PyTypeObject *type = sym_get_type(owner);
         PyObject *name = get_co_name(ctx, oparg >> 1);
         attr = lookup_attr(ctx, dependencies, this_instr, type, name,
-                           true);
+                           _POP_TOP, _LOAD_CONST_INLINE_BORROW, _LOAD_CONST_INLINE, _NOP);
     }
 
     op(_LOAD_ATTR_NONDESCRIPTOR_NO_DICT, (descr/4, owner -- attr)) {
@@ -910,7 +916,7 @@ dummy_func(void) {
         PyTypeObject *type = sym_get_type(owner);
         PyObject *name = get_co_name(ctx, oparg >> 1);
         attr = lookup_attr(ctx, dependencies, this_instr, type, name,
-                           true);
+                           _POP_TOP, _LOAD_CONST_INLINE_BORROW, _LOAD_CONST_INLINE, _NOP);
     }
 
     op(_LOAD_ATTR_METHOD_WITH_VALUES, (descr/4, owner -- attr, self)) {
@@ -918,7 +924,7 @@ dummy_func(void) {
         PyTypeObject *type = sym_get_type(owner);
         PyObject *name = get_co_name(ctx, oparg >> 1);
         attr = lookup_attr(ctx, dependencies, this_instr, type, name,
-                           false);
+                           _NOP, _LOAD_CONST_INLINE_BORROW, _LOAD_CONST_INLINE, _SWAP);
         self = owner;
     }
 
@@ -927,7 +933,7 @@ dummy_func(void) {
         PyTypeObject *type = sym_get_type(owner);
         PyObject *name = get_co_name(ctx, oparg >> 1);
         attr = lookup_attr(ctx, dependencies, this_instr, type, name,
-                           false);
+                           _NOP, _LOAD_CONST_INLINE_BORROW, _LOAD_CONST_INLINE, _SWAP);
         self = owner;
     }
 
@@ -936,7 +942,7 @@ dummy_func(void) {
         PyTypeObject *type = sym_get_type(owner);
         PyObject *name = get_co_name(ctx, oparg >> 1);
         attr = lookup_attr(ctx, dependencies, this_instr, type, name,
-                           false);
+                           _NOP, _LOAD_CONST_INLINE_BORROW, _LOAD_CONST_INLINE, _SWAP);
         self = owner;
     }
 
@@ -2013,10 +2019,6 @@ dummy_func(void) {
             }
             if (ctx->frame->globals_checked_version != 0 && ctx->frame->globals_watched) {
                 cnst = convert_global_to_const(this_instr, builtins);
-                if (cnst != NULL && this_instr->oparg & 1) {
-                    assert(this_instr[1].opcode == _PUSH_NULL_CONDITIONAL);
-                    assert(this_instr[1].oparg & 1);
-                }
             }
         }
         if (cnst == NULL) {
@@ -2056,10 +2058,6 @@ dummy_func(void) {
                 }
                 if (ctx->frame->globals_checked_version == version) {
                     cnst = convert_global_to_const(this_instr, globals);
-                    if (cnst != NULL && this_instr->oparg & 1) {
-                        assert(this_instr[1].opcode == _PUSH_NULL_CONDITIONAL);
-                        assert(this_instr[1].oparg & 1);
-                    }
                 }
             }
         }
