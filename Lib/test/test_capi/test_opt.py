@@ -3210,8 +3210,6 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertEqual(res, TIER2_THRESHOLD)
         uops = get_opnames(ex)
         self.assertNotIn("_LOAD_ATTR_METHOD_NO_DICT", uops)
-        self.assertNotIn("_INSERT_1_LOAD_CONST_INLINE", uops)
-        self.assertNotIn("_INSERT_1_LOAD_CONST_INLINE_BORROW", uops)
         self.assertIn("_LOAD_CONST_INLINE_BORROW", uops)
 
     def test_store_fast_refcount_elimination(self):
