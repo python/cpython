@@ -530,24 +530,39 @@ proxy_check_ref(PyObject *obj)
     return true;
 }
 
-
-/* If a parameter is a proxy, check that it is still "live" and wrap it,
- * replacing the original value with the raw object.  Raises ReferenceError
- * if the param is a dead proxy.
+/*
+ * Unwrap a proxy into a strong reference.
+ * - If `o` is a live proxy: replaces `o` with the underlying object
+ *   (already Py_INCREF'd by _PyWeakref_GET_REF), sets *did_incref = 1.
+ * - If `o` is a dead proxy: sets ReferenceError, sets `o` = NULL,
+ *   sets *did_incref = 0.
+ * - If `o` is not a proxy: Py_INCREF's it, sets *did_incref = 1.
+ * Returns 1 on success, 0 on dead proxy (caller must goto error).
  */
-#define UNWRAP(o) \
-        if (PyWeakref_CheckProxy(o)) { \
-            o = _PyWeakref_GET_REF(o); \
-            proxy_check_ref(o);  \
-        } \
-        else { \
-            Py_INCREF(o); \
+static inline int
+_proxy_unwrap(PyObject **op, int *did_incref)
+{
+    if (PyWeakref_CheckProxy(*op)) {
+        *op = _PyWeakref_GET_REF(*op);
+        if (!proxy_check_ref(*op)) {
+            *did_incref = 0;
+            return 0;
         }
+        /* _PyWeakref_GET_REF already returned a strong ref */
+    }
+    else {
+        Py_INCREF(*op);
+    }
+    *did_incref = 1;
+    return 1;
+}
 
 #define WRAP_UNARY(method, generic) \
     static PyObject * \
     method(PyObject *proxy) { \
-        UNWRAP(proxy); \
+        int proxy_incref = 0; \
+        if (!_proxy_unwrap(&proxy, &proxy_incref)) \
+            return NULL; \
         PyObject* res = generic(proxy); \
         Py_DECREF(proxy); \
         return res; \
@@ -556,18 +571,19 @@ proxy_check_ref(PyObject *obj)
 #define WRAP_BINARY(method, generic) \
     static PyObject * \
     method(PyObject *x, PyObject *y) { \
-        UNWRAP(x); \
-        if (x == NULL) \
-            return NULL; \
-        UNWRAP(y); \
-        if (y == NULL) { \
-            Py_XDECREF(x); \
-            return NULL; \
+        int x_incref = 0, y_incref = 0; \
+        if (!_proxy_unwrap(&x, &x_incref)) goto clean_up; \
+        if (!_proxy_unwrap(&y, &y_incref)) goto clean_up; \
+        { \
+            PyObject* res = generic(x, y); \
+            Py_DECREF(x); \
+            Py_DECREF(y); \
+            return res; \
         } \
-        PyObject* res = generic(x, y); \
-        Py_DECREF(x); \
-        Py_DECREF(y); \
-        return res; \
+    clean_up: \
+        if (x_incref) Py_DECREF(x); \
+        if (y_incref) Py_DECREF(y); \
+        return NULL; \
     }
 
 /* Note that the third arg needs to be checked for NULL since the tp_call
@@ -576,40 +592,36 @@ proxy_check_ref(PyObject *obj)
 #define WRAP_TERNARY(method, generic) \
     static PyObject * \
     method(PyObject *proxy, PyObject *v, PyObject *w) { \
-        UNWRAP(proxy); \
-        if (proxy == NULL) \
-            return NULL; \
-        UNWRAP(v); \
-        if (v == NULL) { \
-            Py_XDECREF(proxy); \
-            return NULL; \
-        } \
+        int proxy_incref = 0, v_incref = 0, w_incref = 0; \
+        if (!_proxy_unwrap(&proxy, &proxy_incref)) goto clean_up; \
+        if (!_proxy_unwrap(&v, &v_incref))         goto clean_up; \
         if (w != NULL) { \
-            UNWRAP(w); \
-            if (w == NULL) { \
-                Py_XDECREF(proxy); \
-                Py_XDECREF(v); \
-                return NULL; \
-            } \
+            if (!_proxy_unwrap(&w, &w_incref))     goto clean_up; \
         } \
-        PyObject* res = generic(proxy, v, w); \
-        Py_DECREF(proxy); \
-        Py_DECREF(v); \
-        Py_XDECREF(w); \
-        return res; \
+        { \
+            PyObject* res = generic(proxy, v, w); \
+            Py_DECREF(proxy); \
+            Py_DECREF(v); \
+            Py_XDECREF(w); \
+            return res; \
+        } \
+    clean_up: \
+        if (proxy_incref) Py_DECREF(proxy); \
+        if (v_incref)     Py_DECREF(v); \
+        if (w_incref)     Py_DECREF(w); \
+        return NULL; \
     }
 
 #define WRAP_METHOD(method, SPECIAL) \
     static PyObject * \
     method(PyObject *proxy, PyObject *Py_UNUSED(ignored)) { \
-            UNWRAP(proxy); \
-            if (proxy == NULL) \
-                return NULL; \
-            PyObject* res = PyObject_CallMethodNoArgs(proxy, &_Py_ID(SPECIAL)); \
-            Py_DECREF(proxy); \
-            return res; \
-        }
-
+        int proxy_incref = 0; \
+        if (!_proxy_unwrap(&proxy, &proxy_incref)) \
+            return NULL; \
+        PyObject* res = PyObject_CallMethodNoArgs(proxy, &_Py_ID(SPECIAL)); \
+        Py_DECREF(proxy); \
+        return res; \
+    }
 
 /* direct slots */
 
@@ -652,18 +664,19 @@ proxy_setattr(PyObject *proxy, PyObject *name, PyObject *value)
 static PyObject *
 proxy_richcompare(PyObject *proxy, PyObject *v, int op)
 {
-    UNWRAP(proxy);
-    if (proxy == NULL)
-        return NULL;
-    UNWRAP(v);
-    if (v == NULL) {
-        Py_XDECREF(proxy);
-        return NULL;
+    int proxy_incref = 0, v_incref = 0;
+    if (!_proxy_unwrap(&proxy, &proxy_incref)) goto clean_up;
+    if (!_proxy_unwrap(&v, &v_incref))         goto clean_up;
+    {
+        PyObject* res = PyObject_RichCompare(proxy, v, op);
+        Py_DECREF(proxy);
+        Py_DECREF(v);
+        return res;
     }
-    PyObject* res = PyObject_RichCompare(proxy, v, op);
-    Py_DECREF(proxy);
-    Py_DECREF(v);
-    return res;
+clean_up:
+    if (proxy_incref) Py_DECREF(proxy);
+    if (v_incref)     Py_DECREF(v);
+    return NULL;
 }
 
 /* number slots */
