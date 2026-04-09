@@ -2796,14 +2796,14 @@ The filter is a callable which disables lazy imports when they
 would otherwise be enabled. Returns True if the import is still enabled
 or False to disable it. The callable is called with:
 
-(importing_module_name, imported_module_name, [fromlist])
+(importing_module_name, resolved_imported_module_name, [fromlist])
 
 Pass None to clear the filter.
 [clinic start generated code]*/
 
 static PyObject *
 sys_set_lazy_imports_filter_impl(PyObject *module, PyObject *filter)
-/*[clinic end generated code: output=10251d49469c278c input=2eb48786bdd4ee42]*/
+/*[clinic end generated code: output=10251d49469c278c input=fd51ed8df6ab54b7]*/
 {
     if (PyImport_SetLazyImportsFilter(filter) < 0) {
         return NULL;

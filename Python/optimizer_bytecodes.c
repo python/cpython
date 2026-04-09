@@ -410,8 +410,16 @@ dummy_func(void) {
     }
 
     op(_BINARY_OP_EXTEND, (descr/4, left, right -- res, l, r)) {
-        (void)descr;
-        res = sym_new_not_null(ctx);
+        _PyBinaryOpSpecializationDescr *d = (_PyBinaryOpSpecializationDescr *)descr;
+        if (d != NULL && d->result_type != NULL) {
+            res = sym_new_type(ctx, d->result_type);
+            if (d->result_unique) {
+                res = PyJitRef_MakeUnique(res);
+            }
+        }
+        else {
+            res = sym_new_not_null(ctx);
+        }
         l = left;
         r = right;
     }
@@ -507,17 +515,17 @@ dummy_func(void) {
     }
 
     op(_BINARY_OP_SUBSCR_DICT, (dict_st, sub_st -- res, ds, ss)) {
-        PyObject *sub = sym_get_const(ctx, sub_st);
-        if (sub != NULL) {
-            optimize_dict_known_hash(ctx, dependencies, this_instr,
-                                     sub, _BINARY_OP_SUBSCR_DICT_KNOWN_HASH);
-        }
         res = sym_new_not_null(ctx);
         ds = dict_st;
         ss = sub_st;
+        PyObject *sub = sym_get_const(ctx, sub_st);
         if (sym_is_not_container(sub_st) &&
             sym_matches_type(dict_st, &PyFrozenDict_Type)) {
             REPLACE_OPCODE_IF_EVALUATES_PURE(dict_st, sub_st, res);
+        }
+        else if (sub != NULL) {
+            optimize_dict_known_hash(ctx, dependencies, this_instr,
+                                     sub, _BINARY_OP_SUBSCR_DICT_KNOWN_HASH);
         }
     }
 
@@ -749,14 +757,6 @@ dummy_func(void) {
         value = PyJitRef_Borrow(sym_new_const(ctx, ptr));
     }
 
-    op(_POP_TOP_LOAD_CONST_INLINE, (ptr/4, pop -- value)) {
-        value = sym_new_const(ctx, ptr);
-    }
-
-    op(_POP_TOP_LOAD_CONST_INLINE_BORROW, (ptr/4, pop -- value)) {
-        value = PyJitRef_Borrow(sym_new_const(ctx, ptr));
-    }
-
     op(_POP_CALL_LOAD_CONST_INLINE_BORROW, (ptr/4, unused, unused -- value)) {
         value = PyJitRef_Borrow(sym_new_const(ctx, ptr));
     }
@@ -837,7 +837,7 @@ dummy_func(void) {
                 if (watched_mutations < _Py_MAX_ALLOWED_GLOBALS_MODIFICATIONS) {
                     PyDict_Watch(GLOBALS_WATCHER_ID, dict);
                     _Py_BloomFilter_Add(dependencies, dict);
-                    PyObject *res = convert_global_to_const(this_instr, dict, false, true);
+                    PyObject *res = convert_global_to_const(this_instr, dict, true);
                     if (res == NULL) {
                         attr = sym_new_not_null(ctx);
                     }
@@ -890,8 +890,7 @@ dummy_func(void) {
         PyTypeObject *type = (PyTypeObject *)sym_get_const(ctx, owner);
         PyObject *name = get_co_name(ctx, oparg >> 1);
         attr = lookup_attr(ctx, dependencies, this_instr, type, name,
-                           _POP_TOP_LOAD_CONST_INLINE_BORROW,
-                           _POP_TOP_LOAD_CONST_INLINE);
+                           true);
     }
 
     op(_LOAD_ATTR_NONDESCRIPTOR_WITH_VALUES, (descr/4, owner -- attr)) {
@@ -899,8 +898,7 @@ dummy_func(void) {
         PyTypeObject *type = sym_get_type(owner);
         PyObject *name = get_co_name(ctx, oparg >> 1);
         attr = lookup_attr(ctx, dependencies, this_instr, type, name,
-                           _POP_TOP_LOAD_CONST_INLINE_BORROW,
-                           _POP_TOP_LOAD_CONST_INLINE);
+                           true);
     }
 
     op(_LOAD_ATTR_NONDESCRIPTOR_NO_DICT, (descr/4, owner -- attr)) {
@@ -908,8 +906,7 @@ dummy_func(void) {
         PyTypeObject *type = sym_get_type(owner);
         PyObject *name = get_co_name(ctx, oparg >> 1);
         attr = lookup_attr(ctx, dependencies, this_instr, type, name,
-                           _POP_TOP_LOAD_CONST_INLINE_BORROW,
-                           _POP_TOP_LOAD_CONST_INLINE);
+                           true);
     }
 
     op(_LOAD_ATTR_METHOD_WITH_VALUES, (descr/4, owner -- attr, self)) {
@@ -917,8 +914,7 @@ dummy_func(void) {
         PyTypeObject *type = sym_get_type(owner);
         PyObject *name = get_co_name(ctx, oparg >> 1);
         attr = lookup_attr(ctx, dependencies, this_instr, type, name,
-                           _LOAD_CONST_UNDER_INLINE_BORROW,
-                           _LOAD_CONST_UNDER_INLINE);
+                           false);
         self = owner;
     }
 
@@ -927,8 +923,7 @@ dummy_func(void) {
         PyTypeObject *type = sym_get_type(owner);
         PyObject *name = get_co_name(ctx, oparg >> 1);
         attr = lookup_attr(ctx, dependencies, this_instr, type, name,
-                           _LOAD_CONST_UNDER_INLINE_BORROW,
-                           _LOAD_CONST_UNDER_INLINE);
+                           false);
         self = owner;
     }
 
@@ -937,8 +932,7 @@ dummy_func(void) {
         PyTypeObject *type = sym_get_type(owner);
         PyObject *name = get_co_name(ctx, oparg >> 1);
         attr = lookup_attr(ctx, dependencies, this_instr, type, name,
-                           _LOAD_CONST_UNDER_INLINE_BORROW,
-                           _LOAD_CONST_UNDER_INLINE);
+                           false);
         self = owner;
     }
 
@@ -1413,7 +1407,7 @@ dummy_func(void) {
         ctx->frame->is_c_recursion_checked = true;
     }
 
-    op(_CALL_METHOD_DESCRIPTOR_NOARGS, (callable, self_or_null, args[oparg] -- res)) {
+    op(_CALL_METHOD_DESCRIPTOR_NOARGS, (callable, self_or_null, args[oparg] -- res, c, s)) {
         PyObject *callable_o = sym_get_const(ctx, callable);
         if (callable_o && Py_IS_TYPE(callable_o, &PyMethodDescr_Type)
             && sym_is_not_null(self_or_null)) {
@@ -1422,6 +1416,17 @@ dummy_func(void) {
             ADD_OP(_CALL_METHOD_DESCRIPTOR_NOARGS_INLINE, oparg + 1, (uintptr_t)cfunc);
         }
         res = sym_new_not_null(ctx);
+        c = callable;
+        if (sym_is_not_null(self_or_null)) {
+            args--;
+            s = args[0];
+        }
+        else if (sym_is_null(self_or_null)) {
+            s = args[0];
+        }
+        else {
+            s = sym_new_unknown(ctx);
+        }
     }
 
     op(_CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS, (callable, self_or_null, args[oparg] -- res)) {
@@ -2002,7 +2007,7 @@ dummy_func(void) {
                 ctx->builtins_watched = true;
             }
             if (ctx->frame->globals_checked_version != 0 && ctx->frame->globals_watched) {
-                cnst = convert_global_to_const(this_instr, builtins, false, false);
+                cnst = convert_global_to_const(this_instr, builtins, false);
             }
         }
         if (cnst == NULL) {
@@ -2041,7 +2046,7 @@ dummy_func(void) {
                     ctx->frame->globals_checked_version = version;
                 }
                 if (ctx->frame->globals_checked_version == version) {
-                    cnst = convert_global_to_const(this_instr, globals, false, false);
+                    cnst = convert_global_to_const(this_instr, globals, false);
                 }
             }
         }
@@ -2129,18 +2134,21 @@ dummy_func(void) {
     }
 
     op(_GUARD_CODE_VERSION_RETURN_VALUE, (version/2 -- )) {
+        (void)version;
         if (ctx->frame->caller) {
             REPLACE_OP(this_instr, _NOP, 0, 0);
         }
     }
 
     op(_GUARD_CODE_VERSION_YIELD_VALUE, (version/2 -- )) {
+        (void)version;
         if (ctx->frame->caller) {
             REPLACE_OP(this_instr, _NOP, 0, 0);
         }
     }
 
     op(_GUARD_CODE_VERSION_RETURN_GENERATOR, (version/2 -- )) {
+        (void)version;
         if (ctx->frame->caller) {
             REPLACE_OP(this_instr, _NOP, 0, 0);
         }

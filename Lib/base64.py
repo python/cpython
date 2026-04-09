@@ -237,7 +237,6 @@ def b32decode(s, casefold=False, map01=None, *, padded=True, ignorechars=b''):
     # either L (el) or I (eye).
     if map01 is not None:
         map01 = _bytes_from_decode_data(map01)
-        assert len(map01) == 1, repr(map01)
         s = s.translate(bytes.maketrans(b'01', b'O' + map01))
     if casefold:
         s = s.upper()
