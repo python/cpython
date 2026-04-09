@@ -1149,9 +1149,6 @@ typedef struct {
 PyObject* DONT_SLP_VECTORIZE
 _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int throwflag)
 {
-    _Py_EnsureTstateNotNULL(tstate);
-    CALL_STAT_INC(pyeval_calls);
-
     /* +1 because vectorcall might use -1 to write self */
     /* gh-138115: This must not be in individual cases for
        non-tail-call interpreters, as it results in excessive
@@ -1162,6 +1159,10 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
 #if !Py_TAIL_CALL_INTERP
     PyObject *STACKREF_SCRATCH[MAX_STACKREF_SCRATCH+1];
 #endif
+
+    _Py_EnsureTstateNotNULL(tstate);
+    CALL_STAT_INC(pyeval_calls);
+
 
 #if USE_COMPUTED_GOTOS && !Py_TAIL_CALL_INTERP
 /* Import the static jump table */
