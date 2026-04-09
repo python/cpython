@@ -31,8 +31,8 @@ Functions
 ---------
 
 .. function:: pp(object, stream=None, indent=1, width=80, depth=None, *, \
-                     color=True, compact=False, sort_dicts=False, \
-                     underscore_numbers=False)
+                 color=True, compact=False, expand=False, sort_dicts=False, \
+                 underscore_numbers=False)
 
    Prints the formatted representation of *object*, followed by a newline.
    This function may be used in the interactive interpreter
@@ -76,6 +76,13 @@ Functions
       each item of a sequence will be formatted on a separate line,
       otherwise as many items as will fit within the *width*
       will be formatted on each output line.
+      Incompatible with *expand*.
+
+   :param bool expand:
+      If ``True``,
+      opening parentheses and brackets will be followed by a newline and the
+      following content will be indented by one level, similar to
+      pretty-printed JSON. Incompatible with *compact*.
 
    :param bool sort_dicts:
       If ``True``, dictionaries will be formatted with
@@ -105,7 +112,7 @@ Functions
 
 
 .. function:: pprint(object, stream=None, indent=1, width=80, depth=None, *, \
-                     color=True, compact=False, sort_dicts=True, \
+                     color=True, compact=False, expand=False, sort_dicts=True, \
                      underscore_numbers=False)
 
    Alias for :func:`~pprint.pp` with *sort_dicts* set to ``True`` by default,
@@ -117,10 +124,11 @@ Functions
 
 
 .. function:: pformat(object, indent=1, width=80, depth=None, *, \
-                      compact=False, sort_dicts=True, underscore_numbers=False)
+                      compact=False, expand=False, sort_dicts=True, \
+                      underscore_numbers=False)
 
    Return the formatted representation of *object* as a string.  *indent*,
-   *width*, *depth*, *compact*, *sort_dicts* and *underscore_numbers* are
+   *width*, *depth*, *compact*, *expand*, *sort_dicts* and *underscore_numbers* are
    passed to the :class:`PrettyPrinter` constructor as formatting parameters
    and their meanings are as described in the documentation above.
 
@@ -164,8 +172,8 @@ PrettyPrinter objects
 .. index:: single: ...; placeholder
 
 .. class:: PrettyPrinter(indent=1, width=80, depth=None, stream=None, *, \
-                         color=True, compact=False, sort_dicts=True, \
-                         underscore_numbers=False)
+                         color=True, compact=False, expand=False, \
+                         sort_dicts=True, underscore_numbers=False)
 
    Construct a :class:`PrettyPrinter` instance.
 
@@ -189,6 +197,22 @@ PrettyPrinter objects
      'knights', 'ni'],
     'spam', 'eggs', 'lumberjack', 'knights',
     'ni']
+   >>> pp = pprint.PrettyPrinter(width=41, expand=True, indent=3)
+   >>> pp.pprint(stuff)
+   [
+      [
+         'spam',
+         'eggs',
+         'lumberjack',
+         'knights',
+         'ni',
+      ],
+      'spam',
+      'eggs',
+      'lumberjack',
+      'knights',
+      'ni',
+   ]
    >>> tup = ('spam', ('eggs', ('lumberjack', ('knights', ('ni', ('dead',
    ... ('parrot', ('fresh fruit',))))))))
    >>> pp = pprint.PrettyPrinter(depth=6)
@@ -210,6 +234,9 @@ PrettyPrinter objects
 
    .. versionchanged:: next
       Added the *color* parameter.
+
+   .. versionchanged:: 3.15
+      Added the *expand* parameter.
 
 
 :class:`PrettyPrinter` instances have the following methods:
@@ -433,3 +460,72 @@ cannot be split, the specified width will be exceeded::
     'requires_python': None,
     'summary': 'A sample Python project',
     'version': '1.2.0'}
+
+Lastly, we can format like pretty-printed JSON with the *expand* parameter.
+Best results are achieved with a higher *indent* value::
+
+   >>> pprint.pp(project_info, indent=4, expand=True)
+   {
+      'author': 'The Python Packaging Authority',
+      'author_email': 'pypa-dev@googlegroups.com',
+      'bugtrack_url': None,
+      'classifiers': [
+         'Development Status :: 3 - Alpha',
+         'Intended Audience :: Developers',
+         'License :: OSI Approved :: MIT License',
+         'Programming Language :: Python :: 2',
+         'Programming Language :: Python :: 2.6',
+         'Programming Language :: Python :: 2.7',
+         'Programming Language :: Python :: 3',
+         'Programming Language :: Python :: 3.2',
+         'Programming Language :: Python :: 3.3',
+         'Programming Language :: Python :: 3.4',
+         'Topic :: Software Development :: Build Tools',
+      ],
+      'description': 'A sample Python project\n'
+      '=======================\n'
+      '\n'
+      'This is the description file for the project.\n'
+      '\n'
+      'The file should use UTF-8 encoding and be written using ReStructured '
+      'Text. It\n'
+      'will be used to generate the project webpage on PyPI, and should be '
+      'written for\n'
+      'that purpose.\n'
+      '\n'
+      'Typical contents for this file would include an overview of the project, '
+      'basic\n'
+      'usage examples, etc. Generally, including the project changelog in here '
+      'is not\n'
+      'a good idea, although a simple "What\'s New" section for the most recent '
+      'version\n'
+      'may be appropriate.',
+      'description_content_type': None,
+      'docs_url': None,
+      'download_url': 'UNKNOWN',
+      'downloads': {'last_day': -1, 'last_month': -1, 'last_week': -1},
+      'dynamic': None,
+      'home_page': 'https://github.com/pypa/sampleproject',
+      'keywords': 'sample setuptools development',
+      'license': 'MIT',
+      'license_expression': None,
+      'license_files': None,
+      'maintainer': None,
+      'maintainer_email': None,
+      'name': 'sampleproject',
+      'package_url': 'https://pypi.org/project/sampleproject/',
+      'platform': 'UNKNOWN',
+      'project_url': 'https://pypi.org/project/sampleproject/',
+      'project_urls': {
+         'Download': 'UNKNOWN',
+         'Homepage': 'https://github.com/pypa/sampleproject',
+      },
+      'provides_extra': None,
+      'release_url': 'https://pypi.org/project/sampleproject/1.2.0/',
+      'requires_dist': None,
+      'requires_python': None,
+      'summary': 'A sample Python project',
+      'version': '1.2.0',
+      'yanked': False,
+      'yanked_reason': None,
+   }
