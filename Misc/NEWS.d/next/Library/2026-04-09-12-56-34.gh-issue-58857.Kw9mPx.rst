@@ -1,0 +1,3 @@
+Add descriptive error messages to all bare assertions in
+:mod:`wsgiref.validate` middleware, making it easier to diagnose WSGI
+compliance issues.

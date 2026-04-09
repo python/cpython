@@ -189,8 +189,51 @@ class IntegrationTests(TestCase):
             b"A server error occurred.  Please contact the administrator."
         )
         self.assertEqual(
-            err.splitlines()[-2], "AssertionError"
+            err.splitlines()[-2],
+            "AssertionError: wsgi.input.read() takes exactly one argument"
         )
+
+    def test_wsgi_input_readline_type(self):
+        def bad_app(e, s):
+            # Monkey-patch the underlying input to return wrong type
+            class BadInput:
+                def read(self, size): return b""
+                def readline(self, *args): return "not bytes"
+                def readlines(self, *args): return []
+                def __iter__(self): return self
+            e["wsgi.input"].input = BadInput()
+            e["wsgi.input"].readline()
+            s("200 OK", [("Content-Type", "text/plain; charset=utf-8")])
+            return [b"data"]
+        out, err = run_amock(validator(bad_app))
+        self.assertIn("wsgi.input.readline() must return bytes",
+            err.splitlines()[-2])
+
+    def test_wsgi_errors_write_type(self):
+        def bad_app(e, s):
+            e["wsgi.errors"].write(b"not a string")
+            s("200 OK", [("Content-Type", "text/plain; charset=utf-8")])
+            return [b"data"]
+        out, err = run_amock(validator(bad_app))
+        self.assertIn("wsgi.errors.write() requires a str argument",
+            err.splitlines()[-2])
+
+    def test_wsgi_write_wrapper_type(self):
+        def bad_app(e, s):
+            write = s("200 OK", [("Content-Type", "text/plain; charset=utf-8")])
+            write("not bytes")
+            return [b"data"]
+        out, err = run_amock(validator(bad_app))
+        self.assertIn("write() argument must be a bytes instance",
+            err.splitlines()[-2])
+
+    def test_headers_tuple_length(self):
+        def bad_app(e, s):
+            s("200 OK", [("Content-Type",)])
+            return [b"data"]
+        out, err = run_amock(validator(bad_app))
+        self.assertIn("Individual headers must be 2-item tuples",
+            err.splitlines()[-2])
 
     @force_not_colorized
     def test_bytes_validation(self):
