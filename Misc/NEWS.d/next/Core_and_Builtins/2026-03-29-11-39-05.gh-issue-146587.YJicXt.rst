@@ -1,1 +1,0 @@
-Fix type slot assignment incase of multiple slots for same name in type object implementation. Patch by Kumar Aditya.
