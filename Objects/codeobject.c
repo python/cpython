@@ -1018,7 +1018,7 @@ PyCode_Addr2Line(PyCodeObject *co, int addrq)
     if (data) {
         _PyCoLineInstrumentationData *lines = _Py_atomic_load_ptr_acquire(&data->lines);
         if (lines) {
-            return _Py_Instrumentation_GetLine(co, addrq/sizeof(_Py_CODEUNIT));
+            return _Py_Instrumentation_GetLine(co, lines, addrq/sizeof(_Py_CODEUNIT));
         }
     }
     assert(addrq >= 0 && addrq < _PyCode_NBYTES(co));
@@ -1034,7 +1034,7 @@ _PyCode_SafeAddr2Line(PyCodeObject *co, int addrq)
         return co->co_firstlineno;
     }
     if (co->_co_monitoring && co->_co_monitoring->lines) {
-        return _Py_Instrumentation_GetLine(co, addrq/sizeof(_Py_CODEUNIT));
+        return _Py_Instrumentation_GetLine(co, co->_co_monitoring->lines, addrq/sizeof(_Py_CODEUNIT));
     }
     if (!(addrq >= 0 && addrq < _PyCode_NBYTES(co))) {
         return -1;
