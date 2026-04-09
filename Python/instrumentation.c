@@ -1737,7 +1737,7 @@ update_instrumentation_data(PyCodeObject *code, PyInterpreterState *interp)
                 return -1;
             }
             initialize_lines(lines, code, bytes_per_entry);
-            _Py_atomic_store_ptr_release(code->_co_monitoring->lines, line_data);
+            _Py_atomic_store_ptr_release(code->_co_monitoring->lines, lines);
         }
         if (multitools && code->_co_monitoring->line_tools == NULL) {
             code->_co_monitoring->line_tools = PyMem_Malloc(code_len);
