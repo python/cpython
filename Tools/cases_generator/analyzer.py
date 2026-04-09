@@ -716,6 +716,8 @@ NON_ESCAPING_FUNCTIONS = (
     "_PyThreadState_PopCStackRefSteal",
     "doesnt_escape",
     "_Py_GatherStats_GetIter",
+    "_PyStolenTuple_Free",
+    "PyObject_GC_UnTrack",
 )
 
 

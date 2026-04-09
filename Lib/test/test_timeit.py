@@ -5,8 +5,13 @@ import io
 from textwrap import dedent
 
 from test.support import (
-    captured_stdout, captured_stderr, force_not_colorized,
+    captured_stderr,
+    captured_stdout,
+    force_colorized,
+    force_not_colorized_test_class,
 )
+
+from _colorize import get_theme
 
 # timeit's default number of iterations.
 DEFAULT_NUMBER = 1000000
@@ -42,6 +47,7 @@ class FakeTimer:
         self.saved_timer = timer
         return self
 
+@force_not_colorized_test_class
 class TestTimeit(unittest.TestCase):
 
     def tearDown(self):
@@ -352,22 +358,20 @@ class TestTimeit(unittest.TestCase):
         self.assertEqual(error_stringio.getvalue(),
                     "Unrecognized unit. Please select nsec, usec, msec, or sec.\n")
 
-    @force_not_colorized
     def test_main_exception(self):
         with captured_stderr() as error_stringio:
             s = self.run_main(switches=['1/0'])
         self.assert_exc_string(error_stringio.getvalue(), 'ZeroDivisionError')
 
-    @force_not_colorized
     def test_main_exception_fixed_reps(self):
         with captured_stderr() as error_stringio:
             s = self.run_main(switches=['-n1', '1/0'])
         self.assert_exc_string(error_stringio.getvalue(), 'ZeroDivisionError')
 
-    def autorange(self, seconds_per_increment=1/1024, callback=None):
+    def autorange(self, seconds_per_increment=1/1024, callback=None, target_time=0.2):
         timer = FakeTimer(seconds_per_increment=seconds_per_increment)
         t = timeit.Timer(stmt=self.fake_stmt, setup=self.fake_setup, timer=timer)
-        return t.autorange(callback)
+        return t.autorange(callback, target_time=target_time)
 
     def test_autorange(self):
         num_loops, time_taken = self.autorange()
@@ -378,6 +382,11 @@ class TestTimeit(unittest.TestCase):
         num_loops, time_taken = self.autorange(seconds_per_increment=1.0)
         self.assertEqual(num_loops, 1)
         self.assertEqual(time_taken, 1.0)
+
+    def test_autorange_with_target_time(self):
+        num_loops, time_taken = self.autorange(target_time=1.0)
+        self.assertEqual(num_loops, 2000)
+        self.assertEqual(time_taken, 2000/1024)
 
     def test_autorange_with_callback(self):
         def callback(a, b):
@@ -398,5 +407,39 @@ class TestTimeit(unittest.TestCase):
         self.assertEqual(s.getvalue(), expected)
 
 
-if __name__ == '__main__':
+class TestTimeitColor(unittest.TestCase):
+
+    fake_stmt = TestTimeit.fake_stmt
+    run_main = TestTimeit.run_main
+
+    @force_colorized
+    def test_main_colorized(self):
+        t = get_theme(force_color=True).timeit
+        s = self.run_main(seconds_per_increment=5.5)
+        self.assertEqual(
+            s,
+            "1 loop, best of 5: "
+            f"{t.best}5.5 sec{t.reset} "
+            f"{t.per_loop}per loop{t.reset}\n",
+        )
+
+    @force_colorized
+    def test_main_verbose_colorized(self):
+        t = get_theme(force_color=True).timeit
+        s = self.run_main(switches=["-v"])
+        self.assertEqual(
+            s,
+            f"1 loop {t.punctuation}-> {t.timing}1 secs{t.reset}\n\n"
+            "raw times: "
+            f"{t.timing}1 sec{t.punctuation}, "
+            f"{t.timing}1 sec{t.punctuation}, "
+            f"{t.timing}1 sec{t.punctuation}, "
+            f"{t.timing}1 sec{t.punctuation}, "
+            f"{t.timing}1 sec{t.reset}\n\n"
+            f"1 loop, best of 5: {t.best}1 sec{t.reset} "
+            f"{t.per_loop}per loop{t.reset}\n",
+        )
+
+
+if __name__ == "__main__":
     unittest.main()
