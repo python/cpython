@@ -1474,9 +1474,6 @@ optimize_and_assemble_code_unit(struct compiler_unit *u, PyObject *const_cache,
         goto error;
     }
 
-    // +1 due to all calls exceeding their stack limit by one.
-    stackdepth += 1;
-
     /** Assembly **/
     co = _PyAssemble_MakeCodeObject(&u->u_metadata, const_cache, consts,
                                     stackdepth, &optimized_instrs, nlocalsplus,
