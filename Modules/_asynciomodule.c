@@ -955,8 +955,7 @@ FutureObj_traverse(PyObject *op, visitproc visit, void *arg)
     Py_VISIT(fut->fut_cancel_msg);
     Py_VISIT(fut->fut_cancelled_exc);
     Py_VISIT(fut->fut_awaited_by);
-    PyObject_VisitManagedDict((PyObject *)fut, visit, arg);
-    return 0;
+    return PyObject_VisitManagedDict((PyObject *)fut, visit, arg);
 }
 
 /*[clinic input]
@@ -2445,8 +2444,7 @@ TaskObj_traverse(PyObject *op, visitproc visit, void *arg)
     Py_VISIT(fut->fut_cancel_msg);
     Py_VISIT(fut->fut_cancelled_exc);
     Py_VISIT(fut->fut_awaited_by);
-    PyObject_VisitManagedDict((PyObject *)fut, visit, arg);
-    return 0;
+    return PyObject_VisitManagedDict((PyObject *)fut, visit, arg);
 }
 
 /*[clinic input]
