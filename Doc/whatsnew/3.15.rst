@@ -978,6 +978,20 @@ pickle
   (Contributed by Zackery Spytz and Serhiy Storchaka in :gh:`77188`.)
 
 
+pprint
+------
+
+* Add an *expand* keyword argument for :func:`pprint.pprint`,
+  :func:`pprint.pformat`, :func:`pprint.pp`. If true, the output will be
+  formatted similar to pretty-printed :func:`json.dumps` when
+  *indent* is supplied.
+  (Contributed by Stefan Todoran, Semyon Moroz and Hugo van Kemenade in
+  :gh:`112632`.)
+
+* Add t-string support to :mod:`pprint`.
+  (Contributed by Loïc Simon and Hugo van Kemenade in :gh:`134551`.)
+
+
 re
 --
 
@@ -1589,20 +1603,6 @@ platform
 * Removed the :func:`!platform.java_ver` function,
   which was deprecated since Python 3.13.
   (Contributed by Alexey Makridenko in :gh:`133604`.)
-
-
-pprint
-------
-
-* Add an *expand* keyword argument for :func:`pprint.pprint`,
-  :func:`pprint.pformat`, :func:`pprint.pp`. If true, the output will be
-  formatted similar to pretty-printed :func:`json.dumps` when
-  *indent* is supplied.
-  (Contributed by Stefan Todoran, Semyon Moroz and Hugo van Kemenade in
-  :gh:`112632`.)
-
-* Add t-string support to :mod:`pprint`.
-  (Contributed by Loïc Simon and Hugo van Kemenade in :gh:`134551`.)
 
 
 sre_*
