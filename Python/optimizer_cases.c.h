@@ -246,8 +246,9 @@
                 if (sym_is_const(ctx, res)) {
                     PyObject *result = sym_get_const(ctx, res);
                     if (_Py_IsImmortal(result)) {
-                        // Replace with _INSERT_1_LOAD_CONST_INLINE_BORROW since we have one input and an immortal result
-                        ADD_OP(_INSERT_1_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)result);
+                        // Replace with _LOAD_CONST_INLINE_BORROW + _SWAP since we have one input and an immortal result
+                        ADD_OP(_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)result);
+                        ADD_OP(_SWAP, 2, 0);
                     }
                 }
                 CHECK_STACK_BOUNDS(1);
@@ -487,7 +488,8 @@
             JitOptRef res;
             JitOptRef v;
             value = stack_pointer[-1];
-            ADD_OP(_INSERT_1_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)Py_True);
+            ADD_OP(_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)Py_True);
+            ADD_OP(_SWAP, 2, 0);
             res = sym_new_const(ctx, Py_True);
             v = value;
             CHECK_STACK_BOUNDS(1);
@@ -525,8 +527,9 @@
                     if (sym_is_const(ctx, res)) {
                         PyObject *result = sym_get_const(ctx, res);
                         if (_Py_IsImmortal(result)) {
-                            // Replace with _INSERT_1_LOAD_CONST_INLINE_BORROW since we have one input and an immortal result
-                            ADD_OP(_INSERT_1_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)result);
+                            // Replace with _LOAD_CONST_INLINE_BORROW + _SWAP since we have one input and an immortal result
+                            ADD_OP(_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)result);
+                            ADD_OP(_SWAP, 2, 0);
                         }
                     }
                     CHECK_STACK_BOUNDS(1);
@@ -2086,7 +2089,11 @@
                         ctx->frame->globals_checked_version = version;
                     }
                     if (ctx->frame->globals_checked_version == version) {
-                        cnst = convert_global_to_const(this_instr, globals, false);
+                        cnst = convert_global_to_const(this_instr, globals);
+                        if (cnst != NULL && this_instr->oparg & 1) {
+                            assert(this_instr[1].opcode == _PUSH_NULL_CONDITIONAL);
+                            assert(this_instr[1].oparg & 1);
+                        }
                     }
                 }
             }
@@ -2129,7 +2136,11 @@
                     ctx->builtins_watched = true;
                 }
                 if (ctx->frame->globals_checked_version != 0 && ctx->frame->globals_watched) {
-                    cnst = convert_global_to_const(this_instr, builtins, false);
+                    cnst = convert_global_to_const(this_instr, builtins);
+                    if (cnst != NULL && this_instr->oparg & 1) {
+                        assert(this_instr[1].opcode == _PUSH_NULL_CONDITIONAL);
+                        assert(this_instr[1].oparg & 1);
+                    }
                 }
             }
             if (cnst == NULL) {
@@ -2439,11 +2450,15 @@
                     if (watched_mutations < _Py_MAX_ALLOWED_GLOBALS_MODIFICATIONS) {
                         PyDict_Watch(GLOBALS_WATCHER_ID, dict);
                         _Py_BloomFilter_Add(dependencies, dict);
-                        PyObject *res = convert_global_to_const(this_instr, dict, true);
+                        PyObject *res = convert_global_to_const(this_instr, dict);
                         if (res == NULL) {
                             attr = sym_new_not_null(ctx);
                         }
                         else {
+                            bool immortal = _Py_IsImmortal(res);
+                            ADD_OP(immortal ? _LOAD_CONST_INLINE_BORROW : _LOAD_CONST_INLINE,
+                                0, (uintptr_t)res);
+                            ADD_OP(_SWAP, 2, 0);
                             attr = sym_new_const(ctx, res);
                         }
                     }
@@ -4946,32 +4961,6 @@
             CHECK_STACK_BOUNDS(-2);
             stack_pointer[-3] = value;
             stack_pointer += -2;
-            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
-            break;
-        }
-
-        case _INSERT_1_LOAD_CONST_INLINE: {
-            JitOptRef res;
-            JitOptRef l;
-            res = sym_new_not_null(ctx);
-            l = sym_new_not_null(ctx);
-            CHECK_STACK_BOUNDS(1);
-            stack_pointer[-1] = res;
-            stack_pointer[0] = l;
-            stack_pointer += 1;
-            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
-            break;
-        }
-
-        case _INSERT_1_LOAD_CONST_INLINE_BORROW: {
-            JitOptRef res;
-            JitOptRef l;
-            res = sym_new_not_null(ctx);
-            l = sym_new_not_null(ctx);
-            CHECK_STACK_BOUNDS(1);
-            stack_pointer[-1] = res;
-            stack_pointer[0] = l;
-            stack_pointer += 1;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
             break;
         }

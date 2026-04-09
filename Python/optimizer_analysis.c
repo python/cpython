@@ -155,7 +155,7 @@ type_watcher_callback(PyTypeObject* type)
 }
 
 static PyObject *
-convert_global_to_const(_PyUOpInstruction *inst, PyObject *obj, bool insert)
+convert_global_to_const(_PyUOpInstruction *inst, PyObject *obj)
 {
     assert(inst->opcode == _LOAD_GLOBAL_MODULE || inst->opcode == _LOAD_GLOBAL_BUILTINS || inst->opcode == _LOAD_ATTR_MODULE);
     assert(PyDict_CheckExact(obj));
@@ -175,22 +175,10 @@ convert_global_to_const(_PyUOpInstruction *inst, PyObject *obj, bool insert)
     if (res == NULL) {
         return NULL;
     }
-    if (insert) {
-        if (_Py_IsImmortal(res)) {
-            inst->opcode = _INSERT_1_LOAD_CONST_INLINE_BORROW;
-        } else {
-            inst->opcode = _INSERT_1_LOAD_CONST_INLINE;
-        }
+    if (_Py_IsImmortal(res)) {
+        inst->opcode = _LOAD_CONST_INLINE_BORROW;
     } else {
-        if (_Py_IsImmortal(res)) {
-            inst->opcode = _LOAD_CONST_INLINE_BORROW;
-        } else {
-            inst->opcode = _LOAD_CONST_INLINE;
-        }
-        if (inst->oparg & 1) {
-            assert(inst[1].opcode == _PUSH_NULL_CONDITIONAL);
-            assert(inst[1].oparg & 1);
-        }
+        inst->opcode = _LOAD_CONST_INLINE;
     }
     inst->operand0 = (uint64_t)res;
     return res;
@@ -341,7 +329,8 @@ optimize_to_bool(
     if (truthiness >= 0) {
         PyObject *load = truthiness ? Py_True : Py_False;
         if (insert_mode) {
-            ADD_OP(_INSERT_1_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)load);
+            ADD_OP(_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)load);
+            ADD_OP(_SWAP, 2, 0);
         } else {
             ADD_OP(_POP_TOP, 0, 0);
             ADD_OP(_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)load);
@@ -404,8 +393,9 @@ lookup_attr(JitOptContext *ctx, _PyBloomFilter *dependencies, _PyUOpInstruction 
                        0, (uintptr_t)lookup);
             }
             else {
-                ADD_OP(immortal ? _INSERT_1_LOAD_CONST_INLINE_BORROW : _INSERT_1_LOAD_CONST_INLINE,
+                ADD_OP(immortal ? _LOAD_CONST_INLINE_BORROW : _LOAD_CONST_INLINE,
                        0, (uintptr_t)lookup);
+                ADD_OP(_SWAP, 2, 0);
             }
             PyType_Watch(TYPE_WATCHER_ID, (PyObject *)type);
             _Py_BloomFilter_Add(dependencies, type);
@@ -616,8 +606,6 @@ const uint16_t op_without_push[MAX_UOP_ID + 1] = {
     [_COPY] = _NOP,
     [_LOAD_CONST_INLINE] = _NOP,
     [_LOAD_CONST_INLINE_BORROW] = _NOP,
-    [_INSERT_1_LOAD_CONST_INLINE] = _POP_TOP_LOAD_CONST_INLINE,
-    [_INSERT_1_LOAD_CONST_INLINE_BORROW] = _POP_TOP_LOAD_CONST_INLINE_BORROW,
     [_LOAD_FAST] = _NOP,
     [_LOAD_FAST_BORROW] = _NOP,
     [_LOAD_SMALL_INT] = _NOP,

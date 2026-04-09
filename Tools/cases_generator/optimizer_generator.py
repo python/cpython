@@ -244,8 +244,9 @@ class OptimizerEmitter(Emitter):
                          "0, (uintptr_t)result")],
                     # (left -- res, left)
                     # usually for unary ops with passthrough references
-                    1: [("_INSERT_1_LOAD_CONST_INLINE_BORROW",
-                         "0, (uintptr_t)result")],
+                    1: [("_LOAD_CONST_INLINE_BORROW",
+                         "0, (uintptr_t)result"),
+                        ("_SWAP", "2, 0")],
                 },
                 2: {
                     # (a, b -- res), usually for binary ops

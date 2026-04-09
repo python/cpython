@@ -837,11 +837,15 @@ dummy_func(void) {
                 if (watched_mutations < _Py_MAX_ALLOWED_GLOBALS_MODIFICATIONS) {
                     PyDict_Watch(GLOBALS_WATCHER_ID, dict);
                     _Py_BloomFilter_Add(dependencies, dict);
-                    PyObject *res = convert_global_to_const(this_instr, dict, true);
+                    PyObject *res = convert_global_to_const(this_instr, dict);
                     if (res == NULL) {
                         attr = sym_new_not_null(ctx);
                     }
                     else {
+                        bool immortal = _Py_IsImmortal(res);
+                        ADD_OP(immortal ? _LOAD_CONST_INLINE_BORROW : _LOAD_CONST_INLINE,
+                               0, (uintptr_t)res);
+                        ADD_OP(_SWAP, 2, 0);
                         attr = sym_new_const(ctx, res);
                     }
 
@@ -1607,7 +1611,8 @@ dummy_func(void) {
     }
 
     op(_REPLACE_WITH_TRUE, (value -- res, v)) {
-        ADD_OP(_INSERT_1_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)Py_True);
+        ADD_OP(_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)Py_True);
+        ADD_OP(_SWAP, 2, 0);
         res = sym_new_const(ctx, Py_True);
         v = value;
     }
@@ -2007,7 +2012,11 @@ dummy_func(void) {
                 ctx->builtins_watched = true;
             }
             if (ctx->frame->globals_checked_version != 0 && ctx->frame->globals_watched) {
-                cnst = convert_global_to_const(this_instr, builtins, false);
+                cnst = convert_global_to_const(this_instr, builtins);
+                if (cnst != NULL && this_instr->oparg & 1) {
+                    assert(this_instr[1].opcode == _PUSH_NULL_CONDITIONAL);
+                    assert(this_instr[1].oparg & 1);
+                }
             }
         }
         if (cnst == NULL) {
@@ -2046,7 +2055,11 @@ dummy_func(void) {
                     ctx->frame->globals_checked_version = version;
                 }
                 if (ctx->frame->globals_checked_version == version) {
-                    cnst = convert_global_to_const(this_instr, globals, false);
+                    cnst = convert_global_to_const(this_instr, globals);
+                    if (cnst != NULL && this_instr->oparg & 1) {
+                        assert(this_instr[1].opcode == _PUSH_NULL_CONDITIONAL);
+                        assert(this_instr[1].oparg & 1);
+                    }
                 }
             }
         }
