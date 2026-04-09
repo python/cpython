@@ -153,3 +153,48 @@ PyCapsule_SetContext:distinct:
 # Import - looks up a capsule from a module attribute and
 # calls PyCapsule_GetPointer; may call arbitrary code
 PyCapsule_Import:compatible:
+
+# Tuple objects
+
+# Creation - pure allocation, no shared state
+PyTuple_New:atomic:
+PyTuple_FromArray:atomic:
+PyTuple_Pack:atomic:
+
+# Size - tuples are immutable so size never changes
+PyTuple_Size:atomic:
+PyTuple_GET_SIZE:atomic:
+
+# Borrowed-reference lookups - tuples are immutable so items
+# never change, however the tuple must be kept alive while using the borrowed reference
+PyTuple_GetItem:compatible:
+PyTuple_GET_ITEM:compatible:
+
+# Slice - creates a new tuple from an existing tuple
+PyTuple_GetSlice:atomic:
+
+# SetItem - only usable on tuples with refcount 1
+PyTuple_SetItem:compatible:
+PyTuple_SET_ITEM:compatible:
+
+# Resize - only usable on tuples with refcount 1
+_PyTuple_Resize:compatible:
+
+# Struct Sequence objects
+
+# Creation
+PyStructSequence_NewType:atomic:
+PyStructSequence_New:atomic:
+
+# Initialization - modifies the type object in place
+PyStructSequence_InitType:distinct:
+PyStructSequence_InitType2:distinct:
+
+# Borrowed-reference lookups - same as tuple items
+PyStructSequence_GetItem:compatible:
+PyStructSequence_GET_ITEM:compatible:
+
+# SetItem - only for filling in brand new instances
+PyStructSequence_SetItem:compatible:
+PyStructSequence_SET_ITEM:compatible:
+

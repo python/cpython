@@ -3,8 +3,7 @@ name: Reusable check HTML IDs
 on:
   workflow_call:
 
-permissions:
-  contents: read
+permissions: {}
 
 env:
   FORCE_COLOR: 1
@@ -15,11 +14,33 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
-      - name: 'Check out base commit'
+      - name: 'Check out PR head'
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           persist-credentials: false
-          ref: ${{ github.event.pull_request.base.sha }}
+          ref: ${{ github.event.pull_request.head.sha }}
+      - name: 'Find merge base'
+        id: merge-base
+        run: |
+          BASE="${{ github.event.pull_request.base.sha }}"
+          HEAD="${{ github.event.pull_request.head.sha }}"
+          git fetch --depth=$((${{ github.event.pull_request.commits }} + 10)) --no-tags origin "$BASE" "$HEAD"
+
+          if ! MERGE_BASE=$(git merge-base "$BASE" "$HEAD" 2>/dev/null); then
+            git fetch --deepen=1 --no-tags origin "$BASE" "$HEAD"
+
+            OLDEST=$(git rev-list --reflog --max-parents=0 --reverse "${BASE}^" "${HEAD}^" | head -1)
+            TIMESTAMP=$(git show --format=%at --no-patch "$OLDEST")
+
+            git fetch --shallow-since="$TIMESTAMP" --no-tags origin "$BASE" "$HEAD"
+
+            MERGE_BASE=$(git merge-base "$BASE" "$HEAD")
+          fi
+          echo "sha=$MERGE_BASE" >> "$GITHUB_OUTPUT"
+      - name: 'Create worktree at merge base'
+        env:
+          MERGE_BASE: ${{ steps.merge-base.outputs.sha }}
+        run: git worktree add /tmp/merge-base "$MERGE_BASE" --detach
       - name: 'Set up Python'
         uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
         with:
@@ -27,24 +48,11 @@ jobs:
           cache: 'pip'
           cache-dependency-path: 'Doc/requirements.txt'
       - name: 'Install build dependencies'
-        run: make -C Doc/ venv
+        run: make -C /tmp/merge-base/Doc/ venv
       - name: 'Build HTML documentation'
-        run: make -C Doc/ SPHINXOPTS="--quiet" html
-      - name: 'Check out PR head tools'
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-        with:
-          persist-credentials: false
-          sparse-checkout: |
-            Doc/tools/check-html-ids.py
-            Doc/tools/removed-ids.txt
-          sparse-checkout-cone-mode: false
-          path: pr-head
-      - name: 'Use PR head tools'
-        run: |
-          cp pr-head/Doc/tools/check-html-ids.py Doc/tools/check-html-ids.py
-          [ -f pr-head/Doc/tools/removed-ids.txt ] && cp pr-head/Doc/tools/removed-ids.txt Doc/tools/removed-ids.txt
+        run: make -C /tmp/merge-base/Doc/ SPHINXOPTS="--quiet" html
       - name: 'Collect HTML IDs'
-        run: python Doc/tools/check-html-ids.py collect Doc/build/html -o /tmp/html-ids-base.json.gz
+        run: python Doc/tools/check-html-ids.py collect /tmp/merge-base/Doc/build/html -o /tmp/html-ids-base.json.gz
       - name: 'Download PR head HTML IDs'
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
