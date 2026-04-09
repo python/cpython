@@ -19,6 +19,14 @@ _DHM_BUILD_DIR  := /tmp/build
 _DHM_WS_MOUNT   := /mnt/workspace
 _DHM_SYS_MOUNT  := /mnt/sysroot
 
+# Named Docker volume that persists the build tree across container runs,
+# so that Make's timestamp-based dependency tracking can skip up-to-date
+# targets on subsequent builds instead of rebuilding from scratch.
+# The volume name includes a hash of the workspace path to avoid
+# cross-contamination between different clones/branches on the same host.
+_DHM_WORKSPACE_ID := $(shell printf '%s' '$(abspath $(CURDIR))' | cksum | awk '{print $$1}')
+_DHM_BUILD_VOLUME ?= cpython-nanvix-build-$(_DHM_WORKSPACE_ID)
+
 # Files that need CRLF -> LF normalization for autotools
 _DHM_CRLF_FILES := configure config.guess config.sub install-sh \
     Modules/makesetup Modules/Setup \
@@ -50,24 +58,38 @@ _DHM_INNER_ARGS := make -f Makefile.nanvix \
 # Build output files to copy back to the host workspace
 _DHM_OUTPUT_FILES := python python.exe python.elf python.wasm libpython3.12.a
 
-# docker-host-run: sync sources into container, fix CRLF, run inner make,
-# copy outputs back.
-#   $(1) = inner make targets
-define docker-host-run
+# Path to the source-sync helper (resolved inside the container via the
+# workspace bind mount).  The script is piped through sed to strip any
+# Windows CRLF line endings before execution.
+_DHM_SYNC_SCRIPT := $(_DHM_WS_MOUNT)/.nanvix/mk/sync-sources.sh
+
+# Common docker-run prefix shared by all container invocations.
+define _dhm_docker_run
 docker run --rm \
+    -v $(_DHM_BUILD_VOLUME):$(_DHM_BUILD_DIR) \
     -v $(CURDIR):$(_DHM_WS_MOUNT) \
     -v $(abspath $(NANVIX_HOME)):$(_DHM_SYS_MOUNT):ro \
     -w $(_DHM_BUILD_DIR) \
     -e HOME=/tmp \
-    $(NANVIX_DOCKER_IMAGE) \
+    $(NANVIX_DOCKER_IMAGE)
+endef
+
+# Common shell preamble: CRLF-strip the sync script, run it, then cd into
+# the build directory.
+define _dhm_sync_preamble
+        sed "s/\r$$//" $(_DHM_SYNC_SCRIPT) > /tmp/_sync.sh && \
+        TAR_EXCLUDES="$(_DHM_TAR_EXCLUDES)" \
+            sh /tmp/_sync.sh $(_DHM_WS_MOUNT) $(_DHM_BUILD_DIR) $(_DHM_CRLF_FILES) && \
+        cd $(_DHM_BUILD_DIR)
+endef
+
+# docker-host-run: sync sources into container via a persistent Docker volume,
+# run inner make, copy outputs back.
+#   $(1) = inner make targets
+define docker-host-run
+$(call _dhm_docker_run) \
     sh -c '\
-        mkdir -p $(_DHM_BUILD_DIR) && \
-        tar -cf - -C $(_DHM_WS_MOUNT) $(_DHM_TAR_EXCLUDES) . \
-            | tar -xf - -C $(_DHM_BUILD_DIR) && \
-        for f in $(_DHM_CRLF_FILES); do \
-            if [ -f "$$f" ]; then sed "s/\r$$//" "$$f" > /tmp/_crlf.tmp && \
-            cat /tmp/_crlf.tmp > "$$f"; fi; done && \
-        rm -f .nanvix-configured conftest* config.cache && \
+        $(_dhm_sync_preamble) && \
         $(_DHM_INNER_ARGS) $(1); rc=$$?; \
         for f in $(_DHM_OUTPUT_FILES); do \
             [ -f $(_DHM_BUILD_DIR)/$$f ] && \
@@ -79,20 +101,9 @@ endef
 # staging directory back to the host so that nanvixd can run natively.
 #   $(1) = inner make prepare target(s)
 define docker-host-test-prepare
-docker run --rm \
-    -v $(CURDIR):$(_DHM_WS_MOUNT) \
-    -v $(abspath $(NANVIX_HOME)):$(_DHM_SYS_MOUNT):ro \
-    -w $(_DHM_BUILD_DIR) \
-    -e HOME=/tmp \
-    $(NANVIX_DOCKER_IMAGE) \
+$(call _dhm_docker_run) \
     sh -c '\
-        mkdir -p $(_DHM_BUILD_DIR) && \
-        tar -cf - -C $(_DHM_WS_MOUNT) $(_DHM_TAR_EXCLUDES) . \
-            | tar -xf - -C $(_DHM_BUILD_DIR) && \
-        for f in $(_DHM_CRLF_FILES); do \
-            if [ -f "$$f" ]; then sed "s/\r$$//" "$$f" > /tmp/_crlf.tmp && \
-            cat /tmp/_crlf.tmp > "$$f"; fi; done && \
-        rm -f .nanvix-configured conftest* config.cache && \
+        $(_dhm_sync_preamble) && \
         $(_DHM_INNER_ARGS) $(1); rc=$$?; \
         for f in $(_DHM_OUTPUT_FILES); do \
             [ -f $(_DHM_BUILD_DIR)/$$f ] && \
@@ -172,6 +183,7 @@ clean:
 	-rmdir /s /q .nanvix\_test_staging 2>nul
 	-rmdir /s /q _test_staging 2>nul
 	-rmdir /s /q staging 2>nul
+	-docker volume rm $(_DHM_BUILD_VOLUME) 2>nul
 
 distclean: clean
 
