@@ -61,7 +61,7 @@ jobs:
               || ''
             }}.txt handle_segv=0" >> "$GITHUB_ENV"
         else
-          echo "UBSAN_OPTIONS=${SAN_LOG_OPTION}" >> "$GITHUB_ENV"
+          echo "UBSAN_OPTIONS=${SAN_LOG_OPTION} halt_on_error=1 suppressions=${GITHUB_WORKSPACE}/Tools/ubsan/suppressions.txt" >> "$GITHUB_ENV"
         fi
         echo "CC=clang" >> "$GITHUB_ENV"
         echo "CXX=clang++" >> "$GITHUB_ENV"
@@ -75,7 +75,7 @@ jobs:
         ${{
           inputs.sanitizer == 'TSan'
           && '--with-thread-sanitizer'
-          || '--with-undefined-behavior-sanitizer'
+          || '--with-undefined-behavior-sanitizer --with-strict-overflow'
         }}
         --with-pydebug
         ${{ fromJSON(inputs.free-threading) && '--disable-gil' || '' }}
@@ -83,10 +83,13 @@ jobs:
       run: make -j4
     - name: Display build info
       run: make pythoninfo
+    # test_{capi,faulthandler} are skipped under UBSan because
+    # they raise signals that UBSan with halt_on_error=1 intercepts.
     - name: Tests
       run: >-
         ./python -m test
         ${{ inputs.sanitizer == 'TSan' && '--tsan' || '' }}
+        ${{ inputs.sanitizer == 'UBSan' && '-x test_capi -x test_faulthandler' || '' }}
         -j4
     - name: Parallel tests
       if: >-
