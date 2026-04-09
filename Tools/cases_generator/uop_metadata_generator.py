@@ -11,6 +11,7 @@ from analyzer import (
     get_uop_cache_depths,
     Uop,
     MAX_CACHED_REGISTER,
+    MIN_GENERATED_CACHED_REGISTER,
     MAX_GENERATED_CACHED_REGISTER,
 )
 from generators_common import (
@@ -82,7 +83,7 @@ def emit_runtime_tables(out: CWriter, max_cached_register: int) -> None:
 def emit_runtime_table_selector(out: CWriter) -> None:
     first = True
     for max_cached_register in range(
-        MAX_CACHED_REGISTER, MAX_GENERATED_CACHED_REGISTER + 1
+        MIN_GENERATED_CACHED_REGISTER, MAX_GENERATED_CACHED_REGISTER + 1
     ):
         directive = "#if" if first else "#elif"
         out.emit(f"{directive} MAX_CACHED_REGISTER == {max_cached_register}\n")
@@ -135,7 +136,7 @@ def emit_exact_match_dispatch(
 ) -> None:
     first = True
     for max_cached_register in range(
-        MAX_CACHED_REGISTER, MAX_GENERATED_CACHED_REGISTER + 1
+        MIN_GENERATED_CACHED_REGISTER, MAX_GENERATED_CACHED_REGISTER + 1
     ):
         directive = "#if" if first else "#elif"
         out.emit(f"{directive} MAX_CACHED_REGISTER == {max_cached_register}\n")
@@ -154,7 +155,7 @@ def generate_names_and_flags(analysis: Analysis, out: CWriter) -> None:
     out.emit("extern int _PyUop_num_popped(int opcode, int oparg);\n")
     out.emit(CACHING_INFO_DECL)
     for max_cached_register in range(
-        MAX_CACHED_REGISTER, MAX_GENERATED_CACHED_REGISTER + 1
+        MIN_GENERATED_CACHED_REGISTER, MAX_GENERATED_CACHED_REGISTER + 1
     ):
         emit_runtime_tables(out, max_cached_register)
     emit_runtime_table_selector(out)

@@ -9,6 +9,7 @@
 extern "C" {
 #endif
 
+#include "pycore_uop.h"
 #define _EXIT_TRACE 300
 #define _SET_IP 301
 #define _BINARY_OP 302
@@ -428,7 +429,6 @@ extern "C" {
 #define _WITH_EXCEPT_START WITH_EXCEPT_START
 #define _YIELD_VALUE 640
 #define MAX_UOP_ID 640
-#define MAX_CACHED_REGISTER 3
 #if MAX_CACHED_REGISTER == 3
 #define _CHECK_AND_ALLOCATE_OBJECT_r00 641
 #define _CHECK_CALL_BOUND_METHOD_EXACT_ARGS_r00 642

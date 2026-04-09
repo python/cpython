@@ -31,7 +31,6 @@ TOOLS_JIT_TEMPLATE_C = TOOLS_JIT / "template.c"
 
 ASYNCIO_RUNNER = asyncio.Runner()
 
-# TODO: Read this from Tools/cases_generator/analyzer.py instead of hardcoding.
 _MAX_CACHED_REGISTER = 3
 
 _S = typing.TypeVar("_S", _schema.COFFSection, _schema.ELFSection, _schema.MachOSection)

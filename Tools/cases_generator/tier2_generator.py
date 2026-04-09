@@ -17,6 +17,7 @@ from analyzer import (
     get_uop_cache_depths,
     is_large,
     MAX_CACHED_REGISTER,
+    MIN_GENERATED_CACHED_REGISTER,
     MAX_GENERATED_CACHED_REGISTER,
 )
 
@@ -267,7 +268,7 @@ def generate_tier2(
 
     first = True
     for target_depth in range(
-        MAX_CACHED_REGISTER, MAX_GENERATED_CACHED_REGISTER + 1
+        MIN_GENERATED_CACHED_REGISTER, MAX_GENERATED_CACHED_REGISTER + 1
     ):
         directive = "#if" if first else "#elif"
         out.start_line()

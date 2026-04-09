@@ -10,7 +10,7 @@ from analyzer import (
     Analysis,
     analyze_files,
     get_uop_cache_depths,
-    MAX_CACHED_REGISTER,
+    MIN_GENERATED_CACHED_REGISTER,
     MAX_GENERATED_CACHED_REGISTER,
 )
 from generators_common import (
@@ -31,6 +31,7 @@ def generate_uop_ids(
     write_header(__file__, filenames, outfile)
     out = CWriter(outfile, 0, False)
     with out.header_guard("Py_CORE_UOP_IDS_H"):
+        out.emit('#include "pycore_uop.h"\n')
         next_id = 1 if distinct_namespace else 300
         # These two are first by convention
         out.emit(f"#define _EXIT_TRACE {next_id}\n")
@@ -52,10 +53,9 @@ def generate_uop_ids(
 
         base_max_uop_id = next_id - 1
         out.emit(f"#define MAX_UOP_ID {base_max_uop_id}\n")
-        out.emit(f"#define MAX_CACHED_REGISTER {MAX_CACHED_REGISTER}\n")
         first = True
         for target_depth in range(
-            MAX_CACHED_REGISTER, MAX_GENERATED_CACHED_REGISTER + 1
+            MIN_GENERATED_CACHED_REGISTER, MAX_GENERATED_CACHED_REGISTER + 1
         ):
             directive = "#if" if first else "#elif"
             out.emit(f"{directive} MAX_CACHED_REGISTER == {target_depth}\n")
