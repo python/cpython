@@ -2122,49 +2122,43 @@ seq_int_multiply(PyObject *seq, PyObject *n,
 static PyObject *
 str_int_multiply(PyObject *lhs, PyObject *rhs)
 {
-    return seq_int_multiply(lhs, rhs,
-                            PyUnicode_Type.tp_as_sequence->sq_repeat);
+    return seq_int_multiply(lhs, rhs, PyUnicode_Type.tp_as_sequence->sq_repeat);
 }
 
 static PyObject *
 int_str_multiply(PyObject *lhs, PyObject *rhs)
 {
-    return seq_int_multiply(rhs, lhs,
-                            PyUnicode_Type.tp_as_sequence->sq_repeat);
+    return seq_int_multiply(rhs, lhs, PyUnicode_Type.tp_as_sequence->sq_repeat);
+}
+
+static PyObject *
+bytes_int_multiply(PyObject *lhs, PyObject *rhs)
+{
+    return seq_int_multiply(lhs, rhs, PyBytes_Type.tp_as_sequence->sq_repeat);
+}
+
+static PyObject *
+int_bytes_multiply(PyObject *lhs, PyObject *rhs)
+{
+    return seq_int_multiply(rhs, lhs, PyBytes_Type.tp_as_sequence->sq_repeat);
+}
+
+static PyObject *
+tuple_int_multiply(PyObject *lhs, PyObject *rhs)
+{
+    return seq_int_multiply(lhs, rhs, PyTuple_Type.tp_as_sequence->sq_repeat);
+}
+
+static PyObject *
+int_tuple_multiply(PyObject *lhs, PyObject *rhs)
+{
+    return seq_int_multiply(rhs, lhs, PyTuple_Type.tp_as_sequence->sq_repeat);
 }
 
 static PyObject *
 bytes_bytes_add(PyObject *lhs, PyObject *rhs)
 {
     return PyBytes_Type.tp_as_sequence->sq_concat(lhs, rhs);
-}
-
-static PyObject *
-bytes_int_multiply(PyObject *lhs, PyObject *rhs)
-{
-    return seq_int_multiply(lhs, rhs,
-                            PyBytes_Type.tp_as_sequence->sq_repeat);
-}
-
-static PyObject *
-int_bytes_multiply(PyObject *lhs, PyObject *rhs)
-{
-    return seq_int_multiply(rhs, lhs,
-                            PyBytes_Type.tp_as_sequence->sq_repeat);
-}
-
-static PyObject *
-tuple_int_multiply(PyObject *lhs, PyObject *rhs)
-{
-    return seq_int_multiply(lhs, rhs,
-                            PyTuple_Type.tp_as_sequence->sq_repeat);
-}
-
-static PyObject *
-int_tuple_multiply(PyObject *lhs, PyObject *rhs)
-{
-    return seq_int_multiply(rhs, lhs,
-                            PyTuple_Type.tp_as_sequence->sq_repeat);
 }
 
 static PyObject *
