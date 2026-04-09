@@ -3902,6 +3902,52 @@ class TestUopsOptimization(unittest.TestCase):
         # are known to be lists from the first _BINARY_OP_EXTEND.
         self.assertEqual(uops.count("_GUARD_BINARY_OP_EXTEND"), 1)
 
+    def test_binary_op_extend_partial_guard_lhs_known(self):
+        # When the lhs type is already known (from a prior _BINARY_OP_EXTEND
+        # result) but the rhs type is not, the optimizer should emit
+        # _GUARD_BINARY_OP_EXTEND_RHS (checking only the rhs) instead of
+        # the full _GUARD_BINARY_OP_EXTEND.
+        def testfunc(n):
+            a = [1, 2]
+            b = [3, 4]
+            total = 0
+            for _ in range(n):
+                c = a + b    # result type is list (known)
+                d = c + b    # lhs (c) is known list, rhs (b) is not -> _GUARD_BINARY_OP_EXTEND_RHS
+                total += d[0]
+            return total
+
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, TIER2_THRESHOLD)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertIn("_BINARY_OP_EXTEND", uops)
+        self.assertIn("_GUARD_BINARY_OP_EXTEND_RHS", uops)
+        self.assertNotIn("_GUARD_BINARY_OP_EXTEND_LHS", uops)
+
+    def test_binary_op_extend_partial_guard_rhs_known(self):
+        # When the rhs type is already known (from a prior _BINARY_OP_EXTEND
+        # result) but the lhs type is not, the optimizer should emit
+        # _GUARD_BINARY_OP_EXTEND_LHS (checking only the lhs) instead of
+        # the full _GUARD_BINARY_OP_EXTEND.
+        def testfunc(n):
+            a = [1, 2]
+            b = [3, 4]
+            total = 0
+            for _ in range(n):
+                c = a + b    # result type is list (known)
+                d = b + c    # rhs (c) is known list, lhs (b) is not -> _GUARD_BINARY_OP_EXTEND_LHS
+                total += d[0]
+            return total
+
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, TIER2_THRESHOLD)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertIn("_BINARY_OP_EXTEND", uops)
+        self.assertIn("_GUARD_BINARY_OP_EXTEND_LHS", uops)
+        self.assertNotIn("_GUARD_BINARY_OP_EXTEND_RHS", uops)
+
     def test_unary_invert_long_type(self):
         def testfunc(n):
             for _ in range(n):
