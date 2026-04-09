@@ -195,12 +195,10 @@ Future Object
       If the Future is already *done* or *cancelled*, return ``False``.
       Otherwise, change the Future's state to *cancelled*,
       schedule the callbacks, and return ``True``.
-      
+
       The optional argument *msg* is passed as the argument to the
       :exc:`CancelledError` exception raised when a cancelled Future
-      is awaited.
-
-      It can be any object.
+      is awaited.It can be any object.
 
       .. versionchanged:: 3.9
          Added the *msg* parameter.
