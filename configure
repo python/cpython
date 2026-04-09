@@ -6632,7 +6632,7 @@ else case e in #(
   ;;
   *)
   as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in notfound
+for as_dir in $PATH
 do
   IFS=$as_save_IFS
   case $as_dir in #(((
@@ -6681,7 +6681,7 @@ else case e in #(
   ;;
   *)
   as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in notfound
+for as_dir in $PATH
 do
   IFS=$as_save_IFS
   case $as_dir in #(((
@@ -6713,7 +6713,7 @@ printf "%s\n" "no" >&6; }
 fi
 
   if test "x$ac_pt_CXX" = x; then
-    CXX="g++"
+    CXX="notfound"
   else
     case $cross_compiling:$ac_tool_warned in
 yes:)
@@ -6742,7 +6742,7 @@ else case e in #(
   ;;
   *)
   as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in notfound
+for as_dir in $PATH
 do
   IFS=$as_save_IFS
   case $as_dir in #(((
@@ -6791,7 +6791,7 @@ else case e in #(
   ;;
   *)
   as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in notfound
+for as_dir in $PATH
 do
   IFS=$as_save_IFS
   case $as_dir in #(((
@@ -6823,7 +6823,7 @@ printf "%s\n" "no" >&6; }
 fi
 
   if test "x$ac_pt_CXX" = x; then
-    CXX="c++"
+    CXX="notfound"
   else
     case $cross_compiling:$ac_tool_warned in
 yes:)
@@ -6852,7 +6852,7 @@ else case e in #(
   ;;
   *)
   as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in notfound
+for as_dir in $PATH
 do
   IFS=$as_save_IFS
   case $as_dir in #(((
@@ -6901,7 +6901,7 @@ else case e in #(
   ;;
   *)
   as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in notfound
+for as_dir in $PATH
 do
   IFS=$as_save_IFS
   case $as_dir in #(((
@@ -6933,7 +6933,7 @@ printf "%s\n" "no" >&6; }
 fi
 
   if test "x$ac_pt_CXX" = x; then
-    CXX="clang++"
+    CXX="notfound"
   else
     case $cross_compiling:$ac_tool_warned in
 yes:)
@@ -6962,7 +6962,7 @@ else case e in #(
   ;;
   *)
   as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in notfound
+for as_dir in $PATH
 do
   IFS=$as_save_IFS
   case $as_dir in #(((
@@ -7011,7 +7011,7 @@ else case e in #(
   ;;
   *)
   as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in notfound
+for as_dir in $PATH
 do
   IFS=$as_save_IFS
   case $as_dir in #(((
@@ -7043,7 +7043,7 @@ printf "%s\n" "no" >&6; }
 fi
 
   if test "x$ac_pt_CXX" = x; then
-    CXX="icpc"
+    CXX="notfound"
   else
     case $cross_compiling:$ac_tool_warned in
 yes:)
