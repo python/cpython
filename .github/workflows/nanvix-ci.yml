@@ -34,6 +34,7 @@ jobs:
       caller-event-name: ${{ github.event_name }}
     secrets:
       GH_TOKEN: ${{ secrets.GH_TOKEN || secrets.GITHUB_TOKEN }}
+      DISPATCH_TOKEN: ${{ secrets.DISPATCH_TOKEN }}
 
   ci-scheduled:
     if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
@@ -51,6 +52,7 @@ jobs:
       caller-event-name: 'schedule'
     secrets:
       GH_TOKEN: ${{ secrets.GH_TOKEN || secrets.GITHUB_TOKEN }}
+      DISPATCH_TOKEN: ${{ secrets.DISPATCH_TOKEN }}
 
   # -------------------------------------------------------------------
   # Create a Windows zip release asset for MXC consumption.
