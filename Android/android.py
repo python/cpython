@@ -401,6 +401,7 @@ def build_testbed(context):
     run(
         [gradlew, "--console", "plain", "packageDebug", "packageDebugAndroidTest"],
         cwd=TESTBED_DIR,
+        env={}
     )
 
 
@@ -644,6 +645,10 @@ async def gradle_task(context):
     else:
         task_prefix = "connected"
         env["ANDROID_SERIAL"] = context.connected
+
+    # Ensure that CROSS_BUILD_DIR is in the Gradle environment, regardless
+    # of whether it was set by environment variable or `--cross-build-dir`.
+    env["CROSS_BUILD_DIR"] = CROSS_BUILD_DIR
 
     if context.ci_mode:
         context.args[0:0] = [
