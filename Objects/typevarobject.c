@@ -498,8 +498,7 @@ typevar_traverse(PyObject *self, visitproc visit, void *arg)
     Py_VISIT(tv->evaluate_constraints);
     Py_VISIT(tv->default_value);
     Py_VISIT(tv->evaluate_default);
-    PyObject_VisitManagedDict(self, visit, arg);
-    return 0;
+    return PyObject_VisitManagedDict(self, visit, arg);
 }
 
 static int
@@ -1193,8 +1192,7 @@ paramspec_traverse(PyObject *self, visitproc visit, void *arg)
     Py_VISIT(ps->bound);
     Py_VISIT(ps->default_value);
     Py_VISIT(ps->evaluate_default);
-    PyObject_VisitManagedDict(self, visit, arg);
-    return 0;
+    return PyObject_VisitManagedDict(self, visit, arg);
 }
 
 static int
@@ -1690,8 +1688,7 @@ typevartuple_traverse(PyObject *self, visitproc visit, void *arg)
     Py_VISIT(tvt->name);
     Py_VISIT(tvt->default_value);
     Py_VISIT(tvt->evaluate_default);
-    PyObject_VisitManagedDict(self, visit, arg);
-    return 0;
+    return PyObject_VisitManagedDict(self, visit, arg);
 }
 
 static int
