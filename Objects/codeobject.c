@@ -1014,9 +1014,9 @@ PyCode_Addr2Line(PyCodeObject *co, int addrq)
     if (addrq < 0) {
         return co->co_firstlineno;
     }
-    _PyCoMonitoringData *data = _Py_atomic_load_ptr_acquire(co->_co_monitoring);
+    _PyCoMonitoringData *data = _Py_atomic_load_ptr_acquire(&co->_co_monitoring);
     if (data) {
-        _PyCoLineInstrumentationData *lines = _Py_atomic_load_ptr_acquire(data->lines);
+        _PyCoLineInstrumentationData *lines = _Py_atomic_load_ptr_acquire(&data->lines);
         if (lines) {
             return _Py_Instrumentation_GetLine(co, addrq/sizeof(_Py_CODEUNIT));
         }
