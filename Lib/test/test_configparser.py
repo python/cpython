@@ -2270,6 +2270,26 @@ class InvalidInputTestCase(unittest.TestCase):
         output.close()
 
 
+class ReDoSTestCase(unittest.TestCase):
+    """Regression tests for quadratic regex backtracking (gh-146333)."""
+
+    def test_option_regex_does_not_backtrack(self):
+        # A line with many spaces between non-delimiter characters
+        # should be parsed in linear time, not quadratic.
+        parser = configparser.RawConfigParser()
+        content = "[section]\n" + "x" + " " * 40000 + "y" + "\n"
+        # This should complete almost instantly. Before the fix,
+        # it would take over a minute due to catastrophic backtracking.
+        with self.assertRaises(configparser.ParsingError):
+            parser.read_string(content)
+
+    def test_option_regex_no_value_does_not_backtrack(self):
+        parser = configparser.RawConfigParser(allow_no_value=True)
+        content = "[section]\n" + "x" + " " * 40000 + "y" + "\n"
+        parser.read_string(content)
+        self.assertTrue(parser.has_option("section", "x" + " " * 40000 + "y"))
+
+
 class MiscTestCase(unittest.TestCase):
     def test__all__(self):
         support.check__all__(self, configparser, not_exported={"Error"})

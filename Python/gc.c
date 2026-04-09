@@ -177,6 +177,11 @@ _PyGC_Init(PyInterpreterState *interp)
 {
     GCState *gcstate = &interp->gc;
 
+    gcstate->generation_stats = PyMem_RawCalloc(1, sizeof(struct gc_stats));
+    if (gcstate->generation_stats == NULL) {
+        return _PyStatus_NO_MEMORY();
+    }
+
     gcstate->garbage = PyList_New(0);
     if (gcstate->garbage == NULL) {
         return _PyStatus_NO_MEMORY();
@@ -1398,13 +1403,13 @@ static struct gc_generation_stats *
 gc_get_stats(GCState *gcstate, int gen)
 {
     if (gen == 0) {
-        struct gc_young_stats_buffer *buffer = &gcstate->generation_stats.young;
+        struct gc_young_stats_buffer *buffer = &gcstate->generation_stats->young;
         buffer->index = (buffer->index + 1) % GC_YOUNG_STATS_SIZE;
         struct gc_generation_stats *stats = &buffer->items[buffer->index];
         return stats;
     }
     else {
-        struct gc_old_stats_buffer *buffer = &gcstate->generation_stats.old[gen - 1];
+        struct gc_old_stats_buffer *buffer = &gcstate->generation_stats->old[gen - 1];
         buffer->index = (buffer->index + 1) % GC_OLD_STATS_SIZE;
         struct gc_generation_stats *stats = &buffer->items[buffer->index];
         return stats;
@@ -1415,12 +1420,12 @@ static struct gc_generation_stats *
 gc_get_prev_stats(GCState *gcstate, int gen)
 {
     if (gen == 0) {
-        struct gc_young_stats_buffer *buffer = &gcstate->generation_stats.young;
+        struct gc_young_stats_buffer *buffer = &gcstate->generation_stats->young;
         struct gc_generation_stats *stats = &buffer->items[buffer->index];
         return stats;
     }
     else {
-        struct gc_old_stats_buffer *buffer = &gcstate->generation_stats.old[gen - 1];
+        struct gc_old_stats_buffer *buffer = &gcstate->generation_stats->old[gen - 1];
         struct gc_generation_stats *stats = &buffer->items[buffer->index];
         return stats;
     }
@@ -2299,6 +2304,8 @@ _PyGC_Fini(PyInterpreterState *interp)
     GCState *gcstate = &interp->gc;
     Py_CLEAR(gcstate->garbage);
     Py_CLEAR(gcstate->callbacks);
+    PyMem_RawFree(gcstate->generation_stats);
+    gcstate->generation_stats = NULL;
 
     /* Prevent a subtle bug that affects sub-interpreters that use basic
      * single-phase init extensions (m_size == -1).  Those extensions cause objects
