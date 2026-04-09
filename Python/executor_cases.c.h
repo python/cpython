@@ -66,8 +66,6 @@
             _tos_cache0 = PyStackRef_ZERO_BITS;
             _tos_cache1 = PyStackRef_ZERO_BITS;
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(0);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -91,8 +89,6 @@
             _tos_cache0 = PyStackRef_ZERO_BITS;
             _tos_cache1 = PyStackRef_ZERO_BITS;
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(0);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -2261,8 +2257,6 @@
             _tos_cache0 = PyStackRef_ZERO_BITS;
             _tos_cache1 = PyStackRef_ZERO_BITS;
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(0);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -2527,8 +2521,6 @@
             _tos_cache0 = PyStackRef_ZERO_BITS;
             _tos_cache1 = PyStackRef_ZERO_BITS;
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(0);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -2585,8 +2577,6 @@
             _tos_cache0 = PyStackRef_ZERO_BITS;
             _tos_cache1 = PyStackRef_ZERO_BITS;
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(0);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -2608,8 +2598,6 @@
             _tos_cache0 = PyStackRef_ZERO_BITS;
             _tos_cache1 = PyStackRef_ZERO_BITS;
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(0);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -2639,8 +2627,6 @@
             _tos_cache0 = val;
             _tos_cache1 = PyStackRef_ZERO_BITS;
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(1);
             stack_pointer += -1;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -2671,8 +2657,6 @@
             _tos_cache1 = v;
             _tos_cache0 = res;
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(2);
             stack_pointer += -1;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -2849,8 +2833,6 @@
             _tos_cache0 = res;
             _tos_cache1 = PyStackRef_ZERO_BITS;
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(1);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -3842,8 +3824,6 @@
             _tos_cache1 = v;
             _tos_cache0 = res;
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(2);
             stack_pointer += -1;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -6185,8 +6165,6 @@
             _tos_cache0 = res;
             _tos_cache1 = PyStackRef_ZERO_BITS;
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(1);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -6226,8 +6204,6 @@
             _tos_cache1 = right;
             _tos_cache0 = left;
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(2);
             stack_pointer += -2;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -6270,8 +6246,6 @@
             _tos_cache2 = r;
             _tos_cache1 = l;
             _tos_cache0 = res;
-            _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(3);
             stack_pointer += -2;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -6371,8 +6345,6 @@
             _tos_cache0 = res;
             _tos_cache1 = PyStackRef_ZERO_BITS;
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(1);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -6433,8 +6405,6 @@
             _tos_cache0 = PyStackRef_ZERO_BITS;
             _tos_cache1 = PyStackRef_ZERO_BITS;
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(0);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -6497,8 +6467,6 @@
             _tos_cache2 = ss;
             _tos_cache1 = ls;
             _tos_cache0 = res;
-            _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(3);
             stack_pointer += -2;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -6540,8 +6508,6 @@
             _tos_cache2 = ss;
             _tos_cache1 = ls;
             _tos_cache0 = res;
-            _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(3);
             stack_pointer += -2;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -6590,8 +6556,6 @@
             _tos_cache2 = i;
             _tos_cache1 = s;
             _tos_cache0 = res;
-            _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(3);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -6644,8 +6608,6 @@
             _tos_cache2 = i;
             _tos_cache1 = s;
             _tos_cache0 = res;
-            _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(3);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -7531,8 +7493,6 @@
             _tos_cache2 = ss;
             _tos_cache1 = ds;
             _tos_cache0 = res;
-            _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(3);
             stack_pointer += -2;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -7579,8 +7539,6 @@
             _tos_cache2 = ss;
             _tos_cache1 = ds;
             _tos_cache0 = res;
-            _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(3);
             stack_pointer += -2;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -7635,8 +7593,6 @@
             _tos_cache2 = getitem;
             _tos_cache1 = _stack_item_1;
             _tos_cache0 = container;
-            _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(3);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -7787,8 +7743,6 @@
             _tos_cache0 = PyStackRef_ZERO_BITS;
             _tos_cache1 = PyStackRef_ZERO_BITS;
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(0);
             stack_pointer += -1;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -7837,8 +7791,6 @@
             _tos_cache0 = PyStackRef_ZERO_BITS;
             _tos_cache1 = PyStackRef_ZERO_BITS;
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(0);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -7904,8 +7856,6 @@
             _tos_cache1 = ss;
             _tos_cache0 = ls;
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(2);
             stack_pointer += -2;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -7952,8 +7902,6 @@
             _tos_cache0 = st;
             _tos_cache1 = PyStackRef_ZERO_BITS;
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(1);
             stack_pointer += -3;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -8002,8 +7950,6 @@
             _tos_cache0 = st;
             _tos_cache1 = PyStackRef_ZERO_BITS;
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(1);
             stack_pointer += -3;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -8045,8 +7991,6 @@
             _tos_cache0 = PyStackRef_ZERO_BITS;
             _tos_cache1 = PyStackRef_ZERO_BITS;
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(0);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -8077,8 +8021,6 @@
             _tos_cache1 = v;
             _tos_cache0 = res;
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(2);
             stack_pointer += -1;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -8119,8 +8061,6 @@
             _tos_cache2 = vs2;
             _tos_cache1 = vs1;
             _tos_cache0 = res;
-            _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(3);
             stack_pointer += -2;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -8209,8 +8149,6 @@
             _tos_cache0 = res;
             _tos_cache1 = PyStackRef_ZERO_BITS;
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(1);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -8279,8 +8217,6 @@
             _tos_cache0 = iter;
             _tos_cache1 = PyStackRef_ZERO_BITS;
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(1);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -8307,8 +8243,6 @@
             _tos_cache1 = awaitable;
             _tos_cache0 = aiter;
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(2);
             stack_pointer += -1;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -8343,8 +8277,6 @@
             _tos_cache0 = iter;
             _tos_cache1 = PyStackRef_ZERO_BITS;
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(1);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -8393,8 +8325,6 @@
             _tos_cache2 = gen_frame;
             _tos_cache1 = _stack_item_1;
             _tos_cache0 = receiver;
-            _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(3);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -8439,8 +8369,6 @@
             _tos_cache0 = value;
             _tos_cache1 = PyStackRef_ZERO_BITS;
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(1);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -8464,8 +8392,6 @@
             _tos_cache0 = PyStackRef_ZERO_BITS;
             _tos_cache1 = PyStackRef_ZERO_BITS;
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(0);
             stack_pointer += -1;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -8542,8 +8468,6 @@
             _tos_cache0 = bc;
             _tos_cache1 = PyStackRef_ZERO_BITS;
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(1);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -8603,8 +8527,6 @@
             _tos_cache0 = PyStackRef_ZERO_BITS;
             _tos_cache1 = PyStackRef_ZERO_BITS;
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(0);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -8640,8 +8562,6 @@
             _tos_cache0 = PyStackRef_ZERO_BITS;
             _tos_cache1 = PyStackRef_ZERO_BITS;
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(0);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -8668,8 +8588,6 @@
             _tos_cache0 = PyStackRef_ZERO_BITS;
             _tos_cache1 = PyStackRef_ZERO_BITS;
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(0);
             stack_pointer += oparg;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -8708,8 +8626,6 @@
             _tos_cache1 = val0;
             _tos_cache0 = val1;
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(2);
             stack_pointer += -2;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -8862,8 +8778,6 @@
             _tos_cache0 = PyStackRef_ZERO_BITS;
             _tos_cache1 = PyStackRef_ZERO_BITS;
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(0);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -8936,8 +8850,6 @@
             _tos_cache0 = PyStackRef_ZERO_BITS;
             _tos_cache1 = PyStackRef_ZERO_BITS;
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(0);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -8964,8 +8876,6 @@
             _tos_cache0 = PyStackRef_ZERO_BITS;
             _tos_cache1 = PyStackRef_ZERO_BITS;
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(0);
             stack_pointer += 1 + (oparg & 0xFF) + (oparg >> 8);
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -9009,8 +8919,6 @@
             _tos_cache0 = PyStackRef_ZERO_BITS;
             _tos_cache1 = PyStackRef_ZERO_BITS;
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(0);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -9042,8 +8950,6 @@
             _tos_cache0 = PyStackRef_ZERO_BITS;
             _tos_cache1 = PyStackRef_ZERO_BITS;
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(0);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -9075,8 +8981,6 @@
             _tos_cache0 = PyStackRef_ZERO_BITS;
             _tos_cache1 = PyStackRef_ZERO_BITS;
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(0);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -9105,8 +9009,6 @@
             _tos_cache0 = PyStackRef_ZERO_BITS;
             _tos_cache1 = PyStackRef_ZERO_BITS;
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(0);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -9230,8 +9132,6 @@
             _tos_cache0 = v;
             _tos_cache1 = PyStackRef_ZERO_BITS;
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(1);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -9254,8 +9154,6 @@
             _tos_cache0 = PyStackRef_ZERO_BITS;
             _tos_cache1 = PyStackRef_ZERO_BITS;
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(0);
             stack_pointer += 1;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -9432,8 +9330,6 @@
             _tos_cache0 = res;
             _tos_cache1 = PyStackRef_ZERO_BITS;
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(1);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -9479,8 +9375,6 @@
             _tos_cache0 = res;
             _tos_cache1 = PyStackRef_ZERO_BITS;
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(1);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -9509,8 +9403,6 @@
             _tos_cache0 = PyStackRef_ZERO_BITS;
             _tos_cache1 = PyStackRef_ZERO_BITS;
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(0);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -9534,8 +9426,6 @@
             _tos_cache0 = PyStackRef_ZERO_BITS;
             _tos_cache1 = PyStackRef_ZERO_BITS;
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(0);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -9560,8 +9450,6 @@
             _tos_cache0 = PyStackRef_ZERO_BITS;
             _tos_cache1 = PyStackRef_ZERO_BITS;
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(0);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -9611,8 +9499,6 @@
             _tos_cache0 = value;
             _tos_cache1 = PyStackRef_ZERO_BITS;
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(1);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -9640,8 +9526,6 @@
             _tos_cache0 = value;
             _tos_cache1 = PyStackRef_ZERO_BITS;
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(1);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -9664,8 +9548,6 @@
             _tos_cache0 = PyStackRef_ZERO_BITS;
             _tos_cache1 = PyStackRef_ZERO_BITS;
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(0);
             stack_pointer += -1;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -9781,8 +9663,6 @@
             _tos_cache0 = str;
             _tos_cache1 = PyStackRef_ZERO_BITS;
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(1);
             stack_pointer += -oparg;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -9842,8 +9722,6 @@
             _tos_cache0 = interpolation;
             _tos_cache1 = PyStackRef_ZERO_BITS;
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(1);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -9886,8 +9764,6 @@
             _tos_cache0 = template;
             _tos_cache1 = PyStackRef_ZERO_BITS;
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(1);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -9932,8 +9808,6 @@
             _tos_cache0 = list;
             _tos_cache1 = PyStackRef_ZERO_BITS;
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(1);
             stack_pointer += -oparg;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -9981,8 +9855,6 @@
             _tos_cache0 = i;
             _tos_cache1 = PyStackRef_ZERO_BITS;
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(1);
             stack_pointer += -1;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -10015,8 +9887,6 @@
             _tos_cache0 = i;
             _tos_cache1 = PyStackRef_ZERO_BITS;
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(1);
             stack_pointer += -1;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -10076,8 +9946,6 @@
             _tos_cache0 = set;
             _tos_cache1 = PyStackRef_ZERO_BITS;
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(1);
             stack_pointer += -oparg;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -10105,8 +9973,6 @@
             _tos_cache0 = map;
             _tos_cache1 = PyStackRef_ZERO_BITS;
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(1);
             stack_pointer += -oparg*2;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -10159,8 +10025,6 @@
             _tos_cache0 = PyStackRef_ZERO_BITS;
             _tos_cache1 = PyStackRef_ZERO_BITS;
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(0);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -10214,8 +10078,6 @@
             _tos_cache0 = upd;
             _tos_cache1 = PyStackRef_ZERO_BITS;
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(1);
             stack_pointer += -1;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -10257,8 +10119,6 @@
             _tos_cache0 = u;
             _tos_cache1 = PyStackRef_ZERO_BITS;
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(1);
             stack_pointer += -1;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -10300,8 +10160,6 @@
             _tos_cache0 = PyStackRef_ZERO_BITS;
             _tos_cache1 = PyStackRef_ZERO_BITS;
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(0);
             stack_pointer += -2;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -10375,8 +10233,6 @@
             _tos_cache0 = attr_st;
             _tos_cache1 = PyStackRef_ZERO_BITS;
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(1);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -10712,8 +10568,6 @@
             _tos_cache1 = self_or_null;
             _tos_cache0 = attr;
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(2);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -10767,8 +10621,6 @@
             _tos_cache0 = PyStackRef_ZERO_BITS;
             _tos_cache1 = PyStackRef_ZERO_BITS;
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(0);
             stack_pointer[-1] = attr;
             stack_pointer += (oparg&1);
@@ -11249,8 +11101,6 @@
             _tos_cache1 = o;
             _tos_cache0 = attr;
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(2);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -11339,8 +11189,6 @@
             _tos_cache1 = o;
             _tos_cache0 = attr;
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(2);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -11605,8 +11453,6 @@
             _tos_cache0 = attr;
             _tos_cache1 = PyStackRef_ZERO_BITS;
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(1);
             stack_pointer += -1;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -11658,8 +11504,6 @@
             _tos_cache0 = new_frame;
             _tos_cache1 = PyStackRef_ZERO_BITS;
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(1);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -11809,8 +11653,6 @@
             _tos_cache0 = o;
             _tos_cache1 = PyStackRef_ZERO_BITS;
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(1);
             stack_pointer += -1;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -11983,8 +11825,6 @@
             _tos_cache0 = o;
             _tos_cache1 = PyStackRef_ZERO_BITS;
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(1);
             stack_pointer += -1;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -12026,8 +11866,6 @@
             _tos_cache0 = o;
             _tos_cache1 = PyStackRef_ZERO_BITS;
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(1);
             stack_pointer += -1;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -12087,8 +11925,6 @@
             _tos_cache0 = res;
             _tos_cache1 = PyStackRef_ZERO_BITS;
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(1);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -12214,8 +12050,6 @@
             _tos_cache2 = r;
             _tos_cache1 = l;
             _tos_cache0 = res;
-            _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(3);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -12248,8 +12082,6 @@
             _tos_cache2 = r;
             _tos_cache1 = l;
             _tos_cache0 = res;
-            _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(3);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -12363,8 +12195,6 @@
             _tos_cache2 = r;
             _tos_cache1 = l;
             _tos_cache0 = b;
-            _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(3);
             stack_pointer += -2;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -12661,8 +12491,6 @@
             _tos_cache2 = r;
             _tos_cache1 = l;
             _tos_cache0 = b;
-            _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(3);
             stack_pointer += -2;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -12704,8 +12532,6 @@
             _tos_cache2 = r;
             _tos_cache1 = l;
             _tos_cache0 = b;
-            _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(3);
             stack_pointer += -2;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -12784,8 +12610,6 @@
             _tos_cache1 = match;
             _tos_cache0 = rest;
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(2);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -12827,8 +12651,6 @@
             _tos_cache1 = b;
             _tos_cache0 = left;
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(2);
             stack_pointer += -1;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -12894,8 +12716,6 @@
             _tos_cache0 = res;
             _tos_cache1 = PyStackRef_ZERO_BITS;
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(1);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -12938,8 +12758,6 @@
             _tos_cache1 = res;
             _tos_cache0 = from;
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(2);
             stack_pointer += -1;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -12977,8 +12795,6 @@
             _tos_cache0 = b;
             _tos_cache1 = PyStackRef_ZERO_BITS;
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(1);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -13012,8 +12828,6 @@
             _tos_cache1 = len;
             _tos_cache0 = obj;
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(2);
             stack_pointer += -1;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -13067,8 +12881,6 @@
             _tos_cache2 = n;
             _tos_cache1 = tp;
             _tos_cache0 = s;
-            _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(3);
             stack_pointer[-3] = attrs;
             stack_pointer += -2;
@@ -13205,8 +13017,6 @@
             _tos_cache2 = values_or_none;
             _tos_cache1 = keys;
             _tos_cache0 = subject;
-            _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(3);
             stack_pointer += -2;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -13242,8 +13052,6 @@
             _tos_cache1 = index_or_null;
             _tos_cache0 = iter;
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(2);
             stack_pointer += -1;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -13290,8 +13098,6 @@
             _tos_cache2 = next;
             _tos_cache1 = null_or_index;
             _tos_cache0 = iter;
-            _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(3);
             stack_pointer += -2;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -13590,8 +13396,6 @@
             _tos_cache2 = next;
             _tos_cache1 = null_or_index;
             _tos_cache0 = iter;
-            _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(3);
             stack_pointer += -2;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -14357,8 +14161,6 @@
             _tos_cache0 = PyStackRef_ZERO_BITS;
             _tos_cache1 = PyStackRef_ZERO_BITS;
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(0);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -14415,8 +14217,6 @@
             _tos_cache2 = res;
             _tos_cache1 = val;
             _tos_cache0 = _stack_item_1;
-            _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(3);
             stack_pointer += -2;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -14858,8 +14658,6 @@
             _tos_cache0 = attr;
             _tos_cache1 = PyStackRef_ZERO_BITS;
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(1);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -14885,8 +14683,6 @@
             _tos_cache0 = attr;
             _tos_cache1 = PyStackRef_ZERO_BITS;
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(1);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -15081,8 +14877,6 @@
             _tos_cache0 = PyStackRef_ZERO_BITS;
             _tos_cache1 = PyStackRef_ZERO_BITS;
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(0);
             stack_pointer[-2 - oparg] = callable;
             stack_pointer[-1 - oparg] = self_or_null;
@@ -15130,8 +14924,6 @@
             _tos_cache0 = new_frame;
             _tos_cache1 = PyStackRef_ZERO_BITS;
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(1);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -15306,8 +15098,6 @@
             _tos_cache0 = PyStackRef_ZERO_BITS;
             _tos_cache1 = PyStackRef_ZERO_BITS;
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(0);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -15372,8 +15162,6 @@
             _tos_cache0 = res;
             _tos_cache1 = PyStackRef_ZERO_BITS;
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(1);
             stack_pointer += -2 - oparg;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -15426,8 +15214,6 @@
             _tos_cache0 = PyStackRef_ZERO_BITS;
             _tos_cache1 = PyStackRef_ZERO_BITS;
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(0);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -16383,8 +16169,6 @@
             _tos_cache1 = a;
             _tos_cache0 = res;
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(2);
             stack_pointer += -3;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -16517,8 +16301,6 @@
             _tos_cache1 = a;
             _tos_cache0 = res;
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(2);
             stack_pointer += -3;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -16582,8 +16364,6 @@
             _tos_cache0 = PyStackRef_ZERO_BITS;
             _tos_cache1 = PyStackRef_ZERO_BITS;
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(0);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -16626,8 +16406,6 @@
             _tos_cache0 = init_frame;
             _tos_cache1 = PyStackRef_ZERO_BITS;
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(1);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -16654,8 +16432,6 @@
             _tos_cache0 = PyStackRef_ZERO_BITS;
             _tos_cache1 = PyStackRef_ZERO_BITS;
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(0);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -16707,8 +16483,6 @@
             _tos_cache0 = res;
             _tos_cache1 = PyStackRef_ZERO_BITS;
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(1);
             stack_pointer += -2 - oparg;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -16789,8 +16563,6 @@
             _tos_cache2 = s;
             _tos_cache1 = c;
             _tos_cache0 = res;
-            _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(3);
             stack_pointer += -2 - oparg;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -16855,8 +16627,6 @@
             _tos_cache0 = res;
             _tos_cache1 = PyStackRef_ZERO_BITS;
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(1);
             stack_pointer += -2 - oparg;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -16917,8 +16687,6 @@
             _tos_cache0 = res;
             _tos_cache1 = PyStackRef_ZERO_BITS;
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(1);
             stack_pointer += -2 - oparg;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -17063,8 +16831,6 @@
             _tos_cache2 = c;
             _tos_cache1 = a;
             _tos_cache0 = res;
-            _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(3);
             stack_pointer += -3;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -17221,8 +16987,6 @@
             _tos_cache0 = res;
             _tos_cache1 = PyStackRef_ZERO_BITS;
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(1);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -17588,8 +17352,6 @@
             _tos_cache2 = a;
             _tos_cache1 = s;
             _tos_cache0 = c;
-            _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(3);
             stack_pointer[-2 - oparg] = res;
             stack_pointer += -1 - oparg;
@@ -17702,8 +17464,6 @@
             _tos_cache2 = a;
             _tos_cache1 = s;
             _tos_cache0 = c;
-            _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(3);
             stack_pointer[-1 - oparg] = res;
             stack_pointer += -oparg;
@@ -17798,8 +17558,6 @@
             _tos_cache0 = res;
             _tos_cache1 = PyStackRef_ZERO_BITS;
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(1);
             stack_pointer += -2 - oparg;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -17840,8 +17598,6 @@
             _tos_cache0 = res;
             _tos_cache1 = PyStackRef_ZERO_BITS;
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(1);
             stack_pointer += -1 - oparg;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -17930,8 +17686,6 @@
             _tos_cache2 = s;
             _tos_cache1 = c;
             _tos_cache0 = res;
-            _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(3);
             stack_pointer += -2 - oparg;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -17971,8 +17725,6 @@
             _tos_cache2 = s;
             _tos_cache1 = c;
             _tos_cache0 = res;
-            _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(3);
             stack_pointer += -1 - oparg;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -18065,8 +17817,6 @@
             _tos_cache0 = res;
             _tos_cache1 = PyStackRef_ZERO_BITS;
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(1);
             stack_pointer += -2 - oparg;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -18107,8 +17857,6 @@
             _tos_cache0 = res;
             _tos_cache1 = PyStackRef_ZERO_BITS;
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(1);
             stack_pointer += -1 - oparg;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -18147,8 +17895,6 @@
             _tos_cache0 = _stack_item_0;
             _tos_cache1 = PyStackRef_ZERO_BITS;
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(1);
             stack_pointer[-2 - oparg] = callable;
             stack_pointer[-1 - oparg] = self_or_null;
@@ -18208,8 +17954,6 @@
             _tos_cache0 = new_frame;
             _tos_cache1 = PyStackRef_ZERO_BITS;
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(1);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -18312,8 +18056,6 @@
             _tos_cache0 = _stack_item_0;
             _tos_cache1 = PyStackRef_ZERO_BITS;
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(1);
             stack_pointer += -1;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -18390,8 +18132,6 @@
             _tos_cache0 = res;
             _tos_cache1 = PyStackRef_ZERO_BITS;
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(1);
             stack_pointer += -3 - oparg;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -18441,8 +18181,6 @@
             _tos_cache2 = _stack_item_2;
             _tos_cache1 = callargs;
             _tos_cache0 = _stack_item_0;
-            _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(3);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -18611,8 +18349,6 @@
             _tos_cache0 = ex_frame;
             _tos_cache1 = PyStackRef_ZERO_BITS;
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(1);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -18764,8 +18500,6 @@
             _tos_cache0 = result;
             _tos_cache1 = PyStackRef_ZERO_BITS;
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(1);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -18798,8 +18532,6 @@
             _tos_cache1 = co;
             _tos_cache0 = func;
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(2);
             stack_pointer += -1;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -18946,8 +18678,6 @@
             _tos_cache0 = res;
             _tos_cache1 = PyStackRef_ZERO_BITS;
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(1);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -18982,8 +18712,6 @@
             _tos_cache0 = slice;
             _tos_cache1 = PyStackRef_ZERO_BITS;
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(1);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -19019,8 +18747,6 @@
             _tos_cache0 = result;
             _tos_cache1 = PyStackRef_ZERO_BITS;
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(1);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -19058,8 +18784,6 @@
             _tos_cache0 = res;
             _tos_cache1 = PyStackRef_ZERO_BITS;
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(1);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -19100,8 +18824,6 @@
             _tos_cache0 = res;
             _tos_cache1 = PyStackRef_ZERO_BITS;
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(1);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -19327,8 +19049,6 @@
             _tos_cache2 = r;
             _tos_cache1 = l;
             _tos_cache0 = res;
-            _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(3);
             stack_pointer += -2;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -20897,8 +20617,6 @@
             _tos_cache0 = PyStackRef_ZERO_BITS;
             _tos_cache1 = PyStackRef_ZERO_BITS;
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(0);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -21504,8 +21222,6 @@
             _tos_cache0 = value;
             _tos_cache1 = PyStackRef_ZERO_BITS;
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(1);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -21569,8 +21285,6 @@
             _tos_cache0 = PyStackRef_ZERO_BITS;
             _tos_cache1 = PyStackRef_ZERO_BITS;
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(0);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -21604,8 +21318,6 @@
             _tos_cache0 = PyStackRef_ZERO_BITS;
             _tos_cache1 = PyStackRef_ZERO_BITS;
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(0);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -21646,8 +21358,6 @@
             _tos_cache0 = PyStackRef_ZERO_BITS;
             _tos_cache1 = PyStackRef_ZERO_BITS;
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(0);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -21668,8 +21378,6 @@
             _tos_cache0 = value;
             _tos_cache1 = PyStackRef_ZERO_BITS;
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(1);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -21701,8 +21409,6 @@
             _tos_cache0 = value;
             _tos_cache1 = PyStackRef_ZERO_BITS;
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(1);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -21727,8 +21433,6 @@
             _tos_cache0 = value;
             _tos_cache1 = PyStackRef_ZERO_BITS;
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(1);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -21765,8 +21469,6 @@
             _tos_cache0 = value;
             _tos_cache1 = PyStackRef_ZERO_BITS;
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(1);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -22177,8 +21879,6 @@
             _tos_cache0 = value;
             _tos_cache1 = PyStackRef_ZERO_BITS;
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(1);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -23561,7 +23261,6 @@
             _tos_cache1 = PyStackRef_ZERO_BITS;
             _tos_cache2 = PyStackRef_ZERO_BITS;
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(0);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -23586,7 +23285,6 @@
             _tos_cache1 = PyStackRef_ZERO_BITS;
             _tos_cache2 = PyStackRef_ZERO_BITS;
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(0);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -26557,7 +26255,6 @@
             _tos_cache1 = PyStackRef_ZERO_BITS;
             _tos_cache2 = PyStackRef_ZERO_BITS;
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(0);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -26899,7 +26596,6 @@
             _tos_cache1 = PyStackRef_ZERO_BITS;
             _tos_cache2 = PyStackRef_ZERO_BITS;
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(0);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -26974,7 +26670,6 @@
             _tos_cache1 = PyStackRef_ZERO_BITS;
             _tos_cache2 = PyStackRef_ZERO_BITS;
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(0);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -26997,7 +26692,6 @@
             _tos_cache1 = PyStackRef_ZERO_BITS;
             _tos_cache2 = PyStackRef_ZERO_BITS;
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(0);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -27028,7 +26722,6 @@
             _tos_cache1 = PyStackRef_ZERO_BITS;
             _tos_cache2 = PyStackRef_ZERO_BITS;
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(1);
             stack_pointer += -1;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -27060,7 +26753,6 @@
             _tos_cache0 = res;
             _tos_cache2 = PyStackRef_ZERO_BITS;
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(2);
             stack_pointer += -1;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -27287,7 +26979,6 @@
             _tos_cache1 = PyStackRef_ZERO_BITS;
             _tos_cache2 = PyStackRef_ZERO_BITS;
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(1);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -28606,7 +28297,6 @@
             _tos_cache0 = res;
             _tos_cache2 = PyStackRef_ZERO_BITS;
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(2);
             stack_pointer += -1;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -31765,7 +31455,6 @@
             _tos_cache1 = PyStackRef_ZERO_BITS;
             _tos_cache2 = PyStackRef_ZERO_BITS;
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(1);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -31806,7 +31495,6 @@
             _tos_cache0 = left;
             _tos_cache2 = PyStackRef_ZERO_BITS;
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(2);
             stack_pointer += -2;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -31850,7 +31538,6 @@
             _tos_cache1 = l;
             _tos_cache0 = res;
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(3);
             stack_pointer += -2;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -31951,7 +31638,6 @@
             _tos_cache1 = PyStackRef_ZERO_BITS;
             _tos_cache2 = PyStackRef_ZERO_BITS;
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(1);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -32015,7 +31701,6 @@
             _tos_cache1 = PyStackRef_ZERO_BITS;
             _tos_cache2 = PyStackRef_ZERO_BITS;
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(0);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -32079,7 +31764,6 @@
             _tos_cache1 = ls;
             _tos_cache0 = res;
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(3);
             stack_pointer += -2;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -32122,7 +31806,6 @@
             _tos_cache1 = ls;
             _tos_cache0 = res;
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(3);
             stack_pointer += -2;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -32172,7 +31855,6 @@
             _tos_cache1 = s;
             _tos_cache0 = res;
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(3);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -32226,7 +31908,6 @@
             _tos_cache1 = s;
             _tos_cache0 = res;
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(3);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -33385,7 +33066,6 @@
             _tos_cache1 = ds;
             _tos_cache0 = res;
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(3);
             stack_pointer += -2;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -33433,7 +33113,6 @@
             _tos_cache1 = ds;
             _tos_cache0 = res;
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(3);
             stack_pointer += -2;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -33489,7 +33168,6 @@
             _tos_cache1 = _stack_item_1;
             _tos_cache0 = container;
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(3);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -33668,7 +33346,6 @@
             _tos_cache1 = PyStackRef_ZERO_BITS;
             _tos_cache2 = PyStackRef_ZERO_BITS;
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(0);
             stack_pointer += -1;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -33718,7 +33395,6 @@
             _tos_cache1 = PyStackRef_ZERO_BITS;
             _tos_cache2 = PyStackRef_ZERO_BITS;
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(0);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -33785,7 +33461,6 @@
             _tos_cache0 = ls;
             _tos_cache2 = PyStackRef_ZERO_BITS;
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(2);
             stack_pointer += -2;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -33833,7 +33508,6 @@
             _tos_cache1 = PyStackRef_ZERO_BITS;
             _tos_cache2 = PyStackRef_ZERO_BITS;
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(1);
             stack_pointer += -3;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -33883,7 +33557,6 @@
             _tos_cache1 = PyStackRef_ZERO_BITS;
             _tos_cache2 = PyStackRef_ZERO_BITS;
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(1);
             stack_pointer += -3;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -33926,7 +33599,6 @@
             _tos_cache1 = PyStackRef_ZERO_BITS;
             _tos_cache2 = PyStackRef_ZERO_BITS;
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(0);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -33958,7 +33630,6 @@
             _tos_cache0 = res;
             _tos_cache2 = PyStackRef_ZERO_BITS;
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(2);
             stack_pointer += -1;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -34000,7 +33671,6 @@
             _tos_cache1 = vs1;
             _tos_cache0 = res;
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(3);
             stack_pointer += -2;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -34109,7 +33779,6 @@
             _tos_cache1 = PyStackRef_ZERO_BITS;
             _tos_cache2 = PyStackRef_ZERO_BITS;
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(1);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -34179,7 +33848,6 @@
             _tos_cache1 = PyStackRef_ZERO_BITS;
             _tos_cache2 = PyStackRef_ZERO_BITS;
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(1);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -34207,7 +33875,6 @@
             _tos_cache0 = aiter;
             _tos_cache2 = PyStackRef_ZERO_BITS;
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(2);
             stack_pointer += -1;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -34243,7 +33910,6 @@
             _tos_cache1 = PyStackRef_ZERO_BITS;
             _tos_cache2 = PyStackRef_ZERO_BITS;
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(1);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -34293,7 +33959,6 @@
             _tos_cache1 = _stack_item_1;
             _tos_cache0 = receiver;
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(3);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -34339,7 +34004,6 @@
             _tos_cache1 = PyStackRef_ZERO_BITS;
             _tos_cache2 = PyStackRef_ZERO_BITS;
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(1);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -34364,7 +34028,6 @@
             _tos_cache1 = PyStackRef_ZERO_BITS;
             _tos_cache2 = PyStackRef_ZERO_BITS;
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(0);
             stack_pointer += -1;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -34461,7 +34124,6 @@
             _tos_cache1 = PyStackRef_ZERO_BITS;
             _tos_cache2 = PyStackRef_ZERO_BITS;
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(1);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -34522,7 +34184,6 @@
             _tos_cache1 = PyStackRef_ZERO_BITS;
             _tos_cache2 = PyStackRef_ZERO_BITS;
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(0);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -34559,7 +34220,6 @@
             _tos_cache1 = PyStackRef_ZERO_BITS;
             _tos_cache2 = PyStackRef_ZERO_BITS;
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(0);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -34587,7 +34247,6 @@
             _tos_cache1 = PyStackRef_ZERO_BITS;
             _tos_cache2 = PyStackRef_ZERO_BITS;
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(0);
             stack_pointer += oparg;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -34627,7 +34286,6 @@
             _tos_cache0 = val1;
             _tos_cache2 = PyStackRef_ZERO_BITS;
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(2);
             stack_pointer += -2;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -34832,7 +34490,6 @@
             _tos_cache1 = PyStackRef_ZERO_BITS;
             _tos_cache2 = PyStackRef_ZERO_BITS;
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(0);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -34906,7 +34563,6 @@
             _tos_cache1 = PyStackRef_ZERO_BITS;
             _tos_cache2 = PyStackRef_ZERO_BITS;
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(0);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -34934,7 +34590,6 @@
             _tos_cache1 = PyStackRef_ZERO_BITS;
             _tos_cache2 = PyStackRef_ZERO_BITS;
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(0);
             stack_pointer += 1 + (oparg & 0xFF) + (oparg >> 8);
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -34979,7 +34634,6 @@
             _tos_cache1 = PyStackRef_ZERO_BITS;
             _tos_cache2 = PyStackRef_ZERO_BITS;
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(0);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -35012,7 +34666,6 @@
             _tos_cache1 = PyStackRef_ZERO_BITS;
             _tos_cache2 = PyStackRef_ZERO_BITS;
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(0);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -35045,7 +34698,6 @@
             _tos_cache1 = PyStackRef_ZERO_BITS;
             _tos_cache2 = PyStackRef_ZERO_BITS;
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(0);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -35075,7 +34727,6 @@
             _tos_cache1 = PyStackRef_ZERO_BITS;
             _tos_cache2 = PyStackRef_ZERO_BITS;
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(0);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -35231,7 +34882,6 @@
             _tos_cache1 = PyStackRef_ZERO_BITS;
             _tos_cache2 = PyStackRef_ZERO_BITS;
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(1);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -35255,7 +34905,6 @@
             _tos_cache1 = PyStackRef_ZERO_BITS;
             _tos_cache2 = PyStackRef_ZERO_BITS;
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(0);
             stack_pointer += 1;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -35471,7 +35120,6 @@
             _tos_cache1 = PyStackRef_ZERO_BITS;
             _tos_cache2 = PyStackRef_ZERO_BITS;
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(1);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -35518,7 +35166,6 @@
             _tos_cache1 = PyStackRef_ZERO_BITS;
             _tos_cache2 = PyStackRef_ZERO_BITS;
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(1);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -35548,7 +35195,6 @@
             _tos_cache1 = PyStackRef_ZERO_BITS;
             _tos_cache2 = PyStackRef_ZERO_BITS;
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(0);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -35573,7 +35219,6 @@
             _tos_cache1 = PyStackRef_ZERO_BITS;
             _tos_cache2 = PyStackRef_ZERO_BITS;
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(0);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -35599,7 +35244,6 @@
             _tos_cache1 = PyStackRef_ZERO_BITS;
             _tos_cache2 = PyStackRef_ZERO_BITS;
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(0);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -35650,7 +35294,6 @@
             _tos_cache1 = PyStackRef_ZERO_BITS;
             _tos_cache2 = PyStackRef_ZERO_BITS;
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(1);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -35679,7 +35322,6 @@
             _tos_cache1 = PyStackRef_ZERO_BITS;
             _tos_cache2 = PyStackRef_ZERO_BITS;
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(1);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -35703,7 +35345,6 @@
             _tos_cache1 = PyStackRef_ZERO_BITS;
             _tos_cache2 = PyStackRef_ZERO_BITS;
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(0);
             stack_pointer += -1;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -35847,7 +35488,6 @@
             _tos_cache1 = PyStackRef_ZERO_BITS;
             _tos_cache2 = PyStackRef_ZERO_BITS;
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(1);
             stack_pointer += -oparg;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -35908,7 +35548,6 @@
             _tos_cache1 = PyStackRef_ZERO_BITS;
             _tos_cache2 = PyStackRef_ZERO_BITS;
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(1);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -35952,7 +35591,6 @@
             _tos_cache1 = PyStackRef_ZERO_BITS;
             _tos_cache2 = PyStackRef_ZERO_BITS;
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(1);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -35998,7 +35636,6 @@
             _tos_cache1 = PyStackRef_ZERO_BITS;
             _tos_cache2 = PyStackRef_ZERO_BITS;
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(1);
             stack_pointer += -oparg;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -36047,7 +35684,6 @@
             _tos_cache1 = PyStackRef_ZERO_BITS;
             _tos_cache2 = PyStackRef_ZERO_BITS;
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(1);
             stack_pointer += -1;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -36081,7 +35717,6 @@
             _tos_cache1 = PyStackRef_ZERO_BITS;
             _tos_cache2 = PyStackRef_ZERO_BITS;
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(1);
             stack_pointer += -1;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -36142,7 +35777,6 @@
             _tos_cache1 = PyStackRef_ZERO_BITS;
             _tos_cache2 = PyStackRef_ZERO_BITS;
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(1);
             stack_pointer += -oparg;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -36171,7 +35805,6 @@
             _tos_cache1 = PyStackRef_ZERO_BITS;
             _tos_cache2 = PyStackRef_ZERO_BITS;
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(1);
             stack_pointer += -oparg*2;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -36225,7 +35858,6 @@
             _tos_cache1 = PyStackRef_ZERO_BITS;
             _tos_cache2 = PyStackRef_ZERO_BITS;
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(0);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -36280,7 +35912,6 @@
             _tos_cache1 = PyStackRef_ZERO_BITS;
             _tos_cache2 = PyStackRef_ZERO_BITS;
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(1);
             stack_pointer += -1;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -36323,7 +35954,6 @@
             _tos_cache1 = PyStackRef_ZERO_BITS;
             _tos_cache2 = PyStackRef_ZERO_BITS;
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(1);
             stack_pointer += -1;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -36366,7 +35996,6 @@
             _tos_cache1 = PyStackRef_ZERO_BITS;
             _tos_cache2 = PyStackRef_ZERO_BITS;
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(0);
             stack_pointer += -2;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -36441,7 +36070,6 @@
             _tos_cache1 = PyStackRef_ZERO_BITS;
             _tos_cache2 = PyStackRef_ZERO_BITS;
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(1);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -36859,7 +36487,6 @@
             _tos_cache0 = attr;
             _tos_cache2 = PyStackRef_ZERO_BITS;
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(2);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -36914,7 +36541,6 @@
             _tos_cache1 = PyStackRef_ZERO_BITS;
             _tos_cache2 = PyStackRef_ZERO_BITS;
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(0);
             stack_pointer[-1] = attr;
             stack_pointer += (oparg&1);
@@ -37538,7 +37164,6 @@
             _tos_cache0 = attr;
             _tos_cache2 = PyStackRef_ZERO_BITS;
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(2);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -37628,7 +37253,6 @@
             _tos_cache0 = attr;
             _tos_cache2 = PyStackRef_ZERO_BITS;
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(2);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -37979,7 +37603,6 @@
             _tos_cache1 = PyStackRef_ZERO_BITS;
             _tos_cache2 = PyStackRef_ZERO_BITS;
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(1);
             stack_pointer += -1;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -38032,7 +37655,6 @@
             _tos_cache1 = PyStackRef_ZERO_BITS;
             _tos_cache2 = PyStackRef_ZERO_BITS;
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(1);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -38217,7 +37839,6 @@
             _tos_cache1 = PyStackRef_ZERO_BITS;
             _tos_cache2 = PyStackRef_ZERO_BITS;
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(1);
             stack_pointer += -1;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -38418,7 +38039,6 @@
             _tos_cache1 = PyStackRef_ZERO_BITS;
             _tos_cache2 = PyStackRef_ZERO_BITS;
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(1);
             stack_pointer += -1;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -38461,7 +38081,6 @@
             _tos_cache1 = PyStackRef_ZERO_BITS;
             _tos_cache2 = PyStackRef_ZERO_BITS;
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(1);
             stack_pointer += -1;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -38522,7 +38141,6 @@
             _tos_cache1 = PyStackRef_ZERO_BITS;
             _tos_cache2 = PyStackRef_ZERO_BITS;
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(1);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -38681,7 +38299,6 @@
             _tos_cache1 = l;
             _tos_cache0 = res;
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(3);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -38715,7 +38332,6 @@
             _tos_cache1 = l;
             _tos_cache0 = res;
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(3);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -38857,7 +38473,6 @@
             _tos_cache1 = l;
             _tos_cache0 = b;
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(3);
             stack_pointer += -2;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -39239,7 +38854,6 @@
             _tos_cache1 = l;
             _tos_cache0 = b;
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(3);
             stack_pointer += -2;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -39282,7 +38896,6 @@
             _tos_cache1 = l;
             _tos_cache0 = b;
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(3);
             stack_pointer += -2;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -39362,7 +38975,6 @@
             _tos_cache0 = rest;
             _tos_cache2 = PyStackRef_ZERO_BITS;
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(2);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -39405,7 +39017,6 @@
             _tos_cache0 = left;
             _tos_cache2 = PyStackRef_ZERO_BITS;
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(2);
             stack_pointer += -1;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -39472,7 +39083,6 @@
             _tos_cache1 = PyStackRef_ZERO_BITS;
             _tos_cache2 = PyStackRef_ZERO_BITS;
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(1);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -39516,7 +39126,6 @@
             _tos_cache0 = from;
             _tos_cache2 = PyStackRef_ZERO_BITS;
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(2);
             stack_pointer += -1;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -39555,7 +39164,6 @@
             _tos_cache1 = PyStackRef_ZERO_BITS;
             _tos_cache2 = PyStackRef_ZERO_BITS;
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(1);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -39590,7 +39198,6 @@
             _tos_cache0 = obj;
             _tos_cache2 = PyStackRef_ZERO_BITS;
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(2);
             stack_pointer += -1;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -39645,7 +39252,6 @@
             _tos_cache2 = tp;
             _tos_cache1 = s;
             _tos_cache0 = attrs;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(4);
             stack_pointer += -3;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -39822,7 +39428,6 @@
             _tos_cache1 = keys;
             _tos_cache0 = subject;
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(3);
             stack_pointer += -2;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -39859,7 +39464,6 @@
             _tos_cache0 = iter;
             _tos_cache2 = PyStackRef_ZERO_BITS;
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(2);
             stack_pointer += -1;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -39907,7 +39511,6 @@
             _tos_cache1 = null_or_index;
             _tos_cache0 = iter;
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(3);
             stack_pointer += -2;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -40282,7 +39885,6 @@
             _tos_cache1 = null_or_index;
             _tos_cache0 = iter;
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(3);
             stack_pointer += -2;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -41287,7 +40889,6 @@
             _tos_cache1 = PyStackRef_ZERO_BITS;
             _tos_cache2 = PyStackRef_ZERO_BITS;
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(0);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -41347,7 +40948,6 @@
             _tos_cache2 = val;
             _tos_cache1 = _stack_item_2;
             _tos_cache0 = lasti;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(4);
             stack_pointer += -3;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -41935,7 +41535,6 @@
             _tos_cache1 = PyStackRef_ZERO_BITS;
             _tos_cache2 = PyStackRef_ZERO_BITS;
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(1);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -41962,7 +41561,6 @@
             _tos_cache1 = PyStackRef_ZERO_BITS;
             _tos_cache2 = PyStackRef_ZERO_BITS;
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(1);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -42215,7 +41813,6 @@
             _tos_cache1 = PyStackRef_ZERO_BITS;
             _tos_cache2 = PyStackRef_ZERO_BITS;
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(0);
             stack_pointer[-2 - oparg] = callable;
             stack_pointer[-1 - oparg] = self_or_null;
@@ -42264,7 +41861,6 @@
             _tos_cache1 = PyStackRef_ZERO_BITS;
             _tos_cache2 = PyStackRef_ZERO_BITS;
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(1);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -42469,7 +42065,6 @@
             _tos_cache1 = PyStackRef_ZERO_BITS;
             _tos_cache2 = PyStackRef_ZERO_BITS;
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(0);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -42535,7 +42130,6 @@
             _tos_cache1 = PyStackRef_ZERO_BITS;
             _tos_cache2 = PyStackRef_ZERO_BITS;
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(1);
             stack_pointer += -2 - oparg;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -42589,7 +42183,6 @@
             _tos_cache1 = PyStackRef_ZERO_BITS;
             _tos_cache2 = PyStackRef_ZERO_BITS;
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(0);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -43759,7 +43352,6 @@
             _tos_cache0 = res;
             _tos_cache2 = PyStackRef_ZERO_BITS;
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(2);
             stack_pointer += -3;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -43921,7 +43513,6 @@
             _tos_cache0 = res;
             _tos_cache2 = PyStackRef_ZERO_BITS;
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(2);
             stack_pointer += -3;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -43986,7 +43577,6 @@
             _tos_cache1 = PyStackRef_ZERO_BITS;
             _tos_cache2 = PyStackRef_ZERO_BITS;
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(0);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -44030,7 +43620,6 @@
             _tos_cache1 = PyStackRef_ZERO_BITS;
             _tos_cache2 = PyStackRef_ZERO_BITS;
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(1);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -44058,7 +43647,6 @@
             _tos_cache1 = PyStackRef_ZERO_BITS;
             _tos_cache2 = PyStackRef_ZERO_BITS;
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(0);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -44111,7 +43699,6 @@
             _tos_cache1 = PyStackRef_ZERO_BITS;
             _tos_cache2 = PyStackRef_ZERO_BITS;
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(1);
             stack_pointer += -2 - oparg;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -44193,7 +43780,6 @@
             _tos_cache1 = c;
             _tos_cache0 = res;
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(3);
             stack_pointer += -2 - oparg;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -44259,7 +43845,6 @@
             _tos_cache1 = PyStackRef_ZERO_BITS;
             _tos_cache2 = PyStackRef_ZERO_BITS;
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(1);
             stack_pointer += -2 - oparg;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -44321,7 +43906,6 @@
             _tos_cache1 = PyStackRef_ZERO_BITS;
             _tos_cache2 = PyStackRef_ZERO_BITS;
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(1);
             stack_pointer += -2 - oparg;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -44496,7 +44080,6 @@
             _tos_cache1 = a;
             _tos_cache0 = res;
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(3);
             stack_pointer += -3;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -44691,7 +44274,6 @@
             _tos_cache1 = PyStackRef_ZERO_BITS;
             _tos_cache2 = PyStackRef_ZERO_BITS;
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(1);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -45139,7 +44721,6 @@
             _tos_cache2 = s;
             _tos_cache1 = c;
             _tos_cache0 = res;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(4);
             stack_pointer += -2 - oparg;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -45277,7 +44858,6 @@
             _tos_cache2 = s;
             _tos_cache1 = c;
             _tos_cache0 = res;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(4);
             stack_pointer += -1 - oparg;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -45372,7 +44952,6 @@
             _tos_cache1 = PyStackRef_ZERO_BITS;
             _tos_cache2 = PyStackRef_ZERO_BITS;
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(1);
             stack_pointer += -2 - oparg;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -45414,7 +44993,6 @@
             _tos_cache1 = PyStackRef_ZERO_BITS;
             _tos_cache2 = PyStackRef_ZERO_BITS;
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(1);
             stack_pointer += -1 - oparg;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -45504,7 +45082,6 @@
             _tos_cache1 = c;
             _tos_cache0 = res;
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(3);
             stack_pointer += -2 - oparg;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -45545,7 +45122,6 @@
             _tos_cache1 = c;
             _tos_cache0 = res;
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(3);
             stack_pointer += -1 - oparg;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -45639,7 +45215,6 @@
             _tos_cache1 = PyStackRef_ZERO_BITS;
             _tos_cache2 = PyStackRef_ZERO_BITS;
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(1);
             stack_pointer += -2 - oparg;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -45681,7 +45256,6 @@
             _tos_cache1 = PyStackRef_ZERO_BITS;
             _tos_cache2 = PyStackRef_ZERO_BITS;
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(1);
             stack_pointer += -1 - oparg;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -45721,7 +45295,6 @@
             _tos_cache1 = PyStackRef_ZERO_BITS;
             _tos_cache2 = PyStackRef_ZERO_BITS;
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(1);
             stack_pointer[-2 - oparg] = callable;
             stack_pointer[-1 - oparg] = self_or_null;
@@ -45782,7 +45355,6 @@
             _tos_cache1 = PyStackRef_ZERO_BITS;
             _tos_cache2 = PyStackRef_ZERO_BITS;
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(1);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -45886,7 +45458,6 @@
             _tos_cache1 = PyStackRef_ZERO_BITS;
             _tos_cache2 = PyStackRef_ZERO_BITS;
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(1);
             stack_pointer += -1;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -45964,7 +45535,6 @@
             _tos_cache1 = PyStackRef_ZERO_BITS;
             _tos_cache2 = PyStackRef_ZERO_BITS;
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(1);
             stack_pointer += -3 - oparg;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -46017,7 +45587,6 @@
             _tos_cache2 = callargs;
             _tos_cache1 = _stack_item_1;
             _tos_cache0 = func;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(4);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -46232,7 +45801,6 @@
             _tos_cache1 = PyStackRef_ZERO_BITS;
             _tos_cache2 = PyStackRef_ZERO_BITS;
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(1);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -46421,7 +45989,6 @@
             _tos_cache1 = PyStackRef_ZERO_BITS;
             _tos_cache2 = PyStackRef_ZERO_BITS;
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(1);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -46455,7 +46022,6 @@
             _tos_cache0 = func;
             _tos_cache2 = PyStackRef_ZERO_BITS;
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(2);
             stack_pointer += -1;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -46633,7 +46199,6 @@
             _tos_cache1 = PyStackRef_ZERO_BITS;
             _tos_cache2 = PyStackRef_ZERO_BITS;
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(1);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -46669,7 +46234,6 @@
             _tos_cache1 = PyStackRef_ZERO_BITS;
             _tos_cache2 = PyStackRef_ZERO_BITS;
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(1);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -46706,7 +46270,6 @@
             _tos_cache1 = PyStackRef_ZERO_BITS;
             _tos_cache2 = PyStackRef_ZERO_BITS;
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(1);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -46745,7 +46308,6 @@
             _tos_cache1 = PyStackRef_ZERO_BITS;
             _tos_cache2 = PyStackRef_ZERO_BITS;
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(1);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -46787,7 +46349,6 @@
             _tos_cache1 = PyStackRef_ZERO_BITS;
             _tos_cache2 = PyStackRef_ZERO_BITS;
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(1);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -47055,7 +46616,6 @@
             _tos_cache1 = l;
             _tos_cache0 = res;
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(3);
             stack_pointer += -2;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -49089,7 +48649,6 @@
             _tos_cache1 = PyStackRef_ZERO_BITS;
             _tos_cache2 = PyStackRef_ZERO_BITS;
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(0);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -49890,7 +49449,6 @@
             _tos_cache1 = PyStackRef_ZERO_BITS;
             _tos_cache2 = PyStackRef_ZERO_BITS;
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(1);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -49973,7 +49531,6 @@
             _tos_cache1 = PyStackRef_ZERO_BITS;
             _tos_cache2 = PyStackRef_ZERO_BITS;
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(0);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -50008,7 +49565,6 @@
             _tos_cache1 = PyStackRef_ZERO_BITS;
             _tos_cache2 = PyStackRef_ZERO_BITS;
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(0);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -50052,7 +49608,6 @@
             _tos_cache1 = PyStackRef_ZERO_BITS;
             _tos_cache2 = PyStackRef_ZERO_BITS;
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(0);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -50074,7 +49629,6 @@
             _tos_cache1 = PyStackRef_ZERO_BITS;
             _tos_cache2 = PyStackRef_ZERO_BITS;
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(1);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -50107,7 +49661,6 @@
             _tos_cache1 = PyStackRef_ZERO_BITS;
             _tos_cache2 = PyStackRef_ZERO_BITS;
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(1);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -50133,7 +49686,6 @@
             _tos_cache1 = PyStackRef_ZERO_BITS;
             _tos_cache2 = PyStackRef_ZERO_BITS;
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(1);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -50171,7 +49723,6 @@
             _tos_cache1 = PyStackRef_ZERO_BITS;
             _tos_cache2 = PyStackRef_ZERO_BITS;
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(1);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -50704,7 +50255,6 @@
             _tos_cache1 = PyStackRef_ZERO_BITS;
             _tos_cache2 = PyStackRef_ZERO_BITS;
             _tos_cache3 = PyStackRef_ZERO_BITS;
-            _tos_cache4 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(1);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;

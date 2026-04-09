@@ -66,11 +66,18 @@ def declare_variables(uop: Uop, out: CWriter) -> None:
 
 class Tier2Emitter(Emitter):
 
-    def __init__(self, out: CWriter, labels: dict[str, Label], exit_cache_depth: int):
+    def __init__(
+        self,
+        out: CWriter,
+        labels: dict[str, Label],
+        exit_cache_depth: int,
+        max_cached_register: int,
+    ):
         super().__init__(out, labels)
         self._replacers["oparg"] = self.oparg
         self._replacers["IP_OFFSET_OF"] = self.ip_offset_of
         self.exit_cache_depth = exit_cache_depth
+        self.max_cached_register = max_cached_register
 
     def goto_error(self, offset: int, storage: Storage) -> str:
         # To do: Add jump targets for popping values.
@@ -204,7 +211,7 @@ class Tier2Emitter(Emitter):
             # replace this with a "clobber" to tell
             # the compiler that these values are unused
             # without having to emit any code.
-            for i in range(cached_items, MAX_GENERATED_CACHED_REGISTER):
+            for i in range(cached_items, self.max_cached_register):
                 self.out.emit(f"_tos_cache{i} = PyStackRef_ZERO_BITS;\n")
         self.emit(f"SET_CURRENT_CACHED_VALUES({cached_items});\n")
 
@@ -287,7 +294,9 @@ def generate_tier2(
             for inputs, outputs, exit_depth in get_uop_cache_depths(
                 uop, max_cached_register=target_depth
             ):
-                emitter = Tier2Emitter(out, analysis.labels, exit_depth)
+                emitter = Tier2Emitter(
+                    out, analysis.labels, exit_depth, target_depth
+                )
                 opname = f"{uop.name}_r{inputs}{outputs}"
                 out.emit(f"case {opname}: {{\n")
                 out.emit(f"CHECK_CURRENT_CACHED_VALUES({inputs});\n")
