@@ -8202,31 +8202,23 @@ static PyObject *
 object___reduce_ex___impl(PyObject *self, int protocol)
 /*[clinic end generated code: output=2e157766f6b50094 input=f326b43fb8a4c5ff]*/
 {
-    PyObject *reduce;
-    if (PyObject_GetOptionalAttr(self, &_Py_ID(__reduce__), &reduce) < 0) {
-        return NULL;
-    }
-    if (reduce != NULL) {
-        PyObject *cls, *clsreduce;
-        int override;
-
-        cls = (PyObject *) Py_TYPE(self);
-        clsreduce = PyObject_GetAttr(cls, &_Py_ID(__reduce__));
-        if (clsreduce == NULL) {
-            Py_DECREF(reduce);
-            return NULL;
-        }
-
+    PyObject *clsreduce = _PyType_LookupRef(Py_TYPE(self), &_Py_ID(__reduce__));
+    if (clsreduce != NULL) {
         PyInterpreterState *interp = _PyInterpreterState_GET();
-        override = (clsreduce != _Py_INTERP_CACHED_OBJECT(interp, objreduce));
+        int override = (clsreduce != _Py_INTERP_CACHED_OBJECT(interp, objreduce));
         Py_DECREF(clsreduce);
+
         if (override) {
-            PyObject *res = _PyObject_CallNoArgs(reduce);
-            Py_DECREF(reduce);
-            return res;
+            PyObject *reduce;
+            if (PyObject_GetOptionalAttr(self, &_Py_ID(__reduce__), &reduce) < 0) {
+                return NULL;
+            }
+            if (reduce != NULL) {
+                PyObject *res = _PyObject_CallNoArgs(reduce);
+                Py_DECREF(reduce);
+                return res;
+            }
         }
-        else
-            Py_DECREF(reduce);
     }
 
     return _common_reduce(self, protocol);
