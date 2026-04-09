@@ -411,7 +411,10 @@ dummy_func(void) {
 
     op(_GUARD_BINARY_OP_EXTEND, (descr/4, left, right -- left, right)) {
         _PyBinaryOpSpecializationDescr *d = (_PyBinaryOpSpecializationDescr *)descr;
-        if (d != NULL && d->lhs_type != NULL && d->rhs_type != NULL) {
+        if (d != NULL && d->guard == NULL) {
+            /* guard == NULL means the check is purely a type test against
+               lhs_type/rhs_type, so eliminate it when types are already known. */
+            assert(d->lhs_type != NULL && d->rhs_type != NULL);
             if (sym_matches_type(left, d->lhs_type) &&
                 sym_matches_type(right, d->rhs_type)) {
                 REPLACE_OP(this_instr, _NOP, 0, 0);

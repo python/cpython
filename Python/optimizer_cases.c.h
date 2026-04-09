@@ -1162,7 +1162,8 @@
             left = stack_pointer[-2];
             PyObject *descr = (PyObject *)this_instr->operand0;
             _PyBinaryOpSpecializationDescr *d = (_PyBinaryOpSpecializationDescr *)descr;
-            if (d != NULL && d->lhs_type != NULL && d->rhs_type != NULL) {
+            if (d != NULL && d->guard == NULL) {
+                assert(d->lhs_type != NULL && d->rhs_type != NULL);
                 if (sym_matches_type(left, d->lhs_type) &&
                     sym_matches_type(right, d->rhs_type)) {
                     REPLACE_OP(this_instr, _NOP, 0, 0);
