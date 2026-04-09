@@ -1168,6 +1168,13 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
         return NULL;
     }
 
+    /* +1 because vectorcall might use -1 to write self */
+    /* gh-138115: This must not be in individual cases for
+       non-tail-call interpreters, as it results in excessive
+       stack usage in some compilers.
+    */
+    PyObject *STACKREF_SCRATCH[MAX_STACKREF_SCRATCH+1];
+
     /* Local "register" variables.
      * These are cached values from the frame and code object.  */
     _Py_CODEUNIT *next_instr;

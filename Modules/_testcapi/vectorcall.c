@@ -98,7 +98,15 @@ _testcapi_pyobject_vectorcall_impl(PyObject *module, PyObject *func,
         PyErr_SetString(PyExc_TypeError, "kwnames must be None or a tuple");
         return NULL;
     }
-    return PyObject_Vectorcall(func, stack, nargs, kwnames);
+    PyObject *res;
+    // The CPython interpreter does not guarantee that vectorcalls are
+    // checked for recursion limit. It's thus up to the C extension themselves to check.
+    if (Py_EnterRecursiveCall("in _testcapi.pyobject_vectorcall")) {
+        return NULL;
+    }
+    res = PyObject_Vectorcall(func, stack, nargs, kwnames);
+    Py_LeaveRecursiveCall();
+    return res;
 }
 
 static PyObject *
