@@ -3,33 +3,7 @@
 # Copyright(c) The Maintainers of Nanvix.
 # Licensed under the MIT License.
 
-# Nanvix Docker image for cross-compilation (used as fallback if native toolchain not found)
-NANVIX_DOCKER_IMAGE ?= nanvix/toolchain:latest-minimal
-
-# Platform and deployment configuration (passed by nanvix-zutil / z.py)
-PLATFORM ?= microvm
-PROCESS_MODE ?= standalone
-MEMORY_SIZE ?= 256mb
-
-# Set to 'yes' for release packaging: disables C test extension modules and
-# skips regrtest.  Dev builds (the default) compile test extensions and run
-# regrtest so that every `./z test` invocation exercises the test suite.
-# NOTE: changing this between builds requires 'make -f Makefile.nanvix distclean'
-# followed by a full rebuild so the new configure flags are picked up.
-NANVIX_RELEASE ?= no
-
-# Space-separated list of stdlib test modules to run via 'python3 -m test'.
-# Keep this list to pure-Python, non-networking tests known to pass on Nanvix.
-# Expand it as more tests are enabled (see issues linked from #320).
-#
-# Trimmed to validated-green modules only. The remaining modules fail due to
-# missing platform capabilities (fork/exec, tempdir, asyncio event loop) or
-# memory limits (test_json MemoryError). Those belong to #321 and #322 where
-# each module gets individual skip/xfail annotations before being re-added.
-#   Deferred: test_builtin test_dict test_list test_str test_tuple test_set
-#             test_bytes test_int test_json test_datetime test_os test_pathlib
-#             test_io
-NANVIX_TEST_LIST ?= test_float test_complex test_bool test_struct
+include $(dir $(lastword $(MAKEFILE_LIST)))defaults.mk
 
 # Nanvix cross-compilation configuration
 ifdef CONFIG_NANVIX
@@ -117,11 +91,6 @@ ifdef CONFIG_NANVIX
   # archive paths portably (e.g. $(NANVIX_SYSROOT)/lib/numpy/*.a).
   NANVIX_SYSROOT := $(SYSROOT_PATH)
   export NANVIX_SYSROOT
-
-  # INSTALL_PREFIX: the prefix baked into the python binary (sys.prefix, sys.path).
-  # Defaults to /sysroot which matches the runtime layout on Nanvix and keeps
-  # DESTDIR installs predictable (files land under DESTDIR/sysroot/...).
-  INSTALL_PREFIX ?= /sysroot
 else
   # Allow clean target without CONFIG_NANVIX
   ifneq ($(MAKECMDGOALS),clean)

@@ -8,8 +8,12 @@
 
 include .nanvix/mk/test-common.mk
 
-# test-hello-multi-process: run hello test via nanvixd with direct file access
-test-hello-multi-process: test-stage
+# test-hello-multi-process-prepare: build and install into staging.
+test-hello-multi-process-prepare: test-stage
+
+# test-hello-multi-process-run: execute hello test via nanvixd.
+# Runs on the host — no cross-toolchain needed.
+test-hello-multi-process-run:
 	@echo "Test: Hello world..."
 	cd $(TEST_STAGING)/sysroot && \
 		{ \
@@ -26,8 +30,14 @@ test-hello-multi-process: test-stage
 		}
 	$(call validate-hello,/tmp/cpython_test.log)
 
-# test-regrtest-multi-process: run stdlib regression tests
-test-regrtest-multi-process: test-stage
+# test-hello-multi-process: combined prepare + run (for native Linux builds)
+test-hello-multi-process: test-hello-multi-process-prepare test-hello-multi-process-run
+
+# test-regrtest-multi-process-prepare: build and install into staging.
+test-regrtest-multi-process-prepare: test-stage
+
+# test-regrtest-multi-process-run: execute stdlib regression tests via nanvixd.
+test-regrtest-multi-process-run:
 ifneq ($(NANVIX_RELEASE),yes)
 	@echo "Test: regrtest ($(words $(NANVIX_TEST_LIST)) modules)..."
 	cd $(TEST_STAGING)/sysroot && \
@@ -46,7 +56,10 @@ else
 	@echo "Test: regrtest skipped (NANVIX_RELEASE=yes)"
 endif
 
+# test-regrtest-multi-process: combined prepare + run (for native Linux builds)
+test-regrtest-multi-process: test-regrtest-multi-process-prepare test-regrtest-multi-process-run
+
 # Aggregate test target for multi-process mode
 test: test-hello-multi-process test-regrtest-multi-process test-cleanup
 
-.PHONY: test-hello-multi-process test-regrtest-multi-process test
+.PHONY: test-hello-multi-process-prepare test-hello-multi-process-run test-hello-multi-process test-regrtest-multi-process-prepare test-regrtest-multi-process-run test-regrtest-multi-process test
