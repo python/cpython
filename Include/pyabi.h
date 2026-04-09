@@ -42,7 +42,7 @@
        free-threaded & GIL)
 
     (Don't use Py_TARGET_ABI3T directly. It's currently only used to set these
-     2 macro, and defined for users' convenience.)
+     2 macros, and defined for users' convenience.)
  */
 #if defined(Py_LIMITED_API) && defined(Py_GIL_DISABLED) \
         && !defined(Py_TARGET_ABI3T)
