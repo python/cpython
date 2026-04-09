@@ -538,6 +538,58 @@ class ReferencesTestCase(TestBase):
         with self.assertRaises(TypeError):
             hash(weakref.proxy(obj))
 
+    def test_proxy_unref_add_refcount(self):
+        class C:
+            def __add__(self, o):
+                return NotImplemented
+        
+        # create dead proxy
+        o = C()
+        dead = weakref.proxy(o)
+        del o
+        gc.collect()
+    
+        # create live proxy
+        obj = C()
+        ref = weakref.ref(obj)
+        proxy = weakref.proxy(obj)
+        
+        try:
+            operator.add(proxy, dead)
+        except ReferenceError:
+            pass
+    
+        del proxy, obj, dead
+        gc.collect()
+    
+        self.assertIsNone(ref(), "Leaked object in add operation")
+    
+    def test_proxy_unref_pow_refcount(self):
+        class C:
+            def __pow__(self, o, m=None):
+                return NotImplemented
+    
+        # create dead proxy
+        o = C()
+        dead = weakref.proxy(o)
+        del o
+        gc.collect()
+    
+        # create live proxy
+        obj = C()
+        ref = weakref.ref(obj)
+        proxy = weakref.proxy(obj)
+    
+        try:
+            pow(proxy, dead, None)
+        except ReferenceError:
+            pass
+    
+        del proxy, obj, dead
+        gc.collect()
+    
+        self.assertIsNone(ref(), "Leaked object in pow operation")
+
     def test_getweakrefcount(self):
         o = C()
         ref1 = weakref.ref(o)

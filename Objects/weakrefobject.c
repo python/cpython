@@ -538,9 +538,7 @@ proxy_check_ref(PyObject *obj)
 #define UNWRAP(o) \
         if (PyWeakref_CheckProxy(o)) { \
             o = _PyWeakref_GET_REF(o); \
-            if (!proxy_check_ref(o)) { \
-                return NULL; \
-            } \
+            proxy_check_ref(o);  \
         } \
         else { \
             Py_INCREF(o); \
@@ -559,7 +557,13 @@ proxy_check_ref(PyObject *obj)
     static PyObject * \
     method(PyObject *x, PyObject *y) { \
         UNWRAP(x); \
+        if (x == NULL) \
+            return NULL; \
         UNWRAP(y); \
+        if (y == NULL) { \
+            Py_XDECREF(x); \
+            return NULL; \
+        } \
         PyObject* res = generic(x, y); \
         Py_DECREF(x); \
         Py_DECREF(y); \
@@ -573,9 +577,20 @@ proxy_check_ref(PyObject *obj)
     static PyObject * \
     method(PyObject *proxy, PyObject *v, PyObject *w) { \
         UNWRAP(proxy); \
+        if (proxy == NULL) \
+            return NULL; \
         UNWRAP(v); \
+        if (v == NULL) { \
+            Py_XDECREF(proxy); \
+            return NULL; \
+        } \
         if (w != NULL) { \
             UNWRAP(w); \
+            if (w == NULL) { \
+                Py_XDECREF(proxy); \
+                Py_XDECREF(v); \
+                return NULL; \
+            } \
         } \
         PyObject* res = generic(proxy, v, w); \
         Py_DECREF(proxy); \
@@ -588,6 +603,8 @@ proxy_check_ref(PyObject *obj)
     static PyObject * \
     method(PyObject *proxy, PyObject *Py_UNUSED(ignored)) { \
             UNWRAP(proxy); \
+            if (proxy == NULL) \
+                return NULL; \
             PyObject* res = PyObject_CallMethodNoArgs(proxy, &_Py_ID(SPECIAL)); \
             Py_DECREF(proxy); \
             return res; \
@@ -636,7 +653,13 @@ static PyObject *
 proxy_richcompare(PyObject *proxy, PyObject *v, int op)
 {
     UNWRAP(proxy);
+    if (proxy == NULL)
+        return NULL;
     UNWRAP(v);
+    if (v == NULL) {
+        Py_XDECREF(proxy);
+        return NULL;
+    }
     PyObject* res = PyObject_RichCompare(proxy, v, op);
     Py_DECREF(proxy);
     Py_DECREF(v);
