@@ -9,10 +9,11 @@
 // is not needed.
 
 
-// Include Python header files
-#include "patchlevel.h"
-#include "pyconfig.h"
-#include "pymacconfig.h"
+// Include Python configuration headers
+#include "patchlevel.h"     // the Python version
+#include "pyconfig.h"       // information from configure
+#include "pymacconfig.h"    // overrides for pyconfig
+#include "pyabi.h"          // feature/ABI selection
 
 
 // Include standard header files

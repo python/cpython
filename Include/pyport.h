@@ -58,45 +58,6 @@
 #endif
 
 
-/* Defines to build Python and its standard library:
- *
- * - Py_BUILD_CORE: Build Python core. Give access to Python internals, but
- *   should not be used by third-party modules.
- * - Py_BUILD_CORE_BUILTIN: Build a Python stdlib module as a built-in module.
- * - Py_BUILD_CORE_MODULE: Build a Python stdlib module as a dynamic library.
- *
- * Py_BUILD_CORE_BUILTIN and Py_BUILD_CORE_MODULE imply Py_BUILD_CORE.
- *
- * On Windows, Py_BUILD_CORE_MODULE exports "PyInit_xxx" symbol, whereas
- * Py_BUILD_CORE_BUILTIN does not.
- */
-#if defined(Py_BUILD_CORE_BUILTIN) && !defined(Py_BUILD_CORE)
-#  define Py_BUILD_CORE
-#endif
-#if defined(Py_BUILD_CORE_MODULE) && !defined(Py_BUILD_CORE)
-#  define Py_BUILD_CORE
-#endif
-
-#if defined(Py_TARGET_ABI3T)
-#  if !defined(Py_GIL_DISABLED)
-// Define Py_GIL_DISABLED for users' needs. This macro is used to enable
-// locking needed in for free-threaded interpreters builds.
-#    define Py_GIL_DISABLED
-#  endif
-#  if defined(_Py_IS_TESTCEXT)
-// When compiling for  abi3t, contents of Python.h should not depend
-// on Py_GIL_DISABLED.
-// We ask GCC to error if it sees the macro from this point on.
-// Since users are free to the macro, and there's no way to undo the poisoning
-// at the end of Python.h, we only do this in a test module.
-#    ifdef __GNUC__
-#      undef Py_GIL_DISABLED
-#      pragma GCC poison Py_GIL_DISABLED
-#    endif
-#  endif
-#endif
-
-
 /**************************************************************************
 Symbols and macros to supply platform-independent interfaces to basic
 C language & library operations whose spellings vary across platforms.
