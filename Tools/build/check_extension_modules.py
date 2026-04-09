@@ -477,6 +477,12 @@ _MISSING_STDLIB_MODULE_MESSAGES = {pprint.pformat(messages)}
         """Attempt to import module and report errors"""
         spec = self.get_spec(modinfo)
         self._check_file(modinfo, spec)
+
+        # skips readline module on macOS (temporary fix)
+        if sys.platform == "darwin" and modinfo.name == "readline":
+            logger.error("Skipping readline module for macOS")
+            return
+            
         try:
             with warnings.catch_warnings():
                 # ignore deprecation warning from deprecated modules
