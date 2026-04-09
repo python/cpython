@@ -480,8 +480,7 @@ _MISSING_STDLIB_MODULE_MESSAGES = {pprint.pformat(messages)}
 
         # skips readline module on macOS (temporary fix)
         if sys.platform == "darwin" and modinfo.name == "readline":
-            logger.error("Skipping readline module for macOS")
-            return
+            raise ImportError("Skipping readline module for macOS")
             
         try:
             with warnings.catch_warnings():
