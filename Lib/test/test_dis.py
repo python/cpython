@@ -2478,6 +2478,16 @@ class TestDisTraceback(DisTestBase):
         with self.assertRaises(RuntimeError):
             dis.distb()
 
+    def test_distb_syntax_error(self):
+        try:
+            compile("???", "", "exec")
+        except SyntaxError as e:
+            sys.last_exc = e
+            sys.last_exc.__traceback__ = None
+
+        with self.assertRaises(RuntimeError):
+            dis.distb()
+
     def test_distb_last_traceback(self):
         self.maxDiff = None
         # We need to have an existing last traceback in `sys`:
