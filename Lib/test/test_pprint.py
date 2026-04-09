@@ -214,6 +214,27 @@ class QueryTestCase(unittest.TestCase):
             pp.pprint(obj)
             self.assertNotIn("\x1b[", stream.getvalue())
 
+    def test_color_preserves_newlines(self):
+        """Color multiline output must use real newlines, not '^J'."""
+        obj = {"a": 1, "b": 2, "c": 3, "d": [10, 20, 30, 40, 50, 60, 70, 80]}
+
+        plain_stream = io.StringIO()
+        pprint.pprint(obj, stream=plain_stream, width=20, color=False)
+        plain = plain_stream.getvalue()
+        self.assertIn("\n", plain)
+
+        with unittest.mock.patch.dict(
+            "os.environ", {"FORCE_COLOR": "1", "NO_COLOR": ""}
+        ):
+            color_stream = io.StringIO()
+            pprint.pprint(obj, stream=color_stream, width=20, color=True)
+            color = color_stream.getvalue()
+
+        self.assertIn("\x1b[", color)  # has color
+        self.assertNotIn("^J", color)
+        stripped = re.sub(r"\x1b\[[0-9;]*m", "", color)
+        self.assertEqual(stripped, plain)
+
     def test_basic(self):
         # Verify .isrecursive() and .isreadable() w/o recursion
         pp = pprint.PrettyPrinter()

@@ -134,7 +134,7 @@ def _safe_tuple(t):
 def _colorize_output(text):
     """Apply syntax highlighting."""
     colors = list(gen_colors(text))
-    chars, _ = disp_str(text, colors=colors, force_color=True)
+    chars, _ = disp_str(text, colors=colors, force_color=True, escape=False)
     return "".join(chars)
 
 
