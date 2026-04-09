@@ -1382,13 +1382,13 @@ Reading directories
       The paths are returned in no particular order.
       If you need a specific order, sort the results.
 
-   .. seealso::
-      :ref:`pathlib-pattern-language` and :meth:`Path.glob` documentation.
-
    .. note::
       Any :exc:`OSError` exceptions raised from scanning the filesystem are
       suppressed. This includes :exc:`PermissionError` when accessing
       directories without read permission.
+
+   .. seealso::
+      :ref:`pathlib-pattern-language` and :meth:`Path.glob` documentation.
 
    .. audit-event:: pathlib.Path.rglob self,pattern pathlib.Path.rglob
 
