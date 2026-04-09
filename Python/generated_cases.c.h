@@ -7849,13 +7849,8 @@
                         !IS_JIT_TRACING() &&
                         (this_instr->op.code == JUMP_BACKWARD_JIT || is_resume)) &&
                     next_instr->op.code != ENTER_EXECUTOR) {
-                    _Py_CODEUNIT *insert_exec_at = this_instr;
-                    while (oparg > 255) {
-                        oparg >>= 8;
-                        insert_exec_at--;
-                    }
-                    int succ = _PyJit_TryInitializeTracing(tstate, frame, this_instr, insert_exec_at,
-                        is_resume ? insert_exec_at : next_instr, stack_pointer, 0, NULL, oparg, NULL);
+                    int succ = _PyJit_TryInitializeTracing(
+                        tstate, frame, this_instr, stack_pointer, 0, NULL, oparg, NULL);
                     if (succ) {
                         ENTER_TRACING();
                     }
@@ -10669,13 +10664,8 @@
                         !IS_JIT_TRACING() &&
                         (this_instr->op.code == JUMP_BACKWARD_JIT || is_resume)) &&
                     next_instr->op.code != ENTER_EXECUTOR) {
-                    _Py_CODEUNIT *insert_exec_at = this_instr;
-                    while (oparg > 255) {
-                        oparg >>= 8;
-                        insert_exec_at--;
-                    }
-                    int succ = _PyJit_TryInitializeTracing(tstate, frame, this_instr, insert_exec_at,
-                        is_resume ? insert_exec_at : next_instr, stack_pointer, 0, NULL, oparg, NULL);
+                    int succ = _PyJit_TryInitializeTracing(
+                        tstate, frame, this_instr, stack_pointer, 0, NULL, oparg, NULL);
                     if (succ) {
                         ENTER_TRACING();
                     }

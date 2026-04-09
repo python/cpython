@@ -3373,13 +3373,8 @@ dummy_func(
                 (this_instr->op.code == JUMP_BACKWARD_JIT || is_resume)) &&
                 next_instr->op.code != ENTER_EXECUTOR) {
                 /* Back up over EXTENDED_ARGs so executor is inserted at the correct place */
-                _Py_CODEUNIT *insert_exec_at = this_instr;
-                while (oparg > 255) {
-                    oparg >>= 8;
-                    insert_exec_at--;
-                }
-                int succ = _PyJit_TryInitializeTracing(tstate, frame, this_instr, insert_exec_at,
-                    is_resume ? insert_exec_at : next_instr, stack_pointer, 0, NULL, oparg, NULL);
+                int succ = _PyJit_TryInitializeTracing(
+                    tstate, frame, this_instr, stack_pointer, 0, NULL, oparg, NULL);
                 if (succ) {
                     ENTER_TRACING();
                 }
@@ -6066,7 +6061,7 @@ dummy_func(
                 // Note: it's safe to use target->op.arg here instead of the oparg given by EXTENDED_ARG.
                 // The invariant in the optimizer is the deopt target always points back to the first EXTENDED_ARG.
                 // So setting it to anything else is wrong.
-                int succ = _PyJit_TryInitializeTracing(tstate, frame, target, target, target, stack_pointer, chain_depth, exit, target->op.arg, previous_executor);
+                int succ = _PyJit_TryInitializeTracing(tstate, frame, target, stack_pointer, chain_depth, exit, target->op.arg, previous_executor);
                 exit->temperature = restart_backoff_counter(exit->temperature);
                 if (succ) {
                     GOTO_TIER_ONE_CONTINUE_TRACING(target);
