@@ -1,1 +1,0 @@
-Ensure correct handling of the result returned by :c:func:`PyObject_VisitManagedDict`
