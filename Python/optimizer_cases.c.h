@@ -334,7 +334,7 @@
             JitOptRef res;
             value = stack_pointer[-1];
             int already_bool = optimize_to_bool(this_instr, ctx, value, &res,
-                _POP_TOP, _LOAD_CONST_INLINE_BORROW, _NOP);
+                _POP_TOP, _NOP);
             if (!already_bool) {
                 res = sym_new_truthiness(ctx, value, true);
             }
@@ -346,7 +346,7 @@
             JitOptRef value;
             value = stack_pointer[-1];
             int already_bool = optimize_to_bool(this_instr, ctx, value, &value,
-                _POP_TOP, _LOAD_CONST_INLINE_BORROW, _NOP);
+                _POP_TOP, _NOP);
             if (!already_bool) {
                 sym_set_type(value, &PyBool_Type);
             }
@@ -360,7 +360,7 @@
             JitOptRef v;
             value = stack_pointer[-1];
             int already_bool = optimize_to_bool(this_instr, ctx, value, &res,
-                _NOP, _LOAD_CONST_INLINE_BORROW, _SWAP);
+                _NOP, _SWAP);
             if (!already_bool) {
                 sym_set_type(value, &PyLong_Type);
                 res = sym_new_truthiness(ctx, value, true);
@@ -416,7 +416,7 @@
             JitOptRef v;
             value = stack_pointer[-1];
             int already_bool = optimize_to_bool(this_instr, ctx, value, &res,
-                _NOP, _LOAD_CONST_INLINE_BORROW, _SWAP);
+                _NOP, _SWAP);
             if (!already_bool) {
                 res = sym_new_type(ctx, &PyBool_Type);
             }
@@ -434,7 +434,7 @@
             JitOptRef res;
             value = stack_pointer[-1];
             int already_bool = optimize_to_bool(this_instr, ctx, value, &res,
-                _POP_TOP, _LOAD_CONST_INLINE_BORROW, _NOP);
+                _POP_TOP, _NOP);
             if (!already_bool) {
                 sym_set_const(value, Py_None);
                 res = sym_new_const(ctx, Py_False);
@@ -476,7 +476,7 @@
             JitOptRef v;
             value = stack_pointer[-1];
             int already_bool = optimize_to_bool(this_instr, ctx, value, &res,
-                _NOP, _LOAD_CONST_INLINE_BORROW, _SWAP);
+                _NOP, _SWAP);
             v = value;
             if (!already_bool) {
                 res = sym_new_truthiness(ctx, value, true);
@@ -2571,7 +2571,7 @@
             PyTypeObject *type = (PyTypeObject *)sym_get_const(ctx, owner);
             PyObject *name = get_co_name(ctx, oparg >> 1);
             attr = lookup_attr(ctx, dependencies, this_instr, type, name,
-                           _POP_TOP, _LOAD_CONST_INLINE_BORROW, _LOAD_CONST_INLINE, _NOP);
+                           _POP_TOP, _NOP);
             stack_pointer[-1] = attr;
             break;
         }
@@ -3464,7 +3464,7 @@
             PyTypeObject *type = sym_get_type(owner);
             PyObject *name = get_co_name(ctx, oparg >> 1);
             attr = lookup_attr(ctx, dependencies, this_instr, type, name,
-                           _NOP, _LOAD_CONST_INLINE_BORROW, _LOAD_CONST_INLINE, _SWAP);
+                           _NOP, _SWAP);
             self = owner;
             CHECK_STACK_BOUNDS(1);
             stack_pointer[-1] = attr;
@@ -3484,7 +3484,7 @@
             PyTypeObject *type = sym_get_type(owner);
             PyObject *name = get_co_name(ctx, oparg >> 1);
             attr = lookup_attr(ctx, dependencies, this_instr, type, name,
-                           _NOP, _LOAD_CONST_INLINE_BORROW, _LOAD_CONST_INLINE, _SWAP);
+                           _NOP, _SWAP);
             self = owner;
             CHECK_STACK_BOUNDS(1);
             stack_pointer[-1] = attr;
@@ -3503,7 +3503,7 @@
             PyTypeObject *type = sym_get_type(owner);
             PyObject *name = get_co_name(ctx, oparg >> 1);
             attr = lookup_attr(ctx, dependencies, this_instr, type, name,
-                           _POP_TOP, _LOAD_CONST_INLINE_BORROW, _LOAD_CONST_INLINE, _NOP);
+                           _POP_TOP, _NOP);
             stack_pointer[-1] = attr;
             break;
         }
@@ -3517,7 +3517,7 @@
             PyTypeObject *type = sym_get_type(owner);
             PyObject *name = get_co_name(ctx, oparg >> 1);
             attr = lookup_attr(ctx, dependencies, this_instr, type, name,
-                           _POP_TOP, _LOAD_CONST_INLINE_BORROW, _LOAD_CONST_INLINE, _NOP);
+                           _POP_TOP, _NOP);
             stack_pointer[-1] = attr;
             break;
         }
@@ -3536,7 +3536,7 @@
             PyTypeObject *type = sym_get_type(owner);
             PyObject *name = get_co_name(ctx, oparg >> 1);
             attr = lookup_attr(ctx, dependencies, this_instr, type, name,
-                           _NOP, _LOAD_CONST_INLINE_BORROW, _LOAD_CONST_INLINE, _SWAP);
+                           _NOP, _SWAP);
             self = owner;
             CHECK_STACK_BOUNDS(1);
             stack_pointer[-1] = attr;

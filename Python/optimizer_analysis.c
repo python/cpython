@@ -319,7 +319,7 @@ optimize_to_bool(
     JitOptContext *ctx,
     JitOptRef value,
     JitOptRef *result_ptr,
-    uint16_t prefix, uint16_t load_op, uint16_t suffix)
+    uint16_t prefix, uint16_t suffix)
 {
     if (sym_matches_type(value, &PyBool_Type)) {
         ADD_OP(_NOP, 0, 0);
@@ -332,7 +332,7 @@ optimize_to_bool(
         if (prefix != _NOP) {
             ADD_OP(prefix, 0, 0);
         }
-        ADD_OP(load_op, 0, (uintptr_t)load);
+        ADD_OP(_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)load);
         if (suffix != _NOP) {
             ADD_OP(suffix, 2, 0);
         }
@@ -382,7 +382,7 @@ eliminate_pop_guard(_PyUOpInstruction *this_instr, JitOptContext *ctx, bool exit
 static JitOptRef
 lookup_attr(JitOptContext *ctx, _PyBloomFilter *dependencies, _PyUOpInstruction *this_instr,
             PyTypeObject *type, PyObject *name,
-            uint16_t prefix, uint16_t immortal_op, uint16_t mortal_op, uint16_t suffix)
+            uint16_t prefix, uint16_t suffix)
 {
     // The cached value may be dead, so we need to do the lookup again... :(
     if (type && PyType_Check(type)) {
@@ -392,7 +392,8 @@ lookup_attr(JitOptContext *ctx, _PyBloomFilter *dependencies, _PyUOpInstruction 
             if (prefix != _NOP) {
                 ADD_OP(prefix, 0, 0);
             }
-            ADD_OP(immortal ? immortal_op : mortal_op, 0, (uintptr_t)lookup);
+            ADD_OP(immortal ? _LOAD_CONST_INLINE_BORROW : _LOAD_CONST_INLINE,
+                   0, (uintptr_t)lookup);
             if (suffix != _NOP) {
                 ADD_OP(suffix, 2, 0);
             }
