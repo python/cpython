@@ -398,10 +398,15 @@ def setup_testbed():
 def build_testbed(context):
     setup_sdk()
     setup_testbed()
+
+    # Ensure that CROSS_BUILD_DIR is in the Gradle environment, regardless
+    # of whether it was set by environment variable or `--cross-build-dir`.
+    env = os.environ.copy()
+    env["CROSS_BUILD_DIR"] = CROSS_BUILD_DIR
     run(
         [gradlew, "--console", "plain", "packageDebug", "packageDebugAndroidTest"],
         cwd=TESTBED_DIR,
-        env={}
+        env=env,
     )
 
 
