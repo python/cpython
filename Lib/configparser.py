@@ -613,7 +613,9 @@ class RawConfigParser(MutableMapping):
         \]                                 # ]
         """
     _OPT_TMPL = r"""
-        (?P<option>.*?)                    # very permissive!
+        (?P<option>                        # very permissive!
+            (?:(?!{delim})\S)*             # non-delimiter non-whitespace
+            (?:\s+(?:(?!{delim})\S)+)*)    # optionally more words
         \s*(?P<vi>{delim})\s*              # any number of space/tab,
                                            # followed by any of the
                                            # allowed delimiters,
@@ -621,7 +623,9 @@ class RawConfigParser(MutableMapping):
         (?P<value>.*)$                     # everything up to eol
         """
     _OPT_NV_TMPL = r"""
-        (?P<option>.*?)                    # very permissive!
+        (?P<option>                        # very permissive!
+            (?:(?!{delim})\S)*             # non-delimiter non-whitespace
+            (?:\s+(?:(?!{delim})\S)+)*)    # optionally more words
         \s*(?:                             # any number of space/tab,
         (?P<vi>{delim})\s*                 # optionally followed by
                                            # any of the allowed
