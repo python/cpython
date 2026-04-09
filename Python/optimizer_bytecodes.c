@@ -2106,6 +2106,11 @@ dummy_func(void) {
         ss = sub_st;
     }
 
+    op(_MAKE_FUNCTION, (codeobj_st -- func, co)) {
+        func = sym_new_type(ctx, &PyFunction_Type);
+        co = codeobj_st;
+    }
+
     op(_MATCH_CLASS, (subject, type, names -- attrs, s, tp, n)) {
         attrs = sym_new_not_null(ctx);
         s = subject;
