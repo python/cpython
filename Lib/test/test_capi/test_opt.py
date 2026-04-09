@@ -5027,6 +5027,49 @@ class TestUopsOptimization(unittest.TestCase):
         PYTHON_JIT="1", PYTHON_JIT_STRESS="1")
         self.assertEqual(result[0].rc, 0, result)
 
+    def test_call_super(self):
+        class A:
+            def method1(self):
+                return 42
+
+            def method2(self):
+                return 21
+
+        class B(A):
+            def method1(self):
+                return super().method1()
+
+            def method2(self):
+                return super(B, self).method2()
+
+        b = B()
+
+        def testfunc(n):
+            x = 0
+            for _ in range(n):
+                x += b.method1()
+                x += b.method2()
+            return x
+
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, 63 * TIER2_THRESHOLD)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertNotIn("_LOAD_SUPER_ATTR_METHOD", uops)
+        self.assertEqual(uops.count("_GUARD_NOS_TYPE_VERSION"), 2)
+        self.assertTrue(ex.is_valid())
+        # this should change the type version of A, which should invalidate the executor
+        A.method1 = lambda self: 1
+        self.assertFalse(ex.is_valid())
+        # re-running should create a new executor
+        res, ex = self._run_with_optimizer(testfunc, 4 * TIER2_THRESHOLD)
+        self.assertEqual(res, 4 * 22 * TIER2_THRESHOLD)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertNotIn("_LOAD_SUPER_ATTR_METHOD", uops)
+        self.assertEqual(uops.count("_GUARD_NOS_TYPE_VERSION"), 2)
+
+
 def global_identity(x):
     return x
 
