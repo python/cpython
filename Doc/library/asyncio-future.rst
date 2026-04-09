@@ -199,7 +199,7 @@ Future Object
       The optional argument *msg* is passed as the argument to the
       :exc:`CancelledError` exception raised when a cancelled Future
       is awaited.
-      
+
       It can be any object.
 
       .. versionchanged:: 3.9
