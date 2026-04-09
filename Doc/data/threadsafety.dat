@@ -147,6 +147,7 @@ PySet_Pop:atomic:
 
 # Clear - empties the set before clearing
 PySet_Clear:atomic:
+
 # Capsule objects (Doc/c-api/capsule.rst)
 
 # Type check - read ob_type pointer, always safe
