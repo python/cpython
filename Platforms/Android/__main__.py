@@ -844,7 +844,7 @@ def ci(context):
             "emulator on this platform."
         )
     else:
-        with TemporaryDirectory(prefix=SCRIPT_NAME) as temp_dir:
+        with TemporaryDirectory(prefix=SCRIPT_NAME.replace("/", "-")) as temp_dir:
             print("::group::Tests")
 
             # Prove the package is self-contained by using it to run the tests.
