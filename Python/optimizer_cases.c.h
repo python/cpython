@@ -2353,15 +2353,53 @@
             break;
         }
 
+        case _GUARD_NOS_TYPE_VERSION: {
+            break;
+        }
+
+        case _GUARD_LOAD_SUPER_ATTR_METHOD: {
+            JitOptRef class_st;
+            JitOptRef global_super_st;
+            class_st = stack_pointer[-2];
+            global_super_st = stack_pointer[-3];
+            if (sym_get_const(ctx, global_super_st) == (PyObject *)&PySuper_Type) {
+                PyTypeObject *probable = (PyTypeObject *)sym_get_probable_value(class_st);
+                PyTypeObject *known = (PyTypeObject *)sym_get_const(ctx, class_st);
+                if (known == NULL && probable != NULL && PyType_Check(probable)) {
+                    ADD_OP(_GUARD_NOS_TYPE_VERSION, 0, probable->tp_version_tag);
+                    known = probable;
+                }
+                sym_set_const(class_st, (PyObject *)known);
+            }
+            else {
+                sym_set_const(global_super_st, (PyObject *)&PySuper_Type);
+                sym_set_type(class_st, &PyType_Type);
+            }
+            break;
+        }
+
         case _LOAD_SUPER_ATTR_METHOD: {
+            JitOptRef self_st;
+            JitOptRef class_st;
             JitOptRef attr;
             JitOptRef self_or_null;
-            attr = sym_new_not_null(ctx);
-            self_or_null = sym_new_not_null(ctx);
-            CHECK_STACK_BOUNDS(-1);
-            stack_pointer[-3] = attr;
-            stack_pointer[-2] = self_or_null;
-            stack_pointer += -1;
+            self_st = stack_pointer[-1];
+            class_st = stack_pointer[-2];
+            self_or_null = self_st;
+            PyTypeObject *su_type = (PyTypeObject *)sym_get_const(ctx, class_st);
+            PyTypeObject *obj_type = sym_get_type(self_st);
+            CHECK_STACK_BOUNDS(-3);
+            stack_pointer += -3;
+            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+            PyObject *name = get_co_name(ctx, oparg >> 2);
+            attr = lookup_super_attr(ctx, dependencies, this_instr,
+                                 su_type, obj_type, name,
+                                 _INSERT_1_LOAD_CONST_INLINE_BORROW,
+                                 _INSERT_1_LOAD_CONST_INLINE);
+            CHECK_STACK_BOUNDS(2);
+            stack_pointer[0] = attr;
+            stack_pointer[1] = self_or_null;
+            stack_pointer += 2;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
             break;
         }
