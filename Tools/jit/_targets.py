@@ -225,7 +225,8 @@ class _Target(typing.Generic[_S, _R]):
         cases_and_opnames = sorted(
             re.findall(
                 r"\n( {8}case (\w+): \{\n.*?\n {8}\})",
-                generated_cases, flags=re.DOTALL,
+                generated_cases,
+                flags=re.DOTALL,
             )
         )
         tasks = []
