@@ -1155,6 +1155,32 @@
             break;
         }
 
+        case _GUARD_BINARY_OP_EXTEND_LHS: {
+            JitOptRef left;
+            left = stack_pointer[-2];
+            PyObject *descr = (PyObject *)this_instr->operand0;
+            _PyBinaryOpSpecializationDescr *d = (_PyBinaryOpSpecializationDescr *)descr;
+            assert(d != NULL && d->guard == NULL && d->lhs_type != NULL);
+            if (sym_matches_type(left, d->lhs_type)) {
+                ADD_OP(_NOP, 0, 0);
+            }
+            sym_set_type(left, d->lhs_type);
+            break;
+        }
+
+        case _GUARD_BINARY_OP_EXTEND_RHS: {
+            JitOptRef right;
+            right = stack_pointer[-1];
+            PyObject *descr = (PyObject *)this_instr->operand0;
+            _PyBinaryOpSpecializationDescr *d = (_PyBinaryOpSpecializationDescr *)descr;
+            assert(d != NULL && d->guard == NULL && d->rhs_type != NULL);
+            if (sym_matches_type(right, d->rhs_type)) {
+                ADD_OP(_NOP, 0, 0);
+            }
+            sym_set_type(right, d->rhs_type);
+            break;
+        }
+
         case _GUARD_BINARY_OP_EXTEND: {
             JitOptRef right;
             JitOptRef left;
@@ -1164,9 +1190,18 @@
             _PyBinaryOpSpecializationDescr *d = (_PyBinaryOpSpecializationDescr *)descr;
             if (d != NULL && d->guard == NULL) {
                 assert(d->lhs_type != NULL && d->rhs_type != NULL);
-                if (sym_matches_type(left, d->lhs_type) &&
-                    sym_matches_type(right, d->rhs_type)) {
-                    REPLACE_OP(this_instr, _NOP, 0, 0);
+                bool lhs_known = sym_matches_type(left, d->lhs_type);
+                bool rhs_known = sym_matches_type(right, d->rhs_type);
+                if (lhs_known && rhs_known) {
+                    ADD_OP(_NOP, 0, 0);
+                }
+                else if (lhs_known) {
+                    ADD_OP(_GUARD_BINARY_OP_EXTEND_RHS, 0, 0);
+                    sym_set_type(right, d->rhs_type);
+                }
+                else if (rhs_known) {
+                    ADD_OP(_GUARD_BINARY_OP_EXTEND_LHS, 0, 0);
+                    sym_set_type(left, d->lhs_type);
                 }
             }
             break;

@@ -961,14 +961,32 @@ dummy_func(
             res = PyStackRef_FromPyObjectSteal(temp);
         }
 
+       op(_GUARD_BINARY_OP_EXTEND_LHS, (descr/4, left, right -- left, right)) {
+            PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);
+            _PyBinaryOpSpecializationDescr *d = (_PyBinaryOpSpecializationDescr*)descr;
+            assert(INLINE_CACHE_ENTRIES_BINARY_OP == 5);
+            assert(d && d->guard == NULL && d->lhs_type != NULL);
+            EXIT_IF(Py_TYPE(left_o) != d->lhs_type);
+        }
+
+       op(_GUARD_BINARY_OP_EXTEND_RHS, (descr/4, left, right -- left, right)) {
+            PyObject *right_o = PyStackRef_AsPyObjectBorrow(right);
+            _PyBinaryOpSpecializationDescr *d = (_PyBinaryOpSpecializationDescr*)descr;
+            assert(INLINE_CACHE_ENTRIES_BINARY_OP == 5);
+            assert(d && d->guard == NULL && d->rhs_type != NULL);
+            EXIT_IF(Py_TYPE(right_o) != d->rhs_type);
+        }
+
        op(_GUARD_BINARY_OP_EXTEND, (descr/4, left, right -- left, right)) {
             PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);
             PyObject *right_o = PyStackRef_AsPyObjectBorrow(right);
             _PyBinaryOpSpecializationDescr *d = (_PyBinaryOpSpecializationDescr*)descr;
             assert(INLINE_CACHE_ENTRIES_BINARY_OP == 5);
-            assert(d && d->guard);
-            int res = d->guard(left_o, right_o);
-            EXIT_IF(!res);
+            assert(d != NULL);
+            int match = (d->guard != NULL)
+                ? d->guard(left_o, right_o)
+                : (Py_TYPE(left_o) == d->lhs_type && Py_TYPE(right_o) == d->rhs_type);
+            EXIT_IF(!match);
         }
 
        op(_BINARY_OP_EXTEND, (descr/4, left, right -- res, l, r)) {
