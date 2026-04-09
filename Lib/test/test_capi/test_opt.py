@@ -2732,6 +2732,7 @@ class TestUopsOptimization(unittest.TestCase):
         uops = get_opnames(ex)
         self.assertIn("_CALL_BUILTIN_FAST", uops)
         self.assertNotIn("_GUARD_CALLABLE_BUILTIN_FAST", uops)
+        self.assertGreaterEqual(count_ops(ex, "_POP_TOP_NOP"), 6)
 
     def test_call_builtin_fast_with_keywords(self):
         def testfunc(n):

@@ -945,12 +945,6 @@ _PyJit_translate_single_bytecode_to_trace(
                     assert(next->op.code == STORE_FAST);
                     operand = next->op.arg;
                 }
-                else if (uop == _POP_TOP_OPARG) {
-                    for (int i = 0; i < oparg; i++) {
-                        ADD_TO_TRACE(_POP_TOP, 0, operand, target);
-                    }
-                    continue;
-                }
                 else if (_PyUop_Flags[uop] & HAS_RECORDS_VALUE_FLAG) {
                     PyObject *recorded_value = tracer->prev_state.recorded_value;
                     tracer->prev_state.recorded_value = NULL;

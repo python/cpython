@@ -16372,12 +16372,13 @@
             _PyStackRef self_or_null;
             _PyStackRef callable;
             _PyStackRef res;
-            _PyStackRef c;
             _PyStackRef s;
+            _PyStackRef *a;
             oparg = CURRENT_OPARG();
             args = &stack_pointer[-oparg];
             self_or_null = stack_pointer[-1 - oparg];
             callable = stack_pointer[-2 - oparg];
+            a = &stack_pointer[-oparg];
             int total_args = oparg;
             _PyStackRef *arguments = args;
             if (!PyStackRef_IsNull(self_or_null)) {
@@ -16392,19 +16393,19 @@
                 total_args
             );
             stack_pointer = _PyFrame_GetStackPointer(frame);
-            c = callable;
+            _PyStackRef *callable_ptr = args - 2;
+            _PyFrame_SetStackPointer(frame, stack_pointer);
+            PyStackRef_XSETREF(*callable_ptr, PyStackRef_NULL);
+            stack_pointer = _PyFrame_GetStackPointer(frame);
             s = self_or_null;
-            args[oparg] = args[0];
+            (void)a;
             res = res_o == NULL ? PyStackRef_NULL : PyStackRef_FromPyObjectSteal(res_o);
             _tos_cache0 = PyStackRef_ZERO_BITS;
             _tos_cache1 = PyStackRef_ZERO_BITS;
             _tos_cache2 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(0);
             stack_pointer[-2 - oparg] = res;
-            stack_pointer[-1 - oparg] = c;
-            stack_pointer[-oparg] = s;
-            stack_pointer += 1;
-            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+            stack_pointer[-1 - oparg] = s;
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
         }

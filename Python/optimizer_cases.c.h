@@ -115,21 +115,7 @@
         case _POP_TOP: {
             JitOptRef value;
             value = stack_pointer[-1];
-            PyTypeObject *typ = sym_get_type(value);
-            if (PyJitRef_IsBorrowed(value) ||
-                sym_is_immortal(PyJitRef_Unwrap(value)) ||
-                sym_is_null(value)) {
-                ADD_OP(_POP_TOP_NOP, 0, 0);
-            }
-            else if (typ == &PyLong_Type) {
-                ADD_OP(_POP_TOP_INT, 0, 0);
-            }
-            else if (typ == &PyFloat_Type) {
-                ADD_OP(_POP_TOP_FLOAT, 0, 0);
-            }
-            else if (typ == &PyUnicode_Type) {
-                ADD_OP(_POP_TOP_UNICODE, 0, 0);
-            }
+            optimize_pop_top(ctx, this_instr, value);
             CHECK_STACK_BOUNDS(-1);
             stack_pointer += -1;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -189,8 +175,9 @@
         case _POP_TOP_OPARG: {
             JitOptRef *args;
             args = &stack_pointer[-oparg];
-            (void)args;
-            Py_FatalError("Forbidden uop seeen in trace.\n");
+            for (int i = oparg-1; i >= 0; i--) {
+                optimize_pop_top(ctx, this_instr, args[i]);
+            }
             CHECK_STACK_BOUNDS(-oparg);
             stack_pointer += -oparg;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -3963,26 +3950,15 @@
         }
 
         case _CALL_BUILTIN_FAST: {
-            JitOptRef *args;
             JitOptRef self_or_null;
-            JitOptRef callable;
             JitOptRef res;
-            JitOptRef c;
             JitOptRef s;
             JitOptRef *a;
-            args = &stack_pointer[-oparg];
             self_or_null = stack_pointer[-1 - oparg];
-            callable = stack_pointer[-2 - oparg];
-            c = callable;
             s = self_or_null;
-            args[oparg] = args[0];
             res = sym_new_unknown(ctx);
-            CHECK_STACK_BOUNDS(1);
             stack_pointer[-2 - oparg] = res;
-            stack_pointer[-1 - oparg] = c;
-            stack_pointer[-oparg] = s;
-            stack_pointer += 1;
-            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+            stack_pointer[-1 - oparg] = s;
             break;
         }
 

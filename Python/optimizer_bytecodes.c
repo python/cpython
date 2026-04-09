@@ -778,28 +778,14 @@ dummy_func(void) {
         a = arg;
     }
 
-    // This is expanded into POP_TOP, POP_TOP, POP_TOP, POP_TOP (...oparg times) in the trace recorder/translator.
     op(_POP_TOP_OPARG, (args[oparg] --)) {
-        (void)args;
-        Py_FatalError("Forbidden uop seeen in trace.\n");
+        for (int i = oparg-1; i >= 0; i--) {
+            optimize_pop_top(ctx, this_instr, args[i]);
+        }
     }
 
     op(_POP_TOP, (value -- )) {
-        PyTypeObject *typ = sym_get_type(value);
-        if (PyJitRef_IsBorrowed(value) ||
-            sym_is_immortal(PyJitRef_Unwrap(value)) ||
-            sym_is_null(value)) {
-            ADD_OP(_POP_TOP_NOP, 0, 0);
-        }
-        else if (typ == &PyLong_Type) {
-            ADD_OP(_POP_TOP_INT, 0, 0);
-        }
-        else if (typ == &PyFloat_Type) {
-            ADD_OP(_POP_TOP_FLOAT, 0, 0);
-        }
-        else if (typ == &PyUnicode_Type) {
-            ADD_OP(_POP_TOP_UNICODE, 0, 0);
-        }
+        optimize_pop_top(ctx, this_instr, value);
     }
 
     op(_POP_TOP_INT, (value --)) {
@@ -1339,12 +1325,8 @@ dummy_func(void) {
         }
     }
 
-    op(_CALL_BUILTIN_FAST, (callable, self_or_null, args[oparg] -- res, c, s, a[oparg])) {
-        c = callable;
+    op(_CALL_BUILTIN_FAST, (callable, self_or_null, args[oparg] -- res, s, a[oparg])) {
         s = self_or_null;
-        // Swap the first argument with the first empty slot after args to allows space for res.
-        // We are guaranteed by the bytecode compiler to have as spare stack slot.
-        args[oparg] = args[0];
         res = sym_new_unknown(ctx);
     }
 
