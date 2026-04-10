@@ -80,6 +80,7 @@ const uint32_t _PyUop_Flags[MAX_UOP_ID+1] = {
     [_POP_TOP_FLOAT] = 0,
     [_POP_TOP_UNICODE] = 0,
     [_POP_TWO] = HAS_ESCAPES_FLAG,
+    [_POP_TOP_OPARG] = HAS_ARG_FLAG | HAS_ESCAPES_FLAG,
     [_PUSH_NULL] = HAS_PURE_FLAG,
     [_END_FOR] = HAS_ESCAPES_FLAG | HAS_NO_SAVE_IP_FLAG,
     [_POP_ITER] = HAS_ESCAPES_FLAG,
@@ -310,7 +311,7 @@ const uint32_t _PyUop_Flags[MAX_UOP_ID+1] = {
     [_GUARD_CALLABLE_BUILTIN_O] = HAS_ARG_FLAG | HAS_EXIT_FLAG,
     [_CALL_BUILTIN_O] = HAS_ARG_FLAG | HAS_EXIT_FLAG | HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG,
     [_GUARD_CALLABLE_BUILTIN_FAST] = HAS_ARG_FLAG | HAS_EXIT_FLAG,
-    [_CALL_BUILTIN_FAST] = HAS_ARG_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
+    [_CALL_BUILTIN_FAST] = HAS_ARG_FLAG | HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG,
     [_GUARD_CALLABLE_BUILTIN_FAST_WITH_KEYWORDS] = HAS_ARG_FLAG | HAS_EXIT_FLAG,
     [_CALL_BUILTIN_FAST_WITH_KEYWORDS] = HAS_ARG_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
     [_GUARD_CALLABLE_LEN] = HAS_EXIT_FLAG,
@@ -834,6 +835,15 @@ const _PyUopCachingInfo _PyUop_Caching[MAX_UOP_ID+1] = {
             { -1, -1, -1 },
             { -1, -1, -1 },
             { 0, 2, _POP_TWO_r20 },
+            { -1, -1, -1 },
+        },
+    },
+    [_POP_TOP_OPARG] = {
+        .best = { 0, 0, 0, 0 },
+        .entries = {
+            { 0, 0, _POP_TOP_OPARG_r00 },
+            { -1, -1, -1 },
+            { -1, -1, -1 },
             { -1, -1, -1 },
         },
     },
@@ -2910,7 +2920,7 @@ const _PyUopCachingInfo _PyUop_Caching[MAX_UOP_ID+1] = {
     [_CALL_BUILTIN_FAST] = {
         .best = { 0, 0, 0, 0 },
         .entries = {
-            { 1, 0, _CALL_BUILTIN_FAST_r01 },
+            { 0, 0, _CALL_BUILTIN_FAST_r00 },
             { -1, -1, -1 },
             { -1, -1, -1 },
             { -1, -1, -1 },
@@ -3925,6 +3935,7 @@ const uint16_t _PyUop_Uncached[MAX_UOP_REGS_ID+1] = {
     [_POP_TOP_UNICODE_r21] = _POP_TOP_UNICODE,
     [_POP_TOP_UNICODE_r32] = _POP_TOP_UNICODE,
     [_POP_TWO_r20] = _POP_TWO,
+    [_POP_TOP_OPARG_r00] = _POP_TOP_OPARG,
     [_PUSH_NULL_r01] = _PUSH_NULL,
     [_PUSH_NULL_r12] = _PUSH_NULL,
     [_PUSH_NULL_r23] = _PUSH_NULL,
@@ -4411,7 +4422,7 @@ const uint16_t _PyUop_Uncached[MAX_UOP_REGS_ID+1] = {
     [_GUARD_CALLABLE_BUILTIN_O_r00] = _GUARD_CALLABLE_BUILTIN_O,
     [_CALL_BUILTIN_O_r03] = _CALL_BUILTIN_O,
     [_GUARD_CALLABLE_BUILTIN_FAST_r00] = _GUARD_CALLABLE_BUILTIN_FAST,
-    [_CALL_BUILTIN_FAST_r01] = _CALL_BUILTIN_FAST,
+    [_CALL_BUILTIN_FAST_r00] = _CALL_BUILTIN_FAST,
     [_GUARD_CALLABLE_BUILTIN_FAST_WITH_KEYWORDS_r00] = _GUARD_CALLABLE_BUILTIN_FAST_WITH_KEYWORDS,
     [_CALL_BUILTIN_FAST_WITH_KEYWORDS_r01] = _CALL_BUILTIN_FAST_WITH_KEYWORDS,
     [_GUARD_CALLABLE_LEN_r03] = _GUARD_CALLABLE_LEN,
@@ -4806,7 +4817,7 @@ const char *const _PyOpcode_uop_name[MAX_UOP_REGS_ID+1] = {
     [_CALL_BUILTIN_CLASS] = "_CALL_BUILTIN_CLASS",
     [_CALL_BUILTIN_CLASS_r01] = "_CALL_BUILTIN_CLASS_r01",
     [_CALL_BUILTIN_FAST] = "_CALL_BUILTIN_FAST",
-    [_CALL_BUILTIN_FAST_r01] = "_CALL_BUILTIN_FAST_r01",
+    [_CALL_BUILTIN_FAST_r00] = "_CALL_BUILTIN_FAST_r00",
     [_CALL_BUILTIN_FAST_WITH_KEYWORDS] = "_CALL_BUILTIN_FAST_WITH_KEYWORDS",
     [_CALL_BUILTIN_FAST_WITH_KEYWORDS_r01] = "_CALL_BUILTIN_FAST_WITH_KEYWORDS_r01",
     [_CALL_BUILTIN_O] = "_CALL_BUILTIN_O",
@@ -5703,6 +5714,8 @@ const char *const _PyOpcode_uop_name[MAX_UOP_REGS_ID+1] = {
     [_POP_TOP_NOP_r10] = "_POP_TOP_NOP_r10",
     [_POP_TOP_NOP_r21] = "_POP_TOP_NOP_r21",
     [_POP_TOP_NOP_r32] = "_POP_TOP_NOP_r32",
+    [_POP_TOP_OPARG] = "_POP_TOP_OPARG",
+    [_POP_TOP_OPARG_r00] = "_POP_TOP_OPARG_r00",
     [_POP_TOP_UNICODE] = "_POP_TOP_UNICODE",
     [_POP_TOP_UNICODE_r00] = "_POP_TOP_UNICODE_r00",
     [_POP_TOP_UNICODE_r10] = "_POP_TOP_UNICODE_r10",
@@ -6035,6 +6048,8 @@ int _PyUop_num_popped(int opcode, int oparg)
             return 1;
         case _POP_TWO:
             return 2;
+        case _POP_TOP_OPARG:
+            return oparg;
         case _PUSH_NULL:
             return 0;
         case _END_FOR:
@@ -6496,7 +6511,7 @@ int _PyUop_num_popped(int opcode, int oparg)
         case _GUARD_CALLABLE_BUILTIN_FAST:
             return 0;
         case _CALL_BUILTIN_FAST:
-            return 2 + oparg;
+            return 0;
         case _GUARD_CALLABLE_BUILTIN_FAST_WITH_KEYWORDS:
             return 0;
         case _CALL_BUILTIN_FAST_WITH_KEYWORDS:

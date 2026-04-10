@@ -433,7 +433,7 @@ _Py_VectorCallInstrumentation_StackRefSteal(
     PyThreadState* tstate);
 
 PyAPI_FUNC(PyObject *)
-_Py_BuiltinCallFast_StackRefSteal(
+_Py_BuiltinCallFast_StackRef(
     _PyStackRef callable,
     _PyStackRef *arguments,
     int total_args);

@@ -115,21 +115,7 @@
         case _POP_TOP: {
             JitOptRef value;
             value = stack_pointer[-1];
-            PyTypeObject *typ = sym_get_type(value);
-            if (PyJitRef_IsBorrowed(value) ||
-                sym_is_immortal(PyJitRef_Unwrap(value)) ||
-                sym_is_null(value)) {
-                ADD_OP(_POP_TOP_NOP, 0, 0);
-            }
-            else if (typ == &PyLong_Type) {
-                ADD_OP(_POP_TOP_INT, 0, 0);
-            }
-            else if (typ == &PyFloat_Type) {
-                ADD_OP(_POP_TOP_FLOAT, 0, 0);
-            }
-            else if (typ == &PyUnicode_Type) {
-                ADD_OP(_POP_TOP_UNICODE, 0, 0);
-            }
+            optimize_pop_top(ctx, this_instr, value);
             CHECK_STACK_BOUNDS(-1);
             stack_pointer += -1;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -182,6 +168,18 @@
         case _POP_TWO: {
             CHECK_STACK_BOUNDS(-2);
             stack_pointer += -2;
+            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+            break;
+        }
+
+        case _POP_TOP_OPARG: {
+            JitOptRef *args;
+            args = &stack_pointer[-oparg];
+            for (int i = oparg-1; i >= 0; i--) {
+                optimize_pop_top(ctx, this_instr, args[i]);
+            }
+            CHECK_STACK_BOUNDS(-oparg);
+            stack_pointer += -oparg;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
             break;
         }
@@ -4001,12 +3999,10 @@
         }
 
         case _CALL_BUILTIN_FAST: {
-            JitOptRef res;
-            res = sym_new_not_null(ctx);
-            CHECK_STACK_BOUNDS(-1 - oparg);
-            stack_pointer[-2 - oparg] = res;
-            stack_pointer += -1 - oparg;
-            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+            JitOptRef callable;
+            callable = stack_pointer[-2 - oparg];
+            callable = sym_new_not_null(ctx);
+            stack_pointer[-2 - oparg] = callable;
             break;
         }
 
