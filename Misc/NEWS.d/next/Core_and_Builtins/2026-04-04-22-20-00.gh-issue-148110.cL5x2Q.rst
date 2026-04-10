@@ -1,2 +1,0 @@
-Fix :func:`sys.set_lazy_imports_filter` so relative lazy imports pass the
-resolved imported module name to the filter callback. Patch by Pablo Galindo.

@@ -126,6 +126,10 @@ extern PyTypeObject _PyBufferWrapper_Type;
 PyAPI_FUNC(PyObject*) _PySuper_Lookup(PyTypeObject *su_type, PyObject *su_obj,
                                  PyObject *name, int *meth_found);
 
+extern PyObject *_PySuper_LookupDescr(PyTypeObject *su_type,
+                                     PyTypeObject *su_obj_type,
+                                     PyObject *name);
+
 extern PyObject* _PyType_GetFullyQualifiedName(PyTypeObject *type, char sep);
 
 // Perform the following operation, in a thread-safe way when required by the

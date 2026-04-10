@@ -822,6 +822,17 @@ http.cookies
   (Contributed by Nick Burns and Senthil Kumaran in :gh:`92936`.)
 
 
+http.server
+-----------
+
+* The logging of :mod:`~http.server.BaseHTTPRequestHandler`,
+  as used by the :ref:`command-line interface <http-server-cli>`,
+  is colored by default.
+  This can be controlled with :ref:`environment variables
+  <using-on-controlling-color>`.
+  (Contributed by Hugo van Kemenade in :gh:`146292`.)
+
+
 inspect
 -------
 
@@ -1097,6 +1108,10 @@ tarfile
 timeit
 ------
 
+* The output of the :mod:`timeit` command-line interface is colored by default.
+  This can be controlled with
+  :ref:`environment variables <using-on-controlling-color>`.
+  (Contributed by Hugo van Kemenade in :gh:`146609`.)
 * The command-line interface now colorizes error tracebacks
   by default. This can be controlled with
   :ref:`environment variables <using-on-controlling-color>`.
@@ -1294,6 +1309,25 @@ warnings
   (Contributed by Serhiy Storchaka in :gh:`135801`.)
 
 
+wave
+----
+
+* Added support for IEEE floating-point WAVE audio
+  (``WAVE_FORMAT_IEEE_FLOAT``) in :mod:`wave`.
+
+* Added :meth:`wave.Wave_read.getformat`, :meth:`wave.Wave_write.getformat`,
+  and :meth:`wave.Wave_write.setformat` for explicit frame format handling.
+
+* :meth:`wave.Wave_write.setparams` accepts both 7-item tuples including
+  ``format`` and 6-item tuples for backwards compatibility (defaulting to
+  ``WAVE_FORMAT_PCM``).
+
+* ``WAVE_FORMAT_IEEE_FLOAT`` output now includes a ``fact`` chunk,
+  as required for non-PCM WAVE formats.
+
+(Contributed by Lionel Koenig and Michiel W. Beijen in :gh:`60729`.)
+
+
 xml.parsers.expat
 -----------------
 
@@ -1394,7 +1428,6 @@ end users running Python do not need LLVM installed. Instructions for
 installing LLVM can be found in the `JIT compiler documentation
 <https://github.com/python/cpython/blob/main/Tools/jit/README.md>`__
 for all supported platforms.
-
 (Contributed by Savannah Ostrowski in :gh:`140973`.)
 
 .. rubric:: A new tracing frontend
@@ -1406,7 +1439,6 @@ code. For example, simple Python object creation is now understood by the
 supported. This was made possible by an overhauled JIT tracing frontend
 that records actual execution paths through code, rather than estimating
 them as the previous implementation did.
-
 (Contributed by Ken Jin in :gh:`139109`. Support for Windows added by
 Mark Shannon in :gh:`141703`.)
 
@@ -1416,7 +1448,6 @@ A basic form of register allocation has been added to the JIT compiler's
 optimizer. This allows the JIT compiler to avoid certain stack operations
 altogether and instead operate on registers. This allows the JIT to produce
 more efficient traces by avoiding reads and writes to memory.
-
 (Contributed by Mark Shannon in :gh:`135379`.)
 
 .. rubric:: More JIT optimizations
@@ -1424,26 +1455,32 @@ more efficient traces by avoiding reads and writes to memory.
 More `constant-propagation <https://en.wikipedia.org/wiki/Constant_folding>`__
 is now performed. This means when the JIT compiler detects that certain user
 code results in constants, the code can be simplified by the JIT.
-
 (Contributed by Ken Jin and Savannah Ostrowski in :gh:`132732`.)
 
-The JIT avoids :term:`reference count`\ s where possible. This generally
+:term:`Reference count`\ s are avoided whenever it is safe to do so. This generally
 reduces the cost of most operations in Python.
-
 (Contributed by Ken Jin, Donghee Na, Zheao Li, Hai Zhu, Savannah Ostrowski,
 Reiden Ong, Noam Cohen, Tomas Roun, PuQing, Cajetan Rodrigues, and Sacul in :gh:`134584`.)
+
+The JIT optimizer now supports significantly more operations than in 3.14.
+(Contributed by Kumar Aditya, Ken Jin, and Sacul in :gh:`131798`.)
 
 .. rubric:: Better machine code generation
 
 The JIT compiler's machine code generator now produces better machine code
 for x86-64 and AArch64 macOS and Linux targets. In general, users should
 experience lower memory usage for generated machine code and more efficient
-machine code versus the old JIT.
-
+machine code versus 3.14.
 (Contributed by Brandt Bucher in :gh:`136528` and :gh:`136528`.
 Implementation for AArch64 contributed by Mark Shannon in :gh:`139855`.
 Additional optimizations for AArch64 contributed by Mark Shannon and
 Diego Russo in :gh:`140683` and :gh:`142305`.)
+
+.. rubric:: Maintainability
+
+The JIT optimizer's operations have been simplified.
+This was made possible by a refactoring of JIT data structures.
+(Contributed by Zhongtian Zheng in :gh:`148211` and Hai Zhu in :gh:`143421`.)
 
 
 Removed
@@ -1562,21 +1599,6 @@ typing
 
 wave
 ----
-
-* Added support for IEEE floating-point WAVE audio
-  (``WAVE_FORMAT_IEEE_FLOAT``) in :mod:`wave`.
-
-* Added :meth:`wave.Wave_read.getformat`, :meth:`wave.Wave_write.getformat`,
-  and :meth:`wave.Wave_write.setformat` for explicit frame format handling.
-
-* :meth:`wave.Wave_write.setparams` accepts both 7-item tuples including
-  ``format`` and 6-item tuples for backwards compatibility (defaulting to
-  ``WAVE_FORMAT_PCM``).
-
-* ``WAVE_FORMAT_IEEE_FLOAT`` output now includes a ``fact`` chunk,
-  as required for non-PCM WAVE formats.
-
-(Contributed by Lionel Koenig and Michiel W. Beijen in :gh:`60729`.)
 
 * Removed the ``getmark()``, ``setmark()`` and ``getmarkers()`` methods
   of the :class:`~wave.Wave_read` and :class:`~wave.Wave_write` classes,
@@ -1780,6 +1802,17 @@ New features
 
 * Add :c:func:`PyTuple_FromArray` to create a :class:`tuple` from an array.
   (Contributed by Victor Stinner in :gh:`111489`.)
+
+* Add functions that are guaranteed to be safe for use in
+  :c:member:`~PyTypeObject.tp_traverse` handlers:
+  :c:func:`PyObject_GetTypeData_DuringGC`,
+  :c:func:`PyObject_GetItemData_DuringGC`,
+  :c:func:`PyType_GetModuleState_DuringGC`,
+  :c:func:`PyModule_GetState_DuringGC`, :c:func:`PyModule_GetToken_DuringGC`,
+  :c:func:`PyType_GetBaseByToken_DuringGC`,
+  :c:func:`PyType_GetModule_DuringGC`,
+  :c:func:`PyType_GetModuleByToken_DuringGC`.
+  (Contributed by Petr Viktorin in :gh:`145925`.)
 
 * Add :c:func:`PyObject_Dump` to dump an object to ``stderr``.
   It should only be used for debugging.

@@ -25,6 +25,7 @@ import sys
 
 import ctypes
 import types
+from dataclasses import dataclass
 from ctypes.wintypes import (
     _COORD,
     WORD,
@@ -37,9 +38,18 @@ from ctypes.wintypes import (
     SHORT,
 )
 from ctypes import Structure, POINTER, Union
+from typing import TYPE_CHECKING
 from .console import Event, Console
-from .trace import trace
-from .utils import wlen
+from .render import (
+    EMPTY_RENDER_LINE,
+    LineUpdate,
+    RenderLine,
+    RenderedScreen,
+    requires_cursor_resync,
+    diff_render_lines,
+    render_cells,
+)
+from .trace import trace, trace_text
 from .windows_eventqueue import EventQueue
 
 try:
@@ -62,8 +72,6 @@ try:
     import nt
 except ImportError:
     nt = None
-
-TYPE_CHECKING = False
 
 if TYPE_CHECKING:
     from typing import IO
@@ -123,6 +131,17 @@ INFINITE = 0xFFFFFFFF
 class _error(Exception):
     pass
 
+
+@dataclass(frozen=True, slots=True)
+class WindowsRefreshPlan:
+    grow_lines: int
+    offset: int
+    scroll_lines: int
+    line_updates: tuple[LineUpdate, ...]
+    cleared_lines: tuple[int, ...]
+    rendered_screen: RenderedScreen
+    cursor: tuple[int, int]
+
 def _supports_vt():
     try:
         return nt._supports_virtual_terminal()
@@ -159,7 +178,6 @@ class WindowsConsole(Console):
         ):
             raise WinError(get_last_error())
 
-        self.screen: list[str] = []
         self.width = 80
         self.height = 25
         self.__offset = 0
@@ -170,74 +188,124 @@ class WindowsConsole(Console):
             # Console I/O is redirected, fallback...
             self.out = None
 
-    def refresh(self, screen: list[str], c_xy: tuple[int, int]) -> None:
+    def refresh(self, rendered_screen: RenderedScreen) -> None:
         """
         Refresh the console screen.
 
         Parameters:
-        - screen (list): List of strings representing the screen contents.
-        - c_xy (tuple): Cursor position (x, y) on the screen.
+        - rendered_screen: Structured rendered screen contents and cursor.
         """
+        c_xy = rendered_screen.cursor
+        trace(
+            "windows.refresh start cursor={cursor} lines={lines} prev_lines={prev_lines} "
+            "offset={offset} posxy={posxy}",
+            cursor=c_xy,
+            lines=len(rendered_screen.composed_lines),
+            prev_lines=len(self._rendered_screen.composed_lines),
+            offset=self.__offset,
+            posxy=self.posxy,
+        )
+        plan = self.__plan_refresh(rendered_screen, c_xy)
+        self.__apply_refresh_plan(plan)
+
+    def __plan_refresh(
+        self,
+        rendered_screen: RenderedScreen,
+        c_xy: tuple[int, int],
+    ) -> WindowsRefreshPlan:
         cx, cy = c_xy
-
-        while len(self.screen) < min(len(screen), self.height):
-            self._hide_cursor()
-            if self.screen:
-                self._move_relative(0, len(self.screen) - 1)
-                self.__write("\n")
-            self.posxy = 0, len(self.screen)
-            self.screen.append("")
-
-        px, py = self.posxy
-        old_offset = offset = self.__offset
         height = self.height
+        old_offset = offset = self.__offset
+        prev_composed = self._rendered_screen.composed_lines
+        previous_lines = list(prev_composed)
+        next_lines = list(rendered_screen.composed_lines)
+        line_count = len(next_lines)
 
-        # we make sure the cursor is on the screen, and that we're
-        # using all of the screen if we can
+        grow_lines = max(
+            min(line_count, height) - len(prev_composed),
+            0,
+        )
+        previous_lines.extend([EMPTY_RENDER_LINE] * grow_lines)
+
+        scroll_lines = 0
         if cy < offset:
             offset = cy
         elif cy >= offset + height:
             offset = cy - height + 1
             scroll_lines = offset - old_offset
+            previous_lines.extend([EMPTY_RENDER_LINE] * scroll_lines)
+        elif offset > 0 and line_count < offset + height:
+            offset = max(line_count - height, 0)
+            next_lines.append(EMPTY_RENDER_LINE)
 
-            # Scrolling the buffer as the current input is greater than the visible
-            # portion of the window.  We need to scroll the visible portion and the
-            # entire history
-            self._scroll(scroll_lines, self._getscrollbacksize())
-            self.posxy = self.posxy[0], self.posxy[1] + scroll_lines
-            self.__offset += scroll_lines
+        oldscr = previous_lines[old_offset : old_offset + height]
+        newscr = next_lines[offset : offset + height]
 
-            for i in range(scroll_lines):
-                self.screen.append("")
-        elif offset > 0 and len(screen) < offset + height:
-            offset = max(len(screen) - height, 0)
-            screen.append("")
+        line_updates: list[LineUpdate] = []
+        px, _ = self.posxy
+        for y, oldline, newline in zip(range(offset, offset + height), oldscr, newscr):
+            update = self.__plan_changed_line(y, oldline, newline, px)
+            if update is not None:
+                line_updates.append(update)
 
-        oldscr = self.screen[old_offset : old_offset + height]
-        newscr = screen[offset : offset + height]
+        cleared_lines = tuple(range(offset + len(newscr), offset + len(oldscr)))
+        console_rendered_screen = RenderedScreen(tuple(next_lines), c_xy)
+        trace(
+            "windows.refresh plan grow={grow} offset={offset} scroll_lines={scroll_lines} "
+            "updates={updates} clears={clears}",
+            grow=grow_lines,
+            offset=offset,
+            scroll_lines=scroll_lines,
+            updates=len(line_updates),
+            clears=len(cleared_lines),
+        )
+        return WindowsRefreshPlan(
+            grow_lines=grow_lines,
+            offset=offset,
+            scroll_lines=scroll_lines,
+            line_updates=tuple(line_updates),
+            cleared_lines=cleared_lines,
+            rendered_screen=console_rendered_screen,
+            cursor=(cx, cy),
+        )
 
-        self.__offset = offset
+    def __apply_refresh_plan(self, plan: WindowsRefreshPlan) -> None:
+        cx, cy = plan.cursor
+        trace(
+            "windows.refresh apply cursor={cursor} updates={updates} clears={clears}",
+            cursor=plan.cursor,
+            updates=len(plan.line_updates),
+            clears=len(plan.cleared_lines),
+        )
+        visual_style = self.begin_redraw_visualization()
+        screen_line_count = len(self._rendered_screen.composed_lines)
+
+        for _ in range(plan.grow_lines):
+            self._hide_cursor()
+            if screen_line_count:
+                self._move_relative(0, screen_line_count - 1)
+                self.__write("\n")
+            self.posxy = 0, screen_line_count
+            screen_line_count += 1
+
+        if plan.scroll_lines:
+            self._scroll(plan.scroll_lines, self._getscrollbacksize())
+            self.posxy = self.posxy[0], self.posxy[1] + plan.scroll_lines
+
+        self.__offset = plan.offset
 
         self._hide_cursor()
-        for (
-            y,
-            oldline,
-            newline,
-        ) in zip(range(offset, offset + height), oldscr, newscr):
-            if oldline != newline:
-                self.__write_changed_line(y, oldline, newline, px)
+        for update in plan.line_updates:
+            self.__apply_line_update(update, visual_style)
 
-        y = len(newscr)
-        while y < len(oldscr):
+        for y in plan.cleared_lines:
             self._move_relative(0, y)
             self.posxy = 0, y
             self._erase_to_end()
-            y += 1
 
         self._show_cursor()
-
-        self.screen = screen
         self.move_cursor(cx, cy)
+        self.sync_rendered_screen(plan.rendered_screen, self.posxy)
 
     @property
     def input_hook(self):
@@ -246,37 +314,98 @@ class WindowsConsole(Console):
         if nt is not None and nt._is_inputhook_installed():
             return nt._inputhook
 
-    def __write_changed_line(
-        self, y: int, oldline: str, newline: str, px_coord: int
-    ) -> None:
-        minlen = min(wlen(oldline), wlen(newline))
-        x_pos = 0
-        x_coord = 0
+    def __plan_changed_line(  # keep in sync with UnixConsole.__plan_changed_line
+        self,
+        y: int,
+        oldline: RenderLine,
+        newline: RenderLine,
+        px_coord: int,
+    ) -> LineUpdate | None:
+        diff = diff_render_lines(oldline, newline)
+        if diff is None:
+            return None
 
-        # reuse the oldline as much as possible, but stop as soon as we
-        # encounter an ESCAPE, because it might be the start of an escape
-        # sequence
-        while (
-            x_coord < minlen
-            and oldline[x_pos] == newline[x_pos]
-            and newline[x_pos] != "\x1b"
+        start_cell = diff.start_cell
+        start_x = diff.start_x
+        if (
+            len(diff.old_cells) == 1
+            and len(diff.new_cells) == 1
+            and diff.old_cells[0].width == diff.new_cells[0].width
         ):
-            x_coord += wlen(newline[x_pos])
-            x_pos += 1
+            changed_cell = diff.new_cells[0]
+            # Ctrl-Z (SUB) can reach here via RenderLine.from_rendered_text()
+            # for prompt/message lines, which bypasses iter_display_chars().
+            # On Windows, raw \x1a causes console cursor anomalies, so we
+            # force a cursor resync when it appears.
+            return LineUpdate(
+                kind="replace_char",
+                y=y,
+                start_cell=start_cell,
+                start_x=start_x,
+                cells=diff.new_cells,
+                char_width=changed_cell.width,
+                reset_to_margin=(
+                    requires_cursor_resync(diff.new_cells)
+                    or "\x1a" in changed_cell.text
+                ),
+            )
 
-        self._hide_cursor()
-        self._move_relative(x_coord, y)
-        if wlen(oldline) > wlen(newline):
+        if diff.old_changed_width == diff.new_changed_width:
+            return LineUpdate(
+                kind="replace_span",
+                y=y,
+                start_cell=start_cell,
+                start_x=start_x,
+                cells=diff.new_cells,
+                char_width=diff.new_changed_width,
+                reset_to_margin=(
+                    requires_cursor_resync(diff.new_cells)
+                    or any("\x1a" in cell.text for cell in diff.new_cells)
+                ),
+            )
+
+        suffix_cells = newline.cells[start_cell:]
+        return LineUpdate(
+            kind="rewrite_suffix",
+            y=y,
+            start_cell=start_cell,
+            start_x=start_x,
+            cells=suffix_cells,
+            char_width=sum(cell.width for cell in suffix_cells),
+            clear_eol=oldline.width > newline.width,
+            reset_to_margin=(
+                requires_cursor_resync(suffix_cells)
+                or any("\x1a" in cell.text for cell in suffix_cells)
+            ),
+        )
+
+    def __apply_line_update(
+        self,
+        update: LineUpdate,
+        visual_style: str | None = None,
+    ) -> None:
+        text = render_cells(update.cells, visual_style) if visual_style else update.text
+        trace(
+            "windows.refresh update kind={kind} y={y} x={x} text={text} "
+            "clear_eol={clear_eol} reset_to_margin={reset}",
+            kind=update.kind,
+            y=update.y,
+            x=update.start_x,
+            text=trace_text(text),
+            clear_eol=update.clear_eol,
+            reset=update.reset_to_margin,
+        )
+        original_y = self.posxy[1]
+        self._move_relative(update.start_x, update.y)
+        if update.clear_eol:
             self._erase_to_end()
 
-        self.__write(newline[x_pos:])
-        self.posxy = min(wlen(newline), self.width - 1), y
+        self.__write(text)
+        self.posxy = min(update.start_x + update.char_width, self.width - 1), update.y
 
-        if "\x1b" in newline or y != self.posxy[1] or '\x1a' in newline:
-            # ANSI escape characters are present, so we can't assume
-            # anything about the position of the cursor.  Moving the cursor
-            # to the left margin should work to get to a known position.
-            self.move_cursor(0, y)
+        if update.reset_to_margin or update.y != original_y:
+            # Non-SGR terminal controls or vertical movement require a cursor sync.
+            self.move_cursor(0, update.y)
 
     def _scroll(
         self, top: int, bottom: int, left: int | None = None, right: int | None = None
@@ -317,7 +446,7 @@ class WindowsConsole(Console):
 
     def __write(self, text: str) -> None:
         if "\x1a" in text:
-            text = ''.join(["^Z" if x == '\x1a' else x for x in text])
+            text = text.replace("\x1a", "^Z")
 
         if self.out is not None:
             self.out.write(text.encode(self.encoding, "replace"))
@@ -336,12 +465,12 @@ class WindowsConsole(Console):
         self.__write(ERASE_IN_LINE)
 
     def prepare(self) -> None:
-        trace("prepare")
-        self.screen = []
+        trace("windows.prepare")
         self.height, self.width = self.getheightwidth()
 
         self.posxy = 0, 0
         self.__offset = 0
+        self.sync_rendered_screen(RenderedScreen.empty(), self.posxy)
 
         if self.__vt_support:
             if not SetConsoleMode(InHandle, self.__original_input_mode | ENABLE_VIRTUAL_TERMINAL_INPUT):
@@ -349,6 +478,7 @@ class WindowsConsole(Console):
             self._enable_bracketed_paste()
 
     def restore(self) -> None:
+        trace("windows.restore")
         if self.__vt_support:
             # Recover to original mode before running REPL
             self._disable_bracketed_paste()
@@ -374,8 +504,16 @@ class WindowsConsole(Console):
             raise ValueError(f"Bad cursor position {x}, {y}")
 
         if y < self.__offset or y >= self.__offset + self.height:
+            trace(
+                "windows.move_cursor offscreen x={x} y={y} offset={offset} height={height}",
+                x=x,
+                y=y,
+                offset=self.__offset,
+                height=self.height,
+            )
             self.event_queue.insert(Event("scroll", ""))
         else:
+            trace("windows.move_cursor x={x} y={y}", x=x, y=y)
             self._move_relative(x, y)
             self.posxy = x, y
 
@@ -496,15 +634,17 @@ class WindowsConsole(Console):
 
     def clear(self) -> None:
         """Wipe the screen"""
+        trace("windows.clear")
         self.__write(CLEAR)
         self.posxy = 0, 0
-        self.screen = []
+        self.sync_rendered_screen(RenderedScreen.empty(), self.posxy)
 
     def finish(self) -> None:
         """Move the cursor to the end of the display and otherwise get
         ready for end.  XXX could be merged with restore?  Hmm."""
-        y = len(self.screen) - 1
-        while y >= 0 and not self.screen[y]:
+        rendered_lines = self._rendered_screen.composed_lines
+        y = len(rendered_lines) - 1
+        while y >= 0 and not rendered_lines[y].text:
             y -= 1
         self._move_relative(0, min(y, self.height + self.__offset - 1))
         self.__write("\r\n")
@@ -546,7 +686,7 @@ class WindowsConsole(Console):
                     # ignore SHIFT_PRESSED and special keys
                     continue
                 if ch == "\r":
-                    ch += "\n"
+                    ch = "\n"
                 e.data += ch
         return e
 
@@ -573,6 +713,7 @@ class WindowsConsole(Console):
         )
 
     def repaint(self) -> None:
+        trace("windows.repaint unsupported")
         raise NotImplementedError("No repaint support")
 
 
