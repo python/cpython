@@ -763,35 +763,14 @@ dummy_func(void) {
         value = PyJitRef_Borrow(sym_new_const(ctx, ptr));
     }
 
-    op(_POP_CALL_LOAD_CONST_INLINE_BORROW, (ptr/4, unused, unused -- value)) {
-        value = PyJitRef_Borrow(sym_new_const(ctx, ptr));
-    }
-
-    op(_POP_CALL_TWO_LOAD_CONST_INLINE_BORROW, (ptr/4, unused, unused, unused, unused -- value)) {
-        value = PyJitRef_Borrow(sym_new_const(ctx, ptr));
-    }
-
-    op(_SHUFFLE_2_LOAD_CONST_INLINE_BORROW, (ptr/4, unused, unused, arg -- res, a)) {
-        res = PyJitRef_Borrow(sym_new_const(ctx, ptr));
-        a = arg;
+    op(_POP_TOP_OPARG, (args[oparg] --)) {
+        for (int i = oparg-1; i >= 0; i--) {
+            optimize_pop_top(ctx, this_instr, args[i]);
+        }
     }
 
     op(_POP_TOP, (value -- )) {
-        PyTypeObject *typ = sym_get_type(value);
-        if (PyJitRef_IsBorrowed(value) ||
-            sym_is_immortal(PyJitRef_Unwrap(value)) ||
-            sym_is_null(value)) {
-            ADD_OP(_POP_TOP_NOP, 0, 0);
-        }
-        else if (typ == &PyLong_Type) {
-            ADD_OP(_POP_TOP_INT, 0, 0);
-        }
-        else if (typ == &PyFloat_Type) {
-            ADD_OP(_POP_TOP_FLOAT, 0, 0);
-        }
-        else if (typ == &PyUnicode_Type) {
-            ADD_OP(_POP_TOP_UNICODE, 0, 0);
-        }
+        optimize_pop_top(ctx, this_instr, value);
     }
 
     op(_POP_TOP_INT, (value --)) {
@@ -1252,8 +1231,11 @@ dummy_func(void) {
         PyObject* type = (PyObject *)sym_get_type(arg);
         if (type) {
             res = sym_new_const(ctx, type);
-            ADD_OP(_SHUFFLE_2_LOAD_CONST_INLINE_BORROW, 0,
-                       (uintptr_t)type);
+            ADD_OP(_SWAP, 3, 0);
+            ADD_OP(_POP_TOP, 0, 0);
+            ADD_OP(_POP_TOP, 0, 0);
+            ADD_OP(_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)type);
+            ADD_OP(_SWAP, 2, 0);
         }
         else {
             res = sym_new_not_null(ctx);
@@ -1290,7 +1272,8 @@ dummy_func(void) {
                 out = Py_True;
             }
             sym_set_const(res, out);
-            ADD_OP(_POP_CALL_TWO_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)out);
+            ADD_OP(_POP_CALL_TWO, 0, 0);
+            ADD_OP(_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)out);
         }
     }
 
@@ -1299,6 +1282,19 @@ dummy_func(void) {
         c = callable;
         s = self;
         none = sym_new_const(ctx, Py_None);
+    }
+
+    op(_GUARD_CALLABLE_BUILTIN_CLASS, (callable, unused, unused[oparg] -- callable, unused, unused[oparg])) {
+        PyObject *callable_o = sym_get_const(ctx, callable);
+        if (callable_o && sym_matches_type(callable, &PyType_Type)) {
+            PyTypeObject *tp = (PyTypeObject *)callable_o;
+            if (tp->tp_vectorcall != NULL) {
+                ADD_OP(_NOP, 0, 0);
+            }
+        }
+        else {
+            sym_set_type(callable, &PyType_Type);
+        }
     }
 
     op(_GUARD_CALLABLE_BUILTIN_O, (callable, self_or_null, args[oparg] -- callable, self_or_null, args[oparg])) {
@@ -1355,6 +1351,10 @@ dummy_func(void) {
         else {
             s = sym_new_unknown(ctx);
         }
+    }
+
+    op(_CALL_BUILTIN_FAST, (callable, self_or_null, args[oparg] -- callable, self_or_null, args[oparg])) {
+        callable = sym_new_not_null(ctx);
     }
 
     op(_GUARD_CALLABLE_METHOD_DESCRIPTOR_O, (callable, self_or_null, args[oparg] -- callable, self_or_null, args[oparg])) {

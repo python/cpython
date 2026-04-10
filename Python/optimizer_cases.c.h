@@ -115,21 +115,7 @@
         case _POP_TOP: {
             JitOptRef value;
             value = stack_pointer[-1];
-            PyTypeObject *typ = sym_get_type(value);
-            if (PyJitRef_IsBorrowed(value) ||
-                sym_is_immortal(PyJitRef_Unwrap(value)) ||
-                sym_is_null(value)) {
-                ADD_OP(_POP_TOP_NOP, 0, 0);
-            }
-            else if (typ == &PyLong_Type) {
-                ADD_OP(_POP_TOP_INT, 0, 0);
-            }
-            else if (typ == &PyFloat_Type) {
-                ADD_OP(_POP_TOP_FLOAT, 0, 0);
-            }
-            else if (typ == &PyUnicode_Type) {
-                ADD_OP(_POP_TOP_UNICODE, 0, 0);
-            }
+            optimize_pop_top(ctx, this_instr, value);
             CHECK_STACK_BOUNDS(-1);
             stack_pointer += -1;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -182,6 +168,18 @@
         case _POP_TWO: {
             CHECK_STACK_BOUNDS(-2);
             stack_pointer += -2;
+            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+            break;
+        }
+
+        case _POP_TOP_OPARG: {
+            JitOptRef *args;
+            args = &stack_pointer[-oparg];
+            for (int i = oparg-1; i >= 0; i--) {
+                optimize_pop_top(ctx, this_instr, args[i]);
+            }
+            CHECK_STACK_BOUNDS(-oparg);
+            stack_pointer += -oparg;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
             break;
         }
@@ -3789,8 +3787,11 @@
             PyObject* type = (PyObject *)sym_get_type(arg);
             if (type) {
                 res = sym_new_const(ctx, type);
-                ADD_OP(_SHUFFLE_2_LOAD_CONST_INLINE_BORROW, 0,
-                   (uintptr_t)type);
+                ADD_OP(_SWAP, 3, 0);
+                ADD_OP(_POP_TOP, 0, 0);
+                ADD_OP(_POP_TOP, 0, 0);
+                ADD_OP(_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)type);
+                ADD_OP(_SWAP, 2, 0);
             }
             else {
                 res = sym_new_not_null(ctx);
@@ -3919,6 +3920,22 @@
             break;
         }
 
+        case _GUARD_CALLABLE_BUILTIN_CLASS: {
+            JitOptRef callable;
+            callable = stack_pointer[-2 - oparg];
+            PyObject *callable_o = sym_get_const(ctx, callable);
+            if (callable_o && sym_matches_type(callable, &PyType_Type)) {
+                PyTypeObject *tp = (PyTypeObject *)callable_o;
+                if (tp->tp_vectorcall != NULL) {
+                    ADD_OP(_NOP, 0, 0);
+                }
+            }
+            else {
+                sym_set_type(callable, &PyType_Type);
+            }
+            break;
+        }
+
         case _CALL_BUILTIN_CLASS: {
             JitOptRef res;
             res = sym_new_not_null(ctx);
@@ -3998,12 +4015,10 @@
         }
 
         case _CALL_BUILTIN_FAST: {
-            JitOptRef res;
-            res = sym_new_not_null(ctx);
-            CHECK_STACK_BOUNDS(-1 - oparg);
-            stack_pointer[-2 - oparg] = res;
-            stack_pointer += -1 - oparg;
-            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+            JitOptRef callable;
+            callable = stack_pointer[-2 - oparg];
+            callable = sym_new_not_null(ctx);
+            stack_pointer[-2 - oparg] = callable;
             break;
         }
 
@@ -4123,7 +4138,8 @@
                     out = Py_True;
                 }
                 sym_set_const(res, out);
-                ADD_OP(_POP_CALL_TWO_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)out);
+                ADD_OP(_POP_CALL_TWO, 0, 0);
+                ADD_OP(_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)out);
             }
             CHECK_STACK_BOUNDS(-3);
             stack_pointer[-4] = res;
@@ -4988,27 +5004,6 @@
             break;
         }
 
-        case _POP_CALL_LOAD_CONST_INLINE_BORROW: {
-            JitOptRef value;
-            PyObject *ptr = (PyObject *)this_instr->operand0;
-            value = PyJitRef_Borrow(sym_new_const(ctx, ptr));
-            CHECK_STACK_BOUNDS(-1);
-            stack_pointer[-2] = value;
-            stack_pointer += -1;
-            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
-            break;
-        }
-
-        case _POP_CALL_ONE_LOAD_CONST_INLINE_BORROW: {
-            JitOptRef value;
-            value = sym_new_not_null(ctx);
-            CHECK_STACK_BOUNDS(-2);
-            stack_pointer[-3] = value;
-            stack_pointer += -2;
-            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
-            break;
-        }
-
         case _INSERT_2_LOAD_CONST_INLINE_BORROW: {
             JitOptRef res;
             JitOptRef l;
@@ -5025,22 +5020,6 @@
             break;
         }
 
-        case _SHUFFLE_2_LOAD_CONST_INLINE_BORROW: {
-            JitOptRef arg;
-            JitOptRef res;
-            JitOptRef a;
-            arg = stack_pointer[-1];
-            PyObject *ptr = (PyObject *)this_instr->operand0;
-            res = PyJitRef_Borrow(sym_new_const(ctx, ptr));
-            a = arg;
-            CHECK_STACK_BOUNDS(-1);
-            stack_pointer[-3] = res;
-            stack_pointer[-2] = a;
-            stack_pointer += -1;
-            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
-            break;
-        }
-
         case _SHUFFLE_3_LOAD_CONST_INLINE_BORROW: {
             JitOptRef res;
             JitOptRef a;
@@ -5051,17 +5030,6 @@
             stack_pointer[-3] = res;
             stack_pointer[-2] = a;
             stack_pointer[-1] = c;
-            break;
-        }
-
-        case _POP_CALL_TWO_LOAD_CONST_INLINE_BORROW: {
-            JitOptRef value;
-            PyObject *ptr = (PyObject *)this_instr->operand0;
-            value = PyJitRef_Borrow(sym_new_const(ctx, ptr));
-            CHECK_STACK_BOUNDS(-3);
-            stack_pointer[-4] = value;
-            stack_pointer += -3;
-            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
             break;
         }
 
