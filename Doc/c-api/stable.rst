@@ -185,7 +185,7 @@ When both are defined, ``Python.h`` may, or may not, redefine
 
 On a :term:`free-threaded build` -- that is, when
 :c:macro:`Py_GIL_DISABLED` is defined -- :c:macro:`!Py_TARGET_ABI3T`
-defaults to the value of :c:macro:`!Py_TARGET_ABI3T`.
+defaults to the value of :c:macro:`!Py_LIMITED_API`.
 This means that there are two ways to build for both ``abi3`` and ``abi3t``:
 
 - define both :c:macro:`!Py_LIMITED_API` and :c:macro:`!Py_TARGET_ABI3T`, or
