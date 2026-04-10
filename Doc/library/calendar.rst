@@ -751,6 +751,10 @@ The following options are accepted:
    By default, today's date is highlighted in color and can be
    :ref:`controlled using environment variables <using-on-controlling-color>`.
 
+.. versionchanged:: next
+   By default, the calendar is in color and can be
+   :ref:`controlled using environment variables <using-on-controlling-color>`.
+
 *HTML-mode options:*
 
 .. option:: --css CSS, -c CSS

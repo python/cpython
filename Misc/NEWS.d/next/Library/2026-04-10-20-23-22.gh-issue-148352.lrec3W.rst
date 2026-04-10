@@ -1,0 +1,1 @@
+Add more colour to :mod:`calendar`'s CLI output. Patch by Hugo van Kemenade.

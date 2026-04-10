@@ -713,6 +713,11 @@ binascii
 calendar
 --------
 
+* :mod:`calendar`'s :ref:`command-line <calendar-cli>` text output has more
+  color. This can be controlled with :ref:`environment variables
+  <using-on-controlling-color>`.
+  (Contributed by Hugo van Kemenade in :gh:`148352`.)
+
 * The :mod:`calendar`'s :ref:`command-line <calendar-cli>` HTML output now
   accepts the year-month option: ``python -m calendar -t html 2009 06``.
   (Contributed by Pål Grønås Drange in :gh:`140212`.)
