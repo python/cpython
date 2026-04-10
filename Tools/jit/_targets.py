@@ -163,10 +163,8 @@ class _Target(typing.Generic[_S, _R]):
             # __FILE__ macro and assert failure messages) for reproducibility:
             f"-ffile-prefix-map={CPYTHON}=.",
             f"-ffile-prefix-map={tempdir}=.",
-            # Don't emit unwind tables or CFI directives. JIT stencils are
-            # not standard functions and their unwind info is not usable at
-            # runtime. The optimizer can produce unbalanced CFI directives
-            # that some assemblers reject (e.g. Apple LLVM 21):
+            # Don't emit CFI directives. The optimizer can produce unbalanced 
+            # CFI directives that some assemblers reject (e.g. Apple LLVM 21):
             "-fno-unwind-tables",
             # Don't call built-in functions that we can't find or patch:
             "-fno-builtin",
