@@ -906,7 +906,7 @@ def parse_args():
         help="Delete build directories for the selected target"
     )
 
-    add_parser("build-testbed", help="Build the testbed app")
+    build_testbed = add_parser("build-testbed", help="Build the testbed app")
     test = add_parser("test", help="Run the testbed app")
     package = add_parser("package", help="Make a release package")
     ci = add_parser("ci", help="Run build, package and test")
@@ -922,6 +922,7 @@ def parse_args():
         make_host,
         build,
         package,
+        build_testbed,
         test,
         ci,
     ]:
