@@ -1346,9 +1346,8 @@ dummy_func(void) {
         }
     }
 
-    op(_CALL_BUILTIN_FAST, (callable, self_or_null, args[oparg] -- res, s, a[oparg])) {
-        s = self_or_null;
-        res = sym_new_unknown(ctx);
+    op(_CALL_BUILTIN_FAST, (callable, self_or_null, args[oparg] -- callable, self_or_null, args[oparg])) {
+        callable = sym_new_not_null(ctx);
     }
 
     op(_GUARD_CALLABLE_METHOD_DESCRIPTOR_O, (callable, self_or_null, args[oparg] -- callable, self_or_null, args[oparg])) {

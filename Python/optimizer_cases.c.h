@@ -3992,19 +3992,10 @@
         }
 
         case _CALL_BUILTIN_FAST: {
-            JitOptRef self_or_null;
-            JitOptRef res;
-            JitOptRef s;
-            JitOptRef *a;
-            self_or_null = stack_pointer[-1 - oparg];
-            s = self_or_null;
-            res = sym_new_unknown(ctx);
-            stack_pointer[-2 - oparg] = res;
-            stack_pointer[-1 - oparg] = s;
-            break;
-        }
-
-        case _ERROR_IF_TOS_NULL: {
+            JitOptRef callable;
+            callable = stack_pointer[-2 - oparg];
+            callable = sym_new_not_null(ctx);
+            stack_pointer[-2 - oparg] = callable;
             break;
         }
 

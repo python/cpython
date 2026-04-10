@@ -2345,9 +2345,6 @@
             _PyStackRef callable;
             _PyStackRef self_or_null;
             _PyStackRef *args;
-            _PyStackRef res;
-            _PyStackRef s;
-            _PyStackRef *a;
             _PyStackRef value;
             /* Skip 1 cache entry */
             /* Skip 2 cache entries */
@@ -2370,7 +2367,6 @@
             {
                 args = &stack_pointer[-oparg];
                 self_or_null = stack_pointer[-1 - oparg];
-                a = &stack_pointer[-oparg];
                 int total_args = oparg;
                 _PyStackRef *arguments = args;
                 if (!PyStackRef_IsNull(self_or_null)) {
@@ -2385,37 +2381,31 @@
                     total_args
                 );
                 stack_pointer = _PyFrame_GetStackPointer(frame);
-                _PyStackRef *callable_ptr = args - 2;
+                if (res_o == NULL) {
+                    JUMP_TO_LABEL(error);
+                }
+                _PyStackRef temp = callable;
+                callable = PyStackRef_FromPyObjectSteal(res_o);
+                stack_pointer[-2 - oparg] = callable;
                 _PyFrame_SetStackPointer(frame, stack_pointer);
-                PyStackRef_XSETREF(*callable_ptr, PyStackRef_NULL);
+                PyStackRef_CLOSE(temp);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
-                s = self_or_null;
-                (void)a;
-                res = res_o == NULL ? PyStackRef_NULL : PyStackRef_FromPyObjectSteal(res_o);
             }
             // _POP_TOP_OPARG
             {
                 args = &stack_pointer[-oparg];
-                stack_pointer[-2 - oparg] = res;
-                stack_pointer[-1 - oparg] = s;
                 _PyFrame_SetStackPointer(frame, stack_pointer);
                 _PyStackRef_CloseStack(args, oparg);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
             }
             // _POP_TOP
             {
-                value = s;
+                value = self_or_null;
                 stack_pointer += -1 - oparg;
                 ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
                 _PyFrame_SetStackPointer(frame, stack_pointer);
                 PyStackRef_XCLOSE(value);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
-            }
-            // _ERROR_IF_TOS_NULL
-            {
-                if (PyStackRef_IsNull(res)) {
-                    JUMP_TO_LABEL(error);
-                }
             }
             // _CHECK_PERIODIC_AT_END
             {

@@ -4651,7 +4651,7 @@ dummy_func(
             EXIT_IF(PyCFunction_GET_FLAGS(callable_o) != METH_FASTCALL);
         }
 
-        op(_CALL_BUILTIN_FAST, (callable, self_or_null, args[oparg] -- res, s, a[oparg])) {
+        op(_CALL_BUILTIN_FAST, (callable, self_or_null, args[oparg] -- callable, self_or_null, args[oparg])) {
             /* Builtin METH_FASTCALL functions, without keywords */
             int total_args = oparg;
             _PyStackRef *arguments = args;
@@ -4665,21 +4665,12 @@ dummy_func(
                 arguments,
                 total_args
             );
-            // To maintain a consistent view of the stack in the GC, callable's stack location
-            // must be overwritten before we close it.
-            _PyStackRef *callable_ptr = args - 2;
-            PyStackRef_XSETREF(*callable_ptr, PyStackRef_NULL);
-            DEAD(callable);
-            s = self_or_null;
-            DEAD(self_or_null);
-            DEAD(callable);
-            (void)a;
-            DEAD(args);
-            res = res_o == NULL ? PyStackRef_NULL : PyStackRef_FromPyObjectSteal(res_o);
-        }
-
-        op(_ERROR_IF_TOS_NULL, (res -- res)) {
-            ERROR_IF(PyStackRef_IsNull(res));
+            if (res_o == NULL) {
+                ERROR_NO_POP();
+            }
+            _PyStackRef temp = callable;
+            callable = PyStackRef_FromPyObjectSteal(res_o);
+            PyStackRef_CLOSE(temp);
         }
 
         macro(CALL_BUILTIN_FAST) =
@@ -4690,7 +4681,6 @@ dummy_func(
             _CALL_BUILTIN_FAST +
             _POP_TOP_OPARG +
             POP_TOP +
-            _ERROR_IF_TOS_NULL +
             _CHECK_PERIODIC_AT_END;
 
         op(_GUARD_CALLABLE_BUILTIN_FAST_WITH_KEYWORDS, (callable, unused, unused[oparg] -- callable, unused, unused[oparg])) {
