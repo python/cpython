@@ -763,19 +763,6 @@ dummy_func(void) {
         value = PyJitRef_Borrow(sym_new_const(ctx, ptr));
     }
 
-    op(_POP_CALL_LOAD_CONST_INLINE_BORROW, (ptr/4, unused, unused -- value)) {
-        value = PyJitRef_Borrow(sym_new_const(ctx, ptr));
-    }
-
-    op(_POP_CALL_TWO_LOAD_CONST_INLINE_BORROW, (ptr/4, unused, unused, unused, unused -- value)) {
-        value = PyJitRef_Borrow(sym_new_const(ctx, ptr));
-    }
-
-    op(_SHUFFLE_2_LOAD_CONST_INLINE_BORROW, (ptr/4, unused, unused, arg -- res, a)) {
-        res = PyJitRef_Borrow(sym_new_const(ctx, ptr));
-        a = arg;
-    }
-
     op(_POP_TOP, (value -- )) {
         PyTypeObject *typ = sym_get_type(value);
         if (PyJitRef_IsBorrowed(value) ||
@@ -1252,8 +1239,11 @@ dummy_func(void) {
         PyObject* type = (PyObject *)sym_get_type(arg);
         if (type) {
             res = sym_new_const(ctx, type);
-            ADD_OP(_SHUFFLE_2_LOAD_CONST_INLINE_BORROW, 0,
-                       (uintptr_t)type);
+            ADD_OP(_SWAP, 3, 0);
+            ADD_OP(_POP_TOP, 0, 0);
+            ADD_OP(_POP_TOP, 0, 0);
+            ADD_OP(_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)type);
+            ADD_OP(_SWAP, 2, 0);
         }
         else {
             res = sym_new_not_null(ctx);
@@ -1290,7 +1280,8 @@ dummy_func(void) {
                 out = Py_True;
             }
             sym_set_const(res, out);
-            ADD_OP(_POP_CALL_TWO_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)out);
+            ADD_OP(_POP_CALL_TWO, 0, 0);
+            ADD_OP(_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)out);
         }
     }
 

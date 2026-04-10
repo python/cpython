@@ -5936,31 +5936,10 @@ dummy_func(
             value = PyStackRef_FromPyObjectBorrow(ptr);
         }
 
-        tier2 op(_POP_CALL_LOAD_CONST_INLINE_BORROW, (ptr/4, callable, null -- value)) {
-            (void)null; // Silence compiler warnings about unused variables
-            DEAD(null);
-            PyStackRef_CLOSE(callable);
-            value = PyStackRef_FromPyObjectBorrow(ptr);
-        }
-
-        tier2 op(_POP_CALL_ONE_LOAD_CONST_INLINE_BORROW, (ptr/4, callable, null, pop -- value)) {
-            PyStackRef_CLOSE(pop);
-            (void)null; // Silence compiler warnings about unused variables
-            DEAD(null);
-            PyStackRef_CLOSE(callable);
-            value = PyStackRef_FromPyObjectBorrow(ptr);
-        }
-
         tier2 op(_INSERT_2_LOAD_CONST_INLINE_BORROW, (ptr/4, left, right -- res, l, r)) {
             res = PyStackRef_FromPyObjectBorrow(ptr);
             l = left;
             r = right;
-            INPUTS_DEAD();
-        }
-
-        tier2 op(_SHUFFLE_2_LOAD_CONST_INLINE_BORROW, (ptr/4, callable, null, arg -- res, a)) {
-            res = PyStackRef_FromPyObjectBorrow(ptr);
-            a = arg;
             INPUTS_DEAD();
         }
 
@@ -5969,15 +5948,6 @@ dummy_func(
             a = arg;
             c = callable;
             INPUTS_DEAD();
-        }
-
-        tier2 op(_POP_CALL_TWO_LOAD_CONST_INLINE_BORROW, (ptr/4, callable, null, pop1, pop2 -- value)) {
-            PyStackRef_CLOSE(pop2);
-            PyStackRef_CLOSE(pop1);
-            (void)null; // Silence compiler warnings about unused variables
-            DEAD(null);
-            PyStackRef_CLOSE(callable);
-            value = PyStackRef_FromPyObjectBorrow(ptr);
         }
 
         tier2 op(_START_EXECUTOR, (executor/4 --)) {
