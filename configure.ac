@@ -7374,10 +7374,10 @@ fi
 AC_MSG_CHECKING([if we need to manually block large inlining in ceval.c])
 AC_RUN_IFELSE([AC_LANG_SOURCE([[
 int main(void) {
-// See gh-148284:
-// Clang 22 seems to have interactions with inlining and the stackref buffer
-// which cause 40kB of stack usage on x86-64 in buggy versions of _PyEval_EvalFrameDefault
-// in computed goto interpreter. The normal usage seen is normally 1-2kB.
+// See gh-148284: Clang 22 seems to have interactions with inlining
+// and the stackref buffer which cause 40 kB of stack usage on x86-64
+// in buggy versions of _PyEval_EvalFrameDefault() in computed goto
+// interpreter. The normal usage seen is normally 1-2 kB.
 #if defined(__clang__) && (__clang_major__ == 22)
     return 1;
 #else
@@ -7391,11 +7391,11 @@ int main(void) {
 AC_MSG_RESULT([$block_huge_inlining_in_ceval])
 
 if test "$block_huge_inlining_in_ceval" = yes && test "$ac_cv_computed_gotos" = yes; then
-    // This number should be tuned to follow the C stack consumption
-    // in _PyEval_EvalFrameDefault on computed goto interpreter.
-    CFLAGS_CEVAL="-finline-max-stacksize=512"
-else
-    CFLAGS_CEVAL=""
+    # gh-148284: Suppress inlining of functions whose stack size exceeds
+    # 512 bytes. This number should be tuned to follow the C stack
+    # consumption in _PyEval_EvalFrameDefault() on computed goto
+    # interpreter.
+    CFLAGS_CEVAL="$CFLAGS_CEVAL -finline-max-stacksize=512"
 fi
 AC_SUBST([CFLAGS_CEVAL])
 
