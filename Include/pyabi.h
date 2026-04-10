@@ -67,11 +67,12 @@
 #    define Py_GIL_DISABLED
 #  endif
 #  if defined(_Py_IS_TESTCEXT)
-     // When compiling for  abi3t, contents of Python.h should not depend
+     // When compiling for abi3t, contents of Python.h should not depend
      // on Py_GIL_DISABLED.
      // We ask GCC to error if it sees the macro from this point on.
      // Since users are free to the macro, and there's no way to undo the
-     // poisoning at the end of Python.h, we only do this in a test module.
+     // poisoning at the end of Python.h, we only do this in a test module
+     // (test_cext).
 #    ifdef __GNUC__
 #      undef Py_GIL_DISABLED
 #      pragma GCC poison Py_GIL_DISABLED
