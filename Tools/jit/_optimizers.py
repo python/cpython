@@ -253,10 +253,10 @@ class Optimizer:
         continue_label = f"{self.label_prefix}_JIT_CONTINUE"
         text = re.sub(continue_symbol, continue_label, text)
         # Strip CFI directives as JIT stencils are compiled with
-        # -fno-asynchronous-unwind-tables and don't use DWARF CFI unwind
-        # tables (.eh_frame). The optimizer can remove blocks containing
-        # .cfi_endproc while keeping the corresponding .cfi_startproc,
-        # producing unbalanced CFI frames that some assemblers reject:
+        # -fno-asynchronous-unwind-tables. The optimizer can remove blocks
+        # containing .cfi_endproc while keeping the corresponding
+        # .cfi_startproc, producing unbalanced CFI frames that some
+        # assemblers reject:
         text = re.sub(r"^\s*\.cfi_\w+[^\n]*$", "", text, flags=re.MULTILINE)
         return text
 
