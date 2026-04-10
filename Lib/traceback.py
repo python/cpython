@@ -1673,55 +1673,55 @@ _CASE_COST = 1
 # If is_raw is True, the suggestion is rendered as-is.
 #
 # See https://github.com/python/cpython/issues/146406.
-_CROSS_LANGUAGE_HINTS = {
+_CROSS_LANGUAGE_HINTS = frozendict({
     # list -- JavaScript/Ruby equivalents
-    "push": [(list, "append", False)],
-    "concat": [(list, "extend", False)],
+    "push": ((list, "append", False),),
+    "concat": ((list, "extend", False),),
     # list -- Java/C# equivalents
-    "addAll": [(list, "extend", False)],
-    "contains": [(list, "Use 'x in list'.", True)],
+    "addAll": ((list, "extend", False),),
+    "contains": ((list, "Use 'x in list'.", True),),
     # list -- wrong-type suggestion (user expected a set)
-    "add": [(list, "Did you mean to use a 'set' object?", True),
-            (frozenset, "Did you mean to use a 'set' object?", True)],
+    "add": ((list, "Did you mean to use a 'set' object?", True),
+            (frozenset, "Did you mean to use a 'set' object?", True)),
     # str -- JavaScript equivalents
-    "toUpperCase": [(str, "upper", False)],
-    "toLowerCase": [(str, "lower", False)],
-    "trimStart": [(str, "lstrip", False)],
-    "trimEnd": [(str, "rstrip", False)],
+    "toUpperCase": ((str, "upper", False),),
+    "toLowerCase": ((str, "lower", False),),
+    "trimStart": ((str, "lstrip", False),),
+    "trimEnd": ((str, "rstrip", False),),
     # dict -- Java/JavaScript equivalents
-    "keySet": [(dict, "keys", False)],
-    "entrySet": [(dict, "items", False)],
-    "entries": [(dict, "items", False)],
-    "putAll": [(dict, "update", False)],
-    "put": [(dict, "Use d[k] = v.", True)],
+    "keySet": ((dict, "keys", False),),
+    "entrySet": ((dict, "items", False),),
+    "entries": ((dict, "items", False),),
+    "putAll": ((dict, "update", False),),
+    "put": ((dict, "Use d[k] = v.", True),),
     # tuple -- mutable method on immutable type (user expected a list)
-    "append": [(tuple, "Did you mean to use a 'list' object?", True)],
-    "extend": [(tuple, "Did you mean to use a 'list' object?", True)],
-    "insert": [(tuple, "Did you mean to use a 'list' object?", True)],
-    "remove": [(tuple, "Did you mean to use a 'list' object?", True),
-               (frozenset, "Did you mean to use a 'set' object?", True)],
+    "append": ((tuple, "Did you mean to use a 'list' object?", True),),
+    "extend": ((tuple, "Did you mean to use a 'list' object?", True),),
+    "insert": ((tuple, "Did you mean to use a 'list' object?", True),),
+    "remove": ((tuple, "Did you mean to use a 'list' object?", True),
+               (frozenset, "Did you mean to use a 'set' object?", True)),
     # frozenset -- mutable method on immutable type (user expected a set)
-    "discard": [(frozenset, "Did you mean to use a 'set' object?", True)],
+    "discard": ((frozenset, "Did you mean to use a 'set' object?", True),),
     # frozendict -- mutable method on immutable type (user expected a dict)
-    "update": [(frozenset, "Did you mean to use a 'set' object?", True),
-               (frozendict, "Did you mean to use a 'dict' object?", True)],
+    "update": ((frozenset, "Did you mean to use a 'set' object?", True),
+               (frozendict, "Did you mean to use a 'dict' object?", True)),
     # float -- bitwise operators belong to int
-    "__or__": [(float, "Did you mean to use an 'int' object? Bitwise operators are not supported by 'float'.", True)],
-    "__and__": [(float, "Did you mean to use an 'int' object? Bitwise operators are not supported by 'float'.", True)],
-    "__xor__": [(float, "Did you mean to use an 'int' object? Bitwise operators are not supported by 'float'.", True)],
-    "__lshift__": [(float, "Did you mean to use an 'int' object? Bitwise operators are not supported by 'float'.", True)],
-    "__rshift__": [(float, "Did you mean to use an 'int' object? Bitwise operators are not supported by 'float'.", True)],
+    "__or__": ((float, "Did you mean to use an 'int' object? Bitwise operators are not supported by 'float'.", True),),
+    "__and__": ((float, "Did you mean to use an 'int' object? Bitwise operators are not supported by 'float'.", True),),
+    "__xor__": ((float, "Did you mean to use an 'int' object? Bitwise operators are not supported by 'float'.", True),),
+    "__lshift__": ((float, "Did you mean to use an 'int' object? Bitwise operators are not supported by 'float'.", True),),
+    "__rshift__": ((float, "Did you mean to use an 'int' object? Bitwise operators are not supported by 'float'.", True),),
     # NoneType -- common methods tried on None (got None instead of expected type)
-    "keys": [(type(None), "Did you expect a 'dict'?", True)],
-    "values": [(type(None), "Did you expect a 'dict'?", True)],
-    "items": [(type(None), "Did you expect a 'dict'?", True)],
-    "upper": [(type(None), "Did you expect a 'str'?", True)],
-    "lower": [(type(None), "Did you expect a 'str'?", True)],
-    "strip": [(type(None), "Did you expect a 'str'?", True)],
-    "split": [(type(None), "Did you expect a 'str'?", True)],
-    "sort": [(type(None), "Did you expect a 'list'?", True)],
-    "pop": [(type(None), "Did you expect a 'list' or 'dict'?", True)],
-}
+    "keys": ((types.NoneType, "Did you expect a 'dict'?", True),),
+    "values": ((types.NoneType, "Did you expect a 'dict'?", True),),
+    "items": ((types.NoneType, "Did you expect a 'dict'?", True),),
+    "upper": ((types.NoneType, "Did you expect a 'str'?", True),),
+    "lower": ((types.NoneType, "Did you expect a 'str'?", True),),
+    "strip": ((types.NoneType, "Did you expect a 'str'?", True),),
+    "split": ((types.NoneType, "Did you expect a 'str'?", True),),
+    "sort": ((types.NoneType, "Did you expect a 'list'?", True),),
+    "pop": ((types.NoneType, "Did you expect a 'list' or 'dict'?", True),),
+})
 
 
 def _substitution_cost(ch_a, ch_b):

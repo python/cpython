@@ -457,15 +457,17 @@ Improved error messages
      ...
      AttributeError: 'tuple' object has no attribute 'append'. Did you mean to use a 'list' object?
 
-  When a common method is called on ``None``, the hint suggests the type
-  the user likely expected:
+  When a common method is called on ``None`` (often because a method like
+  :meth:`list.sort` returned ``None`` instead of the expected object), the
+  hint suggests the type the user likely expected:
 
   .. doctest::
 
-     >>> None.keys()  # doctest: +ELLIPSIS
+     >>> lst = [3, 1, 2].sort()
+     >>> lst.pop()  # doctest: +ELLIPSIS
      Traceback (most recent call last):
      ...
-     AttributeError: 'NoneType' object has no attribute 'keys'. Did you expect a 'dict'?
+     AttributeError: 'NoneType' object has no attribute 'pop'. Did you expect a 'list' or 'dict'?
 
   These hints also work for subclasses of builtin types.
 
