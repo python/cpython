@@ -1,8 +1,10 @@
+.. _functional-howto:
+
 ********************************
   Functional Programming HOWTO
 ********************************
 
-:Author: A. M. Kuchling
+:Author: \A. M. Kuchling
 :Release: 0.32
 
 In this document, we'll take a tour of Python's features suitable for
@@ -370,8 +372,8 @@ have the form::
                  for expr2 in sequence2
                  if condition2
                  for expr3 in sequence3
-                 ...
                  if condition3
+                 ...
                  for exprN in sequenceN
                  if conditionN )
 
@@ -600,7 +602,7 @@ generators:
   raise an exception inside the generator; the exception is raised by the
   ``yield`` expression where the generator's execution is paused.
 
-* :meth:`~generator.close` raises a :exc:`GeneratorExit` exception inside the
+* :meth:`~generator.close` sends a :exc:`GeneratorExit` exception to the
   generator to terminate the iteration.  On receiving this exception, the
   generator's code must either raise :exc:`GeneratorExit` or
   :exc:`StopIteration`; catching the exception and doing anything else is
@@ -1072,8 +1074,8 @@ write the obvious :keyword:`for` loop::
 
 A related function is :func:`itertools.accumulate(iterable, func=operator.add)
 <itertools.accumulate>`.  It performs the same calculation, but instead of
-returning only the final result, :func:`accumulate` returns an iterator that
-also yields each partial result::
+returning only the final result, :func:`~itertools.accumulate` returns an iterator
+that also yields each partial result::
 
     itertools.accumulate([1, 2, 3, 4, 5]) =>
       1, 3, 6, 10, 15
@@ -1208,14 +1210,14 @@ General
 -------
 
 **Structure and Interpretation of Computer Programs**, by Harold Abelson and
-Gerald Jay Sussman with Julie Sussman.  Full text at
-https://mitpress.mit.edu/sicp/.  In this classic textbook of computer science,
+Gerald Jay Sussman with Julie Sussman.  The book can be found at
+https://mitpress.mit.edu/sicp.  In this classic textbook of computer science,
 chapters 2 and 3 discuss the use of sequences and streams to organize the data
 flow inside a program.  The book uses Scheme for its examples, but many of the
 design approaches described in these chapters are applicable to functional-style
 Python code.
 
-https://www.defmacro.org/ramblings/fp.html: A general introduction to functional
+https://defmacro.org/2006/06/19/fp.html: A general introduction to functional
 programming that uses Java examples and has a lengthy historical introduction.
 
 https://en.wikipedia.org/wiki/Functional_programming: General Wikipedia entry

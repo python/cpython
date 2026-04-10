@@ -18,15 +18,23 @@ _is_coroutine = object()
 
 
 def iscoroutinefunction(func):
+    import warnings
     """Return True if func is a decorated coroutine function."""
+    warnings._deprecated("asyncio.iscoroutinefunction",
+                         f"{warnings._DEPRECATED_MSG}; "
+                         "use inspect.iscoroutinefunction() instead",
+                         remove=(3,16))
+    return _iscoroutinefunction(func)
+
+
+def _iscoroutinefunction(func):
     return (inspect.iscoroutinefunction(func) or
             getattr(func, '_is_coroutine', None) is _is_coroutine)
 
 
 # Prioritize native coroutine check to speed-up
 # asyncio.iscoroutine.
-_COROUTINE_TYPES = (types.CoroutineType, types.GeneratorType,
-                    collections.abc.Coroutine)
+_COROUTINE_TYPES = (types.CoroutineType, collections.abc.Coroutine)
 _iscoroutine_typecache = set()
 
 

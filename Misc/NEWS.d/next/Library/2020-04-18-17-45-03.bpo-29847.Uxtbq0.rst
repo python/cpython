@@ -1,1 +1,0 @@
-Fix a bug where :class:`pathlib.Path` accepted and ignored keyword arguments. Patch provided by Yurii Karabas.

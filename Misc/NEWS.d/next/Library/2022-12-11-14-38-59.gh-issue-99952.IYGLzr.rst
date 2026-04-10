@@ -1,2 +1,0 @@
-Fix a reference undercounting issue in :class:`ctypes.Structure` with ``from_param()``
-results larger than a C pointer.

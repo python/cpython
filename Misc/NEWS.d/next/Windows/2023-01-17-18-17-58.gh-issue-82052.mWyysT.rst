@@ -1,1 +1,0 @@
-Fixed an issue where writing more than 32K of Unicode output to the console screen in one go can result in mojibake.

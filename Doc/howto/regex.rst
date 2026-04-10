@@ -1,7 +1,7 @@
 .. _regex-howto:
 
 ****************************
-  Regular Expression HOWTO
+  Regular expression HOWTO
 ****************************
 
 :Author: A.M. Kuchling <amk@amk.ca>
@@ -47,7 +47,7 @@ Python code to do the processing; while Python code will be slower than an
 elaborate regular expression, it will also probably be more understandable.
 
 
-Simple Patterns
+Simple patterns
 ===============
 
 We'll start by learning about the simplest possible regular expressions.  Since
@@ -59,7 +59,7 @@ expressions (deterministic and non-deterministic finite automata), you can refer
 to almost any textbook on writing compilers.
 
 
-Matching Characters
+Matching characters
 -------------------
 
 Most letters and characters will simply match themselves.  For example, the
@@ -159,7 +159,7 @@ match even a newline.  ``.`` is often used where you want to match "any
 character".
 
 
-Repeating Things
+Repeating things
 ----------------
 
 Being able to match varying sets of characters is the first thing regular
@@ -210,7 +210,7 @@ this RE against the string ``'abcbd'``.
 |      |           | ``[bcd]*`` is only matching     |
 |      |           | ``bc``.                         |
 +------+-----------+---------------------------------+
-| 6    | ``abcb``  | Try ``b`` again.  This time     |
+| 7    | ``abcb``  | Try ``b`` again.  This time     |
 |      |           | the character at the            |
 |      |           | current position is ``'b'``, so |
 |      |           | it succeeds.                    |
@@ -245,6 +245,9 @@ You can omit either *m* or *n*; in that case, a reasonable value is assumed for
 the missing value.  Omitting *m* is interpreted as a lower limit of 0, while
 omitting *n* results in an upper bound of infinity.
 
+The simplest case ``{m}`` matches the preceding item exactly *m* times.
+For example, ``a/{2}b`` will only match ``'a//b'``.
+
 Readers of a reductionist bent may notice that the three other quantifiers can
 all be expressed using this notation.  ``{0,}`` is the same as ``*``, ``{1,}``
 is equivalent to ``+``, and ``{0,1}`` is the same as ``?``.  It's better to use
@@ -252,7 +255,7 @@ is equivalent to ``+``, and ``{0,1}`` is the same as ``?``.  It's better to use
 to read.
 
 
-Using Regular Expressions
+Using regular expressions
 =========================
 
 Now that we've looked at some simple regular expressions, how do we actually use
@@ -261,7 +264,7 @@ expression engine, allowing you to compile REs into objects and then perform
 matches with them.
 
 
-Compiling Regular Expressions
+Compiling regular expressions
 -----------------------------
 
 Regular expressions are compiled into pattern objects, which have
@@ -292,7 +295,7 @@ disadvantage which is the topic of the next section.
 
 .. _the-backslash-plague:
 
-The Backslash Plague
+The backslash plague
 --------------------
 
 As stated earlier, regular expressions use the backslash character (``'\'``) to
@@ -332,7 +335,7 @@ expressions will often be written in Python code using this raw string notation.
 
 In addition, special escape sequences that are valid in regular expressions,
 but not valid as Python string literals, now result in a
-:exc:`DeprecationWarning` and will eventually become a :exc:`SyntaxError`,
+:exc:`SyntaxWarning` and will eventually become a :exc:`SyntaxError`,
 which means the sequences will be invalid if raw string notation or escaping
 the backslashes isn't used.
 
@@ -348,7 +351,7 @@ the backslashes isn't used.
 +-------------------+------------------+
 
 
-Performing Matches
+Performing matches
 ------------------
 
 Once you have an object representing a compiled regular expression, what do you
@@ -366,10 +369,10 @@ for a complete listing.
 |                  | location where this RE matches.               |
 +------------------+-----------------------------------------------+
 | ``findall()``    | Find all substrings where the RE matches, and |
-|                  | returns them as a list.                       |
+|                  | return them as a list.                        |
 +------------------+-----------------------------------------------+
 | ``finditer()``   | Find all substrings where the RE matches, and |
-|                  | returns them as an :term:`iterator`.          |
+|                  | return them as an :term:`iterator`.           |
 +------------------+-----------------------------------------------+
 
 :meth:`~re.Pattern.match` and :meth:`~re.Pattern.search` return ``None`` if no match can be found.  If
@@ -470,7 +473,7 @@ Two pattern methods return all of the matches for a pattern.
 The ``r`` prefix, making the literal a raw string literal, is needed in this
 example because escape sequences in a normal "cooked" string literal that are
 not recognized by Python, as opposed to regular expressions, now result in a
-:exc:`DeprecationWarning` and will eventually become a :exc:`SyntaxError`.  See
+:exc:`SyntaxWarning` and will eventually become a :exc:`SyntaxError`.  See
 :ref:`the-backslash-plague`.
 
 :meth:`~re.Pattern.findall` has to create the entire list before it can be returned as the
@@ -488,7 +491,7 @@ result.  The :meth:`~re.Pattern.finditer` method returns a sequence of
    (29, 31)
 
 
-Module-Level Functions
+Module-level functions
 ----------------------
 
 You don't have to create a pattern object and call its methods; the
@@ -515,8 +518,10 @@ Outside of loops, there's not much difference thanks to the internal
 cache.
 
 
-Compilation Flags
+Compilation flags
 -----------------
+
+.. currentmodule:: re
 
 Compilation flags let you modify some aspects of how regular expressions work.
 Flags are available in the :mod:`re` module under two names, a long name such as
@@ -637,7 +642,7 @@ of each one.
    whitespace is in a character class or preceded by an unescaped backslash; this
    lets you organize and indent the RE more clearly.  This flag also lets you put
    comments within a RE that will be ignored by the engine; comments are marked by
-   a ``'#'`` that's neither in a character class or preceded by an unescaped
+   a ``'#'`` that's neither in a character class nor preceded by an unescaped
    backslash.
 
    For example, here's a RE that uses :const:`re.VERBOSE`; see how much easier it
@@ -664,7 +669,7 @@ of each one.
    to understand than the version using :const:`re.VERBOSE`.
 
 
-More Pattern Power
+More pattern power
 ==================
 
 So far we've only covered a part of the features of regular expressions.  In
@@ -674,7 +679,7 @@ retrieve portions of the text that was matched.
 
 .. _more-metacharacters:
 
-More Metacharacters
+More metacharacters
 -------------------
 
 There are some metacharacters that we haven't covered yet.  Most of them will be
@@ -733,8 +738,11 @@ given location, they can obviously be matched an infinite number of times.
    different: ``\A`` still matches only at the beginning of the string, but ``^``
    may match at any location inside the string that follows a newline character.
 
-``\Z``
+``\z``
    Matches only at the end of the string.
+
+``\Z``
+   The same as ``\z``.  For compatibility with old Python versions.
 
 ``\b``
    Word boundary.  This is a zero-width assertion that matches only at the
@@ -867,7 +875,7 @@ Backreferences like this aren't often useful for just searching through a string
 find out that they're *very* useful when performing string substitutions.
 
 
-Non-capturing and Named Groups
+Non-capturing and named groups
 ------------------------------
 
 Elaborate REs may use many groups, both to capture substrings of interest, and
@@ -971,7 +979,7 @@ current point.  The regular expression for finding doubled words,
    'the the'
 
 
-Lookahead Assertions
+Lookahead assertions
 --------------------
 
 Another zero-width assertion is the lookahead assertion.  Lookahead assertions
@@ -1008,7 +1016,9 @@ extension.  This regular expression matches ``foo.bar`` and
 Now, consider complicating the problem a bit; what if you want to match
 filenames where the extension is not ``bat``? Some incorrect attempts:
 
-``.*[.][^b].*$``  The first attempt above tries to exclude ``bat`` by requiring
+``.*[.][^b].*$``
+
+The first attempt above tries to exclude ``bat`` by requiring
 that the first character of the extension is not a ``b``.  This is wrong,
 because the pattern also doesn't match ``foo.bar``.
 
@@ -1035,7 +1045,9 @@ confusing.
 
 A negative lookahead cuts through all this confusion:
 
-``.*[.](?!bat$)[^.]*$``  The negative lookahead means: if the expression ``bat``
+``.*[.](?!bat$)[^.]*$``
+
+The negative lookahead means: if the expression ``bat``
 doesn't match at this point, try the rest of the pattern; if ``bat$`` does
 match, the whole pattern will fail.  The trailing ``$`` is required to ensure
 that something like ``sample.batch``, where the extension only starts with
@@ -1049,7 +1061,7 @@ end in either ``bat`` or ``exe``:
 ``.*[.](?!bat$|exe$)[^.]*$``
 
 
-Modifying Strings
+Modifying strings
 =================
 
 Up to this point, we've simply performed searches against a static string.
@@ -1071,7 +1083,7 @@ using the following pattern methods:
 +------------------+-----------------------------------------------+
 
 
-Splitting Strings
+Splitting strings
 -----------------
 
 The :meth:`~re.Pattern.split` method of a pattern splits a string apart
@@ -1125,7 +1137,7 @@ argument, but is otherwise the same.   ::
    ['Words', 'words, words.']
 
 
-Search and Replace
+Search and replace
 ------------------
 
 Another common task is to find all the matches for a pattern, and replace them
@@ -1224,7 +1236,7 @@ pattern object as the first parameter, or use embedded modifiers in the
 pattern string, e.g. ``sub("(?i)b+", "x", "bbbb BBBB")`` returns ``'x x'``.
 
 
-Common Problems
+Common problems
 ===============
 
 Regular expressions are a powerful tool for some applications, but in some ways
@@ -1232,7 +1244,7 @@ their behaviour isn't intuitive and at times they don't behave the way you may
 expect them to.  This section will point out some of the most common pitfalls.
 
 
-Use String Methods
+Use string methods
 ------------------
 
 Sometimes using the :mod:`re` module is a mistake.  If you're matching a fixed
@@ -1298,7 +1310,7 @@ string and then backtracking to find a match for the rest of the RE.  Use
 :func:`re.search` instead.
 
 
-Greedy versus Non-Greedy
+Greedy versus non-greedy
 ------------------------
 
 When repeating a regular expression, as in ``a*``, the resulting action is to
@@ -1376,9 +1388,9 @@ Feedback
 ========
 
 Regular expressions are a complicated topic.  Did this document help you
-understand them?  Were there parts that were unclear, or Problems you
+understand them?  Were there parts that were unclear, or problems you
 encountered that weren't covered here?  If so, please send suggestions for
-improvements to the author.
+improvements to the :ref:`issue tracker <using-the-tracker>`.
 
 The most complete book on regular expressions is almost certainly Jeffrey
 Friedl's Mastering Regular Expressions, published by O'Reilly.  Unfortunately,

@@ -1,1 +1,0 @@
-Fix race while iterating over thread states in clearing :class:`threading.local`. Patch by Kumar Aditya.

@@ -1301,7 +1301,7 @@ if __name__ == '__main__':
                 out, _ = p.communicate()
                 write_output(out, p.returncode)
 
-        N = os.cpu_count()
+        N = os.process_cpu_count()
         t = N * [None]
 
         for i in range(N):

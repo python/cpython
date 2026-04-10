@@ -1,9 +1,24 @@
+import sys
 import unittest
-from test.test_ctypes import need_symbol
 import test.support
+from ctypes import (CDLL, PyDLL, ArgumentError,
+                    Structure, Array, Union,
+                    _Pointer, _SimpleCData, _CFuncPtr,
+                    POINTER, pointer, byref, sizeof,
+                    c_void_p, c_char_p, c_wchar_p, py_object,
+                    c_bool,
+                    c_char, c_wchar,
+                    c_byte, c_ubyte,
+                    c_short, c_ushort,
+                    c_int, c_uint,
+                    c_long, c_ulong,
+                    c_longlong, c_ulonglong,
+                    c_float, c_double, c_longdouble)
+from test.support import import_helper
+_ctypes_test = import_helper.import_module("_ctypes_test")
+
 
 class SimpleTypesTestCase(unittest.TestCase):
-
     def setUp(self):
         try:
             from _ctypes import set_conversion_mode
@@ -21,7 +36,6 @@ class SimpleTypesTestCase(unittest.TestCase):
             set_conversion_mode(*self.prev_conv_mode)
 
     def test_subclasses(self):
-        from ctypes import c_void_p, c_char_p
         # ctypes 0.9.5 and before did overwrite from_param in SimpleType_new
         class CVOIDP(c_void_p):
             def from_param(cls, value):
@@ -36,10 +50,7 @@ class SimpleTypesTestCase(unittest.TestCase):
         self.assertEqual(CVOIDP.from_param("abc"), "abcabc")
         self.assertEqual(CCHARP.from_param("abc"), "abcabcabcabc")
 
-    @need_symbol('c_wchar_p')
     def test_subclasses_c_wchar_p(self):
-        from ctypes import c_wchar_p
-
         class CWCHARP(c_wchar_p):
             def from_param(cls, value):
                 return value * 3
@@ -49,8 +60,6 @@ class SimpleTypesTestCase(unittest.TestCase):
 
     # XXX Replace by c_char_p tests
     def test_cstrings(self):
-        from ctypes import c_char_p
-
         # c_char_p.from_param on a Python String packs the string
         # into a cparam object
         s = b"123"
@@ -66,10 +75,7 @@ class SimpleTypesTestCase(unittest.TestCase):
         a = c_char_p(b"123")
         self.assertIs(c_char_p.from_param(a), a)
 
-    @need_symbol('c_wchar_p')
     def test_cw_strings(self):
-        from ctypes import c_wchar_p
-
         c_wchar_p.from_param("123")
 
         self.assertRaises(TypeError, c_wchar_p.from_param, 42)
@@ -79,34 +85,40 @@ class SimpleTypesTestCase(unittest.TestCase):
         self.assertEqual(type(pa), c_wchar_p)
 
     def test_c_char(self):
-        from ctypes import c_char
-
         with self.assertRaises(TypeError) as cm:
             c_char.from_param(b"abc")
         self.assertEqual(str(cm.exception),
-                         "one character bytes, bytearray or integer expected")
+                         "one character bytes, bytearray, or an integer "
+                         "in range(256) expected, not bytes of length 3")
 
-    @need_symbol('c_wchar')
     def test_c_wchar(self):
-        from ctypes import c_wchar
-
         with self.assertRaises(TypeError) as cm:
             c_wchar.from_param("abc")
         self.assertEqual(str(cm.exception),
-                         "one character unicode string expected")
+                         "a unicode character expected, not a string of length 3")
 
+        with self.assertRaises(TypeError) as cm:
+            c_wchar.from_param("")
+        self.assertEqual(str(cm.exception),
+                         "a unicode character expected, not a string of length 0")
 
         with self.assertRaises(TypeError) as cm:
             c_wchar.from_param(123)
         self.assertEqual(str(cm.exception),
-                         "unicode string expected instead of int instance")
+                         "a unicode character expected, not instance of int")
+
+        if sizeof(c_wchar) < 4:
+            with self.assertRaises(TypeError) as cm:
+                c_wchar.from_param('\U0001f40d')
+            self.assertEqual(str(cm.exception),
+                             "the string '\\U0001f40d' cannot be converted to "
+                             "a single wchar_t character")
+
+
 
     def test_int_pointers(self):
-        from ctypes import c_short, c_uint, c_int, c_long, POINTER, pointer
         LPINT = POINTER(c_int)
 
-##        p = pointer(c_int(42))
-##        x = LPINT.from_param(p)
         x = LPINT.from_param(pointer(c_int(42)))
         self.assertEqual(x.contents.value, 42)
         self.assertEqual(LPINT(c_int(42)).contents.value, 42)
@@ -121,7 +133,6 @@ class SimpleTypesTestCase(unittest.TestCase):
     def test_byref_pointer(self):
         # The from_param class method of POINTER(typ) classes accepts what is
         # returned by byref(obj), it type(obj) == typ
-        from ctypes import c_short, c_uint, c_int, c_long, POINTER, byref
         LPINT = POINTER(c_int)
 
         LPINT.from_param(byref(c_int(42)))
@@ -133,7 +144,6 @@ class SimpleTypesTestCase(unittest.TestCase):
 
     def test_byref_pointerpointer(self):
         # See above
-        from ctypes import c_short, c_uint, c_int, c_long, pointer, POINTER, byref
 
         LPLPINT = POINTER(POINTER(c_int))
         LPLPINT.from_param(byref(pointer(c_int(42))))
@@ -144,7 +154,6 @@ class SimpleTypesTestCase(unittest.TestCase):
         self.assertRaises(TypeError, LPLPINT.from_param, byref(pointer(c_uint(22))))
 
     def test_array_pointers(self):
-        from ctypes import c_short, c_uint, c_int, c_long, POINTER
         INTARRAY = c_int * 3
         ia = INTARRAY()
         self.assertEqual(len(ia), 3)
@@ -159,15 +168,12 @@ class SimpleTypesTestCase(unittest.TestCase):
         self.assertRaises(TypeError, LPINT.from_param, c_uint*3)
 
     def test_noctypes_argtype(self):
-        import _ctypes_test
-        from ctypes import CDLL, c_void_p, ArgumentError
-
         func = CDLL(_ctypes_test.__file__)._testfunc_p_p
         func.restype = c_void_p
         # TypeError: has no from_param method
         self.assertRaises(TypeError, setattr, func, "argtypes", (object,))
 
-        class Adapter(object):
+        class Adapter:
             def from_param(cls, obj):
                 return None
 
@@ -175,7 +181,7 @@ class SimpleTypesTestCase(unittest.TestCase):
         self.assertEqual(func(None), None)
         self.assertEqual(func(object()), None)
 
-        class Adapter(object):
+        class Adapter:
             def from_param(cls, obj):
                 return obj
 
@@ -184,7 +190,7 @@ class SimpleTypesTestCase(unittest.TestCase):
         self.assertRaises(ArgumentError, func, object())
         self.assertEqual(func(c_void_p(42)), 42)
 
-        class Adapter(object):
+        class Adapter:
             def from_param(cls, obj):
                 raise ValueError(obj)
 
@@ -193,9 +199,6 @@ class SimpleTypesTestCase(unittest.TestCase):
         self.assertRaises(ArgumentError, func, 99)
 
     def test_abstract(self):
-        from ctypes import (Array, Structure, Union, _Pointer,
-                            _SimpleCData, _CFuncPtr)
-
         self.assertRaises(TypeError, Array.from_param, 42)
         self.assertRaises(TypeError, Structure.from_param, 42)
         self.assertRaises(TypeError, Union.from_param, 42)
@@ -207,7 +210,6 @@ class SimpleTypesTestCase(unittest.TestCase):
     def test_issue31311(self):
         # __setstate__ should neither raise a SystemError nor crash in case
         # of a bad __dict__.
-        from ctypes import Structure
 
         class BadStruct(Structure):
             @property
@@ -224,27 +226,6 @@ class SimpleTypesTestCase(unittest.TestCase):
             WorseStruct().__setstate__({}, b'foo')
 
     def test_parameter_repr(self):
-        from ctypes import (
-            c_bool,
-            c_char,
-            c_wchar,
-            c_byte,
-            c_ubyte,
-            c_short,
-            c_ushort,
-            c_int,
-            c_uint,
-            c_long,
-            c_ulong,
-            c_longlong,
-            c_ulonglong,
-            c_float,
-            c_double,
-            c_longdouble,
-            c_char_p,
-            c_wchar_p,
-            c_void_p,
-        )
         self.assertRegex(repr(c_bool.from_param(True)), r"^<cparam '\?' at 0x[A-Fa-f0-9]+>$")
         self.assertEqual(repr(c_char.from_param(97)), "<cparam 'c' ('a')>")
         self.assertRegex(repr(c_wchar.from_param('a')), r"^<cparam 'u' at 0x[A-Fa-f0-9]+>$")
@@ -260,7 +241,8 @@ class SimpleTypesTestCase(unittest.TestCase):
         self.assertRegex(repr(c_ulonglong.from_param(20000)), r"^<cparam '[LIQ]' \(20000\)>$")
         self.assertEqual(repr(c_float.from_param(1.5)), "<cparam 'f' (1.5)>")
         self.assertEqual(repr(c_double.from_param(1.5)), "<cparam 'd' (1.5)>")
-        self.assertEqual(repr(c_double.from_param(1e300)), "<cparam 'd' (1e+300)>")
+        if sys.float_repr_style == 'short':
+            self.assertEqual(repr(c_double.from_param(1e300)), "<cparam 'd' (1e+300)>")
         self.assertRegex(repr(c_longdouble.from_param(1.5)), r"^<cparam ('d' \(1.5\)|'g' at 0x[A-Fa-f0-9]+)>$")
         self.assertRegex(repr(c_char_p.from_param(b'hihi')), r"^<cparam 'z' \(0x[A-Fa-f0-9]+\)>$")
         self.assertRegex(repr(c_wchar_p.from_param('hihi')), r"^<cparam 'Z' \(0x[A-Fa-f0-9]+\)>$")
@@ -269,9 +251,6 @@ class SimpleTypesTestCase(unittest.TestCase):
     @test.support.cpython_only
     def test_from_param_result_refcount(self):
         # Issue #99952
-        import _ctypes_test
-        from ctypes import PyDLL, c_int, c_void_p, py_object, Structure
-
         class X(Structure):
             """This struct size is <= sizeof(void*)."""
             _fields_ = [("a", c_void_p)]
@@ -318,7 +297,6 @@ class SimpleTypesTestCase(unittest.TestCase):
 
         self.assertEqual(trace, [1, 2, 3, 4, 5])
 
-################################################################
 
 if __name__ == '__main__':
     unittest.main()
