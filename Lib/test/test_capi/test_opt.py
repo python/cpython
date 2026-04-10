@@ -2454,14 +2454,8 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertEqual(res, TIER2_THRESHOLD)
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
-        # When the result of type(...) is known, _CALL_TYPE_1 is replaced with
-        # _SHUFFLE_2_LOAD_CONST_INLINE_BORROW which is optimized away in
-        # remove_unneeded_uops.
+        # When the result of type(...) is known, _CALL_TYPE_1 is decomposed.
         self.assertNotIn("_CALL_TYPE_1", uops)
-        self.assertNotIn("_SHUFFLE_2_LOAD_CONST_INLINE_BORROW", uops)
-        self.assertNotIn("_POP_CALL_ONE_LOAD_CONST_INLINE_BORROW", uops)
-        self.assertNotIn("_POP_CALL_LOAD_CONST_INLINE_BORROW", uops)
-        self.assertNotIn("_POP_TOP_LOAD_CONST_INLINE_BORROW", uops)
 
     def test_call_type_1_result_is_const(self):
         def testfunc(n):
@@ -2685,9 +2679,6 @@ class TestUopsOptimization(unittest.TestCase):
         # When the length is < _PY_NSMALLPOSINTS, the len() call is replaced
         # with just an inline load.
         self.assertNotIn("_CALL_LEN", uops)
-        self.assertNotIn("_POP_CALL_ONE_LOAD_CONST_INLINE_BORROW", uops)
-        self.assertNotIn("_POP_CALL_LOAD_CONST_INLINE_BORROW", uops)
-        self.assertNotIn("_POP_TOP_LOAD_CONST_INLINE_BORROW", uops)
 
     def test_call_len_known_length(self):
         # Make sure that len(t) is not optimized for a tuple of length 2048.
@@ -2715,6 +2706,21 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertIn("_CALL_LEN", uops)
         self.assertNotIn("_COMPARE_OP_INT", uops)
         self.assertNotIn(self.guard_is_true, uops)
+
+    def test_call_builtin_class(self):
+        def testfunc(n):
+            x = 0
+            for _ in range(n):
+                y = int("42")
+                x += y
+            return x
+
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, TIER2_THRESHOLD * 42)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertIn("_CALL_BUILTIN_CLASS", uops)
+        self.assertNotIn("_GUARD_CALLABLE_BUILTIN_CLASS", uops)
 
     def test_call_builtin_o(self):
         def testfunc(n):
@@ -2747,6 +2753,9 @@ class TestUopsOptimization(unittest.TestCase):
         uops = get_opnames(ex)
         self.assertIn("_CALL_BUILTIN_FAST", uops)
         self.assertNotIn("_GUARD_CALLABLE_BUILTIN_FAST", uops)
+        # divmod(10, 3) should have at least 3 _POP_TOP_NOP
+        # x += y[0] produces at least 3 _POP_TOP_NOP
+        self.assertGreaterEqual(count_ops(ex, "_POP_TOP_NOP"), 6)
 
     def test_call_builtin_fast_with_keywords(self):
         def testfunc(n):
@@ -2960,10 +2969,6 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertNotIn("_CALL_ISINSTANCE", uops)
         self.assertNotIn("_GUARD_THIRD_NULL", uops)
         self.assertNotIn("_GUARD_CALLABLE_ISINSTANCE", uops)
-        self.assertNotIn("_POP_TOP_LOAD_CONST_INLINE_BORROW", uops)
-        self.assertNotIn("_POP_CALL_LOAD_CONST_INLINE_BORROW", uops)
-        self.assertNotIn("_POP_CALL_ONE_LOAD_CONST_INLINE_BORROW", uops)
-        self.assertNotIn("_POP_CALL_TWO_LOAD_CONST_INLINE_BORROW", uops)
 
     def test_call_list_append(self):
         def testfunc(n):
@@ -3006,9 +3011,6 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertNotIn("_TO_BOOL_BOOL", uops)
         self.assertNotIn(self.guard_is_true, uops)
         self.assertNotIn("_POP_TOP_LOAD_CONST_INLINE_BORROW", uops)
-        self.assertNotIn("_POP_CALL_LOAD_CONST_INLINE_BORROW", uops)
-        self.assertNotIn("_POP_CALL_ONE_LOAD_CONST_INLINE_BORROW", uops)
-        self.assertNotIn("_POP_CALL_TWO_LOAD_CONST_INLINE_BORROW", uops)
 
     def test_call_isinstance_is_false(self):
         def testfunc(n):
@@ -3027,9 +3029,6 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertNotIn("_TO_BOOL_BOOL", uops)
         self.assertNotIn(self.guard_is_false, uops)
         self.assertNotIn("_POP_TOP_LOAD_CONST_INLINE_BORROW", uops)
-        self.assertNotIn("_POP_CALL_LOAD_CONST_INLINE_BORROW", uops)
-        self.assertNotIn("_POP_CALL_ONE_LOAD_CONST_INLINE_BORROW", uops)
-        self.assertNotIn("_POP_CALL_TWO_LOAD_CONST_INLINE_BORROW", uops)
 
     def test_call_isinstance_subclass(self):
         def testfunc(n):
@@ -3048,9 +3047,6 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertNotIn("_TO_BOOL_BOOL", uops)
         self.assertNotIn(self.guard_is_true, uops)
         self.assertNotIn("_POP_TOP_LOAD_CONST_INLINE_BORROW", uops)
-        self.assertNotIn("_POP_CALL_LOAD_CONST_INLINE_BORROW", uops)
-        self.assertNotIn("_POP_CALL_ONE_LOAD_CONST_INLINE_BORROW", uops)
-        self.assertNotIn("_POP_CALL_TWO_LOAD_CONST_INLINE_BORROW", uops)
 
     def test_call_isinstance_unknown_object(self):
         def testfunc(n):
@@ -3210,8 +3206,7 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertEqual(res, TIER2_THRESHOLD)
         uops = get_opnames(ex)
         self.assertNotIn("_LOAD_ATTR_METHOD_NO_DICT", uops)
-        self.assertNotIn("_INSERT_1_LOAD_CONST_INLINE", uops)
-        self.assertIn("_INSERT_1_LOAD_CONST_INLINE_BORROW", uops)
+        self.assertIn("_LOAD_CONST_INLINE_BORROW", uops)
 
     def test_store_fast_refcount_elimination(self):
         def foo(x):
@@ -4830,6 +4825,21 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertIn("_POP_TOP_NOP", uops)
         self.assertLessEqual(count_ops(ex, "_POP_TOP"), 2)
 
+    def test_make_function(self):
+        def testfunc(n):
+            x = 0
+            for _ in range(n):
+                func = lambda: 1
+                x += func()
+            return x
+
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, TIER2_THRESHOLD)
+        uops = get_opnames(ex)
+
+        self.assertIn("_MAKE_FUNCTION", uops)
+        self.assertEqual(uops.count("_POP_TOP_NOP"), 2)
+
     def test_iter_check_list(self):
         def testfunc(n):
             x = 0
@@ -5168,6 +5178,49 @@ class TestUopsOptimization(unittest.TestCase):
         """),
         PYTHON_JIT="1", PYTHON_JIT_STRESS="1")
         self.assertEqual(result[0].rc, 0, result)
+
+    def test_call_super(self):
+        class A:
+            def method1(self):
+                return 42
+
+            def method2(self):
+                return 21
+
+        class B(A):
+            def method1(self):
+                return super().method1()
+
+            def method2(self):
+                return super(B, self).method2()
+
+        b = B()
+
+        def testfunc(n):
+            x = 0
+            for _ in range(n):
+                x += b.method1()
+                x += b.method2()
+            return x
+
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, 63 * TIER2_THRESHOLD)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertNotIn("_LOAD_SUPER_ATTR_METHOD", uops)
+        self.assertEqual(uops.count("_GUARD_NOS_TYPE_VERSION"), 2)
+        self.assertTrue(ex.is_valid())
+        # this should change the type version of A, which should invalidate the executor
+        A.method1 = lambda self: 1
+        self.assertFalse(ex.is_valid())
+        # re-running should create a new executor
+        res, ex = self._run_with_optimizer(testfunc, 4 * TIER2_THRESHOLD)
+        self.assertEqual(res, 4 * 22 * TIER2_THRESHOLD)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertNotIn("_LOAD_SUPER_ATTR_METHOD", uops)
+        self.assertEqual(uops.count("_GUARD_NOS_TYPE_VERSION"), 2)
+
 
 def global_identity(x):
     return x
