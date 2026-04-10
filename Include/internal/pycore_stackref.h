@@ -845,6 +845,18 @@ _Py_TryXGetStackRef(PyObject **src, _PyStackRef *out)
         }                                                               \
     } while (0)
 
+static inline void
+_PyStackRef_CloseStack(_PyStackRef *arguments, int total_args)
+{
+    // arguments is a pointer into the GC visible stack,
+    // so we must NULL out values as we clear them.
+    for (int i = total_args-1; i >= 0; i--) {
+        _PyStackRef tmp = arguments[i];
+        arguments[i] = PyStackRef_NULL;
+        PyStackRef_CLOSE(tmp);
+    }
+}
+
 #ifdef __cplusplus
 }
 #endif
