@@ -1048,7 +1048,7 @@ dummy_func(void) {
             PyHeapTypeObject *cls = (PyHeapTypeObject *)type;
             PyObject *init = FT_ATOMIC_LOAD_PTR_ACQUIRE(cls->_spec_cache.init);
             if (init != NULL && PyFunction_Check(init)) {
-                // Record the __init__ function so _CREATE_INIT_FRAME can
+                // Propagate the __init__ function so _CREATE_INIT_FRAME can
                 // resolve the code object and continue optimizing.
                 callable = sym_new_const(ctx, init);
                 PyType_Watch(TYPE_WATCHER_ID, (PyObject *)type);
