@@ -248,7 +248,7 @@ struct _gc_runtime_state {
     struct gc_generation old[2];
     /* a permanent generation which won't be collected */
     struct gc_generation permanent_generation;
-    struct gc_stats generation_stats;
+    struct gc_stats *generation_stats;
     /* true if we are currently running the collector */
     int collecting;
     // The frame that started the current collection. It might be NULL even when
@@ -448,10 +448,6 @@ typedef struct _PyOptimizationConfig {
     // JIT optimization thresholds
     uint16_t side_exit_initial_value;
     uint16_t side_exit_initial_backoff;
-
-    // Trace fitness thresholds
-    uint16_t fitness_initial;
-    uint16_t fitness_initial_side;
 
     // Optimization flags
     bool specialization_enabled;

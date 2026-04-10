@@ -292,6 +292,8 @@ function createPythonTooltip(data) {
     }
 
     const timeMs = (d.data.value / 1000).toFixed(2);
+    const selfSamples = d.data.self || 0;
+    const selfMs = (selfSamples / 1000).toFixed(2);
     const percentage = ((d.data.value / data.value) * 100).toFixed(2);
     const calls = d.data.calls || 0;
     const childCount = d.children ? d.children.length : 0;
@@ -403,8 +405,13 @@ function createPythonTooltip(data) {
         ${fileLocationHTML}
       </div>
       <div class="tooltip-stats">
-        <span class="tooltip-stat-label">Execution Time:</span>
+        <span class="tooltip-stat-label">Total Time:</span>
         <span class="tooltip-stat-value">${timeMs} ms</span>
+
+        ${selfSamples > 0 ? `
+          <span class="tooltip-stat-label">Self Time:</span>
+          <span class="tooltip-stat-value">${selfMs} ms</span>
+        ` : ''}
 
         <span class="tooltip-stat-label">Percentage:</span>
         <span class="tooltip-stat-value accent">${percentage}%</span>
@@ -1271,6 +1278,7 @@ function accumulateInvertedNode(parent, stackFrame, leaf, isDifferential) {
     const newNode = {
       name: stackFrame.name,
       value: 0,
+      self: 0,
       children: {},
       filename: stackFrame.filename,
       lineno: stackFrame.lineno,
@@ -1293,6 +1301,7 @@ function accumulateInvertedNode(parent, stackFrame, leaf, isDifferential) {
 
   const node = parent.children[key];
   node.value += leaf.value;
+  node.self += stackFrame.self || 0;
   if (leaf.threads) {
     leaf.threads.forEach(t => node.threads.add(t));
   }

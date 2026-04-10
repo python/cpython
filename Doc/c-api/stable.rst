@@ -96,7 +96,7 @@ Contents of the Limited API are :ref:`listed below <limited-api-list>`.
 
    .. seealso:: :pep:`803`
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
 
 .. _stable-abi:
