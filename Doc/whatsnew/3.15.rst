@@ -1457,13 +1457,13 @@ is now performed. This means when the JIT compiler detects that certain user
 code results in constants, the code can be simplified by the JIT.
 (Contributed by Ken Jin and Savannah Ostrowski in :gh:`132732`.)
 
-:term:`reference count`\ s are avoided where safe to do so. This generally
+:term:`Reference count`\ s are avoided where safe to do so. This generally
 reduces the cost of most operations in Python.
 (Contributed by Ken Jin, Donghee Na, Zheao Li, Hai Zhu, Savannah Ostrowski,
 Reiden Ong, Noam Cohen, Tomas Roun, PuQing, Cajetan Rodrigues, and Sacul in :gh:`134584`.)
 
 The JIT optimizer now supports significantly more operations than in 3.14.
-(Contributed by Kumar Aditya, Ken Jin, and Sacul :gh:`131798`)
+(Contributed by Kumar Aditya, Ken Jin, and Sacul in :gh:`131798`)
 
 .. rubric:: Better machine code generation
 
@@ -1480,7 +1480,7 @@ Diego Russo in :gh:`140683` and :gh:`142305`.)
 
 The JIT optimizer's operations have been simplified.
 This was made possible by a refactoring of JIT data structures.
-(Contributed by INSERT NAME HERE in :gh:`148211` and Hai Zhu in :gh:`143421`.)
+(Contributed by Zhongtian Zheng in :gh:`148211` and Hai Zhu in :gh:`143421`.)
 
 
 Removed
