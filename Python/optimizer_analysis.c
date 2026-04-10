@@ -405,6 +405,29 @@ lookup_attr(JitOptContext *ctx, _PyBloomFilter *dependencies, _PyUOpInstruction 
     return sym_new_not_null(ctx);
 }
 
+static void
+optimize_pop_top(JitOptContext *ctx, _PyUOpInstruction *this_instr, JitOptRef value)
+{
+    PyTypeObject *typ = sym_get_type(value);
+    if (PyJitRef_IsBorrowed(value) ||
+        sym_is_immortal(PyJitRef_Unwrap(value)) ||
+        sym_is_null(value)) {
+        ADD_OP(_POP_TOP_NOP, 0, 0);
+    }
+    else if (typ == &PyLong_Type) {
+        ADD_OP(_POP_TOP_INT, 0, 0);
+    }
+    else if (typ == &PyFloat_Type) {
+        ADD_OP(_POP_TOP_FLOAT, 0, 0);
+    }
+    else if (typ == &PyUnicode_Type) {
+        ADD_OP(_POP_TOP_UNICODE, 0, 0);
+    }
+    else {
+        ADD_OP(_POP_TOP, 0, 0);
+    }
+}
+
 /* Look up name via super (normal case from supercheck where
    su_obj_type = Py_TYPE(obj)). */
 static JitOptRef
