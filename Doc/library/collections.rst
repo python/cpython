@@ -1351,7 +1351,7 @@ attribute.
     .. method:: popitem
 
         Remove and return a ``(key, value)`` pair from the wrapped dictionary. Pairs are
-        returned in in the same order as ``data.popitem()``. (For the default
+        returned in the same order as ``data.popitem()``. (For the default
         :meth:`dict.popitem`, this order is :abbr:`LIFO (last-in, first-out)`.) If the
         dictionary is empty, raises a :exc:`KeyError`.
 
