@@ -752,7 +752,8 @@ The following options are accepted:
    :ref:`controlled using environment variables <using-on-controlling-color>`.
 
 .. versionchanged:: next
-   By default, the calendar is in color and can be
+   By default, the month is now also highlighted in color, and
+   the days of the week are also in color. This behavior can be
    :ref:`controlled using environment variables <using-on-controlling-color>`.
 
 *HTML-mode options:*
