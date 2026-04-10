@@ -809,7 +809,7 @@ cleanup:
 }
 
 PyObject *
-_Py_BuiltinCallFast_StackRefSteal(
+_Py_BuiltinCallFast_StackRef(
     _PyStackRef callable,
     _PyStackRef *arguments,
     int total_args)
@@ -817,8 +817,7 @@ _Py_BuiltinCallFast_StackRefSteal(
     PyObject *res;
     STACKREFS_TO_PYOBJECTS(arguments, total_args, args_o);
     if (CONVERSION_FAILED(args_o)) {
-        res = NULL;
-        goto cleanup;
+        return NULL;
     }
     PyObject *callable_o = PyStackRef_AsPyObjectBorrow(callable);
     PyCFunction cfunc = PyCFunction_GET_FUNCTION(callable_o);
@@ -829,15 +828,6 @@ _Py_BuiltinCallFast_StackRefSteal(
     );
     STACKREFS_TO_PYOBJECTS_CLEANUP(args_o);
     assert((res != NULL) ^ (PyErr_Occurred() != NULL));
-cleanup:
-    // arguments is a pointer into the GC visible stack,
-    // so we must NULL out values as we clear them.
-    for (int i = total_args-1; i >= 0; i--) {
-        _PyStackRef tmp = arguments[i];
-        arguments[i] = PyStackRef_NULL;
-        PyStackRef_CLOSE(tmp);
-    }
-    PyStackRef_CLOSE(callable);
     return res;
 }
 
@@ -874,7 +864,7 @@ cleanup:
 PyObject *
 _PyCallMethodDescriptorFast_StackRefSteal(
     _PyStackRef callable,
-    PyMethodDef *meth,
+    PyCFunctionFast cfunc,
     PyObject *self,
     _PyStackRef *arguments,
     int total_args)
@@ -885,10 +875,8 @@ _PyCallMethodDescriptorFast_StackRefSteal(
         res = NULL;
         goto cleanup;
     }
-    assert(((PyMethodDescrObject *)PyStackRef_AsPyObjectBorrow(callable))->d_method == meth);
     assert(self == PyStackRef_AsPyObjectBorrow(arguments[0]));
 
-    PyCFunctionFast cfunc = _PyCFunctionFast_CAST(meth->ml_meth);
     res = cfunc(self, (args_o + 1), total_args - 1);
     STACKREFS_TO_PYOBJECTS_CLEANUP(args_o);
     assert((res != NULL) ^ (PyErr_Occurred() != NULL));
@@ -907,7 +895,7 @@ cleanup:
 PyObject *
 _PyCallMethodDescriptorFastWithKeywords_StackRefSteal(
     _PyStackRef callable,
-    PyMethodDef *meth,
+    PyCFunctionFastWithKeywords cfunc,
     PyObject *self,
     _PyStackRef *arguments,
     int total_args)
@@ -918,11 +906,8 @@ _PyCallMethodDescriptorFastWithKeywords_StackRefSteal(
         res = NULL;
         goto cleanup;
     }
-    assert(((PyMethodDescrObject *)PyStackRef_AsPyObjectBorrow(callable))->d_method == meth);
     assert(self == PyStackRef_AsPyObjectBorrow(arguments[0]));
 
-    PyCFunctionFastWithKeywords cfunc =
-        _PyCFunctionFastWithKeywords_CAST(meth->ml_meth);
     res = cfunc(self, (args_o + 1), total_args-1, NULL);
     STACKREFS_TO_PYOBJECTS_CLEANUP(args_o);
     assert((res != NULL) ^ (PyErr_Occurred() != NULL));

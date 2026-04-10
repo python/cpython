@@ -45,7 +45,7 @@ Dictionary objects
    The first argument can be a :class:`dict`, a :class:`frozendict`, or a
    mapping.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.15
       Also accept :class:`frozendict`.
 
 
@@ -81,7 +81,7 @@ Dictionary objects
       The operation is atomic on :term:`free threading <free-threaded build>`
       when *key* is :class:`str`, :class:`int` or :class:`float`.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.15
       Also accept :class:`frozendict`.
 
 
@@ -95,7 +95,7 @@ Dictionary objects
 
    .. versionadded:: 3.13
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.15
       Also accept :class:`frozendict`.
 
 
@@ -162,7 +162,7 @@ Dictionary objects
 
    .. versionadded:: 3.13
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.15
       Also accept :class:`frozendict`.
 
    See also the :c:func:`PyObject_GetItem` function.
@@ -193,7 +193,7 @@ Dictionary objects
       Calling this API without an :term:`attached thread state` had been allowed for historical
       reason. It is no longer allowed.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.15
       Also accept :class:`frozendict`.
 
 
@@ -211,7 +211,7 @@ Dictionary objects
       the dictionary concurrently. Prefer :c:func:`PyDict_GetItemRef`, which
       returns a :term:`strong reference`.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.15
       Also accept :class:`frozendict`.
 
 
@@ -236,7 +236,7 @@ Dictionary objects
       the dictionary concurrently. Prefer :c:func:`PyDict_GetItemStringRef`,
       which returns a :term:`strong reference`.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.15
       Also accept :class:`frozendict`.
 
 
@@ -248,7 +248,7 @@ Dictionary objects
 
    .. versionadded:: 3.13
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.15
       Also accept :class:`frozendict`.
 
 
@@ -334,7 +334,7 @@ Dictionary objects
 
    The first argument can be a :class:`dict` or a :class:`frozendict`.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.15
       Also accept :class:`frozendict`.
 
 
@@ -344,7 +344,7 @@ Dictionary objects
 
    The first argument can be a :class:`dict` or a :class:`frozendict`.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.15
       Also accept :class:`frozendict`.
 
 
@@ -355,7 +355,7 @@ Dictionary objects
 
    The first argument can be a :class:`dict` or a :class:`frozendict`.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.15
       Also accept :class:`frozendict`.
 
 
@@ -368,7 +368,7 @@ Dictionary objects
 
    The argument can be a :class:`dict` or a :class:`frozendict`.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.15
       Also accept :class:`frozendict`.
 
 
@@ -376,7 +376,7 @@ Dictionary objects
 
    Similar to :c:func:`PyDict_Size`, but without error checking.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.15
       Also accept :class:`frozendict`.
 
 
@@ -450,7 +450,7 @@ Dictionary objects
       :term:`strong reference <strong reference>` (for example, using
       :c:func:`Py_NewRef`).
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.15
       Also accept :class:`frozendict`.
 
 .. c:function:: int PyDict_Merge(PyObject *a, PyObject *b, int override)
