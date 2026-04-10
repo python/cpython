@@ -78,9 +78,8 @@ Dictionary objects
 
    .. note::
 
-      The operation is atomic in the :term:`free-threaded build`, if *key*
-      is a builtin type (e.g. :class:`str`, :class:`int`, :class:`float`) or any
-      other object which does not define :meth:`~object.__hash__` and :meth:`~object.__eq__` methods.
+      The operation is atomic on :term:`free threading <free-threaded build>`
+      when *key* is :class:`str`, :class:`int` or :class:`float`.
 
    .. versionchanged:: next
       Also accept :class:`frozendict`.
@@ -113,9 +112,8 @@ Dictionary objects
 
    .. note::
 
-      The operation is atomic in the :term:`free-threaded build`, if *key*
-      is a builtin type (e.g. :class:`str`, :class:`int`, :class:`float`) or any
-      other object which does not define :meth:`~object.__hash__` and :meth:`~object.__eq__` methods.
+      The operation is atomic on :term:`free threading <free-threaded build>`
+      when *key* is :class:`str`, :class:`int` or :class:`float`.
 
 
 .. c:function:: int PyDict_SetItemString(PyObject *p, const char *key, PyObject *val)
@@ -134,9 +132,8 @@ Dictionary objects
 
    .. note::
 
-      The operation is atomic in the :term:`free-threaded build`, if *key*
-      is a builtin type (e.g. :class:`str`, :class:`int`, :class:`float`) or any
-      other object which does not define :meth:`~object.__hash__` and :meth:`~object.__eq__` methods.
+      The operation is atomic on :term:`free threading <free-threaded build>`
+      when *key* is :class:`str`, :class:`int` or :class:`float`.
 
 
 .. c:function:: int PyDict_DelItemString(PyObject *p, const char *key)
@@ -160,9 +157,8 @@ Dictionary objects
 
    .. note::
 
-      The operation is atomic in the :term:`free-threaded build`, if *key*
-      is a builtin type (e.g. :class:`str`, :class:`int`, :class:`float`) or any
-      other object which does not define :meth:`~object.__hash__` and :meth:`~object.__eq__` methods.
+      The operation is atomic on :term:`free threading <free-threaded build>`
+      when *key* is :class:`str`, :class:`int` or :class:`float`.
 
    .. versionadded:: 3.13
 
@@ -295,9 +291,8 @@ Dictionary objects
 
    .. note::
 
-      The operation is atomic in the :term:`free-threaded build`, if *key*
-      is a builtin type (e.g. :class:`str`, :class:`int`, :class:`float`) or any
-      other object which does not define :meth:`~object.__hash__` and :meth:`~object.__eq__` methods.
+      The operation is atomic on :term:`free threading <free-threaded build>`
+      when *key* is :class:`str`, :class:`int` or :class:`float`.
 
    .. versionadded:: 3.13
 
@@ -318,9 +313,8 @@ Dictionary objects
 
    .. note::
 
-      The operation is atomic in the :term:`free-threaded build`, if *key*
-      is a builtin type (e.g. :class:`str`, :class:`int`, :class:`float`) or any
-      other object which does not define :meth:`~object.__hash__` and :meth:`~object.__eq__` methods.
+      The operation is atomic on :term:`free threading <free-threaded build>`
+      when *key* is :class:`str`, :class:`int` or :class:`float`.
 
    .. versionadded:: 3.13
 
