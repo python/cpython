@@ -522,7 +522,7 @@ Return an empty bytes object at EOF.
 
 static PyObject *
 _io_BytesIO_peek_impl(bytesio *self, Py_ssize_t size)
-/*[clinic end generated code: output=fa4d8ce28b35db9b input=cb06614a3ed0496e]*/
+/*[clinic end generated code: output=fa4d8ce28b35db9b input=1510f0fcf77c0048]*/
 {
     CHECK_CLOSED(self);
 
