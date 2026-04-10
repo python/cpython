@@ -91,8 +91,8 @@ the constructor functions work with any iterable Python object.
 
    .. note::
 
-      The operation is atomic in the :term:`free-threaded build`, if *iterable* is a set,
-      frozenset, dict or frozendict.
+      The operation is atomic on :term:`free threading <free-threaded build>`
+      when *iterable* is a :class:`set`, :class:`frozenset`, :class:`dict` or :class:`frozendict`.
 
 
 .. c:function:: PyObject* PyFrozenSet_New(PyObject *iterable)
@@ -104,8 +104,8 @@ the constructor functions work with any iterable Python object.
 
    .. note::
 
-      The operation is atomic in the :term:`free-threaded build`, if *iterable* is a set,
-      frozenset, dict or frozendict.
+      The operation is atomic on :term:`free threading <free-threaded build>`
+      when *iterable* is a :class:`set`, :class:`frozenset`, :class:`dict` or :class:`frozendict`.
 
 
 The following functions and macros are available for instances of :class:`set`
@@ -136,9 +136,8 @@ or :class:`frozenset` or instances of their subtypes.
 
    .. note::
 
-      The operation is atomic in the :term:`free-threaded build`, if *key*
-      is a simple type (e.g. :class:`str`, :class:`int`, :class:`float`) or any
-      other object which does not define :meth:`~object.__hash__` and :meth:`~object.__eq__` methods.
+      The operation is atomic on :term:`free threading <free-threaded build>`
+      when *key* is :class:`str`, :class:`int`, :class:`float`, :class:`bool` or :class:`bytes`.
 
 .. c:function:: int PySet_Add(PyObject *set, PyObject *key)
 
@@ -152,9 +151,8 @@ or :class:`frozenset` or instances of their subtypes.
 
    .. note::
 
-      The operation is atomic in the :term:`free-threaded build`, if *key*
-      is a simple type (e.g. :class:`str`, :class:`int`, :class:`float`) or any
-      other object which does not define :meth:`~object.__hash__` and :meth:`~object.__eq__` methods.
+      The operation is atomic on :term:`free threading <free-threaded build>`
+      when *key* is :class:`str`, :class:`int`, :class:`float`, :class:`bool` or :class:`bytes`.
 
 
 
@@ -173,9 +171,8 @@ subtypes but not for instances of :class:`frozenset` or its subtypes.
 
    .. note::
 
-      The operation is atomic in the :term:`free-threaded build`, if *key*
-      is a simple type (e.g. :class:`str`, :class:`int`, :class:`float`) or any
-      other object which does not define :meth:`~object.__hash__` and :meth:`~object.__eq__` methods.
+      The operation is atomic on :term:`free threading <free-threaded build>`
+      when *key* is :class:`str`, :class:`int`, :class:`float`, :class:`bool` or :class:`bytes`.
 
 
 .. c:function:: PyObject* PySet_Pop(PyObject *set)
