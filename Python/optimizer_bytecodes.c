@@ -1473,7 +1473,7 @@ dummy_func(void) {
             && sym_is_not_null(self_or_null)) {
             PyMethodDescrObject *method = (PyMethodDescrObject *)callable_o;
             PyCFunction cfunc = method->d_method->ml_meth;
-            ADD_OP(_CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS_INLINE, oparg + 1, (uintptr_t)cfunc);
+            ADD_OP(_CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS_INLINE, oparg, (uintptr_t)cfunc);
         }
         callable = sym_new_not_null(ctx);
     }
@@ -1484,7 +1484,7 @@ dummy_func(void) {
             && sym_is_not_null(self_or_null)) {
             PyMethodDescrObject *method = (PyMethodDescrObject *)callable_o;
             PyCFunction cfunc = method->d_method->ml_meth;
-            ADD_OP(_CALL_METHOD_DESCRIPTOR_FAST_INLINE, oparg + 1, (uintptr_t)cfunc);
+            ADD_OP(_CALL_METHOD_DESCRIPTOR_FAST_INLINE, oparg, (uintptr_t)cfunc);
         }
         callable = sym_new_not_null(ctx);
     }

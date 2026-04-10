@@ -4936,17 +4936,16 @@ dummy_func(
             PyStackRef_CLOSE(temp);
         }
 
-        tier2 op(_CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS_INLINE, (callable, args[oparg], cfunc/4 -- callable, args[oparg])) {
-            PyObject *self = PyStackRef_AsPyObjectBorrow(args[0]);
-            assert(self != NULL);
+        tier2 op(_CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS_INLINE, (callable, self_st, args[oparg], cfunc/4 -- callable, self_st, args[oparg])) {
+            PyObject *self = PyStackRef_AsPyObjectBorrow(self_st);
             STAT_INC(CALL, hit);
             volatile PyCFunctionFastWithKeywords cfunc_v = _PyCFunctionFastWithKeywords_CAST(cfunc);
             PyObject *res_o = _PyCallMethodDescriptorFastWithKeywords_StackRef(
                 callable,
                 cfunc_v,
                 self,
-                args,
-                oparg
+                &self_st,
+                oparg + 1
             );
             if (res_o == NULL) {
                 ERROR_NO_POP();
@@ -5079,8 +5078,8 @@ dummy_func(
             PyStackRef_CLOSE(temp);
         }
 
-        tier2 op(_CALL_METHOD_DESCRIPTOR_FAST_INLINE, (callable, args[oparg], cfunc/4 -- callable, args[oparg])) {
-            PyObject *self = PyStackRef_AsPyObjectBorrow(args[0]);
+        tier2 op(_CALL_METHOD_DESCRIPTOR_FAST_INLINE, (callable, self_st, args[oparg], cfunc/4 -- callable, self_st, args[oparg])) {
+            PyObject *self = PyStackRef_AsPyObjectBorrow(self_st);
             assert(self != NULL);
             STAT_INC(CALL, hit);
             volatile PyCFunctionFast cfunc_v = _PyCFunctionFast_CAST(cfunc);
@@ -5088,8 +5087,8 @@ dummy_func(
                 callable,
                 cfunc_v,
                 self,
-                args,
-                oparg
+                &self_st,
+                oparg + 1
             );
             if (res_o == NULL) {
                 ERROR_NO_POP();
