@@ -4598,9 +4598,9 @@ class SuggestionFormattingTestBase(SuggestionFormattingTestMixin):
                 actual = self.get_suggestion(obj, attr)
                 self.assertEndsWith(actual, expected)
 
-    def test_cross_language_levenshtein_takes_priority(self):
-        # Levenshtein catches trim->strip and indexOf->index before
-        # the cross-language table is consulted
+    def test_cross_language_levenshtein_fallback(self):
+        # When no cross-language entry exists, Levenshtein still works
+        # (e.g., trim->strip is not in the table but Levenshtein catches it)
         actual = self.get_suggestion('', 'trim')
         self.assertIn("strip", actual)
 
@@ -4608,12 +4608,66 @@ class SuggestionFormattingTestBase(SuggestionFormattingTestMixin):
         actual = self.get_suggestion([], 'completely_unknown_method')
         self.assertNotIn("Did you mean", actual)
 
-    def test_cross_language_not_triggered_for_subclasses(self):
-        # Only exact builtin types, not subclasses
+    def test_cross_language_works_for_subclasses(self):
+        # isinstance() check means subclasses also get hints
         class MyList(list):
             pass
         actual = self.get_suggestion(MyList(), 'push')
-        self.assertNotIn("append", actual)
+        self.assertEndsWith(actual, "Did you mean '.append'?")
+
+        class MyDict(dict):
+            pass
+        actual = self.get_suggestion(MyDict(), 'keySet')
+        self.assertEndsWith(actual, "Did you mean '.keys'?")
+
+    @force_not_colorized
+    def test_cross_language_mutable_on_immutable(self):
+        # Mutable method on immutable type suggests the mutable counterpart
+        cases = [
+            (tuple, 'append', "Did you mean to use a 'list' object?"),
+            (tuple, 'extend', "Did you mean to use a 'list' object?"),
+            (tuple, 'insert', "Did you mean to use a 'list' object?"),
+            (tuple, 'remove', "Did you mean to use a 'list' object?"),
+            (frozenset, 'add', "Did you mean to use a 'set' object?"),
+            (frozenset, 'discard', "Did you mean to use a 'set' object?"),
+            (frozenset, 'remove', "Did you mean to use a 'set' object?"),
+            (frozenset, 'update', "Did you mean to use a 'set' object?"),
+            (frozendict, 'update', "Did you mean to use a 'dict' object?"),
+        ]
+        for test_type, attr, expected in cases:
+            with self.subTest(type=test_type.__name__, attr=attr):
+                obj = test_type()
+                actual = self.get_suggestion(obj, attr)
+                self.assertEndsWith(actual, expected)
+
+    @force_not_colorized
+    def test_cross_language_none_suggestions(self):
+        # Common methods tried on None suggest the expected type
+        cases = [
+            ('keys', "Did you expect a 'dict'?"),
+            ('values', "Did you expect a 'dict'?"),
+            ('items', "Did you expect a 'dict'?"),
+            ('upper', "Did you expect a 'str'?"),
+            ('lower', "Did you expect a 'str'?"),
+            ('strip', "Did you expect a 'str'?"),
+            ('split', "Did you expect a 'str'?"),
+            ('sort', "Did you expect a 'list'?"),
+            ('pop', "Did you expect a 'list' or 'dict'?"),
+        ]
+        for attr, expected in cases:
+            with self.subTest(attr=attr):
+                actual = self.get_suggestion(None, attr)
+                self.assertEndsWith(actual, expected)
+
+    @force_not_colorized
+    def test_cross_language_float_bitwise(self):
+        # Bitwise operators on float suggest using int
+        cases = ['__or__', '__and__', '__xor__', '__lshift__', '__rshift__']
+        for attr in cases:
+            with self.subTest(attr=attr):
+                actual = self.get_suggestion(1.0, attr)
+                self.assertIn("'int'", actual)
+                self.assertIn("Bitwise operators", actual)
 
     def make_module(self, code):
         tmpdir = Path(tempfile.mkdtemp())

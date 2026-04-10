@@ -447,6 +447,28 @@ Improved error messages
      ...
      AttributeError: 'dict' object has no attribute 'put'. Use d[k] = v.
 
+  When a mutable method is called on an immutable type, the hint suggests
+  the mutable counterpart:
+
+  .. doctest::
+
+     >>> (1, 2, 3).append(4)  # doctest: +ELLIPSIS
+     Traceback (most recent call last):
+     ...
+     AttributeError: 'tuple' object has no attribute 'append'. Did you mean to use a 'list' object?
+
+  When a common method is called on ``None``, the hint suggests the type
+  the user likely expected:
+
+  .. doctest::
+
+     >>> None.keys()  # doctest: +ELLIPSIS
+     Traceback (most recent call last):
+     ...
+     AttributeError: 'NoneType' object has no attribute 'keys'. Did you expect a 'dict'?
+
+  These hints also work for subclasses of builtin types.
+
   (Contributed by Matt Van Horn in :gh:`146406`.)
 
 

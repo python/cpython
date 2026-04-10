@@ -1147,16 +1147,20 @@ class TracebackException:
         elif exc_type and issubclass(exc_type, AttributeError) and \
                 getattr(exc_value, "name", None) is not None:
             wrong_name = getattr(exc_value, "name", None)
-            suggestion = _compute_suggestion_error(exc_value, exc_traceback, wrong_name)
-            if suggestion:
-                if suggestion.isascii():
-                    self._str += f". Did you mean '.{suggestion}' instead of '.{wrong_name}'?"
-                else:
-                    self._str += f". Did you mean '.{suggestion}' ({suggestion!a}) instead of '.{wrong_name}' ({wrong_name!a})?"
-            elif hasattr(exc_value, 'obj'):
+            # Check cross-language/wrong-type hints first (more specific),
+            # then fall back to Levenshtein distance suggestions.
+            hint = None
+            if hasattr(exc_value, 'obj'):
                 hint = _get_cross_language_hint(exc_value.obj, wrong_name)
-                if hint:
-                    self._str += f". {hint}"
+            if hint:
+                self._str += f". {hint}"
+            else:
+                suggestion = _compute_suggestion_error(exc_value, exc_traceback, wrong_name)
+                if suggestion:
+                    if suggestion.isascii():
+                        self._str += f". Did you mean '.{suggestion}' instead of '.{wrong_name}'?"
+                    else:
+                        self._str += f". Did you mean '.{suggestion}' ({suggestion!a}) instead of '.{wrong_name}' ({wrong_name!a})?"
         elif exc_type and issubclass(exc_type, NameError) and \
                 getattr(exc_value, "name", None) is not None:
             wrong_name = getattr(exc_value, "name", None)
@@ -1663,32 +1667,61 @@ _CASE_COST = 1
 #   2. Must not be catchable by Levenshtein distance (too different from
 #      the correct Python method name).
 #
-# Each entry maps (builtin_type, wrong_name) to a (suggestion, is_raw) tuple.
+# Each entry maps a wrong method name to a list of (type, suggestion, is_raw)
+# tuples. The lookup checks isinstance() so subclasses are also matched.
 # If is_raw is False, the suggestion is wrapped in "Did you mean '.X'?".
 # If is_raw is True, the suggestion is rendered as-is.
 #
 # See https://github.com/python/cpython/issues/146406.
-_CROSS_LANGUAGE_HINTS = frozendict({
+_CROSS_LANGUAGE_HINTS = {
     # list -- JavaScript/Ruby equivalents
-    (list, "push"): ("append", False),
-    (list, "concat"): ("extend", False),
+    "push": [(list, "append", False)],
+    "concat": [(list, "extend", False)],
     # list -- Java/C# equivalents
-    (list, "addAll"): ("extend", False),
-    (list, "contains"): ("Use 'x in list'.", True),
-    # list -- wrong-type suggestion more likely means the user expected a set
-    (list, "add"): ("Did you mean to use a 'set' object?", True),
+    "addAll": [(list, "extend", False)],
+    "contains": [(list, "Use 'x in list'.", True)],
+    # list -- wrong-type suggestion (user expected a set)
+    "add": [(list, "Did you mean to use a 'set' object?", True),
+            (frozenset, "Did you mean to use a 'set' object?", True)],
     # str -- JavaScript equivalents
-    (str, "toUpperCase"): ("upper", False),
-    (str, "toLowerCase"): ("lower", False),
-    (str, "trimStart"): ("lstrip", False),
-    (str, "trimEnd"): ("rstrip", False),
+    "toUpperCase": [(str, "upper", False)],
+    "toLowerCase": [(str, "lower", False)],
+    "trimStart": [(str, "lstrip", False)],
+    "trimEnd": [(str, "rstrip", False)],
     # dict -- Java/JavaScript equivalents
-    (dict, "keySet"): ("keys", False),
-    (dict, "entrySet"): ("items", False),
-    (dict, "entries"): ("items", False),
-    (dict, "putAll"): ("update", False),
-    (dict, "put"): ("Use d[k] = v.", True),
-})
+    "keySet": [(dict, "keys", False)],
+    "entrySet": [(dict, "items", False)],
+    "entries": [(dict, "items", False)],
+    "putAll": [(dict, "update", False)],
+    "put": [(dict, "Use d[k] = v.", True)],
+    # tuple -- mutable method on immutable type (user expected a list)
+    "append": [(tuple, "Did you mean to use a 'list' object?", True)],
+    "extend": [(tuple, "Did you mean to use a 'list' object?", True)],
+    "insert": [(tuple, "Did you mean to use a 'list' object?", True)],
+    "remove": [(tuple, "Did you mean to use a 'list' object?", True),
+               (frozenset, "Did you mean to use a 'set' object?", True)],
+    # frozenset -- mutable method on immutable type (user expected a set)
+    "discard": [(frozenset, "Did you mean to use a 'set' object?", True)],
+    # frozendict -- mutable method on immutable type (user expected a dict)
+    "update": [(frozenset, "Did you mean to use a 'set' object?", True),
+               (frozendict, "Did you mean to use a 'dict' object?", True)],
+    # float -- bitwise operators belong to int
+    "__or__": [(float, "Did you mean to use an 'int' object? Bitwise operators are not supported by 'float'.", True)],
+    "__and__": [(float, "Did you mean to use an 'int' object? Bitwise operators are not supported by 'float'.", True)],
+    "__xor__": [(float, "Did you mean to use an 'int' object? Bitwise operators are not supported by 'float'.", True)],
+    "__lshift__": [(float, "Did you mean to use an 'int' object? Bitwise operators are not supported by 'float'.", True)],
+    "__rshift__": [(float, "Did you mean to use an 'int' object? Bitwise operators are not supported by 'float'.", True)],
+    # NoneType -- common methods tried on None (got None instead of expected type)
+    "keys": [(type(None), "Did you expect a 'dict'?", True)],
+    "values": [(type(None), "Did you expect a 'dict'?", True)],
+    "items": [(type(None), "Did you expect a 'dict'?", True)],
+    "upper": [(type(None), "Did you expect a 'str'?", True)],
+    "lower": [(type(None), "Did you expect a 'str'?", True)],
+    "strip": [(type(None), "Did you expect a 'str'?", True)],
+    "split": [(type(None), "Did you expect a 'str'?", True)],
+    "sort": [(type(None), "Did you expect a 'list'?", True)],
+    "pop": [(type(None), "Did you expect a 'list' or 'dict'?", True)],
+}
 
 
 def _substitution_cost(ch_a, ch_b):
@@ -1753,19 +1786,21 @@ def _check_for_nested_attribute(obj, wrong_name, attrs):
 
 
 def _get_cross_language_hint(obj, wrong_name):
-    """Check if wrong_name is a common method name from another language.
+    """Check if wrong_name is a common method name from another language,
+    a mutable method on an immutable type, or a method tried on None.
 
-    Only checks exact builtin types (list, str, dict) to avoid false
-    positives on subclasses that may intentionally lack these methods.
+    Uses isinstance() so subclasses of builtin types also get hints.
     Returns a formatted hint string, or None.
     """
-    entry = _CROSS_LANGUAGE_HINTS.get((type(obj), wrong_name))
-    if entry is None:
+    entries = _CROSS_LANGUAGE_HINTS.get(wrong_name)
+    if entries is None:
         return None
-    hint, is_raw = entry
-    if is_raw:
-        return hint
-    return f"Did you mean '.{hint}'?"
+    for check_type, hint, is_raw in entries:
+        if isinstance(obj, check_type):
+            if is_raw:
+                return hint
+            return f"Did you mean '.{hint}'?"
+    return None
 
 
 def _get_safe___dir__(obj):
