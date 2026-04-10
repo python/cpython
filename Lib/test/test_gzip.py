@@ -9,7 +9,6 @@ import os
 import struct
 import sys
 import unittest
-import zlib
 from subprocess import PIPE, Popen
 from test.support import catch_unraisable_exception
 from test.support import force_not_colorized_test_class, import_helper
