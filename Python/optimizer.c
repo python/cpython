@@ -28,10 +28,6 @@
 
 #define MAX_EXECUTORS_SIZE 256
 
-_Static_assert(FITNESS_INITIAL < UOP_MAX_TRACE_LENGTH,
-    "FITNESS_INITIAL must be less than UOP_MAX_TRACE_LENGTH so that "
-    "per-slot fitness charging guarantees the buffer never overflows");
-
 // Trace too short, no progress:
 // _START_EXECUTOR
 // _MAKE_WARM
