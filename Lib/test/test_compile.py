@@ -1633,6 +1633,56 @@ class TestSpecifics(unittest.TestCase):
         def f():
             a if (1 if b else c) else d
 
+    def test_while_continue_try_except_exception_table(self):
+        # The try region's exception table must include the backward jump emitted
+        # for 'continue', so pending exceptions (e.g. KeyboardInterrupt) and
+        # tracing behave like other try-body instructions.
+        src = textwrap.dedent('''\
+            def f():
+                while True:
+                    try:
+                        continue
+                    except KeyboardInterrupt:
+                        break
+        ''')
+        f_code = compile(src, '<string>', 'exec').co_consts[0]
+        jump_offsets = [
+            i.offset for i in dis.get_instructions(f_code)
+            if i.opname == 'JUMP_BACKWARD'
+        ]
+        self.assertEqual(len(jump_offsets), 1)
+        joff = jump_offsets[0]
+        entries = dis._parse_exception_table(f_code)
+        self.assertTrue(
+            any(e.start <= joff < e.end for e in entries),
+            f'offset {joff} not covered by {entries!r}',
+        )
+
+    def test_try_literal_stmt_exception_table(self):
+        # Like try + continue, a try body that is only a literal statement must
+        # not leave the "invisible" result-discard outside the exception table.
+        src = textwrap.dedent('''\
+            def f():
+                try:
+                    42
+                except:
+                    pass
+        ''')
+        f_code = compile(src, '<string>', 'exec').co_consts[0]
+        body_offsets = [
+            i.offset for i in dis.get_instructions(f_code)
+            if i.positions is not None
+            and i.positions.lineno == 3
+            and i.opname not in ('RESUME', 'NOP')
+        ]
+        self.assertNotEqual(body_offsets, [])
+        entries = dis._parse_exception_table(f_code)
+        for off in body_offsets:
+            self.assertTrue(
+                any(e.start <= off < e.end for e in entries),
+                f'offset {off} not covered by {entries!r}',
+            )
+
     def test_lineno_propagation_empty_blocks(self):
         # Smoke test. See gh-138714.
         def f():
