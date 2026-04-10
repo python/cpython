@@ -1428,7 +1428,6 @@ end users running Python do not need LLVM installed. Instructions for
 installing LLVM can be found in the `JIT compiler documentation
 <https://github.com/python/cpython/blob/main/Tools/jit/README.md>`__
 for all supported platforms.
-
 (Contributed by Savannah Ostrowski in :gh:`140973`.)
 
 .. rubric:: A new tracing frontend
@@ -1440,7 +1439,6 @@ code. For example, simple Python object creation is now understood by the
 supported. This was made possible by an overhauled JIT tracing frontend
 that records actual execution paths through code, rather than estimating
 them as the previous implementation did.
-
 (Contributed by Ken Jin in :gh:`139109`. Support for Windows added by
 Mark Shannon in :gh:`141703`.)
 
@@ -1450,7 +1448,6 @@ A basic form of register allocation has been added to the JIT compiler's
 optimizer. This allows the JIT compiler to avoid certain stack operations
 altogether and instead operate on registers. This allows the JIT to produce
 more efficient traces by avoiding reads and writes to memory.
-
 (Contributed by Mark Shannon in :gh:`135379`.)
 
 .. rubric:: More JIT optimizations
@@ -1458,26 +1455,32 @@ more efficient traces by avoiding reads and writes to memory.
 More `constant-propagation <https://en.wikipedia.org/wiki/Constant_folding>`__
 is now performed. This means when the JIT compiler detects that certain user
 code results in constants, the code can be simplified by the JIT.
-
 (Contributed by Ken Jin and Savannah Ostrowski in :gh:`132732`.)
 
-The JIT avoids :term:`reference count`\ s where possible. This generally
+:term:`Reference count`\ s are avoided whenever it is safe to do so. This generally
 reduces the cost of most operations in Python.
-
 (Contributed by Ken Jin, Donghee Na, Zheao Li, Hai Zhu, Savannah Ostrowski,
 Reiden Ong, Noam Cohen, Tomas Roun, PuQing, Cajetan Rodrigues, and Sacul in :gh:`134584`.)
+
+The JIT optimizer now supports significantly more operations than in 3.14.
+(Contributed by Kumar Aditya, Ken Jin, and Sacul in :gh:`131798`.)
 
 .. rubric:: Better machine code generation
 
 The JIT compiler's machine code generator now produces better machine code
 for x86-64 and AArch64 macOS and Linux targets. In general, users should
 experience lower memory usage for generated machine code and more efficient
-machine code versus the old JIT.
-
+machine code versus 3.14.
 (Contributed by Brandt Bucher in :gh:`136528` and :gh:`136528`.
 Implementation for AArch64 contributed by Mark Shannon in :gh:`139855`.
 Additional optimizations for AArch64 contributed by Mark Shannon and
 Diego Russo in :gh:`140683` and :gh:`142305`.)
+
+.. rubric:: Maintainability
+
+The JIT optimizer's operations have been simplified.
+This was made possible by a refactoring of JIT data structures.
+(Contributed by Zhongtian Zheng in :gh:`148211` and Hai Zhu in :gh:`143421`.)
 
 
 Removed
