@@ -1,1 +1,1 @@
-Strip CFI directives from JIT stencils to fix build failures with Apple LLVM 21.
+Use ``-fno-unwind-tables`` for JIT stencils to fix build failures with Apple LLVM 21.
