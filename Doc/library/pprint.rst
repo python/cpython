@@ -220,7 +220,7 @@ PrettyPrinter Objects
    .. versionchanged:: 3.11
       No longer attempts to write to :data:`!sys.stdout` if it is ``None``.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.15
       Added the *expand* parameter.
 
 

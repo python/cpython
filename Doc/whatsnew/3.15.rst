@@ -822,6 +822,17 @@ http.cookies
   (Contributed by Nick Burns and Senthil Kumaran in :gh:`92936`.)
 
 
+http.server
+-----------
+
+* The logging of :mod:`~http.server.BaseHTTPRequestHandler`,
+  as used by the :ref:`command-line interface <http-server-cli>`,
+  is colored by default.
+  This can be controlled with :ref:`environment variables
+  <using-on-controlling-color>`.
+  (Contributed by Hugo van Kemenade in :gh:`146292`.)
+
+
 inspect
 -------
 
@@ -1097,6 +1108,10 @@ tarfile
 timeit
 ------
 
+* The output of the :mod:`timeit` command-line interface is colored by default.
+  This can be controlled with
+  :ref:`environment variables <using-on-controlling-color>`.
+  (Contributed by Hugo van Kemenade in :gh:`146609`.)
 * The command-line interface now colorizes error tracebacks
   by default. This can be controlled with
   :ref:`environment variables <using-on-controlling-color>`.
@@ -1292,6 +1307,25 @@ warnings
   constructed starting from different parent directories of the filename
   (with ``/__init__.py``, ``.py`` and, on Windows, ``.pyw`` stripped).
   (Contributed by Serhiy Storchaka in :gh:`135801`.)
+
+
+wave
+----
+
+* Added support for IEEE floating-point WAVE audio
+  (``WAVE_FORMAT_IEEE_FLOAT``) in :mod:`wave`.
+
+* Added :meth:`wave.Wave_read.getformat`, :meth:`wave.Wave_write.getformat`,
+  and :meth:`wave.Wave_write.setformat` for explicit frame format handling.
+
+* :meth:`wave.Wave_write.setparams` accepts both 7-item tuples including
+  ``format`` and 6-item tuples for backwards compatibility (defaulting to
+  ``WAVE_FORMAT_PCM``).
+
+* ``WAVE_FORMAT_IEEE_FLOAT`` output now includes a ``fact`` chunk,
+  as required for non-PCM WAVE formats.
+
+(Contributed by Lionel Koenig and Michiel W. Beijen in :gh:`60729`.)
 
 
 xml.parsers.expat
@@ -1563,21 +1597,6 @@ typing
 wave
 ----
 
-* Added support for IEEE floating-point WAVE audio
-  (``WAVE_FORMAT_IEEE_FLOAT``) in :mod:`wave`.
-
-* Added :meth:`wave.Wave_read.getformat`, :meth:`wave.Wave_write.getformat`,
-  and :meth:`wave.Wave_write.setformat` for explicit frame format handling.
-
-* :meth:`wave.Wave_write.setparams` accepts both 7-item tuples including
-  ``format`` and 6-item tuples for backwards compatibility (defaulting to
-  ``WAVE_FORMAT_PCM``).
-
-* ``WAVE_FORMAT_IEEE_FLOAT`` output now includes a ``fact`` chunk,
-  as required for non-PCM WAVE formats.
-
-(Contributed by Lionel Koenig and Michiel W. Beijen in :gh:`60729`.)
-
 * Removed the ``getmark()``, ``setmark()`` and ``getmarkers()`` methods
   of the :class:`~wave.Wave_read` and :class:`~wave.Wave_write` classes,
   which were deprecated since Python 3.13.
@@ -1780,6 +1799,17 @@ New features
 
 * Add :c:func:`PyTuple_FromArray` to create a :class:`tuple` from an array.
   (Contributed by Victor Stinner in :gh:`111489`.)
+
+* Add functions that are guaranteed to be safe for use in
+  :c:member:`~PyTypeObject.tp_traverse` handlers:
+  :c:func:`PyObject_GetTypeData_DuringGC`,
+  :c:func:`PyObject_GetItemData_DuringGC`,
+  :c:func:`PyType_GetModuleState_DuringGC`,
+  :c:func:`PyModule_GetState_DuringGC`, :c:func:`PyModule_GetToken_DuringGC`,
+  :c:func:`PyType_GetBaseByToken_DuringGC`,
+  :c:func:`PyType_GetModule_DuringGC`,
+  :c:func:`PyType_GetModuleByToken_DuringGC`.
+  (Contributed by Petr Viktorin in :gh:`145925`.)
 
 * Add :c:func:`PyObject_Dump` to dump an object to ``stderr``.
   It should only be used for debugging.

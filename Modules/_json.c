@@ -258,7 +258,10 @@ write_escaped_ascii(PyUnicodeWriter *writer, PyObject *pystr)
         if (PyUnicodeWriter_WriteChar(writer, '"') < 0) {
             return -1;
         }
-        if (PyUnicodeWriter_WriteStr(writer, pystr) < 0) {
+        // gh-148241: Avoid PyUnicodeWriter_WriteStr() which calls str(obj)
+        // on str subclasses
+        assert(PyUnicode_IS_ASCII(pystr));
+        if (PyUnicodeWriter_WriteASCII(writer, input, input_chars) < 0) {
             return -1;
         }
         return PyUnicodeWriter_WriteChar(writer, '"');
@@ -399,7 +402,9 @@ write_escaped_unicode(PyUnicodeWriter *writer, PyObject *pystr)
         if (PyUnicodeWriter_WriteChar(writer, '"') < 0) {
             return -1;
         }
-        if (PyUnicodeWriter_WriteStr(writer, pystr) < 0) {
+        // gh-148241: Avoid PyUnicodeWriter_WriteStr() which calls str(obj)
+        // on str subclasses
+        if (_PyUnicodeWriter_WriteStr((_PyUnicodeWriter*)writer, pystr) < 0) {
             return -1;
         }
         return PyUnicodeWriter_WriteChar(writer, '"');
