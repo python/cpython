@@ -3211,8 +3211,7 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertEqual(res, TIER2_THRESHOLD)
         uops = get_opnames(ex)
         self.assertNotIn("_LOAD_ATTR_METHOD_NO_DICT", uops)
-        self.assertNotIn("_INSERT_1_LOAD_CONST_INLINE", uops)
-        self.assertIn("_INSERT_1_LOAD_CONST_INLINE_BORROW", uops)
+        self.assertIn("_LOAD_CONST_INLINE_BORROW", uops)
 
     def test_store_fast_refcount_elimination(self):
         def foo(x):
@@ -4688,6 +4687,21 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertIn("_UNARY_INVERT", uops)
         self.assertIn("_POP_TOP_NOP", uops)
         self.assertLessEqual(count_ops(ex, "_POP_TOP"), 2)
+
+    def test_make_function(self):
+        def testfunc(n):
+            x = 0
+            for _ in range(n):
+                func = lambda: 1
+                x += func()
+            return x
+
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, TIER2_THRESHOLD)
+        uops = get_opnames(ex)
+
+        self.assertIn("_MAKE_FUNCTION", uops)
+        self.assertEqual(uops.count("_POP_TOP_NOP"), 2)
 
     def test_iter_check_list(self):
         def testfunc(n):
