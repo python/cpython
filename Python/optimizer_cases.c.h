@@ -3939,6 +3939,22 @@
             break;
         }
 
+        case _GUARD_CALLABLE_BUILTIN_CLASS: {
+            JitOptRef callable;
+            callable = stack_pointer[-2 - oparg];
+            PyObject *callable_o = sym_get_const(ctx, callable);
+            if (callable_o && sym_matches_type(callable, &PyType_Type)) {
+                PyTypeObject *tp = (PyTypeObject *)callable_o;
+                if (tp->tp_vectorcall != NULL) {
+                    ADD_OP(_NOP, 0, 0);
+                }
+            }
+            else {
+                sym_set_type(callable, &PyType_Type);
+            }
+            break;
+        }
+
         case _CALL_BUILTIN_CLASS: {
             JitOptRef res;
             res = sym_new_not_null(ctx);

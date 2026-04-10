@@ -1574,6 +1574,12 @@ Compiler flags
 
    .. versionadded:: 3.7
 
+.. envvar:: CFLAGS_CEVAL
+
+   Flags used to compile ``Python/ceval.c``.
+
+   .. versionadded:: 3.14.5
+
 .. envvar:: CCSHARED
 
    Compiler flags used to build a shared library.
