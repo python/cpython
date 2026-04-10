@@ -355,6 +355,9 @@ PyAPI_FUNC(PyObject *) PyType_FromMetaclass(PyTypeObject*, PyObject*, PyType_Spe
 PyAPI_FUNC(void *) PyObject_GetTypeData(PyObject *obj, PyTypeObject *cls);
 PyAPI_FUNC(Py_ssize_t) PyType_GetTypeDataSize(PyTypeObject *cls);
 #endif
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= _Py_PACK_VERSION(3, 15)
+PyAPI_FUNC(void *) PyObject_GetItemData(PyObject *obj);
+#endif
 #if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030E0000
 PyAPI_FUNC(int) PyType_GetBaseByToken(PyTypeObject *, void *, PyTypeObject **);
 #define Py_TP_USE_SPEC NULL
@@ -781,6 +784,7 @@ PyAPI_FUNC(PyObject *) PyType_GetModuleByToken(PyTypeObject *type,
                                                const void *token);
 PyAPI_FUNC(void *) PyObject_GetTypeData_DuringGC(PyObject *obj,
                                                  PyTypeObject *cls);
+PyAPI_FUNC(void *) PyObject_GetItemData_DuringGC(PyObject *obj);
 PyAPI_FUNC(void *) PyType_GetModuleState_DuringGC(PyTypeObject *);
 PyAPI_FUNC(int) PyType_GetBaseByToken_DuringGC(PyTypeObject *,
                                                void *, PyTypeObject **);

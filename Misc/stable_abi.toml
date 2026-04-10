@@ -2666,7 +2666,12 @@
 [function.Py_SET_SIZE]
     # Before 3.15, this was a macro that accessed the PyObject member
     added = '3.15'
+[function.PyObject_GetItemData]
+    # Before 3.15, this was only available in the unstable CPython API
+    added = '3.15'
 [function.PyObject_GetTypeData_DuringGC]
+    added = '3.15'
+[function.PyObject_GetItemData_DuringGC]
     added = '3.15'
 [function.PyType_GetModuleState_DuringGC]
     added = '3.15'
