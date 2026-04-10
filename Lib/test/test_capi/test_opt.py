@@ -1643,7 +1643,7 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
         self.assertNotIn("_BINARY_OP_ADD_INT", uops)
-        self.assertNotIn("_POP_TWO_LOAD_CONST_INLINE_BORROW", uops)
+        self.assertNotIn("_POP_TWO", uops)
         self.assertNotIn("_GUARD_NOS_INT", uops)
         self.assertNotIn("_GUARD_TOS_INT", uops)
 
@@ -1808,7 +1808,6 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
         self.assertNotIn("_UNARY_NEGATIVE", uops)
-        self.assertNotIn("_POP_TOP_LOAD_CONST_INLINE_BORROW", uops)
 
     def test_unary_not_pop_top_load_const_inline_borrow(self):
         def testfunc(n):
@@ -1827,9 +1826,9 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertNotIn("_UNARY_NOT", uops)
         # TODO (gh-143723): After refactoring TO_BOOL_INT to eliminate redundant
         # refcounts, 'not a' is now constant-folded and currently lowered to
-        # _POP_TOP_LOAD_CONST_INLINE_BORROW. Re-enable once constant folding
-        # avoids this fused pop+const uop.
-        # self.assertNotIn("_POP_TOP_LOAD_CONST_INLINE_BORROW", uops)
+        # _POP_TOP + _LOAD_CONST_INLINE_BORROW. Re-enable once constant folding
+        # avoids emitting these.
+        # self.assertNotIn("_LOAD_CONST_INLINE_BORROW", uops)
 
     def test_unary_invert_insert_1_load_const_inline_borrow(self):
         def testfunc(n):
@@ -1863,7 +1862,7 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
         self.assertNotIn("_COMPARE_OP", uops)
-        self.assertNotIn("_POP_TWO_LOAD_CONST_INLINE_BORROW", uops)
+        self.assertNotIn("_POP_TWO", uops)
 
     def test_compare_op_int_insert_two_load_const_inline_borrow(self):
         def testfunc(n):
@@ -1880,7 +1879,7 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
         self.assertNotIn("_COMPARE_OP_INT", uops)
-        self.assertIn("_INSERT_2_LOAD_CONST_INLINE_BORROW", uops)
+        self.assertIn("_LOAD_CONST_INLINE_BORROW", uops)
 
     def test_compare_op_str_insert_two_load_const_inline_borrow(self):
         def testfunc(n):
@@ -1897,7 +1896,7 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
         self.assertNotIn("_COMPARE_OP_STR", uops)
-        self.assertIn("_INSERT_2_LOAD_CONST_INLINE_BORROW", uops)
+        self.assertIn("_LOAD_CONST_INLINE_BORROW", uops)
 
     def test_compare_op_float_insert_two_load_const_inline_borrow(self):
         def testfunc(n):
@@ -1914,7 +1913,7 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
         self.assertNotIn("_COMPARE_OP_FLOAT", uops)
-        self.assertIn("_INSERT_2_LOAD_CONST_INLINE_BORROW", uops)
+        self.assertIn("_LOAD_CONST_INLINE_BORROW", uops)
 
     def test_contains_op_pop_two_load_const_inline_borrow(self):
         def testfunc(n):
@@ -1931,7 +1930,7 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
         self.assertNotIn("_CONTAINS_OP", uops)
-        self.assertNotIn("_POP_TWO_LOAD_CONST_INLINE_BORROW", uops)
+        self.assertNotIn("_POP_TWO", uops)
 
     def test_to_bool_bool_contains_op_set(self):
         """
@@ -2173,7 +2172,7 @@ class TestUopsOptimization(unittest.TestCase):
         uops = get_opnames(ex)
         self.assertNotIn("_GUARD_TOS_ANY_SET", uops)
         # _CONTAINS_OP_SET is constant-folded away for frozenset literals
-        self.assertIn("_INSERT_2_LOAD_CONST_INLINE_BORROW", uops)
+        self.assertIn("_LOAD_CONST_INLINE_BORROW", uops)
 
     def test_remove_guard_for_known_type_tuple(self):
         def f(n):
@@ -2995,7 +2994,6 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertNotIn("_CALL_ISINSTANCE", uops)
         self.assertNotIn("_TO_BOOL_BOOL", uops)
         self.assertNotIn(self.guard_is_true, uops)
-        self.assertNotIn("_POP_TOP_LOAD_CONST_INLINE_BORROW", uops)
 
     def test_call_isinstance_is_false(self):
         def testfunc(n):
@@ -3013,7 +3011,6 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertNotIn("_CALL_ISINSTANCE", uops)
         self.assertNotIn("_TO_BOOL_BOOL", uops)
         self.assertNotIn(self.guard_is_false, uops)
-        self.assertNotIn("_POP_TOP_LOAD_CONST_INLINE_BORROW", uops)
 
     def test_call_isinstance_subclass(self):
         def testfunc(n):
@@ -3031,7 +3028,6 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertNotIn("_CALL_ISINSTANCE", uops)
         self.assertNotIn("_TO_BOOL_BOOL", uops)
         self.assertNotIn(self.guard_is_true, uops)
-        self.assertNotIn("_POP_TOP_LOAD_CONST_INLINE_BORROW", uops)
 
     def test_call_isinstance_unknown_object(self):
         def testfunc(n):
@@ -4404,7 +4400,7 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertEqual(res, TIER2_THRESHOLD)
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
-        self.assertIn("_INSERT_2_LOAD_CONST_INLINE_BORROW", uops)
+        self.assertIn("_LOAD_CONST_INLINE_BORROW", uops)
         self.assertNotIn("_BINARY_OP_SUBSCR_DICT", uops)
 
     def test_binary_subscr_frozendict_const_fold(self):
@@ -4634,7 +4630,7 @@ class TestUopsOptimization(unittest.TestCase):
 
         self.assertIn("_LOAD_ATTR_PROPERTY_FRAME", uops)
         # This is a sign the optimizer ran and didn't hit contradiction.
-        self.assertIn("_INSERT_2_LOAD_CONST_INLINE_BORROW", uops)
+        self.assertIn("_LOAD_CONST_INLINE_BORROW", uops)
 
     def test_unary_negative(self):
         def testfunc(n):

@@ -382,14 +382,10 @@ const uint32_t _PyUop_Flags[MAX_UOP_ID+1] = {
     [_DYNAMIC_EXIT] = HAS_ESCAPES_FLAG,
     [_CHECK_VALIDITY] = HAS_DEOPT_FLAG,
     [_LOAD_CONST_INLINE] = HAS_PURE_FLAG,
-    [_POP_TOP_LOAD_CONST_INLINE] = HAS_ESCAPES_FLAG | HAS_PURE_FLAG,
     [_LOAD_CONST_INLINE_BORROW] = HAS_PURE_FLAG,
     [_POP_CALL] = HAS_ESCAPES_FLAG,
     [_POP_CALL_ONE] = HAS_ESCAPES_FLAG,
     [_POP_CALL_TWO] = HAS_ESCAPES_FLAG,
-    [_POP_TOP_LOAD_CONST_INLINE_BORROW] = HAS_ESCAPES_FLAG,
-    [_POP_TWO_LOAD_CONST_INLINE_BORROW] = HAS_ESCAPES_FLAG,
-    [_INSERT_2_LOAD_CONST_INLINE_BORROW] = 0,
     [_SHUFFLE_3_LOAD_CONST_INLINE_BORROW] = 0,
     [_START_EXECUTOR] = HAS_DEOPT_FLAG,
     [_MAKE_WARM] = 0,
@@ -3556,15 +3552,6 @@ const _PyUopCachingInfo _PyUop_Caching[MAX_UOP_ID+1] = {
             { -1, -1, -1 },
         },
     },
-    [_POP_TOP_LOAD_CONST_INLINE] = {
-        .best = { 1, 1, 1, 1 },
-        .entries = {
-            { -1, -1, -1 },
-            { 1, 1, _POP_TOP_LOAD_CONST_INLINE_r11 },
-            { -1, -1, -1 },
-            { -1, -1, -1 },
-        },
-    },
     [_LOAD_CONST_INLINE_BORROW] = {
         .best = { 0, 1, 2, 2 },
         .entries = {
@@ -3599,33 +3586,6 @@ const _PyUopCachingInfo _PyUop_Caching[MAX_UOP_ID+1] = {
             { -1, -1, -1 },
             { -1, -1, -1 },
             { 0, 3, _POP_CALL_TWO_r30 },
-        },
-    },
-    [_POP_TOP_LOAD_CONST_INLINE_BORROW] = {
-        .best = { 1, 1, 1, 1 },
-        .entries = {
-            { -1, -1, -1 },
-            { 1, 1, _POP_TOP_LOAD_CONST_INLINE_BORROW_r11 },
-            { -1, -1, -1 },
-            { -1, -1, -1 },
-        },
-    },
-    [_POP_TWO_LOAD_CONST_INLINE_BORROW] = {
-        .best = { 2, 2, 2, 2 },
-        .entries = {
-            { -1, -1, -1 },
-            { -1, -1, -1 },
-            { 1, 2, _POP_TWO_LOAD_CONST_INLINE_BORROW_r21 },
-            { -1, -1, -1 },
-        },
-    },
-    [_INSERT_2_LOAD_CONST_INLINE_BORROW] = {
-        .best = { 0, 1, 2, 2 },
-        .entries = {
-            { 3, 0, _INSERT_2_LOAD_CONST_INLINE_BORROW_r03 },
-            { 3, 1, _INSERT_2_LOAD_CONST_INLINE_BORROW_r13 },
-            { 3, 2, _INSERT_2_LOAD_CONST_INLINE_BORROW_r23 },
-            { -1, -1, -1 },
         },
     },
     [_SHUFFLE_3_LOAD_CONST_INLINE_BORROW] = {
@@ -4589,18 +4549,12 @@ const uint16_t _PyUop_Uncached[MAX_UOP_REGS_ID+1] = {
     [_LOAD_CONST_INLINE_r01] = _LOAD_CONST_INLINE,
     [_LOAD_CONST_INLINE_r12] = _LOAD_CONST_INLINE,
     [_LOAD_CONST_INLINE_r23] = _LOAD_CONST_INLINE,
-    [_POP_TOP_LOAD_CONST_INLINE_r11] = _POP_TOP_LOAD_CONST_INLINE,
     [_LOAD_CONST_INLINE_BORROW_r01] = _LOAD_CONST_INLINE_BORROW,
     [_LOAD_CONST_INLINE_BORROW_r12] = _LOAD_CONST_INLINE_BORROW,
     [_LOAD_CONST_INLINE_BORROW_r23] = _LOAD_CONST_INLINE_BORROW,
     [_POP_CALL_r20] = _POP_CALL,
     [_POP_CALL_ONE_r30] = _POP_CALL_ONE,
     [_POP_CALL_TWO_r30] = _POP_CALL_TWO,
-    [_POP_TOP_LOAD_CONST_INLINE_BORROW_r11] = _POP_TOP_LOAD_CONST_INLINE_BORROW,
-    [_POP_TWO_LOAD_CONST_INLINE_BORROW_r21] = _POP_TWO_LOAD_CONST_INLINE_BORROW,
-    [_INSERT_2_LOAD_CONST_INLINE_BORROW_r03] = _INSERT_2_LOAD_CONST_INLINE_BORROW,
-    [_INSERT_2_LOAD_CONST_INLINE_BORROW_r13] = _INSERT_2_LOAD_CONST_INLINE_BORROW,
-    [_INSERT_2_LOAD_CONST_INLINE_BORROW_r23] = _INSERT_2_LOAD_CONST_INLINE_BORROW,
     [_SHUFFLE_3_LOAD_CONST_INLINE_BORROW_r03] = _SHUFFLE_3_LOAD_CONST_INLINE_BORROW,
     [_SHUFFLE_3_LOAD_CONST_INLINE_BORROW_r13] = _SHUFFLE_3_LOAD_CONST_INLINE_BORROW,
     [_SHUFFLE_3_LOAD_CONST_INLINE_BORROW_r23] = _SHUFFLE_3_LOAD_CONST_INLINE_BORROW,
@@ -5422,10 +5376,6 @@ const char *const _PyOpcode_uop_name[MAX_UOP_REGS_ID+1] = {
     [_INIT_CALL_PY_EXACT_ARGS_3_r01] = "_INIT_CALL_PY_EXACT_ARGS_3_r01",
     [_INIT_CALL_PY_EXACT_ARGS_4] = "_INIT_CALL_PY_EXACT_ARGS_4",
     [_INIT_CALL_PY_EXACT_ARGS_4_r01] = "_INIT_CALL_PY_EXACT_ARGS_4_r01",
-    [_INSERT_2_LOAD_CONST_INLINE_BORROW] = "_INSERT_2_LOAD_CONST_INLINE_BORROW",
-    [_INSERT_2_LOAD_CONST_INLINE_BORROW_r03] = "_INSERT_2_LOAD_CONST_INLINE_BORROW_r03",
-    [_INSERT_2_LOAD_CONST_INLINE_BORROW_r13] = "_INSERT_2_LOAD_CONST_INLINE_BORROW_r13",
-    [_INSERT_2_LOAD_CONST_INLINE_BORROW_r23] = "_INSERT_2_LOAD_CONST_INLINE_BORROW_r23",
     [_INSERT_NULL] = "_INSERT_NULL",
     [_INSERT_NULL_r10] = "_INSERT_NULL_r10",
     [_IS_NONE] = "_IS_NONE",
@@ -5705,10 +5655,6 @@ const char *const _PyOpcode_uop_name[MAX_UOP_REGS_ID+1] = {
     [_POP_TOP_INT_r10] = "_POP_TOP_INT_r10",
     [_POP_TOP_INT_r21] = "_POP_TOP_INT_r21",
     [_POP_TOP_INT_r32] = "_POP_TOP_INT_r32",
-    [_POP_TOP_LOAD_CONST_INLINE] = "_POP_TOP_LOAD_CONST_INLINE",
-    [_POP_TOP_LOAD_CONST_INLINE_r11] = "_POP_TOP_LOAD_CONST_INLINE_r11",
-    [_POP_TOP_LOAD_CONST_INLINE_BORROW] = "_POP_TOP_LOAD_CONST_INLINE_BORROW",
-    [_POP_TOP_LOAD_CONST_INLINE_BORROW_r11] = "_POP_TOP_LOAD_CONST_INLINE_BORROW_r11",
     [_POP_TOP_NOP] = "_POP_TOP_NOP",
     [_POP_TOP_NOP_r00] = "_POP_TOP_NOP_r00",
     [_POP_TOP_NOP_r10] = "_POP_TOP_NOP_r10",
@@ -5723,8 +5669,6 @@ const char *const _PyOpcode_uop_name[MAX_UOP_REGS_ID+1] = {
     [_POP_TOP_UNICODE_r32] = "_POP_TOP_UNICODE_r32",
     [_POP_TWO] = "_POP_TWO",
     [_POP_TWO_r20] = "_POP_TWO_r20",
-    [_POP_TWO_LOAD_CONST_INLINE_BORROW] = "_POP_TWO_LOAD_CONST_INLINE_BORROW",
-    [_POP_TWO_LOAD_CONST_INLINE_BORROW_r21] = "_POP_TWO_LOAD_CONST_INLINE_BORROW_r21",
     [_PUSH_EXC_INFO] = "_PUSH_EXC_INFO",
     [_PUSH_EXC_INFO_r02] = "_PUSH_EXC_INFO_r02",
     [_PUSH_EXC_INFO_r12] = "_PUSH_EXC_INFO_r12",
@@ -6652,8 +6596,6 @@ int _PyUop_num_popped(int opcode, int oparg)
             return 0;
         case _LOAD_CONST_INLINE:
             return 0;
-        case _POP_TOP_LOAD_CONST_INLINE:
-            return 1;
         case _LOAD_CONST_INLINE_BORROW:
             return 0;
         case _POP_CALL:
@@ -6662,12 +6604,6 @@ int _PyUop_num_popped(int opcode, int oparg)
             return 3;
         case _POP_CALL_TWO:
             return 4;
-        case _POP_TOP_LOAD_CONST_INLINE_BORROW:
-            return 1;
-        case _POP_TWO_LOAD_CONST_INLINE_BORROW:
-            return 2;
-        case _INSERT_2_LOAD_CONST_INLINE_BORROW:
-            return 2;
         case _SHUFFLE_3_LOAD_CONST_INLINE_BORROW:
             return 3;
         case _START_EXECUTOR:
