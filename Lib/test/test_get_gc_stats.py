@@ -47,10 +47,18 @@ class TestGetGCStats(unittest.TestCase):
             import os
             import sys
             import _remote_debugging
+            try:
+                from _remote_debugging import PROCESS_VM_READV_SUPPORTED
+                supported = True
+            except ImportError:
+                supported = False
 
-            pid = int(sys.argv[1])
-            gc_stats = _remote_debugging.get_gc_stats(pid, all_interpreters={all_interpreters})
-            print(json.dumps(gc_stats, indent=1))
+            if supported:
+                pid = int(sys.argv[1])
+                gc_stats = _remote_debugging.get_gc_stats(pid, all_interpreters={all_interpreters})
+                print(json.dumps(gc_stats, indent=1))
+            else:
+                print(json.dumps(dict([("error", "not supported")])))
             """)
 
         gc.collect(0)
@@ -67,7 +75,13 @@ class TestGetGCStats(unittest.TestCase):
             result.returncode, 0,
             f"stdout: {result.stdout}\nstderr: {result.stderr}"
         )
-        return result
+        data = json.loads(result.stdout)
+        if isinstance(data, dict) and "error" in data:
+            if sys.platform == "linux":
+                self.skipTest("Testing on Linux requires process_vm_readv support")
+            else:
+                self.assertTrue(False, f"Unexpected error: {data}")
+        return data
 
     def _run_in_interpreter(self, interp):
         source = f"""if True:
@@ -104,8 +118,8 @@ class TestGetGCStats(unittest.TestCase):
                                     (before, after))
 
     def test_get_gc_stats_for_main_interpreter(self):
-        before_stats = json.loads(self._run_child_process(False).stdout)
-        after_stats = json.loads(self._run_child_process(False).stdout)
+        before_stats = self._run_child_process(False)
+        after_stats = self._run_child_process(False)
 
         before_iids = get_interpreter_identifiers(before_stats)
         after_iids = get_interpreter_identifiers(after_stats)
@@ -136,9 +150,9 @@ class TestGetGCStats(unittest.TestCase):
         interp = interpreters.create()
 
         self._run_in_interpreter(interp) # ensure that subinterpeter have GC stats
-        before_stats = json.loads(self._run_child_process(True).stdout)
+        before_stats = self._run_child_process(True)
         self._run_in_interpreter(interp) # ensure that GC stats in subinterpreter changed
-        after_stats = json.loads(self._run_child_process(True).stdout)
+        after_stats = self._run_child_process(True)
         interp.close()
 
         before_iids = get_interpreter_identifiers(before_stats)
@@ -171,9 +185,9 @@ class TestGetGCStats(unittest.TestCase):
         interp = interpreters.create()
 
         self._run_in_interpreter(interp) # ensure that subinterpeter have GC stats
-        before_stats = json.loads(self._run_child_process(False).stdout)
+        before_stats = self._run_child_process(False)
         self._run_in_interpreter(interp) # ensure that GC stats in subinterpreter changed
-        after_stats = json.loads(self._run_child_process(False).stdout)
+        after_stats = self._run_child_process(False)
         interp.close()
 
         before_iids = get_interpreter_identifiers(before_stats)
