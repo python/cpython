@@ -28,8 +28,8 @@ PyDict_CheckExact:atomic:
 # Creation - pure allocation, no shared state
 PyDict_New:atomic:
 
-# Lock-free lookups - use _Py_dict_lookup_threadsafe(), no locking
-# atomic with simple types
+# Lock-free lookups - use _Py_dict_lookup_threadsafe(), no locking.
+# Atomic with simple types.
 PyDict_Contains:shared:
 PyDict_ContainsString:atomic:
 PyDict_GetItemRef:shared:
