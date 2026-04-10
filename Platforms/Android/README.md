@@ -91,17 +91,13 @@ similar to the `Android` directory of the CPython source tree.
 
 ## Testing
 
-The Python test suite can be run on Linux, macOS, or Windows.
+Tests can be run  on Linux, macOS, or Windows, using either an Android emulator
+or a physical device.
 
 On Linux, the emulator needs access to the KVM virtualization interface. This may
 require adding your user to a group, or changing your udev rules. On GitHub
 Actions, the test script will do this automatically using the commands shown
 [here](https://github.blog/changelog/2024-04-02-github-actions-hardware-accelerated-android-virtualization-now-available/).
-
-You can run the test suite by doing a build as described above, and then running
-`python3 Platforms/Android test`. On Windows, you won't be able to do the build
-on the same machine, so you'll have to copy the `cross-build/HOST/prefix` directory
-from somewhere else.
 
 The test script supports the following modes:
 
@@ -129,7 +125,14 @@ By default, the only messages the script will show are Python's own stdout and
 stderr. Add the `-v` option to also show Gradle output, and non-Python logcat
 messages.
 
-Any other arguments on the `Platforms/Android test` command line will be passed through
+### Testing Python
+
+You can run the test suite by doing a build as described above, and then running
+`python3 Platforms/Android test`. On Windows, you won't be able to do the build
+on the same machine, so you'll have to copy the `cross-build/HOST/prefix` directory
+from somewhere else.
+
+Extra arguments on the `Platforms/Android test` command line will be passed through
 to `python -m test` – use `--` to separate them from `Platforms/Android`'s own options.
 See the [Python Developer's
 Guide](https://devguide.python.org/testing/run-write-tests/) for common options
@@ -159,8 +162,9 @@ configuring the execution of a third-party test suite:
 * `--site-packages`: the directory to copy into the testbed app to use as site
   packages.
 
-The arguments passed after `--` should also include either a `-c` or `-m`
-argument to specify how the test suite should be started.
+Extra arguments on the `android.py test` command line will be passed through to
+Python – use `--` to separate them from `android.py`'s own options. You must include
+either a `-c` or `-m` argument to specify how the test suite should be started.
 
 For more details, run `android.py test --help`.
 
