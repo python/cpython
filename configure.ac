@@ -7371,6 +7371,35 @@ if test "$have_glibc_memmove_bug" = yes; then
      for memmove and bcopy.])
 fi
 
+AC_MSG_CHECKING([if we need to manually block large inlining in ceval.c])
+AC_RUN_IFELSE([AC_LANG_SOURCE([[
+void foo(void *p, void *q) { memmove(p, q, 19); }
+int main(void) {
+// See gh-148284:
+// Clang 22 seems to have interactions with inlining and the stackref buffer
+// which cause 40kB of stack usage on x86-64 in buggy versions of _PyEval_EvalFrameDefault
+// in computed goto interpreter. The normal usage seen is normally 1-2kB.
+#if defined(__clang__) && (__clang_major__ == 22)
+    return 1;
+#else
+    return 0;
+#endif
+}
+]])],
+[block_huge_inlining_in_ceval=no],
+[block_huge_inlining_in_ceval=yes],
+[block_huge_inlining_in_ceval=undefined])
+AC_MSG_RESULT([$block_huge_inlining_in_ceval])
+
+if test "$block_huge_inlining_in_ceval" = yes && test "$ac_cv_computed_gotos" = yes; then
+    // This number should be tuned to follow the C stack consumption
+    // in _PyEval_EvalFrameDefault on computed goto interpreter.
+    CFLAGS_CEVAL="-finline-max-stacksize=512"
+else
+    CFLAGS_CEVAL=""
+fi
+AC_SUBST([CFLAGS_CEVAL])
+
 if test "$ac_cv_gcc_asm_for_x87" = yes; then
     # Some versions of gcc miscompile inline asm:
     # http://gcc.gnu.org/bugzilla/show_bug.cgi?id=46491
