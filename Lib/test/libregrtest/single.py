@@ -283,7 +283,7 @@ def _runtest(result: TestResult, runtests: RunTests) -> None:
     try:
         setup_tests(runtests)
 
-        if output_on_failure:
+        if output_on_failure or runtests.pgo:
             support.verbose = True
 
             stream = io.StringIO()

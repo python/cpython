@@ -427,12 +427,12 @@ class TestRmTree(BaseTest, unittest.TestCase):
             else:
                 self.assertIs(func, os.listdir)
                 self.assertIn(arg, [TESTFN, self.child_dir_path])
-            self.assertTrue(issubclass(exc[0], OSError))
+            self.assertIsSubclass(exc[0], OSError)
             self.errorState += 1
         else:
             self.assertEqual(func, os.rmdir)
             self.assertEqual(arg, TESTFN)
-            self.assertTrue(issubclass(exc[0], OSError))
+            self.assertIsSubclass(exc[0], OSError)
             self.errorState = 3
 
     @unittest.skipIf(sys.platform[:6] == 'cygwin',
@@ -2042,6 +2042,32 @@ class TestArchives(BaseTest, unittest.TestCase):
             self.assertEqual(make_archive('test', 'zip'), 'test.zip')
             self.assertTrue(os.path.isfile('test.zip'))
 
+    def test_make_archive_pathlike_cwd_default(self):
+        called_args = []
+        def archiver(base_name, base_dir, **kw):
+            called_args.append((base_name, kw.get('root_dir')))
+
+        register_archive_format('xxx', archiver, [], 'xxx file')
+        self.addCleanup(unregister_archive_format, 'xxx')
+        with no_chdir:
+            make_archive(FakePath('basename'), 'xxx')
+        self.assertEqual(called_args, [('basename', None)])
+
+    def test_make_archive_pathlike_cwd_supports_root_dir(self):
+        root_dir = self.mkdtemp()
+        called_args = []
+        def archiver(base_name, base_dir, **kw):
+            called_args.append((base_name, base_dir, kw.get('root_dir')))
+        archiver.supports_root_dir = True
+
+        register_archive_format('xxx', archiver, [], 'xxx file')
+        self.addCleanup(unregister_archive_format, 'xxx')
+        with no_chdir:
+            make_archive(FakePath('basename'), 'xxx',
+                         root_dir=FakePath(root_dir),
+                         base_dir=FakePath('basedir'))
+        self.assertEqual(called_args, [('basename', 'basedir', root_dir)])
+
     def test_register_archive_format(self):
 
         self.assertRaises(TypeError, register_archive_format, 'xxx', 1)
@@ -2152,6 +2178,10 @@ class TestArchives(BaseTest, unittest.TestCase):
     @support.requires_bz2()
     def test_unpack_archive_bztar(self):
         self.check_unpack_tarball('bztar')
+
+    @support.requires_zstd()
+    def test_unpack_archive_zstdtar(self):
+        self.check_unpack_tarball('zstdtar')
 
     @support.requires_lzma()
     @unittest.skipIf(AIX and not _maxdataOK(), "AIX MAXDATA must be 0x20000000 or larger")
@@ -3475,7 +3505,7 @@ class PublicAPITests(unittest.TestCase):
     """Ensures that the correct values are exposed in the public API."""
 
     def test_module_all_attribute(self):
-        self.assertTrue(hasattr(shutil, '__all__'))
+        self.assertHasAttr(shutil, '__all__')
         target_api = ['copyfileobj', 'copyfile', 'copymode', 'copystat',
                       'copy', 'copy2', 'copytree', 'move', 'rmtree', 'Error',
                       'SpecialFileError', 'make_archive',
@@ -3488,7 +3518,7 @@ class PublicAPITests(unittest.TestCase):
             target_api.append('disk_usage')
         self.assertEqual(set(shutil.__all__), set(target_api))
         with self.assertWarns(DeprecationWarning):
-            from shutil import ExecError
+            from shutil import ExecError  # noqa: F401
 
 
 if __name__ == '__main__':

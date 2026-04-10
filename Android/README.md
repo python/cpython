@@ -25,11 +25,13 @@ it:
   `android-sdk/cmdline-tools/latest`.
 * `export ANDROID_HOME=/path/to/android-sdk`
 
-The `android.py` script also requires the following commands to be on the `PATH`:
+The `android.py` script will automatically use the SDK's `sdkmanager` to install
+any packages it needs.
+
+The script also requires the following commands to be on the `PATH`:
 
 * `curl`
 * `java` (or set the `JAVA_HOME` environment variable)
-* `tar`
 
 
 ## Building
@@ -94,18 +96,12 @@ similar to the `Android` directory of the CPython source tree.
 
 ## Testing
 
-The Python test suite can be run on Linux, macOS, or Windows:
+The Python test suite can be run on Linux, macOS, or Windows.
 
-* On Linux, the emulator needs access to the KVM virtualization interface, and
-  a DISPLAY environment variable pointing at an X server.
-
-The test suite can usually be run on a device with 2 GB of RAM, but this is
-borderline, so you may need to increase it to 4 GB. As of Android
-Studio Koala, 2 GB is the default for all emulators, although the user interface
-may indicate otherwise. Locate the emulator's directory under `~/.android/avd`,
-and find `hw.ramSize` in both config.ini and hardware-qemu.ini. Either set these
-manually to the same value, or use the Android Studio Device Manager, which will
-update both files.
+On Linux, the emulator needs access to the KVM virtualization interface. This may
+require adding your user to a group, or changing your udev rules. On GitHub
+Actions, the test script will do this automatically using the commands shown
+[here](https://github.blog/changelog/2024-04-02-github-actions-hardware-accelerated-android-virtualization-now-available/).
 
 You can run the test suite either:
 
@@ -153,6 +149,10 @@ Every time you run `android.py test`, changes in pure-Python files in the
 repository's `Lib` directory will be picked up immediately. Changes in C files,
 and architecture-specific files such as sysconfigdata, will not take effect
 until you re-run `android.py make-host` or `build`.
+
+The testbed app can also be used to test third-party packages. For more details,
+run `android.py test --help`, paying attention to the options `--site-packages`,
+`--cwd`, `-c` and `-m`.
 
 
 ## Using in your own app

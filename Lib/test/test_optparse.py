@@ -14,8 +14,9 @@ import unittest
 
 from io import StringIO
 from test import support
-from test.support import os_helper
+from test.support import cpython_only, os_helper
 from test.support.i18n_helper import TestTranslationsBase, update_translation_snapshots
+from test.support.import_helper import ensure_lazy_imports
 
 import optparse
 from optparse import make_option, Option, \
@@ -614,9 +615,9 @@ Options:
         self.parser.add_option(
             "-p", "--prob",
             help="blow up with probability PROB [default: %default]")
-        self.parser.set_defaults(prob=0.43)
+        self.parser.set_defaults(prob=0.25)
         expected_help = self.help_prefix + \
-            "  -p PROB, --prob=PROB  blow up with probability PROB [default: 0.43]\n"
+            "  -p PROB, --prob=PROB  blow up with probability PROB [default: 0.25]\n"
         self.assertHelp(self.parser, expected_help)
 
     def test_alt_expand(self):
@@ -1655,10 +1656,24 @@ class MiscTestCase(unittest.TestCase):
         not_exported = {'check_builtin', 'AmbiguousOptionError', 'NO_DEFAULT'}
         support.check__all__(self, optparse, not_exported=not_exported)
 
+    @cpython_only
+    def test_lazy_import(self):
+        ensure_lazy_imports("optparse", {"textwrap"})
+
 
 class TestTranslations(TestTranslationsBase):
     def test_translations(self):
         self.assertMsgidsEqual(optparse)
+
+
+class TestModule(unittest.TestCase):
+    def test_deprecated__version__(self):
+        with self.assertWarnsRegex(
+            DeprecationWarning,
+            "'__version__' is deprecated and slated for removal in Python 3.20",
+        ) as cm:
+            getattr(optparse, "__version__")
+        self.assertEqual(cm.filename, __file__)
 
 
 if __name__ == '__main__':

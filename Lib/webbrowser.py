@@ -163,6 +163,12 @@ class BaseBrowser:
     def open_new_tab(self, url):
         return self.open(url, 2)
 
+    @staticmethod
+    def _check_url(url):
+        """Ensures that the URL is safe to pass to subprocesses as a parameter"""
+        if url and url.lstrip().startswith("-"):
+            raise ValueError(f"Invalid URL (leading dash disallowed): {url!r}")
+
 
 class GenericBrowser(BaseBrowser):
     """Class for all browsers started with a command
@@ -180,6 +186,7 @@ class GenericBrowser(BaseBrowser):
 
     def open(self, url, new=0, autoraise=True):
         sys.audit("webbrowser.open", url)
+        self._check_url(url)
         cmdline = [self.name] + [arg.replace("%s", url)
                                  for arg in self.args]
         try:
@@ -200,6 +207,7 @@ class BackgroundBrowser(GenericBrowser):
         cmdline = [self.name] + [arg.replace("%s", url)
                                  for arg in self.args]
         sys.audit("webbrowser.open", url)
+        self._check_url(url)
         try:
             if sys.platform[:3] == 'win':
                 p = subprocess.Popen(cmdline)
@@ -266,6 +274,7 @@ class UnixBrowser(BaseBrowser):
 
     def open(self, url, new=0, autoraise=True):
         sys.audit("webbrowser.open", url)
+        self._check_url(url)
         if new == 0:
             action = self.remote_action
         elif new == 1:
@@ -357,6 +366,7 @@ class Konqueror(BaseBrowser):
 
     def open(self, url, new=0, autoraise=True):
         sys.audit("webbrowser.open", url)
+        self._check_url(url)
         # XXX Currently I know no way to prevent KFM from opening a new win.
         if new == 2:
             action = "newTab"
@@ -482,10 +492,10 @@ def register_standard_browsers():
 
     if sys.platform == 'darwin':
         register("MacOSX", None, MacOSXOSAScript('default'))
-        register("chrome", None, MacOSXOSAScript('chrome'))
+        register("chrome", None, MacOSXOSAScript('google chrome'))
         register("firefox", None, MacOSXOSAScript('firefox'))
         register("safari", None, MacOSXOSAScript('safari'))
-        # OS X can use below Unix support (but we prefer using the OS X
+        # macOS can use below Unix support (but we prefer using the macOS
         # specific stuff)
 
     if sys.platform == "ios":
@@ -559,6 +569,19 @@ def register_standard_browsers():
         # Treat choices in same way as if passed into get() but do register
         # and prepend to _tryorder
         for cmdline in userchoices:
+            if all(x not in cmdline for x in " \t"):
+                # Assume this is the name of a registered command, use
+                # that unless it is a GenericBrowser.
+                try:
+                    command = _browsers[cmdline.lower()]
+                except KeyError:
+                    pass
+
+                else:
+                    if not isinstance(command[1], GenericBrowser):
+                        _tryorder.insert(0, cmdline.lower())
+                        continue
+
             if cmdline != '':
                 cmd = _synthesize(cmdline, preferred=True)
                 if cmd[1] is None:
@@ -575,6 +598,7 @@ if sys.platform[:3] == "win":
     class WindowsDefault(BaseBrowser):
         def open(self, url, new=0, autoraise=True):
             sys.audit("webbrowser.open", url)
+            self._check_url(url)
             try:
                 os.startfile(url)
             except OSError:
@@ -595,6 +619,7 @@ if sys.platform == 'darwin':
 
         def open(self, url, new=0, autoraise=True):
             sys.audit("webbrowser.open", url)
+            self._check_url(url)
             url = url.replace('"', '%22')
             if self.name == 'default':
                 proto, _sep, _rest = url.partition(":")
@@ -631,7 +656,7 @@ if sys.platform == 'darwin':
                    end
                    '''
 
-            osapipe = os.popen("osascript", "w")
+            osapipe = os.popen("/usr/bin/osascript", "w")
             if osapipe is None:
                 return False
 
@@ -651,6 +676,7 @@ if sys.platform == "ios":
     class IOSBrowser(BaseBrowser):
         def open(self, url, new=0, autoraise=True):
             sys.audit("webbrowser.open", url)
+            self._check_url(url)
             # If ctypes isn't available, we can't open a browser
             if objc is None:
                 return False
@@ -706,7 +732,9 @@ if sys.platform == "ios":
 
 def parse_args(arg_list: list[str] | None):
     import argparse
-    parser = argparse.ArgumentParser(description="Open URL in a web browser.")
+    parser = argparse.ArgumentParser(
+        description="Open URL in a web browser.", color=True,
+    )
     parser.add_argument("url", help="URL to open")
 
     group = parser.add_mutually_exclusive_group()

@@ -53,7 +53,7 @@ a :class:`!str` filename, and vice-versa.
 
 Finally, note that :func:`functools.lru_cache` with a *maxsize* of 32768
 is used to cache the (typed) compiled regex patterns in the following
-functions: :func:`fnmatch`, :func:`fnmatchcase`, :func:`.filter`.
+functions: :func:`fnmatch`, :func:`fnmatchcase`, :func:`.filter`, :func:`.filterfalse`.
 
 
 .. function:: fnmatch(name, pat)
@@ -111,7 +111,7 @@ functions: :func:`fnmatch`, :func:`fnmatchcase`, :func:`.filter`.
       >>>
       >>> regex = fnmatch.translate('*.txt')
       >>> regex
-      '(?s:.*\\.txt)\\Z'
+      '(?s:.*\\.txt)\\z'
       >>> reobj = re.compile(regex)
       >>> reobj.match('foobar.txt')
       <re.Match object; span=(0, 10), match='foobar.txt'>

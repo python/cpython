@@ -1,1 +1,0 @@
-Change the default LTO flags on GCC to not pass ``-flto-partition=none``, and allow parallelization of LTO. For newer GNU makes and GCC, this has a multiple factor speedup for LTO build times, with no noticeable loss in performance.
