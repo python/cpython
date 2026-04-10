@@ -1657,6 +1657,7 @@ _CASE_COST = 1
 # Consulted as a fallback when Levenshtein-based suggestions find no match.
 #
 # Inclusion criteria:
+#
 #   1. Must have evidence of real cross-language confusion (Stack Overflow
 #      traffic, bug reports in production repos, developer survey data).
 #   2. Must not be catchable by Levenshtein distance (too different from
