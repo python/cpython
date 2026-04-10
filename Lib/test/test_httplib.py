@@ -411,7 +411,7 @@ class HeaderTests(TestCase):
                 conn = client.HTTPConnection('example.com')
                 conn.set_tunnel(tunnel_host)
                 conn.sock = FakeSocket('')
-                with self.assertRaisesRegex(ValueError, 'Invalid header'):
+                with self.assertRaisesRegex(ValueError, 'Tunnel host can\'t contain control characters'):
                     conn._tunnel()  # Called in .connect()
 
     def test_headers_debuglevel(self):
