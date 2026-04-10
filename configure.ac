@@ -7246,7 +7246,6 @@ fi
 
 AC_MSG_CHECKING([if we need to manually block large inlining in ceval.c])
 AC_RUN_IFELSE([AC_LANG_SOURCE([[
-void foo(void *p, void *q) { memmove(p, q, 19); }
 int main(void) {
 // See gh-148284:
 // Clang 22 seems to have interactions with inlining and the stackref buffer
