@@ -15,7 +15,7 @@ $zutilVersion = if ($env:NANVIX_ZUTIL_VERSION) {
     $env:NANVIX_ZUTIL_VERSION
 }
 else {
-    "0.7.14"
+    "0.7.15"
 }
 
 # z.ps1 lives at the repository root, so use its directory directly
