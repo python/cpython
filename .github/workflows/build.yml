@@ -11,7 +11,8 @@ on:
     - 'main'
     - '3.*'
 
-permissions: {}
+permissions:
+  contents: read
 
 concurrency:
   # https://docs.github.com/en/actions/writing-workflows/workflow-syntax-for-github-actions#concurrency
