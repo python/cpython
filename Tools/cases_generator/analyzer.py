@@ -1149,7 +1149,8 @@ def add_macro(
                             f"Recording uop {part.name} must be first in macro",
                             macro.tokens[0])
                     parts.append(uop)
-                    first = False
+                    if uop.properties.tier != 1:
+                        first = False
             case parser.CacheEffect():
                 parts.append(Skip(part.size))
             case _:

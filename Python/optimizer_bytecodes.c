@@ -873,10 +873,42 @@ dummy_func(void) {
     }
 
     op(_LOAD_ATTR, (owner -- attr, self_or_null[oparg&1])) {
-        (void)owner;
-        attr = sym_new_not_null(ctx);
-        if (oparg & 1) {
-            self_or_null[0] = sym_new_unknown(ctx);
+        PyTypeObject *type = sym_get_probable_type(owner);
+        if (oparg & 1 && type != NULL) {
+            PyObject *name = get_co_name(ctx, oparg >> 1);
+            PyObject *descr = _PyType_Lookup(type, name);
+            bool class_method = descr && Py_IS_TYPE(descr, &PyClassMethod_Type);
+            bool static_method = descr && Py_IS_TYPE(descr, &PyStaticMethod_Type);
+            if (class_method || static_method) {
+                PyObject *callable = NULL;
+                if (class_method) {
+                    callable = _PyClassMethod_GetFunc(descr);
+                }
+                else {
+                    assert(static_method);
+                    callable = _PyStaticMethod_GetFunc(descr);
+                }
+                assert(callable);
+                bool immortal = _Py_IsImmortal(callable) || (type->tp_flags & Py_TPFLAGS_IMMUTABLETYPE);
+                ADD_OP(_GUARD_TYPE_VERSION, 0, type->tp_version_tag);
+                ADD_OP(_POP_TOP, 0, 0);
+                ADD_OP(immortal ? _LOAD_CONST_INLINE_BORROW : _LOAD_CONST_INLINE, 0, (uintptr_t)callable);
+                if (class_method) {
+                    ADD_OP(_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)type);
+                    self_or_null[0] = sym_new_const(ctx, (PyObject *)type);
+                } else if (static_method) {
+                    ADD_OP(_PUSH_NULL, 0, 0);
+                    self_or_null[0] = sym_new_null(ctx);
+                }
+                attr = sym_new_const(ctx, callable);
+                PyType_Watch(TYPE_WATCHER_ID, (PyObject *)type);
+                _Py_BloomFilter_Add(dependencies, (PyTypeObject *)type);
+            } else {
+                attr = sym_new_not_null(ctx);
+                self_or_null[0] = sym_new_unknown(ctx);
+            }
+        } else {
+            attr = sym_new_not_null(ctx);
         }
     }
 
