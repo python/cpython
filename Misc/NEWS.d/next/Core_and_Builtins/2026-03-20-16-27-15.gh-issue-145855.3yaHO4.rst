@@ -1,0 +1,1 @@
+The ``DELETE_ATTR`` opcode is now replaced with ``PUSH_NULL; STORE_ATTR``.
