@@ -8,11 +8,11 @@
 
 -----------------
 
-.. note::
+.. warning::
 
     :mod:`!sys.monitoring` is a namespace within the :mod:`sys` module,
-    not an independent module, so there is no need to
-    ``import sys.monitoring``, simply ``import sys`` and then use
+    not an independent module, so
+    ``import sys.monitoring`` will throw a ``ModuleNotFoundError``. Instead, simply ``import sys`` and then use
     ``sys.monitoring``.
 
 
