@@ -1624,7 +1624,7 @@ islice_traverse(PyObject *op, visitproc visit, void *arg)
 }
 
 static PyObject *
-islice_next(PyObject *op)
+islice_next_lock_held(PyObject *op)
 {
     isliceobject *lz = isliceobject_CAST(op);
     PyObject *item;
@@ -1661,6 +1661,16 @@ islice_next(PyObject *op)
 empty:
     Py_CLEAR(lz->it);
     return NULL;
+}
+
+static PyObject *
+islice_next(PyObject *op)
+{
+    PyObject *result;
+    Py_BEGIN_CRITICAL_SECTION(op);
+    result = islice_next_lock_held(op);
+    Py_END_CRITICAL_SECTION();
+    return result;
 }
 
 PyDoc_STRVAR(islice_doc,
