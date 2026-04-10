@@ -79,7 +79,7 @@ Dictionary objects
    .. note::
 
       The operation is atomic on :term:`free threading <free-threaded build>`
-      when *key* is :class:`str`, :class:`int` or :class:`float`.
+      when *key* is :class:`str`, :class:`int`, :class:`float`, :class:`bool` or :class:`bytes`.
 
    .. versionchanged:: 3.15
       Also accept :class:`frozendict`.
@@ -113,7 +113,7 @@ Dictionary objects
    .. note::
 
       The operation is atomic on :term:`free threading <free-threaded build>`
-      when *key* is :class:`str`, :class:`int` or :class:`float`.
+      when *key* is :class:`str`, :class:`int`, :class:`float`, :class:`bool` or :class:`bytes`.
 
 
 .. c:function:: int PyDict_SetItemString(PyObject *p, const char *key, PyObject *val)
@@ -133,7 +133,7 @@ Dictionary objects
    .. note::
 
       The operation is atomic on :term:`free threading <free-threaded build>`
-      when *key* is :class:`str`, :class:`int` or :class:`float`.
+      when *key* is :class:`str`, :class:`int`, :class:`float`, :class:`bool` or :class:`bytes`.
 
 
 .. c:function:: int PyDict_DelItemString(PyObject *p, const char *key)
@@ -158,7 +158,7 @@ Dictionary objects
    .. note::
 
       The operation is atomic on :term:`free threading <free-threaded build>`
-      when *key* is :class:`str`, :class:`int` or :class:`float`.
+      when *key* is :class:`str`, :class:`int`, :class:`float`, :class:`bool` or :class:`bytes`.
 
    .. versionadded:: 3.13
 
@@ -292,7 +292,7 @@ Dictionary objects
    .. note::
 
       The operation is atomic on :term:`free threading <free-threaded build>`
-      when *key* is :class:`str`, :class:`int` or :class:`float`.
+      when *key* is :class:`str`, :class:`int`, :class:`float`, :class:`bool` or :class:`bytes`.
 
    .. versionadded:: 3.13
 
@@ -314,7 +314,7 @@ Dictionary objects
    .. note::
 
       The operation is atomic on :term:`free threading <free-threaded build>`
-      when *key* is :class:`str`, :class:`int` or :class:`float`.
+      when *key* is :class:`str`, :class:`int`, :class:`float`, :class:`bool` or :class:`bytes`.
 
    .. versionadded:: 3.13
 
