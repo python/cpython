@@ -6,14 +6,13 @@ on:
       sanitizer:
         required: true
         type: string
-      config_hash:
-        required: true
-        type: string
       free-threading:
         description: Whether to use free-threaded mode
         required: false
         type: boolean
         default: false
+
+permissions: {}
 
 env:
   FORCE_COLOR: 1
@@ -29,16 +28,11 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 60
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       with:
         persist-credentials: false
     - name: Runner image version
       run: echo "IMAGE_OS_VERSION=${ImageOS}-${ImageVersion}" >> "$GITHUB_ENV"
-    - name: Restore config.cache
-      uses: actions/cache@v4
-      with:
-        path: config.cache
-        key: ${{ github.job }}-${{ env.IMAGE_OS_VERSION }}-${{ inputs.sanitizer }}-${{ inputs.config_hash }}
     - name: Install dependencies
       run: |
         sudo ./.github/workflows/posix-deps-apt.sh
@@ -67,21 +61,13 @@ jobs:
               || ''
             }}.txt handle_segv=0" >> "$GITHUB_ENV"
         else
-          echo "UBSAN_OPTIONS=${SAN_LOG_OPTION}" >> "$GITHUB_ENV"
+          echo "UBSAN_OPTIONS=${SAN_LOG_OPTION} halt_on_error=1 suppressions=${GITHUB_WORKSPACE}/Tools/ubsan/suppressions.txt" >> "$GITHUB_ENV"
         fi
         echo "CC=clang" >> "$GITHUB_ENV"
         echo "CXX=clang++" >> "$GITHUB_ENV"
       env:
         SANITIZER: ${{ inputs.sanitizer }}
         SAN_LOG_OPTION: log_path=${{ github.workspace }}/san_log
-    - name: Add ccache to PATH
-      run: |
-        echo "PATH=/usr/lib/ccache:$PATH" >> "$GITHUB_ENV"
-    - name: Configure ccache action
-      uses: hendrikmuhs/ccache-action@v1.2
-      with:
-        save: ${{ github.event_name == 'push' }}
-        max-size: "200M"
     - name: Configure CPython
       run: >-
         ./configure
@@ -89,7 +75,7 @@ jobs:
         ${{
           inputs.sanitizer == 'TSan'
           && '--with-thread-sanitizer'
-          || '--with-undefined-behavior-sanitizer'
+          || '--with-undefined-behavior-sanitizer --with-strict-overflow'
         }}
         --with-pydebug
         ${{ fromJSON(inputs.free-threading) && '--disable-gil' || '' }}
@@ -97,10 +83,13 @@ jobs:
       run: make -j4
     - name: Display build info
       run: make pythoninfo
+    # test_{capi,faulthandler} are skipped under UBSan because
+    # they raise signals that UBSan with halt_on_error=1 intercepts.
     - name: Tests
       run: >-
         ./python -m test
         ${{ inputs.sanitizer == 'TSan' && '--tsan' || '' }}
+        ${{ inputs.sanitizer == 'UBSan' && '-x test_capi -x test_faulthandler' || '' }}
         -j4
     - name: Parallel tests
       if: >-
@@ -112,7 +101,7 @@ jobs:
       run: find "${GITHUB_WORKSPACE}" -name 'san_log.*' | xargs head -n 1000
     - name: Archive logs
       if: always()
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
       with:
         name: >-
           ${{ inputs.sanitizer }}-logs-${{

@@ -1,3 +1,0 @@
-PyREPL interactive shell no longer starts with ``__package__`` and
-``__file__`` global names set to ``_pyrepl`` package internals. Contributed
-by Yuichiro Tachibana.
