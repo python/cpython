@@ -977,7 +977,7 @@ class HTTPConnection:
 
     def _tunnel(self):
         if _contains_disallowed_url_pchar_re.search(self._tunnel_host):
-            raise ValueError('Tunnel host can't contain control characters %r'
+            raise ValueError('Tunnel host can\'t contain control characters %r'
                              % (self._tunnel_host,))
         connect = b"CONNECT %s:%d %s\r\n" % (
             self._wrap_ipv6(self._tunnel_host.encode("idna")),
