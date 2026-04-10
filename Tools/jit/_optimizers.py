@@ -251,7 +251,14 @@ class Optimizer:
         # references to a local _JIT_CONTINUE label (which we will add later):
         continue_symbol = rf"\b{re.escape(self.symbol_prefix)}_JIT_CONTINUE\b"
         continue_label = f"{self.label_prefix}_JIT_CONTINUE"
-        return re.sub(continue_symbol, continue_label, text)
+        text = re.sub(continue_symbol, continue_label, text)
+        # Strip CFI directives as JIT stencils are compiled with
+        # -fno-asynchronous-unwind-tables. The optimizer can remove
+        # blocks containing .cfi_endproc while keeping the corresponding
+        # .cfi_startproc, producing unbalanced CFI frames that some
+        # assemblers reject (e.g. Apple LLVM 21):
+        text = re.sub(r"^\s*\.cfi_\w+[^\n]*$", "", text, flags=re.MULTILINE)
+        return text
 
     def _parse_instruction(self, line: str) -> Instruction:
         target = None
