@@ -13,6 +13,7 @@
 #include "pycore_pylifecycle.h"   // _Py_IsInterpreterFinalizing()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_runtime_init.h"  // _Py_ID()
+#include "pycore_tuple.h"         // _PyTuple_FromPair
 
 #include <stddef.h>               // offsetof()
 
@@ -829,14 +830,10 @@ future_add_done_callback(asyncio_state *state, FutureObj *fut, PyObject *arg,
             fut->fut_context0 = Py_NewRef(ctx);
         }
         else {
-            PyObject *tup = PyTuple_New(2);
+            PyObject *tup = _PyTuple_FromPair(arg, (PyObject *)ctx);
             if (tup == NULL) {
                 return NULL;
             }
-            Py_INCREF(arg);
-            PyTuple_SET_ITEM(tup, 0, arg);
-            Py_INCREF(ctx);
-            PyTuple_SET_ITEM(tup, 1, (PyObject *)ctx);
 
             if (fut->fut_callbacks != NULL) {
                 int err = PyList_Append(fut->fut_callbacks, tup);
@@ -947,8 +944,7 @@ FutureObj_traverse(PyObject *op, visitproc visit, void *arg)
     Py_VISIT(fut->fut_cancel_msg);
     Py_VISIT(fut->fut_cancelled_exc);
     Py_VISIT(fut->fut_awaited_by);
-    PyObject_VisitManagedDict((PyObject *)fut, visit, arg);
-    return 0;
+    return PyObject_VisitManagedDict((PyObject *)fut, visit, arg);
 }
 
 /*[clinic input]
@@ -1503,14 +1499,12 @@ _asyncio_Future__callbacks_get_impl(FutureObj *self)
 
     Py_ssize_t i = 0;
     if (self->fut_callback0 != NULL) {
-        PyObject *tup0 = PyTuple_New(2);
+        assert(self->fut_context0 != NULL);
+        PyObject *tup0 = _PyTuple_FromPair(self->fut_callback0, self->fut_context0);
         if (tup0 == NULL) {
             Py_DECREF(callbacks);
             return NULL;
         }
-        PyTuple_SET_ITEM(tup0, 0, Py_NewRef(self->fut_callback0));
-        assert(self->fut_context0 != NULL);
-        PyTuple_SET_ITEM(tup0, 1, Py_NewRef(self->fut_context0));
         PyList_SET_ITEM(callbacks, i, tup0);
         i++;
     }
@@ -2244,7 +2238,7 @@ enter_task(_PyThreadStateImpl *ts, PyObject *loop, PyObject *task)
             PyExc_RuntimeError,
             "Cannot enter into task %R while another " \
             "task %R is being executed.",
-            task, ts->asyncio_running_task, NULL);
+            task, ts->asyncio_running_task);
         return -1;
     }
 
@@ -2265,7 +2259,7 @@ leave_task(_PyThreadStateImpl *ts, PyObject *loop, PyObject *task)
             PyExc_RuntimeError,
             "Invalid attempt to leave task %R while " \
             "task %R is entered.",
-            task, ts->asyncio_running_task ? ts->asyncio_running_task : Py_None, NULL);
+            task, ts->asyncio_running_task ? ts->asyncio_running_task : Py_None);
         return -1;
     }
     Py_CLEAR(ts->asyncio_running_task);
@@ -2328,7 +2322,7 @@ _asyncio_Task___init___impl(TaskObj *self, PyObject *coro, PyObject *loop,
         self->task_log_destroy_pending = 0;
         PyErr_Format(PyExc_TypeError,
                      "a coroutine was expected, got %R",
-                     coro, NULL);
+                     coro);
         return -1;
     }
 
@@ -2430,8 +2424,7 @@ TaskObj_traverse(PyObject *op, visitproc visit, void *arg)
     Py_VISIT(fut->fut_cancel_msg);
     Py_VISIT(fut->fut_cancelled_exc);
     Py_VISIT(fut->fut_awaited_by);
-    PyObject_VisitManagedDict((PyObject *)fut, visit, arg);
-    return 0;
+    return PyObject_VisitManagedDict((PyObject *)fut, visit, arg);
 }
 
 /*[clinic input]
@@ -4394,6 +4387,7 @@ module_exec(PyObject *mod)
 }
 
 static struct PyModuleDef_Slot module_slots[] = {
+    _Py_ABI_SLOT,
     {Py_mod_exec, module_exec},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {Py_mod_gil, Py_MOD_GIL_NOT_USED},
