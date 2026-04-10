@@ -18,8 +18,8 @@ the metadata of an installed `Distribution Package <https://packaging.python.org
 such as its entry points
 or its top-level names (`Import Package <https://packaging.python.org/en/latest/glossary/#term-Import-Package>`_\s, modules, if any).
 Built in part on Python's import system, this library
-intends to replace similar functionality in the `entry point
-API`_ and `metadata API`_ of ``pkg_resources``. Along with
+intends to replace similar functionality in the entry point
+API and metadata API of ``pkg_resources``. Along with
 :mod:`importlib.resources`,
 this package can eliminate the need to use the older and less efficient
 ``pkg_resources`` package.
@@ -717,7 +717,3 @@ packages served by the ``DatabaseImporter``, assuming that the
 The ``DatabaseDistribution`` may also provide other metadata files, like
 ``RECORD`` (required for :attr:`!Distribution.files`) or override the
 implementation of :attr:`!Distribution.files`. See the source for more inspiration.
-
-
-.. _`entry point API`: https://setuptools.readthedocs.io/en/latest/pkg_resources.html#entry-points
-.. _`metadata API`: https://setuptools.readthedocs.io/en/latest/pkg_resources.html#metadata-api
