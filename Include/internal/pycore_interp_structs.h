@@ -451,7 +451,6 @@ typedef struct _PyOptimizationConfig {
 
     // Trace fitness thresholds
     uint16_t fitness_initial;
-    uint16_t fitness_initial_side;
 
     // Optimization flags
     bool specialization_enabled;

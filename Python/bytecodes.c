@@ -6397,7 +6397,13 @@ dummy_func(
             tracer->prev_state.instr_frame = frame;
             tracer->prev_state.instr_oparg = oparg;
             tracer->prev_state.instr_stacklevel = PyStackRef_IsNone(frame->f_executable) ? 2 : STACK_LEVEL();
-            if (_PyOpcode_Caches[_PyOpcode_Deopt[opcode]]) {
+            if (_PyOpcode_Caches[_PyOpcode_Deopt[opcode]]
+                // Branch opcodes use the cache for branch history, not
+                // specialization counters.  Don't reset it.
+                && opcode != POP_JUMP_IF_FALSE
+                && opcode != POP_JUMP_IF_TRUE
+                && opcode != POP_JUMP_IF_NONE
+                && opcode != POP_JUMP_IF_NOT_NONE) {
                 (&next_instr[1])->counter = trigger_backoff_counter();
             }
 

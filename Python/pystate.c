@@ -638,18 +638,7 @@ init_interpreter(PyInterpreterState *interp,
     // Trace fitness configuration
     init_policy(&interp->opt_config.fitness_initial,
                 "PYTHON_JIT_FITNESS_INITIAL",
-                FITNESS_INITIAL, 100, 10000);
-    init_policy(&interp->opt_config.fitness_initial_side,
-                "PYTHON_JIT_FITNESS_INITIAL_SIDE",
-                FITNESS_INITIAL_SIDE, 50, 5000);
-    /* The tracer starts at start_instr, so initial fitness must not be below
-     * the close-loop exit quality or tracing will terminate immediately. */
-    if (interp->opt_config.fitness_initial < EXIT_QUALITY_CLOSE_LOOP) {
-        interp->opt_config.fitness_initial = EXIT_QUALITY_CLOSE_LOOP;
-    }
-    if (interp->opt_config.fitness_initial_side < EXIT_QUALITY_CLOSE_LOOP) {
-        interp->opt_config.fitness_initial_side = EXIT_QUALITY_CLOSE_LOOP;
-    }
+                FITNESS_INITIAL, EXIT_QUALITY_CLOSE_LOOP, UOP_MAX_TRACE_LENGTH - 1);
 
     interp->opt_config.specialization_enabled = !is_env_enabled("PYTHON_SPECIALIZATION_OFF");
     interp->opt_config.uops_optimize_enabled = !is_env_disabled("PYTHON_UOPS_OPTIMIZE");

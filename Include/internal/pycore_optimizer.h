@@ -15,22 +15,50 @@ extern "C" {
 #include "pycore_optimizer_types.h"
 #include <stdbool.h>
 
-/* Default fitness configuration values for trace quality control.
- * FITNESS_INITIAL and FITNESS_INITIAL_SIDE can be overridden via
- * PYTHON_JIT_FITNESS_INITIAL and PYTHON_JIT_FITNESS_INITIAL_SIDE */
-#define FITNESS_PER_INSTRUCTION     2
-#define FITNESS_BRANCH_BASE         5
-#define FITNESS_INITIAL             (UOP_MAX_TRACE_LENGTH * FITNESS_PER_INSTRUCTION)
-#define FITNESS_INITIAL_SIDE        (FITNESS_INITIAL * 3 / 5)
-#define FITNESS_BACKWARD_EDGE       (FITNESS_INITIAL / 10)
+/* Fitness controls how long a trace can grow.
+ * Starts at FITNESS_INITIAL, then decreases from per-bytecode buffer usage
+ * plus branch/frame heuristics. The trace stops when fitness drops below the
+ * current exit_quality.
+ *
+ * Design targets for the constants below:
+ * 1. Reaching the abstract frame-depth limit should drop fitness below
+ *    EXIT_QUALITY_SPECIALIZABLE.
+ * 2. A backward edge should leave budget for roughly N_BACKWARD_SLACK more
+ *    bytecodes, assuming AVG_SLOTS_PER_INSTRUCTION.
+ * 3. Roughly seven balanced branches should reduce fitness to
+ *    EXIT_QUALITY_DEFAULT before per-slot costs.
+ * 4. A push followed by a matching return is net-zero on frame-specific
+ *    fitness, excluding per-slot costs.
+ */
+#define MAX_TARGET_LENGTH          400
+#define OPTIMIZER_EFFECTIVENESS    2
+#define FITNESS_INITIAL            (MAX_TARGET_LENGTH * OPTIMIZER_EFFECTIVENESS)
 
-/* Exit quality constants for fitness-based trace termination.
- * Higher values mean better places to stop the trace. */
+/* Exit quality thresholds: trace stops when fitness < exit_quality.
+ * Higher = trace is more willing to stop here. */
+#define EXIT_QUALITY_CLOSE_LOOP      (FITNESS_INITIAL / 2)
+#define EXIT_QUALITY_ENTER_EXECUTOR  (FITNESS_INITIAL * 3 / 8)
+#define EXIT_QUALITY_DEFAULT         (FITNESS_INITIAL / 8)
+#define EXIT_QUALITY_SPECIALIZABLE   (FITNESS_INITIAL / 80)
 
-#define EXIT_QUALITY_DEFAULT         200
-#define EXIT_QUALITY_CLOSE_LOOP      (4 * EXIT_QUALITY_DEFAULT)
-#define EXIT_QUALITY_ENTER_EXECUTOR  (2 * EXIT_QUALITY_DEFAULT + 100)
-#define EXIT_QUALITY_SPECIALIZABLE   (EXIT_QUALITY_DEFAULT / 4)
+/* Estimated buffer slots per bytecode, used only to derive heuristics.
+ * Runtime charging uses trace-buffer capacity consumed for each bytecode. */
+#define AVG_SLOTS_PER_INSTRUCTION  6
+
+/* Heuristic backward-edge penalty: leave room for about
+ * N_BACKWARD_SLACK more bytecodes before reaching EXIT_QUALITY_CLOSE_LOOP,
+ * based on AVG_SLOTS_PER_INSTRUCTION. */
+#define N_BACKWARD_SLACK           50
+#define FITNESS_BACKWARD_EDGE      (FITNESS_INITIAL - EXIT_QUALITY_CLOSE_LOOP \
+                                      - N_BACKWARD_SLACK * AVG_SLOTS_PER_INSTRUCTION)
+
+/* Backward edge penalty for JUMP_BACKWARD_NO_INTERRUPT (coroutines/yield-from).
+ * Smaller than FITNESS_BACKWARD_EDGE since these loops are very short. */
+#define FITNESS_BACKWARD_EDGE_COROUTINE  (FITNESS_BACKWARD_EDGE / 4)
+
+/* Penalty for a perfectly balanced (50/50) branch.
+ * 7 such branches (ignoring per-slot cost) exhaust fitness to EXIT_QUALITY_DEFAULT. */
+#define FITNESS_BRANCH_BALANCED    ((FITNESS_INITIAL - EXIT_QUALITY_DEFAULT) / 7)
 
 
 typedef struct _PyJitUopBuffer {
