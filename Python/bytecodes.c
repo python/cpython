@@ -2721,6 +2721,11 @@ dummy_func(
         }
 
         op(_GUARD_TYPE_VERSION_LOCKED, (type_version/2, owner -- owner)) {
+            // Guard that type version matches expected value. Object is assumed to be
+            // locked on entry. If version matches, lock is retained for subsequent
+            // operations. If mismatch, unlock and exit (deopt). This allows the JIT
+            // optimizer to eliminate this guard entirely if type version is proven,
+            // in which case the lock is held for the entire trace duration.
             PyObject *owner_o = PyStackRef_AsPyObjectBorrow(owner);
             assert(type_version != 0);
             PyTypeObject *tp = Py_TYPE(owner_o);

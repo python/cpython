@@ -1565,8 +1565,8 @@ class TestUopsOptimization(unittest.TestCase):
     def test_init_resolves_callable(self):
         """
         _CHECK_AND_ALLOCATE_OBJECT should resolve __init__ to a constant,
-        enabling the optimizer to trace into the init frame and eliminate
-        redundant function version and arg count checks.
+        enabling the optimizer to propagate type information through the frame
+        and eliminate redundant function version and arg count checks.
         """
         class MyPoint:
             def __init__(self, x, y):
