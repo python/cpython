@@ -3937,7 +3937,7 @@ class TestUopsOptimization(unittest.TestCase):
             for _ in range(n):
                 c = a + b    # result type is list (known)
                 d = b + c    # rhs (c) is known list, lhs (b) is not -> _GUARD_BINARY_OP_EXTEND_LHS
-                total += d[0]
+                total += d[2]
             return total
 
         res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)

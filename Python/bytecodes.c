@@ -961,7 +961,7 @@ dummy_func(
             res = PyStackRef_FromPyObjectSteal(temp);
         }
 
-       op(_GUARD_BINARY_OP_EXTEND_LHS, (descr/4, left, right -- left, right)) {
+       tier2 op(_GUARD_BINARY_OP_EXTEND_LHS, (descr/4, left, right -- left, right)) {
             PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);
             _PyBinaryOpSpecializationDescr *d = (_PyBinaryOpSpecializationDescr*)descr;
             assert(INLINE_CACHE_ENTRIES_BINARY_OP == 5);
@@ -969,7 +969,7 @@ dummy_func(
             EXIT_IF(Py_TYPE(left_o) != d->lhs_type);
         }
 
-       op(_GUARD_BINARY_OP_EXTEND_RHS, (descr/4, left, right -- left, right)) {
+       tier2 op(_GUARD_BINARY_OP_EXTEND_RHS, (descr/4, left, right -- left, right)) {
             PyObject *right_o = PyStackRef_AsPyObjectBorrow(right);
             _PyBinaryOpSpecializationDescr *d = (_PyBinaryOpSpecializationDescr*)descr;
             assert(INLINE_CACHE_ENTRIES_BINARY_OP == 5);
