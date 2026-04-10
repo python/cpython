@@ -334,14 +334,15 @@
             value = stack_pointer[-1];
             int already_bool = optimize_to_bool(this_instr, ctx, value, &res, false);
             if (!already_bool) {
-                if (sym_matches_type(value, &PyDict_Type)) {
+                PyTypeObject *tp = sym_get_type(value);
+                if (tp == &PyDict_Type) {
                     REPLACE_OP(this_instr, _TO_BOOL_DICT, 0, 0);
                 }
-                else if (sym_matches_type(value, &PyTuple_Type) ||
-                     sym_matches_type(value, &PySet_Type) ||
-                     sym_matches_type(value, &PyFrozenSet_Type) ||
-                     sym_matches_type(value, &PyBytes_Type) ||
-                     sym_matches_type(value, &PyByteArray_Type)) {
+                else if (tp == &PyTuple_Type ||
+                     tp == &PySet_Type ||
+                     tp == &PyFrozenSet_Type ||
+                     tp == &PyBytes_Type ||
+                     tp == &PyByteArray_Type) {
                     REPLACE_OP(this_instr, _TO_BOOL_SIZED, 0, 0);
                 }
                 res = sym_new_truthiness(ctx, value, true);
