@@ -8289,6 +8289,7 @@ class NamedTupleTests(BaseTestCase):
         self.assertEqual(a.x, 3)
         self.assertEqual(a.y, 5)
         self.assertEqual(len(a), 1)
+        self.assertEqual(list(a), [3])
 
         class Y(A, NamedTuple):
             x: int
@@ -8300,6 +8301,7 @@ class NamedTupleTests(BaseTestCase):
         self.assertEqual(a.x, 3)
         self.assertEqual(a.y, 5)
         self.assertEqual(len(a), 10)
+        self.assertEqual(list(a), [3])
 
     def test_multiple_inheritance_errors(self):
         class A(NamedTuple):
