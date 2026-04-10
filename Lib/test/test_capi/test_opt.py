@@ -2454,14 +2454,8 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertEqual(res, TIER2_THRESHOLD)
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
-        # When the result of type(...) is known, _CALL_TYPE_1 is replaced with
-        # _SHUFFLE_2_LOAD_CONST_INLINE_BORROW which is optimized away in
-        # remove_unneeded_uops.
+        # When the result of type(...) is known, _CALL_TYPE_1 is decomposed.
         self.assertNotIn("_CALL_TYPE_1", uops)
-        self.assertNotIn("_SHUFFLE_2_LOAD_CONST_INLINE_BORROW", uops)
-        self.assertNotIn("_POP_CALL_ONE_LOAD_CONST_INLINE_BORROW", uops)
-        self.assertNotIn("_POP_CALL_LOAD_CONST_INLINE_BORROW", uops)
-        self.assertNotIn("_POP_TOP_LOAD_CONST_INLINE_BORROW", uops)
 
     def test_call_type_1_result_is_const(self):
         def testfunc(n):
@@ -2685,9 +2679,6 @@ class TestUopsOptimization(unittest.TestCase):
         # When the length is < _PY_NSMALLPOSINTS, the len() call is replaced
         # with just an inline load.
         self.assertNotIn("_CALL_LEN", uops)
-        self.assertNotIn("_POP_CALL_ONE_LOAD_CONST_INLINE_BORROW", uops)
-        self.assertNotIn("_POP_CALL_LOAD_CONST_INLINE_BORROW", uops)
-        self.assertNotIn("_POP_TOP_LOAD_CONST_INLINE_BORROW", uops)
 
     def test_call_len_known_length(self):
         # Make sure that len(t) is not optimized for a tuple of length 2048.
@@ -2960,10 +2951,6 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertNotIn("_CALL_ISINSTANCE", uops)
         self.assertNotIn("_GUARD_THIRD_NULL", uops)
         self.assertNotIn("_GUARD_CALLABLE_ISINSTANCE", uops)
-        self.assertNotIn("_POP_TOP_LOAD_CONST_INLINE_BORROW", uops)
-        self.assertNotIn("_POP_CALL_LOAD_CONST_INLINE_BORROW", uops)
-        self.assertNotIn("_POP_CALL_ONE_LOAD_CONST_INLINE_BORROW", uops)
-        self.assertNotIn("_POP_CALL_TWO_LOAD_CONST_INLINE_BORROW", uops)
 
     def test_call_list_append(self):
         def testfunc(n):
@@ -3006,9 +2993,6 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertNotIn("_TO_BOOL_BOOL", uops)
         self.assertNotIn(self.guard_is_true, uops)
         self.assertNotIn("_POP_TOP_LOAD_CONST_INLINE_BORROW", uops)
-        self.assertNotIn("_POP_CALL_LOAD_CONST_INLINE_BORROW", uops)
-        self.assertNotIn("_POP_CALL_ONE_LOAD_CONST_INLINE_BORROW", uops)
-        self.assertNotIn("_POP_CALL_TWO_LOAD_CONST_INLINE_BORROW", uops)
 
     def test_call_isinstance_is_false(self):
         def testfunc(n):
@@ -3027,9 +3011,6 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertNotIn("_TO_BOOL_BOOL", uops)
         self.assertNotIn(self.guard_is_false, uops)
         self.assertNotIn("_POP_TOP_LOAD_CONST_INLINE_BORROW", uops)
-        self.assertNotIn("_POP_CALL_LOAD_CONST_INLINE_BORROW", uops)
-        self.assertNotIn("_POP_CALL_ONE_LOAD_CONST_INLINE_BORROW", uops)
-        self.assertNotIn("_POP_CALL_TWO_LOAD_CONST_INLINE_BORROW", uops)
 
     def test_call_isinstance_subclass(self):
         def testfunc(n):
@@ -3048,9 +3029,6 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertNotIn("_TO_BOOL_BOOL", uops)
         self.assertNotIn(self.guard_is_true, uops)
         self.assertNotIn("_POP_TOP_LOAD_CONST_INLINE_BORROW", uops)
-        self.assertNotIn("_POP_CALL_LOAD_CONST_INLINE_BORROW", uops)
-        self.assertNotIn("_POP_CALL_ONE_LOAD_CONST_INLINE_BORROW", uops)
-        self.assertNotIn("_POP_CALL_TWO_LOAD_CONST_INLINE_BORROW", uops)
 
     def test_call_isinstance_unknown_object(self):
         def testfunc(n):
