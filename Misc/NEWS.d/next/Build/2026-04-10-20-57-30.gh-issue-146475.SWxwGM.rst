@@ -1,0 +1,1 @@
+Strip CFI directives from JIT stencil assembly to fix build failures with Apple LLVM 21.
