@@ -4598,16 +4598,19 @@ class SuggestionFormattingTestBase(SuggestionFormattingTestMixin):
                 actual = self.get_suggestion(obj, attr)
                 self.assertEndsWith(actual, expected)
 
+    @force_not_colorized
     def test_cross_language_levenshtein_fallback(self):
         # When no cross-language entry exists, Levenshtein still works
         # (e.g., trim->strip is not in the table but Levenshtein catches it)
         actual = self.get_suggestion('', 'trim')
         self.assertIn("strip", actual)
 
+    @force_not_colorized
     def test_cross_language_no_hint_for_unknown_attr(self):
         actual = self.get_suggestion([], 'completely_unknown_method')
         self.assertNotIn("Did you mean", actual)
 
+    @force_not_colorized
     def test_cross_language_works_for_subclasses(self):
         # isinstance() check means subclasses also get hints
         class MyList(list):
