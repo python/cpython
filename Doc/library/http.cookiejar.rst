@@ -1,18 +1,15 @@
-:mod:`http.cookiejar` --- Cookie handling for HTTP clients
-==========================================================
+:mod:`!http.cookiejar` --- Cookie handling for HTTP clients
+===========================================================
 
 .. module:: http.cookiejar
    :synopsis: Classes for automatic handling of HTTP cookies.
-
-.. moduleauthor:: John J. Lee <jjl@pobox.com>
-.. sectionauthor:: John J. Lee <jjl@pobox.com>
 
 **Source code:** :source:`Lib/http/cookiejar.py`
 
 --------------
 
-The :mod:`http.cookiejar` module defines classes for automatic handling of HTTP
-cookies.  It is useful for accessing web sites that require small pieces of data
+The :mod:`!http.cookiejar` module defines classes for automatic handling of HTTP
+cookies.  It is useful for accessing websites that require small pieces of data
 -- :dfn:`cookies` -- to be set on the client machine by an HTTP response from a
 web server, and then returned to the server in later HTTP requests.
 
@@ -21,7 +18,7 @@ Both the regular Netscape cookie protocol and the protocol defined by
 :rfc:`2109` cookies are parsed as Netscape cookies and subsequently treated
 either as Netscape or RFC 2965 cookies according to the 'policy' in effect.
 Note that the great majority of cookies on the internet are Netscape cookies.
-:mod:`http.cookiejar` attempts to follow the de-facto Netscape cookie protocol (which
+:mod:`!http.cookiejar` attempts to follow the de-facto Netscape cookie protocol (which
 differs substantially from that set out in the original Netscape specification),
 including taking note of the ``max-age`` and ``port`` cookie-attributes
 introduced with RFC 2965.
@@ -44,8 +41,8 @@ The module defines the following exception:
    cookies from a file.  :exc:`LoadError` is a subclass of :exc:`OSError`.
 
    .. versionchanged:: 3.3
-      LoadError was made a subclass of :exc:`OSError` instead of
-      :exc:`IOError`.
+      :exc:`LoadError` used to be a subtype of :exc:`IOError`, which is now an
+      alias of :exc:`OSError`.
 
 
 The following classes are provided:
@@ -61,7 +58,7 @@ The following classes are provided:
    responsible for storing and retrieving cookies from a file or database.
 
 
-.. class:: FileCookieJar(filename, delayload=None, policy=None)
+.. class:: FileCookieJar(filename=None, delayload=None, policy=None)
 
    *policy* is an object implementing the :class:`CookiePolicy` interface.  For the
    other arguments, see the documentation for the corresponding attributes.
@@ -70,6 +67,8 @@ The following classes are provided:
    file on disk.  Cookies are **NOT** loaded from the named file until either the
    :meth:`load` or :meth:`revert` method is called.  Subclasses of this class are
    documented in section :ref:`file-cookie-jar-classes`.
+
+   This should not be initialized directly – use its subclasses below instead.
 
    .. versionchanged:: 3.8
 
@@ -107,7 +106,7 @@ The following classes are provided:
 .. class:: Cookie()
 
    This class represents Netscape, :rfc:`2109` and :rfc:`2965` cookies.  It is not
-   expected that users of :mod:`http.cookiejar` construct their own :class:`Cookie`
+   expected that users of :mod:`!http.cookiejar` construct their own :class:`Cookie`
    instances.  Instead, if necessary, call :meth:`make_cookies` on a
    :class:`CookieJar` instance.
 
@@ -119,13 +118,13 @@ The following classes are provided:
 
    Module :mod:`http.cookies`
       HTTP cookie classes, principally useful for server-side code.  The
-      :mod:`http.cookiejar` and :mod:`http.cookies` modules do not depend on each
+      :mod:`!http.cookiejar` and :mod:`http.cookies` modules do not depend on each
       other.
 
    https://curl.se/rfc/cookie_spec.html
       The specification of the original Netscape cookie protocol.  Though this is
       still the dominant protocol, the 'Netscape cookie protocol' implemented by all
-      the major browsers (and :mod:`http.cookiejar`) only bears a passing resemblance to
+      the major browsers (and :mod:`!http.cookiejar`) only bears a passing resemblance to
       the one sketched out in ``cookie_spec.html``.
 
    :rfc:`2109` - HTTP State Management Mechanism
@@ -135,7 +134,7 @@ The following classes are provided:
       The Netscape protocol with the bugs fixed.  Uses :mailheader:`Set-Cookie2` in
       place of :mailheader:`Set-Cookie`.  Not widely used.
 
-   http://kristol.org/cookie/errata.html
+   https://kristol.org/cookie/errata.html
       Unfinished errata to :rfc:`2965`.
 
    :rfc:`2964` - Use of HTTP State Management
@@ -160,11 +159,10 @@ contained :class:`Cookie` objects.
    respectively), the :mailheader:`Cookie2` header is also added when appropriate.
 
    The *request* object (usually a :class:`urllib.request.Request` instance)
-   must support the methods :meth:`get_full_url`, :meth:`get_host`,
-   :meth:`get_type`, :meth:`unverifiable`, :meth:`has_header`,
+   must support the methods :meth:`get_full_url`, :meth:`has_header`,
    :meth:`get_header`, :meth:`header_items`, :meth:`add_unredirected_header`
-   and :attr:`origin_req_host` attribute as documented by
-   :mod:`urllib.request`.
+   and the attributes :attr:`host`, :attr:`!type`, :attr:`unverifiable`
+   and :attr:`origin_req_host` as documented by :mod:`urllib.request`.
 
    .. versionchanged:: 3.3
 
@@ -186,11 +184,11 @@ contained :class:`Cookie` objects.
    method, which returns an :class:`email.message.Message` instance.
 
    The *request* object (usually a :class:`urllib.request.Request` instance)
-   must support the methods :meth:`get_full_url`, :meth:`get_host`,
-   :meth:`unverifiable`, and :attr:`origin_req_host` attribute, as documented
-   by :mod:`urllib.request`.  The request is used to set default values for
-   cookie-attributes as well as for checking that the cookie is allowed to be
-   set.
+   must support the method :meth:`get_full_url` and the attributes
+   :attr:`host`, :attr:`unverifiable` and :attr:`origin_req_host`,
+   as documented by :mod:`urllib.request`.  The request is used to set
+   default values for cookie-attributes as well as for checking that the
+   cookie is allowed to be set.
 
    .. versionchanged:: 3.3
 
@@ -318,11 +316,11 @@ FileCookieJar subclasses and co-operation with web browsers
 The following :class:`CookieJar` subclasses are provided for reading and
 writing.
 
-.. class:: MozillaCookieJar(filename, delayload=None, policy=None)
+.. class:: MozillaCookieJar(filename=None, delayload=None, policy=None)
 
    A :class:`FileCookieJar` that can load from and save cookies to disk in the
-   Mozilla ``cookies.txt`` file format (which is also used by the Lynx and Netscape
-   browsers).
+   Mozilla ``cookies.txt`` file format (which is also used by curl and the Lynx
+   and Netscape browsers).
 
    .. note::
 
@@ -339,7 +337,7 @@ writing.
    Mozilla.
 
 
-.. class:: LWPCookieJar(filename, delayload=None, policy=None)
+.. class:: LWPCookieJar(filename=None, delayload=None, policy=None)
 
    A :class:`FileCookieJar` that can load from and save cookies to disk in format
    compatible with the libwww-perl library's ``Set-Cookie3`` file format.  This is
@@ -569,7 +567,7 @@ Netscape protocol strictness switches:
 
    Don't allow setting cookies whose path doesn't path-match request URI.
 
-:attr:`strict_ns_domain` is a collection of flags.  Its value is constructed by
+:attr:`~DefaultCookiePolicy.strict_ns_domain` is a collection of flags.  Its value is constructed by
 or-ing together (for example, ``DomainStrictNoDots|DomainStrictNonDomain`` means
 both flags are set).
 
@@ -616,7 +614,7 @@ standard cookie-attributes specified in the various cookie standards.  The
 correspondence is not one-to-one, because there are complicated rules for
 assigning default values, because the ``max-age`` and ``expires``
 cookie-attributes contain equivalent information, and because :rfc:`2109` cookies
-may be 'downgraded' by :mod:`http.cookiejar` from version 1 to version 0 (Netscape)
+may be 'downgraded' by :mod:`!http.cookiejar` from version 1 to version 0 (Netscape)
 cookies.
 
 Assignment to these attributes should not be necessary other than in rare
@@ -628,7 +626,7 @@ internal consistency, so you should know what you're doing if you do that.
 
    Integer or :const:`None`.  Netscape cookies have :attr:`version` 0. :rfc:`2965` and
    :rfc:`2109` cookies have a ``version`` cookie-attribute of 1.  However, note that
-   :mod:`http.cookiejar` may 'downgrade' RFC 2109 cookies to Netscape cookies, in which
+   :mod:`!http.cookiejar` may 'downgrade' RFC 2109 cookies to Netscape cookies, in which
    case :attr:`version` is 0.
 
 
@@ -646,6 +644,11 @@ internal consistency, so you should know what you're doing if you do that.
 
    String representing a port or a set of ports (eg. '80', or '80,8080'), or
    :const:`None`.
+
+
+.. attribute:: Cookie.domain
+
+   Cookie domain (a string).
 
 
 .. attribute:: Cookie.path
@@ -686,7 +689,7 @@ internal consistency, so you should know what you're doing if you do that.
    ``True`` if this cookie was received as an :rfc:`2109` cookie (ie. the cookie
    arrived in a :mailheader:`Set-Cookie` header, and the value of the Version
    cookie-attribute in that header was 1).  This attribute is provided because
-   :mod:`http.cookiejar` may 'downgrade' RFC 2109 cookies to Netscape cookies, in
+   :mod:`!http.cookiejar` may 'downgrade' RFC 2109 cookies to Netscape cookies, in
    which case :attr:`version` is 0.
 
 
@@ -738,7 +741,7 @@ The :class:`Cookie` class also defines the following method:
 Examples
 --------
 
-The first example shows the most common usage of :mod:`http.cookiejar`::
+The first example shows the most common usage of :mod:`!http.cookiejar`::
 
    import http.cookiejar, urllib.request
    cj = http.cookiejar.CookieJar()

@@ -1,1 +1,0 @@
-Improve performance of attribute lookups on objects with custom ``__getattribute__`` and ``__getattr__``. Patch by Ken Jin.

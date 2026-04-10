@@ -1,3 +1,0 @@
-Avoid mixing declarations and code in the C API to fix the compiler warning:
-"ISO C90 forbids mixed declarations and code"
-[-Werror=declaration-after-statement]. Patch by Victor Stinner.

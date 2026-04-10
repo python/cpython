@@ -1,12 +1,21 @@
 import unittest
 
 from test import support
+from test.support.import_helper import ensure_lazy_imports
 from io import StringIO
 from pstats import SortKey
 from enum import StrEnum, _test_simple_enum
 
+import os
 import pstats
+import tempfile
 import cProfile
+
+class LazyImportTest(unittest.TestCase):
+    @support.cpython_only
+    def test_lazy_import(self):
+        ensure_lazy_imports("pstats", {"typing"})
+
 
 class AddCallersTestCase(unittest.TestCase):
     """Tests for pstats.add_callers helper."""
@@ -35,6 +44,33 @@ class StatsTestCase(unittest.TestCase):
         stream = StringIO()
         stats = pstats.Stats(stream=stream)
         stats.add(self.stats, self.stats)
+
+    def test_dump_and_load_works_correctly(self):
+        temp_storage_new = tempfile.NamedTemporaryFile(delete=False)
+        try:
+            self.stats.dump_stats(filename=temp_storage_new.name)
+            tmp_stats = pstats.Stats(temp_storage_new.name)
+            self.assertEqual(self.stats.stats, tmp_stats.stats)
+        finally:
+            temp_storage_new.close()
+            os.remove(temp_storage_new.name)
+
+    def test_load_equivalent_to_init(self):
+        stats = pstats.Stats()
+        self.temp_storage = tempfile.NamedTemporaryFile(delete=False)
+        try:
+            cProfile.run('import os', filename=self.temp_storage.name)
+            stats.load_stats(self.temp_storage.name)
+            created = pstats.Stats(self.temp_storage.name)
+            self.assertEqual(stats.stats, created.stats)
+        finally:
+            self.temp_storage.close()
+            os.remove(self.temp_storage.name)
+
+    def test_loading_wrong_types(self):
+        stats = pstats.Stats()
+        with self.assertRaises(TypeError):
+            stats.load_stats(42)
 
     def test_sort_stats_int(self):
         valid_args = {-1: 'stdname',

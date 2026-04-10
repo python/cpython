@@ -1,1 +1,0 @@
-Augmented documentation of asyncio.create_task(). Clarified the need to keep strong references to tasks and added a code snippet detailing how to to this.

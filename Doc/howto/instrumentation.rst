@@ -13,9 +13,9 @@ DTrace and SystemTap are monitoring tools, each providing a way to inspect
 what the processes on a computer system are doing.  They both use
 domain-specific languages allowing a user to write scripts which:
 
-  - filter which processes are to be observed
-  - gather data from the processes of interest
-  - generate reports on the data
+- filter which processes are to be observed
+- gather data from the processes of interest
+- generate reports on the data
 
 As of Python 3.6, CPython can be built with embedded "markers", also
 known as "probes", that can be observed by a DTrace or SystemTap script,
@@ -246,11 +246,9 @@ The output looks like this:
 
 where the columns are:
 
-  - time in microseconds since start of script
-
-  - name of executable
-
-  - PID of process
+- time in microseconds since start of script
+- name of executable
+- PID of process
 
 and the remainder indicates the call/return hierarchy as the script executes.
 
@@ -270,6 +268,8 @@ should instead read:
 
 (assuming a :ref:`debug build <debug-build>` of CPython 3.6)
 
+
+.. _static-markers:
 
 Available static markers
 ------------------------
@@ -292,11 +292,11 @@ Available static markers
 
 .. object:: function__return(str filename, str funcname, int lineno)
 
-   This marker is the converse of :c:func:`function__entry`, and indicates that
+   This marker is the converse of :c:func:`!function__entry`, and indicates that
    execution of a Python function has ended (either via ``return``, or via an
    exception).  It is only triggered for pure-Python (bytecode) functions.
 
-   The arguments are the same as for :c:func:`function__entry`
+   The arguments are the same as for :c:func:`!function__entry`
 
 .. object:: line(str filename, str funcname, int lineno)
 
@@ -304,12 +304,12 @@ Available static markers
    the equivalent of line-by-line tracing with a Python profiler.  It is
    not triggered within C functions.
 
-   The arguments are the same as for :c:func:`function__entry`.
+   The arguments are the same as for :c:func:`!function__entry`.
 
 .. object:: gc__start(int generation)
 
    Fires when the Python interpreter starts a garbage collection cycle.
-   ``arg0`` is the generation to scan, like :func:`gc.collect()`.
+   ``arg0`` is the generation to scan, like :func:`gc.collect`.
 
 .. object:: gc__done(long collected)
 
@@ -340,6 +340,84 @@ Available static markers
 
    .. versionadded:: 3.8
 
+
+C Entry Points
+^^^^^^^^^^^^^^
+
+To simplify triggering of DTrace markers, Python's C API comes with a number
+of helper functions that mirror each static marker. On builds of Python without
+DTrace enabled, these do nothing.
+
+In general, it is not necessary to call these yourself, as Python will do
+it for you.
+
+.. list-table::
+   :widths: 50 25 25
+   :header-rows: 1
+
+   * * C API Function
+     * Static Marker
+     * Notes
+   * * .. c:function:: void PyDTrace_LINE(const char *arg0, const char *arg1, int arg2)
+     * :c:func:`!line`
+     *
+   * * .. c:function:: void PyDTrace_FUNCTION_ENTRY(const char *arg0, const char *arg1, int arg2)
+     * :c:func:`!function__entry`
+     *
+   * * .. c:function:: void PyDTrace_FUNCTION_RETURN(const char *arg0, const char *arg1, int arg2)
+     * :c:func:`!function__return`
+     *
+   * * .. c:function:: void PyDTrace_GC_START(int arg0)
+     * :c:func:`!gc__start`
+     *
+   * * .. c:function:: void PyDTrace_GC_DONE(Py_ssize_t arg0)
+     * :c:func:`!gc__done`
+     *
+   * * .. c:function:: void PyDTrace_INSTANCE_NEW_START(int arg0)
+     * :c:func:`!instance__new__start`
+     * Not used by Python
+   * * .. c:function:: void PyDTrace_INSTANCE_NEW_DONE(int arg0)
+     * :c:func:`!instance__new__done`
+     * Not used by Python
+   * * .. c:function:: void PyDTrace_INSTANCE_DELETE_START(int arg0)
+     * :c:func:`!instance__delete__start`
+     * Not used by Python
+   * * .. c:function:: void PyDTrace_INSTANCE_DELETE_DONE(int arg0)
+     * :c:func:`!instance__delete__done`
+     * Not used by Python
+   * * .. c:function:: void PyDTrace_IMPORT_FIND_LOAD_START(const char *arg0)
+     * :c:func:`!import__find__load__start`
+     *
+   * * .. c:function:: void PyDTrace_IMPORT_FIND_LOAD_DONE(const char *arg0, int arg1)
+     * :c:func:`!import__find__load__done`
+     *
+   * * .. c:function:: void PyDTrace_AUDIT(const char *arg0, void *arg1)
+     * :c:func:`!audit`
+     *
+
+
+C Probing Checks
+^^^^^^^^^^^^^^^^
+
+.. c:function:: int PyDTrace_LINE_ENABLED(void)
+.. c:function:: int PyDTrace_FUNCTION_ENTRY_ENABLED(void)
+.. c:function:: int PyDTrace_FUNCTION_RETURN_ENABLED(void)
+.. c:function:: int PyDTrace_GC_START_ENABLED(void)
+.. c:function:: int PyDTrace_GC_DONE_ENABLED(void)
+.. c:function:: int PyDTrace_INSTANCE_NEW_START_ENABLED(void)
+.. c:function:: int PyDTrace_INSTANCE_NEW_DONE_ENABLED(void)
+.. c:function:: int PyDTrace_INSTANCE_DELETE_START_ENABLED(void)
+.. c:function:: int PyDTrace_INSTANCE_DELETE_DONE_ENABLED(void)
+.. c:function:: int PyDTrace_IMPORT_FIND_LOAD_START_ENABLED(void)
+.. c:function:: int PyDTrace_IMPORT_FIND_LOAD_DONE_ENABLED(void)
+.. c:function:: int PyDTrace_AUDIT_ENABLED(void)
+
+   All calls to ``PyDTrace`` functions must be guarded by a call to one
+   of these functions. This allows Python to minimize performance impact
+   when probing is disabled.
+
+   On builds without DTrace enabled, these functions do nothing and return
+   ``0``.
 
 SystemTap Tapsets
 -----------------

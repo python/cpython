@@ -10,13 +10,13 @@ Using the Python Interpreter
 Invoking the Interpreter
 ========================
 
-The Python interpreter is usually installed as :file:`/usr/local/bin/python3.12`
+The Python interpreter is usually installed as |usr_local_bin_python_x_dot_y_literal|
 on those machines where it is available; putting :file:`/usr/local/bin` in your
 Unix shell's search path makes it possible to start it by typing the command:
 
 .. code-block:: text
 
-   python3.12
+   python3.15
 
 to the shell. [#]_ Since the choice of the directory where the interpreter lives
 is an installation option, other places are possible; check with your local
@@ -24,7 +24,7 @@ Python guru or system administrator.  (E.g., :file:`/usr/local/python` is a
 popular alternative location.)
 
 On Windows machines where you have installed Python from the :ref:`Microsoft Store
-<windows-store>`, the :file:`python3.12` command will be available. If you have
+<windows-store>`, the |python_x_dot_y_literal| command will be available. If you have
 the :ref:`py.exe launcher <launcher>` installed, you can use the :file:`py`
 command. See :ref:`setting-envvars` for other ways to launch Python.
 
@@ -34,13 +34,13 @@ status.  If that doesn't work, you can exit the interpreter by typing the
 following command: ``quit()``.
 
 The interpreter's line-editing features include interactive editing, history
-substitution and code completion on systems that support the `GNU Readline
-<https://tiswww.case.edu/php/chet/readline/rltop.html>`_ library.
+substitution and code completion on most systems.
 Perhaps the quickest check to see whether command line editing is supported is
-typing :kbd:`Control-P` to the first Python prompt you get.  If it beeps, you
-have command line editing; see Appendix :ref:`tut-interacting` for an
-introduction to the keys.  If nothing appears to happen, or if ``^P`` is
-echoed, command line editing isn't available; you'll only be able to use
+typing a word in on the Python prompt, then pressing Left arrow (or :kbd:`Control-b`).
+If the cursor moves, you have command line editing; see Appendix
+:ref:`tut-interacting` for an introduction to the keys.
+If nothing appears to happen, or if a sequence like ``^[[D`` or ``^B`` appears,
+command line editing isn't available; you'll only be able to use
 backspace to remove characters from the current line.
 
 The interpreter operates somewhat like the Unix shell: when called with standard
@@ -52,7 +52,7 @@ A second way of starting the interpreter is ``python -c command [arg] ...``,
 which executes the statement(s) in *command*, analogous to the shell's
 :option:`-c` option.  Since Python statements often contain spaces or other
 characters that are special to the shell, it is usually advised to quote
-*command* in its entirety with single quotes.
+*command* in its entirety.
 
 Some Python modules are also useful as scripts.  These can be invoked using
 ``python -m module [arg] ...``, which executes the source file for *module* as
@@ -97,8 +97,8 @@ before printing the first prompt:
 
 .. code-block:: shell-session
 
-   $ python3.12
-   Python 3.12 (default, April 4 2022, 09:25:04)
+   $ python3.15
+   Python 3.15 (default, May 7 2025, 15:46:04)
    [GCC 10.2.0] on linux
    Type "help", "copyright", "credits" or "license" for more information.
    >>>

@@ -1,11 +1,8 @@
-:mod:`email.headerregistry`: Custom Header Objects
---------------------------------------------------
+:mod:`!email.headerregistry`: Custom Header Objects
+---------------------------------------------------
 
 .. module:: email.headerregistry
    :synopsis: Automatic Parsing of headers based on the field name
-
-.. moduleauthor:: R. David Murray <rdmurray@bitdance.com>
-.. sectionauthor:: R. David Murray <rdmurray@bitdance.com>
 
 **Source code:** :source:`Lib/email/headerregistry.py`
 
@@ -153,7 +150,7 @@ headers.
       specified as ``-0000`` (indicating it is in UTC but contains no
       information about the source timezone), then :attr:`.datetime` will be a
       naive :class:`~datetime.datetime`.  If a specific timezone offset is
-      found (including `+0000`), then :attr:`.datetime` will contain an aware
+      found (including ``+0000``), then :attr:`.datetime` will contain an aware
       ``datetime`` that uses :class:`datetime.timezone` to record the timezone
       offset.
 
@@ -269,6 +266,10 @@ variant, :attr:`~.BaseHeader.max_count` is set to 1.
 
        A dictionary mapping parameter names to parameter values.
 
+       .. versionchanged:: 3.15
+          It is now a :class:`frozendict` instead of a
+          :class:`types.MappingProxyType`.
+
 
 .. class:: ContentTypeHeader
 
@@ -294,7 +295,7 @@ variant, :attr:`~.BaseHeader.max_count` is set to 1.
        ``inline`` and ``attachment`` are the only valid values in common use.
 
 
-.. class:: ContentTransferEncoding
+.. class:: ContentTransferEncodingHeader
 
    Handles the :mailheader:`Content-Transfer-Encoding` header.
 
@@ -317,7 +318,7 @@ variant, :attr:`~.BaseHeader.max_count` is set to 1.
     class.  When *use_default_map* is ``True`` (the default), the standard
     mapping of header names to classes is copied in to the registry during
     initialization.  *base_class* is always the last class in the generated
-    class's ``__bases__`` list.
+    class's :class:`~type.__bases__` list.
 
     The default mappings are:
 

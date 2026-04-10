@@ -1,2 +1,0 @@
-Expose ``FICLONE`` and ``FICLONERANGE`` constants in :mod:`fcntl`. Patch by
-Illia Volochii.

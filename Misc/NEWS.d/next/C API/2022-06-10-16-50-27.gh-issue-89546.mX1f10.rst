@@ -1,4 +1,0 @@
-:c:func:`PyType_FromMetaclass` (and other ``PyType_From*`` functions) now
-check that offsets and the base class's
-:c:member:`~PyTypeObject.tp_basicsize` fit in the new class's
-``tp_basicsize``.

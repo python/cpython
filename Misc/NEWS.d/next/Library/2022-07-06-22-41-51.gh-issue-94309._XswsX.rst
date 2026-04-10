@@ -1,1 +1,0 @@
-Deprecate aliases :class:`typing.Hashable` and :class:`typing.Sized`

@@ -1,2 +1,0 @@
-Fix the :attr:`__text_signature__` for :meth:`__get__` methods implemented
-in C. Patch by Jelle Zijlstra.

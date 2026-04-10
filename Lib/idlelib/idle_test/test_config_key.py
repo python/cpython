@@ -13,15 +13,13 @@ from tkinter import Tk, TclError
 from idlelib.idle_test.mock_idle import Func
 from idlelib.idle_test.mock_tk import Mbox_func
 
-gkd = config_key.GetKeysDialog
-
 
 class ValidationTest(unittest.TestCase):
     "Test validation methods: ok, keys_ok, bind_ok."
 
-    class Validator(gkd):
+    class Validator(config_key.GetKeysFrame):
         def __init__(self, *args, **kwargs):
-            config_key.GetKeysDialog.__init__(self, *args, **kwargs)
+            super().__init__(*args, **kwargs)
             class list_keys_final:
                 get = Func()
             self.list_keys_final = list_keys_final
@@ -34,15 +32,14 @@ class ValidationTest(unittest.TestCase):
         cls.root = Tk()
         cls.root.withdraw()
         keylist = [['<Key-F12>'], ['<Control-Key-x>', '<Control-Key-X>']]
-        cls.dialog = cls.Validator(
-            cls.root, 'Title', '<<Test>>', keylist, _utest=True)
+        cls.dialog = cls.Validator(cls.root, '<<Test>>', keylist)
 
     @classmethod
     def tearDownClass(cls):
-        cls.dialog.cancel()
+        del cls.dialog
         cls.root.update_idletasks()
         cls.root.destroy()
-        del cls.dialog, cls.root
+        del cls.root
 
     def setUp(self):
         self.dialog.showerror.message = ''
@@ -111,14 +108,14 @@ class ToggleLevelTest(unittest.TestCase):
         requires('gui')
         cls.root = Tk()
         cls.root.withdraw()
-        cls.dialog = gkd(cls.root, 'Title', '<<Test>>', [], _utest=True)
+        cls.dialog = config_key.GetKeysFrame(cls.root, '<<Test>>', [])
 
     @classmethod
     def tearDownClass(cls):
-        cls.dialog.cancel()
+        del cls.dialog
         cls.root.update_idletasks()
         cls.root.destroy()
-        del cls.dialog, cls.root
+        del cls.root
 
     def test_toggle_level(self):
         dialog = self.dialog
@@ -130,7 +127,7 @@ class ToggleLevelTest(unittest.TestCase):
             this can be used to check whether a frame is above or
             below another one.
             """
-            for index, child in enumerate(dialog.frame.winfo_children()):
+            for index, child in enumerate(dialog.winfo_children()):
                 if child._name == 'keyseq_basic':
                     basic = index
                 if child._name == 'keyseq_advanced':
@@ -161,7 +158,7 @@ class ToggleLevelTest(unittest.TestCase):
 class KeySelectionTest(unittest.TestCase):
     "Test selecting key on Basic frames."
 
-    class Basic(gkd):
+    class Basic(config_key.GetKeysFrame):
         def __init__(self, *args, **kwargs):
             super().__init__(*args, **kwargs)
             class list_keys_final:
@@ -179,14 +176,14 @@ class KeySelectionTest(unittest.TestCase):
         requires('gui')
         cls.root = Tk()
         cls.root.withdraw()
-        cls.dialog = cls.Basic(cls.root, 'Title', '<<Test>>', [], _utest=True)
+        cls.dialog = cls.Basic(cls.root, '<<Test>>', [])
 
     @classmethod
     def tearDownClass(cls):
-        cls.dialog.cancel()
+        del cls.dialog
         cls.root.update_idletasks()
         cls.root.destroy()
-        del cls.dialog, cls.root
+        del cls.root
 
     def setUp(self):
         self.dialog.clear_key_seq()
@@ -206,7 +203,7 @@ class KeySelectionTest(unittest.TestCase):
         dialog.modifier_checkbuttons['foo'].invoke()
         eq(gm(), ['BAZ'])
 
-    @mock.patch.object(gkd, 'get_modifiers')
+    @mock.patch.object(config_key.GetKeysFrame, 'get_modifiers')
     def test_build_key_string(self, mock_modifiers):
         dialog = self.dialog
         key = dialog.list_keys_final
@@ -227,7 +224,7 @@ class KeySelectionTest(unittest.TestCase):
         dialog.build_key_string()
         eq(string(), '<mymod-test>')
 
-    @mock.patch.object(gkd, 'get_modifiers')
+    @mock.patch.object(config_key.GetKeysFrame, 'get_modifiers')
     def test_final_key_selected(self, mock_modifiers):
         dialog = self.dialog
         key = dialog.list_keys_final
@@ -240,7 +237,7 @@ class KeySelectionTest(unittest.TestCase):
         eq(string(), '<Shift-Key-braceleft>')
 
 
-class CancelTest(unittest.TestCase):
+class CancelWindowTest(unittest.TestCase):
     "Simulate user clicking [Cancel] button."
 
     @classmethod
@@ -248,21 +245,89 @@ class CancelTest(unittest.TestCase):
         requires('gui')
         cls.root = Tk()
         cls.root.withdraw()
-        cls.dialog = gkd(cls.root, 'Title', '<<Test>>', [], _utest=True)
+        cls.dialog = config_key.GetKeysWindow(
+            cls.root, 'Title', '<<Test>>', [], _utest=True)
 
     @classmethod
     def tearDownClass(cls):
         cls.dialog.cancel()
+        del cls.dialog
         cls.root.update_idletasks()
         cls.root.destroy()
-        del cls.dialog, cls.root
+        del cls.root
 
-    def test_cancel(self):
+    @mock.patch.object(config_key.GetKeysFrame, 'ok')
+    def test_cancel(self, mock_frame_ok):
         self.assertEqual(self.dialog.winfo_class(), 'Toplevel')
         self.dialog.button_cancel.invoke()
         with self.assertRaises(TclError):
             self.dialog.winfo_class()
         self.assertEqual(self.dialog.result, '')
+        mock_frame_ok.assert_not_called()
+
+
+class OKWindowTest(unittest.TestCase):
+    "Simulate user clicking [OK] button."
+
+    @classmethod
+    def setUpClass(cls):
+        requires('gui')
+        cls.root = Tk()
+        cls.root.withdraw()
+        cls.dialog = config_key.GetKeysWindow(
+            cls.root, 'Title', '<<Test>>', [], _utest=True)
+
+    @classmethod
+    def tearDownClass(cls):
+        cls.dialog.cancel()
+        del cls.dialog
+        cls.root.update_idletasks()
+        cls.root.destroy()
+        del cls.root
+
+    @mock.patch.object(config_key.GetKeysFrame, 'ok')
+    def test_ok(self, mock_frame_ok):
+        self.assertEqual(self.dialog.winfo_class(), 'Toplevel')
+        self.dialog.button_ok.invoke()
+        with self.assertRaises(TclError):
+            self.dialog.winfo_class()
+        mock_frame_ok.assert_called()
+
+
+class WindowResultTest(unittest.TestCase):
+    "Test window result get and set."
+
+    @classmethod
+    def setUpClass(cls):
+        requires('gui')
+        cls.root = Tk()
+        cls.root.withdraw()
+        cls.dialog = config_key.GetKeysWindow(
+            cls.root, 'Title', '<<Test>>', [], _utest=True)
+
+    @classmethod
+    def tearDownClass(cls):
+        cls.dialog.cancel()
+        del cls.dialog
+        cls.root.update_idletasks()
+        cls.root.destroy()
+        del cls.root
+
+    def test_result(self):
+        dialog = self.dialog
+        eq = self.assertEqual
+
+        dialog.result = ''
+        eq(dialog.result, '')
+        eq(dialog.frame.result,'')
+
+        dialog.result = 'bar'
+        eq(dialog.result,'bar')
+        eq(dialog.frame.result,'bar')
+
+        dialog.frame.result = 'foo'
+        eq(dialog.result, 'foo')
+        eq(dialog.frame.result,'foo')
 
 
 class HelperTest(unittest.TestCase):

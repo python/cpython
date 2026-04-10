@@ -1,3 +1,0 @@
-Removed undocumented ``-t`` argument of ``python -m base64``. Use
-``python -m unittest test.test_base64.LegacyBase64TestCase.test_encodebytes``
-instead.

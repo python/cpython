@@ -1,5 +1,5 @@
 from test import support
-from test.support import os_helper, requires_debug_ranges
+from test.support import is_apple_mobile, os_helper, requires_debug_ranges, is_emscripten
 from test.support.script_helper import assert_python_ok
 import array
 import io
@@ -28,12 +28,24 @@ class HelperMixin:
         finally:
             os_helper.unlink(os_helper.TESTFN)
 
+def omit_last_byte(data):
+    """return data[:-1]"""
+    # This file's code is used in CompatibilityTestCase,
+    # but slices need marshal version 5.
+    # Avoid the slice literal.
+    return data[slice(0, -1)]
+
 class IntTestCase(unittest.TestCase, HelperMixin):
     def test_ints(self):
         # Test a range of Python ints larger than the machine word size.
         n = sys.maxsize ** 2
         while n:
             for expected in (-n, n):
+                self.helper(expected)
+            n = n >> 1
+        n = 1 << 100
+        while n:
+            for expected in (-n, -n+1, n-1, n):
                 self.helper(expected)
             n = n >> 1
 
@@ -117,8 +129,8 @@ class CodeTestCase(unittest.TestCase):
 
     def test_many_codeobjects(self):
         # Issue2957: bad recursion count on code objects
-        count = 5000    # more than MAX_MARSHAL_STACK_DEPTH
-        codes = (ExceptionTestCase.test_exceptions.__code__,) * count
+        # more than MAX_MARSHAL_STACK_DEPTH
+        codes = (ExceptionTestCase.test_exceptions.__code__,) * 10_000
         marshal.loads(marshal.dumps(codes))
 
     def test_different_filenames(self):
@@ -127,6 +139,32 @@ class CodeTestCase(unittest.TestCase):
         co1, co2 = marshal.loads(marshal.dumps((co1, co2)))
         self.assertEqual(co1.co_filename, "f1")
         self.assertEqual(co2.co_filename, "f2")
+
+    def test_no_allow_code(self):
+        data = {'a': [({0},)]}
+        dump = marshal.dumps(data, allow_code=False)
+        self.assertEqual(marshal.loads(dump, allow_code=False), data)
+
+        f = io.BytesIO()
+        marshal.dump(data, f, allow_code=False)
+        f.seek(0)
+        self.assertEqual(marshal.load(f, allow_code=False), data)
+
+        co = ExceptionTestCase.test_exceptions.__code__
+        data = {'a': [({co, 0},)]}
+        dump = marshal.dumps(data, allow_code=True)
+        self.assertEqual(marshal.loads(dump, allow_code=True), data)
+        with self.assertRaises(ValueError):
+            marshal.dumps(data, allow_code=False)
+        with self.assertRaises(ValueError):
+            marshal.loads(dump, allow_code=False)
+
+        marshal.dump(data, io.BytesIO(), allow_code=True)
+        self.assertEqual(marshal.load(io.BytesIO(dump), allow_code=True), data)
+        with self.assertRaises(ValueError):
+            marshal.dump(data, io.BytesIO(), allow_code=False)
+        with self.assertRaises(ValueError):
+            marshal.load(io.BytesIO(dump), allow_code=False)
 
     @requires_debug_ranges()
     def test_minimal_linetable_with_no_debug_ranges(self):
@@ -214,7 +252,8 @@ class BugsTestCase(unittest.TestCase):
     def test_patch_873224(self):
         self.assertRaises(Exception, marshal.loads, b'0')
         self.assertRaises(Exception, marshal.loads, b'f')
-        self.assertRaises(Exception, marshal.loads, marshal.dumps(2**65)[:-1])
+        self.assertRaises(Exception, marshal.loads,
+                          omit_last_byte(marshal.dumps(2**65)))
 
     def test_version_argument(self):
         # Python 2.4.0 crashes for any call to marshal.dumps(x, y)
@@ -259,6 +298,8 @@ class BugsTestCase(unittest.TestCase):
         #if os.name == 'nt' and support.Py_DEBUG:
         if os.name == 'nt':
             MAX_MARSHAL_STACK_DEPTH = 1000
+        elif sys.platform == 'wasi' or is_emscripten or is_apple_mobile:
+            MAX_MARSHAL_STACK_DEPTH = 1500
         else:
             MAX_MARSHAL_STACK_DEPTH = 2000
         for i in range(MAX_MARSHAL_STACK_DEPTH - 2):
@@ -352,7 +393,7 @@ class BugsTestCase(unittest.TestCase):
             for elements in (
                 "float('nan'), b'a', b'b', b'c', 'x', 'y', 'z'",
                 # Also test for bad interactions with backreferencing:
-                "('Spam', 0), ('Spam', 1), ('Spam', 2)",
+                "('Spam', 0), ('Spam', 1), ('Spam', 2), ('Spam', 3), ('Spam', 4), ('Spam', 5)",
             ):
                 s = f"{kind}([{elements}])"
                 with self.subTest(s):
@@ -371,6 +412,26 @@ class BugsTestCase(unittest.TestCase):
                     _, dump_0, _ = assert_python_ok(*args, PYTHONHASHSEED="0")
                     _, dump_1, _ = assert_python_ok(*args, PYTHONHASHSEED="1")
                     self.assertEqual(dump_0, dump_1)
+
+    def test_unmarshallable(self):
+        # Check no crash after encountering unmarshallable objects.
+        # See https://github.com/python/cpython/issues/106287.
+        fset = frozenset([int])
+        code = compile("a = 1", "<string>", "exec")
+        code = code.replace(co_consts=(1, fset, None))
+        cases = (('tuple', (fset,)),
+                 ('list', [fset]),
+                 ('set', fset),
+                 ('dict key', {fset: 'x'}),
+                 ('dict value', {'x': fset}),
+                 ('dict key & value', {fset: fset}),
+                 ('slice', slice(fset, fset)),
+                 ('code', code))
+        for name, arg in cases:
+            with self.subTest(name, arg=arg):
+                with self.assertRaisesRegex(ValueError, "unmarshallable object"):
+                    marshal.dumps((arg, memoryview(b'')))
+
 
 LARGE_SIZE = 2**31
 pointer_size = 8 if sys.maxsize > 0xFFFFFFFF else 4
@@ -509,6 +570,15 @@ class InstancingTestCase(unittest.TestCase, HelperMixin):
             self.helper(dictobj)
             self.helper3(dictobj)
 
+    def testFrozenDict(self):
+        for obj in self.keys:
+            dictobj = frozendict({"hello": obj, "goodbye": obj, obj: "hello"})
+            self.helper(dictobj)
+
+            for version in range(6):
+                with self.assertRaises(ValueError):
+                    marshal.dumps(dictobj, version)
+
     def testModule(self):
         with open(__file__, "rb") as f:
             code = f.read()
@@ -564,6 +634,19 @@ class InterningTestCase(unittest.TestCase, HelperMixin):
         self.assertNotEqual(id(s), id(self.strobj))
         s2 = sys.intern(s)
         self.assertNotEqual(id(s2), id(s))
+
+class SliceTestCase(unittest.TestCase, HelperMixin):
+    def test_slice(self):
+        for obj in (
+            slice(None), slice(1), slice(1, 2), slice(1, 2, 3),
+            slice({'set'}, ('tuple', {'with': 'dict'}, ), self.helper.__code__)
+        ):
+            with self.subTest(obj=str(obj)):
+                self.helper(obj)
+
+                for version in range(5):
+                    with self.assertRaises(ValueError):
+                        marshal.dumps(obj, version)
 
 @support.cpython_only
 @unittest.skipUnless(_testcapi, 'requires _testcapi')
@@ -625,7 +708,7 @@ class CAPI_TestCase(unittest.TestCase, HelperMixin):
             self.assertEqual(r, obj)
 
             with open(os_helper.TESTFN, 'wb') as f:
-                f.write(data[:1])
+                f.write(omit_last_byte(data))
             with self.assertRaises(EOFError):
                 _testcapi.pymarshal_read_last_object_from_file(os_helper.TESTFN)
             os_helper.unlink(os_helper.TESTFN)
@@ -642,7 +725,7 @@ class CAPI_TestCase(unittest.TestCase, HelperMixin):
             self.assertEqual(p, len(data))
 
             with open(os_helper.TESTFN, 'wb') as f:
-                f.write(data[:1])
+                f.write(omit_last_byte(data))
             with self.assertRaises(EOFError):
                 _testcapi.pymarshal_read_object_from_file(os_helper.TESTFN)
             os_helper.unlink(os_helper.TESTFN)

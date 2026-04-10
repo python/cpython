@@ -1,6 +1,0 @@
-Removed many old deprecated :mod:`unittest` features:
-:class:`~unittest.TestCase` method aliases, undocumented and broken
-:class:`~unittest.TestCase` method ``assertDictContainsSubset``,
-undocumented :meth:`TestLoader.loadTestsFromModule
-<unittest.TestLoader.loadTestsFromModule>` parameter *use_load_tests*, and
-an underscored alias of the :class:`~unittest.TextTestResult` class.

@@ -1,5 +1,3 @@
-#! /usr/bin/env python3
-
 """Tool for measuring execution time of small code snippets.
 
 This module avoids a number of common traps for measuring execution
@@ -9,7 +7,7 @@ the Python Cookbook, published by O'Reilly.
 Library usage: see the Timer class.
 
 Command line usage:
-    python timeit.py [-n N] [-r N] [-s S] [-p] [-h] [--] [statement]
+    python timeit.py [-n N] [-r N] [-s S] [-p] [-h] [-t T] [--] [statement]
 
 Options:
   -n/--number N: how many times to execute 'statement' (default: see below)
@@ -19,6 +17,9 @@ Options:
   -p/--process: use time.process_time() (default is time.perf_counter())
   -v/--verbose: print raw timing results; repeat for more digits precision
   -u/--unit: set the output time unit (nsec, usec, msec, or sec)
+  -t/--target-time T: if --number is 0 the code will run until it
+                      takes *at least* this many seconds
+                      (default: 0.2)
   -h/--help: print this usage message and exit
   --: separate options from statement, use when statement starts with -
   statement: statement to be timed (default 'pass')
@@ -30,7 +31,7 @@ treated similarly.
 
 If -n is not given, a suitable number of loops is calculated by trying
 increasing numbers from the sequence 1, 2, 5, 10, 20, 50, ... until the
-total time is at least 0.2 seconds.
+total time is at least --target-time seconds.
 
 Note: there is a certain baseline overhead associated with executing a
 pass statement.  It differs between versions.  The code here doesn't try
@@ -46,13 +47,12 @@ Functions:
     timeit(string, string) -> float
     repeat(string, string) -> list
     default_timer() -> float
-
 """
 
 import gc
+import itertools
 import sys
 import time
-import itertools
 
 __all__ = ["Timer", "timeit", "repeat", "default_timer"]
 
@@ -60,6 +60,7 @@ dummy_src_name = "<timeit-src>"
 default_number = 1000000
 default_repeat = 5
 default_timer = time.perf_counter
+default_target_time = 0.2
 
 _globals = globals
 
@@ -77,9 +78,11 @@ def inner(_it, _timer{init}):
     return _t1 - _t0
 """
 
+
 def reindent(src, indent):
     """Helper to reindent a multi-line statement."""
-    return src.replace("\n", "\n" + " "*indent)
+    return src.replace("\n", "\n" + " " * indent)
+
 
 class Timer:
     """Class for timing execution speed of small code snippets.
@@ -134,7 +137,7 @@ class Timer:
         exec(code, global_ns, local_ns)
         self.inner = local_ns["inner"]
 
-    def print_exc(self, file=None):
+    def print_exc(self, file=None, **kwargs):
         """Helper to print a traceback from the timed code.
 
         Typical use:
@@ -150,6 +153,11 @@ class Timer:
 
         The optional file argument directs where the traceback is
         sent; it defaults to sys.stderr.
+
+        The optional colorize keyword argument controls whether the
+        traceback is colorized; it defaults to False for programmatic
+        usage. When used from the command line, this is automatically
+        set based on terminal capabilities.
         """
         import linecache, traceback
         if self.src is not None:
@@ -159,14 +167,15 @@ class Timer:
                                                dummy_src_name)
         # else the source is already stored somewhere else
 
-        traceback.print_exc(file=file)
+        kwargs['colorize'] = kwargs.get('colorize', False)
+        traceback.print_exc(file=file, **kwargs)
 
     def timeit(self, number=default_number):
         """Time 'number' executions of the main statement.
 
         To be precise, this executes the setup statement once, and
         then returns the time it takes to execute the main statement
-        a number of times, as a float measured in seconds.  The
+        a number of times, as float seconds if using the default timer.   The
         argument is the number of times through the loop, defaulting
         to one million.  The main statement, the setup statement and
         the timer function to be used are passed to the constructor.
@@ -207,12 +216,13 @@ class Timer:
             r.append(t)
         return r
 
-    def autorange(self, callback=None):
-        """Return the number of loops and time taken so that total time >= 0.2.
+    def autorange(self, callback=None, target_time=default_target_time):
+        """Return the number of loops and time taken so that
+        total time >= target_time (default is 0.2 seconds).
 
         Calls the timeit method with increasing numbers from the sequence
-        1, 2, 5, 10, 20, 50, ... until the time taken is at least 0.2
-        second.  Returns (number, time_taken).
+        1, 2, 5, 10, 20, 50, ... until the target time is reached.
+        Returns (number, time_taken).
 
         If *callback* is given and is not None, it will be called after
         each trial with two arguments: ``callback(number, time_taken)``.
@@ -224,19 +234,22 @@ class Timer:
                 time_taken = self.timeit(number)
                 if callback:
                     callback(number, time_taken)
-                if time_taken >= 0.2:
+                if time_taken >= target_time:
                     return (number, time_taken)
             i *= 10
+
 
 def timeit(stmt="pass", setup="pass", timer=default_timer,
            number=default_number, globals=None):
     """Convenience function to create Timer object and call timeit method."""
     return Timer(stmt, setup, timer, globals).timeit(number)
 
+
 def repeat(stmt="pass", setup="pass", timer=default_timer,
            repeat=default_repeat, number=default_number, globals=None):
     """Convenience function to create Timer object and call repeat method."""
     return Timer(stmt, setup, timer, globals).repeat(repeat, number)
+
 
 def main(args=None, *, _wrap_timer=None):
     """Main program, used when run as a script.
@@ -255,13 +268,18 @@ def main(args=None, *, _wrap_timer=None):
     is not None, it must be a callable that accepts a timer function
     and returns another timer function (used for unit testing).
     """
+    import getopt
     if args is None:
         args = sys.argv[1:]
-    import getopt
+    import _colorize
+    colorize = _colorize.can_colorize()
+    theme = _colorize.get_theme(force_color=colorize).timeit
+    reset = theme.reset
+
     try:
-        opts, args = getopt.getopt(args, "n:u:s:r:tcpvh",
+        opts, args = getopt.getopt(args, "n:u:s:r:pt:vh",
                                    ["number=", "setup=", "repeat=",
-                                    "time", "clock", "process",
+                                    "process", "target-time=",
                                     "verbose", "unit=", "help"])
     except getopt.error as err:
         print(err)
@@ -270,7 +288,8 @@ def main(args=None, *, _wrap_timer=None):
 
     timer = default_timer
     stmt = "\n".join(args) or "pass"
-    number = 0 # auto-determine
+    number = 0  # auto-determine
+    target_time = default_target_time
     setup = []
     repeat = default_repeat
     verbose = 0
@@ -287,7 +306,7 @@ def main(args=None, *, _wrap_timer=None):
                 time_unit = a
             else:
                 print("Unrecognized unit. Please select nsec, usec, msec, or sec.",
-                    file=sys.stderr)
+                      file=sys.stderr)
                 return 2
         if o in ("-r", "--repeat"):
             repeat = int(a)
@@ -295,12 +314,14 @@ def main(args=None, *, _wrap_timer=None):
                 repeat = 1
         if o in ("-p", "--process"):
             timer = time.process_time
+        if o in ("-t", "--target-time"):
+            target_time = float(a)
         if o in ("-v", "--verbose"):
             if verbose:
                 precision += 1
             verbose += 1
         if o in ("-h", "--help"):
-            print(__doc__, end=' ')
+            print(__doc__, end="")
             return 0
     setup = "\n".join(setup) or "pass"
 
@@ -314,18 +335,21 @@ def main(args=None, *, _wrap_timer=None):
 
     t = Timer(stmt, setup, timer)
     if number == 0:
-        # determine number so that 0.2 <= total time < 2.0
+        # determine number so that total time >= target_time
         callback = None
         if verbose:
             def callback(number, time_taken):
-                msg = "{num} loop{s} -> {secs:.{prec}g} secs"
-                plural = (number != 1)
-                print(msg.format(num=number, s='s' if plural else '',
-                                  secs=time_taken, prec=precision))
+                s = "" if number == 1 else "s"
+                print(
+                    f"{number} loop{s} "
+                    f"{theme.punctuation}-> "
+                    f"{theme.timing}{time_taken:.{precision}g} sec{reset}"
+                )
+
         try:
-            number, _ = t.autorange(callback)
+            number, _ = t.autorange(callback, target_time)
         except:
-            t.print_exc()
+            t.print_exc(colorize=colorize)
             return 1
 
         if verbose:
@@ -334,7 +358,7 @@ def main(args=None, *, _wrap_timer=None):
     try:
         raw_timings = t.repeat(repeat, number)
     except:
-        t.print_exc()
+        t.print_exc(colorize=colorize)
         return 1
 
     def format_time(dt):
@@ -352,25 +376,36 @@ def main(args=None, *, _wrap_timer=None):
         return "%.*g %s" % (precision, dt / scale, unit)
 
     if verbose:
-        print("raw times: %s" % ", ".join(map(format_time, raw_timings)))
+        raw = f"{theme.punctuation}, ".join(
+            f"{theme.timing}{t}" for t in map(format_time, raw_timings)
+        )
+        print(f"raw times: {raw}{reset}")
         print()
     timings = [dt / number for dt in raw_timings]
 
     best = min(timings)
-    print("%d loop%s, best of %d: %s per loop"
-          % (number, 's' if number != 1 else '',
-             repeat, format_time(best)))
-
-    best = min(timings)
     worst = max(timings)
+    s = "" if number == 1 else "s"
+    print(
+        f"{number} loop{s}, best of {repeat}: "
+        f"{theme.best}{format_time(best)}{reset} "
+        f"{theme.per_loop}per loop{reset}"
+    )
+
     if worst >= best * 4:
         import warnings
-        warnings.warn_explicit("The test results are likely unreliable. "
-                               "The worst time (%s) was more than four times "
-                               "slower than the best time (%s)."
-                               % (format_time(worst), format_time(best)),
-                               UserWarning, '', 0)
+
+        print(file=sys.stderr)
+        warnings.warn_explicit(
+            f"{theme.warning}The test results are likely unreliable. "
+            f"The {theme.warning_worst}worst time ({format_time(worst)})"
+            f"{theme.warning} was more than four times slower than the "
+            f"{theme.warning_best}best time ({format_time(best)})"
+            f"{theme.warning}.{reset}",
+            UserWarning, "", 0,
+        )
     return None
+
 
 if __name__ == "__main__":
     sys.exit(main())

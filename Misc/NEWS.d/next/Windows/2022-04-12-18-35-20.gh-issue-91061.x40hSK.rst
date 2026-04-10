@@ -1,1 +1,0 @@
-Accept os.PathLike for the argument to winsound.PlaySound

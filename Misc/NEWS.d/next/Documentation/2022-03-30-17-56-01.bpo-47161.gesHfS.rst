@@ -1,2 +1,0 @@
-Document that :class:`pathlib.PurePath` does not collapse
-initial double slashes because they denote UNC paths.

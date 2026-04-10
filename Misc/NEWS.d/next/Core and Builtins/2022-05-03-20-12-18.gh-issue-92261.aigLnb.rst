@@ -1,1 +1,0 @@
-Fix hang when trying to iterate over a ``typing.Union``.

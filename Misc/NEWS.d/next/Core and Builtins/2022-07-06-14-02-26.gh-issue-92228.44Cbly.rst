@@ -1,1 +1,0 @@
-Disable the compiler's inline-small-exit-blocks optimization for exit blocks that are associated with source code lines. This fixes a bug where the debugger cannot tell where an exception handler ends and the following code block begins.

@@ -1,11 +1,8 @@
-:mod:`logging.handlers` --- Logging handlers
-============================================
+:mod:`!logging.handlers` --- Logging handlers
+=============================================
 
 .. module:: logging.handlers
    :synopsis: Handlers for the logging module.
-
-.. moduleauthor:: Vinay Sajip <vinay_sajip@red-dove.com>
-.. sectionauthor:: Vinay Sajip <vinay_sajip@red-dove.com>
 
 **Source code:** :source:`Lib/logging/handlers.py`
 
@@ -66,7 +63,7 @@ and :meth:`flush` methods).
 
       :param stream: The stream that the handler should use.
 
-      :return: the old stream, if the stream was changed, or *None* if it wasn't.
+      :return: the old stream, if the stream was changed, or ``None`` if it wasn't.
 
       .. versionadded:: 3.7
 
@@ -97,7 +94,7 @@ sends logging output to a disk file.  It inherits the output functionality from
 
    Returns a new instance of the :class:`FileHandler` class. The specified file is
    opened and used as the stream for logging. If *mode* is not specified,
-   :const:`'a'` is used.  If *encoding* is not ``None``, it is used to open the file
+   ``'a'`` is used.  If *encoding* is not ``None``, it is used to open the file
    with that encoding.  If *delay* is true, then file opening is deferred until the
    first call to :meth:`emit`. By default, the file grows indefinitely. If
    *errors* is specified, it's used to determine how encoding errors are handled.
@@ -160,7 +157,7 @@ WatchedFileHandler
 
 .. currentmodule:: logging.handlers
 
-The :class:`WatchedFileHandler` class, located in the :mod:`logging.handlers`
+The :class:`WatchedFileHandler` class, located in the :mod:`!logging.handlers`
 module, is a :class:`FileHandler` which watches the file it is logging to. If
 the file changes, it is closed and reopened using the file name.
 
@@ -182,7 +179,7 @@ for this value.
 
    Returns a new instance of the :class:`WatchedFileHandler` class. The specified
    file is opened and used as the stream for logging. If *mode* is not specified,
-   :const:`'a'` is used.  If *encoding* is not ``None``, it is used to open the file
+   ``'a'`` is used.  If *encoding* is not ``None``, it is used to open the file
    with that encoding.  If *delay* is true, then file opening is deferred until the
    first call to :meth:`emit`.  By default, the file grows indefinitely. If
    *errors* is provided, it determines how encoding errors are handled.
@@ -213,7 +210,7 @@ for this value.
 BaseRotatingHandler
 ^^^^^^^^^^^^^^^^^^^
 
-The :class:`BaseRotatingHandler` class, located in the :mod:`logging.handlers`
+The :class:`BaseRotatingHandler` class, located in the :mod:`!logging.handlers`
 module, is the base class for the rotating file handlers,
 :class:`RotatingFileHandler` and :class:`TimedRotatingFileHandler`. You should
 not need to instantiate this class, but it has attributes and methods you may
@@ -307,7 +304,7 @@ For an example, see :ref:`cookbook-rotator-namer`.
 RotatingFileHandler
 ^^^^^^^^^^^^^^^^^^^
 
-The :class:`RotatingFileHandler` class, located in the :mod:`logging.handlers`
+The :class:`RotatingFileHandler` class, located in the :mod:`!logging.handlers`
 module, supports rotation of disk log files.
 
 
@@ -352,13 +349,17 @@ module, supports rotation of disk log files.
       Outputs the record to the file, catering for rollover as described
       previously.
 
+   .. method:: shouldRollover(record)
+
+      See if the supplied record would cause the file to exceed the configured size limit.
+
 .. _timed-rotating-file-handler:
 
 TimedRotatingFileHandler
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
 The :class:`TimedRotatingFileHandler` class, located in the
-:mod:`logging.handlers` module, supports rotation of disk log files at certain
+:mod:`!logging.handlers` module, supports rotation of disk log files at certain
 timed intervals.
 
 
@@ -461,12 +462,17 @@ timed intervals.
       Returns a list of filenames which should be deleted as part of rollover. These
       are the absolute paths of the oldest backup log files written by the handler.
 
+   .. method:: shouldRollover(record)
+
+      See if enough time has passed for a rollover to occur and if it has, compute
+      the next rollover time.
+
 .. _socket-handler:
 
 SocketHandler
 ^^^^^^^^^^^^^
 
-The :class:`SocketHandler` class, located in the :mod:`logging.handlers` module,
+The :class:`SocketHandler` class, located in the :mod:`!logging.handlers` module,
 sends logging output to a network socket. The base class uses a TCP socket.
 
 
@@ -562,7 +568,7 @@ sends logging output to a network socket. The base class uses a TCP socket.
 DatagramHandler
 ^^^^^^^^^^^^^^^
 
-The :class:`DatagramHandler` class, located in the :mod:`logging.handlers`
+The :class:`DatagramHandler` class, located in the :mod:`!logging.handlers`
 module, inherits from :class:`SocketHandler` to support sending logging messages
 over UDP sockets.
 
@@ -571,6 +577,13 @@ over UDP sockets.
 
    Returns a new instance of the :class:`DatagramHandler` class intended to
    communicate with a remote machine whose address is given by *host* and *port*.
+
+   .. note:: As UDP is not a streaming protocol, there is no persistent connection
+      between an instance of this handler and *host*. For this reason, when using a
+      network socket, a DNS lookup might have to be made each time an event is
+      logged, which can introduce some latency into the system. If this affects you,
+      you can do a lookup yourself and initialize this handler using the looked-up IP
+      address rather than the hostname.
 
    .. versionchanged:: 3.4
       If ``port`` is specified as ``None``, a Unix domain socket is created
@@ -602,11 +615,11 @@ over UDP sockets.
 SysLogHandler
 ^^^^^^^^^^^^^
 
-The :class:`SysLogHandler` class, located in the :mod:`logging.handlers` module,
+The :class:`SysLogHandler` class, located in the :mod:`!logging.handlers` module,
 supports sending logging messages to a remote or local Unix syslog.
 
 
-.. class:: SysLogHandler(address=('localhost', SYSLOG_UDP_PORT), facility=LOG_USER, socktype=socket.SOCK_DGRAM)
+.. class:: SysLogHandler(address=('localhost', SYSLOG_UDP_PORT), facility=LOG_USER, socktype=socket.SOCK_DGRAM, timeout=None)
 
    Returns a new instance of the :class:`SysLogHandler` class intended to
    communicate with a remote Unix machine whose address is given by *address* in
@@ -619,6 +632,11 @@ supports sending logging messages to a remote or local Unix syslog.
    *socktype* argument, which defaults to :const:`socket.SOCK_DGRAM` and thus
    opens a UDP socket. To open a TCP socket (for use with the newer syslog
    daemons such as rsyslog), specify a value of :const:`socket.SOCK_STREAM`.
+   If *timeout* is specified, it sets a timeout (in seconds) for the socket operations.
+   This can help prevent the program from hanging indefinitely if the syslog server is
+   unreachable. By default, *timeout* is ``None``, meaning no timeout is applied.
+
+
 
    Note that if your server is not listening on UDP port 514,
    :class:`SysLogHandler` may appear not to work. In that case, check what
@@ -629,14 +647,31 @@ supports sending logging messages to a remote or local Unix syslog.
    application needs to run on several platforms). On Windows, you pretty
    much have to use the UDP option.
 
+   .. note:: On macOS 12.x (Monterey), Apple has changed the behaviour of their
+      syslog daemon - it no longer listens on a domain socket. Therefore, you cannot
+      expect :class:`SysLogHandler` to work on this system.
+
+      See :gh:`91070` for more information.
+
    .. versionchanged:: 3.2
       *socktype* was added.
 
+   .. versionchanged:: 3.14
+      *timeout* was added.
 
    .. method:: close()
 
       Closes the socket to the remote host.
 
+   .. method:: createSocket()
+
+      Tries to create a socket and, if it's not a datagram socket, connect it
+      to the other end. This method is called during handler initialization,
+      but it's not regarded as an error if the other end isn't listening at
+      this point - the method will be called again when emitting an event, if
+      there is no socket at that point.
+
+      .. versionadded:: 3.11
 
    .. method:: emit(record)
 
@@ -759,7 +794,7 @@ supports sending logging messages to a remote or local Unix syslog.
 NTEventLogHandler
 ^^^^^^^^^^^^^^^^^
 
-The :class:`NTEventLogHandler` class, located in the :mod:`logging.handlers`
+The :class:`NTEventLogHandler` class, located in the :mod:`!logging.handlers`
 module, supports sending logging messages to a local Windows NT, Windows 2000 or
 Windows XP event log. Before you can use it, you need Mark Hammond's Win32
 extensions for Python installed.
@@ -826,7 +861,7 @@ extensions for Python installed.
 SMTPHandler
 ^^^^^^^^^^^
 
-The :class:`SMTPHandler` class, located in the :mod:`logging.handlers` module,
+The :class:`SMTPHandler` class, located in the :mod:`!logging.handlers` module,
 supports sending logging messages to an email address via SMTP.
 
 
@@ -849,8 +884,8 @@ supports sending logging messages to an email address via SMTP.
    A timeout can be specified for communication with the SMTP server using the
    *timeout* argument.
 
-   .. versionadded:: 3.3
-      The *timeout* argument was added.
+   .. versionchanged:: 3.3
+      Added the *timeout* parameter.
 
    .. method:: emit(record)
 
@@ -867,7 +902,7 @@ supports sending logging messages to an email address via SMTP.
 MemoryHandler
 ^^^^^^^^^^^^^
 
-The :class:`MemoryHandler` class, located in the :mod:`logging.handlers` module,
+The :class:`MemoryHandler` class, located in the :mod:`!logging.handlers` module,
 supports buffering of logging records in memory, periodically flushing them to a
 :dfn:`target` handler. Flushing occurs whenever the buffer is full, or when an
 event of a certain severity or greater is seen.
@@ -893,8 +928,9 @@ should, then :meth:`flush` is expected to do the flushing.
 
    .. method:: flush()
 
-      You can override this to implement custom flushing behavior. This version
-      just zaps the buffer to empty.
+      For a :class:`BufferingHandler` instance, flushing means that it sets the
+      buffer to an empty list. This method can be overwritten to implement more useful
+      flushing behavior.
 
 
    .. method:: shouldFlush(record)
@@ -926,9 +962,9 @@ should, then :meth:`flush` is expected to do the flushing.
 
    .. method:: flush()
 
-      For a :class:`MemoryHandler`, flushing means just sending the buffered
+      For a :class:`MemoryHandler` instance, flushing means just sending the buffered
       records to the target, if there is one. The buffer is also cleared when
-      this happens. Override if you want different behavior.
+      buffered records are sent to the target. Override if you want different behavior.
 
 
    .. method:: setTarget(target)
@@ -946,7 +982,7 @@ should, then :meth:`flush` is expected to do the flushing.
 HTTPHandler
 ^^^^^^^^^^^
 
-The :class:`HTTPHandler` class, located in the :mod:`logging.handlers` module,
+The :class:`HTTPHandler` class, located in the :mod:`!logging.handlers` module,
 supports sending logging messages to a web server, using either ``GET`` or
 ``POST`` semantics.
 
@@ -998,7 +1034,7 @@ QueueHandler
 
 .. versionadded:: 3.2
 
-The :class:`QueueHandler` class, located in the :mod:`logging.handlers` module,
+The :class:`QueueHandler` class, located in the :mod:`!logging.handlers` module,
 supports sending logging messages to a queue, such as those implemented in the
 :mod:`queue` or :mod:`multiprocessing` modules.
 
@@ -1021,14 +1057,23 @@ possible, while any potentially slow operations (such as sending an email via
    .. note:: If you are using :mod:`multiprocessing`, you should avoid using
       :class:`~queue.SimpleQueue` and instead use :class:`multiprocessing.Queue`.
 
+   .. warning::
+
+      The :mod:`multiprocessing` module uses an internal logger created and
+      accessed via :meth:`~multiprocessing.get_logger`.
+      :class:`multiprocessing.Queue` will log ``DEBUG`` level messages upon
+      items being queued. If those log messages are processed by a
+      :class:`QueueHandler` using the same :class:`multiprocessing.Queue` instance,
+      it will cause a deadlock or infinite recursion.
+
    .. method:: emit(record)
 
       Enqueues the result of preparing the LogRecord. Should an exception
       occur (e.g. because a bounded queue has filled up), the
       :meth:`~logging.Handler.handleError` method is called to handle the
       error. This can result in the record silently being dropped (if
-      :attr:`logging.raiseExceptions` is ``False``) or a message printed to
-      ``sys.stderr`` (if :attr:`logging.raiseExceptions` is ``True``).
+      :data:`logging.raiseExceptions` is ``False``) or a message printed to
+      ``sys.stderr`` (if :data:`logging.raiseExceptions` is ``True``).
 
    .. method:: prepare(record)
 
@@ -1046,6 +1091,20 @@ possible, while any potentially slow operations (such as sending an email via
       You might want to override this method if you want to convert
       the record to a dict or JSON string, or send a modified copy
       of the record while leaving the original intact.
+
+      .. note:: The base implementation formats the message with arguments, sets
+         the ``message`` and ``msg`` attributes to the formatted message and
+         sets the ``args`` and ``exc_text`` attributes to ``None`` to allow
+         pickling and to prevent further attempts at formatting. This means
+         that a handler on the :class:`QueueListener` side won't have the
+         information to do custom formatting, e.g. of exceptions. You may wish
+         to subclass ``QueueHandler`` and override this method to e.g. avoid
+         setting ``exc_text`` to ``None``. Note that the ``message`` / ``msg``
+         / ``args`` changes are related to ensuring the record is pickleable,
+         and you might or might not be able to avoid doing that depending on
+         whether your ``args`` are pickleable. (Note that you may have to
+         consider not only your own code but also code in any libraries that
+         you use.)
 
    .. method:: enqueue(record)
 
@@ -1068,7 +1127,7 @@ QueueListener
 
 .. versionadded:: 3.2
 
-The :class:`QueueListener` class, located in the :mod:`logging.handlers`
+The :class:`QueueListener` class, located in the :mod:`!logging.handlers`
 module, supports receiving logging messages from a queue, such as those
 implemented in the :mod:`queue` or :mod:`multiprocessing` modules. The
 messages are received from a queue in an internal thread and passed, on
@@ -1104,6 +1163,13 @@ possible, while any potentially slow operations (such as sending an email via
    .. versionchanged:: 3.5
       The ``respect_handler_level`` argument was added.
 
+   .. versionchanged:: 3.14
+      :class:`QueueListener` can now be used as a context manager via
+      :keyword:`with`. When entering the context, the listener is started. When
+      exiting the context, the listener is stopped.
+      :meth:`~contextmanager.__enter__` returns the
+      :class:`QueueListener` object.
+
    .. method:: dequeue(block)
 
       Dequeues a record and return it, optionally blocking.
@@ -1134,6 +1200,10 @@ possible, while any potentially slow operations (such as sending an email via
 
       This starts up a background thread to monitor the queue for
       LogRecords to process.
+
+      .. versionchanged:: 3.14
+         Raises :exc:`RuntimeError` if called and the listener is already
+         running.
 
    .. method:: stop()
 
