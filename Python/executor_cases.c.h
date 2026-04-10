@@ -17592,9 +17592,11 @@
         case _CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS_INLINE_r00: {
             CHECK_CURRENT_CACHED_VALUES(0);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
+            _PyStackRef *args;
             _PyStackRef self_st;
             _PyStackRef callable;
             oparg = CURRENT_OPARG();
+            args = &stack_pointer[-oparg];
             self_st = stack_pointer[-1 - oparg];
             callable = stack_pointer[-2 - oparg];
             PyObject *cfunc = (PyObject *)CURRENT_OPERAND0_64();
@@ -17606,19 +17608,17 @@
                 callable,
                 cfunc_v,
                 self,
-                &self_st,
+                args - 1,
                 oparg + 1
             );
             stack_pointer = _PyFrame_GetStackPointer(frame);
             if (res_o == NULL) {
-                stack_pointer[-1 - oparg] = self_st;
                 SET_CURRENT_CACHED_VALUES(0);
                 JUMP_TO_ERROR();
             }
             _PyStackRef temp = callable;
             callable = PyStackRef_FromPyObjectSteal(res_o);
             stack_pointer[-2 - oparg] = callable;
-            stack_pointer[-1 - oparg] = self_st;
             _PyFrame_SetStackPointer(frame, stack_pointer);
             PyStackRef_CLOSE(temp);
             stack_pointer = _PyFrame_GetStackPointer(frame);
@@ -17852,9 +17852,11 @@
         case _CALL_METHOD_DESCRIPTOR_FAST_INLINE_r00: {
             CHECK_CURRENT_CACHED_VALUES(0);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
+            _PyStackRef *args;
             _PyStackRef self_st;
             _PyStackRef callable;
             oparg = CURRENT_OPARG();
+            args = &stack_pointer[-oparg];
             self_st = stack_pointer[-1 - oparg];
             callable = stack_pointer[-2 - oparg];
             PyObject *cfunc = (PyObject *)CURRENT_OPERAND0_64();
@@ -17867,19 +17869,17 @@
                 callable,
                 cfunc_v,
                 self,
-                &self_st,
+                args - 1,
                 oparg + 1
             );
             stack_pointer = _PyFrame_GetStackPointer(frame);
             if (res_o == NULL) {
-                stack_pointer[-1 - oparg] = self_st;
                 SET_CURRENT_CACHED_VALUES(0);
                 JUMP_TO_ERROR();
             }
             _PyStackRef temp = callable;
             callable = PyStackRef_FromPyObjectSteal(res_o);
             stack_pointer[-2 - oparg] = callable;
-            stack_pointer[-1 - oparg] = self_st;
             _PyFrame_SetStackPointer(frame, stack_pointer);
             PyStackRef_CLOSE(temp);
             stack_pointer = _PyFrame_GetStackPointer(frame);

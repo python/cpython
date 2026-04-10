@@ -4944,7 +4944,7 @@ dummy_func(
                 callable,
                 cfunc_v,
                 self,
-                &self_st,
+                args - 1,
                 oparg + 1
             );
             if (res_o == NULL) {
@@ -5087,7 +5087,7 @@ dummy_func(
                 callable,
                 cfunc_v,
                 self,
-                &self_st,
+                args - 1,
                 oparg + 1
             );
             if (res_o == NULL) {
