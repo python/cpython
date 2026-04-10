@@ -38,12 +38,21 @@ TWO_THIRD = 2.0/3.0
 # The ones in this library uses constants from the FCC version of NTSC.
 
 def rgb_to_yiq(r, g, b):
+    """Convert RGB to YIQ.
+
+    r, g, b are in [0, 1].
+    Return (y, i, q) where y is in [0, 1].
+    """
     y = 0.30*r + 0.59*g + 0.11*b
     i = 0.74*(r-y) - 0.27*(b-y)
     q = 0.48*(r-y) + 0.41*(b-y)
     return (y, i, q)
 
 def yiq_to_rgb(y, i, q):
+    """Convert YIQ to RGB.
+
+    Return (r, g, b) in [0, 1].
+    """
     # r = y + (0.27*q + 0.41*i) / (0.74*0.41 + 0.27*0.48)
     # b = y + (0.74*q - 0.48*i) / (0.74*0.41 + 0.27*0.48)
     # g = y - (0.30*(r-y) + 0.11*(b-y)) / 0.59
@@ -73,6 +82,11 @@ def yiq_to_rgb(y, i, q):
 # S: color saturation
 
 def rgb_to_hls(r, g, b):
+    """Convert RGB to HLS (Hue, Lightness, Saturation).
+
+    r, g, b are in [0, 1].
+    Return (h, l, s) in [0, 1].
+    """
     maxc = max(r, g, b)
     minc = min(r, g, b)
     sumc = (maxc+minc)
@@ -97,6 +111,11 @@ def rgb_to_hls(r, g, b):
     return h, l, s
 
 def hls_to_rgb(h, l, s):
+    """Convert HLS (Hue, Lightness, Saturation) to RGB.
+
+    h, l, s are in [0, 1].
+    Return (r, g, b) in [0, 1].
+    """
     if s == 0.0:
         return l, l, l
     if l <= 0.5:
@@ -123,6 +142,11 @@ def _v(m1, m2, hue):
 # V: color brightness
 
 def rgb_to_hsv(r, g, b):
+    """Convert RGB to HSV (Hue, Saturation, Value).
+
+    r, g, b are in [0, 1].
+    Return (h, s, v) in [0, 1].
+    """
     maxc = max(r, g, b)
     minc = min(r, g, b)
     rangec = (maxc-minc)
@@ -143,6 +167,11 @@ def rgb_to_hsv(r, g, b):
     return h, s, v
 
 def hsv_to_rgb(h, s, v):
+    """Convert HSV (Hue, Saturation, Value) to RGB.
+
+    h, s, v are in [0, 1].
+    Return (r, g, b) in [0, 1].
+    """
     if s == 0.0:
         return v, v, v
     i = int(h*6.0) # XXX assume int() truncates!
