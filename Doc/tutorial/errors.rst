@@ -20,7 +20,7 @@ complaint you get while you are still learning Python::
    >>> a[1]] = 0
      File "<stdin>", line 1
        a[1]] = 0
-             ^
+           ^
    SyntaxError: unmatched ']'
 
 The parser repeats the offending line and displays a little arrow pointing
