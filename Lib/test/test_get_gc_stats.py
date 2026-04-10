@@ -7,13 +7,14 @@ import textwrap
 import unittest
 
 from test.support import (
+    import_helper,
     SHORT_TIMEOUT,
     requires_remote_subprocess_debugging,
 )
 
 
-def get_interpreter_identifiers(gc_stats: tuple[dict[str, str|int|float]]) -> list[str]:
-    return [s["iid"] for s in gc_stats]
+def get_interpreter_identifiers(gc_stats: tuple[dict[str, str|int|float]]) -> tuple[str,...]:
+    return tuple(sorted({s["iid"] for s in gc_stats}))
 
 
 def get_generations(gc_stats: tuple[dict[str, str|int|float]]) -> tuple[int,int,int]:
@@ -24,31 +25,31 @@ def get_generations(gc_stats: tuple[dict[str, str|int|float]]) -> tuple[int,int,
     return tuple(sorted(generations))
 
 
-def get_last_item_for_generation(gc_stats: tuple[dict[str, str|int|float]],
-                                 generation:int) -> dict[str, str|int|float] | None:
+def get_last_item(gc_stats: tuple[dict[str, str|int|float]],
+                  generation:int,
+                  iid:int) -> dict[str, str|int|float] | None:
     item = None
     for s in gc_stats:
-        if s["gen"] == generation:
+        if s["gen"] == generation and s["iid"] == iid:
             if item is None or item["ts_start"] < s["ts_start"]:
                 item = s
 
     return item
 
 
-
 @requires_remote_subprocess_debugging()
-class TestGetStackTrace(unittest.TestCase):
+class TestGetGCStats(unittest.TestCase):
 
-    def run_child_process(self):
+    def _run_child_process(self, all_interpreters):
         # Run the test in a subprocess to avoid side effects
-        script = textwrap.dedent("""\
+        script = textwrap.dedent(f"""\
             import json
             import os
             import sys
             import _remote_debugging
 
             pid = int(sys.argv[1])
-            gc_stats = _remote_debugging.get_gc_stats(pid, all_interpreters=False)
+            gc_stats = _remote_debugging.get_gc_stats(pid, all_interpreters={all_interpreters})
             print(json.dumps(gc_stats, indent=1))
             """)
 
@@ -68,25 +69,49 @@ class TestGetStackTrace(unittest.TestCase):
         )
         return result
 
-    def test_get_gc_stats_for_main_interpreter(self):
-        """Test that RemoteUnwinder works on the same process after _ctypes import.
+    def _run_in_interpreter(self, interp):
+        source = f"""if True:
+        import gc
 
-        When _ctypes is imported, it may call dlopen on the libpython shared
-        library, creating a duplicate mapping in the process address space.
-        The remote debugging code must skip these uninitialized duplicate
-        mappings and find the real PyRuntime. See gh-144563.
+        gc.collect(0)
+        gc.collect(1)
+        gc.collect(2)
         """
+        interp.exec(source)
 
-        # Skip the test if the _ctypes module is missing.
+    def _check_gc_state(self, before, after):
+        self.assertIsNotNone(before)
+        self.assertIsNotNone(after)
 
-        before_stats = json.loads(self.run_child_process().stdout)
-        after_stats = json.loads(self.run_child_process().stdout)
+        self.assertGreater(after["collections"], before["collections"], (before, after))
+        self.assertGreater(after["ts_start"], before["ts_start"], (before, after))
+        self.assertGreater(after["ts_stop"], before["ts_stop"], (before, after))
+        self.assertGreater(after["duration"], before["duration"], (before, after))
+
+        self.assertGreater(after["object_visits"], before["object_visits"], (before, after))
+        self.assertGreater(after["candidates"], before["candidates"], (before, after))
+
+        # may not grow
+        self.assertGreaterEqual(after["collected"], before["collected"], (before, after))
+        self.assertGreaterEqual(after["uncollectable"], before["uncollectable"], (before, after))
+
+        if before["gen"] == 1:
+            self.assertGreaterEqual(after["objects_transitively_reachable"],
+                                    before["objects_transitively_reachable"],
+                                    (before, after))
+            self.assertGreaterEqual(after["objects_not_transitively_reachable"],
+                                    before["objects_not_transitively_reachable"],
+                                    (before, after))
+
+    def test_get_gc_stats_for_main_interpreter(self):
+        before_stats = json.loads(self._run_child_process(False).stdout)
+        after_stats = json.loads(self._run_child_process(False).stdout)
 
         before_iids = get_interpreter_identifiers(before_stats)
         after_iids = get_interpreter_identifiers(after_stats)
 
-        self.assertTrue(all([0 == iid for iid in before_iids]))
-        self.assertTrue(all([0 == iid for iid in after_iids]))
+        self.assertEqual(before_iids, (0,))
+        self.assertEqual(after_iids, (0,))
 
         before_gens = get_generations(before_stats)
         after_gens = get_generations(after_stats)
@@ -94,30 +119,83 @@ class TestGetStackTrace(unittest.TestCase):
         self.assertEqual(before_gens, (0, 1, 2))
         self.assertEqual(after_gens, (0, 1, 2))
 
-        before_last_items = (get_last_item_for_generation(before_stats, 0),
-                             get_last_item_for_generation(before_stats, 1),
-                             get_last_item_for_generation(before_stats, 2))
+        iid = 0 # main interpreter ID
+        before_last_items = (get_last_item(before_stats, 0, iid),
+                             get_last_item(before_stats, 1, iid),
+                             get_last_item(before_stats, 2, iid))
 
-        after_last_items = (get_last_item_for_generation(after_stats, 0),
-                            get_last_item_for_generation(after_stats, 1),
-                            get_last_item_for_generation(after_stats, 2))
+        after_last_items = (get_last_item(after_stats, 0, iid),
+                            get_last_item(after_stats, 1, iid),
+                            get_last_item(after_stats, 2, iid))
 
         for before, after in zip(before_last_items, after_last_items):
-            self.assertIsNotNone(before)
-            self.assertIsNotNone(after)
+            self._check_gc_state(before, after)
 
-            self.assertGreater(after["collections"], before["collections"], (before, after))
-            self.assertGreater(after["ts_start"], before["ts_start"], (before, after))
-            self.assertGreater(after["ts_stop"], before["ts_stop"], (before, after))
-            self.assertGreater(after["duration"], before["duration"], (before, after))
+    def test_get_gc_stats_for_all_interpreters(self):
+        interpreters = import_helper.import_module("concurrent.interpreters")
+        interp = interpreters.create()
 
-            self.assertGreater(after["object_visits"], before["object_visits"], (before, after))
-            self.assertGreater(after["candidates"], before["candidates"], (before, after))
+        self._run_in_interpreter(interp) # ensure that subinterpeter have GC stats
+        before_stats = json.loads(self._run_child_process(True).stdout)
+        self._run_in_interpreter(interp) # ensure that GC stats in subinterpreter changed
+        after_stats = json.loads(self._run_child_process(True).stdout)
+        interp.close()
 
-            # may not grow
-            self.assertGreaterEqual(after["collected"], before["collected"], (before, after))
-            self.assertGreaterEqual(after["uncollectable"], before["uncollectable"], (before, after))
+        before_iids = get_interpreter_identifiers(before_stats)
+        after_iids = get_interpreter_identifiers(after_stats)
 
-            if before["gen"] == 1:
-                self.assertGreaterEqual(after["objects_transitively_reachable"], before["objects_transitively_reachable"], (before, after))
-                self.assertGreaterEqual(after["objects_not_transitively_reachable"], before["objects_not_transitively_reachable"], (before, after))
+        self.assertEqual(before_iids, (0, interp.id))
+        self.assertEqual(after_iids, (0, interp.id))
+
+        before_gens = get_generations(before_stats)
+        after_gens = get_generations(after_stats)
+
+        self.assertEqual(before_gens, (0, 1, 2))
+        self.assertEqual(after_gens, (0, 1, 2))
+
+        for iid in after_iids:
+            with self.subTest(f"iid={iid}"):
+                before_last_items = (get_last_item(before_stats, 0, iid),
+                                     get_last_item(before_stats, 1, iid),
+                                     get_last_item(before_stats, 2, iid))
+
+                after_last_items = (get_last_item(after_stats, 0, iid),
+                                    get_last_item(after_stats, 1, iid),
+                                    get_last_item(after_stats, 2, iid))
+
+                for before, after in zip(before_last_items, after_last_items):
+                    self._check_gc_state(before, after)
+
+    def test_get_gc_stats_for_main_interpreter_if_subinterpreter_exists(self):
+        interpreters = import_helper.import_module("concurrent.interpreters")
+        interp = interpreters.create()
+
+        self._run_in_interpreter(interp) # ensure that subinterpeter have GC stats
+        before_stats = json.loads(self._run_child_process(False).stdout)
+        self._run_in_interpreter(interp) # ensure that GC stats in subinterpreter changed
+        after_stats = json.loads(self._run_child_process(False).stdout)
+        interp.close()
+
+        before_iids = get_interpreter_identifiers(before_stats)
+        after_iids = get_interpreter_identifiers(after_stats)
+
+        self.assertEqual(before_iids, (0, ))
+        self.assertEqual(after_iids, (0, ))
+
+        before_gens = get_generations(before_stats)
+        after_gens = get_generations(after_stats)
+
+        self.assertEqual(before_gens, (0, 1, 2))
+        self.assertEqual(after_gens, (0, 1, 2))
+
+        iid = 0 # main interpreter ID
+        before_last_items = (get_last_item(before_stats, 0, iid),
+                             get_last_item(before_stats, 1, iid),
+                             get_last_item(before_stats, 2, iid))
+
+        after_last_items = (get_last_item(after_stats, 0, iid),
+                            get_last_item(after_stats, 1, iid),
+                            get_last_item(after_stats, 2, iid))
+
+        for before, after in zip(before_last_items, after_last_items):
+            self._check_gc_state(before, after)
