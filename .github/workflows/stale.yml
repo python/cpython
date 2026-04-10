@@ -11,6 +11,7 @@ jobs:
     if: github.repository_owner == 'python'
     runs-on: ubuntu-latest
     permissions:
+      actions: write
       pull-requests: write
     timeout-minutes: 10
 
