@@ -1904,7 +1904,11 @@ _remote_debugging_get_gc_stats_impl(PyObject *module, int pid,
     if (result == NULL) {
         goto error;
     }
-    if (0 > iterate_interpreters(&offsets, get_gc_stats_from_interpreter_state, result)) {
+    ReadGCStatsContext ctx = {
+        .result = result,
+        .all_interpreters = all_interpreters,
+    };
+    if (0 > iterate_interpreters(&offsets, get_gc_stats_from_interpreter_state, &ctx)) {
         goto error;
     }
 

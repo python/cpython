@@ -13,6 +13,11 @@ extern "C" {
 
 #include "_remote_debugging.h"
 
+typedef struct {
+    PyObject *result;
+    bool all_interpreters;
+} ReadGCStatsContext;
+
 static int
 read_gc_stats(struct gc_stats *stats, unsigned long iid, PyObject *result)
 {
@@ -115,6 +120,11 @@ get_gc_stats_from_interpreter_state(RuntimeOffsets *offsets,
                                     unsigned long iid,
                                     void *context)
 {
+    ReadGCStatsContext *ctx = (ReadGCStatsContext *)context;
+    if (!ctx->all_interpreters && iid > 0) {
+        return 0;
+    }
+
     uintptr_t gc_stats_addr;
     uintptr_t gc_stats_pointer_address = interpreter_state_addr
         + offsets->debug_offsets.interpreter_state.gc
@@ -137,8 +147,7 @@ get_gc_stats_from_interpreter_state(RuntimeOffsets *offsets,
         return -1;
     }
 
-    PyObject *result = context;
-    if (read_gc_stats(&stats, iid, result) < 0) {
+    if (read_gc_stats(&stats, iid, ctx->result) < 0) {
         return -1;
     }
 

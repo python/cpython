@@ -52,7 +52,6 @@ iterate_interpreters(
     }
 
     while (interpreter_state_addr != 0) {
-
         if (0 > _Py_RemoteDebug_ReadRemoteMemory(
                     &offsets->handle,
                     interpreter_state_addr + interpreter_id_offset,
@@ -61,7 +60,6 @@ iterate_interpreters(
             _set_debug_exception_cause(PyExc_RuntimeError, "Failed to read next interpreter state");
             return -1;
         }
-
 
         // Call the processor function for this interpreter
         if (processor(offsets, interpreter_state_addr, iid, context) < 0) {
