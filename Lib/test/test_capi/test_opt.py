@@ -4662,6 +4662,24 @@ class TestUopsOptimization(unittest.TestCase):
         # v + 1 should be constant folded
         self.assertNotIn("_BINARY_OP", uops)
 
+    def test_is_none_narrows_to_constant(self):
+        def testfunc(n):
+            value = None
+            hits = 0
+            for _ in range(n):
+                if value is None:
+                    hits += 1
+            return hits
+
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, TIER2_THRESHOLD)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+
+        self.assertNotIn("_IS_NONE", uops)
+        self.assertIn("_GUARD_IS_NONE_POP", uops)
+        self.assertIn("_POP_TOP_NOP", uops)
+
     def test_is_false_narrows_to_constant(self):
         def f(n):
             def return_false():

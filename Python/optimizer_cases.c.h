@@ -3193,8 +3193,16 @@
         /* _POP_JUMP_IF_TRUE is not a viable micro-op for tier 2 */
 
         case _IS_NONE: {
+            JitOptRef value;
             JitOptRef b;
-            b = sym_new_not_null(ctx);
+            value = stack_pointer[-1];
+            if (sym_is_const(ctx, value)) {
+                PyObject *value_o = sym_get_const(ctx, value);
+                b = sym_new_const(ctx, Py_IsNone(value_o) ? Py_True : Py_False);
+            }
+            else {
+                b = sym_new_type(ctx, &PyBool_Type);
+            }
             stack_pointer[-1] = b;
             break;
         }
