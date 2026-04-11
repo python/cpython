@@ -179,19 +179,6 @@ html, body {
   position: relative;
 }
 
-.sidebar::-webkit-scrollbar {
-  height: 6px;
-}
-
-.sidebar::-webkit-scrollbar-thumb {
-  background: var(--border);
-  border-radius: 3px;
-}
-
-.sidebar::-webkit-scrollbar-thumb:hover {
-  background: var(--text-muted);
-}
-
 .sidebar.collapsed {
   width: var(--sidebar-collapsed) !important;
   transition: width var(--transition-normal);
