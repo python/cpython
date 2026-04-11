@@ -32,8 +32,14 @@
   #define GNU_PROPERTY_AARCH64_POINTER_AUTH 0
 #endif
 
-/* Add the BTI and PAC support to GNU Notes section */
-#if GNU_PROPERTY_AARCH64_BTI != 0 || GNU_PROPERTY_AARCH64_POINTER_AUTH != 0
+#if defined(__ARM_FEATURE_GCS_DEFAULT) && __ARM_FEATURE_GCS_DEFAULT == 1
+  #define GNU_PROPERTY_AARCH64_GCS 4 /* bit 2 GNU Notes is for GCS support */
+#else
+  #define GNU_PROPERTY_AARCH64_GCS 0
+#endif
+
+/* Add the BTI, PAC and GCS support to GNU Notes section */
+#if GNU_PROPERTY_AARCH64_BTI != 0 || GNU_PROPERTY_AARCH64_POINTER_AUTH != 0 || GNU_PROPERTY_AARCH64_GCS != 0
     .pushsection .note.gnu.property, "a"; /* Start a new allocatable section */
     .balign 8; /* align it on a byte boundry */
     .long 4; /* size of "GNU\0" */
@@ -42,7 +48,7 @@
     .asciz "GNU";
     .long 0xc0000000; /* GNU_PROPERTY_AARCH64_FEATURE_1_AND */
     .long 4; /* Four bytes of data */
-    .long (GNU_PROPERTY_AARCH64_BTI|GNU_PROPERTY_AARCH64_POINTER_AUTH); /* BTI or PAC is enabled */
+    .long (GNU_PROPERTY_AARCH64_BTI|GNU_PROPERTY_AARCH64_POINTER_AUTH|GNU_PROPERTY_AARCH64_GCS); /* BTI, PAC or GCS is enabled */
     .long 0; /* padding for 8 byte alignment */
     .popsection; /* end the section */
 #endif
