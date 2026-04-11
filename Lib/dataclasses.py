@@ -1,6 +1,4 @@
-lazy import re
 import sys
-lazy import copy
 import types
 import inspect
 import keyword
@@ -8,6 +6,8 @@ import itertools
 import annotationlib
 import abc
 from reprlib import recursive_repr
+lazy import copy
+lazy import re
 
 
 __all__ = ['dataclass',
