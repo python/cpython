@@ -1132,11 +1132,16 @@ def add_macro(
     macro: parser.Macro, instructions: dict[str, Instruction], uops: dict[str, Uop]
 ) -> None:
     parts: list[Part] = []
-    first = True
+    # Counts only real OpName entries (not CacheEffect/flush) so we
+    # know the exact position of each concrete uop inside the macro.
+    # CacheEffect → becomes Skip; flush → becomes Flush.
+    # Neither increments uop_index because neither is a "real" uop.
+    uop_index = 0
     for part in macro.uops:
         match part:
             case parser.OpName():
                 if part.name == "flush":
+                    # flush is structural, not a real uop; leave uop_index alone.
                     parts.append(Flush())
                 else:
                     if part.name not in uops:
@@ -1144,13 +1149,30 @@ def add_macro(
                             f"No Uop named {part.name}", macro.tokens[0]
                         )
                     uop = uops[part.name]
-                    if uop.properties.records_value and not first:
-                        raise analysis_error(
-                            f"Recording uop {part.name} must be first in macro",
-                            macro.tokens[0])
+                    if uop.properties.records_value:
+                        # A recording uop is legal in exactly two positions:
+                        #   1. It is the very first real uop (uop_index == 0).
+                        #   2. It is at index 1 AND the immediately preceding
+                        #      real uop is a specializing uop, identified by
+                        #      the "_SPECIALIZE_" name prefix.
+                        #      (Specializing uops are Tier-1-only; recording
+                        #      uops are Tier-2-only — they are orthogonal at
+                        #      runtime, so this ordering is safe.)
+                        preceding_is_specializing = (
+                            uop_index == 1
+                            and isinstance(parts[-1], Uop)
+                            and parts[-1].name.startswith("_SPECIALIZE_")
+                        )
+                        if uop_index != 0 and not preceding_is_specializing:
+                            raise analysis_error(
+                                f"Recording uop {part.name} must be first in macro "
+                                f"or immediately follow a specializing uop",
+                                macro.tokens[0])
                     parts.append(uop)
-                    first = False
+                    uop_index += 1
             case parser.CacheEffect():
+                # Cache-entry skips are structural; they do not occupy a uop
+                # slot, so uop_index is not incremented.
                 parts.append(Skip(part.size))
             case _:
                 assert False
