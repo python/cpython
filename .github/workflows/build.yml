@@ -613,6 +613,7 @@ jobs:
       needs.build-context.outputs.run-ci-fuzz == 'true'
       || needs.build-context.outputs.run-ci-fuzz-stdlib == 'true'
     permissions:
+      contents: read
       security-events: write
     strategy:
       fail-fast: false
