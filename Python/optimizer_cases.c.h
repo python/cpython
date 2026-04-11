@@ -4057,12 +4057,10 @@
         }
 
         case _CALL_BUILTIN_FAST_WITH_KEYWORDS: {
-            JitOptRef res;
-            res = sym_new_not_null(ctx);
-            CHECK_STACK_BOUNDS(-1 - oparg);
-            stack_pointer[-2 - oparg] = res;
-            stack_pointer += -1 - oparg;
-            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+            JitOptRef callable;
+            callable = stack_pointer[-2 - oparg];
+            callable = sym_new_not_null(ctx);
+            stack_pointer[-2 - oparg] = callable;
             break;
         }
 
@@ -4337,7 +4335,6 @@
         case _CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS: {
             JitOptRef self_or_null;
             JitOptRef callable;
-            JitOptRef res;
             self_or_null = stack_pointer[-1 - oparg];
             callable = stack_pointer[-2 - oparg];
             PyObject *callable_o = sym_get_const(ctx, callable);
@@ -4345,23 +4342,14 @@
                 && sym_is_not_null(self_or_null)) {
                 PyMethodDescrObject *method = (PyMethodDescrObject *)callable_o;
                 PyCFunction cfunc = method->d_method->ml_meth;
-                ADD_OP(_CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS_INLINE, oparg + 1, (uintptr_t)cfunc);
+                ADD_OP(_CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS_INLINE, oparg, (uintptr_t)cfunc);
             }
-            res = sym_new_not_null(ctx);
-            CHECK_STACK_BOUNDS(-1 - oparg);
-            stack_pointer[-2 - oparg] = res;
-            stack_pointer += -1 - oparg;
-            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+            callable = sym_new_not_null(ctx);
+            stack_pointer[-2 - oparg] = callable;
             break;
         }
 
         case _CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS_INLINE: {
-            JitOptRef res;
-            res = sym_new_not_null(ctx);
-            CHECK_STACK_BOUNDS(-oparg);
-            stack_pointer[-1 - oparg] = res;
-            stack_pointer += -oparg;
-            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
             break;
         }
 
@@ -4490,7 +4478,6 @@
         case _CALL_METHOD_DESCRIPTOR_FAST: {
             JitOptRef self_or_null;
             JitOptRef callable;
-            JitOptRef res;
             self_or_null = stack_pointer[-1 - oparg];
             callable = stack_pointer[-2 - oparg];
             PyObject *callable_o = sym_get_const(ctx, callable);
@@ -4498,23 +4485,14 @@
                 && sym_is_not_null(self_or_null)) {
                 PyMethodDescrObject *method = (PyMethodDescrObject *)callable_o;
                 PyCFunction cfunc = method->d_method->ml_meth;
-                ADD_OP(_CALL_METHOD_DESCRIPTOR_FAST_INLINE, oparg + 1, (uintptr_t)cfunc);
+                ADD_OP(_CALL_METHOD_DESCRIPTOR_FAST_INLINE, oparg, (uintptr_t)cfunc);
             }
-            res = sym_new_not_null(ctx);
-            CHECK_STACK_BOUNDS(-1 - oparg);
-            stack_pointer[-2 - oparg] = res;
-            stack_pointer += -1 - oparg;
-            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+            callable = sym_new_not_null(ctx);
+            stack_pointer[-2 - oparg] = callable;
             break;
         }
 
         case _CALL_METHOD_DESCRIPTOR_FAST_INLINE: {
-            JitOptRef res;
-            res = sym_new_not_null(ctx);
-            CHECK_STACK_BOUNDS(-oparg);
-            stack_pointer[-1 - oparg] = res;
-            stack_pointer += -oparg;
-            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
             break;
         }
 
