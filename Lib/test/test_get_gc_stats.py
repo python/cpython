@@ -13,6 +13,14 @@ from test.support import (
     requires_remote_subprocess_debugging,
 )
 
+PROCESS_VM_READV_SUPPORTED = False
+
+try:
+    from _remote_debugging import PROCESS_VM_READV_SUPPORTED
+except ImportError:
+    raise unittest.SkipTest(
+        "Test only runs when _remote_debugging is available"
+    )
 
 def get_interpreter_identifiers(gc_stats: tuple[dict[str, str|int|float]]) -> tuple[str,...]:
     return tuple(sorted({s["iid"] for s in gc_stats}))
@@ -36,6 +44,15 @@ def get_last_item(gc_stats: tuple[dict[str, str|int|float]],
                 item = s
 
     return item
+
+skip_if_not_supported = unittest.skipIf(
+    (
+        sys.platform != "darwin"
+        and sys.platform != "linux"
+        and sys.platform != "win32"
+    ),
+    "Test only runs on Linux, Windows and MacOS",
+)
 
 
 @requires_gil_enabled()
@@ -119,6 +136,11 @@ class TestGetGCStats(unittest.TestCase):
                                     before["objects_not_transitively_reachable"],
                                     (before, after))
 
+    @skip_if_not_supported
+    @unittest.skipIf(
+        sys.platform == "linux" and not PROCESS_VM_READV_SUPPORTED,
+        "Test only runs on Linux with process_vm_readv support",
+    )
     def test_get_gc_stats_for_main_interpreter(self):
         before_stats = self._run_child_process(False)
         after_stats = self._run_child_process(False)
