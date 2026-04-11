@@ -823,7 +823,7 @@ def _is_type(annotation, cls, a_module, a_type, is_type_predicate):
             module = sys.modules.get(cls.__module__)
             if module and module.__dict__.get(module_name) is a_module:
                 ns = sys.modules.get(a_type.__module__).__dict__
-        if ns and is_type_predicate(ns.get(match.group(2)), a_module):
+        if ns and is_type_predicate(ns.get(match[2]), a_module):
             return True
     return False
 
