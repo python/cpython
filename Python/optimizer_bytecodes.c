@@ -1338,6 +1338,10 @@ dummy_func(void) {
         }
     }
 
+    op(_CALL_BUILTIN_FAST_WITH_KEYWORDS, (callable, self_or_null, args[oparg] -- callable, self_or_null, args[oparg])) {
+        callable = sym_new_not_null(ctx);
+    }
+
     op(_CALL_BUILTIN_O, (callable, self_or_null, args[oparg] -- res, c, s)) {
         res = sym_new_not_null(ctx);
         c = callable;
