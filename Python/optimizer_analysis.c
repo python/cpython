@@ -397,8 +397,10 @@ lookup_attr(JitOptContext *ctx, _PyBloomFilter *dependencies, _PyUOpInstruction 
             if (suffix != _NOP) {
                 ADD_OP(suffix, 2, 0);
             }
-            PyType_Watch(TYPE_WATCHER_ID, (PyObject *)type);
-            _Py_BloomFilter_Add(dependencies, type);
+            if ((type->tp_flags & Py_TPFLAGS_IMMUTABLETYPE) == 0) {
+                PyType_Watch(TYPE_WATCHER_ID, (PyObject *)type);
+                _Py_BloomFilter_Add(dependencies, type);
+            }
             return sym_new_const(ctx, lookup);
         }
     }
@@ -466,10 +468,12 @@ lookup_super_attr(JitOptContext *ctx, _PyBloomFilter *dependencies,
     if (suffix != _NOP) {
         ADD_OP(suffix, 2, 0);
     }
-    PyType_Watch(TYPE_WATCHER_ID, (PyObject *)su_type);
-    _Py_BloomFilter_Add(dependencies, su_type);
-    PyType_Watch(TYPE_WATCHER_ID, (PyObject *)obj_type);
-    _Py_BloomFilter_Add(dependencies, obj_type);
+    if ((obj_type->tp_flags & Py_TPFLAGS_IMMUTABLETYPE) == 0) {
+        PyType_Watch(TYPE_WATCHER_ID, (PyObject *)su_type);
+        _Py_BloomFilter_Add(dependencies, su_type);
+        PyType_Watch(TYPE_WATCHER_ID, (PyObject *)obj_type);
+        _Py_BloomFilter_Add(dependencies, obj_type);
+    }
     return sym_new_const_steal(ctx, lookup);
 }
 
