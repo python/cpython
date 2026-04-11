@@ -894,7 +894,7 @@ _PyCallMethodDescriptorFastWithKeywords_StackRef(
 }
 
 PyObject *
-_Py_CallBuiltinClass_StackRefSteal(
+_Py_CallBuiltinClass_StackRef(
     _PyStackRef callable,
     _PyStackRef *arguments,
     int total_args)
@@ -902,22 +902,12 @@ _Py_CallBuiltinClass_StackRefSteal(
     PyObject *res;
     STACKREFS_TO_PYOBJECTS(arguments, total_args, args_o);
     if (CONVERSION_FAILED(args_o)) {
-        res = NULL;
-        goto cleanup;
+        return NULL;
     }
     PyTypeObject *tp = (PyTypeObject *)PyStackRef_AsPyObjectBorrow(callable);
     res = tp->tp_vectorcall((PyObject *)tp, args_o, total_args | PY_VECTORCALL_ARGUMENTS_OFFSET, NULL);
     STACKREFS_TO_PYOBJECTS_CLEANUP(args_o);
     assert((res != NULL) ^ (PyErr_Occurred() != NULL));
-cleanup:
-    // arguments is a pointer into the GC visible stack,
-    // so we must NULL out values as we clear them.
-    for (int i = total_args-1; i >= 0; i--) {
-        _PyStackRef tmp = arguments[i];
-        arguments[i] = PyStackRef_NULL;
-        PyStackRef_CLOSE(tmp);
-    }
-    PyStackRef_CLOSE(callable);
     return res;
 }
 

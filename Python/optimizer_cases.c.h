@@ -2442,6 +2442,19 @@
         }
 
         case _GUARD_TYPE_VERSION_LOCKED: {
+            JitOptRef owner;
+            owner = stack_pointer[-1];
+            uint32_t type_version = (uint32_t)this_instr->operand0;
+            assert(type_version);
+            if (sym_matches_type_version(owner, type_version)) {
+                ADD_OP(_NOP, 0, 0);
+            } else {
+                PyTypeObject *probable_type = sym_get_probable_type(owner);
+                if (probable_type->tp_version_tag == type_version && sym_set_type_version(owner, type_version)) {
+                    PyType_Watch(TYPE_WATCHER_ID, (PyObject *)probable_type);
+                    _Py_BloomFilter_Add(dependencies, probable_type);
+                }
+            }
             break;
         }
 
@@ -3180,8 +3193,16 @@
         /* _POP_JUMP_IF_TRUE is not a viable micro-op for tier 2 */
 
         case _IS_NONE: {
+            JitOptRef value;
             JitOptRef b;
-            b = sym_new_not_null(ctx);
+            value = stack_pointer[-1];
+            if (sym_is_const(ctx, value)) {
+                PyObject *value_o = sym_get_const(ctx, value);
+                b = sym_new_const(ctx, Py_IsNone(value_o) ? Py_True : Py_False);
+            }
+            else {
+                b = sym_new_type(ctx, &PyBool_Type);
+            }
             stack_pointer[-1] = b;
             break;
         }
@@ -3890,9 +3911,21 @@
             self_or_null = stack_pointer[-1 - oparg];
             callable = stack_pointer[-2 - oparg];
             uint32_t type_version = (uint32_t)this_instr->operand0;
-            (void)type_version;
             (void)args;
-            callable = sym_new_not_null(ctx);
+            PyObject *probable_callable = sym_get_probable_value(callable);
+            assert(probable_callable != NULL);
+            assert(PyType_Check(probable_callable));
+            PyTypeObject *tp = (PyTypeObject *)probable_callable;
+            if (tp->tp_version_tag == type_version) {
+                PyHeapTypeObject *cls = (PyHeapTypeObject *)probable_callable;
+                PyObject *init = cls->_spec_cache.init;
+                assert(init != NULL);
+                assert(PyFunction_Check(init));
+                callable = sym_new_const(ctx, init);
+            }
+            else {
+                callable = sym_new_not_null(ctx);
+            }
             self_or_null = sym_new_not_null(ctx);
             stack_pointer[-2 - oparg] = callable;
             stack_pointer[-1 - oparg] = self_or_null;
@@ -3950,12 +3983,10 @@
         }
 
         case _CALL_BUILTIN_CLASS: {
-            JitOptRef res;
-            res = sym_new_not_null(ctx);
-            CHECK_STACK_BOUNDS(-1 - oparg);
-            stack_pointer[-2 - oparg] = res;
-            stack_pointer += -1 - oparg;
-            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+            JitOptRef callable;
+            callable = stack_pointer[-2 - oparg];
+            callable = sym_new_not_null(ctx);
+            stack_pointer[-2 - oparg] = callable;
             break;
         }
 

@@ -3011,6 +3011,7 @@ dummy_func(
 
         macro(STORE_ATTR_INSTANCE_VALUE) =
             unused/1 +
+            _RECORD_TOS_TYPE +
             _LOCK_OBJECT +
             _GUARD_TYPE_VERSION_LOCKED +
             _GUARD_DORV_NO_DICT +
@@ -4572,7 +4573,7 @@ dummy_func(
             EXIT_IF(tp->tp_vectorcall == NULL);
         }
 
-        op(_CALL_BUILTIN_CLASS, (callable, self_or_null, args[oparg] -- res)) {
+        op(_CALL_BUILTIN_CLASS, (callable, self_or_null, args[oparg] -- callable, self_or_null, args[oparg])) {
             int total_args = oparg;
             _PyStackRef *arguments = args;
             if (!PyStackRef_IsNull(self_or_null)) {
@@ -4580,15 +4581,16 @@ dummy_func(
                 total_args++;
             }
             STAT_INC(CALL, hit);
-            PyObject *res_o = _Py_CallBuiltinClass_StackRefSteal(
+            PyObject *res_o = _Py_CallBuiltinClass_StackRef(
                 callable,
                 arguments,
                 total_args);
-            DEAD(args);
-            DEAD(self_or_null);
-            DEAD(callable);
-            ERROR_IF(res_o == NULL);
-            res = PyStackRef_FromPyObjectSteal(res_o);
+            if (res_o == NULL) {
+                ERROR_NO_POP();
+            }
+            _PyStackRef temp = callable;
+            callable = PyStackRef_FromPyObjectSteal(res_o);
+            PyStackRef_CLOSE(temp);
         }
 
         macro(CALL_BUILTIN_CLASS) =
@@ -4597,6 +4599,8 @@ dummy_func(
             unused/2 +
             _GUARD_CALLABLE_BUILTIN_CLASS +
             _CALL_BUILTIN_CLASS +
+            _POP_TOP_OPARG +
+            POP_TOP +
             _CHECK_PERIODIC_AT_END;
 
         op(_GUARD_CALLABLE_BUILTIN_O, (callable, self_or_null, args[oparg] -- callable, self_or_null, args[oparg])) {
