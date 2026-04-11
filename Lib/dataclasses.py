@@ -808,12 +808,12 @@ def _is_type(annotation, cls, a_module, a_type, is_type_predicate):
     # https://github.com/python/cpython/issues/77634 for details.
     global _MODULE_IDENTIFIER_RE
     if _MODULE_IDENTIFIER_RE is None:
-        _MODULE_IDENTIFIER_RE = re.compile(r'^(?:\s*(\w+)\s*\.)?\s*(\w+)')
+        _MODULE_IDENTIFIER_RE = re.compile(r'(?:\s*(\w+)\s*\.)?\s*(\w+)')
 
-    match = _MODULE_IDENTIFIER_RE.match(annotation)
+    match = _MODULE_IDENTIFIER_RE.prefixmatch(annotation)
     if match:
         ns = None
-        module_name = match.group(1)
+        module_name = match[1]
         if not module_name:
             # No module name, assume the class's module did
             # "from dataclasses import InitVar".
