@@ -2393,12 +2393,10 @@
             if (sym_matches_type_version(owner, type_version)) {
                 ADD_OP(_NOP, 0, 0);
             } else {
-                PyTypeObject *type = _PyType_LookupByVersion(type_version);
-                if (type) {
-                    if (sym_set_type_version(owner, type_version)) {
-                        PyType_Watch(TYPE_WATCHER_ID, (PyObject *)type);
-                        _Py_BloomFilter_Add(dependencies, type);
-                    }
+                PyTypeObject *probable_type = sym_get_probable_type(owner);
+                if (probable_type->tp_version_tag == type_version && sym_set_type_version(owner, type_version)) {
+                    PyType_Watch(TYPE_WATCHER_ID, (PyObject *)probable_type);
+                    _Py_BloomFilter_Add(dependencies, probable_type);
                 }
             }
             break;
@@ -3792,19 +3790,16 @@
             callable = stack_pointer[-2 - oparg];
             uint32_t type_version = (uint32_t)this_instr->operand0;
             (void)args;
-            PyTypeObject *type = _PyType_LookupByVersion(type_version);
-            if (type) {
-                PyHeapTypeObject *cls = (PyHeapTypeObject *)type;
-                PyObject *init = FT_ATOMIC_LOAD_PTR_ACQUIRE(cls->_spec_cache.init);
-                if (init != NULL && PyFunction_Check(init)) {
-                    callable = sym_new_const(ctx, init);
-                    stack_pointer[-2 - oparg] = callable;
-                    PyType_Watch(TYPE_WATCHER_ID, (PyObject *)type);
-                    _Py_BloomFilter_Add(dependencies, type);
-                }
-                else {
-                    callable = sym_new_not_null(ctx);
-                }
+            PyObject *probable_callable = sym_get_probable_value(callable);
+            assert(probable_callable != NULL);
+            assert(PyType_Check(probable_callable));
+            PyTypeObject *tp = (PyTypeObject *)probable_callable;
+            if (tp->tp_version_tag == type_version) {
+                PyHeapTypeObject *cls = (PyHeapTypeObject *)probable_callable;
+                PyObject *init = cls->_spec_cache.init;
+                assert(init != NULL);
+                assert(PyFunction_Check(init));
+                callable = sym_new_const(ctx, init);
             }
             else {
                 callable = sym_new_not_null(ctx);
