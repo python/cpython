@@ -1134,7 +1134,7 @@ dummy_func(void) {
         }
     }
 
-    op(_GUARD_FOR_ITER_GEN_FRAME, (iter, null -- iter, null)) {
+    op(_GUARD_FOR_ITER_GEN_FRAME, (iter, unused -- iter, unused)) {
         if (sym_matches_type(iter, &PyGen_Type)) {
             ADD_OP(_NOP, 0, 0);
         }

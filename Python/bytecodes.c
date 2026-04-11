@@ -3845,7 +3845,7 @@ dummy_func(
             _ITER_JUMP_RANGE +
             _ITER_NEXT_RANGE;
 
-        op(_GUARD_FOR_ITER_GEN_FRAME, (iter, null -- iter, null)) {
+        op(_GUARD_FOR_ITER_GEN_FRAME, (iter, unused -- iter, unused)) {
             PyGenObject *gen = (PyGenObject *)PyStackRef_AsPyObjectBorrow(iter);
             EXIT_IF(Py_TYPE(gen) != &PyGen_Type);
         }
