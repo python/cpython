@@ -877,6 +877,22 @@ class BaseTestUUID:
             equal((u.int >> 80) & 0xffff, 0x232a)
             equal((u.int >> 96) & 0xffff_ffff, 0x1ec9_414c)
 
+    def check_uuid7(
+        self,
+        u,
+        time_ms=None,
+        counter_hi=None, counter_lo=None,
+        tail=None
+    ):
+        if time_ms is not None:
+            self.assertEqual(u.time, time_ms)
+        if counter_hi is not None:
+            self.assertEqual((u.int >> 64) & 0xfff, counter_hi)
+        if counter_lo is not None:
+            self.assertEqual((u.int >> 32) & 0x3fff_ffff, counter_lo)
+        if tail is not None:
+            self.assertEqual(u.int & 0xffff_ffff, tail)
+
     def test_uuid7(self):
         equal = self.assertEqual
         u = self.uuid.uuid7()
@@ -1101,6 +1117,120 @@ class BaseTestUUID:
             v = self.uuid.uuid7()
             equal(v.time, unix_ts_ms)
             self.assertTrue(self.uuid._last_counter_v7_overflow)
+
+    def test_uuid7_multiple_counter_overflows(self):
+        # Tests when counter overflows multiple times within the same frame.
+        # See https://github.com/python/cpython/issues/138862.
+        equal = self.assertEqual
+
+        t0_ms = 1 + random.getrandbits(24)
+
+        counter_max_value = 0x3ff_ffff_ffff
+        counter_max_value_hi = (counter_max_value >> 30) & 0x0fff
+        counter_max_value_lo = (counter_max_value & 0x3fff_ffff)
+
+        random_tail = int.from_bytes(b'\x11' * 4)
+        tail1 = tail3a = tail3b = random_tail
+        tail2a = 1 + random.getrandbits(16)
+        tail2b = 2 * tail2a
+
+        counter1 = counter2a = counter_max_value
+        counter1_hi = counter2a_hi = counter_max_value_hi
+        counter1_lo = counter2a_lo = counter_max_value_lo
+
+        counter2b = random.getrandbits(40)
+        counter2b_hi = (counter2b >> 30) & 0x0fff
+        counter2b_lo = (counter2b & 0x3fff_ffff)
+        self.assertLess(counter2b, counter_max_value - 3)
+
+        def patch_os_urandom(wraps=True):
+            if wraps:
+                return mock.patch('os.urandom', wraps=lambda n: b'\x11' * n)
+            return mock.patch('os.urandom')
+
+        def patch_get_counter_and_tail(c, t):
+            return mock.patch.object(
+                self.uuid,
+                "_uuid7_get_counter_and_tail",
+                return_value=(c, t),
+            )
+
+        def check_invariants(t, c, *, overflow):
+            equal(self.uuid._last_timestamp_v7, t)
+            equal(self.uuid._last_counter_v7, c)
+            self.assertIs(self.uuid._last_counter_v7_overflow, overflow)
+
+        with (
+            mock.patch.multiple(
+                self.uuid,
+                _last_timestamp_v7=t0_ms,
+                _last_counter_v7=counter_max_value - 1,
+                _last_counter_v7_overflow=False,
+            ),
+            mock.patch('time.time_ns', return_value=1_000_000 * t0_ms),
+        ):
+            # All the calls in this block to uuid7() are always assumed
+            # to be within the same logical millisecond but the timestamp
+            # that is used for the UUIDv7 objects will be altered (and
+            # considered in the future).
+
+            # u1's counter is now the maximal value it can have.
+            # For the next call, we will need to jump 1ms in the
+            # future and pick a new counter (in our case, it will
+            # be an overflowing one).
+            with patch_os_urandom() as urand:
+                u1 = self.uuid.uuid7()
+            urand.assert_called_once_with(4)
+            self.check_uuid7(u1, t0_ms, counter1_hi, counter1_lo, tail1)
+            # For now, we are not yet in an overflow (but all subsequent
+            # calls will be in an overflow state even if we normally
+            # increment the counters). The overflow state is only cleared
+            # when the physical millisecond catches up to the logical one.
+            check_invariants(u1.time, counter1, overflow=False)
+            del u1
+
+            # u1's counter is maximal, so we enter the overflow state
+            # and jump 1ms in the future; the randomized counter is
+            # still one that would cause an overflow at the next call.
+            with (
+                patch_os_urandom(wraps=False) as urand,
+                patch_get_counter_and_tail(counter_max_value, tail2a),
+            ):
+                u2a = self.uuid.uuid7()
+            urand.assert_not_called()
+            self.check_uuid7(u2a, t0_ms + 1, counter2a_hi, counter2a_lo, tail2a)
+            check_invariants(u2a.time, counter2a, overflow=True)
+            del u2a
+
+            # u2a's counter was the maximal value so we need to update
+            # the timestamp and pick a new counter again (this time,
+            # it will be a small value that we can increment later).
+            with (
+                patch_os_urandom(wraps=False) as urand,
+                patch_get_counter_and_tail(counter2b, tail2b),
+            ):
+                u2b = self.uuid.uuid7()
+            urand.assert_not_called()
+            self.check_uuid7(u2b, t0_ms + 2, counter2b_hi, counter2b_lo, tail2b)
+            check_invariants(u2b.time, counter2b, overflow=True)
+            del u2b
+
+            # u2a's counter was small enough that we can increment it;
+            # we are still in the future but we don't need to advance
+            # the timestamp again.
+            with patch_os_urandom() as urand:
+                u3a = self.uuid.uuid7()
+            urand.assert_called_once_with(4)
+            self.check_uuid7(u3a, t0_ms + 2, counter2b_hi, counter2b_lo + 1, tail3a)
+            check_invariants(u3a.time, counter2b + 1, overflow=True)
+            del u3a
+
+            with patch_os_urandom() as urand:
+                u3b = self.uuid.uuid7()
+            urand.assert_called_once_with(4)
+            self.check_uuid7(u3b, t0_ms + 2, counter2b_hi, counter2b_lo + 2, tail3b)
+            check_invariants(u3b.time, counter2b + 2, overflow=True)
+            del u3b
 
     def test_uuid8(self):
         equal = self.assertEqual
