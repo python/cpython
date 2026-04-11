@@ -1502,7 +1502,9 @@ Ensure that early = are not matched by the parser as invalid comparisons
    Traceback (most recent call last):
    SyntaxError: invalid syntax
 
-Ensure that alternative patterns bind the same names
+Ensure that alternative patterns bind the same names (when there is
+a single capture in the first pattern that is not uniformly captured,
+the error message is sightly different).
 
    >>> match 1:
    ...     case x | 1: pass
@@ -1517,17 +1519,32 @@ Ensure that alternative patterns bind the same names
    >>> match 1:
    ...     case 1 | x: pass
    Traceback (most recent call last):
-   SyntaxError: alternative patterns bind different names (first pattern binds no names, pattern 2 binds ['x'])
+   SyntaxError: alternative patterns bind different names (pattern 1 binds nothing, pattern 2 binds ['x'])
+
+   >>> match 1:
+   ...     case (x, y) | 1: pass
+   Traceback (most recent call last):
+   SyntaxError: alternative patterns bind different names (pattern 1 binds ['x', 'y'], pattern 2 binds nothing)
+
+   >>> match 1:
+   ...     case 1 | ("point", {"x": x, "y": y}): pass
+   Traceback (most recent call last):
+   SyntaxError: alternative patterns bind different names (pattern 1 binds nothing, pattern 2 binds ['x', 'y'])
+
+   >>> match 1:
+   ...     case ("point", {"x": x, "y": y}) | 1: pass
+   Traceback (most recent call last):
+   SyntaxError: alternative patterns bind different names (pattern 1 binds ['x', 'y'], pattern 2 binds nothing)
 
    >>> match 1:
    ...     case ("user", {"id": id}) | ("admin", {"name": name}): pass
    Traceback (most recent call last):
-   SyntaxError: alternative patterns bind different names (first pattern binds ['id'], pattern 2 binds ['name'])
+   SyntaxError: alternative patterns bind different names (pattern 1 binds ['id'], pattern 2 binds ['name'])
 
    >>> match 1:
    ...     case ("user", {"id": id}) | ("admin", {"id": id}) | ("other", {"ip": ip}): pass
    Traceback (most recent call last):
-   SyntaxError: alternative patterns bind different names (first pattern binds ['id'], pattern 3 binds ['ip'])
+   SyntaxError: alternative patterns bind different names (pattern 1 binds ['id'], pattern 3 binds ['ip'])
 
 Incomplete dictionary literals
 
