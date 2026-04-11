@@ -12,8 +12,8 @@
 
     :mod:`!sys.monitoring` is a namespace within the :mod:`sys` module,
     not an independent module, and ``import sys.monitoring`` will fail
-    with a :py:exception:`ModuleNotFoundError`. Instead, simply
-    ``import sys`` and then use ``sys.monitoring``.
+    with a :py:exc:`ModuleNotFoundError`. Instead, simply ``import sys``
+    and then use ``sys.monitoring``.
 
 
 This namespace provides access to the functions and constants necessary to
