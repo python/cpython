@@ -1745,9 +1745,11 @@ _encoder_iterate_mapping_lock_held(PyEncoderObject *s, PyUnicodeWriter *writer,
     PyObject *key, *value;
     for (Py_ssize_t  i = 0; i < PyList_GET_SIZE(items); i++) {
         PyObject *item = PyList_GET_ITEM(items, i);
-
+        // gh-142831: item is a borrowed ref from the items list.
+        // encoder_encode_key_value() may invoke user Python code
+        // (the key encoder) that can mutate or clear the list,
+        // so we must hold a strong reference.
         Py_INCREF(item);
-
         if (!PyTuple_Check(item) || PyTuple_GET_SIZE(item) != 2) {
             PyErr_SetString(PyExc_ValueError, "items must return 2-tuples");
             Py_DECREF(item);
@@ -1895,9 +1897,11 @@ _encoder_iterate_fast_seq_lock_held(PyEncoderObject *s, PyUnicodeWriter *writer,
 {
     for (Py_ssize_t i = 0; i < PySequence_Fast_GET_SIZE(s_fast); i++) {
         PyObject *obj = PySequence_Fast_GET_ITEM(s_fast, i);
-
+        // gh-142831: obj is a borrowed ref from the sequence.
+        // encoder_listencode_obj() may invoke user Python code
+        // (the 'default' callback) that can mutate or clear the
+        // sequence, so we must hold a strong reference.
         Py_INCREF(obj);
-
         if (i) {
             if (PyUnicodeWriter_WriteStr(writer, separator) < 0) {
                 Py_DECREF(obj);
