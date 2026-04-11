@@ -22,4 +22,4 @@ Add the following MIME types with file extensions:
   - ``.wgsl``   for ``text/wgsl``
   - ``.ent``    for ``text/xml-external-parsed-entity``
 
-(Contributed by Charlie Lin in :gh:`146342`.)
+  (Contributed by Charlie Lin in :gh:`146342`.)
