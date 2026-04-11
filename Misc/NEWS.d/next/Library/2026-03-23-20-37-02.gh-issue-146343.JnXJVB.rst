@@ -1,4 +1,4 @@
-Add the following MIME types with file extensions:
+* Add the following MIME types with file extensions:
 
   - ``.appcache`` and ``.manifest`` for ``text/cache-manifest``
   - ``.ics`` and ``.ifb``    for ``text/calendar``
