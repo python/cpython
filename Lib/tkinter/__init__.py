@@ -29,16 +29,16 @@ button = tkinter.Button(frame, text="Exit", command=tk.destroy)
 button.pack(side=BOTTOM)
 tk.mainloop()
 """
+import _tkinter # If this fails your Python may not be configured for Tk
+from tkinter.constants import *
 
 lazy import collections
 lazy import enum
-import sys
+lazy import sys
 lazy import types
-
-import _tkinter # If this fails your Python may not be configured for Tk
-TclError = _tkinter.TclError
-from tkinter.constants import *
 lazy import re
+
+TclError = _tkinter.TclError
 
 wantobjects = 1
 _debug = False  # set to True to print executed Tcl/Tk commands
@@ -70,7 +70,6 @@ def _get_space_re():
 def _join(value):
     """Internal function."""
     return ' '.join(map(_stringify, value))
-
 
 def _stringify(value):
     """Internal function."""
