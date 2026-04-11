@@ -2000,6 +2000,8 @@ static int test_init_main(void)
     config._init_main = 0;
     init_from_config_clear(&config);
 
+    assert(Py_IsInitialized() == 0);
+
     /* sys.stdout don't exist yet: it is created by _Py_InitializeMain() */
     int res = PyRun_SimpleString(
         "import sys; "
