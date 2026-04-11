@@ -30,15 +30,15 @@ button.pack(side=BOTTOM)
 tk.mainloop()
 """
 
-import collections
-import enum
+lazy import collections
+lazy import enum
 import sys
-import types
+lazy import types
 
 import _tkinter # If this fails your Python may not be configured for Tk
 TclError = _tkinter.TclError
 from tkinter.constants import *
-import re
+lazy import re
 
 wantobjects = 1
 _debug = False  # set to True to print executed Tcl/Tk commands
