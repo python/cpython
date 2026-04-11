@@ -1,4 +1,4 @@
-Add the following MIME types corresponding to file extensions:
+* Add the following MIME types corresponding to file extensions:
 
   - ``.3gp``   for ``video/3gpp``
   - ``.3g2``   for ``video/3gpp2``
@@ -10,4 +10,4 @@ Add the following MIME types corresponding to file extensions:
   - ``.sswf`` and ``.ssw`` for ``video/vnd.sealed.swf``
   - ``.yt``    for ``video/vnd.youtube.yt``
 
-(Contributed by Charlie Lin in :gh:`146342`.)
+  (Contributed by Charlie Lin in :gh:`146342`.)
