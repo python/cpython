@@ -38,7 +38,8 @@ TWO_THIRD = 2.0/3.0
 # The ones in this library uses constants from the FCC version of NTSC.
 
 def rgb_to_yiq(r, g, b):
-    """Convert RGB to YIQ.
+    """
+    Convert RGB to YIQ.
 
     r, g, b are in [0, 1].
     Return (y, i, q) where y is in [0, 1].
