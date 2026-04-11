@@ -302,18 +302,19 @@ class ParseTest(unittest.TestCase):
 
         def ExternalEntityRefHandler(*args):
             subparser.Parse(payload_extstr, True)
-            return 1  # return an integer to indicate that parsing continues
+            # return a nonzero integer to indicate that parsing continues
+            return 1
         ExternalEntityRefHandler = mock.Mock(wraps=ExternalEntityRefHandler)
 
         def StartElementHandler(*args):
             parser.ExternalEntityRefHandler = ExternalEntityRefHandler
         parser.StartElementHandler = StartElementHandler
 
-        payload = f"""\
-<?xml version="1.0" standalone="no"?>
-<!DOCTYPE quotations SYSTEM "quotations.dtd" [{payload_extstr}]>
-<root>&ext;</root>
-""".encode(encoding)
+        payload = textwrap.dedent(f"""\
+            <?xml version="1.0" standalone="no"?>
+            <!DOCTYPE quotations SYSTEM "quotations.dtd" [{payload_extstr}]>
+            <root>&ext;</root>
+        """).encode(encoding)
 
         # Check that external parsers be called from parent's handlers.
         for i in range(len(payload)):
