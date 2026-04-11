@@ -21,16 +21,18 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from typing import TYPE_CHECKING
 
 import re
 from . import commands, console, reader
+from .render import RenderLine, ScreenOverlay
 from .reader import Reader
 
 
 # types
 Command = commands.Command
-if False:
-    from .types import KeySpec, CommandName
+if TYPE_CHECKING:
+    from .types import CommandName, CompletionAction, Keymap, KeySpec
 
 
 def prefix(wordlist: list[str], j: int = 0) -> str:
@@ -168,39 +170,68 @@ class complete(commands.Command):
         r: CompletingReader
         r = self.reader  # type: ignore[assignment]
         last_is_completer = r.last_command_is(self.__class__)
+        if r.cmpltn_action:
+            if last_is_completer:  # double-tab: execute action
+                msg = r.cmpltn_action[1]()
+                r.cmpltn_action = None  # consumed
+                if msg:
+                    r.msg = msg
+                    r.cmpltn_message_visible = True
+                    r.invalidate_message()
+            else:  # other input since last tab: cancel action
+                r.cmpltn_action = None
+
         immutable_completions = r.assume_immutable_completions
         completions_unchangable = last_is_completer and immutable_completions
         stem = r.get_stem()
         if not completions_unchangable:
-            r.cmpltn_menu_choices = r.get_completions(stem)
+            r.cmpltn_menu_choices, r.cmpltn_action = r.get_completions(stem)
 
         completions = r.cmpltn_menu_choices
         if not completions:
-            r.error("no matches")
+            if not r.cmpltn_action:
+                r.error("no matches")
         elif len(completions) == 1:
-            if completions_unchangable and len(completions[0]) == len(stem):
+            completion = stripcolor(completions[0])
+            if completions_unchangable and len(completion) == len(stem):
                 r.msg = "[ sole completion ]"
-                r.dirty = True
-            r.insert(completions[0][len(stem):])
+                r.cmpltn_message_visible = True
+                r.invalidate_message()
+            r.insert(completion[len(stem):])
         else:
-            p = prefix(completions, len(stem))
+            clean_completions = [stripcolor(word) for word in completions]
+            p = prefix(clean_completions, len(stem))
             if p:
                 r.insert(p)
             if last_is_completer:
                 r.cmpltn_menu_visible = True
-                r.cmpltn_message_visible = False
                 r.cmpltn_menu, r.cmpltn_menu_end = build_menu(
                     r.console, completions, r.cmpltn_menu_end,
                     r.use_brackets, r.sort_in_column)
-                r.dirty = True
+                if r.msg:
+                    r.msg = ""
+                    r.cmpltn_message_visible = False
+                    r.invalidate_message()
+                r.invalidate_overlay()
             elif not r.cmpltn_menu_visible:
-                r.cmpltn_message_visible = True
-                if stem + p in completions:
+                if stem + p in clean_completions:
                     r.msg = "[ complete but not unique ]"
-                    r.dirty = True
+                    r.cmpltn_message_visible = True
+                    r.invalidate_message()
                 else:
                     r.msg = "[ not unique ]"
-                    r.dirty = True
+                    r.cmpltn_message_visible = True
+                    r.invalidate_message()
+
+        if r.cmpltn_action:
+            if r.msg and r.cmpltn_message_visible:
+                # There is already a message (eg. [ not unique ]) that
+                # would conflict for next tab: cancel action
+                r.cmpltn_action = None
+            else:
+                r.msg = r.cmpltn_action[0]
+                r.cmpltn_message_visible = True
+                r.invalidate_message()
 
 
 class self_insert(commands.self_insert):
@@ -215,11 +246,12 @@ class self_insert(commands.self_insert):
                 r.cmpltn_reset()
             else:
                 completions = [w for w in r.cmpltn_menu_choices
-                               if w.startswith(stem)]
+                               if stripcolor(w).startswith(stem)]
                 if completions:
                     r.cmpltn_menu, r.cmpltn_menu_end = build_menu(
                         r.console, completions, 0,
                         r.use_brackets, r.sort_in_column)
+                    r.invalidate_overlay()
                 else:
                     r.cmpltn_reset()
 
@@ -240,6 +272,7 @@ class CompletingReader(Reader):
     cmpltn_message_visible: bool = field(init=False)
     cmpltn_menu_end: int = field(init=False)
     cmpltn_menu_choices: list[str] = field(init=False)
+    cmpltn_action: CompletionAction | None = field(init=False)
 
     def __post_init__(self) -> None:
         super().__post_init__()
@@ -248,7 +281,7 @@ class CompletingReader(Reader):
             self.commands[c.__name__] = c
             self.commands[c.__name__.replace('_', '-')] = c
 
-    def collect_keymap(self) -> tuple[tuple[KeySpec, CommandName], ...]:
+    def collect_keymap(self) -> Keymap:
         return super().collect_keymap() + (
             (r'\t', 'complete'),)
 
@@ -257,25 +290,30 @@ class CompletingReader(Reader):
         if not isinstance(cmd, (complete, self_insert)):
             self.cmpltn_reset()
 
-    def calc_screen(self) -> list[str]:
-        screen = super().calc_screen()
-        if self.cmpltn_menu_visible:
-            ly = self.lxy[1]
-            screen[ly:ly] = self.cmpltn_menu
-            self.screeninfo[ly:ly] = [(0, [])]*len(self.cmpltn_menu)
-            self.cxy = self.cxy[0], self.cxy[1] + len(self.cmpltn_menu)
-        return screen
+    def get_screen_overlays(self) -> tuple[ScreenOverlay, ...]:
+        if not self.cmpltn_menu_visible:
+            return ()
+        return (
+            ScreenOverlay(
+                self.lxy[1] + 1,
+                tuple(RenderLine.from_rendered_text(line) for line in self.cmpltn_menu),
+                insert=True,
+            ),
+        )
 
     def finish(self) -> None:
         super().finish()
         self.cmpltn_reset()
 
     def cmpltn_reset(self) -> None:
+        if getattr(self, "cmpltn_menu_visible", False):
+            self.invalidate_overlay()
         self.cmpltn_menu = []
         self.cmpltn_menu_visible = False
         self.cmpltn_message_visible = False
         self.cmpltn_menu_end = 0
         self.cmpltn_menu_choices = []
+        self.cmpltn_action = None
 
     def get_stem(self) -> str:
         st = self.syntax_table
@@ -286,5 +324,9 @@ class CompletingReader(Reader):
             p -= 1
         return ''.join(b[p+1:self.pos])
 
-    def get_completions(self, stem: str) -> list[str]:
-        return []
+    def get_completions(self, stem: str) -> tuple[list[str], CompletionAction | None]:
+        return [], None
+
+    def get_line(self) -> str:
+        """Return the current line until the cursor position."""
+        return ''.join(self.buffer[:self.pos])

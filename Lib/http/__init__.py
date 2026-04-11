@@ -190,7 +190,7 @@ class HTTPMethod:
 
     Methods from the following RFCs are all observed:
 
-        * RFF 9110: HTTP Semantics, obsoletes 7231, which obsoleted 2616
+        * RFC 9110: HTTP Semantics, obsoletes 7231, which obsoleted 2616
         * RFC 5789: PATCH Method for HTTP
     """
     def __new__(cls, value, description):

@@ -90,7 +90,7 @@ class restore_history(commands.Command):
             if r.get_unicode() != r.history[r.historyi]:
                 r.buffer = list(r.history[r.historyi])
                 r.pos = len(r.buffer)
-                r.dirty = True
+                r.invalidate_buffer(0)
 
 
 class first_history(commands.Command):
@@ -130,10 +130,11 @@ class yank_arg(commands.Command):
             o = len(r.yank_arg_yanked)
         else:
             o = 0
+        start = r.pos - o
         b[r.pos - o : r.pos] = list(w)
         r.yank_arg_yanked = w
         r.pos += len(w) - o
-        r.dirty = True
+        r.invalidate_buffer(start)
 
 
 class forward_history_isearch(commands.Command):
@@ -142,7 +143,7 @@ class forward_history_isearch(commands.Command):
         r.isearch_direction = ISEARCH_DIRECTION_FORWARDS
         r.isearch_start = r.historyi, r.pos
         r.isearch_term = ""
-        r.dirty = True
+        r.invalidate_prompt()
         r.push_input_trans(r.isearch_trans)
 
 
@@ -150,7 +151,7 @@ class reverse_history_isearch(commands.Command):
     def do(self) -> None:
         r = self.reader
         r.isearch_direction = ISEARCH_DIRECTION_BACKWARDS
-        r.dirty = True
+        r.invalidate_prompt()
         r.isearch_term = ""
         r.push_input_trans(r.isearch_trans)
         r.isearch_start = r.historyi, r.pos
@@ -163,7 +164,7 @@ class isearch_cancel(commands.Command):
         r.pop_input_trans()
         r.select_item(r.isearch_start[0])
         r.pos = r.isearch_start[1]
-        r.dirty = True
+        r.invalidate_prompt()
 
 
 class isearch_add_character(commands.Command):
@@ -171,7 +172,7 @@ class isearch_add_character(commands.Command):
         r = self.reader
         b = r.buffer
         r.isearch_term += self.event[-1]
-        r.dirty = True
+        r.invalidate_prompt()
         p = r.pos + len(r.isearch_term) - 1
         if b[p : p + 1] != [r.isearch_term[-1]]:
             r.isearch_next()
@@ -182,7 +183,7 @@ class isearch_backspace(commands.Command):
         r = self.reader
         if len(r.isearch_term) > 0:
             r.isearch_term = r.isearch_term[:-1]
-            r.dirty = True
+            r.invalidate_prompt()
         else:
             r.error("nothing to rubout")
 
@@ -207,7 +208,7 @@ class isearch_end(commands.Command):
         r.isearch_direction = ISEARCH_DIRECTION_NONE
         r.console.forgetinput()
         r.pop_input_trans()
-        r.dirty = True
+        r.invalidate_prompt()
 
 
 @dataclass
@@ -241,7 +242,6 @@ class HistoricalReader(Reader):
             isearch_end,
             isearch_add_character,
             isearch_cancel,
-            isearch_add_character,
             isearch_backspace,
             isearch_forwards,
             isearch_backwards,
@@ -279,8 +279,7 @@ class HistoricalReader(Reader):
         self.buffer = list(buf)
         self.historyi = i
         self.pos = len(self.buffer)
-        self.dirty = True
-        self.last_refresh_cache.invalidated = True
+        self.invalidate_buffer(0)
 
     def get_item(self, i: int) -> str:
         if i != len(self.history):
@@ -290,13 +289,17 @@ class HistoricalReader(Reader):
 
     @contextmanager
     def suspend(self) -> SimpleContextManager:
-        with super().suspend():
-            try:
-                old_history = self.history[:]
-                del self.history[:]
-                yield
-            finally:
-                self.history[:] = old_history
+        with super().suspend(), self.suspend_history():
+            yield
+
+    @contextmanager
+    def suspend_history(self) -> SimpleContextManager:
+        try:
+            old_history = self.history[:]
+            del self.history[:]
+            yield
+        finally:
+            self.history[:] = old_history
 
     def prepare(self) -> None:
         super().prepare()
@@ -354,7 +357,7 @@ class HistoricalReader(Reader):
                 if forwards and not match_prefix:
                     self.pos = 0
                     self.buffer = []
-                    self.dirty = True
+                    self.invalidate_buffer(0)
                 else:
                     self.error("not found")
                 return
