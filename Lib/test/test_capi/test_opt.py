@@ -1570,25 +1570,22 @@ class TestUopsOptimization(unittest.TestCase):
         """
         class MyPoint:
             def __init__(self, x, y):
-                self.x = x
-                self.y = y
+                # If __init__ callable is propagated through, then
+                # These will get promoted from globals to constants.
+                self.x = range(1)
+                self.y = range(1)
 
         def testfunc(n):
-            total = 0.0
             for _ in range(n):
                 p = MyPoint(1.0, 2.0)
-                total += p.x
-            return total
 
-        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
-        self.assertAlmostEqual(res, TIER2_THRESHOLD * 1.0)
+        _, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
         # The __init__ call should be traced through via _PUSH_FRAME
         self.assertIn("_PUSH_FRAME", uops)
-        # __init__ resolution eliminates function version and arg checks
-        self.assertNotIn("_CHECK_FUNCTION_VERSION", uops)
-        self.assertNotIn("_CHECK_FUNCTION_EXACT_ARGS", uops)
+        # __init__ resolution allows promotion of range to constant
+        self.assertNotIn("_LOAD_GLOBAL_BUILTINS", uops)
 
     def test_guard_type_version_locked_propagates(self):
         """
