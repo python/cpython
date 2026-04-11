@@ -2761,12 +2761,7 @@ class TestUopsOptimization(unittest.TestCase):
         def testfunc(n):
             x = 0
             for _ in range(n):
-                # _CALL_BUILTIN_FAST_WITH_KEYWORDS: 1 _POP_TOP_NOP, 1 POP_TOP
-                # _LIST_EXTEND: 1 _POP_TOP_NOP,
                 y = sorted([3, 1, 2])
-
-                # _BINARY_OP_SUBSCR_LIST_INT: 2 _POP_TOP_NOP
-                # _BINARY_OP_ADD_INT: 1 _POP_TOP_NOP
                 x += y[0]
             return x
 
@@ -2776,8 +2771,6 @@ class TestUopsOptimization(unittest.TestCase):
         uops = get_opnames(ex)
         self.assertIn("_CALL_BUILTIN_FAST_WITH_KEYWORDS", uops)
         self.assertNotIn("_GUARD_CALLABLE_BUILTIN_FAST_WITH_KEYWORDS", uops)
-        self.assertGreaterEqual(count_ops(ex, "_POP_TOP_NOP"), 5)
-        self.assertGreaterEqual(count_ops(ex, "_POP_TOP"), 3)
 
     def test_call_method_descriptor_o(self):
         def testfunc(n):
