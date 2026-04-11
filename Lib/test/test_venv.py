@@ -146,9 +146,12 @@ class BasicTest(BaseTest):
         self.assertIn('home = %s' % path, data)
         self.assertIn('executable = %s' %
                       os.path.realpath(sys.executable), data)
-        copies = '' if os.name=='nt' else ' --copies'
-        cmd = (f'command = {sys.executable} -m venv{copies} --without-pip '
-               f'--without-scm-ignore-files {self.env_dir}')
+        expected_argv = [sys.executable, '-m', 'venv']
+        if os.name != 'nt':
+            expected_argv.append('--copies')
+        expected_argv.extend(['--without-pip', '--without-scm-ignore-files',
+                              self.env_dir])
+        cmd = f'command = {shlex.join(expected_argv)}'
         self.assertIn(cmd, data)
         fn = self.get_env_file(self.bindir, self.exe)
         if not os.path.exists(fn):  # diagnostics for Windows buildbot failures
@@ -166,7 +169,7 @@ class BasicTest(BaseTest):
             ('--clear', 'clear', True),
             ('--upgrade', 'upgrade', True),
             ('--upgrade-deps', 'upgrade_deps', True),
-            ('--prompt="foobar"', 'prompt', 'foobar'),
+            ('--prompt', 'prompt', 'foobar'),
             ('--without-scm-ignore-files', 'scm_ignore_files', frozenset()),
         ]
         for opt, attr, value in options:
@@ -189,6 +192,32 @@ class BasicTest(BaseTest):
                     pass
                 else:
                     self.assertRegex(data, rf'command = .* {opt}')
+
+    def test_config_file_command_quotes_paths_with_spaces(self):
+        # gh-148315: the `command = ...` line written to pyvenv.cfg must be
+        # shell-quoted, so a venv created in a directory with whitespace in
+        # its path (as happens on Windows when the user directory contains a
+        # space, e.g. "C:\\Users\\Z B") round-trips through shlex.split as
+        # a single token instead of being truncated at the space.
+        env_dir_with_space = os.path.join(tempfile.mkdtemp(), 'with space')
+        self.addCleanup(rmtree, os.path.dirname(env_dir_with_space))
+        b = venv.EnvBuilder()
+        b.upgrade_dependencies = Mock()
+        b._setup_pip = Mock()
+        self.run_with_capture(b.create, env_dir_with_space)
+        cfg = pathlib.Path(env_dir_with_space, 'pyvenv.cfg').read_text(
+            encoding='utf-8')
+        for line in cfg.splitlines():
+            key, _, value = line.partition('=')
+            if key.strip() == 'command':
+                parts = shlex.split(value.strip())
+                break
+        else:
+            self.fail(f'pyvenv.cfg is missing a command key:\n{cfg}')
+        # Last token must be the full env_dir, not a space-split fragment.
+        self.assertEqual(parts[-1], env_dir_with_space)
+        # And the whole argv must be parseable by the venv CLI.
+        self.assertEqual(parts[1:3], ['-m', 'venv'])
 
     def test_prompt(self):
         env_name = os.path.split(self.env_dir)[1]
