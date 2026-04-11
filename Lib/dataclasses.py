@@ -1,13 +1,13 @@
-lazy import re
 import sys
-lazy import copy
 import types
-lazy import inspect
 import keyword
 import itertools
 import annotationlib
 import abc
 from reprlib import recursive_repr
+lazy import copy
+lazy import inspect
+lazy import re
 
 
 __all__ = ['dataclass',
@@ -191,8 +191,8 @@ class _KW_ONLY_TYPE:
 KW_ONLY = _KW_ONLY_TYPE()
 
 # Since most per-field metadata will be unused, create an empty
-# read-only proxy that can be shared among all fields.
-_EMPTY_METADATA = types.MappingProxyType({})
+# read-only dictionary that can be shared among all fields.
+_EMPTY_METADATA = frozendict()
 
 # Markers for the various kinds of fields and pseudo-fields.
 class _FIELD_BASE:
@@ -805,15 +805,15 @@ def _is_type(annotation, cls, a_module, a_type, is_type_predicate):
 
     # String regex that string annotations for ClassVar or InitVar must match.
     # Allows "identifier.identifier[" or "identifier[".
-    # https://bugs.python.org/issue33453 for details.
+    # https://github.com/python/cpython/issues/77634 for details.
     global _MODULE_IDENTIFIER_RE
     if _MODULE_IDENTIFIER_RE is None:
-        _MODULE_IDENTIFIER_RE = re.compile(r'^(?:\s*(\w+)\s*\.)?\s*(\w+)')
+        _MODULE_IDENTIFIER_RE = re.compile(r'(?:\s*(\w+)\s*\.)?\s*(\w+)')
 
-    match = _MODULE_IDENTIFIER_RE.match(annotation)
+    match = _MODULE_IDENTIFIER_RE.prefixmatch(annotation)
     if match:
         ns = None
-        module_name = match.group(1)
+        module_name = match[1]
         if not module_name:
             # No module name, assume the class's module did
             # "from dataclasses import InitVar".
@@ -823,7 +823,7 @@ def _is_type(annotation, cls, a_module, a_type, is_type_predicate):
             module = sys.modules.get(cls.__module__)
             if module and module.__dict__.get(module_name) is a_module:
                 ns = sys.modules.get(a_type.__module__).__dict__
-        if ns and is_type_predicate(ns.get(match.group(2)), a_module):
+        if ns and is_type_predicate(ns.get(match[2]), a_module):
             return True
     return False
 

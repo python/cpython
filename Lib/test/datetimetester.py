@@ -48,7 +48,11 @@ import _strptime
 try:
     import _pydatetime
 except ImportError:
-    pass
+    _pydatetime = None
+try:
+    import _datetime
+except ImportError:
+    _datetime = None
 #
 
 pickle_loads = {pickle.loads, pickle._loads}
@@ -2206,6 +2210,20 @@ class TestDate(HarmlessMixedComparison, unittest.TestCase):
             self.theclass.strptime(test_date, "%D"),
             self.theclass.strptime(test_date, "%m/%d/%y")
         )
+
+    def test_strptime_n_and_t_format(self):
+        format_directives = ('%n', '%t', '%n%t', '%t%n')
+        whitespaces = ('', ' ', '\t', '\r', '\v', '\n', '\f')
+        for fd in format_directives:
+            for ws in (*whitespaces, ''.join(whitespaces)):
+                with self.subTest(format_directive=fd, whitespace=ws):
+                    self.assertEqual(
+                        self.theclass.strptime(
+                            f"2026{ws}02{ws}03",
+                            f"%Y{fd}%m{fd}%d",
+                        ),
+                        self.theclass(2026, 2, 3),
+                    )
 
 
 #############################################################################

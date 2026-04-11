@@ -420,6 +420,7 @@ _remote_debugging_RemoteUnwinder___init___impl(RemoteUnwinderObject *self,
 
 #if defined(__APPLE__)
     self->thread_id_offset = 0;
+    self->thread_id_offset_initialized = 0;
 #endif
 
 #ifdef MS_WINDOWS
@@ -583,11 +584,16 @@ _remote_debugging_RemoteUnwinder_get_stack_trace_impl(RemoteUnwinderObject *self
             current_tstate = self->tstate_addr;
         }
 
+        // Acquire main thread state information
+        uintptr_t main_thread_tstate = GET_MEMBER(uintptr_t, interp_state_buffer,
+                self->debug_offsets.interpreter_state.threads_main);
+
         while (current_tstate != 0) {
             uintptr_t prev_tstate = current_tstate;
             PyObject* frame_info = unwind_stack_for_thread(self, &current_tstate,
                                                            gil_holder_tstate,
-                                                           gc_frame);
+                                                           gc_frame,
+                                                           main_thread_tstate);
             if (!frame_info) {
                 // Check if this was an intentional skip due to mode-based filtering
                 if ((self->mode == PROFILING_MODE_CPU || self->mode == PROFILING_MODE_GIL ||
@@ -595,6 +601,9 @@ _remote_debugging_RemoteUnwinder_get_stack_trace_impl(RemoteUnwinderObject *self
                     // Detect cycle: if current_tstate didn't advance, we have corrupted data
                     if (current_tstate == prev_tstate) {
                         Py_DECREF(interpreter_threads);
+                        PyErr_Format(PyExc_RuntimeError,
+                            "Thread list cycle detected at address 0x%lx (corrupted remote memory)",
+                            current_tstate);
                         set_exception_cause(self, PyExc_RuntimeError,
                             "Thread list cycle detected (corrupted remote memory)");
                         Py_CLEAR(result);
@@ -1202,6 +1211,9 @@ _remote_debugging_exec(PyObject *m)
         return -1;
     }
     if (PyModule_AddIntConstant(m, "THREAD_STATUS_HAS_EXCEPTION", THREAD_STATUS_HAS_EXCEPTION) < 0) {
+        return -1;
+    }
+    if (PyModule_AddIntConstant(m, "THREAD_STATUS_MAIN_THREAD", THREAD_STATUS_MAIN_THREAD) < 0) {
         return -1;
     }
 
@@ -1828,6 +1840,7 @@ static PyMethodDef remote_debugging_methods[] = {
 };
 
 static PyModuleDef_Slot remote_debugging_slots[] = {
+    _Py_ABI_SLOT,
     {Py_mod_exec, _remote_debugging_exec},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {Py_mod_gil, Py_MOD_GIL_NOT_USED},
