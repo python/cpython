@@ -1,3 +1,4 @@
 :mod:`xml.parsers.expat`: raise :exc:`RuntimeError` when an Expat handler
-calls :meth:`parser.Parse <xml.parsers.expat.xmlparser.Parse>` on the parser
+calls :meth:`parser.Parse <xml.parsers.expat.xmlparser.Parse>` or
+:meth:`parser.ParseFile <xml.parsers.expat.xmlparser.ParseFile>` on the parser
 that called the handler. Patch by Bénédikt Tran.
