@@ -2451,8 +2451,10 @@
             } else {
                 PyTypeObject *probable_type = sym_get_probable_type(owner);
                 if (probable_type->tp_version_tag == type_version && sym_set_type_version(owner, type_version)) {
-                    PyType_Watch(TYPE_WATCHER_ID, (PyObject *)probable_type);
-                    _Py_BloomFilter_Add(dependencies, probable_type);
+                    if ((probable_type->tp_flags & Py_TPFLAGS_IMMUTABLETYPE) == 0) {
+                        PyType_Watch(TYPE_WATCHER_ID, (PyObject *)probable_type);
+                        _Py_BloomFilter_Add(dependencies, probable_type);
+                    }
                 }
             }
             break;
