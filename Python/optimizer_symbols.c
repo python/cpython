@@ -1,4 +1,4 @@
-ifdef _Py_TIER2
+#ifdef _Py_TIER2
 
 #include "Python.h"
 
