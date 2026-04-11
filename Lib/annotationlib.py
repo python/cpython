@@ -1037,13 +1037,26 @@ def get_annotations(
             obj_globals = obj_locals = unwrap = None
 
         if unwrap is not None:
+            # Use an id-based visited set to detect cycles in the __wrapped__
+            # and functools.partial.func chain (e.g. f.__wrapped__ = f).
+            # On cycle detection we stop and use whatever __globals__ we have
+            # found so far, mirroring the approach of inspect.unwrap().
+            _seen_ids = {id(unwrap)}
             while True:
                 if hasattr(unwrap, "__wrapped__"):
-                    unwrap = unwrap.__wrapped__
+                    candidate = unwrap.__wrapped__
+                    if id(candidate) in _seen_ids:
+                        break
+                    _seen_ids.add(id(candidate))
+                    unwrap = candidate
                     continue
                 if functools := sys.modules.get("functools"):
                     if isinstance(unwrap, functools.partial):
-                        unwrap = unwrap.func
+                        candidate = unwrap.func
+                        if id(candidate) in _seen_ids:
+                            break
+                        _seen_ids.add(id(candidate))
+                        unwrap = candidate
                         continue
                 break
             if hasattr(unwrap, "__globals__"):

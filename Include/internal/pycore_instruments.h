@@ -64,9 +64,6 @@ PyAPI_FUNC(void)
 _Py_call_instrumentation_exc2(PyThreadState *tstate, int event,
     _PyInterpreterFrame *frame, _Py_CODEUNIT *instr, PyObject *arg0, PyObject *arg1);
 
-extern int
-_Py_Instrumentation_GetLine(PyCodeObject *code, int index);
-
 PyAPI_DATA(PyObject) _PyInstrumentation_MISSING;
 PyAPI_DATA(PyObject) _PyInstrumentation_DISABLE;
 
@@ -122,6 +119,8 @@ typedef struct _PyCoMonitoringData {
     uint8_t *per_instruction_tools;
 } _PyCoMonitoringData;
 
+extern int
+_Py_Instrumentation_GetLine(PyCodeObject *code, _PyCoLineInstrumentationData *line_data, int index);
 
 #ifdef __cplusplus
 }

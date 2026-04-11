@@ -147,6 +147,7 @@ typedef struct _Py_UOpsAbstractFrame {
     int stack_len;
     int locals_len;
     bool caller; // We have made a call from this frame during the trace
+    bool is_c_recursion_checked;
     JitOptRef callable;
     PyFunctionObject *func;
     PyCodeObject *code;

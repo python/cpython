@@ -1790,6 +1790,7 @@ class TracebackErrorLocationCaretTestBase:
         ]
         self.assertEqual(result_lines, expected)
 
+
 class TestKeywordTypoSuggestions(unittest.TestCase):
     TYPO_CASES = [
         ("with block ad something:\n  pass", "and"),
@@ -5414,6 +5415,92 @@ class TestColorizedTraceback(unittest.TestCase):
         ]
         self.assertEqual(actual, expected(**colors))
 
+    def test_colorized_traceback_unicode(self):
+        try:
+            啊哈=1; 啊哈/0####
+        except Exception as e:
+            exc = traceback.TracebackException.from_exception(e)
+
+        actual = "".join(exc.format(colorize=True)).splitlines()
+        def expected(t, m, fn, l, f, E, e, z, n):
+            return [
+                f"    啊哈=1; {e}啊哈{z}{E}/{z}{e}0{z}####",
+                f"            {e}~~~~{z}{E}^{z}{e}~{z}",
+            ]
+        self.assertEqual(actual[2:4], expected(**colors))
+
+        try:
+            ééééé/0
+        except Exception as e:
+            exc = traceback.TracebackException.from_exception(e)
+
+        actual = "".join(exc.format(colorize=True)).splitlines()
+        def expected(t, m, fn, l, f, E, e, z, n):
+            return [
+                f"    {E}ééééé{z}/0",
+                f"    {E}^^^^^{z}",
+            ]
+        self.assertEqual(actual[2:4], expected(**colors))
+
+    def test_colorized_syntax_error_ascii_display_width(self):
+        """Caret alignment for ASCII edge cases handled by _wlen.
+
+        The old ASCII fast track in _display_width returned the raw character
+        offset for ASCII strings, which is wrong for CTRL-Z (display width 2)
+        and ANSI escape sequences (display width 0).
+        """
+        E = colors["E"]
+        z = colors["z"]
+        t = colors["t"]
+        m = colors["m"]
+        fn = colors["fn"]
+        l = colors["l"]
+
+        def _make_syntax_error(text, offset, end_offset):
+            err = SyntaxError("invalid syntax")
+            err.filename = "<string>"
+            err.lineno = 1
+            err.end_lineno = 1
+            err.text = text
+            err.offset = offset
+            err.end_offset = end_offset
+            return err
+
+        # CTRL-Z (\x1a) is ASCII but displayed as ^Z (2 columns).
+        # Verify caret aligns when CTRL-Z precedes the error.
+        err = _make_syntax_error("a\x1a$\n", offset=3, end_offset=4)
+        exc = traceback.TracebackException.from_exception(err)
+        actual = "".join(exc.format(colorize=True))
+        # 'a' (1 col) + '\x1a' (2 cols) = 3 cols before '$'
+        self.assertIn(
+            f'  File {fn}"<string>"{z}, line {l}1{z}\n'
+            f'    a\x1a{E}${z}\n'
+            f'    {" " * 3}{E}^{z}\n'
+            f'{t}SyntaxError{z}: {m}invalid syntax{z}\n',
+            actual,
+        )
+
+        # CTRL-Z in the highlighted (error) region counts as 2 columns.
+        err = _make_syntax_error("$\x1a\n", offset=1, end_offset=3)
+        exc = traceback.TracebackException.from_exception(err)
+        actual = "".join(exc.format(colorize=True))
+        # '$' (1 col) + '\x1a' (2 cols) = 3 columns of carets
+        self.assertIn(
+            f'    {E}$\x1a{z}\n'
+            f'    {E}{"^" * 3}{z}\n',
+            actual,
+        )
+
+        # ANSI escape sequences are ASCII but take 0 display columns.
+        err = _make_syntax_error("a\x1b[1mb$\n", offset=7, end_offset=8)
+        exc = traceback.TracebackException.from_exception(err)
+        actual = "".join(exc.format(colorize=True))
+        # 'a' (1 col) + '\x1b[1m' (0 cols) + 'b' (1 col) = 2 before '$'
+        self.assertIn(
+            f'    a\x1b[1mb{E}${z}\n'
+            f'    {" " * 2}{E}^{z}\n',
+            actual,
+        )
 
 class TestLazyImportSuggestions(unittest.TestCase):
     """Test that lazy imports are not reified when computing AttributeError suggestions."""
