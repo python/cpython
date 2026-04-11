@@ -575,20 +575,22 @@ class PyBytesIOTest(MemoryTestMixin, MemorySeekTestMixin, unittest.TestCase):
             self.assertEqual(memio.peek(), buf[:1])
             self.assertEqual(memio.peek(3), buf[:3])
             self.assertEqual(memio.peek(5), buf[:5])
-            self.assertEqual(memio.peek(0), b"")
+            self.assertEqual(memio.peek(0), buf)
             self.assertEqual(memio.peek(len(buf) + 100), buf)
             self.assertEqual(memio.peek(-1), buf)
             self.assertEqual(memio.tell(), 0)
+
             memio.read(1)
             self.assertEqual(memio.tell(), 1)
             self.assertEqual(memio.peek(1), buf[1:2])
             self.assertEqual(memio.peek(), buf[1:2])
             self.assertEqual(memio.peek(3), buf[1:4])
             self.assertEqual(memio.peek(5), buf[1:6])
-            self.assertEqual(memio.peek(0), b"")
+            self.assertEqual(memio.peek(0), buf[1:])
             self.assertEqual(memio.peek(len(buf) + 100), buf[1:])
             self.assertEqual(memio.peek(-1), buf[1:])
             self.assertEqual(memio.tell(), 1)
+
             memio.read()
             self.assertEqual(memio.tell(), len(buf))
             self.assertEqual(memio.peek(1), self.EOF)
@@ -596,6 +598,7 @@ class PyBytesIOTest(MemoryTestMixin, MemorySeekTestMixin, unittest.TestCase):
             self.assertEqual(memio.peek(5), self.EOF)
             self.assertEqual(memio.peek(0), b"")
             self.assertEqual(memio.tell(), len(buf))
+
             # Peeking works after writing
             abc = self.buftype("abc")
             memio.write(abc)

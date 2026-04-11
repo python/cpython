@@ -293,7 +293,7 @@ PyDoc_STRVAR(_io_BytesIO_peek__doc__,
 "\n"
 "Return bytes from the stream without advancing the position.\n"
 "\n"
-"If the size argument is negative, read until EOF is reached.\n"
+"If the size argument is zero or negative, read until EOF is reached.\n"
 "Return an empty bytes object at EOF.");
 
 #define _IO_BYTESIO_PEEK_METHODDEF    \

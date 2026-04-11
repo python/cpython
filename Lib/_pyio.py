@@ -999,7 +999,7 @@ class BytesIO(BufferedIOBase):
     def peek(self, size=1):
         if self.closed:
             raise ValueError("peek on closed file")
-        if size < 0:
+        if size < 1:
             return self._buffer[self._pos:]
         return self._buffer[self._pos:self._pos + size]
 

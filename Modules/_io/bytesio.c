@@ -517,7 +517,7 @@ _io.BytesIO.peek
 
 Return bytes from the stream without advancing the position.
 
-If the size argument is negative, read until EOF is reached.
+If the size argument is zero or negative, read until EOF is reached.
 Return an empty bytes object at EOF.
 [clinic start generated code]*/
 
@@ -529,9 +529,9 @@ _io_BytesIO_peek_impl(bytesio *self, Py_ssize_t size)
 
     /* adjust invalid sizes */
     Py_ssize_t n = self->string_size - self->pos;
-    if (size < 0 || size > n) {
+    if (size < 1 || size > n) {
         size = n;
-        /* n can be negative after truncate() or seek() */
+        /* size can be negative after truncate() or seek() */
         if (size < 0) {
             size = 0;
         }
