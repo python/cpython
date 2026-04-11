@@ -1,3 +1,4 @@
+
 Add the following MIME types with file extensions:
 
   - ``.appcache`` and ``.manifest`` for ``text/cache-manifest``
@@ -22,3 +23,4 @@ Add the following MIME types with file extensions:
   - ``.wgsl``   for ``text/wgsl``
   - ``.ent``    for ``text/xml-external-parsed-entity``
 
+  (Contributed by Charlie Lin in :gh:`146342`.)
