@@ -299,7 +299,6 @@ struct _Py_global_strings {
         STRUCT_FOR_ID(aclose)
         STRUCT_FOR_ID(add)
         STRUCT_FOR_ID(add_done_callback)
-        STRUCT_FOR_ID(add_note)
         STRUCT_FOR_ID(adobe)
         STRUCT_FOR_ID(after_in_child)
         STRUCT_FOR_ID(after_in_parent)

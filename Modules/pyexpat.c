@@ -512,12 +512,11 @@ invalid_expat_handler_rv(const char *name)
     if (note == NULL) {
         goto error;
     }
-    PyObject *res = PyObject_CallMethodOneArg(exc, &_Py_ID(add_note), note);
+    int rc = _PyException_AddNote(exc, note);
     Py_DECREF(note);
-    if (res == NULL) {
+    if (rc < 0) {
         goto error;
-    }
-    Py_DECREF(res);
+    };
     goto done;
 
 error:
