@@ -1521,6 +1521,29 @@ class TestUopsOptimization(unittest.TestCase):
         Foo.attr = 0
         self.assertFalse(ex.is_valid())
 
+    def test_guard_type_version_locked_removed(self):
+        """
+        Verify that redundant _GUARD_TYPE_VERSION_LOCKED guards are
+        eliminated for sequential STORE_ATTR_INSTANCE_VALUE in __init__.
+        """
+
+        class Foo:
+            def __init__(self):
+                self.a = 1
+                self.b = 2
+                self.c = 3
+
+        def thing(n):
+            for _ in range(n):
+                Foo()
+
+        res, ex = self._run_with_optimizer(thing, TIER2_THRESHOLD)
+        self.assertIsNotNone(ex)
+        opnames = list(iter_opnames(ex))
+        guard_locked_count = opnames.count("_GUARD_TYPE_VERSION_LOCKED")
+        # Only the first store needs the guard; the rest should be NOPed.
+        self.assertEqual(guard_locked_count, 1)
+
     def test_type_version_doesnt_segfault(self):
         """
         Tests that setting a type version doesn't cause a segfault when later looking at the stack.
@@ -1541,6 +1564,98 @@ class TestUopsOptimization(unittest.TestCase):
                 (_ for _ in [a.method(None)])
 
         fn(A())
+
+    def test_init_resolves_callable(self):
+        """
+        _CHECK_AND_ALLOCATE_OBJECT should resolve __init__ to a constant,
+        enabling the optimizer to propagate type information through the frame
+        and eliminate redundant function version and arg count checks.
+        """
+        class MyPoint:
+            def __init__(self, x, y):
+                # If __init__ callable is propagated through, then
+                # These will get promoted from globals to constants.
+                self.x = range(1)
+                self.y = range(1)
+
+        def testfunc(n):
+            for _ in range(n):
+                p = MyPoint(1.0, 2.0)
+
+        _, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        # The __init__ call should be traced through via _PUSH_FRAME
+        self.assertIn("_PUSH_FRAME", uops)
+        # __init__ resolution allows promotion of range to constant
+        self.assertNotIn("_LOAD_GLOBAL_BUILTINS", uops)
+
+    def test_guard_type_version_locked_propagates(self):
+        """
+        _GUARD_TYPE_VERSION_LOCKED should set the type version on the
+        symbol so repeated accesses to the same type can benefit.
+        """
+        class Item:
+            def __init__(self, val):
+                self.val = val
+
+            def get(self):
+                return self.val
+
+            def get2(self):
+                return self.val + 1
+
+        def testfunc(n):
+            item = Item(42)
+            total = 0
+            for _ in range(n):
+                # Two method calls on the same object — the second
+                # should benefit from type info set by the first.
+                total += item.get() + item.get2()
+            return total
+
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, TIER2_THRESHOLD * (42 + 43))
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        # Both methods should be traced through
+        self.assertEqual(uops.count("_PUSH_FRAME"), 2)
+        # Type version propagation: one guard covers both method lookups
+        self.assertEqual(uops.count("_GUARD_TYPE_VERSION"), 1)
+        # Function checks eliminated (type info resolves the callable)
+        self.assertNotIn("_CHECK_FUNCTION_VERSION", uops)
+        self.assertNotIn("_CHECK_FUNCTION_EXACT_ARGS", uops)
+
+    def test_method_chain_guard_elimination(self):
+        """
+        Calling two methods on the same object should share the outer
+        type guard — only one _GUARD_TYPE_VERSION for the two lookups.
+        """
+        class Calc:
+            def __init__(self, val):
+                self.val = val
+
+            def add(self, x):
+                self.val += x
+                return self
+
+        def testfunc(n):
+            c = Calc(0)
+            for _ in range(n):
+                c.add(1).add(2)
+            return c.val
+
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, TIER2_THRESHOLD * 3)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        # Both add() calls should be inlined
+        push_count = uops.count("_PUSH_FRAME")
+        self.assertEqual(push_count, 2)
+        # Only one outer type version guard for the two method lookups
+        # on the same object c (the second lookup reuses type info)
+        guard_version_count = uops.count("_GUARD_TYPE_VERSION")
+        self.assertEqual(guard_version_count, 1)
 
     def test_func_guards_removed_or_reduced(self):
         def testfunc(n):
