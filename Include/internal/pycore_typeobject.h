@@ -96,7 +96,6 @@ PyAPI_FUNC(PyObject *) _PyType_LookupSubclasses(PyTypeObject *);
 PyAPI_FUNC(PyObject *) _PyType_InitSubclasses(PyTypeObject *);
 
 extern PyObject * _PyType_GetBases(PyTypeObject *type);
-extern PyObject * _PyType_GetMRO(PyTypeObject *type);
 extern PyObject* _PyType_GetSubclasses(PyTypeObject *);
 extern int _PyType_HasSubclasses(PyTypeObject *);
 
@@ -126,6 +125,10 @@ extern PyTypeObject _PyBufferWrapper_Type;
 
 PyAPI_FUNC(PyObject*) _PySuper_Lookup(PyTypeObject *su_type, PyObject *su_obj,
                                  PyObject *name, int *meth_found);
+
+extern PyObject *_PySuper_LookupDescr(PyTypeObject *su_type,
+                                     PyTypeObject *su_obj_type,
+                                     PyObject *name);
 
 extern PyObject* _PyType_GetFullyQualifiedName(PyTypeObject *type, char sep);
 

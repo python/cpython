@@ -100,6 +100,36 @@ class TestDump:
             self.json.dumps(target, default=evil_default,
                             check_circular=False)
 
+    def test_dumps_str_subclass(self):
+        # Don't call obj.__str__() on str subclasses
+
+        # str subclass which returns a different string on str(obj)
+        class StrSubclass(str):
+            def __str__(self):
+                return "StrSubclass"
+
+        obj = StrSubclass('ascii')
+        self.assertEqual(self.dumps(obj), '"ascii"')
+        self.assertEqual(self.dumps([obj]), '["ascii"]')
+        self.assertEqual(self.dumps({'key': obj}), '{"key": "ascii"}')
+
+        obj = StrSubclass('escape\n')
+        self.assertEqual(self.dumps(obj), '"escape\\n"')
+        self.assertEqual(self.dumps([obj]), '["escape\\n"]')
+        self.assertEqual(self.dumps({'key': obj}), '{"key": "escape\\n"}')
+
+        obj = StrSubclass('nonascii:é')
+        self.assertEqual(self.dumps(obj, ensure_ascii=False),
+                         '"nonascii:é"')
+        self.assertEqual(self.dumps([obj], ensure_ascii=False),
+                         '["nonascii:é"]')
+        self.assertEqual(self.dumps({'key': obj}, ensure_ascii=False),
+                         '{"key": "nonascii:é"}')
+        self.assertEqual(self.dumps(obj), '"nonascii:\\u00e9"')
+        self.assertEqual(self.dumps([obj]), '["nonascii:\\u00e9"]')
+        self.assertEqual(self.dumps({'key': obj}),
+                         '{"key": "nonascii:\\u00e9"}')
+
 
 class TestPyDump(TestDump, PyTest): pass
 

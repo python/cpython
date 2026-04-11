@@ -323,6 +323,7 @@ PyAPI_FUNC(void) _Py_Specialize_ToBool(_PyStackRef value, _Py_CODEUNIT *instr);
 PyAPI_FUNC(void) _Py_Specialize_ContainsOp(_PyStackRef value, _Py_CODEUNIT *instr);
 PyAPI_FUNC(void) _Py_GatherStats_GetIter(_PyStackRef iterable);
 PyAPI_FUNC(void) _Py_Specialize_CallFunctionEx(_PyStackRef func_st, _Py_CODEUNIT *instr);
+PyAPI_FUNC(void) _Py_Specialize_Resume(_Py_CODEUNIT *instr, PyThreadState *tstate, _PyInterpreterFrame *frame);
 
 // Utility functions for reading/writing 32/64-bit values in the inline caches.
 // Great care should be taken to ensure that these functions remain correct and
@@ -495,6 +496,13 @@ typedef struct {
     int oparg;
     binaryopguardfunc guard;
     binaryopactionfunc action;
+    /* Static type of the result, or NULL if unknown. Used by the tier 2
+       optimizer to propagate type information through _BINARY_OP_EXTEND. */
+    PyTypeObject *result_type;
+    /* Nonzero iff `action` always returns a freshly allocated object (not
+       aliased to either operand). Used by the tier 2 optimizer to enable
+       inplace follow-up ops. */
+    int result_unique;
 } _PyBinaryOpSpecializationDescr;
 
 /* Comparison bit masks. */
