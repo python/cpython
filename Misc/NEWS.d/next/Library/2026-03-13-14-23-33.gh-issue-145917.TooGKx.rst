@@ -1,4 +1,4 @@
-Add the following to ``mimetypes``:
+* Add the following to ``mimetypes``:
 
   - ``font/collection``
   - ``haptics/ivs``
