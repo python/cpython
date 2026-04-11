@@ -196,6 +196,8 @@ read_py_long(
 
     // Validate size: reject garbage (negative or unreasonably large)
     if (size < 0 || size > MAX_LONG_DIGITS) {
+        PyErr_Format(PyExc_RuntimeError,
+            "Invalid PyLong digit count: %zd (expected 0-%d)", size, MAX_LONG_DIGITS);
         set_exception_cause(unwinder, PyExc_RuntimeError,
             "Invalid PyLong size (corrupted remote memory)");
         return -1;

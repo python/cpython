@@ -2103,6 +2103,7 @@ hashlib_HMAC_CTX_new_from_digestmod(_hashlibstate *state,
     PY_EVP_MD_free(md);
 #endif
     if (r == 0) {
+        hashlib_openssl_HMAC_CTX_free(ctx);
         if (is_xof) {
             /* use a better default error message if an XOF is used */
             raise_unsupported_algorithm_error(state, digestmod);
@@ -2899,6 +2900,7 @@ hashlib_constants(PyObject *module)
 }
 
 static PyModuleDef_Slot hashlib_slots[] = {
+    _Py_ABI_SLOT,
     {Py_mod_exec, hashlib_init_hashtable},
     {Py_mod_exec, hashlib_init_HASH_type},
     {Py_mod_exec, hashlib_init_HASHXOF_type},
