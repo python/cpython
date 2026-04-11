@@ -862,7 +862,7 @@ cleanup:
 }
 
 PyObject *
-_PyCallMethodDescriptorFast_StackRefSteal(
+_PyCallMethodDescriptorFast_StackRef(
     _PyStackRef callable,
     PyCFunctionFast cfunc,
     PyObject *self,
@@ -872,28 +872,18 @@ _PyCallMethodDescriptorFast_StackRefSteal(
     PyObject *res;
     STACKREFS_TO_PYOBJECTS(arguments, total_args, args_o);
     if (CONVERSION_FAILED(args_o)) {
-        res = NULL;
-        goto cleanup;
+        return NULL;
     }
     assert(self == PyStackRef_AsPyObjectBorrow(arguments[0]));
 
     res = cfunc(self, (args_o + 1), total_args - 1);
     STACKREFS_TO_PYOBJECTS_CLEANUP(args_o);
     assert((res != NULL) ^ (PyErr_Occurred() != NULL));
-cleanup:
-    // arguments is a pointer into the GC visible stack,
-    // so we must NULL out values as we clear them.
-    for (int i = total_args-1; i >= 0; i--) {
-        _PyStackRef tmp = arguments[i];
-        arguments[i] = PyStackRef_NULL;
-        PyStackRef_CLOSE(tmp);
-    }
-    PyStackRef_CLOSE(callable);
     return res;
 }
 
 PyObject *
-_PyCallMethodDescriptorFastWithKeywords_StackRefSteal(
+_PyCallMethodDescriptorFastWithKeywords_StackRef(
     _PyStackRef callable,
     PyCFunctionFastWithKeywords cfunc,
     PyObject *self,
@@ -903,23 +893,13 @@ _PyCallMethodDescriptorFastWithKeywords_StackRefSteal(
     PyObject *res;
     STACKREFS_TO_PYOBJECTS(arguments, total_args, args_o);
     if (CONVERSION_FAILED(args_o)) {
-        res = NULL;
-        goto cleanup;
+        return NULL;
     }
     assert(self == PyStackRef_AsPyObjectBorrow(arguments[0]));
 
     res = cfunc(self, (args_o + 1), total_args-1, NULL);
     STACKREFS_TO_PYOBJECTS_CLEANUP(args_o);
     assert((res != NULL) ^ (PyErr_Occurred() != NULL));
-cleanup:
-    // arguments is a pointer into the GC visible stack,
-    // so we must NULL out values as we clear them.
-    for (int i = total_args-1; i >= 0; i--) {
-        _PyStackRef tmp = arguments[i];
-        arguments[i] = PyStackRef_NULL;
-        PyStackRef_CLOSE(tmp);
-    }
-    PyStackRef_CLOSE(callable);
     return res;
 }
 
