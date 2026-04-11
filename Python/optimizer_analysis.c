@@ -468,6 +468,7 @@ lookup_super_attr(JitOptContext *ctx, _PyBloomFilter *dependencies,
     if (suffix != _NOP) {
         ADD_OP(suffix, 2, 0);
     }
+    // if obj_type is immutable, then all its superclasses are immutable
     if ((obj_type->tp_flags & Py_TPFLAGS_IMMUTABLETYPE) == 0) {
         PyType_Watch(TYPE_WATCHER_ID, (PyObject *)su_type);
         _Py_BloomFilter_Add(dependencies, su_type);
