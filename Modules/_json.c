@@ -14,16 +14,24 @@
 #include "pycore_global_strings.h" // _Py_ID()
 #include "pycore_pyerrors.h"      // _PyErr_FormatNote
 #include "pycore_runtime.h"       // _PyRuntime
+#include "pycore_tuple.h"         // _PyTuple_FromPair
 #include "pycore_unicodeobject.h" // _PyUnicode_CheckConsistency()
 
 #include <stdbool.h>              // bool
 
+#include "clinic/_json.c.h"
+
+/*[clinic input]
+module _json
+[clinic start generated code]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=549fa53592c925b2]*/
 
 typedef struct _PyScannerObject {
     PyObject_HEAD
     signed char strict;
     PyObject *object_hook;
     PyObject *object_pairs_hook;
+    PyObject *array_hook;
     PyObject *parse_float;
     PyObject *parse_int;
     PyObject *parse_constant;
@@ -35,6 +43,7 @@ static PyMemberDef scanner_members[] = {
     {"strict", Py_T_BOOL, offsetof(PyScannerObject, strict), Py_READONLY, "strict"},
     {"object_hook", _Py_T_OBJECT, offsetof(PyScannerObject, object_hook), Py_READONLY, "object_hook"},
     {"object_pairs_hook", _Py_T_OBJECT, offsetof(PyScannerObject, object_pairs_hook), Py_READONLY},
+    {"array_hook", _Py_T_OBJECT, offsetof(PyScannerObject, array_hook), Py_READONLY},
     {"parse_float", _Py_T_OBJECT, offsetof(PyScannerObject, parse_float), Py_READONLY, "parse_float"},
     {"parse_int", _Py_T_OBJECT, offsetof(PyScannerObject, parse_int), Py_READONLY, "parse_int"},
     {"parse_constant", _Py_T_OBJECT, offsetof(PyScannerObject, parse_constant), Py_READONLY, "parse_constant"},
@@ -249,7 +258,10 @@ write_escaped_ascii(PyUnicodeWriter *writer, PyObject *pystr)
         if (PyUnicodeWriter_WriteChar(writer, '"') < 0) {
             return -1;
         }
-        if (PyUnicodeWriter_WriteStr(writer, pystr) < 0) {
+        // gh-148241: Avoid PyUnicodeWriter_WriteStr() which calls str(obj)
+        // on str subclasses
+        assert(PyUnicode_IS_ASCII(pystr));
+        if (PyUnicodeWriter_WriteASCII(writer, input, input_chars) < 0) {
             return -1;
         }
         return PyUnicodeWriter_WriteChar(writer, '"');
@@ -390,7 +402,9 @@ write_escaped_unicode(PyUnicodeWriter *writer, PyObject *pystr)
         if (PyUnicodeWriter_WriteChar(writer, '"') < 0) {
             return -1;
         }
-        if (PyUnicodeWriter_WriteStr(writer, pystr) < 0) {
+        // gh-148241: Avoid PyUnicodeWriter_WriteStr() which calls str(obj)
+        // on str subclasses
+        if (_PyUnicodeWriter_WriteStr((_PyUnicodeWriter*)writer, pystr) < 0) {
             return -1;
         }
         return PyUnicodeWriter_WriteChar(writer, '"');
@@ -417,11 +431,12 @@ raise_errmsg(const char *msg, PyObject *s, Py_ssize_t end)
 
     PyObject *exc;
     exc = PyObject_CallFunction(JSONDecodeError, "zOn", msg, s, end);
-    Py_DECREF(JSONDecodeError);
     if (exc) {
         PyErr_SetObject(JSONDecodeError, exc);
         Py_DECREF(exc);
     }
+
+    Py_DECREF(JSONDecodeError);
 }
 
 static void
@@ -437,7 +452,6 @@ raise_stop_iteration(Py_ssize_t idx)
 static PyObject *
 _build_rval_index_tuple(PyObject *rval, Py_ssize_t idx) {
     /* return (rval, idx) tuple, stealing reference to rval */
-    PyObject *tpl;
     PyObject *pyidx;
     /*
     steal a reference to rval, returns (rval, idx)
@@ -450,15 +464,7 @@ _build_rval_index_tuple(PyObject *rval, Py_ssize_t idx) {
         Py_DECREF(rval);
         return NULL;
     }
-    tpl = PyTuple_New(2);
-    if (tpl == NULL) {
-        Py_DECREF(pyidx);
-        Py_DECREF(rval);
-        return NULL;
-    }
-    PyTuple_SET_ITEM(tpl, 0, rval);
-    PyTuple_SET_ITEM(tpl, 1, pyidx);
-    return tpl;
+    return _PyTuple_FromPairSteal(rval, pyidx);
 }
 
 static PyObject *
@@ -637,89 +643,62 @@ bail:
     return NULL;
 }
 
-PyDoc_STRVAR(pydoc_scanstring,
-    "scanstring(string, end, strict=True) -> (string, end)\n"
-    "\n"
-    "Scan the string s for a JSON string. End is the index of the\n"
-    "character in s after the quote that started the JSON string.\n"
-    "Unescapes all valid JSON string escape sequences and raises ValueError\n"
-    "on attempt to decode an invalid string. If strict is False then literal\n"
-    "control characters are allowed in the string.\n"
-    "\n"
-    "Returns a tuple of the decoded string and the index of the character in s\n"
-    "after the end quote."
-);
+/*[clinic input]
+_json.scanstring as py_scanstring
+    pystr: unicode
+    end: Py_ssize_t
+    strict: bool = True
+    /
+
+Scan the string s for a JSON string.
+
+End is the index of the character in s after the quote that started the
+JSON string. Unescapes all valid JSON string escape sequences and raises
+ValueError on attempt to decode an invalid string. If strict is False
+then literal control characters are allowed in the string.
+
+Returns a tuple of the decoded string and the index of the character in s
+after the end quote.
+[clinic start generated code]*/
 
 static PyObject *
-py_scanstring(PyObject* Py_UNUSED(self), PyObject *args)
+py_scanstring_impl(PyObject *module, PyObject *pystr, Py_ssize_t end,
+                   int strict)
+/*[clinic end generated code: output=961740cfae07cdb3 input=cff59e47498f4d8e]*/
 {
-    PyObject *pystr;
-    PyObject *rval;
-    Py_ssize_t end;
     Py_ssize_t next_end = -1;
-    int strict = 1;
-    if (!PyArg_ParseTuple(args, "On|p:scanstring", &pystr, &end, &strict)) {
-        return NULL;
-    }
-    if (PyUnicode_Check(pystr)) {
-        rval = scanstring_unicode(pystr, end, strict, &next_end);
-    }
-    else {
-        PyErr_Format(PyExc_TypeError,
-                     "first argument must be a string, not %.80s",
-                     Py_TYPE(pystr)->tp_name);
-        return NULL;
-    }
+    PyObject *rval = scanstring_unicode(pystr, end, strict, &next_end);
     return _build_rval_index_tuple(rval, next_end);
 }
 
-PyDoc_STRVAR(pydoc_encode_basestring_ascii,
-    "encode_basestring_ascii(string) -> string\n"
-    "\n"
-    "Return an ASCII-only JSON representation of a Python string"
-);
+/*[clinic input]
+_json.encode_basestring_ascii as py_encode_basestring_ascii
+    pystr: unicode
+    /
+
+Return an ASCII-only JSON representation of a Python string
+[clinic start generated code]*/
 
 static PyObject *
-py_encode_basestring_ascii(PyObject* Py_UNUSED(self), PyObject *pystr)
+py_encode_basestring_ascii_impl(PyObject *module, PyObject *pystr)
+/*[clinic end generated code: output=7b3841287cf211df input=4f3609498aff2de5]*/
 {
-    PyObject *rval;
-    /* Return an ASCII-only JSON representation of a Python string */
-    /* METH_O */
-    if (PyUnicode_Check(pystr)) {
-        rval = ascii_escape_unicode(pystr);
-    }
-    else {
-        PyErr_Format(PyExc_TypeError,
-                     "first argument must be a string, not %.80s",
-                     Py_TYPE(pystr)->tp_name);
-        return NULL;
-    }
-    return rval;
+    return ascii_escape_unicode(pystr);
 }
 
+/*[clinic input]
+_json.encode_basestring as py_encode_basestring
+    pystr: unicode
+    /
 
-PyDoc_STRVAR(pydoc_encode_basestring,
-    "encode_basestring(string) -> string\n"
-    "\n"
-    "Return a JSON representation of a Python string"
-);
+Return a JSON representation of a Python string
+[clinic start generated code]*/
 
 static PyObject *
-py_encode_basestring(PyObject* Py_UNUSED(self), PyObject *pystr)
+py_encode_basestring_impl(PyObject *module, PyObject *pystr)
+/*[clinic end generated code: output=900950f95df3f1c9 input=d42ef714b2c07386]*/
 {
-    PyObject *rval;
-    /* Return a JSON representation of a Python string */
-    /* METH_O */
-    if (PyUnicode_Check(pystr)) {
-        rval = escape_unicode(pystr);
-    }
-    else {
-        PyErr_Format(PyExc_TypeError,
-                     "first argument must be a string, not %.80s",
-                     Py_TYPE(pystr)->tp_name);
-        return NULL;
-    }
-    return rval;
+    return escape_unicode(pystr);
 }
 
 static void
@@ -740,6 +719,7 @@ scanner_traverse(PyObject *op, visitproc visit, void *arg)
     Py_VISIT(Py_TYPE(self));
     Py_VISIT(self->object_hook);
     Py_VISIT(self->object_pairs_hook);
+    Py_VISIT(self->array_hook);
     Py_VISIT(self->parse_float);
     Py_VISIT(self->parse_int);
     Py_VISIT(self->parse_constant);
@@ -752,6 +732,7 @@ scanner_clear(PyObject *op)
     PyScannerObject *self = PyScannerObject_CAST(op);
     Py_CLEAR(self->object_hook);
     Py_CLEAR(self->object_pairs_hook);
+    Py_CLEAR(self->array_hook);
     Py_CLEAR(self->parse_float);
     Py_CLEAR(self->parse_int);
     Py_CLEAR(self->parse_constant);
@@ -826,11 +807,10 @@ _parse_object_unicode(PyScannerObject *s, PyObject *memo, PyObject *pystr, Py_ss
                 goto bail;
 
             if (has_pairs_hook) {
-                PyObject *item = PyTuple_Pack(2, key, val);
+                PyObject *item = _PyTuple_FromPairSteal(key, val);
+                key = val = NULL;
                 if (item == NULL)
                     goto bail;
-                Py_CLEAR(key);
-                Py_CLEAR(val);
                 if (PyList_Append(rval, item) == -1) {
                     Py_DECREF(item);
                     goto bail;
@@ -962,6 +942,12 @@ _parse_array_unicode(PyScannerObject *s, PyObject *memo, PyObject *pystr, Py_ssi
         goto bail;
     }
     *next_idx_ptr = idx + 1;
+    /* if array_hook is not None: return array_hook(rval) */
+    if (!Py_IsNone(s->array_hook)) {
+        val = PyObject_CallOneArg(s->array_hook, rval);
+        Py_DECREF(rval);
+        return val;
+    }
     return rval;
 bail:
     Py_XDECREF(val);
@@ -1279,6 +1265,10 @@ scanner_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     s->object_pairs_hook = PyObject_GetAttrString(ctx, "object_pairs_hook");
     if (s->object_pairs_hook == NULL)
         goto bail;
+    s->array_hook = PyObject_GetAttrString(ctx, "array_hook");
+    if (s->array_hook == NULL) {
+        goto bail;
+    }
     s->parse_float = PyObject_GetAttrString(ctx, "parse_float");
     if (s->parse_float == NULL)
         goto bail;
@@ -1480,6 +1470,7 @@ encoder_call(PyObject *op, PyObject *args, PyObject *kwds)
             return NULL;
         }
     }
+    indent_level = 0;
     if (encoder_listencode_obj(self, writer, obj, indent_level, indent_cache)) {
         PyUnicodeWriter_Discard(writer);
         Py_XDECREF(indent_cache);
@@ -1618,7 +1609,7 @@ encoder_listencode_obj(PyEncoderObject *s, PyUnicodeWriter *writer,
         _Py_LeaveRecursiveCall();
         return rv;
     }
-    else if (PyDict_Check(obj)) {
+    else if (PyAnyDict_Check(obj)) {
         if (_Py_EnterRecursiveCall(" while encoding a JSON object"))
             return -1;
         rv = encoder_listencode_dict(s, writer, obj, indent_level, indent_cache);
@@ -1857,7 +1848,7 @@ encoder_listencode_dict(PyEncoderObject *s, PyUnicodeWriter *writer,
             goto bail;
     }
 
-    if (s->sort_keys || !PyDict_CheckExact(dct)) {
+    if (s->sort_keys || !PyAnyDict_CheckExact(dct)) {
         PyObject *items = PyMapping_Items(dct);
         if (items == NULL || (s->sort_keys && PyList_Sort(items) < 0)) {
             Py_XDECREF(items);
@@ -2080,18 +2071,9 @@ static PyType_Spec PyEncoderType_spec = {
 };
 
 static PyMethodDef speedups_methods[] = {
-    {"encode_basestring_ascii",
-        py_encode_basestring_ascii,
-        METH_O,
-        pydoc_encode_basestring_ascii},
-    {"encode_basestring",
-        py_encode_basestring,
-        METH_O,
-        pydoc_encode_basestring},
-    {"scanstring",
-        py_scanstring,
-        METH_VARARGS,
-        pydoc_scanstring},
+    PY_ENCODE_BASESTRING_ASCII_METHODDEF
+    PY_ENCODE_BASESTRING_METHODDEF
+    PY_SCANSTRING_METHODDEF
     {NULL, NULL, 0, NULL}
 };
 
@@ -2115,6 +2097,7 @@ _json_exec(PyObject *module)
 }
 
 static PyModuleDef_Slot _json_slots[] = {
+    _Py_ABI_SLOT,
     {Py_mod_exec, _json_exec},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {Py_mod_gil, Py_MOD_GIL_NOT_USED},

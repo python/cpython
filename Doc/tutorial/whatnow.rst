@@ -30,7 +30,7 @@ the set are:
 
 More Python resources:
 
-* https://www.python.org:  The major Python web site.  It contains code,
+* https://www.python.org:  The major Python website.  It contains code,
   documentation, and pointers to Python-related pages around the web.
 
 * https://docs.python.org:  Fast access to Python's  documentation.
@@ -68,6 +68,6 @@ already contain the solution for your problem.
 
 .. rubric:: Footnotes
 
-.. [#] "Cheese Shop" is a Monty Python's sketch: a customer enters a cheese shop,
+.. [#] "Cheese Shop" is a Monty Python sketch: a customer enters a cheese shop,
    but whatever cheese he asks for, the clerk says it's missing.
 
