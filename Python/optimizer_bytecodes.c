@@ -134,6 +134,22 @@ dummy_func(void) {
         assert(!PyJitRef_IsUnique(value));
     }
 
+    op(_GUARD_TYPE_VERSION_LOCKED, (type_version/2, owner -- owner)) {
+        assert(type_version);
+        if (sym_matches_type_version(owner, type_version)) {
+            ADD_OP(_NOP, 0, 0);
+        } else {
+            PyTypeObject *probable_type = sym_get_probable_type(owner);
+            if (probable_type->tp_version_tag == type_version && sym_set_type_version(owner, type_version)) {
+                // Promote the probable type version to a known one.
+                if ((probable_type->tp_flags & Py_TPFLAGS_IMMUTABLETYPE) == 0) {
+                    PyType_Watch(TYPE_WATCHER_ID, (PyObject *)probable_type);
+                    _Py_BloomFilter_Add(dependencies, probable_type);
+                }
+            }
+        }
+    }
+
     op(_STORE_ATTR_INSTANCE_VALUE, (offset/1, value, owner -- o)) {
         (void)offset;
         (void)value;
@@ -710,6 +726,16 @@ dummy_func(void) {
         r = right;
     }
 
+    op(_IS_NONE, (value -- b)) {
+        if (sym_is_const(ctx, value)) {
+            PyObject *value_o = sym_get_const(ctx, value);
+            b = sym_new_const(ctx, Py_IsNone(value_o) ? Py_True : Py_False);
+        }
+        else {
+            b = sym_new_type(ctx, &PyBool_Type);
+        }
+    }
+
     op(_CONTAINS_OP, (left, right -- b, l, r)) {
         b = sym_new_type(ctx, &PyBool_Type);
         l = left;
@@ -1043,9 +1069,27 @@ dummy_func(void) {
     }
 
     op(_CHECK_AND_ALLOCATE_OBJECT, (type_version/2, callable, self_or_null, args[oparg] -- callable, self_or_null, args[oparg])) {
-        (void)type_version;
         (void)args;
-        callable = sym_new_not_null(ctx);
+        PyObject *probable_callable = sym_get_probable_value(callable);
+        assert(probable_callable != NULL);
+        assert(PyType_Check(probable_callable));
+        PyTypeObject *tp = (PyTypeObject *)probable_callable;
+        if (tp->tp_version_tag == type_version) {
+            // If the type version has not changed since we last saw it,
+            // then we know this __init__ is definitely the same one as in the cache.
+            // We can promote callable to a known constant. This does not need a
+            // type watcher, as we do not remove this _CHECK_AND_ALLOCATE_OBJECT guard.
+            // TODO: split up _CHECK_AND_ALLOCATE_OBJECT to the check then alloate, so we can
+            // eliminate the check.
+            PyHeapTypeObject *cls = (PyHeapTypeObject *)probable_callable;
+            PyObject *init = cls->_spec_cache.init;
+            assert(init != NULL);
+            assert(PyFunction_Check(init));
+            callable = sym_new_const(ctx, init);
+        }
+        else {
+            callable = sym_new_not_null(ctx);
+        }
         self_or_null = sym_new_not_null(ctx);
     }
 
@@ -1272,7 +1316,10 @@ dummy_func(void) {
                 out = Py_True;
             }
             sym_set_const(res, out);
-            ADD_OP(_POP_CALL_TWO, 0, 0);
+            ADD_OP(_POP_TOP, 0, 0);
+            ADD_OP(_POP_TOP, 0, 0);
+            ADD_OP(_POP_TOP_NOP, 0, 0);
+            ADD_OP(_POP_TOP, 0, 0);
             ADD_OP(_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)out);
         }
     }
@@ -1358,6 +1405,10 @@ dummy_func(void) {
     }
 
     op(_CALL_BUILTIN_FAST, (callable, self_or_null, args[oparg] -- callable, self_or_null, args[oparg])) {
+        callable = sym_new_not_null(ctx);
+    }
+
+    op(_CALL_BUILTIN_CLASS, (callable, self_or_null, args[oparg] -- callable, self_or_null, args[oparg])) {
         callable = sym_new_not_null(ctx);
     }
 
