@@ -224,6 +224,8 @@ dummy_func(void) {
             }
             else {
                 sym_set_const(owner, type);
+                PyType_Watch(TYPE_WATCHER_ID, type);
+                _Py_BloomFilter_Add(dependencies, type);
             }
         }
     }
