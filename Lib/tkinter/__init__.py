@@ -50,10 +50,20 @@ READABLE = _tkinter.READABLE
 WRITABLE = _tkinter.WRITABLE
 EXCEPTION = _tkinter.EXCEPTION
 
+_magic_re = None
+_space_re = None
 
-_magic_re = re.compile(r'([\\{}])')
-_space_re = re.compile(r'([\s])', re.ASCII)
+def _get_magic_re():
+    global _magic_re
+    if _magic_re is None:
+        _magic_re = re.compile(r'([\\{}])')
+    return _magic_re
 
+def _get_space_re():
+    global _space_re
+    if _space_re is None:
+        _space_re = re.compile(r'([\s])', re.ASCII)
+    return _space_re
 
 def _join(value):
     """Internal function."""
