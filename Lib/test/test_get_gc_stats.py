@@ -9,6 +9,7 @@ import unittest
 from test.support import (
     import_helper,
     SHORT_TIMEOUT,
+    requires_gil_enabled,
     requires_remote_subprocess_debugging,
 )
 
@@ -37,6 +38,7 @@ def get_last_item(gc_stats: tuple[dict[str, str|int|float]],
     return item
 
 
+@requires_gil_enabled()
 @requires_remote_subprocess_debugging()
 class TestGetGCStats(unittest.TestCase):
 
