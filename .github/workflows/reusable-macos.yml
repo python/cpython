@@ -9,7 +9,8 @@ on:
         type: boolean
         default: false
 
-permissions: {}
+permissions:
+  contents: read
 
 jobs:
   build_macos:

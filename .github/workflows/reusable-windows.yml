@@ -6,7 +6,8 @@ on:
         type: boolean
         default: false
 
-permissions: {}
+permissions:
+  contents: read
 
 jobs:
   build_win32:
