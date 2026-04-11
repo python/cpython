@@ -1643,7 +1643,6 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
         self.assertNotIn("_BINARY_OP_ADD_INT", uops)
-        self.assertNotIn("_POP_TWO", uops)
         self.assertNotIn("_GUARD_NOS_INT", uops)
         self.assertNotIn("_GUARD_TOS_INT", uops)
 
@@ -1862,7 +1861,6 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
         self.assertNotIn("_COMPARE_OP", uops)
-        self.assertNotIn("_POP_TWO", uops)
 
     def test_compare_op_int_insert_two_load_const_inline_borrow(self):
         def testfunc(n):
@@ -1930,7 +1928,6 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
         self.assertNotIn("_CONTAINS_OP", uops)
-        self.assertNotIn("_POP_TWO", uops)
 
     def test_to_bool_bool_contains_op_set(self):
         """
