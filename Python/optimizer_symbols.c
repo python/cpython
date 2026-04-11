@@ -1,4 +1,4 @@
-#ifdef _Py_TIER2
+ifdef _Py_TIER2
 
 #include "Python.h"
 
@@ -829,7 +829,7 @@ _Py_uop_sym_get_probable_type(JitOptRef ref)
         case JIT_SYM_KNOWN_VALUE_TAG:
             return _Py_uop_sym_get_type(ref);
         case JIT_SYM_RECORDED_GEN_FUNC_TAG:
-            return NULL;
+            return &PyGen_Type;
         case JIT_SYM_RECORDED_VALUE_TAG:
             return Py_TYPE(sym->recorded_value.value);
         case JIT_SYM_RECORDED_TYPE_TAG:
@@ -2211,7 +2211,7 @@ _Py_uop_symbols_test(PyObject *Py_UNUSED(self), PyObject *Py_UNUSED(ignored))
     JitOptRef rg1 = _Py_uop_sym_new_unknown(ctx);
     _Py_uop_sym_set_recorded_gen_func(ctx, rg1, func);
     TEST_PREDICATE(!_Py_uop_sym_matches_type(rg1, &PyGen_Type), "recorded gen func treated as generator");
-    TEST_PREDICATE(_Py_uop_sym_get_probable_type(rg1) == NULL, "recorded gen func treated as generator");
+    TEST_PREDICATE(_Py_uop_sym_get_probable_type(rg1) == &PyGen_Type, "recorded gen func not treated as generator");
     TEST_PREDICATE(_Py_uop_sym_get_const(ctx, rg1) == NULL, "recorded gen func is treated as known value");
 
     /* Test that setting type narrows correctly */
