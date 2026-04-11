@@ -114,6 +114,9 @@ class TestEncode(CTest):
         self.assertRaises(TypeError, enc, ['spam', {'ham': 'eggs'}])
 
     def test_mutate_dict_items_during_encode(self):
+        # gh-142831: Clearing the items list via a re-entrant key encoder
+        # must not cause a use-after-free.  BadDict.items() returns a
+        # mutable list; encode_str clears it while iterating.
         items = None
 
         class BadDict(dict):
@@ -122,11 +125,13 @@ class TestEncode(CTest):
                 items = [("boom", object())]
                 return items
 
+        cleared = False
         def encode_str(obj):
-            nonlocal items
+            nonlocal items, cleared
             if items is not None:
                 items.clear()
                 items = None
+                cleared = True
                 gc_collect()
             return '"x"'
 
@@ -137,17 +142,22 @@ class TestEncode(CTest):
             False, True
         )
 
-        try:
-            encoder(BadDict(real=1), 0)
-        except (ValueError, RuntimeError):
-            pass
+        # Must not crash (use-after-free under ASan before fix)
+        encoder(BadDict(real=1), 0)
+        self.assertTrue(cleared)
 
     def test_mutate_list_during_encode(self):
+        # gh-142831: Clearing a list mid-iteration via the default
+        # callback must not cause a use-after-free.
+        call_count = 0
         lst = [object() for _ in range(10)]
 
         def default(obj):
-            lst.clear()
-            gc_collect()
+            nonlocal call_count
+            call_count += 1
+            if call_count == 3:
+                lst.clear()
+                gc_collect()
             return None
 
         encoder = self.json.encoder.c_make_encoder(
@@ -157,7 +167,8 @@ class TestEncode(CTest):
             False, True
         )
 
-        try:
-            encoder(lst, 0)
-        except (ValueError, RuntimeError):
-            pass
+        # Must not crash (use-after-free under ASan before fix)
+        encoder(lst, 0)
+        # Verify the mutation path was actually hit and the loop
+        # stopped iterating after the list was cleared.
+        self.assertEqual(call_count, 3)
