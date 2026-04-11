@@ -252,13 +252,16 @@ class EnvBuilder:
             if self.upgrade_deps:
                 args.append('--upgrade-deps')
             if self.orig_prompt is not None:
-                args.append(f'--prompt="{self.orig_prompt}"')
+                args.extend(['--prompt', self.orig_prompt])
             if not self.scm_ignore_files:
                 args.append('--without-scm-ignore-files')
 
             args.append(context.env_dir)
-            args = ' '.join(args)
-            f.write(f'command = {sys.executable} -m venv {args}\n')
+            # gh-148315: shell-quote so paths containing whitespace
+            # (e.g. a Windows user directory with a space) round-trip
+            # faithfully and the recorded command can be re-executed.
+            command = shlex.join([sys.executable, '-m', 'venv', *args])
+            f.write(f'command = {command}\n')
 
     def symlink_or_copy(self, src, dst, relative_symlinks_ok=False):
         """
