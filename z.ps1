@@ -15,8 +15,9 @@ $zutilVersion = if ($env:NANVIX_ZUTIL_VERSION) {
     $env:NANVIX_ZUTIL_VERSION
 }
 else {
-    "0.7.15"
+    "0.7.18"
 }
+$zutilVersion = $zutilVersion -replace "^v", ""
 
 # z.ps1 lives at the repository root, so use its directory directly
 # instead of relying on git to discover the top-level checkout directory.
