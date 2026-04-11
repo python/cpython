@@ -67,6 +67,8 @@ See :ref:`stable` for a discussion of API and ABI stability across versions.
 
    The Python version as a string, for example, ``"3.4.1a2"``.
 
+These macros are defined in :source:`Include/patchlevel.h`.
+
 
 Run-time version
 ----------------

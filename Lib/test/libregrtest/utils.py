@@ -41,7 +41,7 @@ ALL_RESOURCES = ('audio', 'console', 'curses', 'largefile', 'network',
 # - tzdata: while needed to validate fully test_datetime, it makes
 #   test_datetime too slow (15-20 min on some buildbots) and so is disabled by
 #   default (see bpo-30822).
-RESOURCE_NAMES = ALL_RESOURCES + ('extralargefile', 'tzdata', 'xpickle')
+RESOURCE_NAMES = ALL_RESOURCES + ('extralargefile', 'tzdata', 'xpickle', 'wantobjects')
 
 
 # Types for types hints
@@ -150,7 +150,7 @@ def setup_unraisable_hook() -> None:
     sys.unraisablehook = regrtest_unraisable_hook
 
 
-orig_threading_excepthook: Callable[..., None] | None = None
+orig_threading_excepthook: Callable[..., object] | None = None
 
 
 def regrtest_threading_excepthook(args) -> None:
@@ -452,12 +452,6 @@ def get_temp_dir(tmp_dir: StrPath | None = None) -> StrPath:
                         f"unexpectedly returned {tmp_dir!r} on WASI"
                     )
                 tmp_dir = os.path.join(tmp_dir, 'build')
-
-                # When get_temp_dir() is called in a worker process,
-                # get_temp_dir() path is different than in the parent process
-                # which is not a WASI process. So the parent does not create
-                # the same "tmp_dir" than the test worker process.
-                os.makedirs(tmp_dir, exist_ok=True)
         else:
             tmp_dir = tempfile.gettempdir()
 
@@ -752,3 +746,9 @@ def _sanitize_xml_replace(regs):
 
 def sanitize_xml(text: str) -> str:
     return ILLEGAL_XML_CHARS_RE.sub(_sanitize_xml_replace, text)
+
+
+def display_title(title):
+    print(title)
+    print("#" * len(title))
+    print(flush=True)

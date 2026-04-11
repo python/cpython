@@ -542,6 +542,24 @@ class ColorDelegatorTest(unittest.TestCase):
         self._assert_highlighting('case _:', {'KEYWORD': [('1.0', '1.4'),
                                                           ('1.5', '1.6')]})
 
+    def test_lazy_soft_keyword(self):
+        # lazy followed by import
+        self._assert_highlighting('lazy import foo',
+                                  {'KEYWORD': [('1.0', '1.4'),
+                                               ('1.5', '1.11')]})
+        self._assert_highlighting('    lazy import foo',
+                                  {'KEYWORD': [('1.4', '1.8'),
+                                               ('1.9', '1.15')]})
+
+        # lazy followed by from
+        self._assert_highlighting('lazy from foo import bar',
+                                  {'KEYWORD': [('1.0', '1.4'), ('1.5', '1.9'),
+                                               ('1.14', '1.20')]})
+
+        # lazy not followed by import/from (not highlighted)
+        self._assert_highlighting('lazy = 1', {})
+        self._assert_highlighting('lazy foo', {})
+
     def test_long_multiline_string(self):
         source = textwrap.dedent('''\
             """a

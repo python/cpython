@@ -57,6 +57,14 @@ class CommandTestMixin:
             popen_args.pop(popen_args.index(option))
         self.assertEqual(popen_args, arguments)
 
+    def test_reject_dash_prefixes(self):
+        browser = self.browser_class(name=CMD_NAME)
+        with self.assertRaisesRegex(
+            ValueError,
+            r"^Invalid URL \(leading dash disallowed\): '--key=val http.*'$"
+        ):
+            browser.open(f"--key=val {URL}")
+
 
 class GenericBrowserCommandTest(CommandTestMixin, unittest.TestCase):
 
@@ -321,7 +329,6 @@ class MockPopenPipe:
 @unittest.skipUnless(sys.platform == "darwin", "macOS specific test")
 @requires_subprocess()
 class MacOSXOSAScriptTest(unittest.TestCase):
-
     def setUp(self):
         # Ensure that 'BROWSER' is not set to 'open' or something else.
         # See: https://github.com/python/cpython/issues/131254.
@@ -344,7 +351,7 @@ class MacOSXOSAScriptTest(unittest.TestCase):
         url = "https://python.org"
         self.browser.open(url)
         self.assertTrue(self.popen_pipe._closed)
-        self.assertEqual(self.popen_pipe.cmd, "osascript")
+        self.assertEqual(self.popen_pipe.cmd, "/usr/bin/osascript")
         script = self.popen_pipe.pipe.getvalue()
         self.assertEqual(script.strip(), f'open location "{url}"')
 
@@ -370,6 +377,13 @@ class MacOSXOSAScriptTest(unittest.TestCase):
         script = self.popen_pipe.pipe.getvalue()
         self.assertIn('tell application "safari"', script)
         self.assertIn('open location "https://python.org"', script)
+
+    def test_reject_dash_prefixes(self):
+        with self.assertRaisesRegex(
+            ValueError,
+            r"^Invalid URL \(leading dash disallowed\): '--key=val http.*'$"
+        ):
+            self.browser.open(f"--key=val {URL}")
 
 
 class BrowserRegistrationTest(unittest.TestCase):

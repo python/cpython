@@ -15,6 +15,7 @@
 #include "pycore_initconfig.h"    // _PyStatus_OK()
 #include "pycore_interpolation.h" // _PyInterpolation_InitTypes()
 #include "pycore_long.h"          // _PyLong_InitTypes()
+#include "pycore_moduleobject.h"  // _PyModule_InitModuleDictWatcher()
 #include "pycore_object.h"        // _PyDebug_PrintTotalRefs()
 #include "pycore_obmalloc.h"      // _PyMem_init_obmalloc()
 #include "pycore_optimizer.h"     // _Py_Executors_InvalidateAll
@@ -29,6 +30,7 @@
 #include "pycore_stats.h"         // _PyStats_InterpInit()
 #include "pycore_sysmodule.h"     // _PySys_ClearAttrString()
 #include "pycore_traceback.h"     // _Py_DumpTracebackThreads()
+#include "pycore_tuple.h"         // _PyTuple_FromPair
 #include "pycore_typeobject.h"    // _PyTypes_InitTypes()
 #include "pycore_typevarobject.h" // _Py_clear_generic_types()
 #include "pycore_unicodeobject.h" // _PyUnicode_InitTypes()
@@ -37,6 +39,10 @@
 #include "pycore_weakref.h"       // _PyWeakref_GET_REF()
 #ifdef _Py_JIT
 #include "pycore_jit.h"           // _PyJIT_Fini()
+#endif
+
+#if defined(PYMALLOC_USE_HUGEPAGES) && defined(MS_WINDOWS)
+#include <Windows.h>
 #endif
 
 #include "opcode.h"
@@ -484,6 +490,41 @@ pyinit_core_reconfigure(_PyRuntimeState *runtime,
     return _PyStatus_OK();
 }
 
+#if defined(PYMALLOC_USE_HUGEPAGES) && defined(MS_WINDOWS)
+static PyStatus
+get_huge_pages_privilege(void)
+{
+    HANDLE hToken;
+    if (!OpenProcessToken(GetCurrentProcess(), TOKEN_ADJUST_PRIVILEGES | TOKEN_QUERY, &hToken))
+    {
+        return _PyStatus_ERR("failed to open process token");
+    }
+    TOKEN_PRIVILEGES tp;
+    if (!LookupPrivilegeValue(NULL, SE_LOCK_MEMORY_NAME, &tp.Privileges[0].Luid))
+    {
+        CloseHandle(hToken);
+        return _PyStatus_ERR("failed to lookup SeLockMemoryPrivilege for huge pages");
+    }
+    tp.PrivilegeCount = 1;
+    tp.Privileges[0].Attributes = SE_PRIVILEGE_ENABLED;
+    // AdjustTokenPrivileges can return with nonzero status (i.e. success)
+    // but without having all privileges adjusted (ERROR_NOT_ALL_ASSIGNED).
+    BOOL status = AdjustTokenPrivileges(hToken, FALSE, &tp, sizeof(TOKEN_PRIVILEGES), NULL, NULL);
+    DWORD error = GetLastError();
+    if (!status || (error != ERROR_SUCCESS))
+    {
+        CloseHandle(hToken);
+        return _PyStatus_ERR(
+            "SeLockMemoryPrivilege not held; "
+            "grant it via Local Security Policy or disable PYTHON_PYMALLOC_HUGEPAGES");
+    }
+    if (!CloseHandle(hToken))
+    {
+        return _PyStatus_ERR("failed to close process token handle");
+    }
+    return _PyStatus_OK();
+}
+#endif
 
 static PyStatus
 pycore_init_runtime(_PyRuntimeState *runtime,
@@ -497,6 +538,15 @@ pycore_init_runtime(_PyRuntimeState *runtime,
     if (_PyStatus_EXCEPTION(status)) {
         return status;
     }
+
+#if defined(PYMALLOC_USE_HUGEPAGES) && defined(MS_WINDOWS)
+    if (runtime->allocators.use_hugepages) {
+        status = get_huge_pages_privilege();
+        if (_PyStatus_EXCEPTION(status)) {
+            return status;
+        }
+    }
+#endif
 
     /* Py_Finalize leaves _Py_Finalizing set in order to help daemon
      * threads behave a little more gracefully at interpreter shutdown.
@@ -632,6 +682,11 @@ pycore_create_interpreter(_PyRuntimeState *runtime,
     _PyInterpreterState_SetWhence(interp, _PyInterpreterState_WHENCE_RUNTIME);
     interp->_ready = 1;
 
+    /* Initialize the module dict watcher early, before any modules are created */
+    if (_PyModule_InitModuleDictWatcher(interp) != 0) {
+        return _PyStatus_ERR("failed to initialize module dict watcher");
+    }
+
     status = _PyConfig_Copy(&interp->config, src_config);
     if (_PyStatus_EXCEPTION(status)) {
         return status;
@@ -699,8 +754,6 @@ static PyStatus
 pycore_init_global_objects(PyInterpreterState *interp)
 {
     PyStatus status;
-
-    _PyFloat_InitState(interp);
 
     status = _PyUnicode_InitGlobalObjects(interp);
     if (_PyStatus_EXCEPTION(status)) {
@@ -1165,6 +1218,54 @@ pyinit_main_reconfigure(PyThreadState *tstate)
 
 
 #ifdef Py_DEBUG
+// Equivalent to the Python code:
+//
+//     for part in attr.split('.'):
+//         obj = getattr(obj, part)
+static PyObject*
+presite_resolve_name(PyObject *obj, PyObject *attr)
+{
+    obj = Py_NewRef(obj);
+    attr = Py_NewRef(attr);
+    PyObject *res;
+
+    while (1) {
+        Py_ssize_t len = PyUnicode_GET_LENGTH(attr);
+        Py_ssize_t pos = PyUnicode_FindChar(attr, '.', 0, len, 1);
+        if (pos < 0) {
+            break;
+        }
+
+        PyObject *name = PyUnicode_Substring(attr, 0, pos);
+        if (name == NULL) {
+            goto error;
+        }
+        res = PyObject_GetAttr(obj, name);
+        Py_DECREF(name);
+        if (res == NULL) {
+            goto error;
+        }
+        Py_SETREF(obj, res);
+
+        PyObject *suffix = PyUnicode_Substring(attr, pos + 1, len);
+        if (suffix == NULL) {
+            goto error;
+        }
+        Py_SETREF(attr, suffix);
+    }
+
+    res = PyObject_GetAttr(obj, attr);
+    Py_DECREF(obj);
+    Py_DECREF(attr);
+    return res;
+
+error:
+    Py_DECREF(obj);
+    Py_DECREF(attr);
+    return NULL;
+}
+
+
 static void
 run_presite(PyThreadState *tstate)
 {
@@ -1175,22 +1276,68 @@ run_presite(PyThreadState *tstate)
         return;
     }
 
-    PyObject *presite_modname = PyUnicode_FromWideChar(
-        config->run_presite,
-        wcslen(config->run_presite)
-    );
-    if (presite_modname == NULL) {
-        fprintf(stderr, "Could not convert pre-site module name to unicode\n");
+    PyObject *presite = PyUnicode_FromWideChar(config->run_presite, -1);
+    if (presite == NULL) {
+        fprintf(stderr, "Could not convert pre-site command to Unicode\n");
+        _PyErr_Print(tstate);
+        return;
+    }
+
+    // Accept "mod_name" and "mod_name:func_name" entry point syntax
+    Py_ssize_t len = PyUnicode_GET_LENGTH(presite);
+    Py_ssize_t pos = PyUnicode_FindChar(presite, ':', 0, len, 1);
+    PyObject *mod_name = NULL;
+    PyObject *func_name = NULL;
+    PyObject *module = NULL;
+    if (pos > 0) {
+        mod_name = PyUnicode_Substring(presite, 0, pos);
+        if (mod_name == NULL) {
+            goto error;
+        }
+
+        func_name = PyUnicode_Substring(presite, pos + 1, len);
+        if (func_name == NULL) {
+            goto error;
+        }
     }
     else {
-        PyObject *presite = PyImport_Import(presite_modname);
-        if (presite == NULL) {
-            fprintf(stderr, "pre-site import failed:\n");
-            _PyErr_Print(tstate);
-        }
-        Py_XDECREF(presite);
-        Py_DECREF(presite_modname);
+        mod_name = Py_NewRef(presite);
     }
+
+    // mod_name can contain dots (ex: "math.integer")
+    module = PyImport_Import(mod_name);
+    if (module == NULL) {
+        goto error;
+    }
+
+    if (func_name != NULL) {
+        PyObject *func = presite_resolve_name(module, func_name);
+        if (func == NULL) {
+            goto error;
+        }
+
+        PyObject *res = PyObject_CallNoArgs(func);
+        Py_DECREF(func);
+        if (res == NULL) {
+            goto error;
+        }
+        Py_DECREF(res);
+    }
+
+    Py_DECREF(presite);
+    Py_DECREF(mod_name);
+    Py_XDECREF(func_name);
+    Py_DECREF(module);
+    return;
+
+error:
+    fprintf(stderr, "pre-site failed:\n");
+    _PyErr_Print(tstate);
+
+    Py_DECREF(presite);
+    Py_XDECREF(mod_name);
+    Py_XDECREF(func_name);
+    Py_XDECREF(module);
 }
 #endif
 
@@ -1334,6 +1481,22 @@ init_interp_main(PyThreadState *tstate)
             return status;
         }
     }
+
+    // Initialize lazy imports based on configuration. Do this after site
+    // module is imported to avoid circular imports during startup.
+    if (config->lazy_imports != -1) {
+        PyImport_LazyImportsMode lazy_mode;
+        if (config->lazy_imports == 1) {
+            lazy_mode = PyImport_LAZY_ALL;
+        }
+        else {
+            lazy_mode = PyImport_LAZY_NONE;
+        }
+        if (PyImport_SetLazyImportsMode(lazy_mode) < 0) {
+            return _PyStatus_ERR("failed to set lazy imports mode");
+        }
+    }
+    // If config->lazy_imports == -1, use the default mode, no change needed.
 
     if (is_main_interp) {
 #ifndef MS_WINDOWS
@@ -1508,6 +1671,18 @@ Py_Initialize(void)
 }
 
 
+PyStatus
+_Py_InitializeMain(void)
+{
+    PyStatus status = _PyRuntime_Initialize();
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
+    }
+    PyThreadState *tstate = _PyThreadState_GET();
+    return pyinit_main(tstate);
+}
+
+
 static void
 finalize_modules_delete_special(PyThreadState *tstate, int verbose)
 {
@@ -1581,7 +1756,7 @@ finalize_remove_modules(PyObject *modules, int verbose)
         if (weaklist != NULL) { \
             PyObject *wr = PyWeakref_NewRef(mod, NULL); \
             if (wr) { \
-                PyObject *tup = PyTuple_Pack(2, name, wr); \
+                PyObject *tup = _PyTuple_FromPair(name, wr); \
                 if (!tup || PyList_Append(weaklist, tup) < 0) { \
                     PyErr_FormatUnraisable("Exception ignored while removing modules"); \
                 } \
@@ -1622,6 +1797,7 @@ finalize_remove_modules(PyObject *modules, int verbose)
                 PyObject *value = PyObject_GetItem(modules, key);
                 if (value == NULL) {
                     PyErr_FormatUnraisable("Exception ignored while removing modules");
+                    Py_DECREF(key);
                     continue;
                 }
                 CLEAR_MODULE(key, value);
@@ -1727,6 +1903,12 @@ finalize_modules(PyThreadState *tstate)
     interp->compiling = false;
 #ifdef _Py_TIER2
     _Py_Executors_InvalidateAll(interp, 0);
+    PyMem_Free(interp->executor_blooms);
+    PyMem_Free(interp->executor_ptrs);
+    interp->executor_blooms = NULL;
+    interp->executor_ptrs = NULL;
+    interp->executor_count = 0;
+    interp->executor_capacity = 0;
 #endif
 
     // Stop watching __builtin__ modifications
@@ -1800,6 +1982,9 @@ finalize_modules(PyThreadState *tstate)
     // clear PyModuleDef.m_base.m_copy (of extensions not using the multi-phase
     // initialization API)
     _PyImport_ClearModulesByIndex(interp);
+
+    // Clear the dict of lazily loaded module nname to submodule names
+    _PyImport_ClearLazyModules(interp);
 
     // Clear and delete the modules directory.  Actual modules will
     // still be there only if imported during the execution of some
@@ -2447,6 +2632,11 @@ new_interpreter(PyThreadState **tstate_p,
     }
     _PyInterpreterState_SetWhence(interp, whence);
     interp->_ready = 1;
+
+    /* Initialize the module dict watcher early, before any modules are created */
+    if (_PyModule_InitModuleDictWatcher(interp) != 0) {
+        goto error;
+    }
 
     /* From this point until the init_interp_create_gil() call,
        we must not do anything that requires that the GIL be held
@@ -3392,11 +3582,25 @@ _Py_DumpExtensionModules(int fd, PyInterpreterState *interp)
             Py_hash_t hash;
             // if stdlib_module_names is not NULL, it is always a frozenset.
             while (_PySet_NextEntry(stdlib_module_names, &i, &item, &hash)) {
-                if (PyUnicode_Check(item)
-                    && PyUnicode_Compare(key, item) == 0)
-                {
-                    is_stdlib_ext = 1;
-                    break;
+                if (!PyUnicode_Check(item)) {
+                    continue;
+                }
+                Py_ssize_t len = PyUnicode_GET_LENGTH(item);
+                if (PyUnicode_Tailmatch(key, item, 0, len, -1) == 1) {
+                    Py_ssize_t key_len = PyUnicode_GET_LENGTH(key);
+                    if (key_len == len) {
+                        is_stdlib_ext = 1;
+                        break;
+                    }
+                    assert(key_len > len);
+
+                    // Ignore sub-modules of stdlib packages. For example,
+                    // ignore "math.integer" if key starts with "math.".
+                    Py_UCS4 ch = PyUnicode_ReadChar(key, len);
+                    if (ch == '.') {
+                        is_stdlib_ext = 1;
+                        break;
+                    }
                 }
             }
             if (is_stdlib_ext) {

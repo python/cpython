@@ -11,9 +11,11 @@
 #include "pycore_floatobject.h"
 #include "pycore_frame.h"
 #include "pycore_function.h"
+#include "pycore_import.h"
 #include "pycore_interpframe.h"
 #include "pycore_interpolation.h"
 #include "pycore_intrinsics.h"
+#include "pycore_lazyimportobject.h"
 #include "pycore_list.h"
 #include "pycore_long.h"
 #include "pycore_mmap.h"
@@ -56,6 +58,66 @@ jit_error(const char *message)
     int hint = errno;
 #endif
     PyErr_Format(PyExc_RuntimeWarning, "JIT %s (%d)", message, hint);
+}
+
+static size_t _Py_jit_shim_size = 0;
+
+static int
+address_in_executor_array(_PyExecutorObject **ptrs, size_t count, uintptr_t addr)
+{
+    for (size_t i = 0; i < count; i++) {
+        _PyExecutorObject *exec = ptrs[i];
+        if (exec->jit_code == NULL || exec->jit_size == 0) {
+            continue;
+        }
+        uintptr_t start = (uintptr_t)exec->jit_code;
+        uintptr_t end = start + exec->jit_size;
+        if (addr >= start && addr < end) {
+            return 1;
+        }
+    }
+    return 0;
+}
+
+static int
+address_in_executor_list(_PyExecutorObject *head, uintptr_t addr)
+{
+    for (_PyExecutorObject *exec = head;
+         exec != NULL;
+         exec = exec->vm_data.links.next)
+    {
+        if (exec->jit_code == NULL || exec->jit_size == 0) {
+            continue;
+        }
+        uintptr_t start = (uintptr_t)exec->jit_code;
+        uintptr_t end = start + exec->jit_size;
+        if (addr >= start && addr < end) {
+            return 1;
+        }
+    }
+    return 0;
+}
+
+PyAPI_FUNC(int)
+_PyJIT_AddressInJitCode(PyInterpreterState *interp, uintptr_t addr)
+{
+    if (interp == NULL) {
+        return 0;
+    }
+    if (_Py_jit_entry != _Py_LazyJitShim && _Py_jit_shim_size != 0) {
+        uintptr_t start = (uintptr_t)_Py_jit_entry;
+        uintptr_t end = start + _Py_jit_shim_size;
+        if (addr >= start && addr < end) {
+            return 1;
+        }
+    }
+    if (address_in_executor_array(interp->executor_ptrs, interp->executor_count, addr)) {
+        return 1;
+    }
+    if (address_in_executor_list(interp->executor_deletion_list_head, addr)) {
+        return 1;
+    }
+    return 0;
 }
 
 static unsigned char *
@@ -119,7 +181,7 @@ mark_executable(unsigned char *memory, size_t size)
         jit_error("unable to flush instruction cache");
         return -1;
     }
-    int old;
+    DWORD old;
     int failed = !VirtualProtect(memory, size, PAGE_EXECUTE_READ, &old);
 #else
     __builtin___clear_cache((char *)memory, (char *)memory + size);
@@ -150,8 +212,6 @@ typedef struct {
     symbol_state got_symbols;
     uintptr_t instruction_starts[UOP_MAX_TRACE_LENGTH];
 } jit_state;
-
-static size_t _Py_jit_shim_size = 0;
 
 // Warning! AArch64 requires you to get your hands dirty. These are your gloves:
 
@@ -295,18 +355,6 @@ patch_aarch64_12(unsigned char *location, uint64_t value)
     set_bits(loc32, 10, value, shift, 12);
 }
 
-// Relaxable 12-bit low part of an absolute address. Pairs nicely with
-// patch_aarch64_21rx (below).
-void
-patch_aarch64_12x(unsigned char *location, uint64_t value)
-{
-    // This can *only* be relaxed if it occurs immediately before a matching
-    // patch_aarch64_21rx. If that happens, the JIT build step will replace both
-    // calls with a single call to patch_aarch64_33rx. Otherwise, we end up
-    // here, and the instruction is patched normally:
-    patch_aarch64_12(location, value);
-}
-
 // 16-bit low part of an absolute address.
 void
 patch_aarch64_16a(unsigned char *location, uint64_t value)
@@ -367,18 +415,6 @@ patch_aarch64_21r(unsigned char *location, uint64_t value)
     set_bits(loc32, 5, value, 2, 19);
 }
 
-// Relaxable 21-bit count of pages between this page and an absolute address's
-// page. Pairs nicely with patch_aarch64_12x (above).
-void
-patch_aarch64_21rx(unsigned char *location, uint64_t value)
-{
-    // This can *only* be relaxed if it occurs immediately before a matching
-    // patch_aarch64_12x. If that happens, the JIT build step will replace both
-    // calls with a single call to patch_aarch64_33rx. Otherwise, we end up
-    // here, and the instruction is patched normally:
-    patch_aarch64_21r(location, value);
-}
-
 // 21-bit relative branch.
 void
 patch_aarch64_19r(unsigned char *location, uint64_t value)
@@ -407,55 +443,6 @@ patch_aarch64_26r(unsigned char *location, uint64_t value)
     // Since instructions are 4-byte aligned, only use 26 bits:
     assert(get_bits(value, 0, 2) == 0);
     set_bits(loc32, 0, value, 2, 26);
-}
-
-// A pair of patch_aarch64_21rx and patch_aarch64_12x.
-void
-patch_aarch64_33rx(unsigned char *location, uint64_t value)
-{
-    uint32_t *loc32 = (uint32_t *)location;
-    // Try to relax the pair of GOT loads into an immediate value:
-    assert(IS_AARCH64_ADRP(*loc32));
-    unsigned char reg = get_bits(loc32[0], 0, 5);
-    assert(IS_AARCH64_LDR_OR_STR(loc32[1]));
-    // There should be only one register involved:
-    assert(reg == get_bits(loc32[1], 0, 5));  // ldr's output register.
-    assert(reg == get_bits(loc32[1], 5, 5));  // ldr's input register.
-    uint64_t relaxed = *(uint64_t *)value;
-    if (relaxed < (1UL << 16)) {
-        // adrp reg, AAA; ldr reg, [reg + BBB] -> movz reg, XXX; nop
-        loc32[0] = 0xD2800000 | (get_bits(relaxed, 0, 16) << 5) | reg;
-        loc32[1] = 0xD503201F;
-        return;
-    }
-    if (relaxed < (1ULL << 32)) {
-        // adrp reg, AAA; ldr reg, [reg + BBB] -> movz reg, XXX; movk reg, YYY
-        loc32[0] = 0xD2800000 | (get_bits(relaxed,  0, 16) << 5) | reg;
-        loc32[1] = 0xF2A00000 | (get_bits(relaxed, 16, 16) << 5) | reg;
-        return;
-    }
-    int64_t page_delta = (relaxed >> 12) - ((uintptr_t)location >> 12);
-    if (page_delta >= -(1L << 20) &&
-        page_delta < (1L << 20))
-    {
-        // adrp reg, AAA; ldr reg, [reg + BBB] -> adrp reg, AAA; add reg, reg, BBB
-        patch_aarch64_21rx(location, relaxed);
-        loc32[1] = 0x91000000 | get_bits(relaxed, 0, 12) << 10 | reg << 5 | reg;
-        return;
-    }
-    relaxed = value - (uintptr_t)location;
-    if ((relaxed & 0x3) == 0 &&
-        (int64_t)relaxed >= -(1L << 19) &&
-        (int64_t)relaxed < (1L << 19))
-    {
-        // adrp reg, AAA; ldr reg, [reg + BBB] -> ldr reg, XXX; nop
-        loc32[0] = 0x58000000 | (get_bits(relaxed, 2, 19) << 5) | reg;
-        loc32[1] = 0xD503201F;
-        return;
-    }
-    // Couldn't do it. Just patch the two instructions normally:
-    patch_aarch64_21rx(location, value);
-    patch_aarch64_12x(location + 4, value);
 }
 
 // Relaxable 32-bit relative address.
