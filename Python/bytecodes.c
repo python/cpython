@@ -381,11 +381,6 @@ dummy_func(
             PyStackRef_CLOSE_SPECIALIZED(value, _PyUnicode_ExactDealloc);
         }
 
-        tier2 op(_POP_TWO, (nos, tos --)) {
-            PyStackRef_CLOSE(tos);
-            PyStackRef_CLOSE(nos);
-        }
-
         op(_POP_TOP_OPARG, (args[oparg] -- )) {
             _PyStackRef_CloseStack(args, oparg);
             DEAD(args);
@@ -5920,27 +5915,6 @@ dummy_func(
 
         tier2 pure op(_LOAD_CONST_INLINE_BORROW, (ptr/4 -- value)) {
             value = PyStackRef_FromPyObjectBorrow(ptr);
-        }
-
-        tier2 op(_POP_CALL, (callable, null --)) {
-            (void)null; // Silence compiler warnings about unused variables
-            DEAD(null);
-            PyStackRef_CLOSE(callable);
-        }
-
-        tier2 op(_POP_CALL_ONE, (callable, null, pop --)) {
-            PyStackRef_CLOSE(pop);
-            (void)null; // Silence compiler warnings about unused variables
-            DEAD(null);
-            PyStackRef_CLOSE(callable);
-        }
-
-        tier2 op(_POP_CALL_TWO, (callable, null, pop1, pop2 --)) {
-            PyStackRef_CLOSE(pop2);
-            PyStackRef_CLOSE(pop1);
-            (void)null; // Silence compiler warnings about unused variables
-            DEAD(null);
-            PyStackRef_CLOSE(callable);
         }
 
         tier2 op(_SHUFFLE_3_LOAD_CONST_INLINE_BORROW, (ptr/4, callable, null, arg -- res, a, c)) {
