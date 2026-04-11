@@ -2906,6 +2906,7 @@ dummy_func(
 
         macro(LOAD_ATTR_CLASS) =
             unused/1 +
+            _RECORD_TOS +
             _CHECK_ATTR_CLASS +
             unused/2 +
             _LOAD_ATTR_CLASS +

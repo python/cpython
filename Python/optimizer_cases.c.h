@@ -2430,12 +2430,10 @@
             if (sym_matches_type_version(owner, type_version)) {
                 ADD_OP(_NOP, 0, 0);
             } else {
-                PyTypeObject *type = _PyType_LookupByVersion(type_version);
-                if (type) {
-                    if (sym_set_type_version(owner, type_version)) {
-                        PyType_Watch(TYPE_WATCHER_ID, (PyObject *)type);
-                        _Py_BloomFilter_Add(dependencies, type);
-                    }
+                PyTypeObject *probable_type = sym_get_probable_type(owner);
+                if (probable_type->tp_version_tag == type_version && sym_set_type_version(owner, type_version)) {
+                    PyType_Watch(TYPE_WATCHER_ID, (PyObject *)probable_type);
+                    _Py_BloomFilter_Add(dependencies, probable_type);
                 }
             }
             break;
@@ -2562,8 +2560,8 @@
             JitOptRef owner;
             owner = stack_pointer[-1];
             uint32_t type_version = (uint32_t)this_instr->operand0;
-            PyObject *type = (PyObject *)_PyType_LookupByVersion(type_version);
-            if (type) {
+            PyObject *type = sym_get_probable_value(owner);
+            if (type != NULL && ((PyTypeObject *)type)->tp_version_tag == type_version) {
                 if (type == sym_get_const(ctx, owner)) {
                     ADD_OP(_NOP, 0, 0);
                 }
