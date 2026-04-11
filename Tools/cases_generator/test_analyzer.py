@@ -10,6 +10,7 @@ or:
 import sys
 import os
 import unittest
+from typing import Any
 
 # The cases_generator directory is not on sys.path when invoked from the repo
 # root, so add it explicitly.
@@ -32,7 +33,7 @@ def _parse(src: str) -> list[parsing.AstNode]:
     return nodes
 
 
-def _analyze(src: str):
+def _analyze(src: str) -> Any:
     """Parse *src* and run analyze_forest(); return the Analysis object."""
     return analyze_forest(_parse(src))
 
