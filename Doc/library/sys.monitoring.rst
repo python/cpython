@@ -12,7 +12,7 @@
 
     :mod:`!sys.monitoring` is a namespace within the :mod:`sys` module,
     not an independent module, and ``import sys.monitoring`` will fail
-    with a :exception:`ModuleNotFoundError`. Instead, simply
+    with a :py:exception:`ModuleNotFoundError`. Instead, simply
     ``import sys`` and then use ``sys.monitoring``.
 
 
