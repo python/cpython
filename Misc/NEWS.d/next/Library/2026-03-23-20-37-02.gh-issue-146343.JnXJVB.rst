@@ -1,25 +1,25 @@
-* Add the following MIME types with file extensions:
+Add the following MIME types with file extensions:
 
-  - ``.appcache`` and ``.manifest`` for ``text/cache-manifest``
-  - ``.ics`` and ``.ifb``    for ``text/calendar``
-  - ``.cql``    for ``text/cql``
-  - ``.csvs``   for ``text/csv-schema``
-  - ``.gff3``   for ``text/gff3``
-  - ``.cnd``    for ``text/jcr-cnd``
-  - ``.miz``    for ``text/mizar``
-  - ``.org``    for ``text/org``
-  - ``.provn``  for ``text/provenance-notation``
-  - ``.shaclc`` and ``.shc``    for ``text/shaclc``
-  - ``.shex``   for ``text/shex``
-  - ``.spdx``   for ``text/spdx``
-  - ``.ttl``    for ``text/turtle``
-  - ``.uri``  and ``.uris``   for ``text/uri-list``
-  - ``.vcard`` and ``.vcf``    for ``text/vcard``
-  - ``.ascii``  for ``text/vnd.ascii-art``
-  - ``.curl``   for ``text/vnd.curl``
-  - ``.gml``    for ``text/vnd.gml``
-  - ``.gv``     for ``text/vnd.graphviz``
-  - ``.wgsl``   for ``text/wgsl``
-  - ``.ent``    for ``text/xml-external-parsed-entity``
+  * ``.appcache`` and ``.manifest`` for ``text/cache-manifest``
+  * ``.ics`` and ``.ifb``    for ``text/calendar``
+  * ``.cql``    for ``text/cql``
+  * ``.csvs``   for ``text/csv-schema``
+  * ``.gff3``   for ``text/gff3``
+  * ``.cnd``    for ``text/jcr-cnd``
+  * ``.miz``    for ``text/mizar``
+  * ``.org``    for ``text/org``
+  * ``.provn``  for ``text/provenance-notation``
+  * ``.shaclc`` and ``.shc``    for ``text/shaclc``
+  * ``.shex``   for ``text/shex``
+  * ``.spdx``   for ``text/spdx``
+  * ``.ttl``    for ``text/turtle``
+  * ``.uri``  and ``.uris``   for ``text/uri-list``
+  * ``.vcard`` and ``.vcf``    for ``text/vcard``
+  * ``.ascii``  for ``text/vnd.ascii-art``
+  * ``.curl``   for ``text/vnd.curl``
+  * ``.gml``    for ``text/vnd.gml``
+  * ``.gv``     for ``text/vnd.graphviz``
+  * ``.wgsl``   for ``text/wgsl``
+  * ``.ent``    for ``text/xml-external-parsed-entity``
 
   (Contributed by Charlie Lin in :gh:`146342`.)
