@@ -5,4 +5,4 @@ Add the following to ``mimetypes``:
   - ``haptics/hjif``
   - ``haptics/hmpg``
 
-(Contributed by Charlie Lin in :gh:`145918`.)
+  (Contributed by Charlie Lin in :gh:`145918`.)
