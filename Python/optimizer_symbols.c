@@ -2220,12 +2220,14 @@ _Py_uop_symbols_test(PyObject *Py_UNUSED(self), PyObject *Py_UNUSED(ignored))
     _Py_uop_sym_set_recorded_gen_func(ctx, rg2, func);
     _Py_uop_sym_set_type(ctx, rg2, &PyGen_Type);
     TEST_PREDICATE(!_Py_uop_sym_matches_type(rg2, &PyGen_Type), "recorded gen func treated as generator");
+    TEST_PREDICATE(_Py_uop_sym_get_probable_type(rg2) == &PyGen_Type, "recorded gen func not treated as generator");
     TEST_PREDICATE(_Py_uop_sym_get_const(ctx, rg2) == NULL, "known type is treated as known value");
 
     JitOptRef rg3 = _Py_uop_sym_new_unknown(ctx);
     _Py_uop_sym_set_recorded_gen_func(ctx, rg3, func);
     _Py_uop_sym_set_type_version(ctx, rg3, PyGen_Type.tp_version_tag);
     TEST_PREDICATE(!_Py_uop_sym_matches_type(rg3, &PyGen_Type), "recorded gen func treated as generator");
+    TEST_PREDICATE(_Py_uop_sym_get_probable_type(rg3) == &PyGen_Type, "recorded gen func not treated as generator");
     TEST_PREDICATE(_Py_uop_sym_get_const(ctx, rg3) == NULL, "recorded value with type is treated as known");
 
     /* Test contradictions */
