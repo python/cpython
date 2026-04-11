@@ -2217,7 +2217,6 @@ _hashlib_hmac_digest_size(HMACobject *self)
     }
     int digest_size = EVP_MD_size(md);
     /* digest_size < 0 iff EVP_MD context is NULL (which is impossible here) */
-    assert(digest_size > 0);
     assert(digest_size <= (int)EVP_MAX_MD_SIZE);
     if (digest_size < 0) {
         raise_ssl_error(PyExc_SystemError, "invalid digest size");
