@@ -472,7 +472,7 @@ General Options
    :manpage:`epoll_create1 <epoll_create1(2)>` is available
    but incompatible with Linux semantics.
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
 
 C compiler options
@@ -1573,6 +1573,12 @@ Compiler flags
    Strict or non-strict aliasing flags used to compile ``Python/dtoa.c``.
 
    .. versionadded:: 3.7
+
+.. envvar:: CFLAGS_CEVAL
+
+   Flags used to compile ``Python/ceval.c``.
+
+   .. versionadded:: 3.14.5
 
 .. envvar:: CCSHARED
 
