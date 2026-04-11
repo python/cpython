@@ -6272,6 +6272,7 @@ codegen_pattern_or(compiler *c, pattern_ty p, pattern_context *pc)
     assert(size > 1);
     PyObject *mismatched_names = NULL;
     Py_ssize_t mismatch_index = 0;
+    PyObject *str_nothing = NULL; // the string 'nothing'
     // We're going to be messing with pc. Keep the original info handy:
     pattern_context old_pc = *pc;
     Py_INCREF(pc->stores);
@@ -6412,25 +6413,30 @@ codegen_pattern_or(compiler *c, pattern_ty p, pattern_context *pc)
     ADDOP(c, LOC(p), POP_TOP);
     return SUCCESS;
 diff:;
-    PyObject *no_names = NULL;
-    if (PyList_GET_SIZE(control) == 0 || !mismatched_names) {
-        no_names = PyUnicode_FromString("no names");
-        if (no_names == NULL) {
+    int control_is_empty = PyList_GET_SIZE(control) == 0;
+    int pattern_is_empty = (
+        mismatched_names == NULL
+        || PyList_GET_SIZE(mismatched_names) == 0
+    );
+
+    if (control_is_empty || pattern_is_empty) {
+        str_nothing = PyUnicode_FromString("nothing");
+        if (str_nothing == NULL) {
             goto error;
         }
     }
     _PyCompile_Error(
         c, LOC(p),
         "alternative patterns bind different names "
-        "(first pattern binds %S, pattern %zd binds %S)",
-        PyList_GET_SIZE(control) == 0 ? no_names : control,
+        "(pattern 1 binds %S, pattern %zd binds %S)",
+        control_is_empty ? str_nothing : control,
         mismatch_index + 1,
-        mismatched_names == NULL ? no_names : mismatched_names
+        pattern_is_empty ? str_nothing : mismatched_names
     );
-    Py_XDECREF(no_names);
 error:
     PyMem_Free(old_pc.fail_pop);
     Py_XDECREF(mismatched_names);
+    Py_XDECREF(str_nothing);
     Py_DECREF(old_pc.stores);
     Py_XDECREF(control);
     return ERROR;
