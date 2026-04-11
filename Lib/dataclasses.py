@@ -805,7 +805,7 @@ def _is_type(annotation, cls, a_module, a_type, is_type_predicate):
 
     # String regex that string annotations for ClassVar or InitVar must match.
     # Allows "identifier.identifier[" or "identifier[".
-    # https://bugs.python.org/issue33453 for details.
+    # https://github.com/python/cpython/issues/77634 for details.
     global _MODULE_IDENTIFIER_RE
     if _MODULE_IDENTIFIER_RE is None:
         _MODULE_IDENTIFIER_RE = re.compile(r'^(?:\s*(\w+)\s*\.)?\s*(\w+)')
