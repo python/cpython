@@ -65,6 +65,11 @@ Dictionary Objects
    *key*, return ``1``, otherwise return ``0``.  On error, return ``-1``.
    This is equivalent to the Python expression ``key in p``.
 
+   .. note::
+
+      The operation is atomic on :term:`free threading <free-threaded build>`
+      when *key* is :class:`str`, :class:`int`, :class:`float`, :class:`bool` or :class:`bytes`.
+
 
 .. c:function:: int PyDict_ContainsString(PyObject *p, const char *key)
 
@@ -87,6 +92,11 @@ Dictionary Objects
    ``0`` on success or ``-1`` on failure.  This function *does not* steal a
    reference to *val*.
 
+   .. note::
+
+      The operation is atomic on :term:`free threading <free-threaded build>`
+      when *key* is :class:`str`, :class:`int`, :class:`float`, :class:`bool` or :class:`bytes`.
+
 
 .. c:function:: int PyDict_SetItemString(PyObject *p, const char *key, PyObject *val)
 
@@ -101,6 +111,11 @@ Dictionary Objects
    if it isn't, :exc:`TypeError` is raised.
    If *key* is not in the dictionary, :exc:`KeyError` is raised.
    Return ``0`` on success or ``-1`` on failure.
+
+   .. note::
+
+      The operation is atomic on :term:`free threading <free-threaded build>`
+      when *key* is :class:`str`, :class:`int`, :class:`float`, :class:`bool` or :class:`bytes`.
 
 
 .. c:function:: int PyDict_DelItemString(PyObject *p, const char *key)
@@ -120,6 +135,11 @@ Dictionary Objects
    * If the key is missing, set *\*result* to ``NULL`` and return ``0``.
    * On error, raise an exception and return ``-1``.
 
+   .. note::
+
+      The operation is atomic on :term:`free threading <free-threaded build>`
+      when *key* is :class:`str`, :class:`int`, :class:`float`, :class:`bool` or :class:`bytes`.
+
    .. versionadded:: 3.13
 
    See also the :c:func:`PyObject_GetItem` function.
@@ -137,6 +157,13 @@ Dictionary Objects
       :meth:`~object.__eq__` methods are silently ignored.
       Prefer the :c:func:`PyDict_GetItemWithError` function instead.
 
+   .. note::
+
+      In the :term:`free-threaded build`, the returned
+      :term:`borrowed reference` may become invalid if another thread modifies
+      the dictionary concurrently. Prefer :c:func:`PyDict_GetItemRef`, which
+      returns a :term:`strong reference`.
+
    .. versionchanged:: 3.10
       Calling this API without an :term:`attached thread state` had been allowed for historical
       reason. It is no longer allowed.
@@ -148,6 +175,13 @@ Dictionary Objects
    exceptions. Return ``NULL`` **with** an exception set if an exception
    occurred.  Return ``NULL`` **without** an exception set if the key
    wasn't present.
+
+   .. note::
+
+      In the :term:`free-threaded build`, the returned
+      :term:`borrowed reference` may become invalid if another thread modifies
+      the dictionary concurrently. Prefer :c:func:`PyDict_GetItemRef`, which
+      returns a :term:`strong reference`.
 
 
 .. c:function:: PyObject* PyDict_GetItemString(PyObject *p, const char *key)
@@ -163,6 +197,13 @@ Dictionary Objects
       object are silently ignored.
       Prefer using the :c:func:`PyDict_GetItemWithError` function with your own
       :c:func:`PyUnicode_FromString` *key* instead.
+
+   .. note::
+
+      In the :term:`free-threaded build`, the returned
+      :term:`borrowed reference` may become invalid if another thread modifies
+      the dictionary concurrently. Prefer :c:func:`PyDict_GetItemStringRef`,
+      which returns a :term:`strong reference`.
 
 
 .. c:function:: int PyDict_GetItemStringRef(PyObject *p, const char *key, PyObject **result)
@@ -184,6 +225,14 @@ Dictionary Objects
 
    .. versionadded:: 3.4
 
+   .. note::
+
+      In the :term:`free-threaded build`, the returned
+      :term:`borrowed reference` may become invalid if another thread modifies
+      the dictionary concurrently. Prefer :c:func:`PyDict_SetDefaultRef`,
+      which returns a :term:`strong reference`.
+
+
 
 .. c:function:: int PyDict_SetDefaultRef(PyObject *p, PyObject *key, PyObject *default_value, PyObject **result)
 
@@ -203,6 +252,11 @@ Dictionary Objects
    These may refer to the same object: in that case you hold two separate
    references to it.
 
+   .. note::
+
+      The operation is atomic on :term:`free threading <free-threaded build>`
+      when *key* is :class:`str`, :class:`int`, :class:`float`, :class:`bool` or :class:`bytes`.
+
    .. versionadded:: 3.13
 
 
@@ -219,6 +273,11 @@ Dictionary Objects
 
    Similar to :meth:`dict.pop`, but without the default value and
    not raising :exc:`KeyError` if the key is missing.
+
+   .. note::
+
+      The operation is atomic on :term:`free threading <free-threaded build>`
+      when *key* is :class:`str`, :class:`int`, :class:`float`, :class:`bool` or :class:`bytes`.
 
    .. versionadded:: 3.13
 
@@ -336,6 +395,13 @@ Dictionary Objects
    only be added if there is not a matching key in *a*. Return ``0`` on
    success or ``-1`` if an exception was raised.
 
+   .. note::
+
+      In the :term:`free-threaded build`, when *b* is a
+      :class:`dict` (with the standard iterator), both *a* and *b* are locked
+      for the duration of the operation. When *b* is a non-dict mapping, only
+      *a* is locked; *b* may be concurrently modified by another thread.
+
 
 .. c:function:: int PyDict_Update(PyObject *a, PyObject *b)
 
@@ -344,6 +410,13 @@ Dictionary Objects
    back to the iterating over a sequence of key value pairs if the second
    argument has no "keys" attribute.  Return ``0`` on success or ``-1`` if an
    exception was raised.
+
+   .. note::
+
+      In the :term:`free-threaded build`, when *b* is a
+      :class:`dict` (with the standard iterator), both *a* and *b* are locked
+      for the duration of the operation. When *b* is a non-dict mapping, only
+      *a* is locked; *b* may be concurrently modified by another thread.
 
 
 .. c:function:: int PyDict_MergeFromSeq2(PyObject *a, PyObject *seq2, int override)
@@ -360,12 +433,26 @@ Dictionary Objects
               if override or key not in a:
                   a[key] = value
 
+   .. note::
+
+      In the :term:`free-threaded <free threading>` build, only *a* is locked.
+      The iteration over *seq2* is not synchronized; *seq2* may be concurrently
+      modified by another thread.
+
+
 .. c:function:: int PyDict_AddWatcher(PyDict_WatchCallback callback)
 
    Register *callback* as a dictionary watcher. Return a non-negative integer
    id which must be passed to future calls to :c:func:`PyDict_Watch`. In case
    of error (e.g. no more watcher IDs available), return ``-1`` and set an
    exception.
+
+   .. note::
+
+      This function is not internally synchronized. In the
+      :term:`free-threaded <free threading>` build, callers should ensure no
+      concurrent calls to :c:func:`PyDict_AddWatcher` or
+      :c:func:`PyDict_ClearWatcher` are in progress.
 
    .. versionadded:: 3.12
 
@@ -374,6 +461,13 @@ Dictionary Objects
    Clear watcher identified by *watcher_id* previously returned from
    :c:func:`PyDict_AddWatcher`. Return ``0`` on success, ``-1`` on error (e.g.
    if the given *watcher_id* was never registered.)
+
+   .. note::
+
+      This function is not internally synchronized. In the
+      :term:`free-threaded <free threading>` build, callers should ensure no
+      concurrent calls to :c:func:`PyDict_AddWatcher` or
+      :c:func:`PyDict_ClearWatcher` are in progress.
 
    .. versionadded:: 3.12
 
