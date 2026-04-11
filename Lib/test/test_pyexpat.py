@@ -281,7 +281,8 @@ class ParseTest(unittest.TestCase):
         # See https://github.com/python/cpython/issues/146169.
         parser = expat.ParserCreate(encoding=encoding)
 
-        CharacterDataHandler = lambda data: parser.Parse(data, False)
+        def CharacterDataHandler(data):
+            return parser.Parse(data, False)
         CharacterDataHandler = mock.Mock(wraps=CharacterDataHandler)
         def StartElementHandler(name, attrs):
             parser.CharacterDataHandler = CharacterDataHandler
@@ -292,6 +293,25 @@ class ParseTest(unittest.TestCase):
         with self.assertRaisesRegex(RuntimeError, msg):
             for i in range(len(payload)):
                 parser.Parse(payload[i:i+1], i == len(payload) - 1)
+        CharacterDataHandler.assert_called_once_with("x")
+
+    @support.subTests("encoding", ("utf-8", "utf-16"))
+    def test_parse_file_reentrancy_with_encoding(self, encoding):
+        # See https://github.com/python/cpython/issues/146169.
+        parser = expat.ParserCreate(encoding=encoding)
+
+        def CharacterDataHandler(data):
+            return parser.ParseFile(BytesIO(data.encode(encoding)))
+        CharacterDataHandler = mock.Mock(wraps=CharacterDataHandler)
+        def StartElementHandler(name, attrs):
+            parser.CharacterDataHandler = CharacterDataHandler
+        parser.StartElementHandler = StartElementHandler
+
+        payload = "<a>x".encode(encoding)
+        payload_buffer = BytesIO(payload)
+        msg = re.escape("cannot call ParseFile() from within a handler")
+        with self.assertRaisesRegex(RuntimeError, msg):
+            parser.ParseFile(payload_buffer)
         CharacterDataHandler.assert_called_once_with("x")
 
     @support.subTests("encoding", ("utf-8", "utf-16"))
@@ -319,6 +339,33 @@ class ParseTest(unittest.TestCase):
         # Check that external parsers be called from parent's handlers.
         for i in range(len(payload)):
             parser.Parse(payload[i:i+1], i == len(payload) - 1)
+        external_ref_args = ('ext', None, 'entity.file', None)
+        ExternalEntityRefHandler.assert_called_once_with(*external_ref_args)
+
+    @support.subTests("encoding", ("utf-8", "utf-16"))
+    def test_parse_file_reentrancy_allowed_for_external_parser(self, encoding):
+        parser = expat.ParserCreate(encoding=encoding)
+        subparser = parser.ExternalEntityParserCreate(None, encoding)
+        payload_extstr = '<!ENTITY ext SYSTEM "entity.file">'
+
+        def ExternalEntityRefHandler(*args):
+            subparser.ParseFile(BytesIO(payload_extstr.encode(encoding)))
+            # return a nonzero integer to indicate that parsing continues
+            return 1
+        ExternalEntityRefHandler = mock.Mock(wraps=ExternalEntityRefHandler)
+
+        def StartElementHandler(*args):
+            parser.ExternalEntityRefHandler = ExternalEntityRefHandler
+        parser.StartElementHandler = StartElementHandler
+
+        payload = textwrap.dedent(f"""\
+            <?xml version="1.0" standalone="no"?>
+            <!DOCTYPE quotations SYSTEM "quotations.dtd" [{payload_extstr}]>
+            <root>&ext;</root>
+        """).encode(encoding)
+
+        # Check that external parsers be called from parent's handlers.
+        parser.ParseFile(BytesIO(payload))
         external_ref_args = ('ext', None, 'entity.file', None)
         ExternalEntityRefHandler.assert_called_once_with(*external_ref_args)
 
