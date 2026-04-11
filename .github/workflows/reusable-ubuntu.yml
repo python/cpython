@@ -12,7 +12,8 @@ on:
         type: boolean
         default: false
 
-permissions: {}
+permissions:
+  contents: read
 
 env:
   FORCE_COLOR: 1
