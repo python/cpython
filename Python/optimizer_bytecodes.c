@@ -1364,6 +1364,10 @@ dummy_func(void) {
         callable = sym_new_not_null(ctx);
     }
 
+    op(_CALL_BUILTIN_CLASS, (callable, self_or_null, args[oparg] -- callable, self_or_null, args[oparg])) {
+        callable = sym_new_not_null(ctx);
+    }
+
     op(_GUARD_CALLABLE_METHOD_DESCRIPTOR_O, (callable, self_or_null, args[oparg] -- callable, self_or_null, args[oparg])) {
         PyObject *callable_o = sym_get_const(ctx, callable);
         if (callable_o && sym_matches_type(callable, &PyMethodDescr_Type) &&

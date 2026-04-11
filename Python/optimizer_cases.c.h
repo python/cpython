@@ -3950,12 +3950,10 @@
         }
 
         case _CALL_BUILTIN_CLASS: {
-            JitOptRef res;
-            res = sym_new_not_null(ctx);
-            CHECK_STACK_BOUNDS(-1 - oparg);
-            stack_pointer[-2 - oparg] = res;
-            stack_pointer += -1 - oparg;
-            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+            JitOptRef callable;
+            callable = stack_pointer[-2 - oparg];
+            callable = sym_new_not_null(ctx);
+            stack_pointer[-2 - oparg] = callable;
             break;
         }
 
