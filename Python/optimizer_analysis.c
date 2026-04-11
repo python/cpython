@@ -677,9 +677,6 @@ const uint16_t op_without_push[MAX_UOP_ID + 1] = {
     [_LOAD_FAST] = _NOP,
     [_LOAD_FAST_BORROW] = _NOP,
     [_LOAD_SMALL_INT] = _NOP,
-    [_POP_TOP_LOAD_CONST_INLINE] = _POP_TOP,
-    [_POP_TOP_LOAD_CONST_INLINE_BORROW] = _POP_TOP,
-    [_POP_TWO_LOAD_CONST_INLINE_BORROW] = _POP_TWO,
 };
 
 const bool op_skip[MAX_UOP_ID + 1] = {
@@ -695,10 +692,7 @@ const uint16_t op_without_pop[MAX_UOP_ID + 1] = {
     [_POP_TOP_INT] = _NOP,
     [_POP_TOP_FLOAT] = _NOP,
     [_POP_TOP_UNICODE] = _NOP,
-    [_POP_TOP_LOAD_CONST_INLINE] = _LOAD_CONST_INLINE,
-    [_POP_TOP_LOAD_CONST_INLINE_BORROW] = _LOAD_CONST_INLINE_BORROW,
     [_POP_TWO] = _POP_TOP,
-    [_POP_TWO_LOAD_CONST_INLINE_BORROW] = _POP_TOP_LOAD_CONST_INLINE_BORROW,
     [_POP_CALL_TWO] = _POP_CALL_ONE,
     [_POP_CALL_ONE] = _POP_CALL,
 };
@@ -739,9 +733,9 @@ remove_unneeded_uops(_PyUOpInstruction *buffer, int buffer_size)
             default:
             {
                 // Cancel out pushes and pops, repeatedly. So:
-                //     _LOAD_FAST + _POP_TWO_LOAD_CONST_INLINE_BORROW + _POP_TOP
+                //     _LOAD_FAST + _POP_TWO + _LOAD_CONST_INLINE_BORROW + _POP_TOP
                 // ...becomes:
-                //     _NOP + _POP_TOP + _NOP
+                //     _NOP + _POP_TOP + _NOP + _NOP
                 while (op_without_pop[opcode] || op_without_pop_null[opcode]) {
                     _PyUOpInstruction *last = &buffer[pc - 1];
                     while (op_skip[last->opcode]) {

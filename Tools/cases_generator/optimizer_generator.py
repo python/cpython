@@ -250,12 +250,15 @@ class OptimizerEmitter(Emitter):
                 },
                 2: {
                     # (a, b -- res), usually for binary ops
-                    0: [("_POP_TWO_LOAD_CONST_INLINE_BORROW",
+                    0: [("_POP_TWO", "0, 0"),
+                        ("_LOAD_CONST_INLINE_BORROW",
                          "0, (uintptr_t)result")],
                     # (left, right -- res, left, right)
                     # usually for binary ops with passthrough references
-                    2: [("_INSERT_2_LOAD_CONST_INLINE_BORROW",
-                         "0, (uintptr_t)result")],
+                    2: [("_LOAD_CONST_INLINE_BORROW",
+                         "0, (uintptr_t)result"),
+                        ("_SWAP", "3, 0"),
+                        ("_SWAP", "2, 0")],
                 },
             }
 
