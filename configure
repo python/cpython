@@ -829,6 +829,7 @@ OPENSSL_LDFLAGS
 OPENSSL_LIBS
 OPENSSL_INCLUDES
 ENSUREPIP
+CFLAGS_CEVAL
 SRCDIRS
 THREADHEADERS
 PANEL_LIBS
@@ -30357,6 +30358,52 @@ if test "$have_glibc_memmove_bug" = yes; then
 printf "%s\n" "#define HAVE_GLIBC_MEMMOVE_BUG 1" >>confdefs.h
 
 fi
+
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking if we need to manually block large inlining in ceval.c" >&5
+printf %s "checking if we need to manually block large inlining in ceval.c... " >&6; }
+if test "$cross_compiling" = yes
+then :
+  block_huge_inlining_in_ceval=undefined
+else case e in #(
+  e) cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int main(void) {
+// See gh-148284: Clang 22 seems to have interactions with inlining
+// and the stackref buffer which cause 40 kB of stack usage on x86-64
+// in buggy versions of _PyEval_EvalFrameDefault() in computed goto
+// interpreter. The normal usage seen is normally 1-2 kB.
+#if defined(__clang__) && (__clang_major__ == 22)
+    return 1;
+#else
+    return 0;
+#endif
+}
+
+_ACEOF
+if ac_fn_c_try_run "$LINENO"
+then :
+  block_huge_inlining_in_ceval=no
+else case e in #(
+  e) block_huge_inlining_in_ceval=yes ;;
+esac
+fi
+rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext \
+  conftest.$ac_objext conftest.beam conftest.$ac_ext ;;
+esac
+fi
+
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $block_huge_inlining_in_ceval" >&5
+printf "%s\n" "$block_huge_inlining_in_ceval" >&6; }
+
+if test "$block_huge_inlining_in_ceval" = yes && test "$ac_cv_computed_gotos" = yes; then
+    # gh-148284: Suppress inlining of functions whose stack size exceeds
+    # 512 bytes. This number should be tuned to follow the C stack
+    # consumption in _PyEval_EvalFrameDefault() on computed goto
+    # interpreter.
+    CFLAGS_CEVAL="$CFLAGS_CEVAL -finline-max-stacksize=512"
+fi
+
 
 if test "$ac_cv_gcc_asm_for_x87" = yes; then
     # Some versions of gcc miscompile inline asm:
