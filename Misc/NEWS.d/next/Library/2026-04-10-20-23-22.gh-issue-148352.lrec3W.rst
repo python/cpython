@@ -1,1 +1,1 @@
-Add more colour to :mod:`calendar`'s CLI output. Patch by Hugo van Kemenade.
+Add more color to :mod:`calendar`'s CLI output. Patch by Hugo van Kemenade.
