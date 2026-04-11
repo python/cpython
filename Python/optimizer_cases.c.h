@@ -1177,6 +1177,7 @@
             PyObject *descr = (PyObject *)this_instr->operand0;
             _PyBinaryOpSpecializationDescr *d = (_PyBinaryOpSpecializationDescr *)descr;
             if (d != NULL && d->result_type != NULL) {
+                ADD_OP(_BINARY_OP_EXTEND_INLINE, 0, (uintptr_t)d->action);
                 res = sym_new_type(ctx, d->result_type);
                 if (d->result_unique) {
                     res = PyJitRef_MakeUnique(res);
@@ -1187,6 +1188,22 @@
             }
             l = left;
             r = right;
+            CHECK_STACK_BOUNDS(1);
+            stack_pointer[-2] = res;
+            stack_pointer[-1] = l;
+            stack_pointer[0] = r;
+            stack_pointer += 1;
+            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+            break;
+        }
+
+        case _BINARY_OP_EXTEND_INLINE: {
+            JitOptRef res;
+            JitOptRef l;
+            JitOptRef r;
+            res = sym_new_not_null(ctx);
+            l = sym_new_not_null(ctx);
+            r = sym_new_not_null(ctx);
             CHECK_STACK_BOUNDS(1);
             stack_pointer[-2] = res;
             stack_pointer[-1] = l;
