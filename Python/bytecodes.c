@@ -3845,9 +3845,14 @@ dummy_func(
             _ITER_JUMP_RANGE +
             _ITER_NEXT_RANGE;
 
-        op(_FOR_ITER_GEN_FRAME, (iter, null -- iter, null, gen_frame)) {
+        op(_GUARD_FOR_ITER_GEN_FRAME, (iter, null -- iter, null)) {
             PyGenObject *gen = (PyGenObject *)PyStackRef_AsPyObjectBorrow(iter);
             EXIT_IF(Py_TYPE(gen) != &PyGen_Type);
+        }
+
+        op(_FOR_ITER_GEN_FRAME, (iter, null -- iter, null, gen_frame)) {
+            PyGenObject *gen = (PyGenObject *)PyStackRef_AsPyObjectBorrow(iter);
+            assert(Py_TYPE(gen) == &PyGen_Type);
             EXIT_IF(!gen_try_set_executing((PyGenObject *)gen));
             STAT_INC(FOR_ITER, hit);
             _PyInterpreterFrame *pushed_frame = &gen->gi_iframe;
@@ -3864,6 +3869,7 @@ dummy_func(
             _RECORD_NOS_GEN_FUNC +
             unused/1 +
             _CHECK_PEP_523 +
+            _GUARD_FOR_ITER_GEN_FRAME +
             _FOR_ITER_GEN_FRAME +
             _PUSH_FRAME;
 

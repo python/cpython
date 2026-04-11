@@ -4590,6 +4590,7 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertIn("_FOR_ITER_GEN_FRAME", uops)
         # _POP_TOP_NOP is a sign the optimizer ran and didn't hit bottom.
         self.assertGreaterEqual(count_ops(ex, "_POP_TOP_NOP"), 1)
+        self.assertNotIn("_GUARD_FOR_ITER_GEN_FRAME", uops)
 
     def test_send_gen_frame(self):
 

@@ -3381,6 +3381,18 @@
             break;
         }
 
+        case _GUARD_FOR_ITER_GEN_FRAME: {
+            JitOptRef iter;
+            iter = stack_pointer[-2];
+            if (sym_matches_type(iter, &PyGen_Type)) {
+                ADD_OP(_NOP, 0, 0);
+            }
+            else {
+                sym_set_type(iter, &PyGen_Type);
+            }
+            break;
+        }
+
         case _FOR_ITER_GEN_FRAME: {
             JitOptRef iter;
             JitOptRef gen_frame;

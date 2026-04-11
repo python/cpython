@@ -1134,6 +1134,15 @@ dummy_func(void) {
         }
     }
 
+    op(_GUARD_FOR_ITER_GEN_FRAME, (iter, null -- iter, null)) {
+        if (sym_matches_type(iter, &PyGen_Type)) {
+            ADD_OP(_NOP, 0, 0);
+        }
+        else {
+            sym_set_type(iter, &PyGen_Type);
+        }
+    }
+
     op(_FOR_ITER_GEN_FRAME, (iter, unused -- iter, unused, gen_frame)) {
         _Py_UOpsAbstractFrame *new_frame = frame_new_from_symbol(ctx, iter, NULL, 0);
         if (new_frame == NULL) {

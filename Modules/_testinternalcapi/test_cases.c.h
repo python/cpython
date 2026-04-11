@@ -6104,7 +6104,7 @@
                     JUMP_TO_PREDICTED(FOR_ITER);
                 }
             }
-            // _FOR_ITER_GEN_FRAME
+            // _GUARD_FOR_ITER_GEN_FRAME
             {
                 iter = stack_pointer[-2];
                 PyGenObject *gen = (PyGenObject *)PyStackRef_AsPyObjectBorrow(iter);
@@ -6113,6 +6113,11 @@
                     assert(_PyOpcode_Deopt[opcode] == (FOR_ITER));
                     JUMP_TO_PREDICTED(FOR_ITER);
                 }
+            }
+            // _FOR_ITER_GEN_FRAME
+            {
+                PyGenObject *gen = (PyGenObject *)PyStackRef_AsPyObjectBorrow(iter);
+                assert(Py_TYPE(gen) == &PyGen_Type);
                 if (!gen_try_set_executing((PyGenObject *)gen)) {
                     UPDATE_MISS_STATS(FOR_ITER);
                     assert(_PyOpcode_Deopt[opcode] == (FOR_ITER));
