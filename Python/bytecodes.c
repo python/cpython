@@ -3011,6 +3011,7 @@ dummy_func(
 
         macro(STORE_ATTR_INSTANCE_VALUE) =
             unused/1 +
+            _RECORD_TOS_TYPE +
             _LOCK_OBJECT +
             _GUARD_TYPE_VERSION_LOCKED +
             _GUARD_DORV_NO_DICT +
