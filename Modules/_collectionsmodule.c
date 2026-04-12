@@ -2236,7 +2236,6 @@ defdict_missing(PyObject *op, PyObject *key)
     PyObject *factory = dd->default_factory;
     PyObject *value;
     if (factory == NULL || factory == Py_None) {
-        /* XXX Call dict.__missing__(key) */
         _PyErr_SetKeyError(key);
         return NULL;
     }
