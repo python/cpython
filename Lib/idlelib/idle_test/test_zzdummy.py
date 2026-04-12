@@ -99,9 +99,7 @@ class ZZDummyTest(unittest.TestCase):
         self.assertEqual(zzdummy.idleConf.GetExtensionKeys("ZzDummy"), {'<<z-in>>': ['<Control-Shift-KeyRelease-Insert>']})
         self.assertEqual(zzdummy.idleConf.GetExtensionBindings("ZzDummy"), {'<<z-in>>': ['<Control-Shift-KeyRelease-Insert>'], '<<z-out>>': ['<Control-Shift-KeyRelease-Delete>']})
         # Restore
-        zzdummy.idleConf.userCfg["extensions"].read_dict({
-            "ZzDummy": {'enable': 'False'}
-        })
+        zzdummy.idleConf.userCfg["extensions"].remove_section("ZzDummy")
 
     def test_init(self):
         zz = self.zz
