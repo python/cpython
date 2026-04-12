@@ -18,7 +18,7 @@ STRINGLIB(bytes_join)(PyObject *sep, PyObject *iterable)
     Py_buffer *buffers = NULL;
 #define NB_STATIC_BUFFERS 10
     Py_buffer static_buffers[NB_STATIC_BUFFERS];
-#define GIL_THRESHOLD 1048576
+#define GIL_THRESHOLD 1048576 // 0x100000
     int drop_gil = 1;
     PyThreadState *save = NULL;
 
@@ -81,7 +81,9 @@ STRINGLIB(bytes_join)(PyObject *sep, PyObject *iterable)
              * races anyway, but this is a conservative approach that avoids
              * changing the behaviour of that data race.
              */
-            drop_gil = 0;
+            if (!PyBytes_CheckExact(buffers[i].obj)) {
+                drop_gil = 0;
+            }
         }
         nbufs = i + 1;  /* for error cleanup */
         itemlen = buffers[i].len;
