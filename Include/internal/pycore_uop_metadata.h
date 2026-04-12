@@ -49,14 +49,6 @@ const uint32_t _PyUop_Flags[MAX_UOP_ID+1] = {
     [_LOAD_FAST_6] = HAS_LOCAL_FLAG | HAS_PURE_FLAG,
     [_LOAD_FAST_7] = HAS_LOCAL_FLAG | HAS_PURE_FLAG,
     [_LOAD_FAST] = HAS_ARG_FLAG | HAS_LOCAL_FLAG | HAS_PURE_FLAG,
-    [_LOAD_FAST_BORROW_0] = HAS_LOCAL_FLAG | HAS_PURE_FLAG,
-    [_LOAD_FAST_BORROW_1] = HAS_LOCAL_FLAG | HAS_PURE_FLAG,
-    [_LOAD_FAST_BORROW_2] = HAS_LOCAL_FLAG | HAS_PURE_FLAG,
-    [_LOAD_FAST_BORROW_3] = HAS_LOCAL_FLAG | HAS_PURE_FLAG,
-    [_LOAD_FAST_BORROW_4] = HAS_LOCAL_FLAG | HAS_PURE_FLAG,
-    [_LOAD_FAST_BORROW_5] = HAS_LOCAL_FLAG | HAS_PURE_FLAG,
-    [_LOAD_FAST_BORROW_6] = HAS_LOCAL_FLAG | HAS_PURE_FLAG,
-    [_LOAD_FAST_BORROW_7] = HAS_LOCAL_FLAG | HAS_PURE_FLAG,
     [_LOAD_FAST_BORROW] = HAS_ARG_FLAG | HAS_LOCAL_FLAG | HAS_PURE_FLAG,
     [_LOAD_FAST_AND_CLEAR] = HAS_ARG_FLAG | HAS_LOCAL_FLAG,
     [_LOAD_CONST] = HAS_ARG_FLAG | HAS_CONST_FLAG,
@@ -415,7 +407,6 @@ const uint32_t _PyUop_Flags[MAX_UOP_ID+1] = {
 
 const ReplicationRange _PyUop_Replication[MAX_UOP_ID+1] = {
     [_LOAD_FAST] = { 0, 8 },
-    [_LOAD_FAST_BORROW] = { 0, 8 },
     [_LOAD_SMALL_INT] = { 0, 4 },
     [_SWAP_FAST] = { 0, 8 },
     [_INIT_CALL_PY_EXACT_ARGS] = { 0, 5 },
@@ -549,78 +540,6 @@ const _PyUopCachingInfo _PyUop_Caching[MAX_UOP_ID+1] = {
             { 1, 0, _LOAD_FAST_r01 },
             { 2, 1, _LOAD_FAST_r12 },
             { 3, 2, _LOAD_FAST_r23 },
-            { -1, -1, -1 },
-        },
-    },
-    [_LOAD_FAST_BORROW_0] = {
-        .best = { 0, 1, 2, 2 },
-        .entries = {
-            { 1, 0, _LOAD_FAST_BORROW_0_r01 },
-            { 2, 1, _LOAD_FAST_BORROW_0_r12 },
-            { 3, 2, _LOAD_FAST_BORROW_0_r23 },
-            { -1, -1, -1 },
-        },
-    },
-    [_LOAD_FAST_BORROW_1] = {
-        .best = { 0, 1, 2, 2 },
-        .entries = {
-            { 1, 0, _LOAD_FAST_BORROW_1_r01 },
-            { 2, 1, _LOAD_FAST_BORROW_1_r12 },
-            { 3, 2, _LOAD_FAST_BORROW_1_r23 },
-            { -1, -1, -1 },
-        },
-    },
-    [_LOAD_FAST_BORROW_2] = {
-        .best = { 0, 1, 2, 2 },
-        .entries = {
-            { 1, 0, _LOAD_FAST_BORROW_2_r01 },
-            { 2, 1, _LOAD_FAST_BORROW_2_r12 },
-            { 3, 2, _LOAD_FAST_BORROW_2_r23 },
-            { -1, -1, -1 },
-        },
-    },
-    [_LOAD_FAST_BORROW_3] = {
-        .best = { 0, 1, 2, 2 },
-        .entries = {
-            { 1, 0, _LOAD_FAST_BORROW_3_r01 },
-            { 2, 1, _LOAD_FAST_BORROW_3_r12 },
-            { 3, 2, _LOAD_FAST_BORROW_3_r23 },
-            { -1, -1, -1 },
-        },
-    },
-    [_LOAD_FAST_BORROW_4] = {
-        .best = { 0, 1, 2, 2 },
-        .entries = {
-            { 1, 0, _LOAD_FAST_BORROW_4_r01 },
-            { 2, 1, _LOAD_FAST_BORROW_4_r12 },
-            { 3, 2, _LOAD_FAST_BORROW_4_r23 },
-            { -1, -1, -1 },
-        },
-    },
-    [_LOAD_FAST_BORROW_5] = {
-        .best = { 0, 1, 2, 2 },
-        .entries = {
-            { 1, 0, _LOAD_FAST_BORROW_5_r01 },
-            { 2, 1, _LOAD_FAST_BORROW_5_r12 },
-            { 3, 2, _LOAD_FAST_BORROW_5_r23 },
-            { -1, -1, -1 },
-        },
-    },
-    [_LOAD_FAST_BORROW_6] = {
-        .best = { 0, 1, 2, 2 },
-        .entries = {
-            { 1, 0, _LOAD_FAST_BORROW_6_r01 },
-            { 2, 1, _LOAD_FAST_BORROW_6_r12 },
-            { 3, 2, _LOAD_FAST_BORROW_6_r23 },
-            { -1, -1, -1 },
-        },
-    },
-    [_LOAD_FAST_BORROW_7] = {
-        .best = { 0, 1, 2, 2 },
-        .entries = {
-            { 1, 0, _LOAD_FAST_BORROW_7_r01 },
-            { 2, 1, _LOAD_FAST_BORROW_7_r12 },
-            { 3, 2, _LOAD_FAST_BORROW_7_r23 },
             { -1, -1, -1 },
         },
     },
@@ -3763,30 +3682,6 @@ const uint16_t _PyUop_Uncached[MAX_UOP_REGS_ID+1] = {
     [_LOAD_FAST_r01] = _LOAD_FAST,
     [_LOAD_FAST_r12] = _LOAD_FAST,
     [_LOAD_FAST_r23] = _LOAD_FAST,
-    [_LOAD_FAST_BORROW_0_r01] = _LOAD_FAST_BORROW_0,
-    [_LOAD_FAST_BORROW_0_r12] = _LOAD_FAST_BORROW_0,
-    [_LOAD_FAST_BORROW_0_r23] = _LOAD_FAST_BORROW_0,
-    [_LOAD_FAST_BORROW_1_r01] = _LOAD_FAST_BORROW_1,
-    [_LOAD_FAST_BORROW_1_r12] = _LOAD_FAST_BORROW_1,
-    [_LOAD_FAST_BORROW_1_r23] = _LOAD_FAST_BORROW_1,
-    [_LOAD_FAST_BORROW_2_r01] = _LOAD_FAST_BORROW_2,
-    [_LOAD_FAST_BORROW_2_r12] = _LOAD_FAST_BORROW_2,
-    [_LOAD_FAST_BORROW_2_r23] = _LOAD_FAST_BORROW_2,
-    [_LOAD_FAST_BORROW_3_r01] = _LOAD_FAST_BORROW_3,
-    [_LOAD_FAST_BORROW_3_r12] = _LOAD_FAST_BORROW_3,
-    [_LOAD_FAST_BORROW_3_r23] = _LOAD_FAST_BORROW_3,
-    [_LOAD_FAST_BORROW_4_r01] = _LOAD_FAST_BORROW_4,
-    [_LOAD_FAST_BORROW_4_r12] = _LOAD_FAST_BORROW_4,
-    [_LOAD_FAST_BORROW_4_r23] = _LOAD_FAST_BORROW_4,
-    [_LOAD_FAST_BORROW_5_r01] = _LOAD_FAST_BORROW_5,
-    [_LOAD_FAST_BORROW_5_r12] = _LOAD_FAST_BORROW_5,
-    [_LOAD_FAST_BORROW_5_r23] = _LOAD_FAST_BORROW_5,
-    [_LOAD_FAST_BORROW_6_r01] = _LOAD_FAST_BORROW_6,
-    [_LOAD_FAST_BORROW_6_r12] = _LOAD_FAST_BORROW_6,
-    [_LOAD_FAST_BORROW_6_r23] = _LOAD_FAST_BORROW_6,
-    [_LOAD_FAST_BORROW_7_r01] = _LOAD_FAST_BORROW_7,
-    [_LOAD_FAST_BORROW_7_r12] = _LOAD_FAST_BORROW_7,
-    [_LOAD_FAST_BORROW_7_r23] = _LOAD_FAST_BORROW_7,
     [_LOAD_FAST_BORROW_r01] = _LOAD_FAST_BORROW,
     [_LOAD_FAST_BORROW_r12] = _LOAD_FAST_BORROW,
     [_LOAD_FAST_BORROW_r23] = _LOAD_FAST_BORROW,
@@ -5482,38 +5377,6 @@ const char *const _PyOpcode_uop_name[MAX_UOP_REGS_ID+1] = {
     [_LOAD_FAST_BORROW_r01] = "_LOAD_FAST_BORROW_r01",
     [_LOAD_FAST_BORROW_r12] = "_LOAD_FAST_BORROW_r12",
     [_LOAD_FAST_BORROW_r23] = "_LOAD_FAST_BORROW_r23",
-    [_LOAD_FAST_BORROW_0] = "_LOAD_FAST_BORROW_0",
-    [_LOAD_FAST_BORROW_0_r01] = "_LOAD_FAST_BORROW_0_r01",
-    [_LOAD_FAST_BORROW_0_r12] = "_LOAD_FAST_BORROW_0_r12",
-    [_LOAD_FAST_BORROW_0_r23] = "_LOAD_FAST_BORROW_0_r23",
-    [_LOAD_FAST_BORROW_1] = "_LOAD_FAST_BORROW_1",
-    [_LOAD_FAST_BORROW_1_r01] = "_LOAD_FAST_BORROW_1_r01",
-    [_LOAD_FAST_BORROW_1_r12] = "_LOAD_FAST_BORROW_1_r12",
-    [_LOAD_FAST_BORROW_1_r23] = "_LOAD_FAST_BORROW_1_r23",
-    [_LOAD_FAST_BORROW_2] = "_LOAD_FAST_BORROW_2",
-    [_LOAD_FAST_BORROW_2_r01] = "_LOAD_FAST_BORROW_2_r01",
-    [_LOAD_FAST_BORROW_2_r12] = "_LOAD_FAST_BORROW_2_r12",
-    [_LOAD_FAST_BORROW_2_r23] = "_LOAD_FAST_BORROW_2_r23",
-    [_LOAD_FAST_BORROW_3] = "_LOAD_FAST_BORROW_3",
-    [_LOAD_FAST_BORROW_3_r01] = "_LOAD_FAST_BORROW_3_r01",
-    [_LOAD_FAST_BORROW_3_r12] = "_LOAD_FAST_BORROW_3_r12",
-    [_LOAD_FAST_BORROW_3_r23] = "_LOAD_FAST_BORROW_3_r23",
-    [_LOAD_FAST_BORROW_4] = "_LOAD_FAST_BORROW_4",
-    [_LOAD_FAST_BORROW_4_r01] = "_LOAD_FAST_BORROW_4_r01",
-    [_LOAD_FAST_BORROW_4_r12] = "_LOAD_FAST_BORROW_4_r12",
-    [_LOAD_FAST_BORROW_4_r23] = "_LOAD_FAST_BORROW_4_r23",
-    [_LOAD_FAST_BORROW_5] = "_LOAD_FAST_BORROW_5",
-    [_LOAD_FAST_BORROW_5_r01] = "_LOAD_FAST_BORROW_5_r01",
-    [_LOAD_FAST_BORROW_5_r12] = "_LOAD_FAST_BORROW_5_r12",
-    [_LOAD_FAST_BORROW_5_r23] = "_LOAD_FAST_BORROW_5_r23",
-    [_LOAD_FAST_BORROW_6] = "_LOAD_FAST_BORROW_6",
-    [_LOAD_FAST_BORROW_6_r01] = "_LOAD_FAST_BORROW_6_r01",
-    [_LOAD_FAST_BORROW_6_r12] = "_LOAD_FAST_BORROW_6_r12",
-    [_LOAD_FAST_BORROW_6_r23] = "_LOAD_FAST_BORROW_6_r23",
-    [_LOAD_FAST_BORROW_7] = "_LOAD_FAST_BORROW_7",
-    [_LOAD_FAST_BORROW_7_r01] = "_LOAD_FAST_BORROW_7_r01",
-    [_LOAD_FAST_BORROW_7_r12] = "_LOAD_FAST_BORROW_7_r12",
-    [_LOAD_FAST_BORROW_7_r23] = "_LOAD_FAST_BORROW_7_r23",
     [_LOAD_FAST_CHECK] = "_LOAD_FAST_CHECK",
     [_LOAD_FAST_CHECK_r01] = "_LOAD_FAST_CHECK_r01",
     [_LOAD_FAST_CHECK_r12] = "_LOAD_FAST_CHECK_r12",
@@ -5890,22 +5753,6 @@ int _PyUop_num_popped(int opcode, int oparg)
         case _LOAD_FAST_7:
             return 0;
         case _LOAD_FAST:
-            return 0;
-        case _LOAD_FAST_BORROW_0:
-            return 0;
-        case _LOAD_FAST_BORROW_1:
-            return 0;
-        case _LOAD_FAST_BORROW_2:
-            return 0;
-        case _LOAD_FAST_BORROW_3:
-            return 0;
-        case _LOAD_FAST_BORROW_4:
-            return 0;
-        case _LOAD_FAST_BORROW_5:
-            return 0;
-        case _LOAD_FAST_BORROW_6:
-            return 0;
-        case _LOAD_FAST_BORROW_7:
             return 0;
         case _LOAD_FAST_BORROW:
             return 0;

@@ -580,6 +580,209 @@ combine_symbol_mask(const symbol_mask src, symbol_mask dest)
     }
 }
 
+// Manual code emission for _LOAD_FAST_BORROW.
+// Instead of using stencils, we directly encode the load + borrow-tag sequence.
+// Stencil generation for _LOAD_FAST_BORROW register variants is skipped
+// in Tools/jit/_targets.py since manual codegen handles all reachable opargs.
+// References:
+//   x86-64: https://godbolt.org/z/5oWMTeqod
+//   i686:   https://godbolt.org/z/1EEP75Wda
+// TODO: With dynasm, the per-architecture #ifdef branches below could be
+// replaced by a single portable emission sequence.
+
+// Decode a _LOAD_FAST_BORROW* opcode into register variant and oparg.
+// Returns 1 if the opcode is a _LOAD_FAST_BORROW variant, 0 otherwise.
+static int
+_decode_load_fast_borrow(uint16_t opcode, uint16_t insn_oparg,
+                         int *reg_variant, int *oparg)
+{
+    if (opcode >= _LOAD_FAST_BORROW_r01 && opcode <= _LOAD_FAST_BORROW_r23) {
+        *reg_variant = opcode - _LOAD_FAST_BORROW_r01;
+        *oparg = insn_oparg;
+        return 1;
+    }
+    return 0;
+}
+
+#if defined(__aarch64__) || defined(_M_ARM64)
+
+// AArch64: preserve_none CC: x21=frame, x24/x25/x26=cache0/1/2
+// Small oparg (imm12 fits): ldr x8, [x21, #off] ; orr xDST, x8, #1  (8 bytes)
+// Large oparg:  mov w8, #off ; ldr x8, [x21, x8] ; orr xDST, x8, #1  (12 bytes)
+// https://developer.arm.com/documentation/ddi0602/2024-06/Base-Instructions/LDR--immediate---Load-register--immediate--?lang=en
+
+static const uint32_t _aarch64_cache_regs[3] = {24, 25, 26};
+
+static int
+_load_fast_borrow_code_size(int oparg)
+{
+    uint32_t byte_offset = (uint32_t)(offsetof(_PyInterpreterFrame, localsplus)
+                                      + (unsigned)oparg * sizeof(_PyStackRef));
+    uint32_t imm12 = byte_offset >> 3;
+    return imm12 < 4096 ? 8 : 12;
+}
+
+static void
+_emit_load_fast_borrow(unsigned char *code, int reg_variant, int oparg)
+{
+    uint32_t byte_offset = (uint32_t)(offsetof(_PyInterpreterFrame, localsplus)
+                                      + (unsigned)oparg * sizeof(_PyStackRef));
+    assert(byte_offset % 8 == 0);
+    uint32_t dst = _aarch64_cache_regs[reg_variant];
+    uint32_t imm12 = byte_offset >> 3;
+
+    if (imm12 < 4096) {
+        // ldr x8, [x21, #byte_offset]
+        uint32_t ldr = 0xF9400000 | (imm12 << 10) | (21 << 5) | 8;
+        // orr xDST, x8, #0x1
+        uint32_t orr = 0xB2400000 | (8 << 5) | dst;
+
+        memcpy(code, &ldr, 4);
+        memcpy(code + 4, &orr, 4);
+    }
+    else {
+        // mov w8, #byte_offset
+        uint32_t mov = 0x52800000 | ((byte_offset & 0xFFFF) << 5) | 8;
+        // ldr x8, [x21, x8]
+        uint32_t ldr = 0xF8686AA8;
+        // orr xDST, x8, #0x1
+        uint32_t orr = 0xB2400000 | (8 << 5) | dst;
+
+        memcpy(code, &mov, 4);
+        memcpy(code + 4, &ldr, 4);
+        memcpy(code + 8, &orr, 4);
+    }
+}
+
+#elif defined(__x86_64__) || defined(_M_X64)
+
+// x86_64: mov rDST, [r13 + disp] ; or rDST, 1
+// disp8 (8 bytes) when byte_offset <= 127, disp32 (11 bytes) otherwise.
+// preserve_none CC (Clang 19+): r13=frame, rdi/rsi/rdx=cache0/1/2
+#define LOAD_FAST_BORROW_CODE_SIZE_DISP8  8
+#define LOAD_FAST_BORROW_CODE_SIZE_DISP32 11
+
+// 3-bit register encodings for ModRM
+static const uint8_t _x86_64_cache_regs[3] = {
+    7,  // RDI (cache0, r01)
+    6,  // RSI (cache1, r12)
+    2,  // RDX (cache2, r23)
+};
+
+static int
+_load_fast_borrow_code_size(int oparg)
+{
+    uint32_t byte_offset = (uint32_t)(offsetof(_PyInterpreterFrame, localsplus)
+                                      + (unsigned)oparg * sizeof(_PyStackRef));
+    return byte_offset <= 127
+        ? LOAD_FAST_BORROW_CODE_SIZE_DISP8
+        : LOAD_FAST_BORROW_CODE_SIZE_DISP32;
+}
+
+static void
+_emit_load_fast_borrow(unsigned char *code, int reg_variant, int oparg)
+{
+    uint32_t byte_offset = (uint32_t)(offsetof(_PyInterpreterFrame, localsplus)
+                                      + (unsigned)oparg * sizeof(_PyStackRef));
+    uint8_t dst = _x86_64_cache_regs[reg_variant];
+
+    if (byte_offset <= 127) {
+        // mov rDST, [r13 + disp8]
+        code[0] = 0x49;                // REX.W=1, REX.B=1 (r13)
+        code[1] = 0x8B;                // MOV r64, r/m64
+        code[2] = 0x45 | (dst << 3);   // ModRM: mod=01, reg=dst, r/m=101(r13)
+        code[3] = (uint8_t)byte_offset; // disp8
+
+        // or rDST, 1
+        code[4] = 0x48;                // REX.W=1
+        code[5] = 0x83;                // OR r/m64, imm8
+        code[6] = 0xC8 | dst;          // ModRM: mod=11, reg=001(/1), r/m=dst
+        code[7] = 0x01;                // imm8 = 1
+    }
+    else {
+        // mov rDST, [r13 + disp32]
+        code[0] = 0x49;                    // REX.W=1, REX.B=1 (r13)
+        code[1] = 0x8B;                    // MOV r64, r/m64
+        code[2] = 0x85 | (dst << 3);      // ModRM: mod=10, reg=dst, r/m=101(r13)
+        memcpy(code + 3, &byte_offset, 4); // disp32
+
+        // or rDST, 1
+        code[7] = 0x48;                    // REX.W=1
+        code[8] = 0x83;                    // OR r/m64, imm8
+        code[9] = 0xC8 | dst;             // ModRM: mod=11, reg=001(/1), r/m=dst
+        code[10] = 0x01;                   // imm8 = 1
+    }
+}
+
+#elif defined(_M_IX86) || defined(__i386__)
+
+// i686: movl 8(%esp),%ecx ; movl off(%ecx),%ecx ; orl $1,%ecx ;
+//       movl %ecx,cache(%esp)
+// disp8 (14 bytes) when byte_offset <= 127, disp32 (17 bytes) otherwise.
+// i686 does not use preserve_none (unsupported by MSVC).
+// Stack layout: 8(%esp)=frame, 20/24/28(%esp)=cache0/1/2
+#define LOAD_FAST_BORROW_CODE_SIZE_DISP8  14
+#define LOAD_FAST_BORROW_CODE_SIZE_DISP32 17
+
+// Stack offsets for cache slots (from %esp)
+static const uint8_t _i686_cache_offsets[3] = {
+    20,  // c0 (r01)
+    24,  // c1 (r12)
+    28,  // c2 (r23)
+};
+
+static int
+_load_fast_borrow_code_size(int oparg)
+{
+    uint32_t byte_offset = (uint32_t)(offsetof(_PyInterpreterFrame, localsplus)
+                                      + (unsigned)oparg * sizeof(_PyStackRef));
+    return byte_offset <= 127
+        ? LOAD_FAST_BORROW_CODE_SIZE_DISP8
+        : LOAD_FAST_BORROW_CODE_SIZE_DISP32;
+}
+
+static void
+_emit_load_fast_borrow(unsigned char *code, int reg_variant, int oparg)
+{
+    uint32_t byte_offset = (uint32_t)(offsetof(_PyInterpreterFrame, localsplus)
+                                      + (unsigned)oparg * sizeof(_PyStackRef));
+    uint8_t cache_off = _i686_cache_offsets[reg_variant];
+    int p = 0;
+
+    // movl 8(%esp), %ecx              — load frame
+    code[p++] = 0x8B;                  // MOV r32, r/m32
+    code[p++] = 0x4C;                  // ModRM: mod=01, reg=ecx(001), r/m=100(SIB)
+    code[p++] = 0x24;                  // SIB: scale=00, index=100(none), base=100(esp)
+    code[p++] = 0x08;                  // disp8 = 8
+
+    // movl byte_offset(%ecx), %ecx    — load localsplus[oparg]
+    code[p++] = 0x8B;                  // MOV r32, r/m32
+    if (byte_offset <= 127) {
+        code[p++] = 0x49;              // ModRM: mod=01(disp8), reg=ecx(001), r/m=001(ecx)
+        code[p++] = (uint8_t)byte_offset; // disp8
+    }
+    else {
+        code[p++] = 0x89;              // ModRM: mod=10(disp32), reg=ecx(001), r/m=001(ecx)
+        memcpy(code + p, &byte_offset, 4); // disp32
+        p += 4;
+    }
+
+    // orl $1, %ecx                    — borrow tag
+    code[p++] = 0x83;                  // OR r/m32, imm8
+    code[p++] = 0xC9;                  // ModRM: mod=11, reg=001(/1), r/m=001(ecx)
+    code[p++] = 0x01;                  // imm8 = 1
+
+    // movl %ecx, cache_off(%esp)      — write to cache slot
+    code[p++] = 0x89;                  // MOV r/m32, r32
+    code[p++] = 0x4C;                  // ModRM: mod=01, reg=ecx(001), r/m=100(SIB)
+    code[p++] = 0x24;                  // SIB: scale=00, index=100(none), base=100(esp)
+    code[p++] = cache_off;             // disp8
+}
+
+#else
+#  error "unsupported architecture for manual _LOAD_FAST_BORROW emission"
+#endif
+
 // Compiles executor in-place. Don't forget to call _PyJIT_Free later!
 int
 _PyJIT_Compile(_PyExecutorObject *executor, const _PyUOpInstruction trace[], size_t length)
@@ -591,8 +794,14 @@ _PyJIT_Compile(_PyExecutorObject *executor, const _PyUOpInstruction trace[], siz
     jit_state state = {0};
     for (size_t i = 0; i < length; i++) {
         const _PyUOpInstruction *instruction = &trace[i];
-        group = &stencil_groups[instruction->opcode];
         state.instruction_starts[i] = code_size;
+        int _lfb_reg, _lfb_oparg;
+        if (_decode_load_fast_borrow(instruction->opcode, instruction->oparg,
+                                     &_lfb_reg, &_lfb_oparg)) {
+            code_size += _load_fast_borrow_code_size(_lfb_oparg);
+            continue;
+        }
+        group = &stencil_groups[instruction->opcode];
         code_size += group->code_size;
         data_size += group->data_size;
         combine_symbol_mask(group->trampoline_mask, state.trampolines.mask);
@@ -640,6 +849,13 @@ _PyJIT_Compile(_PyExecutorObject *executor, const _PyUOpInstruction trace[], siz
     state.got_symbols.mem = data + data_size;
     for (size_t i = 0; i < length; i++) {
         const _PyUOpInstruction *instruction = &trace[i];
+        int _lfb_reg, _lfb_oparg;
+        if (_decode_load_fast_borrow(instruction->opcode, instruction->oparg,
+                                     &_lfb_reg, &_lfb_oparg)) {
+            _emit_load_fast_borrow(code, _lfb_reg, _lfb_oparg);
+            code += _load_fast_borrow_code_size(_lfb_oparg);
+            continue;
+        }
         group = &stencil_groups[instruction->opcode];
         group->emit(code, data, executor, instruction, &state);
         code += group->code_size;
