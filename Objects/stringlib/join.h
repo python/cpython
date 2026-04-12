@@ -81,7 +81,8 @@ STRINGLIB(bytes_join)(PyObject *sep, PyObject *iterable)
              * races anyway, but this is a conservative approach that avoids
              * changing the behaviour of that data race.
              */
-            if (!PyBytes_CheckExact(buffers[i].obj)) {
+            PyObject *bufobj = buffers[i].obj;
+            if (!bufobj || !PyBytes_CheckExact(bufobj)) {
                 drop_gil = 0;
             }
         }
