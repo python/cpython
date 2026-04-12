@@ -696,7 +696,6 @@ occurs within the definition of a class. For example:
     class Employee:
         __dept = 'computer lab'
         def __detail(self):
-            # __dept is a private variable,so we access it with _Employee__dept
             print('Employee is from',self.__dept)
 
 .. code-block:: pycon
