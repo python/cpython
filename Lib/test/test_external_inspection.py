@@ -1,6 +1,5 @@
 import unittest
 import os
-import json
 import textwrap
 import contextlib
 import importlib
@@ -418,91 +417,6 @@ class RemoteInspectionTestBase(unittest.TestCase):
         """
         filename, location, funcname, opcode = frame
         return (filename, location.lineno, funcname, opcode)
-
-    @contextmanager
-    def _poisoned_debug_offsets_process(self, poison_code):
-        script = (
-            textwrap.dedent(
-                """\
-                import json
-                import os
-                import struct
-                import sys
-                import threading
-                import time
-
-                cookie = b"xdebugpy"
-                pid = os.getpid()
-
-                def find_debug_offsets():
-                    with open(f"/proc/{pid}/maps") as f:
-                        for line in f:
-                            parts = line.split()
-                            if len(parts) < 2 or "rw" not in parts[1]:
-                                continue
-                            start, end = (int(x, 16) for x in parts[0].split("-"))
-                            if end - start > 10_000_000:
-                                continue
-                            try:
-                                fd = os.open(f"/proc/{pid}/mem", os.O_RDONLY)
-                                os.lseek(fd, start, 0)
-                                data = os.read(fd, end - start)
-                                os.close(fd)
-                            except OSError:
-                                continue
-                            off = data.find(cookie)
-                            if off == -1:
-                                continue
-                            version = struct.unpack_from("<Q", data, off + 8)[0]
-                            if ((version >> 24) & 0xFF) != sys.version_info.major:
-                                continue
-                            return start + off
-                    raise RuntimeError("debug offsets not found")
-
-                addr = find_debug_offsets()
-                """
-            )
-            + textwrap.dedent(poison_code)
-            + "\n"
-            + textwrap.dedent(
-                """\
-                print(
-                    json.dumps({"pid": pid, "native_tid": threading.get_native_id()}),
-                    flush=True,
-                )
-                time.sleep(60)
-                """
-            )
-        )
-
-        proc = subprocess.Popen(
-            [sys.executable, "-c", script],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            text=True,
-        )
-        try:
-            line = proc.stdout.readline()
-            if not line:
-                stderr = proc.stderr.read()
-                self.fail(
-                    "poisoned child failed to initialize: "
-                    f"{stderr.strip() or 'no stderr output'}"
-                )
-            yield proc, json.loads(line)
-        finally:
-            try:
-                proc.terminate()
-                proc.wait(timeout=SHORT_TIMEOUT)
-            except subprocess.TimeoutExpired:
-                proc.kill()
-                proc.wait(timeout=SHORT_TIMEOUT)
-            except OSError:
-                pass
-            if proc.stdout is not None:
-                proc.stdout.close()
-            if proc.stderr is not None:
-                proc.stderr.close()
 
     def _extract_coroutine_stacks_lineno_only(self, stack_trace):
         """Extract coroutine stacks with line numbers only (no column offsets).
