@@ -1217,6 +1217,13 @@ dummy_func(void) {
         (void)framesize;
     }
 
+    op(_CHECK_IS_NOT_PY_CALLABLE, (callable, unused, unused[oparg] -- callable, unused, unused[oparg])) {
+        PyTypeObject *type = sym_get_type(callable);
+        if (type && type != &PyFunction_Type && type != &PyMethod_Type) {
+            ADD_OP(_NOP, 0, 0);
+        }
+    }
+
     op(_PUSH_FRAME, (new_frame -- )) {
         SYNC_SP();
         if (!CURRENT_FRAME_IS_INIT_SHIM()) {
