@@ -280,7 +280,7 @@ def print_exception():
                     print_exc(type(sub), sub, sub.__traceback__, prefix + "  ")
                 need_print_underline = not isinstance(sub, BaseExceptionGroup)
             else:
-                print(f"{prefix2}  | <exception {type(sub).__name__} has printed>")
+                print(f"{prefix2}  | <exception {type(sub).__name__} has printed>", file=efile)
                 need_print_underline = True
             need_print_underline *= (i == len(exc.exceptions))
             if need_print_underline:
