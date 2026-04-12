@@ -2048,7 +2048,7 @@ Boolean operations
 
 In the context of Boolean operations, and also when expressions are used by
 control flow statements, the following values are interpreted as false:
-``False``, ``None``, numeric zero of all types, and empty strings and containers
+``False``, ``None``, zero of any numeric type, and empty strings and containers
 (including strings, tuples, lists, dictionaries, sets and frozensets).  All
 other values are interpreted as true.  User-defined objects can customize their
 truth value by providing a :meth:`~object.__bool__` method.
