@@ -2409,14 +2409,7 @@
             JitOptRef *self_or_null;
             owner = stack_pointer[-1];
             self_or_null = &stack_pointer[0];
-            PyObject *value = sym_get_probable_value(owner);
-            PyTypeObject *type = NULL;
-            if (value != NULL && PyType_Check(value)) {
-                type = (PyTypeObject *)value;
-            }
-            else {
-                type = sym_get_probable_type(owner);
-            }
+            PyTypeObject *type = sym_get_probable_type(owner);
             if (oparg & 1 && type != NULL) {
                 PyObject *name = get_co_name(ctx, oparg >> 1);
                 PyObject *descr = _PyType_Lookup(type, name);
@@ -2433,19 +2426,13 @@
                     }
                     assert(callable);
                     bool immortal = _Py_IsImmortal(callable) || (type->tp_flags & Py_TPFLAGS_IMMUTABLETYPE);
-                    if (PyType_Check(value)) {
-                        ADD_OP(_CHECK_ATTR_CLASS, 0, type->tp_version_tag);
-                    }
-                    else {
-                        ADD_OP(_GUARD_TYPE_VERSION, 0, type->tp_version_tag);
-                    }
+                    ADD_OP(_GUARD_TYPE_VERSION, 0, type->tp_version_tag);
                     ADD_OP(_POP_TOP, 0, 0);
                     ADD_OP(immortal ? _LOAD_CONST_INLINE_BORROW : _LOAD_CONST_INLINE, 0, (uintptr_t)callable);
                     if (class_method) {
                         ADD_OP(_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)type);
                         self_or_null[0] = sym_new_const(ctx, (PyObject *)type);
-                    }
-                    else {
+                    } else if (static_method) {
                         ADD_OP(_PUSH_NULL, 0, 0);
                         self_or_null[0] = sym_new_null(ctx);
                     }
@@ -2456,14 +2443,12 @@
                     ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
                     PyType_Watch(TYPE_WATCHER_ID, (PyObject *)type);
                     _Py_BloomFilter_Add(dependencies, (PyTypeObject *)type);
-                }
-                else {
+                } else {
                     attr = sym_new_not_null(ctx);
                     self_or_null[0] = sym_new_unknown(ctx);
                     stack_pointer += (oparg&1);
                 }
-            }
-            else {
+            } else {
                 attr = sym_new_not_null(ctx);
                 stack_pointer += (oparg&1);
             }

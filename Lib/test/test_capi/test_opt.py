@@ -3196,12 +3196,10 @@ class TestUopsOptimization(unittest.TestCase):
                 x += e.m()  # _LOAD_ATTR_METHOD_LAZY_DICT
                 x += f.class_method()  # _LOAD_ATTR
                 x += f.static_method()  # _LOAD_ATTR
-                x += F.class_method()  # _LOAD_ATTR
-                x += F.static_method()  # _LOAD_ATTR
             return x
 
         res, ex = self._run_with_optimizer(f, TIER2_THRESHOLD)
-        self.assertEqual(res, 10 * TIER2_THRESHOLD)
+        self.assertEqual(res, 8 * TIER2_THRESHOLD)
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
         self.assertNotIn("_LOAD_ATTR", uops)
