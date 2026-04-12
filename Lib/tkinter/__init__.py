@@ -33,9 +33,9 @@ import _tkinter # If this fails your Python may not be configured for Tk
 from tkinter.constants import *
 import collections
 import enum
+import sys
+import types
 
-lazy import sys
-lazy import types
 lazy import re
 TclError = _tkinter.TclError
 
