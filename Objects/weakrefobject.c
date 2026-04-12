@@ -557,6 +557,21 @@ _proxy_unwrap(PyObject **op, int *did_incref)
     return 1;
 }
 
+/* If a parameter is a proxy, check that it is still "live" and wrap it,
+ * replacing the original value with the raw object.  Raises ReferenceError
+ * if the param is a dead proxy.
+ */
+#define UNWRAP(o) \
+        if (PyWeakref_CheckProxy(o)) { \
+            o = _PyWeakref_GET_REF(o); \
+            if (!proxy_check_ref(o)) { \
+                return NULL; \
+            } \
+        } \
+        else { \
+            Py_INCREF(o); \
+        }
+
 #define WRAP_UNARY(method, generic) \
     static PyObject * \
     method(PyObject *proxy) { \
