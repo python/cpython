@@ -237,7 +237,7 @@ add_op(JitOptContext *ctx, _PyUOpInstruction *this_instr,
     ctx->out_buffer.next++;
 }
 
-#define PROMOTE_TO_CONSTANT_POOL _Py_uop_promote_to_constant_pool
+#define sym_promote_to_constant_pool _Py_uop_promote_to_constant_pool
 
 /* Shortened forms for convenience, used in optimizer_bytecodes.c */
 #define sym_is_not_null _Py_uop_sym_is_not_null
