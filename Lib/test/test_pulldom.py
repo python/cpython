@@ -34,7 +34,7 @@ class PullDOMTestCase(unittest.TestCase):
 
         # Test with a filename:
         handler = pulldom.parse(tstfile)
-        self.addCleanup(handler.stream.close)
+        self.addCleanup(handler.close)
         list(handler)
 
         # Test with a file object:
