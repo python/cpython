@@ -1585,8 +1585,10 @@ class TestUopsOptimization(unittest.TestCase):
         _, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
-        self.assertIn("_ALLOCATE_OBJECT", uops)
-        self.assertNotIn("_CHECK_OBJECT", uops)
+        # The __init__ call should be traced through via _PUSH_FRAME
+        self.assertIn("_PUSH_FRAME", uops)
+        # __init__ resolution allows promotion of range to constant
+        self.assertNotIn("_LOAD_GLOBAL_BUILTINS", uops)
 
     def test_guard_type_version_locked_propagates(self):
         """
