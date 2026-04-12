@@ -41,7 +41,6 @@ def get_last_item(gc_stats: tuple[dict[str, str|int|float]],
     return item
 
 
-@requires_gil_enabled()
 @requires_remote_subprocess_debugging()
 class TestGetGCStats(unittest.TestCase):
 
@@ -163,18 +162,21 @@ class TestGetGCStats(unittest.TestCase):
             self.assertIsInstance(item, dict)
             self.assertEqual(sorted(item.keys()), keys)
 
+    @requires_gil_enabled()
     def test_get_gc_stats_for_main_interpreter(self):
         script = textwrap.dedent(self._script.format(False))
         before_stats, after_stats = self._collect_gc_stats(script, False)
 
         self._check_interpreter_gc_stats(before_stats,after_stats)
 
+    @requires_gil_enabled()
     def test_get_gc_stats_for_main_interpreter_if_subinterpreter_exists(self):
         script = textwrap.dedent(self._script.format(True))
         before_stats, after_stats = self._collect_gc_stats(script, False)
 
         self._check_interpreter_gc_stats(before_stats, after_stats)
 
+    @requires_gil_enabled()
     def test_get_gc_stats_for_all_interpreters(self):
         script = textwrap.dedent(self._script.format(True))
         before_stats, after_stats = self._collect_gc_stats(script, True)
