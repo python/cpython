@@ -667,8 +667,8 @@ codegen_unwind_fblock_stack(compiler *c, location *ploc,
     _PyCompile_PopFBlock(c, top->fb_type, top->fb_block);
     RETURN_IF_ERROR(codegen_unwind_fblock(c, ploc, &copy, preserve_tos));
     RETURN_IF_ERROR(codegen_unwind_fblock_stack(c, ploc, preserve_tos, loop));
-    _PyCompile_PushFBlock(c, copy.fb_loc, copy.fb_type, copy.fb_block,
-                          copy.fb_exit, copy.fb_datum);
+    RETURN_IF_ERROR(_PyCompile_PushFBlock(c, copy.fb_loc, copy.fb_type, copy.fb_block,
+                          copy.fb_exit, copy.fb_datum));
     return SUCCESS;
 }
 
@@ -715,10 +715,14 @@ codegen_setup_annotations_scope(compiler *c, location loc,
 
     // if .format > VALUE_WITH_FAKE_GLOBALS: raise NotImplementedError
     PyObject *value_with_fake_globals = PyLong_FromLong(_Py_ANNOTATE_FORMAT_VALUE_WITH_FAKE_GLOBALS);
+    if (value_with_fake_globals == NULL) {
+        return ERROR;
+    }
+
     assert(!SYMTABLE_ENTRY(c)->ste_has_docstring);
     _Py_DECLARE_STR(format, ".format");
     ADDOP_I(c, loc, LOAD_FAST, 0);
-    ADDOP_LOAD_CONST(c, loc, value_with_fake_globals);
+    ADDOP_LOAD_CONST_NEW(c, loc, value_with_fake_globals);
     ADDOP_I(c, loc, COMPARE_OP, (Py_GT << 5) | compare_masks[Py_GT]);
     NEW_JUMP_TARGET_LABEL(c, body);
     ADDOP_JUMP(c, loc, POP_JUMP_IF_FALSE, body);
@@ -794,6 +798,9 @@ codegen_deferred_annotations_body(compiler *c, location loc,
         if (!mangled) {
             return ERROR;
         }
+        // NOTE: ref of mangled can be leaked on ADDOP* and VISIT macros due to early returns
+        // fixing would require an overhaul of these macros
+
         PyObject *cond_index = PyList_GET_ITEM(conditional_annotation_indices, i);
         assert(PyLong_CheckExact(cond_index));
         long idx = PyLong_AS_LONG(cond_index);
@@ -3279,7 +3286,10 @@ codegen_nameop(compiler *c, location loc,
     }
 
     int scope = _PyST_GetScope(SYMTABLE_ENTRY(c), mangled);
-    RETURN_IF_ERROR(scope);
+    if (scope == -1) {
+        goto error;
+    }
+
     _PyCompile_optype optype;
     Py_ssize_t arg = 0;
     if (_PyCompile_ResolveNameop(c, mangled, scope, &optype, &arg) < 0) {

@@ -77,6 +77,14 @@
 #  define Py_BUILD_CORE
 #endif
 
+#if defined(Py_TARGET_ABI3T)
+#  if !defined(Py_GIL_DISABLED)
+// Define Py_GIL_DISABLED for users' needs. This macro is used to enable
+// locking needed in for free-threaded interpreters builds.
+#    define Py_GIL_DISABLED
+#  endif
+#endif
+
 
 /**************************************************************************
 Symbols and macros to supply platform-independent interfaces to basic
@@ -446,7 +454,9 @@ extern "C" {
 /*
  * Specify alignment on compilers that support it.
  */
-#if defined(__GNUC__) && __GNUC__ >= 3
+#ifdef Py_BUILD_CORE
+// always use _Py_ALIGNED_DEF instead
+#elif defined(__GNUC__) && __GNUC__ >= 3
 #define Py_ALIGNED(x) __attribute__((aligned(x)))
 #else
 #define Py_ALIGNED(x)

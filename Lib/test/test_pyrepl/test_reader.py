@@ -10,6 +10,8 @@ from .support import handle_all_events, handle_events_narrow_console
 from .support import ScreenEqualMixin, code_to_events
 from .support import prepare_reader, prepare_console
 from _pyrepl.console import Event
+from _pyrepl.layout import LayoutMap
+from _pyrepl.readline import ReadlineAlikeReader, ReadlineConfig
 from _pyrepl.reader import Reader
 from _colorize import default_theme
 
@@ -18,8 +20,48 @@ overrides = {"reset": "z", "soft_keyword": "K"}
 colors = {overrides.get(k, k[0].lower()): v for k, v in default_theme.syntax.items()}
 
 
+def prepare_reader_multiline_prompt(*args, **kwargs):
+    reader = prepare_reader(*args, **kwargs)
+    del reader.get_prompt
+    reader.ps1 = "Python 3.15\n>>> "
+    reader.ps2 = "Python 3.15\n>>> "
+    reader.ps3 = "Python 3.15\n... "
+    reader.ps4 = "Python 3.15\n... "
+    reader.can_colorize = False
+    reader.paste_mode = False
+    return reader
+
+
 @force_not_colorized_test_class
 class TestReader(ScreenEqualMixin, TestCase):
+    def assert_multiline_prompt_screen(self, code, expected_screen, expected_cxy):
+        reader, _ = handle_all_events(
+            code_to_events(code),
+            prepare_reader=prepare_reader_multiline_prompt,
+        )
+
+        self.assertEqual(reader.screen, expected_screen)
+        self.assertEqual(reader.cxy, expected_cxy)
+
+    def test_multiline_prompt_does_not_duplicate_leading_lines(self):
+        self.assert_multiline_prompt_screen(
+            "abc",
+            ["Python 3.15", ">>> abc"],
+            (7, 1),
+        )
+
+    def test_multiline_prompt_does_not_duplicate_leading_lines_across_buffer_lines(self):
+        self.assert_multiline_prompt_screen(
+            "if x:\n    y",
+            [
+                "Python 3.15",
+                ">>> if x:",
+                "Python 3.15",
+                "...         y",
+            ],
+            (13, 3),
+        )
+
     def test_calc_screen_wrap_simple(self):
         events = code_to_events(10 * "a")
         reader, _ = handle_events_narrow_console(events)
@@ -102,6 +144,22 @@ class TestReader(ScreenEqualMixin, TestCase):
         reader, _ = handle_all_events(events)
         self.assert_screen_equal(reader, "aa")
 
+    def test_refresh_escapes_control_bytes_in_buffer(self):
+        console = prepare_console(())
+        config = ReadlineConfig(readline_completer=None)
+        reader = ReadlineAlikeReader(console=console, config=config)
+        reader.can_colorize = False
+        reader.ps1 = reader.ps2 = ">>> "
+        reader.ps3 = reader.ps4 = "... "
+        reader.buffer = ["\x00", "\x1b"]
+        reader.pos = len(reader.buffer)
+        reader.invalidate_full()
+
+        reader.refresh()
+
+        self.assert_screen_equal(reader, ">>> ^@^[")
+        self.assertEqual(reader.cxy, (8, 0))
+
     def test_calc_screen_wrap_removes_after_backspace(self):
         events = itertools.chain(
             code_to_events(10 * "a"),
@@ -176,7 +234,7 @@ class TestReader(ScreenEqualMixin, TestCase):
         )
 
         reader, _ = handle_all_events(events)
-        self.assert_screen_equal(reader, "")
+        self.assertIn(reader.screen, ([], [""]))
 
     def test_newline_within_block_trailing_whitespace(self):
         # fmt: off
@@ -228,6 +286,7 @@ class TestReader(ScreenEqualMixin, TestCase):
             console.get_event.side_effect = events
             console.height = 100
             console.width = 80
+            console.getheightwidth = MagicMock(side_effect=lambda: (console.height, console.width))
             console.input_hook = input_hook
             return console
 
@@ -300,6 +359,21 @@ class TestReader(ScreenEqualMixin, TestCase):
         self.assertEqual(prompt, "\033[0;32m樂>\033[0m> ")
         self.assertEqual(l, 5)
 
+    def test_prepare_with_zero_width_does_not_crash(self):
+        console = prepare_console([], width=0)
+        reader = ReadlineAlikeReader(console=console, config=ReadlineConfig())
+        reader.ps1 = ">>> "
+        reader.ps2 = ">>> "
+        reader.ps3 = "... "
+        reader.ps4 = ""
+        reader.can_colorize = False
+        reader.paste_mode = False
+
+        reader.prepare()
+
+        self.assertEqual(reader.cxy, (0, 0))
+        self.assertEqual(reader.screen, [])
+
     def test_completions_updated_on_key_press(self):
         namespace = {"itertools": itertools}
         code = "itertools."
@@ -346,8 +420,7 @@ class TestReader(ScreenEqualMixin, TestCase):
     def test_pos2xy_with_no_columns(self):
         console = prepare_console([])
         reader = prepare_reader(console)
-        # Simulate a resize to 0 columns
-        reader.screeninfo = []
+        reader.layout = LayoutMap(())
         self.assertEqual(reader.pos2xy(), (0, 0))
 
     def test_setpos_from_xy_for_non_printing_char(self):
