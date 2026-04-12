@@ -3619,6 +3619,12 @@
             JitOptRef callable;
             callable = stack_pointer[-2 - oparg];
             uint32_t func_version = (uint32_t)this_instr->operand0;
+            PyObject *func = sym_get_probable_value(callable);
+            if (func != NULL && PyFunction_Check(func) &&
+                ((PyFunctionObject *)func)->func_version == func_version) {
+                _Py_BloomFilter_Add(dependencies, func);
+                sym_set_const(callable, func);
+            }
             if (sym_get_func_version(callable) == func_version) {
                 REPLACE_OP(this_instr, _NOP, 0, 0);
             }
@@ -3649,6 +3655,7 @@
                     PyObject *func = method->im_func;
                     if (PyFunction_Check(func) &&
                         ((PyFunctionObject *)func)->func_version == func_version) {
+                        _Py_BloomFilter_Add(dependencies, func);
                         sym_set_const(callable, bound_method);
                     }
                 }
@@ -3712,14 +3719,16 @@
             self_or_null = stack_pointer[-1 - oparg];
             callable = stack_pointer[-2 - oparg];
             PyObject *bound_method = sym_get_probable_value(callable);
-            self_or_null = sym_new_not_null(ctx);
             if (bound_method != NULL && Py_TYPE(bound_method) == &PyMethod_Type) {
                 PyMethodObject *method = (PyMethodObject *)bound_method;
                 callable = sym_new_not_null(ctx);
                 sym_set_recorded_value(callable, method->im_func);
+                self_or_null = sym_new_not_null(ctx);
+                sym_set_recorded_value(self_or_null, method->im_self);
             }
             else {
                 callable = sym_new_not_null(ctx);
+                self_or_null = sym_new_not_null(ctx);
             }
             stack_pointer[-2 - oparg] = callable;
             stack_pointer[-1 - oparg] = self_or_null;
