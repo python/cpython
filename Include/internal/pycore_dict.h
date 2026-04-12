@@ -292,7 +292,7 @@ _PyDict_NotifyEvent(PyDict_WatchEvent event,
                     PyObject *value)
 {
     assert(Py_REFCNT((PyObject*)mp) > 0);
-    int watcher_bits = mp->_ma_watcher_tag & DICT_WATCHER_MASK;
+    int watcher_bits = FT_ATOMIC_LOAD_UINT64_RELAXED(mp->_ma_watcher_tag) & DICT_WATCHER_MASK;
     if (watcher_bits) {
         RARE_EVENT_STAT_INC(watched_dict_modification);
         _PyDict_SendEvent(watcher_bits, event, mp, key, value);
@@ -368,7 +368,7 @@ PyDictObject *_PyObject_MaterializeManagedDict_LockHeld(PyObject *);
 static inline Py_ssize_t
 _PyDict_UniqueId(PyDictObject *mp)
 {
-    return (Py_ssize_t)(mp->_ma_watcher_tag >> DICT_UNIQUE_ID_SHIFT);
+    return (Py_ssize_t)(FT_ATOMIC_LOAD_UINT64_RELAXED(mp->_ma_watcher_tag) >> DICT_UNIQUE_ID_SHIFT);
 }
 
 static inline void
