@@ -8028,7 +8028,7 @@ PyDict_Watch(int watcher_id, PyObject* dict)
     if (validate_watcher_id(interp, watcher_id)) {
         return -1;
     }
-    ((PyDictObject*)dict)->_ma_watcher_tag |= (1LL << watcher_id);
+    FT_ATOMIC_OR_UINT64(((PyDictObject*)dict)->_ma_watcher_tag, (1LL << watcher_id));
     return 0;
 }
 
@@ -8043,7 +8043,7 @@ PyDict_Unwatch(int watcher_id, PyObject* dict)
     if (validate_watcher_id(interp, watcher_id)) {
         return -1;
     }
-    ((PyDictObject*)dict)->_ma_watcher_tag &= ~(1LL << watcher_id);
+    FT_ATOMIC_AND_UINT64(((PyDictObject*)dict)->_ma_watcher_tag, ~(1LL << watcher_id));
     return 0;
 }
 
