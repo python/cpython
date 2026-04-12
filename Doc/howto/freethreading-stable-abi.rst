@@ -11,30 +11,35 @@ a unique kind of Stable ABI with interpreters having the :term:`global interpret
 For 3.14 and 3.13, continue compiling with the version-specific ABI. This document describes how
 to adapt C API extensions to support free threading.
 
-Identifying the Free-Threaded Build in C
-========================================
+Identifying the Free-Threaded Limited API Build in C
+====================================================
 
-The CPython C API exposes the ``Py_GIL_DISABLED`` macro: in the free-threaded
+The CPython C API exposes the :c:macro:`!Py_LIMITED_API` macro: in the free-threaded stable ABI
 build it's defined to ``1``, and in the regular build it's not defined.
 You can use it to enable code that only runs under the free-threaded build::
 
-    #ifdef Py_GIL_DISABLED
-    /* code that only runs in the free-threaded build */
+    #ifdef Py_TARGET_ABI3T
+    /* code that only runs in the free-threaded stable ABI build */
     #endif
 
-.. note::
+If you wish to build youe extension with both ``abi3`` (Stable ABI with GIL) and ``abi3t`` (no-GIL stable ABI) tags,
+do one of the following:
 
-   On Windows, this macro is not defined automatically, but must be specified
-   to the compiler when building. The :func:`sysconfig.get_config_var` function
-   can be used to determine whether the current running interpreter had the
-   macro defined.
+- define both :c:macro:`!Py_LIMITED_API` and :c:macro:`!Py_TARGET_ABI3T`, or
+- define only :c:macro:`!Py_LIMITED_API` and:
 
-``PyObject`` opaqueness
+  - on Windows, define :c:macro:`!Py_GIL_DISABLED`;
+  - on other systems, use the headers of free-threaded build of Python.
+
+``PyObject`` and ``PyVarObject`` opaqueness
 =======================
 
 Accessing any member of ``PyObject`` directly is now prohibited, like the non-GIL
 stable ABI. For instance, prefer ``Py_TYPE()`` and ``Py_SET_TYPE()`` over ``ob_type``,
-``Py_REFCNT``, ``Py_INCREF()`` and ``Py_DecRef()`` over ``ob_refcnt``, etc.
+``Py_REFCNT``, ``Py_IncRef()`` and ``Py_DecRef()`` over ``ob_refcnt``, etc.
+
+Similarly, members of ``PyVarObject`` are not visible. If you need any object of such type
+to be passed as a ``PyObject`` parameter to any API function, cast it directly as ``PyObject``.
 
 Module Initialization
 =====================
@@ -43,9 +48,8 @@ Extension modules need to explicitly indicate that they support running with
 the GIL disabled; otherwise importing the extension will raise a warning and
 enable the GIL at runtime.
 
-There are two ways to indicate that an extension module supports running with
-the GIL disabled depending on whether the extension uses multi-phase or
-single-phase initialization.
+Multi-phase and single-phase initialization is supported to indicate that an extension module 
+targeting the stable ABI supports running with the GIL disabled, though the former is preferred.
 
 Multi-Phase Initialization
 ..........................
@@ -56,48 +60,43 @@ Extensions that use :ref:`multi-phase initialization <multi-phase-initialization
 :c:func:`PyModule_FromSlotsAndSpec`) should add a
 :c:data:`Py_mod_gil` slot in the module definition.
 If your extension supports older versions of CPython,
-you should guard the slot with a :c:data:`PY_VERSION_HEX` check.
+you should guard the slot with a :c:data:`Py_GIL_DISABLED` check.
 
 ::
 
     static struct PyModuleDef_Slot module_slots[] = {
         ...
-    #if PY_VERSION_HEX >= 0x030D0000
+    #ifdef Py_GIL_DISABLED
         {Py_mod_gil, Py_MOD_GIL_NOT_USED},
     #endif
         {0, NULL}
     };
 
+Additionally, using :c:macro:`PyABIInfo_VAR and :c:data:`Py_mod_abi` is recommended so that an
+extension module loaded for an incompatible interpreter will trigger an exception, rather than
+fail with a crash.
+
+.. code-block:: c
+
+   #ifdef PY_VERSION_HEX >= 0x030F0000
+   PyABIInfo_VAR(abi_info);
+   #endif Py_GIL_DISABLED
+
+   static PyModuleDef_Slot mymodule_slots[] = {
+      ...
+   #ifdef PY_VERSION_HEX >= 0x030F0000
+      {Py_mod_abi, &abi_info},
+   #endif
+      {0, NULL}
+   };
 
 Single-Phase Initialization
 ...........................
 
-Extensions that use legacy :ref:`single-phase initialization <single-phase-initialization>`
-(that is, :c:func:`PyModule_Create`) should call :c:func:`PyUnstable_Module_SetGIL` to
-indicate that they support running with the GIL disabled.  The function is
-only defined in the free-threaded build, so you should guard the call with
-``#ifdef Py_GIL_DISABLED`` to avoid compilation errors in the regular build.
-
-::
-
-    static struct PyModuleDef moduledef = {
-        PyModuleDef_HEAD_INIT,
-        ...
-    };
-
-    PyMODINIT_FUNC
-    PyInit_mymodule(void)
-    {
-        PyObject *m = PyModule_Create(&moduledef);
-        if (m == NULL) {
-            return NULL;
-        }
-    #ifdef Py_GIL_DISABLED
-        PyUnstable_Module_SetGIL(m, Py_MOD_GIL_NOT_USED);
-    #endif
-        return m;
-    }
-
+Although members of ``PyModuleDef`` is still available for no-GIL Stable ABI and can be used
+for :ref:`single-phase initialization <single-phase-initialization>`
+(that is, :c:func:`PyModule_Create`), they are not exposed when targeting the regular Stable ABI.
+Prefer multi-phased initializtion when possible.
 
 General API Guidelines
 ======================
@@ -106,12 +105,6 @@ Most of the C API is thread-safe, but there are some exceptions.
 
 * **Struct Fields**: Accessing fields in Python C API objects or structs
   directly is not thread-safe if the field may be concurrently modified.
-* **Macros**: Accessor macros like :c:macro:`PyList_GET_ITEM`,
-  :c:macro:`PyList_SET_ITEM`, and macros like
-  :c:macro:`PySequence_Fast_GET_SIZE` that use the object returned by
-  :c:func:`PySequence_Fast` do not perform any error checking or locking.
-  These macros are not thread-safe if the container object may be modified
-  concurrently.
 * **Borrowed References**: C API functions that return
   :term:`borrowed references <borrowed reference>` may not be thread-safe if
   the containing object is modified concurrently.  See the section on
@@ -389,43 +382,31 @@ Important Considerations
   internal extension state, standard mutexes or other synchronization
   primitives might be more appropriate.
 
-.. _per-object-locks:
+Platform-specific considerations
+................................
 
-Per-Object Locks (``ob_mutex``)
-...............................
+On some platforms, Python will look for and load shared library files named
+with the ``abi3`` or ``abi3t`` tag (for example, ``mymodule.abi3.so``).
+:term:`Free-threaded <free-threaded build>` interpreters only recognize the
+``abi3t`` tag, while non-free-threaded ones will prefer ``abi3`` but fall back
+to ``abi3t``.
+Thus, extensions compatible with both ABIs should use the ``abi3t`` tag.
 
-In the free-threaded build, each Python object contains a :c:member:`~PyObject.ob_mutex`
-field of type :c:type:`PyMutex`.  This mutex is **reserved for use by the
-critical section API** (:c:macro:`Py_BEGIN_CRITICAL_SECTION` /
-:c:macro:`Py_END_CRITICAL_SECTION`).
+Python does not necessarily check that extensions it loads
+have compatible ABI.
+Extension authors are encouraged to add a check using the :c:macro:`Py_mod_abi`
+slot or the :c:func:`PyABIInfo_Check` function.
 
-.. warning::
-
-   Do **not** lock ``ob_mutex`` directly with ``PyMutex_Lock(&obj->ob_mutex)``.
-   Mixing direct ``PyMutex_Lock`` calls with the critical section API on the
-   same mutex can cause deadlocks.
-
-Even if your own code never uses critical sections on a particular object type,
-**CPython internals may use the critical section API on any Python object**.
-
-If your extension type needs its own lock, add a separate :c:type:`PyMutex`
-field (or another synchronization primitive) to your object struct.
-:c:type:`PyMutex` is very lightweight, so there is negligible cost to having
-an additional one.
-
-Limited C API and Stable ABI
-............................
+Limited C API Build Tools
+.........................
 
 If you use
 `setuptools <https://setuptools.pypa.io/en/latest/setuptools.html>`_ to build
 your extension, a future version of ``setuptools`` will allow ``py_limited_api=True``
 to be set to allow targeting limited API when building with the free-threaded build.
 
-Windows
-.......
-
-Due to a limitation of the official Windows installer, you will need to
-manually define ``Py_GIL_DISABLED=1`` when building extensions from source.
+Other build tools will support this ABI as well:
+`<https://packaging.python.org/en/latest/guides/tool-recommendations/#build-backends-for-extension-modules>`
 
 .. seealso::
 
