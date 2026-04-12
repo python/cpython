@@ -145,6 +145,36 @@ class ExceptionTest(unittest.TestCase):
         self.assertIn('ValueError: shared', tb)
         self.assertIn('<exception ValueError has printed>', tb)
 
+    @force_not_colorized
+    def test_print_exception_group_max_width(self):
+        excs = [ValueError(f'v{i}') for i in range(20)]
+        try:
+            raise ExceptionGroup('eg', excs)
+        except ExceptionGroup:
+            tb = self._capture_exception()
+
+        self.assertIn('+---------------- 15 ----------------', tb)
+        self.assertIn('+---------------- ... ----------------', tb)
+        self.assertIn('and 5 more exceptions', tb)
+        self.assertNotIn('+---------------- 16 ----------------', tb)
+
+    @force_not_colorized
+    def test_print_exception_group_max_depth(self):
+        def make_nested(depth):
+            if depth == 0:
+                return ValueError('leaf')
+            return ExceptionGroup(f'level{depth}',
+                                  [make_nested(depth - 1)])
+
+        try:
+            raise make_nested(15)
+        except ExceptionGroup:
+            tb = self._capture_exception()
+
+        self.assertIn('... (max_group_depth is 10)', tb)
+        self.assertIn('ExceptionGroup: level15', tb)
+        self.assertNotIn('ValueError: leaf', tb)
+
 # StdioFile tests.
 
 class S(str):
