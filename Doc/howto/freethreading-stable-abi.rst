@@ -32,7 +32,7 @@ do one of the following:
   - on other systems, use the headers of free-threaded build of Python.
 
 ``PyObject`` and ``PyVarObject`` opaqueness
-=======================
+===========================================
 
 Accessing any member of ``PyObject`` directly is now prohibited, like the non-GIL
 stable ABI. For instance, prefer ``Py_TYPE()`` and ``Py_SET_TYPE()`` over ``ob_type``,
@@ -48,7 +48,7 @@ Extension modules need to explicitly indicate that they support running with
 the GIL disabled; otherwise importing the extension will raise a warning and
 enable the GIL at runtime.
 
-Multi-phase and single-phase initialization is supported to indicate that an extension module 
+Multi-phase and single-phase initialization is supported to indicate that an extension module
 targeting the stable ABI supports running with the GIL disabled, though the former is preferred.
 
 Multi-Phase Initialization
@@ -72,7 +72,7 @@ you should guard the slot with a :c:data:`Py_GIL_DISABLED` check.
         {0, NULL}
     };
 
-Additionally, using :c:macro:`PyABIInfo_VAR and :c:data:`Py_mod_abi` is recommended so that an
+Additionally, using ``PyABIInfo_VAR`` and ``Py_mod_abi`` is recommended so that an
 extension module loaded for an incompatible interpreter will trigger an exception, rather than
 fail with a crash.
 
@@ -118,25 +118,6 @@ Containers like :c:struct:`PyListObject`,
 :c:struct:`PyDictObject`, and :c:struct:`PySetObject` perform internal locking
 in the free-threaded build.  For example, the :c:func:`PyList_Append` will
 lock the list before appending an item.
-
-.. _PyDict_Next:
-
-``PyDict_Next``
-'''''''''''''''
-
-A notable exception is :c:func:`PyDict_Next`, which does not lock the
-dictionary.  You should use :c:macro:`Py_BEGIN_CRITICAL_SECTION` to protect
-the dictionary while iterating over it if the dictionary may be concurrently
-modified::
-
-    Py_BEGIN_CRITICAL_SECTION(dict);
-    PyObject *key, *value;
-    Py_ssize_t pos = 0;
-    while (PyDict_Next(dict, &pos, &key, &value)) {
-        ...
-    }
-    Py_END_CRITICAL_SECTION();
-
 
 Borrowed References
 ===================
@@ -188,26 +169,6 @@ references in that context is safe.
 Some of these functions were added in Python 3.13.  You can use the
 `pythoncapi-compat <https://github.com/python/pythoncapi-compat>`_ package
 to provide implementations of these functions for older Python versions.
-
-
-.. _free-threaded-memory-allocation:
-
-Memory Allocation APIs
-======================
-
-Python's memory management C API provides functions in three different
-:ref:`allocation domains <allocator-domains>`: "raw", "mem", and "object".
-For thread-safety, the free-threaded build requires that only Python objects
-are allocated using the object domain, and that all Python objects are
-allocated using that domain.  This differs from the prior Python versions,
-where this was only a best practice and not a hard requirement.
-
-.. note::
-
-   Search for uses of :c:func:`PyObject_Malloc` in your
-   extension and check that the allocated memory is used for Python objects.
-   Use :c:func:`PyMem_Malloc` to allocate buffers instead of
-   :c:func:`PyObject_Malloc`.
 
 
 Thread State and GIL APIs
@@ -405,8 +366,7 @@ If you use
 your extension, a future version of ``setuptools`` will allow ``py_limited_api=True``
 to be set to allow targeting limited API when building with the free-threaded build.
 
-Other build tools will support this ABI as well:
-`<https://packaging.python.org/en/latest/guides/tool-recommendations/#build-backends-for-extension-modules>`
+`Other build tools will support this ABI as well <https://packaging.python.org/en/latest/guides/tool-recommendations/#build-backends-for-extension-modules>`_.
 
 .. seealso::
 
