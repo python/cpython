@@ -148,7 +148,7 @@ class ResourceTracker(object):
         waitstatus_to_exitcode=os.waitstatus_to_exitcode,
         monotonic=time.monotonic,
         sleep=time.sleep,
-        WNOHANG=os.WNOHANG,
+        WNOHANG=getattr(os, 'WNOHANG', None),
         wait_timeout=None,
     ):
         # This shouldn't happen (it might when called by a finalizer)
