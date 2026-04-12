@@ -1978,11 +1978,11 @@ class ExtPage(Frame):
             opt_list = enables + opt_list
 
             for opt_name in opt_list:
-                if opt_name in user:
-                    def_str = self.ext_userCfg.Get(
+                if opt_name in default:
+                    def_str = self.ext_defaultCfg.Get(
                             ext_name, opt_name, raw=True)
                 else:
-                    def_str = self.ext_defaultCfg.Get(
+                    def_str = self.ext_userCfg.Get(
                             ext_name, opt_name, raw=True)
                 try:
                     def_obj = {'True':True, 'False':False}[def_str]
@@ -1995,14 +1995,9 @@ class ExtPage(Frame):
                         def_obj = def_str
                         opt_type = None
                 try:
-                    if opt_name in user:
-                        value = self.ext_userCfg.Get(
-                                ext_name, opt_name, type=opt_type, raw=True,
-                                default=def_obj)
-                    else:
-                        value = self.ext_defaultCfg.Get(
-                                ext_name, opt_name, type=opt_type, raw=True,
-                                default=def_obj)
+                    value = self.ext_userCfg.Get(
+                            ext_name, opt_name, type=opt_type, raw=True,
+                            default=def_obj)
                 except ValueError:  # Need this until .Get fixed.
                     value = def_obj  # Bad values overwritten by entry.
                 var = StringVar(self)
