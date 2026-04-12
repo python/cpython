@@ -439,13 +439,13 @@ _Py_BuiltinCallFast_StackRef(
     int total_args);
 
 PyAPI_FUNC(PyObject *)
-_Py_BuiltinCallFastWithKeywords_StackRefSteal(
+_Py_BuiltinCallFastWithKeywords_StackRef(
     _PyStackRef callable,
     _PyStackRef *arguments,
     int total_args);
 
 PyAPI_FUNC(PyObject *)
-_PyCallMethodDescriptorFast_StackRefSteal(
+_PyCallMethodDescriptorFast_StackRef(
     _PyStackRef callable,
     PyCFunctionFast cfunc,
     PyObject *self,
@@ -453,7 +453,7 @@ _PyCallMethodDescriptorFast_StackRefSteal(
     int total_args);
 
 PyAPI_FUNC(PyObject *)
-_PyCallMethodDescriptorFastWithKeywords_StackRefSteal(
+_PyCallMethodDescriptorFastWithKeywords_StackRef(
     _PyStackRef callable,
     PyCFunctionFastWithKeywords cfunc,
     PyObject *self,
@@ -461,7 +461,7 @@ _PyCallMethodDescriptorFastWithKeywords_StackRefSteal(
     int total_args);
 
 PyAPI_FUNC(PyObject *)
-_Py_CallBuiltinClass_StackRefSteal(
+_Py_CallBuiltinClass_StackRef(
     _PyStackRef callable,
     _PyStackRef *arguments,
     int total_args);

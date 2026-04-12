@@ -165,13 +165,6 @@
             break;
         }
 
-        case _POP_TWO: {
-            CHECK_STACK_BOUNDS(-2);
-            stack_pointer += -2;
-            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
-            break;
-        }
-
         case _POP_TOP_OPARG: {
             JitOptRef *args;
             args = &stack_pointer[-oparg];
@@ -683,8 +676,10 @@
                 if (sym_is_const(ctx, res)) {
                     PyObject *result = sym_get_const(ctx, res);
                     if (_Py_IsImmortal(result)) {
-                        // Replace with _INSERT_2_LOAD_CONST_INLINE_BORROW since we have two inputs and an immortal result
-                        ADD_OP(_INSERT_2_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)result);
+                        // Replace with _LOAD_CONST_INLINE_BORROW + _SWAP + _SWAP since we have two inputs and an immortal result
+                        ADD_OP(_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)result);
+                        ADD_OP(_SWAP, 3, 0);
+                        ADD_OP(_SWAP, 2, 0);
                     }
                 }
                 CHECK_STACK_BOUNDS(1);
@@ -753,8 +748,10 @@
                 if (sym_is_const(ctx, res)) {
                     PyObject *result = sym_get_const(ctx, res);
                     if (_Py_IsImmortal(result)) {
-                        // Replace with _INSERT_2_LOAD_CONST_INLINE_BORROW since we have two inputs and an immortal result
-                        ADD_OP(_INSERT_2_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)result);
+                        // Replace with _LOAD_CONST_INLINE_BORROW + _SWAP + _SWAP since we have two inputs and an immortal result
+                        ADD_OP(_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)result);
+                        ADD_OP(_SWAP, 3, 0);
+                        ADD_OP(_SWAP, 2, 0);
                     }
                 }
                 CHECK_STACK_BOUNDS(1);
@@ -823,8 +820,10 @@
                 if (sym_is_const(ctx, res)) {
                     PyObject *result = sym_get_const(ctx, res);
                     if (_Py_IsImmortal(result)) {
-                        // Replace with _INSERT_2_LOAD_CONST_INLINE_BORROW since we have two inputs and an immortal result
-                        ADD_OP(_INSERT_2_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)result);
+                        // Replace with _LOAD_CONST_INLINE_BORROW + _SWAP + _SWAP since we have two inputs and an immortal result
+                        ADD_OP(_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)result);
+                        ADD_OP(_SWAP, 3, 0);
+                        ADD_OP(_SWAP, 2, 0);
                     }
                 }
                 CHECK_STACK_BOUNDS(1);
@@ -1548,8 +1547,10 @@
                     if (sym_is_const(ctx, res)) {
                         PyObject *result = sym_get_const(ctx, res);
                         if (_Py_IsImmortal(result)) {
-                            // Replace with _INSERT_2_LOAD_CONST_INLINE_BORROW since we have two inputs and an immortal result
-                            ADD_OP(_INSERT_2_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)result);
+                            // Replace with _LOAD_CONST_INLINE_BORROW + _SWAP + _SWAP since we have two inputs and an immortal result
+                            ADD_OP(_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)result);
+                            ADD_OP(_SWAP, 3, 0);
+                            ADD_OP(_SWAP, 2, 0);
                         }
                     }
                     CHECK_STACK_BOUNDS(1);
@@ -2479,6 +2480,21 @@
         }
 
         case _GUARD_TYPE_VERSION_LOCKED: {
+            JitOptRef owner;
+            owner = stack_pointer[-1];
+            uint32_t type_version = (uint32_t)this_instr->operand0;
+            assert(type_version);
+            if (sym_matches_type_version(owner, type_version)) {
+                ADD_OP(_NOP, 0, 0);
+            } else {
+                PyTypeObject *probable_type = sym_get_probable_type(owner);
+                if (probable_type->tp_version_tag == type_version && sym_set_type_version(owner, type_version)) {
+                    if ((probable_type->tp_flags & Py_TPFLAGS_IMMUTABLETYPE) == 0) {
+                        PyType_Watch(TYPE_WATCHER_ID, (PyObject *)probable_type);
+                        _Py_BloomFilter_Add(dependencies, probable_type);
+                    }
+                }
+            }
             break;
         }
 
@@ -2593,6 +2609,10 @@
                 }
                 else {
                     sym_set_const(owner, type);
+                    if ((((PyTypeObject *)type)->tp_flags & Py_TPFLAGS_IMMUTABLETYPE) == 0) {
+                        PyType_Watch(TYPE_WATCHER_ID, type);
+                        _Py_BloomFilter_Add(dependencies, type);
+                    }
                 }
             }
             break;
@@ -2728,8 +2748,10 @@
                 if (sym_is_const(ctx, res)) {
                     PyObject *result = sym_get_const(ctx, res);
                     if (_Py_IsImmortal(result)) {
-                        // Replace with _POP_TWO_LOAD_CONST_INLINE_BORROW since we have two inputs and an immortal result
-                        ADD_OP(_POP_TWO_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)result);
+                        // Replace with _POP_TOP + _POP_TOP + _LOAD_CONST_INLINE_BORROW since we have two inputs and an immortal result
+                        ADD_OP(_POP_TOP, 0, 0);
+                        ADD_OP(_POP_TOP, 0, 0);
+                        ADD_OP(_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)result);
                     }
                 }
                 CHECK_STACK_BOUNDS(-1);
@@ -2799,8 +2821,10 @@
                 if (sym_is_const(ctx, res)) {
                     PyObject *result = sym_get_const(ctx, res);
                     if (_Py_IsImmortal(result)) {
-                        // Replace with _INSERT_2_LOAD_CONST_INLINE_BORROW since we have two inputs and an immortal result
-                        ADD_OP(_INSERT_2_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)result);
+                        // Replace with _LOAD_CONST_INLINE_BORROW + _SWAP + _SWAP since we have two inputs and an immortal result
+                        ADD_OP(_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)result);
+                        ADD_OP(_SWAP, 3, 0);
+                        ADD_OP(_SWAP, 2, 0);
                     }
                 }
                 CHECK_STACK_BOUNDS(1);
@@ -2872,8 +2896,10 @@
                 if (sym_is_const(ctx, res)) {
                     PyObject *result = sym_get_const(ctx, res);
                     if (_Py_IsImmortal(result)) {
-                        // Replace with _INSERT_2_LOAD_CONST_INLINE_BORROW since we have two inputs and an immortal result
-                        ADD_OP(_INSERT_2_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)result);
+                        // Replace with _LOAD_CONST_INLINE_BORROW + _SWAP + _SWAP since we have two inputs and an immortal result
+                        ADD_OP(_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)result);
+                        ADD_OP(_SWAP, 3, 0);
+                        ADD_OP(_SWAP, 2, 0);
                     }
                 }
                 CHECK_STACK_BOUNDS(1);
@@ -2934,8 +2960,10 @@
                 if (sym_is_const(ctx, res)) {
                     PyObject *result = sym_get_const(ctx, res);
                     if (_Py_IsImmortal(result)) {
-                        // Replace with _INSERT_2_LOAD_CONST_INLINE_BORROW since we have two inputs and an immortal result
-                        ADD_OP(_INSERT_2_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)result);
+                        // Replace with _LOAD_CONST_INLINE_BORROW + _SWAP + _SWAP since we have two inputs and an immortal result
+                        ADD_OP(_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)result);
+                        ADD_OP(_SWAP, 3, 0);
+                        ADD_OP(_SWAP, 2, 0);
                     }
                 }
                 CHECK_STACK_BOUNDS(1);
@@ -3014,8 +3042,10 @@
                 if (sym_is_const(ctx, b)) {
                     PyObject *result = sym_get_const(ctx, b);
                     if (_Py_IsImmortal(result)) {
-                        // Replace with _INSERT_2_LOAD_CONST_INLINE_BORROW since we have two inputs and an immortal result
-                        ADD_OP(_INSERT_2_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)result);
+                        // Replace with _LOAD_CONST_INLINE_BORROW + _SWAP + _SWAP since we have two inputs and an immortal result
+                        ADD_OP(_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)result);
+                        ADD_OP(_SWAP, 3, 0);
+                        ADD_OP(_SWAP, 2, 0);
                     }
                 }
                 CHECK_STACK_BOUNDS(1);
@@ -3121,8 +3151,10 @@
                     if (sym_is_const(ctx, b)) {
                         PyObject *result = sym_get_const(ctx, b);
                         if (_Py_IsImmortal(result)) {
-                            // Replace with _INSERT_2_LOAD_CONST_INLINE_BORROW since we have two inputs and an immortal result
-                            ADD_OP(_INSERT_2_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)result);
+                            // Replace with _LOAD_CONST_INLINE_BORROW + _SWAP + _SWAP since we have two inputs and an immortal result
+                            ADD_OP(_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)result);
+                            ADD_OP(_SWAP, 3, 0);
+                            ADD_OP(_SWAP, 2, 0);
                         }
                     }
                     CHECK_STACK_BOUNDS(1);
@@ -3205,8 +3237,16 @@
         /* _POP_JUMP_IF_TRUE is not a viable micro-op for tier 2 */
 
         case _IS_NONE: {
+            JitOptRef value;
             JitOptRef b;
-            b = sym_new_not_null(ctx);
+            value = stack_pointer[-1];
+            if (sym_is_const(ctx, value)) {
+                PyObject *value_o = sym_get_const(ctx, value);
+                b = sym_new_const(ctx, Py_IsNone(value_o) ? Py_True : Py_False);
+            }
+            else {
+                b = sym_new_type(ctx, &PyBool_Type);
+            }
             stack_pointer[-1] = b;
             break;
         }
@@ -3617,12 +3657,14 @@
             JitOptRef callable;
             callable = stack_pointer[-2 - oparg];
             uint32_t func_version = (uint32_t)this_instr->operand0;
-            if (sym_get_func_version(callable) == func_version) {
-                REPLACE_OP(this_instr, _NOP, 0, 0);
+            PyObject *func = sym_get_probable_value(callable);
+            if (func == NULL || !PyFunction_Check(func) || ((PyFunctionObject *)func)->func_version != func_version) {
+                ctx->contradiction = true;
+                ctx->done = true;
+                break;
             }
-            else {
-                sym_set_func_version(ctx, callable, func_version);
-            }
+            sym_set_const(callable, func);
+            _Py_BloomFilter_Add(dependencies, func);
             break;
         }
 
@@ -3640,15 +3682,48 @@
                 ADD_OP(_CHECK_FUNCTION_VERSION_INLINE, 0, func_version);
                 uop_buffer_last(&ctx->out_buffer)->operand1 = (uintptr_t)method->im_func;
             }
+            else {
+                PyObject *bound_method = sym_get_probable_value(callable);
+                if (bound_method != NULL && Py_TYPE(bound_method) == &PyMethod_Type) {
+                    PyMethodObject *method = (PyMethodObject *)bound_method;
+                    PyObject *func = method->im_func;
+                    if (PyFunction_Check(func) &&
+                        ((PyFunctionObject *)func)->func_version == func_version) {
+                        _Py_BloomFilter_Add(dependencies, func);
+                        sym_set_const(callable, bound_method);
+                    }
+                }
+            }
             sym_set_type(callable, &PyMethod_Type);
             break;
         }
 
         case _EXPAND_METHOD: {
+            JitOptRef self_or_null;
+            JitOptRef callable;
+            self_or_null = stack_pointer[-1 - oparg];
+            callable = stack_pointer[-2 - oparg];
+            if (sym_is_const(ctx, callable) && sym_matches_type(callable, &PyMethod_Type)) {
+                PyMethodObject *method = (PyMethodObject *)sym_get_const(ctx, callable);
+                callable = sym_new_const(ctx, method->im_func);
+                self_or_null = sym_new_const(ctx, method->im_self);
+            }
+            else {
+                callable = sym_new_not_null(ctx);
+                self_or_null = sym_new_not_null(ctx);
+            }
+            stack_pointer[-2 - oparg] = callable;
+            stack_pointer[-1 - oparg] = self_or_null;
             break;
         }
 
         case _CHECK_IS_NOT_PY_CALLABLE: {
+            JitOptRef callable;
+            callable = stack_pointer[-2 - oparg];
+            PyTypeObject *type = sym_get_type(callable);
+            if (type && type != &PyFunction_Type && type != &PyMethod_Type) {
+                ADD_OP(_NOP, 0, 0);
+            }
             break;
         }
 
@@ -3677,8 +3752,18 @@
             JitOptRef callable;
             self_or_null = stack_pointer[-1 - oparg];
             callable = stack_pointer[-2 - oparg];
-            callable = sym_new_not_null(ctx);
-            self_or_null = sym_new_not_null(ctx);
+            PyObject *bound_method = sym_get_probable_value(callable);
+            if (bound_method != NULL && Py_TYPE(bound_method) == &PyMethod_Type) {
+                PyMethodObject *method = (PyMethodObject *)bound_method;
+                callable = sym_new_not_null(ctx);
+                sym_set_recorded_value(callable, method->im_func);
+                self_or_null = sym_new_not_null(ctx);
+                sym_set_recorded_value(self_or_null, method->im_self);
+            }
+            else {
+                callable = sym_new_not_null(ctx);
+                self_or_null = sym_new_not_null(ctx);
+            }
             stack_pointer[-2 - oparg] = callable;
             stack_pointer[-1 - oparg] = self_or_null;
             break;
@@ -3907,19 +3992,47 @@
             break;
         }
 
-        case _CHECK_AND_ALLOCATE_OBJECT: {
-            JitOptRef *args;
+        case _CHECK_OBJECT: {
             JitOptRef self_or_null;
             JitOptRef callable;
-            args = &stack_pointer[-oparg];
             self_or_null = stack_pointer[-1 - oparg];
             callable = stack_pointer[-2 - oparg];
             uint32_t type_version = (uint32_t)this_instr->operand0;
-            (void)type_version;
-            (void)args;
-            callable = sym_new_not_null(ctx);
-            self_or_null = sym_new_not_null(ctx);
+            PyObject *probable_callable = sym_get_probable_value(callable);
+            assert(probable_callable != NULL);
+            PyObject *const_callable = sym_get_const(ctx, callable);
+            bool is_probable = const_callable == NULL && probable_callable != NULL;
+            PyObject *callable_o = const_callable != NULL ? const_callable : probable_callable;
+            if (sym_is_null(self_or_null) &&
+                callable_o != NULL &&
+                PyType_Check(callable_o) &&
+                ((PyTypeObject *)callable_o)->tp_version_tag == type_version) {
+                if (!is_probable) {
+                    ADD_OP(_NOP, 0, 0);
+                }
+                else {
+                    sym_set_const(callable, callable_o);
+                }
+                PyHeapTypeObject *cls = (PyHeapTypeObject *)callable_o;
+                PyObject *init = cls->_spec_cache.init;
+                assert(init != NULL);
+                assert(PyFunction_Check(init));
+                callable = sym_new_const(ctx, init);
+                stack_pointer[-2 - oparg] = callable;
+                PyType_Watch(TYPE_WATCHER_ID, callable_o);
+                _Py_BloomFilter_Add(dependencies, callable_o);;
+            }
+            else {
+                callable = sym_new_not_null(ctx);
+            }
             stack_pointer[-2 - oparg] = callable;
+            break;
+        }
+
+        case _ALLOCATE_OBJECT: {
+            JitOptRef self_or_null;
+            self_or_null = stack_pointer[-1 - oparg];
+            self_or_null = sym_new_not_null(ctx);
             stack_pointer[-1 - oparg] = self_or_null;
             break;
         }
@@ -3975,12 +4088,10 @@
         }
 
         case _CALL_BUILTIN_CLASS: {
-            JitOptRef res;
-            res = sym_new_not_null(ctx);
-            CHECK_STACK_BOUNDS(-1 - oparg);
-            stack_pointer[-2 - oparg] = res;
-            stack_pointer += -1 - oparg;
-            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+            JitOptRef callable;
+            callable = stack_pointer[-2 - oparg];
+            callable = sym_new_not_null(ctx);
+            stack_pointer[-2 - oparg] = callable;
             break;
         }
 
@@ -4076,12 +4187,10 @@
         }
 
         case _CALL_BUILTIN_FAST_WITH_KEYWORDS: {
-            JitOptRef res;
-            res = sym_new_not_null(ctx);
-            CHECK_STACK_BOUNDS(-1 - oparg);
-            stack_pointer[-2 - oparg] = res;
-            stack_pointer += -1 - oparg;
-            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+            JitOptRef callable;
+            callable = stack_pointer[-2 - oparg];
+            callable = sym_new_not_null(ctx);
+            stack_pointer[-2 - oparg] = callable;
             break;
         }
 
@@ -4176,7 +4285,10 @@
                     out = Py_True;
                 }
                 sym_set_const(res, out);
-                ADD_OP(_POP_CALL_TWO, 0, 0);
+                ADD_OP(_POP_TOP, 0, 0);
+                ADD_OP(_POP_TOP, 0, 0);
+                ADD_OP(_POP_TOP_NOP, 0, 0);
+                ADD_OP(_POP_TOP, 0, 0);
                 ADD_OP(_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)out);
             }
             CHECK_STACK_BOUNDS(-3);
@@ -4356,7 +4468,6 @@
         case _CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS: {
             JitOptRef self_or_null;
             JitOptRef callable;
-            JitOptRef res;
             self_or_null = stack_pointer[-1 - oparg];
             callable = stack_pointer[-2 - oparg];
             PyObject *callable_o = sym_get_const(ctx, callable);
@@ -4364,23 +4475,14 @@
                 && sym_is_not_null(self_or_null)) {
                 PyMethodDescrObject *method = (PyMethodDescrObject *)callable_o;
                 PyCFunction cfunc = method->d_method->ml_meth;
-                ADD_OP(_CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS_INLINE, oparg + 1, (uintptr_t)cfunc);
+                ADD_OP(_CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS_INLINE, oparg, (uintptr_t)cfunc);
             }
-            res = sym_new_not_null(ctx);
-            CHECK_STACK_BOUNDS(-1 - oparg);
-            stack_pointer[-2 - oparg] = res;
-            stack_pointer += -1 - oparg;
-            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+            callable = sym_new_not_null(ctx);
+            stack_pointer[-2 - oparg] = callable;
             break;
         }
 
         case _CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS_INLINE: {
-            JitOptRef res;
-            res = sym_new_not_null(ctx);
-            CHECK_STACK_BOUNDS(-oparg);
-            stack_pointer[-1 - oparg] = res;
-            stack_pointer += -oparg;
-            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
             break;
         }
 
@@ -4509,7 +4611,6 @@
         case _CALL_METHOD_DESCRIPTOR_FAST: {
             JitOptRef self_or_null;
             JitOptRef callable;
-            JitOptRef res;
             self_or_null = stack_pointer[-1 - oparg];
             callable = stack_pointer[-2 - oparg];
             PyObject *callable_o = sym_get_const(ctx, callable);
@@ -4517,23 +4618,14 @@
                 && sym_is_not_null(self_or_null)) {
                 PyMethodDescrObject *method = (PyMethodDescrObject *)callable_o;
                 PyCFunction cfunc = method->d_method->ml_meth;
-                ADD_OP(_CALL_METHOD_DESCRIPTOR_FAST_INLINE, oparg + 1, (uintptr_t)cfunc);
+                ADD_OP(_CALL_METHOD_DESCRIPTOR_FAST_INLINE, oparg, (uintptr_t)cfunc);
             }
-            res = sym_new_not_null(ctx);
-            CHECK_STACK_BOUNDS(-1 - oparg);
-            stack_pointer[-2 - oparg] = res;
-            stack_pointer += -1 - oparg;
-            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+            callable = sym_new_not_null(ctx);
+            stack_pointer[-2 - oparg] = callable;
             break;
         }
 
         case _CALL_METHOD_DESCRIPTOR_FAST_INLINE: {
-            JitOptRef res;
-            res = sym_new_not_null(ctx);
-            CHECK_STACK_BOUNDS(-oparg);
-            stack_pointer[-1 - oparg] = res;
-            stack_pointer += -oparg;
-            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
             break;
         }
 
@@ -4754,8 +4846,10 @@
                 if (sym_is_const(ctx, res)) {
                     PyObject *result = sym_get_const(ctx, res);
                     if (_Py_IsImmortal(result)) {
-                        // Replace with _INSERT_2_LOAD_CONST_INLINE_BORROW since we have two inputs and an immortal result
-                        ADD_OP(_INSERT_2_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)result);
+                        // Replace with _LOAD_CONST_INLINE_BORROW + _SWAP + _SWAP since we have two inputs and an immortal result
+                        ADD_OP(_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)result);
+                        ADD_OP(_SWAP, 3, 0);
+                        ADD_OP(_SWAP, 2, 0);
                     }
                 }
                 CHECK_STACK_BOUNDS(1);
@@ -4986,73 +5080,12 @@
             break;
         }
 
-        case _POP_TOP_LOAD_CONST_INLINE: {
-            JitOptRef value;
-            value = sym_new_not_null(ctx);
-            stack_pointer[-1] = value;
-            break;
-        }
-
         case _LOAD_CONST_INLINE_BORROW: {
             JitOptRef value;
             PyObject *ptr = (PyObject *)this_instr->operand0;
             value = PyJitRef_Borrow(sym_new_const(ctx, ptr));
             CHECK_STACK_BOUNDS(1);
             stack_pointer[0] = value;
-            stack_pointer += 1;
-            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
-            break;
-        }
-
-        case _POP_CALL: {
-            CHECK_STACK_BOUNDS(-2);
-            stack_pointer += -2;
-            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
-            break;
-        }
-
-        case _POP_CALL_ONE: {
-            CHECK_STACK_BOUNDS(-3);
-            stack_pointer += -3;
-            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
-            break;
-        }
-
-        case _POP_CALL_TWO: {
-            CHECK_STACK_BOUNDS(-4);
-            stack_pointer += -4;
-            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
-            break;
-        }
-
-        case _POP_TOP_LOAD_CONST_INLINE_BORROW: {
-            JitOptRef value;
-            value = sym_new_not_null(ctx);
-            stack_pointer[-1] = value;
-            break;
-        }
-
-        case _POP_TWO_LOAD_CONST_INLINE_BORROW: {
-            JitOptRef value;
-            value = sym_new_not_null(ctx);
-            CHECK_STACK_BOUNDS(-1);
-            stack_pointer[-2] = value;
-            stack_pointer += -1;
-            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
-            break;
-        }
-
-        case _INSERT_2_LOAD_CONST_INLINE_BORROW: {
-            JitOptRef res;
-            JitOptRef l;
-            JitOptRef r;
-            res = sym_new_not_null(ctx);
-            l = sym_new_not_null(ctx);
-            r = sym_new_not_null(ctx);
-            CHECK_STACK_BOUNDS(1);
-            stack_pointer[-2] = res;
-            stack_pointer[-1] = l;
-            stack_pointer[0] = r;
             stack_pointer += 1;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
             break;
@@ -5117,7 +5150,8 @@
             PyCodeObject *co = get_current_code_object(ctx);
             if (co->co_version == version) {
                 _Py_BloomFilter_Add(dependencies, co);
-                if (sym_get_func_version(ctx->frame->callable) == version) {
+                PyFunctionObject *func = (PyFunctionObject *)sym_get_const(ctx, ctx->frame->callable);
+                if (func != NULL && func->func_version == version) {
                     REPLACE_OP(this_instr, _NOP, 0, 0);
                 }
             }
@@ -5158,7 +5192,8 @@
             PyObject *ip = (PyObject *)this_instr->operand0;
             (void)ip;
             stack_pointer = sym_set_stack_depth((int)this_instr->operand1, stack_pointer);
-            if (sym_get_func_version(ctx->frame->callable) != 0 &&
+            PyFunctionObject *func = (PyFunctionObject *)sym_get_const(ctx, ctx->frame->callable);
+            if (func != NULL && func->func_version != 0 &&
                 // We can remove this guard for simple function call targets.
                 (((PyCodeObject *)ctx->frame->func->func_code)->co_flags &
                     (CO_GENERATOR | CO_COROUTINE | CO_ASYNC_GENERATOR)) == 0) {
@@ -5252,6 +5287,9 @@
         }
 
         case _RECORD_BOUND_METHOD: {
+            JitOptRef callable;
+            callable = stack_pointer[-2 - oparg];
+            sym_set_recorded_value(callable, (PyObject *)this_instr->operand0);
             break;
         }
 

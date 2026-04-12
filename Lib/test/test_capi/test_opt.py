@@ -1521,6 +1521,29 @@ class TestUopsOptimization(unittest.TestCase):
         Foo.attr = 0
         self.assertFalse(ex.is_valid())
 
+    def test_guard_type_version_locked_removed(self):
+        """
+        Verify that redundant _GUARD_TYPE_VERSION_LOCKED guards are
+        eliminated for sequential STORE_ATTR_INSTANCE_VALUE in __init__.
+        """
+
+        class Foo:
+            def __init__(self):
+                self.a = 1
+                self.b = 2
+                self.c = 3
+
+        def thing(n):
+            for _ in range(n):
+                Foo()
+
+        res, ex = self._run_with_optimizer(thing, TIER2_THRESHOLD)
+        self.assertIsNotNone(ex)
+        opnames = list(iter_opnames(ex))
+        guard_locked_count = opnames.count("_GUARD_TYPE_VERSION_LOCKED")
+        # Only the first store needs the guard; the rest should be NOPed.
+        self.assertEqual(guard_locked_count, 1)
+
     def test_type_version_doesnt_segfault(self):
         """
         Tests that setting a type version doesn't cause a segfault when later looking at the stack.
@@ -1542,6 +1565,133 @@ class TestUopsOptimization(unittest.TestCase):
 
         fn(A())
 
+    def test_init_resolves_callable(self):
+        """
+        _CHECK_AND_ALLOCATE_OBJECT should resolve __init__ to a constant,
+        enabling the optimizer to propagate type information through the frame
+        and eliminate redundant function version and arg count checks.
+        """
+        class MyPoint:
+            def __init__(self, x, y):
+                # If __init__ callable is propagated through, then
+                # These will get promoted from globals to constants.
+                self.x = range(1)
+                self.y = range(1)
+
+        def testfunc(n):
+            for _ in range(n):
+                p = MyPoint(1.0, 2.0)
+
+        _, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        # The __init__ call should be traced through via _PUSH_FRAME
+        self.assertIn("_PUSH_FRAME", uops)
+        # __init__ resolution allows promotion of range to constant
+        self.assertNotIn("_LOAD_GLOBAL_BUILTINS", uops)
+
+    def test_init_guards_removed(self):
+        class MyPoint:
+            def __init__(self, x, y):
+                return None
+
+        def testfunc(n):
+            point_local = MyPoint
+            for _ in range(n):
+                p = point_local(1.0, 2.0)
+                p = point_local(1.0, 2.0)
+
+        _, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertIsNotNone(ex)
+        # The __init__ call should be traced through via _PUSH_FRAME
+        count = count_ops(ex, "_CREATE_INIT_FRAME")
+        self.assertEqual(count, 2)
+        # __init__ resolution allows promotion of range to constant
+        count = count_ops(ex, "_CHECK_OBJECT")
+        self.assertEqual(count, 1)
+
+    def test_init_guards_removed_global(self):
+
+        def testfunc(n):
+            for _ in range(n):
+                p = MyGlobalPoint(1.0, 2.0)
+                p = MyGlobalPoint(1.0, 2.0)
+
+        _, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertIsNotNone(ex)
+        # The __init__ call should be traced through via _PUSH_FRAME
+        count = count_ops(ex, "_CREATE_INIT_FRAME")
+        self.assertEqual(count, 2)
+        # __init__ resolution allows promotion of range to constant
+        count = count_ops(ex, "_CHECK_OBJECT")
+        self.assertEqual(count, 0)
+
+    def test_guard_type_version_locked_propagates(self):
+        """
+        _GUARD_TYPE_VERSION_LOCKED should set the type version on the
+        symbol so repeated accesses to the same type can benefit.
+        """
+        class Item:
+            def __init__(self, val):
+                self.val = val
+
+            def get(self):
+                return self.val
+
+            def get2(self):
+                return self.val + 1
+
+        def testfunc(n):
+            item = Item(42)
+            total = 0
+            for _ in range(n):
+                # Two method calls on the same object — the second
+                # should benefit from type info set by the first.
+                total += item.get() + item.get2()
+            return total
+
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, TIER2_THRESHOLD * (42 + 43))
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        # Both methods should be traced through
+        self.assertEqual(uops.count("_PUSH_FRAME"), 2)
+        # Type version propagation: one guard covers both method lookups
+        self.assertEqual(uops.count("_GUARD_TYPE_VERSION"), 1)
+        # Function checks cannot be eliminated for safety reasons.
+        self.assertIn("_CHECK_FUNCTION_VERSION", uops)
+
+    def test_method_chain_guard_elimination(self):
+        """
+        Calling two methods on the same object should share the outer
+        type guard — only one _GUARD_TYPE_VERSION for the two lookups.
+        """
+        class Calc:
+            def __init__(self, val):
+                self.val = val
+
+            def add(self, x):
+                self.val += x
+                return self
+
+        def testfunc(n):
+            c = Calc(0)
+            for _ in range(n):
+                c.add(1).add(2)
+            return c.val
+
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, TIER2_THRESHOLD * 3)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        # Both add() calls should be inlined
+        push_count = uops.count("_PUSH_FRAME")
+        self.assertEqual(push_count, 2)
+        # Only one outer type version guard for the two method lookups
+        # on the same object c (the second lookup reuses type info)
+        guard_version_count = uops.count("_GUARD_TYPE_VERSION")
+        self.assertEqual(guard_version_count, 1)
+
     def test_func_guards_removed_or_reduced(self):
         def testfunc(n):
             for i in range(n):
@@ -1554,10 +1704,7 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
         self.assertIn("_PUSH_FRAME", uops)
-        # Both should be not present, as this is a call
-        # to a simple function with a known function version.
-        self.assertNotIn("_CHECK_FUNCTION_VERSION_INLINE", uops)
-        self.assertNotIn("_CHECK_FUNCTION_VERSION", uops)
+        self.assertIn("_CHECK_FUNCTION_VERSION", uops)
         # Removed guard
         self.assertNotIn("_CHECK_FUNCTION_EXACT_ARGS", uops)
 
@@ -1575,6 +1722,49 @@ class TestUopsOptimization(unittest.TestCase):
         # Strength reduced version
         self.assertIn("_CHECK_FUNCTION_VERSION_INLINE", uops)
         self.assertNotIn("_CHECK_METHOD_VERSION", uops)
+
+    def test_record_bound_method_general(self):
+        class MyClass:
+            def method(self, *args):
+                return args[0] + 1
+
+        def testfunc(n):
+            obj = MyClass()
+            bound = obj.method
+            result = 0
+            for i in range(n):
+                result += bound(i)
+            return result
+
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(
+            res, sum(i + 1 for i in range(TIER2_THRESHOLD))
+        )
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertIn("_PUSH_FRAME", uops)
+
+    def test_record_bound_method_exact_args(self):
+        class MyClass:
+            def method(self, x):
+                return x + 1
+
+        def testfunc(n):
+            obj = MyClass()
+            bound = obj.method
+            result = 0
+            for i in range(n):
+                result += bound(i)
+            return result
+
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(
+            res, sum(i + 1 for i in range(TIER2_THRESHOLD))
+        )
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertIn("_PUSH_FRAME", uops)
+        self.assertNotIn("_CHECK_FUNCTION_EXACT_ARGS", uops)
 
     def test_jit_error_pops(self):
         """
@@ -1643,7 +1833,6 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
         self.assertNotIn("_BINARY_OP_ADD_INT", uops)
-        self.assertNotIn("_POP_TWO_LOAD_CONST_INLINE_BORROW", uops)
         self.assertNotIn("_GUARD_NOS_INT", uops)
         self.assertNotIn("_GUARD_TOS_INT", uops)
 
@@ -1808,7 +1997,6 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
         self.assertNotIn("_UNARY_NEGATIVE", uops)
-        self.assertNotIn("_POP_TOP_LOAD_CONST_INLINE_BORROW", uops)
 
     def test_unary_not_pop_top_load_const_inline_borrow(self):
         def testfunc(n):
@@ -1827,9 +2015,9 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertNotIn("_UNARY_NOT", uops)
         # TODO (gh-143723): After refactoring TO_BOOL_INT to eliminate redundant
         # refcounts, 'not a' is now constant-folded and currently lowered to
-        # _POP_TOP_LOAD_CONST_INLINE_BORROW. Re-enable once constant folding
-        # avoids this fused pop+const uop.
-        # self.assertNotIn("_POP_TOP_LOAD_CONST_INLINE_BORROW", uops)
+        # _POP_TOP + _LOAD_CONST_INLINE_BORROW. Re-enable once constant folding
+        # avoids emitting these.
+        # self.assertNotIn("_LOAD_CONST_INLINE_BORROW", uops)
 
     def test_unary_invert_insert_1_load_const_inline_borrow(self):
         def testfunc(n):
@@ -1863,7 +2051,6 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
         self.assertNotIn("_COMPARE_OP", uops)
-        self.assertNotIn("_POP_TWO_LOAD_CONST_INLINE_BORROW", uops)
 
     def test_compare_op_int_insert_two_load_const_inline_borrow(self):
         def testfunc(n):
@@ -1880,7 +2067,7 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
         self.assertNotIn("_COMPARE_OP_INT", uops)
-        self.assertIn("_INSERT_2_LOAD_CONST_INLINE_BORROW", uops)
+        self.assertIn("_LOAD_CONST_INLINE_BORROW", uops)
 
     def test_compare_op_str_insert_two_load_const_inline_borrow(self):
         def testfunc(n):
@@ -1897,7 +2084,7 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
         self.assertNotIn("_COMPARE_OP_STR", uops)
-        self.assertIn("_INSERT_2_LOAD_CONST_INLINE_BORROW", uops)
+        self.assertIn("_LOAD_CONST_INLINE_BORROW", uops)
 
     def test_compare_op_float_insert_two_load_const_inline_borrow(self):
         def testfunc(n):
@@ -1914,7 +2101,7 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
         self.assertNotIn("_COMPARE_OP_FLOAT", uops)
-        self.assertIn("_INSERT_2_LOAD_CONST_INLINE_BORROW", uops)
+        self.assertIn("_LOAD_CONST_INLINE_BORROW", uops)
 
     def test_contains_op_pop_two_load_const_inline_borrow(self):
         def testfunc(n):
@@ -1931,7 +2118,6 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
         self.assertNotIn("_CONTAINS_OP", uops)
-        self.assertNotIn("_POP_TWO_LOAD_CONST_INLINE_BORROW", uops)
 
     def test_to_bool_bool_contains_op_set(self):
         """
@@ -2173,7 +2359,7 @@ class TestUopsOptimization(unittest.TestCase):
         uops = get_opnames(ex)
         self.assertNotIn("_GUARD_TOS_ANY_SET", uops)
         # _CONTAINS_OP_SET is constant-folded away for frozenset literals
-        self.assertIn("_INSERT_2_LOAD_CONST_INLINE_BORROW", uops)
+        self.assertIn("_LOAD_CONST_INLINE_BORROW", uops)
 
     def test_remove_guard_for_known_type_tuple(self):
         def f(n):
@@ -2644,6 +2830,21 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertNotIn("_GUARD_TOS_INT", uops)
         self.assertIn("_POP_TOP_NOP", uops)
 
+    def test_check_is_not_py_callable(self):
+        def testfunc(n):
+            total = 0
+            f = len
+            xs = (1, 2, 3)
+            for _ in range(n):
+                total += f(xs)
+            return total
+
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, 3 * TIER2_THRESHOLD)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertNotIn("_CHECK_IS_NOT_PY_CALLABLE", uops)
+
     def test_call_len_string(self):
         def testfunc(n):
             for _ in range(n):
@@ -3010,7 +3211,6 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertNotIn("_CALL_ISINSTANCE", uops)
         self.assertNotIn("_TO_BOOL_BOOL", uops)
         self.assertNotIn(self.guard_is_true, uops)
-        self.assertNotIn("_POP_TOP_LOAD_CONST_INLINE_BORROW", uops)
 
     def test_call_isinstance_is_false(self):
         def testfunc(n):
@@ -3028,7 +3228,6 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertNotIn("_CALL_ISINSTANCE", uops)
         self.assertNotIn("_TO_BOOL_BOOL", uops)
         self.assertNotIn(self.guard_is_false, uops)
-        self.assertNotIn("_POP_TOP_LOAD_CONST_INLINE_BORROW", uops)
 
     def test_call_isinstance_subclass(self):
         def testfunc(n):
@@ -3046,7 +3245,6 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertNotIn("_CALL_ISINSTANCE", uops)
         self.assertNotIn("_TO_BOOL_BOOL", uops)
         self.assertNotIn(self.guard_is_true, uops)
-        self.assertNotIn("_POP_TOP_LOAD_CONST_INLINE_BORROW", uops)
 
     def test_call_isinstance_unknown_object(self):
         def testfunc(n):
@@ -4561,7 +4759,7 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertEqual(res, TIER2_THRESHOLD)
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
-        self.assertIn("_INSERT_2_LOAD_CONST_INLINE_BORROW", uops)
+        self.assertIn("_LOAD_CONST_INLINE_BORROW", uops)
         self.assertNotIn("_BINARY_OP_SUBSCR_DICT", uops)
 
     def test_binary_subscr_frozendict_const_fold(self):
@@ -4696,6 +4894,24 @@ class TestUopsOptimization(unittest.TestCase):
         # v + 1 should be constant folded
         self.assertNotIn("_BINARY_OP", uops)
 
+    def test_is_none_narrows_to_constant(self):
+        def testfunc(n):
+            value = None
+            hits = 0
+            for _ in range(n):
+                if value is None:
+                    hits += 1
+            return hits
+
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, TIER2_THRESHOLD)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+
+        self.assertNotIn("_IS_NONE", uops)
+        self.assertIn("_GUARD_IS_NONE_POP", uops)
+        self.assertIn("_POP_TOP_NOP", uops)
+
     def test_is_false_narrows_to_constant(self):
         def f(n):
             def return_false():
@@ -4791,7 +5007,7 @@ class TestUopsOptimization(unittest.TestCase):
 
         self.assertIn("_LOAD_ATTR_PROPERTY_FRAME", uops)
         # This is a sign the optimizer ran and didn't hit contradiction.
-        self.assertIn("_INSERT_2_LOAD_CONST_INLINE_BORROW", uops)
+        self.assertIn("_LOAD_CONST_INLINE_BORROW", uops)
 
     def test_unary_negative(self):
         def testfunc(n):
@@ -5179,6 +5395,27 @@ class TestUopsOptimization(unittest.TestCase):
         PYTHON_JIT="1", PYTHON_JIT_STRESS="1")
         self.assertEqual(result[0].rc, 0, result)
 
+    def test_func_version_guarded_on_change(self):
+        def testfunc(n):
+            for i in range(n):
+                # Only works on functions promoted to constants
+                global_identity_code_will_be_modified(i)
+
+        testfunc(TIER2_THRESHOLD)
+
+        ex = get_first_executor(testfunc)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertIn("_PUSH_FRAME", uops)
+        self.assertIn("_CHECK_FUNCTION_VERSION", uops)
+
+        global_identity_code_will_be_modified.__code__ = (lambda a: 0xdeadead).__code__
+        _testinternalcapi.clear_executor_deletion_list()
+        ex = get_first_executor(testfunc)
+        self.assertIsNone(ex)
+        # JItted code should've deopted.
+        self.assertEqual(global_identity_code_will_be_modified(None), 0xdeadead)
+
     def test_call_super(self):
         class A:
             def method1(self):
@@ -5225,12 +5462,19 @@ class TestUopsOptimization(unittest.TestCase):
 def global_identity(x):
     return x
 
+def global_identity_code_will_be_modified(x):
+    return x
+
 class TestObject:
     def test(self, *args, **kwargs):
         return args[0]
 
 test_object = TestObject()
 test_bound_method = TestObject.test.__get__(test_object)
+
+class MyGlobalPoint:
+    def __init__(self, x, y):
+        return None
 
 if __name__ == "__main__":
     unittest.main()

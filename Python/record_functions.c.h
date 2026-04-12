@@ -74,8 +74,7 @@ void _PyOpcode_RecordFunction_BOUND_METHOD(_PyInterpreterFrame *frame, _PyStackR
     callable = stack_pointer[-2 - oparg];
     PyObject *callable_o = PyStackRef_AsPyObjectBorrow(callable);
     if (Py_TYPE(callable_o) == &PyMethod_Type) {
-        PyObject *func = ((PyMethodObject *)callable_o)->im_func;
-        *recorded_value = (PyObject *)func;
+        *recorded_value = (PyObject *)callable_o;
         Py_INCREF(*recorded_value);
     }
 }
@@ -102,6 +101,7 @@ const uint8_t _PyOpcode_RecordFunctionIndices[256] = {
         [LOAD_ATTR_SLOT] = _RECORD_TOS_TYPE_INDEX,
         [LOAD_ATTR_CLASS_WITH_METACLASS_CHECK] = _RECORD_TOS_TYPE_INDEX,
         [LOAD_ATTR_PROPERTY] = _RECORD_TOS_TYPE_INDEX,
+        [STORE_ATTR_INSTANCE_VALUE] = _RECORD_TOS_TYPE_INDEX,
         [STORE_ATTR_WITH_HINT] = _RECORD_TOS_TYPE_INDEX,
         [STORE_ATTR_SLOT] = _RECORD_TOS_TYPE_INDEX,
         [FOR_ITER_GEN] = _RECORD_NOS_GEN_FUNC_INDEX,

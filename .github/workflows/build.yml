@@ -11,7 +11,8 @@ on:
     - 'main'
     - '3.*'
 
-permissions: {}
+permissions:
+  contents: read
 
 concurrency:
   # https://docs.github.com/en/actions/writing-workflows/workflow-syntax-for-github-actions#concurrency
@@ -612,6 +613,7 @@ jobs:
       needs.build-context.outputs.run-ci-fuzz == 'true'
       || needs.build-context.outputs.run-ci-fuzz-stdlib == 'true'
     permissions:
+      contents: read
       security-events: write
     strategy:
       fail-fast: false
