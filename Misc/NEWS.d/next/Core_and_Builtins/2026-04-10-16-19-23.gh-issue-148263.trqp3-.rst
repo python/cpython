@@ -1,2 +1,6 @@
-fix refcount leak in weakref proxy unwrapping by introducing a safe
-_proxy_unwrap helper
+Fix refcount leak in weakref proxy binary/ternary operations and
+proxy_richcompare: when unwrapping the second or third argument fails
+(dead proxy), the first argument's refcount was already incremented by
+a prior UNWRAP but never released. Introduces UNWRAP_OR(o, cleanup),
+which executes cleanup before returning NULL, allowing callers to
+release any previously acquired references on failure.
