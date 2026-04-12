@@ -153,23 +153,40 @@ class ZZDummyTest(ZZDummyMixin, unittest.TestCase):
         del self.zz
 
     def test_exists(self):
-        self.assertEqual(zzdummy.idleConf.GetSectionList('user', 'extensions'), [])
-        self.assertEqual(zzdummy.idleConf.GetSectionList('default', 'extensions'), ['AutoComplete', 'CodeContext', 'FormatParagraph', 'ParenMatch', 'ZzDummy', 'ZzDummy_cfgBindings', 'ZzDummy_bindings'])
-        self.assertIn("ZzDummy", zzdummy.idleConf.GetExtensions(False))
-        self.assertNotIn("ZzDummy", zzdummy.idleConf.GetExtensions())
-        self.assertEqual(zzdummy.idleConf.GetExtensionKeys("ZzDummy"), {})
-        self.assertEqual(zzdummy.idleConf.GetExtensionBindings("ZzDummy"), {'<<z-out>>': ['<Control-Shift-KeyRelease-Delete>']})
+        conf = zzdummy.idleConf
+        self.assertEqual(
+            conf.GetSectionList('user', 'extensions'), [])
+        self.assertEqual(
+            conf.GetSectionList('default', 'extensions'),
+            ['AutoComplete', 'CodeContext', 'FormatParagraph',
+             'ParenMatch', 'ZzDummy', 'ZzDummy_cfgBindings',
+             'ZzDummy_bindings'])
+        self.assertIn("ZzDummy", conf.GetExtensions(False))
+        self.assertNotIn("ZzDummy", conf.GetExtensions())
+        self.assertEqual(
+            conf.GetExtensionKeys("ZzDummy"), {})
+        self.assertEqual(
+            conf.GetExtensionBindings("ZzDummy"),
+            {'<<z-out>>': ['<Control-Shift-KeyRelease-Delete>']})
 
     def test_exists_user(self):
-        zzdummy.idleConf.userCfg["extensions"].read_dict({
+        conf = zzdummy.idleConf
+        conf.userCfg["extensions"].read_dict({
             "ZzDummy": {'enable': 'True'}
         })
-        self.assertEqual(zzdummy.idleConf.GetSectionList('user', 'extensions'), ["ZzDummy"])
-        self.assertIn("ZzDummy", zzdummy.idleConf.GetExtensions())
-        self.assertEqual(zzdummy.idleConf.GetExtensionKeys("ZzDummy"), {'<<z-in>>': ['<Control-Shift-KeyRelease-Insert>']})
-        self.assertEqual(zzdummy.idleConf.GetExtensionBindings("ZzDummy"), {'<<z-in>>': ['<Control-Shift-KeyRelease-Insert>'], '<<z-out>>': ['<Control-Shift-KeyRelease-Delete>']})
+        self.assertEqual(
+            conf.GetSectionList('user', 'extensions'),
+            ["ZzDummy"])
+        self.assertIn("ZzDummy", conf.GetExtensions())
+        self.assertEqual(
+            conf.GetExtensionKeys("ZzDummy"),
+            {'<<z-in>>': ['<Control-Shift-KeyRelease-Insert>']})
+        self.assertEqual(
+            conf.GetExtensionBindings("ZzDummy"),
+            {'<<z-in>>': ['<Control-Shift-KeyRelease-Insert>'],
+             '<<z-out>>': ['<Control-Shift-KeyRelease-Delete>']})
         # Restore
-        zzdummy.idleConf.userCfg["extensions"].remove_section("ZzDummy")
+        conf.userCfg["extensions"].remove_section("ZzDummy")
 
 
 if __name__ == '__main__':
