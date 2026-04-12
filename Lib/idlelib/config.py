@@ -469,14 +469,14 @@ class IdleConf:
                     extName = extn  # TODO return here?
         return extName
 
-    def GetExtensionKeys(self, extension_name):
+    def GetExtensionKeys(self, extensionName):
         """Return dict: {configurable extensionName event : active keybinding}.
 
         Events come from default config extension_cfgBindings section.
         Keybindings come from GetCurrentKeySet() active key dict,
         where previously used bindings are disabled.
         """
-        bindings_section = f'{extension_name}_cfgBindings'
+        bindings_section = f'{extensionName}_cfgBindings'
         current_keyset = self.GetCurrentKeySet()
         extension_keys = {}
 
@@ -529,15 +529,15 @@ class IdleConf:
             extension_keys[event] = binding
         return extension_keys
 
-    def GetExtensionBindings(self, extension_name):
+    def GetExtensionBindings(self, extensionName):
         """Return dict {extensionName event : active or defined keybinding}.
 
         Augment self.GetExtensionKeys(extensionName) with mapping of non-
         configurable events (from default config) to GetOption splits,
         as in self.__GetRawExtensionKeys.
         """
-        bindings_section = f'{extension_name}_bindings'
-        extension_keys = self.GetExtensionKeys(extension_name)
+        bindings_section = f'{extensionName}_bindings'
+        extension_keys = self.GetExtensionKeys(extensionName)
 
         # add the non-configurable bindings
         event_names = set()
