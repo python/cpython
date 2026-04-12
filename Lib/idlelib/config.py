@@ -28,7 +28,6 @@ configuration problem notification and resolution.
 from configparser import ConfigParser
 import os
 import sys
-from collections import ChainMap
 
 from tkinter.font import Font
 import idlelib
@@ -509,14 +508,17 @@ class IdleConf:
         bindings_section = f'{extension_name}_cfgBindings'
         extension_keys = {}
 
-        event_names = []
+        event_names = set()
         if self.userCfg['extensions'].has_section(bindings_section):
-            event_names.append(self.userCfg['extensions'].GetOptionList(bindings_section))
+            event_names |= set(
+                self.userCfg['extensions'].GetOptionList(bindings_section)
+            )
         if self.defaultCfg['extensions'].has_section(bindings_section):
-            event_names.append(self.defaultCfg['extensions'].GetOptionList(bindings_section))
+            event_names |= set(
+                self.defaultCfg['extensions'].GetOptionList(bindings_section)
+            )
 
-        # Because chain map, favors user bindings over default bindings
-        for event_name in ChainMap(*event_names):
+        for event_name in event_names:
             binding = self.GetOption(
                 'extensions',
                 bindings_section,
@@ -538,18 +540,17 @@ class IdleConf:
         extension_keys = self.GetExtensionKeys(extension_name)
 
         # add the non-configurable bindings
-        values = []
+        event_names = set()
         if self.userCfg['extensions'].has_section(bindings_section):
-            values.append(
+            event_names |= set(
                 self.userCfg['extensions'].GetOptionList(bindings_section)
             )
         if self.defaultCfg['extensions'].has_section(bindings_section):
-            values.append(
+            event_names |= set(
                 self.defaultCfg['extensions'].GetOptionList(bindings_section)
             )
 
-        # Because chain map, favors user bindings over default bindings
-        for event_name in ChainMap(*values):
+        for event_name in event_names:
             binding = self.GetOption(
                 'extensions',
                 bindings_section,
