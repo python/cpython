@@ -29,6 +29,12 @@ You can use it to enable code that only runs under the free-threaded build::
    can be used to determine whether the current running interpreter had the
    macro defined.
 
+`PyObject` opaqueness
+=====================
+
+Accessing any member of `PyObject` is now prohibited, like the non-GIL
+stable ABI. For instance, prefer `Py_Type()` and `Py_SET_TYPE()` over manipulating `ob_type` directly,
+`Py_REFCNT`, `Py_INCREF()` and `Py_DecRef().` over `ob_refcnt`, etc.
 
 Module Initialization
 =====================
@@ -412,9 +418,8 @@ Limited C API and Stable ABI
 
 If you use
 `setuptools <https://setuptools.pypa.io/en/latest/setuptools.html>`_ to build
-your extension, a future version of `setuptools` will allow ``py_limited_api=True`` 
+your extension, a future version of `setuptools` will allow ``py_limited_api=True``
 to be set to allow targeting limited API when building with the free-threaded build.
-
 
 Windows
 .......
