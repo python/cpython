@@ -1,0 +1,1 @@
+Fixed compilation of _Py_hexlify_simd with older clang versions.
