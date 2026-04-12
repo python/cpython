@@ -1,14 +1,14 @@
-import os
-import pathlib
-import tempfile
-import functools
 import contextlib
-import types
+import functools
 import importlib
 import inspect
 import itertools
+import os
+import pathlib
+import tempfile
+import types
+from typing import cast, Optional, Union
 
-from typing import Union, Optional, cast
 from .abc import ResourceReader, Traversable
 
 Package = Union[types.ModuleType, str]
@@ -32,7 +32,7 @@ def get_resource_reader(package: types.ModuleType) -> Optional[ResourceReader]:
     # zipimport.zipimporter does not support weak references, resulting in a
     # TypeError.  That seems terrible.
     spec = package.__spec__
-    reader = getattr(spec.loader, 'get_resource_reader', None)  # type: ignore[union-attr]
+    reader = getattr(spec.loader, "get_resource_reader", None)  # type: ignore[union-attr]
     if reader is None:
         return None
     return reader(spec.name)  # type: ignore[union-attr]
@@ -50,7 +50,7 @@ def _(cand: str) -> types.ModuleType:
 
 @resolve.register
 def _(cand: None) -> types.ModuleType:
-    return resolve(_infer_caller().f_globals['__name__'])
+    return resolve(_infer_caller().f_globals["__name__"])
 
 
 def _infer_caller():
@@ -62,7 +62,7 @@ def _infer_caller():
         return frame_info.filename == stack[0].filename
 
     def is_wrapper(frame_info):
-        return frame_info.function == 'wrapper'
+        return frame_info.function == "wrapper"
 
     stack = inspect.stack()
     not_this_file = itertools.filterfalse(is_this_file, stack)
@@ -87,7 +87,7 @@ def from_package(package: types.ModuleType):
 @contextlib.contextmanager
 def _tempfile(
     reader,
-    suffix='',
+    suffix="",
     # gh-93353: Keep a reference to call os.remove() in late Python
     # finalization.
     *,

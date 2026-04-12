@@ -134,6 +134,22 @@ dummy_func(void) {
         assert(!PyJitRef_IsUnique(value));
     }
 
+    op(_GUARD_TYPE_VERSION_LOCKED, (type_version/2, owner -- owner)) {
+        assert(type_version);
+        if (sym_matches_type_version(owner, type_version)) {
+            ADD_OP(_NOP, 0, 0);
+        } else {
+            PyTypeObject *probable_type = sym_get_probable_type(owner);
+            if (probable_type->tp_version_tag == type_version && sym_set_type_version(owner, type_version)) {
+                // Promote the probable type version to a known one.
+                if ((probable_type->tp_flags & Py_TPFLAGS_IMMUTABLETYPE) == 0) {
+                    PyType_Watch(TYPE_WATCHER_ID, (PyObject *)probable_type);
+                    _Py_BloomFilter_Add(dependencies, probable_type);
+                }
+            }
+        }
+    }
+
     op(_STORE_ATTR_INSTANCE_VALUE, (offset/1, value, owner -- o)) {
         (void)offset;
         (void)value;
@@ -210,6 +226,10 @@ dummy_func(void) {
             }
             else {
                 sym_set_const(owner, type);
+                if ((((PyTypeObject *)type)->tp_flags & Py_TPFLAGS_IMMUTABLETYPE) == 0) {
+                    PyType_Watch(TYPE_WATCHER_ID, type);
+                    _Py_BloomFilter_Add(dependencies, type);
+                }
             }
         }
     }
@@ -710,6 +730,16 @@ dummy_func(void) {
         r = right;
     }
 
+    op(_IS_NONE, (value -- b)) {
+        if (sym_is_const(ctx, value)) {
+            PyObject *value_o = sym_get_const(ctx, value);
+            b = sym_new_const(ctx, Py_IsNone(value_o) ? Py_True : Py_False);
+        }
+        else {
+            b = sym_new_type(ctx, &PyBool_Type);
+        }
+    }
+
     op(_CONTAINS_OP, (left, right -- b, l, r)) {
         b = sym_new_type(ctx, &PyBool_Type);
         l = left;
@@ -763,35 +793,14 @@ dummy_func(void) {
         value = PyJitRef_Borrow(sym_new_const(ctx, ptr));
     }
 
-    op(_POP_CALL_LOAD_CONST_INLINE_BORROW, (ptr/4, unused, unused -- value)) {
-        value = PyJitRef_Borrow(sym_new_const(ctx, ptr));
-    }
-
-    op(_POP_CALL_TWO_LOAD_CONST_INLINE_BORROW, (ptr/4, unused, unused, unused, unused -- value)) {
-        value = PyJitRef_Borrow(sym_new_const(ctx, ptr));
-    }
-
-    op(_SHUFFLE_2_LOAD_CONST_INLINE_BORROW, (ptr/4, unused, unused, arg -- res, a)) {
-        res = PyJitRef_Borrow(sym_new_const(ctx, ptr));
-        a = arg;
+    op(_POP_TOP_OPARG, (args[oparg] --)) {
+        for (int i = oparg-1; i >= 0; i--) {
+            optimize_pop_top(ctx, this_instr, args[i]);
+        }
     }
 
     op(_POP_TOP, (value -- )) {
-        PyTypeObject *typ = sym_get_type(value);
-        if (PyJitRef_IsBorrowed(value) ||
-            sym_is_immortal(PyJitRef_Unwrap(value)) ||
-            sym_is_null(value)) {
-            ADD_OP(_POP_TOP_NOP, 0, 0);
-        }
-        else if (typ == &PyLong_Type) {
-            ADD_OP(_POP_TOP_INT, 0, 0);
-        }
-        else if (typ == &PyFloat_Type) {
-            ADD_OP(_POP_TOP_FLOAT, 0, 0);
-        }
-        else if (typ == &PyUnicode_Type) {
-            ADD_OP(_POP_TOP_UNICODE, 0, 0);
-        }
+        optimize_pop_top(ctx, this_instr, value);
     }
 
     op(_POP_TOP_INT, (value --)) {
@@ -1064,9 +1073,27 @@ dummy_func(void) {
     }
 
     op(_CHECK_AND_ALLOCATE_OBJECT, (type_version/2, callable, self_or_null, args[oparg] -- callable, self_or_null, args[oparg])) {
-        (void)type_version;
         (void)args;
-        callable = sym_new_not_null(ctx);
+        PyObject *probable_callable = sym_get_probable_value(callable);
+        assert(probable_callable != NULL);
+        assert(PyType_Check(probable_callable));
+        PyTypeObject *tp = (PyTypeObject *)probable_callable;
+        if (tp->tp_version_tag == type_version) {
+            // If the type version has not changed since we last saw it,
+            // then we know this __init__ is definitely the same one as in the cache.
+            // We can promote callable to a known constant. This does not need a
+            // type watcher, as we do not remove this _CHECK_AND_ALLOCATE_OBJECT guard.
+            // TODO: split up _CHECK_AND_ALLOCATE_OBJECT to the check then alloate, so we can
+            // eliminate the check.
+            PyHeapTypeObject *cls = (PyHeapTypeObject *)probable_callable;
+            PyObject *init = cls->_spec_cache.init;
+            assert(init != NULL);
+            assert(PyFunction_Check(init));
+            callable = sym_new_const(ctx, init);
+        }
+        else {
+            callable = sym_new_not_null(ctx);
+        }
         self_or_null = sym_new_not_null(ctx);
     }
 
@@ -1190,6 +1217,13 @@ dummy_func(void) {
         (void)framesize;
     }
 
+    op(_CHECK_IS_NOT_PY_CALLABLE, (callable, unused, unused[oparg] -- callable, unused, unused[oparg])) {
+        PyTypeObject *type = sym_get_type(callable);
+        if (type && type != &PyFunction_Type && type != &PyMethod_Type) {
+            ADD_OP(_NOP, 0, 0);
+        }
+    }
+
     op(_PUSH_FRAME, (new_frame -- )) {
         SYNC_SP();
         if (!CURRENT_FRAME_IS_INIT_SHIM()) {
@@ -1252,8 +1286,11 @@ dummy_func(void) {
         PyObject* type = (PyObject *)sym_get_type(arg);
         if (type) {
             res = sym_new_const(ctx, type);
-            ADD_OP(_SHUFFLE_2_LOAD_CONST_INLINE_BORROW, 0,
-                       (uintptr_t)type);
+            ADD_OP(_SWAP, 3, 0);
+            ADD_OP(_POP_TOP, 0, 0);
+            ADD_OP(_POP_TOP, 0, 0);
+            ADD_OP(_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)type);
+            ADD_OP(_SWAP, 2, 0);
         }
         else {
             res = sym_new_not_null(ctx);
@@ -1290,7 +1327,11 @@ dummy_func(void) {
                 out = Py_True;
             }
             sym_set_const(res, out);
-            ADD_OP(_POP_CALL_TWO_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)out);
+            ADD_OP(_POP_TOP, 0, 0);
+            ADD_OP(_POP_TOP, 0, 0);
+            ADD_OP(_POP_TOP_NOP, 0, 0);
+            ADD_OP(_POP_TOP, 0, 0);
+            ADD_OP(_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)out);
         }
     }
 
@@ -1299,6 +1340,19 @@ dummy_func(void) {
         c = callable;
         s = self;
         none = sym_new_const(ctx, Py_None);
+    }
+
+    op(_GUARD_CALLABLE_BUILTIN_CLASS, (callable, unused, unused[oparg] -- callable, unused, unused[oparg])) {
+        PyObject *callable_o = sym_get_const(ctx, callable);
+        if (callable_o && sym_matches_type(callable, &PyType_Type)) {
+            PyTypeObject *tp = (PyTypeObject *)callable_o;
+            if (tp->tp_vectorcall != NULL) {
+                ADD_OP(_NOP, 0, 0);
+            }
+        }
+        else {
+            sym_set_type(callable, &PyType_Type);
+        }
     }
 
     op(_GUARD_CALLABLE_BUILTIN_O, (callable, self_or_null, args[oparg] -- callable, self_or_null, args[oparg])) {
@@ -1342,6 +1396,10 @@ dummy_func(void) {
         }
     }
 
+    op(_CALL_BUILTIN_FAST_WITH_KEYWORDS, (callable, self_or_null, args[oparg] -- callable, self_or_null, args[oparg])) {
+        callable = sym_new_not_null(ctx);
+    }
+
     op(_CALL_BUILTIN_O, (callable, self_or_null, args[oparg] -- res, c, s)) {
         res = sym_new_not_null(ctx);
         c = callable;
@@ -1355,6 +1413,14 @@ dummy_func(void) {
         else {
             s = sym_new_unknown(ctx);
         }
+    }
+
+    op(_CALL_BUILTIN_FAST, (callable, self_or_null, args[oparg] -- callable, self_or_null, args[oparg])) {
+        callable = sym_new_not_null(ctx);
+    }
+
+    op(_CALL_BUILTIN_CLASS, (callable, self_or_null, args[oparg] -- callable, self_or_null, args[oparg])) {
+        callable = sym_new_not_null(ctx);
     }
 
     op(_GUARD_CALLABLE_METHOD_DESCRIPTOR_O, (callable, self_or_null, args[oparg] -- callable, self_or_null, args[oparg])) {
@@ -1467,26 +1533,26 @@ dummy_func(void) {
         }
     }
 
-    op(_CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS, (callable, self_or_null, args[oparg] -- res)) {
+    op(_CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS, (callable, self_or_null, args[oparg] -- callable, self_or_null, args[oparg])) {
         PyObject *callable_o = sym_get_const(ctx, callable);
         if (callable_o && Py_IS_TYPE(callable_o, &PyMethodDescr_Type)
             && sym_is_not_null(self_or_null)) {
             PyMethodDescrObject *method = (PyMethodDescrObject *)callable_o;
             PyCFunction cfunc = method->d_method->ml_meth;
-            ADD_OP(_CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS_INLINE, oparg + 1, (uintptr_t)cfunc);
+            ADD_OP(_CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS_INLINE, oparg, (uintptr_t)cfunc);
         }
-        res = sym_new_not_null(ctx);
+        callable = sym_new_not_null(ctx);
     }
 
-    op(_CALL_METHOD_DESCRIPTOR_FAST, (callable, self_or_null, args[oparg] -- res)) {
+    op(_CALL_METHOD_DESCRIPTOR_FAST, (callable, self_or_null, args[oparg] -- callable, self_or_null, args[oparg])) {
         PyObject *callable_o = sym_get_const(ctx, callable);
         if (callable_o && Py_IS_TYPE(callable_o, &PyMethodDescr_Type)
             && sym_is_not_null(self_or_null)) {
             PyMethodDescrObject *method = (PyMethodDescrObject *)callable_o;
             PyCFunction cfunc = method->d_method->ml_meth;
-            ADD_OP(_CALL_METHOD_DESCRIPTOR_FAST_INLINE, oparg + 1, (uintptr_t)cfunc);
+            ADD_OP(_CALL_METHOD_DESCRIPTOR_FAST_INLINE, oparg, (uintptr_t)cfunc);
         }
-        res = sym_new_not_null(ctx);
+        callable = sym_new_not_null(ctx);
     }
 
     op(_GUARD_CALLABLE_METHOD_DESCRIPTOR_FAST, (callable, self_or_null, args[oparg] -- callable, self_or_null, args[oparg])) {
