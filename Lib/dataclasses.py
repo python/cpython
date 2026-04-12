@@ -725,10 +725,10 @@ def _init_fn(fields, std_fields, kw_only_fields, frozen, has_post_init,
                         annotation_fields=annotation_fields)
 
 
-def _frozen_get_del_attr(cls, fields, func_builder):
-    locals = {'cls': cls,
+def _frozen_set_del_attr(cls, fields, func_builder):
+    locals = {'__class__': cls,
               'FrozenInstanceError': FrozenInstanceError}
-    condition = 'type(self) is cls'
+    condition = 'type(self) is __class__'
     if fields:
         condition += ' or name in {' + ', '.join(repr(f.name) for f in fields) + '}'
 
@@ -736,14 +736,14 @@ def _frozen_get_del_attr(cls, fields, func_builder):
                         ('self', 'name', 'value'),
                         (f'  if {condition}:',
                           '   raise FrozenInstanceError(f"cannot assign to field {name!r}")',
-                         f'  super(cls, self).__setattr__(name, value)'),
+                         f'  super(__class__, self).__setattr__(name, value)'),
                         locals=locals,
                         overwrite_error=True)
     func_builder.add_fn('__delattr__',
                         ('self', 'name'),
                         (f'  if {condition}:',
                           '   raise FrozenInstanceError(f"cannot delete field {name!r}")',
-                         f'  super(cls, self).__delattr__(name)'),
+                         f'  super(__class__, self).__delattr__(name)'),
                         locals=locals,
                         overwrite_error=True)
 
@@ -1199,7 +1199,7 @@ def _process_class(cls, init, repr, eq, order, unsafe_hash, frozen,
                             overwrite_error='Consider using functools.total_ordering')
 
     if frozen:
-        _frozen_get_del_attr(cls, field_list, func_builder)
+        _frozen_set_del_attr(cls, field_list, func_builder)
 
     # Decide if/how we're going to create a hash function.
     hash_action = _hash_action[bool(unsafe_hash),
