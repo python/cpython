@@ -2385,9 +2385,10 @@ defdict_repr(PyObject *op)
             }
             defrepr = PyUnicode_FromString("...");
         }
-        else
+        else {
             defrepr = PyObject_Repr(dd->default_factory);
-        Py_ReprLeave(dd->default_factory);
+            Py_ReprLeave(dd->default_factory);
+        }
     }
     if (defrepr == NULL) {
         Py_DECREF(baserepr);
@@ -2872,6 +2873,7 @@ collections_exec(PyObject *module) {
 #undef ADD_TYPE
 
 static struct PyModuleDef_Slot collections_slots[] = {
+    _Py_ABI_SLOT,
     {Py_mod_exec, collections_exec},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {Py_mod_gil, Py_MOD_GIL_NOT_USED},

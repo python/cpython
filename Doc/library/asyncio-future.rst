@@ -196,6 +196,10 @@ Future Object
       Otherwise, change the Future's state to *cancelled*,
       schedule the callbacks, and return ``True``.
 
+      The optional string argument *msg* is passed as the argument to the
+      :exc:`CancelledError` exception raised when a cancelled Future
+      is awaited.
+
       .. versionchanged:: 3.9
          Added the *msg* parameter.
 

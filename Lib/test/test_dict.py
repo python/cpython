@@ -1829,6 +1829,13 @@ class FrozenDictTests(unittest.TestCase):
         with self.assertRaises(TypeError):
             dict.__init__(d, x=1)
 
+        # Avoid copy if it's frozendict type
+        d2 = frozendict(d)
+        self.assertIs(d2, d)
+        d2 = FrozenDict(d)
+        self.assertIsNot(d2, d)
+        self.assertEqual(d2, d)
+
     def test_copy(self):
         d = frozendict(x=1, y=2)
         d2 = d.copy()

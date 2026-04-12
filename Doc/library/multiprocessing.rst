@@ -932,7 +932,8 @@ For an example of the usage of queues for interprocess communication see
    standard library's :mod:`queue` module are raised to signal timeouts.
 
    :class:`Queue` implements all the methods of :class:`queue.Queue` except for
-   :meth:`~queue.Queue.task_done` and :meth:`~queue.Queue.join`.
+   :meth:`~queue.Queue.task_done`, :meth:`~queue.Queue.join`, and
+   :meth:`~queue.Queue.shutdown`.
 
    .. method:: qsize()
 
