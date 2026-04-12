@@ -53,14 +53,18 @@ _magic_re = None
 _space_re = None
 
 def _get_magic_re():
-    """Internal function."""
+    """
+    Internal function that acts as a wrapper for the re import to make it lazy
+    """
     global _magic_re
     if _magic_re is None:
         _magic_re = re.compile(r'([\\{}])')
     return _magic_re
 
 def _get_space_re():
-    """Internal function."""
+    """
+    Internal function that acts as a wrapper for the re import to make it lazy
+    """
     global _space_re
     if _space_re is None:
         _space_re = re.compile(r'([\s])', re.ASCII)
