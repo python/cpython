@@ -425,7 +425,7 @@ class ExpatParser(xmlreader.IncrementalParser, xmlreader.Locator):
         try:
             xmlreader.IncrementalParser.parse(self, source)
         except Exception:
-            return 0
+            return 0  # FIXME: save error info here?
         finally:
             (self._parser, self._source) = self._entity_stack[-1]
             del self._entity_stack[-1]
