@@ -2237,11 +2237,7 @@ defdict_missing(PyObject *op, PyObject *key)
     PyObject *value;
     if (factory == NULL || factory == Py_None) {
         /* XXX Call dict.__missing__(key) */
-        PyObject *tup;
-        tup = PyTuple_Pack(1, key);
-        if (!tup) return NULL;
-        PyErr_SetObject(PyExc_KeyError, tup);
-        Py_DECREF(tup);
+        _PyErr_SetKeyError(key);
         return NULL;
     }
     value = _PyObject_CallNoArgs(factory);
