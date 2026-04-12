@@ -1,0 +1,4 @@
+Fix bare ``except`` clause in :mod:`xml.sax` expatreader's external entity
+handler that silently swallowed :exc:`KeyboardInterrupt` and
+:exc:`SystemExit`. Also fix entity parser stack leak on errors by moving
+cleanup into a ``finally`` clause.

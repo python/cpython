@@ -1055,6 +1055,65 @@ class ExpatReaderTest(XmlTestBase):
         self.assertEqual(result.getvalue(), start +
                          b"<doc></doc>")
 
+    def test_external_entity_ref_keyboard_interrupt(self):
+        # gh-148427: KeyboardInterrupt must propagate, not be swallowed
+        class KBHandler(handler.ContentHandler):
+            def startElement(self, name, attrs):
+                if name == 'entity':
+                    raise KeyboardInterrupt('test')
+
+        parser = create_parser()
+        parser.setFeature(feature_external_ges, True)
+        parser.setEntityResolver(self.TestEntityResolver())
+        parser.setContentHandler(KBHandler())
+
+        with self.assertRaises(KeyboardInterrupt):
+            parser.feed('<!DOCTYPE doc [\n')
+            parser.feed('  <!ENTITY test SYSTEM "whatever">\n')
+            parser.feed(']>\n')
+            parser.feed('<doc>&test;</doc>')
+            parser.close()
+
+    def test_external_entity_ref_system_exit(self):
+        # gh-148427: SystemExit must propagate, not be swallowed
+        class ExitHandler(handler.ContentHandler):
+            def startElement(self, name, attrs):
+                if name == 'entity':
+                    raise SystemExit(42)
+
+        parser = create_parser()
+        parser.setFeature(feature_external_ges, True)
+        parser.setEntityResolver(self.TestEntityResolver())
+        parser.setContentHandler(ExitHandler())
+
+        with self.assertRaises(SystemExit):
+            parser.feed('<!DOCTYPE doc [\n')
+            parser.feed('  <!ENTITY test SYSTEM "whatever">\n')
+            parser.feed(']>\n')
+            parser.feed('<doc>&test;</doc>')
+            parser.close()
+
+    def test_external_entity_ref_stack_cleanup(self):
+        # gh-148427: _entity_stack must be cleaned up after errors
+        class ErrorHandler(handler.ContentHandler):
+            def startElement(self, name, attrs):
+                if name == 'entity':
+                    raise ValueError('test error')
+
+        parser = create_parser()
+        parser.setFeature(feature_external_ges, True)
+        parser.setEntityResolver(self.TestEntityResolver())
+        parser.setContentHandler(ErrorHandler())
+
+        with self.assertRaises(SAXParseException):
+            parser.feed('<!DOCTYPE doc [\n')
+            parser.feed('  <!ENTITY test SYSTEM "whatever">\n')
+            parser.feed(']>\n')
+            parser.feed('<doc>&test;</doc>')
+            parser.close()
+
+        self.assertEqual(len(parser._entity_stack), 0)
+
     # ===== Attributes support
 
     class AttrGatherer(ContentHandler):
