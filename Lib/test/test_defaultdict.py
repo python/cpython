@@ -51,7 +51,11 @@ class TestDefaultDict(unittest.TestCase):
         d1 = defaultdict()
         self.assertRaises(KeyError, d1.__missing__, 42)
         d1.default_factory = list
-        self.assertEqual(d1.__missing__(42), [])
+        v1 = d1.__missing__(42)
+        self.assertEqual(v1, [])
+        v2 = d1.__missing__(42)
+        self.assertEqual(v2, [])
+        self.assertIsNot(v2, v1)
 
     def test_repr(self):
         d1 = defaultdict()
@@ -186,7 +190,7 @@ class TestDefaultDict(unittest.TestCase):
         with self.assertRaises(TypeError):
             i |= None
 
-    def test_factory_conflict_with_set_value(self):
+    def test_reentering_getitem_method(self):
         key = "conflict_test"
         count = 0
 
@@ -201,7 +205,7 @@ class TestDefaultDict(unittest.TestCase):
         test_dict = defaultdict(default_factory)
 
         self.assertEqual(count, 0)
-        self.assertEqual(test_dict[key], 2)
+        self.assertEqual(test_dict[key], 1)
         self.assertEqual(count, 2)
 
     def test_repr_recursive_factory(self):
