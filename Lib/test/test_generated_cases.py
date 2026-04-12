@@ -29,7 +29,7 @@ skip_if_different_mount_drives()
 
 test_tools.skip_if_missing("cases_generator")
 with test_tools.imports_under_tool("cases_generator"):
-    from analyzer import StackItem
+    from analyzer import StackItem, analyze_forest
     from cwriter import CWriter
     import parser
     from stack import Local, Stack
@@ -2637,6 +2637,75 @@ class TestGeneratedAbstractCases(unittest.TestCase):
         with self.assertRaisesRegex(SyntaxError,
                                     "Pure evaluation cannot take array-like inputs"):
             self.run_cases_test(input, input2, output)
+
+class TestAnalyzer(unittest.TestCase):
+    """Tests for analyzer.add_macro() recording-uop placement rules (gh-148285)."""
+
+    def _parse_and_analyze(self, src: str) -> None:
+        """Parse a raw DSL fragment and run analyze_forest() on it."""
+        nodes = parse_src(src)
+        analyze_forest(nodes)
+
+    # ---- shared DSL fragments -----------------------------------------------
+
+    _SPECIALIZE_OP = """\
+specializing op(_SPECIALIZE_DUMMY, (counter/1, value -- value)) {
+}
+"""
+    _RECORD_OP = """\
+op(_RECORD_DUMMY, (value -- value)) {
+    RECORD_VALUE(PyStackRef_AsPyObjectBorrow(value));
+}
+"""
+    _WORKER_OP = """\
+op(_WORKER_DUMMY, (value -- res)) {
+    res = value;
+}
+"""
+
+    # ---- test cases ---------------------------------------------------------
+
+    def test_recording_uop_after_specializing(self):
+        """Valid: recording uop directly follows a specializing uop."""
+        src = (
+            self._SPECIALIZE_OP
+            + self._RECORD_OP
+            + self._WORKER_OP
+            + "macro(VALID_DIRECT) = _SPECIALIZE_DUMMY + _RECORD_DUMMY + _WORKER_DUMMY;\n"
+        )
+        # Must not raise.
+        self._parse_and_analyze(src)
+
+    def test_recording_uop_after_specializing_with_cache(self):
+        """Valid: recording uop follows a specializing uop with a cache effect between them.
+
+        CacheEffect entries are transparent — they must not close the gate that
+        allows a recording uop to follow a specializing uop.
+        """
+        src = (
+            self._SPECIALIZE_OP
+            + self._RECORD_OP
+            + self._WORKER_OP
+            + "macro(VALID_CACHE) = _SPECIALIZE_DUMMY + unused/1 + _RECORD_DUMMY + _WORKER_DUMMY;\n"
+        )
+        # Must not raise.
+        self._parse_and_analyze(src)
+
+    def test_recording_uop_after_non_specializing_raises(self):
+        """Invalid: recording uop after a plain (non-specializing) uop must be rejected."""
+        src = (
+            self._SPECIALIZE_OP
+            + self._RECORD_OP
+            + self._WORKER_OP
+            + "macro(INVALID) = _WORKER_DUMMY + _RECORD_DUMMY;\n"
+        )
+        with self.assertRaisesRegex(
+            SyntaxError,
+            r"Recording uop _RECORD_DUMMY must be first in macro "
+            r"or immediately follow a specializing uop",
+        ):
+            self._parse_and_analyze(src)
+
 
 if __name__ == "__main__":
     unittest.main()

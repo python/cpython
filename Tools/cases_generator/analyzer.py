@@ -1132,7 +1132,10 @@ def add_macro(
     macro: parser.Macro, instructions: dict[str, Instruction], uops: dict[str, Uop]
 ) -> None:
     parts: list[Part] = []
-    # Tracks the last real Uop seen; CacheEffect and flush leave it unchanged.
+    # Tracks the last "plain" uop (neither specializing nor recording).
+    # CacheEffect, flush, specializing, and recording uops all leave it
+    # unchanged, so prev_uop being non-None is sufficient to mean
+    # "a disqualifying uop has been seen before this recording uop".
     prev_uop: Uop | None = None
     for part in macro.uops:
         match part:
@@ -1145,26 +1148,23 @@ def add_macro(
                             f"No Uop named {part.name}", macro.tokens[0]
                         )
                     uop = uops[part.name]
-                    if uop.properties.records_value:
-                        # Valid if first real uop, or if the previous real uop
-                        # is specializing (cache slots between them are transparent).
-                        preceding_is_specializing = (
-                            prev_uop is not None
-                            and "specializing" in prev_uop.annotations
-                        )
-                        if prev_uop is not None and not preceding_is_specializing:
-                            raise analysis_error(
-                                f"Recording uop {part.name} must be first in macro "
-                                f"or immediately follow a specializing uop",
-                                macro.tokens[0])
+                    if uop.properties.records_value and prev_uop is not None:
+                        raise analysis_error(
+                            f"Recording uop {part.name} must be first in macro "
+                            f"or immediately follow a specializing uop",
+                            macro.tokens[0])
                     parts.append(uop)
-                    prev_uop = uop  # flush and CacheEffect intentionally excluded
+                    # Only plain worker uops set prev_uop; specializing and
+                    # recording uops are excluded so the check above stays simple.
+                    if not uop.properties.records_value and "specializing" not in uop.annotations:
+                        prev_uop = uop
             case parser.CacheEffect():
                 parts.append(Skip(part.size))
             case _:
                 assert False
     assert parts
     add_instruction(macro.first_token, macro.name, parts, instructions)
+
 
 
 def add_family(
