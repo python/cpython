@@ -1,0 +1,2 @@
+Fail fast with an explicit and clear error message if tail-calling is not
+possible for MSVC builds on Windows. Patch by Chris Eibl.

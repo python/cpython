@@ -520,7 +520,7 @@ _Py_COMP_DIAG_IGNORE_DEPR_DECLS
         do { \
             obj = (EXPR); \
             if (obj == NULL) { \
-                return NULL; \
+                goto fail; \
             } \
             int res = PyDict_SetItemString(dict, (KEY), obj); \
             Py_DECREF(obj); \

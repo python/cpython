@@ -1585,6 +1585,7 @@ extern "C" {
     INIT_ID(all), \
     INIT_ID(all_threads), \
     INIT_ID(allow_code), \
+    INIT_ID(alphabet), \
     INIT_ID(any), \
     INIT_ID(append), \
     INIT_ID(arg), \
@@ -1974,6 +1975,7 @@ extern "C" {
     INIT_ID(overlapped), \
     INIT_ID(owner), \
     INIT_ID(pad), \
+    INIT_ID(padded), \
     INIT_ID(pages), \
     INIT_ID(parameter), \
     INIT_ID(parent), \
