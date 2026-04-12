@@ -8217,7 +8217,7 @@ AC_SUBST([LIBHACL_BLAKE2_SIMD256_OBJS])
 # HACL*-based cryptographic primitives
 
 AC_MSG_CHECKING([for HACL* library linking type])
-if test "$ac_sys_system" = "WASI"; then
+if test "$ac_sys_system" = "WASI" || test "$MODULE_BUILDTYPE" = "static"; then
   LIBHACL_LDEPS_LIBTYPE=STATIC
   AC_MSG_RESULT([static])
 else
