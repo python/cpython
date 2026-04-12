@@ -751,7 +751,7 @@ bool _mi_prim_random_buf(void* buf, size_t buf_len) {
 
 #elif defined(__ANDROID__) || defined(__DragonFly__) || \
       defined(__FreeBSD__) || defined(__NetBSD__) || defined(__OpenBSD__) || \
-      defined(__sun)
+      defined(__sun) || defined(__CYGWIN__)
 
 #include <stdlib.h>
 bool _mi_prim_random_buf(void* buf, size_t buf_len) {
