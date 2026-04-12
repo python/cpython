@@ -692,7 +692,7 @@ without regard to the syntactic position of the identifier, as long as it
 occurs within the definition of a class. For example:
 
 .. code-block:: python
-    
+
     class Employee:
         __dept = 'computer lab'
         def __detail(self):
