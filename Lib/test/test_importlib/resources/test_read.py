@@ -1,6 +1,6 @@
+import importlib.resources as resources
 import unittest
-
-from importlib import import_module, resources
+from importlib import import_module
 
 from . import util
 
