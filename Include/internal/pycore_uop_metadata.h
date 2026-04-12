@@ -81,9 +81,8 @@ const uint32_t _PyUop_Flags[MAX_UOP_ID+1] = {
     [_POP_TOP_UNICODE] = 0,
     [_POP_TOP_OPARG] = HAS_ARG_FLAG | HAS_ESCAPES_FLAG,
     [_PUSH_NULL] = HAS_PURE_FLAG,
-    [_END_FOR] = HAS_ESCAPES_FLAG | HAS_NO_SAVE_IP_FLAG,
     [_POP_ITER] = HAS_ESCAPES_FLAG,
-    [_END_SEND] = HAS_ESCAPES_FLAG | HAS_PURE_FLAG,
+    [_END_SEND] = HAS_PURE_FLAG,
     [_UNARY_NEGATIVE] = HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG,
     [_UNARY_NEGATIVE_FLOAT_INPLACE] = 0,
     [_UNARY_NOT] = 0,
@@ -840,15 +839,6 @@ const _PyUopCachingInfo _PyUop_Caching[MAX_UOP_ID+1] = {
             { -1, -1, -1 },
         },
     },
-    [_END_FOR] = {
-        .best = { 1, 1, 1, 1 },
-        .entries = {
-            { -1, -1, -1 },
-            { 0, 1, _END_FOR_r10 },
-            { -1, -1, -1 },
-            { -1, -1, -1 },
-        },
-    },
     [_POP_ITER] = {
         .best = { 2, 2, 2, 2 },
         .entries = {
@@ -859,12 +849,12 @@ const _PyUopCachingInfo _PyUop_Caching[MAX_UOP_ID+1] = {
         },
     },
     [_END_SEND] = {
-        .best = { 3, 3, 3, 3 },
+        .best = { 0, 1, 2, 3 },
         .entries = {
-            { -1, -1, -1 },
-            { -1, -1, -1 },
-            { -1, -1, -1 },
-            { 1, 3, _END_SEND_r31 },
+            { 3, 0, _END_SEND_r03 },
+            { 3, 1, _END_SEND_r13 },
+            { 3, 2, _END_SEND_r23 },
+            { 3, 3, _END_SEND_r33 },
         },
     },
     [_UNARY_NEGATIVE] = {
@@ -3868,9 +3858,11 @@ const uint16_t _PyUop_Uncached[MAX_UOP_REGS_ID+1] = {
     [_PUSH_NULL_r01] = _PUSH_NULL,
     [_PUSH_NULL_r12] = _PUSH_NULL,
     [_PUSH_NULL_r23] = _PUSH_NULL,
-    [_END_FOR_r10] = _END_FOR,
     [_POP_ITER_r20] = _POP_ITER,
-    [_END_SEND_r31] = _END_SEND,
+    [_END_SEND_r03] = _END_SEND,
+    [_END_SEND_r13] = _END_SEND,
+    [_END_SEND_r23] = _END_SEND,
+    [_END_SEND_r33] = _END_SEND,
     [_UNARY_NEGATIVE_r12] = _UNARY_NEGATIVE,
     [_UNARY_NEGATIVE_FLOAT_INPLACE_r02] = _UNARY_NEGATIVE_FLOAT_INPLACE,
     [_UNARY_NEGATIVE_FLOAT_INPLACE_r12] = _UNARY_NEGATIVE_FLOAT_INPLACE,
@@ -4940,10 +4932,11 @@ const char *const _PyOpcode_uop_name[MAX_UOP_REGS_ID+1] = {
     [_DYNAMIC_EXIT_r10] = "_DYNAMIC_EXIT_r10",
     [_DYNAMIC_EXIT_r20] = "_DYNAMIC_EXIT_r20",
     [_DYNAMIC_EXIT_r30] = "_DYNAMIC_EXIT_r30",
-    [_END_FOR] = "_END_FOR",
-    [_END_FOR_r10] = "_END_FOR_r10",
     [_END_SEND] = "_END_SEND",
-    [_END_SEND_r31] = "_END_SEND_r31",
+    [_END_SEND_r03] = "_END_SEND_r03",
+    [_END_SEND_r13] = "_END_SEND_r13",
+    [_END_SEND_r23] = "_END_SEND_r23",
+    [_END_SEND_r33] = "_END_SEND_r33",
     [_ERROR_POP_N] = "_ERROR_POP_N",
     [_ERROR_POP_N_r00] = "_ERROR_POP_N_r00",
     [_EXIT_INIT_CHECK] = "_EXIT_INIT_CHECK",
@@ -5955,8 +5948,6 @@ int _PyUop_num_popped(int opcode, int oparg)
             return oparg;
         case _PUSH_NULL:
             return 0;
-        case _END_FOR:
-            return 1;
         case _POP_ITER:
             return 2;
         case _END_SEND:

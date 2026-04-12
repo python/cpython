@@ -834,6 +834,12 @@ dummy_func(void) {
         assert(oparg >= 2);
     }
 
+    op(_END_SEND, (receiver, index_or_null, value -- val, r, i)) {
+        val = value;
+        r = receiver;
+        i = index_or_null;
+    }
+
     op(_LOAD_ATTR_INSTANCE_VALUE, (offset/1, owner -- attr, o)) {
         attr = sym_new_not_null(ctx);
         (void)offset;

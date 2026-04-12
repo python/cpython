@@ -187,13 +187,6 @@
             break;
         }
 
-        case _END_FOR: {
-            CHECK_STACK_BOUNDS(-1);
-            stack_pointer += -1;
-            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
-            break;
-        }
-
         case _POP_ITER: {
             CHECK_STACK_BOUNDS(-2);
             stack_pointer += -2;
@@ -202,12 +195,21 @@
         }
 
         case _END_SEND: {
+            JitOptRef value;
+            JitOptRef index_or_null;
+            JitOptRef receiver;
             JitOptRef val;
-            val = sym_new_not_null(ctx);
-            CHECK_STACK_BOUNDS(-2);
+            JitOptRef r;
+            JitOptRef i;
+            value = stack_pointer[-1];
+            index_or_null = stack_pointer[-2];
+            receiver = stack_pointer[-3];
+            val = value;
+            r = receiver;
+            i = index_or_null;
             stack_pointer[-3] = val;
-            stack_pointer += -2;
-            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+            stack_pointer[-2] = r;
+            stack_pointer[-1] = i;
             break;
         }
 

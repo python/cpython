@@ -390,14 +390,7 @@ dummy_func(
             res = PyStackRef_NULL;
         }
 
-        no_save_ip inst(END_FOR, (value -- )) {
-            /* Don't update instr_ptr, so that POP_ITER sees
-             * the FOR_ITER as the previous instruction.
-             * This has the benign side effect that if value is
-             * finalized it will see the location as the FOR_ITER's.
-             */
-            PyStackRef_CLOSE(value);
-        }
+        macro(END_FOR) = POP_TOP;
 
 
         inst(POP_ITER, (iter, index_or_null -- )) {
@@ -425,13 +418,14 @@ dummy_func(
             PyStackRef_CLOSE(iter);
         }
 
-        pure inst(END_SEND, (receiver, index_or_null, value -- val)) {
+        pure op(_END_SEND, (receiver, index_or_null, value -- val, r, i)) {
             val = value;
-            (void)index_or_null;
-            DEAD(value);
-            DEAD(index_or_null);
-            PyStackRef_CLOSE(receiver);
+            r = receiver;
+            i = index_or_null;
+            INPUTS_DEAD();
         }
+
+        macro(END_SEND) = _END_SEND + _POP_TOP_NOP + POP_TOP;
 
         tier1 inst(INSTRUMENTED_END_SEND, (receiver, index_or_null, value -- val)) {
             PyObject *receiver_o = PyStackRef_AsPyObjectBorrow(receiver);

@@ -5844,6 +5844,7 @@
             int opcode = END_FOR;
             (void)(opcode);
             #endif
+            frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(END_FOR);
             _PyStackRef value;
@@ -5851,7 +5852,7 @@
             stack_pointer += -1;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
             _PyFrame_SetStackPointer(frame, stack_pointer);
-            PyStackRef_CLOSE(value);
+            PyStackRef_XCLOSE(value);
             stack_pointer = _PyFrame_GetStackPointer(frame);
             DISPATCH();
         }
@@ -5868,17 +5869,33 @@
             _PyStackRef index_or_null;
             _PyStackRef value;
             _PyStackRef val;
-            value = stack_pointer[-1];
-            index_or_null = stack_pointer[-2];
-            receiver = stack_pointer[-3];
-            val = value;
-            (void)index_or_null;
-            stack_pointer[-3] = val;
-            stack_pointer += -2;
-            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
-            _PyFrame_SetStackPointer(frame, stack_pointer);
-            PyStackRef_CLOSE(receiver);
-            stack_pointer = _PyFrame_GetStackPointer(frame);
+            _PyStackRef r;
+            _PyStackRef i;
+            // _END_SEND
+            {
+                value = stack_pointer[-1];
+                index_or_null = stack_pointer[-2];
+                receiver = stack_pointer[-3];
+                val = value;
+                r = receiver;
+                i = index_or_null;
+            }
+            // _POP_TOP_NOP
+            {
+                value = i;
+                assert(PyStackRef_IsNull(value) || (!PyStackRef_RefcountOnObject(value)) ||
+                   _Py_IsImmortal((PyStackRef_AsPyObjectBorrow(value))));
+            }
+            // _POP_TOP
+            {
+                value = r;
+                stack_pointer[-3] = val;
+                stack_pointer += -2;
+                ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+                _PyFrame_SetStackPointer(frame, stack_pointer);
+                PyStackRef_XCLOSE(value);
+                stack_pointer = _PyFrame_GetStackPointer(frame);
+            }
             DISPATCH();
         }
 
