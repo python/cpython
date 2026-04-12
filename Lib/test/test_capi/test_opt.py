@@ -1622,9 +1622,8 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertEqual(uops.count("_PUSH_FRAME"), 2)
         # Type version propagation: one guard covers both method lookups
         self.assertEqual(uops.count("_GUARD_TYPE_VERSION"), 1)
-        # Function checks eliminated (type info resolves the callable)
-        self.assertNotIn("_CHECK_FUNCTION_VERSION", uops)
-        self.assertNotIn("_CHECK_FUNCTION_EXACT_ARGS", uops)
+        # Function checks cannot be eliminated for safety reasons.
+        self.assertIn("_CHECK_FUNCTION_VERSION", uops)
 
     def test_method_chain_guard_elimination(self):
         """
@@ -1669,10 +1668,7 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
         self.assertIn("_PUSH_FRAME", uops)
-        # Both should be not present, as this is a call
-        # to a simple function with a known function version.
-        self.assertNotIn("_CHECK_FUNCTION_VERSION_INLINE", uops)
-        self.assertNotIn("_CHECK_FUNCTION_VERSION", uops)
+        self.assertIn("_CHECK_FUNCTION_VERSION", uops)
         # Removed guard
         self.assertNotIn("_CHECK_FUNCTION_EXACT_ARGS", uops)
 
@@ -5221,6 +5217,27 @@ class TestUopsOptimization(unittest.TestCase):
         PYTHON_JIT="1", PYTHON_JIT_STRESS="1")
         self.assertEqual(result[0].rc, 0, result)
 
+    def test_func_version_guarded_on_change(self):
+        def testfunc(n):
+            for i in range(n):
+                # Only works on functions promoted to constants
+                global_identity_code_will_be_modified(i)
+
+        testfunc(TIER2_THRESHOLD)
+
+        ex = get_first_executor(testfunc)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertIn("_PUSH_FRAME", uops)
+        self.assertIn("_CHECK_FUNCTION_VERSION", uops)
+
+        global_identity_code_will_be_modified.__code__ = (lambda a: 0xdeadead).__code__
+        _testinternalcapi.clear_executor_deletion_list()
+        ex = get_first_executor(testfunc)
+        self.assertIsNone(ex)
+        # JItted code should've deopted.
+        self.assertEqual(global_identity_code_will_be_modified(None), 0xdeadead)
+
     def test_call_super(self):
         class A:
             def method1(self):
@@ -5265,6 +5282,9 @@ class TestUopsOptimization(unittest.TestCase):
 
 
 def global_identity(x):
+    return x
+
+def global_identity_code_will_be_modified(x):
     return x
 
 class TestObject:
