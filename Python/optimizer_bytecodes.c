@@ -455,11 +455,11 @@ dummy_func(void) {
                 ADD_OP(_NOP, 0, 0);
             }
             else if (lhs_known) {
-                ADD_OP(_GUARD_BINARY_OP_EXTEND_RHS, (uintptr_t)d, 0);
+                ADD_OP(_GUARD_BINARY_OP_EXTEND_RHS, 0, (uintptr_t)d);
                 sym_set_type(right, d->rhs_type);
             }
             else if (rhs_known) {
-                ADD_OP(_GUARD_BINARY_OP_EXTEND_LHS, (uintptr_t)d, 0);
+                ADD_OP(_GUARD_BINARY_OP_EXTEND_LHS, 0, (uintptr_t)d);
                 sym_set_type(left, d->lhs_type);
             }
         }
