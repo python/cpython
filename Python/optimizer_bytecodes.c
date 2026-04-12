@@ -1002,20 +1002,17 @@ dummy_func(void) {
 
     op(_CHECK_FUNCTION_VERSION, (func_version/2, callable, self_or_null, unused[oparg] -- callable, self_or_null, unused[oparg])) {
         PyObject *func = sym_get_probable_value(callable);
-        if (func == NULL || !PyFunction_Check(func)) {
+        if (func == NULL || !PyFunction_Check(func) || ((PyFunctionObject *)func)->func_version != func_version) {
             ctx->contradiction = true;
             ctx->done = true;
             break;
         }
-        // This could pass due to a global promoted const.
-        // So we need to add it to the dependencies on both branches.
-        _Py_BloomFilter_Add(dependencies, func);
-        if (sym_get_func_version(callable) == func_version) {
-            REPLACE_OP(this_instr, _NOP, 0, 0);
-        }
-        else {
-            sym_set_func_version(ctx, callable, func_version);
-        }
+        // Guarded on this, so it can be promoted.
+        sym_set_const(callable, func);
+        // We do not need to add func to the bloom filter, as we never remove
+        // this guard. Note: we generally do not want to add functions to our dependencies,
+        // as we want to avoid having to invalidate all executors on every function
+        // deallocation, which is a common procedure (e.g. lambdas).
     }
 
     op(_CHECK_METHOD_VERSION, (func_version/2, callable, null, unused[oparg] -- callable, null, unused[oparg])) {
