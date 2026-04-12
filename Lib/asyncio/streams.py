@@ -5,6 +5,7 @@ __all__ = (
 import collections
 import socket
 import sys
+import warnings
 import weakref
 
 if hasattr(socket, 'AF_UNIX'):
@@ -66,9 +67,8 @@ async def start_server(client_connected_cb, host=None, port=None, *,
     positional host and port, with various optional keyword arguments
     following.  The return value is the same as loop.create_server().
 
-    Additional optional keyword arguments are loop (to set the event loop
-    instance to use) and limit (to set the buffer limit passed to the
-    StreamReader).
+    Additional optional keyword argument is limit (to set the buffer
+    limit passed to the StreamReader).
 
     The return value is the same as loop.create_server(), i.e. a
     Server object which can be used to stop the service.
@@ -201,7 +201,6 @@ class StreamReaderProtocol(FlowControlMixin, protocols.Protocol):
             # is established.
             self._strong_reader = stream_reader
         self._reject_connection = False
-        self._stream_writer = None
         self._task = None
         self._transport = None
         self._client_connected_cb = client_connected_cb
@@ -214,10 +213,7 @@ class StreamReaderProtocol(FlowControlMixin, protocols.Protocol):
             return None
         return self._stream_reader_wr()
 
-    def _replace_writer(self, writer):
-        loop = self._loop
-        transport = writer.transport
-        self._stream_writer = writer
+    def _replace_transport(self, transport):
         self._transport = transport
         self._over_ssl = transport.get_extra_info('sslcontext') is not None
 
@@ -239,13 +235,25 @@ class StreamReaderProtocol(FlowControlMixin, protocols.Protocol):
             reader.set_transport(transport)
         self._over_ssl = transport.get_extra_info('sslcontext') is not None
         if self._client_connected_cb is not None:
-            self._stream_writer = StreamWriter(transport, self,
-                                               reader,
-                                               self._loop)
-            res = self._client_connected_cb(reader,
-                                            self._stream_writer)
+            writer = StreamWriter(transport, self, reader, self._loop)
+            res = self._client_connected_cb(reader, writer)
             if coroutines.iscoroutine(res):
+                def callback(task):
+                    if task.cancelled():
+                        transport.close()
+                        return
+                    exc = task.exception()
+                    if exc is not None:
+                        self._loop.call_exception_handler({
+                            'message': 'Unhandled exception in client_connected_cb',
+                            'exception': exc,
+                            'transport': transport,
+                        })
+                        transport.close()
+
                 self._task = self._loop.create_task(res)
+                self._task.add_done_callback(callback)
+
             self._strong_reader = None
 
     def connection_lost(self, exc):
@@ -262,7 +270,6 @@ class StreamReaderProtocol(FlowControlMixin, protocols.Protocol):
                 self._closed.set_exception(exc)
         super().connection_lost(exc)
         self._stream_reader_wr = None
-        self._stream_writer = None
         self._task = None
         self._transport = None
 
@@ -378,7 +385,8 @@ class StreamWriter:
 
     async def start_tls(self, sslcontext, *,
                         server_hostname=None,
-                        ssl_handshake_timeout=None):
+                        ssl_handshake_timeout=None,
+                        ssl_shutdown_timeout=None):
         """Upgrade an existing stream-based connection to TLS."""
         server_side = self._protocol._client_connected_cb is not None
         protocol = self._protocol
@@ -386,10 +394,18 @@ class StreamWriter:
         new_transport = await self._loop.start_tls(  # type: ignore
             self._transport, protocol, sslcontext,
             server_side=server_side, server_hostname=server_hostname,
-            ssl_handshake_timeout=ssl_handshake_timeout)
+            ssl_handshake_timeout=ssl_handshake_timeout,
+            ssl_shutdown_timeout=ssl_shutdown_timeout)
         self._transport = new_transport
-        protocol._replace_writer(self)
+        protocol._replace_transport(new_transport)
 
+    def __del__(self, warnings=warnings):
+        if not self._transport.is_closing():
+            if self._loop.is_closed():
+                warnings.warn("loop is closed", ResourceWarning)
+            else:
+                self.close()
+                warnings.warn(f"unclosed {self!r}", ResourceWarning)
 
 class StreamReader:
 
@@ -572,20 +588,34 @@ class StreamReader:
         If the data cannot be read because of over limit, a
         LimitOverrunError exception  will be raised, and the data
         will be left in the internal buffer, so it can be read again.
+
+        The ``separator`` may also be a tuple of separators. In this
+        case the return value will be the shortest possible that has any
+        separator as the suffix. For the purposes of LimitOverrunError,
+        the shortest possible separator is considered to be the one that
+        matched.
         """
-        seplen = len(separator)
-        if seplen == 0:
+        if isinstance(separator, tuple):
+            # Makes sure shortest matches wins
+            separator = sorted(separator, key=len)
+        else:
+            separator = [separator]
+        if not separator:
+            raise ValueError('Separator should contain at least one element')
+        min_seplen = len(separator[0])
+        max_seplen = len(separator[-1])
+        if min_seplen == 0:
             raise ValueError('Separator should be at least one-byte string')
 
         if self._exception is not None:
             raise self._exception
 
         # Consume whole buffer except last bytes, which length is
-        # one less than seplen. Let's check corner cases with
-        # separator='SEPARATOR':
+        # one less than max_seplen. Let's check corner cases with
+        # separator[-1]='SEPARATOR':
         # * we have received almost complete separator (without last
         #   byte). i.e buffer='some textSEPARATO'. In this case we
-        #   can safely consume len(separator) - 1 bytes.
+        #   can safely consume max_seplen - 1 bytes.
         # * last byte of buffer is first byte of separator, i.e.
         #   buffer='abcdefghijklmnopqrS'. We may safely consume
         #   everything except that last byte, but this require to
@@ -598,26 +628,35 @@ class StreamReader:
         #   messages :)
 
         # `offset` is the number of bytes from the beginning of the buffer
-        # where there is no occurrence of `separator`.
+        # where there is no occurrence of any `separator`.
         offset = 0
 
-        # Loop until we find `separator` in the buffer, exceed the buffer size,
+        # Loop until we find a `separator` in the buffer, exceed the buffer size,
         # or an EOF has happened.
         while True:
             buflen = len(self._buffer)
 
-            # Check if we now have enough data in the buffer for `separator` to
-            # fit.
-            if buflen - offset >= seplen:
-                isep = self._buffer.find(separator, offset)
+            # Check if we now have enough data in the buffer for shortest
+            # separator to fit.
+            if buflen - offset >= min_seplen:
+                match_start = None
+                match_end = None
+                for sep in separator:
+                    isep = self._buffer.find(sep, offset)
 
-                if isep != -1:
-                    # `separator` is in the buffer. `isep` will be used later
-                    # to retrieve the data.
+                    if isep != -1:
+                        # `separator` is in the buffer. `match_start` and
+                        # `match_end` will be used later to retrieve the
+                        # data.
+                        end = isep + len(sep)
+                        if match_end is None or end < match_end:
+                            match_end = end
+                            match_start = isep
+                if match_end is not None:
                     break
 
                 # see upper comment for explanation.
-                offset = buflen + 1 - seplen
+                offset = max(0, buflen + 1 - max_seplen)
                 if offset > self._limit:
                     raise exceptions.LimitOverrunError(
                         'Separator is not found, and chunk exceed the limit',
@@ -626,37 +665,36 @@ class StreamReader:
             # Complete message (with full separator) may be present in buffer
             # even when EOF flag is set. This may happen when the last chunk
             # adds data which makes separator be found. That's why we check for
-            # EOF *ater* inspecting the buffer.
+            # EOF *after* inspecting the buffer.
             if self._eof:
-                chunk = bytes(self._buffer)
-                self._buffer.clear()
+                chunk = self._buffer.take_bytes()
                 raise exceptions.IncompleteReadError(chunk, None)
 
             # _wait_for_data() will resume reading if stream was paused.
             await self._wait_for_data('readuntil')
 
-        if isep > self._limit:
+        if match_start > self._limit:
             raise exceptions.LimitOverrunError(
-                'Separator is found, but chunk is longer than limit', isep)
+                'Separator is found, but chunk is longer than limit', match_start)
 
-        chunk = self._buffer[:isep + seplen]
-        del self._buffer[:isep + seplen]
+        chunk = self._buffer.take_bytes(match_end)
         self._maybe_resume_transport()
-        return bytes(chunk)
+        return chunk
 
     async def read(self, n=-1):
         """Read up to `n` bytes from the stream.
 
-        If n is not provided, or set to -1, read until EOF and return all read
-        bytes. If the EOF was received and the internal buffer is empty, return
-        an empty bytes object.
+        If `n` is not provided or set to -1,
+        read until EOF, then return all read bytes.
+        If EOF was received and the internal buffer is empty,
+        return an empty bytes object.
 
-        If n is zero, return empty bytes object immediately.
+        If `n` is 0, return an empty bytes object immediately.
 
-        If n is positive, this function try to read `n` bytes, and may return
-        less or equal bytes than requested, but at least one byte. If EOF was
-        received before any byte is read, this function returns empty byte
-        object.
+        If `n` is positive, return at most `n` available bytes
+        as soon as at least 1 byte is available in the internal buffer.
+        If EOF is received before any byte is read, return an empty
+        bytes object.
 
         Returned value is not limited with limit, configured at stream
         creation.
@@ -676,20 +714,16 @@ class StreamReader:
             # collect everything in self._buffer, but that would
             # deadlock if the subprocess sends more than self.limit
             # bytes.  So just call self.read(self._limit) until EOF.
-            blocks = []
-            while True:
-                block = await self.read(self._limit)
-                if not block:
-                    break
-                blocks.append(block)
-            return b''.join(blocks)
+            joined = bytearray()
+            while block := await self.read(self._limit):
+                joined += block
+            return joined.take_bytes()
 
         if not self._buffer and not self._eof:
             await self._wait_for_data('read')
 
         # This will work right even if buffer is less than n bytes
-        data = bytes(memoryview(self._buffer)[:n])
-        del self._buffer[:n]
+        data = self._buffer.take_bytes(min(len(self._buffer), n))
 
         self._maybe_resume_transport()
         return data
@@ -720,18 +754,12 @@ class StreamReader:
 
         while len(self._buffer) < n:
             if self._eof:
-                incomplete = bytes(self._buffer)
-                self._buffer.clear()
+                incomplete = self._buffer.take_bytes()
                 raise exceptions.IncompleteReadError(incomplete, n)
 
             await self._wait_for_data('readexactly')
 
-        if len(self._buffer) == n:
-            data = bytes(self._buffer)
-            self._buffer.clear()
-        else:
-            data = bytes(memoryview(self._buffer)[:n])
-            del self._buffer[:n]
+        data = self._buffer.take_bytes(n)
         self._maybe_resume_transport()
         return data
 

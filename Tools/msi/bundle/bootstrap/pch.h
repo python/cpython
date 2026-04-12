@@ -5,7 +5,7 @@
 //   The license and further copyright text can be found in the file
 //   LICENSE.TXT at the root directory of the distribution.
 // </copyright>
-// 
+//
 // <summary>
 //    Precompiled header for standard bootstrapper application.
 // </summary>

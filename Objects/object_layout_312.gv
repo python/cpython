@@ -20,6 +20,7 @@ digraph ideal {
         shape = none
         label = <<table border="0" cellspacing="0">
                     <tr><td><b>values</b></td></tr>
+                    <tr><td border="1">Insertion order</td></tr>
                     <tr><td port="0" border="1">values[0]</td></tr>
                     <tr><td border="1">values[1]</td></tr>
                     <tr><td border="1">...</td></tr>

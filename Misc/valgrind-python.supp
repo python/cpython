@@ -47,14 +47,6 @@
 #
 
 {
-   Suppress leaking the GIL.  Happens once per process, see comment in ceval.c.
-   Memcheck:Leak
-   fun:malloc
-   fun:PyThread_allocate_lock
-   fun:PyEval_InitThreads
-}
-
-{
    Suppress leaking the GIL after a fork.
    Memcheck:Leak
    fun:malloc
@@ -102,6 +94,49 @@
    fun:_PyObject_GC_NewVar
    fun:COMMENT_THIS_LINE_TO_DISABLE_LEAK_WARNING
 }
+
+#
+# Leaks: dlopen() called without dlclose()
+#
+
+{
+   dlopen() called without dlclose()
+   Memcheck:Leak
+   fun:malloc
+   fun:malloc
+   fun:strdup
+   fun:_dl_load_cache_lookup
+}
+{
+   dlopen() called without dlclose()
+   Memcheck:Leak
+   fun:malloc
+   fun:malloc
+   fun:strdup
+   fun:_dl_map_object
+}
+{
+   dlopen() called without dlclose()
+   Memcheck:Leak
+   fun:malloc
+   fun:*
+   fun:_dl_new_object
+}
+{
+   dlopen() called without dlclose()
+   Memcheck:Leak
+   fun:calloc
+   fun:*
+   fun:_dl_new_object
+}
+{
+   dlopen() called without dlclose()
+   Memcheck:Leak
+   fun:calloc
+   fun:*
+   fun:_dl_check_map_versions
+}
+
 
 #
 # Non-python specific leaks

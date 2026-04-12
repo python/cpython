@@ -17,12 +17,33 @@ typedef enum PyLockStatus {
 
 PyAPI_FUNC(void) PyThread_init_thread(void);
 PyAPI_FUNC(unsigned long) PyThread_start_new_thread(void (*)(void *), void *);
-PyAPI_FUNC(void) _Py_NO_RETURN PyThread_exit_thread(void);
+/* Terminates the current thread. Considered unsafe.
+ *
+ * WARNING: This function is only safe to call if all functions in the full call
+ * stack are written to safely allow it.  Additionally, the behavior is
+ * platform-dependent.  This function should be avoided, and is no longer called
+ * by Python itself.  It is retained only for compatibility with existing C
+ * extension code.
+ *
+ * With pthreads, calls `pthread_exit` causes some libcs (glibc?) to attempt to
+ * unwind the stack and call C++ destructors; if a `noexcept` function is
+ * reached, they may terminate the process. Others (macOS) do unwinding.
+ *
+ * On Windows, calls `_endthreadex` which kills the thread without calling C++
+ * destructors.
+ *
+ * In either case there is a risk of invalid references remaining to data on the
+ * thread stack.
+ */
+Py_DEPRECATED(3.14) PyAPI_FUNC(void) _Py_NO_RETURN PyThread_exit_thread(void);
+
 PyAPI_FUNC(unsigned long) PyThread_get_thread_ident(void);
 
 #if (defined(__APPLE__) || defined(__linux__) || defined(_WIN32) \
-     || defined(__FreeBSD__) || defined(__OpenBSD__) || defined(__NetBSD__) \
-     || defined(__DragonFly__) || defined(_AIX))
+     || defined(__FreeBSD__) || defined(__FreeBSD_kernel__) \
+     || defined(__OpenBSD__) || defined(__NetBSD__) \
+     || defined(__DragonFly__) || defined(_AIX) \
+     || (defined(__sun__) && SIZEOF_LONG >= 8))
 #define PY_HAVE_THREAD_NATIVE_ID
 PyAPI_FUNC(unsigned long) PyThread_get_thread_native_id(void);
 #endif
@@ -33,33 +54,9 @@ PyAPI_FUNC(int) PyThread_acquire_lock(PyThread_type_lock, int);
 #define WAIT_LOCK       1
 #define NOWAIT_LOCK     0
 
-/* PY_TIMEOUT_T is the integral type used to specify timeouts when waiting
-   on a lock (see PyThread_acquire_lock_timed() below).
-   PY_TIMEOUT_MAX is the highest usable value (in microseconds) of that
-   type, and depends on the system threading API.
-
-   NOTE: this isn't the same value as `_thread.TIMEOUT_MAX`.  The _thread
-   module exposes a higher-level API, with timeouts expressed in seconds
-   and floating-point numbers allowed.
-*/
+// PY_TIMEOUT_T is the integral type used to specify timeouts when waiting
+// on a lock (see PyThread_acquire_lock_timed() below).
 #define PY_TIMEOUT_T long long
-
-#if defined(_POSIX_THREADS)
-   /* PyThread_acquire_lock_timed() uses _PyTime_FromNanoseconds(us * 1000),
-      convert microseconds to nanoseconds. */
-#  define PY_TIMEOUT_MAX (LLONG_MAX / 1000)
-#elif defined (NT_THREADS)
-   // WaitForSingleObject() accepts timeout in milliseconds in the range
-   // [0; 0xFFFFFFFE] (DWORD type). INFINITE value (0xFFFFFFFF) means no
-   // timeout. 0xFFFFFFFE milliseconds is around 49.7 days.
-#  if 0xFFFFFFFELL * 1000 < LLONG_MAX
-#    define PY_TIMEOUT_MAX (0xFFFFFFFELL * 1000)
-#  else
-#    define PY_TIMEOUT_MAX LLONG_MAX
-#  endif
-#else
-#  define PY_TIMEOUT_MAX LLONG_MAX
-#endif
 
 
 /* If microseconds == 0, the call is non-blocking: it returns immediately
@@ -67,8 +64,8 @@ PyAPI_FUNC(int) PyThread_acquire_lock(PyThread_type_lock, int);
    If microseconds > 0, the call waits up to the specified duration.
    If microseconds < 0, the call waits until success (or abnormal failure)
 
-   microseconds must be less than PY_TIMEOUT_MAX. Behaviour otherwise is
-   undefined.
+   If *microseconds* is greater than PY_TIMEOUT_MAX, clamp the timeout to
+   PY_TIMEOUT_MAX microseconds.
 
    If intr_flag is true and the acquire is interrupted by a signal, then the
    call will return PY_LOCK_INTR.  The caller may reattempt to acquire the

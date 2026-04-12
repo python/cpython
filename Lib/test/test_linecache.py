@@ -4,9 +4,13 @@ import linecache
 import unittest
 import os.path
 import tempfile
+import threading
 import tokenize
+from importlib.machinery import ModuleSpec
 from test import support
 from test.support import os_helper
+from test.support import threading_helper
+from test.support.script_helper import assert_python_ok
 
 
 FILENAME = linecache.__file__
@@ -82,6 +86,10 @@ class GetLineTestsBadData(TempFile):
 class EmptyFile(GetLineTestsGoodData, unittest.TestCase):
     file_list = []
 
+    def test_getlines(self):
+        lines = linecache.getlines(self.file_name)
+        self.assertEqual(lines, ['\n'])
+
 
 class SingleEmptyLine(GetLineTestsGoodData, unittest.TestCase):
     file_list = ['\n']
@@ -95,6 +103,16 @@ class BadUnicode_NoDeclaration(GetLineTestsBadData, unittest.TestCase):
 
 class BadUnicode_WithDeclaration(GetLineTestsBadData, unittest.TestCase):
     file_byte_string = b'# coding=utf-8\n\x80abc'
+
+
+class FakeLoader:
+    def get_source(self, fullname):
+        return f'source for {fullname}'
+
+
+class NoSourceLoader:
+    def get_source(self, fullname):
+        return None
 
 
 class LineCacheTests(unittest.TestCase):
@@ -238,6 +256,105 @@ class LineCacheTests(unittest.TestCase):
         self.assertEqual(lines3, [])
         self.assertEqual(linecache.getlines(FILENAME), lines)
 
+    def test_loader(self):
+        filename = 'scheme://path'
+
+        linecache.clearcache()
+        module_globals = {'__name__': 'a.b.c', '__loader__': None}
+        self.assertEqual(linecache.getlines(filename, module_globals), [])
+
+        for loader in object(), NoSourceLoader():
+            linecache.clearcache()
+            module_globals = {'__name__': 'a.b.c', '__loader__': loader}
+            with self.assertWarns(DeprecationWarning) as w:
+                self.assertEqual(linecache.getlines(filename, module_globals), [])
+            self.assertEqual(str(w.warning),
+                             'Module globals is missing a __spec__.loader')
+
+        linecache.clearcache()
+        module_globals = {'__name__': 'a.b.c', '__loader__': FakeLoader()}
+        with self.assertWarns(DeprecationWarning) as w:
+            self.assertEqual(linecache.getlines(filename, module_globals),
+                             ['source for a.b.c\n'])
+        self.assertEqual(str(w.warning),
+                         'Module globals is missing a __spec__.loader')
+
+        for spec in None, object():
+            linecache.clearcache()
+            module_globals = {'__name__': 'a.b.c', '__loader__': FakeLoader(),
+                              '__spec__': spec}
+            with self.assertWarns(DeprecationWarning) as w:
+                self.assertEqual(linecache.getlines(filename, module_globals),
+                                 ['source for a.b.c\n'])
+            self.assertEqual(str(w.warning),
+                             'Module globals is missing a __spec__.loader')
+
+        linecache.clearcache()
+        module_globals = {'__name__': 'a.b.c', '__loader__': FakeLoader(),
+                          '__spec__': ModuleSpec('', FakeLoader())}
+        with self.assertWarns(DeprecationWarning) as w:
+            self.assertEqual(linecache.getlines(filename, module_globals),
+                             ['source for a.b.c\n'])
+        self.assertEqual(str(w.warning),
+                         'Module globals; __loader__ != __spec__.loader')
+
+        linecache.clearcache()
+        spec = ModuleSpec('x.y.z', FakeLoader())
+        module_globals = {'__name__': 'a.b.c', '__loader__': spec.loader,
+                          '__spec__': spec}
+        self.assertEqual(linecache.getlines(filename, module_globals),
+                         ['source for x.y.z\n'])
+
+    def test_frozen(self):
+        filename = '<frozen fakemodule>'
+        module_globals = {'__file__': FILENAME}
+        empty = linecache.getlines(filename)
+        self.assertEqual(empty, [])
+        lines = linecache.getlines(filename, module_globals)
+        self.assertGreater(len(lines), 0)
+        lines_cached = linecache.getlines(filename)
+        self.assertEqual(lines, lines_cached)
+        linecache.clearcache()
+        empty = linecache.getlines(filename)
+        self.assertEqual(empty, [])
+
+    def test_invalid_names(self):
+        for name, desc in [
+            ('\x00', 'NUL bytes filename'),
+            (__file__ + '\x00', 'filename with embedded NUL bytes'),
+            # A filename with surrogate codes. A UnicodeEncodeError is raised
+            # by os.stat() upon querying, which is a subclass of ValueError.
+            ("\uD834\uDD1E.py", 'surrogate codes (MUSICAL SYMBOL G CLEF)'),
+            # For POSIX platforms, an OSError will be raised but for Windows
+            # platforms, a ValueError is raised due to the path_t converter.
+            # See: https://github.com/python/cpython/issues/122170
+            ('a' * 1_000_000, 'very long filename'),
+        ]:
+            with self.subTest(f'updatecache: {desc}'):
+                linecache.clearcache()
+                lines = linecache.updatecache(name)
+                self.assertListEqual(lines, [])
+                self.assertNotIn(name, linecache.cache)
+
+            # hack into the cache (it shouldn't be allowed
+            # but we never know what people do...)
+            for key, fullname in [(name, 'ok'), ('key', name), (name, name)]:
+                with self.subTest(f'checkcache: {desc}',
+                                  key=key, fullname=fullname):
+                    linecache.clearcache()
+                    linecache.cache[key] = (0, 1234, [], fullname)
+                    linecache.checkcache(key)
+                    self.assertNotIn(key, linecache.cache)
+
+        # just to be sure that we did not mess with cache
+        linecache.clearcache()
+
+    def test_linecache_python_string(self):
+        cmdline = "import linecache;assert len(linecache.cache) == 0"
+        retcode, stdout, stderr = assert_python_ok('-c', cmdline)
+        self.assertEqual(retcode, 0)
+        self.assertEqual(stdout, b'')
+        self.assertEqual(stderr, b'')
 
 class LineCacheInvalidationTests(unittest.TestCase):
     def setUp(self):
@@ -279,6 +396,41 @@ class LineCacheInvalidationTests(unittest.TestCase):
         self.assertNotIn(self.deleted_file, linecache.cache)
         self.assertNotIn(self.modified_file, linecache.cache)
         self.assertIn(self.unchanged_file, linecache.cache)
+
+
+class MultiThreadingTest(unittest.TestCase):
+    @threading_helper.reap_threads
+    @threading_helper.requires_working_threading()
+    def test_read_write_safety(self):
+
+        with tempfile.TemporaryDirectory() as tmpdirname:
+            filenames = []
+            for i in range(10):
+                name = os.path.join(tmpdirname, f"test_{i}.py")
+                with open(name, "w") as h:
+                    h.write("import time\n")
+                    h.write("import system\n")
+                filenames.append(name)
+
+            def linecache_get_line(b):
+                b.wait()
+                for _ in range(100):
+                    for name in filenames:
+                        linecache.getline(name, 1)
+
+            def check(funcs):
+                barrier = threading.Barrier(len(funcs))
+                threads = []
+
+                for func in funcs:
+                    thread = threading.Thread(target=func, args=(barrier,))
+
+                    threads.append(thread)
+
+                with threading_helper.start_threads(threads):
+                    pass
+
+            check([linecache_get_line] * 20)
 
 
 if __name__ == "__main__":

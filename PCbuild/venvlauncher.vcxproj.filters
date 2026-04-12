@@ -9,7 +9,7 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <None Include="..\PC\launcher.ico">
+    <None Include="..\PC\icons\launcher.ico">
       <Filter>Resource Files</Filter>
     </None>
   </ItemGroup>
@@ -19,7 +19,7 @@
     </ResourceCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\PC\launcher.c">
+    <ClCompile Include="..\PC\venvlauncher.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

@@ -1,2 +1,0 @@
-Fixes inconsistent handling of case sensitivity of *extrasaction* arg in
-:class:`csv.DictWriter`.

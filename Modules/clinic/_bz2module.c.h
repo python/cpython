@@ -3,10 +3,11 @@ preserve
 [clinic start generated code]*/
 
 #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-#  include "pycore_gc.h"            // PyGC_Head
-#  include "pycore_runtime.h"       // _Py_ID()
+#  include "pycore_gc.h"          // PyGC_Head
+#  include "pycore_runtime.h"     // _Py_ID()
 #endif
-
+#include "pycore_abstract.h"      // _PyNumber_Index()
+#include "pycore_modsupport.h"    // _PyArg_BadArgument()
 
 PyDoc_STRVAR(_bz2_BZ2Compressor_compress__doc__,
 "compress($self, data, /)\n"
@@ -26,7 +27,7 @@ static PyObject *
 _bz2_BZ2Compressor_compress_impl(BZ2Compressor *self, Py_buffer *data);
 
 static PyObject *
-_bz2_BZ2Compressor_compress(BZ2Compressor *self, PyObject *arg)
+_bz2_BZ2Compressor_compress(PyObject *self, PyObject *arg)
 {
     PyObject *return_value = NULL;
     Py_buffer data = {NULL, NULL};
@@ -34,11 +35,7 @@ _bz2_BZ2Compressor_compress(BZ2Compressor *self, PyObject *arg)
     if (PyObject_GetBuffer(arg, &data, PyBUF_SIMPLE) != 0) {
         goto exit;
     }
-    if (!PyBuffer_IsContiguous(&data, 'C')) {
-        _PyArg_BadArgument("compress", "argument", "contiguous buffer", arg);
-        goto exit;
-    }
-    return_value = _bz2_BZ2Compressor_compress_impl(self, &data);
+    return_value = _bz2_BZ2Compressor_compress_impl((BZ2Compressor *)self, &data);
 
 exit:
     /* Cleanup for data */
@@ -66,9 +63,51 @@ static PyObject *
 _bz2_BZ2Compressor_flush_impl(BZ2Compressor *self);
 
 static PyObject *
-_bz2_BZ2Compressor_flush(BZ2Compressor *self, PyObject *Py_UNUSED(ignored))
+_bz2_BZ2Compressor_flush(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return _bz2_BZ2Compressor_flush_impl(self);
+    return _bz2_BZ2Compressor_flush_impl((BZ2Compressor *)self);
+}
+
+PyDoc_STRVAR(_bz2_BZ2Compressor__doc__,
+"BZ2Compressor(compresslevel=9, /)\n"
+"--\n"
+"\n"
+"Create a compressor object for compressing data incrementally.\n"
+"\n"
+"  compresslevel\n"
+"    Compression level, as a number between 1 and 9.\n"
+"\n"
+"For one-shot compression, use the compress() function instead.");
+
+static PyObject *
+_bz2_BZ2Compressor_impl(PyTypeObject *type, int compresslevel);
+
+static PyObject *
+_bz2_BZ2Compressor(PyTypeObject *type, PyObject *args, PyObject *kwargs)
+{
+    PyObject *return_value = NULL;
+    PyTypeObject *base_tp = clinic_state()->bz2_compressor_type;
+    int compresslevel = 9;
+
+    if ((type == base_tp || type->tp_init == base_tp->tp_init) &&
+        !_PyArg_NoKeywords("BZ2Compressor", kwargs)) {
+        goto exit;
+    }
+    if (!_PyArg_CheckPositional("BZ2Compressor", PyTuple_GET_SIZE(args), 0, 1)) {
+        goto exit;
+    }
+    if (PyTuple_GET_SIZE(args) < 1) {
+        goto skip_optional;
+    }
+    compresslevel = PyLong_AsInt(PyTuple_GET_ITEM(args, 0));
+    if (compresslevel == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+skip_optional:
+    return_value = _bz2_BZ2Compressor_impl(type, compresslevel);
+
+exit:
+    return return_value;
 }
 
 PyDoc_STRVAR(_bz2_BZ2Decompressor_decompress__doc__,
@@ -98,7 +137,7 @@ _bz2_BZ2Decompressor_decompress_impl(BZ2Decompressor *self, Py_buffer *data,
                                      Py_ssize_t max_length);
 
 static PyObject *
-_bz2_BZ2Decompressor_decompress(BZ2Decompressor *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+_bz2_BZ2Decompressor_decompress(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -107,9 +146,11 @@ _bz2_BZ2Decompressor_decompress(BZ2Decompressor *self, PyObject *const *args, Py
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(data), &_Py_ID(max_length), },
     };
     #undef NUM_KEYWORDS
@@ -131,15 +172,12 @@ _bz2_BZ2Decompressor_decompress(BZ2Decompressor *self, PyObject *const *args, Py
     Py_buffer data = {NULL, NULL};
     Py_ssize_t max_length = -1;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 2, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 1, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
     if (PyObject_GetBuffer(args[0], &data, PyBUF_SIMPLE) != 0) {
-        goto exit;
-    }
-    if (!PyBuffer_IsContiguous(&data, 'C')) {
-        _PyArg_BadArgument("decompress", "argument 'data'", "contiguous buffer", args[0]);
         goto exit;
     }
     if (!noptargs) {
@@ -158,7 +196,7 @@ _bz2_BZ2Decompressor_decompress(BZ2Decompressor *self, PyObject *const *args, Py
         max_length = ival;
     }
 skip_optional_pos:
-    return_value = _bz2_BZ2Decompressor_decompress_impl(self, &data, max_length);
+    return_value = _bz2_BZ2Decompressor_decompress_impl((BZ2Decompressor *)self, &data, max_length);
 
 exit:
     /* Cleanup for data */
@@ -168,4 +206,35 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=829bed4097cf2e63 input=a9049054013a1b77]*/
+
+PyDoc_STRVAR(_bz2_BZ2Decompressor__doc__,
+"BZ2Decompressor()\n"
+"--\n"
+"\n"
+"Create a decompressor object for decompressing data incrementally.\n"
+"\n"
+"For one-shot decompression, use the decompress() function instead.");
+
+static PyObject *
+_bz2_BZ2Decompressor_impl(PyTypeObject *type);
+
+static PyObject *
+_bz2_BZ2Decompressor(PyTypeObject *type, PyObject *args, PyObject *kwargs)
+{
+    PyObject *return_value = NULL;
+    PyTypeObject *base_tp = clinic_state()->bz2_decompressor_type;
+
+    if ((type == base_tp || type->tp_init == base_tp->tp_init) &&
+        !_PyArg_NoPositional("BZ2Decompressor", args)) {
+        goto exit;
+    }
+    if ((type == base_tp || type->tp_init == base_tp->tp_init) &&
+        !_PyArg_NoKeywords("BZ2Decompressor", kwargs)) {
+        goto exit;
+    }
+    return_value = _bz2_BZ2Decompressor_impl(type);
+
+exit:
+    return return_value;
+}
+/*[clinic end generated code: output=552ac6d4c5a101b7 input=a9049054013a1b77]*/
