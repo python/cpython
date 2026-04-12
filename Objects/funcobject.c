@@ -64,6 +64,13 @@ handle_func_event(PyFunction_WatchEvent event, PyFunctionObject *func,
         case PyFunction_EVENT_MODIFY_DEFAULTS:
         case PyFunction_EVENT_MODIFY_KWDEFAULTS:
         case PyFunction_EVENT_MODIFY_QUALNAME:
+#if _Py_TIER2
+            // Note: we only invalidate JIT code if a function version changes.
+            // Not when the function is deallocated.
+            // Function deallocation occurs frequently (think: lambdas),
+            // so we want to minimize dependency invalidation there.
+            _Py_Executors_InvalidateDependency(interp, func, 1);
+#endif
             RARE_EVENT_INTERP_INC(interp, func_modification);
             break;
         default:

@@ -1009,10 +1009,7 @@ dummy_func(void) {
         }
         // Guarded on this, so it can be promoted.
         sym_set_const(callable, func);
-        // We do not need to add func to the bloom filter, as we never remove
-        // this guard. Note: we generally do not want to add functions to our dependencies,
-        // as we want to avoid having to invalidate all executors on every function
-        // deallocation, which is a common procedure (e.g. lambdas).
+        _Py_BloomFilter_Add(dependencies, func);
     }
 
     op(_CHECK_METHOD_VERSION, (func_version/2, callable, null, unused[oparg] -- callable, null, unused[oparg])) {

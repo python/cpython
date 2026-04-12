@@ -3626,6 +3626,7 @@
                 break;
             }
             sym_set_const(callable, func);
+            _Py_BloomFilter_Add(dependencies, func);
             break;
         }
 

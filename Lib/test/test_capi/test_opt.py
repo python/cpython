@@ -5189,6 +5189,9 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertIn("_CHECK_FUNCTION_VERSION", uops)
 
         global_identity_code_will_be_modified.__code__ = (lambda a: 0xdeadead).__code__
+        _testinternalcapi.clear_executor_deletion_list()
+        ex = get_first_executor(testfunc)
+        self.assertIsNone(ex)
         # JItted code should've deopted.
         self.assertEqual(global_identity_code_will_be_modified(None), 0xdeadead)
 
