@@ -215,6 +215,10 @@ class _Target(typing.Generic[_S, _R]):
                 tasks.append(group.create_task(coro, name="shim"))
                 template = TOOLS_JIT_TEMPLATE_C.read_text()
                 for case, opname in cases_and_opnames:
+                    # _LOAD_FAST_BORROW uses manual codegen in jit.c,
+                    # so skip stencil generation for its register variants.
+                    if opname.startswith("_LOAD_FAST_BORROW_r"):
+                        continue
                     # Write out a copy of the template with *only* this case
                     # inserted. This is about twice as fast as #include'ing all
                     # of executor_cases.c.h each time we compile (since the C
