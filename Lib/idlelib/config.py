@@ -477,7 +477,7 @@ class IdleConf:
         where previously used bindings are disabled.
         """
         bindings_section = f'{extension_name}_cfgBindings'
-        current_keyset = idleConf.GetCurrentKeySet()
+        current_keyset = self.GetCurrentKeySet()
         extension_keys = {}
 
         event_names = set()
