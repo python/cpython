@@ -29,12 +29,12 @@ You can use it to enable code that only runs under the free-threaded build::
    can be used to determine whether the current running interpreter had the
    macro defined.
 
-`PyObject` opaqueness
+``PyObject`` opaqueness
 =====================
 
-Accessing any member of `PyObject` is now prohibited, like the non-GIL
-stable ABI. For instance, prefer `Py_Type()` and `Py_SET_TYPE()` over manipulating `ob_type` directly,
-`Py_REFCNT`, `Py_INCREF()` and `Py_DecRef().` over `ob_refcnt`, etc.
+Accessing any member of ``PyObject`` directly is now prohibited, like the non-GIL
+stable ABI. For instance, prefer ``Py_Type()`` and ``Py_SET_TYPE()`` over ``ob_type``,
+``Py_REFCNT``, ``Py_INCREF()`` and ``Py_DecRef()`` over ``ob_refcnt``, etc.
 
 Module Initialization
 =====================
