@@ -37,6 +37,8 @@ import sys
 import types
 
 lazy import re
+lazy import traceback
+lazy import os
 TclError = _tkinter.TclError
 
 wantobjects = 1
@@ -54,7 +56,8 @@ _space_re = None
 
 def _get_magic_re():
     """
-    Internal function that acts as a wrapper for the re import to make it lazy
+    Internal function that acts as a wrapper
+    for the re import to make it lazy.
     """
     global _magic_re
     if _magic_re is None:
@@ -63,7 +66,8 @@ def _get_magic_re():
 
 def _get_space_re():
     """
-    Internal function that acts as a wrapper for the re import to make it lazy
+    Internal function that acts as a wrapper
+    for the re import to make it lazy.
     """
     global _space_re
     if _space_re is None:
@@ -2540,7 +2544,6 @@ class Tk(Misc, Wm):
         # ensure that self.tk is always _something_.
         self.tk = None
         if baseName is None:
-            import os
             baseName = os.path.basename(sys.argv[0])
             baseName, ext = os.path.splitext(baseName)
             if ext not in ('.py', '.pyc'):
@@ -2600,7 +2603,6 @@ class Tk(Misc, Wm):
         """Internal function. It reads .BASENAME.tcl and .CLASSNAME.tcl into
         the Tcl Interpreter and calls exec on the contents of .BASENAME.py and
         .CLASSNAME.py if such a file exists in the home directory."""
-        import os
         if 'HOME' in os.environ: home = os.environ['HOME']
         else: home = os.curdir
         class_tcl = os.path.join(home, '.%s.tcl' % className)
@@ -2623,7 +2625,6 @@ class Tk(Misc, Wm):
 
         Applications may want to override this internal function, and
         should when sys.stderr is None."""
-        import traceback
         print("Exception in Tkinter callback", file=sys.stderr)
         sys.last_exc = val
         sys.last_type = exc
