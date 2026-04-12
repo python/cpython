@@ -82,6 +82,69 @@ class ExceptionTest(unittest.TestCase):
                         subtests += 1
         self.assertEqual(subtests, len(data2))  # All subtests ran?
 
+    def _capture_exception(self):
+        """Call run.print_exception() and return its stderr output."""
+        with captured_stderr() as output:
+            with mock.patch.object(run, 'cleanup_traceback') as ct:
+                ct.side_effect = lambda t, e: t
+                run.print_exception()
+        return output.getvalue()
+
+    @force_not_colorized
+    def test_print_exception_group_nested(self):
+        try:
+            try:
+                raise ExceptionGroup('inner', [ValueError('v1')])
+            except ExceptionGroup as inner:
+                raise ExceptionGroup('outer', [inner, TypeError('t1')])
+        except ExceptionGroup:
+            tb = self._capture_exception()
+
+        self.assertIn('ExceptionGroup: outer (2 sub-exceptions)', tb)
+        self.assertIn('ExceptionGroup: inner', tb)
+        self.assertIn('ValueError: v1', tb)
+        self.assertIn('TypeError: t1', tb)
+        # Verify tree structure characters.
+        self.assertIn('+-+---------------- 1 ----------------', tb)
+        self.assertIn('+---------------- 2 ----------------', tb)
+        self.assertIn('+------------------------------------', tb)
+
+    @force_not_colorized
+    def test_print_exception_group_chaining(self):
+        # __cause__ on a sub-exception exercises the prefixed
+        # chaining-message path (margin chars on separator lines).
+        sub = TypeError('t1')
+        sub.__cause__ = ValueError('original')
+        try:
+            raise ExceptionGroup('eg1', [sub])
+        except ExceptionGroup:
+            tb = self._capture_exception()
+        self.assertIn('ValueError: original', tb)
+        self.assertIn('| The above exception was the direct cause', tb)
+        self.assertIn('ExceptionGroup: eg1', tb)
+
+        # __context__ (implicit chaining) on a sub-exception.
+        sub = TypeError('t2')
+        sub.__context__ = ValueError('first')
+        try:
+            raise ExceptionGroup('eg2', [sub])
+        except ExceptionGroup:
+            tb = self._capture_exception()
+        self.assertIn('ValueError: first', tb)
+        self.assertIn('| During handling of the above exception', tb)
+        self.assertIn('ExceptionGroup: eg2', tb)
+
+    @force_not_colorized
+    def test_print_exception_group_seen(self):
+        shared = ValueError('shared')
+        try:
+            raise ExceptionGroup('eg', [shared, shared])
+        except ExceptionGroup:
+            tb = self._capture_exception()
+
+        self.assertIn('ValueError: shared', tb)
+        self.assertIn('<exception ValueError has printed>', tb)
+
 # StdioFile tests.
 
 class S(str):
