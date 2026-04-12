@@ -1,4 +1,3 @@
-import io
 import os
 import sys
 
@@ -10,13 +9,12 @@ COLORIZE = True
 
 # types
 if False:
-    from typing import IO, Self, ClassVar
+    from typing import IO, Literal, Self, ClassVar
     _theme: Theme
 
 
 class ANSIColors:
     RESET = "\x1b[0m"
-
     BLACK = "\x1b[30m"
     BLUE = "\x1b[34m"
     CYAN = "\x1b[36m"
@@ -73,6 +71,19 @@ for attr, code in ANSIColors.__dict__.items():
     if not attr.startswith("__"):
         ColorCodes.add(code)
         setattr(NoColors, attr, "")
+
+
+class CursesColors:
+    """Curses color constants for terminal UI theming."""
+    BLACK = 0
+    RED = 1
+    GREEN = 2
+    YELLOW = 3
+    BLUE = 4
+    MAGENTA = 5
+    CYAN = 6
+    WHITE = 7
+    DEFAULT = -1
 
 
 #
@@ -169,7 +180,12 @@ class Argparse(ThemeSection):
     short_option: str = ANSIColors.BOLD_GREEN
     label: str = ANSIColors.BOLD_YELLOW
     action: str = ANSIColors.BOLD_GREEN
+    default: str = ANSIColors.GREY
+    interpolated_value: str = ANSIColors.YELLOW
     reset: str = ANSIColors.RESET
+    error: str = ANSIColors.BOLD_MAGENTA
+    warning: str = ANSIColors.BOLD_YELLOW
+    message: str = ANSIColors.MAGENTA
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -181,6 +197,154 @@ class Difflib(ThemeSection):
     hunk: str = ANSIColors.CYAN  # the "@@" lines
     removed: str = ANSIColors.RED
     reset: str = ANSIColors.RESET
+
+
+@dataclass(frozen=True, kw_only=True)
+class FancyCompleter(ThemeSection):
+    # functions and methods
+    function: str = ANSIColors.BOLD_BLUE
+    builtin_function_or_method: str = ANSIColors.BOLD_BLUE
+    method: str = ANSIColors.BOLD_CYAN
+    method_wrapper: str = ANSIColors.BOLD_CYAN
+    wrapper_descriptor: str = ANSIColors.BOLD_CYAN
+    method_descriptor: str = ANSIColors.BOLD_CYAN
+
+    # numbers
+    int: str = ANSIColors.BOLD_YELLOW
+    float: str = ANSIColors.BOLD_YELLOW
+    complex: str = ANSIColors.BOLD_YELLOW
+    bool: str = ANSIColors.BOLD_YELLOW
+
+    # others
+    type: str = ANSIColors.BOLD_MAGENTA
+    module: str = ANSIColors.CYAN
+    NoneType: str = ANSIColors.GREY
+    bytes: str = ANSIColors.BOLD_GREEN
+    str: str = ANSIColors.BOLD_GREEN
+
+
+@dataclass(frozen=True, kw_only=True)
+class HttpServer(ThemeSection):
+    error: str = ANSIColors.YELLOW
+    path: str = ANSIColors.CYAN
+    serving: str = ANSIColors.GREEN
+    size: str = ANSIColors.GREY
+    status_informational: str = ANSIColors.RESET
+    status_ok: str = ANSIColors.GREEN
+    status_redirect: str = ANSIColors.INTENSE_CYAN
+    status_client_error: str = ANSIColors.YELLOW
+    status_server_error: str = ANSIColors.RED
+    timestamp: str = ANSIColors.GREY
+    url: str = ANSIColors.CYAN
+    reset: str = ANSIColors.RESET
+
+
+@dataclass(frozen=True, kw_only=True)
+class LiveProfiler(ThemeSection):
+    """Theme section for the live profiling TUI (Tachyon profiler).
+
+    Colors use CursesColors constants (BLACK, RED, GREEN, YELLOW,
+    BLUE, MAGENTA, CYAN, WHITE, DEFAULT).
+    """
+    # Header colors
+    title_fg: int = CursesColors.CYAN
+    title_bg: int = CursesColors.DEFAULT
+
+    # Status display colors
+    pid_fg: int = CursesColors.CYAN
+    uptime_fg: int = CursesColors.GREEN
+    time_fg: int = CursesColors.YELLOW
+    interval_fg: int = CursesColors.MAGENTA
+
+    # Thread view colors
+    thread_all_fg: int = CursesColors.GREEN
+    thread_single_fg: int = CursesColors.MAGENTA
+
+    # Progress bar colors
+    bar_good_fg: int = CursesColors.GREEN
+    bar_bad_fg: int = CursesColors.RED
+
+    # Stats colors
+    on_gil_fg: int = CursesColors.GREEN
+    off_gil_fg: int = CursesColors.RED
+    waiting_gil_fg: int = CursesColors.YELLOW
+    gc_fg: int = CursesColors.MAGENTA
+
+    # Function display colors
+    func_total_fg: int = CursesColors.CYAN
+    func_exec_fg: int = CursesColors.GREEN
+    func_stack_fg: int = CursesColors.YELLOW
+    func_shown_fg: int = CursesColors.MAGENTA
+
+    # Table header colors (for sorted column highlight)
+    sorted_header_fg: int = CursesColors.BLACK
+    sorted_header_bg: int = CursesColors.CYAN
+
+    # Normal header colors (non-sorted columns) - use reverse video style
+    normal_header_fg: int = CursesColors.BLACK
+    normal_header_bg: int = CursesColors.WHITE
+
+    # Data row colors
+    samples_fg: int = CursesColors.CYAN
+    file_fg: int = CursesColors.GREEN
+    func_fg: int = CursesColors.YELLOW
+
+    # Trend indicator colors
+    trend_up_fg: int = CursesColors.GREEN
+    trend_down_fg: int = CursesColors.RED
+
+    # Medal colors for top functions
+    medal_gold_fg: int = CursesColors.RED
+    medal_silver_fg: int = CursesColors.YELLOW
+    medal_bronze_fg: int = CursesColors.GREEN
+
+    # Background style: 'dark' or 'light'
+    background_style: Literal["dark", "light"] = "dark"
+
+
+LiveProfilerLight = LiveProfiler(
+    # Header colors
+    title_fg=CursesColors.BLUE,  # Blue is more readable than cyan on light bg
+
+    # Status display colors - darker colors for light backgrounds
+    pid_fg=CursesColors.BLUE,
+    uptime_fg=CursesColors.BLACK,
+    time_fg=CursesColors.BLACK,
+    interval_fg=CursesColors.BLUE,
+
+    # Thread view colors
+    thread_all_fg=CursesColors.BLACK,
+    thread_single_fg=CursesColors.BLUE,
+
+    # Stats colors
+    waiting_gil_fg=CursesColors.RED,
+    gc_fg=CursesColors.BLUE,
+
+    # Function display colors
+    func_total_fg=CursesColors.BLUE,
+    func_exec_fg=CursesColors.BLACK,
+    func_stack_fg=CursesColors.BLACK,
+    func_shown_fg=CursesColors.BLUE,
+
+    # Table header colors (for sorted column highlight)
+    sorted_header_fg=CursesColors.WHITE,
+    sorted_header_bg=CursesColors.BLUE,
+
+    # Normal header colors (non-sorted columns)
+    normal_header_fg=CursesColors.WHITE,
+    normal_header_bg=CursesColors.BLACK,
+
+    # Data row colors - use dark colors readable on white
+    samples_fg=CursesColors.BLACK,
+    file_fg=CursesColors.BLACK,
+    func_fg=CursesColors.BLUE,  # Blue is more readable than magenta on light bg
+
+    # Medal colors for top functions
+    medal_silver_fg=CursesColors.BLUE,
+
+    # Background style
+    background_style="light",
+)
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -199,9 +363,22 @@ class Syntax(ThemeSection):
 
 
 @dataclass(frozen=True, kw_only=True)
+class Timeit(ThemeSection):
+    timing: str = ANSIColors.CYAN
+    best: str = ANSIColors.BOLD_GREEN
+    per_loop: str = ANSIColors.GREEN
+    punctuation: str = ANSIColors.GREY
+    warning: str = ANSIColors.YELLOW
+    warning_worst: str = ANSIColors.MAGENTA
+    warning_best: str = ANSIColors.GREEN
+    reset: str = ANSIColors.RESET
+
+
+@dataclass(frozen=True, kw_only=True)
 class Traceback(ThemeSection):
     type: str = ANSIColors.BOLD_MAGENTA
     message: str = ANSIColors.MAGENTA
+    note: str = ANSIColors.CYAN
     filename: str = ANSIColors.MAGENTA
     line_no: str = ANSIColors.MAGENTA
     frame: str = ANSIColors.MAGENTA
@@ -228,7 +405,11 @@ class Theme:
     """
     argparse: Argparse = field(default_factory=Argparse)
     difflib: Difflib = field(default_factory=Difflib)
+    fancycompleter: FancyCompleter = field(default_factory=FancyCompleter)
+    http_server: HttpServer = field(default_factory=HttpServer)
+    live_profiler: LiveProfiler = field(default_factory=LiveProfiler)
     syntax: Syntax = field(default_factory=Syntax)
+    timeit: Timeit = field(default_factory=Timeit)
     traceback: Traceback = field(default_factory=Traceback)
     unittest: Unittest = field(default_factory=Unittest)
 
@@ -237,7 +418,11 @@ class Theme:
         *,
         argparse: Argparse | None = None,
         difflib: Difflib | None = None,
+        fancycompleter: FancyCompleter | None = None,
+        http_server: HttpServer | None = None,
+        live_profiler: LiveProfiler | None = None,
         syntax: Syntax | None = None,
+        timeit: Timeit | None = None,
         traceback: Traceback | None = None,
         unittest: Unittest | None = None,
     ) -> Self:
@@ -249,7 +434,11 @@ class Theme:
         return type(self)(
             argparse=argparse or self.argparse,
             difflib=difflib or self.difflib,
+            fancycompleter=fancycompleter or self.fancycompleter,
+            http_server=http_server or self.http_server,
+            live_profiler=live_profiler or self.live_profiler,
             syntax=syntax or self.syntax,
+            timeit=timeit or self.timeit,
             traceback=traceback or self.traceback,
             unittest=unittest or self.unittest,
         )
@@ -265,7 +454,11 @@ class Theme:
         return cls(
             argparse=Argparse.no_colors(),
             difflib=Difflib.no_colors(),
+            fancycompleter=FancyCompleter.no_colors(),
+            http_server=HttpServer.no_colors(),
+            live_profiler=LiveProfiler.no_colors(),
             syntax=Syntax.no_colors(),
+            timeit=Timeit.no_colors(),
             traceback=Traceback.no_colors(),
             unittest=Unittest.no_colors(),
         )
@@ -327,12 +520,15 @@ def can_colorize(*, file: IO[str] | IO[bytes] | None = None) -> bool:
 
     try:
         return os.isatty(file.fileno())
-    except io.UnsupportedOperation:
+    except OSError:
         return hasattr(file, "isatty") and file.isatty()
 
 
 default_theme = Theme()
 theme_no_color = default_theme.no_colors()
+
+# Convenience theme with light profiler colors (for white/light terminal backgrounds)
+light_profiler_theme = default_theme.copy_with(live_profiler=LiveProfilerLight)
 
 
 def get_theme(

@@ -347,9 +347,9 @@ gc_get_stats_impl(PyObject *module)
     /* To get consistent values despite allocations while constructing
        the result list, we use a snapshot of the running stats. */
     GCState *gcstate = get_gc_state();
-    for (i = 0; i < NUM_GENERATIONS; i++) {
-        stats[i] = gcstate->generation_stats[i];
-    }
+    stats[0] = gcstate->generation_stats->young.items[gcstate->generation_stats->young.index];
+    stats[1] = gcstate->generation_stats->old[0].items[gcstate->generation_stats->old[0].index];
+    stats[2] = gcstate->generation_stats->old[1].items[gcstate->generation_stats->old[1].index];
 
     PyObject *result = PyList_New(0);
     if (result == NULL)
@@ -358,10 +358,12 @@ gc_get_stats_impl(PyObject *module)
     for (i = 0; i < NUM_GENERATIONS; i++) {
         PyObject *dict;
         st = &stats[i];
-        dict = Py_BuildValue("{snsnsn}",
+        dict = Py_BuildValue("{snsnsnsnsd}",
                              "collections", st->collections,
                              "collected", st->collected,
-                             "uncollectable", st->uncollectable
+                             "uncollectable", st->uncollectable,
+                             "candidates", st->candidates,
+                             "duration", st->duration
                             );
         if (dict == NULL)
             goto error;
@@ -536,6 +538,7 @@ gcmodule_exec(PyObject *module)
 }
 
 static PyModuleDef_Slot gcmodule_slots[] = {
+    _Py_ABI_SLOT,
     {Py_mod_exec, gcmodule_exec},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {Py_mod_gil, Py_MOD_GIL_NOT_USED},

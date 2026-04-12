@@ -35,9 +35,32 @@ typedef struct _PyUOpInstruction{
 #endif
 } _PyUOpInstruction;
 
-// This is the length of the trace we project initially.
-#define UOP_MAX_TRACE_LENGTH 1200
-#define UOP_BUFFER_SIZE (UOP_MAX_TRACE_LENGTH * sizeof(_PyUOpInstruction))
+// This is the length of the trace we translate initially.
+#if defined(Py_DEBUG) && defined(_Py_JIT)
+    // With asserts, the stencils are a lot larger
+#define UOP_MAX_TRACE_LENGTH 1000
+#else
+#define UOP_MAX_TRACE_LENGTH 2500
+#endif
+
+/* Bloom filter with m = 256
+ * https://en.wikipedia.org/wiki/Bloom_filter */
+#ifdef HAVE_GCC_UINT128_T
+#define _Py_BLOOM_FILTER_WORDS 2
+typedef __uint128_t _Py_bloom_filter_word_t;
+#else
+#define _Py_BLOOM_FILTER_WORDS 4
+typedef uint64_t _Py_bloom_filter_word_t;
+#endif
+
+#define _Py_BLOOM_FILTER_BITS_PER_WORD \
+    ((int)(sizeof(_Py_bloom_filter_word_t) * 8))
+#define _Py_BLOOM_FILTER_WORD_SHIFT \
+    ((sizeof(_Py_bloom_filter_word_t) == 16) ? 7 : 6)
+
+typedef struct {
+    _Py_bloom_filter_word_t bits[_Py_BLOOM_FILTER_WORDS];
+} _PyBloomFilter;
 
 #ifdef __cplusplus
 }

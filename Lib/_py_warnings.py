@@ -563,7 +563,6 @@ def warn_explicit(message, category, filename, lineno,
     else:
         text = message
         message = category(message)
-    modules = None
     key = (text, category, lineno)
     with _wm._lock:
         if registry is None:
@@ -646,6 +645,9 @@ class WarningMessage(object):
                     "line : %r}" % (self.message, self._category_name,
                                     self.filename, self.lineno, self.line))
 
+    def __repr__(self):
+        return f'<{type(self).__qualname__} {self}>'
+
 
 class catch_warnings(object):
 
@@ -701,8 +703,8 @@ class catch_warnings(object):
                 context = None
                 self._filters = self._module.filters
                 self._module.filters = self._filters[:]
-                self._showwarning = self._module.showwarning
                 self._showwarnmsg_impl = self._module._showwarnmsg_impl
+            self._showwarning = self._module.showwarning
             self._module._filters_mutated_lock_held()
             if self._record:
                 if _use_context:
@@ -710,9 +712,9 @@ class catch_warnings(object):
                 else:
                     log = []
                     self._module._showwarnmsg_impl = log.append
-                    # Reset showwarning() to the default implementation to make sure
-                    # that _showwarnmsg() calls _showwarnmsg_impl()
-                    self._module.showwarning = self._module._showwarning_orig
+                # Reset showwarning() to the default implementation to make sure
+                # that _showwarnmsg() calls _showwarnmsg_impl()
+                self._module.showwarning = self._module._showwarning_orig
             else:
                 log = None
         if self._filter is not None:
@@ -727,8 +729,8 @@ class catch_warnings(object):
                 self._module._warnings_context.set(self._saved_context)
             else:
                 self._module.filters = self._filters
-                self._module.showwarning = self._showwarning
                 self._module._showwarnmsg_impl = self._showwarnmsg_impl
+            self._module.showwarning = self._showwarning
             self._module._filters_mutated_lock_held()
 
 

@@ -10,9 +10,8 @@ import typing
 
 import _targets
 
-
-_LLVM_VERSION = "20"
-_EXTERNALS_LLVM_TAG = "llvm-20.1.8.0"
+_LLVM_VERSION = "21"
+_EXTERNALS_LLVM_TAG = "llvm-21.1.4.0"
 
 _P = typing.ParamSpec("_P")
 _R = typing.TypeVar("_R")
@@ -43,9 +42,19 @@ async def _run(tool: str, args: typing.Iterable[str], echo: bool = False) -> str
     async with _CORES:
         if echo:
             print(shlex.join(command))
+
+        if os.name == "nt":
+            # When building with /p:PlatformToolset=ClangCL, the VS build
+            # system puts that clang's include path into INCLUDE. The JIT's
+            # clang may be a different version, and mismatched headers cause
+            # build errors. See https://github.com/python/cpython/issues/146210.
+            env = os.environ.copy()
+            env.pop("INCLUDE", None)
+        else:
+            env = None
         try:
             process = await asyncio.create_subprocess_exec(
-                *command, stdout=subprocess.PIPE
+                *command, stdout=subprocess.PIPE, env=env
             )
         except FileNotFoundError:
             return None
@@ -83,6 +92,11 @@ async def _find_tool(tool: str, llvm_version: str, *, echo: bool = False) -> str
     # PCbuild externals:
     externals = os.environ.get("EXTERNALS_DIR", _targets.EXTERNALS)
     path = os.path.join(externals, _EXTERNALS_LLVM_TAG, "bin", tool)
+    # On Windows, executables need .exe extension
+    if os.name == "nt" and not path.endswith(".exe"):
+        path_with_exe = path + ".exe"
+        if os.path.exists(path_with_exe):
+            path = path_with_exe
     if await _check_tool_version(path, llvm_version, echo=echo):
         return path
     # Homebrew-installed executables:
