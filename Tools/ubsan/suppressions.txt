@@ -1,0 +1,28 @@
+# This file contains suppressions for the UndefinedBehaviour sanitizer.
+#
+# Reference: https://clang.llvm.org/docs/UndefinedBehaviorSanitizer.html#runtime-suppressions
+#
+# When adding a suppression, include a comment referencing a GitHub issue
+# that describes how to reproduce the race and includes the relevant UBSan
+# output.
+
+# Objects/object.c:97:5: runtime error: member access within null pointer of type 'PyThreadState' (aka 'struct _ts')
+null:Objects/object.c
+
+# Objects/memoryobject.c:3032:15: runtime error: load of value 2, which is not a valid value for type 'bool'
+bool:Objects/memoryobject.c
+
+# Modules/_ctypes/cfield.c:644:1: runtime error: left shift of 1 by 63 places cannot be represented in type 'int64_t' (aka 'long')
+shift-base:Modules/_ctypes/cfield.c
+
+# Modules/_ctypes/cfield.c:640:1: runtime error: signed integer overflow: -2147483648 - 1 cannot be represented in type 'int'
+signed-integer-overflow:Modules/_ctypes/cfield.c
+
+# Modules/_zstd/decompressor.c:598:56: runtime error: applying non-zero offset 18446744073709551615 to null pointer
+pointer-overflow:Modules/_zstd/decompressor.c
+
+# Modules/_io/stringio.c:350:24: runtime error: addition of unsigned offset to 0x7fd01ec25850 overflowed to 0x7fd01ec2584c
+pointer-overflow:Modules/_io/stringio.c
+
+# Objects/bytesobject.c:1190:25: runtime error: applying zero offset to null pointer
+pointer-overflow:Objects/bytesobject.c

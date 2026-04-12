@@ -2,6 +2,7 @@
 #include "Python.h"
 #include "pycore_interpframe.h"   // _PyInterpreterFrame
 #include "pycore_object.h"        // _PyObject_GC_TRACK/UNTRACK, PyAnnotateFormat
+#include "pycore_tuple.h"         // _PyTuple_FromPair
 #include "pycore_typevarobject.h"
 #include "pycore_unicodeobject.h" // _PyUnicode_EqualToASCIIString()
 #include "pycore_unionobject.h"   // _Py_union_type_or, _Py_union_from_tuple
@@ -373,7 +374,7 @@ type_check(PyObject *arg, const char *msg)
 static PyObject *
 make_union(PyObject *self, PyObject *other)
 {
-    PyObject *args = PyTuple_Pack(2, self, other);
+    PyObject *args = _PyTuple_FromPair(self, other);
     if (args == NULL) {
         return NULL;
     }
@@ -499,8 +500,7 @@ typevar_traverse(PyObject *self, visitproc visit, void *arg)
     Py_VISIT(tv->evaluate_constraints);
     Py_VISIT(tv->default_value);
     Py_VISIT(tv->evaluate_default);
-    PyObject_VisitManagedDict(self, visit, arg);
-    return 0;
+    return PyObject_VisitManagedDict(self, visit, arg);
 }
 
 static int
@@ -817,7 +817,7 @@ typevar_typing_prepare_subst_impl(typevarobject *self, PyObject *alias,
     }
     Py_DECREF(params);
     PyErr_Format(PyExc_TypeError,
-                 "Too few arguments for %S; actual %d, expected at least %d",
+                 "Too few arguments for %S; actual %zd, expected at least %zd",
                  alias, args_len, i + 1);
     return NULL;
 }
@@ -1194,8 +1194,7 @@ paramspec_traverse(PyObject *self, visitproc visit, void *arg)
     Py_VISIT(ps->bound);
     Py_VISIT(ps->default_value);
     Py_VISIT(ps->evaluate_default);
-    PyObject_VisitManagedDict(self, visit, arg);
-    return 0;
+    return PyObject_VisitManagedDict(self, visit, arg);
 }
 
 static int
@@ -1691,8 +1690,7 @@ typevartuple_traverse(PyObject *self, visitproc visit, void *arg)
     Py_VISIT(tvt->name);
     Py_VISIT(tvt->default_value);
     Py_VISIT(tvt->evaluate_default);
-    PyObject_VisitManagedDict(self, visit, arg);
-    return 0;
+    return PyObject_VisitManagedDict(self, visit, arg);
 }
 
 static int

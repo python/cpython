@@ -312,6 +312,9 @@ class EditorWindow:
         else:
             self.update_menu_state('options', '*ine*umbers', 'disabled')
 
+        self.mtime = self.last_mtime()
+        text_frame.bind('<FocusIn>', self.focus_in_event)
+
     def handle_winconfig(self, event=None):
         self.set_width()
 
@@ -1027,6 +1030,8 @@ class EditorWindow:
 
     def set_saved(self, flag):
         self.undo.set_saved(flag)
+        if flag:
+            self.mtime = self.last_mtime()
 
     def reset_undo(self):
         self.undo.reset_undo()
@@ -1111,6 +1116,21 @@ class EditorWindow:
         if self.close_hook:
             # unless override: unregister from flist, terminate if last window
             self.close_hook()
+
+    def last_mtime(self):
+        file = self.io.filename
+        return os.path.getmtime(file) if file else 0
+
+    def focus_in_event(self, event):
+        mtime = self.last_mtime()
+        if self.mtime != mtime:
+            self.mtime = mtime
+            if self. askyesno(
+              'Reload', '"%s"\n\nThis script has been modified by another program.'
+              '\nDo you want to reload it?' % self.io.filename, parent=self.text):
+                self.io.loadfile(self.io.filename)
+            else:
+                self.set_saved(False)
 
     def load_extensions(self):
         self.extensions = {}

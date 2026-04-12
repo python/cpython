@@ -7363,6 +7363,23 @@ class MiscTestCase(unittest.TestCase):
             '',
         ])
 
+    @only_run_in_forkserver_testsuite("forkserver specific test.")
+    def test_preload_main_large_sys_argv(self):
+        # gh-144503: a very large parent sys.argv must not prevent the
+        # forkserver from starting (it previously overflowed the OS
+        # per-argument length limit when repr'd into the -c command string).
+        name = os.path.join(os.path.dirname(__file__),
+                            'mp_preload_large_sysargv.py')
+        _, out, err = test.support.script_helper.assert_python_ok(name)
+        self.assertEqual(err, b'')
+
+        out = out.decode().split("\n")
+        self.assertEqual(out, [
+            'preload:5002:sentinel',
+            'worker:5002:sentinel',
+            '',
+        ])
+
 #
 # Mixins
 #
