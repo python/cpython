@@ -3647,6 +3647,12 @@
         }
 
         case _CHECK_IS_NOT_PY_CALLABLE: {
+            JitOptRef callable;
+            callable = stack_pointer[-2 - oparg];
+            PyTypeObject *type = sym_get_type(callable);
+            if (type && type != &PyFunction_Type && type != &PyMethod_Type) {
+                ADD_OP(_NOP, 0, 0);
+            }
             break;
         }
 

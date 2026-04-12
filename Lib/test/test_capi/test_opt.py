@@ -2755,6 +2755,21 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertNotIn("_GUARD_TOS_INT", uops)
         self.assertIn("_POP_TOP_NOP", uops)
 
+    def test_check_is_not_py_callable(self):
+        def testfunc(n):
+            total = 0
+            f = len
+            xs = (1, 2, 3)
+            for _ in range(n):
+                total += f(xs)
+            return total
+
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, 3 * TIER2_THRESHOLD)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertNotIn("_CHECK_IS_NOT_PY_CALLABLE", uops)
+
     def test_call_len_string(self):
         def testfunc(n):
             for _ in range(n):
