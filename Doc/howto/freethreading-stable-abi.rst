@@ -418,7 +418,7 @@ Limited C API and Stable ABI
 
 If you use
 `setuptools <https://setuptools.pypa.io/en/latest/setuptools.html>`_ to build
-your extension, a future version of `setuptools` will allow ``py_limited_api=True``
+your extension, a future version of ``setuptools`` will allow ``py_limited_api=True``
 to be set to allow targeting limited API when building with the free-threaded build.
 
 Windows
