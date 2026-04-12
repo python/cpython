@@ -4499,7 +4499,6 @@ dummy_func(
             POP_TOP +
             _CHECK_PERIODIC_AT_END;
 
-
         op(_CHECK_OBJECT, (type_version/2, callable, self_or_null, unused[oparg] -- callable, self_or_null, unused[oparg])) {
             PyObject *callable_o = PyStackRef_AsPyObjectBorrow(callable);
             EXIT_IF(!PyStackRef_IsNull(self_or_null));
