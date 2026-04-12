@@ -1711,8 +1711,6 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
         self.assertIn("_PUSH_FRAME", uops)
-        self.assertIn("_CHECK_FUNCTION_VERSION_INLINE", uops)
-        self.assertNotIn("_CHECK_METHOD_VERSION", uops)
 
     def test_record_bound_method_exact_args(self):
         class MyClass:

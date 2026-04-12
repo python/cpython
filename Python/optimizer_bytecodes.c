@@ -1032,8 +1032,6 @@ dummy_func(void) {
                 if (PyFunction_Check(func) &&
                     ((PyFunctionObject *)func)->func_version == func_version) {
                     sym_set_const(callable, bound_method);
-                    ADD_OP(_CHECK_FUNCTION_VERSION_INLINE, 0, func_version);
-                    uop_buffer_last(&ctx->out_buffer)->operand1 = (uintptr_t)func;
                 }
             }
         }
