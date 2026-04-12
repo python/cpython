@@ -1075,28 +1075,39 @@ dummy_func(void) {
         ex_frame = PyJitRef_WrapInvalid(frame_new_from_symbol(ctx, func_st, NULL, 0));
     }
 
-    op(_CHECK_AND_ALLOCATE_OBJECT, (type_version/2, callable, self_or_null, args[oparg] -- callable, self_or_null, args[oparg])) {
-        (void)args;
+    op(_CHECK_OBJECT, (type_version/2, callable, self_or_null, unused[oparg] -- callable, self_or_null, unused[oparg])) {
         PyObject *probable_callable = sym_get_probable_value(callable);
         assert(probable_callable != NULL);
-        assert(PyType_Check(probable_callable));
-        PyTypeObject *tp = (PyTypeObject *)probable_callable;
-        if (tp->tp_version_tag == type_version) {
-            // If the type version has not changed since we last saw it,
-            // then we know this __init__ is definitely the same one as in the cache.
-            // We can promote callable to a known constant. This does not need a
-            // type watcher, as we do not remove this _CHECK_AND_ALLOCATE_OBJECT guard.
-            // TODO: split up _CHECK_AND_ALLOCATE_OBJECT to the check then alloate, so we can
-            // eliminate the check.
-            PyHeapTypeObject *cls = (PyHeapTypeObject *)probable_callable;
+        PyObject *const_callable = sym_get_const(ctx, callable);
+        bool is_probable = const_callable == NULL && probable_callable != NULL;
+        PyObject *callable_o = const_callable != NULL ? const_callable : probable_callable;
+        if (sym_is_null(self_or_null) &&
+            callable_o != NULL &&
+            PyType_Check(callable_o) &&
+            ((PyTypeObject *)callable_o)->tp_version_tag == type_version) {
+            // Probable types need the guard.
+            if (!is_probable) {
+                ADD_OP(_NOP, 0, 0);
+            }
+            else {
+                // Promote the probable type, as we have
+                // guarded on it.
+                sym_set_const(callable, callable_o);
+            }
+            PyHeapTypeObject *cls = (PyHeapTypeObject *)callable_o;
             PyObject *init = cls->_spec_cache.init;
             assert(init != NULL);
             assert(PyFunction_Check(init));
             callable = sym_new_const(ctx, init);
+            PyType_Watch(TYPE_WATCHER_ID, callable_o);
+            _Py_BloomFilter_Add(dependencies, callable_o);;
         }
         else {
             callable = sym_new_not_null(ctx);
         }
+    }
+
+    op(_ALLOCATE_OBJECT, (callable, self_or_null, unused[oparg] -- callable, self_or_null, unused[oparg])) {
         self_or_null = sym_new_not_null(ctx);
     }
 

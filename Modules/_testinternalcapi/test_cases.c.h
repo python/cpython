@@ -1897,7 +1897,7 @@
                     JUMP_TO_PREDICTED(CALL);
                 }
             }
-            // _CHECK_AND_ALLOCATE_OBJECT
+            // _CHECK_OBJECT
             {
                 self_or_null = stack_pointer[-1 - oparg];
                 callable = stack_pointer[-2 - oparg];
@@ -1919,6 +1919,13 @@
                     assert(_PyOpcode_Deopt[opcode] == (CALL));
                     JUMP_TO_PREDICTED(CALL);
                 }
+            }
+            // _ALLOCATE_OBJECT
+            {
+                PyObject *callable_o = PyStackRef_AsPyObjectBorrow(callable);
+                assert(PyStackRef_IsNull(self_or_null));
+                assert(PyType_Check(callable_o));
+                PyTypeObject *tp = (PyTypeObject *)callable_o;
                 assert(tp->tp_new == PyBaseObject_Type.tp_new);
                 assert(tp->tp_flags & Py_TPFLAGS_HEAPTYPE);
                 assert(tp->tp_alloc == PyType_GenericAlloc);
