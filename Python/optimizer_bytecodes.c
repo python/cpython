@@ -1022,6 +1022,18 @@ dummy_func(void) {
         _Py_BloomFilter_Add(dependencies, func);
     }
 
+    op(_CHECK_FUNCTION_VERSION_KW, (func_version/2, callable, unused, unused[oparg], unused -- callable, unused, unused[oparg], unused)) {
+        PyObject *func = sym_get_probable_value(callable);
+        if (func == NULL || !PyFunction_Check(func) || ((PyFunctionObject *)func)->func_version != func_version) {
+            ctx->contradiction = true;
+            ctx->done = true;
+            break;
+        }
+        // Guarded on this, so it can be promoted.
+        sym_set_const(callable, func);
+        _Py_BloomFilter_Add(dependencies, func);
+    }
+
     op(_CHECK_METHOD_VERSION, (func_version/2, callable, null, unused[oparg] -- callable, null, unused[oparg])) {
         if (sym_is_const(ctx, callable) && sym_matches_type(callable, &PyMethod_Type)) {
             PyMethodObject *method = (PyMethodObject *)sym_get_const(ctx, callable);

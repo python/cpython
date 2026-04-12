@@ -4612,6 +4612,17 @@
         }
 
         case _CHECK_FUNCTION_VERSION_KW: {
+            JitOptRef callable;
+            callable = stack_pointer[-3 - oparg];
+            uint32_t func_version = (uint32_t)this_instr->operand0;
+            PyObject *func = sym_get_probable_value(callable);
+            if (func == NULL || !PyFunction_Check(func) || ((PyFunctionObject *)func)->func_version != func_version) {
+                ctx->contradiction = true;
+                ctx->done = true;
+                break;
+            }
+            sym_set_const(callable, func);
+            _Py_BloomFilter_Add(dependencies, func);
             break;
         }
 
@@ -5245,6 +5256,10 @@
             JitOptRef func;
             func = stack_pointer[-2 - oparg];
             sym_set_recorded_value(func, (PyObject *)this_instr->operand0);
+            break;
+        }
+
+        case _RECORD_CALLABLE_KW: {
             break;
         }
 
