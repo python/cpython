@@ -129,6 +129,7 @@ const uint32_t _PyUop_Flags[MAX_UOP_ID+1] = {
     [_BINARY_OP_INPLACE_ADD_UNICODE] = HAS_LOCAL_FLAG | HAS_EXIT_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
     [_GUARD_BINARY_OP_EXTEND] = HAS_EXIT_FLAG | HAS_ESCAPES_FLAG,
     [_BINARY_OP_EXTEND] = HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG,
+    [_BINARY_OP_EXTEND_INLINE] = HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG,
     [_BINARY_SLICE] = HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
     [_STORE_SLICE] = HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
     [_BINARY_OP_SUBSCR_LIST_INT] = HAS_EXIT_FLAG | HAS_ESCAPES_FLAG,
@@ -1269,6 +1270,15 @@ const _PyUopCachingInfo _PyUop_Caching[MAX_UOP_ID+1] = {
             { -1, -1, -1 },
             { -1, -1, -1 },
             { 3, 2, _BINARY_OP_EXTEND_r23 },
+            { -1, -1, -1 },
+        },
+    },
+    [_BINARY_OP_EXTEND_INLINE] = {
+        .best = { 2, 2, 2, 2 },
+        .entries = {
+            { -1, -1, -1 },
+            { -1, -1, -1 },
+            { 3, 2, _BINARY_OP_EXTEND_INLINE_r23 },
             { -1, -1, -1 },
         },
     },
@@ -4009,6 +4019,7 @@ const uint16_t _PyUop_Uncached[MAX_UOP_REGS_ID+1] = {
     [_BINARY_OP_INPLACE_ADD_UNICODE_r21] = _BINARY_OP_INPLACE_ADD_UNICODE,
     [_GUARD_BINARY_OP_EXTEND_r22] = _GUARD_BINARY_OP_EXTEND,
     [_BINARY_OP_EXTEND_r23] = _BINARY_OP_EXTEND,
+    [_BINARY_OP_EXTEND_INLINE_r23] = _BINARY_OP_EXTEND_INLINE,
     [_BINARY_SLICE_r31] = _BINARY_SLICE,
     [_STORE_SLICE_r30] = _STORE_SLICE,
     [_BINARY_OP_SUBSCR_LIST_INT_r23] = _BINARY_OP_SUBSCR_LIST_INT,
@@ -4644,6 +4655,8 @@ const char *const _PyOpcode_uop_name[MAX_UOP_REGS_ID+1] = {
     [_BINARY_OP_ADD_UNICODE_r23] = "_BINARY_OP_ADD_UNICODE_r23",
     [_BINARY_OP_EXTEND] = "_BINARY_OP_EXTEND",
     [_BINARY_OP_EXTEND_r23] = "_BINARY_OP_EXTEND_r23",
+    [_BINARY_OP_EXTEND_INLINE] = "_BINARY_OP_EXTEND_INLINE",
+    [_BINARY_OP_EXTEND_INLINE_r23] = "_BINARY_OP_EXTEND_INLINE_r23",
     [_BINARY_OP_INPLACE_ADD_UNICODE] = "_BINARY_OP_INPLACE_ADD_UNICODE",
     [_BINARY_OP_INPLACE_ADD_UNICODE_r21] = "_BINARY_OP_INPLACE_ADD_UNICODE_r21",
     [_BINARY_OP_MULTIPLY_FLOAT] = "_BINARY_OP_MULTIPLY_FLOAT",
@@ -6050,6 +6063,8 @@ int _PyUop_num_popped(int opcode, int oparg)
         case _GUARD_BINARY_OP_EXTEND:
             return 0;
         case _BINARY_OP_EXTEND:
+            return 2;
+        case _BINARY_OP_EXTEND_INLINE:
             return 2;
         case _BINARY_SLICE:
             return 3;

@@ -3902,7 +3902,7 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertEqual(res, 3.5)
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
-        self.assertIn("_BINARY_OP_EXTEND", uops)
+        self.assertIn("_BINARY_OP_EXTEND_INLINE", uops)
         self.assertIn("_POP_TOP_NOP", uops)
         self.assertLessEqual(count_ops(ex, "_POP_TOP"), 2)
 
@@ -3950,7 +3950,7 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertEqual(res, 11.0)
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
-        self.assertIn("_BINARY_OP_EXTEND", uops)
+        self.assertIn("_BINARY_OP_EXTEND_INLINE", uops)
         self.assertIn("_BINARY_OP_MULTIPLY_FLOAT_INPLACE", uops)
         self.assertNotIn("_BINARY_OP_MULTIPLY_FLOAT", uops)
         # NOS guard on the multiply is eliminated because _BINARY_OP_EXTEND

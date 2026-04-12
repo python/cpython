@@ -990,6 +990,22 @@ dummy_func(
             DEAD(right);
         }
 
+        tier2 op(_BINARY_OP_EXTEND_INLINE, (action/4, left, right -- res, l, r)) {
+            PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);
+            PyObject *right_o = PyStackRef_AsPyObjectBorrow(right);
+            STAT_INC(BINARY_OP, hit);
+            volatile binaryopactionfunc func = (binaryopactionfunc)action;
+            PyObject *res_o = func(left_o, right_o);
+            if (res_o == NULL) {
+                ERROR_NO_POP();
+            }
+            res = PyStackRef_FromPyObjectSteal(res_o);
+            l = left;
+            r = right;
+            DEAD(left);
+            DEAD(right);
+        }
+
         macro(BINARY_OP_EXTEND) =
             unused/1 + _GUARD_BINARY_OP_EXTEND + rewind/-4 + _BINARY_OP_EXTEND + POP_TOP + POP_TOP;
 
