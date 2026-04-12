@@ -939,6 +939,22 @@ class SimpleHTTPServerTestCase(BaseTestCase):
             self.assertEqual(response.status, 404)
             self.assertEqual(response.getheader("X-Test1"), None)
 
+    def test_extra_response_headers_dont_overwrite_default_headers(self):
+        with mock.patch.object(self.request_handler, 'extra_response_headers', [
+            ('Content-Type', 'test/not_allowed'),
+            ('Server', 'not_allowed'),
+            ('Set-Cookie', 'test=allowed'),
+        ]):
+            # The Content-Type header should not be overwritten by the extra_response_headers
+            # But cookies in the extra_allowed_duplicate_headers are allowed,
+            # including Set-Cookie
+            response = self.request(self.base_url + '/')
+            self.assertEqual(response.status, 200)
+            self.assertNotEqual(response.getheader("Content-Type"), 'test/not_allowed')
+            self.assertNotEqual(response.getheader("Server"), 'not_allowed')
+            self.assertEqual(response.getheader("Set-Cookie"), 'test=allowed')
+
+
 
 class SocketlessRequestHandler(SimpleHTTPRequestHandler):
     def __init__(self, directory=None):

@@ -406,9 +406,12 @@ instantiation, of which this module provides three different variants:
 
    .. attribute:: extra_response_headers
 
-      A sequence of ``(name, value)`` pairs containing user-defined extra
-      HTTP response headers to add to each successful HTTP status 200 response.
-      These headers are not included in other status code responses.
+      A sequence of ``(name, value)`` pairs containing user-defined extra HTTP
+      response headers to add to each successful HTTP status 200 response. These
+      headers are not included in other status code responses.
+
+      Headers that the server sends automatically (for instance Content-Type)
+      will not be overwritten by extra_response_headers.
 
    The :class:`SimpleHTTPRequestHandler` class defines the following methods:
 
@@ -564,7 +567,8 @@ The following options are accepted:
 
    Specify an additional extra HTTP Response Header to send on successful HTTP
    200 responses. Can be used multiple times to send additional custom response
-   headers.
+   headers. Headers that are sent automatically by the server (for instance
+   Content-Type) will not be overwritten by the server.
 
    .. versionadded:: next
 
