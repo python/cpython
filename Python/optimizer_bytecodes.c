@@ -896,18 +896,21 @@ dummy_func(void) {
                 if (class_method) {
                     ADD_OP(_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)type);
                     self_or_null[0] = sym_new_const(ctx, (PyObject *)type);
-                } else if (static_method) {
+                }
+                else {
                     ADD_OP(_PUSH_NULL, 0, 0);
                     self_or_null[0] = sym_new_null(ctx);
                 }
                 attr = sym_new_const(ctx, callable);
                 PyType_Watch(TYPE_WATCHER_ID, (PyObject *)type);
                 _Py_BloomFilter_Add(dependencies, (PyTypeObject *)type);
-            } else {
+            }
+            else {
                 attr = sym_new_not_null(ctx);
                 self_or_null[0] = sym_new_unknown(ctx);
             }
-        } else {
+        }
+        else {
             attr = sym_new_not_null(ctx);
         }
     }
