@@ -217,8 +217,12 @@ class _Target(typing.Generic[_S, _R]):
                 for case, opname in cases_and_opnames:
                     # _LOAD_FAST_BORROW uses manual codegen in jit.c,
                     # so skip stencil generation for its register variants.
+                    # AArch64 keeps stencils as fallback for huge opargs
+                    # (imm12 limit, oparg > 4085).
+                    # https://developer.arm.com/documentation/ddi0602/2024-06/Base-Instructions/LDR--immediate---Load-register--immediate--?lang=en
                     if opname.startswith("_LOAD_FAST_BORROW_r"):
-                        continue
+                        if not self.triple.startswith("aarch64"):
+                            continue
                     # Write out a copy of the template with *only* this case
                     # inserted. This is about twice as fast as #include'ing all
                     # of executor_cases.c.h each time we compile (since the C

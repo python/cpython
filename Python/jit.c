@@ -590,21 +590,20 @@ combine_symbol_mask(const symbol_mask src, symbol_mask dest)
 // TODO: With dynasm, the per-architecture #ifdef branches below could be
 // replaced by a single portable emission sequence.
 
-// Max oparg for manual codegen. Conservative (AArch64 imm12 limit).
-// TODO: could be set per-architecture (x86 disp32 has a much higher limit).
-#define _LOAD_FAST_BORROW_MAX_OPARG 4085
-
 // Decode a _LOAD_FAST_BORROW* opcode into register variant and oparg.
 // Returns 1 if the opcode is a _LOAD_FAST_BORROW variant, 0 otherwise.
-// Falls back to stencil pipeline for oparg values too large for manual codegen.
+// On AArch64, falls back to stencil for oparg > 4085 (imm12 limit).
+// https://developer.arm.com/documentation/ddi0602/2024-06/Base-Instructions/LDR--immediate---Load-register--immediate--?lang=en
 static int
 _decode_load_fast_borrow(uint16_t opcode, uint16_t insn_oparg,
                          int *reg_variant, int *oparg)
 {
     if (opcode >= _LOAD_FAST_BORROW_r01 && opcode <= _LOAD_FAST_BORROW_r23) {
-        if (insn_oparg > _LOAD_FAST_BORROW_MAX_OPARG) {
+#if defined(__aarch64__) || defined(_M_ARM64)
+        if (insn_oparg > 4085) {
             return 0;
         }
+#endif
         *reg_variant = opcode - _LOAD_FAST_BORROW_r01;
         *oparg = insn_oparg;
         return 1;
