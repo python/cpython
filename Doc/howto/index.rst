@@ -37,6 +37,7 @@ Python Library Reference.
    mro.rst
    free-threading-python.rst
    free-threading-extensions.rst
+   freethreading-stable-abi.rst
    remote_debugging.rst
 
 General:
