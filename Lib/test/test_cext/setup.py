@@ -59,7 +59,7 @@ def main():
     std = os.environ.get("CPYTHON_TEST_STD", "")
     module_name = os.environ["CPYTHON_TEST_EXT_NAME"]
     limited = bool(os.environ.get("CPYTHON_TEST_LIMITED", ""))
-    opaque_pyobject = bool(os.environ.get("CPYTHON_TEST_OPAQUE_PYOBJECT", ""))
+    abi3t = bool(os.environ.get("CPYTHON_TEST_ABI3T", ""))
     internal = bool(int(os.environ.get("TEST_INTERNAL_C_API", "0")))
 
     sources = [SOURCE]
@@ -91,14 +91,12 @@ def main():
         # CC env var overrides sysconfig CC variable in setuptools
         os.environ['CC'] = cmd
 
-    # Define Py_LIMITED_API macro
+    # Define opt-in macros
     if limited:
-        version = sys.hexversion
-        cflags.append(f'-DPy_LIMITED_API={version:#x}')
+        cflags.append(f'-DPy_LIMITED_API={sys.hexversion:#x}')
 
-    # Define _Py_OPAQUE_PYOBJECT macro
-    if opaque_pyobject:
-        cflags.append(f'-D_Py_OPAQUE_PYOBJECT')
+    if abi3t:
+        cflags.append(f'-DPy_TARGET_ABI3T={sys.hexversion:#x}')
 
     if internal:
         cflags.append('-DTEST_INTERNAL_C_API=1')

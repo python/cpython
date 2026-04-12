@@ -636,6 +636,18 @@ class ArrayMemoryviewTest(unittest.TestCase,
                 m = memoryview(a)
                 check_equal(m, True)
 
+        # Test complex formats
+        for complex_format in 'FD':
+            with self.subTest(format=complex_format):
+                data = struct.pack(complex_format * 3, 1.0, 2.0, float('nan'))
+                m = memoryview(data).cast(complex_format)
+                # nan is not equal to nan
+                check_equal(m, False)
+
+                data = struct.pack(complex_format * 3, 1.0, 2.0, 3.0)
+                m = memoryview(data).cast(complex_format)
+                check_equal(m, True)
+
 
 class BytesMemorySliceTest(unittest.TestCase,
     BaseMemorySliceTests, BaseBytesMemoryTests):
@@ -682,6 +694,14 @@ class OtherTest(unittest.TestCase):
         self.assertEqual(half_view.nbytes * 2, float_view.nbytes)
         self.assertListEqual(half_view.tolist(), float_view.tolist())
 
+    def test_complex_types(self):
+        float_complex_data = struct.pack('FFF', 0.0, -1.5j, 1+2j)
+        double_complex_data = struct.pack('DDD', 0.0, -1.5j, 1+2j)
+        float_complex_view = memoryview(float_complex_data).cast('F')
+        double_complex_view = memoryview(double_complex_data).cast('D')
+        self.assertEqual(float_complex_view.nbytes * 2, double_complex_view.nbytes)
+        self.assertListEqual(float_complex_view.tolist(), double_complex_view.tolist())
+
     def test_memoryview_hex(self):
         # Issue #9951: memoryview.hex() segfaults with non-contiguous buffers.
         x = b'0' * 200000
@@ -698,10 +718,10 @@ class OtherTest(unittest.TestCase):
         self.assertEqual(m2.hex(':', -2), '6564:6362:61')
         self.assertEqual(m2.hex(sep=':', bytes_per_sep=2), '65:6463:6261')
         self.assertEqual(m2.hex(sep=':', bytes_per_sep=-2), '6564:6362:61')
-        for bytes_per_sep in 5, -5, 2**31-1, -(2**31-1):
+        for bytes_per_sep in 5, -5, sys.maxsize, -sys.maxsize:
             with self.subTest(bytes_per_sep=bytes_per_sep):
                 self.assertEqual(m2.hex(':', bytes_per_sep), '6564636261')
-        for bytes_per_sep in 2**31, -2**31, 2**1000, -2**1000:
+        for bytes_per_sep in sys.maxsize+1, -sys.maxsize-1, 2**1000, -2**1000:
             with self.subTest(bytes_per_sep=bytes_per_sep):
                 try:
                     self.assertEqual(m2.hex(':', bytes_per_sep), '6564636261')
