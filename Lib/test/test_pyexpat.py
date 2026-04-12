@@ -284,9 +284,7 @@ class ParseTest(unittest.TestCase):
         def CharacterDataHandler(data):
             return parser.Parse(data, False)
         CharacterDataHandler = mock.Mock(wraps=CharacterDataHandler)
-        def StartElementHandler(name, attrs):
-            parser.CharacterDataHandler = CharacterDataHandler
-        parser.StartElementHandler = StartElementHandler
+        parser.CharacterDataHandler = CharacterDataHandler
 
         payload = "<a>x".encode(encoding)
         msg = re.escape("cannot call Parse() from within a handler")
@@ -303,9 +301,7 @@ class ParseTest(unittest.TestCase):
         def CharacterDataHandler(data):
             return parser.ParseFile(BytesIO(data.encode(encoding)))
         CharacterDataHandler = mock.Mock(wraps=CharacterDataHandler)
-        def StartElementHandler(name, attrs):
-            parser.CharacterDataHandler = CharacterDataHandler
-        parser.StartElementHandler = StartElementHandler
+        parser.CharacterDataHandler = CharacterDataHandler
 
         payload = "<a>x".encode(encoding)
         payload_buffer = BytesIO(payload)
@@ -325,10 +321,7 @@ class ParseTest(unittest.TestCase):
             # return a nonzero integer to indicate that parsing continues
             return 1
         ExternalEntityRefHandler = mock.Mock(wraps=ExternalEntityRefHandler)
-
-        def StartElementHandler(*args):
-            parser.ExternalEntityRefHandler = ExternalEntityRefHandler
-        parser.StartElementHandler = StartElementHandler
+        parser.ExternalEntityRefHandler = ExternalEntityRefHandler
 
         payload = textwrap.dedent(f"""\
             <?xml version="1.0" standalone="no"?>
@@ -353,10 +346,7 @@ class ParseTest(unittest.TestCase):
             # return a nonzero integer to indicate that parsing continues
             return 1
         ExternalEntityRefHandler = mock.Mock(wraps=ExternalEntityRefHandler)
-
-        def StartElementHandler(*args):
-            parser.ExternalEntityRefHandler = ExternalEntityRefHandler
-        parser.StartElementHandler = StartElementHandler
+        parser.ExternalEntityRefHandler = ExternalEntityRefHandler
 
         payload = textwrap.dedent(f"""\
             <?xml version="1.0" standalone="no"?>
