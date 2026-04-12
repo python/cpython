@@ -1077,7 +1077,7 @@ dummy_func(void) {
             // then we know this __init__ is definitely the same one as in the cache.
             // We can promote callable to a known constant. This does not need a
             // type watcher, as we do not remove this _CHECK_AND_ALLOCATE_OBJECT guard.
-            if (sym_is_not_null(self_or_null) && sym_matches_type(callable, &PyType_Type)) {
+            if (sym_is_null(self_or_null) && sym_matches_type(callable, &PyType_Type)) {
                 ADD_OP(_NOP, 0, 0);
             }
             PyHeapTypeObject *cls = (PyHeapTypeObject *)probable_callable;
@@ -1101,6 +1101,7 @@ dummy_func(void) {
                     _Py_BloomFilter_Add(dependencies, type);
                 }
             }
+       self_or_null = sym_new_not_null(ctx);
         }
     }
 
