@@ -32,9 +32,10 @@ class PullDOMTestCase(unittest.TestCase):
         # semantics are tested using parseString with a more focused XML
         # fragment.
 
-        # Test with a filename (context manager):
-        with pulldom.parse(tstfile) as handler:
-            list(handler)
+        # Test with a filename:
+        handler = pulldom.parse(tstfile)
+        self.addCleanup(handler.stream.close)
+        list(handler)
 
         # Test with a file object:
         with open(tstfile, "rb") as fin:
