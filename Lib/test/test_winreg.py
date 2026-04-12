@@ -3,6 +3,7 @@
 
 import gc
 import os, sys, errno
+import itertools
 import threading
 import unittest
 from platform import machine, win32_edition
@@ -209,6 +210,33 @@ class BaseWinregTests(unittest.TestCase):
                        access=KEY_ALL_ACCESS) as okey:
             self.assertTrue(okey.handle != 0)
 
+    def test_hkey_comparison(self):
+        """Test HKEY comparison by handle value rather than object identity."""
+        key1 = OpenKey(HKEY_CURRENT_USER, None)
+        key2 = OpenKey(HKEY_CURRENT_USER, None)
+        key3 = OpenKey(HKEY_LOCAL_MACHINE, None)
+
+        self.addCleanup(CloseKey, key1)
+        self.addCleanup(CloseKey, key2)
+        self.addCleanup(CloseKey, key3)
+
+        self.assertEqual(key1.handle, key2.handle)
+        self.assertTrue(key1 == key2)
+        self.assertFalse(key1 != key2)
+
+        self.assertTrue(key1 != key3)
+        self.assertFalse(key1 == key3)
+
+        # Closed keys should be equal (all have handle=0)
+        CloseKey(key1)
+        CloseKey(key2)
+        CloseKey(key3)
+
+        self.assertEqual(key1.handle, 0)
+        self.assertEqual(key2.handle, 0)
+        self.assertEqual(key3.handle, 0)
+        self.assertEqual(key2, key3)
+
 
 class LocalWinregTests(BaseWinregTests):
 
@@ -289,6 +317,37 @@ class LocalWinregTests(BaseWinregTests):
             done = True
             thread.join()
             DeleteKey(HKEY_CURRENT_USER, test_key_name+'\\changing_value')
+            DeleteKey(HKEY_CURRENT_USER, test_key_name)
+
+    def test_queryvalueex_race_condition(self):
+        # gh-142282: QueryValueEx could read garbage buffer under race
+        # condition when another thread changes the value size
+        done = False
+        ready = threading.Event()
+        values = [b'ham', b'spam']
+
+        class WriterThread(threading.Thread):
+            def run(self):
+                with CreateKey(HKEY_CURRENT_USER, test_key_name) as key:
+                    values_iter = itertools.cycle(values)
+                    while not done:
+                        val = next(values_iter)
+                        SetValueEx(key, 'test_value', 0, REG_BINARY, val)
+                        ready.set()
+
+        thread = WriterThread()
+        thread.start()
+        try:
+            ready.wait()
+            with CreateKey(HKEY_CURRENT_USER, test_key_name) as key:
+                for _ in range(1000):
+                    result, typ = QueryValueEx(key, 'test_value')
+                    # The result must be one of the written values,
+                    # not garbage data from uninitialized buffer
+                    self.assertIn(result, values)
+        finally:
+            done = True
+            thread.join()
             DeleteKey(HKEY_CURRENT_USER, test_key_name)
 
     def test_long_key(self):

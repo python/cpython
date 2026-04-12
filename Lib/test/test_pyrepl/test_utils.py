@@ -5,9 +5,28 @@ from _pyrepl.utils import str_width, wlen, prev_next_window, gen_colors
 
 class TestUtils(TestCase):
     def test_str_width(self):
-        characters = ['a', '1', '_', '!', '\x1a', '\u263A', '\uffb9']
+        characters = [
+            'a',
+            '1',
+            '_',
+            '!',
+            '\x1a',
+            '\u263A',
+            '\uffb9',
+            '\N{LATIN SMALL LETTER E WITH ACUTE}',  # é
+            '\N{LATIN SMALL LETTER E WITH CEDILLA}', # ȩ
+            '\u00ad',
+        ]
         for c in characters:
             self.assertEqual(str_width(c), 1)
+
+        zero_width_characters = [
+            '\N{COMBINING ACUTE ACCENT}',
+            '\N{ZERO WIDTH JOINER}',
+        ]
+        for c in zero_width_characters:
+            with self.subTest(character=c):
+                self.assertEqual(str_width(c), 0)
 
         characters = [chr(99989), chr(99999)]
         for c in characters:
@@ -25,6 +44,8 @@ class TestUtils(TestCase):
 
         self.assertEqual(wlen('hello'), 5)
         self.assertEqual(wlen('hello' + '\x1a'), 7)
+        self.assertEqual(wlen('e\N{COMBINING ACUTE ACCENT}'), 1)
+        self.assertEqual(wlen('a\N{ZERO WIDTH JOINER}b'), 2)
 
     def test_prev_next_window(self):
         def gen_normal():
@@ -68,10 +89,42 @@ class TestUtils(TestCase):
             ("obj.list", [(".", "op")]),
             ("obj.match", [(".", "op")]),
             ("b. \\\n format", [(".", "op")]),
+            ("lazy", []),
+            ("lazy()", [('(', 'op'), (')', 'op')]),
             # highlights
             ("set", [("set", "builtin")]),
             ("list", [("list", "builtin")]),
             ("    \n dict", [("dict", "builtin")]),
+            (
+                "    lazy import",
+                [("lazy", "soft_keyword"), ("import", "keyword")],
+            ),
+            (
+                "lazy from cool_people import pablo",
+                [
+                    ("lazy", "soft_keyword"),
+                    ("from", "keyword"),
+                    ("import", "keyword"),
+                ],
+            ),
+            (
+                "if sad: lazy import happy",
+                [
+                    ("if", "keyword"),
+                    (":", "op"),
+                    ("lazy", "soft_keyword"),
+                    ("import", "keyword"),
+                ],
+            ),
+            (
+                "pass; lazy import z",
+                [
+                    ("pass", "keyword"),
+                    (";", "op"),
+                    ("lazy", "soft_keyword"),
+                    ("import", "keyword"),
+                ],
+            ),
         ]
         for code, expected_highlights in cases:
             with self.subTest(code=code):

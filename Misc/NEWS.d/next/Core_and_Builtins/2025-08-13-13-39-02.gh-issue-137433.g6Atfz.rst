@@ -1,3 +1,0 @@
-Fix a potential deadlock in the :term:`free threading` build when daemon
-threads enable or disable profiling or tracing while the main thread is
-shutting down the interpreter.
