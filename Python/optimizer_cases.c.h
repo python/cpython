@@ -3905,32 +3905,38 @@
             break;
         }
 
-        case _CHECK_AND_ALLOCATE_OBJECT: {
-            JitOptRef *args;
+        case _CHECK_OBJECT: {
             JitOptRef self_or_null;
             JitOptRef callable;
-            args = &stack_pointer[-oparg];
             self_or_null = stack_pointer[-1 - oparg];
             callable = stack_pointer[-2 - oparg];
             uint32_t type_version = (uint32_t)this_instr->operand0;
-            (void)args;
             PyObject *probable_callable = sym_get_probable_value(callable);
             assert(probable_callable != NULL);
-            assert(PyType_Check(probable_callable));
             PyTypeObject *tp = (PyTypeObject *)probable_callable;
             if (tp->tp_version_tag == type_version) {
+                if (sym_is_not_null(self_or_null) && sym_matches_type(callable, &PyType_Type)) {
+                    ADD_OP(_NOP, 0, 0);
+                }
                 PyHeapTypeObject *cls = (PyHeapTypeObject *)probable_callable;
                 PyObject *init = cls->_spec_cache.init;
                 assert(init != NULL);
                 assert(PyFunction_Check(init));
-                callable = sym_new_const(ctx, init);
+                sym_set_const(callable, init);
             }
             else {
-                callable = sym_new_not_null(ctx);
+                PyTypeObject *type = _PyType_LookupByVersion(type_version);
+                if (type) {
+                    if (sym_set_type_version(callable, type_version)) {
+                        PyType_Watch(TYPE_WATCHER_ID, (PyObject *)type);
+                        _Py_BloomFilter_Add(dependencies, type);
+                    }
+                }
             }
-            self_or_null = sym_new_not_null(ctx);
-            stack_pointer[-2 - oparg] = callable;
-            stack_pointer[-1 - oparg] = self_or_null;
+            break;
+        }
+
+        case _ALLOCATE_OBJECT: {
             break;
         }
 

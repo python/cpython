@@ -1068,29 +1068,40 @@ dummy_func(void) {
         ex_frame = PyJitRef_WrapInvalid(frame_new_from_symbol(ctx, func_st, NULL, 0));
     }
 
-    op(_CHECK_AND_ALLOCATE_OBJECT, (type_version/2, callable, self_or_null, args[oparg] -- callable, self_or_null, args[oparg])) {
-        (void)args;
+    op(_CHECK_OBJECT, (type_version/2, callable, self_or_null, unused[oparg] -- callable, self_or_null, unused[oparg])) {
         PyObject *probable_callable = sym_get_probable_value(callable);
         assert(probable_callable != NULL);
-        assert(PyType_Check(probable_callable));
         PyTypeObject *tp = (PyTypeObject *)probable_callable;
         if (tp->tp_version_tag == type_version) {
             // If the type version has not changed since we last saw it,
             // then we know this __init__ is definitely the same one as in the cache.
             // We can promote callable to a known constant. This does not need a
             // type watcher, as we do not remove this _CHECK_AND_ALLOCATE_OBJECT guard.
-            // TODO: split up _CHECK_AND_ALLOCATE_OBJECT to the check then alloate, so we can
-            // eliminate the check.
+            if (sym_is_not_null(self_or_null) && sym_matches_type(callable, &PyType_Type)) {
+                ADD_OP(_NOP, 0, 0);
+            }
             PyHeapTypeObject *cls = (PyHeapTypeObject *)probable_callable;
             PyObject *init = cls->_spec_cache.init;
             assert(init != NULL);
             assert(PyFunction_Check(init));
-            callable = sym_new_const(ctx, init);
+            sym_set_const(callable, init);
         }
         else {
-            callable = sym_new_not_null(ctx);
+            // add watcher so that whenever the type changes we invalidate this
+            PyTypeObject *type = _PyType_LookupByVersion(type_version);
+            // if the type is null, it was not found in the cache (there was a conflict)
+            // with the key, in which case we can't trust the version
+            if (type) {
+                // if the type version was set properly, then add a watcher
+                // if it wasn't this means that the type version was previously set to something else
+                // and we set the callable to bottom, so we don't need to add a watcher because we must have
+                // already added one earlier.
+                if (sym_set_type_version(callable, type_version)) {
+                    PyType_Watch(TYPE_WATCHER_ID, (PyObject *)type);
+                    _Py_BloomFilter_Add(dependencies, type);
+                }
+            }
         }
-        self_or_null = sym_new_not_null(ctx);
     }
 
     op(_CREATE_INIT_FRAME, (init, self, args[oparg] -- init_frame)) {
