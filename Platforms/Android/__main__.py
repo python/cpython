@@ -25,7 +25,7 @@ from tempfile import TemporaryDirectory
 
 SCRIPT_NAME = Path(__file__).name
 if SCRIPT_NAME.startswith("__"):
-    SCRIPT_NAME = "Python/Android"
+    SCRIPT_NAME = "Platforms/Android"
 
 ANDROID_DIR = Path(__file__).resolve().parent
 PYTHON_DIR = ANDROID_DIR.parent.parent
