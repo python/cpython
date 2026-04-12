@@ -1,2 +1,2 @@
-Reduce the import time of :mod:`tkinter` with lazy imports. Patch by Rihaan
-Meher.
+Reduce the import time of :mod:`tkinter` with lazy imports. Authored by Rihaan
+Meher in :gh:`148409`
