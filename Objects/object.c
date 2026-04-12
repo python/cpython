@@ -686,6 +686,8 @@ PyObject_Print(PyObject *op, FILE *fp, int flags)
             ret = -1;
         }
     }
+
+    _Py_LeaveRecursiveCall();
     return ret;
 }
 
