@@ -837,7 +837,7 @@ http.server
   HTTP responses.
   (Contributed by Anton I. Sipos in :gh:`135057`.)
 
-* Add a ``-H`` or ``--header`` flag to the :program:`python -m http.server`
+* Add a ``-H/--header`` option to the :program:`python -m http.server`
   command-line interface to support custom headers in HTTP responses.
   (Contributed by Anton I. Sipos in :gh:`135057`.)
 
