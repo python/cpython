@@ -592,18 +592,11 @@ combine_symbol_mask(const symbol_mask src, symbol_mask dest)
 
 // Decode a _LOAD_FAST_BORROW* opcode into register variant and oparg.
 // Returns 1 if the opcode is a _LOAD_FAST_BORROW variant, 0 otherwise.
-// On AArch64, falls back to stencil for oparg > 4085 (imm12 limit).
-// https://developer.arm.com/documentation/ddi0602/2024-06/Base-Instructions/LDR--immediate---Load-register--immediate--?lang=en
 static int
 _decode_load_fast_borrow(uint16_t opcode, uint16_t insn_oparg,
                          int *reg_variant, int *oparg)
 {
     if (opcode >= _LOAD_FAST_BORROW_r01 && opcode <= _LOAD_FAST_BORROW_r23) {
-#if defined(__aarch64__) || defined(_M_ARM64)
-        if (insn_oparg > 4085) {
-            return 0;
-        }
-#endif
         *reg_variant = opcode - _LOAD_FAST_BORROW_r01;
         *oparg = insn_oparg;
         return 1;
@@ -613,17 +606,21 @@ _decode_load_fast_borrow(uint16_t opcode, uint16_t insn_oparg,
 
 #if defined(__aarch64__) || defined(_M_ARM64)
 
-// AArch64: ldr x8, [x21, #off] ; orr xDST, x8, #1  (8 bytes, no data)
-// preserve_none CC: x21=frame, x24/x25/x26=cache0/1/2
+// AArch64: preserve_none CC: x21=frame, x24/x25/x26=cache0/1/2
+// Small oparg (imm12 fits): ldr x8, [x21, #off] ; orr xDST, x8, #1  (8 bytes)
+// Large oparg:  mov w8, #off ; ldr x8, [x21, x8] ; orr xDST, x8, #1  (12 bytes)
+// https://developer.arm.com/documentation/ddi0602/2024-06/Base-Instructions/LDR--immediate---Load-register--immediate--?lang=en
+
+static const uint32_t _aarch64_cache_regs[3] = {24, 25, 26};
 
 static int
 _load_fast_borrow_code_size(int oparg)
 {
-    (void)oparg;
-    return 8;
+    uint32_t byte_offset = (uint32_t)(offsetof(_PyInterpreterFrame, localsplus)
+                                      + (unsigned)oparg * sizeof(_PyStackRef));
+    uint32_t imm12 = byte_offset >> 3;
+    return imm12 < 4096 ? 8 : 12;
 }
-
-static const uint32_t _aarch64_cache_regs[3] = {24, 25, 26};
 
 static void
 _emit_load_fast_borrow(unsigned char *code, int reg_variant, int oparg)
@@ -631,16 +628,30 @@ _emit_load_fast_borrow(unsigned char *code, int reg_variant, int oparg)
     uint32_t byte_offset = (uint32_t)(offsetof(_PyInterpreterFrame, localsplus)
                                       + (unsigned)oparg * sizeof(_PyStackRef));
     assert(byte_offset % 8 == 0);
+    uint32_t dst = _aarch64_cache_regs[reg_variant];
     uint32_t imm12 = byte_offset >> 3;
-    assert(imm12 < 4096);
 
-    // ldr x8, [x21, #byte_offset]
-    uint32_t ldr = 0xF9400000 | (imm12 << 10) | (21 << 5) | 8;
-    // orr xDST, x8, #0x1
-    uint32_t orr = 0xB2400000 | (8 << 5) | _aarch64_cache_regs[reg_variant];
+    if (imm12 < 4096) {
+        // ldr x8, [x21, #byte_offset]
+        uint32_t ldr = 0xF9400000 | (imm12 << 10) | (21 << 5) | 8;
+        // orr xDST, x8, #0x1
+        uint32_t orr = 0xB2400000 | (8 << 5) | dst;
 
-    memcpy(code, &ldr, 4);
-    memcpy(code + 4, &orr, 4);
+        memcpy(code, &ldr, 4);
+        memcpy(code + 4, &orr, 4);
+    }
+    else {
+        // mov w8, #byte_offset
+        uint32_t mov = 0x52800000 | ((byte_offset & 0xFFFF) << 5) | 8;
+        // ldr x8, [x21, x8]
+        uint32_t ldr = 0xF8686AA8;
+        // orr xDST, x8, #0x1
+        uint32_t orr = 0xB2400000 | (8 << 5) | dst;
+
+        memcpy(code, &mov, 4);
+        memcpy(code + 4, &ldr, 4);
+        memcpy(code + 8, &orr, 4);
+    }
 }
 
 #elif defined(__x86_64__) || defined(_M_X64)
