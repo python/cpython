@@ -559,7 +559,7 @@ class BaseHTTPRequestHandler(socketserver.StreamRequestHandler):
                 self._headers_buffer = []
             self._headers_buffer.append(
                 ("%s: %s\r\n" % (keyword, value)).encode('latin-1', 'strict'))
-            if not is_extra:
+            if not is_extra and hasattr(self, 'default_response_headers'):
                 self.default_response_headers.append((keyword, value))
 
         if keyword.lower() == 'connection':
