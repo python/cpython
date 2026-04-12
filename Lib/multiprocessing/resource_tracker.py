@@ -112,9 +112,9 @@ class ResourceTracker(object):
         #     before the parent's __del__ runs, so by then the fd copies
         #     are gone and the parent can reap the tracker promptly.
         #
-        #   - A raw os.fork() leaves the flag unset.  We close the fd so
+        #   - A raw os.fork() leaves the flag unset.  We close the fd in the child after forking so
         #     the parent's __del__ can reap the tracker without waiting
-        #     for us to exit.  If we later need a tracker, ensure_running()
+        #     for the child to exit.  If we later need a tracker, ensure_running()
         #     will launch a fresh one.
         self._lock._at_fork_reinit()
         self._reentrant_messages.clear()
