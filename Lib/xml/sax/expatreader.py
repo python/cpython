@@ -426,9 +426,9 @@ class ExpatParser(xmlreader.IncrementalParser, xmlreader.Locator):
             xmlreader.IncrementalParser.parse(self, source)
         except Exception:
             return 0  # FIXME: save error info here?
-        finally:
-            (self._parser, self._source) = self._entity_stack[-1]
-            del self._entity_stack[-1]
+
+        (self._parser, self._source) = self._entity_stack[-1]
+        del self._entity_stack[-1]
         return 1
 
     def skipped_entity_handler(self, name, is_pe):

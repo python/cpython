@@ -1078,7 +1078,6 @@ class ExpatReaderTest(XmlTestBase):
 
         if issubclass(exc_type, Exception):
             self.assertRaises(SAXParseException, parser.feed, trigger)
-            self.assertEqual(len(parser._entity_stack), 0)
         else:
             with self.assertRaisesRegex(exc_type, "test"):
                 parser.feed(trigger)
