@@ -589,31 +589,31 @@ class ReferencesTestCase(TestBase):
         gc.collect()
 
         self.assertIsNone(ref(), "Leaked object in pow operation")
-        
+
     def test_proxy_unref_richcompare_refcount(self):
         class C:
             def __eq__(self, o):
                 return NotImplemented
-    
+
         # create dead proxy
         o = C()
         dead = weakref.proxy(o)
         del o
         gc.collect()
-    
+
         # create live proxy
         obj = C()
         ref = weakref.ref(obj)
         proxy = weakref.proxy(obj)
-    
+
         try:
             proxy == dead
         except ReferenceError:
             pass
-    
+
         del proxy, obj, dead
         gc.collect()
-    
+
         self.assertIsNone(ref(), "Leaked object in richcompare operation")
 
     def test_getweakrefcount(self):
