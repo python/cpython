@@ -634,6 +634,7 @@ _proxy_unwrap(PyObject **op, int *did_incref)
         return res; \
     }
 
+
 /* direct slots */
 
 WRAP_BINARY(proxy_getattr, PyObject_GetAttr)
