@@ -1,1 +1,1 @@
-Add ``ZipFile.remove()``
+Add :meth:`ZipFile.remove <zipfile.ZipFile.remove>`.
