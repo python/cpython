@@ -226,6 +226,10 @@ dummy_func(void) {
             }
             else {
                 sym_set_const(owner, type);
+                if ((((PyTypeObject *)type)->tp_flags & Py_TPFLAGS_IMMUTABLETYPE) == 0) {
+                    PyType_Watch(TYPE_WATCHER_ID, type);
+                    _Py_BloomFilter_Add(dependencies, type);
+                }
             }
         }
     }
@@ -1211,6 +1215,13 @@ dummy_func(void) {
 
     op (_CHECK_STACK_SPACE_OPERAND, (framesize/2 -- )) {
         (void)framesize;
+    }
+
+    op(_CHECK_IS_NOT_PY_CALLABLE, (callable, unused, unused[oparg] -- callable, unused, unused[oparg])) {
+        PyTypeObject *type = sym_get_type(callable);
+        if (type && type != &PyFunction_Type && type != &PyMethod_Type) {
+            ADD_OP(_NOP, 0, 0);
+        }
     }
 
     op(_PUSH_FRAME, (new_frame -- )) {
