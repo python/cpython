@@ -2,6 +2,7 @@
 
 #include "opcode.h"
 
+#include "pycore_bytesobject.h"   // _PyBytes_Concat
 #include "pycore_code.h"
 #include "pycore_critical_section.h"
 #include "pycore_descrobject.h"   // _PyMethodWrapper_Type
@@ -2166,24 +2167,6 @@ int_tuple_multiply(PyObject *lhs, PyObject *rhs)
     return seq_int_multiply(rhs, lhs, PyTuple_Type.tp_as_sequence->sq_repeat);
 }
 
-static PyObject *
-bytes_bytes_add(PyObject *lhs, PyObject *rhs)
-{
-    return PyBytes_Type.tp_as_sequence->sq_concat(lhs, rhs);
-}
-
-static PyObject *
-dict_dict_or(PyObject *lhs, PyObject *rhs)
-{
-    return PyDict_Type.tp_as_number->nb_or(lhs, rhs);
-}
-
-static PyObject *
-dict_dict_ior(PyObject *lhs, PyObject *rhs)
-{
-    return PyDict_Type.tp_as_number->nb_inplace_or(lhs, rhs);
-}
-
 static int
 compactlongs_guard(PyObject *lhs, PyObject *rhs)
 {
@@ -2311,8 +2294,8 @@ static _PyBinaryOpSpecializationDescr binaryop_extend_descrs[] = {
 
     /* bytes + bytes: bytes_concat may return an operand when one side
        is empty, so result is not always unique. */
-    {NB_ADD, NULL, bytes_bytes_add, &PyBytes_Type, 0, &PyBytes_Type, &PyBytes_Type},
-    {NB_INPLACE_ADD, NULL, bytes_bytes_add, &PyBytes_Type, 0, &PyBytes_Type, &PyBytes_Type},
+    {NB_ADD, NULL, _PyBytes_Concat, &PyBytes_Type, 0, &PyBytes_Type, &PyBytes_Type},
+    {NB_INPLACE_ADD, NULL, _PyBytes_Concat, &PyBytes_Type, 0, &PyBytes_Type, &PyBytes_Type},
 
     /* bytes * int / int * bytes: call bytes_repeat directly.
        bytes_repeat returns the original when n == 1. */
@@ -2329,8 +2312,8 @@ static _PyBinaryOpSpecializationDescr binaryop_extend_descrs[] = {
     {NB_INPLACE_MULTIPLY, NULL, int_tuple_multiply, &PyTuple_Type, 0, &PyLong_Type, &PyTuple_Type},
 
     /* dict | dict */
-    {NB_OR, NULL, dict_dict_or, &PyDict_Type, 1, &PyDict_Type, &PyDict_Type},
-    {NB_INPLACE_OR, NULL, dict_dict_ior, &PyDict_Type, 0, &PyDict_Type, &PyDict_Type},
+    {NB_OR, NULL, _PyDict_Or, &PyDict_Type, 1, &PyDict_Type, &PyDict_Type},
+    {NB_INPLACE_OR, NULL, _PyDict_IOr, &PyDict_Type, 0, &PyDict_Type, &PyDict_Type},
 };
 
 static int

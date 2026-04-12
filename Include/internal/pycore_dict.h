@@ -87,6 +87,11 @@ typedef struct {
 extern PyDictKeysObject *_PyDict_NewKeysForClass(PyHeapTypeObject *);
 extern PyObject *_PyDict_FromKeys(PyObject *, PyObject *, PyObject *);
 
+/* Implementations of the `|` and `|=` operators for dict, used by the
+ * specializing interpreter. */
+extern PyObject *_PyDict_Or(PyObject *self, PyObject *other);
+extern PyObject *_PyDict_IOr(PyObject *self, PyObject *other);
+
 /* Gets a version number unique to the current state of the keys of dict, if possible.
  * Returns the version number, or zero if it was not possible to get a version number. */
 extern uint32_t _PyDictKeys_GetVersionForCurrentState(

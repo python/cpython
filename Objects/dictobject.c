@@ -5041,8 +5041,8 @@ dict___sizeof___impl(PyDictObject *self)
     return PyLong_FromSsize_t(_PyDict_SizeOf(self));
 }
 
-static PyObject *
-dict_or(PyObject *self, PyObject *other)
+PyObject *
+_PyDict_Or(PyObject *self, PyObject *other)
 {
     if (!PyAnyDict_Check(self) || !PyAnyDict_Check(other)) {
         Py_RETURN_NOTIMPLEMENTED;
@@ -5077,12 +5077,12 @@ frozendict_or(PyObject *self, PyObject *other)
         }
     }
 
-    return dict_or(self, other);
+    return _PyDict_Or(self, other);
 }
 
 
-static PyObject *
-dict_ior(PyObject *self, PyObject *other)
+PyObject *
+_PyDict_IOr(PyObject *self, PyObject *other)
 {
     if (dict_update_arg(self, other)) {
         return NULL;
@@ -5198,8 +5198,8 @@ static PySequenceMethods dict_as_sequence = {
 };
 
 static PyNumberMethods dict_as_number = {
-    .nb_or = dict_or,
-    .nb_inplace_or = dict_ior,
+    .nb_or = _PyDict_Or,
+    .nb_inplace_or = _PyDict_IOr,
 };
 
 static PyObject *
