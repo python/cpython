@@ -54,14 +54,15 @@ static int
 get_mutations(PyObject* dict) {
     assert(PyDict_CheckExact(dict));
     PyDictObject *d = (PyDictObject *)dict;
-    return (d->_ma_watcher_tag >> DICT_MAX_WATCHERS) & ((1 << DICT_WATCHED_MUTATION_BITS)-1);
+    uint64_t tag = FT_ATOMIC_LOAD_UINT64_RELAXED(d->_ma_watcher_tag);
+    return (tag >> DICT_MAX_WATCHERS) & ((1 << DICT_WATCHED_MUTATION_BITS) - 1);
 }
 
 static void
 increment_mutations(PyObject* dict) {
     assert(PyDict_CheckExact(dict));
     PyDictObject *d = (PyDictObject *)dict;
-    d->_ma_watcher_tag += (1 << DICT_MAX_WATCHERS);
+    FT_ATOMIC_ADD_UINT64(d->_ma_watcher_tag, (1 << DICT_MAX_WATCHERS));
 }
 
 /* The first two dict watcher IDs are reserved for CPython,
