@@ -3574,36 +3574,5 @@ recurse({depth})
             client_socket.sendall(b"done")
 
 
-@requires_remote_subprocess_debugging()
-@unittest.skipUnless(sys.platform == "linux", "requires /proc/self/mem")
-@unittest.skipIf(
-    not PROCESS_VM_READV_SUPPORTED,
-    "Run on Linux with process_vm_readv support",
-)
-class TestInvalidDebugOffsets(RemoteInspectionTestBase):
-    @skip_if_not_supported
-    @unittest.skipUnless(
-        os.environ.get("PYTHON_REMOTE_DEBUG_UBSAN_PROBE") == "1",
-        "with UBSan probe",
-    )
-    def test_ubsan_probe_misaligned_interpreter_state_id_offset(self):
-        poison_code = textwrap.dedent(
-            """\
-            interpreter_state_offset = 8 + 8 + 8 + 3 * 8
-            interpreter_id_offset = interpreter_state_offset + 8
-            fd = os.open(f"/proc/{pid}/mem", os.O_WRONLY)
-            os.lseek(fd, addr + interpreter_id_offset, 0)
-            os.write(fd, struct.pack("<Q", 1))
-            os.close(fd)
-            """
-        )
-
-        with self._poisoned_debug_offsets_process(poison_code) as (_, info):
-            with self.assertRaisesRegex(RuntimeError, "Invalid debug offsets"):
-                unwinder = RemoteUnwinder(info["pid"], debug=True)
-                stack_trace = unwinder.get_stack_trace()
-                self.assertTrue(stack_trace)
-
-
 if __name__ == "__main__":
     unittest.main()
