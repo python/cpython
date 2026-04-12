@@ -1682,8 +1682,29 @@ dummy_func(void) {
     }
 
     op(_LOAD_SPECIAL, (method_and_self[2] -- method_and_self[2])) {
-        method_and_self[0] = sym_new_not_null(ctx);
-        method_and_self[1] = sym_new_unknown(ctx);
+        PyTypeObject *type = sym_get_probable_type(method_and_self[1]);
+        if (type != NULL) {
+            PyObject *name = _Py_SpecialMethods[oparg].name;
+            PyObject *descr = _PyType_Lookup(type, name);
+            if (descr != NULL && _PyType_HasFeature(Py_TYPE(descr), Py_TPFLAGS_METHOD_DESCRIPTOR))
+            {
+                ADD_OP(_GUARD_TYPE_VERSION, 0, type->tp_version_tag);
+                bool immortal = _Py_IsImmortal(descr) || (type->tp_flags & Py_TPFLAGS_IMMUTABLETYPE);
+                ADD_OP(immortal ? _LOAD_CONST_INLINE_BORROW : _LOAD_CONST_INLINE,
+                       0, (uintptr_t)descr);
+                ADD_OP(_SWAP, 3, 0);
+                ADD_OP(_POP_TOP, 0, 0);
+                if ((type->tp_flags & Py_TPFLAGS_IMMUTABLETYPE) == 0) {
+                    PyType_Watch(TYPE_WATCHER_ID, (PyObject *)type);
+                    _Py_BloomFilter_Add(dependencies, type);
+                }
+                method_and_self[0] = sym_new_const(ctx, descr);
+            }
+        }
+        else {
+            method_and_self[0] = sym_new_not_null(ctx);
+            method_and_self[1] = sym_new_unknown(ctx);
+        }
     }
 
     op(_JUMP_TO_TOP, (--)) {
