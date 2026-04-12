@@ -33,7 +33,7 @@ You can use it to enable code that only runs under the free-threaded build::
 =======================
 
 Accessing any member of ``PyObject`` directly is now prohibited, like the non-GIL
-stable ABI. For instance, prefer ``Py_Type()`` and ``Py_SET_TYPE()`` over ``ob_type``,
+stable ABI. For instance, prefer ``Py_TYPE()`` and ``Py_SET_TYPE()`` over ``ob_type``,
 ``Py_REFCNT``, ``Py_INCREF()`` and ``Py_DecRef()`` over ``ob_refcnt``, etc.
 
 Module Initialization
