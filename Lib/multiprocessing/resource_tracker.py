@@ -122,11 +122,12 @@ class ResourceTracker(object):
         self._exitcode = None
         if (self._fd is not None and
             not getattr(_fork_intent, 'preserve_fd', False)):
+            fd = self._fd
+            self._fd = None
             try:
-                os.close(self._fd)
+                os.close(fd)
             except OSError:
                 pass
-            self._fd = None
 
     def _stop(self, use_blocking_lock=True, wait_timeout=None):
         if use_blocking_lock:
