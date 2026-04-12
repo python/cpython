@@ -36,7 +36,6 @@ lazy import collections
 lazy import enum
 lazy import sys
 lazy import types
-lazy import re
 
 TclError = _tkinter.TclError
 
@@ -45,6 +44,8 @@ _debug = False  # set to True to print executed Tcl/Tk commands
 
 TkVersion = float(_tkinter.TK_VERSION)
 TclVersion = float(_tkinter.TCL_VERSION)
+
+lazy import re
 
 READABLE = _tkinter.READABLE
 WRITABLE = _tkinter.WRITABLE
