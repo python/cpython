@@ -5104,6 +5104,7 @@ def _test():
 
 __all__ = [name for name, obj in globals().items()
            if not name.startswith('_') and not isinstance(obj, types.ModuleType)
+           and not isinstance(obj, types.LazyImportType)
            and name not in {'wantobjects'}]
 
 if __name__ == '__main__':
