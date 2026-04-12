@@ -30,7 +30,7 @@ You can use it to enable code that only runs under the free-threaded build::
    macro defined.
 
 ``PyObject`` opaqueness
-=====================
+=======================
 
 Accessing any member of ``PyObject`` directly is now prohibited, like the non-GIL
 stable ABI. For instance, prefer ``Py_Type()`` and ``Py_SET_TYPE()`` over ``ob_type``,
