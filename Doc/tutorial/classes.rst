@@ -689,7 +689,23 @@ such a mechanism, called :dfn:`name mangling`.  Any identifier of the form
 is textually replaced with ``_classname__spam``, where ``classname`` is the
 current class name with leading underscore(s) stripped.  This mangling is done
 without regard to the syntactic position of the identifier, as long as it
-occurs within the definition of a class.
+occurs within the definition of a class. For example:
+
+.. code-block:: python
+    
+    class Employee:
+        __dept = 'computer lab'
+        def __detail(self):
+            # __dept is a private variable,so we access it with _Employee__dept
+            print('Employee is from',self._Employee__dept)
+
+.. code-block:: pycon
+
+    >>> john = Employee()
+    >>> john._Employee__dept
+    'computer lab'
+    >>> john._Employee__detail()
+    Employee is from computer lab
 
 .. seealso::
 
