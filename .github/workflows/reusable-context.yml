@@ -33,7 +33,8 @@ on:  # yamllint disable-line rule:truthy
         description: Whether to run the CIFuzz job
         value: ${{ jobs.compute-changes.outputs.run-ci-fuzz }}  # bool
 
-permissions: {}
+permissions:
+  contents: read
 
 jobs:
   compute-changes:
