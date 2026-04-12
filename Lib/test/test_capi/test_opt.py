@@ -1691,6 +1691,51 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertIn("_CHECK_FUNCTION_VERSION_INLINE", uops)
         self.assertNotIn("_CHECK_METHOD_VERSION", uops)
 
+    def test_record_bound_method_general(self):
+        class MyClass:
+            def method(self, *args):
+                return args[0] + 1
+
+        def testfunc(n):
+            obj = MyClass()
+            bound = obj.method
+            result = 0
+            for i in range(n):
+                result += bound(i)
+            return result
+
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(
+            res, sum(i + 1 for i in range(TIER2_THRESHOLD))
+        )
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertIn("_PUSH_FRAME", uops)
+        self.assertIn("_CHECK_FUNCTION_VERSION_INLINE", uops)
+        self.assertNotIn("_CHECK_METHOD_VERSION", uops)
+
+    def test_record_bound_method_exact_args(self):
+        class MyClass:
+            def method(self, x):
+                return x + 1
+
+        def testfunc(n):
+            obj = MyClass()
+            bound = obj.method
+            result = 0
+            for i in range(n):
+                result += bound(i)
+            return result
+
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(
+            res, sum(i + 1 for i in range(TIER2_THRESHOLD))
+        )
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertIn("_PUSH_FRAME", uops)
+        self.assertNotIn("_CHECK_FUNCTION_EXACT_ARGS", uops)
+
     def test_jit_error_pops(self):
         """
         Tests that the correct number of pops are inserted into the
