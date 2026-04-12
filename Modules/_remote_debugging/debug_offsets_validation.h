@@ -211,19 +211,22 @@ validate_fixed_field(
  * stays within both the remote table's reported section size and the local
  * buffer size we use when reading that section. If a new dereferenced field is
  * added to the offset tables, add it to the matching list here.
+ *
+ * Sections not listed here are present in the offset tables but not used by
+ * the unwinder, so no validation is needed for them.
  */
 #define PY_REMOTE_DEBUG_RUNTIME_STATE_FIELDS(APPLY, buffer_size) \
     APPLY(runtime_state, interpreters_head, sizeof(uintptr_t), buffer_size)
 
 #define PY_REMOTE_DEBUG_THREAD_STATE_FIELDS(APPLY, buffer_size) \
-    APPLY(thread_state, native_thread_id, sizeof(long), buffer_size); \
+    APPLY(thread_state, native_thread_id, sizeof(unsigned long), buffer_size); \
     APPLY(thread_state, interp, sizeof(uintptr_t), buffer_size); \
     APPLY(thread_state, datastack_chunk, sizeof(uintptr_t), buffer_size); \
     APPLY(thread_state, status, FIELD_SIZE(PyThreadState, _status), buffer_size); \
     APPLY(thread_state, holds_gil, sizeof(int), buffer_size); \
     APPLY(thread_state, gil_requested, sizeof(int), buffer_size); \
     APPLY(thread_state, current_exception, sizeof(uintptr_t), buffer_size); \
-    APPLY(thread_state, thread_id, sizeof(long), buffer_size); \
+    APPLY(thread_state, thread_id, sizeof(unsigned long), buffer_size); \
     APPLY(thread_state, next, sizeof(uintptr_t), buffer_size); \
     APPLY(thread_state, current_frame, sizeof(uintptr_t), buffer_size); \
     APPLY(thread_state, base_frame, sizeof(uintptr_t), buffer_size); \
@@ -296,6 +299,10 @@ validate_fixed_field(
 static inline int
 _PyRemoteDebug_ValidateDebugOffsetsLayout(struct _Py_DebugOffsets *debug_offsets)
 {
+    /* Validate every field the unwinder dereferences against a local buffer
+     * or local object view. Fields used only for remote address arithmetic
+     * (e.g. runtime_state.interpreters_head) are also checked as a sanity
+     * bound on the offset value. */
     PY_REMOTE_DEBUG_VALIDATE_SECTION(runtime_state);
     PY_REMOTE_DEBUG_RUNTIME_STATE_FIELDS(
         PY_REMOTE_DEBUG_VALIDATE_FIELD,
