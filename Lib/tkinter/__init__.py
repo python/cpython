@@ -31,12 +31,12 @@ tk.mainloop()
 """
 import _tkinter # If this fails your Python may not be configured for Tk
 from tkinter.constants import *
+import collections
+import enum
 
-lazy import collections
-lazy import enum
 lazy import sys
 lazy import types
-
+lazy import re
 TclError = _tkinter.TclError
 
 wantobjects = 1
@@ -44,8 +44,6 @@ _debug = False  # set to True to print executed Tcl/Tk commands
 
 TkVersion = float(_tkinter.TK_VERSION)
 TclVersion = float(_tkinter.TCL_VERSION)
-
-lazy import re
 
 READABLE = _tkinter.READABLE
 WRITABLE = _tkinter.WRITABLE
