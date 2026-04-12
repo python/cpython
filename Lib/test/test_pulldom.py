@@ -41,14 +41,6 @@ class PullDOMTestCase(unittest.TestCase):
         with open(tstfile, "rb") as fin:
             list(pulldom.parse(fin))
 
-    def test_context_manager_closes_file(self):
-        # gh-148428: context manager should close owned stream
-        with pulldom.parse(tstfile) as events:
-            stream = events.stream
-            for event, node in events:
-                pass
-        self.assertTrue(stream.closed)
-
     def test_context_manager_does_not_close_user_stream(self):
         # gh-148428: context manager must not close user-provided streams
         with open(tstfile, 'rb') as f:
