@@ -39,6 +39,7 @@ jobs:
     - name: Install Homebrew dependencies
       run: |
         brew bundle --file=.github/workflows/Brewfile
+        brew install make
     - name: Configure CPython
       run: |
         MACOSX_DEPLOYMENT_TARGET=10.15 \
