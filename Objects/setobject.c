@@ -1464,16 +1464,18 @@ set_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     return make_new_set(type, NULL);
 }
 
-#ifdef Py_GIL_DISABLED
 static void
 copy_small_table(setentry *dest, setentry *src)
 {
+#ifdef Py_GIL_DISABLED
     for (Py_ssize_t i = 0; i < PySet_MINSIZE; i++) {
         _Py_atomic_store_ptr_release(&dest[i].key, src[i].key);
         _Py_atomic_store_ssize_relaxed(&dest[i].hash, src[i].hash);
     }
-}
+#else
+    memcpy(dest, src, PySet_MINSIZE * sizeof(setentry));
 #endif
+}
 
 /* set_replace_body() replaces the contents of dst with those of src,
    moving dst's old contents into src for proper cleanup on Py_DECREF.
@@ -1520,13 +1522,8 @@ set_replace_body(PySetObject *dst, PySetObject *src)
 
     if (dst_table == dst->smalltable || src_table == src->smalltable) {
         memcpy(tab, dst->smalltable, sizeof(tab));
-#ifndef Py_GIL_DISABLED
-        memcpy(dst->smalltable, src->smalltable, sizeof(tab));
-        memcpy(src->smalltable, tab, sizeof(tab));
-#else
         copy_small_table(dst->smalltable, src->smalltable);
         memcpy(src->smalltable, tab, sizeof(tab));
-#endif
     }
 
     FT_ATOMIC_STORE_SSIZE_RELAXED(dst->hash, -1);

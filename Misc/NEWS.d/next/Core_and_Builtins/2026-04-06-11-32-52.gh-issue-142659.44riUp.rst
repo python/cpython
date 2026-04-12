@@ -1,3 +1,0 @@
-Optimize :meth:`set.intersection_update` by replacing the general-purpose
-``set_swap_bodies()`` with a specialized ``set_replace_body()`` that skips
-unnecessary atomic operations and checks for the temporary set argument.
