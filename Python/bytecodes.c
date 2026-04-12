@@ -6160,8 +6160,7 @@ dummy_func(
         tier2 op(_RECORD_BOUND_METHOD, (callable, self, args[oparg] -- callable, self, args[oparg])) {
             PyObject *callable_o = PyStackRef_AsPyObjectBorrow(callable);
             if (Py_TYPE(callable_o) == &PyMethod_Type) {
-                PyObject *func = ((PyMethodObject *)callable_o)->im_func;
-                RECORD_VALUE(func);
+                RECORD_VALUE(callable_o);
             }
         }
 
