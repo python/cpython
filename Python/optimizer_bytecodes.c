@@ -226,8 +226,10 @@ dummy_func(void) {
             }
             else {
                 sym_set_const(owner, type);
-                PyType_Watch(TYPE_WATCHER_ID, type);
-                _Py_BloomFilter_Add(dependencies, type);
+                if ((((PyTypeObject *)type)->tp_flags & Py_TPFLAGS_IMMUTABLETYPE) == 0) {
+                    PyType_Watch(TYPE_WATCHER_ID, type);
+                    _Py_BloomFilter_Add(dependencies, type);
+                }
             }
         }
     }
