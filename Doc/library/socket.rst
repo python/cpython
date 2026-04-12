@@ -39,6 +39,8 @@ is implicit on send operations.
       A TLS/SSL wrapper for socket objects.
 
 
+.. _socket-addresses:
+
 Socket families
 ---------------
 
@@ -903,7 +905,7 @@ The following functions all create :ref:`socket objects <socket-objects>`.
 
    Build a pair of connected socket objects using the given address family, socket
    type, and protocol number.  Address family, socket type, and protocol number are
-   as for the :func:`~socket.socket` function above. The default family is :const:`AF_UNIX`
+   as for the :func:`~socket.socket` function. The default family is :const:`AF_UNIX`
    if defined on the platform; otherwise, the default is :const:`AF_INET`.
 
    The newly created sockets are :ref:`non-inheritable <fd_inheritance>`.
@@ -999,8 +1001,8 @@ The following functions all create :ref:`socket objects <socket-objects>`.
 
    Duplicate the file descriptor *fd* (an integer as returned by a file object's
    :meth:`~io.IOBase.fileno` method) and build a socket object from the result.  Address
-   family, socket type and protocol number are as for the :func:`~socket.socket` function
-   above. The file descriptor should refer to a socket, but this is not checked ---
+   family, socket type and protocol number are as for the :func:`~socket.socket` function.
+   The file descriptor should refer to a socket, but this is not checked ---
    subsequent operations on the object may fail if the file descriptor is invalid.
    This function is rarely needed, but can be used to get or set socket options on
    a socket passed to a program as standard input or output (such as a server
@@ -1564,8 +1566,8 @@ to sockets.
 
 .. method:: socket.bind(address)
 
-   Bind the socket to *address*.  The socket must not already be bound. (The format
-   of *address* depends on the address family --- see above.)
+   Bind the socket to *address*.  The socket must not already be bound. The format
+   of *address* depends on the address family --- see :ref:`socket-addresses`.
 
    .. audit-event:: socket.bind self,address socket.socket.bind
 
@@ -1598,8 +1600,8 @@ to sockets.
 
 .. method:: socket.connect(address)
 
-   Connect to a remote socket at *address*. (The format of *address* depends on the
-   address family --- see above.)
+   Connect to a remote socket at *address*. The format of *address* depends on the
+   address family --- see :ref:`socket-addresses`.
 
    If the connection is interrupted by a signal, the method waits until the
    connection completes, or raises a :exc:`TimeoutError` on timeout, if the
@@ -1674,16 +1676,16 @@ to sockets.
 .. method:: socket.getpeername()
 
    Return the remote address to which the socket is connected.  This is useful to
-   find out the port number of a remote IPv4/v6 socket, for instance. (The format
-   of the address returned depends on the address family --- see above.)  On some
-   systems this function is not supported.
+   find out the port number of a remote IPv4/v6 socket, for instance. The format
+   of the address returned depends on the address family --- see :ref:`socket-addresses`.
+   On some systems this function is not supported.
 
 
 .. method:: socket.getsockname()
 
    Return the socket's own address.  This is useful to find out the port number of
-   an IPv4/v6 socket, for instance. (The format of the address returned depends on
-   the address family --- see above.)
+   an IPv4/v6 socket, for instance. The format of the address returned depends on
+   the address family --- see :ref:`socket-addresses`.
 
 
 .. method:: socket.getsockopt(level, optname[, buflen])
@@ -1795,7 +1797,8 @@ to sockets.
    where *bytes* is a bytes object representing the data received and *address* is the
    address of the socket sending the data.  See the Unix manual page
    :manpage:`recv(2)` for the meaning of the optional argument *flags*; it defaults
-   to zero. (The format of *address* depends on the address family --- see above.)
+   to zero. The format of *address* depends on the address family --- see
+   :ref:`socket-addresses`.
 
    .. versionchanged:: 3.5
       If the system call is interrupted and the signal handler does not raise
@@ -1925,8 +1928,8 @@ to sockets.
    new bytestring.  The return value is a pair ``(nbytes, address)`` where *nbytes* is
    the number of bytes received and *address* is the address of the socket sending
    the data.  See the Unix manual page :manpage:`recv(2)` for the meaning of the
-   optional argument *flags*; it defaults to zero.  (The format of *address*
-   depends on the address family --- see above.)
+   optional argument *flags*; it defaults to zero. The format of *address*
+   depends on the address family --- see :ref:`socket-addresses`.
 
 
 .. method:: socket.recv_into(buffer[, nbytes[, flags]])
@@ -1941,7 +1944,7 @@ to sockets.
 .. method:: socket.send(bytes[, flags])
 
    Send data to the socket.  The socket must be connected to a remote socket.  The
-   optional *flags* argument has the same meaning as for :meth:`recv` above.
+   optional *flags* argument has the same meaning as for :meth:`recv`.
    Returns the number of bytes sent. Applications are responsible for checking that
    all data has been sent; if only some of the data was transmitted, the
    application needs to attempt delivery of the remaining data. For further
@@ -1956,7 +1959,7 @@ to sockets.
 .. method:: socket.sendall(bytes[, flags])
 
    Send data to the socket.  The socket must be connected to a remote socket.  The
-   optional *flags* argument has the same meaning as for :meth:`recv` above.
+   optional *flags* argument has the same meaning as for :meth:`recv`.
    Unlike :meth:`send`, this method continues to send data from *bytes* until
    either all data has been sent or an error occurs.  ``None`` is returned on
    success.  On error, an exception is raised, and there is no way to determine how
@@ -1977,9 +1980,9 @@ to sockets.
 
    Send data to the socket.  The socket should not be connected to a remote socket,
    since the destination socket is specified by *address*.  The optional *flags*
-   argument has the same meaning as for :meth:`recv` above.  Return the number of
-   bytes sent. (The format of *address* depends on the address family --- see
-   above.)
+   argument has the same meaning as for :meth:`recv`.  Return the number of
+   bytes sent. The format of *address* depends on the address family --- see
+   :ref:`socket-addresses`.
 
    .. audit-event:: socket.sendto self,address socket.socket.sendto
 

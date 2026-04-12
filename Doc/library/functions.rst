@@ -644,7 +644,7 @@ are always available.  They are listed here in alphabetical order.
    If the given source is a string, then leading and trailing spaces and tabs
    are stripped.
 
-   See :func:`ast.literal_eval` for a function that can safely evaluate strings
+   See :func:`ast.literal_eval` for a function to evaluate strings
    with expressions containing only literals.
 
    .. audit-event:: exec code_object eval
@@ -1754,7 +1754,7 @@ are always available.  They are listed here in alphabetical order.
             self.age = age
 
          def __repr__(self):
-            return f"Person('{self.name}', {self.age})"
+            return f"Person({self.name!r}, {self.age!r})"
 
 
 .. function:: reversed(object, /)

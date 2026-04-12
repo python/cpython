@@ -162,6 +162,7 @@ class Optimizer:
     label_prefix: str
     symbol_prefix: str
     re_global: re.Pattern[str]
+    frame_pointers: bool
     # The first block in the linked list:
     _root: _Block = dataclasses.field(init=False, default_factory=_Block)
     _labels: dict[str, _Block] = dataclasses.field(init=False, default_factory=dict)
@@ -193,6 +194,7 @@ class Optimizer:
     _re_small_const_1 = _RE_NEVER_MATCH
     _re_small_const_2 = _RE_NEVER_MATCH
     const_reloc = "<Not supported>"
+    _frame_pointer_modify: typing.ClassVar[re.Pattern[str]] = _RE_NEVER_MATCH
 
     def __post_init__(self) -> None:
         # Split the code into a linked list of basic blocks. A basic block is an
@@ -553,6 +555,16 @@ class Optimizer:
     def _small_consts_match(self, inst1: Instruction, inst2: Instruction) -> bool:
         raise NotImplementedError()
 
+    def _validate(self) -> None:
+        for block in self._blocks():
+            if not block.instructions:
+                continue
+            for inst in block.instructions:
+                if self.frame_pointers:
+                    assert (
+                        self._frame_pointer_modify.match(inst.text) is None
+                    ), "Frame pointer should not be modified"
+
     def run(self) -> None:
         """Run this optimizer."""
         self._insert_continue_label()
@@ -565,6 +577,7 @@ class Optimizer:
             self._remove_unreachable()
         self._fixup_external_labels()
         self._fixup_constants()
+        self._validate()
         self.path.write_text(self._body())
 
 
@@ -595,6 +608,7 @@ class OptimizerAArch64(Optimizer):  # pylint: disable = too-few-public-methods
         r"\s*(?P<instruction>ldr)\s+.*(?P<value>_JIT_OP(ARG|ERAND(0|1))_(16|32)).*"
     )
     const_reloc = "CUSTOM_AARCH64_CONST"
+    _frame_pointer_modify = re.compile(r"\s*stp\s+x29.*")
 
     def _get_reg(self, inst: Instruction) -> str:
         _, rest = inst.text.split(inst.name)
@@ -649,4 +663,5 @@ class OptimizerX86(Optimizer):  # pylint: disable = too-few-public-methods
     # https://www.felixcloutier.com/x86/jmp
     _re_jump = re.compile(r"\s*jmp\s+(?P<target>[\w.]+)")
     # https://www.felixcloutier.com/x86/ret
-    _re_return = re.compile(r"\s*ret\b")
+    _re_return = re.compile(r"\s*retq?\b")
+    _frame_pointer_modify = re.compile(r"\s*movq?\s+%(\w+),\s+%rbp.*")

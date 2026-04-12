@@ -130,6 +130,8 @@ CONFIGURE_EXE_LDFLAGS=@EXE_LDFLAGS@
 PY_CORE_EXE_LDFLAGS:= $(if $(CONFIGURE_EXE_LDFLAGS), $(CONFIGURE_EXE_LDFLAGS) $(PY_LDFLAGS_NODIST), $(PY_CORE_LDFLAGS))
 # Strict or non-strict aliasing flags used to compile dtoa.c, see above
 CFLAGS_ALIASING=@CFLAGS_ALIASING@
+# Compilation flags only for ceval.c.
+CFLAGS_CEVAL=@CFLAGS_CEVAL@
 
 
 # Machine-dependent subdirectories
@@ -2358,10 +2360,10 @@ testios:
 	fi
 
 	# Clone the testbed project into the XCFOLDER
-	$(PYTHON_FOR_BUILD) $(srcdir)/Apple/testbed clone --framework $(PYTHONFRAMEWORKPREFIX) "$(XCFOLDER)"
+	$(PYTHON_FOR_BUILD) $(srcdir)/Platforms/Apple/testbed clone --framework $(PYTHONFRAMEWORKPREFIX) "$(XCFOLDER)"
 
 	# Run the testbed project
-	$(PYTHON_FOR_BUILD) "$(XCFOLDER)" run --verbose -- test -uall --single-process --rerun -W
+	$(PYTHON_FOR_BUILD) "$(XCFOLDER)" run --verbose -- test -uall --single-process --rerun -W --pythoninfo
 
 # Like test, but using --slow-ci which enables all test resources and use
 # longer timeout. Run an optional pybuildbot.identify script to include
@@ -3203,6 +3205,9 @@ regen-jit:
 Python/dtoa.o: Python/dtoa.c
 	$(CC) -c $(PY_CORE_CFLAGS) $(CFLAGS_ALIASING) -o $@ $<
 
+Python/ceval.o: Python/ceval.c
+	$(CC) -c $(PY_CORE_CFLAGS) $(CFLAGS_CEVAL) -o $@ $<
+
 # Run reindent on the library
 .PHONY: reindent
 reindent:
@@ -3286,10 +3291,10 @@ clean-retain-profile: pycremoval
 	-find build -type f -a ! -name '*.gc??' -exec rm -f {} ';'
 	-rm -f Include/pydtrace_probes.h
 	-rm -f profile-gen-stamp
-	-rm -rf Apple/iOS/testbed/Python.xcframework/ios-*/bin
-	-rm -rf Apple/iOS/testbed/Python.xcframework/ios-*/lib
-	-rm -rf Apple/iOS/testbed/Python.xcframework/ios-*/include
-	-rm -rf Apple/iOS/testbed/Python.xcframework/ios-*/Python.framework
+	-rm -rf Platforms/Apple/iOS/testbed/Python.xcframework/ios-*/bin
+	-rm -rf Platforms/Apple/iOS/testbed/Python.xcframework/ios-*/lib
+	-rm -rf Platforms/Apple/iOS/testbed/Python.xcframework/ios-*/include
+	-rm -rf Platforms/Apple/iOS/testbed/Python.xcframework/ios-*/Python.framework
 
 .PHONY: profile-removal
 profile-removal:
@@ -3323,7 +3328,7 @@ clobber: clean
 		config.cache config.log pyconfig.h Modules/config.c
 	-rm -rf build platform
 	-rm -rf $(PYTHONFRAMEWORKDIR)
-	-rm -rf Apple/iOS/Frameworks
+	-rm -rf Platforms/Apple/iOS/Frameworks
 	-rm -rf iOSTestbed.*
 	-rm -f python-config.py python-config
 	-rm -rf cross-build

@@ -282,6 +282,22 @@ _Py_uop_sym_is_safe_const(JitOptContext *ctx, JitOptRef sym)
     return (typ == &PyUnicode_Type) ||
            (typ == &PyFloat_Type) ||
            (typ == &_PyNone_Type) ||
+           (typ == &PyBool_Type) ||
+           (typ == &PyFrozenDict_Type) ||
+           (typ == &PyFrozenSet_Type);
+}
+
+bool
+_Py_uop_sym_is_not_container(JitOptRef sym)
+{
+    PyTypeObject *typ = _Py_uop_sym_get_type(sym);
+    if (typ == NULL) {
+        return false;
+    }
+    return (typ == &PyLong_Type) ||
+           (typ == &PyFloat_Type) ||
+           (typ == &PyUnicode_Type) ||
+           (typ == &_PyNone_Type) ||
            (typ == &PyBool_Type);
 }
 
@@ -522,7 +538,7 @@ _Py_uop_sym_set_func_version(JitOptContext *ctx, JitOptRef ref, uint32_t version
         case JIT_SYM_PREDICATE_TAG:
         case JIT_SYM_TRUTHINESS_TAG:
             sym_set_bottom(ctx, sym);
-            return true;
+            return false;
         case JIT_SYM_RECORDED_VALUE_TAG: {
             PyObject *val = sym->recorded_value.value;
             if (Py_TYPE(val) != &PyFunction_Type ||
@@ -767,6 +783,7 @@ _Py_uop_sym_get_type(JitOptRef ref)
         case JIT_SYM_NON_NULL_TAG:
         case JIT_SYM_UNKNOWN_TAG:
         case JIT_SYM_RECORDED_TYPE_TAG:
+        case JIT_SYM_RECORDED_GEN_FUNC_TAG:
             return NULL;
         case JIT_SYM_RECORDED_VALUE_TAG:
             if (sym->recorded_value.known_type) {
@@ -788,8 +805,6 @@ _Py_uop_sym_get_type(JitOptRef ref)
             return &PyBool_Type;
         case JIT_SYM_COMPACT_INT:
             return &PyLong_Type;
-        case JIT_SYM_RECORDED_GEN_FUNC_TAG:
-            return &PyGen_Type;
     }
     Py_UNREACHABLE();
 }
@@ -814,7 +829,7 @@ _Py_uop_sym_get_probable_type(JitOptRef ref)
         case JIT_SYM_KNOWN_VALUE_TAG:
             return _Py_uop_sym_get_type(ref);
         case JIT_SYM_RECORDED_GEN_FUNC_TAG:
-            return NULL;
+            return &PyGen_Type;
         case JIT_SYM_RECORDED_VALUE_TAG:
             return Py_TYPE(sym->recorded_value.value);
         case JIT_SYM_RECORDED_TYPE_TAG:
@@ -1513,6 +1528,7 @@ _Py_uop_frame_new(
     frame->globals_watched = false;
     frame->func = NULL;
     frame->caller = false;
+    frame->is_c_recursion_checked = false;
     if (ctx->locals.used > ctx->locals.end || ctx->stack.used > ctx->stack.end) {
         ctx->done = true;
         ctx->out_of_space = true;
@@ -1521,7 +1537,7 @@ _Py_uop_frame_new(
 
     // Initialize with the initial state of all local variables
     for (int i = 0; i < arg_len; i++) {
-        frame->locals[i] = args[i];
+        frame->locals[i] = PyJitRef_RemoveUnique(args[i]);
     }
 
     // If the args are known, then it's safe to just initialize
@@ -1684,6 +1700,9 @@ static JitOptSymbol *
 make_bottom(JitOptContext *ctx)
 {
     JitOptSymbol *sym = sym_new(ctx);
+    if (sym == NULL) {
+        return out_of_space(ctx);
+    }
     sym->tag = JIT_SYM_BOTTOM_TAG;
     return sym;
 }
@@ -2191,7 +2210,8 @@ _Py_uop_symbols_test(PyObject *Py_UNUSED(self), PyObject *Py_UNUSED(ignored))
     /* Test that recorded type aren't treated as known values*/
     JitOptRef rg1 = _Py_uop_sym_new_unknown(ctx);
     _Py_uop_sym_set_recorded_gen_func(ctx, rg1, func);
-    TEST_PREDICATE(_Py_uop_sym_matches_type(rg1, &PyGen_Type), "recorded gen func not treated as generator");
+    TEST_PREDICATE(!_Py_uop_sym_matches_type(rg1, &PyGen_Type), "recorded gen func treated as generator");
+    TEST_PREDICATE(_Py_uop_sym_get_probable_type(rg1) == &PyGen_Type, "recorded gen func not treated as generator");
     TEST_PREDICATE(_Py_uop_sym_get_const(ctx, rg1) == NULL, "recorded gen func is treated as known value");
 
     /* Test that setting type narrows correctly */
@@ -2199,13 +2219,15 @@ _Py_uop_symbols_test(PyObject *Py_UNUSED(self), PyObject *Py_UNUSED(ignored))
     JitOptRef rg2 = _Py_uop_sym_new_unknown(ctx);
     _Py_uop_sym_set_recorded_gen_func(ctx, rg2, func);
     _Py_uop_sym_set_type(ctx, rg2, &PyGen_Type);
-    TEST_PREDICATE(_Py_uop_sym_matches_type(rg1, &PyGen_Type), "recorded gen func not treated as generator");
+    TEST_PREDICATE(!_Py_uop_sym_matches_type(rg2, &PyGen_Type), "recorded gen func treated as generator");
+    TEST_PREDICATE(_Py_uop_sym_get_probable_type(rg2) == &PyGen_Type, "recorded gen func not treated as generator");
     TEST_PREDICATE(_Py_uop_sym_get_const(ctx, rg2) == NULL, "known type is treated as known value");
 
     JitOptRef rg3 = _Py_uop_sym_new_unknown(ctx);
     _Py_uop_sym_set_recorded_gen_func(ctx, rg3, func);
     _Py_uop_sym_set_type_version(ctx, rg3, PyGen_Type.tp_version_tag);
-    TEST_PREDICATE(_Py_uop_sym_matches_type(rg1, &PyGen_Type), "recorded gen func not treated as generator");
+    TEST_PREDICATE(!_Py_uop_sym_matches_type(rg3, &PyGen_Type), "recorded gen func treated as generator");
+    TEST_PREDICATE(_Py_uop_sym_get_probable_type(rg3) == &PyGen_Type, "recorded gen func not treated as generator");
     TEST_PREDICATE(_Py_uop_sym_get_const(ctx, rg3) == NULL, "recorded value with type is treated as known");
 
     /* Test contradictions */
