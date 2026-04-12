@@ -61,8 +61,6 @@ XXX To do:
 # (Actually, the latter is only true if you know the server configuration
 # at the time the request was made!)
 
-__version__ = "0.6"
-
 __all__ = [
     "HTTPServer", "ThreadingHTTPServer",
     "HTTPSServer", "ThreadingHTTPSServer",
@@ -86,6 +84,8 @@ import time
 import urllib.parse
 
 from http import HTTPStatus
+
+lazy import _colorize
 
 
 # Default error message template
@@ -280,7 +280,7 @@ class BaseHTTPRequestHandler(socketserver.StreamRequestHandler):
     # The server software version.  You may want to override this.
     # The format is multiple whitespace-separated strings,
     # where each string is of the form name[/version].
-    server_version = "BaseHTTP/" + __version__
+    server_version = "BaseHTTP"
 
     error_message_format = DEFAULT_ERROR_MESSAGE
     error_content_type = DEFAULT_ERROR_CONTENT_TYPE
@@ -576,6 +576,31 @@ class BaseHTTPRequestHandler(socketserver.StreamRequestHandler):
             self.wfile.write(b"".join(self._headers_buffer))
             self._headers_buffer = []
 
+    def _colorize_request(self, code, size, t):
+        try:
+            code_int = int(code)
+        except (TypeError, ValueError):
+            code_color = ""
+        else:
+            if code_int >= 500:
+                code_color = t.status_server_error
+            elif code_int >= 400:
+                code_color = t.status_client_error
+            elif code_int >= 300:
+                code_color = t.status_redirect
+            elif code_int >= 200:
+                code_color = t.status_ok
+            else:
+                code_color = t.status_informational
+
+        request_line = self.requestline.translate(self._control_char_table)
+        parts = request_line.split(None, 2)
+        if len(parts) == 3:
+            method, path, version = parts
+            request_line = f"{method} {t.path}{path}{t.reset} {version}"
+
+        return f'"{request_line}" {code_color}{code} {t.size}{size}{t.reset}'
+
     def log_request(self, code='-', size='-'):
         """Log an accepted request.
 
@@ -584,6 +609,7 @@ class BaseHTTPRequestHandler(socketserver.StreamRequestHandler):
         """
         if isinstance(code, HTTPStatus):
             code = code.value
+        self._log_request_info = (code, size)
         self.log_message('"%s" %s %s',
                          self.requestline, str(code), str(size))
 
@@ -598,7 +624,7 @@ class BaseHTTPRequestHandler(socketserver.StreamRequestHandler):
         XXX This should go to the separate error log.
 
         """
-
+        self._log_is_error = True
         self.log_message(format, *args)
 
     # https://en.wikipedia.org/wiki/List_of_Unicode_characters#Control_codes
@@ -625,12 +651,22 @@ class BaseHTTPRequestHandler(socketserver.StreamRequestHandler):
         before writing the output to stderr.
 
         """
+        message = (format % args).translate(self._control_char_table)
+        t = _colorize.get_theme(tty_file=sys.stderr).http_server
 
-        message = format % args
-        sys.stderr.write("%s - - [%s] %s\n" %
-                         (self.address_string(),
-                          self.log_date_time_string(),
-                          message.translate(self._control_char_table)))
+        info = getattr(self, "_log_request_info", None)
+        if info is not None:
+            self._log_request_info = None
+            message = self._colorize_request(*info, t)
+        elif getattr(self, "_log_is_error", False):
+            self._log_is_error = False
+            message = f"{t.error}{message}{t.reset}"
+
+        sys.stderr.write(
+            f"{t.timestamp}{self.address_string()} - - "
+            f"[{self.log_date_time_string()}]{t.reset} "
+            f"{message}\n"
+        )
 
     def version_string(self):
         """Return the server software version string."""
@@ -690,7 +726,7 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
 
     """
 
-    server_version = "SimpleHTTP/" + __version__
+    server_version = "SimpleHTTP"
     index_pages = ("index.html", "index.htm")
     extensions_map = _encodings_map_default = {
         '.gz': 'application/gzip',
@@ -1013,9 +1049,11 @@ def test(HandlerClass=BaseHTTPRequestHandler,
         host, port = httpd.socket.getsockname()[:2]
         url_host = f'[{host}]' if ':' in host else host
         protocol = 'HTTPS' if tls_cert else 'HTTP'
+        t = _colorize.get_theme().http_server
+        url = f"{protocol.lower()}://{url_host}:{port}/"
         print(
-            f"Serving {protocol} on {host} port {port} "
-            f"({protocol.lower()}://{url_host}:{port}/) ..."
+            f"{t.serving}Serving {protocol} on {host} port {port}{t.reset} "
+            f"({t.url}{url}{t.reset}) ..."
         )
         try:
             httpd.serve_forever()
@@ -1100,6 +1138,15 @@ def _main(args=None):
         tls_key=args.tls_key,
         tls_password=tls_key_password,
     )
+
+
+def __getattr__(name):
+    if name == "__version__":
+        from warnings import _deprecated
+
+        _deprecated("__version__", remove=(3, 20))
+        return "0.6"  # Do not change
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 
 if __name__ == '__main__':

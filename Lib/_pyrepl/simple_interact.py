@@ -124,7 +124,7 @@ def run_multiline_interactive_console(
         command = REPL_COMMANDS[statement]
         if callable(command):
             # Make sure that history does not change because of commands
-            with reader.suspend_history():
+            with reader.suspend_history(), reader.suspend_colorization():
                 command()
             return True
         return False
@@ -161,7 +161,7 @@ def run_multiline_interactive_console(
             if r.input_trans is r.isearch_trans:
                 r.do_cmd(("isearch-end", [""]))
             r.pos = len(r.get_unicode())
-            r.dirty = True
+            r.invalidate_full()
             r.refresh()
             console.write("\nKeyboardInterrupt\n")
             console.resetbuffer()

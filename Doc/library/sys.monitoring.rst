@@ -10,17 +10,17 @@
 
 .. note::
 
-    :mod:`sys.monitoring` is a namespace within the :mod:`sys` module,
-    not an independent module, so there is no need to
-    ``import sys.monitoring``, simply ``import sys`` and then use
-    ``sys.monitoring``.
+    :mod:`!sys.monitoring` is a namespace within the :mod:`sys` module,
+    not an independent module, and ``import sys.monitoring`` would fail
+    with a :exc:`ModuleNotFoundError`. Instead, simply ``import sys``
+    and then use ``sys.monitoring``.
 
 
 This namespace provides access to the functions and constants necessary to
 activate and control event monitoring.
 
 As programs execute, events occur that might be of interest to tools that
-monitor execution. The :mod:`sys.monitoring` namespace provides means to
+monitor execution. The :mod:`!sys.monitoring` namespace provides means to
 receive callbacks when events of interest occur.
 
 The monitoring API consists of three components:

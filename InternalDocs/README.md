@@ -11,6 +11,11 @@ it is not, please report that through the
 [issue tracker](https://github.com/python/cpython/issues).
 
 
+General Resources
+---
+
+- [Source Code Structure](structure.md)
+
 Compiling Python Source Code
 ---
 

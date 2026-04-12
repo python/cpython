@@ -95,6 +95,7 @@ class InstructionKind(enum.Enum):
     JUMP = enum.auto()
     LONG_BRANCH = enum.auto()
     SHORT_BRANCH = enum.auto()
+    CALL = enum.auto()
     RETURN = enum.auto()
     SMALL_CONST_1 = enum.auto()
     SMALL_CONST_2 = enum.auto()
@@ -161,6 +162,7 @@ class Optimizer:
     label_prefix: str
     symbol_prefix: str
     re_global: re.Pattern[str]
+    frame_pointers: bool
     # The first block in the linked list:
     _root: _Block = dataclasses.field(init=False, default_factory=_Block)
     _labels: dict[str, _Block] = dataclasses.field(init=False, default_factory=dict)
@@ -182,6 +184,8 @@ class Optimizer:
     # Two groups (instruction and target):
     _re_branch: typing.ClassVar[re.Pattern[str]] = _RE_NEVER_MATCH
     # One group (target):
+    _re_call: typing.ClassVar[re.Pattern[str]] = _RE_NEVER_MATCH
+    # One group (target):
     _re_jump: typing.ClassVar[re.Pattern[str]] = _RE_NEVER_MATCH
     # No groups:
     _re_return: typing.ClassVar[re.Pattern[str]] = _RE_NEVER_MATCH
@@ -190,6 +194,7 @@ class Optimizer:
     _re_small_const_1 = _RE_NEVER_MATCH
     _re_small_const_2 = _RE_NEVER_MATCH
     const_reloc = "<Not supported>"
+    _frame_pointer_modify: typing.ClassVar[re.Pattern[str]] = _RE_NEVER_MATCH
 
     def __post_init__(self) -> None:
         # Split the code into a linked list of basic blocks. A basic block is an
@@ -225,6 +230,11 @@ class Optimizer:
                 assert inst.target is not None
                 block.target = self._lookup_label(inst.target)
                 assert block.fallthrough
+            elif inst.kind == InstructionKind.CALL:
+                # A block ending in a call has a target and return point after call:
+                assert inst.target is not None
+                block.target = self._lookup_label(inst.target)
+                assert block.fallthrough
             elif inst.kind == InstructionKind.JUMP:
                 # A block ending in a jump has a target and no fallthrough:
                 assert inst.target is not None
@@ -256,6 +266,10 @@ class Optimizer:
             target = match["target"]
             name = line[: -len(target)].strip()
             kind = InstructionKind.JUMP
+        elif match := self._re_call.match(line):
+            target = match["target"]
+            name = line[: -len(target)].strip()
+            kind = InstructionKind.CALL
         elif match := self._re_return.match(line):
             name = line
             kind = InstructionKind.RETURN
@@ -463,6 +477,8 @@ class Optimizer:
         for index, block in enumerate(self._blocks()):
             if block.target and block.fallthrough:
                 branch = block.instructions[-1]
+                if branch.kind == InstructionKind.CALL:
+                    continue
                 assert branch.is_branch()
                 target = branch.target
                 assert target is not None
@@ -539,6 +555,16 @@ class Optimizer:
     def _small_consts_match(self, inst1: Instruction, inst2: Instruction) -> bool:
         raise NotImplementedError()
 
+    def _validate(self) -> None:
+        for block in self._blocks():
+            if not block.instructions:
+                continue
+            for inst in block.instructions:
+                if self.frame_pointers:
+                    assert (
+                        self._frame_pointer_modify.match(inst.text) is None
+                    ), "Frame pointer should not be modified"
+
     def run(self) -> None:
         """Run this optimizer."""
         self._insert_continue_label()
@@ -551,6 +577,7 @@ class Optimizer:
             self._remove_unreachable()
         self._fixup_external_labels()
         self._fixup_constants()
+        self._validate()
         self.path.write_text(self._body())
 
 
@@ -566,6 +593,8 @@ class OptimizerAArch64(Optimizer):  # pylint: disable = too-few-public-methods
         rf"\s*(?P<instruction>{'|'.join(_branch_patterns)})\s+(.+,\s+)*(?P<target>[\w.]+)"
     )
 
+    # https://developer.arm.com/documentation/ddi0406/b/Application-Level-Architecture/Instruction-Details/Alphabetical-list-of-instructions/BL--BLX--immediate-
+    _re_call = re.compile(r"\s*blx?\s+(?P<target>[\w.]+)")
     # https://developer.arm.com/documentation/ddi0602/2025-03/Base-Instructions/B--Branch-
     _re_jump = re.compile(r"\s*b\s+(?P<target>[\w.]+)")
     # https://developer.arm.com/documentation/ddi0602/2025-09/Base-Instructions/RET--Return-from-subroutine-
@@ -579,6 +608,7 @@ class OptimizerAArch64(Optimizer):  # pylint: disable = too-few-public-methods
         r"\s*(?P<instruction>ldr)\s+.*(?P<value>_JIT_OP(ARG|ERAND(0|1))_(16|32)).*"
     )
     const_reloc = "CUSTOM_AARCH64_CONST"
+    _frame_pointer_modify = re.compile(r"\s*stp\s+x29.*")
 
     def _get_reg(self, inst: Instruction) -> str:
         _, rest = inst.text.split(inst.name)
@@ -628,7 +658,10 @@ class OptimizerX86(Optimizer):  # pylint: disable = too-few-public-methods
     _re_branch = re.compile(
         rf"\s*(?P<instruction>{'|'.join(_X86_BRANCHES)})\s+(?P<target>[\w.]+)"
     )
+    # https://www.felixcloutier.com/x86/call
+    _re_call = re.compile(r"\s*callq?\s+(?P<target>[\w.]+)")
     # https://www.felixcloutier.com/x86/jmp
     _re_jump = re.compile(r"\s*jmp\s+(?P<target>[\w.]+)")
     # https://www.felixcloutier.com/x86/ret
-    _re_return = re.compile(r"\s*ret\b")
+    _re_return = re.compile(r"\s*retq?\b")
+    _frame_pointer_modify = re.compile(r"\s*movq?\s+%(\w+),\s+%rbp.*")

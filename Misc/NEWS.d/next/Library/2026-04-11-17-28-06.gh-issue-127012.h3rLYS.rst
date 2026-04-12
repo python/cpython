@@ -1,0 +1,2 @@
+``importlib.abc.Traversable.read_text`` now allows/solicits an
+``errors`` parameter.

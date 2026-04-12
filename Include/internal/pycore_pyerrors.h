@@ -11,8 +11,8 @@ extern "C" {
 
 /* Error handling definitions */
 
-extern _PyErr_StackItem* _PyErr_GetTopmostException(PyThreadState *tstate);
-extern PyObject* _PyErr_GetHandledException(PyThreadState *);
+PyAPI_FUNC(_PyErr_StackItem*) _PyErr_GetTopmostException(PyThreadState *tstate);
+PyAPI_FUNC(PyObject*) _PyErr_GetHandledException(PyThreadState *);
 extern void _PyErr_SetHandledException(PyThreadState *, PyObject *);
 extern void _PyErr_GetExcInfo(PyThreadState *, PyObject **, PyObject **, PyObject **);
 
@@ -108,7 +108,7 @@ extern void _PyErr_Restore(
     PyObject *value,
     PyObject *traceback);
 
-extern void _PyErr_SetObject(
+PyAPI_FUNC(void) _PyErr_SetObject(
     PyThreadState *tstate,
     PyObject *type,
     PyObject *value);

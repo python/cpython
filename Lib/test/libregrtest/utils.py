@@ -12,7 +12,7 @@ import sys
 import sysconfig
 import tempfile
 import textwrap
-from collections.abc import Callable, Iterable
+from collections.abc import Callable
 
 from test import support
 from test.support import os_helper
@@ -41,7 +41,7 @@ ALL_RESOURCES = ('audio', 'console', 'curses', 'largefile', 'network',
 # - tzdata: while needed to validate fully test_datetime, it makes
 #   test_datetime too slow (15-20 min on some buildbots) and so is disabled by
 #   default (see bpo-30822).
-RESOURCE_NAMES = ALL_RESOURCES + ('extralargefile', 'tzdata')
+RESOURCE_NAMES = ALL_RESOURCES + ('extralargefile', 'tzdata', 'xpickle', 'wantobjects')
 
 
 # Types for types hints
@@ -150,7 +150,7 @@ def setup_unraisable_hook() -> None:
     sys.unraisablehook = regrtest_unraisable_hook
 
 
-orig_threading_excepthook: Callable[..., None] | None = None
+orig_threading_excepthook: Callable[..., object] | None = None
 
 
 def regrtest_threading_excepthook(args) -> None:
@@ -452,12 +452,6 @@ def get_temp_dir(tmp_dir: StrPath | None = None) -> StrPath:
                         f"unexpectedly returned {tmp_dir!r} on WASI"
                     )
                 tmp_dir = os.path.join(tmp_dir, 'build')
-
-                # When get_temp_dir() is called in a worker process,
-                # get_temp_dir() path is different than in the parent process
-                # which is not a WASI process. So the parent does not create
-                # the same "tmp_dir" than the test worker process.
-                os.makedirs(tmp_dir, exist_ok=True)
         else:
             tmp_dir = tempfile.gettempdir()
 
@@ -607,21 +601,30 @@ def is_cross_compiled() -> bool:
     return ('_PYTHON_HOST_PLATFORM' in os.environ)
 
 
-def format_resources(use_resources: Iterable[str]) -> str:
-    use_resources = set(use_resources)
+def format_resources(use_resources: dict[str, str | None]) -> str:
     all_resources = set(ALL_RESOURCES)
+
+    values = []
+    for name in sorted(use_resources):
+        if use_resources[name] is not None:
+            values.append(f'{name}={use_resources[name]}')
 
     # Express resources relative to "all"
     relative_all = ['all']
-    for name in sorted(all_resources - use_resources):
+    for name in sorted(all_resources - set(use_resources)):
         relative_all.append(f'-{name}')
-    for name in sorted(use_resources - all_resources):
-        relative_all.append(f'{name}')
-    all_text = ','.join(relative_all)
+    for name in sorted(set(use_resources) - all_resources):
+        if use_resources[name] is None:
+            relative_all.append(name)
+    all_text = ','.join(relative_all + values)
     all_text = f"resources: {all_text}"
 
     # List of enabled resources
-    text = ','.join(sorted(use_resources))
+    resources = []
+    for name in sorted(use_resources):
+        if use_resources[name] is None:
+            resources.append(name)
+    text = ','.join(resources + values)
     text = f"resources ({len(use_resources)}): {text}"
 
     # Pick the shortest string (prefer relative to all if lengths are equal)
@@ -631,7 +634,7 @@ def format_resources(use_resources: Iterable[str]) -> str:
         return text
 
 
-def display_header(use_resources: tuple[str, ...],
+def display_header(use_resources: dict[str, str | None],
                    python_cmd: tuple[str, ...] | None) -> None:
     # Print basic platform information
     print("==", platform.python_implementation(), *sys.version.split())
@@ -743,3 +746,9 @@ def _sanitize_xml_replace(regs):
 
 def sanitize_xml(text: str) -> str:
     return ILLEGAL_XML_CHARS_RE.sub(_sanitize_xml_replace, text)
+
+
+def display_title(title):
+    print(title)
+    print("#" * len(title))
+    print(flush=True)

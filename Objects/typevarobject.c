@@ -2,6 +2,7 @@
 #include "Python.h"
 #include "pycore_interpframe.h"   // _PyInterpreterFrame
 #include "pycore_object.h"        // _PyObject_GC_TRACK/UNTRACK, PyAnnotateFormat
+#include "pycore_tuple.h"         // _PyTuple_FromPair
 #include "pycore_typevarobject.h"
 #include "pycore_unicodeobject.h" // _PyUnicode_EqualToASCIIString()
 #include "pycore_unionobject.h"   // _Py_union_type_or, _Py_union_from_tuple
@@ -373,7 +374,7 @@ type_check(PyObject *arg, const char *msg)
 static PyObject *
 make_union(PyObject *self, PyObject *other)
 {
-    PyObject *args = PyTuple_Pack(2, self, other);
+    PyObject *args = _PyTuple_FromPair(self, other);
     if (args == NULL) {
         return NULL;
     }
@@ -499,8 +500,7 @@ typevar_traverse(PyObject *self, visitproc visit, void *arg)
     Py_VISIT(tv->evaluate_constraints);
     Py_VISIT(tv->default_value);
     Py_VISIT(tv->evaluate_default);
-    PyObject_VisitManagedDict(self, visit, arg);
-    return 0;
+    return PyObject_VisitManagedDict(self, visit, arg);
 }
 
 static int
@@ -817,7 +817,7 @@ typevar_typing_prepare_subst_impl(typevarobject *self, PyObject *alias,
     }
     Py_DECREF(params);
     PyErr_Format(PyExc_TypeError,
-                 "Too few arguments for %S; actual %d, expected at least %d",
+                 "Too few arguments for %S; actual %zd, expected at least %zd",
                  alias, args_len, i + 1);
     return NULL;
 }
@@ -1194,8 +1194,7 @@ paramspec_traverse(PyObject *self, visitproc visit, void *arg)
     Py_VISIT(ps->bound);
     Py_VISIT(ps->default_value);
     Py_VISIT(ps->evaluate_default);
-    PyObject_VisitManagedDict(self, visit, arg);
-    return 0;
+    return PyObject_VisitManagedDict(self, visit, arg);
 }
 
 static int
@@ -1451,13 +1450,13 @@ The following syntax creates a parameter specification that defaults\n\
 to a callable accepting two positional-only arguments of types int\n\
 and str:\n\
 \n\
-    type IntFuncDefault[**P = (int, str)] = Callable[P, int]\n\
+    type IntFuncDefault[**P = [int, str]] = Callable[P, int]\n\
 \n\
 For compatibility with Python 3.11 and earlier, ParamSpec objects\n\
 can also be created as follows::\n\
 \n\
     P = ParamSpec('P')\n\
-    DefaultP = ParamSpec('DefaultP', default=(int, str))\n\
+    DefaultP = ParamSpec('DefaultP', default=[int, str])\n\
 \n\
 Parameter specification variables exist primarily for the benefit of\n\
 static type checkers.  They are used to forward the parameter types of\n\
@@ -1691,8 +1690,7 @@ typevartuple_traverse(PyObject *self, visitproc visit, void *arg)
     Py_VISIT(tvt->name);
     Py_VISIT(tvt->default_value);
     Py_VISIT(tvt->evaluate_default);
-    PyObject_VisitManagedDict(self, visit, arg);
-    return 0;
+    return PyObject_VisitManagedDict(self, visit, arg);
 }
 
 static int
@@ -2305,13 +2303,12 @@ generic_class_getitem(PyObject *cls, PyObject *args, PyObject *kwargs)
 PyObject *
 _Py_subscript_generic(PyThreadState* unused, PyObject *params)
 {
-    params = unpack_typevartuples(params);
-
     PyInterpreterState *interp = _PyInterpreterState_GET();
     if (interp->cached_objects.generic_type == NULL) {
         PyErr_SetString(PyExc_SystemError, "Cannot find Generic type");
         return NULL;
     }
+    params = unpack_typevartuples(params);
     PyObject *args[2] = {(PyObject *)interp->cached_objects.generic_type, params};
     PyObject *result = call_typing_func_object("_GenericAlias", args, 2);
     Py_DECREF(params);
