@@ -628,11 +628,11 @@ _proxy_unwrap(PyObject **op, int *did_incref)
 #define WRAP_METHOD(method, SPECIAL) \
     static PyObject * \
     method(PyObject *proxy, PyObject *Py_UNUSED(ignored)) { \
-        UNWRAP(proxy); \
-        PyObject* res = PyObject_CallMethodNoArgs(proxy, &_Py_ID(SPECIAL)); \
-        Py_DECREF(proxy); \
-        return res; \
-    }
+            UNWRAP(proxy); \
+            PyObject* res = PyObject_CallMethodNoArgs(proxy, &_Py_ID(SPECIAL)); \
+            Py_DECREF(proxy); \
+            return res; \
+        }
 
 
 /* direct slots */
