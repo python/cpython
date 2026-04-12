@@ -435,8 +435,8 @@ _PyEval_MatchKeys(PyThreadState *tstate, PyObject *map, PyObject *keys)
     PyObject *values = NULL;
     // We use the two argument form of map.get(key, default) for two reasons:
     // - Atomically check for a key and get its value without error handling.
-    // - Don't cause key creation or resizing in dict subclasses like
-    //   collections.defaultdict that define __missing__ (or similar).
+    // - Don't cause key creation or resizing in dict subclasses that define
+    //   __missing__ (or similar).
     _PyCStackRef self, method;
     _PyThreadState_PushCStackRef(tstate, &self);
     _PyThreadState_PushCStackRef(tstate, &method);

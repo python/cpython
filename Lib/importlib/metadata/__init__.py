@@ -22,6 +22,7 @@ import re
 import sys
 import textwrap
 import types
+from collections import defaultdict
 from collections.abc import Iterable, Mapping
 from contextlib import suppress
 from importlib import import_module
@@ -30,7 +31,7 @@ from itertools import starmap
 from typing import Any
 
 from . import _meta
-from ._collections import FreezableDefaultDict, Pair
+from ._collections import Pair
 from ._context import ExceptionTrap
 from ._functools import method_cache, noop, pass_none, passthrough
 from ._itertools import always_iterable, bucket, unique_everseen
@@ -889,8 +890,8 @@ class Lookup:
 
         base = os.path.basename(path.root).lower()
         base_is_egg = base.endswith(".egg")
-        self.infos = FreezableDefaultDict(list)
-        self.eggs = FreezableDefaultDict(list)
+        self.infos = defaultdict(list)
+        self.eggs = defaultdict(list)
 
         for child in path.children():
             low = child.lower()
@@ -904,20 +905,17 @@ class Lookup:
                 legacy_normalized = Prepared.legacy_normalize(name)
                 self.eggs[legacy_normalized].append(path.joinpath(child))
 
-        self.infos.freeze()
-        self.eggs.freeze()
-
     def search(self, prepared: Prepared):
         """
         Yield all infos and eggs matching the Prepared query.
         """
         infos = (
-            self.infos[prepared.normalized]
+            self.infos.get(prepared.normalized, ())
             if prepared
             else itertools.chain.from_iterable(self.infos.values())
         )
         eggs = (
-            self.eggs[prepared.legacy_normalized]
+            self.eggs.get(prepared.legacy_normalized, ())
             if prepared
             else itertools.chain.from_iterable(self.eggs.values())
         )
