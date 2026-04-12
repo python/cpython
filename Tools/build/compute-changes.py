@@ -51,7 +51,6 @@ class Outputs:
     run_ci_fuzz: bool = False
     run_docs: bool = False
     run_tests: bool = False
-    run_windows_msi: bool = False
     run_windows_tests: bool = False
 
 
@@ -78,9 +77,6 @@ def compute_changes() -> None:
 
     if outputs.run_docs:
         print("Build documentation")
-
-    if outputs.run_windows_msi:
-        print("Build Windows MSI")
 
     print(outputs)
 
@@ -116,7 +112,6 @@ def process_changed_files(changed_files: Set[Path]) -> Outputs:
     run_ci_fuzz = False
     run_docs = False
     run_windows_tests = False
-    run_windows_msi = False
 
     for file in changed_files:
         # Documentation files
@@ -128,8 +123,6 @@ def process_changed_files(changed_files: Set[Path]) -> Outputs:
                 run_tests = run_ci_fuzz = True
             if file.name == "reusable-docs.yml":
                 run_docs = True
-            if file.name == "reusable-windows-msi.yml":
-                run_windows_msi = True
 
         if not (
             doc_file
@@ -155,16 +148,11 @@ def process_changed_files(changed_files: Set[Path]) -> Outputs:
         if doc_file:
             run_docs = True
 
-        # Check for changed MSI installer-related files
-        if file.parts[:2] == ("Tools", "msi"):
-            run_windows_msi = True
-
     return Outputs(
         run_ci_fuzz=run_ci_fuzz,
         run_docs=run_docs,
         run_tests=run_tests,
         run_windows_tests=run_windows_tests,
-        run_windows_msi=run_windows_msi,
     )
 
 
@@ -178,7 +166,6 @@ def process_target_branch(outputs: Outputs, git_branch: str) -> Outputs:
 
     if os.environ.get("GITHUB_EVENT_NAME", "").lower() == "workflow_dispatch":
         outputs.run_docs = True
-        outputs.run_windows_msi = True
 
     return outputs
 
@@ -195,7 +182,6 @@ def write_github_output(outputs: Outputs) -> None:
         f.write(f"run-docs={bool_lower(outputs.run_docs)}\n")
         f.write(f"run-tests={bool_lower(outputs.run_tests)}\n")
         f.write(f"run-windows-tests={bool_lower(outputs.run_windows_tests)}\n")
-        f.write(f"run-windows-msi={bool_lower(outputs.run_windows_msi)}\n")
 
 
 def bool_lower(value: bool, /) -> str:

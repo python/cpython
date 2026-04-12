@@ -29,12 +29,12 @@ on:  # yamllint disable-line rule:truthy
       run-windows-tests:
         description: Whether to run the Windows tests
         value: ${{ jobs.compute-changes.outputs.run-windows-tests }}  # bool
-      run-windows-msi:
-        description: Whether to run the MSI installer smoke tests
-        value: ${{ jobs.compute-changes.outputs.run-windows-msi }}  # bool
       run-ci-fuzz:
         description: Whether to run the CIFuzz job
         value: ${{ jobs.compute-changes.outputs.run-ci-fuzz }}  # bool
+
+permissions:
+  contents: read
 
 jobs:
   compute-changes:
@@ -46,18 +46,17 @@ jobs:
       run-ci-fuzz: ${{ steps.changes.outputs.run-ci-fuzz }}
       run-docs: ${{ steps.changes.outputs.run-docs }}
       run-tests: ${{ steps.changes.outputs.run-tests }}
-      run-windows-msi: ${{ steps.changes.outputs.run-windows-msi }}
       run-windows-tests: ${{ steps.changes.outputs.run-windows-tests }}
     steps:
     - name: Set up Python
-      uses: actions/setup-python@v6
+      uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
       with:
         python-version: "3"
 
     - run: >-
         echo '${{ github.event_name }}'
 
-    - uses: actions/checkout@v6
+    - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       with:
         persist-credentials: false
         ref: >-

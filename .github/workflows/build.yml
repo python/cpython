@@ -49,10 +49,10 @@ jobs:
     needs: build-context
     if: needs.build-context.outputs.run-tests == 'true'
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           persist-credentials: false
-      - uses: actions/setup-python@v6
+      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
       - name: Install dependencies
         run: |
             sudo ./.github/workflows/posix-deps-apt.sh
@@ -81,7 +81,7 @@ jobs:
         if: ${{ failure() && steps.check.conclusion == 'failure' }}
         run: |
           make regen-abidump
-      - uses: actions/upload-artifact@v6
+      - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
         name: Publish updated ABI files
         if: ${{ failure() && steps.check.conclusion == 'failure' }}
         with:
@@ -103,7 +103,7 @@ jobs:
         run: |
           apt update && apt install git -yq
           git config --global --add safe.directory "$GITHUB_WORKSPACE"
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           fetch-depth: 1
           persist-credentials: false
@@ -140,16 +140,16 @@ jobs:
     needs: build-context
     if: needs.build-context.outputs.run-tests == 'true'
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           persist-credentials: false
-      - uses: actions/setup-python@v6
+      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
         with:
           python-version: '3.x'
       - name: Runner image version
         run: echo "IMAGE_OS_VERSION=${ImageOS}-${ImageVersion}" >> "$GITHUB_ENV"
       - name: Restore config.cache
-        uses: actions/cache@v5
+        uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5.0.4
         with:
           path: config.cache
           # Include env.pythonLocation in key to avoid changes in environment when setup-python updates Python
@@ -159,7 +159,7 @@ jobs:
       - name: Add ccache to PATH
         run: echo "PATH=/usr/lib/ccache:$PATH" >> "$GITHUB_ENV"
       - name: Configure ccache action
-        uses: hendrikmuhs/ccache-action@v1.2
+        uses: hendrikmuhs/ccache-action@5ebbd400eff9e74630f759d94ddd7b6c26299639 # v1.2.20
         with:
           save: false
       - name: Configure CPython
@@ -215,22 +215,6 @@ jobs:
       arch: ${{ matrix.arch }}
       free-threading: ${{ matrix.free-threading }}
 
-  build-windows-msi:
-    name: >-  # ${{ '' } is a hack to nest jobs under the same sidebar category
-      Windows MSI${{ '' }}
-    needs: build-context
-    if: fromJSON(needs.build-context.outputs.run-windows-msi)
-    strategy:
-      fail-fast: false
-      matrix:
-        arch:
-        - x86
-        - x64
-        - arm64
-    uses: ./.github/workflows/reusable-windows-msi.yml
-    with:
-      arch: ${{ matrix.arch }}
-
   build-macos:
     name: >-
       macOS
@@ -240,10 +224,10 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # macos-14 is M1, macos-15-intel is Intel.
+        # macos-26 is Apple Silicon, macos-15-intel is Intel.
         # macos-15-intel only runs tests against the GIL-enabled CPython.
         os:
-        - macos-14
+        - macos-26
         - macos-15-intel
         free-threading:
         - false
@@ -291,13 +275,13 @@ jobs:
       OPENSSL_DIR: ${{ github.workspace }}/multissl/openssl/${{ matrix.openssl_ver }}
       LD_LIBRARY_PATH: ${{ github.workspace }}/multissl/openssl/${{ matrix.openssl_ver }}/lib
     steps:
-    - uses: actions/checkout@v6
+    - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       with:
         persist-credentials: false
     - name: Runner image version
       run: echo "IMAGE_OS_VERSION=${ImageOS}-${ImageVersion}" >> "$GITHUB_ENV"
     - name: Restore config.cache
-      uses: actions/cache@v5
+      uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5.0.4
       with:
         path: config.cache
         key: ${{ github.job }}-${{ env.IMAGE_OS_VERSION }}-${{ needs.build-context.outputs.config-hash }}
@@ -312,7 +296,7 @@ jobs:
         echo "LD_LIBRARY_PATH=${GITHUB_WORKSPACE}/multissl/openssl/${OPENSSL_VER}/lib" >> "$GITHUB_ENV"
     - name: 'Restore OpenSSL build'
       id: cache-openssl
-      uses: actions/cache@v5
+      uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5.0.4
       with:
         path: ./multissl/openssl/${{ env.OPENSSL_VER }}
         key: ${{ matrix.os }}-multissl-openssl-${{ env.OPENSSL_VER }}
@@ -323,7 +307,7 @@ jobs:
       run: |
         echo "PATH=/usr/lib/ccache:$PATH" >> "$GITHUB_ENV"
     - name: Configure ccache action
-      uses: hendrikmuhs/ccache-action@v1.2
+      uses: hendrikmuhs/ccache-action@5ebbd400eff9e74630f759d94ddd7b6c26299639 # v1.2.20
       with:
         save: false
     - name: Configure CPython
@@ -345,7 +329,7 @@ jobs:
       OPENSSL_VER: 3.0.15
       PYTHONSTRICTEXTENSIONBUILD: 1
     steps:
-    - uses: actions/checkout@v6
+    - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       with:
         persist-credentials: false
     - name: Register gcc problem matcher
@@ -359,7 +343,7 @@ jobs:
         echo "LD_LIBRARY_PATH=${GITHUB_WORKSPACE}/multissl/openssl/${OPENSSL_VER}/lib" >> "$GITHUB_ENV"
     - name: 'Restore OpenSSL build'
       id: cache-openssl
-      uses: actions/cache@v5
+      uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5.0.4
       with:
         path: ./multissl/openssl/${{ env.OPENSSL_VER }}
         key: ${{ runner.os }}-multissl-openssl-${{ env.OPENSSL_VER }}
@@ -370,7 +354,7 @@ jobs:
       run: |
         echo "PATH=/usr/lib/ccache:$PATH" >> "$GITHUB_ENV"
     - name: Configure ccache action
-      uses: hendrikmuhs/ccache-action@v1.2
+      uses: hendrikmuhs/ccache-action@5ebbd400eff9e74630f759d94ddd7b6c26299639 # v1.2.20
       with:
         save: false
     - name: Setup directory envs for out-of-tree builds
@@ -384,7 +368,7 @@ jobs:
     - name: Runner image version
       run: echo "IMAGE_OS_VERSION=${ImageOS}-${ImageVersion}" >> "$GITHUB_ENV"
     - name: Restore config.cache
-      uses: actions/cache@v5
+      uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5.0.4
       with:
         path: ${{ env.CPYTHON_BUILDDIR }}/config.cache
         key: ${{ github.job }}-${{ env.IMAGE_OS_VERSION }}-${{ needs.build-context.outputs.config-hash }}
@@ -417,7 +401,7 @@ jobs:
         ./python -m venv "$VENV_LOC" && "$VENV_PYTHON" -m pip install -r "${GITHUB_WORKSPACE}/Tools/requirements-hypothesis.txt"
     - name: 'Restore Hypothesis database'
       id: cache-hypothesis-database
-      uses: actions/cache@v5
+      uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5.0.4
       with:
         path: ./hypothesis
         key: hypothesis-database-${{ github.head_ref || github.run_id }}
@@ -443,7 +427,7 @@ jobs:
           -x test_subprocess \
           -x test_signal \
           -x test_sysconfig
-    - uses: actions/upload-artifact@v6
+    - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
       if: always()
       with:
         name: hypothesis-example-db
@@ -464,13 +448,13 @@ jobs:
       PYTHONSTRICTEXTENSIONBUILD: 1
       ASAN_OPTIONS: detect_leaks=0:allocator_may_return_null=1:handle_segv=0
     steps:
-    - uses: actions/checkout@v6
+    - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       with:
         persist-credentials: false
     - name: Runner image version
       run: echo "IMAGE_OS_VERSION=${ImageOS}-${ImageVersion}" >> "$GITHUB_ENV"
     - name: Restore config.cache
-      uses: actions/cache@v5
+      uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5.0.4
       with:
         path: config.cache
         key: ${{ github.job }}-${{ env.IMAGE_OS_VERSION }}-${{ needs.build-context.outputs.config-hash }}
@@ -479,7 +463,7 @@ jobs:
     - name: Install dependencies
       run: sudo ./.github/workflows/posix-deps-apt.sh
     - name: Set up GCC-10 for ASAN
-      uses: egor-tensin/setup-gcc@v2
+      uses: egor-tensin/setup-gcc@a2861a8b8538f49cf2850980acccf6b05a1b2ae4 # v2.0
       with:
         version: 10
     - name: Configure OpenSSL env vars
@@ -489,7 +473,7 @@ jobs:
         echo "LD_LIBRARY_PATH=${GITHUB_WORKSPACE}/multissl/openssl/${OPENSSL_VER}/lib" >> "$GITHUB_ENV"
     - name: 'Restore OpenSSL build'
       id: cache-openssl
-      uses: actions/cache@v5
+      uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5.0.4
       with:
         path: ./multissl/openssl/${{ env.OPENSSL_VER }}
         key: ${{ matrix.os }}-multissl-openssl-${{ env.OPENSSL_VER }}
@@ -500,7 +484,7 @@ jobs:
       run: |
         echo "PATH=/usr/lib/ccache:$PATH" >> "$GITHUB_ENV"
     - name: Configure ccache action
-      uses: hendrikmuhs/ccache-action@v1.2
+      uses: hendrikmuhs/ccache-action@5ebbd400eff9e74630f759d94ddd7b6c26299639 # v1.2.20
       with:
         save: ${{ github.event_name == 'push' }}
         max-size: "200M"
@@ -539,7 +523,6 @@ jobs:
     - check-autoconf-regen
     - check-generated-files
     - build-windows
-    - build-windows-msi
     - build-macos
     - build-ubuntu
     - build-ubuntu-ssltests
@@ -553,7 +536,6 @@ jobs:
       uses: re-actors/alls-green@05ac9388f0aebcb5727afa17fcccfecd6f8ec5fe
       with:
         allowed-failures: >-
-          build-windows-msi,
           build-ubuntu-ssltests,
           test-hypothesis,
         allowed-skips: >-
