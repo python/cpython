@@ -1,1 +1,0 @@
-Fix :func:`repr` for lists and tuples containing ``NULL``\ s.

@@ -518,6 +518,10 @@ def configure_emscripten_python(context, working_dir):
         EMSCRIPTEN_DIR / "node_entry.mjs", working_dir / "node_entry.mjs"
     )
 
+    shutil.copy(
+        EMSCRIPTEN_DIR / "streams.mjs", working_dir / "streams.mjs"
+    )
+
     node_entry = working_dir / "node_entry.mjs"
     exec_script = working_dir / "python.sh"
     exec_script.write_text(
@@ -591,6 +595,8 @@ def run_emscripten_python(context):
 
     if context.test:
         args = load_config_toml()["test-args"] + args
+    elif context.pythoninfo:
+        args = load_config_toml()["pythoninfo-args"] + args
 
     os.execv(str(exec_script), [str(exec_script), *args])
 
@@ -722,9 +728,15 @@ def main():
         action="store_true",
         default=False,
         help=(
-            "If passed, will add the default test arguments to the beginning of the command. "
+            "Add the default test arguments to the beginning of the command. "
             "Default arguments loaded from Platforms/emscripten/config.toml"
         ),
+    )
+    run.add_argument(
+        "--pythoninfo",
+        action="store_true",
+        default=False,
+        help="Run -m test.pythoninfo",
     )
     run.add_argument(
         "args",
@@ -812,6 +824,7 @@ def main():
     context = parser.parse_args()
     context.emsdk_cache = getattr(context, "emsdk_cache", None)
     context.cross_build_dir = getattr(context, "cross_build_dir", None)
+    context.check_up_to_date = getattr(context, "check_up_to_date", False)
 
     if context.emsdk_cache:
         context.emsdk_cache = Path(context.emsdk_cache).absolute()

@@ -2666,6 +2666,20 @@
 [function.Py_SET_SIZE]
     # Before 3.15, this was a macro that accessed the PyObject member
     added = '3.15'
+[function.PyObject_GetTypeData_DuringGC]
+    added = '3.15'
+[function.PyType_GetModuleState_DuringGC]
+    added = '3.15'
+[function.PyModule_GetState_DuringGC]
+    added = '3.15'
+[function.PyModule_GetToken_DuringGC]
+    added = '3.15'
+[function.PyType_GetBaseByToken_DuringGC]
+    added = '3.15'
+[function.PyType_GetModule_DuringGC]
+    added = '3.15'
+[function.PyType_GetModuleByToken_DuringGC]
+    added = '3.15'
 
 # PEP 757 import/export API.
 

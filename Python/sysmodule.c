@@ -34,6 +34,7 @@ Data members:
 #include "pycore_pymem.h"         // _PyMem_DefaultRawFree()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_pystats.h"       // _Py_PrintSpecializationStats()
+#include "pycore_runtime.h"       // _PyRuntimeState_Get*()
 #include "pycore_structseq.h"     // _PyStructSequence_InitBuiltinWithFlags()
 #include "pycore_sysmodule.h"     // export _PySys_GetSizeOf()
 #include "pycore_unicodeobject.h" // _PyUnicode_InternImmortal()
@@ -471,7 +472,7 @@ PySys_AddAuditHook(Py_AuditHookFunction hook, void *userData)
        PySys_AddAuditHook() can be called before Python is initialized. */
     _PyRuntimeState *runtime = &_PyRuntime;
     PyThreadState *tstate;
-    if (runtime->initialized) {
+    if (_PyRuntimeState_GetInitialized(runtime)) {
         tstate = _PyThreadState_GET();
     }
     else {
@@ -2796,14 +2797,14 @@ The filter is a callable which disables lazy imports when they
 would otherwise be enabled. Returns True if the import is still enabled
 or False to disable it. The callable is called with:
 
-(importing_module_name, imported_module_name, [fromlist])
+(importing_module_name, resolved_imported_module_name, [fromlist])
 
 Pass None to clear the filter.
 [clinic start generated code]*/
 
 static PyObject *
 sys_set_lazy_imports_filter_impl(PyObject *module, PyObject *filter)
-/*[clinic end generated code: output=10251d49469c278c input=2eb48786bdd4ee42]*/
+/*[clinic end generated code: output=10251d49469c278c input=fd51ed8df6ab54b7]*/
 {
     if (PyImport_SetLazyImportsFilter(filter) < 0) {
         return NULL;
@@ -3878,20 +3879,38 @@ static PyStructSequence_Desc emscripten_info_desc = {
 
 EM_JS(char *, _Py_emscripten_runtime, (void), {
     var info;
-    if (typeof navigator == 'object') {
+    if (typeof process === "object") {
+        if (process.versions?.bun) {
+            info = `bun v${process.versions.bun}`;
+        } else if (process.versions?.deno) {
+            info = `deno v${process.versions.deno}`;
+        } else {
+            // As far as I can tell, every JavaScript runtime puts "node" in
+            // process.release.name. Pyodide once checked for
+            //
+            // process.release.name === "node"
+            //
+            // and this is apparently part of the reason other runtimes started
+            // lying about it. Similar to the situation with userAgent.
+            //
+            // But just in case some other JS runtime decides to tell us what it
+            // is, we'll pick it up.
+            const name = process.release?.name ?? "node";
+            info = `${name} ${process.version}`;
+        }
+        // Include v8 version if we know it
+        if (process.versions?.v8) {
+            info +=  ` (v8 ${process.versions.v8})`;
+        }
+    } else if (typeof navigator === "object") {
         info = navigator.userAgent;
-    } else if (typeof process == 'object') {
-        info = "Node.js ".concat(process.version);
     } else {
         info = "UNKNOWN";
     }
-    var len = lengthBytesUTF8(info) + 1;
-    var res = _malloc(len);
-    if (res) stringToUTF8(info, res, len);
 #if __wasm64__
-    return BigInt(res);
+    return BigInt(stringToNewUTF8(info));
 #else
-    return res;
+    return stringToNewUTF8(info);
 #endif
 });
 

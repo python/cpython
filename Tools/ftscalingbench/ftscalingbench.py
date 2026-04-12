@@ -285,6 +285,29 @@ def deepcopy():
     for i in range(40 * WORK_SCALE):
         copy.deepcopy(x)
 
+@register_benchmark
+def setattr_non_interned():
+    prefix = "prefix"
+    obj = MyObject()
+    for _ in range(1000 * WORK_SCALE):
+        setattr(obj, f"{prefix}_a", None)
+        setattr(obj, f"{prefix}_b", None)
+        setattr(obj, f"{prefix}_c", None)
+
+
+from enum import Enum
+class MyEnum(Enum):
+    X = 1
+    Y = 2
+    Z = 3
+
+@register_benchmark
+def enum_attr():
+    for _ in range(1000 * WORK_SCALE):
+        MyEnum.X
+        MyEnum.Y
+        MyEnum.Z
+
 
 def bench_one_thread(func):
     t0 = time.perf_counter_ns()
