@@ -1011,12 +1011,6 @@ dummy_func(void) {
     }
 
     op(_CHECK_FUNCTION_VERSION, (func_version/2, callable, self_or_null, unused[oparg] -- callable, self_or_null, unused[oparg])) {
-        PyObject *func = sym_get_probable_value(callable);
-        if (func != NULL && PyFunction_Check(func) &&
-            ((PyFunctionObject *)func)->func_version == func_version) {
-            _Py_BloomFilter_Add(dependencies, func);
-            sym_set_const(callable, func);
-        }
         if (sym_get_func_version(callable) == func_version) {
             REPLACE_OP(this_instr, _NOP, 0, 0);
         }
