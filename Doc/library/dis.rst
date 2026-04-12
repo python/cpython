@@ -1076,17 +1076,6 @@ iterations of the loop.
    where *namei* is the index of name in :attr:`~codeobject.co_names` of the
    :ref:`code object <code-objects>`.
 
-.. opcode:: DELETE_ATTR (namei)
-
-   Implements::
-
-      obj = STACK.pop()
-      del obj.name
-
-   where *namei* is the index of name into :attr:`~codeobject.co_names` of the
-   :ref:`code object <code-objects>`.
-
-
 .. opcode:: STORE_GLOBAL (namei)
 
    Works as :opcode:`STORE_NAME`, but stores the name as a global.
