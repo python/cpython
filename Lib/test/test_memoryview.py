@@ -620,9 +620,21 @@ class ArrayMemoryviewTest(unittest.TestCase,
             m = memoryview(a.tobytes()).cast('n')
             check_equal(m, True)
 
-        # Test '?' format
+        # Test '?' format (keep all the checks below for UBSan)
         m = memoryview(b'\0\1\2').cast('?')
         check_equal(m, True)
+        # m1a and m1b are equivalent to [False, True, False]
+        m1a = memoryview(b'\0\2\0').cast('?')
+        self.assertEqual(m1a.tolist(), [False, True, False])
+        m1b = memoryview(b'\0\4\0').cast('?')
+        self.assertEqual(m1b.tolist(), [False, True, False])
+        self.assertEqual(m1a, m1b)
+        # m1a and m1b are equivalent to [True, True, True]
+        m2a = memoryview(b'\1\3\5').cast('?')
+        self.assertEqual(m2a.tolist(), [True, True, True])
+        m2b = memoryview(b'\2\4\6').cast('?')
+        self.assertEqual(m2b.tolist(), [True, True, True])
+        self.assertEqual(m2a, m2b)
 
         # Test float formats
         for float_format in 'fd':
