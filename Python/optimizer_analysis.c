@@ -18,6 +18,7 @@
 #include "pycore_opcode_metadata.h"
 #include "pycore_opcode_utils.h"
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
+#include "pycore_pyatomic_ft_wrappers.h" // FT_MUTEX_LOCK/UNLOCK
 #include "pycore_tstate.h"        // _PyThreadStateImpl
 #include "pycore_uop_metadata.h"
 #include "pycore_long.h"
@@ -119,14 +120,15 @@ static int
 get_mutations(PyObject* dict) {
     assert(PyDict_CheckExact(dict));
     PyDictObject *d = (PyDictObject *)dict;
-    return (d->_ma_watcher_tag >> DICT_MAX_WATCHERS) & ((1 << DICT_WATCHED_MUTATION_BITS)-1);
+    uint64_t tag = FT_ATOMIC_LOAD_UINT64_RELAXED(d->_ma_watcher_tag);
+    return (tag >> DICT_MAX_WATCHERS) & ((1 << DICT_WATCHED_MUTATION_BITS) - 1);
 }
 
 static void
 increment_mutations(PyObject* dict) {
     assert(PyDict_CheckExact(dict));
     PyDictObject *d = (PyDictObject *)dict;
-    d->_ma_watcher_tag += (1 << DICT_MAX_WATCHERS);
+    FT_ATOMIC_ADD_UINT64(d->_ma_watcher_tag, 1ULL << DICT_MAX_WATCHERS);
 }
 
 /* The first two dict watcher IDs are reserved for CPython,
@@ -152,6 +154,17 @@ type_watcher_callback(PyTypeObject* type)
 {
     _Py_Executors_InvalidateDependency(_PyInterpreterState_GET(), type, 1);
     PyType_Unwatch(TYPE_WATCHER_ID, (PyObject *)type);
+    return 0;
+}
+
+static int
+_setup_optimizer_watchers(void *Py_UNUSED(arg))
+{
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    FT_ATOMIC_STORE_PTR_RELEASE(
+        interp->dict_state.watchers[GLOBALS_WATCHER_ID],
+        globals_watcher_callback);
+    interp->type_watchers[TYPE_WATCHER_ID] = type_watcher_callback;
     return 0;
 }
 
@@ -571,10 +584,8 @@ optimize_uops(
 
     // Make sure that watchers are set up
     PyInterpreterState *interp = _PyInterpreterState_GET();
-    if (interp->dict_state.watchers[GLOBALS_WATCHER_ID] == NULL) {
-        interp->dict_state.watchers[GLOBALS_WATCHER_ID] = globals_watcher_callback;
-        interp->type_watchers[TYPE_WATCHER_ID] = type_watcher_callback;
-    }
+    _PyOnceFlag_CallOnce(&interp->dict_state.watcher_setup_once,
+                         _setup_optimizer_watchers, NULL);
 
     _Py_uop_abstractcontext_init(ctx, dependencies);
     _Py_UOpsAbstractFrame *frame = _Py_uop_frame_new(ctx, (PyCodeObject *)func->func_code, NULL, 0);

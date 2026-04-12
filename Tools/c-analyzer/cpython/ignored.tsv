@@ -464,6 +464,7 @@ Modules/_testcapi/object.c	-	MyObject_dealloc_called	-
 Modules/_testcapi/object.c	-	MyType	-
 Modules/_testcapi/structmember.c	-	test_structmembersType_OldAPI	-
 Modules/_testcapi/watchers.c	-	g_dict_watch_events	-
+Modules/_testcapi/watchers.c	-	g_dict_watch_once	-
 Modules/_testcapi/watchers.c	-	g_dict_watchers_installed	-
 Modules/_testcapi/watchers.c	-	g_type_modified_events	-
 Modules/_testcapi/watchers.c	-	g_type_watchers_installed	-
