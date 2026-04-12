@@ -1057,8 +1057,11 @@ class ExpatReaderTest(XmlTestBase):
 
     def test_external_entity_ref_keyboard_interrupt(self):
         # gh-148427: KeyboardInterrupt must propagate, not be swallowed
+        def raise_on_entity(name, attrs):
+            if name == 'entity':
+                raise KeyboardInterrupt('test')
         eh = mock.Mock()
-        eh.startElement.side_effect = KeyboardInterrupt('test')
+        eh.startElement.side_effect = raise_on_entity
 
         parser = create_parser()
         parser.setFeature(feature_external_ges, True)
@@ -1073,8 +1076,11 @@ class ExpatReaderTest(XmlTestBase):
 
     def test_external_entity_ref_system_exit(self):
         # gh-148427: SystemExit must propagate, not be swallowed
+        def raise_on_entity(name, attrs):
+            if name == 'entity':
+                raise SystemExit(42)
         eh = mock.Mock()
-        eh.startElement.side_effect = SystemExit(42)
+        eh.startElement.side_effect = raise_on_entity
 
         parser = create_parser()
         parser.setFeature(feature_external_ges, True)
@@ -1089,8 +1095,11 @@ class ExpatReaderTest(XmlTestBase):
 
     def test_external_entity_ref_stack_cleanup(self):
         # gh-148427: _entity_stack must be cleaned up after errors
+        def raise_on_entity(name, attrs):
+            if name == 'entity':
+                raise ValueError('test error')
         eh = mock.Mock()
-        eh.startElement.side_effect = ValueError('test error')
+        eh.startElement.side_effect = raise_on_entity
 
         parser = create_parser()
         parser.setFeature(feature_external_ges, True)
