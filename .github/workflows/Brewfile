@@ -1,5 +1,7 @@
 brew "gdbm"
+brew "mpdecimal"
 brew "openssl@3.5"
 brew "pkg-config"
 brew "tcl-tk@9"
 brew "xz"
+brew "zstd"
