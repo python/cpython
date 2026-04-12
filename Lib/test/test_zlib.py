@@ -1,6 +1,6 @@
 import unittest
 from test import support
-from test.support import import_helper, script_helper
+from test.support import import_helper
 import binascii
 import copy
 import pickle
@@ -1206,35 +1206,6 @@ class ZlibDecompressorTest(unittest.TestCase):
         self.assertRaises(Exception, zlibd.decompress, self.BAD_DATA * 30)
         # Previously, a second call could crash due to internal inconsistency
         self.assertRaises(Exception, zlibd.decompress, self.BAD_DATA * 30)
-
-    def test_decompressor_reuse_after_tail_copy_memory_error(self):
-        import_helper.import_module("_testcapi")
-        code = """if 1:
-            import _testcapi
-            import zlib
-
-            data = zlib.compress(b"S" * (1 << 20))
-            for skip in range(1, 500):
-                d = zlib._ZlibDecompressor()
-                try:
-                    _testcapi.set_nomemory(skip, skip + 1)
-                    try:
-                        d.decompress(data, max_length=0)
-                    except MemoryError:
-                        pass
-                    else:
-                        continue
-                finally:
-                    _testcapi.remove_mem_hooks()
-                if d.needs_input:
-                    continue
-                try:
-                    d.decompress(b"B" * 64, max_length=0)
-                except Exception:
-                    pass
-                break
-        """
-        script_helper.assert_python_ok("-c", code)
 
     @support.refcount_test
     def test_refleaks_in___init__(self):

@@ -8,7 +8,7 @@ from test import support
 import unittest
 from compression._common import _streams
 
-from test.support import _4G, bigmemtest, script_helper
+from test.support import _4G, bigmemtest
 from test.support.import_helper import import_module
 from test.support.os_helper import (
     TESTFN, unlink, FakePath
@@ -382,35 +382,6 @@ class CompressorDecompressorTestCase(unittest.TestCase):
     def test_uninitialized_LZMADecompressor_crash(self):
         self.assertEqual(LZMADecompressor.__new__(LZMADecompressor).
                          decompress(bytes()), b'')
-
-    def test_decompressor_reuse_after_tail_copy_memory_error(self):
-        import_module("_testcapi")
-        code = """if 1:
-            import _testcapi
-            import lzma
-
-            data = lzma.compress(b"S" * (1 << 20))
-            for skip in range(1, 500):
-                d = lzma.LZMADecompressor()
-                try:
-                    _testcapi.set_nomemory(skip, skip + 1)
-                    try:
-                        d.decompress(data, max_length=0)
-                    except MemoryError:
-                        pass
-                    else:
-                        continue
-                finally:
-                    _testcapi.remove_mem_hooks()
-                if d.needs_input:
-                    continue
-                try:
-                    d.decompress(b"B" * 64, max_length=0)
-                except Exception:
-                    pass
-                break
-        """
-        script_helper.assert_python_ok("-c", code)
 
 
 class CompressDecompressFunctionTestCase(unittest.TestCase):

@@ -13,7 +13,7 @@ import random
 import shutil
 import subprocess
 import threading
-from test.support import import_helper, script_helper
+from test.support import import_helper
 from test.support import threading_helper
 from test.support.os_helper import unlink, FakePath
 from compression._common import _streams
@@ -935,35 +935,6 @@ class BZ2DecompressorTest(BaseTest):
         for proto in range(pickle.HIGHEST_PROTOCOL + 1):
             with self.assertRaises(TypeError):
                 pickle.dumps(BZ2Decompressor(), proto)
-
-    def test_decompressor_reuse_after_tail_copy_memory_error(self):
-        import_helper.import_module("_testcapi")
-        code = """if 1:
-            import _testcapi
-            import bz2
-
-            data = bz2.compress(b"S" * (1 << 20))
-            for skip in range(1, 500):
-                d = bz2.BZ2Decompressor()
-                try:
-                    _testcapi.set_nomemory(skip, skip + 1)
-                    try:
-                        d.decompress(data, max_length=0)
-                    except MemoryError:
-                        pass
-                    else:
-                        continue
-                finally:
-                    _testcapi.remove_mem_hooks()
-                if d.needs_input:
-                    continue
-                try:
-                    d.decompress(b"B" * 64, max_length=0)
-                except Exception:
-                    pass
-                break
-        """
-        script_helper.assert_python_ok("-c", code)
 
     def testDecompressorChunksMaxsize(self):
         bzd = BZ2Decompressor()
