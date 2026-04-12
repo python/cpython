@@ -41,6 +41,9 @@ typedef struct _JitOptContext {
     // Arena for the symbolic types.
     ty_arena t_arena;
 
+    // Pool to store promoted constants to be used at runtime.
+    PyObject *constant_pool;
+
     /* To do -- We could make this more space efficient
      * by using a single array and growing the stack and
      * locals toward each other. */

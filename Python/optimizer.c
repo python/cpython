@@ -115,7 +115,7 @@ insert_executor(PyCodeObject *code, _Py_CODEUNIT *instr, int index, _PyExecutorO
 
 static _PyExecutorObject *
 make_executor_from_uops(_PyThreadStateImpl *tstate, _PyUOpInstruction *buffer,
-    int length, const _PyBloomFilter *dependencies, PyObject **constant_pool_ptr);
+    int length, const _PyBloomFilter *dependencies, PyObject *constant_pool);
 
 static int
 uop_optimize(_PyInterpreterFrame *frame, PyThreadState *tstate,
@@ -1378,7 +1378,7 @@ sanity_check(_PyExecutorObject *executor)
  */
 static _PyExecutorObject *
 make_executor_from_uops(_PyThreadStateImpl *tstate, _PyUOpInstruction *buffer,
-    int length, const _PyBloomFilter *dependencies, PyObject **constant_pool_ptr)
+    int length, const _PyBloomFilter *dependencies, PyObject *constant_pool)
 {
     int exit_count = count_exits(buffer, length);
     _PyExecutorObject *executor = allocate_executor(exit_count, length, constant_pool);
