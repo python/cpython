@@ -25,6 +25,7 @@ import sys
 from urllib.error import URLError
 import urllib.request
 from test.support import os_helper
+from test import support
 from test.support import findfile, check__all__
 from test.support.os_helper import FakePath, TESTFN
 
@@ -1055,64 +1056,32 @@ class ExpatReaderTest(XmlTestBase):
         self.assertEqual(result.getvalue(), start +
                          b"<doc></doc>")
 
-    def test_external_entity_ref_keyboard_interrupt(self):
-        # gh-148427: KeyboardInterrupt must propagate, not be swallowed
+    @support.subTests("exc_type", [KeyboardInterrupt, SystemExit, ValueError])
+    def test_external_entity_parser_with_exceptions(self, exc_type):
+        # gh-148427: BaseException subclasses must propagate, not be swallowed
         def raise_on_entity(name, attrs):
             if name == 'entity':
-                raise KeyboardInterrupt('test')
-        eh = mock.Mock()
-        eh.startElement.side_effect = raise_on_entity
+                raise exc_type("test")
+
+        handler = mock.Mock()
+        handler.startElement = raise_on_entity
 
         parser = create_parser()
         parser.setFeature(feature_external_ges, True)
         parser.setEntityResolver(self.TestEntityResolver())
-        parser.setContentHandler(eh)
+        parser.setContentHandler(handler)
 
         parser.feed('<!DOCTYPE doc [\n')
         parser.feed('  <!ENTITY test SYSTEM "whatever">\n')
         parser.feed(']>\n')
-        with self.assertRaises(KeyboardInterrupt):
-            parser.feed('<doc>&test;</doc>')
+        trigger = '<doc>&test;</doc>'
 
-    def test_external_entity_ref_system_exit(self):
-        # gh-148427: SystemExit must propagate, not be swallowed
-        def raise_on_entity(name, attrs):
-            if name == 'entity':
-                raise SystemExit(42)
-        eh = mock.Mock()
-        eh.startElement.side_effect = raise_on_entity
-
-        parser = create_parser()
-        parser.setFeature(feature_external_ges, True)
-        parser.setEntityResolver(self.TestEntityResolver())
-        parser.setContentHandler(eh)
-
-        parser.feed('<!DOCTYPE doc [\n')
-        parser.feed('  <!ENTITY test SYSTEM "whatever">\n')
-        parser.feed(']>\n')
-        with self.assertRaises(SystemExit):
-            parser.feed('<doc>&test;</doc>')
-
-    def test_external_entity_ref_stack_cleanup(self):
-        # gh-148427: _entity_stack must be cleaned up after errors
-        def raise_on_entity(name, attrs):
-            if name == 'entity':
-                raise ValueError('test error')
-        eh = mock.Mock()
-        eh.startElement.side_effect = raise_on_entity
-
-        parser = create_parser()
-        parser.setFeature(feature_external_ges, True)
-        parser.setEntityResolver(self.TestEntityResolver())
-        parser.setContentHandler(eh)
-
-        parser.feed('<!DOCTYPE doc [\n')
-        parser.feed('  <!ENTITY test SYSTEM "whatever">\n')
-        parser.feed(']>\n')
-        with self.assertRaises(SAXParseException):
-            parser.feed('<doc>&test;</doc>')
-
-        self.assertEqual(len(parser._entity_stack), 0)
+        if issubclass(exc_type, Exception):
+            self.assertRaises(SAXParseException, parser.feed, trigger)
+            self.assertEqual(len(parser._entity_stack), 0)
+        else:
+            with self.assertRaisesRegex(exc_type, "test"):
+                parser.feed(trigger)
 
     # ===== Attributes support
 
