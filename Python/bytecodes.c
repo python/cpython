@@ -4499,15 +4499,23 @@ dummy_func(
             POP_TOP +
             _CHECK_PERIODIC_AT_END;
 
-        op(_CHECK_AND_ALLOCATE_OBJECT, (type_version/2, callable, self_or_null, unused[oparg] -- callable, self_or_null, unused[oparg])) {
+        op(_CHECK_OBJECT, (type_version/2, callable, self_or_null, unused[oparg] -- callable, self_or_null, unused[oparg])) {
             PyObject *callable_o = PyStackRef_AsPyObjectBorrow(callable);
             EXIT_IF(!PyStackRef_IsNull(self_or_null));
             EXIT_IF(!PyType_Check(callable_o));
             PyTypeObject *tp = (PyTypeObject *)callable_o;
             EXIT_IF(FT_ATOMIC_LOAD_UINT32_RELAXED(tp->tp_version_tag) != type_version);
+        }
+
+        op(_ALLOCATE_OBJECT, (callable, self_or_null, unused[oparg] -- callable, self_or_null, unused[oparg])) {
+            PyObject *callable_o = PyStackRef_AsPyObjectBorrow(callable);
+            assert(PyStackRef_IsNull(self_or_null));
+            assert(PyType_Check(callable_o));
+            PyTypeObject *tp = (PyTypeObject *)callable_o;
             assert(tp->tp_new == PyBaseObject_Type.tp_new);
             assert(tp->tp_flags & Py_TPFLAGS_HEAPTYPE);
             assert(tp->tp_alloc == PyType_GenericAlloc);
+
             PyHeapTypeObject *cls = (PyHeapTypeObject *)callable_o;
             PyFunctionObject *init_func = (PyFunctionObject *)FT_ATOMIC_LOAD_PTR_ACQUIRE(cls->_spec_cache.init);
             PyCodeObject *code = (PyCodeObject *)init_func->func_code;
@@ -4552,7 +4560,8 @@ dummy_func(
             _RECORD_CALLABLE +
             unused/1 +
             _CHECK_PEP_523 +
-            _CHECK_AND_ALLOCATE_OBJECT +
+            _CHECK_OBJECT +
+            _ALLOCATE_OBJECT +
             _CREATE_INIT_FRAME +
             _PUSH_FRAME;
 
@@ -6151,8 +6160,7 @@ dummy_func(
         tier2 op(_RECORD_BOUND_METHOD, (callable, self, args[oparg] -- callable, self, args[oparg])) {
             PyObject *callable_o = PyStackRef_AsPyObjectBorrow(callable);
             if (Py_TYPE(callable_o) == &PyMethod_Type) {
-                PyObject *func = ((PyMethodObject *)callable_o)->im_func;
-                RECORD_VALUE(func);
+                RECORD_VALUE(callable_o);
             }
         }
 
