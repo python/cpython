@@ -2816,15 +2816,15 @@ class BadElementTest(ElementTestCase, unittest.TestCase):
 
     def test_remove_with_clear_assume_existing(self):
         # gh-126033: Check that a concurrent clear() for an assumed-to-be
-        # existing element does not make the interpreter crash.
+        # existing element raises RuntimeError but does not crash.
         self.do_test_remove_with_clear(raises=False)
 
     def do_test_remove_with_clear(self, *, raises):
-
-        # Until the discrepency between "del root[:]" and "root.clear()" is
-        # resolved, we need to keep two tests. Previously, using "del root[:]"
-        # did not crash with the reproducer of gh-126033 while "root.clear()"
-        # did.
+        # 'del root[:]' mutates the children list in-place, while
+        # 'root.clear()' replaces self._children with a new list.  When
+        # raises=False (element "found"), the in-place mutation is detected
+        # by list.remove and raises RuntimeError, whereas root.clear() is
+        # invisible to list.remove (the old list is unchanged).
 
         class E(ET.Element):
             """Local class to be able to mock E.__eq__ for introspection."""
@@ -2839,15 +2839,22 @@ class BadElementTest(ElementTestCase, unittest.TestCase):
                 root.clear()
                 return not raises
 
-        if raises:
-            get_checker_context = lambda: self.assertRaises(ValueError)
-        else:
-            get_checker_context = nullcontext
-
         self.assertIs(E.__eq__, object.__eq__)
 
+        get_checker_context = nullcontext
         for Z, side_effect in [(X, 'del root[:]'), (Y, 'root.clear()')]:
             self.enterContext(self.subTest(side_effect=side_effect))
+
+            # X uses 'del root[:]' which mutates the list in-place; this is
+            # detected by list.remove when raises=False (element "found").
+            # Y uses 'root.clear()' which swaps out self._children; the old
+            # list that list.remove is iterating is untouched, so no error.
+            if raises:
+                get_checker_context = lambda: self.assertRaises(ValueError)
+            elif Z is X:
+                get_checker_context = lambda: self.assertRaises(RuntimeError)
+            else:
+                get_checker_context = nullcontext
 
             # test removing R() from [U()]
             for R, U, description in [
@@ -2883,7 +2890,6 @@ class BadElementTest(ElementTestCase, unittest.TestCase):
                 g.assert_not_called()
 
             # Test removing root[1] (of type R) from [U(), R()].
-            is_special = is_python_implementation() and raises and Z is Y
             if is_python_implementation() and raises and Z is Y:
                 # In pure Python, using root.clear() sets the children
                 # list to [] without calling list.clear().
@@ -2913,7 +2919,7 @@ class BadElementTest(ElementTestCase, unittest.TestCase):
 
     def test_remove_with_mutate_root_assume_existing(self):
         # gh-126033: Check that a concurrent mutation for an assumed-to-be
-        # existing element does not make the interpreter crash.
+        # existing element raises RuntimeError.
         self.do_test_remove_with_mutate_root(raises=False)
 
     def do_test_remove_with_mutate_root(self, *, raises):
@@ -2927,7 +2933,7 @@ class BadElementTest(ElementTestCase, unittest.TestCase):
         if raises:
             get_checker_context = lambda: self.assertRaises(ValueError)
         else:
-            get_checker_context = nullcontext
+            get_checker_context = lambda: self.assertRaises(RuntimeError)
 
         # test removing R() from [U(), V()]
         cases = self.cases_for_remove_missing_with_mutations(E, Z)
