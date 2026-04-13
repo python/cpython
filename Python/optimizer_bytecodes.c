@@ -983,10 +983,15 @@ dummy_func(void) {
                                  _LOAD_CONST_INLINE, _SWAP);
     }
 
-    op(_LOAD_ATTR_PROPERTY_FRAME, (fget/4, owner -- new_frame)) {
-        // + 1 for _SAVE_RETURN_OFFSET
-        // FIX ME -- This needs a version check and function watcher
-        PyCodeObject *co = (PyCodeObject *)((PyFunctionObject *)fget)->func_code;
+    op(_LOAD_ATTR_PROPERTY_FRAME, (func_version/2, fget/4, owner -- new_frame)) {
+        PyFunctionObject *func = (PyFunctionObject *)fget;
+        if (func->func_version != func_version) {
+            ctx->contradiction = true;
+            ctx->done = true;
+            break;
+        }
+        _Py_BloomFilter_Add(dependencies, fget);
+        PyCodeObject *co = (PyCodeObject *)func->func_code;
         _Py_UOpsAbstractFrame *f = frame_new(ctx, co, NULL, 0);
         if (f == NULL) {
             break;

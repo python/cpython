@@ -2919,14 +2919,12 @@ dummy_func(
             _LOAD_ATTR_CLASS +
             _PUSH_NULL_CONDITIONAL;
 
-        op(_LOAD_ATTR_PROPERTY_FRAME, (fget/4, owner -- new_frame)) {
+        op(_LOAD_ATTR_PROPERTY_FRAME, (func_version/2, fget/4, owner -- new_frame)) {
             assert((oparg & 1) == 0);
             assert(Py_IS_TYPE(fget, &PyFunction_Type));
             PyFunctionObject *f = (PyFunctionObject *)fget;
+            EXIT_IF(f->func_version != func_version);
             PyCodeObject *code = (PyCodeObject *)f->func_code;
-            EXIT_IF((code->co_flags & (CO_VARKEYWORDS | CO_VARARGS | CO_OPTIMIZED)) != CO_OPTIMIZED);
-            EXIT_IF(code->co_kwonlyargcount);
-            EXIT_IF(code->co_argcount != 1);
             EXIT_IF(!_PyThreadState_HasStackSpace(tstate, code->co_framesize));
             STAT_INC(LOAD_ATTR, hit);
             _PyInterpreterFrame *pushed_frame = _PyFrame_PushUnchecked(tstate, PyStackRef_FromPyObjectNew(fget), 1, frame);
@@ -2940,7 +2938,6 @@ dummy_func(
             _RECORD_TOS_TYPE +
             _GUARD_TYPE_VERSION +
             _CHECK_PEP_523 +
-            unused/2 +
             _LOAD_ATTR_PROPERTY_FRAME +
             _SAVE_RETURN_OFFSET +
             _PUSH_FRAME;

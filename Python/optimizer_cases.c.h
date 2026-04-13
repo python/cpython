@@ -2072,7 +2072,7 @@
         case _LOAD_GLOBAL_MODULE: {
             JitOptRef res;
             uint16_t version = (uint16_t)this_instr->operand0;
-            uint16_t index = (uint16_t)this_instr->operand0;
+            uint16_t index = (uint16_t)this_instr->operand1;
             (void)index;
             PyObject *cnst = NULL;
             if (ctx->frame->func != NULL) {
@@ -2119,7 +2119,7 @@
         case _LOAD_GLOBAL_BUILTINS: {
             JitOptRef res;
             uint16_t version = (uint16_t)this_instr->operand0;
-            uint16_t index = (uint16_t)this_instr->operand0;
+            uint16_t index = (uint16_t)this_instr->operand1;
             (void)version;
             (void)index;
             PyObject *cnst = NULL;
@@ -2487,7 +2487,7 @@
             JitOptRef o;
             owner = stack_pointer[-1];
             uint32_t dict_version = (uint32_t)this_instr->operand0;
-            uint16_t index = (uint16_t)this_instr->operand0;
+            uint16_t index = (uint16_t)this_instr->operand1;
             (void)dict_version;
             (void)index;
             attr = PyJitRef_NULL;
@@ -2598,8 +2598,16 @@
             JitOptRef owner;
             JitOptRef new_frame;
             owner = stack_pointer[-1];
-            PyObject *fget = (PyObject *)this_instr->operand0;
-            PyCodeObject *co = (PyCodeObject *)((PyFunctionObject *)fget)->func_code;
+            uint32_t func_version = (uint32_t)this_instr->operand0;
+            PyObject *fget = (PyObject *)this_instr->operand1;
+            PyFunctionObject *func = (PyFunctionObject *)fget;
+            if (func->func_version != func_version) {
+                ctx->contradiction = true;
+                ctx->done = true;
+                break;
+            }
+            _Py_BloomFilter_Add(dependencies, fget);
+            PyCodeObject *co = (PyCodeObject *)func->func_code;
             _Py_UOpsAbstractFrame *f = frame_new(ctx, co, NULL, 0);
             if (f == NULL) {
                 break;
