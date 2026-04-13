@@ -639,11 +639,11 @@ class LocalPart(TokenList):
         for tok in self[0] + [DOT]:
             if tok.token_type == 'cfws':
                 continue
-            if (last_is_tl and tok.token_type == 'dot' and
+            if (last_is_tl and tok.token_type == 'dot' and last and
                     last[-1].token_type == 'cfws'):
                 res[-1] = TokenList(last[:-1])
             is_tl = isinstance(tok, TokenList)
-            if (is_tl and last.token_type == 'dot' and
+            if (is_tl and last.token_type == 'dot' and tok and
                     tok[0].token_type == 'cfws'):
                 res.append(TokenList(tok[1:]))
             else:
