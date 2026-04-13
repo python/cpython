@@ -3704,7 +3704,7 @@ _PyStackRef _PyForIter_VirtualIteratorNext(PyThreadState* tstate, _PyInterpreter
     if (PyStackRef_IsTaggedInt(index)) {
         intptr_t i = PyStackRef_UntagInt(index);
         assert(i >= 0);
-        PyObjectIndexPair next_index = Py_TYPE(iter_o)->tp_iteritem(iter_o, i);
+        _PyObjectIndexPair next_index = Py_TYPE(iter_o)->tp_iteritem(iter_o, i);
         i = next_index.index;
         PyObject *next = next_index.object;
         if (next == NULL) {

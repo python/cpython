@@ -13982,18 +13982,18 @@ onError:
     return NULL;
 }
 
-static PyObjectIndexPair
+static _PyObjectIndexPair
 unicode_iteritem(PyObject *obj, Py_ssize_t index)
 {
     if (index >= PyUnicode_GET_LENGTH(obj)) {
-        return (PyObjectIndexPair) { .object = NULL, .index = index };
+        return (_PyObjectIndexPair) { .object = NULL, .index = index };
     }
     const void *data = PyUnicode_DATA(obj);
     int kind = PyUnicode_KIND(obj);
     Py_UCS4 ch = PyUnicode_READ(kind, data, index);
     PyObject *result = unicode_char(ch);
     index = (result == NULL) ? -1 : index + 1;
-    return (PyObjectIndexPair) { .object = result, .index = index };
+    return (_PyObjectIndexPair) { .object = result, .index = index };
 }
 
 void

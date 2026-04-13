@@ -6405,7 +6405,7 @@
                 PyObject *iter_o = PyStackRef_AsPyObjectBorrow(iter);
                 Py_ssize_t index = PyStackRef_UntagInt(null_or_index);
                 _PyFrame_SetStackPointer(frame, stack_pointer);
-                PyObjectIndexPair next_index = Py_TYPE(iter_o)->tp_iteritem(iter_o, index);
+                _PyObjectIndexPair next_index = Py_TYPE(iter_o)->tp_iteritem(iter_o, index);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
                 PyObject *next_o = next_index.object;
                 index = next_index.index;
