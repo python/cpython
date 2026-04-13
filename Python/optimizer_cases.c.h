@@ -4627,6 +4627,28 @@
         }
 
         case _CHECK_METHOD_VERSION_KW: {
+            JitOptRef callable;
+            callable = stack_pointer[-3 - oparg];
+            uint32_t func_version = (uint32_t)this_instr->operand0;
+            if (sym_is_const(ctx, callable) && sym_matches_type(callable, &PyMethod_Type)) {
+                PyMethodObject *method = (PyMethodObject *)sym_get_const(ctx, callable);
+                assert(PyMethod_Check(method));
+                ADD_OP(_CHECK_FUNCTION_VERSION_INLINE, 0, func_version);
+                uop_buffer_last(&ctx->out_buffer)->operand1 = (uintptr_t)method->im_func;
+            }
+            else {
+                PyObject *bound_method = sym_get_probable_value(callable);
+                if (bound_method != NULL && Py_TYPE(bound_method) == &PyMethod_Type) {
+                    PyMethodObject *method = (PyMethodObject *)bound_method;
+                    PyObject *func = method->im_func;
+                    if (PyFunction_Check(func) &&
+                        ((PyFunctionObject *)func)->func_version == func_version) {
+                        _Py_BloomFilter_Add(dependencies, func);
+                        sym_set_const(callable, bound_method);
+                    }
+                }
+            }
+            sym_set_type(callable, &PyMethod_Type);
             break;
         }
 
