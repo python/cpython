@@ -314,7 +314,9 @@ class TestGeneratorBase:
             msg = MIMEMultipart()
             msg.attach(MIMEText(boundary_in_part))
             self.genclass(self.ioclass()).flatten(msg, linesep=linesep)
-            # .0 is appended if the boundary was found.
+            # Generator checks the message content for the string it is about
+            # to use as a boundary ('token' in this test) and when it finds it
+            # in our attachment appends .0 to make the boundary it uses unique.
             self.assertEqual(msg.get_boundary(), boundary + ".0")
 
     def test_lf_boundary_detection(self):
