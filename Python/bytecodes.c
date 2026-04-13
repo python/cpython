@@ -5280,6 +5280,7 @@ dummy_func(
         }
 
         macro(CALL_KW_BOUND_METHOD) =
+            _RECORD_CALLABLE_KW +
             unused/1 + // Skip over the counter
             _CHECK_PEP_523 +
             _CHECK_METHOD_VERSION_KW +

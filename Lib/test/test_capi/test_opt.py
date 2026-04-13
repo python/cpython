@@ -5270,6 +5270,26 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertIn("_PUSH_FRAME", uops)
         self.assertIn("_CHECK_FUNCTION_VERSION_KW", uops)
 
+    def test_call_kw_bound_method(self):
+        class C:
+            def method(self, a):
+                return 42 * a
+
+        def testfunc(n):
+            obj = C()
+            x = 0
+            meth = obj.method
+            for _ in range(n):
+                x += meth(a=1)
+            return x
+
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, 42 * TIER2_THRESHOLD)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertIn("_PUSH_FRAME", uops)
+        self.assertIn("_CHECK_METHOD_VERSION_KW", uops)
+
     def test_func_version_guarded_on_change(self):
         def testfunc(n):
             for i in range(n):
