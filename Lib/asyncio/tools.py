@@ -250,11 +250,6 @@ def _get_awaited_by_tasks(pid: int, retries: int = 3) -> list:
             sys.exit(1)
         except _TRANSIENT_ERRORS as e:
             if attempt < retries:
-                print(
-                    f"Transient error while reading process state "
-                    f"(attempt {attempt + 1}/{retries + 1}), retrying...",
-                    file=sys.stderr,
-                )
                 continue
             if isinstance(e, RuntimeError):
                 while e.__context__ is not None:
