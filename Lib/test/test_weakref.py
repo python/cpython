@@ -561,6 +561,11 @@ class ReferencesTestCase(TestBase):
     
         # verify
         self.assertIsNone(ref(), f"Leaked object in '{op_name}' operation")
+
+    def test_proxy_unref_unary_refcount(self):
+        class C:
+            def __neg__(self): return 0
+        self._assert_no_proxy_refcount_leak(C,lambda p, d: operator.neg(d), "Unary")
         
     def test_proxy_unref_binary_refcount(self):
         class C:
@@ -577,6 +582,10 @@ class ReferencesTestCase(TestBase):
             def __eq__(self, o): return NotImplemented
         self._assert_no_proxy_refcount_leak(C, lambda p, d: p == d, "Rich Compare")
 
+    def test_proxy_unref_wrapmethod_refcount(self):
+        class C:
+            def __repr__(self): return "C()"
+        self._assert_no_proxy_refcount_leak(C, lambda p, d: repr(d), "Wrap Method")
 
     def test_getweakrefcount(self):
         o = C()
