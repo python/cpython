@@ -303,7 +303,8 @@ const uint32_t _PyUop_Flags[MAX_UOP_ID+1] = {
     [_CALL_STR_1] = HAS_ARG_FLAG | HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG,
     [_GUARD_CALLABLE_TUPLE_1] = HAS_EXIT_FLAG,
     [_CALL_TUPLE_1] = HAS_ARG_FLAG | HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG,
-    [_CHECK_AND_ALLOCATE_OBJECT] = HAS_ARG_FLAG | HAS_EXIT_FLAG | HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG,
+    [_CHECK_OBJECT] = HAS_ARG_FLAG | HAS_EXIT_FLAG,
+    [_ALLOCATE_OBJECT] = HAS_ARG_FLAG | HAS_EXIT_FLAG | HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG,
     [_CREATE_INIT_FRAME] = HAS_ARG_FLAG | HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG | HAS_SYNC_SP_FLAG,
     [_EXIT_INIT_CHECK] = HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG,
     [_GUARD_CALLABLE_BUILTIN_CLASS] = HAS_ARG_FLAG | HAS_EXIT_FLAG,
@@ -2838,10 +2839,19 @@ const _PyUopCachingInfo _PyUop_Caching[MAX_UOP_ID+1] = {
             { 2, 3, _CALL_TUPLE_1_r32 },
         },
     },
-    [_CHECK_AND_ALLOCATE_OBJECT] = {
+    [_CHECK_OBJECT] = {
         .best = { 0, 0, 0, 0 },
         .entries = {
-            { 0, 0, _CHECK_AND_ALLOCATE_OBJECT_r00 },
+            { 0, 0, _CHECK_OBJECT_r00 },
+            { -1, -1, -1 },
+            { -1, -1, -1 },
+            { -1, -1, -1 },
+        },
+    },
+    [_ALLOCATE_OBJECT] = {
+        .best = { 0, 0, 0, 0 },
+        .entries = {
+            { 0, 0, _ALLOCATE_OBJECT_r00 },
             { -1, -1, -1 },
             { -1, -1, -1 },
             { -1, -1, -1 },
@@ -4344,7 +4354,8 @@ const uint16_t _PyUop_Uncached[MAX_UOP_REGS_ID+1] = {
     [_GUARD_CALLABLE_TUPLE_1_r23] = _GUARD_CALLABLE_TUPLE_1,
     [_GUARD_CALLABLE_TUPLE_1_r33] = _GUARD_CALLABLE_TUPLE_1,
     [_CALL_TUPLE_1_r32] = _CALL_TUPLE_1,
-    [_CHECK_AND_ALLOCATE_OBJECT_r00] = _CHECK_AND_ALLOCATE_OBJECT,
+    [_CHECK_OBJECT_r00] = _CHECK_OBJECT,
+    [_ALLOCATE_OBJECT_r00] = _ALLOCATE_OBJECT,
     [_CREATE_INIT_FRAME_r01] = _CREATE_INIT_FRAME,
     [_EXIT_INIT_CHECK_r10] = _EXIT_INIT_CHECK,
     [_GUARD_CALLABLE_BUILTIN_CLASS_r00] = _GUARD_CALLABLE_BUILTIN_CLASS,
@@ -4612,6 +4623,8 @@ const uint16_t _PyUop_SpillsAndReloads[4][4] = {
 };
 
 const char *const _PyOpcode_uop_name[MAX_UOP_REGS_ID+1] = {
+    [_ALLOCATE_OBJECT] = "_ALLOCATE_OBJECT",
+    [_ALLOCATE_OBJECT_r00] = "_ALLOCATE_OBJECT_r00",
     [_BINARY_OP] = "_BINARY_OP",
     [_BINARY_OP_r23] = "_BINARY_OP_r23",
     [_BINARY_OP_ADD_FLOAT] = "_BINARY_OP_ADD_FLOAT",
@@ -4787,8 +4800,6 @@ const char *const _PyOpcode_uop_name[MAX_UOP_REGS_ID+1] = {
     [_CALL_TYPE_1_r12] = "_CALL_TYPE_1_r12",
     [_CALL_TYPE_1_r22] = "_CALL_TYPE_1_r22",
     [_CALL_TYPE_1_r32] = "_CALL_TYPE_1_r32",
-    [_CHECK_AND_ALLOCATE_OBJECT] = "_CHECK_AND_ALLOCATE_OBJECT",
-    [_CHECK_AND_ALLOCATE_OBJECT_r00] = "_CHECK_AND_ALLOCATE_OBJECT_r00",
     [_CHECK_ATTR_CLASS] = "_CHECK_ATTR_CLASS",
     [_CHECK_ATTR_CLASS_r01] = "_CHECK_ATTR_CLASS_r01",
     [_CHECK_ATTR_CLASS_r11] = "_CHECK_ATTR_CLASS_r11",
@@ -4839,6 +4850,8 @@ const char *const _PyOpcode_uop_name[MAX_UOP_REGS_ID+1] = {
     [_CHECK_METHOD_VERSION_r00] = "_CHECK_METHOD_VERSION_r00",
     [_CHECK_METHOD_VERSION_KW] = "_CHECK_METHOD_VERSION_KW",
     [_CHECK_METHOD_VERSION_KW_r11] = "_CHECK_METHOD_VERSION_KW_r11",
+    [_CHECK_OBJECT] = "_CHECK_OBJECT",
+    [_CHECK_OBJECT_r00] = "_CHECK_OBJECT_r00",
     [_CHECK_PEP_523] = "_CHECK_PEP_523",
     [_CHECK_PEP_523_r00] = "_CHECK_PEP_523_r00",
     [_CHECK_PEP_523_r11] = "_CHECK_PEP_523_r11",
@@ -6399,7 +6412,9 @@ int _PyUop_num_popped(int opcode, int oparg)
             return 0;
         case _CALL_TUPLE_1:
             return 3;
-        case _CHECK_AND_ALLOCATE_OBJECT:
+        case _CHECK_OBJECT:
+            return 0;
+        case _ALLOCATE_OBJECT:
             return 0;
         case _CREATE_INIT_FRAME:
             return 2 + oparg;

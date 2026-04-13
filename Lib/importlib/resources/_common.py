@@ -7,11 +7,11 @@ import os
 import pathlib
 import tempfile
 import types
-from typing import cast, Optional, Union
+from typing import Optional, cast
 
 from .abc import ResourceReader, Traversable
 
-Package = Union[types.ModuleType, str]
+Package = types.ModuleType | str
 Anchor = Package
 
 
@@ -32,7 +32,7 @@ def get_resource_reader(package: types.ModuleType) -> Optional[ResourceReader]:
     # zipimport.zipimporter does not support weak references, resulting in a
     # TypeError.  That seems terrible.
     spec = package.__spec__
-    reader = getattr(spec.loader, "get_resource_reader", None)  # type: ignore[union-attr]
+    reader = getattr(spec.loader, 'get_resource_reader', None)  # type: ignore[union-attr]
     if reader is None:
         return None
     return reader(spec.name)  # type: ignore[union-attr]
@@ -50,7 +50,7 @@ def _(cand: str) -> types.ModuleType:
 
 @resolve.register
 def _(cand: None) -> types.ModuleType:
-    return resolve(_infer_caller().f_globals["__name__"])
+    return resolve(_infer_caller().f_globals['__name__'])
 
 
 def _infer_caller():
@@ -62,13 +62,26 @@ def _infer_caller():
         return frame_info.filename == stack[0].filename
 
     def is_wrapper(frame_info):
-        return frame_info.function == "wrapper"
+        return frame_info.function == 'wrapper'
 
     stack = inspect.stack()
     not_this_file = itertools.filterfalse(is_this_file, stack)
     # also exclude 'wrapper' due to singledispatch in the call stack
     callers = itertools.filterfalse(is_wrapper, not_this_file)
     return next(callers).frame
+
+
+def _assert_spec(package: types.ModuleType) -> None:
+    """
+    Provide a nicer error message when package is ``__main__``
+    and its ``__spec__`` is ``None``
+    (https://docs.python.org/3/reference/import.html#main-spec).
+    """
+    if package.__spec__ is None:
+        raise TypeError(
+            f"Cannot access resources for '{package.__name__}' "
+            "as it does not appear to correspond to an importable module (its __spec__ is None)."
+        )
 
 
 def from_package(package: types.ModuleType):
@@ -79,6 +92,7 @@ def from_package(package: types.ModuleType):
     # deferred for performance (python/cpython#109829)
     from ._adapters import wrap_spec
 
+    _assert_spec(package)
     spec = wrap_spec(package)
     reader = spec.loader.get_resource_reader(spec.name)
     return reader.files()
@@ -87,7 +101,7 @@ def from_package(package: types.ModuleType):
 @contextlib.contextmanager
 def _tempfile(
     reader,
-    suffix="",
+    suffix='',
     # gh-93353: Keep a reference to call os.remove() in late Python
     # finalization.
     *,
