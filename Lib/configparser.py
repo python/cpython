@@ -318,12 +318,12 @@ class ParsingError(Error):
         self.message += f'\n\t[line {lineno:2d}]: {line!r}'
 
     def combine(self, others):
-        messages = []
+        messages = [self.message]
         for other in others:
             for lineno, line in other.errors:
                 self.errors.append((lineno, line))
                 messages.append(f'\n\t[line {lineno:2d}]: {line!r}')
-        self.message += "".join(messages)
+        self.message = "".join(messages)
         return self
 
     @staticmethod
