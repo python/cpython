@@ -1729,6 +1729,19 @@ class ExceptionPicklingTestCase(unittest.TestCase):
             self.assertEqual(e1.message, e2.message)
             self.assertEqual(repr(e1), repr(e2))
 
+    def test_combine_error_linear_complexity(self):
+        # Ensure that ParsingError.combine() has linear complexity.
+        # See https://github.com/python/cpython/issues/148370.
+        n = 50000
+        s = '[*]\n' + (err_line := '=\n') * n
+        p = configparser.ConfigParser(strict=False)
+        with self.assertRaises(configparser.ParsingError) as cm:
+            p.read_string(s)
+        errlines = cm.exception.message.splitlines()
+        self.assertEqual(len(errlines), n + 1)
+        self.assertStartsWith(errlines[0], "Source contains parsing errors: ")
+        self.assertEqual(errlines[42], f"\t[line {43:2d}]: {err_line!r}")
+
     def test_nosectionerror(self):
         import pickle
         e1 = configparser.NoSectionError('section')
