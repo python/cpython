@@ -896,6 +896,7 @@ class TestPEP380Operation(unittest.TestCase):
             yield 2
         g1 = one()
         self.assertEqual(list(g1), [0, 1, 2, 3])
+
         # Check with send
         g1 = one()
         res = [next(g1)]
@@ -905,6 +906,8 @@ class TestPEP380Operation(unittest.TestCase):
         except StopIteration:
             pass
         self.assertEqual(res, [0, 1, 2, 3])
+
+    def test_delegating_generators_claim_to_be_running_with_throw(self):
         # Check with throw
         class MyErr(Exception):
             pass
@@ -941,8 +944,10 @@ class TestPEP380Operation(unittest.TestCase):
         except:
             self.assertEqual(res, [0, 1, 2, 3])
             raise
+
+    def test_delegating_generators_claim_to_be_running_with_close(self):
         # Check with close
-        class MyIt(object):
+        class MyIt:
             def __iter__(self):
                 return self
             def __next__(self):
@@ -1520,8 +1525,9 @@ class TestInterestingEdgeCases(unittest.TestCase):
             try:
                 yield yielded_first
                 yield yielded_second
-            finally:
-                return returned
+            except:
+                pass
+            return returned
 
         def outer():
             return (yield from inner())

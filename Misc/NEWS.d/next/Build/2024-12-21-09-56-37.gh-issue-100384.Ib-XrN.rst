@@ -1,2 +1,0 @@
-Error on ``unguarded-availability`` in macOS builds, preventing invalid
-use of symbols that are not available in older versions of the OS.

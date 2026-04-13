@@ -5,6 +5,7 @@
 import copy
 import datetime
 from decimal import Decimal as D
+import importlib
 from pathlib import Path
 import sys
 import tempfile
@@ -92,6 +93,7 @@ class TestMiscellaneous(unittest.TestCase):
         }
         self.assertEqual(obj_copy, expected_obj)
 
+    @support.skip_if_unlimited_stack_size
     def test_inline_array_recursion_limit(self):
         with support.infinite_recursion(max_depth=100):
             available = support.get_recursion_available()
@@ -103,6 +105,7 @@ class TestMiscellaneous(unittest.TestCase):
                 recursive_array_toml = "arr = " + nest_count * "[" + nest_count * "]"
                 tomllib.loads(recursive_array_toml)
 
+    @support.skip_if_unlimited_stack_size
     def test_inline_table_recursion_limit(self):
         with support.infinite_recursion(max_depth=100):
             available = support.get_recursion_available()
@@ -113,3 +116,11 @@ class TestMiscellaneous(unittest.TestCase):
                               nest_count=nest_count):
                 recursive_table_toml = nest_count * "key = {" + nest_count * "}"
                 tomllib.loads(recursive_table_toml)
+
+    def test_types_import(self):
+        """Test that `_types` module runs.
+
+        The module is for type annotations only, so it is otherwise
+        never imported by tests.
+        """
+        importlib.import_module(f"{tomllib.__name__}._types")
