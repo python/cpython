@@ -575,7 +575,6 @@ _proxy_unwrap(PyObject **op, int *did_incref)
 #define WRAP_UNARY(method, generic) \
     static PyObject * \
     method(PyObject *proxy) { \
-        int proxy_incref = 0; \
         UNWRAP(proxy); \
         PyObject* res = generic(proxy); \
         Py_DECREF(proxy); \
@@ -629,7 +628,6 @@ _proxy_unwrap(PyObject **op, int *did_incref)
 #define WRAP_METHOD(method, SPECIAL) \
     static PyObject * \
     method(PyObject *proxy, PyObject *Py_UNUSED(ignored)) { \
-            int proxy_incref = 0; \
             UNWRAP(proxy); \
             PyObject* res = PyObject_CallMethodNoArgs(proxy, &_Py_ID(SPECIAL)); \
             Py_DECREF(proxy); \
