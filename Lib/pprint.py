@@ -737,21 +737,53 @@ class PrettyPrinter:
 
     def _pprint_template(self, object, stream, indent, allowance, context, level):
         cls_name = object.__class__.__name__
-        indent += len(cls_name) + 1
-        items = (("strings", object.strings),
-                 ("interpolations", object.interpolations))
-        stream.write(cls_name + '(')
-        self._format_namespace_items(items, stream, indent, allowance, context, level)
-        stream.write(')')
+        if self._expand:
+            indent += self._indent_per_level
+        else:
+            indent += len(cls_name) + 1
+
+        items = (
+            ("strings", object.strings),
+            ("interpolations", object.interpolations),
+        )
+        stream.write(self._format_block_start(cls_name + "(", indent))
+        self._format_namespace_items(
+            items, stream, indent, allowance, context, level
+        )
+        stream.write(
+            self._format_block_end(")", indent - self._indent_per_level)
+        )
 
     def _pprint_interpolation(self, object, stream, indent, allowance, context, level):
         cls_name = object.__class__.__name__
-        indent += len(cls_name)
-        items = (object.value, object.expression,
-                object.conversion, object.format_spec)
-        stream.write(cls_name + '(')
-        self._format_items(items, stream, indent, allowance, context, level)
-        stream.write(')')
+        if self._expand:
+            indent += self._indent_per_level
+            items = (
+                ("value", object.value),
+                ("expression", object.expression),
+                ("conversion", object.conversion),
+                ("format_spec", object.format_spec),
+            )
+            stream.write(self._format_block_start(cls_name + "(", indent))
+            self._format_namespace_items(
+                items, stream, indent, allowance, context, level
+            )
+            stream.write(
+                self._format_block_end(")", indent - self._indent_per_level)
+            )
+        else:
+            indent += len(cls_name)
+            items = (
+                object.value,
+                object.expression,
+                object.conversion,
+                object.format_spec,
+            )
+            stream.write(cls_name + "(")
+            self._format_items(
+                items, stream, indent, allowance, context, level
+            )
+            stream.write(")")
 
     t = t"{0}"
     _dispatch[type(t).__repr__] = _pprint_template
