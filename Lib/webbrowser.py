@@ -227,7 +227,6 @@ class UnixBrowser(BaseBrowser):
             return not p.wait()
 
     def open(self, url, new=0, autoraise=True):
-        self._check_url(url)
         if new == 0:
             action = self.remote_action
         elif new == 1:
@@ -241,7 +240,9 @@ class UnixBrowser(BaseBrowser):
             raise Error("Bad 'new' parameter to open(); " +
                         "expected 0, 1, or 2, got %s" % new)
 
-        args = [arg.replace("%s", url).replace("%action", action)
+        self._check_url(url.replace("%action", action))
+
+        args = [arg.replace("%action", action).replace("%s", url)
                 for arg in self.remote_args]
         args = [arg for arg in args if arg]
         success = self._invoke(args, True, autoraise)
