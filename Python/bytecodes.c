@@ -5249,6 +5249,7 @@ dummy_func(
         }
 
         macro(CALL_KW_PY) =
+            _RECORD_CALLABLE_KW +
             unused/1 + // Skip over the counter
             _CHECK_PEP_523 +
             _CHECK_FUNCTION_VERSION_KW +
@@ -5279,6 +5280,7 @@ dummy_func(
         }
 
         macro(CALL_KW_BOUND_METHOD) =
+            _RECORD_CALLABLE_KW +
             unused/1 + // Skip over the counter
             _CHECK_PEP_523 +
             _CHECK_METHOD_VERSION_KW +
@@ -6154,6 +6156,10 @@ dummy_func(
         }
 
         tier2 op(_RECORD_CALLABLE, (func, self, args[oparg] -- func, self, args[oparg])) {
+            RECORD_VALUE(PyStackRef_AsPyObjectBorrow(func));
+        }
+
+        tier2 op(_RECORD_CALLABLE_KW, (func, self, args[oparg], kwnames -- func, self, args[oparg], kwnames)) {
             RECORD_VALUE(PyStackRef_AsPyObjectBorrow(func));
         }
 
