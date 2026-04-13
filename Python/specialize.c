@@ -910,10 +910,6 @@ do_specialize_instance_load_attr(PyObject* owner, _Py_CODEUNIT* instr, PyObject*
                 SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_ATTR_METHOD);
                 return -1;
             }
-            uint32_t version = function_get_version(descr, LOAD_ATTR);
-            if (version == 0) {
-                return -1;
-            }
             /* Don't specialize if PEP 523 is active */
             if (_PyInterpreterState_GET()->eval_frame) {
                 SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_OTHER);
@@ -925,10 +921,10 @@ do_specialize_instance_load_attr(PyObject* owner, _Py_CODEUNIT* instr, PyObject*
                 return -1;
             }
             #endif
-            write_u32(lm_cache->keys_version, version);
+            assert(tp_version != 0);
+            write_u32(lm_cache->type_version, tp_version);
             /* borrowed */
             write_ptr(lm_cache->descr, descr);
-            write_u32(lm_cache->type_version, tp_version);
             specialize(instr, LOAD_ATTR_GETATTRIBUTE_OVERRIDDEN);
             return 0;
         }

@@ -223,6 +223,7 @@ const uint32_t _PyUop_Flags[MAX_UOP_ID+1] = {
     [_CHECK_ATTR_CLASS] = HAS_EXIT_FLAG,
     [_LOAD_ATTR_CLASS] = HAS_ESCAPES_FLAG,
     [_LOAD_ATTR_PROPERTY_FRAME] = HAS_ARG_FLAG | HAS_EXIT_FLAG,
+    [_LOAD_ATTR_GETATTRIBUTE_OVERRIDDEN_FRAME] = HAS_ARG_FLAG | HAS_NAME_FLAG | HAS_DEOPT_FLAG,
     [_GUARD_DORV_NO_DICT] = HAS_EXIT_FLAG,
     [_STORE_ATTR_INSTANCE_VALUE] = HAS_ESCAPES_FLAG,
     [_LOCK_OBJECT] = HAS_DEOPT_FLAG,
@@ -2116,6 +2117,15 @@ const _PyUopCachingInfo _PyUop_Caching[MAX_UOP_ID+1] = {
         .entries = {
             { -1, -1, -1 },
             { 1, 1, _LOAD_ATTR_PROPERTY_FRAME_r11 },
+            { -1, -1, -1 },
+            { -1, -1, -1 },
+        },
+    },
+    [_LOAD_ATTR_GETATTRIBUTE_OVERRIDDEN_FRAME] = {
+        .best = { 1, 1, 1, 1 },
+        .entries = {
+            { -1, -1, -1 },
+            { 1, 1, _LOAD_ATTR_GETATTRIBUTE_OVERRIDDEN_FRAME_r11 },
             { -1, -1, -1 },
             { -1, -1, -1 },
         },
@@ -4181,6 +4191,7 @@ const uint16_t _PyUop_Uncached[MAX_UOP_REGS_ID+1] = {
     [_CHECK_ATTR_CLASS_r33] = _CHECK_ATTR_CLASS,
     [_LOAD_ATTR_CLASS_r11] = _LOAD_ATTR_CLASS,
     [_LOAD_ATTR_PROPERTY_FRAME_r11] = _LOAD_ATTR_PROPERTY_FRAME,
+    [_LOAD_ATTR_GETATTRIBUTE_OVERRIDDEN_FRAME_r11] = _LOAD_ATTR_GETATTRIBUTE_OVERRIDDEN_FRAME,
     [_GUARD_DORV_NO_DICT_r01] = _GUARD_DORV_NO_DICT,
     [_GUARD_DORV_NO_DICT_r11] = _GUARD_DORV_NO_DICT,
     [_GUARD_DORV_NO_DICT_r22] = _GUARD_DORV_NO_DICT,
@@ -5402,6 +5413,8 @@ const char *const _PyOpcode_uop_name[MAX_UOP_REGS_ID+1] = {
     [_LOAD_ATTR_r10] = "_LOAD_ATTR_r10",
     [_LOAD_ATTR_CLASS] = "_LOAD_ATTR_CLASS",
     [_LOAD_ATTR_CLASS_r11] = "_LOAD_ATTR_CLASS_r11",
+    [_LOAD_ATTR_GETATTRIBUTE_OVERRIDDEN_FRAME] = "_LOAD_ATTR_GETATTRIBUTE_OVERRIDDEN_FRAME",
+    [_LOAD_ATTR_GETATTRIBUTE_OVERRIDDEN_FRAME_r11] = "_LOAD_ATTR_GETATTRIBUTE_OVERRIDDEN_FRAME_r11",
     [_LOAD_ATTR_INSTANCE_VALUE] = "_LOAD_ATTR_INSTANCE_VALUE",
     [_LOAD_ATTR_INSTANCE_VALUE_r02] = "_LOAD_ATTR_INSTANCE_VALUE_r02",
     [_LOAD_ATTR_INSTANCE_VALUE_r12] = "_LOAD_ATTR_INSTANCE_VALUE_r12",
@@ -6253,6 +6266,8 @@ int _PyUop_num_popped(int opcode, int oparg)
         case _LOAD_ATTR_CLASS:
             return 1;
         case _LOAD_ATTR_PROPERTY_FRAME:
+            return 1;
+        case _LOAD_ATTR_GETATTRIBUTE_OVERRIDDEN_FRAME:
             return 1;
         case _GUARD_DORV_NO_DICT:
             return 0;

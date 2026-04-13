@@ -995,6 +995,18 @@ dummy_func(void) {
         new_frame = PyJitRef_WrapInvalid(f);
     }
 
+    op(_LOAD_ATTR_GETATTRIBUTE_OVERRIDDEN_FRAME, (getattribute/4, owner -- new_frame)) {
+        PyCodeObject *co = (PyCodeObject *)((PyFunctionObject *)getattribute)->func_code;
+        _Py_UOpsAbstractFrame *f = frame_new(ctx, co, NULL, 0);
+        if (f == NULL) {
+            break;
+        }
+        PyObject *name = get_co_name(ctx, oparg >> 1);
+        f->locals[0] = owner;
+        f->locals[1] = sym_new_const(ctx, name);
+        new_frame = PyJitRef_WrapInvalid(f);
+    }
+
     op(_INIT_CALL_BOUND_METHOD_EXACT_ARGS, (callable, self_or_null, unused[oparg] -- callable, self_or_null, unused[oparg])) {
         PyObject *bound_method = sym_get_probable_value(callable);
         if (bound_method != NULL && Py_TYPE(bound_method) == &PyMethod_Type) {

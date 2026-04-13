@@ -4867,6 +4867,23 @@ class TestUopsOptimization(unittest.TestCase):
         # This is a sign the optimizer ran and didn't hit contradiction.
         self.assertIn("_LOAD_CONST_INLINE_BORROW", uops)
 
+    def test_load_attr_getattribute_overridden_frame(self):
+        class B:
+            def __getattribute__(self, name):
+                return len(name)
+
+        def testfunc(n):
+            b = B()
+            y = 0
+            for _ in range(n):
+                y += b.x + b.y
+            return y
+
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertIn("_LOAD_ATTR_GETATTRIBUTE_OVERRIDDEN_FRAME", uops)
+
     def test_unary_negative(self):
         def testfunc(n):
             a = 3
