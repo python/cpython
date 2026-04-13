@@ -1,2 +1,1 @@
-Improve IDLE Find, Replace and Find in Files dialogs. Patch by Wulian233 and
-AlSweigart.
+Improve IDLE Find, Replace and Find in Files dialogs.
