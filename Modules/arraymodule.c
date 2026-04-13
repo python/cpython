@@ -3063,11 +3063,13 @@ array_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
                         PySequence_GetItem(initial, i);
                     if (v == NULL) {
                         Py_DECREF(a);
+                        Py_XDECREF(it);
                         return NULL;
                     }
                     if (setarrayitem(a, i, v) != 0) {
                         Py_DECREF(v);
                         Py_DECREF(a);
+                        Py_XDECREF(it);
                         return NULL;
                     }
                     Py_DECREF(v);
