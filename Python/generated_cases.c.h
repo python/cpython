@@ -12941,7 +12941,7 @@ JUMP_TO_LABEL(error);
         }
 
         #if _Py_TAIL_CALL_INTERP
-        Py_GCC_ATTRIBUTE((unused)) 
+        Py_GCC_ATTRIBUTE((unused))
         #endif
         LABEL(stop_tracing)
         {
