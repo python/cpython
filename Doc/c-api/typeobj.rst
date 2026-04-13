@@ -2552,6 +2552,13 @@ and :c:data:`PyType_Type` effectively act as defaults.)
    .. versionadded:: 3.12
 
 
+.. c:member:: iteritemfunc PyTypeObject.tp_iteritem
+
+   Internal. Do not use.
+
+   .. versionadded:: 3.15
+
+
 .. _static-types:
 
 Static Types

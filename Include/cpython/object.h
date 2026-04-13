@@ -229,8 +229,8 @@ struct _typeobject {
 
     destructor tp_finalize;
     vectorcallfunc tp_vectorcall;
-    iteritemfunc tp_iteritem; /* Virtual iterator next function */
 
+    /* Below here all fields are internal to the VM */
 
     /* bitset of which type-watchers care about this type */
     unsigned char tp_watched;
@@ -241,6 +241,7 @@ struct _typeobject {
      * Otherwise, limited to MAX_VERSIONS_PER_CLASS (defined elsewhere).
      */
     uint16_t tp_versions_used;
+    iteritemfunc tp_iteritem; /* Virtual iterator next function */
 };
 
 #define _Py_ATTR_CACHE_UNUSED (30000)  // (see tp_versions_used)
