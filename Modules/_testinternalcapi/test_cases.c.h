@@ -12943,7 +12943,7 @@ JUMP_TO_LABEL(error);
             DISPATCH();
         }
 
-        #if _Py_TAIL_CALL_INTERP
+        #if _Py_TAIL_CALL_INTERP && !defined(_Py_TIER2)
         Py_GCC_ATTRIBUTE((unused))
         #endif
         LABEL(stop_tracing)
