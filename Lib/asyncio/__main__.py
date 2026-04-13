@@ -166,7 +166,7 @@ if __name__ == '__main__':
         "--retries",
         type=int,
         default=3,
-        help="Number of retries on transient attach errors (default: 3)",
+        help="Number of retries on transient attach errors",
     )
     pstree = subparsers.add_parser(
         "pstree", help="Display a tree of all pending tasks in a process"
@@ -176,7 +176,7 @@ if __name__ == '__main__':
         "--retries",
         type=int,
         default=3,
-        help="Number of retries on transient attach errors (default: 3)",
+        help="Number of retries on transient attach errors",
     )
     args = parser.parse_args()
     match args.command:
