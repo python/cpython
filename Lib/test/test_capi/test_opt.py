@@ -5269,6 +5269,8 @@ class TestUopsOptimization(unittest.TestCase):
         uops = get_opnames(ex)
         self.assertIn("_PUSH_FRAME", uops)
         self.assertIn("_CHECK_FUNCTION_VERSION_KW", uops)
+        # Check the optimizer has optmized through the function call
+        # by promoting global `int` to a constant.
         self.assertNotIn("_LOAD_GLOBAL_BUILTINS", uops)
         self.assertIn("_CALL_BUILTIN_CLASS", uops)
 
@@ -5291,6 +5293,8 @@ class TestUopsOptimization(unittest.TestCase):
         uops = get_opnames(ex)
         self.assertIn("_PUSH_FRAME", uops)
         self.assertIn("_CHECK_METHOD_VERSION_KW", uops)
+        # Check the optimizer has optmized through the function call
+        # by promoting global `int` to a constant.
         self.assertNotIn("_LOAD_GLOBAL_BUILTINS", uops)
         self.assertIn("_CALL_BUILTIN_CLASS", uops)
 
