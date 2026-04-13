@@ -2232,9 +2232,6 @@ class ArgsTestCase(BaseTestCase):
     def check_add_python_opts(self, option):
         # --fast-ci and --slow-ci add "-u -W error -bb -E" options to Python
 
-        # Skip test if _testinternalcapi is missing
-        import_helper.import_module('_testinternalcapi')
-
         code = textwrap.dedent(r"""
             import sys
             import unittest
