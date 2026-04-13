@@ -1104,6 +1104,18 @@ dummy_func(void) {
         }
     }
 
+    op(_EXPAND_METHOD_KW, (callable, self_or_null, unused[oparg], unused -- callable, self_or_null, unused[oparg], unused)) {
+        if (sym_is_const(ctx, callable) && sym_matches_type(callable, &PyMethod_Type)) {
+            PyMethodObject *method = (PyMethodObject *)sym_get_const(ctx, callable);
+            callable = sym_new_const(ctx, method->im_func);
+            self_or_null = sym_new_const(ctx, method->im_self);
+        }
+        else {
+            callable = sym_new_not_null(ctx);
+            self_or_null = sym_new_not_null(ctx);
+        }
+    }
+
     op(_MAYBE_EXPAND_METHOD, (callable, self_or_null, args[oparg] -- callable, self_or_null, args[oparg])) {
         (void)args;
         callable = sym_new_not_null(ctx);

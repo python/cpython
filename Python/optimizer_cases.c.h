@@ -4631,6 +4631,21 @@
         }
 
         case _EXPAND_METHOD_KW: {
+            JitOptRef self_or_null;
+            JitOptRef callable;
+            self_or_null = stack_pointer[-2 - oparg];
+            callable = stack_pointer[-3 - oparg];
+            if (sym_is_const(ctx, callable) && sym_matches_type(callable, &PyMethod_Type)) {
+                PyMethodObject *method = (PyMethodObject *)sym_get_const(ctx, callable);
+                callable = sym_new_const(ctx, method->im_func);
+                self_or_null = sym_new_const(ctx, method->im_self);
+            }
+            else {
+                callable = sym_new_not_null(ctx);
+                self_or_null = sym_new_not_null(ctx);
+            }
+            stack_pointer[-3 - oparg] = callable;
+            stack_pointer[-2 - oparg] = self_or_null;
             break;
         }
 
