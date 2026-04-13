@@ -461,7 +461,7 @@ _PyCallMethodDescriptorFastWithKeywords_StackRef(
     int total_args);
 
 PyAPI_FUNC(PyObject *)
-_Py_CallBuiltinClass_StackRefSteal(
+_Py_CallBuiltinClass_StackRef(
     _PyStackRef callable,
     _PyStackRef *arguments,
     int total_args);
