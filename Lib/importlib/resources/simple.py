@@ -5,7 +5,7 @@ Interface adapters for low-level readers.
 import abc
 import io
 import itertools
-from typing import BinaryIO
+from typing import BinaryIO, List
 
 from .abc import Traversable, TraversableResources
 
@@ -24,14 +24,14 @@ class SimpleReader(abc.ABC):
         """
 
     @abc.abstractmethod
-    def children(self) -> list['SimpleReader']:
+    def children(self) -> List['SimpleReader']:
         """
         Obtain an iterable of SimpleReader for available
         child containers (e.g. directories).
         """
 
     @abc.abstractmethod
-    def resources(self) -> list[str]:
+    def resources(self) -> List[str]:
         """
         Obtain available named resources for this virtual package.
         """

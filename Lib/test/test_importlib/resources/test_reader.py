@@ -30,7 +30,9 @@ class MultiplexedPathTest(util.DiskSetup, unittest.TestCase):
             contents.remove('__pycache__')
         except (KeyError, ValueError):
             pass
-        assert contents == {'subdirectory', 'binary.file', 'utf-16.file', 'utf-8.file'}
+        self.assertEqual(
+            contents, {'subdirectory', 'binary.file', 'utf-16.file', 'utf-8.file'}
+        )
 
     def test_iterdir_duplicate(self):
         contents = {
@@ -41,19 +43,16 @@ class MultiplexedPathTest(util.DiskSetup, unittest.TestCase):
                 contents.remove(remove)
             except (KeyError, ValueError):
                 pass
-        assert contents == {
-            '__init__.py',
-            'binary.file',
-            'subdirectory',
-            'utf-16.file',
-            'utf-8.file',
-        }
+        self.assertEqual(
+            contents,
+            {'__init__.py', 'binary.file', 'subdirectory', 'utf-16.file', 'utf-8.file'},
+        )
 
     def test_is_dir(self):
-        assert MultiplexedPath(self.folder).is_dir()
+        self.assertEqual(MultiplexedPath(self.folder).is_dir(), True)
 
     def test_is_file(self):
-        assert not MultiplexedPath(self.folder).is_file()
+        self.assertEqual(MultiplexedPath(self.folder).is_file(), False)
 
     def test_open_file(self):
         path = MultiplexedPath(self.folder)
@@ -67,17 +66,19 @@ class MultiplexedPathTest(util.DiskSetup, unittest.TestCase):
     def test_join_path(self):
         prefix = str(self.folder.parent)
         path = MultiplexedPath(self.folder, self.data01)
-        assert str(path.joinpath('binary.file'))[len(prefix) + 1 :] == os.path.join(
-            'namespacedata01', 'binary.file'
+        self.assertEqual(
+            str(path.joinpath('binary.file'))[len(prefix) + 1 :],
+            os.path.join('namespacedata01', 'binary.file'),
         )
         sub = path.joinpath('subdirectory')
         assert isinstance(sub, MultiplexedPath)
         assert 'namespacedata01' in str(sub)
         assert 'data01' in str(sub)
-        assert str(path.joinpath('imaginary'))[len(prefix) + 1 :] == os.path.join(
-            'namespacedata01', 'imaginary'
+        self.assertEqual(
+            str(path.joinpath('imaginary'))[len(prefix) + 1 :],
+            os.path.join('namespacedata01', 'imaginary'),
         )
-        assert path.joinpath() == path
+        self.assertEqual(path.joinpath(), path)
 
     def test_join_path_compound(self):
         path = MultiplexedPath(self.folder)
@@ -86,16 +87,23 @@ class MultiplexedPathTest(util.DiskSetup, unittest.TestCase):
     def test_join_path_common_subdir(self):
         prefix = str(self.data02.parent)
         path = MultiplexedPath(self.data01, self.data02)
-        assert isinstance(path.joinpath('subdirectory'), MultiplexedPath)
-        assert str(path.joinpath('subdirectory', 'subsubdir'))[len(prefix) + 1 :] == (
-            os.path.join('data02', 'subdirectory', 'subsubdir')
+        self.assertIsInstance(path.joinpath('subdirectory'), MultiplexedPath)
+        self.assertEqual(
+            str(path.joinpath('subdirectory', 'subsubdir'))[len(prefix) + 1 :],
+            os.path.join('data02', 'subdirectory', 'subsubdir'),
         )
 
     def test_repr(self):
-        assert repr(MultiplexedPath(self.folder)) == f"MultiplexedPath('{self.folder}')"
+        self.assertEqual(
+            repr(MultiplexedPath(self.folder)),
+            f"MultiplexedPath('{self.folder}')",
+        )
 
     def test_name(self):
-        assert MultiplexedPath(self.folder).name == os.path.basename(self.folder)
+        self.assertEqual(
+            MultiplexedPath(self.folder).name,
+            os.path.basename(self.folder),
+        )
 
 
 class NamespaceReaderTest(util.DiskSetup, unittest.TestCase):
@@ -110,14 +118,18 @@ class NamespaceReaderTest(util.DiskSetup, unittest.TestCase):
         reader = NamespaceReader(namespacedata01.__spec__.submodule_search_locations)
 
         root = self.data.__path__[0]
-        assert reader.resource_path('binary.file') == os.path.join(root, 'binary.file')
-        assert reader.resource_path('imaginary') == os.path.join(root, 'imaginary')
+        self.assertEqual(
+            reader.resource_path('binary.file'), os.path.join(root, 'binary.file')
+        )
+        self.assertEqual(
+            reader.resource_path('imaginary'), os.path.join(root, 'imaginary')
+        )
 
     def test_files(self):
         reader = NamespaceReader(self.data.__spec__.submodule_search_locations)
         root = self.data.__path__[0]
-        assert isinstance(reader.files(), MultiplexedPath)
-        assert repr(reader.files()) == f"MultiplexedPath('{root}')"
+        self.assertIsInstance(reader.files(), MultiplexedPath)
+        self.assertEqual(repr(reader.files()), f"MultiplexedPath('{root}')")
 
 
 if __name__ == '__main__':
