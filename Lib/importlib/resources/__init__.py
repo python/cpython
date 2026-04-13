@@ -1,32 +1,36 @@
-"""Read resources contained within a package."""
+"""
+Read resources contained within a package.
+
+This codebase is shared between importlib.resources in the stdlib
+and importlib_resources in PyPI. See
+https://github.com/python/importlib_metadata/wiki/Development-Methodology
+for more detail.
+"""
 
 from ._common import (
+    Anchor,
+    Package,
     as_file,
     files,
-    Package,
 )
-
-from ._legacy import (
+from ._functional import (
     contents,
-    open_binary,
-    read_binary,
-    open_text,
-    read_text,
     is_resource,
+    open_binary,
+    open_text,
     path,
-    Resource,
+    read_binary,
+    read_text,
 )
-
 from .abc import ResourceReader
-
 
 __all__ = [
     'Package',
-    'Resource',
+    'Anchor',
     'ResourceReader',
     'as_file',
-    'contents',
     'files',
+    'contents',
     'is_resource',
     'open_binary',
     'open_text',

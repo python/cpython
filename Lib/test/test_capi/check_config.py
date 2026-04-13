@@ -10,9 +10,9 @@ import sys
 def import_singlephase():
     assert '_testsinglephase' not in sys.modules
     try:
-        import _testsinglephase
+        import _testsinglephase  # noqa: F401
     except ImportError:
-        sys.modules.pop('_testsinglephase')
+        sys.modules.pop('_testsinglephase', None)
         return False
     else:
         del sys.modules['_testsinglephase']

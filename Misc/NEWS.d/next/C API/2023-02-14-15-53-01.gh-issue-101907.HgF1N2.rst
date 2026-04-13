@@ -1,1 +1,0 @@
-Removes use of non-standard C++ extension in public header files.

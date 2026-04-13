@@ -1,17 +1,14 @@
-:mod:`tokenize` --- Tokenizer for Python source
-===============================================
+:mod:`!tokenize` --- Tokenizer for Python source
+================================================
 
 .. module:: tokenize
    :synopsis: Lexical scanner for Python source code.
-
-.. moduleauthor:: Ka Ping Yee
-.. sectionauthor:: Fred L. Drake, Jr. <fdrake@acm.org>
 
 **Source code:** :source:`Lib/tokenize.py`
 
 --------------
 
-The :mod:`tokenize` module provides a lexical scanner for Python source code,
+The :mod:`!tokenize` module provides a lexical scanner for Python source code,
 implemented in Python.  The scanner in this module returns comments as tokens
 as well, making it useful for implementing "pretty-printers", including
 colorizers for on-screen displays.
@@ -21,6 +18,15 @@ To simplify token stream handling, all :ref:`operator <operators>` and
 the generic :data:`~token.OP` token type.  The exact
 type can be determined by checking the ``exact_type`` property on the
 :term:`named tuple` returned from :func:`tokenize.tokenize`.
+
+
+.. warning::
+
+   Note that the functions in this module are only designed to parse
+   syntactically valid Python code (code that does not raise when parsed
+   using :func:`ast.parse`).  The behavior of the functions in this module is
+   **undefined** when providing invalid Python code and it can change at any
+   point.
 
 Tokenizing Input
 ----------------
@@ -69,7 +75,7 @@ The primary entry point is a :term:`generator`:
    :func:`.tokenize`. It does not yield an :data:`~token.ENCODING` token.
 
 All constants from the :mod:`token` module are also exported from
-:mod:`tokenize`.
+:mod:`!tokenize`.
 
 Another function is provided to reverse the tokenization process. This is
 useful for creating tools that tokenize a script, modify the token stream, and
@@ -82,11 +88,10 @@ write back the modified script.
     sequences with at least two elements, the token type and the token string.
     Any additional sequence elements are ignored.
 
-    The reconstructed script is returned as a single string.  The result is
-    guaranteed to tokenize back to match the input so that the conversion is
-    lossless and round-trips are assured.  The guarantee applies only to the
-    token type and token string as the spacing between tokens (column
-    positions) may change.
+    The result is guaranteed to tokenize back to match the input so that the
+    conversion is lossless and round-trips are assured.  The guarantee applies
+    only to the token type and token string as the spacing between tokens
+    (column positions) may change.
 
     It returns bytes, encoded using the :data:`~token.ENCODING` token, which
     is the first token sequence output by :func:`.tokenize`. If there is no
@@ -139,11 +144,6 @@ function it uses to do this is available:
        2,
        3
 
-Note that unclosed single-quoted strings do not cause an error to be
-raised. They are tokenized as :data:`~token.ERRORTOKEN`, followed by the
-tokenization of their contents.
-
-
 .. _tokenize-cli:
 
 Command-Line Usage
@@ -151,7 +151,7 @@ Command-Line Usage
 
 .. versionadded:: 3.3
 
-The :mod:`tokenize` module can be executed as a script from the command line.
+The :mod:`!tokenize` module can be executed as a script from the command line.
 It is as simple as:
 
 .. code-block:: sh
@@ -162,11 +162,11 @@ The following options are accepted:
 
 .. program:: tokenize
 
-.. cmdoption:: -h, --help
+.. option:: -h, --help
 
    show this help message and exit
 
-.. cmdoption:: -e, --exact
+.. option:: -e, --exact
 
    display token names using the exact type
 

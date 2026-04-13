@@ -1,5 +1,5 @@
-:mod:`quopri` --- Encode and decode MIME quoted-printable data
-==============================================================
+:mod:`!quopri` --- Encode and decode MIME quoted-printable data
+===============================================================
 
 .. module:: quopri
    :synopsis: Encode and decode files using the MIME quoted-printable encoding.

@@ -2,15 +2,30 @@
 # license: PSFL.
 
 
-__all__ = ["TaskGroup"]
+__all__ = ("TaskGroup",)
 
 from . import events
 from . import exceptions
+from . import futures
 from . import tasks
 
 
 class TaskGroup:
+    """Asynchronous context manager for managing groups of tasks.
 
+    Example use:
+
+        async with asyncio.TaskGroup() as group:
+            task1 = group.create_task(some_coroutine(...))
+            task2 = group.create_task(other_coroutine(...))
+        print("Both tasks have completed now.")
+
+    All tasks are awaited when the context manager exits.
+
+    Any exceptions other than `asyncio.CancelledError` raised within
+    a task will cancel all remaining tasks and wait for them to exit.
+    The exceptions are then combined and raised as an `ExceptionGroup`.
+    """
     def __init__(self):
         self._entered = False
         self._exiting = False
@@ -40,20 +55,32 @@ class TaskGroup:
     async def __aenter__(self):
         if self._entered:
             raise RuntimeError(
-                f"TaskGroup {self!r} has been already entered")
-        self._entered = True
-
+                f"TaskGroup {self!r} has already been entered")
         if self._loop is None:
             self._loop = events.get_running_loop()
-
         self._parent_task = tasks.current_task(self._loop)
         if self._parent_task is None:
             raise RuntimeError(
                 f'TaskGroup {self!r} cannot determine the parent task')
+        self._entered = True
 
         return self
 
     async def __aexit__(self, et, exc, tb):
+        tb = None
+        try:
+            return await self._aexit(et, exc)
+        finally:
+            # Exceptions are heavy objects that can have object
+            # cycles (bad for GC); let's not keep a reference to
+            # a bunch of them. It would be nicer to use a try/finally
+            # in __aexit__ directly but that introduced some diff noise
+            self._parent_task = None
+            self._errors = None
+            self._base_error = None
+            exc = None
+
+    async def _aexit(self, et, exc):
         self._exiting = True
 
         if (exc is not None and
@@ -61,14 +88,10 @@ class TaskGroup:
                 self._base_error is None):
             self._base_error = exc
 
-        propagate_cancellation_error = \
-            exc if et is exceptions.CancelledError else None
-        if self._parent_cancel_requested:
-            # If this flag is set we *must* call uncancel().
-            if self._parent_task.uncancel() == 0:
-                # If there are no pending cancellations left,
-                # don't propagate CancelledError.
-                propagate_cancellation_error = None
+        if et is not None and issubclass(et, exceptions.CancelledError):
+            propagate_cancellation_error = exc
+        else:
+            propagate_cancellation_error = None
 
         if et is not None:
             if not self._aborting:
@@ -114,41 +137,78 @@ class TaskGroup:
         assert not self._tasks
 
         if self._base_error is not None:
-            raise self._base_error
+            try:
+                raise self._base_error
+            finally:
+                exc = None
+
+        if self._parent_cancel_requested:
+            # If this flag is set we *must* call uncancel().
+            if self._parent_task.uncancel() == 0:
+                # If there are no pending cancellations left,
+                # don't propagate CancelledError.
+                propagate_cancellation_error = None
 
         # Propagate CancelledError if there is one, except if there
         # are other errors -- those have priority.
-        if propagate_cancellation_error and not self._errors:
-            raise propagate_cancellation_error
+        try:
+            if propagate_cancellation_error is not None and not self._errors:
+                try:
+                    raise propagate_cancellation_error
+                finally:
+                    exc = None
+        finally:
+            propagate_cancellation_error = None
 
-        if et is not None and et is not exceptions.CancelledError:
+        if et is not None and not issubclass(et, exceptions.CancelledError):
             self._errors.append(exc)
 
         if self._errors:
-            # Exceptions are heavy objects that can have object
-            # cycles (bad for GC); let's not keep a reference to
-            # a bunch of them.
+            # If the parent task is being cancelled from the outside
+            # of the taskgroup, un-cancel and re-cancel the parent task,
+            # which will keep the cancel count stable.
+            if self._parent_task.cancelling():
+                self._parent_task.uncancel()
+                self._parent_task.cancel()
             try:
-                me = BaseExceptionGroup('unhandled errors in a TaskGroup', self._errors)
-                raise me from None
+                raise BaseExceptionGroup(
+                    'unhandled errors in a TaskGroup',
+                    self._errors,
+                ) from None
             finally:
-                self._errors = None
+                exc = None
 
-    def create_task(self, coro, *, name=None, context=None):
+
+    def create_task(self, coro, **kwargs):
+        """Create a new task in this group and return it.
+
+        Similar to `asyncio.create_task`.
+        """
         if not self._entered:
+            coro.close()
             raise RuntimeError(f"TaskGroup {self!r} has not been entered")
         if self._exiting and not self._tasks:
+            coro.close()
             raise RuntimeError(f"TaskGroup {self!r} is finished")
         if self._aborting:
+            coro.close()
             raise RuntimeError(f"TaskGroup {self!r} is shutting down")
-        if context is None:
-            task = self._loop.create_task(coro)
-        else:
-            task = self._loop.create_task(coro, context=context)
-        tasks._set_task_name(task, name)
-        task.add_done_callback(self._on_task_done)
+        task = self._loop.create_task(coro, **kwargs)
+
+        futures.future_add_to_awaited_by(task, self._parent_task)
+
+        # Always schedule the done callback even if the task is
+        # already done (e.g. if the coro was able to complete eagerly),
+        # otherwise if the task completes with an exception then it will cancel
+        # the current task too early. gh-128550, gh-128588
         self._tasks.add(task)
-        return task
+        task.add_done_callback(self._on_task_done)
+        try:
+            return task
+        finally:
+            # gh-128552: prevent a refcycle of
+            # task.exception().__traceback__->TaskGroup.create_task->task
+            del task
 
     # Since Python 3.8 Tasks propagate all exceptions correctly,
     # except for KeyboardInterrupt and SystemExit which are
@@ -167,6 +227,8 @@ class TaskGroup:
 
     def _on_task_done(self, task):
         self._tasks.discard(task)
+
+        futures.future_discard_from_awaited_by(task, self._parent_task)
 
         if self._on_completed_fut is not None and not self._tasks:
             if not self._on_completed_fut.done():

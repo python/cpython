@@ -1,10 +1,8 @@
-:mod:`operator` --- Standard operators as functions
-===================================================
+:mod:`!operator` --- Standard operators as functions
+====================================================
 
 .. module:: operator
    :synopsis: Functions corresponding to the standard operators.
-
-.. sectionauthor:: Skip Montanaro <skip@automatrix.com>
 
 **Source code:** :source:`Lib/operator.py`
 
@@ -15,7 +13,7 @@
 
 --------------
 
-The :mod:`operator` module exports a set of efficient functions corresponding to
+The :mod:`!operator` module exports a set of efficient functions corresponding to
 the intrinsic operators of Python.  For example, ``operator.add(x, y)`` is
 equivalent to the expression ``x+y``. Many function names are those used for
 special methods, without the double underscores.  For backward compatibility,
@@ -59,9 +57,9 @@ truth tests, identity tests, and boolean operations:
               __not__(obj)
 
    Return the outcome of :keyword:`not` *obj*.  (Note that there is no
-   :meth:`__not__` method for object instances; only the interpreter core defines
-   this operation.  The result is affected by the :meth:`__bool__` and
-   :meth:`__len__` methods.)
+   :meth:`!__not__` method for object instances; only the interpreter core defines
+   this operation.  The result is affected by the :meth:`~object.__bool__` and
+   :meth:`~object.__len__` methods.)
 
 
 .. function:: truth(obj)
@@ -78,6 +76,20 @@ truth tests, identity tests, and boolean operations:
 .. function:: is_not(a, b)
 
    Return ``a is not b``.  Tests object identity.
+
+
+.. function:: is_none(a)
+
+   Return ``a is None``.  Tests object identity.
+
+   .. versionadded:: 3.14
+
+
+.. function:: is_not_none(a)
+
+   Return ``a is not None``.  Tests object identity.
+
+   .. versionadded:: 3.14
 
 
 The mathematical and bitwise operations are the most numerous:
@@ -244,7 +256,7 @@ Operations which work with sequences (some of them with mappings too) include:
 
 .. function:: length_hint(obj, default=0)
 
-   Return an estimated length for the object *o*. First try to return its
+   Return an estimated length for the object *obj*. First try to return its
    actual length, then an estimate using :meth:`object.__length_hint__`, and
    finally return the default value.
 
@@ -261,7 +273,7 @@ The following operation works with callables:
    .. versionadded:: 3.11
 
 
-The :mod:`operator` module also defines tools for generalized attribute and item
+The :mod:`!operator` module also defines tools for generalized attribute and item
 lookups.  These are useful for making fast field extractors as arguments for
 :func:`map`, :func:`sorted`, :meth:`itertools.groupby`, or other functions that
 expect a function argument.
@@ -306,7 +318,7 @@ expect a function argument.
               itemgetter(*items)
 
    Return a callable object that fetches *item* from its operand using the
-   operand's :meth:`__getitem__` method.  If multiple items are specified,
+   operand's :meth:`~object.__getitem__` method.  If multiple items are specified,
    returns a tuple of lookup values.  For example:
 
    * After ``f = itemgetter(2)``, the call ``f(r)`` returns ``r[2]``.
@@ -326,7 +338,7 @@ expect a function argument.
                   return tuple(obj[item] for item in items)
           return g
 
-   The items can be any type accepted by the operand's :meth:`__getitem__`
+   The items can be any type accepted by the operand's :meth:`~object.__getitem__`
    method.  Dictionaries accept any :term:`hashable` value.  Lists, tuples, and
    strings accept an index or a slice:
 
@@ -376,7 +388,7 @@ Mapping Operators to Functions
 ------------------------------
 
 This table shows how abstract operations correspond to operator symbols in the
-Python syntax and the functions in the :mod:`operator` module.
+Python syntax and the functions in the :mod:`!operator` module.
 
 +-----------------------+-------------------------+---------------------------------------+
 | Operation             | Syntax                  | Function                              |
@@ -404,6 +416,10 @@ Python syntax and the functions in the :mod:`operator` module.
 | Identity              | ``a is b``              | ``is_(a, b)``                         |
 +-----------------------+-------------------------+---------------------------------------+
 | Identity              | ``a is not b``          | ``is_not(a, b)``                      |
++-----------------------+-------------------------+---------------------------------------+
+| Identity              | ``a is None``           | ``is_none(a)``                        |
++-----------------------+-------------------------+---------------------------------------+
+| Identity              | ``a is not None``       | ``is_not_none(a)``                    |
 +-----------------------+-------------------------+---------------------------------------+
 | Indexed Assignment    | ``obj[k] = v``          | ``setitem(obj, k, v)``                |
 +-----------------------+-------------------------+---------------------------------------+

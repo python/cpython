@@ -1,2 +1,0 @@
-On Android, in a static build, python-config in embed mode no longer
-incorrectly reports a library to link to.

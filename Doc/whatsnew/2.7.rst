@@ -196,7 +196,7 @@ A partial list of 3.1 features that were backported to 2.7:
 
 Other new Python3-mode warnings include:
 
-* :func:`operator.isCallable` and :func:`operator.sequenceIncludes`,
+* :func:`!operator.isCallable` and :func:`!operator.sequenceIncludes`,
   which are not supported in 3.x, now trigger warnings.
 * The :option:`!-3` switch now automatically
   enables the :option:`!-Qwarn` switch that causes warnings
@@ -282,16 +282,16 @@ How does the :class:`~collections.OrderedDict` work?  It maintains a
 doubly linked list of keys, appending new keys to the list as they're inserted.
 A secondary dictionary maps keys to their corresponding list node, so
 deletion doesn't have to traverse the entire linked list and therefore
-remains O(1).
+remains *O*\ (1).
 
 The standard library now supports use of ordered dictionaries in several
 modules.
 
-* The :mod:`ConfigParser` module uses them by default, meaning that
+* The :mod:`ConfigParser <configparser>` module uses them by default, meaning that
   configuration files can now be read, modified, and then written back
   in their original order.
 
-* The :meth:`~collections.somenamedtuple._asdict()` method for
+* The :meth:`~collections.somenamedtuple._asdict` method for
   :func:`collections.namedtuple` now returns an ordered dictionary with the
   values appearing in the same order as the underlying tuple indices.
 
@@ -355,7 +355,7 @@ added as a more powerful replacement for the
 This means Python now supports three different modules for parsing
 command-line arguments: :mod:`getopt`, :mod:`optparse`, and
 :mod:`argparse`.  The :mod:`getopt` module closely resembles the C
-library's :c:func:`getopt` function, so it remains useful if you're writing a
+library's :c:func:`!getopt` function, so it remains useful if you're writing a
 Python prototype that will eventually be rewritten in C.
 :mod:`optparse` becomes redundant, but there are no plans to remove it
 because there are many scripts still using it, and there's no
@@ -455,11 +455,11 @@ a varying number of handlers.
 All this flexibility can require a lot of configuration.  You can
 write Python statements to create objects and set their properties,
 but a complex set-up requires verbose but boring code.
-:mod:`logging` also supports a :func:`~logging.fileConfig`
+:mod:`logging` also supports a :func:`~logging.config.fileConfig`
 function that parses a file, but the file format doesn't support
 configuring filters, and it's messier to generate programmatically.
 
-Python 2.7 adds a :func:`~logging.dictConfig` function that
+Python 2.7 adds a :func:`~logging.config.dictConfig` function that
 uses a dictionary to configure logging.  There are many ways to
 produce a dictionary from different sources: construct one with code;
 parse a file containing JSON; or use a YAML parsing library if one is
@@ -533,7 +533,7 @@ implemented by Vinay Sajip, are:
   ``getLogger('app.network.listen')``.
 
 * The :class:`~logging.LoggerAdapter` class gained an
-  :meth:`~logging.LoggerAdapter.isEnabledFor` method that takes a
+  :meth:`~logging.Logger.isEnabledFor` method that takes a
   *level* and returns whether the underlying logger would
   process a message of that level of importance.
 
@@ -554,8 +554,8 @@ called a :dfn:`view` instead of a fully materialized list.
 It's not possible to change the return values of :meth:`~dict.keys`,
 :meth:`~dict.values`, and :meth:`~dict.items` in Python 2.7 because
 too much code would break.  Instead the 3.x versions were added
-under the new names :meth:`~dict.viewkeys`, :meth:`~dict.viewvalues`,
-and :meth:`~dict.viewitems`.
+under the new names :meth:`!viewkeys`, :meth:`!viewvalues`,
+and :meth:`!viewitems`.
 
 ::
 
@@ -720,7 +720,7 @@ Some smaller changes made to the core Python language are:
        with B() as b:
            ... suite of statements ...
 
-  The :func:`contextlib.nested` function provides a very similar
+  The :func:`!contextlib.nested` function provides a very similar
   function, so it's no longer necessary and has been deprecated.
 
   (Proposed in https://codereview.appspot.com/53094; implemented by
@@ -785,7 +785,7 @@ Some smaller changes made to the core Python language are:
   implemented by Mark Dickinson; :issue:`1811`.)
 
 * Implicit coercion for complex numbers has been removed; the interpreter
-  will no longer ever attempt to call a :meth:`__coerce__` method on complex
+  will no longer ever attempt to call a :meth:`!__coerce__` method on complex
   objects.  (Removed by Meador Inge and Mark Dickinson; :issue:`5211`.)
 
 * The :meth:`str.format` method now supports automatic numbering of the replacement
@@ -817,7 +817,7 @@ Some smaller changes made to the core Python language are:
 
   A low-level change: the :meth:`object.__format__` method now triggers
   a :exc:`PendingDeprecationWarning` if it's passed a format string,
-  because the :meth:`__format__` method for :class:`object` converts
+  because the :meth:`!__format__` method for :class:`object` converts
   the object to a string representation and formats that.  Previously
   the method silently applied the format string to the string
   representation, but that could hide mistakes in Python code.  If
@@ -825,7 +825,7 @@ Some smaller changes made to the core Python language are:
   precision, presumably you're expecting the formatting to be applied
   in some object-specific way.  (Fixed by Eric Smith; :issue:`7994`.)
 
-* The :func:`int` and :func:`long` types gained a ``bit_length``
+* The :func:`int` and :func:`!long` types gained a ``bit_length``
   method that returns the number of bits necessary to represent
   its argument in binary::
 
@@ -848,8 +848,8 @@ Some smaller changes made to the core Python language are:
   statements that were only working by accident.  (Fixed by Meador Inge;
   :issue:`7902`.)
 
-* It's now possible for a subclass of the built-in :class:`unicode` type
-  to override the :meth:`__unicode__` method.  (Implemented by
+* It's now possible for a subclass of the built-in :class:`!unicode` type
+  to override the :meth:`!__unicode__` method.  (Implemented by
   Victor Stinner; :issue:`1583863`.)
 
 * The :class:`bytearray` type's :meth:`~bytearray.translate` method now accepts
@@ -858,9 +858,11 @@ Some smaller changes made to the core Python language are:
 
   .. XXX bytearray doesn't seem to be documented
 
-* When using ``@classmethod`` and ``@staticmethod`` to wrap
+* When using :deco:`classmethod` and
+  :deco:`staticmethod` to wrap
   methods as class or static methods, the wrapper object now
-  exposes the wrapped function as their :attr:`__func__` attribute.
+  exposes the wrapped function as their :attr:`~method.__func__`
+  attribute.
   (Contributed by Amaury Forgeot d'Arc, after a suggestion by
   George Sakkis; :issue:`5982`.)
 
@@ -874,7 +876,7 @@ Some smaller changes made to the core Python language are:
   Forgeot d'Arc in :issue:`1616979`; CP858 contributed by Tim Hatch in
   :issue:`8016`.)
 
-* The :class:`file` object will now set the :attr:`filename` attribute
+* The :class:`!file` object will now set the :attr:`!filename` attribute
   on the :exc:`IOError` exception when trying to open a directory
   on POSIX platforms (noted by Jan Kaliszewski; :issue:`4764`), and
   now explicitly checks for and forbids writing to read-only file objects
@@ -913,7 +915,7 @@ used with the :option:`-W` switch, separated by commas.
 (Contributed by Brian Curtin; :issue:`7301`.)
 
 For example, the following setting will print warnings every time
-they occur, but turn warnings from the :mod:`Cookie` module into an
+they occur, but turn warnings from the :mod:`Cookie <http.cookies>` module into an
 error.  (The exact syntax for setting an environment variable varies
 across operating systems and shells.)
 
@@ -930,8 +932,8 @@ Optimizations
 Several performance enhancements have been added:
 
 * A new opcode was added to perform the initial setup for
-  :keyword:`with` statements, looking up the :meth:`__enter__` and
-  :meth:`__exit__` methods.  (Contributed by Benjamin Peterson.)
+  :keyword:`with` statements, looking up the :meth:`~object.__enter__` and
+  :meth:`~object.__exit__` methods.  (Contributed by Benjamin Peterson.)
 
 * The garbage collector now performs better for one common usage
   pattern: when many objects are being allocated without deallocating
@@ -964,7 +966,7 @@ Several performance enhancements have been added:
 
   Apart from the performance improvements this change should be
   invisible to end users, with one exception: for testing and
-  debugging purposes there's a new structseq :data:`sys.long_info` that
+  debugging purposes there's a new structseq :data:`!sys.long_info` that
   provides information about the internal format, giving the number of
   bits per digit and the size in bytes of the C type used to store
   each digit::
@@ -1003,19 +1005,19 @@ Several performance enhancements have been added:
   conversion function that supports arbitrary bases.
   (Patch by Gawain Bolton; :issue:`6713`.)
 
-* The :meth:`split`, :meth:`replace`, :meth:`rindex`,
-  :meth:`rpartition`, and :meth:`rsplit` methods of string-like types
+* The :meth:`!split`, :meth:`!replace`, :meth:`!rindex`,
+  :meth:`!rpartition`, and :meth:`!rsplit` methods of string-like types
   (strings, Unicode strings, and :class:`bytearray` objects) now use a
   fast reverse-search algorithm instead of a character-by-character
   scan.  This is sometimes faster by a factor of 10.  (Added by
   Florent Xicluna; :issue:`7462` and :issue:`7622`.)
 
-* The :mod:`pickle` and :mod:`cPickle` modules now automatically
+* The :mod:`pickle` and :mod:`!cPickle` modules now automatically
   intern the strings used for attribute names, reducing memory usage
   of the objects resulting from unpickling.  (Contributed by Jake
   McGuire; :issue:`5084`.)
 
-* The :mod:`cPickle` module now special-cases dictionaries,
+* The :mod:`!cPickle` module now special-cases dictionaries,
   nearly halving the time required to pickle them.
   (Contributed by Collin Winter; :issue:`5670`.)
 
@@ -1042,7 +1044,7 @@ changes, or look through the Subversion logs for all the details.
   used with :class:`memoryview` instances and other similar buffer objects.
   (Backported from 3.x by Florent Xicluna; :issue:`7703`.)
 
-* Updated module: the :mod:`bsddb` module has been updated from 4.7.2devel9
+* Updated module: the :mod:`!bsddb` module has been updated from 4.7.2devel9
   to version 4.8.4 of
   `the pybsddb package <https://www.jcea.es/programacion/pybsddb.htm>`__.
   The new version features better Python 3.x compatibility, various bug fixes,
@@ -1127,12 +1129,12 @@ changes, or look through the Subversion logs for all the details.
 
   (Added by Raymond Hettinger; :issue:`1818`.)
 
-  Finally, the :class:`~collections.Mapping` abstract base class now
-  returns :const:`NotImplemented` if a mapping is compared to
+  Finally, the :class:`~collections.abc.Mapping` abstract base class now
+  returns :data:`NotImplemented` if a mapping is compared to
   another type that isn't a :class:`Mapping`.
   (Fixed by Daniel Stutzbach; :issue:`8729`.)
 
-* Constructors for the parsing classes in the :mod:`ConfigParser` module now
+* Constructors for the parsing classes in the :mod:`ConfigParser <configparser>` module now
   take an *allow_no_value* parameter, defaulting to false; if true,
   options without values will be allowed.  For example::
 
@@ -1156,12 +1158,12 @@ changes, or look through the Subversion logs for all the details.
 
   (Contributed by Mats Kindahl; :issue:`7005`.)
 
-* Deprecated function: :func:`contextlib.nested`, which allows
+* Deprecated function: :func:`!contextlib.nested`, which allows
   handling more than one context manager with a single :keyword:`with`
   statement, has been deprecated, because the :keyword:`!with` statement
   now supports multiple context managers.
 
-* The :mod:`cookielib` module now ignores cookies that have an invalid
+* The :mod:`cookielib <http.cookiejar>` module now ignores cookies that have an invalid
   version field, one that doesn't contain an integer value.  (Fixed by
   John J. Lee; :issue:`3924`.)
 
@@ -1182,7 +1184,7 @@ changes, or look through the Subversion logs for all the details.
 
 * New method: the :class:`~decimal.Decimal` class gained a
   :meth:`~decimal.Decimal.from_float` class method that performs an exact
-  conversion of a floating-point number to a :class:`~decimal.Decimal`.
+  conversion of a floating-point number to a :class:`!Decimal`.
   This exact conversion strives for the
   closest decimal approximation to the floating-point representation's value;
   the resulting decimal value will therefore still include the inaccuracy,
@@ -1196,9 +1198,9 @@ changes, or look through the Subversion logs for all the details.
   of the operands.  Previously such comparisons would fall back to
   Python's default rules for comparing objects, which produced arbitrary
   results based on their type.  Note that you still cannot combine
-  :class:`Decimal` and floating-point in other operations such as addition,
+  :class:`!Decimal` and floating point in other operations such as addition,
   since you should be explicitly choosing how to convert between float and
-  :class:`~decimal.Decimal`.  (Fixed by Mark Dickinson; :issue:`2531`.)
+  :class:`!Decimal`.  (Fixed by Mark Dickinson; :issue:`2531`.)
 
   The constructor for :class:`~decimal.Decimal` now accepts
   floating-point numbers (added by Raymond Hettinger; :issue:`8257`)
@@ -1216,7 +1218,7 @@ changes, or look through the Subversion logs for all the details.
   more sensible for numeric types.  (Changed by Mark Dickinson; :issue:`6857`.)
 
   Comparisons involving a signaling NaN value (or ``sNAN``) now signal
-  :const:`InvalidOperation` instead of silently returning a true or
+  :const:`~decimal.InvalidOperation` instead of silently returning a true or
   false value depending on the comparison operator.  Quiet NaN values
   (or ``NaN``) are now hashable.  (Fixed by Mark Dickinson;
   :issue:`7279`.)
@@ -1233,13 +1235,13 @@ changes, or look through the Subversion logs for all the details.
   created some new files that should be included.
   (Fixed by Tarek Ziadé; :issue:`8688`.)
 
-* The :mod:`doctest` module's :const:`IGNORE_EXCEPTION_DETAIL` flag
+* The :mod:`doctest` module's :const:`~doctest.IGNORE_EXCEPTION_DETAIL` flag
   will now ignore the name of the module containing the exception
   being tested.  (Patch by Lennart Regebro; :issue:`7490`.)
 
 * The :mod:`email` module's :class:`~email.message.Message` class will
   now accept a Unicode-valued payload, automatically converting the
-  payload to the encoding specified by :attr:`output_charset`.
+  payload to the encoding specified by :attr:`!output_charset`.
   (Added by R. David Murray; :issue:`1368247`.)
 
 * The :class:`~fractions.Fraction` class now accepts a single float or
@@ -1266,10 +1268,10 @@ changes, or look through the Subversion logs for all the details.
   :issue:`6845`.)
 
 * New class decorator: :func:`~functools.total_ordering` in the :mod:`functools`
-  module takes a class that defines an :meth:`__eq__` method and one of
-  :meth:`__lt__`, :meth:`__le__`, :meth:`__gt__`, or :meth:`__ge__`,
+  module takes a class that defines an :meth:`~object.__eq__` method and one of
+  :meth:`~object.__lt__`, :meth:`~object.__le__`, :meth:`~object.__gt__`, or :meth:`~object.__ge__`,
   and generates the missing comparison methods.  Since the
-  :meth:`__cmp__` method is being deprecated in Python 3.x,
+  :meth:`!__cmp__` method is being deprecated in Python 3.x,
   this decorator makes it easier to define ordered classes.
   (Added by Raymond Hettinger; :issue:`5479`.)
 
@@ -1298,24 +1300,24 @@ changes, or look through the Subversion logs for all the details.
   :mod:`gzip` module will now consume these trailing bytes.  (Fixed by
   Tadek Pietraszek and Brian Curtin; :issue:`2846`.)
 
-* New attribute: the :mod:`hashlib` module now has an :attr:`~hashlib.hashlib.algorithms`
+* New attribute: the :mod:`hashlib` module now has an :attr:`!algorithms`
   attribute containing a tuple naming the supported algorithms.
   In Python 2.7, ``hashlib.algorithms`` contains
   ``('md5', 'sha1', 'sha224', 'sha256', 'sha384', 'sha512')``.
   (Contributed by Carl Chenet; :issue:`7418`.)
 
-* The default :class:`~httplib.HTTPResponse` class used by the :mod:`httplib` module now
+* The default :class:`~http.client.HTTPResponse` class used by the :mod:`httplib <http>` module now
   supports buffering, resulting in much faster reading of HTTP responses.
   (Contributed by Kristján Valur Jónsson; :issue:`4879`.)
 
-  The :class:`~httplib.HTTPConnection` and :class:`~httplib.HTTPSConnection` classes
+  The :class:`~http.client.HTTPConnection` and :class:`~http.client.HTTPSConnection` classes
   now support a *source_address* parameter, a ``(host, port)`` 2-tuple
   giving the source address that will be used for the connection.
   (Contributed by Eldon Ziegler; :issue:`3972`.)
 
-* The :mod:`ihooks` module now supports relative imports.  Note that
-  :mod:`ihooks` is an older module for customizing imports,
-  superseded by the :mod:`imputil` module added in Python 2.0.
+* The :mod:`!ihooks` module now supports relative imports.  Note that
+  :mod:`!ihooks` is an older module for customizing imports,
+  superseded by the :mod:`!imputil` module added in Python 2.0.
   (Relative import support added by Neil Schemenauer.)
 
   .. revision 75423
@@ -1346,10 +1348,10 @@ changes, or look through the Subversion logs for all the details.
 * Updated module: The :mod:`io` library has been upgraded to the version shipped with
   Python 3.1.  For 3.1, the I/O library was entirely rewritten in C
   and is 2 to 20 times faster depending on the task being performed.  The
-  original Python version was renamed to the :mod:`_pyio` module.
+  original Python version was renamed to the :mod:`!_pyio` module.
 
   One minor resulting change: the :class:`io.TextIOBase` class now
-  has an :attr:`errors` attribute giving the error setting
+  has an :attr:`~io.TextIOBase.errors` attribute giving the error setting
   used for encoding and decoding errors (one of ``'strict'``, ``'replace'``,
   ``'ignore'``).
 
@@ -1415,21 +1417,21 @@ changes, or look through the Subversion logs for all the details.
   :func:`~math.lgamma` for the natural log of the Gamma function.
   (Contributed by Mark Dickinson and nirinA raseliarison; :issue:`3366`.)
 
-* The :mod:`multiprocessing` module's :class:`Manager*` classes
+* The :mod:`multiprocessing` module's :class:`!Manager*` classes
   can now be passed a callable that will be called whenever
   a subprocess is started, along with a set of arguments that will be
   passed to the callable.
   (Contributed by lekma; :issue:`5585`.)
 
-  The :class:`~multiprocessing.Pool` class, which controls a pool of worker processes,
+  The :class:`~multiprocessing.pool.Pool` class, which controls a pool of worker processes,
   now has an optional *maxtasksperchild* parameter.  Worker processes
   will perform the specified number of tasks and then exit, causing the
-  :class:`~multiprocessing.Pool` to start a new worker.  This is useful if tasks may leak
+  :class:`!Pool` to start a new worker.  This is useful if tasks may leak
   memory or other resources, or if some tasks will cause the worker to
   become very large.
   (Contributed by Charles Cazabon; :issue:`6963`.)
 
-* The :mod:`nntplib` module now supports IPv6 addresses.
+* The :mod:`!nntplib` module now supports IPv6 addresses.
   (Contributed by Derek Morr; :issue:`1664`.)
 
 * New functions: the :mod:`os` module wraps the following POSIX system
@@ -1496,7 +1498,7 @@ changes, or look through the Subversion logs for all the details.
   global site-packages directories,
   :func:`~site.getusersitepackages` returns the path of the user's
   site-packages directory, and
-  :func:`~site.getuserbase` returns the value of the :envvar:`USER_BASE`
+  :func:`~site.getuserbase` returns the value of the :data:`~site.USER_BASE`
   environment variable, giving the path to a directory that can be used
   to store data.
   (Contributed by Tarek Ziadé; :issue:`6693`.)
@@ -1516,16 +1518,16 @@ changes, or look through the Subversion logs for all the details.
   the :class:`bytearray` and :class:`memoryview` objects.  (Implemented by
   Antoine Pitrou; :issue:`8104`.)
 
-* The :mod:`SocketServer` module's :class:`~SocketServer.TCPServer` class now
+* The :mod:`SocketServer <socketserver>` module's :class:`~socketserver.TCPServer` class now
   supports socket timeouts and disabling the Nagle algorithm.
-  The :attr:`~SocketServer.TCPServer.disable_nagle_algorithm` class attribute
+  The :attr:`!disable_nagle_algorithm` class attribute
   defaults to ``False``; if overridden to be true,
   new request connections will have the TCP_NODELAY option set to
   prevent buffering many small sends into a single TCP packet.
-  The :attr:`~SocketServer.BaseServer.timeout` class attribute can hold
+  The :attr:`~socketserver.BaseServer.timeout` class attribute can hold
   a timeout in seconds that will be applied to the request socket; if
-  no request is received within that time, :meth:`~SocketServer.BaseServer.handle_timeout`
-  will be called and :meth:`~SocketServer.BaseServer.handle_request` will return.
+  no request is received within that time, :meth:`~socketserver.BaseServer.handle_timeout`
+  will be called and :meth:`~socketserver.BaseServer.handle_request` will return.
   (Contributed by Kristján Valur Jónsson; :issue:`6192` and :issue:`6267`.)
 
 * Updated module: the :mod:`sqlite3` module has been updated to
@@ -1538,15 +1540,15 @@ changes, or look through the Subversion logs for all the details.
 * The :mod:`ssl` module's :class:`~ssl.SSLSocket` objects now support the
   buffer API, which fixed a test suite failure (fix by Antoine Pitrou;
   :issue:`7133`) and automatically set
-  OpenSSL's :c:macro:`SSL_MODE_AUTO_RETRY`, which will prevent an error
-  code being returned from :meth:`recv` operations that trigger an SSL
+  OpenSSL's :c:macro:`!SSL_MODE_AUTO_RETRY`, which will prevent an error
+  code being returned from :meth:`!recv` operations that trigger an SSL
   renegotiation (fix by Antoine Pitrou; :issue:`8222`).
 
-  The :func:`ssl.wrap_socket` constructor function now takes a
+  The :func:`~ssl.SSLContext.wrap_socket` constructor function now takes a
   *ciphers* argument that's a string listing the encryption algorithms
   to be allowed; the format of the string is described
   `in the OpenSSL documentation
-  <https://www.openssl.org/docs/man1.0.2/man1/ciphers.html>`__.
+  <https://docs.openssl.org/1.0.2/man1/ciphers/>`__.
   (Added by Antoine Pitrou; :issue:`8322`.)
 
   Another change makes the extension load all of OpenSSL's ciphers and
@@ -1556,9 +1558,9 @@ changes, or look through the Subversion logs for all the details.
   :issue:`8484`.)
 
   The version of OpenSSL being used is now available as the module
-  attributes :data:`ssl.OPENSSL_VERSION` (a string),
-  :data:`ssl.OPENSSL_VERSION_INFO` (a 5-tuple), and
-  :data:`ssl.OPENSSL_VERSION_NUMBER` (an integer).  (Added by Antoine
+  attributes :const:`ssl.OPENSSL_VERSION` (a string),
+  :const:`ssl.OPENSSL_VERSION_INFO` (a 5-tuple), and
+  :const:`ssl.OPENSSL_VERSION_NUMBER` (an integer).  (Added by Antoine
   Pitrou; :issue:`8321`.)
 
 * The :mod:`struct` module will no longer silently ignore overflow
@@ -1566,8 +1568,8 @@ changes, or look through the Subversion logs for all the details.
   code (one of ``bBhHiIlLqQ``); it now always raises a
   :exc:`struct.error` exception.  (Changed by Mark Dickinson;
   :issue:`1523`.)  The :func:`~struct.pack` function will also
-  attempt to use :meth:`__index__` to convert and pack non-integers
-  before trying the :meth:`__int__` method or reporting an error.
+  attempt to use :meth:`~object.__index__` to convert and pack non-integers
+  before trying the :meth:`~object.__int__` method or reporting an error.
   (Changed by Mark Dickinson; :issue:`8300`.)
 
 * New function: the :mod:`subprocess` module's
@@ -1588,7 +1590,7 @@ changes, or look through the Subversion logs for all the details.
   (Contributed by Gregory P. Smith.)
 
   The :mod:`subprocess` module will now retry its internal system calls
-  on receiving an :const:`EINTR` signal.  (Reported by several people; final
+  on receiving an :const:`~errno.EINTR` signal.  (Reported by several people; final
   patch by Gregory P. Smith in :issue:`1068268`.)
 
 * New function: :func:`~symtable.Symbol.is_declared_global` in the :mod:`symtable` module
@@ -1600,16 +1602,16 @@ changes, or look through the Subversion logs for all the details.
   identifier instead of the previous default value of ``'python'``.
   (Changed by Sean Reifschneider; :issue:`8451`.)
 
-* The ``sys.version_info`` value is now a named tuple, with attributes
-  named :attr:`major`, :attr:`minor`, :attr:`micro`,
-  :attr:`releaselevel`, and :attr:`serial`.  (Contributed by Ross
+* The :data:`sys.version_info` value is now a named tuple, with attributes
+  named :attr:`!major`, :attr:`!minor`, :attr:`!micro`,
+  :attr:`!releaselevel`, and :attr:`!serial`.  (Contributed by Ross
   Light; :issue:`4285`.)
 
   :func:`sys.getwindowsversion` also returns a named tuple,
-  with attributes named :attr:`major`, :attr:`minor`, :attr:`build`,
-  :attr:`platform`, :attr:`service_pack`, :attr:`service_pack_major`,
-  :attr:`service_pack_minor`, :attr:`suite_mask`, and
-  :attr:`product_type`.  (Contributed by Brian Curtin; :issue:`7766`.)
+  with attributes named :attr:`!major`, :attr:`!minor`, :attr:`!build`,
+  :attr:`!platform`, :attr:`!service_pack`, :attr:`!service_pack_major`,
+  :attr:`!service_pack_minor`, :attr:`!suite_mask`, and
+  :attr:`!product_type`.  (Contributed by Brian Curtin; :issue:`7766`.)
 
 * The :mod:`tarfile` module's default error handling has changed, to
   no longer suppress fatal errors.  The default error level was previously 0,
@@ -1646,7 +1648,7 @@ changes, or look through the Subversion logs for all the details.
   and has been updated to version 5.2.0 (updated by
   Florent Xicluna; :issue:`8024`).
 
-* The :mod:`urlparse` module's :func:`~urlparse.urlsplit` now handles
+* The :mod:`urlparse <urllib.parse>` module's :func:`~urllib.parse.urlsplit` now handles
   unknown URL schemes in a fashion compliant with :rfc:`3986`: if the
   URL is of the form ``"<something>://..."``, the text before the
   ``://`` is treated as the scheme, even if it's a made-up scheme that
@@ -1673,7 +1675,7 @@ changes, or look through the Subversion logs for all the details.
   (Python 2.7 actually produces slightly different output, since it
   returns a named tuple instead of a standard tuple.)
 
-  The :mod:`urlparse` module also supports IPv6 literal addresses as defined by
+  The :mod:`urlparse <urllib.parse>` module also supports IPv6 literal addresses as defined by
   :rfc:`2732` (contributed by Senthil Kumaran; :issue:`2987`).
 
   .. doctest::
@@ -1689,18 +1691,18 @@ changes, or look through the Subversion logs for all the details.
   (Originally implemented in Python 3.x by Raymond Hettinger, and backported
   to 2.7 by Michael Foord.)
 
-* The ElementTree library, :mod:`xml.etree`, no longer escapes
+* The :mod:`xml.etree.ElementTree` library, no longer escapes
   ampersands and angle brackets when outputting an XML processing
   instruction (which looks like ``<?xml-stylesheet href="#style1"?>``)
   or comment (which looks like ``<!-- comment -->``).
   (Patch by Neil Muller; :issue:`2746`.)
 
-* The XML-RPC client and server, provided by the :mod:`xmlrpclib` and
-  :mod:`SimpleXMLRPCServer` modules, have improved performance by
+* The XML-RPC client and server, provided by the :mod:`xmlrpclib <xmlrpc.client>` and
+  :mod:`SimpleXMLRPCServer <xmlrpc.server>` modules, have improved performance by
   supporting HTTP/1.1 keep-alive and by optionally using gzip encoding
   to compress the XML being exchanged.  The gzip compression is
-  controlled by the :attr:`encode_threshold` attribute of
-  :class:`SimpleXMLRPCRequestHandler`, which contains a size in bytes;
+  controlled by the :attr:`!encode_threshold` attribute of
+  :class:`~xmlrpc.server.SimpleXMLRPCRequestHandler`, which contains a size in bytes;
   responses larger than this will be compressed.
   (Contributed by Kristján Valur Jónsson; :issue:`6267`.)
 
@@ -1711,7 +1713,8 @@ changes, or look through the Subversion logs for all the details.
   :mod:`zipfile` now also supports archiving empty directories and
   extracts them correctly.  (Fixed by Kuba Wieczorek; :issue:`4710`.)
   Reading files out of an archive is faster, and interleaving
-  :meth:`~zipfile.ZipFile.read` and :meth:`~zipfile.ZipFile.readline` now works correctly.
+  :meth:`read() <io.BufferedIOBase.read>` and
+  :meth:`readline() <io.IOBase.readline>` now works correctly.
   (Contributed by Nir Aides; :issue:`7610`.)
 
   The :func:`~zipfile.is_zipfile` function now
@@ -1735,7 +1738,7 @@ New module: importlib
 
 Python 3.1 includes the :mod:`importlib` package, a re-implementation
 of the logic underlying Python's :keyword:`import` statement.
-:mod:`importlib` is useful for implementors of Python interpreters and
+:mod:`importlib` is useful for implementers of Python interpreters and
 to users who wish to write new importers that can participate in the
 import process.  Python 2.7 doesn't contain the complete
 :mod:`importlib` package, but instead has a tiny subset that contains
@@ -1805,14 +1808,14 @@ closely resemble the native platform's widgets.  This widget
 set was originally called Tile, but was renamed to Ttk (for "themed Tk")
 on being added to Tcl/Tck release 8.5.
 
-To learn more, read the :mod:`ttk` module documentation.  You may also
+To learn more, read the :mod:`~tkinter.ttk` module documentation.  You may also
 wish to read the Tcl/Tk manual page describing the
 Ttk theme engine, available at
-https://www.tcl.tk/man/tcl8.5/TkCmd/ttk_intro.htm. Some
+https://www.tcl.tk/man/tcl8.5/TkCmd/ttk_intro.html. Some
 screenshots of the Python/Ttk code in use are at
 https://code.google.com/archive/p/python-ttk/wikis/Screenshots.wiki.
 
-The :mod:`ttk` module was written by Guilherme Polo and added in
+The :mod:`tkinter.ttk` module was written by Guilherme Polo and added in
 :issue:`2983`.  An alternate version called ``Tile.py``, written by
 Martin Franklin and maintained by Kevin Walzer, was proposed for
 inclusion in :issue:`2618`, but the authors argued that Guilherme
@@ -1828,8 +1831,7 @@ The :mod:`unittest` module was greatly enhanced; many
 new features were added.  Most of these features were implemented
 by Michael Foord, unless otherwise noted.  The enhanced version of
 the module is downloadable separately for use with Python versions 2.4 to 2.6,
-packaged as the :mod:`unittest2` package, from
-https://pypi.org/project/unittest2.
+packaged as the :mod:`!unittest2` package, from :pypi:`unittest2`.
 
 When used from the command line, the module can automatically discover
 tests.  It's not as fancy as `py.test <https://pytest.org>`__ or
@@ -1936,19 +1938,20 @@ GvR worked on merging them into Python's version of :mod:`unittest`.
   differences in the two strings.  This comparison is now used by
   default when Unicode strings are compared with :meth:`~unittest.TestCase.assertEqual`.
 
-* :meth:`~unittest.TestCase.assertRegexpMatches` and
-  :meth:`~unittest.TestCase.assertNotRegexpMatches` checks whether the
+* :meth:`assertRegexpMatches() <unittest.TestCase.assertRegex>` and
+  :meth:`assertNotRegexpMatches() <unittest.TestCase.assertNotRegex>` checks whether the
   first argument is a string matching or not matching the regular
   expression provided as the second argument (:issue:`8038`).
 
-* :meth:`~unittest.TestCase.assertRaisesRegexp` checks whether a particular exception
+* :meth:`assertRaisesRegexp() <unittest.TestCase.assertRaisesRegex>` checks
+  whether a particular exception
   is raised, and then also checks that the string representation of
   the exception matches the provided regular expression.
 
 * :meth:`~unittest.TestCase.assertIn` and :meth:`~unittest.TestCase.assertNotIn`
   tests whether *first* is or is not in  *second*.
 
-* :meth:`~unittest.TestCase.assertItemsEqual` tests whether two provided sequences
+* :meth:`assertItemsEqual() <unittest.TestCase.assertCountEqual>` tests whether two provided sequences
   contain the same elements.
 
 * :meth:`~unittest.TestCase.assertSetEqual` compares whether two sets are equal, and
@@ -1964,7 +1967,7 @@ GvR worked on merging them into Python's version of :mod:`unittest`.
 
 * :meth:`~unittest.TestCase.assertDictEqual` compares two dictionaries and reports the
   differences; it's now used by default when you compare two dictionaries
-  using :meth:`~unittest.TestCase.assertEqual`.  :meth:`~unittest.TestCase.assertDictContainsSubset` checks whether
+  using :meth:`~unittest.TestCase.assertEqual`.  :meth:`!assertDictContainsSubset` checks whether
   all of the key/value pairs in *first* are found in *second*.
 
 * :meth:`~unittest.TestCase.assertAlmostEqual` and :meth:`~unittest.TestCase.assertNotAlmostEqual` test
@@ -2021,18 +2024,19 @@ version 1.3.  Some of the new features are:
     p = ET.XMLParser(encoding='utf-8')
     t = ET.XML("""<root/>""", parser=p)
 
-  Errors in parsing XML now raise a :exc:`ParseError` exception, whose
-  instances have a :attr:`position` attribute
+  Errors in parsing XML now raise a :exc:`~xml.etree.ElementTree.ParseError` exception, whose
+  instances have a :attr:`!position` attribute
   containing a (*line*, *column*) tuple giving the location of the problem.
 
 * ElementTree's code for converting trees to a string has been
   significantly reworked, making it roughly twice as fast in many
   cases.  The :meth:`ElementTree.write() <xml.etree.ElementTree.ElementTree.write>`
-  and :meth:`Element.write` methods now have a *method* parameter that can be
+  and :meth:`!Element.write` methods now have a *method* parameter that can be
   "xml" (the default), "html", or "text".  HTML mode will output empty
   elements as ``<empty></empty>`` instead of ``<empty/>``, and text
   mode will skip over elements and only output the text chunks.  If
-  you set the :attr:`tag` attribute of an element to ``None`` but
+  you set the :attr:`~xml.etree.ElementTree.Element.tag` attribute of an
+  element to ``None`` but
   leave its children in place, the element will be omitted when the
   tree is written out, so you don't need to do more extensive rearrangement
   to remove a single element.
@@ -2040,7 +2044,7 @@ version 1.3.  Some of the new features are:
   Namespace handling has also been improved.  All ``xmlns:<whatever>``
   declarations are now output on the root element, not scattered throughout
   the resulting XML.  You can set the default namespace for a tree
-  by setting the :attr:`default_namespace` attribute and can
+  by setting the :attr:`!default_namespace` attribute and can
   register new prefixes with :meth:`~xml.etree.ElementTree.register_namespace`.  In XML mode,
   you can use the true/false *xml_declaration* parameter to suppress the
   XML declaration.
@@ -2062,14 +2066,14 @@ version 1.3.  Some of the new features are:
     # Outputs <root><item>1</item>...</root>
     print ET.tostring(new)
 
-* New :class:`Element` method:
+* New :class:`~xml.etree.ElementTree.Element` method:
   :meth:`~xml.etree.ElementTree.Element.iter` yields the children of the
   element as a generator.  It's also possible to write ``for child in
   elem:`` to loop over an element's children.  The existing method
-  :meth:`getiterator` is now deprecated, as is :meth:`getchildren`
+  :meth:`!getiterator` is now deprecated, as is :meth:`!getchildren`
   which constructs and returns a list of children.
 
-* New :class:`Element` method:
+* New :class:`~xml.etree.ElementTree.Element` method:
   :meth:`~xml.etree.ElementTree.Element.itertext` yields all chunks of
   text that are descendants of the element.  For example::
 
@@ -2104,7 +2108,7 @@ Changes to Python's build process and to the C API include:
 
 * The latest release of the GNU Debugger, GDB 7, can be `scripted
   using Python
-  <https://sourceware.org/gdb/current/onlinedocs/gdb/Python.html>`__.
+  <https://web.archive.org/web/20110715084810/http://sourceware.org/gdb/current/onlinedocs/gdb/Python.html>`__.
   When you begin debugging an executable program P, GDB will look for
   a file named ``P-gdb.py`` and automatically read it.  Dave Malcolm
   contributed a :file:`python-gdb.py` that adds a number of
@@ -2128,7 +2132,7 @@ Changes to Python's build process and to the C API include:
   only the filename, function name, and first line number are required.
   This is useful for extension modules that are attempting to
   construct a more useful traceback stack.  Previously such
-  extensions needed to call :c:func:`PyCode_New`, which had many
+  extensions needed to call :c:func:`!PyCode_New`, which had many
   more arguments.  (Added by Jeffrey Yasskin.)
 
 * New function: :c:func:`PyErr_NewExceptionWithDoc` creates a new
@@ -2152,16 +2156,16 @@ Changes to Python's build process and to the C API include:
 
 * New function: stemming from the rewrite of string-to-float conversion,
   a new :c:func:`PyOS_string_to_double` function was added.  The old
-  :c:func:`PyOS_ascii_strtod` and :c:func:`PyOS_ascii_atof` functions
+  :c:func:`!PyOS_ascii_strtod` and :c:func:`!PyOS_ascii_atof` functions
   are now deprecated.
 
-* New function: :c:func:`PySys_SetArgvEx` sets the value of
+* New function: :c:func:`!PySys_SetArgvEx` sets the value of
   ``sys.argv`` and can optionally update ``sys.path`` to include the
   directory containing the script named by ``sys.argv[0]`` depending
   on the value of an *updatepath* parameter.
 
   This function was added to close a security hole for applications
-  that embed Python.  The old function, :c:func:`PySys_SetArgv`, would
+  that embed Python.  The old function, :c:func:`!PySys_SetArgv`, would
   always update ``sys.path``, and sometimes it would add the current
   directory.  This meant that, if you ran an application embedding
   Python in a directory controlled by someone else, attackers could
@@ -2169,12 +2173,11 @@ Changes to Python's build process and to the C API include:
   :file:`os.py`) that your application would then import and run.
 
   If you maintain a C/C++ application that embeds Python, check
-  whether you're calling :c:func:`PySys_SetArgv` and carefully consider
-  whether the application should be using :c:func:`PySys_SetArgvEx`
+  whether you're calling :c:func:`!PySys_SetArgv` and carefully consider
+  whether the application should be using :c:func:`!PySys_SetArgvEx`
   with *updatepath* set to false.
 
-  Security issue reported as `CVE-2008-5983
-  <https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2008-5983>`_;
+  Security issue reported as :cve:`2008-5983`;
   discussed in :issue:`5753`, and fixed by Antoine Pitrou.
 
 * New macros: the Python header files now define the following macros:
@@ -2193,15 +2196,13 @@ Changes to Python's build process and to the C API include:
   locale-independent way.  (Added by Eric Smith;
   :issue:`5793`.)
 
-  .. XXX these macros don't seem to be described in the c-api docs.
-
-* Removed function: :c:macro:`PyEval_CallObject` is now only available
+* Removed function: :c:func:`!PyEval_CallObject` is now only available
   as a macro.  A function version was being kept around to preserve
   ABI linking compatibility, but that was in 1997; it can certainly be
   deleted by now.  (Removed by Antoine Pitrou; :issue:`8276`.)
 
-* New format codes: the :c:func:`PyFormat_FromString`,
-  :c:func:`PyFormat_FromStringV`, and :c:func:`PyErr_Format` functions now
+* New format codes: the :c:func:`!PyString_FromFormat`,
+  :c:func:`!PyString_FromFormatV`, and :c:func:`PyErr_Format` functions now
   accept ``%lld`` and ``%llu`` format codes for displaying
   C's :c:expr:`long long` types.
   (Contributed by Mark Dickinson; :issue:`7228`.)
@@ -2225,13 +2226,13 @@ Changes to Python's build process and to the C API include:
   (Fixed by Thomas Wouters; :issue:`1590864`.)
 
 * The :c:func:`Py_Finalize` function now calls the internal
-  :func:`threading._shutdown` function; this prevents some exceptions from
+  :func:`!threading._shutdown` function; this prevents some exceptions from
   being raised when an interpreter shuts down.
   (Patch by Adam Olsen; :issue:`1722344`.)
 
 * When using the :c:type:`PyMemberDef` structure to define attributes
   of a type, Python will no longer let you try to delete or set a
-  :const:`T_STRING_INPLACE` attribute.
+  :c:macro:`!T_STRING_INPLACE` attribute.
 
   .. rev 79644
 
@@ -2240,7 +2241,7 @@ Changes to Python's build process and to the C API include:
   Heller; :issue:`3102`.)
 
 * New configure option: the :option:`!--with-system-expat` switch allows
-  building the :mod:`pyexpat` module to use the system Expat library.
+  building the :mod:`pyexpat <xml.parsers.expat>` module to use the system Expat library.
   (Contributed by Arfrever Frehtes Taifersar Arahesis; :issue:`7609`.)
 
 * New configure option: the
@@ -2256,12 +2257,12 @@ Changes to Python's build process and to the C API include:
   :issue:`6491`.)
 
 * The :program:`configure` script now checks for floating-point rounding bugs
-  on certain 32-bit Intel chips and defines a :c:macro:`X87_DOUBLE_ROUNDING`
+  on certain 32-bit Intel chips and defines a :c:macro:`!X87_DOUBLE_ROUNDING`
   preprocessor definition.  No code currently uses this definition,
   but it's available if anyone wishes to use it.
   (Added by Mark Dickinson; :issue:`2937`.)
 
-  :program:`configure` also now sets a :envvar:`LDCXXSHARED` Makefile
+  :program:`configure` also now sets a :envvar:`!LDCXXSHARED` Makefile
   variable for supporting C++ linking.  (Contributed by Arfrever
   Frehtes Taifersar Arahesis; :issue:`1222585`.)
 
@@ -2287,10 +2288,10 @@ object, and then get the ``void *`` pointer, which will usually point
 to an array of pointers to the module's various API functions.
 
 There is an existing data type already used for this,
-:c:type:`PyCObject`, but it doesn't provide type safety.  Evil code
+:c:type:`!PyCObject`, but it doesn't provide type safety.  Evil code
 written in pure Python could cause a segmentation fault by taking a
-:c:type:`PyCObject` from module A and somehow substituting it for the
-:c:type:`PyCObject` in module B.   Capsules know their own name,
+:c:type:`!PyCObject` from module A and somehow substituting it for the
+:c:type:`!PyCObject` in module B.   Capsules know their own name,
 and getting the pointer requires providing the name:
 
 .. code-block:: c
@@ -2310,10 +2311,10 @@ detect the mismatched name and return false.  Refer to
 :ref:`using-capsules` for more information on using these objects.
 
 Python 2.7 now uses capsules internally to provide various
-extension-module APIs, but the :c:func:`PyCObject_AsVoidPtr` was
+extension-module APIs, but the :c:func:`!PyCObject_AsVoidPtr` was
 modified to handle capsules, preserving compile-time compatibility
-with the :c:type:`CObject` interface.  Use of
-:c:func:`PyCObject_AsVoidPtr` will signal a
+with the :c:type:`!PyCObject` interface.  Use of
+:c:func:`!PyCObject_AsVoidPtr` will signal a
 :exc:`PendingDeprecationWarning`, which is silent by default.
 
 Implemented in Python 3.1 and backported to 2.7 by Larry Hastings;
@@ -2327,34 +2328,34 @@ Port-Specific Changes: Windows
 
 * The :mod:`msvcrt` module now contains some constants from
   the :file:`crtassem.h` header file:
-  :data:`CRT_ASSEMBLY_VERSION`,
-  :data:`VC_ASSEMBLY_PUBLICKEYTOKEN`,
-  and :data:`LIBRARIES_ASSEMBLY_NAME_PREFIX`.
+  :data:`~msvcrt.CRT_ASSEMBLY_VERSION`,
+  :data:`~msvcrt.VC_ASSEMBLY_PUBLICKEYTOKEN`,
+  and :data:`~msvcrt.LIBRARIES_ASSEMBLY_NAME_PREFIX`.
   (Contributed by David Cournapeau; :issue:`4365`.)
 
-* The :mod:`_winreg` module for accessing the registry now implements
-  the :func:`~_winreg.CreateKeyEx` and :func:`~_winreg.DeleteKeyEx`
+* The :mod:`_winreg <winreg>` module for accessing the registry now implements
+  the :func:`~winreg.CreateKeyEx` and :func:`~winreg.DeleteKeyEx`
   functions, extended versions of previously supported functions that
-  take several extra arguments.  The :func:`~_winreg.DisableReflectionKey`,
-  :func:`~_winreg.EnableReflectionKey`, and :func:`~_winreg.QueryReflectionKey`
+  take several extra arguments.  The :func:`~winreg.DisableReflectionKey`,
+  :func:`~winreg.EnableReflectionKey`, and :func:`~winreg.QueryReflectionKey`
   were also tested and documented.
   (Implemented by Brian Curtin: :issue:`7347`.)
 
-* The new :c:func:`_beginthreadex` API is used to start threads, and
+* The new :c:func:`!_beginthreadex` API is used to start threads, and
   the native thread-local storage functions are now used.
   (Contributed by Kristján Valur Jónsson; :issue:`3582`.)
 
 * The :func:`os.kill` function now works on Windows.  The signal value
-  can be the constants :const:`CTRL_C_EVENT`,
-  :const:`CTRL_BREAK_EVENT`, or any integer.  The first two constants
+  can be the constants :const:`~signal.CTRL_C_EVENT`,
+  :const:`~signal.CTRL_BREAK_EVENT`, or any integer.  The first two constants
   will send :kbd:`Control-C` and :kbd:`Control-Break` keystroke events to
-  subprocesses; any other value will use the :c:func:`TerminateProcess`
+  subprocesses; any other value will use the :c:func:`!TerminateProcess`
   API.  (Contributed by Miki Tebeka; :issue:`1220212`.)
 
 * The :func:`os.listdir` function now correctly fails
   for an empty path.  (Fixed by Hirokazu Yamamoto; :issue:`5913`.)
 
-* The :mod:`mimelib` module will now read the MIME database from
+* The :mod:`mimetypes` module will now read the MIME database from
   the Windows registry when initializing.
   (Patch by Gabriel Genellina; :issue:`4969`.)
 
@@ -2368,7 +2369,7 @@ Port-Specific Changes: Mac OS X
   installation and a user-installed copy of the same version.
   (Changed by Ronald Oussoren; :issue:`4865`.)
 
-   .. versionchanged:: 2.7.13
+  .. versionchanged:: 2.7.13
 
      As of 2.7.13, this change was removed.
      ``/Library/Python/2.7/site-packages``, the site-packages directory
@@ -2383,8 +2384,8 @@ Port-Specific Changes: Mac OS X
 Port-Specific Changes: FreeBSD
 -----------------------------------
 
-* FreeBSD 7.1's :const:`SO_SETFIB` constant, used with
-  :func:`~socket.getsockopt`/:func:`~socket.setsockopt` to select an
+* FreeBSD 7.1's :const:`!SO_SETFIB` constant, used with the :func:`~socket.socket` methods
+  :func:`~socket.socket.getsockopt`/:func:`~socket.socket.setsockopt` to select an
   alternate routing table, is now available in the :mod:`socket`
   module.  (Added by Kyle VanderBeek; :issue:`8235`.)
 
@@ -2404,7 +2405,7 @@ Other Changes and Fixes
   :issue:`5464`.)
 
 * When importing a module from a :file:`.pyc` or :file:`.pyo` file
-  with an existing :file:`.py` counterpart, the :attr:`co_filename`
+  with an existing :file:`.py` counterpart, the :attr:`~codeobject.co_filename`
   attributes of the resulting code objects are overwritten when the
   original filename is obsolete.  This can happen if the file has been
   renamed, moved, or is accessed through different paths.  (Patch by
@@ -2439,7 +2440,7 @@ This section lists previously described changes and other bugfixes
 that may require changes to your code:
 
 * The :func:`range` function processes its arguments more
-  consistently; it will now call :meth:`__int__` on non-float,
+  consistently; it will now call :meth:`~object.__int__` on non-float,
   non-integer arguments that are supplied to it.  (Fixed by Alexander
   Belopolsky; :issue:`1533`.)
 
@@ -2449,13 +2450,13 @@ that may require changes to your code:
   (Changed by Eric Smith; :issue:`5920`.)
 
 * Because of an optimization for the :keyword:`with` statement, the special
-  methods :meth:`__enter__` and :meth:`__exit__` must belong to the object's
+  methods :meth:`~object.__enter__` and :meth:`~object.__exit__` must belong to the object's
   type, and cannot be directly attached to the object's instance.  This
   affects new-style classes (derived from :class:`object`) and C extension
   types.  (:issue:`6101`.)
 
 * Due to a bug in Python 2.6, the *exc_value* parameter to
-  :meth:`__exit__` methods was often the string representation of the
+  :meth:`~object.__exit__` methods was often the string representation of the
   exception, not an instance.  This was fixed in 2.7, so *exc_value*
   will be an instance as expected.  (Fixed by Florent Xicluna;
   :issue:`7853`.)
@@ -2484,13 +2485,13 @@ In the standard library:
   (or ``NaN``) are now hashable.  (Fixed by Mark Dickinson;
   :issue:`7279`.)
 
-* The ElementTree library, :mod:`xml.etree`, no longer escapes
+* The :mod:`xml.etree.ElementTree` library no longer escapes
   ampersands and angle brackets when outputting an XML processing
   instruction (which looks like ``<?xml-stylesheet href="#style1"?>``)
   or comment (which looks like ``<!-- comment -->``).
   (Patch by Neil Muller; :issue:`2746`.)
 
-* The :meth:`~StringIO.StringIO.readline` method of :class:`~StringIO.StringIO` objects now does
+* The :meth:`!readline` method of :class:`~io.StringIO` objects now does
   nothing when a negative length is requested, as other file-like
   objects do.  (:issue:`7348`).
 
@@ -2506,7 +2507,7 @@ In the standard library:
   which raises an exception if there's an error.
   (Changed by Lars Gustäbel; :issue:`7357`.)
 
-* The :mod:`urlparse` module's :func:`~urlparse.urlsplit` now handles
+* The :mod:`urlparse <urllib.parse>` module's :func:`~urllib.parse.urlsplit` now handles
   unknown URL schemes in a fashion compliant with :rfc:`3986`: if the
   URL is of the form ``"<something>://..."``, the text before the
   ``://`` is treated as the scheme, even if it's a made-up scheme that
@@ -2540,16 +2541,16 @@ For C extensions:
   instead of triggering a :exc:`DeprecationWarning` (:issue:`5080`).
 
 * Use the new :c:func:`PyOS_string_to_double` function instead of the old
-  :c:func:`PyOS_ascii_strtod` and :c:func:`PyOS_ascii_atof` functions,
+  :c:func:`!PyOS_ascii_strtod` and :c:func:`!PyOS_ascii_atof` functions,
   which are now deprecated.
 
 For applications that embed Python:
 
-* The :c:func:`PySys_SetArgvEx` function was added, letting
+* The :c:func:`!PySys_SetArgvEx` function was added, letting
   applications close a security hole when the existing
-  :c:func:`PySys_SetArgv` function was used.  Check whether you're
-  calling :c:func:`PySys_SetArgv` and carefully consider whether the
-  application should be using :c:func:`PySys_SetArgvEx` with
+  :c:func:`!PySys_SetArgv` function was used.  Check whether you're
+  calling :c:func:`!PySys_SetArgv` and carefully consider whether the
+  application should be using :c:func:`!PySys_SetArgvEx` with
   *updatepath* set to false.
 
 .. ======================================================================
@@ -2575,11 +2576,11 @@ Two new environment variables for debug mode
 --------------------------------------------
 
 In debug mode, the ``[xxx refs]`` statistic is not written by default, the
-:envvar:`PYTHONSHOWREFCOUNT` environment variable now must also be set.
+:envvar:`!PYTHONSHOWREFCOUNT` environment variable now must also be set.
 (Contributed by Victor Stinner; :issue:`31733`.)
 
 When Python is compiled with ``COUNT_ALLOC`` defined, allocation counts are no
-longer dumped by default anymore: the :envvar:`PYTHONSHOWALLOCCOUNT` environment
+longer dumped by default anymore: the :envvar:`!PYTHONSHOWALLOCCOUNT` environment
 variable must now also be set. Moreover, allocation counts are now dumped into
 stderr, rather than stdout. (Contributed by Victor Stinner; :issue:`31692`.)
 
@@ -2621,7 +2622,7 @@ with the first of those changes appearing in the Python 2.7.7 release.
   2 applications. (Contributed by Alex Gaynor; :issue:`21304`.)
 
 * OpenSSL 1.0.1h was upgraded for the official Windows installers published on
-  python.org. (contributed by Zachary Ware in :issue:`21671` for CVE-2014-0224)
+  python.org. (Contributed by Zachary Ware in :issue:`21671` for :cve:`2014-0224`.)
 
 :pep:`466` related features added in Python 2.7.9:
 
@@ -2677,13 +2678,11 @@ automatic ``PATH`` modifications to have ``pip`` available from the command
 line by default, otherwise it can still be accessed through the Python
 launcher for Windows as ``py -m pip``.
 
-As `discussed in the PEP`__, platform packagers may choose not to install
+As :pep:`discussed in the PEP <0477#disabling-ensurepip-by-downstream-distributors>`,
+platform packagers may choose not to install
 these commands by default, as long as, when invoked, they provide clear and
 simple directions on how to install them on that platform (usually using
 the system package manager).
-
-__ https://peps.python.org/pep-0477/#disabling-ensurepip-by-downstream-distributors
-
 
 Documentation Changes
 ~~~~~~~~~~~~~~~~~~~~~
@@ -2709,8 +2708,9 @@ and :ref:`setuptools-index`.
 PEP 476: Enabling certificate verification by default for stdlib http clients
 -----------------------------------------------------------------------------
 
-:pep:`476` updated :mod:`httplib` and modules which use it, such as
-:mod:`urllib2` and :mod:`xmlrpclib`, to now verify that the server
+:pep:`476` updated :mod:`httplib <http>` and modules which use it, such as
+:mod:`urllib2 <urllib.request>` and :mod:`xmlrpclib <xmlrpc.client>`, to now
+verify that the server
 presents a certificate which is signed by a Certificate Authority in the
 platform trust store and whose hostname matches the hostname being requested
 by default, significantly improving security for many applications. This
@@ -2751,7 +2751,7 @@ entire Python process back to the default permissive behaviour of Python 2.7.8
 and earlier.
 
 For cases where the connection establishment code can't be modified, but the
-overall application can be, the new :func:`ssl._https_verify_certificates`
+overall application can be, the new :func:`!ssl._https_verify_certificates`
 function can be used to adjust the default behaviour at runtime.
 
 

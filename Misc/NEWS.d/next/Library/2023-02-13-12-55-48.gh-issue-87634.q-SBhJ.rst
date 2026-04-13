@@ -1,1 +1,0 @@
-Remove locking behavior from :func:`functools.cached_property`.

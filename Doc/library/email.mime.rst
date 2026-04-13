@@ -1,5 +1,5 @@
-:mod:`email.mime`: Creating email and MIME objects from scratch
----------------------------------------------------------------
+:mod:`!email.mime`: Creating email and MIME objects from scratch
+----------------------------------------------------------------
 
 .. module:: email.mime
    :synopsis: Build MIME messages.
@@ -28,7 +28,7 @@ make things easier.
 
 Here are the classes:
 
-.. currentmodule:: email.mime.base
+.. module:: email.mime.base
 
 .. class:: MIMEBase(_maintype, _subtype, *, policy=compat32, **_params)
 
@@ -58,7 +58,7 @@ Here are the classes:
       Added *policy* keyword-only parameter.
 
 
-.. currentmodule:: email.mime.nonmultipart
+.. module:: email.mime.nonmultipart
 
 .. class:: MIMENonMultipart()
 
@@ -72,7 +72,7 @@ Here are the classes:
    is called, a :exc:`~email.errors.MultipartConversionError` exception is raised.
 
 
-.. currentmodule:: email.mime.multipart
+.. module:: email.mime.multipart
 
 .. class:: MIMEMultipart(_subtype='mixed', boundary=None, _subparts=None, \
                          *, policy=compat32, **_params)
@@ -104,7 +104,7 @@ Here are the classes:
    .. versionchanged:: 3.6
       Added *policy* keyword-only parameter.
 
-.. currentmodule:: email.mime.application
+.. module:: email.mime.application
 
 .. class:: MIMEApplication(_data, _subtype='octet-stream', \
                            _encoder=email.encoders.encode_base64, \
@@ -135,7 +135,7 @@ Here are the classes:
    .. versionchanged:: 3.6
       Added *policy* keyword-only parameter.
 
-.. currentmodule:: email.mime.audio
+.. module:: email.mime.audio
 
 .. class:: MIMEAudio(_audiodata, _subtype=None, \
                      _encoder=email.encoders.encode_base64, \
@@ -169,7 +169,7 @@ Here are the classes:
    .. versionchanged:: 3.6
       Added *policy* keyword-only parameter.
 
-.. currentmodule:: email.mime.image
+.. module:: email.mime.image
 
 .. class:: MIMEImage(_imagedata, _subtype=None, \
                      _encoder=email.encoders.encode_base64, \
@@ -205,7 +205,7 @@ Here are the classes:
    .. versionchanged:: 3.6
       Added *policy* keyword-only parameter.
 
-.. currentmodule:: email.mime.message
+.. module:: email.mime.message
 
 .. class:: MIMEMessage(_msg, _subtype='rfc822', *, policy=compat32)
 
@@ -225,7 +225,7 @@ Here are the classes:
    .. versionchanged:: 3.6
       Added *policy* keyword-only parameter.
 
-.. currentmodule:: email.mime.text
+.. module:: email.mime.text
 
 .. class:: MIMEText(_text, _subtype='plain', _charset=None, *, policy=compat32)
 
