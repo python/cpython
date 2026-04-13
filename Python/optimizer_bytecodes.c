@@ -1273,6 +1273,20 @@ dummy_func(void) {
         }
     }
 
+    op(_CHECK_IS_NOT_PY_CALLABLE_EX, (func_st, unused, unused, unused -- func_st, unused, unused, unused)) {
+        PyTypeObject *type = sym_get_type(func_st);
+        if (type && type != &PyFunction_Type) {
+            ADD_OP(_NOP, 0, 0);
+        }
+    }
+
+    op(_CHECK_IS_NOT_PY_CALLABLE_KW, (callable, unused, unused[oparg], unused -- callable, unused, unused[oparg], unused)) {
+        PyTypeObject *type = sym_get_type(callable);
+        if (type && type != &PyFunction_Type && type != &PyMethod_Type) {
+            ADD_OP(_NOP, 0, 0);
+        }
+    }
+
     op(_PUSH_FRAME, (new_frame -- )) {
         SYNC_SP();
         if (!CURRENT_FRAME_IS_INIT_SHIM()) {
