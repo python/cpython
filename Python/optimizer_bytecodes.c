@@ -2273,6 +2273,10 @@ dummy_func(void) {
         sym_set_recorded_value(func, (PyObject *)this_instr->operand0);
     }
 
+    op(_RECORD_CALLABLE_KW, (func, self, args[oparg], kwnames -- func, self, args[oparg], kwnames)) {
+        sym_set_recorded_value(func, (PyObject *)this_instr->operand0);
+    }
+
     op(_RECORD_BOUND_METHOD, (callable, self, args[oparg] -- callable, self, args[oparg])) {
         sym_set_recorded_value(callable, (PyObject *)this_instr->operand0);
     }

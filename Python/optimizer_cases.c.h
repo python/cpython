@@ -5260,6 +5260,9 @@
         }
 
         case _RECORD_CALLABLE_KW: {
+            JitOptRef func;
+            func = stack_pointer[-3 - oparg];
+            sym_set_recorded_value(func, (PyObject *)this_instr->operand0);
             break;
         }
 
