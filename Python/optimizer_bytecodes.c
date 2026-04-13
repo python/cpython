@@ -1057,6 +1057,29 @@ dummy_func(void) {
         sym_set_type(callable, &PyMethod_Type);
     }
 
+    op(_CHECK_METHOD_VERSION_KW, (func_version/2, callable, null, unused[oparg], unused -- callable, null, unused[oparg], unused)) {
+        if (sym_is_const(ctx, callable) && sym_matches_type(callable, &PyMethod_Type)) {
+            PyMethodObject *method = (PyMethodObject *)sym_get_const(ctx, callable);
+            assert(PyMethod_Check(method));
+            ADD_OP(_CHECK_FUNCTION_VERSION_INLINE, 0, func_version);
+            uop_buffer_last(&ctx->out_buffer)->operand1 = (uintptr_t)method->im_func;
+        }
+        else {
+            // Guarding on the bound method, safe to promote.
+            PyObject *bound_method = sym_get_probable_value(callable);
+            if (bound_method != NULL && Py_TYPE(bound_method) == &PyMethod_Type) {
+                PyMethodObject *method = (PyMethodObject *)bound_method;
+                PyObject *func = method->im_func;
+                if (PyFunction_Check(func) &&
+                    ((PyFunctionObject *)func)->func_version == func_version) {
+                    _Py_BloomFilter_Add(dependencies, func);
+                    sym_set_const(callable, bound_method);
+                }
+            }
+        }
+        sym_set_type(callable, &PyMethod_Type);
+    }
+
     op(_CHECK_FUNCTION_EXACT_ARGS, (callable, self_or_null, unused[oparg] -- callable, self_or_null, unused[oparg])) {
         assert(sym_matches_type(callable, &PyFunction_Type));
         if (sym_is_const(ctx, callable)) {
