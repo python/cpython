@@ -1,11 +1,8 @@
-Fix refcount leak in weakref proxy operations:
-When a weakref proxy was used in binary, ternary, or rich comparison operations
-and the second argument turned out to be a dead proxy, the first argument's
-reference count was already incremented by the unwrap step but never released,
- causing a memory leak.This patch replaces the old UNWRAP macro with
- a proper inline function _proxy_unwrap() that tracks whether each
- argument was incref'd, and introduces cleanup paths (goto clean_up)
- that correctly decref any already-acquired references before
- returning NULL on failure. Also added reference cleanup in unary and compare
- operations.
- 
+Fix refcount leak in weakref proxy operations: When a weakref proxy was used in binary,
+ternary, or rich comparison operations and the second argument turned out to be a dead
+proxy, the first argument's reference count was already incremented by the unwrap step
+but never released, causing a memory leak.This patch replaces the old UNWRAP macro with
+a proper inline function _proxy_unwrap() that tracks whether each argument was incref'd,
+and introduces cleanup paths (goto clean_up) that correctly decref any already-acquired
+references before returning NULL on failure. Also added reference cleanup in unary and
+compare operations.
