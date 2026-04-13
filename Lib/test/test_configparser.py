@@ -1739,7 +1739,7 @@ class ExceptionPicklingTestCase(unittest.TestCase):
             p.read_string(s)
         errlines = cm.exception.message.splitlines()
         self.assertEqual(len(errlines), n + 1)
-        self.assertStartsWith(errlines[0], "Source contains parsing errors: ")
+        self.assertTrue(errlines[0].startswith("Source contains parsing errors: "))
         self.assertEqual(errlines[42], f"\t[line {43:2d}]: {err_line!r}")
 
     def test_nosectionerror(self):
