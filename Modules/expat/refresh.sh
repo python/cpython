@@ -12,9 +12,9 @@ fi
 
 # Update this when updating to a new version after verifying that the changes
 # the update brings in are good. These values are used for verifying the SBOM, too.
-expected_libexpat_tag="R_2_7_3"
-expected_libexpat_version="2.7.3"
-expected_libexpat_sha256="821ac9710d2c073eaf13e1b1895a9c9aa66c1157a99635c639fbff65cdbdd732"
+expected_libexpat_tag="R_2_7_5"
+expected_libexpat_version="2.7.5"
+expected_libexpat_sha256="9931f9860d18e6cf72d183eb8f309bfb96196c00e1d40caa978e95bc9aa978b6"
 
 expat_dir="$(realpath "$(dirname -- "${BASH_SOURCE[0]}")")"
 cd ${expat_dir}
@@ -24,6 +24,9 @@ curl --location "https://github.com/libexpat/libexpat/releases/download/${expect
 echo "${expected_libexpat_sha256} libexpat.tar.gz" | sha256sum --check
 
 # Step 2: Pull files from the libexpat distribution
+
+tar xzvf libexpat.tar.gz "expat-${expected_libexpat_version}/COPYING" --strip-components 2
+
 declare -a lib_files
 lib_files=(
   ascii.h
@@ -61,13 +64,16 @@ This may be due to source changes and will require updating this script" >&2
   exit 1
 fi
 
-echo "
+echo '
 Updated! next steps:
 - Verify all is okay:
     git diff
     git status
-- Regenerate the sbom file
+- Update the sbom file:
+    Under the package "SPDXRef-PACKAGE-expat", update the "checksumValue",
+    "downloadLocation", "referenceLocator", and "versionInfo" fields.
+- Regenerate the sbom file:
     make regen-sbom
-- Update warning count in Tools/build/.warningignore_macos
+- Update the warning count in Tools/build/.warningignore_macos:
     (use info from CI if not on a Mac)
-"
+'

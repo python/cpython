@@ -515,8 +515,12 @@ dbm__enter__(PyObject *self, PyObject *Py_UNUSED(dummy))
 static PyObject *
 dbm__exit__(PyObject *self, PyObject *Py_UNUSED(args))
 {
+    PyObject *result;
     dbmobject *dp = dbmobject_CAST(self);
-    return _dbm_dbm_close_impl(dp);
+    Py_BEGIN_CRITICAL_SECTION(self);
+    result = _dbm_dbm_close_impl(dp);
+    Py_END_CRITICAL_SECTION();
+    return result;
 }
 
 static PyMethodDef dbm_methods[] = {
@@ -670,6 +674,7 @@ _dbm_module_free(void *module)
 }
 
 static PyModuleDef_Slot _dbmmodule_slots[] = {
+    _Py_ABI_SLOT,
     {Py_mod_exec, _dbm_exec},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {Py_mod_gil, Py_MOD_GIL_NOT_USED},

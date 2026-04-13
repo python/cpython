@@ -207,7 +207,7 @@ Describing Warning Filters
 The warnings filter is initialized by :option:`-W` options passed to the Python
 interpreter command line and the :envvar:`PYTHONWARNINGS` environment variable.
 The interpreter saves the arguments for all supplied entries without
-interpretation in :data:`sys.warnoptions`; the :mod:`warnings` module parses these
+interpretation in :data:`sys.warnoptions`; the :mod:`!warnings` module parses these
 when it is first imported (invalid options are ignored, after printing a
 message to :data:`sys.stderr`).
 
@@ -487,7 +487,14 @@ Available Functions
    ignored.
 
    *module*, if supplied, should be the module name.
-   If no module is passed, the filename with ``.py`` stripped is used.
+   If no module is passed, the module regular expression in
+   :ref:`warnings filter <warning-filter>` will be tested against the module
+   names constructed from the path components starting from all parent
+   directories (with ``/__init__.py``, ``.py`` and, on Windows, ``.pyw``
+   stripped) and against the filename with ``.py`` stripped.
+   For example, when the filename is ``'/path/to/package/module.py'``, it will
+   be tested against  ``'path.to.package.module'``, ``'to.package.module'``
+   ``'package.module'``, ``'module'``, and ``'/path/to/package/module'``.
 
    *registry*, if supplied, should be the ``__warningregistry__`` dictionary
    of the module.
@@ -505,6 +512,10 @@ Available Functions
 
    .. versionchanged:: 3.6
       Add the *source* parameter.
+
+   .. versionchanged:: 3.15
+      If no module is passed, test the filter regular expression against
+      module names created from the path, not only the path itself.
 
 
 .. function:: showwarning(message, category, filename, lineno, file=None, line=None)
@@ -620,8 +631,8 @@ Available Context Managers
     :func:`showwarning`.
 
     The *module* argument takes a module that will be used instead of the
-    module returned when you import :mod:`warnings` whose filter will be
-    protected. This argument exists primarily for testing the :mod:`warnings`
+    module returned when you import :mod:`!warnings` whose filter will be
+    protected. This argument exists primarily for testing the :mod:`!warnings`
     module itself.
 
     If the *action* argument is not ``None``, the remaining arguments are
@@ -658,7 +669,7 @@ to true for free-threaded builds and false otherwise.
 
 If the :data:`~sys.flags.context_aware_warnings` flag is false, then
 :class:`catch_warnings` will modify the global attributes of the
-:mod:`warnings` module.  This is not safe if used within a concurrent program
+:mod:`!warnings` module.  This is not safe if used within a concurrent program
 (using multiple threads or using asyncio coroutines).  For example, if two
 or more threads use the :class:`catch_warnings` class at the same time, the
 behavior is undefined.
