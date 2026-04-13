@@ -1,0 +1,4 @@
+Fix a race condition in ``list.__lt__``, ``list.__le__``, ``list.__gt__``,
+and ``list.__ge__``. Previously, under concurrent list mutation, the items
+being compared could be replaced with other objects before the final comparison,
+causing the final comparison result to be incorrect.
