@@ -5253,6 +5253,51 @@ class TestUopsOptimization(unittest.TestCase):
         PYTHON_JIT="1", PYTHON_JIT_STRESS="1")
         self.assertEqual(result[0].rc, 0, result)
 
+    def test_call_kw(self):
+        def func(a):
+            return int(a) * 42
+
+        def testfunc(n):
+            x = 0
+            for _ in range(n):
+                x += func(a=1)
+            return x
+
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, 42 * TIER2_THRESHOLD)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertIn("_PUSH_FRAME", uops)
+        self.assertIn("_CHECK_FUNCTION_VERSION_KW", uops)
+        # Check the optimizer has optmized through the function call
+        # by promoting global `int` to a constant.
+        self.assertNotIn("_LOAD_GLOBAL_BUILTINS", uops)
+        self.assertIn("_CALL_BUILTIN_CLASS", uops)
+
+    def test_call_kw_bound_method(self):
+        class C:
+            def method(self, a, b):
+                return int(a) + int(b)
+
+        def testfunc(n):
+            obj = C()
+            x = 0
+            meth = obj.method
+            for _ in range(n):
+                x += meth(a=1, b=2)
+            return x
+
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, 3 * TIER2_THRESHOLD)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertIn("_PUSH_FRAME", uops)
+        self.assertIn("_CHECK_METHOD_VERSION_KW", uops)
+        # Check the optimizer has optmized through the function call
+        # by promoting global `int` to a constant.
+        self.assertNotIn("_LOAD_GLOBAL_BUILTINS", uops)
+        self.assertIn("_CALL_BUILTIN_CLASS", uops)
+
     def test_func_version_guarded_on_change(self):
         def testfunc(n):
             for i in range(n):
