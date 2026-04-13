@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+    <PropertyGroup>
+        <ProjectGuid>{10487945-15D1-4092-A214-338395C4116B}</ProjectGuid>
+        <OutputName>python</OutputName>
+        <OutputName Condition="$(Platform) == 'x86'">$(OutputName)x86</OutputName>
+        <OutputName Condition="$(Platform) == 'ARM'">$(OutputName)arm32</OutputName>
+        <OutputName Condition="$(BuildForDaily) == 'true'">$(OutputName)daily</OutputName>
+        <OutputSuffix></OutputSuffix>
+        <SupportSigning>false</SupportSigning>
+        <BuildForRelease Condition="$(BuildForRelease) == ''">true</BuildForRelease>
+    </PropertyGroup>
+
+    <Import Project="..\msi\msi.props" />
+
+    <PropertyGroup>
+        <Nuget Condition="$(Nuget) == ''">$(ExternalsDir)\windows-installer\nuget\nuget.exe</Nuget>
+        <NuspecVersion>$(MajorVersionNumber).$(MinorVersionNumber).$(MicroVersionNumber)</NuspecVersion>
+        <NuspecVersion Condition="$(ReleaseLevelName) != ''">$(NuspecVersion)-$(ReleaseLevelName)</NuspecVersion>
+        <NuspecVersion Condition="$(BuildForDaily) == 'true'">$(MajorVersionNumber).$(MinorVersionNumber).$(DailyBuildVersion)</NuspecVersion>
+        <SignOutput>false</SignOutput>
+        <TargetName>$(OutputName).$(NuspecVersion)</TargetName>
+        <TargetExt>.nupkg</TargetExt>
+        <IntermediateOutputPath>$(IntermediateOutputPath)\nuget_$(ArchName)\</IntermediateOutputPath>
+        
+        <CleanCommand>rmdir /q/s "$(IntermediateOutputPath.TrimEnd(`\`))"</CleanCommand>
+        
+        <PythonArguments>"$(PythonExe)" "$(PySourcePath)PC\layout"</PythonArguments>
+        <PythonArguments>$(PythonArguments) -b "$(BuildPath.TrimEnd(`\`))" -s "$(PySourcePath.TrimEnd(`\`))"</PythonArguments>
+        <PythonArguments>$(PythonArguments) -t "$(IntermediateOutputPath)obj"</PythonArguments>
+        <PythonArguments>$(PythonArguments) --copy "$(IntermediateOutputPath)pkg"</PythonArguments>
+        <PythonArguments>$(PythonArguments) --preset-nuget</PythonArguments>
+        
+        <PackageArguments Condition="$(Packages) != ''">"$(IntermediateOutputPath)pkg\pip.exe" -B -m pip install -U $(Packages)</PackageArguments>
+        
+        <NugetPackCommand>"$(Nuget)" pack "$(IntermediateOutputPath)pkg\python.nuspec" -BasePath "$(IntermediateOutputPath)pkg"</NugetPackCommand>
+        <NugetPackSymbolsCommand Condition="Exists('$(MSBuildThisFileDirectory)\$(OutputName).symbols.nuspec')">"$(Nuget)" pack "$(MSBuildThisFileDirectory)\$(OutputName).symbols.nuspec" -BasePath "$(BuildPath.TrimEnd(`\`))"</NugetPackSymbolsCommand>
+        <NugetArguments>$(NugetArguments) -OutputDirectory "$(OutputPath.Trim(`\`))"</NugetArguments>
+        <NugetArguments>$(NugetArguments) -Version "$(NuspecVersion)"</NugetArguments>
+        <NugetArguments>$(NugetArguments) -NoPackageAnalysis -NonInteractive</NugetArguments>
+        
+        <Environment>$(Environment)%0D%0Aset PYTHONPATH=$(PySourcePath)Lib</Environment>
+        <Environment>$(Environment)%0D%0Aset PYTHON_NUSPEC_VERSION=$(NuspecVersion)</Environment>
+        <Environment Condition="$(Platform) != 'x86'">$(Environment)%0D%0Aset PYTHON_PROPS_PLATFORM=$(Platform)</Environment>
+        <Environment Condition="$(Platform) == 'x86'">$(Environment)%0D%0Aset PYTHON_PROPS_PLATFORM=Win32</Environment>
+        <Environment>$(Environment)%0D%0Amkdir "$(OutputPath.Trim(`\`))" &gt;nul 2&gt;nul</Environment>
+    </PropertyGroup>
+
+    <Target Name="_NugetMissing" BeforeTargets="_Build" Condition="!Exists($(Nuget))">
+        <Error Text="$(Nuget) could not be found. Either avoid specifying the property or update your externals/windows-installer files." />
+    </Target>
+
+    <Target Name="_Build">
+        <Exec Command="$(CleanCommand)" />
+        <Exec Command="setlocal%0D%0A$(Environment)%0D%0A$(PythonArguments)%0D%0A$(PackageArguments)" />
+
+        <Exec Command="$(NugetPackCommand) $(NugetArguments)" />
+        <Exec Command="$(NugetPackSymbolsCommand) $(NugetArguments)" Condition="$(NugetPackSymbolsCommand) != ''" />
+    </Target>
+
+    <Target Name="AfterBuild" />
+    <Target Name="Build" DependsOnTargets="_Build;AfterBuild" />
+</Project>

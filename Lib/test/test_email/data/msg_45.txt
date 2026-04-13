@@ -1,0 +1,33 @@
+From: <foo@bar.baz>
+To: <baz@bar.foo>
+Subject: test
+X-Long-Line: Some really long line contains a lot of text and thus has to be rewrapped because it is some
+	really long
+        line
+MIME-Version: 1.0
+Content-Type: multipart/signed; boundary="borderline";
+	protocol="application/pgp-signature"; micalg=pgp-sha1
+
+This is an OpenPGP/MIME signed message (RFC 2440 and 3156)
+--borderline
+Content-Type: text/plain
+X-Long-Line: Another really long line contains a lot of text and thus has to be rewrapped because it is another
+	really long
+        line
+
+This is the signed contents.
+
+--borderline
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: OpenPGP digital signature
+Content-Disposition: attachment; filename="signature.asc"
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2.0.6 (GNU/Linux)
+
+iD8DBQFG03voRhp6o4m9dFsRApSZAKCCAN3IkJlVRg6NvAiMHlvvIuMGPQCeLZtj
+FGwfnRHFBFO/S4/DKysm0lI=
+=t7+s
+-----END PGP SIGNATURE-----
+
+--borderline--

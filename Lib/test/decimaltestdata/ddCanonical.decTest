@@ -1,0 +1,357 @@
+------------------------------------------------------------------------
+-- ddCanonical.decTest -- test decDouble canonical results            --
+-- Copyright (c) IBM Corporation, 1981, 2008.  All rights reserved.   --
+------------------------------------------------------------------------
+-- Please see the document "General Decimal Arithmetic Testcases"     --
+-- at http://www2.hursley.ibm.com/decimal for the description of      --
+-- these testcases.                                                   --
+--                                                                    --
+-- These testcases are experimental ('beta' versions), and they       --
+-- may contain errors.  They are offered on an as-is basis.  In       --
+-- particular, achieving the same results as the tests here is not    --
+-- a guarantee that an implementation complies with any Standard      --
+-- or specification.  The tests are not exhaustive.                   --
+--                                                                    --
+-- Please send comments, suggestions, and corrections to the author:  --
+--   Mike Cowlishaw, IBM Fellow                                       --
+--   IBM UK, PO Box 31, Birmingham Road, Warwick CV34 5JL, UK         --
+--   mfc@uk.ibm.com                                                   --
+------------------------------------------------------------------------
+version: 2.59
+
+-- This file tests that copy operations leave uncanonical operands
+-- unchanged, and vice versa
+-- All operands and results are decDoubles.
+precision:   16
+maxExponent: 384
+minExponent: -383
+extended:    1
+clamp:       1
+rounding:    half_even
+
+-- Uncanonical declets are: abc, where:
+--   a=1,2,3
+--   b=6,7,e,f
+--   c=e,f
+
+-- assert some standard (canonical) values; this tests that FromString
+-- produces canonical results (many more in decimalNN)
+ddcan001 apply 9.999999999999999E+384 -> #77fcff3fcff3fcff
+ddcan002 apply 0                      -> #2238000000000000
+ddcan003 apply 1                      -> #2238000000000001
+ddcan004 apply -1                     -> #a238000000000001
+ddcan005 apply Infinity               -> #7800000000000000
+ddcan006 apply -Infinity              -> #f800000000000000
+ddcan007 apply -NaN                   -> #fc00000000000000
+ddcan008 apply -sNaN                  -> #fe00000000000000
+ddcan009 apply NaN999999999999999     -> #7c00ff3fcff3fcff
+ddcan010 apply sNaN999999999999999    -> #7e00ff3fcff3fcff
+decan011 apply  9999999999999999      -> #6e38ff3fcff3fcff
+ddcan012 apply 7.50                   -> #22300000000003d0
+ddcan013 apply 9.99                   -> #22300000000000ff
+
+-- Base tests for canonical encodings (individual operator
+-- propagation is tested later)
+
+-- Finites: declets in coefficient
+ddcan021 canonical  #77fcff3fcff3fcff  -> #77fcff3fcff3fcff
+ddcan022 canonical  #77fcff3fcff3fcff  -> #77fcff3fcff3fcff
+ddcan023 canonical  #77ffff3fcff3fcff  -> #77fcff3fcff3fcff
+ddcan024 canonical  #77ffff3fcff3fcff  -> #77fcff3fcff3fcff
+ddcan025 canonical  #77fcffffcff3fcff  -> #77fcff3fcff3fcff
+ddcan026 canonical  #77fcffffcff3fcff  -> #77fcff3fcff3fcff
+ddcan027 canonical  #77fcff3ffff3fcff  -> #77fcff3fcff3fcff
+ddcan028 canonical  #77fcff3ffff3fcff  -> #77fcff3fcff3fcff
+ddcan030 canonical  #77fcff3fcffffcff  -> #77fcff3fcff3fcff
+ddcan031 canonical  #77fcff3fcffffcff  -> #77fcff3fcff3fcff
+ddcan032 canonical  #77fcff3fcff3ffff  -> #77fcff3fcff3fcff
+ddcan033 canonical  #77fcff3fcff3ffff  -> #77fcff3fcff3fcff
+ddcan035 canonical  #77fcff3fdff3fcff  -> #77fcff3fcff3fcff
+ddcan036 canonical  #77fcff3feff3fcff  -> #77fcff3fcff3fcff
+
+-- NaN: declets in payload
+ddcan100 canonical  NaN999999999999999 -> #7c00ff3fcff3fcff
+ddcan101 canonical  #7c00ff3fcff3fcff  -> #7c00ff3fcff3fcff
+ddcan102 canonical  #7c03ff3fcff3fcff  -> #7c00ff3fcff3fcff
+ddcan103 canonical  #7c00ffffcff3fcff  -> #7c00ff3fcff3fcff
+ddcan104 canonical  #7c00ff3ffff3fcff  -> #7c00ff3fcff3fcff
+ddcan105 canonical  #7c00ff3fcffffcff  -> #7c00ff3fcff3fcff
+ddcan106 canonical  #7c00ff3fcff3ffff  -> #7c00ff3fcff3fcff
+ddcan107 canonical  #7c00ff3fcff3ffff  -> #7c00ff3fcff3fcff
+-- NaN: exponent continuation bits [excluding sNaN selector]
+ddcan110 canonical  #7c00ff3fcff3fcff  -> #7c00ff3fcff3fcff
+ddcan112 canonical  #7d00ff3fcff3fcff  -> #7c00ff3fcff3fcff
+ddcan113 canonical  #7c80ff3fcff3fcff  -> #7c00ff3fcff3fcff
+ddcan114 canonical  #7c40ff3fcff3fcff  -> #7c00ff3fcff3fcff
+ddcan115 canonical  #7c20ff3fcff3fcff  -> #7c00ff3fcff3fcff
+ddcan116 canonical  #7c10ff3fcff3fcff  -> #7c00ff3fcff3fcff
+ddcan117 canonical  #7c08ff3fcff3fcff  -> #7c00ff3fcff3fcff
+ddcan118 canonical  #7c04ff3fcff3fcff  -> #7c00ff3fcff3fcff
+
+-- sNaN: declets in payload
+ddcan120 canonical sNaN999999999999999 -> #7e00ff3fcff3fcff
+ddcan121 canonical  #7e00ff3fcff3fcff  -> #7e00ff3fcff3fcff
+ddcan122 canonical  #7e03ff3fcff3fcff  -> #7e00ff3fcff3fcff
+ddcan123 canonical  #7e00ffffcff3fcff  -> #7e00ff3fcff3fcff
+ddcan124 canonical  #7e00ff3ffff3fcff  -> #7e00ff3fcff3fcff
+ddcan125 canonical  #7e00ff3fcffffcff  -> #7e00ff3fcff3fcff
+ddcan126 canonical  #7e00ff3fcff3ffff  -> #7e00ff3fcff3fcff
+ddcan127 canonical  #7e00ff3fcff3ffff  -> #7e00ff3fcff3fcff
+-- sNaN: exponent continuation bits [excluding sNaN selector]
+ddcan130 canonical  #7e00ff3fcff3fcff  -> #7e00ff3fcff3fcff
+ddcan132 canonical  #7f00ff3fcff3fcff  -> #7e00ff3fcff3fcff
+ddcan133 canonical  #7e80ff3fcff3fcff  -> #7e00ff3fcff3fcff
+ddcan134 canonical  #7e40ff3fcff3fcff  -> #7e00ff3fcff3fcff
+ddcan135 canonical  #7e20ff3fcff3fcff  -> #7e00ff3fcff3fcff
+ddcan136 canonical  #7e10ff3fcff3fcff  -> #7e00ff3fcff3fcff
+ddcan137 canonical  #7e08ff3fcff3fcff  -> #7e00ff3fcff3fcff
+ddcan138 canonical  #7e04ff3fcff3fcff  -> #7e00ff3fcff3fcff
+
+-- Inf: exponent continuation bits
+ddcan140 canonical  #7800000000000000  -> #7800000000000000
+ddcan141 canonical  #7900000000000000  -> #7800000000000000
+ddcan142 canonical  #7a00000000000000  -> #7800000000000000
+ddcan143 canonical  #7880000000000000  -> #7800000000000000
+ddcan144 canonical  #7840000000000000  -> #7800000000000000
+ddcan145 canonical  #7820000000000000  -> #7800000000000000
+ddcan146 canonical  #7810000000000000  -> #7800000000000000
+ddcan147 canonical  #7808000000000000  -> #7800000000000000
+ddcan148 canonical  #7804000000000000  -> #7800000000000000
+
+-- Inf: coefficient continuation bits (first, last, and a few others)
+ddcan150 canonical  #7800000000000000  -> #7800000000000000
+ddcan151 canonical  #7802000000000000  -> #7800000000000000
+ddcan152 canonical  #7800000000000001  -> #7800000000000000
+ddcan153 canonical  #7801000000000000  -> #7800000000000000
+ddcan154 canonical  #7800200000000000  -> #7800000000000000
+ddcan155 canonical  #7800080000000000  -> #7800000000000000
+ddcan156 canonical  #7800002000000000  -> #7800000000000000
+ddcan157 canonical  #7800000400000000  -> #7800000000000000
+ddcan158 canonical  #7800000040000000  -> #7800000000000000
+ddcan159 canonical  #7800000008000000  -> #7800000000000000
+ddcan160 canonical  #7800000000400000  -> #7800000000000000
+ddcan161 canonical  #7800000000020000  -> #7800000000000000
+ddcan162 canonical  #7800000000008000  -> #7800000000000000
+ddcan163 canonical  #7800000000000200  -> #7800000000000000
+ddcan164 canonical  #7800000000000040  -> #7800000000000000
+ddcan165 canonical  #7800000000000008  -> #7800000000000000
+
+
+-- Now the operators -- trying to check paths that might fail to
+-- canonicalize propagated operands
+
+----- Add:
+-- Finites: neutral 0
+ddcan202 add  0E+384 #77ffff3fcff3fcff        -> #77fcff3fcff3fcff
+ddcan203 add         #77fcffffcff3fcff 0E+384 -> #77fcff3fcff3fcff
+-- tiny zero
+ddcan204 add  0E-398 #77ffff3fcff3fcff        -> #77fcff3fcff3fcff Rounded
+ddcan205 add         #77fcffffcff3fcff 0E-398 -> #77fcff3fcff3fcff Rounded
+-- tiny non zero
+ddcan206 add -1E-398 #77ffff3fcff3fcff         -> #77fcff3fcff3fcff Inexact Rounded
+ddcan207 add         #77ffff3fcff3fcff -1E-398 -> #77fcff3fcff3fcff Inexact Rounded
+-- NaN: declets in payload
+ddcan211 add  0  #7c03ff3fcff3fcff      -> #7c00ff3fcff3fcff
+ddcan212 add     #7c03ff3fcff3fcff  0   -> #7c00ff3fcff3fcff
+-- NaN: exponent continuation bits [excluding sNaN selector]
+ddcan213 add  0  #7c40ff3fcff3fcff      -> #7c00ff3fcff3fcff
+ddcan214 add     #7c40ff3fcff3fcff  0   -> #7c00ff3fcff3fcff
+-- sNaN: declets in payload
+ddcan215 add  0  #7e00ffffcff3fcff      -> #7c00ff3fcff3fcff Invalid_operation
+ddcan216 add     #7e00ffffcff3fcff  0   -> #7c00ff3fcff3fcff Invalid_operation
+-- sNaN: exponent continuation bits [excluding sNaN selector]
+ddcan217 add  0  #7e80ff3fcff3fcff      -> #7c00ff3fcff3fcff Invalid_operation
+ddcan218 add     #7e80ff3fcff3fcff  0   -> #7c00ff3fcff3fcff Invalid_operation
+-- Inf: exponent continuation bits
+ddcan220 add  0  #7880000000000000      -> #7800000000000000
+ddcan221 add     #7880000000000000  0   -> #7800000000000000
+-- Inf: coefficient continuation bits
+ddcan222 add  0  #7802000000000000     -> #7800000000000000
+ddcan223 add     #7802000000000000  0  -> #7800000000000000
+ddcan224 add  0  #7800000000000001     -> #7800000000000000
+ddcan225 add     #7800000000000001  0  -> #7800000000000000
+ddcan226 add  0  #7800002000000000     -> #7800000000000000
+ddcan227 add     #7800002000000000  0  -> #7800000000000000
+
+----- Class: [does not return encoded]
+
+----- Compare:
+ddcan231 compare -Inf   1     ->  #a238000000000001
+ddcan232 compare -Inf  -Inf   ->  #2238000000000000
+ddcan233 compare  1    -Inf   ->  #2238000000000001
+ddcan234 compare  #7c00ff3ffff3fcff -1000  ->  #7c00ff3fcff3fcff
+ddcan235 compare  #7e00ff3ffff3fcff -1000  ->  #7c00ff3fcff3fcff  Invalid_operation
+
+----- CompareSig:
+ddcan241 comparesig -Inf   1     ->  #a238000000000001
+ddcan242 comparesig -Inf  -Inf   ->  #2238000000000000
+ddcan243 comparesig  1    -Inf   ->  #2238000000000001
+ddcan244 comparesig  #7c00ff3ffff3fcff -1000  ->  #7c00ff3fcff3fcff  Invalid_operation
+ddcan245 comparesig  #7e00ff3ffff3fcff -1000  ->  #7c00ff3fcff3fcff  Invalid_operation
+
+----- Copy: [does not usually canonicalize]
+-- finites
+ddcan250 copy  #77ffff3fcff3fcff  -> #77ffff3fcff3fcff
+ddcan251 copy  #77fcff3fdff3fcff  -> #77fcff3fdff3fcff
+-- NaNs
+ddcan252 copy  #7c03ff3fcff3fcff  -> #7c03ff3fcff3fcff
+ddcan253 copy  #7c00ff3fcff3ffff  -> #7c00ff3fcff3ffff
+ddcan254 copy  #7d00ff3fcff3fcff  -> #7d00ff3fcff3fcff
+ddcan255 copy  #7c04ff3fcff3fcff  -> #7c04ff3fcff3fcff
+-- sNaN
+ddcan256 copy  #7e00ff3fcffffcff  -> #7e00ff3fcffffcff
+ddcan257 copy  #7e40ff3fcff3fcff  -> #7e40ff3fcff3fcff
+-- Inf
+ddcan258 copy  #7a00000000000000  -> #7a00000000000000
+ddcan259 copy  #7800200000000000  -> #7800200000000000
+
+----- CopyAbs: [does not usually canonicalize]
+-- finites
+ddcan260 copyabs  #f7ffff3fcff3fcff  -> #77ffff3fcff3fcff
+ddcan261 copyabs  #f7fcff3fdff3fcff  -> #77fcff3fdff3fcff
+-- NaNs
+ddcan262 copyabs  #fc03ff3fcff3fcff  -> #7c03ff3fcff3fcff
+ddcan263 copyabs  #fc00ff3fcff3ffff  -> #7c00ff3fcff3ffff
+ddcan264 copyabs  #fd00ff3fcff3fcff  -> #7d00ff3fcff3fcff
+ddcan265 copyabs  #fc04ff3fcff3fcff  -> #7c04ff3fcff3fcff
+-- sNaN
+ddcan266 copyabs  #fe00ff3fcffffcff  -> #7e00ff3fcffffcff
+ddcan267 copyabs  #fe40ff3fcff3fcff  -> #7e40ff3fcff3fcff
+-- Inf
+ddcan268 copyabs  #fa00000000000000  -> #7a00000000000000
+ddcan269 copyabs  #f800200000000000  -> #7800200000000000
+
+----- CopyNegate: [does not usually canonicalize]
+-- finites
+ddcan270 copynegate  #77ffff3fcff3fcff  -> #f7ffff3fcff3fcff
+ddcan271 copynegate  #77fcff3fdff3fcff  -> #f7fcff3fdff3fcff
+-- NaNs
+ddcan272 copynegate  #7c03ff3fcff3fcff  -> #fc03ff3fcff3fcff
+ddcan273 copynegate  #7c00ff3fcff3ffff  -> #fc00ff3fcff3ffff
+ddcan274 copynegate  #7d00ff3fcff3fcff  -> #fd00ff3fcff3fcff
+ddcan275 copynegate  #7c04ff3fcff3fcff  -> #fc04ff3fcff3fcff
+-- sNaN
+ddcan276 copynegate  #7e00ff3fcffffcff  -> #fe00ff3fcffffcff
+ddcan277 copynegate  #7e40ff3fcff3fcff  -> #fe40ff3fcff3fcff
+-- Inf
+ddcan278 copynegate  #7a00000000000000  -> #fa00000000000000
+ddcan279 copynegate  #7800200000000000  -> #f800200000000000
+
+----- CopySign: [does not usually canonicalize]
+-- finites
+ddcan280 copysign  #77ffff3fcff3fcff -1 -> #f7ffff3fcff3fcff
+ddcan281 copysign  #77fcff3fdff3fcff  1 -> #77fcff3fdff3fcff
+-- NaNs
+ddcan282 copysign  #7c03ff3fcff3fcff -1 -> #fc03ff3fcff3fcff
+ddcan283 copysign  #7c00ff3fcff3ffff  1 -> #7c00ff3fcff3ffff
+ddcan284 copysign  #7d00ff3fcff3fcff -1 -> #fd00ff3fcff3fcff
+ddcan285 copysign  #7c04ff3fcff3fcff  1 -> #7c04ff3fcff3fcff
+-- sNaN
+ddcan286 copysign  #7e00ff3fcffffcff -1 -> #fe00ff3fcffffcff
+ddcan287 copysign  #7e40ff3fcff3fcff  1 -> #7e40ff3fcff3fcff
+-- Inf
+ddcan288 copysign  #7a00000000000000 -1 -> #fa00000000000000
+ddcan289 copysign  #7800200000000000  1 -> #7800200000000000
+
+----- Multiply:
+-- Finites: neutral 0
+ddcan302 multiply  1      #77ffff3fcff3fcff        -> #77fcff3fcff3fcff
+ddcan303 multiply         #77fcffffcff3fcff  1     -> #77fcff3fcff3fcff
+-- negative
+ddcan306 multiply -1      #77ffff3fcff3fcff        -> #f7fcff3fcff3fcff
+ddcan307 multiply         #77fcffffcff3fcff -1     -> #f7fcff3fcff3fcff
+-- NaN: declets in payload
+ddcan311 multiply  1  #7c03ff3fcff3fcff      -> #7c00ff3fcff3fcff
+ddcan312 multiply     #7c03ff3fcff3fcff  1   -> #7c00ff3fcff3fcff
+-- NaN: exponent continuation bits [excluding sNaN selector]
+ddcan313 multiply  1  #7c40ff3fcff3fcff      -> #7c00ff3fcff3fcff
+ddcan314 multiply     #7c40ff3fcff3fcff  1   -> #7c00ff3fcff3fcff
+-- sNaN: declets in payload
+ddcan315 multiply  1  #7e00ffffcff3fcff      -> #7c00ff3fcff3fcff Invalid_operation
+ddcan316 multiply     #7e00ffffcff3fcff  1   -> #7c00ff3fcff3fcff Invalid_operation
+-- sNaN: exponent continuation bits [excluding sNaN selector]
+ddcan317 multiply  1  #7e80ff3fcff3fcff      -> #7c00ff3fcff3fcff Invalid_operation
+ddcan318 multiply     #7e80ff3fcff3fcff  1   -> #7c00ff3fcff3fcff Invalid_operation
+-- Inf: exponent continuation bits
+ddcan320 multiply  1  #7880000000000000      -> #7800000000000000
+ddcan321 multiply     #7880000000000000  1   -> #7800000000000000
+-- Inf: coefficient continuation bits
+ddcan322 multiply  1  #7802000000000000     -> #7800000000000000
+ddcan323 multiply     #7802000000000000  1  -> #7800000000000000
+ddcan324 multiply  1  #7800000000000001     -> #7800000000000000
+ddcan325 multiply     #7800000000000001  1  -> #7800000000000000
+ddcan326 multiply  1  #7800002000000000     -> #7800000000000000
+ddcan327 multiply     #7800002000000000  1  -> #7800000000000000
+
+----- Quantize:
+ddcan401 quantize  #6e38ff3ffff3fcff 1    -> #6e38ff3fcff3fcff
+ddcan402 quantize  #6e38ff3fcff3fdff 0    -> #6e38ff3fcff3fcff
+ddcan403 quantize  #7880000000000000 Inf  -> #7800000000000000
+ddcan404 quantize  #7802000000000000 -Inf -> #7800000000000000
+ddcan410 quantize  #7c03ff3fcff3fcff  1   -> #7c00ff3fcff3fcff
+ddcan411 quantize  #7c03ff3fcff3fcff  1   -> #7c00ff3fcff3fcff
+ddcan412 quantize  #7c40ff3fcff3fcff  1   -> #7c00ff3fcff3fcff
+ddcan413 quantize  #7c40ff3fcff3fcff  1   -> #7c00ff3fcff3fcff
+ddcan414 quantize  #7e00ffffcff3fcff  1   -> #7c00ff3fcff3fcff Invalid_operation
+ddcan415 quantize  #7e00ffffcff3fcff  1   -> #7c00ff3fcff3fcff Invalid_operation
+ddcan416 quantize  #7e80ff3fcff3fcff  1   -> #7c00ff3fcff3fcff Invalid_operation
+ddcan417 quantize  #7e80ff3fcff3fcff  1   -> #7c00ff3fcff3fcff Invalid_operation
+
+----- Subtract:
+-- Finites: neutral 0
+ddcan502 subtract  0E+384 #77ffff3fcff3fcff        -> #f7fcff3fcff3fcff
+ddcan503 subtract         #77fcffffcff3fcff 0E+384 -> #77fcff3fcff3fcff
+-- tiny zero
+ddcan504 subtract  0E-398 #77ffff3fcff3fcff        -> #f7fcff3fcff3fcff Rounded
+ddcan505 subtract         #77fcffffcff3fcff 0E-398 -> #77fcff3fcff3fcff Rounded
+-- tiny non zero
+ddcan506 subtract -1E-398 #77ffff3fcff3fcff         -> #f7fcff3fcff3fcff Inexact Rounded
+ddcan507 subtract         #77ffff3fcff3fcff -1E-398 -> #77fcff3fcff3fcff Inexact Rounded
+-- NaN: declets in payload
+ddcan511 subtract  0  #7c03ff3fcff3fcff      -> #7c00ff3fcff3fcff
+ddcan512 subtract     #7c03ff3fcff3fcff  0   -> #7c00ff3fcff3fcff
+-- NaN: exponent continuation bits [excluding sNaN selector]
+ddcan513 subtract  0  #7c40ff3fcff3fcff      -> #7c00ff3fcff3fcff
+ddcan514 subtract     #7c40ff3fcff3fcff  0   -> #7c00ff3fcff3fcff
+-- sNaN: declets in payload
+ddcan515 subtract  0  #7e00ffffcff3fcff      -> #7c00ff3fcff3fcff Invalid_operation
+ddcan516 subtract     #7e00ffffcff3fcff  0   -> #7c00ff3fcff3fcff Invalid_operation
+-- sNaN: exponent continuation bits [excluding sNaN selector]
+ddcan517 subtract  0  #7e80ff3fcff3fcff      -> #7c00ff3fcff3fcff Invalid_operation
+ddcan518 subtract     #7e80ff3fcff3fcff  0   -> #7c00ff3fcff3fcff Invalid_operation
+-- Inf: exponent continuation bits
+ddcan520 subtract  0  #7880000000000000      -> #f800000000000000
+ddcan521 subtract     #7880000000000000  0   -> #7800000000000000
+-- Inf: coefficient continuation bits
+ddcan522 subtract  0  #7802000000000000     -> #f800000000000000
+ddcan523 subtract     #7802000000000000  0  -> #7800000000000000
+ddcan524 subtract  0  #7800000000000001     -> #f800000000000000
+ddcan525 subtract     #7800000000000001  0  -> #7800000000000000
+ddcan526 subtract  0  #7800002000000000     -> #f800000000000000
+ddcan527 subtract     #7800002000000000  0  -> #7800000000000000
+
+----- ToIntegral:
+ddcan601 tointegralx  #6e38ff3ffff3fcff -> #6e38ff3fcff3fcff
+ddcan602 tointegralx  #6e38ff3fcff3fdff -> #6e38ff3fcff3fcff
+ddcan603 tointegralx  #7880000000000000 -> #7800000000000000
+ddcan604 tointegralx  #7802000000000000 -> #7800000000000000
+ddcan610 tointegralx  #7c03ff3fcff3fcff -> #7c00ff3fcff3fcff
+ddcan611 tointegralx  #7c03ff3fcff3fcff -> #7c00ff3fcff3fcff
+ddcan612 tointegralx  #7c40ff3fcff3fcff -> #7c00ff3fcff3fcff
+ddcan613 tointegralx  #7c40ff3fcff3fcff -> #7c00ff3fcff3fcff
+ddcan614 tointegralx  #7e00ffffcff3fcff -> #7c00ff3fcff3fcff Invalid_operation
+ddcan615 tointegralx  #7e00ffffcff3fcff -> #7c00ff3fcff3fcff Invalid_operation
+ddcan616 tointegralx  #7e80ff3fcff3fcff -> #7c00ff3fcff3fcff Invalid_operation
+ddcan617 tointegralx  #7e80ff3fcff3fcff -> #7c00ff3fcff3fcff Invalid_operation
+-- uncanonical 3999, 39.99, 3.99, 0.399, and negatives
+ddcan618 tointegralx  #2238000000000fff -> #2238000000000cff
+ddcan619 tointegralx  #2230000000000fff -> #2238000000000040 Inexact Rounded
+ddcan620 tointegralx  #222c000000000fff -> #2238000000000004 Inexact Rounded
+ddcan621 tointegralx  #2228000000000fff -> #2238000000000000 Inexact Rounded
+ddcan622 tointegralx  #a238000000000fff -> #a238000000000cff
+ddcan623 tointegralx  #a230000000000fff -> #a238000000000040 Inexact Rounded
+ddcan624 tointegralx  #a22c000000000fff -> #a238000000000004 Inexact Rounded
+ddcan625 tointegralx  #a228000000000fff -> #a238000000000000 Inexact Rounded
+
+
+

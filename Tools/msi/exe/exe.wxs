@@ -1,0 +1,33 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+    <Product Id="*" Language="!(loc.LCID)" Name="!(loc.Title)" Version="$(var.Version)" Manufacturer="!(loc.Manufacturer)" UpgradeCode="$(var.UpgradeCode)">
+        <Package InstallerVersion="500" Compressed="yes" InstallScope="perUser" />
+        <MediaTemplate EmbedCab="yes" CompressionLevel="high" />
+
+        <PropertyRef Id="UpgradeTable" />
+        <PropertyRef Id="REGISTRYKEY" />
+
+        <Feature Id="DefaultFeature" AllowAdvertise="no" Title="!(loc.Title)" Description="!(loc.Description)">
+            <ComponentGroupRef Id="exe_python" Primary="yes" />
+            <ComponentGroupRef Id="exe_reg" Primary="yes" />
+            <ComponentGroupRef Id="exe_txt" />
+            <ComponentGroupRef Id="exe_icons" />
+            <ComponentRef Id="OptionalFeature" />
+        </Feature>
+
+        <Feature Id="Shortcuts" AllowAdvertise="no" Title="!(loc.Title)" Description="!(loc.Description)">
+            <ComponentGroupRef Id="exe_python" />
+            <Component Id="exe_shortcut" Directory="MenuDir" Guid="*">
+                <Shortcut Id="python.exe"
+                          Target="[#python.exe]"
+                          Name="!(loc.ShortcutName)"
+                          Description="!(loc.ShortcutDescription)"
+                          WorkingDirectory="InstallDirectory" />
+                <RemoveFolder Id="Remove_MenuDir" Directory="MenuDir" On="uninstall" />
+                <RegistryKey Root="HKMU" Key="[REGISTRYKEY]">
+                    <RegistryValue Key="InstalledFeatures" Name="Shortcuts" Type="string" Value="$(var.Version)" />
+                </RegistryKey>
+            </Component>
+        </Feature>
+    </Product>
+</Wix>

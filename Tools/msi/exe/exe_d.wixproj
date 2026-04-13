@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+    <PropertyGroup>
+        <ProjectGuid>{B1CA739C-8DB0-403B-9010-D79507507CE9}</ProjectGuid>
+        <SchemaVersion>2.0</SchemaVersion>
+        <OutputName>exe_d</OutputName>
+        <OutputType>Package</OutputType>
+    </PropertyGroup>
+    <Import Project="..\msi.props" />
+    <ItemGroup>
+        <Compile Include="exe_d.wxs" />
+        <Compile Include="exe_files.wxs" />
+        <Compile Include="exe_reg.wxs" />
+    </ItemGroup>
+    <ItemGroup>
+        <EmbeddedResource Include="*.wxl" />
+        <WxlTemplate Include="*.wxl_template" />
+    </ItemGroup>
+
+    <Import Project="..\msi.targets" />
+</Project>

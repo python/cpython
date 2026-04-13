@@ -1,0 +1,67 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+    <Product Id="*" Language="!(loc.LCID)" Name="!(loc.Title)" Version="$(var.Version)" Manufacturer="!(loc.Manufacturer)" UpgradeCode="$(var.UpgradeCode)">
+        <Package InstallerVersion="500" Compressed="yes" InstallScope="perUser" />
+        <MediaTemplate EmbedCab="yes" CompressionLevel="high" />
+        
+        <PropertyRef Id="DetectTargetDir" />
+        <PropertyRef Id="UpgradeTable" />
+        <PropertyRef Id="REGISTRYKEY" />
+        
+        <Property Id="PYTHON_EXE" Secure="yes">
+            <ComponentSearch Id="PythonExe" Guid="$(var.PythonExeComponentGuid)">
+                <FileSearch Name="python.exe" />
+            </ComponentSearch>
+        </Property>
+        
+        <Property Id="PYTHONW_EXE" Secure="yes">
+            <ComponentSearch Id="PythonwExe" Guid="$(var.PythonwExeComponentGuid)">
+                <FileSearch Name="pythonw.exe" />
+            </ComponentSearch>
+        </Property>
+        
+        <Condition Message="!(loc.NoPython)">PYTHON_EXE and PYTHONW_EXE</Condition>
+
+        <Feature Id="DefaultFeature" AllowAdvertise="no" Title="!(loc.Title)" Description="!(loc.Description)">
+            <ComponentGroupRef Id="tkinter_extension" />
+            <ComponentGroupRef Id="tcltk_dlls" />
+            <ComponentGroupRef Id="tcltk_lib" />
+            <ComponentGroupRef Id="tkinter_lib" Primary="yes" />
+            
+            <Component Id="idle_reg" Directory="InstallDirectory">
+                <RegistryValue KeyPath="yes" Root="HKMU" Key="[REGISTRYKEY]\Idle" Type="string" Value="[#Lib_idlelib_idle.pyw]" />
+            </Component>
+            <ComponentRef Id="OptionalFeature" />
+        </Feature>
+        <Feature Id="AssociateFiles" AllowAdvertise="no" Title="!(loc.Title)" Description="!(loc.Description)">
+            <ComponentGroupRef Id="tkinter_lib" />
+            <ComponentGroupRef Id="idle_reg" />
+        </Feature>
+        <Feature Id="Shortcuts" AllowAdvertise="no" Title="!(loc.Title)" Description="!(loc.Description)">
+            <ComponentGroupRef Id="tkinter_lib" />
+            
+            <Component Id="idle_shortcut" Directory="MenuDir">
+                <RegistryValue Root="HKMU" Key="[REGISTRYKEY]\IdleShortcuts" Type="integer" Value="1" KeyPath="yes" />
+                <RemoveFolder Id="Remove_MenuDir" On="uninstall" />
+
+                <Shortcut Id="IDLE"
+                          Directory="MenuDir"
+                          Name="!(loc.ShortcutName)"
+                          Description="!(loc.ShortcutDescription)"
+                          Target="[PYTHONW_EXE]"
+                          Arguments='"[#Lib_idlelib_idle.pyw]"'
+                          Icon="idle.exe"
+                          WorkingDirectory="InstallDirectory">
+                    <Icon Id="idle.exe" SourceFile="!(bindpath.src)Lib\idlelib\Icons\idle.ico" />
+                </Shortcut>
+                <Shortcut Id="pydoc.py"
+                          Target="[PYTHON_EXE]"
+                          Arguments='-m pydoc -b'
+                          Name="!(loc.PyDocShortcutName)"
+                          Description="!(loc.PyDocShortcutDescription)"
+                          Icon="idle.exe"
+                          WorkingDirectory="InstallDirectory" />
+            </Component>
+        </Feature>
+    </Product>
+</Wix>

@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+    <PropertyGroup>
+        <ProjectGuid>{5E0BCE93-D1AC-4591-BBCB-3A2BE5A4B3D1}</ProjectGuid>
+        <SchemaVersion>2.0</SchemaVersion>
+        <OutputName>lib_pdb</OutputName>
+        <OutputType>Package</OutputType>
+    </PropertyGroup>
+    <Import Project="..\msi.props" />
+    <ItemGroup>
+        <Compile Include="lib_pdb.wxs" />
+        <Compile Include="lib_files.wxs" />
+    </ItemGroup>
+    <ItemGroup>
+        <EmbeddedResource Include="*.wxl" />
+    </ItemGroup>
+    
+    <Import Project="..\msi.targets" />
+</Project>

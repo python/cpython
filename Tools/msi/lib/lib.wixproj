@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+    <PropertyGroup>
+        <ProjectGuid>{11367E76-3337-4602-8F1E-77DB4F370D7E}</ProjectGuid>
+        <SchemaVersion>2.0</SchemaVersion>
+        <OutputName>lib</OutputName>
+        <OutputType>Package</OutputType>
+    </PropertyGroup>
+    <Import Project="..\msi.props" />
+    <ItemGroup>
+        <Compile Include="lib.wxs" />
+        <Compile Include="lib_files.wxs" />
+    </ItemGroup>
+    <ItemGroup>
+        <EmbeddedResource Include="*.wxl" />
+    </ItemGroup>
+    <ItemGroup>
+        <ExcludeFolders Include="Lib\site-packages;Lib\test;Lib\tests;Lib\tkinter;Lib\idlelib;Lib\turtledemo" />
+        <InstallFiles Include="$(PySourcePath)Lib\**\*"
+                      Exclude="$(PySourcePath)Lib\**\*.pyc;
+                               $(PySourcePath)Lib\**\*.pyo;
+                               $(PySourcePath)Lib\turtle.py;
+                               @(ExcludeFolders->'$(PySourcePath)%(Identity)\*');
+                               @(ExcludeFolders->'$(PySourcePath)%(Identity)\**\*')">
+            <SourceBase>$(PySourcePath)Lib</SourceBase>
+            <Source>!(bindpath.src)Lib\</Source>
+            <TargetBase>$(PySourcePath)Lib</TargetBase>
+            <Target_>Lib\</Target_>
+            <Group>lib_py</Group>
+            <IncludeInCat>true</IncludeInCat>
+        </InstallFiles>
+    </ItemGroup>
+    
+    <Import Project="..\msi.targets" />
+</Project>

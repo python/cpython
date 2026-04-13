@@ -1,0 +1,166 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|ARM">
+      <Configuration>Debug</Configuration>
+      <Platform>ARM</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|ARM64">
+      <Configuration>Debug</Configuration>
+      <Platform>ARM64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="PGInstrument|ARM">
+      <Configuration>PGInstrument</Configuration>
+      <Platform>ARM</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="PGInstrument|ARM64">
+      <Configuration>PGInstrument</Configuration>
+      <Platform>ARM64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="PGInstrument|Win32">
+      <Configuration>PGInstrument</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="PGInstrument|x64">
+      <Configuration>PGInstrument</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="PGUpdate|ARM">
+      <Configuration>PGUpdate</Configuration>
+      <Platform>ARM</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="PGUpdate|ARM64">
+      <Configuration>PGUpdate</Configuration>
+      <Platform>ARM64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="PGUpdate|Win32">
+      <Configuration>PGUpdate</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="PGUpdate|x64">
+      <Configuration>PGUpdate</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|ARM">
+      <Configuration>Release</Configuration>
+      <Platform>ARM</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|ARM64">
+      <Configuration>Release</Configuration>
+      <Platform>ARM64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{B11D750F-CD1F-4A96-85CE-E69A5C5259F9}</ProjectGuid>
+  </PropertyGroup>
+  <Import Project="python.props" />
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Label="Configuration">
+    <TargetName>$(PyExeName)</TargetName>
+    <ConfigurationType>Application</ConfigurationType>
+    <UseOfMfc>false</UseOfMfc>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="pyproject.props" />
+    <Import Project="tcltk.props" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup>
+    <_ProjectFileVersion>10.0.30319.1</_ProjectFileVersion>
+  </PropertyGroup>
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <PreprocessorDefinitions>Py_BUILD_CORE;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <StackReserveSize>2000000</StackReserveSize>
+      <StackReserveSize Condition="$(Configuration) == 'Debug'">12000000</StackReserveSize>
+      <StackReserveSize Condition="$(Configuration) == 'PGInstrument'">12000000</StackReserveSize>
+      <!-- HACK: Need additional memory to avoid crashing until gh-113655 is fixed -->
+      <StackReserveSize Condition="$(Configuration) == 'PGUpdate' and $(UseExtraStackReserve) == 'true'">3000000</StackReserveSize>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <None Include="..\PC\icons\python.ico" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="..\PC\python_exe.rc" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\Programs\python.c" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="pythoncore.vcxproj">
+      <Project>{cf7ac3d1-e2df-41d2-bea6-1e2556cdea26}</Project>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+    </ProjectReference>
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+    <Import Project="regen.targets" />
+  </ImportGroup>
+  <Target Name="_TriggerPostRegen" AfterTargets="Build" DependsOnTargets="PostBuildRegen" />
+  <Target Name="GeneratePyBuildDirTxt" AfterTargets="Link">
+    <Message Text="Generating $(OutDir)pybuilddir.txt" />
+    <WriteLinesToFile File="$(OutDir)pybuilddir.txt" Lines="%0D%0A" Overwrite="true" />
+  </Target>
+  <Target Name="ValidateUcrtbase" AfterTargets="AfterBuild" Condition="$(Configuration) != 'PGInstrument' and $(Platform) != 'ARM' and $(Platform) != 'ARM64'">
+    <PropertyGroup>
+      <UcrtName>ucrtbase</UcrtName>
+      <UcrtName Condition="'$(Configuration)' == 'Debug'">ucrtbased</UcrtName>
+    </PropertyGroup>
+    <Exec Command='setlocal
+set PYTHONPATH=$(PySourcePath)Lib
+"$(OutDir)$(PyExeName)$(PyDebugExt).exe" "$(PySourcePath)PC\validate_ucrtbase.py" $(UcrtName)' ContinueOnError="true" />
+  </Target>
+  <Target Name="GeneratePythonBat" AfterTargets="AfterBuild">
+    <PropertyGroup>
+      <_Content>@rem This script invokes the most recently built Python with all arguments
+@rem passed through to the interpreter.  This file is generated by the
+@rem build process and any changes *will* be thrown away by the next
+@rem rebuild.
+@rem This is only meant as a convenience for developing CPython
+@rem and using it outside of that context is ill-advised.
+@echo Running $(Configuration)^|$(Platform) interpreter...
+@setlocal
+@set PYTHONHOME=$(PySourcePath)
+@"$(OutDir)$(PyExeName)$(PyDebugExt).exe" %*
+</_Content>
+      <_ExistingContent Condition="Exists('$(PySourcePath)python.bat')">$([System.IO.File]::ReadAllText('$(PySourcePath)python.bat'))</_ExistingContent>
+    </PropertyGroup>
+    <WriteLinesToFile File="$(PySourcePath)python.bat" Lines="$(_Content)" Overwrite="true" Condition="'$(_Content)' != '$(_ExistingContent)'" />
+  </Target>
+  <Target Name="CopyPGORT" AfterTargets="Link" Condition="$(Configuration) == 'PGInstrument'">
+    <ItemGroup>
+      <_PGORT Include="$(VCToolsInstallDir)bin\Hostx86\x86\pgort140.dll" Condition="$(Platform) == 'Win32'" />
+      <_PGORT Include="$(VCToolsInstallDir)bin\Hostx64\x64\pgort140.dll" Condition="$(Platform) == 'x64'" />
+      <_PGORT Include="$(VCToolsInstallDir)bin\arm64\pgort140.dll" Condition="$(Platform) == 'ARM64'" />
+    </ItemGroup>
+    <Warning Text="Unable to locate pgort140.dll for $(Platform)." Condition="@(_PGORT) == '' or !Exists(@(_PGORT))" />
+    <Copy SourceFiles="@(_PGORT)" DestinationFolder="$(OutDir)">
+      <Output TaskParameter="CopiedFiles" ItemName="FileWrites" />
+    </Copy>
+  </Target>
+</Project>

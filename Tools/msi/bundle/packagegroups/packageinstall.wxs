@@ -1,0 +1,26 @@
+<?xml version="1.0"?>
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+    <Fragment>
+        <PackageGroup Id="packageinstall">
+            <!--
+            This is an example of installing a package using pip as part of main install.
+            
+            For a network-only install, remove the Payload element and change the install
+            command to specify the package and (optionally) version specifier.
+            
+            <ExePackage Id="requests"
+                        SourceFile="py.exe"
+                        Compressed="yes"
+                        DisplayName="!(loc.CompileAllDescription)"
+                        InstallCommand='-[WinVer] -m pip install requests-2.7.0-py2.py3-none-any.whl'
+                        UninstallCommand='-[WinVer] -m pip uninstall -y requests'
+                        Vital="no"
+                        InstallCondition="Include_pip and not LauncherOnly">
+                <Payload SourceFile="requests-2.7.0-py2.py3-none-any.whl"
+                         Compressed="$(var.CompressMSI)"
+                         DownloadUrl="$(var.DownloadUrl)" />
+            </ExePackage>
+            -->
+        </PackageGroup>
+    </Fragment>
+</Wix>

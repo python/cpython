@@ -1,0 +1,130 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{f35a78a6-3ef0-4e36-bd8b-afaef22fbb7c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{138089f8-faba-494f-b6ed-051f31fbaf2d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{632b24a3-0844-4e57-ad34-b0e4cef886dd}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\libmpdec">
+      <UniqueIdentifier>{322d127c-1105-4a31-aed2-e29cdececc77}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\libmpdec">
+      <UniqueIdentifier>{780c3b7a-7817-4e89-a2f2-fc522f2c5966}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="$(mpdecimalDir)\libmpdec\basearith.h">
+      <Filter>Header Files\libmpdec</Filter>
+    </ClInclude>
+    <ClInclude Include="$(mpdecimalDir)\libmpdec\bits.h">
+      <Filter>Header Files\libmpdec</Filter>
+    </ClInclude>
+    <ClInclude Include="$(mpdecimalDir)\libmpdec\constants.h">
+      <Filter>Header Files\libmpdec</Filter>
+    </ClInclude>
+    <ClInclude Include="$(mpdecimalDir)\libmpdec\convolute.h">
+      <Filter>Header Files\libmpdec</Filter>
+    </ClInclude>
+    <ClInclude Include="$(mpdecimalDir)\libmpdec\crt.h">
+      <Filter>Header Files\libmpdec</Filter>
+    </ClInclude>
+    <ClInclude Include="$(mpdecimalDir)\libmpdec\difradix2.h">
+      <Filter>Header Files\libmpdec</Filter>
+    </ClInclude>
+    <ClInclude Include="$(mpdecimalDir)\libmpdec\fnt.h">
+      <Filter>Header Files\libmpdec</Filter>
+    </ClInclude>
+    <ClInclude Include="$(mpdecimalDir)\libmpdec\fourstep.h">
+      <Filter>Header Files\libmpdec</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Modules\_decimal\windows\mpdecimal.h">
+      <Filter>Header Files\libmpdec</Filter>
+    </ClInclude>
+    <ClInclude Include="$(mpdecimalDir)\libmpdec\mpdecimal32vc.h">
+      <Filter>Header Files\libmpdec</Filter>
+    </ClInclude>
+    <ClInclude Include="$(mpdecimalDir)\libmpdec\mpdecimal64vc.h">
+      <Filter>Header Files\libmpdec</Filter>
+    </ClInclude>
+    <ClInclude Include="$(mpdecimalDir)\libmpdec\numbertheory.h">
+      <Filter>Header Files\libmpdec</Filter>
+    </ClInclude>
+    <ClInclude Include="$(mpdecimalDir)\libmpdec\sixstep.h">
+      <Filter>Header Files\libmpdec</Filter>
+    </ClInclude>
+    <ClInclude Include="$(mpdecimalDir)\libmpdec\transpose.h">
+      <Filter>Header Files\libmpdec</Filter>
+    </ClInclude>
+    <ClInclude Include="$(mpdecimalDir)\libmpdec\typearith.h">
+      <Filter>Header Files\libmpdec</Filter>
+    </ClInclude>
+    <ClInclude Include="$(mpdecimalDir)\libmpdec\umodarith.h">
+      <Filter>Header Files\libmpdec</Filter>
+    </ClInclude>
+    <ClInclude Include="$(mpdecimalDir)\libmpdec\vccompat.h">
+      <Filter>Header Files\libmpdec</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\Modules\_decimal\_decimal.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(mpdecimalDir)\libmpdec\basearith.c">
+      <Filter>Source Files\libmpdec</Filter>
+    </ClCompile>
+    <ClCompile Include="$(mpdecimalDir)\libmpdec\constants.c">
+      <Filter>Source Files\libmpdec</Filter>
+    </ClCompile>
+    <ClCompile Include="$(mpdecimalDir)\libmpdec\context.c">
+      <Filter>Source Files\libmpdec</Filter>
+    </ClCompile>
+    <ClCompile Include="$(mpdecimalDir)\libmpdec\convolute.c">
+      <Filter>Source Files\libmpdec</Filter>
+    </ClCompile>
+    <ClCompile Include="$(mpdecimalDir)\libmpdec\crt.c">
+      <Filter>Source Files\libmpdec</Filter>
+    </ClCompile>
+    <ClCompile Include="$(mpdecimalDir)\libmpdec\difradix2.c">
+      <Filter>Source Files\libmpdec</Filter>
+    </ClCompile>
+    <ClCompile Include="$(mpdecimalDir)\libmpdec\fnt.c">
+      <Filter>Source Files\libmpdec</Filter>
+    </ClCompile>
+    <ClCompile Include="$(mpdecimalDir)\libmpdec\fourstep.c">
+      <Filter>Source Files\libmpdec</Filter>
+    </ClCompile>
+    <ClCompile Include="$(mpdecimalDir)\libmpdec\io.c">
+      <Filter>Source Files\libmpdec</Filter>
+    </ClCompile>
+    <ClCompile Include="$(mpdecimalDir)\libmpdec\mpalloc.c">
+      <Filter>Source Files\libmpdec</Filter>
+    </ClCompile>
+    <ClCompile Include="$(mpdecimalDir)\libmpdec\mpdecimal.c">
+      <Filter>Source Files\libmpdec</Filter>
+    </ClCompile>
+    <ClCompile Include="$(mpdecimalDir)\libmpdec\numbertheory.c">
+      <Filter>Source Files\libmpdec</Filter>
+    </ClCompile>
+    <ClCompile Include="$(mpdecimalDir)\libmpdec\sixstep.c">
+      <Filter>Source Files\libmpdec</Filter>
+    </ClCompile>
+    <ClCompile Include="$(mpdecimalDir)\libmpdec\transpose.c">
+      <Filter>Source Files\libmpdec</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="..\PC\python_nt.rc">
+      <Filter>Resource Files</Filter>
+    </ResourceCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="$(mpdecimalDir)\libmpdec\vcdiv64.asm">
+      <Filter>Source Files\libmpdec</Filter>
+    </CustomBuild>
+  </ItemGroup>
+</Project>

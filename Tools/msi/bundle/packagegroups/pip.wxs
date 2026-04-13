@@ -1,0 +1,25 @@
+<?xml version="1.0"?>
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+    <Fragment>
+        <PackageGroup Id="pip">
+            <MsiPackage Id="pip_AllUsers"
+                        SourceFile="pip.msi"
+                        Compressed="$(var.CompressMSI)"
+                        DownloadUrl="$(var.DownloadUrl)"
+                        ForcePerMachine="yes"
+                        InstallCondition="InstallAllUsers and Include_pip and not LauncherOnly">
+                <MsiProperty Name="TARGETDIR" Value="[TargetDir]" />
+                <MsiProperty Name="OPTIONALFEATURESREGISTRYKEY" Value="[OptionalFeaturesRegistryKey]" />
+            </MsiPackage>
+            <MsiPackage Id="pip_JustForMe"
+                        SourceFile="pip.msi"
+                        Compressed="$(var.CompressMSI)"
+                        DownloadUrl="$(var.DownloadUrl)"
+                        ForcePerMachine="no"
+                        InstallCondition="not InstallAllUsers and Include_pip and not LauncherOnly">
+                <MsiProperty Name="TARGETDIR" Value="[TargetDir]" />
+                <MsiProperty Name="OPTIONALFEATURESREGISTRYKEY" Value="[OptionalFeaturesRegistryKey]" />
+            </MsiPackage>
+        </PackageGroup>
+    </Fragment>
+</Wix>

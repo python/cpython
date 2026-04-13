@@ -1,0 +1,128 @@
+<?xml version="1.0"?>
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi"
+     xmlns:bal="http://schemas.microsoft.com/wix/BalExtension"
+     xmlns:dep="http://schemas.microsoft.com/wix/DependencyExtension">
+  <Bundle Name="!(loc.FullProductName)"
+          UpgradeCode="$(var.CoreUpgradeCode)"
+          Version="$(var.Version)"
+          IconSourceFile="..\..\..\PC\icons\setup.ico"
+          Manufacturer="!(loc.Manufacturer)"
+          AboutUrl="https://www.python.org/"
+          Compressed="no"
+          dep:ProviderKey="CPython-$(var.MajorVersionNumber).$(var.MinorVersionNumber)$(var.PyArchExt)$(var.PyTestExt)">
+    <BootstrapperApplication Id="PythonBA" SourceFile="$(var.BootstrapApp)">
+        <Payload Compressed='yes' SourceFile='Default.thm' />
+        <Payload Compressed='yes' SourceFile='$(var.DefaultWxl)' />
+        <Payload Compressed='yes' SourceFile='SideBar.png' />
+    </BootstrapperApplication>
+
+    <!-- May be set to "Removing" or "Repairing" -->
+    <Variable Name="ActionLikeInstalling" Value="Installing" />
+    <!-- May be set to "Uninstallation" or "Repair" -->
+    <Variable Name="ActionLikeInstallation" Value="Setup" />
+
+    <Variable Name="ShortVersion" Value="$(var.MajorVersionNumber).$(var.MinorVersionNumber)" />
+    <Variable Name="ShortVersionNoDot" Value="$(var.MajorVersionNumber)$(var.MinorVersionNumber)" />
+    <Variable Name="WinVer" Value="$(var.MajorVersionNumber).$(var.MinorVersionNumber)$(var.PyArchExt)$(var.PyTestExt)" />
+    <Variable Name="WinVerNoDot" Value="$(var.MajorVersionNumber)$(var.MinorVersionNumber)$(var.PyArchExt)$(var.PyTestExt)" />
+
+    <Variable Name="InstallAllUsers" Value="0" bal:Overridable="yes" />
+    <?if "$(var.PyTestExt)"="" ?>
+    <Variable Name="InstallLauncherAllUsers" Value="-1" bal:Overridable="yes" />
+    <?else ?>
+    <Variable Name="InstallLauncherAllUsers" Value="-1" />
+    <?endif ?>
+
+    <Variable Name="TargetDir" Value="" bal:Overridable="yes" />
+    <?if $(var.Platform)~="x64" ?>
+    <Variable Name="DefaultAllUsersTargetDir" Value="[ProgramFiles64Folder]Python[WinVerNoDot]" bal:Overridable="yes" />
+    <Variable Name="TargetPlatform" Value="x64" />
+    <?elseif $(var.Platform)~="ARM64" ?>
+    <Variable Name="DefaultAllUsersTargetDir" Value="[ProgramFiles64Folder]Python[WinVerNoDot]" bal:Overridable="yes" />
+    <Variable Name="TargetPlatform" Value="ARM64" />
+    <?else ?>
+    <Variable Name="DefaultAllUsersTargetDir" Value="[ProgramFilesFolder]Python[WinVerNoDot]" bal:Overridable="yes" />
+    <Variable Name="TargetPlatform" Value="x86" />
+    <?endif ?>
+    <Variable Name="DefaultJustForMeTargetDir" Value="[LocalAppDataFolder]Programs\Python\Python[WinVerNoDot]" bal:Overridable="yes" />
+    <Variable Name="OptionalFeaturesRegistryKey" Value="Software\Python\PythonCore\[WinVer]\InstalledFeatures" />
+    <Variable Name="TargetDirRegistryKey" Value="Software\Python\PythonCore\[WinVer]\InstallPath" />
+
+    <!--
+    An empty string will use the other defaults based on InstallAllUsers
+    (and switch dynamically in the UI). To get the old default, pass
+    this property on the command line:
+        DefaultCustomTargetDir=[WindowsVolume]Python[ShortVersionNoDot]
+    -->
+    <Variable Name="DefaultCustomTargetDir" Value="" bal:Overridable="yes" />
+
+    <Variable Name="InstallAllUsersState" Value="enabled" bal:Overridable="yes" />
+    <?if "$(var.PyTestExt)"="" ?>
+    <Variable Name="InstallLauncherAllUsersState" Value="enabled" bal:Overridable="yes" />
+    <?else ?>
+    <Variable Name="InstallLauncherAllUsersState" Value="disable" bal:Overridable="yes" />
+    <?endif ?>
+    <Variable Name="CustomInstallLauncherAllUsersState" Value="[InstallLauncherAllUsersState]" />
+    <Variable Name="TargetDirState" Value="enabled" />
+    <Variable Name="CustomBrowseButtonState" Value="enabled" />
+
+    <Variable Name="Include_core" Value="1" />
+    <Variable Name="Include_exe" Value="1" bal:Overridable="yes" />
+    <Variable Name="Include_dev" Value="1" bal:Overridable="yes" />
+    <Variable Name="Include_lib" Value="1" bal:Overridable="yes" />
+    <Variable Name="Include_test" Value="1" bal:Overridable="yes" />
+    <Variable Name="Include_doc" Value="1" bal:Overridable="yes" />
+    <Variable Name="Include_tools" Value="0" bal:Overridable="yes" />
+    <Variable Name="Include_tcltk" Value="1" bal:Overridable="yes" />
+    <Variable Name="Include_pip" Value="1" bal:Overridable="yes" />
+    <Variable Name="Include_launcher" Value="-1" bal:Overridable="yes" />
+    <?if "$(var.PyTestExt)"="" ?>
+    <Variable Name="Include_launcherState" Value="enabled" bal:Overridable="yes" />
+    <?else ?>
+    <Variable Name="Include_launcherState" Value="disable" />
+    <?endif ?>
+    <Variable Name="Include_symbols" Value="0" bal:Overridable="yes" />
+    <Variable Name="Include_debug" Value="0" bal:Overridable="yes" />
+    <?if $(var.IncludeFreethreaded)~="true" ?>
+    <Variable Name="Include_freethreaded" Value="0" bal:Overridable="yes" />
+    <Variable Name="Include_freethreadedState" Value="enabled" />
+    <?else ?>
+    <Variable Name="Include_freethreaded" Value="0" />
+    <Variable Name="Include_freethreadedState" Value="disable" />
+    <?endif ?>
+
+    <Variable Name="LauncherOnly" Value="0" bal:Overridable="yes" />
+    <Variable Name="BlockedLauncher" Value="0" />
+    <Variable Name="DetectedLauncher" Value="0" />
+    <Variable Name="DetectedOldLauncher" Value="0" />
+
+    <Variable Name="AssociateFiles" Value="-1" bal:Overridable="yes" />
+    <Variable Name="Shortcuts" Value="1" bal:Overridable="yes" />
+    <Variable Name="PrependPath" Value="0" bal:Overridable="yes" />
+    <Variable Name="AppendPath" Value="0" bal:Overridable="yes" />
+    <Variable Name="CompileAll" Value="0" bal:Overridable="yes" />
+
+    <Variable Name="SimpleInstall" Value="0" bal:Overridable="yes" />
+    <Variable Name="SimpleInstallDescription" Value="" bal:Overridable="yes" />
+
+    <Chain ParallelCache="yes">
+      <PackageGroupRef Id="core" />
+      <PackageGroupRef Id="exe" />
+      <?if $(var.Platform)!="ARM64" ?>
+      <PackageGroupRef Id="crt" />
+      <?endif ?>
+      <PackageGroupRef Id="dev" />
+      <PackageGroupRef Id="lib" />
+      <?if $(var.IncludeFreethreaded)~="true" ?>
+      <PackageGroupRef Id="freethreaded" />
+      <?endif ?>
+      <PackageGroupRef Id="test" />
+      <PackageGroupRef Id="doc" />
+      <PackageGroupRef Id="tcltk" />
+      <PackageGroupRef Id="launcher" />
+      <PackageGroupRef Id="pip" />
+      <PackageGroupRef Id="packageinstall" />
+      <PackageGroupRef Id="postinstall" />
+    </Chain>
+  </Bundle>
+</Wix>

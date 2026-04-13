@@ -1,0 +1,17 @@
+<h3>{% trans %}Download{% endtrans %}</h3>
+<p><a href="{{ pathto('download') }}">{% trans %}Download these documents{% endtrans %}</a></p>
+<h3>{% trans %}Docs by version{% endtrans %}</h3>
+<ul>
+  {# _docs_by_version.html is overwritten by build_docs.py for non-EOL versions #}
+  {% include "_docs_by_version.html" without context %}
+  <li><a href="https://www.python.org/doc/versions/">{% trans %}All versions{% endtrans %}</a></li>
+</ul>
+<h3>{% trans %}Other resources{% endtrans %}</h3>
+<ul>
+  {# XXX: many of these should probably be merged in the main docs #}
+  <li><a href="https://peps.python.org/">{% trans %}PEP index{% endtrans %}</a></li>
+  <li><a href="https://wiki.python.org/moin/BeginnersGuide">{% trans %}Beginner's guide{% endtrans %}</a></li>
+  <li><a href="https://wiki.python.org/moin/PythonBooks">{% trans %}Book list{% endtrans %}</a></li>
+  <li><a href="https://www.python.org/doc/av/">{% trans %}Audio/visual talks{% endtrans %}</a></li>
+  <li><a href="https://devguide.python.org/">{% trans %}Python developer’s guide{% endtrans %}</a></li>
+</ul>

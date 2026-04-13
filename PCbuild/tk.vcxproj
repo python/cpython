@@ -1,0 +1,83 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="PGInstrument|Win32">
+      <Configuration>PGInstrument</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="PGInstrument|x64">
+      <Configuration>PGInstrument</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="PGUpdate|Win32">
+      <Configuration>PGUpdate</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="PGUpdate|x64">
+      <Configuration>PGUpdate</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+        <ProjectConfiguration Include="Release|ARM64">
+      <Configuration>Release</Configuration>
+      <Platform>ARM64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{7E85ECCF-A72C-4DA4-9E52-884508E80BA1}</ProjectGuid>
+    <RootNamespace>tk</RootNamespace>
+  </PropertyGroup>
+  
+  <Import Project="python.props" />
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <Import Project="tcltk.props" />
+  
+  <PropertyGroup Label="Configuration">
+    <ConfigurationType>Makefile</ConfigurationType>
+    <OutDir>$(tcltkDir)</OutDir>
+    <TargetPath>$(OutDir)bin\$(tkDLLName)</TargetPath>
+  </PropertyGroup>
+  
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  
+  <PropertyGroup>
+    <TkOpts>msvcrt</TkOpts>
+    <TkOpts Condition="$(Configuration) == 'Debug'">symbols,msvcrt</TkOpts>
+    <TkDirs>BUILDDIRTOP="$(BuildDirTop)" TCLDIR="$(tclDir.TrimEnd(`\`))" INSTALLDIR="$(OutDir.TrimEnd(`\`))"</TkDirs>
+    <DebugFlags Condition="'$(Configuration)' == 'Debug'">DEBUGFLAGS="-wd4456 -wd4457 -wd4458 -wd4459 -wd4996"</DebugFlags>
+    <WarningsFlags>WARNINGS="-W3 -wd4244 -wd4267 -wd4311 -wd4312 -wd4334"</WarningsFlags>
+    <NMakeBuildCommandLine>setlocal
+set VCINSTALLDIR=$(VCInstallDir)
+cd /D "$(tkDir)win"
+nmake /nologo -f makefile.vc RC=rc MACHINE=$(TclMachine) OPTS=$(TkOpts) $(TkDirs) $(DebugFlags) $(WarningsFlags) TCLSH_NATIVE="$(tclWin32Exe)" all
+nmake /nologo -f makefile.vc RC=rc MACHINE=$(TclMachine) OPTS=$(TkOpts) $(TkDirs) $(DebugFlags) $(WarningsFlags) TCLSH_NATIVE="$(tclWin32Exe)" install-binaries install-libraries
+copy /Y ..\license.terms "$(OutDir)\tklicense.terms"
+</NMakeBuildCommandLine>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="tcl.vcxproj">
+      <Project>{b5fd6f1d-129e-4bff-9340-03606fac7283}</Project>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+    </ProjectReference>
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  
+  <Target Name="Clean" />
+  
+  <Target Name="ResolveAssemblyReferences" />
+</Project>

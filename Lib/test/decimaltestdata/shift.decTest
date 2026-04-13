@@ -1,0 +1,250 @@
+------------------------------------------------------------------------
+-- shift.decTest -- shift coefficient left or right                   --
+-- Copyright (c) IBM Corporation, 1981, 2008.  All rights reserved.   --
+------------------------------------------------------------------------
+-- Please see the document "General Decimal Arithmetic Testcases"     --
+-- at http://www2.hursley.ibm.com/decimal for the description of      --
+-- these testcases.                                                   --
+--                                                                    --
+-- These testcases are experimental ('beta' versions), and they       --
+-- may contain errors.  They are offered on an as-is basis.  In       --
+-- particular, achieving the same results as the tests here is not    --
+-- a guarantee that an implementation complies with any Standard      --
+-- or specification.  The tests are not exhaustive.                   --
+--                                                                    --
+-- Please send comments, suggestions, and corrections to the author:  --
+--   Mike Cowlishaw, IBM Fellow                                       --
+--   IBM UK, PO Box 31, Birmingham Road, Warwick CV34 5JL, UK         --
+--   mfc@uk.ibm.com                                                   --
+------------------------------------------------------------------------
+version: 2.59
+
+extended:    1
+precision:   9
+rounding:    half_up
+maxExponent: 999
+minExponent: -999
+
+-- Sanity check
+shix001 shift          0    0  ->  0
+shix002 shift          0    2  ->  0
+shix003 shift          1    2  ->  100
+shix004 shift          1    8  ->  100000000
+shix005 shift          1    9  ->  0
+shix006 shift          1   -1  ->  0
+shix007 shift  123456789   -1  ->  12345678
+shix008 shift  123456789   -8  ->  1
+shix009 shift  123456789   -9  ->  0
+shix010 shift          0   -2  ->  0
+
+-- rhs must be an integer
+shix011 shift        1    1.5    -> NaN Invalid_operation
+shix012 shift        1    1.0    -> NaN Invalid_operation
+shix013 shift        1    0.1    -> NaN Invalid_operation
+shix014 shift        1    0.0    -> NaN Invalid_operation
+shix015 shift        1    1E+1   -> NaN Invalid_operation
+shix016 shift        1    1E+99  -> NaN Invalid_operation
+shix017 shift        1    Inf    -> NaN Invalid_operation
+shix018 shift        1    -Inf   -> NaN Invalid_operation
+-- and |rhs| <= precision
+shix020 shift        1    -1000  -> NaN Invalid_operation
+shix021 shift        1    -10    -> NaN Invalid_operation
+shix022 shift        1     10    -> NaN Invalid_operation
+shix023 shift        1     1000  -> NaN Invalid_operation
+
+-- full shifting pattern
+shix030 shift  123456789          -9   -> 0
+shix031 shift  123456789          -8   -> 1
+shix032 shift  123456789          -7   -> 12
+shix033 shift  123456789          -6   -> 123
+shix034 shift  123456789          -5   -> 1234
+shix035 shift  123456789          -4   -> 12345
+shix036 shift  123456789          -3   -> 123456
+shix037 shift  123456789          -2   -> 1234567
+shix038 shift  123456789          -1   -> 12345678
+shix039 shift  123456789          -0   -> 123456789
+shix040 shift  123456789          +0   -> 123456789
+shix041 shift  123456789          +1   -> 234567890
+shix042 shift  123456789          +2   -> 345678900
+shix043 shift  123456789          +3   -> 456789000
+shix044 shift  123456789          +4   -> 567890000
+shix045 shift  123456789          +5   -> 678900000
+shix046 shift  123456789          +6   -> 789000000
+shix047 shift  123456789          +7   -> 890000000
+shix048 shift  123456789          +8   -> 900000000
+shix049 shift  123456789          +9   -> 0
+
+-- from examples
+shix051 shift 34        8   ->  '400000000'
+shix052 shift 12        9   ->  '0'
+shix053 shift 123456789 -2  ->  '1234567'
+shix054 shift 123456789 0   ->  '123456789'
+shix055 shift 123456789 +2  ->  '345678900'
+
+-- zeros
+shix060 shift  0E-10              +9   ->   0E-10
+shix061 shift  0E-10              -9   ->   0E-10
+shix062 shift  0.000              +9   ->   0.000
+shix063 shift  0.000              -9   ->   0.000
+shix064 shift  0E+10              +9   ->   0E+10
+shix065 shift  0E+10              -9   ->   0E+10
+shix066 shift -0E-10              +9   ->  -0E-10
+shix067 shift -0E-10              -9   ->  -0E-10
+shix068 shift -0.000              +9   ->  -0.000
+shix069 shift -0.000              -9   ->  -0.000
+shix070 shift -0E+10              +9   ->  -0E+10
+shix071 shift -0E+10              -9   ->  -0E+10
+
+-- Nmax, Nmin, Ntiny
+shix141 shift  9.99999999E+999     -1  -> 9.9999999E+998
+shix142 shift  9.99999999E+999     -8  -> 9E+991
+shix143 shift  9.99999999E+999      1  -> 9.99999990E+999
+shix144 shift  9.99999999E+999      8  -> 9.00000000E+999
+shix145 shift  1E-999              -1  -> 0E-999
+shix146 shift  1E-999              -8  -> 0E-999
+shix147 shift  1E-999               1  -> 1.0E-998
+shix148 shift  1E-999               8  -> 1.00000000E-991
+shix151 shift  1.00000000E-999     -1  -> 1.0000000E-1000
+shix152 shift  1.00000000E-999     -8  -> 1E-1007
+shix153 shift  1.00000000E-999      1  -> 0E-1007
+shix154 shift  1.00000000E-999      8  -> 0E-1007
+shix155 shift  9.00000000E-999     -1  -> 9.0000000E-1000
+shix156 shift  9.00000000E-999     -8  -> 9E-1007
+shix157 shift  9.00000000E-999      1  -> 0E-1007
+shix158 shift  9.00000000E-999      8  -> 0E-1007
+shix160 shift  1E-1007             -1  -> 0E-1007
+shix161 shift  1E-1007             -8  -> 0E-1007
+shix162 shift  1E-1007              1  -> 1.0E-1006
+shix163 shift  1E-1007              8  -> 1.00000000E-999
+--  negatives
+shix171 shift -9.99999999E+999     -1  -> -9.9999999E+998
+shix172 shift -9.99999999E+999     -8  -> -9E+991
+shix173 shift -9.99999999E+999      1  -> -9.99999990E+999
+shix174 shift -9.99999999E+999      8  -> -9.00000000E+999
+shix175 shift -1E-999              -1  -> -0E-999
+shix176 shift -1E-999              -8  -> -0E-999
+shix177 shift -1E-999               1  -> -1.0E-998
+shix178 shift -1E-999               8  -> -1.00000000E-991
+shix181 shift -1.00000000E-999     -1  -> -1.0000000E-1000
+shix182 shift -1.00000000E-999     -8  -> -1E-1007
+shix183 shift -1.00000000E-999      1  -> -0E-1007
+shix184 shift -1.00000000E-999      8  -> -0E-1007
+shix185 shift -9.00000000E-999     -1  -> -9.0000000E-1000
+shix186 shift -9.00000000E-999     -8  -> -9E-1007
+shix187 shift -9.00000000E-999      1  -> -0E-1007
+shix188 shift -9.00000000E-999      8  -> -0E-1007
+shix190 shift -1E-1007             -1  -> -0E-1007
+shix191 shift -1E-1007             -8  -> -0E-1007
+shix192 shift -1E-1007              1  -> -1.0E-1006
+shix193 shift -1E-1007              8  -> -1.00000000E-999
+
+-- more negatives (of sanities)
+shix201 shift         -0    0  ->  -0
+shix202 shift         -0    2  ->  -0
+shix203 shift         -1    2  ->  -100
+shix204 shift         -1    8  ->  -100000000
+shix205 shift         -1    9  ->  -0
+shix206 shift         -1   -1  ->  -0
+shix207 shift -123456789   -1  ->  -12345678
+shix208 shift -123456789   -8  ->  -1
+shix209 shift -123456789   -9  ->  -0
+shix210 shift         -0   -2  ->  -0
+shix211 shift         -0   -0  ->  -0
+
+
+-- Specials; NaNs are handled as usual
+shix781 shift -Inf  -8     -> -Infinity
+shix782 shift -Inf  -1     -> -Infinity
+shix783 shift -Inf  -0     -> -Infinity
+shix784 shift -Inf   0     -> -Infinity
+shix785 shift -Inf   1     -> -Infinity
+shix786 shift -Inf   8     -> -Infinity
+shix787 shift -1000 -Inf   -> NaN Invalid_operation
+shix788 shift -Inf  -Inf   -> NaN Invalid_operation
+shix789 shift -1    -Inf   -> NaN Invalid_operation
+shix790 shift -0    -Inf   -> NaN Invalid_operation
+shix791 shift  0    -Inf   -> NaN Invalid_operation
+shix792 shift  1    -Inf   -> NaN Invalid_operation
+shix793 shift  1000 -Inf   -> NaN Invalid_operation
+shix794 shift  Inf  -Inf   -> NaN Invalid_operation
+
+shix800 shift  Inf  -Inf   -> NaN Invalid_operation
+shix801 shift  Inf  -8     -> Infinity
+shix802 shift  Inf  -1     -> Infinity
+shix803 shift  Inf  -0     -> Infinity
+shix804 shift  Inf   0     -> Infinity
+shix805 shift  Inf   1     -> Infinity
+shix806 shift  Inf   8     -> Infinity
+shix807 shift  Inf   Inf   -> NaN Invalid_operation
+shix808 shift -1000  Inf   -> NaN Invalid_operation
+shix809 shift -Inf   Inf   -> NaN Invalid_operation
+shix810 shift -1     Inf   -> NaN Invalid_operation
+shix811 shift -0     Inf   -> NaN Invalid_operation
+shix812 shift  0     Inf   -> NaN Invalid_operation
+shix813 shift  1     Inf   -> NaN Invalid_operation
+shix814 shift  1000  Inf   -> NaN Invalid_operation
+shix815 shift  Inf   Inf   -> NaN Invalid_operation
+
+shix821 shift  NaN -Inf    ->  NaN
+shix822 shift  NaN -1000   ->  NaN
+shix823 shift  NaN -1      ->  NaN
+shix824 shift  NaN -0      ->  NaN
+shix825 shift  NaN  0      ->  NaN
+shix826 shift  NaN  1      ->  NaN
+shix827 shift  NaN  1000   ->  NaN
+shix828 shift  NaN  Inf    ->  NaN
+shix829 shift  NaN  NaN    ->  NaN
+shix830 shift -Inf  NaN    ->  NaN
+shix831 shift -1000 NaN    ->  NaN
+shix832 shift -1    NaN    ->  NaN
+shix833 shift -0    NaN    ->  NaN
+shix834 shift  0    NaN    ->  NaN
+shix835 shift  1    NaN    ->  NaN
+shix836 shift  1000 NaN    ->  NaN
+shix837 shift  Inf  NaN    ->  NaN
+
+shix841 shift  sNaN -Inf   ->  NaN  Invalid_operation
+shix842 shift  sNaN -1000  ->  NaN  Invalid_operation
+shix843 shift  sNaN -1     ->  NaN  Invalid_operation
+shix844 shift  sNaN -0     ->  NaN  Invalid_operation
+shix845 shift  sNaN  0     ->  NaN  Invalid_operation
+shix846 shift  sNaN  1     ->  NaN  Invalid_operation
+shix847 shift  sNaN  1000  ->  NaN  Invalid_operation
+shix848 shift  sNaN  NaN   ->  NaN  Invalid_operation
+shix849 shift  sNaN sNaN   ->  NaN  Invalid_operation
+shix850 shift  NaN  sNaN   ->  NaN  Invalid_operation
+shix851 shift -Inf  sNaN   ->  NaN  Invalid_operation
+shix852 shift -1000 sNaN   ->  NaN  Invalid_operation
+shix853 shift -1    sNaN   ->  NaN  Invalid_operation
+shix854 shift -0    sNaN   ->  NaN  Invalid_operation
+shix855 shift  0    sNaN   ->  NaN  Invalid_operation
+shix856 shift  1    sNaN   ->  NaN  Invalid_operation
+shix857 shift  1000 sNaN   ->  NaN  Invalid_operation
+shix858 shift  Inf  sNaN   ->  NaN  Invalid_operation
+shix859 shift  NaN  sNaN   ->  NaN  Invalid_operation
+
+-- propagating NaNs
+shix861 shift  NaN1   -Inf    ->  NaN1
+shix862 shift +NaN2   -1000   ->  NaN2
+shix863 shift  NaN3    1000   ->  NaN3
+shix864 shift  NaN4    Inf    ->  NaN4
+shix865 shift  NaN5   +NaN6   ->  NaN5
+shix866 shift -Inf     NaN7   ->  NaN7
+shix867 shift -1000    NaN8   ->  NaN8
+shix868 shift  1000    NaN9   ->  NaN9
+shix869 shift  Inf    +NaN10  ->  NaN10
+shix871 shift  sNaN11  -Inf   ->  NaN11  Invalid_operation
+shix872 shift  sNaN12  -1000  ->  NaN12  Invalid_operation
+shix873 shift  sNaN13   1000  ->  NaN13  Invalid_operation
+shix874 shift  sNaN14   NaN17 ->  NaN14  Invalid_operation
+shix875 shift  sNaN15  sNaN18 ->  NaN15  Invalid_operation
+shix876 shift  NaN16   sNaN19 ->  NaN19  Invalid_operation
+shix877 shift -Inf    +sNaN20 ->  NaN20  Invalid_operation
+shix878 shift -1000    sNaN21 ->  NaN21  Invalid_operation
+shix879 shift  1000    sNaN22 ->  NaN22  Invalid_operation
+shix880 shift  Inf     sNaN23 ->  NaN23  Invalid_operation
+shix881 shift +NaN25  +sNaN24 ->  NaN24  Invalid_operation
+shix882 shift -NaN26    NaN28 -> -NaN26
+shix883 shift -sNaN27  sNaN29 -> -NaN27  Invalid_operation
+shix884 shift  1000    -NaN30 -> -NaN30
+shix885 shift  1000   -sNaN31 -> -NaN31  Invalid_operation

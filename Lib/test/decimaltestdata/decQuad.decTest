@@ -1,0 +1,65 @@
+------------------------------------------------------------------------
+-- decQuad.decTest -- run all decQuad decimal arithmetic tests        --
+-- Copyright (c) IBM Corporation, 1981, 2008.  All rights reserved.   --
+------------------------------------------------------------------------
+-- Please see the document "General Decimal Arithmetic Testcases"     --
+-- at http://www2.hursley.ibm.com/decimal for the description of      --
+-- these testcases.                                                   --
+--                                                                    --
+-- These testcases are experimental ('beta' versions), and they       --
+-- may contain errors.  They are offered on an as-is basis.  In       --
+-- particular, achieving the same results as the tests here is not    --
+-- a guarantee that an implementation complies with any Standard      --
+-- or specification.  The tests are not exhaustive.                   --
+--                                                                    --
+-- Please send comments, suggestions, and corrections to the author:  --
+--   Mike Cowlishaw, IBM Fellow                                       --
+--   IBM UK, PO Box 31, Birmingham Road, Warwick CV34 5JL, UK         --
+--   mfc@uk.ibm.com                                                   --
+------------------------------------------------------------------------
+version: 2.59
+
+-- decQuad tests
+dectest: dqAbs
+dectest: dqAdd
+dectest: dqAnd
+dectest: dqBase
+dectest: dqCanonical
+dectest: dqClass
+dectest: dqCompare
+dectest: dqCompareSig
+dectest: dqCompareTotal
+dectest: dqCompareTotalMag
+dectest: dqCopy
+dectest: dqCopyAbs
+dectest: dqCopyNegate
+dectest: dqCopySign
+dectest: dqDivide
+dectest: dqDivideInt
+dectest: dqEncode
+dectest: dqFMA
+dectest: dqInvert
+dectest: dqLogB
+dectest: dqMax
+dectest: dqMaxMag
+dectest: dqMin
+dectest: dqMinMag
+dectest: dqMinus
+dectest: dqMultiply
+dectest: dqNextMinus
+dectest: dqNextPlus
+dectest: dqNextToward
+dectest: dqOr
+dectest: dqPlus
+dectest: dqQuantize
+dectest: dqReduce
+dectest: dqRemainder
+dectest: dqRemainderNear
+dectest: dqRotate
+dectest: dqSameQuantum
+dectest: dqScaleB
+dectest: dqShift
+dectest: dqSubtract
+dectest: dqToIntegral
+dectest: dqXor
+

@@ -1,0 +1,156 @@
+# Overview
+
+NOTE: This file requires more content.
+
+Since Python 3.7.2, releases have been made through the Microsoft Store
+to allow easy installation on Windows 10.0.17763.0 and later.
+
+# Building
+
+To build the store package, the PC/layout script should be used.
+Execute the directory with the build of Python to package, and pass
+"-h" for full command-line options.
+
+To sideload test builds, you will need a local certificate.
+Instructions are available at
+https://docs.microsoft.com/windows/uwp/packaging/create-certificate-package-signing.
+
+After exporting your certificate, you will need the subject name and
+SHA256 hash. The `certutil -dump <cert file>` command will display this
+information.
+
+To build for sideloading, use these commands in PowerShell:
+
+```
+$env:APPX_DATA_PUBLISHER=<your certificate subject name>
+$env:APPX_DATA_SHA256=<your certificate SHA256>
+$env:SigningCertificateFile=<your certificate file>
+
+python PC/layout --copy <layout directory> --include-appxmanifest
+Tools/msi/make_appx.ps1 <layout directory> python.msix -sign
+
+Add-AppxPackage python.msix
+```
+
+(Note that only the last command requires PowerShell, and the others
+can be used from Command Prompt. You can also double-click to install
+the final package.)
+
+To build for publishing to the Store, use these commands:
+
+```
+$env:APPX_DATA_PUBLISHER = $null
+$env:APPX_DATA_SHA256 = $null
+
+python PC/layout --copy <layout directory> --preset-appxmanifest --precompile
+Tools/msi/make_appx.ps1 <layout directory> python.msix
+```
+
+Note that this package cannot be installed locally. It may only be
+added to a submission for the store.
+
+
+# Submission Metadata
+
+This file contains the text that we use to fill out the store listing
+for the Microsoft Store. It needs to be entered manually when creating
+a new submission via the dashboard at
+https://partner.microsoft.com/dashboard.
+
+We keep it here for convenience and to allow it to be updated via pull
+requests.
+
+When submitting a new app, the HeadlessAppBypass waiver will be needed.
+To request this, send an email to PartnerOps@microsoft.com with the app
+ID (12 character token available from the dashboard). The waiver needs
+to be applied *before* uploading the package (as of November 2019).
+
+Ensure that the new app is named "Python.3.X", where X is the minor
+version of the release. If the name provided initially does not match
+the name used when building the package, the upload will fail. The
+display name shown to users can be set later.
+
+## Title
+
+Python 3.9
+
+## Short Title
+
+Python
+
+## Description
+
+Python is an easy to learn, powerful programming language. It has efficient high-level data structures and a simple but effective approach to object-oriented programming. Python’s elegant syntax and dynamic typing, together with its interpreted nature, make it an ideal language for scripting and rapid application development in many areas on most platforms.
+
+The Python interpreter and the extensive standard library are freely available in source or binary form for all major platforms from the Python web site, https://www.python.org/, and may be freely distributed. The same site also contains distributions of and pointers to many free third party Python modules, programs and tools, and additional documentation.
+
+The Python interpreter is easily extended with new functions and data types implemented in C or C++ (or other languages callable from C). Python is also suitable as an extension language for customizable applications.
+
+## ShortDescription
+
+The Python 3.9 interpreter and runtime.
+
+## Copyright Trademark Information
+
+(c) Python Software Foundation
+
+## Additional License Terms
+
+Visit https://docs.python.org/3.9/license.html for latest license terms.
+
+PSF LICENSE AGREEMENT FOR PYTHON 3.9
+
+1. This LICENSE AGREEMENT is between the Python Software Foundation ("PSF"), and
+   the Individual or Organization ("Licensee") accessing and otherwise using Python
+   3.9 software in source or binary form and its associated documentation.
+
+2. Subject to the terms and conditions of this License Agreement, PSF hereby
+   grants Licensee a nonexclusive, royalty-free, world-wide license to reproduce,
+   analyze, test, perform and/or display publicly, prepare derivative works,
+   distribute, and otherwise use Python 3.9 alone or in any derivative
+   version, provided, however, that PSF's License Agreement and PSF's notice of
+   copyright, i.e., "Copyright © 2001 Python Software Foundation; All Rights
+   Reserved" are retained in Python 3.9 alone or in any derivative version
+   prepared by Licensee.
+
+3. In the event Licensee prepares a derivative work that is based on or
+   incorporates Python 3.9 or any part thereof, and wants to make the
+   derivative work available to others as provided herein, then Licensee hereby
+   agrees to include in any such work a brief summary of the changes made to Python
+   3.9.
+
+4. PSF is making Python 3.9 available to Licensee on an "AS IS" basis.
+   PSF MAKES NO REPRESENTATIONS OR WARRANTIES, EXPRESS OR IMPLIED.  BY WAY OF
+   EXAMPLE, BUT NOT LIMITATION, PSF MAKES NO AND DISCLAIMS ANY REPRESENTATION OR
+   WARRANTY OF MERCHANTABILITY OR FITNESS FOR ANY PARTICULAR PURPOSE OR THAT THE
+   USE OF PYTHON 3.9 WILL NOT INFRINGE ANY THIRD PARTY RIGHTS.
+
+5. PSF SHALL NOT BE LIABLE TO LICENSEE OR ANY OTHER USERS OF PYTHON 3.9
+   FOR ANY INCIDENTAL, SPECIAL, OR CONSEQUENTIAL DAMAGES OR LOSS AS A RESULT OF
+   MODIFYING, DISTRIBUTING, OR OTHERWISE USING PYTHON 3.9, OR ANY DERIVATIVE
+   THEREOF, EVEN IF ADVISED OF THE POSSIBILITY THEREOF.
+
+6. This License Agreement will automatically terminate upon a material breach of
+   its terms and conditions.
+
+7. Nothing in this License Agreement shall be deemed to create any relationship
+   of agency, partnership, or joint venture between PSF and Licensee.  This License
+   Agreement does not grant permission to use PSF trademarks or trade name in a
+   trademark sense to endorse or promote products or services of Licensee, or any
+   third party.
+
+8. By copying, installing or otherwise using Python 3.9, Licensee agrees
+   to be bound by the terms and conditions of this License Agreement.
+
+## Features
+
+* Easy to install Python runtime
+* Supported by core CPython team
+* Find Python, Pip and Idle on PATH
+
+## Search Terms
+
+* Python
+* Scripting
+* Interpreter
+

@@ -1,0 +1,48 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+    <Fragment>
+        <ComponentGroup Id="idle_reg">
+            <!-- We fix the guid of the Subcommands key so that it is correctly reference counted -->
+            <Component Id="assoc_subcommands" Directory="InstallDirectory" Guid="{57D47B4C-96E6-40A0-A958-57083D74423F}">
+                <Condition>VersionNT > 600</Condition>
+                <RegistryValue Root="HKCR" Key="Python.File\Shell\editwithidle$(var.PyTestExt)" Name="MUIVerb" Value="!(loc.EditMenu)" Type="string" KeyPath="yes" />
+                <RegistryValue Root="HKCR" Key="Python.File\Shell\editwithidle$(var.PyTestExt)" Name="Subcommands" Value="" Type="string" KeyPath="no" />
+            </Component>
+            <Component Id="assoc_subcommands_nocon" Directory="InstallDirectory" Guid="{07061D85-9151-4FC4-BB78-13628020D026}">
+                <Condition>VersionNT > 600</Condition>
+                <RegistryValue Root="HKCR" Key="Python.NoConFile\Shell\editwithidle$(var.PyTestExt)" Name="MUIVerb" Value="!(loc.EditMenu)" Type="string" KeyPath="yes" />
+                <RegistryValue Root="HKCR" Key="Python.NoConFile\Shell\editwithidle$(var.PyTestExt)" Name="Subcommands" Value="" Type="string" KeyPath="no" />
+            </Component>
+            
+            <Component Id="assoc_editwithidle" Directory="InstallDirectory">
+                <Condition>VersionNT > 600</Condition>
+                <RegistryKey Root="HKCR" Key="Python.File\Shell\editwithidle\shell\edit$(var.MajorVersionNumber)$(var.MinorVersionNumber)$(var.PyArchExt)$(var.PyTestExt)">
+                    <RegistryValue Name="MUIVerb" Value="!(loc.EditSubMenu)" Type="string" KeyPath="yes" />
+                    <RegistryValue Key="command" Value='"[PYTHONW_EXE]" -m idlelib "%L" %*' Type="string" />
+                </RegistryKey>
+            </Component>
+            <Component Id="assoc_editwithidle_nocon" Directory="InstallDirectory">
+                <Condition>VersionNT > 600</Condition>
+                <RegistryKey Root="HKCR" Key="Python.NoConFile\Shell\editwithidle\shell\edit$(var.MajorVersionNumber)$(var.MinorVersionNumber)$(var.PyArchExt)$(var.PyTestExt)">
+                    <RegistryValue Name="MUIVerb" Value="!(loc.EditSubMenu)" Type="string" KeyPath="yes" />
+                    <RegistryValue Key="command" Value='"[PYTHONW_EXE]" -m idlelib "%L" %*' Type="string" />
+                </RegistryKey>
+            </Component>
+            
+            <Component Id="assoc_editwithidle_vista" Directory="InstallDirectory">
+                <Condition>VersionNT = 600</Condition>
+                <RegistryKey Root="HKCR" Key="Python.File\Shell\editwithidle$(var.MajorVersionNumber)$(var.MinorVersionNumber)$(var.PyArchExt)$(var.PyTestExt)">
+                    <RegistryValue Value="!(loc.EditSubMenu)" Type="string" KeyPath="yes" />
+                    <RegistryValue Key="command" Value='"[PYTHONW_EXE]" -m idlelib "%L" %*' Type="string" />
+                </RegistryKey>
+            </Component>
+            <Component Id="assoc_editwithidle_nocon_vista" Directory="InstallDirectory">
+                <Condition>VersionNT = 600</Condition>
+                <RegistryKey Root="HKCR" Key="Python.NoConFile\Shell\editwithidle$(var.MajorVersionNumber)$(var.MinorVersionNumber)$(var.PyArchExt)$(var.PyTestExt)">
+                    <RegistryValue Value="!(loc.EditSubMenu)" Type="string" KeyPath="yes" />
+                    <RegistryValue Key="command" Value='"[PYTHONW_EXE]" -m idlelib "%L" %*' Type="string" />
+                </RegistryKey>
+            </Component>
+        </ComponentGroup>
+    </Fragment>
+</Wix>

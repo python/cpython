@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+    <PropertyGroup>
+        <ProjectGuid>{0D62A2BB-5F71-4447-8C8C-9708407B3674}</ProjectGuid>
+        <SchemaVersion>2.0</SchemaVersion>
+        <OutputName>doc</OutputName>
+        <OutputType>Package</OutputType>
+        <!-- Shortcut validation is not necessary -->
+        <SuppressICEs>ICE43</SuppressICEs>
+    </PropertyGroup>
+    <Import Project="..\msi.props" />
+    <PropertyGroup>
+        <DocHtmlPath>$(PySourcePath)Doc\build\html\</DocHtmlPath>
+        <DocHtmlPath Condition="!HasTrailingSlash($(DocHtmlPath))">$(DocHtmlPath)\</DocHtmlPath>
+    </PropertyGroup>
+    <ItemGroup>
+        <LinkerBindInputPaths Include="$(DocHtmlPath)">
+            <BindName>doc_html</BindName>
+        </LinkerBindInputPaths>
+        <Compile Include="doc.wxs" />
+    </ItemGroup>
+    <ItemGroup>
+        <WxlTemplate Include="*.wxl_template" />
+    </ItemGroup>
+    <ItemGroup>
+        <InstallFiles Include="$(DocHtmlPath)**\*"
+                      Exclude="$(DocHtmlPath)_sources\**\*">
+            <SourceBase>$(DocHtmlPath)</SourceBase>
+            <Source>!(bindpath.doc_html)</Source>
+            <TargetBase>$(DocHtmlPath)..\</TargetBase>
+            <Target_>Doc_</Target_>
+            <Group>doc_html</Group>
+        </InstallFiles>
+    </ItemGroup>
+
+    <Import Project="..\msi.targets" />
+</Project>

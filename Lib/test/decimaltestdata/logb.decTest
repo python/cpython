@@ -1,0 +1,188 @@
+------------------------------------------------------------------------
+-- logb.decTest -- return integral adjusted exponent as per 754r      --
+-- Copyright (c) IBM Corporation, 2005, 2009.  All rights reserved.   --
+------------------------------------------------------------------------
+-- Please see the document "General Decimal Arithmetic Testcases"     --
+-- at http://www2.hursley.ibm.com/decimal for the description of      --
+-- these testcases.                                                   --
+--                                                                    --
+-- These testcases are experimental ('beta' versions), and they       --
+-- may contain errors.  They are offered on an as-is basis.  In       --
+-- particular, achieving the same results as the tests here is not    --
+-- a guarantee that an implementation complies with any Standard      --
+-- or specification.  The tests are not exhaustive.                   --
+--                                                                    --
+-- Please send comments, suggestions, and corrections to the author:  --
+--   Mike Cowlishaw, IBM Fellow                                       --
+--   IBM UK, PO Box 31, Birmingham Road, Warwick CV34 5JL, UK         --
+--   mfc@uk.ibm.com                                                   --
+------------------------------------------------------------------------
+version: 2.59
+
+-- This emphasises the testing of notable cases, as they will often
+-- have unusual paths (especially the 10**n results).
+
+extended:    1
+rounding:    half_even
+maxExponent: 999
+minexponent: -999
+
+-- basics & examples
+precision:   9
+logbx001 logb  0                 -> -Infinity  Division_by_zero
+logbx002 logb  1E-999            -> -999
+logbx003 logb  9E-999            -> -999
+logbx004 logb  0.001             -> -3
+logbx005 logb  0.03              -> -2
+logbx006 logb  1                 ->  0
+logbx007 logb  2                 ->  0
+logbx008 logb  2.5               ->  0
+logbx009 logb  2.50              ->  0
+logbx010 logb  10                ->  1
+logbx011 logb  70                ->  1
+logbx012 logb  100               ->  2
+logbx013 logb  250               ->  2
+logbx014 logb +Infinity          ->  Infinity
+
+-- negatives are treated as positives
+logbx021 logb -0                 -> -Infinity  Division_by_zero
+logbx022 logb -1E-999            -> -999
+logbx023 logb -9E-999            -> -999
+logbx024 logb -0.001             -> -3
+logbx025 logb -1                 ->  0
+logbx026 logb -2                 ->  0
+logbx027 logb -10                ->  1
+logbx028 logb -70                ->  1
+logbx029 logb -100               ->  2
+logbx030 logb -100000000         ->  8
+logbx031 logb -Infinity          ->  Infinity
+
+-- zeros
+logbx111 logb          0   -> -Infinity  Division_by_zero
+logbx112 logb         -0   -> -Infinity  Division_by_zero
+logbx113 logb       0E+4   -> -Infinity  Division_by_zero
+logbx114 logb      -0E+4   -> -Infinity  Division_by_zero
+logbx115 logb     0.0000   -> -Infinity  Division_by_zero
+logbx116 logb    -0.0000   -> -Infinity  Division_by_zero
+logbx117 logb      0E-141  -> -Infinity  Division_by_zero
+logbx118 logb     -0E-141  -> -Infinity  Division_by_zero
+
+-- full coefficients, alternating bits
+logbx121 logb   268268268        -> 8
+logbx122 logb  -268268268        -> 8
+logbx123 logb   134134134        -> 8
+logbx124 logb  -134134134        -> 8
+
+-- Nmax, Nmin, Ntiny
+logbx131 logb  9.99999999E+999   -> 999
+logbx132 logb  1E-999            -> -999
+logbx133 logb  1.00000000E-999   -> -999
+logbx134 logb  1E-1007           -> -1007
+
+logbx135 logb  -1E-1007          -> -1007
+logbx136 logb  -1.00000000E-999  -> -999
+logbx137 logb  -1E-999           -> -999
+logbx138 logb  -9.99999999E+999  ->  999
+
+-- ones
+logbx0061 logb  1                 ->   0
+logbx0062 logb  1.0               ->   0
+logbx0063 logb  1.000000000000000 ->   0
+logbx0064 logb  1.000000000000000000 ->   0
+
+-- notable cases -- exact powers of 10
+logbx1100 logb 1             -> 0
+logbx1101 logb 10            -> 1
+logbx1102 logb 100           -> 2
+logbx1103 logb 1000          -> 3
+logbx1104 logb 10000         -> 4
+logbx1105 logb 100000        -> 5
+logbx1106 logb 1000000       -> 6
+logbx1107 logb 10000000      -> 7
+logbx1108 logb 100000000     -> 8
+logbx1109 logb 1000000000    -> 9
+logbx1110 logb 10000000000   -> 10
+logbx1111 logb 100000000000  -> 11
+logbx1112 logb 1000000000000 -> 12
+logbx1113 logb 0.00000000001 -> -11
+logbx1114 logb 0.0000000001 -> -10
+logbx1115 logb 0.000000001 -> -9
+logbx1116 logb 0.00000001 -> -8
+logbx1117 logb 0.0000001 -> -7
+logbx1118 logb 0.000001 -> -6
+logbx1119 logb 0.00001 -> -5
+logbx1120 logb 0.0001 -> -4
+logbx1121 logb 0.001 -> -3
+logbx1122 logb 0.01 -> -2
+logbx1123 logb 0.1 -> -1
+logbx1124 logb 1E-99  -> -99
+logbx1125 logb 1E-100 -> -100
+logbx1126 logb 1E-383 -> -383
+logbx1127 logb 1E-999 -> -999
+
+-- suggestions from Ilan Nehama
+logbx1400 logb 10E-3    -> -2
+logbx1401 logb 10E-2    -> -1
+logbx1402 logb 100E-2   ->  0
+logbx1403 logb 1000E-2  ->  1
+logbx1404 logb 10000E-2 ->  2
+logbx1405 logb 10E-1    ->  0
+logbx1406 logb 100E-1   ->  1
+logbx1407 logb 1000E-1  ->  2
+logbx1408 logb 10000E-1 ->  3
+logbx1409 logb 10E0     ->  1
+logbx1410 logb 100E0    ->  2
+logbx1411 logb 1000E0   ->  3
+logbx1412 logb 10000E0  ->  4
+logbx1413 logb 10E1     ->  2
+logbx1414 logb 100E1    ->  3
+logbx1415 logb 1000E1   ->  4
+logbx1416 logb 10000E1  ->  5
+logbx1417 logb 10E2     ->  3
+logbx1418 logb 100E2    ->  4
+logbx1419 logb 1000E2   ->  5
+logbx1420 logb 10000E2  ->  6
+
+-- inexacts
+precision: 2
+logbx1500 logb 10000E2       ->  6
+logbx1501 logb 1E+99         ->  99
+logbx1502 logb 1E-99         -> -99
+logbx1503 logb 1E+100        ->  1.0E+2  Rounded
+logbx1504 logb 1E+999        ->  1.0E+3  Inexact Rounded
+logbx1505 logb 1E-100        -> -1.0E+2  Rounded
+logbx1506 logb 1E-999        -> -1.0E+3  Inexact Rounded
+logbx1507 logb 1E-1111       -> -1.1E+3  Inexact Rounded
+logbx1508 logb 1E-3333       -> -3.3E+3  Inexact Rounded
+logbx1509 logb 1E-6666       -> -6.7E+3  Inexact Rounded
+logbx1510 logb 1E+999999999  ->  1.0E+9  Inexact Rounded
+logbx1511 logb 1E-999999999  -> -1.0E+9  Inexact Rounded
+precision: 1
+logbx1517 logb 1E-1111       -> -1E+3    Inexact Rounded
+logbx1518 logb 1E-3333       -> -3E+3    Inexact Rounded
+logbx1519 logb 1E-6666       -> -7E+3    Inexact Rounded
+precision: 8
+logbx1520 logb 1E+999999999  ->  1.0000000E+9 Inexact Rounded
+logbx1521 logb 1E-999999999  -> -1.0000000E+9 Inexact Rounded
+precision: 9
+logbx1523 logb 1E+999999999  ->  999999999
+logbx1524 logb 1E-999999999  -> -999999999
+
+-- special values
+precision: 9
+logbx820  logb   Infinity ->   Infinity
+logbx821  logb  -Infinity ->   Infinity
+logbx822  logb   0        ->  -Infinity Division_by_zero
+logbx823  logb   NaN      ->   NaN
+logbx824  logb   sNaN     ->   NaN     Invalid_operation
+-- propagating NaNs
+logbx825  logb   sNaN123  ->   NaN123  Invalid_operation
+logbx826  logb   -sNaN321 ->  -NaN321  Invalid_operation
+logbx827  logb   NaN456   ->   NaN456
+logbx828  logb   -NaN654  ->  -NaN654
+logbx829  logb   NaN1     ->   NaN1
+
+-- Null test
+logbx900  logb #   -> NaN Invalid_operation
+
+

@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+    <PropertyGroup>
+        <ProjectGuid>{10487945-15D1-4092-A214-338395C4116B}</ProjectGuid>
+        <OutputName>python</OutputName>
+        <OutputSuffix></OutputSuffix>
+        <SupportSigning>false</SupportSigning>
+    </PropertyGroup>
+
+    <Import Project="msi.props" />
+
+    <PropertyGroup>
+        <SignOutput>false</SignOutput>
+        <TargetName>python-$(PythonVersion)-embed-$(ArchName)</TargetName>
+        <TargetExt>.zip</TargetExt>
+        <TargetPath>$(OutputPath)\$(TargetName)$(TargetExt)</TargetPath>
+        <CleanCommand>rmdir /q/s "$(IntermediateOutputPath)\zip_$(ArchName)"</CleanCommand>
+        <Arguments>"$(PythonExe)" "$(PySourcePath)PC\layout"</Arguments>
+        <Arguments>$(Arguments) -b "$(BuildPath.TrimEnd(`\`))" -s "$(PySourcePath.TrimEnd(`\`))"</Arguments>
+        <Arguments>$(Arguments) -t "$(IntermediateOutputPath)\zip_$(ArchName)"</Arguments>
+        <Arguments>$(Arguments) --zip "$(TargetPath)"</Arguments>
+        <Arguments>$(Arguments) --precompile --zip-lib --include-underpth --include-stable --flat-dlls</Arguments>
+        <Environment>$(Environment)%0D%0Aset PYTHONPATH=$(PySourcePath)Lib</Environment>
+    </PropertyGroup>
+
+    <Target Name="_Build">
+        <Exec Command="setlocal%0D%0A$(Environment)%0D%0A$(CleanCommand)%0D%0A$(Arguments)" />
+    </Target>
+
+    <Target Name="AfterBuild" />
+    <Target Name="Build" DependsOnTargets="_Build;AfterBuild" />
+
+    <Target Name="ShowHashes">
+        <ItemGroup>
+            <UserFiles Include="@(File)" Condition="'%(File.CopyTo)' == '$(EXETarget)'" />
+        </ItemGroup>
+
+        <Exec Command="&quot;$(PythonExe)&quot; generate_md5.py @(UserFiles->'&quot;%(FullPath)&quot;',' ')" />
+    </Target>
+</Project>

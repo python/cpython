@@ -1,0 +1,183 @@
+------------------------------------------------------------------------
+-- dqReduce.decTest -- remove trailing zeros from a decQuad           --
+-- Copyright (c) IBM Corporation, 2003, 2008.  All rights reserved.   --
+------------------------------------------------------------------------
+-- Please see the document "General Decimal Arithmetic Testcases"     --
+-- at http://www2.hursley.ibm.com/decimal for the description of      --
+-- these testcases.                                                   --
+--                                                                    --
+-- These testcases are experimental ('beta' versions), and they       --
+-- may contain errors.  They are offered on an as-is basis.  In       --
+-- particular, achieving the same results as the tests here is not    --
+-- a guarantee that an implementation complies with any Standard      --
+-- or specification.  The tests are not exhaustive.                   --
+--                                                                    --
+-- Please send comments, suggestions, and corrections to the author:  --
+--   Mike Cowlishaw, IBM Fellow                                       --
+--   IBM UK, PO Box 31, Birmingham Road, Warwick CV34 5JL, UK         --
+--   mfc@uk.ibm.com                                                   --
+------------------------------------------------------------------------
+
+version: 2.59
+
+extended:    1
+clamp:       1
+precision:   34
+maxExponent: 6144
+minExponent: -6143
+rounding:    half_even
+
+dqred001 reduce '1'      -> '1'
+dqred002 reduce '-1'     -> '-1'
+dqred003 reduce '1.00'   -> '1'
+dqred004 reduce '-1.00'  -> '-1'
+dqred005 reduce '0'      -> '0'
+dqred006 reduce '0.00'   -> '0'
+dqred007 reduce '00.0'   -> '0'
+dqred008 reduce '00.00'  -> '0'
+dqred009 reduce '00'     -> '0'
+dqred010 reduce '0E+1'   -> '0'
+dqred011 reduce '0E+5'   -> '0'
+
+dqred012 reduce '-2'     -> '-2'
+dqred013 reduce '2'      -> '2'
+dqred014 reduce '-2.00'  -> '-2'
+dqred015 reduce '2.00'   -> '2'
+dqred016 reduce '-0'     -> '-0'
+dqred017 reduce '-0.00'  -> '-0'
+dqred018 reduce '-00.0'  -> '-0'
+dqred019 reduce '-00.00' -> '-0'
+dqred020 reduce '-00'    -> '-0'
+dqred021 reduce '-0E+5'   -> '-0'
+dqred022 reduce '-0E+1'  -> '-0'
+
+dqred030 reduce '+0.1'            -> '0.1'
+dqred031 reduce '-0.1'            -> '-0.1'
+dqred032 reduce '+0.01'           -> '0.01'
+dqred033 reduce '-0.01'           -> '-0.01'
+dqred034 reduce '+0.001'          -> '0.001'
+dqred035 reduce '-0.001'          -> '-0.001'
+dqred036 reduce '+0.000001'       -> '0.000001'
+dqred037 reduce '-0.000001'       -> '-0.000001'
+dqred038 reduce '+0.000000000001' -> '1E-12'
+dqred039 reduce '-0.000000000001' -> '-1E-12'
+
+dqred041 reduce 1.1        -> 1.1
+dqred042 reduce 1.10       -> 1.1
+dqred043 reduce 1.100      -> 1.1
+dqred044 reduce 1.110      -> 1.11
+dqred045 reduce -1.1       -> -1.1
+dqred046 reduce -1.10      -> -1.1
+dqred047 reduce -1.100     -> -1.1
+dqred048 reduce -1.110     -> -1.11
+dqred049 reduce 9.9        -> 9.9
+dqred050 reduce 9.90       -> 9.9
+dqred051 reduce 9.900      -> 9.9
+dqred052 reduce 9.990      -> 9.99
+dqred053 reduce -9.9       -> -9.9
+dqred054 reduce -9.90      -> -9.9
+dqred055 reduce -9.900     -> -9.9
+dqred056 reduce -9.990     -> -9.99
+
+-- some trailing fractional zeros with zeros in units
+dqred060 reduce  10.0        -> 1E+1
+dqred061 reduce  10.00       -> 1E+1
+dqred062 reduce  100.0       -> 1E+2
+dqred063 reduce  100.00      -> 1E+2
+dqred064 reduce  1.1000E+3   -> 1.1E+3
+dqred065 reduce  1.10000E+3  -> 1.1E+3
+dqred066 reduce -10.0        -> -1E+1
+dqred067 reduce -10.00       -> -1E+1
+dqred068 reduce -100.0       -> -1E+2
+dqred069 reduce -100.00      -> -1E+2
+dqred070 reduce -1.1000E+3   -> -1.1E+3
+dqred071 reduce -1.10000E+3  -> -1.1E+3
+
+-- some insignificant trailing zeros with positive exponent
+dqred080 reduce  10E+1       -> 1E+2
+dqred081 reduce  100E+1      -> 1E+3
+dqred082 reduce  1.0E+2      -> 1E+2
+dqred083 reduce  1.0E+3      -> 1E+3
+dqred084 reduce  1.1E+3      -> 1.1E+3
+dqred085 reduce  1.00E+3     -> 1E+3
+dqred086 reduce  1.10E+3     -> 1.1E+3
+dqred087 reduce -10E+1       -> -1E+2
+dqred088 reduce -100E+1      -> -1E+3
+dqred089 reduce -1.0E+2      -> -1E+2
+dqred090 reduce -1.0E+3      -> -1E+3
+dqred091 reduce -1.1E+3      -> -1.1E+3
+dqred092 reduce -1.00E+3     -> -1E+3
+dqred093 reduce -1.10E+3     -> -1.1E+3
+
+-- some significant trailing zeros, were we to be trimming
+dqred100 reduce  11          -> 11
+dqred101 reduce  10          -> 1E+1
+dqred102 reduce  10.         -> 1E+1
+dqred103 reduce  1.1E+1      -> 11
+dqred104 reduce  1.0E+1      -> 1E+1
+dqred105 reduce  1.10E+2     -> 1.1E+2
+dqred106 reduce  1.00E+2     -> 1E+2
+dqred107 reduce  1.100E+3    -> 1.1E+3
+dqred108 reduce  1.000E+3    -> 1E+3
+dqred109 reduce  1.000000E+6 -> 1E+6
+dqred110 reduce -11          -> -11
+dqred111 reduce -10          -> -1E+1
+dqred112 reduce -10.         -> -1E+1
+dqred113 reduce -1.1E+1      -> -11
+dqred114 reduce -1.0E+1      -> -1E+1
+dqred115 reduce -1.10E+2     -> -1.1E+2
+dqred116 reduce -1.00E+2     -> -1E+2
+dqred117 reduce -1.100E+3    -> -1.1E+3
+dqred118 reduce -1.000E+3    -> -1E+3
+dqred119 reduce -1.00000E+5  -> -1E+5
+dqred120 reduce -1.000000E+6 -> -1E+6
+dqred121 reduce -10.00000E+6 -> -1E+7
+dqred122 reduce -100.0000E+6 -> -1E+8
+dqred123 reduce -1000.000E+6 -> -1E+9
+dqred124 reduce -10000.00E+6 -> -1E+10
+dqred125 reduce -100000.0E+6 -> -1E+11
+dqred126 reduce -1000000.E+6 -> -1E+12
+
+-- examples from decArith
+dqred140 reduce '2.1'     ->  '2.1'
+dqred141 reduce '-2.0'    ->  '-2'
+dqred142 reduce '1.200'   ->  '1.2'
+dqred143 reduce '-120'    ->  '-1.2E+2'
+dqred144 reduce '120.00'  ->  '1.2E+2'
+dqred145 reduce '0.00'    ->  '0'
+
+-- Nmax, Nmin, Ntiny
+-- note origami effect on some of these
+dqred151 reduce  9.999999999999999999999999999999999E+6144   -> 9.999999999999999999999999999999999E+6144
+dqred152 reduce  9.999999999999999999999999000000000E+6140   -> 9.99999999999999999999999900000E+6140
+dqred153 reduce  9.999999999999999999999999999990000E+6144   -> 9.999999999999999999999999999990000E+6144
+dqred154 reduce  1E-6143                   -> 1E-6143
+dqred155 reduce  1.000000000000000000000000000000000E-6143   -> 1E-6143
+dqred156 reduce  2.000E-6173               -> 2E-6173   Subnormal
+dqred157 reduce  1E-6176                   -> 1E-6176   Subnormal
+
+dqred161 reduce  -1E-6176                  -> -1E-6176  Subnormal
+dqred162 reduce  -2.000E-6173              -> -2E-6173  Subnormal
+dqred163 reduce  -1.000000000000000000000000000000000E-6143  -> -1E-6143
+dqred164 reduce  -1E-6143                  -> -1E-6143
+dqred165 reduce  -9.999999999999999999999999000000000E+6140  -> -9.99999999999999999999999900000E+6140
+dqred166 reduce  -9.999999999999999999999999999990000E+6144  -> -9.999999999999999999999999999990000E+6144
+dqred167 reduce  -9.999999999999999999999999999999990E+6144  -> -9.999999999999999999999999999999990E+6144
+dqred168 reduce  -9.999999999999999999999999999999999E+6144  -> -9.999999999999999999999999999999999E+6144
+dqred169 reduce  -9.999999999999999999999999999999990E+6144  -> -9.999999999999999999999999999999990E+6144
+
+
+-- specials (reduce does not affect payload)
+dqred820 reduce 'Inf'    -> 'Infinity'
+dqred821 reduce '-Inf'   -> '-Infinity'
+dqred822 reduce   NaN    ->  NaN
+dqred823 reduce  sNaN    ->  NaN    Invalid_operation
+dqred824 reduce   NaN101 ->  NaN101
+dqred825 reduce  sNaN010 ->  NaN10  Invalid_operation
+dqred827 reduce  -NaN    -> -NaN
+dqred828 reduce -sNaN    -> -NaN    Invalid_operation
+dqred829 reduce  -NaN101 -> -NaN101
+dqred830 reduce -sNaN010 -> -NaN10  Invalid_operation
+
+-- Null test
+dqred900 reduce  # -> NaN Invalid_operation

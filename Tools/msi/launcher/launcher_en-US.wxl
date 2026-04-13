@@ -1,0 +1,17 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<WixLocalization Culture="en-us" xmlns="http://schemas.microsoft.com/wix/2006/localization">
+    <String Id="LCID">1033</String>
+    <String Id="Culture">en-us</String>
+    <String Id="ProductName">Python Launcher</String>
+    <String Id="Title">Python Launcher</String>
+    <String Id="Description">Python Launcher</String>
+    <String Id="Manufacturer">Python Software Foundation</String>
+    <String Id="NoDowngrade">A newer version of the Python launcher is already installed.</String>
+    <String Id="NoTargetDir">The TARGETDIR variable must be provided when invoking this installer.</String>
+    <String Id="PythonFileDescription">Python File</String>
+    <String Id="PythonNoConFileDescription">Python File (no console)</String>
+    <String Id="PythonCompiledFileDescription">Compiled Python File</String>
+    <String Id="PythonExtensionDescription">Python Extension Module</String>
+    <String Id="PythonArchiveFileDescription">Python Zip Application File</String>
+    <String Id="PythonNoConArchiveFileDescription">Python Zip Application File (no console)</String>
+</WixLocalization>

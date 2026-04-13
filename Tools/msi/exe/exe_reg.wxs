@@ -1,0 +1,25 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+    <Fragment>
+        <PropertyRef Id="ROOTREGISTRYKEY" />
+        <PropertyRef Id="REGISTRYKEY" />
+        
+        <ComponentGroup Id="exe_reg">
+            <Component Id="CommonPythonRegistration" Directory="InstallDirectory" Guid="$(var.CommonPythonRegComponentGuid)">
+                <RegistryKey Root="HKMU" Key="[ROOTREGISTRYKEY]">
+                    <RegistryValue Name="DisplayName" Type="string" Value="!(loc.Manufacturer)" KeyPath="yes" />
+                    <RegistryValue Name="SupportUrl" Type="string" Value="!(loc.ManufacturerSupportUrl)" KeyPath="no" />
+                </RegistryKey>
+            </Component>
+            <Component Id="PythonRegistration" Directory="InstallDirectory" Guid="$(var.PythonRegComponentGuid)">
+                <RegistryKey Root="HKMU" Key="[REGISTRYKEY]">
+                    <RegistryValue Name="DisplayName" Type="string" Value="!(loc.ShortcutName)" KeyPath="yes" />
+                    <RegistryValue Name="SupportUrl" Type="string" Value="!(loc.SupportUrl)" KeyPath="no" />
+                    <RegistryValue Name="Version" Type="string" Value="$(var.LongVersion)" KeyPath="no" />
+                    <RegistryValue Name="SysVersion" Type="string" Value="$(var.ShortVersion)" KeyPath="no" />
+                    <RegistryValue Name="SysArchitecture" Type="string" Value="$(var.PlatformArchitecture)" KeyPath="no" />
+                </RegistryKey>
+            </Component>
+        </ComponentGroup>
+    </Fragment>
+</Wix>

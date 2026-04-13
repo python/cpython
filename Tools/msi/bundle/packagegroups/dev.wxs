@@ -1,0 +1,44 @@
+<?xml version="1.0"?>
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+    <Fragment>
+        <PackageGroup Id="dev">
+            <MsiPackage Id="dev_AllUsers"
+                        SourceFile="dev.msi"
+                        Compressed="$(var.CompressMSI)"
+                        DownloadUrl="$(var.DownloadUrl)"
+                        ForcePerMachine="yes"
+                        InstallCondition="InstallAllUsers and Include_dev and not LauncherOnly">
+                <MsiProperty Name="TARGETDIR" Value="[TargetDir]" />
+                <MsiProperty Name="OPTIONALFEATURESREGISTRYKEY" Value="[OptionalFeaturesRegistryKey]" />
+            </MsiPackage>
+            <MsiPackage Id="dev_AllUsers_d"
+                        SourceFile="dev_d.msi"
+                        Compressed="$(var.CompressMSI_D)"
+                        DownloadUrl="$(var.DownloadUrl)"
+                        ForcePerMachine="yes"
+                        InstallCondition="InstallAllUsers and Include_dev and Include_debug and not LauncherOnly">
+                <MsiProperty Name="TARGETDIR" Value="[TargetDir]" />
+                <MsiProperty Name="OPTIONALFEATURESREGISTRYKEY" Value="[OptionalFeaturesRegistryKey]" />
+            </MsiPackage>
+
+            <MsiPackage Id="dev_JustForMe"
+                        SourceFile="dev.msi"
+                        Compressed="$(var.CompressMSI)"
+                        DownloadUrl="$(var.DownloadUrl)"
+                        ForcePerMachine="no"
+                        InstallCondition="not InstallAllUsers and Include_dev and not LauncherOnly">
+                <MsiProperty Name="TARGETDIR" Value="[TargetDir]" />
+                <MsiProperty Name="OPTIONALFEATURESREGISTRYKEY" Value="[OptionalFeaturesRegistryKey]" />
+            </MsiPackage>
+            <MsiPackage Id="dev_JustForMe_d"
+                        SourceFile="dev_d.msi"
+                        Compressed="$(var.CompressMSI_D)"
+                        DownloadUrl="$(var.DownloadUrl)"
+                        ForcePerMachine="no"
+                        InstallCondition="not InstallAllUsers and Include_dev and Include_debug and not LauncherOnly">
+                <MsiProperty Name="TARGETDIR" Value="[TargetDir]" />
+                <MsiProperty Name="OPTIONALFEATURESREGISTRYKEY" Value="[OptionalFeaturesRegistryKey]" />
+            </MsiPackage>
+        </PackageGroup>
+    </Fragment>
+</Wix>

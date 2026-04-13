@@ -1,0 +1,764 @@
+------------------------------------------------------------------------
+-- rescale.decTest -- decimal rescale operation                       --
+-- Copyright (c) IBM Corporation, 1981, 2008.  All rights reserved.   --
+------------------------------------------------------------------------
+-- Please see the document "General Decimal Arithmetic Testcases"     --
+-- at http://www2.hursley.ibm.com/decimal for the description of      --
+-- these testcases.                                                   --
+--                                                                    --
+-- These testcases are experimental ('beta' versions), and they       --
+-- may contain errors.  They are offered on an as-is basis.  In       --
+-- particular, achieving the same results as the tests here is not    --
+-- a guarantee that an implementation complies with any Standard      --
+-- or specification.  The tests are not exhaustive.                   --
+--                                                                    --
+-- Please send comments, suggestions, and corrections to the author:  --
+--   Mike Cowlishaw, IBM Fellow                                       --
+--   IBM UK, PO Box 31, Birmingham Road, Warwick CV34 5JL, UK         --
+--   mfc@uk.ibm.com                                                   --
+------------------------------------------------------------------------
+version: 2.59
+
+-- [obsolete]   Quantize.decTest has the improved version
+
+-- 2004.03.15 Underflow for quantize is suppressed
+
+extended:    1
+precision:   9
+rounding:    half_up
+maxExponent: 999
+minexponent: -999
+
+-- sanity checks
+
+resx001 rescale 0       0   -> 0
+resx002 rescale 1       0   -> 1
+resx003 rescale 0.1    +2   -> 0E+2 Inexact Rounded
+resx005 rescale 0.1    +1   -> 0E+1 Inexact Rounded
+resx006 rescale 0.1     0   -> 0 Inexact Rounded
+resx007 rescale 0.1    -1   -> 0.1
+resx008 rescale 0.1    -2   -> 0.10
+resx009 rescale 0.1    -3   -> 0.100
+resx010 rescale 0.9    +2   -> 0E+2 Inexact Rounded
+resx011 rescale 0.9    +1   -> 0E+1 Inexact Rounded
+resx012 rescale 0.9    +0   -> 1 Inexact Rounded
+resx013 rescale 0.9    -1   -> 0.9
+resx014 rescale 0.9    -2   -> 0.90
+resx015 rescale 0.9    -3   -> 0.900
+-- negatives
+resx021 rescale -0      0   -> -0
+resx022 rescale -1      0   -> -1
+resx023 rescale -0.1   +2   -> -0E+2 Inexact Rounded
+resx025 rescale -0.1   +1   -> -0E+1 Inexact Rounded
+resx026 rescale -0.1    0   -> -0 Inexact Rounded
+resx027 rescale -0.1   -1   -> -0.1
+resx028 rescale -0.1   -2   -> -0.10
+resx029 rescale -0.1   -3   -> -0.100
+resx030 rescale -0.9   +2   -> -0E+2 Inexact Rounded
+resx031 rescale -0.9   +1   -> -0E+1 Inexact Rounded
+resx032 rescale -0.9   +0   -> -1 Inexact Rounded
+resx033 rescale -0.9   -1   -> -0.9
+resx034 rescale -0.9   -2   -> -0.90
+resx035 rescale -0.9   -3   -> -0.900
+resx036 rescale -0.5   +2   -> -0E+2 Inexact Rounded
+resx037 rescale -0.5   +1   -> -0E+1 Inexact Rounded
+resx038 rescale -0.5   +0   -> -1 Inexact Rounded
+resx039 rescale -0.5   -1   -> -0.5
+resx040 rescale -0.5   -2   -> -0.50
+resx041 rescale -0.5   -3   -> -0.500
+resx042 rescale -0.9   +2   -> -0E+2 Inexact Rounded
+resx043 rescale -0.9   +1   -> -0E+1 Inexact Rounded
+resx044 rescale -0.9   +0   -> -1 Inexact Rounded
+resx045 rescale -0.9   -1   -> -0.9
+resx046 rescale -0.9   -2   -> -0.90
+resx047 rescale -0.9   -3   -> -0.900
+
+-- examples from Specification
+resx060 rescale 2.17   -3   -> 2.170
+resx061 rescale 2.17   -2   -> 2.17
+resx062 rescale 2.17   -1   -> 2.2 Inexact Rounded
+resx063 rescale 2.17    0   -> 2 Inexact Rounded
+resx064 rescale 2.17   +1   -> 0E+1 Inexact Rounded
+resx065 rescale 2      Inf  -> NaN Invalid_operation
+resx066 rescale -0.1    0   -> -0 Inexact Rounded
+resx067 rescale -0      5   -> -0E+5
+resx068 rescale +35236450.6 -2 -> NaN Invalid_operation
+resx069 rescale -35236450.6 -2 -> NaN Invalid_operation
+resx070 rescale 217    -1   -> 217.0
+resx071 rescale 217     0   -> 217
+resx072 rescale 217    +1   -> 2.2E+2 Inexact Rounded
+resx073 rescale 217    +2   -> 2E+2 Inexact Rounded
+
+-- general tests ..
+resx089 rescale 12     +4   -> 0E+4 Inexact Rounded
+resx090 rescale 12     +3   -> 0E+3 Inexact Rounded
+resx091 rescale 12     +2   -> 0E+2 Inexact Rounded
+resx092 rescale 12     +1   -> 1E+1 Inexact Rounded
+resx093 rescale 1.2345 -2   -> 1.23 Inexact Rounded
+resx094 rescale 1.2355 -2   -> 1.24 Inexact Rounded
+resx095 rescale 1.2345 -6   -> 1.234500
+resx096 rescale 9.9999 -2   -> 10.00 Inexact Rounded
+resx097 rescale 0.0001 -2   -> 0.00 Inexact Rounded
+resx098 rescale 0.001  -2   -> 0.00 Inexact Rounded
+resx099 rescale 0.009  -2   -> 0.01 Inexact Rounded
+resx100 rescale 92     +2   -> 1E+2 Inexact Rounded
+
+resx101 rescale -1      0   ->  -1
+resx102 rescale -1     -1   ->  -1.0
+resx103 rescale -1     -2   ->  -1.00
+resx104 rescale  0      0   ->  0
+resx105 rescale  0     -1   ->  0.0
+resx106 rescale  0     -2   ->  0.00
+resx107 rescale  0.00   0   ->  0
+resx108 rescale  0     +1   ->  0E+1
+resx109 rescale  0     +2   ->  0E+2
+resx110 rescale +1      0   ->  1
+resx111 rescale +1     -1   ->  1.0
+resx112 rescale +1     -2   ->  1.00
+
+resx120 rescale   1.04  -3 ->  1.040
+resx121 rescale   1.04  -2 ->  1.04
+resx122 rescale   1.04  -1 ->  1.0 Inexact Rounded
+resx123 rescale   1.04   0 ->  1 Inexact Rounded
+resx124 rescale   1.05  -3 ->  1.050
+resx125 rescale   1.05  -2 ->  1.05
+resx126 rescale   1.05  -1 ->  1.1 Inexact Rounded
+resx127 rescale   1.05   0 ->  1 Inexact Rounded
+resx128 rescale   1.05  -3 ->  1.050
+resx129 rescale   1.05  -2 ->  1.05
+resx130 rescale   1.05  -1 ->  1.1 Inexact Rounded
+resx131 rescale   1.05   0 ->  1 Inexact Rounded
+resx132 rescale   1.06  -3 ->  1.060
+resx133 rescale   1.06  -2 ->  1.06
+resx134 rescale   1.06  -1 ->  1.1 Inexact Rounded
+resx135 rescale   1.06   0 ->  1 Inexact Rounded
+
+resx140 rescale   -10    -2  ->  -10.00
+resx141 rescale   +1     -2  ->  1.00
+resx142 rescale   +10    -2  ->  10.00
+resx143 rescale   1E+10  -2  ->  NaN Invalid_operation
+resx144 rescale   1E-10  -2  ->  0.00 Inexact Rounded
+resx145 rescale   1E-3   -2  ->  0.00 Inexact Rounded
+resx146 rescale   1E-2   -2  ->  0.01
+resx147 rescale   1E-1   -2  ->  0.10
+resx148 rescale   0E-10  -2  ->  0.00
+
+resx150 rescale   1.0600 -5 ->  1.06000
+resx151 rescale   1.0600 -4 ->  1.0600
+resx152 rescale   1.0600 -3 ->  1.060 Rounded
+resx153 rescale   1.0600 -2 ->  1.06 Rounded
+resx154 rescale   1.0600 -1 ->  1.1 Inexact Rounded
+resx155 rescale   1.0600  0 ->  1 Inexact Rounded
+
+-- +ve exponents ..
+resx201 rescale   -1   +0 ->  -1
+resx202 rescale   -1   +1 ->  -0E+1 Inexact Rounded
+resx203 rescale   -1   +2 ->  -0E+2 Inexact Rounded
+resx204 rescale    0   +0 ->  0
+resx205 rescale    0   +1 ->  0E+1
+resx206 rescale    0   +2 ->  0E+2
+resx207 rescale   +1   +0 ->  1
+resx208 rescale   +1   +1 ->  0E+1 Inexact Rounded
+resx209 rescale   +1   +2 ->  0E+2 Inexact Rounded
+
+resx220 rescale   1.04 +3 ->  0E+3 Inexact Rounded
+resx221 rescale   1.04 +2 ->  0E+2 Inexact Rounded
+resx222 rescale   1.04 +1 ->  0E+1 Inexact Rounded
+resx223 rescale   1.04 +0 ->  1 Inexact Rounded
+resx224 rescale   1.05 +3 ->  0E+3 Inexact Rounded
+resx225 rescale   1.05 +2 ->  0E+2 Inexact Rounded
+resx226 rescale   1.05 +1 ->  0E+1 Inexact Rounded
+resx227 rescale   1.05 +0 ->  1 Inexact Rounded
+resx228 rescale   1.05 +3 ->  0E+3 Inexact Rounded
+resx229 rescale   1.05 +2 ->  0E+2 Inexact Rounded
+resx230 rescale   1.05 +1 ->  0E+1 Inexact Rounded
+resx231 rescale   1.05 +0 ->  1 Inexact Rounded
+resx232 rescale   1.06 +3 ->  0E+3 Inexact Rounded
+resx233 rescale   1.06 +2 ->  0E+2 Inexact Rounded
+resx234 rescale   1.06 +1 ->  0E+1 Inexact Rounded
+resx235 rescale   1.06 +0 ->  1 Inexact Rounded
+
+resx240 rescale   -10   +1  ->  -1E+1 Rounded
+resx241 rescale   +1    +1  ->  0E+1 Inexact Rounded
+resx242 rescale   +10   +1  ->  1E+1 Rounded
+resx243 rescale   1E+1  +1  ->  1E+1          -- underneath this is E+1
+resx244 rescale   1E+2  +1  ->  1.0E+2        -- underneath this is E+1
+resx245 rescale   1E+3  +1  ->  1.00E+3       -- underneath this is E+1
+resx246 rescale   1E+4  +1  ->  1.000E+4      -- underneath this is E+1
+resx247 rescale   1E+5  +1  ->  1.0000E+5     -- underneath this is E+1
+resx248 rescale   1E+6  +1  ->  1.00000E+6    -- underneath this is E+1
+resx249 rescale   1E+7  +1  ->  1.000000E+7   -- underneath this is E+1
+resx250 rescale   1E+8  +1  ->  1.0000000E+8  -- underneath this is E+1
+resx251 rescale   1E+9  +1  ->  1.00000000E+9 -- underneath this is E+1
+-- next one tries to add 9 zeros
+resx252 rescale   1E+10 +1  ->  NaN Invalid_operation
+resx253 rescale   1E-10 +1  ->  0E+1 Inexact Rounded
+resx254 rescale   1E-2  +1  ->  0E+1 Inexact Rounded
+resx255 rescale   0E-10 +1  ->  0E+1
+resx256 rescale  -0E-10 +1  -> -0E+1
+resx257 rescale  -0E-1  +1  -> -0E+1
+resx258 rescale  -0     +1  -> -0E+1
+resx259 rescale  -0E+1  +1  -> -0E+1
+
+resx260 rescale   -10   +2  ->  -0E+2 Inexact Rounded
+resx261 rescale   +1    +2  ->  0E+2 Inexact Rounded
+resx262 rescale   +10   +2  ->  0E+2 Inexact Rounded
+resx263 rescale   1E+1  +2  ->  0E+2 Inexact Rounded
+resx264 rescale   1E+2  +2  ->  1E+2
+resx265 rescale   1E+3  +2  ->  1.0E+3
+resx266 rescale   1E+4  +2  ->  1.00E+4
+resx267 rescale   1E+5  +2  ->  1.000E+5
+resx268 rescale   1E+6  +2  ->  1.0000E+6
+resx269 rescale   1E+7  +2  ->  1.00000E+7
+resx270 rescale   1E+8  +2  ->  1.000000E+8
+resx271 rescale   1E+9  +2  ->  1.0000000E+9
+resx272 rescale   1E+10 +2  ->  1.00000000E+10
+resx273 rescale   1E-10 +2  ->  0E+2 Inexact Rounded
+resx274 rescale   1E-2  +2  ->  0E+2 Inexact Rounded
+resx275 rescale   0E-10 +2  ->  0E+2
+
+resx280 rescale   -10   +3  ->  -0E+3 Inexact Rounded
+resx281 rescale   +1    +3  ->  0E+3 Inexact Rounded
+resx282 rescale   +10   +3  ->  0E+3 Inexact Rounded
+resx283 rescale   1E+1  +3  ->  0E+3 Inexact Rounded
+resx284 rescale   1E+2  +3  ->  0E+3 Inexact Rounded
+resx285 rescale   1E+3  +3  ->  1E+3
+resx286 rescale   1E+4  +3  ->  1.0E+4
+resx287 rescale   1E+5  +3  ->  1.00E+5
+resx288 rescale   1E+6  +3  ->  1.000E+6
+resx289 rescale   1E+7  +3  ->  1.0000E+7
+resx290 rescale   1E+8  +3  ->  1.00000E+8
+resx291 rescale   1E+9  +3  ->  1.000000E+9
+resx292 rescale   1E+10 +3  ->  1.0000000E+10
+resx293 rescale   1E-10 +3  ->  0E+3 Inexact Rounded
+resx294 rescale   1E-2  +3  ->  0E+3 Inexact Rounded
+resx295 rescale   0E-10 +3  ->  0E+3
+
+-- round up from below [sign wrong in JIT compiler once]
+resx300 rescale   0.0078 -5 ->  0.00780
+resx301 rescale   0.0078 -4 ->  0.0078
+resx302 rescale   0.0078 -3 ->  0.008 Inexact Rounded
+resx303 rescale   0.0078 -2 ->  0.01 Inexact Rounded
+resx304 rescale   0.0078 -1 ->  0.0 Inexact Rounded
+resx305 rescale   0.0078  0 ->  0 Inexact Rounded
+resx306 rescale   0.0078 +1 ->  0E+1 Inexact Rounded
+resx307 rescale   0.0078 +2 ->  0E+2 Inexact Rounded
+
+resx310 rescale  -0.0078 -5 -> -0.00780
+resx311 rescale  -0.0078 -4 -> -0.0078
+resx312 rescale  -0.0078 -3 -> -0.008 Inexact Rounded
+resx313 rescale  -0.0078 -2 -> -0.01 Inexact Rounded
+resx314 rescale  -0.0078 -1 -> -0.0 Inexact Rounded
+resx315 rescale  -0.0078  0 -> -0 Inexact Rounded
+resx316 rescale  -0.0078 +1 -> -0E+1 Inexact Rounded
+resx317 rescale  -0.0078 +2 -> -0E+2 Inexact Rounded
+
+resx320 rescale   0.078 -5 ->  0.07800
+resx321 rescale   0.078 -4 ->  0.0780
+resx322 rescale   0.078 -3 ->  0.078
+resx323 rescale   0.078 -2 ->  0.08 Inexact Rounded
+resx324 rescale   0.078 -1 ->  0.1 Inexact Rounded
+resx325 rescale   0.078  0 ->  0 Inexact Rounded
+resx326 rescale   0.078 +1 ->  0E+1 Inexact Rounded
+resx327 rescale   0.078 +2 ->  0E+2 Inexact Rounded
+
+resx330 rescale  -0.078 -5 -> -0.07800
+resx331 rescale  -0.078 -4 -> -0.0780
+resx332 rescale  -0.078 -3 -> -0.078
+resx333 rescale  -0.078 -2 -> -0.08 Inexact Rounded
+resx334 rescale  -0.078 -1 -> -0.1 Inexact Rounded
+resx335 rescale  -0.078  0 -> -0 Inexact Rounded
+resx336 rescale  -0.078 +1 -> -0E+1 Inexact Rounded
+resx337 rescale  -0.078 +2 -> -0E+2 Inexact Rounded
+
+resx340 rescale   0.78 -5 ->  0.78000
+resx341 rescale   0.78 -4 ->  0.7800
+resx342 rescale   0.78 -3 ->  0.780
+resx343 rescale   0.78 -2 ->  0.78
+resx344 rescale   0.78 -1 ->  0.8 Inexact Rounded
+resx345 rescale   0.78  0 ->  1 Inexact Rounded
+resx346 rescale   0.78 +1 ->  0E+1 Inexact Rounded
+resx347 rescale   0.78 +2 ->  0E+2 Inexact Rounded
+
+resx350 rescale  -0.78 -5 -> -0.78000
+resx351 rescale  -0.78 -4 -> -0.7800
+resx352 rescale  -0.78 -3 -> -0.780
+resx353 rescale  -0.78 -2 -> -0.78
+resx354 rescale  -0.78 -1 -> -0.8 Inexact Rounded
+resx355 rescale  -0.78  0 -> -1 Inexact Rounded
+resx356 rescale  -0.78 +1 -> -0E+1 Inexact Rounded
+resx357 rescale  -0.78 +2 -> -0E+2 Inexact Rounded
+
+resx360 rescale   7.8 -5 ->  7.80000
+resx361 rescale   7.8 -4 ->  7.8000
+resx362 rescale   7.8 -3 ->  7.800
+resx363 rescale   7.8 -2 ->  7.80
+resx364 rescale   7.8 -1 ->  7.8
+resx365 rescale   7.8  0 ->  8 Inexact Rounded
+resx366 rescale   7.8 +1 ->  1E+1 Inexact Rounded
+resx367 rescale   7.8 +2 ->  0E+2 Inexact Rounded
+resx368 rescale   7.8 +3 ->  0E+3 Inexact Rounded
+
+resx370 rescale  -7.8 -5 -> -7.80000
+resx371 rescale  -7.8 -4 -> -7.8000
+resx372 rescale  -7.8 -3 -> -7.800
+resx373 rescale  -7.8 -2 -> -7.80
+resx374 rescale  -7.8 -1 -> -7.8
+resx375 rescale  -7.8  0 -> -8 Inexact Rounded
+resx376 rescale  -7.8 +1 -> -1E+1 Inexact Rounded
+resx377 rescale  -7.8 +2 -> -0E+2 Inexact Rounded
+resx378 rescale  -7.8 +3 -> -0E+3 Inexact Rounded
+
+-- some individuals
+precision: 9
+resx380 rescale   352364.506 -2 -> 352364.51 Inexact Rounded
+resx381 rescale   3523645.06 -2 -> 3523645.06
+resx382 rescale   35236450.6 -2 -> NaN Invalid_operation
+resx383 rescale   352364506  -2 -> NaN Invalid_operation
+resx384 rescale  -352364.506 -2 -> -352364.51 Inexact Rounded
+resx385 rescale  -3523645.06 -2 -> -3523645.06
+resx386 rescale  -35236450.6 -2 -> NaN Invalid_operation
+resx387 rescale  -352364506  -2 -> NaN Invalid_operation
+
+rounding: down
+resx389 rescale   35236450.6 -2 -> NaN Invalid_operation
+-- ? should that one instead have been:
+-- resx389 rescale   35236450.6 -2 -> NaN Invalid_operation
+rounding: half_up
+
+-- and a few more from e-mail discussions
+precision: 7
+resx391 rescale  12.34567  -3 -> 12.346   Inexact Rounded
+resx392 rescale  123.4567  -3 -> 123.457  Inexact Rounded
+resx393 rescale  1234.567  -3 -> 1234.567
+resx394 rescale  12345.67  -3 -> NaN Invalid_operation
+resx395 rescale  123456.7  -3 -> NaN Invalid_operation
+resx396 rescale  1234567.  -3 -> NaN Invalid_operation
+
+-- some 9999 round-up cases
+precision: 9
+resx400 rescale   9.999        -5  ->  9.99900
+resx401 rescale   9.999        -4  ->  9.9990
+resx402 rescale   9.999        -3  ->  9.999
+resx403 rescale   9.999        -2  -> 10.00     Inexact Rounded
+resx404 rescale   9.999        -1  -> 10.0      Inexact Rounded
+resx405 rescale   9.999         0  -> 10        Inexact Rounded
+resx406 rescale   9.999         1  -> 1E+1      Inexact Rounded
+resx407 rescale   9.999         2  -> 0E+2      Inexact Rounded
+
+resx410 rescale   0.999        -5  ->  0.99900
+resx411 rescale   0.999        -4  ->  0.9990
+resx412 rescale   0.999        -3  ->  0.999
+resx413 rescale   0.999        -2  ->  1.00     Inexact Rounded
+resx414 rescale   0.999        -1  ->  1.0      Inexact Rounded
+resx415 rescale   0.999         0  ->  1        Inexact Rounded
+resx416 rescale   0.999         1  -> 0E+1      Inexact Rounded
+
+resx420 rescale   0.0999       -5  ->  0.09990
+resx421 rescale   0.0999       -4  ->  0.0999
+resx422 rescale   0.0999       -3  ->  0.100    Inexact Rounded
+resx423 rescale   0.0999       -2  ->  0.10     Inexact Rounded
+resx424 rescale   0.0999       -1  ->  0.1      Inexact Rounded
+resx425 rescale   0.0999        0  ->  0        Inexact Rounded
+resx426 rescale   0.0999        1  -> 0E+1      Inexact Rounded
+
+resx430 rescale   0.00999      -5  ->  0.00999
+resx431 rescale   0.00999      -4  ->  0.0100   Inexact Rounded
+resx432 rescale   0.00999      -3  ->  0.010    Inexact Rounded
+resx433 rescale   0.00999      -2  ->  0.01     Inexact Rounded
+resx434 rescale   0.00999      -1  ->  0.0      Inexact Rounded
+resx435 rescale   0.00999       0  ->  0        Inexact Rounded
+resx436 rescale   0.00999       1  -> 0E+1      Inexact Rounded
+
+resx440 rescale   0.000999     -5  ->  0.00100  Inexact Rounded
+resx441 rescale   0.000999     -4  ->  0.0010   Inexact Rounded
+resx442 rescale   0.000999     -3  ->  0.001    Inexact Rounded
+resx443 rescale   0.000999     -2  ->  0.00     Inexact Rounded
+resx444 rescale   0.000999     -1  ->  0.0      Inexact Rounded
+resx445 rescale   0.000999      0  ->  0        Inexact Rounded
+resx446 rescale   0.000999      1  -> 0E+1      Inexact Rounded
+
+precision: 8
+resx449 rescale   9.999E-15    -23 ->  NaN      Invalid_operation
+resx450 rescale   9.999E-15    -22 ->  9.9990000E-15
+resx451 rescale   9.999E-15    -21 ->  9.999000E-15
+resx452 rescale   9.999E-15    -20 ->  9.99900E-15
+resx453 rescale   9.999E-15    -19 ->  9.9990E-15
+resx454 rescale   9.999E-15    -18 ->  9.999E-15
+resx455 rescale   9.999E-15    -17 ->  1.000E-14 Inexact Rounded
+resx456 rescale   9.999E-15    -16 ->  1.00E-14  Inexact Rounded
+resx457 rescale   9.999E-15    -15 ->  1.0E-14   Inexact Rounded
+resx458 rescale   9.999E-15    -14 ->  1E-14     Inexact Rounded
+resx459 rescale   9.999E-15    -13 ->  0E-13     Inexact Rounded
+resx460 rescale   9.999E-15    -12 ->  0E-12     Inexact Rounded
+resx461 rescale   9.999E-15    -11 ->  0E-11     Inexact Rounded
+resx462 rescale   9.999E-15    -10 ->  0E-10     Inexact Rounded
+resx463 rescale   9.999E-15     -9 ->  0E-9      Inexact Rounded
+resx464 rescale   9.999E-15     -8 ->  0E-8      Inexact Rounded
+resx465 rescale   9.999E-15     -7 ->  0E-7      Inexact Rounded
+resx466 rescale   9.999E-15     -6 ->  0.000000  Inexact Rounded
+resx467 rescale   9.999E-15     -5 ->  0.00000   Inexact Rounded
+resx468 rescale   9.999E-15     -4 ->  0.0000    Inexact Rounded
+resx469 rescale   9.999E-15     -3 ->  0.000     Inexact Rounded
+resx470 rescale   9.999E-15     -2 ->  0.00      Inexact Rounded
+resx471 rescale   9.999E-15     -1 ->  0.0       Inexact Rounded
+resx472 rescale   9.999E-15      0 ->  0         Inexact Rounded
+resx473 rescale   9.999E-15      1 ->  0E+1      Inexact Rounded
+
+-- [additional tests for "don't fit" edge cases are in
+-- quantize.decTest.  Here's a critical one.]
+precision: 3
+resx480 rescale   0.9999        -3 ->  NaN       Invalid_operation
+
+
+-- long operand checks [rhs checks removed]
+maxexponent: 999
+minexponent: -999
+precision: 9
+resx481 rescale 12345678000 +3 -> 1.2345678E+10 Rounded
+resx482 rescale 1234567800  +1 -> 1.23456780E+9 Rounded
+resx483 rescale 1234567890  +1 -> 1.23456789E+9 Rounded
+resx484 rescale 1234567891  +1 -> 1.23456789E+9 Inexact Rounded
+resx485 rescale 12345678901 +2 -> 1.23456789E+10 Inexact Rounded
+resx486 rescale 1234567896  +1 -> 1.23456790E+9 Inexact Rounded
+-- a potential double-round
+resx487 rescale 1234.987643 -4 -> 1234.9876 Inexact Rounded
+resx488 rescale 1234.987647 -4 -> 1234.9876 Inexact Rounded
+
+precision: 15
+resx491 rescale 12345678000 +3 -> 1.2345678E+10 Rounded
+resx492 rescale 1234567800  +1 -> 1.23456780E+9 Rounded
+resx493 rescale 1234567890  +1 -> 1.23456789E+9 Rounded
+resx494 rescale 1234567891  +1 -> 1.23456789E+9 Inexact Rounded
+resx495 rescale 12345678901 +2 -> 1.23456789E+10 Inexact Rounded
+resx496 rescale 1234567896  +1 -> 1.23456790E+9 Inexact Rounded
+resx497 rescale 1234.987643 -4 -> 1234.9876 Inexact Rounded
+resx498 rescale 1234.987647 -4 -> 1234.9876 Inexact Rounded
+
+-- Zeros
+resx500 rescale   0     1 ->  0E+1
+resx501 rescale   0     0 ->  0
+resx502 rescale   0    -1 ->  0.0
+resx503 rescale   0.0  -1 ->  0.0
+resx504 rescale   0.0   0 ->  0
+resx505 rescale   0.0  +1 ->  0E+1
+resx506 rescale   0E+1 -1 ->  0.0
+resx507 rescale   0E+1  0 ->  0
+resx508 rescale   0E+1 +1 ->  0E+1
+resx509 rescale  -0     1 -> -0E+1
+resx510 rescale  -0     0 -> -0
+resx511 rescale  -0    -1 -> -0.0
+resx512 rescale  -0.0  -1 -> -0.0
+resx513 rescale  -0.0   0 -> -0
+resx514 rescale  -0.0  +1 -> -0E+1
+resx515 rescale  -0E+1 -1 -> -0.0
+resx516 rescale  -0E+1  0 -> -0
+resx517 rescale  -0E+1 +1 -> -0E+1
+
+-- Suspicious RHS values
+maxexponent: 999999999
+minexponent: -999999999
+precision: 15
+resx520 rescale   1.234    999999E+3 -> 0E+999999000 Inexact Rounded
+resx521 rescale 123.456    999999E+3 -> 0E+999999000 Inexact Rounded
+resx522 rescale   1.234    999999999 -> 0E+999999999 Inexact Rounded
+resx523 rescale 123.456    999999999 -> 0E+999999999 Inexact Rounded
+resx524 rescale 123.456   1000000000 -> NaN Invalid_operation
+resx525 rescale 123.456  12345678903 -> NaN Invalid_operation
+-- next four are "won't fit" overflows
+resx526 rescale   1.234   -999999E+3 -> NaN Invalid_operation
+resx527 rescale 123.456   -999999E+3 -> NaN Invalid_operation
+resx528 rescale   1.234   -999999999 -> NaN Invalid_operation
+resx529 rescale 123.456   -999999999 -> NaN Invalid_operation
+resx530 rescale 123.456  -1000000014 -> NaN Invalid_operation
+resx531 rescale 123.456 -12345678903 -> NaN Invalid_operation
+
+maxexponent: 999
+minexponent: -999
+precision: 15
+resx532 rescale   1.234E+999    999 -> 1E+999    Inexact Rounded
+resx533 rescale   1.234E+998    999 -> 0E+999    Inexact Rounded
+resx534 rescale   1.234         999 -> 0E+999    Inexact Rounded
+resx535 rescale   1.234        1000 -> NaN Invalid_operation
+resx536 rescale   1.234        5000 -> NaN Invalid_operation
+resx537 rescale   0            -999 -> 0E-999
+-- next two are "won't fit" overflows
+resx538 rescale   1.234        -999 -> NaN Invalid_operation
+resx539 rescale   1.234       -1000 -> NaN Invalid_operation
+resx540 rescale   1.234       -5000 -> NaN Invalid_operation
+-- [more below]
+
+-- check bounds (lhs maybe out of range for destination, etc.)
+precision:     7
+resx541 rescale   1E+999   +999 -> 1E+999
+resx542 rescale   1E+1000  +999 -> NaN Invalid_operation
+resx543 rescale   1E+999  +1000 -> NaN Invalid_operation
+resx544 rescale   1E-999   -999 -> 1E-999
+resx545 rescale   1E-1000  -999 -> 0E-999    Inexact Rounded
+resx546 rescale   1E-999  -1000 -> 1.0E-999
+resx547 rescale   1E-1005  -999 -> 0E-999    Inexact Rounded
+resx548 rescale   1E-1006  -999 -> 0E-999    Inexact Rounded
+resx549 rescale   1E-1007  -999 -> 0E-999    Inexact Rounded
+resx550 rescale   1E-998  -1005 -> NaN Invalid_operation  -- won't fit
+resx551 rescale   1E-999  -1005 -> 1.000000E-999
+resx552 rescale   1E-1000 -1005 -> 1.00000E-1000 Subnormal
+resx553 rescale   1E-999  -1006 -> NaN Invalid_operation
+resx554 rescale   1E-999  -1007 -> NaN Invalid_operation
+-- related subnormal rounding
+resx555 rescale   1.666666E-999  -1005 -> 1.666666E-999
+resx556 rescale   1.666666E-1000 -1005 -> 1.66667E-1000  Subnormal Inexact Rounded
+resx557 rescale   1.666666E-1001 -1005 -> 1.6667E-1001  Subnormal Inexact Rounded
+resx558 rescale   1.666666E-1002 -1005 -> 1.667E-1002  Subnormal Inexact Rounded
+resx559 rescale   1.666666E-1003 -1005 -> 1.67E-1003  Subnormal Inexact Rounded
+resx560 rescale   1.666666E-1004 -1005 -> 1.7E-1004  Subnormal Inexact Rounded
+resx561 rescale   1.666666E-1005 -1005 -> 2E-1005  Subnormal Inexact Rounded
+resx562 rescale   1.666666E-1006 -1005 -> 0E-1005   Inexact Rounded
+resx563 rescale   1.666666E-1007 -1005 -> 0E-1005   Inexact Rounded
+
+-- fractional RHS, some good and some bad
+precision: 9
+resx564 rescale   222 +2.0           -> 2E+2 Inexact Rounded
+resx565 rescale   222 +2.00000000    -> 2E+2 Inexact Rounded
+resx566 rescale   222 +2.00100000000 -> NaN Invalid_operation
+resx567 rescale   222 +2.000001      -> NaN Invalid_operation
+resx568 rescale   222 +2.000000001   -> NaN Invalid_operation
+resx569 rescale   222 +2.0000000001  -> NaN Invalid_operation
+resx570 rescale   222 +2.00000000001 -> NaN Invalid_operation
+resx571 rescale   222 +2.99999999999 -> NaN Invalid_operation
+resx572 rescale   222 -2.00000000    -> 222.00
+resx573 rescale   222 -2.00100000000 -> NaN Invalid_operation
+resx574 rescale   222 -2.0000001000  -> NaN Invalid_operation
+resx575 rescale   222 -2.00000000001 -> NaN Invalid_operation
+resx576 rescale   222 -2.99999999999 -> NaN Invalid_operation
+
+-- Specials
+resx580 rescale  Inf  -Inf   ->  Infinity
+resx581 rescale  Inf  -1000  ->  NaN  Invalid_operation
+resx582 rescale  Inf  -1     ->  NaN  Invalid_operation
+resx583 rescale  Inf   0     ->  NaN  Invalid_operation
+resx584 rescale  Inf   1     ->  NaN  Invalid_operation
+resx585 rescale  Inf   1000  ->  NaN  Invalid_operation
+resx586 rescale  Inf   Inf   ->  Infinity
+resx587 rescale -1000  Inf   ->  NaN  Invalid_operation
+resx588 rescale -Inf   Inf   ->  -Infinity
+resx589 rescale -1     Inf   ->  NaN  Invalid_operation
+resx590 rescale  0     Inf   ->  NaN  Invalid_operation
+resx591 rescale  1     Inf   ->  NaN  Invalid_operation
+resx592 rescale  1000  Inf   ->  NaN  Invalid_operation
+resx593 rescale  Inf   Inf   ->  Infinity
+resx594 rescale  Inf  -0     ->  NaN  Invalid_operation
+resx595 rescale -0     Inf   ->  NaN  Invalid_operation
+
+resx600 rescale -Inf  -Inf   ->  -Infinity
+resx601 rescale -Inf  -1000  ->  NaN  Invalid_operation
+resx602 rescale -Inf  -1     ->  NaN  Invalid_operation
+resx603 rescale -Inf   0     ->  NaN  Invalid_operation
+resx604 rescale -Inf   1     ->  NaN  Invalid_operation
+resx605 rescale -Inf   1000  ->  NaN  Invalid_operation
+resx606 rescale -Inf   Inf   ->  -Infinity
+resx607 rescale -1000  Inf   ->  NaN  Invalid_operation
+resx608 rescale -Inf  -Inf   ->  -Infinity
+resx609 rescale -1    -Inf   ->  NaN  Invalid_operation
+resx610 rescale  0    -Inf   ->  NaN  Invalid_operation
+resx611 rescale  1    -Inf   ->  NaN  Invalid_operation
+resx612 rescale  1000 -Inf   ->  NaN  Invalid_operation
+resx613 rescale  Inf  -Inf   ->  Infinity
+resx614 rescale -Inf  -0     ->  NaN  Invalid_operation
+resx615 rescale -0    -Inf   ->  NaN  Invalid_operation
+
+resx621 rescale  NaN -Inf    ->  NaN
+resx622 rescale  NaN -1000   ->  NaN
+resx623 rescale  NaN -1      ->  NaN
+resx624 rescale  NaN  0      ->  NaN
+resx625 rescale  NaN  1      ->  NaN
+resx626 rescale  NaN  1000   ->  NaN
+resx627 rescale  NaN  Inf    ->  NaN
+resx628 rescale  NaN  NaN    ->  NaN
+resx629 rescale -Inf  NaN    ->  NaN
+resx630 rescale -1000 NaN    ->  NaN
+resx631 rescale -1    NaN    ->  NaN
+resx632 rescale  0    NaN    ->  NaN
+resx633 rescale  1   -NaN    -> -NaN
+resx634 rescale  1000 NaN    ->  NaN
+resx635 rescale  Inf  NaN    ->  NaN
+resx636 rescale  NaN -0      ->  NaN
+resx637 rescale -0    NaN    ->  NaN
+
+resx641 rescale  sNaN -Inf   ->  NaN  Invalid_operation
+resx642 rescale  sNaN -1000  ->  NaN  Invalid_operation
+resx643 rescale  sNaN -1     ->  NaN  Invalid_operation
+resx644 rescale  sNaN  0     ->  NaN  Invalid_operation
+resx645 rescale  sNaN  1     ->  NaN  Invalid_operation
+resx646 rescale  sNaN  1000  ->  NaN  Invalid_operation
+resx647 rescale -sNaN  NaN   -> -NaN  Invalid_operation
+resx648 rescale  sNaN -sNaN  ->  NaN  Invalid_operation
+resx649 rescale  NaN  sNaN   ->  NaN  Invalid_operation
+resx650 rescale -Inf  sNaN   ->  NaN  Invalid_operation
+resx651 rescale -1000 sNaN   ->  NaN  Invalid_operation
+resx652 rescale -1    sNaN   ->  NaN  Invalid_operation
+resx653 rescale  0    sNaN   ->  NaN  Invalid_operation
+resx654 rescale  1   -sNaN   -> -NaN  Invalid_operation
+resx655 rescale  1000 sNaN   ->  NaN  Invalid_operation
+resx656 rescale  Inf  sNaN   ->  NaN  Invalid_operation
+resx657 rescale  NaN  sNaN   ->  NaN  Invalid_operation
+resx658 rescale  sNaN -0     ->  NaN  Invalid_operation
+resx659 rescale -0    sNaN   ->  NaN  Invalid_operation
+
+-- propagating NaNs
+resx661 rescale  NaN9 -Inf   ->  NaN9
+resx662 rescale  NaN81 919   ->  NaN81
+resx663 rescale  NaN72 Inf   ->  NaN72
+resx664 rescale -NaN66 NaN5  -> -NaN66
+resx665 rescale -Inf   NaN4  ->  NaN4
+resx666 rescale -919   NaN32 ->  NaN32
+resx667 rescale  Inf   NaN2  ->  NaN2
+
+resx671 rescale  sNaN99 -Inf    ->  NaN99 Invalid_operation
+resx672 rescale -sNaN98 -11     -> -NaN98 Invalid_operation
+resx673 rescale  sNaN97  NaN    ->  NaN97 Invalid_operation
+resx674 rescale  sNaN16 sNaN94  ->  NaN16 Invalid_operation
+resx675 rescale  NaN95  sNaN93  ->  NaN93 Invalid_operation
+resx676 rescale -Inf    sNaN92  ->  NaN92 Invalid_operation
+resx677 rescale  088   -sNaN91  -> -NaN91 Invalid_operation
+resx678 rescale  Inf   -sNaN90  -> -NaN90 Invalid_operation
+resx679 rescale  NaN    sNaN87  ->  NaN87 Invalid_operation
+
+-- subnormals and underflow
+precision: 4
+maxexponent: 999
+minexponent: -999
+resx710 rescale  1.00E-999    -999  ->   1E-999    Rounded
+resx711 rescale  0.1E-999    -1000  ->   1E-1000   Subnormal
+resx712 rescale  0.10E-999   -1000  ->   1E-1000   Subnormal Rounded
+resx713 rescale  0.100E-999  -1000  ->   1E-1000   Subnormal Rounded
+resx714 rescale  0.01E-999   -1001  ->   1E-1001   Subnormal
+-- next is rounded to Emin
+resx715 rescale  0.999E-999   -999  ->   1E-999    Inexact Rounded
+resx716 rescale  0.099E-999  -1000  ->   1E-1000   Inexact Rounded Subnormal
+
+resx717 rescale  0.009E-999  -1001  ->   1E-1001   Inexact Rounded Subnormal
+resx718 rescale  0.001E-999  -1001  ->   0E-1001   Inexact Rounded
+resx719 rescale  0.0009E-999 -1001  ->   0E-1001   Inexact Rounded
+resx720 rescale  0.0001E-999 -1001  ->   0E-1001   Inexact Rounded
+
+resx730 rescale -1.00E-999   -999  ->  -1E-999     Rounded
+resx731 rescale -0.1E-999    -999  ->  -0E-999     Rounded Inexact
+resx732 rescale -0.10E-999   -999  ->  -0E-999     Rounded Inexact
+resx733 rescale -0.100E-999  -999  ->  -0E-999     Rounded Inexact
+resx734 rescale -0.01E-999   -999  ->  -0E-999     Inexact Rounded
+-- next is rounded to Emin
+resx735 rescale -0.999E-999  -999  ->  -1E-999     Inexact Rounded
+resx736 rescale -0.099E-999  -999  ->  -0E-999     Inexact Rounded
+resx737 rescale -0.009E-999  -999  ->  -0E-999     Inexact Rounded
+resx738 rescale -0.001E-999  -999  ->  -0E-999     Inexact Rounded
+resx739 rescale -0.0001E-999 -999  ->  -0E-999     Inexact Rounded
+
+resx740 rescale -1.00E-999   -1000 ->  -1.0E-999   Rounded
+resx741 rescale -0.1E-999    -1000 ->  -1E-1000    Subnormal
+resx742 rescale -0.10E-999   -1000 ->  -1E-1000    Subnormal Rounded
+resx743 rescale -0.100E-999  -1000 ->  -1E-1000    Subnormal Rounded
+resx744 rescale -0.01E-999   -1000 ->  -0E-1000    Inexact Rounded
+-- next is rounded to Emin
+resx745 rescale -0.999E-999  -1000 ->  -1.0E-999   Inexact Rounded
+resx746 rescale -0.099E-999  -1000 ->  -1E-1000    Inexact Rounded Subnormal
+resx747 rescale -0.009E-999  -1000 ->  -0E-1000    Inexact Rounded
+resx748 rescale -0.001E-999  -1000 ->  -0E-1000    Inexact Rounded
+resx749 rescale -0.0001E-999 -1000 ->  -0E-1000    Inexact Rounded
+
+resx750 rescale -1.00E-999   -1001 ->  -1.00E-999
+resx751 rescale -0.1E-999    -1001 ->  -1.0E-1000  Subnormal
+resx752 rescale -0.10E-999   -1001 ->  -1.0E-1000  Subnormal
+resx753 rescale -0.100E-999  -1001 ->  -1.0E-1000  Subnormal Rounded
+resx754 rescale -0.01E-999   -1001 ->  -1E-1001    Subnormal
+-- next is rounded to Emin
+resx755 rescale -0.999E-999  -1001 ->  -1.00E-999  Inexact Rounded
+resx756 rescale -0.099E-999  -1001 ->  -1.0E-1000  Inexact Rounded Subnormal
+resx757 rescale -0.009E-999  -1001 ->  -1E-1001    Inexact Rounded Subnormal
+resx758 rescale -0.001E-999  -1001 ->  -0E-1001    Inexact Rounded
+resx759 rescale -0.0001E-999 -1001 ->  -0E-1001    Inexact Rounded
+
+resx760 rescale -1.00E-999   -1002 ->  -1.000E-999
+resx761 rescale -0.1E-999    -1002 ->  -1.00E-1000  Subnormal
+resx762 rescale -0.10E-999   -1002 ->  -1.00E-1000  Subnormal
+resx763 rescale -0.100E-999  -1002 ->  -1.00E-1000  Subnormal
+resx764 rescale -0.01E-999   -1002 ->  -1.0E-1001   Subnormal
+resx765 rescale -0.999E-999  -1002 ->  -9.99E-1000  Subnormal
+resx766 rescale -0.099E-999  -1002 ->  -9.9E-1001   Subnormal
+resx767 rescale -0.009E-999  -1002 ->  -9E-1002     Subnormal
+resx768 rescale -0.001E-999  -1002 ->  -1E-1002     Subnormal
+resx769 rescale -0.0001E-999 -1002 ->  -0E-1002     Inexact Rounded
+
+-- rhs must be no less than Etiny
+resx770 rescale -1.00E-999   -1003 ->  NaN Invalid_operation
+resx771 rescale -0.1E-999    -1003 ->  NaN Invalid_operation
+resx772 rescale -0.10E-999   -1003 ->  NaN Invalid_operation
+resx773 rescale -0.100E-999  -1003 ->  NaN Invalid_operation
+resx774 rescale -0.01E-999   -1003 ->  NaN Invalid_operation
+resx775 rescale -0.999E-999  -1003 ->  NaN Invalid_operation
+resx776 rescale -0.099E-999  -1003 ->  NaN Invalid_operation
+resx777 rescale -0.009E-999  -1003 ->  NaN Invalid_operation
+resx778 rescale -0.001E-999  -1003 ->  NaN Invalid_operation
+resx779 rescale -0.0001E-999 -1003 ->  NaN Invalid_operation
+
+precision:   9
+maxExponent: 999999999
+minexponent: -999999999
+
+-- getInt worries
+resx801 rescale   0   1000000000 -> NaN Invalid_operation
+resx802 rescale   0  -1000000000 -> 0E-1000000000
+resx803 rescale   0   2000000000 -> NaN Invalid_operation
+resx804 rescale   0  -2000000000 -> NaN Invalid_operation
+resx805 rescale   0   3000000000 -> NaN Invalid_operation
+resx806 rescale   0  -3000000000 -> NaN Invalid_operation
+resx807 rescale   0   4000000000 -> NaN Invalid_operation
+resx808 rescale   0  -4000000000 -> NaN Invalid_operation
+resx809 rescale   0   5000000000 -> NaN Invalid_operation
+resx810 rescale   0  -5000000000 -> NaN Invalid_operation
+resx811 rescale   0   6000000000 -> NaN Invalid_operation
+resx812 rescale   0  -6000000000 -> NaN Invalid_operation
+resx813 rescale   0   7000000000 -> NaN Invalid_operation
+resx814 rescale   0  -7000000000 -> NaN Invalid_operation
+resx815 rescale   0   8000000000 -> NaN Invalid_operation
+resx816 rescale   0  -8000000000 -> NaN Invalid_operation
+resx817 rescale   0   9000000000 -> NaN Invalid_operation
+resx818 rescale   0  -9000000000 -> NaN Invalid_operation
+resx819 rescale   0   9999999999 -> NaN Invalid_operation
+resx820 rescale   0  -9999999999 -> NaN Invalid_operation
+resx821 rescale   0   10000000000 -> NaN Invalid_operation
+resx822 rescale   0  -10000000000 -> NaN Invalid_operation
+
+resx831 rescale   1   0E-1       -> 1
+resx832 rescale   1   0E-2       -> 1
+resx833 rescale   1   0E-3       -> 1
+resx834 rescale   1   0E-4       -> 1
+resx835 rescale   1   0E-100     -> 1
+resx836 rescale   1   0E-100000  -> 1
+resx837 rescale   1   0E+100     -> 1
+resx838 rescale   1   0E+100000  -> 1
+
+resx841 rescale   0   5E-1000000 -> NaN Invalid_operation
+resx842 rescale   0   5E-1000000 -> NaN Invalid_operation
+resx843 rescale   0    999999999 -> 0E+999999999
+resx844 rescale   0   1000000000 -> NaN Invalid_operation
+resx845 rescale   0   -999999999 -> 0E-999999999
+resx846 rescale   0  -1000000000 -> 0E-1000000000
+resx847 rescale   0  -1000000001 -> 0E-1000000001
+resx848 rescale   0  -1000000002 -> 0E-1000000002
+resx849 rescale   0  -1000000003 -> 0E-1000000003
+resx850 rescale   0  -1000000004 -> 0E-1000000004
+resx851 rescale   0  -1000000005 -> 0E-1000000005
+resx852 rescale   0  -1000000006 -> 0E-1000000006
+resx853 rescale   0  -1000000007 -> 0E-1000000007
+resx854 rescale   0  -1000000008 -> NaN Invalid_operation
+
+resx861 rescale   1  +2147483649 -> NaN Invalid_operation
+resx862 rescale   1  +2147483648 -> NaN Invalid_operation
+resx863 rescale   1  +2147483647 -> NaN Invalid_operation
+resx864 rescale   1  -2147483647 -> NaN Invalid_operation
+resx865 rescale   1  -2147483648 -> NaN Invalid_operation
+resx866 rescale   1  -2147483649 -> NaN Invalid_operation
+
+-- Null tests
+res900 rescale 10  # -> NaN Invalid_operation
+res901 rescale  # 10 -> NaN Invalid_operation

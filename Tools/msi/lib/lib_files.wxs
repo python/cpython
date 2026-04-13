@@ -1,0 +1,128 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+    <?define exts=pyexpat;select;unicodedata;winsound;_bz2;_elementtree;_socket;_ssl;_ctypes;_hashlib;_multiprocessing;_lzma;_decimal;_overlapped;_sqlite3;_asyncio;_queue;_remote_debugging;_uuid;_wmi;_zoneinfo;_zstd ?>
+    <Fragment>
+        <DirectoryRef Id="Lib_venv_scripts_nt" />
+
+        <ComponentGroup Id="lib_extensions">
+            <?foreach ext in $(var.exts)?>
+        
+            <Component Id="$(var.ext).pyd" Directory="DLLs" Guid="*">
+                <File Name="$(var.ext).pyd" KeyPath="yes" />
+            </Component>
+            
+            <?endforeach ?>
+            
+            <Component Id="sqlite3.dll" Directory="DLLs" Guid="*">
+                <File Name="sqlite3.dll" KeyPath="yes" />
+            </Component>
+            <Component Id="libcrypto.dll" Directory="DLLs" Guid="*">
+                <File Name="libcrypto$(var.ssltag).dll" KeyPath="yes" />
+            </Component>
+            <Component Id="libssl.dll" Directory="DLLs" Guid="*">
+                <File Name="libssl$(var.ssltag).dll" KeyPath="yes" />
+            </Component>
+            <Component Id="libffi.dll" Directory="DLLs" Guid="*">
+                <File Name="libffi-8.dll" KeyPath="yes" />
+            </Component>
+            <Component Id="venvlauncher.exe" Directory="Lib_venv_scripts_nt" Guid="*">
+                <File Name="venvlauncher.exe" KeyPath="yes" />
+            </Component>
+            <Component Id="venvwlauncher.exe" Directory="Lib_venv_scripts_nt" Guid="*">
+                <File Name="venvwlauncher.exe" KeyPath="yes" />
+            </Component>
+        </ComponentGroup>
+    </Fragment>
+    
+    <Fragment>
+        <!-- The auto-generated directory is not available when building symbols -->
+        <DirectoryRef Id="Lib">
+            <Directory Id="Lib_venv__pdbs" Name="venv">
+                <Directory Id="Lib_venv_scripts__pdbs" Name="scripts">
+                    <Directory Id="Lib_venv_scripts_nt__pdbs" Name="nt" />
+                </Directory>
+            </Directory>
+        </DirectoryRef>
+
+        <ComponentGroup Id="lib_extensions_symbols">
+            <?foreach ext in $(var.exts)?>
+            
+            <Component Id="$(var.ext).pdb" Directory="DLLs" Guid="*">
+                <File Name="$(var.ext).pdb" />
+            </Component>
+            
+            <?endforeach ?>
+            
+            <Component Id="sqlite3.pdb" Directory="DLLs" Guid="*">
+                <File Name="sqlite3.pdb" />
+            </Component>
+            <Component Id="libcrypto.pdb" Directory="DLLs" Guid="*">
+                <File Name="libcrypto$(var.ssltag).pdb" KeyPath="yes" />
+            </Component>
+            <Component Id="libssl.pdb" Directory="DLLs" Guid="*">
+                <File Name="libssl$(var.ssltag).pdb" KeyPath="yes" />
+            </Component>
+            <Component Id="venvlauncher.pdb" Directory="Lib_venv_scripts_nt__pdbs" Guid="*">
+                <File Name="venvlauncher.pdb" KeyPath="yes" />
+            </Component>
+            <Component Id="venvwlauncher.pdb" Directory="Lib_venv_scripts_nt__pdbs" Guid="*">
+                <File Name="venvwlauncher.pdb" KeyPath="yes" />
+            </Component>
+        </ComponentGroup>
+    </Fragment>
+    
+    <Fragment>
+        <!-- The auto-generated directory is not available when building debug binaries -->
+        <DirectoryRef Id="Lib">
+            <Directory Id="Lib_venv__d" Name="venv">
+                <Directory Id="Lib_venv_scripts__d" Name="scripts">
+                    <Directory Id="Lib_venv_scripts_nt__d" Name="nt" />
+                </Directory>
+            </Directory>
+        </DirectoryRef>
+
+        <ComponentGroup Id="lib_extensions_d">
+            <?foreach ext in $(var.exts)?>
+            
+            <Component Id="$(var.ext)_d.pyd" Directory="DLLs" Guid="*">
+                <File Name="$(var.ext)_d.pyd" />
+            </Component>
+            <Component Id="$(var.ext)_d.pdb" Directory="DLLs" Guid="*">
+                <File Name="$(var.ext)_d.pdb" />
+            </Component>
+            
+            <?endforeach ?>
+            
+            <Component Id="sqlite3_d.dll" Directory="DLLs" Guid="*">
+                <File Name="sqlite3_d.dll" KeyPath="yes" />
+            </Component>
+            <Component Id="sqlite3_d.pdb" Directory="DLLs" Guid="*">
+                <File Name="sqlite3_d.pdb" KeyPath="yes" />
+            </Component>
+            <Component Id="venvlauncher_d.exe" Directory="Lib_venv_scripts_nt__d" Guid="*">
+                <File Name="venvlauncher_d.exe" KeyPath="yes" />
+            </Component>
+            <Component Id="venvwlauncher_d.exe" Directory="Lib_venv_scripts_nt__d" Guid="*">
+                <File Name="venvwlauncher_d.exe" KeyPath="yes" />
+            </Component>
+        </ComponentGroup>
+    </Fragment>
+    <Fragment>
+        <PropertyRef Id="REGISTRYKEY" />
+        
+        <ComponentGroup Id="lib_files">
+            <Component Id="PythonPathRegistry" Directory="Lib" Guid="*">
+                <RegistryKey Root="HKMU" Key="[REGISTRYKEY]">
+                    <RegistryValue Key="PythonPath" Type="string" Value="[Lib];[DLLs]" />
+                </RegistryKey>
+            </Component>
+        </ComponentGroup>
+    </Fragment>
+    <Fragment>
+        <ComponentGroup Id="lib_cat">
+            <Component Id="lib_cat" Directory="Catalogs" Guid="*">
+                <File Name="python_lib.cat" KeyPath="yes" />
+            </Component>
+        </ComponentGroup>
+    </Fragment>
+</Wix>

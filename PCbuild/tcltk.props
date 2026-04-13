@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="pyproject.props" Condition="$(__PyProject_Props_Imported) != 'true'" />
+  <PropertyGroup>
+    <TclVersion Condition="$(TclVersion) == ''">8.6.15.0</TclVersion>
+    <TkVersion Condition="$(TkVersion) == ''">$(TclVersion)</TkVersion>
+    <TclMajorVersion>$([System.Version]::Parse($(TclVersion)).Major)</TclMajorVersion>
+    <TclMinorVersion>$([System.Version]::Parse($(TclVersion)).Minor)</TclMinorVersion>
+    <TclPatchLevel>$([System.Version]::Parse($(TclVersion)).Build)</TclPatchLevel>
+    <TclRevision>$([System.Version]::Parse($(TclVersion)).Revision)</TclRevision>
+    <TkMajorVersion>$([System.Version]::Parse($(TkVersion)).Major)</TkMajorVersion>
+    <TkMinorVersion>$([System.Version]::Parse($(TkVersion)).Minor)</TkMinorVersion>
+    <TkPatchLevel>$([System.Version]::Parse($(TkVersion)).Build)</TkPatchLevel>
+    <TkRevision>$([System.Version]::Parse($(TkVersion)).Revision)</TkRevision>
+    <tclDir Condition="$(tclDir) == ''">$(ExternalsDir)tcl-core-$(TclVersion)\</tclDir>
+    <tkDir Condition="$(tkDir) == ''">$(ExternalsDir)tk-$(TkVersion)\</tkDir>
+    <tcltkDir Condition="$(tcltkDir) == ''">$(ExternalsDir)tcltk-$(TclVersion)\$(ArchName)\</tcltkDir>
+    <tclWin32Exe Condition="$(Platform) == 'Win32'">$(tcltkDir)\bin\tclsh$(TclMajorVersion)$(TclMinorVersion)t.exe</tclWin32Exe>
+    <tclWin32Exe Condition="$(Platform) != 'Win32'">$(tcltkDir)\..\win32\bin\tclsh$(TclMajorVersion)$(TclMinorVersion)t.exe</tclWin32Exe>
+    <tclExternalTommath Condition="$(TclMajorVersion) == '9'">TCL_WITH_EXTERNAL_TOMMATH;</tclExternalTommath>
+
+    <!--<TclDebugExt Condition="'$(Configuration)' == 'Debug'">g</TclDebugExt>-->
+    <tcltkSuffix Condition="'$(TclMajorVersion)' == '8'">t</tcltkSuffix>
+    <tkPrefix Condition="'$(TclMajorVersion)' == '9'">tcl9</tkPrefix>
+    <tclDLLName >tcl$(TclMajorVersion)$(TclMinorVersion)$(tcltkSuffix)$(TclDebugExt).dll</tclDLLName>
+    <tclLibName>tcl$(TclMajorVersion)$(TclMinorVersion)$(tcltkSuffix)$(TclDebugExt).lib</tclLibName>
+    <tclShExeName>tclsh$(TclMajorVersion)$(TclMinorVersion)$(tcltkSuffix)$(TclDebugExt).exe</tclShExeName>
+    <tkDLLName>$(tkPrefix)tk$(TkMajorVersion)$(TkMinorVersion)$(tcltkSuffix)$(TclDebugExt).dll</tkDLLName>
+    <tkLibName>$(tkPrefix)tk$(TclMajorVersion)$(TclMinorVersion)$(tcltkSuffix)$(TclDebugExt).lib</tkLibName>
+    <tclZlibDLLName>zlib1.dll</tclZlibDLLName>
+    <tommathDLLName Condition="'$(TclMajorVersion)' == '9'">libtommath.dll</tommathDLLName>
+    <tommathLibName Condition="'$(TclMajorVersion)' == '9'">tommath.lib</tommathLibName>
+    <tcltkLib>$(tcltkDir)lib\$(TclLibName);$(tcltkDir)lib\$(TkLibName);</tcltkLib>
+    <tcltkLib Condition="'$(tommathLibName)' != ''">$(tcltkLib);$(tcltkDir)lib\$(tommathLibName)</tcltkLib>
+    <TclMachine>IX86</TclMachine>
+    <TclMachine Condition="'$(Platform)' == 'x64'">AMD64</TclMachine>
+    <TclMachine Condition="'$(Platform)' == 'ARM64'">ARM64</TclMachine>
+    <TclVersions>TCL_MAJOR_VERSION=$(TclMajorVersion) TCL_MINOR_VERSION=$(TclMinorVersion) TCL_PATCH_LEVEL=$(TclPatchLevel)</TclVersions>
+    <TclShortVersions>TCL_MAJOR=$(TclMajorVersion) TCL_MINOR=$(TclMinorVersion) TCL_PATCH=$(TclPatchLevel)</TclShortVersions>
+    <TkVersions>TK_MAJOR_VERSION=$(TkMajorVersion) TK_MINOR_VERSION=$(TkMinorVersion) TK_PATCH_LEVEL=$(TkPatchLevel)</TkVersions>
+
+    <BuildDirTop>Release</BuildDirTop>
+    <BuildDirTop Condition="$(Configuration) == 'Debug'">Debug</BuildDirTop>
+    <BuildDirTop Condition="$(TclMachine) != 'IX86'">$(BuildDirTop)_$(TclMachine)</BuildDirTop>
+    <BuildDirTop Condition="$(PlatformToolset.StartsWith('v14'))">$(BuildDirTop)_VC13</BuildDirTop>
+  </PropertyGroup>
+
+  <!--
+  Helper target for copying the lib to a specific directory.
+
+  Using "msbuild tcltk.props /t:CopyTclTkLib /p:OutDir=..." is generally
+  easier than trying to extract the value of $(tcltkdir).
+   -->
+  <Target Name="CopyTclTkLib">
+    <ItemGroup>
+      <_TclTkLib Include="$(tcltkdir)\lib\**\*" />
+    </ItemGroup>
+    <Copy SourceFiles="@(_TclTkLib)"
+          DestinationFiles="$(OutDir)\%(RecursiveDir)\%(Filename)%(Extension)"
+          UseHardlinksIfPossible="true" />
+  </Target>
+</Project>

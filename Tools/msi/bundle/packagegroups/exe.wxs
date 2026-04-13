@@ -1,0 +1,64 @@
+<?xml version="1.0"?>
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+    <Fragment>
+        <PackageGroup Id="exe">
+            <MsiPackage Id="exe_AllUsers"
+                        SourceFile="exe.msi"
+                        ForcePerMachine="yes"
+                        Compressed="$(var.CompressMSI)"
+                        DownloadUrl="$(var.DownloadUrl)"
+                        EnableFeatureSelection="yes"
+                        InstallCondition="InstallAllUsers and (Include_exe or Include_launcher or Include_pip) and not LauncherOnly">
+                <MsiProperty Name="TARGETDIR" Value="[TargetDir]" />
+                <MsiProperty Name="OPTIONALFEATURESREGISTRYKEY" Value="[OptionalFeaturesRegistryKey]" />
+            </MsiPackage>
+            <MsiPackage Id="exe_AllUsers_pdb"
+                        SourceFile="exe_pdb.msi"
+                        ForcePerMachine="yes"
+                        Compressed="$(var.CompressPDB)"
+                        DownloadUrl="$(var.DownloadUrl)"
+                        InstallCondition="InstallAllUsers and (Include_exe or Include_launcher or Include_pip) and Include_symbols and not LauncherOnly">
+                <MsiProperty Name="TARGETDIR" Value="[TargetDir]" />
+                <MsiProperty Name="OPTIONALFEATURESREGISTRYKEY" Value="[OptionalFeaturesRegistryKey]" />
+            </MsiPackage>
+            <MsiPackage Id="exe_AllUsers_d"
+                        SourceFile="exe_d.msi"
+                        ForcePerMachine="yes"
+                        Compressed="$(var.CompressMSI_D)"
+                        DownloadUrl="$(var.DownloadUrl)"
+                        InstallCondition="InstallAllUsers and (Include_exe or Include_launcher or Include_pip) and Include_debug and not LauncherOnly">
+                <MsiProperty Name="TARGETDIR" Value="[TargetDir]" />
+                <MsiProperty Name="OPTIONALFEATURESREGISTRYKEY" Value="[OptionalFeaturesRegistryKey]" />
+            </MsiPackage>
+            
+            <MsiPackage Id="exe_JustForMe"
+                        SourceFile="exe.msi"
+                        ForcePerMachine="no"
+                        Compressed="$(var.CompressMSI)"
+                        DownloadUrl="$(var.DownloadUrl)"
+                        EnableFeatureSelection="yes"
+                        InstallCondition="not InstallAllUsers and (Include_exe or Include_launcher or Include_pip) and not LauncherOnly">
+                <MsiProperty Name="TARGETDIR" Value="[TargetDir]" />
+                <MsiProperty Name="OPTIONALFEATURESREGISTRYKEY" Value="[OptionalFeaturesRegistryKey]" />
+            </MsiPackage>
+            <MsiPackage Id="exe_JustForMe_pdb"
+                        SourceFile="exe_pdb.msi"
+                        ForcePerMachine="no"
+                        Compressed="$(var.CompressPDB)"
+                        DownloadUrl="$(var.DownloadUrl)"
+                        InstallCondition="not InstallAllUsers and (Include_exe or Include_launcher or Include_pip) and Include_symbols and not LauncherOnly">
+                <MsiProperty Name="TARGETDIR" Value="[TargetDir]" />
+                <MsiProperty Name="OPTIONALFEATURESREGISTRYKEY" Value="[OptionalFeaturesRegistryKey]" />
+            </MsiPackage>
+            <MsiPackage Id="exe_JustForMe_d"
+                        SourceFile="exe_d.msi"
+                        ForcePerMachine="no"
+                        Compressed="$(var.CompressMSI_D)"
+                        DownloadUrl="$(var.DownloadUrl)"
+                        InstallCondition="not InstallAllUsers and (Include_exe or Include_launcher or Include_pip) and Include_debug and not LauncherOnly">
+                <MsiProperty Name="TARGETDIR" Value="[TargetDir]" />
+                <MsiProperty Name="OPTIONALFEATURESREGISTRYKEY" Value="[OptionalFeaturesRegistryKey]" />
+            </MsiPackage>
+        </PackageGroup>
+    </Fragment>
+</Wix>

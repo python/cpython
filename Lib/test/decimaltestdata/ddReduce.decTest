@@ -1,0 +1,182 @@
+------------------------------------------------------------------------
+-- ddReduce.decTest -- remove trailing zeros from a decDouble         --
+-- Copyright (c) IBM Corporation, 2003, 2008.  All rights reserved.   --
+------------------------------------------------------------------------
+-- Please see the document "General Decimal Arithmetic Testcases"     --
+-- at http://www2.hursley.ibm.com/decimal for the description of      --
+-- these testcases.                                                   --
+--                                                                    --
+-- These testcases are experimental ('beta' versions), and they       --
+-- may contain errors.  They are offered on an as-is basis.  In       --
+-- particular, achieving the same results as the tests here is not    --
+-- a guarantee that an implementation complies with any Standard      --
+-- or specification.  The tests are not exhaustive.                   --
+--                                                                    --
+-- Please send comments, suggestions, and corrections to the author:  --
+--   Mike Cowlishaw, IBM Fellow                                       --
+--   IBM UK, PO Box 31, Birmingham Road, Warwick CV34 5JL, UK         --
+--   mfc@uk.ibm.com                                                   --
+------------------------------------------------------------------------
+version: 2.59
+
+precision:   16
+maxExponent: 384
+minExponent: -383
+extended:    1
+clamp:       1
+rounding:    half_even
+
+ddred001 reduce '1'      -> '1'
+ddred002 reduce '-1'     -> '-1'
+ddred003 reduce '1.00'   -> '1'
+ddred004 reduce '-1.00'  -> '-1'
+ddred005 reduce '0'      -> '0'
+ddred006 reduce '0.00'   -> '0'
+ddred007 reduce '00.0'   -> '0'
+ddred008 reduce '00.00'  -> '0'
+ddred009 reduce '00'     -> '0'
+ddred010 reduce '0E+1'   -> '0'
+ddred011 reduce '0E+5'   -> '0'
+
+ddred012 reduce '-2'     -> '-2'
+ddred013 reduce '2'      -> '2'
+ddred014 reduce '-2.00'  -> '-2'
+ddred015 reduce '2.00'   -> '2'
+ddred016 reduce '-0'     -> '-0'
+ddred017 reduce '-0.00'  -> '-0'
+ddred018 reduce '-00.0'  -> '-0'
+ddred019 reduce '-00.00' -> '-0'
+ddred020 reduce '-00'    -> '-0'
+ddred021 reduce '-0E+5'   -> '-0'
+ddred022 reduce '-0E+1'  -> '-0'
+
+ddred030 reduce '+0.1'            -> '0.1'
+ddred031 reduce '-0.1'            -> '-0.1'
+ddred032 reduce '+0.01'           -> '0.01'
+ddred033 reduce '-0.01'           -> '-0.01'
+ddred034 reduce '+0.001'          -> '0.001'
+ddred035 reduce '-0.001'          -> '-0.001'
+ddred036 reduce '+0.000001'       -> '0.000001'
+ddred037 reduce '-0.000001'       -> '-0.000001'
+ddred038 reduce '+0.000000000001' -> '1E-12'
+ddred039 reduce '-0.000000000001' -> '-1E-12'
+
+ddred041 reduce 1.1        -> 1.1
+ddred042 reduce 1.10       -> 1.1
+ddred043 reduce 1.100      -> 1.1
+ddred044 reduce 1.110      -> 1.11
+ddred045 reduce -1.1       -> -1.1
+ddred046 reduce -1.10      -> -1.1
+ddred047 reduce -1.100     -> -1.1
+ddred048 reduce -1.110     -> -1.11
+ddred049 reduce 9.9        -> 9.9
+ddred050 reduce 9.90       -> 9.9
+ddred051 reduce 9.900      -> 9.9
+ddred052 reduce 9.990      -> 9.99
+ddred053 reduce -9.9       -> -9.9
+ddred054 reduce -9.90      -> -9.9
+ddred055 reduce -9.900     -> -9.9
+ddred056 reduce -9.990     -> -9.99
+
+-- some trailing fractional zeros with zeros in units
+ddred060 reduce  10.0        -> 1E+1
+ddred061 reduce  10.00       -> 1E+1
+ddred062 reduce  100.0       -> 1E+2
+ddred063 reduce  100.00      -> 1E+2
+ddred064 reduce  1.1000E+3   -> 1.1E+3
+ddred065 reduce  1.10000E+3  -> 1.1E+3
+ddred066 reduce -10.0        -> -1E+1
+ddred067 reduce -10.00       -> -1E+1
+ddred068 reduce -100.0       -> -1E+2
+ddred069 reduce -100.00      -> -1E+2
+ddred070 reduce -1.1000E+3   -> -1.1E+3
+ddred071 reduce -1.10000E+3  -> -1.1E+3
+
+-- some insignificant trailing zeros with positive exponent
+ddred080 reduce  10E+1       -> 1E+2
+ddred081 reduce  100E+1      -> 1E+3
+ddred082 reduce  1.0E+2      -> 1E+2
+ddred083 reduce  1.0E+3      -> 1E+3
+ddred084 reduce  1.1E+3      -> 1.1E+3
+ddred085 reduce  1.00E+3     -> 1E+3
+ddred086 reduce  1.10E+3     -> 1.1E+3
+ddred087 reduce -10E+1       -> -1E+2
+ddred088 reduce -100E+1      -> -1E+3
+ddred089 reduce -1.0E+2      -> -1E+2
+ddred090 reduce -1.0E+3      -> -1E+3
+ddred091 reduce -1.1E+3      -> -1.1E+3
+ddred092 reduce -1.00E+3     -> -1E+3
+ddred093 reduce -1.10E+3     -> -1.1E+3
+
+-- some significant trailing zeros, were we to be trimming
+ddred100 reduce  11          -> 11
+ddred101 reduce  10          -> 1E+1
+ddred102 reduce  10.         -> 1E+1
+ddred103 reduce  1.1E+1      -> 11
+ddred104 reduce  1.0E+1      -> 1E+1
+ddred105 reduce  1.10E+2     -> 1.1E+2
+ddred106 reduce  1.00E+2     -> 1E+2
+ddred107 reduce  1.100E+3    -> 1.1E+3
+ddred108 reduce  1.000E+3    -> 1E+3
+ddred109 reduce  1.000000E+6 -> 1E+6
+ddred110 reduce -11          -> -11
+ddred111 reduce -10          -> -1E+1
+ddred112 reduce -10.         -> -1E+1
+ddred113 reduce -1.1E+1      -> -11
+ddred114 reduce -1.0E+1      -> -1E+1
+ddred115 reduce -1.10E+2     -> -1.1E+2
+ddred116 reduce -1.00E+2     -> -1E+2
+ddred117 reduce -1.100E+3    -> -1.1E+3
+ddred118 reduce -1.000E+3    -> -1E+3
+ddred119 reduce -1.00000E+5  -> -1E+5
+ddred120 reduce -1.000000E+6 -> -1E+6
+ddred121 reduce -10.00000E+6 -> -1E+7
+ddred122 reduce -100.0000E+6 -> -1E+8
+ddred123 reduce -1000.000E+6 -> -1E+9
+ddred124 reduce -10000.00E+6 -> -1E+10
+ddred125 reduce -100000.0E+6 -> -1E+11
+ddred126 reduce -1000000.E+6 -> -1E+12
+
+-- examples from decArith
+ddred140 reduce '2.1'     ->  '2.1'
+ddred141 reduce '-2.0'    ->  '-2'
+ddred142 reduce '1.200'   ->  '1.2'
+ddred143 reduce '-120'    ->  '-1.2E+2'
+ddred144 reduce '120.00'  ->  '1.2E+2'
+ddred145 reduce '0.00'    ->  '0'
+
+-- Nmax, Nmin, Ntiny
+-- note origami effect on some of these
+ddred151 reduce  9.999999999999999E+384   -> 9.999999999999999E+384
+ddred152 reduce  9.999999000000000E+380   -> 9.99999900000E+380
+ddred153 reduce  9.999999999990000E+384   -> 9.999999999990000E+384
+ddred154 reduce  1E-383                   -> 1E-383
+ddred155 reduce  1.000000000000000E-383   -> 1E-383
+ddred156 reduce  2.000E-395               -> 2E-395   Subnormal
+ddred157 reduce  1E-398                   -> 1E-398   Subnormal
+
+ddred161 reduce  -1E-398                  -> -1E-398  Subnormal
+ddred162 reduce  -2.000E-395              -> -2E-395  Subnormal
+ddred163 reduce  -1.000000000000000E-383  -> -1E-383
+ddred164 reduce  -1E-383                  -> -1E-383
+ddred165 reduce  -9.999999000000000E+380  -> -9.99999900000E+380
+ddred166 reduce  -9.999999999990000E+384  -> -9.999999999990000E+384
+ddred167 reduce  -9.999999999999990E+384  -> -9.999999999999990E+384
+ddred168 reduce  -9.999999999999999E+384  -> -9.999999999999999E+384
+ddred169 reduce  -9.999999999999990E+384  -> -9.999999999999990E+384
+
+
+-- specials (reduce does not affect payload)
+ddred820 reduce 'Inf'    -> 'Infinity'
+ddred821 reduce '-Inf'   -> '-Infinity'
+ddred822 reduce   NaN    ->  NaN
+ddred823 reduce  sNaN    ->  NaN    Invalid_operation
+ddred824 reduce   NaN101 ->  NaN101
+ddred825 reduce  sNaN010 ->  NaN10  Invalid_operation
+ddred827 reduce  -NaN    -> -NaN
+ddred828 reduce -sNaN    -> -NaN    Invalid_operation
+ddred829 reduce  -NaN101 -> -NaN101
+ddred830 reduce -sNaN010 -> -NaN10  Invalid_operation
+
+-- Null test
+ddred900 reduce  # -> NaN Invalid_operation

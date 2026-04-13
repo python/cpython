@@ -1,0 +1,83 @@
+
+
+Bignum support (Fast Number Theoretic Transform or FNT):
+========================================================
+
+Bignum arithmetic in libmpdec uses the scheme for fast convolution
+of integer sequences from:
+
+J. M. Pollard: The fast Fourier transform in a finite field
+http://www.ams.org/journals/mcom/1971-25-114/S0025-5718-1971-0301966-0/home.html
+
+
+The transform in a finite field can be used for convolution in the same
+way as the Fourier Transform. The main advantages of the Number Theoretic
+Transform are that it is both exact and very memory efficient.
+
+
+Convolution in pseudo-code:
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+  fnt_convolute(a, b):
+    x = fnt(a)                          # forward transform of a
+    y = fnt(b)                          # forward transform of b
+    z = pairwise multiply x[i] and y[i]
+    result = inv_fnt(z)                 # backward transform of z.
+
+
+Extending the maximum transform length (Chinese Remainder Theorem):
+-------------------------------------------------------------------
+
+The maximum transform length is quite limited when using a single
+prime field. However, it is possible to use multiple primes and
+recover the result using the Chinese Remainder Theorem.
+
+
+Multiplication in pseudo-code:
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+  _mpd_fntmul(u, v):
+    c1 = fnt_convolute(u, v, P1)  # convolute modulo prime1
+    c2 = fnt_convolute(u, v, P2)  # convolute modulo prime2
+    c3 = fnt_convolute(u, v, P3)  # convolute modulo prime3
+    result = crt3(c1, c2, c3)     # Chinese Remainder Theorem
+
+
+Optimized transform functions:
+------------------------------
+
+There are three different fnt() functions:
+
+   std_fnt: "standard" decimation in frequency transform for array lengths
+            of 2**n. Performs well up to 1024 words.
+
+   sixstep: Cache-friendly algorithm for array lengths of 2**n. Outperforms
+            std_fnt for large arrays.
+
+   fourstep: Algorithm for array lengths of 3 * 2**n. Also cache friendly
+             in large parts.
+
+
+List of bignum-only files:
+--------------------------
+
+Functions from these files are only used in _mpd_fntmul().
+
+  umodarith.h    -> fast low level routines for unsigned modular arithmetic
+  numbertheory.c -> routines for setting up the FNT
+  difradix2.c    -> decimation in frequency transform, used as the
+                    "base case" by the following three files:
+
+      fnt.c          -> standard transform for smaller arrays
+      sixstep.c      -> transform large arrays of length 2**n
+      fourstep.c     -> transform arrays of length 3 * 2**n
+
+  convolute.c    -> do the actual fast convolution, using one of
+                    the three transform functions.
+  transpose.c    -> transpositions needed for the sixstep algorithm.
+  crt.c          -> Chinese Remainder Theorem: use information from three
+                    transforms modulo three different primes to get the
+                    final result.
+
+
+

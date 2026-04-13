@@ -1,0 +1,133 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<WixLocalization Culture="en-us" Language="1033" xmlns="http://schemas.microsoft.com/wix/2006/localization">
+  <String Id="Caption">[WixBundleName] Setup</String>
+  <String Id="Installing">Installing</String>
+  <String Id="Installation">Setup</String>
+  <String Id="Modifying">Updating</String>
+  <String Id="Modification">Modify</String>
+  <String Id="Repairing">Repairing</String>
+  <String Id="Repair">Repair</String>
+  <String Id="Uninstalling">Removing</String>
+  <String Id="Uninstallation">Uninstall</String>
+  
+  <String Id="ElevateForCRTInstall">You will be prompted for Administrator privileges to install a C Runtime Library update (KB2999226).
+
+
+Continue?</String>
+  
+  <String Id="CancelButton">&amp;Cancel</String>
+  <String Id="CloseButton">&amp;Close</String>
+  <String Id="InstallHeader">Install [WixBundleName]</String>
+  <String Id="InstallMessage">Select Install Now to install Python with default settings, or choose Customize to enable or disable features.</String>
+  <String Id="InstallVersion">Version [WixBundleVersion]</String>
+  <String Id="InstallUpgradeHeader">Upgrade to [WixBundleName]</String>
+  <String Id="InstallUpgradeMessage">Select Upgrade Now to keep your current settings, or choose Customize to enable or disable features.</String>
+  <String Id="ConfirmCancelMessage">Are you sure you want to cancel?</String>
+  <String Id="ExecuteUpgradeRelatedBundleMessage">Previous version</String>
+  <String Id="HelpHeader">Setup Help</String>
+  <String Id="HelpText">Visit &lt;a href="http://docs.python.org/[ShortVersion]/using/windows.html"&gt;docs.python.org/[ShortVersion]/using/windows.html&lt;/a&gt; for the full list of options, including the ability to enable and disable specific features.
+
+"/passive" to display progress without requiring user interaction
+
+"/quiet" to install/uninstall without displaying any UI
+
+"/simple" to prevent user customization
+
+"/uninstall" to remove Python (without confirmation)
+
+"/layout [\[]directory[\]]" to pre-download all components
+
+"/log [\[]filename[\]]" to specify log files location</String>
+  <String Id="InstallLicenseLinkText">[WixBundleName] &lt;a href="#"&gt;license terms&lt;/a&gt;.</String>
+  <String Id="InstallAcceptCheckbox">I &amp;agree to the license terms and conditions</String>
+  <String Id="InstallButton">&amp;Install Now</String>
+  <String Id="InstallButtonNote">[TargetDir]
+
+Includes IDLE, pip and documentation
+Creates shortcuts and file associations</String>
+  <String Id="InstallCustomButton">C&amp;ustomize installation</String>
+  <String Id="InstallCustomButtonNote">Choose location and features</String>
+  <String Id="InstallSimpleButton">&amp;Install</String>
+  <String Id="InstallSimpleButtonNote">Use settings preselected by your administrator
+
+[SimpleInstallDescription]</String>
+  <String Id="InstallUpgradeButton">Up&amp;grade Now</String>
+  <String Id="InstallUpgradeButtonNote">[TargetDir]
+
+Replaces your existing installation without changing settings.
+Select Customize to review current options.</String>
+  <String Id="InstallUpgradeCustomButton">C&amp;ustomize installation</String>
+  <String Id="InstallUpgradeCustomButtonNote">Choose location and features</String>
+  <String Id="Custom1Header">Optional Features</String>
+  <String Id="Custom2Header">Advanced Options</String>
+  <String Id="CustomLocationLabel">Customize install location</String>
+  <String Id="CustomLocationHelpLabel">You will require write permissions for the selected location.</String>
+  <String Id="CustomInstallButton">&amp;Install</String>
+  <String Id="CustomNextButton">&amp;Next</String>
+  <String Id="CustomBackButton">&amp;Back</String>
+  <String Id="CustomBrowseButton">B&amp;rowse</String>
+  <String Id="Include_docLabel">&amp;Documentation</String>
+  <String Id="Include_docHelpLabel">Installs the Python documentation files.</String>
+  <String Id="Include_pipLabel">&amp;pip</String>
+  <String Id="Include_pipHelpLabel">Installs pip, which can download and install other Python packages.</String>
+  <String Id="Include_tcltkLabel">Tcl/Tk, turtle and &amp;IDLE</String>
+  <String Id="Include_tcltkHelpLabel">Installs tkinter, turtle and the IDLE development environment.</String>
+  <String Id="Include_testLabel">Python &amp;test suite</String>
+  <String Id="Include_testHelpLabel">Installs the standard library test suite.</String>
+  <String Id="Include_launcherLabel">py &amp;launcher</String>
+  <String Id="Include_launcherHelp">Installs the global 'py' launcher to make it easier to start Python.</String>
+  <String Id="Include_launcherRemove">Use Programs and Features to remove the 'py' launcher.</String>
+  <String Id="Include_launcherUpgrade">Upgrades the global 'py' launcher from the previous version.</String>
+  
+  <String Id="AssociateFilesLabel">Associate &amp;files with Python (requires the 'py' launcher)</String>
+  <String Id="ShortcutsLabel">Create shortcuts for installed applications</String>
+  <String Id="PrependPathLabel">Add Python to &amp;environment variables</String>
+  <String Id="ShortPrependPathLabel">Add &amp;python.exe to PATH</String>
+  <String Id="AppendPathLabel">Append Python to &amp;environment variables</String>
+  <String Id="ShortAppendPathLabel">Append &amp;python.exe to PATH</String>
+  <String Id="InstallAllUsersLabel">Install Python [ShortVersion] for &amp;all users</String>
+  <String Id="InstallLauncherAllUsersLabel">for &amp;all users (requires admin privileges)</String>
+  <String Id="ShortInstallLauncherAllUsersLabel">Use admin privi&amp;leges when installing py.exe</String>
+  <String Id="ShortInstallLauncherBlockedLabel">Python Launcher is already installed</String>
+  <String Id="PrecompileLabel">&amp;Precompile standard library</String>
+  <String Id="Include_symbolsLabel">Download debugging &amp;symbols</String>
+  <String Id="Include_debugLabel">Download debu&amp;g binaries (requires VS 2017 or later)</String>
+  <String Id="Include_freethreadedLabel">Download &amp;free-threaded binaries</String>
+  
+  <String Id="ProgressHeader">[ActionLikeInstallation] Progress</String>
+  <String Id="ProgressLabel">[ActionLikeInstalling]:</String>
+  <String Id="OverallProgressPackageText">Initializing...</String>
+  <String Id="ModifyHeader">Modify Setup</String>
+  <String Id="ModifyModifyButton">&amp;Modify</String>
+  <String Id="ModifyButtonNote">Add or remove individual features.</String>
+  <String Id="ModifyRepairButton">&amp;Repair</String>
+  <String Id="RepairButtonNote">Ensure all current features are correctly installed.</String>
+  <String Id="ModifyUninstallButton">&amp;Uninstall</String>
+  <String Id="UninstallButtonNote">Remove the entire [WixBundleName] installation.</String>
+  <String Id="SuccessHeader">[ActionLikeInstallation] was successful</String>
+  <String Id="SuccessLaunchButton">&amp;Launch</String>
+  <String Id="SuccessRestartText">You may need to restart your computer to finish updating files.</String>
+  <String Id="SuccessRestartButton">&amp;Restart</String>
+  <String Id="SuccessInstallMessage">New to Python? Start with the &lt;a href="https://docs.python.org/[ShortVersion]/tutorial/index.html"&gt;online tutorial&lt;/a&gt; and &lt;a href="https://docs.python.org/[ShortVersion]/index.html"&gt;documentation&lt;/a&gt;. At your terminal, type "py" to launch Python, or search for Python in your Start menu.
+
+See &lt;a href="https://docs.python.org/[ShortVersion]/whatsnew/[ShortVersion].html"&gt;what's new&lt;/a&gt; in this release, or find more info about &lt;a href="https://docs.python.org/[ShortVersion]/using/windows.html"&gt;using Python on Windows&lt;/a&gt;.</String>
+  <String Id="SuccessModifyMessage">Thank you for using [WixBundleName].</String>
+  <String Id="SuccessRepairMessage">Thank you for using [WixBundleName].
+
+Feel free to post at &lt;a href="https://discuss.python.org/c/users/7"&gt;discuss.python.org&lt;/a&gt; if you continue to encounter issues.</String>
+  <String Id="SuccessRemoveMessage">Thank you for using [WixBundleName].
+
+Feel free to post at &lt;a href="https://discuss.python.org/c/users/7"&gt;discuss.python.org&lt;/a&gt; if you encountered problems.</String>
+  <String Id="FailureHeader">Setup failed</String>
+  <String Id="FailureHyperlinkLogText">One or more issues caused the setup to fail. Please fix the issues and then retry setup. For more information see the &lt;a href="#"&gt;log file&lt;/a&gt;.</String>
+  <String Id="FailureRestartText">You must restart your computer to complete the rollback of the software.</String>
+  <String Id="FailureRestartButton">&amp;Restart</String>
+  <String Id="FailureExistingInstall">Unable to install [WixBundleName] due to an existing install. Use Programs and Features to modify, repair or remove [WixBundleName].</String>
+  <String Id="FailureOldOS">At least Windows 10 or Windows Server 2016 are required to install [WixBundleName]
+
+Visit &lt;a href="https://www.python.org/downloads/"&gt;python.org&lt;/a&gt; to download an earlier version of Python.</String>
+  <String Id="SuccessMaxPathButton">Disable path length limit</String>
+  <String Id="SuccessMaxPathButtonNote">Changes your machine configuration to allow programs, including Python, to bypass the 260 character "MAX_PATH" limitation.</String>
+
+  <String Id="DeprecationMessage">NOTE: This installer is being retired and will no longer be available after Python 3.15. &lt;a href="https://docs.python.org/using/windows"&gt;More info&lt;/a&gt;</String>
+</WixLocalization>

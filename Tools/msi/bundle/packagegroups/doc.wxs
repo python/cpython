@@ -1,0 +1,28 @@
+<?xml version="1.0"?>
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+    <Fragment>
+        <PackageGroup Id="doc">
+            <MsiPackage Id="doc_AllUsers"
+                        SourceFile="doc.msi"
+                        Compressed="$(var.CompressMSI)"
+                        DownloadUrl="$(var.DownloadUrl)"
+                        EnableFeatureSelection="yes"
+                        ForcePerMachine="yes"
+                        InstallCondition="InstallAllUsers and Include_doc and not LauncherOnly">
+                <MsiProperty Name="TARGETDIR" Value="[TargetDir]" />
+                <MsiProperty Name="OPTIONALFEATURESREGISTRYKEY" Value="[OptionalFeaturesRegistryKey]" />
+            </MsiPackage>
+            
+            <MsiPackage Id="doc_JustForMe"
+                        SourceFile="doc.msi"
+                        Compressed="$(var.CompressMSI)"
+                        DownloadUrl="$(var.DownloadUrl)"
+                        EnableFeatureSelection="yes"
+                        ForcePerMachine="no"
+                        InstallCondition="not InstallAllUsers and Include_doc and not LauncherOnly">
+                <MsiProperty Name="TARGETDIR" Value="[TargetDir]" />
+                <MsiProperty Name="OPTIONALFEATURESREGISTRYKEY" Value="[OptionalFeaturesRegistryKey]" />
+            </MsiPackage>
+        </PackageGroup>
+    </Fragment>
+</Wix>

@@ -1,0 +1,19 @@
+<?xml version="1.0"?>
+<package >
+  <metadata>
+    <id>pythonx86</id>
+    <title>Python (32-bit)</title>
+    <authors>Python Software Foundation</authors>
+    <version>0.0.0.0</version>
+    <license type="file">tools\LICENSE.txt</license>
+    <projectUrl>https://www.python.org/</projectUrl>
+    <description>Installs 32-bit Python for use in build scenarios.</description>
+    <iconUrl>https://www.python.org/static/favicon.ico</iconUrl>
+    <tags>python</tags>
+  </metadata>
+  <files>
+    <file src="**\*" exclude="python.props" target="tools" />
+    <file src="python.props" target="build\native\python.props" />
+    <file src="python.props" target="build\native\pythonx86.props" />
+  </files>
+</package>

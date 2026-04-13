@@ -1,0 +1,7 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<WixLocalization Culture="en-us" xmlns="http://schemas.microsoft.com/wix/2006/localization">
+    <String Id="ShortDescriptor">doc</String>
+    <String Id="Descriptor">Documentation</String>
+    <String Id="ShortcutName">Python {{ShortVersion}} Manuals ({{Bitness}})</String>
+    <String Id="ShortcutDescription">View the !(loc.ProductName) documentation.</String>
+</WixLocalization>

@@ -1,0 +1,347 @@
+------------------------------------------------------------------------
+-- ddAnd.decTest -- digitwise logical AND for decDoubles              --
+-- Copyright (c) IBM Corporation, 1981, 2008.  All rights reserved.   --
+------------------------------------------------------------------------
+-- Please see the document "General Decimal Arithmetic Testcases"     --
+-- at http://www2.hursley.ibm.com/decimal for the description of      --
+-- these testcases.                                                   --
+--                                                                    --
+-- These testcases are experimental ('beta' versions), and they       --
+-- may contain errors.  They are offered on an as-is basis.  In       --
+-- particular, achieving the same results as the tests here is not    --
+-- a guarantee that an implementation complies with any Standard      --
+-- or specification.  The tests are not exhaustive.                   --
+--                                                                    --
+-- Please send comments, suggestions, and corrections to the author:  --
+--   Mike Cowlishaw, IBM Fellow                                       --
+--   IBM UK, PO Box 31, Birmingham Road, Warwick CV34 5JL, UK         --
+--   mfc@uk.ibm.com                                                   --
+------------------------------------------------------------------------
+version: 2.59
+
+precision:   16
+maxExponent: 384
+minExponent: -383
+extended:    1
+clamp:       1
+rounding:    half_even
+
+-- Sanity check (truth table)
+ddand001 and             0    0 ->    0
+ddand002 and             0    1 ->    0
+ddand003 and             1    0 ->    0
+ddand004 and             1    1 ->    1
+ddand005 and          1100 1010 -> 1000
+-- and at msd and msd-1
+--           1234567890123456 1234567890123456      1234567890123456
+ddand006 and 0000000000000000 0000000000000000 ->                  0
+ddand007 and 0000000000000000 1000000000000000 ->                  0
+ddand008 and 1000000000000000 0000000000000000 ->                  0
+ddand009 and 1000000000000000 1000000000000000 ->   1000000000000000
+ddand010 and 0000000000000000 0000000000000000 ->                  0
+ddand011 and 0000000000000000 0100000000000000 ->                  0
+ddand012 and 0100000000000000 0000000000000000 ->                  0
+ddand013 and 0100000000000000 0100000000000000 ->    100000000000000
+
+-- Various lengths
+--           1234567890123456 1234567890123456      1234567890123456
+ddand021 and 1111111111111111 1111111111111111  ->  1111111111111111
+ddand024 and 1111111111111111  111111111111111  ->   111111111111111
+ddand025 and 1111111111111111   11111111111111  ->    11111111111111
+ddand026 and 1111111111111111    1111111111111  ->     1111111111111
+ddand027 and 1111111111111111     111111111111  ->      111111111111
+ddand028 and 1111111111111111      11111111111  ->       11111111111
+ddand029 and 1111111111111111       1111111111  ->        1111111111
+ddand030 and 1111111111111111        111111111  ->         111111111
+ddand031 and 1111111111111111         11111111  ->          11111111
+ddand032 and 1111111111111111          1111111  ->           1111111
+ddand033 and 1111111111111111           111111  ->            111111
+ddand034 and 1111111111111111            11111  ->             11111
+ddand035 and 1111111111111111             1111  ->              1111
+ddand036 and 1111111111111111              111  ->               111
+ddand037 and 1111111111111111               11  ->                11
+ddand038 and 1111111111111111                1  ->                 1
+ddand039 and 1111111111111111                0  ->                 0
+
+ddand040 and 1111111111111111    1111111111111111 ->  1111111111111111
+ddand041 and  111111111111111    1111111111111111 ->   111111111111111
+ddand042 and  111111111111111    1111111111111111 ->   111111111111111
+ddand043 and   11111111111111    1111111111111111 ->    11111111111111
+ddand044 and    1111111111111    1111111111111111 ->     1111111111111
+ddand045 and     111111111111    1111111111111111 ->      111111111111
+ddand046 and      11111111111    1111111111111111 ->       11111111111
+ddand047 and       1111111111    1111111111111111 ->        1111111111
+ddand048 and        111111111    1111111111111111 ->         111111111
+ddand049 and         11111111    1111111111111111 ->          11111111
+ddand050 and          1111111    1111111111111111 ->           1111111
+ddand051 and           111111    1111111111111111 ->            111111
+ddand052 and            11111    1111111111111111 ->             11111
+ddand053 and             1111    1111111111111111 ->              1111
+ddand054 and              111    1111111111111111 ->               111
+ddand055 and               11    1111111111111111 ->                11
+ddand056 and                1    1111111111111111 ->                 1
+ddand057 and                0    1111111111111111 ->                 0
+
+ddand150 and 1111111111  1  ->  1
+ddand151 and  111111111  1  ->  1
+ddand152 and   11111111  1  ->  1
+ddand153 and    1111111  1  ->  1
+ddand154 and     111111  1  ->  1
+ddand155 and      11111  1  ->  1
+ddand156 and       1111  1  ->  1
+ddand157 and        111  1  ->  1
+ddand158 and         11  1  ->  1
+ddand159 and          1  1  ->  1
+
+ddand160 and 1111111111  0  ->  0
+ddand161 and  111111111  0  ->  0
+ddand162 and   11111111  0  ->  0
+ddand163 and    1111111  0  ->  0
+ddand164 and     111111  0  ->  0
+ddand165 and      11111  0  ->  0
+ddand166 and       1111  0  ->  0
+ddand167 and        111  0  ->  0
+ddand168 and         11  0  ->  0
+ddand169 and          1  0  ->  0
+
+ddand170 and 1  1111111111  ->  1
+ddand171 and 1   111111111  ->  1
+ddand172 and 1    11111111  ->  1
+ddand173 and 1     1111111  ->  1
+ddand174 and 1      111111  ->  1
+ddand175 and 1       11111  ->  1
+ddand176 and 1        1111  ->  1
+ddand177 and 1         111  ->  1
+ddand178 and 1          11  ->  1
+ddand179 and 1           1  ->  1
+
+ddand180 and 0  1111111111  ->  0
+ddand181 and 0   111111111  ->  0
+ddand182 and 0    11111111  ->  0
+ddand183 and 0     1111111  ->  0
+ddand184 and 0      111111  ->  0
+ddand185 and 0       11111  ->  0
+ddand186 and 0        1111  ->  0
+ddand187 and 0         111  ->  0
+ddand188 and 0          11  ->  0
+ddand189 and 0           1  ->  0
+
+ddand090 and 011111111  111111111  ->   11111111
+ddand091 and 101111111  111111111  ->  101111111
+ddand092 and 110111111  111111111  ->  110111111
+ddand093 and 111011111  111111111  ->  111011111
+ddand094 and 111101111  111111111  ->  111101111
+ddand095 and 111110111  111111111  ->  111110111
+ddand096 and 111111011  111111111  ->  111111011
+ddand097 and 111111101  111111111  ->  111111101
+ddand098 and 111111110  111111111  ->  111111110
+
+ddand100 and 111111111  011111111  ->   11111111
+ddand101 and 111111111  101111111  ->  101111111
+ddand102 and 111111111  110111111  ->  110111111
+ddand103 and 111111111  111011111  ->  111011111
+ddand104 and 111111111  111101111  ->  111101111
+ddand105 and 111111111  111110111  ->  111110111
+ddand106 and 111111111  111111011  ->  111111011
+ddand107 and 111111111  111111101  ->  111111101
+ddand108 and 111111111  111111110  ->  111111110
+
+-- non-0/1 should not be accepted, nor should signs
+ddand220 and 111111112  111111111  ->  NaN Invalid_operation
+ddand221 and 333333333  333333333  ->  NaN Invalid_operation
+ddand222 and 555555555  555555555  ->  NaN Invalid_operation
+ddand223 and 777777777  777777777  ->  NaN Invalid_operation
+ddand224 and 999999999  999999999  ->  NaN Invalid_operation
+ddand225 and 222222222  999999999  ->  NaN Invalid_operation
+ddand226 and 444444444  999999999  ->  NaN Invalid_operation
+ddand227 and 666666666  999999999  ->  NaN Invalid_operation
+ddand228 and 888888888  999999999  ->  NaN Invalid_operation
+ddand229 and 999999999  222222222  ->  NaN Invalid_operation
+ddand230 and 999999999  444444444  ->  NaN Invalid_operation
+ddand231 and 999999999  666666666  ->  NaN Invalid_operation
+ddand232 and 999999999  888888888  ->  NaN Invalid_operation
+-- a few randoms
+ddand240 and  567468689 -934981942 ->  NaN Invalid_operation
+ddand241 and  567367689  934981942 ->  NaN Invalid_operation
+ddand242 and -631917772 -706014634 ->  NaN Invalid_operation
+ddand243 and -756253257  138579234 ->  NaN Invalid_operation
+ddand244 and  835590149  567435400 ->  NaN Invalid_operation
+-- test MSD
+ddand250 and  2000000000000000 1000000000000000 ->  NaN Invalid_operation
+ddand251 and  7000000000000000 1000000000000000 ->  NaN Invalid_operation
+ddand252 and  8000000000000000 1000000000000000 ->  NaN Invalid_operation
+ddand253 and  9000000000000000 1000000000000000 ->  NaN Invalid_operation
+ddand254 and  2000000000000000 0000000000000000 ->  NaN Invalid_operation
+ddand255 and  7000000000000000 0000000000000000 ->  NaN Invalid_operation
+ddand256 and  8000000000000000 0000000000000000 ->  NaN Invalid_operation
+ddand257 and  9000000000000000 0000000000000000 ->  NaN Invalid_operation
+ddand258 and  1000000000000000 2000000000000000 ->  NaN Invalid_operation
+ddand259 and  1000000000000000 7000000000000000 ->  NaN Invalid_operation
+ddand260 and  1000000000000000 8000000000000000 ->  NaN Invalid_operation
+ddand261 and  1000000000000000 9000000000000000 ->  NaN Invalid_operation
+ddand262 and  0000000000000000 2000000000000000 ->  NaN Invalid_operation
+ddand263 and  0000000000000000 7000000000000000 ->  NaN Invalid_operation
+ddand264 and  0000000000000000 8000000000000000 ->  NaN Invalid_operation
+ddand265 and  0000000000000000 9000000000000000 ->  NaN Invalid_operation
+-- test MSD-1
+ddand270 and  0200001000000000 1000100000000010 ->  NaN Invalid_operation
+ddand271 and  0700000100000000 1000010000000100 ->  NaN Invalid_operation
+ddand272 and  0800000010000000 1000001000001000 ->  NaN Invalid_operation
+ddand273 and  0900000001000000 1000000100010000 ->  NaN Invalid_operation
+ddand274 and  1000000000100000 0200000010100000 ->  NaN Invalid_operation
+ddand275 and  1000000000010000 0700000001000000 ->  NaN Invalid_operation
+ddand276 and  1000000000001000 0800000010100000 ->  NaN Invalid_operation
+ddand277 and  1000000000000100 0900000000010000 ->  NaN Invalid_operation
+-- test LSD
+ddand280 and  0010000000000002 1000000100000001 ->  NaN Invalid_operation
+ddand281 and  0001000000000007 1000001000000011 ->  NaN Invalid_operation
+ddand282 and  0000100000000008 1000010000000001 ->  NaN Invalid_operation
+ddand283 and  0000010000000009 1000100000000001 ->  NaN Invalid_operation
+ddand284 and  1000001000000000 0001000000000002 ->  NaN Invalid_operation
+ddand285 and  1000000100000000 0010000000000007 ->  NaN Invalid_operation
+ddand286 and  1000000010000000 0100000000000008 ->  NaN Invalid_operation
+ddand287 and  1000000001000000 1000000000000009 ->  NaN Invalid_operation
+-- test Middie
+ddand288 and  0010000020000000 1000001000000000 ->  NaN Invalid_operation
+ddand289 and  0001000070000001 1000000100000000 ->  NaN Invalid_operation
+ddand290 and  0000100080000010 1000000010000000 ->  NaN Invalid_operation
+ddand291 and  0000010090000100 1000000001000000 ->  NaN Invalid_operation
+ddand292 and  1000001000001000 0000000020100000 ->  NaN Invalid_operation
+ddand293 and  1000000100010000 0000000070010000 ->  NaN Invalid_operation
+ddand294 and  1000000010100000 0000000080001000 ->  NaN Invalid_operation
+ddand295 and  1000000001000000 0000000090000100 ->  NaN Invalid_operation
+-- signs
+ddand296 and -1000000001000000 -0000010000000100 ->  NaN Invalid_operation
+ddand297 and -1000000001000000  0000000010000100 ->  NaN Invalid_operation
+ddand298 and  1000000001000000 -0000001000000100 ->  NaN Invalid_operation
+ddand299 and  1000000001000000  0000000011000100 ->  1000000
+
+-- Nmax, Nmin, Ntiny-like
+ddand331 and  2   9.99999999E+199     -> NaN Invalid_operation
+ddand332 and  3   1E-199              -> NaN Invalid_operation
+ddand333 and  4   1.00000000E-199     -> NaN Invalid_operation
+ddand334 and  5   1E-100              -> NaN Invalid_operation
+ddand335 and  6   -1E-100             -> NaN Invalid_operation
+ddand336 and  7   -1.00000000E-199    -> NaN Invalid_operation
+ddand337 and  8   -1E-199             -> NaN Invalid_operation
+ddand338 and  9   -9.99999999E+199    -> NaN Invalid_operation
+ddand341 and  9.99999999E+199     -18 -> NaN Invalid_operation
+ddand342 and  1E-199               01 -> NaN Invalid_operation
+ddand343 and  1.00000000E-199     -18 -> NaN Invalid_operation
+ddand344 and  1E-100               18 -> NaN Invalid_operation
+ddand345 and  -1E-100             -10 -> NaN Invalid_operation
+ddand346 and  -1.00000000E-199     18 -> NaN Invalid_operation
+ddand347 and  -1E-199              10 -> NaN Invalid_operation
+ddand348 and  -9.99999999E+199    -18 -> NaN Invalid_operation
+
+-- A few other non-integers
+ddand361 and  1.0                  1  -> NaN Invalid_operation
+ddand362 and  1E+1                 1  -> NaN Invalid_operation
+ddand363 and  0.0                  1  -> NaN Invalid_operation
+ddand364 and  0E+1                 1  -> NaN Invalid_operation
+ddand365 and  9.9                  1  -> NaN Invalid_operation
+ddand366 and  9E+1                 1  -> NaN Invalid_operation
+ddand371 and  0 1.0                   -> NaN Invalid_operation
+ddand372 and  0 1E+1                  -> NaN Invalid_operation
+ddand373 and  0 0.0                   -> NaN Invalid_operation
+ddand374 and  0 0E+1                  -> NaN Invalid_operation
+ddand375 and  0 9.9                   -> NaN Invalid_operation
+ddand376 and  0 9E+1                  -> NaN Invalid_operation
+
+-- All Specials are in error
+ddand780 and -Inf  -Inf   -> NaN Invalid_operation
+ddand781 and -Inf  -1000  -> NaN Invalid_operation
+ddand782 and -Inf  -1     -> NaN Invalid_operation
+ddand783 and -Inf  -0     -> NaN Invalid_operation
+ddand784 and -Inf   0     -> NaN Invalid_operation
+ddand785 and -Inf   1     -> NaN Invalid_operation
+ddand786 and -Inf   1000  -> NaN Invalid_operation
+ddand787 and -1000 -Inf   -> NaN Invalid_operation
+ddand788 and -Inf  -Inf   -> NaN Invalid_operation
+ddand789 and -1    -Inf   -> NaN Invalid_operation
+ddand790 and -0    -Inf   -> NaN Invalid_operation
+ddand791 and  0    -Inf   -> NaN Invalid_operation
+ddand792 and  1    -Inf   -> NaN Invalid_operation
+ddand793 and  1000 -Inf   -> NaN Invalid_operation
+ddand794 and  Inf  -Inf   -> NaN Invalid_operation
+
+ddand800 and  Inf  -Inf   -> NaN Invalid_operation
+ddand801 and  Inf  -1000  -> NaN Invalid_operation
+ddand802 and  Inf  -1     -> NaN Invalid_operation
+ddand803 and  Inf  -0     -> NaN Invalid_operation
+ddand804 and  Inf   0     -> NaN Invalid_operation
+ddand805 and  Inf   1     -> NaN Invalid_operation
+ddand806 and  Inf   1000  -> NaN Invalid_operation
+ddand807 and  Inf   Inf   -> NaN Invalid_operation
+ddand808 and -1000  Inf   -> NaN Invalid_operation
+ddand809 and -Inf   Inf   -> NaN Invalid_operation
+ddand810 and -1     Inf   -> NaN Invalid_operation
+ddand811 and -0     Inf   -> NaN Invalid_operation
+ddand812 and  0     Inf   -> NaN Invalid_operation
+ddand813 and  1     Inf   -> NaN Invalid_operation
+ddand814 and  1000  Inf   -> NaN Invalid_operation
+ddand815 and  Inf   Inf   -> NaN Invalid_operation
+
+ddand821 and  NaN -Inf    -> NaN Invalid_operation
+ddand822 and  NaN -1000   -> NaN Invalid_operation
+ddand823 and  NaN -1      -> NaN Invalid_operation
+ddand824 and  NaN -0      -> NaN Invalid_operation
+ddand825 and  NaN  0      -> NaN Invalid_operation
+ddand826 and  NaN  1      -> NaN Invalid_operation
+ddand827 and  NaN  1000   -> NaN Invalid_operation
+ddand828 and  NaN  Inf    -> NaN Invalid_operation
+ddand829 and  NaN  NaN    -> NaN Invalid_operation
+ddand830 and -Inf  NaN    -> NaN Invalid_operation
+ddand831 and -1000 NaN    -> NaN Invalid_operation
+ddand832 and -1    NaN    -> NaN Invalid_operation
+ddand833 and -0    NaN    -> NaN Invalid_operation
+ddand834 and  0    NaN    -> NaN Invalid_operation
+ddand835 and  1    NaN    -> NaN Invalid_operation
+ddand836 and  1000 NaN    -> NaN Invalid_operation
+ddand837 and  Inf  NaN    -> NaN Invalid_operation
+
+ddand841 and  sNaN -Inf   ->  NaN  Invalid_operation
+ddand842 and  sNaN -1000  ->  NaN  Invalid_operation
+ddand843 and  sNaN -1     ->  NaN  Invalid_operation
+ddand844 and  sNaN -0     ->  NaN  Invalid_operation
+ddand845 and  sNaN  0     ->  NaN  Invalid_operation
+ddand846 and  sNaN  1     ->  NaN  Invalid_operation
+ddand847 and  sNaN  1000  ->  NaN  Invalid_operation
+ddand848 and  sNaN  NaN   ->  NaN  Invalid_operation
+ddand849 and  sNaN sNaN   ->  NaN  Invalid_operation
+ddand850 and  NaN  sNaN   ->  NaN  Invalid_operation
+ddand851 and -Inf  sNaN   ->  NaN  Invalid_operation
+ddand852 and -1000 sNaN   ->  NaN  Invalid_operation
+ddand853 and -1    sNaN   ->  NaN  Invalid_operation
+ddand854 and -0    sNaN   ->  NaN  Invalid_operation
+ddand855 and  0    sNaN   ->  NaN  Invalid_operation
+ddand856 and  1    sNaN   ->  NaN  Invalid_operation
+ddand857 and  1000 sNaN   ->  NaN  Invalid_operation
+ddand858 and  Inf  sNaN   ->  NaN  Invalid_operation
+ddand859 and  NaN  sNaN   ->  NaN  Invalid_operation
+
+-- propagating NaNs
+ddand861 and  NaN1   -Inf    -> NaN Invalid_operation
+ddand862 and +NaN2   -1000   -> NaN Invalid_operation
+ddand863 and  NaN3    1000   -> NaN Invalid_operation
+ddand864 and  NaN4    Inf    -> NaN Invalid_operation
+ddand865 and  NaN5   +NaN6   -> NaN Invalid_operation
+ddand866 and -Inf     NaN7   -> NaN Invalid_operation
+ddand867 and -1000    NaN8   -> NaN Invalid_operation
+ddand868 and  1000    NaN9   -> NaN Invalid_operation
+ddand869 and  Inf    +NaN10  -> NaN Invalid_operation
+ddand871 and  sNaN11  -Inf   -> NaN Invalid_operation
+ddand872 and  sNaN12  -1000  -> NaN Invalid_operation
+ddand873 and  sNaN13   1000  -> NaN Invalid_operation
+ddand874 and  sNaN14   NaN17 -> NaN Invalid_operation
+ddand875 and  sNaN15  sNaN18 -> NaN Invalid_operation
+ddand876 and  NaN16   sNaN19 -> NaN Invalid_operation
+ddand877 and -Inf    +sNaN20 -> NaN Invalid_operation
+ddand878 and -1000    sNaN21 -> NaN Invalid_operation
+ddand879 and  1000    sNaN22 -> NaN Invalid_operation
+ddand880 and  Inf     sNaN23 -> NaN Invalid_operation
+ddand881 and +NaN25  +sNaN24 -> NaN Invalid_operation
+ddand882 and -NaN26    NaN28 -> NaN Invalid_operation
+ddand883 and -sNaN27  sNaN29 -> NaN Invalid_operation
+ddand884 and  1000    -NaN30 -> NaN Invalid_operation
+ddand885 and  1000   -sNaN31 -> NaN Invalid_operation

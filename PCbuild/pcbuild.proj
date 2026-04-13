@@ -1,0 +1,162 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props"/>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props"/>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets"/>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{CC9B93A2-439D-4058-9D29-6DCF43774405}</ProjectGuid>
+    <Platform Condition="'$(Platform)' == ''">Win32</Platform>
+    <Configuration Condition="'$(Configuration)' == ''">Release</Configuration>
+    <IncludeExtensions Condition="'$(IncludeExtensions)' == ''">true</IncludeExtensions>
+    <IncludeExternals Condition="'$(IncludeExternals)' == ''">true</IncludeExternals>
+    <IncludeTests Condition="'$(IncludeTest)' == ''">true</IncludeTests>
+    <IncludeCTypes Condition="'$(IncludeCTypes)' == ''">true</IncludeCTypes>
+    <IncludeSSL Condition="'$(IncludeSSL)' == ''">true</IncludeSSL>
+    <IncludeTkinter Condition="'$(IncludeTkinter)' == ''">true</IncludeTkinter>
+    <IncludeUwp Condition="'$(IncludeUwp)' == ''">false</IncludeUwp>
+  </PropertyGroup>
+
+  <ItemDefinitionGroup>
+    <FreezeProjects>
+      <Platform>$(PreferredToolArchitecture)</Platform>
+      <Configuration>$(Configuration)</Configuration>
+      <Configuration Condition="$(Configuration) == 'PGInstrument'">Release</Configuration>
+      <Properties></Properties>
+      <BuildTarget>Build</BuildTarget>
+      <CleanTarget>Clean</CleanTarget>
+      <CleanAllTarget>CleanAll</CleanAllTarget>
+      <BuildInParallel>false</BuildInParallel>
+    </FreezeProjects>
+    <Projects>
+      <Platform>$(Platform)</Platform>
+      <Configuration>$(Configuration)</Configuration>
+      <Properties></Properties>
+      <BuildTarget>Build</BuildTarget>
+      <CleanTarget>Clean</CleanTarget>
+      <CleanAllTarget>CleanAll</CleanAllTarget>
+      <BuildInParallel>true</BuildInParallel>
+    </Projects>
+    <Projects2>
+      <Platform>$(Platform)</Platform>
+      <Configuration>$(Configuration)</Configuration>
+      <Properties></Properties>
+      <BuildTarget>Build</BuildTarget>
+      <CleanTarget>Clean</CleanTarget>
+      <CleanAllTarget>CleanAll</CleanAllTarget>
+      <BuildInParallel>false</BuildInParallel>
+    </Projects2>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <!-- Static libraries for use later in the build -->
+    <Projects Include="zlib-ng.vcxproj" Condition="$(zlibNgDir) != '' and Exists('$(zlibNgDir)\zlib-ng.h.in')" />
+    <!-- pythonXY.dll -->
+    <!--
+    Parallel build is explicitly disabled for this project because it
+    causes many conflicts between pythoncore and projects that depend
+    on pythoncore. Once the core DLL has been built, subsequent
+    projects will be built in parallel.
+    -->
+    <Projects Include="pythoncore.vcxproj">
+      <BuildInParallel>false</BuildInParallel>
+    </Projects>
+    <!-- python3.dll -->
+    <Projects Include="python3dll.vcxproj" />
+    <!-- py[w].exe -->
+    <Projects Include="pylauncher.vcxproj;pywlauncher.vcxproj" />
+    <!-- pyshellext.dll -->
+    <Projects Include="pyshellext.vcxproj" />
+    <!-- Extension modules -->
+    <ExtensionModules Include="_asyncio;_decimal;_elementtree;_multiprocessing;_overlapped;pyexpat;_queue;_remote_debugging;select;unicodedata;winsound;_uuid;_wmi;_zoneinfo" />
+    <ExtensionModules Include="_ctypes" Condition="$(IncludeCTypes)" />
+    <!-- Extension modules that require external sources -->
+    <ExternalModules Include="_bz2;_lzma;_sqlite3;_zstd" />
+    <!-- venv launchers -->
+    <Projects Include="venvlauncher.vcxproj;venvwlauncher.vcxproj" />
+    <!-- _ssl will build _socket as well, which may cause conflicts in parallel builds -->
+    <ExtensionModules Include="_socket" Condition="!$(IncludeSSL) or !$(IncludeExternals)" />
+    <ExternalModules Include="_ssl;_hashlib" Condition="$(IncludeSSL)" />
+    <ExternalModules Include="_tkinter" Condition="$(IncludeTkinter)" />
+    <ExtensionModules Include="@(ExternalModules->'%(Identity)')" Condition="$(IncludeExternals)" />
+    <Projects Include="@(ExtensionModules->'%(Identity).vcxproj')" Condition="$(IncludeExtensions)" />
+    <!-- Test modules -->
+    <TestModules Include="_ctypes_test;_testbuffer;_testcapi;_testlimitedcapi;_testinternalcapi;_testembed;_testimportmultiple;_testmultiphase;_testsinglephase;_testconsole;_testclinic;_testclinic_limited" />
+    <TestModules Include="xxlimited" Condition="'$(Configuration)' == 'Release'" />
+    <TestModules Include="xxlimited_35" Condition="'$(Configuration)' == 'Release'" />
+    <Projects Include="@(TestModules->'%(Identity).vcxproj')" Condition="$(IncludeTests)">
+      <!-- Disable parallel build for test modules -->
+      <BuildInParallel>false</BuildInParallel>
+    </Projects>
+
+    <!-- _freeze_module -->
+    <FreezeProjects Include="_freeze_module.vcxproj" />
+    <!-- python[w].exe -->
+    <Projects2 Include="python.vcxproj;pythonw.vcxproj" />
+    <Projects2 Include="python_uwp.vcxproj;pythonw_uwp.vcxproj" Condition="$(IncludeUwp)" />
+    <!-- venv[w]launcher.exe -->
+    <Projects2 Include="venvlauncher.vcxproj;venvwlauncher.vcxproj" />
+  </ItemGroup>
+
+  <Target Name="Build">
+    <MSBuild Condition="$(Configuration) != 'PGUpdate'"
+             Projects="@(FreezeProjects)"
+             Properties="Configuration=%(Configuration);Platform=%(Platform);%(Properties)"
+             BuildInParallel="%(BuildInParallel)"
+             StopOnFirstFailure="true"
+             Targets="%(BuildTarget)" />
+    <MSBuild Projects="@(Projects)"
+             Properties="Configuration=%(Configuration);Platform=%(Platform);%(Properties)"
+             BuildInParallel="%(BuildInParallel)"
+             StopOnFirstFailure="true"
+             Targets="%(BuildTarget)" />
+    <MSBuild Projects="@(Projects2)"
+             Properties="Configuration=%(Configuration);Platform=%(Platform);%(Properties)"
+             BuildInParallel="%(BuildInParallel)"
+             StopOnFirstFailure="true"
+             Targets="%(BuildTarget)" />
+  </Target>
+
+  <Target Name="Clean">
+    <MSBuild Projects="@(Projects2)"
+             Properties="Configuration=%(Configuration);Platform=%(Platform);%(Properties)"
+             BuildInParallel="%(BuildInParallel)"
+             StopOnFirstFailure="false"
+             Condition="%(CleanTarget) != ''"
+             Targets="%(CleanTarget)" />
+    <MSBuild Projects="@(Projects)"
+             Properties="Configuration=%(Configuration);Platform=%(Platform);%(Properties)"
+             BuildInParallel="%(BuildInParallel)"
+             StopOnFirstFailure="false"
+             Condition="%(CleanTarget) != ''"
+             Targets="%(CleanTarget)" />
+    <MSBuild Projects="@(FreezeProjects)"
+            Properties="Configuration=%(Configuration);Platform=%(Platform);%(Properties)"
+            BuildInParallel="%(BuildInParallel)"
+            StopOnFirstFailure="false"
+            Condition="%(CleanTarget) != ''"
+            Targets="%(CleanTarget)" />
+  </Target>
+
+  <Target Name="CleanAll">
+    <MSBuild Projects="@(Projects2)"
+             Properties="Configuration=%(Configuration);Platform=%(Platform);%(Properties)"
+             BuildInParallel="%(BuildInParallel)"
+             StopOnFirstFailure="false"
+             Condition="%(CleanAllTarget) != ''"
+             Targets="%(CleanAllTarget)" />
+    <MSBuild Projects="@(Projects)"
+             Properties="Configuration=%(Configuration);Platform=%(Platform);%(Properties)"
+             BuildInParallel="%(BuildInParallel)"
+             StopOnFirstFailure="false"
+             Condition="%(CleanAllTarget) != ''"
+             Targets="%(CleanAllTarget)" />
+    <MSBuild Projects="@(FreezeProjects)"
+            Properties="Configuration=%(Configuration);Platform=%(Platform);%(Properties)"
+            BuildInParallel="%(BuildInParallel)"
+            StopOnFirstFailure="false"
+            Condition="%(CleanTarget) != ''"
+            Targets="%(CleanTarget)" />
+  </Target>
+
+  <Target Name="Rebuild" DependsOnTargets="Clean;Build" />
+  <Target Name="RebuildAll" DependsOnTargets="CleanAll;Build" />
+</Project>
