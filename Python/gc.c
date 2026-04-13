@@ -2489,7 +2489,7 @@ _PyObject_GC_NewVar(PyTypeObject *tp, Py_ssize_t nitems)
 }
 
 PyObject *
-PyUnstable_Object_GC_NewWithExtraData(PyTypeObject *tp, size_t extra_size)
+PyObject_GC_NewWithExtraData(PyTypeObject *tp, size_t extra_size)
 {
     size_t presize = _PyType_PreHeaderSize(tp);
     size_t size = _PyObject_SIZE(tp) + extra_size;

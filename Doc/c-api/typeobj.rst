@@ -599,7 +599,7 @@ and :c:data:`PyType_Type` effectively act as defaults.)
    :c:member:`!tp_itemsize` field.  For a type with fixed-length instances, all
    instances have the same size, given in :c:member:`!tp_basicsize`.
    (Exceptions to this rule can be made using
-   :c:func:`PyUnstable_Object_GC_NewWithExtraData`.)
+   :c:func:`PyObject_GC_NewWithExtraData`.)
 
    For a type with variable-length instances, the instances must have an
    :c:member:`~PyVarObject.ob_size` field, and the instance size is
