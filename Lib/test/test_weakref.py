@@ -545,12 +545,12 @@ class ReferencesTestCase(TestBase):
         dead = weakref.proxy(o)
         del o
         gc.collect()
-
+    
         # Create live proxy
         obj = make_class()
         ref = weakref.ref(obj)
         proxy = weakref.proxy(obj)
-
+        
         # run operation
         try:
             do_op(proxy, dead)
@@ -558,20 +558,20 @@ class ReferencesTestCase(TestBase):
             pass
         del proxy, obj, dead
         gc.collect()
-
+    
         # verify
         self.assertIsNone(ref(), f"Leaked object in '{op_name}' operation")
-
+        
     def test_proxy_unref_binary_refcount(self):
         class C:
             def __add__(self, o): return NotImplemented
         self._assert_no_proxy_refcount_leak(C, operator.add, "Binary")
-
+    
     def test_proxy_unref_ternary_refcount(self):
         class C:
             def __pow__(self, o, m=None): return NotImplemented
         self._assert_no_proxy_refcount_leak(C, lambda p, d: pow(p, d, None), "Ternary")
-
+    
     def test_proxy_unref_richcompare_refcount(self):
         class C:
             def __eq__(self, o): return NotImplemented
