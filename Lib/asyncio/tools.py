@@ -231,7 +231,7 @@ def exit_with_permission_help_text():
     print(
         "Error: The specified process cannot be attached to due to insufficient permissions.\n"
         "See the Python documentation for details on required privileges and troubleshooting:\n"
-        "https://docs.python.org/3.14/howto/remote_debugging.html#permission-requirements\n",
+        "https://docs.python.org/3/howto/remote_debugging.html#permission-requirements\n",
         file=sys.stderr,
     )
     sys.exit(1)
