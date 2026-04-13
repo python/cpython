@@ -1001,15 +1001,12 @@ dummy_func(void) {
     }
 
     op(_CHECK_FUNCTION_VERSION, (func_version/2, callable, self_or_null, unused[oparg] -- callable, self_or_null, unused[oparg])) {
-        PyObject *func = sym_get_probable_value(callable);
-        if (func == NULL || !PyFunction_Check(func) || ((PyFunctionObject *)func)->func_version != func_version) {
-            ctx->contradiction = true;
-            ctx->done = true;
-            break;
+        if (sym_get_func_version(callable) == func_version) {
+            REPLACE_OP(this_instr, _NOP, 0, 0);
         }
-        // Guarded on this, so it can be promoted.
-        sym_set_const(callable, func);
-        _Py_BloomFilter_Add(dependencies, func);
+        else {
+            sym_set_func_version(ctx, callable, func_version);
+        }
     }
 
     op(_CHECK_METHOD_VERSION, (func_version/2, callable, null, unused[oparg] -- callable, null, unused[oparg])) {
@@ -2232,8 +2229,7 @@ dummy_func(void) {
         if (co->co_version == version) {
             _Py_BloomFilter_Add(dependencies, co);
             // Functions derive their version from code objects.
-            PyFunctionObject *func = (PyFunctionObject *)sym_get_const(ctx, ctx->frame->callable);
-            if (func != NULL && func->func_version == version) {
+            if (sym_get_func_version(ctx->frame->callable) == version) {
                 REPLACE_OP(this_instr, _NOP, 0, 0);
             }
         }
@@ -2266,8 +2262,7 @@ dummy_func(void) {
     op(_GUARD_IP__PUSH_FRAME, (ip/4 --)) {
         (void)ip;
         stack_pointer = sym_set_stack_depth((int)this_instr->operand1, stack_pointer);
-        PyFunctionObject *func = (PyFunctionObject *)sym_get_const(ctx, ctx->frame->callable);
-        if (func != NULL && func->func_version != 0 &&
+        if (sym_get_func_version(ctx->frame->callable) != 0 &&
             // We can remove this guard for simple function call targets.
             (((PyCodeObject *)ctx->frame->func->func_code)->co_flags &
                 (CO_GENERATOR | CO_COROUTINE | CO_ASYNC_GENERATOR)) == 0) {
