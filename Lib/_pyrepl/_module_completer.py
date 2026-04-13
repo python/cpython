@@ -104,9 +104,9 @@ class ModuleCompleter:
             path, prefix = self.get_path_and_prefix(from_name)
             modules = self.find_modules(path, prefix)
             names = [self.format_completion(path, module) for module in modules]
-            if len(names) == 1:
-                # One match: insert a space to allow for "import" suggestion
-                names[0] = f"{names[0]} "
+            if names == [from_name]:
+                # Exact match already written: continue with import statement
+                names = [f"{from_name} import "]
             return names, None
 
         # from x.y import z<tab>
@@ -317,7 +317,7 @@ class ImportParser:
         - `import foo`          -> Result(from_name=None, name='foo')
         - `import foo.`         -> Result(from_name=None, name='foo.')
         - `from foo`            -> Result(from_name='foo', name=None)
-        - `from foo `           -> Result(from_name='foo', name=None, end_space=True)
+        - `from foo `           -> Result(from_name='foo', name=None, space_end=True)
         - `from foo import bar` -> Result(from_name='foo', name='bar')
         - `from .foo import (`  -> Result(from_name='.foo', name='')
 

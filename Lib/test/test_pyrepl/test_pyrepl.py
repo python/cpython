@@ -1168,17 +1168,20 @@ class TestPyReplModuleCompleter(TestCase):
             ("import importlib.resources.\t\ta\t\n", "import importlib.resources.abc"),
             ("import foo, impo\t\n", "import foo, importlib"),
             ("import foo as bar, impo\t\n", "import foo as bar, importlib"),
-            ("from impo\t\n", "from importlib "),
+            ("from impo\t\n", "from importlib"),
             ("from impo\t\t\n", "from importlib import "),
+            ("from impo\t\t\t\n", "from importlib import "),
             ("from impo \t\n", "from impo import "),
-            ("from importlib.res\t\n", "from importlib.resources "),
-            ("from importlib.\t\tres\t\n", "from importlib.resources "),
+            ("from importlib\t\n", "from importlib import "),
+            ("from importlib.res\t\n", "from importlib.resources"),
+            ("from importlib.\t\tres\t\n", "from importlib.resources"),
             ("from importlib.res\t\t\n", "from importlib.resources import "),
             ("from importlib.res \t\n", "from importlib.res import "),
-            ("from importlib.resources.ab\t\n", "from importlib.resources.abc "),
+            ("from importlib.resources\t\n", "from importlib.resources import "),
+            ("from importlib.resources.ab\t\n", "from importlib.resources.abc"),
             ("from importlib import mac\t\n", "from importlib import machinery"),
             ("from importlib import res\t\n", "from importlib import resources"),
-            ("from importlib.res\timport a\t\n", "from importlib.resources import abc"),
+            ("from importlib.res\t import a\t\n", "from importlib.resources import abc"),
             ("from importlib.res\t\ta\t\n", "from importlib.resources import abc"),
             ("from __phello__ import s\t\n", "from __phello__ import spam"),  # frozen module
         )
@@ -1196,10 +1199,10 @@ class TestPyReplModuleCompleter(TestCase):
         cases = (
             # Return public methods by default
             ("import \t\n", "import public"),
-            ("from \t\n", "from public "),
+            ("from \t\n", "from public"),
             # Return private methods if explicitly specified
             ("import _\t\n", "import _private"),
-            ("from _\t\n", "from _private "),
+            ("from _\t\n", "from _private"),
         )
         for code, expected in cases:
             with self.subTest(code=code):
@@ -1232,7 +1235,7 @@ class TestPyReplModuleCompleter(TestCase):
     def test_builtin_completion_top_level(self):
         cases = (
             ("import bui\t\n", "import builtins"),
-            ("from bui\t\n", "from builtins "),
+            ("from bui\t\n", "from builtins"),
         )
         for code, expected in cases:
             with self.subTest(code=code):
@@ -1245,11 +1248,11 @@ class TestPyReplModuleCompleter(TestCase):
         cases = (
             (None, "from .readl\t\n", "from .readl"),
             (None, "from . import readl\t\n", "from . import readl"),
-            ("_pyrepl", "from .readl\t\n", "from .readline "),
+            ("_pyrepl", "from .readl\t\n", "from .readline"),
             ("_pyrepl", "from . import readl\t\n", "from . import readline"),
             ("_pyrepl", "from .readline import mul\t\n", "from .readline import multiline_input"),
             ("_pyrepl", "from .. import toodeep\t\n", "from .. import toodeep"),
-            ("concurrent", "from .futures.i\t\n", "from .futures.interpreter "),
+            ("concurrent", "from .futures.i\t\n", "from .futures.interpreter"),
         )
         for package, code, expected in cases:
             with self.subTest(code=code):
