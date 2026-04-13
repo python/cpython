@@ -1618,6 +1618,31 @@ class TestBranchAndJumpEvents(CheckEvents):
             ('branch left', 'func', 46, 52),
             ('branch right', 'func', 30, 72)])
 
+    def test_generator_branch_right(self):
+        import dis
+
+        def gen():
+            yield 1
+            yield 2
+
+        def func():
+            for x in gen():
+                pass
+
+        for_iter_offset = None
+        for instr in dis.get_instructions(func):
+            if instr.opname == "FOR_ITER":
+                for_iter_offset = instr.offset
+                break
+        self.assertIsNotNone(for_iter_offset)
+
+        events = self.get_events(
+            func, TEST_TOOL,
+            recorders=(BranchRightOffsetRecorder,))
+
+        branch_right_sources = [from_ for _, _, from_, _ in events]
+        self.assertIn(for_iter_offset, branch_right_sources)
+
     def test_except_star(self):
 
         class Foo:

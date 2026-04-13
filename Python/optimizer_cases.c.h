@@ -187,6 +187,13 @@
             break;
         }
 
+        case _END_FOR: {
+            CHECK_STACK_BOUNDS(-1);
+            stack_pointer += -1;
+            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+            break;
+        }
+
         case _POP_ITER: {
             CHECK_STACK_BOUNDS(-2);
             stack_pointer += -2;
