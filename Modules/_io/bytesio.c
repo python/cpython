@@ -452,6 +452,7 @@ read_bytes_lock_held(bytesio *self, Py_ssize_t size)
 {
     PyObject *bytes = peek_bytes_lock_held(self, size);
     if (bytes != NULL) {
+        assert(PyBytes_GET_SIZE(bytes) == size);
         self->pos += size;
     }
     return bytes;
@@ -537,7 +538,6 @@ _io_BytesIO_peek_impl(bytesio *self, Py_ssize_t size)
     }
     return peek_bytes_lock_held(self, size);
 }
-
 
 
 /*[clinic input]

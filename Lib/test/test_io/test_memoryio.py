@@ -568,7 +568,7 @@ class PyBytesIOTest(MemoryTestMixin, MemorySeekTestMixin, unittest.TestCase):
 
     def test_peek(self):
         buf = self.buftype("1234567890")
-        with  self.ioclass(buf) as memio:
+        with self.ioclass(buf) as memio:
             self.assertEqual(memio.tell(), 0)
             self.assertEqual(memio.peek(1), buf[:1])
             self.assertEqual(memio.peek(1), buf[:1])
