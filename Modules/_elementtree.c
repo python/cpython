@@ -18,6 +18,7 @@
 #include "Python.h"
 #include "pycore_dict.h"          // _PyDict_CopyAsDict()
 #include "pycore_pyhash.h"        // _Py_HashSecret
+#include "pycore_tuple.h"         // _PyTuple_FromPair
 #include "pycore_weakref.h"       // FT_CLEAR_WEAKREFS()
 
 #include <stddef.h>               // offsetof()
@@ -2594,7 +2595,7 @@ _elementtree__set_factories_impl(PyObject *module, PyObject *comment_factory,
         return NULL;
     }
 
-    old = PyTuple_Pack(2,
+    old = _PyTuple_FromPair(
         st->comment_factory ? st->comment_factory : Py_None,
         st->pi_factory ? st->pi_factory : Py_None);
 
@@ -2712,7 +2713,7 @@ treebuilder_append_event(TreeBuilderObject *self, PyObject *action,
 {
     if (action != NULL) {
         PyObject *res;
-        PyObject *event = PyTuple_Pack(2, action, node);
+        PyObject *event = _PyTuple_FromPair(action, node);
         if (event == NULL)
             return -1;
         res = PyObject_CallOneArg(self->events_append, event);
@@ -2933,7 +2934,7 @@ treebuilder_handle_pi(TreeBuilderObject* self, PyObject* target, PyObject* text)
             Py_XSETREF(self->last_for_tail, Py_NewRef(pi));
         }
     } else {
-        pi = PyTuple_Pack(2, target, text);
+        pi = _PyTuple_FromPair(target, text);
         if (!pi) {
             return NULL;
         }
@@ -2957,7 +2958,7 @@ treebuilder_handle_start_ns(TreeBuilderObject* self, PyObject* prefix, PyObject*
     PyObject* parcel;
 
     if (self->events_append && self->start_ns_event_obj) {
-        parcel = PyTuple_Pack(2, prefix, uri);
+        parcel = _PyTuple_FromPair(prefix, uri);
         if (!parcel) {
             return NULL;
         }

@@ -12,6 +12,7 @@
 #endif
 
 #include "Python.h"
+#include "pycore_tuple.h"           // _PyTuple_FromPairSteal
 
 #define WINDOWS_LEAN_AND_MEAN
 #include <winsock2.h>
@@ -896,6 +897,7 @@ _overlapped_Overlapped_getresult_impl(OverlappedObject *self, BOOL wait)
     BOOL ret;
     DWORD err;
     PyObject *addr;
+    PyObject *transferred_obj;
 
     if (self->type == TYPE_NONE) {
         PyErr_SetString(PyExc_ValueError, "operation not yet attempted");
@@ -964,17 +966,11 @@ _overlapped_Overlapped_getresult_impl(OverlappedObject *self, BOOL wait)
             }
 
             // The result is a two item tuple: (message, address)
-            self->read_from.result = PyTuple_New(2);
+            self->read_from.result = _PyTuple_FromPairSteal(
+                Py_NewRef(self->read_from.allocated_buffer), addr);
             if (self->read_from.result == NULL) {
-                Py_CLEAR(addr);
                 return NULL;
             }
-
-            // first item: message
-            PyTuple_SET_ITEM(self->read_from.result, 0,
-                             Py_NewRef(self->read_from.allocated_buffer));
-            // second item: address
-            PyTuple_SET_ITEM(self->read_from.result, 1, addr);
 
             return Py_NewRef(self->read_from.result);
         case TYPE_READ_FROM_INTO:
@@ -986,18 +982,18 @@ _overlapped_Overlapped_getresult_impl(OverlappedObject *self, BOOL wait)
                 return NULL;
             }
 
-            // The result is a two item tuple: (number of bytes read, address)
-            self->read_from_into.result = PyTuple_New(2);
-            if (self->read_from_into.result == NULL) {
-                Py_CLEAR(addr);
+            transferred_obj = PyLong_FromUnsignedLong((unsigned long)transferred);
+            if (transferred_obj == NULL) {
+                Py_DECREF(addr);
                 return NULL;
             }
 
-            // first item: number of bytes read
-            PyTuple_SET_ITEM(self->read_from_into.result, 0,
-                PyLong_FromUnsignedLong((unsigned long)transferred));
-            // second item: address
-            PyTuple_SET_ITEM(self->read_from_into.result, 1, addr);
+            // The result is a two item tuple: (number of bytes read, address)
+            self->read_from_into.result = _PyTuple_FromPairSteal(
+                transferred_obj, addr);
+            if (self->read_from_into.result == NULL) {
+                return NULL;
+            }
 
             return Py_NewRef(self->read_from_into.result);
         default:

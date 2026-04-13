@@ -5184,28 +5184,28 @@ check_basicsize_includes_size_and_offsets(PyTypeObject* type)
 
     if (type->tp_base && type->tp_base->tp_basicsize > type->tp_basicsize) {
         PyErr_Format(PyExc_TypeError,
-                     "tp_basicsize for type '%s' (%d) is too small for base '%s' (%d)",
+                     "tp_basicsize for type '%s' (%zd) is too small for base '%s' (%zd)",
                      type->tp_name, type->tp_basicsize,
                      type->tp_base->tp_name, type->tp_base->tp_basicsize);
         return 0;
     }
     if (type->tp_weaklistoffset + (Py_ssize_t)sizeof(PyObject*) > max) {
         PyErr_Format(PyExc_TypeError,
-                     "weaklist offset %d is out of bounds for type '%s' (tp_basicsize = %d)",
+                     "weaklist offset %zd is out of bounds for type '%s' (tp_basicsize = %zd)",
                      type->tp_weaklistoffset,
                      type->tp_name, type->tp_basicsize);
         return 0;
     }
     if (type->tp_dictoffset + (Py_ssize_t)sizeof(PyObject*) > max) {
         PyErr_Format(PyExc_TypeError,
-                     "dict offset %d is out of bounds for type '%s' (tp_basicsize = %d)",
+                     "dict offset %zd is out of bounds for type '%s' (tp_basicsize = %zd)",
                      type->tp_dictoffset,
                      type->tp_name, type->tp_basicsize);
         return 0;
     }
     if (type->tp_vectorcall_offset + (Py_ssize_t)sizeof(vectorcallfunc*) > max) {
         PyErr_Format(PyExc_TypeError,
-                     "vectorcall offset %d is out of bounds for type '%s' (tp_basicsize = %d)",
+                     "vectorcall offset %zd is out of bounds for type '%s' (tp_basicsize = %zd)",
                      type->tp_vectorcall_offset,
                      type->tp_name, type->tp_basicsize);
         return 0;
@@ -5768,6 +5768,17 @@ PyType_GetSlot(PyTypeObject *type, int slot)
 }
 
 PyObject *
+PyType_GetModule_DuringGC(PyTypeObject *type)
+{
+    assert(PyType_Check(type));
+    if (!_PyType_HasFeature(type, Py_TPFLAGS_HEAPTYPE)) {
+        return NULL;
+    }
+    PyHeapTypeObject* et = (PyHeapTypeObject*)type;
+    return et->ht_module;
+}
+
+PyObject *
 PyType_GetModule(PyTypeObject *type)
 {
     assert(PyType_Check(type));
@@ -5788,7 +5799,16 @@ PyType_GetModule(PyTypeObject *type)
         return NULL;
     }
     return et->ht_module;
+}
 
+void *
+PyType_GetModuleState_DuringGC(PyTypeObject *type)
+{
+    PyObject *m = PyType_GetModule_DuringGC(type);
+    if (m == NULL) {
+        return NULL;
+    }
+    return _PyModule_GetState(m);
 }
 
 void *
@@ -5801,19 +5821,18 @@ PyType_GetModuleState(PyTypeObject *type)
     return _PyModule_GetState(m);
 }
 
-
 /* Return borrowed ref to the module of the first superclass where the module
  * has the given token.
  */
-static PyObject *
-borrow_module_by_token(PyTypeObject *type, const void *token)
+PyObject *
+PyType_GetModuleByToken_DuringGC(PyTypeObject *type, const void *token)
 {
     assert(PyType_Check(type));
 
     if (!_PyType_HasFeature(type, Py_TPFLAGS_HEAPTYPE)) {
         // type_ready_mro() ensures that no heap type is
         // contained in a static type MRO.
-        goto error;
+        return NULL;
     }
     else {
         PyHeapTypeObject *ht = (PyHeapTypeObject*)type;
@@ -5853,27 +5872,29 @@ borrow_module_by_token(PyTypeObject *type, const void *token)
     }
     END_TYPE_LOCK();
 
-    if (res != NULL) {
-        return res;
-    }
-error:
-    PyErr_Format(
-        PyExc_TypeError,
-        "PyType_GetModuleByDef: No superclass of '%s' has the given module",
-        type->tp_name);
-    return NULL;
-}
-
-PyObject *
-PyType_GetModuleByDef(PyTypeObject *type, PyModuleDef *def)
-{
-    return borrow_module_by_token(type, def);
+    return res;
 }
 
 PyObject *
 PyType_GetModuleByToken(PyTypeObject *type, const void *token)
 {
-    return Py_XNewRef(borrow_module_by_token(type, token));
+    PyObject *mod = PyType_GetModuleByToken_DuringGC(type, token);
+    if (!mod) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "PyType_GetModuleByDef: No superclass of '%s' has the given module",
+            type->tp_name);
+        return NULL;
+    }
+    return Py_NewRef(mod);
+}
+
+PyObject *
+PyType_GetModuleByDef(PyTypeObject *type, PyModuleDef *def)
+{
+    PyObject *mod = PyType_GetModuleByToken(type, def);
+    Py_XDECREF(mod);  // return borrowed ref
+    return mod;
 }
 
 
@@ -5902,13 +5923,16 @@ get_base_by_token_recursive(PyObject *bases, void *token)
 }
 
 int
-_PyType_GetBaseByToken_Borrow(PyTypeObject *type, void *token, PyTypeObject **result)
+PyType_GetBaseByToken_DuringGC(PyTypeObject *type, void *token, PyTypeObject **result)
 {
-    assert(token != NULL);
-    assert(PyType_Check(type));
-
     if (result != NULL) {
         *result = NULL;
+    }
+    if (token == NULL) {
+        return -1;
+    }
+    if (!PyType_Check(type)) {
+        return -1;
     }
 
     if (!_PyType_HasFeature(type, Py_TPFLAGS_HEAPTYPE)) {
@@ -5970,7 +5994,7 @@ PyType_GetBaseByToken(PyTypeObject *type, void *token, PyTypeObject **result)
         return -1;
     }
 
-    int res = _PyType_GetBaseByToken_Borrow(type, token, result);
+    int res = PyType_GetBaseByToken_DuringGC(type, token, result);
     if (res > 0 && result) {
         Py_INCREF(*result);
     }
@@ -5979,10 +6003,16 @@ PyType_GetBaseByToken(PyTypeObject *type, void *token, PyTypeObject **result)
 
 
 void *
-PyObject_GetTypeData(PyObject *obj, PyTypeObject *cls)
+PyObject_GetTypeData_DuringGC(PyObject *obj, PyTypeObject *cls)
 {
     assert(PyObject_TypeCheck(obj, cls));
     return (char *)obj + _align_up(cls->tp_base->tp_basicsize);
+}
+
+void *
+PyObject_GetTypeData(PyObject *obj, PyTypeObject *cls)
+{
+    return PyObject_GetTypeData_DuringGC(obj, cls);
 }
 
 Py_ssize_t
@@ -5995,16 +6025,30 @@ PyType_GetTypeDataSize(PyTypeObject *cls)
     return result;
 }
 
-void *
-PyObject_GetItemData(PyObject *obj)
+static inline void *
+getitemdata(PyObject *obj, bool raise)
 {
-    if (!PyType_HasFeature(Py_TYPE(obj), Py_TPFLAGS_ITEMS_AT_END)) {
-        PyErr_Format(PyExc_TypeError,
-                     "type '%s' does not have Py_TPFLAGS_ITEMS_AT_END",
-                     Py_TYPE(obj)->tp_name);
+    if (!_PyType_HasFeature(Py_TYPE(obj), Py_TPFLAGS_ITEMS_AT_END)) {
+        if (raise) {
+            PyErr_Format(PyExc_TypeError,
+                         "type '%T' does not have Py_TPFLAGS_ITEMS_AT_END",
+                         obj);
+        }
         return NULL;
     }
     return (char *)obj + Py_TYPE(obj)->tp_basicsize;
+}
+
+void *
+PyObject_GetItemData_DuringGC(PyObject *obj)
+{
+    return getitemdata(obj, false);
+}
+
+void *
+PyObject_GetItemData(PyObject *obj)
+{
+    return getitemdata(obj, true);
 }
 
 /* Internal API to look for a name through the MRO, bypassing the method cache.
@@ -9345,6 +9389,7 @@ type_ready_post_checks(PyTypeObject *type)
             PyErr_Format(PyExc_SystemError,
                          "type %s has a tp_dictoffset that is too small",
                          type->tp_name);
+            return -1;
         }
     }
     return 0;
@@ -12401,8 +12446,8 @@ super_repr(PyObject *self)
 on the super object itself.
 
 May return NULL with or without an exception set, like PyDict_GetItemWithError. */
-static PyObject *
-_super_lookup_descr(PyTypeObject *su_type, PyTypeObject *su_obj_type, PyObject *name)
+PyObject *
+_PySuper_LookupDescr(PyTypeObject *su_type, PyTypeObject *su_obj_type, PyObject *name)
 {
     PyObject *mro, *res;
     Py_ssize_t i, n;
@@ -12461,7 +12506,7 @@ do_super_lookup(superobject *su, PyTypeObject *su_type, PyObject *su_obj,
         goto skip;
     }
 
-    res = _super_lookup_descr(su_type, su_obj_type, name);
+    res = _PySuper_LookupDescr(su_type, su_obj_type, name);
     if (res != NULL) {
         if (method && _PyType_HasFeature(Py_TYPE(res), Py_TPFLAGS_METHOD_DESCRIPTOR)) {
             *method = 1;

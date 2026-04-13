@@ -472,7 +472,7 @@ General Options
    :manpage:`epoll_create1 <epoll_create1(2)>` is available
    but incompatible with Linux semantics.
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
 
 C compiler options
@@ -906,9 +906,11 @@ See also the :ref:`Python Development Mode <devmode>` and the
 :option:`--with-trace-refs` configure option.
 
 .. versionchanged:: 3.8
-   Release builds and debug builds are now ABI compatible: defining the
+   Release builds are now ABI compatible with debug builds: defining the
    ``Py_DEBUG`` macro no longer implies the ``Py_TRACE_REFS`` macro (see the
-   :option:`--with-trace-refs` option).
+   :option:`--with-trace-refs` option). However, debug builds still expose
+   more symbols than release builds and code built against a debug build is not
+   necessarily compatible with a release build.
 
 
 Debug options
@@ -1571,6 +1573,12 @@ Compiler flags
    Strict or non-strict aliasing flags used to compile ``Python/dtoa.c``.
 
    .. versionadded:: 3.7
+
+.. envvar:: CFLAGS_CEVAL
+
+   Flags used to compile ``Python/ceval.c``.
+
+   .. versionadded:: 3.14.5
 
 .. envvar:: CCSHARED
 
