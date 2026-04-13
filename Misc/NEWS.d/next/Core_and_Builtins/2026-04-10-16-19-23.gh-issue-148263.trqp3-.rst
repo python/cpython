@@ -6,5 +6,5 @@ reference count was already incremented by the unwrap step but never released,
  a proper inline function _proxy_unwrap() that tracks whether each
  argument was incref'd, and introduces cleanup paths (goto clean_up)
  that correctly decref any already-acquired references before
- returning NULL on failure. Also added reference cleanup in unary and compare 
+ returning NULL on failure. Also added reference cleanup in unary and compare
  operations.
