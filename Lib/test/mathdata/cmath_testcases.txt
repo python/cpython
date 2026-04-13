@@ -371,9 +371,9 @@ acosh1002 acosh 0.0 inf -> inf 1.5707963267948966
 acosh1003 acosh 2.3 inf -> inf 1.5707963267948966
 acosh1004 acosh -0.0 inf -> inf 1.5707963267948966
 acosh1005 acosh -2.3 inf -> inf 1.5707963267948966
-acosh1006 acosh 0.0 nan -> nan nan
+acosh1006 acosh 0.0 nan -> nan 1.5707963267948966         ignore-imag-sign
 acosh1007 acosh 2.3 nan -> nan nan
-acosh1008 acosh -0.0 nan -> nan nan
+acosh1008 acosh -0.0 nan -> nan 1.5707963267948966        ignore-imag-sign
 acosh1009 acosh -2.3 nan -> nan nan
 acosh1010 acosh -inf 0.0 -> inf 3.1415926535897931
 acosh1011 acosh -inf 2.3 -> inf 3.1415926535897931
@@ -1992,9 +1992,9 @@ tanh0065 tanh 1.797e+308 0.0 -> 1.0 0.0
 
 --special values
 tanh1000 tanh 0.0 0.0 -> 0.0 0.0
-tanh1001 tanh 0.0 inf -> nan nan        invalid
+tanh1001 tanh 0.0 inf -> 0.0 nan        invalid
 tanh1002 tanh 2.3 inf -> nan nan        invalid
-tanh1003 tanh 0.0 nan -> nan nan
+tanh1003 tanh 0.0 nan -> 0.0 nan
 tanh1004 tanh 2.3 nan -> nan nan
 tanh1005 tanh inf 0.0 -> 1.0 0.0
 tanh1006 tanh inf 0.7 -> 1.0 0.0
@@ -2009,7 +2009,7 @@ tanh1014 tanh nan 2.3 -> nan nan
 tanh1015 tanh nan inf -> nan nan
 tanh1016 tanh nan nan -> nan nan
 tanh1017 tanh 0.0 -0.0 -> 0.0 -0.0
-tanh1018 tanh 0.0 -inf -> nan nan       invalid
+tanh1018 tanh 0.0 -inf -> 0.0 nan       invalid
 tanh1019 tanh 2.3 -inf -> nan nan       invalid
 tanh1020 tanh inf -0.0 -> 1.0 -0.0
 tanh1021 tanh inf -0.7 -> 1.0 -0.0
@@ -2022,9 +2022,9 @@ tanh1027 tanh nan -0.0 -> nan -0.0
 tanh1028 tanh nan -2.3 -> nan nan
 tanh1029 tanh nan -inf -> nan nan
 tanh1030 tanh -0.0 -0.0 -> -0.0 -0.0
-tanh1031 tanh -0.0 -inf -> nan nan      invalid
+tanh1031 tanh -0.0 -inf -> -0.0 nan      invalid
 tanh1032 tanh -2.3 -inf -> nan nan      invalid
-tanh1033 tanh -0.0 nan -> nan nan
+tanh1033 tanh -0.0 nan -> -0.0 nan
 tanh1034 tanh -2.3 nan -> nan nan
 tanh1035 tanh -inf -0.0 -> -1.0 -0.0
 tanh1036 tanh -inf -0.7 -> -1.0 -0.0
@@ -2035,7 +2035,7 @@ tanh1040 tanh -inf -3.5 -> -1.0 -0.0
 tanh1041 tanh -inf -inf -> -1.0 0.0     ignore-imag-sign
 tanh1042 tanh -inf nan -> -1.0 0.0      ignore-imag-sign
 tanh1043 tanh -0.0 0.0 -> -0.0 0.0
-tanh1044 tanh -0.0 inf -> nan nan       invalid
+tanh1044 tanh -0.0 inf -> -0.0 nan       invalid
 tanh1045 tanh -2.3 inf -> nan nan       invalid
 tanh1046 tanh -inf 0.0 -> -1.0 0.0
 tanh1047 tanh -inf 0.7 -> -1.0 0.0
@@ -2307,9 +2307,9 @@ tan0066 tan -8.79645943005142 0.0 -> 0.7265425280053614098 0.0
 
 -- special values
 tan1000 tan -0.0 0.0 -> -0.0 0.0
-tan1001 tan -inf 0.0 -> nan nan invalid
+tan1001 tan -inf 0.0 -> nan 0.0 invalid
 tan1002 tan -inf 2.2999999999999998 -> nan nan invalid
-tan1003 tan nan 0.0 -> nan nan
+tan1003 tan nan 0.0 -> nan 0.0
 tan1004 tan nan 2.2999999999999998 -> nan nan
 tan1005 tan -0.0 inf -> -0.0 1.0
 tan1006 tan -0.69999999999999996 inf -> -0.0 1.0
@@ -2324,7 +2324,7 @@ tan1014 tan -2.2999999999999998 nan -> nan nan
 tan1015 tan -inf nan -> nan nan
 tan1016 tan nan nan -> nan nan
 tan1017 tan 0.0 0.0 -> 0.0 0.0
-tan1018 tan inf 0.0 -> nan nan invalid
+tan1018 tan inf 0.0 -> nan 0.0 invalid
 tan1019 tan inf 2.2999999999999998 -> nan nan invalid
 tan1020 tan 0.0 inf -> 0.0 1.0
 tan1021 tan 0.69999999999999996 inf -> 0.0 1.0
@@ -2337,9 +2337,9 @@ tan1027 tan 0.0 nan -> 0.0 nan
 tan1028 tan 2.2999999999999998 nan -> nan nan
 tan1029 tan inf nan -> nan nan
 tan1030 tan 0.0 -0.0 -> 0.0 -0.0
-tan1031 tan inf -0.0 -> nan nan invalid
+tan1031 tan inf -0.0 -> nan -0.0 invalid
 tan1032 tan inf -2.2999999999999998 -> nan nan invalid
-tan1033 tan nan -0.0 -> nan nan
+tan1033 tan nan -0.0 -> nan -0.0
 tan1034 tan nan -2.2999999999999998 -> nan nan
 tan1035 tan 0.0 -inf -> 0.0 -1.0
 tan1036 tan 0.69999999999999996 -inf -> 0.0 -1.0
@@ -2350,7 +2350,7 @@ tan1040 tan 3.5 -inf -> 0.0 -1.0
 tan1041 tan inf -inf -> -0.0 -1.0 ignore-real-sign
 tan1042 tan nan -inf -> -0.0 -1.0 ignore-real-sign
 tan1043 tan -0.0 -0.0 -> -0.0 -0.0
-tan1044 tan -inf -0.0 -> nan nan invalid
+tan1044 tan -inf -0.0 -> nan -0.0 invalid
 tan1045 tan -inf -2.2999999999999998 -> nan nan invalid
 tan1046 tan -0.0 -inf -> -0.0 -1.0
 tan1047 tan -0.69999999999999996 -inf -> -0.0 -1.0

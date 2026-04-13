@@ -1,1 +1,0 @@
-Emit ``c_call`` events in :func:`sys.setprofile` when a ``PyMethodObject`` pointing to a ``PyCFunction`` is called.

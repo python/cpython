@@ -51,7 +51,7 @@ terms of the MIT license. A copy of the license can be found in the file
   #include <sys/sysctl.h>
 #endif
 
-#if !defined(__HAIKU__) && !defined(__APPLE__) && !defined(__CYGWIN__) && !defined(_AIX) && !defined(__OpenBSD__) && !defined(__FreeBSD__) && !defined(__sun)
+#if !defined(__HAIKU__) && !defined(__APPLE__) && !defined(__CYGWIN__) && !defined(_AIX) && !defined(__OpenBSD__) && !defined(__FreeBSD__) && !defined(__sun) && !defined(__NetBSD__)
   #define MI_HAS_SYSCALL_H
   #include <sys/syscall.h>
 #endif
@@ -77,7 +77,7 @@ static int mi_prim_access(const char *fpath, int mode) {
   return syscall(SYS_access,fpath,mode);
 }
 
-#elif !defined(__APPLE__) && !defined(_AIX) && !defined(__OpenBSD__) && !defined(__FreeBSD__) && !defined(__sun) // avoid unused warnings
+#elif !defined(__APPLE__) && !defined(_AIX) && !defined(__OpenBSD__) && !defined(__FreeBSD__) && !defined(__sun) && !defined(__NetBSD__) // avoid unused warnings
 
 static int mi_prim_open(const char* fpath, int open_flags) {
   return open(fpath,open_flags);
@@ -739,7 +739,7 @@ bool _mi_prim_getenv(const char* name, char* result, size_t result_size) {
 #endif
 bool _mi_prim_random_buf(void* buf, size_t buf_len) {
   #if defined(MAC_OS_X_VERSION_10_15) && MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_15
-    // We prefere CCRandomGenerateBytes as it returns an error code while arc4random_buf
+    // We prefer CCRandomGenerateBytes as it returns an error code while arc4random_buf
     // may fail silently on macOS. See PR #390, and <https://opensource.apple.com/source/Libc/Libc-1439.40.11/gen/FreeBSD/arc4random.c.auto.html>
     return (CCRandomGenerateBytes(buf, buf_len) == kCCSuccess);
   #else

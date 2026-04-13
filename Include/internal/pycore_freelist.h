@@ -9,32 +9,27 @@ extern "C" {
 #endif
 
 #include "pycore_freelist_state.h"      // struct _Py_freelists
-#include "pycore_object.h"              // _PyObject_IS_GC
+#include "pycore_interp_structs.h"      // PyInterpreterState
+#include "pycore_pyatomic_ft_wrappers.h" // FT_ATOMIC_STORE_PTR_RELAXED()
 #include "pycore_pystate.h"             // _PyThreadState_GET
-#include "pycore_code.h"                // OBJECT_STAT_INC
+#include "pycore_stats.h"               // OBJECT_STAT_INC
 
 static inline struct _Py_freelists *
 _Py_freelists_GET(void)
 {
-    PyThreadState *tstate = _PyThreadState_GET();
 #ifdef Py_DEBUG
-    _Py_EnsureTstateNotNULL(tstate);
+    _Py_AssertHoldsTstate();
 #endif
 
 #ifdef Py_GIL_DISABLED
+    PyThreadState *tstate = _PyThreadState_GET();
     return &((_PyThreadStateImpl*)tstate)->freelists;
 #else
-    return &tstate->interp->object_state.freelists;
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    return &interp->object_state.freelists;
 #endif
 }
 
-#ifndef WITH_FREELISTS
-#define _Py_FREELIST_FREE(NAME, op, freefunc) freefunc(op)
-#define _Py_FREELIST_PUSH(NAME, op, limit) (0)
-#define _Py_FREELIST_POP(TYPE, NAME) (NULL)
-#define _Py_FREELIST_POP_MEM(NAME) (NULL)
-#define _Py_FREELIST_SIZE(NAME) (0)
-#else
 // Pushes `op` to the freelist, calls `freefunc` if the freelist is full
 #define _Py_FREELIST_FREE(NAME, op, freefunc) \
     _PyFreeList_Free(&_Py_freelists_GET()->NAME, _PyObject_CAST(op), \
@@ -58,7 +53,7 @@ static inline int
 _PyFreeList_Push(struct _Py_freelist *fl, void *obj, Py_ssize_t maxsize)
 {
     if (fl->size < maxsize && fl->size >= 0) {
-        *(void **)obj = fl->freelist;
+        FT_ATOMIC_STORE_PTR_RELAXED(*(void **)obj, fl->freelist);
         fl->freelist = obj;
         fl->size++;
         OBJECT_STAT_INC(to_freelist);
@@ -108,7 +103,6 @@ _PyFreeList_PopMem(struct _Py_freelist *fl)
     }
     return op;
 }
-#endif
 
 extern void _PyObject_ClearFreeLists(struct _Py_freelists *freelists, int is_finalization);
 

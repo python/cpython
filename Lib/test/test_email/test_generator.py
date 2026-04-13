@@ -6,6 +6,7 @@ from email.message import EmailMessage
 from email.generator import Generator, BytesGenerator
 from email.headerregistry import Address
 from email import policy
+import email.errors
 from test.test_email import TestEmailBase, parameterize
 
 
@@ -249,6 +250,44 @@ class TestGeneratorBase:
         g.flatten(msg)
         self.assertEqual(s.getvalue(), self.typ(expected))
 
+    def test_keep_encoded_newlines(self):
+        msg = self.msgmaker(self.typ(textwrap.dedent("""\
+            To: nobody
+            Subject: Bad subject=?UTF-8?Q?=0A?=Bcc: injection@example.com
+
+            None
+            """)))
+        expected = textwrap.dedent("""\
+            To: nobody
+            Subject: Bad subject=?UTF-8?Q?=0A?=Bcc: injection@example.com
+
+            None
+            """)
+        s = self.ioclass()
+        g = self.genclass(s, policy=self.policy.clone(max_line_length=80))
+        g.flatten(msg)
+        self.assertEqual(s.getvalue(), self.typ(expected))
+
+    def test_keep_long_encoded_newlines(self):
+        msg = self.msgmaker(self.typ(textwrap.dedent("""\
+            To: nobody
+            Subject: Bad subject=?UTF-8?Q?=0A?=Bcc: injection@example.com
+
+            None
+            """)))
+        expected = textwrap.dedent("""\
+            To: nobody
+            Subject: Bad subject
+             =?utf-8?q?=0A?=Bcc:
+             injection@example.com
+
+            None
+            """)
+        s = self.ioclass()
+        g = self.genclass(s, policy=self.policy.clone(max_line_length=30))
+        g.flatten(msg)
+        self.assertEqual(s.getvalue(), self.typ(expected))
+
 
 class TestGenerator(TestGeneratorBase, TestEmailBase):
 
@@ -272,6 +311,31 @@ class TestGenerator(TestGeneratorBase, TestEmailBase):
         g = self.genclass(s, policy=self.policy.clone(refold_source='all'))
         g.flatten(msg)
         self.assertEqual(s.getvalue(), self.typ(expected))
+
+    def test_verify_generated_headers(self):
+        # gh-121650: by default the generator prevents header injection
+        class LiteralHeader(str):
+            name = 'Header'
+            def fold(self, **kwargs):
+                return self
+
+        for text in (
+            'Value\r\nBad Injection\r\n',
+            'NoNewLine'
+        ):
+            with self.subTest(text=text):
+                message = message_from_string(
+                    "Header: Value\r\n\r\nBody",
+                    policy=self.policy,
+                )
+
+                del message['Header']
+                message['Header'] = LiteralHeader(text)
+
+                with self.assertRaises(email.errors.HeaderWriteError):
+                    message.as_string()
+                with self.assertRaises(email.errors.HeaderWriteError):
+                    message.as_bytes()
 
 
 class TestBytesGenerator(TestGeneratorBase, TestEmailBase):
@@ -328,6 +392,50 @@ class TestBytesGenerator(TestGeneratorBase, TestEmailBase):
         g = BytesGenerator(s)
         g.flatten(msg)
         self.assertEqual(s.getvalue(), expected)
+
+    # gh-144156: fold between non-encoded and encoded words don't need to encoded
+    #            the separating space
+    def test_defaults_handle_spaces_at_start_of_continuation_line_2(self):
+        source = ("Re: [SOS-1495488] Commande et livraison - Demande de retour - "
+                  "bibijolie - 251210-AABBCC - Abo actualités digitales 20 semaines "
+                  "d’abonnement à 24 heures, Bilan, Tribune de Genève et tous les titres Tamedia")
+        expected = (
+            b"Subject: "
+            b"Re: [SOS-1495488] Commande et livraison - Demande de retour -\n"
+            b" bibijolie - 251210-AABBCC - Abo =?utf-8?q?actualit=C3=A9s?= digitales 20\n"
+            b" semaines =?utf-8?q?d=E2=80=99abonnement_=C3=A0?= 24 heures, Bilan, Tribune de\n"
+            b" =?utf-8?q?Gen=C3=A8ve?= et tous les titres Tamedia\n\n"
+        )
+        msg = EmailMessage()
+        msg['Subject'] = source
+        s = io.BytesIO()
+        g = BytesGenerator(s)
+        g.flatten(msg)
+        self.assertEqual(s.getvalue(), expected)
+
+    def test_ew_folding_round_trip_1(self):
+        print()
+        source = "aaaaaaaaa фффффффф "
+        msg = EmailMessage()
+        msg['Subject'] = source
+        s = io.BytesIO()
+        g = BytesGenerator(s, maxheaderlen=30)
+        g.flatten(msg)
+        flat = s.getvalue()
+        reparsed = message_from_bytes(flat, policy=policy.default)['Subject']
+        self.assertMultiLineEqual(reparsed, source)
+
+    def test_ew_folding_round_trip_2(self):
+        print()
+        source = "aaa aaaaaaa   aaa ффф фффф  "
+        msg = EmailMessage()
+        msg['Subject'] = source
+        s = io.BytesIO()
+        g = BytesGenerator(s, maxheaderlen=30)
+        g.flatten(msg)
+        flat = s.getvalue()
+        reparsed = message_from_bytes(flat, policy=policy.default)['Subject']
+        self.assertMultiLineEqual(reparsed, source)
 
     def test_cte_type_7bit_handles_unknown_8bit(self):
         source = ("Subject: Maintenant je vous présente mon "

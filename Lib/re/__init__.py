@@ -61,7 +61,7 @@ below.  If the ordinary character is not on the list, then the
 resulting RE will match the second character.
     \number  Matches the contents of the group of the same number.
     \A       Matches only at the start of the string.
-    \Z       Matches only at the end of the string.
+    \z       Matches only at the end of the string.
     \b       Matches the empty string, but only at the start or end of a word.
     \B       Matches the empty string, but not at the start or end of a word.
     \d       Matches any decimal digit; equivalent to the set [0-9] in
@@ -85,17 +85,18 @@ resulting RE will match the second character.
     \\       Matches a literal backslash.
 
 This module exports the following functions:
-    match     Match a regular expression pattern to the beginning of a string.
-    fullmatch Match a regular expression pattern to all of a string.
-    search    Search a string for the presence of a pattern.
-    sub       Substitute occurrences of a pattern found in a string.
-    subn      Same as sub, but also return the number of substitutions made.
-    split     Split a string by the occurrences of a pattern.
-    findall   Find all occurrences of a pattern in a string.
-    finditer  Return an iterator yielding a Match object for each match.
-    compile   Compile a pattern into a Pattern object.
-    purge     Clear the regular expression cache.
-    escape    Backslash all non-alphanumerics in a string.
+    prefixmatch Match a regular expression pattern to the beginning of a str.
+    match       The original name of prefixmatch prior to 3.15.
+    fullmatch   Match a regular expression pattern to all of a string.
+    search      Search a string for the presence of a pattern.
+    sub         Substitute occurrences of a pattern found in a string.
+    subn        Same as sub, but also return the number of substitutions made.
+    split       Split a string by the occurrences of a pattern.
+    findall     Find all occurrences of a pattern in a string.
+    finditer    Return an iterator yielding a Match object for each match.
+    compile     Compile a pattern into a Pattern object.
+    purge       Clear the regular expression cache.
+    escape      Backslash all non-alphanumerics in a string.
 
 Each function other than purge and escape can take an optional 'flags' argument
 consisting of one or more of the following module constants, joined by "|".
@@ -130,14 +131,12 @@ import _sre
 
 # public symbols
 __all__ = [
-    "match", "fullmatch", "search", "sub", "subn", "split",
+    "prefixmatch", "match", "fullmatch", "search", "sub", "subn", "split",
     "findall", "finditer", "compile", "purge", "escape",
     "error", "Pattern", "Match", "A", "I", "L", "M", "S", "X", "U",
     "ASCII", "IGNORECASE", "LOCALE", "MULTILINE", "DOTALL", "VERBOSE",
     "UNICODE", "NOFLAG", "RegexFlag", "PatternError"
 ]
-
-__version__ = "2.2.1"
 
 @enum.global_enum
 @enum._simple_enum(enum.IntFlag, boundary=enum.KEEP)
@@ -161,10 +160,13 @@ PatternError = error = _compiler.PatternError
 # --------------------------------------------------------------------
 # public interface
 
-def match(pattern, string, flags=0):
+def prefixmatch(pattern, string, flags=0):
     """Try to apply the pattern at the start of the string, returning
     a Match object, or None if no match was found."""
-    return _compile(pattern, flags).match(string)
+    return _compile(pattern, flags).prefixmatch(string)
+
+# Our original name which was less explicitly clear about the behavior for prefixmatch.
+match = prefixmatch
 
 def fullmatch(pattern, string, flags=0):
     """Try to apply the pattern to all of the string, returning
@@ -313,7 +315,7 @@ def escape(pattern):
         return pattern.translate(_special_chars_map).encode('latin1')
 
 Pattern = type(_compiler.compile('', 0))
-Match = type(_compiler.compile('', 0).match(''))
+Match = type(_compiler.compile('', 0).prefixmatch(''))
 
 # --------------------------------------------------------------------
 # internals
@@ -399,9 +401,12 @@ class Scanner:
         s = _parser.State()
         s.flags = flags
         for phrase, action in lexicon:
+            sub_pattern = _parser.parse(phrase, flags)
+            if sub_pattern.state.groups != 1:
+                raise ValueError("Cannot use capturing groups in re.Scanner")
             gid = s.opengroup()
             p.append(_parser.SubPattern(s, [
-                (SUBPATTERN, (gid, 0, 0, _parser.parse(phrase, flags))),
+                (SUBPATTERN, (gid, 0, 0, sub_pattern)),
                 ]))
             s.closegroup(gid, p[-1])
         p = _parser.SubPattern(s, [(BRANCH, (None, p))])
@@ -409,10 +414,10 @@ class Scanner:
     def scan(self, string):
         result = []
         append = result.append
-        match = self.scanner.scanner(string).match
+        _match = self.scanner.scanner(string).prefixmatch
         i = 0
         while True:
-            m = match()
+            m = _match()
             if not m:
                 break
             j = m.end()
@@ -426,3 +431,12 @@ class Scanner:
                 append(action)
             i = j
         return result, string[i:]
+
+
+def __getattr__(name):
+    if name == "__version__":
+        from warnings import _deprecated
+
+        _deprecated("__version__", remove=(3, 20))
+        return "2.2.1"  # Do not change
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

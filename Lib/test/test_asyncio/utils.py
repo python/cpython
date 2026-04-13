@@ -14,7 +14,7 @@ import sys
 import threading
 import unittest
 import weakref
-import warnings
+from ast import literal_eval
 from unittest import mock
 
 from http.server import HTTPServer
@@ -28,7 +28,6 @@ except ImportError:  # pragma: no cover
 from asyncio import base_events
 from asyncio import events
 from asyncio import format_helpers
-from asyncio import futures
 from asyncio import tasks
 from asyncio.log import logger
 from test import support
@@ -56,24 +55,8 @@ ONLYCERT = data_file('certdata', 'ssl_cert.pem')
 ONLYKEY = data_file('certdata', 'ssl_key.pem')
 SIGNED_CERTFILE = data_file('certdata', 'keycert3.pem')
 SIGNING_CA = data_file('certdata', 'pycacert.pem')
-PEERCERT = {
-    'OCSP': ('http://testca.pythontest.net/testca/ocsp/',),
-    'caIssuers': ('http://testca.pythontest.net/testca/pycacert.cer',),
-    'crlDistributionPoints': ('http://testca.pythontest.net/testca/revocation.crl',),
-    'issuer': ((('countryName', 'XY'),),
-            (('organizationName', 'Python Software Foundation CA'),),
-            (('commonName', 'our-ca-server'),)),
-    'notAfter': 'Oct 28 14:23:16 2037 GMT',
-    'notBefore': 'Aug 29 14:23:16 2018 GMT',
-    'serialNumber': 'CB2D80995A69525C',
-    'subject': ((('countryName', 'XY'),),
-             (('localityName', 'Castle Anthrax'),),
-             (('organizationName', 'Python Software Foundation'),),
-             (('commonName', 'localhost'),)),
-    'subjectAltName': (('DNS', 'localhost'),),
-    'version': 3
-}
-
+with open(data_file('certdata', 'keycert3.pem.reference')) as file:
+    PEERCERT = literal_eval(file.read())
 
 def simple_server_sslcontext():
     server_context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
@@ -120,7 +103,7 @@ def run_until(loop, pred, timeout=support.SHORT_TIMEOUT):
         loop.run_until_complete(tasks.sleep(delay))
         delay = max(delay * 2, 1.0)
     else:
-        raise futures.TimeoutError()
+        raise TimeoutError()
 
 
 def run_once(loop):
@@ -405,8 +388,8 @@ class TestLoop(base_events.BaseEventLoop):
             else:  # pragma: no cover
                 raise AssertionError("Time generator is not finished")
 
-    def _add_reader(self, fd, callback, *args):
-        self.readers[fd] = events.Handle(callback, args, self, None)
+    def _add_reader(self, fd, callback, *args, context=None):
+        self.readers[fd] = events.Handle(callback, args, self, context)
 
     def _remove_reader(self, fd):
         self.remove_reader_count[fd] += 1
@@ -431,8 +414,8 @@ class TestLoop(base_events.BaseEventLoop):
         if fd in self.readers:
             raise AssertionError(f'fd {fd} is registered')
 
-    def _add_writer(self, fd, callback, *args):
-        self.writers[fd] = events.Handle(callback, args, self, None)
+    def _add_writer(self, fd, callback, *args, context=None):
+        self.writers[fd] = events.Handle(callback, args, self, context)
 
     def _remove_writer(self, fd):
         self.remove_writer_count[fd] += 1
@@ -618,3 +601,9 @@ async def await_without_task(coro):
     await asyncio.sleep(0)
     if exc is not None:
         raise exc
+
+
+if sys.platform == 'win32':
+    DefaultEventLoopPolicy = asyncio.windows_events._DefaultEventLoopPolicy
+else:
+    DefaultEventLoopPolicy = asyncio.unix_events._DefaultEventLoopPolicy
