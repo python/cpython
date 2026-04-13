@@ -101,6 +101,14 @@ class ChromeCommandTest(CommandTestMixin, unittest.TestCase):
                    options=[],
                    arguments=[URL])
 
+    def test_reject_action_dash_prefixes(self):
+        browser = self.browser_class(name=CMD_NAME)
+        with self.assertRaises(ValueError):
+            browser.open('%action--incognito')
+        # new=1: action is "--new-window", so "%action" itself expands to
+        # a dash-prefixed flag even with no dash in the original URL.
+        with self.assertRaises(ValueError):
+            browser.open('%action', new=1)
 
 class MozillaCommandTest(CommandTestMixin, unittest.TestCase):
 
