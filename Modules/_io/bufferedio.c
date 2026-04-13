@@ -1944,24 +1944,20 @@ _bufferedwriter_reset_buf(buffered *self)
 static void
 _bufferedwriter_set_append(buffered *self)
 {
-    PyObject *mode = _PyObject_GetAttrId(self->raw, &PyId_mode);
-    if (mode != NULL && PyUnicode_Check(mode)) {
+    PyObject *mode = NULL;
+    if (PyObject_GetOptionalAttr(self->raw, &_Py_ID(mode), &mode) < 0) {
+        /* Raw fileobj has no mode string so as far as we can know it has
+           normal write behavior */
+        self->appending = 0;
+    } else if (mode != NULL && PyUnicode_Check(mode)) {
         if (PyUnicode_FindChar(mode, 'a', 0,
-                               PyUnicode_GET_LENGTH(mode), 1) != -1) {
+                               PyUnicode_GET_LENGTH(mode), 1) >= 0) {
             self->appending = 1;
         }
         else {
             self->appending = 0;
         }
         Py_DECREF(mode);
-    }
-    else {
-        if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
-            PyErr_Clear();
-        }
-        /* Raw fileobj has no mode string so as far as we can know it has
-           normal write behavior */
-        self->appending = 0;
     }
 }
 
@@ -2062,14 +2058,13 @@ _bufferedwriter_raw_write(buffered *self, char *start, Py_ssize_t len)
 static PyObject *
 _bufferedwriter_flush_unlocked(buffered *self)
 {
-    Py_ssize_t written = 0;
     Py_off_t n, rewind;
 
     if (!VALID_WRITE_BUFFER(self) || self->write_pos == self->write_end)
         goto end;
     /* First, rewind unless raw file is in append mode */
     if (!self->appending) {
-        Py_off_t rewind = RAW_OFFSET(self) + (self->pos - self->write_pos);
+        rewind = RAW_OFFSET(self) + (self->pos - self->write_pos);
         if (rewind != 0) {
             n = _buffered_raw_seek(self, -rewind, 1);
             if (n < 0) {
