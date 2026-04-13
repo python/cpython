@@ -79,7 +79,6 @@ const uint32_t _PyUop_Flags[MAX_UOP_ID+1] = {
     [_POP_TOP_INT] = 0,
     [_POP_TOP_FLOAT] = 0,
     [_POP_TOP_UNICODE] = 0,
-    [_POP_TWO] = HAS_ESCAPES_FLAG,
     [_POP_TOP_OPARG] = HAS_ARG_FLAG | HAS_ESCAPES_FLAG,
     [_PUSH_NULL] = HAS_PURE_FLAG,
     [_END_FOR] = HAS_ESCAPES_FLAG | HAS_NO_SAVE_IP_FLAG,
@@ -304,11 +303,12 @@ const uint32_t _PyUop_Flags[MAX_UOP_ID+1] = {
     [_CALL_STR_1] = HAS_ARG_FLAG | HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG,
     [_GUARD_CALLABLE_TUPLE_1] = HAS_EXIT_FLAG,
     [_CALL_TUPLE_1] = HAS_ARG_FLAG | HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG,
-    [_CHECK_AND_ALLOCATE_OBJECT] = HAS_ARG_FLAG | HAS_EXIT_FLAG | HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG,
+    [_CHECK_OBJECT] = HAS_ARG_FLAG | HAS_EXIT_FLAG,
+    [_ALLOCATE_OBJECT] = HAS_ARG_FLAG | HAS_EXIT_FLAG | HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG,
     [_CREATE_INIT_FRAME] = HAS_ARG_FLAG | HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG | HAS_SYNC_SP_FLAG,
     [_EXIT_INIT_CHECK] = HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG,
     [_GUARD_CALLABLE_BUILTIN_CLASS] = HAS_ARG_FLAG | HAS_EXIT_FLAG,
-    [_CALL_BUILTIN_CLASS] = HAS_ARG_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
+    [_CALL_BUILTIN_CLASS] = HAS_ARG_FLAG | HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG,
     [_GUARD_CALLABLE_BUILTIN_O] = HAS_ARG_FLAG | HAS_EXIT_FLAG,
     [_CALL_BUILTIN_O] = HAS_ARG_FLAG | HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG,
     [_GUARD_CALLABLE_BUILTIN_FAST] = HAS_ARG_FLAG | HAS_EXIT_FLAG,
@@ -383,14 +383,7 @@ const uint32_t _PyUop_Flags[MAX_UOP_ID+1] = {
     [_DYNAMIC_EXIT] = HAS_ESCAPES_FLAG,
     [_CHECK_VALIDITY] = HAS_DEOPT_FLAG,
     [_LOAD_CONST_INLINE] = HAS_PURE_FLAG,
-    [_POP_TOP_LOAD_CONST_INLINE] = HAS_ESCAPES_FLAG | HAS_PURE_FLAG,
     [_LOAD_CONST_INLINE_BORROW] = HAS_PURE_FLAG,
-    [_POP_CALL] = HAS_ESCAPES_FLAG,
-    [_POP_CALL_ONE] = HAS_ESCAPES_FLAG,
-    [_POP_CALL_TWO] = HAS_ESCAPES_FLAG,
-    [_POP_TOP_LOAD_CONST_INLINE_BORROW] = HAS_ESCAPES_FLAG,
-    [_POP_TWO_LOAD_CONST_INLINE_BORROW] = HAS_ESCAPES_FLAG,
-    [_INSERT_2_LOAD_CONST_INLINE_BORROW] = 0,
     [_SHUFFLE_3_LOAD_CONST_INLINE_BORROW] = 0,
     [_START_EXECUTOR] = HAS_DEOPT_FLAG,
     [_MAKE_WARM] = 0,
@@ -828,15 +821,6 @@ const _PyUopCachingInfo _PyUop_Caching[MAX_UOP_ID+1] = {
             { 0, 1, _POP_TOP_UNICODE_r10 },
             { 1, 2, _POP_TOP_UNICODE_r21 },
             { 2, 3, _POP_TOP_UNICODE_r32 },
-        },
-    },
-    [_POP_TWO] = {
-        .best = { 2, 2, 2, 2 },
-        .entries = {
-            { -1, -1, -1 },
-            { -1, -1, -1 },
-            { 0, 2, _POP_TWO_r20 },
-            { -1, -1, -1 },
         },
     },
     [_POP_TOP_OPARG] = {
@@ -2855,10 +2839,19 @@ const _PyUopCachingInfo _PyUop_Caching[MAX_UOP_ID+1] = {
             { 2, 3, _CALL_TUPLE_1_r32 },
         },
     },
-    [_CHECK_AND_ALLOCATE_OBJECT] = {
+    [_CHECK_OBJECT] = {
         .best = { 0, 0, 0, 0 },
         .entries = {
-            { 0, 0, _CHECK_AND_ALLOCATE_OBJECT_r00 },
+            { 0, 0, _CHECK_OBJECT_r00 },
+            { -1, -1, -1 },
+            { -1, -1, -1 },
+            { -1, -1, -1 },
+        },
+    },
+    [_ALLOCATE_OBJECT] = {
+        .best = { 0, 0, 0, 0 },
+        .entries = {
+            { 0, 0, _ALLOCATE_OBJECT_r00 },
             { -1, -1, -1 },
             { -1, -1, -1 },
             { -1, -1, -1 },
@@ -2894,7 +2887,7 @@ const _PyUopCachingInfo _PyUop_Caching[MAX_UOP_ID+1] = {
     [_CALL_BUILTIN_CLASS] = {
         .best = { 0, 0, 0, 0 },
         .entries = {
-            { 1, 0, _CALL_BUILTIN_CLASS_r01 },
+            { 0, 0, _CALL_BUILTIN_CLASS_r00 },
             { -1, -1, -1 },
             { -1, -1, -1 },
             { -1, -1, -1 },
@@ -3566,75 +3559,12 @@ const _PyUopCachingInfo _PyUop_Caching[MAX_UOP_ID+1] = {
             { -1, -1, -1 },
         },
     },
-    [_POP_TOP_LOAD_CONST_INLINE] = {
-        .best = { 1, 1, 1, 1 },
-        .entries = {
-            { -1, -1, -1 },
-            { 1, 1, _POP_TOP_LOAD_CONST_INLINE_r11 },
-            { -1, -1, -1 },
-            { -1, -1, -1 },
-        },
-    },
     [_LOAD_CONST_INLINE_BORROW] = {
         .best = { 0, 1, 2, 2 },
         .entries = {
             { 1, 0, _LOAD_CONST_INLINE_BORROW_r01 },
             { 2, 1, _LOAD_CONST_INLINE_BORROW_r12 },
             { 3, 2, _LOAD_CONST_INLINE_BORROW_r23 },
-            { -1, -1, -1 },
-        },
-    },
-    [_POP_CALL] = {
-        .best = { 2, 2, 2, 2 },
-        .entries = {
-            { -1, -1, -1 },
-            { -1, -1, -1 },
-            { 0, 2, _POP_CALL_r20 },
-            { -1, -1, -1 },
-        },
-    },
-    [_POP_CALL_ONE] = {
-        .best = { 3, 3, 3, 3 },
-        .entries = {
-            { -1, -1, -1 },
-            { -1, -1, -1 },
-            { -1, -1, -1 },
-            { 0, 3, _POP_CALL_ONE_r30 },
-        },
-    },
-    [_POP_CALL_TWO] = {
-        .best = { 3, 3, 3, 3 },
-        .entries = {
-            { -1, -1, -1 },
-            { -1, -1, -1 },
-            { -1, -1, -1 },
-            { 0, 3, _POP_CALL_TWO_r30 },
-        },
-    },
-    [_POP_TOP_LOAD_CONST_INLINE_BORROW] = {
-        .best = { 1, 1, 1, 1 },
-        .entries = {
-            { -1, -1, -1 },
-            { 1, 1, _POP_TOP_LOAD_CONST_INLINE_BORROW_r11 },
-            { -1, -1, -1 },
-            { -1, -1, -1 },
-        },
-    },
-    [_POP_TWO_LOAD_CONST_INLINE_BORROW] = {
-        .best = { 2, 2, 2, 2 },
-        .entries = {
-            { -1, -1, -1 },
-            { -1, -1, -1 },
-            { 1, 2, _POP_TWO_LOAD_CONST_INLINE_BORROW_r21 },
-            { -1, -1, -1 },
-        },
-    },
-    [_INSERT_2_LOAD_CONST_INLINE_BORROW] = {
-        .best = { 0, 1, 2, 2 },
-        .entries = {
-            { 3, 0, _INSERT_2_LOAD_CONST_INLINE_BORROW_r03 },
-            { 3, 1, _INSERT_2_LOAD_CONST_INLINE_BORROW_r13 },
-            { 3, 2, _INSERT_2_LOAD_CONST_INLINE_BORROW_r23 },
             { -1, -1, -1 },
         },
     },
@@ -3944,7 +3874,6 @@ const uint16_t _PyUop_Uncached[MAX_UOP_REGS_ID+1] = {
     [_POP_TOP_UNICODE_r10] = _POP_TOP_UNICODE,
     [_POP_TOP_UNICODE_r21] = _POP_TOP_UNICODE,
     [_POP_TOP_UNICODE_r32] = _POP_TOP_UNICODE,
-    [_POP_TWO_r20] = _POP_TWO,
     [_POP_TOP_OPARG_r00] = _POP_TOP_OPARG,
     [_PUSH_NULL_r01] = _PUSH_NULL,
     [_PUSH_NULL_r12] = _PUSH_NULL,
@@ -4425,11 +4354,12 @@ const uint16_t _PyUop_Uncached[MAX_UOP_REGS_ID+1] = {
     [_GUARD_CALLABLE_TUPLE_1_r23] = _GUARD_CALLABLE_TUPLE_1,
     [_GUARD_CALLABLE_TUPLE_1_r33] = _GUARD_CALLABLE_TUPLE_1,
     [_CALL_TUPLE_1_r32] = _CALL_TUPLE_1,
-    [_CHECK_AND_ALLOCATE_OBJECT_r00] = _CHECK_AND_ALLOCATE_OBJECT,
+    [_CHECK_OBJECT_r00] = _CHECK_OBJECT,
+    [_ALLOCATE_OBJECT_r00] = _ALLOCATE_OBJECT,
     [_CREATE_INIT_FRAME_r01] = _CREATE_INIT_FRAME,
     [_EXIT_INIT_CHECK_r10] = _EXIT_INIT_CHECK,
     [_GUARD_CALLABLE_BUILTIN_CLASS_r00] = _GUARD_CALLABLE_BUILTIN_CLASS,
-    [_CALL_BUILTIN_CLASS_r01] = _CALL_BUILTIN_CLASS,
+    [_CALL_BUILTIN_CLASS_r00] = _CALL_BUILTIN_CLASS,
     [_GUARD_CALLABLE_BUILTIN_O_r00] = _GUARD_CALLABLE_BUILTIN_O,
     [_CALL_BUILTIN_O_r03] = _CALL_BUILTIN_O,
     [_GUARD_CALLABLE_BUILTIN_FAST_r00] = _GUARD_CALLABLE_BUILTIN_FAST,
@@ -4600,18 +4530,9 @@ const uint16_t _PyUop_Uncached[MAX_UOP_REGS_ID+1] = {
     [_LOAD_CONST_INLINE_r01] = _LOAD_CONST_INLINE,
     [_LOAD_CONST_INLINE_r12] = _LOAD_CONST_INLINE,
     [_LOAD_CONST_INLINE_r23] = _LOAD_CONST_INLINE,
-    [_POP_TOP_LOAD_CONST_INLINE_r11] = _POP_TOP_LOAD_CONST_INLINE,
     [_LOAD_CONST_INLINE_BORROW_r01] = _LOAD_CONST_INLINE_BORROW,
     [_LOAD_CONST_INLINE_BORROW_r12] = _LOAD_CONST_INLINE_BORROW,
     [_LOAD_CONST_INLINE_BORROW_r23] = _LOAD_CONST_INLINE_BORROW,
-    [_POP_CALL_r20] = _POP_CALL,
-    [_POP_CALL_ONE_r30] = _POP_CALL_ONE,
-    [_POP_CALL_TWO_r30] = _POP_CALL_TWO,
-    [_POP_TOP_LOAD_CONST_INLINE_BORROW_r11] = _POP_TOP_LOAD_CONST_INLINE_BORROW,
-    [_POP_TWO_LOAD_CONST_INLINE_BORROW_r21] = _POP_TWO_LOAD_CONST_INLINE_BORROW,
-    [_INSERT_2_LOAD_CONST_INLINE_BORROW_r03] = _INSERT_2_LOAD_CONST_INLINE_BORROW,
-    [_INSERT_2_LOAD_CONST_INLINE_BORROW_r13] = _INSERT_2_LOAD_CONST_INLINE_BORROW,
-    [_INSERT_2_LOAD_CONST_INLINE_BORROW_r23] = _INSERT_2_LOAD_CONST_INLINE_BORROW,
     [_SHUFFLE_3_LOAD_CONST_INLINE_BORROW_r03] = _SHUFFLE_3_LOAD_CONST_INLINE_BORROW,
     [_SHUFFLE_3_LOAD_CONST_INLINE_BORROW_r13] = _SHUFFLE_3_LOAD_CONST_INLINE_BORROW,
     [_SHUFFLE_3_LOAD_CONST_INLINE_BORROW_r23] = _SHUFFLE_3_LOAD_CONST_INLINE_BORROW,
@@ -4702,6 +4623,8 @@ const uint16_t _PyUop_SpillsAndReloads[4][4] = {
 };
 
 const char *const _PyOpcode_uop_name[MAX_UOP_REGS_ID+1] = {
+    [_ALLOCATE_OBJECT] = "_ALLOCATE_OBJECT",
+    [_ALLOCATE_OBJECT_r00] = "_ALLOCATE_OBJECT_r00",
     [_BINARY_OP] = "_BINARY_OP",
     [_BINARY_OP_r23] = "_BINARY_OP_r23",
     [_BINARY_OP_ADD_FLOAT] = "_BINARY_OP_ADD_FLOAT",
@@ -4826,7 +4749,7 @@ const char *const _PyOpcode_uop_name[MAX_UOP_REGS_ID+1] = {
     [_BUILD_TUPLE] = "_BUILD_TUPLE",
     [_BUILD_TUPLE_r01] = "_BUILD_TUPLE_r01",
     [_CALL_BUILTIN_CLASS] = "_CALL_BUILTIN_CLASS",
-    [_CALL_BUILTIN_CLASS_r01] = "_CALL_BUILTIN_CLASS_r01",
+    [_CALL_BUILTIN_CLASS_r00] = "_CALL_BUILTIN_CLASS_r00",
     [_CALL_BUILTIN_FAST] = "_CALL_BUILTIN_FAST",
     [_CALL_BUILTIN_FAST_r00] = "_CALL_BUILTIN_FAST_r00",
     [_CALL_BUILTIN_FAST_WITH_KEYWORDS] = "_CALL_BUILTIN_FAST_WITH_KEYWORDS",
@@ -4877,8 +4800,6 @@ const char *const _PyOpcode_uop_name[MAX_UOP_REGS_ID+1] = {
     [_CALL_TYPE_1_r12] = "_CALL_TYPE_1_r12",
     [_CALL_TYPE_1_r22] = "_CALL_TYPE_1_r22",
     [_CALL_TYPE_1_r32] = "_CALL_TYPE_1_r32",
-    [_CHECK_AND_ALLOCATE_OBJECT] = "_CHECK_AND_ALLOCATE_OBJECT",
-    [_CHECK_AND_ALLOCATE_OBJECT_r00] = "_CHECK_AND_ALLOCATE_OBJECT_r00",
     [_CHECK_ATTR_CLASS] = "_CHECK_ATTR_CLASS",
     [_CHECK_ATTR_CLASS_r01] = "_CHECK_ATTR_CLASS_r01",
     [_CHECK_ATTR_CLASS_r11] = "_CHECK_ATTR_CLASS_r11",
@@ -4929,6 +4850,8 @@ const char *const _PyOpcode_uop_name[MAX_UOP_REGS_ID+1] = {
     [_CHECK_METHOD_VERSION_r00] = "_CHECK_METHOD_VERSION_r00",
     [_CHECK_METHOD_VERSION_KW] = "_CHECK_METHOD_VERSION_KW",
     [_CHECK_METHOD_VERSION_KW_r11] = "_CHECK_METHOD_VERSION_KW_r11",
+    [_CHECK_OBJECT] = "_CHECK_OBJECT",
+    [_CHECK_OBJECT_r00] = "_CHECK_OBJECT_r00",
     [_CHECK_PEP_523] = "_CHECK_PEP_523",
     [_CHECK_PEP_523_r00] = "_CHECK_PEP_523_r00",
     [_CHECK_PEP_523_r11] = "_CHECK_PEP_523_r11",
@@ -5435,10 +5358,6 @@ const char *const _PyOpcode_uop_name[MAX_UOP_REGS_ID+1] = {
     [_INIT_CALL_PY_EXACT_ARGS_3_r01] = "_INIT_CALL_PY_EXACT_ARGS_3_r01",
     [_INIT_CALL_PY_EXACT_ARGS_4] = "_INIT_CALL_PY_EXACT_ARGS_4",
     [_INIT_CALL_PY_EXACT_ARGS_4_r01] = "_INIT_CALL_PY_EXACT_ARGS_4_r01",
-    [_INSERT_2_LOAD_CONST_INLINE_BORROW] = "_INSERT_2_LOAD_CONST_INLINE_BORROW",
-    [_INSERT_2_LOAD_CONST_INLINE_BORROW_r03] = "_INSERT_2_LOAD_CONST_INLINE_BORROW_r03",
-    [_INSERT_2_LOAD_CONST_INLINE_BORROW_r13] = "_INSERT_2_LOAD_CONST_INLINE_BORROW_r13",
-    [_INSERT_2_LOAD_CONST_INLINE_BORROW_r23] = "_INSERT_2_LOAD_CONST_INLINE_BORROW_r23",
     [_INSERT_NULL] = "_INSERT_NULL",
     [_INSERT_NULL_r10] = "_INSERT_NULL_r10",
     [_IS_NONE] = "_IS_NONE",
@@ -5696,12 +5615,6 @@ const char *const _PyOpcode_uop_name[MAX_UOP_REGS_ID+1] = {
     [_NOP_r11] = "_NOP_r11",
     [_NOP_r22] = "_NOP_r22",
     [_NOP_r33] = "_NOP_r33",
-    [_POP_CALL] = "_POP_CALL",
-    [_POP_CALL_r20] = "_POP_CALL_r20",
-    [_POP_CALL_ONE] = "_POP_CALL_ONE",
-    [_POP_CALL_ONE_r30] = "_POP_CALL_ONE_r30",
-    [_POP_CALL_TWO] = "_POP_CALL_TWO",
-    [_POP_CALL_TWO_r30] = "_POP_CALL_TWO_r30",
     [_POP_EXCEPT] = "_POP_EXCEPT",
     [_POP_EXCEPT_r10] = "_POP_EXCEPT_r10",
     [_POP_ITER] = "_POP_ITER",
@@ -5718,10 +5631,6 @@ const char *const _PyOpcode_uop_name[MAX_UOP_REGS_ID+1] = {
     [_POP_TOP_INT_r10] = "_POP_TOP_INT_r10",
     [_POP_TOP_INT_r21] = "_POP_TOP_INT_r21",
     [_POP_TOP_INT_r32] = "_POP_TOP_INT_r32",
-    [_POP_TOP_LOAD_CONST_INLINE] = "_POP_TOP_LOAD_CONST_INLINE",
-    [_POP_TOP_LOAD_CONST_INLINE_r11] = "_POP_TOP_LOAD_CONST_INLINE_r11",
-    [_POP_TOP_LOAD_CONST_INLINE_BORROW] = "_POP_TOP_LOAD_CONST_INLINE_BORROW",
-    [_POP_TOP_LOAD_CONST_INLINE_BORROW_r11] = "_POP_TOP_LOAD_CONST_INLINE_BORROW_r11",
     [_POP_TOP_NOP] = "_POP_TOP_NOP",
     [_POP_TOP_NOP_r00] = "_POP_TOP_NOP_r00",
     [_POP_TOP_NOP_r10] = "_POP_TOP_NOP_r10",
@@ -5734,10 +5643,6 @@ const char *const _PyOpcode_uop_name[MAX_UOP_REGS_ID+1] = {
     [_POP_TOP_UNICODE_r10] = "_POP_TOP_UNICODE_r10",
     [_POP_TOP_UNICODE_r21] = "_POP_TOP_UNICODE_r21",
     [_POP_TOP_UNICODE_r32] = "_POP_TOP_UNICODE_r32",
-    [_POP_TWO] = "_POP_TWO",
-    [_POP_TWO_r20] = "_POP_TWO_r20",
-    [_POP_TWO_LOAD_CONST_INLINE_BORROW] = "_POP_TWO_LOAD_CONST_INLINE_BORROW",
-    [_POP_TWO_LOAD_CONST_INLINE_BORROW_r21] = "_POP_TWO_LOAD_CONST_INLINE_BORROW_r21",
     [_PUSH_EXC_INFO] = "_PUSH_EXC_INFO",
     [_PUSH_EXC_INFO_r02] = "_PUSH_EXC_INFO_r02",
     [_PUSH_EXC_INFO_r12] = "_PUSH_EXC_INFO_r12",
@@ -6059,8 +5964,6 @@ int _PyUop_num_popped(int opcode, int oparg)
             return 1;
         case _POP_TOP_UNICODE:
             return 1;
-        case _POP_TWO:
-            return 2;
         case _POP_TOP_OPARG:
             return oparg;
         case _PUSH_NULL:
@@ -6509,7 +6412,9 @@ int _PyUop_num_popped(int opcode, int oparg)
             return 0;
         case _CALL_TUPLE_1:
             return 3;
-        case _CHECK_AND_ALLOCATE_OBJECT:
+        case _CHECK_OBJECT:
+            return 0;
+        case _ALLOCATE_OBJECT:
             return 0;
         case _CREATE_INIT_FRAME:
             return 2 + oparg;
@@ -6518,7 +6423,7 @@ int _PyUop_num_popped(int opcode, int oparg)
         case _GUARD_CALLABLE_BUILTIN_CLASS:
             return 0;
         case _CALL_BUILTIN_CLASS:
-            return 2 + oparg;
+            return 0;
         case _GUARD_CALLABLE_BUILTIN_O:
             return 0;
         case _CALL_BUILTIN_O:
@@ -6667,22 +6572,8 @@ int _PyUop_num_popped(int opcode, int oparg)
             return 0;
         case _LOAD_CONST_INLINE:
             return 0;
-        case _POP_TOP_LOAD_CONST_INLINE:
-            return 1;
         case _LOAD_CONST_INLINE_BORROW:
             return 0;
-        case _POP_CALL:
-            return 2;
-        case _POP_CALL_ONE:
-            return 3;
-        case _POP_CALL_TWO:
-            return 4;
-        case _POP_TOP_LOAD_CONST_INLINE_BORROW:
-            return 1;
-        case _POP_TWO_LOAD_CONST_INLINE_BORROW:
-            return 2;
-        case _INSERT_2_LOAD_CONST_INLINE_BORROW:
-            return 2;
         case _SHUFFLE_3_LOAD_CONST_INLINE_BORROW:
             return 3;
         case _START_EXECUTOR:
