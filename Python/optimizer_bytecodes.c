@@ -995,7 +995,8 @@ dummy_func(void) {
         new_frame = PyJitRef_WrapInvalid(f);
     }
 
-    op(_LOAD_ATTR_GETATTRIBUTE_OVERRIDDEN_FRAME, (getattribute/4, owner -- new_frame)) {
+    op(_LOAD_ATTR_GETATTRIBUTE_OVERRIDDEN_FRAME, (func_version/2, getattribute/4, owner -- new_frame)) {
+        (void)func_version;
         PyCodeObject *co = (PyCodeObject *)((PyFunctionObject *)getattribute)->func_code;
         _Py_UOpsAbstractFrame *f = frame_new(ctx, co, NULL, 0);
         if (f == NULL) {

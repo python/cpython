@@ -2945,15 +2945,15 @@ dummy_func(
             _SAVE_RETURN_OFFSET +
             _PUSH_FRAME;
 
-        op(_LOAD_ATTR_GETATTRIBUTE_OVERRIDDEN_FRAME, (getattribute/4, owner -- new_frame)) {
+        op(_LOAD_ATTR_GETATTRIBUTE_OVERRIDDEN_FRAME, (func_version/2, getattribute/4, owner -- new_frame)) {
             assert((oparg & 1) == 0);
             assert(Py_IS_TYPE(getattribute, &PyFunction_Type));
             PyFunctionObject *f = (PyFunctionObject *)getattribute;
+            assert(func_version != 0);
+            EXIT_IF(f->func_version != func_version);
             PyCodeObject *code = (PyCodeObject *)f->func_code;
-            DEOPT_IF((code->co_flags & (CO_VARKEYWORDS | CO_VARARGS | CO_OPTIMIZED)) != CO_OPTIMIZED);
-            DEOPT_IF(code->co_kwonlyargcount);
-            DEOPT_IF(code->co_argcount != 2);
-            DEOPT_IF(!_PyThreadState_HasStackSpace(tstate, code->co_framesize));
+            assert(code->co_argcount == 2);
+            EXIT_IF(!_PyThreadState_HasStackSpace(tstate, code->co_framesize));
             STAT_INC(LOAD_ATTR, hit);
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg >> 1);
             _PyInterpreterFrame *pushed_frame = _PyFrame_PushUnchecked(
@@ -2969,7 +2969,6 @@ dummy_func(
             _RECORD_TOS_TYPE +
             _GUARD_TYPE_VERSION +
             _CHECK_PEP_523 +
-            unused/2 +
             _LOAD_ATTR_GETATTRIBUTE_OVERRIDDEN_FRAME +
             _SAVE_RETURN_OFFSET +
             _PUSH_FRAME;

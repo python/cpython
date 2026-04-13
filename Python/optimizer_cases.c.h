@@ -2614,7 +2614,9 @@
             JitOptRef owner;
             JitOptRef new_frame;
             owner = stack_pointer[-1];
+            uint32_t func_version = (uint32_t)this_instr->operand0;
             PyObject *getattribute = (PyObject *)this_instr->operand0;
+            (void)func_version;
             PyCodeObject *co = (PyCodeObject *)((PyFunctionObject *)getattribute)->func_code;
             _Py_UOpsAbstractFrame *f = frame_new(ctx, co, NULL, 0);
             if (f == NULL) {

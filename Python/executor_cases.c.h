@@ -11507,29 +11507,20 @@
             _PyStackRef _stack_item_0 = _tos_cache0;
             oparg = CURRENT_OPARG();
             owner = _stack_item_0;
-            PyObject *getattribute = (PyObject *)CURRENT_OPERAND0_64();
+            uint32_t func_version = (uint32_t)CURRENT_OPERAND0_32();
+            PyObject *getattribute = (PyObject *)CURRENT_OPERAND1_64();
             assert((oparg & 1) == 0);
             assert(Py_IS_TYPE(getattribute, &PyFunction_Type));
             PyFunctionObject *f = (PyFunctionObject *)getattribute;
+            assert(func_version != 0);
+            if (f->func_version != func_version) {
+                UOP_STAT_INC(uopcode, miss);
+                _tos_cache0 = owner;
+                SET_CURRENT_CACHED_VALUES(1);
+                JUMP_TO_JUMP_TARGET();
+            }
             PyCodeObject *code = (PyCodeObject *)f->func_code;
-            if ((code->co_flags & (CO_VARKEYWORDS | CO_VARARGS | CO_OPTIMIZED)) != CO_OPTIMIZED) {
-                UOP_STAT_INC(uopcode, miss);
-                _tos_cache0 = owner;
-                SET_CURRENT_CACHED_VALUES(1);
-                JUMP_TO_JUMP_TARGET();
-            }
-            if (code->co_kwonlyargcount) {
-                UOP_STAT_INC(uopcode, miss);
-                _tos_cache0 = owner;
-                SET_CURRENT_CACHED_VALUES(1);
-                JUMP_TO_JUMP_TARGET();
-            }
-            if (code->co_argcount != 2) {
-                UOP_STAT_INC(uopcode, miss);
-                _tos_cache0 = owner;
-                SET_CURRENT_CACHED_VALUES(1);
-                JUMP_TO_JUMP_TARGET();
-            }
+            assert(code->co_argcount == 2);
             if (!_PyThreadState_HasStackSpace(tstate, code->co_framesize)) {
                 UOP_STAT_INC(uopcode, miss);
                 _tos_cache0 = owner;
