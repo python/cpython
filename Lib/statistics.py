@@ -145,6 +145,7 @@ from operator import itemgetter
 from collections import Counter, namedtuple, defaultdict
 
 _SQRT2 = sqrt(2.0)
+_SQRT2PI = sqrt(tau)
 _random = random
 
 ## Exceptions ##############################################################
@@ -1257,11 +1258,11 @@ class NormalDist:
 
     def pdf(self, x):
         "Probability density function.  P(x <= X < x+dx) / dx"
-        variance = self._sigma * self._sigma
-        if not variance:
+        sigma = self._sigma
+        if not sigma:
             raise StatisticsError('pdf() not defined when sigma is zero')
-        diff = x - self._mu
-        return exp(diff * diff / (-2.0 * variance)) / sqrt(tau * variance)
+        z = (x - self._mu) / sigma
+        return exp(-0.5 * z * z) / (_SQRT2PI * sigma)
 
     def cdf(self, x):
         "Cumulative distribution function.  P(X <= x)"
