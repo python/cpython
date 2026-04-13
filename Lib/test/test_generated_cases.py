@@ -1890,6 +1890,64 @@ class TestGeneratedCases(unittest.TestCase):
         """
         self.run_cases_test(input, output)
 
+    def test_recording_after_specializing_with_cache(self):
+        input = """
+        specializing op(SPEC, (counter/1 --)) {
+            spam;
+        }
+
+        tier2 op(REC, (--)) {
+            RECORD_VALUE(0);
+        }
+
+        op(BODY, (--)) {
+            ham;
+        }
+
+        macro(OP) = SPEC + unused/2 + REC + BODY;
+        """
+        output = """
+        TARGET(OP) {
+            #if _Py_TAIL_CALL_INTERP
+            int opcode = OP;
+            (void)(opcode);
+            #endif
+            _Py_CODEUNIT* const this_instr = next_instr;
+            (void)this_instr;
+            frame->instr_ptr = next_instr;
+            next_instr += 4;
+            INSTRUCTION_STATS(OP);
+            // SPEC
+            {
+                uint16_t counter = read_u16(&this_instr[1].cache);
+                (void)counter;
+                spam;
+            }
+            /* Skip 2 cache entries */
+            // BODY
+            {
+                ham;
+            }
+            DISPATCH();
+        }
+        """
+        self.run_cases_test(input, output)
+
+    def test_recording_after_non_specializing(self):
+        input = """
+        op(REGULAR, (--)) {
+            spam;
+        }
+
+        tier2 op(REC, (--)) {
+            RECORD_VALUE(0);
+        }
+
+        macro(OP) = REGULAR + REC;
+        """
+        with self.assertRaisesRegex(SyntaxError, "Recording uop"):
+            self.run_cases_test(input, "")
+
 
 class TestGeneratedAbstractCases(unittest.TestCase):
     def setUp(self) -> None:
