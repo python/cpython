@@ -792,6 +792,32 @@ D_get(void *ptr, Py_ssize_t size)
     return PyComplex_FromDoubles(x[0], x[1]);
 }
 
+static PyObject *
+D_set_sw(void *ptr, PyObject *value, Py_ssize_t size)
+{
+    assert(NUM_BITS(size) || (size == 2*sizeof(double)));
+    Py_complex c = PyComplex_AsCComplex(value);
+
+    if (c.real == -1 && PyErr_Occurred()) {
+        return NULL;
+    }
+    if (PyFloat_Pack8(c.real, ptr, PY_BIG_ENDIAN)
+        || PyFloat_Pack8(c.imag, ptr + sizeof(double), PY_BIG_ENDIAN))
+    {
+        return NULL;
+    }
+    _RET(value);
+}
+
+static PyObject *
+D_get_sw(void *ptr, Py_ssize_t size)
+{
+    assert(NUM_BITS(size) || (size == 2*sizeof(double)));
+    return PyComplex_FromDoubles(PyFloat_Unpack8(ptr, PY_BIG_ENDIAN),
+                                 PyFloat_Unpack8(ptr + sizeof(double),
+                                                 PY_BIG_ENDIAN));
+}
+
 /* F: float complex */
 static PyObject *
 F_set(void *ptr, PyObject *value, Py_ssize_t size)
@@ -815,6 +841,32 @@ F_get(void *ptr, Py_ssize_t size)
 
     memcpy(&x, ptr, sizeof(x));
     return PyComplex_FromDoubles(x[0], x[1]);
+}
+
+static PyObject *
+F_set_sw(void *ptr, PyObject *value, Py_ssize_t size)
+{
+    assert(NUM_BITS(size) || (size == 2*sizeof(float)));
+    Py_complex c = PyComplex_AsCComplex(value);
+
+    if (c.real == -1 && PyErr_Occurred()) {
+        return NULL;
+    }
+    if (PyFloat_Pack4(c.real, ptr, PY_BIG_ENDIAN)
+        || PyFloat_Pack4(c.imag, ptr + sizeof(float), PY_BIG_ENDIAN))
+    {
+        return NULL;
+    }
+    _RET(value);
+}
+
+static PyObject *
+F_get_sw(void *ptr, Py_ssize_t size)
+{
+    assert(NUM_BITS(size) || (size == 2*sizeof(float)));
+    return PyComplex_FromDoubles(PyFloat_Unpack4(ptr, PY_BIG_ENDIAN),
+                                 PyFloat_Unpack4(ptr + sizeof(float),
+                                                 PY_BIG_ENDIAN));
 }
 
 /* G: long double complex */
@@ -1602,7 +1654,9 @@ for base_code, base_c_type in [
 #if defined(_Py_FFI_SUPPORT_C_COMPLEX)
     if (Py_FFI_COMPLEX_AVAILABLE) {
         TABLE_ENTRY(D, &ffi_type_complex_double);
+        TABLE_ENTRY_SW(D, &ffi_type_complex_double);
         TABLE_ENTRY(F, &ffi_type_complex_float);
+        TABLE_ENTRY_SW(F, &ffi_type_complex_float);
         TABLE_ENTRY(G, &ffi_type_complex_longdouble);
     }
 #endif

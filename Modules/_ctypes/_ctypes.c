@@ -2267,7 +2267,17 @@ static PyObject *CreateSwappedType(ctypes_state *st, PyTypeObject *type,
         return NULL;
     }
 
-    stginfo->ffi_type_pointer = *fmt->pffi_type;
+    if (!fmt->pffi_type->elements) {
+        stginfo->ffi_type_pointer = *fmt->pffi_type;
+    }
+    else {
+        stginfo->ffi_type_pointer.size = fmt->pffi_type->size;
+        stginfo->ffi_type_pointer.alignment = fmt->pffi_type->alignment;
+        stginfo->ffi_type_pointer.type = fmt->pffi_type->type;
+        stginfo->ffi_type_pointer.elements = PyMem_Malloc(2 * sizeof(ffi_type));
+        memcpy(stginfo->ffi_type_pointer.elements,
+               fmt->pffi_type->elements, 2 * sizeof(ffi_type));
+    }
     stginfo->align = fmt->pffi_type->alignment;
     stginfo->length = 0;
     stginfo->size = fmt->pffi_type->size;
