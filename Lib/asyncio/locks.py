@@ -165,7 +165,7 @@ class Event(mixins._LoopBoundMixin):
     """
 
     def __init__(self):
-        self._waiters = collections.deque()
+        self._waiters = None
         self._value = False
 
     def __repr__(self):
@@ -187,9 +187,10 @@ class Event(mixins._LoopBoundMixin):
         if not self._value:
             self._value = True
 
-            for fut in self._waiters:
-                if not fut.done():
-                    fut.set_result(True)
+            if self._waiters:
+                for fut in self._waiters:
+                    if not fut.done():
+                        fut.set_result(True)
 
     def clear(self):
         """Reset the internal flag to false. Subsequently, tasks calling
@@ -207,6 +208,8 @@ class Event(mixins._LoopBoundMixin):
         if self._value:
             return True
 
+        if self._waiters is None:
+            self._waiters = collections.deque()
         fut = self._get_loop().create_future()
         self._waiters.append(fut)
         try:
@@ -236,7 +239,7 @@ class Condition(_ContextManagerMixin, mixins._LoopBoundMixin):
         self.acquire = lock.acquire
         self.release = lock.release
 
-        self._waiters = collections.deque()
+        self._waiters = None
 
     def __repr__(self):
         res = super().__repr__()
@@ -263,6 +266,8 @@ class Condition(_ContextManagerMixin, mixins._LoopBoundMixin):
         if not self.locked():
             raise RuntimeError('cannot wait on un-acquired lock')
 
+        if self._waiters is None:
+            self._waiters = collections.deque()
         fut = self._get_loop().create_future()
         self.release()
         try:
@@ -331,6 +336,8 @@ class Condition(_ContextManagerMixin, mixins._LoopBoundMixin):
         self._notify(n)
 
     def _notify(self, n):
+        if not self._waiters:
+            return
         idx = 0
         for fut in self._waiters:
             if idx >= n:
@@ -346,7 +353,7 @@ class Condition(_ContextManagerMixin, mixins._LoopBoundMixin):
         calling task has not acquired the lock when this method is called,
         a RuntimeError is raised.
         """
-        self.notify(len(self._waiters))
+        self.notify(len(self._waiters or ()))
 
 
 class Semaphore(_ContextManagerMixin, mixins._LoopBoundMixin):
