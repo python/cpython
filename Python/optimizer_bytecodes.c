@@ -1682,6 +1682,7 @@ dummy_func(void) {
     }
 
     op(_LOAD_SPECIAL, (method_and_self[2] -- method_and_self[2])) {
+        bool optimized = false;
         PyTypeObject *type = sym_get_probable_type(method_and_self[1]);
         if (type != NULL) {
             PyObject *name = _Py_SpecialMethods[oparg].name;
@@ -1699,9 +1700,10 @@ dummy_func(void) {
                     _Py_BloomFilter_Add(dependencies, type);
                 }
                 method_and_self[0] = sym_new_const(ctx, descr);
+                optimized = true;
             }
         }
-        else {
+        if (!optimized) {
             method_and_self[0] = sym_new_not_null(ctx);
             method_and_self[1] = sym_new_unknown(ctx);
         }
