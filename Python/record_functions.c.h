@@ -69,6 +69,13 @@ void _PyOpcode_RecordFunction_CALLABLE(_PyInterpreterFrame *frame, _PyStackRef *
     Py_INCREF(*recorded_value);
 }
 
+void _PyOpcode_RecordFunction_CALLABLE_KW(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer, int oparg, PyObject **recorded_value) {
+    _PyStackRef func;
+    func = stack_pointer[-3 - oparg];
+    *recorded_value = (PyObject *)PyStackRef_AsPyObjectBorrow(func);
+    Py_INCREF(*recorded_value);
+}
+
 void _PyOpcode_RecordFunction_BOUND_METHOD(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer, int oparg, PyObject **recorded_value) {
     _PyStackRef callable;
     callable = stack_pointer[-2 - oparg];
@@ -127,7 +134,7 @@ const _PyOpcodeRecordEntry _PyOpcode_RecordEntries[256] = {
         [CALL_EX_PY] = {1, {_RECORD_4OS_INDEX}},
 };
 
-const _Py_RecordFuncPtr _PyOpcode_RecordFunctions[8] = {
+const _Py_RecordFuncPtr _PyOpcode_RecordFunctions[9] = {
         [0] = NULL,
         [_RECORD_TOS_TYPE_INDEX] = _PyOpcode_RecordFunction_TOS_TYPE,
         [_RECORD_NOS_INDEX] = _PyOpcode_RecordFunction_NOS,
@@ -135,5 +142,6 @@ const _Py_RecordFuncPtr _PyOpcode_RecordFunctions[8] = {
         [_RECORD_NOS_GEN_FUNC_INDEX] = _PyOpcode_RecordFunction_NOS_GEN_FUNC,
         [_RECORD_CALLABLE_INDEX] = _PyOpcode_RecordFunction_CALLABLE,
         [_RECORD_BOUND_METHOD_INDEX] = _PyOpcode_RecordFunction_BOUND_METHOD,
+        [_RECORD_CALLABLE_KW_INDEX] = _PyOpcode_RecordFunction_CALLABLE_KW,
         [_RECORD_4OS_INDEX] = _PyOpcode_RecordFunction_4OS,
 };
