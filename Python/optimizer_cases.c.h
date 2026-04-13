@@ -3917,47 +3917,31 @@
             break;
         }
 
-        case _CHECK_OBJECT: {
+        case _CHECK_AND_ALLOCATE_OBJECT: {
+            JitOptRef *args;
             JitOptRef self_or_null;
             JitOptRef callable;
+            args = &stack_pointer[-oparg];
             self_or_null = stack_pointer[-1 - oparg];
             callable = stack_pointer[-2 - oparg];
             uint32_t type_version = (uint32_t)this_instr->operand0;
+            (void)args;
             PyObject *probable_callable = sym_get_probable_value(callable);
             assert(probable_callable != NULL);
-            PyObject *const_callable = sym_get_const(ctx, callable);
-            bool is_probable = const_callable == NULL && probable_callable != NULL;
-            PyObject *callable_o = const_callable != NULL ? const_callable : probable_callable;
-            if (sym_is_null(self_or_null) &&
-                callable_o != NULL &&
-                PyType_Check(callable_o) &&
-                ((PyTypeObject *)callable_o)->tp_version_tag == type_version) {
-                if (!is_probable) {
-                    ADD_OP(_NOP, 0, 0);
-                }
-                else {
-                    sym_set_const(callable, callable_o);
-                }
-                PyHeapTypeObject *cls = (PyHeapTypeObject *)callable_o;
+            assert(PyType_Check(probable_callable));
+            PyTypeObject *tp = (PyTypeObject *)probable_callable;
+            if (tp->tp_version_tag == type_version) {
+                PyHeapTypeObject *cls = (PyHeapTypeObject *)probable_callable;
                 PyObject *init = cls->_spec_cache.init;
                 assert(init != NULL);
                 assert(PyFunction_Check(init));
                 callable = sym_new_const(ctx, init);
-                stack_pointer[-2 - oparg] = callable;
-                PyType_Watch(TYPE_WATCHER_ID, callable_o);
-                _Py_BloomFilter_Add(dependencies, callable_o);;
             }
             else {
                 callable = sym_new_not_null(ctx);
             }
-            stack_pointer[-2 - oparg] = callable;
-            break;
-        }
-
-        case _ALLOCATE_OBJECT: {
-            JitOptRef self_or_null;
-            self_or_null = stack_pointer[-1 - oparg];
             self_or_null = sym_new_not_null(ctx);
+            stack_pointer[-2 - oparg] = callable;
             stack_pointer[-1 - oparg] = self_or_null;
             break;
         }

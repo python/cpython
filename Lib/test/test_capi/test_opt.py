@@ -1590,42 +1590,6 @@ class TestUopsOptimization(unittest.TestCase):
         # __init__ resolution allows promotion of range to constant
         self.assertNotIn("_LOAD_GLOBAL_BUILTINS", uops)
 
-    def test_init_guards_removed(self):
-        class MyPoint:
-            def __init__(self, x, y):
-                return None
-
-        def testfunc(n):
-            point_local = MyPoint
-            for _ in range(n):
-                p = point_local(1.0, 2.0)
-                p = point_local(1.0, 2.0)
-
-        _, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
-        self.assertIsNotNone(ex)
-        # The __init__ call should be traced through via _PUSH_FRAME
-        count = count_ops(ex, "_CREATE_INIT_FRAME")
-        self.assertEqual(count, 2)
-        # __init__ resolution allows promotion of range to constant
-        count = count_ops(ex, "_CHECK_OBJECT")
-        self.assertEqual(count, 1)
-
-    def test_init_guards_removed_global(self):
-
-        def testfunc(n):
-            for _ in range(n):
-                p = MyGlobalPoint(1.0, 2.0)
-                p = MyGlobalPoint(1.0, 2.0)
-
-        _, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
-        self.assertIsNotNone(ex)
-        # The __init__ call should be traced through via _PUSH_FRAME
-        count = count_ops(ex, "_CREATE_INIT_FRAME")
-        self.assertEqual(count, 2)
-        # __init__ resolution allows promotion of range to constant
-        count = count_ops(ex, "_CHECK_OBJECT")
-        self.assertEqual(count, 0)
-
     def test_guard_type_version_locked_propagates(self):
         """
         _GUARD_TYPE_VERSION_LOCKED should set the type version on the
@@ -5286,10 +5250,6 @@ class TestObject:
 
 test_object = TestObject()
 test_bound_method = TestObject.test.__get__(test_object)
-
-class MyGlobalPoint:
-    def __init__(self, x, y):
-        return None
 
 if __name__ == "__main__":
     unittest.main()
