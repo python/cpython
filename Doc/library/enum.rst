@@ -240,7 +240,7 @@ Data types
 
    .. method:: EnumType.__len__(cls)
 
-      Returns the number of member in *cls*::
+      Returns the number of members in *cls*::
 
         >>> len(Color)
         3
