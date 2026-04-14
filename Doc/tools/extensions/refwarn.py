@@ -36,7 +36,7 @@ def summarise_warnings(app, exception):
     warnfile = os.path.join(app.outdir, 'refwarn.csv')
     warnfile_count = os.path.join(app.outdir, 'refwarn_count.csv')
 
-    with open(warnfile, 'r', encoding='utf-8') as f:
+    with open(warnfile, encoding='utf-8') as f:
         r = csv.reader(f, lineterminator='\n')
         next(r, None)  # Skip the header
         lines = [tuple(line[:3]) for line in r]
@@ -56,4 +56,8 @@ def setup(app):
         w.writerow(('Domain', 'Type', 'Target', 'Source'))
     app.connect('warn-missing-reference', warn_missing_reference)
     app.connect('build-finished', summarise_warnings)
-    return {'version': '1', 'parallel_read_safe': True, 'parallel_write_safe': True}
+    return {
+        'version': '1',
+        'parallel_read_safe': True,
+        'parallel_write_safe': True,
+    }
