@@ -63,16 +63,6 @@ ramfs-stage: test-stage
 # test-hello-standalone: run hello test via nanvixd with the full-test ramfs
 test-hello-standalone: ramfs-stage
 	@cp "$(MKRAMFS)" $(TEST_STAGING)/sysroot/bin/ 2>/dev/null || true
-ifdef CONFIG_NANVIX_DOCKER
-	$(DOCKER_RUN) sh -c '\
-		if [ -x "$(DOCKER_TOOLCHAIN_PATH)/bin/i686-nanvix-strip" ] && [ -f "$(DOCKER_WORKSPACE_PATH)/.nanvix/_test_staging/sysroot/bin/python3.12" ]; then \
-			"$(DOCKER_TOOLCHAIN_PATH)/bin/i686-nanvix-strip" --strip-debug \
-				"$(DOCKER_WORKSPACE_PATH)/.nanvix/_test_staging/sysroot/bin/python3.12" || true; \
-		fi'
-else
-	$(if $(wildcard $(TOOLCHAIN_PREFIX)/bin/i686-nanvix-strip),\
-		$(TOOLCHAIN_PREFIX)/bin/i686-nanvix-strip --strip-debug $(TEST_STAGING)/sysroot/bin/python3.12 2>/dev/null || true)
-endif
 	@echo "Test: Hello world (standalone)..."
 	cd $(TEST_STAGING)/sysroot && \
 		{ \
