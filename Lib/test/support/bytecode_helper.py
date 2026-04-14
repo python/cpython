@@ -3,7 +3,12 @@
 import unittest
 import dis
 import io
-from _testinternalcapi import compiler_codegen, optimize_cfg, assemble_code_object
+try:
+    from _testinternalcapi import compiler_codegen, optimize_cfg, assemble_code_object
+    _HAS_INTERNAL_CAPI = True
+except ImportError:
+    compiler_codegen = optimize_cfg = assemble_code_object = None
+    _HAS_INTERNAL_CAPI = False
 
 _UNSPECIFIED = object()
 

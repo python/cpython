@@ -140,7 +140,7 @@ except ImportError:
     ctypes = None
 from test.support import (cpython_only,
                           check_impl_detail, requires_debug_ranges,
-                          gc_collect)
+                          gc_collect, is_nanvix)
 from test.support.script_helper import assert_python_ok
 from test.support import threading_helper
 from opcode import opmap, opname
@@ -172,6 +172,8 @@ def external_getitem(self, i):
 class CodeTest(unittest.TestCase):
 
     @cpython_only
+    # NSKIP002 https://github.com/nanvix/cpython/issues/371
+    @unittest.skipIf(is_nanvix, "NSKIP002: _testcapi not available")
     def test_newempty(self):
         import _testcapi
         co = _testcapi.code_newempty("filename", "funcname", 15)

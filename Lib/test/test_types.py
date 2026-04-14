@@ -1,6 +1,7 @@
 # Python test set -- part 6, built-in types
 
 from test.support import run_with_locale, cpython_only, MISSING_C_DOCSTRINGS
+from test import support
 import collections.abc
 from collections import namedtuple
 import copy
@@ -881,6 +882,8 @@ class UnionTests(unittest.TestCase):
         eq(x[NT], int | NT | bytes)
         eq(x[S], int | S | bytes)
 
+    # NSKIP001 https://github.com/nanvix/cpython/issues/371
+    @unittest.skipIf(support.is_nanvix, "NSKIP001: pickle corrupt on 32-bit")
     def test_union_pickle(self):
         orig = list[T] | int
         for proto in range(pickle.HIGHEST_PROTOCOL + 1):
@@ -1909,6 +1912,8 @@ class SimpleNamespaceTests(unittest.TestCase):
         self.assertIs(type(spam), Spam)
         self.assertEqual(vars(spam), {'ham': 8, 'eggs': 9})
 
+    # NSKIP001 https://github.com/nanvix/cpython/issues/371
+    @unittest.skipIf(support.is_nanvix, "NSKIP001: pickle corrupt on 32-bit")
     def test_pickle(self):
         ns = types.SimpleNamespace(breakfast="spam", lunch="spam")
 

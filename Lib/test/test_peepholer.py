@@ -5,7 +5,7 @@ import textwrap
 import unittest
 
 from test import support
-from test.support.bytecode_helper import BytecodeTestCase, CfgOptimizationTestCase
+from test.support.bytecode_helper import BytecodeTestCase, CfgOptimizationTestCase, _HAS_INTERNAL_CAPI
 
 
 def compile_pattern_with_fast_locals(pattern):
@@ -973,6 +973,7 @@ class TestMarkingVariablesAsUnKnown(BytecodeTestCase):
         self.assertNotInBytecode(f, "LOAD_FAST_CHECK")
 
 
+@unittest.skipUnless(_HAS_INTERNAL_CAPI, "requires _testinternalcapi")
 class DirectCfgOptimizerTests(CfgOptimizationTestCase):
 
     def cfg_optimization_test(self, insts, expected_insts,

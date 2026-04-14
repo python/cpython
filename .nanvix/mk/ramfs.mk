@@ -21,6 +21,11 @@ _RAMFS_MK := 1
 # Trim the staged sysroot to the minimal runtime footprint.
 # Removes build-time headers, static libraries, config dirs, caches, and
 # heavyweight stdlib packages not needed at runtime.
+#
+# Set RAMFS_KEEP_TESTS=1 to retain lib/python3.12/test/ (needed when
+# building a ramfs for the test pipeline).  config-3.12 (~54 MB) is
+# always removed — it is not needed at runtime and would push the
+# ramfs image over the 256 MB VM budget.
 ramfs-trim:
 	@if [ -z "$(RAMFS_STAGING)" ]; then echo "Error: RAMFS_STAGING is not set"; exit 1; fi
 	@if [ ! -d "$(RAMFS_STAGING)/sysroot" ]; then echo "Error: $(RAMFS_STAGING)/sysroot does not exist"; exit 1; fi
@@ -35,7 +40,9 @@ ramfs-trim:
 	@rm -rf $(RAMFS_STAGING)/sysroot/lib/python3.12/venv
 	@rm -rf $(RAMFS_STAGING)/sysroot/lib/python3.12/site-packages
 	@rm -rf $(RAMFS_STAGING)/sysroot/lib/python3.12/__phello__
+ifndef RAMFS_KEEP_TESTS
 	@rm -rf $(RAMFS_STAGING)/sysroot/lib/python3.12/test
+endif
 	@rm -f  $(RAMFS_STAGING)/sysroot/lib/libpython3.12.a
 	@rm -rf $(RAMFS_STAGING)/sysroot/include
 	@rm -rf $(RAMFS_STAGING)/sysroot/share

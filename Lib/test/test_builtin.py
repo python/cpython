@@ -401,9 +401,10 @@ class BuiltinTest(unittest.TestCase):
                                 msg=f"source={source} mode={mode}")
 
 
+    # NSKIP011 https://github.com/nanvix/cpython/issues/371
     @unittest.skipIf(
-        support.is_emscripten or support.is_wasi,
-        "socket.accept is broken"
+        support.is_emscripten or support.is_wasi or support.is_nanvix,
+        "NSKIP011: socket.accept not supported"
     )
     def test_compile_top_level_await(self):
         """Test whether code some top level await can be compiled.
@@ -960,6 +961,8 @@ class BuiltinTest(unittest.TestCase):
         self.assertEqual(list(filter(lambda x: x>=3, (1, 2, 3, 4))), [3, 4])
         self.assertRaises(TypeError, list, filter(42, (1, 2)))
 
+    # NSKIP001 https://github.com/nanvix/cpython/issues/371
+    @unittest.skipIf(support.is_nanvix, "NSKIP001: pickle corrupt on 32-bit")
     def test_filter_pickle(self):
         for proto in range(pickle.HIGHEST_PROTOCOL + 1):
             f1 = filter(filter_char, "abcdeabcde")
@@ -1183,6 +1186,8 @@ class BuiltinTest(unittest.TestCase):
             raise RuntimeError
         self.assertRaises(RuntimeError, list, map(badfunc, range(5)))
 
+    # NSKIP001 https://github.com/nanvix/cpython/issues/371
+    @unittest.skipIf(support.is_nanvix, "NSKIP001: pickle corrupt on 32-bit")
     def test_map_pickle(self):
         for proto in range(pickle.HIGHEST_PROTOCOL + 1):
             m1 = map(map_char, "Is this the real life?")
@@ -1541,6 +1546,8 @@ class BuiltinTest(unittest.TestCase):
         a[0] = a
         self.assertEqual(repr(a), '{0: {...}}')
 
+    # NSKIP005 https://github.com/nanvix/cpython/issues/371
+    @unittest.skipIf(support.is_nanvix, "NSKIP005: round-half-up, not round-half-to-even")
     def test_round(self):
         self.assertEqual(round(0.0), 0.0)
         self.assertEqual(type(round(0.0)), int)
@@ -1625,9 +1632,9 @@ class BuiltinTest(unittest.TestCase):
     linux_alpha = (platform.system().startswith('Linux') and
                    platform.machine().startswith('alpha'))
     system_round_bug = round(5e15+1) != 5e15+1
-    @unittest.skipIf(linux_alpha and system_round_bug,
-                     "test will fail;  failure is probably due to a "
-                     "buggy system round function")
+    # NSKIP005 https://github.com/nanvix/cpython/issues/371
+    @unittest.skipIf((linux_alpha and system_round_bug) or support.is_nanvix,
+                     "NSKIP005: round-half-up, not round-half-to-even")
     def test_round_large(self):
         # Issue #1869: integral floats should remain unchanged
         self.assertEqual(round(5e15-1), 5e15-1)
@@ -1801,6 +1808,8 @@ class BuiltinTest(unittest.TestCase):
                     return i
         self.assertRaises(ValueError, list, zip(BadSeq(), BadSeq()))
 
+    # NSKIP001 https://github.com/nanvix/cpython/issues/371
+    @unittest.skipIf(support.is_nanvix, "NSKIP001: pickle corrupt on 32-bit")
     def test_zip_pickle(self):
         a = (1, 2, 3)
         b = (4, 5, 6)
@@ -1809,6 +1818,8 @@ class BuiltinTest(unittest.TestCase):
             z1 = zip(a, b)
             self.check_iter_pickle(z1, t, proto)
 
+    # NSKIP001 https://github.com/nanvix/cpython/issues/371
+    @unittest.skipIf(support.is_nanvix, "NSKIP001: pickle corrupt on 32-bit")
     def test_zip_pickle_strict(self):
         a = (1, 2, 3)
         b = (4, 5, 6)
@@ -1817,6 +1828,8 @@ class BuiltinTest(unittest.TestCase):
             z1 = zip(a, b, strict=True)
             self.check_iter_pickle(z1, t, proto)
 
+    # NSKIP001 https://github.com/nanvix/cpython/issues/371
+    @unittest.skipIf(support.is_nanvix, "NSKIP001: pickle corrupt on 32-bit")
     def test_zip_pickle_strict_fail(self):
         a = (1, 2, 3)
         b = (4, 5, 6, 7)

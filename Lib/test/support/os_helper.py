@@ -431,12 +431,13 @@ else:
                     _force_run(path, os.unlink, fullname)
         _rmtree_inner(path)
         # Nanvix does not implement rmdir (returns ENOSYS). Cleanup code
-        # should never crash the test run, so swallow all OSError here.
+        # should never crash the test run, so swallow ENOSYS here.
         # https://github.com/nanvix/nanvix/issues/348
         try:
             os.rmdir(path)
-        except OSError:
-            pass
+        except OSError as exc:
+            if exc.errno != errno.ENOSYS:
+                raise
 
     def _longpath(path):
         return path
@@ -447,11 +448,12 @@ def rmdir(dirname):
         _rmdir(dirname)
     except FileNotFoundError:
         pass
-    except OSError:
+    except OSError as exc:
         # Nanvix does not implement rmdir (returns ENOSYS). Cleanup code
-        # should never crash the test run, so swallow all OSError here.
+        # should never crash the test run, so swallow ENOSYS here.
         # https://github.com/nanvix/nanvix/issues/348
-        pass
+        if exc.errno != errno.ENOSYS:
+            raise
 
 
 def rmtree(path):
