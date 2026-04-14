@@ -23,6 +23,12 @@ SORT_MODE_NSAMPLES_CUMUL = 5
 # Format: (lineno, end_lineno, col_offset, end_col_offset)
 DEFAULT_LOCATION = (0, 0, -1, -1)
 
+# Internal frame path suffixes to filter from profiling output
+# These are internal profiler modules that should not appear in user-facing output
+_INTERNAL_FRAME_SUFFIXES = (
+    "_sync_coordinator.py",
+)
+
 # Thread status flags
 try:
     from _remote_debugging import (
@@ -31,6 +37,7 @@ try:
         THREAD_STATUS_UNKNOWN,
         THREAD_STATUS_GIL_REQUESTED,
         THREAD_STATUS_HAS_EXCEPTION,
+        THREAD_STATUS_MAIN_THREAD,
     )
 except ImportError:
     # Fallback for tests or when module is not available
@@ -39,3 +46,4 @@ except ImportError:
     THREAD_STATUS_UNKNOWN = (1 << 2)
     THREAD_STATUS_GIL_REQUESTED = (1 << 3)
     THREAD_STATUS_HAS_EXCEPTION = (1 << 4)
+    THREAD_STATUS_MAIN_THREAD = (1 << 5)

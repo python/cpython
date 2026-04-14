@@ -102,10 +102,10 @@ static inline _PyStackRef *_PyFrame_Stackbase(_PyInterpreterFrame *f) {
     return (f->localsplus + _PyFrame_GetCode(f)->co_nlocalsplus);
 }
 
-static inline _PyStackRef _PyFrame_StackPeek(_PyInterpreterFrame *f) {
+static inline _PyStackRef _PyFrame_StackPeek(_PyInterpreterFrame *f, int depth) {
     assert(f->stackpointer > _PyFrame_Stackbase(f));
-    assert(!PyStackRef_IsNull(f->stackpointer[-1]));
-    return f->stackpointer[-1];
+    assert(!PyStackRef_IsNull(f->stackpointer[-depth]));
+    return f->stackpointer[-depth];
 }
 
 static inline _PyStackRef _PyFrame_StackPop(_PyInterpreterFrame *f) {
@@ -149,6 +149,11 @@ static inline void _PyFrame_Copy(_PyInterpreterFrame *src, _PyInterpreterFrame *
     int stacktop = (int)(src->stackpointer - src->localsplus);
     assert(stacktop >= 0);
     dest->stackpointer = dest->localsplus + stacktop;
+    // visited is GC bookkeeping for the current stack walk, not frame state.
+    dest->visited = 0;
+#ifdef Py_DEBUG
+    dest->lltrace = src->lltrace;
+#endif
     for (int i = 0; i < stacktop; i++) {
         dest->localsplus[i] = PyStackRef_MakeHeapSafe(src->localsplus[i]);
     }
@@ -279,7 +284,7 @@ _PyThreadState_GetFrame(PyThreadState *tstate)
 
 /* For use by _PyFrame_GetFrameObject
   Do not call directly. */
-PyFrameObject *
+PyAPI_FUNC(PyFrameObject *)
 _PyFrame_MakeAndSetFrameObject(_PyInterpreterFrame *frame);
 
 /* Gets the PyFrameObject for this frame, lazily
@@ -394,6 +399,10 @@ _PyEvalFramePushAndInit(PyThreadState *tstate, _PyStackRef func,
                         PyObject *locals, _PyStackRef const *args,
                         size_t argcount, PyObject *kwnames,
                         _PyInterpreterFrame *previous);
+
+PyAPI_FUNC(_PyInterpreterFrame *)
+_PyEvalFramePushAndInit_Ex(PyThreadState *tstate, _PyStackRef func,
+    PyObject *locals, Py_ssize_t nargs, PyObject *callargs, PyObject *kwargs, _PyInterpreterFrame *previous);
 
 #ifdef __cplusplus
 }

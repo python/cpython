@@ -42,6 +42,7 @@ except ImportError:
     LiveStatsCollector = None
 
 _FREE_THREADED_BUILD = sysconfig.get_config_var("Py_GIL_DISABLED") is not None
+
 # Minimum number of samples required before showing the TUI
 # If fewer samples are collected, we skip the TUI and just print a message
 MIN_SAMPLES_FOR_TUI = 200
@@ -64,19 +65,23 @@ class SampleProfiler:
         self.realtime_stats = False
 
     def _new_unwinder(self, native, gc, opcodes, skip_non_matching_threads):
-        if _FREE_THREADED_BUILD:
-            unwinder = _remote_debugging.RemoteUnwinder(
-                self.pid, all_threads=self.all_threads, mode=self.mode, native=native, gc=gc,
-                opcodes=opcodes, skip_non_matching_threads=skip_non_matching_threads,
-                cache_frames=True, stats=self.collect_stats
-            )
+        kwargs = {}
+        if _FREE_THREADED_BUILD or self.all_threads:
+            kwargs['all_threads'] = self.all_threads
         else:
-            unwinder = _remote_debugging.RemoteUnwinder(
-                self.pid, only_active_thread=bool(self.all_threads), mode=self.mode, native=native, gc=gc,
-                opcodes=opcodes, skip_non_matching_threads=skip_non_matching_threads,
-                cache_frames=True, stats=self.collect_stats
-            )
-        return unwinder
+            kwargs['only_active_thread'] = bool(self.all_threads)
+
+        return _remote_debugging.RemoteUnwinder(
+            self.pid,
+            mode=self.mode,
+            native=native,
+            gc=gc,
+            opcodes=opcodes,
+            skip_non_matching_threads=skip_non_matching_threads,
+            cache_frames=True,
+            stats=self.collect_stats,
+            **kwargs
+        )
 
     def sample(self, collector, duration_sec=None, *, async_aware=False):
         sample_interval_sec = self.sample_interval_usec / 1_000_000
@@ -95,7 +100,11 @@ class SampleProfiler:
                     break
 
                 current_time = time.perf_counter()
-                if next_time < current_time:
+                if next_time > current_time:
+                    sleep_time = (next_time - current_time) * 0.9
+                    if sleep_time > 0.0001:
+                        time.sleep(sleep_time)
+                elif next_time < current_time:
                     try:
                         with _pause_threads(self.unwinder, self.blocking):
                             if async_aware == "all":
@@ -155,7 +164,8 @@ class SampleProfiler:
         # Don't print stats for live mode (curses is handling display)
         is_live_mode = LiveStatsCollector is not None and isinstance(collector, LiveStatsCollector)
         if not is_live_mode:
-            print(f"Captured {num_samples:n} samples in {fmt(running_time_sec, 2)} seconds")
+            s = "" if num_samples == 1 else "s"
+            print(f"Captured {num_samples:n} sample{s} in {fmt(running_time_sec, 2)} seconds")
             print(f"Sample rate: {fmt(sample_rate, 2)} samples/sec")
             print(f"Error rate: {fmt(error_rate, 2)}")
 

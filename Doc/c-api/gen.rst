@@ -45,6 +45,7 @@ than explicitly calling :c:func:`PyGen_New` or :c:func:`PyGen_NewWithQualName`.
    A reference to *frame* is stolen by this function.  The *frame* argument
    must not be ``NULL``.
 
+
 .. c:function:: PyCodeObject* PyGen_GetCode(PyGenObject *gen)
 
    Return a new :term:`strong reference` to the code object wrapped by *gen*.
@@ -82,3 +83,14 @@ Asynchronous Generator Objects
    This function always succeeds.
 
    .. versionadded:: 3.6
+
+
+Deprecated API
+^^^^^^^^^^^^^^
+
+.. c:macro:: PyAsyncGenASend_CheckExact(op)
+
+   This is a :term:`soft deprecated` API that was included in Python's C API
+   by mistake.
+
+   It is solely here for completeness; do not use this API.

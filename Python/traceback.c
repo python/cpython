@@ -41,7 +41,7 @@
 
 #if defined(__STDC_NO_VLA__) && (__STDC_NO_VLA__ == 1)
 /* Use alloca() for VLAs. */
-#  define VLA(type, name, size) type *name = alloca(size)
+#  define VLA(type, name, size) type *name = alloca(sizeof(type) * (size))
 #elif !defined(__STDC_NO_VLA__) || (__STDC_NO_VLA__ == 0)
 /* Use actual C VLAs.*/
 #  define VLA(type, name, size) type name[size]
@@ -1186,7 +1186,7 @@ _Py_DumpTraceback(int fd, PyThreadState *tstate)
 
 
 // Write the thread name
-static void
+static void _Py_NO_SANITIZE_THREAD
 write_thread_name(int fd, PyThreadState *tstate)
 {
 #ifndef MS_WINDOWS
@@ -1239,7 +1239,7 @@ write_thread_name(int fd, PyThreadState *tstate)
 
    This function is signal safe (except on Windows). */
 
-static void
+static void _Py_NO_SANITIZE_THREAD
 write_thread_id(int fd, PyThreadState *tstate, int is_current)
 {
     if (is_current)

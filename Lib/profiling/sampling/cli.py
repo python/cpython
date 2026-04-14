@@ -10,12 +10,13 @@ import socket
 import subprocess
 import sys
 import time
+import webbrowser
 from contextlib import nullcontext
 
 from .errors import SamplingUnknownProcessError, SamplingModuleNotFoundError, SamplingScriptNotFoundError
 from .sample import sample, sample_live, _is_process_running
 from .pstats_collector import PstatsCollector
-from .stack_collector import CollapsedStackCollector, FlamegraphCollector
+from .stack_collector import CollapsedStackCollector, FlamegraphCollector, DiffFlamegraphCollector
 from .heatmap_collector import HeatmapCollector
 from .gecko_collector import GeckoCollector
 from .binary_collector import BinaryCollector
@@ -36,6 +37,12 @@ from .constants import (
 )
 
 try:
+    from ._child_monitor import ChildProcessMonitor
+except ImportError:
+    # _remote_debugging module not available on this platform (e.g., WASI)
+    ChildProcessMonitor = None
+
+try:
     from .live_collector import LiveStatsCollector
 except ImportError:
     LiveStatsCollector = None
@@ -47,6 +54,13 @@ class CustomFormatter(
 ):
     """Custom formatter that combines default values display with raw description formatting."""
     pass
+
+
+class DiffFlamegraphAction(argparse.Action):
+    """Custom action for --diff-flamegraph that sets both format and baseline path."""
+    def __call__(self, parser, namespace, values, option_string=None):
+        namespace.format = 'diff_flamegraph'
+        namespace.diff_baseline = values
 
 
 _HELP_DESCRIPTION = """Sample a process's stack frames and generate profiling data.
@@ -72,12 +86,15 @@ _SYNC_TIMEOUT_SEC = 5.0
 _PROCESS_KILL_TIMEOUT_SEC = 2.0
 _READY_MESSAGE = b"ready"
 _RECV_BUFFER_SIZE = 1024
+_BINARY_PROFILE_HEADER_SIZE = 64
+_BINARY_PROFILE_MAGICS = (b"HCAT", b"TACH")
 
 # Format configuration
 FORMAT_EXTENSIONS = {
     "pstats": "pstats",
     "collapsed": "txt",
     "flamegraph": "html",
+    "diff_flamegraph": "html",
     "gecko": "json",
     "heatmap": "html",
     "binary": "bin",
@@ -87,14 +104,13 @@ COLLECTOR_MAP = {
     "pstats": PstatsCollector,
     "collapsed": CollapsedStackCollector,
     "flamegraph": FlamegraphCollector,
+    "diff_flamegraph": DiffFlamegraphCollector,
     "gecko": GeckoCollector,
     "heatmap": HeatmapCollector,
     "binary": BinaryCollector,
 }
 
 def _setup_child_monitor(args, parent_pid):
-    from ._child_monitor import ChildProcessMonitor
-
     # Build CLI args for child profilers (excluding --subprocesses to avoid recursion)
     child_cli_args = _build_child_profiler_args(args)
 
@@ -462,6 +478,12 @@ def _add_format_options(parser, include_compression=True, include_binary=True):
         dest="format",
         help="Generate interactive HTML heatmap visualization with line-level sample counts",
     )
+    format_group.add_argument(
+        "--diff-flamegraph",
+        metavar="BASELINE",
+        action=DiffFlamegraphAction,
+        help="Generate differential flamegraph comparing current profile to BASELINE binary file",
+    )
     if include_binary:
         format_group.add_argument(
             "--binary",
@@ -470,7 +492,7 @@ def _add_format_options(parser, include_compression=True, include_binary=True):
             dest="format",
             help="Generate high-performance binary format (use 'replay' command to convert)",
         )
-    parser.set_defaults(format="pstats")
+    parser.set_defaults(format="pstats", diff_baseline=None)
 
     if include_compression:
         output_group.add_argument(
@@ -484,8 +506,14 @@ def _add_format_options(parser, include_compression=True, include_binary=True):
         "-o",
         "--output",
         dest="outfile",
-        help="Output path (default: stdout for pstats, auto-generated for others). "
-        "For heatmap: directory name (default: heatmap_PID)",
+        help="Output path (default: stdout for pstats text; with -o, pstats is binary). "
+        "Auto-generated for other formats. For heatmap: directory name (default: heatmap_PID)",
+    )
+    output_group.add_argument(
+        "--browser",
+        action="store_true",
+        help="Automatically open HTML output (flamegraph, heatmap) in browser. "
+        "When using --subprocesses, only the main process opens the browser",
     )
 
 
@@ -534,17 +562,18 @@ def _sort_to_mode(sort_choice):
     return sort_map.get(sort_choice, SORT_MODE_NSAMPLES)
 
 def _create_collector(format_type, sample_interval_usec, skip_idle, opcodes=False,
-                      output_file=None, compression='auto'):
+                      output_file=None, compression='auto', diff_baseline=None):
     """Create the appropriate collector based on format type.
 
     Args:
-        format_type: The output format ('pstats', 'collapsed', 'flamegraph', 'gecko', 'heatmap', 'binary')
+        format_type: The output format ('pstats', 'collapsed', 'flamegraph', 'gecko', 'heatmap', 'binary', 'diff_flamegraph')
         sample_interval_usec: Sampling interval in microseconds
         skip_idle: Whether to skip idle samples
         opcodes: Whether to collect opcode information (only used by gecko format
                  for creating interval markers in Firefox Profiler)
         output_file: Output file path (required for binary format)
         compression: Compression type for binary format ('auto', 'zstd', 'none')
+        diff_baseline: Path to baseline binary file for differential flamegraph
 
     Returns:
         A collector instance of the appropriate type
@@ -552,6 +581,17 @@ def _create_collector(format_type, sample_interval_usec, skip_idle, opcodes=Fals
     collector_class = COLLECTOR_MAP.get(format_type)
     if collector_class is None:
         raise ValueError(f"Unknown format: {format_type}")
+
+    if format_type == "diff_flamegraph":
+        if diff_baseline is None:
+            raise ValueError("Differential flamegraph requires a baseline file")
+        if not os.path.exists(diff_baseline):
+            raise ValueError(f"Baseline file not found: {diff_baseline}")
+        return collector_class(
+            sample_interval_usec,
+            baseline_binary_path=diff_baseline,
+            skip_idle=skip_idle
+        )
 
     # Binary format requires output file and compression
     if format_type == "binary":
@@ -584,6 +624,114 @@ def _generate_output_filename(format_type, pid):
     if format_type == "heatmap":
         return f"heatmap_{pid}"
     return f"{format_type}_{pid}.{extension}"
+
+
+def _open_in_browser(path):
+    """Open a file or directory in the default web browser.
+
+    Args:
+        path: File path or directory path to open
+
+    For directories (heatmap), opens the index.html file inside.
+    """
+    abs_path = os.path.abspath(path)
+
+    # For heatmap directories, open the index.html file
+    if os.path.isdir(abs_path):
+        index_path = os.path.join(abs_path, 'index.html')
+        if os.path.exists(index_path):
+            abs_path = index_path
+        else:
+            print(f"Warning: Could not find index.html in {path}", file=sys.stderr)
+            return
+
+    file_url = f"file://{abs_path}"
+    try:
+        webbrowser.open(file_url)
+    except Exception as e:
+        print(f"Warning: Could not open browser: {e}", file=sys.stderr)
+
+
+def _validate_replay_input_file(filename):
+    """Validate that the replay input looks like a sampling binary profile."""
+    try:
+        with open(filename, "rb") as file:
+            header = file.read(_BINARY_PROFILE_HEADER_SIZE)
+    except OSError as exc:
+        sys.exit(f"Error: Could not read input file {filename}: {exc}")
+
+    if (
+        len(header) < _BINARY_PROFILE_HEADER_SIZE
+        or header[:4] not in _BINARY_PROFILE_MAGICS
+    ):
+        sys.exit(
+            "Error: Input file is not a binary sampling profile. "
+            "The replay command only accepts files created with --binary"
+        )
+
+
+def _replay_with_reader(args, reader):
+    """Replay samples from an open binary reader."""
+    info = reader.get_info()
+    interval = info['sample_interval_us']
+
+    print(f"Replaying {info['sample_count']} samples from {args.input_file}")
+    print(f"  Sample interval: {interval} us")
+    print(
+        "  Compression: "
+        f"{'zstd' if info.get('compression_type', 0) == 1 else 'none'}"
+    )
+
+    collector = _create_collector(
+        args.format, interval, skip_idle=False,
+        diff_baseline=args.diff_baseline
+    )
+
+    def progress_callback(current, total):
+        if total > 0:
+            pct = current / total
+            bar_width = 40
+            filled = int(bar_width * pct)
+            bar = '█' * filled + '░' * (bar_width - filled)
+            print(
+                f"\r  [{bar}] {pct*100:5.1f}% ({current:,}/{total:,})",
+                end="",
+                flush=True,
+            )
+
+    count = reader.replay_samples(collector, progress_callback)
+    print()
+
+    if args.format == "pstats":
+        if args.outfile:
+            collector.export(args.outfile)
+        else:
+            sort_choice = (
+                args.sort if args.sort is not None else "nsamples"
+            )
+            limit = args.limit if args.limit is not None else 15
+            sort_mode = _sort_to_mode(sort_choice)
+            collector.print_stats(
+                sort_mode, limit, not args.no_summary,
+                PROFILING_MODE_WALL
+            )
+    else:
+        filename = (
+            args.outfile
+            or _generate_output_filename(args.format, os.getpid())
+        )
+        collector.export(filename)
+
+        # Auto-open browser for HTML output if --browser flag is set
+        if (
+            args.format in (
+                'flamegraph', 'diff_flamegraph', 'heatmap'
+            )
+            and getattr(args, 'browser', False)
+        ):
+            _open_in_browser(filename)
+
+    print(f"Replayed {count} samples")
 
 
 def _handle_output(collector, args, pid, mode):
@@ -625,6 +773,10 @@ def _handle_output(collector, args, pid, mode):
             filename = args.outfile or _generate_output_filename(args.format, pid)
         collector.export(filename)
 
+        # Auto-open browser for HTML output if --browser flag is set
+        if args.format in ('flamegraph', 'diff_flamegraph', 'heatmap') and getattr(args, 'browser', False):
+            _open_in_browser(filename)
+
 
 def _validate_args(args, parser):
     """Validate format-specific options and live mode requirements.
@@ -654,6 +806,11 @@ def _validate_args(args, parser):
 
     # --subprocesses is incompatible with --live
     if hasattr(args, 'subprocesses') and args.subprocesses:
+        if ChildProcessMonitor is None:
+            parser.error(
+                "--subprocesses is not available on this platform "
+                "(requires _remote_debugging module)."
+            )
         if hasattr(args, 'live') and args.live:
             parser.error("--subprocesses is incompatible with --live mode.")
 
@@ -710,7 +867,7 @@ def _validate_args(args, parser):
         )
 
     # Validate --opcodes is only used with compatible formats
-    opcodes_compatible_formats = ("live", "gecko", "flamegraph", "heatmap", "binary")
+    opcodes_compatible_formats = ("live", "gecko", "flamegraph", "diff_flamegraph", "heatmap", "binary")
     if getattr(args, 'opcodes', False) and args.format not in opcodes_compatible_formats:
         parser.error(
             f"--opcodes is only compatible with {', '.join('--' + f for f in opcodes_compatible_formats)}."
@@ -907,7 +1064,8 @@ def _handle_attach(args):
     collector = _create_collector(
         args.format, args.sample_interval_usec, skip_idle, args.opcodes,
         output_file=output_file,
-        compression=getattr(args, 'compression', 'auto')
+        compression=getattr(args, 'compression', 'auto'),
+        diff_baseline=args.diff_baseline
     )
 
     with _get_child_monitor_context(args, args.pid):
@@ -985,7 +1143,8 @@ def _handle_run(args):
     collector = _create_collector(
         args.format, args.sample_interval_usec, skip_idle, args.opcodes,
         output_file=output_file,
-        compression=getattr(args, 'compression', 'auto')
+        compression=getattr(args, 'compression', 'auto'),
+        diff_baseline=args.diff_baseline
     )
 
     with _get_child_monitor_context(args, process.pid):
@@ -1123,45 +1282,16 @@ def _handle_live_run(args):
 
 def _handle_replay(args):
     """Handle the 'replay' command - convert binary profile to another format."""
-    import os
-
     if not os.path.exists(args.input_file):
         sys.exit(f"Error: Input file not found: {args.input_file}")
 
-    with BinaryReader(args.input_file) as reader:
-        info = reader.get_info()
-        interval = info['sample_interval_us']
+    _validate_replay_input_file(args.input_file)
 
-        print(f"Replaying {info['sample_count']} samples from {args.input_file}")
-        print(f"  Sample interval: {interval} us")
-        print(f"  Compression: {'zstd' if info.get('compression_type', 0) == 1 else 'none'}")
-
-        collector = _create_collector(args.format, interval, skip_idle=False)
-
-        def progress_callback(current, total):
-            if total > 0:
-                pct = current / total
-                bar_width = 40
-                filled = int(bar_width * pct)
-                bar = '█' * filled + '░' * (bar_width - filled)
-                print(f"\r  [{bar}] {pct*100:5.1f}% ({current:,}/{total:,})", end="", flush=True)
-
-        count = reader.replay_samples(collector, progress_callback)
-        print()
-
-        if args.format == "pstats":
-            if args.outfile:
-                collector.export(args.outfile)
-            else:
-                sort_choice = args.sort if args.sort is not None else "nsamples"
-                limit = args.limit if args.limit is not None else 15
-                sort_mode = _sort_to_mode(sort_choice)
-                collector.print_stats(sort_mode, limit, not args.no_summary, PROFILING_MODE_WALL)
-        else:
-            filename = args.outfile or _generate_output_filename(args.format, os.getpid())
-            collector.export(filename)
-
-        print(f"Replayed {count} samples")
+    try:
+        with BinaryReader(args.input_file) as reader:
+            _replay_with_reader(args, reader)
+    except (OSError, ValueError) as exc:
+        sys.exit(f"Error: {exc}")
 
 
 if __name__ == "__main__":

@@ -1,6 +1,4 @@
-import re
 import sys
-import copy
 import types
 import inspect
 import keyword
@@ -8,6 +6,8 @@ import itertools
 import annotationlib
 import abc
 from reprlib import recursive_repr
+lazy import copy
+lazy import re
 
 
 __all__ = ['dataclass',
@@ -191,8 +191,8 @@ class _KW_ONLY_TYPE:
 KW_ONLY = _KW_ONLY_TYPE()
 
 # Since most per-field metadata will be unused, create an empty
-# read-only proxy that can be shared among all fields.
-_EMPTY_METADATA = types.MappingProxyType({})
+# read-only dictionary that can be shared among all fields.
+_EMPTY_METADATA = frozendict()
 
 # Markers for the various kinds of fields and pseudo-fields.
 class _FIELD_BASE:
@@ -217,9 +217,8 @@ _PARAMS = '__dataclass_params__'
 _POST_INIT_NAME = '__post_init__'
 
 # String regex that string annotations for ClassVar or InitVar must match.
-# Allows "identifier.identifier[" or "identifier[".
-# https://bugs.python.org/issue33453 for details.
-_MODULE_IDENTIFIER_RE = re.compile(r'^(?:\s*(\w+)\s*\.)?\s*(\w+)')
+# This regular expression is compiled on demand so that 're' module can be imported lazily
+_MODULE_IDENTIFIER_RE = None
 
 # Atomic immutable types which don't require any recursive handling and for which deepcopy
 # returns the same object. We can provide a fast-path for these types in asdict and astuple.
@@ -725,10 +724,10 @@ def _init_fn(fields, std_fields, kw_only_fields, frozen, has_post_init,
                         annotation_fields=annotation_fields)
 
 
-def _frozen_get_del_attr(cls, fields, func_builder):
-    locals = {'cls': cls,
+def _frozen_set_del_attr(cls, fields, func_builder):
+    locals = {'__class__': cls,
               'FrozenInstanceError': FrozenInstanceError}
-    condition = 'type(self) is cls'
+    condition = 'type(self) is __class__'
     if fields:
         condition += ' or name in {' + ', '.join(repr(f.name) for f in fields) + '}'
 
@@ -736,14 +735,14 @@ def _frozen_get_del_attr(cls, fields, func_builder):
                         ('self', 'name', 'value'),
                         (f'  if {condition}:',
                           '   raise FrozenInstanceError(f"cannot assign to field {name!r}")',
-                         f'  super(cls, self).__setattr__(name, value)'),
+                         f'  super(__class__, self).__setattr__(name, value)'),
                         locals=locals,
                         overwrite_error=True)
     func_builder.add_fn('__delattr__',
                         ('self', 'name'),
                         (f'  if {condition}:',
                           '   raise FrozenInstanceError(f"cannot delete field {name!r}")',
-                         f'  super(cls, self).__delattr__(name)'),
+                         f'  super(__class__, self).__delattr__(name)'),
                         locals=locals,
                         overwrite_error=True)
 
@@ -804,10 +803,17 @@ def _is_type(annotation, cls, a_module, a_type, is_type_predicate):
     # a eval() penalty for every single field of every dataclass
     # that's defined.  It was judged not worth it.
 
-    match = _MODULE_IDENTIFIER_RE.match(annotation)
+    # String regex that string annotations for ClassVar or InitVar must match.
+    # Allows "identifier.identifier[" or "identifier[".
+    # https://github.com/python/cpython/issues/77634 for details.
+    global _MODULE_IDENTIFIER_RE
+    if _MODULE_IDENTIFIER_RE is None:
+        _MODULE_IDENTIFIER_RE = re.compile(r'(?:\s*(\w+)\s*\.)?\s*(\w+)')
+
+    match = _MODULE_IDENTIFIER_RE.prefixmatch(annotation)
     if match:
         ns = None
-        module_name = match.group(1)
+        module_name = match[1]
         if not module_name:
             # No module name, assume the class's module did
             # "from dataclasses import InitVar".
@@ -817,7 +823,7 @@ def _is_type(annotation, cls, a_module, a_type, is_type_predicate):
             module = sys.modules.get(cls.__module__)
             if module and module.__dict__.get(module_name) is a_module:
                 ns = sys.modules.get(a_type.__module__).__dict__
-        if ns and is_type_predicate(ns.get(match.group(2)), a_module):
+        if ns and is_type_predicate(ns.get(match[2]), a_module):
             return True
     return False
 
@@ -1199,7 +1205,7 @@ def _process_class(cls, init, repr, eq, order, unsafe_hash, frozen,
                             overwrite_error='Consider using functools.total_ordering')
 
     if frozen:
-        _frozen_get_del_attr(cls, field_list, func_builder)
+        _frozen_set_del_attr(cls, field_list, func_builder)
 
     # Decide if/how we're going to create a hash function.
     hash_action = _hash_action[bool(unsafe_hash),

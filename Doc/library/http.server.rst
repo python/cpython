@@ -19,7 +19,7 @@ This module defines classes for implementing HTTP servers.
 
 .. warning::
 
-    :mod:`http.server` is not recommended for production. It only implements
+    :mod:`!http.server` is not recommended for production. It only implements
     :ref:`basic security checks <http.server-security>`.
 
 .. include:: ../includes/wasm-notavail.rst
@@ -287,6 +287,8 @@ instantiation, of which this module provides three different variants:
       specifying its value. Note that, after the send_header calls are done,
       :meth:`end_headers` MUST BE called in order to complete the operation.
 
+      This method does not reject input containing CRLF sequences.
+
       .. versionchanged:: 3.2
          Headers are stored in an internal buffer.
 
@@ -296,6 +298,8 @@ instantiation, of which this module provides three different variants:
       Continue`` response is sent by the server to the client. The headers not
       buffered and sent directly the output stream.If the *message* is not
       specified, the HTTP message corresponding the response *code*  is sent.
+
+      This method does not reject *message* containing CRLF sequences.
 
       .. versionadded:: 3.2
 
@@ -463,7 +467,7 @@ such as using different index file names by overriding the class attribute
 Command-line interface
 ----------------------
 
-:mod:`http.server` can also be invoked directly using the :option:`-m`
+:mod:`!http.server` can also be invoked directly using the :option:`-m`
 switch of the interpreter.  The following example illustrates how to serve
 files relative to the current directory::
 
@@ -554,6 +558,11 @@ Security considerations
 :class:`SimpleHTTPRequestHandler` will follow symbolic links when handling
 requests, this makes it possible for files outside of the specified directory
 to be served.
+
+Methods :meth:`BaseHTTPRequestHandler.send_header` and
+:meth:`BaseHTTPRequestHandler.send_response_only` assume sanitized input
+and does not perform input validation such as checking for the presence of CRLF
+sequences. Untrusted input may result in HTTP Header injection attacks.
 
 Earlier versions of Python did not scrub control characters from the
 log messages emitted to stderr from ``python -m http.server`` or the
