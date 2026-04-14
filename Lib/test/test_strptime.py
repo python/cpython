@@ -8,7 +8,6 @@ import os
 import platform
 import sys
 from test import support
-from test.support import warnings_helper
 from test.support import skip_if_buggy_ucrt_strfptime, run_with_locales
 from datetime import date as datetime_date
 
