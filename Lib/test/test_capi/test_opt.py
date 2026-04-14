@@ -3435,6 +3435,25 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertNotIn("_LOAD_ATTR_METHOD_NO_DICT", uops)
         self.assertIn("_LOAD_CONST_INLINE_BORROW", uops)
 
+    def test_cached_load_special(self):
+        class CM:
+            def __enter__(self):
+                return self
+            def __exit__(self, *args):
+                pass
+        def f(n):
+            cm = CM()
+            x = 0
+            for _ in range(n):
+                with cm:
+                    x += 1
+            return x
+        res, ex = self._run_with_optimizer(f, TIER2_THRESHOLD)
+        self.assertIsNotNone(ex)
+        self.assertEqual(res, TIER2_THRESHOLD)
+        uops = get_opnames(ex)
+        self.assertNotIn("_LOAD_SPECIAL", uops)
+
     def test_store_fast_refcount_elimination(self):
         def foo(x):
             # Since x is known to be
