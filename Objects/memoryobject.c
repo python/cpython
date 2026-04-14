@@ -1677,7 +1677,8 @@ fix_error_int(const char *fmt)
 }
 
 // Return 0 if PTR represents "false", and 1 otherwise.
-#define UNPACK_TO_BOOL(PTR) (memcmp((PTR), &(_Bool){0}, sizeof(_Bool)) != 0)
+static const _Bool bool_false = 0;
+#define UNPACK_TO_BOOL(PTR) (memcmp((PTR), &bool_false, sizeof(_Bool)) != 0)
 
 /* Accept integer objects or objects with an __index__() method. */
 static long
