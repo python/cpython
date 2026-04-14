@@ -618,10 +618,10 @@ compute_exit_quality(_Py_CODEUNIT *target_instr, int opcode,
         target_instr == tracer->initial_state.close_loop_instr) {
         return EXIT_QUALITY_CLOSE_LOOP;
     }
-    if (target_instr->op.code == ENTER_EXECUTOR) {
+    if (target_instr->op.code == ENTER_EXECUTOR && !_PyJit_EnterExecutorShouldStopTracing(opcode)) {
         return EXIT_QUALITY_ENTER_EXECUTOR;
     }
-    if (_PyOpcode_Caches[_PyOpcode_Deopt[opcode]] > 0) {
+    else if (_PyOpcode_Caches[_PyOpcode_Deopt[opcode]] > 0) {
         return EXIT_QUALITY_SPECIALIZABLE;
     }
     return EXIT_QUALITY_DEFAULT;
@@ -842,8 +842,10 @@ _PyJit_translate_single_bytecode_to_trace(
     // _GUARD_IP leads to an exit.
     trace->end -= needs_guard_ip;
 
+#if Py_DEBUG
     int space_needed = expansion->nuops + needs_guard_ip + 2 + (!OPCODE_HAS_NO_SAVE_IP(opcode));
     assert(uop_buffer_remaining_space(trace) > space_needed);
+#endif
 
     ADD_TO_TRACE(_CHECK_VALIDITY, 0, 0, target);
 
@@ -1075,7 +1077,6 @@ done:
     DPRINTF(2, "Trace done\n");
     if (!is_terminator(uop_buffer_last(trace))) {
         ADD_TO_TRACE(_EXIT_TRACE, 0, 0, target);
-        uop_buffer_last(trace)->operand1 = true; // is_control_flow
     }
     return 0;
 }
@@ -1152,12 +1153,9 @@ _PyJit_TryInitializeTracing(
     assert(curr_instr->op.code == JUMP_BACKWARD_JIT || curr_instr->op.code == RESUME_CHECK_JIT || (exit != NULL));
     tracer->initial_state.jump_backward_instr = curr_instr;
 
-    // Reduce side-trace fitness as chain depth grows, but clamp the reduction
-    // after depth 4 so deeply chained exits still have at least half budget.
     const _PyOptimizationConfig *cfg = &tstate->interp->opt_config;
     _PyJitTracerTranslatorState *ts = &tracer->translator_state;
-    int effective_depth = Py_MIN(chain_depth, 4);
-    ts->fitness = (int32_t)((8 - effective_depth) * cfg->fitness_initial / 8);
+    ts->fitness = cfg->fitness_initial;
     ts->frame_depth = 0;
     DPRINTF(3, "Fitness init: chain_depth=%d, fitness=%d\n",
             chain_depth, ts->fitness);

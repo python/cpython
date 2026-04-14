@@ -26,11 +26,11 @@ extern "C" {
  * 2. A backward edge should leave budget for roughly N_BACKWARD_SLACK more
  *    bytecodes, assuming AVG_SLOTS_PER_INSTRUCTION.
  * 3. Roughly seven balanced branches should reduce fitness to
- *    EXIT_QUALITY_DEFAULT before per-slot costs.
+ *    EXIT_QUALITY_DEFAULT after per-slot costs.
  * 4. A push followed by a matching return is net-zero on frame-specific
  *    fitness, excluding per-slot costs.
  */
-#define MAX_TARGET_LENGTH          400
+#define MAX_TARGET_LENGTH          800
 #define OPTIMIZER_EFFECTIVENESS    2
 #define FITNESS_INITIAL            (MAX_TARGET_LENGTH * OPTIMIZER_EFFECTIVENESS)
 
@@ -57,8 +57,8 @@ extern "C" {
 #define FITNESS_BACKWARD_EDGE_COROUTINE  (FITNESS_BACKWARD_EDGE / 4)
 
 /* Penalty for a perfectly balanced (50/50) branch.
- * 7 such branches (ignoring per-slot cost) exhaust fitness to EXIT_QUALITY_DEFAULT. */
-#define FITNESS_BRANCH_BALANCED    ((FITNESS_INITIAL - EXIT_QUALITY_DEFAULT) / 7)
+ * 7 such branches (after per-slot cost) exhaust fitness to EXIT_QUALITY_DEFAULT. */
+#define FITNESS_BRANCH_BALANCED    ((FITNESS_INITIAL - EXIT_QUALITY_DEFAULT) / (7 * AVG_SLOTS_PER_INSTRUCTION))
 
 
 typedef struct _PyJitUopBuffer {
