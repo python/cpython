@@ -12318,9 +12318,12 @@
                 }
                 DISPATCH();
             }
-            _PyFrame_SetStackPointer(frame, stack_pointer);
-            Py_CLEAR(tracer->prev_state.recorded_value);
-            stack_pointer = _PyFrame_GetStackPointer(frame);
+            for (int i = 0; i < tracer->prev_state.recorded_count; i++) {
+                _PyFrame_SetStackPointer(frame, stack_pointer);
+                Py_CLEAR(tracer->prev_state.recorded_values[i]);
+                stack_pointer = _PyFrame_GetStackPointer(frame);
+            }
+            tracer->prev_state.recorded_count = 0;
             tracer->prev_state.instr = next_instr;
             PyObject *prev_code = PyStackRef_AsPyObjectBorrow(frame->f_executable);
             if (tracer->prev_state.instr_code != (PyCodeObject *)prev_code) {
@@ -12334,11 +12337,12 @@
             if (_PyOpcode_Caches[_PyOpcode_Deopt[opcode]]) {
                 (&next_instr[1])->counter = trigger_backoff_counter();
             }
-            uint8_t record_func_index = _PyOpcode_RecordFunctionIndices[opcode];
-            if (record_func_index) {
-                _Py_RecordFuncPtr doesnt_escape = _PyOpcode_RecordFunctions[record_func_index];
-                doesnt_escape(frame, stack_pointer, oparg, &tracer->prev_state.recorded_value);
+            const _PyOpcodeRecordEntry *record_entry = &_PyOpcode_RecordEntries[opcode];
+            for (int i = 0; i < record_entry->count; i++) {
+                _Py_RecordFuncPtr doesnt_escape = _PyOpcode_RecordFunctions[record_entry->indices[i]];
+                doesnt_escape(frame, stack_pointer, oparg, &tracer->prev_state.recorded_values[i]);
             }
+            tracer->prev_state.recorded_count = record_entry->count;
             DISPATCH_GOTO_NON_TRACING();
             #else
             (void)prev_instr;
@@ -12944,6 +12948,9 @@ JUMP_TO_LABEL(error);
             DISPATCH();
         }
 
+        #if _Py_TAIL_CALL_INTERP && !defined(_Py_TIER2)
+        Py_GCC_ATTRIBUTE((unused))
+        #endif
         LABEL(stop_tracing)
         {
             #if _Py_TIER2

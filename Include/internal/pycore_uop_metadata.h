@@ -413,6 +413,7 @@ const uint32_t _PyUop_Flags[MAX_UOP_ID+1] = {
     [_RECORD_3OS_GEN_FUNC] = HAS_RECORDS_VALUE_FLAG,
     [_RECORD_4OS] = HAS_RECORDS_VALUE_FLAG,
     [_RECORD_CALLABLE] = HAS_ARG_FLAG | HAS_RECORDS_VALUE_FLAG,
+    [_RECORD_CALLABLE_KW] = HAS_ARG_FLAG | HAS_RECORDS_VALUE_FLAG,
     [_RECORD_BOUND_METHOD] = HAS_ARG_FLAG | HAS_RECORDS_VALUE_FLAG,
     [_RECORD_CODE] = HAS_RECORDS_VALUE_FLAG,
 };
@@ -5712,6 +5713,7 @@ const char *const _PyOpcode_uop_name[MAX_UOP_REGS_ID+1] = {
     [_RECORD_4OS] = "_RECORD_4OS",
     [_RECORD_BOUND_METHOD] = "_RECORD_BOUND_METHOD",
     [_RECORD_CALLABLE] = "_RECORD_CALLABLE",
+    [_RECORD_CALLABLE_KW] = "_RECORD_CALLABLE_KW",
     [_RECORD_CODE] = "_RECORD_CODE",
     [_RECORD_NOS] = "_RECORD_NOS",
     [_RECORD_NOS_GEN_FUNC] = "_RECORD_NOS_GEN_FUNC",
@@ -6678,6 +6680,8 @@ int _PyUop_num_popped(int opcode, int oparg)
         case _RECORD_4OS:
             return 0;
         case _RECORD_CALLABLE:
+            return 0;
+        case _RECORD_CALLABLE_KW:
             return 0;
         case _RECORD_BOUND_METHOD:
             return 0;
