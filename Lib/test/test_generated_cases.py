@@ -2696,5 +2696,30 @@ class TestGeneratedAbstractCases(unittest.TestCase):
                                     "Pure evaluation cannot take array-like inputs"):
             self.run_cases_test(input, input2, output)
 
+    def test_overridden_abstract_with_multiple_caches(self):
+        input = """
+        op(OP, (version/1, unused/1, index/1, value -- res)) {
+            res = SPAM(version, index, value);
+        }
+        """
+        input2 = """
+        op(OP, (value -- res)) {
+            res = eggs(version, index, value);
+        }
+        """
+        output = """
+        case OP: {
+            JitOptRef value;
+            JitOptRef res;
+            value = stack_pointer[-1];
+            uint16_t version = (uint16_t)this_instr->operand0;
+            uint16_t index = (uint16_t)this_instr->operand1;
+            res = eggs(version, index, value);
+            stack_pointer[-1] = res;
+            break;
+        }
+        """
+        self.run_cases_test(input, input2, output)
+
 if __name__ == "__main__":
     unittest.main()

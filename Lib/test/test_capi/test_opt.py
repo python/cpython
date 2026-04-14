@@ -2845,6 +2845,35 @@ class TestUopsOptimization(unittest.TestCase):
         uops = get_opnames(ex)
         self.assertNotIn("_CHECK_IS_NOT_PY_CALLABLE", uops)
 
+    def test_check_is_not_py_callable_ex(self):
+        def testfunc(n):
+            total = 0
+            xs = (1, 2, 3)
+            args = (xs,)
+            for _ in range(n):
+                total += len(*args)
+            return total
+
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, 3 * TIER2_THRESHOLD)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertNotIn("_CHECK_IS_NOT_PY_CALLABLE_EX", uops)
+
+    def test_check_is_not_py_callable_kw(self):
+        def testfunc(n):
+            total = 0
+            xs = (3, 1, 2)
+            for _ in range(n):
+                total += sorted(xs, reverse=False)[0]
+            return total
+
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, TIER2_THRESHOLD)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertNotIn("_CHECK_IS_NOT_PY_CALLABLE_KW", uops)
+
     def test_call_len_string(self):
         def testfunc(n):
             for _ in range(n):
@@ -4867,7 +4896,7 @@ class TestUopsOptimization(unittest.TestCase):
         # This is a sign the optimizer ran and didn't hit contradiction.
         self.assertIn("_LOAD_CONST_INLINE_BORROW", uops)
 
-    def test_load_attr_getattribute_overridden_frame(self):
+    def test_load_attr_getattribute_frame(self):
         class B:
             def __getattribute__(self, name):
                 return len(name)
@@ -4881,8 +4910,10 @@ class TestUopsOptimization(unittest.TestCase):
 
         res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
         self.assertIsNotNone(ex)
+        self.assertEqual(res, 2 * TIER2_THRESHOLD)
         uops = get_opnames(ex)
         self.assertIn("_LOAD_ATTR_GETATTRIBUTE_OVERRIDDEN_FRAME", uops)
+        self.assertNotIn("_LOAD_GLOBAL_BUILTINS")
 
     def test_unary_negative(self):
         def testfunc(n):

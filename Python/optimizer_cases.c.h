@@ -2072,7 +2072,7 @@
         case _LOAD_GLOBAL_MODULE: {
             JitOptRef res;
             uint16_t version = (uint16_t)this_instr->operand0;
-            uint16_t index = (uint16_t)this_instr->operand0;
+            uint16_t index = (uint16_t)this_instr->operand1;
             (void)index;
             PyObject *cnst = NULL;
             if (ctx->frame->func != NULL) {
@@ -2119,7 +2119,7 @@
         case _LOAD_GLOBAL_BUILTINS: {
             JitOptRef res;
             uint16_t version = (uint16_t)this_instr->operand0;
-            uint16_t index = (uint16_t)this_instr->operand0;
+            uint16_t index = (uint16_t)this_instr->operand1;
             (void)version;
             (void)index;
             PyObject *cnst = NULL;
@@ -2487,7 +2487,7 @@
             JitOptRef o;
             owner = stack_pointer[-1];
             uint32_t dict_version = (uint32_t)this_instr->operand0;
-            uint16_t index = (uint16_t)this_instr->operand0;
+            uint16_t index = (uint16_t)this_instr->operand1;
             (void)dict_version;
             (void)index;
             attr = PyJitRef_NULL;
@@ -2615,9 +2615,16 @@
             JitOptRef new_frame;
             owner = stack_pointer[-1];
             uint32_t func_version = (uint32_t)this_instr->operand0;
-            PyObject *getattribute = (PyObject *)this_instr->operand0;
-            (void)func_version;
-            PyCodeObject *co = (PyCodeObject *)((PyFunctionObject *)getattribute)->func_code;
+            PyObject *getattribute = (PyObject *)this_instr->operand1;
+            PyFunctionObject *func = (PyFunctionObject *)getattribute;
+            if (sym_get_type_version(owner) == 0 ||
+                func->func_version != func_version) {
+                ctx->contradiction = true;
+                ctx->done = true;
+                break;
+            }
+            _Py_BloomFilter_Add(dependencies, func);
+            PyCodeObject *co = (PyCodeObject *)func->func_code;
             _Py_UOpsAbstractFrame *f = frame_new(ctx, co, NULL, 0);
             if (f == NULL) {
                 break;
@@ -2625,6 +2632,7 @@
             PyObject *name = get_co_name(ctx, oparg >> 1);
             f->locals[0] = owner;
             f->locals[1] = sym_new_const(ctx, name);
+            f->func = func;
             new_frame = PyJitRef_WrapInvalid(f);
             stack_pointer[-1] = new_frame;
             break;
@@ -4690,6 +4698,12 @@
         }
 
         case _CHECK_IS_NOT_PY_CALLABLE_KW: {
+            JitOptRef callable;
+            callable = stack_pointer[-3 - oparg];
+            PyTypeObject *type = sym_get_type(callable);
+            if (type && type != &PyFunction_Type && type != &PyMethod_Type) {
+                ADD_OP(_NOP, 0, 0);
+            }
             break;
         }
 
@@ -4726,6 +4740,12 @@
         }
 
         case _CHECK_IS_NOT_PY_CALLABLE_EX: {
+            JitOptRef func_st;
+            func_st = stack_pointer[-4];
+            PyTypeObject *type = sym_get_type(func_st);
+            if (type && type != &PyFunction_Type) {
+                ADD_OP(_NOP, 0, 0);
+            }
             break;
         }
 

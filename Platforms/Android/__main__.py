@@ -24,8 +24,11 @@ from tempfile import TemporaryDirectory
 
 
 SCRIPT_NAME = Path(__file__).name
+if SCRIPT_NAME.startswith("__"):
+    SCRIPT_NAME = "Platforms/Android"
+
 ANDROID_DIR = Path(__file__).resolve().parent
-PYTHON_DIR = ANDROID_DIR.parent
+PYTHON_DIR = ANDROID_DIR.parent.parent
 in_source_tree = (
     ANDROID_DIR.name == "Android" and (PYTHON_DIR / "pyconfig.h.in").exists()
 )
@@ -756,7 +759,7 @@ def package(context):
     prefix_dir = subdir(context.host, "prefix")
     version = package_version(prefix_dir)
 
-    with TemporaryDirectory(prefix=SCRIPT_NAME) as temp_dir:
+    with TemporaryDirectory(prefix=SCRIPT_NAME.replace("/", "-")) as temp_dir:
         temp_dir = Path(temp_dir)
 
         # Include all tracked files from the Android directory.
@@ -765,7 +768,10 @@ def package(context):
             cwd=ANDROID_DIR, capture_output=True, text=True, log=False,
         ).stdout.splitlines():
             src = ANDROID_DIR / line
-            dst = temp_dir / line
+            # "__main__.py" is renamed "android.py" for distribution purpose
+            dst = temp_dir / {
+                "__main__.py": "android.py"
+            }.get(line, line)
             dst.parent.mkdir(parents=True, exist_ok=True)
             shutil.copy2(src, dst, follow_symlinks=False)
 
@@ -831,7 +837,7 @@ def ci(context):
             "emulator on this platform."
         )
     else:
-        with TemporaryDirectory(prefix=SCRIPT_NAME) as temp_dir:
+        with TemporaryDirectory(prefix=SCRIPT_NAME.replace("/", "-")) as temp_dir:
             print("::group::Tests")
 
             # Prove the package is self-contained by using it to run the tests.
