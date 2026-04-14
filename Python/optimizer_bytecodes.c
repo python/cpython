@@ -20,6 +20,7 @@ typedef struct _Py_UOpsAbstractFrame _Py_UOpsAbstractFrame;
 #define sym_new_null _Py_uop_sym_new_null
 #define sym_matches_type _Py_uop_sym_matches_type
 #define sym_matches_type_version _Py_uop_sym_matches_type_version
+#define sym_get_type_version _Py_uop_sym_get_type_version
 #define sym_get_type _Py_uop_sym_get_type
 #define sym_has_type _Py_uop_sym_has_type
 #define sym_set_null(SYM) _Py_uop_sym_set_null(ctx, SYM)
@@ -138,14 +139,23 @@ dummy_func(void) {
         assert(type_version);
         if (sym_matches_type_version(owner, type_version)) {
             ADD_OP(_NOP, 0, 0);
-        } else {
+        }
+        else {
             PyTypeObject *probable_type = sym_get_probable_type(owner);
-            if (probable_type->tp_version_tag == type_version && sym_set_type_version(owner, type_version)) {
+            if (probable_type != NULL &&
+                probable_type->tp_version_tag == type_version) {
                 // Promote the probable type version to a known one.
+                sym_set_type(owner, probable_type);
+                sym_set_type_version(owner, type_version);
                 if ((probable_type->tp_flags & Py_TPFLAGS_IMMUTABLETYPE) == 0) {
                     PyType_Watch(TYPE_WATCHER_ID, (PyObject *)probable_type);
                     _Py_BloomFilter_Add(dependencies, probable_type);
                 }
+            }
+            else {
+                ctx->contradiction = true;
+                ctx->done = true;
+                break;
             }
         }
     }
@@ -239,14 +249,17 @@ dummy_func(void) {
         assert(this_instr[-1].opcode == _RECORD_TOS_TYPE);
         if (sym_matches_type_version(owner, type_version)) {
             ADD_OP(_NOP, 0, 0);
-        } else {
+        }
+        else {
             PyTypeObject *probable_type = sym_get_probable_type(owner);
             if (probable_type != NULL &&
-                probable_type->tp_version_tag == type_version &&
-                sym_set_type_version(owner, type_version)) {
+                probable_type->tp_version_tag == type_version) {
+                sym_set_type(owner, probable_type);
+                sym_set_type_version(owner, type_version);
                 PyType_Watch(TYPE_WATCHER_ID, (PyObject *)probable_type);
                 _Py_BloomFilter_Add(dependencies, probable_type);
-            } else {
+            }
+            else {
                 ctx->contradiction = true;
                 ctx->done = true;
                 break;
@@ -981,6 +994,10 @@ dummy_func(void) {
     }
 
     op(_LOAD_ATTR_PROPERTY_FRAME, (func_version/2, fget/4, owner -- new_frame)) {
+        if (sym_get_type_version(owner) == 0) {
+            ctx->done = true;
+            break;
+        }
         PyFunctionObject *func = (PyFunctionObject *)fget;
         if (func->func_version != func_version) {
             ctx->contradiction = true;

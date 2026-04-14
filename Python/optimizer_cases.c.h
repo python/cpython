@@ -2429,14 +2429,17 @@
             assert(this_instr[-1].opcode == _RECORD_TOS_TYPE);
             if (sym_matches_type_version(owner, type_version)) {
                 ADD_OP(_NOP, 0, 0);
-            } else {
+            }
+            else {
                 PyTypeObject *probable_type = sym_get_probable_type(owner);
                 if (probable_type != NULL &&
-                    probable_type->tp_version_tag == type_version &&
-                    sym_set_type_version(owner, type_version)) {
+                    probable_type->tp_version_tag == type_version) {
+                    sym_set_type(owner, probable_type);
+                    sym_set_type_version(owner, type_version);
                     PyType_Watch(TYPE_WATCHER_ID, (PyObject *)probable_type);
                     _Py_BloomFilter_Add(dependencies, probable_type);
-                } else {
+                }
+                else {
                     ctx->contradiction = true;
                     ctx->done = true;
                     break;
@@ -2452,13 +2455,22 @@
             assert(type_version);
             if (sym_matches_type_version(owner, type_version)) {
                 ADD_OP(_NOP, 0, 0);
-            } else {
+            }
+            else {
                 PyTypeObject *probable_type = sym_get_probable_type(owner);
-                if (probable_type->tp_version_tag == type_version && sym_set_type_version(owner, type_version)) {
+                if (probable_type != NULL &&
+                    probable_type->tp_version_tag == type_version) {
+                    sym_set_type(owner, probable_type);
+                    sym_set_type_version(owner, type_version);
                     if ((probable_type->tp_flags & Py_TPFLAGS_IMMUTABLETYPE) == 0) {
                         PyType_Watch(TYPE_WATCHER_ID, (PyObject *)probable_type);
                         _Py_BloomFilter_Add(dependencies, probable_type);
                     }
+                }
+                else {
+                    ctx->contradiction = true;
+                    ctx->done = true;
+                    break;
                 }
             }
             break;
@@ -2604,6 +2616,10 @@
             owner = stack_pointer[-1];
             uint32_t func_version = (uint32_t)this_instr->operand0;
             PyObject *fget = (PyObject *)this_instr->operand1;
+            if (sym_get_type_version(owner) == 0) {
+                ctx->done = true;
+                break;
+            }
             PyFunctionObject *func = (PyFunctionObject *)fget;
             if (func->func_version != func_version) {
                 ctx->contradiction = true;
