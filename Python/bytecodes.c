@@ -3884,6 +3884,7 @@ dummy_func(
         }
 
         macro(LOAD_SPECIAL) =
+            _RECORD_TOS_TYPE +
             _INSERT_NULL +
             _LOAD_SPECIAL;
 
