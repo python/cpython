@@ -56,7 +56,7 @@ extern "C" {
 #define EXIT_QUALITY_BACKWARD_EDGE_COROUTINE  (EXIT_QUALITY_BACKWARD_EDGE / 8)
 
 /* Penalty for a perfectly balanced (50/50) branch.
- * 7 such branches (after per-slot cost) exhaust fitness to EXIT_QUALITY_DEFAULT. 
+ * 7 such branches (after per-slot cost) exhaust fitness to EXIT_QUALITY_DEFAULT.
  * The calculation assumes the branches are spread out roughly equally throughout the trace.
  */
 #define FITNESS_BRANCH_BALANCED    ((FITNESS_INITIAL - EXIT_QUALITY_DEFAULT - \
