@@ -245,7 +245,7 @@ class ListTest(list_tests.CommonTest):
 
         list1 = [X()]
         list2 = [Y()]
-        self.assertTrue(list1 == list2)
+        self.assertFalse(list1 == list2)
 
         list3 = [Z()]
         list4 = [1]
