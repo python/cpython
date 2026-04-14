@@ -12333,10 +12333,7 @@
             if (_PyOpcode_Caches[_PyOpcode_Deopt[opcode]]
                 // Branch opcodes use the cache for branch history, not
                 // specialization counters.  Don't reset it.
-                && opcode != POP_JUMP_IF_FALSE
-                && opcode != POP_JUMP_IF_TRUE
-                && opcode != POP_JUMP_IF_NONE
-                && opcode != POP_JUMP_IF_NOT_NONE) {
+                && !IS_CONDITIONAL_JUMP_OPCODE(opcode)) {
                 (&next_instr[1])->counter = trigger_backoff_counter();
             }
             uint8_t record_func_index = _PyOpcode_RecordFunctionIndices[opcode];
