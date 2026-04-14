@@ -108,6 +108,7 @@
 #endif
 
 #include <limits.h> // ULONG_MAX
+#include <stddef.h> // size_t
 
 #if defined(_WIN32)                                                            \
     && (! defined(__USE_MINGW_ANSI_STDIO)                                      \
@@ -127,7 +128,7 @@
 #  elif ULONG_MAX == 18446744073709551615u // 2^64-1
 #    define EXPAT_FMT_PTRDIFF_T(midpart) "%" midpart "ld"
 #    define EXPAT_FMT_SIZE_T(midpart) "%" midpart "lu"
-#  elif defined(EMSCRIPTEN) // 32bit mode Emscripten
+#  elif defined(__wasm32__) // 32bit mode Emscripten or WASI SDK
 #    define EXPAT_FMT_PTRDIFF_T(midpart) "%" midpart "ld"
 #    define EXPAT_FMT_SIZE_T(midpart) "%" midpart "zu"
 #  else
@@ -152,6 +153,11 @@
 #define EXPAT_ALLOC_TRACKER_MAXIMUM_AMPLIFICATION_DEFAULT 100.0f
 #define EXPAT_ALLOC_TRACKER_ACTIVATION_THRESHOLD_DEFAULT                       \
   67108864 // 64 MiB, 2^26
+
+// NOTE: If function expat_alloc was user facing, EXPAT_MALLOC_ALIGNMENT would
+//       have to take sizeof(long double) into account
+#define EXPAT_MALLOC_ALIGNMENT sizeof(long long) // largest parser (sub)member
+#define EXPAT_MALLOC_PADDING ((EXPAT_MALLOC_ALIGNMENT) - sizeof(size_t))
 
 /* NOTE END */
 

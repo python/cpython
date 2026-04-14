@@ -6,7 +6,7 @@ import test.support
 from test.support import threading_helper, requires_subprocess, requires_gil_enabled
 from test.support import verbose, cpython_only, os_helper
 from test.support.import_helper import ensure_lazy_imports, import_module
-from test.support.script_helper import assert_python_ok, assert_python_failure
+from test.support.script_helper import assert_python_ok, assert_python_failure, spawn_python
 from test.support import force_not_colorized
 
 import random
@@ -323,6 +323,7 @@ class ThreadTests(BaseTestCase):
 
     # PyThreadState_SetAsyncExc() is a CPython-only gimmick, not (currently)
     # exposed at the Python level.  This test relies on ctypes to get at it.
+    @cpython_only
     def test_PyThreadState_SetAsyncExc(self):
         ctypes = import_module("ctypes")
 
@@ -410,6 +411,53 @@ class ThreadTests(BaseTestCase):
         if t.finished:
             t.join()
         # else the thread is still running, and we have no way to kill it
+
+    @cpython_only
+    @unittest.skipUnless(hasattr(signal, "pthread_kill"), "need pthread_kill")
+    @unittest.skipUnless(hasattr(signal, "SIGUSR1"), "need SIGUSR1")
+    def test_PyThreadState_SetAsyncExc_interrupts_sleep(self):
+        _testcapi = import_module("_testlimitedcapi")
+
+        worker_started = threading.Event()
+
+        class InjectedException(Exception):
+            """Custom exception for testing"""
+
+        caught_exception = None
+
+        def catch_exception():
+            nonlocal caught_exception
+            day_as_seconds = 60 * 60 * 24
+            try:
+                worker_started.set()
+                time.sleep(day_as_seconds)
+            except InjectedException as exc:
+                caught_exception = exc
+
+        thread = threading.Thread(target=catch_exception)
+        thread.start()
+        worker_started.wait()
+
+        signal.signal(signal.SIGUSR1, lambda sig, frame: None)
+
+        result = _testcapi.threadstate_set_async_exc(
+            thread.ident, InjectedException)
+        self.assertEqual(result, 1)
+
+        for _ in support.sleeping_retry(support.SHORT_TIMEOUT):
+            if not thread.is_alive():
+                break
+            try:
+                signal.pthread_kill(thread.ident, signal.SIGUSR1)
+            except OSError:
+                # The thread might have terminated between the is_alive check
+                # and the pthread_kill
+                break
+
+        thread.join()
+        signal.signal(signal.SIGUSR1, signal.SIG_DFL)
+
+        self.assertIsInstance(caught_exception, InjectedException)
 
     def test_limbo_cleanup(self):
         # Issue 7481: Failure to start thread should cleanup the limbo map.
@@ -1776,6 +1824,7 @@ class SubinterpThreadingTests(BaseTestCase):
         self.assertEqual(os.read(r_interp, 1), DONE)
 
     @cpython_only
+    @support.skip_if_sanitizer(thread=True, memory=True)
     def test_daemon_threads_fatal_error(self):
         import_module("_testcapi")
         subinterp_code = f"""if 1:
@@ -1794,10 +1843,7 @@ class SubinterpThreadingTests(BaseTestCase):
 
             _testcapi.run_in_subinterp(%r)
             """ % (subinterp_code,)
-        with test.support.SuppressCrashReport():
-            rc, out, err = assert_python_failure("-c", script)
-        self.assertIn("Fatal Python error: Py_EndInterpreter: "
-                      "not the last thread", err.decode())
+        assert_python_ok("-c", script)
 
     def _check_allowed(self, before_start='', *,
                        allowed=True,
@@ -2085,6 +2131,32 @@ class ThreadingExceptionTests(BaseTestCase):
         self.assertEqual(rc, 0)
         self.assertEqual(out, b"")
         self.assertEqual(err, b"")
+
+    @requires_subprocess()
+    @unittest.skipIf(os.name == 'nt', "signals don't work well on windows")
+    def test_keyboard_interrupt_during_threading_shutdown(self):
+        import subprocess
+        source = f"""
+        from threading import Thread
+        import time
+        import os
+
+
+        def test():
+            print('a', flush=True, end='')
+            time.sleep(10)
+
+
+        for _ in range(3):
+            Thread(target=test).start()
+        """
+
+        with spawn_python("-c", source, stderr=subprocess.PIPE) as proc:
+            self.assertEqual(proc.stdout.read(3), b'aaa')
+            proc.send_signal(signal.SIGINT)
+            proc.stderr.flush()
+            error = proc.stderr.read()
+            self.assertIn(b"KeyboardInterrupt", error)
 
 
 class ThreadRunFail(threading.Thread):

@@ -1320,6 +1320,18 @@ class ClassPropertiesAndMethods(unittest.TestCase):
         with self.assertRaisesRegex(AttributeError, "'X' object has no attribute 'a'"):
             X().a
 
+    def test_slots_after_items(self):
+        class C(tuple):
+            __slots__ = ['a']
+        x = C((1, 2, 3))
+        self.assertNotHasAttr(x, "__dict__")
+        self.assertNotHasAttr(x, "a")
+        x.a = 42
+        self.assertEqual(x.a, 42)
+        del x.a
+        self.assertNotHasAttr(x, "a")
+        self.assertEqual(x, (1, 2, 3))
+
     def test_slots_special(self):
         # Testing __dict__ and __weakref__ in __slots__...
         class D(object):
@@ -1329,18 +1341,17 @@ class ClassPropertiesAndMethods(unittest.TestCase):
         self.assertNotHasAttr(a, "__weakref__")
         a.foo = 42
         self.assertEqual(a.__dict__, {"foo": 42})
+        with self.assertRaises(TypeError):
+            weakref.ref(a)
 
         class W(object):
             __slots__ = ["__weakref__"]
         a = W()
         self.assertHasAttr(a, "__weakref__")
         self.assertNotHasAttr(a, "__dict__")
-        try:
+        with self.assertRaises(AttributeError):
             a.foo = 42
-        except AttributeError:
-            pass
-        else:
-            self.fail("shouldn't be allowed to set a.foo")
+        self.assertIs(weakref.ref(a)(), a)
 
         class C1(W, D):
             __slots__ = []
@@ -1349,6 +1360,7 @@ class ClassPropertiesAndMethods(unittest.TestCase):
         self.assertHasAttr(a, "__weakref__")
         a.foo = 42
         self.assertEqual(a.__dict__, {"foo": 42})
+        self.assertIs(weakref.ref(a)(), a)
 
         class C2(D, W):
             __slots__ = []
@@ -1357,6 +1369,80 @@ class ClassPropertiesAndMethods(unittest.TestCase):
         self.assertHasAttr(a, "__weakref__")
         a.foo = 42
         self.assertEqual(a.__dict__, {"foo": 42})
+        self.assertIs(weakref.ref(a)(), a)
+
+    @unittest.skipIf(_testcapi is None, 'need the _testcapi module')
+    def test_slots_special_before_items(self):
+        class D(_testcapi.HeapCCollection):
+            __slots__ = ["__dict__"]
+        a = D(1, 2, 3)
+        self.assertHasAttr(a, "__dict__")
+        self.assertNotHasAttr(a, "__weakref__")
+        a.foo = 42
+        self.assertEqual(a.__dict__, {"foo": 42})
+        with self.assertRaises(TypeError):
+            weakref.ref(a)
+        del a.__dict__
+        self.assertNotHasAttr(a, "foo")
+        self.assertEqual(a.__dict__, {})
+        self.assertEqual(list(a), [1, 2, 3])
+
+        class W(_testcapi.HeapCCollection):
+            __slots__ = ["__weakref__"]
+        a = W(1, 2, 3)
+        self.assertHasAttr(a, "__weakref__")
+        self.assertNotHasAttr(a, "__dict__")
+        with self.assertRaises(AttributeError):
+            a.foo = 42
+        self.assertIs(weakref.ref(a)(), a)
+
+        with self.assertRaises(TypeError):
+            class X(_testcapi.HeapCCollection):
+                __slots__ = ['x']
+
+        with self.assertRaises(TypeError):
+            class X(_testcapi.HeapCCollection):
+                __slots__ = ['__dict__', 'x']
+
+    @support.subTests(('base', 'arg'), [
+        (tuple, (1, 2, 3)),
+        (int, 9876543210**2),
+        (bytes, b'ab'),
+    ])
+    def test_slots_special_after_items(self, base, arg):
+        class D(base):
+            __slots__ = ["__dict__"]
+        a = D(arg)
+        self.assertHasAttr(a, "__dict__")
+        self.assertNotHasAttr(a, "__weakref__")
+        a.foo = 42
+        self.assertEqual(a.__dict__, {"foo": 42})
+        with self.assertRaises(TypeError):
+            weakref.ref(a)
+        del a.__dict__
+        self.assertNotHasAttr(a, "foo")
+        self.assertEqual(a.__dict__, {})
+        self.assertEqual(a, base(arg))
+
+        class W(base):
+            __slots__ = ["__weakref__"]
+        a = W(arg)
+        self.assertHasAttr(a, "__weakref__")
+        self.assertNotHasAttr(a, "__dict__")
+        with self.assertRaises(AttributeError):
+            a.foo = 42
+        self.assertIs(weakref.ref(a)(), a)
+        self.assertEqual(a, base(arg))
+
+    @support.subTests('base', [int, bytes] +
+                      ([_testcapi.HeapCCollection] if _testcapi else []))
+    def test_unsupported_slots(self, base):
+        with self.assertRaises(TypeError):
+            class X(base):
+                __slots__ = ['x']
+        with self.assertRaises(TypeError):
+            class X(base):
+                __slots__ = ['__dict__', 'x']
 
     def test_slots_special2(self):
         # Testing __qualname__ and __classcell__ in __slots__
@@ -1641,6 +1727,18 @@ class ClassPropertiesAndMethods(unittest.TestCase):
                     del method.__annotate__
                     self.assertIs(method.__annotate__, original_annotate)
 
+    def test_classmethod_without_dict_access(self):
+        class Spam:
+            @classmethod
+            def method(cls, x, y):
+                pass
+
+        obj = Spam.__dict__['method']
+        self.assertIsInstance(obj, classmethod)
+        self.assertEqual(obj.__annotations__, {})
+        self.assertEqual(obj.__name__, 'method')
+        self.assertEqual(obj.__module__, __name__)
+
     def test_staticmethod_annotations_without_dict_access(self):
         # gh-125017: this used to crash
         class Spam:
@@ -1651,15 +1749,8 @@ class ClassPropertiesAndMethods(unittest.TestCase):
         obj = Spam.__dict__['__new__']
         self.assertIsInstance(obj, staticmethod)
         self.assertEqual(obj.__annotations__, {})
-
-    @support.refcount_test
-    def test_refleaks_in_classmethod___init__(self):
-        gettotalrefcount = support.get_attribute(sys, 'gettotalrefcount')
-        cm = classmethod(None)
-        refs_before = gettotalrefcount()
-        for i in range(100):
-            cm.__init__(None)
-        self.assertAlmostEqual(gettotalrefcount() - refs_before, 0, delta=10)
+        self.assertEqual(obj.__name__, '__new__')
+        self.assertEqual(obj.__module__, __name__)
 
     @support.impl_detail("the module 'xxsubtype' is internal")
     @unittest.skipIf(xxsubtype is None, "requires xxsubtype module")
@@ -1712,6 +1803,28 @@ class ClassPropertiesAndMethods(unittest.TestCase):
             spam_cm.__get__(None, list)
         self.assertEqual(str(cm.exception), expected_errmsg)
 
+    @support.cpython_only
+    def test_method_get_meth_method_invalid_type(self):
+        # gh-146615: method_get() for METH_METHOD descriptors used to pass
+        # Py_TYPE(type)->tp_name as the %V fallback instead of the separate
+        # %s argument, causing a missing argument for %s and a crash.
+        # Verify the error message is correct when __get__() is called with a
+        # non-type as the second argument.
+        #
+        # METH_METHOD|METH_FASTCALL|METH_KEYWORDS is the only flag combination
+        # that enters the affected branch in method_get().
+        import io
+
+        obj = io.StringIO()
+        descr = io.TextIOBase.read
+
+        with self.assertRaises(TypeError) as cm:
+            descr.__get__(obj, "not_a_type")
+        self.assertEqual(
+            str(cm.exception),
+            "descriptor 'read' needs a type, not 'str', as arg 2",
+        )
+
     def test_staticmethods(self):
         # Testing static methods...
         class C(object):
@@ -1735,15 +1848,6 @@ class ClassPropertiesAndMethods(unittest.TestCase):
         self.assertEqual(sm.__dict__, {"x" : 42, '__doc__': None.__doc__})
         del sm.x
         self.assertNotHasAttr(sm, "x")
-
-    @support.refcount_test
-    def test_refleaks_in_staticmethod___init__(self):
-        gettotalrefcount = support.get_attribute(sys, 'gettotalrefcount')
-        sm = staticmethod(None)
-        refs_before = gettotalrefcount()
-        for i in range(100):
-            sm.__init__(None)
-        self.assertAlmostEqual(gettotalrefcount() - refs_before, 0, delta=10)
 
     @support.impl_detail("the module 'xxsubtype' is internal")
     @unittest.skipIf(xxsubtype is None, "requires xxsubtype module")
@@ -4078,7 +4182,7 @@ class ClassPropertiesAndMethods(unittest.TestCase):
         self.assertEqual(C2.__subclasses__(), [D])
 
         with self.assertRaisesRegex(TypeError,
-                    "cannot delete '__bases__' attribute of immutable type"):
+                    "cannot delete '__bases__' attribute of type 'D'"):
             del D.__bases__
         with self.assertRaisesRegex(TypeError, 'can only assign non-empty tuple'):
             D.__bases__ = ()
@@ -5062,7 +5166,7 @@ class ClassPropertiesAndMethods(unittest.TestCase):
 
         with self.assertRaises(TypeError) as cm:
             type(X).__dict__["__doc__"].__delete__(X)
-        self.assertIn("cannot delete '__doc__' attribute of immutable type 'X'", str(cm.exception))
+        self.assertIn("cannot delete '__doc__' attribute of type 'X'", str(cm.exception))
         self.assertEqual(X.__doc__, "banana")
 
     def test_qualname(self):
@@ -5278,6 +5382,31 @@ class ClassPropertiesAndMethods(unittest.TestCase):
 
         with self.assertRaisesRegex(NotImplementedError, "BAR"):
             B().foo
+
+    def test_gh146587(self):
+        # See https://github.com/python/cpython/issues/146587
+
+        class A:
+            def __radd__(self, other): ...
+
+        class B(tuple): ...
+
+        self.assertIsNone(() + A())
+        self.assertIsNone(B() + A())
+
+        from typing import NamedTuple
+
+        class T(NamedTuple):
+            x: int
+
+        class A:
+            def __init__(self, *args):
+                self.lst = list(args)
+            def __radd__(self, other):
+                return A(*self.lst, other)
+
+        self.assertEqual(((1,)+A()).lst, [(1,)])
+        self.assertEqual((T(x=1)+A()).lst, [T(x=1)])
 
 
 class DictProxyTests(unittest.TestCase):
