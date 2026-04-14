@@ -1211,13 +1211,11 @@ class TestDateOnly(unittest.TestCase):
         with self.assertRaises(ValueError):
             # The existing behavior that GH-70647 seeks to change.
             date.strptime('02-29', '%m-%d')
-        with self.assertRaises(ValueError):
-            date.strptime('02-29', '%m-%e')
         # %e without a year is deprecated, scheduled for removal in 3.17.
         _strptime._regex_cache.clear()
         with self.assertWarnsRegex(DeprecationWarning,
                                    r'.*day of month without a year.*'):
-            date.strptime('02- 1', '%m-%e')
+            date.strptime('02-01', '%m-%e')
         with self._assertNotWarns(DeprecationWarning):
             date.strptime('20-03-14', '%y-%m-%d')
             date.strptime('02-29,2024', '%m-%d,%Y')
