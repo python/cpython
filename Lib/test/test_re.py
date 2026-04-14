@@ -90,10 +90,13 @@ class ReTests(unittest.TestCase):
         self.assertEqual(re.search('x+', 'axx').span(), (1, 3))
         self.assertIsNone(re.search('x', 'aaa'))
         self.assertEqual(re.match('a*', 'xxx').span(0), (0, 0))
+        self.assertEqual(re.prefixmatch('a*', 'xxx').span(0), (0, 0))
         self.assertEqual(re.match('a*', 'xxx').span(), (0, 0))
         self.assertEqual(re.match('x*', 'xxxa').span(0), (0, 3))
+        self.assertEqual(re.prefixmatch('x*', 'xxxa').span(0), (0, 3))
         self.assertEqual(re.match('x*', 'xxxa').span(), (0, 3))
         self.assertIsNone(re.match('a+', 'xxx'))
+        self.assertIsNone(re.prefixmatch('a+', 'xxx'))
 
     def test_branching(self):
         """Test Branching
@@ -180,6 +183,7 @@ class ReTests(unittest.TestCase):
     def test_bug_1661(self):
         # Verify that flags do not get silently ignored with compiled patterns
         pattern = re.compile('.')
+        self.assertRaises(ValueError, re.prefixmatch, pattern, 'A', re.I)
         self.assertRaises(ValueError, re.match, pattern, 'A', re.I)
         self.assertRaises(ValueError, re.search, pattern, 'A', re.I)
         self.assertRaises(ValueError, re.findall, pattern, 'A', re.I)
@@ -517,6 +521,8 @@ class ReTests(unittest.TestCase):
             self.assertEqual(re.match(b'(a)', string).group(0), b'a')
             self.assertEqual(re.match(b'(a)', string).group(1), b'a')
             self.assertEqual(re.match(b'(a)', string).group(1, 1), (b'a', b'a'))
+            self.assertEqual(re.prefixmatch(b'(a)', string).group(1, 1),
+                             (b'a', b'a'))
         for a in ("\xe0", "\u0430", "\U0001d49c"):
             self.assertEqual(re.match(a, a).groups(), ())
             self.assertEqual(re.match('(%s)' % a, a).groups(), (a,))
@@ -558,10 +564,8 @@ class ReTests(unittest.TestCase):
         self.assertEqual(m.group(2, 1), ('b', 'a'))
         self.assertEqual(m.group(Index(2), Index(1)), ('b', 'a'))
 
-    def test_match_getitem(self):
-        pat = re.compile('(?:(?P<a1>a)|(?P<b2>b))(?P<c3>c)?')
-
-        m = pat.match('a')
+    def do_test_match_getitem(self, match_fn):
+        m = match_fn('a')
         self.assertEqual(m['a1'], 'a')
         self.assertEqual(m['b2'], None)
         self.assertEqual(m['c3'], None)
@@ -585,7 +589,7 @@ class ReTests(unittest.TestCase):
         with self.assertRaisesRegex(IndexError, 'no such group'):
             'a1={a2}'.format_map(m)
 
-        m = pat.match('ac')
+        m = match_fn('ac')
         self.assertEqual(m['a1'], 'a')
         self.assertEqual(m['b2'], None)
         self.assertEqual(m['c3'], 'c')
@@ -601,6 +605,14 @@ class ReTests(unittest.TestCase):
 
         # No len().
         self.assertRaises(TypeError, len, m)
+
+    def test_match_getitem(self):
+        pat = re.compile('(?:(?P<a1>a)|(?P<b2>b))(?P<c3>c)?')
+        self.do_test_match_getitem(pat.match)
+
+    def test_prefixmatch_getitem(self):
+        pat = re.compile('(?:(?P<a1>a)|(?P<b2>b))(?P<c3>c)?')
+        self.do_test_match_getitem(pat.prefixmatch)
 
     def test_re_fullmatch(self):
         # Issue 16203: Proposal: add re.fullmatch() method.
@@ -1639,6 +1651,24 @@ class ReTests(unittest.TestCase):
                          (['sum', 'op=', 3, 'op*', 'foo', 'op+', 312.5,
                            'op+', 'bar'], ''))
 
+    def test_bug_gh140797(self):
+        # gh140797: Capturing groups are not allowed in re.Scanner
+
+        msg = r"Cannot use capturing groups in re\.Scanner"
+        # Capturing group throws an error
+        with self.assertRaisesRegex(ValueError, msg):
+            Scanner([("(a)b", None)])
+
+        # Named Group
+        with self.assertRaisesRegex(ValueError, msg):
+            Scanner([("(?P<name>a)", None)])
+
+        # Non-capturing groups should pass normally
+        s = Scanner([("(?:a)b", lambda scanner, token: token)])
+        result, rem = s.scan("ab")
+        self.assertEqual(result,['ab'])
+        self.assertEqual(rem,'')
+
     def test_bug_448951(self):
         # bug 448951 (similar to 429357, but with single char match)
         # (Also test greedy matches.)
@@ -2178,6 +2208,8 @@ class ReTests(unittest.TestCase):
         self.assertEqual(re.fullmatch('[a-c]+', 'ABC', re.I).span(), (0, 3))
 
     @unittest.skipIf(linked_to_musl(), "musl libc issue, bpo-46390")
+    @unittest.skipIf(sys.platform.startswith("sunos"),
+                     "test doesn't work on Solaris, gh-91214")
     def test_locale_caching(self):
         # Issue #22410
         oldlocale = locale.setlocale(locale.LC_CTYPE)
@@ -2215,6 +2247,8 @@ class ReTests(unittest.TestCase):
         self.assertIsNone(re.match(b'(?Li)\xe5', b'\xc5'))
 
     @unittest.skipIf(linked_to_musl(), "musl libc issue, bpo-46390")
+    @unittest.skipIf(sys.platform.startswith("sunos"),
+                     "test doesn't work on Solaris, gh-91214")
     def test_locale_compiled(self):
         oldlocale = locale.setlocale(locale.LC_CTYPE)
         self.addCleanup(locale.setlocale, locale.LC_CTYPE, oldlocale)
@@ -2927,33 +2961,6 @@ class ImplementationTest(unittest.TestCase):
         pat = re.compile("")
         check_disallow_instantiation(self, type(pat.scanner("")))
 
-    def test_deprecated_modules(self):
-        deprecated = {
-            'sre_compile': ['compile', 'error',
-                            'SRE_FLAG_IGNORECASE', 'SUBPATTERN',
-                            '_compile_info'],
-            'sre_constants': ['error', 'SRE_FLAG_IGNORECASE', 'SUBPATTERN',
-                              '_NamedIntConstant'],
-            'sre_parse': ['SubPattern', 'parse',
-                          'SRE_FLAG_IGNORECASE', 'SUBPATTERN',
-                          '_parse_sub'],
-        }
-        for name in deprecated:
-            with self.subTest(module=name):
-                sys.modules.pop(name, None)
-                with self.assertWarns(DeprecationWarning) as w:
-                    __import__(name)
-                self.assertEqual(str(w.warning),
-                                 f"module {name!r} is deprecated")
-                self.assertEqual(w.filename, __file__)
-                self.assertIn(name, sys.modules)
-                mod = sys.modules[name]
-                self.assertEqual(mod.__name__, name)
-                self.assertEqual(mod.__package__, '')
-                for attr in deprecated[name]:
-                    self.assertHasAttr(mod, attr)
-                del sys.modules[name]
-
     @cpython_only
     def test_case_helpers(self):
         import _sre
@@ -3137,6 +3144,16 @@ class ExternalTests(unittest.TestCase):
                 with self.subTest('unicode-sensitive match'):
                     obj = re.compile(pattern, re.UNICODE)
                     self.assertTrue(obj.search(s))
+
+
+class TestModule(unittest.TestCase):
+    def test_deprecated__version__(self):
+        with self.assertWarnsRegex(
+            DeprecationWarning,
+            "'__version__' is deprecated and slated for removal in Python 3.20",
+        ) as cm:
+            getattr(re, "__version__")
+        self.assertEqual(cm.filename, __file__)
 
 
 if __name__ == "__main__":

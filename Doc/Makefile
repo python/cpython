@@ -58,7 +58,7 @@ build:
 	@if [ -f  ../Misc/NEWS ] ; then \
 		echo "Using existing Misc/NEWS file"; \
 		cp ../Misc/NEWS build/NEWS; \
-	elif $(BLURB) help >/dev/null 2>&1 && $(SPHINXBUILD) --version >/dev/null 2>&1; then \
+	elif $(BLURB) --version && $(SPHINXBUILD) --version ; then \
 		if [ -d ../Misc/NEWS.d ]; then \
 			echo "Building NEWS from Misc/NEWS.d with blurb"; \
 			$(BLURB) merge -f build/NEWS; \
@@ -88,6 +88,7 @@ htmlhelp: build
 	      "build/htmlhelp/pydoc.hhp project file."
 
 .PHONY: latex
+latex: _ensure-sphinxcontrib-svg2pdfconverter
 latex: BUILDER = latex
 latex: build
 	@echo "Build finished; the LaTeX files are in build/latex."
@@ -140,7 +141,8 @@ doctest:
 pydoc-topics: BUILDER = pydoc-topics
 pydoc-topics: build
 	@echo "Building finished; now run this:" \
-	      "cp build/pydoc-topics/topics.py ../Lib/pydoc_data/topics.py"
+	      "cp build/pydoc-topics/topics.py ../Lib/pydoc_data/topics.py" \
+	      "&& cp build/pydoc-topics/module_docs.py ../Lib/pydoc_data/module_docs.py"
 
 .PHONY: gettext
 gettext: BUILDER = gettext
@@ -170,6 +172,7 @@ venv:
 		echo "venv already exists."; \
 		echo "To recreate it, remove it first with \`make clean-venv'."; \
 	else \
+		set -e; \
 		echo "Creating venv in $(VENVDIR)"; \
 		if $(UV) --version >/dev/null 2>&1; then \
 			$(UV) venv --python=$(PYTHON) $(VENVDIR); \
@@ -183,7 +186,7 @@ venv:
 	fi
 
 .PHONY: dist-no-html
-dist-no-html: dist-text dist-pdf dist-epub dist-texinfo
+dist-no-html: dist-text dist-epub dist-texinfo
 
 .PHONY: dist
 dist:
@@ -229,7 +232,7 @@ dist-text:
 	@echo "Build finished and archived!"
 
 .PHONY: dist-pdf
-dist-pdf:
+dist-pdf: _ensure-sphinxcontrib-svg2pdfconverter
 	# archive the A4 latex
 	@echo "Building LaTeX (A4 paper)..."
 	mkdir -p dist
@@ -240,7 +243,8 @@ dist-pdf:
 	# as otherwise the full latexmk process is run twice.
 	# ($$ is needed to escape the $; https://www.gnu.org/software/make/manual/make.html#Basics-of-Variable-References)
 	-sed -i 's/: all-$$(FMT)/:/' build/latex/Makefile
-	(cd build/latex; $(MAKE) clean && $(MAKE) --jobs=$$((`nproc`+1)) --output-sync LATEXMKOPTS='-quiet' all-pdf && $(MAKE) FMT=pdf zip bz2)
+	if [ -n "$(filter output-sync,$(value .FEATURES))" ]; then OUTPUTSYNC=--output-sync; else OUTPUTSYNC=; fi && \
+	(cd build/latex; $(MAKE) clean && $(MAKE) --jobs=$$((`getconf _NPROCESSORS_ONLN`+1)) $$OUTPUTSYNC LATEXMKOPTS='-quiet' all-pdf && $(MAKE) FMT=pdf zip bz2)
 	cp build/latex/docs-pdf.zip dist/python-$(DISTVERSION)-docs-pdf-a4.zip
 	cp build/latex/docs-pdf.tar.bz2 dist/python-$(DISTVERSION)-docs-pdf-a4.tar.bz2
 	@echo "Build finished and archived!"
@@ -289,6 +293,10 @@ _ensure-pre-commit:
 _ensure-sphinx-autobuild:
 	$(MAKE) _ensure-package PACKAGE=sphinx-autobuild
 
+.PHONY: _ensure-sphinxcontrib-svg2pdfconverter
+_ensure-sphinxcontrib-svg2pdfconverter:
+	$(MAKE) _ensure-package PACKAGE=sphinxcontrib-svg2pdfconverter
+
 .PHONY: check
 check: _ensure-pre-commit
 	$(VENVDIR)/bin/python3 -m pre_commit run --all-files
@@ -333,3 +341,9 @@ autobuild-stable-html:
 		exit 1;; \
 	esac
 	@$(MAKE) autobuild-dev-html
+
+# Collect HTML IDs to a JSON document
+.PHONY: html-ids
+html-ids:
+	$(PYTHON) tools/check-html-ids.py collect build/html \
+		-o build/html/html-ids.json.gz

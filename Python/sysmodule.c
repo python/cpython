@@ -34,6 +34,7 @@ Data members:
 #include "pycore_pymem.h"         // _PyMem_DefaultRawFree()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_pystats.h"       // _Py_PrintSpecializationStats()
+#include "pycore_runtime.h"       // _PyRuntimeState_Get*()
 #include "pycore_structseq.h"     // _PyStructSequence_InitBuiltinWithFlags()
 #include "pycore_sysmodule.h"     // export _PySys_GetSizeOf()
 #include "pycore_unicodeobject.h" // _PyUnicode_InternImmortal()
@@ -471,7 +472,7 @@ PySys_AddAuditHook(Py_AuditHookFunction hook, void *userData)
        PySys_AddAuditHook() can be called before Python is initialized. */
     _PyRuntimeState *runtime = &_PyRuntime;
     PyThreadState *tstate;
-    if (runtime->initialized) {
+    if (_PyRuntimeState_GetInitialized(runtime)) {
         tstate = _PyThreadState_GET();
     }
     else {
@@ -610,7 +611,7 @@ sys_breakpointhook(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyOb
 
     if (last_dot == NULL) {
         /* The breakpoint is a built-in, e.g. PYTHONBREAKPOINT=int */
-        modulepath = PyUnicode_FromString("builtins");
+        modulepath = &_Py_ID(builtins);
         attrname = envar;
     }
     else if (last_dot != envar) {
@@ -1160,6 +1161,7 @@ sys_settrace(PyObject *module, PyObject *function)
 }
 
 /*[clinic input]
+@permit_long_summary
 sys._settraceallthreads
 
     function as arg: object
@@ -1173,7 +1175,7 @@ in the library manual.
 
 static PyObject *
 sys__settraceallthreads(PyObject *module, PyObject *arg)
-/*[clinic end generated code: output=161cca30207bf3ca input=d4bde1f810d73675]*/
+/*[clinic end generated code: output=161cca30207bf3ca input=e5750f5dc01142eb]*/
 {
     PyObject* argument = NULL;
     Py_tracefunc func = NULL;
@@ -1183,9 +1185,10 @@ sys__settraceallthreads(PyObject *module, PyObject *arg)
         argument = arg;
     }
 
-
-    PyEval_SetTraceAllThreads(func, argument);
-
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    if (_PyEval_SetTraceAllThreads(interp, func, argument) < 0) {
+        return NULL;
+    }
     Py_RETURN_NONE;
 }
 
@@ -1240,6 +1243,7 @@ sys_setprofile(PyObject *module, PyObject *function)
 }
 
 /*[clinic input]
+@permit_long_summary
 sys._setprofileallthreads
 
     function as arg: object
@@ -1253,7 +1257,7 @@ chapter in the library manual.
 
 static PyObject *
 sys__setprofileallthreads(PyObject *module, PyObject *arg)
-/*[clinic end generated code: output=2d61319e27b309fe input=a10589439ba20cee]*/
+/*[clinic end generated code: output=2d61319e27b309fe input=9a3dc3352c63b471]*/
 {
     PyObject* argument = NULL;
     Py_tracefunc func = NULL;
@@ -1263,8 +1267,10 @@ sys__setprofileallthreads(PyObject *module, PyObject *arg)
         argument = arg;
     }
 
-    PyEval_SetProfileAllThreads(func, argument);
-
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    if (_PyEval_SetProfileAllThreads(interp, func, argument) < 0) {
+        return NULL;
+    }
     Py_RETURN_NONE;
 }
 
@@ -1582,10 +1588,10 @@ get_hash_info(PyThreadState *tstate)
     } while(0)
 
     SET_HASH_INFO_ITEM(PyLong_FromLong(8 * sizeof(Py_hash_t)));
-    SET_HASH_INFO_ITEM(PyLong_FromSsize_t(_PyHASH_MODULUS));
-    SET_HASH_INFO_ITEM(PyLong_FromLong(_PyHASH_INF));
+    SET_HASH_INFO_ITEM(PyLong_FromSsize_t(PyHASH_MODULUS));
+    SET_HASH_INFO_ITEM(PyLong_FromLong(PyHASH_INF));
     SET_HASH_INFO_ITEM(PyLong_FromLong(0));  // This is no longer used
-    SET_HASH_INFO_ITEM(PyLong_FromLong(_PyHASH_IMAG));
+    SET_HASH_INFO_ITEM(PyLong_FromLong(PyHASH_IMAG));
     SET_HASH_INFO_ITEM(PyUnicode_FromString(hashfunc->name));
     SET_HASH_INFO_ITEM(PyLong_FromLong(hashfunc->hash_bits));
     SET_HASH_INFO_ITEM(PyLong_FromLong(hashfunc->seed_bits));
@@ -1757,7 +1763,7 @@ sys_getwindowsversion_impl(PyObject *module)
     PyObject *realVersion = _sys_getwindowsversion_from_kernel32();
     if (!realVersion) {
         if (!PyErr_ExceptionMatches(PyExc_WindowsError)) {
-            return NULL;
+            goto error;
         }
 
         PyErr_Clear();
@@ -2138,6 +2144,7 @@ sys__current_frames_impl(PyObject *module)
 }
 
 /*[clinic input]
+@permit_long_summary
 sys._current_exceptions
 
 Return a dict mapping each thread's identifier to its current raised exception.
@@ -2147,7 +2154,7 @@ This function should be used for specialized purposes only.
 
 static PyObject *
 sys__current_exceptions_impl(PyObject *module)
-/*[clinic end generated code: output=2ccfd838c746f0ba input=0e91818fbf2edc1f]*/
+/*[clinic end generated code: output=2ccfd838c746f0ba input=4ba429b6cfcd736d]*/
 {
     return _PyThread_CurrentExceptions();
 }
@@ -2275,7 +2282,9 @@ static PyObject *
 sys__stats_on_impl(PyObject *module)
 /*[clinic end generated code: output=aca53eafcbb4d9fe input=43b5bfe145299e55]*/
 {
-    _Py_StatsOn();
+    if (_Py_StatsOn() < 0) {
+        return NULL;
+    }
     Py_RETURN_NONE;
 }
 
@@ -2308,6 +2317,7 @@ sys__stats_clear_impl(PyObject *module)
 }
 
 /*[clinic input]
+@permit_long_docstring_body
 sys._stats_dump -> bool
 
 Dump stats to file, and clears the stats.
@@ -2317,7 +2327,7 @@ Return False if no statistics were not dumped because stats gathering was off.
 
 static int
 sys__stats_dump_impl(PyObject *module)
-/*[clinic end generated code: output=6e346b4ba0de4489 input=31a489e39418b2a5]*/
+/*[clinic end generated code: output=6e346b4ba0de4489 input=5a3ab40d2fb5af47]*/
 {
     int res = _Py_PrintSpecializationStats(1);
     _Py_StatsClear();
@@ -2371,14 +2381,14 @@ sys_activate_stack_trampoline_impl(PyObject *module, const char *backend)
                 return NULL;
             }
         }
-        else if (strcmp(backend, "perf_jit") == 0) {
-            _PyPerf_Callbacks cur_cb;
-            _PyPerfTrampoline_GetCallbacks(&cur_cb);
-            if (cur_cb.write_state != _Py_perfmap_jit_callbacks.write_state) {
-                if (_PyPerfTrampoline_SetCallbacks(&_Py_perfmap_jit_callbacks) < 0 ) {
-                    PyErr_SetString(PyExc_ValueError, "can't activate perf jit trampoline");
-                    return NULL;
-                }
+    }
+    else if (strcmp(backend, "perf_jit") == 0) {
+        _PyPerf_Callbacks cur_cb;
+        _PyPerfTrampoline_GetCallbacks(&cur_cb);
+        if (cur_cb.write_state != _Py_perfmap_jit_callbacks.write_state) {
+            if (_PyPerfTrampoline_SetCallbacks(&_Py_perfmap_jit_callbacks) < 0 ) {
+                PyErr_SetString(PyExc_ValueError, "can't activate perf jit trampoline");
+                return NULL;
             }
         }
     }
@@ -2488,6 +2498,11 @@ sys_remote_exec_impl(PyObject *module, int pid, PyObject *script)
     if (PyUnicode_FSConverter(script, &path) == 0) {
         return NULL;
     }
+
+    if (PySys_Audit("sys.remote_exec", "iO", pid, script) < 0) {
+        goto error;
+    }
+
     debugger_script_path = PyBytes_AS_STRING(path);
 #ifdef MS_WINDOWS
     PyObject *unicode_path;
@@ -2636,6 +2651,7 @@ sys__baserepl_impl(PyObject *module)
     Py_RETURN_NONE;
 }
 
+
 /*[clinic input]
 sys._is_gil_enabled -> bool
 
@@ -2738,20 +2754,31 @@ PyAPI_FUNC(int) PyUnstable_CopyPerfMapFile(const char* parent_filename) {
     }
     char buf[4096];
     PyThread_acquire_lock(perf_map_state.map_lock, 1);
-    int fflush_result = 0, result = 0;
+    int result = 0;
     while (1) {
         size_t bytes_read = fread(buf, 1, sizeof(buf), from);
-        size_t bytes_written = fwrite(buf, 1, bytes_read, perf_map_state.perf_map);
-        fflush_result = fflush(perf_map_state.perf_map);
-        if (fflush_result != 0 || bytes_read == 0 || bytes_written < bytes_read) {
-            result = -1;
-            goto close_and_release;
+        if (bytes_read == 0) {
+            if (ferror(from)) {
+                result = -1;
+            }
+            break;
         }
+
+        size_t bytes_written = fwrite(buf, 1, bytes_read, perf_map_state.perf_map);
+        if (bytes_written < bytes_read) {
+            result = -1;
+            break;
+        }
+
+        if (fflush(perf_map_state.perf_map) != 0) {
+            result = -1;
+            break;
+        }
+
         if (bytes_read < sizeof(buf) && feof(from)) {
-            goto close_and_release;
+            break;
         }
     }
-close_and_release:
     fclose(from);
     PyThread_release_lock(perf_map_state.map_lock);
     return result;
@@ -2759,6 +2786,128 @@ close_and_release:
     return 0;
 }
 
+/*[clinic input]
+sys.set_lazy_imports_filter
+
+    filter: object
+
+Set the lazy imports filter callback.
+
+The filter is a callable which disables lazy imports when they
+would otherwise be enabled. Returns True if the import is still enabled
+or False to disable it. The callable is called with:
+
+(importing_module_name, resolved_imported_module_name, [fromlist])
+
+Pass None to clear the filter.
+[clinic start generated code]*/
+
+static PyObject *
+sys_set_lazy_imports_filter_impl(PyObject *module, PyObject *filter)
+/*[clinic end generated code: output=10251d49469c278c input=fd51ed8df6ab54b7]*/
+{
+    if (PyImport_SetLazyImportsFilter(filter) < 0) {
+        return NULL;
+    }
+
+    Py_RETURN_NONE;
+}
+
+/*[clinic input]
+sys.get_lazy_imports_filter
+
+Get the current lazy imports filter callback.
+
+Returns the filter callable or None if no filter is set.
+[clinic start generated code]*/
+
+static PyObject *
+sys_get_lazy_imports_filter_impl(PyObject *module)
+/*[clinic end generated code: output=3bf73022892165af input=cf1e07cb8e203c94]*/
+{
+    PyObject *filter = PyImport_GetLazyImportsFilter();
+    if (filter == NULL) {
+        assert(!PyErr_Occurred());
+        Py_RETURN_NONE;
+    }
+    return filter;
+}
+
+/*[clinic input]
+sys.set_lazy_imports
+
+    mode: object
+
+Sets the global lazy imports mode.
+
+The mode parameter must be one of the following strings:
+- "all": All top-level imports become potentially lazy
+- "none": All lazy imports are suppressed (even explicitly marked ones)
+- "normal": Only explicitly marked imports (with 'lazy' keyword) are lazy
+
+In addition to the mode, lazy imports can be controlled via the filter
+provided to sys.set_lazy_imports_filter
+
+[clinic start generated code]*/
+
+static PyObject *
+sys_set_lazy_imports_impl(PyObject *module, PyObject *mode)
+/*[clinic end generated code: output=1ff34ba6c4feaf73 input=f04e70d8bf9fe4f6]*/
+{
+    PyImport_LazyImportsMode lazy_mode;
+    if (!PyUnicode_Check(mode)) {
+        PyErr_SetString(PyExc_TypeError,
+                        "mode must be a string: 'normal', 'all', or 'none'");
+        return NULL;
+    }
+    if (PyUnicode_CompareWithASCIIString(mode, "normal") == 0) {
+        lazy_mode = PyImport_LAZY_NORMAL;
+    }
+    else if (PyUnicode_CompareWithASCIIString(mode, "all") == 0) {
+        lazy_mode = PyImport_LAZY_ALL;
+    }
+    else if (PyUnicode_CompareWithASCIIString(mode, "none") == 0) {
+        lazy_mode = PyImport_LAZY_NONE;
+    }
+    else {
+        PyErr_SetString(PyExc_ValueError,
+                        "mode must be 'normal', 'all', or 'none'");
+        return NULL;
+    }
+
+    if (PyImport_SetLazyImportsMode(lazy_mode)) {
+        return NULL;
+    }
+    Py_RETURN_NONE;
+}
+
+/*[clinic input]
+sys.get_lazy_imports
+
+Gets the global lazy imports mode.
+
+Returns "all" if all top level imports are potentially lazy.
+Returns "none" if all explicitly marked lazy imports are suppressed.
+Returns "normal" if only explicitly marked imports are lazy.
+
+[clinic start generated code]*/
+
+static PyObject *
+sys_get_lazy_imports_impl(PyObject *module)
+/*[clinic end generated code: output=4147dec48c51ae99 input=8cb574f1e4e3003c]*/
+{
+    switch (PyImport_GetLazyImportsMode()) {
+        case PyImport_LAZY_NORMAL:
+            return PyUnicode_FromString("normal");
+        case PyImport_LAZY_ALL:
+            return PyUnicode_FromString("all");
+        case PyImport_LAZY_NONE:
+            return PyUnicode_FromString("none");
+        default:
+            PyErr_SetString(PyExc_RuntimeError, "unknown lazy imports mode");
+            return NULL;
+    }
+}
 
 static PyMethodDef sys_methods[] = {
     /* Might as well keep this in alphabetic order */
@@ -2824,6 +2973,10 @@ static PyMethodDef sys_methods[] = {
     SYS_UNRAISABLEHOOK_METHODDEF
     SYS_GET_INT_MAX_STR_DIGITS_METHODDEF
     SYS_SET_INT_MAX_STR_DIGITS_METHODDEF
+    SYS_GET_LAZY_IMPORTS_METHODDEF
+    SYS_SET_LAZY_IMPORTS_METHODDEF
+    SYS_GET_LAZY_IMPORTS_FILTER_METHODDEF
+    SYS_SET_LAZY_IMPORTS_FILTER_METHODDEF
     SYS__BASEREPL_METHODDEF
 #ifdef Py_STATS
     SYS__STATS_ON_METHODDEF
@@ -3032,7 +3185,7 @@ get_warnoptions(PyThreadState *tstate)
     return warnoptions;
 }
 
-void
+PyAPI_FUNC(void)
 PySys_ResetWarnOptions(void)
 {
     PyThreadState *tstate = _PyThreadState_GET();
@@ -3255,6 +3408,7 @@ PyDoc_STR(
 "\n\
 Static objects:\n\
 \n\
+abi_info -- Python ABI information.\n\
 builtin_module_names -- tuple of module names built into this interpreter\n\
 copyright -- copyright notice pertaining to this interpreter\n\
 exec_prefix -- prefix used to find the machine-specific Python library\n\
@@ -3342,11 +3496,13 @@ static PyStructSequence_Field flags_fields[] = {
     {"dev_mode",                "-X dev"},
     {"utf8_mode",               "-X utf8"},
     {"warn_default_encoding",   "-X warn_default_encoding"},
-    {"safe_path", "-P"},
+    {"safe_path",               "-P"},
     {"int_max_str_digits",      "-X int_max_str_digits"},
+    // Fields below are only usable by sys.flags attribute name, not index:
     {"gil",                     "-X gil"},
     {"thread_inherit_context",  "-X thread_inherit_context"},
-    {"context_aware_warnings",    "-X context_aware_warnings"},
+    {"context_aware_warnings",  "-X context_aware_warnings"},
+    {"lazy_imports",            "-X lazy_imports"},
     {0}
 };
 
@@ -3356,7 +3512,9 @@ static PyStructSequence_Desc flags_desc = {
     "sys.flags",        /* name */
     flags__doc__,       /* doc */
     flags_fields,       /* fields */
-    18
+    18  /* NB - do not increase beyond 3.13's value of 18. */
+    // New sys.flags fields should NOT be tuple addressable per
+    // https://github.com/python/cpython/issues/122575#issuecomment-2416497086
 };
 
 static void
@@ -3449,6 +3607,7 @@ set_flags_from_config(PyInterpreterState *interp, PyObject *flags)
 #endif
     SetFlag(config->thread_inherit_context);
     SetFlag(config->context_aware_warnings);
+    SetFlag(config->lazy_imports);
 #undef SetFlagObj
 #undef SetFlag
     return 0;
@@ -3541,16 +3700,22 @@ make_version_info(PyThreadState *tstate)
 }
 
 /* sys.implementation values */
-#define NAME "cpython"
-const char *_PySys_ImplName = NAME;
+#ifndef _PY_IMPL_NAME
+#define _PY_IMPL_NAME "cpython"
+#endif
+const char *_PySys_ImplName = _PY_IMPL_NAME;
+#ifndef _PY_IMPL_CACHE_TAG
 #define MAJOR Py_STRINGIFY(PY_MAJOR_VERSION)
 #define MINOR Py_STRINGIFY(PY_MINOR_VERSION)
-#define TAG NAME "-" MAJOR MINOR
-const char *_PySys_ImplCacheTag = TAG;
-#undef NAME
+#define _PY_IMPL_CACHE_TAG _PY_IMPL_NAME "-" MAJOR MINOR
+#endif
+const char *_PySys_ImplCacheTag = _PY_IMPL_CACHE_TAG;
+#ifdef MAJOR
 #undef MAJOR
+#endif
+#ifdef MINOR
 #undef MINOR
-#undef TAG
+#endif
 
 static PyObject *
 make_impl_info(PyObject *version_info)
@@ -3572,9 +3737,12 @@ make_impl_info(PyObject *version_info)
     if (res < 0)
         goto error;
 
-    value = PyUnicode_FromString(_PySys_ImplCacheTag);
-    if (value == NULL)
+    value = _PySys_ImplCacheTag
+        ? PyUnicode_FromString(_PySys_ImplCacheTag)
+        : Py_NewRef(Py_None);
+    if (value == NULL) {
         goto error;
+    }
     res = PyDict_SetItemString(impl_info, "cache_tag", value);
     Py_DECREF(value);
     if (res < 0)
@@ -3602,6 +3770,18 @@ make_impl_info(PyObject *version_info)
         goto error;
 #endif
 
+    // PEP-734
+#if defined(__wasi__) || defined(__EMSCRIPTEN__)
+    // It is not enabled on WASM builds just yet
+    value = Py_False;
+#else
+    value = Py_True;
+#endif
+    res = PyDict_SetItemString(impl_info, "supports_isolated_interpreters", value);
+    if (res < 0) {
+        goto error;
+    }
+
     /* dict ready */
 
     ns = _PyNamespace_New(impl_info);
@@ -3612,6 +3792,66 @@ error:
     Py_CLEAR(impl_info);
     return NULL;
 }
+
+
+static PyObject *
+make_abi_info(void)
+{
+    // New entries should be added when needed for a supported platform,
+    // or by core dev consensus for enabling an unsupported one.
+
+    PyObject *value;
+    PyObject *abi_info = PyDict_New();
+    if (abi_info == NULL) {
+        return NULL;
+    }
+
+    value = PyLong_FromLong(sizeof(void *) * 8);
+    if (value == NULL) {
+        goto error;
+    }
+    if (PyDict_SetItem(abi_info, &_Py_ID(pointer_bits), value) < 0) {
+        goto error;
+    }
+    Py_DECREF(value);
+
+#ifdef Py_GIL_DISABLED
+    value = Py_True;
+#else
+    value = Py_False;
+#endif
+    if (PyDict_SetItem(abi_info, &_Py_ID(free_threaded), value) < 0) {
+        goto error;
+    }
+
+#ifdef Py_DEBUG
+    value = Py_True;
+#else
+    value = Py_False;
+#endif
+    if (PyDict_SetItem(abi_info, &_Py_ID(debug), value) < 0) {
+        goto error;
+    }
+
+#if PY_BIG_ENDIAN
+    value = &_Py_ID(big);
+#else
+    value = &_Py_ID(little);
+#endif
+    if (PyDict_SetItem(abi_info, &_Py_ID(byteorder), value) < 0) {
+        goto error;
+    }
+
+    PyObject *ns = _PyNamespace_New(abi_info);
+    Py_DECREF(abi_info);
+    return ns;
+
+error:
+    Py_DECREF(abi_info);
+    Py_XDECREF(value);
+    return NULL;
+}
+
 
 #ifdef __EMSCRIPTEN__
 
@@ -3639,20 +3879,38 @@ static PyStructSequence_Desc emscripten_info_desc = {
 
 EM_JS(char *, _Py_emscripten_runtime, (void), {
     var info;
-    if (typeof navigator == 'object') {
+    if (typeof process === "object") {
+        if (process.versions?.bun) {
+            info = `bun v${process.versions.bun}`;
+        } else if (process.versions?.deno) {
+            info = `deno v${process.versions.deno}`;
+        } else {
+            // As far as I can tell, every JavaScript runtime puts "node" in
+            // process.release.name. Pyodide once checked for
+            //
+            // process.release.name === "node"
+            //
+            // and this is apparently part of the reason other runtimes started
+            // lying about it. Similar to the situation with userAgent.
+            //
+            // But just in case some other JS runtime decides to tell us what it
+            // is, we'll pick it up.
+            const name = process.release?.name ?? "node";
+            info = `${name} ${process.version}`;
+        }
+        // Include v8 version if we know it
+        if (process.versions?.v8) {
+            info +=  ` (v8 ${process.versions.v8})`;
+        }
+    } else if (typeof navigator === "object") {
         info = navigator.userAgent;
-    } else if (typeof process == 'object') {
-        info = "Node.js ".concat(process.version);
     } else {
         info = "UNKNOWN";
     }
-    var len = lengthBytesUTF8(info) + 1;
-    var res = _malloc(len);
-    if (res) stringToUTF8(info, res, len);
 #if __wasm64__
-    return BigInt(res);
+    return BigInt(stringToNewUTF8(info));
 #else
-    return res;
+    return stringToNewUTF8(info);
 #endif
 });
 
@@ -3787,9 +4045,9 @@ _PySys_InitCore(PyThreadState *tstate, PyObject *sysdict)
     SET_SYS("builtin_module_names", list_builtin_module_names());
     SET_SYS("stdlib_module_names", list_stdlib_module_names());
 #if PY_BIG_ENDIAN
-    SET_SYS_FROM_STRING("byteorder", "big");
+    SET_SYS("byteorder", &_Py_ID(big));
 #else
-    SET_SYS_FROM_STRING("byteorder", "little");
+    SET_SYS("byteorder", &_Py_ID(little));
 #endif
 
 #ifdef MS_COREDLL
@@ -3831,12 +4089,14 @@ _PySys_InitCore(PyThreadState *tstate, PyObject *sysdict)
 
     /* float repr style: 0.03 (short) vs 0.029999999999999999 (legacy) */
 #if _PY_SHORT_FLOAT_REPR == 1
-    SET_SYS_FROM_STRING("float_repr_style", "short");
+    SET_SYS("float_repr_style", &_Py_ID(short));
 #else
-    SET_SYS_FROM_STRING("float_repr_style", "legacy");
+    SET_SYS("float_repr_style", &_Py_ID(legacy));
 #endif
 
     SET_SYS("thread_info", PyThread_GetInfo());
+
+    SET_SYS("abi_info", make_abi_info());
 
     /* initialize asyncgen_hooks */
     if (_PyStructSequence_InitBuiltin(interp, &AsyncGenHooksType,
@@ -3996,13 +4256,14 @@ module _jit
 PyDoc_STRVAR(_jit_doc, "Utilities for observing just-in-time compilation.");
 
 /*[clinic input]
+@permit_long_summary
 _jit.is_available -> bool
 Return True if the current Python executable supports JIT compilation, and False otherwise.
 [clinic start generated code]*/
 
 static int
 _jit_is_available_impl(PyObject *module)
-/*[clinic end generated code: output=6849a9cd2ff4aac9 input=03add84aa8347cf1]*/
+/*[clinic end generated code: output=6849a9cd2ff4aac9 input=d009d751ae64c9ef]*/
 {
     (void)module;
 #ifdef _Py_TIER2
@@ -4013,26 +4274,28 @@ _jit_is_available_impl(PyObject *module)
 }
 
 /*[clinic input]
+@permit_long_summary
 _jit.is_enabled -> bool
 Return True if JIT compilation is enabled for the current Python process (implies sys._jit.is_available()), and False otherwise.
 [clinic start generated code]*/
 
 static int
 _jit_is_enabled_impl(PyObject *module)
-/*[clinic end generated code: output=55865f8de993fe42 input=02439394da8e873f]*/
+/*[clinic end generated code: output=55865f8de993fe42 input=0524151e857f4f3a]*/
 {
     (void)module;
     return _PyInterpreterState_GET()->jit;
 }
 
 /*[clinic input]
+@permit_long_summary
 _jit.is_active -> bool
 Return True if the topmost Python frame is currently executing JIT code (implies sys._jit.is_enabled()), and False otherwise.
 [clinic start generated code]*/
 
 static int
 _jit_is_active_impl(PyObject *module)
-/*[clinic end generated code: output=7facca06b10064d4 input=be2fcd8a269d9b72]*/
+/*[clinic end generated code: output=7facca06b10064d4 input=081ee32563dc2086]*/
 {
     (void)module;
     return _PyThreadState_GET()->current_executor != NULL;
@@ -4087,6 +4350,15 @@ _PySys_Create(PyThreadState *tstate, PyObject **sysmod_p)
     }
 
     if (PyDict_SetItemString(sysdict, "modules", modules) < 0) {
+        goto error;
+    }
+
+    PyObject *lazy_modules = _PyImport_InitLazyModules(interp); // borrowed reference
+    if (lazy_modules == NULL) {
+        goto error;
+    }
+
+    if (PyDict_SetItemString(sysdict, "lazy_modules", lazy_modules) < 0) {
         goto error;
     }
 
