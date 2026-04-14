@@ -102,6 +102,7 @@ const uint32_t _PyUop_Flags[MAX_UOP_ID+1] = {
     [_REPLACE_WITH_TRUE] = 0,
     [_TO_BOOL_DICT] = HAS_ESCAPES_FLAG,
     [_TO_BOOL_SIZED] = HAS_ESCAPES_FLAG,
+    [_TO_BOOL_ANY_SET] = HAS_ESCAPES_FLAG,
     [_UNARY_INVERT] = HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG,
     [_GUARD_NOS_INT] = HAS_EXIT_FLAG,
     [_GUARD_TOS_INT] = HAS_EXIT_FLAG,
@@ -1029,6 +1030,15 @@ const _PyUopCachingInfo _PyUop_Caching[MAX_UOP_ID+1] = {
         .entries = {
             { -1, -1, -1 },
             { 1, 1, _TO_BOOL_SIZED_r11 },
+            { -1, -1, -1 },
+            { -1, -1, -1 },
+        },
+    },
+    [_TO_BOOL_ANY_SET] = {
+        .best = { 1, 1, 1, 1 },
+        .entries = {
+            { -1, -1, -1 },
+            { 1, 1, _TO_BOOL_ANY_SET_r11 },
             { -1, -1, -1 },
             { -1, -1, -1 },
         },
@@ -3957,6 +3967,7 @@ const uint16_t _PyUop_Uncached[MAX_UOP_REGS_ID+1] = {
     [_REPLACE_WITH_TRUE_r23] = _REPLACE_WITH_TRUE,
     [_TO_BOOL_DICT_r11] = _TO_BOOL_DICT,
     [_TO_BOOL_SIZED_r11] = _TO_BOOL_SIZED,
+    [_TO_BOOL_ANY_SET_r11] = _TO_BOOL_ANY_SET,
     [_UNARY_INVERT_r12] = _UNARY_INVERT,
     [_GUARD_NOS_INT_r02] = _GUARD_NOS_INT,
     [_GUARD_NOS_INT_r12] = _GUARD_NOS_INT,
@@ -5838,6 +5849,8 @@ const char *const _PyOpcode_uop_name[MAX_UOP_REGS_ID+1] = {
     [_TIER2_RESUME_CHECK_r33] = "_TIER2_RESUME_CHECK_r33",
     [_TO_BOOL] = "_TO_BOOL",
     [_TO_BOOL_r11] = "_TO_BOOL_r11",
+    [_TO_BOOL_ANY_SET] = "_TO_BOOL_ANY_SET",
+    [_TO_BOOL_ANY_SET_r11] = "_TO_BOOL_ANY_SET_r11",
     [_TO_BOOL_BOOL] = "_TO_BOOL_BOOL",
     [_TO_BOOL_BOOL_r01] = "_TO_BOOL_BOOL_r01",
     [_TO_BOOL_BOOL_r11] = "_TO_BOOL_BOOL_r11",
@@ -6037,6 +6050,8 @@ int _PyUop_num_popped(int opcode, int oparg)
         case _TO_BOOL_DICT:
             return 1;
         case _TO_BOOL_SIZED:
+            return 1;
+        case _TO_BOOL_ANY_SET:
             return 1;
         case _UNARY_INVERT:
             return 1;

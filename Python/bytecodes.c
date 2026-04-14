@@ -611,10 +611,20 @@ dummy_func(
 
         tier2 op(_TO_BOOL_SIZED, (value -- res)) {
             /* Covers types whose truthiness is Py_SIZE(obj) != 0:
-               tuple, set, frozenset, bytes, bytearray. */
+               tuple, bytes, bytearray.  Not set/frozenset: PySetObject is
+               not a PyVarObject and its ob_size slot aliases `fill`, which
+               counts dummy entries -- use _TO_BOOL_ANY_SET for those. */
             PyObject *value_o = PyStackRef_AsPyObjectBorrow(value);
             STAT_INC(TO_BOOL, hit);
             res = Py_SIZE(value_o) ? PyStackRef_True : PyStackRef_False;
+            PyStackRef_CLOSE(value);
+        }
+
+        tier2 op(_TO_BOOL_ANY_SET, (value -- res)) {
+            PyObject *value_o = PyStackRef_AsPyObjectBorrow(value);
+            assert(PyAnySet_Check(value_o));
+            STAT_INC(TO_BOOL, hit);
+            res = PySet_GET_SIZE(value_o) ? PyStackRef_True : PyStackRef_False;
             PyStackRef_CLOSE(value);
         }
 
