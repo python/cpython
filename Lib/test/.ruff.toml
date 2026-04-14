@@ -18,7 +18,7 @@ extend-exclude = [
     "test_lazy_import/__init__.py",
     "test_lazy_import/data/*.py",
     "test_lazy_import/data/**/*.py",
-    # Unary literal pattern is not yet supported by Ruff (GH-145239)
+    # Unary plus literal pattern is not yet supported by Ruff (GH-145239)
     "test_patma.py",
 ]
 
