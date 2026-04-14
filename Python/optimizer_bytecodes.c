@@ -236,10 +236,19 @@ dummy_func(void) {
         if (sym_matches_type_version(owner, type_version)) {
             ADD_OP(_NOP, 0, 0);
         } else {
-            PyTypeObject *probable_type = sym_get_probable_type(owner);
-            if (probable_type->tp_version_tag == type_version && sym_set_type_version(owner, type_version)) {
-                PyType_Watch(TYPE_WATCHER_ID, (PyObject *)probable_type);
-                _Py_BloomFilter_Add(dependencies, probable_type);
+            // add watcher so that whenever the type changes we invalidate this
+            PyTypeObject *type = _PyType_LookupByVersion(type_version);
+            // if the type is null, it was not found in the cache (there was a conflict)
+            // with the key, in which case we can't trust the version
+            if (type) {
+                // if the type version was set properly, then add a watcher
+                // if it wasn't this means that the type version was previously set to something else
+                // and we set the owner to bottom, so we don't need to add a watcher because we must have
+                // already added one earlier.
+                if (sym_set_type_version(owner, type_version)) {
+                    PyType_Watch(TYPE_WATCHER_ID, (PyObject *)type);
+                    _Py_BloomFilter_Add(dependencies, type);
+                }
             }
         }
     }
