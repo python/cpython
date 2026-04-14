@@ -4896,6 +4896,38 @@ class TestUopsOptimization(unittest.TestCase):
         # This is a sign the optimizer ran and didn't hit contradiction.
         self.assertIn("_LOAD_CONST_INLINE_BORROW", uops)
 
+    def test_load_attr_property_frame_invalidates_on_code_change(self):
+        class C:
+            @property
+            def val(self):
+                return int(1)
+
+        fget = C.val.fget
+
+        def testfunc(*args):
+            n, c = args[0]
+            total = 0
+            for _ in range(n):
+                total += c.val
+            return total
+
+        testfunc((3, C()))
+        res, ex = self._run_with_optimizer(testfunc, (TIER2_THRESHOLD, C()))
+        self.assertEqual(res, TIER2_THRESHOLD)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertIn("_LOAD_ATTR_PROPERTY_FRAME", uops)
+        # Check the optimizer traced through the property call.
+        self.assertNotIn("_LOAD_GLOBAL_BUILTINS", uops)
+        self.assertIn("_CALL_BUILTIN_CLASS", uops)
+
+        fget.__code__ = (lambda self: 2).__code__
+        _testinternalcapi.clear_executor_deletion_list()
+        ex = get_first_executor(testfunc)
+        self.assertIsNone(ex)
+        res = testfunc((TIER2_THRESHOLD, C()))
+        self.assertEqual(res, TIER2_THRESHOLD * 2)
+
     def test_unary_negative(self):
         def testfunc(n):
             a = 3
