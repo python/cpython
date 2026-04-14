@@ -29,6 +29,10 @@ from nanvix_zutil import (
     suffix_dep,
 )
 
+# ---------------------------------------------------------------------------
+# Path helpers
+# ---------------------------------------------------------------------------
+
 # Makefile variable names (build-system-specific).
 _MAKE_VAR_CONFIG = "CONFIG_NANVIX"
 _MAKE_VAR_HOME = "NANVIX_HOME"
@@ -59,7 +63,7 @@ class CPythonBuild(ZScript):
 
     # ---- Make invocation -------------------------------------------------
 
-    def _run_make(self, make_args: list[str]) -> None:
+    def _run_make(self, make_args: list[str], *, kvm: bool = False) -> None:
         """Execute a make command, delegating Docker wrapping to the Makefile.
 
         On Windows, passes ``DOCKER_HOST_MODE=windows`` so that
@@ -78,12 +82,18 @@ class CPythonBuild(ZScript):
             # Insert DOCKER_HOST_MODE right after CONFIG_NANVIX=y so the
             # Makefile activates the host-side Docker wrapper.
             make_args.insert(4, "DOCKER_HOST_MODE=windows")
-        self.run(*make_args, cwd=self.repo_root, docker=False)
+        self.run(*make_args, cwd=self.repo_root, docker=False, kvm=kvm)
 
     # ---- Make argument builder -------------------------------------------
 
     def _make_args(self, *targets: str, with_install_prefix: bool = True) -> list[str]:
-        """Build the common make argument list."""
+        """Build the common make argument list.
+
+        When Docker mode is active, host paths are translated to their
+        container-side equivalents via :meth:`translate_path` so that
+        ``-I``, ``-L``, and ``-T`` flags in the Makefile resolve correctly
+        inside the container.
+        """
         sysroot = self.config.get(CFG_SYSROOT, "")
         if not sysroot:
             log.fatal(
@@ -93,13 +103,17 @@ class CPythonBuild(ZScript):
             )
         toolchain = self.config.get(CFG_TOOLCHAIN, "/opt/nanvix")
 
+        # Translate host paths → container paths when Docker is active.
+        sysroot_path = self.translate_path(Path(sysroot))
+        toolchain_path = self.translate_path(Path(toolchain))
+
         args = [
             "make",
             "-f",
             "Makefile.nanvix",
             f"{_MAKE_VAR_CONFIG}=y",
-            f"{_MAKE_VAR_HOME}={sysroot}",
-            f"{_MAKE_VAR_TOOLCHAIN}={toolchain}",
+            f"{_MAKE_VAR_HOME}={sysroot_path}",
+            f"{_MAKE_VAR_TOOLCHAIN}={toolchain_path}",
         ]
 
         args.extend(
@@ -176,7 +190,7 @@ class CPythonBuild(ZScript):
     def test(self) -> None:
         """Run the CPython test suite."""
         targets = self.targets if self.targets else ["test"]
-        self._run_make(self._make_args(*targets))
+        self._run_make(self._make_args(*targets), kvm=True)
 
     def release(self) -> None:
         """Package the CPython release tarballs and verify them."""
@@ -204,7 +218,10 @@ class CPythonBuild(ZScript):
                 log.info("Removed .nanvix/_test_staging/")
         else:
             self.run(
-                "make", "-f", "Makefile.nanvix", "clean",
+                "make",
+                "-f",
+                "Makefile.nanvix",
+                "clean",
                 cwd=self.repo_root,
             )
 
@@ -231,7 +248,11 @@ class CPythonBuild(ZScript):
             )
 
     def _download_dep_fallback(
-        self, dep_name: str, repo: str, ref: str, buildroot: Path,
+        self,
+        dep_name: str,
+        repo: str,
+        ref: str,
+        buildroot: Path,
     ) -> None:
         """Download *dep_name* using a fallback asset variant.
 

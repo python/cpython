@@ -36,6 +36,12 @@ endif
 	@cp "$(abspath $(NANVIX_HOME))/bin/kernel.elf"  $(TEST_STAGING)/sysroot/bin/ 2>/dev/null || true
 	@cp "$(abspath $(NANVIX_HOME))/bin/linuxd.elf"  $(TEST_STAGING)/sysroot/bin/ 2>/dev/null || true
 	@cp "$(abspath $(NANVIX_HOME))/bin/uservm.elf"  $(TEST_STAGING)/sysroot/bin/ 2>/dev/null || true
+	@# Replace unstripped python binary in staging with the stripped python.elf to save VM memory
+	@if [ -f "$(CURDIR)/python.elf" ]; then \
+		cp "$(CURDIR)/python.elf" "$(TEST_STAGING)/sysroot/bin/python3.12"; \
+		echo "  Installed stripped python.elf into staging ($$(du -sh $(TEST_STAGING)/sysroot/bin/python3.12 | cut -f1))"; \
+	fi
+	@cp $(CURDIR)/.nanvix/run-regrtest.py $(TEST_STAGING)/sysroot/run-regrtest.py
 
 # Validate hello-world test output in a log file.
 # Usage: $(call validate-hello,/path/to/logfile)
@@ -47,11 +53,16 @@ define validate-hello
 	fi
 endef
 
-# Clean up test artifacts.
+# Clean up test artifacts (keeps caches for next run).
 test-cleanup:
-	@rm -rf $(TEST_STAGING) /tmp/cpython_test.log /tmp/cpython_regrtest.log /tmp/cpython-rootfs.img
+	@rm -rf $(TEST_STAGING) /tmp/cpython_test.log /tmp/cpython_regrtest.log /tmp/cpython_regrtest_batch.log
 	@echo "		*** CPython tests PASSED ***"
 
-.PHONY: test-stage test-cleanup
+# Deep clean: remove cached ramfs template.
+test-distclean: test-cleanup
+	@rm -rf $(CURDIR)/.nanvix/_ramfs_cache
+	@rm -f $(RAMFS_IMG)
+
+.PHONY: test-stage test-cleanup test-distclean
 
 endif # _TEST_COMMON_MK

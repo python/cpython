@@ -3022,6 +3022,8 @@ class TestNormalDist:
         nd2 = copy.deepcopy(nd)
         self.assertEqual(nd, nd2)
 
+    # NSKIP001 https://github.com/nanvix/cpython/issues/371
+    @unittest.skipIf(support.is_nanvix, "NSKIP001: pickle corrupt on 32-bit")
     def test_pickle(self):
         nd = self.module.NormalDist(37.5, 5.625)
         for proto in range(pickle.HIGHEST_PROTOCOL + 1):

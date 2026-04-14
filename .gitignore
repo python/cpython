@@ -162,3 +162,6 @@ Python/frozen_modules/MANIFEST
 # Nanvix build state (keep .nanvix/z.py tracked)
 python.elf
 .nanvix-configured
+.nanvix/_test_staging/
+.nanvix/_ramfs_cache/
+.nanvix/cross-imports.json

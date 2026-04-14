@@ -42,6 +42,7 @@ from test.support import (TestFailed,
 from test.support.import_helper import import_fresh_module
 from test.support import threading_helper
 from test.support import warnings_helper
+from test import support
 import random
 import inspect
 import threading
@@ -2559,6 +2560,8 @@ class PythonAPItests:
         self.assertIsInstance(Decimal(0), numbers.Number)
         self.assertNotIsInstance(Decimal(0), numbers.Real)
 
+    # NSKIP001 https://github.com/nanvix/cpython/issues/371
+    @unittest.skipIf(support.is_nanvix, "NSKIP001: pickle corrupt on 32-bit")
     def test_pickle(self):
         for proto in range(pickle.HIGHEST_PROTOCOL + 1):
             Decimal = self.decimal.Decimal
@@ -2943,6 +2946,8 @@ class ContextAPItests:
         s = _testcapi.unicode_legacy_string('ROUND_\x00UP')
         self.assertRaises(TypeError, setattr, c, 'rounding', s)
 
+    # NSKIP001 https://github.com/nanvix/cpython/issues/371
+    @unittest.skipIf(support.is_nanvix, "NSKIP001: pickle corrupt on 32-bit")
     def test_pickle(self):
 
         for proto in range(pickle.HIGHEST_PROTOCOL + 1):

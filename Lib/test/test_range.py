@@ -4,7 +4,7 @@ import unittest
 import sys
 import pickle
 import itertools
-from test.support import ALWAYS_EQ
+from test.support import ALWAYS_EQ, is_nanvix
 
 # pure Python implementations (3 args only), for comparison
 def pyrange(start, stop, step):
@@ -363,6 +363,8 @@ class RangeTest(unittest.TestCase):
         self.assertEqual(repr(range(1, 2)), 'range(1, 2)')
         self.assertEqual(repr(range(1, 2, 3)), 'range(1, 2, 3)')
 
+    # NSKIP001 https://github.com/nanvix/cpython/issues/371
+    @unittest.skipIf(is_nanvix, "NSKIP001: pickle corrupt on 32-bit")
     def test_pickling(self):
         testcases = [(13,), (0, 11), (-22, 10), (20, 3, -1),
                      (13, 21, 3), (-2, 2, 2), (2**65, 2**65+2)]
@@ -373,6 +375,8 @@ class RangeTest(unittest.TestCase):
                     self.assertEqual(list(pickle.loads(pickle.dumps(r, proto))),
                                      list(r))
 
+    # NSKIP004 https://github.com/nanvix/cpython/issues/371
+    @unittest.skipIf(is_nanvix, "NSKIP004: 32-bit integer overflow")
     def test_iterator_pickling(self):
         testcases = [(13,), (0, 11), (-22, 10), (20, 3, -1), (13, 21, 3),
                      (-2, 2, 2)]
@@ -403,6 +407,8 @@ class RangeTest(unittest.TestCase):
                     it = pickle.loads(d)
                     self.assertEqual(list(it), data[1:])
 
+    # NSKIP004 https://github.com/nanvix/cpython/issues/371
+    @unittest.skipIf(is_nanvix, "NSKIP004: 32-bit integer overflow")
     def test_iterator_pickling_overflowing_index(self):
         for proto in range(pickle.HIGHEST_PROTOCOL + 1):
             with self.subTest(proto=proto):
@@ -412,6 +418,8 @@ class RangeTest(unittest.TestCase):
                 it = pickle.loads(d)
                 self.assertEqual(next(it), 2**32 + 1)
 
+    # NSKIP001 https://github.com/nanvix/cpython/issues/371
+    @unittest.skipIf(is_nanvix, "NSKIP001: pickle corrupt on 32-bit")
     def test_exhausted_iterator_pickling(self):
         for proto in range(pickle.HIGHEST_PROTOCOL + 1):
             r = range(2**65, 2**65+2)
@@ -425,6 +433,8 @@ class RangeTest(unittest.TestCase):
             self.assertEqual(list(i), [])
             self.assertEqual(list(i2), [])
 
+    # NSKIP001 https://github.com/nanvix/cpython/issues/371
+    @unittest.skipIf(is_nanvix, "NSKIP001: pickle corrupt on 32-bit")
     def test_large_exhausted_iterator_pickling(self):
         for proto in range(pickle.HIGHEST_PROTOCOL + 1):
             r = range(20)
@@ -438,6 +448,8 @@ class RangeTest(unittest.TestCase):
             self.assertEqual(list(i), [])
             self.assertEqual(list(i2), [])
 
+    # NSKIP001 https://github.com/nanvix/cpython/issues/371
+    @unittest.skipIf(is_nanvix, "NSKIP001: pickle corrupt on 32-bit")
     def test_iterator_unpickle_compat(self):
         testcases = [
             b'c__builtin__\niter\n(c__builtin__\nxrange\n(I10\nI20\nI2\ntRtRI2\nb.',
@@ -456,6 +468,8 @@ class RangeTest(unittest.TestCase):
             it = pickle.loads(t)
             self.assertEqual(list(it), [14, 16, 18])
 
+    # NSKIP004 https://github.com/nanvix/cpython/issues/371
+    @unittest.skipIf(is_nanvix, "NSKIP004: 32-bit integer overflow")
     def test_iterator_setstate(self):
         it = iter(range(10, 20, 2))
         it.__setstate__(2)
@@ -531,6 +545,8 @@ class RangeTest(unittest.TestCase):
         self.assertNotIn(-1, r)
         self.assertNotIn(1, r)
 
+    # NSKIP004 https://github.com/nanvix/cpython/issues/371
+    @unittest.skipIf(is_nanvix, "NSKIP004: 32-bit integer overflow")
     def test_range_iterators(self):
         # exercise 'fast' iterators, that use a rangeiterobject internally.
         # see issue 7298

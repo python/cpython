@@ -1,6 +1,7 @@
 venv/
 cache/
-sysroot/
-buildroot/
+sysroot*
+buildroot*/
 env.json
 nanvix.lock
+_test_staging/

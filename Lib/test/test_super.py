@@ -4,6 +4,7 @@ import textwrap
 import unittest
 from unittest.mock import patch
 from test.support import import_helper
+from test import support
 
 
 ADAPTIVE_WARMUP_DELAY = 2
@@ -46,6 +47,8 @@ class G(A):
     pass
 
 
+# NSKIP009 https://github.com/nanvix/cpython/issues/371
+@unittest.skipIf(support.is_nanvix, "NSKIP009: VM crash from __class__ cell corruption")
 class TestSuper(unittest.TestCase):
 
     def tearDown(self):

@@ -898,6 +898,8 @@ class AST_Tests(unittest.TestCase):
         x = ast.Sub()
         self.assertEqual(x._fields, ())
 
+    # NSKIP001 https://github.com/nanvix/cpython/issues/371
+    @unittest.skipIf(support.is_nanvix, "NSKIP001: pickle corrupt on 32-bit")
     def test_pickling(self):
         import pickle
 
@@ -1081,6 +1083,8 @@ class AST_Tests(unittest.TestCase):
         enum._test_simple_enum(_Precedence, ast._Precedence)
 
     @unittest.skipIf(support.is_wasi, "exhausts limited stack on WASI")
+    # NSKIP007 https://github.com/nanvix/cpython/issues/371
+    @unittest.skipIf(support.is_nanvix, "NSKIP007: deep recursion crashes 32-bit VM")
     @support.cpython_only
     def test_ast_recursion_limit(self):
         fail_depth = support.C_RECURSION_LIMIT + 1
@@ -2882,6 +2886,8 @@ class ModuleStateTests(unittest.TestCase):
                 import _ast
                 self.assertIs(_ast, lazy_mod)
 
+    # NSKIP002 https://github.com/nanvix/cpython/issues/371
+    @unittest.skipIf(support.is_nanvix, "NSKIP002: _testcapi not available")
     def test_subinterpreter(self):
         # bpo-41631: Importing and using the _ast module in a subinterpreter
         # must not crash.

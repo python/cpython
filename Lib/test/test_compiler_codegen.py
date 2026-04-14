@@ -1,9 +1,10 @@
-
-from test.support.bytecode_helper import CodegenTestCase
+import unittest
+from test.support.bytecode_helper import CodegenTestCase, _HAS_INTERNAL_CAPI
 
 # Tests for the code-generation stage of the compiler.
 # Examine the un-optimized code generated from the AST.
 
+@unittest.skipUnless(_HAS_INTERNAL_CAPI, "requires _testinternalcapi")
 class IsolatedCodeGenTests(CodegenTestCase):
 
     def codegen_test(self, snippet, expected_insts):
