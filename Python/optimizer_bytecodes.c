@@ -294,10 +294,10 @@ dummy_func(void) {
         bool is_remainder = (oparg == NB_REMAINDER
                              || oparg == NB_INPLACE_REMAINDER);
         // Promote probable-float operands to known floats via speculative
-        // guards. _RECORD_TOS / _RECORD_NOS in the BINARY_OP macro record
-        // the observed operand during tracing, which sym_get_probable_type
-        // reads here. Applied only to ops where narrowing unlocks a
-        // meaningful downstream win:
+        // guards. _RECORD_TOS_TYPE / _RECORD_NOS_TYPE in the BINARY_OP macro
+        // record the observed operand type during tracing, which
+        // sym_get_probable_type reads here. Applied only to ops where
+        // narrowing unlocks a meaningful downstream win:
         //   - NB_TRUE_DIVIDE: enables the specialized float path below.
         //   - NB_REMAINDER: lets the float result type propagate.
         // NB_POWER is excluded — speculative guards there regressed
@@ -2422,6 +2422,11 @@ dummy_func(void) {
 
     op(_RECORD_NOS, (nos, tos -- nos, tos)) {
         sym_set_recorded_value(nos, (PyObject *)this_instr->operand0);
+    }
+
+    op(_RECORD_NOS_TYPE, (nos, tos -- nos, tos)) {
+        PyTypeObject *tp = (PyTypeObject *)this_instr->operand0;
+        sym_set_recorded_type(nos, tp);
     }
 
     op(_RECORD_4OS, (value, _3os, nos, tos -- value, _3os, nos, tos)) {

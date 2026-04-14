@@ -27,6 +27,13 @@ void _PyOpcode_RecordFunction_NOS(_PyInterpreterFrame *frame, _PyStackRef *stack
     Py_INCREF(*recorded_value);
 }
 
+void _PyOpcode_RecordFunction_NOS_TYPE(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer, int oparg, PyObject **recorded_value) {
+    _PyStackRef nos;
+    nos = stack_pointer[-2];
+    *recorded_value = (PyObject *)Py_TYPE(PyStackRef_AsPyObjectBorrow(nos));
+    Py_INCREF(*recorded_value);
+}
+
 void _PyOpcode_RecordFunction_NOS_GEN_FUNC(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer, int oparg, PyObject **recorded_value) {
     _PyStackRef nos;
     nos = stack_pointer[-2];
@@ -99,7 +106,7 @@ void _PyOpcode_RecordFunction_CODE(_PyInterpreterFrame *frame, _PyStackRef *stac
 #define _RECORD_BOUND_METHOD_INDEX 6
 #define _RECORD_CALLABLE_KW_INDEX 7
 #define _RECORD_4OS_INDEX 8
-#define _RECORD_TOS_INDEX 9
+#define _RECORD_NOS_TYPE_INDEX 9
 
 const _PyOpcodeRecordEntry _PyOpcode_RecordEntries[256] = {
         [TO_BOOL_ALWAYS_TRUE] = {1, {_RECORD_TOS_TYPE_INDEX}},
@@ -138,7 +145,7 @@ const _PyOpcodeRecordEntry _PyOpcode_RecordEntries[256] = {
         [CALL_KW_PY] = {1, {_RECORD_CALLABLE_KW_INDEX}},
         [CALL_KW_BOUND_METHOD] = {1, {_RECORD_CALLABLE_KW_INDEX}},
         [CALL_EX_PY] = {1, {_RECORD_4OS_INDEX}},
-        [BINARY_OP] = {2, {_RECORD_TOS_INDEX, _RECORD_NOS_INDEX}},
+        [BINARY_OP] = {2, {_RECORD_TOS_TYPE_INDEX, _RECORD_NOS_TYPE_INDEX}},
 };
 
 const _Py_RecordFuncPtr _PyOpcode_RecordFunctions[10] = {
@@ -151,5 +158,5 @@ const _Py_RecordFuncPtr _PyOpcode_RecordFunctions[10] = {
         [_RECORD_BOUND_METHOD_INDEX] = _PyOpcode_RecordFunction_BOUND_METHOD,
         [_RECORD_CALLABLE_KW_INDEX] = _PyOpcode_RecordFunction_CALLABLE_KW,
         [_RECORD_4OS_INDEX] = _PyOpcode_RecordFunction_4OS,
-        [_RECORD_TOS_INDEX] = _PyOpcode_RecordFunction_TOS,
+        [_RECORD_NOS_TYPE_INDEX] = _PyOpcode_RecordFunction_NOS_TYPE,
 };
