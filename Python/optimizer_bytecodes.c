@@ -279,33 +279,34 @@ dummy_func(void) {
         bool rhs_int = sym_matches_type(rhs, &PyLong_Type);
         bool lhs_float = sym_matches_type(lhs, &PyFloat_Type);
         bool rhs_float = sym_matches_type(rhs, &PyFloat_Type);
-        // Speculatively promote probable floats to known floats. The
-        // _RECORD_TOS / _RECORD_NOS uops preceding _BINARY_OP record the
-        // observed operands during tracing; if the probable type is float
-        // but no static type is known, emit a guard and narrow the symbol.
-        // For NB_TRUE_DIVIDE this enables the specialized float path
-        // below; for NB_REMAINDER it lets the result type propagate as
-        // float so downstream ops can specialize. NB_POWER is intentionally
-        // excluded: speculative guards there broke
-        // test_power_type_depends_on_input_values (see GH-127844), likely
-        // due to subtle interactions with the case A-G dispatch.
-        if (oparg == NB_TRUE_DIVIDE || oparg == NB_INPLACE_TRUE_DIVIDE
-                || oparg == NB_REMAINDER || oparg == NB_INPLACE_REMAINDER) {
-            if (!rhs_float && !sym_has_type(rhs)
+        bool is_truediv = (oparg == NB_TRUE_DIVIDE
+                           || oparg == NB_INPLACE_TRUE_DIVIDE);
+        bool is_remainder = (oparg == NB_REMAINDER
+                             || oparg == NB_INPLACE_REMAINDER);
+        // Promote probable-float operands to known floats via speculative
+        // guards. _RECORD_TOS / _RECORD_NOS in the BINARY_OP macro record
+        // the observed operand during tracing, which sym_get_probable_type
+        // reads here. Applied only to ops where narrowing unlocks a
+        // meaningful downstream win:
+        //   - NB_TRUE_DIVIDE: enables the specialized float path below.
+        //   - NB_REMAINDER: lets the float result type propagate.
+        // NB_POWER is excluded — speculative guards there regressed
+        // test_power_type_depends_on_input_values (GH-127844).
+        if (is_truediv || is_remainder) {
+            if (!sym_has_type(rhs)
                     && sym_get_probable_type(rhs) == &PyFloat_Type) {
                 ADD_OP(_GUARD_TOS_FLOAT, 0, 0);
                 sym_set_type(rhs, &PyFloat_Type);
                 rhs_float = true;
             }
-            if (!lhs_float && !sym_has_type(lhs)
+            if (!sym_has_type(lhs)
                     && sym_get_probable_type(lhs) == &PyFloat_Type) {
                 ADD_OP(_GUARD_NOS_FLOAT, 0, 0);
                 sym_set_type(lhs, &PyFloat_Type);
                 lhs_float = true;
             }
         }
-        if ((oparg == NB_TRUE_DIVIDE || oparg == NB_INPLACE_TRUE_DIVIDE)
-                && lhs_float && rhs_float) {
+        if (is_truediv && lhs_float && rhs_float) {
             if (PyJitRef_IsUnique(lhs)) {
                 ADD_OP(_BINARY_OP_TRUEDIV_FLOAT_INPLACE, 0, 0);
                 l = sym_new_null(ctx);
@@ -323,7 +324,7 @@ dummy_func(void) {
             }
             res = PyJitRef_MakeUnique(sym_new_type(ctx, &PyFloat_Type));
         }
-        else if ((oparg == NB_TRUE_DIVIDE || oparg == NB_INPLACE_TRUE_DIVIDE)
+        else if (is_truediv
                 && (lhs_int || lhs_float) && (rhs_int || rhs_float)) {
             res = PyJitRef_MakeUnique(sym_new_type(ctx, &PyFloat_Type));
         }
