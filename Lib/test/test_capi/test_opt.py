@@ -3708,8 +3708,8 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertIn("_BINARY_OP_TRUEDIV_FLOAT_INPLACE_RIGHT", uops)
 
     def test_float_truediv_speculative_guards_from_tracing(self):
-        # a, b are locals with no statically known type. _RECORD_TOS /
-        # _RECORD_NOS (added to the BINARY_OP macro) capture the observed
+        # a, b are locals with no statically known type. _RECORD_TOS_TYPE /
+        # _RECORD_NOS_TYPE (added to the BINARY_OP macro) capture the observed
         # operand types during tracing, and the optimizer then speculatively
         # emits _GUARD_{TOS,NOS}_FLOAT and specializes the division.
         def testfunc(args):

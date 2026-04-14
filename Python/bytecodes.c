@@ -5725,7 +5725,7 @@ dummy_func(
             DEAD(rhs);
         }
 
-        macro(BINARY_OP) = _SPECIALIZE_BINARY_OP + _RECORD_TOS + _RECORD_NOS + unused/4 + _BINARY_OP + POP_TOP + POP_TOP;
+        macro(BINARY_OP) = _SPECIALIZE_BINARY_OP + _RECORD_TOS_TYPE + _RECORD_NOS_TYPE + unused/4 + _BINARY_OP + POP_TOP + POP_TOP;
 
         pure replicate(2:4) inst(SWAP, (bottom, unused[oparg-2], top --
                     bottom, unused[oparg-2], top)) {
@@ -6176,6 +6176,10 @@ dummy_func(
 
         tier2 op(_RECORD_NOS, (nos, tos -- nos, tos)) {
             RECORD_VALUE(PyStackRef_AsPyObjectBorrow(nos));
+        }
+
+        tier2 op(_RECORD_NOS_TYPE, (nos, tos -- nos, tos)) {
+            RECORD_VALUE(Py_TYPE(PyStackRef_AsPyObjectBorrow(nos)));
         }
 
         tier2 op(_RECORD_NOS_GEN_FUNC, (nos, tos -- nos, tos)) {
