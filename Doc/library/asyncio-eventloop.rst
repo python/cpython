@@ -201,8 +201,8 @@ Running and stopping the loop
 
    The *timeout* parameter specifies the amount of time
    (in :class:`float` seconds) the executor will be given to finish joining.
-   With the default, ``None``,
-   the executor is allowed an unlimited amount of time.
+   With the default ``None``,
+   the executor is allowed unlimited time.
 
    If the *timeout* is reached, a :exc:`RuntimeWarning` is emitted
    and the default executor is terminated
