@@ -1551,7 +1551,11 @@ pprint
   :func:`pprint.pformat`, :func:`pprint.pp`. If true, the output will be
   formatted similar to pretty-printed :func:`json.dumps` when
   *indent* is supplied.
-  (Contributed by Stefan Todoran and Semyon Moroz in :gh:`112632`.)
+  (Contributed by Stefan Todoran, Semyon Moroz and Hugo van Kemenade in
+  :gh:`112632`.)
+
+* Add t-string support to :mod:`pprint`.
+  (Contributed by Loïc Simon and Hugo van Kemenade in :gh:`134551`.)
 
 
 sre_*
