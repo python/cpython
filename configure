@@ -33089,7 +33089,7 @@ fi
 
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for HACL* library linking type" >&5
 printf %s "checking for HACL* library linking type... " >&6; }
-if test "$ac_sys_system" = "WASI"; then
+if test "$ac_sys_system" = "WASI" || test "$MODULE_BUILDTYPE" = "static"; then
   LIBHACL_LDEPS_LIBTYPE=STATIC
   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: static" >&5
 printf "%s\n" "static" >&6; }

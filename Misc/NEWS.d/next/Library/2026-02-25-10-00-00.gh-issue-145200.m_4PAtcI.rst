@@ -1,0 +1,2 @@
+:mod:`hashlib`: fix a memory leak when allocating
+or initializing an OpenSSL HMAC context fails.
