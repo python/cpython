@@ -2636,7 +2636,33 @@
             break;
         }
 
-        /* _LOAD_ATTR_GETATTRIBUTE_OVERRIDDEN is not a viable micro-op for tier 2 */
+        case _LOAD_ATTR_GETATTRIBUTE_OVERRIDDEN_FRAME: {
+            JitOptRef owner;
+            JitOptRef new_frame;
+            owner = stack_pointer[-1];
+            uint32_t func_version = (uint32_t)this_instr->operand0;
+            PyObject *getattribute = (PyObject *)this_instr->operand1;
+            PyFunctionObject *func = (PyFunctionObject *)getattribute;
+            if (sym_get_type_version(owner) == 0 ||
+                func->func_version != func_version) {
+                ctx->contradiction = true;
+                ctx->done = true;
+                break;
+            }
+            _Py_BloomFilter_Add(dependencies, func);
+            PyCodeObject *co = (PyCodeObject *)func->func_code;
+            _Py_UOpsAbstractFrame *f = frame_new(ctx, co, NULL, 0);
+            if (f == NULL) {
+                break;
+            }
+            PyObject *name = get_co_name(ctx, oparg >> 1);
+            f->locals[0] = owner;
+            f->locals[1] = sym_new_const(ctx, name);
+            f->func = func;
+            new_frame = PyJitRef_WrapInvalid(f);
+            stack_pointer[-1] = new_frame;
+            break;
+        }
 
         case _GUARD_DORV_NO_DICT: {
             break;
