@@ -1594,6 +1594,42 @@ class TestUopsOptimization(unittest.TestCase):
         # __init__ resolution allows promotion of range to constant
         self.assertNotIn("_LOAD_GLOBAL_BUILTINS", uops)
 
+    def test_init_guards_removed(self):
+        class MyPoint:
+            def __init__(self, x, y):
+                return None
+
+        def testfunc(n):
+            point_local = MyPoint
+            for _ in range(n):
+                p = point_local(1.0, 2.0)
+                p = point_local(1.0, 2.0)
+
+        _, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertIsNotNone(ex)
+        # The __init__ call should be traced through via _PUSH_FRAME
+        count = count_ops(ex, "_CREATE_INIT_FRAME")
+        self.assertEqual(count, 2)
+        # __init__ resolution allows promotion of range to constant
+        count = count_ops(ex, "_CHECK_OBJECT")
+        self.assertEqual(count, 1)
+
+    def test_init_guards_removed_global(self):
+
+        def testfunc(n):
+            for _ in range(n):
+                p = MyGlobalPoint(1.0, 2.0)
+                p = MyGlobalPoint(1.0, 2.0)
+
+        _, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertIsNotNone(ex)
+        # The __init__ call should be traced through via _PUSH_FRAME
+        count = count_ops(ex, "_CREATE_INIT_FRAME")
+        self.assertEqual(count, 2)
+        # __init__ resolution allows promotion of range to constant
+        count = count_ops(ex, "_CHECK_OBJECT")
+        self.assertEqual(count, 0)
+
     def test_guard_type_version_locked_propagates(self):
         """
         _GUARD_TYPE_VERSION_LOCKED should set the type version on the
@@ -1626,9 +1662,8 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertEqual(uops.count("_PUSH_FRAME"), 2)
         # Type version propagation: one guard covers both method lookups
         self.assertEqual(uops.count("_GUARD_TYPE_VERSION"), 1)
-        # Function checks eliminated (type info resolves the callable)
-        self.assertNotIn("_CHECK_FUNCTION_VERSION", uops)
-        self.assertNotIn("_CHECK_FUNCTION_EXACT_ARGS", uops)
+        # Function checks cannot be eliminated for safety reasons.
+        self.assertIn("_CHECK_FUNCTION_VERSION", uops)
 
     def test_method_chain_guard_elimination(self):
         """
@@ -1673,10 +1708,7 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
         self.assertIn("_PUSH_FRAME", uops)
-        # Both should be not present, as this is a call
-        # to a simple function with a known function version.
-        self.assertNotIn("_CHECK_FUNCTION_VERSION_INLINE", uops)
-        self.assertNotIn("_CHECK_FUNCTION_VERSION", uops)
+        self.assertIn("_CHECK_FUNCTION_VERSION", uops)
         # Removed guard
         self.assertNotIn("_CHECK_FUNCTION_EXACT_ARGS", uops)
 
@@ -1694,6 +1726,49 @@ class TestUopsOptimization(unittest.TestCase):
         # Strength reduced version
         self.assertIn("_CHECK_FUNCTION_VERSION_INLINE", uops)
         self.assertNotIn("_CHECK_METHOD_VERSION", uops)
+
+    def test_record_bound_method_general(self):
+        class MyClass:
+            def method(self, *args):
+                return args[0] + 1
+
+        def testfunc(n):
+            obj = MyClass()
+            bound = obj.method
+            result = 0
+            for i in range(n):
+                result += bound(i)
+            return result
+
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(
+            res, sum(i + 1 for i in range(TIER2_THRESHOLD))
+        )
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertIn("_PUSH_FRAME", uops)
+
+    def test_record_bound_method_exact_args(self):
+        class MyClass:
+            def method(self, x):
+                return x + 1
+
+        def testfunc(n):
+            obj = MyClass()
+            bound = obj.method
+            result = 0
+            for i in range(n):
+                result += bound(i)
+            return result
+
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(
+            res, sum(i + 1 for i in range(TIER2_THRESHOLD))
+        )
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertIn("_PUSH_FRAME", uops)
+        self.assertNotIn("_CHECK_FUNCTION_EXACT_ARGS", uops)
 
     def test_jit_error_pops(self):
         """
@@ -2758,6 +2833,50 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertNotIn("_GUARD_NOS_INT", uops)
         self.assertNotIn("_GUARD_TOS_INT", uops)
         self.assertIn("_POP_TOP_NOP", uops)
+
+    def test_check_is_not_py_callable(self):
+        def testfunc(n):
+            total = 0
+            f = len
+            xs = (1, 2, 3)
+            for _ in range(n):
+                total += f(xs)
+            return total
+
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, 3 * TIER2_THRESHOLD)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertNotIn("_CHECK_IS_NOT_PY_CALLABLE", uops)
+
+    def test_check_is_not_py_callable_ex(self):
+        def testfunc(n):
+            total = 0
+            xs = (1, 2, 3)
+            args = (xs,)
+            for _ in range(n):
+                total += len(*args)
+            return total
+
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, 3 * TIER2_THRESHOLD)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertNotIn("_CHECK_IS_NOT_PY_CALLABLE_EX", uops)
+
+    def test_check_is_not_py_callable_kw(self):
+        def testfunc(n):
+            total = 0
+            xs = (3, 1, 2)
+            for _ in range(n):
+                total += sorted(xs, reverse=False)[0]
+            return total
+
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, TIER2_THRESHOLD)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertNotIn("_CHECK_IS_NOT_PY_CALLABLE_KW", uops)
 
     def test_call_len_string(self):
         def testfunc(n):
@@ -5167,6 +5286,72 @@ class TestUopsOptimization(unittest.TestCase):
         PYTHON_JIT="1", PYTHON_JIT_STRESS="1")
         self.assertEqual(result[0].rc, 0, result)
 
+    def test_call_kw(self):
+        def func(a):
+            return int(a) * 42
+
+        def testfunc(n):
+            x = 0
+            for _ in range(n):
+                x += func(a=1)
+            return x
+
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, 42 * TIER2_THRESHOLD)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertIn("_PUSH_FRAME", uops)
+        self.assertIn("_CHECK_FUNCTION_VERSION_KW", uops)
+        # Check the optimizer has optmized through the function call
+        # by promoting global `int` to a constant.
+        self.assertNotIn("_LOAD_GLOBAL_BUILTINS", uops)
+        self.assertIn("_CALL_BUILTIN_CLASS", uops)
+
+    def test_call_kw_bound_method(self):
+        class C:
+            def method(self, a, b):
+                return int(a) + int(b)
+
+        def testfunc(n):
+            obj = C()
+            x = 0
+            meth = obj.method
+            for _ in range(n):
+                x += meth(a=1, b=2)
+            return x
+
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, 3 * TIER2_THRESHOLD)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertIn("_PUSH_FRAME", uops)
+        self.assertIn("_CHECK_METHOD_VERSION_KW", uops)
+        # Check the optimizer has optmized through the function call
+        # by promoting global `int` to a constant.
+        self.assertNotIn("_LOAD_GLOBAL_BUILTINS", uops)
+        self.assertIn("_CALL_BUILTIN_CLASS", uops)
+
+    def test_func_version_guarded_on_change(self):
+        def testfunc(n):
+            for i in range(n):
+                # Only works on functions promoted to constants
+                global_identity_code_will_be_modified(i)
+
+        testfunc(TIER2_THRESHOLD)
+
+        ex = get_first_executor(testfunc)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertIn("_PUSH_FRAME", uops)
+        self.assertIn("_CHECK_FUNCTION_VERSION", uops)
+
+        global_identity_code_will_be_modified.__code__ = (lambda a: 0xdeadead).__code__
+        _testinternalcapi.clear_executor_deletion_list()
+        ex = get_first_executor(testfunc)
+        self.assertIsNone(ex)
+        # JItted code should've deopted.
+        self.assertEqual(global_identity_code_will_be_modified(None), 0xdeadead)
+
     def test_call_super(self):
         class A:
             def method1(self):
@@ -5213,12 +5398,19 @@ class TestUopsOptimization(unittest.TestCase):
 def global_identity(x):
     return x
 
+def global_identity_code_will_be_modified(x):
+    return x
+
 class TestObject:
     def test(self, *args, **kwargs):
         return args[0]
 
 test_object = TestObject()
 test_bound_method = TestObject.test.__get__(test_object)
+
+class MyGlobalPoint:
+    def __init__(self, x, y):
+        return None
 
 if __name__ == "__main__":
     unittest.main()
