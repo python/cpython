@@ -30,7 +30,7 @@ extern "C" {
  * 4. A push followed by a matching return is net-zero on frame-specific
  *    fitness, excluding per-slot costs.
  */
-#define MAX_TARGET_LENGTH          (UOP_MAX_TRACE_LENGTH / 3 * 2)
+#define MAX_TARGET_LENGTH          (UOP_MAX_TRACE_LENGTH / 5 * 2)
 #define OPTIMIZER_EFFECTIVENESS    2
 #define FITNESS_INITIAL            (MAX_TARGET_LENGTH * OPTIMIZER_EFFECTIVENESS)
 
