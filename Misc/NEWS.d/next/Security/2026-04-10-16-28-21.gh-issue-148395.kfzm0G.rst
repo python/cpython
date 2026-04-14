@@ -1,0 +1,5 @@
+Fix a dangling input pointer in :class:`lzma.LZMADecompressor`,
+:class:`bz2.BZ2Decompressor`, and internal :class:`!zlib._ZlibDecompressor`
+when memory allocation fails with :exc:`MemoryError`, which could let a
+subsequent :meth:`!decompress` call read or write through a stale pointer to
+the already-released caller buffer.
