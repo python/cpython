@@ -94,11 +94,12 @@ void _PyOpcode_RecordFunction_CODE(_PyInterpreterFrame *frame, _PyStackRef *stac
 #define _RECORD_TOS_TYPE_INDEX 1
 #define _RECORD_NOS_INDEX 2
 #define _RECORD_3OS_GEN_FUNC_INDEX 3
-#define _RECORD_NOS_GEN_FUNC_INDEX 4
-#define _RECORD_CALLABLE_INDEX 5
-#define _RECORD_BOUND_METHOD_INDEX 6
-#define _RECORD_CALLABLE_KW_INDEX 7
-#define _RECORD_4OS_INDEX 8
+#define _RECORD_TOS_INDEX 4
+#define _RECORD_NOS_GEN_FUNC_INDEX 5
+#define _RECORD_CALLABLE_INDEX 6
+#define _RECORD_BOUND_METHOD_INDEX 7
+#define _RECORD_CALLABLE_KW_INDEX 8
+#define _RECORD_4OS_INDEX 9
 
 const _PyOpcodeRecordEntry _PyOpcode_RecordEntries[256] = {
         [TO_BOOL_ALWAYS_TRUE] = {1, {_RECORD_TOS_TYPE_INDEX}},
@@ -108,7 +109,8 @@ const _PyOpcodeRecordEntry _PyOpcode_RecordEntries[256] = {
         [LOAD_ATTR_INSTANCE_VALUE] = {1, {_RECORD_TOS_TYPE_INDEX}},
         [LOAD_ATTR_WITH_HINT] = {1, {_RECORD_TOS_TYPE_INDEX}},
         [LOAD_ATTR_SLOT] = {1, {_RECORD_TOS_TYPE_INDEX}},
-        [LOAD_ATTR_CLASS_WITH_METACLASS_CHECK] = {1, {_RECORD_TOS_TYPE_INDEX}},
+        [LOAD_ATTR_CLASS] = {1, {_RECORD_TOS_INDEX}},
+        [LOAD_ATTR_CLASS_WITH_METACLASS_CHECK] = {1, {_RECORD_TOS_INDEX}},
         [LOAD_ATTR_PROPERTY] = {1, {_RECORD_TOS_TYPE_INDEX}},
         [LOAD_ATTR_GETATTRIBUTE_OVERRIDDEN] = {1, {_RECORD_TOS_TYPE_INDEX}},
         [STORE_ATTR_INSTANCE_VALUE] = {1, {_RECORD_TOS_TYPE_INDEX}},
@@ -139,11 +141,12 @@ const _PyOpcodeRecordEntry _PyOpcode_RecordEntries[256] = {
         [CALL_EX_PY] = {1, {_RECORD_4OS_INDEX}},
 };
 
-const _Py_RecordFuncPtr _PyOpcode_RecordFunctions[9] = {
+const _Py_RecordFuncPtr _PyOpcode_RecordFunctions[10] = {
         [0] = NULL,
         [_RECORD_TOS_TYPE_INDEX] = _PyOpcode_RecordFunction_TOS_TYPE,
         [_RECORD_NOS_INDEX] = _PyOpcode_RecordFunction_NOS,
         [_RECORD_3OS_GEN_FUNC_INDEX] = _PyOpcode_RecordFunction_3OS_GEN_FUNC,
+        [_RECORD_TOS_INDEX] = _PyOpcode_RecordFunction_TOS,
         [_RECORD_NOS_GEN_FUNC_INDEX] = _PyOpcode_RecordFunction_NOS_GEN_FUNC,
         [_RECORD_CALLABLE_INDEX] = _PyOpcode_RecordFunction_CALLABLE,
         [_RECORD_BOUND_METHOD_INDEX] = _PyOpcode_RecordFunction_BOUND_METHOD,
