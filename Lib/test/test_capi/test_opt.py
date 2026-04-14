@@ -4913,8 +4913,7 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertEqual(res, 2 * TIER2_THRESHOLD)
         uops = get_opnames(ex)
         self.assertIn("_LOAD_ATTR_GETATTRIBUTE_OVERRIDDEN_FRAME", uops)
-        self.assertNotIn("_LOAD_GLOBAL_BUILTINS")
-
+        self.assertNotIn("_LOAD_GLOBAL_BUILTINS", uops)
 
     def test_load_attr_property_frame_invalidates_on_code_change(self):
         class C:
