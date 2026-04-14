@@ -391,22 +391,26 @@ High-level APIs
    .. versionadded:: 3.9
 
 
-.. c:function:: void _PyInterpreterState_SetEvalFrameFunc(PyInterpreterState *interp, _PyFrameEvalFunction eval_frame, int allow_specialization)
+.. c:function:: void _PyInterpreterState_SetEvalFrameFunc(PyInterpreterState *interp, _PyFrameEvalFunction eval_frame)
 
    Set the frame evaluation function.
-
-   If *allow_specialization* is non-zero, the adaptive specializer will
-   continue to specialize bytecodes even though a custom eval frame function
-   is set. When *allow_specialization* is zero, setting a custom eval frame
-   disables specialization.
 
    See the :pep:`523` "Adding a frame evaluation API to CPython".
 
    .. versionadded:: 3.9
 
-   .. versionchanged:: 3.15
-      Added the *allow_specialization* parameter.
+.. c:function:: void _PyInterpreterState_SetEvalFrameAllowSpecialization(PyInterpreterState *interp, int allow_specialization)
 
+   Enables or disables specialization why a custom frame evaluator is in place.
+
+   If *allow_specialization* is non-zero, the adaptive specializer will
+   continue to specialize bytecodes even though a custom eval frame function
+   is set. When *allow_specialization* is zero, setting a custom eval frame
+   disables specialization. The standard interpreter loop will continue to deopt
+   while a frame evaluation API is in place - the frame evaluation function needs
+   to handle the specialized opcodes to take advantage of this.
+
+   .. versionadded:: 3.15
 
 .. c:function:: int _PyInterpreterState_IsSpecializationEnabled(PyInterpreterState *interp)
 
