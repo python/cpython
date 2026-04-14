@@ -49,7 +49,7 @@ extern "C" {
  * N_BACKWARD_SLACK more bytecodes before reaching EXIT_QUALITY_CLOSE_LOOP,
  * based on AVG_SLOTS_PER_INSTRUCTION. */
 #define N_BACKWARD_SLACK           50
-#define FITNESS_BACKWARD_EDGE      (FITNESS_INITIAL - EXIT_QUALITY_CLOSE_LOOP \
+#define FITNESS_BACKWARD_EDGE      (FITNESS_INITIAL/2 \
                                       - N_BACKWARD_SLACK * AVG_SLOTS_PER_INSTRUCTION)
 
 /* Backward edge penalty for JUMP_BACKWARD_NO_INTERRUPT (coroutines/yield-from).
