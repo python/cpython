@@ -749,13 +749,4 @@
   <Target Name="_DeletePyBuildDirTxt" BeforeTargets="PrepareForBuild">
     <Delete Files="$(OutDir)pybuilddir.txt" />
   </Target>
-
-  <Target Name="_CheckTailCalling" BeforeTargets="PrepareForBuild" Condition="'$(UseTailCallInterp)' == 'true' and $(PlatformToolset) != 'ClangCL'">
-    <Error Text="MSVC supports tail-calling only for x64."
-           Condition="$(Platform) != 'x64'" />
-    <Error Text="Platform toolset >= v145 is required for tail-calling."
-           Condition="$(PlatformToolset.Replace('v', '0')) &lt; '145'" />
-    <Error Text="MSVC requires optimization to be enabled for tail-calling."
-           Condition="$(Configuration) == 'Debug'" />
-  </Target>
 </Project>

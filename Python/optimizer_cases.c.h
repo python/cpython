@@ -2072,7 +2072,7 @@
         case _LOAD_GLOBAL_MODULE: {
             JitOptRef res;
             uint16_t version = (uint16_t)this_instr->operand0;
-            uint16_t index = (uint16_t)this_instr->operand0;
+            uint16_t index = (uint16_t)this_instr->operand1;
             (void)index;
             PyObject *cnst = NULL;
             if (ctx->frame->func != NULL) {
@@ -2119,7 +2119,7 @@
         case _LOAD_GLOBAL_BUILTINS: {
             JitOptRef res;
             uint16_t version = (uint16_t)this_instr->operand0;
-            uint16_t index = (uint16_t)this_instr->operand0;
+            uint16_t index = (uint16_t)this_instr->operand1;
             (void)version;
             (void)index;
             PyObject *cnst = NULL;
@@ -2429,13 +2429,20 @@
             assert(this_instr[-1].opcode == _RECORD_TOS_TYPE);
             if (sym_matches_type_version(owner, type_version)) {
                 ADD_OP(_NOP, 0, 0);
-            } else {
-                PyTypeObject *type = _PyType_LookupByVersion(type_version);
-                if (type) {
-                    if (sym_set_type_version(owner, type_version)) {
-                        PyType_Watch(TYPE_WATCHER_ID, (PyObject *)type);
-                        _Py_BloomFilter_Add(dependencies, type);
-                    }
+            }
+            else {
+                PyTypeObject *probable_type = sym_get_probable_type(owner);
+                if (probable_type != NULL &&
+                    probable_type->tp_version_tag == type_version) {
+                    sym_set_type(owner, probable_type);
+                    sym_set_type_version(owner, type_version);
+                    PyType_Watch(TYPE_WATCHER_ID, (PyObject *)probable_type);
+                    _Py_BloomFilter_Add(dependencies, probable_type);
+                }
+                else {
+                    ctx->contradiction = true;
+                    ctx->done = true;
+                    break;
                 }
             }
             break;
@@ -2448,13 +2455,22 @@
             assert(type_version);
             if (sym_matches_type_version(owner, type_version)) {
                 ADD_OP(_NOP, 0, 0);
-            } else {
+            }
+            else {
                 PyTypeObject *probable_type = sym_get_probable_type(owner);
-                if (probable_type->tp_version_tag == type_version && sym_set_type_version(owner, type_version)) {
+                if (probable_type != NULL &&
+                    probable_type->tp_version_tag == type_version) {
+                    sym_set_type(owner, probable_type);
+                    sym_set_type_version(owner, type_version);
                     if ((probable_type->tp_flags & Py_TPFLAGS_IMMUTABLETYPE) == 0) {
                         PyType_Watch(TYPE_WATCHER_ID, (PyObject *)probable_type);
                         _Py_BloomFilter_Add(dependencies, probable_type);
                     }
+                }
+                else {
+                    ctx->contradiction = true;
+                    ctx->done = true;
+                    break;
                 }
             }
             break;
@@ -2487,7 +2503,7 @@
             JitOptRef o;
             owner = stack_pointer[-1];
             uint32_t dict_version = (uint32_t)this_instr->operand0;
-            uint16_t index = (uint16_t)this_instr->operand0;
+            uint16_t index = (uint16_t)this_instr->operand1;
             (void)dict_version;
             (void)index;
             attr = PyJitRef_NULL;
@@ -2598,19 +2614,55 @@
             JitOptRef owner;
             JitOptRef new_frame;
             owner = stack_pointer[-1];
-            PyObject *fget = (PyObject *)this_instr->operand0;
-            PyCodeObject *co = (PyCodeObject *)((PyFunctionObject *)fget)->func_code;
+            uint32_t func_version = (uint32_t)this_instr->operand0;
+            PyObject *fget = (PyObject *)this_instr->operand1;
+            PyFunctionObject *func = (PyFunctionObject *)fget;
+            if (sym_get_type_version(owner) == 0 ||
+                func->func_version != func_version) {
+                ctx->contradiction = true;
+                ctx->done = true;
+                break;
+            }
+            _Py_BloomFilter_Add(dependencies, fget);
+            PyCodeObject *co = (PyCodeObject *)func->func_code;
             _Py_UOpsAbstractFrame *f = frame_new(ctx, co, NULL, 0);
             if (f == NULL) {
                 break;
             }
             f->locals[0] = owner;
+            f->func = func;
             new_frame = PyJitRef_WrapInvalid(f);
             stack_pointer[-1] = new_frame;
             break;
         }
 
-        /* _LOAD_ATTR_GETATTRIBUTE_OVERRIDDEN is not a viable micro-op for tier 2 */
+        case _LOAD_ATTR_GETATTRIBUTE_OVERRIDDEN_FRAME: {
+            JitOptRef owner;
+            JitOptRef new_frame;
+            owner = stack_pointer[-1];
+            uint32_t func_version = (uint32_t)this_instr->operand0;
+            PyObject *getattribute = (PyObject *)this_instr->operand1;
+            PyFunctionObject *func = (PyFunctionObject *)getattribute;
+            if (sym_get_type_version(owner) == 0 ||
+                func->func_version != func_version) {
+                ctx->contradiction = true;
+                ctx->done = true;
+                break;
+            }
+            _Py_BloomFilter_Add(dependencies, func);
+            PyCodeObject *co = (PyCodeObject *)func->func_code;
+            _Py_UOpsAbstractFrame *f = frame_new(ctx, co, NULL, 0);
+            if (f == NULL) {
+                break;
+            }
+            PyObject *name = get_co_name(ctx, oparg >> 1);
+            f->locals[0] = owner;
+            f->locals[1] = sym_new_const(ctx, name);
+            f->func = func;
+            new_frame = PyJitRef_WrapInvalid(f);
+            stack_pointer[-1] = new_frame;
+            break;
+        }
 
         case _GUARD_DORV_NO_DICT: {
             break;
@@ -3148,6 +3200,53 @@
             b = sym_new_type(ctx, &PyBool_Type);
             l = left;
             r = right;
+            if (sym_is_not_container(left) &&
+                sym_matches_type(right, &PyFrozenDict_Type)) {
+                if (
+                    sym_is_safe_const(ctx, left) &&
+                    sym_is_safe_const(ctx, right)
+                ) {
+                    JitOptRef left_sym = left;
+                    JitOptRef right_sym = right;
+                    _PyStackRef left = sym_get_const_as_stackref(ctx, left_sym);
+                    _PyStackRef right = sym_get_const_as_stackref(ctx, right_sym);
+                    _PyStackRef b_stackref;
+                    _PyStackRef l_stackref;
+                    _PyStackRef r_stackref;
+                    /* Start of uop copied from bytecodes for constant evaluation */
+                    PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);
+                    PyObject *right_o = PyStackRef_AsPyObjectBorrow(right);
+                    assert(PyAnyDict_CheckExact(right_o));
+                    STAT_INC(CONTAINS_OP, hit);
+                    int res = PyDict_Contains(right_o, left_o);
+                    if (res < 0) {
+                        JUMP_TO_LABEL(error);
+                    }
+                    b_stackref = (res ^ oparg) ? PyStackRef_True : PyStackRef_False;
+                    l_stackref = left;
+                    r_stackref = right;
+                    /* End of uop copied from bytecodes for constant evaluation */
+                    (void)l_stackref;
+                    (void)r_stackref;
+                    b = sym_new_const_steal(ctx, PyStackRef_AsPyObjectSteal(b_stackref));
+                    if (sym_is_const(ctx, b)) {
+                        PyObject *result = sym_get_const(ctx, b);
+                        if (_Py_IsImmortal(result)) {
+                            // Replace with _LOAD_CONST_INLINE_BORROW + _SWAP + _SWAP since we have two inputs and an immortal result
+                            ADD_OP(_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)result);
+                            ADD_OP(_SWAP, 3, 0);
+                            ADD_OP(_SWAP, 2, 0);
+                        }
+                    }
+                    CHECK_STACK_BOUNDS(1);
+                    stack_pointer[-2] = b;
+                    stack_pointer[-1] = l;
+                    stack_pointer[0] = r;
+                    stack_pointer += 1;
+                    ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+                    break;
+                }
+            }
             CHECK_STACK_BOUNDS(1);
             stack_pointer[-2] = b;
             stack_pointer[-1] = l;
@@ -3456,8 +3555,30 @@
         case _LOAD_SPECIAL: {
             JitOptRef *method_and_self;
             method_and_self = &stack_pointer[-2];
-            method_and_self[0] = sym_new_not_null(ctx);
-            method_and_self[1] = sym_new_unknown(ctx);
+            bool optimized = false;
+            PyTypeObject *type = sym_get_probable_type(method_and_self[1]);
+            if (type != NULL) {
+                PyObject *name = _Py_SpecialMethods[oparg].name;
+                PyObject *descr = _PyType_Lookup(type, name);
+                if (descr != NULL && (Py_TYPE(descr)->tp_flags & Py_TPFLAGS_METHOD_DESCRIPTOR)) {
+                    ADD_OP(_GUARD_TYPE_VERSION, 0, type->tp_version_tag);
+                    bool immortal = _Py_IsImmortal(descr) || (type->tp_flags & Py_TPFLAGS_IMMUTABLETYPE);
+                    ADD_OP(immortal ? _LOAD_CONST_INLINE_BORROW : _LOAD_CONST_INLINE,
+                        0, (uintptr_t)descr);
+                    ADD_OP(_SWAP, 3, 0);
+                    ADD_OP(_POP_TOP, 0, 0);
+                    if ((type->tp_flags & Py_TPFLAGS_IMMUTABLETYPE) == 0) {
+                        PyType_Watch(TYPE_WATCHER_ID, (PyObject *)type);
+                        _Py_BloomFilter_Add(dependencies, type);
+                    }
+                    method_and_self[0] = sym_new_const(ctx, descr);
+                    optimized = true;
+                }
+            }
+            if (!optimized) {
+                method_and_self[0] = sym_new_not_null(ctx);
+                method_and_self[1] = sym_new_unknown(ctx);
+            }
             break;
         }
 
