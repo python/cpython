@@ -30,11 +30,22 @@ and indentation to more clearly reveal data structure::
    ...     'yellow'], 'blue']]]
    ...
    >>> pprint.pprint(t, width=30)
-   [[[['black', 'cyan'],
-      'white',
-      ['green', 'red']],
-     [['magenta', 'yellow'],
-      'blue']]]
+   [
+       [
+           [
+               ['black', 'cyan'],
+               'white',
+               ['green', 'red'],
+           ],
+           [
+               [
+                   'magenta',
+                   'yellow',
+               ],
+               'blue',
+           ],
+       ],
+   ]
 
 The :mod:`textwrap` module formats paragraphs of text to fit a given screen
 width::

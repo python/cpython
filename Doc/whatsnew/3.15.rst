@@ -1094,6 +1094,9 @@ pprint
   (Contributed by Stefan Todoran, Semyon Moroz and Hugo van Kemenade in
   :gh:`112632`.)
 
+* :mod:`pprint` now uses modern defaults: ``indent=4, width=88, expand=True``.
+  (Contributed by Hugo van Kemenade in :gh:`149189`.)
+
 * Add t-string support to :mod:`pprint`.
   (Contributed by Loïc Simon and Hugo van Kemenade in :gh:`134551`.)
 

@@ -1,0 +1,2 @@
+:mod:`pprint` now uses modern defaults: ``indent=4, width=88, expand=True``.
+Patch by Hugo van Kemenade.
