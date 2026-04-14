@@ -4646,7 +4646,7 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertEqual(res, TIER2_THRESHOLD)
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
-        self.assertIn("_LOAD_CONST_INLINE_BORROW", uops)
+        self.assertGreaterEqual(count_ops(ex, "_LOAD_CONST_INLINE_BORROW"), 2)
         self.assertNotIn("_BINARY_OP_SUBSCR_DICT", uops)
 
     def test_binary_subscr_frozendict_const_fold(self):
@@ -4661,8 +4661,8 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertEqual(res, TIER2_THRESHOLD)
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
+        self.assertGreaterEqual(count_ops(ex, "_LOAD_CONST_INLINE_BORROW"), 3)
         # lookup result is folded to constant 1, so comparison is optimized away
-        self.assertIn("_LOAD_CONST_INLINE_BORROW", uops)
         self.assertNotIn("_COMPARE_OP_INT", uops)
 
     def test_contains_op_frozenset_const_fold(self):
@@ -4677,7 +4677,7 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertEqual(res, TIER2_THRESHOLD)
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
-        self.assertIn("_LOAD_CONST_INLINE_BORROW", uops)
+        self.assertGreaterEqual(count_ops(ex, "_LOAD_CONST_INLINE_BORROW"), 3)
         self.assertNotIn("_CONTAINS_OP_SET", uops)
 
     def test_contains_op_frozendict_const_fold(self):
@@ -4692,7 +4692,7 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertEqual(res, TIER2_THRESHOLD)
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
-        self.assertIn("_LOAD_CONST_INLINE_BORROW", uops)
+        self.assertGreaterEqual(count_ops(ex, "_LOAD_CONST_INLINE_BORROW"), 3)
         self.assertNotIn("_CONTAINS_OP_DICT", uops)
 
     def test_not_contains_op_frozendict_const_fold(self):
@@ -4707,7 +4707,7 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertEqual(res, TIER2_THRESHOLD)
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
-        self.assertIn("_LOAD_CONST_INLINE_BORROW", uops)
+        self.assertGreaterEqual(count_ops(ex, "_LOAD_CONST_INLINE_BORROW"), 3)
         self.assertNotIn("_CONTAINS_OP_DICT", uops)
 
     def test_binary_subscr_list_slice(self):
