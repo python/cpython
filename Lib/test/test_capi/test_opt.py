@@ -4900,7 +4900,7 @@ class TestUopsOptimization(unittest.TestCase):
         class C:
             @property
             def val(self):
-                return 1
+                return int(1)
 
         fget = C.val.fget
 
@@ -4917,6 +4917,8 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
         self.assertIn("_LOAD_ATTR_PROPERTY_FRAME", uops)
+        # Check the optimizer traced through the property call.
+        self.assertIn("_CALL_BUILTIN_CLASS", uops)
 
         fget.__code__ = (lambda self: 2).__code__
         _testinternalcapi.clear_executor_deletion_list()
