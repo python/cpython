@@ -50,9 +50,6 @@ endif
 	@if [ -f "$(CURDIR)/python$(EXE)" ]; then \
 		mkdir -p "$(RELEASE_STAGING)/bin"; \
 		cp "$(CURDIR)/python$(EXE)" "$(RELEASE_STAGING)/bin/python.elf"; \
-		if [ -x "$(TOOLCHAIN_PREFIX)/bin/i686-nanvix-strip" ]; then \
-			"$(TOOLCHAIN_PREFIX)/bin/i686-nanvix-strip" --strip-all "$(RELEASE_STAGING)/bin/python.elf" 2>/dev/null || true; \
-		fi; \
 		echo "Included bin/python.elf ($$(du -h "$(RELEASE_STAGING)/bin/python.elf" | cut -f1))"; \
 	else \
 		echo "Warning: python$(EXE) not found — binary will not be included in release"; \

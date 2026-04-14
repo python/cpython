@@ -170,15 +170,15 @@ ifdef CONFIG_NANVIX_DOCKER
 	@# Use cp instead of mv so that the original 'python' remains on disk;
 	@# otherwise Make would see the missing target and re-link on every run.
 	@if [ -f python ]; then cp -f python python$(EXE); fi
-	@# Strip debug symbols from the final binary for size reduction
+	@# Strip the final binary so all downstream consumers get a small artifact
 	$(DOCKER_RUN) sh -c '\
 		if [ ! -x "$(DOCKER_TOOLCHAIN_PATH)/bin/i686-nanvix-strip" ]; then \
 			echo "Warning: i686-nanvix-strip not found in Docker toolchain; skipping strip."; \
 		elif [ ! -f "$(DOCKER_WORKSPACE_PATH)/python$(EXE)" ]; then \
 			echo "Warning: $(DOCKER_WORKSPACE_PATH)/python$(EXE) not found; skipping strip."; \
 		else \
-			"$(DOCKER_TOOLCHAIN_PATH)/bin/i686-nanvix-strip" --strip-debug "$(DOCKER_WORKSPACE_PATH)/python$(EXE)" || { \
-				echo "Error: failed to strip debug symbols from python$(EXE) inside Docker."; exit 1; }; \
+			"$(DOCKER_TOOLCHAIN_PATH)/bin/i686-nanvix-strip" --strip-all "$(DOCKER_WORKSPACE_PATH)/python$(EXE)" || { \
+				echo "Error: failed to strip python$(EXE) inside Docker."; exit 1; }; \
 		fi'
 else
 	make -j$$(nproc) all
@@ -186,11 +186,11 @@ else
 	@# Use cp instead of mv so that the original 'python' remains on disk;
 	@# otherwise Make would see the missing target and re-link on every run.
 	@if [ -f python ]; then cp -f python python$(EXE); fi
-	@# Strip debug symbols from the final binary for size reduction
+	@# Strip the final binary so all downstream consumers get a small artifact
 	@if [ -x "$(TOOLCHAIN_PREFIX)/bin/i686-nanvix-strip" ]; then \
 		if [ -f "python$(EXE)" ]; then \
-			"$(TOOLCHAIN_PREFIX)/bin/i686-nanvix-strip" --strip-debug "python$(EXE)" || { \
-				echo "Error: failed to strip debug symbols from python$(EXE)."; exit 1; }; \
+			"$(TOOLCHAIN_PREFIX)/bin/i686-nanvix-strip" --strip-all "python$(EXE)" || { \
+				echo "Error: failed to strip python$(EXE)."; exit 1; }; \
 		else \
 			echo "Warning: python$(EXE) not found; skipping strip."; \
 		fi; \
