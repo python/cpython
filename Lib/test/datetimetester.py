@@ -1206,14 +1206,18 @@ class TestDateOnly(unittest.TestCase):
                 newdate = strptime(string, format)
                 self.assertEqual(newdate, target, msg=reason)
 
-    @warnings_helper.ignore_warnings(category=DeprecationWarning)
     def test_strptime_leap_year(self):
-        # GH-70647: warns if parsing a format with a day and no year.
+        # GH-70647: %d errors if parsing a format with a day and no year.
         with self.assertRaises(ValueError):
             # The existing behavior that GH-70647 seeks to change.
             date.strptime('02-29', '%m-%d')
         with self.assertRaises(ValueError):
             date.strptime('02-29', '%m-%e')
+        # %e without a year is deprecated, scheduled for removal in 3.17.
+        _strptime._regex_cache.clear()
+        with self.assertWarnsRegex(DeprecationWarning,
+                                   r'.*day of month without a year.*'):
+            date.strptime('02- 1', '%m-%e')
         with self._assertNotWarns(DeprecationWarning):
             date.strptime('20-03-14', '%y-%m-%d')
             date.strptime('02-29,2024', '%m-%d,%Y')
@@ -3122,15 +3126,15 @@ class TestDateTime(TestDate):
                 newdate = strptime(string, format)
                 self.assertEqual(newdate, target, msg=reason)
 
-    @warnings_helper.ignore_warnings(category=DeprecationWarning)
     def test_strptime_leap_year(self):
-        # GH-70647: warns if parsing a format with a day and no year.
+        # GH-70647: %d errors if parsing a format with a day and no year.
         with self.assertRaises(ValueError):
             # The existing behavior that GH-70647 seeks to change.
             self.theclass.strptime('02-29', '%m-%d')
-        with self.assertWarnsRegex(DeprecationWarning,
-                                   r'.*day of month without a year.*'):
+        with self.assertRaises(ValueError):
             self.theclass.strptime('03-14.159265', '%m-%d.%f')
+        # %e without a year is deprecated, scheduled for removal in 3.17.
+        _strptime._regex_cache.clear()
         with self.assertWarnsRegex(DeprecationWarning,
                                    r'.*day of month without a year.*'):
             self.theclass.strptime('03-14.159265', '%m-%e.%f')

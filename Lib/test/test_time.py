@@ -387,10 +387,10 @@ class TimeTestCase(unittest.TestCase):
         self.assertTrue(e.exception.__suppress_context__)
 
     def test_strptime_leap_year(self):
-        # GH-70647: warns if parsing a format with a day and no year.
-        with self.assertWarnsRegex(DeprecationWarning,
-                                   r'.*day of month without a year.*'):
+        # GH-70647: %d errors if parsing a format with a day and no year.
+        with self.assertRaises(ValueError):
             time.strptime('02-07 18:28', '%m-%d %H:%M')
+        # %e without a year is deprecated, scheduled for removal in 3.17.
         with self.assertWarnsRegex(DeprecationWarning,
                                    r'.*day of month without a year.*'):
             time.strptime('02- 7 18:28', '%m-%e %H:%M')

@@ -606,12 +606,11 @@ Other constructors, all class methods:
 
    .. note::
 
-      If *format* specifies a day of month without a year a
-      :exc:`DeprecationWarning` is emitted.  This is to avoid a quadrennial
+      If *format* specifies a day of month (``%d``) without a year,
+      :exc:`ValueError` is raised.  This is to avoid a quadrennial
       leap year bug in code seeking to parse only a month and day as the
       default year used in absence of one in the format is not a leap year.
-      Such *format* values may raise an error as of Python 3.18.  The
-      workaround is to always include a year in your *format*.  If parsing
+      The workaround is to always include a year in your *format*.  If parsing
       *date_string* values that do not have a year, explicitly add a year that
       is a leap year before parsing:
 
@@ -1180,14 +1179,13 @@ Other constructors, all class methods:
    time tuple.  See also :ref:`strftime-strptime-behavior` and
    :meth:`datetime.fromisoformat`.
 
-   .. versionchanged:: 3.13
+   .. versionchanged:: 3.15
 
-      If *format* specifies a day of month without a year a
-      :exc:`DeprecationWarning` is now emitted.  This is to avoid a quadrennial
+      If *format* specifies a day of month (``%d``) without a year,
+      :exc:`ValueError` is raised.  This is to avoid a quadrennial
       leap year bug in code seeking to parse only a month and day as the
       default year used in absence of one in the format is not a leap year.
-      Such *format* values may raise an error as of Python 3.18.  The
-      workaround is to always include a year in your *format*.  If parsing
+      The workaround is to always include a year in your *format*.  If parsing
       *date_string* values that do not have a year, explicitly add a year that
       is a leap year before parsing:
 
@@ -2919,11 +2917,12 @@ Notes:
       >>> dt.datetime.strptime(f"{month_day};1984", "%m/%d;%Y")  # No leap year bug.
       datetime.datetime(1984, 2, 29, 0, 0)
 
-   .. deprecated-removed:: 3.13 3.18
+   .. versionchanged:: 3.15
+      Using ``%d`` without a year now raises :exc:`ValueError`.
+
+   .. deprecated-removed:: 3.15 3.17
       :meth:`~.datetime.strptime` calls using a format string containing
-      a day of month without a year now emit a
-      :exc:`DeprecationWarning`. In 3.18 we will change this into
-      an error or change the default year to a leap year.
+      ``%e`` without a year now emit a :exc:`DeprecationWarning`.
 
 .. rubric:: Footnotes
 
