@@ -69,8 +69,8 @@ support.
 
    Yield :term:`finder` objects for the given module name.
 
-   If fullname contains a ``'.'``, the finders will be for the package
-   containing fullname, otherwise they will be all registered top level
+   If *fullname* contains a ``'.'``, the finders will be for the package
+   containing *fullname*, otherwise they will be all registered top level
    finders (i.e. those on both :data:`sys.meta_path` and :data:`sys.path_hooks`).
 
    If the named module is in a package, that package is imported as a side
@@ -151,11 +151,15 @@ support.
    :meth:`get_data <importlib.abc.ResourceLoader.get_data>` API.  The
    *package* argument should be the name of a package, in standard module format
    (``foo.bar``).  The *resource* argument should be in the form of a relative
-   filename, using ``/`` as the path separator.  The parent directory name
-   ``..`` is not allowed, and nor is a rooted name (starting with a ``/``).
+   filename, using ``/`` as the path separator.
 
    The function returns a binary string that is the contents of the specified
    resource.
+
+   This function uses the :term:`loader` method
+   :func:`~importlib.abc.FileLoader.get_data`
+   to support modules installed in the filesystem, but also in zip files,
+   databases, or elsewhere.
 
    For packages located in the filesystem, which have already been imported,
    this is the rough equivalent of::
@@ -163,12 +167,32 @@ support.
       d = os.path.dirname(sys.modules[package].__file__)
       data = open(os.path.join(d, resource), 'rb').read()
 
+   Like the :func:`open` function, :func:`!get_data` can follow parent
+   directories (``../``) and absolute paths (starting with ``/`` or ``C:/``,
+   for example).
+   It can open compilation/installation artifacts like ``.py`` and ``.pyc``
+   files or files with :func:`reserved filenames <os.path.isreserved>`.
+   To be compatible with non-filesystem loaders, avoid using these features.
+
+   .. warning::
+
+      This function is intended for trusted input.
+      It does not verify that *resource* "belongs" to *package*.
+
+   If you use a user-provided *resource* path, consider verifying it.
+   For example, require an alphanumeric filename with a known extension, or
+   install and check a list of known resources.
+
    If the package cannot be located or loaded, or it uses a :term:`loader`
    which does not support :meth:`get_data <importlib.abc.ResourceLoader.get_data>`,
    then ``None`` is returned.  In particular, the :term:`loader` for
    :term:`namespace packages <namespace package>` does not support
    :meth:`get_data <importlib.abc.ResourceLoader.get_data>`.
 
+   .. seealso::
+
+      The :mod:`importlib.resources` module provides structured access to
+      module resources.
 
 .. function:: resolve_name(name)
 

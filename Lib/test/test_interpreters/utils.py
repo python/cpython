@@ -1,5 +1,6 @@
 from collections import namedtuple
 import contextlib
+import errno
 import json
 import logging
 import os
@@ -21,7 +22,7 @@ try:
     import _interpreters
 except ImportError as exc:
     raise unittest.SkipTest(str(exc))
-from test.support import interpreters
+from concurrent import interpreters
 
 
 try:
@@ -51,7 +52,7 @@ def _close_file(file):
         else:
             os.close(file)
     except OSError as exc:
-        if exc.errno != 9:
+        if exc.errno != errno.EBADF:
             raise  # re-raise
         # It was closed already.
 
