@@ -3633,8 +3633,6 @@ class TestDateTime(TestDate):
              self.theclass(2025, 1, 2, 3, 4, 5, 678901)),
             ('2009-04-19T03:15:45.2345',
              self.theclass(2009, 4, 19, 3, 15, 45, 234500)),
-            ('2009-04-19T03:15:45.1234567',
-             self.theclass(2009, 4, 19, 3, 15, 45, 123456)),
             ('2025-01-02T03:04:05,678',
              self.theclass(2025, 1, 2, 3, 4, 5, 678000)),
             ('20250102', self.theclass(2025, 1, 2, 0, 0)),
@@ -3734,6 +3732,18 @@ class TestDateTime(TestDate):
             ('2025-01-31T24:00:00', self.theclass(2025, 2, 1, 0, 0, 0)),
             ('2025-12-31T24:00:00', self.theclass(2026, 1, 1, 0, 0, 0))
         ]
+
+
+        if '_Fast' in self.__class__.__name__:
+            examples += [
+                ('2009-04-19T03:15:45.1234567',
+                 self.theclass(2009, 4, 19, 3, 15, 45, 123456)),
+            ]
+        else:
+            examples += [
+                ('2009-04-19T03:15:45.1234567',
+                 self.theclass(2009, 4, 19, 3, 15, 45, nanosecond=123456700)),
+            ]
 
         for input_str, expected in examples:
             with self.subTest(input_str=input_str):
@@ -4932,12 +4942,24 @@ class TestTimeTZ(TestTime, TZInfoBase, unittest.TestCase):
             ('12:30:45.1234', (12, 30, 45, 123400)),
             ('12:30:45.12345', (12, 30, 45, 123450)),
             ('12:30:45.123456', (12, 30, 45, 123456)),
-            ('12:30:45.1234567', (12, 30, 45, 123456)),
-            ('12:30:45.12345678', (12, 30, 45, 123456)),
         ]
 
+        if '_Fast' in self.__class__.__name__:
+            strs += [
+                ('12:30:45.1234567', (12, 30, 45, 123456)),
+                ('12:30:45.12345678', (12, 30, 45, 123456)),
+            ]
+        else:
+            strs += [
+                ('12:30:45.1234567', (12, 30, 45, 123456.7)),
+                ('12:30:45.12345678', (12, 30, 45, 123456.78)),
+            ]
+
         for time_str, time_comps in strs:
-            expected = self.theclass(*time_comps)
+            if isinstance(time_comps[-1], float):
+                expected = self.theclass(*time_comps[:-1], nanosecond=int(time_comps[-1] * 1000))
+            else:
+                expected = self.theclass(*time_comps)
             actual = self.theclass.fromisoformat(time_str)
 
             self.assertEqual(actual, expected)
