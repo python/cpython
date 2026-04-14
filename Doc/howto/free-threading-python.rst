@@ -270,3 +270,27 @@ counting are not immediately freed when their internal reference count goes to
 zero.  Instead, they are examined by the next GC run and, if no stack
 references to them are found, they are freed.  This means these objects are
 freed by the GC and not when their reference count goes to zero, as is typical.
+
+
+Per-thread reference counting can delay freeing objects
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+To avoid contention on the reference count fields of frequently shared
+objects, the free-threaded build also uses "per-thread reference counting"
+for a few selected object types.  Rather than updating a single shared
+reference count, each thread maintains its own local reference count array,
+indexed by a unique id assigned to the object.  The true reference count is
+only computed by summing the per-thread counts when the object's local
+count drops to zero.  Per-thread reference counting is currently used for:
+
+* heap type objects (classes created in Python)
+* code objects
+* the ``__dict__`` of module objects
+
+Because the per-thread counts must be merged back to the object before it
+can be deallocated, objects using per-thread reference counting are
+typically freed later than they would be in the default build.  In
+particular, such an object is usually not freed until the thread that
+referenced it reaches a safe point (for example, in the "eval breaker"
+section of the bytecode evaluator) or exits.  Running :func:`gc.collect`
+will merge the per-thread counts and allow these objects to be freed.
