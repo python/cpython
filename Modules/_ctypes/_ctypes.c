@@ -2271,12 +2271,17 @@ static PyObject *CreateSwappedType(ctypes_state *st, PyTypeObject *type,
         stginfo->ffi_type_pointer = *fmt->pffi_type;
     }
     else {
+        const size_t els_size = sizeof(fmt->pffi_type->elements);
         stginfo->ffi_type_pointer.size = fmt->pffi_type->size;
         stginfo->ffi_type_pointer.alignment = fmt->pffi_type->alignment;
         stginfo->ffi_type_pointer.type = fmt->pffi_type->type;
-        stginfo->ffi_type_pointer.elements = PyMem_Malloc(2 * sizeof(ffi_type));
+        stginfo->ffi_type_pointer.elements = PyMem_Malloc(els_size);
+        if (!stginfo->ffi_type_pointer.elements) {
+            Py_DECREF(result);
+            return PyErr_NoMemory();
+        }
         memcpy(stginfo->ffi_type_pointer.elements,
-               fmt->pffi_type->elements, 2 * sizeof(ffi_type));
+               fmt->pffi_type->elements, els_size);
     }
     stginfo->align = fmt->pffi_type->alignment;
     stginfo->length = 0;
@@ -2382,6 +2387,10 @@ PyCSimpleType_init(PyObject *self, PyObject *args, PyObject *kwds)
         stginfo->ffi_type_pointer.alignment = fmt->pffi_type->alignment;
         stginfo->ffi_type_pointer.type = fmt->pffi_type->type;
         stginfo->ffi_type_pointer.elements = PyMem_Malloc(els_size);
+        if (!stginfo->ffi_type_pointer.elements) {
+            PyErr_NoMemory();
+            goto error;
+        }
         memcpy(stginfo->ffi_type_pointer.elements,
                fmt->pffi_type->elements, els_size);
     }
