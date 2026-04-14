@@ -994,13 +994,9 @@ dummy_func(void) {
     }
 
     op(_LOAD_ATTR_PROPERTY_FRAME, (func_version/2, fget/4, owner -- new_frame)) {
-        if (sym_get_type_version(owner) == 0) {
-            ctx->contradiction = true;
-            ctx->done = true;
-            break;
-        }
         PyFunctionObject *func = (PyFunctionObject *)fget;
-        if (func->func_version != func_version) {
+        if (sym_get_type_version(owner) == 0 ||
+            func->func_version != func_version) {
             ctx->contradiction = true;
             ctx->done = true;
             break;
