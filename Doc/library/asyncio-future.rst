@@ -47,7 +47,10 @@ Future Functions
    * a :class:`Task` object that would await on *obj*, if *obj* is an
      awaitable (:func:`inspect.isawaitable` is used for the test.)
 
-   If *obj* is neither of the above a :exc:`TypeError` is raised.
+   If *obj* is neither of the above a :exc:`TypeError` is raised. The
+   optional *loop* argument takes an object of :class:`EventLoop` to
+   denote which event loop *obj* belongs to. By default *loop* is set
+   to currently running event loop.
 
    .. important::
 
