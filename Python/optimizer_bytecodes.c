@@ -1062,7 +1062,42 @@ dummy_func(void) {
         _Py_BloomFilter_Add(dependencies, func);
     }
 
+    op(_CHECK_FUNCTION_VERSION_KW, (func_version/2, callable, unused, unused[oparg], unused -- callable, unused, unused[oparg], unused)) {
+        PyObject *func = sym_get_probable_value(callable);
+        if (func == NULL || !PyFunction_Check(func) || ((PyFunctionObject *)func)->func_version != func_version) {
+            ctx->contradiction = true;
+            ctx->done = true;
+            break;
+        }
+        // Guarded on this, so it can be promoted.
+        sym_set_const(callable, func);
+        _Py_BloomFilter_Add(dependencies, func);
+    }
+
     op(_CHECK_METHOD_VERSION, (func_version/2, callable, null, unused[oparg] -- callable, null, unused[oparg])) {
+        if (sym_is_const(ctx, callable) && sym_matches_type(callable, &PyMethod_Type)) {
+            PyMethodObject *method = (PyMethodObject *)sym_get_const(ctx, callable);
+            assert(PyMethod_Check(method));
+            ADD_OP(_CHECK_FUNCTION_VERSION_INLINE, 0, func_version);
+            uop_buffer_last(&ctx->out_buffer)->operand1 = (uintptr_t)method->im_func;
+        }
+        else {
+            // Guarding on the bound method, safe to promote.
+            PyObject *bound_method = sym_get_probable_value(callable);
+            if (bound_method != NULL && Py_TYPE(bound_method) == &PyMethod_Type) {
+                PyMethodObject *method = (PyMethodObject *)bound_method;
+                PyObject *func = method->im_func;
+                if (PyFunction_Check(func) &&
+                    ((PyFunctionObject *)func)->func_version == func_version) {
+                    _Py_BloomFilter_Add(dependencies, func);
+                    sym_set_const(callable, bound_method);
+                }
+            }
+        }
+        sym_set_type(callable, &PyMethod_Type);
+    }
+
+    op(_CHECK_METHOD_VERSION_KW, (func_version/2, callable, null, unused[oparg], unused -- callable, null, unused[oparg], unused)) {
         if (sym_is_const(ctx, callable) && sym_matches_type(callable, &PyMethod_Type)) {
             PyMethodObject *method = (PyMethodObject *)sym_get_const(ctx, callable);
             assert(PyMethod_Check(method));
@@ -1121,6 +1156,18 @@ dummy_func(void) {
     }
 
     op(_EXPAND_METHOD, (callable, self_or_null, unused[oparg] -- callable, self_or_null, unused[oparg])) {
+        if (sym_is_const(ctx, callable) && sym_matches_type(callable, &PyMethod_Type)) {
+            PyMethodObject *method = (PyMethodObject *)sym_get_const(ctx, callable);
+            callable = sym_new_const(ctx, method->im_func);
+            self_or_null = sym_new_const(ctx, method->im_self);
+        }
+        else {
+            callable = sym_new_not_null(ctx);
+            self_or_null = sym_new_not_null(ctx);
+        }
+    }
+
+    op(_EXPAND_METHOD_KW, (callable, self_or_null, unused[oparg], unused -- callable, self_or_null, unused[oparg], unused)) {
         if (sym_is_const(ctx, callable) && sym_matches_type(callable, &PyMethod_Type)) {
             PyMethodObject *method = (PyMethodObject *)sym_get_const(ctx, callable);
             callable = sym_new_const(ctx, method->im_func);
@@ -1307,6 +1354,20 @@ dummy_func(void) {
     }
 
     op(_CHECK_IS_NOT_PY_CALLABLE, (callable, unused, unused[oparg] -- callable, unused, unused[oparg])) {
+        PyTypeObject *type = sym_get_type(callable);
+        if (type && type != &PyFunction_Type && type != &PyMethod_Type) {
+            ADD_OP(_NOP, 0, 0);
+        }
+    }
+
+    op(_CHECK_IS_NOT_PY_CALLABLE_EX, (func_st, unused, unused, unused -- func_st, unused, unused, unused)) {
+        PyTypeObject *type = sym_get_type(func_st);
+        if (type && type != &PyFunction_Type) {
+            ADD_OP(_NOP, 0, 0);
+        }
+    }
+
+    op(_CHECK_IS_NOT_PY_CALLABLE_KW, (callable, unused, unused[oparg], unused -- callable, unused, unused[oparg], unused)) {
         PyTypeObject *type = sym_get_type(callable);
         if (type && type != &PyFunction_Type && type != &PyMethod_Type) {
             ADD_OP(_NOP, 0, 0);
@@ -2298,6 +2359,10 @@ dummy_func(void) {
     }
 
     op(_RECORD_CALLABLE, (func, self, args[oparg] -- func, self, args[oparg])) {
+        sym_set_recorded_value(func, (PyObject *)this_instr->operand0);
+    }
+
+    op(_RECORD_CALLABLE_KW, (func, self, args[oparg], kwnames -- func, self, args[oparg], kwnames)) {
         sym_set_recorded_value(func, (PyObject *)this_instr->operand0);
     }
 

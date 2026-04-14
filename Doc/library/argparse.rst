@@ -1970,7 +1970,7 @@ FileType objects
       run and then use the :keyword:`with`-statement to manage the files.
 
    .. versionchanged:: 3.4
-      Added the *encodings* and *errors* parameters.
+      Added the *encoding* and *errors* parameters.
 
    .. deprecated:: 3.14
 
