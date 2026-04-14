@@ -4646,7 +4646,7 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertEqual(res, TIER2_THRESHOLD)
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
-        self.assertIn("_LOAD_CONST_INLINE_BORROW", uops)
+        self.assertGreaterEqual(count_ops(ex, "_LOAD_CONST_INLINE_BORROW"), 2)
         self.assertNotIn("_BINARY_OP_SUBSCR_DICT", uops)
 
     def test_binary_subscr_frozendict_const_fold(self):
@@ -4661,6 +4661,7 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertEqual(res, TIER2_THRESHOLD)
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
+        self.assertGreaterEqual(count_ops(ex, "_LOAD_CONST_INLINE_BORROW"), 3)
         # lookup result is folded to constant 1, so comparison is optimized away
         self.assertNotIn("_COMPARE_OP_INT", uops)
 
@@ -4676,7 +4677,38 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertEqual(res, TIER2_THRESHOLD)
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
+        self.assertGreaterEqual(count_ops(ex, "_LOAD_CONST_INLINE_BORROW"), 3)
         self.assertNotIn("_CONTAINS_OP_SET", uops)
+
+    def test_contains_op_frozendict_const_fold(self):
+        def testfunc(n):
+            x = 0
+            for _ in range(n):
+                if 'x' in FROZEN_DICT_CONST:
+                    x += 1
+            return x
+
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, TIER2_THRESHOLD)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertGreaterEqual(count_ops(ex, "_LOAD_CONST_INLINE_BORROW"), 3)
+        self.assertNotIn("_CONTAINS_OP_DICT", uops)
+
+    def test_not_contains_op_frozendict_const_fold(self):
+        def testfunc(n):
+            x = 0
+            for _ in range(n):
+                if 'z' not in FROZEN_DICT_CONST:
+                    x += 1
+            return x
+
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, TIER2_THRESHOLD)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertGreaterEqual(count_ops(ex, "_LOAD_CONST_INLINE_BORROW"), 3)
+        self.assertNotIn("_CONTAINS_OP_DICT", uops)
 
     def test_binary_subscr_list_slice(self):
         def testfunc(n):
@@ -4895,6 +4927,25 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertIn("_LOAD_ATTR_PROPERTY_FRAME", uops)
         # This is a sign the optimizer ran and didn't hit contradiction.
         self.assertIn("_LOAD_CONST_INLINE_BORROW", uops)
+
+    def test_load_attr_getattribute_frame(self):
+        class B:
+            def __getattribute__(self, name):
+                return len(name)
+
+        def testfunc(n):
+            b = B()
+            y = 0
+            for _ in range(n):
+                y += b.x + b.y
+            return y
+
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertIsNotNone(ex)
+        self.assertEqual(res, 2 * TIER2_THRESHOLD)
+        uops = get_opnames(ex)
+        self.assertIn("_LOAD_ATTR_GETATTRIBUTE_OVERRIDDEN_FRAME", uops)
+        self.assertNotIn("_LOAD_GLOBAL_BUILTINS", uops)
 
     def test_load_attr_property_frame_invalidates_on_code_change(self):
         class C:

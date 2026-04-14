@@ -771,6 +771,10 @@ dummy_func(void) {
         b = sym_new_type(ctx, &PyBool_Type);
         l = left;
         r = right;
+        if (sym_is_not_container(left) &&
+            sym_matches_type(right, &PyFrozenDict_Type)) {
+            REPLACE_OPCODE_IF_EVALUATES_PURE(left, right, b);
+        }
     }
 
     op(_LOAD_CONST, (-- value)) {
@@ -1008,6 +1012,27 @@ dummy_func(void) {
             break;
         }
         f->locals[0] = owner;
+        f->func = func;
+        new_frame = PyJitRef_WrapInvalid(f);
+    }
+
+    op(_LOAD_ATTR_GETATTRIBUTE_OVERRIDDEN_FRAME, (func_version/2, getattribute/4, owner -- new_frame)) {
+        PyFunctionObject *func = (PyFunctionObject *)getattribute;
+        if (sym_get_type_version(owner) == 0 ||
+            func->func_version != func_version) {
+            ctx->contradiction = true;
+            ctx->done = true;
+            break;
+        }
+        _Py_BloomFilter_Add(dependencies, func);
+        PyCodeObject *co = (PyCodeObject *)func->func_code;
+        _Py_UOpsAbstractFrame *f = frame_new(ctx, co, NULL, 0);
+        if (f == NULL) {
+            break;
+        }
+        PyObject *name = get_co_name(ctx, oparg >> 1);
+        f->locals[0] = owner;
+        f->locals[1] = sym_new_const(ctx, name);
         f->func = func;
         new_frame = PyJitRef_WrapInvalid(f);
     }
