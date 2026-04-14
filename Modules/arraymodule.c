@@ -3061,7 +3061,8 @@ array_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
             if (len > 0 && !array_Check(initial, state)) {
                 Py_ssize_t i;
                 for (i = 0; i < len; i++) {
-                    PyObject *v = PySequence_GetItem(initial, i);
+                    PyObject *v =
+                        PySequence_GetItem(initial, i);
                     if (v == NULL) {
                         Py_DECREF(a);
                         Py_XDECREF(it);
