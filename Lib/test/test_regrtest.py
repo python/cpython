@@ -2221,11 +2221,8 @@ class ArgsTestCase(BaseTestCase):
         self.check_executed_tests(output, tests, stats=3)
 
     def check_add_python_opts(self, option):
-        # --fast-ci and --slow-ci add "-u -W default -bb -E" options to Python
-        try:
-            import _testinternalcapi
-        except ImportError:
-            raise unittest.SkipTest("requires _testinternalcapi")
+        # --fast-ci and --slow-ci add "-u -W error -bb -E" options to Python
+
         code = textwrap.dedent(r"""
             import sys
             import unittest
@@ -2239,25 +2236,27 @@ class ArgsTestCase(BaseTestCase):
             use_environment = (support.is_emscripten or support.is_wasi)
 
             class WorkerTests(unittest.TestCase):
-                @unittest.skipUnless(get_config is None, 'need get_config()')
+                @unittest.skipIf(get_config is None, 'need get_config()')
                 def test_config(self):
-                    config = get_config()['config']
+                    config = get_config()
                     # -u option
                     self.assertEqual(config['buffered_stdio'], 0)
-                    # -W default option
-                    self.assertTrue(config['warnoptions'], ['default'])
+                    # -W error option
+                    self.assertEqual(config['warnoptions'],
+                                     ['error', 'error::BytesWarning'])
                     # -bb option
-                    self.assertTrue(config['bytes_warning'], 2)
+                    self.assertEqual(config['bytes_warning'], 2)
                     # -E option
-                    self.assertTrue(config['use_environment'], use_environment)
+                    self.assertEqual(config['use_environment'], use_environment)
 
                 def test_python_opts(self):
                     # -u option
                     self.assertTrue(sys.__stdout__.write_through)
                     self.assertTrue(sys.__stderr__.write_through)
 
-                    # -W default option
-                    self.assertTrue(sys.warnoptions, ['default'])
+                    # -W error option
+                    self.assertEqual(sys.warnoptions,
+                                     ['error', 'error::BytesWarning'])
 
                     # -bb option
                     self.assertEqual(sys.flags.bytes_warning, 2)
