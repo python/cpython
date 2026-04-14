@@ -2,6 +2,7 @@
 
 import dis
 import pickle
+import types
 import unittest
 
 from test.support import check_syntax_error
@@ -36,8 +37,8 @@ class PositionalOnlyTestCase(unittest.TestCase):
         check_syntax_error(self, "def f(/): pass")
         check_syntax_error(self, "def f(*, a, /): pass")
         check_syntax_error(self, "def f(*, /, a): pass")
-        check_syntax_error(self, "def f(a, /, a): pass", "duplicate argument 'a' in function definition")
-        check_syntax_error(self, "def f(a, /, *, a): pass", "duplicate argument 'a' in function definition")
+        check_syntax_error(self, "def f(a, /, a): pass", "duplicate parameter 'a' in function definition")
+        check_syntax_error(self, "def f(a, /, *, a): pass", "duplicate parameter 'a' in function definition")
         check_syntax_error(self, "def f(a, b/2, c): pass")
         check_syntax_error(self, "def f(a, /, c, /): pass")
         check_syntax_error(self, "def f(a, /, c, /, d): pass")
@@ -58,8 +59,8 @@ class PositionalOnlyTestCase(unittest.TestCase):
         check_syntax_error(self, "async def f(/): pass")
         check_syntax_error(self, "async def f(*, a, /): pass")
         check_syntax_error(self, "async def f(*, /, a): pass")
-        check_syntax_error(self, "async def f(a, /, a): pass", "duplicate argument 'a' in function definition")
-        check_syntax_error(self, "async def f(a, /, *, a): pass", "duplicate argument 'a' in function definition")
+        check_syntax_error(self, "async def f(a, /, a): pass", "duplicate parameter 'a' in function definition")
+        check_syntax_error(self, "async def f(a, /, *, a): pass", "duplicate parameter 'a' in function definition")
         check_syntax_error(self, "async def f(a, b/2, c): pass")
         check_syntax_error(self, "async def f(a, /, c, /): pass")
         check_syntax_error(self, "async def f(a, /, c, /, d): pass")
@@ -246,8 +247,8 @@ class PositionalOnlyTestCase(unittest.TestCase):
         check_syntax_error(self, "lambda /: None")
         check_syntax_error(self, "lambda *, a, /: None")
         check_syntax_error(self, "lambda *, /, a: None")
-        check_syntax_error(self, "lambda a, /, a: None", "duplicate argument 'a' in function definition")
-        check_syntax_error(self, "lambda a, /, *, a: None", "duplicate argument 'a' in function definition")
+        check_syntax_error(self, "lambda a, /, a: None", "duplicate parameter 'a' in function definition")
+        check_syntax_error(self, "lambda a, /, *, a: None", "duplicate parameter 'a' in function definition")
         check_syntax_error(self, "lambda a, /, b, /: None")
         check_syntax_error(self, "lambda a, /, b, /, c: None")
         check_syntax_error(self, "lambda a, /, b, /, c, *, d: None")
@@ -440,7 +441,9 @@ class PositionalOnlyTestCase(unittest.TestCase):
         # without constant folding we end up with
         # COMPARE_OP(is), IS_OP (0)
         # with constant folding we should expect a IS_OP (1)
-        codes = [(i.opname, i.argval) for i in dis.get_instructions(g)]
+        code_obj = next(const for const in g.__code__.co_consts
+                        if isinstance(const, types.CodeType) and const.co_name == "__annotate__")
+        codes = [(i.opname, i.argval) for i in dis.get_instructions(code_obj)]
         self.assertNotIn(('UNARY_NOT', None), codes)
         self.assertIn(('IS_OP', 1), codes)
 

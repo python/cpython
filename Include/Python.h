@@ -16,17 +16,19 @@
 
 
 // Include standard header files
+// When changing these files, remember to update Doc/extending/extending.rst.
 #include <assert.h>               // assert()
 #include <inttypes.h>             // uintptr_t
 #include <limits.h>               // INT_MAX
 #include <math.h>                 // HUGE_VAL
 #include <stdarg.h>               // va_list
+#include <string.h>               // memcpy()
 #include <wchar.h>                // wchar_t
 #ifdef HAVE_SYS_TYPES_H
 #  include <sys/types.h>          // ssize_t
 #endif
 
-// <errno.h>, <stdio.h>, <stdlib.h> and <string.h> headers are no longer used
+// <errno.h>, <stdio.h> and <stdlib.h> headers are no longer used
 // by Python, but kept for the backward compatibility of existing third party C
 // extensions. They are not included by limited C API version 3.11 and newer.
 //
@@ -36,13 +38,30 @@
 #  include <errno.h>              // errno
 #  include <stdio.h>              // FILE*
 #  include <stdlib.h>             // getenv()
-#  include <string.h>             // memcpy()
 #endif
 #if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 < 0x030d0000
 #  include <ctype.h>              // tolower()
 #  ifndef MS_WINDOWS
 #    include <unistd.h>           // close()
 #  endif
+#endif
+
+#if defined(Py_GIL_DISABLED)
+#  if defined(_MSC_VER)
+#    include <intrin.h>             // __readgsqword()
+#  endif
+
+#  if defined(__MINGW32__)
+#    include <intrin.h>             // __readgsqword()
+#  endif
+#endif // Py_GIL_DISABLED
+
+#ifdef _MSC_VER
+// Ignore MSC warning C4201: "nonstandard extension used: nameless
+// struct/union".  (Only generated for C standard versions less than C11, which
+// we don't *officially* support.)
+__pragma(warning(push))
+__pragma(warning(disable: 4201))
 #endif
 
 
@@ -55,7 +74,10 @@
 #include "pybuffer.h"
 #include "pystats.h"
 #include "pyatomic.h"
+#include "cpython/pylock.h"
+#include "critical_section.h"
 #include "object.h"
+#include "refcount.h"
 #include "objimpl.h"
 #include "typeslots.h"
 #include "pyhash.h"
@@ -63,6 +85,7 @@
 #include "bytearrayobject.h"
 #include "bytesobject.h"
 #include "unicodeobject.h"
+#include "pyerrors.h"
 #include "longobject.h"
 #include "cpython/longintrepr.h"
 #include "boolobject.h"
@@ -78,6 +101,7 @@
 #include "setobject.h"
 #include "methodobject.h"
 #include "moduleobject.h"
+#include "cpython/monitoring.h"
 #include "cpython/funcobject.h"
 #include "cpython/classobject.h"
 #include "fileobject.h"
@@ -97,8 +121,8 @@
 #include "weakrefobject.h"
 #include "structseq.h"
 #include "cpython/picklebufobject.h"
+#include "cpython/pytime.h"
 #include "codecs.h"
-#include "pyerrors.h"
 #include "pythread.h"
 #include "cpython/context.h"
 #include "modsupport.h"
@@ -107,6 +131,7 @@
 #include "pylifecycle.h"
 #include "ceval.h"
 #include "sysmodule.h"
+#include "audit.h"
 #include "osmodule.h"
 #include "intrcheck.h"
 #include "import.h"
@@ -118,6 +143,9 @@
 #include "fileutils.h"
 #include "cpython/pyfpe.h"
 #include "cpython/tracemalloc.h"
-#include "cpython/optimizer.h"
+
+#ifdef _MSC_VER
+__pragma(warning(pop))  // warning(disable: 4201)
+#endif
 
 #endif /* !Py_PYTHON_H */

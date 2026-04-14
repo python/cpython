@@ -8,9 +8,7 @@ Fixed an issue where instances of :class:`ssl.SSLSocket` were vulnerable to
 a bypass of the TLS handshake and included protections (like certificate
 verification) and treating sent unencrypted data as if it were
 post-handshake TLS encrypted data.  Security issue reported as
-`CVE-2023-40217
-<https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2023-40217>`_ by Aapo
-Oksman. Patch by Gregory P. Smith.
+:cve:`2023-40217` by Aapo Oksman. Patch by Gregory P. Smith.
 
 ..
 
@@ -155,7 +153,7 @@ about a 10% improvement.
 .. section: Core and Builtins
 
 Guard ``assert(tstate->thread_id > 0)`` with ``#ifndef HAVE_PTHREAD_STUBS``.
-This allows for for pydebug builds to work under WASI which (currently)
+This allows for pydebug builds to work under WASI which (currently)
 lacks thread support.
 
 ..
@@ -565,7 +563,7 @@ on deallocation.
 
 Fix :meth:`multiprocessing.synchronize.SemLock.__setstate__` to properly
 initialize :attr:`multiprocessing.synchronize.SemLock._is_fork_ctx`. This
-fixes a regression when passing a SemLock accross nested processes.
+fixes a regression when passing a SemLock across nested processes.
 
 Rename :attr:`multiprocessing.synchronize.SemLock.is_fork_ctx` to
 :attr:`multiprocessing.synchronize.SemLock._is_fork_ctx` to avoid exposing
@@ -710,7 +708,7 @@ Fixes crash when tracing in recursive calls to Python classes.
 .. section: Core and Builtins
 
 Remove the ``_PyCFrame`` struct, moving the pointer to the current
-intepreter frame back to the threadstate, as it was for 3.10 and earlier.
+interpreter frame back to the threadstate, as it was for 3.10 and earlier.
 The ``_PyCFrame`` existed as a performance optimization for tracing. Since
 PEP 669 has been implemented, this optimization no longer applies.
 
@@ -928,7 +926,7 @@ Isolate :mod:`!_decimal` (apply :pep:`687`). Patch by Charlie Zhao.
 
 Add the exception as the third argument to ``PY_UNIND`` callbacks in
 ``sys.monitoring``. This makes the ``PY_UNWIND`` callback consistent with
-the other exception hanlding callbacks.
+the other exception handling callbacks.
 
 ..
 
@@ -937,7 +935,7 @@ the other exception hanlding callbacks.
 .. nonce: DdEwV8
 .. section: Core and Builtins
 
-Raise a ``ValueError`` when a monitoring callback funtion returns
+Raise a ``ValueError`` when a monitoring callback function returns
 ``DISABLE`` for events that cannot be disabled locally.
 
 ..
@@ -1008,7 +1006,7 @@ Add :meth:`dbm.gnu.gdbm.clear` to :mod:`dbm.gnu`. Patch By Donghee Na.
 .. section: Core and Builtins
 
 The ASYNC and AWAIT tokens are removed from the Grammar, which removes the
-posibility of making ``async`` and ``await`` soft keywords when using
+possibility of making ``async`` and ``await`` soft keywords when using
 ``feature_version<7`` in :func:`ast.parse`.
 
 ..
@@ -1030,7 +1028,7 @@ the call is not a classmethod.
 .. nonce: DdqHFg
 .. section: Core and Builtins
 
-Python no longer crashes due an infrequent race when initialzing
+Python no longer crashes due an infrequent race when initializing
 per-interpreter interned strings.  The crash would manifest when the
 interpreter was finalized.
 
@@ -1924,7 +1922,7 @@ objects
 .. nonce: RDGe8-
 .. section: Library
 
-Deprecation warning about non-integer number in :mod:`gettext` now alwais
+Deprecation warning about non-integer number in :mod:`gettext` now always
 refers to the line in the user code where gettext function or method is
 used. Previously it could refer to a line in ``gettext`` code.
 
@@ -1966,7 +1964,7 @@ debugging.
 .. nonce: LCxiau
 .. section: Library
 
-Fix :func:`termios.tcsetattr` bug that was overwritting existing errors
+Fix :func:`termios.tcsetattr` bug that was overwriting existing errors
 during parsing integers from ``term`` list.
 
 ..
@@ -2049,7 +2047,7 @@ point.
 .. nonce: fECxTj
 .. section: Library
 
-On Windows, multiprocessing ``Popen.terminate()`` now catchs
+On Windows, multiprocessing ``Popen.terminate()`` now catches
 :exc:`PermissionError` and get the process exit code. If the process is
 still running, raise again the :exc:`PermissionError`. Otherwise, the
 process terminated as expected: store its exit code. Patch by Victor
@@ -2276,7 +2274,7 @@ creation.
 .. nonce: m2H5Bk
 .. section: Library
 
-Remove unnecessary extra ``__slots__`` in :py:class:`datetime`\'s pure
+Remove unnecessary extra ``__slots__`` in :class:`~datetime.datetime`\'s pure
 python implementation to reduce memory size, as they are defined in the
 superclass. Patch by James Hilton-Balfe
 
@@ -2296,7 +2294,7 @@ superclass. Patch by James Hilton-Balfe
 .. nonce: VksX1D
 .. section: Library
 
-:class:`http.server.CGIHTTPRequestHandler` has been deprecated for removal
+:class:`!http.server.CGIHTTPRequestHandler` has been deprecated for removal
 in 3.15.  Its design is old and the web world has long since moved beyond
 CGI.
 
@@ -2859,7 +2857,7 @@ Seems that in some conditions, OpenSSL will return ``SSL_ERROR_SYSCALL``
 instead of ``SSL_ERROR_SSL`` when a certification verification has failed,
 but the error parameters will still contain ``ERR_LIB_SSL`` and
 ``SSL_R_CERTIFICATE_VERIFY_FAILED``. We are now detecting this situation and
-raising the appropiate ``ssl.SSLCertVerificationError``. Patch by Pablo
+raising the appropriate ``ssl.SSLCertVerificationError``. Patch by Pablo
 Galindo
 
 ..
@@ -2890,9 +2888,9 @@ documented and were not intended to be used externally.
 .. nonce: vMbmj_
 .. section: Library
 
-:data:`opcode.ENABLE_SPECIALIZATION` (which was added in 3.12 but never
+:data:`!opcode.ENABLE_SPECIALIZATION` (which was added in 3.12 but never
 documented or intended for external usage) is moved to
-:data:`_opcode.ENABLE_SPECIALIZATION` where tests can access it.
+:data:`!_opcode.ENABLE_SPECIALIZATION` where tests can access it.
 
 ..
 
@@ -2981,7 +2979,7 @@ method. Patch by James Cave.
 .. section: Library
 
 Fix overflow on 32-bit systems with :mod:`asyncio` :func:`os.sendfile`
-implemention.
+implementation.
 
 ..
 
@@ -3055,7 +3053,7 @@ Donghee Na.
 .. nonce: U9nD_B
 .. section: Library
 
-Optimize :meth:`_PollLikeSelector.select` for many iteration case.
+Optimize :meth:`!_PollLikeSelector.select` for many iteration case.
 
 ..
 
@@ -3175,7 +3173,7 @@ Disable tab completion in multiline mode of :mod:`pdb`
 .. nonce: pYSwMj
 .. section: Library
 
-Expose opcode metadata through :mod:`_opcode`.
+Expose opcode metadata through :mod:`!_opcode`.
 
 ..
 
@@ -3253,7 +3251,7 @@ Eliseev.
 .. nonce: NN35-U
 .. section: Library
 
-Optimize ``(?!)`` (pattern which alwais fails) in regular expressions.
+Optimize ``(?!)`` (pattern which always fails) in regular expressions.
 
 ..
 
@@ -3428,7 +3426,7 @@ This bug was introduced in Python 3.12.0 beta 1.
 .. nonce: hSlB17
 .. section: Library
 
-Deprecate :func:`typing.no_type_check_decorator`. No major type checker ever
+Deprecate :func:`!typing.no_type_check_decorator`. No major type checker ever
 added support for this decorator. Patch by Alex Waygood.
 
 ..
@@ -3438,7 +3436,8 @@ added support for this decorator. Patch by Alex Waygood.
 .. nonce: C1ahtk
 .. section: Library
 
-Make pydoc.doc catch bad module ImportError when output stream is not None.
+Make :func:`pydoc.doc` catch bad module :exc:`ImportError`
+when output stream is not ``None``.
 
 ..
 
@@ -3477,7 +3476,7 @@ Fix rare concurrency bug in lock acquisition by the logging package.
 .. nonce: ya5jBT
 .. section: Library
 
-Added PY_THROW event hook for :mod:`cProfile` for generators
+Added PY_THROW event hook for :mod:`!cProfile` for generators
 
 ..
 
@@ -3496,7 +3495,7 @@ star imports.
 .. nonce: TJEUkd
 .. section: Library
 
-Zipapp will now skip over apending an archive to itself.
+Zipapp will now skip over appending an archive to itself.
 
 ..
 
@@ -3736,7 +3735,7 @@ overwritten.
 .. nonce: _sZilh
 .. section: Library
 
-Fix bugs in :mod:`_ctypes` where exceptions could end up being overwritten.
+Fix bugs in :mod:`!_ctypes` where exceptions could end up being overwritten.
 
 ..
 
@@ -4184,8 +4183,7 @@ Hugo van Kemenade.
 .. section: Library
 
 :pep:`594`: Remove the :mod:`!spwd` module, deprecated in Python 3.11: the
-`python-pam project <https://pypi.org/project/python-pam/>`_ can be used
-instead. Patch by Victor Stinner.
+:pypi:`python-pam` project can be used instead. Patch by Victor Stinner.
 
 ..
 
@@ -4380,7 +4378,7 @@ Patch by Victor Stinner.
 .. nonce: I6MQhb
 .. section: Library
 
-:pep:`594`: Remove the :mod:`!cgi`` and :mod:`!cgitb` modules, deprecated in
+:pep:`594`: Remove the :mod:`!cgi` and :mod:`!cgitb` modules, deprecated in
 Python 3.11. Patch by Victor Stinner.
 
 ..
@@ -4566,7 +4564,7 @@ Deprecate passing any arguments to :func:`threading.RLock`.
 .. nonce: o5Zb0t
 .. section: Library
 
-Refactored ``zipfile._strip_extra`` to use higher level abstactions for
+Refactored ``zipfile._strip_extra`` to use higher level abstractions for
 extras instead of a heavy-state loop.
 
 ..
@@ -5016,7 +5014,7 @@ by Victor Stinner.
 
 Fix test_timeout() of test_concurrent_futures.test_wait. Remove the future
 which may or may not complete depending if it takes longer than the timeout
-ot not. Keep the second future which does not complete before wait()
+or not. Keep the second future which does not complete before wait()
 timeout. Patch by Victor Stinner.
 
 ..
@@ -5106,7 +5104,7 @@ Victor Stinner.
 
 regrtest: Add ``--fast-ci`` and ``--slow-ci`` options. ``--fast-ci`` uses a
 default timeout of 10 minutes and ``-u all,-cpu`` (skip slowest tests).
-``--slow-ci`` uses a default timeout of 20 minues and ``-u all`` (run all
+``--slow-ci`` uses a default timeout of 20 minutes and ``-u all`` (run all
 tests). Patch by Victor Stinner.
 
 ..
@@ -5150,7 +5148,7 @@ frame did not save the PC`` is found. Patch by Victor Stinner.
 .. nonce: qxI4OG
 .. section: Tests
 
-libregrtest now calls :func:`random.seed()` before running each test file
+libregrtest now calls :func:`random.seed` before running each test file
 when ``-r/--randomize`` command line option is used. Moreover, it's also
 called in worker processes.  It should help to make tests more
 deterministic. Previously, it was only called once in the main process
@@ -5234,7 +5232,7 @@ and ``sysctl net.inet.udp.blackhole=1``).  Patch by Victor Stinner.
 
 Skip ``test_gdb`` if gdb is unable to retrieve Python frame objects: if a
 frame is ``<optimized out>``. When Python is built with "clang -Og", gdb can
-fail to retrive the *frame* parameter of ``_PyEval_EvalFrameDefault()``. In
+fail to retrieve the *frame* parameter of ``_PyEval_EvalFrameDefault()``. In
 this case, tests like ``py_bt()`` are likely to fail. Without getting access
 to Python frames, ``python-gdb.py`` is mostly clueless on retrieving the
 Python traceback. Moreover, ``test_gdb`` is no longer skipped on macOS if
@@ -5718,7 +5716,7 @@ Tools/wasm/build_wasi.sh as a reference implementation of the docs.
 .. section: Build
 
 Autoconf 2.71 and aclocal 1.16.4 is now required to regenerate
-:file:`!configure`.
+:file:`configure`.
 
 ..
 
@@ -6460,8 +6458,8 @@ Victor Stinner.
 .. nonce: GRxZtI
 .. section: C API
 
-Deprecate the :c:func:`PyWeakref_GetObject` and
-:c:func:`PyWeakref_GET_OBJECT` functions: use the new
+Deprecate the :c:func:`!PyWeakref_GetObject` and
+:c:func:`!PyWeakref_GET_OBJECT` functions: use the new
 :c:func:`PyWeakref_GetRef` function instead. Patch by Victor Stinner.
 
 ..
@@ -6472,7 +6470,7 @@ Deprecate the :c:func:`PyWeakref_GetObject` and
 .. section: C API
 
 Add :c:func:`PyWeakref_GetRef` function: similar to
-:c:func:`PyWeakref_GetObject` but returns a :term:`strong reference`, or
+:c:func:`!PyWeakref_GetObject` but returns a :term:`strong reference`, or
 ``NULL`` if the referent is no longer live. Patch by Victor Stinner.
 
 ..
@@ -6540,7 +6538,7 @@ to hide implementation details. Patch by Victor Stinner.
 .. nonce: FQJG5B
 .. section: C API
 
-Deprecate the :c:func:`PyImport_ImportModuleNoBlock` function which is just
+Deprecate the :c:func:`!PyImport_ImportModuleNoBlock` function which is just
 an alias to :c:func:`PyImport_ImportModule` since Python 3.3. Patch by
 Victor Stinner.
 
@@ -6594,13 +6592,13 @@ functions, deprecated in Python 3.9. Patch by Victor Stinner.
 
 Deprecate old Python initialization functions:
 
-* :c:func:`PySys_ResetWarnOptions`
-* :c:func:`Py_GetExecPrefix`
-* :c:func:`Py_GetPath`
-* :c:func:`Py_GetPrefix`
-* :c:func:`Py_GetProgramFullPath`
-* :c:func:`Py_GetProgramName`
-* :c:func:`Py_GetPythonHome`
+* :c:func:`!PySys_ResetWarnOptions`
+* :c:func:`!Py_GetExecPrefix`
+* :c:func:`!Py_GetPath`
+* :c:func:`!Py_GetPrefix`
+* :c:func:`!Py_GetProgramFullPath`
+* :c:func:`!Py_GetProgramName`
+* :c:func:`!Py_GetPythonHome`
 
 Patch by Victor Stinner.
 

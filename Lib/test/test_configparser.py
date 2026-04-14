@@ -2,7 +2,6 @@ import collections
 import configparser
 import io
 import os
-import pathlib
 import textwrap
 import unittest
 
@@ -646,6 +645,21 @@ boolean {0[0]} NO
                                      "'opt' in section 'Bar' already exists")
             self.assertEqual(e.args, ("Bar", "opt", "<dict>", None))
 
+    def test_get_after_duplicate_option_error(self):
+        cf = self.newconfig()
+        ini = textwrap.dedent("""\
+            [Foo]
+            x{equals}1
+            y{equals}2
+            y{equals}3
+        """.format(equals=self.delimiters[0]))
+        if self.strict:
+            with self.assertRaises(configparser.DuplicateOptionError):
+                cf.read_string(ini)
+        else:
+            cf.read_string(ini)
+        self.assertEqual(cf.get('Foo', 'x'), '1')
+
     def test_write(self):
         config_string = (
             "[Long Line]\n"
@@ -730,12 +744,12 @@ boolean {0[0]} NO
         self.assertEqual(cf.get("Foo Bar", "foo"), "newbar")
         # check when we pass only a Path object:
         cf = self.newconfig()
-        parsed_files = cf.read(pathlib.Path(file1), encoding="utf-8")
+        parsed_files = cf.read(os_helper.FakePath(file1), encoding="utf-8")
         self.assertEqual(parsed_files, [file1])
         self.assertEqual(cf.get("Foo Bar", "foo"), "newbar")
         # check when we passed both a filename and a Path object:
         cf = self.newconfig()
-        parsed_files = cf.read([pathlib.Path(file1), file1], encoding="utf-8")
+        parsed_files = cf.read([os_helper.FakePath(file1), file1], encoding="utf-8")
         self.assertEqual(parsed_files, [file1, file1])
         self.assertEqual(cf.get("Foo Bar", "foo"), "newbar")
         # check when we pass only missing files:
@@ -972,12 +986,12 @@ class ConfigParserTestCase(BasicTestCase, unittest.TestCase):
 
     def test_defaults_keyword(self):
         """bpo-23835 fix for ConfigParser"""
-        cf = self.newconfig(defaults={1: 2.4})
-        self.assertEqual(cf[self.default_section]['1'], '2.4')
-        self.assertAlmostEqual(cf[self.default_section].getfloat('1'), 2.4)
-        cf = self.newconfig(defaults={"A": 5.2})
-        self.assertEqual(cf[self.default_section]['a'], '5.2')
-        self.assertAlmostEqual(cf[self.default_section].getfloat('a'), 5.2)
+        cf = self.newconfig(defaults={1: 2.5})
+        self.assertEqual(cf[self.default_section]['1'], '2.5')
+        self.assertAlmostEqual(cf[self.default_section].getfloat('1'), 2.5)
+        cf = self.newconfig(defaults={"A": 5.25})
+        self.assertEqual(cf[self.default_section]['a'], '5.25')
+        self.assertAlmostEqual(cf[self.default_section].getfloat('a'), 5.25)
 
 
 class ConfigParserTestCaseNoInterpolation(BasicTestCase, unittest.TestCase):
@@ -1314,6 +1328,47 @@ class ConfigParserTestCaseNoValue(ConfigParserTestCase):
     allow_no_value = True
 
 
+class NoValueAndExtendedInterpolation(CfgParserTestCaseClass):
+    interpolation = configparser.ExtendedInterpolation()
+    allow_no_value = True
+
+    def test_interpolation_with_allow_no_value(self):
+        config = textwrap.dedent("""
+            [dummy]
+            a
+            b = ${a}
+        """)
+        cf = self.fromstring(config)
+
+        self.assertIs(cf["dummy"]["a"], None)
+        self.assertEqual(cf["dummy"]["b"], "")
+
+    def test_explicit_none(self):
+        config = textwrap.dedent("""
+            [dummy]
+            a = None
+            b = ${a}
+        """)
+        cf = self.fromstring(config)
+
+        self.assertEqual(cf["dummy"]["a"], "None")
+        self.assertEqual(cf["dummy"]["b"], "None")
+
+
+class ConfigParserNoValueAndExtendedInterpolationTest(
+    NoValueAndExtendedInterpolation,
+    unittest.TestCase,
+):
+    config_class = configparser.ConfigParser
+
+
+class RawConfigParserNoValueAndExtendedInterpolationTest(
+    NoValueAndExtendedInterpolation,
+    unittest.TestCase,
+):
+    config_class = configparser.RawConfigParser
+
+
 class ConfigParserTestCaseTrickyFile(CfgParserTestCaseClass, unittest.TestCase):
     config_class = configparser.ConfigParser
     delimiters = {'='}
@@ -1555,6 +1610,30 @@ class ReadFileTestCase(unittest.TestCase):
             "'[badbad'"
         )
 
+    def test_keys_without_value_with_extra_whitespace(self):
+        lines = [
+            '[SECT]\n',
+            'KEY1\n',
+            ' KEY2 = VAL2\n', # note the Space before the key!
+        ]
+        parser = configparser.ConfigParser(
+            comment_prefixes="",
+            allow_no_value=True,
+            strict=False,
+            delimiters=('=',),
+            interpolation=None,
+        )
+        with self.assertRaises(configparser.MultilineContinuationError) as dse:
+            parser.read_file(lines)
+        self.assertEqual(
+            str(dse.exception),
+            "Key without value continued with an indented line.\n"
+            "file: '<???>', line: 3\n"
+            "' KEY2 = VAL2\\n'"
+        )
+
+
+
 
 class CoverageOneHundredTestCase(unittest.TestCase):
     """Covers edge cases in the codebase."""
@@ -1649,6 +1728,19 @@ class ExceptionPicklingTestCase(unittest.TestCase):
             e2 = pickle.loads(pickled)
             self.assertEqual(e1.message, e2.message)
             self.assertEqual(repr(e1), repr(e2))
+
+    def test_combine_error_linear_complexity(self):
+        # Ensure that ParsingError.combine() has linear complexity.
+        # See https://github.com/python/cpython/issues/148370.
+        n = 50000
+        s = '[*]\n' + (err_line := '=\n') * n
+        p = configparser.ConfigParser(strict=False)
+        with self.assertRaises(configparser.ParsingError) as cm:
+            p.read_string(s)
+        errlines = cm.exception.message.splitlines()
+        self.assertEqual(len(errlines), n + 1)
+        self.assertStartsWith(errlines[0], "Source contains parsing errors: ")
+        self.assertEqual(errlines[42], f"\t[line {43:2d}]: {err_line!r}")
 
     def test_nosectionerror(self):
         import pickle
@@ -2074,6 +2166,141 @@ class BlatantOverrideConvertersTestCase(unittest.TestCase):
             self.assertEqual(cfg['one'].getlen('one'), 5)
         with self.assertRaises(AttributeError):
             self.assertEqual(cfg['two'].getlen('one'), 5)
+
+
+class SectionlessTestCase(unittest.TestCase):
+
+    def fromstring(self, string):
+        cfg = configparser.ConfigParser(allow_unnamed_section=True)
+        cfg.read_string(string)
+        return cfg
+
+    def test_no_first_section(self):
+        cfg1 = self.fromstring("""
+        a = 1
+        b = 2
+        [sect1]
+        c = 3
+        """)
+
+        self.assertEqual(set([configparser.UNNAMED_SECTION, 'sect1']), set(cfg1.sections()))
+        self.assertEqual('1', cfg1[configparser.UNNAMED_SECTION]['a'])
+        self.assertEqual('2', cfg1[configparser.UNNAMED_SECTION]['b'])
+        self.assertEqual('3', cfg1['sect1']['c'])
+
+        output = io.StringIO()
+        cfg1.write(output)
+        cfg2 = self.fromstring(output.getvalue())
+
+        #self.assertEqual(set([configparser.UNNAMED_SECTION, 'sect1']), set(cfg2.sections()))
+        self.assertEqual('1', cfg2[configparser.UNNAMED_SECTION]['a'])
+        self.assertEqual('2', cfg2[configparser.UNNAMED_SECTION]['b'])
+        self.assertEqual('3', cfg2['sect1']['c'])
+
+    def test_no_section(self):
+        cfg1 = self.fromstring("""
+        a = 1
+        b = 2
+        """)
+
+        self.assertEqual([configparser.UNNAMED_SECTION], cfg1.sections())
+        self.assertEqual('1', cfg1[configparser.UNNAMED_SECTION]['a'])
+        self.assertEqual('2', cfg1[configparser.UNNAMED_SECTION]['b'])
+
+        output = io.StringIO()
+        cfg1.write(output)
+        cfg2 = self.fromstring(output.getvalue())
+
+        self.assertEqual([configparser.UNNAMED_SECTION], cfg2.sections())
+        self.assertEqual('1', cfg2[configparser.UNNAMED_SECTION]['a'])
+        self.assertEqual('2', cfg2[configparser.UNNAMED_SECTION]['b'])
+
+    def test_empty_unnamed_section(self):
+        cfg = configparser.ConfigParser(allow_unnamed_section=True)
+        cfg.add_section(configparser.UNNAMED_SECTION)
+        cfg.add_section('section')
+        output = io.StringIO()
+        cfg.write(output)
+        self.assertEqual(output.getvalue(), '[section]\n\n')
+
+    def test_add_section(self):
+        cfg = configparser.ConfigParser(allow_unnamed_section=True)
+        cfg.add_section(configparser.UNNAMED_SECTION)
+        cfg.set(configparser.UNNAMED_SECTION, 'a', '1')
+        self.assertEqual('1', cfg[configparser.UNNAMED_SECTION]['a'])
+        output = io.StringIO()
+        cfg.write(output)
+        self.assertEqual(output.getvalue(), 'a = 1\n\n')
+
+        cfg = configparser.ConfigParser(allow_unnamed_section=True)
+        cfg[configparser.UNNAMED_SECTION] = {'a': '1'}
+        self.assertEqual('1', cfg[configparser.UNNAMED_SECTION]['a'])
+        output = io.StringIO()
+        cfg.write(output)
+        self.assertEqual(output.getvalue(), 'a = 1\n\n')
+
+    def test_disabled_error(self):
+        with self.assertRaises(configparser.MissingSectionHeaderError):
+            configparser.ConfigParser().read_string("a = 1")
+
+        with self.assertRaises(configparser.UnnamedSectionDisabledError):
+            configparser.ConfigParser().add_section(configparser.UNNAMED_SECTION)
+
+        with self.assertRaises(configparser.UnnamedSectionDisabledError):
+            configparser.ConfigParser()[configparser.UNNAMED_SECTION] = {'a': '1'}
+
+    def test_multiple_configs(self):
+        cfg = configparser.ConfigParser(allow_unnamed_section=True)
+        cfg.read_string('a = 1')
+        cfg.read_string('b = 2')
+
+        self.assertEqual([configparser.UNNAMED_SECTION], cfg.sections())
+        self.assertEqual('1', cfg[configparser.UNNAMED_SECTION]['a'])
+        self.assertEqual('2', cfg[configparser.UNNAMED_SECTION]['b'])
+
+
+class InvalidInputTestCase(unittest.TestCase):
+    """Tests for issue #65697, where configparser will write configs
+    it parses back differently. Ex: keys containing delimiters or
+    matching the section pattern"""
+
+    def test_delimiter_in_key(self):
+        cfg = configparser.ConfigParser(delimiters=('='))
+        cfg.add_section('section1')
+        cfg.set('section1', 'a=b', 'c')
+        output = io.StringIO()
+        with self.assertRaises(configparser.InvalidWriteError):
+            cfg.write(output)
+        output.close()
+
+    def test_section_bracket_in_key(self):
+        cfg = configparser.ConfigParser()
+        cfg.add_section('section1')
+        cfg.set('section1', '[this parses back as a section]', 'foo')
+        output = io.StringIO()
+        with self.assertRaises(configparser.InvalidWriteError):
+            cfg.write(output)
+        output.close()
+
+
+class ReDoSTestCase(unittest.TestCase):
+    """Regression tests for quadratic regex backtracking (gh-146333)."""
+
+    def test_option_regex_does_not_backtrack(self):
+        # A line with many spaces between non-delimiter characters
+        # should be parsed in linear time, not quadratic.
+        parser = configparser.RawConfigParser()
+        content = "[section]\n" + "x" + " " * 40000 + "y" + "\n"
+        # This should complete almost instantly. Before the fix,
+        # it would take over a minute due to catastrophic backtracking.
+        with self.assertRaises(configparser.ParsingError):
+            parser.read_string(content)
+
+    def test_option_regex_no_value_does_not_backtrack(self):
+        parser = configparser.RawConfigParser(allow_no_value=True)
+        content = "[section]\n" + "x" + " " * 40000 + "y" + "\n"
+        parser.read_string(content)
+        self.assertTrue(parser.has_option("section", "x" + " " * 40000 + "y"))
 
 
 class MiscTestCase(unittest.TestCase):

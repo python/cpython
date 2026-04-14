@@ -5,11 +5,20 @@
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
-// Similar to _Py_HashPointer(), but don't replace -1 with -2
-extern Py_hash_t _Py_HashPointerRaw(const void*);
+// Similar to Py_HashPointer(), but don't replace -1 with -2.
+static inline Py_hash_t
+_Py_HashPointerRaw(const void *ptr)
+{
+    uintptr_t x = (uintptr_t)ptr;
+    Py_BUILD_ASSERT(sizeof(x) == sizeof(ptr));
 
-// Export for '_datetime' shared extension
-PyAPI_FUNC(Py_hash_t) _Py_HashBytes(const void*, Py_ssize_t);
+    // Bottom 3 or 4 bits are likely to be 0; rotate x by 4 to the right
+    // to avoid excessive hash collisions for dicts and sets.
+    x = (x >> 4) | (x << (8 * sizeof(uintptr_t) - 4));
+
+    Py_BUILD_ASSERT(sizeof(x) == sizeof(Py_hash_t));
+    return (Py_hash_t)x;
+}
 
 /* Hash secret
  *
@@ -61,19 +70,6 @@ PyAPI_DATA(_Py_HashSecret_t) _Py_HashSecret;
 extern int _Py_HashSecret_Initialized;
 #endif
 
-
-struct pyhash_runtime_state {
-    struct {
-#ifndef MS_WINDOWS
-        int fd;
-        dev_t st_dev;
-        ino_t st_ino;
-#else
-    // This is a placeholder so the struct isn't empty on Windows.
-    int _not_used;
-#endif
-    } urandom_cache;
-};
 
 #ifndef MS_WINDOWS
 # define _py_urandom_cache_INIT \
