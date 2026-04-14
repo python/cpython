@@ -20,6 +20,7 @@ typedef struct _Py_UOpsAbstractFrame _Py_UOpsAbstractFrame;
 #define sym_new_null _Py_uop_sym_new_null
 #define sym_matches_type _Py_uop_sym_matches_type
 #define sym_matches_type_version _Py_uop_sym_matches_type_version
+#define sym_get_type_version _Py_uop_sym_get_type_version
 #define sym_get_type _Py_uop_sym_get_type
 #define sym_has_type _Py_uop_sym_has_type
 #define sym_set_null(SYM) _Py_uop_sym_set_null(ctx, SYM)
@@ -138,14 +139,23 @@ dummy_func(void) {
         assert(type_version);
         if (sym_matches_type_version(owner, type_version)) {
             ADD_OP(_NOP, 0, 0);
-        } else {
+        }
+        else {
             PyTypeObject *probable_type = sym_get_probable_type(owner);
-            if (probable_type->tp_version_tag == type_version && sym_set_type_version(owner, type_version)) {
+            if (probable_type != NULL &&
+                probable_type->tp_version_tag == type_version) {
                 // Promote the probable type version to a known one.
+                sym_set_type(owner, probable_type);
+                sym_set_type_version(owner, type_version);
                 if ((probable_type->tp_flags & Py_TPFLAGS_IMMUTABLETYPE) == 0) {
                     PyType_Watch(TYPE_WATCHER_ID, (PyObject *)probable_type);
                     _Py_BloomFilter_Add(dependencies, probable_type);
                 }
+            }
+            else {
+                ctx->contradiction = true;
+                ctx->done = true;
+                break;
             }
         }
     }
@@ -239,20 +249,20 @@ dummy_func(void) {
         assert(this_instr[-1].opcode == _RECORD_TOS_TYPE);
         if (sym_matches_type_version(owner, type_version)) {
             ADD_OP(_NOP, 0, 0);
-        } else {
-            // add watcher so that whenever the type changes we invalidate this
-            PyTypeObject *type = _PyType_LookupByVersion(type_version);
-            // if the type is null, it was not found in the cache (there was a conflict)
-            // with the key, in which case we can't trust the version
-            if (type) {
-                // if the type version was set properly, then add a watcher
-                // if it wasn't this means that the type version was previously set to something else
-                // and we set the owner to bottom, so we don't need to add a watcher because we must have
-                // already added one earlier.
-                if (sym_set_type_version(owner, type_version)) {
-                    PyType_Watch(TYPE_WATCHER_ID, (PyObject *)type);
-                    _Py_BloomFilter_Add(dependencies, type);
-                }
+        }
+        else {
+            PyTypeObject *probable_type = sym_get_probable_type(owner);
+            if (probable_type != NULL &&
+                probable_type->tp_version_tag == type_version) {
+                sym_set_type(owner, probable_type);
+                sym_set_type_version(owner, type_version);
+                PyType_Watch(TYPE_WATCHER_ID, (PyObject *)probable_type);
+                _Py_BloomFilter_Add(dependencies, probable_type);
+            }
+            else {
+                ctx->contradiction = true;
+                ctx->done = true;
+                break;
             }
         }
     }
@@ -983,15 +993,22 @@ dummy_func(void) {
                                  _LOAD_CONST_INLINE, _SWAP);
     }
 
-    op(_LOAD_ATTR_PROPERTY_FRAME, (fget/4, owner -- new_frame)) {
-        // + 1 for _SAVE_RETURN_OFFSET
-        // FIX ME -- This needs a version check and function watcher
-        PyCodeObject *co = (PyCodeObject *)((PyFunctionObject *)fget)->func_code;
+    op(_LOAD_ATTR_PROPERTY_FRAME, (func_version/2, fget/4, owner -- new_frame)) {
+        PyFunctionObject *func = (PyFunctionObject *)fget;
+        if (sym_get_type_version(owner) == 0 ||
+            func->func_version != func_version) {
+            ctx->contradiction = true;
+            ctx->done = true;
+            break;
+        }
+        _Py_BloomFilter_Add(dependencies, fget);
+        PyCodeObject *co = (PyCodeObject *)func->func_code;
         _Py_UOpsAbstractFrame *f = frame_new(ctx, co, NULL, 0);
         if (f == NULL) {
             break;
         }
         f->locals[0] = owner;
+        f->func = func;
         new_frame = PyJitRef_WrapInvalid(f);
     }
 
