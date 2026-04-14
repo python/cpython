@@ -45,20 +45,22 @@ extern "C" {
  * Runtime charging uses trace-buffer capacity consumed for each bytecode. */
 #define AVG_SLOTS_PER_INSTRUCTION  6
 
-/* Heuristic backward-edge penalty: leave room for about
+/* Heuristic backward-edge exit quality: leave room for about 1 unroll and
  * N_BACKWARD_SLACK more bytecodes before reaching EXIT_QUALITY_CLOSE_LOOP,
  * based on AVG_SLOTS_PER_INSTRUCTION. */
 #define N_BACKWARD_SLACK           50
-#define FITNESS_BACKWARD_EDGE      (FITNESS_INITIAL/2 \
-                                      - N_BACKWARD_SLACK * AVG_SLOTS_PER_INSTRUCTION)
+#define EXIT_QUALITY_BACKWARD_EDGE (EXIT_QUALITY_CLOSE_LOOP / 2 - N_BACKWARD_SLACK * AVG_SLOTS_PER_INSTRUCTION)
 
 /* Backward edge penalty for JUMP_BACKWARD_NO_INTERRUPT (coroutines/yield-from).
- * Smaller than FITNESS_BACKWARD_EDGE since these loops are very short. */
-#define FITNESS_BACKWARD_EDGE_COROUTINE  (FITNESS_BACKWARD_EDGE / 4)
+ * Smaller than FITNESS_BACKWARD_EDGE since we want to trace through them. */
+#define EXIT_QUALITY_BACKWARD_EDGE_COROUTINE  (EXIT_QUALITY_BACKWARD_EDGE / 8)
 
 /* Penalty for a perfectly balanced (50/50) branch.
- * 7 such branches (after per-slot cost) exhaust fitness to EXIT_QUALITY_DEFAULT. */
-#define FITNESS_BRANCH_BALANCED    ((FITNESS_INITIAL - EXIT_QUALITY_DEFAULT) / (7 * AVG_SLOTS_PER_INSTRUCTION))
+ * 7 such branches (after per-slot cost) exhaust fitness to EXIT_QUALITY_DEFAULT. 
+ * The calculation assumes the branches are spread out roughly equally throughout the trace.
+ */
+#define FITNESS_BRANCH_BALANCED    ((FITNESS_INITIAL - EXIT_QUALITY_DEFAULT - \
+                                        (MAX_TARGET_LENGTH / 7 * AVG_SLOTS_PER_INSTRUCTION)) / (7))
 
 
 typedef struct _PyJitUopBuffer {
