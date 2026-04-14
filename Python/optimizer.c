@@ -812,8 +812,10 @@ _PyJit_translate_single_bytecode_to_trace(
         goto done;
     }
 
-    // Snapshot the buffer position before emitting uops for this bytecode.
+    // Snapshot the buffer before reserving tail slots. The later charge
+    // includes both emitted uops and capacity reserved for exits/deopts/errors.
     _PyUOpInstruction *next_before = trace->next;
+    _PyUOpInstruction *end_before = trace->end;
 
     // One for possible _DEOPT, one because _CHECK_VALIDITY itself might _DEOPT
     trace->end -= 2;
@@ -1056,12 +1058,16 @@ _PyJit_translate_single_bytecode_to_trace(
         ADD_TO_TRACE(_JUMP_TO_TOP, 0, 0, 0);
         goto done;
     }
-    // Charge fitness by the number of uops actually emitted for this bytecode.
+    // Charge fitness by trace-buffer capacity consumed for this bytecode,
+    // including both emitted uops and tail reservations.
     {
-        int32_t slots_used = (int32_t)(trace->next - next_before);
+        int32_t slots_fwd = (int32_t)(trace->next - next_before);
+        int32_t slots_rev = (int32_t)(end_before - trace->end);
+        int32_t slots_used = slots_fwd + slots_rev;
         tracer->translator_state.fitness -= slots_used;
-        DPRINTF(3, "  per-insn cost: -%d -> fitness=%d\n",
-                slots_used, tracer->translator_state.fitness);
+        DPRINTF(3, "  per-insn cost: -%d (fwd=%d, rev=%d) -> fitness=%d\n",
+                slots_used, slots_fwd, slots_rev,
+                tracer->translator_state.fitness);
     }
     DPRINTF(2, "Trace continuing (fitness=%d)\n", tracer->translator_state.fitness);
     return 1;
