@@ -2617,6 +2617,7 @@
             uint32_t func_version = (uint32_t)this_instr->operand0;
             PyObject *fget = (PyObject *)this_instr->operand1;
             if (sym_get_type_version(owner) == 0) {
+                ctx->contradiction = true;
                 ctx->done = true;
                 break;
             }
