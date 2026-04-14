@@ -3674,6 +3674,171 @@ class TestUopsOptimization(unittest.TestCase):
         uops = get_opnames(ex)
         self.assertNotIn("_UNARY_NEGATIVE_FLOAT_INPLACE", uops)
 
+    def test_float_truediv_inplace_unique_lhs(self):
+        # (a + b) / (c + d): LHS is unique float from add, RHS is unique
+        # float from add. The division reuses the LHS in place.
+        def testfunc(args):
+            a, b, c, d, n = args
+            total = 0.0
+            for _ in range(n):
+                total += (a + b) / (c + d)
+            return total
+
+        res, ex = self._run_with_optimizer(testfunc, (2.0, 3.0, 1.0, 3.0, TIER2_THRESHOLD))
+        self.assertAlmostEqual(res, TIER2_THRESHOLD * 1.25)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertIn("_BINARY_OP_TRUEDIV_FLOAT_INPLACE", uops)
+
+    def test_float_truediv_inplace_unique_rhs(self):
+        # x = c + d stores to a local (not unique when reloaded).
+        # (a + b) is unique. The division should use inplace on the RHS.
+        def testfunc(args):
+            a, b, c, d, n = args
+            total = 0.0
+            for _ in range(n):
+                x = c + d
+                total += x / (a + b)
+            return total
+
+        res, ex = self._run_with_optimizer(testfunc, (2.0, 3.0, 4.0, 5.0, TIER2_THRESHOLD))
+        self.assertAlmostEqual(res, TIER2_THRESHOLD * (9.0 / 5.0))
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertIn("_BINARY_OP_TRUEDIV_FLOAT_INPLACE_RIGHT", uops)
+
+    def test_float_truediv_speculative_guards_from_tracing(self):
+        # a, b are locals with no statically known type. _RECORD_TOS /
+        # _RECORD_NOS (added to the BINARY_OP macro) capture the observed
+        # operand types during tracing, and the optimizer then speculatively
+        # emits _GUARD_{TOS,NOS}_FLOAT and specializes the division.
+        def testfunc(args):
+            a, b, n = args
+            total = 0.0
+            for _ in range(n):
+                total += a / b
+            return total
+
+        res, ex = self._run_with_optimizer(testfunc, (10.0, 3.0, TIER2_THRESHOLD))
+        self.assertAlmostEqual(res, TIER2_THRESHOLD * (10.0 / 3.0))
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertIn("_GUARD_TOS_FLOAT", uops)
+        self.assertIn("_GUARD_NOS_FLOAT", uops)
+        self.assertIn("_BINARY_OP_TRUEDIV_FLOAT", uops)
+
+    def test_float_remainder_speculative_guards_from_tracing(self):
+        # a, b are locals with no statically known type. Tracing records
+        # them as floats; the optimizer then speculatively emits
+        # _GUARD_{TOS,NOS}_FLOAT for NB_REMAINDER. That narrows both
+        # operands to float, and the _BINARY_OP handler marks the result
+        # as a unique float. Downstream, `* 2.0` therefore specializes
+        # to _BINARY_OP_MULTIPLY_FLOAT_INPLACE.
+        def testfunc(args):
+            a, b, n = args
+            total = 0.0
+            for _ in range(n):
+                total += (a % b) * 2.0
+            return total
+
+        res, ex = self._run_with_optimizer(testfunc, (10.0, 3.0, TIER2_THRESHOLD))
+        self.assertAlmostEqual(res, TIER2_THRESHOLD * (10.0 % 3.0) * 2.0)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertIn("_GUARD_TOS_FLOAT", uops)
+        self.assertIn("_GUARD_NOS_FLOAT", uops)
+        self.assertIn("_BINARY_OP_MULTIPLY_FLOAT_INPLACE", uops)
+
+    def test_float_truediv_type_propagation(self):
+        # Test the _BINARY_OP_TRUEDIV_FLOAT propagates type information
+        def testfunc(args):
+            a, b, n = args
+            total = 0.0
+            for _ in range(n):
+                x = (a + b) # type of x will specialize to float
+                total += x / x - x / x
+            return total
+
+        res, ex = self._run_with_optimizer(testfunc,
+            (2.0, 3.0, TIER2_THRESHOLD))
+        expected = TIER2_THRESHOLD * ((2.0 + 3.0) / (2.0 + 3.0) - (2.0 + 3.0) / (2.0 + 3.0))
+        self.assertAlmostEqual(res, expected)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertIn("_BINARY_OP_TRUEDIV_FLOAT", uops)
+        self.assertIn("_BINARY_OP_SUBTRACT_FLOAT_INPLACE", uops)
+
+    def test_float_truediv_unique_result_enables_inplace(self):
+        # (a+b) / (c+d) / (e+f): chained divisions where each result
+        # is unique, enabling inplace for subsequent divisions.
+        def testfunc(args):
+            a, b, c, d, e, f, n = args
+            total = 0.0
+            for _ in range(n):
+                total += (a + b) / (c + d) / (e + f)
+            return total
+
+        res, ex = self._run_with_optimizer(testfunc,
+            (2.0, 3.0, 1.0, 1.0, 1.0, 1.0, TIER2_THRESHOLD))
+        expected = TIER2_THRESHOLD * ((2.0 + 3.0) / (1.0 + 1.0) / (1.0 + 1.0))
+        self.assertAlmostEqual(res, expected)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertIn("_BINARY_OP_TRUEDIV_FLOAT_INPLACE", uops)
+
+    def test_float_add_chain_both_unique(self):
+        # (a+b) + (c+d): both sub-additions produce unique floats.
+        # The outer + should use inplace on one of them.
+        def testfunc(args):
+            a, b, c, d, n = args
+            total = 0.0
+            for _ in range(n):
+                total += (a + b) + (c + d)
+            return total
+
+        res, ex = self._run_with_optimizer(testfunc, (1.0, 2.0, 3.0, 4.0, TIER2_THRESHOLD))
+        self.assertAlmostEqual(res, TIER2_THRESHOLD * 10.0)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        # The outer + should use inplace (at least one operand is unique)
+        inplace = (
+            "_BINARY_OP_ADD_FLOAT_INPLACE" in uops
+            or "_BINARY_OP_ADD_FLOAT_INPLACE_RIGHT" in uops
+        )
+        self.assertTrue(inplace, "Expected inplace add for unique sub-results")
+
+    def test_float_truediv_non_float_type_no_crash(self):
+        # Fraction / Fraction goes through _BINARY_OP with NB_TRUE_DIVIDE
+        # but returns Fraction, not float. The optimizer must not assume
+        # the result is float for non-int/float operands. See gh-146306.
+        from fractions import Fraction
+        def testfunc(args):
+            a, b, n = args
+            total = Fraction(0)
+            for _ in range(n):
+                total += a / b
+            return float(total)
+
+        res, ex = self._run_with_optimizer(testfunc, (Fraction(10), Fraction(3), TIER2_THRESHOLD))
+        expected = float(TIER2_THRESHOLD * Fraction(10, 3))
+        self.assertAlmostEqual(res, expected)
+
+    def test_float_truediv_mixed_float_fraction_no_crash(self):
+        # float / Fraction: lhs is known float from a prior guard,
+        # but rhs is Fraction. The guard insertion for rhs should
+        # deopt cleanly at runtime, not crash.
+        from fractions import Fraction
+        def testfunc(args):
+            a, b, c, n = args
+            total = 0.0
+            for _ in range(n):
+                total += (a + b) / c  # (a+b) is float, c is Fraction
+            return total
+
+        res, ex = self._run_with_optimizer(testfunc, (2.0, 3.0, Fraction(4), TIER2_THRESHOLD))
+        expected = TIER2_THRESHOLD * (5.0 / Fraction(4))
+        self.assertAlmostEqual(res, float(expected))
+
     def test_int_add_inplace_unique_lhs(self):
         # a * b produces a unique compact int; adding c reuses it in place
         def testfunc(args):

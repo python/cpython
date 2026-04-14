@@ -1092,7 +1092,7 @@ struct opcode_metadata {
 PyAPI_DATA(const struct opcode_metadata) _PyOpcode_opcode_metadata[267];
 #ifdef NEED_OPCODE_METADATA
 const struct opcode_metadata _PyOpcode_opcode_metadata[267] = {
-    [BINARY_OP] = { true, INSTR_FMT_IBC0000, HAS_ARG_FLAG | HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG },
+    [BINARY_OP] = { true, INSTR_FMT_IBC0000, HAS_ARG_FLAG | HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG | HAS_RECORDS_VALUE_FLAG },
     [BINARY_OP_ADD_FLOAT] = { true, INSTR_FMT_IXC0000, HAS_EXIT_FLAG | HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG },
     [BINARY_OP_ADD_INT] = { true, INSTR_FMT_IXC0000, HAS_EXIT_FLAG },
     [BINARY_OP_ADD_UNICODE] = { true, INSTR_FMT_IXC0000, HAS_EXIT_FLAG | HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG },
@@ -1345,7 +1345,7 @@ extern const struct opcode_macro_expansion _PyOpcode_macro_expansion[256];
 #ifdef NEED_OPCODE_METADATA
 const struct opcode_macro_expansion
 _PyOpcode_macro_expansion[256] = {
-    [BINARY_OP] = { .nuops = 3, .uops = { { _BINARY_OP, OPARG_SIMPLE, 4 }, { _POP_TOP, OPARG_SIMPLE, 4 }, { _POP_TOP, OPARG_SIMPLE, 4 } } },
+    [BINARY_OP] = { .nuops = 5, .uops = { { _RECORD_TOS, OPARG_SIMPLE, 0 }, { _RECORD_NOS, OPARG_SIMPLE, 0 }, { _BINARY_OP, OPARG_SIMPLE, 4 }, { _POP_TOP, OPARG_SIMPLE, 4 }, { _POP_TOP, OPARG_SIMPLE, 4 } } },
     [BINARY_OP_ADD_FLOAT] = { .nuops = 5, .uops = { { _GUARD_TOS_FLOAT, OPARG_SIMPLE, 0 }, { _GUARD_NOS_FLOAT, OPARG_SIMPLE, 0 }, { _BINARY_OP_ADD_FLOAT, OPARG_SIMPLE, 5 }, { _POP_TOP_FLOAT, OPARG_SIMPLE, 5 }, { _POP_TOP_FLOAT, OPARG_SIMPLE, 5 } } },
     [BINARY_OP_ADD_INT] = { .nuops = 5, .uops = { { _GUARD_TOS_INT, OPARG_SIMPLE, 0 }, { _GUARD_NOS_INT, OPARG_SIMPLE, 0 }, { _BINARY_OP_ADD_INT, OPARG_SIMPLE, 5 }, { _POP_TOP_INT, OPARG_SIMPLE, 5 }, { _POP_TOP_INT, OPARG_SIMPLE, 5 } } },
     [BINARY_OP_ADD_UNICODE] = { .nuops = 5, .uops = { { _GUARD_TOS_UNICODE, OPARG_SIMPLE, 0 }, { _GUARD_NOS_UNICODE, OPARG_SIMPLE, 0 }, { _BINARY_OP_ADD_UNICODE, OPARG_SIMPLE, 5 }, { _POP_TOP_UNICODE, OPARG_SIMPLE, 5 }, { _POP_TOP_UNICODE, OPARG_SIMPLE, 5 } } },
