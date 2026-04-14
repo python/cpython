@@ -392,7 +392,7 @@ Python interpreter, import the :mod:`re` module, and compile a RE::
    >>> p
    re.compile('[a-z]+')
 
-Now, you can try searching various strings against the RE ``[a-z]+``.  An empty
+Now, you can try matching various strings against the RE ``[a-z]+``.  An empty
 string shouldn't match at all, since ``+`` means 'one or more repetitions'.
 :meth:`~re.Pattern.search` should return ``None`` in this case, which will cause the
 interpreter to print no output.  You can explicitly print the result of
