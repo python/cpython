@@ -1,8 +1,7 @@
-:mod:`termios` --- POSIX style tty control
-==========================================
+:mod:`!termios` --- POSIX style tty control
+===========================================
 
 .. module:: termios
-   :platform: Unix
    :synopsis: POSIX style tty control.
 
 .. index::
@@ -15,6 +14,8 @@ This module provides an interface to the POSIX calls for tty I/O control. For a
 complete description of these calls, see :manpage:`termios(3)` Unix manual
 page.  It is only available for those Unix versions that support POSIX
 *termios* style tty I/O control configured during installation.
+
+.. availability:: Unix.
 
 All functions in this module take a file descriptor *fd* as their first
 argument.  This can be an integer file descriptor, such as returned by
@@ -36,7 +37,7 @@ The module defines the following functions:
    items with indices :const:`VMIN` and :const:`VTIME`, which are integers when
    these fields are defined).  The interpretation of the flags and the speeds as
    well as the indexing in the *cc* array must be done using the symbolic
-   constants defined in the :mod:`termios` module.
+   constants defined in the :mod:`!termios` module.
 
 
 .. function:: tcsetattr(fd, when, attributes)

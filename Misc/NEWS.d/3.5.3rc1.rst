@@ -1048,7 +1048,7 @@ certs.
 .. section: Library
 
 Remove 3DES from ssl module's default cipher list to counter measure sweet32
-attack (CVE-2016-2183).
+attack (:cve:`2016-2183`).
 
 ..
 
@@ -1146,7 +1146,7 @@ after a commit.
 .. section: Library
 
 A new version of typing.py from https://github.com/python/typing:
-Collection (only for 3.6) (Issue #27598). Add FrozenSet to __all__
+Collection (only for 3.6) (issue #27598). Add FrozenSet to __all__
 (upstream #261). Fix crash in _get_type_vars() (upstream #259). Remove the
 dict constraint in ForwardRef._eval_type (upstream #252).
 
@@ -1251,7 +1251,7 @@ Fix possible integer overflow in the _csv module for large record lengths.
 .. nonce: OnuO9s
 .. section: Library
 
-Prevent HTTPoxy attack (CVE-2016-1000110). Ignore the HTTP_PROXY variable
+Prevent HTTPoxy attack (:cve:`2016-1000110`). Ignore the HTTP_PROXY variable
 when REQUEST_METHOD environment is set, which indicates that the script is
 in CGI mode.
 

@@ -1,3 +1,0 @@
-Add :c:func:`PyMem_RawMalloc`, :c:func:`PyMem_RawCalloc`,
-:c:func:`PyMem_RawRealloc` and :c:func:`PyMem_RawFree` to the limited C API.
-Patch by Victor Stinner.

@@ -10,12 +10,11 @@
 
   See the source code for LLVMFuzzerTestOneInput for details. */
 
-#ifndef Py_BUILD_CORE
-#  define Py_BUILD_CORE 1
+#ifndef Py_BUILD_CORE_MODULE
+#  define Py_BUILD_CORE_MODULE 1
 #endif
 
 #include <Python.h>
-#include "pycore_pyhash.h"        // _Py_HashBytes()
 #include <stdlib.h>
 #include <inttypes.h>
 
@@ -39,23 +38,18 @@ static int fuzz_builtin_float(const char* data, size_t size) {
 static int fuzz_builtin_int(const char* data, size_t size) {
     /* Ignore test cases with very long ints to avoid timeouts
        int("9" * 1000000) is not a very interesting test caase */
-    if (size > MAX_INT_TEST_SIZE) {
+    if (size < 1 || size > MAX_INT_TEST_SIZE) {
         return 0;
     }
-    /* Pick a random valid base. (When the fuzzed function takes extra
-       parameters, it's somewhat normal to hash the input to generate those
-       parameters. We want to exercise all code paths, so we do so here.) */
-    int base = _Py_HashBytes(data, size) % 37;
+    // Use the first byte to pick a base
+    int base = ((unsigned char) data[0]) % 37;
     if (base == 1) {
         // 1 is the only number between 0 and 36 that is not a valid base.
         base = 0;
     }
-    if (base == -1) {
-        return 0;  // An error occurred, bail early.
-    }
-    if (base < 0) {
-        base = -base;
-    }
+
+    data += 1;
+    size -= 1;
 
     PyObject* s = PyUnicode_FromStringAndSize(data, size);
     if (s == NULL) {
@@ -132,6 +126,10 @@ static int fuzz_struct_unpack(const char* data, size_t size) {
     /* The pascal format string will throw a negative size when passing 0
        like: struct.unpack('0p', b'') */
     if (unpacked == NULL && PyErr_ExceptionMatches(PyExc_SystemError)) {
+        PyErr_Clear();
+    }
+    /* Ignore any ValueError, these are triggered by non-ASCII format. */
+    if (unpacked == NULL && PyErr_ExceptionMatches(PyExc_ValueError)) {
         PyErr_Clear();
     }
     /* Ignore any struct.error exceptions, these can be caused by invalid
@@ -429,6 +427,7 @@ static int fuzz_ast_literal_eval(const char* data, size_t size) {
                             PyErr_ExceptionMatches(PyExc_TypeError) ||
                             PyErr_ExceptionMatches(PyExc_SyntaxError) ||
                             PyErr_ExceptionMatches(PyExc_MemoryError) ||
+                            PyErr_ExceptionMatches(PyExc_OverflowError) ||
                             PyErr_ExceptionMatches(PyExc_RecursionError))
     ) {
         PyErr_Clear();
@@ -436,6 +435,146 @@ static int fuzz_ast_literal_eval(const char* data, size_t size) {
 
     Py_XDECREF(literal);
     Py_DECREF(s);
+    return 0;
+}
+
+#define MAX_ELEMENTTREE_PARSEWHOLE_TEST_SIZE 0x100000
+PyObject* xmlparser_type = NULL;
+PyObject* bytesio_type = NULL;
+/* Called by LLVMFuzzerTestOneInput for initialization */
+static int init_elementtree_parsewhole(void) {
+    PyObject* elementtree_module = PyImport_ImportModule("_elementtree");
+    if (elementtree_module == NULL) {
+        return 0;
+    }
+    xmlparser_type = PyObject_GetAttrString(elementtree_module, "XMLParser");
+    Py_DECREF(elementtree_module);
+    if (xmlparser_type == NULL) {
+        return 0;
+    }
+
+
+    PyObject* io_module = PyImport_ImportModule("io");
+    if (io_module == NULL) {
+        return 0;
+    }
+    bytesio_type = PyObject_GetAttrString(io_module, "BytesIO");
+    Py_DECREF(io_module);
+    if (bytesio_type == NULL) {
+        return 0;
+    }
+
+    return 1;
+}
+/* Fuzz _elementtree.XMLParser._parse_whole(x) */
+static int fuzz_elementtree_parsewhole(const char* data, size_t size) {
+    if (size > MAX_ELEMENTTREE_PARSEWHOLE_TEST_SIZE) {
+        return 0;
+    }
+
+    PyObject *input = PyObject_CallFunction(bytesio_type, "y#", data, (Py_ssize_t)size);
+    if (input == NULL) {
+        assert(PyErr_Occurred());
+        PyErr_Print();
+        abort();
+    }
+
+    PyObject *xmlparser_instance = PyObject_CallObject(xmlparser_type, NULL);
+    if (xmlparser_instance == NULL) {
+        assert(PyErr_Occurred());
+        PyErr_Print();
+        abort();
+    }
+
+    PyObject *result = PyObject_CallMethod(xmlparser_instance, "_parse_whole", "O", input);
+    if (result == NULL) {
+        /* Ignore exception here, which can be caused by invalid XML input */
+        PyErr_Clear();
+    } else {
+        Py_DECREF(result);
+    }
+
+    Py_DECREF(xmlparser_instance);
+    Py_DECREF(input);
+
+    return 0;
+}
+
+#define MAX_PYCOMPILE_TEST_SIZE 16384
+
+static const int start_vals[] = {Py_eval_input, Py_single_input, Py_file_input};
+const size_t NUM_START_VALS = sizeof(start_vals) / sizeof(start_vals[0]);
+
+static const int optimize_vals[] = {-1, 0, 1, 2};
+const size_t NUM_OPTIMIZE_VALS = sizeof(optimize_vals) / sizeof(optimize_vals[0]);
+
+/* Fuzz `PyCompileStringExFlags` using a variety of input parameters.
+ * That function is essentially behind the `compile` builtin */
+static int fuzz_pycompile(const char* data, size_t size) {
+    // Ignore overly-large inputs, and account for a NUL terminator
+    if (size > MAX_PYCOMPILE_TEST_SIZE - 1) {
+        return 0;
+    }
+
+    // Need 3 bytes for parameter selection
+    if (size < 3) {
+        return 0;
+    }
+
+    // Use first byte to determine element of `start_vals` to use
+    unsigned char start_idx = (unsigned char) data[0];
+    int start = start_vals[start_idx % NUM_START_VALS];
+
+    // Use second byte to determine element of `optimize_vals` to use
+    unsigned char optimize_idx = (unsigned char) data[1];
+    int optimize = optimize_vals[optimize_idx % NUM_OPTIMIZE_VALS];
+
+    // Use third byte to determine compiler flags to use.
+    unsigned char flags_byte = (unsigned char) data[2];
+    PyCompilerFlags flags = _PyCompilerFlags_INIT;
+    if (flags_byte & 0x01) {
+        flags.cf_flags |= PyCF_DONT_IMPLY_DEDENT;
+    }
+    if (flags_byte & 0x02) {
+        flags.cf_flags |= PyCF_ONLY_AST;
+    }
+    if (flags_byte & 0x04) {
+        flags.cf_flags |= PyCF_IGNORE_COOKIE;
+    }
+    if (flags_byte & 0x08) {
+        flags.cf_flags |= PyCF_TYPE_COMMENTS;
+    }
+    if (flags_byte & 0x10) {
+        flags.cf_flags |= PyCF_ALLOW_TOP_LEVEL_AWAIT;
+    }
+    if (flags_byte & 0x20) {
+        flags.cf_flags |= PyCF_ALLOW_INCOMPLETE_INPUT;
+    }
+    if (flags_byte & 0x40) {
+        flags.cf_flags |= PyCF_OPTIMIZED_AST;
+    }
+
+    char pycompile_scratch[MAX_PYCOMPILE_TEST_SIZE];
+
+    // Create a NUL-terminated C string from the remaining input
+    memcpy(pycompile_scratch, data + 3, size - 3);
+    // Put a NUL terminator just after the copied data. (Space was reserved already.)
+    pycompile_scratch[size - 3] = '\0';
+
+    PyObject *result = Py_CompileStringExFlags(pycompile_scratch, "<fuzz input>", start, &flags, optimize);
+    if (result == NULL) {
+        /* Compilation failed, most likely from a syntax error. If it was a
+           SystemError we abort. There's no non-bug reason to raise a
+           SystemError. */
+        if (PyErr_Occurred() && PyErr_ExceptionMatches(PyExc_SystemError)) {
+            PyErr_Print();
+            abort();
+        }
+        PyErr_Clear();
+    } else {
+        Py_DECREF(result);
+    }
+
     return 0;
 }
 
@@ -569,6 +708,20 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
     }
 
     rv |= _run_fuzz(data, size, fuzz_ast_literal_eval);
+#endif
+#if !defined(_Py_FUZZ_ONE) || defined(_Py_FUZZ_fuzz_elementtree_parsewhole)
+    static int ELEMENTTREE_PARSEWHOLE_INITIALIZED = 0;
+    if (!ELEMENTTREE_PARSEWHOLE_INITIALIZED && !init_elementtree_parsewhole()) {
+        PyErr_Print();
+        abort();
+    } else {
+        ELEMENTTREE_PARSEWHOLE_INITIALIZED = 1;
+    }
+
+    rv |= _run_fuzz(data, size, fuzz_elementtree_parsewhole);
+#endif
+#if !defined(_Py_FUZZ_ONE) || defined(_Py_FUZZ_fuzz_pycompile)
+    rv |= _run_fuzz(data, size, fuzz_pycompile);
 #endif
   return rv;
 }

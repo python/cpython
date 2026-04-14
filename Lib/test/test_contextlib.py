@@ -48,23 +48,23 @@ class TestAbstractContextManager(unittest.TestCase):
             def __exit__(self, exc_type, exc_value, traceback):
                 return None
 
-        self.assertTrue(issubclass(ManagerFromScratch, AbstractContextManager))
+        self.assertIsSubclass(ManagerFromScratch, AbstractContextManager)
 
         class DefaultEnter(AbstractContextManager):
             def __exit__(self, *args):
                 super().__exit__(*args)
 
-        self.assertTrue(issubclass(DefaultEnter, AbstractContextManager))
+        self.assertIsSubclass(DefaultEnter, AbstractContextManager)
 
         class NoEnter(ManagerFromScratch):
             __enter__ = None
 
-        self.assertFalse(issubclass(NoEnter, AbstractContextManager))
+        self.assertNotIsSubclass(NoEnter, AbstractContextManager)
 
         class NoExit(ManagerFromScratch):
             __exit__ = None
 
-        self.assertFalse(issubclass(NoExit, AbstractContextManager))
+        self.assertNotIsSubclass(NoExit, AbstractContextManager)
 
 
 class ContextManagerTestCase(unittest.TestCase):
@@ -444,12 +444,10 @@ class FileContextTestCase(unittest.TestCase):
     def testWithOpen(self):
         tfn = tempfile.mktemp()
         try:
-            f = None
             with open(tfn, "w", encoding="utf-8") as f:
                 self.assertFalse(f.closed)
                 f.write("Booh\n")
             self.assertTrue(f.closed)
-            f = None
             with self.assertRaises(ZeroDivisionError):
                 with open(tfn, "r", encoding="utf-8") as f:
                     self.assertFalse(f.closed)
@@ -789,6 +787,75 @@ class TestBaseExitStack:
             self.assertIs(stack._exit_callbacks[-1][1].__self__, cm)
             result.append(2)
         self.assertEqual(result, [1, 2, 3, 4])
+
+    def test_enter_context_classmethod(self):
+        class TestCM:
+            @classmethod
+            def __enter__(cls):
+                result.append(('enter', cls))
+            @classmethod
+            def __exit__(cls, *exc_details):
+                result.append(('exit', cls, *exc_details))
+
+        cm = TestCM()
+        result = []
+        with self.exit_stack() as stack:
+            stack.enter_context(cm)
+            self.assertEqual(result, [('enter', TestCM)])
+        self.assertEqual(result, [('enter', TestCM),
+                                  ('exit', TestCM, None, None, None)])
+
+        result = []
+        with self.exit_stack() as stack:
+            stack.push(cm)
+            self.assertEqual(result, [])
+        self.assertEqual(result, [('exit', TestCM, None, None, None)])
+
+    def test_enter_context_staticmethod(self):
+        class TestCM:
+            @staticmethod
+            def __enter__():
+                result.append('enter')
+            @staticmethod
+            def __exit__(*exc_details):
+                result.append(('exit', *exc_details))
+
+        cm = TestCM()
+        result = []
+        with self.exit_stack() as stack:
+            stack.enter_context(cm)
+            self.assertEqual(result, ['enter'])
+        self.assertEqual(result, ['enter', ('exit', None, None, None)])
+
+        result = []
+        with self.exit_stack() as stack:
+            stack.push(cm)
+            self.assertEqual(result, [])
+        self.assertEqual(result, [('exit', None, None, None)])
+
+    def test_enter_context_slots(self):
+        class TestCM:
+            __slots__ = ('__enter__', '__exit__')
+            def __init__(self):
+                def enter():
+                    result.append('enter')
+                def exit(*exc_details):
+                    result.append(('exit', *exc_details))
+                self.__enter__ = enter
+                self.__exit__ = exit
+
+        cm = TestCM()
+        result = []
+        with self.exit_stack() as stack:
+            stack.enter_context(cm)
+            self.assertEqual(result, ['enter'])
+        self.assertEqual(result, ['enter', ('exit', None, None, None)])
+
+        result = []
+        with self.exit_stack() as stack:
+            stack.push(cm)
+            self.assertEqual(result, [])
+        self.assertEqual(result, [('exit', None, None, None)])
 
     def test_enter_context_errors(self):
         class LacksEnterAndExit:
@@ -1297,6 +1364,24 @@ class TestSuppress(ExceptionIsLikeMixin, unittest.TestCase):
                 [KeyError("ke1"), KeyError("ke2")],
             ),
         )
+        # Check handling of BaseExceptionGroup, using GeneratorExit so that
+        # we don't accidentally discard a ctrl-c with KeyboardInterrupt.
+        with suppress(GeneratorExit):
+            raise BaseExceptionGroup("message", [GeneratorExit()])
+        # If we raise a BaseException group, we can still suppress parts
+        with self.assertRaises(BaseExceptionGroup) as eg1:
+            with suppress(KeyError):
+                raise BaseExceptionGroup("message", [GeneratorExit("g"), KeyError("k")])
+        self.assertExceptionIsLike(
+            eg1.exception, BaseExceptionGroup("message", [GeneratorExit("g")]),
+        )
+        # If we suppress all the leaf BaseExceptions, we get a non-base ExceptionGroup
+        with self.assertRaises(ExceptionGroup) as eg1:
+            with suppress(GeneratorExit):
+                raise BaseExceptionGroup("message", [GeneratorExit("g"), KeyError("k")])
+        self.assertExceptionIsLike(
+            eg1.exception, ExceptionGroup("message", [KeyError("k")]),
+        )
 
 
 class TestChdir(unittest.TestCase):
@@ -1318,7 +1403,7 @@ class TestChdir(unittest.TestCase):
     def test_reentrant(self):
         old_cwd = os.getcwd()
         target1 = self.make_relative_path('data')
-        target2 = self.make_relative_path('ziptestdata')
+        target2 = self.make_relative_path('archivetestdata')
         self.assertNotIn(old_cwd, (target1, target2))
         chdir1, chdir2 = chdir(target1), chdir(target2)
 

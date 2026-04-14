@@ -1,3 +1,0 @@
-Improve errors for unsupported look-behind patterns. Now re.error is raised
-instead of OverflowError or RuntimeError for too large width of look-behind
-pattern.

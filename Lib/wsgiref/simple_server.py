@@ -16,11 +16,10 @@ import urllib.parse
 from wsgiref.handlers import SimpleHandler
 from platform import python_implementation
 
-__version__ = "0.2"
 __all__ = ['WSGIServer', 'WSGIRequestHandler', 'demo_app', 'make_server']
 
 
-server_version = "WSGIServer/" + __version__
+server_version = "WSGIServer"
 sys_version = python_implementation() + "/" + sys.version.split()[0]
 software_version = server_version + ' ' + sys_version
 
@@ -70,7 +69,7 @@ class WSGIServer(HTTPServer):
 
 class WSGIRequestHandler(BaseHTTPRequestHandler):
 
-    server_version = "WSGIServer/" + __version__
+    server_version = "WSGIServer"
 
     def get_environ(self):
         env = self.server.base_environ.copy()
@@ -84,10 +83,6 @@ class WSGIRequestHandler(BaseHTTPRequestHandler):
 
         env['PATH_INFO'] = urllib.parse.unquote(path, 'iso-8859-1')
         env['QUERY_STRING'] = query
-
-        host = self.address_string()
-        if host != self.client_address[0]:
-            env['REMOTE_HOST'] = host
         env['REMOTE_ADDR'] = self.client_address[0]
 
         if self.headers.get('content-type') is None:
@@ -154,6 +149,15 @@ def make_server(
     server = server_class((host, port), handler_class)
     server.set_app(app)
     return server
+
+
+def __getattr__(name):
+    if name == "__version__":
+        from warnings import _deprecated
+
+        _deprecated("__version__", remove=(3, 20))
+        return "0.2"  # Do not change
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 
 if __name__ == '__main__':

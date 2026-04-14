@@ -26,7 +26,7 @@ module_globals is not a dict.
 .. nonce: kqBNzv
 .. section: Core and Builtins
 
-The new `os.posix_spawn` added in 3.7.0b1 was removed as we are still
+The new ``os.posix_spawn`` added in 3.7.0b1 was removed as we are still
 working on what the API should look like.  Expect this in 3.8 instead.
 
 ..
@@ -77,7 +77,7 @@ their body. Based on patch by Inada Naoki.
 .. nonce: UoC319
 .. section: Core and Builtins
 
-Fix a crash in `ctypes.cast()` in case the type argument is a ctypes
+Fix a crash in ``ctypes.cast()`` in case the type argument is a ctypes
 structured data type. Patch by Eryk Sun and Oren Milman.
 
 ..
@@ -254,8 +254,8 @@ default.
 .. nonce: C6Hnd1
 .. section: Library
 
-Do not simplify arguments to `typing.Union`. Now `Union[Manager, Employee]`
-is not simplified to `Employee` at runtime. Such simplification previously
+Do not simplify arguments to ``typing.Union``. Now ``Union[Manager, Employee]``
+is not simplified to ``Employee`` at runtime. Such simplification previously
 caused several bugs and limited possibilities for introspection.
 
 ..
@@ -314,7 +314,7 @@ Patch by Zvi Effron
 .. nonce: taxbVT
 .. section: Library
 
-Fix race condition with `ReadTransport.resume_reading` in Windows proactor
+Fix race condition with ``ReadTransport.resume_reading`` in Windows proactor
 event loop.
 
 ..
@@ -324,7 +324,7 @@ event loop.
 .. nonce: pj2Mbb
 .. section: Library
 
-Fix failure in `typing.get_type_hints()` when ClassVar was provided as a
+Fix failure in ``typing.get_type_hints()`` when ClassVar was provided as a
 string forward reference.
 
 ..
@@ -427,7 +427,7 @@ Donghee Na.
 .. nonce: B56Hc1
 .. section: Library
 
-Fix FD leak in `_SelectorSocketTransport`  Patch by Vlad Starostin.
+Fix FD leak in ``_SelectorSocketTransport``  Patch by Vlad Starostin.
 
 ..
 
@@ -466,7 +466,7 @@ Support arrays >=2GiB in :mod:`ctypes`.  Patch by Segev Finer.
 .. nonce: E5gba1
 .. section: Documentation
 
-Document that `asyncio.wait()` does not cancel its futures on timeout.
+Document that ``asyncio.wait()`` does not cancel its futures on timeout.
 
 ..
 

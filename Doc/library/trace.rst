@@ -1,5 +1,5 @@
-:mod:`trace` --- Trace or track Python statement execution
-==========================================================
+:mod:`!trace` --- Trace or track Python statement execution
+===========================================================
 
 .. module:: trace
    :synopsis: Trace or track Python statement execution.
@@ -8,7 +8,7 @@
 
 --------------
 
-The :mod:`trace` module allows you to trace program execution, generate
+The :mod:`!trace` module allows you to trace program execution, generate
 annotated statement coverage listings, print caller/callee relationships and
 list functions executed during a program run.  It can be used in another program
 or from the command line.
@@ -24,7 +24,7 @@ or from the command line.
 Command-Line Usage
 ------------------
 
-The :mod:`trace` module can be invoked from the command line.  It can be as
+The :mod:`!trace` module can be invoked from the command line.  It can be as
 simple as ::
 
    python -m trace --count -C . somefile.py ...
@@ -43,13 +43,13 @@ all Python modules imported during the execution into the current directory.
    Display the version of the module and exit.
 
 .. versionadded:: 3.8
-    Added ``--module`` option that allows to run an executable module.
+    Added ``--module`` option that allows running an executable module.
 
 Main options
 ^^^^^^^^^^^^
 
 At least one of the following options must be specified when invoking
-:mod:`trace`.  The :option:`--listfuncs <-l>` option is mutually exclusive with
+:mod:`!trace`.  The :option:`--listfuncs <-l>` option is mutually exclusive with
 the :option:`--trace <-t>` and :option:`--count <-c>` options. When
 :option:`--listfuncs <-l>` is provided, neither :option:`--count <-c>` nor
 :option:`--trace <-t>` are accepted, and vice versa.
@@ -187,13 +187,21 @@ Programmatic Interface
 
       Merge in data from another :class:`CoverageResults` object.
 
-   .. method:: write_results(show_missing=True, summary=False, coverdir=None)
+   .. method:: write_results(show_missing=True, summary=False, coverdir=None,\
+                             *, ignore_missing_files=False)
 
       Write coverage results.  Set *show_missing* to show lines that had no
       hits.  Set *summary* to include in the output the coverage summary per
       module.  *coverdir* specifies the directory into which the coverage
       result files will be output.  If ``None``, the results for each source
       file are placed in its directory.
+
+      If *ignore_missing_files* is ``True``, coverage counts for files that no
+      longer exist are silently ignored. Otherwise, a missing file will
+      raise a :exc:`FileNotFoundError`.
+
+      .. versionchanged:: 3.13
+         Added *ignore_missing_files* parameter.
 
 A simple example demonstrating the use of the programmatic interface::
 

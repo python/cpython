@@ -1,1 +1,0 @@
-Improved error handling in :mod:`pdb` command line interface, making it produce more concise error messages.

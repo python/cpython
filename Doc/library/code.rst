@@ -1,5 +1,5 @@
-:mod:`code` --- Interpreter base classes
-========================================
+:mod:`!code` --- Interpreter base classes
+=========================================
 
 .. module:: code
    :synopsis: Facilities to implement read-eval-print loops.
@@ -18,16 +18,22 @@ build applications which provide an interactive interpreter prompt.
    This class deals with parsing and interpreter state (the user's namespace); it
    does not deal with input buffering or prompting or input file naming (the
    filename is always passed in explicitly). The optional *locals* argument
-   specifies the dictionary in which code will be executed; it defaults to a newly
-   created dictionary with key ``'__name__'`` set to ``'__console__'`` and key
-   ``'__doc__'`` set to ``None``.
+   specifies a mapping to use as the namespace in which code will be executed;
+   it defaults to a newly created dictionary with key ``'__name__'`` set to
+   ``'__console__'`` and key ``'__doc__'`` set to ``None``.
+
+   Note that functions and classes objects created under an
+   :class:`!InteractiveInterpreter` instance will belong to the namespace
+   specified by *locals*.
+   They are only pickleable if *locals* is the namespace of an existing
+   module.
 
 
-.. class:: InteractiveConsole(locals=None, filename="<console>", local_exit=False)
+.. class:: InteractiveConsole(locals=None, filename="<console>", *, local_exit=False)
 
    Closely emulate the behavior of the interactive Python interpreter. This class
    builds on :class:`InteractiveInterpreter` and adds prompting using the familiar
-   ``sys.ps1`` and ``sys.ps2``, and input buffering. If *local_exit* is True,
+   ``sys.ps1`` and ``sys.ps2``, and input buffering. If *local_exit* is true,
    ``exit()`` and ``quit()`` in the console will not raise :exc:`SystemExit`, but
    instead return to the calling code.
 
@@ -41,7 +47,7 @@ build applications which provide an interactive interpreter prompt.
    the :meth:`InteractiveConsole.raw_input` method, if provided.  If *local* is
    provided, it is passed to the :class:`InteractiveConsole` constructor for
    use as the default namespace for the interpreter loop.  If *local_exit* is provided,
-   it is passed to the :class:`InteractiveConsole` constructor.  The :meth:`interact`
+   it is passed to the :class:`InteractiveConsole` constructor.  The :meth:`~InteractiveConsole.interact`
    method of the instance is then run with *banner* and *exitmsg* passed as the
    banner and exit message to use, if provided.  The console object is discarded
    after use.

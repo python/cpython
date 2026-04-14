@@ -4,6 +4,7 @@ import io
 import re
 import sqlite3
 import test.support
+import unittest
 
 
 # Helper for temporary memory databases
@@ -22,15 +23,16 @@ def cx_limit(cx, category=sqlite3.SQLITE_LIMIT_SQL_LENGTH, limit=128):
         cx.setlimit(category, _prev)
 
 
-def with_tracebacks(exc, regex="", name=""):
+def with_tracebacks(exc, regex="", name="", msg_regex=""):
     """Convenience decorator for testing callback tracebacks."""
     def decorator(func):
-        _regex = re.compile(regex) if regex else None
+        exc_regex = re.compile(regex) if regex else None
+        _msg_regex = re.compile(msg_regex) if msg_regex else None
         @functools.wraps(func)
         def wrapper(self, *args, **kwargs):
             with test.support.catch_unraisable_exception() as cm:
                 # First, run the test with traceback enabled.
-                with check_tracebacks(self, cm, exc, _regex, name):
+                with check_tracebacks(self, cm, exc, exc_regex, _msg_regex, name):
                     func(self, *args, **kwargs)
 
             # Then run the test with traceback disabled.
@@ -40,7 +42,7 @@ def with_tracebacks(exc, regex="", name=""):
 
 
 @contextlib.contextmanager
-def check_tracebacks(self, cm, exc, regex, obj_name):
+def check_tracebacks(self, cm, exc, exc_regex, msg_regex, obj_name):
     """Convenience context manager for testing callback tracebacks."""
     sqlite3.enable_callback_tracebacks(True)
     try:
@@ -49,9 +51,12 @@ def check_tracebacks(self, cm, exc, regex, obj_name):
             yield
 
         self.assertEqual(cm.unraisable.exc_type, exc)
-        if regex:
+        if exc_regex:
             msg = str(cm.unraisable.exc_value)
-            self.assertIsNotNone(regex.search(msg))
+            self.assertIsNotNone(exc_regex.search(msg), (exc_regex, msg))
+        if msg_regex:
+            msg = cm.unraisable.err_msg
+            self.assertIsNotNone(msg_regex.search(msg), (msg_regex, msg))
         if obj_name:
             self.assertEqual(cm.unraisable.object.__name__, obj_name)
     finally:
@@ -75,3 +80,10 @@ class MemoryDatabaseMixin:
     @property
     def cu(self):
         return self.cur
+
+
+def requires_virtual_table(module):
+    with memory_database() as cx:
+        supported = (module,) in list(cx.execute("PRAGMA module_list"))
+        reason = f"Requires {module!r} virtual table support"
+        return unittest.skipUnless(supported, reason)
