@@ -6349,7 +6349,10 @@ dummy_func(
                 ERROR_IF(err < 0);
                 DISPATCH();
             }
-            Py_CLEAR(tracer->prev_state.recorded_value);
+            for (int i = 0; i < tracer->prev_state.recorded_count; i++) {
+                Py_CLEAR(tracer->prev_state.recorded_values[i]);
+            }
+            tracer->prev_state.recorded_count = 0;
             tracer->prev_state.instr = next_instr;
             PyObject *prev_code = PyStackRef_AsPyObjectBorrow(frame->f_executable);
             if (tracer->prev_state.instr_code != (PyCodeObject *)prev_code) {
@@ -6363,11 +6366,12 @@ dummy_func(
                 (&next_instr[1])->counter = trigger_backoff_counter();
             }
 
-            uint8_t record_func_index = _PyOpcode_RecordFunctionIndices[opcode];
-            if (record_func_index) {
-                _Py_RecordFuncPtr doesnt_escape = _PyOpcode_RecordFunctions[record_func_index];
-                doesnt_escape(frame, stack_pointer, oparg, &tracer->prev_state.recorded_value);
+            const _PyOpcodeRecordEntry *record_entry = &_PyOpcode_RecordEntries[opcode];
+            for (int i = 0; i < record_entry->count; i++) {
+                _Py_RecordFuncPtr doesnt_escape = _PyOpcode_RecordFunctions[record_entry->indices[i]];
+                doesnt_escape(frame, stack_pointer, oparg, &tracer->prev_state.recorded_values[i]);
             }
+            tracer->prev_state.recorded_count = record_entry->count;
             DISPATCH_GOTO_NON_TRACING();
 #else
             (void)prev_instr;
