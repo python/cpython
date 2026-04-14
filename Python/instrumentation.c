@@ -1286,13 +1286,10 @@ _Py_call_instrumentation_exc2(
 }
 
 int
-_Py_Instrumentation_GetLine(PyCodeObject *code, int index)
+_Py_Instrumentation_GetLine(PyCodeObject *code, _PyCoLineInstrumentationData *line_data, int index)
 {
-    _PyCoMonitoringData *monitoring = code->_co_monitoring;
-    assert(monitoring != NULL);
-    assert(monitoring->lines != NULL);
+    assert(line_data != NULL);
     assert(index < Py_SIZE(code));
-    _PyCoLineInstrumentationData *line_data = monitoring->lines;
     int line_delta = get_line_delta(line_data, index);
     int line = compute_line(code, line_delta);
     return line;
@@ -1310,11 +1307,11 @@ _Py_call_instrumentation_line(PyThreadState *tstate, _PyInterpreterFrame* frame,
     _PyCoMonitoringData *monitoring = code->_co_monitoring;
     _PyCoLineInstrumentationData *line_data = monitoring->lines;
     PyInterpreterState *interp = tstate->interp;
-    int line = _Py_Instrumentation_GetLine(code, i);
+    int line = _Py_Instrumentation_GetLine(code, line_data, i);
     assert(line >= 0);
     assert(prev != NULL);
     int prev_index = (int)(prev - bytecode);
-    int prev_line = _Py_Instrumentation_GetLine(code, prev_index);
+    int prev_line = _Py_Instrumentation_GetLine(code, line_data, prev_index);
     if (prev_line == line) {
         int prev_opcode = bytecode[prev_index].op.code;
         /* RESUME and INSTRUMENTED_RESUME are needed for the operation of
@@ -1511,11 +1508,9 @@ initialize_tools(PyCodeObject *code)
 }
 
 static void
-initialize_lines(PyCodeObject *code, int bytes_per_entry)
+initialize_lines(_PyCoLineInstrumentationData *line_data, PyCodeObject *code, int bytes_per_entry)
 {
     ASSERT_WORLD_STOPPED_OR_LOCKED(code);
-    _PyCoLineInstrumentationData *line_data = code->_co_monitoring->lines;
-
     assert(line_data != NULL);
     line_data->bytes_per_entry = bytes_per_entry;
     int code_len = (int)Py_SIZE(code);
@@ -1656,18 +1651,19 @@ allocate_instrumentation_data(PyCodeObject *code)
     ASSERT_WORLD_STOPPED_OR_LOCKED(code);
 
     if (code->_co_monitoring == NULL) {
-        code->_co_monitoring = PyMem_Malloc(sizeof(_PyCoMonitoringData));
-        if (code->_co_monitoring == NULL) {
+        _PyCoMonitoringData *monitoring = PyMem_Malloc(sizeof(_PyCoMonitoringData));
+        if (monitoring == NULL) {
             PyErr_NoMemory();
             return -1;
         }
-        code->_co_monitoring->local_monitors = (_Py_LocalMonitors){ 0 };
-        code->_co_monitoring->active_monitors = (_Py_LocalMonitors){ 0 };
-        code->_co_monitoring->tools = NULL;
-        code->_co_monitoring->lines = NULL;
-        code->_co_monitoring->line_tools = NULL;
-        code->_co_monitoring->per_instruction_opcodes = NULL;
-        code->_co_monitoring->per_instruction_tools = NULL;
+        monitoring->local_monitors = (_Py_LocalMonitors){ 0 };
+        monitoring->active_monitors = (_Py_LocalMonitors){ 0 };
+        monitoring->tools = NULL;
+        monitoring->lines = NULL;
+        monitoring->line_tools = NULL;
+        monitoring->per_instruction_opcodes = NULL;
+        monitoring->per_instruction_tools = NULL;
+        _Py_atomic_store_ptr_release(&code->_co_monitoring, monitoring);
     }
     return 0;
 }
@@ -1732,12 +1728,13 @@ update_instrumentation_data(PyCodeObject *code, PyInterpreterState *interp)
             else {
                 bytes_per_entry = 5;
             }
-            code->_co_monitoring->lines = PyMem_Malloc(1 + code_len * bytes_per_entry);
-            if (code->_co_monitoring->lines == NULL) {
+            _PyCoLineInstrumentationData *lines = PyMem_Malloc(1 + code_len * bytes_per_entry);
+            if (lines == NULL) {
                 PyErr_NoMemory();
                 return -1;
             }
-            initialize_lines(code, bytes_per_entry);
+            initialize_lines(lines, code, bytes_per_entry);
+            _Py_atomic_store_ptr_release(&code->_co_monitoring->lines, lines);
         }
         if (multitools && code->_co_monitoring->line_tools == NULL) {
             code->_co_monitoring->line_tools = PyMem_Malloc(code_len);

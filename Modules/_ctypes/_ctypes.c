@@ -111,6 +111,7 @@ bytes(cdata)
 #include "pycore_unicodeobject.h" // _PyUnicode_EqualToASCIIString()
 #include "pycore_pyatomic_ft_wrappers.h"
 #include "pycore_object.h"
+#include "pycore_tuple.h"         // _PyTuple_FromPair
 #ifdef MS_WIN32
 #  include "pycore_modsupport.h"  // _PyArg_NoKeywords()
 #endif
@@ -467,11 +468,7 @@ class _ctypes.CType_Type "PyObject *" "clinic_state()->CType_Type"
 static int
 CType_Type_traverse(PyObject *self, visitproc visit, void *arg)
 {
-    StgInfo *info = _PyStgInfo_FromType_NoState(self);
-    if (!info) {
-        PyErr_FormatUnraisable("Exception ignored while "
-                               "calling ctypes traverse function %R", self);
-    }
+    StgInfo *info = _PyStgInfo_FromType_DuringGC(self);
     if (info) {
         Py_VISIT(info->proto);
         Py_VISIT(info->argtypes);
@@ -515,11 +512,7 @@ ctype_free_stginfo_members(StgInfo *info)
 static int
 CType_Type_clear(PyObject *self)
 {
-    StgInfo *info = _PyStgInfo_FromType_NoState(self);
-    if (!info) {
-        PyErr_FormatUnraisable("Exception ignored while "
-                               "clearing ctypes %R", self);
-    }
+    StgInfo *info = _PyStgInfo_FromType_DuringGC(self);
     if (info) {
         ctype_clear_stginfo(info);
     }
@@ -529,11 +522,7 @@ CType_Type_clear(PyObject *self)
 static void
 CType_Type_dealloc(PyObject *self)
 {
-    StgInfo *info = _PyStgInfo_FromType_NoState(self);
-    if (!info) {
-        PyErr_FormatUnraisable("Exception ignored while "
-                               "deallocating ctypes %R", self);
-    }
+    StgInfo *info = _PyStgInfo_FromType_DuringGC(self);
     if (info) {
         ctype_free_stginfo_members(info);
     }
@@ -3511,7 +3500,7 @@ _PyCData_set(ctypes_state *st,
           only it's object list.  So we create a tuple, containing
           b_objects list PLUS the array itself, and return that!
         */
-        return PyTuple_Pack(2, keep, value);
+        return _PyTuple_FromPair(keep, value);
     }
     PyErr_Format(PyExc_TypeError,
                  "incompatible types, %s instance instead of %s instance",
@@ -5332,8 +5321,7 @@ PyCArrayType_from_ctype(ctypes_state *st, PyObject *itemtype, Py_ssize_t length)
     len = PyLong_FromSsize_t(length);
     if (len == NULL)
         return NULL;
-    key = PyTuple_Pack(2, itemtype, len);
-    Py_DECREF(len);
+    key = _PyTuple_FromPairSteal(Py_NewRef(itemtype), len);
     if (!key)
         return NULL;
 

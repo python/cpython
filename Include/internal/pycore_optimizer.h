@@ -394,6 +394,7 @@ extern JitOptRef _Py_uop_sym_new_type(
 extern JitOptRef _Py_uop_sym_new_const(JitOptContext *ctx, PyObject *const_val);
 extern JitOptRef _Py_uop_sym_new_const_steal(JitOptContext *ctx, PyObject *const_val);
 bool _Py_uop_sym_is_safe_const(JitOptContext *ctx, JitOptRef sym);
+bool _Py_uop_sym_is_not_container(JitOptRef sym);
 _PyStackRef _Py_uop_sym_get_const_as_stackref(JitOptContext *ctx, JitOptRef sym);
 extern JitOptRef _Py_uop_sym_new_null(JitOptContext *ctx);
 extern bool _Py_uop_sym_has_type(JitOptRef sym);
@@ -423,8 +424,6 @@ extern PyCodeObject *_Py_uop_sym_get_probable_func_code(JitOptRef sym);
 extern PyObject *_Py_uop_sym_get_probable_value(JitOptRef sym);
 extern PyTypeObject *_Py_uop_sym_get_probable_type(JitOptRef sym);
 extern JitOptRef *_Py_uop_sym_set_stack_depth(JitOptContext *ctx, int stack_depth, JitOptRef *current_sp);
-extern uint32_t _Py_uop_sym_get_func_version(JitOptRef ref);
-bool _Py_uop_sym_set_func_version(JitOptContext *ctx, JitOptRef ref, uint32_t version);
 
 extern void _Py_uop_abstractcontext_init(JitOptContext *ctx, _PyBloomFilter *dependencies);
 extern void _Py_uop_abstractcontext_fini(JitOptContext *ctx);
