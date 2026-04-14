@@ -328,15 +328,20 @@
                 _POP_TOP, _NOP);
             if (!already_bool) {
                 PyTypeObject *tp = sym_get_type(value);
+                uintptr_t size_offset = 0;
                 if (tp == &PyDict_Type) {
-                    REPLACE_OP(this_instr, _TO_BOOL_DICT, 0, 0);
+                    size_offset = offsetof(PyDictObject, ma_used);
                 }
                 else if (tp == &PyTuple_Type ||
-                     tp == &PySet_Type ||
-                     tp == &PyFrozenSet_Type ||
                      tp == &PyBytes_Type ||
                      tp == &PyByteArray_Type) {
-                    REPLACE_OP(this_instr, _TO_BOOL_SIZED, 0, 0);
+                    size_offset = offsetof(PyVarObject, ob_size);
+                }
+                else if (tp == &PySet_Type || tp == &PyFrozenSet_Type) {
+                    size_offset = offsetof(PySetObject, used);
+                }
+                if (size_offset) {
+                    REPLACE_OP(this_instr, _TO_BOOL_SIZED, 0, size_offset);
                 }
                 res = sym_new_truthiness(ctx, value, true);
             }
@@ -508,24 +513,12 @@
             break;
         }
 
-        case _TO_BOOL_DICT: {
-            JitOptRef value;
-            JitOptRef res;
-            value = stack_pointer[-1];
-            int already_bool = optimize_to_bool(this_instr, ctx, value, &res,
-                _POP_TOP, _NOP);
-            if (!already_bool) {
-                sym_set_type(value, &PyDict_Type);
-                res = sym_new_truthiness(ctx, value, true);
-            }
-            stack_pointer[-1] = res;
-            break;
-        }
-
         case _TO_BOOL_SIZED: {
             JitOptRef value;
             JitOptRef res;
             value = stack_pointer[-1];
+            uint16_t size_offset = (uint16_t)this_instr->operand0;
+            (void)size_offset;
             int already_bool = optimize_to_bool(this_instr, ctx, value, &res,
                 _POP_TOP, _NOP);
             if (!already_bool) {

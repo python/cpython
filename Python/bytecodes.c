@@ -601,20 +601,15 @@ dummy_func(
             _REPLACE_WITH_TRUE +
             POP_TOP;
 
-        tier2 op(_TO_BOOL_DICT, (value -- res)) {
-            PyObject *value_o = PyStackRef_AsPyObjectBorrow(value);
-            assert(PyDict_CheckExact(value_o));
-            STAT_INC(TO_BOOL, hit);
-            res = PyDict_GET_SIZE(value_o) ? PyStackRef_True : PyStackRef_False;
-            PyStackRef_CLOSE(value);
-        }
-
-        tier2 op(_TO_BOOL_SIZED, (value -- res)) {
-            /* Covers types whose truthiness is Py_SIZE(obj) != 0:
-               tuple, set, frozenset, bytes, bytearray. */
+        tier2 op(_TO_BOOL_SIZED, (size_offset/1, value -- res)) {
+            /* Covers any type whose truthiness is a Py_ssize_t size field at a
+               known offset: dict (ma_used), tuple/bytes/bytearray (ob_size),
+               set/frozenset (used). */
             PyObject *value_o = PyStackRef_AsPyObjectBorrow(value);
             STAT_INC(TO_BOOL, hit);
-            res = Py_SIZE(value_o) ? PyStackRef_True : PyStackRef_False;
+            Py_ssize_t size = FT_ATOMIC_LOAD_SSIZE_RELAXED(
+                *(Py_ssize_t *)((char *)value_o + size_offset));
+            res = size ? PyStackRef_True : PyStackRef_False;
             PyStackRef_CLOSE(value);
         }
 

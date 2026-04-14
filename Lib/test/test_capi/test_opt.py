@@ -4251,7 +4251,7 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertNotIn("_REPLACE_WITH_TRUE", uops)
 
     def test_to_bool_kwargs_dict(self):
-        """**kwargs is known to be dict, so TO_BOOL specializes to _TO_BOOL_DICT."""
+        """**kwargs is known to be dict, so TO_BOOL specializes to _TO_BOOL_SIZED."""
         def inner(**kwargs):
             cnt = 0
             for i in range(TIER2_THRESHOLD):
@@ -4267,7 +4267,7 @@ class TestUopsOptimization(unittest.TestCase):
         ex_inner = get_first_executor(inner)
         self.assertIsNotNone(ex_inner)
         uops = get_opnames(ex_inner)
-        self.assertIn("_TO_BOOL_DICT", uops)
+        self.assertIn("_TO_BOOL_SIZED", uops)
         self.assertNotIn("_TO_BOOL", uops)
 
     def test_to_bool_kwargs_empty_dict(self):
@@ -4287,7 +4287,7 @@ class TestUopsOptimization(unittest.TestCase):
         ex_inner = get_first_executor(inner)
         self.assertIsNotNone(ex_inner)
         uops = get_opnames(ex_inner)
-        self.assertIn("_TO_BOOL_DICT", uops)
+        self.assertIn("_TO_BOOL_SIZED", uops)
         self.assertNotIn("_TO_BOOL", uops)
 
     def test_to_bool_varargs_tuple(self):
@@ -4347,8 +4347,8 @@ class TestUopsOptimization(unittest.TestCase):
         ex_inner = get_first_executor(inner)
         self.assertIsNotNone(ex_inner)
         uops = get_opnames(ex_inner)
-        self.assertIn("_TO_BOOL_SIZED", uops)
-        self.assertIn("_TO_BOOL_DICT", uops)
+        # Both the tuple (args) and dict (kwargs) TO_BOOLs specialize to _TO_BOOL_SIZED.
+        self.assertGreaterEqual(count_ops(ex_inner, "_TO_BOOL_SIZED"), 2)
         self.assertNotIn("_TO_BOOL", uops)
 
     def test_to_bool_args_kwargs_with_regular_params(self):
@@ -4368,8 +4368,7 @@ class TestUopsOptimization(unittest.TestCase):
         ex_inner = get_first_executor(inner)
         self.assertIsNotNone(ex_inner)
         uops = get_opnames(ex_inner)
-        self.assertIn("_TO_BOOL_SIZED", uops)
-        self.assertIn("_TO_BOOL_DICT", uops)
+        self.assertGreaterEqual(count_ops(ex_inner, "_TO_BOOL_SIZED"), 2)
         self.assertNotIn("_TO_BOOL", uops)
 
     def test_to_bool_kwargs_only_no_varargs(self):
@@ -4389,7 +4388,7 @@ class TestUopsOptimization(unittest.TestCase):
         ex_inner = get_first_executor(inner)
         self.assertIsNotNone(ex_inner)
         uops = get_opnames(ex_inner)
-        self.assertIn("_TO_BOOL_DICT", uops)
+        self.assertIn("_TO_BOOL_SIZED", uops)
         self.assertNotIn("_TO_BOOL", uops)
 
     def test_to_bool_set_with_dummy_entries(self):
