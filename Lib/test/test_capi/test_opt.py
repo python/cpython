@@ -3688,6 +3688,48 @@ class TestUopsOptimization(unittest.TestCase):
         uops = get_opnames(ex)
         self.assertIn("_BINARY_OP_TRUEDIV_FLOAT_INPLACE_RIGHT", uops)
 
+    def test_float_truediv_speculative_guards_from_tracing(self):
+        # a, b are locals with no statically known type. _RECORD_TOS /
+        # _RECORD_NOS (added to the BINARY_OP macro) capture the observed
+        # operand types during tracing, and the optimizer then speculatively
+        # emits _GUARD_{TOS,NOS}_FLOAT and specializes the division.
+        def testfunc(args):
+            a, b, n = args
+            total = 0.0
+            for _ in range(n):
+                total += a / b
+            return total
+
+        res, ex = self._run_with_optimizer(testfunc, (10.0, 3.0, TIER2_THRESHOLD))
+        self.assertAlmostEqual(res, TIER2_THRESHOLD * (10.0 / 3.0))
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertIn("_GUARD_TOS_FLOAT", uops)
+        self.assertIn("_GUARD_NOS_FLOAT", uops)
+        self.assertIn("_BINARY_OP_TRUEDIV_FLOAT", uops)
+
+    def test_float_remainder_speculative_guards_from_tracing(self):
+        # a, b are locals with no statically known type. Tracing records
+        # them as floats; the optimizer then speculatively emits
+        # _GUARD_{TOS,NOS}_FLOAT for NB_REMAINDER. That narrows both
+        # operands to float, and the _BINARY_OP handler marks the result
+        # as a unique float. Downstream, `* 2.0` therefore specializes
+        # to _BINARY_OP_MULTIPLY_FLOAT_INPLACE.
+        def testfunc(args):
+            a, b, n = args
+            total = 0.0
+            for _ in range(n):
+                total += (a % b) * 2.0
+            return total
+
+        res, ex = self._run_with_optimizer(testfunc, (10.0, 3.0, TIER2_THRESHOLD))
+        self.assertAlmostEqual(res, TIER2_THRESHOLD * (10.0 % 3.0) * 2.0)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertIn("_GUARD_TOS_FLOAT", uops)
+        self.assertIn("_GUARD_NOS_FLOAT", uops)
+        self.assertIn("_BINARY_OP_MULTIPLY_FLOAT_INPLACE", uops)
+
     def test_float_truediv_type_propagation(self):
         # Test the _BINARY_OP_TRUEDIV_FLOAT propagates type information
         def testfunc(args):

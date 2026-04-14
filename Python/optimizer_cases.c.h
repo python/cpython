@@ -4934,6 +4934,21 @@
             bool rhs_int = sym_matches_type(rhs, &PyLong_Type);
             bool lhs_float = sym_matches_type(lhs, &PyFloat_Type);
             bool rhs_float = sym_matches_type(rhs, &PyFloat_Type);
+            if (oparg == NB_TRUE_DIVIDE || oparg == NB_INPLACE_TRUE_DIVIDE
+                || oparg == NB_REMAINDER || oparg == NB_INPLACE_REMAINDER) {
+                if (!rhs_float && !sym_has_type(rhs)
+                    && sym_get_probable_type(rhs) == &PyFloat_Type) {
+                    ADD_OP(_GUARD_TOS_FLOAT, 0, 0);
+                    sym_set_type(rhs, &PyFloat_Type);
+                    rhs_float = true;
+                }
+                if (!lhs_float && !sym_has_type(lhs)
+                    && sym_get_probable_type(lhs) == &PyFloat_Type) {
+                    ADD_OP(_GUARD_NOS_FLOAT, 0, 0);
+                    sym_set_type(lhs, &PyFloat_Type);
+                    lhs_float = true;
+                }
+            }
             if ((oparg == NB_TRUE_DIVIDE || oparg == NB_INPLACE_TRUE_DIVIDE)
                 && lhs_float && rhs_float) {
                 if (PyJitRef_IsUnique(lhs)) {
