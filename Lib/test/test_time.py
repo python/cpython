@@ -393,7 +393,7 @@ class TimeTestCase(unittest.TestCase):
         # %e without a year is deprecated, scheduled for removal in 3.17.
         with self.assertWarnsRegex(DeprecationWarning,
                                    r'.*day of month without a year.*'):
-            time.strptime('02- 7 18:28', '%m-%e %H:%M')
+            time.strptime('02-07 18:28', '%m-%e %H:%M')
 
     def test_asctime(self):
         time.asctime(time.gmtime(self.t))
