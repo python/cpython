@@ -2552,7 +2552,7 @@ and :c:data:`PyType_Type` effectively act as defaults.)
    .. versionadded:: 3.12
 
 
-.. c:member:: iteritemfunc PyTypeObject.tp_iteritem
+.. c:member:: function_pointer PyTypeObject.tp_iteritem
 
    Internal. Do not use.
 
