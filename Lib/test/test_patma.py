@@ -2842,6 +2842,16 @@ class TestPatma(unittest.TestCase):
         self.assertEqual(x, 0.25 - 1.75j)
         self.assertEqual(y, 0)
 
+    def test_patma_266(self):
+        x = 0
+        match x:
+            case +1e1000:
+                y = 0
+            case 0:
+                y = 1
+        self.assertEqual(x, 0)
+        self.assertEqual(y, 1)
+
     def test_patma_runtime_checkable_protocol(self):
         # Runtime-checkable protocol
         from typing import Protocol, runtime_checkable
