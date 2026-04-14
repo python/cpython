@@ -14061,7 +14061,7 @@ PyTypeObject PyUnicode_Type = {
     unicode_new,                  /* tp_new */
     PyObject_Free,                /* tp_free */
     .tp_vectorcall = unicode_vectorcall,
-    .tp_iteritem = unicode_iteritem,
+    ._tp_iteritem = unicode_iteritem,
 };
 
 /* Initialize the Unicode implementation */

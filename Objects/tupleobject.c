@@ -1011,7 +1011,7 @@ PyTypeObject PyTuple_Type = {
     PyObject_GC_Del,                            /* tp_free */
     .tp_vectorcall = tuple_vectorcall,
     .tp_version_tag = _Py_TYPE_VERSION_TUPLE,
-    .tp_iteritem = tuple_iteritem,
+    ._tp_iteritem = tuple_iteritem,
 };
 
 /* The following function breaks the notion that tuples are immutable:

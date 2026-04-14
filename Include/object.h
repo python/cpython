@@ -310,7 +310,7 @@ typedef struct _py_object_index_pair {
     PyObject *object;
     Py_ssize_t index;
 } _PyObjectIndexPair;
-typedef _PyObjectIndexPair (*iteritemfunc) (PyObject *, Py_ssize_t index);
+typedef _PyObjectIndexPair (*_Py_iteritemfunc) (PyObject *, Py_ssize_t index);
 typedef PyObject *(*descrgetfunc) (PyObject *, PyObject *, PyObject *);
 typedef int (*descrsetfunc) (PyObject *, PyObject *, PyObject *);
 typedef int (*initproc)(PyObject *, PyObject *, PyObject *);

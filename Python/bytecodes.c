@@ -3634,7 +3634,7 @@ dummy_func(
 
         op(_GUARD_ITER_VIRTUAL, (iterable -- iterable)) {
             PyTypeObject *tp = Py_TYPE(PyStackRef_AsPyObjectBorrow(iterable));
-            EXIT_IF(tp->tp_iteritem == NULL);
+            EXIT_IF(tp->_tp_iteritem == NULL);
             STAT_INC(GET_ITER, hit);
         }
 
@@ -3712,13 +3712,13 @@ dummy_func(
 
         op(_GUARD_NOS_ITER_VIRTUAL, (iter, null_or_index -- iter, null_or_index)) {
             PyObject *iter_o = PyStackRef_AsPyObjectBorrow(iter);
-            EXIT_IF(Py_TYPE(iter_o)->tp_iteritem == NULL);
+            EXIT_IF(Py_TYPE(iter_o)->_tp_iteritem == NULL);
         }
 
         replaced op(_FOR_ITER_VIRTUAL, (iter, null_or_index -- iter, null_or_index, next)) {
             PyObject *iter_o = PyStackRef_AsPyObjectBorrow(iter);
             Py_ssize_t index = PyStackRef_UntagInt(null_or_index);
-            _PyObjectIndexPair next_index = Py_TYPE(iter_o)->tp_iteritem(iter_o, index);
+            _PyObjectIndexPair next_index = Py_TYPE(iter_o)->_tp_iteritem(iter_o, index);
             PyObject *next_o = next_index.object;
             index = next_index.index;
             if (next_o == NULL) {
@@ -3741,7 +3741,7 @@ dummy_func(
         op(_FOR_ITER_VIRTUAL_TIER_TWO, (iter, null_or_index -- iter, null_or_index, next)) {
             PyObject *iter_o = PyStackRef_AsPyObjectBorrow(iter);
             Py_ssize_t index = PyStackRef_UntagInt(null_or_index);
-            _PyObjectIndexPair next_index = Py_TYPE(iter_o)->tp_iteritem(iter_o, index);
+            _PyObjectIndexPair next_index = Py_TYPE(iter_o)->_tp_iteritem(iter_o, index);
             PyObject *next_o = next_index.object;
             index = next_index.index;
             if (next_o == NULL) {

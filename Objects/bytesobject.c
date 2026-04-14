@@ -3260,7 +3260,7 @@ PyTypeObject PyBytes_Type = {
     bytes_new,                                  /* tp_new */
     PyObject_Free,                              /* tp_free */
     .tp_version_tag = _Py_TYPE_VERSION_BYTES,
-    .tp_iteritem = bytes_iteritem,
+    ._tp_iteritem = bytes_iteritem,
 };
 
 void

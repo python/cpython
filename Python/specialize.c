@@ -2614,7 +2614,7 @@ _Py_Specialize_ForIter(_PyStackRef iter, _PyStackRef null_or_index, _Py_CODEUNIT
         }
     }
     else {
-        if (tp->tp_iteritem != NULL) {
+        if (tp->_tp_iteritem != NULL) {
             if (tp == &PyList_Type) {
     #ifdef Py_GIL_DISABLED
                 // Only specialize for lists owned by this thread or shared
@@ -2831,7 +2831,7 @@ _Py_Specialize_GetIter(_PyStackRef iterable, _Py_CODEUNIT *instr)
 {
     assert(ENABLE_SPECIALIZATION);
     PyTypeObject *tp = PyStackRef_TYPE(iterable);
-    if (tp->tp_iteritem != NULL) {
+    if (tp->_tp_iteritem != NULL) {
         specialize(instr, GET_ITER_VIRTUAL);
         return;
     }

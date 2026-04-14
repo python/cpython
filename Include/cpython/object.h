@@ -241,7 +241,7 @@ struct _typeobject {
      * Otherwise, limited to MAX_VERSIONS_PER_CLASS (defined elsewhere).
      */
     uint16_t tp_versions_used;
-    iteritemfunc tp_iteritem; /* Virtual iterator next function */
+    _Py_iteritemfunc _tp_iteritem; /* Virtual iterator next function */
 };
 
 #define _Py_ATTR_CACHE_UNUSED (30000)  // (see tp_versions_used)

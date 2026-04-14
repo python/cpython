@@ -1287,7 +1287,7 @@ dummy_func(void) {
             }
         }
         if (tp != NULL &&
-            tp->tp_iteritem == NULL &&
+            tp->_tp_iteritem == NULL &&
             tp->tp_iter != NULL &&
             tp->tp_iter != PyObject_SelfIter &&
             tp->tp_flags & Py_TPFLAGS_IMMUTABLETYPE
@@ -1340,7 +1340,7 @@ dummy_func(void) {
             definite = false;
             tp = sym_get_probable_type(iterable);
         }
-        if (tp != NULL && tp->tp_iteritem != NULL) {
+        if (tp != NULL && tp->_tp_iteritem != NULL) {
             if (definite) {
                 ADD_OP(_NOP, 0, 0);
             }

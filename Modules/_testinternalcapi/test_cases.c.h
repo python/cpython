@@ -6393,7 +6393,7 @@
             {
                 iter = stack_pointer[-2];
                 PyObject *iter_o = PyStackRef_AsPyObjectBorrow(iter);
-                if (Py_TYPE(iter_o)->tp_iteritem == NULL) {
+                if (Py_TYPE(iter_o)->_tp_iteritem == NULL) {
                     UPDATE_MISS_STATS(FOR_ITER);
                     assert(_PyOpcode_Deopt[opcode] == (FOR_ITER));
                     JUMP_TO_PREDICTED(FOR_ITER);
@@ -6405,7 +6405,7 @@
                 PyObject *iter_o = PyStackRef_AsPyObjectBorrow(iter);
                 Py_ssize_t index = PyStackRef_UntagInt(null_or_index);
                 _PyFrame_SetStackPointer(frame, stack_pointer);
-                _PyObjectIndexPair next_index = Py_TYPE(iter_o)->tp_iteritem(iter_o, index);
+                _PyObjectIndexPair next_index = Py_TYPE(iter_o)->_tp_iteritem(iter_o, index);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
                 PyObject *next_o = next_index.object;
                 index = next_index.index;
@@ -6641,7 +6641,7 @@
             {
                 iterable = stack_pointer[-1];
                 PyTypeObject *tp = Py_TYPE(PyStackRef_AsPyObjectBorrow(iterable));
-                if (tp->tp_iteritem == NULL) {
+                if (tp->_tp_iteritem == NULL) {
                     UPDATE_MISS_STATS(GET_ITER);
                     assert(_PyOpcode_Deopt[opcode] == (GET_ITER));
                     JUMP_TO_PREDICTED(GET_ITER);

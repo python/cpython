@@ -1115,7 +1115,7 @@ _PyStackRef
 _PyEval_GetIter(_PyStackRef iterable, _PyStackRef *index_or_null, int yield_from)
 {
     PyTypeObject *tp = PyStackRef_TYPE(iterable);
-    if (tp->tp_iteritem != NULL) {
+    if (tp->_tp_iteritem != NULL) {
         /* Leave iterable on stack and pushed tagged 0 */
         *index_or_null = PyStackRef_TagInt(0);
         return iterable;
@@ -3704,7 +3704,7 @@ _PyStackRef _PyForIter_VirtualIteratorNext(PyThreadState* tstate, _PyInterpreter
     if (PyStackRef_IsTaggedInt(index)) {
         intptr_t i = PyStackRef_UntagInt(index);
         assert(i >= 0);
-        _PyObjectIndexPair next_index = Py_TYPE(iter_o)->tp_iteritem(iter_o, i);
+        _PyObjectIndexPair next_index = Py_TYPE(iter_o)->_tp_iteritem(iter_o, i);
         i = next_index.index;
         PyObject *next = next_index.object;
         if (next == NULL) {

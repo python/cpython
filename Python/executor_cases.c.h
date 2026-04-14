@@ -13230,7 +13230,7 @@
             _PyStackRef iterable;
             iterable = stack_pointer[-1];
             PyTypeObject *tp = Py_TYPE(PyStackRef_AsPyObjectBorrow(iterable));
-            if (tp->tp_iteritem == NULL) {
+            if (tp->_tp_iteritem == NULL) {
                 UOP_STAT_INC(uopcode, miss);
                 SET_CURRENT_CACHED_VALUES(0);
                 JUMP_TO_JUMP_TARGET();
@@ -13251,7 +13251,7 @@
             _PyStackRef _stack_item_0 = _tos_cache0;
             iterable = _stack_item_0;
             PyTypeObject *tp = Py_TYPE(PyStackRef_AsPyObjectBorrow(iterable));
-            if (tp->tp_iteritem == NULL) {
+            if (tp->_tp_iteritem == NULL) {
                 UOP_STAT_INC(uopcode, miss);
                 _tos_cache0 = iterable;
                 SET_CURRENT_CACHED_VALUES(1);
@@ -13272,7 +13272,7 @@
             _PyStackRef _stack_item_1 = _tos_cache1;
             iterable = _stack_item_1;
             PyTypeObject *tp = Py_TYPE(PyStackRef_AsPyObjectBorrow(iterable));
-            if (tp->tp_iteritem == NULL) {
+            if (tp->_tp_iteritem == NULL) {
                 UOP_STAT_INC(uopcode, miss);
                 _tos_cache1 = iterable;
                 _tos_cache0 = _stack_item_0;
@@ -13296,7 +13296,7 @@
             _PyStackRef _stack_item_2 = _tos_cache2;
             iterable = _stack_item_2;
             PyTypeObject *tp = Py_TYPE(PyStackRef_AsPyObjectBorrow(iterable));
-            if (tp->tp_iteritem == NULL) {
+            if (tp->_tp_iteritem == NULL) {
                 UOP_STAT_INC(uopcode, miss);
                 _tos_cache2 = iterable;
                 _tos_cache1 = _stack_item_1;
@@ -13437,7 +13437,7 @@
             _PyStackRef iter;
             iter = stack_pointer[-2];
             PyObject *iter_o = PyStackRef_AsPyObjectBorrow(iter);
-            if (Py_TYPE(iter_o)->tp_iteritem == NULL) {
+            if (Py_TYPE(iter_o)->_tp_iteritem == NULL) {
                 UOP_STAT_INC(uopcode, miss);
                 SET_CURRENT_CACHED_VALUES(0);
                 JUMP_TO_JUMP_TARGET();
@@ -13458,7 +13458,7 @@
             _PyStackRef _stack_item_0 = _tos_cache0;
             iter = stack_pointer[-1];
             PyObject *iter_o = PyStackRef_AsPyObjectBorrow(iter);
-            if (Py_TYPE(iter_o)->tp_iteritem == NULL) {
+            if (Py_TYPE(iter_o)->_tp_iteritem == NULL) {
                 UOP_STAT_INC(uopcode, miss);
                 _tos_cache0 = _stack_item_0;
                 SET_CURRENT_CACHED_VALUES(1);
@@ -13481,7 +13481,7 @@
             _PyStackRef _stack_item_1 = _tos_cache1;
             iter = _stack_item_0;
             PyObject *iter_o = PyStackRef_AsPyObjectBorrow(iter);
-            if (Py_TYPE(iter_o)->tp_iteritem == NULL) {
+            if (Py_TYPE(iter_o)->_tp_iteritem == NULL) {
                 UOP_STAT_INC(uopcode, miss);
                 _tos_cache1 = _stack_item_1;
                 _tos_cache0 = iter;
@@ -13504,7 +13504,7 @@
             _PyStackRef _stack_item_2 = _tos_cache2;
             iter = _stack_item_1;
             PyObject *iter_o = PyStackRef_AsPyObjectBorrow(iter);
-            if (Py_TYPE(iter_o)->tp_iteritem == NULL) {
+            if (Py_TYPE(iter_o)->_tp_iteritem == NULL) {
                 UOP_STAT_INC(uopcode, miss);
                 _tos_cache2 = _stack_item_2;
                 _tos_cache1 = iter;
@@ -13539,7 +13539,7 @@
             stack_pointer += 2;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
             _PyFrame_SetStackPointer(frame, stack_pointer);
-            _PyObjectIndexPair next_index = Py_TYPE(iter_o)->tp_iteritem(iter_o, index);
+            _PyObjectIndexPair next_index = Py_TYPE(iter_o)->_tp_iteritem(iter_o, index);
             stack_pointer = _PyFrame_GetStackPointer(frame);
             PyObject *next_o = next_index.object;
             index = next_index.index;

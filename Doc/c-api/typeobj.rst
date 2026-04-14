@@ -147,8 +147,6 @@ Quick Reference
    +------------------------------------------------+-----------------------------------+-------------------+---+---+---+---+
    | :c:member:`~PyTypeObject.tp_vectorcall`        | :c:type:`vectorcallfunc`          |                   |   |   |   |   |
    +------------------------------------------------+-----------------------------------+-------------------+---+---+---+---+
-   | [:c:member:`~PyTypeObject.tp_iteritem`]        | opaque function pointer           |                   |   |   |   |   |
-   +------------------------------------------------+-----------------------------------+-------------------+---+---+---+---+
    | [:c:member:`~PyTypeObject.tp_watched`]         | unsigned char                     |                   |   |   |   |   |
    +------------------------------------------------+-----------------------------------+-------------------+---+---+---+---+
 
@@ -2550,13 +2548,6 @@ and :c:data:`PyType_Type` effectively act as defaults.)
    Internal. Do not use.
 
    .. versionadded:: 3.12
-
-
-.. c:member:: function_pointer PyTypeObject.tp_iteritem
-
-   Internal. Do not use.
-
-   .. versionadded:: 3.15
 
 
 .. _static-types:
