@@ -1829,8 +1829,7 @@ dummy_func(void) {
         if (type != NULL) {
             PyObject *name = _Py_SpecialMethods[oparg].name;
             PyObject *descr = _PyType_Lookup(type, name);
-            if (descr != NULL && _PyType_HasFeature(Py_TYPE(descr), Py_TPFLAGS_METHOD_DESCRIPTOR))
-            {
+            if (descr != NULL && (Py_TYPE(descr)->tp_flags & Py_TPFLAGS_METHOD_DESCRIPTOR)) {
                 ADD_OP(_GUARD_TYPE_VERSION, 0, type->tp_version_tag);
                 bool immortal = _Py_IsImmortal(descr) || (type->tp_flags & Py_TPFLAGS_IMMUTABLETYPE);
                 ADD_OP(immortal ? _LOAD_CONST_INLINE_BORROW : _LOAD_CONST_INLINE,
