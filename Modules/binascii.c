@@ -1240,7 +1240,7 @@ binascii_b2a_ascii85_impl(PyObject *module, Py_buffer *data, int foldspaces,
 
     /* Encode all full-length chunks. */
     for (; bin_len >= 4; bin_len -= 4, bin_data += 4) {
-        uint32_t leftchar = (bin_data[0] << 24) | (bin_data[1] << 16) |
+        uint32_t leftchar = ((uint32_t)bin_data[0] << 24) | (bin_data[1] << 16) |
                             (bin_data[2] << 8)  |  bin_data[3];
         if (leftchar == BASE85_A85_Z) {
             *ascii_data++ = 'z';
@@ -1481,7 +1481,7 @@ binascii_b2a_base85_impl(PyObject *module, Py_buffer *data, int pad,
 
     /* Encode all full-length chunks. */
     for (; bin_len >= 4; bin_len -= 4, bin_data += 4) {
-        uint32_t leftchar = (bin_data[0] << 24) | (bin_data[1] << 16) |
+        uint32_t leftchar = ((uint32_t)bin_data[0] << 24) | (bin_data[1] << 16) |
                             (bin_data[2] << 8)  |  bin_data[3];
 
         ascii_data[4] = table_b2a[leftchar % 85];
