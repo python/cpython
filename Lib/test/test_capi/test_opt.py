@@ -4918,6 +4918,7 @@ class TestUopsOptimization(unittest.TestCase):
         uops = get_opnames(ex)
         self.assertIn("_LOAD_ATTR_PROPERTY_FRAME", uops)
         # Check the optimizer traced through the property call.
+        self.assertNotIn("_LOAD_GLOBAL_BUILTINS", uops)
         self.assertIn("_CALL_BUILTIN_CLASS", uops)
 
         fget.__code__ = (lambda self: 2).__code__

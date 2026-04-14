@@ -1012,6 +1012,7 @@ dummy_func(void) {
             break;
         }
         f->locals[0] = owner;
+        f->func = func;
         new_frame = PyJitRef_WrapInvalid(f);
     }
 
