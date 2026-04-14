@@ -36,7 +36,7 @@ extern "C" {
 
 /* Exit quality thresholds: trace stops when fitness < exit_quality.
  * Higher = trace is more willing to stop here. */
-#define EXIT_QUALITY_CLOSE_LOOP      (FITNESS_INITIAL / 2)
+#define EXIT_QUALITY_CLOSE_LOOP      (FITNESS_INITIAL)
 #define EXIT_QUALITY_ENTER_EXECUTOR  (FITNESS_INITIAL * 3 / 8)
 #define EXIT_QUALITY_DEFAULT         (FITNESS_INITIAL / 8)
 #define EXIT_QUALITY_SPECIALIZABLE   (FITNESS_INITIAL / 80)
