@@ -699,8 +699,6 @@ The add_argument() method
    * deprecated_ - Whether or not use of the argument is deprecated.
 
    The method returns an :class:`Action` object representing the argument.
-   Within each argument group, arguments are displayed in help output in the
-   order in which they are added.
 
 The following sections describe how each of these are used.
 
@@ -2033,6 +2031,9 @@ Argument groups
 
    Note that any arguments not in your user-defined groups will end up back
    in the usual "positional arguments" and "optional arguments" sections.
+
+   Within each argument group, arguments are displayed in help output in the
+   order in which they are added.
 
    .. deprecated-removed:: 3.11 3.14
       Calling :meth:`add_argument_group` on an argument group now raises an
