@@ -4392,6 +4392,26 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertIn("_TO_BOOL_DICT", uops)
         self.assertNotIn("_TO_BOOL", uops)
 
+    def test_to_bool_set_with_dummy_entries(self):
+        """Sets with dummy entries (after discard) must evaluate as falsy.
+
+        PySetObject does not use PyObject_VAR_HEAD; reading ob_size at that
+        offset accidentally reads `fill`, which counts both live *and* dummy
+        (deleted) entries.  A set whose items have all been discarded must
+        still be falsy even after the JIT specialises TO_BOOL.
+        """
+        def f(n):
+            result = []
+            for _ in range(n):
+                s = {1}
+                s.discard(1)   # leaves a dummy entry; fill == 1, used == 0
+                result.append(bool(s))
+            return result
+
+        res, ex = self._run_with_optimizer(f, TIER2_THRESHOLD)
+        # Every element must be False: the set is empty after discard()
+        self.assertTrue(all(r is False for r in res))
+
     def test_attr_promotion_failure(self):
         # We're not testing for any specific uops here, just
         # testing it doesn't crash.
