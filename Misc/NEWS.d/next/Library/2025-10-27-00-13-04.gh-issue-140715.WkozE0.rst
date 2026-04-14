@@ -1,1 +1,0 @@
-Add ``'%F'`` support to :meth:`~datetime.datetime.strptime`.

@@ -771,6 +771,13 @@ _PyThreadState_PushCStackRef(PyThreadState *tstate, _PyCStackRef *ref)
 }
 
 static inline void
+_PyThreadState_PushCStackRefNew(PyThreadState *tstate, _PyCStackRef *ref, PyObject *obj)
+{
+    _PyThreadState_PushCStackRef(tstate, ref);
+    ref->ref = PyStackRef_FromPyObjectNew(obj);
+}
+
+static inline void
 _PyThreadState_PopCStackRef(PyThreadState *tstate, _PyCStackRef *ref)
 {
 #ifdef Py_GIL_DISABLED
@@ -837,6 +844,18 @@ _Py_TryXGetStackRef(PyObject **src, _PyStackRef *out)
                 return vret;                                            \
         }                                                               \
     } while (0)
+
+static inline void
+_PyStackRef_CloseStack(_PyStackRef *arguments, int total_args)
+{
+    // arguments is a pointer into the GC visible stack,
+    // so we must NULL out values as we clear them.
+    for (int i = total_args-1; i >= 0; i--) {
+        _PyStackRef tmp = arguments[i];
+        arguments[i] = PyStackRef_NULL;
+        PyStackRef_CLOSE(tmp);
+    }
+}
 
 #ifdef __cplusplus
 }

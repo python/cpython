@@ -4,9 +4,6 @@
 .. module:: zipfile
    :synopsis: Read and write ZIP-format archive files.
 
-.. moduleauthor:: James C. Ahlstrom <jim@interet.com>
-.. sectionauthor:: James C. Ahlstrom <jim@interet.com>
-
 **Source code:** :source:`Lib/zipfile/`
 
 --------------
@@ -535,6 +532,11 @@ ZipFile objects
       Calling :meth:`writestr` on a ZipFile created with mode ``'r'`` or
       a closed ZipFile will raise a :exc:`ValueError`.  Previously,
       a :exc:`RuntimeError` was raised.
+
+   .. versionchanged:: 3.14
+      Now respects the :envvar:`SOURCE_DATE_EPOCH` environment variable.
+      If set, it uses this value as the modification timestamp for the file
+      written into the ZIP archive, instead of using the current time.
 
 .. method:: ZipFile.mkdir(zinfo_or_directory, mode=511)
 

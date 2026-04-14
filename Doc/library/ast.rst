@@ -4,9 +4,6 @@
 .. module:: ast
    :synopsis: Abstract Syntax Tree classes and manipulation.
 
-.. sectionauthor:: Martin v. Löwis <martin@v.loewis.de>
-.. sectionauthor:: Georg Brandl <georg@python.org>
-
 .. testsetup::
 
     import ast
@@ -133,6 +130,14 @@ Node classes
 
    Simple indices are represented by their value, extended slices are
    represented as tuples.
+
+.. versionchanged:: 3.13
+
+    AST node constructors were changed to provide sensible defaults for omitted
+    fields: optional fields now default to ``None``, list fields default to an
+    empty list, and fields of type :class:`!ast.expr_context` default to
+    :class:`Load() <ast.Load>`. Previously, omitted attributes would not exist on constructed
+    nodes (accessing them raised :exc:`AttributeError`).
 
 .. versionchanged:: 3.14
 
@@ -1114,7 +1119,8 @@ Imports
                     names=[
                         alias(name='x'),
                         alias(name='y'),
-                        alias(name='z')])])
+                        alias(name='z')],
+                    is_lazy=0)])
 
 
 .. class:: ImportFrom(module, names, level)
@@ -1135,7 +1141,8 @@ Imports
                         alias(name='x'),
                         alias(name='y'),
                         alias(name='z')],
-                    level=0)])
+                    level=0,
+                    is_lazy=0)])
 
 
 .. class:: alias(name, asname)
@@ -1153,7 +1160,8 @@ Imports
                     names=[
                         alias(name='a', asname='b'),
                         alias(name='c')],
-                    level=2)])
+                    level=2,
+                    is_lazy=0)])
 
 Control flow
 ^^^^^^^^^^^^
