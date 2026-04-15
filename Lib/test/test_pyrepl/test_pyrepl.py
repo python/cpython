@@ -1176,6 +1176,12 @@ class TestPyReplModuleCompleter(TestCase):
             ("from importlib import res\t\n", "from importlib import resources"),
             ("from importlib.res\t import a\t\n", "from importlib.resources import abc"),
             ("from __phello__ import s\t\n", "from __phello__ import spam"),  # frozen module
+            ("import importlib .res\t\n", "import importlib .resources"),
+            ("import importlib. res\t\n", "import importlib. resources"),
+            ("import importlib . res\t\n", "import importlib . resources"),
+            ("import importlib  .metadata.\t\n", "import importlib  .metadata.diagnose"),
+            ("import importlib .metadata   .\t\n", "import importlib .metadata   .diagnose"),
+            ("from importlib .resources .a\t\n", "from importlib .resources .abc"),
         )
         for code, expected in cases:
             with self.subTest(code=code):
@@ -1564,8 +1570,13 @@ class TestPyReplModuleCompleter(TestCase):
             ('import a.b.c, foo.bar, ', (None, '')),
             ('from foo', ('foo', None)),
             ('from a.', ('a.', None)),
+            ('from a .', ('a.', None)),
+            ('from a   .', ('a.', None)),
+            ('from a .', ('a.', None)),
             ('from a.b', ('a.b', None)),
             ('from a.b.', ('a.b.', None)),
+            ('from a. b.', ('a.b.', None)),
+            ('from a  .  b  .', ('a.b.', None)),
             ('from a.b.c', ('a.b.c', None)),
             ('from foo import ', ('foo', '')),
             ('from foo import a', ('foo', 'a')),
