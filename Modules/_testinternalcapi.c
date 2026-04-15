@@ -196,6 +196,10 @@ classify_address(uintptr_t addr, int jit_enabled, PyInterpreterState *interp)
         if (strncmp(base, "python", 6) == 0) {
             return "python";
         }
+        // Match "libpython3.15.so.1.0"
+        if (strncmp(base, "libpython", 9) == 0) {
+            return "python";
+        }
         return "other";
     }
 #ifdef _Py_JIT
@@ -274,10 +278,8 @@ get_jit_code_ranges(PyObject *self, PyObject *Py_UNUSED(args))
     if (interp == NULL) {
         return ranges;
     }
-    for (_PyExecutorObject *exec = interp->executor_list_head;
-         exec != NULL;
-         exec = exec->vm_data.links.next)
-    {
+    for (size_t i = 0; i < interp->executor_count; i++) {
+        _PyExecutorObject *exec = interp->executor_ptrs[i];
         if (exec->jit_code == NULL || exec->jit_size == 0) {
             continue;
         }
@@ -415,14 +417,14 @@ test_bswap(PyObject *self, PyObject *Py_UNUSED(args))
     uint16_t u16 = _Py_bswap16(UINT16_C(0x3412));
     if (u16 != UINT16_C(0x1234)) {
         PyErr_Format(PyExc_AssertionError,
-                     "_Py_bswap16(0x3412) returns %u", u16);
+                     "_Py_bswap16(0x3412) returns %d", u16);
         return NULL;
     }
 
     uint32_t u32 = _Py_bswap32(UINT32_C(0x78563412));
     if (u32 != UINT32_C(0x12345678)) {
         PyErr_Format(PyExc_AssertionError,
-                     "_Py_bswap32(0x78563412) returns %lu", u32);
+                     "_Py_bswap32(0x78563412) returns %u", u32);
         return NULL;
     }
 
@@ -701,7 +703,7 @@ test_edit_cost(PyObject *self, PyObject *Py_UNUSED(args))
 
 static int
 check_bytes_find(const char *haystack0, const char *needle0,
-                 int offset, Py_ssize_t expected)
+                 Py_ssize_t offset, Py_ssize_t expected)
 {
     Py_ssize_t len_haystack = strlen(haystack0);
     Py_ssize_t len_needle = strlen(needle0);
@@ -1156,7 +1158,7 @@ get_interp_settings(PyObject *self, PyObject *args)
     }
     else {
         PyErr_Format(PyExc_NotImplementedError,
-                     "%zd", interpid);
+                     "%d", interpid);
         return NULL;
     }
     assert(interp != NULL);
@@ -2836,6 +2838,20 @@ test_threadstate_set_stack_protection(PyObject *self, PyObject *Py_UNUSED(args))
 }
 
 
+static PyObject *
+_pyerr_setkeyerror(PyObject *self, PyObject *arg)
+{
+    // Test that _PyErr_SetKeyError() overrides the current exception
+    // if an exception is set
+    PyErr_NoMemory();
+
+    _PyErr_SetKeyError(arg);
+
+    assert(PyErr_Occurred());
+    return NULL;
+}
+
+
 static PyMethodDef module_functions[] = {
     {"get_configs", get_configs, METH_NOARGS},
     {"get_eval_frame_stats", get_eval_frame_stats, METH_NOARGS, NULL},
@@ -2957,6 +2973,7 @@ static PyMethodDef module_functions[] = {
     {"module_get_gc_hooks", module_get_gc_hooks, METH_O},
     {"test_threadstate_set_stack_protection",
      test_threadstate_set_stack_protection, METH_NOARGS},
+    {"_pyerr_setkeyerror", _pyerr_setkeyerror, METH_O},
     {NULL, NULL} /* sentinel */
 };
 
@@ -2966,6 +2983,8 @@ static PyMethodDef module_functions[] = {
 static int
 module_exec(PyObject *module)
 {
+    PyInterpreterState *interp = PyInterpreterState_Get();
+
     if (_PyTestInternalCapi_Init_Lock(module) < 0) {
         return 1;
     }
@@ -2979,6 +2998,9 @@ module_exec(PyObject *module)
         return 1;
     }
     if (_PyTestInternalCapi_Init_CriticalSection(module) < 0) {
+        return 1;
+    }
+    if (_PyTestInternalCapi_Init_Tuple(module) < 0) {
         return 1;
     }
 
@@ -3007,9 +3029,18 @@ module_exec(PyObject *module)
         return 1;
     }
 
+    // + 1 more due to one loop spent on tracing.
+    unsigned long threshold = interp->opt_config.jump_backward_initial_value + 2;
     if (PyModule_Add(module, "TIER2_THRESHOLD",
-        // + 1 more due to one loop spent on tracing.
-                        PyLong_FromLong(JUMP_BACKWARD_INITIAL_VALUE + 2)) < 0) {
+                        PyLong_FromUnsignedLong(threshold)) < 0) {
+        return 1;
+    }
+
+    // + 1 to specialize from RESUME to RESUME_CHECK_JIT
+    // + 1 more due to one loop spent on tracing.
+    long resume_threshold = interp->opt_config.resume_initial_value + 2;
+    if (PyModule_Add(module, "TIER2_RESUME_THRESHOLD",
+                    PyLong_FromLong(resume_threshold)) < 0) {
         return 1;
     }
 

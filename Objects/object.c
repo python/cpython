@@ -10,6 +10,7 @@
 #include "pycore_descrobject.h"   // _PyMethodWrapper_Type
 #include "pycore_dict.h"          // _PyObject_MaterializeManagedDict()
 #include "pycore_floatobject.h"   // _PyFloat_DebugMallocStats()
+#include "pycore_function.h"      // _PyClassMethod_GetFunc()
 #include "pycore_freelist.h"      // _PyObject_ClearFreeLists()
 #include "pycore_genobject.h"     // _PyAsyncGenAThrow_Type
 #include "pycore_hamt.h"          // _PyHamtItems_Type
@@ -17,6 +18,7 @@
 #include "pycore_instruction_sequence.h" // _PyInstructionSequence_Type
 #include "pycore_interpframe.h"   // _PyFrame_Stackbase()
 #include "pycore_interpolation.h" // _PyInterpolation_Type
+#include "pycore_lazyimportobject.h" // PyLazyImport_Type
 #include "pycore_list.h"          // _PyList_DebugMallocStats()
 #include "pycore_long.h"          // _PyLong_GetZero()
 #include "pycore_memoryobject.h"  // _PyManagedBuffer_Type
@@ -686,6 +688,8 @@ PyObject_Print(PyObject *op, FILE *fp, int flags)
             ret = -1;
         }
     }
+
+    _Py_LeaveRecursiveCall();
     return ret;
 }
 
@@ -1294,6 +1298,7 @@ _PyObject_SetAttributeErrorContext(PyObject* v, PyObject* name)
     // Augment the exception with the name and object
     if (PyObject_SetAttr(exc, &_Py_ID(name), name) ||
         PyObject_SetAttr(exc, &_Py_ID(obj), v)) {
+        Py_DECREF(exc);
         return 1;
     }
 restore:
@@ -1739,27 +1744,39 @@ _PyObject_GetMethod(PyObject *obj, PyObject *name, PyObject **method)
     return 0;
 }
 
+// Look up a method on `self` by `name`.
+//
+// On success, `*method` is set and the function returns 0 or 1. If the
+// return value is 1, the call is an unbound method and `*self` is the
+// "self" or "cls" argument to pass. If the return value is 0, the call is
+// a regular function and `*self` is cleared.
+//
+// On error, returns -1, clears `*self`, and sets an exception.
 int
-_PyObject_GetMethodStackRef(PyThreadState *ts, PyObject *obj,
+_PyObject_GetMethodStackRef(PyThreadState *ts, _PyStackRef *self,
                             PyObject *name, _PyStackRef *method)
 {
     int meth_found = 0;
+    PyObject *obj = PyStackRef_AsPyObjectBorrow(*self);
 
     assert(PyStackRef_IsNull(*method));
 
     PyTypeObject *tp = Py_TYPE(obj);
     if (!_PyType_IsReady(tp)) {
         if (PyType_Ready(tp) < 0) {
-            return 0;
+            PyStackRef_CLEAR(*self);
+            return -1;
         }
     }
 
     if (tp->tp_getattro != PyObject_GenericGetAttr || !PyUnicode_CheckExact(name)) {
         PyObject *res = PyObject_GetAttr(obj, name);
+        PyStackRef_CLEAR(*self);
         if (res != NULL) {
             *method = PyStackRef_FromPyObjectSteal(res);
+            return 0;
         }
-        return 0;
+        return -1;
     }
 
     _PyType_LookupStackRefAndVersion(tp, name, method);
@@ -1774,10 +1791,12 @@ _PyObject_GetMethodStackRef(PyThreadState *ts, PyObject *obj,
             if (f != NULL && PyDescr_IsData(descr)) {
                 PyObject *value = f(descr, obj, (PyObject *)Py_TYPE(obj));
                 PyStackRef_CLEAR(*method);
+                PyStackRef_CLEAR(*self);
                 if (value != NULL) {
                     *method = PyStackRef_FromPyObjectSteal(value);
+                    return 0;
                 }
-                return 0;
+                return -1;
             }
         }
     }
@@ -1785,9 +1804,9 @@ _PyObject_GetMethodStackRef(PyThreadState *ts, PyObject *obj,
     if ((tp->tp_flags & Py_TPFLAGS_INLINE_VALUES) &&
          _PyObject_TryGetInstanceAttribute(obj, name, &attr)) {
         if (attr != NULL) {
-           PyStackRef_CLEAR(*method);
-           *method = PyStackRef_FromPyObjectSteal(attr);
-           return 0;
+            PyStackRef_XSETREF(*method, PyStackRef_FromPyObjectSteal(attr));
+            PyStackRef_CLEAR(*self);
+            return 0;
         }
         dict = NULL;
     }
@@ -1808,9 +1827,11 @@ _PyObject_GetMethodStackRef(PyThreadState *ts, PyObject *obj,
         int found = _PyDict_GetMethodStackRef((PyDictObject *)dict, name, method);
         if (found < 0) {
             assert(PyStackRef_IsNull(*method));
+            PyStackRef_CLEAR(*self);
             return -1;
         }
         else if (found) {
+            PyStackRef_CLEAR(*self);
             return 0;
         }
     }
@@ -1821,16 +1842,31 @@ _PyObject_GetMethodStackRef(PyThreadState *ts, PyObject *obj,
     }
 
     if (f != NULL) {
-        PyObject *value = f(descr, obj, (PyObject *)Py_TYPE(obj));
+        if (Py_IS_TYPE(descr, &PyClassMethod_Type)) {
+            PyObject *callable = _PyClassMethod_GetFunc(descr);
+            PyStackRef_XSETREF(*method, PyStackRef_FromPyObjectNew(callable));
+            PyStackRef_XSETREF(*self, PyStackRef_FromPyObjectNew((PyObject *)tp));
+            return 1;
+        }
+        else if (Py_IS_TYPE(descr, &PyStaticMethod_Type)) {
+            PyObject *callable = _PyStaticMethod_GetFunc(descr);
+            PyStackRef_XSETREF(*method, PyStackRef_FromPyObjectNew(callable));
+            PyStackRef_CLEAR(*self);
+            return 0;
+        }
+        PyObject *value = f(descr, obj, (PyObject *)tp);
         PyStackRef_CLEAR(*method);
+        PyStackRef_CLEAR(*self);
         if (value) {
             *method = PyStackRef_FromPyObjectSteal(value);
+            return 0;
         }
-        return 0;
+        return -1;
     }
 
     if (descr != NULL) {
         assert(!PyStackRef_IsNull(*method));
+        PyStackRef_CLEAR(*self);
         return 0;
     }
 
@@ -1840,7 +1876,8 @@ _PyObject_GetMethodStackRef(PyThreadState *ts, PyObject *obj,
 
     _PyObject_SetAttributeErrorContext(obj, name);
     assert(PyStackRef_IsNull(*method));
-    return 0;
+    PyStackRef_CLEAR(*self);
+    return -1;
 }
 
 
@@ -1997,7 +2034,7 @@ _PyObject_GenericSetAttrWithDict(PyObject *obj, PyObject *name,
     }
 
     Py_INCREF(name);
-    Py_INCREF(tp);
+    _Py_INCREF_TYPE(tp);
 
     PyThreadState *tstate = _PyThreadState_GET();
     _PyCStackRef cref;
@@ -2072,7 +2109,7 @@ _PyObject_GenericSetAttrWithDict(PyObject *obj, PyObject *name,
     }
   done:
     _PyThreadState_PopCStackRef(tstate, &cref);
-    Py_DECREF(tp);
+    _Py_DECREF_TYPE(tp);
     Py_DECREF(name);
     return res;
 }
@@ -2540,6 +2577,7 @@ static PyTypeObject* static_types[] = {
     &PyGen_Type,
     &PyGetSetDescr_Type,
     &PyInstanceMethod_Type,
+    &PyLazyImport_Type,
     &PyListIter_Type,
     &PyListRevIter_Type,
     &PyList_Type,
@@ -2725,13 +2763,6 @@ _Py_NewReferenceNoTotal(PyObject *op)
 void
 _Py_SetImmortalUntracked(PyObject *op)
 {
-#ifdef Py_DEBUG
-    // For strings, use _PyUnicode_InternImmortal instead.
-    if (PyUnicode_CheckExact(op)) {
-        assert(PyUnicode_CHECK_INTERNED(op) == SSTATE_INTERNED_IMMORTAL
-            || PyUnicode_CHECK_INTERNED(op) == SSTATE_INTERNED_IMMORTAL_STATIC);
-    }
-#endif
     // Check if already immortal to avoid degrading from static immortal to plain immortal
     if (_Py_IsImmortal(op)) {
         return;
@@ -3075,9 +3106,9 @@ Py_ReprEnter(PyObject *obj)
         list = PyList_New(0);
         if (list == NULL)
             return -1;
-        if (PyDict_SetItem(dict, &_Py_ID(Py_Repr), list) < 0)
+        if (_PyDict_SetItem_Take2((PyDictObject *)dict, &_Py_ID(Py_Repr), list) < 0) {
             return -1;
-        Py_DECREF(list);
+        }
     }
     i = PyList_GET_SIZE(list);
     while (--i >= 0) {
