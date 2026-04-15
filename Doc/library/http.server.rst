@@ -209,7 +209,7 @@ instantiation, of which this module provides three different variants:
 
    .. attribute:: default_content_type
 
-      Specifies the content-type header value sent when the MIME type
+      Specifies the Content-Type header value sent when the MIME type
       cannot be guessed from the file extension of the requested URL.
       By default, it is set to ``'application/octet-stream'``.
 
@@ -530,7 +530,9 @@ The following options are accepted:
 
    Specifies the Content-Type HTTP header. By default, the server uses the
    MIME type ``'application/octet-stream'`` for the ``Content-Type`` header
-   when the content type cannot be guessed from the URL's extension (if any)::
+   when the content type cannot be guessed from the URL's extension (if any):
+
+   .. code-block:: bash
 
       python -m http.server --content-type text/html
 
