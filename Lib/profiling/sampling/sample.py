@@ -13,6 +13,10 @@ from .stack_collector import CollapsedStackCollector, FlamegraphCollector
 from .heatmap_collector import HeatmapCollector
 from .gecko_collector import GeckoCollector
 from .binary_collector import BinaryCollector
+try:
+    from .telemetry.manager import TelemetryHelperManager
+except ImportError:
+    TelemetryHelperManager = None
 
 
 @contextlib.contextmanager
@@ -48,7 +52,7 @@ _FREE_THREADED_BUILD = sysconfig.get_config_var("Py_GIL_DISABLED") is not None
 MIN_SAMPLES_FOR_TUI = 200
 
 class SampleProfiler:
-    def __init__(self, pid, sample_interval_usec, all_threads, *, mode=PROFILING_MODE_WALL, native=False, gc=True, opcodes=False, skip_non_matching_threads=True, collect_stats=False, blocking=False):
+    def __init__(self, pid, sample_interval_usec, all_threads, *, mode=PROFILING_MODE_WALL, native=False, gc=True, opcodes=False, skip_non_matching_threads=True, collect_stats=False, blocking=False, telemetry_plugins=None):
         self.pid = pid
         self.sample_interval_usec = sample_interval_usec
         self.all_threads = all_threads
@@ -63,6 +67,15 @@ class SampleProfiler:
         self.sample_intervals = deque(maxlen=100)
         self.total_samples = 0
         self.realtime_stats = False
+        self.telemetry_managers = []
+        if telemetry_plugins and TelemetryHelperManager is not None:
+            for plugin in telemetry_plugins:
+                plugin_id = plugin.get("id")
+                plugin_config = plugin.get("config", {})
+                if plugin_id:
+                    self.telemetry_managers.append(
+                        TelemetryHelperManager(plugin_id, plugin_config)
+                    )
 
     def _new_unwinder(self, native, gc, opcodes, skip_non_matching_threads):
         kwargs = {}
@@ -93,6 +106,11 @@ class SampleProfiler:
         last_sample_time = start_time
         realtime_update_interval = 1.0  # Update every second
         last_realtime_update = start_time
+        for mgr in self.telemetry_managers:
+            mgr.start()
+            if hasattr(collector, "set_plugin_enabled"):
+                collector.set_plugin_enabled(mgr.plugin_id)
+
         try:
             while duration_sec is None or running_time_sec < duration_sec:
                 # Check if live collector wants to stop
@@ -114,6 +132,9 @@ class SampleProfiler:
                             else:
                                 stack_frames = self.unwinder.get_stack_trace()
                             collector.collect(stack_frames)
+
+                            if self.telemetry_managers:
+                                self._poll_telemetry_records(collector)
                     except ProcessLookupError as e:
                         running_time_sec = current_time - start_time
                         break
@@ -151,6 +172,12 @@ class SampleProfiler:
             interrupted = True
             running_time_sec = time.perf_counter() - start_time
             print("Interrupted by user.")
+        finally:
+            if self.telemetry_managers:
+                # Final drain before shutdown.
+                self._poll_telemetry_records(collector)
+                for mgr in self.telemetry_managers:
+                    mgr.stop()
 
         # Clear real-time stats line if it was being displayed
         if self.realtime_stats and len(self.sample_intervals) > 0:
@@ -186,6 +213,16 @@ class SampleProfiler:
                 f"from the expected total of {expected_samples} "
                 f"({fmt((expected_samples - num_samples) / expected_samples * 100, 2)}%)"
             )
+
+    def _poll_telemetry_records(self, collector):
+        for mgr in self.telemetry_managers:
+            records = mgr.poll()
+            for event in records:
+                plugin_id = event.get("plugin", mgr.plugin_id)
+                event_type = event.get("event_type")
+                payload = event.get("payload", {})
+                if hasattr(collector, "collect_plugin_event"):
+                    collector.collect_plugin_event(plugin_id, event_type, payload)
 
     def _print_realtime_stats(self):
         """Print real-time sampling statistics."""
@@ -384,6 +421,7 @@ def sample(
     gc=True,
     opcodes=False,
     blocking=False,
+    telemetry_plugins=None,
 ):
     """Sample a process using the provided collector.
 
@@ -427,6 +465,7 @@ def sample(
         skip_non_matching_threads=skip_non_matching_threads,
         collect_stats=realtime_stats,
         blocking=blocking,
+        telemetry_plugins=telemetry_plugins,
     )
     profiler.realtime_stats = realtime_stats
 
@@ -449,6 +488,7 @@ def sample_live(
     gc=True,
     opcodes=False,
     blocking=False,
+    telemetry_plugins=None,
 ):
     """Sample a process in live/interactive mode with curses TUI.
 
@@ -496,6 +536,7 @@ def sample_live(
         skip_non_matching_threads=skip_non_matching_threads,
         collect_stats=realtime_stats,
         blocking=blocking,
+        telemetry_plugins=telemetry_plugins,
     )
     profiler.realtime_stats = realtime_stats
 
@@ -531,3 +572,5 @@ def sample_live(
             print(f"Only {collector.successful_samples} sample(s) collected (minimum {MIN_SAMPLES_FOR_TUI} required for TUI) - process {pid} exited too quickly.", file=sys.stderr)
 
     return collector
+
+

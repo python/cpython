@@ -5,6 +5,7 @@ import time
 import _remote_debugging
 
 from .collector import Collector
+from .telemetry.chunks import TelemetryChunkWriter
 
 # Compression type constants (must match binary_io.h)
 COMPRESSION_NONE = 0
@@ -67,6 +68,21 @@ class BinaryCollector(Collector):
         self._writer = _remote_debugging.BinaryWriter(
             filename, sample_interval_usec, start_time_us, compression=compression_type
         )
+        self._telemetry_chunk_writer = None
+
+    def set_plugin_enabled(self, plugin_id):
+        if plugin_id and self._telemetry_chunk_writer is None:
+            self._telemetry_chunk_writer = TelemetryChunkWriter(self.filename)
+
+    def set_plugin_metadata(self, plugin_id, metadata):
+        if self._telemetry_chunk_writer is None:
+            return
+        self._telemetry_chunk_writer.write_record(plugin_id, "metadata", metadata)
+
+    def collect_plugin_event(self, plugin_id, event_type, payload):
+        if self._telemetry_chunk_writer is None:
+            return
+        self._telemetry_chunk_writer.write_record(plugin_id, event_type, payload)
 
     def collect(self, stack_frames, timestamp_us=None):
         """Collect profiling data from stack frames.
@@ -94,6 +110,8 @@ class BinaryCollector(Collector):
             filename: Ignored (binary files are written incrementally)
         """
         self._writer.finalize()
+        if self._telemetry_chunk_writer is not None:
+            self._telemetry_chunk_writer.close()
 
     @property
     def total_samples(self):
@@ -115,6 +133,10 @@ class BinaryCollector(Collector):
         """Context manager exit - finalize unless there was an error."""
         if exc_type is None:
             self._writer.finalize()
+            if self._telemetry_chunk_writer is not None:
+                self._telemetry_chunk_writer.close()
         else:
             self._writer.close()
+            if self._telemetry_chunk_writer is not None:
+                self._telemetry_chunk_writer.close()
         return False

@@ -21,6 +21,7 @@ from .constants import (
     FOOTER_LINES,
     FINISHED_BANNER_EXTRA_LINES,
     OPCODE_PANEL_HEIGHT,
+    TELEMETRY_PANEL_HEIGHT,
 )
 from ..constants import (
     THREAD_STATUS_HAS_GIL,
@@ -917,7 +918,7 @@ class FooterWidget(Widget):
         if self.collector.finished:
             footer = f"{status_str}"
         else:
-            footer = f"{status_str}Sort: {sort_display} | 't':mode 'x':trends ←→:thread 'h':help 'q':quit"
+            footer = f"{status_str}Sort: {sort_display} | 't':mode 'x':trends 'g':panel 'n':plugin 'm':mode ←→:thread 'h':help 'q':quit"
         self.add_str(
             line,
             0,
@@ -966,6 +967,9 @@ class HelpWidget(Widget):
             ("  S           - Cycle through sort modes (backward)", A_NORMAL),
             ("  t           - Toggle view mode (ALL / per-thread)", A_NORMAL),
             ("  x           - Toggle trend colors (on/off)", A_NORMAL),
+            ("  g           - Toggle telemetry panel", A_NORMAL),
+            ("  n           - Cycle telemetry plugin", A_NORMAL),
+            ("  m           - Cycle telemetry plugin mode", A_NORMAL),
             ("  j/k or ↑/↓  - Select next/previous function (--opcodes)", A_NORMAL),
             ("  ← / →       - Cycle through threads", A_NORMAL),
             ("  +           - Faster display refresh rate", A_NORMAL),
@@ -1085,6 +1089,38 @@ class OpcodePanel(Widget):
         if len(sorted_opcodes) > max_rows:
             remaining = len(sorted_opcodes) - max_rows
             self.add_str(line, 2, f"... and {remaining} more opcodes", A_NORMAL)
+            line += 1
+
+        return line
+
+
+class TelemetryPanelWidget(Widget):
+    """Widget for displaying current telemetry plugin panel."""
+
+    def __init__(self, display, colors, collector):
+        super().__init__(display, colors)
+        self.collector = collector
+
+    def render(self, line, width, **kwargs):
+        A_BOLD = self.display.get_attr("A_BOLD")
+        A_DIM = self.display.get_attr("A_DIM")
+        A_NORMAL = self.display.get_attr("A_NORMAL")
+        plugin_id, plugin = self.collector._get_current_telemetry_plugin()
+        if plugin is None:
+            self.add_str(line, 0, "No telemetry plugins active.", A_DIM)
+            return line + 1
+
+        modes = list(getattr(plugin, "panel_modes", ("default",)))
+        mode_idx = self.collector.current_telemetry_mode_idx % len(modes)
+        mode = modes[mode_idx]
+        title = f"─── Telemetry [{plugin_id}] ({mode.upper()}) "
+        title += "─" * max(0, width - len(title) - 1)
+        self.add_str(line, 0, title[: width - 1], self.colors.get("magenta", A_BOLD) | A_BOLD)
+        line += 1
+
+        for panel_line in plugin.render_lines(mode, width)[: TELEMETRY_PANEL_HEIGHT - 1]:
+            attr = A_DIM if not panel_line else (A_BOLD if str(panel_line).endswith(":") else A_NORMAL)
+            self.add_str(line, 0, str(panel_line)[: width - 1], attr)
             line += 1
 
         return line

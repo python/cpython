@@ -110,6 +110,7 @@ from .widgets import (
     TableWidget,
     FooterWidget,
     HelpWidget,
+    TelemetryPanelWidget,
 )
 from .constants import (
     MICROSECONDS_PER_SECOND,
@@ -137,6 +138,7 @@ from .constants import (
     MAX_EFFICIENCY_BAR_WIDTH,
     MIN_SAMPLE_RATE_FOR_SCALING,
     FINISHED_BANNER_EXTRA_LINES,
+    TELEMETRY_PANEL_HEIGHT,
     COLOR_PAIR_HEADER_BG,
     COLOR_PAIR_CYAN,
     COLOR_PAIR_YELLOW,
@@ -162,6 +164,7 @@ __all__ = [
     "TableWidget",
     "FooterWidget",
     "HelpWidget",
+    "TelemetryPanelWidget",
     # Constants
     "MICROSECONDS_PER_SECOND",
     "DISPLAY_UPDATE_HZ",
@@ -188,6 +191,7 @@ __all__ = [
     "MAX_EFFICIENCY_BAR_WIDTH",
     "MIN_SAMPLE_RATE_FOR_SCALING",
     "FINISHED_BANNER_EXTRA_LINES",
+    "TELEMETRY_PANEL_HEIGHT",
     "COLOR_PAIR_HEADER_BG",
     "COLOR_PAIR_CYAN",
     "COLOR_PAIR_YELLOW",

@@ -43,10 +43,12 @@ from .constants import (
     COLOR_PAIR_MAGENTA,
     COLOR_PAIR_RED,
     COLOR_PAIR_SORTED_HEADER,
+    TELEMETRY_PANEL_HEIGHT,
 )
 from .display import CursesDisplay
-from .widgets import HeaderWidget, TableWidget, FooterWidget, HelpWidget, OpcodePanel
+from .widgets import HeaderWidget, TableWidget, FooterWidget, HelpWidget, OpcodePanel, TelemetryPanelWidget
 from .trend_tracker import TrendTracker
+from ..telemetry.plugin_registry import create_live_plugin
 
 
 @dataclass
@@ -118,6 +120,7 @@ class LiveStatsCollector(Collector):
         mode=None,
         opcodes=False,
         async_aware=None,
+        telemetry_plugin_ids=None,
     ):
         """
         Initialize the live stats collector.
@@ -176,6 +179,13 @@ class LiveStatsCollector(Collector):
         # Opcode statistics: {location: {opcode: count}}
         self.opcode_stats = collections.defaultdict(lambda: collections.defaultdict(int))
         self.show_opcodes = opcodes  # Show opcode panel when --opcodes flag is passed
+        self.show_telemetry_panel = bool(telemetry_plugin_ids)
+        self.telemetry_plugins = {}  # plugin_id -> plugin runtime
+        self.telemetry_plugin_order = []
+        self.current_telemetry_plugin_idx = 0
+        self.current_telemetry_mode_idx = 0
+        for plugin_id in telemetry_plugin_ids or []:
+            self.set_plugin_enabled(plugin_id)
         self.selected_row = 0  # Currently selected row in table for opcode view
         self.scroll_offset = 0  # Scroll offset for table when in opcode mode
 
@@ -206,6 +216,7 @@ class LiveStatsCollector(Collector):
         self.footer_widget = None
         self.help_widget = None
         self.opcode_panel = None
+        self.telemetry_panel = None
 
         # Color mode
         self._can_colorize = _colorize.can_colorize()
@@ -431,12 +442,14 @@ class LiveStatsCollector(Collector):
         extra_header_lines = (
             FINISHED_BANNER_EXTRA_LINES if self.finished else 0
         )
+        extra_telemetry_lines = TELEMETRY_PANEL_HEIGHT if self.show_telemetry_panel else 0
         max_stats_lines = max(
             0,
             height
             - HEADER_LINES
             - extra_header_lines
             - FOOTER_LINES
+            - extra_telemetry_lines
             - SAFETY_MARGIN,
         )
         stats_list = stats_list[:max_stats_lines]
@@ -455,6 +468,7 @@ class LiveStatsCollector(Collector):
             self.footer_widget = FooterWidget(self.display, colors, self)
             self.help_widget = HelpWidget(self.display, colors)
             self.opcode_panel = OpcodePanel(self.display, colors, self)
+            self.telemetry_panel = TelemetryPanelWidget(self.display, colors, self)
 
     def _render_display_sections(
         self, height, width, elapsed, stats_list, colors
@@ -479,6 +493,10 @@ class LiveStatsCollector(Collector):
             if self.show_opcodes:
                 line = self.opcode_panel.render(
                     line, width, height=height, stats_list=stats_list
+                )
+            if self.show_telemetry_panel:
+                line = self.telemetry_panel.render(
+                    line, width, height=height
                 )
 
         except curses.error:
@@ -1003,6 +1021,12 @@ class LiveStatsCollector(Collector):
             # Toggle trend colors on/off
             if self._trend_tracker is not None:
                 self._trend_tracker.toggle()
+        elif ch == ord("g") or ch == ord("G"):
+            self.show_telemetry_panel = not self.show_telemetry_panel
+        elif ch == ord("m") or ch == ord("M"):
+            self._cycle_telemetry_mode()
+        elif ch == ord("n") or ch == ord("N"):
+            self._cycle_telemetry_plugin()
 
         elif ch == ord("j") or ch == ord("J"):
             # Move selection down in opcode mode (with scrolling)
@@ -1109,3 +1133,42 @@ class LiveStatsCollector(Collector):
             "Export to file is not supported in live mode. "
             "Use the live TUI to view statistics in real-time."
         )
+
+    def set_plugin_enabled(self, plugin_id):
+        if not plugin_id or plugin_id in self.telemetry_plugins:
+            return
+        plugin = create_live_plugin(plugin_id)
+        if plugin is None:
+            return
+        self.telemetry_plugins[plugin_id] = plugin
+        self.telemetry_plugin_order.append(plugin_id)
+
+    def collect_plugin_event(self, plugin_id, event_type, payload):
+        plugin = self.telemetry_plugins.get(plugin_id)
+        if plugin is None:
+            self.set_plugin_enabled(plugin_id)
+            plugin = self.telemetry_plugins.get(plugin_id)
+        if plugin is not None:
+            plugin.ingest(event_type, payload)
+
+    def _get_current_telemetry_plugin(self):
+        if not self.telemetry_plugin_order:
+            return None, None
+        idx = self.current_telemetry_plugin_idx % len(self.telemetry_plugin_order)
+        plugin_id = self.telemetry_plugin_order[idx]
+        return plugin_id, self.telemetry_plugins.get(plugin_id)
+
+    def _cycle_telemetry_mode(self):
+        _, plugin = self._get_current_telemetry_plugin()
+        if plugin is None:
+            return
+        modes = list(getattr(plugin, "panel_modes", ("default",)))
+        if not modes:
+            return
+        self.current_telemetry_mode_idx = (self.current_telemetry_mode_idx + 1) % len(modes)
+
+    def _cycle_telemetry_plugin(self):
+        if not self.telemetry_plugin_order:
+            return
+        self.current_telemetry_plugin_idx = (self.current_telemetry_plugin_idx + 1) % len(self.telemetry_plugin_order)
+        self.current_telemetry_mode_idx = 0

@@ -5,6 +5,7 @@ import _remote_debugging
 from .gecko_collector import GeckoCollector
 from .stack_collector import FlamegraphCollector, CollapsedStackCollector
 from .pstats_collector import PstatsCollector
+from .telemetry import replay_sidecar_to_sink
 
 
 class BinaryReader:
@@ -70,7 +71,9 @@ class BinaryReader:
         """
         if self._reader is None:
             raise RuntimeError("Reader not open. Use as context manager.")
-        return self._reader.replay(collector, progress_callback)
+        replayed = self._reader.replay(collector, progress_callback)
+        replay_sidecar_to_sink(self.filename, collector)
+        return replayed
 
     @property
     def sample_count(self):
