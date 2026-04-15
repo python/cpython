@@ -112,7 +112,7 @@ class SoftDeprecated(PyVersionChange):
     def _add_glossary_link(inline: nodes.inline) -> None:
         """Replace 'Soft deprecated' text with a cross-reference to the
         :term:`soft deprecated` glossary entry."""
-        marker = "Soft deprecated"
+        marker = sphinx_gettext("Soft deprecated")
         ref = addnodes.pending_xref(
             "",
             nodes.Text(marker),
