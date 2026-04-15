@@ -488,8 +488,8 @@ class ThreadedRDSSocketTest(SocketRDSTest, ThreadableTest):
 @unittest.skipIf(fcntl is None, "need fcntl")
 @unittest.skipUnless(HAVE_SOCKET_VSOCK,
           'VSOCK sockets required for this test.')
-@unittest.skipUnless(get_cid() != 2,  # VMADDR_CID_HOST
-                     "This test can only be run on a virtual guest.")
+@unittest.skipIf(get_cid() == getattr(socket, 'VMADDR_CID_HOST', 2),
+                 "This test can only be run on a virtual guest.")
 class ThreadedVSOCKSocketStreamTest(unittest.TestCase, ThreadableTest):
 
     def __init__(self, methodName='runTest'):
@@ -499,7 +499,16 @@ class ThreadedVSOCKSocketStreamTest(unittest.TestCase, ThreadableTest):
     def setUp(self):
         self.serv = socket.socket(socket.AF_VSOCK, socket.SOCK_STREAM)
         self.addCleanup(self.serv.close)
-        self.serv.bind((socket.VMADDR_CID_ANY, VSOCKPORT))
+        cid = get_cid()
+        if cid in (socket.VMADDR_CID_HOST, socket.VMADDR_CID_ANY):
+            cid = VMADDR_CID_LOCAL
+        try:
+            self.serv.bind((cid, VSOCKPORT))
+        except OSError as exc:
+            if exc.errno == errno.EADDRNOTAVAIL:
+                self.skipTest(f"bind() failed with {exc!r}")
+            else:
+                raise
         self.serv.listen()
         self.serverExplicitReady()
         self.conn, self.connaddr = self.serv.accept()
