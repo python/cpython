@@ -2642,6 +2642,9 @@ class TestUopsOptimization(unittest.TestCase):
         uops = get_opnames(ex)
         # When the result of type(...) is known, _CALL_TYPE_1 is decomposed.
         self.assertNotIn("_CALL_TYPE_1", uops)
+        # _CALL_TYPE_1 produces 2 _POP_TOP_NOP (callable and null)
+        # type(42) is int produces 4 _POP_TOP_NOP
+        self.assertGreaterEqual(count_ops(ex, "_POP_TOP_NOP"), 6)
 
     def test_call_type_1_result_is_const(self):
         def testfunc(n):
@@ -3453,6 +3456,10 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertEqual(res, TIER2_THRESHOLD)
         uops = get_opnames(ex)
         self.assertNotIn("_LOAD_SPECIAL", uops)
+        # __enter__/__exit__ produce 2 _POP_TOP_NOP
+        # x += 1 produces 2 _POP_TOP_NOP
+        # __exit__()'s None return produces 1 _POP_TOP_NOP
+        self.assertGreaterEqual(count_ops(ex, "_POP_TOP_NOP"), 5)
 
     def test_store_fast_refcount_elimination(self):
         def foo(x):
