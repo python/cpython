@@ -2642,6 +2642,9 @@ class TestUopsOptimization(unittest.TestCase):
         uops = get_opnames(ex)
         # When the result of type(...) is known, _CALL_TYPE_1 is decomposed.
         self.assertNotIn("_CALL_TYPE_1", uops)
+        # _CALL_TYPE_1 produces 2 _POP_TOP_NOP (callable and null)
+        # type(42) is int produces 4 _POP_TOP_NOP
+        self.assertGreaterEqual(count_ops(ex, "_POP_TOP_NOP"), 6)
 
     def test_call_type_1_result_is_const(self):
         def testfunc(n):
@@ -2844,6 +2847,35 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
         self.assertNotIn("_CHECK_IS_NOT_PY_CALLABLE", uops)
+
+    def test_check_is_not_py_callable_ex(self):
+        def testfunc(n):
+            total = 0
+            xs = (1, 2, 3)
+            args = (xs,)
+            for _ in range(n):
+                total += len(*args)
+            return total
+
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, 3 * TIER2_THRESHOLD)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertNotIn("_CHECK_IS_NOT_PY_CALLABLE_EX", uops)
+
+    def test_check_is_not_py_callable_kw(self):
+        def testfunc(n):
+            total = 0
+            xs = (3, 1, 2)
+            for _ in range(n):
+                total += sorted(xs, reverse=False)[0]
+            return total
+
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, TIER2_THRESHOLD)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertNotIn("_CHECK_IS_NOT_PY_CALLABLE_KW", uops)
 
     def test_call_len_string(self):
         def testfunc(n):
@@ -3406,6 +3438,29 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertNotIn("_LOAD_ATTR_METHOD_NO_DICT", uops)
         self.assertIn("_LOAD_CONST_INLINE_BORROW", uops)
 
+    def test_cached_load_special(self):
+        class CM:
+            def __enter__(self):
+                return self
+            def __exit__(self, *args):
+                pass
+        def f(n):
+            cm = CM()
+            x = 0
+            for _ in range(n):
+                with cm:
+                    x += 1
+            return x
+        res, ex = self._run_with_optimizer(f, TIER2_THRESHOLD)
+        self.assertIsNotNone(ex)
+        self.assertEqual(res, TIER2_THRESHOLD)
+        uops = get_opnames(ex)
+        self.assertNotIn("_LOAD_SPECIAL", uops)
+        # __enter__/__exit__ produce 2 _POP_TOP_NOP
+        # x += 1 produces 2 _POP_TOP_NOP
+        # __exit__()'s None return produces 1 _POP_TOP_NOP
+        self.assertGreaterEqual(count_ops(ex, "_POP_TOP_NOP"), 5)
+
     def test_store_fast_refcount_elimination(self):
         def foo(x):
             # Since x is known to be
@@ -3625,6 +3680,171 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
         self.assertNotIn("_UNARY_NEGATIVE_FLOAT_INPLACE", uops)
+
+    def test_float_truediv_inplace_unique_lhs(self):
+        # (a + b) / (c + d): LHS is unique float from add, RHS is unique
+        # float from add. The division reuses the LHS in place.
+        def testfunc(args):
+            a, b, c, d, n = args
+            total = 0.0
+            for _ in range(n):
+                total += (a + b) / (c + d)
+            return total
+
+        res, ex = self._run_with_optimizer(testfunc, (2.0, 3.0, 1.0, 3.0, TIER2_THRESHOLD))
+        self.assertAlmostEqual(res, TIER2_THRESHOLD * 1.25)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertIn("_BINARY_OP_TRUEDIV_FLOAT_INPLACE", uops)
+
+    def test_float_truediv_inplace_unique_rhs(self):
+        # x = c + d stores to a local (not unique when reloaded).
+        # (a + b) is unique. The division should use inplace on the RHS.
+        def testfunc(args):
+            a, b, c, d, n = args
+            total = 0.0
+            for _ in range(n):
+                x = c + d
+                total += x / (a + b)
+            return total
+
+        res, ex = self._run_with_optimizer(testfunc, (2.0, 3.0, 4.0, 5.0, TIER2_THRESHOLD))
+        self.assertAlmostEqual(res, TIER2_THRESHOLD * (9.0 / 5.0))
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertIn("_BINARY_OP_TRUEDIV_FLOAT_INPLACE_RIGHT", uops)
+
+    def test_float_truediv_speculative_guards_from_tracing(self):
+        # a, b are locals with no statically known type. _RECORD_TOS_TYPE /
+        # _RECORD_NOS_TYPE (added to the BINARY_OP macro) capture the observed
+        # operand types during tracing, and the optimizer then speculatively
+        # emits _GUARD_{TOS,NOS}_FLOAT and specializes the division.
+        def testfunc(args):
+            a, b, n = args
+            total = 0.0
+            for _ in range(n):
+                total += a / b
+            return total
+
+        res, ex = self._run_with_optimizer(testfunc, (10.0, 3.0, TIER2_THRESHOLD))
+        self.assertAlmostEqual(res, TIER2_THRESHOLD * (10.0 / 3.0))
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertIn("_GUARD_TOS_FLOAT", uops)
+        self.assertIn("_GUARD_NOS_FLOAT", uops)
+        self.assertIn("_BINARY_OP_TRUEDIV_FLOAT", uops)
+
+    def test_float_remainder_speculative_guards_from_tracing(self):
+        # a, b are locals with no statically known type. Tracing records
+        # them as floats; the optimizer then speculatively emits
+        # _GUARD_{TOS,NOS}_FLOAT for NB_REMAINDER. That narrows both
+        # operands to float, and the _BINARY_OP handler marks the result
+        # as a unique float. Downstream, `* 2.0` therefore specializes
+        # to _BINARY_OP_MULTIPLY_FLOAT_INPLACE.
+        def testfunc(args):
+            a, b, n = args
+            total = 0.0
+            for _ in range(n):
+                total += (a % b) * 2.0
+            return total
+
+        res, ex = self._run_with_optimizer(testfunc, (10.0, 3.0, TIER2_THRESHOLD))
+        self.assertAlmostEqual(res, TIER2_THRESHOLD * (10.0 % 3.0) * 2.0)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertIn("_GUARD_TOS_FLOAT", uops)
+        self.assertIn("_GUARD_NOS_FLOAT", uops)
+        self.assertIn("_BINARY_OP_MULTIPLY_FLOAT_INPLACE", uops)
+
+    def test_float_truediv_type_propagation(self):
+        # Test the _BINARY_OP_TRUEDIV_FLOAT propagates type information
+        def testfunc(args):
+            a, b, n = args
+            total = 0.0
+            for _ in range(n):
+                x = (a + b) # type of x will specialize to float
+                total += x / x - x / x
+            return total
+
+        res, ex = self._run_with_optimizer(testfunc,
+            (2.0, 3.0, TIER2_THRESHOLD))
+        expected = TIER2_THRESHOLD * ((2.0 + 3.0) / (2.0 + 3.0) - (2.0 + 3.0) / (2.0 + 3.0))
+        self.assertAlmostEqual(res, expected)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertIn("_BINARY_OP_TRUEDIV_FLOAT", uops)
+        self.assertIn("_BINARY_OP_SUBTRACT_FLOAT_INPLACE", uops)
+
+    def test_float_truediv_unique_result_enables_inplace(self):
+        # (a+b) / (c+d) / (e+f): chained divisions where each result
+        # is unique, enabling inplace for subsequent divisions.
+        def testfunc(args):
+            a, b, c, d, e, f, n = args
+            total = 0.0
+            for _ in range(n):
+                total += (a + b) / (c + d) / (e + f)
+            return total
+
+        res, ex = self._run_with_optimizer(testfunc,
+            (2.0, 3.0, 1.0, 1.0, 1.0, 1.0, TIER2_THRESHOLD))
+        expected = TIER2_THRESHOLD * ((2.0 + 3.0) / (1.0 + 1.0) / (1.0 + 1.0))
+        self.assertAlmostEqual(res, expected)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertIn("_BINARY_OP_TRUEDIV_FLOAT_INPLACE", uops)
+
+    def test_float_add_chain_both_unique(self):
+        # (a+b) + (c+d): both sub-additions produce unique floats.
+        # The outer + should use inplace on one of them.
+        def testfunc(args):
+            a, b, c, d, n = args
+            total = 0.0
+            for _ in range(n):
+                total += (a + b) + (c + d)
+            return total
+
+        res, ex = self._run_with_optimizer(testfunc, (1.0, 2.0, 3.0, 4.0, TIER2_THRESHOLD))
+        self.assertAlmostEqual(res, TIER2_THRESHOLD * 10.0)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        # The outer + should use inplace (at least one operand is unique)
+        inplace = (
+            "_BINARY_OP_ADD_FLOAT_INPLACE" in uops
+            or "_BINARY_OP_ADD_FLOAT_INPLACE_RIGHT" in uops
+        )
+        self.assertTrue(inplace, "Expected inplace add for unique sub-results")
+
+    def test_float_truediv_non_float_type_no_crash(self):
+        # Fraction / Fraction goes through _BINARY_OP with NB_TRUE_DIVIDE
+        # but returns Fraction, not float. The optimizer must not assume
+        # the result is float for non-int/float operands. See gh-146306.
+        from fractions import Fraction
+        def testfunc(args):
+            a, b, n = args
+            total = Fraction(0)
+            for _ in range(n):
+                total += a / b
+            return float(total)
+
+        res, ex = self._run_with_optimizer(testfunc, (Fraction(10), Fraction(3), TIER2_THRESHOLD))
+        expected = float(TIER2_THRESHOLD * Fraction(10, 3))
+        self.assertAlmostEqual(res, expected)
+
+    def test_float_truediv_mixed_float_fraction_no_crash(self):
+        # float / Fraction: lhs is known float from a prior guard,
+        # but rhs is Fraction. The guard insertion for rhs should
+        # deopt cleanly at runtime, not crash.
+        from fractions import Fraction
+        def testfunc(args):
+            a, b, c, n = args
+            total = 0.0
+            for _ in range(n):
+                total += (a + b) / c  # (a+b) is float, c is Fraction
+            return total
+
+        res, ex = self._run_with_optimizer(testfunc, (2.0, 3.0, Fraction(4), TIER2_THRESHOLD))
+        expected = TIER2_THRESHOLD * (5.0 / Fraction(4))
+        self.assertAlmostEqual(res, float(expected))
 
     def test_int_add_inplace_unique_lhs(self):
         # a * b produces a unique compact int; adding c reuses it in place
@@ -4617,7 +4837,7 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertEqual(res, TIER2_THRESHOLD)
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
-        self.assertIn("_LOAD_CONST_INLINE_BORROW", uops)
+        self.assertGreaterEqual(count_ops(ex, "_LOAD_CONST_INLINE_BORROW"), 2)
         self.assertNotIn("_BINARY_OP_SUBSCR_DICT", uops)
 
     def test_binary_subscr_frozendict_const_fold(self):
@@ -4632,6 +4852,7 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertEqual(res, TIER2_THRESHOLD)
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
+        self.assertGreaterEqual(count_ops(ex, "_LOAD_CONST_INLINE_BORROW"), 3)
         # lookup result is folded to constant 1, so comparison is optimized away
         self.assertNotIn("_COMPARE_OP_INT", uops)
 
@@ -4647,7 +4868,38 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertEqual(res, TIER2_THRESHOLD)
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
+        self.assertGreaterEqual(count_ops(ex, "_LOAD_CONST_INLINE_BORROW"), 3)
         self.assertNotIn("_CONTAINS_OP_SET", uops)
+
+    def test_contains_op_frozendict_const_fold(self):
+        def testfunc(n):
+            x = 0
+            for _ in range(n):
+                if 'x' in FROZEN_DICT_CONST:
+                    x += 1
+            return x
+
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, TIER2_THRESHOLD)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertGreaterEqual(count_ops(ex, "_LOAD_CONST_INLINE_BORROW"), 3)
+        self.assertNotIn("_CONTAINS_OP_DICT", uops)
+
+    def test_not_contains_op_frozendict_const_fold(self):
+        def testfunc(n):
+            x = 0
+            for _ in range(n):
+                if 'z' not in FROZEN_DICT_CONST:
+                    x += 1
+            return x
+
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, TIER2_THRESHOLD)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertGreaterEqual(count_ops(ex, "_LOAD_CONST_INLINE_BORROW"), 3)
+        self.assertNotIn("_CONTAINS_OP_DICT", uops)
 
     def test_binary_subscr_list_slice(self):
         def testfunc(n):
@@ -4866,6 +5118,57 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertIn("_LOAD_ATTR_PROPERTY_FRAME", uops)
         # This is a sign the optimizer ran and didn't hit contradiction.
         self.assertIn("_LOAD_CONST_INLINE_BORROW", uops)
+
+    def test_load_attr_getattribute_frame(self):
+        class B:
+            def __getattribute__(self, name):
+                return len(name)
+
+        def testfunc(n):
+            b = B()
+            y = 0
+            for _ in range(n):
+                y += b.x + b.y
+            return y
+
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertIsNotNone(ex)
+        self.assertEqual(res, 2 * TIER2_THRESHOLD)
+        uops = get_opnames(ex)
+        self.assertIn("_LOAD_ATTR_GETATTRIBUTE_OVERRIDDEN_FRAME", uops)
+        self.assertNotIn("_LOAD_GLOBAL_BUILTINS", uops)
+
+    def test_load_attr_property_frame_invalidates_on_code_change(self):
+        class C:
+            @property
+            def val(self):
+                return int(1)
+
+        fget = C.val.fget
+
+        def testfunc(*args):
+            n, c = args[0]
+            total = 0
+            for _ in range(n):
+                total += c.val
+            return total
+
+        testfunc((3, C()))
+        res, ex = self._run_with_optimizer(testfunc, (TIER2_THRESHOLD, C()))
+        self.assertEqual(res, TIER2_THRESHOLD)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertIn("_LOAD_ATTR_PROPERTY_FRAME", uops)
+        # Check the optimizer traced through the property call.
+        self.assertNotIn("_LOAD_GLOBAL_BUILTINS", uops)
+        self.assertIn("_CALL_BUILTIN_CLASS", uops)
+
+        fget.__code__ = (lambda self: 2).__code__
+        _testinternalcapi.clear_executor_deletion_list()
+        ex = get_first_executor(testfunc)
+        self.assertIsNone(ex)
+        res = testfunc((TIER2_THRESHOLD, C()))
+        self.assertEqual(res, TIER2_THRESHOLD * 2)
 
     def test_unary_negative(self):
         def testfunc(n):
@@ -5252,6 +5555,51 @@ class TestUopsOptimization(unittest.TestCase):
         """),
         PYTHON_JIT="1", PYTHON_JIT_STRESS="1")
         self.assertEqual(result[0].rc, 0, result)
+
+    def test_call_kw(self):
+        def func(a):
+            return int(a) * 42
+
+        def testfunc(n):
+            x = 0
+            for _ in range(n):
+                x += func(a=1)
+            return x
+
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, 42 * TIER2_THRESHOLD)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertIn("_PUSH_FRAME", uops)
+        self.assertIn("_CHECK_FUNCTION_VERSION_KW", uops)
+        # Check the optimizer has optmized through the function call
+        # by promoting global `int` to a constant.
+        self.assertNotIn("_LOAD_GLOBAL_BUILTINS", uops)
+        self.assertIn("_CALL_BUILTIN_CLASS", uops)
+
+    def test_call_kw_bound_method(self):
+        class C:
+            def method(self, a, b):
+                return int(a) + int(b)
+
+        def testfunc(n):
+            obj = C()
+            x = 0
+            meth = obj.method
+            for _ in range(n):
+                x += meth(a=1, b=2)
+            return x
+
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, 3 * TIER2_THRESHOLD)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertIn("_PUSH_FRAME", uops)
+        self.assertIn("_CHECK_METHOD_VERSION_KW", uops)
+        # Check the optimizer has optmized through the function call
+        # by promoting global `int` to a constant.
+        self.assertNotIn("_LOAD_GLOBAL_BUILTINS", uops)
+        self.assertIn("_CALL_BUILTIN_CLASS", uops)
 
     def test_func_version_guarded_on_change(self):
         def testfunc(n):

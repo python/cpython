@@ -1,0 +1,5 @@
+Fix an undefined behavior in :class:`memoryview` when using the native
+boolean format (``?``) in :meth:`~memoryview.cast`. Previously, on some
+common platforms, calling ``memoryview(b).cast("?").tolist()`` incorrectly
+returned ``[False]`` instead of ``[True]`` for any even byte *b*.
+Patch by Bénédikt Tran.
