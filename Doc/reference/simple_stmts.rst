@@ -920,6 +920,46 @@ See :pep:`810` for the full specification of lazy imports.
 
 .. versionadded:: 3.15
 
+.. _lazy-modules-compat:
+
+Compatibility mode via ``__lazy_modules__``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. index::
+   single: __lazy_modules__
+
+As an alternative to using the :keyword:`lazy` keyword, a module can opt
+into lazy loading for specific imports by defining a module-level
+:attr:`~module.__lazy_modules__` variable.  When present, it must be a
+sequence of absolute module name strings.  Any regular (non-``lazy``)
+:keyword:`import` statement at module scope whose target appears in
+:attr:`!__lazy_modules__` is treated as a lazy import, exactly as if the
+:keyword:`lazy` keyword had been used.
+
+This provides a way to enable lazy loading for specific dependencies without
+changing individual ``import`` statements — useful when migrating existing
+code or when the imports are generated programmatically::
+
+   __lazy_modules__ = ["json", "pathlib"]
+
+   import json     # loaded lazily (name is in __lazy_modules__)
+   import os       # loaded eagerly (name not in __lazy_modules__)
+
+   import pathlib  # loaded lazily
+
+Relative imports are resolved to their absolute name before the lookup, so
+the sequence must always contain absolute module names.
+
+Imports inside functions, class bodies, or
+:keyword:`try`/:keyword:`except`/:keyword:`finally` blocks are always eager,
+regardless of :attr:`!__lazy_modules__`.
+
+Setting ``-X lazy_imports=none`` (or the :envvar:`PYTHON_LAZY_IMPORTS`
+environment variable to ``none``) overrides :attr:`!__lazy_modules__` and
+forces all imports to be eager.
+
+.. versionadded:: 3.15
+
 .. _future:
 
 Future statements

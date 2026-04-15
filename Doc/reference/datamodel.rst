@@ -926,6 +926,7 @@ Attribute assignment updates the module's namespace dictionary, e.g.,
    single: __doc__ (module attribute)
    single: __annotations__ (module attribute)
    single: __annotate__ (module attribute)
+   single: __lazy_modules__ (module attribute)
    pair: module; namespace
 
 .. _import-mod-attrs:
@@ -1120,6 +1121,19 @@ the following writable attributes:
    no annotations. See also: :attr:`~object.__annotate__` attributes.
 
    .. versionadded:: 3.14
+
+.. attribute:: module.__lazy_modules__
+
+   An optional sequence of absolute module name strings.  When defined at
+   module scope, any regular :keyword:`import` statement in that module whose
+   target module name appears in this sequence is treated as a
+   :ref:`lazy import <lazy-imports>`, as if the :keyword:`lazy` keyword had
+   been used.  Imports inside functions, class bodies, or
+   :keyword:`try`/:keyword:`except`/:keyword:`finally` blocks are unaffected.
+
+   See :ref:`lazy-modules-compat` for details and examples.
+
+   .. versionadded:: 3.15
 
 Module dictionaries
 ^^^^^^^^^^^^^^^^^^^
