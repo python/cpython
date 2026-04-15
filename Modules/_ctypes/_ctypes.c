@@ -2388,7 +2388,6 @@ PyCSimpleType_init(PyObject *self, PyObject *args, PyObject *kwds)
         goto error;
     }
     if (set_stginfo_ffi_type_pointer(stginfo, fmt)) {
-        PyErr_NoMemory();
         goto error;
     }
     stginfo->align = fmt->pffi_type->alignment;
