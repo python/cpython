@@ -933,12 +933,12 @@ The formal grammar for comprehensions is:
 .. grammar-snippet::
    :group: python-grammar
 
-   listcomp:
-       | '[' `flexible_expression` `for_if_clause`+ ']'
-   setcomp:
-       | '{' `flexible_expression` `for_if_clause`+ '}'
+   listcomp:      '[' `comprehension` ']'
+   setcomp:       '{' `comprehension` '}'
+   comprehension: `flexible_expression` `for_if_clause`+
+
    dictcomp:
-       | '{' `dict_item` `for_if_clause`+ '}'
+       | '{' `kvpair` `for_if_clause`+ '}'
        | '{' '**' `expression` `for_if_clause`+ '}'
 
    for_if_clause:
@@ -958,7 +958,7 @@ Generator expressions
 A generator expression is a compact generator notation in parentheses:
 
 .. productionlist:: python-grammar
-   generator_expression: "(" `flexible_expression` `comp_for` ")"
+   generator_expression: "(" `comprehension` ")"
 
 A generator expression yields a new generator object.  Its syntax is the same as
 for comprehensions, except that it is enclosed in parentheses instead of
