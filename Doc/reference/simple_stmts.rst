@@ -938,8 +938,7 @@ sequence of absolute module name strings.  Any regular (non-``lazy``)
 
 This provides a way to enable lazy loading for specific dependencies without
 changing individual ``import`` statements. This is useful when supporting
-Python versions older than 3.15 while leveraging lazy imports on 3.15+, or
-when the imports are generated programmatically::
+Python versions older than 3.15 while leveraging lazy imports on 3.15+::
 
    __lazy_modules__ = ["json", "pathlib"]
 
