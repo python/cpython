@@ -127,11 +127,26 @@ _PyFrame_ClearExceptCode(_PyInterpreterFrame *frame)
     PyStackRef_CLEAR(frame->f_funcobj);
 }
 
+// Calls the frame reifier to populate the frame's fields
+void
+_PyFrame_InitializeExternalFrame(_PyInterpreterFrame *frame)
+{
+    if (_PyFrame_IsExternalFrame(frame)) {
+        PyObject *executor = PyStackRef_AsPyObjectBorrow(frame->f_executable);
+        PyUnstable_PyExternalExecutable *jit_exec = (PyUnstable_PyExternalExecutable *)executor;
+        jit_exec->ef_reifier(frame, executor);
+    }
+}
+
 /* Unstable API functions */
 
 PyObject *
 PyUnstable_InterpreterFrame_GetCode(struct _PyInterpreterFrame *frame)
 {
+    if (_PyFrame_IsExternalFrame(frame)) {
+        PyObject *executable = PyStackRef_AsPyObjectBorrow(frame->f_executable);
+        return Py_NewRef(((PyUnstable_PyExternalExecutable *)executable)->ef_code);
+    }
     return PyStackRef_AsPyObjectNew(frame->f_executable);
 }
 
@@ -146,8 +161,75 @@ PyUnstable_InterpreterFrame_GetLasti(struct _PyInterpreterFrame *frame)
 int _Py_NO_SANITIZE_THREAD
 PyUnstable_InterpreterFrame_GetLine(_PyInterpreterFrame *frame)
 {
+    _PyFrame_EnsureFrameFullyInitialized(frame);
     int addr = _PyInterpreterFrame_LASTI(frame) * sizeof(_Py_CODEUNIT);
     return PyCode_Addr2Line(_PyFrame_GetCode(frame), addr);
+}
+
+static int
+jitexecutable_traverse(PyObject *self, visitproc visit, void *arg)
+{
+    PyUnstable_PyExternalExecutable *o = (PyUnstable_PyExternalExecutable *)self;
+    Py_VISIT(o->ef_code);
+    Py_VISIT(o->ef_state);
+    return 0;
+}
+
+static int
+jitexecutable_clear(PyObject *self)
+{
+    PyUnstable_PyExternalExecutable *o = (PyUnstable_PyExternalExecutable *)self;
+    Py_CLEAR(o->ef_code);
+    Py_CLEAR(o->ef_state);
+    return 0;
+}
+
+static void
+jitexecutable_dealloc(PyObject *self)
+{
+    PyUnstable_PyExternalExecutable *o = (PyUnstable_PyExternalExecutable *)self;
+    PyObject_GC_UnTrack(self);
+    Py_DECREF(o->ef_code);
+    Py_XDECREF(o->ef_state);
+    Py_TYPE(self)->tp_free(self);
+}
+
+PyTypeObject PyUnstable_ExternalExecutable_Type = {
+    PyVarObject_HEAD_INIT(&PyType_Type, 0)
+    .tp_name = "jit_executable",
+    .tp_basicsize = sizeof(PyUnstable_PyExternalExecutable),
+    .tp_dealloc = jitexecutable_dealloc,
+    .tp_traverse = jitexecutable_traverse,
+    .tp_clear = jitexecutable_clear,
+    .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_IMMUTABLETYPE | Py_TPFLAGS_HAVE_GC,
+    .tp_alloc = PyType_GenericAlloc,
+    .tp_free = PyObject_GC_Del,
+};
+
+PyObject *
+PyUnstable_MakeExternalExecutable(_PyFrame_Reifier reifier, PyCodeObject *code, PyObject *state)
+{
+    if (reifier == NULL) {
+        PyErr_SetString(PyExc_ValueError, "need reifier");
+        return NULL;
+    } else if (code == NULL) {
+        PyErr_SetString(PyExc_ValueError, "need code object");
+        return NULL;
+    }
+
+    PyUnstable_PyExternalExecutable *jit_exec = PyObject_GC_New(PyUnstable_PyExternalExecutable,
+                                                           &PyUnstable_ExternalExecutable_Type);
+    if (jit_exec == NULL) {
+        return NULL;
+    }
+
+    jit_exec->ef_reifier = reifier;
+    jit_exec->ef_code = (PyCodeObject *)Py_NewRef(code);
+    jit_exec->ef_state = Py_XNewRef(state);
+    if (state != NULL && PyObject_GC_IsTracked(state)) {
+        PyObject_GC_Track((PyObject *)jit_exec);
+    }
+    return (PyObject *)jit_exec;
 }
 
 const PyTypeObject *const PyUnstable_ExecutableKinds[PyUnstable_EXECUTABLE_KINDS+1] = {
@@ -155,5 +237,6 @@ const PyTypeObject *const PyUnstable_ExecutableKinds[PyUnstable_EXECUTABLE_KINDS
     [PyUnstable_EXECUTABLE_KIND_PY_FUNCTION] = &PyCode_Type,
     [PyUnstable_EXECUTABLE_KIND_BUILTIN_FUNCTION] = &PyMethod_Type,
     [PyUnstable_EXECUTABLE_KIND_METHOD_DESCRIPTOR] = &PyMethodDescr_Type,
+    [PyUnstable_EXECUTABLE_KIND_JIT] = &PyUnstable_ExternalExecutable_Type,
     [PyUnstable_EXECUTABLE_KINDS] = NULL,
 };

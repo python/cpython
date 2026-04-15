@@ -85,6 +85,15 @@ struct _PyAsyncGenObject {
     _PyGenObject_HEAD(ag)
 };
 
+typedef void (*_PyFrame_Reifier)(struct _PyInterpreterFrame *, PyObject *reifier);
+
+typedef struct {
+    PyObject_HEAD
+    PyCodeObject *ef_code;
+    PyObject *ef_state;
+    _PyFrame_Reifier ef_reifier;
+} PyUnstable_PyExternalExecutable;
+
 #undef _PyGenObject_HEAD
 
 

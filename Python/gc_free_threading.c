@@ -273,11 +273,14 @@ frame_disable_deferred_refcounting(_PyInterpreterFrame *frame)
 {
     // Convert locals, variables, and the executable object to strong
     // references from (possibly) deferred references.
-    assert(frame->stackpointer != NULL);
     assert(frame->owner == FRAME_OWNED_BY_FRAME_OBJECT ||
            frame->owner == FRAME_OWNED_BY_GENERATOR);
 
     frame->f_executable = PyStackRef_AsStrongReference(frame->f_executable);
+    _PyFrame_EnsureFrameFullyInitialized(frame);
+    if (frame->stackpointer == NULL) {
+        return;
+    }
 
     if (frame->owner == FRAME_OWNED_BY_GENERATOR) {
         PyGenObject *gen = _PyGen_GetGeneratorFromFrame(frame);
@@ -480,6 +483,10 @@ gc_visit_thread_stacks(PyInterpreterState *interp, struct collection_state *stat
         for (_PyInterpreterFrame *f = p->current_frame; f != NULL; f = f->previous) {
             if (f->owner >= FRAME_OWNED_BY_INTERPRETER) {
                 continue;
+            }
+            _PyFrame_EnsureFrameFullyInitialized(f);
+            if (f->stackpointer == NULL) {
+                return;
             }
 
             _PyStackRef *top = f->stackpointer;
@@ -878,6 +885,7 @@ gc_visit_thread_stacks_mark_alive(PyInterpreterState *interp, gc_mark_args_t *ar
             if (f->owner >= FRAME_OWNED_BY_INTERPRETER) {
                 continue;
             }
+            _PyFrame_EnsureFrameFullyInitialized(f);
 
             if (f->stackpointer == NULL) {
                 // GH-129236: The stackpointer may be NULL in cases where

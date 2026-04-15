@@ -50,7 +50,7 @@ Test_EvalFrame(PyThreadState *tstate, _PyInterpreterFrame *frame, int throwflag)
 #if !_Py_TAIL_CALL_INTERP
     uint8_t opcode;        /* Current opcode */
     int oparg;         /* Current opcode argument, if any */
-    assert(tstate->current_frame == NULL || tstate->current_frame->stackpointer != NULL);
+    assert(_PyFrame_StackpointerSaved());
 #if !USE_COMPUTED_GOTOS
     uint8_t tracing_mode = 0;
     uint8_t dispatch_code;

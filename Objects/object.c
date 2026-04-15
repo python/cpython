@@ -2608,6 +2608,7 @@ static PyTypeObject* static_types[] = {
     &PyTuple_Type,
     &PyUnicodeIter_Type,
     &PyUnicode_Type,
+    &PyUnstable_ExternalExecutable_Type,
     &PyWrapperDescr_Type,
     &PyZip_Type,
     &Py_GenericAliasType,
@@ -3285,7 +3286,7 @@ _Py_Dealloc(PyObject *op)
 #if !defined(Py_GIL_DISABLED) && !defined(Py_STACKREF_DEBUG)
     /* This assertion doesn't hold for the free-threading build, as
      * PyStackRef_CLOSE_SPECIALIZED is not implemented */
-    assert(tstate->current_frame == NULL || tstate->current_frame->stackpointer != NULL);
+    assert(_PyFrame_StackpointerSaved());
 #endif
     PyObject *old_exc = tstate != NULL ? tstate->current_exception : NULL;
     // Keep the old exception type alive to prevent undefined behavior
