@@ -2949,27 +2949,40 @@ dummy_func(
             EXIT_IF(FT_ATOMIC_LOAD_UINT_RELAXED(((PyTypeObject *)owner_o)->tp_version_tag) != type_version);
         }
 
-        op(_LOAD_ATTR_CLASS, (descr/4, owner -- attr)) {
+        // This can't use _PUSH_NULL_CONDITIONAL as it requires swapping self in certain cases.
+        op(_LOAD_ATTR_CLASS, (descr_tagged/4, owner -- attr, self_or_null[oparg&1])) {
             STAT_INC(LOAD_ATTR, hit);
+            PyObject *descr = (PyObject *)((uintptr_t)descr_tagged & (~1));
+            int use_self = ((uintptr_t)descr_tagged & 1);
             assert(descr != NULL);
             attr = PyStackRef_FromPyObjectNew(descr);
-            DECREF_INPUTS();
+            if (oparg & 1) {
+                if (use_self) {
+                    self_or_null[0] = owner;
+                    DEAD(owner);
+                }
+                else {
+                    self_or_null[0] = PyStackRef_NULL;
+                    PyStackRef_CLOSE(owner);
+                }
+            }
+            else {
+                PyStackRef_CLOSE(owner);
+            }
         }
 
         macro(LOAD_ATTR_CLASS) =
             unused/1 +
             _CHECK_ATTR_CLASS +
             unused/2 +
-            _LOAD_ATTR_CLASS +
-            _PUSH_NULL_CONDITIONAL;
+            _LOAD_ATTR_CLASS;
 
         macro(LOAD_ATTR_CLASS_WITH_METACLASS_CHECK) =
             unused/1 +
             _RECORD_TOS_TYPE +
             _GUARD_TYPE_VERSION +
             _CHECK_ATTR_CLASS +
-            _LOAD_ATTR_CLASS +
-            _PUSH_NULL_CONDITIONAL;
+            _LOAD_ATTR_CLASS;
 
         op(_LOAD_ATTR_PROPERTY_FRAME, (func_version/2, fget/4, owner -- new_frame)) {
             assert((oparg & 1) == 0);

@@ -2647,14 +2647,20 @@
         case _LOAD_ATTR_CLASS: {
             JitOptRef owner;
             JitOptRef attr;
+            JitOptRef *self_or_null;
             owner = stack_pointer[-1];
-            PyObject *descr = (PyObject *)this_instr->operand0;
-            (void)descr;
+            self_or_null = &stack_pointer[0];
+            PyObject *descr_tagged = (PyObject *)this_instr->operand0;
+            (void)descr_tagged;
             PyTypeObject *type = (PyTypeObject *)sym_get_const(ctx, owner);
             PyObject *name = get_co_name(ctx, oparg >> 1);
             attr = lookup_attr(ctx, dependencies, this_instr, type, name,
                            _POP_TOP, _NOP);
+            self_or_null[0] = sym_new_unknown(ctx);
+            CHECK_STACK_BOUNDS((oparg&1));
             stack_pointer[-1] = attr;
+            stack_pointer += (oparg&1);
+            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
             break;
         }
 

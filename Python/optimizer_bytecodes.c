@@ -964,12 +964,13 @@ dummy_func(void) {
         o = owner;
     }
 
-    op(_LOAD_ATTR_CLASS, (descr/4, owner -- attr)) {
-        (void)descr;
+    op(_LOAD_ATTR_CLASS, (descr_tagged/4, owner -- attr, self_or_null[oparg&1])) {
+        (void)descr_tagged;
         PyTypeObject *type = (PyTypeObject *)sym_get_const(ctx, owner);
         PyObject *name = get_co_name(ctx, oparg >> 1);
         attr = lookup_attr(ctx, dependencies, this_instr, type, name,
                            _POP_TOP, _NOP);
+        self_or_null[0] = sym_new_unknown(ctx);
     }
 
     op(_LOAD_ATTR_NONDESCRIPTOR_WITH_VALUES, (descr/4, owner -- attr)) {
