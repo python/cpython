@@ -2024,8 +2024,8 @@ class TestSpecializer(TestBase):
                 C.val()
 
         class_method_call()
-        # gh-148608: To improve specialization, the classmethod should've become unbound.
-        self.assert_specialized(class_method_call, "CALL_PY_EXACT_ARGS")
+        # gh-148608: To improve specialization, the classmethod should be unbound.
+        self.assert_specialized(class_method_call, "LOAD_ATTR_CLASS")
         self.assert_no_opcode(class_method_call, "CALL_BOUND_METHOD_EXACT_ARGS")
         self.assert_no_opcode(class_method_call, "CALL")
 

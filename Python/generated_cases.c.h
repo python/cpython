@@ -8183,7 +8183,7 @@
             static_assert(INLINE_CACHE_ENTRIES_LOAD_ATTR == 9, "incorrect cache size");
             _PyStackRef owner;
             _PyStackRef attr;
-            _PyStackRef *null;
+            _PyStackRef *self_or_null;
             /* Skip 1 cache entry */
             // _CHECK_ATTR_CLASS
             {
@@ -8205,25 +8205,40 @@
             /* Skip 2 cache entries */
             // _LOAD_ATTR_CLASS
             {
-                PyObject *descr = read_obj(&this_instr[6].cache);
+                self_or_null = &stack_pointer[0];
+                PyObject *descr_tagged = read_obj(&this_instr[6].cache);
                 STAT_INC(LOAD_ATTR, hit);
+                PyObject *descr = (PyObject *)((uintptr_t)descr_tagged & (~1));
+                int use_self = ((uintptr_t)descr_tagged & 1);
                 assert(descr != NULL);
                 attr = PyStackRef_FromPyObjectNew(descr);
-                _PyFrame_SetStackPointer(frame, stack_pointer);
-                _PyStackRef tmp = owner;
-                owner = attr;
-                stack_pointer[-1] = owner;
-                PyStackRef_CLOSE(tmp);
-                stack_pointer = _PyFrame_GetStackPointer(frame);
-            }
-            // _PUSH_NULL_CONDITIONAL
-            {
-                null = &stack_pointer[0];
                 if (oparg & 1) {
-                    null[0] = PyStackRef_NULL;
+                    if (use_self) {
+                        self_or_null[0] = owner;
+                    }
+                    else {
+                        self_or_null[0] = PyStackRef_NULL;
+                        stack_pointer[-1] = attr;
+                        stack_pointer += (oparg&1);
+                        ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+                        _PyFrame_SetStackPointer(frame, stack_pointer);
+                        PyStackRef_CLOSE(owner);
+                        stack_pointer = _PyFrame_GetStackPointer(frame);
+                        stack_pointer += -(oparg&1);
+                    }
+                }
+                else {
+                    stack_pointer[-1] = attr;
+                    stack_pointer += (oparg&1);
+                    ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+                    _PyFrame_SetStackPointer(frame, stack_pointer);
+                    PyStackRef_CLOSE(owner);
+                    stack_pointer = _PyFrame_GetStackPointer(frame);
+                    stack_pointer += -(oparg&1);
                 }
             }
-            stack_pointer += (oparg & 1);
+            stack_pointer[-1] = attr;
+            stack_pointer += (oparg&1);
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
             DISPATCH();
         }
@@ -8241,7 +8256,7 @@
             static_assert(INLINE_CACHE_ENTRIES_LOAD_ATTR == 9, "incorrect cache size");
             _PyStackRef owner;
             _PyStackRef attr;
-            _PyStackRef *null;
+            _PyStackRef *self_or_null;
             /* Skip 1 cache entry */
             // _GUARD_TYPE_VERSION
             {
@@ -8273,25 +8288,40 @@
             }
             // _LOAD_ATTR_CLASS
             {
-                PyObject *descr = read_obj(&this_instr[6].cache);
+                self_or_null = &stack_pointer[0];
+                PyObject *descr_tagged = read_obj(&this_instr[6].cache);
                 STAT_INC(LOAD_ATTR, hit);
+                PyObject *descr = (PyObject *)((uintptr_t)descr_tagged & (~1));
+                int use_self = ((uintptr_t)descr_tagged & 1);
                 assert(descr != NULL);
                 attr = PyStackRef_FromPyObjectNew(descr);
-                _PyFrame_SetStackPointer(frame, stack_pointer);
-                _PyStackRef tmp = owner;
-                owner = attr;
-                stack_pointer[-1] = owner;
-                PyStackRef_CLOSE(tmp);
-                stack_pointer = _PyFrame_GetStackPointer(frame);
-            }
-            // _PUSH_NULL_CONDITIONAL
-            {
-                null = &stack_pointer[0];
                 if (oparg & 1) {
-                    null[0] = PyStackRef_NULL;
+                    if (use_self) {
+                        self_or_null[0] = owner;
+                    }
+                    else {
+                        self_or_null[0] = PyStackRef_NULL;
+                        stack_pointer[-1] = attr;
+                        stack_pointer += (oparg&1);
+                        ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+                        _PyFrame_SetStackPointer(frame, stack_pointer);
+                        PyStackRef_CLOSE(owner);
+                        stack_pointer = _PyFrame_GetStackPointer(frame);
+                        stack_pointer += -(oparg&1);
+                    }
+                }
+                else {
+                    stack_pointer[-1] = attr;
+                    stack_pointer += (oparg&1);
+                    ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+                    _PyFrame_SetStackPointer(frame, stack_pointer);
+                    PyStackRef_CLOSE(owner);
+                    stack_pointer = _PyFrame_GetStackPointer(frame);
+                    stack_pointer += -(oparg&1);
                 }
             }
-            stack_pointer += (oparg & 1);
+            stack_pointer[-1] = attr;
+            stack_pointer += (oparg&1);
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
             DISPATCH();
         }

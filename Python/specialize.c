@@ -1206,6 +1206,20 @@ specialize_class_load_attr(PyObject *owner, _Py_CODEUNIT *instr,
         }
     }
     switch (kind) {
+        case PYTHON_CLASSMETHOD: {
+            int is_meth = FT_ATOMIC_LOAD_UINT8_RELAXED(instr->op.arg) & 1;
+            if (!is_meth) {
+                SPECIALIZATION_FAIL(LOAD_ATTR, load_attr_fail_kind(kind));
+                return -1;
+            }
+            Py_DECREF(descr);
+            descr =  Py_NewRef(_PyClassMethod_GetFunc(descr));
+            write_ptr(cache->descr, (void *)((uintptr_t)descr | 1));
+            write_u32(cache->type_version, tp_version);
+            specialize(instr, LOAD_ATTR_CLASS);
+            Py_XDECREF(descr);
+            return 0;
+        }
         case MUTABLE:
             // special case for enums which has Py_TYPE(descr) == cls
             // so guarding on type version is sufficient
