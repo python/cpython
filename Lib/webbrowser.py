@@ -274,7 +274,6 @@ class UnixBrowser(BaseBrowser):
 
     def open(self, url, new=0, autoraise=True):
         sys.audit("webbrowser.open", url)
-        self._check_url(url)
         if new == 0:
             action = self.remote_action
         elif new == 1:
@@ -288,7 +287,9 @@ class UnixBrowser(BaseBrowser):
             raise Error("Bad 'new' parameter to open(); "
                         f"expected 0, 1, or 2, got {new}")
 
-        args = [arg.replace("%s", url).replace("%action", action)
+        self._check_url(url.replace("%action", action))
+
+        args = [arg.replace("%action", action).replace("%s", url)
                 for arg in self.remote_args]
         args = [arg for arg in args if arg]
         success = self._invoke(args, True, autoraise, url)

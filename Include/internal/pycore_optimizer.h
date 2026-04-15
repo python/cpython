@@ -91,13 +91,15 @@ typedef struct _PyJitTracerInitialState {
     _Py_CODEUNIT *jump_backward_instr;
 } _PyJitTracerInitialState;
 
+#define MAX_RECORDED_VALUES 3
 typedef struct _PyJitTracerPreviousState {
     int instr_oparg;
     int instr_stacklevel;
     _Py_CODEUNIT *instr;
     PyCodeObject *instr_code; // Strong
     struct _PyInterpreterFrame *instr_frame;
-    PyObject *recorded_value; // Strong, may be NULL
+    PyObject *recorded_values[MAX_RECORDED_VALUES]; // Strong, may be NULL
+    int recorded_count;
 } _PyJitTracerPreviousState;
 
 typedef struct _PyJitTracerTranslatorState {
@@ -400,6 +402,7 @@ extern JitOptRef _Py_uop_sym_new_null(JitOptContext *ctx);
 extern bool _Py_uop_sym_has_type(JitOptRef sym);
 extern bool _Py_uop_sym_matches_type(JitOptRef sym, PyTypeObject *typ);
 extern bool _Py_uop_sym_matches_type_version(JitOptRef sym, unsigned int version);
+extern unsigned int _Py_uop_sym_get_type_version(JitOptRef sym);
 extern void _Py_uop_sym_set_null(JitOptContext *ctx, JitOptRef sym);
 extern void _Py_uop_sym_set_non_null(JitOptContext *ctx, JitOptRef sym);
 extern void _Py_uop_sym_set_type(JitOptContext *ctx, JitOptRef sym, PyTypeObject *typ);
@@ -481,7 +484,12 @@ void _PyJit_TracerFree(_PyThreadStateImpl *_tstate);
 #ifdef _Py_TIER2
 typedef void (*_Py_RecordFuncPtr)(_PyInterpreterFrame *frame, _PyStackRef *stackpointer, int oparg, PyObject **recorded_value);
 PyAPI_DATA(const _Py_RecordFuncPtr) _PyOpcode_RecordFunctions[];
-PyAPI_DATA(const uint8_t) _PyOpcode_RecordFunctionIndices[256];
+
+typedef struct {
+    uint8_t count;
+    uint8_t indices[MAX_RECORDED_VALUES];
+} _PyOpcodeRecordEntry;
+PyAPI_DATA(const _PyOpcodeRecordEntry) _PyOpcode_RecordEntries[256];
 #endif
 
 #ifdef __cplusplus
