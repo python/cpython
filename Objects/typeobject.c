@@ -6419,9 +6419,23 @@ set_flags_recursive(PyTypeObject *self, unsigned long mask, unsigned long flags)
 void
 _PyType_SetFlagsRecursive(PyTypeObject *self, unsigned long mask, unsigned long flags)
 {
+    BEGIN_TYPE_LOCK();
+     /* Invalidate the old version before changing flags. This must happen
+         before types_stop_world(); immutable/static-builtin types are
+         skipped because set_flags_recursive() does not touch them. */
+    if (!PyType_HasFeature(self, Py_TPFLAGS_IMMUTABLETYPE) &&
+        (self->tp_flags & mask) != flags)
+    {
+        type_modified_unlocked(self);
+    }
+     /* Keep TYPE_LOCK held while waiting for stop-the-world so no thread
+         can reassign a version tag before the flag update. */
+    type_lock_prevent_release();
     types_stop_world();
     set_flags_recursive(self, mask, flags);
     types_start_world();
+    type_lock_allow_release();
+    END_TYPE_LOCK();
 }
 
 /* This is similar to PyObject_GenericGetAttr(),
