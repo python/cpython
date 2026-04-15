@@ -2140,7 +2140,7 @@ class TestIssueGH74956(unittest.TestCase):
     def tearDown(self):
         self.loop.close()
         self.loop = None
-        asyncio.set_event_loop_policy(None)
+        asyncio.events._set_event_loop_policy(None)
 
     def test_simultaneous_asend(self):
         """
