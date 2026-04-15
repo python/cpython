@@ -332,6 +332,7 @@ Formally:
    single: parenthesized form
    single: () (parentheses)
 
+.. _parenthesized-forms:
 .. _parenthesized:
 
 Parenthesized groups
@@ -365,7 +366,7 @@ Formally, the syntax for groups is:
 
    group: '(' `assignment_expression` ')'
 
-
+.. _displays-for-lists-sets-and-dictionaries:
 .. _displays:
 
 Container displays
@@ -641,7 +642,6 @@ This may be used to override a set of defaults::
 
 .. versionadded:: 3.5
    Unpacking into dictionary displays, originally proposed by :pep:`448`.
-
 
 The formal grammar for dict displays is:
 
@@ -924,6 +924,7 @@ execution of the coroutine function in which it appears.
    asynchronous functions. Outer comprehensions implicitly become
    asynchronous.
 
+.. _comprehension-grammar:
 
 Formal grammar for comprehensions
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

@@ -1,1 +1,15 @@
 # HTML IDs excluded from the check-html-ids.py check.
+
+
+## Old names for grammar tokens
+reference/expressions.html: grammar-token-python-grammar-comp_for
+reference/expressions.html: grammar-token-python-grammar-comp_if
+reference/expressions.html: grammar-token-python-grammar-comp_iter
+reference/expressions.html: grammar-token-python-grammar-dict_comprehension
+reference/expressions.html: grammar-token-python-grammar-dict_display
+reference/expressions.html: grammar-token-python-grammar-dict_item
+reference/expressions.html: grammar-token-python-grammar-dict_item_list
+reference/expressions.html: grammar-token-python-grammar-enclosure
+reference/expressions.html: grammar-token-python-grammar-list_display
+reference/expressions.html: grammar-token-python-grammar-parenth_form
+reference/expressions.html: grammar-token-python-grammar-set_display
