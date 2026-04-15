@@ -68,19 +68,18 @@ Formally, the syntax for atoms is:
       | `builtin_constant`
       | `identifier`
       | `literal`
-      | `enclosure`
-   builtin_constant:
-      | 'True'
-      | 'False'
-      | 'None'
-      | '...'
-   enclosure:
+      | `parenthesized_enclosure`
+      | `bracketed_enclosure`
+      | `braced_enclosure`
+   parenthesized_enclosure:
       | `group`
       | `tuple`
       | `yield_atom`
       | `generator_expression`
+   bracketed_enclosure:
       | `listcomp`
       | `list`
+   braced_enclosure:
       | `dictcomp`
       | `dict`
       | `setcomp`
@@ -110,6 +109,13 @@ Evaluation of these atoms yields the corresponding value.
          False = 123
          ^^^^^
       SyntaxError: cannot assign to False
+
+Formally, the syntax for built-in constants is:
+
+.. grammar-snippet::
+   :group: python-grammar
+
+   builtin_constant: 'True' | 'False' | 'None' | '...'
 
 .. _atom-identifiers:
 
@@ -657,9 +663,9 @@ The formal grammar for dict displays is:
 Comprehensions
 --------------
 
-List, set and dictionary :dfn:`comprehensions` are a form of :ref:`displays`
-where items are computed via a set of looping and filtering instructions
-rather than listed explicitly.
+List, set and dictionary :dfn:`comprehensions` are a form of
+:ref:`container displays <displays>` where items are computed via a set of
+looping and filtering instructions rather than listed explicitly.
 
 In its simplest form, a comprehension consists of a single expression
 followed by a :keyword:`!for` clause.
@@ -755,8 +761,8 @@ that start with `f` is::
    ['fabs', 'factorial', 'floor', 'fma', 'fmod', 'frexp', 'fsum']
 
 At run time, the expression after :keyword:`!if` is evaluated before
-each element is added to the resulting container.
-If the expression evaluates to false, the element is skipped.
+each element is added to the resulting container, and if it is false,
+the element is skipped.
 Thus, the above example roughly corresponds to defining and calling the
 following function::
 
@@ -778,7 +784,7 @@ See the next section for a more formal description.
 Complex comprehensions
 ^^^^^^^^^^^^^^^^^^^^^^
 
-Generally, a comprehension's initial :keyword:`!for` clause may be followed
+Generally, a comprehension's initial :keyword:`!for` clause may be followed by
 zero or more additional :keyword:`!for` or :keyword:`!if` clauses.
 For example, here is a list of names exposed by two Python modules,
 filtered to only include names that start with ``a``::
