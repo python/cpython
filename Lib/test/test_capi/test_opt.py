@@ -5609,7 +5609,7 @@ class TestUopsOptimization(unittest.TestCase):
             f2()
         """), PYTHON_JIT="1", PYTHON_JIT_STRESS="1")
         self.assertEqual(result[0].rc, 0, result)
-        
+
     def test_call_kw(self):
         def func(a):
             return int(a) * 42
