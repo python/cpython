@@ -1065,7 +1065,7 @@ def _main(args=None):
                              '(default: %(default)s)')
     parser.add_argument('--content-type',
                         default=BaseHTTPRequestHandler.default_content_type,
-                        help='default content type for unknown extensions'
+                        help='default content type for unknown extensions '
                              '(default: %(default)s)')
     parser.add_argument('--tls-cert', metavar='PATH',
                         help='path to the TLS certificate chain file')

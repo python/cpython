@@ -214,6 +214,7 @@ instantiation, of which this module provides three different variants:
       By default, it is set to ``'application/octet-stream'``.
 
       .. versionadded:: next
+
    .. attribute:: MessageClass
 
       Specifies an :class:`email.message.Message`\ -like class to parse HTTP
