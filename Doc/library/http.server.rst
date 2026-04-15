@@ -506,13 +506,13 @@ The following options are accepted:
    .. versionchanged:: 3.8
       Support IPv6 in the ``--bind`` option.
 
-.. option:: --default-content-type <content_type>
+.. option:: --content-type <content_type>
 
    Specifies the Content-Type HTTP header. By default, the server uses the
    MIME type ``'application/octet-stream'`` for the ``Content-Type`` header
    when the content type cannot be guessed from the URL's extension (if any)::
 
-        python -m http.server --default-content-type text/html
+        python -m http.server --content-type text/html
 
    .. versionadded:: next
 
