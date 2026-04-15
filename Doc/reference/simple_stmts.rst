@@ -937,9 +937,9 @@ sequence of absolute module name strings.  Any regular (non-``lazy``)
 :keyword:`lazy` keyword had been used.
 
 This provides a way to enable lazy loading for specific dependencies without
-changing individual ``import`` statements — useful when supporting Python
-versions older than 3.15 while leveraging lazy imports on 3.15+, or when
-the imports are generated programmatically::
+changing individual ``import`` statements. This is useful when supporting
+Python versions older than 3.15 while leveraging lazy imports on 3.15+, or
+when the imports are generated programmatically::
 
    __lazy_modules__ = ["json", "pathlib"]
 
