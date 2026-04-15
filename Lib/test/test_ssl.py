@@ -327,10 +327,13 @@ def _get_openssl_error_lib():
     if ctypes is None:
         raise unittest.SkipTest("ctypes is required")
 
+    # Try _ssl first: it is already loaded and linked to the correct
+    # OpenSSL/AWS-LC.  Falling back to find_library() may locate a
+    # different system libcrypto and abort the process (macOS).
     for candidate in (
+        _ssl.__file__,
         ctypes.util.find_library("crypto"),
         ctypes.util.find_library("ssl"),
-        _ssl.__file__,
     ):
         if not candidate:
             continue
