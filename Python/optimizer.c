@@ -617,7 +617,7 @@ compute_exit_quality(_Py_CODEUNIT *target_instr, int opcode,
     if (target_instr == tracer->initial_state.close_loop_instr) {
         return EXIT_QUALITY_CLOSE_LOOP;
     }
-    else if (target_instr->op.code == ENTER_EXECUTOR && !_PyJit_EnterExecutorShouldStopTracing(opcode)) {
+    else if (target_instr->op.code == ENTER_EXECUTOR) {
         return EXIT_QUALITY_ENTER_EXECUTOR;
     }
     else if (opcode == JUMP_BACKWARD_JIT ||
