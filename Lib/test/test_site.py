@@ -1005,7 +1005,8 @@ class StartFileTests(unittest.TestCase):
         self.assertEqual(site._pending_entrypoints, {})
 
     def test_read_start_file_nonexistent(self):
-        site._read_start_file(self.tmpdir, 'nonexistent.start')
+        with captured_stderr():
+            site._read_start_file(self.tmpdir, 'nonexistent.start')
         self.assertEqual(site._pending_entrypoints, {})
 
     @unittest.skipUnless(hasattr(os, 'chflags'), 'test needs os.chflags()')
