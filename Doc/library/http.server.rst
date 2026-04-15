@@ -99,7 +99,7 @@ instantiation, of which this module provides three different variants:
 
    This class is used to handle the HTTP requests that arrive at the server.  By
    itself, it cannot respond to any actual HTTP requests; it must be subclassed
-   to handle each request method (e.g. GET or POST).
+   to handle each request method (for example, ``'GET'`` or ``'POST'``).
    :class:`BaseHTTPRequestHandler` provides a number of class and instance
    variables, and methods for use by subclasses.
 
@@ -241,7 +241,7 @@ instantiation, of which this module provides three different variants:
       request header it responds back with a ``100 Continue`` followed by ``200
       OK`` headers.
       This method can be overridden to raise an error if the server does not
-      want the client to continue.  For e.g. server can choose to send ``417
+      want the client to continue.  For example, the server can choose to send ``417
       Expectation Failed`` as a response header and ``return False``.
 
       .. versionadded:: 3.2
@@ -575,7 +575,7 @@ to be served.
 
 Methods :meth:`BaseHTTPRequestHandler.send_header` and
 :meth:`BaseHTTPRequestHandler.send_response_only` assume sanitized input
-and does not perform input validation such as checking for the presence of CRLF
+and do not perform input validation such as checking for the presence of CRLF
 sequences. Untrusted input may result in HTTP Header injection attacks.
 
 Earlier versions of Python did not scrub control characters from the
