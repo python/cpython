@@ -15,6 +15,12 @@ Futures
 *Future* objects are used to bridge **low-level callback-based code**
 with high-level async/await code.
 
+.. note::
+
+   Some of the future functions and the future object use an
+   optional argument *loop* that takes an object of :class:`EventLoop`
+   to denote which event loop the future is using. By default *loop*
+   is set to the event loop that is currently running.
 
 Future Functions
 ================
