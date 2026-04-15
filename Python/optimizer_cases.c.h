@@ -3614,7 +3614,7 @@
                     ADD_OP(immortal ? _LOAD_CONST_INLINE_BORROW : _LOAD_CONST_INLINE,
                         0, (uintptr_t)descr);
                     ADD_OP(_SWAP, 3, 0);
-                    ADD_OP(_POP_TOP, 0, 0);
+                    optimize_pop_top(ctx, this_instr, method_and_self[0]);
                     if ((type->tp_flags & Py_TPFLAGS_IMMUTABLETYPE) == 0) {
                         PyType_Watch(TYPE_WATCHER_ID, (PyObject *)type);
                         _Py_BloomFilter_Add(dependencies, type);

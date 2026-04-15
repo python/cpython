@@ -3453,6 +3453,10 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertEqual(res, TIER2_THRESHOLD)
         uops = get_opnames(ex)
         self.assertNotIn("_LOAD_SPECIAL", uops)
+        # __enter__/__exit__ produce 2 _POP_TOP_NOP
+        # x += 1 produces 2 _POP_TOP_NOP
+        # __exit__()'s None return produces 1 _POP_TOP_NOP
+        self.assertGreaterEqual(count_ops(ex, "_POP_TOP_NOP"), 5)
 
     def test_store_fast_refcount_elimination(self):
         def foo(x):
