@@ -2367,6 +2367,8 @@ PyCSimpleType_init(PyObject *self, PyObject *args, PyObject *kwds)
         stginfo->ffi_type_pointer = *fmt->pffi_type;
     }
     else {
+        /* From primitive types - only complex types have the elements
+           struct field as non-NULL (two element array). */
         assert(fmt->pffi_type->type == FFI_TYPE_COMPLEX);
         const size_t els_size = 2 * sizeof(ffi_type *);
         stginfo->ffi_type_pointer.size = fmt->pffi_type->size;
