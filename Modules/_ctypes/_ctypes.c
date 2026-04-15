@@ -2236,6 +2236,7 @@ set_stginfo_ffi_type_pointer(StgInfo *stginfo, struct fielddesc *fmt)
         stginfo->ffi_type_pointer.type = fmt->pffi_type->type;
         stginfo->ffi_type_pointer.elements = PyMem_Malloc(els_size);
         if (!stginfo->ffi_type_pointer.elements) {
+            PyErr_NoMemory();
             return -1;
         }
         memcpy(stginfo->ffi_type_pointer.elements,
