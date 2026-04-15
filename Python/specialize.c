@@ -848,8 +848,13 @@ do_specialize_instance_load_attr(PyObject* owner, _Py_CODEUNIT* instr, PyObject*
                 return -1;
             }
             #endif
+            uint32_t func_version = function_get_version(fget, LOAD_ATTR);
+            if (func_version == 0) {
+                return -1;
+            }
             assert(tp_version != 0);
             write_u32(lm_cache->type_version, tp_version);
+            write_u32(lm_cache->keys_version, func_version);
             /* borrowed */
             write_ptr(lm_cache->descr, fget);
             specialize(instr, LOAD_ATTR_PROPERTY);
