@@ -1546,6 +1546,14 @@ collections.abc
   deprecated since Python 3.12, and is scheduled for removal in Python 3.17.
 
 
+ctypes
+------
+
+* Removed the undocumented function :func:`!ctypes.SetPointerType`,
+  which has been deprecated since Python 3.13.
+  (Contributed by Bénédikt Tran in :gh:`133866`.)
+
+
 datetime
 --------
 
@@ -1553,14 +1561,6 @@ datetime
   format string contains ``%d`` (day of month) without a year directive.
   This has been deprecated since Python 3.13.
   (Contributed by Stan Ulbrych and Gregory P. Smith in :gh:`70647`.)
-
-
-ctypes
-------
-
-* Removed the undocumented function :func:`!ctypes.SetPointerType`,
-  which has been deprecated since Python 3.13.
-  (Contributed by Bénédikt Tran in :gh:`133866`.)
 
 
 glob
