@@ -829,12 +829,14 @@ Subsequent :keyword:`!for` clauses and any filter condition in the
 leftmost :keyword:`!for` clause cannot be evaluated in the enclosing scope as
 they may depend on the values obtained from the leftmost iterable.
 
-TODO: PEP 572:
-   ..due to a limitation in CPython’s symbol table analysis process, the reference implementation raises SyntaxError for all uses of named expressions inside comprehension iterable expressions, rather than only raising them when the named expression target conflicts with one of the iteration variables in the comprehension. This could be revisited given sufficiently compelling examples, but the extra complexity needed to implement the more selective restriction doesn’t seem worthwhile for purely hypothetical use cases.
-
 To ensure the comprehension always results in a container of the appropriate
 type, ``yield`` and ``yield from`` expressions are prohibited in the implicitly
 nested scope.
+
+:ref:`Assignment expressions <assignment-expressions>` are not allowed
+inside comprehension iterable expressions (that is, the expressions after
+the :keyword:`!in` keyword), nor anywhere within comprehensions that
+appear directly in a class definition.
 
 .. versionchanged:: 3.8
    ``yield`` and ``yield from`` prohibited in the implicitly nested scope.
