@@ -945,9 +945,10 @@ pickle
 re
 --
 
-* :func:`re.prefixmatch` and a corresponding :meth:`~re.Pattern.prefixmatch`
-  have been added as alternate more explicit names for the existing
-  :func:`re.match` and :meth:`~re.Pattern.match` APIs. These are intended
+* :func:`re.prefixmatch` and a corresponding :meth:`re.Pattern.prefixmatch`
+  have been added as alternate, more explicit names for the existing
+  and now :term:`soft deprecated`
+  :func:`re.match` and :meth:`re.Pattern.match` APIs. These are intended
   to be used to alleviate confusion around what *match* means by following the
   Zen of Python's *"Explicit is better than implicit"* mantra. Most other
   language regular expression libraries use an API named *match* to mean what
@@ -1685,6 +1686,27 @@ New deprecations
 
     (Contributed by Bénédikt Tran in :gh:`134978`.)
 
+
+* :mod:`re`:
+
+  * :func:`re.match` and :meth:`re.Pattern.match` are now
+    :term:`soft deprecated` in favor of the new :func:`re.prefixmatch` and
+    :meth:`re.Pattern.prefixmatch` APIs, which have been added as alternate,
+    more explicit names. These are intended to be used to alleviate confusion
+    around what *match* means by following the Zen of Python's *"Explicit is
+    better than implicit"* mantra. Most other language regular expression
+    libraries use an API named *match* to mean what Python has always called
+    *search*.
+
+    We **do not** plan to remove the older :func:`!match` name, as it has been
+    used in code for over 30 years. Code supporting older versions of Python
+    should continue to use :func:`!match`, while new code should prefer
+    :func:`!prefixmatch`. See :ref:`prefixmatch-vs-match`.
+
+    (Contributed by Gregory P. Smith in :gh:`86519` and
+    Hugo van Kemenade in :gh:`148100`.)
+
+
 * :mod:`struct`:
 
   * Calling the ``Struct.__new__()`` without required argument now is
@@ -1756,6 +1778,8 @@ New deprecations
 .. include:: ../deprecations/pending-removal-in-3.20.rst
 
 .. include:: ../deprecations/pending-removal-in-future.rst
+
+.. include:: ../deprecations/soft-deprecations.rst
 
 
 C API changes
