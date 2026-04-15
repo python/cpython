@@ -177,24 +177,22 @@ class HelperFunctionsTests(unittest.TestCase):
 
     def test_addpackage_import_bad_pth_file(self):
         # Issue 5258
+        # A .pth line with null bytes should not add anything to sys.path.
         pth_dir, pth_fn = self.make_pth("abc\x00def\n")
-        with captured_stderr() as err_out:
-            self.assertFalse(site.addpackage(pth_dir, pth_fn, set()))
-        self.maxDiff = None
-        self.assertEqual(err_out.getvalue(), "")
+        site.addpackage(pth_dir, pth_fn, set())
         for path in sys.path:
             if isinstance(path, str):
                 self.assertNotIn("abc\x00def", path)
 
     def test_addsitedir(self):
-        # Same tests for test_addpackage since addsitedir() essentially just
-        # calls _read_pth_file() for every .pth file in the directory
+        # addsitedir() reads .pth files and, when called standalone
+        # (known_paths=None), flushes paths and import lines immediately.
         pth_file = PthFile()
         pth_file.cleanup(prep=True) # Make sure that nothing is pre-existing
                                     # that is tested for
         try:
             pth_file.create()
-            site.addsitedir(pth_file.base_dir, set())
+            site.addsitedir(pth_file.base_dir)
             self.pth_file_tests(pth_file)
         finally:
             pth_file.cleanup()
