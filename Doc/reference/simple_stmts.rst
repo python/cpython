@@ -48,7 +48,7 @@ expression statements are allowed and occasionally useful.  The syntax for an
 expression statement is:
 
 .. productionlist:: python-grammar
-   expression_stmt: `starred_expression`
+   expression_stmt: `starred_expression_list`
 
 An expression statement evaluates the expression list (which may be a single
 expression).
@@ -84,7 +84,7 @@ Assignment statements are used to (re)bind names to values and to modify
 attributes or items of mutable objects:
 
 .. productionlist:: python-grammar
-   assignment_stmt: (`target_list` "=")+ (`starred_expression` | `yield_expression`)
+   assignment_stmt: (`target_list` "=")+ (`starred_expression_list` | `yield_expression`)
    target_list: `target` ("," `target`)* [","]
    target: `identifier`
          : | "(" [`target_list`] ")"
@@ -275,7 +275,7 @@ Augmented assignment is the combination, in a single statement, of a binary
 operation and an assignment statement:
 
 .. productionlist:: python-grammar
-   augmented_assignment_stmt: `augtarget` `augop` (`expression_list` | `yield_expression`)
+   augmented_assignment_stmt: `augtarget` `augop` (`starred_expression_list` | `yield_expression`)
    augtarget: `identifier` | `attributeref` | `subscription`
    augop: "+=" | "-=" | "*=" | "@=" | "/=" | "//=" | "%=" | "**="
         : | ">>=" | "<<=" | "&=" | "^=" | "|="
@@ -324,7 +324,7 @@ statement, of a variable or attribute annotation and an optional assignment stat
 
 .. productionlist:: python-grammar
    annotated_assignment_stmt: `augtarget` ":" `expression`
-                            : ["=" (`starred_expression` | `yield_expression`)]
+                            : ["=" (`starred_expression_list` | `yield_expression`)]
 
 The difference from normal :ref:`assignment` is that only a single target is allowed.
 
