@@ -922,8 +922,8 @@ See :pep:`810` for the full specification of lazy imports.
 
 .. _lazy-modules-compat:
 
-Compatibility mode via ``__lazy_modules__``
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Compatibility via ``__lazy_modules__``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. index::
    single: __lazy_modules__
@@ -938,7 +938,7 @@ container of fully qualified module name strings.  Any regular (non-``lazy``)
 
 This provides a way to enable lazy loading for specific dependencies without
 changing individual ``import`` statements. This is useful when supporting
-Python versions older than 3.15 while leveraging lazy imports on 3.15+::
+Python versions older than 3.15 while using lazy imports in 3.15+::
 
    __lazy_modules__ = ["json", "pathlib"]
 
