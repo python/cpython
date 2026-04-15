@@ -1,2 +1,0 @@
-Set frame pointers in ``x86_64-unknown-linux-gnu`` JIT code, allowing
-most native profilers and debuggers to unwind through them.

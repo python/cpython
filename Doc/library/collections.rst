@@ -1346,7 +1346,14 @@ attribute.
         A real dictionary used to store the contents of the :class:`UserDict`
         class.
 
+    :class:`!UserDict` instances also override the following method:
 
+    .. method:: popitem
+
+        Remove and return a ``(key, value)`` pair from the wrapped dictionary. Pairs are
+        returned in the same order as ``data.popitem()``. (For the default
+        :meth:`dict.popitem`, this order is :abbr:`LIFO (last-in, first-out)`.) If the
+        dictionary is empty, raises a :exc:`KeyError`.
 
 :class:`UserList` objects
 -------------------------
