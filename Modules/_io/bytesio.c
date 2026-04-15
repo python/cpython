@@ -511,6 +511,7 @@ _io_BytesIO_read1_impl(bytesio *self, Py_ssize_t size)
 
 
 /*[clinic input]
+@critical_section
 _io.BytesIO.peek
     size: Py_ssize_t = 1
     /
@@ -523,7 +524,7 @@ Return an empty bytes object at EOF.
 
 static PyObject *
 _io_BytesIO_peek_impl(bytesio *self, Py_ssize_t size)
-/*[clinic end generated code: output=fa4d8ce28b35db9b input=1510f0fcf77c0048]*/
+/*[clinic end generated code: output=fa4d8ce28b35db9b input=36dc9805d333fe24]*/
 {
     CHECK_CLOSED(self);
 

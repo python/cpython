@@ -327,7 +327,9 @@ _io_BytesIO_peek(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
         size = ival;
     }
 skip_optional:
+    Py_BEGIN_CRITICAL_SECTION(self);
     return_value = _io_BytesIO_peek_impl((bytesio *)self, size);
+    Py_END_CRITICAL_SECTION();
 
 exit:
     return return_value;
@@ -683,4 +685,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=396250eb9869a0b4 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=35e7dd7244e3d236 input=a9049054013a1b77]*/
