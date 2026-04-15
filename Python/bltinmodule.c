@@ -1607,7 +1607,7 @@ check:
         // ValueError: map() argument 3 is shorter than arguments 1-2
         const char* plural = i == 1 ? " " : "s 1-";
         PyErr_Format(PyExc_ValueError,
-                     "map() argument %d is shorter than argument%s%d",
+                     "map() argument %zd is shorter than argument%s%zd",
                      i + 1, plural, i);
         goto exit_no_result;
     }
@@ -1618,7 +1618,7 @@ check:
             Py_DECREF(val);
             const char* plural = i == 1 ? " " : "s 1-";
             PyErr_Format(PyExc_ValueError,
-                         "map() argument %d is longer than argument%s%d",
+                         "map() argument %zd is longer than argument%s%zd",
                          i + 1, plural, i);
             goto exit_no_result;
         }
@@ -3307,7 +3307,7 @@ check:
         // ValueError: zip() argument 3 is shorter than arguments 1-2
         const char* plural = i == 1 ? " " : "s 1-";
         return PyErr_Format(PyExc_ValueError,
-                            "zip() argument %d is shorter than argument%s%d",
+                            "zip() argument %zd is shorter than argument%s%zd",
                             i + 1, plural, i);
     }
     for (i = 1; i < tuplesize; i++) {
@@ -3317,7 +3317,7 @@ check:
             Py_DECREF(item);
             const char* plural = i == 1 ? " " : "s 1-";
             return PyErr_Format(PyExc_ValueError,
-                                "zip() argument %d is longer than argument%s%d",
+                                "zip() argument %zd is longer than argument%s%zd",
                                 i + 1, plural, i);
         }
         if (PyErr_Occurred()) {
@@ -3341,7 +3341,7 @@ zip_reduce(PyObject *self, PyObject *Py_UNUSED(ignored))
     if (lz->strict) {
         return PyTuple_Pack(3, Py_TYPE(lz), lz->ittuple, Py_True);
     }
-    return PyTuple_Pack(2, Py_TYPE(lz), lz->ittuple);
+    return _PyTuple_FromPair((PyObject *)Py_TYPE(lz), lz->ittuple);
 }
 
 static PyObject *

@@ -148,7 +148,9 @@ find_frame_in_chunks(StackChunkList *chunks, uintptr_t remote_ptr)
         uintptr_t base = chunks->chunks[i].remote_addr + offsetof(_PyStackChunk, data);
         size_t payload = chunks->chunks[i].size - offsetof(_PyStackChunk, data);
 
-        if (remote_ptr >= base && remote_ptr < base + payload) {
+        if (payload >= SIZEOF_INTERP_FRAME &&
+                remote_ptr >= base &&
+                remote_ptr <= base + payload - SIZEOF_INTERP_FRAME) {
             return (char *)chunks->chunks[i].local_copy + (remote_ptr - chunks->chunks[i].remote_addr);
         }
     }
@@ -348,10 +350,12 @@ process_frame_chain(
             PyObject *extra_frame_info = make_frame_info(
                 unwinder, _Py_LATIN1_CHR('~'), Py_None, extra_frame, Py_None);
             if (extra_frame_info == NULL) {
+                Py_XDECREF(frame);
                 return -1;
             }
             if (PyList_Append(ctx->frame_info, extra_frame_info) < 0) {
                 Py_DECREF(extra_frame_info);
+                Py_XDECREF(frame);
                 set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to append extra frame");
                 return -1;
             }
