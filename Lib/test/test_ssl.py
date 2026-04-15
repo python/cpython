@@ -2197,6 +2197,24 @@ class SimpleBackgroundTests(unittest.TestCase):
 
             self.assertEqual(lib.ERR_peek_last_error(), 0)
 
+    @unittest.skipIf(ctypes is None, "requires ctypes")
+    def test_recv_clears_stale_openssl_error_queue(self):
+        with test_wrap_socket(socket.socket(socket.AF_INET),
+                              cert_reqs=ssl.CERT_REQUIRED,
+                              ca_certs=SIGNING_CA) as s:
+            s.connect(self.server_addr)
+
+            s.send(b"x")
+
+            lib = _get_openssl_error_lib()
+            _prime_openssl_sys_error_queue(lib, errno.EPIPE)
+            self.assertNotEqual(lib.ERR_peek_last_error(), 0)
+
+            data = s.recv(1)
+
+            self.assertEqual(data, b"x")
+            self.assertEqual(lib.ERR_peek_last_error(), 0)
+
     def test_connect_with_context(self):
         # Same as test_connect, but with a separately created context
         ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
