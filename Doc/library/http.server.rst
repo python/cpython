@@ -557,7 +557,7 @@ The following options are accepted:
              --tls-key key.pem \
              --tls-password-file password.txt
 
-   This option requires `--tls-cert`` to be specified.
+   This option requires ``--tls-cert`` to be specified.
 
    .. versionadded:: 3.14
 
