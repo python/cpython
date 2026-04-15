@@ -307,9 +307,10 @@ array_resize(arrayobject *self, Py_ssize_t newsize)
 
 /****************************************************************************
 Get and Set functions for each type.
-A Get function takes an arrayobject* and an integer index, returning the
+A Get function takes a char* to the data and an integer index, returning the
 array value at that index wrapped in an appropriate PyObject*.
-A Set function takes an arrayobject, integer index, and PyObject*; sets
+A Set function takes an arrayobject, a char* to the data, integer index, and
+PyObject*; sets
 the array value at that index to the raw C data extracted from the PyObject*,
 and returns 0 if successful, else nonzero on failure (PyObject* not of an
 appropriate type or value).
@@ -1903,7 +1904,7 @@ components (the real part, followed by imaginary part) is preserved.
 
 static PyObject *
 array_array_byteswap_impl(arrayobject *self)
-/*[clinic end generated code: output=5f8236cbdf0d90b5 input=aafda275f48191d0]*/
+/*[clinic end generated code: output=5f8236cbdf0d90b5 input=1bcd5b5c6b2d8fa0]*/
 {
     char *p;
     Py_ssize_t i;
