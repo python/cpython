@@ -755,7 +755,7 @@ The :keyword:`!for` clause may be followed by an :keyword:`!if` clause
 with an expression.
 
 For example, a list of names from the :mod:`math` module
-that start with `f` is::
+that start with ``f`` is::
 
    >>> [name for name in vars(math) if name.startswith('f')]
    ['fabs', 'factorial', 'floor', 'fma', 'fmod', 'frexp', 'fsum']
