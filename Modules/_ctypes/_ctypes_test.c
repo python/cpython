@@ -1,8 +1,7 @@
+// Need limited C API version 3.13 for Py_mod_gil
 #include "pyconfig.h"   // Py_GIL_DISABLED
-
 #ifndef Py_GIL_DISABLED
-// Need limited C API version 3.12 for Py_MOD_PER_INTERPRETER_GIL_SUPPORTED
-#define Py_LIMITED_API 0x030c0000
+#  define Py_LIMITED_API 0x030d0000
 #endif
 
 // gh-85283: On Windows, Py_LIMITED_API requires Py_BUILD_CORE to not attempt
@@ -14,6 +13,20 @@
 
 #include <Python.h>
 
+#ifdef thread_local
+#  define _Py_thread_local thread_local
+#elif __STDC_VERSION__ >= 201112L && !defined(__STDC_NO_THREADS__)
+#  define _Py_thread_local _Thread_local
+#elif defined(_MSC_VER)  /* AKA NT_THREADS */
+#  define _Py_thread_local __declspec(thread)
+#elif defined(__GNUC__)  /* includes clang */
+#  define _Py_thread_local __thread
+#endif
+
+#if defined(_Py_FFI_SUPPORT_C_COMPLEX)
+#  include <complex.h>            // csqrt()
+#  undef I                        // for _ctypes_test_generated.c.h
+#endif
 #include <stdio.h>                // printf()
 #include <stdlib.h>               // qsort()
 #include <string.h>               // memset()
@@ -22,6 +35,8 @@
 #endif
 
 #define EXPORT(x) Py_EXPORTED_SYMBOL x
+
+#include "_ctypes_test_generated.c.h"
 
 /* some functions handy for testing */
 
@@ -76,7 +91,7 @@ typedef struct {
 } TestReg;
 
 
-EXPORT(TestReg) last_tfrsuv_arg = {0};
+_Py_thread_local TestReg last_tfrsuv_arg = {0};
 
 
 EXPORT(void)
@@ -179,9 +194,9 @@ _testfunc_array_in_struct3B_set_defaults(void)
 
 /*
  * Test3C struct tests the MAX_STRUCT_SIZE 32. Structs containing arrays of up
- * to four floating point types are passed in registers on Arm platforms.
- * This struct is used for within bounds test on Arm platfroms and for an
- * out-of-bounds tests for platfroms where MAX_STRUCT_SIZE is less than 32.
+ * to four floating-point types are passed in registers on Arm platforms.
+ * This struct is used for within-bounds tests on Arm platforms and for an
+ * out-of-bounds test for platforms where MAX_STRUCT_SIZE is less than 32.
  * See gh-110190.
  */
 typedef struct {
@@ -203,9 +218,9 @@ _testfunc_array_in_struct3C_set_defaults(void)
 
 /*
  * Test3D struct tests the MAX_STRUCT_SIZE 64. Structs containing arrays of up
- * to eight floating point types are passed in registers on PPC64LE platforms.
- * This struct is used for within bounds test on PPC64LE platfroms and for an
- * out-of-bounds tests for platfroms where MAX_STRUCT_SIZE is less than 64.
+ * to eight floating-point types are passed in registers on PPC64LE platforms.
+ * This struct is used for within bounds test on PPC64LE platforms and for an
+ * out-of-bounds tests for platforms where MAX_STRUCT_SIZE is less than 64.
  * See gh-110190.
  */
 typedef struct {
@@ -344,6 +359,31 @@ _testfunc_bitfield_by_reference2(Test7 *in) {
     return result;
 }
 
+typedef struct{
+    uint16_t A ;
+    uint16_t B : 9;
+    uint16_t C : 1;
+    uint16_t D : 1;
+    uint16_t E : 1;
+    uint16_t F : 1;
+    uint16_t G : 3;
+    uint32_t H : 10;
+    uint32_t I : 20;
+    uint32_t J : 2;
+} Test9;
+
+EXPORT(long)
+_testfunc_bitfield_by_reference3(Test9 *in, long pos) {
+    long data[] = {in->A , in->B , in->C , in->D , in->E , in->F , in->G , in->H , in->I , in->J};
+    long data_length = (long) (sizeof(data)/sizeof(data[0]));
+    if(pos < 0)
+        return -1;
+    if(pos >= data_length)
+        return -1;
+
+    return data[pos];
+}
+
 typedef union {
     signed int A: 1, B:2, C:3, D:2;
 } Test8;
@@ -416,6 +456,23 @@ EXPORT(double) my_sqrt(double a)
 {
     return sqrt(a);
 }
+
+#if defined(_Py_FFI_SUPPORT_C_COMPLEX)
+EXPORT(double complex) my_csqrt(double complex a)
+{
+    return csqrt(a);
+}
+
+EXPORT(float complex) my_csqrtf(float complex a)
+{
+    return csqrtf(a);
+}
+
+EXPORT(long double complex) my_csqrtl(long double complex a)
+{
+    return csqrtl(a);
+}
+#endif
 
 EXPORT(void) my_qsort(void *base, size_t num, size_t width, int(*compare)(const void*, const void*))
 {
@@ -694,8 +751,8 @@ EXPORT(void) _py_func(void)
 {
 }
 
-EXPORT(long long) last_tf_arg_s = 0;
-EXPORT(unsigned long long) last_tf_arg_u = 0;
+_Py_thread_local long long last_tf_arg_s = 0;
+_Py_thread_local unsigned long long last_tf_arg_u = 0;
 
 struct BITS {
     signed int A: 1, B:2, C:3, D:4, E: 5, F: 6, G: 7, H: 8, I: 9;
@@ -705,7 +762,7 @@ struct BITS {
  */
 #ifndef __xlc__
 #define SIGNED_SHORT_BITFIELDS
-     short M: 1, N: 2, O: 3, P: 4, Q: 5, R: 6, S: 7;
+    signed short M: 1, N: 2, O: 3, P: 4, Q: 5, R: 6, S: 7;
 #endif
 };
 
@@ -735,12 +792,72 @@ EXPORT(int) unpack_bitfields(struct BITS *bits, char name)
     return 999;
 }
 
+#if (defined(MS_WIN32) || ((defined(__x86_64__) || defined(__i386__) || defined(__ppc64__)) && (defined(__GNUC__) || defined(__clang__))))
+struct
+#ifndef MS_WIN32
+__attribute__ ((ms_struct))
+#endif
+BITS_msvc
+{
+    signed int A: 1, B:2, C:3, D:4, E: 5, F: 6, G: 7, H: 8, I: 9;
+/*
+ * The test case needs/uses "signed short" bitfields, but the
+ * IBM XLC compiler does not support this
+ */
+#ifndef __xlc__
+#define SIGNED_SHORT_BITFIELDS
+    signed short M: 1, N: 2, O: 3, P: 4, Q: 5, R: 6, S: 7;
+#endif
+};
+
+EXPORT(int) unpack_bitfields_msvc(struct BITS_msvc *bits, char name)
+{
+    switch (name) {
+    case 'A': return bits->A;
+    case 'B': return bits->B;
+    case 'C': return bits->C;
+    case 'D': return bits->D;
+    case 'E': return bits->E;
+    case 'F': return bits->F;
+    case 'G': return bits->G;
+    case 'H': return bits->H;
+    case 'I': return bits->I;
+
+#ifdef SIGNED_SHORT_BITFIELDS
+    case 'M': return bits->M;
+    case 'N': return bits->N;
+    case 'O': return bits->O;
+    case 'P': return bits->P;
+    case 'Q': return bits->Q;
+    case 'R': return bits->R;
+    case 'S': return bits->S;
+#endif
+    }
+    return 999;
+}
+#endif
+
+PyObject *get_last_tf_arg_s(PyObject *self, PyObject *noargs)
+{
+    return PyLong_FromLongLong(last_tf_arg_s);
+}
+
+PyObject *get_last_tf_arg_u(PyObject *self, PyObject *noargs)
+{
+    return PyLong_FromUnsignedLongLong(last_tf_arg_u);
+}
+
+EXPORT(TestReg) get_last_tfrsuv_arg(void)
+{
+    return last_tfrsuv_arg;
+}
+
 static PyMethodDef module_methods[] = {
-/*      {"get_last_tf_arg_s", get_last_tf_arg_s, METH_NOARGS},
+    {"get_last_tf_arg_s", get_last_tf_arg_s, METH_NOARGS},
     {"get_last_tf_arg_u", get_last_tf_arg_u, METH_NOARGS},
-*/
     {"func_si", py_func_si, METH_VARARGS},
     {"func", py_func, METH_NOARGS},
+    {"get_generated_test_data", get_generated_test_data, METH_O},
     { NULL, NULL, 0, NULL},
 };
 
@@ -872,13 +989,10 @@ EXPORT(RECT) ReturnRect(int i, RECT ar, RECT* br, POINT cp, RECT dr,
     {
     case 0:
         return ar;
-        break;
     case 1:
         return dr;
-        break;
     case 2:
         return gr;
-        break;
 
     }
     return ar;
@@ -1168,6 +1282,7 @@ _testfunc_pylist_append(PyObject *list, PyObject *item)
 
 static struct PyModuleDef_Slot _ctypes_test_slots[] = {
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+    {Py_mod_gil, Py_MOD_GIL_NOT_USED},
     {0, NULL}
 };
 

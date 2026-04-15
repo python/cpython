@@ -17,9 +17,9 @@ static PyObject *
 blob_close_impl(pysqlite_Blob *self);
 
 static PyObject *
-blob_close(pysqlite_Blob *self, PyObject *Py_UNUSED(ignored))
+blob_close(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return blob_close_impl(self);
+    return blob_close_impl((pysqlite_Blob *)self);
 }
 
 PyDoc_STRVAR(blob_read__doc__,
@@ -42,7 +42,7 @@ static PyObject *
 blob_read_impl(pysqlite_Blob *self, int length);
 
 static PyObject *
-blob_read(pysqlite_Blob *self, PyObject *const *args, Py_ssize_t nargs)
+blob_read(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     int length = -1;
@@ -58,7 +58,7 @@ blob_read(pysqlite_Blob *self, PyObject *const *args, Py_ssize_t nargs)
         goto exit;
     }
 skip_optional:
-    return_value = blob_read_impl(self, length);
+    return_value = blob_read_impl((pysqlite_Blob *)self, length);
 
 exit:
     return return_value;
@@ -80,7 +80,7 @@ static PyObject *
 blob_write_impl(pysqlite_Blob *self, Py_buffer *data);
 
 static PyObject *
-blob_write(pysqlite_Blob *self, PyObject *arg)
+blob_write(PyObject *self, PyObject *arg)
 {
     PyObject *return_value = NULL;
     Py_buffer data = {NULL, NULL};
@@ -88,7 +88,7 @@ blob_write(pysqlite_Blob *self, PyObject *arg)
     if (PyObject_GetBuffer(arg, &data, PyBUF_SIMPLE) != 0) {
         goto exit;
     }
-    return_value = blob_write_impl(self, &data);
+    return_value = blob_write_impl((pysqlite_Blob *)self, &data);
 
 exit:
     /* Cleanup for data */
@@ -116,7 +116,7 @@ static PyObject *
 blob_seek_impl(pysqlite_Blob *self, int offset, int origin);
 
 static PyObject *
-blob_seek(pysqlite_Blob *self, PyObject *const *args, Py_ssize_t nargs)
+blob_seek(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     int offset;
@@ -137,7 +137,7 @@ blob_seek(pysqlite_Blob *self, PyObject *const *args, Py_ssize_t nargs)
         goto exit;
     }
 skip_optional:
-    return_value = blob_seek_impl(self, offset, origin);
+    return_value = blob_seek_impl((pysqlite_Blob *)self, offset, origin);
 
 exit:
     return return_value;
@@ -156,9 +156,9 @@ static PyObject *
 blob_tell_impl(pysqlite_Blob *self);
 
 static PyObject *
-blob_tell(pysqlite_Blob *self, PyObject *Py_UNUSED(ignored))
+blob_tell(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return blob_tell_impl(self);
+    return blob_tell_impl((pysqlite_Blob *)self);
 }
 
 PyDoc_STRVAR(blob_enter__doc__,
@@ -174,9 +174,9 @@ static PyObject *
 blob_enter_impl(pysqlite_Blob *self);
 
 static PyObject *
-blob_enter(pysqlite_Blob *self, PyObject *Py_UNUSED(ignored))
+blob_enter(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return blob_enter_impl(self);
+    return blob_enter_impl((pysqlite_Blob *)self);
 }
 
 PyDoc_STRVAR(blob_exit__doc__,
@@ -193,7 +193,7 @@ blob_exit_impl(pysqlite_Blob *self, PyObject *type, PyObject *val,
                PyObject *tb);
 
 static PyObject *
-blob_exit(pysqlite_Blob *self, PyObject *const *args, Py_ssize_t nargs)
+blob_exit(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *type;
@@ -206,9 +206,9 @@ blob_exit(pysqlite_Blob *self, PyObject *const *args, Py_ssize_t nargs)
     type = args[0];
     val = args[1];
     tb = args[2];
-    return_value = blob_exit_impl(self, type, val, tb);
+    return_value = blob_exit_impl((pysqlite_Blob *)self, type, val, tb);
 
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=31abd55660e0c5af input=a9049054013a1b77]*/
+/*[clinic end generated code: output=f03f4ba622b67ae0 input=a9049054013a1b77]*/

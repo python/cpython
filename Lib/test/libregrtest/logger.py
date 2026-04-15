@@ -43,7 +43,10 @@ class Logger:
 
     def get_load_avg(self) -> float | None:
         if hasattr(os, 'getloadavg'):
-            return os.getloadavg()[0]
+            try:
+                return os.getloadavg()[0]
+            except OSError:
+                pass
         if self.win_load_tracker is not None:
             return self.win_load_tracker.getloadavg()
         return None

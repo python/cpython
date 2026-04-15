@@ -1,2 +1,0 @@
-email: fix misfolding of comma in address-lists over multiple lines in
-combination with unicode encoding.

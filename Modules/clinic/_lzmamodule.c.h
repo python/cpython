@@ -27,7 +27,7 @@ static PyObject *
 _lzma_LZMACompressor_compress_impl(Compressor *self, Py_buffer *data);
 
 static PyObject *
-_lzma_LZMACompressor_compress(Compressor *self, PyObject *arg)
+_lzma_LZMACompressor_compress(PyObject *self, PyObject *arg)
 {
     PyObject *return_value = NULL;
     Py_buffer data = {NULL, NULL};
@@ -35,7 +35,7 @@ _lzma_LZMACompressor_compress(Compressor *self, PyObject *arg)
     if (PyObject_GetBuffer(arg, &data, PyBUF_SIMPLE) != 0) {
         goto exit;
     }
-    return_value = _lzma_LZMACompressor_compress_impl(self, &data);
+    return_value = _lzma_LZMACompressor_compress_impl((Compressor *)self, &data);
 
 exit:
     /* Cleanup for data */
@@ -63,9 +63,9 @@ static PyObject *
 _lzma_LZMACompressor_flush_impl(Compressor *self);
 
 static PyObject *
-_lzma_LZMACompressor_flush(Compressor *self, PyObject *Py_UNUSED(ignored))
+_lzma_LZMACompressor_flush(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return _lzma_LZMACompressor_flush_impl(self);
+    return _lzma_LZMACompressor_flush_impl((Compressor *)self);
 }
 
 PyDoc_STRVAR(_lzma_LZMADecompressor_decompress__doc__,
@@ -95,7 +95,7 @@ _lzma_LZMADecompressor_decompress_impl(Decompressor *self, Py_buffer *data,
                                        Py_ssize_t max_length);
 
 static PyObject *
-_lzma_LZMADecompressor_decompress(Decompressor *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+_lzma_LZMADecompressor_decompress(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -104,9 +104,11 @@ _lzma_LZMADecompressor_decompress(Decompressor *self, PyObject *const *args, Py_
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(data), &_Py_ID(max_length), },
     };
     #undef NUM_KEYWORDS
@@ -128,7 +130,8 @@ _lzma_LZMADecompressor_decompress(Decompressor *self, PyObject *const *args, Py_
     Py_buffer data = {NULL, NULL};
     Py_ssize_t max_length = -1;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 2, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 1, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -151,7 +154,7 @@ _lzma_LZMADecompressor_decompress(Decompressor *self, PyObject *const *args, Py_
         max_length = ival;
     }
 skip_optional_pos:
-    return_value = _lzma_LZMADecompressor_decompress_impl(self, &data, max_length);
+    return_value = _lzma_LZMADecompressor_decompress_impl((Decompressor *)self, &data, max_length);
 
 exit:
     /* Cleanup for data */
@@ -199,9 +202,11 @@ _lzma_LZMADecompressor(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(format), &_Py_ID(memlimit), &_Py_ID(filters), },
     };
     #undef NUM_KEYWORDS
@@ -226,7 +231,8 @@ _lzma_LZMADecompressor(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     PyObject *memlimit = Py_None;
     PyObject *filters = Py_None;
 
-    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 0, 3, 0, argsbuf);
+    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser,
+            /*minpos*/ 0, /*maxpos*/ 3, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!fastargs) {
         goto exit;
     }
@@ -327,4 +333,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=5e79c05ace76dc96 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=6386084cb43d2533 input=a9049054013a1b77]*/

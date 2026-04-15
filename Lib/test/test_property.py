@@ -87,8 +87,8 @@ class PropertyTests(unittest.TestCase):
         self.assertEqual(base.spam, 10)
         self.assertEqual(base._spam, 10)
         delattr(base, "spam")
-        self.assertTrue(not hasattr(base, "spam"))
-        self.assertTrue(not hasattr(base, "_spam"))
+        self.assertNotHasAttr(base, "spam")
+        self.assertNotHasAttr(base, "_spam")
         base.spam = 20
         self.assertEqual(base.spam, 20)
         self.assertEqual(base._spam, 20)
@@ -200,6 +200,59 @@ class PropertyTests(unittest.TestCase):
             prop = prop.deleter(None)
         self.assertIsNone(prop.fdel)
         self.assertAlmostEqual(gettotalrefcount() - refs_before, 0, delta=10)
+
+    def test_property_name(self):
+        def getter(self):
+            return 42
+
+        def setter(self, value):
+            pass
+
+        class A:
+            @property
+            def foo(self):
+                return 1
+
+            @foo.setter
+            def oof(self, value):
+                pass
+
+            bar = property(getter)
+            baz = property(None, setter)
+
+        self.assertEqual(A.foo.__name__, 'foo')
+        self.assertEqual(A.oof.__name__, 'oof')
+        self.assertEqual(A.bar.__name__, 'bar')
+        self.assertEqual(A.baz.__name__, 'baz')
+
+        A.quux = property(getter)
+        self.assertEqual(A.quux.__name__, 'getter')
+        A.quux.__name__ = 'myquux'
+        self.assertEqual(A.quux.__name__, 'myquux')
+        self.assertEqual(A.bar.__name__, 'bar')  # not affected
+        A.quux.__name__ = None
+        self.assertIsNone(A.quux.__name__)
+
+        with self.assertRaisesRegex(
+            AttributeError, "'property' object has no attribute '__name__'"
+        ):
+            property(None, setter).__name__
+
+        with self.assertRaisesRegex(
+            AttributeError, "'property' object has no attribute '__name__'"
+        ):
+            property(1).__name__
+
+        class Err:
+            def __getattr__(self, attr):
+                raise RuntimeError('fail')
+
+        p = property(Err())
+        with self.assertRaisesRegex(RuntimeError, 'fail'):
+            p.__name__
+
+        p.__name__ = 'not_fail'
+        self.assertEqual(p.__name__, 'not_fail')
 
     def test_property_set_name_incorrect_args(self):
         p = property()
@@ -385,7 +438,7 @@ class PropertySubclassTests(unittest.TestCase):
         self.assertEqual(p2.__doc__, "doc-A")
 
         # Case-3: with no user-provided doc new getter doc
-        #         takes precendence
+        #         takes precedence
         p = property(getter2, None, None, None)
 
         p2 = p.getter(getter3)
@@ -409,6 +462,40 @@ class PropertySubclassTests(unittest.TestCase):
         p2 = p.getter(getter2)
         self.assertEqual(p.__doc__, "user")
         self.assertEqual(p2.__doc__, "user")
+
+    @unittest.skipIf(sys.flags.optimize >= 2,
+                     "Docstrings are omitted with -O2 and above")
+    def test_prefer_explicit_doc(self):
+        # Issue 25757: subclasses of property lose docstring
+        self.assertEqual(property(doc="explicit doc").__doc__, "explicit doc")
+        self.assertEqual(PropertySub(doc="explicit doc").__doc__, "explicit doc")
+
+        class Foo:
+            spam = PropertySub(doc="spam explicit doc")
+
+            @spam.getter
+            def spam(self):
+                """ignored as doc already set"""
+                return 1
+
+            def _stuff_getter(self):
+                """ignored as doc set directly"""
+            stuff = PropertySub(doc="stuff doc argument", fget=_stuff_getter)
+
+        #self.assertEqual(Foo.spam.__doc__, "spam explicit doc")
+        self.assertEqual(Foo.stuff.__doc__, "stuff doc argument")
+
+    def test_property_no_doc_on_getter(self):
+        # If a property's getter has no __doc__ then the property's doc should
+        # be None; test that this is consistent with subclasses as well; see
+        # GH-2487
+        class NoDoc:
+            @property
+            def __doc__(self):
+                raise AttributeError
+
+        self.assertEqual(property(NoDoc()).__doc__, None)
+        self.assertEqual(PropertySub(NoDoc()).__doc__, None)
 
     @unittest.skipIf(sys.flags.optimize >= 2,
                      "Docstrings are omitted with -O2 and above")
