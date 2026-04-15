@@ -79,9 +79,10 @@ import _io as io
 import stat
 import errno
 
-lazy import importlib
-lazy import tomllib
+lazy import locale
+lazy import pkgutil
 lazy import traceback
+lazy import warnings
 
 # Prefixes for site-packages; add additional prefixes like /usr/local here
 PREFIXES = [sys.prefix, sys.exec_prefix]
@@ -101,9 +102,16 @@ def _trace(message):
         print(message, file=sys.stderr)
 
 
-def _warn(*args, **kwargs):
-    import warnings
+def _print_error(message, exc=None):
+    """Print an error message to stderr, optionally with a formatted traceback."""
+    print(message, file=sys.stderr)
+    if exc is not None:
+        for record in traceback.format_exception(exc):
+            for line in record.splitlines():
+                print('  ' + line, file=sys.stderr)
 
+
+def _warn(*args, **kwargs):
     warnings.warn(*args, **kwargs)
 
 
@@ -167,206 +175,198 @@ def _init_pathinfo():
     return d
 
 
-class _SiteTOMLData:
-    """Parsed data from a single .site.toml file."""
-    __slots__ = ('filename', 'sitedir', 'metadata', 'dirs', 'init')
-
-    def __init__(self, filename, sitedir, metadata, dirs, init):
-        self.filename = filename    # str: basename e.g. "foo.site.toml"
-        self.sitedir = sitedir      # str: absolute path to site-packages dir
-        self.metadata = metadata    # dict: raw [metadata] table (may be empty)
-        self.dirs = dirs            # list[str]: validated [paths].dirs (may be empty)
-        self.init = init            # list[str]: validated [entrypoints].init (may be empty)
+# Accumulated entry points from .start files across all site-packages
+# directories.  Execution is deferred until all paths in .pth files have been
+# appended to sys.path.  Map the .pth/.start file the data is found in to the
+# data.
+_pending_entrypoints = {}
+_pending_syspaths = {}
+_pending_importexecs = {}
 
 
-def _read_site_toml(sitedir, name):
-    """Parse a .site.toml file and return a _SiteTOMLData, or None on error."""
-    fullname = os.path.join(sitedir, name)
+def _read_pthstart_file(sitedir, name, suffix):
+    """Parse a .start or .pth file and return (lines, filename).
 
-    # Check that name.site.toml file exists and is not hidden.
+    Always returns a 2-tuple.  On failure (hidden, unreadable, etc.),
+    returns ([], filename) so callers can proceed without checking.
+    """
+    content = ""
+    filename = os.path.join(sitedir, name)
+    _trace(f"Reading startup configuration file: {filename}")
+
     try:
-        st = os.lstat(fullname)
-    except OSError:
-        return None
+        st = os.lstat(filename)
+    except OSError as exc:
+        _print_error(f"Cannot stat {filename!r}", exc)
+        return [], filename
+
     if ((getattr(st, 'st_flags', 0) & stat.UF_HIDDEN) or
         (getattr(st, 'st_file_attributes', 0) & stat.FILE_ATTRIBUTE_HIDDEN)):
-        _trace(f"Skipping hidden .site.toml file: {fullname!r}")
-        return None
+        _trace(f"Skipping hidden {suffix} file: {filename!r}")
+        return [], filename
 
-    _trace(f"Processing .site.toml file: {fullname!r}")
+    _trace(f"Processing {suffix} file: {filename!r}")
+    try:
+        with io.open_code(filename) as f:
+            raw_content = f.read()
+    except OSError as exc:
+        _print_error(f"Cannot read {filename!r}", exc)
+        return [], filename
 
     try:
-        with io.open_code(fullname) as f:
-            raw = f.read()
-    except OSError:
-        return None
+        # Accept BOM markers in .start and .pth files as we do in source files (Windows PowerShell
+        # 5.1 makes it hard to emit UTF-8 files without a BOM).
+        content = raw_content.decode("utf-8-sig")
+    except UnicodeDecodeError:
+        # Fallback to locale encoding for backward compatibility.  We will deprecate this fallback
+        # in the future.
+        content = raw_content.decode(locale.getencoding())
+        _trace(f"Cannot read {filename!r} as UTF-8. "
+               f"Using fallback encoding {locale.getencoding()!r}")
 
-    try:
-        data = tomllib.loads(raw.decode("utf-8"))
-    except Exception as exc:
-        _trace(f"Error parsing {fullname!r}: {exc}")
-        return None
+    return content.splitlines(), filename
 
-    metadata = data.get("metadata", {})
-    # Validate the TOML schema version.  PEP 829 defines schema_version == 1.  Both the [metadata]
-    # section and [metadata].schema_version are optional, but if missing, future compatibility
-    # cannot be guaranteed.
-    if (schema_version := metadata.get("schema_version")) is not None:
-        if schema_version != 1:
-            _trace(f"Unsupported [metadata].schema_version: {schema_version}")
-            return None
 
-    # Validate [paths].dirs
-    dirs = []
-    if (paths_table := data.get("paths")) is not None:
-        if (raw_dirs := paths_table.get("dirs")) is not None:
-            if (isinstance(raw_dirs, list) and
-                all(isinstance(d, str) for d in raw_dirs)):
-                dirs = raw_dirs
+def _read_pth_file(sitedir, name, known_paths):
+    """Parse a .pth file, accumulating sys.path extensions and import lines.
+
+    Errors on individual lines do not abort processing of the rest of the
+    file (PEP 829).
+    """
+    lines, filename = _read_pthstart_file(sitedir, name, ".pth")
+
+    for n, line in enumerate(lines, 1):
+        line = line.strip()
+        if len(line) == 0 or line.startswith("#"):
+            continue
+
+        if line.startswith("import ") or line.startswith("import\t"):
+            _pending_importexecs.setdefault(filename, []).append(line)
+            continue
+
+        try:
+            dir, dircase = makepath(sitedir, line)
+        except Exception as exc:
+            _print_error(
+                f"Error in {filename!r}, line {n:d}: {line!r}", exc)
+            continue
+
+        if dircase in known_paths:
+            _trace(f"In {filename!r}, line {n:d}: "
+                   f"skipping duplicate sys.path entry: {dir}")
+        else:
+            _pending_syspaths.setdefault(filename, []).append(dir)
+            known_paths.add(dircase)
+
+
+def _read_start_file(sitedir, name):
+    """Parse a .start file and return a list of entry point strings."""
+    lines, filename = _read_pthstart_file(sitedir, name, ".start")
+
+    for n, line in enumerate(lines, 1):
+        line = line.strip()
+        if len(line) == 0 or line.startswith("#"):
+            continue
+
+        # Validate mandatory colon-form: pkg.mod:callable.
+        if ':' not in line:
+            _trace(f"In {filename!r}, line {n:d}: "
+                   f"skipping invalid entry point: {line}")
+            continue
+
+        _pending_entrypoints.setdefault(filename, []).append(line)
+
+
+def _extend_syspath():
+    # We've already filtered out duplicates, either in the existing sys.path
+    # or in all the .pth files we've seen.  We've also abspath/normpath'd all
+    # the entries, so all that's left to do is to ensure that the path exists.
+    for filename, dirs in _pending_syspaths.items():
+        for dir in dirs:
+            if os.path.exists(dir):
+                _trace(f"Extending sys.path with {dir} from {filename}")
+                sys.path.append(dir)
             else:
-                _trace(f"Invalid 'dirs' in {fullname!r}: "
-                       f"expected list of strings")
-
-    # Validate [entrypoints].init
-    init = []
-    if (ep_table := data.get("entrypoints")) is not None:
-        if (raw_init := ep_table.get("init")) is not None:
-            if (isinstance(raw_init, list) and
-                all(isinstance(e, str) for e in raw_init)):
-                init = raw_init
-            else:
-                _trace(f"Invalid 'init' in {fullname!r}: "
-                       f"expected list of strings")
-
-    return _SiteTOMLData(name, sitedir, metadata, dirs, init)
+                _print_error(
+                    f"In {filename}: {dir} does not exist; "
+                    f"skipping sys.path append")
 
 
-def _process_site_toml_paths(toml_data_list, known_paths):
-    """Process [paths] from all parsed .site.toml data."""
-    for td in toml_data_list:
-        for dir_entry in td.dirs:
+def _exec_imports():
+    # For all the `import` lines we've seen in .pth files, exec() them in
+    # order.  However, if they come from a file with a matching .start, then
+    # we ignore these import lines.  For the ones we do process, print a
+    # warning but only when -v was given.
+    for filename, imports in _pending_importexecs.items():
+        name, dot, pth = filename.rpartition(".")
+        assert dot == "." and pth == "pth", f"Bad startup filename: {filename}"
+
+        if f"{name}.start" in _pending_entrypoints:
+            # Skip import lines in favor of entry points.
+            continue
+
+        _trace(
+            f"import lines in {filename} are deprecated, "
+            f"use entry points in a {name}.start file instead."
+        )
+
+        for line in imports:
             try:
-                # The {sitedir} placeholder expands to the site directory where the pkg.site.toml
-                # file was found.  When placed at the beginning of the path, this is the explicit
-                # way to name directories relative to sitedir.
-                dir_entry = dir_entry.replace("{sitedir}", td.sitedir)
-                # For backward compatibility with .pth files, relative directories are implicitly
-                # anchored to sitedir.
-                if not os.path.isabs(dir_entry):
-                    dir_entry = os.path.join(td.sitedir, dir_entry)
-                dir, dircase = makepath(dir_entry)
-                if dircase not in known_paths and os.path.exists(dir):
-                    sys.path.append(dir)
-                    known_paths.add(dircase)
+                _trace(f"Exec'ing from {filename}: {line}")
+                exec(line)
             except Exception as exc:
-                fullname = os.path.join(td.sitedir, td.filename)
-                print(f"Error processing path {dir_entry!r} "
-                      f"from {fullname}:",
-                      file=sys.stderr)
-                for record in traceback.format_exception(exc):
-                    for line in record.splitlines():
-                        print('  ' + line, file=sys.stderr)
+                _print_error(
+                    f"Error in import line from {filename}: {line}", exc)
 
 
-def _process_site_toml_entrypoints(toml_data_list):
-    """Execute [entrypoints] from all parsed .site.toml data."""
-    for td in toml_data_list:
-        for entry in td.init:
+def _execute_start_entrypoints():
+    """Execute all accumulated .start file entry points.
+
+    Called after all site-packages directories have been processed so that
+    sys.path is fully populated before any entry point code runs.  Uses
+    pkgutil.resolve_name() for resolution.
+    """
+    for filename, entrypoints in _pending_entrypoints.items():
+        for entrypoint in entrypoints:
             try:
-                # Parse "package.module:callable" format.  When the optional :callable is not given,
-                # the entire string will end up in the last item, so swap things around.
-                modname, colon, funcname = entry.rpartition(':')
-                if colon != ':':
-                    modname = funcname
-                    funcname = None
-
-                _trace(f"Executing entrypoint: {entry!r} "
-                       f"from {td.filename!r}")
-
-                mod = importlib.import_module(modname)
-
-                # Call the callable if given.
-                if funcname is not None:
-                    func = getattr(mod, funcname)
-                    func()
+                _trace(f"Executing entry point: {entrypoint} from {filename}")
+                callable_ = pkgutil.resolve_name(entrypoint)
+                callable_()
             except Exception as exc:
-                fullname = os.path.join(td.sitedir, td.filename)
-                print(f"Error in entrypoint {entry!r} from {fullname}:",
-                      file=sys.stderr)
-                for record in traceback.format_exception(exc):
-                    for line in record.splitlines():
-                        print('  ' + line, file=sys.stderr)
+                _print_error(
+                    f"Error in entry point {entrypoint} from {filename}",
+                    exc)
 
 
 def addpackage(sitedir, name, known_paths):
-    """Process a .pth file within the site-packages directory:
-       For each line in the file, either combine it with sitedir to a path
-       and add that to known_paths, or execute it if it starts with 'import '.
+    """Process a .pth file within the site-packages directory.
+
+    .. deprecated:: 3.15
+       Use :func:`addsitedir` instead.
     """
+    _warn(
+        "site.addpackage() is deprecated, use site.addsitedir() instead.",
+        DeprecationWarning,
+        stacklevel=2,
+    )
     if known_paths is None:
         known_paths = _init_pathinfo()
         reset = True
     else:
         reset = False
-    fullname = os.path.join(sitedir, name)
-    try:
-        st = os.lstat(fullname)
-    except OSError:
-        return
-    if ((getattr(st, 'st_flags', 0) & stat.UF_HIDDEN) or
-        (getattr(st, 'st_file_attributes', 0) & stat.FILE_ATTRIBUTE_HIDDEN)):
-        _trace(f"Skipping hidden .pth file: {fullname!r}")
-        return
-    _trace(f"Processing .pth file: {fullname!r}")
-    try:
-        with io.open_code(fullname) as f:
-            pth_content = f.read()
-    except OSError:
-        return
-
-    try:
-        # Accept BOM markers in .pth files as we do in source files
-        # (Windows PowerShell 5.1 makes it hard to emit UTF-8 files without a BOM)
-        pth_content = pth_content.decode("utf-8-sig")
-    except UnicodeDecodeError:
-        # Fallback to locale encoding for backward compatibility.
-        # We will deprecate this fallback in the future.
-        import locale
-        pth_content = pth_content.decode(locale.getencoding())
-        _trace(f"Cannot read {fullname!r} as UTF-8. "
-               f"Using fallback encoding {locale.getencoding()!r}")
-
-    for n, line in enumerate(pth_content.splitlines(), 1):
-        if line.startswith("#"):
-            continue
-        if line.strip() == "":
-            continue
-        try:
-            if line.startswith(("import ", "import\t")):
-                exec(line)
-                continue
-            line = line.rstrip()
-            dir, dircase = makepath(sitedir, line)
-            if dircase not in known_paths and os.path.exists(dir):
-                sys.path.append(dir)
-                known_paths.add(dircase)
-        except Exception as exc:
-            print(f"Error processing line {n:d} of {fullname}:\n",
-                  file=sys.stderr)
-            import traceback
-            for record in traceback.format_exception(exc):
-                for line in record.splitlines():
-                    print('  '+line, file=sys.stderr)
-            print("\nRemainder of file ignored", file=sys.stderr)
-            break
+    _read_pth_file(sitedir, name, known_paths)
+    _extend_syspath()
+    _exec_imports()
+    _pending_syspaths.clear()
+    _pending_importexecs.clear()
     if reset:
         known_paths = None
     return known_paths
 
 
 def addsitedir(sitedir, known_paths=None):
-    """Add 'sitedir' argument to sys.path if missing and handle .site.toml
-    and .pth files in 'sitedir'"""
+    """Add 'sitedir' argument to sys.path if missing and handle startup
+    files."""
     _trace(f"Adding directory: {sitedir!r}")
     if known_paths is None:
         known_paths = _init_pathinfo()
@@ -382,41 +382,33 @@ def addsitedir(sitedir, known_paths=None):
     except OSError:
         return
 
-    # Phase 1: Discover and parse .site.toml files, sorted alphabetically.
-    toml_names = sorted(
+    # Phase 1: Discover .start files and accumulate their entry points.
+    start_names = sorted(
         name for name in names
-        if name.endswith(".site.toml") and not name.startswith(".")
+        if name.endswith(".start") and not name.startswith(".")
     )
+    for name in start_names:
+        _read_start_file(sitedir, name)
 
-    toml_data_list = []
-    superseded_pth = set()
-
-    for name in toml_names:
-        # "foo.site.toml" supersedes "foo.pth"
-        base = name.removesuffix(".site.toml")
-        pth_name = base + ".pth"
-        if pth_name in names:
-            superseded_pth.add(pth_name)
-        td = _read_site_toml(sitedir, name)
-        if td is not None:
-            toml_data_list.append(td)
-
-    # Phase 2: Process all .site.toml data (paths first, then entrypoints)
-    if toml_data_list:
-        _process_site_toml_paths(toml_data_list, known_paths)
-        _process_site_toml_entrypoints(toml_data_list)
-
-    # Phase 3: Process remaining .pth files
+    # Phase 2: Read .pth files, accumulating paths and import lines.
     pth_names = sorted(
         name for name in names
         if name.endswith(".pth") and not name.startswith(".")
-        and name not in superseded_pth
     )
     for name in pth_names:
-        addpackage(sitedir, name, known_paths)
+        _read_pth_file(sitedir, name, known_paths)
 
+    # If standalone call (not from main()), flush immediately
+    # so the caller sees the effect.
     if reset:
+        _extend_syspath()
+        _exec_imports()
+        _execute_start_entrypoints()
+        _pending_syspaths.clear()
+        _pending_importexecs.clear()
+        _pending_entrypoints.clear()
         known_paths = None
+
     return known_paths
 
 
@@ -872,6 +864,13 @@ def main():
         ENABLE_USER_SITE = check_enableusersite()
     known_paths = addusersitepackages(known_paths)
     known_paths = addsitepackages(known_paths)
+    # PEP 829: flush accumulated data from all .pth and .start files.
+    # Paths are extended first, then deprecated import lines are exec'd,
+    # and finally .start entry points are executed — ensuring sys.path is
+    # fully populated before any startup code runs.
+    _extend_syspath()
+    _exec_imports()
+    _execute_start_entrypoints()
     setquit()
     setcopyright()
     sethelper()
