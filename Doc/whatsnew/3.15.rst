@@ -1467,7 +1467,7 @@ reference count updates and perform inplace operations on ints and floats.
 (Contributed by Reiden Ong, and Pieter Eendebak in :gh:`143414` and :gh:`146306`.)
 
 The JIT optimizer now supports significantly more operations than in 3.14.
-(Contributed by Kumar Aditya, Ken Jin, and Sacul in :gh:`131798`.)
+(Contributed by Kumar Aditya, Ken Jin, Jiahao Li, and Sacul in :gh:`131798`.)
 
 .. rubric:: Better machine code generation
 
