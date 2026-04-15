@@ -666,7 +666,7 @@ class ArrayMemoryviewTest(unittest.TestCase,
         self.assertEqual(m2b.tolist(), [True, True, True])
         self.assertEqual(m2a, m2b)
 
-        allbytes = bytes(x for x in range(256))
+        allbytes = bytes(range(256))
         allbytes = memoryview(allbytes).cast('?')
         self.assertEqual(allbytes.tolist(), [False] + [True] * 255)
 
