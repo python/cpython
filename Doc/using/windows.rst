@@ -784,7 +784,7 @@ directory containing the configuration file that specified them.
        added or overwritten, but individual settings are not merged.
        These settings are currently only for :ref:`index signatures
        <pymanager-index-signatures>`.
-     
+
 
 .. _install-freethreaded-windows:
 
