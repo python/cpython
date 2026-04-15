@@ -1462,8 +1462,12 @@ reduces the cost of most operations in Python.
 (Contributed by Ken Jin, Donghee Na, Zheao Li, Hai Zhu, Savannah Ostrowski,
 Reiden Ong, Noam Cohen, Tomas Roun, PuQing, Cajetan Rodrigues, and Sacul in :gh:`134584`.)
 
+By tracking unique references to objects, the JIT optimizer can now eliminate
+reference count updates and perform inplace operations on ints and floats.
+(Contributed by Reiden Ong, and Pieter Eendebak in :gh:`143414` and :gh:`146306`.)
+
 The JIT optimizer now supports significantly more operations than in 3.14.
-(Contributed by Kumar Aditya, Ken Jin, and Sacul in :gh:`131798`.)
+(Contributed by Kumar Aditya, Ken Jin, Jiahao Li, and Sacul in :gh:`131798`.)
 
 .. rubric:: Better machine code generation
 
