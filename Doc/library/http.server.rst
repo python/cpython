@@ -59,7 +59,7 @@ provides three different variants:
 
    This class is used to handle the HTTP requests that arrive at the server.  By
    itself, it cannot respond to any actual HTTP requests; it must be subclassed
-   to handle each request method (e.g. GET or POST).
+   to handle each request method (for example, ``'GET'`` or ``'POST'``).
    :class:`BaseHTTPRequestHandler` provides a number of class and instance
    variables, and methods for use by subclasses.
 
@@ -201,7 +201,7 @@ provides three different variants:
       request header it responds back with a ``100 Continue`` followed by ``200
       OK`` headers.
       This method can be overridden to raise an error if the server does not
-      want the client to continue.  For e.g. server can choose to send ``417
+      want the client to continue.  For example, the server can choose to send ``417
       Expectation Failed`` as a response header and ``return False``.
 
       .. versionadded:: 3.2
@@ -478,7 +478,9 @@ Command-line interface
 
 :mod:`http.server` can also be invoked directly using the :option:`-m`
 switch of the interpreter.  The following example illustrates how to serve
-files relative to the current directory::
+files relative to the current directory:
+
+.. code-block:: bash
 
    python -m http.server [OPTIONS] [port]
 
@@ -489,7 +491,9 @@ The following options are accepted:
 .. option:: port
 
    The server listens to port 8000 by default. The default can be overridden
-   by passing the desired port number as an argument::
+   by passing the desired port number as an argument:
+
+   .. code-block:: bash
 
       python -m http.server 9000
 
@@ -498,7 +502,9 @@ The following options are accepted:
    Specifies a specific address to which it should bind. Both IPv4 and IPv6
    addresses are supported. By default, the server binds itself to all
    interfaces. For example, the following command causes the server to bind
-   to localhost only::
+   to localhost only:
+
+   .. code-block:: bash
 
       python -m http.server --bind 127.0.0.1
 
@@ -511,7 +517,9 @@ The following options are accepted:
 
    Specifies a directory to which it should serve the files. By default,
    the server uses the current directory. For example, the following command
-   uses a specific directory::
+   uses a specific directory:
+
+   .. code-block:: bash
 
       python -m http.server --directory /tmp/
 
@@ -521,7 +529,9 @@ The following options are accepted:
 
    Specifies the HTTP version to which the server is conformant. By default,
    the server is conformant to HTTP/1.0. For example, the following command
-   runs an HTTP/1.1 conformant server::
+   runs an HTTP/1.1 conformant server:
+
+   .. code-block:: bash
 
       python -m http.server --protocol HTTP/1.1
 
@@ -530,7 +540,9 @@ The following options are accepted:
 .. option:: --cgi
 
    :class:`CGIHTTPRequestHandler` can be enabled in the command line by passing
-   the ``--cgi`` option::
+   the ``--cgi`` option:
+
+   .. code-block:: bash
 
       python -m http.server --cgi
 
@@ -559,7 +571,7 @@ to be served.
 
 Methods :meth:`BaseHTTPRequestHandler.send_header` and
 :meth:`BaseHTTPRequestHandler.send_response_only` assume sanitized input
-and does not perform input validation such as checking for the presence of CRLF
+and do not perform input validation such as checking for the presence of CRLF
 sequences. Untrusted input may result in HTTP Header injection attacks.
 
 Earlier versions of Python did not scrub control characters from the
