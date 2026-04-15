@@ -1124,7 +1124,8 @@ the following writable attributes:
 
 .. attribute:: module.__lazy_modules__
 
-   A container of fully qualified module name strings.  When defined
+   A container (an object implementing :meth:`~object.__contains__`) of fully
+   qualified module name strings.  When defined
    at module scope, any regular :keyword:`import` statement in that module whose
    target module name appears in this container is treated as a
    :ref:`lazy import <lazy-imports>`, as if the :keyword:`lazy` keyword had
