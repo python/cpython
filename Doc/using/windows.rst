@@ -810,7 +810,7 @@ installed, then ``python`` will launch this one. Otherwise, you will need to use
 
 .. _pymanager-index-signatures:
 
-Index Signatures
+Index signatures
 ----------------
 
 .. versionadded:: 26.2
