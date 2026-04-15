@@ -35,6 +35,7 @@ import functools
 from contextlib import nullcontext
 try:
     import ctypes
+    import ctypes.util
 except ImportError:
     ctypes = None
 
@@ -317,6 +318,53 @@ def make_test_context(
         context.maximum_version = max_version
 
     return context
+
+
+_OPENSSL_ERR_LIB_SYS = 2
+
+
+def _get_openssl_error_lib():
+    if ctypes is None:
+        raise unittest.SkipTest("ctypes is required")
+
+    for candidate in (
+        ctypes.util.find_library("crypto"),
+        ctypes.util.find_library("ssl"),
+        _ssl.__file__,
+    ):
+        if not candidate:
+            continue
+        try:
+            lib = ctypes.CDLL(candidate)
+        except OSError:
+            continue
+        if hasattr(lib, "ERR_clear_error") and hasattr(lib, "ERR_peek_last_error"):
+            lib.ERR_peek_last_error.restype = ctypes.c_ulong
+            return lib
+    raise unittest.SkipTest("OpenSSL error API not reachable via ctypes")
+
+
+def _prime_openssl_sys_error_queue(lib, reason):
+    lib.ERR_clear_error()
+    if hasattr(lib, "ERR_new") and hasattr(lib, "ERR_set_debug") and hasattr(lib, "ERR_set_error"):
+        lib.ERR_set_debug.argtypes = [ctypes.c_char_p, ctypes.c_int, ctypes.c_char_p]
+        lib.ERR_set_error.argtypes = [ctypes.c_int, ctypes.c_int, ctypes.c_char_p]
+        lib.ERR_new()
+        lib.ERR_set_debug(b"Lib/test/test_ssl.py", 0,
+                          b"_prime_openssl_sys_error_queue")
+        lib.ERR_set_error(_OPENSSL_ERR_LIB_SYS, reason, b"")
+        return
+    if hasattr(lib, "ERR_put_error"):
+        lib.ERR_put_error.argtypes = [
+            ctypes.c_int, ctypes.c_int, ctypes.c_int,
+            ctypes.c_char_p, ctypes.c_int,
+        ]
+        lib.ERR_put_error(
+            _OPENSSL_ERR_LIB_SYS, 0, reason,
+            b"Lib/test/test_ssl.py", 0,
+        )
+        return
+    raise unittest.SkipTest("No supported OpenSSL error injection API")
 
 
 def test_wrap_socket(
@@ -2133,6 +2181,21 @@ class SimpleBackgroundTests(unittest.TestCase):
                 select.select([], [s], [], 5.0)
         # SSL established
         self.assertTrue(s.getpeercert())
+
+    @unittest.skipIf(ctypes is None, "requires ctypes")
+    def test_send_clears_stale_openssl_error_queue(self):
+        with test_wrap_socket(socket.socket(socket.AF_INET),
+                              cert_reqs=ssl.CERT_REQUIRED,
+                              ca_certs=SIGNING_CA) as s:
+            s.connect(self.server_addr)
+
+            lib = _get_openssl_error_lib()
+            _prime_openssl_sys_error_queue(lib, errno.EPIPE)
+            self.assertNotEqual(lib.ERR_peek_last_error(), 0)
+
+            self.assertEqual(s.send(b"x"), 1)
+
+            self.assertEqual(lib.ERR_peek_last_error(), 0)
 
     def test_connect_with_context(self):
         # Same as test_connect, but with a separately created context

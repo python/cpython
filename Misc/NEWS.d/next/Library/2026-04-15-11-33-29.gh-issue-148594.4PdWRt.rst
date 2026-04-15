@@ -1,0 +1,3 @@
+Fix stale OpenSSL per-thread error queue handling in
+``ssl.SSLSocket.read()`` and ``ssl.SSLSocket.write()``. Patched by Shamil
+Abdulaev.

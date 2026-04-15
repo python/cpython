@@ -2786,6 +2786,7 @@ _ssl__SSLSocket_write_impl(PySSLSocket *self, Py_buffer *b)
 
     do {
         Py_BEGIN_ALLOW_THREADS;
+        ERR_clear_error();
         retval = SSL_write_ex(self->ssl, b->buf, (size_t)b->len, &count);
         err = _PySSL_errno(retval == 0, self->ssl, retval);
         Py_END_ALLOW_THREADS;
@@ -2938,6 +2939,7 @@ _ssl__SSLSocket_read_impl(PySSLSocket *self, Py_ssize_t len,
 
     do {
         Py_BEGIN_ALLOW_THREADS;
+        ERR_clear_error();
         retval = SSL_read_ex(self->ssl, mem, (size_t)len, &count);
         err = _PySSL_errno(retval == 0, self->ssl, retval);
         Py_END_ALLOW_THREADS;
