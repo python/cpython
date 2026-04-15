@@ -801,11 +801,19 @@ D_set_sw(void *ptr, PyObject *value, Py_ssize_t size)
     if (c.real == -1 && PyErr_Occurred()) {
         return NULL;
     }
-    if (PyFloat_Pack8(c.real, ptr, PY_BIG_ENDIAN)
-        || PyFloat_Pack8(c.imag, ptr + sizeof(double), PY_BIG_ENDIAN))
+#ifdef WORDS_BIGENDIAN
+    if (PyFloat_Pack8(c.real, ptr, 1)
+        || PyFloat_Pack8(c.imag, ptr + sizeof(double), 1))
     {
         return NULL;
     }
+#else
+    if (PyFloat_Pack8(c.real, ptr, 0)
+        || PyFloat_Pack8(c.imag, ptr + sizeof(double), 0))
+    {
+        return NULL;
+    }
+#endif
     _RET(value);
 }
 
@@ -813,9 +821,13 @@ static PyObject *
 D_get_sw(void *ptr, Py_ssize_t size)
 {
     assert(NUM_BITS(size) || (size == 2*sizeof(double)));
-    return PyComplex_FromDoubles(PyFloat_Unpack8(ptr, PY_BIG_ENDIAN),
-                                 PyFloat_Unpack8(ptr + sizeof(double),
-                                                 PY_BIG_ENDIAN));
+#ifdef WORDS_BIGENDIAN
+    return PyComplex_FromDoubles(PyFloat_Unpack8(ptr, 1),
+                                 PyFloat_Unpack8(ptr + sizeof(double), 1));
+#else
+    return PyComplex_FromDoubles(PyFloat_Unpack8(ptr, 0),
+                                 PyFloat_Unpack8(ptr + sizeof(double), 0));
+#endif
 }
 
 /* F: float complex */
@@ -852,11 +864,19 @@ F_set_sw(void *ptr, PyObject *value, Py_ssize_t size)
     if (c.real == -1 && PyErr_Occurred()) {
         return NULL;
     }
-    if (PyFloat_Pack4(c.real, ptr, PY_BIG_ENDIAN)
-        || PyFloat_Pack4(c.imag, ptr + sizeof(float), PY_BIG_ENDIAN))
+#ifdef WORDS_BIGENDIAN
+    if (PyFloat_Pack4(c.real, ptr, 1)
+        || PyFloat_Pack4(c.imag, ptr + sizeof(float), 1))
     {
         return NULL;
     }
+#else
+    if (PyFloat_Pack4(c.real, ptr, 0)
+        || PyFloat_Pack4(c.imag, ptr + sizeof(float), 0))
+    {
+        return NULL;
+    }
+#endif
     _RET(value);
 }
 
@@ -864,9 +884,13 @@ static PyObject *
 F_get_sw(void *ptr, Py_ssize_t size)
 {
     assert(NUM_BITS(size) || (size == 2*sizeof(float)));
-    return PyComplex_FromDoubles(PyFloat_Unpack4(ptr, PY_BIG_ENDIAN),
-                                 PyFloat_Unpack4(ptr + sizeof(float),
-                                                 PY_BIG_ENDIAN));
+#ifdef WORDS_BIGENDIAN
+    return PyComplex_FromDoubles(PyFloat_Unpack4(ptr, 1),
+                                 PyFloat_Unpack4(ptr + sizeof(float), 1));
+#else
+    return PyComplex_FromDoubles(PyFloat_Unpack4(ptr, 0),
+                                 PyFloat_Unpack4(ptr + sizeof(float), 0));
+#endif
 }
 
 /* G: long double complex */
