@@ -895,7 +895,7 @@ dummy_func(
             INPUTS_DEAD();
         }
 
-        // Float true division — not specialized at tier 1, emitted by the
+        // Float true division --- not specialized at tier 1, emitted by the
         // tier 2 optimizer when both operands are known floats.
         tier2 op(_BINARY_OP_TRUEDIV_FLOAT, (left, right -- res, l, r)) {
             PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);
