@@ -1379,6 +1379,7 @@ class CommandLineTestCase(unittest.TestCase):
         'protocol': default_protocol,
         'port': default_port,
         'bind': default_bind,
+        'content_type': 'application/octet-stream',
         'tls_cert': None,
         'tls_key': None,
         'tls_password': None,
