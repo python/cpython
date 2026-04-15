@@ -96,6 +96,18 @@ with ``import`` (followed by space or tab) are executed.
    The :file:`.pth` files are now decoded by UTF-8 at first and then by the
    :term:`locale encoding` if it fails.
 
+.. versionchanged:: 3.15
+   Lines starting with ``import`` are deprecated.  During the deprecation
+   period, such lines are still executed, but a diagnostic message is
+   emitted when the :option:`-v` flag is given.  If a :file:`{name}.start`
+   file with the same base name exists, ``import`` lines are silently
+   ignored.  See :ref:`site-start-files` and :pep:`829`.
+
+.. versionchanged:: 3.15
+   Errors on individual lines no longer abort processing of the rest of
+   the file.  Each error is reported and the remaining lines continue to
+   be processed.
+
 .. index::
    single: package
    triple: path; configuration; file
@@ -130,6 +142,47 @@ Note that :file:`bletch` is omitted because it doesn't exist; the :file:`bar`
 directory precedes the :file:`foo` directory because :file:`bar.pth` comes
 alphabetically before :file:`foo.pth`; and :file:`spam` is omitted because it is
 not mentioned in either path configuration file.
+
+.. _site-start-files:
+
+Startup entry points (:file:`.start` files)
+--------------------------------------------
+
+.. versionadded:: 3.15
+
+A startup entry point file is a file whose name has the form
+:file:`{name}.start` and exists in one of the site-packages directories
+described above.  Each file specifies entry points to be called during
+interpreter startup, using the ``pkg.mod:callable`` syntax understood by
+:func:`pkgutil.resolve_name`.
+
+Each non-blank line that does not begin with ``#`` must contain an entry
+point reference in the form ``pkg.mod:callable``.  The colon and callable
+portion are mandatory.  Each callable is invoked with no arguments, and
+any return value is discarded.
+
+:file:`.start` files are processed after all :file:`.pth` path extensions
+have been applied to :data:`sys.path`, ensuring that paths are available
+before any startup code runs.  Within each site-packages directory, files
+are sorted alphabetically by filename.
+
+Unlike :data:`sys.path` extensions from :file:`.pth` files, duplicate entry
+points are **not** deduplicated --- if an entry point appears more than once,
+it will be called more than once.
+
+If an exception occurs during resolution or invocation of an entry point,
+a traceback is printed to :data:`sys.stderr` and processing continues with
+the remaining entry points.
+
+See :pep:`829` for the full specification.
+
+.. note::
+
+   If a :file:`{name}.start` file exists alongside a :file:`{name}.pth`
+   file with the same base name, any ``import`` lines in the :file:`.pth`
+   file are ignored in favour of the entry points in the :file:`.start`
+   file.
+
 
 :mod:`!sitecustomize`
 ---------------------
@@ -238,8 +291,19 @@ Module contents
 
 .. function:: addsitedir(sitedir, known_paths=None)
 
-   Add a directory to sys.path and process its :file:`.pth` files.  Typically
-   used in :mod:`sitecustomize` or :mod:`usercustomize` (see above).
+   Add a directory to sys.path and process its :file:`.pth` and
+   :file:`.start` files.  Typically used in :mod:`sitecustomize` or
+   :mod:`usercustomize` (see above).
+
+   The *known_paths* argument is an optional set of case-normalized paths
+   used to prevent duplicate :data:`sys.path` entries.  When ``None`` (the
+   default), the set is built from the current :data:`sys.path`.
+
+   .. versionchanged:: 3.15
+      Also processes :file:`.start` files.  See :ref:`site-start-files`.
+      All :file:`.pth` and :file:`.start` files are now read and
+      accumulated before any path extensions, ``import`` line execution,
+      or entry point invocations take place.
 
 
 .. function:: getsitepackages()
