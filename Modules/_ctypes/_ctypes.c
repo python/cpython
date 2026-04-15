@@ -2230,7 +2230,7 @@ set_stginfo_ffi_type_pointer(StgInfo *stginfo, struct fielddesc *fmt)
     }
     else {
         assert(fmt->pffi_type->type == FFI_TYPE_COMPLEX);
-        const size_t els_size = sizeof(2 * sizeof(ffi_type *));
+        const size_t els_size = 2 * sizeof(ffi_type *);
         stginfo->ffi_type_pointer.size = fmt->pffi_type->size;
         stginfo->ffi_type_pointer.alignment = fmt->pffi_type->alignment;
         stginfo->ffi_type_pointer.type = fmt->pffi_type->type;
