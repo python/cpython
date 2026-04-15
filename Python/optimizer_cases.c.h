@@ -2651,7 +2651,7 @@
             owner = stack_pointer[-1];
             self_or_null = &stack_pointer[0];
             PyObject *descr_tagged = (PyObject *)this_instr->operand0;
-            (void)descr;
+            (void)descr_tagged;
             PyTypeObject *type = (PyTypeObject *)sym_get_const(ctx, owner);
             PyObject *name = get_co_name(ctx, oparg >> 1);
             attr = lookup_attr(ctx, dependencies, this_instr, type, name,
