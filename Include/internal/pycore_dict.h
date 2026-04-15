@@ -55,7 +55,7 @@ extern Py_ssize_t _PyDict_SizeOf_LockHeld(PyDictObject *);
    of a key wins, if override is 2, a KeyError with conflicting key as
    argument is raised.
 */
-PyAPI_FUNC(int) _PyDict_MergeEx(PyObject *mp, PyObject *other, int override);
+PyAPI_FUNC(int) _PyDict_MergeUniq(PyObject *mp, PyObject *other, PyObject **dupkey);
 
 extern void _PyDict_DebugMallocStats(FILE *out);
 
@@ -138,13 +138,14 @@ extern PyObject *_PyDict_LoadBuiltinsFromGlobals(PyObject *globals);
 
 /* Consumes references to key and value */
 PyAPI_FUNC(int) _PyDict_SetItem_Take2(PyDictObject *op, PyObject *key, PyObject *value);
+PyAPI_FUNC(int) _PyDict_SetItem_Take2_KnownHash(PyDictObject *op, PyObject *key, PyObject *value, Py_hash_t hash);
 extern int _PyDict_SetItem_LockHeld(PyDictObject *dict, PyObject *name, PyObject *value);
 // Export for '_asyncio' shared extension
 PyAPI_FUNC(int) _PyDict_SetItem_KnownHash_LockHeld(PyDictObject *mp, PyObject *key,
                                                    PyObject *value, Py_hash_t hash);
 // Export for '_asyncio' shared extension
 PyAPI_FUNC(int) _PyDict_GetItemRef_KnownHash_LockHeld(PyDictObject *op, PyObject *key, Py_hash_t hash, PyObject **result);
-extern int _PyDict_GetItemRef_KnownHash(PyDictObject *op, PyObject *key, Py_hash_t hash, PyObject **result);
+PyAPI_FUNC(int) _PyDict_GetItemRef_KnownHash(PyDictObject *op, PyObject *key, Py_hash_t hash, PyObject **result);
 extern int _PyDict_GetItemRef_Unicode_LockHeld(PyDictObject *op, PyObject *key, PyObject **result);
 PyAPI_FUNC(int) _PyObjectDict_SetItem(PyTypeObject *tp, PyObject *obj, PyObject **dictptr, PyObject *name, PyObject *value);
 
@@ -291,7 +292,7 @@ _PyDict_NotifyEvent(PyDict_WatchEvent event,
                     PyObject *value)
 {
     assert(Py_REFCNT((PyObject*)mp) > 0);
-    int watcher_bits = mp->_ma_watcher_tag & DICT_WATCHER_MASK;
+    int watcher_bits = FT_ATOMIC_LOAD_UINT64_ACQUIRE(mp->_ma_watcher_tag) & DICT_WATCHER_MASK;
     if (watcher_bits) {
         RARE_EVENT_STAT_INC(watched_dict_modification);
         _PyDict_SendEvent(watcher_bits, event, mp, key, value);
@@ -367,7 +368,7 @@ PyDictObject *_PyObject_MaterializeManagedDict_LockHeld(PyObject *);
 static inline Py_ssize_t
 _PyDict_UniqueId(PyDictObject *mp)
 {
-    return (Py_ssize_t)(mp->_ma_watcher_tag >> DICT_UNIQUE_ID_SHIFT);
+    return (Py_ssize_t)(FT_ATOMIC_LOAD_UINT64_RELAXED(mp->_ma_watcher_tag) >> DICT_UNIQUE_ID_SHIFT);
 }
 
 static inline void

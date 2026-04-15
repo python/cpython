@@ -328,14 +328,14 @@ class OrderedDict(dict):
         return self
 
     def __or__(self, other):
-        if not isinstance(other, dict):
+        if not isinstance(other, (dict, frozendict)):
             return NotImplemented
         new = self.__class__(self)
         new.update(other)
         return new
 
     def __ror__(self, other):
-        if not isinstance(other, dict):
+        if not isinstance(other, (dict, frozendict)):
             return NotImplemented
         new = self.__class__(other)
         new.update(self)
@@ -1216,14 +1216,14 @@ class UserDict(_collections_abc.MutableMapping):
     def __or__(self, other):
         if isinstance(other, UserDict):
             return self.__class__(self.data | other.data)
-        if isinstance(other, dict):
+        if isinstance(other, (dict, frozendict)):
             return self.__class__(self.data | other)
         return NotImplemented
 
     def __ror__(self, other):
         if isinstance(other, UserDict):
             return self.__class__(other.data | self.data)
-        if isinstance(other, dict):
+        if isinstance(other, (dict, frozendict)):
             return self.__class__(other | self.data)
         return NotImplemented
 
@@ -1252,6 +1252,20 @@ class UserDict(_collections_abc.MutableMapping):
             self.data = data
         c.update(self)
         return c
+
+
+    # This method has a default implementation in MutableMapping, but dict's
+    # equivalent is last-in, first-out instead of first-in, first-out.
+    def popitem(self):
+        """Remove and return a (key, value) pair as a 2-tuple.
+
+        Removes pairs in the same order as the wrapped mapping's popitem()
+        method. For dict objects (the default), that order is last-in,
+        first-out (LIFO).
+        Raises KeyError if the UserDict is empty.
+        """
+        return self.data.popitem()
+
 
     @classmethod
     def fromkeys(cls, iterable, value=None):
