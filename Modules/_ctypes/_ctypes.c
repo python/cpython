@@ -2291,7 +2291,7 @@ static PyObject *CreateSwappedType(ctypes_state *st, PyTypeObject *type,
     }
     if (set_stginfo_ffi_type_pointer(stginfo, fmt)) {
         Py_DECREF(result);
-        return PyErr_NoMemory();
+        return NULL;
     }
     stginfo->align = fmt->pffi_type->alignment;
     stginfo->length = 0;
