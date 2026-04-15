@@ -1676,7 +1676,7 @@ fix_error_int(const char *fmt)
     return -1;
 }
 
-// Return 0 if PTR represents "false", and 1 otherwise.
+// UNPACK_TO_BOOL: Return 0 if PTR represents "false", and 1 otherwise.
 static const _Bool bool_false = 0;
 #define UNPACK_TO_BOOL(PTR) (memcmp((PTR), &bool_false, sizeof(_Bool)) != 0)
 
