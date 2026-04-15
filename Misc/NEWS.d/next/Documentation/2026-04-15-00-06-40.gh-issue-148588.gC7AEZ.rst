@@ -1,3 +1,0 @@
-Document :attr:`module.__lazy_modules__`, the compatibility-mode mechanism
-for opting specific imports into lazy loading without the :keyword:`lazy`
-keyword, in the language reference and the "What's New in Python 3.15" page.
