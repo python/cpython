@@ -185,7 +185,7 @@ raise :exc:`SyntaxError`).
 For code that cannot use the ``lazy`` keyword directly (for example, when
 supporting Python versions older than 3.15 while still leveraging lazy
 imports on 3.15+), a module can define
-:attr:`~module.__lazy_modules__` as an :term:`iterable` of absolute module
+:attr:`~module.__lazy_modules__` as an :term:`iterable` of fully qualified module
 name strings.  Regular ``import`` statements for those modules are then treated
 as lazy, with the same semantics as the ``lazy`` keyword::
 
