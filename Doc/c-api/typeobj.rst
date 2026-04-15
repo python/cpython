@@ -1563,93 +1563,9 @@ and :c:data:`PyType_Type` effectively act as defaults.)
    .. corresponding-type-slot:: Py_tp_traverse
 
    An optional pointer to a traversal function for the garbage collector.  This is
-   only used if the :c:macro:`Py_TPFLAGS_HAVE_GC` flag bit is set.  The signature is::
+   only used if the :c:macro:`Py_TPFLAGS_HAVE_GC` flag bit is set.
 
-      int tp_traverse(PyObject *self, visitproc visit, void *arg);
-
-   More information about Python's garbage collection scheme can be found
-   in section :ref:`supporting-cycle-detection`.
-
-   The :c:member:`~PyTypeObject.tp_traverse` pointer is used by the garbage collector to detect
-   reference cycles. A typical implementation of a :c:member:`~PyTypeObject.tp_traverse` function
-   simply calls :c:func:`Py_VISIT` on each of the instance's members that are Python
-   objects that the instance owns. For example, this is function :c:func:`!local_traverse` from the
-   :mod:`!_thread` extension module::
-
-      static int
-      local_traverse(PyObject *op, visitproc visit, void *arg)
-      {
-          localobject *self = (localobject *) op;
-          Py_VISIT(self->args);
-          Py_VISIT(self->kw);
-          Py_VISIT(self->dict);
-          return 0;
-      }
-
-   Note that :c:func:`Py_VISIT` is called only on those members that can participate
-   in reference cycles.  Although there is also a ``self->key`` member, it can only
-   be ``NULL`` or a Python string and therefore cannot be part of a reference cycle.
-
-   On the other hand, even if you know a member can never be part of a cycle, as a
-   debugging aid you may want to visit it anyway just so the :mod:`gc` module's
-   :func:`~gc.get_referents` function will include it.
-
-   Heap types (:c:macro:`Py_TPFLAGS_HEAPTYPE`) must visit their type with::
-
-       Py_VISIT(Py_TYPE(self));
-
-   It is only needed since Python 3.9. To support Python 3.8 and older, this
-   line must be conditional::
-
-       #if PY_VERSION_HEX >= 0x03090000
-           Py_VISIT(Py_TYPE(self));
-       #endif
-
-   If the :c:macro:`Py_TPFLAGS_MANAGED_DICT` bit is set in the
-   :c:member:`~PyTypeObject.tp_flags` field, the traverse function must call
-   :c:func:`PyObject_VisitManagedDict` like this::
-
-       PyObject_VisitManagedDict((PyObject*)self, visit, arg);
-
-   .. warning::
-       When implementing :c:member:`~PyTypeObject.tp_traverse`, only the
-       members that the instance *owns* (by having :term:`strong references
-       <strong reference>` to them) must be
-       visited. For instance, if an object supports weak references via the
-       :c:member:`~PyTypeObject.tp_weaklist` slot, the pointer supporting
-       the linked list (what *tp_weaklist* points to) must **not** be
-       visited as the instance does not directly own the weak references to itself
-       (the weakreference list is there to support the weak reference machinery,
-       but the instance has no strong reference to the elements inside it, as they
-       are allowed to be removed even if the instance is still alive).
-
-   .. warning::
-      The traversal function must not have any side effects.  It must not
-      modify the reference counts of any Python objects nor create or destroy
-      any Python objects.
-
-   Note that :c:func:`Py_VISIT` requires the *visit* and *arg* parameters to
-   :c:func:`!local_traverse` to have these specific names; don't name them just
-   anything.
-
-   Instances of :ref:`heap-allocated types <heap-types>` hold a reference to
-   their type. Their traversal function must therefore either visit
-   :c:func:`Py_TYPE(self) <Py_TYPE>`, or delegate this responsibility by
-   calling ``tp_traverse`` of another heap-allocated type (such as a
-   heap-allocated superclass).
-   If they do not, the type object may not be garbage-collected.
-
-   .. note::
-
-      The :c:member:`~PyTypeObject.tp_traverse` function can be called from any
-      thread.
-
-   .. versionchanged:: 3.9
-
-      Heap-allocated types are expected to visit ``Py_TYPE(self)`` in
-      ``tp_traverse``.  In earlier versions of Python, due to
-      `bug 40217 <https://bugs.python.org/issue40217>`_, doing this
-      may lead to crashes in subclasses.
+   See :ref:`gc-traversal` for documentation.
 
    **Inheritance:**
 

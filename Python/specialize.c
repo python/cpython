@@ -846,8 +846,13 @@ do_specialize_instance_load_attr(PyObject* owner, _Py_CODEUNIT* instr, PyObject*
                 return -1;
             }
             #endif
+            uint32_t func_version = function_get_version(fget, LOAD_ATTR);
+            if (func_version == 0) {
+                return -1;
+            }
             assert(tp_version != 0);
             write_u32(lm_cache->type_version, tp_version);
+            write_u32(lm_cache->keys_version, func_version);
             /* borrowed */
             write_ptr(lm_cache->descr, fget);
             specialize(instr, LOAD_ATTR_PROPERTY);
@@ -1201,22 +1206,33 @@ specialize_class_load_attr(PyObject *owner, _Py_CODEUNIT *instr,
         }
     }
     switch (kind) {
-        case METHOD:
-        case NON_DESCRIPTOR:
-            #ifdef Py_GIL_DISABLED
-            if (!_PyObject_HasDeferredRefcount(descr)) {
-                SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_ATTR_DESCR_NOT_DEFERRED);
+        case MUTABLE:
+            // special case for enums which has Py_TYPE(descr) == cls
+            // so guarding on type version is sufficient
+            if (Py_TYPE(descr) != cls) {
+                SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_ATTR_MUTABLE_CLASS);
                 Py_XDECREF(descr);
                 return -1;
             }
-            #endif
-            write_u32(cache->type_version, tp_version);
+            if (Py_TYPE(descr)->tp_descr_get || Py_TYPE(descr)->tp_descr_set) {
+                SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_ATTR_OVERRIDING_DESCRIPTOR);
+                Py_XDECREF(descr);
+                return -1;
+            }
+            _Py_FALLTHROUGH;
+        case METHOD:
+        case NON_DESCRIPTOR:
+#ifdef Py_GIL_DISABLED
+            maybe_enable_deferred_ref_count(descr);
+#endif
             write_ptr(cache->descr, descr);
             if (metaclass_check) {
-                write_u32(cache->keys_version, meta_version);
+                write_u32(cache->keys_version, tp_version);
+                write_u32(cache->type_version, meta_version);
                 specialize(instr, LOAD_ATTR_CLASS_WITH_METACLASS_CHECK);
             }
             else {
+                write_u32(cache->type_version, tp_version);
                 specialize(instr, LOAD_ATTR_CLASS);
             }
             Py_XDECREF(descr);
@@ -2195,24 +2211,24 @@ LONG_FLOAT_ACTION(compactlong_float_true_div, /)
 
 static _PyBinaryOpSpecializationDescr binaryop_extend_descrs[] = {
     /* long-long arithmetic */
-    {NB_OR, compactlongs_guard, compactlongs_or},
-    {NB_AND, compactlongs_guard, compactlongs_and},
-    {NB_XOR, compactlongs_guard, compactlongs_xor},
-    {NB_INPLACE_OR, compactlongs_guard, compactlongs_or},
-    {NB_INPLACE_AND, compactlongs_guard, compactlongs_and},
-    {NB_INPLACE_XOR, compactlongs_guard, compactlongs_xor},
+    {NB_OR, compactlongs_guard, compactlongs_or, &PyLong_Type, 1},
+    {NB_AND, compactlongs_guard, compactlongs_and, &PyLong_Type, 1},
+    {NB_XOR, compactlongs_guard, compactlongs_xor, &PyLong_Type, 1},
+    {NB_INPLACE_OR, compactlongs_guard, compactlongs_or, &PyLong_Type, 1},
+    {NB_INPLACE_AND, compactlongs_guard, compactlongs_and, &PyLong_Type, 1},
+    {NB_INPLACE_XOR, compactlongs_guard, compactlongs_xor, &PyLong_Type, 1},
 
     /* float-long arithemetic */
-    {NB_ADD, float_compactlong_guard, float_compactlong_add},
-    {NB_SUBTRACT, float_compactlong_guard, float_compactlong_subtract},
-    {NB_TRUE_DIVIDE, nonzero_float_compactlong_guard, float_compactlong_true_div},
-    {NB_MULTIPLY, float_compactlong_guard, float_compactlong_multiply},
+    {NB_ADD, float_compactlong_guard, float_compactlong_add, &PyFloat_Type, 1},
+    {NB_SUBTRACT, float_compactlong_guard, float_compactlong_subtract, &PyFloat_Type, 1},
+    {NB_TRUE_DIVIDE, nonzero_float_compactlong_guard, float_compactlong_true_div, &PyFloat_Type, 1},
+    {NB_MULTIPLY, float_compactlong_guard, float_compactlong_multiply, &PyFloat_Type, 1},
 
     /* float-float arithmetic */
-    {NB_ADD, compactlong_float_guard, compactlong_float_add},
-    {NB_SUBTRACT, compactlong_float_guard, compactlong_float_subtract},
-    {NB_TRUE_DIVIDE, nonzero_compactlong_float_guard, compactlong_float_true_div},
-    {NB_MULTIPLY, compactlong_float_guard, compactlong_float_multiply},
+    {NB_ADD, compactlong_float_guard, compactlong_float_add, &PyFloat_Type, 1},
+    {NB_SUBTRACT, compactlong_float_guard, compactlong_float_subtract, &PyFloat_Type, 1},
+    {NB_TRUE_DIVIDE, nonzero_compactlong_float_guard, compactlong_float_true_div, &PyFloat_Type, 1},
+    {NB_MULTIPLY, compactlong_float_guard, compactlong_float_multiply, &PyFloat_Type, 1},
 };
 
 static int
