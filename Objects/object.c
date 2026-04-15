@@ -1773,15 +1773,6 @@ _PyObject_GetMethodStackRef(PyThreadState *ts, _PyStackRef *self,
         PyObject *res = PyObject_GetAttr(obj, name);
         PyStackRef_CLEAR(*self);
         if (res != NULL) {
-            // gh-148608: If it's a method, unbind it right now to improve
-            // specialization later on.
-            if (Py_IS_TYPE(res, &PyMethod_Type)) {
-                PyMethodObject *as_meth = ((PyMethodObject *)res);
-                *method = PyStackRef_FromPyObjectNew(as_meth->im_func);
-                *self = PyStackRef_FromPyObjectNew(as_meth->im_self);
-                Py_DECREF(res);
-                return 1;
-            }
             *method = PyStackRef_FromPyObjectSteal(res);
             return 0;
         }
