@@ -1468,11 +1468,11 @@ dummy_func(void) {
     }
 
     op(_ITER_CHECK_RANGE, (iter, null_or_index -- iter, null_or_index)) {
-        if (sym_matches_type(iter, &PyRange_Type)) {
+        if (sym_matches_type(iter, &PyRangeIter_Type)) {
             ADD_OP(_NOP, 0, 0);
         }
         else {
-            sym_set_type(iter, &PyRange_Type);
+            sym_set_type(iter, &PyRangeIter_Type);
         }
     }
 
