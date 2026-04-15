@@ -306,7 +306,7 @@ typedef Py_hash_t (*hashfunc)(PyObject *);
 typedef PyObject *(*richcmpfunc) (PyObject *, PyObject *, int);
 typedef PyObject *(*getiterfunc) (PyObject *);
 typedef PyObject *(*iternextfunc) (PyObject *);
-typedef struct _py_object_index_pair {
+typedef struct {
     PyObject *object;
     Py_ssize_t index;
 } _PyObjectIndexPair;
