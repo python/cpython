@@ -948,13 +948,17 @@ Python versions older than 3.15 while leveraging lazy imports on 3.15+::
    import pathlib  # loaded lazily
 
 Relative imports are resolved to their absolute name before the lookup, so
-the sequence must always contain fully qualified module names::
+the sequence must always contain fully qualified module names.  For
+``from``-style imports, the name to list is the module being imported
+*from* (the base module, left of the ``import`` keyword), not the names
+imported from it::
 
    # In mypackage/mymodule.py
-   __lazy_modules__ = ["mypackage"]
+   __lazy_modules__ = ["mypackage", "mypackage.sub.utils"]
 
-   from . import utils  # loaded lazily: resolves to mypackage
-   import json          # loaded eagerly (not in __lazy_modules__)
+   from . import helper         # loaded lazily: . resolves to mypackage
+   from .sub.utils import func  # loaded lazily: .sub.utils resolves to mypackage.sub.utils
+   import json                  # loaded eagerly (not in __lazy_modules__)
 
 Imports inside functions, class bodies, or
 :keyword:`try`/:keyword:`except`/:keyword:`finally` blocks are always eager,
