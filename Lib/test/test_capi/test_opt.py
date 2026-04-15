@@ -2642,6 +2642,9 @@ class TestUopsOptimization(unittest.TestCase):
         uops = get_opnames(ex)
         # When the result of type(...) is known, _CALL_TYPE_1 is decomposed.
         self.assertNotIn("_CALL_TYPE_1", uops)
+        # _CALL_TYPE_1 produces 2 _POP_TOP_NOP (callable and null)
+        # type(42) is int produces 4 _POP_TOP_NOP
+        self.assertGreaterEqual(count_ops(ex, "_POP_TOP_NOP"), 6)
 
     def test_call_type_1_result_is_const(self):
         def testfunc(n):
