@@ -532,7 +532,7 @@ The following options are accepted:
    MIME type ``'application/octet-stream'`` for the ``Content-Type`` header
    when the content type cannot be guessed from the URL's extension (if any)::
 
-        python -m http.server --content-type text/html
+      python -m http.server --content-type text/html
 
    .. versionadded:: next
 
