@@ -197,7 +197,6 @@ distinguished from a number.  Use :c:func:`PyErr_Occurred` to disambiguate.
 
    .. c:function:: long PyLong_AS_LONG(PyObject *obj)
 
-      A :term:`soft deprecated` alias.
       Exactly equivalent to the preferred ``PyLong_AsLong``. In particular,
       it can fail with :exc:`OverflowError` or another exception.
 
