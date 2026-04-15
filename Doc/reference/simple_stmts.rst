@@ -931,8 +931,7 @@ Compatibility mode via ``__lazy_modules__``
 As an alternative to using the :keyword:`lazy` keyword, a module can opt
 into lazy loading for specific imports by defining a module-level
 :attr:`~module.__lazy_modules__` variable.  When present, it must be a
-container (an object implementing :meth:`~object.__contains__`) of fully
-qualified module name strings.  Any regular (non-``lazy``)
+container of fully qualified module name strings.  Any regular (non-``lazy``)
 :keyword:`import` statement at module scope whose target appears in
 :attr:`!__lazy_modules__` is treated as a lazy import, exactly as if the
 :keyword:`lazy` keyword had been used.
