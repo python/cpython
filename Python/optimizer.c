@@ -614,25 +614,19 @@ static inline int32_t
 compute_exit_quality(_Py_CODEUNIT *target_instr, int opcode,
                      const _PyJitTracerState *tracer)
 {
-    // We need to check for this, otherwise the first instruction (JUMP_BACKWARD usually)
-    // is mistakenly thought of as an exit.
-    if (uop_buffer_length((_PyJitUopBuffer *)&tracer->code_buffer) > CODE_SIZE_NO_PROGRESS) {
-        if (target_instr == tracer->initial_state.start_instr ||
-            target_instr == tracer->initial_state.close_loop_instr) {
-            return EXIT_QUALITY_CLOSE_LOOP;
-        }
-        else if (target_instr->op.code == ENTER_EXECUTOR && !_PyJit_EnterExecutorShouldStopTracing(opcode)) {
-            return EXIT_QUALITY_ENTER_EXECUTOR;
-        }
-        else if (opcode == JUMP_BACKWARD_JIT || opcode == JUMP_BACKWARD) {
-            return EXIT_QUALITY_BACKWARD_EDGE;
-        }
-        else if (opcode == JUMP_BACKWARD_NO_INTERRUPT) {
-            return EXIT_QUALITY_BACKWARD_EDGE_COROUTINE;
-        }
-        else if (_PyOpcode_Caches[_PyOpcode_Deopt[opcode]] > 0) {
-            return EXIT_QUALITY_SPECIALIZABLE;
-        }
+    if (target_instr == tracer->initial_state.close_loop_instr) {
+        return EXIT_QUALITY_CLOSE_LOOP;
+    }
+    else if (target_instr->op.code == ENTER_EXECUTOR && !_PyJit_EnterExecutorShouldStopTracing(opcode)) {
+        return EXIT_QUALITY_ENTER_EXECUTOR;
+    }
+    else if (opcode == JUMP_BACKWARD_JIT ||
+        opcode == JUMP_BACKWARD ||
+        opcode == JUMP_BACKWARD_NO_INTERRUPT) {
+        return EXIT_QUALITY_BACKWARD_EDGE;
+    }
+    else if (_PyOpcode_Caches[_PyOpcode_Deopt[opcode]] > 0) {
+        return EXIT_QUALITY_SPECIALIZABLE;
     }
     return EXIT_QUALITY_DEFAULT;
 }
