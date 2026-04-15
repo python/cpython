@@ -970,7 +970,7 @@ dummy_func(void) {
         PyObject *name = get_co_name(ctx, oparg >> 1);
         attr = lookup_attr(ctx, dependencies, this_instr, type, name,
                            _POP_TOP, _NOP);
-        self_or_null = sym_new_unknown(ctx);
+        self_or_null[0] = sym_new_unknown(ctx);
     }
 
     op(_LOAD_ATTR_NONDESCRIPTOR_WITH_VALUES, (descr/4, owner -- attr)) {

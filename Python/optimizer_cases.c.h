@@ -2656,7 +2656,7 @@
             PyObject *name = get_co_name(ctx, oparg >> 1);
             attr = lookup_attr(ctx, dependencies, this_instr, type, name,
                            _POP_TOP, _NOP);
-            self_or_null = sym_new_unknown(ctx);
+            self_or_null[0] = sym_new_unknown(ctx);
             CHECK_STACK_BOUNDS((oparg&1));
             stack_pointer[-1] = attr;
             stack_pointer += (oparg&1);
