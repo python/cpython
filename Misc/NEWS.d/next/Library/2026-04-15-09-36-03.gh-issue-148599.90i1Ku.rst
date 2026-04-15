@@ -1,1 +1,1 @@
-Update the phrasing and fix typos in the :mod:`socket` module's WSA error messages to match official documentation.
+Update the :mod:`socket` module's WSA error messages to match official documentation.
