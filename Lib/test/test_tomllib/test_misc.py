@@ -12,7 +12,6 @@ import tempfile
 import textwrap
 import unittest
 from test import support
-from test.support import os_helper
 from test.support.script_helper import assert_python_ok
 
 from . import tomllib
@@ -128,54 +127,19 @@ class TestMiscellaneous(unittest.TestCase):
         """
         importlib.import_module(f"{tomllib.__name__}._types")
 
-    def test_try_simple_decimal(self):
-        try_simple_decimal = tomllib._parser.try_simple_decimal
-        self.assertEqual(try_simple_decimal("123", 0), (3, 123))
-        self.assertEqual(try_simple_decimal("123\n", 0), (3, 123))
-        self.assertEqual(try_simple_decimal("123 456", 0), (3, 123))
-        self.assertEqual(try_simple_decimal("+123\n", 0), (4, 123))
-        self.assertEqual(try_simple_decimal("-123\n", 0), (4, -123))
-        self.assertEqual(try_simple_decimal("0\n", 0), (1, 0))
-        self.assertEqual(try_simple_decimal("+0\n", 0), (2, 0))
-        self.assertEqual(try_simple_decimal("-0\n", 0), (2, 0))
-        self.assertEqual(try_simple_decimal("[23]\n", 1), (3, 23))
-        self.assertEqual(try_simple_decimal("[23, 24]\n", 1), (3, 23))
-        self.assertEqual(try_simple_decimal("{x = 42}\n", 5), (7, 42))
-
-        self.assertIsNone(try_simple_decimal("+", 0), None)
-        self.assertIsNone(try_simple_decimal("-", 0), None)
-        self.assertIsNone(try_simple_decimal("+\n", 0), None)
-        self.assertIsNone(try_simple_decimal("-\n", 0), None)
-        self.assertIsNone(try_simple_decimal("+inf\n", 0), None)
-        self.assertIsNone(try_simple_decimal("-nan\n", 0), None)
-        self.assertIsNone(try_simple_decimal("0123\n", 0))
-        self.assertIsNone(try_simple_decimal("1979-05-27\n", 0))
-        self.assertIsNone(try_simple_decimal("12:32:00\n", 0))
-        self.assertIsNone(try_simple_decimal("1.0\n", 0))
-        self.assertIsNone(try_simple_decimal("1_000\n", 0))
-        self.assertIsNone(try_simple_decimal("0x123\n", 0))
-        self.assertIsNone(try_simple_decimal("0o123\n", 0))
-        self.assertIsNone(try_simple_decimal("0b100\n", 0))
-
     def test_lazy_import(self):
-        # Test that try_simple_decimal() can parse the TOML file without
-        # importing regular expressions (tomllib._re)
-        filename = os_helper.TESTFN
-        self.addCleanup(os_helper.unlink, filename)
-        toml = textwrap.dedent("""
-            [metadata]
-            int = 123
-            list = [+1, -2, 3]
-            table = {x=1, y=2}
-        """)
-        with open(filename, "w") as fp:
-            fp.write(toml)
-
-        code = textwrap.dedent(f"""
-            import sys, tomllib
-            with open({filename!a}, "rb") as fp:
-                tomllib.load(fp)
+        # Test the TOML file can be parsed without importing regular
+        # expressions (tomllib._re)
+        code = textwrap.dedent("""
+            import sys, tomllib, textwrap
+            document = textwrap.dedent('''
+                [metadata]
+                key = "text"
+                array = ["array", "of", "text"]
+                booleans = [true, false]
+            ''')
+            tomllib.loads(document)
             print("lazy import?", 'tomllib._re' not in sys.modules)
         """)
-        proc = assert_python_ok('-c', code)
-        self.assertIn(b'lazy import? True', proc.out)
+        proc = assert_python_ok("-c", code)
+        self.assertIn(b"lazy import? True", proc.out)

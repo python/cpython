@@ -5,8 +5,7 @@
 from __future__ import annotations
 
 # Defer loading regular expressions until we actually need them in
-# parse_value(). Before that, use try_simple_decimal() to parse simple
-# decimal numbers.
+# parse_value().
 __lazy_modules__ = ["tomllib._re"]
 
 from ._re import (
@@ -44,17 +43,6 @@ BARE_KEY_CHARS: Final = frozenset(
 )
 KEY_INITIAL_CHARS: Final = BARE_KEY_CHARS | frozenset("\"'")
 HEXDIGIT_CHARS: Final = frozenset("abcdef" "ABCDEF" "0123456789")
-
-# If one of these follows a "simple decimal" it could mean that
-# the value is actually something else (float, datetime...), so
-# optimized parsing should be abandoned.
-ILLEGAL_AFTER_SIMPLE_DECIMAL: Final = frozenset(
-    "eE."  # decimal
-    "xbo"  # hex, bin, oct
-    "-"  # datetime
-    ":"  # localtime
-    "_0123456789"  # complex decimal
-)
 
 BASIC_STR_ESCAPE_REPLACEMENTS: Final = frozendict( # type: ignore[name-defined]
     {
@@ -679,37 +667,6 @@ def parse_basic_str(src: str, pos: Pos, *, multiline: bool) -> tuple[Pos, str]:
         pos += 1
 
 
-def try_simple_decimal(
-    src: str, pos: Pos
-) -> None | tuple[Pos, int]:
-    """Parse a "simple" decimal integer.
-
-    An optimization that tries to parse a simple decimal integer
-    without underscores. Returns `None` if there's any uncertainty
-    on correctness.
-    """
-    start_pos = pos
-
-    if src.startswith(("+", "-"), pos):
-        pos += 1
-
-    if src.startswith("0", pos):
-        pos += 1
-    elif src.startswith(("1", "2", "3", "4", "5", "6", "7", "8", "9"), pos):
-        pos = skip_chars(src, pos, "0123456789")
-    else:
-        return None
-
-    try:
-        next_char = src[pos]
-    except IndexError:
-        next_char = None
-    if next_char in ILLEGAL_AFTER_SIMPLE_DECIMAL:
-        return None
-
-    return pos, int(src[start_pos:pos])
-
-
 def parse_value(
     src: str, pos: Pos, parse_float: ParseFloat
 ) -> tuple[Pos, Any]:
@@ -747,13 +704,6 @@ def parse_value(
     # Inline tables
     if char == "{":
         return parse_inline_table(src, pos, parse_float)
-
-    # Try a simple parser for decimal numbers. If it's able to parse all
-    # numbers, it avoids importing tomllib._re which has an impact on
-    # the tomllib startup time.
-    number = try_simple_decimal(src, pos)
-    if number is not None:
-        return number
 
     # Dates and times
     datetime_match = RE_DATETIME.match(src, pos)
