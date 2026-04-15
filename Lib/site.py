@@ -382,21 +382,24 @@ def addsitedir(sitedir, known_paths=None):
     except OSError:
         return
 
-    # Phase 1: Discover .start files and accumulate their entry points.
-    start_names = sorted(
-        name for name in names
-        if name.endswith(".start") and not name.startswith(".")
-    )
-    for name in start_names:
-        _read_start_file(sitedir, name)
-
-    # Phase 2: Read .pth files, accumulating paths and import lines.
+    # The following phases are defined by PEP 829.
+    # Phases 1-3: Read .pth files, accumulating paths and import lines.
     pth_names = sorted(
         name for name in names
         if name.endswith(".pth") and not name.startswith(".")
     )
     for name in pth_names:
         _read_pth_file(sitedir, name, known_paths)
+
+    # Phases 6-7: Discover .start files and accumulate their entry points.
+    # Import lines from .pth files with a matching .start file are discarded
+    # at flush time by _exec_imports().
+    start_names = sorted(
+        name for name in names
+        if name.endswith(".start") and not name.startswith(".")
+    )
+    for name in start_names:
+        _read_start_file(sitedir, name)
 
     # If standalone call (not from main()), flush immediately
     # so the caller sees the effect.
