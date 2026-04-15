@@ -351,6 +351,10 @@ getaddrinfo(const char*hostname, const char*servname,
             struct servent *sp;
             const char *proto;
 
+            if (pai->ai_flags & AI_NUMERICSERV) {
+                ERR(EAI_NONAME);
+            }
+
             proto = NULL;
             switch (pai->ai_socktype) {
             case GAI_ANY:

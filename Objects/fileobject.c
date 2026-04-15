@@ -3,10 +3,12 @@
 #include "Python.h"
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
 #include "pycore_runtime.h"       // _PyRuntime
+#include "pycore_unicodeobject.h" // _PyUnicode_AsUTF8String()
 
 #ifdef HAVE_UNISTD_H
 #  include <unistd.h>             // isatty()
 #endif
+
 
 #if defined(HAVE_GETC_UNLOCKED) && !defined(_Py_MEMORY_SANITIZER)
    /* clang MemorySanitizer doesn't yet understand getc_unlocked. */
@@ -66,9 +68,9 @@ PyFile_GetLine(PyObject *f, int n)
     }
     if (result != NULL && !PyBytes_Check(result) &&
         !PyUnicode_Check(result)) {
+        PyErr_Format(PyExc_TypeError,
+                     "%T.readline() must return a str, not %T", f, result);
         Py_SETREF(result, NULL);
-        PyErr_SetString(PyExc_TypeError,
-                   "object.readline() returned non-string");
     }
 
     if (n < 0 && result != NULL && PyBytes_Check(result)) {
@@ -191,8 +193,8 @@ PyObject_AsFileDescriptor(PyObject *o)
             Py_DECREF(fno);
         }
         else {
-            PyErr_SetString(PyExc_TypeError,
-                            "fileno() returned a non-integer");
+            PyErr_Format(PyExc_TypeError,
+                         "%T.fileno() must return an int, not %T", o, fno);
             Py_DECREF(fno);
             return -1;
         }
@@ -402,27 +404,27 @@ static PyMethodDef stdprinter_methods[] = {
 };
 
 static PyObject *
-get_closed(PyStdPrinter_Object *self, void *closure)
+get_closed(PyObject *self, void *Py_UNUSED(closure))
 {
     Py_RETURN_FALSE;
 }
 
 static PyObject *
-get_mode(PyStdPrinter_Object *self, void *closure)
+get_mode(PyObject *self, void *Py_UNUSED(closure))
 {
     return PyUnicode_FromString("w");
 }
 
 static PyObject *
-get_encoding(PyStdPrinter_Object *self, void *closure)
+get_encoding(PyObject *self, void *Py_UNUSED(closure))
 {
     Py_RETURN_NONE;
 }
 
 static PyGetSetDef stdprinter_getsetlist[] = {
-    {"closed", (getter)get_closed, NULL, "True if the file is closed"},
-    {"encoding", (getter)get_encoding, NULL, "Encoding of the file"},
-    {"mode", (getter)get_mode, NULL, "String giving the file mode"},
+    {"closed", get_closed, NULL, "True if the file is closed"},
+    {"encoding", get_encoding, NULL, "Encoding of the file"},
+    {"mode", get_mode, NULL, "String giving the file mode"},
     {0},
 };
 

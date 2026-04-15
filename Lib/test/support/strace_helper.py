@@ -38,7 +38,7 @@ class StraceResult:
 
         This assumes the program under inspection doesn't print any non-utf8
         strings which would mix into the strace output."""
-        decoded_events = self.event_bytes.decode('utf-8')
+        decoded_events = self.event_bytes.decode('utf-8', 'surrogateescape')
         matches = [
             _syscall_regex.match(event)
             for event in decoded_events.splitlines()
@@ -178,7 +178,10 @@ def get_syscalls(code, strace_flags, prelude="", cleanup="",
 # Moderately expensive (spawns a subprocess), so share results when possible.
 @cache
 def _can_strace():
-    res = strace_python("import sys; sys.exit(0)", [], check=False)
+    res = strace_python("import sys; sys.exit(0)",
+                        # --trace option needs strace 5.5 (gh-133741)
+                        ["--trace=%process"],
+                        check=False)
     if res.strace_returncode == 0 and res.python_returncode == 0:
         assert res.events(), "Should have parsed multiple calls"
         return True

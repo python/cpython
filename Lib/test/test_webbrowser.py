@@ -6,8 +6,8 @@ import subprocess
 import sys
 import unittest
 import webbrowser
-from functools import partial
 from test import support
+from test.support import force_not_colorized_test_class
 from test.support import import_helper
 from test.support import is_apple_mobile
 from test.support import os_helper
@@ -56,6 +56,14 @@ class CommandTestMixin:
             self.assertIn(option, popen_args)
             popen_args.pop(popen_args.index(option))
         self.assertEqual(popen_args, arguments)
+
+    def test_reject_dash_prefixes(self):
+        browser = self.browser_class(name=CMD_NAME)
+        with self.assertRaisesRegex(
+            ValueError,
+            r"^Invalid URL \(leading dash disallowed\): '--key=val http.*'$"
+        ):
+            browser.open(f"--key=val {URL}")
 
 
 class GenericBrowserCommandTest(CommandTestMixin, unittest.TestCase):
@@ -110,6 +118,15 @@ class ChromeCommandTest(CommandTestMixin, unittest.TestCase):
                        options=[],
                        arguments=[URL],
                        kw=dict(new=999))
+
+    def test_reject_action_dash_prefixes(self):
+        browser = self.browser_class(name=CMD_NAME)
+        with self.assertRaises(ValueError):
+            browser.open('%action--incognito')
+        # new=1: action is "--new-window", so "%action" itself expands to
+        # a dash-prefixed flag even with no dash in the original URL.
+        with self.assertRaises(ValueError):
+            browser.open('%action', new=1)
 
 
 class EdgeCommandTest(CommandTestMixin, unittest.TestCase):
@@ -322,6 +339,11 @@ class MockPopenPipe:
 @requires_subprocess()
 class MacOSXOSAScriptTest(unittest.TestCase):
     def setUp(self):
+        # Ensure that 'BROWSER' is not set to 'open' or something else.
+        # See: https://github.com/python/cpython/issues/131254.
+        env = self.enterContext(os_helper.EnvironmentVarGuard())
+        env.unset("BROWSER")
+
         support.patch(self, os, "popen", self.mock_popen)
         self.browser = webbrowser.MacOSXOSAScript("default")
 
@@ -338,7 +360,7 @@ class MacOSXOSAScriptTest(unittest.TestCase):
         url = "https://python.org"
         self.browser.open(url)
         self.assertTrue(self.popen_pipe._closed)
-        self.assertEqual(self.popen_pipe.cmd, "osascript")
+        self.assertEqual(self.popen_pipe.cmd, "/usr/bin/osascript")
         script = self.popen_pipe.pipe.getvalue()
         self.assertEqual(script.strip(), f'open location "{url}"')
 
@@ -364,6 +386,13 @@ class MacOSXOSAScriptTest(unittest.TestCase):
         script = self.popen_pipe.pipe.getvalue()
         self.assertIn('tell application "safari"', script)
         self.assertIn('open location "https://python.org"', script)
+
+    def test_reject_dash_prefixes(self):
+        with self.assertRaisesRegex(
+            ValueError,
+            r"^Invalid URL \(leading dash disallowed\): '--key=val http.*'$"
+        ):
+            self.browser.open(f"--key=val {URL}")
 
 
 class BrowserRegistrationTest(unittest.TestCase):
@@ -498,6 +527,7 @@ class ImportTest(unittest.TestCase):
             self.assertEqual(webbrowser.get().name, sys.executable)
 
 
+@force_not_colorized_test_class
 class CliTest(unittest.TestCase):
     def test_parse_args(self):
         for command, url, new_win in [

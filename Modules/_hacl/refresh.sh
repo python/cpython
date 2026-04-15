@@ -22,7 +22,7 @@ fi
 
 # Update this when updating to a new version after verifying that the changes
 # the update brings in are good.
-expected_hacl_star_rev=322f6d58290e0ed7f4ecb84fcce12917aa0f594b
+expected_hacl_star_rev=8ba599b2f6c9701b3dc961db895b0856a2210f76
 
 hacl_dir="$(realpath "$1")"
 cd "$(dirname "$0")"
@@ -41,6 +41,8 @@ fi
 declare -a dist_files
 dist_files=(
   Hacl_Streaming_Types.h
+  internal/Hacl_Streaming_Types.h
+# Cryptographic Hash Functions (headers)
   Hacl_Hash_MD5.h
   Hacl_Hash_SHA1.h
   Hacl_Hash_SHA2.h
@@ -49,6 +51,10 @@ dist_files=(
   Hacl_Hash_Blake2s.h
   Hacl_Hash_Blake2b_Simd256.h
   Hacl_Hash_Blake2s_Simd128.h
+# Cryptographic Primitives (headers)
+  Hacl_HMAC.h
+  Hacl_Streaming_HMAC.h
+# Cryptographic Hash Functions (internal headers)
   internal/Hacl_Hash_MD5.h
   internal/Hacl_Hash_SHA1.h
   internal/Hacl_Hash_SHA2.h
@@ -58,7 +64,10 @@ dist_files=(
   internal/Hacl_Hash_Blake2b_Simd256.h
   internal/Hacl_Hash_Blake2s_Simd128.h
   internal/Hacl_Impl_Blake2_Constants.h
-  internal/Hacl_Streaming_Types.h
+# Cryptographic Primitives (internal headers)
+  internal/Hacl_HMAC.h
+  internal/Hacl_Streaming_HMAC.h
+# Cryptographic Hash Functions (sources)
   Hacl_Hash_MD5.c
   Hacl_Hash_SHA1.c
   Hacl_Hash_SHA2.c
@@ -67,7 +76,12 @@ dist_files=(
   Hacl_Hash_Blake2s.c
   Hacl_Hash_Blake2b_Simd256.c
   Hacl_Hash_Blake2s_Simd128.c
+# Cryptographic Primitives (sources)
+  Hacl_HMAC.c
+  Hacl_Streaming_HMAC.c
+# Miscellaneous
   libintvector.h
+  libintvector-shim.h
   lib_memzero0.h
   Lib_Memzero0.c
 )
@@ -126,7 +140,13 @@ $sed -i -z 's!#define KRML_TYPES_H!#define KRML_TYPES_H\n#define KRML_VERIFIED_U
 $sed -i 's!#include.*Hacl_Krmllib.h"!!g' "${all_files[@]}"
 
 # Use globally unique names for the Hacl_ C APIs to avoid linkage conflicts.
-$sed -i -z 's!#include <string.h>!#include <string.h>\n#include "python_hacl_namespaces.h"!' Hacl_Hash_*.h
+$sed -i -z 's!#include <string.h>!#include <string.h>\n#include "python_hacl_namespaces.h"!' \
+  Hacl_Hash_*.h \
+  Hacl_HMAC.h \
+  Hacl_Streaming_HMAC.h
+
+$sed -i -z 's!#include <inttypes.h>!#include <inttypes.h>\n#include "python_hacl_namespaces.h"!' \
+  lib_memzero0.h
 
 # Step 3: trim whitespace (for the linter)
 

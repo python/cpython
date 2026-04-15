@@ -3,12 +3,15 @@
 #endif
 
 #include "Python.h"
+#include "pycore_ceval.h"         // _Py_EnterRecursiveCall()
 #include "pycore_import.h"        // _PyImport_SetModule()
 #include "pycore_pyhash.h"        // _Py_HashSecret
 #include "pycore_traceback.h"     // _PyTraceback_Add()
 
 #include <stdbool.h>
 #include <stddef.h>               // offsetof()
+
+#include "expat_config.h"
 #include "expat.h"
 #include "pyexpat.h"
 
@@ -74,6 +77,15 @@ typedef struct {
     PyObject_HEAD
 
     XML_Parser itself;
+    /*
+     * Strong reference to a parent `xmlparseobject` if this parser
+     * is a child parser. Set to NULL if this parser is a root parser.
+     * This is needed to keep the parent parser alive as long as it has
+     * at least one child parser.
+     *
+     * See https://github.com/python/cpython/issues/139400 for details.
+     */
+    PyObject *parent;
     int ordered_attributes;     /* Return attributes as a list. */
     int specified_attributes;   /* Report only specified attributes. */
     int in_callback;            /* Is a callback active? */
@@ -98,7 +110,11 @@ typedef struct {
 
 #define CHARACTER_DATA_BUFFER_SIZE 8192
 
-typedef const void *xmlhandler;
+// A generic function type for storage.
+// To avoid undefined behaviors, a handler must be cast to the correct
+// function type before it's called; see SETTER_WRAPPER below.
+typedef void (*xmlhandler)(void);
+
 typedef void (*xmlhandlersetter)(XML_Parser self, xmlhandler handler);
 
 struct HandlerInfo {
@@ -110,27 +126,77 @@ struct HandlerInfo {
 
 static struct HandlerInfo handler_info[64];
 
-#define CALL_XML_HANDLER_SETTER(HANDLER_INFO, XML_PARSER, XML_HANDLER)      \
-    do {                                                                    \
-        xmlhandlersetter setter = (xmlhandlersetter)(HANDLER_INFO).setter;  \
-        setter((XML_PARSER), (XML_HANDLER));                                \
-    } while (0)
+static inline void
+CALL_XML_HANDLER_SETTER(const struct HandlerInfo *handler_info,
+                        XML_Parser xml_parser, xmlhandler xml_handler)
+{
+    xmlhandlersetter setter = (xmlhandlersetter)handler_info->setter;
+    setter(xml_parser, xml_handler);
+}
+
+static int
+set_xml_error_attr_code(PyObject *err, enum XML_Error code)
+{
+    PyObject *v = PyLong_FromLong((long)code);
+    int ok = v != NULL && PyObject_SetAttr(err, &_Py_ID(code), v) != -1;
+    Py_XDECREF(v);
+    return ok;
+}
 
 /* Set an integer attribute on the error object; return true on success,
  * false on an exception.
  */
 static int
-set_error_attr(PyObject *err, const char *name, int value)
+set_xml_error_attr_location(PyObject *err, const char *name, XML_Size value)
 {
-    PyObject *v = PyLong_FromLong(value);
-
-    if (v == NULL || PyObject_SetAttrString(err, name, v) == -1) {
-        Py_XDECREF(v);
-        return 0;
-    }
-    Py_DECREF(v);
-    return 1;
+    PyObject *v = PyLong_FromSize_t((size_t)value);
+    int ok = v != NULL && PyObject_SetAttrString(err, name, v) != -1;
+    Py_XDECREF(v);
+    return ok;
 }
+
+
+static PyObject *
+set_xml_error(pyexpat_state *state,
+              enum XML_Error code, XML_Size lineno, XML_Size column,
+              const char *errmsg)
+{
+    PyObject *arg;
+    if (errmsg == NULL) {
+        arg = PyUnicode_FromFormat(
+            "%s: line %zu, column %zu",
+            XML_ErrorString(code),
+            (size_t)lineno, (size_t)column
+        );
+    }
+    else {
+        arg = PyUnicode_FromStringAndSize(errmsg, strlen(errmsg));
+    }
+    if (arg == NULL) {
+        return NULL;
+    }
+    PyObject *res = PyObject_CallOneArg(state->error, arg);
+    Py_DECREF(arg);
+    if (
+        res != NULL
+        && set_xml_error_attr_code(res, code)
+        && set_xml_error_attr_location(res, "lineno", lineno)
+        && set_xml_error_attr_location(res, "offset", column)
+    ) {
+        PyErr_SetObject(state->error, res);
+    }
+    Py_XDECREF(res);
+    return NULL;
+}
+
+#define SET_XML_ERROR(STATE, SELF, CODE, ERRMSG)                    \
+    do {                                                            \
+        XML_Parser parser = SELF->itself;                           \
+        assert(parser != NULL);                                     \
+        XML_Size lineno = XML_GetCurrentLineNumber(parser);         \
+        XML_Size column = XML_GetCurrentColumnNumber(parser);       \
+        (void)set_xml_error(state, CODE, lineno, column, ERRMSG);   \
+    } while (0)
 
 /* Build and set an Expat exception, including positioning
  * information.  Always returns NULL.
@@ -138,27 +204,20 @@ set_error_attr(PyObject *err, const char *name, int value)
 static PyObject *
 set_error(pyexpat_state *state, xmlparseobject *self, enum XML_Error code)
 {
-    PyObject *err;
-    PyObject *buffer;
-    XML_Parser parser = self->itself;
-    int lineno = XML_GetErrorLineNumber(parser);
-    int column = XML_GetErrorColumnNumber(parser);
-
-    buffer = PyUnicode_FromFormat("%s: line %i, column %i",
-                                  XML_ErrorString(code), lineno, column);
-    if (buffer == NULL)
-        return NULL;
-    err = PyObject_CallOneArg(state->error, buffer);
-    Py_DECREF(buffer);
-    if (  err != NULL
-          && set_error_attr(err, "code", code)
-          && set_error_attr(err, "offset", column)
-          && set_error_attr(err, "lineno", lineno)) {
-        PyErr_SetObject(state->error, err);
-    }
-    Py_XDECREF(err);
+    SET_XML_ERROR(state, self, code, NULL);
     return NULL;
 }
+
+#if XML_COMBINED_VERSION >= 20400
+static PyObject *
+set_invalid_arg(pyexpat_state *state, xmlparseobject *self, const char *errmsg)
+{
+    SET_XML_ERROR(state, self, XML_ERROR_INVALID_ARGUMENT, errmsg);
+    return NULL;
+}
+#endif
+
+#undef SET_XML_ERROR
 
 static int
 have_handler(xmlparseobject *self, int type)
@@ -180,6 +239,12 @@ conv_string_to_unicode(const XML_Char *str)
         Py_RETURN_NONE;
     }
     return PyUnicode_DecodeUTF8(str, strlen(str), "strict");
+}
+
+static PyObject *
+conv_string_to_unicode_void(void *arg)
+{
+    return conv_string_to_unicode((const XML_Char *)arg);
 }
 
 static PyObject *
@@ -438,6 +503,28 @@ my_StartElementHandler(void *userData,
     }
 }
 
+static inline void
+invalid_expat_handler_rv(const char *name)
+{
+    PyObject *exc = PyErr_GetRaisedException();
+    assert(exc != NULL);
+    PyObject *note = PyUnicode_FromFormat("invalid '%s' event handler return value", name);
+    if (note == NULL) {
+        goto error;
+    }
+    int rc = _PyException_AddNote(exc, note);
+    Py_DECREF(note);
+    if (rc < 0) {
+        goto error;
+    };
+    goto done;
+
+error:
+    PyErr_Clear();
+done:
+    PyErr_SetRaisedException(exc);
+}
+
 #define RC_HANDLER(RETURN_TYPE, NAME, PARAMS,       \
                    INIT, PARSE_FORMAT, CONVERSION,  \
                    RETURN_VARIABLE, GETUSERDATA)    \
@@ -471,6 +558,9 @@ my_ ## NAME ## Handler PARAMS {                     \
     }                                               \
     CONVERSION                                      \
     Py_DECREF(rv);                                  \
+    if (PyErr_Occurred()) {                         \
+        invalid_expat_handler_rv(#NAME);            \
+    }                                               \
     return RETURN_VARIABLE;                         \
 }
 
@@ -498,7 +588,7 @@ VOID_HANDLER(ProcessingInstruction,
              (void *userData,
               const XML_Char *target,
               const XML_Char *data),
-             ("(NO&)", string_intern(self, target), conv_string_to_unicode ,data))
+             ("(NO&)", string_intern(self, target), conv_string_to_unicode_void, data))
 
 VOID_HANDLER(UnparsedEntityDecl,
              (void *userData,
@@ -535,13 +625,18 @@ VOID_HANDLER(XmlDecl,
               const XML_Char *encoding,
               int standalone),
              ("(O&O&i)",
-              conv_string_to_unicode ,version, conv_string_to_unicode ,encoding,
+              conv_string_to_unicode_void, version,
+              conv_string_to_unicode_void, encoding,
               standalone))
 
 static PyObject *
 conv_content_model(XML_Content * const model,
-                   PyObject *(*conv_string)(const XML_Char *))
+                   PyObject *(*conv_string)(void *))
 {
+    if (_Py_EnterRecursiveCall(" in conv_content_model")) {
+        return NULL;
+    }
+
     PyObject *result = NULL;
     PyObject *children = PyTuple_New(model->numchildren);
     int i;
@@ -553,14 +648,16 @@ conv_content_model(XML_Content * const model,
                                                  conv_string);
             if (child == NULL) {
                 Py_XDECREF(children);
-                return NULL;
+                goto done;
             }
             PyTuple_SET_ITEM(children, i, child);
         }
         result = Py_BuildValue("(iiO&N)",
                                model->type, model->quant,
-                               conv_string,model->name, children);
+                               conv_string, model->name, children);
     }
+done:
+    _Py_LeaveRecursiveCall();
     return result;
 }
 
@@ -577,11 +674,11 @@ my_ElementDeclHandler(void *userData,
         PyObject *modelobj, *nameobj;
 
         if (PyErr_Occurred())
-            return;
+            goto finally;
 
         if (flush_character_buffer(self) < 0)
             goto finally;
-        modelobj = conv_content_model(model, (conv_string_to_unicode));
+        modelobj = conv_content_model(model, conv_string_to_unicode_void);
         if (modelobj == NULL) {
             flag_error(self);
             goto finally;
@@ -622,7 +719,8 @@ VOID_HANDLER(AttlistDecl,
               int isrequired),
              ("(NNO&O&i)",
               string_intern(self, elname), string_intern(self, attname),
-              conv_string_to_unicode ,att_type, conv_string_to_unicode ,dflt,
+              conv_string_to_unicode_void, att_type,
+              conv_string_to_unicode_void, dflt,
               isrequired))
 
 #if XML_COMBINED_VERSION >= 19504
@@ -658,7 +756,7 @@ VOID_HANDLER(EndNamespaceDecl,
 
 VOID_HANDLER(Comment,
                (void *userData, const XML_Char *data),
-                ("(O&)", conv_string_to_unicode ,data))
+                ("(O&)", conv_string_to_unicode_void, data))
 
 VOID_HANDLER(StartCdataSection,
                (void *userData),
@@ -689,7 +787,8 @@ RC_HANDLER(int, ExternalEntityRef,
                     const XML_Char *publicId),
                 int rc=0;,
                 ("(O&NNN)",
-                 conv_string_to_unicode ,context, string_intern(self, base),
+                 conv_string_to_unicode_void, context,
+                 string_intern(self, base),
                  string_intern(self, systemId), string_intern(self, publicId)),
                 rc = PyLong_AsLong(rv);, rc,
                 XML_GetUserData(parser))
@@ -752,6 +851,7 @@ pyexpat_xmlparser_SetReparseDeferralEnabled_impl(xmlparseobject *self,
 }
 
 /*[clinic input]
+@permit_long_summary
 pyexpat.xmlparser.GetReparseDeferralEnabled
 
 Retrieve reparse deferral enabled status; always returns false with Expat <2.6.0.
@@ -759,7 +859,7 @@ Retrieve reparse deferral enabled status; always returns false with Expat <2.6.0
 
 static PyObject *
 pyexpat_xmlparser_GetReparseDeferralEnabled_impl(xmlparseobject *self)
-/*[clinic end generated code: output=4e91312e88a595a8 input=54b5f11d32b20f3e]*/
+/*[clinic end generated code: output=4e91312e88a595a8 input=ae02d7152ab9e2d0]*/
 {
     return PyBool_FromLong(self->reparse_deferral_enabled);
 }
@@ -953,6 +1053,7 @@ pyexpat_xmlparser_GetBase_impl(xmlparseobject *self)
 }
 
 /*[clinic input]
+@permit_long_docstring_body
 pyexpat.xmlparser.GetInputContext
 
 Return the untranslated text of the input that caused the current event.
@@ -963,7 +1064,7 @@ for an element with many attributes), not all of the text may be available.
 
 static PyObject *
 pyexpat_xmlparser_GetInputContext_impl(xmlparseobject *self)
-/*[clinic end generated code: output=a88026d683fc22cc input=034df8712db68379]*/
+/*[clinic end generated code: output=a88026d683fc22cc input=925cea010fdfa682]*/
 {
     if (self->in_callback) {
         int offset, size;
@@ -981,6 +1082,7 @@ pyexpat_xmlparser_GetInputContext_impl(xmlparseobject *self)
 }
 
 /*[clinic input]
+@permit_long_summary
 pyexpat.xmlparser.ExternalEntityParserCreate
 
     cls: defining_class
@@ -996,7 +1098,7 @@ pyexpat_xmlparser_ExternalEntityParserCreate_impl(xmlparseobject *self,
                                                   PyTypeObject *cls,
                                                   const char *context,
                                                   const char *encoding)
-/*[clinic end generated code: output=01d4472b49cb3f92 input=ec70c6b9e6e9619a]*/
+/*[clinic end generated code: output=01d4472b49cb3f92 input=550479eaff952cc0]*/
 {
     xmlparseobject *new_parser;
     pyexpat_state *state = PyType_GetModuleState(cls);
@@ -1015,6 +1117,10 @@ pyexpat_xmlparser_ExternalEntityParserCreate_impl(xmlparseobject *self,
     new_parser->ns_prefixes = self->ns_prefixes;
     new_parser->itself = XML_ExternalEntityParserCreate(self->itself, context,
                                                         encoding);
+    // The new subparser will make use of the parent XML_Parser inside of Expat.
+    // So we need to take subparsers into account with the reference counting
+    // of their parent parser.
+    new_parser->parent = Py_NewRef(self);
     new_parser->handlers = 0;
     new_parser->intern = Py_XNewRef(self->intern);
 
@@ -1050,7 +1156,7 @@ pyexpat_xmlparser_ExternalEntityParserCreate_impl(xmlparseobject *self,
         if (handler != NULL) {
             new_parser->handlers[i] = Py_NewRef(handler);
             struct HandlerInfo info = handler_info[i];
-            CALL_XML_HANDLER_SETTER(info, new_parser->itself, info.handler);
+            CALL_XML_HANDLER_SETTER(&info, new_parser->itself, info.handler);
         }
     }
 
@@ -1059,6 +1165,7 @@ pyexpat_xmlparser_ExternalEntityParserCreate_impl(xmlparseobject *self,
 }
 
 /*[clinic input]
+@permit_long_summary
 pyexpat.xmlparser.SetParamEntityParsing
 
     flag: int
@@ -1074,7 +1181,7 @@ was successful.
 
 static PyObject *
 pyexpat_xmlparser_SetParamEntityParsing_impl(xmlparseobject *self, int flag)
-/*[clinic end generated code: output=18668ee8e760d64c input=8aea19b4b15e9af1]*/
+/*[clinic end generated code: output=18668ee8e760d64c input=1c43532fcb405879]*/
 {
     flag = XML_SetParamEntityParsing(self->itself, flag);
     return PyLong_FromLong(flag);
@@ -1083,6 +1190,8 @@ pyexpat_xmlparser_SetParamEntityParsing_impl(xmlparseobject *self, int flag)
 
 #if XML_COMBINED_VERSION >= 19505
 /*[clinic input]
+@permit_long_summary
+@permit_long_docstring_body
 pyexpat.xmlparser.UseForeignDTD
 
     cls: defining_class
@@ -1099,7 +1208,7 @@ information to the parser. 'flag' defaults to True if not provided.
 static PyObject *
 pyexpat_xmlparser_UseForeignDTD_impl(xmlparseobject *self, PyTypeObject *cls,
                                      int flag)
-/*[clinic end generated code: output=d7d98252bd25a20f input=23440ecb0573fb29]*/
+/*[clinic end generated code: output=d7d98252bd25a20f input=c2264845d8c0029c]*/
 {
     pyexpat_state *state = PyType_GetModuleState(cls);
     enum XML_Error rc;
@@ -1112,6 +1221,192 @@ pyexpat_xmlparser_UseForeignDTD_impl(xmlparseobject *self, PyTypeObject *cls,
 }
 #endif
 
+#if XML_COMBINED_VERSION >= 20400
+static PyObject *
+set_activation_threshold(xmlparseobject *self,
+                         PyTypeObject *cls,
+                         unsigned long long threshold,
+                         XML_Bool (*setter)(XML_Parser, unsigned long long))
+{
+    assert(self->itself != NULL);
+    if (setter(self->itself, threshold) == XML_TRUE) {
+        Py_RETURN_NONE;
+    }
+    // The setter fails if self->itself is NULL (which is not possible here)
+    // or is a non-root parser, which currently only happens for parsers
+    // created by ExternalEntityParserCreate().
+    pyexpat_state *state = PyType_GetModuleState(cls);
+    return set_invalid_arg(state, self, "parser must be a root parser");
+}
+
+static PyObject *
+set_maximum_amplification(xmlparseobject *self,
+                          PyTypeObject *cls,
+                          float max_factor,
+                          XML_Bool (*setter)(XML_Parser, float))
+{
+    assert(self->itself != NULL);
+    if (setter(self->itself, max_factor) == XML_TRUE) {
+        Py_RETURN_NONE;
+    }
+    // The setter fails if self->itself is NULL (which is not possible here),
+    // is a non-root parser, which currently only happens for parsers created
+    // by ExternalEntityParserCreate(), or if 'max_factor' is NaN or < 1.0.
+    pyexpat_state *state = PyType_GetModuleState(cls);
+    // Note: Expat has no API to determine whether a parser is a root parser,
+    // and since the Expat functions for defining the various maximum allowed
+    // amplifcation factors fail when a bad parser or an out-of-range factor
+    // is given without specifying which check failed, we check whether the
+    // factor is out-of-range to improve the error message. See also gh-90949.
+    const char *message = (isnan(max_factor) || max_factor < 1.0f)
+          ? "'max_factor' must be at least 1.0"
+          : "parser must be a root parser";
+    return set_invalid_arg(state, self, message);
+}
+#endif
+
+#if XML_COMBINED_VERSION >= 20400
+/*[clinic input]
+@permit_long_summary
+@permit_long_docstring_body
+pyexpat.xmlparser.SetBillionLaughsAttackProtectionActivationThreshold
+
+    cls: defining_class
+    threshold: unsigned_long_long
+    /
+
+Sets the number of output bytes needed to activate protection against billion laughs attacks.
+
+The number of output bytes includes amplification from entity expansion
+and reading DTD files.
+
+Parser objects usually have a protection activation threshold of 8 MiB,
+but the actual default value depends on the underlying Expat library.
+
+Activation thresholds below 4 MiB are known to break support for DITA 1.3
+payload and are hence not recommended.
+[clinic start generated code]*/
+
+static PyObject *
+pyexpat_xmlparser_SetBillionLaughsAttackProtectionActivationThreshold_impl(xmlparseobject *self,
+                                                                           PyTypeObject *cls,
+                                                                           unsigned long long threshold)
+/*[clinic end generated code: output=0c082342f1c78114 input=fa2f91f26b62a42a]*/
+{
+    return set_activation_threshold(
+        self, cls, threshold,
+        XML_SetBillionLaughsAttackProtectionActivationThreshold
+    );
+}
+#endif
+
+#if XML_COMBINED_VERSION >= 20400
+/*[clinic input]
+@permit_long_summary
+@permit_long_docstring_body
+pyexpat.xmlparser.SetBillionLaughsAttackProtectionMaximumAmplification
+
+    cls: defining_class
+    max_factor: float
+    /
+
+Sets the maximum tolerated amplification factor for protection against billion laughs attacks.
+
+The amplification factor is calculated as "(direct + indirect) / direct"
+while parsing, where "direct" is the number of bytes read from the primary
+document in parsing and "indirect" is the number of bytes added by expanding
+entities and reading external DTD files, combined.
+
+The 'max_factor' value must be a non-NaN floating point value greater than
+or equal to 1.0. Amplification factors greater than 30,000 can be observed
+in the middle of parsing even with benign files in practice. In particular,
+the activation threshold should be carefully chosen to avoid false positives.
+
+Parser objects usually have a maximum amplification factor of 100,
+but the actual default value depends on the underlying Expat library.
+[clinic start generated code]*/
+
+static PyObject *
+pyexpat_xmlparser_SetBillionLaughsAttackProtectionMaximumAmplification_impl(xmlparseobject *self,
+                                                                            PyTypeObject *cls,
+                                                                            float max_factor)
+/*[clinic end generated code: output=c590439eadf463fa input=cc1e97c1fd2bd950]*/
+{
+    return set_maximum_amplification(
+        self, cls, max_factor,
+        XML_SetBillionLaughsAttackProtectionMaximumAmplification
+    );
+}
+#endif
+
+#if XML_COMBINED_VERSION >= 20702
+/*[clinic input]
+@permit_long_summary
+@permit_long_docstring_body
+pyexpat.xmlparser.SetAllocTrackerActivationThreshold
+
+    cls: defining_class
+    threshold: unsigned_long_long
+    /
+
+Sets the number of allocated bytes of dynamic memory needed to activate protection against disproportionate use of RAM.
+
+Parser objects usually have an allocation activation threshold of 64 MiB,
+but the actual default value depends on the underlying Expat library.
+[clinic start generated code]*/
+
+static PyObject *
+pyexpat_xmlparser_SetAllocTrackerActivationThreshold_impl(xmlparseobject *self,
+                                                          PyTypeObject *cls,
+                                                          unsigned long long threshold)
+/*[clinic end generated code: output=bed7e93207ba08c5 input=b7a7a3e3d054286a]*/
+{
+    return set_activation_threshold(
+        self, cls, threshold,
+        XML_SetAllocTrackerActivationThreshold
+    );
+}
+#endif
+
+#if XML_COMBINED_VERSION >= 20702
+/*[clinic input]
+@permit_long_summary
+@permit_long_docstring_body
+pyexpat.xmlparser.SetAllocTrackerMaximumAmplification
+
+    cls: defining_class
+    max_factor: float
+    /
+
+Sets the maximum amplification factor between direct input and bytes of dynamic memory allocated.
+
+The amplification factor is calculated as "allocated / direct" while parsing,
+where "direct" is the number of bytes read from the primary document in parsing
+and "allocated" is the number of bytes of dynamic memory allocated in the parser
+hierarchy.
+
+The 'max_factor' value must be a non-NaN floating point value greater than
+or equal to 1.0. Amplification factors greater than 100.0 can be observed
+near the start of parsing even with benign files in practice. In particular,
+the activation threshold should be carefully chosen to avoid false positives.
+
+Parser objects usually have a maximum amplification factor of 100,
+but the actual default value depends on the underlying Expat library.
+[clinic start generated code]*/
+
+static PyObject *
+pyexpat_xmlparser_SetAllocTrackerMaximumAmplification_impl(xmlparseobject *self,
+                                                           PyTypeObject *cls,
+                                                           float max_factor)
+/*[clinic end generated code: output=6e44bd48c9b112a0 input=c6af7ccb76ae5c6b]*/
+{
+    return set_maximum_amplification(
+        self, cls, max_factor,
+        XML_SetAllocTrackerMaximumAmplification
+    );
+}
+#endif
+
 static struct PyMethodDef xmlparse_methods[] = {
     PYEXPAT_XMLPARSER_PARSE_METHODDEF
     PYEXPAT_XMLPARSER_PARSEFILE_METHODDEF
@@ -1120,9 +1415,11 @@ static struct PyMethodDef xmlparse_methods[] = {
     PYEXPAT_XMLPARSER_GETINPUTCONTEXT_METHODDEF
     PYEXPAT_XMLPARSER_EXTERNALENTITYPARSERCREATE_METHODDEF
     PYEXPAT_XMLPARSER_SETPARAMENTITYPARSING_METHODDEF
-#if XML_COMBINED_VERSION >= 19505
     PYEXPAT_XMLPARSER_USEFOREIGNDTD_METHODDEF
-#endif
+    PYEXPAT_XMLPARSER_SETBILLIONLAUGHSATTACKPROTECTIONACTIVATIONTHRESHOLD_METHODDEF
+    PYEXPAT_XMLPARSER_SETBILLIONLAUGHSATTACKPROTECTIONMAXIMUMAMPLIFICATION_METHODDEF
+    PYEXPAT_XMLPARSER_SETALLOCTRACKERACTIVATIONTHRESHOLD_METHODDEF
+    PYEXPAT_XMLPARSER_SETALLOCTRACKERMAXIMUMAMPLIFICATION_METHODDEF
     PYEXPAT_XMLPARSER_SETREPARSEDEFERRALENABLED_METHODDEF
     PYEXPAT_XMLPARSER_GETREPARSEDEFERRALENABLED_METHODDEF
     {NULL, NULL}  /* sentinel */
@@ -1229,6 +1526,7 @@ newxmlparseobject(pyexpat_state *state, const char *encoding,
     /* namespace_separator is either NULL or contains one char + \0 */
     self->itself = XML_ParserCreate_MM(encoding, &ExpatMemoryHandler,
                                        namespace_separator);
+    self->parent = NULL;
     if (self->itself == NULL) {
         PyErr_SetString(PyExc_RuntimeError,
                         "XML_ParserCreate failed");
@@ -1265,6 +1563,7 @@ xmlparse_traverse(PyObject *op, visitproc visit, void *arg)
     for (size_t i = 0; handler_info[i].name != NULL; i++) {
         Py_VISIT(self->handlers[i]);
     }
+    Py_VISIT(self->parent);
     Py_VISIT(Py_TYPE(op));
     return 0;
 }
@@ -1275,6 +1574,10 @@ xmlparse_clear(PyObject *op)
     xmlparseobject *self = xmlparseobject_CAST(op);
     clear_handlers(self, 0);
     Py_CLEAR(self->intern);
+    // NOTE: We cannot call Py_CLEAR(self->parent) prior to calling
+    //       XML_ParserFree(self->itself), or a subparser could lose its parent
+    //       XML_Parser while still making use of it internally.
+    //       https://github.com/python/cpython/issues/139400
     return 0;
 }
 
@@ -1288,6 +1591,7 @@ xmlparse_dealloc(PyObject *op)
         XML_ParserFree(self->itself);
     }
     self->itself = NULL;
+    Py_CLEAR(self->parent);
 
     if (self->handlers != NULL) {
         PyMem_Free(self->handlers);
@@ -1352,7 +1656,7 @@ xmlparse_handler_setter(PyObject *op, PyObject *v, void *closure)
            elaborate system of handlers and state could remove the
            C handler more effectively. */
         if (handlernum == CharacterData && self->in_callback) {
-            c_handler = noop_character_data_handler;
+            c_handler = (xmlhandler)noop_character_data_handler;
         }
         v = NULL;
     }
@@ -1361,7 +1665,7 @@ xmlparse_handler_setter(PyObject *op, PyObject *v, void *closure)
         c_handler = handler_info[handlernum].handler;
     }
     Py_XSETREF(self->handlers[handlernum], v);
-    CALL_XML_HANDLER_SETTER(handler_info[handlernum], self->itself, c_handler);
+    CALL_XML_HANDLER_SETTER(&handler_info[handlernum], self->itself, c_handler);
     return 0;
 }
 
@@ -2128,6 +2432,20 @@ pyexpat_exec(PyObject *mod)
 #else
     capi->SetReparseDeferralEnabled = NULL;
 #endif
+#if XML_COMBINED_VERSION >= 20702
+    capi->SetAllocTrackerActivationThreshold = XML_SetAllocTrackerActivationThreshold;
+    capi->SetAllocTrackerMaximumAmplification = XML_SetAllocTrackerMaximumAmplification;
+#else
+    capi->SetAllocTrackerActivationThreshold = NULL;
+    capi->SetAllocTrackerMaximumAmplification = NULL;
+#endif
+#if XML_COMBINED_VERSION >= 20400
+    capi->SetBillionLaughsAttackProtectionActivationThreshold = XML_SetBillionLaughsAttackProtectionActivationThreshold;
+    capi->SetBillionLaughsAttackProtectionMaximumAmplification = XML_SetBillionLaughsAttackProtectionMaximumAmplification;
+#else
+    capi->SetAllocTrackerActivationThreshold = NULL;
+    capi->SetAllocTrackerMaximumAmplification = NULL;
+#endif
 
     /* export using capsule */
     PyObject *capi_object = PyCapsule_New(capi, PyExpat_CAPSULE_NAME,
@@ -2171,6 +2489,7 @@ pyexpat_free(void *module)
 }
 
 static PyModuleDef_Slot pyexpat_slots[] = {
+    _Py_ABI_SLOT,
     {Py_mod_exec, pyexpat_exec},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {Py_mod_gil, Py_MOD_GIL_NOT_USED},
@@ -2198,16 +2517,90 @@ PyInit_pyexpat(void)
 static void
 clear_handlers(xmlparseobject *self, int initial)
 {
+    if (self->handlers == NULL) {
+        return;
+    }
     for (size_t i = 0; handler_info[i].name != NULL; i++) {
         if (initial) {
             self->handlers[i] = NULL;
         }
         else {
             Py_CLEAR(self->handlers[i]);
-            CALL_XML_HANDLER_SETTER(handler_info[i], self->itself, NULL);
+            CALL_XML_HANDLER_SETTER(&handler_info[i], self->itself, NULL);
         }
     }
 }
+
+/* To avoid undefined behaviors, a function must be *called* via a function
+ * pointer of the correct type.
+ * So, for each `XML_Set*` function, we define a wrapper that calls `XML_Set*`
+ * with its argument cast to the appropriate type.
+ */
+
+typedef void (*parser_only)(void *);
+typedef int (*not_standalone)(void *);
+typedef void (*parser_and_data)(void *, const XML_Char *);
+typedef void (*parser_and_data_and_int)(void *, const XML_Char *, int);
+typedef void (*parser_and_data_and_data)(
+    void *, const XML_Char *, const XML_Char *);
+typedef void (*start_element)(void *, const XML_Char *, const XML_Char **);
+typedef void (*element_decl)(void *, const XML_Char *, XML_Content *);
+typedef void (*xml_decl)(
+    void *, const XML_Char *, const XML_Char *, int);
+typedef void (*start_doctype_decl)(
+    void *, const XML_Char *, const XML_Char *, const XML_Char *, int);
+typedef void (*notation_decl)(
+    void *,
+    const XML_Char *, const XML_Char *, const XML_Char *, const XML_Char *);
+typedef void (*attlist_decl)(
+    void *,
+    const XML_Char *, const XML_Char *, const XML_Char *, const XML_Char *,
+    int);
+typedef void (*unparsed_entity_decl)(
+    void *,
+    const XML_Char *, const XML_Char *,
+    const XML_Char *, const XML_Char *, const XML_Char *);
+typedef void (*entity_decl)(
+    void *,
+    const XML_Char *, int,
+    const XML_Char *, int,
+    const XML_Char *, const XML_Char *, const XML_Char *, const XML_Char *);
+typedef int (*external_entity_ref)(
+    XML_Parser,
+    const XML_Char *, const XML_Char *, const XML_Char *, const XML_Char *);
+
+#define SETTER_WRAPPER(NAME, TYPE)                                      \
+    static inline void                                                  \
+    pyexpat_Set ## NAME (XML_Parser parser, xmlhandler handler)         \
+    {                                                                   \
+        (void)XML_Set ## NAME (parser, (TYPE)handler);                  \
+    }
+
+SETTER_WRAPPER(StartElementHandler, start_element)
+SETTER_WRAPPER(EndElementHandler, parser_and_data)
+SETTER_WRAPPER(ProcessingInstructionHandler, parser_and_data_and_data)
+SETTER_WRAPPER(CharacterDataHandler, parser_and_data_and_int)
+SETTER_WRAPPER(UnparsedEntityDeclHandler, unparsed_entity_decl)
+SETTER_WRAPPER(NotationDeclHandler, notation_decl)
+SETTER_WRAPPER(StartNamespaceDeclHandler, parser_and_data_and_data)
+SETTER_WRAPPER(EndNamespaceDeclHandler, parser_and_data)
+SETTER_WRAPPER(CommentHandler, parser_and_data)
+SETTER_WRAPPER(StartCdataSectionHandler, parser_only)
+SETTER_WRAPPER(EndCdataSectionHandler, parser_only)
+SETTER_WRAPPER(DefaultHandler, parser_and_data_and_int)
+SETTER_WRAPPER(DefaultHandlerExpand, parser_and_data_and_int)
+SETTER_WRAPPER(NotStandaloneHandler, not_standalone)
+SETTER_WRAPPER(ExternalEntityRefHandler, external_entity_ref)
+SETTER_WRAPPER(StartDoctypeDeclHandler, start_doctype_decl)
+SETTER_WRAPPER(EndDoctypeDeclHandler, parser_only)
+SETTER_WRAPPER(EntityDeclHandler, entity_decl)
+SETTER_WRAPPER(XmlDeclHandler, xml_decl)
+SETTER_WRAPPER(ElementDeclHandler, element_decl)
+SETTER_WRAPPER(AttlistDeclHandler, attlist_decl)
+#if XML_COMBINED_VERSION >= 19504
+SETTER_WRAPPER(SkippedEntityHandler, parser_and_data_and_int)
+#endif
+#undef SETTER_WRAPPER
 
 static struct HandlerInfo handler_info[] = {
 
@@ -2215,7 +2608,7 @@ static struct HandlerInfo handler_info[] = {
     // handler functions is not compatible with `xmlhandlersetter` since
     // their second parameter is narrower than a `const void *`.
 #define HANDLER_INFO(name) \
-    {#name, (xmlhandlersetter)XML_Set##name, my_##name},
+    {#name, (xmlhandlersetter)pyexpat_Set##name, (xmlhandler)my_##name},
 
     HANDLER_INFO(StartElementHandler)
     HANDLER_INFO(EndElementHandler)
