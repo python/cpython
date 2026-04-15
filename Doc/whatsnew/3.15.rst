@@ -1170,7 +1170,7 @@ timeit
 
 * Make the target time of :meth:`timeit.Timer.autorange` configurable
   and add ``--target-time`` option to the command-line interface.
-  (Contributed by Alessandro Cucci and Miikka Koskinen in :gh:`140283`.)
+  (Contributed by Alessandro Cucci and Miikka Koskinen in :gh:`80642`.)
 
 
 tkinter
