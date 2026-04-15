@@ -2010,6 +2010,27 @@ class TestSpecializer(TestBase):
 
     @cpython_only
     @requires_specialization
+    def test_load_and_call_classmethod(self):
+
+        r = range(_testinternalcapi.SPECIALIZATION_THRESHOLD)
+
+        class C:
+            @classmethod
+            def val(self):
+                return 1
+
+        def class_method_call():
+            for _ in r:
+                C.val()
+
+        class_method_call()
+        # gh-148608: To improve specialization, the classmethod should've become unbound.
+        self.assert_specialized(class_method_call, "CALL_PY_EXACT_ARGS")
+        self.assert_no_opcode(class_method_call, "CALL_BOUND_METHOD_EXACT_ARGS")
+        self.assert_no_opcode(class_method_call, "CALL")
+
+    @cpython_only
+    @requires_specialization
     def test_load_attr_module_with_getattr(self):
         module = types.ModuleType("test_module_with_getattr")
         module.__dict__["some_attr"] = "foo"
