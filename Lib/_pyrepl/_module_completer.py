@@ -11,9 +11,9 @@ from importlib.machinery import FileFinder
 from io import StringIO
 from contextlib import contextmanager
 from dataclasses import dataclass
-from itertools import chain, takewhile
+from itertools import chain
 from tokenize import TokenInfo
-from .trace import trace
+
 TYPE_CHECKING = False
 
 if TYPE_CHECKING:
