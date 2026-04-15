@@ -1124,9 +1124,9 @@ the following writable attributes:
 
 .. attribute:: module.__lazy_modules__
 
-   An optional sequence of absolute module name strings.  When defined at
-   module scope, any regular :keyword:`import` statement in that module whose
-   target module name appears in this sequence is treated as a
+   An optional :term:`iterable` of absolute module name strings.  When defined
+   at module scope, any regular :keyword:`import` statement in that module whose
+   target module name appears in this iterable is treated as a
    :ref:`lazy import <lazy-imports>`, as if the :keyword:`lazy` keyword had
    been used.  Imports inside functions, class bodies, or
    :keyword:`try`/:keyword:`except`/:keyword:`finally` blocks are unaffected.
