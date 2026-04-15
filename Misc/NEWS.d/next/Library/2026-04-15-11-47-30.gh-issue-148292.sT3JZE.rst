@@ -1,0 +1,2 @@
+Update :meth:`ssl.SSLSocket.read` for OpenSSL 4: no longer call
+``SSL_read_ex()`` after ``SSL_ERROR_EOF``. Patch by Victor Stinner.
