@@ -1,3 +1,7 @@
+# NANVIX: Windows Docker builds tar-copy sources into a Linux container;
+# eol=lf ensures files arrive with Unix line endings.
+* text=auto eol=lf
+
 # Binary data types
 *.aif binary
 *.aifc binary
