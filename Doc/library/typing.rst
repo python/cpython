@@ -3383,6 +3383,10 @@ Functions and decorators
    Users may also mark other classes as disjoint bases to indicate to type checkers that
    multiple inheritance with other disjoint bases should not be allowed.
 
+   Note that the concept of a solid base is a CPython implementation
+   detail, and the exact set of standard library classes that are
+   disjoint bases at runtime may change in future versions of Python.
+
    .. versionadded:: next
 
 .. decorator:: type_check_only
