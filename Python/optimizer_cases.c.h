@@ -78,7 +78,7 @@
             JitOptRef value;
             PyCodeObject *co = get_current_code_object(ctx);
             PyObject *val = PyTuple_GET_ITEM(co->co_consts, oparg);
-            ADD_OP(_LOAD_CONST_INLINE_BORROW, 0, PyStackRef_TagBorrow(val));
+            ADD_OP(_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)val);
             value = PyJitRef_Borrow(sym_new_const(ctx, val));
             CHECK_STACK_BOUNDS(1);
             stack_pointer[0] = value;
@@ -92,7 +92,7 @@
             PyObject *val = PyLong_FromLong(oparg);
             assert(val);
             assert(_Py_IsImmortal(val));
-            ADD_OP(_LOAD_CONST_INLINE_BORROW, 0, PyStackRef_TagBorrow(val));
+            ADD_OP(_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)val);
             value = PyJitRef_Borrow(sym_new_const(ctx, val));
             CHECK_STACK_BOUNDS(1);
             stack_pointer[0] = value;
@@ -238,7 +238,7 @@
                     PyObject *result = sym_get_const(ctx, res);
                     if (_Py_IsImmortal(result)) {
                         // Replace with _LOAD_CONST_INLINE_BORROW + _SWAP since we have one input and an immortal result
-                        ADD_OP(_LOAD_CONST_INLINE_BORROW, 0, PyStackRef_TagBorrow(result));
+                        ADD_OP(_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)result);
                         ADD_OP(_SWAP, 2, 0);
                     }
                 }
@@ -308,7 +308,7 @@
                     if (_Py_IsImmortal(result)) {
                         // Replace with _POP_TOP + _LOAD_CONST_INLINE_BORROW since we have one input and an immortal result
                         ADD_OP(_POP_TOP, 0, 0);
-                        ADD_OP(_LOAD_CONST_INLINE_BORROW, 0, PyStackRef_TagBorrow(result));
+                        ADD_OP(_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)result);
                     }
                 }
                 stack_pointer[-1] = res;
@@ -485,7 +485,7 @@
             JitOptRef res;
             JitOptRef v;
             value = stack_pointer[-1];
-            ADD_OP(_LOAD_CONST_INLINE_BORROW, 0, PyStackRef_TagBorrow(Py_True));
+            ADD_OP(_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)Py_True);
             ADD_OP(_SWAP, 2, 0);
             res = sym_new_const(ctx, Py_True);
             v = value;
@@ -525,7 +525,7 @@
                         PyObject *result = sym_get_const(ctx, res);
                         if (_Py_IsImmortal(result)) {
                             // Replace with _LOAD_CONST_INLINE_BORROW + _SWAP since we have one input and an immortal result
-                            ADD_OP(_LOAD_CONST_INLINE_BORROW, 0, PyStackRef_TagBorrow(result));
+                            ADD_OP(_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)result);
                             ADD_OP(_SWAP, 2, 0);
                         }
                     }
@@ -639,7 +639,7 @@
                     PyObject *result = sym_get_const(ctx, res);
                     if (_Py_IsImmortal(result)) {
                         // Replace with _LOAD_CONST_INLINE_BORROW + _SWAP + _SWAP since we have two inputs and an immortal result
-                        ADD_OP(_LOAD_CONST_INLINE_BORROW, 0, PyStackRef_TagBorrow(result));
+                        ADD_OP(_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)result);
                         ADD_OP(_SWAP, 3, 0);
                         ADD_OP(_SWAP, 2, 0);
                     }
@@ -711,7 +711,7 @@
                     PyObject *result = sym_get_const(ctx, res);
                     if (_Py_IsImmortal(result)) {
                         // Replace with _LOAD_CONST_INLINE_BORROW + _SWAP + _SWAP since we have two inputs and an immortal result
-                        ADD_OP(_LOAD_CONST_INLINE_BORROW, 0, PyStackRef_TagBorrow(result));
+                        ADD_OP(_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)result);
                         ADD_OP(_SWAP, 3, 0);
                         ADD_OP(_SWAP, 2, 0);
                     }
@@ -783,7 +783,7 @@
                     PyObject *result = sym_get_const(ctx, res);
                     if (_Py_IsImmortal(result)) {
                         // Replace with _LOAD_CONST_INLINE_BORROW + _SWAP + _SWAP since we have two inputs and an immortal result
-                        ADD_OP(_LOAD_CONST_INLINE_BORROW, 0, PyStackRef_TagBorrow(result));
+                        ADD_OP(_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)result);
                         ADD_OP(_SWAP, 3, 0);
                         ADD_OP(_SWAP, 2, 0);
                     }
@@ -1606,7 +1606,7 @@
                         PyObject *result = sym_get_const(ctx, res);
                         if (_Py_IsImmortal(result)) {
                             // Replace with _LOAD_CONST_INLINE_BORROW + _SWAP + _SWAP since we have two inputs and an immortal result
-                            ADD_OP(_LOAD_CONST_INLINE_BORROW, 0, PyStackRef_TagBorrow(result));
+                            ADD_OP(_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)result);
                             ADD_OP(_SWAP, 3, 0);
                             ADD_OP(_SWAP, 2, 0);
                         }
@@ -1915,7 +1915,7 @@
             JitOptRef value;
             assert(oparg < NUM_COMMON_CONSTANTS);
             PyObject *val = _PyInterpreterState_GET()->common_consts[oparg];
-            ADD_OP(_LOAD_CONST_INLINE_BORROW, 0, PyStackRef_TagBorrow(val));
+            ADD_OP(_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)val);
             value = PyJitRef_Borrow(sym_new_const(ctx, val));
             CHECK_STACK_BOUNDS(1);
             stack_pointer[0] = value;
@@ -2623,7 +2623,7 @@
                         else {
                             bool immortal = _Py_IsImmortal(res);
                             ADD_OP(immortal ? _LOAD_CONST_INLINE_BORROW : _LOAD_CONST_INLINE,
-                                0, immortal ? PyStackRef_TagBorrow(res) : (uintptr_t)res);
+                                0, (uintptr_t)res);
                             ADD_OP(_SWAP, 2, 0);
                             attr = sym_new_const(ctx, res);
                         }
@@ -2865,7 +2865,7 @@
                         // Replace with _POP_TOP + _POP_TOP + _LOAD_CONST_INLINE_BORROW since we have two inputs and an immortal result
                         ADD_OP(_POP_TOP, 0, 0);
                         ADD_OP(_POP_TOP, 0, 0);
-                        ADD_OP(_LOAD_CONST_INLINE_BORROW, 0, PyStackRef_TagBorrow(result));
+                        ADD_OP(_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)result);
                     }
                 }
                 CHECK_STACK_BOUNDS(-1);
@@ -2936,7 +2936,7 @@
                     PyObject *result = sym_get_const(ctx, res);
                     if (_Py_IsImmortal(result)) {
                         // Replace with _LOAD_CONST_INLINE_BORROW + _SWAP + _SWAP since we have two inputs and an immortal result
-                        ADD_OP(_LOAD_CONST_INLINE_BORROW, 0, PyStackRef_TagBorrow(result));
+                        ADD_OP(_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)result);
                         ADD_OP(_SWAP, 3, 0);
                         ADD_OP(_SWAP, 2, 0);
                     }
@@ -3011,7 +3011,7 @@
                     PyObject *result = sym_get_const(ctx, res);
                     if (_Py_IsImmortal(result)) {
                         // Replace with _LOAD_CONST_INLINE_BORROW + _SWAP + _SWAP since we have two inputs and an immortal result
-                        ADD_OP(_LOAD_CONST_INLINE_BORROW, 0, PyStackRef_TagBorrow(result));
+                        ADD_OP(_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)result);
                         ADD_OP(_SWAP, 3, 0);
                         ADD_OP(_SWAP, 2, 0);
                     }
@@ -3075,7 +3075,7 @@
                     PyObject *result = sym_get_const(ctx, res);
                     if (_Py_IsImmortal(result)) {
                         // Replace with _LOAD_CONST_INLINE_BORROW + _SWAP + _SWAP since we have two inputs and an immortal result
-                        ADD_OP(_LOAD_CONST_INLINE_BORROW, 0, PyStackRef_TagBorrow(result));
+                        ADD_OP(_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)result);
                         ADD_OP(_SWAP, 3, 0);
                         ADD_OP(_SWAP, 2, 0);
                     }
@@ -3157,7 +3157,7 @@
                     PyObject *result = sym_get_const(ctx, b);
                     if (_Py_IsImmortal(result)) {
                         // Replace with _LOAD_CONST_INLINE_BORROW + _SWAP + _SWAP since we have two inputs and an immortal result
-                        ADD_OP(_LOAD_CONST_INLINE_BORROW, 0, PyStackRef_TagBorrow(result));
+                        ADD_OP(_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)result);
                         ADD_OP(_SWAP, 3, 0);
                         ADD_OP(_SWAP, 2, 0);
                     }
@@ -3266,7 +3266,7 @@
                         PyObject *result = sym_get_const(ctx, b);
                         if (_Py_IsImmortal(result)) {
                             // Replace with _LOAD_CONST_INLINE_BORROW + _SWAP + _SWAP since we have two inputs and an immortal result
-                            ADD_OP(_LOAD_CONST_INLINE_BORROW, 0, PyStackRef_TagBorrow(result));
+                            ADD_OP(_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)result);
                             ADD_OP(_SWAP, 3, 0);
                             ADD_OP(_SWAP, 2, 0);
                         }
@@ -3333,7 +3333,7 @@
                         PyObject *result = sym_get_const(ctx, b);
                         if (_Py_IsImmortal(result)) {
                             // Replace with _LOAD_CONST_INLINE_BORROW + _SWAP + _SWAP since we have two inputs and an immortal result
-                            ADD_OP(_LOAD_CONST_INLINE_BORROW, 0, PyStackRef_TagBorrow(result));
+                            ADD_OP(_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)result);
                             ADD_OP(_SWAP, 3, 0);
                             ADD_OP(_SWAP, 2, 0);
                         }
@@ -3429,7 +3429,7 @@
                     goto error;
                 }
                 if (_Py_IsImmortal(temp)) {
-                    ADD_OP(_LOAD_CONST_INLINE_BORROW, 0, PyStackRef_TagBorrow(temp));
+                    ADD_OP(_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)temp);
                 }
                 len = sym_new_const(ctx, temp);
                 CHECK_STACK_BOUNDS(1);
@@ -3782,7 +3782,7 @@
                     ADD_OP(_GUARD_TYPE_VERSION, 0, type->tp_version_tag);
                     bool immortal = _Py_IsImmortal(descr) || (type->tp_flags & Py_TPFLAGS_IMMUTABLETYPE);
                     ADD_OP(immortal ? _LOAD_CONST_INLINE_BORROW : _LOAD_CONST_INLINE,
-                        0, immortal ? PyStackRef_TagBorrow(descr) : (uintptr_t)descr);
+                        0, (uintptr_t)descr);
                     ADD_OP(_SWAP, 3, 0);
                     optimize_pop_top(ctx, this_instr, method_and_self[0]);
                     if ((type->tp_flags & Py_TPFLAGS_IMMUTABLETYPE) == 0) {
@@ -4218,7 +4218,7 @@
                 ADD_OP(_SWAP, 3, 0);
                 optimize_pop_top(ctx, this_instr, callable);
                 optimize_pop_top(ctx, this_instr, null);
-                ADD_OP(_LOAD_CONST_INLINE_BORROW, 0, PyStackRef_TagBorrow(type));
+                ADD_OP(_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)type);
                 ADD_OP(_SWAP, 2, 0);
             }
             else {
@@ -4544,7 +4544,7 @@
                     goto error;
                 }
                 if (_Py_IsImmortal(temp)) {
-                    ADD_OP(_SHUFFLE_3_LOAD_CONST_INLINE_BORROW, 0, PyStackRef_TagBorrow(temp));
+                    ADD_OP(_SHUFFLE_3_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)temp);
                 }
                 res = sym_new_const(ctx, temp);
                 CHECK_STACK_BOUNDS(-2);
@@ -4598,7 +4598,7 @@
                 optimize_pop_top(ctx, this_instr, instance);
                 optimize_pop_top(ctx, this_instr, null);
                 optimize_pop_top(ctx, this_instr, callable);
-                ADD_OP(_LOAD_CONST_INLINE_BORROW, 0, PyStackRef_TagBorrow(out));
+                ADD_OP(_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)out);
             }
             CHECK_STACK_BOUNDS(-3);
             stack_pointer[-4] = res;
@@ -5216,7 +5216,7 @@
                     PyObject *result = sym_get_const(ctx, res);
                     if (_Py_IsImmortal(result)) {
                         // Replace with _LOAD_CONST_INLINE_BORROW + _SWAP + _SWAP since we have two inputs and an immortal result
-                        ADD_OP(_LOAD_CONST_INLINE_BORROW, 0, PyStackRef_TagBorrow(result));
+                        ADD_OP(_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)result);
                         ADD_OP(_SWAP, 3, 0);
                         ADD_OP(_SWAP, 2, 0);
                     }

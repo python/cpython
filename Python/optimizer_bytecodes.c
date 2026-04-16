@@ -866,14 +866,14 @@ dummy_func(void) {
     op(_LOAD_CONST, (-- value)) {
         PyCodeObject *co = get_current_code_object(ctx);
         PyObject *val = PyTuple_GET_ITEM(co->co_consts, oparg);
-        ADD_OP(_LOAD_CONST_INLINE_BORROW, 0, PyStackRef_TagBorrow(val));
+        ADD_OP(_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)val);
         value = PyJitRef_Borrow(sym_new_const(ctx, val));
     }
 
     op(_LOAD_COMMON_CONSTANT, (-- value)) {
         assert(oparg < NUM_COMMON_CONSTANTS);
         PyObject *val = _PyInterpreterState_GET()->common_consts[oparg];
-        ADD_OP(_LOAD_CONST_INLINE_BORROW, 0, PyStackRef_TagBorrow(val));
+        ADD_OP(_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)val);
         value = PyJitRef_Borrow(sym_new_const(ctx, val));
     }
 
@@ -881,7 +881,7 @@ dummy_func(void) {
         PyObject *val = PyLong_FromLong(oparg);
         assert(val);
         assert(_Py_IsImmortal(val));
-        ADD_OP(_LOAD_CONST_INLINE_BORROW, 0, PyStackRef_TagBorrow(val));
+        ADD_OP(_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)val);
         value = PyJitRef_Borrow(sym_new_const(ctx, val));
     }
 
@@ -959,7 +959,7 @@ dummy_func(void) {
                     else {
                         bool immortal = _Py_IsImmortal(res);
                         ADD_OP(immortal ? _LOAD_CONST_INLINE_BORROW : _LOAD_CONST_INLINE,
-                               0, immortal ? PyStackRef_TagBorrow(res) : (uintptr_t)res);
+                               0, (uintptr_t)res);
                         ADD_OP(_SWAP, 2, 0);
                         attr = sym_new_const(ctx, res);
                     }
@@ -1600,7 +1600,7 @@ dummy_func(void) {
             ADD_OP(_SWAP, 3, 0);
             optimize_pop_top(ctx, this_instr, callable);
             optimize_pop_top(ctx, this_instr, null);
-            ADD_OP(_LOAD_CONST_INLINE_BORROW, 0, PyStackRef_TagBorrow(type));
+            ADD_OP(_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)type);
             ADD_OP(_SWAP, 2, 0);
         }
         else {
@@ -1642,7 +1642,7 @@ dummy_func(void) {
             optimize_pop_top(ctx, this_instr, instance);
             optimize_pop_top(ctx, this_instr, null);
             optimize_pop_top(ctx, this_instr, callable);
-            ADD_OP(_LOAD_CONST_INLINE_BORROW, 0, PyStackRef_TagBorrow(out));
+            ADD_OP(_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)out);
         }
     }
 
@@ -2013,7 +2013,7 @@ dummy_func(void) {
                 ADD_OP(_GUARD_TYPE_VERSION, 0, type->tp_version_tag);
                 bool immortal = _Py_IsImmortal(descr) || (type->tp_flags & Py_TPFLAGS_IMMUTABLETYPE);
                 ADD_OP(immortal ? _LOAD_CONST_INLINE_BORROW : _LOAD_CONST_INLINE,
-                       0, immortal ? PyStackRef_TagBorrow(descr) : (uintptr_t)descr);
+                       0, (uintptr_t)descr);
                 ADD_OP(_SWAP, 3, 0);
                 optimize_pop_top(ctx, this_instr, method_and_self[0]);
                 if ((type->tp_flags & Py_TPFLAGS_IMMUTABLETYPE) == 0) {
@@ -2044,7 +2044,7 @@ dummy_func(void) {
     }
 
     op(_REPLACE_WITH_TRUE, (value -- res, v)) {
-        ADD_OP(_LOAD_CONST_INLINE_BORROW, 0, PyStackRef_TagBorrow(Py_True));
+        ADD_OP(_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)Py_True);
         ADD_OP(_SWAP, 2, 0);
         res = sym_new_const(ctx, Py_True);
         v = value;
@@ -2330,7 +2330,7 @@ dummy_func(void) {
                 goto error;
             }
             if (_Py_IsImmortal(temp)) {
-                ADD_OP(_SHUFFLE_3_LOAD_CONST_INLINE_BORROW, 0, PyStackRef_TagBorrow(temp));
+                ADD_OP(_SHUFFLE_3_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)temp);
             }
             res = sym_new_const(ctx, temp);
             Py_DECREF(temp);
@@ -2351,7 +2351,7 @@ dummy_func(void) {
                 goto error;
             }
             if (_Py_IsImmortal(temp)) {
-                ADD_OP(_LOAD_CONST_INLINE_BORROW, 0, PyStackRef_TagBorrow(temp));
+                ADD_OP(_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)temp);
             }
             len = sym_new_const(ctx, temp);
             Py_DECREF(temp);

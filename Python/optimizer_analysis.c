@@ -234,7 +234,13 @@ add_op(JitOptContext *ctx, _PyUOpInstruction *this_instr,
     out->format = this_instr->format;
     out->oparg = (oparg);
     out->target = this_instr->target;
-    out->operand0 = (operand0);
+    if (opcode == _LOAD_CONST_INLINE_BORROW ||
+        opcode == _SHUFFLE_3_LOAD_CONST_INLINE_BORROW) {
+        out->operand0 = PyStackRef_TagBorrow((PyObject *)operand0);
+    }
+    else {
+        out->operand0 = (operand0);
+    }
     out->operand1 = this_instr->operand1;
     ctx->out_buffer.next++;
 }
@@ -333,7 +339,7 @@ optimize_to_bool(
         if (prefix != _NOP) {
             ADD_OP(prefix, 0, 0);
         }
-        ADD_OP(_LOAD_CONST_INLINE_BORROW, 0, PyStackRef_TagBorrow(load));
+        ADD_OP(_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)load);
         if (suffix != _NOP) {
             ADD_OP(suffix, 2, 0);
         }
@@ -394,7 +400,7 @@ lookup_attr(JitOptContext *ctx, _PyBloomFilter *dependencies, _PyUOpInstruction 
                 ADD_OP(prefix, 0, 0);
             }
             ADD_OP(immortal ? _LOAD_CONST_INLINE_BORROW : _LOAD_CONST_INLINE,
-                   0, immortal ? PyStackRef_TagBorrow(lookup) : (uintptr_t)lookup);
+                   0, (uintptr_t)lookup);
             if (suffix != _NOP) {
                 ADD_OP(suffix, 2, 0);
             }
@@ -465,7 +471,7 @@ lookup_super_attr(JitOptContext *ctx, _PyBloomFilter *dependencies,
     ADD_OP(_SWAP, 3, 0);
     ADD_OP(_POP_TOP, 0, 0);
     ADD_OP(_POP_TOP, 0, 0);
-    ADD_OP(opcode, 0, (opcode == immortal) ? PyStackRef_TagBorrow(lookup) : (uintptr_t)lookup);
+    ADD_OP(opcode, 0, (uintptr_t)lookup);
     if (suffix != _NOP) {
         ADD_OP(suffix, 2, 0);
     }
