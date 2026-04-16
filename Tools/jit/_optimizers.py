@@ -499,9 +499,12 @@ class Optimizer:
         if not self.supports_small_constants:
             return
         index = 0
+        # Keep small_const_index across blocks so small constant
+        # pairs split across block boundaries are still matched.
+        small_const_index = -1
+        prev_fixed: list[Instruction] = []
         for block in self._blocks():
             fixed: list[Instruction] = []
-            small_const_index = -1
             for inst in block.instructions:
                 if inst.kind == InstructionKind.SMALL_CONST_1:
                     marker = f"jit_pending_{inst.target}{index}:"
@@ -513,14 +516,16 @@ class Optimizer:
                     if small_const_index < 0:
                         fixed.append(inst)
                         continue
-                    small_const_1 = fixed[small_const_index]
+                    # SMALL_CONST_1 may be in the current or previous block's list.
+                    source = fixed if small_const_index < len(fixed) else prev_fixed
+                    small_const_1 = source[small_const_index]
                     if not self._small_consts_match(small_const_1, inst):
                         small_const_index = -1
                         fixed.append(inst)
                         continue
                     assert small_const_1.target is not None
                     if small_const_1.target.endswith("16"):
-                        fixed[small_const_index] = self._make_temp_label(index)
+                        source[small_const_index] = self._make_temp_label(index)
                         index += 1
                     else:
                         assert small_const_1.target.endswith("32")
@@ -528,10 +533,10 @@ class Optimizer:
                         if replacement is not None:
                             label = f"{self.const_reloc}{patch_kind}_JIT_RELOCATION_CONST{small_const_1.target[:-3]}_JIT_RELOCATION_{index}:"
                             index += 1
-                            fixed[small_const_index - 1] = Instruction(
+                            source[small_const_index - 1] = Instruction(
                                 InstructionKind.OTHER, "", label, None
                             )
-                            fixed[small_const_index] = replacement
+                            source[small_const_index] = replacement
                     patch_kind, replacement = self._small_const_2(inst)
                     if replacement is not None:
                         assert inst.target is not None
@@ -544,6 +549,7 @@ class Optimizer:
                     small_const_index = -1
                 else:
                     fixed.append(inst)
+            prev_fixed = fixed
             block.instructions = fixed
 
     def _small_const_1(self, inst: Instruction) -> tuple[str, Instruction | None]:

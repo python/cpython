@@ -1,0 +1,2 @@
+Fix cross-block adrp+ldr to movz optimization on AArch64. Patch by Donghee
+Na.
