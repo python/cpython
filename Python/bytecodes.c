@@ -199,7 +199,7 @@ dummy_func(
             }
         }
 
-        op(_LOAD_BYTECODE, (--)) {
+        replaced op(_LOAD_BYTECODE, (--)) {
             #ifdef Py_GIL_DISABLED
             if (frame->tlbc_index !=
                 ((_PyThreadStateImpl *)tstate)->tlbc_index) {
@@ -2820,6 +2820,11 @@ dummy_func(
             }
         }
 
+        op(_GUARD_TYPE, (type/4, owner -- owner)) {
+            PyTypeObject *tp = Py_TYPE(PyStackRef_AsPyObjectBorrow(owner));
+            EXIT_IF(tp != (PyTypeObject *)type);
+        }
+
         op(_CHECK_MANAGED_OBJECT_HAS_VALUES, (owner -- owner)) {
             PyObject *owner_o = PyStackRef_AsPyObjectBorrow(owner);
             assert(Py_TYPE(owner_o)->tp_dictoffset < 0);
@@ -3655,14 +3660,69 @@ dummy_func(
             values_or_none = PyStackRef_FromPyObjectSteal(values_or_none_o);
         }
 
-        inst(GET_ITER, (iterable -- iter, index_or_null)) {
-            #ifdef Py_STATS
-            _Py_GatherStats_GetIter(iterable);
-            #endif
+        family(GET_ITER, INLINE_CACHE_ENTRIES_GET_ITER) = {
+            GET_ITER_SELF,
+            GET_ITER_VIRTUAL,
+        };
+
+        specializing op(_SPECIALIZE_GET_ITER, (counter/1, iterable -- iterable)) {
+            #if ENABLE_SPECIALIZATION
+            if (ADAPTIVE_COUNTER_TRIGGERS(counter)) {
+                next_instr = this_instr;
+                _Py_Specialize_GetIter(iterable, next_instr);
+                DISPATCH_SAME_OPARG();
+            }
+            OPCODE_DEFERRED_INC(GET_ITER);
+            ADVANCE_ADAPTIVE_COUNTER(this_instr[1].counter);
+            #endif  /* ENABLE_SPECIALIZATION */
+        }
+
+        op(_GET_ITER, (iterable -- iter, index_or_null)) {
             _PyStackRef result = _PyEval_GetIter(iterable, &index_or_null, oparg);
             DEAD(iterable);
             ERROR_IF(PyStackRef_IsError(result));
             iter = result;
+        }
+
+        macro(GET_ITER) =
+            _RECORD_TOS_TYPE +
+            _SPECIALIZE_GET_ITER +
+            _GET_ITER;
+
+        op(_GUARD_ITERATOR, (iterable -- iterable)) {
+            PyTypeObject *tp = Py_TYPE(PyStackRef_AsPyObjectBorrow(iterable));
+            EXIT_IF(tp->tp_iter != PyObject_SelfIter);
+            STAT_INC(GET_ITER, hit);
+        }
+
+        macro(GET_ITER_SELF) =
+            _RECORD_TOS_TYPE +
+            unused/1 +
+            _GUARD_ITERATOR +
+            PUSH_NULL;
+
+        op(_GUARD_ITER_VIRTUAL, (iterable -- iterable)) {
+            PyTypeObject *tp = Py_TYPE(PyStackRef_AsPyObjectBorrow(iterable));
+            EXIT_IF(tp->_tp_iteritem == NULL);
+            STAT_INC(GET_ITER, hit);
+        }
+
+        op(_PUSH_TAGGED_ZERO, ( -- zero)) {
+            zero = PyStackRef_TagInt(0);
+        }
+
+        macro(GET_ITER_VIRTUAL) =
+            _RECORD_TOS_TYPE +
+            unused/1 +
+            _GUARD_ITER_VIRTUAL +
+            _PUSH_TAGGED_ZERO;
+
+        op(_GET_ITER_TRAD, (iterable -- iter, index_or_null)) {
+            PyObject *iter_o = PyObject_GetIter(PyStackRef_AsPyObjectBorrow(iterable));
+            PyStackRef_CLOSE(iterable);
+            ERROR_IF(iter_o == NULL);
+            iter = PyStackRef_FromPyObjectSteal(iter_o);
+            index_or_null = PyStackRef_NULL;
         }
 
         // Most members of this family are "secretly" super-instructions.
@@ -3676,6 +3736,7 @@ dummy_func(
             FOR_ITER_TUPLE,
             FOR_ITER_RANGE,
             FOR_ITER_GEN,
+            FOR_ITER_VIRTUAL,
         };
 
         specializing op(_SPECIALIZE_FOR_ITER, (counter/1, iter, null_or_index -- iter, null_or_index)) {
@@ -3703,6 +3764,8 @@ dummy_func(
             next = item;
         }
 
+        macro(FOR_ITER) = _SPECIALIZE_FOR_ITER + _FOR_ITER;
+
         op(_FOR_ITER_TIER_TWO, (iter, null_or_index -- iter, null_or_index, next)) {
             _PyStackRef item = _PyForIter_VirtualIteratorNext(tstate, frame, iter, &null_or_index);
             if (!PyStackRef_IsValid(item)) {
@@ -3716,9 +3779,51 @@ dummy_func(
             next = item;
         }
 
+        op(_GUARD_NOS_ITER_VIRTUAL, (iter, null_or_index -- iter, null_or_index)) {
+            PyObject *iter_o = PyStackRef_AsPyObjectBorrow(iter);
+            EXIT_IF(Py_TYPE(iter_o)->_tp_iteritem == NULL);
+        }
 
-        macro(FOR_ITER) = _SPECIALIZE_FOR_ITER + _FOR_ITER;
+        replaced op(_FOR_ITER_VIRTUAL, (iter, null_or_index -- iter, null_or_index, next)) {
+            PyObject *iter_o = PyStackRef_AsPyObjectBorrow(iter);
+            Py_ssize_t index = PyStackRef_UntagInt(null_or_index);
+            _PyObjectIndexPair next_index = Py_TYPE(iter_o)->_tp_iteritem(iter_o, index);
+            PyObject *next_o = next_index.object;
+            index = next_index.index;
+            if (next_o == NULL) {
+                if (index < 0) {
+                    ERROR_NO_POP();
+                }
+                // Jump forward by oparg and skip the following END_FOR
+                JUMPBY(oparg + 1);
+                DISPATCH();
+            }
+            null_or_index = PyStackRef_TagInt(index);
+            next = PyStackRef_FromPyObjectSteal(next_o);
+        }
 
+        macro(FOR_ITER_VIRTUAL) =
+            unused/1 +  // Skip over the counter
+            _GUARD_NOS_ITER_VIRTUAL +
+            _FOR_ITER_VIRTUAL;
+
+        op(_FOR_ITER_VIRTUAL_TIER_TWO, (iter, null_or_index -- iter, null_or_index, next)) {
+            PyObject *iter_o = PyStackRef_AsPyObjectBorrow(iter);
+            Py_ssize_t index = PyStackRef_UntagInt(null_or_index);
+            _PyObjectIndexPair next_index = Py_TYPE(iter_o)->_tp_iteritem(iter_o, index);
+            PyObject *next_o = next_index.object;
+            index = next_index.index;
+            if (next_o == NULL) {
+                if (index < 0) {
+                    ERROR_NO_POP();
+                }
+                /* iterator ended normally */
+                /* The translator sets the deopt target just past the matching END_FOR */
+                EXIT_IF(true);
+            }
+            next = PyStackRef_FromPyObjectSteal(next_o);
+            null_or_index = PyStackRef_TagInt(index);
+        }
 
         inst(INSTRUMENTED_FOR_ITER, (unused/1, iter, null_or_index -- iter, null_or_index, next)) {
             _PyStackRef item = _PyForIter_VirtualIteratorNext(tstate, frame, iter, &null_or_index);

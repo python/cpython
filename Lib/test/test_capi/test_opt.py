@@ -371,6 +371,75 @@ class TestUops(unittest.TestCase):
         # look for indirect evidence: the += operator
         self.assertIn("_BINARY_OP_ADD_INT", uops)
 
+    def test_get_iter_list(self):
+        l = list(range(10))
+        def testfunc(n):
+            total = 0
+            while n:
+                n -= 1
+                total += n
+                for i in l:
+                    break
+            return total
+
+        total = testfunc(TIER2_THRESHOLD)
+        self.assertEqual(total, sum(range(TIER2_THRESHOLD)))
+        ex = get_first_executor(testfunc)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertIn("_PUSH_TAGGED_ZERO", uops)
+        self.assertNotIn("_GET_ITER", uops)
+        self.assertNotIn("_GET_ITER_TRAD", uops)
+        self.assertNotIn("_GET_ITER_VIRTUAL", uops)
+        self.assertNotIn("_GET_ITER_SELF", uops)
+
+    def test_get_iter_gen(self):
+        def gen():
+            while True:
+                yield 1
+
+        def testfunc(n):
+            total = 0
+            while n:
+                n -= 1
+                total += n
+                for i in gen():
+                    break
+            return total
+
+        total = testfunc(TIER2_THRESHOLD)
+        self.assertEqual(total, sum(range(TIER2_THRESHOLD)))
+        ex = get_first_executor(testfunc)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertIn("_PUSH_NULL", uops)
+        self.assertNotIn("_GET_ITER", uops)
+        self.assertNotIn("_GET_ITER_TRAD", uops)
+        self.assertNotIn("_GET_ITER_VIRTUAL", uops)
+        self.assertNotIn("_GET_ITER_SELF", uops)
+
+    def test_get_iter_trad(self):
+        d = {v:v for v in range(10)}
+        def testfunc(n):
+            total = 0
+            while n:
+                n -= 1
+                total += n
+                for i in d:
+                    break
+            return total
+
+        total = testfunc(TIER2_THRESHOLD)
+        self.assertEqual(total, sum(range(TIER2_THRESHOLD)))
+        ex = get_first_executor(testfunc)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertIn("_GET_ITER_TRAD", uops)
+        self.assertNotIn("_GET_ITER", uops)
+        self.assertNotIn("_GET_ITER_VIRTUAL", uops)
+        self.assertNotIn("_GET_ITER_SELF", uops)
+
+
     def test_for_iter_range(self):
         def testfunc(n):
             total = 0
