@@ -6,7 +6,7 @@ import copy
 import pickle
 import random
 import sys
-from test.support import bigmemtest, _1G, _4G, skip_on_s390x
+from test.support import bigmemtest, _1G, _4G, is_s390x
 
 
 zlib = import_helper.import_module('zlib')
@@ -33,8 +33,9 @@ def _zlib_runtime_version_tuple(zlib_version=zlib.ZLIB_RUNTIME_VERSION):
 ZLIB_RUNTIME_VERSION_TUPLE = _zlib_runtime_version_tuple()
 
 
-# bpo-46623: On s390x, when a hardware accelerator is used, using different
-# ways to compress data with zlib can produce different compressed data.
+# bpo-46623: When a hardware accelerator is used (currently only on s390x),
+# using different ways to compress data with zlib can produce different
+# compressed data.
 # Simplified test_pair() code:
 #
 #   def func1(data):
@@ -57,8 +58,10 @@ ZLIB_RUNTIME_VERSION_TUPLE = _zlib_runtime_version_tuple()
 #
 #   zlib.decompress(func1(data)) == zlib.decompress(func2(data)) == data
 #
-# Make the assumption that s390x always has an accelerator to simplify the skip
-# condition.
+# To simplify the skip condition, make the assumption that s390x always has an
+# accelerator, and nothing else has it.
+HW_ACCELERATED = is_s390x
+
 
 class VersionTestCase(unittest.TestCase):
 
@@ -114,6 +117,114 @@ class ChecksumTestCase(unittest.TestCase):
         self.assertEqual(binascii.crc32(foo), crc)
         self.assertEqual(zlib.crc32(foo), crc)
         self.assertEqual(binascii.crc32(b'spam'), zlib.crc32(b'spam'))
+
+
+class ChecksumCombineMixin:
+    """Mixin class for testing checksum combination."""
+
+    N = 1000
+    default_iv: int
+
+    def parse_iv(self, iv):
+        """Parse an IV value.
+
+        - The default IV is returned if *iv* is None.
+        - A random IV is returned if *iv* is -1.
+        - Otherwise, *iv* is returned as is.
+        """
+        if iv is None:
+            return self.default_iv
+        if iv == -1:
+            return random.randint(1, 0x80000000)
+        return iv
+
+    def checksum(self, data, init=None):
+        """Compute the checksum of data with a given initial value.
+
+        The *init* value is parsed by ``parse_iv``.
+        """
+        iv = self.parse_iv(init)
+        return self._checksum(data, iv)
+
+    def _checksum(self, data, init):
+        raise NotImplementedError
+
+    def combine(self, a, b, blen):
+        """Combine two checksums together."""
+        raise NotImplementedError
+
+    def get_random_data(self, data_len, *, iv=None):
+        """Get a triplet (data, iv, checksum)."""
+        data = random.randbytes(data_len)
+        init = self.parse_iv(iv)
+        checksum = self.checksum(data, init)
+        return data, init, checksum
+
+    def test_combine_empty(self):
+        for _ in range(self.N):
+            a, iv, checksum = self.get_random_data(32, iv=-1)
+            res = self.combine(iv, self.checksum(a), len(a))
+            self.assertEqual(res, checksum)
+
+    def test_combine_no_iv(self):
+        for _ in range(self.N):
+            a, _, chk_a = self.get_random_data(32)
+            b, _, chk_b = self.get_random_data(64)
+            res = self.combine(chk_a, chk_b, len(b))
+            self.assertEqual(res, self.checksum(a + b))
+
+    def test_combine_no_iv_invalid_length(self):
+        a, _, chk_a = self.get_random_data(32)
+        b, _, chk_b = self.get_random_data(64)
+        checksum = self.checksum(a + b)
+        for invalid_len in [1, len(a), 48, len(b) + 1, 191]:
+            invalid_res = self.combine(chk_a, chk_b, invalid_len)
+            self.assertNotEqual(invalid_res, checksum)
+
+        self.assertRaises(TypeError, self.combine, 0, 0, "len")
+
+    def test_combine_with_iv(self):
+        for _ in range(self.N):
+            a, iv_a, chk_a_with_iv = self.get_random_data(32, iv=-1)
+            chk_a_no_iv = self.checksum(a)
+            b, iv_b, chk_b_with_iv = self.get_random_data(64, iv=-1)
+            chk_b_no_iv = self.checksum(b)
+
+            # We can represent c = COMBINE(CHK(a, iv_a), CHK(b, iv_b)) as:
+            #
+            #   c = CHK(CHK(b'', iv_a) + CHK(a) + CHK(b'', iv_b) + CHK(b))
+            #     = COMBINE(
+            #           COMBINE(CHK(b'', iv_a), CHK(a)),
+            #           COMBINE(CHK(b'', iv_b), CHK(b)),
+            #       )
+            #     = COMBINE(COMBINE(iv_a, CHK(a)), COMBINE(iv_b, CHK(b)))
+            tmp0 = self.combine(iv_a, chk_a_no_iv, len(a))
+            tmp1 = self.combine(iv_b, chk_b_no_iv, len(b))
+            expected = self.combine(tmp0, tmp1, len(b))
+            checksum = self.combine(chk_a_with_iv, chk_b_with_iv, len(b))
+            self.assertEqual(checksum, expected)
+
+
+class CRC32CombineTestCase(ChecksumCombineMixin, unittest.TestCase):
+
+    default_iv = 0
+
+    def _checksum(self, data, init):
+        return zlib.crc32(data, init)
+
+    def combine(self, a, b, blen):
+        return zlib.crc32_combine(a, b, blen)
+
+
+class Adler32CombineTestCase(ChecksumCombineMixin, unittest.TestCase):
+
+    default_iv = 1
+
+    def _checksum(self, data, init):
+        return zlib.adler32(data, init)
+
+    def combine(self, a, b, blen):
+        return zlib.adler32_combine(a, b, blen)
 
 
 # Issue #10276 - check that inputs >=4 GiB are handled correctly.
@@ -223,12 +334,14 @@ class CompressTestCase(BaseCompressTestCase, unittest.TestCase):
                                          bufsize=zlib.DEF_BUF_SIZE),
                          HAMLET_SCENE)
 
-    @skip_on_s390x
     def test_speech128(self):
         # compress more data
         data = HAMLET_SCENE * 128
         x = zlib.compress(data)
-        self.assertEqual(zlib.compress(bytearray(data)), x)
+        # With hardware acceleration, the compressed bytes
+        # might not be identical.
+        if not HW_ACCELERATED:
+            self.assertEqual(zlib.compress(bytearray(data)), x)
         for ob in x, bytearray(x):
             self.assertEqual(zlib.decompress(ob), data)
 
@@ -275,7 +388,6 @@ class CompressTestCase(BaseCompressTestCase, unittest.TestCase):
 
 class CompressObjectTestCase(BaseCompressTestCase, unittest.TestCase):
     # Test compression object
-    @skip_on_s390x
     def test_pair(self):
         # straightforward compress/decompress objects
         datasrc = HAMLET_SCENE * 128
@@ -286,7 +398,10 @@ class CompressObjectTestCase(BaseCompressTestCase, unittest.TestCase):
             x1 = co.compress(data)
             x2 = co.flush()
             self.assertRaises(zlib.error, co.flush) # second flush should not work
-            self.assertEqual(x1 + x2, datazip)
+            # With hardware acceleration, the compressed bytes might not
+            # be identical.
+            if not HW_ACCELERATED:
+                self.assertEqual(x1 + x2, datazip)
         for v1, v2 in ((x1, x2), (bytearray(x1), bytearray(x2))):
             dco = zlib.decompressobj()
             y1 = dco.decompress(v1 + v2)
@@ -498,20 +613,16 @@ class CompressObjectTestCase(BaseCompressTestCase, unittest.TestCase):
 
         for sync in sync_opt:
             for level in range(10):
-                try:
+                with self.subTest(sync=sync, level=level):
                     obj = zlib.compressobj( level )
                     a = obj.compress( data[:3000] )
                     b = obj.flush( sync )
                     c = obj.compress( data[3000:] )
                     d = obj.flush()
-                except:
-                    print("Error for flush mode={}, level={}"
-                          .format(sync, level))
-                    raise
-                self.assertEqual(zlib.decompress(b''.join([a,b,c,d])),
-                                 data, ("Decompress failed: flush "
-                                        "mode=%i, level=%i") % (sync, level))
-                del obj
+                    self.assertEqual(zlib.decompress(b''.join([a,b,c,d])),
+                                     data, ("Decompress failed: flush "
+                                            "mode=%i, level=%i") % (sync, level))
+                    del obj
 
     @unittest.skipUnless(hasattr(zlib, 'Z_SYNC_FLUSH'),
                          'requires zlib.Z_SYNC_FLUSH')
@@ -1109,6 +1220,16 @@ class ZlibDecompressorTest(unittest.TestCase):
 class CustomInt:
     def __index__(self):
         return 100
+
+
+class TestModule(unittest.TestCase):
+    def test_deprecated__version__(self):
+        with self.assertWarnsRegex(
+                DeprecationWarning,
+                "'__version__' is deprecated and slated for removal in Python 3.20",
+        ) as cm:
+            getattr(zlib, "__version__")
+        self.assertEqual(cm.filename, __file__)
 
 
 if __name__ == "__main__":

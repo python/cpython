@@ -8,7 +8,7 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
-#include "pycore_lock.h"          // PyMutex
+#include "pycore_interp_structs.h" // struct codecs_state
 
 /* Initialize codecs-related state for the given interpreter, including
    registering the first codec search function. Must be called before any other
@@ -20,6 +20,17 @@ extern PyStatus _PyCodec_InitRegistry(PyInterpreterState *interp);
 extern void _PyCodec_Fini(PyInterpreterState *interp);
 
 extern PyObject* _PyCodec_Lookup(const char *encoding);
+
+/*
+ * Un-register the error handling callback function registered under
+ * the given 'name'. Only custom error handlers can be un-registered.
+ *
+ * - Return -1 and set an exception if 'name' refers to a built-in
+ *   error handling name (e.g., 'strict'), or if an error occurred.
+ * - Return 0 if no custom error handler can be found for 'name'.
+ * - Return 1 if the custom error handler was successfully removed.
+ */
+extern int _PyCodec_UnregisterError(const char *name);
 
 /* Text codec specific encoding and decoding API.
 
@@ -58,27 +69,6 @@ extern PyObject* _PyCodecInfo_GetIncrementalDecoder(
 extern PyObject* _PyCodecInfo_GetIncrementalEncoder(
    PyObject *codec_info,
    const char *errors);
-
-// Per-interpreter state used by codecs.c.
-struct codecs_state {
-    // A list of callable objects used to search for codecs.
-    PyObject *search_path;
-
-    // A dict mapping codec names to codecs returned from a callable in
-    // search_path.
-    PyObject *search_cache;
-
-    // A dict mapping error handling strategies to functions to implement them.
-    PyObject *error_registry;
-
-#ifdef Py_GIL_DISABLED
-    // Used to safely delete a specific item from search_path.
-    PyMutex search_path_mutex;
-#endif
-
-    // Whether or not the rest of the state is initialized.
-    int initialized;
-};
 
 #ifdef __cplusplus
 }

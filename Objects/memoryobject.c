@@ -109,8 +109,6 @@ mbuf_release(_PyManagedBufferObject *self)
     if (self->flags&_Py_MANAGED_BUFFER_RELEASED)
         return;
 
-    /* NOTE: at this point self->exports can still be > 0 if this function
-       is called from mbuf_clear() to break up a reference cycle. */
     self->flags |= _Py_MANAGED_BUFFER_RELEASED;
 
     /* PyBuffer_Release() decrements master->obj and sets it to NULL. */
@@ -1088,6 +1086,16 @@ PyBuffer_ToContiguous(void *buf, const Py_buffer *src, Py_ssize_t len, char orde
     return ret;
 }
 
+static inline Py_ssize_t
+get_exports(PyMemoryViewObject *buf)
+{
+#ifdef Py_GIL_DISABLED
+    return _Py_atomic_load_ssize_relaxed(&buf->exports);
+#else
+    return buf->exports;
+#endif
+}
+
 
 /****************************************************************************/
 /*                           Release/GC management                          */
@@ -1096,32 +1104,19 @@ PyBuffer_ToContiguous(void *buf, const Py_buffer *src, Py_ssize_t len, char orde
 /* Inform the managed buffer that this particular memoryview will not access
    the underlying buffer again. If no other memoryviews are registered with
    the managed buffer, the underlying buffer is released instantly and
-   marked as inaccessible for both the memoryview and the managed buffer.
-
-   This function fails if the memoryview itself has exported buffers. */
-static int
+   marked as inaccessible for both the memoryview and the managed buffer. */
+static void
 _memory_release(PyMemoryViewObject *self)
 {
+    assert(get_exports(self) == 0);
     if (self->flags & _Py_MEMORYVIEW_RELEASED)
-        return 0;
+        return;
 
-    if (self->exports == 0) {
-        self->flags |= _Py_MEMORYVIEW_RELEASED;
-        assert(self->mbuf->exports > 0);
-        if (--self->mbuf->exports == 0)
-            mbuf_release(self->mbuf);
-        return 0;
+    self->flags |= _Py_MEMORYVIEW_RELEASED;
+    assert(self->mbuf->exports > 0);
+    if (--self->mbuf->exports == 0) {
+        mbuf_release(self->mbuf);
     }
-    if (self->exports > 0) {
-        PyErr_Format(PyExc_BufferError,
-            "memoryview has %zd exported buffer%s", self->exports,
-            self->exports==1 ? "" : "s");
-        return -1;
-    }
-
-    PyErr_SetString(PyExc_SystemError,
-                    "_memory_release(): negative export count");
-    return -1;
 }
 
 /*[clinic input]
@@ -1134,18 +1129,31 @@ static PyObject *
 memoryview_release_impl(PyMemoryViewObject *self)
 /*[clinic end generated code: output=d0b7e3ba95b7fcb9 input=bc71d1d51f4a52f0]*/
 {
-    if (_memory_release(self) < 0)
+    Py_ssize_t exports = get_exports(self);
+    if (exports == 0) {
+        _memory_release(self);
+        Py_RETURN_NONE;
+    }
+
+    if (exports > 0) {
+        PyErr_Format(PyExc_BufferError,
+            "memoryview has %zd exported buffer%s", exports,
+            exports==1 ? "" : "s");
         return NULL;
-    Py_RETURN_NONE;
+    }
+
+    PyErr_SetString(PyExc_SystemError,
+                    "memoryview: negative export count");
+    return NULL;
 }
 
 static void
 memory_dealloc(PyObject *_self)
 {
     PyMemoryViewObject *self = (PyMemoryViewObject *)_self;
-    assert(self->exports == 0);
+    assert(get_exports(self) == 0);
     _PyObject_GC_UNTRACK(self);
-    (void)_memory_release(self);
+    _memory_release(self);
     Py_CLEAR(self->mbuf);
     if (self->weakreflist != NULL)
         PyObject_ClearWeakRefs((PyObject *) self);
@@ -1164,8 +1172,10 @@ static int
 memory_clear(PyObject *_self)
 {
     PyMemoryViewObject *self = (PyMemoryViewObject *)_self;
-    (void)_memory_release(self);
-    Py_CLEAR(self->mbuf);
+    if (get_exports(self) == 0) {
+        _memory_release(self);
+        Py_CLEAR(self->mbuf);
+    }
     return 0;
 }
 
@@ -1206,6 +1216,8 @@ get_native_fmtchar(char *result, const char *fmt)
     case 'f': size = sizeof(float); break;
     case 'd': size = sizeof(double); break;
     case 'e': size = sizeof(float) / 2; break;
+    case 'F': size = 2*sizeof(float); break;
+    case 'D': size = 2*sizeof(double); break;
     case '?': size = sizeof(_Bool); break;
     case 'P': size = sizeof(void *); break;
     }
@@ -1250,6 +1262,8 @@ get_native_fmtstr(const char *fmt)
     case 'f': RETURN("f");
     case 'd': RETURN("d");
     case 'e': RETURN("e");
+    case 'F': RETURN("F");
+    case 'D': RETURN("D");
     case '?': RETURN("?");
     case 'P': RETURN("P");
     }
@@ -1590,7 +1604,11 @@ memory_getbuf(PyObject *_self, Py_buffer *view, int flags)
 
 
     view->obj = Py_NewRef(self);
+#ifdef Py_GIL_DISABLED
+    _Py_atomic_add_ssize(&self->exports, 1);
+#else
     self->exports++;
+#endif
 
     return 0;
 }
@@ -1599,7 +1617,11 @@ static void
 memory_releasebuf(PyObject *_self, Py_buffer *view)
 {
     PyMemoryViewObject *self = (PyMemoryViewObject *)_self;
+#ifdef Py_GIL_DISABLED
+    _Py_atomic_add_ssize(&self->exports, -1);
+#else
     self->exports--;
+#endif
     return;
     /* PyBuffer_Release() decrements view->obj after this function returns. */
 }
@@ -1653,6 +1675,10 @@ fix_error_int(const char *fmt)
 
     return -1;
 }
+
+// UNPACK_TO_BOOL: Return 0 if PTR represents "false", and 1 otherwise.
+static const _Bool bool_false = 0;
+#define UNPACK_TO_BOOL(PTR) (memcmp((PTR), &bool_false, sizeof(_Bool)) != 0)
 
 /* Accept integer objects or objects with an __index__() method. */
 static long
@@ -1767,7 +1793,7 @@ unpack_single(PyMemoryViewObject *self, const char *ptr, const char *fmt)
     long long lld;
     long ld;
     Py_ssize_t zd;
-    double d;
+    double d[2];
     unsigned char uc;
     void *p;
 
@@ -1789,7 +1815,7 @@ unpack_single(PyMemoryViewObject *self, const char *ptr, const char *fmt)
     case 'l': UNPACK_SINGLE(ld, ptr, long); goto convert_ld;
 
     /* boolean */
-    case '?': UNPACK_SINGLE(ld, ptr, _Bool); goto convert_bool;
+    case '?': ld = UNPACK_TO_BOOL(ptr); goto convert_bool;
 
     /* unsigned integers */
     case 'H': UNPACK_SINGLE(lu, ptr, unsigned short); goto convert_lu;
@@ -1805,9 +1831,20 @@ unpack_single(PyMemoryViewObject *self, const char *ptr, const char *fmt)
     case 'N': UNPACK_SINGLE(zu, ptr, size_t); goto convert_zu;
 
     /* floats */
-    case 'f': UNPACK_SINGLE(d, ptr, float); goto convert_double;
-    case 'd': UNPACK_SINGLE(d, ptr, double); goto convert_double;
-    case 'e': d = PyFloat_Unpack2(ptr, endian); goto convert_double;
+    case 'f': UNPACK_SINGLE(d[0], ptr, float); goto convert_double;
+    case 'd': UNPACK_SINGLE(d[0], ptr, double); goto convert_double;
+    case 'e': d[0] = PyFloat_Unpack2(ptr, endian); goto convert_double;
+
+    /* complexes */
+    case 'F':
+        d[0] = PyFloat_Unpack4(ptr, endian);
+        d[1] = PyFloat_Unpack4(ptr + sizeof(float), endian);
+        goto convert_double_complex;
+
+    case 'D':
+        d[0] = PyFloat_Unpack8(ptr, endian);
+        d[1] = PyFloat_Unpack8(ptr + sizeof(double), endian);
+        goto convert_double_complex;
 
     /* bytes object */
     case 'c': goto convert_bytes;
@@ -1835,7 +1872,9 @@ convert_zd:
 convert_zu:
     return PyLong_FromSize_t(zu);
 convert_double:
-    return PyFloat_FromDouble(d);
+    return PyFloat_FromDouble(d[0]);
+convert_double_complex:
+    return PyComplex_FromDoubles(d[0], d[1]);
 convert_bool:
     return PyBool_FromLong(ld);
 convert_bytes:
@@ -1867,6 +1906,7 @@ pack_single(PyMemoryViewObject *self, char *ptr, PyObject *item, const char *fmt
     long ld;
     Py_ssize_t zd;
     double d;
+    Py_complex c;
     void *p;
 
 #if PY_LITTLE_ENDIAN
@@ -1968,6 +2008,25 @@ pack_single(PyMemoryViewObject *self, char *ptr, PyObject *item, const char *fmt
         }
         break;
 
+    /* complexes */
+    case 'F': case 'D':
+        c = PyComplex_AsCComplex(item);
+        if (c.real == -1.0 && PyErr_Occurred()) {
+            goto err_occurred;
+        }
+        CHECK_RELEASED_INT_AGAIN(self);
+        if (fmt[0] == 'D') {
+            double x[2] = {c.real, c.imag};
+
+            memcpy(ptr, &x, sizeof(x));
+        }
+        else {
+            float x[2] = {(float)c.real, (float)c.imag};
+
+            memcpy(ptr, &x, sizeof(x));
+        }
+        break;
+
     /* bool */
     case '?':
         ld = PyObject_IsTrue(item);
@@ -2065,7 +2124,7 @@ struct_get_unpacker(const char *fmt, Py_ssize_t itemsize)
     PyObject *format = NULL;
     struct unpacker *x = NULL;
 
-    Struct = _PyImport_GetModuleAttrString("struct", "Struct");
+    Struct = PyImport_ImportModuleAttrString("struct", "Struct");
     if (Struct == NULL)
         return NULL;
 
@@ -2247,6 +2306,7 @@ memoryview_tolist_impl(PyMemoryViewObject *self)
 }
 
 /*[clinic input]
+@permit_long_docstring_body
 memoryview.tobytes
 
     order: str(accept={str, NoneType}, c_default="NULL") = 'C'
@@ -2262,11 +2322,10 @@ to C first. order=None is the same as order='C'.
 
 static PyObject *
 memoryview_tobytes_impl(PyMemoryViewObject *self, const char *order)
-/*[clinic end generated code: output=1288b62560a32a23 input=0efa3ddaeda573a8]*/
+/*[clinic end generated code: output=1288b62560a32a23 input=23c9faf372cfdbcc]*/
 {
     Py_buffer *src = VIEW_ADDR(self);
     char ord = 'C';
-    PyObject *bytes;
 
     CHECK_RELEASED(self);
 
@@ -2284,16 +2343,18 @@ memoryview_tobytes_impl(PyMemoryViewObject *self, const char *order)
         }
     }
 
-    bytes = PyBytes_FromStringAndSize(NULL, src->len);
-    if (bytes == NULL)
-        return NULL;
-
-    if (PyBuffer_ToContiguous(PyBytes_AS_STRING(bytes), src, src->len, ord) < 0) {
-        Py_DECREF(bytes);
+    PyBytesWriter *writer = PyBytesWriter_Create(src->len);
+    if (writer == NULL) {
         return NULL;
     }
 
-    return bytes;
+    if (PyBuffer_ToContiguous(PyBytesWriter_GetData(writer),
+                              src, src->len, ord) < 0) {
+        PyBytesWriter_Discard(writer);
+        return NULL;
+    }
+
+    return PyBytesWriter_Finish(writer);
 }
 
 /*[clinic input]
@@ -2301,7 +2362,7 @@ memoryview.hex
 
     sep: object = NULL
         An optional single character or byte to separate hex bytes.
-    bytes_per_sep: int = 1
+    bytes_per_sep: Py_ssize_t = 1
         How many bytes between separators.  Positive values count from the
         right, negative values count from the left.
 
@@ -2321,32 +2382,39 @@ Example:
 
 static PyObject *
 memoryview_hex_impl(PyMemoryViewObject *self, PyObject *sep,
-                    int bytes_per_sep)
-/*[clinic end generated code: output=430ca760f94f3ca7 input=539f6a3a5fb56946]*/
+                    Py_ssize_t bytes_per_sep)
+/*[clinic end generated code: output=c9bb00c7a8e86056 input=dc48a56ed3b058ae]*/
 {
     Py_buffer *src = VIEW_ADDR(self);
-    PyObject *bytes;
-    PyObject *ret;
 
     CHECK_RELEASED(self);
 
     if (MV_C_CONTIGUOUS(self->flags)) {
-        return _Py_strhex_with_sep(src->buf, src->len, sep, bytes_per_sep);
+        // Prevent 'self' from being freed if computing len(sep) mutates 'self'
+        // in _Py_strhex_with_sep().
+        // See: https://github.com/python/cpython/issues/143195.
+        self->exports++;
+        PyObject *ret = _Py_strhex_with_sep(src->buf, src->len, sep, bytes_per_sep);
+        self->exports--;
+        return ret;
     }
 
-    bytes = PyBytes_FromStringAndSize(NULL, src->len);
-    if (bytes == NULL)
-        return NULL;
-
-    if (PyBuffer_ToContiguous(PyBytes_AS_STRING(bytes), src, src->len, 'C') < 0) {
-        Py_DECREF(bytes);
+    PyBytesWriter *writer = PyBytesWriter_Create(src->len);
+    if (writer == NULL) {
         return NULL;
     }
 
-    ret = _Py_strhex_with_sep(
-            PyBytes_AS_STRING(bytes), PyBytes_GET_SIZE(bytes),
-            sep, bytes_per_sep);
-    Py_DECREF(bytes);
+    if (PyBuffer_ToContiguous(PyBytesWriter_GetData(writer),
+                              src, src->len, 'C') < 0) {
+        PyBytesWriter_Discard(writer);
+        return NULL;
+    }
+
+    PyObject *ret = _Py_strhex_with_sep(
+        PyBytesWriter_GetData(writer),
+        PyBytesWriter_GetSize(writer),
+        sep, bytes_per_sep);
+    PyBytesWriter_Discard(writer);
 
     return ret;
 }
@@ -2408,7 +2476,7 @@ ptr_from_tuple(const Py_buffer *view, PyObject *tup)
 
     if (nindices > view->ndim) {
         PyErr_Format(PyExc_TypeError,
-                     "cannot index %zd-dimension view with %zd-element tuple",
+                     "cannot index %d-dimension view with %zd-element tuple",
                      view->ndim, nindices);
         return NULL;
     }
@@ -2749,6 +2817,141 @@ static PySequenceMethods memory_as_sequence = {
 };
 
 
+/****************************************************************************/
+/*                              Counting                                    */
+/****************************************************************************/
+
+/*[clinic input]
+memoryview.count
+
+    value: object
+    /
+
+Count the number of occurrences of a value.
+[clinic start generated code]*/
+
+static PyObject *
+memoryview_count_impl(PyMemoryViewObject *self, PyObject *value)
+/*[clinic end generated code: output=a15cb19311985063 input=e3036ce1ed7d1823]*/
+{
+    PyObject *iter = PyObject_GetIter(_PyObject_CAST(self));
+    if (iter == NULL) {
+        return NULL;
+    }
+
+    Py_ssize_t count = 0;
+    PyObject *item = NULL;
+    while (PyIter_NextItem(iter, &item)) {
+        if (item == NULL) {
+            Py_DECREF(iter);
+            return NULL;
+        }
+        if (item == value) {
+            Py_DECREF(item);
+            count++;  // no overflow since count <= len(mv) <= PY_SSIZE_T_MAX
+            continue;
+        }
+        int contained = PyObject_RichCompareBool(item, value, Py_EQ);
+        Py_DECREF(item);
+        if (contained > 0) { // more likely than 'contained < 0'
+            count++;  // no overflow since count <= len(mv) <= PY_SSIZE_T_MAX
+        }
+        else if (contained < 0) {
+            Py_DECREF(iter);
+            return NULL;
+        }
+    }
+    Py_DECREF(iter);
+    return PyLong_FromSsize_t(count);
+}
+
+
+/**************************************************************************/
+/*                             Lookup                                     */
+/**************************************************************************/
+
+/*[clinic input]
+memoryview.index
+
+    value: object
+    start: slice_index(accept={int}) = 0
+    stop: slice_index(accept={int}, c_default="PY_SSIZE_T_MAX") = sys.maxsize
+    /
+
+Return the index of the first occurrence of a value.
+
+Raises ValueError if the value is not present.
+[clinic start generated code]*/
+
+static PyObject *
+memoryview_index_impl(PyMemoryViewObject *self, PyObject *value,
+                      Py_ssize_t start, Py_ssize_t stop)
+/*[clinic end generated code: output=e0185e3819e549df input=0697a0165bf90b5a]*/
+{
+    const Py_buffer *view = &self->view;
+    CHECK_RELEASED(self);
+
+    if (view->ndim == 0) {
+        PyErr_SetString(PyExc_TypeError, "invalid lookup on 0-dim memory");
+        return NULL;
+    }
+
+    if (view->ndim == 1) {
+        Py_ssize_t n = view->shape[0];
+
+        if (start < 0) {
+            start = Py_MAX(start + n, 0);
+        }
+
+        if (stop < 0) {
+            stop = Py_MAX(stop + n, 0);
+        }
+
+        stop = Py_MIN(stop, n);
+        assert(stop >= 0);
+        assert(stop <= n);
+
+        start = Py_MIN(start, stop);
+        assert(0 <= start);
+        assert(start <= stop);
+
+        PyObject *obj = _PyObject_CAST(self);
+        for (Py_ssize_t index = start; index < stop; index++) {
+            // Note: while memoryviews can be mutated during iterations
+            // when calling the == operator, their shape cannot. As such,
+            // it is safe to assume that the index remains valid for the
+            // entire loop.
+            assert(index < n);
+
+            PyObject *item = memory_item(obj, index);
+            if (item == NULL) {
+                return NULL;
+            }
+            if (item == value) {
+                Py_DECREF(item);
+                return PyLong_FromSsize_t(index);
+            }
+            int contained = PyObject_RichCompareBool(item, value, Py_EQ);
+            Py_DECREF(item);
+            if (contained > 0) {  // more likely than 'contained < 0'
+                return PyLong_FromSsize_t(index);
+            }
+            else if (contained < 0) {
+                return NULL;
+            }
+        }
+
+        PyErr_SetString(PyExc_ValueError, "memoryview.index(x): x not found");
+        return NULL;
+    }
+
+    PyErr_SetString(PyExc_NotImplementedError,
+                    "multi-dimensional lookup is not implemented");
+    return NULL;
+
+}
+
+
 /**************************************************************************/
 /*                             Comparisons                                */
 /**************************************************************************/
@@ -2830,7 +3033,7 @@ unpack_cmp(const char *p, const char *q, char fmt,
     case 'l': CMP_SINGLE(p, q, long); return equal;
 
     /* boolean */
-    case '?': CMP_SINGLE(p, q, _Bool); return equal;
+    case '?': return UNPACK_TO_BOOL(p) == UNPACK_TO_BOOL(q);
 
     /* unsigned integers */
     case 'H': CMP_SINGLE(p, q, unsigned short); return equal;
@@ -2859,6 +3062,24 @@ unpack_cmp(const char *p, const char *q, char fmt,
         double u = PyFloat_Unpack2(p, endian);
         double v = PyFloat_Unpack2(q, endian);
         return (u == v);
+    }
+
+    /* complexes */
+    case 'F':
+    {
+         float x[2], y[2];
+
+         memcpy(&x, p, sizeof(x));
+         memcpy(&y, q, sizeof(y));
+         return (x[0] == y[0]) && (x[1] == y[1]);
+    }
+    case 'D':
+    {
+         double x[2], y[2];
+
+         memcpy(&x, p, sizeof(x));
+         memcpy(&y, q, sizeof(y));
+         return (x[0] == y[0]) && (x[1] == y[1]);
     }
 
     /* bytes object */
@@ -2959,6 +3180,30 @@ memory_richcompare(PyObject *v, PyObject *w, int op)
         goto result;
     }
     vv = VIEW_ADDR(v);
+
+    // For formats supported by the struct module a memoryview is equal to
+    // itself: there is no need to compare individual values.
+    // This is not true for float values since they can be NaN, and NaN
+    // is not equal to itself.  So only use this optimization on format known to
+    // not use floats.
+    if (v == w) {
+        const char *format = vv->format;
+        if (format != NULL) {
+            if (*format == '@') {
+                format++;
+            }
+            // Include only formats known by struct, exclude float formats
+            // "d" (double), "f" (float) and "e" (16-bit float).
+            // Do not optimize "P" format.
+            if (format[0] != 0
+                && strchr("bBchHiIlLnNqQ?", format[0]) != NULL
+                && format[1] == 0)
+            {
+                equal = 1;
+                goto result;
+            }
+        }
+    }
 
     if (PyMemoryView_Check(w)) {
         if (BASE_INACCESSIBLE(w)) {
@@ -3069,9 +3314,16 @@ memory_hash(PyObject *_self)
                 "memoryview: hashing is restricted to formats 'B', 'b' or 'c'");
             return -1;
         }
-        if (view->obj != NULL && PyObject_Hash(view->obj) == -1) {
-            /* Keep the original error message */
-            return -1;
+        if (view->obj != NULL) {
+            // Prevent 'self' from being freed when computing the item's hash.
+            // See https://github.com/python/cpython/issues/142664.
+            self->exports++;
+            Py_hash_t h = PyObject_Hash(view->obj);
+            self->exports--;
+            if (h == -1) {
+                /* Keep the original error message */
+                return -1;
+            }
         }
 
         if (!MV_C_CONTIGUOUS(self->flags)) {
@@ -3087,7 +3339,7 @@ memory_hash(PyObject *_self)
         }
 
         /* Can't fail */
-        self->hash = _Py_HashBytes(mem, view->len);
+        self->hash = Py_HashBuffer(mem, view->len);
 
         if (mem != view->buf)
             PyMem_Free(mem);
@@ -3285,8 +3537,11 @@ static PyMethodDef memory_methods[] = {
     MEMORYVIEW_CAST_METHODDEF
     MEMORYVIEW_TOREADONLY_METHODDEF
     MEMORYVIEW__FROM_FLAGS_METHODDEF
+    MEMORYVIEW_COUNT_METHODDEF
+    MEMORYVIEW_INDEX_METHODDEF
     {"__enter__",   memory_enter, METH_NOARGS, NULL},
     {"__exit__",    memory_exit, METH_VARARGS, memory_exit_doc},
+    {"__class_getitem__", Py_GenericAlias, METH_O|METH_CLASS, PyDoc_STR("See PEP 585")},
     {NULL,          NULL}
 };
 
@@ -3356,6 +3611,7 @@ memory_iter(PyObject *seq)
         PyErr_BadInternalCall();
         return NULL;
     }
+    CHECK_RELEASED(seq);
     PyMemoryViewObject *obj = (PyMemoryViewObject *)seq;
     int ndims = obj->view.ndim;
     if (ndims == 0) {

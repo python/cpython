@@ -124,6 +124,11 @@ class BaseLockTests(BaseTestCase):
         lock = self.locktype()
         del lock
 
+    def test_constructor_noargs(self):
+        self.assertRaises(TypeError, self.locktype, 1)
+        self.assertRaises(TypeError, self.locktype, x=1)
+        self.assertRaises(TypeError, self.locktype, 1, x=2)
+
     def test_repr(self):
         lock = self.locktype()
         self.assertRegex(repr(lock), "<unlocked .* object (.*)?at .*>")
@@ -332,6 +337,26 @@ class RLockTests(BaseLockTests):
     """
     Tests for recursive locks.
     """
+    def test_repr_count(self):
+        # see gh-134322: check that count values are correct:
+        # when a rlock is just created,
+        # in a second thread when rlock is acquired in the main thread.
+        lock = self.locktype()
+        self.assertIn("count=0", repr(lock))
+        self.assertIn("<unlocked", repr(lock))
+        lock.acquire()
+        lock.acquire()
+        self.assertIn("count=2", repr(lock))
+        self.assertIn("<locked", repr(lock))
+
+        result = []
+        def call_repr():
+            result.append(repr(lock))
+        with Bunch(call_repr, 1):
+            pass
+        self.assertIn("count=2", result[0])
+        self.assertIn("<locked", result[0])
+
     def test_reacquire(self):
         lock = self.locktype()
         lock.acquire()
@@ -352,6 +377,36 @@ class RLockTests(BaseLockTests):
         lock.release()
         lock.release()
         self.assertRaises(RuntimeError, lock.release)
+
+    def test_locked(self):
+        lock = self.locktype()
+        self.assertFalse(lock.locked())
+        lock.acquire()
+        self.assertTrue(lock.locked())
+        lock.acquire()
+        self.assertTrue(lock.locked())
+        lock.release()
+        self.assertTrue(lock.locked())
+        lock.release()
+        self.assertFalse(lock.locked())
+
+    def test_locked_with_2threads(self):
+        # see gh-134323: check that a rlock which
+        # is acquired in a different thread,
+        # is still locked in the main thread.
+        result = []
+        rlock = self.locktype()
+        self.assertFalse(rlock.locked())
+        def acquire():
+            result.append(rlock.locked())
+            rlock.acquire()
+            result.append(rlock.locked())
+
+        with Bunch(acquire, 1):
+            pass
+        self.assertTrue(rlock.locked())
+        self.assertFalse(result[0])
+        self.assertTrue(result[1])
 
     def test_release_save_unacquired(self):
         # Cannot _release_save an unacquired lock
@@ -1012,6 +1067,10 @@ class BarrierTests(BaseTestCase):
             self.barrier.wait()
         self.assertEqual(self.barrier.n_waiting, 0)
         self.assertFalse(self.barrier.broken)
+
+    def test_constructor(self):
+        self.assertRaises(ValueError, self.barriertype, parties=0)
+        self.assertRaises(ValueError, self.barriertype, parties=-1)
 
     def test_barrier(self, passes=1):
         """

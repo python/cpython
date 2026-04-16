@@ -2,6 +2,12 @@
 preserve
 [clinic start generated code]*/
 
+#if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+#  include "pycore_gc.h"          // PyGC_Head
+#  include "pycore_runtime.h"     // _Py_ID()
+#endif
+#include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
+
 PyDoc_STRVAR(grp_getgrgid__doc__,
 "getgrgid($module, /, id)\n"
 "--\n"
@@ -11,21 +17,51 @@ PyDoc_STRVAR(grp_getgrgid__doc__,
 "If id is not valid, raise KeyError.");
 
 #define GRP_GETGRGID_METHODDEF    \
-    {"getgrgid", (PyCFunction)(void(*)(void))grp_getgrgid, METH_VARARGS|METH_KEYWORDS, grp_getgrgid__doc__},
+    {"getgrgid", _PyCFunction_CAST(grp_getgrgid), METH_FASTCALL|METH_KEYWORDS, grp_getgrgid__doc__},
 
 static PyObject *
 grp_getgrgid_impl(PyObject *module, PyObject *id);
 
 static PyObject *
-grp_getgrgid(PyObject *module, PyObject *args, PyObject *kwargs)
+grp_getgrgid(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    static char *_keywords[] = {"id", NULL};
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 1
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
+        .ob_item = { &_Py_ID(id), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"id", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "getgrgid",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[1];
     PyObject *id;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O:getgrgid", _keywords,
-        &id))
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    if (!args) {
         goto exit;
+    }
+    id = args[0];
     return_value = grp_getgrgid_impl(module, id);
 
 exit:
@@ -41,21 +77,55 @@ PyDoc_STRVAR(grp_getgrnam__doc__,
 "If name is not valid, raise KeyError.");
 
 #define GRP_GETGRNAM_METHODDEF    \
-    {"getgrnam", (PyCFunction)(void(*)(void))grp_getgrnam, METH_VARARGS|METH_KEYWORDS, grp_getgrnam__doc__},
+    {"getgrnam", _PyCFunction_CAST(grp_getgrnam), METH_FASTCALL|METH_KEYWORDS, grp_getgrnam__doc__},
 
 static PyObject *
 grp_getgrnam_impl(PyObject *module, PyObject *name);
 
 static PyObject *
-grp_getgrnam(PyObject *module, PyObject *args, PyObject *kwargs)
+grp_getgrnam(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    static char *_keywords[] = {"name", NULL};
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 1
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
+        .ob_item = { &_Py_ID(name), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"name", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "getgrnam",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[1];
     PyObject *name;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "U:getgrnam", _keywords,
-        &name))
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    if (!args) {
         goto exit;
+    }
+    if (!PyUnicode_Check(args[0])) {
+        _PyArg_BadArgument("getgrnam", "argument 'name'", "str", args[0]);
+        goto exit;
+    }
+    name = args[0];
     return_value = grp_getgrnam_impl(module, name);
 
 exit:
@@ -82,4 +152,4 @@ grp_getgrall(PyObject *module, PyObject *Py_UNUSED(ignored))
 {
     return grp_getgrall_impl(module);
 }
-/*[clinic end generated code: output=81f180beb67fc585 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=35aa81c00dbd3229 input=a9049054013a1b77]*/

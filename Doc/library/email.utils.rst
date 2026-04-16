@@ -8,7 +8,7 @@
 
 --------------
 
-There are a couple of useful utilities provided in the :mod:`email.utils`
+There are a couple of useful utilities provided in the :mod:`!email.utils`
 module:
 
 .. function:: localtime(dt=None)
@@ -158,7 +158,7 @@ of the new API.
 
       Fri, 09 Nov 2001 01:08:47 -0000
 
-   Optional *timeval* if given is a floating point time value as accepted by
+   Optional *timeval* if given is a floating-point time value as accepted by
    :func:`time.gmtime` and :func:`time.localtime`, otherwise the current time is
    used.
 

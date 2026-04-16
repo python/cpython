@@ -17,13 +17,13 @@ from enum import StrEnum
 
 __all__ = ["symtable", "SymbolTableType", "SymbolTable", "Class", "Function", "Symbol"]
 
-def symtable(code, filename, compile_type):
+def symtable(code, filename, compile_type, *, module=None):
     """ Return the toplevel *SymbolTable* for the source code.
 
     *filename* is the name of the file with the code
     and *compile_type* is the *compile()* mode argument.
     """
-    top = _symtable.symtable(code, filename, compile_type)
+    top = _symtable.symtable(code, filename, compile_type, module=module)
     return _newSymbolTable(top, filename)
 
 class SymbolTableFactory:
@@ -184,6 +184,7 @@ class Function(SymbolTable):
     __frees = None
     __globals = None
     __nonlocals = None
+    __cells = None
 
     def __idents_matching(self, test_func):
         return tuple(ident for ident in self.get_identifiers()
@@ -229,6 +230,14 @@ class Function(SymbolTable):
             self.__frees = self.__idents_matching(is_free)
         return self.__frees
 
+    def get_cells(self):
+        """Return a tuple of cell variables in the function.
+        """
+        if self.__cells is None:
+            is_cell = lambda x: _get_scope(x) == CELL
+            self.__cells = self.__idents_matching(is_cell)
+        return self.__cells
+
 
 class Class(SymbolTable):
 
@@ -237,6 +246,12 @@ class Class(SymbolTable):
     def get_methods(self):
         """Return a tuple of methods declared in the class.
         """
+        import warnings
+        typename = f'{self.__class__.__module__}.{self.__class__.__name__}'
+        warnings.warn(f'{typename}.get_methods() is deprecated '
+                      f'and will be removed in Python 3.16.',
+                      DeprecationWarning, stacklevel=2)
+
         if self.__methods is None:
             d = {}
 
@@ -256,7 +271,7 @@ class Class(SymbolTable):
                             scope_name = st.name
                             for c in st.children:
                                 if c.name == scope_name and c.type == _symtable.TYPE_FUNCTION:
-                                    d[st.name] = 1
+                                    d[scope_name] = 1
                                     break
             self.__methods = tuple(d)
         return self.__methods
@@ -336,6 +351,10 @@ class Symbol:
         """
         return bool(self.__scope == FREE)
 
+    def is_cell(self):
+        """Return *True* if the symbol is a cell variable."""
+        return bool(self.__scope == CELL)
+
     def is_free_class(self):
         """Return *True* if a class-scoped symbol is free from
         the perspective of a method."""
@@ -395,7 +414,7 @@ class Symbol:
 _flags = [('USE', USE)]
 _flags.extend(kv for kv in globals().items() if kv[0].startswith('DEF_'))
 _scopes_names = ('FREE', 'LOCAL', 'GLOBAL_IMPLICIT', 'GLOBAL_EXPLICIT', 'CELL')
-_scopes_value_to_name = {globals()[n]: n for n in _scopes_names}
+_scopes_value_to_name = frozendict({globals()[n]: n for n in _scopes_names})
 
 
 def main(args):

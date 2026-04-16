@@ -279,7 +279,7 @@ applications include caching objects that are expensive to create::
    Traceback (most recent call last):
      File "<stdin>", line 1, in <module>
        d['primary']                # entry was automatically removed
-     File "C:/python314/lib/weakref.py", line 46, in __getitem__
+     File "C:/python315/lib/weakref.py", line 46, in __getitem__
        o = self.data[key]()
    KeyError: 'primary'
 
@@ -352,11 +352,11 @@ not want to run a full list sort::
 
 .. _tut-decimal-fp:
 
-Decimal Floating Point Arithmetic
+Decimal Floating-Point Arithmetic
 =================================
 
 The :mod:`decimal` module offers a :class:`~decimal.Decimal` datatype for
-decimal floating point arithmetic.  Compared to the built-in :class:`float`
+decimal floating-point arithmetic.  Compared to the built-in :class:`float`
 implementation of binary floating point, the class is especially helpful for
 
 * financial applications and other uses which require exact decimal

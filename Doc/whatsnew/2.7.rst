@@ -291,7 +291,7 @@ modules.
   configuration files can now be read, modified, and then written back
   in their original order.
 
-* The :meth:`~collections.somenamedtuple._asdict()` method for
+* The :meth:`~collections.somenamedtuple._asdict` method for
   :func:`collections.namedtuple` now returns an ordered dictionary with the
   values appearing in the same order as the underlying tuple indices.
 
@@ -858,8 +858,8 @@ Some smaller changes made to the core Python language are:
 
   .. XXX bytearray doesn't seem to be documented
 
-* When using :class:`@classmethod <classmethod>` and
-  :class:`@staticmethod <staticmethod>` to wrap
+* When using :deco:`classmethod` and
+  :deco:`staticmethod` to wrap
   methods as class or static methods, the wrapper object now
   exposes the wrapped function as their :attr:`~method.__func__`
   attribute.
@@ -1198,7 +1198,7 @@ changes, or look through the Subversion logs for all the details.
   of the operands.  Previously such comparisons would fall back to
   Python's default rules for comparing objects, which produced arbitrary
   results based on their type.  Note that you still cannot combine
-  :class:`!Decimal` and floating-point in other operations such as addition,
+  :class:`!Decimal` and floating point in other operations such as addition,
   since you should be explicitly choosing how to convert between float and
   :class:`!Decimal`.  (Fixed by Mark Dickinson; :issue:`2531`.)
 
@@ -1541,14 +1541,14 @@ changes, or look through the Subversion logs for all the details.
   buffer API, which fixed a test suite failure (fix by Antoine Pitrou;
   :issue:`7133`) and automatically set
   OpenSSL's :c:macro:`!SSL_MODE_AUTO_RETRY`, which will prevent an error
-  code being returned from :meth:`recv` operations that trigger an SSL
+  code being returned from :meth:`!recv` operations that trigger an SSL
   renegotiation (fix by Antoine Pitrou; :issue:`8222`).
 
   The :func:`~ssl.SSLContext.wrap_socket` constructor function now takes a
   *ciphers* argument that's a string listing the encryption algorithms
   to be allowed; the format of the string is described
   `in the OpenSSL documentation
-  <https://www.openssl.org/docs/man1.0.2/man1/ciphers.html>`__.
+  <https://docs.openssl.org/1.0.2/man1/ciphers/>`__.
   (Added by Antoine Pitrou; :issue:`8322`.)
 
   Another change makes the extension load all of OpenSSL's ciphers and
@@ -1602,7 +1602,7 @@ changes, or look through the Subversion logs for all the details.
   identifier instead of the previous default value of ``'python'``.
   (Changed by Sean Reifschneider; :issue:`8451`.)
 
-* The :attr:`sys.version_info` value is now a named tuple, with attributes
+* The :data:`sys.version_info` value is now a named tuple, with attributes
   named :attr:`!major`, :attr:`!minor`, :attr:`!micro`,
   :attr:`!releaselevel`, and :attr:`!serial`.  (Contributed by Ross
   Light; :issue:`4285`.)
@@ -2031,7 +2031,7 @@ version 1.3.  Some of the new features are:
 * ElementTree's code for converting trees to a string has been
   significantly reworked, making it roughly twice as fast in many
   cases.  The :meth:`ElementTree.write() <xml.etree.ElementTree.ElementTree.write>`
-  and :meth:`Element.write` methods now have a *method* parameter that can be
+  and :meth:`!Element.write` methods now have a *method* parameter that can be
   "xml" (the default), "html", or "text".  HTML mode will output empty
   elements as ``<empty></empty>`` instead of ``<empty/>``, and text
   mode will skip over elements and only output the text chunks.  If
@@ -2044,7 +2044,7 @@ version 1.3.  Some of the new features are:
   Namespace handling has also been improved.  All ``xmlns:<whatever>``
   declarations are now output on the root element, not scattered throughout
   the resulting XML.  You can set the default namespace for a tree
-  by setting the :attr:`default_namespace` attribute and can
+  by setting the :attr:`!default_namespace` attribute and can
   register new prefixes with :meth:`~xml.etree.ElementTree.register_namespace`.  In XML mode,
   you can use the true/false *xml_declaration* parameter to suppress the
   XML declaration.
@@ -2196,8 +2196,6 @@ Changes to Python's build process and to the C API include:
   locale-independent way.  (Added by Eric Smith;
   :issue:`5793`.)
 
-  .. XXX these macros don't seem to be described in the c-api docs.
-
 * Removed function: :c:func:`!PyEval_CallObject` is now only available
   as a macro.  A function version was being kept around to preserve
   ABI linking compatibility, but that was in 1997; it can certainly be
@@ -2234,7 +2232,7 @@ Changes to Python's build process and to the C API include:
 
 * When using the :c:type:`PyMemberDef` structure to define attributes
   of a type, Python will no longer let you try to delete or set a
-  :c:macro:`T_STRING_INPLACE` attribute.
+  :c:macro:`!T_STRING_INPLACE` attribute.
 
   .. rev 79644
 
@@ -2259,12 +2257,12 @@ Changes to Python's build process and to the C API include:
   :issue:`6491`.)
 
 * The :program:`configure` script now checks for floating-point rounding bugs
-  on certain 32-bit Intel chips and defines a :c:macro:`X87_DOUBLE_ROUNDING`
+  on certain 32-bit Intel chips and defines a :c:macro:`!X87_DOUBLE_ROUNDING`
   preprocessor definition.  No code currently uses this definition,
   but it's available if anyone wishes to use it.
   (Added by Mark Dickinson; :issue:`2937`.)
 
-  :program:`configure` also now sets a :envvar:`LDCXXSHARED` Makefile
+  :program:`configure` also now sets a :envvar:`!LDCXXSHARED` Makefile
   variable for supporting C++ linking.  (Contributed by Arfrever
   Frehtes Taifersar Arahesis; :issue:`1222585`.)
 
@@ -2680,13 +2678,11 @@ automatic ``PATH`` modifications to have ``pip`` available from the command
 line by default, otherwise it can still be accessed through the Python
 launcher for Windows as ``py -m pip``.
 
-As `discussed in the PEP`__, platform packagers may choose not to install
+As :pep:`discussed in the PEP <0477#disabling-ensurepip-by-downstream-distributors>`,
+platform packagers may choose not to install
 these commands by default, as long as, when invoked, they provide clear and
 simple directions on how to install them on that platform (usually using
 the system package manager).
-
-__ https://peps.python.org/pep-0477/#disabling-ensurepip-by-downstream-distributors
-
 
 Documentation Changes
 ~~~~~~~~~~~~~~~~~~~~~

@@ -16,6 +16,12 @@ class TestDecode:
         self.assertIsInstance(rval, float)
         self.assertEqual(rval, 1.0)
 
+    def test_nonascii_digits_rejected(self):
+        # JSON specifies only ascii digits, see gh-125687
+        for num in ["1\uff10", "0.\uff10", "0e\uff10"]:
+            with self.assertRaises(self.JSONDecodeError):
+                self.loads(num)
+
     def test_bytes(self):
         self.assertEqual(self.loads(b"1"), 1)
 
@@ -62,6 +68,24 @@ class TestDecode:
         self.assertEqual(self.loads('{"empty": {}}',
                                     object_pairs_hook=OrderedDict),
                          OrderedDict([('empty', OrderedDict())]))
+
+    def test_array_hook(self):
+        s = '[1, 2, 3]'
+        t = self.loads(s, array_hook=tuple)
+        self.assertEqual(t, (1, 2, 3))
+        self.assertEqual(type(t), tuple)
+
+        # Nested array in inner structure with object_hook
+        s = '{"xkd": [[1], [2], [3]]}'
+        p = frozendict(xkd=((1,), (2,), (3,)))
+        data = self.loads(s, object_hook=frozendict, array_hook=tuple)
+        self.assertEqual(data, p)
+        self.assertEqual(type(data), frozendict)
+        self.assertEqual(type(data["xkd"]), tuple)
+        for item in data["xkd"]:
+            self.assertEqual(type(item), tuple)
+
+        self.assertEqual(self.loads('[]', array_hook=tuple), ())
 
     def test_decoder_optimizations(self):
         # Several optimizations were made that skip over calls to

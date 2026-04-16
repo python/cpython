@@ -1,1 +1,0 @@
-Fix ``_CHECK_STACK_SPACE`` optimization problems introduced in :gh:`118322`.

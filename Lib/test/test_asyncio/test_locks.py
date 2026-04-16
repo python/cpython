@@ -14,24 +14,24 @@ STR_RGX_REPR = (
     r'(, value:\d)?'
     r'(, waiters:\d+)?'
     r'(, waiters:\d+\/\d+)?' # barrier
-    r')\]>\Z'
+    r')\]>\z'
 )
 RGX_REPR = re.compile(STR_RGX_REPR)
 
 
 def tearDownModule():
-    asyncio.set_event_loop_policy(None)
+    asyncio.events._set_event_loop_policy(None)
 
 
 class LockTests(unittest.IsolatedAsyncioTestCase):
 
     async def test_repr(self):
         lock = asyncio.Lock()
-        self.assertTrue(repr(lock).endswith('[unlocked]>'))
+        self.assertEndsWith(repr(lock), '[unlocked]>')
         self.assertTrue(RGX_REPR.match(repr(lock)))
 
         await lock.acquire()
-        self.assertTrue(repr(lock).endswith('[locked]>'))
+        self.assertEndsWith(repr(lock), '[locked]>')
         self.assertTrue(RGX_REPR.match(repr(lock)))
 
     async def test_lock(self):
@@ -286,12 +286,12 @@ class EventTests(unittest.IsolatedAsyncioTestCase):
 
     def test_repr(self):
         ev = asyncio.Event()
-        self.assertTrue(repr(ev).endswith('[unset]>'))
+        self.assertEndsWith(repr(ev), '[unset]>')
         match = RGX_REPR.match(repr(ev))
         self.assertEqual(match.group('extras'), 'unset')
 
         ev.set()
-        self.assertTrue(repr(ev).endswith('[set]>'))
+        self.assertEndsWith(repr(ev), '[set]>')
         self.assertTrue(RGX_REPR.match(repr(ev)))
 
         ev._waiters.append(mock.Mock())
@@ -916,11 +916,11 @@ class SemaphoreTests(unittest.IsolatedAsyncioTestCase):
 
     async def test_repr(self):
         sem = asyncio.Semaphore()
-        self.assertTrue(repr(sem).endswith('[unlocked, value:1]>'))
+        self.assertEndsWith(repr(sem), '[unlocked, value:1]>')
         self.assertTrue(RGX_REPR.match(repr(sem)))
 
         await sem.acquire()
-        self.assertTrue(repr(sem).endswith('[locked]>'))
+        self.assertEndsWith(repr(sem), '[locked]>')
         self.assertTrue('waiters' not in repr(sem))
         self.assertTrue(RGX_REPR.match(repr(sem)))
 
@@ -1194,14 +1194,14 @@ class SemaphoreTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual([2, 3], result)
 
     async def test_acquire_fifo_order_4(self):
-        # Test that a successfule `acquire()` will wake up multiple Tasks
+        # Test that a successful `acquire()` will wake up multiple Tasks
         # that were waiting in the Semaphore queue due to FIFO rules.
         sem = asyncio.Semaphore(0)
         result = []
         count = 0
 
         async def c1(result):
-            # First task immediatlly waits for semaphore.  It will be awoken by c2.
+            # First task immediately waits for semaphore.  It will be awoken by c2.
             self.assertEqual(sem._value, 0)
             await sem.acquire()
             # We should have woken up all waiting tasks now.
@@ -1475,7 +1475,7 @@ class BarrierTests(unittest.IsolatedAsyncioTestCase):
             # first time waiting
             await barrier.wait()
 
-            # after wainting once for all tasks
+            # after waiting once for all tasks
             if rewait_n > 0:
                 rewait_n -= 1
                 # wait again only for rewait tasks
