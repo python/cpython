@@ -47,7 +47,7 @@
         char *uop_debug = Py_GETENV(DEBUG_ENV);
         int lltrace = 0;
         if (uop_debug != NULL && *uop_debug >= '0') {
-            lltrace = *uop_debug - '0';  // TODO: Parse an int and all that
+            lltrace = atoi(uop_debug);
         }
         return lltrace;
     }
