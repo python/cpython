@@ -243,9 +243,16 @@ struct _gc_runtime_state {
     /* Is automatic collection enabled? */
     int enabled;
     int debug;
-    /* linked lists of container objects */
+
+    /* Generational GC state used in GIL builds. */
+    struct gc_generation generations[NUM_GENERATIONS];
+    PyGC_Head *generation0;
+    struct gc_generation_stats generation_stats_gen[NUM_GENERATIONS];
+
+    /* Incremental/free-threaded GC state. */
     struct gc_generation young;
     struct gc_generation old[2];
+
     /* a permanent generation which won't be collected */
     struct gc_generation permanent_generation;
     struct gc_stats *generation_stats;
@@ -265,7 +272,6 @@ struct _gc_runtime_state {
     int visited_space;
     int phase;
 
-#ifdef Py_GIL_DISABLED
     /* This is the number of objects that survived the last full
        collection. It approximates the number of long lived objects
        tracked by the GC.
@@ -278,6 +284,7 @@ struct _gc_runtime_state {
        the first time. */
     Py_ssize_t long_lived_pending;
 
+#ifdef Py_GIL_DISABLED
     /* True if gc.freeze() has been used. */
     int freeze_active;
 

@@ -1688,7 +1688,7 @@ get_gc_state(void)
 void
 _PyGC_InitState(GCState *gcstate)
 {
-    // TODO: move to pycore_runtime_init.h once the incremental GC lands.
+    // TODO: move to pycore_runtime_init.h.
     gcstate->young.threshold = 2000;
 }
 

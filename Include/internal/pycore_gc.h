@@ -211,7 +211,6 @@ extern void _Py_ScheduleGC(PyThreadState *tstate);
 extern void _Py_TriggerGC(struct _gc_runtime_state *gcstate);
 #endif
 
-
 /* Tell the GC to track this object.
  *
  * The object must not be tracked by the GC.
@@ -220,7 +219,7 @@ extern void _Py_TriggerGC(struct _gc_runtime_state *gcstate);
  * ob_traverse method.
  *
  * Internal note: interp->gc.generation0->_gc_prev doesn't have any bit flags
- * because it's not object header.  So we don't use _PyGCHead_PREV() and
+ * because it's not an object header. So we don't use _PyGCHead_PREV() and
  * _PyGCHead_SET_PREV() for it to avoid unnecessary bitwise operations.
  *
  * See also the public PyObject_GC_Track() function.
@@ -245,16 +244,15 @@ static inline void _PyObject_GC_TRACK(
                           filename, lineno, __func__);
 
     struct _gc_runtime_state *gcstate = &_PyInterpreterState_GET()->gc;
-    PyGC_Head *generation0 = &gcstate->young.head;
-    PyGC_Head *last = (PyGC_Head*)(generation0->_gc_prev);
+    PyGC_Head *generation0 = gcstate->generation0;
+    PyGC_Head *last = (PyGC_Head *)(generation0->_gc_prev);
     _PyGCHead_SET_NEXT(last, gc);
     _PyGCHead_SET_PREV(gc, last);
-    uintptr_t not_visited = 1 ^ gcstate->visited_space;
-    gc->_gc_next = ((uintptr_t)generation0) | not_visited;
+    _PyGCHead_SET_NEXT(gc, generation0);
     generation0->_gc_prev = (uintptr_t)gc;
-    gcstate->young.count++; /* number of tracked GC objects */
-    gcstate->heap_size++;
-    if (gcstate->young.count > gcstate->young.threshold) {
+    /* gh-139951: count tracked GC objects, not all GC-capable allocations. */
+    gcstate->generations[0].count++; /* number of tracked GC objects */
+    if (gcstate->generations[0].count > gcstate->generations[0].threshold) {
         _Py_TriggerGC(gcstate);
     }
 #endif
@@ -292,10 +290,9 @@ static inline void _PyObject_GC_UNTRACK(
     gc->_gc_next = 0;
     gc->_gc_prev &= _PyGC_PREV_MASK_FINALIZED;
     struct _gc_runtime_state *gcstate = &_PyInterpreterState_GET()->gc;
-    if (gcstate->young.count > 0) {
-        gcstate->young.count--;
+    if (gcstate->generations[0].count > 0) {
+        gcstate->generations[0].count--;
     }
-    gcstate->heap_size--;
 #endif
 }
 
