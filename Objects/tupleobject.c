@@ -547,8 +547,8 @@ PyTuple_GetSlice(PyObject *op, Py_ssize_t i, Py_ssize_t j)
     return tuple_slice((PyTupleObject *)op, i, j);
 }
 
-static PyObject *
-tuple_concat(PyObject *aa, PyObject *bb)
+PyObject *
+_PyTuple_Concat(PyObject *aa, PyObject *bb)
 {
     PyTupleObject *a = _PyTuple_CAST(aa);
     if (Py_SIZE(a) == 0 && PyTuple_CheckExact(bb)) {
@@ -864,7 +864,7 @@ tuple_subtype_new(PyTypeObject *type, PyObject *iterable)
 
 static PySequenceMethods tuple_as_sequence = {
     tuple_length,                               /* sq_length */
-    tuple_concat,                               /* sq_concat */
+    _PyTuple_Concat,                            /* sq_concat */
     tuple_repeat,                               /* sq_repeat */
     tuple_item,                                 /* sq_item */
     0,                                          /* sq_slice */

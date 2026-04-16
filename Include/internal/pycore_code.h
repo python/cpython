@@ -510,6 +510,11 @@ typedef struct {
        aliased to either operand). Used by the tier 2 optimizer to enable
        inplace follow-up ops. */
     int result_unique;
+    /* Expected types of the left and right operands. Used by the tier 2
+       optimizer to eliminate _GUARD_BINARY_OP_EXTEND when the operand
+       types are already known. NULL means unknown/don't eliminate. */
+    PyTypeObject *lhs_type;
+    PyTypeObject *rhs_type;
 } _PyBinaryOpSpecializationDescr;
 
 /* Comparison bit masks. */

@@ -485,6 +485,46 @@ dummy_func(void) {
         r = right;
     }
 
+    op(_GUARD_BINARY_OP_EXTEND_LHS, (descr/4, left, right -- left, right)) {
+        _PyBinaryOpSpecializationDescr *d = (_PyBinaryOpSpecializationDescr *)descr;
+        assert(d != NULL && d->guard == NULL && d->lhs_type != NULL);
+        if (sym_matches_type(left, d->lhs_type)) {
+            ADD_OP(_NOP, 0, 0);
+        }
+        sym_set_type(left, d->lhs_type);
+    }
+
+    op(_GUARD_BINARY_OP_EXTEND_RHS, (descr/4, left, right -- left, right)) {
+        _PyBinaryOpSpecializationDescr *d = (_PyBinaryOpSpecializationDescr *)descr;
+        assert(d != NULL && d->guard == NULL && d->rhs_type != NULL);
+        if (sym_matches_type(right, d->rhs_type)) {
+            ADD_OP(_NOP, 0, 0);
+        }
+        sym_set_type(right, d->rhs_type);
+    }
+
+    op(_GUARD_BINARY_OP_EXTEND, (descr/4, left, right -- left, right)) {
+        _PyBinaryOpSpecializationDescr *d = (_PyBinaryOpSpecializationDescr *)descr;
+        if (d != NULL && d->guard == NULL) {
+            /* guard == NULL means the check is purely a type test against
+               lhs_type/rhs_type, so eliminate it when types are already known. */
+            assert(d->lhs_type != NULL && d->rhs_type != NULL);
+            bool lhs_known = sym_matches_type(left, d->lhs_type);
+            bool rhs_known = sym_matches_type(right, d->rhs_type);
+            if (lhs_known && rhs_known) {
+                ADD_OP(_NOP, 0, 0);
+            }
+            else if (lhs_known) {
+                ADD_OP(_GUARD_BINARY_OP_EXTEND_RHS, 0, (uintptr_t)d);
+                sym_set_type(right, d->rhs_type);
+            }
+            else if (rhs_known) {
+                ADD_OP(_GUARD_BINARY_OP_EXTEND_LHS, 0, (uintptr_t)d);
+                sym_set_type(left, d->lhs_type);
+            }
+        }
+    }
+
     op(_BINARY_OP_EXTEND, (descr/4, left, right -- res, l, r)) {
         _PyBinaryOpSpecializationDescr *d = (_PyBinaryOpSpecializationDescr *)descr;
         if (d != NULL && d->result_type != NULL) {
@@ -1541,11 +1581,11 @@ dummy_func(void) {
     }
 
     op(_ITER_CHECK_RANGE, (iter, null_or_index -- iter, null_or_index)) {
-        if (sym_matches_type(iter, &PyRange_Type)) {
+        if (sym_matches_type(iter, &PyRangeIter_Type)) {
             ADD_OP(_NOP, 0, 0);
         }
         else {
-            sym_set_type(iter, &PyRange_Type);
+            sym_set_type(iter, &PyRangeIter_Type);
         }
     }
 
@@ -1553,13 +1593,13 @@ dummy_func(void) {
        next = sym_new_type(ctx, &PyLong_Type);
     }
 
-    op(_CALL_TYPE_1, (unused, unused, arg -- res, a)) {
+    op(_CALL_TYPE_1, (callable, null, arg -- res, a)) {
         PyObject* type = (PyObject *)sym_get_type(arg);
         if (type) {
             res = sym_new_const(ctx, type);
             ADD_OP(_SWAP, 3, 0);
-            ADD_OP(_POP_TOP, 0, 0);
-            ADD_OP(_POP_TOP, 0, 0);
+            optimize_pop_top(ctx, this_instr, callable);
+            optimize_pop_top(ctx, this_instr, null);
             ADD_OP(_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)type);
             ADD_OP(_SWAP, 2, 0);
         }
@@ -1582,7 +1622,7 @@ dummy_func(void) {
         a = arg;
     }
 
-    op(_CALL_ISINSTANCE, (unused, unused, instance, cls -- res)) {
+    op(_CALL_ISINSTANCE, (callable, null, instance, cls -- res)) {
         // the result is always a bool, but sometimes we can
         // narrow it down to True or False
         res = sym_new_type(ctx, &PyBool_Type);
@@ -1598,10 +1638,10 @@ dummy_func(void) {
                 out = Py_True;
             }
             sym_set_const(res, out);
-            ADD_OP(_POP_TOP, 0, 0);
-            ADD_OP(_POP_TOP, 0, 0);
-            ADD_OP(_POP_TOP_NOP, 0, 0);
-            ADD_OP(_POP_TOP, 0, 0);
+            optimize_pop_top(ctx, this_instr, cls);
+            optimize_pop_top(ctx, this_instr, instance);
+            optimize_pop_top(ctx, this_instr, null);
+            optimize_pop_top(ctx, this_instr, callable);
             ADD_OP(_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)out);
         }
     }
@@ -1975,7 +2015,7 @@ dummy_func(void) {
                 ADD_OP(immortal ? _LOAD_CONST_INLINE_BORROW : _LOAD_CONST_INLINE,
                        0, (uintptr_t)descr);
                 ADD_OP(_SWAP, 3, 0);
-                ADD_OP(_POP_TOP, 0, 0);
+                optimize_pop_top(ctx, this_instr, method_and_self[0]);
                 if ((type->tp_flags & Py_TPFLAGS_IMMUTABLETYPE) == 0) {
                     PyType_Watch(TYPE_WATCHER_ID, (PyObject *)type);
                     _Py_BloomFilter_Add(dependencies, type);

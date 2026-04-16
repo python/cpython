@@ -1536,9 +1536,9 @@ bytes_length(PyObject *self)
     return Py_SIZE(a);
 }
 
-/* This is also used by PyBytes_Concat() */
-static PyObject *
-bytes_concat(PyObject *a, PyObject *b)
+/* This is also used by PyBytes_Concat() and the specializing interpreter. */
+PyObject *
+_PyBytes_Concat(PyObject *a, PyObject *b)
 {
     Py_buffer va, vb;
     PyObject *result = NULL;
@@ -1804,7 +1804,7 @@ bytes_buffer_getbuffer(PyObject *op, Py_buffer *view, int flags)
 
 static PySequenceMethods bytes_as_sequence = {
     bytes_length,       /*sq_length*/
-    bytes_concat,       /*sq_concat*/
+    _PyBytes_Concat,       /*sq_concat*/
     bytes_repeat,       /*sq_repeat*/
     bytes_item,         /*sq_item*/
     0,                  /*sq_slice*/
@@ -3307,7 +3307,7 @@ PyBytes_Concat(PyObject **pv, PyObject *w)
     else {
         /* Multiple references, need to create new object */
         PyObject *v;
-        v = bytes_concat(*pv, w);
+        v = _PyBytes_Concat(*pv, w);
         Py_SETREF(*pv, v);
     }
 }

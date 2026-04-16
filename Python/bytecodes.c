@@ -895,7 +895,7 @@ dummy_func(
             INPUTS_DEAD();
         }
 
-        // Float true division — not specialized at tier 1, emitted by the
+        // Float true division --- not specialized at tier 1, emitted by the
         // tier 2 optimizer when both operands are known floats.
         tier2 op(_BINARY_OP_TRUEDIV_FLOAT, (left, right -- res, l, r)) {
             PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);
@@ -1008,14 +1008,32 @@ dummy_func(
             res = PyStackRef_FromPyObjectSteal(temp);
         }
 
+       tier2 op(_GUARD_BINARY_OP_EXTEND_LHS, (descr/4, left, right -- left, right)) {
+            PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);
+            _PyBinaryOpSpecializationDescr *d = (_PyBinaryOpSpecializationDescr*)descr;
+            assert(INLINE_CACHE_ENTRIES_BINARY_OP == 5);
+            assert(d && d->guard == NULL && d->lhs_type != NULL);
+            EXIT_IF(Py_TYPE(left_o) != d->lhs_type);
+        }
+
+       tier2 op(_GUARD_BINARY_OP_EXTEND_RHS, (descr/4, left, right -- left, right)) {
+            PyObject *right_o = PyStackRef_AsPyObjectBorrow(right);
+            _PyBinaryOpSpecializationDescr *d = (_PyBinaryOpSpecializationDescr*)descr;
+            assert(INLINE_CACHE_ENTRIES_BINARY_OP == 5);
+            assert(d && d->guard == NULL && d->rhs_type != NULL);
+            EXIT_IF(Py_TYPE(right_o) != d->rhs_type);
+        }
+
        op(_GUARD_BINARY_OP_EXTEND, (descr/4, left, right -- left, right)) {
             PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);
             PyObject *right_o = PyStackRef_AsPyObjectBorrow(right);
             _PyBinaryOpSpecializationDescr *d = (_PyBinaryOpSpecializationDescr*)descr;
             assert(INLINE_CACHE_ENTRIES_BINARY_OP == 5);
-            assert(d && d->guard);
-            int res = d->guard(left_o, right_o);
-            EXIT_IF(!res);
+            assert(d != NULL);
+            int match = (d->guard != NULL)
+                ? d->guard(left_o, right_o)
+                : (Py_TYPE(left_o) == d->lhs_type && Py_TYPE(right_o) == d->rhs_type);
+            EXIT_IF(!match);
         }
 
        op(_BINARY_OP_EXTEND, (descr/4, left, right -- res, l, r)) {
@@ -1030,11 +1048,14 @@ dummy_func(
             if (res_o == NULL) {
                 ERROR_NO_POP();
             }
+            assert(d->result_type == NULL || Py_TYPE(res_o) == d->result_type);
+            assert(!d->result_unique || Py_REFCNT(res_o) == 1 || _Py_IsImmortal(res_o));
             // The JIT and tier 2 optimizer assume that float results from
             // binary operations are always uniquely referenced (refcount == 1).
             // If this assertion fails, update the optimizer to stop marking
             // float results as unique in optimizer_bytecodes.c.
             assert(!PyFloat_CheckExact(res_o) || Py_REFCNT(res_o) == 1);
+
             res = PyStackRef_FromPyObjectSteal(res_o);
             l = left;
             r = right;
