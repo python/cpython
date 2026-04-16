@@ -3797,7 +3797,7 @@ Aliases to other concrete types
            Match
 
    Deprecated aliases corresponding to the return types from
-   :func:`re.compile` and :func:`re.match`.
+   :func:`re.compile` and :func:`re.search`.
 
    These types (and the corresponding functions) are generic over
    :data:`AnyStr`. ``Pattern`` can be specialised as ``Pattern[str]`` or

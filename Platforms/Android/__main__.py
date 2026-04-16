@@ -24,8 +24,11 @@ from tempfile import TemporaryDirectory
 
 
 SCRIPT_NAME = Path(__file__).name
+if SCRIPT_NAME.startswith("__"):
+    SCRIPT_NAME = "Platforms/Android"
+
 ANDROID_DIR = Path(__file__).resolve().parent
-PYTHON_DIR = ANDROID_DIR.parent
+PYTHON_DIR = ANDROID_DIR.parent.parent
 in_source_tree = (
     ANDROID_DIR.name == "Android" and (PYTHON_DIR / "pyconfig.h.in").exists()
 )
@@ -393,17 +396,6 @@ def setup_testbed():
         os.chmod(out_path, 0o755)
 
 
-# run_testbed will build the app automatically, but it's useful to have this as
-# a separate command to allow running the app outside of this script.
-def build_testbed(context):
-    setup_sdk()
-    setup_testbed()
-    run(
-        [gradlew, "--console", "plain", "packageDebug", "packageDebugAndroidTest"],
-        cwd=TESTBED_DIR,
-    )
-
-
 # Work around a bug involving sys.exit and TaskGroups
 # (https://github.com/python/cpython/issues/101515).
 def exit(*args):
@@ -645,6 +637,10 @@ async def gradle_task(context):
         task_prefix = "connected"
         env["ANDROID_SERIAL"] = context.connected
 
+    # Ensure that CROSS_BUILD_DIR is in the Gradle environment, regardless
+    # of whether it was set by environment variable or `--cross-build-dir`.
+    env["CROSS_BUILD_DIR"] = CROSS_BUILD_DIR
+
     if context.ci_mode:
         context.args[0:0] = [
             # See _add_ci_python_opts in libregrtest/main.py.
@@ -763,7 +759,7 @@ def package(context):
     prefix_dir = subdir(context.host, "prefix")
     version = package_version(prefix_dir)
 
-    with TemporaryDirectory(prefix=SCRIPT_NAME) as temp_dir:
+    with TemporaryDirectory(prefix=SCRIPT_NAME.replace("/", "-")) as temp_dir:
         temp_dir = Path(temp_dir)
 
         # Include all tracked files from the Android directory.
@@ -772,7 +768,10 @@ def package(context):
             cwd=ANDROID_DIR, capture_output=True, text=True, log=False,
         ).stdout.splitlines():
             src = ANDROID_DIR / line
-            dst = temp_dir / line
+            # "__main__.py" is renamed "android.py" for distribution purpose
+            dst = temp_dir / {
+                "__main__.py": "android.py"
+            }.get(line, line)
             dst.parent.mkdir(parents=True, exist_ok=True)
             shutil.copy2(src, dst, follow_symlinks=False)
 
@@ -838,7 +837,7 @@ def ci(context):
             "emulator on this platform."
         )
     else:
-        with TemporaryDirectory(prefix=SCRIPT_NAME) as temp_dir:
+        with TemporaryDirectory(prefix=SCRIPT_NAME.replace("/", "-")) as temp_dir:
             print("::group::Tests")
 
             # Prove the package is self-contained by using it to run the tests.
@@ -873,49 +872,6 @@ def parse_args():
     def add_parser(*args, **kwargs):
         parser = subcommands.add_parser(*args, **kwargs)
         parser.add_argument(
-            "-v", "--verbose", action="count", default=0,
-            help="Show verbose output. Use twice to be even more verbose.")
-        return parser
-
-    # Subcommands
-    build = add_parser(
-        "build",
-        help="Run configure and make for the selected target"
-    )
-    configure_build = add_parser(
-        "configure-build", help="Run `configure` for the build Python")
-    make_build = add_parser(
-        "make-build", help="Run `make` for the build Python")
-    configure_host = add_parser(
-        "configure-host", help="Run `configure` for Android")
-    make_host = add_parser(
-        "make-host", help="Run `make` for Android")
-
-    clean = add_parser(
-        "clean",
-        help="Delete build directories for the selected target"
-    )
-
-    add_parser("build-testbed", help="Build the testbed app")
-    test = add_parser("test", help="Run the testbed app")
-    package = add_parser("package", help="Make a release package")
-    ci = add_parser("ci", help="Run build, package and test")
-    env = add_parser("env", help="Print environment variables")
-
-    # Common arguments
-    # --cross-build-dir argument
-    for cmd in [
-        clean,
-        configure_build,
-        make_build,
-        configure_host,
-        make_host,
-        build,
-        package,
-        test,
-        ci,
-    ]:
-        cmd.add_argument(
             "--cross-build-dir",
             action="store",
             default=os.environ.get("CROSS_BUILD_DIR"),
@@ -927,7 +883,36 @@ def parse_args():
                 "with the CROSS_BUILD_DIR environment variable."
             ),
         )
+        parser.add_argument(
+            "-v", "--verbose", action="count", default=0,
+            help="Show verbose output. Use twice to be even more verbose.")
+        return parser
 
+    # Subcommands
+    build = add_parser(
+        "build",
+        help="Run configure and make for the selected target"
+    )
+    configure_build = add_parser(
+        "configure-build", help="Run `configure` for the build Python")
+    add_parser(
+        "make-build", help="Run `make` for the build Python")
+    configure_host = add_parser(
+        "configure-host", help="Run `configure` for Android")
+    make_host = add_parser(
+        "make-host", help="Run `make` for Android")
+
+    clean = add_parser(
+        "clean",
+        help="Delete build directories for the selected target"
+    )
+
+    test = add_parser("test", help="Run the testbed app")
+    package = add_parser("package", help="Make a release package")
+    ci = add_parser("ci", help="Run build, package and test")
+    env = add_parser("env", help="Print environment variables")
+
+    # Common arguments
     # --cache-dir option
     for cmd in [configure_host, build, ci]:
         cmd.add_argument(
@@ -1032,7 +1017,6 @@ def main():
         "make-host": make_host_python,
         "build": build_targets,
         "clean": clean_targets,
-        "build-testbed": build_testbed,
         "test": run_testbed,
         "package": package,
         "ci": ci,

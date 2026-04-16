@@ -798,8 +798,8 @@ list_concat_lock_held(PyListObject *a, PyListObject *b)
     return (PyObject *)np;
 }
 
-static PyObject *
-list_concat(PyObject *aa, PyObject *bb)
+PyObject *
+_PyList_Concat(PyObject *aa, PyObject *bb)
 {
     if (!PyList_Check(bb)) {
         PyErr_Format(PyExc_TypeError,
@@ -3617,7 +3617,7 @@ static PyMethodDef list_methods[] = {
 
 static PySequenceMethods list_as_sequence = {
     list_length,                                /* sq_length */
-    list_concat,                                /* sq_concat */
+    _PyList_Concat,                             /* sq_concat */
     list_repeat,                                /* sq_repeat */
     list_item,                                  /* sq_item */
     0,                                          /* sq_slice */
