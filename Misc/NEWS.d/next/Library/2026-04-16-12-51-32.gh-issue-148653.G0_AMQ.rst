@@ -1,0 +1,2 @@
+Fix SIGSEGV in :func:`marshal.loads` for self-referencing tuples. Such
+payloads will now raise :exc:`ValueError` instead of crashing.
