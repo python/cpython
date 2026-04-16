@@ -36,7 +36,7 @@ iterate_interpreters(
     uintptr_t interpreter_next_offset =
         (uintptr_t)offsets->debug_offsets.interpreter_state.next;
 
-    unsigned long iid = 0;
+    int64_t iid = 0;
     uintptr_t interpreter_state_addr;
     if (_Py_RemoteDebug_ReadRemoteMemory(&offsets->handle,
                                          interpreter_state_offset,
