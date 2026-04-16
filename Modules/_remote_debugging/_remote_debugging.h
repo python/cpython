@@ -399,7 +399,7 @@ typedef int (*set_entry_processor_func)(
 typedef int (*interpreter_processor_func)(
     RuntimeOffsets *offsets,
     uintptr_t interpreter_state_addr,
-    unsigned long iid,
+    int64_t iid,
     void *context
 );
 
