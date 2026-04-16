@@ -220,14 +220,14 @@ do { \
         DISPATCH_GOTO_NON_TRACING(); \
     }
 
-#define DISPATCH_INLINED(NEW_FRAME)                     \
-    do {                                                \
-        assert(tstate->interp->eval_frame == NULL);     \
-        _PyFrame_SetStackPointer(frame, stack_pointer); \
-        assert((NEW_FRAME)->previous == frame);         \
-        frame = tstate->current_frame = (NEW_FRAME);     \
-        CALL_STAT_INC(inlined_py_calls);                \
-        JUMP_TO_LABEL(start_frame);                      \
+#define DISPATCH_INLINED(NEW_FRAME)                              \
+    do {                                                         \
+        assert(!IS_PEP523_HOOKED(tstate));                       \
+        _PyFrame_SetStackPointer(frame, stack_pointer);          \
+        assert((NEW_FRAME)->previous == frame);                  \
+        frame = tstate->current_frame = (NEW_FRAME);             \
+        CALL_STAT_INC(inlined_py_calls);                         \
+        JUMP_TO_LABEL(start_frame);                              \
     } while (0)
 
 /* Tuple access macros */
@@ -563,6 +563,30 @@ gen_try_set_executing(PyGenObject *gen)
             ->ob_fval = _dres;                                           \
     } while (0)
 
+// Inplace float true division. Sets _divop_err to 1 on zero division.
+// Caller must check _divop_err and call ERROR_NO_POP() if set.
+#define FLOAT_INPLACE_DIVOP(left, right, TARGET)                         \
+    int _divop_err = 0;                                                  \
+    do {                                                                 \
+        PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);            \
+        PyObject *right_o = PyStackRef_AsPyObjectBorrow(right);          \
+        assert(PyFloat_CheckExact(left_o));                              \
+        assert(PyFloat_CheckExact(right_o));                             \
+        assert(_PyObject_IsUniquelyReferenced(                           \
+            PyStackRef_AsPyObjectBorrow(TARGET)));                       \
+        STAT_INC(BINARY_OP, hit);                                        \
+        double _divisor = ((PyFloatObject *)right_o)->ob_fval;           \
+        if (_divisor == 0.0) {                                           \
+            PyErr_SetString(PyExc_ZeroDivisionError,                     \
+                            "float division by zero");                   \
+            _divop_err = 1;                                              \
+            break;                                                       \
+        }                                                                \
+        double _dres = ((PyFloatObject *)left_o)->ob_fval / _divisor;    \
+        ((PyFloatObject *)PyStackRef_AsPyObjectBorrow(TARGET))           \
+            ->ob_fval = _dres;                                           \
+    } while (0)
+
 // Inplace compact int operation. TARGET is expected to be uniquely
 // referenced at the optimizer level, but at runtime it may be a
 // cached small int singleton. We check _Py_IsImmortal on TARGET
@@ -604,4 +628,3 @@ gen_try_set_executing(PyGenObject *gen)
             (PyLongObject *)PyStackRef_AsPyObjectBorrow(left),           \
             (PyLongObject *)PyStackRef_AsPyObjectBorrow(right));         \
     }
-
