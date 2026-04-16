@@ -3383,6 +3383,8 @@ Functions and decorators
    Users may also mark other classes as disjoint bases to indicate to type checkers that
    multiple inheritance with other disjoint bases should not be allowed.
 
+   .. versionadded:: next
+
 .. decorator:: type_check_only
 
    Decorator to mark a class or function as unavailable at runtime.
