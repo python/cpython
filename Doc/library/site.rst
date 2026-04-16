@@ -183,6 +183,29 @@ See :pep:`829` for the full specification.
    file are ignored in favour of the entry points in the :file:`.start`
    file.
 
+.. _site-migration-guide:
+
+Migrating from ``import`` lines in ``.pth`` files to ``.start`` files
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+If your package currently ships a :file:`{name}.pth` file, you can keep all
+``sys.path`` extension lines unchanged.  Only ``import`` lines need to be
+migrated.
+
+To migrate, create a callable (taking zero arguments) within an importable
+module in your package.  Reference it as a ``pkg.mod:callable`` entry point
+in a matching :file:`{name}.start` file.
+
+If your package must straddle older Pythons that do not support :pep:`829`
+and newer Pythons that do, change the ``import`` lines in your
+:file:`{name}.pth` to use the following form::
+
+   import pkg.mod; pkg.mod.callable()
+
+Older Pythons will execute these ``import`` lines, while newer Pythons will
+ignore them in favor of the :file:`{name}.start` file.  After the straddling
+period, remove all ``import`` lines from your :file:`.pth` file.
+
 
 :mod:`!sitecustomize`
 ---------------------
