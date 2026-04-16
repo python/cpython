@@ -720,7 +720,7 @@ breaking intraclass method calls.  For example::
 
 The above example would work even if ``MappingSubclass`` were to introduce a
 ``__update`` identifier since it is replaced with ``_Mapping__update`` in the
-``Mapping`` class  and ``_MappingSubclass__update`` in the ``MappingSubclass``
+``Mapping`` class and ``_MappingSubclass__update`` in the ``MappingSubclass``
 class respectively.
 
 Note that the mangling rules are designed mostly to avoid accidents; it still is

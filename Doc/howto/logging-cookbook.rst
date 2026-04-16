@@ -4170,7 +4170,7 @@ The script, when run, should produce output like this:
     2025-07-09 06:47:33,783 DEBUG     Another single line
     2025-07-09 06:47:33,783 DEBUG     Multiple lines:\nfool me ...\ncan't get fooled again
 
-Escaping behaviour can't be the stdlib default , as it would break backwards
+Escaping behaviour can't be the stdlib default, as it would break backwards
 compatibility.
 
 .. patterns-to-avoid:
