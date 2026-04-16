@@ -13982,6 +13982,20 @@ onError:
     return NULL;
 }
 
+static _PyObjectIndexPair
+unicode_iteritem(PyObject *obj, Py_ssize_t index)
+{
+    if (index >= PyUnicode_GET_LENGTH(obj)) {
+        return (_PyObjectIndexPair) { .object = NULL, .index = index };
+    }
+    const void *data = PyUnicode_DATA(obj);
+    int kind = PyUnicode_KIND(obj);
+    Py_UCS4 ch = PyUnicode_READ(kind, data, index);
+    PyObject *result = unicode_char(ch);
+    index = (result == NULL) ? -1 : index + 1;
+    return (_PyObjectIndexPair) { .object = result, .index = index };
+}
+
 void
 _PyUnicode_ExactDealloc(PyObject *op)
 {
@@ -14047,6 +14061,7 @@ PyTypeObject PyUnicode_Type = {
     unicode_new,                  /* tp_new */
     PyObject_Free,                /* tp_free */
     .tp_vectorcall = unicode_vectorcall,
+    ._tp_iteritem = unicode_iteritem,
 };
 
 /* Initialize the Unicode implementation */

@@ -485,6 +485,46 @@ dummy_func(void) {
         r = right;
     }
 
+    op(_GUARD_BINARY_OP_EXTEND_LHS, (descr/4, left, right -- left, right)) {
+        _PyBinaryOpSpecializationDescr *d = (_PyBinaryOpSpecializationDescr *)descr;
+        assert(d != NULL && d->guard == NULL && d->lhs_type != NULL);
+        if (sym_matches_type(left, d->lhs_type)) {
+            ADD_OP(_NOP, 0, 0);
+        }
+        sym_set_type(left, d->lhs_type);
+    }
+
+    op(_GUARD_BINARY_OP_EXTEND_RHS, (descr/4, left, right -- left, right)) {
+        _PyBinaryOpSpecializationDescr *d = (_PyBinaryOpSpecializationDescr *)descr;
+        assert(d != NULL && d->guard == NULL && d->rhs_type != NULL);
+        if (sym_matches_type(right, d->rhs_type)) {
+            ADD_OP(_NOP, 0, 0);
+        }
+        sym_set_type(right, d->rhs_type);
+    }
+
+    op(_GUARD_BINARY_OP_EXTEND, (descr/4, left, right -- left, right)) {
+        _PyBinaryOpSpecializationDescr *d = (_PyBinaryOpSpecializationDescr *)descr;
+        if (d != NULL && d->guard == NULL) {
+            /* guard == NULL means the check is purely a type test against
+               lhs_type/rhs_type, so eliminate it when types are already known. */
+            assert(d->lhs_type != NULL && d->rhs_type != NULL);
+            bool lhs_known = sym_matches_type(left, d->lhs_type);
+            bool rhs_known = sym_matches_type(right, d->rhs_type);
+            if (lhs_known && rhs_known) {
+                ADD_OP(_NOP, 0, 0);
+            }
+            else if (lhs_known) {
+                ADD_OP(_GUARD_BINARY_OP_EXTEND_RHS, 0, (uintptr_t)d);
+                sym_set_type(right, d->rhs_type);
+            }
+            else if (rhs_known) {
+                ADD_OP(_GUARD_BINARY_OP_EXTEND_LHS, 0, (uintptr_t)d);
+                sym_set_type(left, d->lhs_type);
+            }
+        }
+    }
+
     op(_BINARY_OP_EXTEND, (descr/4, left, right -- res, l, r)) {
         _PyBinaryOpSpecializationDescr *d = (_PyBinaryOpSpecializationDescr *)descr;
         if (d != NULL && d->result_type != NULL) {
@@ -1356,13 +1396,86 @@ dummy_func(void) {
     }
 
     op(_GET_ITER, (iterable -- iter, index_or_null)) {
-        if (sym_matches_type(iterable, &PyTuple_Type) || sym_matches_type(iterable, &PyList_Type)) {
+        bool is_coro = false;
+        bool is_trad = false; // has `tp_iter` slot
+        bool definite = true;
+        PyTypeObject *tp = sym_get_type(iterable);
+        if (tp == NULL) {
+            definite = false;
+            tp = sym_get_probable_type(iterable);
+        }
+        if (oparg == GET_ITER_YIELD_FROM_NO_CHECK) {
+            if (tp == &PyCoro_Type) {
+                if (!definite) {
+                    ADD_OP(_GUARD_TYPE, 0, (uintptr_t)tp);
+                    sym_set_type(iterable, tp);
+                }
+                ADD_OP(_PUSH_NULL, 0, 0);
+                is_coro = true;
+            }
+        }
+        if (tp != NULL &&
+            tp->_tp_iteritem == NULL &&
+            tp->tp_iter != NULL &&
+            tp->tp_iter != PyObject_SelfIter &&
+            tp->tp_flags & Py_TPFLAGS_IMMUTABLETYPE
+        ) {
+            assert(tp != &PyCoro_Type);
+            is_trad = true;
+            if (!definite) {
+                ADD_OP(_GUARD_TYPE, 0, (uintptr_t)tp);
+                sym_set_type(iterable, tp);
+            }
+            ADD_OP(_GET_ITER_TRAD, 0, 0);
+        }
+        if (is_coro) {
+            assert(!is_trad);
             iter = iterable;
-            index_or_null = sym_new_not_null(ctx);
+            index_or_null = sym_new_null(ctx);
+        }
+        else if (is_trad) {
+            iter = sym_new_not_null(ctx);
+            index_or_null = sym_new_null(ctx);
         }
         else {
             iter = sym_new_not_null(ctx);
             index_or_null = sym_new_unknown(ctx);
+        }
+    }
+
+    op(_GUARD_ITERATOR, (iterable -- iterable)) {
+        bool definite = true;
+        PyTypeObject *tp = sym_get_type(iterable);
+        if (tp == NULL) {
+            definite = false;
+            tp = sym_get_probable_type(iterable);
+        }
+        if (tp != NULL && tp->tp_iter == PyObject_SelfIter) {
+            if (definite) {
+                ADD_OP(_NOP, 0, 0);
+            }
+            else {
+                ADD_OP(_GUARD_TYPE, 0, (uintptr_t)tp);
+                sym_set_type(iterable, tp);
+            }
+        }
+    }
+
+    op(_GUARD_ITER_VIRTUAL, (iterable -- iterable)) {
+        bool definite = true;
+        PyTypeObject *tp = sym_get_type(iterable);
+        if (tp == NULL) {
+            definite = false;
+            tp = sym_get_probable_type(iterable);
+        }
+        if (tp != NULL && tp->_tp_iteritem != NULL) {
+            if (definite) {
+                ADD_OP(_NOP, 0, 0);
+            }
+            else {
+                ADD_OP(_GUARD_TYPE, 0, (uintptr_t)tp);
+                sym_set_type(iterable, tp);
+            }
         }
     }
 
