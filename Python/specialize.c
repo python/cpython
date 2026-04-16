@@ -2715,20 +2715,24 @@ _Py_Specialize_ForIter(_PyStackRef iter, _PyStackRef null_or_index, _Py_CODEUNIT
         }
     }
     else {
-        if (tp == &PyList_Type) {
-#ifdef Py_GIL_DISABLED
-            // Only specialize for lists owned by this thread or shared
-            if (!_Py_IsOwnedByCurrentThread(iter_o) && !_PyObject_GC_IS_SHARED(iter_o)) {
-                goto failure;
+        if (tp->_tp_iteritem != NULL) {
+            if (tp == &PyList_Type) {
+    #ifdef Py_GIL_DISABLED
+                // Only specialize for lists owned by this thread or shared
+                if (!_Py_IsOwnedByCurrentThread(iter_o) && !_PyObject_GC_IS_SHARED(iter_o)) {
+                    goto failure;
+                }
+    #endif
+                specialize(instr, FOR_ITER_LIST);
+                return;
             }
-#endif
-            specialize(instr, FOR_ITER_LIST);
-            return;
+            else if (tp == &PyTuple_Type) {
+                specialize(instr, FOR_ITER_TUPLE);
+                return;
+            }
         }
-        else if (tp == &PyTuple_Type) {
-            specialize(instr, FOR_ITER_TUPLE);
-            return;
-        }
+        specialize(instr, FOR_ITER_VIRTUAL);
+        return;
     }
 failure:
     SPECIALIZATION_FAIL(FOR_ITER,
@@ -2923,6 +2927,23 @@ _Py_Specialize_ContainsOp(_PyStackRef value_st, _Py_CODEUNIT *instr)
     return;
 }
 
+void
+_Py_Specialize_GetIter(_PyStackRef iterable, _Py_CODEUNIT *instr)
+{
+    assert(ENABLE_SPECIALIZATION);
+    PyTypeObject *tp = PyStackRef_TYPE(iterable);
+    if (tp->_tp_iteritem != NULL) {
+        specialize(instr, GET_ITER_VIRTUAL);
+        return;
+    }
+    if (tp->tp_iter == PyObject_SelfIter) {
+        specialize(instr, GET_ITER_SELF);
+        return;
+    }
+    SPECIALIZATION_FAIL(GET_ITER,
+        tp == &PyCoro_Type ? SPEC_FAIL_ITER_COROUTINE : SPEC_FAIL_OTHER);
+    unspecialize(instr);
+}
 
 void
 _Py_Specialize_Resume(_Py_CODEUNIT *instr, PyThreadState *tstate, _PyInterpreterFrame *frame)
