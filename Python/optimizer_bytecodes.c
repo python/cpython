@@ -485,6 +485,46 @@ dummy_func(void) {
         r = right;
     }
 
+    op(_GUARD_BINARY_OP_EXTEND_LHS, (descr/4, left, right -- left, right)) {
+        _PyBinaryOpSpecializationDescr *d = (_PyBinaryOpSpecializationDescr *)descr;
+        assert(d != NULL && d->guard == NULL && d->lhs_type != NULL);
+        if (sym_matches_type(left, d->lhs_type)) {
+            ADD_OP(_NOP, 0, 0);
+        }
+        sym_set_type(left, d->lhs_type);
+    }
+
+    op(_GUARD_BINARY_OP_EXTEND_RHS, (descr/4, left, right -- left, right)) {
+        _PyBinaryOpSpecializationDescr *d = (_PyBinaryOpSpecializationDescr *)descr;
+        assert(d != NULL && d->guard == NULL && d->rhs_type != NULL);
+        if (sym_matches_type(right, d->rhs_type)) {
+            ADD_OP(_NOP, 0, 0);
+        }
+        sym_set_type(right, d->rhs_type);
+    }
+
+    op(_GUARD_BINARY_OP_EXTEND, (descr/4, left, right -- left, right)) {
+        _PyBinaryOpSpecializationDescr *d = (_PyBinaryOpSpecializationDescr *)descr;
+        if (d != NULL && d->guard == NULL) {
+            /* guard == NULL means the check is purely a type test against
+               lhs_type/rhs_type, so eliminate it when types are already known. */
+            assert(d->lhs_type != NULL && d->rhs_type != NULL);
+            bool lhs_known = sym_matches_type(left, d->lhs_type);
+            bool rhs_known = sym_matches_type(right, d->rhs_type);
+            if (lhs_known && rhs_known) {
+                ADD_OP(_NOP, 0, 0);
+            }
+            else if (lhs_known) {
+                ADD_OP(_GUARD_BINARY_OP_EXTEND_RHS, 0, (uintptr_t)d);
+                sym_set_type(right, d->rhs_type);
+            }
+            else if (rhs_known) {
+                ADD_OP(_GUARD_BINARY_OP_EXTEND_LHS, 0, (uintptr_t)d);
+                sym_set_type(left, d->lhs_type);
+            }
+        }
+    }
+
     op(_BINARY_OP_EXTEND, (descr/4, left, right -- res, l, r)) {
         _PyBinaryOpSpecializationDescr *d = (_PyBinaryOpSpecializationDescr *)descr;
         if (d != NULL && d->result_type != NULL) {
