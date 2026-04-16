@@ -29,7 +29,8 @@ PyAPI_FUNC(PyObject*) _PyErr_FormatFromCause(
     ...
     );
 
-extern int _PyException_AddNote(
+// Export for 'pyexpat' shared extension.
+PyAPI_FUNC(int) _PyException_AddNote(
      PyObject *exc,
      PyObject *note);
 
