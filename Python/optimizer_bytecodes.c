@@ -903,7 +903,7 @@ dummy_func(void) {
                 assert(callable);
                 bool immortal = _Py_IsImmortal(callable) || (type->tp_flags & Py_TPFLAGS_IMMUTABLETYPE);
                 ADD_OP(_GUARD_TYPE_VERSION, 0, type->tp_version_tag);
-                ADD_OP(_POP_TOP, 0, 0);
+                optimize_pop_top(ctx, this_instr, owner);
                 ADD_OP(immortal ? _LOAD_CONST_INLINE_BORROW : _LOAD_CONST_INLINE, 0, (uintptr_t)callable);
                 if (class_method) {
                     ADD_OP(_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)type);
