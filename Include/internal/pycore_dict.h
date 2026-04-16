@@ -87,6 +87,11 @@ typedef struct {
 extern PyDictKeysObject *_PyDict_NewKeysForClass(PyHeapTypeObject *);
 extern PyObject *_PyDict_FromKeys(PyObject *, PyObject *, PyObject *);
 
+/* Implementations of the `|` and `|=` operators for dict, used by the
+ * specializing interpreter. */
+extern PyObject *_PyDict_Or(PyObject *self, PyObject *other);
+extern PyObject *_PyDict_IOr(PyObject *self, PyObject *other);
+
 /* Gets a version number unique to the current state of the keys of dict, if possible.
  * Returns the version number, or zero if it was not possible to get a version number. */
 extern uint32_t _PyDictKeys_GetVersionForCurrentState(
@@ -292,7 +297,7 @@ _PyDict_NotifyEvent(PyDict_WatchEvent event,
                     PyObject *value)
 {
     assert(Py_REFCNT((PyObject*)mp) > 0);
-    int watcher_bits = FT_ATOMIC_LOAD_UINT64_RELAXED(mp->_ma_watcher_tag) & DICT_WATCHER_MASK;
+    int watcher_bits = FT_ATOMIC_LOAD_UINT64_ACQUIRE(mp->_ma_watcher_tag) & DICT_WATCHER_MASK;
     if (watcher_bits) {
         RARE_EVENT_STAT_INC(watched_dict_modification);
         _PyDict_SendEvent(watcher_bits, event, mp, key, value);
