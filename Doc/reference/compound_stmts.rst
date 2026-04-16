@@ -1565,6 +1565,8 @@ child class. It must be a metaclass that is a subclass of
 all other candidate metaclasses. If no such metaclass exists among the candidates,
 the class cannot be created, as explained in :ref:`metaclass-determination`.
 
+.. _solid-bases:
+
 Finally, the instance layouts of the bases must be compatible. This means that it must be
 possible to compute a *solid base* for the class. Exactly which classes are solid bases
 depends on the Python implementation.
