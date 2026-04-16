@@ -3634,15 +3634,14 @@ def parse_args():
         opt_module = parser.parse_args(args[:2])
         opts.module = opt_module.module
         args = args[2:]
+    elif args[0] == '--':
+        args.pop(0)
+        if not args:
+            parser.error("missing script or module to run")
     elif args[0].startswith('-'):
-        if args[0] == '--':
-            args.pop(0)
-            if not args:
-                parser.error("missing script or module to run")
-        else:
-            # Invalid argument before the script name.
-            invalid_args = list(itertools.takewhile(lambda a: a.startswith('-'), args))
-            parser.error(f"unrecognized arguments: {' '.join(invalid_args)}")
+        # Invalid argument before the script name.
+        invalid_args = list(itertools.takewhile(lambda a: a.startswith('-'), args))
+        parser.error(f"unrecognized arguments: {' '.join(invalid_args)}")
 
     # Otherwise it's debugging a script and we already parsed all -c commands.
 
