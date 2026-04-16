@@ -57,6 +57,10 @@
 	<string>%VERSION%</string>
 	<key>CFBundleSignature</key>
 	<string>PytL</string>
+	<key>CFBundleSupportedPlatforms</key>
+	<array>
+		<string>MacOSX</string>
+	</array>
 	<key>CFBundleVersion</key>
 	<string>%VERSION%</string>
 	<key>NSMainNibFile</key>
