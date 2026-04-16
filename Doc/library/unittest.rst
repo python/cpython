@@ -2269,7 +2269,7 @@ Loading and running tests
 
       Return a test name used in test results.
 
-      .. versionadded:: 3.14
+      .. versionadded:: 3.15
 
 .. data:: defaultTestLoader
 
