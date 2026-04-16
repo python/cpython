@@ -91,7 +91,7 @@ class SoftDeprecated(PyVersionChange):
         versionlabels[self.name] = sphinx_gettext(
             "Soft deprecated since version %s"
         )
-        versionlabel_classes[self.name] = "softdeprecated"
+        versionlabel_classes[self.name] = "soft-deprecated"
         try:
             result = super().run()
         finally:
