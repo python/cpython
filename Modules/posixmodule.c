@@ -6140,6 +6140,109 @@ os__path_normpath_impl(PyObject *module, path_t *path)
     return result;
 }
 
+#if defined(MS_WINDOWS) && \
+    (defined(MS_WINDOWS_APP) || defined(MS_WINDOWS_SYSTEM))
+
+// If running under an AppContainer, this will append an ACE to the provided 
+// SDDL string that grants full control to the AppContainer SID.
+static LPCWSTR
+sddl_append_for_appcontainer_if_necessary(LPCWSTR base_sddl) {
+    
+    // Default to using the "base" SDDL, which is what we want if
+    // we are not running under an AppContainer
+    LPCWSTR resolved_sddl = base_sddl;
+
+    HANDLE hToken = NULL;
+    DWORD isAppContainer = 0;
+    DWORD returnLength = 0;
+    void *tokenInfo = NULL;
+    LPWSTR sidStr = NULL;
+
+    // Start by opening the process token, so we can query it
+    if (!OpenProcessToken(GetCurrentProcess(), TOKEN_QUERY, &hToken)) {
+        goto done;
+    }
+
+    // Determine if the process is running under an AppContainer
+    BOOL getTokenResult = GetTokenInformation(hToken, TokenIsAppContainer,
+                             &isAppContainer, sizeof(isAppContainer),
+                             &returnLength);
+    if (!getTokenResult || !isAppContainer) {
+        goto done;
+    }
+
+    // Determine the size of the buffer we need for the AppContainer SID
+    returnLength = 0;
+    GetTokenInformation(hToken, TokenAppContainerSid, NULL, 0, &returnLength);
+    if (!returnLength) {
+        goto done;
+    }
+
+    tokenInfo = PyMem_RawMalloc(returnLength);
+    if (!tokenInfo) {
+        goto done;
+    }
+
+    // Get the AppContainer SID
+    getTokenResult = GetTokenInformation(hToken, TokenAppContainerSid, 
+                             tokenInfo, returnLength, &returnLength);
+    if (!getTokenResult) {
+        goto done;
+    }
+
+    TOKEN_APPCONTAINER_INFORMATION *acInfo =
+        (TOKEN_APPCONTAINER_INFORMATION *)tokenInfo;
+    if (!acInfo->TokenAppContainer) {
+        goto done;
+    }
+    if (!ConvertSidToStringSidW(acInfo->TokenAppContainer, &sidStr)) {
+        goto done;
+    }
+
+    // Now that we know we are running under an AppContainer, and we have
+    // the AppContainer SID as a string, we can append an ACE to the provided 
+    // SDDL
+
+    // Dynamically allocate the final buffer here. This is expected to be 
+    // called at most once, however in the case it could be called from 
+    // multiple threads, we are dynamically allocating the buffer here rather 
+    // than using a static buffer (which would then require synchronization 
+    // for that static buffer).
+    LPWSTR sddl_buf = PyMem_RawMalloc(sizeof(WCHAR) * 256);
+
+    int sddl_chars = _snwprintf(
+        sddl_buf,
+        256,
+        // Append a string that includes inheritable (OICI) entries 
+        // that allow (A) full control (FA) to the AppContainer SID
+        L"%s(A;OICI;FA;;;%s)",
+        base_sddl,
+        sidStr);
+
+    if (sddl_chars >= 0 && (size_t)sddl_chars < 256) {
+        resolved_sddl = sddl_buf;
+    } 
+    else {
+        PyMem_RawFree(sddl_buf);
+    }
+
+done:
+    if (sidStr) {
+        LocalFree(sidStr);
+    }
+    if (tokenInfo) {
+        PyMem_RawFree(tokenInfo);
+    }
+    if (hToken) {
+        CloseHandle(hToken);
+    }
+
+    return resolved_sddl;
+}
+
+
+#endif
+
 /*[clinic input]
 os.mkdir
 
@@ -6173,6 +6276,10 @@ os_mkdir_impl(PyObject *module, path_t *path, int mode, int dir_fd)
     int error = 0;
     SECURITY_ATTRIBUTES secAttr = { sizeof(secAttr) };
     SECURITY_ATTRIBUTES *pSecAttr = NULL;
+#if defined(MS_WINDOWS_APP) || defined(MS_WINDOWS_SYSTEM)
+    // Hold the final resolved SDDL as a static, since we only need to resolve it once
+    static LPCWSTR resolved_sddl = NULL;
+#endif
 #endif
 #ifdef HAVE_MKDIRAT
     int mkdirat_unavailable = 0;
@@ -6191,11 +6298,15 @@ os_mkdir_impl(PyObject *module, path_t *path, int mode, int dir_fd)
     if (mode == 0700 /* 0o700 */) {
         ULONG sdSize;
         pSecAttr = &secAttr;
-        // Set a discretionary ACL (D) that is protected (P) and includes
-        // inheritable (OICI) entries that allow (A) full control (FA) to
-        // SYSTEM (SY), Administrators (BA), and the owner (OW).
+        if (!resolved_sddl) {
+            // Set a discretionary ACL (D) that is protected (P) and includes
+            // inheritable (OICI) entries that allow (A) full control (FA) to
+            // SYSTEM (SY), Administrators (BA), and the owner (OW).
+            resolved_sddl = sddl_append_for_appcontainer_if_necessary(
+                L"D:P(A;OICI;FA;;;SY)(A;OICI;FA;;;BA)(A;OICI;FA;;;OW)");
+        }
         if (!ConvertStringSecurityDescriptorToSecurityDescriptorW(
-            L"D:P(A;OICI;FA;;;SY)(A;OICI;FA;;;BA)(A;OICI;FA;;;OW)",
+            resolved_sddl,
             SDDL_REVISION_1,
             &secAttr.lpSecurityDescriptor,
             &sdSize

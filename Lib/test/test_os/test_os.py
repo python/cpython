@@ -2209,6 +2209,238 @@ class MakedirTests(unittest.TestCase):
             '"D:P(A;OICI;FA;;;SY)(A;OICI;FA;;;BA)(A;OICI;FA;;;OW)"',
         )
 
+    @unittest.skipUnless(os.name == 'nt', "requires Windows")
+    def test_win32_mkdir_700_appcontainer(self):
+        # gh-134587: os.mkdir(mode=0o700) must include the AppContainer SID
+        # in the protected DACL so that the creating process can still access
+        # the directory when running inside a Windows AppContainer.
+        import ctypes
+        from ctypes import wintypes
+
+        CONTAINER_NAME = "CPythonTestMkdir700"
+        PROC_THREAD_ATTRIBUTE_SECURITY_CAPABILITIES = 0x00020009
+        EXTENDED_STARTUPINFO_PRESENT = 0x00080000
+        CREATE_NO_WINDOW = 0x08000000
+
+        class SECURITY_CAPABILITIES(ctypes.Structure):
+            _fields_ = [
+                ("AppContainerSid", ctypes.c_void_p),
+                ("Capabilities", ctypes.c_void_p),
+                ("CapabilityCount", wintypes.DWORD),
+                ("Reserved", wintypes.DWORD),
+            ]
+
+        class STARTUPINFOW(ctypes.Structure):
+            _fields_ = [
+                ("cb", wintypes.DWORD),
+                ("lpReserved", wintypes.LPWSTR),
+                ("lpDesktop", wintypes.LPWSTR),
+                ("lpTitle", wintypes.LPWSTR),
+                ("dwX", wintypes.DWORD),
+                ("dwY", wintypes.DWORD),
+                ("dwXSize", wintypes.DWORD),
+                ("dwYSize", wintypes.DWORD),
+                ("dwXCountChars", wintypes.DWORD),
+                ("dwYCountChars", wintypes.DWORD),
+                ("dwFillAttribute", wintypes.DWORD),
+                ("dwFlags", wintypes.DWORD),
+                ("wShowWindow", wintypes.WORD),
+                ("cbReserved2", wintypes.WORD),
+                ("lpReserved2", ctypes.c_void_p),
+                ("hStdInput", wintypes.HANDLE),
+                ("hStdOutput", wintypes.HANDLE),
+                ("hStdError", wintypes.HANDLE),
+            ]
+
+        class STARTUPINFOEXW(ctypes.Structure):
+            _fields_ = [
+                ("StartupInfo", STARTUPINFOW),
+                ("lpAttributeList", ctypes.c_void_p),
+            ]
+
+        class PROCESS_INFORMATION(ctypes.Structure):
+            _fields_ = [
+                ("hProcess", wintypes.HANDLE),
+                ("hThread", wintypes.HANDLE),
+                ("dwProcessId", wintypes.DWORD),
+                ("dwThreadId", wintypes.DWORD),
+            ]
+
+        kernel32 = ctypes.WinDLL('kernel32', use_last_error=True)
+        advapi32 = ctypes.WinDLL('advapi32', use_last_error=True)
+        try:
+            userenv = ctypes.WinDLL('userenv', use_last_error=True)
+        except OSError:
+            self.skipTest("userenv.dll not available")
+
+        userenv.CreateAppContainerProfile.restype = ctypes.c_long
+        userenv.DeriveAppContainerSidFromAppContainerName.restype = ctypes.c_long
+        userenv.DeleteAppContainerProfile.restype = ctypes.c_long
+
+        # Create (or reuse existing) AppContainer profile
+        psid = ctypes.c_void_p()
+        hr = userenv.CreateAppContainerProfile(
+            CONTAINER_NAME, CONTAINER_NAME, CONTAINER_NAME,
+            None, 0, ctypes.byref(psid),
+        )
+        created_profile = (hr >= 0)
+        if not created_profile:
+            hr = userenv.DeriveAppContainerSidFromAppContainerName(
+                CONTAINER_NAME, ctypes.byref(psid),
+            )
+            if hr < 0:
+                self.skipTest(
+                    f"Cannot create AppContainer: HRESULT {hr:#010x}"
+                )
+
+        try:
+            # Convert SID to string for icacls
+            sid_ptr = ctypes.c_wchar_p()
+            if not advapi32.ConvertSidToStringSidW(
+                psid, ctypes.byref(sid_ptr),
+            ):
+                self.skipTest("Cannot convert AppContainer SID")
+            sid_str = sid_ptr.value
+            kernel32.LocalFree(sid_ptr)
+
+            work_dir = tempfile.mkdtemp(prefix='_test_ac_')
+            python_dir = os.path.dirname(os.path.abspath(sys.executable))
+            stdlib_dir = os.path.dirname(os.__file__)
+
+            # Directories that need AppContainer read access.
+            grant_rx = {python_dir, stdlib_dir}
+            granted = []
+
+            try:
+                # Grant AppContainer read+execute to the work directory
+                # (for the test script) and the Python installation.
+                subprocess.check_call(
+                    ['icacls', work_dir, '/grant',
+                     f'*{sid_str}:(OI)(CI)RX', '/T', '/Q'],
+                    stdout=subprocess.DEVNULL,
+                    stderr=subprocess.DEVNULL,
+                )
+                granted.append(work_dir)
+                for d in grant_rx:
+                    subprocess.check_call(
+                        ['icacls', d, '/grant',
+                         f'*{sid_str}:(OI)(CI)RX', '/T', '/Q'],
+                        stdout=subprocess.DEVNULL,
+                        stderr=subprocess.DEVNULL,
+                    )
+                    granted.append(d)
+
+                # This script is the actual bug scenario: Using mkdtemp under
+                # an AppContainer, and finding it doesn't work
+                script = os.path.join(work_dir, '_ac_test.py')
+                with open(script, 'w') as f:
+                    f.write(textwrap.dedent("""\
+                        import os
+                        import shutil
+                        import tempfile
+                                            
+                        # Test what was reported in gh-134587
+                        target = tempfile.mkdtemp(prefix='_test_ac_inner_')
+                        try:
+                            fpath = os.path.join(target, 'test.txt')
+                            with open(fpath, 'w') as fp:
+                                fp.write('ok')
+                            with open(fpath) as fp:
+                                assert fp.read() == 'ok', 'content mismatch'
+                        finally:
+                            shutil.rmtree(target, ignore_errors=True)
+
+                        # Also test the root cause (mkdir with mode=0o700)
+                        temp_dir = tempfile.gettempdir()
+                        unique_name = next(tempfile._get_candidate_names())
+                        other_target = os.path.join(temp_dir, '_test_ac_mkdir_' + unique_name)
+                        os.mkdir(other_target, mode=0o700)
+                        try:
+                            fpath = os.path.join(other_target, 'test.txt')
+                            with open(fpath, 'w') as fp:
+                                fp.write('ok')
+                            with open(fpath) as fp:
+                                assert fp.read() == 'ok', 'content mismatch'
+                        finally:
+                            shutil.rmtree(other_target, ignore_errors=True)
+                    """))
+
+                # Set up proc-thread attribute list for AppContainer
+                attr_size = ctypes.c_size_t()
+                kernel32.InitializeProcThreadAttributeList(
+                    None, 1, 0, ctypes.byref(attr_size),
+                )
+                attr_buf = (ctypes.c_byte * attr_size.value)()
+                if not kernel32.InitializeProcThreadAttributeList(
+                    attr_buf, 1, 0, ctypes.byref(attr_size),
+                ):
+                    self.skipTest("InitializeProcThreadAttributeList failed")
+
+                try:
+                    sc = SECURITY_CAPABILITIES()
+                    sc.AppContainerSid = psid
+                    if not kernel32.UpdateProcThreadAttribute(
+                        attr_buf, 0,
+                        PROC_THREAD_ATTRIBUTE_SECURITY_CAPABILITIES,
+                        ctypes.byref(sc), ctypes.sizeof(sc),
+                        None, None,
+                    ):
+                        self.skipTest("UpdateProcThreadAttribute failed")
+
+                    siex = STARTUPINFOEXW()
+                    siex.StartupInfo.cb = ctypes.sizeof(siex)
+                    siex.lpAttributeList = ctypes.addressof(attr_buf)
+
+                    pi = PROCESS_INFORMATION()
+                    cmd = ctypes.create_unicode_buffer(
+                        f'"{sys.executable}" -I -S "{script}"'
+                    )
+
+                    if not kernel32.CreateProcessW(
+                        None, cmd, None, None, False,
+                        EXTENDED_STARTUPINFO_PRESENT | CREATE_NO_WINDOW,
+                        None, None,
+                        ctypes.byref(siex), ctypes.byref(pi),
+                    ):
+                        err = ctypes.get_last_error()
+                        self.skipTest(
+                            f"CreateProcessW failed: error {err}"
+                        )
+
+                    try:
+                        kernel32.WaitForSingleObject(
+                            pi.hProcess, 30_000,
+                        )
+                        exit_code = wintypes.DWORD()
+                        kernel32.GetExitCodeProcess(
+                            pi.hProcess, ctypes.byref(exit_code),
+                        )
+                        self.assertEqual(
+                            exit_code.value, 0,
+                            "os.mkdir(mode=0o700) created a directory "
+                            "that is inaccessible from within its "
+                            "AppContainer (gh-134587)"
+                        )
+                    finally:
+                        kernel32.CloseHandle(pi.hProcess)
+                        kernel32.CloseHandle(pi.hThread)
+                finally:
+                    kernel32.DeleteProcThreadAttributeList(attr_buf)
+            finally:
+                for d in granted:
+                    subprocess.call(
+                        ['icacls', d, '/remove', f'*{sid_str}',
+                         '/T', '/Q'],
+                        stdout=subprocess.DEVNULL,
+                        stderr=subprocess.DEVNULL,
+                    )
+                shutil.rmtree(work_dir, ignore_errors=True)
+        finally:
+            if created_profile:
+                userenv.DeleteAppContainerProfile(CONTAINER_NAME)
+            if psid:
+                advapi32.FreeSid(psid)
+
     def tearDown(self):
         path = os.path.join(os_helper.TESTFN, 'dir1', 'dir2', 'dir3',
                             'dir4', 'dir5', 'dir6')
