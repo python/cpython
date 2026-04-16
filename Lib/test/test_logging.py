@@ -6658,7 +6658,6 @@ class TimedRotatingFileHandlerTest(BaseFileTest):
         assertRaises(ValueError, logging.handlers.TimedRotatingFileHandler,
                      self.fn, 'W7', encoding="utf-8", delay=True)
 
-    # TODO: Test for utc=False.
     def test_compute_rollover_daily_attime(self):
         currentTime = 0
         rh = logging.handlers.TimedRotatingFileHandler(
@@ -6698,7 +6697,41 @@ class TimedRotatingFileHandlerTest(BaseFileTest):
         finally:
             rh.close()
 
-    # TODO: Test for utc=False.
+        # Test utc=False
+        rh = logging.handlers.TimedRotatingFileHandler(
+            self.fn, encoding="utf-8", when='MIDNIGHT',
+            utc=False, atTime=None)
+        try:
+            t = time.localtime(currentTime)
+            currentHour = t[3]
+            currentMinute = t[4]
+            currentSecond = t[5]
+            # Next rollover is at midnight, which is (24 - currentHour) hours from now
+            expected = currentTime + (24 - currentHour) * 3600 - currentMinute * 60 - currentSecond
+            actual = rh.computeRollover(currentTime)
+            self.assertEqual(actual, expected)
+        finally:
+            rh.close()
+
+        atTime = datetime.time(12, 0, 0)
+        rh = logging.handlers.TimedRotatingFileHandler(
+            self.fn, encoding="utf-8", when='MIDNIGHT',
+            utc=False, atTime=atTime)
+        try:
+            t = time.localtime(currentTime)
+            currentHour = t[3]
+            currentMinute = t[4]
+            currentSecond = t[5]
+            # Next rollover is at atTime today if current time < atTime, otherwise tomorrow
+            if currentHour < 12:
+                expected = currentTime + (12 - currentHour) * 3600 - currentMinute * 60 - currentSecond
+            else:
+                expected = currentTime + (36 - currentHour) * 3600 - currentMinute * 60 - currentSecond
+            actual = rh.computeRollover(currentTime)
+            self.assertEqual(actual, expected)
+        finally:
+            rh.close()
+
     def test_compute_rollover_weekly_attime(self):
         currentTime = int(time.time())
         today = currentTime - currentTime % 86400
@@ -6749,6 +6782,37 @@ class TimedRotatingFileHandlerTest(BaseFileTest):
                 if actual != expected:
                     print('failed in timezone: %d' % time.timezone)
                     print('local vars: %s' % locals())
+                self.assertEqual(actual, expected)
+            finally:
+                rh.close()
+
+        # Test utc=False
+        wday = time.localtime(today).tm_wday
+        for day in range(7):
+            rh = logging.handlers.TimedRotatingFileHandler(
+                self.fn, encoding="utf-8", when='W%d' % day, interval=1, backupCount=0,
+                utc=False, atTime=atTime)
+            try:
+                if wday > day:
+                    expected = (7 - wday + day)
+                else:
+                    expected = (day - wday)
+                expected *= 24 * 60 * 60
+                expected += 12 * 60 * 60
+                expected += today
+
+                actual = rh.computeRollover(today)
+                self.assertEqual(actual, expected)
+
+                actual = rh.computeRollover(today + 12 * 60 * 60 - 1)
+                self.assertEqual(actual, expected)
+
+                if day == wday:
+                    expected += 7 * 24 * 60 * 60
+                actual = rh.computeRollover(today + 12 * 60 * 60)
+                self.assertEqual(actual, expected)
+
+                actual = rh.computeRollover(today + 13 * 60 * 60)
                 self.assertEqual(actual, expected)
             finally:
                 rh.close()
