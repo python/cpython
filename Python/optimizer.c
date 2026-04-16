@@ -1296,6 +1296,7 @@ allocate_executor(int exit_count, int length)
     res->trace = (_PyUOpInstruction *)(res->exits + exit_count);
     res->code_size = length;
     res->exit_count = exit_count;
+    res->jit_gdb_handle = NULL;
     return res;
 }
 
@@ -1442,6 +1443,7 @@ make_executor_from_uops(_PyThreadStateImpl *tstate, _PyUOpInstruction *buffer, i
     // This is initialized to false so we can prevent the executor
     // from being immediately detected as cold and invalidated.
     executor->vm_data.cold = false;
+    executor->jit_gdb_handle = NULL;
     if (_PyJIT_Compile(executor, executor->trace, length)) {
         Py_DECREF(executor);
         return NULL;
@@ -1674,6 +1676,7 @@ make_cold_executor(uint16_t opcode)
 #ifdef _Py_JIT
     cold->jit_code = NULL;
     cold->jit_size = 0;
+    cold->jit_gdb_handle = NULL;
     if (_PyJIT_Compile(cold, cold->trace, 1)) {
         Py_DECREF(cold);
         Py_FatalError("Cannot allocate core JIT code");

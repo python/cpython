@@ -9,7 +9,7 @@
 #include "pycore_jit_unwind.h"
 #include "pycore_lock.h"
 
-#ifdef PY_HAVE_PERF_TRAMPOLINE
+#if defined(PY_HAVE_PERF_TRAMPOLINE) || (defined(__linux__) && defined(__ELF__))
 
 #if defined(__linux__)
 #  include <elf.h>
@@ -43,31 +43,6 @@ enum {
     DWRF_CFA_advance_loc = 0x40,          // Advance location counter
     DWRF_CFA_offset = 0x80,               // Simple offset instruction
     DWRF_CFA_restore = 0xc0               // Restore register
-};
-
-/* DWARF Exception Handling pointer encodings */
-enum {
-    DWRF_EH_PE_absptr = 0x00,             // Absolute pointer
-    DWRF_EH_PE_omit = 0xff,               // Omitted value
-
-    /* Data type encodings */
-    DWRF_EH_PE_uleb128 = 0x01,            // Unsigned LEB128
-    DWRF_EH_PE_udata2 = 0x02,             // Unsigned 2-byte
-    DWRF_EH_PE_udata4 = 0x03,             // Unsigned 4-byte
-    DWRF_EH_PE_udata8 = 0x04,             // Unsigned 8-byte
-    DWRF_EH_PE_sleb128 = 0x09,            // Signed LEB128
-    DWRF_EH_PE_sdata2 = 0x0a,             // Signed 2-byte
-    DWRF_EH_PE_sdata4 = 0x0b,             // Signed 4-byte
-    DWRF_EH_PE_sdata8 = 0x0c,             // Signed 8-byte
-    DWRF_EH_PE_signed = 0x08,             // Signed flag
-
-    /* Reference type encodings */
-    DWRF_EH_PE_pcrel = 0x10,              // PC-relative
-    DWRF_EH_PE_textrel = 0x20,            // Text-relative
-    DWRF_EH_PE_datarel = 0x30,            // Data-relative
-    DWRF_EH_PE_funcrel = 0x40,            // Function-relative
-    DWRF_EH_PE_aligned = 0x50,            // Aligned
-    DWRF_EH_PE_indirect = 0x80            // Indirect
 };
 
 /*
@@ -121,7 +96,6 @@ enum {
 typedef struct ELFObjectContext {
     uint8_t* p;            // Current write position in buffer
     uint8_t* startp;       // Start of buffer (for offset calculations)
-    uint8_t* eh_frame_p;   // Start of EH frame data (for relative offsets)
     uint8_t* fde_p;        // Start of FDE data (for PC-relative calculations)
     uintptr_t code_addr;   // Address of the code section
     size_t code_size;      // Size of the code section
@@ -243,7 +217,6 @@ _PyJitUnwind_EhFrameSize(int absolute_addr)
     ctx.code_size = 1;
     ctx.code_addr = 0;
     ctx.startp = ctx.p = scratch;
-    ctx.eh_frame_p = NULL;
     ctx.fde_p = NULL;
     /* Generate once into scratch to learn the required size. */
     elf_init_ehframe(&ctx, absolute_addr);
@@ -269,7 +242,6 @@ _PyJitUnwind_BuildEhFrame(uint8_t *buffer, size_t buffer_size,
     ctx.code_size = code_size;
     ctx.code_addr = (uintptr_t)code_addr;
     ctx.startp = ctx.p = buffer;
-    ctx.eh_frame_p = NULL;
     ctx.fde_p = NULL;
     elf_init_ehframe(&ctx, absolute_addr);
     size_t written = (size_t)(ctx.p - ctx.startp);
@@ -497,8 +469,6 @@ static void elf_init_ehframe(ELFObjectContext* ctx, int absolute_addr) {
         DWRF_ALIGNNOP(sizeof(uintptr_t));     // Align to pointer boundary
     )
 
-    ctx->eh_frame_p = p;  // Remember start of FDE data
-
     /*
      * Emit DWARF EH FDE (Frame Description Entry)
      *
@@ -669,8 +639,9 @@ struct jit_descriptor {
     uint32_t action_flag;
     struct jit_code_entry *relevant_entry;
     struct jit_code_entry *first_entry;
-    PyMutex mutex;
 };
+
+static PyMutex jit_debug_mutex = {0};
 
 Py_EXPORTED_SYMBOL volatile struct jit_descriptor __jit_debug_descriptor = {
     1, JIT_NOACTION, NULL, NULL
@@ -699,7 +670,7 @@ gdb_jit_machine_id(void)
 #endif
 }
 
-static void
+static struct jit_code_entry *
 gdb_jit_register_code(
     const void *code_addr,
     size_t code_size,
@@ -713,12 +684,12 @@ gdb_jit_register_code(
      * __jit_debug_descriptor so debuggers can resolve JIT code.
      */
     if (code_addr == NULL || code_size == 0 || symname == NULL) {
-        return;
+        return NULL;
     }
 
     const uint16_t machine = gdb_jit_machine_id();
     if (machine == 0) {
-        return;
+        return NULL;
     }
 
     enum {
@@ -766,7 +737,7 @@ gdb_jit_register_code(
     const size_t total_size = sh_off + shnum * sizeof(Elf64_Shdr);
     uint8_t *buf = (uint8_t *)PyMem_RawMalloc(total_size);
     if (buf == NULL) {
-        return;
+        return NULL;
     }
     memset(buf, 0, total_size);
 
@@ -856,13 +827,13 @@ gdb_jit_register_code(
     struct jit_code_entry *entry = PyMem_RawMalloc(sizeof(*entry));
     if (entry == NULL) {
         PyMem_RawFree(buf);
-        return;
+        return NULL;
     }
     entry->symfile_addr = (const char *)buf;
     entry->symfile_size = total_size;
     entry->code_addr = code_addr;
 
-    PyMutex_Lock((PyMutex *)&__jit_debug_descriptor.mutex);
+    PyMutex_Lock(&jit_debug_mutex);
     entry->prev = NULL;
     entry->next = __jit_debug_descriptor.first_entry;
     if (entry->next != NULL) {
@@ -874,11 +845,12 @@ gdb_jit_register_code(
     __jit_debug_register_code();
     __jit_debug_descriptor.action_flag = JIT_NOACTION;
     __jit_debug_descriptor.relevant_entry = NULL;
-    PyMutex_Unlock((PyMutex *)&__jit_debug_descriptor.mutex);
+    PyMutex_Unlock(&jit_debug_mutex);
+    return entry;
 }
 #endif  // __linux__ && __ELF__
 
-void
+void *
 _PyJitUnwind_GdbRegisterCode(const void *code_addr,
                              size_t code_size,
                              const char *entry,
@@ -895,7 +867,7 @@ _PyJitUnwind_GdbRegisterCode(const void *code_addr,
     size_t name_size = snprintf(NULL, 0, "py::%s:%s", entry, filename) + 1;
     char *name = (char *)PyMem_RawMalloc(name_size);
     if (name == NULL) {
-        return;
+        return NULL;
     }
     snprintf(name, name_size, "py::%s:%s", entry, filename);
 
@@ -904,38 +876,32 @@ _PyJitUnwind_GdbRegisterCode(const void *code_addr,
         buffer, sizeof(buffer), code_addr, code_size, 1);
     if (eh_frame_size == 0) {
         PyMem_RawFree(name);
-        return;
+        return NULL;
     }
 
-    gdb_jit_register_code(code_addr, code_size, name,
-                          buffer, eh_frame_size);
+    void *handle = gdb_jit_register_code(code_addr, code_size, name,
+                                         buffer, eh_frame_size);
     PyMem_RawFree(name);
+    return handle;
 #else
     (void)code_addr;
     (void)code_size;
     (void)entry;
     (void)filename;
+    return NULL;
 #endif
 }
 
 void
-_PyJitUnwind_GdbUnregisterCode(const void *code_addr)
+_PyJitUnwind_GdbUnregisterCode(void *handle)
 {
 #if defined(__linux__) && defined(__ELF__)
-    if (code_addr == NULL) {
-        return;
-    }
-
-    PyMutex_Lock((PyMutex *)&__jit_debug_descriptor.mutex);
-    struct jit_code_entry *entry = __jit_debug_descriptor.first_entry;
-    while (entry != NULL && entry->code_addr != code_addr) {
-        entry = entry->next;
-    }
+    struct jit_code_entry *entry = (struct jit_code_entry *)handle;
     if (entry == NULL) {
-        PyMutex_Unlock((PyMutex *)&__jit_debug_descriptor.mutex);
         return;
     }
 
+    PyMutex_Lock(&jit_debug_mutex);
     if (entry->prev != NULL) {
         entry->prev->next = entry->next;
     }
@@ -951,13 +917,14 @@ _PyJitUnwind_GdbUnregisterCode(const void *code_addr)
     __jit_debug_register_code();
     __jit_debug_descriptor.action_flag = JIT_NOACTION;
     __jit_debug_descriptor.relevant_entry = NULL;
-    PyMutex_Unlock((PyMutex *)&__jit_debug_descriptor.mutex);
+
+    PyMutex_Unlock(&jit_debug_mutex);
 
     PyMem_RawFree((void *)entry->symfile_addr);
     PyMem_RawFree(entry);
 #else
-    (void)code_addr;
+    (void)handle;
 #endif
 }
 
-#endif  // PY_HAVE_PERF_TRAMPOLINE
+#endif  // defined(PY_HAVE_PERF_TRAMPOLINE) || (defined(__linux__) && defined(__ELF__))

@@ -267,12 +267,6 @@ typedef struct __attribute__((packed)) {
 } EhFrameHeader;
 _Static_assert(sizeof(EhFrameHeader) == 20, "EhFrameHeader layout mismatch");
 
-/* DWARF encoding constants used in EH frame headers */
-static const uint8_t DwarfUData4 = 0x03;
-static const uint8_t DwarfSData4 = 0x0b;
-static const uint8_t DwarfPcRel = 0x10;
-static const uint8_t DwarfDataRel = 0x30;
-
 // =============================================================================
 //                              GLOBAL STATE MANAGEMENT
 // =============================================================================
@@ -618,9 +612,9 @@ static void perf_map_jit_write_entry_with_name(
      */
     EhFrameHeader f;
     f.version = 1;
-    f.eh_frame_ptr_enc = DwarfSData4 | DwarfPcRel;  // PC-relative signed 4-byte
-    f.fde_count_enc = DwarfUData4;                  // Unsigned 4-byte count
-    f.table_enc = DwarfSData4 | DwarfDataRel;       // Data-relative signed 4-byte
+    f.eh_frame_ptr_enc = DWRF_EH_PE_sdata4 | DWRF_EH_PE_pcrel;
+    f.fde_count_enc = DWRF_EH_PE_udata4;
+    f.table_enc = DWRF_EH_PE_sdata4 | DWRF_EH_PE_datarel;
 
     /* Calculate relative offsets for EH frame navigation */
     f.eh_frame_ptr = -(int32_t)(eh_frame_size + 4 * sizeof(unsigned char));

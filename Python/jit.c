@@ -61,7 +61,7 @@ jit_error(const char *message)
     PyErr_Format(PyExc_RuntimeWarning, "JIT %s (%d)", message, hint);
 }
 
-static void
+static void *
 jit_record_code(const void *code_addr, size_t code_size,
                 const char *entry, const char *filename)
 {
@@ -71,19 +71,24 @@ jit_record_code(const void *code_addr, size_t code_size,
     if (callbacks.write_state == _Py_perfmap_jit_callbacks.write_state) {
         _PyPerfJit_WriteNamedCode(
             code_addr, code_size, entry, filename);
-        return;
+        return NULL;
     }
-    _PyJitUnwind_GdbRegisterCode(
+#endif
+
+#if defined(__linux__) && defined(__ELF__)
+    return _PyJitUnwind_GdbRegisterCode(
         code_addr, code_size, entry, filename);
 #else
     (void)code_addr;
     (void)code_size;
     (void)entry;
     (void)filename;
+    return NULL;
 #endif
 }
 
 static size_t _Py_jit_shim_size = 0;
+static void *_Py_jit_shim_gdb_handle = NULL;
 
 static int
 address_in_executor_array(_PyExecutorObject **ptrs, size_t count, uintptr_t addr)
@@ -754,7 +759,7 @@ _PyJIT_Compile(_PyExecutorObject *executor, const _PyUOpInstruction trace[], siz
     }
     executor->jit_code = memory;
     executor->jit_size = total_size;
-    jit_record_code(memory,
+    executor->jit_gdb_handle = jit_record_code(memory,
                     code_size + state.trampolines.size,
                     "jit_entry",
                     "<jit>");
@@ -808,10 +813,10 @@ compile_shim(void)
         return NULL;
     }
     _Py_jit_shim_size = total_size;
-    jit_record_code(memory,
-                    code_size + state.trampolines.size,
-                    "jit_entry",
-                    "<jit>");
+    _Py_jit_shim_gdb_handle = jit_record_code(memory,
+                                              code_size + state.trampolines.size,
+                                              "jit_entry",
+                                              "<jit>");
     return (_PyJitEntryFuncPtr)memory;
 }
 
@@ -843,8 +848,11 @@ _PyJIT_Free(_PyExecutorObject *executor)
     if (memory) {
         executor->jit_code = NULL;
         executor->jit_size = 0;
-#ifdef PY_HAVE_PERF_TRAMPOLINE
-        _PyJitUnwind_GdbUnregisterCode(memory);
+#if defined(__linux__) && defined(__ELF__)
+        if (executor->jit_gdb_handle != NULL) {
+            _PyJitUnwind_GdbUnregisterCode(executor->jit_gdb_handle);
+            executor->jit_gdb_handle = NULL;
+        }
 #endif
         if (jit_free(memory, size)) {
             PyErr_FormatUnraisable("Exception ignored while "
@@ -863,8 +871,11 @@ _PyJIT_Fini(void)
     if (size) {
         _Py_jit_entry = _Py_LazyJitShim;
         _Py_jit_shim_size = 0;
-#ifdef PY_HAVE_PERF_TRAMPOLINE
-        _PyJitUnwind_GdbUnregisterCode(memory);
+#if defined(__linux__) && defined(__ELF__)
+        if (_Py_jit_shim_gdb_handle != NULL) {
+            _PyJitUnwind_GdbUnregisterCode(_Py_jit_shim_gdb_handle);
+            _Py_jit_shim_gdb_handle = NULL;
+        }
 #endif
         if (jit_free(memory, size)) {
             PyErr_FormatUnraisable("Exception ignored while "
