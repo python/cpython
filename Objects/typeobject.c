@@ -6420,16 +6420,18 @@ void
 _PyType_SetFlagsRecursive(PyTypeObject *self, unsigned long mask, unsigned long flags)
 {
     BEGIN_TYPE_LOCK();
-     /* Invalidate the old version before changing flags. This must happen
-         before types_stop_world(); immutable/static-builtin types are
-         skipped because set_flags_recursive() does not touch them. */
+    /* Ideally, changing flags and invalidating the old version tag would
+       happen in one step. But type_modified_unlocked() is re-entrant and
+       cannot run with the world stopped, so we must invalidate first.
+       Immutable/static-builtin types are skipped because
+       set_flags_recursive() does not modify them. */
     if (!PyType_HasFeature(self, Py_TPFLAGS_IMMUTABLETYPE) &&
         (self->tp_flags & mask) != flags)
     {
         type_modified_unlocked(self);
     }
-     /* Keep TYPE_LOCK held while waiting for stop-the-world so no thread
-         can reassign a version tag before the flag update. */
+    /* Keep TYPE_LOCK held while waiting for stop-the-world so no thread
+       can reassign a version tag before the flag update. */
     type_lock_prevent_release();
     types_stop_world();
     set_flags_recursive(self, mask, flags);
