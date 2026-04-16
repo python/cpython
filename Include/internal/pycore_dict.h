@@ -31,7 +31,8 @@ PyAPI_FUNC(int) _PyDict_SetItem_KnownHash(PyObject *mp, PyObject *key,
 PyAPI_FUNC(int) _PyDict_DelItem_KnownHash(PyObject *mp, PyObject *key,
                                           Py_hash_t hash);
 
-extern int _PyDict_DelItem_KnownHash_LockHeld(PyObject *mp, PyObject *key,
+// Exported for external JIT support
+PyAPI_FUNC(int) _PyDict_DelItem_KnownHash_LockHeld(PyObject *mp, PyObject *key,
                                               Py_hash_t hash);
 
 extern int _PyDict_Contains_KnownHash(PyObject *, PyObject *, Py_hash_t);
@@ -93,8 +94,9 @@ extern PyObject *_PyDict_Or(PyObject *self, PyObject *other);
 extern PyObject *_PyDict_IOr(PyObject *self, PyObject *other);
 
 /* Gets a version number unique to the current state of the keys of dict, if possible.
- * Returns the version number, or zero if it was not possible to get a version number. */
-extern uint32_t _PyDictKeys_GetVersionForCurrentState(
+ * Returns the version number, or zero if it was not possible to get a version number.
+ * Exported for external JIT support */
+PyAPI_FUNC(uint32_t) _PyDictKeys_GetVersionForCurrentState(
         PyInterpreterState *interp, PyDictKeysObject *dictkeys);
 
 /* Gets a version number unique to the current state of the keys of dict, if possible.
@@ -104,8 +106,9 @@ extern uint32_t _PyDictKeys_GetVersionForCurrentState(
  *
  * The caller must hold the per-object lock on dict.
  *
- * Returns the version number, or zero if it was not possible to get a version number. */
-extern uint32_t _PyDict_GetKeysVersionForCurrentState(
+ * Returns the version number, or zero if it was not possible to get a version number.
+ * Exported for external JIT support */
+PyAPI_FUNC(uint32_t) _PyDict_GetKeysVersionForCurrentState(
         PyInterpreterState *interp, PyDictObject *dict);
 
 extern size_t _PyDict_KeysSize(PyDictKeysObject *keys);
@@ -114,16 +117,18 @@ extern void _PyDictKeys_DecRef(PyDictKeysObject *keys);
 
 /* _Py_dict_lookup() returns index of entry which can be used like DK_ENTRIES(dk)[index].
  * -1 when no entry found, -3 when compare raises error.
+ * Exported for external JIT support
  */
-extern Py_ssize_t _Py_dict_lookup(PyDictObject *mp, PyObject *key, Py_hash_t hash, PyObject **value_addr);
+PyAPI_FUNC(Py_ssize_t) _Py_dict_lookup(PyDictObject *mp, PyObject *key, Py_hash_t hash, PyObject **value_addr);
 extern Py_ssize_t _Py_dict_lookup_threadsafe(PyDictObject *mp, PyObject *key, Py_hash_t hash, PyObject **value_addr);
 extern Py_ssize_t _Py_dict_lookup_threadsafe_stackref(PyDictObject *mp, PyObject *key, Py_hash_t hash, _PyStackRef *value_addr);
 
 extern int _PyDict_GetMethodStackRef(PyDictObject *dict, PyObject *name, _PyStackRef *method);
 
-extern Py_ssize_t _PyDict_LookupIndexAndValue(PyDictObject *, PyObject *, PyObject **);
-extern Py_ssize_t _PyDict_LookupIndex(PyDictObject *, PyObject *);
-extern Py_ssize_t _PyDictKeys_StringLookup(PyDictKeysObject* dictkeys, PyObject *key);
+// Exported for external JIT support
+PyAPI_FUNC(Py_ssize_t) _PyDict_LookupIndexAndValue(PyDictObject *, PyObject *, PyObject **);
+PyAPI_FUNC(Py_ssize_t) _PyDict_LookupIndex(PyDictObject *, PyObject *);
+PyAPI_FUNC(Py_ssize_t) _PyDictKeys_StringLookup(PyDictKeysObject* dictkeys, PyObject *key);
 
 /* Look up a string key in an all unicode dict keys, assign the keys object a version, and
  * store it in version.
@@ -132,9 +137,11 @@ extern Py_ssize_t _PyDictKeys_StringLookup(PyDictKeysObject* dictkeys, PyObject 
  * strings.
  *
  * Returns DKIX_EMPTY if the key is not present.
+ *
+ * Exported for external JIT support
  */
-extern Py_ssize_t _PyDictKeys_StringLookupAndVersion(PyDictKeysObject* dictkeys, PyObject *key, uint32_t *version);
-extern Py_ssize_t _PyDictKeys_StringLookupSplit(PyDictKeysObject* dictkeys, PyObject *key);
+PyAPI_FUNC(Py_ssize_t) _PyDictKeys_StringLookupAndVersion(PyDictKeysObject* dictkeys, PyObject *key, uint32_t *version);
+PyAPI_FUNC(Py_ssize_t) _PyDictKeys_StringLookupSplit(PyDictKeysObject* dictkeys, PyObject *key);
 PyAPI_FUNC(PyObject *)_PyDict_LoadGlobal(PyDictObject *, PyDictObject *, PyObject *);
 PyAPI_FUNC(void) _PyDict_LoadGlobalStackRef(PyDictObject *, PyDictObject *, PyObject *, _PyStackRef *);
 
@@ -144,7 +151,8 @@ extern PyObject *_PyDict_LoadBuiltinsFromGlobals(PyObject *globals);
 /* Consumes references to key and value */
 PyAPI_FUNC(int) _PyDict_SetItem_Take2(PyDictObject *op, PyObject *key, PyObject *value);
 PyAPI_FUNC(int) _PyDict_SetItem_Take2_KnownHash(PyDictObject *op, PyObject *key, PyObject *value, Py_hash_t hash);
-extern int _PyDict_SetItem_LockHeld(PyDictObject *dict, PyObject *name, PyObject *value);
+// Exported for external JIT support
+PyAPI_FUNC(int) _PyDict_SetItem_LockHeld(PyDictObject *dict, PyObject *name, PyObject *value);
 // Export for '_asyncio' shared extension
 PyAPI_FUNC(int) _PyDict_SetItem_KnownHash_LockHeld(PyDictObject *mp, PyObject *key,
                                                    PyObject *value, Py_hash_t hash);
@@ -328,6 +336,10 @@ _PyDictValues_AddToInsertionOrder(PyDictValues *values, Py_ssize_t ix)
     array[size] = (uint8_t)ix;
     values->size = size+1;
 }
+
+// Exported for external JIT support
+PyAPI_FUNC(void)
+_PyDict_InsertSplitValue(PyDictObject *mp, PyObject *key, PyObject *value, Py_ssize_t ix);
 
 static inline size_t
 shared_keys_usable_size(PyDictKeysObject *keys)
