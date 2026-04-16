@@ -36,7 +36,6 @@ iterate_interpreters(
     uintptr_t interpreter_next_offset =
         (uintptr_t)offsets->debug_offsets.interpreter_state.next;
 
-    int64_t iid = 0;
     uintptr_t interpreter_state_addr;
     if (_Py_RemoteDebug_ReadRemoteMemory(&offsets->handle,
                                          interpreter_state_offset,
@@ -51,6 +50,10 @@ iterate_interpreters(
         return -1;
     }
 
+    int64_t iid = 0;
+    static_assert(
+        sizeof((((PyInterpreterState*)NULL)->id)) == sizeof(iid),
+        "Sizeof of PyInterpreterState.id mismatch with local iid value");
     while (interpreter_state_addr != 0) {
         if (0 > _Py_RemoteDebug_ReadRemoteMemory(
                     &offsets->handle,

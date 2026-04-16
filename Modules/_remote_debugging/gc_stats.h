@@ -19,10 +19,18 @@ typedef struct {
 } ReadGCStatsContext;
 
 static int
-read_gc_stats(struct gc_stats *stats, unsigned long iid, PyObject *result)
+read_gc_stats(struct gc_stats *stats, int64_t iid, PyObject *result)
 {
 #define ADD_LOCAL_ULONG(name) do { \
     val = PyLong_FromUnsignedLong(name);  \
+    if (!val || PyDict_SetItemString(item, #name, val) < 0) {          \
+        goto error;         \
+    }                       \
+    Py_DECREF(val);         \
+} while(0)
+
+#define ADD_LOCAL_INT64(name) do { \
+    val = PyLong_FromInt64(name);  \
     if (!val || PyDict_SetItemString(item, #name, val) < 0) {          \
         goto error;         \
     }                       \
@@ -75,7 +83,7 @@ read_gc_stats(struct gc_stats *stats, unsigned long iid, PyObject *result)
             }
 
             ADD_LOCAL_ULONG(gen);
-            ADD_LOCAL_ULONG(iid);
+            ADD_LOCAL_INT64(iid);
 
             ADD_STATS_INT64(ts_start);
             ADD_STATS_INT64(ts_stop);
@@ -101,6 +109,7 @@ read_gc_stats(struct gc_stats *stats, unsigned long iid, PyObject *result)
     }
 
 #undef ADD_LOCAL_ULONG
+#undef ADD_LOCAL_INT64
 #undef ADD_STATS_SSIZE
 #undef ADD_STATS_INT64
 #undef ADD_STATS_DOUBLE
@@ -117,7 +126,7 @@ error:
 static int
 get_gc_stats_from_interpreter_state(RuntimeOffsets *offsets,
                                     uintptr_t interpreter_state_addr,
-                                    unsigned long iid,
+                                    int64_t iid,
                                     void *context)
 {
     ReadGCStatsContext *ctx = (ReadGCStatsContext *)context;
