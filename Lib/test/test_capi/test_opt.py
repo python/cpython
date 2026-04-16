@@ -4267,6 +4267,118 @@ class TestUopsOptimization(unittest.TestCase):
         # propagates PyFloat_Type.
         self.assertNotIn("_GUARD_NOS_FLOAT", uops)
 
+    def test_binary_op_extend_list_concat_type_propagation(self):
+        # list + list is specialized via BINARY_OP_EXTEND. The tier 2 optimizer
+        # should learn that the result is a list and eliminate subsequent
+        # list-type guards.
+        def testfunc(n):
+            a = [1, 2]
+            b = [3, 4]
+            x = True
+            for _ in range(n):
+                c = a + b
+                if c[0]:
+                    x = False
+            return x
+
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, False)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertIn("_BINARY_OP_EXTEND", uops)
+        # The c[0] subscript emits _GUARD_NOS_LIST before _BINARY_OP_SUBSCR_LIST_INT;
+        # since _BINARY_OP_EXTEND now propagates PyList_Type, that guard is gone.
+        self.assertIn("_BINARY_OP_SUBSCR_LIST_INT", uops)
+        self.assertNotIn("_GUARD_NOS_LIST", uops)
+
+    def test_binary_op_extend_tuple_concat_type_propagation(self):
+        # tuple + tuple is specialized via BINARY_OP_EXTEND. The tier 2 optimizer
+        # should learn the result is a tuple and eliminate subsequent tuple guards.
+        def testfunc(n):
+            t1 = (1, 2)
+            t2 = (3, 4)
+            for _ in range(n):
+                a, b, c, d = t1 + t2
+            return a + b + c + d
+
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, 10)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertIn("_BINARY_OP_EXTEND", uops)
+        self.assertIn("_UNPACK_SEQUENCE_TUPLE", uops)
+        self.assertNotIn("_GUARD_TOS_TUPLE", uops)
+
+    def test_binary_op_extend_guard_elimination(self):
+        # When both operands have known types (e.g., from a prior
+        # _BINARY_OP_EXTEND result), the _GUARD_BINARY_OP_EXTEND
+        # should be eliminated.
+        def testfunc(n):
+            a = [1, 2]
+            b = [3, 4]
+            total = 0
+            for _ in range(n):
+                c = a + b    # first: guard stays, result type = list
+                d = c + c    # second: both operands are list -> guard eliminated
+                total += d[0]
+            return total
+
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, TIER2_THRESHOLD)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        # Both list additions use _BINARY_OP_EXTEND
+        self.assertEqual(uops.count("_BINARY_OP_EXTEND"), 2)
+        # But the second guard is eliminated because both operands
+        # are known to be lists from the first _BINARY_OP_EXTEND.
+        self.assertEqual(uops.count("_GUARD_BINARY_OP_EXTEND"), 1)
+
+    def test_binary_op_extend_partial_guard_lhs_known(self):
+        # When the lhs type is already known (from a prior _BINARY_OP_EXTEND
+        # result) but the rhs type is not, the optimizer should emit
+        # _GUARD_BINARY_OP_EXTEND_RHS (checking only the rhs) instead of
+        # the full _GUARD_BINARY_OP_EXTEND.
+        def testfunc(n):
+            a = [1, 2]
+            b = [3, 4]
+            total = 0
+            for _ in range(n):
+                c = a + b    # result type is list (known)
+                d = c + b    # lhs (c) is known list, rhs (b) is not -> _GUARD_BINARY_OP_EXTEND_RHS
+                total += d[0]
+            return total
+
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, TIER2_THRESHOLD)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertIn("_BINARY_OP_EXTEND", uops)
+        self.assertIn("_GUARD_BINARY_OP_EXTEND_RHS", uops)
+        self.assertNotIn("_GUARD_BINARY_OP_EXTEND_LHS", uops)
+
+    def test_binary_op_extend_partial_guard_rhs_known(self):
+        # When the rhs type is already known (from a prior _BINARY_OP_EXTEND
+        # result) but the lhs type is not, the optimizer should emit
+        # _GUARD_BINARY_OP_EXTEND_LHS (checking only the lhs) instead of
+        # the full _GUARD_BINARY_OP_EXTEND.
+        def testfunc(n):
+            a = [1, 2]
+            b = [3, 4]
+            total = 0
+            for _ in range(n):
+                c = a + b    # result type is list (known)
+                d = b + c    # rhs (c) is known list, lhs (b) is not -> _GUARD_BINARY_OP_EXTEND_LHS
+                total += d[2]
+            return total
+
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, TIER2_THRESHOLD)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertIn("_BINARY_OP_EXTEND", uops)
+        self.assertIn("_GUARD_BINARY_OP_EXTEND_LHS", uops)
+        self.assertNotIn("_GUARD_BINARY_OP_EXTEND_RHS", uops)
+
     def test_unary_invert_long_type(self):
         def testfunc(n):
             for _ in range(n):
