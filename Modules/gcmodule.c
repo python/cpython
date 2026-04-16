@@ -8,7 +8,6 @@
 #include "pycore_gc.h"
 #include "pycore_object.h"      // _PyObject_IS_GC()
 #include "pycore_pystate.h"     // _PyInterpreterState_GET()
-#include "pycore_tuple.h"       // _PyTuple_FromArray()
 
 typedef struct _gc_runtime_state GCState;
 
@@ -159,6 +158,7 @@ gc_set_threshold_impl(PyObject *module, int threshold0, int group_right_1,
 {
     GCState *gcstate = get_gc_state();
 
+#ifdef Py_GIL_DISABLED
     gcstate->young.threshold = threshold0;
     if (group_right_1) {
         gcstate->old[0].threshold = threshold1;
@@ -166,6 +166,15 @@ gc_set_threshold_impl(PyObject *module, int threshold0, int group_right_1,
     if (group_right_2) {
         gcstate->old[1].threshold = threshold2;
     }
+#else
+    gcstate->generations[0].threshold = threshold0;
+    if (group_right_1) {
+        gcstate->generations[1].threshold = threshold1;
+    }
+    if (group_right_2) {
+        gcstate->generations[2].threshold = threshold2;
+    }
+#endif
     Py_RETURN_NONE;
 }
 
@@ -180,10 +189,17 @@ gc_get_threshold_impl(PyObject *module)
 /*[clinic end generated code: output=7902bc9f41ecbbd8 input=286d79918034d6e6]*/
 {
     GCState *gcstate = get_gc_state();
+#ifdef Py_GIL_DISABLED
     return Py_BuildValue("(iii)",
                          gcstate->young.threshold,
                          gcstate->old[0].threshold,
                          0);
+#else
+    return Py_BuildValue("(iii)",
+                         gcstate->generations[0].threshold,
+                         gcstate->generations[1].threshold,
+                         gcstate->generations[2].threshold);
+#endif
 }
 
 /*[clinic input]
@@ -205,12 +221,17 @@ gc_get_count_impl(PyObject *module)
     // Flush the local allocation count to the global count
     _Py_atomic_add_int(&gcstate->young.count, (int)gc->alloc_count);
     gc->alloc_count = 0;
-#endif
 
     return Py_BuildValue("(iii)",
                          gcstate->young.count,
                          gcstate->old[gcstate->visited_space].count,
                          gcstate->old[gcstate->visited_space^1].count);
+#else
+    return Py_BuildValue("(iii)",
+                         gcstate->generations[0].count,
+                         gcstate->generations[1].count,
+                         gcstate->generations[2].count);
+#endif
 }
 
 /*[clinic input]
@@ -347,9 +368,15 @@ gc_get_stats_impl(PyObject *module)
     /* To get consistent values despite allocations while constructing
        the result list, we use a snapshot of the running stats. */
     GCState *gcstate = get_gc_state();
+#ifdef Py_GIL_DISABLED
     for (i = 0; i < NUM_GENERATIONS; i++) {
         stats[i] = gcstate->generation_stats[i];
     }
+#else
+    for (i = 0; i < NUM_GENERATIONS; i++) {
+        stats[i] = gcstate->generation_stats_gen[i];
+    }
+#endif
 
     PyObject *result = PyList_New(0);
     if (result == NULL)
@@ -358,10 +385,12 @@ gc_get_stats_impl(PyObject *module)
     for (i = 0; i < NUM_GENERATIONS; i++) {
         PyObject *dict;
         st = &stats[i];
-        dict = Py_BuildValue("{snsnsn}",
+        dict = Py_BuildValue("{snsnsnsnsd}",
                              "collections", st->collections,
                              "collected", st->collected,
-                             "uncollectable", st->uncollectable
+                             "uncollectable", st->uncollectable,
+                             "candidates", st->candidates,
+                             "duration", st->duration
                             );
         if (dict == NULL)
             goto error;

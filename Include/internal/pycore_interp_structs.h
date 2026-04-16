@@ -187,12 +187,19 @@ struct gc_collection_stats {
 
 /* Running stats per generation */
 struct gc_generation_stats {
+    PyTime_t ts_start;
+    PyTime_t ts_stop;
+
     /* total number of collections */
     Py_ssize_t collections;
     /* total number of collected objects */
     Py_ssize_t collected;
     /* total number of uncollectable objects (put into gc.garbage) */
     Py_ssize_t uncollectable;
+    /* total number of objects considered for collection */
+    Py_ssize_t candidates;
+    /* total duration of the collection in seconds */
+    double duration;
 };
 
 enum _GCPhase {
@@ -214,14 +221,23 @@ struct _gc_runtime_state {
     /* Is automatic collection enabled? */
     int enabled;
     int debug;
-    /* linked lists of container objects */
+
+    /* Generational GC state used in GIL builds. */
+    struct gc_generation generations[NUM_GENERATIONS];
+    PyGC_Head *generation0;
+    struct gc_generation_stats generation_stats_gen[NUM_GENERATIONS];
+
+    /* Incremental/free-threaded GC state. */
     struct gc_generation young;
     struct gc_generation old[2];
+
     /* a permanent generation which won't be collected */
     struct gc_generation permanent_generation;
     struct gc_generation_stats generation_stats[NUM_GENERATIONS];
     /* true if we are currently running the collector */
     int collecting;
+    /* The frame that started the current collection, or NULL. */
+    _PyInterpreterFrame *frame;
     /* list of uncollectable objects */
     PyObject *garbage;
     /* a list of callbacks to be invoked when collection is performed */
@@ -233,7 +249,6 @@ struct _gc_runtime_state {
     int visited_space;
     int phase;
 
-#ifdef Py_GIL_DISABLED
     /* This is the number of objects that survived the last full
        collection. It approximates the number of long lived objects
        tracked by the GC.
@@ -246,6 +261,7 @@ struct _gc_runtime_state {
        the first time. */
     Py_ssize_t long_lived_pending;
 
+#ifdef Py_GIL_DISABLED
     /* True if gc.freeze() has been used. */
     int freeze_active;
 

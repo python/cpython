@@ -276,19 +276,28 @@ class SelfCycleFinalizationTest(TestBase, unittest.TestCase):
             s = SelfCycleResurrector()
             ids = [id(s)]
             wr = weakref.ref(s)
+            wrc = weakref.ref(s, lambda x: None)
             del s
             gc.collect()
             self.assert_del_calls(ids)
             self.assert_survivors(ids)
-            # XXX is this desirable?
-            self.assertIs(wr(), None)
+            # The backport keeps the 3.14 free-threaded collector unchanged,
+            # so weakrefs without callbacks are still cleared before
+            # finalizers there.  GIL builds follow the newer behavior.
+            if support.Py_GIL_DISABLED:
+                self.assertIsNone(wr())
+            else:
+                self.assertIsNotNone(wr())
+            # A weakref with a callback is still cleared before calling
+            # finalizers.
+            self.assertIsNone(wrc())
             # When trying to destroy the object a second time, __del__
             # isn't called anymore (and the object isn't resurrected).
             self.clear_survivors()
             gc.collect()
             self.assert_del_calls(ids)
             self.assert_survivors([])
-            self.assertIs(wr(), None)
+            self.assertIsNone(wr())
 
     def test_simple_suicide(self):
         # Test the GC is able to deal with an object that kills its last
@@ -378,18 +387,32 @@ class CycleChainFinalizationTest(TestBase, unittest.TestCase):
 
     def check_resurrecting_chain(self, classes):
         N = len(classes)
+        def dummy_callback(ref):
+            pass
         with SimpleBase.test():
             nodes = self.build_chain(classes)
             N = len(nodes)
             ids = [id(s) for s in nodes]
             survivor_ids = [id(s) for s in nodes if isinstance(s, SimpleResurrector)]
             wrs = [weakref.ref(s) for s in nodes]
+            wrcs = [weakref.ref(s, dummy_callback) for s in nodes]
             del nodes
             gc.collect()
             self.assert_del_calls(ids)
             self.assert_survivors(survivor_ids)
-            # XXX desirable?
-            self.assertEqual([wr() for wr in wrs], [None] * N)
+            for wr in wrs:
+                # The backport keeps the 3.14 free-threaded collector
+                # unchanged, so weakrefs without callbacks are still cleared
+                # before finalizers there.  GIL builds follow the newer
+                # behavior.
+                if support.Py_GIL_DISABLED:
+                    self.assertIsNone(wr())
+                else:
+                    self.assertIsNotNone(wr())
+            for wr in wrcs:
+                # Weakrefs with callbacks are still cleared before calling
+                # finalizers.
+                self.assertIsNone(wr())
             self.clear_survivors()
             gc.collect()
             self.assert_del_calls(ids)

@@ -137,6 +137,11 @@ extern PyTypeObject _PyExc_MemoryError;
         }, \
         .gc = { \
             .enabled = 1, \
+            .generations = { \
+                { .threshold = 2000, }, \
+                { .threshold = 10, }, \
+                { .threshold = 10, }, \
+            }, \
             .young = { .threshold = 2000, }, \
             .old = { \
                 { .threshold = 10, }, \
