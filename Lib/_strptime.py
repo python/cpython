@@ -464,7 +464,8 @@ class TimeRE(dict):
         format = re_sub(r'\s+', r'\\s+', format)
         format = re_sub(r"'", "['\u02bc]", format)  # needed for br_FR
         year_in_format = False
-        day_of_month_in_format = False
+        day_d_in_format = False
+        day_e_in_format = False
         def repl(m):
             directive = m.group()[1:] # exclude `%` symbol
             match directive:
@@ -472,20 +473,30 @@ class TimeRE(dict):
                     nonlocal year_in_format
                     year_in_format = True
                 case 'd':
-                    nonlocal day_of_month_in_format
-                    day_of_month_in_format = True
+                    nonlocal day_d_in_format
+                    day_d_in_format = True
+                case 'e':
+                    nonlocal day_e_in_format
+                    day_e_in_format = True
             return self[directive]
         format = re_sub(r'%[-_0^#]*[0-9]*([OE]?[:\\]?.?)', repl, format)
-        if day_of_month_in_format and not year_in_format:
-            import warnings
-            warnings.warn("""\
+        if not year_in_format:
+            if day_d_in_format:
+                raise ValueError(
+                    "Day of month directive '%d' may not be used without "
+                    "a year directive. Parsing dates involving a day of "
+                    "month without a year is ambiguous and fails to parse "
+                    "leap day. Add a year to the input and format. "
+                    "See https://github.com/python/cpython/issues/70647.")
+            if day_e_in_format:
+                import warnings
+                warnings.warn("""\
 Parsing dates involving a day of month without a year specified is ambiguous
-and fails to parse leap day. The default behavior will change in Python 3.15
-to either always raise an exception or to use a different default year (TBD).
-To avoid trouble, add a specific year to the input & format.
+and fails to parse leap day. '%e' without a year will become an error in Python 3.17.
+To avoid trouble, add a specific year to the input and format.
 See https://github.com/python/cpython/issues/70647.""",
-                          DeprecationWarning,
-                          skip_file_prefixes=(os.path.dirname(__file__),))
+                              DeprecationWarning,
+                              skip_file_prefixes=(os.path.dirname(__file__),))
         return format
 
     def compile(self, format):
