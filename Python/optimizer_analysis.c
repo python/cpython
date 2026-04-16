@@ -177,12 +177,13 @@ convert_global_to_const(_PyUOpInstruction *inst, PyObject *obj)
     if (res == NULL) {
         return NULL;
     }
-    if (_Py_IsImmortal(res)) {
+    bool borrow = _Py_IsImmortal(res);
+    if (borrow) {
         inst->opcode = _LOAD_CONST_INLINE_BORROW;
     } else {
         inst->opcode = _LOAD_CONST_INLINE;
     }
-    inst->operand0 = (uint64_t)res;
+    inst->operand0 = borrow ? PyStackRef_TagBorrow(res) : (uint64_t)res;
     return res;
 }
 
@@ -332,7 +333,7 @@ optimize_to_bool(
         if (prefix != _NOP) {
             ADD_OP(prefix, 0, 0);
         }
-        ADD_OP(_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)load);
+        ADD_OP(_LOAD_CONST_INLINE_BORROW, 0, PyStackRef_TagBorrow(load));
         if (suffix != _NOP) {
             ADD_OP(suffix, 2, 0);
         }
@@ -393,7 +394,7 @@ lookup_attr(JitOptContext *ctx, _PyBloomFilter *dependencies, _PyUOpInstruction 
                 ADD_OP(prefix, 0, 0);
             }
             ADD_OP(immortal ? _LOAD_CONST_INLINE_BORROW : _LOAD_CONST_INLINE,
-                   0, (uintptr_t)lookup);
+                   0, immortal ? PyStackRef_TagBorrow(lookup) : (uintptr_t)lookup);
             if (suffix != _NOP) {
                 ADD_OP(suffix, 2, 0);
             }
@@ -464,7 +465,7 @@ lookup_super_attr(JitOptContext *ctx, _PyBloomFilter *dependencies,
     ADD_OP(_SWAP, 3, 0);
     ADD_OP(_POP_TOP, 0, 0);
     ADD_OP(_POP_TOP, 0, 0);
-    ADD_OP(opcode, 0, (uintptr_t)lookup);
+    ADD_OP(opcode, 0, (opcode == immortal) ? PyStackRef_TagBorrow(lookup) : (uintptr_t)lookup);
     if (suffix != _NOP) {
         ADD_OP(suffix, 2, 0);
     }

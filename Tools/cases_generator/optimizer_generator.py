@@ -245,7 +245,7 @@ class OptimizerEmitter(Emitter):
                     # (left -- res, left)
                     # usually for unary ops with passthrough references
                     1: [("_LOAD_CONST_INLINE_BORROW",
-                         "0, (uintptr_t)result"),
+                         "0, PyStackRef_TagBorrow(result)"),
                         ("_SWAP", "2, 0")],
                 },
                 2: {
@@ -253,11 +253,11 @@ class OptimizerEmitter(Emitter):
                     0: [("_POP_TOP", "0, 0"),
                         ("_POP_TOP", "0, 0"),
                         ("_LOAD_CONST_INLINE_BORROW",
-                         "0, (uintptr_t)result")],
+                         "0, PyStackRef_TagBorrow(result)")],
                     # (left, right -- res, left, right)
                     # usually for binary ops with passthrough references
                     2: [("_LOAD_CONST_INLINE_BORROW",
-                         "0, (uintptr_t)result"),
+                         "0, PyStackRef_TagBorrow(result)"),
                         ("_SWAP", "3, 0"),
                         ("_SWAP", "2, 0")],
                 },
