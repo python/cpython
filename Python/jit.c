@@ -355,6 +355,14 @@ patch_aarch64_12(unsigned char *location, uint64_t value)
     set_bits(loc32, 10, value, shift, 12);
 }
 
+// Relaxable 12-bit low part of an absolute address.
+// Usually paired with patch_aarch64_21rx (below).
+void
+patch_aarch64_12x(unsigned char *location, uint64_t value)
+{
+    patch_aarch64_12(location, value);
+}
+
 // 16-bit low part of an absolute address.
 void
 patch_aarch64_16a(unsigned char *location, uint64_t value)
@@ -415,6 +423,14 @@ patch_aarch64_21r(unsigned char *location, uint64_t value)
     set_bits(loc32, 5, value, 2, 19);
 }
 
+// Relaxable 21-bit count of pages between this page and an absolute address's
+// page. Usually paired with patch_aarch64_12x (above).
+void
+patch_aarch64_21rx(unsigned char *location, uint64_t value)
+{
+    patch_aarch64_21r(location, value);
+}
+
 // 21-bit relative branch.
 void
 patch_aarch64_19r(unsigned char *location, uint64_t value)
@@ -443,6 +459,56 @@ patch_aarch64_26r(unsigned char *location, uint64_t value)
     // Since instructions are 4-byte aligned, only use 26 bits:
     assert(get_bits(value, 0, 2) == 0);
     set_bits(loc32, 0, value, 2, 26);
+}
+
+// A pair of patch_aarch64_21rx and patch_aarch64_12x.
+void
+patch_aarch64_33rx(unsigned char *location_a, unsigned char *location_b, uint64_t value)
+{
+    uint32_t *loc32_a = (uint32_t *)location_a;
+    uint32_t *loc32_b = (uint32_t *)location_b;
+    // Try to relax the pair of GOT loads into an immediate value:
+    assert(IS_AARCH64_ADRP(*loc32_a));
+    assert(IS_AARCH64_LDR_OR_STR(*loc32_b));
+    unsigned char reg = get_bits(*loc32_a, 0, 5);
+    // There should be only one register involved:
+    assert(reg == get_bits(*loc32_a, 0, 5));  // ldr's output register.
+    assert(reg == get_bits(*loc32_b, 5, 5));  // ldr's input register.
+    uint64_t relaxed = *(uint64_t *)value;
+    if (relaxed < (1UL << 16)) {
+        // adrp reg, AAA; ldr reg, [reg + BBB] -> movz reg, XXX; nop
+        *loc32_a = 0xD2800000 | (get_bits(relaxed, 0, 16) << 5) | reg;
+        *loc32_b = 0xD503201F;
+        return;
+    }
+    if (relaxed < (1ULL << 32)) {
+        // adrp reg, AAA; ldr reg, [reg + BBB] -> movz reg, XXX; movk reg, YYY
+        *loc32_a = 0xD2800000 | (get_bits(relaxed,  0, 16) << 5) | reg;
+        *loc32_b = 0xF2A00000 | (get_bits(relaxed, 16, 16) << 5) | reg;
+        return;
+    }
+    int64_t page_delta = (relaxed >> 12) - ((uintptr_t)location_a >> 12);
+    if (page_delta >= -(1L << 20) &&
+        page_delta < (1L << 20))
+    {
+        // adrp reg, AAA; ldr reg, [reg + BBB] -> adrp reg, AAA; add reg, reg, BBB
+        patch_aarch64_21rx(location_a, relaxed);
+        *loc32_b = 0x91000000 | get_bits(relaxed, 0, 12) << 10 | reg << 5 | reg;
+        return;
+    }
+    relaxed = value - (uintptr_t)location_a;
+    if ((relaxed & 0x3) == 0 &&
+        (int64_t)relaxed >= -(1L << 19) &&
+        (int64_t)relaxed < (1L << 19))
+    {
+        // adrp reg, AAA; ldr reg, [reg + BBB] -> ldr reg, XXX; nop
+        *loc32_a = 0x58000000 | (get_bits(relaxed, 2, 19) << 5) | reg;
+        *loc32_b = 0xD503201F;
+        return;
+    }
+    // Couldn't do it. Just patch the two instructions normally:
+    patch_aarch64_21rx(location_a, value);
+    patch_aarch64_12x(location_b, value);
 }
 
 // Relaxable 32-bit relative address.

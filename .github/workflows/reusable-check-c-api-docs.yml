@@ -3,7 +3,8 @@ name: Reusable C API Docs Check
 on:
   workflow_call:
 
-permissions: {}
+permissions:
+  contents: read
 
 env:
   FORCE_COLOR: 1
