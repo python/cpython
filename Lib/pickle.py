@@ -536,12 +536,27 @@ class _Pickler:
         # growable) array, indexed by memo key.
         if self.fast:
             return
-        assert id(obj) not in self.memo
-        idx = len(self.memo)
-        self.write(self.put(idx))
-        self.memo[id(obj)] = idx, obj
+        memo = self.memo
+        assert id(obj) not in memo
+        idx = len(memo)
+        # Inlined self.put(idx). For proto >= 4 (the common case for any
+        # recent user), MEMOIZE is a one-byte constant; avoid the method
+        # dispatch + the redundant self.write indirection.
+        proto = self.proto
+        if proto >= 4:
+            self.write(MEMOIZE)
+        elif self.bin:
+            if idx < 256:
+                self.write(BINPUT + pack("<B", idx))
+            else:
+                self.write(LONG_BINPUT + pack("<I", idx))
+        else:
+            self.write(PUT + repr(idx).encode("ascii") + b'\n')
+        memo[id(obj)] = idx, obj
 
     # Return a PUT (BINPUT, LONG_BINPUT) opcode string, with argument i.
+    # Retained for backward compatibility with subclasses that override
+    # this method; memoize() now inlines the common paths directly.
     def put(self, idx):
         if self.proto >= 4:
             return MEMOIZE
