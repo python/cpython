@@ -224,6 +224,22 @@ class FancyCompleter(ThemeSection):
 
 
 @dataclass(frozen=True, kw_only=True)
+class HttpServer(ThemeSection):
+    error: str = ANSIColors.YELLOW
+    path: str = ANSIColors.CYAN
+    serving: str = ANSIColors.GREEN
+    size: str = ANSIColors.GREY
+    status_informational: str = ANSIColors.RESET
+    status_ok: str = ANSIColors.GREEN
+    status_redirect: str = ANSIColors.INTENSE_CYAN
+    status_client_error: str = ANSIColors.YELLOW
+    status_server_error: str = ANSIColors.RED
+    timestamp: str = ANSIColors.GREY
+    url: str = ANSIColors.CYAN
+    reset: str = ANSIColors.RESET
+
+
+@dataclass(frozen=True, kw_only=True)
 class LiveProfiler(ThemeSection):
     """Theme section for the live profiling TUI (Tachyon profiler).
 
@@ -347,6 +363,18 @@ class Syntax(ThemeSection):
 
 
 @dataclass(frozen=True, kw_only=True)
+class Timeit(ThemeSection):
+    timing: str = ANSIColors.CYAN
+    best: str = ANSIColors.BOLD_GREEN
+    per_loop: str = ANSIColors.GREEN
+    punctuation: str = ANSIColors.GREY
+    warning: str = ANSIColors.YELLOW
+    warning_worst: str = ANSIColors.MAGENTA
+    warning_best: str = ANSIColors.GREEN
+    reset: str = ANSIColors.RESET
+
+
+@dataclass(frozen=True, kw_only=True)
 class Traceback(ThemeSection):
     type: str = ANSIColors.BOLD_MAGENTA
     message: str = ANSIColors.MAGENTA
@@ -378,8 +406,10 @@ class Theme:
     argparse: Argparse = field(default_factory=Argparse)
     difflib: Difflib = field(default_factory=Difflib)
     fancycompleter: FancyCompleter = field(default_factory=FancyCompleter)
+    http_server: HttpServer = field(default_factory=HttpServer)
     live_profiler: LiveProfiler = field(default_factory=LiveProfiler)
     syntax: Syntax = field(default_factory=Syntax)
+    timeit: Timeit = field(default_factory=Timeit)
     traceback: Traceback = field(default_factory=Traceback)
     unittest: Unittest = field(default_factory=Unittest)
 
@@ -389,8 +419,10 @@ class Theme:
         argparse: Argparse | None = None,
         difflib: Difflib | None = None,
         fancycompleter: FancyCompleter | None = None,
+        http_server: HttpServer | None = None,
         live_profiler: LiveProfiler | None = None,
         syntax: Syntax | None = None,
+        timeit: Timeit | None = None,
         traceback: Traceback | None = None,
         unittest: Unittest | None = None,
     ) -> Self:
@@ -403,8 +435,10 @@ class Theme:
             argparse=argparse or self.argparse,
             difflib=difflib or self.difflib,
             fancycompleter=fancycompleter or self.fancycompleter,
+            http_server=http_server or self.http_server,
             live_profiler=live_profiler or self.live_profiler,
             syntax=syntax or self.syntax,
+            timeit=timeit or self.timeit,
             traceback=traceback or self.traceback,
             unittest=unittest or self.unittest,
         )
@@ -421,8 +455,10 @@ class Theme:
             argparse=Argparse.no_colors(),
             difflib=Difflib.no_colors(),
             fancycompleter=FancyCompleter.no_colors(),
+            http_server=HttpServer.no_colors(),
             live_profiler=LiveProfiler.no_colors(),
             syntax=Syntax.no_colors(),
+            timeit=Timeit.no_colors(),
             traceback=Traceback.no_colors(),
             unittest=Unittest.no_colors(),
         )
