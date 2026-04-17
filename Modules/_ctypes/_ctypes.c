@@ -2273,6 +2273,8 @@ static PyObject *CreateSwappedType(ctypes_state *st, PyTypeObject *type,
     stginfo->size = fmt->pffi_type->size;
     stginfo->setfunc = fmt->setfunc_swapped;
     stginfo->getfunc = fmt->getfunc_swapped;
+    stginfo->flags |= (fmt->flags & (TYPEFLAG_IS_INTEGER | TYPEFLAG_IS_SIGNED));
+    stginfo->flags |= TYPEFLAG_IS_SWAPPED;
 
     stginfo->proto = Py_NewRef(proto);
 
@@ -2316,7 +2318,7 @@ PyCSimpleType_init(PyObject *self, PyObject *args, PyObject *kwds)
     PyObject *proto;
     const char *proto_str;
     Py_ssize_t proto_len;
-    PyMethodDef *ml;
+    PyMethodDef *ml = NULL;
     struct fielddesc *fmt;
 
     if (PyType_Type.tp_init(self, args, kwds) < 0) {
@@ -2362,6 +2364,7 @@ PyCSimpleType_init(PyObject *self, PyObject *args, PyObject *kwds)
     if (!stginfo) {
         goto error;
     }
+    stginfo->flags |= fmt->flags;
 
     if (!fmt->pffi_type->elements) {
         stginfo->ffi_type_pointer = *fmt->pffi_type;
@@ -2408,24 +2411,12 @@ PyCSimpleType_init(PyObject *self, PyObject *args, PyObject *kwds)
         switch (*proto_str) {
         case 'z': /* c_char_p */
             ml = c_char_p_methods;
-            stginfo->flags |= TYPEFLAG_ISPOINTER;
             break;
         case 'Z': /* c_wchar_p */
             ml = c_wchar_p_methods;
-            stginfo->flags |= TYPEFLAG_ISPOINTER;
             break;
         case 'P': /* c_void_p */
             ml = c_void_p_methods;
-            stginfo->flags |= TYPEFLAG_ISPOINTER;
-            break;
-        case 's':
-        case 'X':
-        case 'O':
-            ml = NULL;
-            stginfo->flags |= TYPEFLAG_ISPOINTER;
-            break;
-        default:
-            ml = NULL;
             break;
         }
 
