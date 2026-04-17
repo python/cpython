@@ -1028,11 +1028,54 @@ class _Pickler:
             self.write(MARK + LIST)
 
         self.memoize(obj)
-        self._batch_appends(obj, obj)
+        if self.bin and type(obj) is list:
+            # Fast path for exact lists under binary protocols; mirrors the
+            # C accelerator's batch_list_exact (Modules/_pickle.c). Avoids
+            # the per-batch tuple allocation from batched() and the
+            # enumerate() overhead used by the generic _batch_appends path.
+            self._batch_appends_exact(obj)
+        else:
+            self._batch_appends(obj, obj)
 
     dispatch[list] = save_list
 
     _BATCHSIZE = 1000
+
+    def _batch_appends_exact(self, obj):
+        # Fast path for type(obj) is list, binary protocols. Snapshots a
+        # slice per batch so concurrent mutation (e.g. via persistent_id)
+        # does not break indexing; matches the tolerance of the generic
+        # _batch_appends path that goes through batched().
+        save = self.save
+        write = self.write
+        batch_size = self._BATCHSIZE
+        idx = 0
+        while True:
+            n = len(obj)
+            if idx >= n:
+                return
+            remaining = n - idx
+            if remaining == 1:
+                try:
+                    save(obj[idx])
+                except BaseException as exc:
+                    exc.add_note(f'when serializing {_T(obj)} item {idx}')
+                    raise
+                write(APPEND)
+                return
+            batch = remaining if remaining < batch_size else batch_size
+            snapshot = obj[idx:idx + batch]
+            write(MARK)
+            i = idx
+            for x in snapshot:
+                try:
+                    save(x)
+                except BaseException as exc:
+                    exc.add_note(f'when serializing {_T(obj)} item {i}')
+                    raise
+                i += 1
+            write(APPENDS)
+            idx = i
 
     def _batch_appends(self, items, obj):
         # Helper to batch up APPENDS sequences
@@ -1077,9 +1120,73 @@ class _Pickler:
             self.write(MARK + DICT)
 
         self.memoize(obj)
-        self._batch_setitems(obj.items(), obj)
+        if self.bin and type(obj) is dict:
+            self._batch_setitems_exact(obj)
+        else:
+            self._batch_setitems(obj.items(), obj)
 
     dispatch[dict] = save_dict
+
+    def _batch_setitems_exact(self, obj):
+        # Fast path for type(obj) is dict, binary protocols. dict's own
+        # iterator raises RuntimeError on size change, so no snapshotting
+        # is needed.
+        save = self.save
+        write = self.write
+        batch_size = self._BATCHSIZE
+        items = obj.items()
+        n = len(items)
+        if n == 0:
+            return
+        if n == 1:
+            for k, v in items:
+                save(k)
+                try:
+                    save(v)
+                except BaseException as exc:
+                    exc.add_note(f'when serializing {_T(obj)} item {k!r}')
+                    raise
+                write(SETITEM)
+            return
+        if n <= batch_size:
+            # Single batch: iterate items() directly, no batching machinery.
+            write(MARK)
+            for k, v in items:
+                save(k)
+                try:
+                    save(v)
+                except BaseException as exc:
+                    exc.add_note(f'when serializing {_T(obj)} item {k!r}')
+                    raise
+            write(SETITEMS)
+            return
+        # Large dict: materialize items once, batch via slicing. The full
+        # items list is allocated only when n > batch_size.
+        all_items = list(items)
+        total = 0
+        while total < n:
+            remaining = n - total
+            if remaining == 1:
+                k, v = all_items[total]
+                save(k)
+                try:
+                    save(v)
+                except BaseException as exc:
+                    exc.add_note(f'when serializing {_T(obj)} item {k!r}')
+                    raise
+                write(SETITEM)
+                return
+            this_batch = remaining if remaining < batch_size else batch_size
+            write(MARK)
+            for k, v in all_items[total:total + this_batch]:
+                save(k)
+                try:
+                    save(v)
+                except BaseException as exc:
+                    exc.add_note(f'when serializing {_T(obj)} item {k!r}')
+                    raise
+            write(SETITEMS)
+            total += this_batch
 
     def _batch_setitems(self, items, obj):
         # Helper to batch up SETITEMS sequences; proto >= 1 only
