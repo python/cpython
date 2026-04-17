@@ -1800,8 +1800,8 @@ while new code should prefer :func:`!prefixmatch`.
 .. versionadded:: 3.15
    :func:`!prefixmatch`
 
-.. deprecated:: 3.15
-   :func:`!match` is :term:`soft deprecated`
+.. soft-deprecated:: 3.15
+   :func:`!match`
 
 Making a phonebook
 ^^^^^^^^^^^^^^^^^^
