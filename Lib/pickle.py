@@ -610,6 +610,8 @@ class _Pickler:
             self.save_str(obj)
             return
         # int / None / bool / float: not memoized; skip memo.get entirely.
+        # Placed before bytes so int-heavy workloads don't pay an extra
+        # branch miss before hitting their fast path.
         if t is int:
             self.save_long(obj)
             return
@@ -621,6 +623,14 @@ class _Pickler:
             return
         if t is float:
             self.save_float(obj)
+            return
+        # bytes: memoized; same inline memo pattern as str.
+        if t is bytes:
+            x = self.memo.get(id(obj))
+            if x is not None:
+                self.write(self.get(x[0]))
+                return
+            self.save_bytes(obj)
             return
 
         # Check the memo (non-atomic, non-str types)
