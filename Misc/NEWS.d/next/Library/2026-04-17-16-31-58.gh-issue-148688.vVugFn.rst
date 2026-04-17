@@ -1,0 +1,2 @@
+Fix a double free in :mod:`bz2` on memory allocation failure. Patch by
+Victor Stinner.
