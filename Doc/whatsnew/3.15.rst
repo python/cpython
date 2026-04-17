@@ -1523,7 +1523,7 @@ The JIT compiler's machine code generator now produces better machine code
 for x86-64 and AArch64 macOS and Linux targets. In general, users should
 experience lower memory usage for generated machine code and more efficient
 machine code versus 3.14.
-(Contributed by Brandt Bucher in :gh:`136528` and :gh:`136528`.
+(Contributed by Brandt Bucher in :gh:`136528` and :gh:`135905`.
 Implementation for AArch64 contributed by Mark Shannon in :gh:`139855`.
 Additional optimizations for AArch64 contributed by Mark Shannon and
 Diego Russo in :gh:`140683` and :gh:`142305`.)
