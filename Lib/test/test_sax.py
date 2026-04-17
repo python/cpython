@@ -1348,6 +1348,23 @@ class ExpatReaderTest(XmlTestBase):
 
             self.assertIsNone(h.qname)
 
+    def test_namespace_prefixed_enabled_when_namespace_is_not(self):
+
+        class Handler(ContentHandler):
+            def startElementNS(self, name, qname, attrs):
+                self.qname = qname
+
+        for xml_s in (
+                "<Q:E xmlns:Q='http://example.org/testuri'/>",
+                "<E xmlns='http://example.org/testuri'/>",
+                "<E />",
+        ):
+            parser = create_parser()
+
+            with self.assertRaises(SAXException):
+                parser.setFeature(feature_namespace_prefixes, 1)
+
+
 
 # ===========================================================================
 #
