@@ -90,6 +90,7 @@ _PATCH_FUNCS = {
     "R_AARCH64_MOVW_UABS_G1_NC": "patch_aarch64_16b",
     "R_AARCH64_MOVW_UABS_G2_NC": "patch_aarch64_16c",
     "R_AARCH64_MOVW_UABS_G3": "patch_aarch64_16d",
+    "R_AARCH64_PREL32": "patch_32r",
     # x86_64-unknown-linux-gnu:
     "R_X86_64_64": "patch_64",
     "R_X86_64_GOTPCRELX": "patch_x86_64_32rx",
