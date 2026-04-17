@@ -16,6 +16,7 @@
 #include "pycore_pyerrors.h"      // _PyErr_NoMemory()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_pythonrun.h"     // _Py_SourceAsString()
+#include "pycore_sentinelobject.h" // PySentinel_Type
 #include "pycore_tuple.h"         // _PyTuple_Recycle()
 
 #include "clinic/bltinmodule.c.h"
@@ -3554,6 +3555,7 @@ _PyBuiltin_Init(PyInterpreterState *interp)
     SETBUILTIN("range",                 &PyRange_Type);
     SETBUILTIN("reversed",              &PyReversed_Type);
     SETBUILTIN("set",                   &PySet_Type);
+    SETBUILTIN("sentinel",              &PySentinel_Type);
     SETBUILTIN("slice",                 &PySlice_Type);
     SETBUILTIN("staticmethod",          &PyStaticMethod_Type);
     SETBUILTIN("str",                   &PyUnicode_Type);

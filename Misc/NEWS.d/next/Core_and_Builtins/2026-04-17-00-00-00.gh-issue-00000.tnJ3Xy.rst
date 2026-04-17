@@ -1,0 +1,1 @@
+Add the :class:`sentinel` built-in class for creating unique sentinel values.

@@ -19,13 +19,13 @@ are always available.  They are listed here in alphabetical order.
 | |  :func:`ascii`        | |  :func:`filter`     | |  :func:`map`        | |  **S**                |
 | |                       | |  :func:`float`      | |  :func:`max`        | |  |func-set|_          |
 | |  **B**                | |  :func:`format`     | |  |func-memoryview|_ | |  :func:`setattr`      |
-| |  :func:`bin`          | |  |func-frozenset|_  | |  :func:`min`        | |  :func:`slice`        |
-| |  :func:`bool`         | |                     | |                     | |  :func:`sorted`       |
-| |  :func:`breakpoint`   | |  **G**              | |  **N**              | |  :func:`staticmethod` |
-| |  |func-bytearray|_    | |  :func:`getattr`    | |  :func:`next`       | |  |func-str|_          |
-| |  |func-bytes|_        | |  :func:`globals`    | |                     | |  :func:`sum`          |
-| |                       | |                     | |  **O**              | |  :func:`super`        |
-| |  **C**                | |  **H**              | |  :func:`object`     | |                       |
+| |  :func:`bin`          | |  |func-frozenset|_  | |  :func:`min`        | |  :func:`sentinel`     |
+| |  :func:`bool`         | |                     | |                     | |  :func:`slice`        |
+| |  :func:`breakpoint`   | |  **G**              | |  **N**              | |  :func:`sorted`       |
+| |  |func-bytearray|_    | |  :func:`getattr`    | |  :func:`next`       | |  :func:`staticmethod` |
+| |  |func-bytes|_        | |  :func:`globals`    | |                     | |  |func-str|_          |
+| |                       | |                     | |  **O**              | |  :func:`sum`          |
+| |  **C**                | |  **H**              | |  :func:`object`     | |  :func:`super`        |
 | |  :func:`callable`     | |  :func:`hasattr`    | |  :func:`oct`        | |  **T**                |
 | |  :func:`chr`          | |  :func:`hash`       | |  :func:`open`       | |  |func-tuple|_        |
 | |  :func:`classmethod`  | |  :func:`help`       | |  :func:`ord`        | |  :func:`type`         |
@@ -1825,6 +1825,40 @@ are always available.  They are listed here in alphabetical order.
       compilation time, one must manually mangle a private attribute's
       (attributes with two leading underscores) name in order to set it with
       :func:`setattr`.
+
+
+.. class:: sentinel(name, /)
+
+   Return a new unique sentinel object.  *name* must be a :class:`str`, and is
+   used as the returned object's representation::
+
+      >>> MISSING = sentinel("MISSING")
+      >>> MISSING
+      MISSING
+
+   Sentinel objects are truthy and compare equal only to themselves.  They are
+   intended to be compared with the ``is`` operator.
+
+   Shallow and deep copies of a sentinel object return the object itself.
+
+   Sentinels importable from their defining module by name preserve their
+   identity when pickled and unpickled.  Sentinels that are not importable by
+   module and name are not picklable.
+
+   Sentinel objects support the ``|`` operator for use in type expressions::
+
+      def next_value(default: int | MISSING = MISSING):
+          ...
+
+   .. attribute:: __name__
+
+      The sentinel's name.
+
+   .. attribute:: __module__
+
+      The name of the module where the sentinel was created.
+
+   .. versionadded:: next
 
 
 .. class:: slice(stop, /)

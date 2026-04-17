@@ -4,6 +4,7 @@ import ast
 import builtins
 import collections
 import contextlib
+import copy
 import decimal
 import fractions
 import gc
@@ -52,6 +53,10 @@ HAVE_DOUBLE_ROUNDING = (x + y == 1e16 + 4)
 
 # used as proof of globals being used
 A_GLOBAL_VALUE = 123
+A_SENTINEL = sentinel("A_SENTINEL")
+
+class SentinelContainer:
+    CLASS_SENTINEL = sentinel("SentinelContainer.CLASS_SENTINEL")
 
 class Squares:
 
@@ -1902,6 +1907,63 @@ class BuiltinTest(ComplexesAreIdenticalMixin, unittest.TestCase):
         class C:
             __repr__ = None
         self.assertRaises(TypeError, repr, C())
+
+    def test_sentinel(self):
+        missing = sentinel("MISSING")
+        other = sentinel("MISSING")
+
+        self.assertIsInstance(missing, sentinel)
+        self.assertIs(type(missing), sentinel)
+        self.assertEqual(missing.__name__, "MISSING")
+        self.assertEqual(missing.__module__, __name__)
+        self.assertIsNot(missing, other)
+        self.assertEqual(repr(missing), "MISSING")
+        self.assertTrue(missing)
+        self.assertIs(copy.copy(missing), missing)
+        self.assertIs(copy.deepcopy(missing), missing)
+        self.assertEqual(missing, missing)
+        self.assertNotEqual(missing, other)
+        self.assertRaises(TypeError, sentinel)
+        self.assertRaises(TypeError, sentinel, "MISSING", "EXTRA")
+        self.assertRaises(TypeError, sentinel, name="MISSING")
+        with self.assertRaisesRegex(TypeError, "must be str"):
+            sentinel(1)
+        self.assertTrue(sentinel.__flags__ & support._TPFLAGS_IMMUTABLETYPE)
+        self.assertFalse(sentinel.__flags__ & support._TPFLAGS_BASETYPE)
+        with self.assertRaises(TypeError):
+            class SubSentinel(sentinel):
+                pass
+        with self.assertRaises(TypeError):
+            sentinel.attribute = "value"
+        with self.assertRaises(AttributeError):
+            missing.__name__ = "CHANGED"
+        with self.assertRaises(AttributeError):
+            missing.__module__ = "changed"
+
+    def test_sentinel_pickle(self):
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            with self.subTest(protocol=proto):
+                self.assertIs(
+                    pickle.loads(pickle.dumps(A_SENTINEL, protocol=proto)),
+                    A_SENTINEL)
+                self.assertIs(
+                    pickle.loads(pickle.dumps(
+                        SentinelContainer.CLASS_SENTINEL, protocol=proto)),
+                    SentinelContainer.CLASS_SENTINEL)
+
+        missing = sentinel("MISSING")
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            with self.subTest(protocol=proto):
+                with self.assertRaises(pickle.PicklingError):
+                    pickle.dumps(missing, protocol=proto)
+
+    def test_sentinel_union(self):
+        missing = sentinel("MISSING")
+
+        self.assertEqual((missing | int).__args__, (missing, int))
+        self.assertEqual((int | missing).__args__, (int, missing))
+        self.assertIs(missing | missing, missing)
+        self.assertEqual(repr(int | missing), "int | MISSING")
 
     def test_round(self):
         self.assertEqual(round(0.0), 0.0)

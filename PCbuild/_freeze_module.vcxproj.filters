@@ -403,6 +403,9 @@
     <ClCompile Include="..\Objects\setobject.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\Objects\sentinelobject.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="..\Modules\signalmodule.c">
       <Filter>Source Files</Filter>
     </ClCompile>

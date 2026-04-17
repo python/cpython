@@ -86,6 +86,7 @@ Objects/rangeobject.c	-	PyRange_Type	-
 Objects/setobject.c	-	PyFrozenSet_Type	-
 Objects/setobject.c	-	PySetIter_Type	-
 Objects/setobject.c	-	PySet_Type	-
+Objects/sentinelobject.c	-	PySentinel_Type	-
 Objects/sliceobject.c	-	PyEllipsis_Type	-
 Objects/sliceobject.c	-	PySlice_Type	-
 Objects/templateobject.c	-	_PyTemplateIter_Type	-
