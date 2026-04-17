@@ -798,10 +798,17 @@ typedef struct {
     const char *end;
     char *buf;
     Py_ssize_t buf_size;
-    PyObject *refs;  /* a list */
-    uint8_t *ref_states;  /* parallel table for refs */
+    /* Raw growable ref table. Each slot is a tagged pointer:
+     *   NULL              -> reserved (published as shell placeholder)
+     *   ptr, low bit clr  -> READY
+     *   ptr, low bit set  -> INCOMPLETE_HASHABLE (untag to recover object)
+     * Requires Python object pointers to be at least 2-byte aligned,
+     * which _Py_ALIGNOF(PyObject) guarantees. */
+    PyObject **refs;
+    Py_ssize_t refs_len;
     Py_ssize_t refs_allocated;
     int allow_code;
+    int allow_incomplete_hashable;
 } RFILE;
 
 typedef enum {
@@ -809,6 +816,14 @@ typedef enum {
     REF_STATE_RESERVED = 1,
     REF_STATE_INCOMPLETE_HASHABLE = 2,
 } RefState;
+
+#define REF_TAG_INCOMPLETE ((uintptr_t)1)
+#define REF_IS_INCOMPLETE(tagged) (((uintptr_t)(tagged)) & REF_TAG_INCOMPLETE)
+#define REF_UNTAG(tagged) \
+    ((PyObject *)(((uintptr_t)(tagged)) & ~REF_TAG_INCOMPLETE))
+#define REF_TAG(obj, state) \
+    ((PyObject *)(((uintptr_t)(obj)) | \
+                  ((state) == REF_STATE_INCOMPLETE_HASHABLE ? REF_TAG_INCOMPLETE : 0)))
 
 static const char *
 r_string(Py_ssize_t n, RFILE *p)
@@ -881,7 +896,30 @@ r_string(Py_ssize_t n, RFILE *p)
     return p->buf;
 }
 
-static int
+static inline void
+r_ref_init(RFILE *p)
+{
+    p->refs = NULL;
+    p->refs_len = 0;
+    p->refs_allocated = 0;
+    p->allow_incomplete_hashable = 0;
+}
+
+static inline void
+r_ref_release(RFILE *p)
+{
+    if (p->refs != NULL) {
+        for (Py_ssize_t i = 0; i < p->refs_len; i++) {
+            Py_XDECREF(REF_UNTAG(p->refs[i]));
+        }
+        PyMem_Free(p->refs);
+        p->refs = NULL;
+    }
+    p->refs_len = 0;
+    p->refs_allocated = 0;
+}
+
+static inline int
 r_ref_ensure_capacity(RFILE *p, Py_ssize_t needed)
 {
     if (needed <= p->refs_allocated) {
@@ -897,13 +935,13 @@ r_ref_ensure_capacity(RFILE *p, Py_ssize_t needed)
         allocated *= 2;
     }
 
-    uint8_t *states = PyMem_Realloc(p->ref_states, allocated * sizeof(*states));
-    if (states == NULL) {
+    PyObject **refs = PyMem_Realloc(p->refs, allocated * sizeof(*refs));
+    if (refs == NULL) {
         PyErr_NoMemory();
         return -1;
     }
 
-    p->ref_states = states;
+    p->refs = refs;
     p->refs_allocated = allocated;
     return 0;
 }
@@ -1120,11 +1158,11 @@ r_float_str(RFILE *p)
 }
 
 /* allocate the reflist index for a new object. Return -1 on failure */
-static Py_ssize_t
+static inline Py_ssize_t
 r_ref_reserve(int flag, RFILE *p)
 {
     if (flag) { /* currently only FLAG_REF is defined */
-        Py_ssize_t idx = PyList_GET_SIZE(p->refs);
+        Py_ssize_t idx = p->refs_len;
         if (idx >= 0x7ffffffe) {
             PyErr_SetString(PyExc_ValueError, "bad marshal data (index list too large)");
             return -1;
@@ -1132,30 +1170,28 @@ r_ref_reserve(int flag, RFILE *p)
         if (r_ref_ensure_capacity(p, idx + 1) < 0) {
             return -1;
         }
-        if (PyList_Append(p->refs, Py_None) < 0)
-            return -1;
-        p->ref_states[idx] = REF_STATE_RESERVED;
+        p->refs[idx] = NULL;
+        p->refs_len = idx + 1;
         return idx;
     } else
         return 0;
 }
 
-static void
+static inline void
 r_ref_publish(PyObject *o, Py_ssize_t idx, int flag, RefState state, RFILE *p)
 {
     if (flag) {
-        PyObject *tmp = PyList_GET_ITEM(p->refs, idx);
-        PyList_SET_ITEM(p->refs, idx, Py_NewRef(o));
-        Py_DECREF(tmp);
-        p->ref_states[idx] = state;
+        PyObject *tmp = p->refs[idx];
+        p->refs[idx] = REF_TAG(Py_NewRef(o), state);
+        Py_XDECREF(REF_UNTAG(tmp));
     }
 }
 
-static void
+static inline void
 r_ref_mark_ready(Py_ssize_t idx, int flag, RFILE *p)
 {
     if (flag) {
-        p->ref_states[idx] = REF_STATE_READY;
+        p->refs[idx] = REF_UNTAG(p->refs[idx]);
     }
 }
 
@@ -1167,7 +1203,7 @@ r_ref_mark_ready(Py_ssize_t idx, int flag, RFILE *p)
  * NULL returned. This simplifies error checking at the call site since
  * a single test for NULL for the function result is enough.
  */
-static PyObject *
+static inline PyObject *
 r_ref_insert(PyObject *o, Py_ssize_t idx, int flag, RFILE *p)
 {
     if (o != NULL && flag) { /* currently only FLAG_REF is defined */
@@ -1180,7 +1216,7 @@ r_ref_insert(PyObject *o, Py_ssize_t idx, int flag, RFILE *p)
  * created whenever it is seen in the file, as opposed to
  * after having loaded its sub-objects.
  */
-static PyObject *
+static inline PyObject *
 r_ref(PyObject *o, int flag, RFILE *p)
 {
     assert(flag & FLAG_REF);
@@ -1209,9 +1245,25 @@ r_new_slice_shell(void)
     return (PyObject *)slice;
 }
 
-static PyObject *
-r_object(RFILE *p, int allow_incomplete_hashable)
+static PyObject *r_object(RFILE *p);
+
+static inline PyObject *
+r_object_allow_incomplete(RFILE *p)
 {
+    int saved = p->allow_incomplete_hashable;
+    p->allow_incomplete_hashable = 1;
+    PyObject *v = r_object(p);
+    p->allow_incomplete_hashable = saved;
+    return v;
+}
+
+static PyObject *
+r_object(RFILE *p)
+{
+    int allow_incomplete_hashable = p->allow_incomplete_hashable;
+    /* Reset so nested recursion defaults to strict; list-element and
+     * dict-value sites opt in via r_object_allow_incomplete. */
+    p->allow_incomplete_hashable = 0;
     /* NULL is a valid return value, it does not necessarily means that
        an exception is set. */
     PyObject *v, *v2;
@@ -1468,7 +1520,7 @@ r_object(RFILE *p, int allow_incomplete_hashable)
         }
 
         for (i = 0; i < n; i++) {
-            v2 = r_object(p, 0);
+            v2 = r_object(p);
             if ( v2 == NULL ) {
                 if (!PyErr_Occurred())
                     PyErr_SetString(PyExc_TypeError,
@@ -1498,7 +1550,7 @@ r_object(RFILE *p, int allow_incomplete_hashable)
         if (v == NULL)
             break;
         for (i = 0; i < n; i++) {
-            v2 = r_object(p, 1);
+            v2 = r_object_allow_incomplete(p);
             if ( v2 == NULL ) {
                 if (!PyErr_Occurred())
                     PyErr_SetString(PyExc_TypeError,
@@ -1518,10 +1570,10 @@ r_object(RFILE *p, int allow_incomplete_hashable)
             break;
         for (;;) {
             PyObject *key, *val;
-            key = r_object(p, 0);
+            key = r_object(p);
             if (key == NULL)
                 break;
-            val = r_object(p, 1);
+            val = r_object_allow_incomplete(p);
             if (val == NULL) {
                 Py_DECREF(key);
                 break;
@@ -1553,10 +1605,10 @@ r_object(RFILE *p, int allow_incomplete_hashable)
         }
         for (;;) {
             PyObject *key, *val;
-            key = r_object(p, 0);
+            key = r_object(p);
             if (key == NULL)
                 break;
-            val = r_object(p, 0);
+            val = r_object(p);
             if (val == NULL) {
                 Py_DECREF(key);
                 break;
@@ -1613,7 +1665,7 @@ r_object(RFILE *p, int allow_incomplete_hashable)
                 break;
 
             for (i = 0; i < n; i++) {
-                v2 = r_object(p, 0);
+                v2 = r_object(p);
                 if ( v2 == NULL ) {
                     if (!PyErr_Occurred())
                         PyErr_SetString(PyExc_TypeError,
@@ -1682,37 +1734,37 @@ r_object(RFILE *p, int allow_incomplete_hashable)
             flags = (int)r_long(p);
             if (flags == -1 && PyErr_Occurred())
                 goto code_error;
-            code = r_object(p, 0);
+            code = r_object(p);
             if (code == NULL)
                 goto code_error;
-            consts = r_object(p, 0);
+            consts = r_object(p);
             if (consts == NULL)
                 goto code_error;
-            names = r_object(p, 0);
+            names = r_object(p);
             if (names == NULL)
                 goto code_error;
-            localsplusnames = r_object(p, 0);
+            localsplusnames = r_object(p);
             if (localsplusnames == NULL)
                 goto code_error;
-            localspluskinds = r_object(p, 0);
+            localspluskinds = r_object(p);
             if (localspluskinds == NULL)
                 goto code_error;
-            filename = r_object(p, 0);
+            filename = r_object(p);
             if (filename == NULL)
                 goto code_error;
-            name = r_object(p, 0);
+            name = r_object(p);
             if (name == NULL)
                 goto code_error;
-            qualname = r_object(p, 0);
+            qualname = r_object(p);
             if (qualname == NULL)
                 goto code_error;
             firstlineno = (int)r_long(p);
             if (firstlineno == -1 && PyErr_Occurred())
                 break;
-            linetable = r_object(p, 0);
+            linetable = r_object(p);
             if (linetable == NULL)
                 goto code_error;
-            exceptiontable = r_object(p, 0);
+            exceptiontable = r_object(p);
             if (exceptiontable == NULL)
                 goto code_error;
 
@@ -1771,27 +1823,29 @@ r_object(RFILE *p, int allow_incomplete_hashable)
         retval = v;
         break;
 
-    case TYPE_REF:
+    case TYPE_REF: {
+        PyObject *tagged;
         n = r_long(p);
-        if (n < 0 || n >= PyList_GET_SIZE(p->refs)) {
+        if (n < 0 || n >= p->refs_len) {
             if (!PyErr_Occurred()) {
                 PyErr_SetString(PyExc_ValueError,
                     "bad marshal data (invalid reference)");
             }
             break;
         }
-        v = PyList_GET_ITEM(p->refs, n);
-        if (p->ref_states[n] == REF_STATE_RESERVED || v == Py_None) {
+        tagged = p->refs[n];
+        if (tagged == NULL) {
             PyErr_SetString(PyExc_ValueError, "bad marshal data (invalid reference)");
             break;
         }
-        if (p->ref_states[n] == REF_STATE_INCOMPLETE_HASHABLE &&
-                !allow_incomplete_hashable) {
+        if (REF_IS_INCOMPLETE(tagged) && !allow_incomplete_hashable) {
             PyErr_SetString(PyExc_ValueError, "bad marshal data (invalid reference)");
             break;
         }
+        v = REF_UNTAG(tagged);
         retval = Py_NewRef(v);
         break;
+    }
 
     case TYPE_SLICE:
     {
@@ -1809,19 +1863,19 @@ r_object(RFILE *p, int allow_incomplete_hashable)
         if (flag) {
             r_ref_publish(v, idx, flag, REF_STATE_INCOMPLETE_HASHABLE, p);
         }
-        PyObject *start = r_object(p, 0);
+        PyObject *start = r_object(p);
         if (start == NULL) {
             Py_CLEAR(v);
             break;
         }
         Py_SETREF(slice->start, start);
-        PyObject *stop = r_object(p, 0);
+        PyObject *stop = r_object(p);
         if (stop == NULL) {
             Py_CLEAR(v);
             break;
         }
         Py_SETREF(slice->stop, stop);
-        PyObject *step = r_object(p, 0);
+        PyObject *step = r_object(p);
         if (step == NULL) {
             Py_CLEAR(v);
             break;
@@ -1862,7 +1916,7 @@ read_object(RFILE *p)
             return NULL;
         }
     }
-    v = r_object(p, 0);
+    v = r_object(p);
     if (v == NULL && !PyErr_Occurred())
         PyErr_SetString(PyExc_TypeError, "NULL object in marshal data for object");
     return v;
@@ -1878,9 +1932,7 @@ PyMarshal_ReadShortFromFile(FILE *fp)
     rf.fp = fp;
     rf.end = rf.ptr = NULL;
     rf.buf = NULL;
-    rf.refs = NULL;
-    rf.ref_states = NULL;
-    rf.refs_allocated = 0;
+    r_ref_init(&rf);
     res = r_short(&rf);
     if (rf.buf != NULL)
         PyMem_Free(rf.buf);
@@ -1896,9 +1948,7 @@ PyMarshal_ReadLongFromFile(FILE *fp)
     rf.readable = NULL;
     rf.ptr = rf.end = NULL;
     rf.buf = NULL;
-    rf.refs = NULL;
-    rf.ref_states = NULL;
-    rf.refs_allocated = 0;
+    r_ref_init(&rf);
     res = r_long(&rf);
     if (rf.buf != NULL)
         PyMem_Free(rf.buf);
@@ -1962,14 +2012,9 @@ PyMarshal_ReadObjectFromFile(FILE *fp)
     rf.depth = 0;
     rf.ptr = rf.end = NULL;
     rf.buf = NULL;
-    rf.ref_states = NULL;
-    rf.refs_allocated = 0;
-    rf.refs = PyList_New(0);
-    if (rf.refs == NULL)
-        return NULL;
+    r_ref_init(&rf);
     result = read_object(&rf);
-    Py_DECREF(rf.refs);
-    PyMem_Free(rf.ref_states);
+    r_ref_release(&rf);
     if (rf.buf != NULL)
         PyMem_Free(rf.buf);
     return result;
@@ -1987,14 +2032,9 @@ PyMarshal_ReadObjectFromString(const char *str, Py_ssize_t len)
     rf.end = str + len;
     rf.buf = NULL;
     rf.depth = 0;
-    rf.ref_states = NULL;
-    rf.refs_allocated = 0;
-    rf.refs = PyList_New(0);
-    if (rf.refs == NULL)
-        return NULL;
+    r_ref_init(&rf);
     result = read_object(&rf);
-    Py_DECREF(rf.refs);
-    PyMem_Free(rf.ref_states);
+    r_ref_release(&rf);
     if (rf.buf != NULL)
         PyMem_Free(rf.buf);
     return result;
@@ -2148,16 +2188,11 @@ marshal_load_impl(PyObject *module, PyObject *file, int allow_code)
         rf.readable = file;
         rf.ptr = rf.end = NULL;
         rf.buf = NULL;
-        rf.ref_states = NULL;
-        rf.refs_allocated = 0;
-        if ((rf.refs = PyList_New(0)) != NULL) {
-            result = read_object(&rf);
-            Py_DECREF(rf.refs);
-            PyMem_Free(rf.ref_states);
-            if (rf.buf != NULL)
-                PyMem_Free(rf.buf);
-        } else
-            result = NULL;
+        r_ref_init(&rf);
+        result = read_object(&rf);
+        r_ref_release(&rf);
+        if (rf.buf != NULL)
+            PyMem_Free(rf.buf);
     }
     Py_DECREF(data);
     return result;
@@ -2221,13 +2256,9 @@ marshal_loads_impl(PyObject *module, Py_buffer *bytes, int allow_code)
     rf.end = s + n;
     rf.depth = 0;
     rf.buf = NULL;
-    rf.ref_states = NULL;
-    rf.refs_allocated = 0;
-    if ((rf.refs = PyList_New(0)) == NULL)
-        return NULL;
+    r_ref_init(&rf);
     result = read_object(&rf);
-    Py_DECREF(rf.refs);
-    PyMem_Free(rf.ref_states);
+    r_ref_release(&rf);
     return result;
 }
 
