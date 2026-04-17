@@ -2349,11 +2349,23 @@ PyCSimpleType_init(PyObject *self, PyObject *args, PyObject *kwds)
     }
     fmt = _ctypes_get_fielddesc(proto_str);
     if (!fmt) {
-        PyErr_Format(PyExc_AttributeError,
-                     "class must define a '_type_' attribute which must be\n"
-                     "a single character string containing one of the\n"
-                     "supported types: '%s'.",
-                     _ctypes_get_simple_type_chars());
+        const char *complex_formats = _ctypes_get_complex_type_formats();
+        if (complex_formats) {
+            PyErr_Format(PyExc_AttributeError,
+                         "class must define a '_type_' attribute which must be\n"
+                         "a single character string containing one of the\n"
+                         "supported types: '%s', or one of these strings:\n"
+                         "%s.",
+                         _ctypes_get_simple_type_chars(),
+                         complex_formats);
+        }
+        else {
+            PyErr_Format(PyExc_AttributeError,
+                         "class must define a '_type_' attribute which must be\n"
+                         "a single character string containing one of the\n"
+                         "supported types: '%s'.\n",
+                         _ctypes_get_simple_type_chars());
+        }
         goto error;
     }
 
