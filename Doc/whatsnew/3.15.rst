@@ -141,7 +141,7 @@ In the case where loading a lazily imported module fails (for example, if
 the module does not exist), Python raises the exception at the point of
 first use rather than at import time. The associated traceback includes both
 the location where the name was accessed and the original import statement,
-making it straightforward to diagnose & debug the failure.
+making it straightforward to diagnose and debug the failure.
 
 For cases where you want to enable lazy loading globally without modifying
 source code, Python provides the :option:`-X lazy_imports <-X>` command-line
@@ -1410,7 +1410,7 @@ Optimizations
 =============
 
 * ``mimalloc`` is now used as the default allocator for
-  for raw memory allocations such as via :c:func:`PyMem_RawMalloc`
+  raw memory allocations such as via :c:func:`PyMem_RawMalloc`
   for better performance on :term:`free-threaded builds <free-threaded build>`.
   (Contributed by Kumar Aditya in :gh:`144914`.)
 
