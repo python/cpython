@@ -8,9 +8,8 @@
 # nanvixd invocation.  Each batch gets a fresh VM process, which
 # resets the 32MB heap and avoids OOM from cumulative fragmentation.
 #
-# Batches run in parallel (up to NANVIX_TEST_JOBS workers).  All
-# batches are run regardless of failures; the overall exit code
-# reflects whether any batch failed.
+# Batches run sequentially.  All batches are run regardless of
+# failures; the overall exit code reflects whether any batch failed.
 #
 # Supports both direct mode (single-process / multi-process) and
 # standalone mode (ramfs).  In standalone mode, the guest command line
@@ -22,8 +21,7 @@
 #
 # Environment:
 #     NANVIX_TEST_BATCH_SIZE - modules per nanvixd invocation (default: 4)
-#     NANVIX_TEST_JOBS       - max parallel nanvixd instances (default: nproc)
-#     NANVIXD_EXTRA_ARGS     - extra flags passed to nanvixd.elf (optional)
+#     NANVIXD_EXTRA_ARGS     - extra flags passed to nanvixd (optional)
 #     NANVIX_STANDALONE      - set to "1" to enable standalone mode
 #     NANVIX_EXCLUDE_TESTS   - space-separated patterns passed to regrtest
 #                              --ignore (optional)
@@ -35,11 +33,16 @@ import shutil
 import subprocess
 import sys
 import tempfile
-from concurrent.futures import ThreadPoolExecutor, as_completed
 
 BATCH_SIZE = int(os.environ.get("NANVIX_TEST_BATCH_SIZE", "4"))
-JOBS = int(os.environ.get("NANVIX_TEST_JOBS", os.cpu_count() or 1))
 STANDALONE = os.environ.get("NANVIX_STANDALONE", "") == "1"
+NANVIXD = "./bin/nanvixd.exe" if sys.platform == "win32" else "./bin/nanvixd.elf"
+# Must match config.PYTHON_VERSION / config.python_binary().
+PYTHON_BIN = os.environ.get("NANVIX_PYTHON_BIN", "./bin/python3.12")
+# Must match _sysconfigdata_{ABIFLAGS}_{MACHDEP}_{MULTIARCH} from configure.
+SYSCONFIGDATA_NAME = os.environ.get(
+    "NANVIX_SYSCONFIGDATA_NAME", "_sysconfigdata__nanvix_"
+)
 REGRTEST_TIMEOUT = os.environ.get("REGRTEST_TIMEOUT", "120")
 
 
@@ -79,24 +82,25 @@ def run_batch(
                 regrtest_args += f" {exclude_str}"
             python_arg = (
                 f"{regrtest_args};PYTHONHOME=/ PYTHONDONTWRITEBYTECODE=1"
-                f" TMPDIR={batch_tmpdir}"
+                f" TMPDIR=/tmp"
+                f" _PYTHON_SYSCONFIGDATA_NAME={SYSCONFIGDATA_NAME}"
             )
 
             cmd = [
-                "./bin/nanvixd.elf",
+                NANVIXD,
                 *nanvixd_extra,
                 "--",
-                "./bin/python3.12",
+                PYTHON_BIN,
                 python_arg,
             ]
         else:
             # Direct mode: separate argv elements, invoke run-regrtest.py
             # in the guest.  --tmpdir must come before the module list.
             cmd = [
-                "./bin/nanvixd.elf",
+                NANVIXD,
                 *nanvixd_extra,
                 "--",
-                "./bin/python3.12",
+                PYTHON_BIN,
                 "./run-regrtest.py",
                 "--tmpdir",
                 batch_tmpdir,
@@ -121,7 +125,10 @@ def main() -> int:
         print("run-tests.py: no modules specified", file=sys.stderr)
         return 1
 
-    nanvixd_extra = shlex.split(os.environ.get("NANVIXD_EXTRA_ARGS", ""))
+    nanvixd_extra = shlex.split(
+        os.environ.get("NANVIXD_EXTRA_ARGS", ""),
+        posix=(sys.platform != "win32"),
+    )
 
     batches = []
     for i in range(0, len(modules), BATCH_SIZE):
@@ -131,7 +138,7 @@ def main() -> int:
     mode_label = "standalone" if STANDALONE else "direct"
     print(
         f"  Running {len(modules)} modules in {total_batches} batches "
-        f"({BATCH_SIZE}/batch, {JOBS} parallel workers, {mode_label} mode)"
+        f"({BATCH_SIZE}/batch, sequential, {mode_label} mode)"
     )
     for i, batch in enumerate(batches, 1):
         print(f"    Batch {i}: {' '.join(batch)}")
@@ -139,20 +146,14 @@ def main() -> int:
     failed: list[str] = []
     failed_batches = 0
 
-    with ThreadPoolExecutor(max_workers=JOBS) as pool:
-        futures = {
-            pool.submit(run_batch, i, batch, nanvixd_extra): i
-            for i, batch in enumerate(batches, 1)
-        }
-
-        for future in as_completed(futures):
-            batch_num, rc, batch = future.result()
-            if rc != 0:
-                print(f"  FAIL: batch {batch_num} exited with status {rc}")
-                failed.extend(batch)
-                failed_batches += 1
-            else:
-                print(f"  OK: batch {batch_num}")
+    for i, batch in enumerate(batches, 1):
+        batch_num, rc, batch = run_batch(i, batch, nanvixd_extra)
+        if rc != 0:
+            print(f"  FAIL: batch {batch_num} exited with status {rc}")
+            failed.extend(batch)
+            failed_batches += 1
+        else:
+            print(f"  OK: batch {batch_num}")
 
     total = len(modules)
     if failed:

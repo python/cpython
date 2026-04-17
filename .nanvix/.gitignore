@@ -5,3 +5,9 @@ buildroot*/
 env.json
 nanvix.lock
 _test_staging/
+_install_cache/
+_ramfs_cache/
+cpython-rootfs.img
+cpython_*.log
+__pycache__/
+release/
