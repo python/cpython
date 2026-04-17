@@ -260,7 +260,8 @@ class ForwardRef:
 
     @property
     def __resolved_forward_str__(self):
-        # __forward_arg__ but with __extra_names__ resolved as strings
+        # __forward_arg__ with any names from __extra_names__ replaced
+        # with the type_repr of the value they represent
         resolved_str = self.__forward_arg__
         names = self.__extra_names__
 
