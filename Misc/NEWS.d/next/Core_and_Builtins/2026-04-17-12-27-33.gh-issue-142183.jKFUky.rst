@@ -1,0 +1,1 @@
+Change the resizing implementation of the Python stack to use a resizable array instead of a chain of arrays, to avoid degenerate performance cases and allow further JIT optimizations.
