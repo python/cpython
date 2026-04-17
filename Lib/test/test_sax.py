@@ -1,7 +1,6 @@
 # regression test for SAX 2.0
 from xml.sax import make_parser, ContentHandler, \
                     SAXException, SAXReaderNotAvailable, SAXParseException
-from xml.sax.handler import feature_namespaces, feature_namespace_prefixes
 import unittest
 from unittest import mock
 try:
