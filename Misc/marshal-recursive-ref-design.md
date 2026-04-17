@@ -456,6 +456,108 @@ Tests should cover four buckets:
    - nested dict/list payload
    - code object payload
 
+## Benchmark Summary
+
+This section records the cleaner performance rerun taken after the earlier
+noisy measurements.
+
+Baseline commit:
+
+- `7c214ea52efbcf12261128b458db8fe025cbc61b`
+
+Current commit:
+
+- `38351499d915a61a71e9eeefe7b7af571c3a4e21`
+
+### Method
+
+Two benchmark layers were rerun:
+
+1. Targeted `pyperformance` comparison:
+   - baseline and current interpreters built locally
+   - `pyperformance run --affinity 0`
+   - current run used `--same-loops` from the baseline JSON
+   - benchmark slice:
+     `python_startup, python_startup_no_site, pickle, pickle_dict,
+     pickle_list, pickle_pure_python, unpickle, unpickle_list,
+     unpickle_pure_python, unpack_sequence`
+2. Direct marshal microbenches:
+   - both interpreters pinned with `taskset -c 0`
+   - 11 repeats per benchmark
+   - loop counts increased by 10x over the earlier quick pass
+   - report medians as the primary statistic, with mins retained in the raw
+     JSON artifacts
+
+Artifacts:
+
+- `/tmp/pyperf-baseline-targeted-rerun.json`
+- `/tmp/pyperf-current-targeted-rerun.json`
+- `/tmp/marshal-baseline-stable.json`
+- `/tmp/marshal-current-stable.json`
+
+### Targeted pyperformance
+
+The official targeted `pyperformance` slice is effectively flat. The earlier
+`python_startup` regression did not reproduce under the cleaner rerun.
+
+| Benchmark | Baseline | Current | Delta | Significance |
+| --- | ---: | ---: | ---: | --- |
+| `python_startup` | `6.64 ms +- 0.28 ms` | `6.61 ms +- 0.09 ms` | `1.00x faster` | not significant |
+| `python_startup_no_site` | `4.24 ms +- 0.09 ms` | `4.14 ms +- 0.05 ms` | `1.02x faster` | significant |
+| `pickle` | `6.95 us +- 0.07 us` | `6.98 us +- 0.07 us` | `1.01x slower` | not significant |
+| `pickle_dict` | `16.4 us +- 0.3 us` | `16.3 us +- 0.4 us` | `1.00x faster` | not significant |
+| `pickle_list` | `2.64 us +- 0.04 us` | `2.63 us +- 0.06 us` | `1.01x faster` | not significant |
+| `pickle_pure_python` | `182 us +- 3 us` | `183 us +- 2 us` | `1.00x slower` | not significant |
+| `unpickle` | `8.66 us +- 0.26 us` | `8.51 us +- 0.20 us` | `1.02x faster` | not significant |
+| `unpickle_list` | `2.64 us +- 0.03 us` | `2.69 us +- 0.07 us` | `1.02x slower` | not significant |
+| `unpickle_pure_python` | `122 us +- 2 us` | `120 us +- 1 us` | `1.01x faster` | not significant |
+| `unpack_sequence` | `20.5 ns +- 0.4 ns` | `20.0 ns +- 0.2 ns` | `1.02x faster` | significant |
+
+Interpretation:
+
+- No marshal-adjacent benchmark in this official slice shows a statistically
+  significant regression.
+- The earlier `python_startup` slowdown was not stable.
+- The two significant wins are small and likely unrelated to marshal itself.
+
+### Direct marshal microbenches
+
+The direct marshal-focused microbenches are more sensitive to this change than
+the broader `pyperformance` slice. Here the load path remains consistently
+slower, while dumps stay close to flat.
+
+Median results from the pinned stable rerun:
+
+| Benchmark | Operation | Baseline median | Current median | Delta |
+| --- | --- | ---: | ---: | ---: |
+| `small_tuple` | `loads` | `0.028996168 s` | `0.032467121 s` | `+12.0%` |
+| `small_tuple` | `dumps` | `0.015875994 s` | `0.015498953 s` | `-2.4%` |
+| `nested_dict` | `loads` | `0.077889564 s` | `0.085107413 s` | `+9.3%` |
+| `nested_dict` | `dumps` | `0.072245140 s` | `0.073205785 s` | `+1.3%` |
+| `code_obj` | `loads` | `0.090201660 s` | `0.097551488 s` | `+8.1%` |
+| `code_obj` | `dumps` | `0.039133891 s` | `0.039431035 s` | `+0.8%` |
+
+Load-path deltas from the same rerun using the best observed sample were
+similar:
+
+- `small_tuple` loads: `+12.5%`
+- `nested_dict` loads: `+9.3%`
+- `code_obj` loads: `+6.9%`
+
+### Conclusion
+
+The benchmark story is mixed but clear:
+
+- The broader targeted `pyperformance` slice does not show a stable
+  user-visible regression.
+- The marshal-specific hot path does show a repeatable load slowdown of roughly
+  `7%` to `12%` on the synthetic microbenches above.
+- Dump performance is approximately flat.
+
+So this design currently looks behaviorally correct and broadly acceptable at
+the application level, but it is not yet honest to call it performance-neutral
+for marshal's load fast path.
+
 ## Non-Goals
 
 - Do not add a whole-graph pre-scan.
