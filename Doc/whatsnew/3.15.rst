@@ -83,6 +83,7 @@ Summary -- Release highlights
 * :pep:`800`: Disjoint bases in the type system
 * :pep:`782`: :ref:`A new PyBytesWriter C API to create a Python bytes object
   <whatsnew315-pybyteswriter>`
+* :pep:`803`: :ref:`Stable ABI for Free-Threaded Builds <whatsnew315-abi3t>`
 * :ref:`The JIT compiler has been significantly upgraded <whatsnew315-jit>`
 * :ref:`Improved error messages <whatsnew315-improved-error-messages>`
 * :ref:`The official Windows 64-bit binaries now use the tail-calling interpreter
@@ -381,6 +382,41 @@ agen() for x in a)``.
 .. seealso:: :pep:`798` for further details.
 
 (Contributed by Adam Hartz in :gh:`143055`.)
+
+.. _whatsnew315-abi3t:
+
+:pep:`803`: ``abi3t`` -- Stable ABI for Free-Threaded Builds
+------------------------------------------------------------
+
+C extensions that target the :ref:`Stable ABI <stable-abi>` can now be
+compiled for the new *Stable ABI for Free-Threaded Builds* (also known
+as ``abi3t``), which makes them compatible with
+:term:`free-threaded builds <free-threaded build>` of CPython.
+This usually requires some non-trivial changes to the source code;
+specifically:
+
+- Switching to API introduced in :pep:`697` (Python 3.12), such as
+  negative :c:member:`~PyType_Spec.basicsize` and
+  :c:func:`PyObject_GetTypeData`, rather than making :c:type:`PyObject`
+  part of the instance struct; and
+- Switching from a ``PyInit_`` function to a new export hook,
+  :c:func:`PyModExport_* <PyModExport_modulename>`, introduced for this
+  purpose in :pep:`793`.
+
+Note that Stable ABI does not offer all the functionality that CPython
+has to offer.
+Extensions that cannot switch to ``abi3t`` should continue to build for
+the existing Stable ABI (``abi3``) and the version-specific ABI for
+free-threading (``cp315t``) separately.
+
+Stable ABI for Free-Threaded Builds should typically
+be selected in a build tool (such as, for example, Setuptools, meson-python,
+scikit-build-core, or Maturin).
+At the time of writing, these tools did **not** support ``abi3t``.
+If this is the case for your tool, compile for ``cp315t`` separately.
+If not using a build tool -- or when writing such a tool -- you can select
+``abi3t`` by setting the macro :c:macro:`!Py_TARGET_ABI3T` as discussed
+in :ref:`abi3-compiling`.
 
 
 .. _whatsnew315-improved-error-messages:
