@@ -458,6 +458,9 @@ Improved error messages
               ^^^^^^^^^^^^^^
      AttributeError: 'Container' object has no attribute 'area'. Did you mean '.inner.area' instead of '.area'?
 
+* Several error messages incorrectly using the term "argument" have been corrected.
+  (Contributed by Stan Ulbrych in :gh:`133382`.)
+
 
 Other language changes
 ======================
@@ -488,9 +491,6 @@ Other language changes
   .. _Unicode: https://home.unicode.org/
 
   (Contributed by Adam Turner in :gh:`133711`; PEP 686 written by Inada Naoki.)
-
-* Several error messages incorrectly using the term "argument" have been corrected.
-  (Contributed by Stan Ulbrych in :gh:`133382`.)
 
 * The interpreter now tries to provide a suggestion when
   :func:`delattr` fails due to a missing attribute.
