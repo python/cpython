@@ -1583,18 +1583,29 @@ whichtable(const char **pfmt)
 }
 
 
+static int
+format_equal(const formatdef *e, const char *s)
+{
+    const char *format = e->format;
+    size_t i = 0;
+    while (format[i] == s[i]) {
+        i++;
+        if (format[i] == 0) {
+            return 1;
+        }
+    }
+    return 0;
+}
+
+
 /* Get the table entry for a format code */
 
 static const formatdef *
 getentry(_structmodulestate *state, const char *s, const formatdef *f)
 {
     for (; f->format != NULL; f++) {
-        size_t i = 0;
-        while (f->format[i] == s[i]) {
-            i++;
-            if (f->format[i] == 0) {
-                return f;
-            }
+        if (format_equal(f, s)) {
+            return f;
         }
     }
     PyErr_SetString(state->StructError, "bad char in struct format");
@@ -1609,7 +1620,7 @@ align(Py_ssize_t size, const char *s, const formatdef *e)
 {
     Py_ssize_t extra;
 
-    if (strcmp(e->format, s) == 0) {
+    if (format_equal(e, s)) {
         if (e->alignment && size > 0) {
             extra = (e->alignment - 1) - (size - 1) % (e->alignment);
             if (extra > PY_SSIZE_T_MAX - size)
