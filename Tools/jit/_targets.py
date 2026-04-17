@@ -166,6 +166,7 @@ class _Target(typing.Generic[_S, _R]):
             # This debug info isn't necessary, and bloats out the JIT'ed code.
             # We *may* be able to re-enable this, process it, and JIT it for a
             # nicer debugging experience... but that needs a lot more research:
+            "-fno-asynchronous-unwind-tables",
             "-fno-unwind-tables",
             # Don't call built-in functions that we can't find or patch:
             "-fno-builtin",
@@ -435,7 +436,6 @@ class _ELF(
                 "SHT_NULL",
                 "SHT_STRTAB",
                 "SHT_SYMTAB",
-                "SHT_X86_64_UNWIND",
             }, section_type
 
     def _handle_relocation(
