@@ -113,7 +113,7 @@ class ForwardRef:
         """
         match format:
             case Format.STRING:
-                return self.__forward_arg__
+                return self.__resolved_forward_str__
             case Format.VALUE:
                 is_forwardref_format = False
             case Format.FORWARDREF:
@@ -259,6 +259,25 @@ class ForwardRef:
         )
 
     @property
+    def __resolved_forward_str__(self):
+        # __forward_arg__ but with __extra_names__ resolved as strings
+        resolved_str = self.__forward_arg__
+        names = self.__extra_names__
+
+        if names:
+            # identifiers can be replaced directly
+            if resolved_str.isidentifier():
+                if (name_obj := names.get(resolved_str), _sentinel) is not _sentinel:
+                    resolved_str = type_repr(name_obj)
+            else:
+                visitor = _ExtraNameFixer(names)
+                ast_expr = ast.parse(resolved_str, mode="eval").body
+                node = visitor.visit(ast_expr)
+                resolved_str = ast.unparse(node)
+
+        return resolved_str
+
+    @property
     def __forward_code__(self):
         if self.__code__ is not None:
             return self.__code__
@@ -321,7 +340,7 @@ class ForwardRef:
             extra.append(", is_class=True")
         if self.__owner__ is not None:
             extra.append(f", owner={self.__owner__!r}")
-        return f"ForwardRef({self.__forward_arg__!r}{''.join(extra)})"
+        return f"ForwardRef({self.__resolved_forward_str__!r}{''.join(extra)})"
 
 
 _Template = type(t"")
@@ -1163,3 +1182,16 @@ def _get_dunder_annotations(obj):
     if not isinstance(ann, dict):
         raise ValueError(f"{obj!r}.__annotations__ is neither a dict nor None")
     return ann
+
+
+class _ExtraNameFixer(ast.NodeTransformer):
+    """Fixer for __extra_names__ items in ForwardRef __repr__ and string evaluation"""
+    def __init__(self, extra_names):
+        self.extra_names = extra_names
+
+    def visit_Name(self, node: ast.Name):
+        if (new_name := self.extra_names.get(node.id, _sentinel)) is not _sentinel:
+            new_node = ast.Name(id=type_repr(new_name))
+            ast.copy_location(node, new_node)
+            node = new_node
+        return node
