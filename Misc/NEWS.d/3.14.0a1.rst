@@ -1033,7 +1033,7 @@ retrieve the spec information.
 .. nonce: s3vKql
 .. section: Library
 
-:mod:`argparse` vim supports abbreviated single-dash long options separated
+:mod:`argparse` supports abbreviated single-dash long options separated
 by ``=`` from its value.
 
 ..
@@ -1999,7 +1999,7 @@ with an escape character.
 .. nonce: vi2bP-
 .. section: Library
 
-:func:`@warnings.deprecated <warnings.deprecated>` now copies the coroutine
+:deco:`warnings.deprecated` now copies the coroutine
 status of functions and methods so that :func:`inspect.iscoroutinefunction`
 returns the correct result.
 
@@ -2623,7 +2623,7 @@ Fix :func:`unittest.mock.patch` to not read attributes of the target when
 .. nonce: s4HXR0
 .. section: Library
 
-Fixed the use-after-free issue in :mod:`cProfile` by disallowing
+Fixed the use-after-free issue in :mod:`!cProfile` by disallowing
 ``disable()`` and ``clear()`` in external timers.
 
 ..
@@ -3586,7 +3586,7 @@ atomic types.
 
 Add *doc* parameter to :func:`dataclasses.field`, so it can be stored and
 shown as a documentation / metadata. If ``@dataclass(slots=True)`` is used,
-then the supplied string is availabl in the :attr:`~object.__slots__` dict.
+then the supplied string is available in the :attr:`~object.__slots__` dict.
 Otherwise, the supplied string is only available in the corresponding
 :class:`dataclasses.Field` object.
 
@@ -4016,7 +4016,7 @@ Make ``this_instr`` and ``prev_instr`` const in cases generator.
 .. date: 2024-10-05-23-53-06
 .. gh-issue: 125008
 .. nonce: ETANpd
-.. section: Core and Builtins
+.. section: Library
 
 Fix :func:`tokenize.untokenize` producing invalid syntax for double braces
 preceded by certain escape characters.
@@ -4184,7 +4184,7 @@ display REPL ``help()``.
 .. nonce: aFqNAB
 .. section: Core and Builtins
 
-Fix reading and decoding a line from the source file witn non-UTF-8 encoding
+Fix reading and decoding a line from the source file with non-UTF-8 encoding
 for syntax errors raised in the compiler.
 
 ..
@@ -4275,7 +4275,7 @@ devdanzin
 .. date: 2024-09-02-20-39-10
 .. gh-issue: 123614
 .. nonce: 26TMHp
-.. section: Core and Builtins
+.. section: Library
 
 Add :func:`turtle.save` to easily save Turtle drawings as PostScript files.
 Patch by Marie Roald and Yngve Mardal Moe.
@@ -4761,7 +4761,7 @@ enabled (yet).
 .. date: 2024-07-18-21-19-04
 .. gh-issue: 121999
 .. nonce: 8IBbTK
-.. section: Core and Builtins
+.. section: Library
 
 The default extraction filter for the :mod:`tarfile` module is now set to
 :func:`'data' <tarfile.data_filter>`.
@@ -4913,11 +4913,11 @@ Allow tuples of length 20 in the freelist to be reused.
 .. nonce: lYKYYP
 .. section: Core and Builtins
 
-:exc:`ValueError` messages for :meth:`!list.index`, :meth:`!range.index`,
+:exc:`ValueError` messages for :meth:`list.index`, :meth:`range.index`,
 :meth:`!deque.index`, :meth:`!deque.remove` and :meth:`!ShareableList.index`
 no longer contain the repr of the searched value (which can be arbitrary
-large) and are consistent with error messages for other :meth:`!index` and
-:meth:`!remove` methods.
+large) and are consistent with error messages for other :meth:`~sequence.index` and
+:meth:`~sequence.remove` methods.
 
 ..
 
@@ -4955,7 +4955,7 @@ Galindo
 .. date: 2024-06-28-23-17-22
 .. gh-issue: 121381
 .. nonce: i2xL7P
-.. section: Core and Builtins
+.. section: Library
 
 Remove ``subprocess._USE_VFORK`` escape hatch code and documentation. It was
 added just in case, and doesn't have any known cases that require it.
@@ -5115,7 +5115,7 @@ and identities of :class:`str` objects.
 .. date: 2024-06-14-07-52-00
 .. gh-issue: 120485
 .. nonce: yy4K4b
-.. section: Core and Builtins
+.. section: Library
 
 Add an override of ``allow_reuse_port`` on classes subclassing
 ``socketserver.TCPServer`` where ``allow_reuse_address`` is also overridden.
@@ -5147,7 +5147,7 @@ after exception handlers are moved to the end of the code.
 .. date: 2024-06-12-18-23-15
 .. gh-issue: 120380
 .. nonce: edtqjq
-.. section: Core and Builtins
+.. section: Library
 
 Fix Python implementation of :class:`pickle.Pickler` for :class:`bytes` and
 :class:`bytearray` objects when using protocol version 5. Patch by Bénédikt
@@ -5604,7 +5604,7 @@ Using :data:`NotImplemented` in a boolean context now raises
 .. nonce: wNMKVd
 .. section: Core and Builtins
 
-Fix race condition in free-threaded build where :meth:`!list.extend` could
+Fix race condition in free-threaded build where :meth:`list.extend` could
 expose uninitialised memory to concurrent readers.
 
 ..
@@ -5625,7 +5625,7 @@ in the future.
 .. date: 2024-04-27-18-36-46
 .. gh-issue: 115801
 .. nonce: SVeHSy
-.. section: Core and Builtins
+.. section: Library
 
 Raise ``TypeError`` when passing a string to :func:`difflib.unified_diff`
 and :func:`difflib.context_diff`.
@@ -6092,7 +6092,7 @@ Patch by Victor Stinner.
 .. nonce: qOr9GF
 .. section: C API
 
-Soft deprecate the :c:macro:`!Py_MEMCPY` macro: use directly ``memcpy()``
+Soft deprecate the :c:macro:`Py_MEMCPY` macro: use directly ``memcpy()``
 instead.  Patch by Victor Stinner.
 
 ..

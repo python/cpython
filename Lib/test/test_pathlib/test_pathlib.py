@@ -16,10 +16,13 @@ from unittest import mock
 from urllib.request import pathname2url
 
 from test.support import import_helper
-from test.support import is_emscripten, is_wasi
+from test.support import cpython_only
+from test.support import is_emscripten, is_wasi, is_wasm32
 from test.support import infinite_recursion
 from test.support import os_helper
-from test.support.os_helper import TESTFN, FakePath
+from test.support import requires_root_user
+from test.support import requires_non_root_user
+from test.support.os_helper import TESTFN, FS_NONASCII, FakePath
 try:
     import fcntl
 except ImportError:
@@ -32,11 +35,6 @@ try:
     import posix
 except ImportError:
     posix = None
-
-
-root_in_posix = False
-if hasattr(os, 'geteuid'):
-    root_in_posix = (os.geteuid() == 0)
 
 
 def patch_replace(old_test):
@@ -76,8 +74,14 @@ def needs_symlinks(fn):
 
 class UnsupportedOperationTest(unittest.TestCase):
     def test_is_notimplemented(self):
-        self.assertTrue(issubclass(pathlib.UnsupportedOperation, NotImplementedError))
-        self.assertTrue(isinstance(pathlib.UnsupportedOperation(), NotImplementedError))
+        self.assertIsSubclass(pathlib.UnsupportedOperation, NotImplementedError)
+        self.assertIsInstance(pathlib.UnsupportedOperation(), NotImplementedError)
+
+
+class LazyImportTest(unittest.TestCase):
+    @cpython_only
+    def test_lazy_import(self):
+        import_helper.ensure_lazy_imports("pathlib", {"shutil"})
 
 
 #
@@ -286,6 +290,12 @@ class PurePathTest(unittest.TestCase):
                     self.assertEqual(hash(pp), hash(p))
                     self.assertEqual(str(pp), str(p))
 
+    def test_unpicking_3_13(self):
+        data = (b"\x80\x04\x95'\x00\x00\x00\x00\x00\x00\x00\x8c\x0e"
+                b"pathlib._local\x94\x8c\rPurePosixPath\x94\x93\x94)R\x94.")
+        p = pickle.loads(data)
+        self.assertIsInstance(p, pathlib.PurePosixPath)
+
     def test_repr_common(self):
         for pathstr in ('a', 'a/b', 'a/b/c', '/', '/a/b', '/a/b/c'):
             with self.subTest(pathstr=pathstr):
@@ -293,8 +303,8 @@ class PurePathTest(unittest.TestCase):
                 clsname = p.__class__.__name__
                 r = repr(p)
                 # The repr() is in the form ClassName("forward-slashes path").
-                self.assertTrue(r.startswith(clsname + '('), r)
-                self.assertTrue(r.endswith(')'), r)
+                self.assertStartsWith(r, clsname + '(')
+                self.assertEndsWith(r, ')')
                 inner = r[len(clsname) + 1 : -1]
                 self.assertEqual(eval(inner), p.as_posix())
 
@@ -532,12 +542,6 @@ class PurePathTest(unittest.TestCase):
         self.assertRaises(ValueError, P('a/b').with_stem, '')
         self.assertRaises(ValueError, P('a/b').with_stem, '.')
 
-    def test_is_reserved_deprecated(self):
-        P = self.cls
-        p = P('a/b')
-        with self.assertWarns(DeprecationWarning):
-            p.is_reserved()
-
     def test_full_match_case_sensitive(self):
         P = self.cls
         self.assertFalse(P('A.py').full_match('a.PY', case_sensitive=True))
@@ -763,12 +767,16 @@ class PurePathTest(unittest.TestCase):
         self.assertEqual(self.make_uri(P('c:/')), 'file:///c:/')
         self.assertEqual(self.make_uri(P('c:/a/b.c')), 'file:///c:/a/b.c')
         self.assertEqual(self.make_uri(P('c:/a/b%#c')), 'file:///c:/a/b%25%23c')
-        self.assertEqual(self.make_uri(P('c:/a/b\xe9')), 'file:///c:/a/b%C3%A9')
         self.assertEqual(self.make_uri(P('//some/share/')), 'file://some/share/')
         self.assertEqual(self.make_uri(P('//some/share/a/b.c')),
                          'file://some/share/a/b.c')
-        self.assertEqual(self.make_uri(P('//some/share/a/b%#c\xe9')),
-                         'file://some/share/a/b%25%23c%C3%A9')
+
+        from urllib.parse import quote_from_bytes
+        QUOTED_FS_NONASCII = quote_from_bytes(os.fsencode(FS_NONASCII))
+        self.assertEqual(self.make_uri(P('c:/a/b' + FS_NONASCII)),
+                         'file:///c:/a/b' + QUOTED_FS_NONASCII)
+        self.assertEqual(self.make_uri(P('//some/share/a/b%#c' + FS_NONASCII)),
+                         'file://some/share/a/b%25%23c' + QUOTED_FS_NONASCII)
 
     @needs_windows
     def test_ordering_windows(self):
@@ -1543,7 +1551,7 @@ class PathTest(PurePathTest):
             self.assertRaises(FileNotFoundError, source.copy, target)
 
     @unittest.skipIf(sys.platform == "win32" or sys.platform == "wasi", "directories are always readable on Windows and WASI")
-    @unittest.skipIf(root_in_posix, "test fails with root privilege")
+    @requires_non_root_user
     def test_copy_dir_no_read_permission(self):
         base = self.cls(self.base)
         source = base / 'dirE'
@@ -2016,7 +2024,7 @@ class PathTest(PurePathTest):
         self.assertEqual(expected_name, p.owner())
 
     @unittest.skipUnless(pwd, "the pwd module is needed for this test")
-    @unittest.skipUnless(root_in_posix, "test needs root privilege")
+    @requires_root_user
     def test_owner_no_follow_symlinks(self):
         all_users = [u.pw_uid for u in pwd.getpwall()]
         if len(all_users) < 2:
@@ -2051,7 +2059,7 @@ class PathTest(PurePathTest):
         self.assertEqual(expected_name, p.group())
 
     @unittest.skipUnless(grp, "the grp module is needed for this test")
-    @unittest.skipUnless(root_in_posix, "test needs root privilege")
+    @requires_root_user
     def test_group_no_follow_symlinks(self):
         all_groups = [g.gr_gid for g in grp.getgrall()]
         if len(all_groups) < 2:
@@ -2065,7 +2073,7 @@ class PathTest(PurePathTest):
         os.chown(link, -1, gid_2, follow_symlinks=False)
 
         expected_gid = link.stat(follow_symlinks=False).st_gid
-        expected_name = self._get_pw_name_or_skip_test(expected_gid)
+        expected_name = self._get_gr_name_or_skip_test(expected_gid)
 
         self.assertEqual(expected_gid, gid_2)
         self.assertEqual(expected_name, link.group(follow_symlinks=False))
@@ -2943,7 +2951,13 @@ class PathTest(PurePathTest):
         else:
             # ".." segments are normalized first on Windows, so this path is stat()able.
             self.assertEqual(set(p.glob("xyzzy/..")), { P(self.base, "xyzzy", "..") })
-        self.assertEqual(set(p.glob("/".join([".."] * 50))), { P(self.base, *[".."] * 50)})
+        if sys.platform == "emscripten":
+            # Emscripten will return ELOOP if there are 49 or more ..'s.
+            # Can remove when https://github.com/emscripten-core/emscripten/pull/24591 is merged.
+            NDOTDOTS = 48
+        else:
+            NDOTDOTS = 50
+        self.assertEqual(set(p.glob("/".join([".."] * NDOTDOTS))), { P(self.base, *[".."] * NDOTDOTS)})
 
     def test_glob_inaccessible(self):
         P = self.cls
@@ -3147,7 +3161,7 @@ class PathTest(PurePathTest):
         self.assertEqual(str(P('//a/b').absolute()), '//a/b')
 
     @unittest.skipIf(
-        is_emscripten or is_wasi,
+        is_wasm32,
         "umask is not implemented on Emscripten/WASI."
     )
     @needs_posix
@@ -3178,7 +3192,7 @@ class PathTest(PurePathTest):
             os.chdir(current_directory)
 
     @unittest.skipIf(
-        is_emscripten or is_wasi,
+        is_wasm32,
         "umask is not implemented on Emscripten/WASI."
     )
     @needs_posix
@@ -3285,10 +3299,13 @@ class PathTest(PurePathTest):
     def test_from_uri_posix(self):
         P = self.cls
         self.assertEqual(P.from_uri('file:/foo/bar'), P('/foo/bar'))
-        self.assertEqual(P.from_uri('file://foo/bar'), P('//foo/bar'))
+        self.assertRaises(ValueError, P.from_uri, 'file://foo/bar')
         self.assertEqual(P.from_uri('file:///foo/bar'), P('/foo/bar'))
         self.assertEqual(P.from_uri('file:////foo/bar'), P('//foo/bar'))
         self.assertEqual(P.from_uri('file://localhost/foo/bar'), P('/foo/bar'))
+        if not is_wasi:
+            self.assertEqual(P.from_uri(f'file://{socket.gethostname()}/foo/bar'),
+                             P('/foo/bar'))
         self.assertRaises(ValueError, P.from_uri, 'foo/bar')
         self.assertRaises(ValueError, P.from_uri, '/foo/bar')
         self.assertRaises(ValueError, P.from_uri, '//foo/bar')
@@ -3298,8 +3315,8 @@ class PathTest(PurePathTest):
     @needs_posix
     def test_from_uri_pathname2url_posix(self):
         P = self.cls
-        self.assertEqual(P.from_uri('file:' + pathname2url('/foo/bar')), P('/foo/bar'))
-        self.assertEqual(P.from_uri('file:' + pathname2url('//foo/bar')), P('//foo/bar'))
+        self.assertEqual(P.from_uri(pathname2url('/foo/bar', add_scheme=True)), P('/foo/bar'))
+        self.assertEqual(P.from_uri(pathname2url('//foo/bar', add_scheme=True)), P('//foo/bar'))
 
     @needs_windows
     def test_absolute_windows(self):

@@ -16,7 +16,7 @@ Copyright (c) Corporation for National Research Initiatives.
 #include "pycore_runtime.h"       // _Py_ID()
 #include "pycore_ucnhash.h"       // _PyUnicode_Name_CAPI
 #include "pycore_unicodeobject.h" // _PyUnicode_InternMortal()
-
+#include "pycore_pyatomic_ft_wrappers.h"
 
 static const char *codecs_builtin_error_handlers[] = {
     "strict", "ignore", "replace",
@@ -40,13 +40,10 @@ int PyCodec_Register(PyObject *search_function)
         PyErr_SetString(PyExc_TypeError, "argument must be callable");
         goto onError;
     }
-#ifdef Py_GIL_DISABLED
-    PyMutex_Lock(&interp->codecs.search_path_mutex);
-#endif
+    FT_MUTEX_LOCK(&interp->codecs.search_path_mutex);
     int ret = PyList_Append(interp->codecs.search_path, search_function);
-#ifdef Py_GIL_DISABLED
-    PyMutex_Unlock(&interp->codecs.search_path_mutex);
-#endif
+    FT_MUTEX_UNLOCK(&interp->codecs.search_path_mutex);
+
     return ret;
 
  onError:
@@ -66,9 +63,7 @@ PyCodec_Unregister(PyObject *search_function)
     PyObject *codec_search_path = interp->codecs.search_path;
     assert(PyList_CheckExact(codec_search_path));
     for (Py_ssize_t i = 0; i < PyList_GET_SIZE(codec_search_path); i++) {
-#ifdef Py_GIL_DISABLED
-        PyMutex_Lock(&interp->codecs.search_path_mutex);
-#endif
+        FT_MUTEX_LOCK(&interp->codecs.search_path_mutex);
         PyObject *item = PyList_GetItemRef(codec_search_path, i);
         int ret = 1;
         if (item == search_function) {
@@ -76,9 +71,7 @@ PyCodec_Unregister(PyObject *search_function)
             // while we hold search_path_mutex.
             ret = PyList_SetSlice(codec_search_path, i, i+1, NULL);
         }
-#ifdef Py_GIL_DISABLED
-        PyMutex_Unlock(&interp->codecs.search_path_mutex);
-#endif
+        FT_MUTEX_UNLOCK(&interp->codecs.search_path_mutex);
         Py_DECREF(item);
         if (ret != 1) {
             assert(interp->codecs.search_cache != NULL);
@@ -90,16 +83,15 @@ PyCodec_Unregister(PyObject *search_function)
     return 0;
 }
 
-extern int _Py_normalize_encoding(const char *, char *, size_t);
+/* Convert a string to a normalized Python string: all ASCII letters are
+   converted to lower case, spaces are replaced with hyphens. */
 
-/* Convert a string to a normalized Python string(decoded from UTF-8): all characters are
-   converted to lower case, spaces and hyphens are replaced with underscores. */
-
-static
-PyObject *normalizestring(const char *string)
+static PyObject*
+normalizestring(const char *string)
 {
+    size_t i;
     size_t len = strlen(string);
-    char *encoding;
+    char *p;
     PyObject *v;
 
     if (len > PY_SSIZE_T_MAX) {
@@ -107,28 +99,30 @@ PyObject *normalizestring(const char *string)
         return NULL;
     }
 
-    encoding = PyMem_Malloc(len + 1);
-    if (encoding == NULL)
+    p = PyMem_Malloc(len + 1);
+    if (p == NULL)
         return PyErr_NoMemory();
-
-    if (!_Py_normalize_encoding(string, encoding, len + 1))
-    {
-        PyErr_SetString(PyExc_RuntimeError, "_Py_normalize_encoding() failed");
-        PyMem_Free(encoding);
-        return NULL;
+    for (i = 0; i < len; i++) {
+        char ch = string[i];
+        if (ch == ' ')
+            ch = '-';
+        else
+            ch = Py_TOLOWER(Py_CHARMASK(ch));
+        p[i] = ch;
     }
-
-    v = PyUnicode_FromString(encoding);
-    PyMem_Free(encoding);
+    p[i] = '\0';
+    v = PyUnicode_FromString(p);
+    PyMem_Free(p);
     return v;
 }
 
 /* Lookup the given encoding and return a tuple providing the codec
    facilities.
 
-   The encoding string is looked up converted to all lower-case
-   characters. This makes encodings looked up through this mechanism
-   effectively case-insensitive.
+   ASCII letters in the encoding string is looked up converted to all
+   lower case. This makes encodings looked up through this mechanism
+   effectively case-insensitive. Spaces are replaced with hyphens for
+   names like "US ASCII" and "ISO 8859-1".
 
    If no codec is found, a LookupError is set and NULL returned.
 
@@ -149,8 +143,8 @@ PyObject *_PyCodec_Lookup(const char *encoding)
     assert(interp->codecs.initialized);
 
     /* Convert the encoding to a normalized Python string: all
-       characters are converted to lower case, spaces and hyphens are
-       replaced with underscores. */
+       ASCII letters are converted to lower case, spaces are
+       replaced with hyphens. */
     PyObject *v = normalizestring(encoding);
     if (v == NULL) {
         return NULL;
@@ -540,11 +534,19 @@ PyObject * _PyCodec_LookupTextEncoding(const char *encoding,
             Py_DECREF(attr);
             if (is_text_codec <= 0) {
                 Py_DECREF(codec);
-                if (!is_text_codec)
-                    PyErr_Format(PyExc_LookupError,
-                                 "'%.400s' is not a text encoding; "
-                                 "use %s to handle arbitrary codecs",
-                                 encoding, alternate_command);
+                if (!is_text_codec) {
+                    if (alternate_command != NULL) {
+                        PyErr_Format(PyExc_LookupError,
+                                     "'%.400s' is not a text encoding; "
+                                     "use %s to handle arbitrary codecs",
+                                     encoding, alternate_command);
+                    }
+                    else {
+                        PyErr_Format(PyExc_LookupError,
+                                     "'%.400s' is not a text encoding",
+                                     encoding);
+                    }
+                }
                 return NULL;
             }
         }
@@ -1196,7 +1198,7 @@ get_standard_encoding_impl(const char *encoding, int *bytelength)
             }
         }
     }
-    else if (strcmp(encoding, "CP_UTF8") == 0) {
+    else if (strcmp(encoding, "cp65001") == 0) {
         *bytelength = 3;
         return ENC_UTF8;
     }
