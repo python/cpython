@@ -73,7 +73,12 @@
      // Since users are free to the macro, and there's no way to undo the
      // poisoning at the end of Python.h, we only do this in a test module
      // (test_cext).
-#    ifdef __GNUC__
+     //
+     // Clang's poisoning is stricter than GCC's: it looks in `#elif`
+     // expressions after matching `#if`s. We disable it for now.
+     // We also provide an undocumented, unsupported opt-out macro to help
+     // porting to other compilers. Consider reaching out if you use it.
+#    if defined(__GNUC__) && !defined(__clang__) && !defined(_Py_NO_GCC_POISON)
 #      undef Py_GIL_DISABLED
 #      pragma GCC poison Py_GIL_DISABLED
 #    endif
