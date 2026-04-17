@@ -162,6 +162,10 @@ LONG4          = b'\x8b'  # push really big long
 
 _tuplesize2code = [EMPTY_TUPLE, TUPLE1, TUPLE2, TUPLE3]
 
+# Precomputed BININT1 opcode + payload for n in 0..255. Avoids the
+# struct.pack("<B", n) on every small non-negative int save.
+_BININT1_BYTES = tuple(BININT1 + bytes([_i]) for _i in range(256))
+
 # Protocol 3 (Python 3.x)
 
 BINBYTES       = b'B'   # push bytes; counted binary string argument
@@ -861,7 +865,7 @@ class _Pickler:
             # First one- and two-byte unsigned ints:
             if obj >= 0:
                 if obj <= 0xff:
-                    self.write(BININT1 + pack("<B", obj))
+                    self.write(_BININT1_BYTES[obj])
                     return
                 if obj <= 0xffff:
                     self.write(BININT2 + pack("<H", obj))
