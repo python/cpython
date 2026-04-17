@@ -1100,6 +1100,7 @@ enable_wasm_pthreads
 with_suffix
 enable_shared
 with_static_libpython
+enable_static_libpython_for_interpreter
 enable_profiling
 enable_gil
 with_pydebug
@@ -1837,6 +1838,10 @@ Optional Features:
                           no)
   --enable-shared         enable building a shared Python library (default is
                           no)
+  --enable-static-libpython-for-interpreter
+                          even with --enable-shared, statically link libpython
+                          into the interpreter (default is to use the shared
+                          library)
   --enable-profiling      enable C-level code profiling with gprof (default is
                           no)
   --disable-gil           enable support for running without the GIL (default
@@ -7688,6 +7693,22 @@ fi
 
 
 
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for --enable-static-libpython-for-interpreter" >&5
+printf %s "checking for --enable-static-libpython-for-interpreter... " >&6; }
+# Check whether --enable-static-libpython-for-interpreter was given.
+if test ${enable_static_libpython_for_interpreter+y}
+then :
+  enableval=$enable_static_libpython_for_interpreter;
+fi
+
+
+if test -z "$enable_static_libpython_for_interpreter"
+then
+  enable_static_libpython_for_interpreter="no"
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $enable_static_libpython_for_interpreter" >&5
+printf "%s\n" "$enable_static_libpython_for_interpreter" >&6; }
+
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for --enable-profiling" >&5
 printf %s "checking for --enable-profiling... " >&6; }
 # Check whether --enable-profiling was given.
@@ -7977,7 +7998,11 @@ if test "$PY_ENABLE_SHARED" = 1 || test "$enable_framework" ; then
         LIBRARY_DEPS="\$(LIBRARY) $LIBRARY_DEPS"
     fi
     # Link Python program to the shared library
-    LINK_PYTHON_OBJS='$(BLDLIBRARY)'
+    if test "$enable_static_libpython_for_interpreter" = "yes"; then
+        LINK_PYTHON_OBJS='$(LIBRARY_OBJS)'
+    else
+        LINK_PYTHON_OBJS='$(BLDLIBRARY)'
+    fi
 else
     if test "$STATIC_LIBPYTHON" = 0; then
         # Build Python needs object files but don't need to build
@@ -9092,7 +9117,57 @@ case "$ac_cv_cc_name" in
     fi
     ;;
   gcc)
-    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts -fprofile-update=atomic" >&5
+    # Check for 32-bit x86 ISA
+    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for i686" >&5
+printf %s "checking for i686... " >&6; }
+if test ${ac_cv_i686+y}
+then :
+  printf %s "(cached) " >&6
+else case e in #(
+  e)
+        cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+
+                #ifdef __i386__
+                #  error "i386"
+                #endif
+
+int
+main (void)
+{
+
+  ;
+  return 0;
+}
+
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
+  ac_cv_i686=no
+else case e in #(
+  e) ac_cv_i686=yes ;;
+esac
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+     ;;
+esac
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_i686" >&5
+printf "%s\n" "$ac_cv_i686" >&6; }
+
+    PGO_PROF_GEN_FLAG="-fprofile-generate"
+
+    # Use -fprofile-update=atomic to fix a random GCC internal error on PGO
+    # build (gh-145801) caused by corruption of profile data (.gcda files).
+    #
+    # gh-148535: On i686, using -fprofile-update=atomic makes the PGO build
+    # way slower (up to 47x slower). So far, the GCC internal error on PGO
+    # build was not seen on i686, so don't use this flag on i686.
+    if test "x$ac_cv_i686" = xno
+then :
+
+        { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts -fprofile-update=atomic" >&5
 printf %s "checking whether C compiler accepts -fprofile-update=atomic... " >&6; }
 if test ${ax_cv_check_cflags___fprofile_update_atomic+y}
 then :
@@ -9127,10 +9202,13 @@ fi
 printf "%s\n" "$ax_cv_check_cflags___fprofile_update_atomic" >&6; }
 if test "x$ax_cv_check_cflags___fprofile_update_atomic" = xyes
 then :
-  PGO_PROF_GEN_FLAG="-fprofile-generate -fprofile-update=atomic"
+  PGO_PROF_GEN_FLAG="$PGO_PROF_GEN_FLAG -fprofile-update=atomic"
 else case e in #(
-  e) PGO_PROF_GEN_FLAG="-fprofile-generate" ;;
+  e) : ;;
 esac
+fi
+
+
 fi
 
     PGO_PROF_USE_FLAG="-fprofile-use -fprofile-correction"
@@ -9473,7 +9551,12 @@ BOLT_BINARIES='$(BUILDPYTHON)'
 if test "x$enable_shared" = xyes
 then :
 
-  BOLT_BINARIES="${BOLT_BINARIES} \$(INSTSONAME)"
+  if test "x$enable_static_libpython_for_interpreter" = xno
+then :
+
+    BOLT_BINARIES="${BOLT_BINARIES} \$(INSTSONAME)"
+
+fi
 
 fi
 

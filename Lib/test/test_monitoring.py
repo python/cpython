@@ -1612,11 +1612,11 @@ class TestBranchAndJumpEvents(CheckEvents):
             ('branch right', 'whilefunc', 1, 3)])
 
         self.check_events(func, recorders = BRANCH_OFFSET_RECORDERS, expected = [
-            ('branch left', 'func', 30, 34),
-            ('branch right', 'func', 46, 60),
-            ('branch left', 'func', 30, 34),
-            ('branch left', 'func', 46, 52),
-            ('branch right', 'func', 30, 72)])
+            ('branch left', 'func', 32, 36),
+            ('branch right', 'func', 48, 62),
+            ('branch left', 'func', 32, 36),
+            ('branch left', 'func', 48, 54),
+            ('branch right', 'func', 32, 74)])
 
     def test_except_star(self):
 

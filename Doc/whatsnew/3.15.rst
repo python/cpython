@@ -82,6 +82,7 @@ Summary -- Release highlights
   <whatsnew315-typeform>`
 * :pep:`782`: :ref:`A new PyBytesWriter C API to create a Python bytes object
   <whatsnew315-pybyteswriter>`
+* :pep:`803`: :ref:`Stable ABI for Free-Threaded Builds <whatsnew315-abi3t>`
 * :ref:`The JIT compiler has been significantly upgraded <whatsnew315-jit>`
 * :ref:`Improved error messages <whatsnew315-improved-error-messages>`
 * :ref:`The official Windows 64-bit binaries now use the tail-calling interpreter
@@ -380,6 +381,41 @@ agen() for x in a)``.
 .. seealso:: :pep:`798` for further details.
 
 (Contributed by Adam Hartz in :gh:`143055`.)
+
+.. _whatsnew315-abi3t:
+
+:pep:`803`: ``abi3t`` -- Stable ABI for Free-Threaded Builds
+------------------------------------------------------------
+
+C extensions that target the :ref:`Stable ABI <stable-abi>` can now be
+compiled for the new *Stable ABI for Free-Threaded Builds* (also known
+as ``abi3t``), which makes them compatible with
+:term:`free-threaded builds <free-threaded build>` of CPython.
+This usually requires some non-trivial changes to the source code;
+specifically:
+
+- Switching to API introduced in :pep:`697` (Python 3.12), such as
+  negative :c:member:`~PyType_Spec.basicsize` and
+  :c:func:`PyObject_GetTypeData`, rather than making :c:type:`PyObject`
+  part of the instance struct; and
+- Switching from a ``PyInit_`` function to a new export hook,
+  :c:func:`PyModExport_* <PyModExport_modulename>`, introduced for this
+  purpose in :pep:`793`.
+
+Note that Stable ABI does not offer all the functionality that CPython
+has to offer.
+Extensions that cannot switch to ``abi3t`` should continue to build for
+the existing Stable ABI (``abi3``) and the version-specific ABI for
+free-threading (``cp315t``) separately.
+
+Stable ABI for Free-Threaded Builds should typically
+be selected in a build tool (such as, for example, Setuptools, meson-python,
+scikit-build-core, or Maturin).
+At the time of writing, these tools did **not** support ``abi3t``.
+If this is the case for your tool, compile for ``cp315t`` separately.
+If not using a build tool -- or when writing such a tool -- you can select
+``abi3t`` by setting the macro :c:macro:`!Py_TARGET_ABI3T` as discussed
+in :ref:`abi3-compiling`.
 
 
 .. _whatsnew315-improved-error-messages:
@@ -945,9 +981,10 @@ pickle
 re
 --
 
-* :func:`re.prefixmatch` and a corresponding :meth:`~re.Pattern.prefixmatch`
-  have been added as alternate more explicit names for the existing
-  :func:`re.match` and :meth:`~re.Pattern.match` APIs. These are intended
+* :func:`re.prefixmatch` and a corresponding :meth:`re.Pattern.prefixmatch`
+  have been added as alternate, more explicit names for the existing
+  and now :term:`soft deprecated`
+  :func:`re.match` and :meth:`re.Pattern.match` APIs. These are intended
   to be used to alleviate confusion around what *match* means by following the
   Zen of Python's *"Explicit is better than implicit"* mantra. Most other
   language regular expression libraries use an API named *match* to mean what
@@ -1462,8 +1499,12 @@ reduces the cost of most operations in Python.
 (Contributed by Ken Jin, Donghee Na, Zheao Li, Hai Zhu, Savannah Ostrowski,
 Reiden Ong, Noam Cohen, Tomas Roun, PuQing, Cajetan Rodrigues, and Sacul in :gh:`134584`.)
 
+By tracking unique references to objects, the JIT optimizer can now eliminate
+reference count updates and perform inplace operations on ints and floats.
+(Contributed by Reiden Ong, and Pieter Eendebak in :gh:`143414` and :gh:`146306`.)
+
 The JIT optimizer now supports significantly more operations than in 3.14.
-(Contributed by Kumar Aditya, Ken Jin, and Sacul in :gh:`131798`.)
+(Contributed by Kumar Aditya, Ken Jin, Jiahao Li, and Sacul in :gh:`131798`.)
 
 .. rubric:: Better machine code generation
 
@@ -1492,6 +1533,15 @@ collections.abc
 * :class:`collections.abc.ByteString` has been removed from
   ``collections.abc.__all__``. :class:`!collections.abc.ByteString` has been
   deprecated since Python 3.12, and is scheduled for removal in Python 3.17.
+
+
+datetime
+--------
+
+* :meth:`~datetime.datetime.strptime` now raises :exc:`ValueError` when the
+  format string contains ``%d`` (day of month) without a year directive.
+  This has been deprecated since Python 3.13.
+  (Contributed by Stan Ulbrych and Gregory P. Smith in :gh:`70647`.)
 
 
 ctypes
@@ -1551,7 +1601,11 @@ pprint
   :func:`pprint.pformat`, :func:`pprint.pp`. If true, the output will be
   formatted similar to pretty-printed :func:`json.dumps` when
   *indent* is supplied.
-  (Contributed by Stefan Todoran and Semyon Moroz in :gh:`112632`.)
+  (Contributed by Stefan Todoran, Semyon Moroz and Hugo van Kemenade in
+  :gh:`112632`.)
+
+* Add t-string support to :mod:`pprint`.
+  (Contributed by Loïc Simon and Hugo van Kemenade in :gh:`134551`.)
 
 
 sre_*
@@ -1668,6 +1722,27 @@ New deprecations
 
     (Contributed by Bénédikt Tran in :gh:`134978`.)
 
+
+* :mod:`re`:
+
+  * :func:`re.match` and :meth:`re.Pattern.match` are now
+    :term:`soft deprecated` in favor of the new :func:`re.prefixmatch` and
+    :meth:`re.Pattern.prefixmatch` APIs, which have been added as alternate,
+    more explicit names. These are intended to be used to alleviate confusion
+    around what *match* means by following the Zen of Python's *"Explicit is
+    better than implicit"* mantra. Most other language regular expression
+    libraries use an API named *match* to mean what Python has always called
+    *search*.
+
+    We **do not** plan to remove the older :func:`!match` name, as it has been
+    used in code for over 30 years. Code supporting older versions of Python
+    should continue to use :func:`!match`, while new code should prefer
+    :func:`!prefixmatch`. See :ref:`prefixmatch-vs-match`.
+
+    (Contributed by Gregory P. Smith in :gh:`86519` and
+    Hugo van Kemenade in :gh:`148100`.)
+
+
 * :mod:`struct`:
 
   * Calling the ``Struct.__new__()`` without required argument now is
@@ -1739,6 +1814,8 @@ New deprecations
 .. include:: ../deprecations/pending-removal-in-3.20.rst
 
 .. include:: ../deprecations/pending-removal-in-future.rst
+
+.. include:: ../deprecations/soft-deprecations.rst
 
 
 C API changes

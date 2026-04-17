@@ -362,11 +362,12 @@ for a complete listing.
 +------------------+-----------------------------------------------+
 | Method/Attribute | Purpose                                       |
 +==================+===============================================+
-| ``match()``      | Determine if the RE matches at the beginning  |
-|                  | of the string.                                |
-+------------------+-----------------------------------------------+
 | ``search()``     | Scan through a string, looking for any        |
 |                  | location where this RE matches.               |
++------------------+-----------------------------------------------+
+| ``prefixmatch()``| Determine if the RE matches at the beginning  |
+|                  | of the string. Previously named :ref:`match() |
+|                  | <prefixmatch-vs-match>`.                      |
 +------------------+-----------------------------------------------+
 | ``findall()``    | Find all substrings where the RE matches, and |
 |                  | return them as a list.                        |
@@ -375,7 +376,7 @@ for a complete listing.
 |                  | return them as an :term:`iterator`.           |
 +------------------+-----------------------------------------------+
 
-:meth:`~re.Pattern.match` and :meth:`~re.Pattern.search` return ``None`` if no match can be found.  If
+:meth:`~re.Pattern.search` and :meth:`~re.Pattern.prefixmatch` return ``None`` if no match can be found.  If
 they're successful, a :ref:`match object <match-objects>` instance is returned,
 containing information about the match: where it starts and ends, the substring
 it matched, and more.
@@ -393,19 +394,19 @@ Python interpreter, import the :mod:`re` module, and compile a RE::
 
 Now, you can try matching various strings against the RE ``[a-z]+``.  An empty
 string shouldn't match at all, since ``+`` means 'one or more repetitions'.
-:meth:`~re.Pattern.match` should return ``None`` in this case, which will cause the
+:meth:`~re.Pattern.search` should return ``None`` in this case, which will cause the
 interpreter to print no output.  You can explicitly print the result of
-:meth:`!match` to make this clear. ::
+:meth:`!search` to make this clear. ::
 
-   >>> p.match("")
-   >>> print(p.match(""))
+   >>> p.search("")
+   >>> print(p.search(""))
    None
 
 Now, let's try it on a string that it should match, such as ``tempo``.  In this
-case, :meth:`~re.Pattern.match` will return a :ref:`match object <match-objects>`, so you
+case, :meth:`~re.Pattern.search` will return a :ref:`match object <match-objects>`, so you
 should store the result in a variable for later use. ::
 
-   >>> m = p.match('tempo')
+   >>> m = p.search('tempo')
    >>> m
    <re.Match object; span=(0, 5), match='tempo'>
 
@@ -437,27 +438,28 @@ Trying these methods will soon clarify their meaning::
 
 :meth:`~re.Match.group` returns the substring that was matched by the RE.  :meth:`~re.Match.start`
 and :meth:`~re.Match.end` return the starting and ending index of the match. :meth:`~re.Match.span`
-returns both start and end indexes in a single tuple.  Since the :meth:`~re.Pattern.match`
-method only checks if the RE matches at the start of a string, :meth:`!start`
-will always be zero.  However, the :meth:`~re.Pattern.search` method of patterns
-scans through the string, so  the match may not start at zero in that
-case. ::
+returns both start and end indexes in a single tuple.
+The :meth:`~re.Pattern.search` method of patterns
+scans through the string, so the match may not start at zero.
+However, the :meth:`~re.Pattern.prefixmatch`
+method only checks if the RE matches at the start of a string, so :meth:`!start`
+will always be zero in that case. ::
 
-   >>> print(p.match('::: message'))
-   None
    >>> m = p.search('::: message'); print(m)
    <re.Match object; span=(4, 11), match='message'>
    >>> m.group()
    'message'
    >>> m.span()
    (4, 11)
+   >>> print(p.prefixmatch('::: message'))
+   None
 
 In actual programs, the most common style is to store the
 :ref:`match object <match-objects>` in a variable, and then check if it was
 ``None``.  This usually looks like::
 
    p = re.compile( ... )
-   m = p.match( 'string goes here' )
+   m = p.search( 'string goes here' )
    if m:
        print('Match found: ', m.group())
    else:
@@ -495,15 +497,15 @@ Module-level functions
 ----------------------
 
 You don't have to create a pattern object and call its methods; the
-:mod:`re` module also provides top-level functions called :func:`~re.match`,
-:func:`~re.search`, :func:`~re.findall`, :func:`~re.sub`, and so forth.  These functions
+:mod:`re` module also provides top-level functions called :func:`~re.search`,
+:func:`~re.prefixmatch`, :func:`~re.findall`, :func:`~re.sub`, and so forth.  These functions
 take the same arguments as the corresponding pattern method with
 the RE string added as the first argument, and still return either ``None`` or a
 :ref:`match object <match-objects>` instance. ::
 
-   >>> print(re.match(r'From\s+', 'Fromage amk'))
+   >>> print(re.prefixmatch(r'From\s+', 'Fromage amk'))
    None
-   >>> re.match(r'From\s+', 'From amk Thu May 14 19:12:10 1998')  #doctest: +ELLIPSIS
+   >>> re.prefixmatch(r'From\s+', 'From amk Thu May 14 19:12:10 1998')  #doctest: +ELLIPSIS
    <re.Match object; span=(0, 5), match='From '>
 
 Under the hood, these functions simply create a pattern object for you
@@ -812,7 +814,7 @@ of a group with a quantifier, such as ``*``, ``+``, ``?``, or
 ``ab``. ::
 
    >>> p = re.compile('(ab)*')
-   >>> print(p.match('ababababab').span())
+   >>> print(p.search('ababababab').span())
    (0, 10)
 
 Groups indicated with ``'('``, ``')'`` also capture the starting and ending
@@ -825,7 +827,7 @@ argument.  Later we'll see how to express groups that don't capture the span
 of text that they match. ::
 
    >>> p = re.compile('(a)b')
-   >>> m = p.match('ab')
+   >>> m = p.search('ab')
    >>> m.group()
    'ab'
    >>> m.group(0)
@@ -836,7 +838,7 @@ to determine the number, just count the opening parenthesis characters, going
 from left to right. ::
 
    >>> p = re.compile('(a(b)c)d')
-   >>> m = p.match('abcd')
+   >>> m = p.search('abcd')
    >>> m.group(0)
    'abcd'
    >>> m.group(1)
@@ -912,10 +914,10 @@ but aren't interested in retrieving the group's contents. You can make this fact
 explicit by using a non-capturing group: ``(?:...)``, where you can replace the
 ``...`` with any other regular expression. ::
 
-   >>> m = re.match("([abc])+", "abc")
+   >>> m = re.search("([abc])+", "abc")
    >>> m.groups()
    ('c',)
-   >>> m = re.match("(?:[abc])+", "abc")
+   >>> m = re.search("(?:[abc])+", "abc")
    >>> m.groups()
    ()
 
@@ -949,7 +951,7 @@ given numbers, so you can retrieve information about a group in two ways::
 Additionally, you can retrieve named groups as a dictionary with
 :meth:`~re.Match.groupdict`::
 
-   >>> m = re.match(r'(?P<first>\w+) (?P<last>\w+)', 'Jane Doe')
+   >>> m = re.search(r'(?P<first>\w+) (?P<last>\w+)', 'Jane Doe')
    >>> m.groupdict()
    {'first': 'Jane', 'last': 'Doe'}
 
@@ -1274,21 +1276,26 @@ In short, before turning to the :mod:`re` module, consider whether your problem
 can be solved with a faster and simpler string method.
 
 
-match() versus search()
------------------------
+.. _match-versus-search:
 
-The :func:`~re.match` function only checks if the RE matches at the beginning of the
-string while :func:`~re.search` will scan forward through the string for a match.
-It's important to keep this distinction in mind.  Remember,  :func:`!match` will
-only report a successful match which will start at 0; if the match wouldn't
-start at zero,  :func:`!match` will *not* report it. ::
+prefixmatch() (aka match) versus search()
+-----------------------------------------
 
-   >>> print(re.match('super', 'superstition').span())
+:func:`~re.prefixmatch` was added in Python 3.15 as the :ref:`preferred name
+<prefixmatch-vs-match>` for :func:`~re.match`. Before this, it was only known
+as :func:`!match` and the distinction with :func:`~re.search` was often
+misunderstood.
+
+:func:`!prefixmatch` aka :func:`!match` only checks if the RE matches at the
+beginning of the string while :func:`!search` scans forward through the
+string for a match. ::
+
+   >>> print(re.prefixmatch('super', 'superstition').span())
    (0, 5)
-   >>> print(re.match('super', 'insuperable'))
+   >>> print(re.prefixmatch('super', 'insuperable'))
    None
 
-On the other hand, :func:`~re.search` will scan forward through the string,
+On the other hand, :func:`~re.search` scans forward through the string,
 reporting the first match it finds. ::
 
    >>> print(re.search('super', 'superstition').span())
@@ -1296,18 +1303,8 @@ reporting the first match it finds. ::
    >>> print(re.search('super', 'insuperable').span())
    (2, 7)
 
-Sometimes you'll be tempted to keep using :func:`re.match`, and just add ``.*``
-to the front of your RE.  Resist this temptation and use :func:`re.search`
-instead.  The regular expression compiler does some analysis of REs in order to
-speed up the process of looking for a match.  One such analysis figures out what
-the first character of a match must be; for example, a pattern starting with
-``Crow`` must match starting with a ``'C'``.  The analysis lets the engine
-quickly scan through the string looking for the starting character, only trying
-the full match if a ``'C'`` is found.
-
-Adding ``.*`` defeats this optimization, requiring scanning to the end of the
-string and then backtracking to find a match for the rest of the RE.  Use
-:func:`re.search` instead.
+This distinction is important to remember when using the old :func:`~re.match`
+name in code requiring compatibility with older Python versions.
 
 
 Greedy versus non-greedy
@@ -1322,9 +1319,9 @@ doesn't work because of the greedy nature of ``.*``. ::
    >>> s = '<html><head><title>Title</title>'
    >>> len(s)
    32
-   >>> print(re.match('<.*>', s).span())
+   >>> print(re.prefixmatch('<.*>', s).span())
    (0, 32)
-   >>> print(re.match('<.*>', s).group())
+   >>> print(re.prefixmatch('<.*>', s).group())
    <html><head><title>Title</title>
 
 The RE matches the ``'<'`` in ``'<html>'``, and the ``.*`` consumes the rest of
@@ -1340,7 +1337,7 @@ example, the ``'>'`` is tried immediately after the first ``'<'`` matches, and
 when it fails, the engine advances a character at a time, retrying the ``'>'``
 at every step.  This produces just the right result::
 
-   >>> print(re.match('<.*?>', s).group())
+   >>> print(re.prefixmatch('<.*?>', s).group())
    <html>
 
 (Note that parsing HTML or XML with regular expressions is painful.
