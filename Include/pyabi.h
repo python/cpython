@@ -58,6 +58,11 @@
 #    undef Py_LIMITED_API
 #    define Py_LIMITED_API Py_TARGET_ABI3T
 #  endif
+#else
+#  ifdef _Py_OPAQUE_PYOBJECT
+     // _Py_OPAQUE_PYOBJECT is a private macro; do not define it directly.
+#    error "Define Py_TARGET_ABI3T to target abi3t."
+#  endif
 #endif
 
 #if defined(Py_TARGET_ABI3T)
