@@ -165,3 +165,4 @@ python.elf
 .nanvix/_test_staging/
 .nanvix/_ramfs_cache/
 .nanvix/cross-imports.json
+Python/python
