@@ -375,6 +375,9 @@ class ExpatParser(xmlreader.IncrementalParser, xmlreader.Locator):
             newattrs[apair] = value
             qnames[apair] = qname
 
+        if not self._namespace_prefixes:
+            elem_qname = None
+
         self._cont_handler.startElementNS(pair, elem_qname,
                                           AttributesNSImpl(newattrs, qnames))
 
