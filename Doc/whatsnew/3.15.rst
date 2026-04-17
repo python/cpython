@@ -1384,7 +1384,7 @@ xml.parsers.expat
 
 
 xml.sax.expatreader
------------------
+-------------------
 
 * Add support for `namespace prefixes <https://www.w3.org/TR/xml-names/#dt-prefix>`_.
   (Contributed by Yassir Karroum in :gh:`118317`.)
