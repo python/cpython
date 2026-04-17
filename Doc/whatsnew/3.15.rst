@@ -885,7 +885,7 @@ json
   the resulting decoded object. Passing combined :class:`frozendict` to
   *object_pairs_hook* param and :class:`tuple` to ``array_hook`` will yield a
   deeply nested immutable Python structure representing the JSON data.
-  (Contributed by Joao S. O. Bueno in :gh:`146440`)
+  (Contributed by Joao S. O. Bueno in :gh:`146440`.)
 
 
 locale
@@ -1113,7 +1113,7 @@ subprocess
 
   If none of these mechanisms are available, the function falls back to the
   traditional busy loop (non-blocking call and short sleeps).
-  (Contributed by Giampaolo Rodola in :gh:`83069`).
+  (Contributed by Giampaolo Rodola in :gh:`83069`.)
 
 
 symtable
@@ -1429,7 +1429,7 @@ base64 & binascii
 
 * Implementation for Base32 has been rewritten in C.
   Encoding and decoding is now two orders of magnitude faster.
-  (Contributed by James Seo in :gh:`146192`)
+  (Contributed by James Seo in :gh:`146192`.)
 
 
 csv
