@@ -77,6 +77,14 @@
 #  define Py_BUILD_CORE
 #endif
 
+#if defined(Py_TARGET_ABI3T)
+#  if !defined(Py_GIL_DISABLED)
+// Define Py_GIL_DISABLED for users' needs. This macro is used to enable
+// locking needed in for free-threaded interpreters builds.
+#    define Py_GIL_DISABLED
+#  endif
+#endif
+
 
 /**************************************************************************
 Symbols and macros to supply platform-independent interfaces to basic

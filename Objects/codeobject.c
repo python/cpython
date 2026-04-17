@@ -574,8 +574,12 @@ init_code(PyCodeObject *co, struct _PyCodeConstructor *con)
     co->co_tlbc->entries[0] = co->co_code_adaptive;
 #endif
     int entry_point = 0;
-    while (entry_point < Py_SIZE(co) &&
-        _PyCode_CODE(co)[entry_point].op.code != RESUME) {
+    while (entry_point < Py_SIZE(co)) {
+        if (_PyCode_CODE(co)[entry_point].op.code == RESUME &&
+           (_PyCode_CODE(co)[entry_point].op.arg & RESUME_OPARG_LOCATION_MASK) != RESUME_AT_GEN_EXPR_START
+        ) {
+            break;
+        }
         entry_point++;
     }
     co->_co_firsttraceable = entry_point;
@@ -1008,14 +1012,18 @@ failed:
  * source location tracking (co_lines/co_positions)
  ******************/
 
-static int
-_PyCode_Addr2Line(PyCodeObject *co, int addrq)
+int
+PyCode_Addr2Line(PyCodeObject *co, int addrq)
 {
     if (addrq < 0) {
         return co->co_firstlineno;
     }
-    if (co->_co_monitoring && co->_co_monitoring->lines) {
-        return _Py_Instrumentation_GetLine(co, addrq/sizeof(_Py_CODEUNIT));
+    _PyCoMonitoringData *data = _Py_atomic_load_ptr_acquire(&co->_co_monitoring);
+    if (data) {
+        _PyCoLineInstrumentationData *lines = _Py_atomic_load_ptr_acquire(&data->lines);
+        if (lines) {
+            return _Py_Instrumentation_GetLine(co, lines, addrq/sizeof(_Py_CODEUNIT));
+        }
     }
     assert(addrq >= 0 && addrq < _PyCode_NBYTES(co));
     PyCodeAddressRange bounds;
@@ -1030,7 +1038,7 @@ _PyCode_SafeAddr2Line(PyCodeObject *co, int addrq)
         return co->co_firstlineno;
     }
     if (co->_co_monitoring && co->_co_monitoring->lines) {
-        return _Py_Instrumentation_GetLine(co, addrq/sizeof(_Py_CODEUNIT));
+        return _Py_Instrumentation_GetLine(co, co->_co_monitoring->lines, addrq/sizeof(_Py_CODEUNIT));
     }
     if (!(addrq >= 0 && addrq < _PyCode_NBYTES(co))) {
         return -1;
@@ -1038,16 +1046,6 @@ _PyCode_SafeAddr2Line(PyCodeObject *co, int addrq)
     PyCodeAddressRange bounds;
     _PyCode_InitAddressRange(co, &bounds);
     return _PyCode_CheckLineNumber(addrq, &bounds);
-}
-
-int
-PyCode_Addr2Line(PyCodeObject *co, int addrq)
-{
-    int lineno;
-    Py_BEGIN_CRITICAL_SECTION(co);
-    lineno = _PyCode_Addr2Line(co, addrq);
-    Py_END_CRITICAL_SECTION();
-    return lineno;
 }
 
 void
@@ -3052,7 +3050,7 @@ _PyCode_ConstantKey(PyObject *op)
     else if (PyBool_Check(op) || PyBytes_CheckExact(op)) {
         /* Make booleans different from integers 0 and 1.
          * Avoid BytesWarning from comparing bytes with strings. */
-        key = PyTuple_Pack(2, Py_TYPE(op), op);
+        key = _PyTuple_FromPair((PyObject *)Py_TYPE(op), op);
     }
     else if (PyFloat_CheckExact(op)) {
         double d = PyFloat_AS_DOUBLE(op);
@@ -3062,7 +3060,7 @@ _PyCode_ConstantKey(PyObject *op)
         if (d == 0.0 && copysign(1.0, d) < 0.0)
             key = PyTuple_Pack(3, Py_TYPE(op), op, Py_None);
         else
-            key = PyTuple_Pack(2, Py_TYPE(op), op);
+            key = _PyTuple_FromPair((PyObject *)Py_TYPE(op), op);
     }
     else if (PyComplex_CheckExact(op)) {
         Py_complex z;
@@ -3086,7 +3084,7 @@ _PyCode_ConstantKey(PyObject *op)
             key = PyTuple_Pack(3, Py_TYPE(op), op, Py_None);
         }
         else {
-            key = PyTuple_Pack(2, Py_TYPE(op), op);
+            key = _PyTuple_FromPair((PyObject *)Py_TYPE(op), op);
         }
     }
     else if (PyTuple_CheckExact(op)) {
@@ -3111,7 +3109,7 @@ _PyCode_ConstantKey(PyObject *op)
             PyTuple_SET_ITEM(tuple, i, item_key);
         }
 
-        key = PyTuple_Pack(2, tuple, op);
+        key = _PyTuple_FromPair(tuple, op);
         Py_DECREF(tuple);
     }
     else if (PyFrozenSet_CheckExact(op)) {
@@ -3145,7 +3143,7 @@ _PyCode_ConstantKey(PyObject *op)
         if (set == NULL)
             return NULL;
 
-        key = PyTuple_Pack(2, set, op);
+        key = _PyTuple_FromPair(set, op);
         Py_DECREF(set);
         return key;
     }
@@ -3176,7 +3174,7 @@ _PyCode_ConstantKey(PyObject *op)
             goto slice_exit;
         }
 
-        key = PyTuple_Pack(2, slice_key, op);
+        key = _PyTuple_FromPair(slice_key, op);
         Py_DECREF(slice_key);
     slice_exit:
         Py_XDECREF(start_key);
@@ -3190,7 +3188,7 @@ _PyCode_ConstantKey(PyObject *op)
         if (obj_id == NULL)
             return NULL;
 
-        key = PyTuple_Pack(2, obj_id, op);
+        key = _PyTuple_FromPair(obj_id, op);
         Py_DECREF(obj_id);
     }
     return key;

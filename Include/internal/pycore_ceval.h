@@ -302,7 +302,7 @@ PyAPI_FUNC(int) _PyEval_ExceptionGroupMatch(_PyInterpreterFrame *, PyObject* exc
 PyAPI_FUNC(void) _PyEval_FormatAwaitableError(PyThreadState *tstate, PyTypeObject *type, int oparg);
 PyAPI_FUNC(void) _PyEval_FormatExcCheckArg(PyThreadState *tstate, PyObject *exc, const char *format_str, PyObject *obj);
 PyAPI_FUNC(void) _PyEval_FormatExcUnbound(PyThreadState *tstate, PyCodeObject *co, int oparg);
-PyAPI_FUNC(void) _PyEval_FormatKwargsError(PyThreadState *tstate, PyObject *func, PyObject *kwargs);
+PyAPI_FUNC(void) _PyEval_FormatKwargsError(PyThreadState *tstate, PyObject *func, PyObject *kwargs, PyObject *dupkey);
 PyAPI_FUNC(PyObject *) _PyEval_ImportFrom(PyThreadState *, PyObject *, PyObject *);
 
 PyAPI_FUNC(PyObject *) _PyEval_LazyImportName(
@@ -433,35 +433,35 @@ _Py_VectorCallInstrumentation_StackRefSteal(
     PyThreadState* tstate);
 
 PyAPI_FUNC(PyObject *)
-_Py_BuiltinCallFast_StackRefSteal(
+_Py_BuiltinCallFast_StackRef(
     _PyStackRef callable,
     _PyStackRef *arguments,
     int total_args);
 
 PyAPI_FUNC(PyObject *)
-_Py_BuiltinCallFastWithKeywords_StackRefSteal(
+_Py_BuiltinCallFastWithKeywords_StackRef(
     _PyStackRef callable,
     _PyStackRef *arguments,
     int total_args);
 
 PyAPI_FUNC(PyObject *)
-_PyCallMethodDescriptorFast_StackRefSteal(
+_PyCallMethodDescriptorFast_StackRef(
     _PyStackRef callable,
-    PyMethodDef *meth,
+    PyCFunctionFast cfunc,
     PyObject *self,
     _PyStackRef *arguments,
     int total_args);
 
 PyAPI_FUNC(PyObject *)
-_PyCallMethodDescriptorFastWithKeywords_StackRefSteal(
+_PyCallMethodDescriptorFastWithKeywords_StackRef(
     _PyStackRef callable,
-    PyMethodDef *meth,
+    PyCFunctionFastWithKeywords cfunc,
     PyObject *self,
     _PyStackRef *arguments,
     int total_args);
 
 PyAPI_FUNC(PyObject *)
-_Py_CallBuiltinClass_StackRefSteal(
+_Py_CallBuiltinClass_StackRef(
     _PyStackRef callable,
     _PyStackRef *arguments,
     int total_args);

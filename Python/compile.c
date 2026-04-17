@@ -297,6 +297,19 @@ compiler_set_qualname(compiler *c)
                 base = Py_NewRef(parent->u_metadata.u_qualname);
             }
         }
+        if (u->u_ste->ste_function_name != NULL) {
+            PyObject *tmp = base;
+            base = PyUnicode_FromFormat("%U.%U",
+                base,
+                u->u_ste->ste_function_name);
+            Py_DECREF(tmp);
+            if (base == NULL) {
+                return ERROR;
+            }
+        }
+    }
+    else if (u->u_ste->ste_function_name != NULL) {
+        base = Py_NewRef(u->u_ste->ste_function_name);
     }
 
     if (base != NULL) {
@@ -1100,18 +1113,22 @@ _PyCompile_TweakInlinedComprehensionScopes(compiler *c, location loc,
                 assert(orig == NULL || orig == Py_True || orig == Py_False);
                 if (orig != Py_True) {
                     if (PyDict_SetItem(c->u->u_metadata.u_fasthidden, k, Py_True) < 0) {
+                        Py_XDECREF(orig);
                         return ERROR;
                     }
                     if (state->fast_hidden == NULL) {
                         state->fast_hidden = PySet_New(NULL);
                         if (state->fast_hidden == NULL) {
+                            Py_XDECREF(orig);
                             return ERROR;
                         }
                     }
                     if (PySet_Add(state->fast_hidden, k) < 0) {
+                        Py_XDECREF(orig);
                         return ERROR;
                     }
                 }
+                Py_XDECREF(orig);
             }
         }
     }

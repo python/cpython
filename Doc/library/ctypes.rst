@@ -1756,7 +1756,7 @@ as a default or fallback.
    (or by) Python.
    It is recommended to only use this function as a default or fallback,
 
-   .. deprecated:: next
+   .. deprecated:: 3.15
 
       This function is :term:`soft deprecated`.
       It is kept for use in cases where it works, but not expected to be
