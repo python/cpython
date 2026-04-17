@@ -13,7 +13,7 @@ from xml.sax.saxutils import XMLGenerator, escape, unescape, quoteattr, \
                              XMLFilterBase, prepare_input_source
 from xml.sax.expatreader import create_parser
 from xml.sax.handler import (feature_namespaces, feature_external_ges,
-                             LexicalHandler)
+                             LexicalHandler, feature_namespace_prefixes)
 from xml.sax.xmlreader import InputSource, AttributesImpl, AttributesNSImpl
 from xml import sax
 from io import BytesIO, StringIO
@@ -1319,14 +1319,35 @@ class ExpatReaderTest(XmlTestBase):
             ("<E />", "E"),
         ):
             parser = create_parser()
-            parser.setFeature(handler.feature_namespaces, 1)
-            parser.setFeature(handler.feature_namespace_prefixes, 1)
+            parser.setFeature(feature_namespaces, 1)
+            parser.setFeature(feature_namespace_prefixes, 1)
 
             h = Handler()
 
             parser.setContentHandler(h)
             parser.parse(StringIO(xml_s))
             self.assertEqual(h.qname, expected_qname)
+
+    def test_qualified_names_when_feature_not_set(self):
+
+        class Handler(ContentHandler):
+            def startElementNS(self, name, qname, attrs):
+                self.qname = qname
+
+        for xml_s in (
+                "<Q:E xmlns:Q='http://example.org/testuri'/>",
+                "<E xmlns='http://example.org/testuri'/>",
+                "<E />",
+        ):
+            parser = create_parser()
+            parser.setFeature(feature_namespaces, 1)
+
+            h = Handler()
+
+            parser.setContentHandler(h)
+            parser.parse(StringIO(xml_s))
+
+            self.assertIsNone(h.qname)
 
 
 # ===========================================================================

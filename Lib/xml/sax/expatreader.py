@@ -79,7 +79,7 @@ class ExpatLocator(xmlreader.Locator):
 class ExpatParser(xmlreader.IncrementalParser, xmlreader.Locator):
     """SAX driver for the pyexpat C module."""
 
-    def __init__(self, namespaceHandling=0, namespacePrefixesHandling=0, bufsize=2**16-20):
+    def __init__(self, namespaceHandling=0, bufsize=2**16-20):
         xmlreader.IncrementalParser.__init__(self, bufsize)
         self._source = xmlreader.InputSource()
         self._parser = None
@@ -89,7 +89,7 @@ class ExpatParser(xmlreader.IncrementalParser, xmlreader.Locator):
         self._entity_stack = []
         self._external_ges = 0
         self._interning = None
-        self._namespace_prefixes = namespacePrefixesHandling
+        self._namespace_prefixes = 0
 
     # XMLReader methods
 
@@ -147,8 +147,6 @@ class ExpatParser(xmlreader.IncrementalParser, xmlreader.Locator):
                     self._interning = {}
             else:
                 self._interning = None
-        elif name == feature_namespace_prefixes:
-            self._namespace_prefixes = state
         elif name == feature_validation:
             if state:
                 raise SAXNotSupportedException(
@@ -157,6 +155,8 @@ class ExpatParser(xmlreader.IncrementalParser, xmlreader.Locator):
             if state:
                 raise SAXNotSupportedException(
                     "expat does not read external parameter entities")
+        elif name == feature_namespace_prefixes:
+            self._namespace_prefixes = state
         else:
             raise SAXNotRecognizedException(
                 "Feature '%s' not recognized" % name)
@@ -374,6 +374,9 @@ class ExpatParser(xmlreader.IncrementalParser, xmlreader.Locator):
 
             newattrs[apair] = value
             qnames[apair] = qname
+
+        if not self._namespace_prefixes:
+            elem_qname = None
 
         self._cont_handler.startElementNS(pair, elem_qname,
                                           AttributesNSImpl(newattrs, qnames))
