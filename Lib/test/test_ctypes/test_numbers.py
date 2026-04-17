@@ -119,8 +119,20 @@ class NumberTestCase(unittest.TestCase, ComplexesAreIdenticalMixin):
     @unittest.skipUnless(hasattr(ctypes, "c_double_complex"),
                          "requires C11 complex type")
     def test_complex(self):
+        class c_double_complex2(ctypes._SimpleCData):
+            _type_ = "Zd"
+        ctypes._check_size(c_double_complex2)
+
+        class c_float_complex2(ctypes._SimpleCData):
+            _type_ = "Zf"
+        ctypes._check_size(c_float_complex2)
+
+        class c_longdouble_complex2(ctypes._SimpleCData):
+            _type_ = "Zg"
+
         for t in [ctypes.c_double_complex, ctypes.c_float_complex,
-                  ctypes.c_longdouble_complex]:
+                  ctypes.c_longdouble_complex,
+                  c_double_complex2, c_float_complex2, c_longdouble_complex2]:
             self.assertEqual(t(1).value, 1+0j)
             self.assertEqual(t(1.0).value, 1+0j)
             self.assertEqual(t(1+0.125j).value, 1+0.125j)

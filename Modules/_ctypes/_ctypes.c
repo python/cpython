@@ -2315,7 +2315,6 @@ PyCSimpleType_init(PyObject *self, PyObject *args, PyObject *kwds)
 {
     PyObject *proto;
     const char *proto_str;
-    Py_ssize_t proto_len;
     PyMethodDef *ml;
     struct fielddesc *fmt;
 
@@ -2333,18 +2332,12 @@ PyCSimpleType_init(PyObject *self, PyObject *args, PyObject *kwds)
         return -1;
     }
     if (PyUnicode_Check(proto)) {
-        proto_str = PyUnicode_AsUTF8AndSize(proto, &proto_len);
+        proto_str = PyUnicode_AsUTF8(proto);
         if (!proto_str)
             goto error;
     } else {
         PyErr_SetString(PyExc_TypeError,
             "class must define a '_type_' string attribute");
-        goto error;
-    }
-    if (proto_len != 1) {
-        PyErr_SetString(PyExc_ValueError,
-                        "class must define a '_type_' attribute "
-                        "which must be a string of length 1");
         goto error;
     }
     fmt = _ctypes_get_fielddesc(proto_str);
