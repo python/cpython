@@ -1276,6 +1276,11 @@ typing
   as it was incorrectly inferred in runtime before.
   (Contributed by Nikita Sobolev in :gh:`137191`.)
 
+* Add support of multiple inheritance with :class:`~typing.NamedTuple`.
+  Previously, multiple inheritance was only supported if there was exactly
+  one other base and the base was :class:`typing.Generic`.
+  (Contributed by Serhiy Storchaka in :gh:`116241`.)
+
 
 unicodedata
 -----------

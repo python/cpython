@@ -2482,6 +2482,10 @@ types.
       Using :func:`super` (and the ``__class__`` :term:`closure variable`) in methods of ``NamedTuple`` subclasses
       is unsupported and causes a :class:`TypeError`.
 
+   .. versionchanged:: next
+      Added support for arbitrary multiple inheritance.
+
+
 .. class:: NewType(name, tp)
 
    Helper class to create low-overhead :ref:`distinct types <distinct>`.
