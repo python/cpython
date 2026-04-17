@@ -116,10 +116,12 @@ insert_executor(PyCodeObject *code, _Py_CODEUNIT *instr, int index, _PyExecutorO
 static _PyExecutorObject *
 make_executor_from_uops(_PyThreadStateImpl *tstate, _PyUOpInstruction *buffer, int length, const _PyBloomFilter *dependencies);
 
+#ifndef Py_GIL_DISABLED
 static int
 uop_optimize(_PyInterpreterFrame *frame, PyThreadState *tstate,
              _PyExecutorObject **exec_ptr,
              bool progress_needed);
+#endif
 
 /* Returns 1 if optimized, 0 if not optimized, and -1 for an error.
  * If optimized, *executor_ptr contains a new reference to the executor
@@ -1526,6 +1528,7 @@ stack_allocate(_PyUOpInstruction *buffer, _PyUOpInstruction *output, int length)
     return (int)(write - output);
 }
 
+#ifndef Py_GIL_DISABLED
 static int
 uop_optimize(
     _PyInterpreterFrame *frame,
@@ -1606,6 +1609,7 @@ uop_optimize(
     *exec_ptr = executor;
     return 1;
 }
+#endif
 
 
 /*****************************************
