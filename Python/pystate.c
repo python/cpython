@@ -330,8 +330,8 @@ init_runtime(_PyRuntimeState *runtime,
 {
     assert(!runtime->preinitializing);
     assert(!runtime->preinitialized);
-    assert(!runtime->core_initialized);
-    assert(!runtime->initialized);
+    assert(!_PyRuntimeState_GetCoreInitialized(runtime));
+    assert(!_PyRuntimeState_GetInitialized(runtime));
     assert(!runtime->_initialized);
 
     runtime->open_code_hook = open_code_hook;
@@ -3026,7 +3026,30 @@ _PyInterpreterState_SetEvalFrameFunc(PyInterpreterState *interp,
     RARE_EVENT_INC(set_eval_frame_func);
     _PyEval_StopTheWorld(interp);
     interp->eval_frame = eval_frame;
+    // reset when evaluator is reset
+    interp->eval_frame_allow_specialization = 0;
     _PyEval_StartTheWorld(interp);
+}
+
+void
+_PyInterpreterState_SetEvalFrameAllowSpecialization(PyInterpreterState *interp,
+                                                    int allow_specialization)
+{
+    if (allow_specialization == interp->eval_frame_allow_specialization) {
+        return;
+    }
+    _Py_Executors_InvalidateAll(interp, 1);
+    RARE_EVENT_INC(set_eval_frame_func);
+    _PyEval_StopTheWorld(interp);
+    interp->eval_frame_allow_specialization = allow_specialization;
+    _PyEval_StartTheWorld(interp);
+}
+
+int
+_PyInterpreterState_IsSpecializationEnabled(PyInterpreterState *interp)
+{
+    return interp->eval_frame == NULL
+        || interp->eval_frame_allow_specialization;
 }
 
 
