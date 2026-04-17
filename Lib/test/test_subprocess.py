@@ -3177,6 +3177,19 @@ class POSIXProcessTestCase(BaseTestCase):
                         close_fds=False, pass_fds=(fd, )))
             self.assertIn('overriding close_fds', str(context.warning))
 
+    def test_pass_fds_overriding_close_fds_warning_location(self):
+        # Verify the warning points to the caller, not subprocess.py.
+        r, w = os.pipe()
+        self.addCleanup(os.close, r)
+        self.addCleanup(os.close, w)
+        os.set_inheritable(r, True)
+        with self.assertWarns(RuntimeWarning) as cm:
+            p = subprocess.Popen(
+                ZERO_RETURN_CMD,
+                close_fds=False, pass_fds=(r,))
+            p.wait()
+        self.assertEqual(cm.filename, __file__)
+
     def test_pass_fds_inheritable(self):
         script = support.findfile("fd_status.py", subdir="subprocessdata")
 
@@ -3762,8 +3775,7 @@ class Win32ProcessTestCase(BaseTestCase):
         self.assertIn(b"OSError", stderr)
 
         # Check for a warning due to using handle_list and close_fds=False
-        with warnings_helper.check_warnings((".*overriding close_fds",
-                                             RuntimeWarning)):
+        with self.assertWarns(RuntimeWarning) as cm:
             startupinfo = subprocess.STARTUPINFO()
             startupinfo.lpAttributeList = {"handle_list": handles[:]}
             p = subprocess.Popen([sys.executable, "-c",
@@ -3772,6 +3784,8 @@ class Win32ProcessTestCase(BaseTestCase):
                                  startupinfo=startupinfo, close_fds=False)
             stdout, stderr = p.communicate()
             self.assertEqual(p.returncode, 0)
+        self.assertIn('overriding close_fds', str(cm.warning))
+        self.assertEqual(cm.filename, __file__)
 
     def test_empty_attribute_list(self):
         startupinfo = subprocess.STARTUPINFO()
