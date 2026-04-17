@@ -539,19 +539,16 @@ def _have_ieee_doubles():
             or sys.float_info.max_10_exp != 308
             or not math.issubnormal(math.nextafter(0, 1))):
         return False
-    try:
-        import ctypes
-    except ImportError:
-        return True
     # We attempt to determine if this machine is using IEC
     # floating-point formats by peering at the bits of some
     # carefully chosen value.  Assume that integer and
     # floating-point types have same endianness.
     d = 9006104071832581.0
-    be_d = int.from_bytes(b"\x43\x3f\xff\x01\x02\x03\x04\x05")
-    dp = ctypes.pointer(ctypes.c_double(d))
-    lp = ctypes.cast(dp, ctypes.POINTER(ctypes.c_uint64))
-    return lp[0] == be_d
+    d_be_bytes = b"\x43\x3f\xff\x01\x02\x03\x04\x05"
+    d_packed = struct.pack('d', d)
+    if sys.byteorder == 'little':
+        return d_packed == bytes(reversed(d_be_bytes)
+    return d_packed == d_be_bytes
 
 HAVE_IEEE_754 = _have_ieee_doubles()
 
