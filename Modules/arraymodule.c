@@ -786,7 +786,7 @@ static const struct arraydescr descriptors[] = {
     {"D", 2*sizeof(double), cd_getitem, cd_setitem, NULL, 0, 0},
     {"Zf", 2*sizeof(float), cf_getitem, cf_setitem, NULL, 0, 0},
     {"Zd", 2*sizeof(double), cd_getitem, cd_setitem, NULL, 0, 0},
-    {'\0', 0, 0, 0, 0, 0, 0} /* Sentinel */
+    {NULL, 0, 0, 0, 0, 0, 0} /* Sentinel */
 };
 
 /****************************************************************************
