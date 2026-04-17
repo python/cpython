@@ -850,7 +850,7 @@ and :term:`generators <generator>` which incur interpreter overhead.
 
    def running_mean(iterable):
        "Yield the average of all values seen so far."
-       # running_mean([8.5, 9.5, 7.5, 6.5]) -> 8.5 9.0 8.5 8.0
+       # running_mean([8.5, 9.5, 7.5, 6.5]) → 8.5 9.0 8.5 8.0
        return map(truediv, accumulate(iterable), count(1))
 
    def repeatfunc(function, times=None, *args):
@@ -932,10 +932,10 @@ and :term:`generators <generator>` which incur interpreter overhead.
                    yield element
 
    def unique(iterable, key=None, reverse=False):
-      "Yield unique elements in sorted order. Supports unhashable inputs."
-      # unique([[1, 2], [3, 4], [1, 2]]) → [1, 2] [3, 4]
-      sequenced = sorted(iterable, key=key, reverse=reverse)
-      return unique_justseen(sequenced, key=key)
+       "Yield unique elements in sorted order. Supports unhashable inputs."
+       # unique([[1, 2], [3, 4], [1, 2]]) → [1, 2] [3, 4]
+       sequenced = sorted(iterable, key=key, reverse=reverse)
+       return unique_justseen(sequenced, key=key)
 
    def sliding_window(iterable, n):
        "Collect data into overlapping fixed-length chunks or blocks."

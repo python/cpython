@@ -170,13 +170,13 @@ int (*_PyOS_mystrnicmp_hack)(const char *, const char *, Py_ssize_t) = \
 int
 _Py_IsCoreInitialized(void)
 {
-    return _PyRuntime.core_initialized;
+    return _PyRuntimeState_GetCoreInitialized(&_PyRuntime);
 }
 
 int
 Py_IsInitialized(void)
 {
-    return _PyRuntime.initialized;
+    return _PyRuntimeState_GetInitialized(&_PyRuntime);
 }
 
 
@@ -530,7 +530,7 @@ static PyStatus
 pycore_init_runtime(_PyRuntimeState *runtime,
                     const PyConfig *config)
 {
-    if (runtime->initialized) {
+    if (_PyRuntimeState_GetInitialized(runtime)) {
         return _PyStatus_ERR("main interpreter already initialized");
     }
 
@@ -1032,7 +1032,7 @@ pyinit_config(_PyRuntimeState *runtime,
     }
 
     /* Only when we get here is the runtime core fully initialized */
-    runtime->core_initialized = 1;
+    _PyRuntimeState_SetCoreInitialized(runtime, 1);
     return _PyStatus_OK();
 }
 
@@ -1218,6 +1218,54 @@ pyinit_main_reconfigure(PyThreadState *tstate)
 
 
 #ifdef Py_DEBUG
+// Equivalent to the Python code:
+//
+//     for part in attr.split('.'):
+//         obj = getattr(obj, part)
+static PyObject*
+presite_resolve_name(PyObject *obj, PyObject *attr)
+{
+    obj = Py_NewRef(obj);
+    attr = Py_NewRef(attr);
+    PyObject *res;
+
+    while (1) {
+        Py_ssize_t len = PyUnicode_GET_LENGTH(attr);
+        Py_ssize_t pos = PyUnicode_FindChar(attr, '.', 0, len, 1);
+        if (pos < 0) {
+            break;
+        }
+
+        PyObject *name = PyUnicode_Substring(attr, 0, pos);
+        if (name == NULL) {
+            goto error;
+        }
+        res = PyObject_GetAttr(obj, name);
+        Py_DECREF(name);
+        if (res == NULL) {
+            goto error;
+        }
+        Py_SETREF(obj, res);
+
+        PyObject *suffix = PyUnicode_Substring(attr, pos + 1, len);
+        if (suffix == NULL) {
+            goto error;
+        }
+        Py_SETREF(attr, suffix);
+    }
+
+    res = PyObject_GetAttr(obj, attr);
+    Py_DECREF(obj);
+    Py_DECREF(attr);
+    return res;
+
+error:
+    Py_DECREF(obj);
+    Py_DECREF(attr);
+    return NULL;
+}
+
+
 static void
 run_presite(PyThreadState *tstate)
 {
@@ -1228,22 +1276,68 @@ run_presite(PyThreadState *tstate)
         return;
     }
 
-    PyObject *presite_modname = PyUnicode_FromWideChar(
-        config->run_presite,
-        wcslen(config->run_presite)
-    );
-    if (presite_modname == NULL) {
-        fprintf(stderr, "Could not convert pre-site module name to unicode\n");
+    PyObject *presite = PyUnicode_FromWideChar(config->run_presite, -1);
+    if (presite == NULL) {
+        fprintf(stderr, "Could not convert pre-site command to Unicode\n");
+        _PyErr_Print(tstate);
+        return;
+    }
+
+    // Accept "mod_name" and "mod_name:func_name" entry point syntax
+    Py_ssize_t len = PyUnicode_GET_LENGTH(presite);
+    Py_ssize_t pos = PyUnicode_FindChar(presite, ':', 0, len, 1);
+    PyObject *mod_name = NULL;
+    PyObject *func_name = NULL;
+    PyObject *module = NULL;
+    if (pos > 0) {
+        mod_name = PyUnicode_Substring(presite, 0, pos);
+        if (mod_name == NULL) {
+            goto error;
+        }
+
+        func_name = PyUnicode_Substring(presite, pos + 1, len);
+        if (func_name == NULL) {
+            goto error;
+        }
     }
     else {
-        PyObject *presite = PyImport_Import(presite_modname);
-        if (presite == NULL) {
-            fprintf(stderr, "pre-site import failed:\n");
-            _PyErr_Print(tstate);
-        }
-        Py_XDECREF(presite);
-        Py_DECREF(presite_modname);
+        mod_name = Py_NewRef(presite);
     }
+
+    // mod_name can contain dots (ex: "math.integer")
+    module = PyImport_Import(mod_name);
+    if (module == NULL) {
+        goto error;
+    }
+
+    if (func_name != NULL) {
+        PyObject *func = presite_resolve_name(module, func_name);
+        if (func == NULL) {
+            goto error;
+        }
+
+        PyObject *res = PyObject_CallNoArgs(func);
+        Py_DECREF(func);
+        if (res == NULL) {
+            goto error;
+        }
+        Py_DECREF(res);
+    }
+
+    Py_DECREF(presite);
+    Py_DECREF(mod_name);
+    Py_XDECREF(func_name);
+    Py_DECREF(module);
+    return;
+
+error:
+    fprintf(stderr, "pre-site failed:\n");
+    _PyErr_Print(tstate);
+
+    Py_DECREF(presite);
+    Py_XDECREF(mod_name);
+    Py_XDECREF(func_name);
+    Py_XDECREF(module);
 }
 #endif
 
@@ -1265,7 +1359,7 @@ init_interp_main(PyThreadState *tstate)
          * or pure Python code in the standard library won't work.
          */
         if (is_main_interp) {
-            interp->runtime->initialized = 1;
+            _PyRuntimeState_SetInitialized(interp->runtime, 1);
         }
         return _PyStatus_OK();
     }
@@ -1377,8 +1471,6 @@ init_interp_main(PyThreadState *tstate)
             Py_XDECREF(warnings_module);
         }
         Py_XDECREF(warnoptions);
-
-        interp->runtime->initialized = 1;
     }
 
     if (config->site_import) {
@@ -1474,6 +1566,10 @@ init_interp_main(PyThreadState *tstate)
 
     assert(!_PyErr_Occurred(tstate));
 
+    if (is_main_interp) {
+        _PyRuntimeState_SetInitialized(interp->runtime, 1);
+    }
+
     return _PyStatus_OK();
 }
 
@@ -1493,11 +1589,11 @@ static PyStatus
 pyinit_main(PyThreadState *tstate)
 {
     PyInterpreterState *interp = tstate->interp;
-    if (!interp->runtime->core_initialized) {
+    if (!_PyRuntimeState_GetCoreInitialized(interp->runtime)) {
         return _PyStatus_ERR("runtime core not initialized");
     }
 
-    if (interp->runtime->initialized) {
+    if (_PyRuntimeState_GetInitialized(interp->runtime)) {
         return pyinit_main_reconfigure(tstate);
     }
 
@@ -1551,9 +1647,8 @@ Py_InitializeEx(int install_sigs)
     if (_PyStatus_EXCEPTION(status)) {
         Py_ExitStatusException(status);
     }
-    _PyRuntimeState *runtime = &_PyRuntime;
 
-    if (runtime->initialized) {
+    if (Py_IsInitialized()) {
         /* bpo-33932: Calling Py_Initialize() twice does nothing. */
         return;
     }
@@ -2258,7 +2353,7 @@ _Py_Finalize(_PyRuntimeState *runtime)
     int status = 0;
 
     /* Bail out early if already finalized (or never initialized). */
-    if (!runtime->initialized) {
+    if (!_PyRuntimeState_GetInitialized(runtime)) {
         return status;
     }
 
@@ -2293,8 +2388,8 @@ _Py_Finalize(_PyRuntimeState *runtime)
        when they attempt to take the GIL (ex: PyEval_RestoreThread()). */
     _PyInterpreterState_SetFinalizing(tstate->interp, tstate);
     _PyRuntimeState_SetFinalizing(runtime, tstate);
-    runtime->initialized = 0;
-    runtime->core_initialized = 0;
+    _PyRuntimeState_SetInitialized(runtime, 0);
+    _PyRuntimeState_SetCoreInitialized(runtime, 0);
 
     // XXX Call something like _PyImport_Disable() here?
 
@@ -2520,7 +2615,7 @@ new_interpreter(PyThreadState **tstate_p,
     }
     _PyRuntimeState *runtime = &_PyRuntime;
 
-    if (!runtime->initialized) {
+    if (!_PyRuntimeState_GetInitialized(runtime)) {
         return _PyStatus_ERR("Py_Initialize must be called first");
     }
 
@@ -3360,10 +3455,10 @@ fatal_error_dump_runtime(int fd, _PyRuntimeState *runtime)
         _Py_DumpHexadecimal(fd, (uintptr_t)finalizing, sizeof(finalizing) * 2);
         PUTS(fd, ")");
     }
-    else if (runtime->initialized) {
+    else if (_PyRuntimeState_GetInitialized(runtime)) {
         PUTS(fd, "initialized");
     }
-    else if (runtime->core_initialized) {
+    else if (_PyRuntimeState_GetCoreInitialized(runtime)) {
         PUTS(fd, "core initialized");
     }
     else if (runtime->preinitialized) {
