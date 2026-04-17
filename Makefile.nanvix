@@ -6,9 +6,9 @@
 # Usage:
 #   make -f Makefile.nanvix CONFIG_NANVIX=y NANVIX_HOME=/path/to/nanvix all
 #
-# This Makefile provides Nanvix cross-compilation support similar to QuickJS, zlib,
-# SQLite, and OpenSSL. It wraps the standard ./configure build system with Nanvix
-# cross-compilation settings.
+# Thin cross-compilation wrapper: configure, build, install, clean.
+# All other concerns (tests, ramfs, packaging) are handled by the Python
+# modules in .nanvix/ and invoked via ./z.
 #
 # Dependencies:
 #   - zlib (libz.a in NANVIX_HOME/lib)
@@ -16,56 +16,220 @@
 #   - OpenSSL (libssl.a, libcrypto.a in NANVIX_HOME/lib)
 #   - bzip2 (libbz2.a in NANVIX_HOME/lib)
 #   - libffi (libffi.a in NANVIX_HOME/lib)
-#
-# Structure:
-#   .nanvix/mk/common.mk             - variables, toolchain, configure, build, install, clean
-#   .nanvix/mk/ramfs.mk              - shared ramfs staging (trim + image build)
-#   .nanvix/mk/test-common.mk        - test infrastructure (staging, validation helpers)
-#   .nanvix/mk/test-standalone.mk    - standalone deployment mode tests
-#   .nanvix/mk/test-multi-process.mk - multi-process deployment mode tests
-#   .nanvix/mk/test-single-process.mk - single-process deployment mode tests
-#   .nanvix/mk/test-hyperlight.mk    - hyperlight machine type overrides
-#   .nanvix/mk/test-microvm.mk       - microvm machine type overrides
-#   .nanvix/mk/docker-host.mk        - Windows Docker host-side re-invocation
-#   .nanvix/mk/package-common.mk     - release packaging
-#   .nanvix/mk/verify-package.mk     - tarball verification
 
-# ---- Windows Docker host-side re-invocation ----
-# When DOCKER_HOST_MODE=windows is set, this overrides build/test/install/package
-# targets to re-invoke make inside a Docker container with tar-based source
-# copying (avoids Docker Desktop bind mount I/O penalty). All subsequent
-# includes are skipped because docker-host.mk provides its own target recipes.
-include .nanvix/mk/docker-host.mk
+# Nanvix Docker image for cross-compilation
+NANVIX_DOCKER_IMAGE ?= nanvix/toolchain:latest-minimal
 
-ifndef DOCKER_HOST_MODE
+# Platform and deployment configuration
+PLATFORM ?= microvm
+PROCESS_MODE ?= standalone
+MEMORY_SIZE ?= 256mb
 
-# ---- Common: variables, toolchain, configure, build, install, clean ----
-include .nanvix/mk/common.mk
+# Install prefix baked into the python binary (sys.prefix, sys.path)
+INSTALL_PREFIX ?= /sysroot
+
+# Set to 'yes' for release packaging
+NANVIX_RELEASE ?= no
+
+# Nanvix cross-compilation configuration
+ifdef CONFIG_NANVIX
+  NANVIX_TOOLCHAIN ?= /opt/nanvix
+  NANVIX_HOME ?= $(HOME)/nanvix
+
+  # Check if Docker is explicitly requested or native toolchain is not available
+  ifndef CONFIG_NANVIX_DOCKER
+    ifeq ($(wildcard $(NANVIX_TOOLCHAIN)/bin/i686-nanvix-gcc),)
+      # Native toolchain not found, check for Docker
+      DOCKER_AVAILABLE := $(shell command -v docker 2>/dev/null)
+      ifdef DOCKER_AVAILABLE
+        DOCKER_IMAGE_EXISTS := $(shell docker image inspect $(NANVIX_DOCKER_IMAGE) >/dev/null 2>&1 && echo yes)
+        ifdef DOCKER_IMAGE_EXISTS
+          CONFIG_NANVIX_DOCKER := y
+          $(info [INFO] Native toolchain not found at $(NANVIX_TOOLCHAIN), using Docker image $(NANVIX_DOCKER_IMAGE))
+        else
+          $(error Docker image $(NANVIX_DOCKER_IMAGE) not found. Run: docker pull $(NANVIX_DOCKER_IMAGE))
+        endif
+      else
+        $(error Nanvix toolchain not found at $(NANVIX_TOOLCHAIN) and Docker is not available)
+      endif
+    endif
+  else
+    # Docker explicitly requested via CONFIG_NANVIX_DOCKER=y
+    DOCKER_AVAILABLE := $(shell command -v docker 2>/dev/null)
+    ifndef DOCKER_AVAILABLE
+      $(error CONFIG_NANVIX_DOCKER=y but Docker is not installed)
+    endif
+    DOCKER_IMAGE_EXISTS := $(shell docker image inspect $(NANVIX_DOCKER_IMAGE) >/dev/null 2>&1 && echo yes)
+    ifndef DOCKER_IMAGE_EXISTS
+      $(error Docker image $(NANVIX_DOCKER_IMAGE) not found. Run: docker pull $(NANVIX_DOCKER_IMAGE))
+    endif
+    $(info [INFO] Using Docker image $(NANVIX_DOCKER_IMAGE) (explicitly requested))
+  endif
+
+  EXE=.elf
+
+  ifdef CONFIG_NANVIX_DOCKER
+    DOCKER_TOOLCHAIN_PATH := /opt/nanvix
+    DOCKER_SYSROOT_PATH := /mnt/sysroot
+    DOCKER_WORKSPACE_PATH := /mnt/workspace
+    DOCKER_UID := $(shell id -u)
+    DOCKER_GID := $(shell id -g)
+    DOCKER_RUN := docker run --rm --user $(DOCKER_UID):$(DOCKER_GID) \
+      -v $(CURDIR):$(DOCKER_WORKSPACE_PATH) \
+      -v $(abspath $(NANVIX_HOME)):$(DOCKER_SYSROOT_PATH):ro \
+      -w $(DOCKER_WORKSPACE_PATH) \
+      -e HOME=/tmp \
+      $(NANVIX_DOCKER_IMAGE)
+
+    TOOLCHAIN_PREFIX := $(DOCKER_TOOLCHAIN_PATH)
+    SYSROOT_PATH := $(DOCKER_SYSROOT_PATH)
+    LIBC := $(DOCKER_TOOLCHAIN_PATH)/i686-nanvix/lib/libc.a
+    LIBM := $(DOCKER_TOOLCHAIN_PATH)/i686-nanvix/lib/libm.a
+    LIBPOSIX := $(DOCKER_SYSROOT_PATH)/lib/libposix.a
+    LIBZ := $(DOCKER_SYSROOT_PATH)/lib/libz.a
+    LIBSQLITE3 := $(DOCKER_SYSROOT_PATH)/lib/libsqlite3.a
+    LIBSSL := $(DOCKER_SYSROOT_PATH)/lib/libssl.a
+    LIBCRYPTO := $(DOCKER_SYSROOT_PATH)/lib/libcrypto.a
+    BUILD_PYTHON := $(DOCKER_TOOLCHAIN_PATH)/bin/python3
+  else
+    TOOLCHAIN_PREFIX := $(NANVIX_TOOLCHAIN)
+    SYSROOT_PATH := $(abspath $(NANVIX_HOME))
+    LIBC := $(NANVIX_TOOLCHAIN)/i686-nanvix/lib/libc.a
+    LIBM := $(NANVIX_TOOLCHAIN)/i686-nanvix/lib/libm.a
+    LIBPOSIX := $(abspath $(NANVIX_HOME))/lib/libposix.a
+    LIBZ := $(abspath $(NANVIX_HOME))/lib/libz.a
+    LIBSQLITE3 := $(abspath $(NANVIX_HOME))/lib/libsqlite3.a
+    LIBSSL := $(abspath $(NANVIX_HOME))/lib/libssl.a
+    LIBCRYPTO := $(abspath $(NANVIX_HOME))/lib/libcrypto.a
+    BUILD_PYTHON := $(NANVIX_TOOLCHAIN)/bin/python3
+  endif
+
+  NANVIX_SYSROOT := $(SYSROOT_PATH)
+  export NANVIX_SYSROOT
+else
+  ifneq ($(MAKECMDGOALS),clean)
+    ifneq ($(MAKECMDGOALS),distclean)
+      $(error CONFIG_NANVIX must be set to 'y'. Usage: make -f Makefile.nanvix CONFIG_NANVIX=y NANVIX_HOME=/path/to/nanvix)
+    endif
+  endif
+  EXE=.elf
+endif
+
+# Configure environment variables
+CONFIGURE_ENV = \
+	CC="$(TOOLCHAIN_PREFIX)/bin/i686-nanvix-gcc" \
+	CXX="$(TOOLCHAIN_PREFIX)/bin/i686-nanvix-g++" \
+	LD="$(TOOLCHAIN_PREFIX)/bin/i686-nanvix-ld" \
+	AR="$(TOOLCHAIN_PREFIX)/bin/i686-nanvix-ar" \
+	RANLIB="$(TOOLCHAIN_PREFIX)/bin/i686-nanvix-ranlib" \
+	CFLAGS="-O3 -fomit-frame-pointer -fno-unwind-tables -fno-asynchronous-unwind-tables -I$(SYSROOT_PATH)/include" \
+	CFLAGS_NODIST="-fno-semantic-interposition" \
+	LDFLAGS="-L$(SYSROOT_PATH)/lib -T$(SYSROOT_PATH)/lib/user.ld -Wl,--allow-multiple-definition -no-pie -Wl,--export-dynamic -Wl,--no-dynamic-linker" \
+	LIBS="-Wl,--start-group $(LIBPOSIX) $(LIBC) $(LIBM) -lsqlite3 -lssl -lcrypto -lz -lbz2 -lffi -Wl,--end-group" \
+	LIBSQLITE3_LIBS="-L$(SYSROOT_PATH)/lib -lsqlite3" \
+	LIBSQLITE3_CFLAGS="-I$(SYSROOT_PATH)/include" \
+	ZLIB_LIBS="-L$(SYSROOT_PATH)/lib -lz" \
+	ZLIB_CFLAGS="-I$(SYSROOT_PATH)/include" \
+	BZIP2_LIBS="-L$(SYSROOT_PATH)/lib -lbz2" \
+	BZIP2_CFLAGS="-I$(SYSROOT_PATH)/include" \
+	LIBFFI_LIBS="-L$(SYSROOT_PATH)/lib -lffi" \
+	LIBFFI_CFLAGS="-I$(SYSROOT_PATH)/include"
+
+# Configure options for Nanvix
+CONFIGURE_OPTS = \
+	--disable-shared \
+	--build=x86_64-pc-linux-gnux32 \
+	--host=i686-nanvix \
+	--with-build-python="$(BUILD_PYTHON)" \
+	$(if $(filter yes,$(NANVIX_RELEASE)),--disable-test-modules,) \
+	--with-libc="$(LIBC)" \
+	--with-libm="$(LIBM)" \
+	--prefix="$(INSTALL_PREFIX)" \
+	--exec-prefix="$(INSTALL_PREFIX)" \
+	--with-ensurepip=no \
+	--with-pkg-config=no \
+	--with-openssl="$(SYSROOT_PATH)" \
+	--disable-ipv6 \
+	$(if $(filter yes,$(NANVIX_RELEASE)),--without-doc-strings,) \
+	--with-computed-gotos \
+	ac_cv_file__dev_ptmx=no \
+	ac_cv_file__dev_ptc=no \
+	ac_cv_pthread_is_default=yes \
+	ac_cv_pthread=yes \
+	ac_cv_kthread=no \
+	ac_cv_func_dlopen=yes \
+	ac_cv_header_dlfcn_h=yes
+
+# Marker file to track if configure has been run
+CONFIGURED_MARKER = .nanvix-configured
 
 # Default target
 all: build
 
-# ---- Machine-type overrides ----
-ifeq ($(PLATFORM),microvm)
-  include .nanvix/mk/test-microvm.mk
+# Configure target
+configure: $(CONFIGURED_MARKER)
+
+$(CONFIGURED_MARKER):
+ifdef CONFIG_NANVIX_DOCKER
+	@echo "Running configure inside Docker..."
+	$(DOCKER_RUN) sh -c '$(CONFIGURE_ENV) ./configure $(CONFIGURE_OPTS)'
 else
-  include .nanvix/mk/test-hyperlight.mk
+	$(CONFIGURE_ENV) ./configure $(CONFIGURE_OPTS)
+endif
+	touch $(CONFIGURED_MARKER)
+
+# Build target
+build: $(CONFIGURED_MARKER)
+ifdef CONFIG_NANVIX_DOCKER
+	@echo "Building inside Docker..."
+	$(DOCKER_RUN) $(MAKE) -j$$(nproc) all
+	@if [ -f python ]; then cp -f python python$(EXE); fi
+	$(DOCKER_RUN) sh -c '\
+		if [ ! -x "$(DOCKER_TOOLCHAIN_PATH)/bin/i686-nanvix-strip" ]; then \
+			echo "Warning: i686-nanvix-strip not found in Docker toolchain; skipping strip."; \
+		elif [ ! -f "$(DOCKER_WORKSPACE_PATH)/python$(EXE)" ]; then \
+			echo "Warning: $(DOCKER_WORKSPACE_PATH)/python$(EXE) not found; skipping strip."; \
+		else \
+			"$(DOCKER_TOOLCHAIN_PATH)/bin/i686-nanvix-strip" --strip-all "$(DOCKER_WORKSPACE_PATH)/python$(EXE)" || { \
+				echo "Error: failed to strip python$(EXE) inside Docker."; exit 1; }; \
+		fi'
+else
+	$(MAKE) -j$$(nproc) all
+	@if [ -f python ]; then cp -f python python$(EXE); fi
+	@if [ -x "$(TOOLCHAIN_PREFIX)/bin/i686-nanvix-strip" ]; then \
+		if [ -f "python$(EXE)" ]; then \
+			"$(TOOLCHAIN_PREFIX)/bin/i686-nanvix-strip" --strip-all "python$(EXE)" || { \
+				echo "Error: failed to strip python$(EXE)."; exit 1; }; \
+		else \
+			echo "Warning: python$(EXE) not found; skipping strip."; \
+		fi; \
+	else \
+		echo "Warning: i686-nanvix-strip not found in $(TOOLCHAIN_PREFIX); skipping strip."; \
+	fi
 endif
 
-# ---- Deployment-mode-specific test rules ----
-ifeq ($(PROCESS_MODE),standalone)
-  include .nanvix/mk/test-standalone.mk
-else ifeq ($(PROCESS_MODE),single-process)
-  include .nanvix/mk/test-single-process.mk
+# Install target
+install: build
+ifdef CONFIG_NANVIX_DOCKER
+	$(DOCKER_RUN) $(MAKE) install DESTDIR="$(patsubst $(CURDIR)%,$(DOCKER_WORKSPACE_PATH)%,$(abspath $(DESTDIR)))"
 else
-  include .nanvix/mk/test-multi-process.mk
+	$(MAKE) install DESTDIR="$(DESTDIR)"
 endif
 
-# ---- Packaging ----
-include .nanvix/mk/ramfs.mk
-include .nanvix/mk/package-common.mk
-include .nanvix/mk/verify-package.mk
+# Clean target
+clean:
+	-$(MAKE) clean 2>/dev/null || true
+	rm -f $(CONFIGURED_MARKER)
+	rm -f python$(EXE)
 
-.PHONY: all
+# Distclean target
+distclean: clean
+	-$(MAKE) distclean 2>/dev/null || true
+	git clean -fdx -e Makefile.nanvix -e NANVIX.md -e .github \
+		-e .nanvix/z.py -e .nanvix/_loader.py -e .nanvix/nanvix.toml -e .nanvix/.gitignore \
+		-e .nanvix/config.py -e .nanvix/build.py -e .nanvix/docker.py \
+		-e .nanvix/ramfs.py -e .nanvix/test.py -e .nanvix/package.py \
+		-e .nanvix/run-regrtest.py -e .nanvix/run-tests.py \
+		-e z -e z.sh -e z.ps1 2>/dev/null || true
 
-endif # DOCKER_HOST_MODE
+.PHONY: all configure build install clean distclean
