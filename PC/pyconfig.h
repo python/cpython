@@ -331,7 +331,7 @@ Py_NO_ENABLE_SHARED to find out.  Also support MS_NO_COREDLL for b/w compat */
 #                       if defined(Py_GIL_DISABLED)
 #                       if defined(Py_DEBUG)
 #                               pragma comment(lib,"python315t_d.lib")
-#                       elif defined(Py_LIMITED_API)
+#                       elif defined(Py_LIMITED_API) || defined(Py_TARGET_ABI3T)
 #                               pragma comment(lib,"python3t.lib")
 #                       else
 #                               pragma comment(lib,"python315t.lib")
@@ -339,6 +339,8 @@ Py_NO_ENABLE_SHARED to find out.  Also support MS_NO_COREDLL for b/w compat */
 #                       else /* Py_GIL_DISABLED */
 #                       if defined(Py_DEBUG)
 #                               pragma comment(lib,"python315_d.lib")
+#                       elif defined(Py_TARGET_ABI3T)
+#                               pragma comment(lib,"python3t.lib")
 #                       elif defined(Py_LIMITED_API)
 #                               pragma comment(lib,"python3.lib")
 #                       else
