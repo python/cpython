@@ -1,1 +1,0 @@
-Removed the sqlite3_shutdown call that could cause closing connections for sqlite when used with multiple sub interpreters.

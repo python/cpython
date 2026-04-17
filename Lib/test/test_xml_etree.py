@@ -370,8 +370,7 @@ class ElementTreeTest(unittest.TestCase):
         self.serialize_check(element, '<tag key="value"><subtag /></tag>') # 4
         element.remove(subelement)
         self.serialize_check(element, '<tag key="value" />') # 5
-        with self.assertRaisesRegex(ValueError,
-                                    r'Element\.remove\(.+\): element not found'):
+        with self.assertRaises(ValueError):
             element.remove(subelement)
         self.serialize_check(element, '<tag key="value" />') # 6
         element[0:0] = [subelement, subelement, subelement]
@@ -381,6 +380,19 @@ class ElementTreeTest(unittest.TestCase):
         del element[1:2]
         self.serialize_check(element,
                 '<tag key="value"><subtag /><subtag /></tag>')
+
+    def test_positional_only_parameter(self):
+        # Test Element positional-only parameters (gh-144846).
+
+        # 'tag' is positional-only
+        with self.assertRaises(TypeError):
+            ET.Element(tag='fail')
+
+        # 'tag' and 'attrib' as kwarg/attribute names
+        e = ET.Element('e', attrib={'attrib': 'foo'}, tag='bar')
+        self.assertEqual(e.tag, 'e')
+        self.assertEqual(e.get('attrib'), 'foo')
+        self.assertEqual(e.get('tag'), 'bar')
 
     def test_cdata(self):
         # Test CDATA handling (etc).
@@ -484,6 +496,28 @@ class ElementTreeTest(unittest.TestCase):
         elem.set('d', '\n\n\r\r\t\t  ')
         self.assertEqual(ET.tostring(elem),
                 b'<test a="&#13;" b="&#13;&#10;" c="&#09;&#10;&#13; " d="&#10;&#10;&#13;&#13;&#09;&#09;  " />')
+
+    def test_subelement_positional_only_parameter(self):
+        # Test SubElement positional-only parameters (gh-144270).
+        parent = ET.Element('parent')
+
+        # 'parent' and 'tag' are positional-only
+        with self.assertRaises(TypeError):
+            ET.SubElement(parent=parent, tag='fail')
+        with self.assertRaises(TypeError):
+            ET.SubElement(parent, tag='fail')
+
+        # 'attrib' can be passed as keyword
+        sub1 = ET.SubElement(parent, 'sub1', attrib={'key': 'value'})
+        self.assertEqual(sub1.get('key'), 'value')
+
+        # 'tag' and 'parent' as kwargs become XML attributes, not func params
+        sub2 = ET.SubElement(parent, 'sub2', attrib={'attrib': 'foo'},
+                             tag='bar', parent='baz')
+        self.assertEqual(sub2.tag, 'sub2')
+        self.assertEqual(sub2.get('attrib'), 'foo')
+        self.assertEqual(sub2.get('tag'), 'bar')
+        self.assertEqual(sub2.get('parent'), 'baz')
 
     def test_makeelement(self):
         # Test makeelement handling.
@@ -2758,6 +2792,17 @@ class BasicElementTest(ElementTestCase, unittest.TestCase):
                 self.assertEqual(e2.tag, 'group')
                 self.assertEqual(e2[0].tag, 'dogs')
 
+    def test_remove_errors(self):
+        e = ET.Element('tag')
+        with self.assertRaisesRegex(ValueError,
+                r"<Element 'subtag'.*> not in <Element 'tag'.*>"):
+            e.remove(ET.Element('subtag'))
+        with self.assertRaisesRegex(TypeError,
+                r".*\bElement, not type"):
+            e.remove(ET.Element)
+        with self.assertRaisesRegex(TypeError,
+                r".*\bElement, not int"):
+            e.remove(1)
 
 class BadElementTest(ElementTestCase, unittest.TestCase):
 
@@ -3010,32 +3055,72 @@ class BadElementTest(ElementTestCase, unittest.TestCase):
         elem = b.close()
         self.assertEqual(elem[0].tail, 'ABCDEFGHIJKL')
 
-    def test_subscr(self):
-        # Issue #27863
+    def test_subscr_with_clear(self):
+        # See https://github.com/python/cpython/issues/143200.
+        self.do_test_subscr_with_mutating_slice(use_clear_method=True)
+
+    def test_subscr_with_delete(self):
+        # See https://github.com/python/cpython/issues/72050.
+        self.do_test_subscr_with_mutating_slice(use_clear_method=False)
+
+    def do_test_subscr_with_mutating_slice(self, *, use_clear_method):
         class X:
+            def __init__(self, i=0):
+                self.i = i
             def __index__(self):
-                del e[:]
-                return 1
+                if use_clear_method:
+                    e.clear()
+                else:
+                    del e[:]
+                return self.i
 
-        e = ET.Element('elem')
-        e.append(ET.Element('child'))
-        e[:X()]  # shouldn't crash
+        for s in self.get_mutating_slices(X, 10):
+            with self.subTest(s):
+                e = ET.Element('elem')
+                e.extend([ET.Element(f'c{i}') for i in range(10)])
+                e[s]  # shouldn't crash
 
-        e.append(ET.Element('child'))
-        e[0:10:X()]  # shouldn't crash
+    def test_ass_subscr_with_mutating_slice(self):
+        # See https://github.com/python/cpython/issues/72050
+        # and https://github.com/python/cpython/issues/143200.
 
-    def test_ass_subscr(self):
-        # Issue #27863
         class X:
+            def __init__(self, i=0):
+                self.i = i
             def __index__(self):
                 e[:] = []
-                return 1
+                return self.i
+
+        for s in self.get_mutating_slices(X, 10):
+            with self.subTest(s):
+                e = ET.Element('elem')
+                e.extend([ET.Element(f'c{i}') for i in range(10)])
+                e[s] = []  # shouldn't crash
+
+    def get_mutating_slices(self, index_class, n_children):
+        self.assertGreaterEqual(n_children, 10)
+        return [
+            slice(index_class(), None, None),
+            slice(index_class(2), None, None),
+            slice(None, index_class(), None),
+            slice(None, index_class(2), None),
+            slice(0, 2, index_class(1)),
+            slice(0, 2, index_class(2)),
+            slice(0, n_children, index_class(1)),
+            slice(0, n_children, index_class(2)),
+            slice(0, 2 * n_children, index_class(1)),
+            slice(0, 2 * n_children, index_class(2)),
+        ]
+
+    def test_ass_subscr_with_mutating_iterable_value(self):
+        class V:
+            def __iter__(self):
+                e.clear()
+                return iter([ET.Element('a'), ET.Element('b')])
 
         e = ET.Element('elem')
-        for _ in range(10):
-            e.insert(0, ET.Element('child'))
-
-        e[0:10:X()] = []  # shouldn't crash
+        e.extend([ET.Element(f'c{i}') for i in range(10)])
+        e[:] = V()
 
     def test_treebuilder_start(self):
         # Issue #27863
@@ -4422,6 +4507,9 @@ class KeywordArgsTest(unittest.TestCase):
             ET.Element('a', dict(href="#"), id="foo"),
             ET.Element('a', href="#", id="foo"),
             ET.Element('a', dict(href="#", id="foo"), href="#", id="foo"),
+            ET.Element('a', frozendict(href="#", id="foo")),
+            ET.Element('a', frozendict(href="#"), id="foo"),
+            ET.Element('a', attrib=frozendict(href="#", id="foo")),
         ]
         for e in elements:
             self.assertEqual(e.tag, 'a')
@@ -4429,10 +4517,14 @@ class KeywordArgsTest(unittest.TestCase):
 
         e2 = ET.SubElement(elements[0], 'foobar', attrib={'key1': 'value1'})
         self.assertEqual(e2.attrib['key1'], 'value1')
+        e3 = ET.SubElement(elements[0], 'foobar',
+                           attrib=frozendict({'key1': 'value1'}))
+        self.assertEqual(e3.attrib['key1'], 'value1')
 
-        with self.assertRaisesRegex(TypeError, 'must be dict, not str'):
+        errmsg = 'must be dict or frozendict, not str'
+        with self.assertRaisesRegex(TypeError, errmsg):
             ET.Element('a', "I'm not a dict")
-        with self.assertRaisesRegex(TypeError, 'must be dict, not str'):
+        with self.assertRaisesRegex(TypeError, errmsg):
             ET.Element('a', attrib="I'm not a dict")
 
 # --------------------------------------------------------------------
@@ -4702,6 +4794,19 @@ class C14NTest(unittest.TestCase):
                             expected = expected.replace(' attr="default"', '')
                             text = text.replace(' attr="default"', '')
                     self.assertEqual(expected, text)
+
+# --------------------------------------------------------------------
+
+
+class TestModule(unittest.TestCase):
+    def test_deprecated_version(self):
+        with self.assertWarnsRegex(
+            DeprecationWarning,
+            "'VERSION' is deprecated and slated for removal in Python 3.20",
+        ) as cm:
+                getattr(ET, "VERSION")
+        self.assertEqual(cm.filename, __file__)
+
 
 # --------------------------------------------------------------------
 

@@ -8,6 +8,7 @@ import functools
 import itertools
 import pickle
 from string.templatelib import Template, Interpolation
+import types
 import typing
 import sys
 import unittest
@@ -120,8 +121,8 @@ class TestForwardRefFormat(unittest.TestCase):
             beta: +some,
             gamma: some < obj,
             delta: some | {obj: module},
-            epsilon: some | {obj, module},
-            zeta: some | [obj],
+            epsilon: some | {obj},
+            zeta: some | [obj, module],
             eta: some | (),
         ):
             pass
@@ -157,11 +158,11 @@ class TestForwardRefFormat(unittest.TestCase):
 
         epsilon_anno = anno["epsilon"]
         self.assertIsInstance(epsilon_anno, ForwardRef)
-        self.assertEqual(epsilon_anno, support.EqualToForwardRef("some | {obj, module}", owner=f))
+        self.assertEqual(epsilon_anno, support.EqualToForwardRef("some | {obj}", owner=f))
 
         zeta_anno = anno["zeta"]
         self.assertIsInstance(zeta_anno, ForwardRef)
-        self.assertEqual(zeta_anno, support.EqualToForwardRef("some | [obj]", owner=f))
+        self.assertEqual(zeta_anno, support.EqualToForwardRef("some | [obj, module]", owner=f))
 
         eta_anno = anno["eta"]
         self.assertIsInstance(eta_anno, ForwardRef)
@@ -645,6 +646,31 @@ class TestGetAnnotations(unittest.TestCase):
             get_annotations(foo, format=Format.FORWARDREF, eval_str=True)
             get_annotations(foo, format=Format.STRING, eval_str=True)
 
+    def test_eval_str_wrapped_cycle_self(self):
+        # gh-146556: self-referential __wrapped__ cycle must not hang.
+        def f(x: 'int') -> 'str': ...
+        f.__wrapped__ = f
+        # Cycle is detected and broken; globals from f itself are used.
+        result = get_annotations(f, eval_str=True)
+        self.assertEqual(result, {'x': int, 'return': str})
+
+    def test_eval_str_wrapped_cycle_mutual(self):
+        # gh-146556: mutual __wrapped__ cycle (a -> b -> a) must not hang.
+        def a(x: 'int'): ...
+        def b(): ...
+        a.__wrapped__ = b
+        b.__wrapped__ = a
+        result = get_annotations(a, eval_str=True)
+        self.assertEqual(result, {'x': int})
+
+    def test_eval_str_wrapped_chain_no_cycle(self):
+        # gh-146556: a valid (non-cyclic) __wrapped__ chain must still work.
+        def inner(x: 'int'): ...
+        def outer(x: 'int'): ...
+        outer.__wrapped__ = inner
+        result = get_annotations(outer, eval_str=True)
+        self.assertEqual(result, {'x': int})
+
     def test_stock_annotations(self):
         def foo(a: int, b: str):
             pass
@@ -883,6 +909,9 @@ class TestGetAnnotations(unittest.TestCase):
 
     def test_stringized_annotations_with_star_unpack(self):
         def f(*args: "*tuple[int, ...]"): ...
+        self.assertEqual(get_annotations(f, eval_str=True),
+                         {'args': (*tuple[int, ...],)[0]})
+        def f(*args: " *tuple[int, ...]"): ...
         self.assertEqual(get_annotations(f, eval_str=True),
                          {'args': (*tuple[int, ...],)[0]})
 
@@ -1858,6 +1887,39 @@ class TestForwardRefClass(unittest.TestCase):
         self.assertNotEqual(hash(c3), hash(c1_gth))
         self.assertNotEqual(hash(c3), hash(c4))
         self.assertEqual(hash(c3), hash(ForwardRef("int", module=__name__)))
+
+    def test_forward_equality_and_hash_with_cells(self):
+        """Regression test for GH-143831."""
+        class A:
+            def one(_) -> C1:
+                """One cell."""
+
+            one_f = ForwardRef("C1", owner=one)
+            one_f_ga1 = get_annotations(one, format=Format.FORWARDREF)["return"]
+            one_f_ga2 = get_annotations(one, format=Format.FORWARDREF)["return"]
+            self.assertIsInstance(one_f_ga1.__cell__, types.CellType)
+            self.assertIs(one_f_ga1.__cell__, one_f_ga2.__cell__)
+
+            def two(_) -> C1 | C2:
+                """Two cells."""
+
+            two_f_ga1 = get_annotations(two, format=Format.FORWARDREF)["return"]
+            two_f_ga2 = get_annotations(two, format=Format.FORWARDREF)["return"]
+            self.assertIsNot(two_f_ga1.__cell__, two_f_ga2.__cell__)
+            self.assertIsInstance(two_f_ga1.__cell__, dict)
+            self.assertIsInstance(two_f_ga2.__cell__, dict)
+
+        type C1 = None
+        type C2 = None
+
+        self.assertNotEqual(A.one_f, A.one_f_ga1)
+        self.assertNotEqual(hash(A.one_f), hash(A.one_f_ga1))
+
+        self.assertEqual(A.one_f_ga1, A.one_f_ga2)
+        self.assertEqual(hash(A.one_f_ga1), hash(A.one_f_ga2))
+
+        self.assertEqual(A.two_f_ga1, A.two_f_ga2)
+        self.assertEqual(hash(A.two_f_ga1), hash(A.two_f_ga2))
 
     def test_forward_equality_namespace(self):
         def namespace1():

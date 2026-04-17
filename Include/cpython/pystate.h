@@ -135,6 +135,15 @@ struct _ts {
     /* Pointer to currently executing frame. */
     struct _PyInterpreterFrame *current_frame;
 
+    /* Pointer to the base frame (bottommost sentinel frame).
+       Used by profilers to validate complete stack unwinding.
+       Points to the embedded base_frame in _PyThreadStateImpl.
+       The frame is embedded there rather than here because _PyInterpreterFrame
+       is defined in internal headers that cannot be exposed in the public API. */
+    struct _PyInterpreterFrame *base_frame;
+
+    struct _PyInterpreterFrame *last_profiled_frame;
+
     Py_tracefunc c_profilefunc;
     Py_tracefunc c_tracefunc;
     PyObject *c_profileobj;
@@ -189,6 +198,7 @@ struct _ts {
     _PyStackChunk *datastack_chunk;
     PyObject **datastack_top;
     PyObject **datastack_limit;
+    _PyStackChunk *datastack_cached_chunk;
     /* XXX signal handlers should also be here */
 
     /* The following fields are here to avoid allocation during init.
@@ -309,3 +319,8 @@ PyAPI_FUNC(_PyFrameEvalFunction) _PyInterpreterState_GetEvalFrameFunc(
 PyAPI_FUNC(void) _PyInterpreterState_SetEvalFrameFunc(
     PyInterpreterState *interp,
     _PyFrameEvalFunction eval_frame);
+PyAPI_FUNC(void) _PyInterpreterState_SetEvalFrameAllowSpecialization(
+    PyInterpreterState *interp,
+    int allow_specialization);
+PyAPI_FUNC(int) _PyInterpreterState_IsSpecializationEnabled(
+    PyInterpreterState *interp);

@@ -1,21 +1,42 @@
 """Common test helpers and mocks for live collector tests."""
 
+from collections import namedtuple
+
 from profiling.sampling.constants import (
     THREAD_STATUS_HAS_GIL,
     THREAD_STATUS_ON_CPU,
 )
 
 
-class MockFrameInfo:
-    """Mock FrameInfo for testing."""
+# Matches the C structseq LocationInfo from _remote_debugging
+LocationInfo = namedtuple('LocationInfo', ['lineno', 'end_lineno', 'col_offset', 'end_col_offset'])
 
-    def __init__(self, filename, lineno, funcname):
+
+class MockFrameInfo:
+    """Mock FrameInfo for testing.
+
+    Frame format: (filename, location, funcname, opcode) where:
+    - location is a tuple (lineno, end_lineno, col_offset, end_col_offset)
+    - opcode is an int or None
+    """
+
+    def __init__(self, filename, lineno, funcname, opcode=None):
         self.filename = filename
-        self.lineno = lineno
         self.funcname = funcname
+        self.opcode = opcode
+        self.location = LocationInfo(lineno, lineno, -1, -1)
+
+    def __iter__(self):
+        return iter((self.filename, self.location, self.funcname, self.opcode))
+
+    def __getitem__(self, index):
+        return (self.filename, self.location, self.funcname, self.opcode)[index]
+
+    def __len__(self):
+        return 4
 
     def __repr__(self):
-        return f"MockFrameInfo(filename='{self.filename}', lineno={self.lineno}, funcname='{self.funcname}')"
+        return f"MockFrameInfo('{self.filename}', {self.location}, '{self.funcname}', {self.opcode})"
 
 
 class MockThreadInfo:
