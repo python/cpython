@@ -32,6 +32,7 @@ extern PyObject* _PyUnicode_ResizeCompact(
     PyObject *unicode,
     Py_ssize_t length);
 extern PyObject* _PyUnicode_GetEmpty(void);
+PyAPI_FUNC(PyObject*) _PyUnicode_BinarySlice(PyObject *, PyObject *, PyObject *);
 
 
 /* Generic helper macro to convert characters of different types.
@@ -307,14 +308,6 @@ PyAPI_FUNC(PyObject*) _PyUnicode_JoinArray(
     Py_ssize_t seqlen
     );
 
-/* Test whether a unicode is equal to ASCII identifier.  Return 1 if true,
-   0 otherwise.  The right argument must be ASCII identifier.
-   Any error occurs inside will be cleared before return. */
-extern int _PyUnicode_EqualToASCIIId(
-    PyObject *left,             /* Left string */
-    _Py_Identifier *right       /* Right identifier */
-    );
-
 // Test whether a unicode is equal to ASCII string.  Return 1 if true,
 // 0 otherwise.  The right argument must be ASCII-encoded string.
 // Any error occurs inside will be cleared before return.
@@ -333,7 +326,8 @@ extern PyObject* _PyUnicode_XStrip(
 
 
 /* Dedent a string.
-   Behaviour is expected to be an exact match of `textwrap.dedent`.
+   Intended to dedent Python source. Unlike `textwrap.dedent`, this
+   only supports spaces and tabs and doesn't normalize empty lines.
    Return a new reference on success, NULL with exception set on error.
    */
 extern PyObject* _PyUnicode_Dedent(PyObject *unicode);

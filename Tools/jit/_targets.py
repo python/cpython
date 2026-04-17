@@ -46,10 +46,12 @@ class _Target(typing.Generic[_S, _R]):
     optimizer: type[_optimizers.Optimizer] = _optimizers.Optimizer
     label_prefix: typing.ClassVar[str]
     symbol_prefix: typing.ClassVar[str]
+    re_global: typing.ClassVar[re.Pattern[str]]
     stable: bool = False
     debug: bool = False
     verbose: bool = False
     cflags: str = ""
+    frame_pointers: bool = False
     llvm_version: str = _llvm._LLVM_VERSION
     llvm_tools_install_dir: str | None = None
     known_symbols: dict[str, int] = dataclasses.field(default_factory=dict)
@@ -76,7 +78,7 @@ class _Target(typing.Generic[_S, _R]):
             # Exclude cache files from digest computation to ensure reproducible builds.
             if dirpath.endswith("__pycache__"):
                 continue
-            for filename in filenames:
+            for filename in sorted(filenames):
                 hasher.update(pathlib.Path(dirpath, filename).read_bytes())
         return hasher.hexdigest()
 
@@ -146,6 +148,7 @@ class _Target(typing.Generic[_S, _R]):
             f"--target={self.triple}",
             "-DPy_BUILD_CORE_MODULE",
             "-D_DEBUG" if self.debug else "-DNDEBUG",
+            f"-DSUPPORTS_SMALL_CONSTS={1 if self.optimizer.supports_small_constants else 0}",
             f"-D_JIT_OPCODE={opname}",
             "-D_PyJIT_ACTIVE",
             "-D_Py_JIT",
@@ -181,10 +184,14 @@ class _Target(typing.Generic[_S, _R]):
             "-o",
             f"{s}",
             f"{c}",
-            *self.args,
-            # Allow user-provided CFLAGS to override any defaults
-            *shlex.split(self.cflags),
         ]
+        is_shim = opname == "shim"
+        if self.frame_pointers:
+            frame_pointer = "all" if is_shim else "reserved"
+            args_s += ["-Xclang", f"-mframe-pointer={frame_pointer}"]
+        args_s += self.args
+        # Allow user-provided CFLAGS to override any defaults
+        args_s += shlex.split(self.cflags)
         await _llvm.run(
             "clang",
             args_s,
@@ -192,9 +199,14 @@ class _Target(typing.Generic[_S, _R]):
             llvm_version=self.llvm_version,
             llvm_tools_install_dir=self.llvm_tools_install_dir,
         )
-        self.optimizer(
-            s, label_prefix=self.label_prefix, symbol_prefix=self.symbol_prefix
-        ).run()
+        if not is_shim:
+            self.optimizer(
+                s,
+                label_prefix=self.label_prefix,
+                symbol_prefix=self.symbol_prefix,
+                re_global=self.re_global,
+                frame_pointers=self.frame_pointers,
+            ).run()
         args_o = [f"--target={self.triple}", "-c", "-o", f"{o}", f"{s}"]
         await _llvm.run(
             "clang",
@@ -213,11 +225,14 @@ class _Target(typing.Generic[_S, _R]):
             )
         )
         tasks = []
+        # If you need to see the generated assembly files,
+        # uncomment line below (and comment out line below that)
+        #   with tempfile.TemporaryDirectory("-stencils-assembly", delete=False) as tempdir:
         with tempfile.TemporaryDirectory() as tempdir:
             work = pathlib.Path(tempdir).resolve()
             async with asyncio.TaskGroup() as group:
-                coro = self._compile("trampoline", TOOLS_JIT / "trampoline.c", work)
-                tasks.append(group.create_task(coro, name="trampoline"))
+                coro = self._compile("shim", TOOLS_JIT / "shim.c", work)
+                tasks.append(group.create_task(coro, name="shim"))
                 template = TOOLS_JIT_TEMPLATE_C.read_text()
                 for case, opname in cases_and_opnames:
                     # Write out a copy of the template with *only* this case
@@ -284,6 +299,10 @@ class _COFF(
     def _handle_section(
         self, section: _schema.COFFSection, group: _stencils.StencilGroup
     ) -> None:
+        name = section["Name"]["Value"]
+        if name == ".debug$S":
+            # skip debug sections
+            return
         flags = {flag["Name"] for flag in section["Characteristics"]["Flags"]}
         if "SectionData" in section:
             section_data_bytes = section["SectionData"]["Bytes"]
@@ -368,12 +387,14 @@ class _COFF32(_COFF):
     # These mangle like Mach-O and other "older" formats:
     label_prefix = "L"
     symbol_prefix = "_"
+    re_global = re.compile(r'\s*\.def\s+(?P<label>[\w."$?@]+);')
 
 
 class _COFF64(_COFF):
     # These mangle like ELF and other "newer" formats:
     label_prefix = ".L"
     symbol_prefix = ""
+    re_global = re.compile(r'\s*\.def\s+(?P<label>[\w."$?@]+);')
 
 
 class _ELF(
@@ -381,6 +402,7 @@ class _ELF(
 ):  # pylint: disable = too-few-public-methods
     label_prefix = ".L"
     symbol_prefix = ""
+    re_global = re.compile(r'\s*\.globl\s+(?P<label>[\w."$?@]+)(\s+.*)?')
 
     def _handle_section(
         self, section: _schema.ELFSection, group: _stencils.StencilGroup
@@ -471,6 +493,7 @@ class _MachO(
 ):  # pylint: disable = too-few-public-methods
     label_prefix = "L"
     symbol_prefix = "_"
+    re_global = re.compile(r'\s*\.globl\s+(?P<label>[\w."$?@]+)(\s+.*)?')
 
     def _handle_section(
         self, section: _schema.MachOSection, group: _stencils.StencilGroup
@@ -591,14 +614,18 @@ def get_target(host: str) -> _COFF32 | _COFF64 | _ELF | _MachO:
         host = "aarch64-unknown-linux-gnu"
         condition = "defined(__aarch64__) && defined(__linux__)"
         # -mno-outline-atomics: Keep intrinsics from being emitted.
-        args = ["-fpic", "-mno-outline-atomics", "-fno-plt"]
+        args = ["-fpic", "-mno-outline-atomics"]
         optimizer = _optimizers.OptimizerAArch64
-        target = _ELF(host, condition, args=args, optimizer=optimizer)
+        target = _ELF(
+            host, condition, args=args, optimizer=optimizer, frame_pointers=True
+        )
     elif re.fullmatch(r"i686-pc-windows-msvc", host):
         host = "i686-pc-windows-msvc"
         condition = "defined(_M_IX86)"
         # -Wno-ignored-attributes: __attribute__((preserve_none)) is not supported here.
-        args = ["-DPy_NO_ENABLE_SHARED", "-Wno-ignored-attributes"]
+        # -mno-sse: Use x87 FPU instead of SSE for float math. The COFF32
+        # stencil converter cannot handle _xmm register references.
+        args = ["-DPy_NO_ENABLE_SHARED", "-Wno-ignored-attributes", "-mno-sse"]
         optimizer = _optimizers.OptimizerX86
         target = _COFF32(host, condition, args=args, optimizer=optimizer)
     elif re.fullmatch(r"x86_64-apple-darwin.*", host):
@@ -617,7 +644,9 @@ def get_target(host: str) -> _COFF32 | _COFF64 | _ELF | _MachO:
         condition = "defined(__x86_64__) && defined(__linux__)"
         args = ["-fno-pic", "-mcmodel=medium", "-mlarge-data-threshold=0", "-fno-plt"]
         optimizer = _optimizers.OptimizerX86
-        target = _ELF(host, condition, args=args, optimizer=optimizer)
+        target = _ELF(
+            host, condition, args=args, optimizer=optimizer, frame_pointers=True
+        )
     else:
         raise ValueError(host)
     return target

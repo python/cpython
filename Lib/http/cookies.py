@@ -87,9 +87,9 @@ within a string.  Escaped quotation marks, nested semicolons, and other
 such trickeries do not confuse it.
 
    >>> C = cookies.SimpleCookie()
-   >>> C.load('keebler="E=everybody; L=\\"Loves\\"; fudge=\\012;";')
+   >>> C.load('keebler="E=everybody; L=\\"Loves\\"; fudge=;";')
    >>> print(C)
-   Set-Cookie: keebler="E=everybody; L=\"Loves\"; fudge=\012;"
+   Set-Cookie: keebler="E=everybody; L=\"Loves\"; fudge=;"
 
 Each element of the Cookie also supports all of the RFC 2109
 Cookie attributes.  Here's an example which sets the Path
@@ -170,6 +170,15 @@ _Translator.update({
 })
 
 _is_legal_key = re.compile('[%s]+' % re.escape(_LegalChars)).fullmatch
+_control_character_re = re.compile(r'[\x00-\x1F\x7F]')
+
+
+def _has_control_character(*val):
+    """Detects control characters within a value.
+    Supports any type, as header values can be any type.
+    """
+    return any(_control_character_re.search(str(v)) for v in val)
+
 
 def _quote(str):
     r"""Quote a string for use in a cookie header.
@@ -294,12 +303,16 @@ class Morsel(dict):
         K = K.lower()
         if not K in self._reserved:
             raise CookieError("Invalid attribute %r" % (K,))
+        if _has_control_character(K, V):
+            raise CookieError(f"Control characters are not allowed in cookies {K!r} {V!r}")
         dict.__setitem__(self, K, V)
 
     def setdefault(self, key, val=None):
         key = key.lower()
         if key not in self._reserved:
             raise CookieError("Invalid attribute %r" % (key,))
+        if _has_control_character(key, val):
+            raise CookieError("Control characters are not allowed in cookies %r %r" % (key, val,))
         return dict.setdefault(self, key, val)
 
     def __eq__(self, morsel):
@@ -324,8 +337,15 @@ class Morsel(dict):
             key = key.lower()
             if key not in self._reserved:
                 raise CookieError("Invalid attribute %r" % (key,))
+            if _has_control_character(key, val):
+                raise CookieError("Control characters are not allowed in "
+                                  f"cookies {key!r} {val!r}")
             data[key] = val
         dict.update(self, data)
+
+    def __ior__(self, values):
+        self.update(values)
+        return self
 
     def isReservedKey(self, K):
         return K.lower() in self._reserved
@@ -335,6 +355,9 @@ class Morsel(dict):
             raise CookieError('Attempt to set a reserved key %r' % (key,))
         if not _is_legal_key(key):
             raise CookieError('Illegal key %r' % (key,))
+        if _has_control_character(key, val, coded_val):
+            raise CookieError(
+                "Control characters are not allowed in cookies %r %r %r" % (key, val, coded_val,))
 
         # It's a good key, so save it.
         self._key = key
@@ -349,9 +372,15 @@ class Morsel(dict):
         }
 
     def __setstate__(self, state):
-        self._key = state['key']
-        self._value = state['value']
-        self._coded_value = state['coded_value']
+        key = state['key']
+        value = state['value']
+        coded_value = state['coded_value']
+        if _has_control_character(key, value, coded_value):
+            raise CookieError("Control characters are not allowed in cookies "
+                              f"{key!r} {value!r} {coded_value!r}")
+        self._key = key
+        self._value = value
+        self._coded_value = coded_value
 
     def output(self, attrs=None, header="Set-Cookie:"):
         return "%s %s" % (header, self.OutputString(attrs))
@@ -363,13 +392,16 @@ class Morsel(dict):
 
     def js_output(self, attrs=None):
         # Print javascript
+        output_string = self.OutputString(attrs)
+        if _has_control_character(output_string):
+            raise CookieError("Control characters are not allowed in cookies")
         return """
         <script type="text/javascript">
         <!-- begin hiding
         document.cookie = \"%s\";
         // end hiding -->
         </script>
-        """ % (self.OutputString(attrs).replace('"', r'\"'))
+        """ % (output_string.replace('"', r'\"'))
 
     def OutputString(self, attrs=None):
         # Build up our result
@@ -488,7 +520,10 @@ class BaseCookie(dict):
         result = []
         items = sorted(self.items())
         for key, value in items:
-            result.append(value.output(attrs, header))
+            value_output = value.output(attrs, header)
+            if _has_control_character(value_output):
+                raise CookieError("Control characters are not allowed in cookies")
+            result.append(value_output)
         return sep.join(result)
 
     __str__ = output
