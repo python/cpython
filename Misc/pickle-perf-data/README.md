@@ -12,13 +12,19 @@ list-of-strs, flat str-keyed dict, deep list-of-lists, nested
 list-of-dicts). Each reports a best-of-9 median for dump and load at
 protocol 5.
 
-`pickle_save_profile.py` — `cProfile`-based breakdown used once to
-identify which internal calls dominate `save()` (informed the priority
-ordering of ideas D, E over B).
+`pickle_pure_bench_bytes.py` — bytes-heavy workload (short bytes,
+medium bytes, bytearrays, bytes-keyed dict). Introduced in round 2 to
+evaluate F6 (bytes in the save() fast path).
+
+`pickle_save_profile.py` — `cProfile`-based breakdown used to identify
+which internal calls dominate `save()` (informed the priority ordering
+of ideas D, E over B; in round 2, drove the F1 / F2 / F4 ordering).
 
 Run each with `taskset -c 0 ./python <script>` on a quiet machine.
 
 ## JSON files
+
+### Round 1 (Exp 4 → E)
 
 | File | Commit / state |
 | --- | --- |
@@ -27,7 +33,26 @@ Run each with `taskset -c 0 ./python <script>` on a quiet machine.
 | `pickle-pure-Donly-verify.json` | Exp 4 + D (inlined `commit_frame`) |
 | `pickle-pure-BD.json` | Exp 4 + D + B attempt — **used to confirm B regression** |
 | `pickle-pure-DE.json` | Exp 4 + D + E (int-only initial form) |
-| `pickle-pure-DE-v2.json` | Exp 4 + D + E (str added — the shipped form, `bb9d721`) |
+| `pickle-pure-DE-v2.json` | Exp 4 + D + E (str added — `bb9d721`) |
+
+### Round 2 (F1 → F6)
+
+| File | Commit / state |
+| --- | --- |
+| `pickle-post-fix.json` | Large-dict mutation fix, before F1 reorder |
+| `pickle-F1v2.json` | F1 (save() reordered, atomic short-circuit before memo, `285fcae`) |
+| `pickle-F3.json` | F3 (frame byte counter) — **rejected**, reverted |
+| `pickle-F4.json` | F4 (BININT1 opcode cache, `7c6af84`) |
+| `pickle-F2.json` | F2 (inlined MEMOIZE in memoize(), `2f1d38b`) |
+| `pickle-F5.json` | F5 (ASCII save_str) — **rejected**, reverted |
+| `pickle-F6v2.json` | F6 (bytes in fast path, `e917108`) — current tip |
+
+### Bytes-specific bench (introduced in round 2)
+
+| File | Content |
+| --- | --- |
+| `pickle-bytes-pre.json` | Before F6; baseline for bytes workloads |
+| `pickle-bytes-F6v2.json` | After F6 |
 
 ## Interpretation guide
 
