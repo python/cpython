@@ -27,7 +27,7 @@ process_single_stack_chunk(
     StackChunkInfo *chunk_info
 ) {
     // Start with default size assumption
-    size_t current_size = _PY_DATA_STACK_CHUNK_SIZE;
+    size_t current_size = _PY_STACK_CHUNK_MIN_SIZE;
 
     char *this_chunk = PyMem_RawMalloc(current_size);
     if (!this_chunk) {
@@ -87,9 +87,15 @@ copy_stack_chunks(RemoteUnwinderObject *unwinder,
     size_t count = 0;
     size_t max_chunks = 16;
 
-    if (read_ptr(unwinder, tstate_addr + (uintptr_t)unwinder->debug_offsets.thread_state.datastack_chunk, &chunk_addr)) {
+    if (read_ptr(unwinder, tstate_addr + (uintptr_t)unwinder->debug_offsets.thread_state.stack_chunk_list, &chunk_addr)) {
         set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to read initial stack chunk address");
         return -1;
+    }
+
+    if (!chunk_addr) {
+        out_chunks->chunks = NULL;
+        out_chunks->count = 0;
+        return 0;
     }
 
     chunks = PyMem_RawMalloc(max_chunks * sizeof(StackChunkInfo));
@@ -99,33 +105,14 @@ copy_stack_chunks(RemoteUnwinderObject *unwinder,
         return -1;
     }
 
-    const size_t MAX_STACK_CHUNKS = 4096;
-    while (chunk_addr != 0 && count < MAX_STACK_CHUNKS) {
-        // Grow array if needed
-        if (count >= max_chunks) {
-            max_chunks *= 2;
-            StackChunkInfo *new_chunks = PyMem_RawRealloc(chunks, max_chunks * sizeof(StackChunkInfo));
-            if (!new_chunks) {
-                PyErr_NoMemory();
-                set_exception_cause(unwinder, PyExc_MemoryError, "Failed to grow stack chunks array");
-                goto error;
-            }
-            chunks = new_chunks;
-        }
-
-        // Process this chunk
-        if (process_single_stack_chunk(unwinder, chunk_addr, &chunks[count]) < 0) {
-            set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to process stack chunk");
-            goto error;
-        }
-
-        // Get next chunk address and increment count
-        chunk_addr = GET_MEMBER(uintptr_t, chunks[count].local_copy, offsetof(_PyStackChunk, previous));
-        count++;
+    // Process this chunk
+    if (process_single_stack_chunk(unwinder, chunk_addr, &chunks[count]) < 0) {
+        set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to process stack chunk");
+        goto error;
     }
 
     out_chunks->chunks = chunks;
-    out_chunks->count = count;
+    out_chunks->count = 1;
     return 0;
 
 error:

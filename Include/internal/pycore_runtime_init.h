@@ -179,6 +179,9 @@ extern PyTypeObject _PyExc_MemoryError;
         ._whence = _PyThreadState_WHENCE_NOTSET, \
         .py_recursion_limit = Py_DEFAULT_RECURSION_LIMIT, \
         .context_ver = 1, \
+        .stack_chunk_list = NULL, \
+        .stack_limit = NULL, \
+        .stack_top = NULL, \
     }
 
 

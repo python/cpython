@@ -106,7 +106,7 @@ typedef struct _Py_DebugOffsets {
         uint64_t last_profiled_frame;
         uint64_t thread_id;
         uint64_t native_thread_id;
-        uint64_t datastack_chunk;
+        uint64_t stack_chunk_list;
         uint64_t status;
         uint64_t holds_gil;
         uint64_t gil_requested;
@@ -287,7 +287,7 @@ typedef struct _Py_DebugOffsets {
         .last_profiled_frame = offsetof(PyThreadState, last_profiled_frame), \
         .thread_id = offsetof(PyThreadState, thread_id), \
         .native_thread_id = offsetof(PyThreadState, native_thread_id), \
-        .datastack_chunk = offsetof(PyThreadState, datastack_chunk), \
+        .stack_chunk_list = offsetof(PyThreadState, stack_chunk_list), \
         .status = offsetof(PyThreadState, _status), \
         .holds_gil = offsetof(PyThreadState, holds_gil), \
         .gil_requested = offsetof(PyThreadState, gil_requested), \

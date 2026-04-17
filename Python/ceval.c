@@ -1925,8 +1925,13 @@ clear_thread_frame(PyThreadState *tstate, _PyInterpreterFrame * frame)
     assert(frame->owner == FRAME_OWNED_BY_THREAD);
     // Make sure that this is, indeed, the top frame. We can't check this in
     // _PyThreadState_PopFrame, since f_code is already cleared at that point:
-    assert((PyObject **)frame + _PyFrame_GetCode(frame)->co_framesize ==
-        tstate->datastack_top);
+    assert(
+        _Py_ensure_frame_in_current_stack_chunk(  // the frame might be in a previous stack chunk
+            tstate,
+            (char *)((PyObject **)frame + _PyFrame_GetCode(frame)->co_framesize)
+        )
+        == tstate->stack_top
+    );
     assert(frame->frame_obj == NULL || frame->frame_obj->f_frame == frame);
     _PyFrame_ClearExceptCode(frame);
     PyStackRef_CLEAR(frame->f_executable);

@@ -55,14 +55,14 @@ typedef struct _err_stackitem {
 } _PyErr_StackItem;
 
 typedef struct _stack_chunk {
-    struct _stack_chunk *previous;
     size_t size;
-    size_t top;
-    PyObject * data[1]; /* Variable sized */
+    struct _stack_chunk *previous;
+    PyObject *data[1]; /* Variable sized */
 } _PyStackChunk;
 
-/* Minimum size of data stack chunk */
-#define _PY_DATA_STACK_CHUNK_SIZE (16*1024)
+#define _PY_STACK_CHUNK_MIN_SIZE 4096
+#define _PY_STACK_CHUNK_OVERHEADS (offsetof(_PyStackChunk, data))
+
 struct _ts {
     /* See Python/ceval.c for comments explaining most fields */
 
@@ -195,10 +195,9 @@ struct _ts {
     /* Unique thread state id. */
     uint64_t id;
 
-    _PyStackChunk *datastack_chunk;
-    PyObject **datastack_top;
-    PyObject **datastack_limit;
-    _PyStackChunk *datastack_cached_chunk;
+    _PyStackChunk *stack_chunk_list;
+    PyObject **stack_top;
+    PyObject **stack_limit;
     /* XXX signal handlers should also be here */
 
     /* The following fields are here to avoid allocation during init.
