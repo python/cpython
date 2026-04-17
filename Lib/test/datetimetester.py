@@ -5661,6 +5661,15 @@ class TestDateTimeTZ(TestDateTime, TZInfoBase, unittest.TestCase):
         s = t.astimezone()
         self.assertEqual(t.tzinfo, s.tzinfo)
 
+    @unittest.skipIf(sys.platform != "win32", "gh-148658 only affects Windows")
+    def test_astimezone_negative_timestamp_dst(self):
+        # gh-148658: astimezone() returned DST name for negative timestamps
+        # on Windows. Verify that the timezone name is consistent between
+        # negative and non-negative timestamps.
+        dt_neg1 = self.theclass.fromtimestamp(-1).astimezone()
+        dt_zero = self.theclass.fromtimestamp(0).astimezone()
+        self.assertEqual(dt_neg1.tzname(), dt_zero.tzname())
+
     def test_aware_subtract(self):
         cls = self.theclass
 
