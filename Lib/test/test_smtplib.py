@@ -3,6 +3,7 @@ import email.mime.text
 from email.message import EmailMessage
 from email.base64mime import body_encode as encode_base64
 import email.utils
+from _saslprep import saslprep
 import hashlib
 import hmac
 import socket
@@ -808,6 +809,13 @@ sim_users = {'Mr.A@somewhere.com':'John A',
             }
 
 sim_auth = ('Mr.A@somewhere.com', 'somepassword')
+sim_auths = {
+    'Mr.A@somewhere.com': 'somepassword',
+    # Unicode username and password (Devanagari).
+    '\u092D\u093E\u0930\u0924@\u092D\u093E\u0930\u0924': '\u092D\u093E\u0930\u0924@',
+    # Password that SASLprep normalizes: Roman numeral IX (U+2168) -> 'IX'.
+    'Mr.C@somewhere.com': 'IX',
+}
 sim_cram_md5_challenge = ('PENCeUxFREJoU0NnbmhNWitOMjNGNn'
                           'dAZWx3b29kLmlubm9zb2Z0LmNvbT4=')
 sim_lists = {'list-1':['Mr.A@somewhere.com','Mrs.C@somewhereesle.com'],
@@ -897,7 +905,11 @@ class SimSMTPChannel(smtpd.SMTPChannel):
                 self.push('535 Splitting response {!r} into user and password'
                           ' failed: {}'.format(logpass, e))
                 return
-            self._authenticated(user, password == sim_auth[1])
+            stored = sim_auths.get(user, '')
+            self._authenticated(
+                user,
+                password == saslprep(stored, allow_unassigned_code_points=False),
+            )
 
     def _auth_login(self, arg=None):
         if arg is None:
@@ -909,7 +921,11 @@ class SimSMTPChannel(smtpd.SMTPChannel):
             self.push('334 UGFzc3dvcmQ6')
         else:
             password = self._decode_base64(arg)
-            self._authenticated(self._auth_login_user, password == sim_auth[1])
+            stored = sim_auths.get(self._auth_login_user, '')
+            self._authenticated(
+                self._auth_login_user,
+                password == saslprep(stored, allow_unassigned_code_points=False),
+            )
             del self._auth_login_user
 
     def _auth_buggy(self, arg=None):
@@ -928,8 +944,9 @@ class SimSMTPChannel(smtpd.SMTPChannel):
                 self.push('535 Splitting response {!r} into user and password '
                           'failed: {}'.format(logpass, e))
                 return
-            pwd = sim_auth[1].encode('ascii')
-            msg = self._decode_base64(sim_cram_md5_challenge).encode('ascii')
+            stored = sim_auths.get(user, '')
+            pwd = saslprep(stored, allow_unassigned_code_points=False).encode('utf-8')
+            msg = self._decode_base64(sim_cram_md5_challenge).encode('utf-8')
             try:
                 valid_hashed_pass = hmac.HMAC(pwd, msg, 'md5').hexdigest()
             except ValueError:
@@ -1122,21 +1139,36 @@ class SMTPSimTests(unittest.TestCase):
         self.assertEqual(smtp.expn(u), expected_unknown)
         smtp.quit()
 
+    def helpAUTH_x(self, feature):
+        """Helper: test all sim_auths credentials against the given AUTH feature."""
+        self.serv.add_feature(feature)
+        for username, password in sim_auths.items():
+            with self.subTest(username=username):
+                smtp = smtplib.SMTP(HOST, self.port, local_hostname='localhost',
+                                    timeout=support.LOOPBACK_TIMEOUT)
+                resp = smtp.login(username, password)
+                self.assertEqual(resp, (235, b'Authentication Succeeded'))
+                smtp.close()
+            with self.subTest(username=username, wrong_password=True):
+                smtp = smtplib.SMTP(HOST, self.port, local_hostname='localhost',
+                                    timeout=support.LOOPBACK_TIMEOUT)
+                with self.assertRaises(smtplib.SMTPAuthenticationError):
+                    smtp.login(username, "No" + password)
+                smtp.close()
+            with self.subTest(username=username, saslprep_equivalent=True):
+                # A soft-hyphen (U+00AD) SASLprep-normalizes to nothing,
+                # so the password with a trailing soft-hyphen should succeed.
+                smtp = smtplib.SMTP(HOST, self.port, local_hostname='localhost',
+                                    timeout=support.LOOPBACK_TIMEOUT)
+                resp = smtp.login(username, password + "\u00AD")
+                self.assertEqual(resp, (235, b'Authentication Succeeded'))
+                smtp.close()
+
     def testAUTH_PLAIN(self):
-        self.serv.add_feature("AUTH PLAIN")
-        smtp = smtplib.SMTP(HOST, self.port, local_hostname='localhost',
-                            timeout=support.LOOPBACK_TIMEOUT)
-        resp = smtp.login(sim_auth[0], sim_auth[1])
-        self.assertEqual(resp, (235, b'Authentication Succeeded'))
-        smtp.close()
+        self.helpAUTH_x("AUTH PLAIN")
 
     def testAUTH_LOGIN(self):
-        self.serv.add_feature("AUTH LOGIN")
-        smtp = smtplib.SMTP(HOST, self.port, local_hostname='localhost',
-                            timeout=support.LOOPBACK_TIMEOUT)
-        resp = smtp.login(sim_auth[0], sim_auth[1])
-        self.assertEqual(resp, (235, b'Authentication Succeeded'))
-        smtp.close()
+        self.helpAUTH_x("AUTH LOGIN")
 
     def testAUTH_LOGIN_initial_response_ok(self):
         self.serv.add_feature("AUTH LOGIN")
@@ -1178,12 +1210,7 @@ class SMTPSimTests(unittest.TestCase):
 
     @hashlib_helper.requires_hashdigest('md5', openssl=True)
     def testAUTH_CRAM_MD5(self):
-        self.serv.add_feature("AUTH CRAM-MD5")
-        smtp = smtplib.SMTP(HOST, self.port, local_hostname='localhost',
-                            timeout=support.LOOPBACK_TIMEOUT)
-        resp = smtp.login(sim_auth[0], sim_auth[1])
-        self.assertEqual(resp, (235, b'Authentication Succeeded'))
-        smtp.close()
+        self.helpAUTH_x("AUTH CRAM-MD5")
 
     @hashlib_helper.block_algorithm('md5')
     @mock.patch("smtplib._have_cram_md5_support", False)
@@ -1221,12 +1248,7 @@ class SMTPSimTests(unittest.TestCase):
     @hashlib_helper.requires_hashdigest('md5', openssl=True)
     def testAUTH_multiple(self):
         # Test that multiple authentication methods are tried.
-        self.serv.add_feature("AUTH BOGUS PLAIN LOGIN CRAM-MD5")
-        smtp = smtplib.SMTP(HOST, self.port, local_hostname='localhost',
-                            timeout=support.LOOPBACK_TIMEOUT)
-        resp = smtp.login(sim_auth[0], sim_auth[1])
-        self.assertEqual(resp, (235, b'Authentication Succeeded'))
-        smtp.close()
+        self.helpAUTH_x("AUTH BOGUS PLAIN LOGIN CRAM-MD5")
 
     def test_auth_function(self):
         supported = {'PLAIN', 'LOGIN'}
