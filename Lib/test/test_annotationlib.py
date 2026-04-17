@@ -1962,9 +1962,13 @@ class TestForwardRefClass(unittest.TestCase):
         )
 
     def test_forward_repr_extra_names(self):
-        fr = ForwardRef("__annotationlib_name_1__")
-        fr.__extra_names__ = {"__annotationlib_name_1__": list[str]}
-        self.assertEqual(repr(fr), "ForwardRef('list[str]')")
+        def f(a: undefined | str): ...
+
+        annos = get_annotations(f, format=Format.FORWARDREF)
+
+        self.assertRegex(
+            repr(annos['a']), r"ForwardRef\('undefined \| str'.*\)"
+        )
 
     def test_forward_recursion_actually(self):
         def namespace1():
