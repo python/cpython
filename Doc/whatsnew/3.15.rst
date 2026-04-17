@@ -450,7 +450,7 @@ Improved error messages
 
   Running this code now produces a clearer suggestion:
 
-  .. code-block:: pycon
+  .. code-block:: pytb
 
      Traceback (most recent call last):
      File "/home/pablogsal/github/python/main/lel.py", line 42, in <module>
