@@ -1313,7 +1313,11 @@ class ExpatReaderTest(XmlTestBase):
             def startElementNS(self, name, qname, attrs):
                 self.qname = qname
 
-        for xml_s, expected_qname in zip(["<Q:E xmlns:Q='http://example.org/testuri'/>", "<E xmlns='http://example.org/testuri'/>", "<E />"], ["Q:E", "E", "E"]):
+        for xml_s, expected_qname in (
+            ("<Q:E xmlns:Q='http://example.org/testuri'/>", "Q:E"),
+            ("<E xmlns='http://example.org/testuri'/>", "E"),
+            ("<E />", "E"),
+        ):
             parser = create_parser()
             parser.setFeature(handler.feature_namespaces, 1)
             parser.setFeature(handler.feature_namespace_prefixes, 1)
