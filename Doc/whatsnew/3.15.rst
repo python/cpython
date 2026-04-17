@@ -707,7 +707,7 @@ base64
   (Contributed by Serhiy Storchaka in :gh:`143214` and :gh:`146431`.)
 
 * Added the *ignorechars* parameter in :func:`~base64.b16decode`,
-  :func:`~base64.b32decode`,  :func:`~base64.b32hexdecode`,
+  :func:`~base64.b32decode`, :func:`~base64.b32hexdecode`,
   :func:`~base64.b64decode`, :func:`~base64.b85decode`, and
   :func:`~base64.z85decode`.
   (Contributed by Serhiy Storchaka in :gh:`144001` and :gh:`146431`.)
@@ -879,7 +879,7 @@ inspect
 json
 ----
 
-* Add the *array_hook* parameter to  :func:`~json.load` and
+* Add the *array_hook* parameter to :func:`~json.load` and
   :func:`~json.loads` functions:
   allow a callback for JSON literal array types to customize Python lists in
   the resulting decoded object. Passing combined :class:`frozendict` to
