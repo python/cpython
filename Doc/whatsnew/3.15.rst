@@ -453,9 +453,9 @@ Improved error messages
   .. code-block:: pytb
 
      Traceback (most recent call last):
-     File "/home/pablogsal/github/python/main/lel.py", line 42, in <module>
-        print(container.area)
-              ^^^^^^^^^^^^^^
+       File "/home/pablogsal/github/python/main/lel.py", line 42, in <module>
+         print(container.area)
+               ^^^^^^^^^^^^^^
      AttributeError: 'Container' object has no attribute 'area'. Did you mean '.inner.area' instead of '.area'?
 
 * The interpreter now tries to provide a suggestion when
