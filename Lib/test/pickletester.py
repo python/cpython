@@ -57,6 +57,8 @@ requires_32b = unittest.skipUnless(sys.maxsize < 2**32,
 # kind of outer loop.
 protocols = range(pickle.HIGHEST_PROTOCOL + 1)
 
+FAST_NESTING_LIMIT = 50
+
 
 # Return True if opcode code appears in the pickle, else False.
 def opcode_in_pickle(code, pickle):
@@ -1484,6 +1486,29 @@ class AbstractUnpickleTests:
         # bad hashable dict key
         self.check_unpickling_error(CustomError, base + b'}c__main__\nBadKey1\n)\x81Nsb.')
 
+    def test_bad_types(self):
+        # APPEND
+        self.assertEqual(self.loads(b']Na.'), [None])
+        self.check_unpickling_error(AttributeError, b'NNa.')  # non-list
+        # APPENDS
+        self.assertEqual(self.loads(b'](Ne.'), [None])
+        self.check_unpickling_error(AttributeError, b'N(Ne.')  # non-list
+        self.check_unpickling_error(AttributeError, b'N(e.')
+        # SETITEM
+        self.assertEqual(self.loads(b'}NNs.'), {None: None})
+        self.check_unpickling_error(TypeError, b'NNNs.')  # non-dict
+        self.check_unpickling_error(TypeError, b'}]Ns.')  # non-hashable key
+        # SETITEMS
+        self.assertEqual(self.loads(b'}(NNu.'), {None: None})
+        self.check_unpickling_error(TypeError, b'N(NNu.')  # non-dict
+        self.assertEqual(self.loads(b'N(u.'), None)  # no validation for empty items
+        self.check_unpickling_error(TypeError, b'}(]Nu.')  # non-hashable key
+        # ADDITEMS
+        self.assertEqual(self.loads(b'\x8f(N\x90.'), {None})
+        self.check_unpickling_error(AttributeError, b'N(N\x90.')  # non-set
+        self.check_unpickling_error(AttributeError, b'N(\x90.')
+        self.check_unpickling_error(TypeError, b'\x8f(]\x90.')  # non-hashable element
+
     def test_bad_stack(self):
         badpickles = [
             b'.',                       # STOP
@@ -2816,11 +2841,13 @@ class AbstractPickleTests:
             self.assertEqual(list(x[0].attr.keys()), [1])
             self.assertIs(x[0].attr[1], x)
 
-    def _test_recursive_collection_and_inst(self, factory, oldminproto=None):
+    def _test_recursive_collection_and_inst(self, factory, oldminproto=None,
+                                            minprotocol=0):
         if self.py_version < (3, 0):
             self.skipTest('"classic" classes are not interoperable with Python 2')
         # Mutable object containing a collection containing the original
         # object.
+        protocols = range(minprotocol, pickle.HIGHEST_PROTOCOL + 1)
         o = Object()
         o.attr = factory([o])
         t = type(o.attr)
@@ -2860,6 +2887,11 @@ class AbstractPickleTests:
     def test_recursive_dict_and_inst(self):
         self._test_recursive_collection_and_inst(dict.fromkeys, oldminproto=0)
 
+    def test_recursive_frozendict_and_inst(self):
+        if self.py_version < (3, 15):
+            self.skipTest('need frozendict')
+        self._test_recursive_collection_and_inst(frozendict.fromkeys, minprotocol=2)
+
     def test_recursive_set_and_inst(self):
         self._test_recursive_collection_and_inst(set)
 
@@ -2880,6 +2912,50 @@ class AbstractPickleTests:
 
     def test_recursive_frozenset_subclass_and_inst(self):
         self._test_recursive_collection_and_inst(MyFrozenSet)
+
+    def _test_recursive_collection_in_key(self, factory, minprotocol=0):
+        protocols = range(minprotocol, pickle.HIGHEST_PROTOCOL + 1)
+        key = Object()
+        o = factory({key: 1})
+        key.attr = o
+        for proto in protocols:
+            with self.subTest(proto=proto):
+                s = self.dumps(o, proto)
+                x = self.loads(s)
+                keys = list(x.keys())
+                self.assertEqual(len(keys), 1)
+                self.assertIs(keys[0].attr, x)
+
+    def test_recursive_frozendict_in_key(self):
+        if self.py_version < (3, 15):
+            self.skipTest('need frozendict')
+        self._test_recursive_collection_in_key(frozendict, minprotocol=2)
+
+    def test_recursive_frozendict_subclass_in_key(self):
+        if self.py_version < (3, 15):
+            self.skipTest('need frozendict')
+        self._test_recursive_collection_in_key(MyFrozenDict)
+
+    def _test_recursive_collection_in_value(self, factory, minprotocol=0):
+        protocols = range(minprotocol, pickle.HIGHEST_PROTOCOL + 1)
+        o = factory(key=[])
+        o['key'].append(o)
+        for proto in protocols:
+            with self.subTest(proto=proto):
+                s = self.dumps(o, proto)
+                x = self.loads(s)
+                self.assertEqual(len(x['key']), 1)
+                self.assertIs(x['key'][0], x)
+
+    def test_recursive_frozendict_in_value(self):
+        if self.py_version < (3, 15):
+            self.skipTest('need frozendict')
+        self._test_recursive_collection_in_value(frozendict, minprotocol=2)
+
+    def test_recursive_frozendict_subclass_in_value(self):
+        if self.py_version < (3, 15):
+            self.skipTest('need frozendict')
+        self._test_recursive_collection_in_value(MyFrozenDict)
 
     def test_recursive_inst_state(self):
         # Mutable object containing itself.
@@ -3167,6 +3243,7 @@ class AbstractPickleTests:
             'bytes': (3, 0),
             'BuiltinImporter': (3, 3),
             'str': (3, 4),  # not interoperable with Python < 3.4
+            'frozendict': (3, 15),
         }
         for t in builtins.__dict__.values():
             if isinstance(t, type) and not issubclass(t, BaseException):
@@ -3202,6 +3279,7 @@ class AbstractPickleTests:
             'ExceptionGroup': (3, 11),
             '_IncompleteInputError': (3, 13),
             'PythonFinalizationError': (3, 13),
+            'ImportCycleError': (3, 15),
         }
         for t in builtins.__dict__.values():
             if isinstance(t, type) and issubclass(t, BaseException):
@@ -3228,6 +3306,7 @@ class AbstractPickleTests:
             'breakpoint': (3, 7),
             'aiter': (3, 10),
             'anext': (3, 10),
+            '__lazy_import__': (3, 15),
         }
         for t in builtins.__dict__.values():
             if isinstance(t, types.BuiltinFunctionType):
@@ -3368,6 +3447,8 @@ class AbstractPickleTests:
                         self.skipTest('int and str subclasses are not interoperable with Python 2')
                     if (3, 0) <= self.py_version < (3, 4) and proto < 2 and C in (MyStr, MyUnicode):
                         self.skipTest('str subclasses are not interoperable with Python < 3.4')
+                    if self.py_version < (3, 15) and C == MyFrozenDict:
+                        self.skipTest('frozendict is not available on Python < 3.15')
                     B = C.__base__
                     x = C(C.sample)
                     x.foo = 42
@@ -3389,6 +3470,8 @@ class AbstractPickleTests:
                 with self.subTest(proto=proto, C=C):
                     if self.py_version < (3, 4) and proto < 3 and C in (MyStr, MyUnicode):
                         self.skipTest('str subclasses are not interoperable with Python < 3.4')
+                    if self.py_version < (3, 15) and C == MyFrozenDict:
+                        self.skipTest('frozendict is not available on Python < 3.15')
                     B = C.__base__
                     x = C(C.sample)
                     x.foo = 42
@@ -4118,6 +4201,109 @@ class AbstractPickleTests:
                 with self.subTest(proto=proto, descr=descr):
                     self.assertRaises(TypeError, self.dumps, descr, proto)
 
+    def test_private_methods(self):
+        if self.py_version < (3, 15):
+            self.skipTest('not supported in Python < 3.15')
+        obj = PrivateMethods(42)
+        for proto in protocols:
+            with self.subTest(proto=proto):
+                unpickled = self.loads(self.dumps(obj.get_method(), proto))
+                self.assertEqual(unpickled(), 42)
+                unpickled = self.loads(self.dumps(obj.get_unbound_method(), proto))
+                self.assertEqual(unpickled(obj), 42)
+                unpickled = self.loads(self.dumps(obj.get_classmethod(), proto))
+                self.assertEqual(unpickled(), 43)
+                unpickled = self.loads(self.dumps(obj.get_staticmethod(), proto))
+                self.assertEqual(unpickled(), 44)
+
+    def test_private_nested_classes(self):
+        if self.py_version < (3, 15):
+            self.skipTest('not supported in Python < 3.15')
+        cls1 = PrivateNestedClasses.get_nested()
+        cls2 = cls1.get_nested2()
+        for proto in protocols:
+            with self.subTest(proto=proto):
+                unpickled = self.loads(self.dumps(cls1, proto))
+                self.assertIs(unpickled, cls1)
+                unpickled = self.loads(self.dumps(cls2, proto))
+                self.assertIs(unpickled, cls2)
+
+    def test_object_with_attrs(self):
+        obj = Object()
+        obj.a = 1
+        for proto in protocols:
+            with self.subTest(proto=proto):
+                unpickled = self.loads(self.dumps(obj, proto))
+                self.assertEqual(unpickled.a, obj.a)
+
+    def test_object_with_slots(self):
+        obj = WithSlots()
+        obj.a = 1
+        self.assertRaises(TypeError, self.dumps, obj, 0)
+        self.assertRaises(TypeError, self.dumps, obj, 1)
+        for proto in protocols[2:]:
+            with self.subTest(proto=proto):
+                unpickled = self.loads(self.dumps(obj, proto))
+                self.assertEqual(unpickled.a, obj.a)
+                self.assertNotHasAttr(unpickled, 'b')
+
+        obj = WithSlotsSubclass()
+        obj.a = 1
+        obj.c = 2
+        self.assertRaises(TypeError, self.dumps, obj, 0)
+        self.assertRaises(TypeError, self.dumps, obj, 1)
+        for proto in protocols[2:]:
+            with self.subTest(proto=proto):
+                unpickled = self.loads(self.dumps(obj, proto))
+                self.assertEqual(unpickled.a, obj.a)
+                self.assertEqual(unpickled.c, obj.c)
+                self.assertNotHasAttr(unpickled, 'b')
+
+        obj = WithSlotsAndDict()
+        obj.a = 1
+        obj.c = 2
+        self.assertRaises(TypeError, self.dumps, obj, 0)
+        self.assertRaises(TypeError, self.dumps, obj, 1)
+        for proto in protocols[2:]:
+            with self.subTest(proto=proto):
+                unpickled = self.loads(self.dumps(obj, proto))
+                self.assertEqual(unpickled.a, obj.a)
+                self.assertEqual(unpickled.c, obj.c)
+                self.assertEqual(unpickled.__dict__, obj.__dict__)
+                self.assertNotHasAttr(unpickled, 'b')
+
+    def test_object_with_private_attrs(self):
+        obj = WithPrivateAttrs(1)
+        for proto in protocols:
+            with self.subTest(proto=proto):
+                unpickled = self.loads(self.dumps(obj, proto))
+                self.assertEqual(unpickled.get(), obj.get())
+
+        obj = WithPrivateAttrsSubclass(1, 2)
+        for proto in protocols:
+            with self.subTest(proto=proto):
+                unpickled = self.loads(self.dumps(obj, proto))
+                self.assertEqual(unpickled.get(), obj.get())
+                self.assertEqual(unpickled.get2(), obj.get2())
+
+    def test_object_with_private_slots(self):
+        obj = WithPrivateSlots(1)
+        self.assertRaises(TypeError, self.dumps, obj, 0)
+        self.assertRaises(TypeError, self.dumps, obj, 1)
+        for proto in protocols[2:]:
+            with self.subTest(proto=proto):
+                unpickled = self.loads(self.dumps(obj, proto))
+                self.assertEqual(unpickled.get(), obj.get())
+
+        obj = WithPrivateSlotsSubclass(1, 2)
+        self.assertRaises(TypeError, self.dumps, obj, 0)
+        self.assertRaises(TypeError, self.dumps, obj, 1)
+        for proto in protocols[2:]:
+            with self.subTest(proto=proto):
+                unpickled = self.loads(self.dumps(obj, proto))
+                self.assertEqual(unpickled.get(), obj.get())
+                self.assertEqual(unpickled.get2(), obj.get2())
+
     def test_compat_pickle(self):
         if self.py_version < (3, 4):
             self.skipTest("doesn't work in Python < 3.4'")
@@ -4367,6 +4553,94 @@ class AbstractPickleTests:
                 except RuntimeError as e:
                     expected = "changed size during iteration"
                     self.assertIn(expected, str(e))
+
+    def fast_save_enter(self, create_data, minprotocol=0):
+        # gh-146059: Check that fast_save_leave() is called when
+        # fast_save_enter() is called.
+        if not hasattr(self, "pickler"):
+            self.skipTest("need Pickler class")
+
+        data = [create_data(i) for i in range(FAST_NESTING_LIMIT * 2)]
+        protocols = range(minprotocol, pickle.HIGHEST_PROTOCOL + 1)
+        for proto in protocols:
+            with self.subTest(proto=proto):
+                buf = io.BytesIO()
+                pickler = self.pickler(buf, protocol=proto)
+                # Enable fast mode (disables memo, enables cycle detection)
+                pickler.fast = 1
+                pickler.dump(data)
+
+                buf.seek(0)
+                data2 = self.unpickler(buf).load()
+                self.assertEqual(data2, data)
+
+    def test_fast_save_enter_tuple(self):
+        self.fast_save_enter(lambda i: (i,))
+
+    def test_fast_save_enter_list(self):
+        self.fast_save_enter(lambda i: [i])
+
+    def test_fast_save_enter_frozenset(self):
+        self.fast_save_enter(lambda i: frozenset([i]))
+
+    def test_fast_save_enter_set(self):
+        self.fast_save_enter(lambda i: set([i]))
+
+    def test_fast_save_enter_frozendict(self):
+        if self.py_version < (3, 15):
+            self.skipTest('need frozendict')
+        self.fast_save_enter(lambda i: frozendict(key=i), minprotocol=2)
+
+    def test_fast_save_enter_dict(self):
+        self.fast_save_enter(lambda i: {"key": i})
+
+    def deep_nested_struct(self, create_nested,
+                           minprotocol=0, compare_equal=True,
+                           depth=FAST_NESTING_LIMIT * 2):
+        # gh-146059: Check that fast_save_leave() is called when
+        # fast_save_enter() is called.
+        if not hasattr(self, "pickler"):
+            self.skipTest("need Pickler class")
+
+        data = None
+        for i in range(depth):
+            data = create_nested(data)
+        protocols = range(minprotocol, pickle.HIGHEST_PROTOCOL + 1)
+        for proto in protocols:
+            with self.subTest(proto=proto):
+                buf = io.BytesIO()
+                pickler = self.pickler(buf, protocol=proto)
+                # Enable fast mode (disables memo, enables cycle detection)
+                pickler.fast = 1
+                pickler.dump(data)
+
+                buf.seek(0)
+                data2 = self.unpickler(buf).load()
+                if compare_equal:
+                    self.assertEqual(data2, data)
+
+    def test_deep_nested_struct_tuple(self):
+        self.deep_nested_struct(lambda data: (data,))
+
+    def test_deep_nested_struct_list(self):
+        self.deep_nested_struct(lambda data: [data])
+
+    def test_deep_nested_struct_frozenset(self):
+        self.deep_nested_struct(lambda data: frozenset((1, data)))
+
+    def test_deep_nested_struct_set(self):
+        self.deep_nested_struct(lambda data: {K(data)},
+                                depth=FAST_NESTING_LIMIT+1,
+                                compare_equal=False)
+
+    def test_deep_nested_struct_frozendict(self):
+        if self.py_version < (3, 15):
+            self.skipTest('need frozendict')
+        self.deep_nested_struct(lambda data: frozendict(x=data),
+                                minprotocol=2)
+
+    def test_deep_nested_struct_dict(self):
+        self.deep_nested_struct(lambda data: {'x': data})
 
 
 class BigmemPickleTests:

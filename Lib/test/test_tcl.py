@@ -817,6 +817,10 @@ class BigmemTclTest(unittest.TestCase):
 
 
 def setUpModule():
+    wantobjects = support.get_resource_value('wantobjects')
+    if wantobjects is not None:
+        unittest.enterModuleContext(
+            support.swap_attr(tkinter, 'wantobjects', int(wantobjects)))
     if support.verbose:
         tcl = Tcl()
         print('patchlevel =', tcl.call('info', 'patchlevel'), flush=True)

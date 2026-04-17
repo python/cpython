@@ -123,11 +123,33 @@ the :mod:`io` APIs instead.
 
    Write object *obj* to file object *p*.  The only supported flag for *flags* is
    :c:macro:`Py_PRINT_RAW`; if given, the :func:`str` of the object is written
-   instead of the :func:`repr`.  Return ``0`` on success or ``-1`` on failure; the
-   appropriate exception will be set.
+   instead of the :func:`repr`.
 
+   If *obj* is ``NULL``, write the string ``"<NULL>"``.
+
+   Return ``0`` on success or ``-1`` on failure; the
+   appropriate exception will be set.
 
 .. c:function:: int PyFile_WriteString(const char *s, PyObject *p)
 
    Write string *s* to file object *p*.  Return ``0`` on success or ``-1`` on
    failure; the appropriate exception will be set.
+
+
+Deprecated API
+^^^^^^^^^^^^^^
+
+
+These are :term:`soft deprecated` APIs that were included in Python's C API
+by mistake. They are documented solely for completeness; use other
+``PyFile*`` APIs instead.
+
+.. c:function:: PyObject *PyFile_NewStdPrinter(int fd)
+
+   Use :c:func:`PyFile_FromFd` with defaults (``fd, NULL, "w", -1, NULL, NULL, NULL, 0``) instead.
+
+.. c:var:: PyTypeObject PyStdPrinter_Type
+
+   Type of file-like objects used internally at Python startup when :py:mod:`io` is
+   not yet available.
+   Use Python :py:func:`open` or :c:func:`PyFile_FromFd` to create file objects instead.
