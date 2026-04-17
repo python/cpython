@@ -16,7 +16,6 @@
 #endif
 
 #include "Python.h"
-#include "pycore_dict.h"          // _PyDict_CopyAsDict()
 #include "pycore_pyhash.h"        // _Py_HashSecret
 #include "pycore_tuple.h"         // _PyTuple_FromPair
 #include "pycore_weakref.h"       // FT_CLEAR_WEAKREFS()
@@ -391,7 +390,7 @@ get_attrib_from_keywords(PyObject *kwds)
             Py_DECREF(attrib);
             return NULL;
         }
-        Py_SETREF(attrib, _PyDict_CopyAsDict(attrib));
+        Py_SETREF(attrib, PyAnyDict_AsNewDict(attrib));
     }
     else {
         attrib = PyDict_New();
@@ -430,7 +429,7 @@ element_init(PyObject *self, PyObject *args, PyObject *kwds)
 
     if (attrib) {
         /* attrib passed as positional arg */
-        attrib = _PyDict_CopyAsDict(attrib);
+        attrib = PyAnyDict_AsNewDict(attrib);
         if (!attrib)
             return -1;
         if (kwds) {

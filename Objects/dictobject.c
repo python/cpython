@@ -4479,12 +4479,13 @@ anydict_copy(PyObject *o)
     return res;
 }
 
-// Similar to PyDict_Copy(), but accept also frozendict:
-// convert frozendict to a new dict.
 PyObject*
-_PyDict_CopyAsDict(PyObject *o)
+PyAnyDict_AsNewDict(PyObject *o)
 {
-    assert(PyAnyDict_Check(o));
+    if (o == NULL || !PyAnyDict_Check(o)) {
+        PyErr_BadInternalCall();
+        return NULL;
+    }
 
     PyObject *res;
     if (PyFrozenDict_Check(o)) {

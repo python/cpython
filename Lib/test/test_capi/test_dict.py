@@ -674,6 +674,19 @@ class CAPITest(unittest.TestCase):
         self.assertEqual(dct, frozendict())
         self.assertIs(type(dct), frozendict)
 
+    def test_anydict_asnewdict(self):
+        # Test PyAnyDict_AsNewDict()
+        anydict_asnewdict = _testcapi.anydict_asnewdict
+        for dict_type in ANYDICT_TYPES:
+            dct = dict_type({1: 2})
+            dct_copy = anydict_asnewdict(dct)
+            self.assertIs(type(dct_copy), dict)
+            self.assertEqual(dct_copy, dct)
+
+        for test_type in NOT_ANYDICT_TYPES + OTHER_TYPES:
+            self.assertRaises(SystemError, anydict_asnewdict, test_type())
+        self.assertRaises(SystemError, anydict_asnewdict, NULL)
+
 
 if __name__ == "__main__":
     unittest.main()

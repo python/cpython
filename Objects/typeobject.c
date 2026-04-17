@@ -4883,7 +4883,7 @@ type_new_get_slots(type_new_ctx *ctx, PyObject *dict)
 static PyTypeObject*
 type_new_init(type_new_ctx *ctx)
 {
-    PyObject *dict = _PyDict_CopyAsDict(ctx->orig_dict);
+    PyObject *dict = PyAnyDict_AsNewDict(ctx->orig_dict);
     if (dict == NULL) {
         goto error;
     }
