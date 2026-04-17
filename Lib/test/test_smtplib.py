@@ -3,7 +3,7 @@ import email.mime.text
 from email.message import EmailMessage
 from email.base64mime import body_encode as encode_base64
 import email.utils
-from _saslprep import saslprep
+from hashlib import saslprep
 import hashlib
 import hmac
 import socket

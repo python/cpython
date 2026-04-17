@@ -51,7 +51,7 @@ import copy
 import datetime
 import sys
 from email.base64mime import body_encode as encode_base64
-from _saslprep import saslprep
+from hashlib import saslprep
 
 __all__ = ["SMTPException", "SMTPNotSupportedError", "SMTPServerDisconnected", "SMTPResponseException",
            "SMTPSenderRefused", "SMTPRecipientsRefused", "SMTPDataError",
