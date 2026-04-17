@@ -31,6 +31,18 @@
 #  define Py_BUILD_CORE
 #endif
 
+/* Check valid values for target ABI macros.
+ */
+#if defined(Py_LIMITED_API) && Py_LIMITED_API+0 < 3
+   // Empty Py_LIMITED_API used to work; redefine to
+   // Python 3.2 to be explicit.
+#  undef Py_LIMITED_API
+#  define Py_LIMITED_API 0x03020000
+#endif
+#if defined(Py_TARGET_ABI3T) && Py_TARGET_ABI3T+0 < 0x030f0000
+#  error "Py_TARGET_ABI3T must be 0x030f0000 (3.15) or above"
+#endif
+
 /* Stable ABI for free-threaded builds (abi3t, introduced in PEP 803)
  * is enabled by one of:
  *   - Py_TARGET_ABI3T, or
