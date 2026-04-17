@@ -296,7 +296,9 @@ can_modify_dict(PyDictObject *mp)
     if (PyFrozenDict_Check(mp)) {
         // No locking required to modify a newly created frozendict
         // since it's only accessible from the current thread.
-        return PyUnstable_Object_IsUniquelyReferenced(_PyObject_CAST(mp));
+        PyFrozenDictObject *frozen = (PyFrozenDictObject *)mp;
+        return frozen->ma_hash == _Py_FROZENDICT_HASH_CONSTRUCTING ||
+               PyUnstable_Object_IsUniquelyReferenced(_PyObject_CAST(mp));
     }
     else {
         // Locking is only required if the dictionary is not
@@ -8206,6 +8208,11 @@ frozendict_hash(PyObject *op)
 {
     PyFrozenDictObject *self = _PyFrozenDictObject_CAST(op);
     Py_hash_t shash = FT_ATOMIC_LOAD_SSIZE_RELAXED(self->ma_hash);
+    if (shash == _Py_FROZENDICT_HASH_CONSTRUCTING) {
+        PyErr_SetString(PyExc_ValueError,
+                        "cannot hash frozendict during marshal construction");
+        return -1;
+    }
     if (shash != -1) {
         return shash;
     }

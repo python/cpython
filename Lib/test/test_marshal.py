@@ -2,9 +2,11 @@ from test import support
 from test.support import is_apple_mobile, os_helper, requires_debug_ranges, is_emscripten
 from test.support.script_helper import assert_python_ok
 import array
+import itertools
 import io
 import marshal
 import sys
+import typing
 import unittest
 import os
 import types
@@ -731,24 +733,322 @@ class CAPI_TestCase(unittest.TestCase, HelperMixin):
             os_helper.unlink(os_helper.TESTFN)
 
 
-class SelfRefTupleTest(unittest.TestCase):
-    """Regression test for gh-148653: TYPE_TUPLE with FLAG_REF back-reference.
+WrapperTargetKind = typing.Literal["tuple", "slice", "frozendict"]
+MutableTargetKind = typing.Literal["list", "dict_value"]
+BridgeStepKind = typing.Literal["list", "dict_value"]
+WrapperRootLayoutKind = typing.Literal[
+    "target", "first_bridge", "outer_list_pair", "outer_dict_pair"]
+MutableRootLayoutKind = typing.Literal["target", "outer_list", "outer_dict"]
+BackrefMultiplicityKind = typing.Literal["single", "duplicate"]
 
-    R_REF registered the tuple in p->refs before its slots were populated.
-    A TYPE_REF back-reference to the partial tuple could reach a hashing
-    site (PySet_Add) with NULL slots, crashing with SIGSEGV.
 
-    The fix uses the two-phase r_ref_reserve/r_ref_insert pattern so the
-    Py_None placeholder is detected by the TYPE_REF handler, raising
-    ValueError instead.
-    """
+class SemanticRecursiveCase(typing.NamedTuple):
+    name: str
+    min_version: int
+    build: typing.Callable[[], object]
 
-    def test_self_ref_tuple(self):
-        # TYPE_TUPLE|FLAG_REF n=2; NONE; TYPE_SET n=1; TYPE_REF(0)
-        payload = (b'\xa8\x02\x00\x00\x00N'
-                   b'<\x01\x00\x00\x00r\x00\x00\x00\x00')
-        with self.assertRaises(ValueError):
-            marshal.loads(payload)
+
+class RecursivePayloadCase(typing.NamedTuple):
+    name: str
+    payload: bytes
+    expected: typing.Callable[[], object]
+
+
+def _marshal_atomic_signature(value: object) -> tuple[str, object] | None:
+    if value is None:
+        return ("none", None)
+    if value is Ellipsis:
+        return ("ellipsis", None)
+    if value is StopIteration:
+        return ("stopiter", None)
+    if isinstance(value, bool):
+        return ("bool", value)
+    if isinstance(value, int):
+        return ("int", value)
+    if isinstance(value, float):
+        return ("float", value)
+    if isinstance(value, complex):
+        return ("complex", value)
+    if isinstance(value, str):
+        return ("str", value)
+    if isinstance(value, bytes):
+        return ("bytes", value)
+    return None
+
+
+def _marshal_mapping_signature(
+        mapping: dict[object, object] | frozendict,
+        encode: typing.Callable[[object], object],
+) -> tuple[tuple[tuple[str, object], object], ...]:
+    entries = []
+    for key, value in mapping.items():
+        key_sig = _marshal_atomic_signature(key)
+        if key_sig is None:
+            raise TypeError(
+                "recursive marshal test only supports atomic mapping keys")
+        entries.append((key_sig, encode(value)))
+    entries.sort()
+    return tuple(entries)
+
+
+def _marshal_graph_signature(root: object) -> object:
+    seen: dict[int, int] = {}
+    nodes: list[object] = []
+
+    def encode(value: object) -> object:
+        atomic = _marshal_atomic_signature(value)
+        if atomic is not None:
+            return atomic
+
+        obj_id = id(value)
+        if obj_id in seen:
+            return ("ref", seen[obj_id])
+
+        node_id = len(nodes)
+        seen[obj_id] = node_id
+        nodes.append(("pending",))
+
+        if isinstance(value, list):
+            node = ("list", tuple(encode(item) for item in value))
+        elif isinstance(value, tuple):
+            node = ("tuple", tuple(encode(item) for item in value))
+        elif isinstance(value, frozendict):
+            node = ("frozendict", _marshal_mapping_signature(value, encode))
+        elif isinstance(value, dict):
+            node = ("dict", _marshal_mapping_signature(value, encode))
+        elif isinstance(value, slice):
+            node = ("slice", (
+                ("start", encode(value.start)),
+                ("stop", encode(value.stop)),
+                ("step", encode(value.step)),
+            ))
+        else:
+            raise TypeError(
+                f"unsupported recursive marshal test node type: {type(value)!r}")
+
+        nodes[node_id] = node
+        return ("ref", node_id)
+
+    return (encode(root), tuple(nodes))
+
+
+def _make_bridge(bridge_kind: BridgeStepKind) -> list[object] | dict[str, object]:
+    if bridge_kind == "list":
+        return []
+    return {}
+
+
+def _link_bridge(bridge_kind: BridgeStepKind,
+                 bridge: list[object] | dict[str, object],
+                 value: object,
+                 multiplicity: BackrefMultiplicityKind) -> None:
+    if bridge_kind == "list":
+        bridge = typing.cast(list[object], bridge)
+        bridge.append(value)
+        if multiplicity == "duplicate":
+            bridge.append(value)
+    else:
+        bridge = typing.cast(dict[str, object], bridge)
+        bridge["x"] = value
+        if multiplicity == "duplicate":
+            bridge["y"] = value
+
+
+def _build_wrapper_target(
+        target_kind: WrapperTargetKind,
+        bridge: list[object] | dict[str, object],
+) -> object:
+    if target_kind == "tuple":
+        return (bridge,)
+    if target_kind == "slice":
+        return slice(None, bridge, None)
+    return frozendict({None: bridge})
+
+
+def _build_wrapper_recursive_case(
+        target_kind: WrapperTargetKind,
+        bridge_path: tuple[BridgeStepKind, ...],
+        root_layout: WrapperRootLayoutKind,
+        multiplicity: BackrefMultiplicityKind,
+) -> object:
+    bridges = [_make_bridge(bridge_kind) for bridge_kind in bridge_path]
+    target = _build_wrapper_target(target_kind, bridges[0])
+    for index, bridge_kind in enumerate(bridge_path[:-1]):
+        _link_bridge(bridge_kind, bridges[index], bridges[index + 1], "single")
+    _link_bridge(bridge_path[-1], bridges[-1], target, multiplicity)
+
+    if root_layout == "target":
+        return target
+    if root_layout == "first_bridge":
+        return bridges[0]
+    if root_layout == "outer_list_pair":
+        return [target, bridges[-1]]
+    return {"target": target, "bridge": bridges[-1]}
+
+
+def _build_mutable_recursive_case(
+        target_kind: MutableTargetKind,
+        root_layout: MutableRootLayoutKind,
+        multiplicity: BackrefMultiplicityKind,
+) -> object:
+    if target_kind == "list":
+        target = []
+        _link_bridge("list", target, target, multiplicity)
+    else:
+        target = {}
+        _link_bridge("dict_value", target, target, multiplicity)
+
+    if root_layout == "target":
+        return target
+    if root_layout == "outer_list":
+        return [target]
+    return {"target": target}
+
+
+def _iter_semantic_recursive_cases() -> typing.Iterator[SemanticRecursiveCase]:
+    mutable_target_kinds = typing.cast(
+        tuple[MutableTargetKind, ...], ("list", "dict_value"))
+    mutable_root_layouts = typing.cast(
+        tuple[MutableRootLayoutKind, ...], ("target", "outer_list", "outer_dict"))
+    wrapper_target_kinds = typing.cast(
+        tuple[WrapperTargetKind, ...], ("tuple", "slice", "frozendict"))
+    wrapper_root_layouts = typing.cast(
+        tuple[WrapperRootLayoutKind, ...],
+        ("target", "first_bridge", "outer_list_pair", "outer_dict_pair"))
+    multiplicities = typing.cast(
+        tuple[BackrefMultiplicityKind, ...], ("single", "duplicate"))
+    bridge_steps = typing.cast(tuple[BridgeStepKind, ...], ("list", "dict_value"))
+    bridge_paths = tuple(
+        typing.cast(tuple[BridgeStepKind, ...], bridge_path)
+        for path_len in (1, 2)
+        for bridge_path in itertools.product(bridge_steps, repeat=path_len)
+    )
+
+    for target_kind, root_layout, multiplicity in itertools.product(
+            mutable_target_kinds, mutable_root_layouts, multiplicities):
+        def build(target_kind: MutableTargetKind = target_kind,
+                  root_layout: MutableRootLayoutKind = root_layout,
+                  multiplicity: BackrefMultiplicityKind = multiplicity) -> object:
+            return _build_mutable_recursive_case(
+                target_kind, root_layout, multiplicity)
+
+        yield SemanticRecursiveCase(
+            name=f"{target_kind}_self_{root_layout}_{multiplicity}",
+            min_version=3,
+            build=build,
+        )
+
+    for target_kind, bridge_path, root_layout, multiplicity in itertools.product(
+            wrapper_target_kinds, bridge_paths, wrapper_root_layouts, multiplicities):
+        if target_kind == "tuple":
+            min_version = 3
+        elif target_kind == "slice":
+            min_version = 5
+        else:
+            min_version = 6
+
+        def build(target_kind: WrapperTargetKind = target_kind,
+                  bridge_path: tuple[BridgeStepKind, ...] = bridge_path,
+                  root_layout: WrapperRootLayoutKind = root_layout,
+                  multiplicity: BackrefMultiplicityKind = multiplicity) -> object:
+            return _build_wrapper_recursive_case(
+                target_kind, bridge_path, root_layout, multiplicity)
+
+        bridge_path_name = "_".join(bridge_path)
+        yield SemanticRecursiveCase(
+            name=(
+                f"{target_kind}_via_{bridge_path_name}_"
+                f"{root_layout}_{multiplicity}"
+            ),
+            min_version=min_version,
+            build=build,
+        )
+
+
+def _iter_valid_recursive_payload_cases() -> typing.Iterator[RecursivePayloadCase]:
+    yield RecursivePayloadCase(
+        name="tuple_with_duplicate_backrefs_in_list_payload",
+        payload=(b'\xa9\x01'
+                 b'[\x02\x00\x00\x00'
+                 b'r\x00\x00\x00\x00'
+                 b'r\x00\x00\x00\x00'),
+        expected=lambda: _build_wrapper_recursive_case(
+            "tuple", ("list",), "target", "duplicate"),
+    )
+    yield RecursivePayloadCase(
+        name="root_list_with_inner_tuple_backref_payload",
+        payload=(b'\xdb\x02\x00\x00\x00'
+                 b'\xa9\x01'
+                 b'\xdb\x01\x00\x00\x00'
+                 b'r\x01\x00\x00\x00'
+                 b'r\x02\x00\x00\x00'),
+        expected=lambda: _build_wrapper_recursive_case(
+            "tuple", ("list",), "outer_list_pair", "single"),
+    )
+
+
+def _iter_invalid_recursive_payloads() -> typing.Iterator[tuple[str, bytes]]:
+    yield (
+        "tuple_self_in_set",
+        b'\xa8\x02\x00\x00\x00N<\x01\x00\x00\x00r\x00\x00\x00\x00',
+    )
+    yield (
+        "tuple_direct_self_reference",
+        b'\xa9\x01r\x00\x00\x00\x00',
+    )
+    yield (
+        "tuple_as_incomplete_dict_key",
+        b'\xa9\x01{r\x00\x00\x00\x00N0',
+    )
+    if marshal.version >= 5:
+        yield (
+            "slice_direct_self_reference",
+            b'\xbaNr\x00\x00\x00\x00N',
+        )
+    if marshal.version >= 6:
+        yield (
+            "frozendict_direct_self_value",
+            b'\xfdNr\x00\x00\x00\x000',
+        )
+
+
+class RecursiveGraphTest(unittest.TestCase):
+    def assert_marshal_graph_roundtrip(self, sample: object, version: int) -> None:
+        expected = _marshal_graph_signature(sample)
+        loaded = marshal.loads(marshal.dumps(sample, version))
+        self.assertEqual(expected, _marshal_graph_signature(loaded))
+        try:
+            with open(os_helper.TESTFN, "wb") as file:
+                marshal.dump(sample, file, version)
+            with open(os_helper.TESTFN, "rb") as file:
+                loaded = marshal.load(file)
+            self.assertEqual(expected, _marshal_graph_signature(loaded))
+        finally:
+            os_helper.unlink(os_helper.TESTFN)
+
+    def test_constructible_recursive_case_count(self):
+        self.assertEqual(len(tuple(_iter_semantic_recursive_cases())), 156)
+
+    def test_constructible_recursive_roundtrips(self):
+        for case in _iter_semantic_recursive_cases():
+            for version in range(case.min_version, marshal.version + 1):
+                with self.subTest(case=case.name, version=version):
+                    self.assert_marshal_graph_roundtrip(case.build(), version)
+
+    def test_handpicked_recursive_payloads(self):
+        for case in _iter_valid_recursive_payload_cases():
+            with self.subTest(case.name):
+                loaded = marshal.loads(case.payload)
+                self.assertEqual(
+                    _marshal_graph_signature(case.expected()),
+                    _marshal_graph_signature(loaded),
+                )
+
+    def test_invalid_recursive_payloads(self):
+        for name, payload in _iter_invalid_recursive_payloads():
+            with self.subTest(name):
+                with self.assertRaises(ValueError):
+                    marshal.loads(payload)
 
 
 if __name__ == "__main__":

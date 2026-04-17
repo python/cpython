@@ -423,6 +423,8 @@ typedef struct {
     Py_hash_t ma_hash;
 } PyFrozenDictObject;
 
+#define _Py_FROZENDICT_HASH_CONSTRUCTING ((Py_hash_t)-2)
+
 #define _PyFrozenDictObject_CAST(op) \
     (assert(PyFrozenDict_Check(op)), _Py_CAST(PyFrozenDictObject*, (op)))
 
