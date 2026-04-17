@@ -577,7 +577,34 @@ class _Pickler:
                 self.save_pers(pid)
                 return
 
-        # Check the memo
+        # Fast paths matching the order of Modules/_pickle.c::save().
+        # Each of these returns without going through reducer_override,
+        # which the C reference implementation also skips for these
+        # types.
+        t = type(obj)
+        # str: memoized, so check memo inline before falling into save_str.
+        if t is str:
+            x = self.memo.get(id(obj))
+            if x is not None:
+                self.write(self.get(x[0]))
+                return
+            self.save_str(obj)
+            return
+        # int / None / bool / float: not memoized; skip memo.get entirely.
+        if t is int:
+            self.save_long(obj)
+            return
+        if obj is None:
+            self.write(NONE)
+            return
+        if t is bool:
+            self.save_bool(obj)
+            return
+        if t is float:
+            self.save_float(obj)
+            return
+
+        # Check the memo (non-atomic, non-str types)
         x = self.memo.get(id(obj))
         if x is not None:
             self.write(self.get(x[0]))
@@ -589,26 +616,6 @@ class _Pickler:
             rv = reduce(obj)
 
         if rv is NotImplemented:
-            # Fast-path common types before the general dispatch table
-            # lookup. Saves one dict.get per save() call on payloads
-            # dominated by these types. The memo check already ran, so
-            # repeated strings / bytes / tuples still dedup via that path.
-            t = type(obj)
-            if t is str:
-                self.save_str(obj)
-                return
-            if t is int:
-                self.save_long(obj)
-                return
-            if obj is None:
-                self.write(NONE)
-                return
-            if t is bool:
-                self.save_bool(obj)
-                return
-            if t is float:
-                self.save_float(obj)
-                return
             # Check the type dispatch table
             f = self.dispatch.get(t)
             if f is not None:
@@ -1177,6 +1184,9 @@ class _Pickler:
             return
         if n <= batch_size:
             # Single batch: iterate items() directly, no batching machinery.
+            # dict_items iteration itself raises RuntimeError on size change,
+            # so mutation during save() (e.g. from persistent_id hooks) is
+            # detected.
             write(MARK)
             for k, v in items:
                 save(k)
@@ -1187,33 +1197,12 @@ class _Pickler:
                     raise
             write(SETITEMS)
             return
-        # Large dict: materialize items once, batch via slicing. The full
-        # items list is allocated only when n > batch_size.
-        all_items = list(items)
-        total = 0
-        while total < n:
-            remaining = n - total
-            if remaining == 1:
-                k, v = all_items[total]
-                save(k)
-                try:
-                    save(v)
-                except BaseException as exc:
-                    exc.add_note(f'when serializing {_T(obj)} item {k!r}')
-                    raise
-                write(SETITEM)
-                return
-            this_batch = remaining if remaining < batch_size else batch_size
-            write(MARK)
-            for k, v in all_items[total:total + this_batch]:
-                save(k)
-                try:
-                    save(v)
-                except BaseException as exc:
-                    exc.add_note(f'when serializing {_T(obj)} item {k!r}')
-                    raise
-            write(SETITEMS)
-            total += this_batch
+        # Large dict: delegate to the generic path, which uses batched()
+        # over the live items iterator and preserves dict mutation-during-
+        # save detection. The per-batch tuple allocation is amortised over
+        # BATCHSIZE items here, so the exact-dict fast-path advantage is
+        # concentrated on the n <= batch_size case above.
+        self._batch_setitems(items, obj)
 
     def _batch_setitems(self, items, obj):
         # Helper to batch up SETITEMS sequences; proto >= 1 only
