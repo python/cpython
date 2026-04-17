@@ -547,7 +547,7 @@ def _have_ieee_doubles():
     d_be_bytes = b"\x43\x3f\xff\x01\x02\x03\x04\x05"
     d_packed = struct.pack('d', d)
     if sys.byteorder == 'little':
-        return d_packed == bytes(reversed(d_be_bytes)
+        return d_packed == bytes(reversed(d_be_bytes))
     return d_packed == d_be_bytes
 
 HAVE_IEEE_754 = _have_ieee_doubles()
