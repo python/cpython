@@ -1961,6 +1961,11 @@ class TestForwardRefClass(unittest.TestCase):
             "typing.List[ForwardRef('int', owner='class')]",
         )
 
+    def test_forward_repr_extra_names(self):
+        fr = ForwardRef("__annotationlib_name_1__")
+        fr.__extra_names__ = {"__annotationlib_name_1__": list[str]}
+        self.assertEqual(repr(fr), "ForwardRef('list[str]')")
+
     def test_forward_recursion_actually(self):
         def namespace1():
             a = ForwardRef("A")
@@ -2036,6 +2041,20 @@ class TestForwardRefClass(unittest.TestCase):
     def test_evaluate_string_format(self):
         fr = ForwardRef("set[Any]")
         self.assertEqual(fr.evaluate(format=Format.STRING), "set[Any]")
+
+    def test_evaluate_string_format_extra_names(self):
+        # Test that internal extra_names are replaced when evaluating as strings
+
+        # As identifier
+        fr = ForwardRef("__annotationlib_name_1__")
+        fr.__extra_names__ = {"__annotationlib_name_1__": str}
+        self.assertEqual(fr.evaluate(format=Format.STRING), "str")
+
+        # Via AST visitor
+        def f(a: ref | str): ...
+
+        fr = get_annotations(f, format=Format.FORWARDREF)['a']
+        self.assertEqual(fr.evaluate(format=Format.STRING), "ref | str")
 
     def test_evaluate_forwardref_format(self):
         fr = ForwardRef("undef")
