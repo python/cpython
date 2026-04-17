@@ -580,8 +580,11 @@ The :mod:`!calendar` module defines the following exceptions:
 
 .. exception:: IllegalMonthError(month)
 
-   A subclass of :exc:`ValueError`,
+   A subclass of both :exc:`ValueError` and :exc:`IndexError`,
    raised when the given month number is outside of the range 1-12 (inclusive).
+   The :exc:`IndexError` base class is preserved for backwards compatibility
+   with code that caught :exc:`IndexError` for bad month numbers prior to
+   Python 3.13.
 
    .. attribute:: month
 

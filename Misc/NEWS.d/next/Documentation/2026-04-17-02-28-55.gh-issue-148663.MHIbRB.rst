@@ -1,0 +1,5 @@
+Document that :class:`calendar.IllegalMonthError` inherits from both
+:exc:`ValueError` and :exc:`IndexError`, preserving :exc:`IndexError` for
+backwards compatibility with code that caught it for bad month numbers prior
+to Python 3.13.
+###########################################################################
