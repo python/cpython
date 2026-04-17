@@ -10,6 +10,7 @@
 #endif
 #ifdef MS_WINDOWS
 #  include <winsock2.h>           // struct timeval
+#  include <windows.h>            // time zone APIs
 #endif
 
 #if defined(__APPLE__)
@@ -355,8 +356,24 @@ _PyTime_windows_filetime(time_t timer, struct tm *tm, int is_local)
     // `time.gmtime` and `time.localtime` will return `struct_time` containing this
     tm->tm_yday = _PyTime_calc_yday(&st_result);
 
-    /* DST flag: -1 (unknown) for local time on historical dates, 0 for UTC */
-    tm->tm_isdst = is_local ? -1 : 0;
+    /* DST flag: -1 (unknown) for local time on historical dates, 0 for UTC.
+     * For timezones that don't observe DST, set tm_isdst to 0 to ensure
+     * strftime('%Z') returns the standard time name (gh-148658). */
+    if (is_local) {
+        TIME_ZONE_INFORMATION tzi;
+        DWORD tz_result = GetTimeZoneInformation(&tzi);
+        if (tz_result != TIME_ZONE_ID_INVALID &&
+            tzi.DaylightDate.wMonth == 0) {
+            /* Timezone does not observe DST */
+            tm->tm_isdst = 0;
+        }
+        else {
+            tm->tm_isdst = -1;
+        }
+    }
+    else {
+        tm->tm_isdst = 0;
+    }
 
     return 0;
 }
