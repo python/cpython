@@ -693,7 +693,10 @@ or both.
    If a string is returned, the string should be interpreted as the name of a
    global variable.  It should be the object's local name relative to its
    module; the pickle module searches the module namespace to determine the
-   object's module.  This behaviour is typically useful for singletons.
+   object's module: for a given ``obj`` to be pickled, the ``__module__``
+   attribute is looked up on ``obj`` directly, which falls back to a lookup
+   on the type of ``obj`` if no ``__module__`` instance attribute is set.
+   This behaviour is typically useful for singletons.
 
    When a tuple is returned, it must be between two and six items long.
    Optional items can either be omitted, or ``None`` can be provided as their
