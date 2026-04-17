@@ -506,6 +506,84 @@ Correctness: `./python -m test test_marshal` passes (72 run / 7 skipped).
   only one we'd add without reservation is a properly-validated Exp 4
   — once there is a benchmark that actually exercises back-refs.
 
+## Final validation (post-squash HEAD `4aaf064344d`)
+
+After squashing the combined stack (Exp 1+2+6+7) onto
+`marshal-safe-cycle-design`, the following validation ran.
+
+### Full CPython test suite
+
+    ./python -m test -j24 --timeout=600 -w
+
+Result: **SUCCESS**.
+
+- 468 test files OK, 0 failures.
+- 48,932 individual tests executed.
+- 2,890 tests skipped (platform-specific: Windows/Apple/Android/Tk,
+  resource-gated, free-threading).
+- Total wall time: 1 min 48 sec.
+- All four new `RecursiveGraphTest` cases — the 156-program bounded
+  semantic round-trip generator, the case-count check, the handpicked
+  payloads, and the crafted-invalid-payload negative tests — pass.
+
+### `pyperformance` targeted slice vs `main`
+
+Ten marshal-adjacent benchmarks (same slice the original design-doc
+rerun used): pickle, pickle_dict, pickle_list, pickle_pure_python,
+python_startup, python_startup_no_site, unpack_sequence, unpickle,
+unpickle_list, unpickle_pure_python. Run with
+`uvx pyperformance run -b <list>`, `taskset -c 0`, default
+(non-rigorous) loop count, per-benchmark venv.
+
+| Benchmark | `main` | HEAD | Delta | Significance |
+| --- | ---: | ---: | ---: | --- |
+| `pickle`                 | `7.19 us +- 0.38 us` | `7.06 us +- 0.07 us` | `1.02x faster` | not significant |
+| `pickle_dict`            | `16.4 us +- 0.2 us`  | `16.5 us +- 0.3 us`  | `1.00x slower` | not significant |
+| `pickle_list`            | `2.66 us +- 0.06 us` | `2.68 us +- 0.06 us` | `1.01x slower` | not significant |
+| `pickle_pure_python`     | `185 us +- 2 us`     | `186 us +- 3 us`     | `1.01x slower` | not significant |
+| **`python_startup`**     | `7.88 ms +- 0.25 ms` | `6.70 ms +- 0.12 ms` | **`1.18x faster`** | **significant (t=59.80)** |
+| **`python_startup_no_site`** | `4.34 ms +- 0.13 ms` | `4.19 ms +- 0.09 ms` | **`1.03x faster`** | **significant (t=12.90)** |
+| `unpack_sequence`        | `20.4 ns +- 0.4 ns`  | `20.4 ns +- 0.3 ns`  | `1.00x faster` | not significant |
+| `unpickle`               | `8.70 us +- 0.12 us` | `8.60 us +- 0.14 us` | `1.01x faster` | not significant |
+| `unpickle_list`          | `2.65 us +- 0.03 us` | `2.69 us +- 0.03 us` | `1.01x slower` | not significant |
+| `unpickle_pure_python`   | `121 us +- 3 us`     | `122 us +- 3 us`     | `1.00x slower` | not significant |
+
+Two statistically significant wins, both on startup. No regressions.
+
+The 18% `python_startup` speedup is real and user-visible:
+interpreter startup loads a large number of `.pyc` files through
+`marshal.loads`, so the hot-path improvements land on every Python
+invocation. `python_startup_no_site` is smaller (3%) because it skips
+the site module's imports, leaving less marshal work in the budget.
+
+Raw JSON: `Misc/marshal-perf-data/pyperf-slice-{baseline,current}.json`.
+Reproduce with `uvx pyperformance compare` on the two files.
+
+### Marshal microbench on post-squash HEAD
+
+Three pinned best-of-median runs, same harness as every other experiment.
+
+| Bench | Op | `main` | HEAD `4aaf064` | vs `main` |
+| --- | --- | ---: | ---: | ---: |
+| `small_tuple` | `loads` | 0.0289962 | 0.0248193 | **−14.4%** |
+| `small_tuple` | `dumps` | 0.0158760 | 0.0152102 | −4.2% |
+| `nested_dict` | `loads` | 0.0778896 | 0.0721462 | **−7.4%** |
+| `nested_dict` | `dumps` | 0.0722451 | 0.0722497 | flat |
+| `code_obj`    | `loads` | 0.0902017 | 0.0839155 | **−7.0%** |
+| `code_obj`    | `dumps` | 0.0391339 | 0.0385998 | −1.4% |
+
+Raw JSON: `Misc/marshal-perf-data/final-head-run{1,2,3}.json`.
+
+### Summary
+
+- Regression introduced by the safe-cycle design is fully erased on the
+  marshal microbench.
+- `loads` is **7–14% faster than `main`** on all three microbenches.
+- `pyperformance`'s marshal-adjacent slice shows one 18% startup win and
+  no regressions.
+- Full CPython test suite passes, including the new combinatoric
+  recursive-graph generator.
+
 ## Final conclusions
 
 ### Recommended stack
