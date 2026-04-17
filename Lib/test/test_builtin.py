@@ -22,6 +22,7 @@ import types
 import typing
 import unittest
 import warnings
+import weakref
 from contextlib import ExitStack
 from functools import partial
 from inspect import CO_COROUTINE
@@ -1929,6 +1930,7 @@ class BuiltinTest(ComplexesAreIdenticalMixin, unittest.TestCase):
         with self.assertRaisesRegex(TypeError, "must be str"):
             sentinel(1)
         self.assertTrue(sentinel.__flags__ & support._TPFLAGS_IMMUTABLETYPE)
+        self.assertTrue(sentinel.__flags__ & support._TPFLAGS_HAVE_GC)
         self.assertFalse(sentinel.__flags__ & support._TPFLAGS_BASETYPE)
         with self.assertRaises(TypeError):
             class SubSentinel(sentinel):
@@ -1956,6 +1958,21 @@ class BuiltinTest(ComplexesAreIdenticalMixin, unittest.TestCase):
             with self.subTest(protocol=proto):
                 with self.assertRaises(pickle.PicklingError):
                     pickle.dumps(missing, protocol=proto)
+
+    def test_sentinel_str_subclass_name_cycle(self):
+        class Name(str):
+            pass
+
+        name = Name("MISSING")
+        missing = sentinel(name)
+        self.assertIs(missing.__name__, name)
+        self.assertTrue(gc.is_tracked(missing))
+
+        name.missing = missing
+        ref = weakref.ref(name)
+        del name, missing
+        support.gc_collect()
+        self.assertIsNone(ref())
 
     def test_sentinel_union(self):
         missing = sentinel("MISSING")
