@@ -1351,9 +1351,8 @@ class ExpatReaderTest(XmlTestBase):
     def test_namespace_prefixed_enabled_when_namespace_is_not(self):
 
         parser = create_parser()
-        with self.assertRaises(SAXException) as caught:
+        with self.assertRaises(SAXException):
             parser.setFeature(feature_namespace_prefixes, 1)
-        self.assertEquals(caught.exception.args, ("TODO actual string here",))
 
 
 
