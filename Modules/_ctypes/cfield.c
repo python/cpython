@@ -1647,7 +1647,7 @@ for base_code, base_c_type in [
         TABLE_ENTRY(F, &ffi_type_complex_float);
         TABLE_ENTRY(G, &ffi_type_complex_longdouble);
         TABLE_ENTRY(Zd, &ffi_type_complex_double);
-        TABLE_ENTRY(Zd, &ffi_type_complex_float);
+        TABLE_ENTRY(Zf, &ffi_type_complex_float);
         TABLE_ENTRY(Zg, &ffi_type_complex_longdouble);
     }
 #endif
