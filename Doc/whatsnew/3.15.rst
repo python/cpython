@@ -2051,8 +2051,8 @@ Deprecated C APIs
 
   - :c:macro:`Py_ALIGNED`: Prefer ``alignas`` instead.
   - :c:macro:`PY_FORMAT_SIZE_T`: Use ``"z"`` directly.
-  - :c:macro:`Py_LL` & :c:macro:`Py_ULL`:
-    Use standard suffixes, ``LL`` & ``ULL``.
+  - :c:macro:`Py_LL` and :c:macro:`Py_ULL`:
+    Use standard suffixes, ``LL`` and ``ULL``.
   - :c:macro:`PY_LONG_LONG`, :c:macro:`PY_LLONG_MIN`, :c:macro:`PY_LLONG_MAX`,
     :c:macro:`PY_ULLONG_MAX`, :c:macro:`PY_INT32_T`, :c:macro:`PY_UINT32_T`,
     :c:macro:`PY_INT64_T`, :c:macro:`PY_UINT64_T`, :c:macro:`PY_SIZE_MAX`:
