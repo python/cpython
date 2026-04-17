@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import re
+
 from docutils import nodes
 from sphinx import addnodes
 from sphinx.domains.changeset import (
@@ -87,9 +89,11 @@ class SoftDeprecated(PyVersionChange):
     with "Soft deprecated" linking to the glossary definition.
     """
 
+    _TERM_RE = re.compile(r":term:`([^`]+)`")
+
     def run(self) -> list[Node]:
         versionlabels[self.name] = sphinx_gettext(
-            "Soft deprecated since version %s"
+            ":term:`Soft deprecated` since version %s"
         )
         versionlabel_classes[self.name] = "soft-deprecated"
         try:
@@ -108,38 +112,35 @@ class SoftDeprecated(PyVersionChange):
 
         return result
 
-    @staticmethod
-    def _add_glossary_link(inline: nodes.inline) -> None:
-        """Replace 'Soft deprecated' text with a cross-reference to the
-        :term:`soft deprecated` glossary entry."""
-        marker = sphinx_gettext("Soft deprecated")
-        ref = addnodes.pending_xref(
-            "",
-            nodes.Text(marker),
-            refdomain="std",
-            reftype="term",
-            reftarget="soft deprecated",
-            refwarn=True,
-        )
-
+    @classmethod
+    def _add_glossary_link(cls, inline: nodes.inline) -> None:
+        """Replace :term:`soft deprecated` text with a cross-reference to the
+        'Soft deprecated' glossary entry."""
         for child in inline.children:
             if not isinstance(child, nodes.Text):
                 continue
 
             text = str(child)
-            idx = text.find(marker)
-            if idx < 0:
+            match = cls._TERM_RE.search(text)
+            if match is None:
                 continue
 
-            # Replace the text node with the split parts using docutils API
-            new_nodes: list[nodes.Node] = []
-            if idx > 0:
-                new_nodes.append(nodes.Text(text[:idx]))
+            ref = addnodes.pending_xref(
+                "",
+                nodes.Text(match.group(1)),
+                refdomain="std",
+                reftype="term",
+                reftarget="soft deprecated",
+                refwarn=True,
+            )
 
+            start, end = match.span()
+            new_nodes: list[nodes.Node] = []
+            if start > 0:
+                new_nodes.append(nodes.Text(text[:start]))
             new_nodes.append(ref)
-            remainder = text[idx + len(marker) :]
-            if remainder:
-                new_nodes.append(nodes.Text(remainder))
+            if end < len(text):
+                new_nodes.append(nodes.Text(text[end:]))
 
             child.parent.replace(child, new_nodes)
             break
