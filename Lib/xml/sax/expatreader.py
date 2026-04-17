@@ -156,6 +156,8 @@ class ExpatParser(xmlreader.IncrementalParser, xmlreader.Locator):
                 raise SAXNotSupportedException(
                     "expat does not read external parameter entities")
         elif name == feature_namespace_prefixes:
+            if state and not self._namespaces:
+                raise SAXException(f"{feature_namespace_prefixes} requires {feature_namespaces} to be enabled")
             self._namespace_prefixes = state
         else:
             raise SAXNotRecognizedException(
