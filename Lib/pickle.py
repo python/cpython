@@ -560,7 +560,15 @@ class _Pickler:
         return GET + repr(i).encode("ascii") + b'\n'
 
     def save(self, obj, save_persistent_id=True):
-        self.framer.commit_frame()
+        # Inlined commit_frame() hot check. The frame is either None
+        # (proto < 4) or a BytesIO that only needs committing once it
+        # exceeds _FRAME_SIZE_TARGET. Skip the Python-level method
+        # dispatch for the no-op case (the overwhelming majority of
+        # saves on small/medium payloads).
+        framer = self.framer
+        cf = framer.current_frame
+        if cf is not None and cf.tell() >= _Framer._FRAME_SIZE_TARGET:
+            framer.commit_frame()
 
         # Check for persistent id (defined by a subclass)
         if save_persistent_id:
@@ -581,8 +589,27 @@ class _Pickler:
             rv = reduce(obj)
 
         if rv is NotImplemented:
-            # Check the type dispatch table
+            # Fast-path common types before the general dispatch table
+            # lookup. Saves one dict.get per save() call on payloads
+            # dominated by these types. The memo check already ran, so
+            # repeated strings / bytes / tuples still dedup via that path.
             t = type(obj)
+            if t is str:
+                self.save_str(obj)
+                return
+            if t is int:
+                self.save_long(obj)
+                return
+            if obj is None:
+                self.write(NONE)
+                return
+            if t is bool:
+                self.save_bool(obj)
+                return
+            if t is float:
+                self.save_float(obj)
+                return
+            # Check the type dispatch table
             f = self.dispatch.get(t)
             if f is not None:
                 f(self, obj)  # Call unbound method with explicit self
