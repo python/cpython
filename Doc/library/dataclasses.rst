@@ -330,7 +330,7 @@ Module contents
    :attr:`!C.t` will be ``20``, and the class attributes :attr:`!C.x` and
    :attr:`!C.y` will not be set.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.15
       If *metadata* is ``None``, use an empty :class:`frozendict`, instead
       of a :func:`~types.MappingProxyType` of an empty :class:`dict`.
 

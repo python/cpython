@@ -1122,6 +1122,7 @@ mmap_mmap_seek_impl(mmap_object *self, Py_ssize_t dist, int how)
 }
 
 /*[clinic input]
+@critical_section
 mmap.mmap.set_name
 
     name: str
@@ -1131,7 +1132,7 @@ mmap.mmap.set_name
 
 static PyObject *
 mmap_mmap_set_name_impl(mmap_object *self, const char *name)
-/*[clinic end generated code: output=1edaf4fd51277760 input=6c7dd91cad205f07]*/
+/*[clinic end generated code: output=1edaf4fd51277760 input=7c0e2a17ca6d1adc]*/
 {
 #if defined(MAP_ANONYMOUS) && defined(__linux__)
     const char *prefix = "cpython:mmap:";
@@ -2431,6 +2432,7 @@ mmap_exec(PyObject *module)
 }
 
 static PyModuleDef_Slot mmap_slots[] = {
+    _Py_ABI_SLOT,
     {Py_mod_exec, mmap_exec},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {Py_mod_gil, Py_MOD_GIL_NOT_USED},

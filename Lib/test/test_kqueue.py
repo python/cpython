@@ -254,6 +254,15 @@ class TestKQueue(unittest.TestCase):
         # operations must fail with ValueError("I/O operation on closed ...")
         self.assertRaises(ValueError, kqueue.control, None, 4)
 
+    def test_close_error(self):
+        # gh-146205: close() should raise OSError if underlying fd is invalid
+        kqueue = select.kqueue()
+        fd = kqueue.fileno()
+        os.close(fd)
+        with self.assertRaises(OSError) as cm:
+            kqueue.close()
+        self.assertEqual(cm.exception.errno, errno.EBADF)
+
     def test_fd_non_inheritable(self):
         kqueue = select.kqueue()
         self.addCleanup(kqueue.close)

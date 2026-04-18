@@ -126,6 +126,7 @@ __all__ = [
     'cast',
     'clear_overloads',
     'dataclass_transform',
+    'disjoint_base',
     'evaluate_forward_ref',
     'final',
     'get_args',
@@ -155,6 +156,7 @@ __all__ = [
     'Text',
     'TYPE_CHECKING',
     'TypeAlias',
+    'TypeForm',
     'TypeGuard',
     'TypeIs',
     'TypeAliasType',
@@ -588,6 +590,13 @@ class _TypedCacheSpecialForm(_SpecialForm, _root=True):
         return self._getitem(self, *parameters)
 
 
+class _TypeFormForm(_SpecialForm, _root=True):
+    # TypeForm(X) is equivalent to X but indicates to the type checker
+    # that the object is a TypeForm.
+    def __call__(self, obj, /):
+        return obj
+
+
 class _AnyMeta(type):
     def __instancecheck__(self, obj):
         if self is Any:
@@ -890,6 +899,31 @@ def TypeGuard(self, parameters):
 
     ``TypeGuard`` also works with type variables.  For more information, see
     PEP 647 (User-Defined Type Guards).
+    """
+    item = _type_check(parameters, f'{self} accepts only single type.')
+    return _GenericAlias(self, (item,))
+
+
+@_TypeFormForm
+def TypeForm(self, parameters):
+    """A special form representing the value that results from the evaluation
+    of a type expression.
+
+    This value encodes the information supplied in the type expression, and it
+    represents the type described by that type expression.
+
+    When used in a type expression, TypeForm describes a set of type form
+    objects. It accepts a single type argument, which must be a valid type
+    expression. ``TypeForm[T]`` describes the set of all type form objects that
+    represent the type T or types that are assignable to T.
+
+    Usage::
+
+        def cast[T](typ: TypeForm[T], value: Any) -> T: ...
+
+        reveal_type(cast(int, "x"))  # int
+
+    See PEP 747 for more information.
     """
     item = _type_check(parameters, f'{self} accepts only single type.')
     return _GenericAlias(self, (item,))
@@ -1348,10 +1382,11 @@ class _GenericAlias(_BaseGenericAlias, _root=True):
     #     A = Callable[[], None]  # _CallableGenericAlias
     #     B = Callable[[T], None]  # _CallableGenericAlias
     #     C = B[int]  # _CallableGenericAlias
-    # * Parameterized `Final`, `ClassVar`, `TypeGuard`, and `TypeIs`:
+    # * Parameterized `Final`, `ClassVar`, `TypeForm`, `TypeGuard`, and `TypeIs`:
     #     # All _GenericAlias
     #     Final[int]
     #     ClassVar[float]
+    #     TypeForm[bytes]
     #     TypeGuard[bool]
     #     TypeIs[range]
 
@@ -2758,6 +2793,29 @@ def final(f):
         # read-only property, TypeError if it's a builtin class.
         pass
     return f
+
+
+def disjoint_base(cls):
+    """This decorator marks a class as a disjoint base.
+
+    Child classes of a disjoint base cannot inherit from other disjoint bases that are
+    not parent or child classes of the disjoint base.
+
+    For example:
+
+        @disjoint_base
+        class Disjoint1: pass
+
+        @disjoint_base
+        class Disjoint2: pass
+
+        class Disjoint3(Disjoint1, Disjoint2): pass  # Type checker error
+
+    Type checkers can use knowledge of disjoint bases to detect unreachable code
+    and determine when two types can overlap.
+    """
+    cls.__disjoint_base__ = True
+    return cls
 
 
 # Some unconstrained type variables.  These were initially used by the container types.

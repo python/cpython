@@ -1855,8 +1855,6 @@ object.
    On success, return ``0``.
    On error, set an exception, leave the writer unchanged, and return ``-1``.
 
-   .. versionadded:: 3.14
-
 .. c:function:: int PyUnicodeWriter_WriteWideChar(PyUnicodeWriter *writer, const wchar_t *str, Py_ssize_t size)
 
    Write the wide string *str* into *writer*.
@@ -1867,7 +1865,7 @@ object.
    On success, return ``0``.
    On error, set an exception, leave the writer unchanged, and return ``-1``.
 
-.. c:function:: int PyUnicodeWriter_WriteUCS4(PyUnicodeWriter *writer, Py_UCS4 *str, Py_ssize_t size)
+.. c:function:: int PyUnicodeWriter_WriteUCS4(PyUnicodeWriter *writer, const Py_UCS4 *str, Py_ssize_t size)
 
    Writer the UCS4 string *str* into *writer*.
 
@@ -1883,12 +1881,22 @@ object.
    On success, return ``0``.
    On error, set an exception, leave the writer unchanged, and return ``-1``.
 
+   To write a :class:`str` subclass which overrides the :meth:`~object.__str__`
+   method, :c:func:`PyUnicode_FromObject` can be used to get the original
+   string.
+
 .. c:function:: int PyUnicodeWriter_WriteRepr(PyUnicodeWriter *writer, PyObject *obj)
 
    Call :c:func:`PyObject_Repr` on *obj* and write the output into *writer*.
 
+   If *obj* is ``NULL``, write the string ``"<NULL>"`` into *writer*.
+
    On success, return ``0``.
    On error, set an exception, leave the writer unchanged, and return ``-1``.
+
+   .. versionchanged:: 3.14.4
+
+      Added support for ``NULL``.
 
 .. c:function:: int PyUnicodeWriter_WriteSubstring(PyUnicodeWriter *writer, PyObject *str, Py_ssize_t start, Py_ssize_t end)
 
