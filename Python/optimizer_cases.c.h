@@ -3612,10 +3612,13 @@
         }
 
         case _GET_ITER_TRAD: {
+            JitOptRef iterable;
             JitOptRef iter;
             JitOptRef index_or_null;
+            iterable = stack_pointer[-1];
+            (void)iterable;
             iter = sym_new_not_null(ctx);
-            index_or_null = sym_new_not_null(ctx);
+            index_or_null = sym_new_null(ctx);
             CHECK_STACK_BOUNDS(1);
             stack_pointer[-1] = iter;
             stack_pointer[0] = index_or_null;

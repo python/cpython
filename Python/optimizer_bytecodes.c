@@ -1443,6 +1443,12 @@ dummy_func(void) {
         }
     }
 
+    op(_GET_ITER_TRAD, (iterable -- iter, index_or_null)) {
+        (void)iterable;
+        iter = sym_new_not_null(ctx);
+        index_or_null = sym_new_null(ctx);
+    }
+
     op(_GUARD_ITERATOR, (iterable -- iterable)) {
         bool definite = true;
         PyTypeObject *tp = sym_get_type(iterable);

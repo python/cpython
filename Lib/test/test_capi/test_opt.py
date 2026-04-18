@@ -438,7 +438,25 @@ class TestUops(unittest.TestCase):
         self.assertNotIn("_GET_ITER", uops)
         self.assertNotIn("_GET_ITER_VIRTUAL", uops)
         self.assertNotIn("_GET_ITER_SELF", uops)
+        self.assertNotIn("_GUARD_NOS_NULL", uops)
 
+    def test_get_iter_trad_for_iter_tier_two(self):
+        d = {v: v for v in range(20)}
+
+        def testfunc(n):
+            total = 0
+            while n:
+                n -= 1
+                for _ in d:
+                    total += 1
+            return total
+
+        self.assertEqual(testfunc(TIER2_THRESHOLD), TIER2_THRESHOLD * len(d))
+        ex = get_first_executor(testfunc)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertIn("_FOR_ITER_TIER_TWO", uops)
+        self.assertNotIn("_GET_ITER_TRAD", uops)
 
     def test_for_iter_range(self):
         def testfunc(n):
