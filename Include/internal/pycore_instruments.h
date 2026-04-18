@@ -74,7 +74,7 @@ PyAPI_DATA(PyObject) _PyInstrumentation_DISABLE;
 /* Total tool ids available */
 #define  PY_MONITORING_TOOL_IDS 8
 /* Count of all "real" monitoring events (not derived from other events).
- * All ungrouped events are now local events. */
+ * "Other" events can now be turned on/disabled per code object. */
 #define _PY_MONITORING_UNGROUPED_EVENTS 16
 /* Count of all  monitoring events */
 #define _PY_MONITORING_EVENTS 19

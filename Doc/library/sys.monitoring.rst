@@ -179,14 +179,9 @@ events, use the expression ``PY_RETURN | PY_START``.
 Local events
 ''''''''''''
 
-Local events are associated with execution of a particular code object and
-can all be disabled via :data:`DISABLE`. There are two kinds, which differ
-in how :data:`DISABLE` takes effect.
-
-**Instrumented local events** require bytecode instrumentation and fire at
-clearly defined instruction locations within a function. Returning
-:data:`DISABLE` from a callback disables the event at that specific
-code location only, leaving all other locations unaffected:
+Local events are associated with normal execution of the program and happen
+at clearly defined locations. All local events can be disabled
+per location. The local events are:
 
 * :monitoring-event:`PY_START`
 * :monitoring-event:`PY_RESUME`
@@ -199,24 +194,6 @@ code location only, leaving all other locations unaffected:
 * :monitoring-event:`BRANCH_LEFT`
 * :monitoring-event:`BRANCH_RIGHT`
 * :monitoring-event:`STOP_ITERATION`
-
-**Non-instrumented local events** do not require bytecode instrumentation and
-are not tied to a specific instruction. They can fire at any point within
-a function where the triggering condition occurs. Returning :data:`DISABLE`
-from a callback disables the event for the entire code object (for the
-current tool):
-
-* :monitoring-event:`PY_UNWIND`
-* :monitoring-event:`EXCEPTION_HANDLED`
-* :monitoring-event:`RAISE`
-* :monitoring-event:`PY_THROW`
-* :monitoring-event:`RERAISE`
-
-.. versionchanged:: 3.15
-   :monitoring-event:`PY_UNWIND`, :monitoring-event:`EXCEPTION_HANDLED`,
-   :monitoring-event:`RAISE`, :monitoring-event:`PY_THROW`, and
-   :monitoring-event:`RERAISE` are now local events and can be disabled
-   via :data:`DISABLE`.
 
 Deprecated event
 ''''''''''''''''
@@ -243,6 +220,28 @@ The :monitoring-event:`C_RETURN` and :monitoring-event:`C_RAISE` events
 are controlled by the :monitoring-event:`CALL` event.
 :monitoring-event:`C_RETURN` and :monitoring-event:`C_RAISE` events will only be
 seen if the corresponding :monitoring-event:`CALL` event is being monitored.
+
+
+.. _monitoring-event-global:
+
+Other events
+''''''''''''
+
+Other events are not necessarily tied to a specific location in the
+program and cannot be individually disabled per location.
+
+The other events that can be monitored are:
+
+* :monitoring-event:`PY_THROW`
+* :monitoring-event:`PY_UNWIND`
+* :monitoring-event:`RAISE`
+* :monitoring-event:`EXCEPTION_HANDLED`
+* :monitoring-event:`RERAISE`
+
+.. versionchanged:: 3.15
+   Other events can now be turned on and disabled on a per code object
+   basis. Returning :data:`DISABLE` from a callback disables the event
+   for the entire code object (for the current tool).
 
 
 The STOP_ITERATION event
@@ -315,23 +314,21 @@ Disabling events
 .. data:: DISABLE
 
    A special value that can be returned from a callback function to disable
-   the event.
+   events for the current code location.
 
-All :ref:`local events <monitoring-event-local>` can be disabled by returning
-:data:`sys.monitoring.DISABLE` from a callback function. This does not change
-which events are set globally.
+:ref:`Local events <monitoring-event-local>` can be disabled for a specific code
+location by returning :data:`sys.monitoring.DISABLE` from a callback function.
+This does not change which events are set, or any other code locations for the
+same event.
 
-For :ref:`instrumented local events <monitoring-event-local>`, :data:`DISABLE`
-disables the event at the specific code location where it fired only, leaving
-all other locations for the same event unaffected.
-
-For :ref:`non-instrumented local events <monitoring-event-local>`,
-:data:`DISABLE` disables the event for the entire code object (for the current
+:ref:`Other events <monitoring-event-global>` can be disabled on a per code
+object basis by returning :data:`sys.monitoring.DISABLE` from a callback
+function. This disables the event for the entire code object (for the current
 tool).
 
-Disabling events is very important for high performance monitoring. For
-example, a program can be run under a debugger with no overhead if the
-debugger disables all monitoring except for a few breakpoints.
+Disabling events for specific locations is very important for high performance
+monitoring. For example, a program can be run under a debugger with no overhead
+if the debugger disables all monitoring except for a few breakpoints.
 
 .. function:: restart_events() -> None
 

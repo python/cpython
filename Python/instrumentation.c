@@ -1114,7 +1114,7 @@ get_tools_for_instruction(PyCodeObject *code, PyInterpreterState *interp, int i,
         }
     }
     else {
-        /* Non-instrumented local events are not tied to specific instructions;
+        /* Other (non-instrumented) events are not tied to specific instructions;
          * use the code-object-level active_monitors bitmap instead. */
         tools = code->_co_monitoring->active_monitors.tools[event];
     }
@@ -1143,7 +1143,7 @@ static const char *const event_names [] = {
     [PY_MONITORING_EVENT_STOP_ITERATION] = "STOP_ITERATION",
 };
 
-/* Disable a local-but-not-instrumented event (e.g. PY_UNWIND) for a single
+/* Disable an "other" (non-instrumented) event (e.g. PY_UNWIND) for a single
  * tool on this code object.  Must be called with the world stopped or the
  * code lock held. */
 static void
@@ -1212,8 +1212,7 @@ call_instrumentation_vector(
                 _PyEval_StartTheWorld(interp);
             }
             else if (_PY_MONITORING_IS_UNGROUPED_EVENT(event)) {
-                /* Non-instrumented local event: disable for this code object
-                 * entirely. */
+                /* Other (non-instrumented) event: disable for this code object. */
                 _PyEval_StopTheWorld(interp);
                 remove_local_tool(code, interp, event, tool);
                 _PyEval_StartTheWorld(interp);

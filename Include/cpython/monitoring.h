@@ -8,8 +8,8 @@ extern "C" {
 // There is currently no limited API for monitoring
 
 
-/* Local events (tracked per code object).
- * Events 0-10 require bytecode instrumentation; 11-15 do not. */
+/* Local events.
+ * These require bytecode instrumentation */
 
 #define PY_MONITORING_EVENT_PY_START 0
 #define PY_MONITORING_EVENT_PY_RESUME 1
@@ -25,6 +25,9 @@ extern "C" {
 
 #define PY_MONITORING_IS_INSTRUMENTED_EVENT(ev) \
 ((ev) <= PY_MONITORING_EVENT_STOP_ITERATION)
+
+/* Other events, mainly exceptions.
+ * These can now be turned on and disabled on a per code object basis. */
 
 #define PY_MONITORING_EVENT_PY_UNWIND 11
 #define PY_MONITORING_EVENT_EXCEPTION_HANDLED 12
