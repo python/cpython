@@ -130,13 +130,7 @@ extern PyTypeObject _PyExc_MemoryError;
         }, \
         .gc = { \
             .enabled = 1, \
-            .young = { .threshold = 2000, }, \
-            .old = { \
-                { .threshold = 10, }, \
-                { .threshold = 0, }, \
-            }, \
-            .work_to_do = -5000, \
-            .phase = GC_PHASE_MARK, \
+            GC_GENERATION_INIT \
         }, \
         .qsbr = { \
             .wr_seq = QSBR_INITIAL, \
