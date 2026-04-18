@@ -114,7 +114,26 @@ frame_getvarstring(PyObject *self, PyObject *args)
 }
 
 
+static PyObject *
+test_my_doc_example(PyObject *self, PyObject *arg)
+{
+    PyFrameObject *frame = (PyFrameObject *)PyEval_GetFrame();
+    if (frame == NULL) {
+        Py_RETURN_NONE;
+    }
+
+    int kind = PyUnstable_Frame_GetExecutableKind(frame);
+
+    if (kind == PyUnstable_EXECUTABLE_KIND_SKIP) {
+         return PyLong_FromLong(kind);
+    }
+
+    return PyLong_FromLong(kind);
+}
+
+
 static PyMethodDef test_methods[] = {
+    {"test_my_doc_example", test_my_doc_example, METH_NOARGS, NULL},
     {"frame_getlocals", frame_getlocals, METH_O, NULL},
     {"frame_getglobals", frame_getglobals, METH_O, NULL},
     {"frame_getgenerator", frame_getgenerator, METH_O, NULL},
@@ -131,4 +150,3 @@ _PyTestCapi_Init_Frame(PyObject *m)
 {
     return PyModule_AddFunctions(m, test_methods);
 }
-
