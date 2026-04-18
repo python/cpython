@@ -213,7 +213,7 @@ extern void _Py_ScheduleGC(PyThreadState *tstate);
  * ob_traverse method.
  *
  * Internal note: interp->gc.generation0->_gc_prev doesn't have any bit flags
- * because it's not object header.  So we don't use _PyGCHead_PREV() and
+ * because it's not an object header. So we don't use _PyGCHead_PREV() and
  * _PyGCHead_SET_PREV() for it to avoid unnecessary bitwise operations.
  *
  * See also the public PyObject_GC_Track() function.
