@@ -1,0 +1,16 @@
+Speed up :class:`pickle._Pickler` (the pure-Python pickler fallback,
+also the base class of :class:`dill.Pickler`) on the ``dump`` path by
+inlining the frame-boundary check, reordering
+:meth:`~pickle._Pickler.save` to dispatch atomic types (``str``,
+``bytes``, ``int``, ``None``, ``bool``, ``float``) ahead of the memo
+lookup to match the C reference implementation in
+:mod:`!Modules/_pickle.c`, adding exact-container fast paths for
+:class:`list` and :class:`dict` under binary protocols, inlining
+``MEMOIZE`` for protocol 4+, and precomputing the ``BININT1`` opcode
+byte sequences for integers in ``0..255``.  Pure-Python
+:meth:`pickle._Pickler.dump` is now 20–49% faster on representative
+workloads; :func:`dill.dumps` (which inherits from
+:class:`pickle._Pickler`) is 19–37% faster on the same shapes.  One
+user-visible semantic change: atomic types no longer invoke
+:meth:`~pickle._Pickler.reducer_override`, aligning pure-Python
+behaviour with the long-standing C dispatch order.
