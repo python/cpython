@@ -20,10 +20,13 @@ MAX_FINISH_STEPS = 20
 # enough to let it install the compiled JIT entry and set a temporary
 # breakpoint on the resulting address.
 MAX_ENTRY_SETUP_STEPS = 20
-# After landing on the JIT entry frame, single-step a little further into the
-# blob so the backtrace is taken from JIT code itself rather than the
-# immediate helper-return site.
-JIT_ENTRY_SINGLE_STEPS = 2
+# After landing on the JIT entry frame, single-step a bounded number of
+# instructions further into the blob so the backtrace is taken from JIT code
+# itself rather than the immediate helper-return site. The exact number of
+# steps is not significant: each step is cross-checked against the selected
+# frame's symbol so the test fails loudly if stepping escapes the registered
+# JIT region, instead of asserting against a misleading backtrace.
+MAX_JIT_ENTRY_STEPS = 4
 EVAL_FRAME_RE = r"(_PyEval_EvalFrameDefault|_PyEval_Vector)"
 
 FINISH_TO_JIT_ENTRY = (
@@ -48,6 +51,19 @@ BREAK_IN_COMPILED_JIT_ENTRY = (
     "    gdb.execute('next')\\n"
     "else:\\n"
     "    raise RuntimeError('compiled JIT entry was not installed')\\n\")"
+)
+STEP_INSIDE_JIT_ENTRY = (
+    "python exec(\"import gdb\\n"
+    "target = 'py::jit_entry:<jit>'\\n"
+    f"for _ in range({MAX_JIT_ENTRY_STEPS}):\\n"
+    "    frame = gdb.selected_frame()\\n"
+    "    if frame is None or frame.name() != target:\\n"
+    "        raise RuntimeError('left JIT region during stepping: '\\n"
+    "                           + repr(frame and frame.name()))\\n"
+    "    gdb.execute('si')\\n"
+    "frame = gdb.selected_frame()\\n"
+    "if frame is None or frame.name() != target:\\n"
+    "    raise RuntimeError('stepped out of JIT region after si')\\n\")"
 )
 
 
@@ -111,7 +127,7 @@ class JitBacktraceTests(DebuggerTests):
             script=JIT_SAMPLE_SCRIPT,
             cmds_after_breakpoint=[
                 FINISH_TO_JIT_ENTRY,
-                *(["si"] * JIT_ENTRY_SINGLE_STEPS),
+                STEP_INSIDE_JIT_ENTRY,
                 "bt",
             ],
             PYTHON_JIT="1",
