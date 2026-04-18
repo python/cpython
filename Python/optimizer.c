@@ -610,6 +610,65 @@ is_terminator(const _PyUOpInstruction *uop)
     );
 }
 
+/* Transform a recorded value before storing it in operand0.
+ *
+ * Family-wide recording stores the base opcode's raw value. Some uops need a
+ * derived form instead, such as the value's type. A NULL entry leaves the
+ * recorded value unchanged.
+ */
+typedef PyObject *(*_Py_RecordTraceTransformFn)(PyObject *value);
+
+static PyObject *
+record_trace_transform_to_type(PyObject *value)
+{
+    PyObject *tp = (PyObject *)Py_TYPE(value);
+    Py_INCREF(tp);
+    Py_DECREF(value);
+    return tp;
+}
+
+/* _RECORD_NOS_GEN_FUNC and _RECORD_3OS_GEN_FUNC record the raw receiver.
+ * If it is a generator, return its function object; otherwise return NULL.
+ */
+static PyObject *
+record_trace_transform_gen_func(PyObject *value)
+{
+    PyObject *func = NULL;
+    if (PyGen_Check(value)) {
+        PyGenObject *gen = (PyGenObject *)value;
+        _PyStackRef f = gen->gi_iframe.f_funcobj;
+        if (!PyStackRef_IsNull(f)) {
+            func = PyStackRef_AsPyObjectBorrow(f);
+            Py_INCREF(func);
+        }
+    }
+    Py_DECREF(value);
+    return func;
+}
+
+/* _RECORD_BOUND_METHOD records the raw callable.
+ * Keep it only for bound methods; otherwise return NULL.
+ */
+static PyObject *
+record_trace_transform_bound_method(PyObject *value)
+{
+    PyObject *result = NULL;
+    if (Py_TYPE(value) == &PyMethod_Type) {
+        result = value;
+        Py_INCREF(result);
+    }
+    Py_DECREF(value);
+    return result;
+}
+
+static const _Py_RecordTraceTransformFn record_trace_transforms[MAX_UOP_ID + 1] = {
+    [_RECORD_TOS_TYPE] = record_trace_transform_to_type,
+    [_RECORD_NOS_TYPE] = record_trace_transform_to_type,
+    [_RECORD_NOS_GEN_FUNC] = record_trace_transform_gen_func,
+    [_RECORD_3OS_GEN_FUNC] = record_trace_transform_gen_func,
+    [_RECORD_BOUND_METHOD] = record_trace_transform_bound_method,
+};
+
 /* Returns 1 on success (added to trace), 0 on trace end.
  */
 // gh-142543: inlining this function causes stack overflows
@@ -950,6 +1009,13 @@ _PyJit_translate_single_bytecode_to_trace(
                     PyObject *recorded_value = tracer->prev_state.recorded_values[record_idx];
                     tracer->prev_state.recorded_values[record_idx] = NULL;
                     record_idx++;
+                    if (_PyOpcode_RecordIsFamilyOverride[opcode] &&
+                        recorded_value != NULL) {
+                        _Py_RecordTraceTransformFn transform = record_trace_transforms[uop];
+                        if (transform != NULL) {
+                            recorded_value = transform(recorded_value);
+                        }
+                    }
                     operand = (uintptr_t)recorded_value;
                 }
                 // All other instructions

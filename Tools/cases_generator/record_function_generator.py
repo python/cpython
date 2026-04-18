@@ -85,12 +85,21 @@ def generate_recorder_functions(filenames: list[str], analysis: Analysis, out: C
 def generate_recorder_tables(analysis: Analysis, out: CWriter) -> None:
     record_function_indexes: dict[str, int] = dict()
     record_table: dict[str, list[str]] = {}
+    record_override_table: dict[str, bool] = {}
     index = 1
     for inst in analysis.instructions.values():
-        if not inst.properties.records_value:
-            continue
+        source_inst = inst
+        is_family_override = False
+        if inst.family is not None:
+            # TRACE_RECORD runs before execution, but specialization may
+            # rewrite the opcode before translation. Use the family head's
+            # raw recording shape so every member records the same layout.
+            family_head = analysis.instructions[inst.family.name]
+            if family_head.properties.records_value:
+                source_inst = family_head
+                is_family_override = family_head is not inst
         records: list[str] = []
-        for part in inst.parts:
+        for part in source_inst.parts:
             if not part.properties.records_value:
                 continue
             if part.name not in record_function_indexes:
@@ -104,6 +113,7 @@ def generate_recorder_tables(analysis: Analysis, out: CWriter) -> None:
                     f"exceeds MAX_RECORDED_VALUES ({MAX_RECORDED_VALUES})"
                 )
             record_table[inst.name] = records
+            record_override_table[inst.name] = is_family_override
     func_count = len(record_function_indexes)
 
     for name, index in record_function_indexes.items():
@@ -113,6 +123,11 @@ def generate_recorder_tables(analysis: Analysis, out: CWriter) -> None:
     for inst_name, record_names in record_table.items():
         indices = ", ".join(f"{name}_INDEX" for name in record_names)
         out.emit(f"    [{inst_name}] = {{{len(record_names)}, {{{indices}}}}},\n")
+    out.emit("};\n\n")
+    out.emit("const uint8_t _PyOpcode_RecordIsFamilyOverride[256] = {\n")
+    for inst_name, is_override in record_override_table.items():
+        if is_override:
+            out.emit(f"    [{inst_name}] = 1,\n")
     out.emit("};\n\n")
     out.emit(f"const _Py_RecordFuncPtr _PyOpcode_RecordFunctions[{func_count+1}] = {{\n")
     out.emit("    [0] = NULL,\n")

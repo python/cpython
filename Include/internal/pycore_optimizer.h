@@ -490,6 +490,7 @@ typedef struct {
     uint8_t indices[MAX_RECORDED_VALUES];
 } _PyOpcodeRecordEntry;
 PyAPI_DATA(const _PyOpcodeRecordEntry) _PyOpcode_RecordEntries[256];
+PyAPI_DATA(const uint8_t) _PyOpcode_RecordIsFamilyOverride[256];
 #endif
 
 #ifdef __cplusplus

@@ -2145,6 +2145,25 @@ class TestRecorderTableGeneration(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "exceeds MAX_RECORDED_VALUES"):
             self.generate_tables(input)
 
+    def test_family_member_inherits_recorder_shape(self):
+        input = """
+        tier2 op(_RECORD_TOS, (value -- value)) {
+            RECORD_VALUE(value);
+        }
+        op(_DO_STUFF, (value -- res)) {
+            res = value;
+        }
+        macro(OP) = _RECORD_TOS + _DO_STUFF;
+        inst(OP_SPECIALIZED, (value -- res)) {
+            res = value;
+        }
+        family(OP, INLINE_CACHE_ENTRIES_OP) = { OP_SPECIALIZED };
+        """
+        output = self.generate_tables(input)
+        self.assertIn("[OP] = {1, {_RECORD_TOS_INDEX}}", output)
+        self.assertIn("[OP_SPECIALIZED] = {1, {_RECORD_TOS_INDEX}}", output)
+        self.assertIn("const uint8_t _PyOpcode_RecordIsFamilyOverride[256] = {", output)
+        self.assertIn("[OP_SPECIALIZED] = 1", output)
 
 class TestGeneratedAbstractCases(unittest.TestCase):
     def setUp(self) -> None:
