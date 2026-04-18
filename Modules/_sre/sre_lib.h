@@ -1753,10 +1753,17 @@ SRE(search)(SRE_STATE* state, SRE_CODE* pattern)
         end = (SRE_CHAR *)state->end;
         state->must_advance = 0;
         while (ptr < end) {
+#if SIZEOF_SRE_CHAR == 1
+            ptr = (SRE_CHAR *)memchr(ptr, c, end - ptr);
+            if (!ptr) {
+                return 0;
+            }
+#else
             while (*ptr != c) {
                 if (++ptr >= end)
                     return 0;
             }
+#endif
             TRACE(("|%p|%p|SEARCH LITERAL\n", pattern, ptr));
             state->start = ptr;
             state->ptr = ptr + prefix_skip;
@@ -1786,10 +1793,18 @@ SRE(search)(SRE_STATE* state, SRE_CODE* pattern)
 #endif
         while (ptr < end) {
             SRE_CHAR c = (SRE_CHAR) prefix[0];
+#if SIZEOF_SRE_CHAR == 1
+            ptr = (SRE_CHAR *)memchr(ptr, c, end - ptr);
+            if (!ptr) {
+                return 0;
+            }
+            ptr++;
+#else
             while (*ptr++ != c) {
                 if (ptr >= end)
                     return 0;
             }
+#endif
             if (ptr >= end)
                 return 0;
 

@@ -1,0 +1,3 @@
+Optimize prefix search for regular expressions starting with literals using
+``memchr()``. For single-byte character strings, the internal scanning loop
+now delegates to the C library, which is typically vectorized.
