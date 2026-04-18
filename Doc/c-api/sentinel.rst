@@ -8,7 +8,7 @@ Sentinel Objects
 .. c:var:: PyTypeObject PySentinel_Type
 
    This instance of :c:type:`PyTypeObject` represents the Python
-   :class:`sentinel` type.  This is the same object as :class:`builtins.sentinel`.
+   :class:`sentinel` type.  This is the same object as :class:`sentinel`.
 
    .. versionadded:: next
 
