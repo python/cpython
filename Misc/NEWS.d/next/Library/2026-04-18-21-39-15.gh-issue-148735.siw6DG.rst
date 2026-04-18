@@ -1,0 +1,4 @@
+:mod:`xml.etree.ElementTree`: Fix a use-after-free in
+:meth:`Element.findtext <xml.etree.ElementTree.Element.findtext>` when the
+tag to find implements an :meth:`~object.__eq__` method that drops every
+other reference to a matching element.

@@ -1347,12 +1347,12 @@ _elementtree_Element_findtext_impl(ElementObject *self, PyTypeObject *cls,
         int rc = PyObject_RichCompareBool(tag, path, Py_EQ);
         Py_DECREF(tag);
         if (rc > 0) {
-            PyObject *text = element_get_text((ElementObject *)item);
+            PyObject *text = Py_XNewRef(element_get_text((ElementObject *)item));
             Py_DECREF(item);
             if (text == Py_None) {
+                Py_DECREF(text);
                 return Py_GetConstant(Py_CONSTANT_EMPTY_STR);
             }
-            Py_XINCREF(text);
             return text;
         }
         Py_DECREF(item);
