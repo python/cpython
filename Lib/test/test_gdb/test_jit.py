@@ -1,4 +1,5 @@
 import os
+import platform
 import re
 import sys
 import unittest
@@ -54,10 +55,18 @@ def setUpModule():
     setup_module()
 
 
-@unittest.skipUnless(
-    hasattr(sys, "_jit") and sys._jit.is_available(),
-    "requires a JIT-enabled build",
-)
+# The GDB JIT interface registration is gated on __linux__ && __ELF__ in
+# Python/jit_unwind.c, and the synthetic EH-frame is only implemented for
+# x86_64 and AArch64 (a #error fires otherwise). Skip cleanly on other
+# platforms or architectures instead of producing timeouts / empty backtraces.
+# is_enabled() implies is_available() and also implies that the runtime has
+# JIT execution active; interpreter-only tier 2 builds don't hit this path.
+@unittest.skipUnless(sys.platform == "linux",
+                     "GDB JIT interface is only implemented for Linux + ELF")
+@unittest.skipUnless(platform.machine() in ("x86_64", "aarch64"),
+                     "GDB JIT CFI emitter only supports x86_64 and AArch64")
+@unittest.skipUnless(hasattr(sys, "_jit") and sys._jit.is_enabled(),
+                     "requires a JIT-enabled build with JIT execution active")
 class JitBacktraceTests(DebuggerTests):
     def test_bt_shows_compiled_jit_entry(self):
         gdb_output = self.get_stack_trace(
