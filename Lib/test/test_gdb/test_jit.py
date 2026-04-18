@@ -28,6 +28,7 @@ MAX_ENTRY_SETUP_STEPS = 20
 # JIT region, instead of asserting against a misleading backtrace.
 MAX_JIT_ENTRY_STEPS = 4
 EVAL_FRAME_RE = r"(_PyEval_EvalFrameDefault|_PyEval_Vector)"
+BACKTRACE_FRAME_RE = re.compile(r"^#\d+\s+.*$", re.MULTILINE)
 
 FINISH_TO_JIT_ENTRY = (
     "python exec(\"import gdb\\n"
@@ -84,6 +85,62 @@ def setUpModule():
 @unittest.skipUnless(hasattr(sys, "_jit") and sys._jit.is_enabled(),
                      "requires a JIT-enabled build with JIT execution active")
 class JitBacktraceTests(DebuggerTests):
+    def _extract_backtrace_frames(self, gdb_output):
+        frames = BACKTRACE_FRAME_RE.findall(gdb_output)
+        self.assertGreater(
+            len(frames), 0,
+            f"expected at least one GDB backtrace frame in output:\n{gdb_output}",
+        )
+        return frames
+
+    def _assert_jit_backtrace_shape(self, gdb_output, *, anchor_at_top):
+        # Shape assertions applied to every JIT backtrace we produce:
+        #   1. The synthetic JIT symbol appears exactly once. A second
+        #      py::jit_entry:<jit> frame would mean the unwinder is
+        #      materializing two native frames for a single logical JIT
+        #      region, or failing to unwind out of the region entirely.
+        #   2. At least one _PyEval_EvalFrameDefault / _PyEval_Vector
+        #      frame appears after the JIT frame, proving the unwinder
+        #      climbs back out of the JIT region into the eval loop.
+        #      Helper frames from inside the JITted region may still
+        #      appear above the synthetic JIT frame in the backtrace.
+        #   4. For tests that assert a specific entry PC, the JIT frame
+        #      is also at #0.
+        frames = self._extract_backtrace_frames(gdb_output)
+        backtrace = "\n".join(frames)
+
+        jit_frames = [frame for frame in frames if "py::jit_entry:<jit>" in frame]
+        jit_count = len(jit_frames)
+        self.assertEqual(
+            jit_count, 1,
+            f"expected exactly 1 py::jit_entry:<jit> frame, got {jit_count}\n"
+            f"backtrace:\n{backtrace}",
+        )
+        eval_frames = [frame for frame in frames if re.search(EVAL_FRAME_RE, frame)]
+        eval_count = len(eval_frames)
+        self.assertGreaterEqual(
+            eval_count, 1,
+            f"expected at least one _PyEval_* frame, got {eval_count}\n"
+            f"backtrace:\n{backtrace}",
+        )
+        jit_frame_index = next(
+            i for i, frame in enumerate(frames) if "py::jit_entry:<jit>" in frame
+        )
+        eval_after_jit = any(
+            re.search(EVAL_FRAME_RE, frame)
+            for frame in frames[jit_frame_index + 1:]
+        )
+        self.assertTrue(
+            eval_after_jit,
+            f"expected an eval frame after the JIT frame\n"
+            f"backtrace:\n{backtrace}",
+        )
+        if anchor_at_top:
+            self.assertRegex(
+                frames[0],
+                re.compile(r"^#0\s+py::jit_entry:<jit>"),
+            )
+
     def test_bt_shows_compiled_jit_entry(self):
         gdb_output = self.get_stack_trace(
             script=JIT_SAMPLE_SCRIPT,
@@ -96,14 +153,9 @@ class JitBacktraceTests(DebuggerTests):
             PYTHON_JIT="1",
         )
         # GDB registers the compiled JIT entry and per-trace JIT regions under
-        # the same synthetic symbol name.
-        self.assertRegex(
-            gdb_output,
-            re.compile(
-                rf"#0\s+py::jit_entry:<jit>.*{EVAL_FRAME_RE}",
-                re.DOTALL,
-            ),
-        )
+        # the same synthetic symbol name; breaking at the entry PC pins the
+        # JIT frame at #0.
+        self._assert_jit_backtrace_shape(gdb_output, anchor_at_top=True)
 
     def test_bt_unwinds_through_jit_frames(self):
         gdb_output = self.get_stack_trace(
@@ -114,13 +166,7 @@ class JitBacktraceTests(DebuggerTests):
         # The executor should appear as a named JIT frame and unwind back into
         # the eval loop. Whether GDB also materializes a separate shim frame is
         # an implementation detail of the synthetic executor CFI.
-        self.assertRegex(
-            gdb_output,
-            re.compile(
-                rf"py::jit_entry:<jit>.*{EVAL_FRAME_RE}",
-                re.DOTALL,
-            ),
-        )
+        self._assert_jit_backtrace_shape(gdb_output, anchor_at_top=False)
 
     def test_bt_unwinds_from_inside_jit_entry(self):
         gdb_output = self.get_stack_trace(
@@ -132,12 +178,6 @@ class JitBacktraceTests(DebuggerTests):
             ],
             PYTHON_JIT="1",
         )
-        # Once the selected PC is inside the JIT entry, we only require that
-        # GDB can identify the JIT frame and keep unwinding into _PyEval_*.
-        self.assertRegex(
-            gdb_output,
-            re.compile(
-                rf"#0\s+py::jit_entry:<jit>.*{EVAL_FRAME_RE}",
-                re.DOTALL,
-            ),
-        )
+        # Once the selected PC is inside the JIT entry, we require that GDB
+        # identifies the JIT frame at #0 and keeps unwinding into _PyEval_*.
+        self._assert_jit_backtrace_shape(gdb_output, anchor_at_top=True)
