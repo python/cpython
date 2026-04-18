@@ -4,7 +4,6 @@
 #include "pycore_ceval.h"         // _PyThreadState_GET()
 #include "pycore_interpframe.h"   // _PyFrame_IsIncomplete()
 #include "pycore_object.h"        // _PyObject_GC_TRACK/UNTRACK()
-#include "pycore_sentinelobject.h"
 #include "pycore_stackref.h"      // PyStackRef_AsPyObjectBorrow()
 #include "pycore_typeobject.h"    // _Py_BaseObject_RichCompare()
 #include "pycore_unionobject.h"   // _Py_union_from_tuple()
@@ -17,7 +16,7 @@ typedef struct {
 } sentinelobject;
 
 #define sentinelobject_CAST(op) \
-    (assert(_PySentinel_Check(op)), _Py_CAST(sentinelobject *, (op)))
+    (assert(PySentinel_Check(op)), _Py_CAST(sentinelobject *, (op)))
 
 /*[clinic input]
 class sentinel "sentinelobject *" "&PySentinel_Type"

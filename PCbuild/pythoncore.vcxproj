@@ -311,7 +311,6 @@
     <ClInclude Include="..\Include\internal\pycore_semaphore.h" />
     <ClInclude Include="..\Include\internal\pycore_setobject.h" />
     <ClInclude Include="..\Include\internal\pycore_signal.h" />
-    <ClInclude Include="..\Include\internal\pycore_sentinelobject.h" />
     <ClInclude Include="..\Include\internal\pycore_sliceobject.h" />
     <ClInclude Include="..\Include\internal\pycore_stackref.h" />
     <ClInclude Include="..\Include\internal\pycore_stats.h" />

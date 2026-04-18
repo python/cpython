@@ -840,9 +840,6 @@
     <ClInclude Include="..\Include\internal\pycore_signal.h">
       <Filter>Include\internal</Filter>
     </ClInclude>
-    <ClInclude Include="..\Include\internal\pycore_sentinelobject.h">
-      <Filter>Include\internal</Filter>
-    </ClInclude>
     <ClInclude Include="..\Include\internal\pycore_sliceobject.h">
       <Filter>Include\internal</Filter>
     </ClInclude>
