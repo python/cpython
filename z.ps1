@@ -29,7 +29,7 @@ $venvZutil = Join-Path $venvDir "Scripts\nanvix-zutil.exe"
 # Windows compatibility shim: nanvix-zutil references os.getuid/os.getgid
 # which are unavailable on Windows.  Stub them before importing the package.
 $ShimCode = @'
-import os,sys;os.getuid=getattr(os,'getuid',lambda:0);os.getgid=getattr(os,'getgid',lambda:0);from nanvix_zutil.__main__ import main;sys.exit(main())
+import os,sys;os.getuid=getattr(os,"getuid",lambda:0);os.getgid=getattr(os,"getgid",lambda:0);from nanvix_zutil.__main__ import main;sys.exit(main())
 '@
 
 $zutilGlobalVersion = try {
@@ -116,31 +116,10 @@ else {
     }
 }
 
-# Extract --with-nanvix PATH before forwarding to nanvix-zutil.
-$filteredArgs = @()
-$i = 0
-while ($i -lt $ZArgs.Count) {
-    if ($ZArgs[$i] -eq '--with-nanvix') {
-        if ($i + 1 -ge $ZArgs.Count) {
-            throw "ERROR: --with-nanvix requires a path argument"
-        }
-        $localPath = (Resolve-Path $ZArgs[$i + 1] -ErrorAction Stop).Path
-        if (-not (Test-Path $localPath -PathType Container)) {
-            throw "ERROR: --with-nanvix path does not exist: $($ZArgs[$i + 1])"
-        }
-        $env:NANVIX_LOCAL_PATH = $localPath
-        $i += 2
-    }
-    else {
-        $filteredArgs += $ZArgs[$i]
-        $i++
-    }
-}
-
 if ($bin -eq $venvZutil) {
-    & $venvPython -c $ShimCode @filteredArgs
+    & $venvPython -c $ShimCode @ZArgs
 }
 else {
-    & $bin @filteredArgs
+    & $bin @ZArgs
 }
 exit $LASTEXITCODE

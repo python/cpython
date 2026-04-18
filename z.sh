@@ -72,31 +72,4 @@ else
     fi
 fi
 
-# Extract --with-nanvix PATH before forwarding to nanvix-zutil.
-# The nanvix-zutil CLI inspects positional args to find the subcommand;
-# --with-nanvix's PATH argument would be mistaken for a subcommand.
-# Pass the value via env var so z.py can pick it up.
-ARGS=()
-while [[ $# -gt 0 ]]; do
-    case "$1" in
-        --with-nanvix)
-            if [[ $# -lt 2 ]]; then
-                echo "ERROR: --with-nanvix requires a path argument" >&2
-                exit 1
-            fi
-            NANVIX_LOCAL_PATH="$(cd "$2" 2>/dev/null && pwd || readlink -f "$2")"
-            if [[ ! -d "$NANVIX_LOCAL_PATH" ]]; then
-                echo "ERROR: --with-nanvix path does not exist: $2" >&2
-                exit 1
-            fi
-            export NANVIX_LOCAL_PATH
-            shift 2
-            ;;
-        *)
-            ARGS+=("$1")
-            shift
-            ;;
-    esac
-done
-
-exec "$BIN" "${ARGS[@]}"
+exec "$BIN" "$@"
