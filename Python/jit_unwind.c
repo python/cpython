@@ -204,7 +204,17 @@ static void elfctx_append_uleb128(ELFObjectContext* ctx, uint32_t v) {
 //                              DWARF EH FRAME GENERATION
 // =============================================================================
 
-static void elf_init_ehframe(ELFObjectContext* ctx, int absolute_addr);
+static void elf_init_ehframe_perf(ELFObjectContext* ctx);
+static void elf_init_ehframe_gdb(ELFObjectContext* ctx);
+
+static inline void elf_init_ehframe(ELFObjectContext* ctx, int absolute_addr) {
+    if (absolute_addr) {
+        elf_init_ehframe_gdb(ctx);
+    }
+    else {
+        elf_init_ehframe_perf(ctx);
+    }
+}
 
 size_t
 _PyJitUnwind_EhFrameSize(int absolute_addr)
@@ -261,14 +271,26 @@ _PyJitUnwind_BuildEhFrame(uint8_t *buffer, size_t buffer_size,
  * 1. A CIE (Common Information Entry) describing the calling convention.
  * 2. An FDE (Frame Description Entry) describing how to unwind the JIT frame.
  *
- * The caller selects the FDE address encoding through absolute_addr:
- * - 0: emit PC-relative addresses for perf's synthesized DSO layout.
- * - 1: emit absolute addresses for the GDB JIT in-memory ELF.
+ * Two flavors are emitted, dispatched on the absolute_addr flag:
+ *
+ * - absolute_addr == 0 (elf_init_ehframe_perf): PC-relative FDE address
+ *   encoding for perf's synthesized DSO layout. The CIE describes the
+ *   trampoline's entry state and the FDE walks through the prologue and
+ *   epilogue with advance_loc instructions. This matches the pre-existing
+ *   perf_jit_trampoline behavior byte-for-byte.
+ *
+ * - absolute_addr == 1 (elf_init_ehframe_gdb): absolute FDE address
+ *   encoding for the GDB JIT in-memory ELF. The CIE describes the
+ *   steady-state frame layout (CFA = %rbp+16 / x29+16, with saved fp and
+ *   return-address column at fixed offsets) and the FDE emits no further
+ *   CFI. The same rule applies at every PC in the registered region,
+ *   which is correct for executor stencils (they pin the frame pointer
+ *   across the region). This is the GDB-side fix; see elf_init_ehframe_gdb
+ *   for details.
  */
-static void elf_init_ehframe(ELFObjectContext* ctx, int absolute_addr) {
-    int fde_ptr_enc = absolute_addr
-        ? DWRF_EH_PE_absptr
-        : (DWRF_EH_PE_pcrel | DWRF_EH_PE_sdata4);
+static void elf_init_ehframe_perf(ELFObjectContext* ctx) {
+    const int absolute_addr = 0;
+    int fde_ptr_enc = DWRF_EH_PE_pcrel | DWRF_EH_PE_sdata4;
     uint8_t* p = ctx->p;
     uint8_t* framep = p;  // Remember start of frame data
 
@@ -617,6 +639,90 @@ static void elf_init_ehframe(ELFObjectContext* ctx, int absolute_addr) {
         int32_t fde_offset_in_frame = (int32_t)(ctx->fde_p - framep);
         *(int32_t *)ctx->fde_p = -(rounded_code_size + fde_offset_in_frame);
     }
+}
+
+/*
+ * Build .eh_frame data for the GDB JIT interface.
+ *
+ * The FDE PC field is encoded with DWRF_EH_PE_absptr so GDB resolves the
+ * covered address range directly from the generated ELF, without needing
+ * the perf-style synthesized DSO layout.
+ *
+ * The CIE's initial instructions describe the STEADY-STATE frame layout
+ * directly:
+ *
+ *   x86_64:  CFA = %rbp + 16, saved %rbp at cfa-16, RA at cfa-8
+ *   AArch64: CFA = x29 + 16,  saved x29  at cfa-16, x30 at cfa-8
+ *
+ * The FDE emits no further CFI, so that rule applies uniformly at every
+ * PC in the registered JIT region. This is correct for executor stencils:
+ * they are compiled with -mframe-pointer=reserved and the optimizer
+ * asserts they never touch the frame pointer (see Tools/jit/_optimizers.py
+ * _validate()), so %rbp / x29 stays pinned across the whole region.
+ *
+ * The compiled shim does execute a real push/mov prologue, so within its
+ * first few bytes the steady-state rule is slightly off (there the
+ * shim's %rbp is still the caller's). This is a small, well-bounded
+ * tradeoff accepted because GDB rarely stops inside a 4-byte prologue
+ * window and backtraces remain correctly structured (they just skip one
+ * frame) rather than corrupt (wrong RA).
+ *
+ * If stencil code generation changes so that executors start touching
+ * the frame pointer, this helper must be updated together with the
+ * stencil generator and tests.
+ */
+static void elf_init_ehframe_gdb(ELFObjectContext* ctx) {
+    int fde_ptr_enc = DWRF_EH_PE_absptr;
+    uint8_t* p = ctx->p;
+    uint8_t* framep = p;  // Remember start of frame data
+
+    DWRF_SECTION(CIE,
+        DWRF_U32(0);                           // CIE ID (0 indicates this is a CIE)
+        DWRF_U8(DWRF_CIE_VERSION);            // CIE version (1)
+        DWRF_STR("zR");                       // Augmentation string ("zR" = has LSDA)
+#ifdef __x86_64__
+        DWRF_UV(1);                           // Code alignment factor (x86_64: 1 byte)
+#elif defined(__aarch64__) && defined(__AARCH64EL__) && !defined(__ILP32__)
+        DWRF_UV(4);                           // Code alignment factor (AArch64: 4 bytes per instruction)
+#endif
+        DWRF_SV(-(int64_t)sizeof(uintptr_t)); // Data alignment factor (negative)
+        DWRF_U8(DWRF_REG_RA);                 // Return address register number
+        DWRF_UV(1);                           // Augmentation data length
+        DWRF_U8(fde_ptr_enc);                 // FDE pointer encoding (absptr)
+
+        /* Initial CFI: steady-state frame layout. */
+#ifdef __x86_64__
+        DWRF_U8(DWRF_CFA_def_cfa);            // CFA = %rbp + 16
+        DWRF_UV(DWRF_REG_BP);
+        DWRF_UV(16);
+        DWRF_U8(DWRF_CFA_offset | DWRF_REG_RA);
+        DWRF_UV(1);                           // RA at cfa-8
+        DWRF_U8(DWRF_CFA_offset | DWRF_REG_BP);
+        DWRF_UV(2);                           // saved %rbp at cfa-16
+#elif defined(__aarch64__) && defined(__AARCH64EL__) && !defined(__ILP32__)
+        DWRF_U8(DWRF_CFA_def_cfa);            // CFA = x29 + 16
+        DWRF_UV(DWRF_REG_FP);
+        DWRF_UV(16);
+        DWRF_U8(DWRF_CFA_offset | DWRF_REG_FP);
+        DWRF_UV(2);                           // saved x29 at cfa-16
+        DWRF_U8(DWRF_CFA_offset | DWRF_REG_RA);
+        DWRF_UV(1);                           // x30 at cfa-8
+#else
+#    error "Unsupported target architecture"
+#endif
+        DWRF_ALIGNNOP(sizeof(uintptr_t));     // Align to pointer boundary
+    )
+
+    DWRF_SECTION(FDE,
+        DWRF_U32((uint32_t)(p - framep));     // Offset to CIE (backwards reference)
+        DWRF_ADDR(ctx->code_addr);            // Absolute code start
+        DWRF_ADDR((uintptr_t)ctx->code_size); // Code range covered
+        DWRF_U8(0);                           // Augmentation data length (none)
+        /* No per-PC CFI: the CIE's initial state covers the whole region. */
+        DWRF_ALIGNNOP(sizeof(uintptr_t));     // Align to pointer boundary
+    )
+
+    ctx->p = p;
 }
 
 #if defined(__linux__) && defined(__ELF__)
