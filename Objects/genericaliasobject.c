@@ -278,7 +278,7 @@ _Py_make_parameters(PyObject *args)
                     len += needed;
                     if (_PyTuple_Resize(&parameters, len) < 0) {
                         Py_DECREF(subparams);
-                        Py_DECREF(parameters);
+
                         return NULL;
                     }
                 }
@@ -636,7 +636,7 @@ ga_vectorcall(PyObject *self, PyObject *const *args,
               size_t nargsf, PyObject *kwnames)
 {
     gaobject *alias = (gaobject *) self;
-    PyObject *obj = PyVectorcall_Function(alias->origin)(alias->origin, args, nargsf, kwnames);
+    PyObject *obj = PyObject_Vectorcall(alias->origin, args, nargsf, kwnames);
     return set_orig_class(obj, self);
 }
 
