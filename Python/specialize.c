@@ -2,6 +2,7 @@
 
 #include "opcode.h"
 
+#include "pycore_bytesobject.h"   // _PyBytes_Concat
 #include "pycore_code.h"
 #include "pycore_critical_section.h"
 #include "pycore_descrobject.h"   // _PyMethodWrapper_Type
@@ -9,7 +10,8 @@
 #include "pycore_function.h"      // _PyFunction_GetVersionForCurrentState()
 #include "pycore_interpframe.h"   // FRAME_SPECIALS_SIZE
 #include "pycore_lazyimportobject.h" // PyLazyImport_CheckExact
-#include "pycore_list.h"          // _PyListIterObject
+#include "pycore_list.h"          // _PyListIterObject, _PyList_Concat
+#include "pycore_tuple.h"         // _PyTuple_Concat
 #include "pycore_long.h"          // _PyLong_IsNonNegativeCompact()
 #include "pycore_moduleobject.h"
 #include "pycore_object.h"
@@ -836,7 +838,7 @@ do_specialize_instance_load_attr(PyObject* owner, _Py_CODEUNIT* instr, PyObject*
                 return -1;
             }
             /* Don't specialize if PEP 523 is active */
-            if (_PyInterpreterState_GET()->eval_frame) {
+            if (!_PyInterpreterState_IsSpecializationEnabled(_PyInterpreterState_GET())) {
                 SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_OTHER);
                 return -1;
             }
@@ -846,8 +848,13 @@ do_specialize_instance_load_attr(PyObject* owner, _Py_CODEUNIT* instr, PyObject*
                 return -1;
             }
             #endif
+            uint32_t func_version = function_get_version(fget, LOAD_ATTR);
+            if (func_version == 0) {
+                return -1;
+            }
             assert(tp_version != 0);
             write_u32(lm_cache->type_version, tp_version);
+            write_u32(lm_cache->keys_version, func_version);
             /* borrowed */
             write_ptr(lm_cache->descr, fget);
             specialize(instr, LOAD_ATTR_PROPERTY);
@@ -915,7 +922,7 @@ do_specialize_instance_load_attr(PyObject* owner, _Py_CODEUNIT* instr, PyObject*
                 return -1;
             }
             /* Don't specialize if PEP 523 is active */
-            if (_PyInterpreterState_GET()->eval_frame) {
+            if (!_PyInterpreterState_IsSpecializationEnabled(_PyInterpreterState_GET())) {
                 SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_OTHER);
                 return -1;
             }
@@ -1733,7 +1740,7 @@ specialize_py_call(PyFunctionObject *func, _Py_CODEUNIT *instr, int nargs,
     PyCodeObject *code = (PyCodeObject *)func->func_code;
     int kind = function_kind(code);
     /* Don't specialize if PEP 523 is active */
-    if (_PyInterpreterState_GET()->eval_frame) {
+    if (!_PyInterpreterState_IsSpecializationEnabled(_PyInterpreterState_GET())) {
         SPECIALIZATION_FAIL(CALL, SPEC_FAIL_CALL_PEP_523);
         return -1;
     }
@@ -1776,7 +1783,7 @@ specialize_py_call_kw(PyFunctionObject *func, _Py_CODEUNIT *instr, int nargs,
     PyCodeObject *code = (PyCodeObject *)func->func_code;
     int kind = function_kind(code);
     /* Don't specialize if PEP 523 is active */
-    if (_PyInterpreterState_GET()->eval_frame) {
+    if (!_PyInterpreterState_IsSpecializationEnabled(_PyInterpreterState_GET())) {
         SPECIALIZATION_FAIL(CALL, SPEC_FAIL_CALL_PEP_523);
         return -1;
     }
@@ -2039,7 +2046,7 @@ binary_op_fail_kind(int oparg, PyObject *lhs, PyObject *rhs)
                     return SPEC_FAIL_WRONG_NUMBER_ARGUMENTS;
                 }
 
-                if (_PyInterpreterState_GET()->eval_frame) {
+                if (!_PyInterpreterState_IsSpecializationEnabled(_PyInterpreterState_GET())) {
                     /* Don't specialize if PEP 523 is active */
                     Py_DECREF(descriptor);
                     return SPEC_FAIL_OTHER;
@@ -2113,6 +2120,56 @@ is_compactlong(PyObject *v)
 {
     return PyLong_CheckExact(v) &&
            _PyLong_IsCompact((PyLongObject *)v);
+}
+
+/* sequence * int helpers: bypass PyNumber_Multiply dispatch overhead
+   by calling sq_repeat directly with PyLong_AsSsize_t. */
+
+static inline PyObject *
+seq_int_multiply(PyObject *seq, PyObject *n,
+                 ssizeargfunc repeat)
+{
+    Py_ssize_t count = PyLong_AsSsize_t(n);
+    if (count == -1 && PyErr_Occurred()) {
+        return NULL;
+    }
+    return repeat(seq, count);
+}
+
+static PyObject *
+str_int_multiply(PyObject *lhs, PyObject *rhs)
+{
+    return seq_int_multiply(lhs, rhs, PyUnicode_Type.tp_as_sequence->sq_repeat);
+}
+
+static PyObject *
+int_str_multiply(PyObject *lhs, PyObject *rhs)
+{
+    return seq_int_multiply(rhs, lhs, PyUnicode_Type.tp_as_sequence->sq_repeat);
+}
+
+static PyObject *
+bytes_int_multiply(PyObject *lhs, PyObject *rhs)
+{
+    return seq_int_multiply(lhs, rhs, PyBytes_Type.tp_as_sequence->sq_repeat);
+}
+
+static PyObject *
+int_bytes_multiply(PyObject *lhs, PyObject *rhs)
+{
+    return seq_int_multiply(rhs, lhs, PyBytes_Type.tp_as_sequence->sq_repeat);
+}
+
+static PyObject *
+tuple_int_multiply(PyObject *lhs, PyObject *rhs)
+{
+    return seq_int_multiply(lhs, rhs, PyTuple_Type.tp_as_sequence->sq_repeat);
+}
+
+static PyObject *
+int_tuple_multiply(PyObject *lhs, PyObject *rhs)
+{
+    return seq_int_multiply(rhs, lhs, PyTuple_Type.tp_as_sequence->sq_repeat);
 }
 
 static int
@@ -2205,25 +2262,63 @@ LONG_FLOAT_ACTION(compactlong_float_true_div, /)
 #undef LONG_FLOAT_ACTION
 
 static _PyBinaryOpSpecializationDescr binaryop_extend_descrs[] = {
-    /* long-long arithmetic */
-    {NB_OR, compactlongs_guard, compactlongs_or, &PyLong_Type, 1},
-    {NB_AND, compactlongs_guard, compactlongs_and, &PyLong_Type, 1},
-    {NB_XOR, compactlongs_guard, compactlongs_xor, &PyLong_Type, 1},
-    {NB_INPLACE_OR, compactlongs_guard, compactlongs_or, &PyLong_Type, 1},
-    {NB_INPLACE_AND, compactlongs_guard, compactlongs_and, &PyLong_Type, 1},
-    {NB_INPLACE_XOR, compactlongs_guard, compactlongs_xor, &PyLong_Type, 1},
+    /* long-long arithmetic: guards also check _PyLong_IsCompact, so
+       type alone is not sufficient to eliminate the guard. */
+    {NB_OR, compactlongs_guard, compactlongs_or, &PyLong_Type, 1, NULL, NULL},
+    {NB_AND, compactlongs_guard, compactlongs_and, &PyLong_Type, 1, NULL, NULL},
+    {NB_XOR, compactlongs_guard, compactlongs_xor, &PyLong_Type, 1, NULL, NULL},
+    {NB_INPLACE_OR, compactlongs_guard, compactlongs_or, &PyLong_Type, 1, NULL, NULL},
+    {NB_INPLACE_AND, compactlongs_guard, compactlongs_and, &PyLong_Type, 1, NULL, NULL},
+    {NB_INPLACE_XOR, compactlongs_guard, compactlongs_xor, &PyLong_Type, 1, NULL, NULL},
 
-    /* float-long arithemetic */
-    {NB_ADD, float_compactlong_guard, float_compactlong_add, &PyFloat_Type, 1},
-    {NB_SUBTRACT, float_compactlong_guard, float_compactlong_subtract, &PyFloat_Type, 1},
-    {NB_TRUE_DIVIDE, nonzero_float_compactlong_guard, float_compactlong_true_div, &PyFloat_Type, 1},
-    {NB_MULTIPLY, float_compactlong_guard, float_compactlong_multiply, &PyFloat_Type, 1},
+    /* float-long arithmetic: guards also check NaN and compactness. */
+    {NB_ADD, float_compactlong_guard, float_compactlong_add, &PyFloat_Type, 1, NULL, NULL},
+    {NB_SUBTRACT, float_compactlong_guard, float_compactlong_subtract, &PyFloat_Type, 1, NULL, NULL},
+    {NB_TRUE_DIVIDE, nonzero_float_compactlong_guard, float_compactlong_true_div, &PyFloat_Type, 1, NULL, NULL},
+    {NB_MULTIPLY, float_compactlong_guard, float_compactlong_multiply, &PyFloat_Type, 1, NULL, NULL},
 
-    /* float-float arithmetic */
-    {NB_ADD, compactlong_float_guard, compactlong_float_add, &PyFloat_Type, 1},
-    {NB_SUBTRACT, compactlong_float_guard, compactlong_float_subtract, &PyFloat_Type, 1},
-    {NB_TRUE_DIVIDE, nonzero_compactlong_float_guard, compactlong_float_true_div, &PyFloat_Type, 1},
-    {NB_MULTIPLY, compactlong_float_guard, compactlong_float_multiply, &PyFloat_Type, 1},
+    /* long-float arithmetic: guards also check NaN and compactness. */
+    {NB_ADD, compactlong_float_guard, compactlong_float_add, &PyFloat_Type, 1, NULL, NULL},
+    {NB_SUBTRACT, compactlong_float_guard, compactlong_float_subtract, &PyFloat_Type, 1, NULL, NULL},
+    {NB_TRUE_DIVIDE, nonzero_compactlong_float_guard, compactlong_float_true_div, &PyFloat_Type, 1, NULL, NULL},
+    {NB_MULTIPLY, compactlong_float_guard, compactlong_float_multiply, &PyFloat_Type, 1, NULL, NULL},
+
+    /* list-list concatenation: _PyList_Concat always allocates a new list */
+    {NB_ADD, NULL, _PyList_Concat, &PyList_Type, 1, &PyList_Type, &PyList_Type},
+    /* tuple-tuple concatenation: _PyTuple_Concat has a zero-length shortcut
+       that can return one of the operands, so the result is not guaranteed
+       to be a freshly allocated object. */
+    {NB_ADD, NULL, _PyTuple_Concat, &PyTuple_Type, 0, &PyTuple_Type, &PyTuple_Type},
+
+    /* str * int / int * str: call unicode_repeat directly.
+       unicode_repeat returns the original when n == 1. */
+    {NB_MULTIPLY, NULL, str_int_multiply, &PyUnicode_Type, 0, &PyUnicode_Type, &PyLong_Type},
+    {NB_MULTIPLY, NULL, int_str_multiply, &PyUnicode_Type, 0, &PyLong_Type, &PyUnicode_Type},
+    {NB_INPLACE_MULTIPLY, NULL, str_int_multiply, &PyUnicode_Type, 0, &PyUnicode_Type, &PyLong_Type},
+    {NB_INPLACE_MULTIPLY, NULL, int_str_multiply, &PyUnicode_Type, 0, &PyLong_Type, &PyUnicode_Type},
+
+    /* bytes + bytes: bytes_concat may return an operand when one side
+       is empty, so result is not always unique. */
+    {NB_ADD, NULL, _PyBytes_Concat, &PyBytes_Type, 0, &PyBytes_Type, &PyBytes_Type},
+    {NB_INPLACE_ADD, NULL, _PyBytes_Concat, &PyBytes_Type, 0, &PyBytes_Type, &PyBytes_Type},
+
+    /* bytes * int / int * bytes: call bytes_repeat directly.
+       bytes_repeat returns the original when n == 1. */
+    {NB_MULTIPLY, NULL, bytes_int_multiply, &PyBytes_Type, 0, &PyBytes_Type, &PyLong_Type},
+    {NB_MULTIPLY, NULL, int_bytes_multiply, &PyBytes_Type, 0, &PyLong_Type, &PyBytes_Type},
+    {NB_INPLACE_MULTIPLY, NULL, bytes_int_multiply, &PyBytes_Type, 0, &PyBytes_Type, &PyLong_Type},
+    {NB_INPLACE_MULTIPLY, NULL, int_bytes_multiply, &PyBytes_Type, 0, &PyLong_Type, &PyBytes_Type},
+
+    /* tuple * int / int * tuple: call tuple_repeat directly.
+       tuple_repeat returns the original when n == 1. */
+    {NB_MULTIPLY, NULL, tuple_int_multiply, &PyTuple_Type, 0, &PyTuple_Type, &PyLong_Type},
+    {NB_MULTIPLY, NULL, int_tuple_multiply, &PyTuple_Type, 0, &PyLong_Type, &PyTuple_Type},
+    {NB_INPLACE_MULTIPLY, NULL, tuple_int_multiply, &PyTuple_Type, 0, &PyTuple_Type, &PyLong_Type},
+    {NB_INPLACE_MULTIPLY, NULL, int_tuple_multiply, &PyTuple_Type, 0, &PyLong_Type, &PyTuple_Type},
+
+    /* dict | dict */
+    {NB_OR, NULL, _PyDict_Or, &PyDict_Type, 1, &PyDict_Type, &PyDict_Type},
+    {NB_INPLACE_OR, NULL, _PyDict_IOr, &PyDict_Type, 0, &PyDict_Type, &PyDict_Type},
 };
 
 static int
@@ -2233,7 +2328,13 @@ binary_op_extended_specialization(PyObject *lhs, PyObject *rhs, int oparg,
     size_t n = sizeof(binaryop_extend_descrs)/sizeof(_PyBinaryOpSpecializationDescr);
     for (size_t i = 0; i < n; i++) {
         _PyBinaryOpSpecializationDescr *d = &binaryop_extend_descrs[i];
-        if (d->oparg == oparg && d->guard(lhs, rhs)) {
+        if (d->oparg != oparg) {
+            continue;
+        }
+        int match = (d->guard != NULL)
+            ? d->guard(lhs, rhs)
+            : (Py_TYPE(lhs) == d->lhs_type && Py_TYPE(rhs) == d->rhs_type);
+        if (match) {
             *descr = d;
             return 1;
         }
@@ -2348,7 +2449,7 @@ _Py_Specialize_BinaryOp(_PyStackRef lhs_st, _PyStackRef rhs_st, _Py_CODEUNIT *in
                 PyHeapTypeObject *ht = (PyHeapTypeObject *)container_type;
                 if (kind == SIMPLE_FUNCTION &&
                     fcode->co_argcount == 2 &&
-                    !_PyInterpreterState_GET()->eval_frame && /* Don't specialize if PEP 523 is active */
+                    _PyInterpreterState_IsSpecializationEnabled(_PyInterpreterState_GET()) && /* Don't specialize if PEP 523 is active */
                     _PyType_CacheGetItemForSpecialization(ht, descriptor, (uint32_t)tp_version))
                 {
                     specialize(instr, BINARY_OP_SUBSCR_GETITEM);
@@ -2606,7 +2707,7 @@ _Py_Specialize_ForIter(_PyStackRef iter, _PyStackRef null_or_index, _Py_CODEUNIT
                 instr[oparg + INLINE_CACHE_ENTRIES_FOR_ITER + 1].op.code == INSTRUMENTED_END_FOR
             );
             /* Don't specialize if PEP 523 is active */
-            if (_PyInterpreterState_GET()->eval_frame) {
+            if (!_PyInterpreterState_IsSpecializationEnabled(_PyInterpreterState_GET())) {
                 goto failure;
             }
             specialize(instr, FOR_ITER_GEN);
@@ -2614,20 +2715,24 @@ _Py_Specialize_ForIter(_PyStackRef iter, _PyStackRef null_or_index, _Py_CODEUNIT
         }
     }
     else {
-        if (tp == &PyList_Type) {
-#ifdef Py_GIL_DISABLED
-            // Only specialize for lists owned by this thread or shared
-            if (!_Py_IsOwnedByCurrentThread(iter_o) && !_PyObject_GC_IS_SHARED(iter_o)) {
-                goto failure;
+        if (tp->_tp_iteritem != NULL) {
+            if (tp == &PyList_Type) {
+    #ifdef Py_GIL_DISABLED
+                // Only specialize for lists owned by this thread or shared
+                if (!_Py_IsOwnedByCurrentThread(iter_o) && !_PyObject_GC_IS_SHARED(iter_o)) {
+                    goto failure;
+                }
+    #endif
+                specialize(instr, FOR_ITER_LIST);
+                return;
             }
-#endif
-            specialize(instr, FOR_ITER_LIST);
-            return;
+            else if (tp == &PyTuple_Type) {
+                specialize(instr, FOR_ITER_TUPLE);
+                return;
+            }
         }
-        else if (tp == &PyTuple_Type) {
-            specialize(instr, FOR_ITER_TUPLE);
-            return;
-        }
+        specialize(instr, FOR_ITER_VIRTUAL);
+        return;
     }
 failure:
     SPECIALIZATION_FAIL(FOR_ITER,
@@ -2645,7 +2750,7 @@ _Py_Specialize_Send(_PyStackRef receiver_st, _Py_CODEUNIT *instr)
     PyTypeObject *tp = Py_TYPE(receiver);
     if (tp == &PyGen_Type || tp == &PyCoro_Type) {
         /* Don't specialize if PEP 523 is active */
-        if (_PyInterpreterState_GET()->eval_frame) {
+        if (!_PyInterpreterState_IsSpecializationEnabled(_PyInterpreterState_GET())) {
             SPECIALIZATION_FAIL(SEND, SPEC_FAIL_OTHER);
             goto failure;
         }
@@ -2668,7 +2773,7 @@ _Py_Specialize_CallFunctionEx(_PyStackRef func_st, _Py_CODEUNIT *instr)
 
     if (Py_TYPE(func) == &PyFunction_Type &&
         ((PyFunctionObject *)func)->vectorcall == _PyFunction_Vectorcall) {
-        if (_PyInterpreterState_GET()->eval_frame) {
+        if (!_PyInterpreterState_IsSpecializationEnabled(_PyInterpreterState_GET())) {
             goto failure;
         }
         specialize(instr, CALL_EX_PY);
@@ -2822,6 +2927,23 @@ _Py_Specialize_ContainsOp(_PyStackRef value_st, _Py_CODEUNIT *instr)
     return;
 }
 
+void
+_Py_Specialize_GetIter(_PyStackRef iterable, _Py_CODEUNIT *instr)
+{
+    assert(ENABLE_SPECIALIZATION);
+    PyTypeObject *tp = PyStackRef_TYPE(iterable);
+    if (tp->_tp_iteritem != NULL) {
+        specialize(instr, GET_ITER_VIRTUAL);
+        return;
+    }
+    if (tp->tp_iter == PyObject_SelfIter) {
+        specialize(instr, GET_ITER_SELF);
+        return;
+    }
+    SPECIALIZATION_FAIL(GET_ITER,
+        tp == &PyCoro_Type ? SPEC_FAIL_ITER_COROUTINE : SPEC_FAIL_OTHER);
+    unspecialize(instr);
+}
 
 void
 _Py_Specialize_Resume(_Py_CODEUNIT *instr, PyThreadState *tstate, _PyInterpreterFrame *frame)
