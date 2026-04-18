@@ -25,6 +25,9 @@ from stack import Stack, Storage
 
 DEFAULT_OUTPUT = ROOT / "Python/recorder_functions.c.h"
 
+# Must match MAX_RECORDED_VALUES in Include/internal/pycore_optimizer.h.
+MAX_RECORDED_VALUES = 3
+
 
 class RecorderEmitter(Emitter):
     def __init__(self, out: CWriter):
@@ -81,27 +84,35 @@ def generate_recorder_functions(filenames: list[str], analysis: Analysis, out: C
 
 def generate_recorder_tables(analysis: Analysis, out: CWriter) -> None:
     record_function_indexes: dict[str, int] = dict()
-    record_table: dict[str, str] = {}
+    record_table: dict[str, list[str]] = {}
     index = 1
     for inst in analysis.instructions.values():
         if not inst.properties.records_value:
             continue
+        records: list[str] = []
         for part in inst.parts:
             if not part.properties.records_value:
                 continue
             if part.name not in record_function_indexes:
                 record_function_indexes[part.name] = index
                 index += 1
-            record_table[inst.name] = part.name
-            break
+            records.append(part.name)
+        if records:
+            if len(records) > MAX_RECORDED_VALUES:
+                raise ValueError(
+                    f"Instruction {inst.name} has {len(records)} recording ops, "
+                    f"exceeds MAX_RECORDED_VALUES ({MAX_RECORDED_VALUES})"
+                )
+            record_table[inst.name] = records
     func_count = len(record_function_indexes)
 
     for name, index in record_function_indexes.items():
         out.emit(f"#define {name}_INDEX {index}\n")
-    args = "_PyJitTracerState *tracer, _PyInterpreterFrame *frame, _PyStackRef *stackpointer, int oparg"
-    out.emit("const uint8_t _PyOpcode_RecordFunctionIndices[256] = {\n")
-    for inst_name, record_name in record_table.items():
-        out.emit(f"    [{inst_name}] = {record_name}_INDEX,\n")
+    out.emit("\n")
+    out.emit("const _PyOpcodeRecordEntry _PyOpcode_RecordEntries[256] = {\n")
+    for inst_name, record_names in record_table.items():
+        indices = ", ".join(f"{name}_INDEX" for name in record_names)
+        out.emit(f"    [{inst_name}] = {{{len(record_names)}, {{{indices}}}}},\n")
     out.emit("};\n\n")
     out.emit(f"const _Py_RecordFuncPtr _PyOpcode_RecordFunctions[{func_count+1}] = {{\n")
     out.emit("    [0] = NULL,\n")

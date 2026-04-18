@@ -29,7 +29,7 @@ from typing import Generic, ClassVar, Final, final, Protocol
 from typing import assert_type, cast, runtime_checkable
 from typing import get_type_hints
 from typing import get_origin, get_args, get_protocol_members
-from typing import override
+from typing import override, disjoint_base
 from typing import is_typeddict, is_protocol
 from typing import reveal_type
 from typing import dataclass_transform
@@ -7269,6 +7269,13 @@ class GetTypeHintsTests(BaseTestCase):
         self.assertEqual(TD.__annotations__, {'a': EqualToForwardRef('UniqueT', owner=TD, module=TD.__module__)})
         self.assertEqual(get_type_hints(TD), {'a': TD.__type_params__[0]})
 
+    def test_get_type_hints_order(self):
+        """Ensure that the order of function annotations matches the order they're defined"""
+        def f(positional: int, /, normal: str, *args: bytes, kwarg: list, **kwargs: bool) -> tuple:
+            pass
+
+        self.assertEqual(list(gth(f)), ["positional", "normal", "args", "kwarg", "kwargs", "return"])
+
 
 class GetUtilitiesTestCase(TestCase):
     def test_get_origin(self):
@@ -10911,6 +10918,18 @@ class SpecialAttrsTests(BaseTestCase):
             with self.subTest(required_item=required_item):
                 self.assertIn(required_item, dir_items)
         self.assertNotIn('__magic__', dir_items)
+
+
+class DisjointBaseTests(BaseTestCase):
+    def test_disjoint_base_unmodified(self):
+        class C: ...
+        self.assertIs(C, disjoint_base(C))
+
+    def test_dunder_disjoint_base(self):
+        @disjoint_base
+        class C: ...
+
+        self.assertIs(C.__disjoint_base__, True)
 
 
 class RevealTypeTests(BaseTestCase):

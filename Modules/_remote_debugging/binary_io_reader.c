@@ -601,6 +601,20 @@ reader_get_or_create_thread_state(BinaryReader *reader, uint64_t thread_id,
  * STACK DECODING HELPERS
  * ============================================================================ */
 
+/* Validate that final_depth fits in the stack buffer.
+ * Uses uint64_t to prevent overflow on 32-bit platforms. */
+static inline int
+validate_stack_depth(ReaderThreadState *ts, uint64_t final_depth)
+{
+    if (final_depth > ts->current_stack_capacity) {
+        PyErr_Format(PyExc_ValueError,
+            "Final stack depth %llu exceeds capacity %zu",
+            (unsigned long long)final_depth, ts->current_stack_capacity);
+        return -1;
+    }
+    return 0;
+}
+
 /* Decode a full stack from sample data.
  * Updates ts->current_stack and ts->current_stack_depth.
  * Returns 0 on success, -1 on error (bounds violation). */
@@ -658,12 +672,9 @@ decode_stack_suffix(ReaderThreadState *ts, const uint8_t *data,
         return -1;
     }
 
-    /* Validate final depth doesn't exceed capacity */
-    size_t final_depth = (size_t)shared + new_count;
-    if (final_depth > ts->current_stack_capacity) {
-        PyErr_Format(PyExc_ValueError,
-            "Final stack depth %zu exceeds capacity %zu",
-            final_depth, ts->current_stack_capacity);
+    /* Use uint64_t to prevent overflow on 32-bit platforms */
+    uint64_t final_depth = (uint64_t)shared + new_count;
+    if (validate_stack_depth(ts, final_depth) < 0) {
         return -1;
     }
 
@@ -713,12 +724,9 @@ decode_stack_pop_push(ReaderThreadState *ts, const uint8_t *data,
     }
     size_t keep = (ts->current_stack_depth > pop) ? ts->current_stack_depth - pop : 0;
 
-    /* Validate final depth doesn't exceed capacity */
-    size_t final_depth = keep + push;
-    if (final_depth > ts->current_stack_capacity) {
-        PyErr_Format(PyExc_ValueError,
-            "Final stack depth %zu exceeds capacity %zu",
-            final_depth, ts->current_stack_capacity);
+    /* Use uint64_t to prevent overflow on 32-bit platforms */
+    uint64_t final_depth = (uint64_t)keep + push;
+    if (validate_stack_depth(ts, final_depth) < 0) {
         return -1;
     }
 
