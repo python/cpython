@@ -459,6 +459,59 @@ Improved error messages
               ^^^^^^^^^^^^^^
      AttributeError: 'Container' object has no attribute 'area'. Did you mean '.inner.area' instead of '.area'?
 
+* When an :exc:`AttributeError` on a builtin type has no close match via
+  Levenshtein distance, the error message now checks a static table of common
+  method names from other languages (JavaScript, Java, Ruby, C#) and suggests
+  the Python equivalent:
+
+  .. doctest::
+
+     >>> [1, 2, 3].push(4)  # doctest: +ELLIPSIS
+     Traceback (most recent call last):
+     ...
+     AttributeError: 'list' object has no attribute 'push'. Did you mean '.append'?
+
+     >>> 'hello'.toUpperCase()  # doctest: +ELLIPSIS
+     Traceback (most recent call last):
+     ...
+     AttributeError: 'str' object has no attribute 'toUpperCase'. Did you mean '.upper'?
+
+  When the Python equivalent is a language construct rather than a method,
+  the hint describes the construct directly:
+
+  .. doctest::
+
+     >>> {}.put("a", 1)  # doctest: +ELLIPSIS
+     Traceback (most recent call last):
+     ...
+     AttributeError: 'dict' object has no attribute 'put'. Use d[k] = v.
+
+  When a mutable method is called on an immutable type, the hint suggests
+  the mutable counterpart:
+
+  .. doctest::
+
+     >>> (1, 2, 3).append(4)  # doctest: +ELLIPSIS
+     Traceback (most recent call last):
+     ...
+     AttributeError: 'tuple' object has no attribute 'append'. Did you mean to use a 'list' object?
+
+  When a common method is called on ``None`` (often because a method like
+  :meth:`list.sort` returned ``None`` instead of the expected object), the
+  hint suggests the type the user likely expected:
+
+  .. doctest::
+
+     >>> lst = [3, 1, 2].sort()
+     >>> lst.pop()  # doctest: +ELLIPSIS
+     Traceback (most recent call last):
+     ...
+     AttributeError: 'NoneType' object has no attribute 'pop'. Did you expect a 'list' or 'dict'?
+
+  These hints also work for subclasses of builtin types.
+
+  (Contributed by Matt Van Horn in :gh:`146406`.)
+
 
 Other language changes
 ======================
