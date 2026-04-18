@@ -536,16 +536,14 @@ have been standardized in C11 (or previous standards).
 
    Use the standard ``alignas`` specifier rather than this macro.
 
-   .. deprecated:: 3.15
-      The macro is :term:`soft deprecated`.
+   .. soft-deprecated:: 3.15
 
 .. c:macro:: PY_FORMAT_SIZE_T
 
    The :c:func:`printf` formatting modifier for :c:type:`size_t`.
    Use ``"z"`` directly instead.
 
-   .. deprecated:: 3.15
-      The macro is :term:`soft deprecated`.
+   .. soft-deprecated:: 3.15
 
 .. c:macro:: Py_LL(number)
              Py_ULL(number)
@@ -558,8 +556,7 @@ have been standardized in C11 (or previous standards).
 
    Consider using the C99 standard suffixes ``LL`` and ``LLU`` directly.
 
-   .. deprecated:: 3.15
-      The macro is :term:`soft deprecated`.
+   .. soft-deprecated:: 3.15
 
 .. c:macro:: PY_LONG_LONG
              PY_INT32_T
@@ -572,8 +569,7 @@ have been standardized in C11 (or previous standards).
    respectively.
    Historically, these types needed compiler-specific extensions.
 
-   .. deprecated:: 3.15
-      These macros are :term:`soft deprecated`.
+   .. soft-deprecated:: 3.15
 
 .. c:macro:: PY_LLONG_MIN
              PY_LLONG_MAX
@@ -587,16 +583,14 @@ have been standardized in C11 (or previous standards).
    The required header, ``<limits.h>``,
    :ref:`is included <capi-system-includes>` in ``Python.h``.
 
-   .. deprecated:: 3.15
-      These macros are :term:`soft deprecated`.
+   .. soft-deprecated:: 3.15
 
 .. c:macro:: Py_MEMCPY(dest, src, n)
 
    This is a :term:`soft deprecated` alias to :c:func:`!memcpy`.
    Use :c:func:`!memcpy` directly instead.
 
-   .. deprecated:: 3.14
-      The macro is :term:`soft deprecated`.
+   .. soft-deprecated:: 3.14
 
 .. c:macro:: Py_UNICODE_SIZE
 
@@ -606,16 +600,14 @@ have been standardized in C11 (or previous standards).
    The required header for the latter, ``<limits.h>``,
    :ref:`is included <capi-system-includes>` in ``Python.h``.
 
-   .. deprecated:: 3.15
-      The macro is :term:`soft deprecated`.
+   .. soft-deprecated:: 3.15
 
 .. c:macro:: Py_UNICODE_WIDE
 
    Defined if ``wchar_t`` can hold a Unicode character (UCS-4).
    Use ``sizeof(wchar_t) >= 4`` instead
 
-   .. deprecated:: 3.15
-      The macro is :term:`soft deprecated`.
+   .. soft-deprecated:: 3.15
 
 .. c:macro:: Py_VA_COPY
 
@@ -627,8 +619,7 @@ have been standardized in C11 (or previous standards).
    .. versionchanged:: 3.6
       This is now an alias to ``va_copy``.
 
-   .. deprecated:: 3.15
-      The macro is :term:`soft deprecated`.
+   .. soft-deprecated:: 3.15
 
 
 .. _api-objects:
