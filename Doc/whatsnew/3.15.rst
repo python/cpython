@@ -80,6 +80,7 @@ Summary -- Release highlights
 * :pep:`728`: ``TypedDict`` with typed extra items
 * :pep:`747`: :ref:`Annotating type forms with TypeForm
   <whatsnew315-typeform>`
+* :pep:`800`: Disjoint bases in the type system
 * :pep:`782`: :ref:`A new PyBytesWriter C API to create a Python bytes object
   <whatsnew315-pybyteswriter>`
 * :pep:`803`: :ref:`Stable ABI for Free-Threaded Builds <whatsnew315-abi3t>`
@@ -1289,6 +1290,13 @@ typing
   type parameters order: it is ``(T1, T2)``, not ``(T2, T1)``
   as it was incorrectly inferred in runtime before.
   (Contributed by Nikita Sobolev in :gh:`137191`.)
+
+* :pep:`800`: Add :deco:`typing.disjoint_base`, a new decorator marking a class
+  as a disjoint base. This is an advanced feature primarily intended to allow
+  type checkers to faithfully reflect the runtime semantics of types defined
+  as builtins or in compiled extensions. If a class ``C`` is a disjoint base, then
+  child classes of that class cannot inherit from other disjoint bases that are
+  not parent or child classes of ``C``. (Contributed by Jelle Zijlstra in :gh:`148639`.)
 
 
 unicodedata
