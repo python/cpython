@@ -1239,6 +1239,7 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/rangeobject.h \
 		$(srcdir)/Include/refcount.h \
 		$(srcdir)/Include/setobject.h \
+		$(srcdir)/Include/sentinelobject.h \
 		$(srcdir)/Include/sliceobject.h \
 		$(srcdir)/Include/structmember.h \
 		$(srcdir)/Include/structseq.h \

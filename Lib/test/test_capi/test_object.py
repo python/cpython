@@ -63,6 +63,24 @@ class GetConstantTest(unittest.TestCase):
         self.check_get_constant(_testlimitedcapi.get_constant_borrowed)
 
 
+class SentinelTest(unittest.TestCase):
+
+    def test_pysentinel_new(self):
+        import pickle
+
+        marker = _testcapi.pysentinel_new("CAPI_SENTINEL", __name__)
+        self.assertIs(type(marker), sentinel)
+        self.assertTrue(_testcapi.pysentinel_check(marker))
+        self.assertFalse(_testcapi.pysentinel_check(object()))
+        self.assertEqual(marker.__name__, "CAPI_SENTINEL")
+        self.assertEqual(marker.__module__, __name__)
+        self.assertEqual(repr(marker), "CAPI_SENTINEL")
+
+        globals()["CAPI_SENTINEL"] = marker
+        self.addCleanup(globals().pop, "CAPI_SENTINEL", None)
+        self.assertIs(pickle.loads(pickle.dumps(marker)), marker)
+
+
 class PrintTest(unittest.TestCase):
     def testPyObjectPrintObject(self):
 

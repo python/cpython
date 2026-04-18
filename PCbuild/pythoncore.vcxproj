@@ -382,6 +382,7 @@
     <ClInclude Include="..\Include\rangeobject.h" />
     <ClInclude Include="..\Include\refcount.h" />
     <ClInclude Include="..\Include\setobject.h" />
+    <ClInclude Include="..\Include\sentinelobject.h" />
     <ClInclude Include="..\Include\sliceobject.h" />
     <ClInclude Include="..\Include\structmember.h" />
     <ClInclude Include="..\Include\structseq.h" />

@@ -26,22 +26,42 @@ class sentinel "sentinelobject *" "&PySentinel_Type"
 
 #include "clinic/sentinelobject.c.h"
 
+
 static PyObject *
-sentinel_get_caller_module(void)
+caller(void)
 {
     _PyInterpreterFrame *f = _PyThreadState_GET()->current_frame;
-    while (f && _PyFrame_IsIncomplete(f)) {
-        f = f->previous;
+    if (f == NULL) {
+        Py_RETURN_NONE;
     }
-    if (f != NULL && !PyStackRef_IsNull(f->f_funcobj)) {
-        PyObject *module = PyFunction_GetModule(
-            PyStackRef_AsPyObjectBorrow(f->f_funcobj));
-        if (module != NULL && module != Py_None) {
-            return Py_NewRef(module);
-        }
+    if (f == NULL || PyStackRef_IsNull(f->f_funcobj)) {
+        Py_RETURN_NONE;
+    }
+    PyObject *r = PyFunction_GetModule(PyStackRef_AsPyObjectBorrow(f->f_funcobj));
+    if (!r) {
         PyErr_Clear();
+        Py_RETURN_NONE;
     }
-    return PyUnicode_FromString("builtins");
+    return Py_NewRef(r);
+}
+
+static PyObject *
+sentinel_new_with_module(PyTypeObject *type, PyObject *name, PyObject *module)
+{
+    assert(PyUnicode_Check(name));
+
+    Py_INCREF(name);
+    Py_INCREF(module);
+    sentinelobject *self = PyObject_GC_New(sentinelobject, type);
+    if (self == NULL) {
+        Py_DECREF(name);
+        Py_DECREF(module);
+        return NULL;
+    }
+    self->name = name;
+    self->module = module;
+    _PyObject_GC_TRACK(self);
+    return (PyObject *)self;
 }
 
 /*[clinic input]
@@ -56,23 +76,34 @@ static PyObject *
 sentinel_new_impl(PyTypeObject *type, PyObject *name)
 /*[clinic end generated code: output=4af55c6048bed30d input=3ab75704f39c119c]*/
 {
-    Py_INCREF(name);
-    PyObject *module = sentinel_get_caller_module();
+    PyObject *module = caller();
     if (module == NULL) {
-        Py_DECREF(name);
         return NULL;
     }
 
-    sentinelobject *self = PyObject_GC_New(sentinelobject, type);
-    if (self == NULL) {
-        Py_DECREF(name);
-        Py_DECREF(module);
+    PyObject *self = sentinel_new_with_module(type, name, module);
+    Py_DECREF(module);
+    return self;
+}
+
+PyObject *
+PySentinel_New(const char *name, const char *module_name)
+{
+    PyObject *name_obj = PyUnicode_FromString(name);
+    if (name_obj == NULL) {
         return NULL;
     }
-    self->name = name;
-    self->module = module;
-    _PyObject_GC_TRACK(self);
-    return (PyObject *)self;
+    PyObject *module_obj = PyUnicode_FromString(module_name);
+    if (module_obj == NULL) {
+        Py_DECREF(name_obj);
+        return NULL;
+    }
+
+    PyObject *sentinel = sentinel_new_with_module(
+        &PySentinel_Type, name_obj, module_obj);
+    Py_DECREF(module_obj);
+    Py_DECREF(name_obj);
+    return sentinel;
 }
 
 static void
