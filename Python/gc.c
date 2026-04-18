@@ -526,13 +526,12 @@ visit_reachable(PyObject *op, void *arg)
         // Manually unlink gc from unreachable list because the list functions
         // don't work right in the presence of NEXT_MASK_UNREACHABLE flags.
         PyGC_Head *prev = GC_PREV(gc);
-        PyGC_Head *next = (PyGC_Head*)(gc->_gc_next & ~NEXT_MASK_UNREACHABLE); // MSN: GC_NEXT
+        PyGC_Head *next = (PyGC_Head*)(gc->_gc_next & ~NEXT_MASK_UNREACHABLE);
         _PyObject_ASSERT(FROM_GC(prev),
                          prev->_gc_next & NEXT_MASK_UNREACHABLE);
         _PyObject_ASSERT(FROM_GC(next),
                          next->_gc_next & NEXT_MASK_UNREACHABLE);
         prev->_gc_next = gc->_gc_next;  // copy NEXT_MASK_UNREACHABLE
-        // gc->_gc_next &= ~NEXT_MASK_UNREACHABLE; // MSN: needed only for incremental GC
         _PyGCHead_SET_PREV(next, prev);
 
         gc_list_append(gc, reachable);
@@ -1155,7 +1154,7 @@ deduce_unreachable(PyGC_Head *base, PyGC_Head *unreachable) {
      * the reachable objects instead.  But this is a one-time cost, probably not
      * worth complicating the code to speed just a little.
      */
-    gc_list_init(unreachable); // MSN: was removed in 3.14+
+    gc_list_init(unreachable);
     move_unreachable(base, unreachable);  // gc_prev is pointer again
     validate_list(base, collecting_clear_unreachable_clear);
     validate_list(unreachable, collecting_set_unreachable_set);
