@@ -1837,7 +1837,7 @@ are always available.  They are listed here in alphabetical order.
       MISSING
 
    Sentinel objects are truthy and compare equal only to themselves.  They are
-   intended to be compared with the ``is`` operator.
+   intended to be compared with the :keyword:`is` operator.
 
    Shallow and deep copies of a sentinel object return the object itself.
 
