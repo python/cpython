@@ -395,7 +395,11 @@ signal_alarm_impl(PyObject *module, int seconds)
 /*[clinic input]
 signal.pause
 
-Wait until a signal arrives.
+Wait until a signal with an installed handler is delivered.
+
+Cause the process to sleep until a signal is received that either
+terminates it or causes it to call a signal-catching function. If the
+signal is being ignored, pause() is not interrupted.
 [clinic start generated code]*/
 
 static PyObject *

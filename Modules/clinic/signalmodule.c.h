@@ -87,7 +87,11 @@ PyDoc_STRVAR(signal_pause__doc__,
 "pause($module, /)\n"
 "--\n"
 "\n"
-"Wait until a signal arrives.");
+"Wait until a signal with an installed handler is delivered.\n"
+"\n"
+"Cause the process to sleep until a signal is received that either\n"
+"terminates it or causes it to call a signal-catching function. If the\n"
+"signal is being ignored, pause() is not interrupted.");
 
 #define SIGNAL_PAUSE_METHODDEF    \
     {"pause", (PyCFunction)signal_pause, METH_NOARGS, signal_pause__doc__},

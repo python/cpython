@@ -1,0 +1,4 @@
+Clarify the documentation for :func:`signal.pause` to explain that it only
+returns when a signal with an installed handler is delivered, not when an
+ignored signal arrives.
+###########################################################################
