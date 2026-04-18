@@ -3688,7 +3688,7 @@ dummy_func(
         }
 
         macro(GET_ITER) =
-            _RECORD_TOS_TYPE +
+            _RECORD_TOS +
             _SPECIALIZE_GET_ITER +
             _GET_ITER;
 

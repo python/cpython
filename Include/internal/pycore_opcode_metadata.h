@@ -1447,7 +1447,7 @@ _PyOpcode_macro_expansion[256] = {
     [GET_AITER] = { .nuops = 1, .uops = { { _GET_AITER, OPARG_SIMPLE, 0 } } },
     [GET_ANEXT] = { .nuops = 1, .uops = { { _GET_ANEXT, OPARG_SIMPLE, 0 } } },
     [GET_AWAITABLE] = { .nuops = 1, .uops = { { _GET_AWAITABLE, OPARG_SIMPLE, 0 } } },
-    [GET_ITER] = { .nuops = 2, .uops = { { _RECORD_TOS_TYPE, OPARG_SIMPLE, 0 }, { _GET_ITER, OPARG_SIMPLE, 0 } } },
+    [GET_ITER] = { .nuops = 2, .uops = { { _RECORD_TOS, OPARG_SIMPLE, 0 }, { _GET_ITER, OPARG_SIMPLE, 0 } } },
     [GET_ITER_SELF] = { .nuops = 3, .uops = { { _RECORD_TOS_TYPE, OPARG_SIMPLE, 0 }, { _GUARD_ITERATOR, OPARG_SIMPLE, 1 }, { _PUSH_NULL, OPARG_SIMPLE, 1 } } },
     [GET_ITER_VIRTUAL] = { .nuops = 3, .uops = { { _RECORD_TOS_TYPE, OPARG_SIMPLE, 0 }, { _GUARD_ITER_VIRTUAL, OPARG_SIMPLE, 1 }, { _PUSH_TAGGED_ZERO, OPARG_SIMPLE, 1 } } },
     [GET_LEN] = { .nuops = 1, .uops = { { _GET_LEN, OPARG_SIMPLE, 0 } } },
