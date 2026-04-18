@@ -1423,6 +1423,21 @@ class TestSpecializer(TestBase):
         self.assert_specialized(binary_op_add_extend, "BINARY_OP_EXTEND")
         self.assert_no_opcode(binary_op_add_extend, "BINARY_OP")
 
+        def binary_op_add_extend_sequences():
+            l1 = [1, 2]
+            l2 = [None]
+            t1 = (1, 2)
+            t2 = (None,)
+            for _ in range(100):
+                list_sum = l1 + l2
+                self.assertEqual(list_sum, [1, 2, None])
+                tuple_sum = t1 + t2
+                self.assertEqual(tuple_sum, (1, 2, None))
+
+        binary_op_add_extend_sequences()
+        self.assert_specialized(binary_op_add_extend_sequences, "BINARY_OP_EXTEND")
+        self.assert_no_opcode(binary_op_add_extend_sequences, "BINARY_OP")
+
         def binary_op_zero_division():
             def compactlong_lhs(arg):
                 42 / arg
@@ -1964,6 +1979,15 @@ class TestSpecializer(TestBase):
         self.assert_specialized(for_iter_tuple, "FOR_ITER_TUPLE")
         self.assert_no_opcode(for_iter_tuple, "FOR_ITER")
 
+        s = "abcdefghij"
+        def for_iter_str():
+            for i in s:
+                self.assertIn(i, s)
+
+        for_iter_str()
+        self.assert_specialized(for_iter_str, "FOR_ITER_VIRTUAL")
+        self.assert_no_opcode(for_iter_str, "FOR_ITER")
+
         r = range(10)
         def for_iter_range():
             for i in r:
@@ -1980,6 +2004,30 @@ class TestSpecializer(TestBase):
         for_iter_generator()
         self.assert_specialized(for_iter_generator, "FOR_ITER_GEN")
         self.assert_no_opcode(for_iter_generator, "FOR_ITER")
+
+    @cpython_only
+    @requires_specialization
+    def test_get_iter(self):
+        L = list(range(10))
+        def get_iter_list():
+            n = 10
+            while n:
+                n -= 1
+                for i in L:
+                    break
+        get_iter_list()
+        self.assert_specialized(get_iter_list, "GET_ITER_VIRTUAL")
+        self.assert_no_opcode(get_iter_list, "GET_ITER")
+
+        def get_iter_gen():
+            n = 10
+            while n:
+                n -= 1
+                for i in (i for i in range(10)):
+                    break
+        get_iter_gen()
+        self.assert_specialized(get_iter_gen, "GET_ITER_SELF")
+        self.assert_no_opcode(get_iter_gen, "GET_ITER")
 
     @cpython_only
     @requires_specialization

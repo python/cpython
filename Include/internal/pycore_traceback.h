@@ -85,7 +85,8 @@ extern void _Py_DumpHexadecimal(
     uintptr_t value,
     Py_ssize_t width);
 
-extern PyObject* _PyTraceBack_FromFrame(
+// Exported for external JIT support
+PyAPI_FUNC(PyObject *) _PyTraceBack_FromFrame(
     PyObject *tb_next,
     PyFrameObject *frame);
 

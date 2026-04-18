@@ -648,6 +648,28 @@ class ArrayMemoryviewTest(unittest.TestCase,
                 m = memoryview(data).cast(complex_format)
                 check_equal(m, True)
 
+    def test_boolean_format(self):
+        # Test '?' format (keep all the checks below for UBSan)
+        # See github.com/python/cpython/issues/148390.
+
+        # m1a and m1b are equivalent to [False, True, False]
+        m1a = memoryview(b'\0\2\0').cast('?')
+        self.assertEqual(m1a.tolist(), [False, True, False])
+        m1b = memoryview(b'\0\4\0').cast('?')
+        self.assertEqual(m1b.tolist(), [False, True, False])
+        self.assertEqual(m1a, m1b)
+
+        # m2a and m2b are equivalent to [True, True, True]
+        m2a = memoryview(b'\1\3\5').cast('?')
+        self.assertEqual(m2a.tolist(), [True, True, True])
+        m2b = memoryview(b'\2\4\6').cast('?')
+        self.assertEqual(m2b.tolist(), [True, True, True])
+        self.assertEqual(m2a, m2b)
+
+        allbytes = bytes(range(256))
+        allbytes = memoryview(allbytes).cast('?')
+        self.assertEqual(allbytes.tolist(), [False] + [True] * 255)
+
 
 class BytesMemorySliceTest(unittest.TestCase,
     BaseMemorySliceTests, BaseBytesMemoryTests):

@@ -11,7 +11,6 @@ Instead, use one of the tools listed
 [here](https://docs.python.org/3/using/android.html), which will provide a much
 easier experience.
 
-
 ## Prerequisites
 
 If you already have an Android SDK installed, export the `ANDROID_HOME`
@@ -25,14 +24,13 @@ it:
   `android-sdk/cmdline-tools/latest`.
 * `export ANDROID_HOME=/path/to/android-sdk`
 
-The `android.py` script will automatically use the SDK's `sdkmanager` to install
+The `Platforms/Android` script will automatically use the SDK's `sdkmanager` to install
 any packages it needs.
 
 The script also requires the following commands to be on the `PATH`:
 
 * `curl`
 * `java` (or set the `JAVA_HOME` environment variable)
-
 
 ## Building
 
@@ -43,29 +41,28 @@ First we'll make a "build" Python (for your development machine), then use it to
 help produce a "host" Python for Android. So make sure you have all the usual
 tools and libraries needed to build Python for your development machine.
 
-The easiest way to do a build is to use the `android.py` script. You can either
+The easiest way to do a build is to use the `Platforms/Android` script. You can either
 have it perform the entire build process from start to finish in one step, or
 you can do it in discrete steps that mirror running `configure` and `make` for
 each of the two builds of Python you end up producing.
 
-The discrete steps for building via `android.py` are:
+The discrete steps for building via `Platforms/Android` are:
 
 ```sh
-./android.py configure-build
-./android.py make-build
-./android.py configure-host HOST
-./android.py make-host HOST
+python3 Platforms/Android configure-build
+python3 Platforms/Android make-build
+python3 Platforms/Android configure-host HOST
+python3 Platforms/Android make-host HOST
 ```
 
 `HOST` identifies which architecture to build. To see the possible values, run
-`./android.py configure-host --help`.
+`python3 Platforms/Android configure-host --help`.
 
 To do all steps in a single command, run:
 
 ```sh
-./android.py build HOST
+python3 Platforms/Android build HOST
 ```
-
 In the end you should have a build Python in `cross-build/build`, and a host
 Python in `cross-build/HOST`.
 
@@ -75,9 +72,8 @@ call. For example, if you want a pydebug build that also caches the results from
 `configure`, you can do:
 
 ```sh
-./android.py build HOST -- -C --with-pydebug
+python3 Platforms/Android build HOST -- -C --with-pydebug
 ```
-
 
 ## Packaging
 
@@ -85,7 +81,7 @@ After building an architecture as described in the section above, you can
 package it for release with this command:
 
 ```sh
-./android.py package HOST
+python3 Platforms/Android package HOST
 ```
 
 `HOST` is defined in the section above.
@@ -93,24 +89,15 @@ package it for release with this command:
 This will generate a tarball in `cross-build/HOST/dist`, whose structure is
 similar to the `Android` directory of the CPython source tree.
 
-
 ## Testing
 
-The Python test suite can be run on Linux, macOS, or Windows.
+Tests can be run  on Linux, macOS, or Windows, using either an Android emulator
+or a physical device.
 
 On Linux, the emulator needs access to the KVM virtualization interface. This may
 require adding your user to a group, or changing your udev rules. On GitHub
 Actions, the test script will do this automatically using the commands shown
 [here](https://github.blog/changelog/2024-04-02-github-actions-hardware-accelerated-android-virtualization-now-available/).
-
-You can run the test suite either:
-
-* Within the CPython repository, after doing a build as described above. On
-  Windows, you won't be able to do the build on the same machine, so you'll have
-  to copy the `cross-build/HOST/prefix` directory from somewhere else.
-
-* Or by taking a release package built using the `package` command, extracting
-  it wherever you want, and using its own copy of `android.py`.
 
 The test script supports the following modes:
 
@@ -120,7 +107,7 @@ The test script supports the following modes:
   script like this:
 
   ```sh
-  ./android.py test --connected emulator-5554
+  python3 Platforms/Android test --connected emulator-5554
   ```
 
 * In `--managed` mode, it uses a temporary headless emulator defined in the
@@ -131,29 +118,55 @@ The test script supports the following modes:
   to our minimum and maximum supported Android versions. For example:
 
   ```sh
-  ./android.py test --managed maxVersion
+  python3 Platforms/Android test --managed maxVersion
   ```
 
 By default, the only messages the script will show are Python's own stdout and
 stderr. Add the `-v` option to also show Gradle output, and non-Python logcat
 messages.
 
-Any other arguments on the `android.py test` command line will be passed through
-to `python -m test` – use `--` to separate them from android.py's own options.
+### Testing Python
+
+You can run the test suite by doing a build as described above, and then running
+`python3 Platforms/Android test`. On Windows, you won't be able to do the build
+on the same machine, so you'll have to copy the `cross-build/HOST/prefix` directory
+from somewhere else.
+
+Extra arguments on the `Platforms/Android test` command line will be passed through
+to `python -m test` – use `--` to separate them from `Platforms/Android`'s own options.
 See the [Python Developer's
 Guide](https://devguide.python.org/testing/run-write-tests/) for common options
 – most of them will work on Android, except for those that involve subprocesses,
 such as `-j`.
 
-Every time you run `android.py test`, changes in pure-Python files in the
+Every time you run `python3 Platforms/Android test`, changes in pure-Python files in the
 repository's `Lib` directory will be picked up immediately. Changes in C files,
 and architecture-specific files such as sysconfigdata, will not take effect
-until you re-run `android.py make-host` or `build`.
+until you re-run `python3 Platforms/Android make-host` or `build`.
 
-The testbed app can also be used to test third-party packages. For more details,
-run `android.py test --help`, paying attention to the options `--site-packages`,
-`--cwd`, `-c` and `-m`.
+### Testing a third-party package
 
+The `Platforms/Android` script is also included as `android.py` in the root of a
+release package (i.e., the one built using `Platforms/Android package`).
+
+You can use this script to test third-party packages by taking a release
+package, extracting it wherever you want, and using the `android.py` script to
+run the test suite for your third-party package.
+
+Any argument that can be passed to `python3 Platforms/Android test` can also be
+passed to `android.py`. The following options will be of particular use when
+configuring the execution of a third-party test suite:
+
+* `--cwd`: the directory of content to copy into the testbed app as the working
+  directory.
+* `--site-packages`: the directory to copy into the testbed app to use as site
+  packages.
+
+Extra arguments on the `android.py test` command line will be passed through to
+Python – use `--` to separate them from `android.py`'s own options. You must include
+either a `-c` or `-m` argument to specify how the test suite should be started.
+
+For more details, run `android.py test --help`.
 
 ## Using in your own app
 
