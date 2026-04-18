@@ -69,6 +69,9 @@ _cache_format = frozendict(
     FOR_ITER=frozendict(
         counter=1,
     ),
+    GET_ITER=frozendict(
+        counter=1,
+    ),
     LOAD_SUPER_ATTR=frozendict(
         counter=1,
     ),
