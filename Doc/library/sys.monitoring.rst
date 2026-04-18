@@ -11,9 +11,9 @@
 .. note::
 
     :mod:`!sys.monitoring` is a namespace within the :mod:`sys` module,
-    not an independent module, so there is no need to
-    ``import sys.monitoring``, simply ``import sys`` and then use
-    ``sys.monitoring``.
+    not an independent module, and ``import sys.monitoring`` would fail
+    with a :exc:`ModuleNotFoundError`. Instead, simply ``import sys``
+    and then use ``sys.monitoring``.
 
 
 This namespace provides access to the functions and constants necessary to

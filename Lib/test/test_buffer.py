@@ -66,7 +66,8 @@ NATIVE = {
     '?':0, 'c':0, 'b':0, 'B':0,
     'h':0, 'H':0, 'i':0, 'I':0,
     'l':0, 'L':0, 'n':0, 'N':0,
-    'e':0, 'f':0, 'd':0, 'P':0
+    'e':0, 'f':0, 'd':0, 'P':0,
+    'F':0, 'D':0
 }
 
 # NumPy does not have 'n' or 'N':
@@ -92,7 +93,9 @@ STANDARD = {
     'l':(-(1<<31), 1<<31), 'L':(0, 1<<32),
     'q':(-(1<<63), 1<<63), 'Q':(0, 1<<64),
     'e':(-65519, 65520),   'f':(-(1<<63), 1<<63),
-    'd':(-(1<<1023), 1<<1023)
+    'd':(-(1<<1023), 1<<1023),
+    'F':(-(1<<63), 1<<63),
+    'D':(-(1<<1023), 1<<1023)
 }
 
 def native_type_range(fmt):
@@ -106,6 +109,10 @@ def native_type_range(fmt):
     elif fmt == 'f':
         lh = (-(1<<63), 1<<63)
     elif fmt == 'd':
+        lh = (-(1<<1023), 1<<1023)
+    elif fmt == 'F':
+        lh = (-(1<<63), 1<<63)
+    elif fmt == 'D':
         lh = (-(1<<1023), 1<<1023)
     else:
         for exp in (128, 127, 64, 63, 32, 31, 16, 15, 8, 7):
@@ -173,6 +180,11 @@ def randrange_fmt(mode, char, obj):
     if char == '?':
         x = bool(x)
     if char in 'efd':
+        x = struct.pack(char, x)
+        x = struct.unpack(char, x)[0]
+    if char in 'FD':
+        y = randrange(*fmtdict[mode][char])
+        x = complex(x, y)
         x = struct.pack(char, x)
         x = struct.unpack(char, x)[0]
     return x
@@ -3015,7 +3027,7 @@ class TestBufferProtocol(unittest.TestCase):
         m = memoryview(nd)
         self.assertRaises(TypeError, m.__setitem__, 0, 100)
 
-        ex = ndarray(list(range(120)), shape=[1,2,3,4,5], flags=ND_WRITABLE)
+        ex = ndarray(list(range(144)), shape=[1,2,3,4,6], flags=ND_WRITABLE)
         m1 = memoryview(ex)
 
         for fmt, _range in fmtdict['@'].items():
@@ -3025,7 +3037,7 @@ class TestBufferProtocol(unittest.TestCase):
                 continue
             m2 = m1.cast(fmt)
             lo, hi = _range
-            if fmt == 'd' or fmt == 'f':
+            if fmt in "dfDF":
                 lo, hi = -2**1024, 2**1024
             if fmt != 'P': # PyLong_AsVoidPtr() accepts negative numbers
                 self.assertRaises(ValueError, m2.__setitem__, 0, lo-1)

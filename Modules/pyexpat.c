@@ -503,6 +503,28 @@ my_StartElementHandler(void *userData,
     }
 }
 
+static inline void
+invalid_expat_handler_rv(const char *name)
+{
+    PyObject *exc = PyErr_GetRaisedException();
+    assert(exc != NULL);
+    PyObject *note = PyUnicode_FromFormat("invalid '%s' event handler return value", name);
+    if (note == NULL) {
+        goto error;
+    }
+    int rc = _PyException_AddNote(exc, note);
+    Py_DECREF(note);
+    if (rc < 0) {
+        goto error;
+    };
+    goto done;
+
+error:
+    PyErr_Clear();
+done:
+    PyErr_SetRaisedException(exc);
+}
+
 #define RC_HANDLER(RETURN_TYPE, NAME, PARAMS,       \
                    INIT, PARSE_FORMAT, CONVERSION,  \
                    RETURN_VARIABLE, GETUSERDATA)    \
@@ -536,6 +558,9 @@ my_ ## NAME ## Handler PARAMS {                     \
     }                                               \
     CONVERSION                                      \
     Py_DECREF(rv);                                  \
+    if (PyErr_Occurred()) {                         \
+        invalid_expat_handler_rv(#NAME);            \
+    }                                               \
     return RETURN_VARIABLE;                         \
 }
 
@@ -2464,6 +2489,7 @@ pyexpat_free(void *module)
 }
 
 static PyModuleDef_Slot pyexpat_slots[] = {
+    _Py_ABI_SLOT,
     {Py_mod_exec, pyexpat_exec},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {Py_mod_gil, Py_MOD_GIL_NOT_USED},

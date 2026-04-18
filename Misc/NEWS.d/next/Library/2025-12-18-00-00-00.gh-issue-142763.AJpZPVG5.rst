@@ -1,2 +1,0 @@
-Fix a race condition between :class:`zoneinfo.ZoneInfo` creation and
-:func:`zoneinfo.ZoneInfo.clear_cache` that could raise :exc:`KeyError`.

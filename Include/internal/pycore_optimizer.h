@@ -91,13 +91,15 @@ typedef struct _PyJitTracerInitialState {
     _Py_CODEUNIT *jump_backward_instr;
 } _PyJitTracerInitialState;
 
+#define MAX_RECORDED_VALUES 3
 typedef struct _PyJitTracerPreviousState {
     int instr_oparg;
     int instr_stacklevel;
     _Py_CODEUNIT *instr;
     PyCodeObject *instr_code; // Strong
     struct _PyInterpreterFrame *instr_frame;
-    PyObject *recorded_value; // Strong, may be NULL
+    PyObject *recorded_values[MAX_RECORDED_VALUES]; // Strong, may be NULL
+    int recorded_count;
 } _PyJitTracerPreviousState;
 
 typedef struct _PyJitTracerTranslatorState {
@@ -290,8 +292,12 @@ static inline uint16_t uop_get_error_target(const _PyUOpInstruction *inst)
 
 
 #define REF_IS_BORROWED 1
-#define REF_IS_INVALID  2
+#define REF_IS_UNIQUE   2
+#define REF_IS_INVALID  3
 #define REF_TAG_BITS    3
+
+#define REF_GET_TAG(x)   ((uintptr_t)(x) & (REF_TAG_BITS))
+#define REF_CLEAR_TAG(x) ((uintptr_t)(x) & (~REF_TAG_BITS))
 
 #define JIT_BITS_TO_PTR_MASKED(REF) ((JitOptSymbol *)(((REF).bits) & (~REF_TAG_BITS)))
 
@@ -313,13 +319,34 @@ PyJitRef_Wrap(JitOptSymbol *sym)
 static inline JitOptRef
 PyJitRef_WrapInvalid(void *ptr)
 {
-    return (JitOptRef){.bits=(uintptr_t)ptr | REF_IS_INVALID};
+    return (JitOptRef){.bits = REF_CLEAR_TAG((uintptr_t)ptr) | REF_IS_INVALID};
 }
 
 static inline bool
 PyJitRef_IsInvalid(JitOptRef ref)
 {
-    return (ref.bits & REF_IS_INVALID) == REF_IS_INVALID;
+    return REF_GET_TAG(ref.bits) == REF_IS_INVALID;
+}
+
+static inline JitOptRef
+PyJitRef_MakeUnique(JitOptRef ref)
+{
+    return (JitOptRef){ REF_CLEAR_TAG(ref.bits) | REF_IS_UNIQUE };
+}
+
+static inline bool
+PyJitRef_IsUnique(JitOptRef ref)
+{
+    return REF_GET_TAG(ref.bits) == REF_IS_UNIQUE;
+}
+
+static inline JitOptRef
+PyJitRef_StripBorrowInfo(JitOptRef ref)
+{
+    if (PyJitRef_IsUnique(ref)) {
+        return ref;
+    }
+    return (JitOptRef){ .bits = REF_CLEAR_TAG(ref.bits) };
 }
 
 static inline JitOptRef
@@ -329,9 +356,18 @@ PyJitRef_StripReferenceInfo(JitOptRef ref)
 }
 
 static inline JitOptRef
+PyJitRef_RemoveUnique(JitOptRef ref)
+{
+    if (PyJitRef_IsUnique(ref)) {
+        ref = PyJitRef_StripReferenceInfo(ref);
+    }
+    return ref;
+}
+
+static inline JitOptRef
 PyJitRef_Borrow(JitOptRef ref)
 {
-    return (JitOptRef){ .bits = ref.bits | REF_IS_BORROWED };
+    return (JitOptRef){ .bits = REF_CLEAR_TAG(ref.bits) | REF_IS_BORROWED };
 }
 
 static const JitOptRef PyJitRef_NULL = {.bits = REF_IS_BORROWED};
@@ -345,7 +381,7 @@ PyJitRef_IsNull(JitOptRef ref)
 static inline int
 PyJitRef_IsBorrowed(JitOptRef ref)
 {
-    return (ref.bits & REF_IS_BORROWED) == REF_IS_BORROWED;
+    return REF_GET_TAG(ref.bits) == REF_IS_BORROWED;
 }
 
 extern bool _Py_uop_sym_is_null(JitOptRef sym);
@@ -360,11 +396,13 @@ extern JitOptRef _Py_uop_sym_new_type(
 extern JitOptRef _Py_uop_sym_new_const(JitOptContext *ctx, PyObject *const_val);
 extern JitOptRef _Py_uop_sym_new_const_steal(JitOptContext *ctx, PyObject *const_val);
 bool _Py_uop_sym_is_safe_const(JitOptContext *ctx, JitOptRef sym);
+bool _Py_uop_sym_is_not_container(JitOptRef sym);
 _PyStackRef _Py_uop_sym_get_const_as_stackref(JitOptContext *ctx, JitOptRef sym);
 extern JitOptRef _Py_uop_sym_new_null(JitOptContext *ctx);
 extern bool _Py_uop_sym_has_type(JitOptRef sym);
 extern bool _Py_uop_sym_matches_type(JitOptRef sym, PyTypeObject *typ);
 extern bool _Py_uop_sym_matches_type_version(JitOptRef sym, unsigned int version);
+extern unsigned int _Py_uop_sym_get_type_version(JitOptRef sym);
 extern void _Py_uop_sym_set_null(JitOptContext *ctx, JitOptRef sym);
 extern void _Py_uop_sym_set_non_null(JitOptContext *ctx, JitOptRef sym);
 extern void _Py_uop_sym_set_type(JitOptContext *ctx, JitOptRef sym, PyTypeObject *typ);
@@ -446,7 +484,12 @@ void _PyJit_TracerFree(_PyThreadStateImpl *_tstate);
 #ifdef _Py_TIER2
 typedef void (*_Py_RecordFuncPtr)(_PyInterpreterFrame *frame, _PyStackRef *stackpointer, int oparg, PyObject **recorded_value);
 PyAPI_DATA(const _Py_RecordFuncPtr) _PyOpcode_RecordFunctions[];
-PyAPI_DATA(const uint8_t) _PyOpcode_RecordFunctionIndices[256];
+
+typedef struct {
+    uint8_t count;
+    uint8_t indices[MAX_RECORDED_VALUES];
+} _PyOpcodeRecordEntry;
+PyAPI_DATA(const _PyOpcodeRecordEntry) _PyOpcode_RecordEntries[256];
 #endif
 
 #ifdef __cplusplus

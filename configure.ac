@@ -342,6 +342,9 @@ then
 	*-*-darwin*)
 		ac_sys_system=Darwin
 		;;
+	*-gnu)
+		ac_sys_system=GNU
+		;;
 	*-*-vxworks*)
 	    ac_sys_system=VxWorks
 	    ;;
@@ -568,7 +571,7 @@ AC_ARG_ENABLE([framework],
 	yes)
 		case $ac_sys_system in
 			Darwin) enableval=/Library/Frameworks ;;
-			iOS)    enableval=Apple/iOS/Frameworks/\$\(MULTIARCH\) ;;
+			iOS)    enableval=Platforms/Apple/iOS/Frameworks/\$\(MULTIARCH\) ;;
 			*) AC_MSG_ERROR([Unknown platform for framework build])
 		esac
 	esac
@@ -675,9 +678,9 @@ AC_ARG_ENABLE([framework],
 
 				prefix=$PYTHONFRAMEWORKPREFIX
 				PYTHONFRAMEWORKINSTALLNAMEPREFIX="@rpath/$PYTHONFRAMEWORKDIR"
-				RESSRCDIR=Apple/iOS/Resources
+				RESSRCDIR=Platforms/Apple/iOS/Resources
 
-				AC_CONFIG_FILES([Apple/iOS/Resources/Info.plist])
+				AC_CONFIG_FILES([Platforms/Apple/iOS/Resources/Info.plist])
 				;;
 			*)
 				AC_MSG_ERROR([Unknown platform for framework build])
@@ -779,6 +782,9 @@ if test "$cross_compiling" = yes; then
 		*)
 			_host_ident=$host_cpu
 		esac
+		;;
+	*-gnu)
+		_host_ident=$host_cpu
 		;;
 	*-*-cygwin*)
 		_host_ident=
@@ -1520,6 +1526,17 @@ fi],
 [AC_MSG_RESULT([yes])])
 AC_SUBST([STATIC_LIBPYTHON])
 
+AC_MSG_CHECKING([for --enable-static-libpython-for-interpreter])
+AC_ARG_ENABLE([static-libpython-for-interpreter],
+   AS_HELP_STRING([--enable-static-libpython-for-interpreter],
+                  [even with --enable-shared, statically link libpython into the interpreter (default is to use the shared library)]))
+
+if test -z "$enable_static_libpython_for_interpreter"
+then
+  enable_static_libpython_for_interpreter="no"
+fi
+AC_MSG_RESULT([$enable_static_libpython_for_interpreter])
+
 AC_MSG_CHECKING([for --enable-profiling])
 AC_ARG_ENABLE([profiling],
               AS_HELP_STRING([--enable-profiling], [enable C-level code profiling with gprof (default is no)]))
@@ -1673,7 +1690,11 @@ if test "$PY_ENABLE_SHARED" = 1 || test "$enable_framework" ; then
         LIBRARY_DEPS="\$(LIBRARY) $LIBRARY_DEPS"
     fi
     # Link Python program to the shared library
-    LINK_PYTHON_OBJS='$(BLDLIBRARY)'
+    if test "$enable_static_libpython_for_interpreter" = "yes"; then
+        LINK_PYTHON_OBJS='$(LIBRARY_OBJS)'
+    else
+        LINK_PYTHON_OBJS='$(BLDLIBRARY)'
+    fi
 else
     if test "$STATIC_LIBPYTHON" = 0; then
         # Build Python needs object files but don't need to build
@@ -2084,10 +2105,32 @@ case "$ac_cv_cc_name" in
     fi
     ;;
   gcc)
-    AX_CHECK_COMPILE_FLAG(
-        [-fprofile-update=atomic],
-        [PGO_PROF_GEN_FLAG="-fprofile-generate -fprofile-update=atomic"],
-        [PGO_PROF_GEN_FLAG="-fprofile-generate"])
+    # Check for 32-bit x86 ISA
+    AC_CACHE_CHECK([for i686], [ac_cv_i686], [
+        AC_COMPILE_IFELSE([
+            AC_LANG_PROGRAM([
+                #ifdef __i386__
+                #  error "i386"
+                #endif
+            ], [])
+        ],[ac_cv_i686=no],[ac_cv_i686=yes])
+    ])
+
+    PGO_PROF_GEN_FLAG="-fprofile-generate"
+
+    # Use -fprofile-update=atomic to fix a random GCC internal error on PGO
+    # build (gh-145801) caused by corruption of profile data (.gcda files).
+    #
+    # gh-148535: On i686, using -fprofile-update=atomic makes the PGO build
+    # way slower (up to 47x slower). So far, the GCC internal error on PGO
+    # build was not seen on i686, so don't use this flag on i686.
+    AS_VAR_IF([ac_cv_i686], [no], [
+        AX_CHECK_COMPILE_FLAG(
+            [-fprofile-update=atomic],
+            [PGO_PROF_GEN_FLAG="$PGO_PROF_GEN_FLAG -fprofile-update=atomic"],
+            [])
+    ])
+
     PGO_PROF_USE_FLAG="-fprofile-use -fprofile-correction"
     LLVM_PROF_MERGER="true"
     LLVM_PROF_FILE=""
@@ -2155,11 +2198,14 @@ if test "$Py_BOLT" = 'true' ; then
   fi
 fi
 
-dnl Enable BOLT of libpython if built.
+dnl Enable BOLT of libpython if built and used by the python3 binary.
+dnl (If it is built but not used, we cannot profile it.)
 AC_SUBST([BOLT_BINARIES])
 BOLT_BINARIES='$(BUILDPYTHON)'
 AS_VAR_IF([enable_shared], [yes], [
-  BOLT_BINARIES="${BOLT_BINARIES} \$(INSTSONAME)"
+  AS_VAR_IF([enable_static_libpython_for_interpreter], [no], [
+    BOLT_BINARIES="${BOLT_BINARIES} \$(INSTSONAME)"
+  ])
 ])
 
 AC_ARG_VAR(
@@ -2359,7 +2405,7 @@ AS_CASE([$ac_sys_system],
 
     dnl Include file system support
     AS_VAR_APPEND([LINKFORSHARED], [" -sFORCE_FILESYSTEM -lidbfs.js -lnodefs.js -lproxyfs.js -lworkerfs.js"])
-    AS_VAR_APPEND([LINKFORSHARED], [" -sEXPORTED_RUNTIME_METHODS=FS,callMain,ENV,HEAPU32,TTY"])
+    AS_VAR_APPEND([LINKFORSHARED], [" -sEXPORTED_RUNTIME_METHODS=FS,callMain,ENV,HEAPU32,TTY,ERRNO_CODES"])
     AS_VAR_APPEND([LINKFORSHARED], [" -sEXPORTED_FUNCTIONS=_main,_Py_Version,__PyRuntime,_PyGILState_GetThisThreadState,__Py_DumpTraceback,__PyEM_EMSCRIPTEN_TRAMPOLINE_OFFSET"])
     AS_VAR_APPEND([LINKFORSHARED], [" -sSTACK_SIZE=5MB"])
     dnl Avoid bugs in JS fallback string decoding path
@@ -5383,8 +5429,20 @@ PY_CHECK_FUNC([symlink], [@%:@include <unistd.h>])
 PY_CHECK_FUNC([fchdir], [@%:@include <unistd.h>])
 PY_CHECK_FUNC([fsync], [@%:@include <unistd.h>])
 PY_CHECK_FUNC([fdatasync], [@%:@include <unistd.h>])
-PY_CHECK_FUNC([epoll_create], [@%:@include <sys/epoll.h>], [HAVE_EPOLL])
-PY_CHECK_FUNC([epoll_create1], [@%:@include <sys/epoll.h>])
+
+AC_MSG_CHECKING([for --disable-epoll])
+AC_ARG_ENABLE([epoll],
+  [AS_HELP_STRING([--disable-epoll], [disable epoll (default is yes if supported)])],
+  [AS_VAR_IF([enable_epoll], [no], [disable_epoll=yes], [disable_epoll=no])],
+  [disable_epoll=no]
+)
+AC_MSG_RESULT([$disable_epoll])
+if test "$disable_epoll" = "no"
+then
+  PY_CHECK_FUNC([epoll_create], [@%:@include <sys/epoll.h>], [HAVE_EPOLL])
+  PY_CHECK_FUNC([epoll_create1], [@%:@include <sys/epoll.h>])
+fi
+
 PY_CHECK_FUNC([kqueue],[
 #include <sys/types.h>
 #include <sys/event.h>
@@ -7353,6 +7411,34 @@ if test "$have_glibc_memmove_bug" = yes; then
      for memmove and bcopy.])
 fi
 
+AC_MSG_CHECKING([if we need to manually block large inlining in ceval.c])
+AC_RUN_IFELSE([AC_LANG_SOURCE([[
+int main(void) {
+// See gh-148284: Clang 22 seems to have interactions with inlining
+// and the stackref buffer which cause 40 kB of stack usage on x86-64
+// in buggy versions of _PyEval_EvalFrameDefault() in computed goto
+// interpreter. The normal usage seen is normally 1-2 kB.
+#if defined(__clang__) && (__clang_major__ == 22)
+    return 1;
+#else
+    return 0;
+#endif
+}
+]])],
+[block_huge_inlining_in_ceval=no],
+[block_huge_inlining_in_ceval=yes],
+[block_huge_inlining_in_ceval=undefined])
+AC_MSG_RESULT([$block_huge_inlining_in_ceval])
+
+if test "$block_huge_inlining_in_ceval" = yes && test "$ac_cv_computed_gotos" = yes; then
+    # gh-148284: Suppress inlining of functions whose stack size exceeds
+    # 512 bytes. This number should be tuned to follow the C stack
+    # consumption in _PyEval_EvalFrameDefault() on computed goto
+    # interpreter.
+    CFLAGS_CEVAL="$CFLAGS_CEVAL -finline-max-stacksize=512"
+fi
+AC_SUBST([CFLAGS_CEVAL])
+
 if test "$ac_cv_gcc_asm_for_x87" = yes; then
     # Some versions of gcc miscompile inline asm:
     # http://gcc.gnu.org/bugzilla/show_bug.cgi?id=46491
@@ -8171,7 +8257,7 @@ AC_SUBST([LIBHACL_BLAKE2_SIMD256_OBJS])
 # HACL*-based cryptographic primitives
 
 AC_MSG_CHECKING([for HACL* library linking type])
-if test "$ac_sys_system" = "WASI"; then
+if test "$ac_sys_system" = "WASI" || test "$MODULE_BUILDTYPE" = "static"; then
   LIBHACL_LDEPS_LIBTYPE=STATIC
   AC_MSG_RESULT([static])
 else
