@@ -1001,7 +1001,7 @@ class _AutoDocstring:
                  cls,
                  annotation_format=annotationlib.Format.FORWARDREF,
             )).replace(' -> None', '')
-        except (TypeError, ValueError):
+        except TypeError, ValueError:
             text_sig = ''
 
         doc = cls.__name__ + text_sig
