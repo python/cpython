@@ -342,6 +342,9 @@ then
 	*-*-darwin*)
 		ac_sys_system=Darwin
 		;;
+	*-gnu)
+		ac_sys_system=GNU
+		;;
 	*-*-vxworks*)
 	    ac_sys_system=VxWorks
 	    ;;
@@ -568,7 +571,7 @@ AC_ARG_ENABLE([framework],
 	yes)
 		case $ac_sys_system in
 			Darwin) enableval=/Library/Frameworks ;;
-			iOS)    enableval=Apple/iOS/Frameworks/\$\(MULTIARCH\) ;;
+			iOS)    enableval=Platforms/Apple/iOS/Frameworks/\$\(MULTIARCH\) ;;
 			*) AC_MSG_ERROR([Unknown platform for framework build])
 		esac
 	esac
@@ -675,9 +678,9 @@ AC_ARG_ENABLE([framework],
 
 				prefix=$PYTHONFRAMEWORKPREFIX
 				PYTHONFRAMEWORKINSTALLNAMEPREFIX="@rpath/$PYTHONFRAMEWORKDIR"
-				RESSRCDIR=Apple/iOS/Resources
+				RESSRCDIR=Platforms/Apple/iOS/Resources
 
-				AC_CONFIG_FILES([Apple/iOS/Resources/Info.plist])
+				AC_CONFIG_FILES([Platforms/Apple/iOS/Resources/Info.plist])
 				;;
 			*)
 				AC_MSG_ERROR([Unknown platform for framework build])
@@ -779,6 +782,9 @@ if test "$cross_compiling" = yes; then
 		*)
 			_host_ident=$host_cpu
 		esac
+		;;
+	*-gnu)
+		_host_ident=$host_cpu
 		;;
 	*-*-cygwin*)
 		_host_ident=
@@ -916,8 +922,8 @@ esac
 
 if test $define_xopen_source = yes
 then
-  # X/Open 7, incorporating POSIX.1-2008
-  AC_DEFINE([_XOPEN_SOURCE], [700],
+  # X/Open 8, incorporating POSIX.1-2024
+  AC_DEFINE([_XOPEN_SOURCE], [800],
             [Define to the level of X/Open that your system supports])
 
   # On Tru64 Unix 4.0F, defining _XOPEN_SOURCE also requires
@@ -927,8 +933,8 @@ then
   AC_DEFINE([_XOPEN_SOURCE_EXTENDED], [1],
             [Define to activate Unix95-and-earlier features])
 
-  AC_DEFINE([_POSIX_C_SOURCE], [200809L],
-            [Define to activate features from IEEE Stds 1003.1-2008])
+  AC_DEFINE([_POSIX_C_SOURCE], [202405L],
+            [Define to activate features from IEEE Std 1003.1-2024])
 fi
 
 # On HP-UX mbstate_t requires _INCLUDE__STDC_A1_SOURCE
@@ -1323,11 +1329,11 @@ dnl See https://emscripten.org/docs/compiling/Dynamic-Linking.html
 AC_MSG_CHECKING([for --enable-wasm-dynamic-linking])
 AC_ARG_ENABLE([wasm-dynamic-linking],
   [AS_HELP_STRING([--enable-wasm-dynamic-linking],
-                  [Enable dynamic linking support for WebAssembly (default is no)])],
+                  [Enable dynamic linking support for WebAssembly (default is no); WASI requires an external dynamic loader to handle imports])],
 [
   AS_CASE([$ac_sys_system],
     [Emscripten], [],
-    [WASI], [AC_MSG_ERROR([WASI dynamic linking is not implemented yet.])],
+    [WASI], [],
     [AC_MSG_ERROR([--enable-wasm-dynamic-linking only applies to Emscripten and WASI])]
   )
 ], [
@@ -1520,6 +1526,17 @@ fi],
 [AC_MSG_RESULT([yes])])
 AC_SUBST([STATIC_LIBPYTHON])
 
+AC_MSG_CHECKING([for --enable-static-libpython-for-interpreter])
+AC_ARG_ENABLE([static-libpython-for-interpreter],
+   AS_HELP_STRING([--enable-static-libpython-for-interpreter],
+                  [even with --enable-shared, statically link libpython into the interpreter (default is to use the shared library)]))
+
+if test -z "$enable_static_libpython_for_interpreter"
+then
+  enable_static_libpython_for_interpreter="no"
+fi
+AC_MSG_RESULT([$enable_static_libpython_for_interpreter])
+
 AC_MSG_CHECKING([for --enable-profiling])
 AC_ARG_ENABLE([profiling],
               AS_HELP_STRING([--enable-profiling], [enable C-level code profiling with gprof (default is no)]))
@@ -1673,7 +1690,11 @@ if test "$PY_ENABLE_SHARED" = 1 || test "$enable_framework" ; then
         LIBRARY_DEPS="\$(LIBRARY) $LIBRARY_DEPS"
     fi
     # Link Python program to the shared library
-    LINK_PYTHON_OBJS='$(BLDLIBRARY)'
+    if test "$enable_static_libpython_for_interpreter" = "yes"; then
+        LINK_PYTHON_OBJS='$(LIBRARY_OBJS)'
+    else
+        LINK_PYTHON_OBJS='$(BLDLIBRARY)'
+    fi
 else
     if test "$STATIC_LIBPYTHON" = 0; then
         # Build Python needs object files but don't need to build
@@ -2084,7 +2105,32 @@ case "$ac_cv_cc_name" in
     fi
     ;;
   gcc)
+    # Check for 32-bit x86 ISA
+    AC_CACHE_CHECK([for i686], [ac_cv_i686], [
+        AC_COMPILE_IFELSE([
+            AC_LANG_PROGRAM([
+                #ifdef __i386__
+                #  error "i386"
+                #endif
+            ], [])
+        ],[ac_cv_i686=no],[ac_cv_i686=yes])
+    ])
+
     PGO_PROF_GEN_FLAG="-fprofile-generate"
+
+    # Use -fprofile-update=atomic to fix a random GCC internal error on PGO
+    # build (gh-145801) caused by corruption of profile data (.gcda files).
+    #
+    # gh-148535: On i686, using -fprofile-update=atomic makes the PGO build
+    # way slower (up to 47x slower). So far, the GCC internal error on PGO
+    # build was not seen on i686, so don't use this flag on i686.
+    AS_VAR_IF([ac_cv_i686], [no], [
+        AX_CHECK_COMPILE_FLAG(
+            [-fprofile-update=atomic],
+            [PGO_PROF_GEN_FLAG="$PGO_PROF_GEN_FLAG -fprofile-update=atomic"],
+            [])
+    ])
+
     PGO_PROF_USE_FLAG="-fprofile-use -fprofile-correction"
     LLVM_PROF_MERGER="true"
     LLVM_PROF_FILE=""
@@ -2152,11 +2198,14 @@ if test "$Py_BOLT" = 'true' ; then
   fi
 fi
 
-dnl Enable BOLT of libpython if built.
+dnl Enable BOLT of libpython if built and used by the python3 binary.
+dnl (If it is built but not used, we cannot profile it.)
 AC_SUBST([BOLT_BINARIES])
 BOLT_BINARIES='$(BUILDPYTHON)'
 AS_VAR_IF([enable_shared], [yes], [
-  BOLT_BINARIES="${BOLT_BINARIES} \$(INSTSONAME)"
+  AS_VAR_IF([enable_static_libpython_for_interpreter], [no], [
+    BOLT_BINARIES="${BOLT_BINARIES} \$(INSTSONAME)"
+  ])
 ])
 
 AC_ARG_VAR(
@@ -2356,8 +2405,8 @@ AS_CASE([$ac_sys_system],
 
     dnl Include file system support
     AS_VAR_APPEND([LINKFORSHARED], [" -sFORCE_FILESYSTEM -lidbfs.js -lnodefs.js -lproxyfs.js -lworkerfs.js"])
-    AS_VAR_APPEND([LINKFORSHARED], [" -sEXPORTED_RUNTIME_METHODS=FS,callMain,ENV,HEAPU32,TTY"])
-    AS_VAR_APPEND([LINKFORSHARED], [" -sEXPORTED_FUNCTIONS=_main,_Py_Version,__PyRuntime,_PyGILState_GetThisThreadState,__Py_DumpTraceback"])
+    AS_VAR_APPEND([LINKFORSHARED], [" -sEXPORTED_RUNTIME_METHODS=FS,callMain,ENV,HEAPU32,TTY,ERRNO_CODES"])
+    AS_VAR_APPEND([LINKFORSHARED], [" -sEXPORTED_FUNCTIONS=_main,_Py_Version,__PyRuntime,_PyGILState_GetThisThreadState,__Py_DumpTraceback,__PyEM_EMSCRIPTEN_TRAMPOLINE_OFFSET"])
     AS_VAR_APPEND([LINKFORSHARED], [" -sSTACK_SIZE=5MB"])
     dnl Avoid bugs in JS fallback string decoding path
     AS_VAR_APPEND([LINKFORSHARED], [" -sTEXTDECODER=2"])
@@ -2422,6 +2471,7 @@ AS_CASE([$enable_wasm_dynamic_linking],
 AC_SUBST([BASECFLAGS])
 AC_SUBST([CFLAGS_NODIST])
 AC_SUBST([LDFLAGS_NODIST])
+AC_SUBST([EXE_LDFLAGS])
 AC_SUBST([LDFLAGS_NOLTO])
 AC_SUBST([WASM_ASSETS_DIR])
 AC_SUBST([WASM_STDLIB])
@@ -3010,7 +3060,7 @@ AC_CHECK_HEADERS([ \
   io.h langinfo.h libintl.h libutil.h linux/auxvec.h sys/auxv.h linux/fs.h linux/limits.h linux/memfd.h \
   linux/netfilter_ipv4.h linux/random.h linux/soundcard.h linux/sched.h \
   linux/tipc.h linux/wait.h netdb.h net/ethernet.h netinet/in.h netpacket/packet.h poll.h process.h pthread.h pty.h \
-  sched.h setjmp.h shadow.h signal.h spawn.h stropts.h sys/audioio.h sys/bsdtty.h sys/devpoll.h \
+  sched.h setjmp.h shadow.h signal.h spawn.h sys/audioio.h sys/bsdtty.h sys/devpoll.h \
   sys/endian.h sys/epoll.h sys/event.h sys/eventfd.h sys/file.h sys/ioctl.h sys/kern_control.h \
   sys/loadavg.h sys/lock.h sys/memfd.h sys/mkdev.h sys/mman.h sys/modem.h sys/param.h sys/pidfd.h sys/poll.h \
   sys/random.h sys/resource.h sys/select.h sys/sendfile.h sys/socket.h sys/soundcard.h sys/stat.h \
@@ -3020,6 +3070,16 @@ AC_CHECK_HEADERS([ \
 ])
 AC_HEADER_DIRENT
 AC_HEADER_MAJOR
+
+# On Linux, stropts.h may be empty
+AC_CHECK_DECL([I_PUSH], [
+  AC_DEFINE([HAVE_STROPTS_H], [1],
+    [Define to 1 if you have the <stropts.h> header file.])], [], [
+    #ifdef HAVE_SYS_TYPES_H
+    #  include <sys/types.h>
+    #endif
+    #include <stropts.h>
+])
 
 # bluetooth/bluetooth.h has been known to not compile with -std=c99.
 # http://permalink.gmane.org/gmane.linux.bluez.kernel/22294
@@ -3717,7 +3777,10 @@ AC_MSG_CHECKING([perf trampoline])
 AS_CASE([$PLATFORM_TRIPLET],
   [x86_64-linux-gnu], [perf_trampoline=yes],
   [aarch64-linux-gnu], [perf_trampoline=yes],
-  [darwin], [perf_trampoline=yes],
+  [darwin], [AS_CASE([$MACOSX_DEPLOYMENT_TARGET],
+                [[10.[0-9]|10.1[0-1]]], [perf_trampoline=no],
+                [perf_trampoline=yes]
+            )],
   [perf_trampoline=no]
 )
 AC_MSG_RESULT([$perf_trampoline])
@@ -4760,6 +4823,7 @@ if test "$posix_threads" = "yes"; then
         if (pthread_attr_init(&attr)) return (-1);
         if (pthread_attr_setscope(&attr, PTHREAD_SCOPE_SYSTEM)) return (-1);
         if (pthread_create(&id, &attr, foo, NULL)) return (-1);
+        if (pthread_join(id, NULL)) return (-1);
         return (0);
       }]])],
       [ac_cv_pthread_system_supported=yes],
@@ -5013,6 +5077,41 @@ AS_VAR_IF([ac_cv_builtin_atomic], [yes], [
     AC_DEFINE(HAVE_BUILTIN_ATOMIC, 1, [Has builtin __atomic_load_n() and __atomic_store_n() functions])
 ])
 
+# Check for __builtin_shufflevector with 128-bit vector support on an
+# architecture where it compiles to worthwhile native SIMD instructions.
+# Used for SIMD-accelerated bytes.hex() in Python/pystrhex.c.
+AC_CACHE_CHECK([for __builtin_shufflevector], [ac_cv_efficient_builtin_shufflevector], [
+AC_LINK_IFELSE([
+  AC_LANG_PROGRAM([[
+    /* __builtin_shufflevector is available on many platforms, but 128-bit
+       vector code is only worthwhile on architectures with native SIMD:
+       x86-64 (SSE2, always available), ARM64 (NEON, always available),
+       or ARM32 when NEON is enabled via compiler flags (e.g. -march=native
+       on RPi3+).  On ARM32 without NEON (e.g. armv6 builds), the compiler
+       has the builtin but generates slow scalar code instead. */
+    #if !defined(__x86_64__) && !defined(__aarch64__) && \
+        !(defined(__arm__) && defined(__ARM_NEON))
+    #  error "128-bit vector SIMD not worthwhile on this architecture"
+    #endif
+    typedef unsigned char v16u8 __attribute__((vector_size(16)));
+  ]], [[
+    v16u8 a = {0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15};
+    v16u8 b = {16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31};
+    v16u8 c = __builtin_shufflevector(a, b,
+        0, 16, 1, 17, 2, 18, 3, 19, 4, 20, 5, 21, 6, 22, 7, 23);
+    (void)c;
+    return 0;
+  ]])
+],[ac_cv_efficient_builtin_shufflevector=yes],[ac_cv_efficient_builtin_shufflevector=no])
+])
+
+AS_VAR_IF([ac_cv_efficient_builtin_shufflevector], [yes], [
+    AC_DEFINE([HAVE_EFFICIENT_BUILTIN_SHUFFLEVECTOR], [1],
+              [Define if compiler supports __builtin_shufflevector with 128-bit
+               vectors AND the target architecture has native SIMD (not just API
+               availability)])
+])
+
 # --with-mimalloc
 AC_MSG_CHECKING([for --with-mimalloc])
 AC_ARG_WITH([mimalloc],
@@ -5059,6 +5158,29 @@ then
      [Define if you want to compile in Python-specific mallocs])
 fi
 AC_MSG_RESULT([$with_pymalloc])
+
+AC_MSG_CHECKING([for --with-pymalloc-hugepages])
+AC_ARG_WITH(
+  [pymalloc-hugepages],
+  [AS_HELP_STRING([--with-pymalloc-hugepages],
+    [enable huge page support for pymalloc arenas (default is no)])])
+if test "$with_pymalloc_hugepages" = "yes"
+then
+    dnl configure only runs on Unix-like systems; Windows uses MEM_LARGE_PAGES
+    dnl via VirtualAlloc but does not use configure. Only check MAP_HUGETLB here.
+    AC_COMPILE_IFELSE(
+      [AC_LANG_PROGRAM([[
+#include <sys/mman.h>
+      ]], [[
+int flags = MAP_PRIVATE | MAP_ANONYMOUS | MAP_HUGETLB;
+(void)flags;
+      ]])],
+      [AC_DEFINE([PYMALLOC_USE_HUGEPAGES], [1],
+         [Define to use huge pages for pymalloc arenas])],
+      [AC_MSG_WARN([--with-pymalloc-hugepages requested but MAP_HUGETLB not found])
+       with_pymalloc_hugepages=no])
+fi
+AC_MSG_RESULT([${with_pymalloc_hugepages:-no}])
 
 # Check for --with-c-locale-coercion
 AC_MSG_CHECKING([for --with-c-locale-coercion])
@@ -5252,7 +5374,7 @@ AC_CHECK_FUNCS([ \
   getspnam getuid getwd grantpt if_nameindex initgroups kill killpg lchown linkat \
   lockf lstat lutimes madvise mbrtowc memrchr mkdirat mkfifo mkfifoat \
   mknod mknodat mktime mmap mremap nice openat opendir pathconf pause pipe \
-  pipe2 plock poll posix_fadvise posix_fallocate posix_openpt posix_spawn posix_spawnp \
+  pipe2 plock poll ppoll posix_fadvise posix_fallocate posix_openpt posix_spawn posix_spawnp \
   posix_spawn_file_actions_addclosefrom_np \
   pread preadv preadv2 process_vm_readv \
   pthread_cond_timedwait_relative_np pthread_condattr_setclock pthread_init \
@@ -5307,8 +5429,20 @@ PY_CHECK_FUNC([symlink], [@%:@include <unistd.h>])
 PY_CHECK_FUNC([fchdir], [@%:@include <unistd.h>])
 PY_CHECK_FUNC([fsync], [@%:@include <unistd.h>])
 PY_CHECK_FUNC([fdatasync], [@%:@include <unistd.h>])
-PY_CHECK_FUNC([epoll_create], [@%:@include <sys/epoll.h>], [HAVE_EPOLL])
-PY_CHECK_FUNC([epoll_create1], [@%:@include <sys/epoll.h>])
+
+AC_MSG_CHECKING([for --disable-epoll])
+AC_ARG_ENABLE([epoll],
+  [AS_HELP_STRING([--disable-epoll], [disable epoll (default is yes if supported)])],
+  [AS_VAR_IF([enable_epoll], [no], [disable_epoll=yes], [disable_epoll=no])],
+  [disable_epoll=no]
+)
+AC_MSG_RESULT([$disable_epoll])
+if test "$disable_epoll" = "no"
+then
+  PY_CHECK_FUNC([epoll_create], [@%:@include <sys/epoll.h>], [HAVE_EPOLL])
+  PY_CHECK_FUNC([epoll_create1], [@%:@include <sys/epoll.h>])
+fi
+
 PY_CHECK_FUNC([kqueue],[
 #include <sys/types.h>
 #include <sys/event.h>
@@ -5529,6 +5663,18 @@ PKG_CHECK_MODULES([LIBZSTD], [libzstd >= 1.4.5], [have_libzstd=yes], [
   ])
 ])
 
+dnl _remote_debugging module: optional zstd compression support
+dnl The module always builds, but zstd compression is only available when libzstd is found
+AS_VAR_IF([have_libzstd], [yes], [
+  REMOTE_DEBUGGING_CFLAGS="-DHAVE_ZSTD $LIBZSTD_CFLAGS"
+  REMOTE_DEBUGGING_LIBS="$LIBZSTD_LIBS"
+], [
+  REMOTE_DEBUGGING_CFLAGS=""
+  REMOTE_DEBUGGING_LIBS=""
+])
+AC_SUBST([REMOTE_DEBUGGING_CFLAGS])
+AC_SUBST([REMOTE_DEBUGGING_LIBS])
+
 dnl PY_CHECK_NETDB_FUNC(FUNCTION)
 AC_DEFUN([PY_CHECK_NETDB_FUNC], [PY_CHECK_FUNC([$1], [@%:@include <netdb.h>])])
 
@@ -5582,7 +5728,15 @@ AC_CHECK_DECLS([UT_NAMESIZE],
                          [Define if you have the 'HAVE_UT_NAMESIZE' constant.])],
               [],
               [@%:@include <utmp.h>])
-
+# musl libc redefines struct prctl_mm_map and conflicts with linux/prctl.h
+AS_IF([test "$ac_cv_libc" != musl], [
+AC_CHECK_DECLS([PR_SET_VMA_ANON_NAME],
+              [AC_DEFINE([HAVE_PR_SET_VMA_ANON_NAME], [1],
+                         [Define if you have the 'PR_SET_VMA_ANON_NAME' constant.])],
+              [],
+              [@%:@include <linux/prctl.h>
+               @%:@include <sys/prctl.h>])
+])
 # check for openpty, login_tty, and forkpty
 
 AC_CHECK_FUNCS([openpty], [],
@@ -6085,21 +6239,11 @@ AX_C_FLOAT_WORDS_BIGENDIAN(
   [AC_DEFINE([DOUBLE_IS_LITTLE_ENDIAN_IEEE754], [1],
              [Define if C doubles are 64-bit IEEE 754 binary format,
               stored with the least significant byte first])],
-  [AS_CASE([$host_cpu],
-           [*arm*], [# Some ARM platforms use a mixed-endian representation for
-                     # doubles. While Python doesn't currently have full support
-                     # for these platforms (see e.g., issue 1762561), we can at
-                     # least make sure that float <-> string conversions work.
-                     # FLOAT_WORDS_BIGENDIAN doesn't actually detect this case,
-                     # but if it's not big or little, then it must be this?
-                     AC_DEFINE([DOUBLE_IS_ARM_MIXED_ENDIAN_IEEE754], [1],
-                               [Define if C doubles are 64-bit IEEE 754 binary format,
-                                stored in ARM mixed-endian order (byte order 45670123)])],
-           [AC_MSG_ERROR([m4_normalize([
+  [AC_MSG_ERROR([m4_normalize([
              Unknown float word ordering. You need to manually
              preset ax_cv_c_float_words_bigendian=no (or yes)
              according to your system.
-           ])])])])
+           ])])])
 
 # The short float repr introduced in Python 3.1 requires the
 # correctly-rounded string <-> double conversion functions from
@@ -6126,8 +6270,8 @@ AS_VAR_IF([ac_cv_gcc_asm_for_x87], [yes], [
 AC_CACHE_CHECK([whether we can use gcc inline assembler to get and set mc68881 fpcr], [ac_cv_gcc_asm_for_mc68881], [
 AC_LINK_IFELSE(   [AC_LANG_PROGRAM([[]], [[
   unsigned int fpcr;
-  __asm__ __volatile__ ("fmove.l %%fpcr,%0" : "=g" (fpcr));
-  __asm__ __volatile__ ("fmove.l %0,%%fpcr" : : "g" (fpcr));
+  __asm__ __volatile__ ("fmove.l %%fpcr,%0" : "=dm" (fpcr));
+  __asm__ __volatile__ ("fmove.l %0,%%fpcr" : : "dm" (fpcr));
 ]])],[ac_cv_gcc_asm_for_mc68881=yes],[ac_cv_gcc_asm_for_mc68881=no])
 ])
 AS_VAR_IF([ac_cv_gcc_asm_for_mc68881], [yes], [
@@ -6413,15 +6557,10 @@ if test "$ac_sys_system" = "iOS"; then
   MODULE_DEPS_SHARED="$MODULE_DEPS_SHARED \$(PYTHONFRAMEWORKDIR)/\$(PYTHONFRAMEWORK)"
 fi
 
-
-AC_SUBST([BINLIBDEST])
-BINLIBDEST='$(LIBDIR)/python$(VERSION)$(ABI_THREAD)'
-
-
 # Check for --with-platlibdir
 # /usr/$PLATLIBDIR/python$(VERSION)$(ABI_THREAD)
 AC_SUBST([PLATLIBDIR])
-PLATLIBDIR="lib"
+PLATLIBDIR="lib"  # XXX: We should probably calculate the defauly from libdir, if defined.
 AC_MSG_CHECKING([for --with-platlibdir])
 AC_ARG_WITH(
   [platlibdir],
@@ -6438,19 +6577,22 @@ if test -n "$withval" -a "$withval" != yes -a "$withval" != no
 then
   AC_MSG_RESULT([yes])
   PLATLIBDIR="$withval"
-  BINLIBDEST='${exec_prefix}/${PLATLIBDIR}/python$(VERSION)$(ABI_THREAD)'
 else
   AC_MSG_RESULT([no])
 fi],
 [AC_MSG_RESULT([no])])
 
+AC_SUBST([LIBDEST])
+AC_SUBST([BINLIBDEST])
+LIBDEST='${prefix}/${PLATLIBDIR}/python$(VERSION)$(ABI_THREAD)'
+BINLIBDEST='${exec_prefix}/${PLATLIBDIR}/python$(VERSION)$(ABI_THREAD)'
 
 dnl define LIBPL after ABIFLAGS and LDVERSION is defined.
 AC_SUBST([PY_ENABLE_SHARED])
 if test x$PLATFORM_TRIPLET = x; then
-  LIBPL='$(prefix)'"/${PLATLIBDIR}/python${VERSION}${ABI_THREAD}/config-${LDVERSION}"
+  LIBPL='$(LIBDEST)'"/config-${LDVERSION}"
 else
-  LIBPL='$(prefix)'"/${PLATLIBDIR}/python${VERSION}${ABI_THREAD}/config-${LDVERSION}-${PLATFORM_TRIPLET}"
+  LIBPL='$(LIBDEST)'"/config-${LDVERSION}-${PLATFORM_TRIPLET}"
 fi
 AC_SUBST([LIBPL])
 
@@ -7269,6 +7411,34 @@ if test "$have_glibc_memmove_bug" = yes; then
      for memmove and bcopy.])
 fi
 
+AC_MSG_CHECKING([if we need to manually block large inlining in ceval.c])
+AC_RUN_IFELSE([AC_LANG_SOURCE([[
+int main(void) {
+// See gh-148284: Clang 22 seems to have interactions with inlining
+// and the stackref buffer which cause 40 kB of stack usage on x86-64
+// in buggy versions of _PyEval_EvalFrameDefault() in computed goto
+// interpreter. The normal usage seen is normally 1-2 kB.
+#if defined(__clang__) && (__clang_major__ == 22)
+    return 1;
+#else
+    return 0;
+#endif
+}
+]])],
+[block_huge_inlining_in_ceval=no],
+[block_huge_inlining_in_ceval=yes],
+[block_huge_inlining_in_ceval=undefined])
+AC_MSG_RESULT([$block_huge_inlining_in_ceval])
+
+if test "$block_huge_inlining_in_ceval" = yes && test "$ac_cv_computed_gotos" = yes; then
+    # gh-148284: Suppress inlining of functions whose stack size exceeds
+    # 512 bytes. This number should be tuned to follow the C stack
+    # consumption in _PyEval_EvalFrameDefault() on computed goto
+    # interpreter.
+    CFLAGS_CEVAL="$CFLAGS_CEVAL -finline-max-stacksize=512"
+fi
+AC_SUBST([CFLAGS_CEVAL])
+
 if test "$ac_cv_gcc_asm_for_x87" = yes; then
     # Some versions of gcc miscompile inline asm:
     # http://gcc.gnu.org/bugzilla/show_bug.cgi?id=46491
@@ -7906,7 +8076,7 @@ PY_STDLIB_MOD_SIMPLE([_pickle])
 PY_STDLIB_MOD_SIMPLE([_posixsubprocess])
 PY_STDLIB_MOD_SIMPLE([_queue])
 PY_STDLIB_MOD_SIMPLE([_random])
-PY_STDLIB_MOD_SIMPLE([_remote_debugging])
+PY_STDLIB_MOD_SIMPLE([_remote_debugging], [$REMOTE_DEBUGGING_CFLAGS], [$REMOTE_DEBUGGING_LIBS])
 PY_STDLIB_MOD_SIMPLE([select])
 PY_STDLIB_MOD_SIMPLE([_struct])
 PY_STDLIB_MOD_SIMPLE([_types])
@@ -8087,7 +8257,7 @@ AC_SUBST([LIBHACL_BLAKE2_SIMD256_OBJS])
 # HACL*-based cryptographic primitives
 
 AC_MSG_CHECKING([for HACL* library linking type])
-if test "$ac_sys_system" = "WASI"; then
+if test "$ac_sys_system" = "WASI" || test "$MODULE_BUILDTYPE" = "static"; then
   LIBHACL_LDEPS_LIBTYPE=STATIC
   AC_MSG_RESULT([static])
 else

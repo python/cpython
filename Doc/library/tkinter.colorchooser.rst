@@ -2,14 +2,13 @@
 ======================================================
 
 .. module:: tkinter.colorchooser
-   :platform: Tk
    :synopsis: Color choosing dialog
 
 **Source code:** :source:`Lib/tkinter/colorchooser.py`
 
 --------------
 
-The :mod:`tkinter.colorchooser` module provides the :class:`Chooser` class
+The :mod:`!tkinter.colorchooser` module provides the :class:`Chooser` class
 as an interface to the native color picker dialog. ``Chooser`` implements
 a modal color choosing dialog window. The ``Chooser`` class inherits from
 the :class:`~tkinter.commondialog.Dialog` class.

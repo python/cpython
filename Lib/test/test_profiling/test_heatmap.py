@@ -4,7 +4,11 @@ import os
 import shutil
 import tempfile
 import unittest
+from collections import namedtuple
 from pathlib import Path
+
+# Matches the C structseq LocationInfo from _remote_debugging
+LocationInfo = namedtuple('LocationInfo', ['lineno', 'end_lineno', 'col_offset', 'end_col_offset'])
 
 from profiling.sampling.heatmap_collector import (
     HeatmapCollector,
@@ -147,12 +151,6 @@ class TestHeatmapCollectorInit(unittest.TestCase):
         collector = HeatmapCollector(sample_interval_usec=100)
         self.assertEqual(collector._total_samples, 0)
 
-    def test_init_creates_color_cache(self):
-        """Test that color cache is initialized."""
-        collector = HeatmapCollector(sample_interval_usec=100)
-        self.assertIsInstance(collector._color_cache, dict)
-        self.assertEqual(len(collector._color_cache), 0)
-
     def test_init_gets_path_info(self):
         """Test that path info is retrieved during init."""
         collector = HeatmapCollector(sample_interval_usec=100)
@@ -220,7 +218,7 @@ class TestHeatmapCollectorProcessFrames(unittest.TestCase):
         collector = HeatmapCollector(sample_interval_usec=100)
 
         initial_count = collector._total_samples
-        frames = [('file.py', 10, 'func')]
+        frames = [('file.py', (10, 10, -1, -1), 'func', None)]
         collector.process_frames(frames, thread_id=1)
 
         self.assertEqual(collector._total_samples, initial_count + 1)
@@ -229,7 +227,7 @@ class TestHeatmapCollectorProcessFrames(unittest.TestCase):
         """Test that process_frames records line samples."""
         collector = HeatmapCollector(sample_interval_usec=100)
 
-        frames = [('test.py', 5, 'test_func')]
+        frames = [('test.py', (5, 5, -1, -1), 'test_func', None)]
         collector.process_frames(frames, thread_id=1)
 
         # Check that line was recorded
@@ -241,9 +239,9 @@ class TestHeatmapCollectorProcessFrames(unittest.TestCase):
         collector = HeatmapCollector(sample_interval_usec=100)
 
         frames = [
-            ('file1.py', 10, 'func1'),
-            ('file2.py', 20, 'func2'),
-            ('file3.py', 30, 'func3')
+            ('file1.py', (10, 10, -1, -1), 'func1', None),
+            ('file2.py', (20, 20, -1, -1), 'func2', None),
+            ('file3.py', (30, 30, -1, -1), 'func3', None)
         ]
         collector.process_frames(frames, thread_id=1)
 
@@ -257,8 +255,8 @@ class TestHeatmapCollectorProcessFrames(unittest.TestCase):
         collector = HeatmapCollector(sample_interval_usec=100)
 
         frames = [
-            ('leaf.py', 5, 'leaf_func'),  # This is the leaf (top of stack)
-            ('caller.py', 10, 'caller_func')
+            ('leaf.py', (5, 5, -1, -1), 'leaf_func', None),  # This is the leaf (top of stack)
+            ('caller.py', (10, 10, -1, -1), 'caller_func', None)
         ]
         collector.process_frames(frames, thread_id=1)
 
@@ -273,7 +271,7 @@ class TestHeatmapCollectorProcessFrames(unittest.TestCase):
         """Test that multiple calls accumulate samples."""
         collector = HeatmapCollector(sample_interval_usec=100)
 
-        frames = [('file.py', 10, 'func')]
+        frames = [('file.py', (10, 10, -1, -1), 'func', None)]
 
         collector.process_frames(frames, thread_id=1)
         collector.process_frames(frames, thread_id=1)
@@ -288,11 +286,11 @@ class TestHeatmapCollectorProcessFrames(unittest.TestCase):
 
         # These should be ignored
         invalid_frames = [
-            ('<string>', 1, 'test'),
-            ('[eval]', 1, 'test'),
-            ('', 1, 'test'),
-            (None, 1, 'test'),
-            ('__init__', 0, 'test'),  # Special invalid frame
+            ('<string>', (1, 1, -1, -1), 'test', None),
+            ('[eval]', (1, 1, -1, -1), 'test', None),
+            ('', (1, 1, -1, -1), 'test', None),
+            (None, (1, 1, -1, -1), 'test', None),
+            ('__init__', (0, 0, -1, -1), 'test', None),  # Special invalid frame
         ]
 
         for frame in invalid_frames:
@@ -301,15 +299,15 @@ class TestHeatmapCollectorProcessFrames(unittest.TestCase):
         # Should not record these invalid frames
         for frame in invalid_frames:
             if frame[0]:
-                self.assertNotIn((frame[0], frame[1]), collector.line_samples)
+                self.assertNotIn((frame[0], frame[1][0]), collector.line_samples)
 
     def test_process_frames_builds_call_graph(self):
         """Test that process_frames builds call graph relationships."""
         collector = HeatmapCollector(sample_interval_usec=100)
 
         frames = [
-            ('callee.py', 5, 'callee_func'),
-            ('caller.py', 10, 'caller_func')
+            ('callee.py', (5, 5, -1, -1), 'callee_func', None),
+            ('caller.py', (10, 10, -1, -1), 'caller_func', None)
         ]
         collector.process_frames(frames, thread_id=1)
 
@@ -325,7 +323,7 @@ class TestHeatmapCollectorProcessFrames(unittest.TestCase):
         """Test that process_frames records function definition locations."""
         collector = HeatmapCollector(sample_interval_usec=100)
 
-        frames = [('module.py', 42, 'my_function')]
+        frames = [('module.py', (42, 42, -1, -1), 'my_function', None)]
         collector.process_frames(frames, thread_id=1)
 
         self.assertIn(('module.py', 'my_function'), collector.function_definitions)
@@ -336,8 +334,8 @@ class TestHeatmapCollectorProcessFrames(unittest.TestCase):
         collector = HeatmapCollector(sample_interval_usec=100)
 
         frames = [
-            ('callee.py', 5, 'callee'),
-            ('caller.py', 10, 'caller')
+            ('callee.py', (5, 5, -1, -1), 'callee', None),
+            ('caller.py', (10, 10, -1, -1), 'caller', None)
         ]
 
         # Process same call stack multiple times
@@ -361,12 +359,102 @@ class TestHeatmapCollectorProcessFrames(unittest.TestCase):
         """Test that file_samples dict is properly populated."""
         collector = HeatmapCollector(sample_interval_usec=100)
 
-        frames = [('test.py', 10, 'func')]
+        frames = [('test.py', (10, 10, -1, -1), 'func', None)]
         collector.process_frames(frames, thread_id=1)
 
         self.assertIn('test.py', collector.file_samples)
         self.assertIn(10, collector.file_samples['test.py'])
         self.assertEqual(collector.file_samples['test.py'][10], 1)
+
+
+def frame(filename, line, func):
+    """Create a frame tuple: (filename, location, funcname, opcode)."""
+    return (filename, (line, line, -1, -1), func, None)
+
+
+class TestHeatmapCollectorNavigationButtons(unittest.TestCase):
+    """Test navigation button behavior for caller/callee relationships.
+
+    For every call stack:
+    - Root frames (entry points): only DOWN arrow (callees)
+    - Middle frames: both UP and DOWN arrows
+    - Leaf frames: only UP arrow (callers)
+    """
+
+    def collect(self, *stacks):
+        """Create collector and process frame stacks."""
+        collector = HeatmapCollector(sample_interval_usec=100)
+        for stack in stacks:
+            collector.process_frames(stack, thread_id=1)
+        return collector
+
+    def test_deep_call_stack_relationships(self):
+        """Test root/middle/leaf navigation in a 5-level call stack."""
+        # Stack: root -> A -> B -> C -> leaf
+        stack = [
+            frame('leaf.py', 5, 'leaf'),
+            frame('c.py', 10, 'func_c'),
+            frame('b.py', 15, 'func_b'),
+            frame('a.py', 20, 'func_a'),
+            frame('root.py', 25, 'root'),
+        ]
+        c = self.collect(stack)
+
+        # Root: only callees (no one calls it)
+        self.assertIn(('root.py', 25), c.call_graph)
+        self.assertNotIn(('root.py', 25), c.callers_graph)
+
+        # Middle frames: both callers and callees
+        for key in [('a.py', 20), ('b.py', 15), ('c.py', 10)]:
+            self.assertIn(key, c.call_graph)
+            self.assertIn(key, c.callers_graph)
+
+        # Leaf: only callers (doesn't call anyone)
+        self.assertNotIn(('leaf.py', 5), c.call_graph)
+        self.assertIn(('leaf.py', 5), c.callers_graph)
+
+    def test_all_lines_in_function_see_callers(self):
+        """Test that interior lines map to their function for caller lookup."""
+        # Same function sampled at different lines (12, 15, 10)
+        c = self.collect(
+            [frame('mod.py', 12, 'my_func'), frame('caller.py', 100, 'caller')],
+            [frame('mod.py', 15, 'my_func'), frame('caller.py', 100, 'caller')],
+            [frame('mod.py', 10, 'my_func'), frame('caller.py', 100, 'caller')],
+        )
+
+        # All lines should map to same function
+        for line in [10, 12, 15]:
+            self.assertEqual(c.line_to_function[('mod.py', line)], 'my_func')
+
+        # Function definition line should have callers
+        func_def = c.function_definitions[('mod.py', 'my_func')]
+        self.assertIn(('mod.py', func_def), c.callers_graph)
+
+    def test_multiple_callers_and_callees(self):
+        """Test multiple callers/callees are recorded correctly."""
+        # Two callers -> target, and caller -> two callees
+        c = self.collect(
+            [frame('target.py', 10, 'target'), frame('caller1.py', 20, 'c1')],
+            [frame('target.py', 10, 'target'), frame('caller2.py', 30, 'c2')],
+            [frame('callee1.py', 5, 'f1'), frame('dispatcher.py', 40, 'dispatch')],
+            [frame('callee2.py', 6, 'f2'), frame('dispatcher.py', 40, 'dispatch')],
+        )
+
+        # Target has 2 callers
+        callers = c.callers_graph[('target.py', 10)]
+        self.assertEqual({x[0] for x in callers}, {'caller1.py', 'caller2.py'})
+
+        # Dispatcher has 2 callees
+        callees = c.call_graph[('dispatcher.py', 40)]
+        self.assertEqual({x[0] for x in callees}, {'callee1.py', 'callee2.py'})
+
+    def test_edge_samples_counted(self):
+        """Test that repeated calls accumulate edge counts."""
+        stack = [frame('callee.py', 10, 'callee'), frame('caller.py', 20, 'caller')]
+        c = self.collect(stack, stack, stack)
+
+        edge_key = (('caller.py', 20), ('callee.py', 10))
+        self.assertEqual(c.edge_samples[edge_key], 3)
 
 
 class TestHeatmapCollectorExport(unittest.TestCase):
@@ -382,7 +470,7 @@ class TestHeatmapCollectorExport(unittest.TestCase):
         collector = HeatmapCollector(sample_interval_usec=100)
 
         # Add some data
-        frames = [('test.py', 10, 'func')]
+        frames = [('test.py', (10, 10, -1, -1), 'func', None)]
         collector.process_frames(frames, thread_id=1)
 
         output_path = os.path.join(self.test_dir, 'heatmap_output')
@@ -397,7 +485,7 @@ class TestHeatmapCollectorExport(unittest.TestCase):
         """Test that export creates index.html."""
         collector = HeatmapCollector(sample_interval_usec=100)
 
-        frames = [('test.py', 10, 'func')]
+        frames = [('test.py', (10, 10, -1, -1), 'func', None)]
         collector.process_frames(frames, thread_id=1)
 
         output_path = os.path.join(self.test_dir, 'heatmap_output')
@@ -412,7 +500,7 @@ class TestHeatmapCollectorExport(unittest.TestCase):
         """Test that export creates individual file HTMLs."""
         collector = HeatmapCollector(sample_interval_usec=100)
 
-        frames = [('test.py', 10, 'func')]
+        frames = [('test.py', (10, 10, -1, -1), 'func', None)]
         collector.process_frames(frames, thread_id=1)
 
         output_path = os.path.join(self.test_dir, 'heatmap_output')
@@ -439,7 +527,7 @@ class TestHeatmapCollectorExport(unittest.TestCase):
         """Test that export handles .html suffix in output path."""
         collector = HeatmapCollector(sample_interval_usec=100)
 
-        frames = [('test.py', 10, 'func')]
+        frames = [('test.py', (10, 10, -1, -1), 'func', None)]
         collector.process_frames(frames, thread_id=1)
 
         # Path with .html suffix should be stripped
@@ -457,9 +545,9 @@ class TestHeatmapCollectorExport(unittest.TestCase):
         collector = HeatmapCollector(sample_interval_usec=100)
 
         # Add samples for multiple files
-        collector.process_frames([('file1.py', 10, 'func1')], thread_id=1)
-        collector.process_frames([('file2.py', 20, 'func2')], thread_id=1)
-        collector.process_frames([('file3.py', 30, 'func3')], thread_id=1)
+        collector.process_frames([('file1.py', (10, 10, -1, -1), 'func1', None)], thread_id=1)
+        collector.process_frames([('file2.py', (20, 20, -1, -1), 'func2', None)], thread_id=1)
+        collector.process_frames([('file3.py', (30, 30, -1, -1), 'func3', None)], thread_id=1)
 
         output_path = os.path.join(self.test_dir, 'multi_file')
 
@@ -476,7 +564,7 @@ class TestHeatmapCollectorExport(unittest.TestCase):
         collector = HeatmapCollector(sample_interval_usec=100)
         collector.set_stats(sample_interval_usec=100, duration_sec=1.0, sample_rate=100.0)
 
-        frames = [('mytest.py', 10, 'my_func')]
+        frames = [('mytest.py', (10, 10, -1, -1), 'my_func', None)]
         collector.process_frames(frames, thread_id=1)
 
         output_path = os.path.join(self.test_dir, 'test_output')
@@ -500,7 +588,7 @@ class TestHeatmapCollectorExport(unittest.TestCase):
         with open(temp_file, 'w') as f:
             f.write('def test():\n    pass\n')
 
-        frames = [(temp_file, 1, 'test')]
+        frames = [(temp_file, (1, 1, -1, -1), 'test', None)]
         collector.process_frames(frames, thread_id=1)
 
         output_path = os.path.join(self.test_dir, 'line_test')
@@ -521,23 +609,39 @@ class TestHeatmapCollectorExport(unittest.TestCase):
 
 
 class MockFrameInfo:
-    """Mock FrameInfo for testing since the real one isn't accessible."""
+    """Mock FrameInfo for testing.
 
-    def __init__(self, filename, lineno, funcname):
+    Frame format: (filename, location, funcname, opcode) where:
+    - location is a tuple (lineno, end_lineno, col_offset, end_col_offset)
+    - opcode is an int or None
+    """
+
+    def __init__(self, filename, lineno, funcname, opcode=None):
         self.filename = filename
-        self.lineno = lineno
         self.funcname = funcname
+        self.opcode = opcode
+        self.location = (lineno, lineno, -1, -1)
+
+    def __iter__(self):
+        return iter((self.filename, self.location, self.funcname, self.opcode))
+
+    def __getitem__(self, index):
+        return (self.filename, self.location, self.funcname, self.opcode)[index]
+
+    def __len__(self):
+        return 4
 
     def __repr__(self):
-        return f"MockFrameInfo(filename='{self.filename}', lineno={self.lineno}, funcname='{self.funcname}')"
+        return f"MockFrameInfo('{self.filename}', {self.location}, '{self.funcname}', {self.opcode})"
 
 
 class MockThreadInfo:
     """Mock ThreadInfo for testing since the real one isn't accessible."""
 
-    def __init__(self, thread_id, frame_info):
+    def __init__(self, thread_id, frame_info, status=0):
         self.thread_id = thread_id
         self.frame_info = frame_info
+        self.status = status  # Thread status flags
 
     def __repr__(self):
         return f"MockThreadInfo(thread_id={self.thread_id}, frame_info={self.frame_info})"
@@ -565,13 +669,13 @@ class TestHeatmapCollector(unittest.TestCase):
         self.assertEqual(len(collector.file_samples), 0)
         self.assertEqual(len(collector.line_samples), 0)
 
-        # Test collecting sample data
+        # Test collecting sample data - frames are 4-tuples: (filename, location, funcname, opcode)
         test_frames = [
             MockInterpreterInfo(
                 0,
                 [MockThreadInfo(
                     1,
-                    [("file.py", 10, "func1"), ("file.py", 20, "func2")],
+                    [MockFrameInfo("file.py", 10, "func1"), MockFrameInfo("file.py", 20, "func2")],
                 )]
             )
         ]
@@ -592,21 +696,21 @@ class TestHeatmapCollector(unittest.TestCase):
 
         collector = HeatmapCollector(sample_interval_usec=100)
 
-        # Create test data with multiple files
+        # Create test data with multiple files using MockFrameInfo
         test_frames1 = [
             MockInterpreterInfo(
                 0,
-                [MockThreadInfo(1, [("file.py", 10, "func1"), ("file.py", 20, "func2")])],
+                [MockThreadInfo(1, [MockFrameInfo("file.py", 10, "func1"), MockFrameInfo("file.py", 20, "func2")])],
             )
         ]
         test_frames2 = [
             MockInterpreterInfo(
                 0,
-                [MockThreadInfo(1, [("file.py", 10, "func1"), ("file.py", 20, "func2")])],
+                [MockThreadInfo(1, [MockFrameInfo("file.py", 10, "func1"), MockFrameInfo("file.py", 20, "func2")])],
             )
         ]  # Same stack
         test_frames3 = [
-            MockInterpreterInfo(0, [MockThreadInfo(1, [("other.py", 5, "other_func")])])
+            MockInterpreterInfo(0, [MockThreadInfo(1, [MockFrameInfo("other.py", 5, "other_func")])])
         ]
 
         collector.collect(test_frames1)
@@ -647,6 +751,96 @@ class TestHeatmapCollector(unittest.TestCase):
         # Should contain heatmap styling and JavaScript
         self.assertIn("line-sample", file_content)
         self.assertIn("nav-btn", file_content)
+
+
+class TestHeatmapCollectorLocation(unittest.TestCase):
+    """Tests for HeatmapCollector location handling."""
+
+    def test_heatmap_with_full_location_info(self):
+        """Test HeatmapCollector uses full location tuple."""
+        collector = HeatmapCollector(sample_interval_usec=1000)
+
+        # Frame with full location: (lineno, end_lineno, col_offset, end_col_offset)
+        frame = MockFrameInfo("test.py", 10, "func")
+        # Override with full location info
+        frame.location = LocationInfo(10, 15, 4, 20)
+        frames = [
+            MockInterpreterInfo(
+                0,
+                [MockThreadInfo(1, [frame])]
+            )
+        ]
+        collector.collect(frames)
+
+        # Verify data was collected with location info
+        # HeatmapCollector uses file_samples dict with filename -> Counter of linenos
+        self.assertIn("test.py", collector.file_samples)
+        # Line 10 should have samples
+        self.assertIn(10, collector.file_samples["test.py"])
+
+    def test_heatmap_with_none_location(self):
+        """Test HeatmapCollector handles None location gracefully."""
+        collector = HeatmapCollector(sample_interval_usec=1000)
+
+        # Synthetic frame with None location
+        frame = MockFrameInfo("~", 0, "<native>")
+        frame.location = None
+        frames = [
+            MockInterpreterInfo(
+                0,
+                [MockThreadInfo(1, [frame])]
+            )
+        ]
+        # Should not raise
+        collector.collect(frames)
+
+    def test_heatmap_export_with_location_data(self):
+        """Test HeatmapCollector export includes location info."""
+        tmp_dir = tempfile.mkdtemp()
+        self.addCleanup(shutil.rmtree, tmp_dir)
+
+        collector = HeatmapCollector(sample_interval_usec=1000)
+
+        frame = MockFrameInfo("test.py", 10, "process")
+        frame.location = LocationInfo(10, 12, 0, 30)
+        frames = [
+            MockInterpreterInfo(
+                0,
+                [MockThreadInfo(1, [frame])]
+            )
+        ]
+        collector.collect(frames)
+
+        # Export should work
+        with (captured_stdout(), captured_stderr()):
+            collector.export(tmp_dir)
+        self.assertTrue(os.path.exists(os.path.join(tmp_dir, "index.html")))
+
+    def test_heatmap_collector_frame_format(self):
+        """Test HeatmapCollector with 4-element frame format."""
+        collector = HeatmapCollector(sample_interval_usec=1000)
+
+        frames = [
+            MockInterpreterInfo(
+                0,
+                [
+                    MockThreadInfo(
+                        1,
+                        [
+                            MockFrameInfo("app.py", 100, "main", opcode=90),
+                            MockFrameInfo("utils.py", 50, "helper", opcode=100),
+                            MockFrameInfo("lib.py", 25, "process", opcode=None),
+                        ],
+                    )
+                ],
+            )
+        ]
+        collector.collect(frames)
+
+        # Should have recorded data for the files
+        self.assertIn("app.py", collector.file_samples)
+        self.assertIn("utils.py", collector.file_samples)
+        self.assertIn("lib.py", collector.file_samples)
 
 
 if __name__ == "__main__":

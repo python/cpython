@@ -246,13 +246,23 @@ PyErr_SetObject(PyObject *exception, PyObject *value)
     _PyErr_SetObject(tstate, exception, value);
 }
 
-/* Set a key error with the specified argument, wrapping it in a
- * tuple automatically so that tuple keys are not unpacked as the
- * exception arguments. */
+/* Set a key error with the specified argument. This function should be used to
+ * raise a KeyError with an argument instead of PyErr_SetObject(PyExc_KeyError,
+ * arg) which has a special behavior. PyErr_SetObject() unpacks arg if it's a
+ * tuple, and it uses arg instead of creating a new exception if arg is an
+ * exception.
+ *
+ * If an exception is already set, override the exception. */
 void
 _PyErr_SetKeyError(PyObject *arg)
 {
     PyThreadState *tstate = _PyThreadState_GET();
+
+    // PyObject_CallOneArg() must not be called with an exception set,
+    // otherwise _Py_CheckFunctionResult() can fail if the function returned
+    // a result with an excception set.
+    _PyErr_Clear(tstate);
+
     PyObject *exc = PyObject_CallOneArg(PyExc_KeyError, arg);
     if (!exc) {
         /* caller will expect error to be set anyway */
@@ -1656,6 +1666,7 @@ format_unraisable_v(const char *format, va_list va, PyObject *obj)
     _Py_EnsureTstateNotNULL(tstate);
 
     PyObject *err_msg = NULL;
+    PyObject *hook = NULL;
     PyObject *exc_type, *exc_value, *exc_tb;
     _PyErr_Fetch(tstate, &exc_type, &exc_value, &exc_tb);
 
@@ -1700,7 +1711,6 @@ format_unraisable_v(const char *format, va_list va, PyObject *obj)
         goto error;
     }
 
-    PyObject *hook;
     if (PySys_GetOptionalAttr(&_Py_ID(unraisablehook), &hook) < 0) {
         Py_DECREF(hook_args);
         err_msg_str = NULL;
@@ -1713,7 +1723,6 @@ format_unraisable_v(const char *format, va_list va, PyObject *obj)
     }
 
     if (_PySys_Audit(tstate, "sys.unraisablehook", "OO", hook, hook_args) < 0) {
-        Py_DECREF(hook);
         Py_DECREF(hook_args);
         err_msg_str = "Exception ignored in audit hook";
         obj = NULL;
@@ -1721,13 +1730,11 @@ format_unraisable_v(const char *format, va_list va, PyObject *obj)
     }
 
     if (hook == Py_None) {
-        Py_DECREF(hook);
         Py_DECREF(hook_args);
         goto default_hook;
     }
 
     PyObject *res = PyObject_CallOneArg(hook, hook_args);
-    Py_DECREF(hook);
     Py_DECREF(hook_args);
     if (res != NULL) {
         Py_DECREF(res);
@@ -1757,6 +1764,7 @@ done:
     Py_XDECREF(exc_value);
     Py_XDECREF(exc_tb);
     Py_XDECREF(err_msg);
+    Py_XDECREF(hook);
     _PyErr_Clear(tstate); /* Just in case */
 }
 
