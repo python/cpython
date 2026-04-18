@@ -317,6 +317,133 @@ class BugsTestCase(unittest.TestCase):
         last.append([0])
         self.assertRaises(ValueError, marshal.dumps, head)
 
+    def test_reference_loop_list(self):
+        a = []
+        a.append(a)
+        for v in range(3):
+            self.assertRaises(ValueError, marshal.dumps, a, v)
+        for v in range(3, marshal.version + 1):
+            d = marshal.dumps(a, v)
+            b = marshal.loads(d)
+            self.assertIsInstance(b, list)
+            self.assertIs(b[0], b)
+
+    def test_reference_loop_dict(self):
+        a = {}
+        a[None] = a
+        for v in range(3):
+            self.assertRaises(ValueError, marshal.dumps, a, v)
+        for v in range(3, marshal.version + 1):
+            d = marshal.dumps(a, v)
+            b = marshal.loads(d)
+            self.assertIsInstance(b, dict)
+            self.assertIs(b[None], b)
+
+    def test_reference_loop_tuple(self):
+        a = ([],)
+        a[0].append(a)
+        for v in range(3):
+            self.assertRaises(ValueError, marshal.dumps, a, v)
+        for v in range(3, marshal.version + 1):
+            d = marshal.dumps(a, v)
+            b = marshal.loads(d)
+            self.assertIsInstance(b, tuple)
+            self.assertIsInstance(b[0], list)
+            self.assertIs(b[0][0], b)
+
+    def test_reference_loop_code(self):
+        def f():
+            return 1234.5
+        code = f.__code__
+        a = []
+        code = code.replace(co_consts=code.co_consts + (a,))
+        a.append(code)
+        for v in range(marshal.version + 1):
+            self.assertRaises(ValueError, marshal.dumps, code, v)
+
+    def test_reference_loop_slice(self):
+        a = slice([], None)
+        a.start.append(a)
+        for v in range(marshal.version + 1):
+            self.assertRaises(ValueError, marshal.dumps, a, v)
+
+        a = slice(None, [])
+        a.stop.append(a)
+        for v in range(marshal.version + 1):
+            self.assertRaises(ValueError, marshal.dumps, a, v)
+
+        a = slice(None, None, [])
+        a.step.append(a)
+        for v in range(marshal.version + 1):
+            self.assertRaises(ValueError, marshal.dumps, a, v)
+
+    def test_reference_loop_frozendict(self):
+        a = frozendict({None: []})
+        a[None].append(a)
+        for v in range(marshal.version + 1):
+            self.assertRaises(ValueError, marshal.dumps, a, v)
+
+    def test_loads_reference_loop_list(self):
+        data = b'\xdb\x01\x00\x00\x00r\x00\x00\x00\x00' # [<R>]
+        a = marshal.loads(data)
+        self.assertIsInstance(a, list)
+        self.assertIs(a[0], a)
+
+    def test_loads_reference_loop_dict(self):
+        data = b'\xfbNr\x00\x00\x00\x000' # {None: <R>}
+        a = marshal.loads(data)
+        self.assertIsInstance(a, dict)
+        self.assertIs(a[None], a)
+
+    def test_loads_abnormal_reference_loops(self):
+        # Indirect self-references of tuples.
+        data = b'\xa8\x01\x00\x00\x00[\x01\x00\x00\x00r\x00\x00\x00\x00' # ([<R>],)
+        a = marshal.loads(data)
+        self.assertIsInstance(a, tuple)
+        self.assertIsInstance(a[0], list)
+        self.assertIs(a[0][0], a)
+
+        data = b'\xa8\x01\x00\x00\x00{Nr\x00\x00\x00\x000' # ({None: <R>},)
+        a = marshal.loads(data)
+        self.assertIsInstance(a, tuple)
+        self.assertIsInstance(a[0], dict)
+        self.assertIs(a[0][None], a)
+
+        # Direct self-reference which cannot be created in Python.
+        data = b'\xa8\x01\x00\x00\x00r\x00\x00\x00\x00' # (<R>,)
+        a = marshal.loads(data)
+        self.assertIsInstance(a, tuple)
+        self.assertIs(a[0], a)
+
+        # Direct self-references which cannot be created in Python
+        # because of unhashability.
+        data = b'\xfbr\x00\x00\x00\x00N0' # {<R>: None}
+        self.assertRaises(TypeError, marshal.loads, data)
+        data = b'\xbc\x01\x00\x00\x00r\x00\x00\x00\x00' # {<R>}
+        self.assertRaises(TypeError, marshal.loads, data)
+
+        for data in [
+            # Indirect self-references of immutable objects.
+            b'\xba[\x01\x00\x00\x00r\x00\x00\x00\x00NN', # slice([<R>], None)
+            b'\xbaN[\x01\x00\x00\x00r\x00\x00\x00\x00N', # slice(None, [<R>])
+            b'\xbaNN[\x01\x00\x00\x00r\x00\x00\x00\x00', # slice(None, None, [<R>])
+            b'\xba{Nr\x00\x00\x00\x000NN', # slice({None: <R>}, None)
+            b'\xbaN{Nr\x00\x00\x00\x000N', # slice(None, {None: <R>})
+            b'\xbaNN{Nr\x00\x00\x00\x000', # slice(None, None, {None: <R>})
+            b'\xfdN[\x01\x00\x00\x00r\x00\x00\x00\x000', # frozendict({None: [<R>]})
+            b'\xfdN{Nr\x00\x00\x00\x0000', # frozendict({None: {None: <R>})
+
+            # Direct self-references which cannot be created in Python.
+            b'\xbe\x01\x00\x00\x00r\x00\x00\x00\x00', # frozenset({<R>})
+            b'\xfdNr\x00\x00\x00\x000', # frozendict({None: <R>})
+            b'\xfdr\x00\x00\x00\x00N0', # frozendict({<R>: None})
+            b'\xbar\x00\x00\x00\x00NN', # slice(<R>, None)
+            b'\xbaNr\x00\x00\x00\x00N', # slice(None, <R>)
+            b'\xbaNNr\x00\x00\x00\x00', # slice(None, None, <R>)
+        ]:
+            with self.subTest(data=data):
+                self.assertRaises(ValueError, marshal.loads, data)
+
     def test_exact_type_match(self):
         # Former bug:
         #   >>> class Int(int): pass
