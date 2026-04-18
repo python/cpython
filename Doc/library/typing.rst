@@ -3365,7 +3365,7 @@ Functions and decorators
    Type checkers do not allow child classes of a disjoint base ``C`` to
    inherit from other disjoint bases that are not parent or child classes of ``C``.
 
-   For example:
+   For example::
 
        @disjoint_base
        class Disjoint1: pass

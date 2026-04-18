@@ -2799,7 +2799,7 @@ def disjoint_base(cls):
     """This decorator marks a class as a disjoint base.
 
     Child classes of a disjoint base cannot inherit from other disjoint bases that are
-    not parent classes of the disjoint base.
+    not parent or child classes of the disjoint base.
 
     For example:
 
