@@ -1845,10 +1845,15 @@ are always available.  They are listed here in alphabetical order.
    identity when pickled and unpickled.  Sentinels that are not importable by
    module and name are not picklable.
 
-   Sentinel objects support the :ref:`| <bitwise>` operator for use in type expressions::
+   Sentinels are conventionally assigned to a variable with a matching name.
+   Sentinels defined in this way can be used in :term:`type hints<type hint>`::
+
+      MISSING = sentinel("MISSING")
 
       def next_value(default: int | MISSING = MISSING):
           ...
+
+   Sentinel objects support the :ref:`| <bitwise>` operator for use in type expressions.
 
    .. attribute:: __name__
 
