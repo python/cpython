@@ -63,6 +63,23 @@ jit_error(const char *message)
 static size_t _Py_jit_shim_size = 0;
 
 static int
+address_in_executor_array(_PyExecutorObject **ptrs, size_t count, uintptr_t addr)
+{
+    for (size_t i = 0; i < count; i++) {
+        _PyExecutorObject *exec = ptrs[i];
+        if (exec->jit_code == NULL || exec->jit_size == 0) {
+            continue;
+        }
+        uintptr_t start = (uintptr_t)exec->jit_code;
+        uintptr_t end = start + exec->jit_size;
+        if (addr >= start && addr < end) {
+            return 1;
+        }
+    }
+    return 0;
+}
+
+static int
 address_in_executor_list(_PyExecutorObject *head, uintptr_t addr)
 {
     for (_PyExecutorObject *exec = head;
@@ -94,7 +111,7 @@ _PyJIT_AddressInJitCode(PyInterpreterState *interp, uintptr_t addr)
             return 1;
         }
     }
-    if (address_in_executor_list(interp->executor_list_head, addr)) {
+    if (address_in_executor_array(interp->executor_ptrs, interp->executor_count, addr)) {
         return 1;
     }
     if (address_in_executor_list(interp->executor_deletion_list_head, addr)) {
@@ -338,15 +355,11 @@ patch_aarch64_12(unsigned char *location, uint64_t value)
     set_bits(loc32, 10, value, shift, 12);
 }
 
-// Relaxable 12-bit low part of an absolute address. Pairs nicely with
-// patch_aarch64_21rx (below).
+// Relaxable 12-bit low part of an absolute address.
+// Usually paired with patch_aarch64_21rx (below).
 void
 patch_aarch64_12x(unsigned char *location, uint64_t value)
 {
-    // This can *only* be relaxed if it occurs immediately before a matching
-    // patch_aarch64_21rx. If that happens, the JIT build step will replace both
-    // calls with a single call to patch_aarch64_33rx. Otherwise, we end up
-    // here, and the instruction is patched normally:
     patch_aarch64_12(location, value);
 }
 
@@ -411,14 +424,10 @@ patch_aarch64_21r(unsigned char *location, uint64_t value)
 }
 
 // Relaxable 21-bit count of pages between this page and an absolute address's
-// page. Pairs nicely with patch_aarch64_12x (above).
+// page. Usually paired with patch_aarch64_12x (above).
 void
 patch_aarch64_21rx(unsigned char *location, uint64_t value)
 {
-    // This can *only* be relaxed if it occurs immediately before a matching
-    // patch_aarch64_12x. If that happens, the JIT build step will replace both
-    // calls with a single call to patch_aarch64_33rx. Otherwise, we end up
-    // here, and the instruction is patched normally:
     patch_aarch64_21r(location, value);
 }
 
@@ -454,51 +463,52 @@ patch_aarch64_26r(unsigned char *location, uint64_t value)
 
 // A pair of patch_aarch64_21rx and patch_aarch64_12x.
 void
-patch_aarch64_33rx(unsigned char *location, uint64_t value)
+patch_aarch64_33rx(unsigned char *location_a, unsigned char *location_b, uint64_t value)
 {
-    uint32_t *loc32 = (uint32_t *)location;
+    uint32_t *loc32_a = (uint32_t *)location_a;
+    uint32_t *loc32_b = (uint32_t *)location_b;
     // Try to relax the pair of GOT loads into an immediate value:
-    assert(IS_AARCH64_ADRP(*loc32));
-    unsigned char reg = get_bits(loc32[0], 0, 5);
-    assert(IS_AARCH64_LDR_OR_STR(loc32[1]));
+    assert(IS_AARCH64_ADRP(*loc32_a));
+    assert(IS_AARCH64_LDR_OR_STR(*loc32_b));
+    unsigned char reg = get_bits(*loc32_a, 0, 5);
     // There should be only one register involved:
-    assert(reg == get_bits(loc32[1], 0, 5));  // ldr's output register.
-    assert(reg == get_bits(loc32[1], 5, 5));  // ldr's input register.
+    assert(reg == get_bits(*loc32_a, 0, 5));  // ldr's output register.
+    assert(reg == get_bits(*loc32_b, 5, 5));  // ldr's input register.
     uint64_t relaxed = *(uint64_t *)value;
     if (relaxed < (1UL << 16)) {
         // adrp reg, AAA; ldr reg, [reg + BBB] -> movz reg, XXX; nop
-        loc32[0] = 0xD2800000 | (get_bits(relaxed, 0, 16) << 5) | reg;
-        loc32[1] = 0xD503201F;
+        *loc32_a = 0xD2800000 | (get_bits(relaxed, 0, 16) << 5) | reg;
+        *loc32_b = 0xD503201F;
         return;
     }
     if (relaxed < (1ULL << 32)) {
         // adrp reg, AAA; ldr reg, [reg + BBB] -> movz reg, XXX; movk reg, YYY
-        loc32[0] = 0xD2800000 | (get_bits(relaxed,  0, 16) << 5) | reg;
-        loc32[1] = 0xF2A00000 | (get_bits(relaxed, 16, 16) << 5) | reg;
+        *loc32_a = 0xD2800000 | (get_bits(relaxed,  0, 16) << 5) | reg;
+        *loc32_b = 0xF2A00000 | (get_bits(relaxed, 16, 16) << 5) | reg;
         return;
     }
-    int64_t page_delta = (relaxed >> 12) - ((uintptr_t)location >> 12);
+    int64_t page_delta = (relaxed >> 12) - ((uintptr_t)location_a >> 12);
     if (page_delta >= -(1L << 20) &&
         page_delta < (1L << 20))
     {
         // adrp reg, AAA; ldr reg, [reg + BBB] -> adrp reg, AAA; add reg, reg, BBB
-        patch_aarch64_21rx(location, relaxed);
-        loc32[1] = 0x91000000 | get_bits(relaxed, 0, 12) << 10 | reg << 5 | reg;
+        patch_aarch64_21rx(location_a, relaxed);
+        *loc32_b = 0x91000000 | get_bits(relaxed, 0, 12) << 10 | reg << 5 | reg;
         return;
     }
-    relaxed = value - (uintptr_t)location;
+    relaxed = value - (uintptr_t)location_a;
     if ((relaxed & 0x3) == 0 &&
         (int64_t)relaxed >= -(1L << 19) &&
         (int64_t)relaxed < (1L << 19))
     {
         // adrp reg, AAA; ldr reg, [reg + BBB] -> ldr reg, XXX; nop
-        loc32[0] = 0x58000000 | (get_bits(relaxed, 2, 19) << 5) | reg;
-        loc32[1] = 0xD503201F;
+        *loc32_a = 0x58000000 | (get_bits(relaxed, 2, 19) << 5) | reg;
+        *loc32_b = 0xD503201F;
         return;
     }
     // Couldn't do it. Just patch the two instructions normally:
-    patch_aarch64_21rx(location, value);
-    patch_aarch64_12x(location + 4, value);
+    patch_aarch64_21rx(location_a, value);
+    patch_aarch64_12x(location_b, value);
 }
 
 // Relaxable 32-bit relative address.
