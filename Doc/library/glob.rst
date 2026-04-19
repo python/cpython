@@ -70,7 +70,8 @@ The :mod:`!glob` module defines the following functions:
    pattern is followed by an :data:`os.sep` or :data:`os.altsep` then files will not
    match.
 
-   If *include_hidden* is true, "``**``" pattern will match hidden directories.
+   If *include_hidden* is true, patterns that do not begin with a dot (``.``)
+   may also match path components that begin with a dot.
 
    .. audit-event:: glob.glob pathname,recursive glob.glob
    .. audit-event:: glob.glob/2 pathname,recursive,root_dir,dir_fd glob.glob
