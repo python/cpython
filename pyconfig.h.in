@@ -305,10 +305,6 @@
 /* Define to 1 if you have the <db.h> header file. */
 #undef HAVE_DB_H
 
-/* Define to 1 if you have the declaration of 'PR_SET_VMA_ANON_NAME', and to 0
-   if you don't. */
-#undef HAVE_DECL_PR_SET_VMA_ANON_NAME
-
 /* Define to 1 if you have the declaration of 'RTLD_DEEPBIND', and to 0 if you
    don't. */
 #undef HAVE_DECL_RTLD_DEEPBIND
@@ -2207,9 +2203,6 @@
 /* Define to 1 if libgcc __register_frame and __deregister_frame are linkable.
    */
 #undef _Py_HAVE_LIBGCC_EH_FRAME_REGISTRATION
-
-/* Define if you have the 'PR_SET_VMA_ANON_NAME' constant. */
-#undef _Py_HAVE_PR_SET_VMA_ANON_NAME
 
 /* Define if you have the 'sinpi' function. */
 #undef _Py_HAVE_SINPI
