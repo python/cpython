@@ -54,7 +54,7 @@ interpreted as prescribed by the ISO 8601 standard.  Year 0 is 1 BC, year -1 is
 
    .. method:: setfirstweekday(firstweekday)
 
-      Set the first weekday to *firstweekday*, passed as an :class:`int` (0--6)
+      Set the first weekday to *firstweekday*, passed as an :class:`int` (0--6).
 
       Identical to setting the :attr:`~Calendar.firstweekday` property.
 
