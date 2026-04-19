@@ -1543,8 +1543,8 @@ class GCTogglingTests(unittest.TestCase):
         assert not detector.gc_happened
         while not detector.gc_happened:
             i += 1
-            if i > 100000:
-                self.fail("gc didn't happen after 100000 iterations")
+            if i > 10000:
+                self.fail("gc didn't happen after 10000 iterations")
             self.assertEqual(len(ouch), 0)
             junk.append([])  # this will eventually trigger gc
 
@@ -1616,8 +1616,8 @@ class GCTogglingTests(unittest.TestCase):
             gc.collect()
         while not detector.gc_happened:
             i += 1
-            if i > 50000:
-                self.fail("gc didn't happen after 50000 iterations")
+            if i > 10000:
+                self.fail("gc didn't happen after 10000 iterations")
             self.assertEqual(len(ouch), 0)
             junk.append([])  # this will eventually trigger gc
 
@@ -1634,8 +1634,8 @@ class GCTogglingTests(unittest.TestCase):
         detector = GC_Detector()
         while not detector.gc_happened:
             i += 1
-            if i > 100000:
-                self.fail("gc didn't happen after 100000 iterations")
+            if i > 10000:
+                self.fail("gc didn't happen after 10000 iterations")
             junk.append([])  # this will eventually trigger gc
 
         try:
@@ -1645,11 +1645,11 @@ class GCTogglingTests(unittest.TestCase):
             detector = GC_Detector()
             while not detector.gc_happened:
                 i += 1
-                if i > 100000:
+                if i > 10000:
                     break
                 junk.append([])  # this may eventually trigger gc (if it is enabled)
 
-            self.assertEqual(i, 100001)
+            self.assertEqual(i, 10001)
         finally:
             gc.enable()
 
