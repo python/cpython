@@ -2899,12 +2899,12 @@ PyGILState_Check(void)
     return (tstate == tcur);
 }
 
-static PyInterpreterGuard
+static PyInterpreterGuard *
 get_main_interp_guard(void)
 {
-    PyInterpreterView view = PyUnstable_InterpreterView_FromDefault();
-    if (view == 0) {
-        return 0;
+    PyInterpreterView *view = PyInterpreterView_FromMain();
+    if (view == NULL) {
+        return NULL;
     }
 
     return PyInterpreterGuard_FromView(view);
@@ -2922,15 +2922,14 @@ PyGILState_Ensure(void)
     int has_gil;
     if (tcur == NULL) {
         /* Create a new Python thread state for this thread */
-        // XXX Use PyInterpreterState_EnsureThreadState()?
-        PyInterpreterGuard guard = get_main_interp_guard();
-        if (guard == 0) {
+        PyInterpreterGuard *guard = get_main_interp_guard();
+        if (guard == NULL) {
             // The main interpreter has finished, so we don't have
             // any intepreter to make a thread state for. Hang the
             // thread to act as failure.
             PyThread_hang_thread();
         }
-        tcur = new_threadstate(PyInterpreterGuard_GetInterpreter(guard),
+        tcur = new_threadstate(guard->interp,
                                _PyThreadState_WHENCE_GILSTATE);
         if (tcur == NULL) {
             Py_FatalError("Couldn't create thread-state for new thread");
@@ -2943,7 +2942,7 @@ PyGILState_Ensure(void)
         assert(tcur->gilstate_counter == 1);
         tcur->gilstate_counter = 0;
         has_gil = 0; /* new thread state is never current */
-        PyInterpreterGuard_Release(guard);
+        PyInterpreterGuard_Close(guard);
     }
     else {
         has_gil = holds_gil(tcur);
@@ -3331,130 +3330,96 @@ Py_ssize_t
 _PyInterpreterState_GuardCountdown(PyInterpreterState *interp)
 {
     assert(interp != NULL);
-    return _Py_atomic_load_ssize_relaxed(&interp->finalization_guards.countdown);
+    Py_ssize_t count = _Py_atomic_load_ssize_relaxed(&interp->finalization_guards.countdown);
+    assert(count >= 0);
+    return count;
 }
 
-static PyInterpreterGuard
+PyInterpreterState *
+_PyInterpreterGuard_GetInterpreter(PyInterpreterGuard *guard)
+{
+    assert(guard != NULL);
+    assert(guard->interp != NULL);
+    return guard->interp;
+}
+
+static PyInterpreterGuard *
 try_acquire_interp_guard(PyInterpreterState *interp)
 {
+    assert(interp != NULL);
     _PyRWMutex_RLock(&interp->finalization_guards.lock);
     if (_PyInterpreterState_GetFinalizing(interp) != NULL) {
         _PyRWMutex_RUnlock(&interp->finalization_guards.lock);
-        return (PyInterpreterGuard)interp;
+        assert(_Py_atomic_load_ssize_relaxed(&interp->finalization_guards.countdown) == 0);
+        return NULL;
     }
     _Py_atomic_add_ssize(&interp->finalization_guards.countdown, 1);
     _PyRWMutex_RUnlock(&interp->finalization_guards.lock);
-    return (PyInterpreterGuard)interp;
+    return (PyInterpreterGuard *)interp;
 }
 
-static PyInterpreterState *
-guard_as_interp(PyInterpreterGuard guard)
-{
-    PyInterpreterState *interp = (PyInterpreterState *)guard;
-    if (interp == NULL) {
-        Py_FatalError("Got a null interpreter guard");
-    }
-
-    return interp;
-}
-
-PyInterpreterGuard
+PyInterpreterGuard *
 PyInterpreterGuard_FromCurrent(void)
 {
-    PyInterpreterState *interp = PyInterpreterState_Get();
-    PyInterpreterGuard guard = try_acquire_interp_guard(interp);
-    if (guard == 0) {
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    assert(interp != NULL);
+    PyInterpreterGuard *guard = try_acquire_interp_guard(interp);
+    if (guard == NULL) {
         PyErr_SetString(PyExc_PythonFinalizationError,
-                        "cannot acquire finalization lock anymore");
-        return 0;
+                        "cannot acquire finalization guard anymore");
+        return NULL;
     }
     return guard;
 }
 
-PyInterpreterGuard
-PyInterpreterGuard_Copy(PyInterpreterGuard guard)
-{
-    PyInterpreterState *interp = guard_as_interp(guard);
-    PyInterpreterGuard new_guard = try_acquire_interp_guard(interp);
-    // We already hold a guard, so it shouldn't be possible
-    // for the interpreter to be at a point where guards don't work anymore
-    assert(new_guard != 0);
-    return new_guard;
-}
-
-#undef PyInterpreterGuard_Release
 void
-PyInterpreterGuard_Release(PyInterpreterGuard guard)
+PyInterpreterGuard_Close(PyInterpreterGuard *guard)
 {
-    PyInterpreterState *interp = guard_as_interp(guard);
+    PyInterpreterState *interp = guard->interp;
     assert(interp != NULL);
     _PyRWMutex_RLock(&interp->finalization_guards.lock);
     Py_ssize_t old = _Py_atomic_add_ssize(&interp->finalization_guards.countdown, -1);
     _PyRWMutex_RUnlock(&interp->finalization_guards.lock);
+    assert(old > 0);
     if (old <= 0) {
         Py_FatalError("interpreter has negative guard count, likely due"
-                      " to an extra PyInterpreterGuard_Release() call");
+                      " to an extra PyInterpreterGuard_Close() call");
     }
 }
 
-PyInterpreterState *
-PyInterpreterGuard_GetInterpreter(PyInterpreterGuard guard)
-{
-    PyInterpreterState *interp = guard_as_interp(guard);
-    return interp;
-}
-
-PyInterpreterView
+PyInterpreterView *
 PyInterpreterView_FromCurrent(void)
 {
-    PyInterpreterState *interp = PyInterpreterState_Get();
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    assert(interp != NULL);
     /* PyInterpreterView_Close() can be called without an attached thread
        state, so we have to use the raw allocator. */
-    _PyInterpreterView *view = PyMem_RawMalloc(sizeof(_PyInterpreterView));
+    PyInterpreterView *view = PyMem_RawMalloc(sizeof(PyInterpreterView));
     if (view == NULL) {
         PyErr_NoMemory();
-        return -1;
+        return NULL;
     }
     view->refcount = 1;
     view->id = interp->id;
-    return (PyInterpreterView)view;
-}
-
-static _PyInterpreterView *
-view_as_ptr(PyInterpreterView view_handle)
-{
-    _PyInterpreterView *view = (_PyInterpreterView *)view_handle;
-    if (view == NULL) {
-        Py_FatalError("Got a null interpreter view, likely due to use after "
-                      "PyInterpreterView_Close()");
-    }
-
     return view;
 }
 
-PyInterpreterView
-PyInterpreterView_Copy(PyInterpreterView view_handle)
-{
-    _PyInterpreterView *view = view_as_ptr(view_handle);
-    ++view->refcount;
-    return view_handle;
-}
-
-#undef PyInterpreterView_Close
 void
-PyInterpreterView_Close(PyInterpreterView view_handle)
+PyInterpreterView_Close(PyInterpreterView *view)
 {
-    _PyInterpreterView *view = view_as_ptr(view_handle);
+    assert(view != NULL);
+    assert(view->refcount > 0);
     if (--view->refcount == 0) {
         PyMem_RawFree(view);
     }
 }
 
-PyInterpreterGuard
-PyInterpreterGuard_FromView(PyInterpreterView view_handle)
+PyInterpreterGuard *
+PyInterpreterGuard_FromView(PyInterpreterView *view)
 {
-    _PyInterpreterView *view = view_as_ptr(view_handle);
+    assert(view != NULL);
     int64_t interp_id = view->id;
+    assert(interp_id >= 0);
     /* Interpreters cannot be deleted while we hold the runtime lock. */
     _PyRuntimeState *runtime = &_PyRuntime;
     HEAD_LOCK(runtime);
@@ -3464,38 +3429,41 @@ PyInterpreterGuard_FromView(PyInterpreterView view_handle)
         return 0;
     }
 
-    PyInterpreterGuard guard = try_acquire_interp_guard(interp);
+    PyInterpreterGuard *guard = try_acquire_interp_guard(interp);
     HEAD_UNLOCK(runtime);
     return guard;
 }
 
-PyInterpreterView
-PyUnstable_InterpreterView_FromDefault(void)
+PyInterpreterView *
+PyInterpreterView_FromMain(void)
 {
-    _PyRuntimeState *runtime = &_PyRuntime;
-    _PyInterpreterView *view = PyMem_RawMalloc(sizeof(_PyInterpreterView));
-
+    PyInterpreterView *view = PyMem_RawMalloc(sizeof(PyInterpreterView));
     if (view == NULL) {
-        return 0;
+        return NULL;
     }
 
+    _PyRuntimeState *runtime = &_PyRuntime;
     HEAD_LOCK(runtime);
     view->id = runtime->_main_interpreter.id;
     view->refcount = 1;
     HEAD_UNLOCK(runtime);
 
-    return (PyInterpreterView)view;
+    return view;
 }
 
-// This is a bit of a hack -- since 0 is reserved for failure, we need
+// This is a bit of a hack -- since NULL is reserved for failure, we need
 // to have our own sentinel for when we want to indicate that no prior
 // thread state was attached.
+// To do this, we just use the memory address of a global variable and
+// cast it to a PyThreadState *.
 static int NO_TSTATE_SENTINEL = 0;
 
 PyThreadState *
-PyThreadState_Ensure(PyInterpreterGuard guard)
+PyThreadState_Ensure(PyInterpreterGuard *guard)
 {
-    PyInterpreterState *interp = guard_as_interp(guard);
+    assert(guard != NULL);
+    PyInterpreterState *interp = guard->interp;
+    assert(interp != NULL);
     PyThreadState *attached_tstate = current_fast_get();
     if (attached_tstate != NULL && attached_tstate->interp == interp) {
         /* Yay! We already have an attached thread state that matches. */
@@ -3515,13 +3483,13 @@ PyThreadState_Ensure(PyInterpreterGuard guard)
     PyThreadState *fresh_tstate = _PyThreadState_NewBound(interp,
                                                           _PyThreadState_WHENCE_GILSTATE);
     if (fresh_tstate == NULL) {
-        return 0;
+        return NULL;
     }
     fresh_tstate->ensure.counter = 1;
     fresh_tstate->ensure.delete_on_release = 1;
 
     if (attached_tstate != NULL) {
-        return (PyThreadState *)PyThreadState_Swap(fresh_tstate);
+        return PyThreadState_Swap(fresh_tstate);
     } else {
         _PyThreadState_Attach(fresh_tstate);
     }
@@ -3530,7 +3498,7 @@ PyThreadState_Ensure(PyInterpreterGuard guard)
 }
 
 void
-PyThreadState_Release(PyThreadState * thread_view)
+PyThreadState_Release(PyThreadState *old_tstate)
 {
     PyThreadState *tstate = current_fast_get();
     _Py_EnsureTstateNotNULL(tstate);
@@ -3540,11 +3508,11 @@ PyThreadState_Release(PyThreadState * thread_view)
     }
     // The thread view might be NULL
     PyThreadState *to_restore;
-    if (thread_view == (PyThreadState *)&NO_TSTATE_SENTINEL) {
+    if (old_tstate == (PyThreadState *)&NO_TSTATE_SENTINEL) {
         to_restore = NULL;
     }
     else {
-        to_restore = (PyThreadState *)thread_view;
+        to_restore = old_tstate;
     }
     if (remaining == 0) {
         if (tstate->ensure.delete_on_release) {
