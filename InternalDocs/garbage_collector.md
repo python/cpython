@@ -373,8 +373,8 @@ it will be moved to the last generation (generation 2) where it will be
 surveyed the least often.
 
 > [!NOTE]
-> The GC implementation for the free-threaded build does not use incremental collection.
-> Every collection operates on the entire heap.
+> The GC implementation for the free-threaded build does not use generational
+> collection. Every collection operates on the entire heap.
 
 
 In order to decide when to run, the collector keeps track of the number of object
