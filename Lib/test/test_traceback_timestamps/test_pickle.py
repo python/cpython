@@ -110,7 +110,7 @@ class BuiltinExceptionPickleTests(unittest.TestCase):
         for exc_name in EXCEPTION_TYPES:
             with self.subTest(exc_name):
                 result = script_helper.assert_python_ok(
-                    "-X", "traceback_timestamps=us",
+                    "-X", "traceback_timestamps=ns",
                     "-c", PICKLE_SCRIPT, exc_name, "ts",
                 )
                 output = json.loads(result.out)
@@ -137,7 +137,7 @@ class UserExceptionPickleTests(unittest.TestCase):
 
     def test_user_exceptions_with_timestamps(self):
         result = script_helper.assert_python_ok(
-            "-X", "traceback_timestamps=us",
+            "-X", "traceback_timestamps=ns",
             "-c", USER_PICKLE_SCRIPT, "ts",
         )
         results = json.loads(result.out)

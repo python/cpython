@@ -273,7 +273,7 @@ def _exception_traceback(exc_info):
     # Get a traceback message.
     excout = StringIO()
     exc_type, exc_val, exc_tb = exc_info
-    traceback.print_exception(exc_type, exc_val, exc_tb, file=excout, no_timestamp=True)
+    traceback.print_exception(exc_type, exc_val, exc_tb, file=excout, timestamps=False)
     return excout.getvalue()
 
 # Override some StringIO methods.
@@ -1449,7 +1449,7 @@ class DocTestRunner:
 
             # The example raised an exception:  check if it was expected.
             else:
-                formatted_ex = traceback.format_exception_only(*exc_info[:2], no_timestamp=True)
+                formatted_ex = traceback.format_exception_only(*exc_info[:2], timestamps=False)
                 if issubclass(exc_info[0], SyntaxError):
                     # SyntaxError / IndentationError is special:
                     # we don't care about the carets / suggestions / etc

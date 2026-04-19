@@ -79,7 +79,7 @@ Module-Level Functions
 
 
 .. function:: print_exception(exc, /[, value, tb], limit=None, \
-                          file=None, chain=True, \*, no_timestamp=False)
+                          file=None, chain=True, \*, timestamps=None)
 
    Print exception information and stack trace entries from
    :ref:`traceback object <traceback-objects>`
@@ -108,11 +108,14 @@ Module-Level Functions
    printed as well, like the interpreter itself does when printing an unhandled
    exception.
 
-   If *no_timestamp* is ``True`` and a traceback timestamp format is enabled via the
-   :envvar:`PYTHON_TRACEBACK_TIMESTAMPS` environment variable or the
-   :option:`-X traceback_timestamps <-X>` option, any timestamp after the exception
-   message will be omitted. This is useful for tests or other situations where
-   you need consistent output regardless of when exceptions occur.
+   The *timestamps* argument controls whether the
+   :attr:`~BaseException.__timestamp_ns__` of each exception is appended after
+   its message.  When ``None`` (the default), the global configuration set by
+   :envvar:`PYTHON_TRACEBACK_TIMESTAMPS` or
+   :option:`-X traceback_timestamps <-X>` is followed.  When ``False``,
+   timestamps are never shown.  When ``True``, any non-zero
+   ``__timestamp_ns__`` is shown regardless of the global configuration, using
+   the configured format if one is set and the ``ns`` format otherwise.
 
    .. versionchanged:: 3.5
       The *etype* argument is ignored and inferred from the type of *value*.
@@ -122,7 +125,7 @@ Module-Level Functions
       positional-only.
 
    .. versionchanged:: next
-      The *no_timestamp* keyword only argument was added.
+      The *timestamps* keyword-only argument was added.
 
 
 .. function:: print_exc(limit=None, file=None, chain=True)
@@ -191,7 +194,7 @@ Module-Level Functions
 
 
 .. function:: format_exception_only(exc, /[, value], \*, show_group=False, \
-                    no_timestamp=False)
+                    timestamps=None)
 
    Format the exception part of a traceback using an exception value such as
    given by :data:`sys.last_value`.  The return value is a list of strings, each
@@ -209,11 +212,8 @@ Module-Level Functions
    :exc:`BaseExceptionGroup`, the nested exceptions are included as
    well, recursively, with indentation relative to their nesting depth.
 
-   If *no_timestamp* is ``True`` and a traceback timestamp formatting is enabled
-   via the :envvar:`PYTHON_TRACEBACK_TIMESTAMPS` environment variable or the
-   :option:`-X traceback_timestamps <-X>` command line option, any timestamp
-   after the exception message will be omitted. This is useful for tests or
-   other situations where you need canonical output.
+   The *timestamps* argument has the same meaning as for
+   :func:`print_exception`.
 
    .. versionchanged:: 3.10
       The *etype* parameter has been renamed to *exc* and is now
@@ -227,11 +227,11 @@ Module-Level Functions
       *show_group* parameter was added.
 
    .. versionchanged:: next
-      The *no_timestamp* keyword only argument was added.
+      The *timestamps* keyword-only argument was added.
 
 
 .. function:: format_exception(exc, /[, value, tb], limit=None, chain=True, \
-                 \*, no_timestamp=False)
+                 \*, timestamps=None)
 
    Format a stack trace and the exception information.  The arguments  have the
    same meaning as the corresponding arguments to :func:`print_exception`.  The
@@ -239,12 +239,8 @@ Module-Level Functions
    containing internal newlines.  When these lines are concatenated and printed,
    exactly the same text is printed as does :func:`print_exception`.
 
-   If *no_timestamp* is ``True`` and a traceback timestamp formatting is enabled
-   via the :envvar:`PYTHON_TRACEBACK_TIMESTAMPS` environment variable or the
-   :option:`-X traceback_timestamps <-X>` command line option, any timestamp
-   after the exception message will be omitted. This is useful for tests or
-   other situations where you need consistent output regardless of when
-   exceptions occur.
+   The *timestamps* argument has the same meaning as for
+   :func:`print_exception`.
 
    .. versionchanged:: 3.5
       The *etype* argument is ignored and inferred from the type of *value*.
@@ -254,7 +250,7 @@ Module-Level Functions
       :func:`print_exception`.
 
    .. versionchanged:: next
-      The *no_timestamp* keyword only argument was added.
+      The *timestamps* keyword-only argument was added.
 
 
 .. function:: format_exc(limit=None, chain=True)
@@ -329,7 +325,7 @@ storing this information by avoiding holding references to
 In addition, they expose more options to configure the output compared to
 the module-level functions described above.
 
-.. class:: TracebackException(exc_type, exc_value, exc_traceback, \*, limit=None, lookup_lines=True, capture_locals=False, compact=False, max_group_width=15, max_group_depth=10, no_timestamp=False)
+.. class:: TracebackException(exc_type, exc_value, exc_traceback, \*, limit=None, lookup_lines=True, capture_locals=False, compact=False, max_group_width=15, max_group_depth=10, timestamps=None)
 
    Capture an exception for later rendering. The meaning of *limit*,
    *lookup_lines* and *capture_locals* are as for the :class:`StackSummary`
@@ -349,9 +345,13 @@ the module-level functions described above.
    group's exceptions array. The formatted output is truncated when either
    limit is exceeded.
 
-   If *no_timestamp* is ``True`` the ``__timestamp_ns__`` attribute from the
-   exception will not be rendered when formatting this
-   :class:`!TracebackException`.
+   The *timestamps* argument controls whether each exception's
+   :attr:`~BaseException.__timestamp_ns__` is captured for later rendering.
+   When ``None`` (the default), the global configuration set by
+   :envvar:`PYTHON_TRACEBACK_TIMESTAMPS` or
+   :option:`-X traceback_timestamps <-X>` is followed.  When ``False``,
+   timestamps are never shown.  When ``True``, any non-zero
+   ``__timestamp_ns__`` is shown regardless of the global configuration.
 
    .. versionchanged:: 3.10
       Added the *compact* parameter.
@@ -360,7 +360,7 @@ the module-level functions described above.
       Added the *max_group_width* and *max_group_depth* parameters.
 
    .. versionchanged:: next
-      Added the *no_timestamp* parameter.
+      Added the *timestamps* parameter.
 
    .. attribute:: __cause__
 

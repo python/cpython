@@ -655,7 +655,7 @@ always available. Unless explicitly noted otherwise, all variables are read-only
       * - .. attribute:: flags.traceback_timestamps
         - :option:`-X traceback_timestamps <-X>` and
           :envvar:`PYTHON_TRACEBACK_TIMESTAMPS`.  This is a string containing
-          the selected format (``us``, ``ns``, ``iso``),  or an empty string
+          the selected format (``ns`` or ``iso``), or an empty string
           when disabled.
 
    .. versionchanged:: 3.2

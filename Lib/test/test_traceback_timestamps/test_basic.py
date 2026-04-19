@@ -1,10 +1,17 @@
 """Tests for traceback timestamps configuration, output format, and utilities."""
 
 import re
+import textwrap
+import traceback
 import unittest
 from traceback import TIMESTAMP_AFTER_EXC_MSG_RE_GROUP
 
-from test.support import force_not_colorized, script_helper
+from test.support import (
+    force_not_colorized,
+    no_traceback_timestamps,
+    script_helper,
+    swap_attr,
+)
 
 
 # Script that raises an exception and prints the traceback.
@@ -32,7 +39,7 @@ class ConfigurationTests(unittest.TestCase):
 
     def test_env_var_enables(self):
         result = script_helper.assert_python_ok(
-            "-c", RAISE_SCRIPT, PYTHON_TRACEBACK_TIMESTAMPS="us"
+            "-c", RAISE_SCRIPT, PYTHON_TRACEBACK_TIMESTAMPS="ns"
         )
         self.assertIn(b"<@", result.err)
 
@@ -44,23 +51,22 @@ class ConfigurationTests(unittest.TestCase):
         )
         self.assertEqual(result.out.strip(), b"'ns'")
 
-    def test_flag_no_value_defaults_to_us(self):
+    def test_flag_no_value_defaults_to_ns(self):
         result = script_helper.assert_python_ok(
             "-X", "traceback_timestamps", "-c", FLAGS_SCRIPT
         )
-        self.assertEqual(result.out.strip(), b"'us'")
+        self.assertEqual(result.out.strip(), b"'ns'")
 
     def test_flag_values(self):
         """Test sys.flags reflects configured value for each valid option."""
         cases = [
             ([], {}, b"''"),                           # default
-            (["-X", "traceback_timestamps=us"], {}, b"'us'"),
             (["-X", "traceback_timestamps=ns"], {}, b"'ns'"),
             (["-X", "traceback_timestamps=iso"], {}, b"'iso'"),
-            (["-X", "traceback_timestamps=1"], {}, b"'us'"),
+            (["-X", "traceback_timestamps=1"], {}, b"'ns'"),
             (["-X", "traceback_timestamps=0"], {}, b"''"),
-            ([], {"PYTHON_TRACEBACK_TIMESTAMPS": "us"}, b"'us'"),
-            ([], {"PYTHON_TRACEBACK_TIMESTAMPS": "1"}, b"'us'"),
+            ([], {"PYTHON_TRACEBACK_TIMESTAMPS": "ns"}, b"'ns'"),
+            ([], {"PYTHON_TRACEBACK_TIMESTAMPS": "1"}, b"'ns'"),
             ([], {"PYTHON_TRACEBACK_TIMESTAMPS": "0"}, b"''"),
         ]
         for args, env, expected in cases:
@@ -90,19 +96,29 @@ class ConfigurationTests(unittest.TestCase):
 
 
 class FormatTests(unittest.TestCase):
-    """Test the three timestamp output formats."""
-
-    def test_us_format(self):
-        result = script_helper.assert_python_ok(
-            "-X", "traceback_timestamps=us", "-c", RAISE_SCRIPT
-        )
-        self.assertRegex(result.err, rb"<@\d+\.\d{6}>")
+    """Test the timestamp output formats."""
 
     def test_ns_format(self):
         result = script_helper.assert_python_ok(
             "-X", "traceback_timestamps=ns", "-c", RAISE_SCRIPT
         )
-        self.assertRegex(result.err, rb"<@\d+ns>")
+        self.assertRegex(result.err, rb"<@\d+\.\d{9}>")
+
+    def test_ns_format_exact(self):
+        # Integer divmod must preserve all digits; float division would not.
+        self.assertEqual(traceback._format_ns(1_776_017_178_687_320_256),
+                         "<@1776017178.687320256>")
+        self.assertEqual(traceback._format_ns(123), "<@0.000000123>")
+
+    def test_iso_format_exact(self):
+        self.assertEqual(traceback._format_iso(1_776_017_178_687_320_256),
+                         "<@2026-04-12T18:06:18.687320Z>")
+
+    def test_us_format_removed(self):
+        result = script_helper.assert_python_failure(
+            "-X", "traceback_timestamps=us", "-c", FLAGS_SCRIPT
+        )
+        self.assertIn(b"Invalid -X traceback_timestamps", result.err)
 
     def test_iso_format(self):
         result = script_helper.assert_python_ok(
@@ -136,7 +152,7 @@ except BaseException as e:
         for exc_name in ("ValueError", "OSError", "RuntimeError", "KeyError"):
             with self.subTest(exc_name):
                 result = script_helper.assert_python_ok(
-                    "-X", "traceback_timestamps=us",
+                    "-X", "traceback_timestamps=ns",
                     "-c", self.PRESENCE_SCRIPT, exc_name,
                 )
                 import json
@@ -144,11 +160,30 @@ except BaseException as e:
                 self.assertGreater(output["ts"], 0,
                                    f"{exc_name} should have a positive timestamp")
 
+    def test_memoryerror_freelist_stamped_on_reuse(self):
+        # MemoryError instances recycled from the interpreter free list must
+        # get a fresh timestamp at the time they are handed out, not retain a
+        # stale one from a prior occupant of the slot nor report 0.
+        script = textwrap.dedent("""
+            e = MemoryError()
+            old_ts = e.__timestamp_ns__
+            del e
+            # __new__ alone exercises the freelist path without __init__.
+            e2 = MemoryError.__new__(MemoryError)
+            assert e2.__timestamp_ns__ > 0, e2.__timestamp_ns__
+            assert e2.__timestamp_ns__ != old_ts
+            print("ok")
+        """)
+        result = script_helper.assert_python_ok(
+            "-X", "traceback_timestamps=ns", "-c", script,
+        )
+        self.assertEqual(result.out.strip(), b"ok")
+
     def test_stop_iteration_excluded(self):
         for exc_name in ("StopIteration", "StopAsyncIteration"):
             with self.subTest(exc_name):
                 result = script_helper.assert_python_ok(
-                    "-X", "traceback_timestamps=us",
+                    "-X", "traceback_timestamps=ns",
                     "-c", self.PRESENCE_SCRIPT, exc_name,
                 )
                 import json
@@ -186,7 +221,7 @@ sys.stdout.write(raw + "---MARKER---\\n" + stripped)
 
     @force_not_colorized
     def test_strip_removes_timestamps(self):
-        for mode in ("us", "ns", "iso"):
+        for mode in ("ns", "iso"):
             with self.subTest(mode=mode):
                 result = script_helper.assert_python_ok(
                     "-X", f"traceback_timestamps={mode}",
@@ -212,13 +247,96 @@ sys.stdout.write(raw + "---MARKER---\\n" + stripped)
     def test_timestamp_regex_pattern(self):
         pattern = re.compile(TIMESTAMP_AFTER_EXC_MSG_RE_GROUP, re.MULTILINE)
         # Should match valid formats
-        self.assertTrue(pattern.search(" <@1234567890.123456>"))
-        self.assertTrue(pattern.search(" <@1234567890123456789ns>"))
+        self.assertTrue(pattern.search(" <@1234567890.123456789>"))
+        self.assertTrue(pattern.search(" <@0.000000001>"))
         self.assertTrue(pattern.search(" <@2023-04-13T12:34:56.789012Z>"))
         # Should not match invalid formats
         self.assertFalse(pattern.search("<@>"))
         self.assertFalse(pattern.search(" <1234567890.123456>"))
         self.assertFalse(pattern.search("<@abc>"))
+
+
+class TimestampsParameterTests(unittest.TestCase):
+    """Test the timestamps= tri-state parameter on the formatting APIs."""
+
+    def setUp(self):
+        try:
+            raise ValueError("boom")
+        except ValueError as e:
+            self.exc = e
+        # Guarantee a known non-zero value regardless of how the test
+        # process itself was launched.
+        self.exc.__timestamp_ns__ = 1_234_567_890_123_456_789
+
+    def test_timestamps_false_suppresses(self):
+        out = "".join(traceback.format_exception(self.exc, timestamps=False))
+        self.assertNotIn("<@", out)
+
+    def test_timestamps_true_forces_display(self):
+        # Even with the global config off, timestamps=True must render any
+        # non-zero __timestamp_ns__ using the ns format as a fallback.
+        with no_traceback_timestamps():
+            out = "".join(traceback.format_exception(self.exc, timestamps=True))
+        self.assertIn("<@1234567890.123456789>", out)
+
+    def test_timestamps_true_zero_value_hidden(self):
+        self.exc.__timestamp_ns__ = 0
+        out = "".join(traceback.format_exception(self.exc, timestamps=True))
+        self.assertNotIn("<@", out)
+
+    def test_timestamps_none_follows_global_off(self):
+        with no_traceback_timestamps():
+            out = "".join(traceback.format_exception(self.exc, timestamps=None))
+        self.assertNotIn("<@", out)
+
+    def test_timestamps_none_follows_global_on(self):
+        with (
+            swap_attr(traceback, "_TIMESTAMP_FORMAT", "ns"),
+            swap_attr(traceback, "_timestamp_formatter", traceback._format_ns),
+        ):
+            out = "".join(traceback.format_exception(self.exc, timestamps=None))
+        self.assertIn("<@1234567890.123456789>", out)
+
+    def test_timestamps_propagates_to_cause(self):
+        try:
+            raise RuntimeError("outer") from self.exc
+        except RuntimeError as e:
+            outer = e
+        outer.__timestamp_ns__ = 2_000_000_000_000_000_000
+        out = "".join(traceback.format_exception(outer, timestamps=True))
+        self.assertIn("<@1234567890.123456789>", out)
+        self.assertIn("<@2000000000.000000000>", out)
+        out = "".join(traceback.format_exception(outer, timestamps=False))
+        self.assertNotIn("<@", out)
+
+    def test_timestamps_propagates_to_context(self):
+        try:
+            try:
+                raise self.exc
+            except ValueError:
+                raise RuntimeError("outer")
+        except RuntimeError as e:
+            outer = e
+        outer.__timestamp_ns__ = 2_000_000_000_000_000_000
+        out = "".join(traceback.format_exception(outer, timestamps=True))
+        self.assertIn("<@1234567890.123456789>", out)
+        self.assertIn("<@2000000000.000000000>", out)
+        out = "".join(traceback.format_exception(outer, timestamps=False))
+        self.assertNotIn("<@", out)
+
+    def test_timestamps_propagates_to_exception_group(self):
+        e1 = ValueError("a")
+        e1.__timestamp_ns__ = 1_111_111_111_111_111_111
+        e2 = TypeError("b")
+        e2.__timestamp_ns__ = 2_222_222_222_222_222_222
+        eg = ExceptionGroup("grp", [e1, e2])
+        eg.__timestamp_ns__ = 3_333_333_333_333_333_333
+        out = "".join(traceback.format_exception(eg, timestamps=True))
+        self.assertIn("<@1111111111.111111111>", out)
+        self.assertIn("<@2222222222.222222222>", out)
+        self.assertIn("<@3333333333.333333333>", out)
+        out = "".join(traceback.format_exception(eg, timestamps=False))
+        self.assertNotIn("<@", out)
 
 
 if __name__ == "__main__":

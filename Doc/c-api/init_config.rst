@@ -1905,9 +1905,9 @@ PyConfig
       If not ``NULL`` or an empty string, timestamps of exceptions are collected
       and will be displayed in the configured format. Acceptable values are:
 
-      * ``"us"``: Display timestamps in microseconds
-      * ``"ns"``: Display timestamps in nanoseconds
-      * ``"iso"``: Display timestamps in ISO-8601 format
+      * ``"ns"``: Display UTC seconds since the epoch with nanosecond resolution
+      * ``"iso"``: Display an ISO-8601 formatted UTC time with microsecond
+        resolution
       * ``""``: Collection and display is disabled.
 
       Set by the :option:`-X traceback_timestamps=FORMAT <-X>` command line

@@ -158,7 +158,7 @@ class TestInteractiveConsole(unittest.TestCase, MockSys):
         self.assertIs(self.sysmod.last_traceback, self.sysmod.last_value.__traceback__)
         self.assertIs(self.sysmod.last_exc, self.sysmod.last_value)
         self.assertEqual(
-            traceback.format_exception(self.sysmod.last_exc, no_timestamp=True),
+            traceback.format_exception(self.sysmod.last_exc, timestamps=False),
             [
             'Traceback (most recent call last):\n',
             '  File "<console>", line 1, in <module>\n',
@@ -183,7 +183,7 @@ class TestInteractiveConsole(unittest.TestCase, MockSys):
         self.assertIsNone(self.sysmod.last_value.__traceback__)
         self.assertIs(self.sysmod.last_exc, self.sysmod.last_value)
         self.assertEqual(
-            traceback.format_exception(self.sysmod.last_exc, no_timestamp=True),
+            traceback.format_exception(self.sysmod.last_exc, timestamps=False),
             [
             '  File "<console>", line 2\n',
             '    x = ?\n',
@@ -205,7 +205,7 @@ class TestInteractiveConsole(unittest.TestCase, MockSys):
         self.assertIsNone(self.sysmod.last_value.__traceback__)
         self.assertIs(self.sysmod.last_exc, self.sysmod.last_value)
         self.assertEqual(
-            traceback.format_exception(self.sysmod.last_exc, no_timestamp=True),
+            traceback.format_exception(self.sysmod.last_exc, timestamps=False),
             [
             '  File "<console>", line 1\n',
             '    1\n',

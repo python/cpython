@@ -713,12 +713,12 @@ Miscellaneous options
 
      .. versionadded:: 3.15
 
-   * :samp:`-X traceback_timestamps=[us|ns|iso|0|1]` enables or configures timestamp
+   * :samp:`-X traceback_timestamps=[ns|iso|0|1]` enables or configures timestamp
      display in exception tracebacks. When enabled, each exception's traceback
      will include a timestamp showing when the exception occurred. The format
-     options are: ``us`` (microseconds), ``ns``
-     (nanoseconds), ``iso`` (ISO-8601 formatted time), ``0`` (disable timestamps),
-     and ``1`` (equivalent to ``us``). See also :envvar:`PYTHON_TRACEBACK_TIMESTAMPS`.
+     options are: ``ns`` (seconds since the epoch with nanosecond resolution),
+     ``iso`` (ISO-8601 formatted UTC time), ``0`` (disable timestamps),
+     and ``1`` (equivalent to ``ns``). See also :envvar:`PYTHON_TRACEBACK_TIMESTAMPS`.
 
      .. versionadded:: next
 
@@ -1440,9 +1440,9 @@ conflict.
    by the runtime will be annotated with the timestamp of each exception.  The
    values control the format of the timestamp:
 
-   * ``us`` or ``1``: Prints decimal timestamps with microsecond precision.
-   * ``ns``: Prints the raw timestamp in nanoseconds.
-   * ``iso``: Prints the timestamp formatted by :meth:`~datetime.datetime.isoformat` (also microsecond precision).
+   * ``ns`` or ``1``: Prints UTC seconds since the epoch with nanosecond
+     resolution.
+   * ``iso``: Prints an ISO-8601 formatted UTC time with microsecond resolution.
    * ``0``: Explicitly disables timestamps.
 
    When unset, timestamps are disabled by default. The time is not recorded on

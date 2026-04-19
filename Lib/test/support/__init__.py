@@ -3039,17 +3039,15 @@ def no_traceback_timestamps():
 
     with (
         swap_attr(traceback, "_TIMESTAMP_FORMAT", ""),
+        # The C fallback display path in pythonrun.c gates on
+        # PyCallable_Check(_timestamp_formatter), so None is needed here in
+        # addition to the empty format string.
+        swap_attr(traceback, "_timestamp_formatter", None),
         EnvironmentVarGuard() as env,
     ):
         # This prevents it from being on in child processes.
         env.unset("PYTHON_TRACEBACK_TIMESTAMPS")
-        # Silence our other-path pythonrun.c print_exception_message().
-        tf = getattr(traceback, "_timestamp_formatter", "Nope!")
-        if tf != "Nope!":
-            del traceback._timestamp_formatter
         yield
-        if tf != "Nope!":
-            traceback._timestamp_formatter = tf
 
 
 def force_no_traceback_timestamps(func):

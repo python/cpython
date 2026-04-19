@@ -4216,11 +4216,17 @@ get_memory_error(int allow_allocation, PyObject *args, PyObject *kwds)
     MEMERRORS_UNLOCK(state);
 
     if (self != NULL) {
+        /* Record the time we hand it out, not the time the slot was
+         * preallocated.  Kept outside MEMERRORS_LOCK so the clock syscall
+         * cannot extend the critical section. */
+        BaseException_init_timestamp(self);
         return (PyObject *)self;
     }
 
     if (!allow_allocation) {
         PyInterpreterState *interp = _PyInterpreterState_GET();
+        /* The last-resort static singleton always reports timestamp_ns==0;
+         * it is shared so no single raise time would be meaningful. */
         return Py_NewRef(
             &_Py_INTERP_SINGLETON(interp, last_resort_memory_error));
     }
@@ -4270,6 +4276,7 @@ MemoryError_dealloc(PyObject *op)
     }
 
     struct _Py_exc_state *state = get_exc_state();
+    self->timestamp_ns = 0;  /* avoid leaking a stale value to the next reuse */
     MEMERRORS_LOCK(state);
     if (state->memerrors_numfree < MEMERRORS_SAVE) {
         self->dict = (PyObject *) state->memerrors_freelist;

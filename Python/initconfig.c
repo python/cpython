@@ -363,10 +363,10 @@ The following implementation-specific options are available:\n\
          PYTHON_TLBC\n"
 #endif
 "\
--X traceback_timestamps=[us|ns|iso|0|1]: display timestamp in tracebacks when\n\
-         exception occurs; \"us\" shows microseconds;\n\
-         \"ns\" shows raw nanoseconds; \"iso\" shows ISO-8601 format; \"0\" disables timestamps;\n\
-         \"1\" is equivalent to \"us\"; also PYTHON_TRACEBACK_TIMESTAMPS\n\
+-X traceback_timestamps=[ns|iso|0|1]: display timestamp in tracebacks when\n\
+         exception occurs; \"ns\" shows seconds since the epoch with\n\
+         nanosecond resolution; \"iso\" shows ISO-8601 format; \"0\" disables timestamps;\n\
+         \"1\" is equivalent to \"ns\"; also PYTHON_TRACEBACK_TIMESTAMPS\n\
 -X tracemalloc[=N]: trace Python memory allocations; N sets a traceback limit\n\
          of N frames (default: 1); also PYTHONTRACEMALLOC=N\n\
 -X utf8[=0|1]: enable (1) or disable (0) UTF-8 mode; also PYTHONUTF8\n\
@@ -2088,8 +2088,7 @@ config_init_tlbc(PyConfig *config)
 static inline int
 is_valid_timestamp_format(const wchar_t *value)
 {
-    return (wcscmp(value, L"us") == 0 ||
-            wcscmp(value, L"ns") == 0 ||
+    return (wcscmp(value, L"ns") == 0 ||
             wcscmp(value, L"iso") == 0 ||
             wcscmp(value, L"0") == 0 ||
             wcscmp(value, L"1") == 0);
@@ -2099,8 +2098,7 @@ static inline const wchar_t *
 normalize_timestamp_format(const wchar_t *value)
 {
     if (wcscmp(value, L"1") == 0) {
-        /* Treat "1" as "us" for backward compatibility */
-        return L"us";
+        return L"ns";
     }
     if (wcscmp(value, L"0") == 0) {
         /* "0" means disable the feature. */
@@ -2138,8 +2136,8 @@ config_init_traceback_timestamps(PyConfig *config)
     const wchar_t *xoption = config_get_xoption_value(
         config, L"traceback_timestamps");
     if (xoption != NULL) {
-        /* If just -X traceback_timestamps with no =, use "us" as default */
-        const wchar_t *value = (*xoption != '\0') ? xoption : L"us";
+        /* If just -X traceback_timestamps with no =, use "ns" as default */
+        const wchar_t *value = (*xoption != '\0') ? xoption : L"ns";
 
         /* Validate command line option values, error out if invalid */
         if (is_valid_timestamp_format(value)) {
@@ -2152,7 +2150,7 @@ config_init_traceback_timestamps(PyConfig *config)
         } else {
             return PyStatus_Error(
                 "Invalid -X traceback_timestamps=value option.  Valid "
-                "values are: us, ns, iso, 0, 1 or empty.");
+                "values are: ns, iso, 0, 1 or empty.");
         }
     }
 
