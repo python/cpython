@@ -183,7 +183,7 @@ gc_get_threshold_impl(PyObject *module)
     return Py_BuildValue("(iii)",
                          gcstate->young.threshold,
                          gcstate->old[0].threshold,
-                         0);
+                         gcstate->old[1].threshold);
 }
 
 /*[clinic input]
@@ -209,8 +209,8 @@ gc_get_count_impl(PyObject *module)
 
     return Py_BuildValue("(iii)",
                          gcstate->young.count,
-                         gcstate->old[gcstate->visited_space].count,
-                         gcstate->old[gcstate->visited_space^1].count);
+                         gcstate->old[0].count,
+                         gcstate->old[1].count);
 }
 
 /*[clinic input]
