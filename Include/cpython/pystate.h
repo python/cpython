@@ -239,6 +239,7 @@ struct _ts {
     // structure and all share the same per-interpreter structure).
     PyStats *pystats;
 #endif
+
     struct {
         /* Number of nested PyThreadState_Ensure() calls on this thread state */
         Py_ssize_t counter;
@@ -248,6 +249,9 @@ struct _ts {
 
            This is only true for thread states created by PyThreadState_Ensure() */
         int delete_on_release;
+
+        /* The interpreter guard owned by PyThreadState_EnsureFromView(), if any. */
+        PyInterpreterGuard *owned_guard;
     } ensure;
 };
 

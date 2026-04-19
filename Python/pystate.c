@@ -3348,11 +3348,13 @@ try_acquire_interp_guard(PyInterpreterState *interp)
 {
     assert(interp != NULL);
     _PyRWMutex_RLock(&interp->finalization_guards.lock);
+
     if (_PyInterpreterState_GetFinalizing(interp) != NULL) {
         _PyRWMutex_RUnlock(&interp->finalization_guards.lock);
         assert(_Py_atomic_load_ssize_relaxed(&interp->finalization_guards.countdown) == 0);
         return NULL;
     }
+
     _Py_atomic_add_ssize(&interp->finalization_guards.countdown, 1);
     _PyRWMutex_RUnlock(&interp->finalization_guards.lock);
     return (PyInterpreterGuard *)interp;
@@ -3363,12 +3365,14 @@ PyInterpreterGuard_FromCurrent(void)
 {
     PyInterpreterState *interp = _PyInterpreterState_GET();
     assert(interp != NULL);
+
     PyInterpreterGuard *guard = try_acquire_interp_guard(interp);
     if (guard == NULL) {
         PyErr_SetString(PyExc_PythonFinalizationError,
                         "cannot acquire finalization guard anymore");
         return NULL;
     }
+
     return guard;
 }
 
@@ -3377,9 +3381,11 @@ PyInterpreterGuard_Close(PyInterpreterGuard *guard)
 {
     PyInterpreterState *interp = guard->interp;
     assert(interp != NULL);
+
     _PyRWMutex_RLock(&interp->finalization_guards.lock);
     Py_ssize_t old = _Py_atomic_add_ssize(&interp->finalization_guards.countdown, -1);
     _PyRWMutex_RUnlock(&interp->finalization_guards.lock);
+
     assert(old > 0);
     if (old <= 0) {
         Py_FatalError("interpreter has negative guard count, likely due"
@@ -3392,13 +3398,15 @@ PyInterpreterView_FromCurrent(void)
 {
     PyInterpreterState *interp = _PyInterpreterState_GET();
     assert(interp != NULL);
-    /* PyInterpreterView_Close() can be called without an attached thread
-       state, so we have to use the raw allocator. */
+
+    // PyInterpreterView_Close() can be called without an attached thread
+    // state, so we have to use the raw allocator.
     PyInterpreterView *view = PyMem_RawMalloc(sizeof(PyInterpreterView));
     if (view == NULL) {
         PyErr_NoMemory();
         return NULL;
     }
+
     view->refcount = 1;
     view->id = interp->id;
     return view;
@@ -3420,7 +3428,8 @@ PyInterpreterGuard_FromView(PyInterpreterView *view)
     assert(view != NULL);
     int64_t interp_id = view->id;
     assert(interp_id >= 0);
-    /* Interpreters cannot be deleted while we hold the runtime lock. */
+
+    // Interpreters cannot be deleted while we hold the runtime lock.
     _PyRuntimeState *runtime = &_PyRuntime;
     HEAD_LOCK(runtime);
     PyInterpreterState *interp = interp_look_up_id(runtime, interp_id);
@@ -3497,6 +3506,31 @@ PyThreadState_Ensure(PyInterpreterGuard *guard)
     return (PyThreadState *)&NO_TSTATE_SENTINEL;
 }
 
+PyThreadState *
+PyThreadState_EnsureFromView(PyInterpreterView *view)
+{
+    assert(view != NULL);
+    PyInterpreterGuard *guard = PyInterpreterGuard_FromView(view);
+    if (guard == NULL) {
+        return NULL;
+    }
+
+    PyThreadState *tstate = PyThreadState_Ensure(guard);
+    if (tstate == NULL) {
+        PyInterpreterGuard_Close(guard);
+        return NULL;
+    }
+
+    if (tstate->ensure.owned_guard != NULL) {
+        assert(tstate->ensure.owned_guard->interp == guard->interp);
+        PyInterpreterGuard_Close(guard);
+    } else {
+        tstate->ensure.owned_guard = guard;
+    }
+
+    return tstate;
+}
+
 void
 PyThreadState_Release(PyThreadState *old_tstate)
 {
@@ -3506,7 +3540,11 @@ PyThreadState_Release(PyThreadState *old_tstate)
     if (remaining < 0) {
         Py_FatalError("PyThreadState_Release() called more times than PyThreadState_Ensure()");
     }
-    // The thread view might be NULL
+
+    if (remaining != 0) {
+        return;
+    }
+
     PyThreadState *to_restore;
     if (old_tstate == (PyThreadState *)&NO_TSTATE_SENTINEL) {
         to_restore = NULL;
@@ -3514,15 +3552,18 @@ PyThreadState_Release(PyThreadState *old_tstate)
     else {
         to_restore = old_tstate;
     }
-    if (remaining == 0) {
-        if (tstate->ensure.delete_on_release) {
-            PyThreadState_Clear(tstate);
-            PyThreadState_Swap(to_restore);
-            PyThreadState_Delete(tstate);
-        } else {
-            PyThreadState_Swap(to_restore);
-        }
+
+    assert(tstate->ensure.delete_on_release == 1 || tstate->ensure.delete_on_release == 0);
+    if (tstate->ensure.delete_on_release) {
+        PyThreadState_Clear(tstate);
+        PyThreadState_Swap(to_restore);
+        PyThreadState_Delete(tstate);
+    } else {
+        PyThreadState_Swap(to_restore);
     }
 
-    return;
+    if (tstate->ensure.owned_guard != NULL) {
+        PyInterpreterGuard_Close(tstate->ensure.owned_guard);
+        tstate->ensure.owned_guard = NULL;
+    }
 }
