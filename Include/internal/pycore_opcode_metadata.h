@@ -1438,7 +1438,7 @@ _PyOpcode_macro_expansion[256] = {
     [EXIT_INIT_CHECK] = { .nuops = 1, .uops = { { _EXIT_INIT_CHECK, OPARG_SIMPLE, 0 } } },
     [FORMAT_SIMPLE] = { .nuops = 1, .uops = { { _FORMAT_SIMPLE, OPARG_SIMPLE, 0 } } },
     [FORMAT_WITH_SPEC] = { .nuops = 1, .uops = { { _FORMAT_WITH_SPEC, OPARG_SIMPLE, 0 } } },
-    [FOR_ITER] = { .nuops = 2, .uops = { { _RECORD_NOS_TYPE, OPARG_SIMPLE, 0 }, { _FOR_ITER, OPARG_REPLACED, 0 } } },
+    [FOR_ITER] = { .nuops = 3, .uops = { { _RECORD_NOS_GEN_FUNC, OPARG_SIMPLE, 0 }, { _RECORD_NOS_TYPE, OPARG_SIMPLE, 0 }, { _FOR_ITER, OPARG_REPLACED, 0 } } },
     [FOR_ITER_GEN] = { .nuops = 4, .uops = { { _RECORD_NOS_GEN_FUNC, OPARG_SIMPLE, 0 }, { _CHECK_PEP_523, OPARG_SIMPLE, 1 }, { _FOR_ITER_GEN_FRAME, OPARG_SIMPLE, 1 }, { _PUSH_FRAME, OPARG_SIMPLE, 1 } } },
     [FOR_ITER_LIST] = { .nuops = 3, .uops = { { _ITER_CHECK_LIST, OPARG_SIMPLE, 1 }, { _ITER_JUMP_LIST, OPARG_REPLACED, 1 }, { _ITER_NEXT_LIST, OPARG_REPLACED, 1 } } },
     [FOR_ITER_RANGE] = { .nuops = 3, .uops = { { _ITER_CHECK_RANGE, OPARG_SIMPLE, 1 }, { _ITER_JUMP_RANGE, OPARG_REPLACED, 1 }, { _ITER_NEXT_RANGE, OPARG_SIMPLE, 1 } } },

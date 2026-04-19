@@ -3764,8 +3764,6 @@ dummy_func(
             next = item;
         }
 
-        macro(FOR_ITER) = _SPECIALIZE_FOR_ITER + _FOR_ITER;
-
         op(_FOR_ITER_TIER_TWO, (iter, null_or_index -- iter, null_or_index, next)) {
             _PyStackRef item = _PyForIter_VirtualIteratorNext(tstate, frame, iter, &null_or_index);
             if (!PyStackRef_IsValid(item)) {
@@ -3804,7 +3802,7 @@ dummy_func(
         }
 
 
-        macro(FOR_ITER) = _SPECIALIZE_FOR_ITER + _RECORD_NOS_TYPE + _FOR_ITER;
+        macro(FOR_ITER) = _SPECIALIZE_FOR_ITER + _RECORD_NOS_GEN_FUNC + _RECORD_NOS_TYPE + _FOR_ITER;
 
         op(_GUARD_NOS_ITER_VIRTUAL, (iter, null_or_index -- iter, null_or_index)) {
             PyObject *iter_o = PyStackRef_AsPyObjectBorrow(iter);
