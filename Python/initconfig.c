@@ -250,216 +250,321 @@ static void initconfig_free_config(const PyConfig *config);
 
 /* --- Command line options --------------------------------------- */
 
-/* Short usage message (with %s for argv0) */
+/* ANSI color codes matching the Argparse theme in Lib/_colorize.py */
+#define _COLOR_BOLD_BLUE    "\x1b[1;34m"
+#define _COLOR_BOLD_CYAN    "\x1b[1;36m"
+#define _COLOR_BOLD_GREEN   "\x1b[1;32m"
+#define _COLOR_BOLD_MAGENTA "\x1b[1;35m"
+#define _COLOR_BOLD_YELLOW  "\x1b[1;33m"
+#define _COLOR_CYAN         "\x1b[36m"
+#define _COLOR_GREEN        "\x1b[32m"
+#define _COLOR_MAGENTA      "\x1b[35m"
+#define _COLOR_RESET        "\x1b[0m"
+#define _COLOR_YELLOW       "\x1b[33m"
+
+/* Determine if we can emit ANSI color codes on the given stream.
+ * Logic mirrors Lib/_colorize.py:can_colorize(). */
+static int
+_Py_can_colorize(FILE *f)
+{
+    const char *env;
+
+    env = Py_GETENV("PYTHON_COLORS");
+    if (env) {
+        if (strcmp(env, "0") == 0) {
+            return 0;
+        }
+        if (strcmp(env, "1") == 0) {
+            return 1;
+        }
+    }
+    if (getenv("NO_COLOR")) {
+        return 0;
+    }
+    if (getenv("FORCE_COLOR")) {
+        return 1;
+    }
+    env = getenv("TERM");
+    if (env && strcmp(env, "dumb") == 0) {
+        return 0;
+    }
+#if defined(MS_WINDOWS) && defined(HAVE_WINDOWS_CONSOLE_IO)
+    {
+        DWORD mode = 0;
+        HANDLE handle = GetStdHandle(STD_OUTPUT_HANDLE);
+        if (!GetConsoleMode(handle, &mode)
+            || !(mode & ENABLE_VIRTUAL_TERMINAL_PROCESSING))
+        {
+            return 0;
+        }
+    }
+#endif
+    return isatty(fileno(f));
+}
+
+/* Print text with inline color tags.
+ *
+ * Tags use the format {X} where X is (uppercase = bold):
+ *   B = label
+ *   b = summary label
+ *   E = env var
+ *   H = heading
+ *   L = long option
+ *   l = summary long option
+ *   P = prog
+ *   r = reset
+ *   S = short option
+ *   s = summary short option/action
+ *   u = usage suffix
+ *
+ * When colorize is 0, tags are stripped and plain text is emitted.
+ */
+static void
+fprint_tagged(FILE *f, const char *text, int colorize)
+{
+    const char *p = text;
+    while (*p) {
+        if (p[0] == '{' && p[1] != '\0' && p[2] == '}') {
+            if (colorize) {
+                switch (p[1]) {
+                case 'B': fputs(_COLOR_BOLD_YELLOW, f); break;
+                case 'b': fputs(_COLOR_YELLOW, f); break;
+                case 'E': fputs(_COLOR_BOLD_CYAN, f); break;
+                case 'H': fputs(_COLOR_BOLD_BLUE, f); break;
+                case 'L': fputs(_COLOR_BOLD_CYAN, f); break;
+                case 'l': fputs(_COLOR_CYAN, f); break;
+                case 'P': fputs(_COLOR_BOLD_MAGENTA, f); break;
+                case 'r': fputs(_COLOR_RESET, f); break;
+                case 'S': fputs(_COLOR_BOLD_GREEN, f); break;
+                case 's': fputs(_COLOR_GREEN, f); break;
+                case 'u': fputs(_COLOR_MAGENTA, f); break;
+                default:
+                    /* Unknown tag, print literally */
+                    fwrite(p, 1, 3, f);
+                    break;
+                }
+            }
+            p += 3;
+        }
+        else {
+            fputc(*p, f);
+            p++;
+        }
+    }
+}
+
+/* Short usage message (with %ls for argv0) */
 static const char usage_line[] =
-"usage: %ls [option] ... [-c cmd | -m mod | file | -] [arg] ...\n";
+"{H}usage:{r} {P}%ls{r} [{s}option{r}] {s}...{r} "
+"[{s}-c{r} {b}cmd{r} | {s}-m{r} {b}mod{r} | {s}file{r} | {s}-{r}] "
+"[{s}arg{r}] {s}...{r}\n";
 
 /* Long help message */
 /* Lines sorted by option name; keep in sync with usage_envvars* below */
 static const char usage_help[] = "\
-Options (and corresponding environment variables):\n\
--b     : issue warnings about converting bytes/bytearray to str and comparing\n\
+{H}Options (and corresponding environment variables):{r}\n\
+{S}-b{r}     : issue warnings about converting bytes/bytearray to str and comparing\n\
          bytes/bytearray with str or bytes with int. (-bb: issue errors)\n\
          deprecated since 3.15 and will become no-op in 3.17.\n\
--B     : don't write .pyc files on import; also PYTHONDONTWRITEBYTECODE=x\n\
--c cmd : program passed in as string (terminates option list)\n\
--d     : turn on parser debugging output (for experts only, only works on\n\
+{S}-B{r}     : don't write .pyc files on import; also PYTHONDONTWRITEBYTECODE=x\n\
+{S}-c{r} {B}cmd{r} : program passed in as string (terminates option list)\n\
+{S}-d{r}     : turn on parser debugging output (for experts only, only works on\n\
          debug builds); also PYTHONDEBUG=x\n\
--E     : ignore PYTHON* environment variables (such as PYTHONPATH)\n\
--h     : print this help message and exit (also -? or --help)\n\
--i     : inspect interactively after running script; forces a prompt even\n\
+{S}-E{r}     : ignore PYTHON* environment variables (such as PYTHONPATH)\n\
+{S}-h{r}     : print this help message and exit (also -? or --help)\n\
+{S}-i{r}     : inspect interactively after running script; forces a prompt even\n\
          if stdin does not appear to be a terminal; also PYTHONINSPECT=x\n\
--I     : isolate Python from the user's environment (implies -E, -P and -s)\n\
--m mod : run library module as a script (terminates option list)\n\
--O     : remove assert and __debug__-dependent statements; add .opt-1 before\n\
+{S}-I{r}     : isolate Python from the user's environment (implies -E, -P and -s)\n\
+{S}-m{r} {B}mod{r} : run library module as a script (terminates option list)\n\
+{S}-O{r}     : remove assert and __debug__-dependent statements; add .opt-1 before\n\
          .pyc extension; also PYTHONOPTIMIZE=x\n\
--OO    : do -O changes and also discard docstrings; add .opt-2 before\n\
+{S}-OO{r}    : do -O changes and also discard docstrings; add .opt-2 before\n\
          .pyc extension\n\
--P     : don't prepend a potentially unsafe path to sys.path; also\n\
+{S}-P{r}     : don't prepend a potentially unsafe path to sys.path; also\n\
          PYTHONSAFEPATH\n\
--q     : don't print version and copyright messages on interactive startup\n\
--s     : don't add user site directory to sys.path; also PYTHONNOUSERSITE=x\n\
--S     : don't imply 'import site' on initialization\n\
--u     : force the stdout and stderr streams to be unbuffered;\n\
+{S}-q{r}     : don't print version and copyright messages on interactive startup\n\
+{S}-s{r}     : don't add user site directory to sys.path; also PYTHONNOUSERSITE=x\n\
+{S}-S{r}     : don't imply 'import site' on initialization\n\
+{S}-u{r}     : force the stdout and stderr streams to be unbuffered;\n\
          this option has no effect on stdin; also PYTHONUNBUFFERED=x\n\
--v     : verbose (trace import statements); also PYTHONVERBOSE=x\n\
+{S}-v{r}     : verbose (trace import statements); also PYTHONVERBOSE=x\n\
          can be supplied multiple times to increase verbosity\n\
--V     : print the Python version number and exit (also --version)\n\
+{S}-V{r}     : print the Python version number and exit (also --version)\n\
          when given twice, print more information about the build\n\
--W arg : warning control; arg is action:message:category:module:lineno\n\
+{S}-W{r} {B}arg{r} : warning control; arg is action:message:category:module:lineno\n\
          also PYTHONWARNINGS=arg\n\
--x     : skip first line of source, allowing use of non-Unix forms of #!cmd\n\
--X opt : set implementation-specific option\n\
---check-hash-based-pycs always|default|never:\n\
+{S}-x{r}     : skip first line of source, allowing use of non-Unix forms of #!cmd\n\
+{S}-X{r} {B}opt{r} : set implementation-specific option\n\
+{L}--check-hash-based-pycs{r} {B}always|default|never{r}:\n\
          control how Python invalidates hash-based .pyc files\n\
---help-env: print help about Python environment variables and exit\n\
---help-xoptions: print help about implementation-specific -X options and exit\n\
---help-all: print complete help information and exit\n\
+{L}--help-env{r}: print help about Python environment variables and exit\n\
+{L}--help-xoptions{r}: print help about implementation-specific -X options and exit\n\
+{L}--help-all{r}: print complete help information and exit\n\
 \n\
-Arguments:\n\
-file   : program read from script file\n\
--      : program read from stdin (default; interactive mode if a tty)\n\
-arg ...: arguments passed to program in sys.argv[1:]\n\
+{H}Arguments:{r}\n\
+{S}file{r}   : program read from script file\n\
+{S}-{r}      : program read from stdin (default; interactive mode if a tty)\n\
+{S}arg{r} {B}...{r}: arguments passed to program in sys.argv[1:]\n\
 ";
 
 static const char usage_xoptions[] = "\
-The following implementation-specific options are available:\n\
--X context_aware_warnings=[0|1]: if true (1) then the warnings module will\n\
+{H}The following implementation-specific options are available:{r}\n\
+{S}-X{r} {L}context_aware_warnings{r}{B}=[0|1]{r}: if true (1) then the warnings module will\n\
          use a context variables; if false (0) then the warnings module will\n\
          use module globals, which is not concurrent-safe; set to true for\n\
          free-threaded builds and false otherwise; also\n\
          PYTHON_CONTEXT_AWARE_WARNINGS\n\
--X cpu_count=N: override the return value of os.cpu_count();\n\
+{S}-X{r} {L}cpu_count{r}{B}=N{r}: override the return value of os.cpu_count();\n\
          -X cpu_count=default cancels overriding; also PYTHON_CPU_COUNT\n\
--X dev : enable Python Development Mode; also PYTHONDEVMODE\n\
--X disable-remote-debug: disable remote debugging; also PYTHON_DISABLE_REMOTE_DEBUG\n\
--X faulthandler: dump the Python traceback on fatal errors;\n\
+{S}-X{r} {L}dev{r} : enable Python Development Mode; also PYTHONDEVMODE\n\
+{S}-X{r} {L}disable-remote-debug{r}: disable remote debugging; also PYTHON_DISABLE_REMOTE_DEBUG\n\
+{S}-X{r} {L}faulthandler{r}: dump the Python traceback on fatal errors;\n\
          also PYTHONFAULTHANDLER\n\
--X frozen_modules=[on|off]: whether to use frozen modules; the default is \"on\"\n\
+{S}-X{r} {L}frozen_modules{r}{B}=[on|off]{r}: whether to use frozen modules; the default is \"on\"\n\
          for installed Python and \"off\" for a local build;\n\
          also PYTHON_FROZEN_MODULES\n\
 "
 #ifdef Py_GIL_DISABLED
-"-X gil=[0|1]: enable (1) or disable (0) the GIL; also PYTHON_GIL\n"
+"{S}-X{r} {L}gil{r}{B}=[0|1]{r}: enable (1) or disable (0) the GIL; also PYTHON_GIL\n"
 #endif
 "\
--X importtime[=2]: show how long each import takes; use -X importtime=2 to\n\
+{S}-X{r} {L}importtime{r}{B}[=2]{r}: show how long each import takes; use -X importtime=2 to\n\
          log imports of already-loaded modules; also PYTHONPROFILEIMPORTTIME\n\
--X int_max_str_digits=N: limit the size of int<->str conversions;\n\
+{S}-X{r} {L}int_max_str_digits{r}{B}=N{r}: limit the size of int<->str conversions;\n\
          0 disables the limit; also PYTHONINTMAXSTRDIGITS\n\
--X lazy_imports=[all|none|normal]: control global lazy imports;\n\
+{S}-X{r} {L}lazy_imports{r}{B}=[all|none|normal]{r}: control global lazy imports;\n\
          default is normal; also PYTHON_LAZY_IMPORTS\n\
--X no_debug_ranges: don't include extra location information in code objects;\n\
+{S}-X{r} {L}no_debug_ranges{r}: don't include extra location information in code objects;\n\
          also PYTHONNODEBUGRANGES\n\
--X pathconfig_warnings=[0|1]: if true (1) then path configuration is allowed\n\
+{S}-X{r} {L}pathconfig_warnings{r}{B}=[0|1]{r}: if true (1) then path configuration is allowed\n\
          to log warnings into stderr; if false (0) suppress these warnings;\n\
          set to true by default; also PYTHON_PATHCONFIG_WARNINGS\n\
--X perf: support the Linux \"perf\" profiler; also PYTHONPERFSUPPORT=1\n\
--X perf_jit: support the Linux \"perf\" profiler with DWARF support;\n\
+{S}-X{r} {L}perf{r}: support the Linux \"perf\" profiler; also PYTHONPERFSUPPORT=1\n\
+{S}-X{r} {L}perf_jit{r}: support the Linux \"perf\" profiler with DWARF support;\n\
          also PYTHON_PERF_JIT_SUPPORT=1\n\
 "
 #ifdef Py_DEBUG
-"-X presite=MOD: import this module before site; also PYTHON_PRESITE\n"
+"{S}-X{r} {L}presite{r}{B}=MOD{r}: import this module before site; also PYTHON_PRESITE\n"
 #endif
 "\
--X pycache_prefix=PATH: write .pyc files to a parallel tree instead of to the\n\
+{S}-X{r} {L}pycache_prefix{r}{B}=PATH{r}: write .pyc files to a parallel tree instead of to the\n\
          code tree; also PYTHONPYCACHEPREFIX\n\
 "
 #ifdef Py_STATS
-"-X pystats: enable pystats collection at startup; also PYTHONSTATS\n"
+"{S}-X{r} {L}pystats{r}: enable pystats collection at startup; also PYTHONSTATS\n"
 #endif
 "\
--X showrefcount: output the total reference count and number of used\n\
+{S}-X{r} {L}showrefcount{r}: output the total reference count and number of used\n\
          memory blocks when the program finishes or after each statement in\n\
          the interactive interpreter; only works on debug builds\n\
--X thread_inherit_context=[0|1]: enable (1) or disable (0) threads inheriting\n\
+{S}-X{r} {L}thread_inherit_context{r}{B}=[0|1]{r}: enable (1) or disable (0) threads inheriting\n\
          context vars by default; enabled by default in the free-threaded\n\
          build and disabled otherwise; also PYTHON_THREAD_INHERIT_CONTEXT\n\
 "
 #ifdef Py_GIL_DISABLED
-"-X tlbc=[0|1]: enable (1) or disable (0) thread-local bytecode. Also\n\
+"{S}-X{r} {L}tlbc{r}{B}=[0|1]{r}: enable (1) or disable (0) thread-local bytecode. Also\n\
          PYTHON_TLBC\n"
 #endif
 "\
--X tracemalloc[=N]: trace Python memory allocations; N sets a traceback limit\n\
+{S}-X{r} {L}tracemalloc{r}{B}[=N]{r}: trace Python memory allocations; N sets a traceback limit\n\
          of N frames (default: 1); also PYTHONTRACEMALLOC=N\n\
--X utf8[=0|1]: enable (1) or disable (0) UTF-8 mode; also PYTHONUTF8\n\
--X warn_default_encoding: enable opt-in EncodingWarning for 'encoding=None';\n\
-         also PYTHONWARNDEFAULTENCODING\
+{S}-X{r} {L}utf8{r}{B}[=0|1]{r}: enable (1) or disable (0) UTF-8 mode; also PYTHONUTF8\n\
+{S}-X{r} {L}warn_default_encoding{r}: enable opt-in EncodingWarning for 'encoding=None';\n\
+         also PYTHONWARNDEFAULTENCODING\n\
 ";
 
 /* Envvars that don't have equivalent command-line options are listed first */
 static const char usage_envvars[] =
-"Environment variables that change behavior:\n"
-"PYTHONASYNCIODEBUG: enable asyncio debug mode\n"
-"PYTHON_BASIC_REPL: use the traditional parser-based REPL\n"
-"PYTHONBREAKPOINT: if this variable is set to 0, it disables the default\n"
+"{H}Environment variables that change behavior:{r}\n"
+"{E}PYTHONASYNCIODEBUG{r}: enable asyncio debug mode\n"
+"{E}PYTHON_BASIC_REPL{r}: use the traditional parser-based REPL\n"
+"{E}PYTHONBREAKPOINT{r}: if this variable is set to 0, it disables the default\n"
 "                  debugger.  It can be set to the callable of your debugger of\n"
 "                  choice.\n"
-"PYTHONCASEOK    : ignore case in 'import' statements (Windows)\n"
-"PYTHONCOERCECLOCALE: if this variable is set to 0, it disables the locale\n"
+"{E}PYTHONCASEOK{r}    : ignore case in 'import' statements (Windows)\n"
+"{E}PYTHONCOERCECLOCALE{r}: if this variable is set to 0, it disables the locale\n"
 "                  coercion behavior.  Use PYTHONCOERCECLOCALE=warn to request\n"
 "                  display of locale coercion and locale compatibility warnings\n"
 "                  on stderr.\n"
-"PYTHON_COLORS   : if this variable is set to 1, the interpreter will colorize\n"
+"{E}PYTHON_COLORS{r}   : if this variable is set to 1, the interpreter will colorize\n"
 "                  various kinds of output.  Setting it to 0 deactivates\n"
 "                  this behavior.\n"
 #ifdef Py_TRACE_REFS
-"PYTHONDUMPREFS  : dump objects and reference counts still alive after shutdown\n"
-"PYTHONDUMPREFSFILE: dump objects and reference counts to the specified file\n"
+"{E}PYTHONDUMPREFS{r}  : dump objects and reference counts still alive after shutdown\n"
+"{E}PYTHONDUMPREFSFILE{r}: dump objects and reference counts to the specified file\n"
 #endif
 #ifdef __APPLE__
-"PYTHONEXECUTABLE: set sys.argv[0] to this value (macOS only)\n"
+"{E}PYTHONEXECUTABLE{r}: set sys.argv[0] to this value (macOS only)\n"
 #endif
-"PYTHONHASHSEED  : if this variable is set to 'random', a random value is used\n"
+"{E}PYTHONHASHSEED{r}  : if this variable is set to 'random', a random value is used\n"
 "                  to seed the hashes of str and bytes objects.  It can also be\n"
 "                  set to an integer in the range [0,4294967295] to get hash\n"
 "                  values with a predictable seed.\n"
-"PYTHON_HISTORY  : the location of a .python_history file.\n"
-"PYTHONHOME      : alternate <prefix> directory (or <prefix>%lc<exec_prefix>).\n"
+"{E}PYTHON_HISTORY{r}  : the location of a .python_history file.\n"
+"{E}PYTHONHOME{r}      : alternate <prefix> directory (or <prefix>%lc<exec_prefix>).\n"
 "                  The default module search path uses %s.\n"
-"PYTHONIOENCODING: encoding[:errors] used for stdin/stdout/stderr\n"
+"{E}PYTHONIOENCODING{r}: encoding[:errors] used for stdin/stdout/stderr\n"
 #ifdef MS_WINDOWS
-"PYTHONLEGACYWINDOWSFSENCODING: use legacy \"mbcs\" encoding for file system\n"
-"PYTHONLEGACYWINDOWSSTDIO: use legacy Windows stdio\n"
+"{E}PYTHONLEGACYWINDOWSFSENCODING{r}: use legacy \"mbcs\" encoding for file system\n"
+"{E}PYTHONLEGACYWINDOWSSTDIO{r}: use legacy Windows stdio\n"
 #endif
-"PYTHONMALLOC    : set the Python memory allocators and/or install debug hooks\n"
+"{E}PYTHONMALLOC{r}    : set the Python memory allocators and/or install debug hooks\n"
 "                  on Python memory allocators.  Use PYTHONMALLOC=debug to\n"
 "                  install debug hooks.\n"
-"PYTHONMALLOCSTATS: print memory allocator statistics\n"
-"PYTHONPATH      : '%lc'-separated list of directories prefixed to the\n"
+"{E}PYTHONMALLOCSTATS{r}: print memory allocator statistics\n"
+"{E}PYTHONPATH{r}      : '%lc'-separated list of directories prefixed to the\n"
 "                  default module search path.  The result is sys.path.\n"
-"PYTHONPLATLIBDIR: override sys.platlibdir\n"
-"PYTHONSTARTUP   : file executed on interactive startup (no default)\n"
-"PYTHONUSERBASE  : defines the user base directory (site.USER_BASE)\n"
+"{E}PYTHONPLATLIBDIR{r}: override sys.platlibdir\n"
+"{E}PYTHONSTARTUP{r}   : file executed on interactive startup (no default)\n"
+"{E}PYTHONUSERBASE{r}  : defines the user base directory (site.USER_BASE)\n"
 "\n"
-"These variables have equivalent command-line options (see --help for details):\n"
-"PYTHON_CONTEXT_AWARE_WARNINGS: if true (1), enable thread-safe warnings\n"
+"{H}These variables have equivalent command-line options (see --help for details):{r}\n"
+"{E}PYTHON_CONTEXT_AWARE_WARNINGS{r}: if true (1), enable thread-safe warnings\n"
 "                  module behaviour (-X context_aware_warnings)\n"
-"PYTHON_CPU_COUNT: override the return value of os.cpu_count() (-X cpu_count)\n"
-"PYTHONDEBUG     : enable parser debug mode (-d)\n"
-"PYTHONDEVMODE   : enable Python Development Mode (-X dev)\n"
-"PYTHONDONTWRITEBYTECODE: don't write .pyc files (-B)\n"
-"PYTHONFAULTHANDLER: dump the Python traceback on fatal errors (-X faulthandler)\n"
-"PYTHON_FROZEN_MODULES: whether to use frozen modules; the default is \"on\"\n"
+"{E}PYTHON_CPU_COUNT{r}: override the return value of os.cpu_count() (-X cpu_count)\n"
+"{E}PYTHONDEBUG{r}     : enable parser debug mode (-d)\n"
+"{E}PYTHONDEVMODE{r}   : enable Python Development Mode (-X dev)\n"
+"{E}PYTHONDONTWRITEBYTECODE{r}: don't write .pyc files (-B)\n"
+"{E}PYTHONFAULTHANDLER{r}: dump the Python traceback on fatal errors (-X faulthandler)\n"
+"{E}PYTHON_FROZEN_MODULES{r}: whether to use frozen modules; the default is \"on\"\n"
 "                  for installed Python and \"off\" for a local build\n"
 "                  (-X frozen_modules)\n"
 #ifdef Py_GIL_DISABLED
-"PYTHON_GIL      : when set to 0, disables the GIL (-X gil)\n"
+"{E}PYTHON_GIL{r}      : when set to 0, disables the GIL (-X gil)\n"
 #endif
-"PYTHONINSPECT   : inspect interactively after running script (-i)\n"
-"PYTHONINTMAXSTRDIGITS: limit the size of int<->str conversions;\n"
+"{E}PYTHONINSPECT{r}   : inspect interactively after running script (-i)\n"
+"{E}PYTHONINTMAXSTRDIGITS{r}: limit the size of int<->str conversions;\n"
 "                  0 disables the limit (-X int_max_str_digits=N)\n"
-"PYTHON_LAZY_IMPORTS: control global lazy imports (-X lazy_imports)\n"
-"PYTHONNODEBUGRANGES: don't include extra location information in code objects\n"
+"{E}PYTHON_LAZY_IMPORTS{r}: control global lazy imports (-X lazy_imports)\n"
+"{E}PYTHONNODEBUGRANGES{r}: don't include extra location information in code objects\n"
 "                  (-X no_debug_ranges)\n"
-"PYTHONNOUSERSITE: disable user site directory (-s)\n"
-"PYTHONOPTIMIZE  : enable level 1 optimizations (-O)\n"
-"PYTHON_PERF_JIT_SUPPORT: enable Linux \"perf\" profiler support with JIT\n"
+"{E}PYTHONNOUSERSITE{r}: disable user site directory (-s)\n"
+"{E}PYTHONOPTIMIZE{r}  : enable level 1 optimizations (-O)\n"
+"{E}PYTHON_PERF_JIT_SUPPORT{r}: enable Linux \"perf\" profiler support with JIT\n"
 "                  (-X perf_jit)\n"
-"PYTHONPERFSUPPORT: support the Linux \"perf\" profiler (-X perf)\n"
+"{E}PYTHONPERFSUPPORT{r}: support the Linux \"perf\" profiler (-X perf)\n"
 #ifdef Py_DEBUG
-"PYTHON_PRESITE: import this module before site (-X presite)\n"
+"{E}PYTHON_PRESITE{r}: import this module before site (-X presite)\n"
 #endif
-"PYTHONPROFILEIMPORTTIME: show how long each import takes (-X importtime)\n"
-"PYTHONPYCACHEPREFIX: root directory for bytecode cache (pyc) files\n"
+"{E}PYTHONPROFILEIMPORTTIME{r}: show how long each import takes (-X importtime)\n"
+"{E}PYTHONPYCACHEPREFIX{r}: root directory for bytecode cache (pyc) files\n"
 "                  (-X pycache_prefix)\n"
-"PYTHONSAFEPATH  : don't prepend a potentially unsafe path to sys.path.\n"
+"{E}PYTHONSAFEPATH{r}  : don't prepend a potentially unsafe path to sys.path.\n"
 #ifdef Py_STATS
-"PYTHONSTATS     : turns on statistics gathering (-X pystats)\n"
+"{E}PYTHONSTATS{r}     : turns on statistics gathering (-X pystats)\n"
 #endif
-"PYTHON_THREAD_INHERIT_CONTEXT: if true (1), threads inherit context vars\n"
+"{E}PYTHON_THREAD_INHERIT_CONTEXT{r}: if true (1), threads inherit context vars\n"
 "                  (-X thread_inherit_context)\n"
 #ifdef Py_GIL_DISABLED
-"PYTHON_TLBC     : when set to 0, disables thread-local bytecode (-X tlbc)\n"
+"{E}PYTHON_TLBC{r}     : when set to 0, disables thread-local bytecode (-X tlbc)\n"
 #endif
-"PYTHONTRACEMALLOC: trace Python memory allocations (-X tracemalloc)\n"
-"PYTHONUNBUFFERED: disable stdout/stderr buffering (-u)\n"
-"PYTHONUTF8      : control the UTF-8 mode (-X utf8)\n"
-"PYTHONVERBOSE   : trace import statements (-v)\n"
-"PYTHONWARNDEFAULTENCODING: enable opt-in EncodingWarning for 'encoding=None'\n"
+"{E}PYTHONTRACEMALLOC{r}: trace Python memory allocations (-X tracemalloc)\n"
+"{E}PYTHONUNBUFFERED{r}: disable stdout/stderr buffering (-u)\n"
+"{E}PYTHONUTF8{r}      : control the UTF-8 mode (-X utf8)\n"
+"{E}PYTHONVERBOSE{r}   : trace import statements (-v)\n"
+"{E}PYTHONWARNDEFAULTENCODING{r}: enable opt-in EncodingWarning for 'encoding=None'\n"
 "                  (-X warn_default_encoding)\n"
-"PYTHONWARNINGS  : warning control (-W)\n"
+"{E}PYTHONWARNINGS{r}  : warning control (-W)\n"
 ;
 
 #if defined(MS_WINDOWS)
@@ -2935,25 +3040,58 @@ static void
 config_usage(int error, const wchar_t* program)
 {
     FILE *f = error ? stderr : stdout;
+    int colorize = _Py_can_colorize(f);
 
-    fprintf(f, usage_line, program);
-    if (error)
-        fprintf(f, "Try `python -h' for more information.\n");
+    /* Format usage_line (resolves %ls), then process color tags. */
+    int needed = snprintf(NULL, 0, usage_line, program);
+    if (needed > 0) {
+        char *buf = (char *)PyMem_RawMalloc((size_t)needed + 1);
+        if (buf) {
+            snprintf(buf, (size_t)needed + 1, usage_line, program);
+            fprint_tagged(f, buf, colorize);
+            PyMem_RawFree(buf);
+        }
+        else {
+            fprintf(f, usage_line, program);
+        }
+    }
     else {
-        fputs(usage_help, f);
+        fprintf(f, usage_line, program);
+    }
+    if (error) {
+        fprintf(f, "Try `python -h' for more information.\n");
+    }
+    else {
+        fprint_tagged(f, usage_help, colorize);
     }
 }
 
 static void
 config_envvars_usage(void)
 {
-    printf(usage_envvars, (wint_t)DELIM, PYTHONHOMEHELP, (wint_t)DELIM);
+    int colorize = _Py_can_colorize(stdout);
+    /* Format the string first (it contains %lc and %s specifiers),
+     * then process color tags in the result. */
+    int needed = snprintf(NULL, 0, usage_envvars,
+                          (wint_t)DELIM, PYTHONHOMEHELP, (wint_t)DELIM);
+    if (needed > 0) {
+        char *buf = (char *)PyMem_RawMalloc((size_t)needed + 1);
+        if (buf) {
+            snprintf(buf, (size_t)needed + 1, usage_envvars,
+                     (wint_t)DELIM, PYTHONHOMEHELP, (wint_t)DELIM);
+            fprint_tagged(stdout, buf, colorize);
+            PyMem_RawFree(buf);
+            return;
+        }
+    }
+    fprint_tagged(stdout, usage_envvars, 0);
 }
 
 static void
 config_xoptions_usage(void)
 {
-    puts(usage_xoptions);
+    int colorize = _Py_can_colorize(stdout);
+    fprint_tagged(stdout, usage_xoptions, colorize);
 }
 
 static void
