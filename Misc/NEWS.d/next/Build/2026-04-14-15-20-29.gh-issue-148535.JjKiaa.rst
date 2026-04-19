@@ -1,0 +1,6 @@
+No longer use the ``gcc -fprofile-update=atomic`` flag on i686. The flag has
+been added to fix a random GCC internal error on PGO build (:gh:`145801`)
+caused by corruption of profile data (.gcda files). The problem is that it
+makes the PGO build way slower (up to 47x slower) on i686. Since the GCC
+internal error was not seen on i686 so far, don't use
+``-fprofile-update=atomic`` on i686 anymore. Patch by Victor Stinner.

@@ -80,8 +80,10 @@ Summary -- Release highlights
 * :pep:`728`: ``TypedDict`` with typed extra items
 * :pep:`747`: :ref:`Annotating type forms with TypeForm
   <whatsnew315-typeform>`
+* :pep:`800`: Disjoint bases in the type system
 * :pep:`782`: :ref:`A new PyBytesWriter C API to create a Python bytes object
   <whatsnew315-pybyteswriter>`
+* :pep:`803`: :ref:`Stable ABI for Free-Threaded Builds <whatsnew315-abi3t>`
 * :ref:`The JIT compiler has been significantly upgraded <whatsnew315-jit>`
 * :ref:`Improved error messages <whatsnew315-improved-error-messages>`
 * :ref:`The official Windows 64-bit binaries now use the tail-calling interpreter
@@ -380,6 +382,41 @@ agen() for x in a)``.
 .. seealso:: :pep:`798` for further details.
 
 (Contributed by Adam Hartz in :gh:`143055`.)
+
+.. _whatsnew315-abi3t:
+
+:pep:`803`: ``abi3t`` -- Stable ABI for Free-Threaded Builds
+------------------------------------------------------------
+
+C extensions that target the :ref:`Stable ABI <stable-abi>` can now be
+compiled for the new *Stable ABI for Free-Threaded Builds* (also known
+as ``abi3t``), which makes them compatible with
+:term:`free-threaded builds <free-threaded build>` of CPython.
+This usually requires some non-trivial changes to the source code;
+specifically:
+
+- Switching to API introduced in :pep:`697` (Python 3.12), such as
+  negative :c:member:`~PyType_Spec.basicsize` and
+  :c:func:`PyObject_GetTypeData`, rather than making :c:type:`PyObject`
+  part of the instance struct; and
+- Switching from a ``PyInit_`` function to a new export hook,
+  :c:func:`PyModExport_* <PyModExport_modulename>`, introduced for this
+  purpose in :pep:`793`.
+
+Note that Stable ABI does not offer all the functionality that CPython
+has to offer.
+Extensions that cannot switch to ``abi3t`` should continue to build for
+the existing Stable ABI (``abi3``) and the version-specific ABI for
+free-threading (``cp315t``) separately.
+
+Stable ABI for Free-Threaded Builds should typically
+be selected in a build tool (such as, for example, Setuptools, meson-python,
+scikit-build-core, or Maturin).
+At the time of writing, these tools did **not** support ``abi3t``.
+If this is the case for your tool, compile for ``cp315t`` separately.
+If not using a build tool -- or when writing such a tool -- you can select
+``abi3t`` by setting the macro :c:macro:`!Py_TARGET_ABI3T` as discussed
+in :ref:`abi3-compiling`.
 
 
 .. _whatsnew315-improved-error-messages:
@@ -942,12 +979,27 @@ pickle
   (Contributed by Zackery Spytz and Serhiy Storchaka in :gh:`77188`.)
 
 
+pprint
+------
+
+* Add an *expand* keyword argument for :func:`pprint.pprint`,
+  :func:`pprint.pformat`, :func:`pprint.pp`. If true, the output will be
+  formatted similar to pretty-printed :func:`json.dumps` when
+  *indent* is supplied.
+  (Contributed by Stefan Todoran, Semyon Moroz and Hugo van Kemenade in
+  :gh:`112632`.)
+
+* Add t-string support to :mod:`pprint`.
+  (Contributed by Loïc Simon and Hugo van Kemenade in :gh:`134551`.)
+
+
 re
 --
 
-* :func:`re.prefixmatch` and a corresponding :meth:`~re.Pattern.prefixmatch`
-  have been added as alternate more explicit names for the existing
-  :func:`re.match` and :meth:`~re.Pattern.match` APIs. These are intended
+* :func:`re.prefixmatch` and a corresponding :meth:`re.Pattern.prefixmatch`
+  have been added as alternate, more explicit names for the existing
+  and now :term:`soft deprecated`
+  :func:`re.match` and :meth:`re.Pattern.match` APIs. These are intended
   to be used to alleviate confusion around what *match* means by following the
   Zen of Python's *"Explicit is better than implicit"* mantra. Most other
   language regular expression libraries use an API named *match* to mean what
@@ -1238,6 +1290,13 @@ typing
   type parameters order: it is ``(T1, T2)``, not ``(T2, T1)``
   as it was incorrectly inferred in runtime before.
   (Contributed by Nikita Sobolev in :gh:`137191`.)
+
+* :pep:`800`: Add :deco:`typing.disjoint_base`, a new decorator marking a class
+  as a disjoint base. This is an advanced feature primarily intended to allow
+  type checkers to faithfully reflect the runtime semantics of types defined
+  as builtins or in compiled extensions. If a class ``C`` is a disjoint base, then
+  child classes of that class cannot inherit from other disjoint bases that are
+  not parent or child classes of ``C``. (Contributed by Jelle Zijlstra in :gh:`148639`.)
 
 
 unicodedata
@@ -1557,20 +1616,6 @@ platform
   (Contributed by Alexey Makridenko in :gh:`133604`.)
 
 
-pprint
-------
-
-* Add an *expand* keyword argument for :func:`pprint.pprint`,
-  :func:`pprint.pformat`, :func:`pprint.pp`. If true, the output will be
-  formatted similar to pretty-printed :func:`json.dumps` when
-  *indent* is supplied.
-  (Contributed by Stefan Todoran, Semyon Moroz and Hugo van Kemenade in
-  :gh:`112632`.)
-
-* Add t-string support to :mod:`pprint`.
-  (Contributed by Loïc Simon and Hugo van Kemenade in :gh:`134551`.)
-
-
 sre_*
 -----
 
@@ -1685,6 +1730,27 @@ New deprecations
 
     (Contributed by Bénédikt Tran in :gh:`134978`.)
 
+
+* :mod:`re`:
+
+  * :func:`re.match` and :meth:`re.Pattern.match` are now
+    :term:`soft deprecated` in favor of the new :func:`re.prefixmatch` and
+    :meth:`re.Pattern.prefixmatch` APIs, which have been added as alternate,
+    more explicit names. These are intended to be used to alleviate confusion
+    around what *match* means by following the Zen of Python's *"Explicit is
+    better than implicit"* mantra. Most other language regular expression
+    libraries use an API named *match* to mean what Python has always called
+    *search*.
+
+    We **do not** plan to remove the older :func:`!match` name, as it has been
+    used in code for over 30 years. Code supporting older versions of Python
+    should continue to use :func:`!match`, while new code should prefer
+    :func:`!prefixmatch`. See :ref:`prefixmatch-vs-match`.
+
+    (Contributed by Gregory P. Smith in :gh:`86519` and
+    Hugo van Kemenade in :gh:`148100`.)
+
+
 * :mod:`struct`:
 
   * Calling the ``Struct.__new__()`` without required argument now is
@@ -1756,6 +1822,8 @@ New deprecations
 .. include:: ../deprecations/pending-removal-in-3.20.rst
 
 .. include:: ../deprecations/pending-removal-in-future.rst
+
+.. include:: ../deprecations/soft-deprecations.rst
 
 
 C API changes

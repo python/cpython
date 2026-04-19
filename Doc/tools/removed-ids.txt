@@ -1,1 +1,5 @@
 # HTML IDs excluded from the check-html-ids.py check.
+
+# Remove from here in 3.16
+c-api/allocation.html: deprecated-aliases
+c-api/file.html: deprecated-api
