@@ -2690,7 +2690,7 @@ static void
 do_tstate_ensure(void *arg)
 {
     ThreadData *data = (ThreadData *)arg;
-    PyThreadView refs[4];
+    PyThreadState * refs[4];
     refs[0] = PyThreadState_Ensure(data->guard);
     refs[1] = PyThreadState_Ensure(data->guard);
     refs[2] = PyThreadState_Ensure(data->guard);

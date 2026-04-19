@@ -3492,7 +3492,7 @@ PyUnstable_InterpreterView_FromDefault(void)
 // thread state was attached.
 static int NO_TSTATE_SENTINEL = 0;
 
-PyThreadView
+PyThreadState *
 PyThreadState_Ensure(PyInterpreterGuard guard)
 {
     PyInterpreterState *interp = guard_as_interp(guard);
@@ -3500,7 +3500,7 @@ PyThreadState_Ensure(PyInterpreterGuard guard)
     if (attached_tstate != NULL && attached_tstate->interp == interp) {
         /* Yay! We already have an attached thread state that matches. */
         ++attached_tstate->ensure.counter;
-        return (PyThreadView)&NO_TSTATE_SENTINEL;
+        return (PyThreadState *)&NO_TSTATE_SENTINEL;
     }
 
     PyThreadState *detached_gilstate = gilstate_get();
@@ -3509,7 +3509,7 @@ PyThreadState_Ensure(PyInterpreterGuard guard)
         assert(attached_tstate == NULL);
         ++detached_gilstate->ensure.counter;
         _PyThreadState_Attach(detached_gilstate);
-        return (PyThreadView)&NO_TSTATE_SENTINEL;
+        return (PyThreadState *)&NO_TSTATE_SENTINEL;
     }
 
     PyThreadState *fresh_tstate = _PyThreadState_NewBound(interp,
@@ -3521,16 +3521,16 @@ PyThreadState_Ensure(PyInterpreterGuard guard)
     fresh_tstate->ensure.delete_on_release = 1;
 
     if (attached_tstate != NULL) {
-        return (PyThreadView)PyThreadState_Swap(fresh_tstate);
+        return (PyThreadState *)PyThreadState_Swap(fresh_tstate);
     } else {
         _PyThreadState_Attach(fresh_tstate);
     }
 
-    return (PyThreadView)&NO_TSTATE_SENTINEL;
+    return (PyThreadState *)&NO_TSTATE_SENTINEL;
 }
 
 void
-PyThreadState_Release(PyThreadView thread_view)
+PyThreadState_Release(PyThreadState * thread_view)
 {
     PyThreadState *tstate = current_fast_get();
     _Py_EnsureTstateNotNULL(tstate);
@@ -3540,7 +3540,7 @@ PyThreadState_Release(PyThreadView thread_view)
     }
     // The thread view might be NULL
     PyThreadState *to_restore;
-    if (thread_view == (PyThreadView)&NO_TSTATE_SENTINEL) {
+    if (thread_view == (PyThreadState *)&NO_TSTATE_SENTINEL) {
         to_restore = NULL;
     }
     else {

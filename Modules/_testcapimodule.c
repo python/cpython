@@ -2663,7 +2663,7 @@ test_thread_state_ensure_nested(PyObject *self, PyObject *unused)
     }
     PyThreadState *save_tstate = PyThreadState_Swap(NULL);
     assert(PyGILState_GetThisThreadState() == save_tstate);
-    PyThreadView thread_views[10];
+    PyThreadState * thread_views[10];
 
     for (int i = 0; i < 10; ++i) {
         // Test reactivation of the detached tstate.
@@ -2730,7 +2730,7 @@ test_thread_state_ensure_crossinterp(PyObject *self, PyObject *unused)
        interp = interpreters.create()
        interp.exec(some_func)
        */
-    PyThreadView thread_view = PyThreadState_Ensure(guard);
+    PyThreadState * thread_view = PyThreadState_Ensure(guard);
     if (thread_view == 0) {
         PyInterpreterGuard_Release(guard);
         return PyErr_NoMemory();
@@ -2742,7 +2742,7 @@ test_thread_state_ensure_crossinterp(PyObject *self, PyObject *unused)
     assert(PyGILState_GetThisThreadState() == ensured_tstate);
 
     // Now though, we should reactivate the thread state
-    PyThreadView other_thread_view = PyThreadState_Ensure(guard);
+    PyThreadState * other_thread_view = PyThreadState_Ensure(guard);
     if (other_thread_view == 0) {
         PyThreadState_Release(thread_view);
         PyInterpreterGuard_Release(guard);

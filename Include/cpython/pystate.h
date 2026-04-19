@@ -369,11 +369,9 @@ PyAPI_FUNC(PyInterpreterView) PyUnstable_InterpreterView_FromDefault(void);
 } while (0)
 #endif
 
-typedef uintptr_t PyThreadView;
+PyAPI_FUNC(PyThreadState *) PyThreadState_Ensure(PyInterpreterGuard guard);
 
-PyAPI_FUNC(PyThreadView) PyThreadState_Ensure(PyInterpreterGuard guard);
-
-PyAPI_FUNC(void) PyThreadState_Release(PyThreadView thread_ref);
+PyAPI_FUNC(void) PyThreadState_Release(PyThreadState *tstate);
 
 PyAPI_FUNC(void) _PyInterpreterState_SetEvalFrameAllowSpecialization(
     PyInterpreterState *interp,
