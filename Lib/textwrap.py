@@ -260,7 +260,7 @@ class TextWrapper:
                 raise ValueError("placeholder too large for max width")
 
         # Arrange in reverse order so items can be efficiently popped
-        # from a stack of chucks.
+        # from a stack of chunks.
         chunks.reverse()
 
         while chunks:
