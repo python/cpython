@@ -1735,7 +1735,7 @@ If wrapping a shared library with :mod:`!ctypes`, consider determining the
 shared library name at development time, and hardcoding it into the wrapper
 module instead of using :func:`!find_library` to locate the library
 at runtime.
-Also consider addding a configuration option or environment variable to let
+Also consider adding a configuration option or environment variable to let
 users select a library to use, and then perhaps use :func:`!find_library`
 as a default or fallback.
 
