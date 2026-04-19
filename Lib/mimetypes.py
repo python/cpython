@@ -187,15 +187,19 @@ class MimeTypes:
             base, ext = splitext(base)
         else:
             encoding = None
-        ext = ext.lower()
+        ext_lower = ext.lower()
         types_map = self.types_map[True]
         if ext in types_map:
             return types_map[ext], encoding
+        if ext_lower in types_map:
+            return types_map[ext_lower], encoding
         elif strict:
             return None, encoding
         types_map = self.types_map[False]
         if ext in types_map:
             return types_map[ext], encoding
+        if ext_lower in types_map:
+            return types_map[ext_lower], encoding
         else:
             return None, encoding
 

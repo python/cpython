@@ -49,6 +49,18 @@ class MimeTypesTestCase(unittest.TestCase):
         eq(self.db.guess_file_type("foobar.tar.z"), (None, None))
         eq(self.db.guess_type("scheme:foobar.tar.z"), (None, None))
 
+    def test_added_types_case_sensitive_preferred(self):
+        self.db.add_type("text/x-r-script", ".R")
+        self.db.add_type("text/x-test-lowercase-r", ".r")
+        self.assertEqual(
+            self.db.guess_file_type("example.R"),
+            ("text/x-r-script", None),
+        )
+        self.assertEqual(
+            self.db.guess_file_type("example.r"),
+            ("text/x-test-lowercase-r", None),
+        )
+
     def test_default_data(self):
         eq = self.assertEqual
         eq(self.db.guess_file_type("foo.html"), ("text/html", None))
