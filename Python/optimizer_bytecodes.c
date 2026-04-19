@@ -1366,6 +1366,27 @@ dummy_func(void) {
         }
     }
 
+    op(_FOR_ITER_TIER_TWO, (iter, null_or_index -- iter, null_or_index, next)) {
+        if (!sym_has_type(iter)) {
+            PyTypeObject *probable = sym_get_probable_type(iter);
+            if (probable != NULL &&
+                probable->tp_iternext != NULL &&
+                probable != &PyList_Type &&
+                probable != &PyTuple_Type &&
+                probable != &PyRangeIter_Type &&
+                probable != &PyGen_Type) {
+                PyType_Watch(TYPE_WATCHER_ID, (PyObject *)probable);
+                _Py_BloomFilter_Add(dependencies, probable);
+                sym_set_type(iter, probable);
+                int32_t orig_target = (this_instr - 1)->target;
+                ADD_OP(_GUARD_TYPE_ITER, 0, (uintptr_t)probable);
+                uop_buffer_last(&ctx->out_buffer)->target = orig_target;
+                ADD_OP(_ITER_NEXT_INLINE, 0, (uintptr_t)probable->tp_iternext);
+            }
+        }
+        next = sym_new_not_null(ctx);
+    }
+
     op(_FOR_ITER_GEN_FRAME, (iter, unused -- iter, unused, gen_frame)) {
         _Py_UOpsAbstractFrame *new_frame = frame_new_from_symbol(ctx, iter, NULL, 0);
         if (new_frame == NULL) {
