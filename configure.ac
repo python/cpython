@@ -6232,17 +6232,6 @@ AC_CHECK_DECLS([UT_NAMESIZE],
                          [Define if you have the 'HAVE_UT_NAMESIZE' constant.])],
               [],
               [@%:@include <utmp.h>])
-# musl libc redefines struct prctl_mm_map and conflicts with linux/prctl.h.
-# The conftest does not reliably catch this, so skip the check on musl.
-AS_CASE([$host],
-  [*-musl*], [],
-  [AC_CHECK_DECLS([PR_SET_VMA_ANON_NAME],
-                [AC_DEFINE([_Py_HAVE_PR_SET_VMA_ANON_NAME], [1],
-                           [Define if you have the 'PR_SET_VMA_ANON_NAME' constant.])],
-                [],
-                [@%:@include <linux/prctl.h>
-                 @%:@include <sys/prctl.h>])]
-)
 # check for openpty, login_tty, and forkpty
 # tvOS/watchOS have functions for tty, but can't use them
 if test "$ac_sys_system" != "tvOS" -a "$ac_sys_system" != "watchOS" ; then
