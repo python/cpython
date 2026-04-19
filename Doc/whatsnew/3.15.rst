@@ -930,6 +930,15 @@ mimetypes
 
   (Contributed by Charlie Lin in :gh:`145718`.)
 
+* Add the following:
+
+   - ``font/collection`` for ``.ttc`` extension
+   - ``haptics/ivs`` for ``.ivs`` extension
+   - ``haptics/hjif`` for ``.hjif`` extension
+   - ``haptics/hmpg`` for ``.hmpg`` extension
+
+   (Contributed by Charlie Lin in :gh:`145918`.)
+
 * Add ``image/jxl``. (Contributed by Foolbar in :gh:`144213`.)
 * Rename ``application/x-texinfo`` to ``application/texinfo``.
   (Contributed by Charlie Lin in :gh:`140165`.)
