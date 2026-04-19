@@ -371,7 +371,7 @@ Equality comparisons are defined though::
     >>> Color.BLUE == Color.BLUE
     True
 
-Comparisons against non-enumeration values will always compare not equal
+Comparisons against non-enumeration values will always return ``False``
 (again, :class:`IntEnum` was explicitly designed to behave differently, see
 below)::
 
