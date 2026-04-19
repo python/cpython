@@ -1402,10 +1402,13 @@ gc_collect_main(PyThreadState *tstate, int generation, _PyGC_Reason reason)
         gc_list_merge(young, old);
     }
     else {
-        /* We only un-track dicts in full collections, to avoid quadratic
-           dict build-up. See issue #14775.
-           Note: _PyDict_MaybeUntrack was removed in 3.14, so dict
-           untracking during GC is no longer done. */
+        // In Python <= 3.13, we called untrack_dicts(young) here to untrack
+        // atomic-only dicts (see issue #14775). Python 3.14 removed the lazy
+        // dict tracking machinery entirely (GH-127010) -- dicts are always
+        // tracked from creation and never untracked by GC. That way, we don't
+        // have to restore MAINTAIN_TRACKING across every PyDict_SetItem call
+        // site; the cost is slightly more work for full collections on dicts
+        // with only atomic values.
         gcstate->long_lived_pending = 0;
         gcstate->long_lived_total = gc_list_size(young);
     }

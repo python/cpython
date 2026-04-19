@@ -692,6 +692,14 @@ tuples can be untracked. A tuple can be untracked if all of its contents are
 already not tracked. Tuples are examined for untracking in all garbage collection
 cycles.
 
+Dictionaries are always tracked from creation and are not untracked by the
+garbage collector. Earlier versions (up to 3.13) used lazy tracking: empty or
+atomic-only dicts were untracked on creation and re-tracked when a trackable
+value was inserted (via `MAINTAIN_TRACKING`), and full collections called
+`_PyDict_MaybeUntrack` to prune dicts whose values had become atomic. That
+machinery was removed in 3.14 (GH-127010) because the per-set-item cost of
+checking the tracking invariant outweighed the savings on full collections.
+
 The garbage collector module provides the Python function `is_tracked(obj)`, which returns
 the current tracking status of the object. Subsequent garbage collections may change the
 tracking status of the object.
