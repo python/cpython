@@ -828,6 +828,7 @@ _PyJit_translate_single_bytecode_to_trace(
     trace->end -= 2;
 
     const struct opcode_macro_expansion *expansion = &_PyOpcode_macro_expansion[opcode];
+    const _PyOpcodeRecordSlotMap *record_slot_map = &_PyOpcode_RecordSlotMaps[opcode];
 
     assert(opcode != ENTER_EXECUTOR && opcode != EXTENDED_ARG);
     assert(!_PyErr_Occurred(tstate));
@@ -1008,15 +1009,17 @@ _PyJit_translate_single_bytecode_to_trace(
                     operand = next->op.arg;
                 }
                 else if (_PyUop_Flags[uop] & HAS_RECORDS_VALUE_FLAG) {
-                    PyObject *recorded_value = tracer->prev_state.recorded_values[record_idx];
-                    tracer->prev_state.recorded_values[record_idx] = NULL;
+                    assert(record_idx < record_slot_map->count);
+                    uint8_t record_slot = record_slot_map->slots[record_idx];
                     record_idx++;
-                    if (_PyOpcode_RecordIsFamilyOverride[opcode] &&
-                        recorded_value != NULL) {
-                        _Py_RecordTraceTransformFn transform = record_trace_transforms[uop];
-                        if (transform != NULL) {
-                            recorded_value = transform(recorded_value);
-                        }
+                    assert(record_slot < tracer->prev_state.recorded_count);
+
+                    PyObject *recorded_value = tracer->prev_state.recorded_values[record_slot];
+                    tracer->prev_state.recorded_values[record_slot] = NULL;
+                    _Py_RecordTraceTransformFn transform =
+                        record_slot_map->needs_family_transform ? record_trace_transforms[uop] : NULL;
+                    if (transform != NULL && recorded_value != NULL) {
+                        recorded_value = transform(recorded_value);
                     }
                     operand = (uintptr_t)recorded_value;
                 }

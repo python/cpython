@@ -1371,7 +1371,6 @@ dummy_func(
         }
 
         macro(BINARY_OP_SUBSCR_GETITEM) =
-            _RECORD_TOS +
             _RECORD_NOS +
             unused/5 + // Skip over the counter and cache
             _CHECK_PEP_523 +
@@ -3688,7 +3687,7 @@ dummy_func(
         }
 
         macro(GET_ITER) =
-            _RECORD_TOS +
+            _RECORD_TOS_TYPE +
             _SPECIALIZE_GET_ITER +
             _GET_ITER;
 

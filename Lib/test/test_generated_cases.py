@@ -2087,6 +2087,17 @@ class TestRecorderTableGeneration(unittest.TestCase):
         record_function_generator.generate_recorder_tables(analysis, out)
         return buf.getvalue()
 
+    def get_slot_map_section(self, output: str) -> str:
+        return output.split(
+            "const _PyOpcodeRecordSlotMap _PyOpcode_RecordSlotMaps[256] = {\n",
+            1,
+        )[1].split("};\n\n", 1)[0]
+
+    def assert_slot_map_lines(self, output: str, *lines: str) -> None:
+        slot_map_section = self.get_slot_map_section(output)
+        for line in lines:
+            self.assertIn(line, slot_map_section)
+
     def test_single_recording_uop_generates_count(self):
         input = """
         tier2 op(_RECORD_TOS, (value -- value)) {
@@ -2145,25 +2156,67 @@ class TestRecorderTableGeneration(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "exceeds MAX_RECORDED_VALUES"):
             self.generate_tables(input)
 
-    def test_family_member_inherits_recorder_shape(self):
+    def test_family_member_needs_transform_only_when_shape_changes(self):
         input = """
         tier2 op(_RECORD_TOS, (value -- value)) {
             RECORD_VALUE(value);
         }
+        tier2 op(_RECORD_TOS_TYPE, (value -- value)) {
+            RECORD_VALUE(Py_TYPE(value));
+        }
         op(_DO_STUFF, (value -- res)) {
             res = value;
         }
-        macro(OP) = _RECORD_TOS + _DO_STUFF;
-        inst(OP_SPECIALIZED, (value -- res)) {
-            res = value;
+        macro(OP_RAW) = _RECORD_TOS + _DO_STUFF;
+        macro(OP_RAW_SPECIALIZED) = _RECORD_TOS_TYPE + _DO_STUFF;
+        family(OP_RAW, INLINE_CACHE_ENTRIES_OP_RAW) = { OP_RAW_SPECIALIZED };
+
+        macro(OP_TYPED) = _RECORD_TOS_TYPE + _DO_STUFF;
+        macro(OP_TYPED_SPECIALIZED) = _RECORD_TOS_TYPE + _DO_STUFF;
+        family(OP_TYPED, INLINE_CACHE_ENTRIES_OP_TYPED) = { OP_TYPED_SPECIALIZED };
+        """
+        output = self.generate_tables(input)
+        self.assert_slot_map_lines(
+            output,
+            "[OP_RAW_SPECIALIZED] = {1, 1, {0}}",
+            "[OP_TYPED_SPECIALIZED] = {1, 0, {0}}",
+        )
+
+    def test_family_member_maps_positional_recorders_to_family_slots(self):
+        input = """
+        tier2 op(_RECORD_TOS, (sub -- sub)) {
+            RECORD_VALUE(sub);
         }
+        tier2 op(_RECORD_NOS, (container, sub -- container, sub)) {
+            RECORD_VALUE(container);
+        }
+        op(_DO_STUFF, (container, sub -- res)) {
+            res = container;
+        }
+        macro(OP) = _RECORD_TOS + _RECORD_NOS + _DO_STUFF;
+        macro(OP_SPECIALIZED) = _RECORD_NOS + _DO_STUFF;
         family(OP, INLINE_CACHE_ENTRIES_OP) = { OP_SPECIALIZED };
         """
         output = self.generate_tables(input)
-        self.assertIn("[OP] = {1, {_RECORD_TOS_INDEX}}", output)
-        self.assertIn("[OP_SPECIALIZED] = {1, {_RECORD_TOS_INDEX}}", output)
-        self.assertIn("const uint8_t _PyOpcode_RecordIsFamilyOverride[256] = {", output)
-        self.assertIn("[OP_SPECIALIZED] = 1", output)
+        self.assert_slot_map_lines(output, "[OP_SPECIALIZED] = {1, 0, {1}}")
+
+    def test_family_member_maps_non_positional_recorders_by_stack_shape(self):
+        input = """
+        tier2 op(_RECORD_CALLABLE, (callable, self, args[oparg] -- callable, self, args[oparg])) {
+            RECORD_VALUE(callable);
+        }
+        tier2 op(_RECORD_BOUND_METHOD, (callable, self, args[oparg] -- callable, self, args[oparg])) {
+            RECORD_VALUE(callable);
+        }
+        op(_DO_STUFF, (callable, self, args[oparg] -- res)) {
+            res = callable;
+        }
+        macro(OP) = _RECORD_CALLABLE + _DO_STUFF;
+        macro(OP_SPECIALIZED) = _RECORD_BOUND_METHOD + _DO_STUFF;
+        family(OP, INLINE_CACHE_ENTRIES_OP) = { OP_SPECIALIZED };
+        """
+        output = self.generate_tables(input)
+        self.assert_slot_map_lines(output, "[OP_SPECIALIZED] = {1, 1, {0}}")
 
 class TestGeneratedAbstractCases(unittest.TestCase):
     def setUp(self) -> None:
