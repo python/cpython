@@ -419,8 +419,9 @@ The :mod:`!signal` module defines the following functions:
 
 .. function:: pause()
 
-   Cause the process to sleep until a signal is received; the appropriate handler
-   will then be called.  Returns nothing.
+   Cause the process to sleep until a signal with an installed handler is
+   delivered; the handler will then be called.  Signals that are ignored or
+   set to the default action do not wake the process.  Returns nothing.
 
    .. availability:: Unix.
 
