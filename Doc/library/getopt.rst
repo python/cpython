@@ -7,18 +7,13 @@
 
 **Source code:** :source:`Lib/getopt.py`
 
-.. deprecated:: 3.13
-   The :mod:`getopt` module is :term:`soft deprecated` and will not be
-   developed further; development will continue with the :mod:`argparse`
-   module.
-
 .. note::
 
-   The :mod:`getopt` module is a parser for command line options whose API is
-   designed to be familiar to users of the C :c:func:`!getopt` function. Users who
-   are unfamiliar with the C :c:func:`!getopt` function or who would like to write
-   less code and get better help and error messages should consider using the
-   :mod:`argparse` module instead.
+   This module is considered feature complete. A more declarative and
+   extensible alternative to this API is provided in the :mod:`optparse`
+   module. Further functional enhancements for command line parameter
+   processing are provided either as third party modules on PyPI,
+   or else as features in the :mod:`argparse` module.
 
 --------------
 
@@ -27,6 +22,13 @@ It supports the same conventions as the Unix :c:func:`!getopt` function (includi
 the special meanings of arguments of the form '``-``' and '``--``').  Long
 options similar to those supported by GNU software may be used as well via an
 optional third argument.
+
+Users who are unfamiliar with the Unix :c:func:`!getopt` function should consider
+using the :mod:`argparse` module instead. Users who are familiar with the Unix
+:c:func:`!getopt` function, but would like to get equivalent behavior while
+writing less code and getting better help and error messages should consider
+using the :mod:`optparse` module. See :ref:`choosing-an-argument-parser` for
+additional details.
 
 This module provides two functions and an
 exception:
@@ -38,7 +40,8 @@ exception:
    be parsed, without the leading reference to the running program. Typically, this
    means ``sys.argv[1:]``. *shortopts* is the string of option letters that the
    script wants to recognize, with options that require an argument followed by a
-   colon (``':'``; i.e., the same format that Unix :c:func:`!getopt` uses).
+   colon (``':'``) and options that accept an optional argument followed by
+   two colons (``'::'``); i.e., the same format that Unix :c:func:`!getopt` uses.
 
    .. note::
 
@@ -49,8 +52,10 @@ exception:
    *longopts*, if specified, must be a list of strings with the names of the
    long options which should be supported.  The leading ``'--'`` characters
    should not be included in the option name.  Long options which require an
-   argument should be followed by an equal sign (``'='``).  Optional arguments
-   are not supported.  To accept only long options, *shortopts* should be an
+   argument should be followed by an equal sign (``'='``).
+   Long options which accept an optional argument should be followed by
+   an equal sign and question mark (``'=?'``).
+   To accept only long options, *shortopts* should be an
    empty string.  Long options on the command line can be recognized so long as
    they provide a prefix of the option name that matches exactly one of the
    accepted options.  For example, if *longopts* is ``['foo', 'frob']``, the
@@ -67,6 +72,9 @@ exception:
    options occur in the list in the same order in which they were found, thus
    allowing multiple occurrences.  Long and short options may be mixed.
 
+   .. versionchanged:: 3.14
+      Optional arguments are supported.
+
 
 .. function:: gnu_getopt(args, shortopts, longopts=[])
 
@@ -78,6 +86,16 @@ exception:
    If the first character of the option string is ``'+'``, or if the environment
    variable :envvar:`!POSIXLY_CORRECT` is set, then option processing stops as
    soon as a non-option argument is encountered.
+
+   If the first character of the option string is ``'-'``, non-option arguments
+   that are followed by options are added to the list of option-and-value pairs
+   as a pair that has ``None`` as its first element and the list of non-option
+   arguments as its second element.
+   The second element of the :func:`!gnu_getopt` result is a list of
+   program arguments after the last option.
+
+   .. versionchanged:: 3.14
+      Support for returning intermixed options and non-option arguments in order.
 
 
 .. exception:: GetoptError
@@ -124,6 +142,34 @@ Using long option names is equally easy:
    >>> args
    ['a1', 'a2']
 
+Optional arguments should be specified explicitly:
+
+.. doctest::
+
+   >>> s = '-Con -C --color=off --color a1 a2'
+   >>> args = s.split()
+   >>> args
+   ['-Con', '-C', '--color=off', '--color', 'a1', 'a2']
+   >>> optlist, args = getopt.getopt(args, 'C::', ['color=?'])
+   >>> optlist
+   [('-C', 'on'), ('-C', ''), ('--color', 'off'), ('--color', '')]
+   >>> args
+   ['a1', 'a2']
+
+The order of options and non-option arguments can be preserved:
+
+.. doctest::
+
+   >>> s = 'a1 -x a2 a3 a4 --long a5 a6'
+   >>> args = s.split()
+   >>> args
+   ['a1', '-x', 'a2', 'a3', 'a4', '--long', 'a5', 'a6']
+   >>> optlist, args = getopt.gnu_getopt(args, '-x:', ['long='])
+   >>> optlist
+   [(None, ['a1']), ('-x', 'a2'), (None, ['a3', 'a4']), ('--long', 'a5')]
+   >>> args
+   ['a6']
+
 In a script, typical usage is something like this:
 
 .. testcode::
@@ -150,13 +196,27 @@ In a script, typical usage is something like this:
                output = a
            else:
                assert False, "unhandled option"
-       # ...
+       process(args, output=output, verbose=verbose)
 
    if __name__ == "__main__":
        main()
 
 Note that an equivalent command line interface could be produced with less code
-and more informative help and error messages by using the :mod:`argparse` module:
+and more informative help and error messages by using the :mod:`optparse` module:
+
+.. testcode::
+
+   import optparse
+
+   if __name__ == '__main__':
+       parser = optparse.OptionParser()
+       parser.add_option('-o', '--output')
+       parser.add_option('-v', dest='verbose', action='store_true')
+       opts, args = parser.parse_args()
+       process(args, output=opts.output, verbose=opts.verbose)
+
+A roughly equivalent command line interface for this case can also be
+produced by using the :mod:`argparse` module:
 
 .. testcode::
 
@@ -166,12 +226,18 @@ and more informative help and error messages by using the :mod:`argparse` module
        parser = argparse.ArgumentParser()
        parser.add_argument('-o', '--output')
        parser.add_argument('-v', dest='verbose', action='store_true')
+       parser.add_argument('rest', nargs='*')
        args = parser.parse_args()
-       # ... do something with args.output ...
-       # ... do something with args.verbose ..
+       process(args.rest, output=args.output, verbose=args.verbose)
+
+See :ref:`choosing-an-argument-parser` for details on how the ``argparse``
+version of this code differs in behaviour from the ``optparse`` (and
+``getopt``) version.
 
 .. seealso::
 
-   Module :mod:`argparse`
-      Alternative command line option and argument parsing library.
+   Module :mod:`optparse`
+      Declarative command line option parsing.
 
+   Module :mod:`argparse`
+      More opinionated command line option and argument parsing library.

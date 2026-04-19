@@ -3,6 +3,7 @@ import sys
 import warnings
 from inspect import isabstract
 from typing import Any
+import linecache
 
 from test import support
 from test.support import os_helper
@@ -73,6 +74,11 @@ def runtest_refleak(test_name, test_func,
     ps = copyreg.dispatch_table.copy()
     pic = sys.path_importer_cache.copy()
     zdc: dict[str, Any] | None
+    # Linecache holds a cache with the source of interactive code snippets
+    # (e.g. code typed in the REPL). This cache is not cleared by
+    # linecache.clearcache(). We need to save and restore it to avoid false
+    # positives.
+    linecache_data = linecache.cache.copy(), linecache._interactive_cache.copy() # type: ignore[attr-defined]
     try:
         import zipimport
     except ImportError:
@@ -86,6 +92,13 @@ def runtest_refleak(test_name, test_func,
             continue
         for obj in abc.__subclasses__() + [abc]:
             abcs[obj] = _get_dump(obj)[0]
+
+    # `ByteString` is not included in `collections.abc.__all__`
+    with warnings.catch_warnings(action='ignore', category=DeprecationWarning):
+        ByteString = collections.abc.ByteString
+    # Mypy doesn't even think `ByteString` is a class, hence the `type: ignore`
+    for obj in ByteString.__subclasses__() + [ByteString]:  # type: ignore[attr-defined]
+        abcs[obj] = _get_dump(obj)[0]
 
     # bpo-31217: Integer pool to get a single integer object for the same
     # value. The pool is used to prevent false alarm when checking for memory
@@ -122,10 +135,10 @@ def runtest_refleak(test_name, test_func,
 
     xml_filename = 'refleak-xml.tmp'
     result = None
-    dash_R_cleanup(fs, ps, pic, zdc, abcs)
-    support.gc_collect()
+    dash_R_cleanup(fs, ps, pic, zdc, abcs, linecache_data)
 
     for i in rep_range:
+        support.gc_collect()
         current = refleak_helper._hunting_for_refleaks
         refleak_helper._hunting_for_refleaks = True
         try:
@@ -134,7 +147,7 @@ def runtest_refleak(test_name, test_func,
             refleak_helper._hunting_for_refleaks = current
 
         save_support_xml(xml_filename)
-        dash_R_cleanup(fs, ps, pic, zdc, abcs)
+        dash_R_cleanup(fs, ps, pic, zdc, abcs, linecache_data)
         support.gc_collect()
 
         # Read memory statistics immediately after the garbage collection.
@@ -223,7 +236,7 @@ def runtest_refleak(test_name, test_func,
     return (failed, result)
 
 
-def dash_R_cleanup(fs, ps, pic, zdc, abcs):
+def dash_R_cleanup(fs, ps, pic, zdc, abcs, linecache_data):
     import copyreg
     import collections.abc
 
@@ -233,6 +246,11 @@ def dash_R_cleanup(fs, ps, pic, zdc, abcs):
     copyreg.dispatch_table.update(ps)
     sys.path_importer_cache.clear()
     sys.path_importer_cache.update(pic)
+    lcache, linteractive = linecache_data
+    linecache._interactive_cache.clear()
+    linecache._interactive_cache.update(linteractive)
+    linecache.cache.clear()
+    linecache.cache.update(lcache)
     try:
         import zipimport
     except ImportError:
@@ -243,6 +261,8 @@ def dash_R_cleanup(fs, ps, pic, zdc, abcs):
 
     # Clear ABC registries, restoring previously saved ABC registries.
     abs_classes = [getattr(collections.abc, a) for a in collections.abc.__all__]
+    with warnings.catch_warnings(action='ignore', category=DeprecationWarning):
+        abs_classes.append(collections.abc.ByteString)
     abs_classes = filter(isabstract, abs_classes)
     for abc in abs_classes:
         for obj in abc.__subclasses__() + [abc]:

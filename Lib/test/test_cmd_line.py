@@ -3,6 +3,7 @@
 # See test_cmd_line_script.py for testing of script execution
 
 import os
+import re
 import subprocess
 import sys
 import sysconfig
@@ -17,6 +18,8 @@ from test.support.script_helper import (
     spawn_python, kill_python, assert_python_ok, assert_python_failure,
     interpreter_requires_environment
 )
+from textwrap import dedent
+
 
 if not support.has_subprocess_support:
     raise unittest.SkipTest("test module requires subprocess")
@@ -29,6 +32,17 @@ def _kill_python_and_exit_code(p):
     return data, returncode
 
 
+def presite_func():
+    print("presite func")
+
+class Namespace:
+    pass
+
+presite = Namespace()
+presite.attr = Namespace()
+presite.attr.func = presite_func
+
+
 class CmdLineTest(unittest.TestCase):
     def test_directories(self):
         assert_python_failure('.')
@@ -36,7 +50,8 @@ class CmdLineTest(unittest.TestCase):
 
     def verify_valid_flag(self, cmd_line):
         rc, out, err = assert_python_ok(cmd_line)
-        self.assertTrue(out == b'' or out.endswith(b'\n'))
+        if out != b'':
+            self.assertEndsWith(out, b'\n')
         self.assertNotIn(b'Traceback', out)
         self.assertNotIn(b'Traceback', err)
         return out
@@ -56,11 +71,22 @@ class CmdLineTest(unittest.TestCase):
     def test_help_env(self):
         out = self.verify_valid_flag('--help-env')
         self.assertIn(b'PYTHONHOME', out)
+        # Env vars in each section should be sorted alphabetically
+        # (ignoring underscores so PYTHON_FOO and PYTHONFOO intermix naturally)
+        sort_key = lambda name: name.replace(b'_', b'').lower()
+        sections = out.split(b'These variables have equivalent')
+        for section in sections:
+            envvars = re.findall(rb'^(PYTHON\w+)', section, re.MULTILINE)
+            self.assertEqual(envvars, sorted(envvars, key=sort_key),
+                             "env vars should be sorted alphabetically")
 
     @support.cpython_only
     def test_help_xoptions(self):
         out = self.verify_valid_flag('--help-xoptions')
         self.assertIn(b'-X dev', out)
+        options = re.findall(rb'^-X (\w+)', out, re.MULTILINE)
+        self.assertEqual(options, sorted(options),
+                         "options should be sorted alphabetically")
 
     @support.cpython_only
     def test_help_all(self):
@@ -86,8 +112,8 @@ class CmdLineTest(unittest.TestCase):
         version = ('Python %d.%d' % sys.version_info[:2]).encode("ascii")
         for switch in '-V', '--version', '-VV':
             rc, out, err = assert_python_ok(switch)
-            self.assertFalse(err.startswith(version))
-            self.assertTrue(out.startswith(version))
+            self.assertNotStartsWith(err, version)
+            self.assertStartsWith(out, version)
 
     def test_verbose(self):
         # -v causes imports to write to stderr.  If the write to
@@ -197,6 +223,14 @@ class CmdLineTest(unittest.TestCase):
         self.assertTrue(data.find(b'1 loop') != -1)
         self.assertTrue(data.find(b'__main__.Timer') != -1)
 
+    @support.cpython_only
+    def test_null_byte_in_interactive_mode(self):
+        # gh-140594: Fix an out of bounds read when a single NUL character
+        # is read from the standard input in interactive mode.
+        proc = spawn_python('-i')
+        proc.communicate(b'\x00', timeout=support.SHORT_TIMEOUT)
+        self.assertEqual(proc.returncode, 0)
+
     def test_relativedir_bug46421(self):
         # Test `python -m unittest` with a relative directory beginning with ./
         # Note: We have to switch to the project's top module's directory, as per
@@ -296,6 +330,10 @@ class CmdLineTest(unittest.TestCase):
             cmd = [sys.executable, '-X', 'utf8', '-c', code, arg]
             return subprocess.run(cmd, stdout=subprocess.PIPE, text=True)
 
+        def run_no_utf8_mode(arg):
+            cmd = [sys.executable, '-X', 'utf8=0', '-c', code, arg]
+            return subprocess.run(cmd, stdout=subprocess.PIPE, text=True)
+
         valid_utf8 = 'e:\xe9, euro:\u20ac, non-bmp:\U0010ffff'.encode('utf-8')
         # invalid UTF-8 byte sequences with a valid UTF-8 sequence
         # in the middle.
@@ -308,7 +346,8 @@ class CmdLineTest(unittest.TestCase):
         )
         test_args = [valid_utf8, invalid_utf8]
 
-        for run_cmd in (run_default, run_c_locale, run_utf8_mode):
+        for run_cmd in (run_default, run_c_locale, run_utf8_mode,
+                        run_no_utf8_mode):
             with self.subTest(run_cmd=run_cmd):
                 for arg in test_args:
                     proc = run_cmd(arg)
@@ -336,6 +375,8 @@ class CmdLineTest(unittest.TestCase):
         self.assertEqual(stdout, expected)
         self.assertEqual(p.returncode, 0)
 
+    @unittest.skipIf(os.environ.get("PYTHONUNBUFFERED", "0") != "0",
+                     "Python stdio buffering is disabled.")
     def test_non_interactive_output_buffering(self):
         code = textwrap.dedent("""
             import sys
@@ -375,7 +416,7 @@ class CmdLineTest(unittest.TestCase):
         p.stdin.flush()
         data, rc = _kill_python_and_exit_code(p)
         self.assertEqual(rc, 0)
-        self.assertTrue(data.startswith(b'x'), data)
+        self.assertStartsWith(data, b'x')
 
     def test_large_PYTHONPATH(self):
         path1 = "ABCDE" * 100
@@ -478,6 +519,7 @@ class CmdLineTest(unittest.TestCase):
         self.assertRegex(err.decode('ascii', 'ignore'), 'SyntaxError')
         self.assertEqual(b'', out)
 
+    @force_not_colorized
     def test_stdout_flush_at_shutdown(self):
         # Issue #5319: if stdout.flush() fails at shutdown, an error should
         # be printed out.
@@ -489,7 +531,7 @@ class CmdLineTest(unittest.TestCase):
         rc, out, err = assert_python_failure('-c', code)
         self.assertEqual(b'', out)
         self.assertEqual(120, rc)
-        self.assertIn(b'Exception ignored on flushing sys.stdout:\n'
+        self.assertIn(b'Exception ignored while flushing sys.stdout:\n'
                       b'OSError: '.replace(b'\n', os.linesep.encode()),
                       err)
 
@@ -931,14 +973,14 @@ class CmdLineTest(unittest.TestCase):
 
     @unittest.skipUnless(sysconfig.get_config_var('Py_TRACE_REFS'), "Requires --with-trace-refs build option")
     def test_python_dump_refs(self):
-        code = 'import sys; sys._clear_type_cache()'
+        code = 'import sys; sys._clear_internal_caches()'
         rc, out, err = assert_python_ok('-c', code, PYTHONDUMPREFS='1')
         self.assertEqual(rc, 0)
 
     @unittest.skipUnless(sysconfig.get_config_var('Py_TRACE_REFS'), "Requires --with-trace-refs build option")
     def test_python_dump_refs_file(self):
         with tempfile.NamedTemporaryFile() as dump_file:
-            code = 'import sys; sys._clear_type_cache()'
+            code = 'import sys; sys._clear_internal_caches()'
             rc, out, err = assert_python_ok('-c', code, PYTHONDUMPREFSFILE=dump_file.name)
             self.assertEqual(rc, 0)
             with open(dump_file.name, 'r') as file:
@@ -961,10 +1003,25 @@ class CmdLineTest(unittest.TestCase):
 
     @unittest.skipUnless(support.MS_WINDOWS, 'Test only applicable on Windows')
     def test_python_legacy_windows_stdio(self):
-        code = "import sys; print(sys.stdin.encoding, sys.stdout.encoding)"
-        expected = 'cp'
-        rc, out, err = assert_python_ok('-c', code, PYTHONLEGACYWINDOWSSTDIO='1')
-        self.assertIn(expected.encode(), out)
+        # Test that _WindowsConsoleIO is used when PYTHONLEGACYWINDOWSSTDIO
+        # is not set.
+        # We cannot use PIPE becase it prevents creating new console.
+        # So we use exit code.
+        code = "import sys; sys.exit(type(sys.stdout.buffer.raw).__name__ != '_WindowsConsoleIO')"
+        env = os.environ.copy()
+        env["PYTHONLEGACYWINDOWSSTDIO"] = ""
+        p = subprocess.run([sys.executable, "-c", code],
+                           creationflags=subprocess.CREATE_NEW_CONSOLE,
+                           env=env)
+        self.assertEqual(p.returncode, 0)
+
+        # Then test that FIleIO is used when PYTHONLEGACYWINDOWSSTDIO is set.
+        code = "import sys; sys.exit(type(sys.stdout.buffer.raw).__name__ != 'FileIO')"
+        env["PYTHONLEGACYWINDOWSSTDIO"] = "1"
+        p = subprocess.run([sys.executable, "-c", code],
+                           creationflags=subprocess.CREATE_NEW_CONSOLE,
+                           env=env)
+        self.assertEqual(p.returncode, 0)
 
     @unittest.skipIf("-fsanitize" in sysconfig.get_config_vars().get('PY_CFLAGS', ()),
                      "PYTHONMALLOCSTATS doesn't work with ASAN")
@@ -1012,8 +1069,8 @@ class CmdLineTest(unittest.TestCase):
                               stdout=subprocess.PIPE,
                               stderr=subprocess.PIPE,
                               text=True)
-        err_msg = "unknown option --unknown-option\nusage: "
-        self.assertTrue(proc.stderr.startswith(err_msg), proc.stderr)
+        err_msg = "Unknown option: --unknown-option\nusage: "
+        self.assertStartsWith(proc.stderr, err_msg)
         self.assertNotEqual(proc.returncode, 0)
 
     def test_int_max_str_digits(self):
@@ -1049,6 +1106,88 @@ class CmdLineTest(unittest.TestCase):
         )
         self.assertEqual(res2int(res), (6000, 6000))
 
+    def test_cmd_dedent(self):
+        # test that -c auto-dedents its arguments
+        test_cases = [
+            (
+                """
+                    print('space-auto-dedent')
+                """,
+                "space-auto-dedent",
+            ),
+            (
+                dedent(
+                    """
+                ^^^print('tab-auto-dedent')
+                """
+                ).replace("^", "\t"),
+                "tab-auto-dedent",
+            ),
+            (
+                dedent(
+                    """
+                ^^if 1:
+                ^^^^print('mixed-auto-dedent-1')
+                ^^print('mixed-auto-dedent-2')
+                """
+                ).replace("^", "\t \t"),
+                "mixed-auto-dedent-1\nmixed-auto-dedent-2",
+            ),
+            (
+                '''
+                    data = """$
+
+                    this data has an empty newline above and a newline with spaces below $
+                                            $
+                    """$
+                    if 1:         $
+                        print(repr(data))$
+                '''.replace(
+                    "$", ""
+                ),
+                # Note: entirely blank lines are normalized to \n, even if they
+                # are part of a data string. This is consistent with
+                # textwrap.dedent behavior, but might not be intuitive.
+                "'\\n\\nthis data has an empty newline above and a newline with spaces below \\n\\n'",
+            ),
+            (
+                '',
+                '',
+            ),
+            (
+                '  \t\n\t\n \t\t\t  \t\t \t\n\t\t \n\n\n\t\t\t   ',
+                '',
+            ),
+        ]
+        for code, expected in test_cases:
+            # Run the auto-dedent case
+            args1 = sys.executable, '-c', code
+            proc1 = subprocess.run(args1, stdout=subprocess.PIPE)
+            self.assertEqual(proc1.returncode, 0, proc1)
+            output1 = proc1.stdout.strip().decode(encoding='utf-8')
+
+            # Manually dedent beforehand, check the result is the same.
+            args2 = sys.executable, '-c', dedent(code)
+            proc2 = subprocess.run(args2, stdout=subprocess.PIPE)
+            self.assertEqual(proc2.returncode, 0, proc2)
+            output2 = proc2.stdout.strip().decode(encoding='utf-8')
+
+            self.assertEqual(output1, output2)
+            self.assertEqual(output1.replace('\r\n', '\n'), expected)
+
+    def test_cmd_dedent_failcase(self):
+        # Mixing tabs and spaces is not allowed
+        from textwrap import dedent
+        template = dedent(
+            '''
+            -+if 1:
+            +-++ print('will fail')
+            ''')
+        code = template.replace('-', ' ').replace('+', '\t')
+        assert_python_failure('-c', code)
+        code = template.replace('-', '\t').replace('+', ' ')
+        assert_python_failure('-c', code)
+
     def test_cpu_count(self):
         code = "import os; print(os.cpu_count(), os.process_cpu_count())"
         res = assert_python_ok('-X', 'cpu_count=4321', '-c', code)
@@ -1064,6 +1203,24 @@ class CmdLineTest(unittest.TestCase):
         self.assertEqual(self.res2int(res), (os.cpu_count(), os.process_cpu_count()))
         res = assert_python_ok('-c', code, PYTHON_CPU_COUNT='default')
         self.assertEqual(self.res2int(res), (os.cpu_count(), os.process_cpu_count()))
+
+    def test_import_time(self):
+        # os is not imported at startup
+        code = 'import os; import os'
+
+        for case in 'importtime', 'importtime=1', 'importtime=true':
+            res = assert_python_ok('-X', case, '-c', code)
+            res_err = res.err.decode('utf-8')
+            self.assertRegex(res_err, r'import time: \s*\d+ \| \s*\d+ \| \s*os')
+            self.assertNotRegex(res_err, r'import time: cached\s* \| cached\s* \| os')
+
+        res = assert_python_ok('-X', 'importtime=2', '-c', code)
+        res_err = res.err.decode('utf-8')
+        self.assertRegex(res_err, r'import time: \s*\d+ \| \s*\d+ \| \s*os')
+        self.assertRegex(res_err, r'import time: cached\s* \| cached\s* \| os')
+
+        assert_python_failure('-X', 'importtime=-1', '-c', code)
+        assert_python_failure('-X', 'importtime=3', '-c', code)
 
     def res2int(self, res):
         out = res.out.strip().decode("utf-8")
@@ -1119,6 +1276,17 @@ class CmdLineTest(unittest.TestCase):
         self.assertIn(b"PYTHON_TLBC=N: N is missing or invalid", err)
         rc, out, err = assert_python_failure(PYTHON_TLBC="2")
         self.assertIn(b"PYTHON_TLBC=N: N is missing or invalid", err)
+
+    @unittest.skipUnless(support.Py_DEBUG,
+                         '-X presite requires a Python debug build')
+    def test_presite(self):
+        entrypoint = "test.test_cmd_line:presite_func"
+        proc = assert_python_ok("-X", f"presite={entrypoint}", "-c", "pass")
+        self.assertEqual(proc.out.rstrip(), b"presite func")
+
+        entrypoint = "test.test_cmd_line:presite.attr.func"
+        proc = assert_python_ok("-X", f"presite={entrypoint}", "-c", "pass")
+        self.assertEqual(proc.out.rstrip(), b"presite func")
 
 
 @unittest.skipIf(interpreter_requires_environment(),

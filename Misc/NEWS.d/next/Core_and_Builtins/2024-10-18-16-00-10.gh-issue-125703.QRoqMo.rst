@@ -1,2 +1,0 @@
-Correctly honour :mod:`tracemalloc` hooks in specialized ``Py_DECREF``
-paths. Patch by Pablo Galindo

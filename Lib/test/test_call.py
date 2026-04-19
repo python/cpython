@@ -1,6 +1,9 @@
 import unittest
 from test.support import (cpython_only, is_wasi, requires_limited_api, Py_DEBUG,
-                          set_recursion_limit, skip_on_s390x)
+                          set_recursion_limit, skip_on_s390x,
+                          skip_emscripten_stack_overflow,
+                          skip_wasi_stack_overflow, skip_if_sanitizer,
+                          import_helper)
 try:
     import _testcapi
 except ImportError:
@@ -9,6 +12,10 @@ try:
     import _testlimitedcapi
 except ImportError:
     _testlimitedcapi = None
+try:
+    import _testinternalcapi
+except ImportError:
+    _testinternalcapi = None
 import struct
 import collections
 import itertools
@@ -616,9 +623,6 @@ def testfunction_kw(self, *, kw):
     return self
 
 
-ADAPTIVE_WARMUP_DELAY = 2
-
-
 @unittest.skipIf(_testcapi is None, "requires _testcapi")
 class TestPEP590(unittest.TestCase):
 
@@ -695,8 +699,8 @@ class TestPEP590(unittest.TestCase):
         UnaffectedType2 = _testcapi.make_vectorcall_class(SuperType)
 
         # Aside: Quickly check that the C helper actually made derived types
-        self.assertTrue(issubclass(UnaffectedType1, DerivedType))
-        self.assertTrue(issubclass(UnaffectedType2, SuperType))
+        self.assertIsSubclass(UnaffectedType1, DerivedType)
+        self.assertIsSubclass(UnaffectedType2, SuperType)
 
         # Initial state: tp_call
         self.assertEqual(instance(), "tp_call")
@@ -802,17 +806,18 @@ class TestPEP590(unittest.TestCase):
 
     def test_setvectorcall(self):
         from _testcapi import function_setvectorcall
+        _testinternalcapi = import_helper.import_module("_testinternalcapi")
         def f(num): return num + 1
         assert_equal = self.assertEqual
         num = 10
         assert_equal(11, f(num))
         function_setvectorcall(f)
-        # make sure specializer is triggered by running > 50 times
-        for _ in range(10 * ADAPTIVE_WARMUP_DELAY):
+        for _ in range(_testinternalcapi.SPECIALIZATION_THRESHOLD):
             assert_equal("overridden", f(num))
 
     def test_setvectorcall_load_attr_specialization_skip(self):
         from _testcapi import function_setvectorcall
+        _testinternalcapi = import_helper.import_module("_testinternalcapi")
 
         class X:
             def __getattribute__(self, attr):
@@ -824,11 +829,12 @@ class TestPEP590(unittest.TestCase):
         function_setvectorcall(X.__getattribute__)
         # make sure specialization doesn't trigger
         # when vectorcall is overridden
-        for _ in range(ADAPTIVE_WARMUP_DELAY):
+        for _ in range(_testinternalcapi.SPECIALIZATION_THRESHOLD):
             assert_equal("overridden", x.a)
 
     def test_setvectorcall_load_attr_specialization_deopt(self):
         from _testcapi import function_setvectorcall
+        _testinternalcapi = import_helper.import_module("_testinternalcapi")
 
         class X:
             def __getattribute__(self, attr):
@@ -840,12 +846,12 @@ class TestPEP590(unittest.TestCase):
         assert_equal = self.assertEqual
         x = X()
         # trigger LOAD_ATTR_GETATTRIBUTE_OVERRIDDEN specialization
-        for _ in range(ADAPTIVE_WARMUP_DELAY):
+        for _ in range(_testinternalcapi.SPECIALIZATION_THRESHOLD):
             assert_equal("a", get_a(x))
         function_setvectorcall(X.__getattribute__)
         # make sure specialized LOAD_ATTR_GETATTRIBUTE_OVERRIDDEN
         # gets deopted due to overridden vectorcall
-        for _ in range(ADAPTIVE_WARMUP_DELAY):
+        for _ in range(_testinternalcapi.SPECIALIZATION_THRESHOLD):
             assert_equal("overridden", get_a(x))
 
     @requires_limited_api
@@ -1035,9 +1041,29 @@ class TestErrorMessagesSuggestions(unittest.TestCase):
 @cpython_only
 class TestRecursion(unittest.TestCase):
 
+    def test_margin_is_sufficient(self):
+
+        def get_sp():
+            return _testinternalcapi.get_stack_pointer()
+
+        this_sp = _testinternalcapi.get_stack_pointer()
+        lower_sp = _testcapi.pyobject_vectorcall(get_sp, (), ())
+        if _testcapi._Py_STACK_GROWS_DOWN:
+            self.assertLess(lower_sp, this_sp)
+            safe_margin = this_sp - lower_sp
+        else:
+            self.assertGreater(lower_sp, this_sp)
+            safe_margin = lower_sp - this_sp
+        # Add an (arbitrary) extra 25% for safety
+        safe_margin = safe_margin * 5 / 4
+        self.assertLess(safe_margin, _testinternalcapi.get_stack_margin())
+
     @skip_on_s390x
     @unittest.skipIf(is_wasi and Py_DEBUG, "requires deep stack")
+    @skip_if_sanitizer("requires deep stack", thread=True)
     @unittest.skipIf(_testcapi is None, "requires _testcapi")
+    @skip_emscripten_stack_overflow()
+    @skip_wasi_stack_overflow()
     def test_super_deep(self):
 
         def recurse(n):
@@ -1062,12 +1088,20 @@ class TestRecursion(unittest.TestCase):
             recurse(90_000)
             with self.assertRaises(RecursionError):
                 recurse(101_000)
-            c_recurse(100)
+            c_recurse(50)
             with self.assertRaises(RecursionError):
                 c_recurse(90_000)
-            c_py_recurse(90)
+            c_py_recurse(50)
             with self.assertRaises(RecursionError):
                 c_py_recurse(100_000)
+
+    def test_recursion_with_kwargs(self):
+        # GH-137883: The interpreter forgot to check the recursion limit when
+        # calling with keywords.
+        def recurse_kw(a=0):
+            recurse_kw(a=0)
+        with self.assertRaises(RecursionError):
+            recurse_kw()
 
 
 class TestFunctionWithManyArgs(unittest.TestCase):

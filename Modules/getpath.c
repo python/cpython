@@ -17,8 +17,11 @@
 #endif
 
 #ifdef __APPLE__
-#  include <dlfcn.h>
 #  include <mach-o/dyld.h>
+#endif
+
+#ifdef HAVE_DLFCN_H
+#  include <dlfcn.h>
 #endif
 
 /* Reference the precompiled getpath.py */
@@ -687,7 +690,7 @@ env_to_dict(PyObject *dict, const char *key, int and_clear)
     // Quick convert to wchar_t, since we know key is ASCII
     wchar_t *wp = wkey;
     for (const char *p = &key[4]; *p; ++p) {
-        assert(*p < 128);
+        assert(!(*p & 0x80));
         *wp++ = *p;
     }
     *wp = L'\0';
@@ -803,36 +806,25 @@ progname_to_dict(PyObject *dict, const char *key)
 static int
 library_to_dict(PyObject *dict, const char *key)
 {
+/* macOS framework builds do not link against a libpython dynamic library, but
+   instead link against a macOS Framework. */
+#if defined(Py_ENABLE_SHARED) || defined(WITH_NEXT_FRAMEWORK)
+
 #ifdef MS_WINDOWS
-#ifdef Py_ENABLE_SHARED
     extern HMODULE PyWin_DLLhModule;
     if (PyWin_DLLhModule) {
         return winmodule_to_dict(dict, key, PyWin_DLLhModule);
     }
 #endif
-#elif defined(WITH_NEXT_FRAMEWORK)
-    static char modPath[MAXPATHLEN + 1];
-    static int modPathInitialized = -1;
-    if (modPathInitialized < 0) {
-        modPathInitialized = 0;
 
-        /* On Mac OS X we have a special case if we're running from a framework.
-           This is because the python home should be set relative to the library,
-           which is in the framework, not relative to the executable, which may
-           be outside of the framework. Except when we're in the build
-           directory... */
-        Dl_info pythonInfo;
-        if (dladdr(&Py_Initialize, &pythonInfo)) {
-            if (pythonInfo.dli_fname) {
-                strncpy(modPath, pythonInfo.dli_fname, MAXPATHLEN);
-                modPathInitialized = 1;
-            }
-        }
-    }
-    if (modPathInitialized > 0) {
-        return decode_to_dict(dict, key, modPath);
+#if HAVE_DLADDR
+    Dl_info libpython_info;
+    if (dladdr(&Py_Initialize, &libpython_info) && libpython_info.dli_fname) {
+        return decode_to_dict(dict, key, libpython_info.dli_fname);
     }
 #endif
+#endif
+
     return PyDict_SetItemString(dict, key, Py_None) == 0;
 }
 
@@ -963,7 +955,7 @@ _PyConfig_InitPathConfig(PyConfig *config, int compute_path_config)
     ) {
         Py_DECREF(co);
         Py_DECREF(dict);
-        PyErr_FormatUnraisable("Exception ignored in preparing getpath");
+        PyErr_FormatUnraisable("Exception ignored while preparing getpath");
         return PyStatus_Error("error evaluating initial values");
     }
 
@@ -972,13 +964,13 @@ _PyConfig_InitPathConfig(PyConfig *config, int compute_path_config)
 
     if (!r) {
         Py_DECREF(dict);
-        PyErr_FormatUnraisable("Exception ignored in running getpath");
+        PyErr_FormatUnraisable("Exception ignored while running getpath");
         return PyStatus_Error("error evaluating path");
     }
     Py_DECREF(r);
 
     if (_PyConfig_FromDict(config, configDict) < 0) {
-        PyErr_FormatUnraisable("Exception ignored in reading getpath results");
+        PyErr_FormatUnraisable("Exception ignored while reading getpath results");
         Py_DECREF(dict);
         return PyStatus_Error("error getting getpath results");
     }

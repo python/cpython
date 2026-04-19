@@ -1,3 +1,0 @@
-Fix a use-after-free crash on :class:`asyncio.Task` objects for which the
-underlying event loop implements an evil :meth:`~object.__getattribute__`.
-Reported by Nico-Posada. Patch by Bénédikt Tran.
