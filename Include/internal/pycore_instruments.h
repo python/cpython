@@ -64,11 +64,8 @@ PyAPI_FUNC(void)
 _Py_call_instrumentation_exc2(PyThreadState *tstate, int event,
     _PyInterpreterFrame *frame, _Py_CODEUNIT *instr, PyObject *arg0, PyObject *arg1);
 
-extern int
-_Py_Instrumentation_GetLine(PyCodeObject *code, int index);
-
-extern PyObject _PyInstrumentation_MISSING;
-extern PyObject _PyInstrumentation_DISABLE;
+PyAPI_DATA(PyObject) _PyInstrumentation_MISSING;
+PyAPI_DATA(PyObject) _PyInstrumentation_DISABLE;
 
 
 /* Total tool ids available */
@@ -122,6 +119,17 @@ typedef struct _PyCoMonitoringData {
     uint8_t *per_instruction_tools;
 } _PyCoMonitoringData;
 
+extern int
+_Py_Instrumentation_GetLine(PyCodeObject *code, _PyCoLineInstrumentationData *line_data, int index);
+
+static inline uint8_t
+_PyCode_GetOriginalOpcode(_PyCoLineInstrumentationData *line_data, int index)
+{
+    return line_data->data[index*line_data->bytes_per_entry];
+}
+
+// Exported for external JIT support
+PyAPI_FUNC(uint8_t) _PyCode_Deinstrument(uint8_t opcode);
 
 #ifdef __cplusplus
 }
