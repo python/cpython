@@ -283,7 +283,7 @@ immediate playback::
             'Return turtle to the home position:  HOME'
             home()
         def do_circle(self, arg):
-            'Draw circle with given radius, an optional extent and steps:  CIRCLE 50'
+            'Draw circle with given radius and optional extent and steps:  CIRCLE 50'
             circle(*parse(arg))
         def do_position(self, arg):
             'Print the current turtle position:  POSITION'
