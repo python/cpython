@@ -3641,6 +3641,7 @@
                     PyType_Watch(TYPE_WATCHER_ID, (PyObject *)probable);
                     _Py_BloomFilter_Add(dependencies, probable);
                     sym_set_type(iter, probable);
+                    assert((this_instr - 1)->opcode == _RECORD_NOS_TYPE);
                     int32_t orig_target = (this_instr - 1)->target;
                     ADD_OP(_GUARD_TYPE_ITER, 0, (uintptr_t)probable);
                     uop_buffer_last(&ctx->out_buffer)->target = orig_target;
