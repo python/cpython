@@ -338,19 +338,3 @@ PyAPI_FUNC(void) _PyInterpreterState_SetEvalFrameAllowSpecialization(
     int allow_specialization);
 PyAPI_FUNC(int) _PyInterpreterState_IsSpecializationEnabled(
     PyInterpreterState *interp);
-
-/* PEP 788 -- Interpreter guards and views. */
-
-typedef struct _PyInterpreterGuard PyInterpreterGuard;
-typedef struct _PyInterpreterView PyInterpreterView;
-
-PyAPI_FUNC(PyInterpreterGuard *) PyInterpreterGuard_FromCurrent(void);
-PyAPI_FUNC(void) PyInterpreterGuard_Close(PyInterpreterGuard *guard);
-PyAPI_FUNC(PyInterpreterGuard *) PyInterpreterGuard_FromView(PyInterpreterView *view);
-
-PyAPI_FUNC(PyInterpreterView *) PyInterpreterView_FromCurrent(void);
-PyAPI_FUNC(void) PyInterpreterView_Close(PyInterpreterView *view);
-PyAPI_FUNC(PyInterpreterView *) PyInterpreterView_FromMain(void);
-
-PyAPI_FUNC(PyThreadState *) PyThreadState_Ensure(PyInterpreterGuard *guard);
-PyAPI_FUNC(void) PyThreadState_Release(PyThreadState *tstate);
