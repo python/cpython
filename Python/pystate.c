@@ -2930,7 +2930,7 @@ PyGILState_Ensure(void)
             PyThread_hang_thread();
         }
         tcur = new_threadstate(guard->interp,
-                               _PyThreadState_WHENCE_GILSTATE);
+                               _PyThreadState_WHENCE_C_API);
         if (tcur == NULL) {
             Py_FatalError("Couldn't create thread-state for new thread");
         }
@@ -3481,7 +3481,7 @@ PyThreadState_Ensure(PyInterpreterGuard *guard)
     }
 
     PyThreadState *fresh_tstate = _PyThreadState_NewBound(interp,
-                                                          _PyThreadState_WHENCE_GILSTATE);
+                                                          _PyThreadState_WHENCE_C_API);
     if (fresh_tstate == NULL) {
         return NULL;
     }

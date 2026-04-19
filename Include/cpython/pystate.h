@@ -105,7 +105,7 @@ struct _ts {
 #  define _PyThreadState_WHENCE_INIT 1
 #  define _PyThreadState_WHENCE_FINI 2
 #  define _PyThreadState_WHENCE_THREADING 3
-#  define _PyThreadState_WHENCE_GILSTATE 4
+#  define _PyThreadState_WHENCE_C_API 4
 #  define _PyThreadState_WHENCE_EXEC 5
 #  define _PyThreadState_WHENCE_THREADING_DAEMON 6
 #endif
