@@ -220,6 +220,8 @@ int _PyOpcode_num_popped(int opcode, int oparg)  {
             return 2;
         case FOR_ITER_TUPLE:
             return 2;
+        case FOR_ITER_VIRTUAL:
+            return 2;
         case GET_AITER:
             return 1;
         case GET_ANEXT:
@@ -227,6 +229,10 @@ int _PyOpcode_num_popped(int opcode, int oparg)  {
         case GET_AWAITABLE:
             return 1;
         case GET_ITER:
+            return 1;
+        case GET_ITER_SELF:
+            return 1;
+        case GET_ITER_VIRTUAL:
             return 1;
         case GET_LEN:
             return 1;
@@ -711,6 +717,8 @@ int _PyOpcode_num_pushed(int opcode, int oparg)  {
             return 3;
         case FOR_ITER_TUPLE:
             return 3;
+        case FOR_ITER_VIRTUAL:
+            return 3;
         case GET_AITER:
             return 1;
         case GET_ANEXT:
@@ -718,6 +726,10 @@ int _PyOpcode_num_pushed(int opcode, int oparg)  {
         case GET_AWAITABLE:
             return 1;
         case GET_ITER:
+            return 2;
+        case GET_ITER_SELF:
+            return 2;
+        case GET_ITER_VIRTUAL:
             return 2;
         case GET_LEN:
             return 2;
@@ -1183,10 +1195,13 @@ const struct opcode_metadata _PyOpcode_opcode_metadata[267] = {
     [FOR_ITER_LIST] = { true, INSTR_FMT_IBC, HAS_ARG_FLAG | HAS_JUMP_FLAG | HAS_DEOPT_FLAG | HAS_EXIT_FLAG | HAS_ESCAPES_FLAG | HAS_UNPREDICTABLE_JUMP_FLAG },
     [FOR_ITER_RANGE] = { true, INSTR_FMT_IBC, HAS_ARG_FLAG | HAS_JUMP_FLAG | HAS_EXIT_FLAG | HAS_ERROR_FLAG | HAS_UNPREDICTABLE_JUMP_FLAG },
     [FOR_ITER_TUPLE] = { true, INSTR_FMT_IBC, HAS_ARG_FLAG | HAS_JUMP_FLAG | HAS_EXIT_FLAG | HAS_UNPREDICTABLE_JUMP_FLAG },
+    [FOR_ITER_VIRTUAL] = { true, INSTR_FMT_IBC, HAS_ARG_FLAG | HAS_JUMP_FLAG | HAS_EXIT_FLAG | HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG | HAS_UNPREDICTABLE_JUMP_FLAG },
     [GET_AITER] = { true, INSTR_FMT_IX, HAS_ERROR_FLAG | HAS_ESCAPES_FLAG },
     [GET_ANEXT] = { true, INSTR_FMT_IX, HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG },
     [GET_AWAITABLE] = { true, INSTR_FMT_IB, HAS_ARG_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG },
-    [GET_ITER] = { true, INSTR_FMT_IB, HAS_ARG_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG },
+    [GET_ITER] = { true, INSTR_FMT_IBC, HAS_ARG_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG | HAS_RECORDS_VALUE_FLAG },
+    [GET_ITER_SELF] = { true, INSTR_FMT_IXC, HAS_EXIT_FLAG | HAS_RECORDS_VALUE_FLAG },
+    [GET_ITER_VIRTUAL] = { true, INSTR_FMT_IXC, HAS_EXIT_FLAG | HAS_RECORDS_VALUE_FLAG },
     [GET_LEN] = { true, INSTR_FMT_IX, HAS_ERROR_FLAG | HAS_ESCAPES_FLAG },
     [IMPORT_FROM] = { true, INSTR_FMT_IB, HAS_ARG_FLAG | HAS_NAME_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG },
     [IMPORT_NAME] = { true, INSTR_FMT_IB, HAS_ARG_FLAG | HAS_NAME_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG },
@@ -1428,10 +1443,13 @@ _PyOpcode_macro_expansion[256] = {
     [FOR_ITER_LIST] = { .nuops = 3, .uops = { { _ITER_CHECK_LIST, OPARG_SIMPLE, 1 }, { _ITER_JUMP_LIST, OPARG_REPLACED, 1 }, { _ITER_NEXT_LIST, OPARG_REPLACED, 1 } } },
     [FOR_ITER_RANGE] = { .nuops = 3, .uops = { { _ITER_CHECK_RANGE, OPARG_SIMPLE, 1 }, { _ITER_JUMP_RANGE, OPARG_REPLACED, 1 }, { _ITER_NEXT_RANGE, OPARG_SIMPLE, 1 } } },
     [FOR_ITER_TUPLE] = { .nuops = 3, .uops = { { _ITER_CHECK_TUPLE, OPARG_SIMPLE, 1 }, { _ITER_JUMP_TUPLE, OPARG_REPLACED, 1 }, { _ITER_NEXT_TUPLE, OPARG_SIMPLE, 1 } } },
+    [FOR_ITER_VIRTUAL] = { .nuops = 2, .uops = { { _GUARD_NOS_ITER_VIRTUAL, OPARG_SIMPLE, 1 }, { _FOR_ITER_VIRTUAL, OPARG_REPLACED, 1 } } },
     [GET_AITER] = { .nuops = 1, .uops = { { _GET_AITER, OPARG_SIMPLE, 0 } } },
     [GET_ANEXT] = { .nuops = 1, .uops = { { _GET_ANEXT, OPARG_SIMPLE, 0 } } },
     [GET_AWAITABLE] = { .nuops = 1, .uops = { { _GET_AWAITABLE, OPARG_SIMPLE, 0 } } },
-    [GET_ITER] = { .nuops = 1, .uops = { { _GET_ITER, OPARG_SIMPLE, 0 } } },
+    [GET_ITER] = { .nuops = 2, .uops = { { _RECORD_TOS_TYPE, OPARG_SIMPLE, 0 }, { _GET_ITER, OPARG_SIMPLE, 0 } } },
+    [GET_ITER_SELF] = { .nuops = 3, .uops = { { _RECORD_TOS_TYPE, OPARG_SIMPLE, 0 }, { _GUARD_ITERATOR, OPARG_SIMPLE, 1 }, { _PUSH_NULL, OPARG_SIMPLE, 1 } } },
+    [GET_ITER_VIRTUAL] = { .nuops = 3, .uops = { { _RECORD_TOS_TYPE, OPARG_SIMPLE, 0 }, { _GUARD_ITER_VIRTUAL, OPARG_SIMPLE, 1 }, { _PUSH_TAGGED_ZERO, OPARG_SIMPLE, 1 } } },
     [GET_LEN] = { .nuops = 1, .uops = { { _GET_LEN, OPARG_SIMPLE, 0 } } },
     [IMPORT_FROM] = { .nuops = 1, .uops = { { _IMPORT_FROM, OPARG_SIMPLE, 0 } } },
     [IMPORT_NAME] = { .nuops = 1, .uops = { { _IMPORT_NAME, OPARG_SIMPLE, 0 } } },
@@ -1631,10 +1649,13 @@ const char *_PyOpcode_OpName[267] = {
     [FOR_ITER_LIST] = "FOR_ITER_LIST",
     [FOR_ITER_RANGE] = "FOR_ITER_RANGE",
     [FOR_ITER_TUPLE] = "FOR_ITER_TUPLE",
+    [FOR_ITER_VIRTUAL] = "FOR_ITER_VIRTUAL",
     [GET_AITER] = "GET_AITER",
     [GET_ANEXT] = "GET_ANEXT",
     [GET_AWAITABLE] = "GET_AWAITABLE",
     [GET_ITER] = "GET_ITER",
+    [GET_ITER_SELF] = "GET_ITER_SELF",
+    [GET_ITER_VIRTUAL] = "GET_ITER_VIRTUAL",
     [GET_LEN] = "GET_LEN",
     [IMPORT_FROM] = "IMPORT_FROM",
     [IMPORT_NAME] = "IMPORT_NAME",
@@ -1801,6 +1822,7 @@ const uint8_t _PyOpcode_Caches[256] = {
     [POP_JUMP_IF_FALSE] = 1,
     [POP_JUMP_IF_NONE] = 1,
     [POP_JUMP_IF_NOT_NONE] = 1,
+    [GET_ITER] = 1,
     [FOR_ITER] = 1,
     [CALL] = 3,
     [CALL_KW] = 3,
@@ -1820,9 +1842,6 @@ const uint8_t _PyOpcode_Deopt[256] = {
     [125] = 125,
     [126] = 126,
     [127] = 127,
-    [214] = 214,
-    [215] = 215,
-    [216] = 216,
     [217] = 217,
     [218] = 218,
     [219] = 219,
@@ -1930,10 +1949,13 @@ const uint8_t _PyOpcode_Deopt[256] = {
     [FOR_ITER_LIST] = FOR_ITER,
     [FOR_ITER_RANGE] = FOR_ITER,
     [FOR_ITER_TUPLE] = FOR_ITER,
+    [FOR_ITER_VIRTUAL] = FOR_ITER,
     [GET_AITER] = GET_AITER,
     [GET_ANEXT] = GET_ANEXT,
     [GET_AWAITABLE] = GET_AWAITABLE,
     [GET_ITER] = GET_ITER,
+    [GET_ITER_SELF] = GET_ITER,
+    [GET_ITER_VIRTUAL] = GET_ITER,
     [GET_LEN] = GET_LEN,
     [IMPORT_FROM] = IMPORT_FROM,
     [IMPORT_NAME] = IMPORT_NAME,
@@ -2081,9 +2103,6 @@ const uint8_t _PyOpcode_Deopt[256] = {
     case 125: \
     case 126: \
     case 127: \
-    case 214: \
-    case 215: \
-    case 216: \
     case 217: \
     case 218: \
     case 219: \

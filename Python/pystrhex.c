@@ -67,6 +67,7 @@ _Py_hexlify_simd(const unsigned char *src, Py_UCS1 *dst, Py_ssize_t len)
     const v16u8 mask_0f = v16u8_splat(0x0f);
     const v16u8 ascii_0 = v16u8_splat('0');
     const v16u8 offset = v16u8_splat('a' - '0' - 10);  /* 0x27 */
+    const v16u8 four = v16u8_splat(4);
     const v16s8 nine = v16s8_splat(9);
 
     Py_ssize_t i = 0;
@@ -78,7 +79,7 @@ _Py_hexlify_simd(const unsigned char *src, Py_UCS1 *dst, Py_ssize_t len)
         memcpy(&data, src + i, 16);
 
         /* Extract high and low nibbles using vector operators */
-        v16u8 hi = (data >> 4) & mask_0f;
+        v16u8 hi = (data >> four) & mask_0f;
         v16u8 lo = data & mask_0f;
 
         /* Compare > 9 using signed comparison for efficient codegen.

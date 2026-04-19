@@ -122,6 +122,15 @@ typedef struct _PyCoMonitoringData {
 extern int
 _Py_Instrumentation_GetLine(PyCodeObject *code, _PyCoLineInstrumentationData *line_data, int index);
 
+static inline uint8_t
+_PyCode_GetOriginalOpcode(_PyCoLineInstrumentationData *line_data, int index)
+{
+    return line_data->data[index*line_data->bytes_per_entry];
+}
+
+// Exported for external JIT support
+PyAPI_FUNC(uint8_t) _PyCode_Deinstrument(uint8_t opcode);
+
 #ifdef __cplusplus
 }
 #endif

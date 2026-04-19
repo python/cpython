@@ -963,7 +963,7 @@ label_exception_targets(basicblock *entryblock) {
             }
             else if (instr->i_opcode == RESUME) {
                 instr->i_except = handler;
-                if (instr->i_oparg != RESUME_AT_FUNC_START) {
+                if (instr->i_oparg != RESUME_AT_FUNC_START && instr->i_oparg != RESUME_AT_GEN_EXPR_START) {
                     assert(last_yield_except_depth >= 0);
                     if (last_yield_except_depth == 1) {
                         instr->i_oparg |= RESUME_OPARG_DEPTH1_MASK;
