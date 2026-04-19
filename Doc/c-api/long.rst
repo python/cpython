@@ -858,8 +858,9 @@ The :c:type:`PyLongWriter` API can be used to import an integer.
 Deprecated API
 ^^^^^^^^^^^^^^
 
-These macros are :term:`soft deprecated`. They describe parameters
-of the internal representation of :c:type:`PyLongObject` instances.
+.. soft-deprecated:: 3.14
+   These macros describe parameters of the internal representation of
+   :c:type:`PyLongObject` instances.
 
 Use :c:func:`PyLong_GetNativeLayout` instead, along with :c:func:`PyLong_Export`
 to read integer data or :c:type:`PyLongWriter` to write it.
