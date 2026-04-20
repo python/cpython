@@ -1,3 +1,0 @@
-Register the :class:`!multiprocessing.managers.DictProxy` and :class:`!multiprocessing.managers.ListProxy` types in
-:mod:`multiprocessing.managers` to :class:`collections.abc.MutableMapping` and
-:class:`collections.abc.MutableSequence`, respectively.

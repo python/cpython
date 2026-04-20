@@ -1,2 +1,0 @@
-Add :c:func:`PyType_Freeze` function to make a type immutable. Patch by
-Victor Stinner.

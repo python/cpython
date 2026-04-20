@@ -51,7 +51,7 @@ InstructionSequenceType_use_label_impl(_PyInstructionSequence *self,
                                        int label);
 
 static PyObject *
-InstructionSequenceType_use_label(_PyInstructionSequence *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+InstructionSequenceType_use_label(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -60,9 +60,11 @@ InstructionSequenceType_use_label(_PyInstructionSequence *self, PyObject *const 
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(label), },
     };
     #undef NUM_KEYWORDS
@@ -91,7 +93,7 @@ InstructionSequenceType_use_label(_PyInstructionSequence *self, PyObject *const 
     if (label == -1 && PyErr_Occurred()) {
         goto exit;
     }
-    return_value = InstructionSequenceType_use_label_impl(self, label);
+    return_value = InstructionSequenceType_use_label_impl((_PyInstructionSequence *)self, label);
 
 exit:
     return return_value;
@@ -113,7 +115,7 @@ InstructionSequenceType_addop_impl(_PyInstructionSequence *self, int opcode,
                                    int end_lineno, int end_col_offset);
 
 static PyObject *
-InstructionSequenceType_addop(_PyInstructionSequence *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+InstructionSequenceType_addop(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -122,9 +124,11 @@ InstructionSequenceType_addop(_PyInstructionSequence *self, PyObject *const *arg
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(opcode), &_Py_ID(oparg), &_Py_ID(lineno), &_Py_ID(col_offset), &_Py_ID(end_lineno), &_Py_ID(end_col_offset), },
     };
     #undef NUM_KEYWORDS
@@ -178,7 +182,7 @@ InstructionSequenceType_addop(_PyInstructionSequence *self, PyObject *const *arg
     if (end_col_offset == -1 && PyErr_Occurred()) {
         goto exit;
     }
-    return_value = InstructionSequenceType_addop_impl(self, opcode, oparg, lineno, col_offset, end_lineno, end_col_offset);
+    return_value = InstructionSequenceType_addop_impl((_PyInstructionSequence *)self, opcode, oparg, lineno, col_offset, end_lineno, end_col_offset);
 
 exit:
     return return_value;
@@ -197,12 +201,12 @@ static int
 InstructionSequenceType_new_label_impl(_PyInstructionSequence *self);
 
 static PyObject *
-InstructionSequenceType_new_label(_PyInstructionSequence *self, PyObject *Py_UNUSED(ignored))
+InstructionSequenceType_new_label(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     PyObject *return_value = NULL;
     int _return_value;
 
-    _return_value = InstructionSequenceType_new_label_impl(self);
+    _return_value = InstructionSequenceType_new_label_impl((_PyInstructionSequence *)self);
     if ((_return_value == -1) && PyErr_Occurred()) {
         goto exit;
     }
@@ -226,7 +230,7 @@ InstructionSequenceType_add_nested_impl(_PyInstructionSequence *self,
                                         PyObject *nested);
 
 static PyObject *
-InstructionSequenceType_add_nested(_PyInstructionSequence *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+InstructionSequenceType_add_nested(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -235,9 +239,11 @@ InstructionSequenceType_add_nested(_PyInstructionSequence *self, PyObject *const
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(nested), },
     };
     #undef NUM_KEYWORDS
@@ -263,7 +269,7 @@ InstructionSequenceType_add_nested(_PyInstructionSequence *self, PyObject *const
         goto exit;
     }
     nested = args[0];
-    return_value = InstructionSequenceType_add_nested_impl(self, nested);
+    return_value = InstructionSequenceType_add_nested_impl((_PyInstructionSequence *)self, nested);
 
 exit:
     return return_value;
@@ -282,9 +288,9 @@ static PyObject *
 InstructionSequenceType_get_nested_impl(_PyInstructionSequence *self);
 
 static PyObject *
-InstructionSequenceType_get_nested(_PyInstructionSequence *self, PyObject *Py_UNUSED(ignored))
+InstructionSequenceType_get_nested(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return InstructionSequenceType_get_nested_impl(self);
+    return InstructionSequenceType_get_nested_impl((_PyInstructionSequence *)self);
 }
 
 PyDoc_STRVAR(InstructionSequenceType_get_instructions__doc__,
@@ -300,8 +306,8 @@ static PyObject *
 InstructionSequenceType_get_instructions_impl(_PyInstructionSequence *self);
 
 static PyObject *
-InstructionSequenceType_get_instructions(_PyInstructionSequence *self, PyObject *Py_UNUSED(ignored))
+InstructionSequenceType_get_instructions(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return InstructionSequenceType_get_instructions_impl(self);
+    return InstructionSequenceType_get_instructions_impl((_PyInstructionSequence *)self);
 }
-/*[clinic end generated code: output=35163e5b589b4446 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=c80501a59a1a1103 input=a9049054013a1b77]*/

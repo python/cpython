@@ -1,2 +1,0 @@
-Register the :class:`contextvars.Context` type to
-:class:`collections.abc.Mapping`.

@@ -1,1 +1,0 @@
-Fixed the bug for :mod:`pdb` where it can't set breakpoints on functions with certain annotations.

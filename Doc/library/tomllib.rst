@@ -4,18 +4,21 @@
 .. module:: tomllib
    :synopsis: Parse TOML files.
 
-.. versionadded:: 3.11
-
-.. moduleauthor:: Taneli Hukkinen
-.. sectionauthor:: Taneli Hukkinen
-
 **Source code:** :source:`Lib/tomllib`
 
 --------------
 
-This module provides an interface for parsing TOML 1.0.0 (Tom's Obvious Minimal
+This module provides an interface for parsing TOML 1.1.0 (Tom's Obvious Minimal
 Language, `https://toml.io <https://toml.io/en/>`_). This module does not
 support writing TOML.
+
+.. versionadded:: 3.11
+   The module was added with support for TOML 1.0.0.
+
+.. versionchanged:: 3.15
+   Added TOML 1.1.0 support.
+   See the :ref:`What's New <whatsnew315-tomllib-1-1-0>` for details.
+
 
 .. seealso::
 
@@ -84,11 +87,11 @@ The following exceptions are available:
 
       The column corresponding to *pos*.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.14
       Added the *msg*, *doc* and *pos* parameters.
       Added the :attr:`msg`, :attr:`doc`, :attr:`pos`, :attr:`lineno` and :attr:`colno` attributes.
 
-   .. deprecated:: next
+   .. deprecated:: 3.14
       Passing free-form positional arguments is deprecated.
 
 

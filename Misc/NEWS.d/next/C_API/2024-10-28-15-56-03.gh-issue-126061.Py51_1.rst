@@ -1,3 +1,0 @@
-Add :c:func:`PyLong_IsPositive`, :c:func:`PyLong_IsNegative`
-and :c:func:`PyLong_IsZero` for checking if a :c:type:`PyLongObject`
-is positive, negative, or zero, respectively.

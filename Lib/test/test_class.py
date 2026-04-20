@@ -1,6 +1,7 @@
 "Test the functionality of Python classes implementing operators."
 
 import unittest
+from test import support
 from test.support import cpython_only, import_helper, script_helper
 
 testmeths = [
@@ -134,6 +135,7 @@ for method in testmeths:
 AllTests = type("AllTests", (object,), d)
 del d, statictests, method, method_template
 
+@support.thread_unsafe("callLst is shared between threads")
 class ClassTests(unittest.TestCase):
     def setUp(self):
         callLst[:] = []
@@ -554,6 +556,8 @@ class ClassTests(unittest.TestCase):
         self.assertFalse(hasattr(o, "__call__"))
         self.assertFalse(hasattr(c, "__call__"))
 
+    @support.skip_emscripten_stack_overflow()
+    @support.skip_wasi_stack_overflow()
     def testSFBug532646(self):
         # Test for SF bug 532646
 
@@ -648,6 +652,7 @@ class ClassTests(unittest.TestCase):
         a = A(hash(A.f)^(-1))
         hash(a.f)
 
+    @cpython_only
     def testSetattrWrapperNameIntern(self):
         # Issue #25794: __setattr__ should intern the attribute name
         class A:
@@ -854,7 +859,12 @@ class ClassTests(unittest.TestCase):
 
 from _testinternalcapi import has_inline_values
 
-Py_TPFLAGS_MANAGED_DICT = (1 << 2)
+Py_TPFLAGS_INLINE_VALUES = (1 << 2)
+Py_TPFLAGS_MANAGED_DICT = (1 << 4)
+
+class NoManagedDict:
+    __slots__ = ('a',)
+
 
 class Plain:
     pass
@@ -869,11 +879,31 @@ class WithAttrs:
         self.d = 4
 
 
+class VarSizedSubclass(tuple):
+    pass
+
+
 class TestInlineValues(unittest.TestCase):
 
-    def test_flags(self):
-        self.assertEqual(Plain.__flags__ & Py_TPFLAGS_MANAGED_DICT, Py_TPFLAGS_MANAGED_DICT)
-        self.assertEqual(WithAttrs.__flags__ & Py_TPFLAGS_MANAGED_DICT, Py_TPFLAGS_MANAGED_DICT)
+    def test_no_flags_for_slots_class(self):
+        flags = NoManagedDict.__flags__
+        self.assertEqual(flags & Py_TPFLAGS_MANAGED_DICT, 0)
+        self.assertEqual(flags & Py_TPFLAGS_INLINE_VALUES, 0)
+        self.assertFalse(has_inline_values(NoManagedDict()))
+
+    def test_both_flags_for_regular_class(self):
+        for cls in (Plain, WithAttrs):
+            with self.subTest(cls=cls.__name__):
+                flags = cls.__flags__
+                self.assertEqual(flags & Py_TPFLAGS_MANAGED_DICT, Py_TPFLAGS_MANAGED_DICT)
+                self.assertEqual(flags & Py_TPFLAGS_INLINE_VALUES, Py_TPFLAGS_INLINE_VALUES)
+                self.assertTrue(has_inline_values(cls()))
+
+    def test_managed_dict_only_for_varsized_subclass(self):
+        flags = VarSizedSubclass.__flags__
+        self.assertEqual(flags & Py_TPFLAGS_MANAGED_DICT, Py_TPFLAGS_MANAGED_DICT)
+        self.assertEqual(flags & Py_TPFLAGS_INLINE_VALUES, 0)
+        self.assertFalse(has_inline_values(VarSizedSubclass()))
 
     def test_has_inline_values(self):
         c = Plain()

@@ -1,5 +1,0 @@
-Fix exceptions in the :mod:`argparse` module so that only error messages for
-ArgumentError and ArgumentTypeError are now translated.
-ArgumentError is now only used for command line errors, not for logical
-errors in the program. TypeError is now raised instead of ValueError for
-some logical errors.
