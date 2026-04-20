@@ -142,7 +142,7 @@ In the case where loading a lazily imported module fails (for example, if
 the module does not exist), Python raises the exception at the point of
 first use rather than at import time. The associated traceback includes both
 the location where the name was accessed and the original import statement,
-making it straightforward to diagnose & debug the failure.
+making it straightforward to diagnose and debug the failure.
 
 For cases where you want to enable lazy loading globally without modifying
 source code, Python provides the :option:`-X lazy_imports <-X>` command-line
@@ -451,13 +451,35 @@ Improved error messages
 
   Running this code now produces a clearer suggestion:
 
-  .. code-block:: pycon
+  .. code-block:: pytb
 
      Traceback (most recent call last):
-     File "/home/pablogsal/github/python/main/lel.py", line 42, in <module>
-        print(container.area)
-              ^^^^^^^^^^^^^^
+       File "/home/pablogsal/github/python/main/lel.py", line 42, in <module>
+         print(container.area)
+               ^^^^^^^^^^^^^^
      AttributeError: 'Container' object has no attribute 'area'. Did you mean '.inner.area' instead of '.area'?
+
+* The interpreter now tries to provide a suggestion when
+  :func:`delattr` fails due to a missing attribute.
+  When an attribute name that closely resembles an existing attribute is used,
+  the interpreter will suggest the correct attribute name in the error message.
+  For example:
+
+  .. doctest::
+
+     >>> class A:
+     ...     pass
+     >>> a = A()
+     >>> a.abcde = 1
+     >>> del a.abcdf  # doctest: +ELLIPSIS
+     Traceback (most recent call last):
+     ...
+     AttributeError: 'A' object has no attribute 'abcdf'. Did you mean: 'abcde'?
+
+  (Contributed by Nikita Sobolev and Pranjal Prajapati in :gh:`136588`.)
+
+* Several error messages incorrectly using the term "argument" have been corrected.
+  (Contributed by Stan Ulbrych in :gh:`133382`.)
 
 
 Other language changes
@@ -489,28 +511,6 @@ Other language changes
   .. _Unicode: https://home.unicode.org/
 
   (Contributed by Adam Turner in :gh:`133711`; PEP 686 written by Inada Naoki.)
-
-* Several error messages incorrectly using the term "argument" have been corrected.
-  (Contributed by Stan Ulbrych in :gh:`133382`.)
-
-* The interpreter now tries to provide a suggestion when
-  :func:`delattr` fails due to a missing attribute.
-  When an attribute name that closely resembles an existing attribute is used,
-  the interpreter will suggest the correct attribute name in the error message.
-  For example:
-
-  .. doctest::
-
-     >>> class A:
-     ...     pass
-     >>> a = A()
-     >>> a.abcde = 1
-     >>> del a.abcdf  # doctest: +ELLIPSIS
-     Traceback (most recent call last):
-     ...
-     AttributeError: 'A' object has no attribute 'abcdf'. Did you mean: 'abcde'?
-
-  (Contributed by Nikita Sobolev and Pranjal Prajapati in :gh:`136588`.)
 
 * Unraisable exceptions are now highlighted with color by default. This can be
   controlled by :ref:`environment variables <using-on-controlling-color>`.
@@ -708,7 +708,7 @@ base64
   (Contributed by Serhiy Storchaka in :gh:`143214` and :gh:`146431`.)
 
 * Added the *ignorechars* parameter in :func:`~base64.b16decode`,
-  :func:`~base64.b32decode`,  :func:`~base64.b32hexdecode`,
+  :func:`~base64.b32decode`, :func:`~base64.b32hexdecode`,
   :func:`~base64.b64decode`, :func:`~base64.b85decode`, and
   :func:`~base64.z85decode`.
   (Contributed by Serhiy Storchaka in :gh:`144001` and :gh:`146431`.)
@@ -880,13 +880,13 @@ inspect
 json
 ----
 
-* Add the *array_hook* parameter to  :func:`~json.load` and
+* Add the *array_hook* parameter to :func:`~json.load` and
   :func:`~json.loads` functions:
   allow a callback for JSON literal array types to customize Python lists in
   the resulting decoded object. Passing combined :class:`frozendict` to
   *object_pairs_hook* param and :class:`tuple` to ``array_hook`` will yield a
   deeply nested immutable Python structure representing the JSON data.
-  (Contributed by Joao S. O. Bueno in :gh:`146440`)
+  (Contributed by Joao S. O. Bueno in :gh:`146440`.)
 
 
 locale
@@ -914,23 +914,11 @@ math
 mimetypes
 ---------
 
-* Add ``application/dicom`` MIME type for ``.dcm`` extension.
-  (Contributed by Benedikt Johannes in :gh:`144217`.)
-* Add ``application/efi``. (Contributed by Charlie Lin in :gh:`145720`.)
-* Add ``application/node`` MIME type for ``.cjs`` extension.
-  (Contributed by John Franey in :gh:`140937`.)
-* Add ``application/toml``. (Contributed by Gil Forcada in :gh:`139959`.)
-* Add ``application/sql`` and ``application/vnd.sqlite3``.
-  (Contributed by Charlie Lin in :gh:`145698`.)
-* Add the following MIME types:
-
-  - ``application/vnd.ms-cab-compressed`` for ``.cab`` extension
-  - ``application/vnd.ms-htmlhelp`` for ``.chm`` extension
-  - ``application/vnd.ms-officetheme`` for ``.thmx`` extension
-
-  (Contributed by Charlie Lin in :gh:`145718`.)
-
-* Add ``image/jxl``. (Contributed by Foolbar in :gh:`144213`.)
+* Add more MIME types.
+  (Contributed by Benedikt Johannes, Charlie Lin, Foolbar, Gil Forcada and
+  John Franey
+  in :gh:`144217`, :gh:`145720`, :gh:`140937`, :gh:`139959`, :gh:`145698`,
+  :gh:`145718` and :gh:`144213`.)
 * Rename ``application/x-texinfo`` to ``application/texinfo``.
   (Contributed by Charlie Lin in :gh:`140165`.)
 * Changed the MIME type for ``.ai`` files to ``application/pdf``.
@@ -1114,7 +1102,7 @@ subprocess
 
   If none of these mechanisms are available, the function falls back to the
   traditional busy loop (non-blocking call and short sleeps).
-  (Contributed by Giampaolo Rodola in :gh:`83069`).
+  (Contributed by Giampaolo Rodola in :gh:`83069`.)
 
 
 symtable
@@ -1171,7 +1159,7 @@ timeit
 
 * Make the target time of :meth:`timeit.Timer.autorange` configurable
   and add ``--target-time`` option to the command-line interface.
-  (Contributed by Alessandro Cucci and Miikka Koskinen in :gh:`140283`.)
+  (Contributed by Alessandro Cucci and Miikka Koskinen in :gh:`80642`.)
 
 
 tkinter
@@ -1216,10 +1204,7 @@ tomllib
     Previously an inline table had to be on a single line and couldn't end
     with a trailing comma. This is now relaxed so that the following is valid:
 
-    .. syntax highlighting needs TOML 1.1.0 support in Pygments,
-       see https://github.com/pygments/pygments/issues/3026
-
-    .. code-block:: text
+    .. code-block:: toml
 
        tbl = {
           key      = "a string",
@@ -1231,7 +1216,7 @@ tomllib
   - Add ``\xHH`` notation to basic strings for codepoints under 255,
     and the ``\e`` escape for the escape character:
 
-    .. code-block:: text
+    .. code-block:: toml
 
        null = "null byte: \x00; letter a: \x61"
        csi = "\e["
@@ -1239,7 +1224,7 @@ tomllib
   - Seconds in datetime and time values are now optional.
     The following are now valid:
 
-    .. code-block:: text
+    .. code-block:: toml
 
        dt = 2010-02-03 14:15
        t  = 14:15
@@ -1421,7 +1406,7 @@ Optimizations
 =============
 
 * ``mimalloc`` is now used as the default allocator for
-  for raw memory allocations such as via :c:func:`PyMem_RawMalloc`
+  raw memory allocations such as via :c:func:`PyMem_RawMalloc`
   for better performance on :term:`free-threaded builds <free-threaded build>`.
   (Contributed by Kumar Aditya in :gh:`144914`.)
 
@@ -1440,7 +1425,7 @@ base64 & binascii
 
 * Implementation for Base32 has been rewritten in C.
   Encoding and decoding is now two orders of magnitude faster.
-  (Contributed by James Seo in :gh:`146192`)
+  (Contributed by James Seo in :gh:`146192`.)
 
 
 csv
@@ -1534,7 +1519,7 @@ The JIT compiler's machine code generator now produces better machine code
 for x86-64 and AArch64 macOS and Linux targets. In general, users should
 experience lower memory usage for generated machine code and more efficient
 machine code versus 3.14.
-(Contributed by Brandt Bucher in :gh:`136528` and :gh:`136528`.
+(Contributed by Brandt Bucher in :gh:`136528` and :gh:`135905`.
 Implementation for AArch64 contributed by Mark Shannon in :gh:`139855`.
 Additional optimizations for AArch64 contributed by Mark Shannon and
 Diego Russo in :gh:`140683` and :gh:`142305`.)
@@ -1557,6 +1542,14 @@ collections.abc
   deprecated since Python 3.12, and is scheduled for removal in Python 3.17.
 
 
+ctypes
+------
+
+* Removed the undocumented function :func:`!ctypes.SetPointerType`,
+  which has been deprecated since Python 3.13.
+  (Contributed by Bénédikt Tran in :gh:`133866`.)
+
+
 datetime
 --------
 
@@ -1564,14 +1557,6 @@ datetime
   format string contains ``%d`` (day of month) without a year directive.
   This has been deprecated since Python 3.13.
   (Contributed by Stan Ulbrych and Gregory P. Smith in :gh:`70647`.)
-
-
-ctypes
-------
-
-* Removed the undocumented function :func:`!ctypes.SetPointerType`,
-  which has been deprecated since Python 3.13.
-  (Contributed by Bénédikt Tran in :gh:`133866`.)
 
 
 glob
@@ -1657,6 +1642,9 @@ typing
   longer supported. Use ``class TD(TypedDict): pass``
   or ``TD = TypedDict("TD", {})`` instead.
   (Contributed by Bénédikt Tran in :gh:`133823`.)
+
+* Deprecated :func:`!typing.no_type_check_decorator` has been removed.
+  (Contributed by Nikita Sobolev in :gh:`133601`.)
 
 
 wave
@@ -1773,8 +1761,6 @@ New deprecations
     :func:`issubclass`, but warnings were not previously emitted if it was
     merely imported or accessed from the :mod:`!typing` module.
 
-  * Deprecated :func:`!typing.no_type_check_decorator` has been removed.
-    (Contributed by Nikita Sobolev in :gh:`133601`.)
 
 * ``__version__``
 
@@ -2061,8 +2047,8 @@ Deprecated C APIs
 
   - :c:macro:`Py_ALIGNED`: Prefer ``alignas`` instead.
   - :c:macro:`PY_FORMAT_SIZE_T`: Use ``"z"`` directly.
-  - :c:macro:`Py_LL` & :c:macro:`Py_ULL`:
-    Use standard suffixes, ``LL`` & ``ULL``.
+  - :c:macro:`Py_LL` and :c:macro:`Py_ULL`:
+    Use standard suffixes, ``LL`` and ``ULL``.
   - :c:macro:`PY_LONG_LONG`, :c:macro:`PY_LLONG_MIN`, :c:macro:`PY_LLONG_MAX`,
     :c:macro:`PY_ULLONG_MAX`, :c:macro:`PY_INT32_T`, :c:macro:`PY_UINT32_T`,
     :c:macro:`PY_INT64_T`, :c:macro:`PY_UINT64_T`, :c:macro:`PY_SIZE_MAX`:
