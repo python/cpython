@@ -472,7 +472,8 @@ def run_regrtest(
             extra_str += " " + " ".join(nanvixd_extra)
         env["NANVIXD_EXTRA_ARGS"] = extra_str
         env["NANVIX_STANDALONE"] = "1"
-        env["NANVIX_EXCLUDE_TESTS"] = " ".join(config.STANDALONE_EXCLUDE)
+        exclude_set = set(config.STANDALONE_EXCLUDE)
+        test_list = [m for m in test_list if m not in exclude_set]
     else:
         # Direct mode: host filesystem, no ramfs.
         if nanvixd_extra:

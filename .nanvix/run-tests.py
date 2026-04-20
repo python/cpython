@@ -23,8 +23,6 @@
 #     NANVIX_TEST_BATCH_SIZE - modules per nanvixd invocation (default: 4)
 #     NANVIXD_EXTRA_ARGS     - extra flags passed to nanvixd (optional)
 #     NANVIX_STANDALONE      - set to "1" to enable standalone mode
-#     NANVIX_EXCLUDE_TESTS   - space-separated patterns passed to regrtest
-#                              --ignore (optional)
 #     REGRTEST_TIMEOUT       - per-test timeout in seconds (default: 120)
 
 import os
@@ -46,22 +44,12 @@ SYSCONFIGDATA_NAME = os.environ.get(
 REGRTEST_TIMEOUT = os.environ.get("REGRTEST_TIMEOUT", "120")
 
 
-def _build_exclude_args() -> list[str]:
-    """Convert NANVIX_EXCLUDE_TESTS into regrtest --ignore flags."""
-    excludes = os.environ.get("NANVIX_EXCLUDE_TESTS", "").split()
-    args: list[str] = []
-    for pat in excludes:
-        args.extend(["-i", pat])
-    return args
-
-
 def run_batch(
     batch_num: int,
     batch: list[str],
     nanvixd_extra: list[str],
 ) -> tuple[int, int, list[str]]:
     """Run a single batch. Returns (batch_num, returncode, modules)."""
-    exclude_args = _build_exclude_args()
 
     # Each batch gets its own temp directory so parallel nanvixd instances
     # don't collide in /tmp (the guest shares the host filesystem in direct
@@ -74,12 +62,9 @@ def run_batch(
             # string.  nanvixd splits on spaces for argv and on semicolons
             # for environment variables.
             modules_str = " ".join(batch)
-            exclude_str = " ".join(exclude_args)
             regrtest_args = (
                 f"-B -m test --timeout={REGRTEST_TIMEOUT} {modules_str}"
             )
-            if exclude_str:
-                regrtest_args += f" {exclude_str}"
             python_arg = (
                 f"{regrtest_args};PYTHONHOME=/ PYTHONDONTWRITEBYTECODE=1"
                 f" TMPDIR=/tmp"
