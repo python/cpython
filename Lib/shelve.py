@@ -236,9 +236,9 @@ class DbfilenameShelf(Shelf):
     """
 
     def __init__(self, filename, flag='c', protocol=None, writeback=False, *,
-                 serializer=None, deserializer=None):
+                 mode=0o666, serializer=None, deserializer=None):
         import dbm
-        Shelf.__init__(self, dbm.open(filename, flag), protocol, writeback,
+        Shelf.__init__(self, dbm.open(filename, flag, mode), protocol, writeback,
                        serializer=serializer, deserializer=deserializer)
 
     def clear(self):
@@ -249,7 +249,7 @@ class DbfilenameShelf(Shelf):
         self.dict.clear()
 
 def open(filename, flag='c', protocol=None, writeback=False, *,
-         serializer=None, deserializer=None):
+         mode=0o666, serializer=None, deserializer=None):
     """Open a persistent dictionary for reading and writing.
 
     The filename parameter is the base filename for the underlying
