@@ -1,4 +1,0 @@
-Simplify GC tracking of dictionaries. All dictionaries are tracked when
-created, rather than being lazily tracked when a trackable object was added
-to them. This simplifies the code considerably and results in a slight
-speedup.

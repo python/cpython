@@ -8,7 +8,9 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
+#include "pycore_code.h"          // EVAL_CALL_STAT_INC_IF_FUNCTION()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
+#include "pycore_stats.h"
 
 /* Suggested size (number of positional arguments) for arrays of PyObject*
    allocated on a C stack to avoid allocating memory on the heap memory. Such
@@ -62,39 +64,14 @@ PyAPI_FUNC(PyObject*) _PyObject_CallMethod(
     PyObject *name,
     const char *format, ...);
 
-extern PyObject* _PyObject_CallMethodIdObjArgs(
-    PyObject *obj,
-    _Py_Identifier *name,
-    ...);
 
-static inline PyObject *
-_PyObject_VectorcallMethodId(
-    _Py_Identifier *name, PyObject *const *args,
-    size_t nargsf, PyObject *kwnames)
-{
-    PyObject *oname = _PyUnicode_FromId(name); /* borrowed */
-    if (!oname) {
-        return _Py_NULL;
-    }
-    return PyObject_VectorcallMethod(oname, args, nargsf, kwnames);
-}
-
-static inline PyObject *
-_PyObject_CallMethodIdNoArgs(PyObject *self, _Py_Identifier *name)
-{
-    size_t nargsf = 1 | PY_VECTORCALL_ARGUMENTS_OFFSET;
-    return _PyObject_VectorcallMethodId(name, &self, nargsf, _Py_NULL);
-}
-
-static inline PyObject *
-_PyObject_CallMethodIdOneArg(PyObject *self, _Py_Identifier *name, PyObject *arg)
-{
-    PyObject *args[2] = {self, arg};
-    size_t nargsf = 2 | PY_VECTORCALL_ARGUMENTS_OFFSET;
-    assert(arg != NULL);
-    return _PyObject_VectorcallMethodId(name, args, nargsf, _Py_NULL);
-}
-
+extern PyObject *_PyObject_VectorcallPrepend(
+    PyThreadState *tstate,
+    PyObject *callable,
+    PyObject *arg,
+    PyObject *const *args,
+    size_t nargsf,
+    PyObject *kwnames);
 
 /* === Vectorcall protocol (PEP 590) ============================= */
 
@@ -184,17 +161,18 @@ _PyObject_CallNoArgs(PyObject *func) {
 }
 
 
-extern PyObject *const *
+PyAPI_FUNC(PyObject *const *)
 _PyStack_UnpackDict(PyThreadState *tstate,
     PyObject *const *args, Py_ssize_t nargs,
     PyObject *kwargs, PyObject **p_kwnames);
 
-extern void _PyStack_UnpackDict_Free(
+// Exported for external JIT support
+PyAPI_FUNC(void) _PyStack_UnpackDict_Free(
     PyObject *const *stack,
     Py_ssize_t nargs,
     PyObject *kwnames);
 
-extern void _PyStack_UnpackDict_FreeNoDecRef(
+PyAPI_FUNC(void) _PyStack_UnpackDict_FreeNoDecRef(
     PyObject *const *stack,
     PyObject *kwnames);
 

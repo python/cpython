@@ -231,11 +231,9 @@ class ReloadTests:
                     # Start as a plain module.
                     self.init.invalidate_caches()
                     path = os.path.join(cwd, name + '.py')
-                    cached = self.util.cache_from_source(path)
                     expected = {'__name__': name,
                                 '__package__': '',
                                 '__file__': path,
-                                '__cached__': cached,
                                 '__doc__': None,
                                 }
                     os_helper.create_empty_file(path)
@@ -252,11 +250,9 @@ class ReloadTests:
                     # Change to a package.
                     self.init.invalidate_caches()
                     init_path = os.path.join(cwd, name, '__init__.py')
-                    cached = self.util.cache_from_source(init_path)
                     expected = {'__name__': name,
                                 '__package__': name,
                                 '__file__': init_path,
-                                '__cached__': cached,
                                 '__path__': [os.path.dirname(init_path)],
                                 '__doc__': None,
                                 }
@@ -283,7 +279,6 @@ class ReloadTests:
                     # Start as a namespace package.
                     self.init.invalidate_caches()
                     bad_path = os.path.join(cwd, name, '__init.py')
-                    cached = self.util.cache_from_source(bad_path)
                     expected = {'__name__': name,
                                 '__package__': name,
                                 '__doc__': None,
@@ -312,11 +307,9 @@ class ReloadTests:
                     # Change to a regular package.
                     self.init.invalidate_caches()
                     init_path = os.path.join(cwd, name, '__init__.py')
-                    cached = self.util.cache_from_source(init_path)
                     expected = {'__name__': name,
                                 '__package__': name,
                                 '__file__': init_path,
-                                '__cached__': cached,
                                 '__path__': [os.path.dirname(init_path)],
                                 '__doc__': None,
                                 'eggs': None,
@@ -430,8 +423,7 @@ class StartupTests:
         for name, module in sys.modules.items():
             if isinstance(module, types.ModuleType):
                 with self.subTest(name=name):
-                    self.assertTrue(hasattr(module, '__loader__'),
-                                    '{!r} lacks a __loader__ attribute'.format(name))
+                    self.assertHasAttr(module, '__loader__')
                     if self.machinery.BuiltinImporter.find_spec(name):
                         self.assertIsNot(module.__loader__, None)
                     elif self.machinery.FrozenImporter.find_spec(name):
@@ -441,7 +433,7 @@ class StartupTests:
         for name, module in sys.modules.items():
             if isinstance(module, types.ModuleType):
                 with self.subTest(name=name):
-                    self.assertTrue(hasattr(module, '__spec__'))
+                    self.assertHasAttr(module, '__spec__')
                     if self.machinery.BuiltinImporter.find_spec(name):
                         self.assertIsNot(module.__spec__, None)
                     elif self.machinery.FrozenImporter.find_spec(name):
@@ -490,6 +482,19 @@ class TestModuleAll(unittest.TestCase):
             'spec_from_loader',
         )
         support.check__all__(self, util['Source'], extra=extra)
+
+
+class TestDeprecations(unittest.TestCase):
+    def test_machinery_deprecated_attributes(self):
+        from importlib import machinery
+        attributes = (
+            'DEBUG_BYTECODE_SUFFIXES',
+            'OPTIMIZED_BYTECODE_SUFFIXES',
+        )
+        for attr in attributes:
+            with self.subTest(attr=attr):
+                with self.assertWarns(DeprecationWarning):
+                    getattr(machinery, attr)
 
 
 if __name__ == '__main__':

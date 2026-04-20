@@ -258,7 +258,7 @@ depending on whether your code is written for Python 2 or 3.
 Creating Standalone Applications with zipapp
 --------------------------------------------
 
-Using the :mod:`zipapp` module, it is possible to create self-contained Python
+Using the :mod:`!zipapp` module, it is possible to create self-contained Python
 programs, which can be distributed to end users who only need to have a
 suitable version of Python installed on their system.  The key to doing this
 is to bundle all of the application's dependencies into the archive, along

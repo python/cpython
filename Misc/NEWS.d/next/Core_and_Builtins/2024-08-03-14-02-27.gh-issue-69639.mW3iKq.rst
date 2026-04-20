@@ -1,2 +1,0 @@
-Implement mixed-mode arithmetic rules combining real and complex numbers
-as specified by C standards since C99.  Patch by Sergey B Kirpichev.

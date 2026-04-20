@@ -1,1 +1,0 @@
-Disable strace based system call tests when LD_PRELOAD is set.

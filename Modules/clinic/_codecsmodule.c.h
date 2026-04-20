@@ -98,9 +98,11 @@ _codecs_encode(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObje
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(obj), &_Py_ID(encoding), &_Py_ID(errors), },
     };
     #undef NUM_KEYWORDS
@@ -199,9 +201,11 @@ _codecs_decode(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObje
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(obj), &_Py_ID(encoding), &_Py_ID(errors), },
     };
     #undef NUM_KEYWORDS
@@ -2775,6 +2779,70 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(_codecs__normalize_encoding__doc__,
+"_normalize_encoding($module, /, encoding)\n"
+"--\n"
+"\n"
+"Normalize an encoding name *encoding*.\n"
+"\n"
+"Used for encodings.normalize_encoding. Does not convert to lower case.");
+
+#define _CODECS__NORMALIZE_ENCODING_METHODDEF    \
+    {"_normalize_encoding", _PyCFunction_CAST(_codecs__normalize_encoding), METH_FASTCALL|METH_KEYWORDS, _codecs__normalize_encoding__doc__},
+
+static PyObject *
+_codecs__normalize_encoding_impl(PyObject *module, PyObject *encoding);
+
+static PyObject *
+_codecs__normalize_encoding(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 1
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
+        .ob_item = { &_Py_ID(encoding), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"encoding", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "_normalize_encoding",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[1];
+    PyObject *encoding;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    if (!PyUnicode_Check(args[0])) {
+        _PyArg_BadArgument("_normalize_encoding", "argument 'encoding'", "str", args[0]);
+        goto exit;
+    }
+    encoding = args[0];
+    return_value = _codecs__normalize_encoding_impl(module, encoding);
+
+exit:
+    return return_value;
+}
+
 #ifndef _CODECS_MBCS_DECODE_METHODDEF
     #define _CODECS_MBCS_DECODE_METHODDEF
 #endif /* !defined(_CODECS_MBCS_DECODE_METHODDEF) */
@@ -2798,4 +2866,4 @@ exit:
 #ifndef _CODECS_CODE_PAGE_ENCODE_METHODDEF
     #define _CODECS_CODE_PAGE_ENCODE_METHODDEF
 #endif /* !defined(_CODECS_CODE_PAGE_ENCODE_METHODDEF) */
-/*[clinic end generated code: output=f8a7fdd0b7edc0c4 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=a968c493bb28be3e input=a9049054013a1b77]*/

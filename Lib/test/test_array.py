@@ -8,6 +8,7 @@ from test import support
 from test.support import import_helper
 from test.support import os_helper
 from test.support import _2G
+from test.support import subTests
 import weakref
 import pickle
 import operator
@@ -30,7 +31,7 @@ class ArraySubclassWithKwargs(array.array):
     def __init__(self, typecode, newarg=None):
         array.array.__init__(self)
 
-typecodes = 'uwbBhHiIlLfdqQ'
+typecodes = 'uwbBhHiIlLfdqQFDe'
 
 class MiscTest(unittest.TestCase):
 
@@ -67,6 +68,23 @@ class MiscTest(unittest.TestCase):
         a += a
         self.assertEqual(len(a), 0)
 
+    def test_fromlist_reentrant_index_mutation(self):
+
+        class Evil:
+            def __init__(self, lst):
+                self.lst = lst
+            def __index__(self):
+                self.lst.clear()
+                return "not an int"
+
+        for typecode in ('I', 'L', 'Q'):
+            with self.subTest(typecode=typecode):
+                lst = []
+                lst.append(Evil(lst))
+                a = array.array(typecode)
+                with self.assertRaises(TypeError):
+                    a.fromlist(lst)
+
 
 # Machine format codes.
 #
@@ -95,6 +113,14 @@ UTF16_LE = 18
 UTF16_BE = 19
 UTF32_LE = 20
 UTF32_BE = 21
+IEEE_754_FLOAT_COMPLEX_LE = 22
+IEEE_754_FLOAT_COMPLEX_BE = 23
+IEEE_754_DOUBLE_COMPLEX_LE = 24
+IEEE_754_DOUBLE_COMPLEX_BE = 25
+IEEE_754_FLOAT16_LE = 26
+IEEE_754_FLOAT16_BE = 27
+
+MACHINE_FORMAT_CODE_MAX = 27
 
 
 class ArrayReconstructorTest(unittest.TestCase):
@@ -121,7 +147,7 @@ class ArrayReconstructorTest(unittest.TestCase):
         self.assertRaises(ValueError, array_reconstructor,
                           array.array, "b", UNKNOWN_FORMAT, b"")
         self.assertRaises(ValueError, array_reconstructor,
-                          array.array, "b", 22, b"")
+                          array.array, "b", MACHINE_FORMAT_CODE_MAX + 1, b"")
         self.assertRaises(ValueError, array_reconstructor,
                           array.array, "d", 16, b"a")
 
@@ -173,7 +199,15 @@ class ArrayReconstructorTest(unittest.TestCase):
             (['d'], IEEE_754_DOUBLE_LE, '<dddd',
              [9006104071832581.0, float('inf'), float('-inf'), -0.0]),
             (['d'], IEEE_754_DOUBLE_BE, '>dddd',
-             [9006104071832581.0, float('inf'), float('-inf'), -0.0])
+             [9006104071832581.0, float('inf'), float('-inf'), -0.0]),
+            (['F'], IEEE_754_FLOAT_COMPLEX_LE, '<FFFF',
+             [16711938.0j, float('inf'), complex('1-infj'), -0.0]),
+            (['F'], IEEE_754_FLOAT_COMPLEX_BE, '>FFFF',
+             [16711938.0j, float('inf'), complex('1-infj'), -0.0]),
+            (['D'], IEEE_754_DOUBLE_COMPLEX_LE, '<DDDD',
+             [9006104071832581.0j, float('inf'), complex('1-infj'), -0.0]),
+            (['D'], IEEE_754_DOUBLE_COMPLEX_BE, '>DDDD',
+             [9006104071832581.0j, float('inf'), complex('1-infj'), -0.0]),
         )
         for testcase in testcases:
             valid_typecodes, mformat_code, struct_fmt, values = testcase
@@ -261,7 +295,7 @@ class BaseTest:
             example = self.example
         a = array.array(self.typecode, example)
         self.assertRaises(TypeError, a.byteswap, 42)
-        if a.itemsize in (1, 2, 4, 8):
+        if a.itemsize in (1, 2, 4, 8, 16):
             b = array.array(self.typecode, example)
             b.byteswap()
             if a.itemsize==1:
@@ -1255,6 +1289,14 @@ class UnicodeTest(StringTest, unittest.TestCase):
         with self.assertWarns(DeprecationWarning):
             array.array("u")
 
+    def test_empty_string_mem_leak_gh140474(self):
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore', DeprecationWarning)
+            for _ in range(1000):
+                a = array.array('u', '')
+                self.assertEqual(len(a), 0)
+                self.assertEqual(a.typecode, 'u')
+
 
 class UCS4Test(UnicodeTest):
     typecode = 'w'
@@ -1499,6 +1541,62 @@ class FPTest(NumberTest):
             b.byteswap()
             self.assertEqual(a, b)
 
+class CFPTest(NumberTest):
+    example = [-42j, 0, 42+1j, 1e5j, -1e10]
+    outside = 23
+
+    def assertEntryEqual(self, entry1, entry2):
+        self.assertAlmostEqual(entry1, entry2)
+
+    def test_cmp(self):
+        a = array.array(self.typecode, self.example)
+        self.assertIs(a == 42, False)
+        self.assertIs(a != 42, True)
+
+        self.assertIs(a == a, True)
+        self.assertIs(a != a, False)
+        self.assertIs(a < a, False)
+        self.assertIs(a <= a, True)
+        self.assertIs(a > a, False)
+        self.assertIs(a >= a, True)
+
+        self.assertIs(a == 2*a, False)
+        self.assertIs(a != 2*a, True)
+        self.assertIs(a < 2*a, True)
+        self.assertIs(a <= 2*a, True)
+        self.assertIs(a > 2*a, False)
+        self.assertIs(a >= 2*a, False)
+
+    def test_nan(self):
+        a = array.array(self.typecode, [float('nan')])
+        b = array.array(self.typecode, [float('nan')])
+        self.assertIs(a != b, True)
+        self.assertIs(a == b, False)
+
+    def test_byteswap(self):
+        a = array.array(self.typecode, self.example)
+        self.assertRaises(TypeError, a.byteswap, 42)
+        if a.itemsize in (1, 2, 4, 8):
+            b = array.array(self.typecode, self.example)
+            b.byteswap()
+            if a.itemsize == 1:
+                self.assertEqual(a, b)
+            else:
+                # On alphas treating the byte swapped bit patterns as
+                # floats/doubles results in floating-point exceptions
+                # => compare the 8bit string values instead
+                self.assertNotEqual(a.tobytes(), b.tobytes())
+            b.byteswap()
+            self.assertEqual(a, b)
+
+
+class HalfFloatTest(FPTest, unittest.TestCase):
+    example = [-42.0, 0, 42, 1e2, -1e4]
+    smallerexample = [-42.0, 0, 42, 1e2, -2e4]
+    biggerexample = [-42.0, 0, 42, 1e2, 1e4]
+    typecode = 'e'
+    minitemsize = 2
+
 class FloatTest(FPTest, unittest.TestCase):
     typecode = 'f'
     minitemsize = 4
@@ -1523,6 +1621,15 @@ class DoubleTest(FPTest, unittest.TestCase):
             pass
         else:
             self.fail("Array of size > maxsize created - MemoryError expected")
+
+
+class ComplexFloatTest(CFPTest, unittest.TestCase):
+    typecode = 'F'
+    minitemsize = 8
+
+class ComplexDoubleTest(CFPTest, unittest.TestCase):
+    typecode = 'D'
+    minitemsize = 16
 
 
 class LargeArrayTest(unittest.TestCase):
@@ -1664,6 +1771,53 @@ class LargeArrayTest(unittest.TestCase):
         self.assertEqual(len(ls), len(example))
         self.assertEqual(ls[:8], list(example[:8]))
         self.assertEqual(ls[-8:], list(example[-8:]))
+
+    def test_gh_128961(self):
+        a = array.array('i')
+        it = iter(a)
+        list(it)
+        it.__setstate__(0)
+        self.assertRaises(StopIteration, next, it)
+
+    # Tests for NULL pointer dereference in array.__setitem__
+    # when the index conversion mutates the array.
+    # See: https://github.com/python/cpython/issues/142555.
+
+    @subTests("dtype", ["b", "B", "h", "H", "i", "l", "q", "I", "L", "Q"])
+    def test_setitem_use_after_clear_with_int_data(self, dtype):
+        victim = array.array(dtype, list(range(64)))
+
+        class Index:
+            def __index__(self):
+                victim.clear()
+                return 0
+
+        self.assertRaises(IndexError, victim.__setitem__, 1, Index())
+        self.assertEqual(len(victim), 0)
+
+    def test_setitem_use_after_shrink_with_int_data(self):
+        victim = array.array('b', [1, 2, 3])
+
+        class Index:
+            def __index__(self):
+                victim.pop()
+                victim.pop()
+                return 0
+
+        self.assertRaises(IndexError, victim.__setitem__, 1, Index())
+
+    @subTests("dtype", ["f", "d"])
+    def test_setitem_use_after_clear_with_float_data(self, dtype):
+        victim = array.array(dtype, [1.0, 2.0, 3.0])
+
+        class Float:
+            def __float__(self):
+                victim.clear()
+                return 0.0
+
+        self.assertRaises(IndexError, victim.__setitem__, 1, Float())
+        self.assertEqual(len(victim), 0)
+
 
 if __name__ == "__main__":
     unittest.main()
