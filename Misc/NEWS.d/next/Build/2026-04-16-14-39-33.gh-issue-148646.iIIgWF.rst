@@ -1,0 +1,6 @@
+Add a new ``--enable-prebuilt-jit-stencils`` configure flag that forces the
+build to use the existing provided JIT stencils even when the digest at the
+beginning of the file does not match expectations. That allows
+redistributors who prebuilt the JIT stencils on a system with a different
+autoconf version to still use them even when ``pyconfig.h`` is slightly
+different.

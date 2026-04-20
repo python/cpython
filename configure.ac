@@ -2858,6 +2858,19 @@ AS_VAR_IF([jit_flags],
 AC_SUBST([REGEN_JIT_COMMAND])
 AC_MSG_RESULT([$tier2_flags $jit_flags])
 
+# Check for --enable-prebuilt-jit-stencils:
+AC_MSG_CHECKING([for --enable-prebuilt-jit-stencils])
+AC_ARG_ENABLE([prebuilt-jit-stencils],
+              [AS_HELP_STRING([--enable-prebuilt-jit-stencils],
+                              [accept prebuilt JIT stencils even if the digest does not match (default is no)])],
+              [],
+              [enable_prebuilt_jit_stencils=no])
+AS_VAR_IF([enable_prebuilt_jit_stencils],
+          [no],
+          [],
+          [AS_VAR_APPEND([REGEN_JIT_COMMAND], [" --prebuilt"])])
+AC_MSG_RESULT([$enable_prebuilt_jit_stencils])
+
 if test "$disable_gil" = "yes" -a "$enable_experimental_jit" != "no"; then
   # GH-133171: This configuration builds the JIT but never actually uses it,
   # which is surprising (and strictly worse than not building it at all):
