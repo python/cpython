@@ -503,7 +503,7 @@ static void* perf_map_jit_init(void) {
         ((uint64_t)pid << 32) ^ (uint64_t)get_current_monotonic_ticks();
 
     /* Calculate padding size based on actual unwind info requirements */
-    size_t eh_frame_size = _PyJitUnwind_EhFrameSize(0);
+    size_t eh_frame_size = _PyJitUnwind_EhFrameSize(0, NULL);
     size_t unwind_data_size = sizeof(EhFrameHeader) + eh_frame_size;
     trampoline_api.code_padding = _Py_SIZE_ROUND_UP(unwind_data_size, 16);
     trampoline_api.code_alignment = 32;
@@ -572,7 +572,7 @@ static void perf_map_jit_write_entry_with_name(
      */
     uint8_t buffer[1024];  // Buffer for DWARF data (1KB should be sufficient)
     size_t eh_frame_size = _PyJitUnwind_BuildEhFrame(
-        buffer, sizeof(buffer), code_addr, code_size, 0);
+        buffer, sizeof(buffer), code_addr, code_size, 0, NULL);
     if (eh_frame_size == 0) {
         PyMem_RawFree(perf_map_entry);
         return;

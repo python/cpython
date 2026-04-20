@@ -12,6 +12,7 @@ import tempfile
 import typing
 import shlex
 
+import _eh_frame
 import _llvm
 import _optimizers
 import _schema
@@ -163,10 +164,10 @@ class _Target(typing.Generic[_S, _R]):
             # __FILE__ macro and assert failure messages) for reproducibility:
             f"-ffile-prefix-map={CPYTHON}=.",
             f"-ffile-prefix-map={tempdir}=.",
-            # This debug info isn't necessary, and bloats out the JIT'ed code.
-            # We *may* be able to re-enable this, process it, and JIT it for a
-            # nicer debugging experience... but that needs a lot more research:
-            "-fno-asynchronous-unwind-tables",
+            # Unwind info is per-stencil (see below): disabled for
+            # executors (bloats the JIT'ed code with info we'd have to
+            # process and re-JIT), enabled for the shim because its
+            # .eh_frame is what jit_unwind.c ships to GDB.
             # Don't call built-in functions that we can't find or patch:
             "-fno-builtin",
             # Don't call stack-smashing canaries that we can't find or patch:
@@ -177,6 +178,16 @@ class _Target(typing.Generic[_S, _R]):
             f"{c}",
         ]
         is_shim = opname == "shim"
+        # Executors ride the pinned-frame-pointer invariant so we can
+        # synthesize their CFI by hand. Only the Linux/ELF shim consumes
+        # compiler-emitted unwind tables; enabling them on COFF/Mach-O
+        # would introduce platform unwind relocations our parsers do not
+        # handle.
+        args_s.append(
+            "-fasynchronous-unwind-tables"
+            if is_shim and isinstance(self, _ELF)
+            else "-fno-asynchronous-unwind-tables"
+        )
         if self.frame_pointers:
             frame_pointer = "all" if is_shim else "reserved"
             args_s += ["-Xclang", f"-mframe-pointer={frame_pointer}"]
@@ -388,6 +399,7 @@ class _ELF(
         self, section: _schema.ELFSection, group: _stencils.StencilGroup
     ) -> None:
         section_type = section["Type"]["Name"]
+        section_name = section["Name"]["Name"]
         flags = {flag["Name"] for flag in section["Flags"]["Flags"]}
         if section_type == "SHT_RELA":
             assert "SHF_INFO_LINK" in flags, flags
@@ -406,6 +418,15 @@ class _ELF(
                 relocation = wrapped_relocation["Relocation"]
                 hole = self._handle_relocation(base, relocation, stencil.body)
                 stencil.holes.append(hole)
+        elif section_name == ".eh_frame":
+            if "SHF_ALLOC" not in flags:
+                return
+            # LLVM 21 emits x86_64 .eh_frame as SHT_X86_64_UNWIND.
+            assert section_type in {"SHT_PROGBITS", "SHT_X86_64_UNWIND"}, (
+                section_type
+            )
+            group.shim_cfi = _eh_frame.parse(bytes(section["SectionData"]["Bytes"]))
+            return
         elif section_type == "SHT_PROGBITS":
             if "SHF_ALLOC" not in flags:
                 return

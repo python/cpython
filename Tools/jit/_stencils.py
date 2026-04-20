@@ -247,6 +247,22 @@ class Stencil:
 
 
 @dataclasses.dataclass
+class ShimCfi:
+    """
+    DWARF CFI bytes captured from the compiled shim's .eh_frame.
+
+    These let jit_unwind.c emit an accurate GDB EH frame for the shim
+    without hand-rolling DWARF that tracks the compiler's prologue.
+    """
+
+    cie_init_cfi: bytes
+    fde_cfi: bytes
+    code_align: int
+    data_align: int
+    ra_column: int
+
+
+@dataclasses.dataclass
 class StencilGroup:
     """
     Code and data corresponding to a given micro-opcode.
@@ -259,6 +275,7 @@ class StencilGroup:
     symbols: dict[int | str, tuple[HoleValue, int]] = dataclasses.field(
         default_factory=dict, init=False
     )
+    shim_cfi: ShimCfi | None = dataclasses.field(default=None, init=False)
     _jit_symbol_table: dict[str, int] = dataclasses.field(
         default_factory=dict, init=False
     )

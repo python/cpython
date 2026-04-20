@@ -63,7 +63,8 @@ jit_error(const char *message)
 
 static void *
 jit_record_code(const void *code_addr, size_t code_size,
-                const char *entry, const char *filename)
+                const char *entry, const char *filename,
+                const _PyJitUnwind_ShimCfi *shim_cfi)
 {
 #ifdef PY_HAVE_PERF_TRAMPOLINE
     _PyPerf_Callbacks callbacks;
@@ -77,12 +78,13 @@ jit_record_code(const void *code_addr, size_t code_size,
 
 #if defined(__linux__) && defined(__ELF__)
     return _PyJitUnwind_GdbRegisterCode(
-        code_addr, code_size, entry, filename);
+        code_addr, code_size, entry, filename, shim_cfi);
 #else
     (void)code_addr;
     (void)code_size;
     (void)entry;
     (void)filename;
+    (void)shim_cfi;
     return NULL;
 #endif
 }
@@ -762,7 +764,8 @@ _PyJIT_Compile(_PyExecutorObject *executor, const _PyUOpInstruction trace[], siz
     executor->jit_gdb_handle = jit_record_code(memory,
                     code_size + state.trampolines.size,
                     "jit_entry",
-                    "<jit>");
+                    "<jit>",
+                    /*shim_cfi=*/NULL);
     return 0;
 }
 
@@ -813,10 +816,29 @@ compile_shim(void)
         return NULL;
     }
     _Py_jit_shim_size = total_size;
+    /* GDB JIT unwind info (and the captured-.eh_frame blob that feeds it)
+     * is only wired up on Linux+ELF — see jit_record_code() below. Even
+     * there, user-provided JIT CFLAGS can suppress the shim's .eh_frame,
+     * so jit_stencils.h advertises whether the captured CFI blob exists. */
+#if defined(__linux__) && defined(__ELF__) && _Py_JIT_HAS_SHIM_CFI
+    static const _PyJitUnwind_ShimCfi shim_cfi = {
+        .cie_init_cfi      = _Py_jit_shim_cie_init_cfi,
+        .cie_init_cfi_size = sizeof(_Py_jit_shim_cie_init_cfi),
+        .fde_cfi           = _Py_jit_shim_fde_cfi,
+        .fde_cfi_size      = sizeof(_Py_jit_shim_fde_cfi),
+        .code_align        = _Py_jit_shim_code_align,
+        .data_align        = _Py_jit_shim_data_align,
+        .ra_column         = _Py_jit_shim_ra_column,
+    };
+    const _PyJitUnwind_ShimCfi *shim_cfi_ptr = &shim_cfi;
+#else
+    const _PyJitUnwind_ShimCfi *shim_cfi_ptr = NULL;
+#endif
     _Py_jit_shim_gdb_handle = jit_record_code(memory,
                                               code_size + state.trampolines.size,
                                               "jit_entry",
-                                              "<jit>");
+                                              "<jit>",
+                                              shim_cfi_ptr);
     return (_PyJitEntryFuncPtr)memory;
 }
 

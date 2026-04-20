@@ -85,6 +85,13 @@ def setUpModule():
 @unittest.skipUnless(hasattr(sys, "_jit") and sys._jit.is_enabled(),
                      "requires a JIT-enabled build with JIT execution active")
 class JitBacktraceTests(DebuggerTests):
+    def get_stack_trace(self, **kwargs):
+        # These tests validate the JIT-relevant part of the backtrace via
+        # _assert_jit_backtrace_shape, so an unrelated "?? ()" frame below
+        # the JIT/eval segment (e.g. libc without debug info) is tolerable.
+        kwargs.setdefault("skip_on_truncation", False)
+        return super().get_stack_trace(**kwargs)
+
     def _extract_backtrace_frames(self, gdb_output):
         frames = BACKTRACE_FRAME_RE.findall(gdb_output)
         self.assertGreater(
@@ -133,6 +140,20 @@ class JitBacktraceTests(DebuggerTests):
         self.assertTrue(
             eval_after_jit,
             f"expected an eval frame after the JIT frame\n"
+            f"backtrace:\n{backtrace}",
+        )
+        relevant_end = max(
+            i
+            for i, frame in enumerate(frames)
+            if "py::jit_entry:<jit>" in frame or re.search(EVAL_FRAME_RE, frame)
+        )
+        truncated_frames = [
+            frame for frame in frames[: relevant_end + 1]
+            if " ?? ()" in frame
+        ]
+        self.assertFalse(
+            truncated_frames,
+            "unexpected truncated frame before the validated JIT/eval segment\n"
             f"backtrace:\n{backtrace}",
         )
         if anchor_at_top:
