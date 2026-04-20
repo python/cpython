@@ -2048,21 +2048,14 @@ class TestForwardRefClass(unittest.TestCase):
 
     def test_evaluate_string_format_extra_names(self):
         # Test that internal extra_names are replaced when evaluating as strings
-
-        # As identifier
-        fr = ForwardRef("__annotationlib_name_1__")
-        fr.__extra_names__ = {"__annotationlib_name_1__": str}
-        self.assertEqual(fr.evaluate(format=Format.STRING), "str")
-
-        # Via AST visitor
-        def f(a: ref | str): ...
+        def f(a: unknown | str | int | list[str] | tuple[int, ...]): ...
 
         fr = get_annotations(f, format=Format.FORWARDREF)['a']
         # Test the cache is not populated before access
         self.assertIsNone(fr.__resolved_str_cache__)
 
-        self.assertEqual(fr.evaluate(format=Format.STRING), "ref | str")
-        self.assertEqual(fr.__resolved_str_cache__, "ref | str")
+        self.assertEqual(fr.evaluate(format=Format.STRING), "unknown | str | int | list[str] | tuple[int, ...]")
+        self.assertEqual(fr.__resolved_str_cache__, "unknown | str | int | list[str] | tuple[int, ...]")
 
     def test_evaluate_forwardref_format(self):
         fr = ForwardRef("undef")
