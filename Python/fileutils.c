@@ -1970,8 +1970,8 @@ _Py_write_impl(int fd, const void *buf, size_t count, int gil_held)
                 c /= 2;
             } while (c > 0);
 #else
-            /* only call write() if there is something to write.
-             * writing 0 bytes to not a regular file is undefined behaviour. */
+            /* Only call write() if there is something to write as
+             * writing 0 bytes to a non-regular file is an undefined behaviour. */
             if (count > 0) {
                 n = write(fd, buf, count);
             }
@@ -2000,8 +2000,8 @@ _Py_write_impl(int fd, const void *buf, size_t count, int gil_held)
                 c /= 2;
             } while (c > 0);
 #else
-            /* only call write() if there is something to write.
-             * writing 0 bytes to not a regular file is undefined behaviour. */
+            /* Only call write() if there is something to write as
+             * writing 0 bytes to a non-regular file is an undefined behaviour. */
             if (count > 0) {
                 n = write(fd, buf, count);
             }
