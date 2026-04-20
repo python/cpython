@@ -66,7 +66,7 @@ class TestCase(unittest.TestCase):
         # Bulletproof test for mode parameter
         import os
         import tempfile
-        
+
         # Ek fresh temporary directory mein file banate hain
         with tempfile.TemporaryDirectory() as tmpdir:
             temp_fn = os.path.join(tmpdir, "test_shelf")
@@ -74,12 +74,12 @@ class TestCase(unittest.TestCase):
                 # Sirf check karna hai ki 'mode' accept ho raha hai bina crash ke
                 with shelve.open(temp_fn, mode=0o666) as s:
                     s['key'] = 'value'
-                
+
                 # Check ki koi na koi file generate hui ya nahi
                 self.assertTrue(len(os.listdir(tmpdir)) > 0)
             except Exception as e:
                 self.fail(f"shelve.open failed with mode parameter: {e}")
-                
+
     def test_open_template(self, filename=None, protocol=None):
         os.mkdir(self.dirname)
         self.addCleanup(os_helper.rmtree, self.dirname)
