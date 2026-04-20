@@ -4716,8 +4716,8 @@ These functions may be used to create and manage processes.
 
    *Program arguments*
 
-   The exec functions take a list of arguments for the new program. The first of these 
-   is by convention the command name used on the command line, rather than an argument to the command, 
+   The exec functions take a list of arguments for the new program. The first of these
+   is by convention the command name used on the command line, rather than an argument to the command,
    and becomes argv[0] passed to the main function of a C program.
 
    For example, ``os.execv('/bin/echo', ['echo', 'foo', 'bar'])`` would only print ``foo bar``;
