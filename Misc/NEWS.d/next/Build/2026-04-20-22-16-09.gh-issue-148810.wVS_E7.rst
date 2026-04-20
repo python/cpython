@@ -1,0 +1,1 @@
+Add configuration options to enable more sanitizers supported by GCC
