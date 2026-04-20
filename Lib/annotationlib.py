@@ -269,15 +269,10 @@ class ForwardRef:
             names = self.__extra_names__
 
             if names:
-                # identifiers can be replaced directly
-                if resolved_str.isidentifier():
-                    if (name_obj := names.get(resolved_str, _sentinel)) is not _sentinel:
-                        resolved_str = type_repr(name_obj)
-                else:
-                    visitor = _ExtraNameFixer(names)
-                    ast_expr = ast.parse(resolved_str, mode="eval").body
-                    node = visitor.visit(ast_expr)
-                    resolved_str = ast.unparse(node)
+                visitor = _ExtraNameFixer(names)
+                ast_expr = ast.parse(resolved_str, mode="eval").body
+                node = visitor.visit(ast_expr)
+                resolved_str = ast.unparse(node)
 
             self.__resolved_str_cache__ = resolved_str
 
