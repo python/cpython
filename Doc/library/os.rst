@@ -4720,7 +4720,7 @@ These functions may be used to create and manage processes.
    is by convention the command name used on the command line, rather than an argument to the command, 
    and becomes argv[0] passed to the main function of a C program.
 
-   For example, ``os.execv('/bin/echo', ['echo', 'foo', 'bar'])`` would only print ``foo bar``; 
+   For example, ``os.execv('/bin/echo', ['echo', 'foo', 'bar'])`` would only print ``foo bar``;
    the echo argument would seem to be ignored.
 
    The "l" and "v" variants of the :func:`exec\* <execl>` functions differ in how
