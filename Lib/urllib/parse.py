@@ -131,7 +131,7 @@ def _coerce_args(*args):
             else:
                 if isinstance(arg, str) != str_input:
                     raise TypeError("Cannot mix str and non-str arguments")
-                elif not hasattr(arg, 'decode'):
+                elif str_input is False and not hasattr(arg, 'decode'):
                     if arg:
                         raise TypeError(f"Expected a string or bytes object: got {type(arg)}")
                     else:
