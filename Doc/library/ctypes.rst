@@ -3190,8 +3190,8 @@ Arrays and pointers
    Equivalent to ``type * length``, where *type* is a
    :mod:`!ctypes` data type and *length* an integer.
 
-   This function is :term:`soft deprecated` in favor of multiplication.
-   There are no plans to remove it.
+   .. soft-deprecated:: 3.14
+      In favor of multiplication.
 
 
 .. class:: _Pointer
