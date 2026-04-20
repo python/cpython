@@ -271,7 +271,7 @@ class ForwardRef:
             if names:
                 # identifiers can be replaced directly
                 if resolved_str.isidentifier():
-                    if (name_obj := names.get(resolved_str), _sentinel) is not _sentinel:
+                    if (name_obj := names.get(resolved_str, _sentinel)) is not _sentinel:
                         resolved_str = type_repr(name_obj)
                 else:
                     visitor = _ExtraNameFixer(names)
