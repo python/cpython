@@ -38,7 +38,7 @@ jobs:
       run: echo "IMAGE_OS_VERSION=${ImageOS}-${ImageVersion}" >> "$GITHUB_ENV"
     - name: Install Homebrew dependencies
       run: |
-        brew bundle --file=.github/workflows/Brewfile
+        brew bundle --file=Misc/Brewfile
         brew install make
     - name: Configure CPython
       run: |
