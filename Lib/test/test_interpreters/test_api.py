@@ -117,6 +117,18 @@ class CreateTests(TestBase):
         # GH-126221: Passing an invalid Unicode character used to cause a SystemError
         self.assertRaises(UnicodeEncodeError, _interpreters.create, '\udc80')
 
+        # A config object with a surrogate in a string field must raise, not crash.
+        class BadConfig:
+            use_main_obmalloc = False
+            allow_fork = False
+            allow_exec = False
+            allow_threads = False
+            allow_daemon_threads = False
+            check_multi_interp_extensions = False
+            own_gil = True
+            gil = 'own\udc80'
+        self.assertRaises(UnicodeEncodeError, _interpreters.create, BadConfig())
+
     def test_in_thread(self):
         lock = threading.Lock()
         interp = None
