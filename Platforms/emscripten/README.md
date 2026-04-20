@@ -243,8 +243,8 @@ await createEmscriptenModule({
   are not shipped. All other modules are bundled as pre-compiled
   ``pyc`` files.
 - In-memory file system (MEMFS) is not persistent and limited.
-- Test modules are disabled by default. Use ``--enable-test-modules`` build
-  test modules like ``_testcapi``.
+- Test modules are built by default. Use ``--disable-test-modules`` to disable
+  building test modules like ``_testcapi``.
 
 ## WASI (wasm32-wasi)
 
