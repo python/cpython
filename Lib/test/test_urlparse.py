@@ -1257,7 +1257,7 @@ class UrlParseTestCase(unittest.TestCase):
 
     def test_non_string_true_values_rejected(self):
         # True values raise informative TypeErrors
-        msg = "Expected a string or bytes object: got <class "
+        msg = "Expected a string, bytes, or None: got <class "
         with self.assertRaisesRegex(TypeError, msg):
             urllib.parse.urlsplit(1, b'http')
 
@@ -1998,12 +1998,12 @@ class DeprecationTest(unittest.TestCase):
         cases = [
             (urllib.parse.urljoin, ['http://www.python.org', []]),
             (urllib.parse.urljoin, [[], b'docs']),
-            (urllib.parse.urlparse, [b'www.python.org', None]),
+            (urllib.parse.urlparse, [b'www.python.org', {}]),
             (urllib.parse.urlparse, [{}, '']),
             (urllib.parse.urlsplit, [0, b'http']),
-            (urllib.parse.urlsplit, [b'http://www.python.org', None]),
+            (urllib.parse.urlsplit, [b'http://www.python.org', 0]),
             (urllib.parse.urldefrag, [{}]),
-            (urllib.parse.urlunparse, [[None, b'www.python.org', None, None, None, None]]),
+            (urllib.parse.urlunparse, [[None, b'www.python.org', (), (), (), ()]]),
             (urllib.parse.urlunsplit, [['http', 0, '', '', '']]),
         ]
         for callable, args in cases:
