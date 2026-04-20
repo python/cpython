@@ -454,8 +454,6 @@ def run_regrtest(
     nanvixd_extra = nanvixd_extra or config.PLATFORM_NANVIXD_ARGS.get(platform, [])
     standalone = process_mode == "standalone"
 
-    print(f"Test: regrtest ({len(test_list)} modules, {process_mode})...")
-
     sysroot = staging / "sysroot"
     run_tests_script = repo_root / ".nanvix" / "run-tests.py"
 
@@ -484,6 +482,7 @@ def run_regrtest(
 
     cmd = [sys.executable, str(run_tests_script)] + test_list
 
+    print(f"Test: regrtest ({len(test_list)} modules, {process_mode})...")
     result = subprocess.run(cmd, cwd=sysroot, env=env)
     if result.returncode != 0:
         raise RuntimeError(
