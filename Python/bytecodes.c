@@ -6107,13 +6107,6 @@ dummy_func(
             value = PyStackRef_FromPyObjectBorrow(ptr);
         }
 
-        tier2 op(_SHUFFLE_3_LOAD_CONST_INLINE_BORROW, (ptr/4, callable, null, arg -- res, a, c)) {
-            res = PyStackRef_FromPyObjectBorrow(ptr);
-            a = arg;
-            c = callable;
-            INPUTS_DEAD();
-        }
-
         tier2 op(_START_EXECUTOR, (executor/4 --)) {
 #ifndef _Py_JIT
             assert(current_executor == (_PyExecutorObject*)executor);
