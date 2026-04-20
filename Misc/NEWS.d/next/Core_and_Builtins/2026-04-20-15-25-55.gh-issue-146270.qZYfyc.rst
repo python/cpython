@@ -1,1 +1,1 @@
-Fix a sequential consistency bug in `structmember.c` and add `_testcapi.SpinningBarrier` to support the new test.
+Fix a sequential consistency bug in ``structmember.c`` and add ``_testcapi.SpinningBarrier`` to support the new test.
