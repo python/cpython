@@ -124,6 +124,7 @@ def _coerce_args(*args):
     #   - noop for str inputs
     #   - encoding function otherwise
     str_input = None
+    empty_values = {"", b"", None}
     for arg in args:
         if arg:
             if str_input is None:
@@ -131,14 +132,13 @@ def _coerce_args(*args):
             else:
                 if isinstance(arg, str) != str_input:
                     raise TypeError("Cannot mix str and non-str arguments")
-                elif str_input is False and not hasattr(arg, 'decode'):
-                    if arg:
-                        raise TypeError(f"Expected a string or bytes object: got {type(arg)}")
-                    else:
-                        warnings.warn(
-                            f"Providing false values other than strings or bytes "
-                            f"to urllib.parse is deprecated: got {type(arg)}",
-                            DeprecationWarning, stacklevel=3)
+            if str_input is False and arg is not None and not hasattr(arg, "decode"):
+                raise TypeError(f"Expected a string, bytes, or None: got {type(arg)}")
+        elif arg not in empty_values:
+            warnings.warn(
+                f"Providing false values other than empty strings, bytes, or"
+                f"None to urllib.parse is deprecated: got {type(arg)}",
+                DeprecationWarning, stacklevel=3)
     if str_input is None:
         for arg in args:
             if arg is not None:
