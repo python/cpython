@@ -5,11 +5,13 @@ import unittest
 from test.support import cpython_only
 from test.support.os_helper import TESTFN, unlink
 from test.support import check_free_after_iterating, ALWAYS_EQ, NEVER_EQ
+from test import support
 import pickle
 import collections.abc
 import functools
 import contextlib
 import builtins
+
 
 # Test result of triple loop (too big to inline)
 TRIPLETS = [(0, 0, 0), (0, 0, 1), (0, 0, 2),
@@ -127,7 +129,14 @@ class TestCase(unittest.TestCase):
         self.assertEqual(res, seq)
 
     # Helper to check picklability
+    # NSKIP001 https://github.com/nanvix/cpython/issues/371
+    _nanvix_pickle_warned = False
     def check_pickle(self, itorg, seq):
+        if support.is_nanvix:
+            if not self._nanvix_pickle_warned:
+                support.print_warning("NSKIP001: skipping pickle check on Nanvix (32-bit corrupt)")
+                type(self)._nanvix_pickle_warned = True
+            return
         for proto in range(pickle.HIGHEST_PROTOCOL + 1):
             d = pickle.dumps(itorg, proto)
             it = pickle.loads(d)
@@ -200,6 +209,8 @@ class TestCase(unittest.TestCase):
     def test_seq_class_iter(self):
         self.check_iterator(iter(SequenceClass(10)), list(range(10)))
 
+    # NSKIP001 https://github.com/nanvix/cpython/issues/371
+    @unittest.skipIf(support.is_nanvix, "NSKIP001: pickle corrupt on 32-bit")
     def test_mutating_seq_class_iter_pickle(self):
         orig = SequenceClass(5)
         for proto in range(pickle.HIGHEST_PROTOCOL + 1):

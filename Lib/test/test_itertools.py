@@ -1,3 +1,12 @@
+# NSKIP015 https://github.com/nanvix/cpython/issues/371
+# This module is excluded from standalone mode via STANDALONE_EXCLUDE in
+# .nanvix/config.py (32MB heap too small for itertools' large allocations).
+#
+# In non-standalone modes (256MB), two categories of failure remain:
+#   NSKIP001: pickle corrupt on 32-bit — picklecopiers emptied, and
+#             pickle_deprecated decorator patched to skip assertWarns phase.
+#   NSKIP015: test_tee_del_backward OOMs (20M-element tee exhausts memory).
+
 import doctest
 import unittest
 from test import support
@@ -24,15 +33,22 @@ def pickle_deprecated(testfunc):
     Third, run with warnings promoted to errors.
     """
     def inner(self):
-        with self.assertWarns(DeprecationWarning):
-            testfunc(self)
+        # NSKIP001 https://github.com/nanvix/cpython/issues/371
+        # On Nanvix picklecopiers is empty (32-bit pickle corrupt), so
+        # no pickle call happens and the DeprecationWarning is never
+        # emitted.  Skip the assertWarns and assertRaises phases; still
+        # run with warnings suppressed to exercise the non-pickle logic.
+        if not support.is_nanvix:
+            with self.assertWarns(DeprecationWarning):
+                testfunc(self)
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", category=DeprecationWarning)
             testfunc(self)
-        with warnings.catch_warnings():
-            warnings.simplefilter("error", category=DeprecationWarning)
-            with self.assertRaises((DeprecationWarning, AssertionError, SystemError)):
-                testfunc(self)
+        if not support.is_nanvix:
+            with warnings.catch_warnings():
+                warnings.simplefilter("error", category=DeprecationWarning)
+                with self.assertRaises((DeprecationWarning, AssertionError, SystemError)):
+                    testfunc(self)
 
     return inner
 
@@ -100,11 +116,23 @@ def underten(x):
 
 picklecopiers = [lambda s, proto=proto: pickle.loads(pickle.dumps(s, proto))
                  for proto in range(pickle.HIGHEST_PROTOCOL + 1)]
+# NSKIP001 https://github.com/nanvix/cpython/issues/371
+_nanvix_pickle_warned = False
+if support.is_nanvix:
+    support.print_warning("NSKIP001: disabling picklecopiers on Nanvix (32-bit corrupt)")
+    picklecopiers = []
 
 class TestBasicOps(unittest.TestCase):
 
+    # NSKIP001 https://github.com/nanvix/cpython/issues/371
     def pickletest(self, protocol, it, stop=4, take=1, compare=None):
         """Test that an iterator is the same after pickling, also when part-consumed"""
+        if support.is_nanvix:
+            global _nanvix_pickle_warned
+            if not _nanvix_pickle_warned:
+                support.print_warning("NSKIP001: skipping pickle check on Nanvix (32-bit corrupt)")
+                _nanvix_pickle_warned = True
+            return
         def expand(it, i=0):
             # Recursively expand iterables, within sensible bounds
             if i > 10:
@@ -703,6 +731,8 @@ class TestBasicOps(unittest.TestCase):
         self.assertEqual(list(islice(cycle(gen3()),10)), [0,1,2,0,1,2,0,1,2,0])
 
     @pickle_deprecated
+    # NSKIP001 https://github.com/nanvix/cpython/issues/371
+    @unittest.skipIf(support.is_nanvix, "NSKIP001: pickle corrupt on 32-bit")
     def test_cycle_copy_pickle(self):
         # check copy, deepcopy, pickle
         c = cycle('abc')
@@ -740,6 +770,8 @@ class TestBasicOps(unittest.TestCase):
             self.assertEqual(take(20, d), list('cdeabcdeabcdeabcdeab'))
 
     @pickle_deprecated
+    # NSKIP001 https://github.com/nanvix/cpython/issues/371
+    @unittest.skipIf(support.is_nanvix, "NSKIP001: pickle corrupt on 32-bit")
     def test_cycle_unpickle_compat(self):
         testcases = [
             b'citertools\ncycle\n(c__builtin__\niter\n((lI1\naI2\naI3\natRI1\nbtR((lI1\naI0\ntb.',
@@ -828,13 +860,15 @@ class TestBasicOps(unittest.TestCase):
         self.assertEqual(s, dup)
 
         # Check normal pickled
-        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
-            dup = []
-            for k, g in pickle.loads(pickle.dumps(groupby(s, testR), proto)):
-                for elem in g:
-                    self.assertEqual(k, elem[0])
-                    dup.append(elem)
-            self.assertEqual(s, dup)
+        # NSKIP001 https://github.com/nanvix/cpython/issues/371
+        if not support.is_nanvix:
+            for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+                dup = []
+                for k, g in pickle.loads(pickle.dumps(groupby(s, testR), proto)):
+                    for elem in g:
+                        self.assertEqual(k, elem[0])
+                        dup.append(elem)
+                self.assertEqual(s, dup)
 
         # Check nested case
         dup = []
@@ -847,15 +881,17 @@ class TestBasicOps(unittest.TestCase):
         self.assertEqual(s, dup)
 
         # Check nested and pickled
-        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
-            dup = []
-            for k, g in pickle.loads(pickle.dumps(groupby(s, testR), proto)):
-                for ik, ig in pickle.loads(pickle.dumps(groupby(g, testR2), proto)):
-                    for elem in ig:
-                        self.assertEqual(k, elem[0])
-                        self.assertEqual(ik, elem[2])
-                        dup.append(elem)
-            self.assertEqual(s, dup)
+        # NSKIP001 https://github.com/nanvix/cpython/issues/371
+        if not support.is_nanvix:
+            for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+                dup = []
+                for k, g in pickle.loads(pickle.dumps(groupby(s, testR), proto)):
+                    for ik, ig in pickle.loads(pickle.dumps(groupby(g, testR2), proto)):
+                        for elem in ig:
+                            self.assertEqual(k, elem[0])
+                            self.assertEqual(ik, elem[2])
+                            dup.append(elem)
+                self.assertEqual(s, dup)
 
 
         # Check case where inner iterator is not used
@@ -877,12 +913,14 @@ class TestBasicOps(unittest.TestCase):
         list(it)  # exhaust the groupby iterator
         self.assertEqual(list(g3), [])
 
-        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
-            it = groupby(s, testR)
-            _, g = next(it)
-            next(it)
-            next(it)
-            self.assertEqual(list(pickle.loads(pickle.dumps(g, proto))), [])
+        # NSKIP001 https://github.com/nanvix/cpython/issues/371
+        if not support.is_nanvix:
+            for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+                it = groupby(s, testR)
+                _, g = next(it)
+                next(it)
+                next(it)
+                self.assertEqual(list(pickle.loads(pickle.dumps(g, proto))), [])
 
         # Exercise pipes and filters style
         s = 'abracadabra'
@@ -957,11 +995,13 @@ class TestBasicOps(unittest.TestCase):
         self.assertEqual(list(copy.copy(c)), ans)
         c = filter(isEven, range(6))
         self.assertEqual(list(copy.deepcopy(c)), ans)
-        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
-            c = filter(isEven, range(6))
-            self.assertEqual(list(pickle.loads(pickle.dumps(c, proto))), ans)
-            next(c)
-            self.assertEqual(list(pickle.loads(pickle.dumps(c, proto))), ans[1:])
+        # NSKIP001 https://github.com/nanvix/cpython/issues/371
+        if not support.is_nanvix:
+            for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+                c = filter(isEven, range(6))
+                self.assertEqual(list(pickle.loads(pickle.dumps(c, proto))), ans)
+                next(c)
+                self.assertEqual(list(pickle.loads(pickle.dumps(c, proto))), ans[1:])
         for proto in range(pickle.HIGHEST_PROTOCOL + 1):
             c = filter(isEven, range(6))
             self.pickletest(proto, c)
@@ -1011,15 +1051,17 @@ class TestBasicOps(unittest.TestCase):
         ans = [(x,y) for x, y in copy.deepcopy(zip('abc',count()))]
         self.assertEqual(ans, [('a', 0), ('b', 1), ('c', 2)])
 
-        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
-            ans = [(x,y) for x, y in pickle.loads(pickle.dumps(zip('abc',count()), proto))]
-            self.assertEqual(ans, [('a', 0), ('b', 1), ('c', 2)])
+        # NSKIP001 https://github.com/nanvix/cpython/issues/371
+        if not support.is_nanvix:
+            for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+                ans = [(x,y) for x, y in pickle.loads(pickle.dumps(zip('abc',count()), proto))]
+                self.assertEqual(ans, [('a', 0), ('b', 1), ('c', 2)])
 
-        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
-            testIntermediate = zip('abc',count())
-            next(testIntermediate)
-            ans = [(x,y) for x, y in pickle.loads(pickle.dumps(testIntermediate, proto))]
-            self.assertEqual(ans, [('b', 1), ('c', 2)])
+            for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+                testIntermediate = zip('abc',count())
+                next(testIntermediate)
+                ans = [(x,y) for x, y in pickle.loads(pickle.dumps(testIntermediate, proto))]
+                self.assertEqual(ans, [('b', 1), ('c', 2)])
 
         for proto in range(pickle.HIGHEST_PROTOCOL + 1):
             self.pickletest(proto, zip('abc', count()))
@@ -1704,6 +1746,8 @@ class TestBasicOps(unittest.TestCase):
         script_helper.assert_python_ok("-c", script)
 
     # Issue 13454: Crash when deleting backward iterator from tee()
+    # NSKIP015 https://github.com/nanvix/cpython/issues/371
+    @unittest.skipIf(support.is_nanvix, "NSKIP015: 20M-element tee exhausts Nanvix memory")
     def test_tee_del_backward(self):
         forward, backward = tee(repeat(None, 20000000))
         try:
@@ -1856,6 +1900,8 @@ class TestExamples(unittest.TestCase):
         self.assertEqual(list(accumulate([1,2,3,4,5])), [1, 3, 6, 10, 15])
 
     @pickle_deprecated
+    # NSKIP001 https://github.com/nanvix/cpython/issues/371
+    @unittest.skipIf(support.is_nanvix, "NSKIP001: pickle corrupt on 32-bit")
     def test_accumulate_reducible(self):
         # check copy, deepcopy, pickle
         data = [1, 2, 3, 4, 5]
@@ -1872,6 +1918,8 @@ class TestExamples(unittest.TestCase):
         self.assertEqual(list(copy.copy(it)), accumulated[1:])
 
     @pickle_deprecated
+    # NSKIP001 https://github.com/nanvix/cpython/issues/371
+    @unittest.skipIf(support.is_nanvix, "NSKIP001: pickle corrupt on 32-bit")
     def test_accumulate_reducible_none(self):
         # Issue #25718: total is None
         it = accumulate([None, None, None], operator.is_)

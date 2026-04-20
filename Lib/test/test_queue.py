@@ -1,5 +1,17 @@
 # Some simple queue module tests, plus some failure conditions
 # to ensure the Queue locks remain stable.
+
+# NSKIP015 https://github.com/nanvix/cpython/issues/371
+# This module is excluded from standalone mode via STANDALONE_EXCLUDE in
+# .nanvix/config.py (32MB heap too small for threading tests).
+#
+# In non-standalone modes (256MB), two categories of failure remain:
+#   NSKIP015: CSimpleQueueTest.test_reentrancy OOMs from circular __del__ loop
+#   NSKIP016: Nanvix has a low thread creation limit; pure-Python queue classes
+#             (Py*) exhaust it, and BaseSimpleQueueTest thread-heavy methods
+#             (test_order, test_many_threads*) fail even for C variants due to
+#             cumulative thread exhaustion across the test run.
+
 import itertools
 import random
 import threading
@@ -7,6 +19,7 @@ import time
 import unittest
 import weakref
 from test.support import gc_collect
+from test import support
 from test.support import import_helper
 from test.support import threading_helper
 
@@ -189,6 +202,8 @@ class BaseQueueTestMixin(BlockingTestMixin):
         else:
             self.fail("Did not detect task count going negative")
 
+    # NSKIP016 https://github.com/nanvix/cpython/issues/371
+    @unittest.skipIf(support.is_nanvix, "NSKIP016: exceeds Nanvix thread limit")
     def test_queue_join(self):
         # Test that a queue join()s successfully, and before anything else
         # (done twice for insurance).
@@ -247,6 +262,9 @@ class QueueTest(BaseQueueTestMixin):
         self.type2test = self.queue.Queue
         super().setUp()
 
+# NSKIP016 https://github.com/nanvix/cpython/issues/371
+# Nanvix has a low thread creation limit; pure-Python queue tests exceed it.
+@unittest.skipIf(support.is_nanvix, "NSKIP016: exceeds Nanvix thread limit")
 class PyQueueTest(QueueTest, unittest.TestCase):
     queue = py_queue
 
@@ -263,6 +281,8 @@ class LifoQueueTest(BaseQueueTestMixin):
         super().setUp()
 
 
+# NSKIP016 https://github.com/nanvix/cpython/issues/371
+@unittest.skipIf(support.is_nanvix, "NSKIP016: exceeds Nanvix thread limit")
 class PyLifoQueueTest(LifoQueueTest, unittest.TestCase):
     queue = py_queue
 
@@ -279,6 +299,8 @@ class PriorityQueueTest(BaseQueueTestMixin):
         super().setUp()
 
 
+# NSKIP016 https://github.com/nanvix/cpython/issues/371
+@unittest.skipIf(support.is_nanvix, "NSKIP016: exceeds Nanvix thread limit")
 class PyPriorityQueueTest(PriorityQueueTest, unittest.TestCase):
     queue = py_queue
 
@@ -409,6 +431,8 @@ class FailingQueueTest(BlockingTestMixin):
 
 
 
+# NSKIP016 https://github.com/nanvix/cpython/issues/371
+@unittest.skipIf(support.is_nanvix, "NSKIP016: exceeds Nanvix thread limit")
 class PyFailingQueueTest(FailingQueueTest, unittest.TestCase):
     queue = py_queue
 
@@ -542,6 +566,10 @@ class BaseSimpleQueueTest:
         with self.assertRaises(ValueError):
             q.get(timeout=-1)
 
+    # NSKIP016 https://github.com/nanvix/cpython/issues/371
+    # Nanvix exhausts its thread limit during the test run; by the time
+    # SimpleQueue tests execute, new thread creation fails.
+    @unittest.skipIf(support.is_nanvix, "NSKIP016: exceeds Nanvix thread limit")
     def test_order(self):
         # Test a pair of concurrent put() and get()
         q = self.q
@@ -551,6 +579,8 @@ class BaseSimpleQueueTest:
         # One producer, one consumer => results appended in well-defined order
         self.assertEqual(results, inputs)
 
+    # NSKIP016 https://github.com/nanvix/cpython/issues/371
+    @unittest.skipIf(support.is_nanvix, "NSKIP016: exceeds Nanvix thread limit")
     def test_many_threads(self):
         # Test multiple concurrent put() and get()
         N = 50
@@ -562,6 +592,8 @@ class BaseSimpleQueueTest:
         # results in random order
         self.assertEqual(sorted(results), inputs)
 
+    # NSKIP016 https://github.com/nanvix/cpython/issues/371
+    @unittest.skipIf(support.is_nanvix, "NSKIP016: exceeds Nanvix thread limit")
     def test_many_threads_nonblock(self):
         # Test multiple concurrent put() and get(block=False)
         N = 50
@@ -572,6 +604,8 @@ class BaseSimpleQueueTest:
 
         self.assertEqual(sorted(results), inputs)
 
+    # NSKIP016 https://github.com/nanvix/cpython/issues/371
+    @unittest.skipIf(support.is_nanvix, "NSKIP016: exceeds Nanvix thread limit")
     def test_many_threads_timeout(self):
         # Test multiple concurrent put() and get(timeout=...)
         N = 50
@@ -619,6 +653,8 @@ class CSimpleQueueTest(BaseSimpleQueueTest, unittest.TestCase):
         self.assertIs(self.type2test, self.queue.SimpleQueue)
         self.assertIs(self.type2test, self.queue.SimpleQueue)
 
+    # NSKIP015 https://github.com/nanvix/cpython/issues/371
+    @unittest.skipIf(support.is_nanvix, "NSKIP015: circular __del__ OOM on Nanvix")
     def test_reentrancy(self):
         # bpo-14976: put() may be called reentrantly in an asynchronous
         # callback.

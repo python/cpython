@@ -613,6 +613,8 @@ class TestBasic(unittest.TestCase):
         self.assertNotEqual(id(d), id(e))
         self.assertEqual(list(d), list(e))
 
+    # NSKIP001 https://github.com/nanvix/cpython/issues/371
+    @unittest.skipIf(support.is_nanvix, "NSKIP001: pickle corrupt on 32-bit")
     def test_pickle(self):
         for d in deque(range(200)), deque(range(200), 100):
             for i in range(pickle.HIGHEST_PROTOCOL + 1):
@@ -622,6 +624,8 @@ class TestBasic(unittest.TestCase):
                 self.assertEqual(list(e), list(d))
                 self.assertEqual(e.maxlen, d.maxlen)
 
+    # NSKIP001 https://github.com/nanvix/cpython/issues/371
+    @unittest.skipIf(support.is_nanvix, "NSKIP001: pickle corrupt on 32-bit")
     def test_pickle_recursive(self):
         for d in deque('abc'), deque('abc', 3):
             d.append(d)
@@ -631,6 +635,8 @@ class TestBasic(unittest.TestCase):
                 self.assertEqual(id(e[-1]), id(e))
                 self.assertEqual(e.maxlen, d.maxlen)
 
+    # NSKIP001 https://github.com/nanvix/cpython/issues/371
+    @unittest.skipIf(support.is_nanvix, "NSKIP001: pickle corrupt on 32-bit")
     def test_iterator_pickle(self):
         orig = deque(range(200))
         data = [i*1.01 for i in orig]
@@ -830,16 +836,20 @@ class TestSubclass(unittest.TestCase):
                 self.assertEqual(type(d), type(e))
                 self.assertEqual(list(d), list(e))
 
-                for proto in range(pickle.HIGHEST_PROTOCOL + 1):
-                    s = pickle.dumps(d, proto)
-                    e = pickle.loads(s)
-                    self.assertNotEqual(id(d), id(e))
-                    self.assertEqual(type(d), type(e))
-                    self.assertEqual(list(d), list(e))
-                    self.assertEqual(e.x, d.x)
-                    self.assertEqual(e.z, d.z)
-                    self.assertFalse(hasattr(e, 'y'))
+                # NSKIP001 https://github.com/nanvix/cpython/issues/371
+                if not support.is_nanvix:
+                    for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+                        s = pickle.dumps(d, proto)
+                        e = pickle.loads(s)
+                        self.assertNotEqual(id(d), id(e))
+                        self.assertEqual(type(d), type(e))
+                        self.assertEqual(list(d), list(e))
+                        self.assertEqual(e.x, d.x)
+                        self.assertEqual(e.z, d.z)
+                        self.assertFalse(hasattr(e, 'y'))
 
+    # NSKIP001 https://github.com/nanvix/cpython/issues/371
+    @unittest.skipIf(support.is_nanvix, "NSKIP001: pickle corrupt on 32-bit")
     def test_pickle_recursive(self):
         for proto in range(pickle.HIGHEST_PROTOCOL + 1):
             for d in Deque('abc'), Deque('abc', 3):
@@ -905,6 +915,11 @@ class TestSubclassWithKwargs(unittest.TestCase):
 
 class TestSequence(seq_tests.CommonTest):
     type2test = deque
+
+    # NSKIP001 https://github.com/nanvix/cpython/issues/371
+    @unittest.skipIf(support.is_nanvix, "NSKIP001: pickle corrupt on 32-bit")
+    def test_pickle(self):
+        super().test_pickle()
 
     def test_getitem(self):
         # For now, bypass tests that require slicing

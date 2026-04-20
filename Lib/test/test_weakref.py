@@ -132,6 +132,8 @@ class ReferencesTestCase(TestBase):
         self.check_basic_callback(create_function)
         self.check_basic_callback(create_bound_method)
 
+    # NSKIP002 https://github.com/nanvix/cpython/issues/371
+    @unittest.skipIf(support.is_nanvix, "NSKIP002: _testcapi not available")
     @support.cpython_only
     def test_cfunction(self):
         import _testcapi
