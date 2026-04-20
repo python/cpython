@@ -1506,7 +1506,7 @@ locale_alias = {
 #
 # This list has been updated from
 # https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-lcid/70feba9f-294e-491e-b6eb-56532684c37f
-# to include every locale up to protocol revision 16.0 (4/23/2024).
+# to include every locale up to protocol revision 16.0 (2024-04-23).
 #
 # NOTE: this mapping is incomplete.  If your language is missing, please
 # submit a bug report as detailed in the Python devguide at:
