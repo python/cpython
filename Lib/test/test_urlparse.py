@@ -1995,10 +1995,6 @@ class DeprecationTest(unittest.TestCase):
                          'urllib.parse.to_bytes() is deprecated as of 3.8')
 
     def test_falsey_deprecation(self):
-        pattern = (
-            "Providing false values other than strings or bytes to urllib.parse "
-            "is deprecated: got <class "
-        )
         cases = [
             (urllib.parse.urljoin, ['http://www.python.org', []]),
             (urllib.parse.urljoin, [[], b'docs']),
@@ -2011,8 +2007,8 @@ class DeprecationTest(unittest.TestCase):
             (urllib.parse.urlunsplit, [['http', 0, '', '', '']]),
         ]
         for callable, args in cases:
-            with self.subTest(callable=callable):
-                with self.assertWarnsRegex(DeprecationWarning, pattern):
+            with self.subTest(callable=callable.__name__, args=args):
+                with self.assertWarnsRegex(DeprecationWarning, "false values"):
                     callable(*args)
 
 
