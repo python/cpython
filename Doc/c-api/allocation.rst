@@ -74,7 +74,7 @@ Allocating objects on the heap
 Soft-deprecated aliases
 ^^^^^^^^^^^^^^^^^^^^^^^
 
-.. soft-deprecated:: 3.15
+.. soft-deprecated:: 3.10
 
 These are aliases to existing functions and macros.
 They exist solely for backwards compatibility.
