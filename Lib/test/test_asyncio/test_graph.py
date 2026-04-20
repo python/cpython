@@ -5,7 +5,7 @@ import unittest
 
 # To prevent a warning "test altered the execution environment"
 def tearDownModule():
-    asyncio._set_event_loop_policy(None)
+    asyncio.events._set_event_loop_policy(None)
 
 
 def capture_test_stack(*, fut=None, depth=1):
@@ -369,6 +369,8 @@ class TestCallStackC(CallStackTestBase, unittest.IsolatedAsyncioTestCase):
         futures.future_discard_from_awaited_by = futures._c_future_discard_from_awaited_by
         asyncio.future_discard_from_awaited_by = futures.future_discard_from_awaited_by
 
+        self._current_task = asyncio.current_task
+        asyncio.current_task = asyncio.tasks.current_task = tasks._c_current_task
 
     def tearDown(self):
         futures = asyncio.futures
@@ -389,6 +391,8 @@ class TestCallStackC(CallStackTestBase, unittest.IsolatedAsyncioTestCase):
         asyncio.Future = self._Future
         futures.Future = self._Future
         del self._Future
+
+        asyncio.current_task = asyncio.tasks.current_task = self._current_task
 
 
 @unittest.skipIf(
@@ -414,6 +418,9 @@ class TestCallStackPy(CallStackTestBase, unittest.IsolatedAsyncioTestCase):
         futures.future_discard_from_awaited_by = futures._py_future_discard_from_awaited_by
         asyncio.future_discard_from_awaited_by = futures.future_discard_from_awaited_by
 
+        self._current_task = asyncio.current_task
+        asyncio.current_task = asyncio.tasks.current_task = tasks._py_current_task
+
 
     def tearDown(self):
         futures = asyncio.futures
@@ -434,3 +441,5 @@ class TestCallStackPy(CallStackTestBase, unittest.IsolatedAsyncioTestCase):
         asyncio.Future = self._Future
         futures.Future = self._Future
         del self._Future
+
+        asyncio.current_task = asyncio.tasks.current_task = self._current_task

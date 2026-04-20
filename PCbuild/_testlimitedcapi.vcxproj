@@ -110,10 +110,12 @@
     <ClCompile Include="..\Modules\_testlimitedcapi\pyos.c" />
     <ClCompile Include="..\Modules\_testlimitedcapi\set.c" />
     <ClCompile Include="..\Modules\_testlimitedcapi\sys.c" />
+    <ClCompile Include="..\Modules\_testlimitedcapi\threadstate.c" />
     <ClCompile Include="..\Modules\_testlimitedcapi\tuple.c" />
     <ClCompile Include="..\Modules\_testlimitedcapi\unicode.c" />
     <ClCompile Include="..\Modules\_testlimitedcapi\vectorcall_limited.c" />
     <ClCompile Include="..\Modules\_testlimitedcapi\version.c" />
+    <ClCompile Include="..\Modules\_testlimitedcapi\file.c" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="..\PC\python_nt.rc" />

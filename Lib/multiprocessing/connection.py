@@ -16,7 +16,6 @@ import os
 import sys
 import socket
 import struct
-import tempfile
 import time
 
 
@@ -46,6 +45,7 @@ BUFSIZE = 64 * 1024
 CONNECTION_TIMEOUT = 20.
 
 _mmap_counter = itertools.count()
+_MAX_PIPE_ATTEMPTS = 100
 
 default_family = 'AF_INET'
 families = ['AF_INET']
@@ -76,10 +76,14 @@ def arbitrary_address(family):
     if family == 'AF_INET':
         return ('localhost', 0)
     elif family == 'AF_UNIX':
-        return tempfile.mktemp(prefix='listener-', dir=util.get_temp_dir())
+        # NOTE: util.get_temp_dir() is a 0o700 per-process directory. A
+        # mktemp-style ToC vs ToU concern is not important; bind() surfaces
+        # the extremely unlikely collision as EADDRINUSE.
+        return os.path.join(util.get_temp_dir(),
+                            f'sock-{os.urandom(6).hex()}')
     elif family == 'AF_PIPE':
-        return tempfile.mktemp(prefix=r'\\.\pipe\pyc-%d-%d-' %
-                               (os.getpid(), next(_mmap_counter)), dir="")
+        return (r'\\.\pipe\pyc-%d-%d-%s' %
+                (os.getpid(), next(_mmap_counter), os.urandom(8).hex()))
     else:
         raise ValueError('unrecognized family')
 
@@ -322,22 +326,32 @@ if _winapi:
                 try:
                     ov, err = _winapi.ReadFile(self._handle, bsize,
                                                 overlapped=True)
+
+                    sentinel = object()
+                    return_value = sentinel
                     try:
-                        if err == _winapi.ERROR_IO_PENDING:
-                            waitres = _winapi.WaitForMultipleObjects(
-                                [ov.event], False, INFINITE)
-                            assert waitres == WAIT_OBJECT_0
+                        try:
+                            if err == _winapi.ERROR_IO_PENDING:
+                                waitres = _winapi.WaitForMultipleObjects(
+                                    [ov.event], False, INFINITE)
+                                assert waitres == WAIT_OBJECT_0
+                        except:
+                            ov.cancel()
+                            raise
+                        finally:
+                            nread, err = ov.GetOverlappedResult(True)
+                            if err == 0:
+                                f = io.BytesIO()
+                                f.write(ov.getbuffer())
+                                return_value = f
+                            elif err == _winapi.ERROR_MORE_DATA:
+                                return_value = self._get_more_data(ov, maxsize)
                     except:
-                        ov.cancel()
-                        raise
-                    finally:
-                        nread, err = ov.GetOverlappedResult(True)
-                        if err == 0:
-                            f = io.BytesIO()
-                            f.write(ov.getbuffer())
-                            return f
-                        elif err == _winapi.ERROR_MORE_DATA:
-                            return self._get_more_data(ov, maxsize)
+                        if return_value is sentinel:
+                            raise
+
+                    if return_value is not sentinel:
+                        return return_value
                 except OSError as e:
                     if e.winerror == _winapi.ERROR_BROKEN_PIPE:
                         raise EOFError
@@ -462,16 +476,28 @@ class Listener(object):
     def __init__(self, address=None, family=None, backlog=1, authkey=None):
         family = family or (address and address_type(address)) \
                  or default_family
-        address = address or arbitrary_address(family)
-
         _validate_family(family)
-        if family == 'AF_PIPE':
-            self._listener = PipeListener(address, backlog)
-        else:
-            self._listener = SocketListener(address, family, backlog)
-
         if authkey is not None and not isinstance(authkey, bytes):
             raise TypeError('authkey should be a byte string')
+
+        if family == 'AF_PIPE':
+            if address:
+                self._listener = PipeListener(address, backlog)
+            else:
+                for attempts in itertools.count():
+                    address = arbitrary_address(family)
+                    try:
+                        self._listener = PipeListener(address, backlog)
+                        break
+                    except OSError as e:
+                        if attempts >= _MAX_PIPE_ATTEMPTS:
+                            raise
+                        if e.winerror not in (_winapi.ERROR_PIPE_BUSY,
+                                              _winapi.ERROR_ACCESS_DENIED):
+                            raise
+        else:
+            address = address or arbitrary_address(family)
+            self._listener = SocketListener(address, family, backlog)
 
         self._authkey = authkey
 
@@ -560,7 +586,6 @@ else:
         '''
         Returns pair of connection objects at either end of a pipe
         '''
-        address = arbitrary_address('AF_PIPE')
         if duplex:
             openmode = _winapi.PIPE_ACCESS_DUPLEX
             access = _winapi.GENERIC_READ | _winapi.GENERIC_WRITE
@@ -570,15 +595,25 @@ else:
             access = _winapi.GENERIC_WRITE
             obsize, ibsize = 0, BUFSIZE
 
-        h1 = _winapi.CreateNamedPipe(
-            address, openmode | _winapi.FILE_FLAG_OVERLAPPED |
-            _winapi.FILE_FLAG_FIRST_PIPE_INSTANCE,
-            _winapi.PIPE_TYPE_MESSAGE | _winapi.PIPE_READMODE_MESSAGE |
-            _winapi.PIPE_WAIT,
-            1, obsize, ibsize, _winapi.NMPWAIT_WAIT_FOREVER,
-            # default security descriptor: the handle cannot be inherited
-            _winapi.NULL
-            )
+        for attempts in itertools.count():
+            address = arbitrary_address('AF_PIPE')
+            try:
+                h1 = _winapi.CreateNamedPipe(
+                    address, openmode | _winapi.FILE_FLAG_OVERLAPPED |
+                    _winapi.FILE_FLAG_FIRST_PIPE_INSTANCE,
+                    _winapi.PIPE_TYPE_MESSAGE | _winapi.PIPE_READMODE_MESSAGE |
+                    _winapi.PIPE_WAIT,
+                    1, obsize, ibsize, _winapi.NMPWAIT_WAIT_FOREVER,
+                    # default security descriptor: the handle cannot be inherited
+                    _winapi.NULL
+                    )
+                break
+            except OSError as e:
+                if attempts >= _MAX_PIPE_ATTEMPTS:
+                    raise
+                if e.winerror not in (_winapi.ERROR_PIPE_BUSY,
+                                      _winapi.ERROR_ACCESS_DENIED):
+                    raise
         h2 = _winapi.CreateFile(
             address, access, 0, _winapi.NULL, _winapi.OPEN_EXISTING,
             _winapi.FILE_FLAG_OVERLAPPED, _winapi.NULL
@@ -699,8 +734,7 @@ if sys.platform == 'win32':
                 # written data and then disconnected -- see Issue 14725.
             else:
                 try:
-                    res = _winapi.WaitForMultipleObjects(
-                        [ov.event], False, INFINITE)
+                    _winapi.WaitForMultipleObjects([ov.event], False, INFINITE)
                 except:
                     ov.cancel()
                     _winapi.CloseHandle(handle)
@@ -853,7 +887,7 @@ _MD5_DIGEST_LEN = 16
 _LEGACY_LENGTHS = (_MD5ONLY_MESSAGE_LENGTH, _MD5_DIGEST_LEN)
 
 
-def _get_digest_name_and_payload(message: bytes) -> (str, bytes):
+def _get_digest_name_and_payload(message):  # type: (bytes) -> tuple[str, bytes]
     """Returns a digest name and the payload for a response hash.
 
     If a legacy protocol is detected based on the message length
@@ -1054,14 +1088,22 @@ if sys.platform == 'win32':
 
         Returns list of those objects in object_list which are ready/readable.
         '''
+        object_list = list(object_list)
+
+        if not object_list:
+            if timeout is None:
+                while True:
+                    time.sleep(1e6)
+            elif timeout > 0:
+                time.sleep(timeout)
+            return []
+
         if timeout is None:
             timeout = INFINITE
         elif timeout < 0:
             timeout = 0
         else:
             timeout = int(timeout * 1000 + 0.5)
-
-        object_list = list(object_list)
         waithandle_to_obj = {}
         ov_list = []
         ready_objects = set()

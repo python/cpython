@@ -2,9 +2,11 @@
 /* Support for dynamic loading of extension modules */
 
 #include "Python.h"
-#include "pycore_interp.h"    // _PyInterpreterState.dlopenflags
-#include "pycore_pystate.h"   // _PyInterpreterState_GET()
+#include "pycore_fileutils.h"     // struct _Py_stat_struct
+#include "pycore_import.h"        // _PyImport_GetDLOpenFlags()
 #include "pycore_importdl.h"
+#include "pycore_interp.h"        // _PyInterpreterState.dlopenflags
+#include "pycore_pystate.h"       // _PyInterpreterState_GET()
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -42,7 +44,10 @@ const char *_PyImport_DynLoadFiletab[] = {
 #ifdef ALT_SOABI
     "." ALT_SOABI ".so",
 #endif
+#ifndef Py_GIL_DISABLED
     ".abi" PYTHON_ABI_STRING ".so",
+#endif  /* Py_GIL_DISABLED */
+    ".abi" PYTHON_ABI_STRING "t.so",
     ".so",
 #endif  /* __CYGWIN__ */
     NULL,

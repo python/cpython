@@ -57,9 +57,11 @@ bytes_split(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *k
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(sep), &_Py_ID(maxsplit), },
     };
     #undef NUM_KEYWORDS
@@ -224,9 +226,11 @@ bytes_rsplit(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(sep), &_Py_ID(maxsplit), },
     };
     #undef NUM_KEYWORDS
@@ -295,6 +299,19 @@ PyDoc_STRVAR(bytes_join__doc__,
 
 #define BYTES_JOIN_METHODDEF    \
     {"join", (PyCFunction)bytes_join, METH_O, bytes_join__doc__},
+
+static PyObject *
+bytes_join_impl(PyBytesObject *self, PyObject *iterable_of_bytes);
+
+static PyObject *
+bytes_join(PyObject *self, PyObject *iterable_of_bytes)
+{
+    PyObject *return_value = NULL;
+
+    return_value = bytes_join_impl((PyBytesObject *)self, iterable_of_bytes);
+
+    return return_value;
+}
 
 PyDoc_STRVAR(bytes_find__doc__,
 "find($self, sub[, start[, end]], /)\n"
@@ -680,9 +697,11 @@ bytes_translate(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObjec
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(delete), },
     };
     #undef NUM_KEYWORDS
@@ -739,7 +758,7 @@ static PyObject *
 bytes_maketrans_impl(Py_buffer *frm, Py_buffer *to);
 
 static PyObject *
-bytes_maketrans(void *null, PyObject *const *args, Py_ssize_t nargs)
+bytes_maketrans(PyObject *null, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     Py_buffer frm = {NULL, NULL};
@@ -770,7 +789,7 @@ exit:
 }
 
 PyDoc_STRVAR(bytes_replace__doc__,
-"replace($self, old, new, count=-1, /)\n"
+"replace($self, old, new, /, count=-1)\n"
 "--\n"
 "\n"
 "Return a copy with all occurrences of substring old replaced by new.\n"
@@ -779,25 +798,56 @@ PyDoc_STRVAR(bytes_replace__doc__,
 "    Maximum number of occurrences to replace.\n"
 "    -1 (the default value) means replace all occurrences.\n"
 "\n"
-"If the optional argument count is given, only the first count occurrences are\n"
-"replaced.");
+"If count is given, only the first count occurrences are replaced.\n"
+"If count is not specified or -1, then all occurrences are replaced.");
 
 #define BYTES_REPLACE_METHODDEF    \
-    {"replace", _PyCFunction_CAST(bytes_replace), METH_FASTCALL, bytes_replace__doc__},
+    {"replace", _PyCFunction_CAST(bytes_replace), METH_FASTCALL|METH_KEYWORDS, bytes_replace__doc__},
 
 static PyObject *
 bytes_replace_impl(PyBytesObject *self, Py_buffer *old, Py_buffer *new,
                    Py_ssize_t count);
 
 static PyObject *
-bytes_replace(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
+bytes_replace(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 1
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
+        .ob_item = { &_Py_ID(count), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"", "", "count", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "replace",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[3];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 2;
     Py_buffer old = {NULL, NULL};
     Py_buffer new = {NULL, NULL};
     Py_ssize_t count = -1;
 
-    if (!_PyArg_CheckPositional("replace", nargs, 2, 3)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 2, /*maxpos*/ 3, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    if (!args) {
         goto exit;
     }
     if (PyObject_GetBuffer(args[0], &old, PyBUF_SIMPLE) != 0) {
@@ -806,8 +856,8 @@ bytes_replace(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
     if (PyObject_GetBuffer(args[1], &new, PyBUF_SIMPLE) != 0) {
         goto exit;
     }
-    if (nargs < 3) {
-        goto skip_optional;
+    if (!noptargs) {
+        goto skip_optional_pos;
     }
     {
         Py_ssize_t ival = -1;
@@ -821,7 +871,7 @@ bytes_replace(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
         }
         count = ival;
     }
-skip_optional:
+skip_optional_pos:
     return_value = bytes_replace_impl((PyBytesObject *)self, &old, &new, count);
 
 exit:
@@ -1042,9 +1092,11 @@ bytes_decode(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(encoding), &_Py_ID(errors), },
     };
     #undef NUM_KEYWORDS
@@ -1137,9 +1189,11 @@ bytes_splitlines(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObje
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(keepends), },
     };
     #undef NUM_KEYWORDS
@@ -1195,19 +1249,12 @@ static PyObject *
 bytes_fromhex_impl(PyTypeObject *type, PyObject *string);
 
 static PyObject *
-bytes_fromhex(PyTypeObject *type, PyObject *arg)
+bytes_fromhex(PyObject *type, PyObject *string)
 {
     PyObject *return_value = NULL;
-    PyObject *string;
 
-    if (!PyUnicode_Check(arg)) {
-        _PyArg_BadArgument("fromhex", "argument", "str", arg);
-        goto exit;
-    }
-    string = arg;
-    return_value = bytes_fromhex_impl(type, string);
+    return_value = bytes_fromhex_impl((PyTypeObject *)type, string);
 
-exit:
     return return_value;
 }
 
@@ -1238,7 +1285,7 @@ PyDoc_STRVAR(bytes_hex__doc__,
     {"hex", _PyCFunction_CAST(bytes_hex), METH_FASTCALL|METH_KEYWORDS, bytes_hex__doc__},
 
 static PyObject *
-bytes_hex_impl(PyBytesObject *self, PyObject *sep, int bytes_per_sep);
+bytes_hex_impl(PyBytesObject *self, PyObject *sep, Py_ssize_t bytes_per_sep);
 
 static PyObject *
 bytes_hex(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
@@ -1250,9 +1297,11 @@ bytes_hex(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwn
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(sep), &_Py_ID(bytes_per_sep), },
     };
     #undef NUM_KEYWORDS
@@ -1272,7 +1321,7 @@ bytes_hex(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwn
     PyObject *argsbuf[2];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
     PyObject *sep = NULL;
-    int bytes_per_sep = 1;
+    Py_ssize_t bytes_per_sep = 1;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
             /*minpos*/ 0, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
@@ -1288,9 +1337,17 @@ bytes_hex(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwn
             goto skip_optional_pos;
         }
     }
-    bytes_per_sep = PyLong_AsInt(args[1]);
-    if (bytes_per_sep == -1 && PyErr_Occurred()) {
-        goto exit;
+    {
+        Py_ssize_t ival = -1;
+        PyObject *iobj = _PyNumber_Index(args[1]);
+        if (iobj != NULL) {
+            ival = PyLong_AsSsize_t(iobj);
+            Py_DECREF(iobj);
+        }
+        if (ival == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        bytes_per_sep = ival;
     }
 skip_optional_pos:
     return_value = bytes_hex_impl((PyBytesObject *)self, sep, bytes_per_sep);
@@ -1313,9 +1370,11 @@ bytes_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(source), &_Py_ID(encoding), &_Py_ID(errors), },
     };
     #undef NUM_KEYWORDS
@@ -1391,4 +1450,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=96fe2d6ef9ac8f6a input=a9049054013a1b77]*/
+/*[clinic end generated code: output=b252801ff04a89b3 input=a9049054013a1b77]*/
