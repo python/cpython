@@ -1756,11 +1756,10 @@ as a default or fallback.
    (or by) Python.
    It is recommended to only use this function as a default or fallback,
 
-   .. deprecated:: 3.15
+   .. soft-deprecated:: 3.15
 
-      This function is :term:`soft deprecated`.
-      It is kept for use in cases where it works, but not expected to be
-      updated for additional platforms and configurations.
+      This function is kept for use in cases where it works, but not expected to
+      be updated for additional platforms and configurations.
 
 On Linux, :func:`!find_library` tries to run external
 programs (``/sbin/ldconfig``, ``gcc``, ``objdump`` and ``ld``) to find the
@@ -3191,8 +3190,8 @@ Arrays and pointers
    Equivalent to ``type * length``, where *type* is a
    :mod:`!ctypes` data type and *length* an integer.
 
-   This function is :term:`soft deprecated` in favor of multiplication.
-   There are no plans to remove it.
+   .. soft-deprecated:: 3.14
+      In favor of multiplication.
 
 
 .. class:: _Pointer

@@ -931,7 +931,6 @@ Functions
 
 
 .. function:: prefixmatch(pattern, string, flags=0)
-.. function:: match(pattern, string, flags=0)
 
    If zero or more characters at the beginning of *string* match the regular
    expression *pattern*, return a corresponding :class:`~re.Match`.  Return
@@ -954,7 +953,11 @@ Functions
    :func:`~re.match`.  Use that name when you need to retain compatibility with
    older Python versions.
 
-   .. deprecated:: 3.15
+   .. versionadded:: 3.15
+
+.. function:: match(pattern, string, flags=0)
+
+   .. soft-deprecated:: 3.15
       :func:`~re.match` has been :term:`soft deprecated` in favor of
       the alternate :func:`~re.prefixmatch` name of this API which is
       more explicitly descriptive. Use it to better
@@ -1285,7 +1288,6 @@ Regular expression objects
 
 
 .. method:: Pattern.prefixmatch(string[, pos[, endpos]])
-.. method:: Pattern.match(string[, pos[, endpos]])
 
    If zero or more characters at the *beginning* of *string* match this regular
    expression, return a corresponding :class:`~re.Match`. Return ``None`` if the
@@ -1310,7 +1312,11 @@ Regular expression objects
    :meth:`~Pattern.match`.  Use that name when you need to retain compatibility
    with older Python versions.
 
-   .. deprecated:: 3.15
+   .. versionadded:: 3.15
+
+.. method:: Pattern.match(string[, pos[, endpos]])
+
+   .. soft-deprecated:: 3.15
       :meth:`~Pattern.match` has been :term:`soft deprecated` in favor of
       the alternate :meth:`~Pattern.prefixmatch` name of this API which is
       more explicitly descriptive. Use it to
@@ -1794,8 +1800,8 @@ while new code should prefer :func:`!prefixmatch`.
 .. versionadded:: 3.15
    :func:`!prefixmatch`
 
-.. deprecated:: 3.15
-   :func:`!match` is :term:`soft deprecated`
+.. soft-deprecated:: 3.15
+   :func:`!match`
 
 Making a phonebook
 ^^^^^^^^^^^^^^^^^^

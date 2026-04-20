@@ -185,6 +185,12 @@ opcode_has_event(int opcode)
     );
 }
 
+uint8_t
+_PyCode_Deinstrument(uint8_t opcode)
+{
+    return DE_INSTRUMENT[opcode];
+}
+
 static inline bool
 is_instrumented(int opcode)
 {
@@ -330,12 +336,6 @@ _PyInstruction_GetLength(PyCodeObject *code, int offset)
     return 1 + _PyOpcode_Caches[inst.op.code];
 }
 
-static inline uint8_t
-get_original_opcode(_PyCoLineInstrumentationData *line_data, int index)
-{
-    return line_data->data[index*line_data->bytes_per_entry];
-}
-
 static inline uint8_t *
 get_original_opcode_ptr(_PyCoLineInstrumentationData *line_data, int index)
 {
@@ -401,7 +401,7 @@ dump_instrumentation_data_lines(PyCodeObject *code, _PyCoLineInstrumentationData
         fprintf(out, ", lines = NULL");
     }
     else {
-        int opcode = get_original_opcode(lines, i);
+        int opcode = _PyCode_GetOriginalOpcode(lines, i);
         int line_delta = get_line_delta(lines, i);
         if (opcode == 0) {
             fprintf(out, ", lines = {original_opcode = No LINE (0), line_delta = %d)", line_delta);
@@ -571,7 +571,7 @@ sanity_check_instrumentation(PyCodeObject *code)
         }
         if (opcode == INSTRUMENTED_LINE) {
             CHECK(data->lines);
-            opcode = get_original_opcode(data->lines, i);
+            opcode = _PyCode_GetOriginalOpcode(data->lines, i);
             CHECK(valid_opcode(opcode));
             CHECK(opcode != END_FOR);
             CHECK(opcode != RESUME);
@@ -588,7 +588,7 @@ sanity_check_instrumentation(PyCodeObject *code)
              * *and* we are executing a INSTRUMENTED_LINE instruction
              * that has de-instrumented itself, then we will execute
              * an invalid INSTRUMENTED_INSTRUCTION */
-            CHECK(get_original_opcode(data->lines, i) != INSTRUMENTED_INSTRUCTION);
+            CHECK(_PyCode_GetOriginalOpcode(data->lines, i) != INSTRUMENTED_INSTRUCTION);
         }
         if (opcode == INSTRUMENTED_INSTRUCTION) {
             CHECK(data->per_instruction_opcodes[i] != 0);
@@ -603,7 +603,7 @@ sanity_check_instrumentation(PyCodeObject *code)
             }
             CHECK(active_monitors.tools[event] != 0);
         }
-        if (data->lines && get_original_opcode(data->lines, i)) {
+        if (data->lines && _PyCode_GetOriginalOpcode(data->lines, i)) {
             int line1 = compute_line(code, get_line_delta(data->lines, i));
             int line2 = _PyCode_CheckLineNumber(i*sizeof(_Py_CODEUNIT), &range);
             CHECK(line1 == line2);
@@ -655,7 +655,7 @@ _Py_GetBaseCodeUnit(PyCodeObject *code, int i)
         return inst;
     }
     if (opcode == INSTRUMENTED_LINE) {
-        opcode = get_original_opcode(code->_co_monitoring->lines, i);
+        opcode = _PyCode_GetOriginalOpcode(code->_co_monitoring->lines, i);
     }
     if (opcode == INSTRUMENTED_INSTRUCTION) {
         opcode = code->_co_monitoring->per_instruction_opcodes[i];
@@ -714,7 +714,7 @@ de_instrument_line(PyCodeObject *code, _Py_CODEUNIT *bytecode, _PyCoMonitoringDa
         return;
     }
     _PyCoLineInstrumentationData *lines = monitoring->lines;
-    int original_opcode = get_original_opcode(lines, i);
+    int original_opcode = _PyCode_GetOriginalOpcode(lines, i);
     if (original_opcode == INSTRUMENTED_INSTRUCTION) {
         set_original_opcode(lines, i, monitoring->per_instruction_opcodes[i]);
     }
@@ -1391,7 +1391,7 @@ _Py_call_instrumentation_line(PyThreadState *tstate, _PyInterpreterFrame* frame,
     Py_DECREF(line_obj);
     uint8_t original_opcode;
 done:
-    original_opcode = get_original_opcode(line_data, i);
+    original_opcode = _PyCode_GetOriginalOpcode(line_data, i);
     assert(original_opcode != 0);
     assert(original_opcode != INSTRUMENTED_LINE);
     assert(_PyOpcode_Deopt[original_opcode] == original_opcode);
@@ -1464,7 +1464,7 @@ initialize_tools(PyCodeObject *code)
         int opcode = instr->op.code;
         assert(opcode != ENTER_EXECUTOR);
         if (opcode == INSTRUMENTED_LINE) {
-            opcode = get_original_opcode(code->_co_monitoring->lines, i);
+            opcode = _PyCode_GetOriginalOpcode(code->_co_monitoring->lines, i);
         }
         if (opcode == INSTRUMENTED_INSTRUCTION) {
             opcode = code->_co_monitoring->per_instruction_opcodes[i];
@@ -1849,7 +1849,7 @@ force_instrument_lock_held(PyCodeObject *code, PyInterpreterState *interp)
     if (removed_line_tools) {
         _PyCoLineInstrumentationData *line_data = code->_co_monitoring->lines;
         for (int i = code->_co_firsttraceable; i < code_len;) {
-            if (get_original_opcode(line_data, i)) {
+            if (_PyCode_GetOriginalOpcode(line_data, i)) {
                 remove_line_tools(code, i, removed_line_tools);
             }
             i += _PyInstruction_GetLength(code, i);
@@ -1876,7 +1876,7 @@ force_instrument_lock_held(PyCodeObject *code, PyInterpreterState *interp)
     if (new_line_tools) {
         _PyCoLineInstrumentationData *line_data = code->_co_monitoring->lines;
         for (int i = code->_co_firsttraceable; i < code_len;) {
-            if (get_original_opcode(line_data, i)) {
+            if (_PyCode_GetOriginalOpcode(line_data, i)) {
                 add_line_tools(code, i, new_line_tools);
             }
             i += _PyInstruction_GetLength(code, i);
