@@ -962,7 +962,7 @@ def main():
                         default="uuid4",
                         help="function to generate the UUID")
     parser.add_argument("-n", "--namespace",
-                        metavar=f"{{any UUID,{','.join(namespaces.keys())}}}",
+                        metavar=f"{{any UUID,{','.join(namespaces)}}}",
                         help="uuid3/uuid5 only: "
                         "a UUID, or a well-known predefined UUID addressed "
                         "by namespace name")
