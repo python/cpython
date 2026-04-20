@@ -1,1 +1,0 @@
-Bump LLVM in CI sanitizer tests to 22
