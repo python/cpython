@@ -71,8 +71,10 @@ static const _PyStackRef PyStackRef_NULL = { .index = 0 };
 static const _PyStackRef PyStackRef_ERROR = { .index = (1 << Py_TAGGED_SHIFT) };
 
 #define PyStackRef_None ((_PyStackRef){ .index = (2 << Py_TAGGED_SHIFT) } )
-#define PyStackRef_False ((_PyStackRef){ .index = (3 << Py_TAGGED_SHIFT) })
-#define PyStackRef_True ((_PyStackRef){ .index = (4 << Py_TAGGED_SHIFT) })
+#define _Py_STACKREF_FALSE_INDEX (3 << Py_TAGGED_SHIFT)
+#define _Py_STACKREF_TRUE_INDEX (4 << Py_TAGGED_SHIFT)
+#define PyStackRef_False ((_PyStackRef){ .index = _Py_STACKREF_FALSE_INDEX })
+#define PyStackRef_True ((_PyStackRef){ .index = _Py_STACKREF_TRUE_INDEX })
 
 #define INITIAL_STACKREF_INDEX (5 << Py_TAGGED_SHIFT)
 

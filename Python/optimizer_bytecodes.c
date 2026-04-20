@@ -300,7 +300,7 @@ dummy_func(void) {
         // narrowing unlocks a meaningful downstream win:
         //   - NB_TRUE_DIVIDE: enables the specialized float path below.
         //   - NB_REMAINDER: lets the float result type propagate.
-        // NB_POWER is excluded — speculative guards there regressed
+        // NB_POWER is excluded: speculative guards there regressed
         // test_power_type_depends_on_input_values (GH-127844).
         if (is_truediv || is_remainder) {
             if (!sym_has_type(rhs)
