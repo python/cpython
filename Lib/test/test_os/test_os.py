@@ -2338,7 +2338,7 @@ class MakedirTests(unittest.TestCase):
                         import os
                         import shutil
                         import tempfile
-                                            
+
                         # Test what was reported in gh-134587
                         target = tempfile.mkdtemp(prefix='_test_ac_inner_')
                         try:

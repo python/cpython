@@ -6143,11 +6143,11 @@ os__path_normpath_impl(PyObject *module, path_t *path)
 #if defined(MS_WINDOWS) && \
     (defined(MS_WINDOWS_APP) || defined(MS_WINDOWS_SYSTEM))
 
-// If running under an AppContainer, this will append an ACE to the provided 
+// If running under an AppContainer, this will append an ACE to the provided
 // SDDL string that grants full control to the AppContainer SID.
 static LPCWSTR
 sddl_append_for_appcontainer_if_necessary(LPCWSTR base_sddl) {
-    
+
     // Default to using the "base" SDDL, which is what we want if
     // we are not running under an AppContainer
     LPCWSTR resolved_sddl = base_sddl;
@@ -6184,7 +6184,7 @@ sddl_append_for_appcontainer_if_necessary(LPCWSTR base_sddl) {
     }
 
     // Get the AppContainer SID
-    getTokenResult = GetTokenInformation(hToken, TokenAppContainerSid, 
+    getTokenResult = GetTokenInformation(hToken, TokenAppContainerSid,
                              tokenInfo, returnLength, &returnLength);
     if (!getTokenResult) {
         goto done;
@@ -6200,20 +6200,20 @@ sddl_append_for_appcontainer_if_necessary(LPCWSTR base_sddl) {
     }
 
     // Now that we know we are running under an AppContainer, and we have
-    // the AppContainer SID as a string, we can append an ACE to the provided 
+    // the AppContainer SID as a string, we can append an ACE to the provided
     // SDDL
 
-    // Dynamically allocate the final buffer here. This is expected to be 
-    // called at most once, however in the case it could be called from 
-    // multiple threads, we are dynamically allocating the buffer here rather 
-    // than using a static buffer (which would then require synchronization 
+    // Dynamically allocate the final buffer here. This is expected to be
+    // called at most once, however in the case it could be called from
+    // multiple threads, we are dynamically allocating the buffer here rather
+    // than using a static buffer (which would then require synchronization
     // for that static buffer).
     LPWSTR sddl_buf = PyMem_RawMalloc(sizeof(WCHAR) * 256);
 
     int sddl_chars = _snwprintf(
         sddl_buf,
         256,
-        // Append a string that includes inheritable (OICI) entries 
+        // Append a string that includes inheritable (OICI) entries
         // that allow (A) full control (FA) to the AppContainer SID
         L"%s(A;OICI;FA;;;%s)",
         base_sddl,
@@ -6221,7 +6221,7 @@ sddl_append_for_appcontainer_if_necessary(LPCWSTR base_sddl) {
 
     if (sddl_chars >= 0 && (size_t)sddl_chars < 256) {
         resolved_sddl = sddl_buf;
-    } 
+    }
     else {
         PyMem_RawFree(sddl_buf);
     }
