@@ -1,0 +1,2 @@
+Added buffer boundary check comparing ``nbytes`` parameter to
+:meth:`asyncio.AbstractEventLoop.sock_recvfrom_into`.
