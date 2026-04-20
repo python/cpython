@@ -214,11 +214,14 @@ class PrettyPrinter:
 
     def pprint(self, object):
         if self._stream is not None:
-            if self._color and _colorize.can_colorize(file=self._stream):
-                sio = _StringIO()
-                self._format(object, sio, 0, 0, {}, 0)
-                self._stream.write(_colorize_output(sio.getvalue()))
-            else:
+            try:
+                if self._color and _colorize.can_colorize(file=self._stream):
+                    sio = _StringIO()
+                    self._format(object, sio, 0, 0, {}, 0)
+                    self._stream.write(_colorize_output(sio.getvalue()))
+                else:
+                    self._format(object, self._stream, 0, 0, {}, 0)
+            except ImportError:
                 self._format(object, self._stream, 0, 0, {}, 0)
             self._stream.write("\n")
 
