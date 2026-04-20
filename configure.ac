@@ -3394,6 +3394,76 @@ with_pymalloc="no"
 ],
 [AC_MSG_RESULT([no])])
 
+AC_MSG_CHECKING([for --with-hwaddress-sanitizer])
+AC_ARG_WITH([hwaddress_sanitizer],
+            AS_HELP_STRING([--with-hwaddress-sanitizer],
+                           [enable hardware-assisted AddressSanitizer memory error detector on arm64, 'hwasan' (default is no)]),
+[
+if test "$withval" != no; then
+	case "$host" in
+		aarch64*): 
+			BASECFLAGS="-fsanitize=hwaddress -fno-omit-frame-pointer $BASECFLAGS"
+			LDFLAGS="-fsanitize=hwaddress $LDFLAGS"
+			# ASan works by controlling memory allocation, our own malloc interferes.
+			with_pymalloc="no"
+			AC_MSG_RESULT([yes])
+			;;
+		*):
+			AC_MSG_RESULT([only available on ARM64])
+			;;
+	esac
+fi
+]
+
+AC_MSG_CHECKING([for --with-memory-tagging])
+AC_ARG_WITH([hwaddress_sanitizer],
+            AS_HELP_STRING([--with-memory-tagging],
+                           [enable Memory Tagging Extension for arm64 to detect memory errors (default is no)]),
+[
+if test "$withval" != no; then
+	case "$host" in
+		aarch64*): 
+			BASECFLAGS="-fsanitize=memtag-stack -fno-omit-frame-pointer $BASECFLAGS"
+			LDFLAGS="-fsanitize=memtag-stack $LDFLAGS"
+			# ASan works by controlling memory allocation, our own malloc interferes.
+			with_pymalloc="no"
+			AC_MSG_RESULT([yes])
+			;;
+		*):
+			AC_MSG_RESULT([only available on ARM64])
+			;;
+	esac
+fi
+]
+
+AC_MSG_CHECKING([for --sanitize-pointer-comparison])
+AC_ARG_WITH([sanitize_pointer_compare],
+            AS_HELP_STRING([--sanitize-pointer-comparison],
+                           [Instrument pointer comparison operation (<, <=, >, >=).
+				Must be combined with --with-address-sanitizer,
+				and can't combined with --with-thread-sanitizer (default is no)]),
+[
+AC_MSG_RESULT([$withval])
+BASECFLAGS="-fsanitize=pointer-compare -fno-omit-frame-pointer $BASECFLAGS"
+LDFLAGS="-fsanitize=pointer-compare $LDFLAGS"
+ASAN_OPTIONS="detect_invalid_pointer_pairs=2 $ASAN_OPTIONS"
+],
+[AC_MSG_RESULT([no])])
+
+AC_MSG_CHECKING([for --sanitize-pointer-subtraction])
+AC_ARG_WITH([sanitize_pointer_compare],
+            AS_HELP_STRING([--sanitize-pointer-substraction],
+                           [Instrument pointer subtraction.
+				Must be combined with --with-address-sanitizer,
+				and can't combined with --with-thread-sanitizer (default is no)]),
+[
+AC_MSG_RESULT([$withval])
+BASECFLAGS="-fsanitize=pointer-compare -fno-omit-frame-pointer $BASECFLAGS"
+LDFLAGS="-fsanitize=pointer-compare $LDFLAGS"
+ASAN_OPTIONS="detect_invalid_pointer_pairs=2 $ASAN_OPTIONS"
+],
+[AC_MSG_RESULT([no])])
+
 AC_MSG_CHECKING([for --with-memory-sanitizer])
 AC_ARG_WITH(
   [memory_sanitizer],
@@ -3428,6 +3498,40 @@ with_ubsan="yes"
 [
 AC_MSG_RESULT([no])
 with_ubsan="no"
+])
+
+AC_MSG_CHECKING([for --with-leak-sanitizer])
+AC_ARG_WITH(
+  [leak_sanitizer],
+  [AS_HELP_STRING(
+    [--with-leak-sanitizer],
+    [enable LeakSanitizer memory leak detector, 'lsan' (default is no)]
+  )],
+[
+AC_MSG_RESULT([$withval])
+BASECFLAGS="-fsanitize=leak $BASECFLAGS"
+LDFLAGS="-fsanitize=leak $LDFLAGS"
+with_lsan="yes"
+],
+[
+AC_MSG_RESULT([no])
+with_lsan="no"
+])
+
+AC_MSG_CHECKING([for --sanitize-address-use-after-scope])
+AC_ARG_WITH(
+  [sanitize-address-use-after-scope],
+  [AS_HELP_STRING(
+    [--sanitize-address-use-after-scope],
+    [sanitize local variales to detect use-after-scope bugs (default is no)]
+  )],
+[
+AC_MSG_RESULT([$withval])
+BASECFLAGS="-fsanitize-address-use-after-scope $BASECFLAGS"
+LDFLAGS="-fsanitize-address-use-after-scope $LDFLAGS"
+],
+[
+AC_MSG_RESULT([no])
 ])
 
 AC_MSG_CHECKING([for --with-thread-sanitizer])
