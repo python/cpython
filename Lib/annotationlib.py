@@ -47,6 +47,7 @@ _SLOTS = (
     "__cell__",
     "__owner__",
     "__stringifier_dict__",
+    "__resolved_str_cache__",
 )
 
 
@@ -94,6 +95,7 @@ class ForwardRef:
         # value later.
         self.__code__ = None
         self.__ast_node__ = None
+        self.__resolved_str_cache__ = None
 
     def __init_subclass__(cls, /, *args, **kwds):
         raise TypeError("Cannot subclass ForwardRef")
@@ -113,7 +115,7 @@ class ForwardRef:
         """
         match format:
             case Format.STRING:
-                return self.__resolved_forward_str__
+                return self.__resolved_str__
             case Format.VALUE:
                 is_forwardref_format = False
             case Format.FORWARDREF:
@@ -259,24 +261,27 @@ class ForwardRef:
         )
 
     @property
-    def __resolved_forward_str__(self):
+    def __resolved_str__(self):
         # __forward_arg__ with any names from __extra_names__ replaced
         # with the type_repr of the value they represent
-        resolved_str = self.__forward_arg__
-        names = self.__extra_names__
+        if self.__resolved_str_cache__ is None:
+            resolved_str = self.__forward_arg__
+            names = self.__extra_names__
 
-        if names:
-            # identifiers can be replaced directly
-            if resolved_str.isidentifier():
-                if (name_obj := names.get(resolved_str), _sentinel) is not _sentinel:
-                    resolved_str = type_repr(name_obj)
-            else:
-                visitor = _ExtraNameFixer(names)
-                ast_expr = ast.parse(resolved_str, mode="eval").body
-                node = visitor.visit(ast_expr)
-                resolved_str = ast.unparse(node)
+            if names:
+                # identifiers can be replaced directly
+                if resolved_str.isidentifier():
+                    if (name_obj := names.get(resolved_str), _sentinel) is not _sentinel:
+                        resolved_str = type_repr(name_obj)
+                else:
+                    visitor = _ExtraNameFixer(names)
+                    ast_expr = ast.parse(resolved_str, mode="eval").body
+                    node = visitor.visit(ast_expr)
+                    resolved_str = ast.unparse(node)
 
-        return resolved_str
+            self.__resolved_str_cache__ = resolved_str
+
+        return self.__resolved_str_cache__
 
     @property
     def __forward_code__(self):
@@ -341,7 +346,7 @@ class ForwardRef:
             extra.append(", is_class=True")
         if self.__owner__ is not None:
             extra.append(f", owner={self.__owner__!r}")
-        return f"ForwardRef({self.__resolved_forward_str__!r}{''.join(extra)})"
+        return f"ForwardRef({self.__resolved_str__!r}{''.join(extra)})"
 
 
 _Template = type(t"")
@@ -377,6 +382,7 @@ class _Stringifier:
         self.__cell__ = cell
         self.__owner__ = owner
         self.__stringifier_dict__ = stringifier_dict
+        self.__resolved_str_cache__ = None  # Needed for ForwardRef
 
     def __convert_to_ast(self, other):
         if isinstance(other, _Stringifier):

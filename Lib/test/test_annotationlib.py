@@ -2058,7 +2058,11 @@ class TestForwardRefClass(unittest.TestCase):
         def f(a: ref | str): ...
 
         fr = get_annotations(f, format=Format.FORWARDREF)['a']
+        # Test the cache is not populated before access
+        self.assertIsNone(fr.__resolved_str_cache__)
+
         self.assertEqual(fr.evaluate(format=Format.STRING), "ref | str")
+        self.assertEqual(fr.__resolved_str_cache__, "ref | str")
 
     def test_evaluate_forwardref_format(self):
         fr = ForwardRef("undef")
