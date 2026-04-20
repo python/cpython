@@ -1618,6 +1618,7 @@ static void
 add_threadstate(PyInterpreterState *interp, PyThreadState *tstate,
                 PyThreadState *next)
 {
+    assert(interp != NULL);
     assert(interp->threads.head != tstate);
     if (next != NULL) {
         assert(next->prev == NULL || next->prev == tstate);
@@ -3355,9 +3356,17 @@ try_acquire_interp_guard(PyInterpreterState *interp)
         return NULL;
     }
 
+    PyInterpreterGuard *guard = PyMem_RawMalloc(sizeof(PyInterpreterGuard));
+    if (guard == NULL) {
+        _PyRWMutex_RUnlock(&interp->finalization_guards.lock);
+        return NULL;
+    }
+
     _Py_atomic_add_ssize(&interp->finalization_guards.countdown, 1);
     _PyRWMutex_RUnlock(&interp->finalization_guards.lock);
-    return (PyInterpreterGuard *)interp;
+
+    guard->interp = interp;
+    return guard;
 }
 
 PyInterpreterGuard *
@@ -3391,6 +3400,8 @@ PyInterpreterGuard_Close(PyInterpreterGuard *guard)
         Py_FatalError("interpreter has negative guard count, likely due"
                       " to an extra PyInterpreterGuard_Close() call");
     }
+
+    PyMem_RawFree(guard);
 }
 
 PyInterpreterView *
@@ -3440,6 +3451,8 @@ PyInterpreterGuard_FromView(PyInterpreterView *view)
 
     PyInterpreterGuard *guard = try_acquire_interp_guard(interp);
     HEAD_UNLOCK(runtime);
+
+    assert(guard == NULL || guard->interp != NULL);
     return guard;
 }
 
