@@ -1,0 +1,3 @@
+Providing anything but a string or bytes object to :mod:`urllib.parse`
+functions expecting strings or bytes now raises :exc:`DeprecationWarning`
+if the value tests false, or :exc:`TypeError` if it tests true.

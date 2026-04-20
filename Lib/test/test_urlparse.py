@@ -1255,7 +1255,14 @@ class UrlParseTestCase(unittest.TestCase):
         with self.assertRaisesRegex(TypeError, "Cannot mix str"):
             urllib.parse.urljoin(b"http://python.org", "http://python.org")
 
+    def test_non_string_true_values_rejected(self):
+        # True values raise informative TypeErrors
+        msg = "Expected a string or bytes object: got <class "
+        with self.assertRaisesRegex(TypeError, msg):
+            urllib.parse.urlsplit(1, b'http')
+
     def _check_result_type(self, str_type, str_args):
+        num_args = len(str_type._fields)
         bytes_type = str_type._encoded_counterpart
         self.assertIs(bytes_type._decoded_counterpart, str_type)
         bytes_args = tuple_encode(str_args)
@@ -1986,6 +1993,27 @@ class DeprecationTest(unittest.TestCase):
             urllib.parse.to_bytes('')
         self.assertEqual(str(cm.warning),
                          'urllib.parse.to_bytes() is deprecated as of 3.8')
+
+    def test_falsey_deprecation(self):
+        pattern = (
+            "Providing false values other than strings or bytes to urllib.parse "
+            "is deprecated: got <class "
+        )
+        cases = [
+            (urllib.parse.urljoin, ['http://www.python.org', []]),
+            (urllib.parse.urljoin, [[], b'docs']),
+            (urllib.parse.urlparse, [b'www.python.org', None]),
+            (urllib.parse.urlparse, [{}, '']),
+            (urllib.parse.urlsplit, [0, b'http']),
+            (urllib.parse.urlsplit, [b'http://www.python.org', None]),
+            (urllib.parse.urldefrag, [{}]),
+            (urllib.parse.urlunparse, [[None, b'www.python.org', None, None, None, None]]),
+            (urllib.parse.urlunsplit, [['http', 0, '', '', '']]),
+        ]
+        for callable, args in cases:
+            with self.subTest(callable=callable):
+                with self.assertWarnsRegex(DeprecationWarning, pattern):
+                    callable(*args)
 
 
 def str_encode(s):

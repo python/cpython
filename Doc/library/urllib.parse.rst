@@ -220,6 +220,11 @@ or on combining URL components into a URL string.
    .. versionchanged:: 3.15
       Added the *missing_as_none* parameter.
 
+   .. versionchanged:: 3.15
+       Values for ``url`` and ``scheme`` other than strings or bytes raise
+      :exc:`TypeError` if true or :exc:`DeprecationWarning` if false (to be
+      changed to :exc:`TypeError` in future versions of Python).
+
 .. _WHATWG spec: https://url.spec.whatwg.org/#concept-basic-url-parser
 
 
@@ -315,6 +320,11 @@ or on combining URL components into a URL string.
       query parameter separator. This has been changed to allow only a single
       separator key, with ``&`` as the default separator.
 
+   .. versionchanged:: 3.15
+      Values for ``qs`` and ``separator`` other than strings or bytes raise
+      :exc:`TypeError` if true or :exc:`DeprecationWarning` if false (to be
+      changed to :exc:`TypeError` in future versions of Python).
+
 
 .. function:: urlunsplit(parts)
               urlunsplit(parts, *, keep_empty)
@@ -374,6 +384,11 @@ or on combining URL components into a URL string.
    .. versionchanged:: 3.15
       Added the *keep_empty* parameter.
 
+   .. versionchanged:: 3.15
+      Items in ``parts`` other than strings or bytes raise
+      :exc:`TypeError` if true or :exc:`DeprecationWarning` if false (to be
+      changed to :exc:`TypeError` in future versions of Python).
+
 
 .. function:: urljoin(base, url, allow_fragments=True)
 
@@ -417,6 +432,11 @@ or on combining URL components into a URL string.
 
       Behavior updated to match the semantics defined in :rfc:`3986`.
 
+   .. versionchanged:: 3.15
+      Values for ``base`` and ``url`` other than strings or bytes raise
+      :exc:`TypeError` if true or :exc:`DeprecationWarning` if false (to be
+      changed to :exc:`TypeError` in future versions of Python).
+
 
 .. function:: urldefrag(url, *, missing_as_none=False)
 
@@ -446,6 +466,11 @@ or on combining URL components into a URL string.
 
    .. versionchanged:: 3.15
       Added the *missing_as_none* parameter.
+
+   .. versionchanged:: 3.15
+      Values other than strings or bytes raise
+      :exc:`TypeError` if true or :exc:`DeprecationWarning` if false (to be
+      changed to :exc:`TypeError` in future versions of Python).
 
 .. function:: unwrap(url)
 
