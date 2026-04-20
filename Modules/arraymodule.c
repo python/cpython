@@ -8,7 +8,7 @@
 #endif
 
 #include "Python.h"
-#include "pycore_bytesobject.h"   // _PyBytes_Repeat
+#include "pycore_bytesobject.h"   // _PyBytes_RepeatBuffer
 #include "pycore_call.h"          // _PyObject_CallMethod()
 #include "pycore_ceval.h"         // _PyEval_GetBuiltin()
 #include "pycore_floatobject.h"   // _PY_FLOAT_BIG_ENDIAN
@@ -1148,7 +1148,7 @@ array_repeat(PyObject *op, Py_ssize_t n)
 
     const Py_ssize_t oldbytes = array_length * a->ob_descr->itemsize;
     const Py_ssize_t newbytes = oldbytes * n;
-    _PyBytes_Repeat(np->ob_item, newbytes, a->ob_item, oldbytes);
+    _PyBytes_RepeatBuffer(np->ob_item, newbytes, a->ob_item, oldbytes);
 
     return (PyObject *)np;
 }
@@ -1305,7 +1305,7 @@ array_inplace_repeat(PyObject *op, Py_ssize_t n)
         if (array_resize(self, n * array_size) == -1)
             return NULL;
 
-        _PyBytes_Repeat(self->ob_item, n*size, self->ob_item, size);
+        _PyBytes_RepeatBuffer(self->ob_item, n*size, self->ob_item, size);
     }
     return Py_NewRef(self);
 }

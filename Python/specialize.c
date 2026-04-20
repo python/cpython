@@ -2122,54 +2122,64 @@ is_compactlong(PyObject *v)
            _PyLong_IsCompact((PyLongObject *)v);
 }
 
-/* sequence * int helpers: bypass PyNumber_Multiply dispatch overhead
-   by calling sq_repeat directly with PyLong_AsSsize_t. */
-
-static inline PyObject *
-seq_int_multiply(PyObject *seq, PyObject *n,
-                 ssizeargfunc repeat)
-{
-    Py_ssize_t count = PyLong_AsSsize_t(n);
-    if (count == -1 && PyErr_Occurred()) {
-        return NULL;
-    }
-    return repeat(seq, count);
-}
-
 static PyObject *
 str_int_multiply(PyObject *lhs, PyObject *rhs)
 {
-    return seq_int_multiply(lhs, rhs, PyUnicode_Type.tp_as_sequence->sq_repeat);
+    Py_ssize_t count = PyLong_AsSsize_t(rhs);
+    if (count == -1 && PyErr_Occurred()) {
+        return NULL;
+    }
+    return _PyUnicode_Repeat(lhs, count);
 }
 
 static PyObject *
 int_str_multiply(PyObject *lhs, PyObject *rhs)
 {
-    return seq_int_multiply(rhs, lhs, PyUnicode_Type.tp_as_sequence->sq_repeat);
+    Py_ssize_t count = PyLong_AsSsize_t(lhs);
+    if (count == -1 && PyErr_Occurred()) {
+        return NULL;
+    }
+    return _PyUnicode_Repeat(rhs, count);
 }
 
 static PyObject *
 bytes_int_multiply(PyObject *lhs, PyObject *rhs)
 {
-    return seq_int_multiply(lhs, rhs, PyBytes_Type.tp_as_sequence->sq_repeat);
+    Py_ssize_t count = PyLong_AsSsize_t(rhs);
+    if (count == -1 && PyErr_Occurred()) {
+        return NULL;
+    }
+    return _PyBytes_Repeat(lhs, count);
 }
 
 static PyObject *
 int_bytes_multiply(PyObject *lhs, PyObject *rhs)
 {
-    return seq_int_multiply(rhs, lhs, PyBytes_Type.tp_as_sequence->sq_repeat);
+    Py_ssize_t count = PyLong_AsSsize_t(lhs);
+    if (count == -1 && PyErr_Occurred()) {
+        return NULL;
+    }
+    return _PyBytes_Repeat(rhs, count);
 }
 
 static PyObject *
 tuple_int_multiply(PyObject *lhs, PyObject *rhs)
 {
-    return seq_int_multiply(lhs, rhs, PyTuple_Type.tp_as_sequence->sq_repeat);
+    Py_ssize_t count = PyLong_AsSsize_t(rhs);
+    if (count == -1 && PyErr_Occurred()) {
+        return NULL;
+    }
+    return _PyTuple_Repeat(lhs, count);
 }
 
 static PyObject *
 int_tuple_multiply(PyObject *lhs, PyObject *rhs)
 {
-    return seq_int_multiply(rhs, lhs, PyTuple_Type.tp_as_sequence->sq_repeat);
+    Py_ssize_t count = PyLong_AsSsize_t(lhs);
+    if (count == -1 && PyErr_Occurred()) {
+        return NULL;
+    }
+    return _PyTuple_Repeat(rhs, count);
 }
 
 static int
@@ -2290,8 +2300,8 @@ static _PyBinaryOpSpecializationDescr binaryop_extend_descrs[] = {
        to be a freshly allocated object. */
     {NB_ADD, NULL, _PyTuple_Concat, &PyTuple_Type, 0, &PyTuple_Type, &PyTuple_Type},
 
-    /* str * int / int * str: call unicode_repeat directly.
-       unicode_repeat returns the original when n == 1. */
+    /* str * int / int * str: call _PyUnicode_Repeat directly.
+       _PyUnicode_Repeat returns the original when n == 1. */
     {NB_MULTIPLY, NULL, str_int_multiply, &PyUnicode_Type, 0, &PyUnicode_Type, &PyLong_Type},
     {NB_MULTIPLY, NULL, int_str_multiply, &PyUnicode_Type, 0, &PyLong_Type, &PyUnicode_Type},
     {NB_INPLACE_MULTIPLY, NULL, str_int_multiply, &PyUnicode_Type, 0, &PyUnicode_Type, &PyLong_Type},
@@ -2302,15 +2312,15 @@ static _PyBinaryOpSpecializationDescr binaryop_extend_descrs[] = {
     {NB_ADD, NULL, _PyBytes_Concat, &PyBytes_Type, 0, &PyBytes_Type, &PyBytes_Type},
     {NB_INPLACE_ADD, NULL, _PyBytes_Concat, &PyBytes_Type, 0, &PyBytes_Type, &PyBytes_Type},
 
-    /* bytes * int / int * bytes: call bytes_repeat directly.
-       bytes_repeat returns the original when n == 1. */
+    /* bytes * int / int * bytes: call _PyBytes_Repeat directly.
+       _PyBytes_Repeat returns the original when n == 1. */
     {NB_MULTIPLY, NULL, bytes_int_multiply, &PyBytes_Type, 0, &PyBytes_Type, &PyLong_Type},
     {NB_MULTIPLY, NULL, int_bytes_multiply, &PyBytes_Type, 0, &PyLong_Type, &PyBytes_Type},
     {NB_INPLACE_MULTIPLY, NULL, bytes_int_multiply, &PyBytes_Type, 0, &PyBytes_Type, &PyLong_Type},
     {NB_INPLACE_MULTIPLY, NULL, int_bytes_multiply, &PyBytes_Type, 0, &PyLong_Type, &PyBytes_Type},
 
-    /* tuple * int / int * tuple: call tuple_repeat directly.
-       tuple_repeat returns the original when n == 1. */
+    /* tuple * int / int * tuple: call _PyTuple_Repeat directly.
+       _PyTuple_Repeat returns the original when n == 1. */
     {NB_MULTIPLY, NULL, tuple_int_multiply, &PyTuple_Type, 0, &PyTuple_Type, &PyLong_Type},
     {NB_MULTIPLY, NULL, int_tuple_multiply, &PyTuple_Type, 0, &PyLong_Type, &PyTuple_Type},
     {NB_INPLACE_MULTIPLY, NULL, tuple_int_multiply, &PyTuple_Type, 0, &PyTuple_Type, &PyLong_Type},
