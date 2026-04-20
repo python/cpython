@@ -3164,7 +3164,7 @@ def in_systemd_nspawn_sync_suppressed() -> bool:
         with open("/run/systemd/container", "rb") as fp:
             if fp.read().rstrip() != b"systemd-nspawn":
                 return False
-    except FileNotFoundError:
+    except (FileNotFoundError, PermissionError):
         return False
 
     # If systemd-nspawn is used, O_SYNC flag will immediately
