@@ -8,7 +8,8 @@ import stat
 
 __all__ = ['commonprefix', 'exists', 'getatime', 'getctime', 'getmtime',
            'getsize', 'isdevdrive', 'isdir', 'isfile', 'isjunction', 'islink',
-           'lexists', 'samefile', 'sameopenfile', 'samestat', 'ALLOW_MISSING']
+           'lexists', 'samefile', 'sameopenfile', 'samestat',
+           'ALL_BUT_LAST', 'ALLOW_MISSING']
 
 
 # Does a path exist?
@@ -104,6 +105,15 @@ def getctime(filename, /):
 # Return the longest prefix of all list elements.
 def commonprefix(m, /):
     "Given a list of pathnames, returns the longest common leading component"
+    import warnings
+    warnings.warn('os.path.commonprefix() is deprecated. Use '
+                  'os.path.commonpath() for longest path prefix.',
+                  category=DeprecationWarning,
+                  stacklevel=2)
+    return _commonprefix(m)
+
+def _commonprefix(m, /):
+    "Internal implementation of commonprefix()"
     if not m: return ''
     # Some people pass in a list of pathname parts to operate in an OS-agnostic
     # fashion; don't try to translate in that case as that's an abuse of the
@@ -190,7 +200,17 @@ def _check_arg_types(funcname, *args):
     if hasstr and hasbytes:
         raise TypeError("Can't mix strings and bytes in path components") from None
 
-# A singleton with a true boolean value.
+
+# Singletons with a true boolean value.
+
+@object.__new__
+class ALL_BUT_LAST:
+    """Special value for use in realpath()."""
+    def __repr__(self):
+        return 'os.path.ALL_BUT_LAST'
+    def __reduce__(self):
+        return self.__class__.__name__
+
 @object.__new__
 class ALLOW_MISSING:
     """Special value for use in realpath()."""
