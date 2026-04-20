@@ -289,7 +289,6 @@ _PyJitUnwind_BuildEhFrame(uint8_t *buffer, size_t buffer_size,
  *   for details.
  */
 static void elf_init_ehframe_perf(ELFObjectContext* ctx) {
-    const int absolute_addr = 0;
     int fde_ptr_enc = DWRF_EH_PE_pcrel | DWRF_EH_PE_sdata4;
     uint8_t* p = ctx->p;
     uint8_t* framep = p;  // Remember start of frame data
@@ -502,22 +501,15 @@ static void elf_init_ehframe_perf(ELFObjectContext* ctx) {
      */
     DWRF_SECTION(FDE,
         DWRF_U32((uint32_t)(p - framep));     // Offset to CIE (backwards reference)
-        if (absolute_addr) {
-            DWRF_ADDR(ctx->code_addr);        // Absolute code start
-            DWRF_ADDR((uintptr_t)ctx->code_size); // Code range covered
-        }
-        else {
-            /*
-             * In perf jitdump mode (absolute_addr == 0), the FDE PC field is
-             * encoded PC-relative and points back to code_start. For the GDB
-             * JIT interface we reuse the same generator with absolute_addr == 1;
-             * the EH frame is then carried in a .eh_frame section of an
-             * in-memory ELF (no EhFrameHeader).
-             */
-            ctx->fde_p = p;                   // Remember where PC offset field is located for later calculation
-            DWRF_U32(0);                      // Placeholder for PC-relative offset (calculated at end of elf_init_ehframe)
-            DWRF_U32(ctx->code_size);         // Address range covered by this FDE (code length)
-        }
+        /*
+         * In perf jitdump mode the FDE PC field is encoded PC-relative and
+         * points back to code_start. Record where that field lives so we can
+         * patch in the final offset after the rest of the synthetic DSO
+         * layout is known.
+         */
+        ctx->fde_p = p;                       // Remember where PC offset field is located for later calculation
+        DWRF_U32(0);                          // Placeholder for PC-relative offset (calculated below)
+        DWRF_U32(ctx->code_size);             // Address range covered by this FDE (code length)
         DWRF_U8(0);                           // Augmentation data length (none)
 
         /*
@@ -526,25 +518,9 @@ static void elf_init_ehframe_perf(ELFObjectContext* ctx) {
          * These instructions describe how registers are saved and restored
          * during function calls. Each architecture has different calling
          * conventions and register usage patterns.
-         *
-         * GDB JIT invariant (absolute_addr == 1):
-         *
-         * We emit one synthetic FDE for the whole registered JIT region and
-         * treat that region as one logical native frame while unwinding. This
-         * relies on the generated executor stencils preserving the
-         * frame-pointer register across the whole region (%rbp on x86_64,
-         * x29 on AArch64). Individual stencils may still adjust SP or spill
-         * temporaries, but they must not clobber the frame pointer or move
-         * the recoverable caller state away from the frame layout described by
-         * the steady-state CFI below.
-         *
-         * If code generation changes so that executor stencils start touching
-         * the frame pointer, or the caller state is no longer recoverable from
-         * this frame layout, then this synthetic GDB CFI must be updated
-         * together with the stencil generator and tests.
          */
 #ifdef __x86_64__
-        /* x86_64 calling convention unwinding rules; keep CFA on %rbp */
+        /* x86_64 calling convention unwinding rules */
 #  if defined(__CET__) && (__CET__ & 1)
         DWRF_U8(DWRF_CFA_advance_loc | 4);    // Advance past endbr64 (4 bytes)
 #  endif
@@ -556,12 +532,10 @@ static void elf_init_ehframe_perf(ELFObjectContext* ctx) {
         DWRF_U8(DWRF_CFA_advance_loc | 3);    // Advance past mov %rsp,%rbp (3 bytes)
         DWRF_U8(DWRF_CFA_def_cfa_register);   // def_cfa_register r6
         DWRF_UV(DWRF_REG_BP);                 // Use base pointer register
-        if (!absolute_addr) {
-            DWRF_U8(DWRF_CFA_advance_loc | 3);    // Advance past call *%rcx (2 bytes) + pop %rbp (1 byte) = 3
-            DWRF_U8(DWRF_CFA_def_cfa);            // def_cfa r7 ofs 8
-            DWRF_UV(DWRF_REG_SP);                 // Use stack pointer register
-            DWRF_UV(8);                           // New offset: SP + 8
-        }
+        DWRF_U8(DWRF_CFA_advance_loc | 3);    // Advance past call *%rcx (2 bytes) + pop %rbp (1 byte) = 3
+        DWRF_U8(DWRF_CFA_def_cfa);            // def_cfa r7 ofs 8
+        DWRF_UV(DWRF_REG_SP);                 // Use stack pointer register
+        DWRF_UV(8);                           // New offset: SP + 8
 #elif defined(__aarch64__) && defined(__AARCH64EL__) && !defined(__ILP32__)
         /* AArch64 calling convention unwinding rules */
         DWRF_U8(DWRF_CFA_advance_loc | 1);        // Advance by 1 instruction (4 bytes)
@@ -574,13 +548,11 @@ static void elf_init_ehframe_perf(ELFObjectContext* ctx) {
         DWRF_U8(DWRF_CFA_advance_loc | 3);        // Advance by 3 instructions (12 bytes)
         DWRF_U8(DWRF_CFA_def_cfa_register);       // CFA = FP (x29) + 16
         DWRF_UV(DWRF_REG_FP);
-        if (!absolute_addr) {
-            DWRF_U8(DWRF_CFA_restore | DWRF_REG_RA);  // Restore x30 - NO DWRF_UV() after this!
-            DWRF_U8(DWRF_CFA_restore | DWRF_REG_FP);  // Restore x29 - NO DWRF_UV() after this!
-            DWRF_U8(DWRF_CFA_def_cfa);               // CFA = SP + 0 (stack restored)
-            DWRF_UV(DWRF_REG_SP);
-            DWRF_UV(0);
-        }
+        DWRF_U8(DWRF_CFA_restore | DWRF_REG_RA);  // Restore x30 - NO DWRF_UV() after this!
+        DWRF_U8(DWRF_CFA_restore | DWRF_REG_FP);  // Restore x29 - NO DWRF_UV() after this!
+        DWRF_U8(DWRF_CFA_def_cfa);                // CFA = SP + 0 (stack restored)
+        DWRF_UV(DWRF_REG_SP);
+        DWRF_UV(0);
 
 #else
 #    error "Unsupported target architecture"
@@ -633,12 +605,10 @@ static void elf_init_ehframe_perf(ELFObjectContext* ctx) {
      * Note: fde_offset_in_frame is the offset from EH frame start to the PC offset field.
      *
      */
-    if (!absolute_addr) {
-        int32_t rounded_code_size =
-            (int32_t)_Py_SIZE_ROUND_UP(ctx->code_size, 8);
-        int32_t fde_offset_in_frame = (int32_t)(ctx->fde_p - framep);
-        *(int32_t *)ctx->fde_p = -(rounded_code_size + fde_offset_in_frame);
-    }
+    int32_t rounded_code_size =
+        (int32_t)_Py_SIZE_ROUND_UP(ctx->code_size, 8);
+    int32_t fde_offset_in_frame = (int32_t)(ctx->fde_p - framep);
+    *(int32_t *)ctx->fde_p = -(rounded_code_size + fde_offset_in_frame);
 }
 
 /*
@@ -702,11 +672,11 @@ static void elf_init_ehframe_gdb(ELFObjectContext* ctx) {
 #elif defined(__aarch64__) && defined(__AARCH64EL__) && !defined(__ILP32__)
         DWRF_U8(DWRF_CFA_def_cfa);            // CFA = x29 + 16
         DWRF_UV(DWRF_REG_FP);
-        DWRF_UV(16);
+        DWRF_UV(96);
         DWRF_U8(DWRF_CFA_offset | DWRF_REG_FP);
-        DWRF_UV(2);                           // saved x29 at cfa-16
+        DWRF_UV(12);                           // saved x29 at cfa-16
         DWRF_U8(DWRF_CFA_offset | DWRF_REG_RA);
-        DWRF_UV(1);                           // x30 at cfa-8
+        DWRF_UV(11);                           // x30 at cfa-8
 #else
 #    error "Unsupported target architecture"
 #endif
