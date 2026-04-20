@@ -116,8 +116,8 @@ test_sizeof_c_types(PyObject *self, PyObject *Py_UNUSED(ignored))
     do { \
         if (EXPECTED != sizeof(TYPE)) { \
             PyErr_Format(get_testerror(self),               \
-                         "sizeof(%s) = %u instead of %u",   \
-                         #TYPE, sizeof(TYPE), EXPECTED);    \
+                         "sizeof(%s) = %zu instead of %u",   \
+                         #TYPE, sizeof(TYPE), (unsigned)(EXPECTED));    \
             return (PyObject*)NULL; \
         } \
     } while (0)
@@ -224,6 +224,18 @@ pycompilestring(PyObject* self, PyObject *obj) {
         return NULL;
     }
     return Py_CompileString(the_string, "<string>", Py_file_input);
+}
+
+static PyObject*
+pycompilestringexflags(PyObject *self, PyObject *args) {
+    const char *the_string, *filename;
+    int start, flags;
+    if (!PyArg_ParseTuple(args, "ysii", &the_string, &filename, &start, &flags)) {
+        return NULL;
+    }
+    PyCompilerFlags cf = _PyCompilerFlags_INIT;
+    cf.cf_flags = flags;
+    return Py_CompileStringExFlags(the_string, filename, start, &cf, -1);
 }
 
 static PyObject*
@@ -1583,9 +1595,9 @@ getitem_with_error(PyObject *self, PyObject *args)
 static PyObject *
 raise_SIGINT_then_send_None(PyObject *self, PyObject *args)
 {
-    PyGenObject *gen;
+    PyObject *gen;
 
-    if (!PyArg_ParseTuple(args, "O!", &PyGen_Type, &gen))
+    if (!PyArg_ParseTuple(args, "O", &gen))
         return NULL;
 
     /* This is used in a test to check what happens if a signal arrives just
@@ -1599,7 +1611,7 @@ raise_SIGINT_then_send_None(PyObject *self, PyObject *args)
          because we check for signals before every bytecode operation.
      */
     raise(SIGINT);
-    return PyObject_CallMethod((PyObject *)gen, "send", "O", Py_None);
+    return PyObject_CallMethod(gen, "send", "O", Py_None);
 }
 
 
@@ -2206,9 +2218,8 @@ test_macros(PyObject *self, PyObject *Py_UNUSED(args))
 static PyObject *
 test_weakref_capi(PyObject *Py_UNUSED(module), PyObject *Py_UNUSED(args))
 {
-    // Ignore PyWeakref_GetObject() deprecation, we test it on purpose
-    _Py_COMP_DIAG_PUSH
-    _Py_COMP_DIAG_IGNORE_DEPR_DECLS
+    // Get the function (removed in 3.15) from the stable ABI.
+    PyAPI_FUNC(PyObject *) PyWeakref_GetObject(PyObject *);
 
     // Create a new heap type, create an instance of this type, and delete the
     // type. This object supports weak references.
@@ -2249,18 +2260,11 @@ test_weakref_capi(PyObject *Py_UNUSED(module), PyObject *Py_UNUSED(args))
     ref = PyWeakref_GetObject(weakref);  // borrowed ref
     assert(ref == obj);
 
-    // test PyWeakref_GET_OBJECT(), reference is alive
-    ref = PyWeakref_GET_OBJECT(weakref);  // borrowed ref
-    assert(ref == obj);
-
     // delete the referenced object: clear the weakref
     assert(Py_REFCNT(obj) == 1);
     Py_DECREF(obj);
 
     assert(PyWeakref_IsDead(weakref));
-
-    // test PyWeakref_GET_OBJECT(), reference is dead
-    assert(PyWeakref_GET_OBJECT(weakref) == Py_None);
 
     // test PyWeakref_GetRef(), reference is dead
     ref = UNINITIALIZED_PTR;
@@ -2312,8 +2316,6 @@ test_weakref_capi(PyObject *Py_UNUSED(module), PyObject *Py_UNUSED(args))
     Py_DECREF(weakref);
 
     Py_RETURN_NONE;
-
-    _Py_COMP_DIAG_POP
 }
 
 struct simpletracer_data {
@@ -2572,6 +2574,74 @@ toggle_reftrace_printer(PyObject *ob, PyObject *arg)
     Py_RETURN_NONE;
 }
 
+
+typedef struct {
+    PyObject_HEAD
+} ManagedWeakrefNoGCObject;
+
+static void
+ManagedWeakrefNoGC_dealloc(PyObject *self)
+{
+    PyObject_ClearWeakRefs(self);
+    PyTypeObject *tp = Py_TYPE(self);
+    tp->tp_free(self);
+    Py_DECREF(tp);
+}
+
+static PyType_Slot ManagedWeakrefNoGC_slots[] = {
+    {Py_tp_dealloc, ManagedWeakrefNoGC_dealloc},
+    {0, 0}
+};
+
+static PyType_Spec ManagedWeakrefNoGC_spec = {
+    .name = "_testcapi.ManagedWeakrefNoGCType",
+    .basicsize = sizeof(ManagedWeakrefNoGCObject),
+    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_MANAGED_WEAKREF),
+    .slots = ManagedWeakrefNoGC_slots,
+};
+
+static PyObject *
+create_managed_weakref_nogc_type(PyObject *self, PyObject *Py_UNUSED(args))
+{
+    return PyType_FromSpec(&ManagedWeakrefNoGC_spec);
+}
+
+
+static PyObject*
+test_soft_deprecated_macros(PyObject *Py_UNUSED(self), PyObject *Py_UNUSED(args))
+{
+    // Test soft-deprecated macros
+    Py_ALIGNED(64) char buf[4];
+    #ifdef __GNUC__
+        // Py_ALIGNED must compile everywhere, but only does something
+        // on "supported" compilers, i.e. GCC
+        Py_BUILD_ASSERT(__extension__ __alignof__(buf) >= 64);
+    #endif
+    assert(strcmp(PY_FORMAT_SIZE_T, "z") == 0);
+    Py_BUILD_ASSERT(Py_LL(123) == 123LL);
+    Py_BUILD_ASSERT(sizeof(Py_LL(123)) == sizeof(long long));
+    Py_BUILD_ASSERT(sizeof(Py_ULL(123)) == sizeof(unsigned long long));
+    Py_BUILD_ASSERT(sizeof(PY_LONG_LONG) == sizeof(long long));
+    Py_BUILD_ASSERT(sizeof(PY_INT32_T) == sizeof(int32_t));
+    Py_BUILD_ASSERT(sizeof(PY_UINT32_T) == sizeof(uint32_t));
+    Py_BUILD_ASSERT(sizeof(PY_INT64_T) == sizeof(int64_t));
+    Py_BUILD_ASSERT(sizeof(PY_UINT64_T) == sizeof(uint64_t));
+    Py_BUILD_ASSERT(PY_LLONG_MIN == LLONG_MIN);
+    Py_BUILD_ASSERT(PY_LLONG_MAX == LLONG_MAX);
+    Py_BUILD_ASSERT(PY_ULLONG_MAX == ULLONG_MAX);
+    Py_BUILD_ASSERT(PY_SIZE_MAX == SIZE_MAX);
+    Py_BUILD_ASSERT(PY_LLONG_MIN == LLONG_MIN);
+    Py_MEMCPY(buf, "abc", 4);
+    assert(strcmp(buf, "abc") == 0);
+    Py_BUILD_ASSERT(Py_UNICODE_SIZE == sizeof(wchar_t));
+    #ifdef Py_UNICODE_WIDE
+        Py_BUILD_ASSERT(sizeof(wchar_t) >= 4);
+    #else
+        Py_BUILD_ASSERT(sizeof(wchar_t) < 4);
+    #endif
+    Py_RETURN_NONE;
+}
+
 static PyMethodDef TestMethods[] = {
     {"set_errno",               set_errno,                       METH_VARARGS},
     {"test_config",             test_config,                     METH_NOARGS},
@@ -2636,6 +2706,7 @@ static PyMethodDef TestMethods[] = {
     {"return_result_with_error", return_result_with_error, METH_NOARGS},
     {"getitem_with_error", getitem_with_error, METH_VARARGS},
     {"Py_CompileString",     pycompilestring, METH_O},
+    {"Py_CompileStringExFlags", pycompilestringexflags, METH_VARARGS},
     {"raise_SIGINT_then_send_None", raise_SIGINT_then_send_None, METH_VARARGS},
     {"stack_pointer", stack_pointer, METH_NOARGS},
 #ifdef W_STOPCODE
@@ -2666,6 +2737,9 @@ static PyMethodDef TestMethods[] = {
     {"test_atexit", test_atexit, METH_NOARGS},
     {"code_offset_to_line", _PyCFunction_CAST(code_offset_to_line), METH_FASTCALL},
     {"toggle_reftrace_printer", toggle_reftrace_printer, METH_O},
+    {"create_managed_weakref_nogc_type",
+        create_managed_weakref_nogc_type, METH_NOARGS},
+    {"test_soft_deprecated_macros", test_soft_deprecated_macros, METH_NOARGS},
     {NULL, NULL} /* sentinel */
 };
 
@@ -3206,9 +3280,8 @@ typedef struct {
 } ManagedDictObject;
 
 int ManagedDict_traverse(PyObject *self, visitproc visit, void *arg) {
-    PyObject_VisitManagedDict(self, visit, arg);
     Py_VISIT(Py_TYPE(self));
-    return 0;
+    return PyObject_VisitManagedDict(self, visit, arg);
 }
 
 int ManagedDict_clear(PyObject *self) {
@@ -3333,6 +3406,16 @@ _testcapi_exec(PyObject *m)
     PyModule_AddObject(m, "INT64_MIN", PyLong_FromInt64(INT64_MIN));
     PyModule_AddObject(m, "INT64_MAX", PyLong_FromInt64(INT64_MAX));
     PyModule_AddObject(m, "UINT64_MAX", PyLong_FromUInt64(UINT64_MAX));
+
+#ifdef HAVE_PPOLL
+    if (PyModule_AddObjectRef(m, "HAVE_PPOLL", Py_True) < 0) {
+        return -1;
+    }
+#endif
+
+    if (PyModule_AddIntMacro(m, _Py_STACK_GROWS_DOWN)) {
+        return -1;
+    }
 
     if (PyModule_AddIntMacro(m, Py_single_input)) {
         return -1;
@@ -3487,11 +3570,17 @@ _testcapi_exec(PyObject *m)
     if (_PyTestCapi_Init_Function(m) < 0) {
         return -1;
     }
+    if (_PyTestCapi_Init_Module(m) < 0) {
+        return -1;
+    }
 
     return 0;
 }
 
+PyABIInfo_VAR(abi_info);
+
 static PyModuleDef_Slot _testcapi_slots[] = {
+    {Py_mod_abi, &abi_info},
     {Py_mod_exec, _testcapi_exec},
     {Py_mod_gil, Py_MOD_GIL_NOT_USED},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},

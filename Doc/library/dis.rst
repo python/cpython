@@ -14,7 +14,7 @@
 
 --------------
 
-The :mod:`dis` module supports the analysis of CPython :term:`bytecode` by
+The :mod:`!dis` module supports the analysis of CPython :term:`bytecode` by
 disassembling it. The CPython bytecode which this module takes as an input is
 defined in the file :file:`Include/opcode.h` and used by the compiler and the
 interpreter.
@@ -38,7 +38,7 @@ interpreter.
       Some instructions are accompanied by one or more inline cache entries,
       which take the form of :opcode:`CACHE` instructions. These instructions
       are hidden by default, but can be shown by passing ``show_caches=True`` to
-      any :mod:`dis` utility. Furthermore, the interpreter now adapts the
+      any :mod:`!dis` utility. Furthermore, the interpreter now adapts the
       bytecode to specialize it for different runtime conditions. The
       adaptive bytecode can be shown by passing ``adaptive=True``.
 
@@ -87,7 +87,7 @@ the following command can be used to display the disassembly of
 Command-line interface
 ----------------------
 
-The :mod:`dis` module can be invoked as a script from the command line:
+The :mod:`!dis` module can be invoked as a script from the command line:
 
 .. code-block:: sh
 
@@ -223,7 +223,7 @@ Example:
 Analysis functions
 ------------------
 
-The :mod:`dis` module also defines the following analysis functions that convert
+The :mod:`!dis` module also defines the following analysis functions that convert
 the input directly to the desired output. They can be useful if only a single
 operation is being performed, so the intermediate analysis object isn't useful:
 
@@ -585,6 +585,22 @@ operations on it as if it was a Python list. The top of the stack corresponds to
    generate line tracing events.
 
 
+.. opcode:: NOT_TAKEN
+
+   Do nothing code.
+   Used by the interpreter to record :monitoring-event:`BRANCH_LEFT`
+   and :monitoring-event:`BRANCH_RIGHT` events for :mod:`sys.monitoring`.
+
+   .. versionadded:: 3.14
+
+
+.. opcode:: POP_ITER
+
+   Removes the iterator from the top of the stack.
+
+   .. versionadded:: 3.14
+
+
 .. opcode:: POP_TOP
 
    Removes the top-of-stack item::
@@ -752,7 +768,7 @@ not have to be) the original ``STACK[-2]``.
       end = STACK.pop()
       start = STACK.pop()
       container = STACK.pop()
-      values = STACK.pop()
+      value = STACK.pop()
       container[start:end] = value
 
    .. versionadded:: 3.12
@@ -1084,11 +1100,6 @@ iterations of the loop.
 .. opcode:: LOAD_CONST (consti)
 
    Pushes ``co_consts[consti]`` onto the stack.
-
-
-.. opcode:: LOAD_CONST_IMMORTAL (consti)
-
-   Works as :opcode:`LOAD_CONST`, but is more efficient for immortal objects.
 
 
 .. opcode:: LOAD_SMALL_INT (i)
@@ -1631,7 +1642,7 @@ iterations of the loop.
 
    Pushes a ``NULL`` to the stack.
    Used in the call sequence to match the ``NULL`` pushed by
-   :opcode:`LOAD_METHOD` for non-method calls.
+   :opcode:`LOAD_ATTR` for non-method calls.
 
    .. versionadded:: 3.11
 
@@ -1662,8 +1673,12 @@ iterations of the loop.
    * ``0x02`` a dictionary of keyword-only parameters' default values
    * ``0x04`` a tuple of strings containing parameters' annotations
    * ``0x08`` a tuple containing cells for free variables, making a closure
+   * ``0x10`` the :term:`annotate function` for the function object
 
    .. versionadded:: 3.13
+
+   .. versionchanged:: 3.14
+      Added ``0x10`` to indicate the annotate function for the function object.
 
 
 .. opcode:: BUILD_SLICE (argc)
@@ -1812,7 +1827,7 @@ iterations of the loop.
       ignore it. Before, only opcodes ``>= HAVE_ARGUMENT`` had an argument.
 
    .. versionchanged:: 3.12
-      Pseudo instructions were added to the :mod:`dis` module, and for them
+      Pseudo instructions were added to the :mod:`!dis` module, and for them
       it is not true that comparison with ``HAVE_ARGUMENT`` indicates whether
       they use their arg.
 
@@ -1952,14 +1967,15 @@ but are replaced by real opcodes or removed before bytecode is generated.
    Marks the end of the code block associated with the last ``SETUP_FINALLY``,
    ``SETUP_CLEANUP`` or ``SETUP_WITH``.
 
+
 .. opcode:: JUMP
-.. opcode:: JUMP_NO_INTERRUPT
+            JUMP_NO_INTERRUPT
 
    Undirected relative jump instructions which are replaced by their
    directed (forward/backward) counterparts by the assembler.
 
 .. opcode:: JUMP_IF_TRUE
-.. opcode:: JUMP_IF_FALSE
+            JUMP_IF_FALSE
 
    Conditional jumps which do not impact the stack. Replaced by the sequence
    ``COPY 1``, ``TO_BOOL``, ``POP_JUMP_IF_TRUE/FALSE``.
@@ -1973,12 +1989,6 @@ but are replaced by real opcodes or removed before bytecode is generated.
 
    .. versionchanged:: 3.13
       This opcode is now a pseudo-instruction.
-
-
-.. opcode:: LOAD_METHOD
-
-   Optimized unbound method lookup. Emitted as a ``LOAD_ATTR`` opcode
-   with a flag set in the arg.
 
 
 .. _opcode_collections:

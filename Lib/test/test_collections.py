@@ -2135,6 +2135,19 @@ class TestCounter(unittest.TestCase):
         self.assertEqual(c.setdefault('e', 5), 5)
         self.assertEqual(c['e'], 5)
 
+    def test_update_reentrant_add_clears_counter(self):
+        c = Counter()
+        key = object()
+
+        class Evil(int):
+            def __add__(self, other):
+                c.clear()
+                return NotImplemented
+
+        c[key] = Evil()
+        c.update([key])
+        self.assertEqual(c[key], 1)
+
     def test_init(self):
         self.assertEqual(list(Counter(self=42).items()), [('self', 42)])
         self.assertEqual(list(Counter(iterable=42).items()), [('iterable', 42)])
@@ -2179,6 +2192,7 @@ class TestCounter(unittest.TestCase):
         self.assertTrue(correctly_ordered(p - q))
         self.assertTrue(correctly_ordered(p | q))
         self.assertTrue(correctly_ordered(p & q))
+        self.assertTrue(correctly_ordered(p ^ q))
 
         p, q = Counter(ps), Counter(qs)
         p += q
@@ -2194,6 +2208,10 @@ class TestCounter(unittest.TestCase):
 
         p, q = Counter(ps), Counter(qs)
         p &= q
+        self.assertTrue(correctly_ordered(p))
+
+        p, q = Counter(ps), Counter(qs)
+        p ^= q
         self.assertTrue(correctly_ordered(p))
 
         p, q = Counter(ps), Counter(qs)
@@ -2278,6 +2296,7 @@ class TestCounter(unittest.TestCase):
                 (Counter.__sub__, lambda x, y: max(0, x-y)),
                 (Counter.__or__, lambda x, y: max(0,x,y)),
                 (Counter.__and__, lambda x, y: max(0, min(x,y))),
+                (Counter.__xor__, lambda x, y: max(0, max(x,y) - min(x,y))),
             ]:
                 result = counterop(p, q)
                 for x in elements:
@@ -2295,6 +2314,7 @@ class TestCounter(unittest.TestCase):
                 (Counter.__sub__, set.__sub__),
                 (Counter.__or__, set.__or__),
                 (Counter.__and__, set.__and__),
+                (Counter.__xor__, set.__xor__),
             ]:
                 counter_result = counterop(p, q)
                 set_result = setop(set(p.elements()), set(q.elements()))
@@ -2313,6 +2333,7 @@ class TestCounter(unittest.TestCase):
                 (Counter.__isub__, Counter.__sub__),
                 (Counter.__ior__, Counter.__or__),
                 (Counter.__iand__, Counter.__and__),
+                (Counter.__ixor__, Counter.__xor__),
             ]:
                 c = p.copy()
                 c_id = id(c)
@@ -2388,6 +2409,7 @@ class TestCounter(unittest.TestCase):
             self.assertEqual(set(cp - cq), sp - sq)
             self.assertEqual(set(cp | cq), sp | sq)
             self.assertEqual(set(cp & cq), sp & sq)
+            self.assertEqual(set(cp ^ cq), sp ^ sq)
             self.assertEqual(cp == cq, sp == sq)
             self.assertEqual(cp != cq, sp != sq)
             self.assertEqual(cp <= cq, sp <= sq)
@@ -2401,6 +2423,8 @@ class TestCounter(unittest.TestCase):
 
     def test_le(self):
         self.assertTrue(Counter(a=3, b=2, c=0) <= Counter('ababa'))
+        self.assertTrue(Counter() <= Counter(c=1))
+        self.assertFalse(Counter() <= Counter(c=-1))
         self.assertFalse(Counter(a=3, b=2) <= Counter('babab'))
 
     def test_lt(self):
@@ -2409,11 +2433,47 @@ class TestCounter(unittest.TestCase):
 
     def test_ge(self):
         self.assertTrue(Counter(a=2, b=1, c=0) >= Counter('aab'))
+        self.assertTrue(Counter() >= Counter(c=-1))
+        self.assertFalse(Counter() >= Counter(c=1))
         self.assertFalse(Counter(a=3, b=2, c=0) >= Counter('aabd'))
 
     def test_gt(self):
         self.assertTrue(Counter(a=3, b=2, c=0) > Counter('aab'))
         self.assertFalse(Counter(a=2, b=1, c=0) > Counter('aab'))
+
+    def test_symmetric_difference(self):
+        population = (-4, -3, -2, -1, 0, 1, 2, 3, 4)
+
+        for a, b1, b2, c in product(population, repeat=4):
+            p = Counter(a=a, b=b1)
+            q = Counter(b=b2, c=c)
+            r = p ^ q
+
+            # Elementwise invariants
+            for k in ('a', 'b', 'c'):
+                self.assertEqual(r[k], max(p[k], q[k]) - min(p[k], q[k]))
+                self.assertEqual(r[k], abs(p[k] - q[k]))
+
+            # Invariant for all positive, negative, and zero counts
+            self.assertEqual(r, (p - q) | (q - p))
+
+            # Invariant for non-negative counts
+            if a >= 0 and b1 >= 0 and b2 >= 0 and c >= 0:
+                self.assertEqual(r, (p | q) - (p & q))
+
+            # Zeros and negatives eliminated
+            self.assertTrue(all(value > 0 for value in r.values()))
+
+            # Output preserves input order:  p first and then q
+            keys = list(p) + list(q)
+            indices = [keys.index(k) for k in r]
+            self.assertEqual(indices, sorted(indices))
+
+            # Inplace operation matches binary operation
+            pp = Counter(p)
+            qq = Counter(q)
+            pp ^= qq
+            self.assertEqual(pp, r)
 
 
 def load_tests(loader, tests, pattern):

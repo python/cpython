@@ -4,15 +4,13 @@
 .. module:: mimetypes
    :synopsis: Mapping of filename extensions to MIME types.
 
-.. sectionauthor:: Fred L. Drake, Jr. <fdrake@acm.org>
-
 **Source code:** :source:`Lib/mimetypes.py`
 
 .. index:: pair: MIME; content type
 
 --------------
 
-The :mod:`mimetypes` module converts between a filename or URL and the MIME type
+The :mod:`!mimetypes` module converts between a filename or URL and the MIME type
 associated with the filename extension.  Conversions are provided from filename
 to MIME type and from MIME type to filename extension; encodings are not
 supported for the latter conversion.
@@ -56,7 +54,7 @@ the information :func:`init` sets up.
    .. versionchanged:: 3.8
       Added support for *url* being a :term:`path-like object`.
 
-   .. deprecated:: 3.13
+   .. soft-deprecated:: 3.13
       Passing a file path instead of URL is :term:`soft deprecated`.
       Use :func:`guess_file_type` for this.
 
@@ -196,7 +194,7 @@ MimeTypes objects
 
 The :class:`MimeTypes` class may be useful for applications which may want more
 than one MIME-type database; it provides an interface similar to the one of the
-:mod:`mimetypes` module.
+:mod:`!mimetypes` module.
 
 
 .. class:: MimeTypes(filenames=(), strict=True)

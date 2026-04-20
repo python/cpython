@@ -362,16 +362,24 @@ _enter_buffered_busy(buffered *self)
     }
 
 #define IS_CLOSED(self) \
-    (!self->buffer || \
+    (!self->buffer ? 1 : \
     (self->fast_closed_checks \
      ? _PyFileIO_closed(self->raw) \
      : buffered_closed(self)))
 
 #define CHECK_CLOSED(self, error_msg) \
-    if (IS_CLOSED(self) && (Py_SAFE_DOWNCAST(READAHEAD(self), Py_off_t, Py_ssize_t) == 0)) { \
-        PyErr_SetString(PyExc_ValueError, error_msg); \
-        return NULL; \
-    } \
+    do { \
+        int _closed = IS_CLOSED(self); \
+        if (_closed < 0) { \
+            return NULL; \
+        } \
+        if (_closed && \
+            (Py_SAFE_DOWNCAST(READAHEAD(self), Py_off_t, Py_ssize_t) == 0)) \
+        { \
+            PyErr_SetString(PyExc_ValueError, error_msg); \
+            return NULL; \
+        } \
+    } while (0);
 
 #define VALID_READ_BUFFER(self) \
     (self->readable && self->read_end != -1)
@@ -1065,6 +1073,7 @@ _io__Buffered_read1_impl(buffered *self, Py_ssize_t n)
 
     PyBytesWriter *writer = PyBytesWriter_Create(n);
     if (writer == NULL) {
+        LEAVE_BUFFERED(self)
         return NULL;
     }
 
@@ -1496,8 +1505,8 @@ buffered_iternext(PyObject *op)
 
     _PyIO_State *state = find_io_state_by_def(Py_TYPE(self));
     tp = Py_TYPE(self);
-    if (Py_IS_TYPE(tp, state->PyBufferedReader_Type) ||
-        Py_IS_TYPE(tp, state->PyBufferedRandom_Type))
+    if (tp == state->PyBufferedReader_Type ||
+        tp == state->PyBufferedRandom_Type)
     {
         /* Skip method call overhead for speed */
         line = _buffered_readline(self, -1);
@@ -2079,6 +2088,7 @@ _io_BufferedWriter_write_impl(buffered *self, Py_buffer *buffer)
     PyObject *res = NULL;
     Py_ssize_t written, avail, remaining;
     Py_off_t offset;
+    int r;
 
     CHECK_INITIALIZED(self)
 
@@ -2087,7 +2097,11 @@ _io_BufferedWriter_write_impl(buffered *self, Py_buffer *buffer)
 
     /* Issue #31976: Check for closed file after acquiring the lock. Another
        thread could be holding the lock while closing the file. */
-    if (IS_CLOSED(self)) {
+    r = IS_CLOSED(self);
+    if (r < 0) {
+        goto error;
+    }
+    if (r > 0) {
         PyErr_SetString(PyExc_ValueError, "write to closed file");
         goto error;
     }
@@ -2524,7 +2538,7 @@ static PyType_Slot bufferediobase_slots[] = {
 };
 
 /* Do not set Py_TPFLAGS_HAVE_GC so that tp_traverse and tp_clear are inherited */
-PyType_Spec bufferediobase_spec = {
+PyType_Spec _Py_bufferediobase_spec = {
     .name = "_io._BufferedIOBase",
     .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE |
               Py_TPFLAGS_IMMUTABLETYPE),
@@ -2587,7 +2601,7 @@ static PyType_Slot bufferedreader_slots[] = {
     {0, NULL},
 };
 
-PyType_Spec bufferedreader_spec = {
+PyType_Spec _Py_bufferedreader_spec = {
     .name = "_io.BufferedReader",
     .basicsize = sizeof(buffered),
     .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC |
@@ -2645,7 +2659,7 @@ static PyType_Slot bufferedwriter_slots[] = {
     {0, NULL},
 };
 
-PyType_Spec bufferedwriter_spec = {
+PyType_Spec _Py_bufferedwriter_spec = {
     .name = "_io.BufferedWriter",
     .basicsize = sizeof(buffered),
     .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC |
@@ -2695,7 +2709,7 @@ static PyType_Slot bufferedrwpair_slots[] = {
     {0, NULL},
 };
 
-PyType_Spec bufferedrwpair_spec = {
+PyType_Spec _Py_bufferedrwpair_spec = {
     .name = "_io.BufferedRWPair",
     .basicsize = sizeof(rwpair),
     .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC |
@@ -2763,7 +2777,7 @@ static PyType_Slot bufferedrandom_slots[] = {
     {0, NULL},
 };
 
-PyType_Spec bufferedrandom_spec = {
+PyType_Spec _Py_bufferedrandom_spec = {
     .name = "_io.BufferedRandom",
     .basicsize = sizeof(buffered),
     .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC |
