@@ -10,6 +10,7 @@ also includes default encodings for all supported locale names.
 
 """
 
+import os
 import sys
 import encodings
 import encodings.aliases
@@ -468,6 +469,30 @@ def normalize(localename):
 
     return localename
 
+def _conv_to_windows(locale):
+    locale = locale.replace('_', '-')
+    if '@' in locale:
+        locale, modifier = locale.split('@', 1)
+        locale, _, encoding = locale.partition('.')
+        locale, _, territory = locale.partition('-')
+        suffix = ''
+        modifier = modifier.lower()
+        if modifier == 'valencia':
+            suffix = '-' + modifier
+        elif modifier:
+            if modifier in _modifier_to_script:
+                modifier = _modifier_to_script[modifier]
+            else:
+                modifier = modifier.title()
+            locale += '-' + modifier
+        if territory:
+            locale += '-' + territory
+        if suffix:
+            locale += suffix
+        if encoding:
+            locale += '.' + encoding
+    return locale
+
 def _parse_localename(localename):
 
     """ Parses the locale code for localename and returns the
@@ -621,6 +646,8 @@ def setlocale(category, locale=None):
     if locale and not isinstance(locale, _builtin_str):
         # convert to string
         locale = normalize(_build_localename(locale))
+        if os.name == 'nt':
+            locale = _conv_to_windows(locale)
     return _setlocale(category, locale)
 
 
@@ -1546,9 +1573,9 @@ windows_locale = {
     0x004d: "as", # Assamese
     0x044d: "as_IN", # Assamese - India
     0x002c: "az", # Azerbaijani (Latin)
-    0x742c: "az", # Azerbaijani (Cyrillic)
-    0x782c: "az", # Azerbaijani (Latin)
-    0x042c: "az_AZ", # Azerbaijani (Latin) - Azerbaijan
+    0x742c: "az@cyrillic", # Azerbaijani (Cyrillic)
+    0x782c: "az@latin", # Azerbaijani (Latin)
+    0x042c: "az_AZ@latin", # Azerbaijani (Latin) - Azerbaijan
     0x0045: "bn", # Bangla
     0x0445: "bn_IN", # Bangla - India
     0x0845: "bn_BD", # Bangla - Bangladesh
@@ -1558,10 +1585,10 @@ windows_locale = {
     0x042d: "eu_ES", # Basque - Spain
     0x0023: "be", # Belarusian
     0x0423: "be_BY", # Belarusian - Belarus
-    0x641a: "bs", # Bosnian (Cyrillic)
-    0x681a: "bs", # Bosnian (Latin)
-    0x141a: "bs_BA", # Bosnian (Latin) - Bosnia and Herzegovina
-    0x201a: "bs_BA", # Bosnian (Cyrillic) - Bosnia and Herzegovina
+    0x641a: "bs@cyrillic", # Bosnian (Cyrillic)
+    0x681a: "bs@latin", # Bosnian (Latin)
+    0x141a: "bs_BA@latin", # Bosnian (Latin) - Bosnia and Herzegovina
+    0x201a: "bs_BA@cyrillic", # Bosnian (Cyrillic) - Bosnia and Herzegovina
     0x781a: "bs", # Bosnian (Latin)
     0x007e: "br", # Breton
     0x047e: "br_FR", # Breton - France
@@ -1571,16 +1598,16 @@ windows_locale = {
     0x0455: "my_MM", # Burmese - Myanmar
     0x0003: "ca", # Catalan
     0x0403: "ca_ES", # Catalan - Spain
-    0x0803: "ca_ES", # Valencian - Spain
+    0x0803: "ca_ES@valencia", # Valencian - Spain
     0x0092: "ku", # Central Kurdish
-    0x7c92: "ku", # Central Kurdish
-    0x0492: "ku_IQ", # Central Kurdish - Iraq
+    0x7c92: "ku@arabic", # Central Kurdish
+    0x0492: "ku_IQ@arabic", # Central Kurdish - Iraq
     0x005c: "chr", # Cherokee
-    0x7c5c: "chr", # Cherokee
-    0x045c: "chr_US", # Cherokee - United States
-    0x0004: "zh", # Chinese (Simplified)
+    0x7c5c: "chr@Cher", # Cherokee
+    0x045c: "chr_US@Cher", # Cherokee - United States
+    0x0004: "zh@Hans", # Chinese (Simplified)
     0x7804: "zh", # Chinese (Simplified)
-    0x7c04: "zh", # Chinese (Traditional)
+    0x7c04: "zh@Hant", # Chinese (Traditional)
     0x0404: "zh_TW", # Chinese (Traditional) - Taiwan
     0x0804: "zh_CN", # Chinese (Simplified) - People's Republic of China
     0x0c04: "zh_HK", # Chinese (Traditional) - Hong Kong S.A.R.
@@ -1648,9 +1675,9 @@ windows_locale = {
     0x0062: "fy", # Frisian
     0x0462: "fy_NL", # Frisian - Netherlands
     0x0067: "ff", # Fulah
-    0x7c67: "ff", # Fulah (Latin)
-    0x0467: "ff_NG",
-    0x0867: "ff_SN", # Fulah - Senegal
+    0x7c67: "ff@latin", # Fulah (Latin)
+    0x0467: "ff_NG@latin",
+    0x0867: "ff_SN@latin", # Fulah - Senegal
     0x0056: "gl", # Galician
     0x0456: "gl_ES", # Galician - Spain
     0x0037: "ka", # Georgian
@@ -1670,8 +1697,8 @@ windows_locale = {
     0x0047: "gu", # Gujarati
     0x0447: "gu_IN", # Gujarati - India
     0x0068: "ha", # Hausa (Latin)
-    0x7c68: "ha", # Hausa (Latin)
-    0x0468: "ha_NG", # Hausa (Latin) - Nigeria
+    0x7c68: "ha@latin", # Hausa (Latin)
+    0x0468: "ha_NG@latin", # Hausa (Latin) - Nigeria
     0x0075: "haw", # Hawaiian
     0x0475: "haw_US", # Hawaiian - United States
     0x000d: "he", # Hebrew
@@ -1687,10 +1714,10 @@ windows_locale = {
     0x0021: "id", # Indonesian
     0x0421: "id_ID", # Indonesian - Indonesia
     0x005d: "iu", # Inuktitut (Latin)
-    0x785d: "iu", # Inuktitut (Syllabics)
-    0x7c5d: "iu", # Inuktitut (Latin)
-    0x045d: "iu_CA", # Inuktitut (Syllabics) - Canada
-    0x085d: "iu_CA", # Inuktitut (Latin) - Canada
+    0x785d: "iu@Cans", # Inuktitut (Syllabics)
+    0x7c5d: "iu@latin", # Inuktitut (Latin)
+    0x045d: "iu_CA@Cans", # Inuktitut (Syllabics) - Canada
+    0x085d: "iu_CA@latin", # Inuktitut (Latin) - Canada
     0x003c: "ga", # Irish
     0x083c: "ga_IE", # Irish - Ireland
     0x0010: "it", # Italian
@@ -1700,10 +1727,10 @@ windows_locale = {
     0x0411: "ja_JP", # Japanese - Japan
     0x004b: "kn", # Kannada
     0x044b: "kn_IN", # Kannada - India
-    0x0471: "kr_NG", # Kanuri (Latin) - Nigeria
+    0x0471: "kr_NG@latin", # Kanuri (Latin) - Nigeria
     0x0060: "ks", # Kashmiri
-    0x0460: "ks", # Kashmiri - Perso_Arabic
-    0x0860: "ks_IN", # Kashmiri (Devanagari) - India
+    0x0460: "ks@arabic", # Kashmiri - Perso_Arabic
+    0x0860: "ks_IN@devanagari", # Kashmiri (Devanagari) - India
     0x003f: "kk", # Kazakh
     0x043f: "kk_KZ", # Kazakh - Kazakhstan
     0x0053: "km", # Khmer
@@ -1747,10 +1774,10 @@ windows_locale = {
     0x007c: "moh", # Mohawk
     0x047c: "moh_CA", # Mohawk - Canada
     0x0050: "mn", # Mongolian (Cyrillic)
-    0x7850: "mn", # Mongolian (Cyrillic)
-    0x7c50: "mn", # Mongolian (Traditional Mongolian)
+    0x7850: "mn@cyrillic", # Mongolian (Cyrillic)
+    0x7c50: "mn@Mong", # Mongolian (Traditional Mongolian)
     0x0450: "mn_MN", # Mongolian (Cyrillic) - Mongolia
-    0x0c50: "mn_MN", # Mongolian (Traditional Mongolian) - Mongolia
+    0x0c50: "mn_MN@Mong", # Mongolian (Traditional Mongolian) - Mongolia
     0x0061: "ne", # Nepali
     0x0461: "ne_NP", # Nepali - Nepal
     0x0861: "ne_IN", # Nepali - India
@@ -1775,9 +1802,9 @@ windows_locale = {
     0x0416: "pt_BR", # Portuguese - Brazil
     0x0816: "pt_PT", # Portuguese - Portugal
     0x0046: "pa", # Punjabi
-    0x7c46: "pa", # Punjabi
+    0x7c46: "pa@arabic", # Punjabi
     0x0446: "pa_IN", # Punjabi - India
-    0x0846: "pa_PK", # Punjabi - Islamic Republic of Pakistan
+    0x0846: "pa_PK@arabic", # Punjabi - Islamic Republic of Pakistan
     0x006b: "quz", # Quechua
     0x046b: "quz_BO", # Quechua - Bolivia
     0x086b: "quz_EC", # Quechua - Ecuador
@@ -1810,25 +1837,25 @@ windows_locale = {
     0x044f: "sa_IN", # Sanskrit - India
     0x0091: "gd", # Scottish Gaelic
     0x0491: "gd_GB", # Scottish Gaelic - United Kingdom
-    0x6c1a: "sr", # Serbian (Cyrillic)
-    0x701a: "sr", # Serbian (Latin)
+    0x6c1a: "sr@cyrillic", # Serbian (Cyrillic)
+    0x701a: "sr@latin", # Serbian (Latin)
     0x7c1a: "sr", # Serbian (Latin)
-    0x081a: "sr_CS", # Serbian (Latin) - Serbia and Montenegro (Former)
-    0x0c1a: "sr_CS", # Serbian (Cyrillic) - Serbia and Montenegro (Former)
-    0x181a: "sr_BA", # Serbian (Latin) - Bosnia and Herzegovina
-    0x1c1a: "sr_BA", # Serbian (Cyrillic) - Bosnia and Herzegovina
-    0x241a: "sr_RS", # Serbian (Latin) - Serbia
-    0x281a: "sr_RS", # Serbian (Cyrillic) - Serbia
-    0x2c1a: "sr_ME", # Serbian (Latin) - Montenegro
-    0x301a: "sr_ME", # Serbian (Cyrillic) - Montenegro
+    0x081a: "sr_CS@latin", # Serbian (Latin) - Serbia and Montenegro (Former)
+    0x0c1a: "sr_CS@cyrillic", # Serbian (Cyrillic) - Serbia and Montenegro (Former)
+    0x181a: "sr_BA@latin", # Serbian (Latin) - Bosnia and Herzegovina
+    0x1c1a: "sr_BA@cyrillic", # Serbian (Cyrillic) - Bosnia and Herzegovina
+    0x241a: "sr_RS@latin", # Serbian (Latin) - Serbia
+    0x281a: "sr_RS@cyrillic", # Serbian (Cyrillic) - Serbia
+    0x2c1a: "sr_ME@latin", # Serbian (Latin) - Montenegro
+    0x301a: "sr_ME@cyrillic", # Serbian (Cyrillic) - Montenegro
     0x006c: "nso", # Sesotho sa Leboa
     0x046c: "nso_ZA", # Sesotho sa Leboa - South Africa
     0x0032: "tn", # Setswana
     0x0432: "tn_ZA", # Setswana - South Africa
     0x0832: "tn_BW", # Setswana - Botswana
     0x0059: "sd", # Sindhi
-    0x7c59: "sd", # Sindhi
-    0x0859: "sd_PK", # Sindhi - Islamic Republic of Pakistan
+    0x7c59: "sd@arabic", # Sindhi
+    0x0859: "sd_PK@arabic", # Sindhi - Islamic Republic of Pakistan
     0x005b: "si", # Sinhala
     0x045b: "si_LK", # Sinhala - Sri Lanka
     0x001b: "sk", # Slovak
@@ -1867,14 +1894,14 @@ windows_locale = {
     0x005a: "syr", # Syriac
     0x045a: "syr_SY", # Syriac - Syria
     0x0028: "tg", # Tajik (Cyrillic)
-    0x7c28: "tg", # Tajik (Cyrillic)
-    0x0428: "tg_TJ", # Tajik (Cyrillic) - Tajikistan
+    0x7c28: "tg@cyrillic", # Tajik (Cyrillic)
+    0x0428: "tg_TJ@cyrillic", # Tajik (Cyrillic) - Tajikistan
     0x005f: "tzm", # Tamazight (Latin)
-    0x785f: "tzm",
-    0x7c5f: "tzm", # Tamazight (Latin)
-    0x085f: "tzm_DZ", # Tamazight (Latin) - Algeria
-    0x045f: "tzm_MA", # Central Atlas Tamazight (Arabic) - Morocco
-    0x105f: "tzm_MA",
+    0x785f: "tzm@Tfng",
+    0x7c5f: "tzm@latin", # Tamazight (Latin)
+    0x085f: "tzm_DZ@latin", # Tamazight (Latin) - Algeria
+    0x045f: "tzm_MA@arabic", # Central Atlas Tamazight (Arabic) - Morocco
+    0x105f: "tzm_MA@Tfng",
     0x0049: "ta", # Tamil
     0x0449: "ta_IN", # Tamil - India
     0x0849: "ta_LK", # Tamil - Sri Lanka
@@ -1905,9 +1932,9 @@ windows_locale = {
     0x0080: "ug", # Uyghur
     0x0480: "ug_CN", # Uyghur - People's Republic of China
     0x0043: "uz", # Uzbek (Latin)
-    0x7843: "uz", # Uzbek (Cyrillic)
-    0x7c43: "uz", # Uzbek (Latin)
-    0x0443: "uz_UZ", # Uzbek (Latin) - Uzbekistan
+    0x7843: "uz@cyrillic", # Uzbek (Cyrillic)
+    0x7c43: "uz@latin", # Uzbek (Latin)
+    0x0443: "uz_UZ@latin", # Uzbek (Latin) - Uzbekistan
     0x0033: "ve", # Venda
     0x0433: "ve_ZA", # Venda - South Africa
     0x002a: "vi", # Vietnamese
@@ -1941,6 +1968,16 @@ windows_locale = {
     0x00041404: "zh_MO",
     0x00050804: "zh_CN",
     0x00051004: "zh_SG",
+}
+
+# Maps Unix-like modifiers to ISO15924 script names
+# https://www.unicode.org/iso15924/iso15924.txt
+
+_modifier_to_script = {
+    'arabic': 'Arab',
+    'cyrillic': 'Cyrl',
+    'devanagari': 'Deva',
+    'latin': 'Latn',
 }
 
 def _print_locale():
