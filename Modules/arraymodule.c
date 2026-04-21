@@ -14,6 +14,7 @@
 #include "pycore_floatobject.h"   // _PY_FLOAT_BIG_ENDIAN
 #include "pycore_modsupport.h"    // _PyArg_NoKeywords()
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
+#include "pycore_tuple.h"         // _PyTuple_FromPairSteal
 #include "pycore_weakref.h"       // FT_CLEAR_WEAKREFS()
 
 #include <stddef.h>               // offsetof()
@@ -1542,27 +1543,17 @@ static PyObject *
 array_array_buffer_info_impl(arrayobject *self)
 /*[clinic end generated code: output=9b2a4ec3ae7e98e7 input=63d9ad83ba60cda8]*/
 {
-    PyObject *retval = NULL, *v;
-
-    retval = PyTuple_New(2);
-    if (!retval)
-        return NULL;
-
-    v = PyLong_FromVoidPtr(self->ob_item);
-    if (v == NULL) {
-        Py_DECREF(retval);
+    PyObject* item1 = PyLong_FromVoidPtr(self->ob_item);
+    if (item1 == NULL) {
         return NULL;
     }
-    PyTuple_SET_ITEM(retval, 0, v);
-
-    v = PyLong_FromSsize_t(Py_SIZE(self));
-    if (v == NULL) {
-        Py_DECREF(retval);
+    PyObject* item2 = PyLong_FromSsize_t(Py_SIZE(self));
+    if (item2 == NULL) {
+        Py_DECREF(item1);
         return NULL;
     }
-    PyTuple_SET_ITEM(retval, 1, v);
 
-    return retval;
+    return _PyTuple_FromPairSteal(item1, item2);
 }
 
 /*[clinic input]
@@ -2248,13 +2239,10 @@ make_array(PyTypeObject *arraytype, char typecode, PyObject *items)
     if (typecode_obj == NULL)
         return NULL;
 
-    new_args = PyTuple_New(2);
+    new_args = _PyTuple_FromPairSteal(typecode_obj, Py_NewRef(items));
     if (new_args == NULL) {
-        Py_DECREF(typecode_obj);
         return NULL;
     }
-    PyTuple_SET_ITEM(new_args, 0, typecode_obj);
-    PyTuple_SET_ITEM(new_args, 1, Py_NewRef(items));
 
     array_obj = array_new(arraytype, new_args, NULL);
     Py_DECREF(new_args);
@@ -3065,8 +3053,10 @@ array_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
                 len = 0;
 
             a = newarrayobject(type, len, descr);
-            if (a == NULL)
+            if (a == NULL) {
+                Py_XDECREF(it);
                 return NULL;
+            }
 
             if (len > 0 && !array_Check(initial, state)) {
                 Py_ssize_t i;
@@ -3075,11 +3065,13 @@ array_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
                         PySequence_GetItem(initial, i);
                     if (v == NULL) {
                         Py_DECREF(a);
+                        Py_XDECREF(it);
                         return NULL;
                     }
                     if (setarrayitem(a, i, v) != 0) {
                         Py_DECREF(v);
                         Py_DECREF(a);
+                        Py_XDECREF(it);
                         return NULL;
                     }
                     Py_DECREF(v);
@@ -3091,6 +3083,7 @@ array_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
                 v = array_array_frombytes((PyObject *)a, initial);
                 if (v == NULL) {
                     Py_DECREF(a);
+                    Py_XDECREF(it);
                     return NULL;
                 }
                 Py_DECREF(v);
@@ -3101,6 +3094,7 @@ array_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
                     wchar_t *ustr = PyUnicode_AsWideCharString(initial, &n);
                     if (ustr == NULL) {
                         Py_DECREF(a);
+                        Py_XDECREF(it);
                         return NULL;
                     }
 
@@ -3121,6 +3115,7 @@ array_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
                     Py_UCS4 *ustr = PyUnicode_AsUCS4Copy(initial);
                     if (ustr == NULL) {
                         Py_DECREF(a);
+                        Py_XDECREF(it);
                         return NULL;
                     }
 
@@ -3148,6 +3143,7 @@ array_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
             return a;
         }
     }
+    Py_XDECREF(it);
     PyErr_SetString(PyExc_ValueError,
         "bad typecode (must be b, B, u, w, h, H, i, I, l, L, q, Q, f or d)");
     return NULL;

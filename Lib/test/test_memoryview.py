@@ -648,6 +648,28 @@ class ArrayMemoryviewTest(unittest.TestCase,
                 m = memoryview(data).cast(complex_format)
                 check_equal(m, True)
 
+    def test_boolean_format(self):
+        # Test '?' format (keep all the checks below for UBSan)
+        # See github.com/python/cpython/issues/148390.
+
+        # m1a and m1b are equivalent to [False, True, False]
+        m1a = memoryview(b'\0\2\0').cast('?')
+        self.assertEqual(m1a.tolist(), [False, True, False])
+        m1b = memoryview(b'\0\4\0').cast('?')
+        self.assertEqual(m1b.tolist(), [False, True, False])
+        self.assertEqual(m1a, m1b)
+
+        # m2a and m2b are equivalent to [True, True, True]
+        m2a = memoryview(b'\1\3\5').cast('?')
+        self.assertEqual(m2a.tolist(), [True, True, True])
+        m2b = memoryview(b'\2\4\6').cast('?')
+        self.assertEqual(m2b.tolist(), [True, True, True])
+        self.assertEqual(m2a, m2b)
+
+        allbytes = bytes(range(256))
+        allbytes = memoryview(allbytes).cast('?')
+        self.assertEqual(allbytes.tolist(), [False] + [True] * 255)
+
 
 class BytesMemorySliceTest(unittest.TestCase,
     BaseMemorySliceTests, BaseBytesMemoryTests):
@@ -718,10 +740,10 @@ class OtherTest(unittest.TestCase):
         self.assertEqual(m2.hex(':', -2), '6564:6362:61')
         self.assertEqual(m2.hex(sep=':', bytes_per_sep=2), '65:6463:6261')
         self.assertEqual(m2.hex(sep=':', bytes_per_sep=-2), '6564:6362:61')
-        for bytes_per_sep in 5, -5, 2**31-1, -(2**31-1):
+        for bytes_per_sep in 5, -5, sys.maxsize, -sys.maxsize:
             with self.subTest(bytes_per_sep=bytes_per_sep):
                 self.assertEqual(m2.hex(':', bytes_per_sep), '6564636261')
-        for bytes_per_sep in 2**31, -2**31, 2**1000, -2**1000:
+        for bytes_per_sep in sys.maxsize+1, -sys.maxsize-1, 2**1000, -2**1000:
             with self.subTest(bytes_per_sep=bytes_per_sep):
                 try:
                     self.assertEqual(m2.hex(':', bytes_per_sep), '6564636261')
