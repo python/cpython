@@ -1,1 +1,0 @@
-Fix Android stdout and stderr messages being truncated or lost.

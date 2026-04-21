@@ -1,6 +1,7 @@
 #include "Python.h"
 #include "errcode.h"
 #include "internal/pycore_critical_section.h"   // Py_BEGIN_CRITICAL_SECTION
+#include "internal/pycore_tuple.h"              // _PyTuple_FromPair
 #include "../Parser/lexer/state.h"
 #include "../Parser/lexer/lexer.h"
 #include "../Parser/tokenizer/tokenizer.h"
@@ -164,7 +165,7 @@ _tokenizer_error(tokenizeriterobject *it)
         goto exit;
     }
 
-    value = PyTuple_Pack(2, errstr, tmp);
+    value = _PyTuple_FromPair(errstr, tmp);
     if (!value) {
         result = -1;
         goto exit;
@@ -239,8 +240,9 @@ _get_col_offsets(tokenizeriterobject *it, struct token token, const char *line_s
 }
 
 static PyObject *
-tokenizeriter_next(tokenizeriterobject *it)
+tokenizeriter_next(PyObject *op)
 {
+    tokenizeriterobject *it = (tokenizeriterobject*)op;
     PyObject* result = NULL;
 
     Py_BEGIN_CRITICAL_SECTION(it);
@@ -348,8 +350,9 @@ exit:
 }
 
 static void
-tokenizeriter_dealloc(tokenizeriterobject *it)
+tokenizeriter_dealloc(PyObject *op)
 {
+    tokenizeriterobject *it = (tokenizeriterobject*)op;
     PyTypeObject *tp = Py_TYPE(it);
     Py_XDECREF(it->last_line);
     _PyTokenizer_Free(it->tok);

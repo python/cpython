@@ -1,2 +1,0 @@
-Fix a bug that was preventing the REPL to correctly respect the history when
-an input hook was set. Patch by Pablo Galindo

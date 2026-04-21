@@ -122,18 +122,18 @@ Context object management functions:
 .. c:type:: PyContextEvent
 
    Enumeration of possible context object watcher events:
-   - ``Py_CONTEXT_EVENT_ENTER``
-   - ``Py_CONTEXT_EVENT_EXIT``
+
+   - ``Py_CONTEXT_SWITCHED``: The :term:`current context` has switched to a
+     different context.  The object passed to the watch callback is the
+     now-current :class:`contextvars.Context` object, or None if no context is
+     current.
 
    .. versionadded:: 3.14
 
-.. c:type:: int (*PyContext_WatchCallback)(PyContextEvent event, PyContext* ctx)
+.. c:type:: int (*PyContext_WatchCallback)(PyContextEvent event, PyObject *obj)
 
-   Type of a context object watcher callback function.
-   If *event* is ``Py_CONTEXT_EVENT_ENTER``, then the callback is invoked
-   after *ctx* has been set as the current context for the current thread.
-   Otherwise, the callback is invoked before the deactivation of *ctx* as the current context
-   and the restoration of the previous contex object for the current thread.
+   Context object watcher callback function.  The object passed to the callback
+   is event-specific; see :c:type:`PyContextEvent` for details.
 
    If the callback returns with an exception set, it must return ``-1``; this
    exception will be printed as an unraisable exception using

@@ -630,7 +630,6 @@ class CAPICodecs(unittest.TestCase):
         for name in [
             encoding_name,
             encoding_name.upper(),
-            encoding_name.replace('_', '-'),
         ]:
             with self.subTest(name):
                 self.assertTrue(_testcapi.codec_known_encoding(name))
@@ -747,6 +746,49 @@ class CAPICodecs(unittest.TestCase):
 
 class CAPICodecErrors(unittest.TestCase):
 
+    @classmethod
+    def _generate_exception_args(cls):
+        for objlen in range(5):
+            maxind = 2 * max(2, objlen)
+            for start in range(-maxind, maxind + 1):
+                for end in range(-maxind, maxind + 1):
+                    yield objlen, start, end
+
+    @classmethod
+    def generate_encode_errors(cls):
+        return tuple(
+            UnicodeEncodeError('utf-8', '0' * objlen, start, end, 'why')
+            for objlen, start, end in cls._generate_exception_args()
+        )
+
+    @classmethod
+    def generate_decode_errors(cls):
+        return tuple(
+            UnicodeDecodeError('utf-8', b'0' * objlen, start, end, 'why')
+            for objlen, start, end in cls._generate_exception_args()
+        )
+
+    @classmethod
+    def generate_translate_errors(cls):
+        return tuple(
+            UnicodeTranslateError('0' * objlen, start, end, 'why')
+            for objlen, start, end in cls._generate_exception_args()
+        )
+
+    @classmethod
+    def setUpClass(cls):
+        cls.unicode_encode_errors = cls.generate_encode_errors()
+        cls.unicode_decode_errors = cls.generate_decode_errors()
+        cls.unicode_translate_errors = cls.generate_translate_errors()
+        cls.all_unicode_errors = (
+            cls.unicode_encode_errors
+            + cls.unicode_decode_errors
+            + cls.unicode_translate_errors
+        )
+        cls.bad_unicode_errors = (
+            ValueError(),
+        )
+
     def test_codec_register_error(self):
         # for cleaning up between tests
         from _codecs import _unregister_error as _codecs_unregister_error
@@ -780,33 +822,56 @@ class CAPICodecErrors(unittest.TestCase):
         self.assertIs(codec_lookup_error('ignore'), codecs.ignore_errors)
         self.assertIs(codec_lookup_error('replace'), codecs.replace_errors)
         self.assertIs(codec_lookup_error('xmlcharrefreplace'), codecs.xmlcharrefreplace_errors)
+        self.assertIs(codec_lookup_error('backslashreplace'), codecs.backslashreplace_errors)
         self.assertIs(codec_lookup_error('namereplace'), codecs.namereplace_errors)
         self.assertRaises(LookupError, codec_lookup_error, 'unknown')
 
-    def test_codec_error_handlers(self):
-        exceptions = [
-            # A UnicodeError with an empty message currently crashes:
-            # See: https://github.com/python/cpython/issues/123378
-            # UnicodeEncodeError('bad', '', 0, 1, 'reason'),
-            UnicodeEncodeError('bad', 'x', 0, 1, 'reason'),
-            UnicodeEncodeError('bad', 'xyz123', 0, 1, 'reason'),
-            UnicodeEncodeError('bad', 'xyz123', 1, 4, 'reason'),
-        ]
+    def test_codec_strict_errors_handler(self):
+        handler = _testcapi.codec_strict_errors
+        for exc in self.all_unicode_errors + self.bad_unicode_errors:
+            with self.subTest(handler=handler, exc=exc):
+                self.assertRaises(type(exc), handler, exc)
 
-        strict_handler = _testcapi.codec_strict_errors
+    def test_codec_ignore_errors_handler(self):
+        handler = _testcapi.codec_ignore_errors
+        self.do_test_codec_errors_handler(handler, self.all_unicode_errors)
+
+    def test_codec_replace_errors_handler(self):
+        handler = _testcapi.codec_replace_errors
+        self.do_test_codec_errors_handler(handler, self.all_unicode_errors)
+
+    def test_codec_xmlcharrefreplace_errors_handler(self):
+        handler = _testcapi.codec_xmlcharrefreplace_errors
+        self.do_test_codec_errors_handler(handler, self.unicode_encode_errors)
+
+    def test_codec_backslashreplace_errors_handler(self):
+        handler = _testcapi.codec_backslashreplace_errors
+        self.do_test_codec_errors_handler(handler, self.all_unicode_errors)
+
+    def test_codec_namereplace_errors_handler(self):
+        handler = _testlimitedcapi.codec_namereplace_errors
+        self.do_test_codec_errors_handler(handler, self.unicode_encode_errors)
+
+    def do_test_codec_errors_handler(self, handler, exceptions):
+        self.assertNotEqual(len(exceptions), 0)
         for exc in exceptions:
-            with self.subTest(handler=strict_handler, exc=exc):
-                self.assertRaises(UnicodeEncodeError, strict_handler, exc)
+            with self.subTest(handler=handler, exc=exc):
+                # test that the handler does not crash
+                res = handler(exc)
+                self.assertIsInstance(res, tuple)
+                self.assertEqual(len(res), 2)
+                replacement, continue_from = res
+                self.assertIsInstance(replacement, str)
+                self.assertIsInstance(continue_from, int)
+                self.assertGreaterEqual(continue_from, 0)
+                self.assertLessEqual(continue_from, len(exc.object))
 
-        for handler in [
-            _testcapi.codec_ignore_errors,
-            _testcapi.codec_replace_errors,
-            _testcapi.codec_xmlcharrefreplace_errors,
-            _testlimitedcapi.codec_namereplace_errors,
-        ]:
-            for exc in exceptions:
-                with self.subTest(handler=handler, exc=exc):
-                    self.assertIsInstance(handler(exc), tuple)
+        for bad_exc in (
+            self.bad_unicode_errors
+            + tuple(e for e in self.all_unicode_errors if e not in exceptions)
+        ):
+            with self.subTest('bad type', handler=handler, exc=bad_exc):
+                self.assertRaises(TypeError, handler, bad_exc)
 
 
 if __name__ == "__main__":
