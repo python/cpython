@@ -247,6 +247,8 @@ objects preserve identity when copied, support use in type expressions with
 the ``|`` operator, and can be pickled when they are importable by module and
 name.
 
+(PEP by Tal Einat; contributed by Jelle Zijlstra in :gh:`148829`.)
+
 
 .. _whatsnew315-profiling-package:
 
