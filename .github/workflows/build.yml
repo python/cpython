@@ -283,6 +283,7 @@ jobs:
           - { name: openssl, version: 3.4.4 }
           - { name: openssl, version: 3.5.5 }
           - { name: openssl, version: 3.6.1 }
+          - { name: openssl, version: 4.0.0 }
           ## AWS-LC
           - { name: aws-lc, version: 1.68.0 }
     env:
