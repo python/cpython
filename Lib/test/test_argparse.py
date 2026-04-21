@@ -108,7 +108,6 @@ class TestLazyImports(unittest.TestCase):
         )
 
     def test_add_subparser(self):
-        # This fails as it currently imports colorize
         add_subparser = textwrap.dedent(
             f"""
             parser = argparse.ArgumentParser()
