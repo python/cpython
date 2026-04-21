@@ -2682,32 +2682,34 @@ const char *THREAD_CODE = \
     "fib(10)";
 
 typedef struct {
-    PyInterpreterGuard *guard;
+    void *argument;
     int done;
+    PyEvent event;
 } ThreadData;
 
 static void
 do_tstate_ensure(void *arg)
 {
     ThreadData *data = (ThreadData *)arg;
-    PyThreadState *refs[4];
-    refs[0] = PyThreadState_Ensure(data->guard);
-    refs[1] = PyThreadState_Ensure(data->guard);
-    refs[2] = PyThreadState_Ensure(data->guard);
+    PyThreadState *tstates[4];
+    PyInterpreterGuard *guard = data->argument;
+    tstates[0] = PyThreadState_Ensure(guard);
+    tstates[1] = PyThreadState_Ensure(guard);
+    tstates[2] = PyThreadState_Ensure(guard);
     PyGILState_STATE gstate = PyGILState_Ensure();
-    refs[3] = PyThreadState_Ensure(data->guard);
-    assert(refs[0] != 0);
-    assert(refs[1] != 0);
-    assert(refs[2] != 0);
-    assert(refs[3] != 0);
+    tstates[3] = PyThreadState_Ensure(guard);
+    assert(tstates[0] != NULL);
+    assert(tstates[1] != NULL);
+    assert(tstates[2] != NULL);
+    assert(tstates[3] != NULL);
     int res = PyRun_SimpleString(THREAD_CODE);
     assert(res == 0);
-    PyThreadState_Release(refs[3]);
+    PyThreadState_Release(tstates[3]);
     PyGILState_Release(gstate);
-    PyThreadState_Release(refs[2]);
-    PyThreadState_Release(refs[1]);
-    PyThreadState_Release(refs[0]);
-    PyInterpreterGuard_Close(data->guard);
+    PyThreadState_Release(tstates[2]);
+    PyThreadState_Release(tstates[1]);
+    PyThreadState_Release(tstates[0]);
+    PyInterpreterGuard_Close(guard);
     data->done = 1;
 }
 
@@ -2718,9 +2720,7 @@ test_thread_state_ensure(void)
     PyThread_handle_t handle;
     PyThread_ident_t ident;
     PyInterpreterGuard *guard = PyInterpreterGuard_FromCurrent();
-    if (guard == NULL) {
-        return -1;
-    };
+    assert(guard != NULL);
     ThreadData data = { guard };
     if (PyThread_start_joinable_thread(do_tstate_ensure, &data,
                                        &ident, &handle) < 0) {
@@ -2756,6 +2756,43 @@ test_main_interpreter_view(void)
 
     PyInterpreterView_Close(view);
 
+    return 0;
+}
+
+static void
+do_tstate_ensure_from_view(void *arg)
+{
+    ThreadData *data = (ThreadData *)arg;
+    PyInterpreterView *view = data->argument;
+    assert(view != NULL);
+    PyThreadState *tstate = PyThreadState_EnsureFromView(view);
+    assert(tstate != NULL);
+    _PyEvent_Notify(&data->event);
+    int res = PyRun_SimpleString(THREAD_CODE);
+    assert(res == 0);
+    data->done = 1;
+    PyThreadState_Release(tstate);
+}
+
+static int
+test_thread_state_ensure_from_view(void)
+{
+    _testembed_initialize();
+    PyThread_handle_t handle;
+    PyThread_ident_t ident;
+    PyInterpreterView *view = PyInterpreterView_FromCurrent();
+    assert(view != NULL);
+
+    ThreadData data = { view };
+    if (PyThread_start_joinable_thread(do_tstate_ensure_from_view, &data,
+                                       &ident, &handle) < 0) {
+        PyInterpreterView_Close(view);
+        return -1;
+    }
+
+    PyEvent_Wait(&data.event);
+    Py_Finalize();
+    assert(data.done == 1);
     return 0;
 }
 
@@ -2855,6 +2892,7 @@ static struct TestCase TestCases[] = {
     {"test_inittab_submodule_singlephase", test_inittab_submodule_singlephase},
     {"test_thread_state_ensure", test_thread_state_ensure},
     {"test_main_interpreter_view", test_main_interpreter_view},
+    {"test_thread_state_ensure_from_view", test_thread_state_ensure_from_view},
     {NULL, NULL}
 };
 
