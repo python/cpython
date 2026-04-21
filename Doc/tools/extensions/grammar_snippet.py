@@ -144,7 +144,13 @@ class GrammarSnippetBase(SphinxDirective):
                         location=location,
                     )
                 case 'rule_ref':
-                    production_node += token_xrefs(content, group_name)
+                    if content.startswith('`!'):
+                        token = content[2:-1]
+                        production_node += nodes.literal(
+                            token, token, classes=['xref']
+                        )
+                    else:
+                        production_node += token_xrefs(content, group_name)
                 case 'single_quoted' | 'double_quoted':
                     production_node += snippet_string_node('', content)
                 case 'text':
