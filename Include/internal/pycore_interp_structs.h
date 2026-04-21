@@ -1053,6 +1053,7 @@ struct _is {
     struct {
         _PyRWMutex lock;
         Py_ssize_t countdown;
+        PyEvent done;
     } finalization_guards;
 
     /* the initial PyInterpreterState.threads.head */

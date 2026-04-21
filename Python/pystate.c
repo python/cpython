@@ -3356,7 +3356,17 @@ try_acquire_interp_guard(PyInterpreterState *interp, PyInterpreterGuard *guard)
         return -1;
     }
 
-    _Py_atomic_add_ssize(&interp->finalization_guards.countdown, 1);
+    Py_ssize_t old_value = _Py_atomic_add_ssize(&interp->finalization_guards.countdown, 1);
+    if (old_value == 0) {
+        // Reset the event.
+        // We first have to notify the finalization thread if it's waiting on us, but
+        // it will get trapped waiting on the RW lock. When it goes to check
+        // again after we release the lock, it will see that the countdown is
+        // non-zero and begin waiting again (hence why we need to reset the
+        // event).
+        _PyEvent_Notify(&interp->finalization_guards.done);
+        memset(&interp->finalization_guards.done, 0, sizeof(PyEvent));
+    }
     _PyRWMutex_RUnlock(&interp->finalization_guards.lock);
 
     guard->interp = interp;
@@ -3393,6 +3403,9 @@ PyInterpreterGuard_Close(PyInterpreterGuard *guard)
 
     _PyRWMutex_RLock(&interp->finalization_guards.lock);
     Py_ssize_t old = _Py_atomic_add_ssize(&interp->finalization_guards.countdown, -1);
+    if (old == 1) {
+        _PyEvent_Notify(&interp->finalization_guards.done);
+    }
     _PyRWMutex_RUnlock(&interp->finalization_guards.lock);
 
     assert(old > 0);

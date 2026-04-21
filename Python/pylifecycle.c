@@ -2309,16 +2309,25 @@ make_pre_finalization_calls(PyThreadState *tstate, int subinterpreters)
 
         if (subinterpreters) {
             /* Clean up any lingering subinterpreters.
-
-            Two preconditions need to be met here:
-
-                - This has to happen before _PyRuntimeState_SetFinalizing is
-                called, or else threads might get prematurely blocked.
-                - The world must not be stopped, as finalizers can run.
-            */
+             * Two preconditions need to be met here:
+             * 1. This has to happen before _PyRuntimeState_SetFinalizing is
+             *    called, or else threads might get prematurely blocked.
+             * 2. The world must not be stopped, as finalizers can run.
+             */
             finalize_subinterpreters();
         }
 
+        /* Wait on finalization guards.
+         *
+         * To avoid eating CPU cycles, we use an event to signal when we reach
+         * zero remaining guards. But, this isn't atomic! This event can be reset
+         * later if another thread creates a new finalization guard. The actual
+         * atomic check is made below, when we hold the finalization guard lock.
+         * Again, this is purely an optimization to avoid overloading the CPU.
+         */
+        if (_Py_atomic_load_ssize_relaxed(&interp->finalization_guards.countdown) > 0) {
+            PyEvent_Wait(&interp->finalization_guards.done);
+        }
 
         /* Stop the world to prevent other threads from creating threads or
          * atexit callbacks. On the default build, this is simply locked by
