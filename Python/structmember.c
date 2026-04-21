@@ -325,20 +325,16 @@ PyMember_SetOne(char *addr, PyMemberDef *l, PyObject *v)
         oldv = *(PyObject **)addr;
         FT_ATOMIC_STORE_PTR_RELEASE(*(PyObject **)addr, Py_XNewRef(v));
         Py_END_CRITICAL_SECTION();
-        Py_XDECREF(oldv);
         if (v == NULL && oldv == NULL && l->type == Py_T_OBJECT_EX) {
-            // Pseudo-non-existing attribute is deleted: raise AttributeError.
-            // The attribute doesn't exist to Python, but CPython knows that it
-            // could have existed because it was declared in __slots__.
-            // _Py_T_OBJECT does not raise an exception here, and
-            // PyMember_GetOne will return Py_None instead of NULL.
+            // Raise an exception when attempting to delete an already deleted
+            // attribute.
+            // Differently from Py_T_OBJECT_EX, _Py_T_OBJECT does not raise an
+            // exception here (PyMember_GetOne will return Py_None instead of
+            // NULL).
             PyErr_SetString(PyExc_AttributeError, l->name);
             return -1;
         }
-        // Other cases are already covered by the above:
-        // oldv == NULL && v != NULL: pseudo-non-existing attribute is set, ok
-        // oldv != NULL && v == NULL: existing attribute is deleted, ok
-        // oldv != NULL && v != NULL: existing attribute is set, ok
+        Py_XDECREF(oldv);
         break;
     case Py_T_CHAR: {
         const char *string;
