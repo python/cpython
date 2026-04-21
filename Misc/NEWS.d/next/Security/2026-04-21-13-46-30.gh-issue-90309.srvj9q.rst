@@ -1,0 +1,2 @@
+Base64-encode values when embedding cookies to JavaScript to avoid injection
+and escaping.
