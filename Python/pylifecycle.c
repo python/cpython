@@ -2340,7 +2340,7 @@ make_pre_finalization_calls(PyThreadState *tstate, int subinterpreters)
                               || interp_has_atexit_callbacks(interp)
                               || interp_has_pending_calls(interp)
                               || has_subinterpreters
-                              || interp->finalization_guards.countdown > 0);
+                              || _Py_atomic_load_ssize_acquire(&interp->finalization_guards.countdown) > 0);
         if (!should_continue) {
             break;
         }

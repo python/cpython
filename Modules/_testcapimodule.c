@@ -2767,11 +2767,14 @@ test_interp_view_after_shutdown(PyObject *self, PyObject *unused)
     PyThreadState *save_tstate = PyThreadState_Swap(NULL);
     PyThreadState *interp_tstate = Py_NewInterpreter();
     if (interp_tstate == NULL) {
+        PyThreadState_Swap(save_tstate);
         return PyErr_NoMemory();
     }
 
     PyInterpreterView *view = PyInterpreterView_FromCurrent();
     if (view == NULL) {
+        Py_EndInterpreter(interp_tstate);
+        PyThreadState_Swap(save_tstate);
         return PyErr_NoMemory();
     }
 
@@ -2786,6 +2789,64 @@ test_interp_view_after_shutdown(PyObject *self, PyObject *unused)
     assert(guard == NULL);
 
     PyThreadState_Swap(save_tstate);
+    Py_RETURN_NONE;
+}
+
+static PyObject *
+test_thread_state_ensure_view(PyObject *self, PyObject *unused)
+{
+    // For simplicity's sake, we assume that functions won't fail due to being
+    // out of memory.
+    PyThreadState *save_tstate = PyThreadState_Swap(NULL);
+    PyThreadState *interp_tstate = Py_NewInterpreter();
+    assert(interp_tstate != NULL);
+    assert(PyInterpreterState_Get() == PyThreadState_GetInterpreter(interp_tstate));
+
+    PyInterpreterView *main_view = PyInterpreterView_FromMain();
+    assert(main_view != NULL);
+
+    PyInterpreterView *view = PyInterpreterView_FromCurrent();
+    assert(view != NULL);
+
+    Py_BEGIN_ALLOW_THREADS;
+    PyThreadState *tstate = PyThreadState_EnsureFromView(view);
+    assert(tstate != NULL);
+    assert(PyThreadState_Get() == interp_tstate);
+
+    // Test a nested call
+    PyThreadState *tstate2 = PyThreadState_EnsureFromView(view);
+    assert(PyThreadState_Get() == interp_tstate);
+
+    // We're in a new interpreter now. PyThreadState_EnsureFromView() should
+    // now create a new thread state.
+    PyThreadState *main_tstate = PyThreadState_EnsureFromView(main_view);
+    assert(main_tstate == interp_tstate); // The old thread state
+    assert(PyInterpreterState_Get() == PyInterpreterState_Main());
+
+    // Going back to the old interpreter should create a new thread state again.
+    PyThreadState *tstate3 = PyThreadState_EnsureFromView(view);
+    assert(PyInterpreterState_Get() == PyThreadState_GetInterpreter(interp_tstate));
+    assert(PyThreadState_Get() != interp_tstate);
+    PyThreadState_Release(tstate3);
+    PyThreadState_Release(main_tstate);
+
+    // We're back in the original interpreter. PyThreadState_EnsureFromView() should
+    // no longer create a new thread state.
+    assert(PyThreadState_Get() == interp_tstate);
+    PyThreadState *tstate4 = PyThreadState_EnsureFromView(view);
+    assert(PyThreadState_Get() == interp_tstate);
+    PyThreadState_Release(tstate4);
+    PyThreadState_Release(tstate2);
+    PyThreadState_Release(tstate);
+    assert(PyThreadState_GetUnchecked() == NULL);
+    Py_END_ALLOW_THREADS;
+
+    assert(PyThreadState_Get() == interp_tstate);
+    PyInterpreterView_Close(view);
+    PyInterpreterView_Close(main_view);
+    Py_EndInterpreter(interp_tstate);
+    PyThreadState_Swap(save_tstate);
+
     Py_RETURN_NONE;
 }
 
@@ -2927,6 +2988,7 @@ static PyMethodDef TestMethods[] = {
     {"test_thread_state_ensure_nested", test_thread_state_ensure_nested, METH_NOARGS},
     {"test_thread_state_ensure_crossinterp", test_thread_state_ensure_crossinterp, METH_NOARGS},
     {"test_interp_view_after_shutdown", test_interp_view_after_shutdown, METH_NOARGS},
+    {"test_thread_state_ensure_view", test_thread_state_ensure_view, METH_NOARGS},
     {NULL, NULL} /* sentinel */
 };
 

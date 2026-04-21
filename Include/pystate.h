@@ -134,6 +134,7 @@ PyAPI_FUNC(void) PyInterpreterView_Close(PyInterpreterView *view);
 PyAPI_FUNC(PyInterpreterView *) PyInterpreterView_FromMain(void);
 
 PyAPI_FUNC(PyThreadState *) PyThreadState_Ensure(PyInterpreterGuard *guard);
+PyAPI_FUNC(PyThreadState *) PyThreadState_EnsureFromView(PyInterpreterView *view);
 PyAPI_FUNC(void) PyThreadState_Release(PyThreadState *tstate);
 
 #ifndef Py_LIMITED_API

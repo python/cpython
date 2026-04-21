@@ -3344,8 +3344,8 @@ _PyInterpreterGuard_GetInterpreter(PyInterpreterGuard *guard)
     return guard->interp;
 }
 
-static PyInterpreterGuard *
-try_acquire_interp_guard(PyInterpreterState *interp)
+static int
+try_acquire_interp_guard(PyInterpreterState *interp, PyInterpreterGuard *guard)
 {
     assert(interp != NULL);
     _PyRWMutex_RLock(&interp->finalization_guards.lock);
@@ -3353,20 +3353,14 @@ try_acquire_interp_guard(PyInterpreterState *interp)
     if (_PyInterpreterState_GetFinalizing(interp) != NULL) {
         _PyRWMutex_RUnlock(&interp->finalization_guards.lock);
         assert(_Py_atomic_load_ssize_relaxed(&interp->finalization_guards.countdown) == 0);
-        return NULL;
-    }
-
-    PyInterpreterGuard *guard = PyMem_RawMalloc(sizeof(PyInterpreterGuard));
-    if (guard == NULL) {
-        _PyRWMutex_RUnlock(&interp->finalization_guards.lock);
-        return NULL;
+        return -1;
     }
 
     _Py_atomic_add_ssize(&interp->finalization_guards.countdown, 1);
     _PyRWMutex_RUnlock(&interp->finalization_guards.lock);
 
     guard->interp = interp;
-    return guard;
+    return 0;
 }
 
 PyInterpreterGuard *
@@ -3375,8 +3369,14 @@ PyInterpreterGuard_FromCurrent(void)
     PyInterpreterState *interp = _PyInterpreterState_GET();
     assert(interp != NULL);
 
-    PyInterpreterGuard *guard = try_acquire_interp_guard(interp);
+    PyInterpreterGuard *guard = PyMem_RawMalloc(sizeof(PyInterpreterGuard));
     if (guard == NULL) {
+        PyErr_NoMemory();
+        return NULL;
+    }
+
+    if (try_acquire_interp_guard(interp, guard) < 0) {
+        PyMem_RawFree(guard);
         PyErr_SetString(PyExc_PythonFinalizationError,
                         "cannot acquire finalization guard anymore");
         return NULL;
@@ -3396,11 +3396,6 @@ PyInterpreterGuard_Close(PyInterpreterGuard *guard)
     _PyRWMutex_RUnlock(&interp->finalization_guards.lock);
 
     assert(old > 0);
-    if (old <= 0) {
-        Py_FatalError("interpreter has negative guard count, likely due"
-                      " to an extra PyInterpreterGuard_Close() call");
-    }
-
     PyMem_RawFree(guard);
 }
 
@@ -3440,17 +3435,31 @@ PyInterpreterGuard_FromView(PyInterpreterView *view)
     int64_t interp_id = view->id;
     assert(interp_id >= 0);
 
+    // This allocation has to happen before we acquire the runtime lock, because
+    // PyMem_RawMalloc() might call some weird callback (such as tracemalloc)
+    // that tries to re-entrantly acquire the lock.
+    PyInterpreterGuard *guard = PyMem_RawMalloc(sizeof(PyInterpreterGuard));
+    if (guard == NULL) {
+        return NULL;
+    }
+
     // Interpreters cannot be deleted while we hold the runtime lock.
     _PyRuntimeState *runtime = &_PyRuntime;
     HEAD_LOCK(runtime);
     PyInterpreterState *interp = interp_look_up_id(runtime, interp_id);
     if (interp == NULL) {
         HEAD_UNLOCK(runtime);
-        return 0;
+        PyMem_RawFree(guard);
+        return NULL;
     }
 
-    PyInterpreterGuard *guard = try_acquire_interp_guard(interp);
+    int result = try_acquire_interp_guard(interp, guard);
     HEAD_UNLOCK(runtime);
+
+    if (result < 0) {
+        PyMem_RawFree(guard);
+        return NULL;
+    }
 
     assert(guard == NULL || guard->interp != NULL);
     return guard;
@@ -3528,20 +3537,24 @@ PyThreadState_EnsureFromView(PyInterpreterView *view)
         return NULL;
     }
 
-    PyThreadState *tstate = PyThreadState_Ensure(guard);
-    if (tstate == NULL) {
+    PyThreadState *result_tstate = PyThreadState_Ensure(guard);
+    if (result_tstate == NULL) {
         PyInterpreterGuard_Close(guard);
         return NULL;
     }
+
+    PyThreadState *tstate = current_fast_get();
+    assert(tstate != NULL);
 
     if (tstate->ensure.owned_guard != NULL) {
         assert(tstate->ensure.owned_guard->interp == guard->interp);
         PyInterpreterGuard_Close(guard);
     } else {
+        assert(tstate->ensure.owned_guard == NULL);
         tstate->ensure.owned_guard = guard;
     }
 
-    return tstate;
+    return result_tstate;
 }
 
 void
