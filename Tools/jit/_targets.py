@@ -51,7 +51,9 @@ class _Target(typing.Generic[_S, _R]):
     debug: bool = False
     verbose: bool = False
     cflags: str = ""
+    frame_pointers: bool = False
     llvm_version: str = _llvm._LLVM_VERSION
+    llvm_tools_install_dir: str | None = None
     known_symbols: dict[str, int] = dataclasses.field(default_factory=dict)
     pyconfig_dir: pathlib.Path = pathlib.Path.cwd().resolve()
 
@@ -84,7 +86,11 @@ class _Target(typing.Generic[_S, _R]):
         group = _stencils.StencilGroup()
         args = ["--disassemble", "--reloc", f"{path}"]
         output = await _llvm.maybe_run(
-            "llvm-objdump", args, echo=self.verbose, llvm_version=self.llvm_version
+            "llvm-objdump",
+            args,
+            echo=self.verbose,
+            llvm_version=self.llvm_version,
+            llvm_tools_install_dir=self.llvm_tools_install_dir,
         )
         if output is not None:
             # Make sure that full paths don't leak out (for reproducibility):
@@ -104,7 +110,11 @@ class _Target(typing.Generic[_S, _R]):
             f"{path}",
         ]
         output = await _llvm.run(
-            "llvm-readobj", args, echo=self.verbose, llvm_version=self.llvm_version
+            "llvm-readobj",
+            args,
+            echo=self.verbose,
+            llvm_version=self.llvm_version,
+            llvm_tools_install_dir=self.llvm_tools_install_dir,
         )
         # --elf-output-style=JSON is only *slightly* broken on Mach-O...
         output = output.replace("PrivateExtern\n", "\n")
@@ -174,22 +184,36 @@ class _Target(typing.Generic[_S, _R]):
             "-o",
             f"{s}",
             f"{c}",
-            *self.args,
-            # Allow user-provided CFLAGS to override any defaults
-            *shlex.split(self.cflags),
         ]
+        is_shim = opname == "shim"
+        if self.frame_pointers:
+            frame_pointer = "all" if is_shim else "reserved"
+            args_s += ["-Xclang", f"-mframe-pointer={frame_pointer}"]
+        args_s += self.args
+        # Allow user-provided CFLAGS to override any defaults
+        args_s += shlex.split(self.cflags)
         await _llvm.run(
-            "clang", args_s, echo=self.verbose, llvm_version=self.llvm_version
+            "clang",
+            args_s,
+            echo=self.verbose,
+            llvm_version=self.llvm_version,
+            llvm_tools_install_dir=self.llvm_tools_install_dir,
         )
-        self.optimizer(
-            s,
-            label_prefix=self.label_prefix,
-            symbol_prefix=self.symbol_prefix,
-            re_global=self.re_global,
-        ).run()
+        if not is_shim:
+            self.optimizer(
+                s,
+                label_prefix=self.label_prefix,
+                symbol_prefix=self.symbol_prefix,
+                re_global=self.re_global,
+                frame_pointers=self.frame_pointers,
+            ).run()
         args_o = [f"--target={self.triple}", "-c", "-o", f"{o}", f"{s}"]
         await _llvm.run(
-            "clang", args_o, echo=self.verbose, llvm_version=self.llvm_version
+            "clang",
+            args_o,
+            echo=self.verbose,
+            llvm_version=self.llvm_version,
+            llvm_tools_install_dir=self.llvm_tools_install_dir,
         )
         return await self._parse(o)
 
@@ -201,6 +225,9 @@ class _Target(typing.Generic[_S, _R]):
             )
         )
         tasks = []
+        # If you need to see the generated assembly files,
+        # uncomment line below (and comment out line below that)
+        #   with tempfile.TemporaryDirectory("-stencils-assembly", delete=False) as tempdir:
         with tempfile.TemporaryDirectory() as tempdir:
             work = pathlib.Path(tempdir).resolve()
             async with asyncio.TaskGroup() as group:
@@ -587,14 +614,18 @@ def get_target(host: str) -> _COFF32 | _COFF64 | _ELF | _MachO:
         host = "aarch64-unknown-linux-gnu"
         condition = "defined(__aarch64__) && defined(__linux__)"
         # -mno-outline-atomics: Keep intrinsics from being emitted.
-        args = ["-fpic", "-mno-outline-atomics", "-fno-plt"]
+        args = ["-fpic", "-mno-outline-atomics"]
         optimizer = _optimizers.OptimizerAArch64
-        target = _ELF(host, condition, args=args, optimizer=optimizer)
+        target = _ELF(
+            host, condition, args=args, optimizer=optimizer, frame_pointers=True
+        )
     elif re.fullmatch(r"i686-pc-windows-msvc", host):
         host = "i686-pc-windows-msvc"
         condition = "defined(_M_IX86)"
         # -Wno-ignored-attributes: __attribute__((preserve_none)) is not supported here.
-        args = ["-DPy_NO_ENABLE_SHARED", "-Wno-ignored-attributes"]
+        # -mno-sse: Use x87 FPU instead of SSE for float math. The COFF32
+        # stencil converter cannot handle _xmm register references.
+        args = ["-DPy_NO_ENABLE_SHARED", "-Wno-ignored-attributes", "-mno-sse"]
         optimizer = _optimizers.OptimizerX86
         target = _COFF32(host, condition, args=args, optimizer=optimizer)
     elif re.fullmatch(r"x86_64-apple-darwin.*", host):
@@ -613,7 +644,9 @@ def get_target(host: str) -> _COFF32 | _COFF64 | _ELF | _MachO:
         condition = "defined(__x86_64__) && defined(__linux__)"
         args = ["-fno-pic", "-mcmodel=medium", "-mlarge-data-threshold=0", "-fno-plt"]
         optimizer = _optimizers.OptimizerX86
-        target = _ELF(host, condition, args=args, optimizer=optimizer)
+        target = _ELF(
+            host, condition, args=args, optimizer=optimizer, frame_pointers=True
+        )
     else:
         raise ValueError(host)
     return target

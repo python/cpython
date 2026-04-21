@@ -501,7 +501,7 @@ _PyCode_Validate(struct _PyCodeConstructor *con)
 }
 
 extern void
-_PyCode_Quicken(_Py_CODEUNIT *instructions, Py_ssize_t size, int enable_counters);
+_PyCode_Quicken(_Py_CODEUNIT *instructions, Py_ssize_t size, int enable_counters, int flags);
 
 #ifdef Py_GIL_DISABLED
 static _PyCodeArray * _PyCodeArray_New(Py_ssize_t size);
@@ -574,16 +574,21 @@ init_code(PyCodeObject *co, struct _PyCodeConstructor *con)
     co->co_tlbc->entries[0] = co->co_code_adaptive;
 #endif
     int entry_point = 0;
-    while (entry_point < Py_SIZE(co) &&
-        _PyCode_CODE(co)[entry_point].op.code != RESUME) {
+    while (entry_point < Py_SIZE(co)) {
+        if (_PyCode_CODE(co)[entry_point].op.code == RESUME &&
+           (_PyCode_CODE(co)[entry_point].op.arg & RESUME_OPARG_LOCATION_MASK) != RESUME_AT_GEN_EXPR_START
+        ) {
+            break;
+        }
         entry_point++;
     }
     co->_co_firsttraceable = entry_point;
+
 #ifdef Py_GIL_DISABLED
     int enable_counters = interp->config.tlbc_enabled && interp->opt_config.specialization_enabled;
-    _PyCode_Quicken(_PyCode_CODE(co), Py_SIZE(co), enable_counters);
+    _PyCode_Quicken(_PyCode_CODE(co), Py_SIZE(co), enable_counters, co->co_flags);
 #else
-    _PyCode_Quicken(_PyCode_CODE(co), Py_SIZE(co), interp->opt_config.specialization_enabled);
+    _PyCode_Quicken(_PyCode_CODE(co), Py_SIZE(co), interp->opt_config.specialization_enabled, co->co_flags);
 #endif
     notify_code_watchers(PY_CODE_EVENT_CREATE, co);
     return 0;
@@ -931,8 +936,9 @@ PyUnstable_Code_New(int argcount, int kwonlyargcount,
 // NOTE: When modifying the construction of PyCode_NewEmpty, please also change
 // test.test_code.CodeLocationTest.test_code_new_empty to keep it in sync!
 
-static const uint8_t assert0[6] = {
+static const uint8_t assert0[8] = {
     RESUME, RESUME_AT_FUNC_START,
+    CACHE, 0,
     LOAD_COMMON_CONSTANT, CONSTANT_ASSERTIONERROR,
     RAISE_VARARGS, 1
 };
@@ -940,7 +946,7 @@ static const uint8_t assert0[6] = {
 static const uint8_t linetable[2] = {
     (1 << 7)  // New entry.
     | (PY_CODE_LOCATION_INFO_NO_COLUMNS << 3)
-    | (3 - 1),  // Three code units.
+    | (4 - 1),  // Four code units.
     0,  // Offset from co_firstlineno.
 };
 
@@ -966,7 +972,7 @@ PyCode_NewEmpty(const char *filename, const char *funcname, int firstlineno)
     if (filename_ob == NULL) {
         goto failed;
     }
-    code_ob = PyBytes_FromStringAndSize((const char *)assert0, 6);
+    code_ob = PyBytes_FromStringAndSize((const char *)assert0, 8);
     if (code_ob == NULL) {
         goto failed;
     }
@@ -1006,14 +1012,18 @@ failed:
  * source location tracking (co_lines/co_positions)
  ******************/
 
-static int
-_PyCode_Addr2Line(PyCodeObject *co, int addrq)
+int
+PyCode_Addr2Line(PyCodeObject *co, int addrq)
 {
     if (addrq < 0) {
         return co->co_firstlineno;
     }
-    if (co->_co_monitoring && co->_co_monitoring->lines) {
-        return _Py_Instrumentation_GetLine(co, addrq/sizeof(_Py_CODEUNIT));
+    _PyCoMonitoringData *data = _Py_atomic_load_ptr_acquire(&co->_co_monitoring);
+    if (data) {
+        _PyCoLineInstrumentationData *lines = _Py_atomic_load_ptr_acquire(&data->lines);
+        if (lines) {
+            return _Py_Instrumentation_GetLine(co, lines, addrq/sizeof(_Py_CODEUNIT));
+        }
     }
     assert(addrq >= 0 && addrq < _PyCode_NBYTES(co));
     PyCodeAddressRange bounds;
@@ -1028,7 +1038,7 @@ _PyCode_SafeAddr2Line(PyCodeObject *co, int addrq)
         return co->co_firstlineno;
     }
     if (co->_co_monitoring && co->_co_monitoring->lines) {
-        return _Py_Instrumentation_GetLine(co, addrq/sizeof(_Py_CODEUNIT));
+        return _Py_Instrumentation_GetLine(co, co->_co_monitoring->lines, addrq/sizeof(_Py_CODEUNIT));
     }
     if (!(addrq >= 0 && addrq < _PyCode_NBYTES(co))) {
         return -1;
@@ -1036,16 +1046,6 @@ _PyCode_SafeAddr2Line(PyCodeObject *co, int addrq)
     PyCodeAddressRange bounds;
     _PyCode_InitAddressRange(co, &bounds);
     return _PyCode_CheckLineNumber(addrq, &bounds);
-}
-
-int
-PyCode_Addr2Line(PyCodeObject *co, int addrq)
-{
-    int lineno;
-    Py_BEGIN_CRITICAL_SECTION(co);
-    lineno = _PyCode_Addr2Line(co, addrq);
-    Py_END_CRITICAL_SECTION();
-    return lineno;
 }
 
 void
@@ -2605,7 +2605,7 @@ code_richcompare(PyObject *self, PyObject *other, int op)
     cp = (PyCodeObject *)other;
 
     eq = PyObject_RichCompareBool(co->co_name, cp->co_name, Py_EQ);
-    if (!eq) goto unequal;
+    if (eq <= 0) goto unequal;
     eq = co->co_argcount == cp->co_argcount;
     if (!eq) goto unequal;
     eq = co->co_posonlyargcount == cp->co_posonlyargcount;
@@ -3050,7 +3050,7 @@ _PyCode_ConstantKey(PyObject *op)
     else if (PyBool_Check(op) || PyBytes_CheckExact(op)) {
         /* Make booleans different from integers 0 and 1.
          * Avoid BytesWarning from comparing bytes with strings. */
-        key = PyTuple_Pack(2, Py_TYPE(op), op);
+        key = _PyTuple_FromPair((PyObject *)Py_TYPE(op), op);
     }
     else if (PyFloat_CheckExact(op)) {
         double d = PyFloat_AS_DOUBLE(op);
@@ -3060,7 +3060,7 @@ _PyCode_ConstantKey(PyObject *op)
         if (d == 0.0 && copysign(1.0, d) < 0.0)
             key = PyTuple_Pack(3, Py_TYPE(op), op, Py_None);
         else
-            key = PyTuple_Pack(2, Py_TYPE(op), op);
+            key = _PyTuple_FromPair((PyObject *)Py_TYPE(op), op);
     }
     else if (PyComplex_CheckExact(op)) {
         Py_complex z;
@@ -3084,7 +3084,7 @@ _PyCode_ConstantKey(PyObject *op)
             key = PyTuple_Pack(3, Py_TYPE(op), op, Py_None);
         }
         else {
-            key = PyTuple_Pack(2, Py_TYPE(op), op);
+            key = _PyTuple_FromPair((PyObject *)Py_TYPE(op), op);
         }
     }
     else if (PyTuple_CheckExact(op)) {
@@ -3109,7 +3109,7 @@ _PyCode_ConstantKey(PyObject *op)
             PyTuple_SET_ITEM(tuple, i, item_key);
         }
 
-        key = PyTuple_Pack(2, tuple, op);
+        key = _PyTuple_FromPair(tuple, op);
         Py_DECREF(tuple);
     }
     else if (PyFrozenSet_CheckExact(op)) {
@@ -3143,7 +3143,7 @@ _PyCode_ConstantKey(PyObject *op)
         if (set == NULL)
             return NULL;
 
-        key = PyTuple_Pack(2, set, op);
+        key = _PyTuple_FromPair(set, op);
         Py_DECREF(set);
         return key;
     }
@@ -3174,7 +3174,7 @@ _PyCode_ConstantKey(PyObject *op)
             goto slice_exit;
         }
 
-        key = PyTuple_Pack(2, slice_key, op);
+        key = _PyTuple_FromPair(slice_key, op);
         Py_DECREF(slice_key);
     slice_exit:
         Py_XDECREF(start_key);
@@ -3188,7 +3188,7 @@ _PyCode_ConstantKey(PyObject *op)
         if (obj_id == NULL)
             return NULL;
 
-        key = PyTuple_Pack(2, obj_id, op);
+        key = _PyTuple_FromPair(obj_id, op);
         Py_DECREF(obj_id);
     }
     return key;
@@ -3459,7 +3459,7 @@ copy_code(PyInterpreterState *interp, _Py_CODEUNIT *dst, PyCodeObject *co)
     for (int i = 0; i < code_len; i += _PyInstruction_GetLength(co, i)) {
         dst[i] = deopt_code_unit(co, i);
     }
-    _PyCode_Quicken(dst, code_len, interp->opt_config.specialization_enabled);
+    _PyCode_Quicken(dst, code_len, interp->opt_config.specialization_enabled, co->co_flags);
 }
 
 static Py_ssize_t

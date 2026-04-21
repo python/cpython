@@ -16,8 +16,10 @@
 #endif
 
 #include "Python.h"
+#include "pycore_ceval.h"         // _Py_EnterRecursiveCall()
 #include "pycore_dict.h"          // _PyDict_CopyAsDict()
 #include "pycore_pyhash.h"        // _Py_HashSecret
+#include "pycore_tuple.h"         // _PyTuple_FromPair
 #include "pycore_weakref.h"       // FT_CLEAR_WEAKREFS()
 
 #include <stddef.h>               // offsetof()
@@ -810,26 +812,31 @@ _elementtree_Element___deepcopy___impl(ElementObject *self, PyObject *memo)
 /*[clinic end generated code: output=eefc3df50465b642 input=a2d40348c0aade10]*/
 {
     Py_ssize_t i;
-    ElementObject* element;
+    ElementObject* element = NULL;
     PyObject* tag;
     PyObject* attrib;
     PyObject* text;
     PyObject* tail;
     PyObject* id;
 
+    if (_Py_EnterRecursiveCall(" in Element.__deepcopy__")) {
+        return NULL;
+    }
+
     PyTypeObject *tp = Py_TYPE(self);
     elementtreestate *st = get_elementtree_state_by_type(tp);
     // The deepcopy() helper takes care of incrementing the refcount
     // of the object to copy so to avoid use-after-frees.
     tag = deepcopy(st, self->tag, memo);
-    if (!tag)
-        return NULL;
+    if (!tag) {
+        goto error;
+    }
 
     if (self->extra && self->extra->attrib) {
         attrib = deepcopy(st, self->extra->attrib, memo);
         if (!attrib) {
             Py_DECREF(tag);
-            return NULL;
+            goto error;
         }
     } else {
         attrib = NULL;
@@ -840,8 +847,9 @@ _elementtree_Element___deepcopy___impl(ElementObject *self, PyObject *memo)
     Py_DECREF(tag);
     Py_XDECREF(attrib);
 
-    if (!element)
-        return NULL;
+    if (!element) {
+        goto error;
+    }
 
     text = deepcopy(st, JOIN_OBJ(self->text), memo);
     if (!text)
@@ -903,10 +911,12 @@ _elementtree_Element___deepcopy___impl(ElementObject *self, PyObject *memo)
     if (i < 0)
         goto error;
 
+    _Py_LeaveRecursiveCall();
     return (PyObject*) element;
 
   error:
-    Py_DECREF(element);
+    _Py_LeaveRecursiveCall();
+    Py_XDECREF(element);
     return NULL;
 }
 
@@ -2594,7 +2604,7 @@ _elementtree__set_factories_impl(PyObject *module, PyObject *comment_factory,
         return NULL;
     }
 
-    old = PyTuple_Pack(2,
+    old = _PyTuple_FromPair(
         st->comment_factory ? st->comment_factory : Py_None,
         st->pi_factory ? st->pi_factory : Py_None);
 
@@ -2712,7 +2722,7 @@ treebuilder_append_event(TreeBuilderObject *self, PyObject *action,
 {
     if (action != NULL) {
         PyObject *res;
-        PyObject *event = PyTuple_Pack(2, action, node);
+        PyObject *event = _PyTuple_FromPair(action, node);
         if (event == NULL)
             return -1;
         res = PyObject_CallOneArg(self->events_append, event);
@@ -2840,8 +2850,6 @@ treebuilder_handle_data(TreeBuilderObject* self, PyObject* data)
 LOCAL(PyObject*)
 treebuilder_handle_end(TreeBuilderObject* self, PyObject* tag)
 {
-    PyObject* item;
-
     if (treebuilder_flush_data(self) < 0) {
         return NULL;
     }
@@ -2854,17 +2862,22 @@ treebuilder_handle_end(TreeBuilderObject* self, PyObject* tag)
         return NULL;
     }
 
-    item = self->last;
-    self->last = Py_NewRef(self->this);
-    Py_XSETREF(self->last_for_tail, self->last);
+    PyObject *last = self->last;
+    PyObject *last_for_tail = self->last_for_tail;
+    PyObject *this = self->this;
+    self->last = Py_NewRef(this);
+    self->last_for_tail = Py_NewRef(this);
     self->index--;
     self->this = Py_NewRef(PyList_GET_ITEM(self->stack, self->index));
-    Py_DECREF(item);
+    Py_DECREF(last);
+    Py_XDECREF(last_for_tail);
 
-    if (treebuilder_append_event(self, self->end_event_obj, self->last) < 0)
+    if (treebuilder_append_event(self, self->end_event_obj, self->last) < 0) {
+        Py_DECREF(this);
         return NULL;
+    }
 
-    return Py_NewRef(self->last);
+    return this;
 }
 
 LOCAL(PyObject*)
@@ -2930,7 +2943,7 @@ treebuilder_handle_pi(TreeBuilderObject* self, PyObject* target, PyObject* text)
             Py_XSETREF(self->last_for_tail, Py_NewRef(pi));
         }
     } else {
-        pi = PyTuple_Pack(2, target, text);
+        pi = _PyTuple_FromPair(target, text);
         if (!pi) {
             return NULL;
         }
@@ -2954,7 +2967,7 @@ treebuilder_handle_start_ns(TreeBuilderObject* self, PyObject* prefix, PyObject*
     PyObject* parcel;
 
     if (self->events_append && self->start_ns_event_obj) {
-        parcel = PyTuple_Pack(2, prefix, uri);
+        parcel = _PyTuple_FromPair(prefix, uri);
         if (!parcel) {
             return NULL;
         }
@@ -4530,6 +4543,7 @@ error:
 }
 
 static struct PyModuleDef_Slot elementtree_slots[] = {
+    _Py_ABI_SLOT,
     {Py_mod_exec, module_exec},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {Py_mod_gil, Py_MOD_GIL_NOT_USED},

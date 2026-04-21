@@ -86,14 +86,12 @@ class Py_UCS4_converter(CConverter):
     type = 'Py_UCS4'
     converter = 'convert_uc'
 
-    def converter_init(self):
-        if self.default is not unspecified:
-            self.c_default = ascii(self.default)
-            if len(self.c_default) > 4 or self.c_default[0] != "'":
-                self.c_default = hex(ord(self.default))
+    def c_default_init(self):
+        import libclinic
+        self.c_default = libclinic.c_unichar_repr(self.default)
 
 [python start generated code]*/
-/*[python end generated code: output=da39a3ee5e6b4b0d input=88f5dd06cd8e7a61]*/
+/*[python end generated code: output=da39a3ee5e6b4b0d input=22f057b68fd9a65a]*/
 
 /* --- Globals ------------------------------------------------------------
 
@@ -2226,7 +2224,7 @@ _PyUnicode_FromUCS4(const Py_UCS4 *u, Py_ssize_t size)
 
 int
 PyUnicodeWriter_WriteUCS4(PyUnicodeWriter *pub_writer,
-                          Py_UCS4 *str,
+                          const Py_UCS4 *str,
                           Py_ssize_t size)
 {
     _PyUnicodeWriter *writer = (_PyUnicodeWriter*)pub_writer;
@@ -5582,15 +5580,14 @@ _Py_EncodeUTF8Ex(const wchar_t *text, char **str, size_t *error_pos,
         Py_ssize_t ch_pos = i;
         Py_UCS4 ch = text[i];
         i++;
-#if Py_UNICODE_SIZE == 2
-        if (Py_UNICODE_IS_HIGH_SURROGATE(ch)
+        if (sizeof(wchar_t) == 2
+            && Py_UNICODE_IS_HIGH_SURROGATE(ch)
             && i < len
             && Py_UNICODE_IS_LOW_SURROGATE(text[i]))
         {
             ch = Py_UNICODE_JOIN_SURROGATES(ch, text[i]);
             i++;
         }
-#endif
 
         if (ch < 0x80) {
             /* Encode ASCII */
@@ -8353,7 +8350,7 @@ charmap_decode_mapping(const char *s,
                 goto Undefined;
             if (value < 0 || value > MAX_UNICODE) {
                 PyErr_Format(PyExc_TypeError,
-                             "character mapping must be in range(0x%x)",
+                             "character mapping must be in range(0x%lx)",
                              (unsigned long)MAX_UNICODE + 1);
                 goto onError;
             }
@@ -9144,8 +9141,8 @@ charmaptranslate_lookup(Py_UCS4 c, PyObject *mapping, PyObject **result, Py_UCS4
         long value = PyLong_AsLong(x);
         if (value < 0 || value > MAX_UNICODE) {
             PyErr_Format(PyExc_ValueError,
-                         "character mapping must be in range(0x%x)",
-                         MAX_UNICODE+1);
+                         "character mapping must be in range(0x%lx)",
+                         (unsigned long)MAX_UNICODE + 1);
             Py_DECREF(x);
             return -1;
         }
@@ -12564,7 +12561,6 @@ PyUnicode_Replace(PyObject *str,
 }
 
 /*[clinic input]
-@permit_long_docstring_body
 str.replace as unicode_replace
 
     old: unicode
@@ -12576,14 +12572,14 @@ str.replace as unicode_replace
 
 Return a copy with all occurrences of substring old replaced by new.
 
-If the optional argument count is given, only the first count occurrences are
-replaced.
+If count is given, only the first count occurrences are replaced.
+If count is not specified or -1, then all occurrences are replaced.
 [clinic start generated code]*/
 
 static PyObject *
 unicode_replace_impl(PyObject *self, PyObject *old, PyObject *new,
                      Py_ssize_t count)
-/*[clinic end generated code: output=b63f1a8b5eebf448 input=f27ca92ac46b65a1]*/
+/*[clinic end generated code: output=b63f1a8b5eebf448 input=d15a6886b05e2edc]*/
 {
     return replace(self, old, new, count);
 }
@@ -13986,6 +13982,20 @@ onError:
     return NULL;
 }
 
+static _PyObjectIndexPair
+unicode_iteritem(PyObject *obj, Py_ssize_t index)
+{
+    if (index >= PyUnicode_GET_LENGTH(obj)) {
+        return (_PyObjectIndexPair) { .object = NULL, .index = index };
+    }
+    const void *data = PyUnicode_DATA(obj);
+    int kind = PyUnicode_KIND(obj);
+    Py_UCS4 ch = PyUnicode_READ(kind, data, index);
+    PyObject *result = unicode_char(ch);
+    index = (result == NULL) ? -1 : index + 1;
+    return (_PyObjectIndexPair) { .object = result, .index = index };
+}
+
 void
 _PyUnicode_ExactDealloc(PyObject *op)
 {
@@ -14051,6 +14061,7 @@ PyTypeObject PyUnicode_Type = {
     unicode_new,                  /* tp_new */
     PyObject_Free,                /* tp_free */
     .tp_vectorcall = unicode_vectorcall,
+    ._tp_iteritem = unicode_iteritem,
 };
 
 /* Initialize the Unicode implementation */
@@ -14190,8 +14201,11 @@ immortalize_interned(PyObject *s)
         _Py_DecRefTotal(_PyThreadState_GET());
     }
 #endif
-    FT_ATOMIC_STORE_UINT8_RELAXED(_PyUnicode_STATE(s).interned, SSTATE_INTERNED_IMMORTAL);
     _Py_SetImmortal(s);
+    // The switch to SSTATE_INTERNED_IMMORTAL must be the last thing done here
+    // to synchronize with the check in intern_common() that avoids locking if
+    // the string is already immortal.
+    FT_ATOMIC_STORE_UINT8(_PyUnicode_STATE(s).interned, SSTATE_INTERNED_IMMORTAL);
 }
 
 static /* non-null */ PyObject*
@@ -14273,6 +14287,23 @@ intern_common(PyInterpreterState *interp, PyObject *s /* stolen */,
     assert(interned != NULL);
 #ifdef Py_GIL_DISABLED
 #  define INTERN_MUTEX &_Py_INTERP_CACHED_OBJECT(interp, interned_mutex)
+    // Lock-free fast path: check if there's already an interned copy that
+    // is in its final immortal state.
+    PyObject *r;
+    int res = PyDict_GetItemRef(interned, s, &r);
+    if (res < 0) {
+        PyErr_Clear();
+        return s;
+    }
+    if (res > 0) {
+        unsigned int state = _Py_atomic_load_uint8(&_PyUnicode_STATE(r).interned);
+        if (state == SSTATE_INTERNED_IMMORTAL) {
+            Py_DECREF(s);
+            return r;
+        }
+        // Not yet fully interned; fall through to the locking path.
+        Py_DECREF(r);
+    }
 #endif
     FT_MUTEX_LOCK(INTERN_MUTEX);
     PyObject *t;
@@ -14310,7 +14341,7 @@ intern_common(PyInterpreterState *interp, PyObject *s /* stolen */,
         Py_DECREF(s);
         Py_DECREF(s);
     }
-    FT_ATOMIC_STORE_UINT8_RELAXED(_PyUnicode_STATE(s).interned, SSTATE_INTERNED_MORTAL);
+    FT_ATOMIC_STORE_UINT8(_PyUnicode_STATE(s).interned, SSTATE_INTERNED_MORTAL);
 
     /* INTERNED_MORTAL -> INTERNED_IMMORTAL (if needed) */
 
@@ -14931,6 +14962,7 @@ static PyMethodDef _string_methods[] = {
 };
 
 static PyModuleDef_Slot module_slots[] = {
+    _Py_ABI_SLOT,
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {Py_mod_gil, Py_MOD_GIL_NOT_USED},
     {0, NULL}

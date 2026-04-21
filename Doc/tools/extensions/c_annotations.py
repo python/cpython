@@ -249,18 +249,17 @@ def _stable_abi_annotation(
         reftype="ref",
         refexplicit="False",
     )
-    struct_abi_kind = record.struct_abi_kind
-    if struct_abi_kind in {"opaque", "members"}:
-        ref_node += nodes.Text(sphinx_gettext("Limited API"))
-    else:
-        ref_node += nodes.Text(sphinx_gettext("Stable ABI"))
+    ref_node += nodes.Text(sphinx_gettext("Stable ABI"))
     emph_node += ref_node
+    struct_abi_kind = record.struct_abi_kind
     if struct_abi_kind == "opaque":
         emph_node += nodes.Text(" " + sphinx_gettext("(as an opaque struct)"))
     elif struct_abi_kind == "full-abi":
         emph_node += nodes.Text(
             " " + sphinx_gettext("(including all members)")
         )
+    elif struct_abi_kind in {"members", "abi3t-opaque"}:
+        emph_node += nodes.Text(" " + sphinx_gettext("(see below)"))
     if record.ifdef_note:
         emph_node += nodes.Text(f" {record.ifdef_note}")
     if stable_added == "3.2":
@@ -271,11 +270,7 @@ def _stable_abi_annotation(
             " " + sphinx_gettext("since version %s") % stable_added
         )
     emph_node += nodes.Text(".")
-    if struct_abi_kind == "members":
-        msg = " " + sphinx_gettext(
-            "(Only some members are part of the stable ABI.)"
-        )
-        emph_node += nodes.Text(msg)
+
     return emph_node
 
 
@@ -308,27 +303,27 @@ def _unstable_api_annotation() -> nodes.admonition:
 def _threadsafety_annotation(level: str) -> nodes.emphasis:
     match level:
         case "incompatible":
-            display = sphinx_gettext("Not safe to call from multiple threads.")
+            display = sphinx_gettext("Not safe to call from multiple threads")
             reftarget = "threadsafety-level-incompatible"
         case "compatible":
             display = sphinx_gettext(
                 "Safe to call from multiple threads"
-                " with external synchronization only."
+                " with external synchronization only"
             )
             reftarget = "threadsafety-level-compatible"
         case "distinct":
             display = sphinx_gettext(
                 "Safe to call without external synchronization"
-                " on distinct objects."
+                " on distinct objects"
             )
             reftarget = "threadsafety-level-distinct"
         case "shared":
             display = sphinx_gettext(
-                "Safe for concurrent use on the same object."
+                "Safe for concurrent use on the same object"
             )
             reftarget = "threadsafety-level-shared"
         case "atomic":
-            display = sphinx_gettext("Atomic.")
+            display = sphinx_gettext("Atomic")
             reftarget = "threadsafety-level-atomic"
         case _:
             raise AssertionError(f"Unknown thread safety level {level!r}")
@@ -340,9 +335,11 @@ def _threadsafety_annotation(level: str) -> nodes.emphasis:
         reftype="ref",
         refexplicit="True",
     )
-    prefix = sphinx_gettext("Thread safety:") + " "
+    prefix = " " + sphinx_gettext("Thread safety:") + " "
     classes = ["threadsafety", f"threadsafety-{level}"]
-    return nodes.emphasis("", prefix, ref_node, classes=classes)
+    return nodes.emphasis(
+        "", prefix, ref_node, nodes.Text("."), classes=classes
+    )
 
 
 def _return_value_annotation(result_refs: int | None) -> nodes.emphasis:
@@ -371,6 +368,33 @@ class LimitedAPIList(SphinxDirective):
             f"* :c:{record.role}:`{record.name}`"
             for record in state["stable_abi_data"].values()
         ]
+        node = nodes.paragraph()
+        self.state.nested_parse(StringList(content), 0, node)
+        return [node]
+
+
+class VersionHexCheatsheet(SphinxDirective):
+    """Show results of Py_PACK_VERSION(3, x) for a few relevant Python versions
+
+    This is useful for defining version before Python.h is included.
+    It should auto-update with the version being documented, so it must be an
+    extension.
+    """
+
+    has_content = False
+    required_arguments = 0
+    optional_arguments = 0
+    final_argument_whitespace = True
+
+    def run(self) -> list[nodes.Node]:
+        content = [
+            ".. code-block:: c",
+            "",
+        ]
+        current_minor = int(self.config.version.removeprefix('3.'))
+        for minor in range(current_minor - 5, current_minor + 1):
+            value = (3 << 24) | (minor << 16)
+            content.append(f'    {value:#x}  /* Py_PACK_VERSION(3.{minor}) */')
         node = nodes.paragraph()
         self.state.nested_parse(StringList(content), 0, node)
         return [node]
@@ -441,6 +465,7 @@ def setup(app: Sphinx) -> ExtensionMetadata:
     app.add_config_value("stable_abi_file", "", "env", types={str})
     app.add_config_value("threadsafety_file", "", "env", types={str})
     app.add_directive("limited-api-list", LimitedAPIList)
+    app.add_directive("version-hex-cheatsheet", VersionHexCheatsheet)
     app.add_directive("corresponding-type-slot", CorrespondingTypeSlot)
     app.connect("builder-inited", init_annotations)
     app.connect("doctree-read", add_annotations)

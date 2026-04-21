@@ -212,13 +212,15 @@ bound into a function.
 
 .. c:function:: PyObject *PyCode_Optimize(PyObject *code, PyObject *consts, PyObject *names, PyObject *lnotab_obj)
 
-   This is a :term:`soft deprecated` function that does nothing.
+   This is a function that does nothing.
 
    Prior to Python 3.10, this function would perform basic optimizations to a
    code object.
 
    .. versionchanged:: 3.10
       This function now does nothing.
+
+   .. soft-deprecated:: 3.13
 
 
 .. _c_codeobject_flags:

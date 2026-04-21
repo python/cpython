@@ -130,6 +130,8 @@ CONFIGURE_EXE_LDFLAGS=@EXE_LDFLAGS@
 PY_CORE_EXE_LDFLAGS:= $(if $(CONFIGURE_EXE_LDFLAGS), $(CONFIGURE_EXE_LDFLAGS) $(PY_LDFLAGS_NODIST), $(PY_CORE_LDFLAGS))
 # Strict or non-strict aliasing flags used to compile dtoa.c, see above
 CFLAGS_ALIASING=@CFLAGS_ALIASING@
+# Compilation flags only for ceval.c.
+CFLAGS_CEVAL=@CFLAGS_CEVAL@
 
 
 # Machine-dependent subdirectories
@@ -1103,7 +1105,7 @@ $(DLLLIBRARY) libpython$(LDVERSION).dll.a: $(LIBRARY_OBJS)
 
 # wasm32-emscripten browser web example
 
-EMSCRIPTEN_DIR=$(srcdir)/Tools/wasm/emscripten
+EMSCRIPTEN_DIR=$(srcdir)/Platforms/emscripten
 WEBEX_DIR=$(EMSCRIPTEN_DIR)/web_example/
 
 ZIP_STDLIB=python$(VERSION)$(ABI_THREAD).zip
@@ -1729,6 +1731,10 @@ FROZEN_FILES_IN = \
 		Lib/zipimport.py \
 		Lib/abc.py \
 		Lib/codecs.py \
+		Lib/encodings/__init__.py \
+		Lib/encodings/aliases.py \
+		Lib/encodings/utf_8.py \
+		Lib/encodings/_win_cp_codecs.py \
 		Lib/io.py \
 		Lib/_collections_abc.py \
 		Lib/_sitebuiltins.py \
@@ -1738,6 +1744,7 @@ FROZEN_FILES_IN = \
 		Lib/os.py \
 		Lib/site.py \
 		Lib/stat.py \
+		Lib/linecache.py \
 		Lib/importlib/util.py \
 		Lib/importlib/machinery.py \
 		Lib/runpy.py \
@@ -1754,6 +1761,10 @@ FROZEN_FILES_OUT = \
 		Python/frozen_modules/zipimport.h \
 		Python/frozen_modules/abc.h \
 		Python/frozen_modules/codecs.h \
+		Python/frozen_modules/encodings.h \
+		Python/frozen_modules/encodings.aliases.h \
+		Python/frozen_modules/encodings.utf_8.h \
+		Python/frozen_modules/encodings._win_cp_codecs.h \
 		Python/frozen_modules/io.h \
 		Python/frozen_modules/_collections_abc.h \
 		Python/frozen_modules/_sitebuiltins.h \
@@ -1763,6 +1774,7 @@ FROZEN_FILES_OUT = \
 		Python/frozen_modules/os.h \
 		Python/frozen_modules/site.h \
 		Python/frozen_modules/stat.h \
+		Python/frozen_modules/linecache.h \
 		Python/frozen_modules/importlib.util.h \
 		Python/frozen_modules/importlib.machinery.h \
 		Python/frozen_modules/runpy.h \
@@ -1802,6 +1814,18 @@ Python/frozen_modules/abc.h: Lib/abc.py $(FREEZE_MODULE_DEPS)
 Python/frozen_modules/codecs.h: Lib/codecs.py $(FREEZE_MODULE_DEPS)
 	$(FREEZE_MODULE) codecs $(srcdir)/Lib/codecs.py Python/frozen_modules/codecs.h
 
+Python/frozen_modules/encodings.h: Lib/encodings/__init__.py $(FREEZE_MODULE_DEPS)
+	$(FREEZE_MODULE) encodings $(srcdir)/Lib/encodings/__init__.py Python/frozen_modules/encodings.h
+
+Python/frozen_modules/encodings.aliases.h: Lib/encodings/aliases.py $(FREEZE_MODULE_DEPS)
+	$(FREEZE_MODULE) encodings.aliases $(srcdir)/Lib/encodings/aliases.py Python/frozen_modules/encodings.aliases.h
+
+Python/frozen_modules/encodings.utf_8.h: Lib/encodings/utf_8.py $(FREEZE_MODULE_DEPS)
+	$(FREEZE_MODULE) encodings.utf_8 $(srcdir)/Lib/encodings/utf_8.py Python/frozen_modules/encodings.utf_8.h
+
+Python/frozen_modules/encodings._win_cp_codecs.h: Lib/encodings/_win_cp_codecs.py $(FREEZE_MODULE_DEPS)
+	$(FREEZE_MODULE) encodings._win_cp_codecs $(srcdir)/Lib/encodings/_win_cp_codecs.py Python/frozen_modules/encodings._win_cp_codecs.h
+
 Python/frozen_modules/io.h: Lib/io.py $(FREEZE_MODULE_DEPS)
 	$(FREEZE_MODULE) io $(srcdir)/Lib/io.py Python/frozen_modules/io.h
 
@@ -1828,6 +1852,9 @@ Python/frozen_modules/site.h: Lib/site.py $(FREEZE_MODULE_DEPS)
 
 Python/frozen_modules/stat.h: Lib/stat.py $(FREEZE_MODULE_DEPS)
 	$(FREEZE_MODULE) stat $(srcdir)/Lib/stat.py Python/frozen_modules/stat.h
+
+Python/frozen_modules/linecache.h: Lib/linecache.py $(FREEZE_MODULE_DEPS)
+	$(FREEZE_MODULE) linecache $(srcdir)/Lib/linecache.py Python/frozen_modules/linecache.h
 
 Python/frozen_modules/importlib.util.h: Lib/importlib/util.py $(FREEZE_MODULE_DEPS)
 	$(FREEZE_MODULE) importlib.util $(srcdir)/Lib/importlib/util.py Python/frozen_modules/importlib.util.h
@@ -2358,10 +2385,10 @@ testios:
 	fi
 
 	# Clone the testbed project into the XCFOLDER
-	$(PYTHON_FOR_BUILD) $(srcdir)/Apple/testbed clone --framework $(PYTHONFRAMEWORKPREFIX) "$(XCFOLDER)"
+	$(PYTHON_FOR_BUILD) $(srcdir)/Platforms/Apple/testbed clone --framework $(PYTHONFRAMEWORKPREFIX) "$(XCFOLDER)"
 
 	# Run the testbed project
-	$(PYTHON_FOR_BUILD) "$(XCFOLDER)" run --verbose -- test -uall --single-process --rerun -W
+	$(PYTHON_FOR_BUILD) "$(XCFOLDER)" run --verbose -- test -uall --single-process --rerun -W --pythoninfo
 
 # Like test, but using --slow-ci which enables all test resources and use
 # longer timeout. Run an optional pybuildbot.identify script to include
@@ -3174,7 +3201,7 @@ Python/emscripten_trampoline_inner.wasm: $(srcdir)/Python/emscripten_trampoline_
 	$$(dirname $$(dirname $(CC)))/bin/clang -o $@ $< -mgc -O2 -Wl,--no-entry -Wl,--import-table -Wl,--import-memory -target wasm32-unknown-unknown -nostdlib
 
 Python/emscripten_trampoline_wasm.c: Python/emscripten_trampoline_inner.wasm
-	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/wasm/emscripten/prepare_external_wasm.py $< $@ getWasmTrampolineModule
+	$(PYTHON_FOR_REGEN) $(srcdir)/Platforms/emscripten/prepare_external_wasm.py $< $@ getWasmTrampolineModule
 
 JIT_DEPS = \
 		$(srcdir)/Tools/jit/*.c \
@@ -3202,6 +3229,9 @@ regen-jit:
 # https://bugs.llvm.org//show_bug.cgi?id=31928
 Python/dtoa.o: Python/dtoa.c
 	$(CC) -c $(PY_CORE_CFLAGS) $(CFLAGS_ALIASING) -o $@ $<
+
+Python/ceval.o: Python/ceval.c
+	$(CC) -c $(PY_CORE_CFLAGS) $(CFLAGS_CEVAL) -o $@ $<
 
 # Run reindent on the library
 .PHONY: reindent
@@ -3286,10 +3316,10 @@ clean-retain-profile: pycremoval
 	-find build -type f -a ! -name '*.gc??' -exec rm -f {} ';'
 	-rm -f Include/pydtrace_probes.h
 	-rm -f profile-gen-stamp
-	-rm -rf Apple/iOS/testbed/Python.xcframework/ios-*/bin
-	-rm -rf Apple/iOS/testbed/Python.xcframework/ios-*/lib
-	-rm -rf Apple/iOS/testbed/Python.xcframework/ios-*/include
-	-rm -rf Apple/iOS/testbed/Python.xcframework/ios-*/Python.framework
+	-rm -rf Platforms/Apple/iOS/testbed/Python.xcframework/ios-*/bin
+	-rm -rf Platforms/Apple/iOS/testbed/Python.xcframework/ios-*/lib
+	-rm -rf Platforms/Apple/iOS/testbed/Python.xcframework/ios-*/include
+	-rm -rf Platforms/Apple/iOS/testbed/Python.xcframework/ios-*/Python.framework
 
 .PHONY: profile-removal
 profile-removal:
@@ -3323,7 +3353,7 @@ clobber: clean
 		config.cache config.log pyconfig.h Modules/config.c
 	-rm -rf build platform
 	-rm -rf $(PYTHONFRAMEWORKDIR)
-	-rm -rf Apple/iOS/Frameworks
+	-rm -rf Platforms/Apple/iOS/Frameworks
 	-rm -rf iOSTestbed.*
 	-rm -f python-config.py python-config
 	-rm -rf cross-build
