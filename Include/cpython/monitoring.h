@@ -9,7 +9,7 @@ extern "C" {
 
 
 /* Local events.
- * These require bytecode instrumentation */
+ * Some of these require bytecode instrumentation */
 
 #define PY_MONITORING_EVENT_PY_START 0
 #define PY_MONITORING_EVENT_PY_RESUME 1
@@ -24,13 +24,18 @@ extern "C" {
 #define PY_MONITORING_EVENT_STOP_ITERATION 10
 
 #define PY_MONITORING_IS_INSTRUMENTED_EVENT(ev) \
-    ((ev) < _PY_MONITORING_LOCAL_EVENTS)
+((ev) <= PY_MONITORING_EVENT_STOP_ITERATION)
+
+#define PY_MONITORING_EVENT_PY_UNWIND 11
+
+#define PY_MONITORING_IS_LOCAL_EVENT(ev) \
+((ev) < _PY_MONITORING_LOCAL_EVENTS)
+
 
 /* Other events, mainly exceptions */
 
-#define PY_MONITORING_EVENT_RAISE 11
 #define PY_MONITORING_EVENT_EXCEPTION_HANDLED 12
-#define PY_MONITORING_EVENT_PY_UNWIND 13
+#define PY_MONITORING_EVENT_RAISE 13
 #define PY_MONITORING_EVENT_PY_THROW 14
 #define PY_MONITORING_EVENT_RERAISE 15
 
