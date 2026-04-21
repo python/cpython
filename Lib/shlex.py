@@ -317,7 +317,7 @@ def join(split_command):
     return ' '.join(quote(arg) for arg in split_command)
 
 
-def quote(s, force=False):
+def quote(s, *, force=False):
     """Return a shell-escaped version of the string *s*.
 
     If *force* is *True* then *s* will be quoted even if it is
