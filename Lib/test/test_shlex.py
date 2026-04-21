@@ -341,6 +341,28 @@ class ShlexTest(unittest.TestCase):
                              "'test%s'\"'\"'name'\"'\"''" % u)
         self.assertRaises(TypeError, shlex.quote, 42)
         self.assertRaises(TypeError, shlex.quote, b"abc")
+        # self.assertRaises(TypeError, shlex.quote, None)
+
+    def testForceQuote(self):
+        # ensure default `force` behavior does not unnecessarily quote strings
+        self.assertEqual(shlex.quote("no-quotes-needed"),
+                                     "no-quotes-needed")
+
+        # ensure `force=False` does not unnecessarily quote strings
+        self.assertEqual(shlex.quote("no-quotes-needed", force=False),
+                                     "no-quotes-needed")
+
+        # ensure `force=True` does quote strings that
+        # would not be quoted if using `force=False`
+        self.assertEqual(shlex.quote("no-quotes-needed", force=True),
+                                     "'no-quotes-needed'")
+
+        # ensure `force` does not affect outcome for strings that
+        # need quoting anyways
+        self.assertEqual(shlex.quote("quotes needed", force=False),
+                                     "'quotes needed'")
+        self.assertEqual(shlex.quote("quotes needed", force=True),
+                                     "'quotes needed'")
 
     def testJoin(self):
         for split_command, command in [
