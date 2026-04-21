@@ -67,6 +67,10 @@ class ThreadSafetyMixin:
             barrier.wait()
             b.readinto(into)
 
+        def peek(barrier, b, into, *ignore):
+            barrier.wait()
+            b.peek(into)
+
         def close(barrier, b, *ignore):
             barrier.wait()
             b.close()
