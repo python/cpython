@@ -71,8 +71,7 @@ class urlopenNetworkTests(unittest.TestCase):
         with self.urlopen(self.url) as open_url:
             for attr in ("read", "readline", "readlines", "fileno", "close",
                          "info", "geturl"):
-                self.assertTrue(hasattr(open_url, attr), "object returned from "
-                                "urlopen lacks the %s attribute" % attr)
+                self.assertHasAttr(open_url, attr)
             self.assertTrue(open_url.read(), "calling 'read' failed")
 
     def test_readlines(self):
@@ -106,6 +105,7 @@ class urlopenNetworkTests(unittest.TestCase):
                 with urllib.request.urlopen(URL):
                     pass
             self.assertEqual(e.exception.code, 404)
+            e.exception.close()
 
     @support.requires_resource('walltime')
     def test_bad_address(self):

@@ -168,9 +168,9 @@ class LongTests(unittest.TestCase):
                          mask=False,
                          negative_value_error=OverflowError):
         # round trip (object -> C integer -> object)
-        values = (0, 1, 1234, max_val)
+        values = (0, 1, 512, 1234, max_val)
         if min_val < 0:
-            values += (-1, min_val)
+            values += (-1, -512, -1234, min_val)
         for value in values:
             with self.subTest(value=value):
                 self.assertEqual(func(value), value)
@@ -211,9 +211,8 @@ class LongTests(unittest.TestCase):
 
         self.assertEqual(func(min_val - 1), (-1, -1))
         self.assertEqual(func(max_val + 1), (-1, +1))
-
-        # CRASHES func(1.0)
-        # CRASHES func(NULL)
+        self.assertRaises(SystemError, func, None)
+        self.assertRaises(TypeError, func, 1.0)
 
     def test_long_asint(self):
         # Test PyLong_AsInt()
@@ -803,6 +802,26 @@ class LongTests(unittest.TestCase):
                     digits = to_digits(abs(value))
                 self.assertEqual(pylongwriter_create(negative, digits), num,
                                  (negative, digits))
+
+    @unittest.skipUnless(support.Py_DEBUG, "need a debug build (Py_DEBUG)")
+    def test_longwriter_finish(self):
+        # Test PyLongWriter_Create(0, 3, &digits) with PyLongWriter_Finish()
+        # where the last digit is left uninitialized
+        pylongwriter_finish_bug = _testcapi.pylongwriter_finish_bug
+        with self.assertRaises(SystemError) as cm:
+            pylongwriter_finish_bug()
+        self.assertEqual(str(cm.exception),
+                         'PyLongWriter_Finish: digit 2 is uninitialized')
+
+    def test_bug_143050(self):
+        with support.adjust_int_max_str_digits(0):
+            # Bug coming from using _pylong.int_from_string(), that
+            # currently requires > 6000 decimal digits.
+            int('-' + '0' * 7000, 10)
+            _testcapi.test_immortal_small_ints()
+            # Test also nonzero small int
+            int('-' + '0' * 7000 + '123', 10)
+            _testcapi.test_immortal_small_ints()
 
 
 if __name__ == "__main__":

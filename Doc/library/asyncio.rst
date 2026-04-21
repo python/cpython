@@ -29,6 +29,11 @@ database connection libraries, distributed task queues, etc.
 asyncio is often a perfect fit for IO-bound and high-level
 **structured** network code.
 
+.. seealso::
+
+   :ref:`a-conceptual-overview-of-asyncio`
+      Explanation of the fundamentals of asyncio.
+
 asyncio provides a set of **high-level** APIs to:
 
 * :ref:`run Python coroutines <coroutine>` concurrently and
@@ -74,6 +79,10 @@ You can experiment with an ``asyncio`` concurrent context in the :term:`REPL`:
    >>> await asyncio.sleep(10, result='hello')
    'hello'
 
+This REPL provides limited compatibility with :envvar:`PYTHON_BASIC_REPL`.
+It is recommended that the default REPL is used
+for full functionality and the latest features.
+
 .. audit-event:: cpython.run_stdin "" ""
 
 .. versionchanged:: 3.12.5 (also 3.11.10, 3.10.15, 3.9.20, and 3.8.20)
@@ -99,6 +108,7 @@ You can experiment with an ``asyncio`` concurrent context in the :term:`REPL`:
    asyncio-subprocess.rst
    asyncio-queue.rst
    asyncio-exceptions.rst
+   asyncio-graph.rst
 
 .. toctree::
    :caption: Low-level APIs

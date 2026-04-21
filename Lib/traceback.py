@@ -1,14 +1,29 @@
 """Extract, format and print information about Python stack traces."""
 
 import collections.abc
+import functools
 import itertools
 import linecache
+import os
+import re
 import sys
 import textwrap
+import types
 import warnings
-from contextlib import suppress
+import codeop
+import keyword
+import tokenize
+import io
+import importlib.util
+import pathlib
 import _colorize
-from _colorize import ANSIColors
+
+from contextlib import suppress
+
+try:
+    from _missing_stdlib_info import _MISSING_STDLIB_MODULE_MESSAGES
+except ImportError:
+    _MISSING_STDLIB_MODULE_MESSAGES = {}
 
 __all__ = ['extract_stack', 'extract_tb', 'format_exception',
            'format_exception_only', 'format_list', 'format_stack',
@@ -133,9 +148,10 @@ def print_exception(exc, /, value=_sentinel, tb=_sentinel, limit=None, \
 BUILTIN_EXCEPTION_LIMIT = object()
 
 
-def _print_exception_bltin(exc, /):
-    file = sys.stderr if sys.stderr is not None else sys.__stderr__
-    colorize = _colorize.can_colorize()
+def _print_exception_bltin(exc, file=None, /):
+    if file is None:
+        file = sys.stderr if sys.stderr is not None else sys.__stderr__
+    colorize = _colorize.can_colorize(file=file)
     return print_exception(exc, limit=BUILTIN_EXCEPTION_LIMIT, file=file, colorize=colorize)
 
 
@@ -183,15 +199,13 @@ def _format_final_exc_line(etype, value, *, insert_final_newline=True, colorize=
     valuestr = _safe_string(value, 'exception')
     end_char = "\n" if insert_final_newline else ""
     if colorize:
-        if value is None or not valuestr:
-            line = f"{ANSIColors.BOLD_MAGENTA}{etype}{ANSIColors.RESET}{end_char}"
-        else:
-            line = f"{ANSIColors.BOLD_MAGENTA}{etype}{ANSIColors.RESET}: {ANSIColors.MAGENTA}{valuestr}{ANSIColors.RESET}{end_char}"
+        theme = _colorize.get_theme(force_color=True).traceback
     else:
-        if value is None or not valuestr:
-            line = f"{etype}{end_char}"
-        else:
-            line = f"{etype}: {valuestr}{end_char}"
+        theme = _colorize.get_theme(force_no_color=True).traceback
+    if value is None or not valuestr:
+        line = f"{theme.type}{etype}{theme.reset}{end_char}"
+    else:
+        line = f"{theme.type}{etype}{theme.reset}: {theme.message}{valuestr}{theme.reset}{end_char}"
     return line
 
 
@@ -203,24 +217,24 @@ def _safe_string(value, what, func=str):
 
 # --
 
-def print_exc(limit=None, file=None, chain=True):
-    """Shorthand for 'print_exception(sys.exception(), limit, file, chain)'."""
-    print_exception(sys.exception(), limit=limit, file=file, chain=chain)
+def print_exc(limit=None, file=None, chain=True, **kwargs):
+    """Shorthand for 'print_exception(sys.exception(), limit=limit, file=file, chain=chain)'."""
+    print_exception(sys.exception(), limit=limit, file=file, chain=chain, **kwargs)
 
 def format_exc(limit=None, chain=True):
     """Like print_exc() but return a string."""
     return "".join(format_exception(sys.exception(), limit=limit, chain=chain))
 
 def print_last(limit=None, file=None, chain=True):
-    """This is a shorthand for 'print_exception(sys.last_exc, limit, file, chain)'."""
+    """This is a shorthand for 'print_exception(sys.last_exc, limit=limit, file=file, chain=chain)'."""
     if not hasattr(sys, "last_exc") and not hasattr(sys, "last_type"):
         raise ValueError("no last exception")
 
     if hasattr(sys, "last_exc"):
-        print_exception(sys.last_exc, limit, file, chain)
+        print_exception(sys.last_exc, limit=limit, file=file, chain=chain)
     else:
         print_exception(sys.last_type, sys.last_value, sys.last_traceback,
-                        limit, file, chain)
+                        limit=limit, file=file, chain=chain)
 
 
 #
@@ -285,14 +299,20 @@ class FrameSummary:
       of code that was running when the frame was captured.
     - :attr:`locals` Either None if locals were not supplied, or a dict
       mapping the name to the repr() of the variable.
+    - :attr:`end_lineno` The last line number of the source code for this frame.
+      By default, it is set to lineno and indexation starts from 1.
+    - :attr:`colno` The column number of the source code for this frame.
+      By default, it is None and indexation starts from 0.
+    - :attr:`end_colno` The last column number of the source code for this frame.
+      By default, it is None and indexation starts from 0.
     """
 
     __slots__ = ('filename', 'lineno', 'end_lineno', 'colno', 'end_colno',
-                 'name', '_lines', '_lines_dedented', 'locals')
+                 'name', '_lines', '_lines_dedented', 'locals', '_code')
 
     def __init__(self, filename, lineno, name, *, lookup_line=True,
             locals=None, line=None,
-            end_lineno=None, colno=None, end_colno=None):
+            end_lineno=None, colno=None, end_colno=None, **kwargs):
         """Construct a FrameSummary.
 
         :param lookup_line: If True, `linecache` is consulted for the source
@@ -308,6 +328,7 @@ class FrameSummary:
         self.colno = colno
         self.end_colno = end_colno
         self.name = name
+        self._code = kwargs.get("_code")
         self._lines = line
         self._lines_dedented = None
         if lookup_line:
@@ -347,7 +368,10 @@ class FrameSummary:
             lines = []
             for lineno in range(self.lineno, self.end_lineno + 1):
                 # treat errors (empty string) and empty lines (newline) as the same
-                lines.append(linecache.getline(self.filename, lineno).rstrip())
+                line = linecache.getline(self.filename, lineno).rstrip()
+                if not line and self._code is not None and self.filename.startswith("<"):
+                    line = linecache._getline_from_code(self._code, lineno).rstrip()
+                lines.append(line)
             self._lines = "\n".join(lines) + "\n"
 
     @property
@@ -380,10 +404,14 @@ def walk_stack(f):
     current stack is used. Usually used with StackSummary.extract.
     """
     if f is None:
-        f = sys._getframe().f_back.f_back.f_back.f_back
-    while f is not None:
-        yield f, f.f_lineno
-        f = f.f_back
+        f = sys._getframe().f_back
+
+    def walk_stack_generator(frame):
+        while frame is not None:
+            yield frame, frame.f_lineno
+            frame = frame.f_back
+
+    return walk_stack_generator(f)
 
 
 def walk_tb(tb):
@@ -480,9 +508,13 @@ class StackSummary(list):
                 f_locals = f.f_locals
             else:
                 f_locals = None
-            result.append(FrameSummary(
-                filename, lineno, name, lookup_line=False, locals=f_locals,
-                end_lineno=end_lineno, colno=colno, end_colno=end_colno))
+            result.append(
+                FrameSummary(filename, lineno, name,
+                    lookup_line=False, locals=f_locals,
+                    end_lineno=end_lineno, colno=colno, end_colno=end_colno,
+                    _code=f.f_code,
+                )
+            )
         for filename in fnames:
             linecache.checkcache(filename)
 
@@ -520,24 +552,25 @@ class StackSummary(list):
         colorize = kwargs.get("colorize", False)
         row = []
         filename = frame_summary.filename
-        if frame_summary.filename.startswith("<stdin>-"):
+        if frame_summary.filename.startswith("<stdin-") and frame_summary.filename.endswith('>'):
             filename = "<stdin>"
         if colorize:
-            row.append('  File {}"{}"{}, line {}{}{}, in {}{}{}\n'.format(
-                    ANSIColors.MAGENTA,
-                    filename,
-                    ANSIColors.RESET,
-                    ANSIColors.MAGENTA,
-                    frame_summary.lineno,
-                    ANSIColors.RESET,
-                    ANSIColors.MAGENTA,
-                    frame_summary.name,
-                    ANSIColors.RESET,
-                    )
-            )
+            theme = _colorize.get_theme(force_color=True).traceback
         else:
-            row.append('  File "{}", line {}, in {}\n'.format(
-                filename, frame_summary.lineno, frame_summary.name))
+            theme = _colorize.get_theme(force_no_color=True).traceback
+        row.append(
+            '  File {}"{}"{}, line {}{}{}, in {}{}{}\n'.format(
+                theme.filename,
+                filename,
+                theme.reset,
+                theme.line_no,
+                frame_summary.lineno,
+                theme.reset,
+                theme.frame,
+                frame_summary.name,
+                theme.reset,
+            )
+        )
         if frame_summary._dedented_lines and frame_summary._dedented_lines.strip():
             if (
                 frame_summary.colno is None or
@@ -653,14 +686,14 @@ class StackSummary(list):
                         colorized_line_parts = []
                         colorized_carets_parts = []
 
-                        for color, group in itertools.groupby(itertools.zip_longest(line, carets, fillvalue=""), key=lambda x: x[1]):
+                        for color, group in itertools.groupby(_zip_display_width(line, carets), key=lambda x: x[1]):
                             caret_group = list(group)
-                            if color == "^":
-                                colorized_line_parts.append(ANSIColors.BOLD_RED + "".join(char for char, _ in caret_group) + ANSIColors.RESET)
-                                colorized_carets_parts.append(ANSIColors.BOLD_RED + "".join(caret for _, caret in caret_group) + ANSIColors.RESET)
-                            elif color == "~":
-                                colorized_line_parts.append(ANSIColors.RED + "".join(char for char, _ in caret_group) + ANSIColors.RESET)
-                                colorized_carets_parts.append(ANSIColors.RED + "".join(caret for _, caret in caret_group) + ANSIColors.RESET)
+                            if "^" in color:
+                                colorized_line_parts.append(theme.error_highlight + "".join(char for char, _ in caret_group) + theme.reset)
+                                colorized_carets_parts.append(theme.error_highlight + "".join(caret for _, caret in caret_group) + theme.reset)
+                            elif "~" in color:
+                                colorized_line_parts.append(theme.error_range + "".join(char for char, _ in caret_group) + theme.reset)
+                                colorized_carets_parts.append(theme.error_range + "".join(caret for _, caret in caret_group) + theme.reset)
                             else:
                                 colorized_line_parts.append("".join(char for char, _ in caret_group))
                                 colorized_carets_parts.append("".join(caret for _, caret in caret_group))
@@ -940,7 +973,54 @@ def _extract_caret_anchors_from_line_segment(segment):
 
     return None
 
-_WIDE_CHAR_SPECIFIERS = "WF"
+
+def _zip_display_width(line, carets):
+    carets = iter(carets)
+    if line.isascii() and '\x1a' not in line:
+        for char in line:
+            yield char, next(carets, "")
+        return
+
+    import unicodedata
+    for char in unicodedata.iter_graphemes(line):
+        char = str(char)
+        char_width = _display_width(char)
+        yield char, "".join(itertools.islice(carets, char_width))
+
+
+@functools.cache
+def _str_width(c: str) -> int:
+    # copied from _pyrepl.utils to fix gh-130273
+
+    if ord(c) < 128:
+        return 1
+    import unicodedata
+    # gh-139246 for zero-width joiner and combining characters
+    if unicodedata.combining(c):
+        return 0
+    category = unicodedata.category(c)
+    if category == "Cf" and c != "\u00ad":
+        return 0
+    w = unicodedata.east_asian_width(c)
+    if w in ("N", "Na", "H", "A"):
+        return 1
+    return 2
+
+
+_ANSI_ESCAPE_SEQUENCE = re.compile(r"\x1b\[[ -@]*[A-~]")
+
+
+def _wlen(s: str) -> int:
+    # copied from _pyrepl.utils to fix gh-130273
+
+    if len(s) == 1 and s != "\x1a":
+        return _str_width(s)
+    length = sum(_str_width(i) for i in s)
+    # remove lengths of any escape sequences
+    sequence = _ANSI_ESCAPE_SEQUENCE.findall(s)
+    ctrl_z_cnt = s.count("\x1a")
+    return length - sum(len(i) for i in sequence) + ctrl_z_cnt
+
 
 def _display_width(line, offset=None):
     """Calculate the extra amount of width space the given source
@@ -948,19 +1028,14 @@ def _display_width(line, offset=None):
     width output device. Supports wide unicode characters and emojis."""
 
     if offset is None:
-        offset = len(line)
+        return _wlen(line)
 
-    # Fast track for ASCII-only strings
-    if line.isascii():
-        return offset
+    return _wlen(line[:offset])
 
-    import unicodedata
 
-    return sum(
-        2 if unicodedata.east_asian_width(char) in _WIDE_CHAR_SPECIFIERS else 1
-        for char in line[:offset]
-    )
-
+def _format_note(note, indent, theme):
+    for l in note.split("\n"):
+        yield f"{indent}{theme.note}{l}{theme.reset}\n"
 
 
 class _ExceptionPrintContext:
@@ -1078,25 +1153,60 @@ class TracebackException:
             self.end_offset = exc_value.end_offset
             self.msg = exc_value.msg
             self._is_syntax_error = True
+            self._exc_metadata = getattr(exc_value, "_metadata", None)
         elif exc_type and issubclass(exc_type, ImportError) and \
                 getattr(exc_value, "name_from", None) is not None:
             wrong_name = getattr(exc_value, "name_from", None)
             suggestion = _compute_suggestion_error(exc_value, exc_traceback, wrong_name)
             if suggestion:
-                self._str += f". Did you mean: '{suggestion}'?"
-        elif exc_type and issubclass(exc_type, (NameError, AttributeError)) and \
+                if suggestion.isascii():
+                    self._str += f". Did you mean: '{suggestion}'?"
+                else:
+                    self._str += f". Did you mean: '{suggestion}' ({suggestion!a})?"
+        elif exc_type and issubclass(exc_type, ModuleNotFoundError):
+            module_name = getattr(exc_value, "name", None)
+            if module_name in sys.stdlib_module_names:
+                message = _MISSING_STDLIB_MODULE_MESSAGES.get(
+                    module_name,
+                    f"Standard library module {module_name!r} was not found"
+                )
+                self._str = message
+            elif sys.flags.no_site:
+                self._str += (". Site initialization is disabled, did you forget to "
+                    + "add the site-packages directory to sys.path "
+                    + "or to enable your virtual environment?")
+            elif abi_tag := _find_incompatible_extension_module(module_name):
+                self._str += (
+                    ". Although a module with this name was found for a "
+                    f"different Python version ({abi_tag})."
+                )
+            else:
+                suggestion = _compute_suggestion_error(exc_value, exc_traceback, module_name)
+                if suggestion:
+                    self._str += f". Did you mean: '{suggestion}'?"
+        elif exc_type and issubclass(exc_type, AttributeError) and \
                 getattr(exc_value, "name", None) is not None:
             wrong_name = getattr(exc_value, "name", None)
             suggestion = _compute_suggestion_error(exc_value, exc_traceback, wrong_name)
             if suggestion:
-                self._str += f". Did you mean: '{suggestion}'?"
-            if issubclass(exc_type, NameError):
-                wrong_name = getattr(exc_value, "name", None)
-                if wrong_name is not None and wrong_name in sys.stdlib_module_names:
-                    if suggestion:
-                        self._str += f" Or did you forget to import '{wrong_name}'?"
-                    else:
-                        self._str += f". Did you forget to import '{wrong_name}'?"
+                if suggestion.isascii():
+                    self._str += f". Did you mean '.{suggestion}' instead of '.{wrong_name}'?"
+                else:
+                    self._str += f". Did you mean '.{suggestion}' ({suggestion!a}) instead of '.{wrong_name}' ({wrong_name!a})?"
+        elif exc_type and issubclass(exc_type, NameError) and \
+                getattr(exc_value, "name", None) is not None:
+            wrong_name = getattr(exc_value, "name", None)
+            suggestion = _compute_suggestion_error(exc_value, exc_traceback, wrong_name)
+            if suggestion:
+                if suggestion.isascii():
+                    self._str += f". Did you mean: '{suggestion}'?"
+                else:
+                    self._str += f". Did you mean: '{suggestion}' ({suggestion!a})?"
+            if wrong_name is not None and wrong_name in sys.stdlib_module_names:
+                if suggestion:
+                    self._str += f" Or did you forget to import '{wrong_name}'?"
+                else:
+                    self._str += f". Did you forget to import '{wrong_name}'?"
         if lookup_lines:
             self._load_lines()
         self.__suppress_context__ = \
@@ -1108,7 +1218,7 @@ class TracebackException:
             queue = [(self, exc_value)]
             while queue:
                 te, e = queue.pop()
-                if (e and e.__cause__ is not None
+                if (e is not None and e.__cause__ is not None
                     and id(e.__cause__) not in _seen):
                     cause = TracebackException(
                         type(e.__cause__),
@@ -1129,7 +1239,7 @@ class TracebackException:
                                     not e.__suppress_context__)
                 else:
                     need_context = True
-                if (e and e.__context__ is not None
+                if (e is not None and e.__context__ is not None
                     and need_context and id(e.__context__) not in _seen):
                     context = TracebackException(
                         type(e.__context__),
@@ -1144,7 +1254,7 @@ class TracebackException:
                 else:
                     context = None
 
-                if e and isinstance(e, BaseExceptionGroup):
+                if e is not None and isinstance(e, BaseExceptionGroup):
                     exceptions = []
                     for exc in e.exceptions:
                         texc = TracebackException(
@@ -1225,6 +1335,10 @@ class TracebackException:
         well, recursively, with indentation relative to their nesting depth.
         """
         colorize = kwargs.get("colorize", False)
+        if colorize:
+            theme = _colorize.get_theme(force_color=True).traceback
+        else:
+            theme = _colorize.get_theme(force_no_color=True).traceback
 
         indent = 3 * _depth * ' '
         if not self._have_exc_type:
@@ -1253,49 +1367,165 @@ class TracebackException:
         ):
             for note in self.__notes__:
                 note = _safe_string(note, 'note')
-                yield from [indent + l + '\n' for l in note.split('\n')]
+                yield from _format_note(note, indent, theme)
         elif self.__notes__ is not None:
-            yield indent + "{}\n".format(_safe_string(self.__notes__, '__notes__', func=repr))
+            note = _safe_string(self.__notes__, '__notes__', func=repr)
+            yield from _format_note(note, indent, theme)
 
         if self.exceptions and show_group:
             for ex in self.exceptions:
                 yield from ex.format_exception_only(show_group=show_group, _depth=_depth+1, colorize=colorize)
 
+    def _find_keyword_typos(self):
+        assert self._is_syntax_error
+        try:
+            import _suggestions
+        except ImportError:
+            _suggestions = None
+
+        # Only try to find keyword typos if there is no custom message
+        if self.msg != "invalid syntax" and "Perhaps you forgot a comma" not in self.msg:
+            return
+
+        if not self._exc_metadata:
+            return
+
+        line, offset, source = self._exc_metadata
+        end_line = int(self.lineno) if self.lineno is not None else 0
+        lines = None
+        from_filename = False
+
+        if source is None:
+            if self.filename:
+                try:
+                    with open(self.filename) as f:
+                        lines = f.read().splitlines()
+                except Exception:
+                    line, end_line, offset = 0,1,0
+                else:
+                    from_filename = True
+            lines = lines if lines is not None else self.text.splitlines()
+        else:
+            lines = source.splitlines()
+
+        error_code = lines[line -1 if line > 0 else 0:end_line]
+        error_code = textwrap.dedent('\n'.join(error_code))
+
+        # Do not continue if the source is too large
+        if len(error_code) > 1024:
+            return
+
+        # If the original code doesn't raise SyntaxError, we can't validate
+        # that a keyword replacement actually fixes anything
+        try:
+            codeop.compile_command(error_code, symbol="exec", flags=codeop.PyCF_ONLY_AST)
+        except SyntaxError:
+            pass  # Good - the original code has a syntax error we might fix
+        else:
+            return  # Original code compiles or is incomplete - can't validate fixes
+
+        error_lines = error_code.splitlines()
+        tokens = tokenize.generate_tokens(io.StringIO(error_code).readline)
+        tokens_left_to_process = 10
+        import difflib
+        for token in tokens:
+            start, end = token.start, token.end
+            if token.type != tokenize.NAME:
+                continue
+            # Only consider NAME tokens on the same line as the error
+            the_end = end_line if line == 0 else end_line + 1
+            if from_filename and token.start[0]+line != the_end:
+                continue
+            wrong_name = token.string
+            if wrong_name in keyword.kwlist:
+                continue
+
+            # Limit the number of valid tokens to consider to not spend
+            # to much time in this function
+            tokens_left_to_process -= 1
+            if tokens_left_to_process < 0:
+                break
+            # Limit the number of possible matches to try
+            max_matches = 3
+            matches = []
+            if _suggestions is not None:
+                suggestion = _suggestions._generate_suggestions(keyword.kwlist, wrong_name)
+                if suggestion:
+                    matches.append(suggestion)
+            matches.extend(difflib.get_close_matches(wrong_name, keyword.kwlist, n=max_matches, cutoff=0.5))
+            matches = matches[:max_matches]
+            for suggestion in matches:
+                if not suggestion or suggestion == wrong_name:
+                    continue
+                # Try to replace the token with the keyword
+                the_lines = error_lines.copy()
+                the_line = the_lines[start[0] - 1][:]
+                chars = list(the_line)
+                chars[token.start[1]:token.end[1]] = suggestion
+                the_lines[start[0] - 1] = ''.join(chars)
+                code = '\n'.join(the_lines)
+
+                # Check if it works
+                try:
+                    codeop.compile_command(code, symbol="exec", flags=codeop.PyCF_ONLY_AST)
+                except SyntaxError:
+                    continue
+
+                # Keep token.line but handle offsets correctly
+                self.text = token.line
+                self.offset = token.start[1] + 1
+                self.end_offset = token.end[1] + 1
+                self.lineno = start[0]
+                self.end_lineno = end[0]
+                self.msg = f"invalid syntax. Did you mean '{suggestion}'?"
+                return
+
+
     def _format_syntax_error(self, stype, **kwargs):
         """Format SyntaxError exceptions (internal helper)."""
         # Show exactly where the problem was found.
         colorize = kwargs.get("colorize", False)
+        if colorize:
+            theme = _colorize.get_theme(force_color=True).traceback
+        else:
+            theme = _colorize.get_theme(force_no_color=True).traceback
         filename_suffix = ''
         if self.lineno is not None:
-            if colorize:
-                yield '  File {}"{}"{}, line {}{}{}\n'.format(
-                    ANSIColors.MAGENTA,
-                    self.filename or "<string>",
-                    ANSIColors.RESET,
-                    ANSIColors.MAGENTA,
-                    self.lineno,
-                    ANSIColors.RESET,
-                    )
-            else:
-                yield '  File "{}", line {}\n'.format(
-                    self.filename or "<string>", self.lineno)
+            yield '  File {}"{}"{}, line {}{}{}\n'.format(
+                theme.filename,
+                self.filename or "<string>",
+                theme.reset,
+                theme.line_no,
+                self.lineno,
+                theme.reset,
+                )
         elif self.filename is not None:
             filename_suffix = ' ({})'.format(self.filename)
 
         text = self.text
-        if text is not None:
+        if isinstance(text, str):
             # text  = "   foo\n"
             # rtext = "   foo"
             # ltext =    "foo"
+            with suppress(Exception):
+                self._find_keyword_typos()
+            text = self.text
             rtext = text.rstrip('\n')
             ltext = rtext.lstrip(' \n\f')
             spaces = len(rtext) - len(ltext)
             if self.offset is None:
                 yield '    {}\n'.format(ltext)
-            else:
+            elif isinstance(self.offset, int):
                 offset = self.offset
                 if self.lineno == self.end_lineno:
-                    end_offset = self.end_offset if self.end_offset not in {None, 0} else offset
+                    end_offset = (
+                        self.end_offset
+                        if (
+                            isinstance(self.end_offset, int)
+                            and self.end_offset != 0
+                        )
+                        else offset
+                    )
                 else:
                     end_offset = len(rtext) + 1
 
@@ -1309,41 +1539,40 @@ class TracebackException:
                 # Convert 1-based column offset to 0-based index into stripped text
                 colno = offset - 1 - spaces
                 end_colno = end_offset - 1 - spaces
-                caretspace = ' '
                 if colno >= 0:
-                    # non-space whitespace (likes tabs) must be kept for alignment
-                    caretspace = ((c if c.isspace() else ' ') for c in ltext[:colno])
+                    # Calculate display width to account for wide characters
+                    dp_colno = _display_width(ltext, colno)
+                    highlighted = ltext[colno:end_colno]
+                    caret_count = _display_width(highlighted) if highlighted else (end_colno - colno)
                     start_color = end_color = ""
                     if colorize:
                         # colorize from colno to end_colno
                         ltext = (
                             ltext[:colno] +
-                            ANSIColors.BOLD_RED + ltext[colno:end_colno] + ANSIColors.RESET +
+                            theme.error_highlight + ltext[colno:end_colno] + theme.reset +
                             ltext[end_colno:]
                         )
-                        start_color = ANSIColors.BOLD_RED
-                        end_color = ANSIColors.RESET
+                        start_color = theme.error_highlight
+                        end_color = theme.reset
                     yield '    {}\n'.format(ltext)
                     yield '    {}{}{}{}\n'.format(
-                        "".join(caretspace),
+                        ' ' * dp_colno,
                         start_color,
-                        ('^' * (end_colno - colno)),
+                        '^' * caret_count,
                         end_color,
                     )
                 else:
                     yield '    {}\n'.format(ltext)
         msg = self.msg or "<no detail available>"
-        if colorize:
-            yield "{}{}{}: {}{}{}{}\n".format(
-                ANSIColors.BOLD_MAGENTA,
-                stype,
-                ANSIColors.RESET,
-                ANSIColors.MAGENTA,
-                msg,
-                ANSIColors.RESET,
-                filename_suffix)
-        else:
-            yield "{}: {}{}\n".format(stype, msg, filename_suffix)
+        yield "{}{}{}: {}{}{}{}\n".format(
+            theme.type,
+            stype,
+            theme.reset,
+            theme.message,
+            msg,
+            theme.reset,
+            filename_suffix,
+        )
 
     def format(self, *, chain=True, _ctx=None, **kwargs):
         """Format the exception.
@@ -1469,13 +1698,86 @@ def _substitution_cost(ch_a, ch_b):
     return _MOVE_COST
 
 
+def _is_lazy_import(obj, attr_name):
+    """Check if attr_name in obj's __dict__ is a lazy import.
+
+    Returns True if obj is a module and the attribute is a LazyImportType,
+    False otherwise. This avoids triggering module loading when computing
+    suggestions for AttributeError.
+    """
+    if not isinstance(obj, types.ModuleType):
+        return False
+    obj_dict = getattr(obj, '__dict__', None)
+    if obj_dict is None:
+        return False
+    attr_value = obj_dict.get(attr_name)
+    return isinstance(attr_value, types.LazyImportType)
+
+
+def _check_for_nested_attribute(obj, wrong_name, attrs):
+    """Check if any attribute of obj has the wrong_name as a nested attribute.
+
+    Returns the first nested attribute suggestion found, or None.
+    Limited to checking 20 attributes.
+    Only considers non-descriptor outer attributes to avoid executing
+    arbitrary code. Checks nested attributes statically so descriptors such
+    as properties can still be suggested without invoking them.
+    Skips lazy imports to avoid triggering module loading.
+    """
+    from inspect import getattr_static
+
+    # Check for nested attributes (only one level deep)
+    attrs_to_check = [x for x in attrs if not x.startswith('_')][:20]  # Limit number of attributes to check
+    for attr_name in attrs_to_check:
+        with suppress(Exception):
+            # Check if attr_name is a descriptor - if so, skip it
+            attr_from_class = getattr_static(type(obj), attr_name, _sentinel)
+            if attr_from_class is not _sentinel and hasattr(attr_from_class, '__get__'):
+                continue  # Skip descriptors to avoid executing arbitrary code
+
+            # Skip lazy imports to avoid triggering module loading
+            if _is_lazy_import(obj, attr_name):
+                continue
+
+            # Safe to get the attribute since it's not a descriptor
+            attr_obj = getattr(obj, attr_name)
+
+            if _is_lazy_import(attr_obj, wrong_name):
+                continue
+
+            if getattr_static(attr_obj, wrong_name, _sentinel) is not _sentinel:
+                return f"{attr_name}.{wrong_name}"
+
+    return None
+
+
+def _get_safe___dir__(obj):
+    # Use obj.__dir__() to avoid a TypeError when calling dir(obj).
+    # See gh-131001 and gh-139933.
+    # Also filters out lazy imports to avoid triggering module loading.
+    try:
+        d = obj.__dir__()
+    except TypeError:  # when obj is a class
+        d = type(obj).__dir__(obj)
+    return sorted(
+        x for x in d if isinstance(x, str) and not _is_lazy_import(obj, x)
+    )
+
+
 def _compute_suggestion_error(exc_value, tb, wrong_name):
     if wrong_name is None or not isinstance(wrong_name, str):
         return None
+    not_normalized = False
+    if not wrong_name.isascii():
+        from unicodedata import normalize
+        normalized_name = normalize('NFKC', wrong_name)
+        if normalized_name != wrong_name:
+            not_normalized = True
+            wrong_name = normalized_name
     if isinstance(exc_value, AttributeError):
         obj = exc_value.obj
         try:
-            d = dir(obj)
+            d = _get_safe___dir__(obj)
             hide_underscored = (wrong_name[:1] != '_')
             if hide_underscored and tb is not None:
                 while tb.tb_next is not None:
@@ -1487,10 +1789,22 @@ def _compute_suggestion_error(exc_value, tb, wrong_name):
                 d = [x for x in d if x[:1] != '_']
         except Exception:
             return None
+    elif isinstance(exc_value, ModuleNotFoundError):
+        try:
+            if parent_name := wrong_name.rpartition('.')[0]:
+                parent = importlib.util.find_spec(parent_name)
+            else:
+                parent = None
+            d = []
+            for finder in sys.meta_path:
+                if discover := getattr(finder, 'discover', None):
+                    d += [spec.name for spec in discover(parent)]
+        except Exception:
+            return None
     elif isinstance(exc_value, ImportError):
         try:
             mod = __import__(exc_value.name)
-            d = dir(mod)
+            d = _get_safe___dir__(mod)
             if wrong_name[:1] != '_':
                 d = [x for x in d if x[:1] != '_']
         except Exception:
@@ -1508,20 +1822,31 @@ def _compute_suggestion_error(exc_value, tb, wrong_name):
             + list(frame.f_globals)
             + list(frame.f_builtins)
         )
+        d = [x for x in d if isinstance(x, str)]
+        if not_normalized and wrong_name in d:
+            return wrong_name
 
         # Check first if we are in a method and the instance
         # has the wrong name as attribute
         if 'self' in frame.f_locals:
             self = frame.f_locals['self']
-            if hasattr(self, wrong_name):
+            try:
+                has_wrong_name = hasattr(self, wrong_name)
+            except Exception:
+                has_wrong_name = False
+            if has_wrong_name:
                 return f"self.{wrong_name}"
 
+    if not_normalized and wrong_name in d:
+        return wrong_name
     try:
         import _suggestions
     except ImportError:
         pass
     else:
-        return _suggestions._generate_suggestions(d, wrong_name)
+        suggestion = _suggestions._generate_suggestions(d, wrong_name)
+        if suggestion:
+            return suggestion
 
     # Compute closest match
 
@@ -1546,6 +1871,14 @@ def _compute_suggestion_error(exc_value, tb, wrong_name):
         if not suggestion or current_distance < best_distance:
             suggestion = possible_name
             best_distance = current_distance
+
+    # If no direct attribute match found, check for nested attributes
+    if not suggestion and isinstance(exc_value, AttributeError):
+        with suppress(Exception):
+            nested_suggestion = _check_for_nested_attribute(exc_value.obj, wrong_name, d)
+            if nested_suggestion:
+                return nested_suggestion
+
     return suggestion
 
 
@@ -1608,3 +1941,32 @@ def _levenshtein_distance(a, b, max_cost):
             # Everything in this row is too big, so bail early.
             return max_cost + 1
     return result
+
+
+def _find_incompatible_extension_module(module_name):
+    import importlib.machinery
+    import importlib.resources.readers
+
+    if not module_name or not importlib.machinery.EXTENSION_SUFFIXES:
+        return
+
+    # We assume the last extension is untagged (eg. .so, .pyd)!
+    # tests.test_traceback.MiscTest.test_find_incompatible_extension_modules
+    # tests that assumption.
+    untagged_suffix = importlib.machinery.EXTENSION_SUFFIXES[-1]
+    # On Windows the debug tag is part of the module file stem, instead of the
+    # extension (eg. foo_d.pyd), so let's remove it and just look for .pyd.
+    if os.name == 'nt':
+        untagged_suffix = untagged_suffix.removeprefix('_d')
+
+    parent, _, child = module_name.rpartition('.')
+    if parent:
+        traversable = importlib.resources.files(parent)
+    else:
+        traversable = importlib.resources.readers.MultiplexedPath(
+            *map(pathlib.Path, filter(os.path.isdir, sys.path))
+        )
+
+    for entry in traversable.iterdir():
+        if entry.name.startswith(child + '.') and entry.name.endswith(untagged_suffix):
+            return entry.name

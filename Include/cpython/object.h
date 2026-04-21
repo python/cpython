@@ -5,6 +5,7 @@
 PyAPI_FUNC(void) _Py_NewReference(PyObject *op);
 PyAPI_FUNC(void) _Py_NewReferenceNoTotal(PyObject *op);
 PyAPI_FUNC(void) _Py_ResurrectReference(PyObject *op);
+PyAPI_FUNC(void) _Py_ForgetReference(PyObject *op);
 
 #ifdef Py_REF_DEBUG
 /* These are useful as debugging aids when chasing down refleaks. */
@@ -221,16 +222,29 @@ struct _typeobject {
     PyObject *tp_weaklist; /* not used for static builtin types */
     destructor tp_del;
 
-    /* Type attribute cache version tag. Added in version 2.6 */
+    /* Type attribute cache version tag. Added in version 2.6.
+     * If zero, the cache is invalid and must be initialized.
+     */
     unsigned int tp_version_tag;
 
     destructor tp_finalize;
     vectorcallfunc tp_vectorcall;
 
+    /* Below here all fields are internal to the VM */
+
     /* bitset of which type-watchers care about this type */
     unsigned char tp_watched;
+
+    /* Number of tp_version_tag values used.
+     * Set to _Py_ATTR_CACHE_UNUSED if the attribute cache is
+     * disabled for this type (e.g. due to custom MRO entries).
+     * Otherwise, limited to MAX_VERSIONS_PER_CLASS (defined elsewhere).
+     */
     uint16_t tp_versions_used;
+    _Py_iteritemfunc _tp_iteritem; /* Virtual iterator next function */
 };
+
+#define _Py_ATTR_CACHE_UNUSED (30000)  // (see tp_versions_used)
 
 /* This struct is used by the specializer
  * It should be treated as an opaque blob
@@ -245,7 +259,7 @@ struct _specialization_cache {
     // - If getitem is NULL, then getitem_version is meaningless.
     // - If getitem->func_version == getitem_version, then getitem can be called
     //   with two positional arguments and no keyword arguments, and has neither
-    //   *args nor **kwargs (as required by BINARY_SUBSCR_GETITEM):
+    //   *args nor **kwargs (as required by BINARY_OP_SUBSCR_GETITEM):
     PyObject *getitem;
     uint32_t getitem_version;
     PyObject *init;
@@ -284,9 +298,12 @@ PyAPI_FUNC(PyObject *) PyType_GetDict(PyTypeObject *);
 
 PyAPI_FUNC(int) PyObject_Print(PyObject *, FILE *, int);
 PyAPI_FUNC(void) _Py_BreakPoint(void);
-PyAPI_FUNC(void) _PyObject_Dump(PyObject *);
+PyAPI_FUNC(void) PyObject_Dump(PyObject *);
 
-PyAPI_FUNC(PyObject*) _PyObject_GetAttrId(PyObject *, _Py_Identifier *);
+// Alias for backward compatibility
+#define _PyObject_Dump PyObject_Dump
+
+Py_DEPRECATED(3.15) PyAPI_FUNC(PyObject*) _PyObject_GetAttrId(PyObject *, _Py_Identifier *);
 
 PyAPI_FUNC(PyObject **) _PyObject_GetDictPtr(PyObject *);
 PyAPI_FUNC(void) PyObject_CallFinalizer(PyObject *);
@@ -376,10 +393,11 @@ PyAPI_FUNC(PyObject *) _PyObject_FunctionStr(PyObject *);
    process with a message on stderr if the given condition fails to hold,
    but compile away to nothing if NDEBUG is defined.
 
-   However, before aborting, Python will also try to call _PyObject_Dump() on
-   the given object.  This may be of use when investigating bugs in which a
-   particular object is corrupt (e.g. buggy a tp_visit method in an extension
-   module breaking the garbage collector), to help locate the broken objects.
+   However, before aborting, Python will also try to call
+   PyObject_Dump() on the given object. This may be of use when
+   investigating bugs in which a particular object is corrupt (e.g. buggy a
+   tp_visit method in an extension module breaking the garbage collector), to
+   help locate the broken objects.
 
    The WITH_MSG variant allows you to supply an additional message that Python
    will attempt to print to stderr, after the object dump. */
@@ -418,92 +436,20 @@ PyAPI_FUNC(void) _Py_NO_RETURN _PyObject_AssertFailed(
     const char *function);
 
 
-/* Trashcan mechanism, thanks to Christian Tismer.
-
-When deallocating a container object, it's possible to trigger an unbounded
-chain of deallocations, as each Py_DECREF in turn drops the refcount on "the
-next" object in the chain to 0.  This can easily lead to stack overflows,
-especially in threads (which typically have less stack space to work with).
-
-A container object can avoid this by bracketing the body of its tp_dealloc
-function with a pair of macros:
-
-static void
-mytype_dealloc(mytype *p)
-{
-    ... declarations go here ...
-
-    PyObject_GC_UnTrack(p);        // must untrack first
-    Py_TRASHCAN_BEGIN(p, mytype_dealloc)
-    ... The body of the deallocator goes here, including all calls ...
-    ... to Py_DECREF on contained objects.                         ...
-    Py_TRASHCAN_END                // there should be no code after this
-}
-
-CAUTION:  Never return from the middle of the body!  If the body needs to
-"get out early", put a label immediately before the Py_TRASHCAN_END
-call, and goto it.  Else the call-depth counter (see below) will stay
-above 0 forever, and the trashcan will never get emptied.
-
-How it works:  The BEGIN macro increments a call-depth counter.  So long
-as this counter is small, the body of the deallocator is run directly without
-further ado.  But if the counter gets large, it instead adds p to a list of
-objects to be deallocated later, skips the body of the deallocator, and
-resumes execution after the END macro.  The tp_dealloc routine then returns
-without deallocating anything (and so unbounded call-stack depth is avoided).
-
-When the call stack finishes unwinding again, code generated by the END macro
-notices this, and calls another routine to deallocate all the objects that
-may have been added to the list of deferred deallocations.  In effect, a
-chain of N deallocations is broken into (N-1)/(Py_TRASHCAN_HEADROOM-1) pieces,
-with the call stack never exceeding a depth of Py_TRASHCAN_HEADROOM.
-
-Since the tp_dealloc of a subclass typically calls the tp_dealloc of the base
-class, we need to ensure that the trashcan is only triggered on the tp_dealloc
-of the actual class being deallocated. Otherwise we might end up with a
-partially-deallocated object. To check this, the tp_dealloc function must be
-passed as second argument to Py_TRASHCAN_BEGIN().
-*/
-
-/* Python 3.9 private API, invoked by the macros below. */
-PyAPI_FUNC(int) _PyTrash_begin(PyThreadState *tstate, PyObject *op);
-PyAPI_FUNC(void) _PyTrash_end(PyThreadState *tstate);
-
 PyAPI_FUNC(void) _PyTrash_thread_deposit_object(PyThreadState *tstate, PyObject *op);
 PyAPI_FUNC(void) _PyTrash_thread_destroy_chain(PyThreadState *tstate);
 
-
-/* Python 3.10 private API, invoked by the Py_TRASHCAN_BEGIN(). */
-
-/* To avoid raising recursion errors during dealloc trigger trashcan before we reach
- * recursion limit. To avoid trashing, we don't attempt to empty the trashcan until
- * we have headroom above the trigger limit */
-#define Py_TRASHCAN_HEADROOM 50
-
-#define Py_TRASHCAN_BEGIN(op, dealloc) \
-do { \
-    PyThreadState *tstate = PyThreadState_Get(); \
-    if (tstate->c_recursion_remaining <= Py_TRASHCAN_HEADROOM && Py_TYPE(op)->tp_dealloc == (destructor)dealloc) { \
-        _PyTrash_thread_deposit_object(tstate, (PyObject *)op); \
-        break; \
-    } \
-    tstate->c_recursion_remaining--;
-    /* The body of the deallocator is here. */
-#define Py_TRASHCAN_END \
-    tstate->c_recursion_remaining++; \
-    if (tstate->delete_later && tstate->c_recursion_remaining > (Py_TRASHCAN_HEADROOM*2)) { \
-        _PyTrash_thread_destroy_chain(tstate); \
-    } \
-} while (0);
+/* For backwards compatibility with the old trashcan mechanism */
+#define Py_TRASHCAN_BEGIN(op, dealloc)
+#define Py_TRASHCAN_END
 
 
 PyAPI_FUNC(void *) PyObject_GetItemData(PyObject *obj);
+PyAPI_FUNC(void *) PyObject_GetItemData_DuringGC(PyObject *obj);
 
 PyAPI_FUNC(int) PyObject_VisitManagedDict(PyObject *obj, visitproc visit, void *arg);
-PyAPI_FUNC(int) _PyObject_SetManagedDict(PyObject *obj, PyObject *new_dict);
 PyAPI_FUNC(void) PyObject_ClearManagedDict(PyObject *obj);
 
-#define TYPE_MAX_WATCHERS 8
 
 typedef int(*PyType_WatchCallback)(PyTypeObject *);
 PyAPI_FUNC(int) PyType_AddWatcher(PyType_WatchCallback callback);
@@ -522,6 +468,7 @@ PyAPI_FUNC(int) PyUnstable_Type_AssignVersionTag(PyTypeObject *type);
 typedef enum {
     PyRefTracer_CREATE = 0,
     PyRefTracer_DESTROY = 1,
+    PyRefTracer_TRACKER_REMOVED = 2,
 } PyRefTracerEvent;
 
 typedef int (*PyRefTracer)(PyObject *, PyRefTracerEvent event, void *);
@@ -534,3 +481,100 @@ PyAPI_FUNC(PyRefTracer) PyRefTracer_GetTracer(void**);
  * 0 if the runtime ignored it. This function cannot fail.
  */
 PyAPI_FUNC(int) PyUnstable_Object_EnableDeferredRefcount(PyObject *);
+
+/* Determine if the object exists as a unique temporary variable on the
+ * topmost frame of the interpreter.
+ */
+PyAPI_FUNC(int) PyUnstable_Object_IsUniqueReferencedTemporary(PyObject *);
+
+/* Check whether the object is immortal. This cannot fail. */
+PyAPI_FUNC(int) PyUnstable_IsImmortal(PyObject *);
+
+// Increments the reference count of the object, if it's not zero.
+// PyUnstable_EnableTryIncRef() should be called on the object
+// before calling this function in order to avoid spurious failures.
+PyAPI_FUNC(int) PyUnstable_TryIncRef(PyObject *);
+PyAPI_FUNC(void) PyUnstable_EnableTryIncRef(PyObject *);
+
+PyAPI_FUNC(int) PyUnstable_Object_IsUniquelyReferenced(PyObject *);
+
+PyAPI_FUNC(int) PyUnstable_SetImmortal(PyObject *op);
+
+#if defined(Py_GIL_DISABLED)
+PyAPI_FUNC(uintptr_t) _Py_GetThreadLocal_Addr(void);
+
+static inline uintptr_t
+_Py_ThreadId(void)
+{
+    uintptr_t tid;
+#if defined(_MSC_VER) && defined(_M_X64)
+    tid = __readgsqword(48);
+#elif defined(_MSC_VER) && defined(_M_IX86)
+    tid = __readfsdword(24);
+#elif defined(_MSC_VER) && defined(_M_ARM64)
+    tid = __getReg(18);
+#elif defined(__MINGW32__) && defined(_M_X64)
+    tid = __readgsqword(48);
+#elif defined(__MINGW32__) && defined(_M_IX86)
+    tid = __readfsdword(24);
+#elif defined(__MINGW32__) && defined(_M_ARM64)
+    tid = __getReg(18);
+#elif defined(__i386__)
+    __asm__("{movl %%gs:0, %0|mov %0, dword ptr gs:[0]}" : "=r" (tid));  // 32-bit always uses GS
+#elif defined(__MACH__) && defined(__x86_64__)
+    __asm__("{movq %%gs:0, %0|mov %0, qword ptr gs:[0]}" : "=r" (tid));  // x86_64 macOSX uses GS
+#elif defined(__x86_64__)
+    __asm__("{movq %%fs:0, %0|mov %0, qword ptr fs:[0]}" : "=r" (tid));  // x86_64 Linux, BSD uses FS
+#elif defined(__arm__) && __ARM_ARCH >= 7
+    __asm__ ("mrc p15, 0, %0, c13, c0, 3\nbic %0, %0, #3" : "=r" (tid));
+#elif defined(__aarch64__) && defined(__APPLE__)
+    __asm__ ("mrs %0, tpidrro_el0" : "=r" (tid));
+#elif defined(__aarch64__)
+    __asm__ ("mrs %0, tpidr_el0" : "=r" (tid));
+#elif defined(__powerpc64__)
+    #if defined(__clang__) && _Py__has_builtin(__builtin_thread_pointer)
+    tid = (uintptr_t)__builtin_thread_pointer();
+    #else
+    // r13 is reserved for use as system thread ID by the Power 64-bit ABI.
+    register uintptr_t tp __asm__ ("r13");
+    __asm__("" : "=r" (tp));
+    tid = tp;
+    #endif
+#elif defined(__powerpc__)
+    #if defined(__clang__) && _Py__has_builtin(__builtin_thread_pointer)
+    tid = (uintptr_t)__builtin_thread_pointer();
+    #else
+    // r2 is reserved for use as system thread ID by the Power 32-bit ABI.
+    register uintptr_t tp __asm__ ("r2");
+    __asm__ ("" : "=r" (tp));
+    tid = tp;
+    #endif
+#elif defined(__s390__) && defined(__GNUC__)
+    // Both GCC and Clang have supported __builtin_thread_pointer
+    // for s390 from long time ago.
+    tid = (uintptr_t)__builtin_thread_pointer();
+#elif defined(__riscv)
+    #if defined(__clang__) && _Py__has_builtin(__builtin_thread_pointer)
+    tid = (uintptr_t)__builtin_thread_pointer();
+    #else
+    // tp is Thread Pointer provided by the RISC-V ABI.
+    __asm__ ("mv %0, tp" : "=r" (tid));
+    #endif
+#else
+    // Fallback to a portable implementation if we do not have a faster
+    // platform-specific implementation.
+    tid = _Py_GetThreadLocal_Addr();
+#endif
+  return tid;
+}
+
+static inline Py_ALWAYS_INLINE int
+_Py_IsOwnedByCurrentThread(PyObject *ob)
+{
+#ifdef _Py_THREAD_SANITIZER
+    return _Py_atomic_load_uintptr_relaxed(&ob->ob_tid) == _Py_ThreadId();
+#else
+    return ob->ob_tid == _Py_ThreadId();
+#endif
+}
+#endif
