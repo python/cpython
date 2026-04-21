@@ -180,9 +180,8 @@ class TaskGroup:
             finally:
                 exc = None
 
-        # If we wanted to raise an error, it would have been done explicitly
-        # above.  Otherwise, either there is no error or we want to suppress
-        # the original error.
+        # Suppress any remaining exception (exceptions deserving to be raised
+        # were raised above).
         return True
 
     def create_task(self, coro, *, name=None, context=None):
