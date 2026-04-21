@@ -1130,10 +1130,10 @@ codegen_annotations_in_scope(compiler *c, location loc,
                              Py_ssize_t *annotations_len)
 {
     RETURN_IF_ERROR(
-        codegen_argannotations(c, args->args, annotations_len, loc));
+        codegen_argannotations(c, args->posonlyargs, annotations_len, loc));
 
     RETURN_IF_ERROR(
-        codegen_argannotations(c, args->posonlyargs, annotations_len, loc));
+        codegen_argannotations(c, args->args, annotations_len, loc));
 
     if (args->vararg && args->vararg->annotation) {
         RETURN_IF_ERROR(
@@ -1224,12 +1224,17 @@ codegen_wrap_in_stopiteration_handler(compiler *c)
 {
     NEW_JUMP_TARGET_LABEL(c, handler);
 
-    /* Insert SETUP_CLEANUP just before RESUME */
+    /* Insert SETUP_CLEANUP just after the initial RETURN_GENERATOR; POP_TOP */
     instr_sequence *seq = INSTR_SEQUENCE(c);
     int resume = 0;
-    while (_PyInstructionSequence_GetInstruction(seq, resume).i_opcode != RESUME) {
+    while (_PyInstructionSequence_GetInstruction(seq, resume).i_opcode != RETURN_GENERATOR) {
         resume++;
+        assert(resume < seq->s_used);
     }
+    resume++;
+    assert(_PyInstructionSequence_GetInstruction(seq, resume).i_opcode == POP_TOP);
+    resume++;
+    assert(resume < seq->s_used);
     RETURN_IF_ERROR(
         _PyInstructionSequence_InsertInstruction(
             seq, resume,
@@ -4977,10 +4982,14 @@ codegen_comprehension(compiler *c, expr_ty e, int type,
             RETURN_IF_ERROR(
                 _PyInstructionSequence_InsertInstruction(
                     INSTR_SEQUENCE(c), 0,
-                    LOAD_FAST, 0, LOC(outermost->iter)));
+                    RESUME, RESUME_AT_GEN_EXPR_START, NO_LOCATION));
             RETURN_IF_ERROR(
                 _PyInstructionSequence_InsertInstruction(
                     INSTR_SEQUENCE(c), 1,
+                    LOAD_FAST, 0, LOC(outermost->iter)));
+            RETURN_IF_ERROR(
+                _PyInstructionSequence_InsertInstruction(
+                    INSTR_SEQUENCE(c), 2,
                     outermost->is_async ? GET_AITER : GET_ITER,
                     0, LOC(outermost->iter)));
             iter_state = ITERATOR_ON_STACK;

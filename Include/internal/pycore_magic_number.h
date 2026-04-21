@@ -294,7 +294,9 @@ Known values:
     Python 3.15a4 3661 (Lazy imports IMPORT_NAME opcode changes)
     Python 3.15a8 3662 (Add counter to RESUME)
     Python 3.15a8 3663 (Merge GET_ITER and GET_YIELD_FROM_ITER. Modify SEND to make it a bit more like FOR_ITER)
-    Python 3.15a7 3664 (Add MATCH_CLASS_ISINSTANCE & MATCH_CLASS_GET_OPT_ATTR)
+    Python 3.15a8 3664 (Fix __qualname__ for __annotate__ functions)
+    Python 3.15a8 3665 (Add FOR_ITER_VIRTUAL and GET_ITER specializations)
+    Python 3.15b1 3666 (Add MATCH_CLASS_ISINSTANCE & MATCH_CLASS_GET_OPT_ATTR)
 
 
     Python 3.16 will start with 3700
@@ -308,7 +310,7 @@ PC/launcher.c must also be updated.
 
 */
 
-#define PYC_MAGIC_NUMBER 3664
+#define PYC_MAGIC_NUMBER 3666
 /* This is equivalent to converting PYC_MAGIC_NUMBER to 2 bytes
    (little-endian) and then appending b'\r\n'. */
 #define PYC_MAGIC_NUMBER_TOKEN \
