@@ -295,7 +295,9 @@ _Py_can_colorize(FILE *f)
 #if defined(MS_WINDOWS) && defined(HAVE_WINDOWS_CONSOLE_IO)
     {
         DWORD mode = 0;
-        HANDLE handle = GetStdHandle(STD_OUTPUT_HANDLE);
+        DWORD nStdHandle = (f == stderr) ? STD_ERROR_HANDLE
+                                         : STD_OUTPUT_HANDLE;
+        HANDLE handle = GetStdHandle(nStdHandle);
         if (!GetConsoleMode(handle, &mode)
             || !(mode & ENABLE_VIRTUAL_TERMINAL_PROCESSING))
         {
