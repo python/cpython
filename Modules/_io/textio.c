@@ -740,8 +740,7 @@ static PyObject *
 buffer_access_safe(textio *self)
 {
     /* Check self->buffer directly but match errors of CHECK_ATTACHED since this
-       is called during construction and destruction where self->ok which
-       CHECK_ATTACHED uses does not imply self->buffer state. */
+       is called during construction and finalization where self->ok == 0. */
     if (self->buffer == NULL) {
         if (self->ok <= 0) {
             PyErr_SetString(PyExc_ValueError,
