@@ -752,23 +752,22 @@ stack manipulations such as ``dup``, ``drop``, ``swap``, ``over``, ``pick``,
 
     .. method:: __missing__(key, /)
 
-        If the :attr:`default_factory` attribute is ``None``, this raises a
-        :exc:`KeyError` exception with the *key* as argument.
+        Equivalent to::
 
-        If :attr:`default_factory` is not ``None``, it is called without arguments
-        to provide a default value for the given *key*, this value is inserted in
-        the dictionary for the *key*, and returned.
+            if self.default_factory is None:
+                raise KeyError(key)
+            self[key] = value = self.default_factory()
+            return value
 
-        If calling :attr:`default_factory` raises an exception this exception is
-        propagated unchanged.
+        Keep in mind that this method is *not* called for any operations besides
+        ``dd[key]``. This means that ``dd.get(key)`` will, like normal
+        dictionaries, return ``None`` as a default rather than using
+        :attr:`default_factory`.
 
-        This method is called by the :meth:`__getitem__` method when the requested
-        key is not found; whatever it returns or raises is then returned or raised
-        by :meth:`__getitem__`.
-
-        Note that :meth:`__missing__` is *not* called for any operations besides
-        `self[key]`. This means that `self.get(key)` will, like normal dictionaries,
-        return ``None`` as a default rather than using :attr:`default_factory`.
+        A direct call to this method (meaning a call that isn't coming from
+        :meth:`__getitem__`) can create a :term:`race condition`. To reset an
+        item to a default value the next time it's accessed, use the
+        :meth:`~dict.pop` method to safely remove the current value.
 
 
     :class:`defaultdict` objects support the following instance variable:
