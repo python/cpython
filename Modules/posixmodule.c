@@ -17195,6 +17195,10 @@ os_getrandom_impl(PyObject *module, Py_ssize_t size, int flags)
         goto error;
     }
 
+#ifdef _Py_MEMORY_SANITIZER
+    __msan_unpoison(data, size);
+#endif
+
     return PyBytesWriter_FinishWithSize(writer, n);
 
 error:
