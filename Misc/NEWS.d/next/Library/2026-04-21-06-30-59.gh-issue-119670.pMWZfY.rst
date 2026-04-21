@@ -1,0 +1,3 @@
+Add *force* keyword only argument to :func:`shlex.quote` to always quote the
+string passed to it, even if it is already safe for a shell without being
+quoted.
