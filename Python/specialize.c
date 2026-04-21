@@ -112,8 +112,10 @@ _PyCode_Quicken(_Py_CODEUNIT *instructions, Py_ssize_t size, int enable_counters
         }
     }
     #else
+    int opcode = 0;
     for (Py_ssize_t i = 0; i < size-1; i++) {
-        if (instructions[i].op.code == GET_ITER) {
+        opcode = instructions[i].op.code;
+        if (opcode == GET_ITER) {
             fixup_getiter(&instructions[i], flags);
         }
         i += _PyOpcode_Caches[opcode];
