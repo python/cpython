@@ -49,7 +49,7 @@
     <_PlatformPreprocessorDefinition Condition="$(Platform) == 'x64'">_WIN64;</_PlatformPreprocessorDefinition>
     <_PlatformPreprocessorDefinition Condition="$(Platform) == 'x64' and $(PlatformToolset) != 'ClangCL'">_M_X64;$(_PlatformPreprocessorDefinition)</_PlatformPreprocessorDefinition>
     <_Py3NamePreprocessorDefinition>PY3_DLLNAME=L"$(Py3DllName)$(PyDebugExt)";</_Py3NamePreprocessorDefinition>
-    <_Abi3tCompatDllNamePreprocessorDefinition Condition="$(DisableGil) != 'true'">ABI3T_COMPAT_DLLNAME=L"$(PyAbi3tCompat3DllName)$(PyDebugExt)";</_Abi3tCompatDllNamePreprocessorDefinition>
+    <_Abi3tCompatDllNamePreprocessorDefinition Condition="$(DisableGil) != 'true'">ABI3T_COMPAT_DLLNAME=L"$(PyAbi3tCompatDllDir)\\$(PyAbi3tCompatDllName)$(PyDebugExt)";</_Abi3tCompatDllNamePreprocessorDefinition>
     <_FreeThreadedPreprocessorDefinition Condition="$(DisableGil) == 'true'">Py_GIL_DISABLED=1;</_FreeThreadedPreprocessorDefinition>
     <_PymallocHugepagesPreprocessorDefinition Condition="$(UsePymallocHugepages) == 'true'">PYMALLOC_USE_HUGEPAGES=1;</_PymallocHugepagesPreprocessorDefinition>
   </PropertyGroup>

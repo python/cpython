@@ -61,6 +61,8 @@
     </Projects>
     <!-- python3.dll -->
     <Projects Include="python3dll.vcxproj" />
+    <!-- abi3t-compat\python3t.dll -->
+    <Projects Include="abi3t-compat.vcxproj" />
     <!-- py[w].exe -->
     <Projects Include="pylauncher.vcxproj;pywlauncher.vcxproj" />
     <!-- pyshellext.dll -->
