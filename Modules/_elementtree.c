@@ -812,7 +812,7 @@ _elementtree_Element___deepcopy___impl(ElementObject *self, PyObject *memo)
 /*[clinic end generated code: output=eefc3df50465b642 input=a2d40348c0aade10]*/
 {
     Py_ssize_t i;
-    ElementObject* element;
+    ElementObject* element = NULL;
     PyObject* tag;
     PyObject* attrib;
     PyObject* text;
@@ -829,16 +829,14 @@ _elementtree_Element___deepcopy___impl(ElementObject *self, PyObject *memo)
     // of the object to copy so to avoid use-after-frees.
     tag = deepcopy(st, self->tag, memo);
     if (!tag) {
-        _Py_LeaveRecursiveCall();
-        return NULL;
+        goto error;
     }
 
     if (self->extra && self->extra->attrib) {
         attrib = deepcopy(st, self->extra->attrib, memo);
         if (!attrib) {
             Py_DECREF(tag);
-            _Py_LeaveRecursiveCall();
-            return NULL;
+            goto error;
         }
     } else {
         attrib = NULL;
@@ -850,8 +848,7 @@ _elementtree_Element___deepcopy___impl(ElementObject *self, PyObject *memo)
     Py_XDECREF(attrib);
 
     if (!element) {
-        _Py_LeaveRecursiveCall();
-        return NULL;
+        goto error;
     }
 
     text = deepcopy(st, JOIN_OBJ(self->text), memo);
@@ -919,7 +916,7 @@ _elementtree_Element___deepcopy___impl(ElementObject *self, PyObject *memo)
 
   error:
     _Py_LeaveRecursiveCall();
-    Py_DECREF(element);
+    Py_XDECREF(element);
     return NULL;
 }
 
