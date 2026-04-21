@@ -2326,7 +2326,19 @@ make_pre_finalization_calls(PyThreadState *tstate, int subinterpreters)
          * Again, this is purely an optimization to avoid overloading the CPU.
          */
         if (_Py_atomic_load_ssize_relaxed(&interp->finalization_guards.countdown) > 0) {
-            PyEvent_Wait(&interp->finalization_guards.done);
+            for (;;) {
+                PyTime_t wait_ns = 1000 * 1000;  // 1ms
+                if (PyEvent_WaitTimed(&interp->finalization_guards.done, wait_ns, /*detach=*/1)) {
+                    break;
+                }
+
+                // For debugging purposes, we emit a fatal error if someone
+                // CTRL^C'ed the process.
+                if (PyErr_CheckSignals()) {
+                    PyErr_FormatUnraisable("Exception ignored while waiting on finalization guards");
+                    Py_FatalError("Interrupted while waiting on finalization guard");
+                }
+            }
         }
 
         /* Stop the world to prevent other threads from creating threads or
