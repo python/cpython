@@ -2271,6 +2271,15 @@ New deprecations
     Hugo van Kemenade in :gh:`148100`.)
 
 
+* :mod:`shlex`:
+
+  * :func:`shlex.quote` has a new keyword-only parameter *force* that ensures
+    a string will always be quoted, even if it is already safe for a shell
+    without being quoted.
+
+    (Contributed by Jay Berry in :gh:`148846`.)
+
+
 * :mod:`struct`:
 
   * Calling ``Struct.__new__()`` without a required argument is now
