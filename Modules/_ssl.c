@@ -171,11 +171,11 @@ static void _PySSLFixErrno(void) {
 #  define OPENSSL_NO_SSL3
 #  define OPENSSL_NO_TLS1
 #  define OPENSSL_NO_TLS1_1
-#  define OPENSSL_NO_TLS1_2
+// #  define OPENSSL_NO_TLS1_2
 #  define OPENSSL_NO_SSL3_METHOD
 #  define OPENSSL_NO_TLS1_METHOD
 #  define OPENSSL_NO_TLS1_1_METHOD
-#  define OPENSSL_NO_TLS1_2_METHOD
+// #  define OPENSSL_NO_TLS1_2_METHOD
 #endif
 
 /* OpenSSL API 1.1.0+ does not include version methods */
