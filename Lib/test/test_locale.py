@@ -533,6 +533,7 @@ class TestRealLocales(unittest.TestCase):
         with self.assertRaises(locale.Error):
             locale.setlocale(locale.LC_ALL, loc2)
 
+    @unittest.skipUnless(os.name == 'posix', 'requires Windows')
     @support.subTests('localename,localetuple', [
         ('fr_FR.ISO8859-15@euro', ('fr_FR@euro', 'iso885915')),
         ('fr_FR.ISO8859-15@euro', ('fr_FR@euro', 'iso88591')),
@@ -574,7 +575,7 @@ class TestRealLocales(unittest.TestCase):
         ('uz_UZ.UTF-8@cyrillic', ('uz_UZ@cyrillic', 'UTF-8')),
         ('uz_UZ.UTF-8@cyrillic', ('uz_UZ@cyrillic', None)),
     ])
-    def test_setlocale_with_modifier(self, localename, localetuple):
+    def test_setlocale_with_modifier_posix(self, localename, localetuple):
         try:
             locale.setlocale(locale.LC_CTYPE, localename)
         except locale.Error as exc:
@@ -586,6 +587,37 @@ class TestRealLocales(unittest.TestCase):
         loc = locale.setlocale(locale.LC_CTYPE, loctuple)
         self.assertEqual(loc, localename)
 
+    @unittest.skipUnless(os.name == 'nt', 'requires Windows')
+    @support.subTests('localename,localetuple', [
+        # ('ca-ES-valencia', ('ca_ES@valencia', 'UTF-8')),
+        # ('ca-ES-valencia', ('ca_ES@valencia', 'utf8')),
+        ('ca-ES-valencia', ('ca_ES@valencia', None)),
+        ('ks-Deva-IN.UTF-8', ('ks_IN@devanagari', 'UTF-8')),
+        ('ks-Deva-IN.utf8', ('ks_IN@devanagari', 'utf8')),
+        ('ks-Deva-IN', ('ks_IN@devanagari', None)),
+        ('sd-Deva-IN', ('sd_IN@devanagari', None)),
+        ('be-Latn-BY.UTF-8', ('be_BY@latin', 'UTF-8')),
+        ('be-Latn-BY', ('be_BY@latin', None)),
+        ('sr-Latn-RS.UTF-8', ('sr_RS@latin', 'UTF-8')),
+        ('sr-Latn-RS', ('sr_RS@latin', None)),
+        ('ug-Latn-CN', ('ug_CN@latin', None)),
+        ('uz-Cyrl-UZ', ('uz_UZ@cyrillic', None)),
+        ('zh-Hant', ('zh@Hant', None)),
+        ('tzm-Arab-MA', ('tzm_MA@arabic', None)),
+        ('tzm-Tfng-MA', ('tzm_MA@tifinagh', None)),
+        ('chr-Cher-US', ('chr_US@cherokee', None)),
+        ('iu-Cans-CA', ('iu_CA@canadian_aboriginal', None)),
+        ('mn-Mong', ('mn@mongolian', None)),
+    ])
+    def test_setlocale_with_modifier(self, localename, localetuple):
+        loc = locale.setlocale(locale.LC_CTYPE, localetuple)
+        self.assertEqual(loc, localename)
+
+        loctuple = locale.getlocale(locale.LC_CTYPE)
+        loc = locale.setlocale(locale.LC_CTYPE, loctuple)
+        self.assertEqual(loc, localename)
+
+    @unittest.skipUnless(os.name == 'posix', 'requires Posix')
     @support.subTests('localename,localetuple', [
         ('fr_FR.iso885915@euro', ('fr_FR@euro', 'ISO8859-15')),
         ('fr_FR.ISO8859-15@euro', ('fr_FR@euro', 'ISO8859-15')),
@@ -621,7 +653,7 @@ class TestRealLocales(unittest.TestCase):
         ('uz_UZ.UTF-8@cyrillic', ('uz_UZ@cyrillic', 'UTF-8')),
         ('uz_UZ@cyrillic', ('uz_UZ@cyrillic', 'UTF-8')),
     ])
-    def test_getlocale_with_modifier(self, localename, localetuple):
+    def test_getlocale_with_modifier_posix(self, localename, localetuple):
         try:
             locale.setlocale(locale.LC_CTYPE, localename)
         except locale.Error as exc:

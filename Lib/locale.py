@@ -472,19 +472,17 @@ def normalize(localename):
 def _conv_to_windows(locale):
     locale = locale.replace('_', '-')
     if '@' in locale:
-        locale, modifier = locale.split('@', 1)
+        locale, _, modifier = locale.partition('@')
         locale, _, encoding = locale.partition('.')
         locale, _, territory = locale.partition('-')
         suffix = ''
-        modifier = modifier.lower()
-        if modifier == 'valencia':
-            suffix = '-' + modifier
-        elif modifier:
-            if modifier in _modifier_to_script:
-                modifier = _modifier_to_script[modifier]
+        if modifier:
+            modifier_lower = modifier.lower()
+            if modifier_lower == 'valencia':
+                suffix = '-' + modifier_lower
             else:
-                modifier = modifier.title()
-            locale += '-' + modifier
+                modifier = _modifier_to_script.get(modifier_lower, modifier)
+                locale += '-' + modifier
         if territory:
             locale += '-' + territory
         if suffix:
@@ -530,6 +528,7 @@ def _parse_localename(localename):
         # On macOS "LC_CTYPE=UTF-8" is a valid locale setting
         # for getting UTF-8 handling for text.
         return None, 'UTF-8'
+    return code, None
     raise ValueError('unknown locale: %s' % localename)
 
 def _build_localename(localetuple):
@@ -643,12 +642,34 @@ def setlocale(category, locale=None):
         category may be given as one of the LC_* values.
 
     """
-    if locale and not isinstance(locale, _builtin_str):
-        # convert to string
+    if not locale or isinstance(locale, _builtin_str):
+        return _setlocale(category, locale)
+
+    # convert to string
+    if os.name == 'nt':
+        locale = _build_localename(locale)
+        try:
+            return _setlocale(category, locale)
+        except Error:
+            locale2 = _conv_to_windows(locale)
+            try:
+                return _setlocale(category, locale2)
+            except Error:
+                pass
+            locale = normalize(locale)
+            try:
+                return _setlocale(category, locale)
+            except Error:
+                pass
+            locale2 = _conv_to_windows(locale)
+            try:
+                return _setlocale(category, locale2)
+            except Error:
+                pass
+            raise
+    else:
         locale = normalize(_build_localename(locale))
-        if os.name == 'nt':
-            locale = _conv_to_windows(locale)
-    return _setlocale(category, locale)
+        return _setlocale(category, locale)
 
 
 try:
@@ -1603,8 +1624,8 @@ windows_locale = {
     0x7c92: "ku@arabic", # Central Kurdish
     0x0492: "ku_IQ@arabic", # Central Kurdish - Iraq
     0x005c: "chr", # Cherokee
-    0x7c5c: "chr@Cher", # Cherokee
-    0x045c: "chr_US@Cher", # Cherokee - United States
+    0x7c5c: "chr@cherokee", # Cherokee
+    0x045c: "chr_US@cherokee", # Cherokee - United States
     0x0004: "zh@Hans", # Chinese (Simplified)
     0x7804: "zh", # Chinese (Simplified)
     0x7c04: "zh@Hant", # Chinese (Traditional)
@@ -1714,9 +1735,9 @@ windows_locale = {
     0x0021: "id", # Indonesian
     0x0421: "id_ID", # Indonesian - Indonesia
     0x005d: "iu", # Inuktitut (Latin)
-    0x785d: "iu@Cans", # Inuktitut (Syllabics)
+    0x785d: "iu@canadian_aboriginal", # Inuktitut (Syllabics)
     0x7c5d: "iu@latin", # Inuktitut (Latin)
-    0x045d: "iu_CA@Cans", # Inuktitut (Syllabics) - Canada
+    0x045d: "iu_CA@canadian_aboriginal", # Inuktitut (Syllabics) - Canada
     0x085d: "iu_CA@latin", # Inuktitut (Latin) - Canada
     0x003c: "ga", # Irish
     0x083c: "ga_IE", # Irish - Ireland
@@ -1775,9 +1796,9 @@ windows_locale = {
     0x047c: "moh_CA", # Mohawk - Canada
     0x0050: "mn", # Mongolian (Cyrillic)
     0x7850: "mn@cyrillic", # Mongolian (Cyrillic)
-    0x7c50: "mn@Mong", # Mongolian (Traditional Mongolian)
+    0x7c50: "mn@mongolian", # Mongolian (Traditional Mongolian)
     0x0450: "mn_MN", # Mongolian (Cyrillic) - Mongolia
-    0x0c50: "mn_MN@Mong", # Mongolian (Traditional Mongolian) - Mongolia
+    0x0c50: "mn_MN@mongolian", # Mongolian (Traditional Mongolian) - Mongolia
     0x0061: "ne", # Nepali
     0x0461: "ne_NP", # Nepali - Nepal
     0x0861: "ne_IN", # Nepali - India
@@ -1897,11 +1918,11 @@ windows_locale = {
     0x7c28: "tg@cyrillic", # Tajik (Cyrillic)
     0x0428: "tg_TJ@cyrillic", # Tajik (Cyrillic) - Tajikistan
     0x005f: "tzm", # Tamazight (Latin)
-    0x785f: "tzm@Tfng",
+    0x785f: "tzm@tifinagh",
     0x7c5f: "tzm@latin", # Tamazight (Latin)
     0x085f: "tzm_DZ@latin", # Tamazight (Latin) - Algeria
     0x045f: "tzm_MA@arabic", # Central Atlas Tamazight (Arabic) - Morocco
-    0x105f: "tzm_MA@Tfng",
+    0x105f: "tzm_MA@tifinagh",
     0x0049: "ta", # Tamil
     0x0449: "ta_IN", # Tamil - India
     0x0849: "ta_LK", # Tamil - Sri Lanka
@@ -1975,9 +1996,13 @@ windows_locale = {
 
 _modifier_to_script = {
     'arabic': 'Arab',
+    'canadian-aboriginal': 'Cans',
+    'cherokee': 'Cher',
     'cyrillic': 'Cyrl',
     'devanagari': 'Deva',
     'latin': 'Latn',
+    'mongolian': 'Mong',
+    'tifinagh': 'Tfng',
 }
 
 def _print_locale():
