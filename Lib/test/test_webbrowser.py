@@ -119,6 +119,15 @@ class ChromeCommandTest(CommandTestMixin, unittest.TestCase):
                        arguments=[URL],
                        kw=dict(new=999))
 
+    def test_reject_action_dash_prefixes(self):
+        browser = self.browser_class(name=CMD_NAME)
+        with self.assertRaises(ValueError):
+            browser.open('%action--incognito')
+        # new=1: action is "--new-window", so "%action" itself expands to
+        # a dash-prefixed flag even with no dash in the original URL.
+        with self.assertRaises(ValueError):
+            browser.open('%action', new=1)
+
 
 class EdgeCommandTest(CommandTestMixin, unittest.TestCase):
 
@@ -351,7 +360,7 @@ class MacOSXOSAScriptTest(unittest.TestCase):
         url = "https://python.org"
         self.browser.open(url)
         self.assertTrue(self.popen_pipe._closed)
-        self.assertEqual(self.popen_pipe.cmd, "osascript")
+        self.assertEqual(self.popen_pipe.cmd, "/usr/bin/osascript")
         script = self.popen_pipe.pipe.getvalue()
         self.assertEqual(script.strip(), f'open location "{url}"')
 

@@ -23,7 +23,8 @@ on:
          type: string
          default: ''
 
-permissions: {}
+permissions:
+  contents: read
 
 env:
   FORCE_COLOR: 1
