@@ -317,8 +317,12 @@ def join(split_command):
     return ' '.join(quote(arg) for arg in split_command)
 
 
-def quote(s):
-    """Return a shell-escaped version of the string *s*."""
+def quote(s, force=False):
+    """Return a shell-escaped version of the string *s*.
+
+    If *force* is *True* then *s* will be quoted even if it is
+    already safe for a shell without being quoted.
+    """
     if not s:
         return "''"
 
@@ -329,8 +333,11 @@ def quote(s):
     safe_chars = (b'%+,-./0123456789:=@'
                   b'ABCDEFGHIJKLMNOPQRSTUVWXYZ_'
                   b'abcdefghijklmnopqrstuvwxyz')
-    # No quoting is needed if `s` is an ASCII string consisting only of `safe_chars`
-    if s.isascii() and not s.encode().translate(None, delete=safe_chars):
+    if (not force
+        and s.isascii() and not s.encode().translate(None, delete=safe_chars)
+    ):
+        # No quoting is needed if we're not forcing quoting
+        # and `s` is an ASCII string consisting only of `safe_chars`
         return s
 
     # use single quotes, and put single quotes into double quotes
