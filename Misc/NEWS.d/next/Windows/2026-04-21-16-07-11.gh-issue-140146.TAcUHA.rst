@@ -1,0 +1,3 @@
+Avoid tkinter to hang on Windows if stdin is redirected to a pipe in an
+interactive session. This is helpful for testing interactive usage of
+tkinter from a script, for example as part of the cpython test suite.
