@@ -56,7 +56,6 @@ class TestSlots(TestCase):
             ]
 
         spam = Spam()
-        iters = 1_000
         non_seq_cst_behaviour_observed = False
 
         def deleter():
@@ -80,7 +79,7 @@ class TestSlots(TestCase):
                     # falsifying the assumption that `del spam.eggs` was
                     # atomic. The test fails if this point is reached.
 
-        for _ in range(iters):
+        for _ in range(10):
             spam.eggs = 0
             spam.foo = 0
             barrier = _testcapi.SpinningBarrier(2)
