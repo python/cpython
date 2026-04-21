@@ -495,7 +495,7 @@ class OutputTestCase(unittest.TestCase):
             calendar.TextCalendar().formatmonth(0, 2),
             result_0_02_text
         )
-        
+
     def test_formatmonth_with_invalid_month(self):
         with self.assertRaises(calendar.IllegalMonthError):
             calendar.TextCalendar().formatmonth(2017, 13)
