@@ -2709,10 +2709,7 @@ test_thread_state_ensure_crossinterp(PyObject *self, PyObject *unused)
     PyInterpreterGuard *guard = PyInterpreterGuard_FromCurrent();
     PyThreadState *save_tstate = PyThreadState_Swap(NULL);
     PyThreadState *interp_tstate = Py_NewInterpreter();
-    if (interp_tstate == NULL) {
-        PyInterpreterGuard_Close(guard);
-        return PyErr_NoMemory();
-    }
+    assert(interp_tstate != NULL);
 
     /* This should create a new thread state for the calling interpreter, *not*
        reactivate the old one. In a real-world scenario, this would arise in
@@ -2728,10 +2725,7 @@ test_thread_state_ensure_crossinterp(PyObject *self, PyObject *unused)
        interp.exec(some_func)
        */
     PyThreadState *thread_state = PyThreadState_Ensure(guard);
-    if (thread_state == NULL) {
-        PyInterpreterGuard_Close(guard);
-        return PyErr_NoMemory();
-    }
+    assert(thread_state != NULL);
 
     PyThreadState *ensured_tstate = PyThreadState_Get();
     assert(ensured_tstate != save_tstate);
@@ -2739,13 +2733,9 @@ test_thread_state_ensure_crossinterp(PyObject *self, PyObject *unused)
 
     // Now though, we should reactivate the thread state
     PyThreadState *other_thread_state = PyThreadState_Ensure(guard);
-    if (other_thread_state == NULL) {
-        PyThreadState_Release(thread_state);
-        PyInterpreterGuard_Close(guard);
-        return PyErr_NoMemory();
-    }
-
+    assert(other_thread_state != NULL);
     assert(PyThreadState_Get() == ensured_tstate);
+
     PyThreadState_Release(other_thread_state);
 
     // Ensure that we're restoring the prior thread state

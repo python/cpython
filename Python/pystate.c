@@ -3595,14 +3595,18 @@ PyThreadState_Release(PyThreadState *old_tstate)
     assert(tstate->ensure.delete_on_release == 1 || tstate->ensure.delete_on_release == 0);
     if (tstate->ensure.delete_on_release) {
         PyThreadState_Clear(tstate);
-        PyThreadState_Swap(to_restore);
-        PyThreadState_Delete(tstate);
     } else {
         PyThreadState_Swap(to_restore);
     }
 
+    PyThreadState_Swap(to_restore);
+
     if (tstate->ensure.owned_guard != NULL) {
         PyInterpreterGuard_Close(tstate->ensure.owned_guard);
         tstate->ensure.owned_guard = NULL;
+    }
+
+    if (tstate->ensure.delete_on_release) {
+        PyThreadState_Delete(tstate);
     }
 }
