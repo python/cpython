@@ -1,5 +1,4 @@
-Fix a crash in :func:`!_interpreters.create` when a config object passes a
-string with an unpaired surrogate as a value (for example ``gil``). The
-internal helper ``_config_dict_copy_str`` now checks the return of
-:c:func:`PyUnicode_AsUTF8` before copying, turning the segfault into a
-:exc:`UnicodeEncodeError`.
+Fix a crash in :func:`!_interpreters.create` when a config value contains
+a string with an unpaired surrogate. :c:func:`PyUnicode_AsUTF8` returned
+``NULL`` and the result was passed to :c:func:`!strncpy`, dereferencing
+it. The caller now propagates the :exc:`UnicodeEncodeError` instead.
