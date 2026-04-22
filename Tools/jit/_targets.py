@@ -57,6 +57,12 @@ class _Target(typing.Generic[_S, _R]):
     known_symbols: dict[str, int] = dataclasses.field(default_factory=dict)
     pyconfig_dir: pathlib.Path = pathlib.Path.cwd().resolve()
 
+    def _compile_args(self) -> list[str]:
+        return list(self.args)
+
+    def _shim_compile_args(self) -> list[str]:
+        return []
+
     def _get_nop(self) -> bytes:
         if re.fullmatch(r"aarch64-.*", self.triple):
             nop = b"\x1f\x20\x03\xd5"
@@ -139,7 +145,7 @@ class _Target(typing.Generic[_S, _R]):
     ) -> _stencils.Hole:
         raise NotImplementedError(type(self))
 
-    def _common_clang_args(self, opname: str, tempdir: pathlib.Path) -> list[str]:
+    def _base_clang_args(self, opname: str, tempdir: pathlib.Path) -> list[str]:
         return [
             f"--target={self.triple}",
             "-DPy_BUILD_CORE_MODULE",
@@ -179,12 +185,14 @@ class _Target(typing.Generic[_S, _R]):
     ) -> _stencils.StencilGroup:
         s = tempdir / f"{opname}.s"
         o = tempdir / f"{opname}.o"
-        args_s = self._common_clang_args(opname, tempdir)
+        args_s = self._base_clang_args(opname, tempdir)
         args_s += [
             "-S",
-            # This debug info isn't necessary, and bloats out the JIT'ed code.
-            # We *may* be able to re-enable this, process it, and JIT it for a
-            # nicer debugging experience... but that needs a lot more research:
+            # Stencils do not need unwind info, and the optimizer does not
+            # preserve .cfi_* directives correctly. On Darwin,
+            # -fno-asynchronous-unwind-tables alone still leaves synchronous
+            # unwind directives in the assembly, so disable both forms here.
+            "-fno-unwind-tables",
             "-fno-asynchronous-unwind-tables",
             "-o",
             f"{s}",
@@ -192,7 +200,7 @@ class _Target(typing.Generic[_S, _R]):
         ]
         if self.frame_pointers:
             args_s += ["-Xclang", "-mframe-pointer=reserved"]
-        args_s += self.args
+        args_s += self._compile_args()
         # Allow user-provided CFLAGS to override any defaults
         args_s += shlex.split(self.cflags)
         await _llvm.run(
@@ -222,13 +230,8 @@ class _Target(typing.Generic[_S, _R]):
     async def _build_shim_object(self, output: pathlib.Path) -> None:
         with tempfile.TemporaryDirectory() as tempdir:
             work = pathlib.Path(tempdir).resolve()
-            args_o = self._common_clang_args("shim", work)
-            if self.triple.endswith("-windows-msvc"):
-                # The linked shim is part of pythoncore, not a shared extension.
-                # On Windows, Py_BUILD_CORE_MODULE makes public APIs import from
-                # pythonXY.lib, which creates a self-dependency when linking
-                # pythoncore.dll. Build the shim with builtin/core semantics.
-                args_o += ["-UPy_BUILD_CORE_MODULE", "-DPy_BUILD_CORE_BUILTIN"]
+            args_o = self._base_clang_args("shim", work)
+            args_o += self._shim_compile_args()
             args_o += [
                 "-c",
                 # The linked shim is a real function in the final binary, so
@@ -237,7 +240,7 @@ class _Target(typing.Generic[_S, _R]):
             ]
             if self.frame_pointers:
                 args_o += ["-Xclang", "-mframe-pointer=all"]
-            args_o += self.args
+            args_o += self._compile_args()
             args_o += shlex.split(self.cflags)
             args_o += ["-o", f"{output}", f"{TOOLS_JIT / 'shim.c'}"]
             await _llvm.run(
@@ -328,6 +331,13 @@ class _Target(typing.Generic[_S, _R]):
 class _COFF(
     _Target[_schema.COFFSection, _schema.COFFRelocation]
 ):  # pylint: disable = too-few-public-methods
+    def _shim_compile_args(self) -> list[str]:
+        # The linked shim is part of pythoncore, not a shared extension.
+        # On Windows, Py_BUILD_CORE_MODULE makes public APIs import from
+        # pythonXY.lib, which creates a self-dependency when linking
+        # pythoncore.dll. Build the shim with builtin/core semantics.
+        return ["-UPy_BUILD_CORE_MODULE", "-DPy_BUILD_CORE_BUILTIN"]
+
     def _handle_section(
         self, section: _schema.COFFSection, group: _stencils.StencilGroup
     ) -> None:
@@ -427,6 +437,10 @@ class _COFF64(_COFF):
     label_prefix = ".L"
     symbol_prefix = ""
     re_global = re.compile(r'\s*\.def\s+(?P<label>[\w."$?@]+);')
+
+    def _compile_args(self) -> list[str]:
+        runtime = "-fms-runtime-lib=dll_dbg" if self.debug else "-fms-runtime-lib=dll"
+        return [runtime, *self.args]
 
 
 class _ELF(
@@ -639,9 +653,8 @@ def get_target(host: str) -> _COFF32 | _COFF64 | _ELF | _MachO:
     elif re.fullmatch(r"aarch64-pc-windows-msvc", host):
         host = "aarch64-pc-windows-msvc"
         condition = "defined(_M_ARM64)"
-        args = ["-fms-runtime-lib=dll"]
         optimizer = _optimizers.OptimizerAArch64
-        target = _COFF64(host, condition, args=args, optimizer=optimizer)
+        target = _COFF64(host, condition, optimizer=optimizer)
     elif re.fullmatch(r"aarch64-.*-linux-gnu", host):
         host = "aarch64-unknown-linux-gnu"
         condition = "defined(__aarch64__) && defined(__linux__)"
@@ -668,9 +681,8 @@ def get_target(host: str) -> _COFF32 | _COFF64 | _ELF | _MachO:
     elif re.fullmatch(r"x86_64-pc-windows-msvc", host):
         host = "x86_64-pc-windows-msvc"
         condition = "defined(_M_X64)"
-        args = ["-fms-runtime-lib=dll"]
         optimizer = _optimizers.OptimizerX86
-        target = _COFF64(host, condition, args=args, optimizer=optimizer)
+        target = _COFF64(host, condition, optimizer=optimizer)
     elif re.fullmatch(r"x86_64-.*-linux-gnu", host):
         host = "x86_64-unknown-linux-gnu"
         condition = "defined(__x86_64__) && defined(__linux__)"

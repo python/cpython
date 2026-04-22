@@ -290,6 +290,7 @@ LDLIBRARYDIR=   @LDLIBRARYDIR@
 INSTSONAME=	@INSTSONAME@
 LIBRARY_DEPS=	@LIBRARY_DEPS@
 LINK_PYTHON_DEPS=@LINK_PYTHON_DEPS@
+JIT_OBJS=	@JIT_SHIM_O@
 PY_ENABLE_SHARED=	@PY_ENABLE_SHARED@
 STATIC_LIBPYTHON=	@STATIC_LIBPYTHON@
 
@@ -3204,8 +3205,10 @@ Python/emscripten_trampoline_inner.wasm: $(srcdir)/Python/emscripten_trampoline_
 Python/emscripten_trampoline_wasm.c: Python/emscripten_trampoline_inner.wasm
 	$(PYTHON_FOR_REGEN) $(srcdir)/Platforms/emscripten/prepare_external_wasm.py $< $@ getWasmTrampolineModule
 
-JIT_OBJS=	@JIT_SHIM_O@
-JIT_TARGETS=	jit_stencils.h @JIT_STENCILS_H@ $(JIT_OBJS)
+JIT_SHIM_BUILD_OBJS=	@JIT_SHIM_BUILD_O@
+JIT_BUILD_TARGETS=	jit_stencils.h @JIT_STENCILS_H@ $(JIT_SHIM_BUILD_OBJS)
+JIT_TARGETS=	$(JIT_BUILD_TARGETS) $(filter-out $(JIT_SHIM_BUILD_OBJS),$(JIT_OBJS))
+JIT_GENERATED_STAMP=	.jit-stamp
 
 JIT_DEPS = \
 		$(srcdir)/Tools/jit/*.c \
@@ -3214,15 +3217,25 @@ JIT_DEPS = \
 		$(srcdir)/Python/executor_cases.c.h \
 		pyconfig.h
 
-$(JIT_TARGETS): $(JIT_DEPS)
+$(JIT_GENERATED_STAMP): $(JIT_DEPS)
 	@REGEN_JIT_COMMAND@
+	@touch $@
+
+$(JIT_BUILD_TARGETS): $(JIT_GENERATED_STAMP)
+	@if test ! -f "$@"; then \
+		rm -f $(JIT_GENERATED_STAMP); \
+		$(MAKE) $(JIT_GENERATED_STAMP); \
+		test -f "$@"; \
+	fi
+
+jit_shim-universal2-apple-darwin.o: jit_shim-aarch64-apple-darwin.o jit_shim-x86_64-apple-darwin.o
+	lipo -create -output $@ jit_shim-aarch64-apple-darwin.o jit_shim-x86_64-apple-darwin.o
 
 Python/jit.o: $(srcdir)/Python/jit.c @JIT_STENCILS_H@
 	$(CC) -c $(PY_CORE_CFLAGS) -o $@ $<
 
 .PHONY: regen-jit
-regen-jit:
-	@REGEN_JIT_COMMAND@
+regen-jit: $(JIT_TARGETS)
 
 # Some make's put the object file in the current directory
 .c.o:
@@ -3346,7 +3359,7 @@ clean-profile: clean-retain-profile clean-bolt
 # gh-141808: The JIT stencils are deliberately kept in clean-profile
 .PHONY: clean-jit-stencils
 clean-jit-stencils:
-	-rm -f $(JIT_TARGETS) jit_stencils*.h jit_shim*.o
+	-rm -f $(JIT_TARGETS) $(JIT_GENERATED_STAMP) jit_stencils*.h jit_shim*.o
 
 .PHONY: clean
 clean: clean-profile clean-jit-stencils
