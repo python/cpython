@@ -1,13 +1,13 @@
 /* Sentinel object implementation */
 
 #include "Python.h"
+#include "descrobject.h"          // PyMemberDef
 #include "pycore_ceval.h"         // _PyThreadState_GET()
 #include "pycore_interpframe.h"   // _PyFrame_IsIncomplete()
 #include "pycore_object.h"        // _PyObject_GC_TRACK/UNTRACK()
 #include "pycore_stackref.h"      // PyStackRef_AsPyObjectBorrow()
 #include "pycore_typeobject.h"    // _Py_BaseObject_RichCompare()
 #include "pycore_unionobject.h"   // _Py_union_from_tuple()
-#include "structmember.h"         // PyMemberDef
 
 typedef struct {
     PyObject_HEAD
@@ -30,15 +30,13 @@ static PyObject *
 caller(void)
 {
     _PyInterpreterFrame *f = _PyThreadState_GET()->current_frame;
-    if (f == NULL) {
-        Py_RETURN_NONE;
-    }
     if (f == NULL || PyStackRef_IsNull(f->f_funcobj)) {
         Py_RETURN_NONE;
     }
-    PyObject *r = PyFunction_GetModule(PyStackRef_AsPyObjectBorrow(f->f_funcobj));
+    PyFunctionObject *func = _PyFrame_GetFunction(f);
+    assert(PyFunction_Check(func));
+    PyObject *r = PyFunction_GetModule((PyObject *)func);
     if (!r) {
-        PyErr_Clear();
         Py_RETURN_NONE;
     }
     return Py_NewRef(r);
@@ -49,16 +47,12 @@ sentinel_new_with_module(PyTypeObject *type, PyObject *name, PyObject *module)
 {
     assert(PyUnicode_Check(name));
 
-    Py_INCREF(name);
-    Py_INCREF(module);
     sentinelobject *self = PyObject_GC_New(sentinelobject, type);
     if (self == NULL) {
-        Py_DECREF(name);
-        Py_DECREF(module);
         return NULL;
     }
-    self->name = name;
-    self->module = module;
+    self->name = Py_NewRef(name);
+    self->module = Py_NewRef(module);
     _PyObject_GC_TRACK(self);
     return (PyObject *)self;
 }
@@ -105,13 +99,20 @@ PySentinel_New(const char *name, const char *module_name)
     return sentinel;
 }
 
+static int
+sentinel_clear(PyObject *op)
+{
+    sentinelobject *self = sentinelobject_CAST(op);
+    Py_CLEAR(self->name);
+    Py_CLEAR(self->module);
+    return 0;
+}
+
 static void
 sentinel_dealloc(PyObject *op)
 {
     _PyObject_GC_UNTRACK(op);
-    sentinelobject *self = sentinelobject_CAST(op);
-    Py_CLEAR(self->name);
-    Py_CLEAR(self->module);
+    sentinel_clear(op);
     Py_TYPE(op)->tp_free(op);
 }
 
@@ -121,15 +122,6 @@ sentinel_traverse(PyObject *op, visitproc visit, void *arg)
     sentinelobject *self = sentinelobject_CAST(op);
     Py_VISIT(self->name);
     Py_VISIT(self->module);
-    return 0;
-}
-
-static int
-sentinel_clear(PyObject *op)
-{
-    sentinelobject *self = sentinelobject_CAST(op);
-    Py_CLEAR(self->name);
-    Py_CLEAR(self->module);
     return 0;
 }
 
