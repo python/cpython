@@ -2406,15 +2406,16 @@ void
 _PyEval_MonitorRaise(PyThreadState *tstate, _PyInterpreterFrame *frame,
               _Py_CODEUNIT *instr)
 {
-    if (no_tools_for_global_event(tstate, PY_MONITORING_EVENT_RAISE)) {
+    if (no_tools_for_local_event(tstate, frame, PY_MONITORING_EVENT_RAISE)) {
         return;
     }
     do_monitor_exc(tstate, frame, instr, PY_MONITORING_EVENT_RAISE);
 }
 
 bool
-_PyEval_NoToolsForUnwind(PyThreadState *tstate) {
-    return no_tools_for_global_event(tstate, PY_MONITORING_EVENT_PY_UNWIND);
+_PyEval_NoToolsForUnwind(PyThreadState *tstate, _PyInterpreterFrame *frame)
+{
+    return no_tools_for_local_event(tstate, frame, PY_MONITORING_EVENT_PY_UNWIND);
 }
 
 
