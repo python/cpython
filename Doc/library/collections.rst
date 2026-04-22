@@ -744,11 +744,13 @@ stack manipulations such as ``dup``, ``drop``, ``swap``, ``over``, ``pick``,
 
     .. method:: __getitem__(key, /)
 
-        Does exactly the same thing as :meth:`dict.__getitem__`, but in a more
-        :term:`thread-safe` way. When :term:`free threading` is enabled, the
-        defaultdict is locked while the key is being looked up and the
-        :meth:`__missing__` method is being called, thus ensuring that only one
-        default value is generated and inserted for each missing key.
+        Return ``self[key]``. If the item doesn't exist, the :meth:`__missing__`
+        method is called to create it.
+
+        When :term:`free threading` is enabled, the defaultdict is locked while
+        the key is being looked up and the :meth:`__missing__` method is being
+        called, thus ensuring that only one default value is generated and
+        inserted for each missing key.
 
     .. method:: __missing__(key, /)
 

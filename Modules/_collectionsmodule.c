@@ -2225,8 +2225,8 @@ static PyType_Spec defdict_spec;
 
 PyDoc_STRVAR(defdict_getitem_doc,
 "__getitem__($self, key, /)\n--\n\n\
-Return self[key]. Try to create the item if it doesn't exist, by calling\n\
-self.__missing__(key).\
+Return self[key]. If the item doesn't exist, self.__missing__(key) is called\n\
+to create it.\
 ");
 
 static PyObject *
