@@ -1150,22 +1150,22 @@ and :term:`generators <generator>` which incur interpreter overhead.
 
    def running_mean(iterable):
        "Average of values seen so far."
-       # running_mean([37, 33, 38, 28]) -> 37 35 36 34
+       # running_mean([37, 33, 38, 28]) → 37 35 36 34
        return map(truediv, accumulate(iterable), count(1))
 
    def running_min(iterable):
        "Smallest of values seen so far."
-       # running_min([37, 33, 38, 28]) -> 37 33 33 28
+       # running_min([37, 33, 38, 28]) → 37 33 33 28
        return accumulate(iterable, func=min)
 
    def running_max(iterable):
        "Largest of values seen so far."
-       # running_max([37, 33, 38, 28]) -> 37 37 38 38
+       # running_max([37, 33, 38, 28]) → 37 37 38 38
        return accumulate(iterable, func=max)
 
    def running_median(iterable):
        "Median of values seen so far."
-       # running_median([37, 33, 38, 28]) -> 37 35 37 35
+       # running_median([37, 33, 38, 28]) → 37 35 37 35
        read = iter(iterable).__next__
        lo = []  # max-heap
        hi = []  # min-heap the same size as or one smaller than lo
@@ -1263,10 +1263,6 @@ and :term:`generators <generator>` which incur interpreter overhead.
 
     >>> list(enumerate('abc'))
     [(0, 'a'), (1, 'b'), (2, 'c')]
-
-
-    >>> list(running_mean([8.5, 9.5, 7.5, 6.5]))
-    [8.5, 9.0, 8.5, 8.0]
 
 
     >>> for _ in loops(5):
@@ -1826,6 +1822,28 @@ and :term:`generators <generator>` which incur interpreter overhead.
     >>> word = 'coffee'
     >>> multinomial(*Counter(word).values()) == len(set(permutations(word)))
     True
+
+
+    >>> list(running_mean([8.5, 9.5, 7.5, 6.5]))
+    [8.5, 9.0, 8.5, 8.0]
+    >>> list(running_mean([37, 33, 38, 28]))
+    [37.0, 35.0, 36.0, 34.0]
+
+
+    >>> list(running_min([37, 33, 38, 28]))
+    [37, 33, 33, 28]
+
+
+    >>> list(running_max([37, 33, 38, 28]))
+    [37, 37, 38, 38]
+
+
+    >>> list(running_median([37, 33, 38, 28]))
+    [37, 35.0, 37, 35.0]
+
+
+    >>> list(running_statistics([37, 33, 38, 28]))
+    [(1, 37, 37, 37, 37.0), (2, 33, 35.0, 37, 35.0), (3, 33, 37, 38, 36.0), (4, 28, 35.0, 38, 34.0)]
 
 
 .. testcode::
