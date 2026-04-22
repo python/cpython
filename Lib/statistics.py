@@ -136,7 +136,7 @@ import sys
 
 from fractions import Fraction
 from decimal import Decimal
-from itertools import count, compress, groupby, repeat
+from itertools import compress, count, groupby, repeat
 from bisect import bisect_left, bisect_right
 from math import hypot, sqrt, fabs, exp, erfc, tau, log, fsum, sumprod
 from math import isfinite, isinf, pi, cos, sin, tan, cosh, asin, atan, acos
