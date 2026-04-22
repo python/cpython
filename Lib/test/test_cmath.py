@@ -516,6 +516,8 @@ class CMathTests(ComplexesAreIdenticalMixin, unittest.TestCase):
         self.assertFalse(cmath.isinf(1j))
         self.assertFalse(cmath.isinf(NAN))
         self.assertTrue(cmath.isinf(INF))
+        self.assertTrue(cmath.isinf(-INF))
+        self.assertFalse(cmath.isinf(INF/INF))
         self.assertTrue(cmath.isinf(complex(INF, 0)))
         self.assertTrue(cmath.isinf(complex(0, INF)))
         self.assertTrue(cmath.isinf(complex(INF, INF)))
