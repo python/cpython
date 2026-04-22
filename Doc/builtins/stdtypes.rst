@@ -976,32 +976,82 @@ A function that contains one or more :ref:`yield expressions <yieldexpr>`
 is a :term:`generator function`.
 For example::
 
-   >>> def count_to_three():
-   ...     yield 0
-   ...     yield 1
-   ...     yield 2
-   ...     yield 3
+   >>> def generator_function():
+   ...     print("generator starting")
+   ...     yield 123
+   ...     print("generator at line 4")
+   ...     yield 456
+   ...     print("generator ending")
 
 Generator functions behave as regular
 :ref:`user-defined functions <user-defined-funcs>`
 (for example, they have the same attributes), except that calling a generator
-function returns a :ref:`generator iterator <generator-methods>`::
+function returns a :term:`generator iterator`::
 
-   >>> count_to_three()
-   <generator object count_to_three at 0x7f33a2305000>
+   >>> generator_iterator = generator_function()
+   >>> generator_iterator
+   <generator object generator_function at ...>
 
-Iterating a generator iterator executes code of the underlying
-generator function, producing each :keyword:`yield`\ed value in turn::
+The iterator then allows control over the execution of the underlying function.
+Initially, the function is *suspended*.
+Execution starts when a :dfn:`consumer` asks the iterator to produce the next
+value, for example using the :func:`next` function (which calls
+the generator's :meth:`!generator.__next__()` method).
+The execution starts at the beginning of the function body
+and proceeds to the first :keyword:`!yield` expression.
+The expression after the :keyword:`!yield` keyword is evaluated and returned
+to the consumer (here, the caller of ``next``)::
 
-   >>> for number in count_to_three():
-   ...     print(number)
-   0
-   1
-   2
-   3
+   >>> first_value = next(generator_iterator)
+   generator starting
+   >>> print(first_value)
+   123
 
-   >>> list(count_to_three())
-   [0, 1, 2, 3]
+At this point, execution of the generator function is *suspended* again.
+By *suspended*, we mean that all local execution state is retained, including the
+current bindings of local variables, the "instruction pointer" (index of
+the :keyword:`!yield` expression at which execution is suspended),
+the internal evaluation stack, and the state of any exception handling.
+
+When the iterator is asked to produce another value, execution is *resumed*:
+the function proceeds from the :keyword:`!yield` expression where it was
+suspended until the next :keyword:`!yield` expression is encountered::
+
+   >>> second_value = next(generator_iterator)
+   generator at line 4
+   >>> print(second_value)
+   456
+
+If the generator function returns before a :keyword:`!yield` expression is
+encountered (either with a :keyword:`return` statement, or implicitly at the
+end of the function), the generator iterator becomes :term:`exhausted`.
+All further attempts to get the next value from it will raise
+a :exc:`StopIteration` exception::
+
+   >>> third_value = next(generator_iterator)
+   Traceback (most recent call last):
+     ...
+   StopIteration
+   >>> third_value = next(generator_iterator)
+   Traceback (most recent call last):
+     ...
+   StopIteration
+
+Commonly, an iterator is consumed via a :keyword:`for` loop, which implicitly
+calls :func:`next` at the start of each iteration, and handles
+:exc:`StopIteration`::
+
+   >>> for value in generator_function():
+   ...     print("value from generator:", value)
+   generator starting
+   value from generator: 123
+   generator at line 4
+   value from generator: 456
+   generator ending
+
+Note that instead of reusing the exhausted ``generator_iterator``,
+this example calls ``generator_function()`` again to create a new iterator
+with its own local execution state.
 
 One common use for generator functions is implementing the
 :meth:`~object.__iter__` method of custom iterable objects.
@@ -1014,6 +1064,12 @@ For example::
 
    >>> list(CardDeck())
    ['three of clubs', 'ace of hearts']
+
+.. seealso::
+
+   :pep:`255` - Simple Generators
+      The proposal for adding generators and the :keyword:`yield` statement to Python.
+
 
 
 .. index:: pair: object; generator
