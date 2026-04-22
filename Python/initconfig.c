@@ -3048,7 +3048,7 @@ config_envvars_usage(void)
             return;
         }
     }
-    fprint_color(stdout, usage_envvars, 0);
+    fprint_color(stdout, usage_envvars, colorize);
 }
 
 static void
