@@ -344,7 +344,6 @@ class ShlexTest(unittest.TestCase):
         # self.assertRaises(TypeError, shlex.quote, None)
 
     def testForceQuote(self):
-        # ensure default `force` behavior does not unnecessarily quote strings
         self.assertEqual(shlex.quote("spam"), "spam")
         self.assertEqual(shlex.quote("spam", force=False), "spam")
         self.assertEqual(shlex.quote("spam", force=True), "'spam'")
