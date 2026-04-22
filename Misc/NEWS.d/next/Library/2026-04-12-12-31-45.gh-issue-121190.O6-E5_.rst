@@ -1,0 +1,2 @@
+``importlib.resources.files()`` now emits a more meaningful error message
+when module spec is None (as found in some ``__main__`` modules).

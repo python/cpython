@@ -965,6 +965,12 @@ Reader_iternext_lock_held(PyObject *op)
             Py_DECREF(lineobj);
             return NULL;
         }
+        if (self->fields == NULL) {
+            PyErr_SetString(module_state->error_obj,
+                            "iterator has already advanced the reader");
+            Py_DECREF(lineobj);
+            return NULL;
+        }
         ++self->line_num;
         kind = PyUnicode_KIND(lineobj);
         data = PyUnicode_DATA(lineobj);
@@ -1833,6 +1839,7 @@ csv_exec(PyObject *module) {
 }
 
 static PyModuleDef_Slot csv_slots[] = {
+    _Py_ABI_SLOT,
     {Py_mod_exec, csv_exec},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {Py_mod_gil, Py_MOD_GIL_NOT_USED},

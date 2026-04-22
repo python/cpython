@@ -7,6 +7,7 @@ import test.support
 import unittest
 import unittest.mock
 from pathlib import Path
+from test.support import import_helper
 
 import ensurepip
 import ensurepip._uninstall
@@ -35,6 +36,15 @@ class TestPackages(unittest.TestCase):
         with unittest.mock.patch.object(ensurepip, '_WHEEL_PKG_DIR', None):
             # when the bundled pip wheel is used, we get _PIP_VERSION
             self.assertEqual(ensurepip._PIP_VERSION, ensurepip.version())
+
+    def test_wheel_pkg_dir_none(self):
+        # gh-146310: empty or None WHEEL_PKG_DIR should not search CWD
+        for value in ('', None):
+            with unittest.mock.patch('sysconfig.get_config_var',
+                                     return_value=value) as get_config_var:
+                module = import_helper.import_fresh_module('ensurepip')
+                self.assertIsNone(module._WHEEL_PKG_DIR)
+                get_config_var.assert_called_once_with('WHEEL_PKG_DIR')
 
     def test_selected_wheel_path_no_dir(self):
         pip_filename = f'pip-{ensurepip._PIP_VERSION}-py3-none-any.whl'

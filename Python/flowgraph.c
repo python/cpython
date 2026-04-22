@@ -963,7 +963,7 @@ label_exception_targets(basicblock *entryblock) {
             }
             else if (instr->i_opcode == RESUME) {
                 instr->i_except = handler;
-                if (instr->i_oparg != RESUME_AT_FUNC_START) {
+                if (instr->i_oparg != RESUME_AT_FUNC_START && instr->i_oparg != RESUME_AT_GEN_EXPR_START) {
                     assert(last_yield_except_depth >= 0);
                     if (last_yield_except_depth == 1) {
                         instr->i_oparg |= RESUME_OPARG_DEPTH1_MASK;
@@ -1411,7 +1411,7 @@ maybe_instr_make_load_smallint(cfg_instr *instr, PyObject *newconst,
         if (val == -1 && PyErr_Occurred()) {
             return -1;
         }
-        if (!overflow && _PY_IS_SMALL_INT(val)) {
+        if (!overflow && _PY_IS_SMALL_INT(val) && 0 <= val && val <= 255) {
             assert(_Py_IsImmortal(newconst));
             INSTR_SET_OP1(instr, LOAD_SMALL_INT, (int)val);
             return 1;

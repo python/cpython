@@ -126,6 +126,7 @@ __all__ = [
     'cast',
     'clear_overloads',
     'dataclass_transform',
+    'disjoint_base',
     'evaluate_forward_ref',
     'final',
     'get_args',
@@ -2794,6 +2795,29 @@ def final(f):
     return f
 
 
+def disjoint_base(cls):
+    """This decorator marks a class as a disjoint base.
+
+    Child classes of a disjoint base cannot inherit from other disjoint bases that are
+    not parent or child classes of the disjoint base.
+
+    For example:
+
+        @disjoint_base
+        class Disjoint1: pass
+
+        @disjoint_base
+        class Disjoint2: pass
+
+        class Disjoint3(Disjoint1, Disjoint2): pass  # Type checker error
+
+    Type checkers can use knowledge of disjoint bases to detect unreachable code
+    and determine when two types can overlap.
+    """
+    cls.__disjoint_base__ = True
+    return cls
+
+
 # Some unconstrained type variables.  These were initially used by the container types.
 # They were never meant for export and are now unused, but we keep them around to
 # avoid breaking compatibility with users who import them.
@@ -3588,7 +3612,7 @@ class IO(Generic[AnyStr]):
         pass
 
     @abstractmethod
-    def read(self, n: int = -1) -> AnyStr:
+    def read(self, n: int = -1, /) -> AnyStr:
         pass
 
     @abstractmethod
@@ -3596,15 +3620,15 @@ class IO(Generic[AnyStr]):
         pass
 
     @abstractmethod
-    def readline(self, limit: int = -1) -> AnyStr:
+    def readline(self, limit: int = -1, /) -> AnyStr:
         pass
 
     @abstractmethod
-    def readlines(self, hint: int = -1) -> list[AnyStr]:
+    def readlines(self, hint: int = -1, /) -> list[AnyStr]:
         pass
 
     @abstractmethod
-    def seek(self, offset: int, whence: int = 0) -> int:
+    def seek(self, offset: int, whence: int = 0, /) -> int:
         pass
 
     @abstractmethod
@@ -3616,7 +3640,7 @@ class IO(Generic[AnyStr]):
         pass
 
     @abstractmethod
-    def truncate(self, size: int | None = None) -> int:
+    def truncate(self, size: int | None = None, /) -> int:
         pass
 
     @abstractmethod
@@ -3624,11 +3648,11 @@ class IO(Generic[AnyStr]):
         pass
 
     @abstractmethod
-    def write(self, s: AnyStr) -> int:
+    def write(self, s: AnyStr, /) -> int:
         pass
 
     @abstractmethod
-    def writelines(self, lines: list[AnyStr]) -> None:
+    def writelines(self, lines: list[AnyStr], /) -> None:
         pass
 
     @abstractmethod
@@ -3636,7 +3660,7 @@ class IO(Generic[AnyStr]):
         pass
 
     @abstractmethod
-    def __exit__(self, type, value, traceback) -> None:
+    def __exit__(self, type, value, traceback, /) -> None:
         pass
 
 
@@ -3646,7 +3670,7 @@ class BinaryIO(IO[bytes]):
     __slots__ = ()
 
     @abstractmethod
-    def write(self, s: bytes | bytearray) -> int:
+    def write(self, s: bytes | bytearray, /) -> int:
         pass
 
     @abstractmethod
