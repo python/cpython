@@ -1119,6 +1119,19 @@ sys
   (Contributed by Klaus Zimmermann in :gh:`137476`.)
 
 
+sys.monitoring
+--------------
+
+* The :ref:`other events <monitoring-event-global>`
+  (:monitoring-event:`PY_THROW`, :monitoring-event:`PY_UNWIND`,
+  :monitoring-event:`RAISE`, :monitoring-event:`EXCEPTION_HANDLED`, and
+  :monitoring-event:`RERAISE`) can now be turned on and disabled on a per code
+  object basis. Returning :data:`~sys.monitoring.DISABLE` from a callback for
+  one of these events disables the event for the entire code object (for the
+  current tool), rather than raising :exc:`ValueError` as in prior versions.
+  (Contributed by Gabriele N. Tornetta in :gh:`146182`.)
+
+
 tarfile
 -------
 
@@ -1282,6 +1295,11 @@ typing
   as builtins or in compiled extensions. If a class ``C`` is a disjoint base, then
   child classes of that class cannot inherit from other disjoint bases that are
   not parent or child classes of ``C``. (Contributed by Jelle Zijlstra in :gh:`148639`.)
+
+* :class:`~typing.TypeVarTuple` now accepts ``bound``, ``covariant``,
+  ``contravariant``, and ``infer_variance`` keyword arguments, matching the
+  interface of :class:`~typing.TypeVar` and :class:`~typing.ParamSpec`.
+  ``bound`` semantics remain undefined in the specification.
 
 
 unicodedata
