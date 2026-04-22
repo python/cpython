@@ -154,7 +154,7 @@ sentinel_reduce(PyObject *op, PyObject *Py_UNUSED(ignored))
 static PyObject *
 sentinel_or(PyObject *self, PyObject *other)
 {
-    PyObject *args = PyTuple_Pack(2, self, other);
+    PyObject *args = _PyTuple_FromPair(self, other);
     if (args == NULL) {
         return NULL;
     }
