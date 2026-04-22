@@ -585,7 +585,7 @@ The :mod:`!calendar` module defines the following exceptions:
 
    .. versionchanged:: 3.12
       :exc:`IllegalMonthError` is now also a subclass of
-      :exc:`ValueError`. Newer code should avoid catching
+      :exc:`ValueError`. New code should avoid catching
       :exc:`IndexError`.
 
    .. attribute:: month
