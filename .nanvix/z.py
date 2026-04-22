@@ -261,80 +261,24 @@ class CPythonBuild(ZScript):
         )
 
     def setup(self) -> None:
-        """Download the Nanvix sysroot and dependencies."""
-        from nanvix_zutil import Sysroot, CFG_GH_TOKEN
+        """Download the Nanvix sysroot and dependencies.
 
+        Delegates sysroot download, Windows binary augmentation, and
+        verification to the base class. The local-nanvix override is
+        handled before calling super().
+        """
         local_nanvix = self._local_nanvix_path
         if local_nanvix:
             local_nanvix = os.path.abspath(os.path.expanduser(local_nanvix))
 
         if local_nanvix and os.path.isdir(local_nanvix):
-            # Use local Nanvix binaries instead of downloading the sysroot.
-            log.info(f"Using local Nanvix from {local_nanvix}")
-            sysroot_dir = self.nanvix_dir / "sysroot"
-            if sysroot_dir.exists():
-                shutil.rmtree(sysroot_dir)
-            sysroot_dir.mkdir(parents=True)
-
-            local = Path(local_nanvix)
-            # Copy binaries.
-            bin_dst = sysroot_dir / "bin"
-            bin_dst.mkdir()
-            if sys.platform == "win32":
-                binaries = ["nanvixd.exe", "mkramfs.exe", "kernel.elf"]
-            else:
-                binaries = [
-                    "nanvixd.elf", "kernel.elf", "mkramfs.elf",
-                    "linuxd.elf", "uservm.elf",
-                ]
-            for name in binaries:
-                src = local / "bin" / name
-                if src.is_file():
-                    shutil.copy2(src, bin_dst / name)
-                    log.info(f"  Copied bin/{name}")
-
-            # Copy libraries.
-            lib_dst = sysroot_dir / "lib"
-            lib_dst.mkdir()
-            lib_src = local / "lib"
-            if lib_src.is_dir():
-                for f in lib_src.iterdir():
-                    if f.is_file():
-                        shutil.copy2(f, lib_dst / f.name)
-                        log.info(f"  Copied lib/{f.name}")
-
-            # Copy user.ld from known fallback locations.
-            if not (lib_dst / "user.ld").is_file():
-                for candidate in [
-                    local / "sysroot-release" / "lib" / "user.ld",
-                    local / "build" / "user" / "linker" / "x86" / "user.ld",
-                ]:
-                    if candidate.is_file():
-                        shutil.copy2(candidate, lib_dst / "user.ld")
-                        log.info(f"  Copied user.ld from {candidate}")
-                        break
-
-            self.sysroot = Sysroot(sysroot_dir.resolve())
-            self.sysroot.verify(self.sysroot_required_files())
-            self.config.set(CFG_SYSROOT, str(self.sysroot.path))
-            self.config.set(_CFG_LOCAL_NANVIX, local_nanvix)
+            self._setup_from_local_nanvix(local_nanvix)
         else:
-            self.sysroot = Sysroot.download(
-                machine=self.config.machine,
-                deployment_mode=self.config.deployment_mode,
-                memory_size=self.config.memory_size,
-                tag=self.manifest.sysroot_ref.value,
-                gh_token=self.config.get(CFG_GH_TOKEN),
-                dest=self.nanvix_dir / "sysroot",
-                config=self.config,
-            )
-            self.sysroot.verify(self.sysroot_required_files())
-            self.config.set(CFG_SYSROOT, str(self.sysroot.path))
+            # Base class handles: download sysroot, download Windows
+            # binaries (if on Windows), verify required files.
+            super().setup()
 
         self._install_missing_deps()
-
-        if config.IS_WINDOWS:
-            self._download_windows_binaries()
 
         self.config.save()
 
@@ -374,7 +318,7 @@ class CPythonBuild(ZScript):
         )
 
     def test(self) -> None:
-        """Run the CPython test suite."""
+        """Run the CPython test suite (hello + regrtest)."""
         self._overlay_local_nanvix()
         sysroot, toolchain = self._get_paths()
         kwargs = self._build_kwargs()
@@ -411,105 +355,57 @@ class CPythonBuild(ZScript):
         """Deep clean: remove all build artifacts, caches, and untracked files."""
         build_mod.distclean(self.repo_root)
 
-    # ---- Fallback dependency download ------------------------------------
+    # ---- Local Nanvix override -------------------------------------------
 
-    def _download_windows_binaries(self) -> None:
-        """Download native Windows host binaries from the Nanvix release page.
+    def _setup_from_local_nanvix(self, local_nanvix: str) -> None:
+        """Set up sysroot from a local Nanvix build directory."""
+        from nanvix_zutil import Sysroot
 
-        On Windows, tests run natively using nanvixd.exe and mkramfs.exe.
-        These are distributed as part of the Windows-specific release assets.
-        """
-        from nanvix_zutil import CFG_GH_TOKEN
+        log.info(f"Using local Nanvix from {local_nanvix}")
+        sysroot_dir = self.nanvix_dir / "sysroot"
+        if sysroot_dir.exists():
+            shutil.rmtree(sysroot_dir)
+        sysroot_dir.mkdir(parents=True)
 
-        sysroot_path = Path(self.config.get(CFG_SYSROOT))
-        bin_dir = sysroot_path / "bin"
+        local = Path(local_nanvix)
+        bin_dst = sysroot_dir / "bin"
+        bin_dst.mkdir()
+        if config.IS_WINDOWS:
+            binaries = ["nanvixd.exe", "mkramfs.exe", "kernel.elf"]
+        else:
+            binaries = [
+                "nanvixd.elf", "kernel.elf", "mkramfs.elf",
+                "linuxd.elf", "uservm.elf",
+            ]
+        for name in binaries:
+            src = local / "bin" / name
+            if src.is_file():
+                shutil.copy2(src, bin_dst / name)
+                log.info(f"  Copied bin/{name}")
 
-        # Skip if already present.
-        required = ["nanvixd.exe", "mkramfs.exe"]
-        if all((bin_dir / b).is_file() for b in required):
-            log.info("Windows host binaries already present in sysroot")
-            return
+        lib_dst = sysroot_dir / "lib"
+        lib_dst.mkdir()
+        lib_src = local / "lib"
+        if lib_src.is_dir():
+            for f in lib_src.iterdir():
+                if f.is_file():
+                    shutil.copy2(f, lib_dst / f.name)
+                    log.info(f"  Copied lib/{f.name}")
 
-        # Use the resolved sysroot tag (matches the semver fallback from
-        # Sysroot.download, e.g. "0.12.410" → "v0.12.420").
-        tag = getattr(self, "sysroot", None) and self.sysroot.tag or ""
-        if not tag:
-            tag = self.config.get("sysroot_tag", "")
-        if not tag:
-            tag = self.manifest.sysroot_ref.value
-        if not tag.startswith("v"):
-            tag = f"v{tag}"
+        if not (lib_dst / "user.ld").is_file():
+            for candidate in [
+                local / "sysroot-release" / "lib" / "user.ld",
+                local / "build" / "user" / "linker" / "x86" / "user.ld",
+            ]:
+                if candidate.is_file():
+                    shutil.copy2(candidate, lib_dst / "user.ld")
+                    log.info(f"  Copied user.ld from {candidate}")
+                    break
 
-        machine = self.config.machine
-        mode = self.config.deployment_mode
-        mem = self.config.memory_size
-        asset_prefix = f"nanvix-windows-x86-{machine}-{mode}-release-{mem}"
-
-        log.info(f"Downloading Windows host binaries ({asset_prefix})...")
-
-        # Resolve the release via GitHub API.
-        api_url = f"https://api.github.com/repos/nanvix/nanvix/releases/tags/{tag}"
-        try:
-            req = urllib.request.Request(api_url)
-            req.add_header("Accept", "application/vnd.github+json")
-            gh_token = self.config.get(CFG_GH_TOKEN)
-            if gh_token:
-                req.add_header("Authorization", f"Bearer {gh_token}")
-            with urllib.request.urlopen(req, timeout=30) as resp:
-                release = json.loads(resp.read())
-        except Exception as exc:
-            log.warning(f"Cannot fetch release {tag}: {exc}")
-            log.warning("Windows binaries not available — tests may not work.")
-            return
-
-        # Find matching Windows asset.
-        asset_url = None
-        asset_name = None
-        for a in release.get("assets", []):
-            name = a.get("name", "")
-            if name.startswith(asset_prefix) and name.endswith(".zip"):
-                asset_url = a["browser_download_url"]
-                asset_name = name
-                break
-
-        if not asset_url:
-            log.warning(
-                f"No Windows asset matching '{asset_prefix}*.zip' in release {tag}"
-            )
-            return
-
-        # Download to cache.
-        cache_dir = self.nanvix_dir / "cache"
-        cache_dir.mkdir(parents=True, exist_ok=True)
-        zip_path = cache_dir / asset_name
-
-        if not zip_path.is_file():
-            log.info(f"Downloading {asset_name}...")
-            urllib.request.urlretrieve(asset_url, str(zip_path))
-
-        # Extract only host-native binaries into sysroot/bin/.
-        bin_dir.mkdir(parents=True, exist_ok=True)
-        wanted = set(config.WINDOWS_HOST_BINARIES)
-        with zipfile.ZipFile(zip_path) as zf:
-            for entry in zf.namelist():
-                basename = Path(entry).name
-                if basename in wanted:
-                    data = zf.read(entry)
-                    dest = bin_dir / basename
-                    dest.write_bytes(data)
-                    log.info(f"Extracted {basename} to sysroot/bin/")
-
-        # Verify required binaries exist.
-        missing = [b for b in required if not (bin_dir / b).is_file()]
-        if missing:
-            log.fatal(
-                f"Required Windows binaries missing after download: "
-                f"{', '.join(missing)}",
-                code=EXIT_MISSING_DEP,
-                hint="Check the Nanvix release page for Windows assets.",
-            )
-
-        log.success("Windows host binaries installed")
+        self.sysroot = Sysroot(sysroot_dir.resolve())
+        self.sysroot.verify(self.sysroot_required_files())
+        self.config.set(CFG_SYSROOT, str(self.sysroot.path))
+        self.config.set(_CFG_LOCAL_NANVIX, local_nanvix)
 
     def _install_missing_deps(self) -> None:
         """Download missing dependency libraries using fallback assets."""
