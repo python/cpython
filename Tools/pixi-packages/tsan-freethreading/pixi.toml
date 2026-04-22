@@ -13,3 +13,4 @@ version = "*"
 
 [package.build.config]
 recipe = "../default/recipe.yaml"
+experimental = true
