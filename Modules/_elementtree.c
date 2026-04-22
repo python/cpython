@@ -16,6 +16,7 @@
 #endif
 
 #include "Python.h"
+#include "pycore_ceval.h"         // _Py_EnterRecursiveCall()
 #include "pycore_dict.h"          // _PyDict_CopyAsDict()
 #include "pycore_pyhash.h"        // _Py_HashSecret
 #include "pycore_tuple.h"         // _PyTuple_FromPair
@@ -811,26 +812,31 @@ _elementtree_Element___deepcopy___impl(ElementObject *self, PyObject *memo)
 /*[clinic end generated code: output=eefc3df50465b642 input=a2d40348c0aade10]*/
 {
     Py_ssize_t i;
-    ElementObject* element;
+    ElementObject* element = NULL;
     PyObject* tag;
     PyObject* attrib;
     PyObject* text;
     PyObject* tail;
     PyObject* id;
 
+    if (_Py_EnterRecursiveCall(" in Element.__deepcopy__")) {
+        return NULL;
+    }
+
     PyTypeObject *tp = Py_TYPE(self);
     elementtreestate *st = get_elementtree_state_by_type(tp);
     // The deepcopy() helper takes care of incrementing the refcount
     // of the object to copy so to avoid use-after-frees.
     tag = deepcopy(st, self->tag, memo);
-    if (!tag)
-        return NULL;
+    if (!tag) {
+        goto error;
+    }
 
     if (self->extra && self->extra->attrib) {
         attrib = deepcopy(st, self->extra->attrib, memo);
         if (!attrib) {
             Py_DECREF(tag);
-            return NULL;
+            goto error;
         }
     } else {
         attrib = NULL;
@@ -841,8 +847,9 @@ _elementtree_Element___deepcopy___impl(ElementObject *self, PyObject *memo)
     Py_DECREF(tag);
     Py_XDECREF(attrib);
 
-    if (!element)
-        return NULL;
+    if (!element) {
+        goto error;
+    }
 
     text = deepcopy(st, JOIN_OBJ(self->text), memo);
     if (!text)
@@ -904,10 +911,12 @@ _elementtree_Element___deepcopy___impl(ElementObject *self, PyObject *memo)
     if (i < 0)
         goto error;
 
+    _Py_LeaveRecursiveCall();
     return (PyObject*) element;
 
   error:
-    Py_DECREF(element);
+    _Py_LeaveRecursiveCall();
+    Py_XDECREF(element);
     return NULL;
 }
 
