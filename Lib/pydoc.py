@@ -1702,7 +1702,7 @@ def resolve(thing, forceload=0):
         if object is None:
             raise ImportError('''\
 No Python documentation found for %r.
-Use help() to get the interactive help utility.
+Use 'help' to get the interactive help utility.
 Use help(str) for help on the str class.''' % thing)
         return object, thing
     else:
