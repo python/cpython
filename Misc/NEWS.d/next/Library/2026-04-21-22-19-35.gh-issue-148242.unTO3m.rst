@@ -1,4 +1,4 @@
-The built-in :meth:`defaultdict.__missing__` method no longer exists. A custom
+The built-in ``defaultdict.__missing__`` method no longer exists. A custom
 :meth:`~object.__missing__` method should no longer insert the generated value
-into the dictionary, as this is done by the new :meth:`__getitem__` method.
-defaultdict is now safe to use with :term:`free threading`.
+into the dictionary, as this is done by the new :meth:`defaultdict.__getitem__`
+method. defaultdict is now safe to use with :term:`free threading`.

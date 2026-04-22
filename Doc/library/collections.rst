@@ -767,7 +767,7 @@ stack manipulations such as ``dup``, ``drop``, ``swap``, ``over``, ``pick``,
         :pep:`584`.
 
     .. versionchanged:: 3.15
-        The built-in :meth:`defaultdict.__missing__` method no longer exists. A
+        The built-in ``defaultdict.__missing__`` method no longer exists. A
         custom :meth:`~object.__missing__` method should no longer insert the
         generated value into the dictionary, as this is done by the new
         :meth:`__getitem__` method. defaultdict is now safe to use with
