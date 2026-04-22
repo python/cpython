@@ -1334,15 +1334,12 @@ add_const(PyObject *newconst, PyObject *consts, PyObject *const_cache,
         return -1;
     }
 
-    /* O(1) lookup via pointer-keyed hashtable (replaces linear search). */
     _Py_hashtable_entry_t *entry = _Py_hashtable_get_entry(consts_index, (void *)newconst);
     if (entry != NULL) {
-        /* Already exists */
         Py_DECREF(newconst);
         return (int)(uintptr_t)entry->value;
     }
 
-    /* Not found – append to consts list */
     Py_ssize_t index = PyList_GET_SIZE(consts);
     if ((size_t)index >= (size_t)INT_MAX - 1) {
         PyErr_SetString(PyExc_OverflowError, "too many constants");
@@ -1354,9 +1351,7 @@ add_const(PyObject *newconst, PyObject *consts, PyObject *const_cache,
         return -1;
     }
 
-    /* Update index (must be after successful append) */
     if (_Py_hashtable_set(consts_index, (void *)newconst, (void *)(uintptr_t)index) < 0) {
-        /* OOM – rollback append for consistency */
         PyList_SetSlice(consts, index, index + 1, NULL);
         Py_DECREF(newconst);
         PyErr_NoMemory();
@@ -3688,7 +3683,6 @@ _PyCfg_OptimizeCodeUnit(cfg_builder *g, PyObject *consts, PyObject *const_cache,
 
     /** Optimization **/
 
-    /* Auxiliary pointer→index hashtable for O(1) lookup in add_const. */
     _Py_hashtable_t *consts_index = _Py_hashtable_new(
         _Py_hashtable_hash_ptr, _Py_hashtable_compare_direct);
     if (consts_index == NULL) {
@@ -3696,11 +3690,10 @@ _PyCfg_OptimizeCodeUnit(cfg_builder *g, PyObject *consts, PyObject *const_cache,
         return ERROR;
     }
 
-    /* Seed the index with pre-existing constants. */
     for (Py_ssize_t i = 0; i < PyList_GET_SIZE(consts); i++) {
         PyObject *item = PyList_GET_ITEM(consts, i);
         if (_Py_hashtable_get_entry(consts_index, (void *)item) != NULL) {
-            continue;  /* duplicate pointer; keep first occurrence */
+            continue;
         }
         if (_Py_hashtable_set(consts_index, (void *)item,
                               (void *)(uintptr_t)i) < 0) {
@@ -3712,7 +3705,6 @@ _PyCfg_OptimizeCodeUnit(cfg_builder *g, PyObject *consts, PyObject *const_cache,
 
     int ret = optimize_cfg(g, consts, const_cache, consts_index, firstlineno);
 
-    /* consts_index is invalid after this (consts list may be modified). */
     _Py_hashtable_destroy(consts_index);
 
     RETURN_IF_ERROR(ret);
