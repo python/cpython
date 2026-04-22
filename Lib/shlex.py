@@ -334,8 +334,7 @@ def quote(s, *, force=False):
                   b'ABCDEFGHIJKLMNOPQRSTUVWXYZ_'
                   b'abcdefghijklmnopqrstuvwxyz')
     if (not force
-        and s.isascii() and not s.encode().translate(None, delete=safe_chars)
-    ):
+        and s.isascii() and not s.encode().translate(None, delete=safe_chars)):
         # No quoting is needed if we're not forcing quoting
         # and `s` is an ASCII string consisting only of `safe_chars`
         return s
