@@ -1,6 +1,6 @@
 '''SMTP/ESMTP client class.
 
-This should follow RFC 821 (SMTP), RFC 1869 (ESMTP), RFC 2554 (SMTP
+This should follow RFC 821 (SMTP), RFC 1869 (ESMTP), RFC 4954 (SMTP
 Authentication) and RFC 2487 (Secure SMTP over TLS).
 
 Notes:
@@ -36,6 +36,8 @@ Example:
 # Better RFC 821 compliance (MAIL and RCPT, and CRLF in data)
 #     by Carey Evans <c.evans@clear.net.nz>, for picky mail servers.
 # RFC 2554 (authentication) support by Gerhard Haering <gerhard@bigfoot.de>.
+# RFC 4954 (authentication, obsoletes 2554) support by Barry Warsaw <barry@python.org> and
+#     Steven Silvester <steve.silvester@mongodb.com>.
 #
 # This was modified from the Python 1.5 library HTTP lib.
 
@@ -53,15 +55,6 @@ import sys
 from email.base64mime import body_encode as encode_base64
 from email import saslprep
 
-
-def _apply_saslprep(value):
-    """Apply SASLprep (RFC 4013) to *value*, with an ASCII fast-path.
-
-    Pure-ASCII input is returned unchanged without calling saslprep().
-    """
-    if value.isascii():
-        return value
-    return saslprep(value, allow_unassigned_code_points=False)
 
 __all__ = ["SMTPException", "SMTPNotSupportedError", "SMTPServerDisconnected", "SMTPResponseException",
            "SMTPSenderRefused", "SMTPRecipientsRefused", "SMTPDataError",
@@ -187,6 +180,15 @@ def _quote_periods(bindata):
 
 def _fix_eols(data):
     return  re.sub(r'(?:\r\n|\n|\r(?!\n))', CRLF, data)
+
+def _apply_saslprep(value):
+    """Apply SASLprep (RFC 4013) to *value*, with an ASCII fast-path.
+
+    Pure-ASCII input is returned unchanged without calling saslprep().
+    """
+    if value.isascii():
+        return value
+    return saslprep(value, allow_unassigned_code_points=False)
 
 
 try:
