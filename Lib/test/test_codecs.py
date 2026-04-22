@@ -2137,6 +2137,7 @@ all_unicode_encodings = [
     "utf_16_le",
     "utf_7",
     "utf_8",
+    "viscii",
 ]
 
 if hasattr(codecs, "mbcs_encode"):
