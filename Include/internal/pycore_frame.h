@@ -28,27 +28,33 @@ struct _frame {
        PyEval_GetLocals requires a borrowed reference so the actual reference
        is stored here */
     PyObject *f_locals_cache;
+    /* A tuple containing strong references to fast locals that were overwritten
+     * via f_locals. Borrowed references to these locals may exist in frames
+     * closer to the top of the stack. The references in this tuple act as
+     * "support" for the borrowed references, ensuring that they remain valid.
+     */
+    PyObject *f_overwritten_fast_locals;
     /* The frame data, if this frame object owns the frame */
     PyObject *_f_frame_data[1];
 };
 
-extern PyFrameObject* _PyFrame_New_NoTrack(PyCodeObject *code);
+// Exported for external JIT support
+PyAPI_FUNC(PyFrameObject *) _PyFrame_New_NoTrack(PyCodeObject *code);
 
 
 /* other API */
 
 typedef enum _framestate {
-    FRAME_CREATED = -3,
-    FRAME_SUSPENDED = -2,
-    FRAME_SUSPENDED_YIELD_FROM = -1,
-    FRAME_EXECUTING = 0,
-    FRAME_COMPLETED = 1,
-    FRAME_CLEARED = 4
+    FRAME_CREATED = 0,
+    FRAME_SUSPENDED = 1,
+    FRAME_SUSPENDED_YIELD_FROM = 2,
+    FRAME_SUSPENDED_YIELD_FROM_LOCKED = 3,
+    FRAME_EXECUTING = 4,
+    FRAME_CLEARED = 5
 } PyFrameState;
 
-#define FRAME_STATE_SUSPENDED(S) ((S) == FRAME_SUSPENDED || (S) == FRAME_SUSPENDED_YIELD_FROM)
-#define FRAME_STATE_FINISHED(S) ((S) >= FRAME_COMPLETED)
-
+#define FRAME_STATE_SUSPENDED(S) ((S) >= FRAME_SUSPENDED && (S) <= FRAME_SUSPENDED_YIELD_FROM_LOCKED)
+#define FRAME_STATE_FINISHED(S) ((S) == FRAME_CLEARED)
 #ifdef __cplusplus
 }
 #endif

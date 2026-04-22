@@ -66,10 +66,41 @@ Dumping the traceback
       Added support for passing file descriptor to this function.
 
 
+Dumping the C stack
+-------------------
+
+.. versionadded:: 3.14
+
+.. function:: dump_c_stack(file=sys.stderr)
+
+   Dump the C stack trace of the current thread into *file*.
+
+   If the Python build does not support it or the operating system
+   does not provide a stack trace, then this prints an error in place
+   of a dumped C stack.
+
+.. _c-stack-compatibility:
+
+C Stack Compatibility
+*********************
+
+If the system does not support the C-level :manpage:`backtrace(3)`
+or :manpage:`dladdr1(3)`, then C stack dumps will not work.
+An error will be printed instead of the stack.
+
+Additionally, some compilers do not support :term:`CPython's <CPython>`
+implementation of C stack dumps. As a result, a different error may be printed
+instead of the stack, even if the operating system supports dumping stacks.
+
+.. note::
+
+   Dumping C stacks can be arbitrarily slow, depending on the DWARF level
+   of the binaries in the call stack.
+
 Fault handler state
 -------------------
 
-.. function:: enable(file=sys.stderr, all_threads=True)
+.. function:: enable(file=sys.stderr, all_threads=True, c_stack=True)
 
    Enable the fault handler: install handlers for the :const:`~signal.SIGSEGV`,
    :const:`~signal.SIGFPE`, :const:`~signal.SIGABRT`, :const:`~signal.SIGBUS`
@@ -80,6 +111,10 @@ Fault handler state
 
    The *file* must be kept open until the fault handler is disabled: see
    :ref:`issue with file descriptors <faulthandler-fd>`.
+
+   If *c_stack* is ``True``, then the C stack trace is printed after the Python
+   traceback, unless the system does not support it. See :func:`dump_c_stack` for
+   more information on compatibility.
 
    .. versionchanged:: 3.5
       Added support for passing file descriptor to this function.
@@ -94,6 +129,9 @@ Fault handler state
    .. versionchanged:: 3.14
       Only the current thread is dumped if the :term:`GIL` is disabled to
       prevent the risk of data races.
+
+   .. versionchanged:: 3.14
+      The dump now displays the C stack trace if *c_stack* is true.
 
 .. function:: disable()
 
@@ -190,6 +228,41 @@ handler:
     Fatal Python error: Segmentation fault
 
     Current thread 0x00007fb899f39700 (most recent call first):
-      File "/home/python/cpython/Lib/ctypes/__init__.py", line 486 in string_at
+      File "/opt/python/Lib/ctypes/__init__.py", line 486 in string_at
       File "<stdin>", line 1 in <module>
+
+    Current thread's C stack trace (most recent call first):
+      Binary file "/opt/python/python", at _Py_DumpStack+0x42 [0x5b27f7d7147e]
+      Binary file "/opt/python/python", at +0x32dcbd [0x5b27f7d85cbd]
+      Binary file "/opt/python/python", at +0x32df8a [0x5b27f7d85f8a]
+      Binary file "/usr/lib/libc.so.6", at +0x3def0 [0x77b73226bef0]
+      Binary file "/usr/lib/libc.so.6", at +0x17ef9c [0x77b7323acf9c]
+      Binary file "/opt/python/build/lib.linux-x86_64-3.15/_ctypes.cpython-315d-x86_64-linux-gnu.so", at +0xcdf6 [0x77b7315dddf6]
+      Binary file "/usr/lib/libffi.so.8", at +0x7976 [0x77b73158f976]
+      Binary file "/usr/lib/libffi.so.8", at +0x413c [0x77b73158c13c]
+      Binary file "/usr/lib/libffi.so.8", at ffi_call+0x12e [0x77b73158ef0e]
+      Binary file "/opt/python/build/lib.linux-x86_64-3.15/_ctypes.cpython-315d-x86_64-linux-gnu.so", at +0x15a33 [0x77b7315e6a33]
+      Binary file "/opt/python/build/lib.linux-x86_64-3.15/_ctypes.cpython-315d-x86_64-linux-gnu.so", at +0x164fa [0x77b7315e74fa]
+      Binary file "/opt/python/build/lib.linux-x86_64-3.15/_ctypes.cpython-315d-x86_64-linux-gnu.so", at +0xc624 [0x77b7315dd624]
+      Binary file "/opt/python/python", at _PyObject_MakeTpCall+0xce [0x5b27f7b73883]
+      Binary file "/opt/python/python", at +0x11bab6 [0x5b27f7b73ab6]
+      Binary file "/opt/python/python", at PyObject_Vectorcall+0x23 [0x5b27f7b73b04]
+      Binary file "/opt/python/python", at _PyEval_EvalFrameDefault+0x490c [0x5b27f7cbb302]
+      Binary file "/opt/python/python", at +0x2818e6 [0x5b27f7cd98e6]
+      Binary file "/opt/python/python", at +0x281aab [0x5b27f7cd9aab]
+      Binary file "/opt/python/python", at PyEval_EvalCode+0xc5 [0x5b27f7cd9ba3]
+      Binary file "/opt/python/python", at +0x255957 [0x5b27f7cad957]
+      Binary file "/opt/python/python", at +0x255ab4 [0x5b27f7cadab4]
+      Binary file "/opt/python/python", at _PyEval_EvalFrameDefault+0x6c3e [0x5b27f7cbd634]
+      Binary file "/opt/python/python", at +0x2818e6 [0x5b27f7cd98e6]
+      Binary file "/opt/python/python", at +0x281aab [0x5b27f7cd9aab]
+      Binary file "/opt/python/python", at +0x11b6e1 [0x5b27f7b736e1]
+      Binary file "/opt/python/python", at +0x11d348 [0x5b27f7b75348]
+      Binary file "/opt/python/python", at +0x11d626 [0x5b27f7b75626]
+      Binary file "/opt/python/python", at PyObject_Call+0x20 [0x5b27f7b7565e]
+      Binary file "/opt/python/python", at +0x32a67a [0x5b27f7d8267a]
+      Binary file "/opt/python/python", at +0x32a7f8 [0x5b27f7d827f8]
+      Binary file "/opt/python/python", at +0x32ac1b [0x5b27f7d82c1b]
+      Binary file "/opt/python/python", at Py_RunMain+0x31 [0x5b27f7d82ebe]
+      <truncated rest of calls>
     Segmentation fault

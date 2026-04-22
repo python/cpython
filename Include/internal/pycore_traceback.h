@@ -85,7 +85,8 @@ extern void _Py_DumpHexadecimal(
     uintptr_t value,
     Py_ssize_t width);
 
-extern PyObject* _PyTraceBack_FromFrame(
+// Exported for external JIT support
+PyAPI_FUNC(PyObject *) _PyTraceBack_FromFrame(
     PyObject *tb_next,
     PyFrameObject *frame);
 
@@ -98,6 +99,12 @@ extern int _PyTraceBack_Print(
     PyObject *tb, const char *header, PyObject *f);
 extern int _Py_WriteIndentedMargin(int, const char*, PyObject *);
 extern int _Py_WriteIndent(int, PyObject *);
+
+// Export for the faulthandler module
+PyAPI_FUNC(void) _Py_InitDumpStack(void);
+PyAPI_FUNC(void) _Py_DumpStack(int fd);
+
+extern void _Py_DumpTraceback_Init(void);
 
 #ifdef __cplusplus
 }

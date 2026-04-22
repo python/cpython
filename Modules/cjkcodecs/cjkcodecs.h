@@ -495,11 +495,12 @@ _cjk_free(void *mod)
 }
 
 static struct PyMethodDef _cjk_methods[] = {
-    {"getcodec", (PyCFunction)getcodec, METH_O, ""},
+    {"getcodec", getcodec, METH_O, ""},
     {NULL, NULL},
 };
 
 static PyModuleDef_Slot _cjk_slots[] = {
+    _Py_ABI_SLOT,
     {Py_mod_exec, _cjk_exec},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {Py_mod_gil, Py_MOD_GIL_NOT_USED},

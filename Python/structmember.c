@@ -3,6 +3,7 @@
 
 #include "Python.h"
 #include "pycore_abstract.h"      // _PyNumber_Index()
+#include "pycore_descrobject.h"   // _PyMember_GetOffset()
 #include "pycore_long.h"          // _PyLong_IsNegative()
 #include "pycore_object.h"        // _Py_TryIncrefCompare(), FT_ATOMIC_*()
 #include "pycore_critical_section.h"
@@ -20,6 +21,17 @@ member_get_object(const char *addr, const char *obj_addr, PyMemberDef *l)
     return v;
 }
 
+void *
+_PyMember_GetOffset(PyObject *obj, PyMemberDef *mp)
+{
+    unsigned char *addr = (unsigned char *)obj + mp->offset;
+    if (mp->flags & _Py_AFTER_ITEMS) {
+        PyTypeObject *type = Py_TYPE(obj);
+        addr += _Py_SIZE_ROUND_UP(Py_SIZE(obj) * type->tp_itemsize, SIZEOF_VOID_P);
+    }
+    return addr;
+}
+
 PyObject *
 PyMember_GetOne(const char *obj_addr, PyMemberDef *l)
 {
@@ -31,7 +43,7 @@ PyMember_GetOne(const char *obj_addr, PyMemberDef *l)
         return NULL;
     }
 
-    const char* addr = obj_addr + l->offset;
+    const void *addr = _PyMember_GetOffset((PyObject *)obj_addr, l);
     switch (l->type) {
     case Py_T_BOOL:
         v = PyBool_FromLong(FT_ATOMIC_LOAD_CHAR_RELAXED(*(char*)addr));
@@ -80,15 +92,27 @@ PyMember_GetOne(const char *obj_addr, PyMemberDef *l)
         v = PyUnicode_FromString((char*)addr);
         break;
     case Py_T_CHAR: {
-        char char_val = FT_ATOMIC_LOAD_CHAR_RELAXED(*addr);
+        char char_val = FT_ATOMIC_LOAD_CHAR_RELAXED(*(char*)addr);
         v = PyUnicode_FromStringAndSize(&char_val, 1);
         break;
     }
     case _Py_T_OBJECT:
-        v = *(PyObject **)addr;
-        if (v == NULL)
+        v = FT_ATOMIC_LOAD_PTR(*(PyObject **) addr);
+        if (v != NULL) {
+#ifdef Py_GIL_DISABLED
+            if (!_Py_TryIncrefCompare((PyObject **) addr, v)) {
+                Py_BEGIN_CRITICAL_SECTION((PyObject *) obj_addr);
+                v = FT_ATOMIC_LOAD_PTR(*(PyObject **) addr);
+                Py_XINCREF(v);
+                Py_END_CRITICAL_SECTION();
+            }
+#else
+            Py_INCREF(v);
+#endif
+        }
+        if (v == NULL) {
             v = Py_None;
-        Py_INCREF(v);
+        }
         break;
     case Py_T_OBJECT_EX:
         v = member_get_object(addr, obj_addr, l);
@@ -139,10 +163,8 @@ PyMember_SetOne(char *addr, PyMemberDef *l, PyObject *v)
         return -1;
     }
 
-#ifdef Py_GIL_DISABLED
-    PyObject *obj = (PyObject *) addr;
-#endif
-    addr += l->offset;
+    PyObject *obj = (PyObject *)addr;
+    addr = _PyMember_GetOffset(obj, l);
 
     if ((l->flags & Py_READONLY))
     {

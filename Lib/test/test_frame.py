@@ -597,6 +597,22 @@ class TestFrameLocals(unittest.TestCase):
         with self.assertRaises(TypeError):
             FrameLocalsProxy(frame=sys._getframe())  # no keyword arguments
 
+    def test_overwrite_locals(self):
+        # Verify we do not crash if we overwrite a local passed as an argument
+        # from an ancestor in the call stack.
+        def f():
+            xs = [1, 2, 3]
+            ys = [4, 5, 6]
+            return g(xs)
+
+        def g(xs):
+            f = sys._getframe()
+            f.f_back.f_locals["xs"] = None
+            f.f_back.f_locals["ys"] = None
+            return xs[1]
+
+        self.assertEqual(f(), 2)
+
 
 class FrameLocalsProxyMappingTests(mapping_tests.TestHashMappingProtocol):
     """Test that FrameLocalsProxy behaves like a Mapping (with exceptions)"""
