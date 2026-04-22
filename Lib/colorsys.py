@@ -52,18 +52,9 @@ def yiq_to_rgb(y, i, q):
     g = y - 0.27478764629897834*i - 0.6356910791873801*q
     b = y - 1.1085450346420322*i + 1.7090069284064666*q
 
-    if r < 0.0:
-        r = 0.0
-    if g < 0.0:
-        g = 0.0
-    if b < 0.0:
-        b = 0.0
-    if r > 1.0:
-        r = 1.0
-    if g > 1.0:
-        g = 1.0
-    if b > 1.0:
-        b = 1.0
+    r = max(0.0, min(1.0, r))
+    g = max(0.0, min(1.0, g))
+    b = max(0.0, min(1.0, b))
     return (r, g, b)
 
 
@@ -150,17 +141,13 @@ def hsv_to_rgb(h, s, v):
     p = v*(1.0 - s)
     q = v*(1.0 - s*f)
     t = v*(1.0 - s*(1.0-f))
-    i = i%6
-    if i == 0:
-        return v, t, p
-    if i == 1:
-        return q, v, p
-    if i == 2:
-        return p, v, t
-    if i == 3:
-        return p, q, v
-    if i == 4:
-        return t, p, v
-    if i == 5:
-        return v, p, q
-    # Cannot get here
+    i = i % 6
+    rgb_table = (
+        (v, t, p),  # i == 0
+        (q, v, p),  # i == 1
+        (p, v, t),  # i == 2
+        (p, q, v),  # i == 3
+        (t, p, v),  # i == 4
+        (v, p, q),  # i == 5
+    )
+    return rgb_table[i]
