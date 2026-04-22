@@ -1980,7 +1980,7 @@ without the dedicated syntax, as documented below.
 
 .. _typevartuple:
 
-.. class:: TypeVarTuple(name, *, default=typing.NoDefault)
+.. class:: TypeVarTuple(name, *, bound=None, covariant=False, contravariant=False, infer_variance=False, default=typing.NoDefault)
 
    Type variable tuple. A specialized form of :ref:`type variable <typevar>`
    that enables *variadic* generics.
@@ -2090,6 +2090,24 @@ without the dedicated syntax, as documented below.
 
       The name of the type variable tuple.
 
+   .. attribute:: __covariant__
+
+      Whether the type variable tuple has been explicitly marked as covariant.
+
+      .. versionadded:: 3.15
+
+   .. attribute:: __contravariant__
+
+      Whether the type variable tuple has been explicitly marked as contravariant.
+
+      .. versionadded:: 3.15
+
+   .. attribute:: __infer_variance__
+
+      Whether the type variable tuple's variance should be inferred by type checkers.
+
+      .. versionadded:: 3.15
+
    .. attribute:: __default__
 
       The default value of the type variable tuple, or :data:`typing.NoDefault` if it
@@ -2116,6 +2134,11 @@ without the dedicated syntax, as documented below.
 
       .. versionadded:: 3.13
 
+   Type variable tuples created with ``covariant=True`` or
+   ``contravariant=True`` can be used to declare covariant or contravariant
+   generic types.  The ``bound`` argument is also accepted, similar to
+   :class:`TypeVar`, but its actual semantics are yet to be decided.
+
    .. versionadded:: 3.11
 
    .. versionchanged:: 3.12
@@ -2126,6 +2149,11 @@ without the dedicated syntax, as documented below.
    .. versionchanged:: 3.13
 
       Support for default values was added.
+
+   .. versionchanged:: 3.15
+
+      Added support for the ``bound``, ``covariant``, ``contravariant``, and
+      ``infer_variance`` parameters.
 
 .. class:: ParamSpec(name, *, bound=None, covariant=False, contravariant=False, default=typing.NoDefault)
 
@@ -2195,6 +2223,20 @@ without the dedicated syntax, as documented below.
    .. attribute:: __name__
 
       The name of the parameter specification.
+
+   .. attribute:: __covariant__
+
+      Whether the parameter specification has been explicitly marked as covariant.
+
+   .. attribute:: __contravariant__
+
+      Whether the parameter specification has been explicitly marked as contravariant.
+
+   .. attribute:: __infer_variance__
+
+      Whether the parameter specification's variance should be inferred by type checkers.
+
+      .. versionadded:: 3.12
 
    .. attribute:: __default__
 
@@ -3358,6 +3400,36 @@ Functions and decorators
 
    .. versionadded:: 3.12
 
+.. decorator:: disjoint_base
+
+   Decorator to mark a class as a disjoint base.
+
+   Type checkers do not allow child classes of a disjoint base ``C`` to
+   inherit from other disjoint bases that are not parent or child classes of ``C``.
+
+   For example::
+
+       @disjoint_base
+       class Disjoint1: pass
+
+       @disjoint_base
+       class Disjoint2: pass
+
+       class Disjoint3(Disjoint1, Disjoint2): pass  # Type checker error
+
+   Type checkers can use knowledge of disjoint bases to detect unreachable code
+   and determine when two types can overlap.
+
+   The corresponding runtime concept is a solid base (see :ref:`multiple-inheritance`).
+   Classes that are solid bases at runtime can be marked with ``@disjoint_base`` in stub files.
+   Users may also mark other classes as disjoint bases to indicate to type checkers that
+   multiple inheritance with other disjoint bases should not be allowed.
+
+   Note that the concept of a solid base is a CPython implementation
+   detail, and the exact set of standard library classes that are
+   disjoint bases at runtime may change in future versions of Python.
+
+   .. versionadded:: next
 
 .. decorator:: type_check_only
 
