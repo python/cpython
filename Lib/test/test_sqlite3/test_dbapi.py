@@ -749,7 +749,7 @@ class OpenTests(unittest.TestCase):
             with contextlib.closing(sqlite.connect(path)) as cx:
                 # Check that we can read the default value when we didn't set it explicitly:
                 rc = cx.file_control(sqlite.SQLITE_FCNTL_PERSIST_WAL, -1)
-                assert rc == 0, f"SQLITE_FCNTL_PERSIST_WAL should be off by default"
+                assert rc == 0, f"SQLITE_FCNTL_PERSIST_WAL should be 0 by default, not {rc}"
 
                 cu = cx.cursor()
                 self.assertTrue(os.path.exists(path + "-wal"))
