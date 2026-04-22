@@ -1,7 +1,7 @@
 # This script is best run with pystats enabled to help visualize the shape of the traces.
 # ./configure --enable-experimental-jit=interpreter  -C --with-pydebug --enable-pystats
 
-# The resulting images can be visualized by on linux as follows:
+# The resulting images can be visualize on linux as follows:
 # $ cd folder_with_gv_files
 # $ dot -Tsvg -Osvg *.gv
 # $ firefox *.gv.svg
