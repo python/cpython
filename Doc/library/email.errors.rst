@@ -1,4 +1,4 @@
-:mod:`!email.errors`: Exception and Defect classes
+/:mod:`!email.errors`: Exception and Defect classes
 --------------------------------------------------
 
 .. module:: email.errors
@@ -65,7 +65,7 @@ The following exception classes are defined in the :mod:`email.errors` module:
    a mailbox incompatible with the policy in use.
    (See :attr:`email.policy.EmailPolicy.utf8`.)
 
-   .. versionadded:: 3.14
+   .. versionadded:: 3.15
 
 
 .. exception:: MessageDefect()
