@@ -65,8 +65,7 @@ algorithms_guaranteed = set(__always_supported)
 algorithms_available = set(__always_supported)
 
 __all__ = __always_supported + ('new', 'algorithms_guaranteed',
-                                'algorithms_available', 'file_digest',
-                                'saslprep')
+                                'algorithms_available', 'file_digest')
 
 
 __builtin_constructor_cache = {}
@@ -197,8 +196,6 @@ except ImportError:
     _hashlib = None
     new = __py_new
     __get_hash = __get_builtin_constructor
-
-from _saslprep import saslprep
 
 try:
     # OpenSSL's PKCS5_PBKDF2_HMAC requires OpenSSL 1.0+ with HMAC and SHA
