@@ -86,3 +86,8 @@ If you're looking for information on how to update the JIT build dependencies, s
 [^pep-744]: [PEP 744](https://peps.python.org/pep-0744/)
 
 [^why-llvm]: Clang is specifically needed because it's the only C compiler with support for guaranteed tail calls (`musttail`), which are required by CPython's continuation-passing-style approach to JIT compilation. Since LLVM also includes other functionalities we need (namely, object file parsing and disassembly), it's convenient to only support one toolchain at this time.
+
+### Understanding JIT behavior
+
+The [example_trace_dump.py](./example_trace_dump.py) script will (when configured as described in the script) dump out the
+executors for a range of tiny programs to show the behavior of the JIT front-end.
