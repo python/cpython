@@ -532,7 +532,6 @@ def run_all(
     release: bool = False,
     test_list: list[str] | None = None,
     batch_size: int = config.DEFAULT_TEST_BATCH_SIZE,
-    skip_regrtest: bool = False,
     run_fn=None,
 ) -> None:
     """Run the complete test pipeline: stage → hello → regrtest → cleanup."""
@@ -564,11 +563,6 @@ def run_all(
         ramfs_img=ramfs_img,
         nanvix_home=nanvix_home,
     )
-
-    if skip_regrtest:
-        print("\t\t*** CPython smoke tests PASSED (regrtest skipped) ***")
-        cleanup(repo_root)
-        return
 
     # Regression tests.
     run_regrtest(

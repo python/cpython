@@ -318,25 +318,14 @@ class CPythonBuild(ZScript):
         )
 
     def test(self) -> None:
-        """Run the CPython test suite.
-
-        Without targets, runs the full suite (hello + regrtest).
-        With targets (e.g. ``./z test -- test-smoke``), runs only the
-        selected stages:
-          - ``test-smoke``: hello world test only
-          - ``test-integration``: hello + regrtest
-        """
+        """Run the CPython test suite (hello + regrtest)."""
         self._overlay_local_nanvix()
         sysroot, toolchain = self._get_paths()
         kwargs = self._build_kwargs()
 
-        targets = set(self.targets) if self.targets else {"test-smoke", "test-integration"}
-        skip_regrtest = "test-integration" not in targets
-
         test_mod.run_all(
             sysroot, toolchain, self.repo_root,
             **kwargs,
-            skip_regrtest=skip_regrtest,
             run_fn=lambda *args, **kw: self.run(*args, **kw),
         )
 
