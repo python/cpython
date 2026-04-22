@@ -6,6 +6,7 @@
 #include "pycore_bitutils.h"
 #include "pycore_call.h"
 #include "pycore_ceval.h"
+#include "pycore_critical_section.h"
 #include "pycore_dict.h"
 #include "pycore_floatobject.h"
 #include "pycore_frame.h"
