@@ -11,7 +11,7 @@ from test.test_asyncio import functional as func_tests
 
 
 def tearDownModule():
-    asyncio._set_event_loop_policy(None)
+    asyncio.events._set_event_loop_policy(None)
 
 
 class BaseStartServer(func_tests.FunctionalTestCaseMixin):
@@ -265,6 +265,38 @@ class TestServer2(unittest.IsolatedAsyncioTestCase):
         await asyncio.sleep(0)
         await asyncio.sleep(0)
         self.assertTrue(task.done())
+
+    async def test_close_with_hanging_client(self):
+        # Synchronize server cancellation only after the socket connection is
+        # accepted and this event is set
+        conn_event = asyncio.Event()
+        class Proto(asyncio.Protocol):
+            def connection_made(self, transport):
+                conn_event.set()
+
+        loop = asyncio.get_running_loop()
+        srv = await loop.create_server(Proto, socket_helper.HOSTv4, 0)
+
+        # Start the server
+        serve_forever_task = asyncio.create_task(srv.serve_forever())
+        await asyncio.sleep(0)
+
+        # Create a connection to server
+        addr = srv.sockets[0].getsockname()
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock.connect(addr)
+        self.addCleanup(sock.close)
+
+        # Send a CancelledError into the server to emulate a Ctrl+C
+        # KeyboardInterrupt whilst the server is handling a hanging client
+        await conn_event.wait()
+        serve_forever_task.cancel()
+
+        # Ensure the client is closed within a timeout
+        async with asyncio.timeout(0.5):
+            await srv.wait_closed()
+
+        self.assertFalse(srv.is_serving())
 
 
 # Test the various corner cases of Unix server socket removal

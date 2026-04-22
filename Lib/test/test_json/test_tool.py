@@ -13,6 +13,7 @@ from _colorize import get_theme
 
 
 @support.requires_subprocess()
+@support.skip_if_pgo_task
 class TestMain(unittest.TestCase):
     data = """
 
@@ -270,7 +271,7 @@ class TestMain(unittest.TestCase):
             (r'" \"foo\" "', f'{t.string}" \\"foo\\" "{t.reset}'),
             ('"α"', f'{t.string}"\\u03b1"{t.reset}'),
             ('123', f'{t.number}123{t.reset}'),
-            ('-1.2345e+23', f'{t.number}-1.2345e+23{t.reset}'),
+            ('-1.25e+23', f'{t.number}-1.25e+23{t.reset}'),
             (r'{"\\": ""}',
              f'''\
 {ob}
@@ -319,6 +320,7 @@ class TestMain(unittest.TestCase):
 
 
 @support.requires_subprocess()
+@support.skip_if_pgo_task
 class TestTool(TestMain):
     module = 'json.tool'
 
