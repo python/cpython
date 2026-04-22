@@ -201,3 +201,23 @@ PyCriticalSection2_End(PyCriticalSection2 *c)
     _PyCriticalSection2_End(_PyThreadState_GET(), c);
 #endif
 }
+
+void
+_PyCriticalSection_WarnIfNotHeld(PyObject *op, const char *message)
+{
+#ifdef Py_GIL_DISABLED
+    PyMutex *mutex = &_PyObject_CAST(op)->ob_mutex;
+    PyThreadState *tstate = _PyThreadState_GET();
+    uintptr_t prev = tstate->critical_section;
+    if (prev & _Py_CRITICAL_SECTION_TWO_MUTEXES) {
+        PyCriticalSection2 *cs = (PyCriticalSection2 *)(prev & ~_Py_CRITICAL_SECTION_MASK);
+        if (cs == NULL || (cs->_cs_base._cs_mutex != mutex && cs->_cs_mutex2 != mutex))
+            PyErr_WarnEx(NULL, message, 2);
+    }
+    else {
+        PyCriticalSection *cs = (PyCriticalSection *)(prev & ~_Py_CRITICAL_SECTION_MASK);
+        if (cs == NULL || cs->_cs_mutex != mutex)
+            PyErr_WarnEx(NULL, message, 2);
+    }
+#endif
+}

@@ -95,6 +95,9 @@ _PyCriticalSection2_BeginSlow(PyThreadState *tstate, PyCriticalSection2 *c, PyMu
 PyAPI_FUNC(void)
 _PyCriticalSection_SuspendAll(PyThreadState *tstate);
 
+PyAPI_FUNC(void)
+_PyCriticalSection_WarnIfNotHeld(PyObject *op, const char *message);
+
 #ifdef Py_GIL_DISABLED
 
 static inline int
@@ -249,26 +252,6 @@ _PyCriticalSection_AssertHeldObj(PyObject *op)
             "Critical section of object is not held");
     }
 
-#endif
-}
-
-static inline void
-_PyCriticalSection_WarnIfNotHeld(PyObject *op, const char *message)
-{
-#ifdef Py_GIL_DISABLED
-    PyMutex *mutex = &_PyObject_CAST(op)->ob_mutex;
-    PyThreadState *tstate = _PyThreadState_GET();
-    uintptr_t prev = tstate->critical_section;
-    if (prev & _Py_CRITICAL_SECTION_TWO_MUTEXES) {
-        PyCriticalSection2 *cs = (PyCriticalSection2 *)(prev & ~_Py_CRITICAL_SECTION_MASK);
-        if (cs == NULL || (cs->_cs_base._cs_mutex != mutex && cs->_cs_mutex2 != mutex))
-            PyErr_WarnEx(NULL, message, 2);
-    }
-    else {
-        PyCriticalSection *cs = (PyCriticalSection *)(prev & ~_Py_CRITICAL_SECTION_MASK);
-        if (cs == NULL || cs->_cs_mutex != mutex)
-            PyErr_WarnEx(NULL, message, 2);
-    }
 #endif
 }
 
