@@ -2210,7 +2210,7 @@ Basic customization
       pair: built-in function; hash
 
    Called by built-in function :func:`hash` and for operations on members of
-   hashed collections including :class:`set`, :class:`frozenset`, :class:`dict`
+   hashed collections including :class:`set`, :class:`frozenset`, :class:`dict`,
    and :class:`frozendict`. The ``__hash__()`` method should return an integer.
    The only required property is that objects which compare equal have the same
    hash value; it is advised to mix together the hash values of the components
