@@ -341,7 +341,6 @@ class ShlexTest(unittest.TestCase):
                              "'test%s'\"'\"'name'\"'\"''" % u)
         self.assertRaises(TypeError, shlex.quote, 42)
         self.assertRaises(TypeError, shlex.quote, b"abc")
-        # self.assertRaises(TypeError, shlex.quote, None)
 
     def testForceQuote(self):
         self.assertEqual(shlex.quote("spam"), "spam")
