@@ -1,0 +1,2 @@
+``codecs`` does not support the viscii charset. It now supports the viscii
+charset.
