@@ -567,6 +567,7 @@ real_number[expr_ty]:
 
 imaginary_number[expr_ty]:
     | imag=NUMBER { _PyPegen_ensure_imaginary(p, imag) }
+    | '+' imag=NUMBER { _PyPegen_ensure_imaginary(p, imag) }
 
 capture_pattern[pattern_ty]:
     | target=pattern_capture_target { _PyAST_MatchAs(NULL, target->v.Name.id, EXTRA) }
