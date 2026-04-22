@@ -197,7 +197,7 @@ class TestProgram(object):
         return parser
 
     def _getMainArgParser(self, parent):
-        parser = argparse.ArgumentParser(parents=[parent])
+        parser = argparse.ArgumentParser(parents=[parent], color=True)
         parser.prog = self.progName
         parser.print_help = self._print_help
 
@@ -208,7 +208,7 @@ class TestProgram(object):
         return parser
 
     def _getDiscoveryArgParser(self, parent):
-        parser = argparse.ArgumentParser(parents=[parent])
+        parser = argparse.ArgumentParser(parents=[parent], color=True)
         parser.prog = '%s discover' % self.progName
         parser.epilog = ('For test discovery all test modules must be '
                          'importable from the top level directory of the '
@@ -269,12 +269,12 @@ class TestProgram(object):
             testRunner = self.testRunner
         self.result = testRunner.run(self.test)
         if self.exit:
-            if self.result.testsRun == 0 and len(self.result.skipped) == 0:
-                sys.exit(_NO_TESTS_EXITCODE)
-            elif self.result.wasSuccessful():
-                sys.exit(0)
-            else:
+            if not self.result.wasSuccessful():
                 sys.exit(1)
+            elif self.result.testsRun == 0 and len(self.result.skipped) == 0:
+                sys.exit(_NO_TESTS_EXITCODE)
+            else:
+                sys.exit(0)
 
 
 main = TestProgram

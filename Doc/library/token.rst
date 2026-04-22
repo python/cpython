@@ -4,8 +4,6 @@
 .. module:: token
    :synopsis: Constants representing terminal nodes of the parse tree.
 
-.. sectionauthor:: Fred L. Drake, Jr. <fdrake@acm.org>
-
 **Source code:** :source:`Lib/token.py`
 
 --------------
@@ -50,8 +48,7 @@ The token constants are:
 
 .. data:: NAME
 
-   Token value that indicates an :ref:`identifier <identifiers>`.
-   Note that keywords are also initially tokenized an ``NAME`` tokens.
+   Token value that indicates an :ref:`identifier or keyword <identifiers>`.
 
 .. data:: NUMBER
 
@@ -130,6 +127,41 @@ The token constants are:
    .. impl-detail::
 
       The token string contains the closing quote(s).
+
+.. data:: TSTRING_START
+
+   Token value used to indicate the beginning of a template string literal.
+
+   .. impl-detail::
+
+      The token string includes the prefix and the opening quote(s), but none
+      of the contents of the literal.
+
+   .. versionadded:: 3.14
+
+.. data:: TSTRING_MIDDLE
+
+   Token value used for literal text inside a template string literal
+   including format specifications.
+
+   .. impl-detail::
+
+      Replacement fields (that is, the non-literal parts of t-strings) use
+      the same tokens as other expressions, and are delimited by
+      :data:`LBRACE`, :data:`RBRACE`, :data:`EXCLAMATION` and :data:`COLON`
+      tokens.
+
+   .. versionadded:: 3.14
+
+.. data:: TSTRING_END
+
+   Token value used to indicate the end of a template string literal.
+
+   .. impl-detail::
+
+      The token string contains the closing quote(s).
+
+   .. versionadded:: 3.14
 
 .. data:: ENDMARKER
 

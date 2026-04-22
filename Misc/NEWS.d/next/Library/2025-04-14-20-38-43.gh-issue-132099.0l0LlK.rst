@@ -1,3 +1,0 @@
-The Bluetooth socket with the :data:`~socket.BTPROTO_HCI` protocol on Linux
-now accepts an address in the format of an integer ``device_id``, not only a
-tuple  ``(device_id,)``.

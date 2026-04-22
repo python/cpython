@@ -49,8 +49,9 @@
 // Static inline functions should use _Py_NULL rather than using directly NULL
 // to prevent C++ compiler warnings. On C23 and newer and on C++11 and newer,
 // _Py_NULL is defined as nullptr.
-#if (defined (__STDC_VERSION__) && __STDC_VERSION__ > 201710L) \
-        || (defined(__cplusplus) && __cplusplus >= 201103)
+#if !defined(_MSC_VER) && \
+    ((defined (__STDC_VERSION__) && __STDC_VERSION__ >= 202311L) \
+        || (defined(__cplusplus) && __cplusplus >= 201103))
 #  define _Py_NULL nullptr
 #else
 #  define _Py_NULL NULL
@@ -74,6 +75,14 @@
 #endif
 #if defined(Py_BUILD_CORE_MODULE) && !defined(Py_BUILD_CORE)
 #  define Py_BUILD_CORE
+#endif
+
+#if defined(Py_TARGET_ABI3T)
+#  if !defined(Py_GIL_DISABLED)
+// Define Py_GIL_DISABLED for users' needs. This macro is used to enable
+// locking needed in for free-threaded interpreters builds.
+#    define Py_GIL_DISABLED
+#  endif
 #endif
 
 
@@ -445,7 +454,9 @@ extern "C" {
 /*
  * Specify alignment on compilers that support it.
  */
-#if defined(__GNUC__) && __GNUC__ >= 3
+#ifdef Py_BUILD_CORE
+// always use _Py_ALIGNED_DEF instead
+#elif defined(__GNUC__) && __GNUC__ >= 3
 #define Py_ALIGNED(x) __attribute__((aligned(x)))
 #else
 #define Py_ALIGNED(x)
@@ -503,28 +514,30 @@ extern "C" {
  * Thread support is stubbed and any attempt to create a new thread fails.
  */
 #if (!defined(HAVE_PTHREAD_STUBS) && \
+     !defined(__wasi__) && \
       (!defined(__EMSCRIPTEN__) || defined(__EMSCRIPTEN_PTHREADS__)))
 #  define Py_CAN_START_THREADS 1
 #endif
 
+
+/* gh-142163: Some libraries rely on HAVE_THREAD_LOCAL being undefined, so
+ * we can only define it only when Py_BUILD_CORE is set.*/
+#ifdef Py_BUILD_CORE
+// This is no longer coupled to _Py_thread_local.
+#  define HAVE_THREAD_LOCAL 1
+#endif
+
 #ifdef WITH_THREAD
-#  ifdef Py_BUILD_CORE
-#    ifdef HAVE_THREAD_LOCAL
-#      error "HAVE_THREAD_LOCAL is already defined"
-#    endif
-#    define HAVE_THREAD_LOCAL 1
-#    ifdef thread_local
-#      define _Py_thread_local thread_local
-#    elif __STDC_VERSION__ >= 201112L && !defined(__STDC_NO_THREADS__)
-#      define _Py_thread_local _Thread_local
-#    elif defined(_MSC_VER)  /* AKA NT_THREADS */
-#      define _Py_thread_local __declspec(thread)
-#    elif defined(__GNUC__)  /* includes clang */
-#      define _Py_thread_local __thread
-#    else
-       // fall back to the PyThread_tss_*() API, or ignore.
-#      undef HAVE_THREAD_LOCAL
-#    endif
+#  ifdef thread_local
+#    define _Py_thread_local thread_local
+#  elif __STDC_VERSION__ >= 201112L && !defined(__STDC_NO_THREADS__)
+#    define _Py_thread_local _Thread_local
+#  elif defined(_MSC_VER)  /* AKA NT_THREADS */
+#    define _Py_thread_local __declspec(thread)
+#  elif defined(__GNUC__)  /* includes clang */
+#    define _Py_thread_local __thread
+#  else
+#    error "no supported thread-local variable storage classifier"
 #  endif
 #endif
 
@@ -564,8 +577,11 @@ extern "C" {
 //
 // Example: _Py_TYPEOF(x) x_copy = (x);
 //
-// The macro is only defined if GCC or clang compiler is used.
-#if defined(__GNUC__) || defined(__clang__)
+// On C23, use typeof(). Otherwise, the macro is only defined
+// if GCC or clang compiler is used.
+#if defined (__STDC_VERSION__) && __STDC_VERSION__ >= 202311L
+#  define _Py_TYPEOF(expr) typeof(expr)
+#elif defined(__GNUC__) || defined(__clang__)
 #  define _Py_TYPEOF(expr) __typeof__(expr)
 #endif
 
@@ -666,22 +682,24 @@ extern "C" {
 #endif
 
 
-// _Py_NO_SANITIZE_UNDEFINED(): Disable Undefined Behavior sanitizer (UBsan)
-// on a function.
+// _Py_NONSTRING: The nonstring variable attribute specifies that an object or
+// member declaration with type array of char, signed char, or unsigned char,
+// or pointer to such a type is intended to store character arrays that do not
+// necessarily contain a terminating NUL.
 //
-// Clang and GCC 9.0+ use __attribute__((no_sanitize("undefined"))).
-// GCC 4.9+ uses __attribute__((no_sanitize_undefined)).
-#if defined(__has_feature)
-#  if __has_feature(undefined_behavior_sanitizer)
-#    define _Py_NO_SANITIZE_UNDEFINED __attribute__((no_sanitize("undefined")))
-#  endif
+// Usage:
+//
+//   char name [8] _Py_NONSTRING;
+#if _Py__has_attribute(nonstring)
+#  define _Py_NONSTRING __attribute__((nonstring))
+#else
+#  define _Py_NONSTRING
 #endif
-#if !defined(_Py_NO_SANITIZE_UNDEFINED) && defined(__GNUC__) \
-    && ((__GNUC__ >= 5) || (__GNUC__ == 4) && (__GNUC_MINOR__ >= 9))
-#  define _Py_NO_SANITIZE_UNDEFINED __attribute__((no_sanitize_undefined))
-#endif
-#ifndef _Py_NO_SANITIZE_UNDEFINED
-#  define _Py_NO_SANITIZE_UNDEFINED
+
+
+// Assume the stack grows down unless specified otherwise
+#ifndef _Py_STACK_GROWS_DOWN
+#  define _Py_STACK_GROWS_DOWN 1
 #endif
 
 

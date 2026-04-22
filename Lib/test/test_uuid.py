@@ -13,7 +13,8 @@ from itertools import product
 from unittest import mock
 
 from test import support
-from test.support import import_helper
+from test.support import force_not_colorized_test_class, import_helper, warnings_helper
+from test.support.script_helper import assert_python_ok
 
 py_uuid = import_helper.import_fresh_module('uuid', blocked=['_uuid'])
 c_uuid = import_helper.import_fresh_module('uuid', fresh=['_uuid'])
@@ -589,6 +590,7 @@ class BaseTestUUID:
         # dependent on the underlying platform support.  At least it cannot be
         # unknown (unless I suppose the platform is buggy).
         self.assertNotEqual(u.is_safe, self.uuid.SafeUUID.unknown)
+        self.assertEqual(u.version, 1)
 
     @contextlib.contextmanager
     def mock_generate_time_safe(self, safe_value):
@@ -611,24 +613,28 @@ class BaseTestUUID:
         with self.mock_generate_time_safe(None):
             u = self.uuid.uuid1()
             self.assertEqual(u.is_safe, self.uuid.SafeUUID.unknown)
+            self.assertEqual(u.version, 1)
 
     @unittest.skipUnless(os.name == 'posix', 'POSIX-only test')
     def test_uuid1_is_safe(self):
         with self.mock_generate_time_safe(0):
             u = self.uuid.uuid1()
             self.assertEqual(u.is_safe, self.uuid.SafeUUID.safe)
+            self.assertEqual(u.version, 1)
 
     @unittest.skipUnless(os.name == 'posix', 'POSIX-only test')
     def test_uuid1_is_unsafe(self):
         with self.mock_generate_time_safe(-1):
             u = self.uuid.uuid1()
             self.assertEqual(u.is_safe, self.uuid.SafeUUID.unsafe)
+            self.assertEqual(u.version, 1)
 
     @unittest.skipUnless(os.name == 'posix', 'POSIX-only test')
     def test_uuid1_bogus_return_value(self):
         with self.mock_generate_time_safe(3):
             u = self.uuid.uuid1()
             self.assertEqual(u.is_safe, self.uuid.SafeUUID.unknown)
+            self.assertEqual(u.version, 1)
 
     def test_uuid1_time(self):
         with mock.patch.object(self.uuid, '_generate_time_safe', None), \
@@ -1111,6 +1117,7 @@ class BaseTestUUID:
         versions = {u.version for u in uuids}
         self.assertSetEqual(versions, {8})
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     @support.requires_fork()
     def testIssue8621(self):
         # On at least some versions of OSX self.uuid.uuid4 generates
@@ -1138,6 +1145,23 @@ class BaseTestUUID:
         strong = self.uuid.uuid4()
         weak = weakref.ref(strong)
         self.assertIs(strong, weak())
+
+
+class CommandLineTestCases:
+    uuid = None  # to be defined in subclasses
+
+    def do_test_standalone_uuid(self, version):
+        stdout = io.StringIO()
+        with contextlib.redirect_stdout(stdout):
+            self.uuid.main()
+        output = stdout.getvalue().strip()
+        u = self.uuid.UUID(output)
+        self.assertEqual(output, str(u))
+        self.assertEqual(u.version, version)
+
+    @mock.patch.object(sys, "argv", ["", "-u", "uuid1"])
+    def test_cli_uuid1(self):
+        self.do_test_standalone_uuid(1)
 
     @mock.patch.object(sys, "argv", ["", "-u", "uuid3", "-n", "@dns"])
     @mock.patch('sys.stderr', new_callable=io.StringIO)
@@ -1213,13 +1237,54 @@ class BaseTestUUID:
         self.assertEqual(output, str(uuid_output))
         self.assertEqual(uuid_output.version, 5)
 
+    @mock.patch.object(sys, "argv", ["", "-u", "uuid6"])
+    def test_cli_uuid6(self):
+        self.do_test_standalone_uuid(6)
 
-class TestUUIDWithoutExtModule(BaseTestUUID, unittest.TestCase):
+    @mock.patch.object(sys, "argv", ["", "-u", "uuid7"])
+    def test_cli_uuid7(self):
+        self.do_test_standalone_uuid(7)
+
+    @mock.patch.object(sys, "argv", ["", "-u", "uuid8"])
+    def test_cli_uuid8(self):
+        self.do_test_standalone_uuid(8)
+
+
+@force_not_colorized_test_class
+class TestUUIDWithoutExtModule(CommandLineTestCases, BaseTestUUID, unittest.TestCase):
     uuid = py_uuid
 
+
+@force_not_colorized_test_class
 @unittest.skipUnless(c_uuid, 'requires the C _uuid module')
-class TestUUIDWithExtModule(BaseTestUUID, unittest.TestCase):
+class TestUUIDWithExtModule(CommandLineTestCases, BaseTestUUID, unittest.TestCase):
     uuid = c_uuid
+
+    def check_has_stable_libuuid_extractable_node(self):
+        if not self.uuid._has_stable_extractable_node:
+            self.skipTest("libuuid cannot deduce MAC address")
+
+    @unittest.skipUnless(os.name == 'posix', 'POSIX only')
+    def test_unix_getnode_from_libuuid(self):
+        self.check_has_stable_libuuid_extractable_node()
+        script = 'import uuid; print(uuid._unix_getnode())'
+        _, n_a, _ = assert_python_ok('-c', script)
+        _, n_b, _ = assert_python_ok('-c', script)
+        n_a, n_b = n_a.decode().strip(), n_b.decode().strip()
+        self.assertTrue(n_a.isdigit())
+        self.assertTrue(n_b.isdigit())
+        self.assertEqual(n_a, n_b)
+
+    @unittest.skipUnless(os.name == 'nt', 'Windows only')
+    def test_windows_getnode_from_libuuid(self):
+        self.check_has_stable_libuuid_extractable_node()
+        script = 'import uuid; print(uuid._windll_getnode())'
+        _, n_a, _ = assert_python_ok('-c', script)
+        _, n_b, _ = assert_python_ok('-c', script)
+        n_a, n_b = n_a.decode().strip(), n_b.decode().strip()
+        self.assertTrue(n_a.isdigit())
+        self.assertTrue(n_b.isdigit())
+        self.assertEqual(n_a, n_b)
 
 
 class BaseTestInternals:
