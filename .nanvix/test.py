@@ -13,11 +13,14 @@ all deployment modes and platforms.
 
 from __future__ import annotations
 
+import json
 import os
 import shutil
 import subprocess
 import sys
+import tarfile
 import time
+import urllib.request
 from pathlib import Path
 
 import sys as _sys
@@ -27,6 +30,123 @@ from _loader import load_sibling
 config = load_sibling("config", __file__)
 build_mod = load_sibling("build", __file__)
 ramfs_mod = load_sibling("ramfs", __file__)
+
+
+# ---------------------------------------------------------------------------
+# Windows: download release artifacts as install cache
+# ---------------------------------------------------------------------------
+
+def _download_release_as_cache(
+    repo_root: Path,
+    platform: str,
+    process_mode: str,
+    memory_size: str,
+) -> Path:
+    """Download the latest cpython release tarball and extract it as _install_cache.
+
+    This lets ``./z test`` work on Windows without a prior ``./z build``
+    (which requires Docker). The release tarball contains the same
+    sysroot tree that ``./z build`` would produce.
+    """
+    cache_dir = repo_root / ".nanvix" / "_install_cache"
+    if cache_dir.exists():
+        shutil.rmtree(cache_dir)
+    cache_dir.mkdir(parents=True, exist_ok=True)
+
+    # Resolve the latest release from nanvix/cpython.
+    gh_token = os.environ.get("GH_TOKEN") or os.environ.get("GITHUB_TOKEN")
+    api_url = "https://api.github.com/repos/nanvix/cpython/releases/latest"
+    req = urllib.request.Request(api_url)
+    req.add_header("Accept", "application/vnd.github+json")
+    if gh_token:
+        req.add_header("Authorization", f"Bearer {gh_token}")
+
+    with urllib.request.urlopen(req, timeout=30) as resp:
+        release = json.loads(resp.read())
+
+    tag = release["tag_name"]
+    print(f"  Resolved cpython release: {tag}")
+
+    # Find a standalone tarball asset.
+    asset_prefix = f"cpython-{platform}-{process_mode}-{memory_size}"
+    asset_url = None
+    asset_name = None
+    for a in release.get("assets", []):
+        name = a.get("name", "")
+        if (name.startswith(asset_prefix)
+                and name.endswith(".tar.bz2")
+                and "buildroot" not in name):
+            asset_url = a["browser_download_url"]
+            asset_name = name
+            break
+
+    if not asset_url:
+        raise FileNotFoundError(
+            f"No cpython release asset matching '{asset_prefix}*.tar.bz2' "
+            f"in release {tag}. Available assets: "
+            + ", ".join(a["name"] for a in release.get("assets", []))
+        )
+
+    # Download.
+    dl_dir = repo_root / ".nanvix" / "cache"
+    dl_dir.mkdir(parents=True, exist_ok=True)
+    tarball = dl_dir / asset_name
+    if not tarball.is_file():
+        print(f"  Downloading {asset_name}...")
+        urllib.request.urlretrieve(asset_url, str(tarball))
+
+    # Extract into _install_cache with path-traversal protection.
+    print(f"  Extracting to {cache_dir}...")
+    with tarfile.open(tarball, "r:bz2") as tf:
+        base = cache_dir.resolve()
+        for member in tf.getmembers():
+            if member.issym() or member.islnk():
+                raise tarfile.TarError(
+                    f"refusing to extract link entry: {member.name}"
+                )
+            resolved = (base / member.name).resolve()
+            if os.path.commonpath([str(base), str(resolved)]) != str(base):
+                raise tarfile.TarError(
+                    f"refusing to extract path outside destination: {member.name}"
+                )
+        tf.extractall(cache_dir)
+
+    # The tarball contains {bin/, sysroot/, cpython-ramfs.img}.
+    # Restructure if needed so that sysroot/ is at cache_dir/sysroot/.
+    sysroot = cache_dir / "sysroot"
+    if not sysroot.is_dir():
+        python_lib_dir = Path(config.PYTHON_LIB_DIR)
+        for candidate in cache_dir.rglob(str(python_lib_dir)):
+            parent = candidate
+            for _ in python_lib_dir.parts:
+                parent = parent.parent
+            if parent != cache_dir:
+                sysroot.mkdir(exist_ok=True)
+                for item in parent.iterdir():
+                    shutil.move(str(item), str(sysroot / item.name))
+                break
+
+    # Copy the stripped python binary into sysroot/bin/ if present.
+    bin_dir = sysroot / "bin"
+    bin_dir.mkdir(exist_ok=True)
+    python_elf = cache_dir / "bin" / "python.elf"
+    if python_elf.is_file():
+        shutil.copy2(python_elf, bin_dir / config.python_binary())
+        print(f"  Installed python binary ({python_elf.stat().st_size // 1024}K)")
+
+    # Copy the test suite from the source tree into the sysroot.
+    # The release tarball is trimmed (no Lib/test/), but regrtest
+    # needs it. The source checkout has the full Lib/test/.
+    pylib_dir = sysroot / "lib" / config.PYTHON_LIB_DIR
+    test_dst = pylib_dir / "test"
+    test_src = repo_root / "Lib" / "test"
+    if test_src.is_dir() and not test_dst.is_dir():
+        shutil.copytree(test_src, test_dst)
+        test_count = sum(1 for _ in test_dst.rglob("*.py"))
+        print(f"  Copied test suite from source tree ({test_count} files)")
+
+    print(f"  Install cache ready at {cache_dir}")
+    return cache_dir
 
 
 # ---------------------------------------------------------------------------
@@ -59,13 +179,19 @@ def stage(
         # On Windows, use the cached install tree produced by ``./z build``
         # so that no Docker invocation is needed during testing.
         install_cache = repo_root / ".nanvix" / "_install_cache"
-        if not install_cache.is_dir():
-            raise FileNotFoundError(
-                "Install cache not found at .nanvix/_install_cache/. "
-                "Run `./z build` before `./z test` to create the install cache."
+        if install_cache.is_dir():
+            shutil.copytree(install_cache, staging)
+            print("  Using cached install from ./z build")
+        else:
+            # Fallback: download the release tarball and use it as the
+            # install cache. This lets ``./z test`` work on Windows
+            # without a prior ``./z build`` (which requires Docker).
+            print("  Install cache not found — downloading release artifacts...")
+            install_cache = _download_release_as_cache(
+                repo_root, platform, process_mode, memory_size,
             )
-        shutil.copytree(install_cache, staging)
-        print("  Using cached install from ./z build")
+            shutil.copytree(install_cache, staging)
+            print("  Using downloaded release as install cache")
     else:
         # Linux: build and install directly.
         build_mod.build(
@@ -406,6 +532,7 @@ def run_all(
     release: bool = False,
     test_list: list[str] | None = None,
     batch_size: int = config.DEFAULT_TEST_BATCH_SIZE,
+    skip_regrtest: bool = False,
     run_fn=None,
 ) -> None:
     """Run the complete test pipeline: stage → hello → regrtest → cleanup."""
@@ -437,6 +564,11 @@ def run_all(
         ramfs_img=ramfs_img,
         nanvix_home=nanvix_home,
     )
+
+    if skip_regrtest:
+        print("\t\t*** CPython smoke tests PASSED (regrtest skipped) ***")
+        cleanup(repo_root)
+        return
 
     # Regression tests.
     run_regrtest(
