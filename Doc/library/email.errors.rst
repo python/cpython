@@ -1,4 +1,4 @@
-/:mod:`!email.errors`: Exception and Defect classes
+:mod:`!email.errors`: Exception and Defect classes
 --------------------------------------------------
 
 .. module:: email.errors
