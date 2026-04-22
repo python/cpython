@@ -7,6 +7,7 @@ import _contextvars
 
 from time import monotonic as _time
 from _weakrefset import WeakSet
+lazy from functools import wraps
 from itertools import count as _count
 try:
     from _collections import deque as _deque
@@ -29,6 +30,7 @@ __all__ = ['get_ident', 'active_count', 'Condition', 'current_thread',
            'Barrier', 'BrokenBarrierError', 'Timer', 'ThreadError',
            'setprofile', 'settrace', 'local', 'stack_size',
            'excepthook', 'ExceptHookArgs', 'gettrace', 'getprofile',
+           'serialize', 'synchronized', 'concurrent_tee',
            'setprofile_all_threads','settrace_all_threads']
 
 # Rename some stuff so "from threading import *" is safe
@@ -840,6 +842,111 @@ class Barrier:
 # exception raised by the Barrier class
 class BrokenBarrierError(RuntimeError):
     pass
+
+
+## Synchronization tools for iterators #####################
+
+class serialize:
+    """Wrap a non-concurrent iterator with a lock to enforce sequential access.
+
+    Applies a non-reentrant lock around calls to __next__, allowing
+    iterator and generator instances to be shared by multiple consumer
+    threads.
+    """
+
+    __slots__ = ('iterator', 'lock')
+
+    def __init__(self, iterable):
+        self.iterator = iter(iterable)
+        self.lock = Lock()
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        with self.lock:
+            return next(self.iterator)
+
+
+def synchronized(func):
+    """Wrap an iterator-returning callable to make its iterators thread-safe.
+
+    Existing itertools and more-itertools can be wrapped so that their
+    iterator instances are serialized.
+
+    For example, itertools.count does not make thread-safe instances,
+    but that is easily fixed with:
+
+        atomic_counter = synchronized(itertools.count)
+
+    Can also be used as a decorator for generator functions definitions
+    so that the generator instances are serialized::
+
+        @synchronized
+        def enumerate_and_timestamp(iterable):
+            for count, value in enumerate(iterable):
+                yield count, time_ns(), value
+
+    """
+
+    @wraps(func)
+    def inner(*args, **kwargs):
+        iterator = func(*args, **kwargs)
+        return serialize(iterator)
+
+    return inner
+
+
+def concurrent_tee(iterable, n=2):
+    """Variant of itertools.tee() but with guaranteed threading semantics.
+
+    Takes a non-threadsafe iterator as an input and creates concurrent
+    tee objects for other threads to have reliable independent copies of
+    the data stream.
+
+    The new iterators are only thread-safe if consumed within a single thread.
+    To share just one of the new iterators across multiple threads, wrap it
+    with threading.serialize().
+    """
+
+    if n < 0:
+        raise ValueError
+    if n == 0:
+        return ()
+    iterator = _concurrent_tee(iterable)
+    result = [iterator]
+    for _ in range(n - 1):
+        result.append(_concurrent_tee(iterator))
+    return tuple(result)
+
+
+class _concurrent_tee:
+    __slots__ = ('iterator', 'link', 'lock')
+
+    def __init__(self, iterable):
+        if isinstance(iterable, _concurrent_tee):
+            self.iterator = iterable.iterator
+            self.link = iterable.link
+            self.lock = iterable.lock
+        else:
+            self.iterator = iter(iterable)
+            self.link = [None, None]
+            self.lock = Lock()
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        link = self.link
+        if link[1] is None:
+            with self.lock:
+                if link[1] is None:
+                    link[0] = next(self.iterator)
+                    link[1] = [None, None]
+        value, self.link = link
+        return value
+
+############################################################
 
 
 # Helper to generate new thread names

@@ -2368,6 +2368,145 @@ class BarrierTests(lock_tests.BarrierTests):
     barriertype = staticmethod(threading.Barrier)
 
 
+## Test Synchronization tools for iterators ################
+
+class ThreadingIteratorToolsTests(BaseTestCase):
+    def test_serialize_serializes_concurrent_iteration(self):
+        limit = 10_000
+        workers_count = 10
+        result = 0
+        result_lock = threading.Lock()
+        start = threading.Event()
+
+        def producer(limit):
+            for x in range(limit):
+                yield x
+
+        def consumer(iterator):
+            nonlocal result
+            start.wait()
+            total = 0
+            for x in iterator:
+                total += x
+            with result_lock:
+                result += total
+
+        iterator = threading.serialize(producer(limit))
+        workers = [
+            threading.Thread(target=consumer, args=(iterator,))
+            for _ in range(workers_count)
+        ]
+        with threading_helper.wait_threads_exit():
+            for worker in workers:
+                worker.start()
+            start.set()
+            for worker in workers:
+                worker.join()
+
+        self.assertEqual(result, limit * (limit - 1) // 2)
+
+    def test_synchronized_serializes_generator_instances(self):
+        unique = 10
+        repetitions = 5
+        limit = 100
+        start = threading.Event()
+
+        @threading.synchronized
+        def atomic_counter():
+            # The sleep widens the race window that would exist without
+            # synchronization between yielding a value and advancing state.
+            i = 0
+            while True:
+                yield i
+                time.sleep(0.0005)
+                i += 1
+
+        def consumer(counter):
+            start.wait()
+            for _ in range(limit):
+                next(counter)
+
+        unique_counters = [atomic_counter() for _ in range(unique)]
+        counters = unique_counters * repetitions
+        workers = [
+            threading.Thread(target=consumer, args=(counter,))
+            for counter in counters
+        ]
+        with threading_helper.wait_threads_exit():
+            for worker in workers:
+                worker.start()
+            start.set()
+            for worker in workers:
+                worker.join()
+
+        self.assertEqual(
+            {next(counter) for counter in unique_counters},
+            {limit * repetitions},
+        )
+
+    def test_synchronized_preserves_wrapped_metadata(self):
+        def gen():
+            yield 1
+
+        wrapped = threading.synchronized(gen)
+
+        self.assertEqual(wrapped.__name__, gen.__name__)
+        self.assertIs(wrapped.__wrapped__, gen)
+        self.assertEqual(list(wrapped()), [1])
+
+    def test_concurrent_tee_supports_concurrent_consumers(self):
+        limit = 5_000
+        num_threads = 25
+        successes = 0
+        failures = []
+        result_lock = threading.Lock()
+        start = threading.Event()
+        expected = list(range(limit))
+
+        def producer(limit):
+            for x in range(limit):
+                yield x
+
+        def consumer(iterator):
+            nonlocal successes
+            start.wait()
+            items = list(iterator)
+            with result_lock:
+                if items == expected:
+                    successes += 1
+                else:
+                    failures.append(items[:20])
+
+        tees = threading.concurrent_tee(producer(limit), n=num_threads)
+        workers = [
+            threading.Thread(target=consumer, args=(iterator,))
+            for iterator in tees
+        ]
+        with threading_helper.wait_threads_exit():
+            for worker in workers:
+                worker.start()
+            start.set()
+            for worker in workers:
+                worker.join()
+
+        self.assertEqual(failures, [])
+        self.assertEqual(successes, len(tees))
+
+        # Verify that locks are shared
+        self.assertEqual(len({id(t_obj.lock) for t_obj in tees}), 1)
+
+    def test_concurrent_tee_zero_iterators(self):
+        self.assertEqual(threading.concurrent_tee(range(10), n=0), ())
+
+    def test_concurrent_tee_negative_n(self):
+        with self.assertRaises(ValueError):
+            threading.concurrent_tee(range(10), n=-1)
+
+
+#################
+
+
+
 class MiscTestCase(unittest.TestCase):
     def test__all__(self):
         restore_default_excepthook(self)
