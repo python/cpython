@@ -833,6 +833,7 @@ and :term:`generators <generator>` which incur interpreter overhead.
    from collections import Counter, deque
    from contextlib import suppress
    from functools import reduce
+   from heapq import heappush, heappushpop, heappush_max, heappushpop_max
    from math import comb, isqrt, prod, sumprod
    from operator import getitem, is_not, itemgetter, mul, neg, truediv
 
