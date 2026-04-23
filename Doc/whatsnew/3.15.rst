@@ -645,6 +645,10 @@ Other language changes
 * Allow the *count* argument of :meth:`bytes.replace` to be a keyword.
   (Contributed by Stan Ulbrych in :gh:`147856`.)
 
+* Unary plus is now accepted in :keyword:`match` literal patterns, mirroring
+  the existing support for unary minus.
+  (Contributed by Bartosz Sławecki in :gh:`145239`.)
+
 
 New modules
 ===========
