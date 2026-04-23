@@ -16,6 +16,7 @@ import pickle
 import pyexpat
 import sys
 import textwrap
+import time
 import types
 import unittest
 import unittest.mock as mock
@@ -3476,6 +3477,29 @@ class ElementFindTest(unittest.TestCase):
         self.assertRaisesRegex(SyntaxError, 'XPath', e.find, './tag[-1]')
         self.assertRaisesRegex(SyntaxError, 'XPath', e.find, './tag[last()-0]')
         self.assertRaisesRegex(SyntaxError, 'XPath', e.find, './tag[last()+1]')
+
+    def test_find_xpath_index_no_quadratic_complexity(self):
+        root = ET.Element("root")
+        first_a = ET.SubElement(root, "a")
+        first_a.set("pos", "first")
+        n = 2 ** 15
+        for i in range(n):
+            ET.SubElement(root, "a")
+        last_a = ET.SubElement(root, "a")
+        last_a.set("pos", "last")
+
+        for pattern in [".//a[1]", ".//a[last()]"]:
+            start = time.time()
+            result = root.findall(pattern)
+            end = time.time()
+
+            # Before the fix these took 30+ seconds.
+            self.assertLess(end - start, 1)
+
+        self.assertIs(root.find(".//a[1]"), first_a)
+        self.assertEqual(root.find(".//a[1]").get("pos"), "first")
+        self.assertIs(root.find(".//a[last()]"), last_a)
+        self.assertEqual(root.find(".//a[last()]").get("pos"), "last")
 
     def test_findall(self):
         e = ET.XML(SAMPLE_XML)
