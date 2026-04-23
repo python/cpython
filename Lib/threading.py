@@ -910,7 +910,7 @@ def concurrent_tee(iterable, n=2):
     """
 
     if n < 0:
-        raise ValueError
+        raise ValueError("n must be positive integer")
     if n == 0:
         return ()
     iterator = _concurrent_tee(iterable)

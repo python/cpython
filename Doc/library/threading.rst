@@ -1464,10 +1464,9 @@ of the derived iterators.
    :meth:`~iterator.__next__` using a lock.
 
    This makes it possible to share a single iterator, including a generator
-   iterator, between multiple threads. Calls are handled one at a time in
-   arrival order determined by lock acquisition. No values are duplicated or
-   skipped by the wrapper itself. Each item produced by the underlying iterator
-   is given to exactly one caller.
+   iterator, between multiple threads. A lock assures that calls are handled
+   one at a time. No values are duplicated or skipped by the wrapper itself.
+   Each item from the underlying iterator is given to exactly one caller.
 
    This wrapper does not copy or buffer values. Threads that call
    :func:`next` while another thread is already advancing the iterator will
