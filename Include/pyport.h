@@ -593,7 +593,7 @@ extern "C" {
 #  define _Py_NO_SANITIZE_MEMORY
 #endif
 #ifndef _Py_MSAN_UNPOISON
-#  define _Py_MSAN_UNPOISON
+#  define _Py_MSAN_UNPOISON(PTR, SIZE)
 #endif
 
 /* AIX has __bool__ redefined in it's system header file. */
