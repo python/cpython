@@ -1,0 +1,3 @@
+Added buffer boundary check when using ``nbytes`` parameter with
+:meth:`!asyncio.AbstractEventLoop.sock_recvfrom_into`. Only
+relevant for Windows and the :class:`asyncio.ProactorEventLoop`.
