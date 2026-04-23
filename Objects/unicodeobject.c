@@ -676,6 +676,14 @@ _PyUnicode_CheckConsistency(PyObject *op, int check_content)
 {
 #define CHECK(expr) \
     do { if (!(expr)) { _PyObject_ASSERT_FAILED_MSG(op, Py_STRINGIFY(expr)); } } while (0)
+#ifdef Py_GIL_DISABLED
+# define CHECK_IF_GIL(expr) (void)(expr)
+# define CHECK_IF_FT(expr) CHECK(expr)
+#else
+# define CHECK_IF_GIL(expr) CHECK(expr)
+# define CHECK_IF_FT(expr) (void)(expr)
+#endif
+
 
     assert(op != NULL);
     CHECK(PyUnicode_Check(op));
@@ -756,11 +764,9 @@ _PyUnicode_CheckConsistency(PyObject *op, int check_content)
 
     /* Check interning state */
 #ifdef Py_DEBUG
-    // Note that we do not check `_Py_IsImmortal(op)`, since stable ABI
-    // extensions can make immortal strings mortal (but with a high enough
-    // refcount).
-    // The other way is extremely unlikely (worth a potential failed assertion
-    // in a debug build), so we do check `!_Py_IsImmortal(op)`.
+    // Note that we do not check `_Py_IsImmortal(op)` in the GIL-enabled build
+    // since stable ABI extensions can make immortal strings mortal (but with a
+    // high enough refcount).
     switch (PyUnicode_CHECK_INTERNED(op)) {
         case SSTATE_NOT_INTERNED:
             if (ascii->state.statically_allocated) {
@@ -770,18 +776,20 @@ _PyUnicode_CheckConsistency(PyObject *op, int check_content)
                 //   are static but use SSTATE_NOT_INTERNED
             }
             else {
-                CHECK(!_Py_IsImmortal(op));
+                CHECK_IF_GIL(!_Py_IsImmortal(op));
             }
             break;
         case SSTATE_INTERNED_MORTAL:
             CHECK(!ascii->state.statically_allocated);
-            CHECK(!_Py_IsImmortal(op));
+            CHECK_IF_GIL(!_Py_IsImmortal(op));
             break;
         case SSTATE_INTERNED_IMMORTAL:
             CHECK(!ascii->state.statically_allocated);
+            CHECK_IF_FT(_Py_IsImmortal(op));
             break;
         case SSTATE_INTERNED_IMMORTAL_STATIC:
             CHECK(ascii->state.statically_allocated);
+            CHECK_IF_FT(_Py_IsImmortal(op));
             break;
         default:
             Py_UNREACHABLE();
@@ -15961,6 +15969,18 @@ immortalize_interned(PyObject *s)
     FT_ATOMIC_STORE_UINT8(_PyUnicode_STATE(s).interned, SSTATE_INTERNED_IMMORTAL);
 }
 
+#ifdef Py_GIL_DISABLED
+static bool
+can_immortalize_safely(PyObject *s)
+{
+    if (_Py_IsOwnedByCurrentThread(s) || _Py_IsImmortal(s)) {
+        return true;
+    }
+    Py_ssize_t shared = _Py_atomic_load_ssize(&s->ob_ref_shared);
+    return _Py_REF_IS_MERGED(shared);
+}
+#endif
+
 static /* non-null */ PyObject*
 intern_common(PyInterpreterState *interp, PyObject *s /* stolen */,
               bool immortalize)
@@ -15989,11 +16009,16 @@ intern_common(PyInterpreterState *interp, PyObject *s /* stolen */,
             // no, go on
             break;
         case SSTATE_INTERNED_MORTAL:
+#ifndef Py_GIL_DISABLED
             // yes but we might need to make it immortal
             if (immortalize) {
                 immortalize_interned(s);
             }
             return s;
+#else
+            // not fully interned yet; fall through to the locking path
+            break;
+#endif
         default:
             // all done
             return s;
@@ -16057,6 +16082,23 @@ intern_common(PyInterpreterState *interp, PyObject *s /* stolen */,
         Py_DECREF(r);
     }
 #endif
+
+#ifdef Py_GIL_DISABLED
+    // Immortalization writes to the refcount fields non-atomically. That
+    // races with Py_INCREF / Py_DECREF on the thread that owns `s`. If we
+    // don't own it (and its refcount hasn't been merged), intern a copy
+    // we own instead.
+    if (!can_immortalize_safely(s)) {
+        PyObject *copy = _PyUnicode_Copy(s);
+        if (copy == NULL) {
+            PyErr_Clear();
+            return s;
+        }
+        Py_DECREF(s);
+        s = copy;
+    }
+#endif
+
     LOCK_INTERNED(interp);
     PyObject *t;
     {
