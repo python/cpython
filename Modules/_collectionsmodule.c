@@ -2263,12 +2263,11 @@ PyDoc_STRVAR(defdict_missing_doc,
 static PyObject *
 defdict_missing(PyObject *op, PyObject *key)
 {
-    _PyCriticalSection_WarnIfNotHeld(
-        op,
+    if (_PyCriticalSection_WarnIfNotHeld(op,
         "the defaultdict.__missing__ method should not be called directly; "
         "use dd.pop(key, None) to safely trigger a reset to a default value "
-        "the next time key is accessed"
-    );
+        "the next time key is accessed") < 0)
+        return NULL;
     defdictobject *dd = defdictobject_CAST(op);
     PyObject *factory = dd->default_factory;
     PyObject *value;

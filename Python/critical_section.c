@@ -202,7 +202,7 @@ PyCriticalSection2_End(PyCriticalSection2 *c)
 #endif
 }
 
-void
+int
 _PyCriticalSection_WarnIfNotHeld(PyObject *op, const char *message)
 {
 #ifdef Py_GIL_DISABLED
@@ -212,12 +212,13 @@ _PyCriticalSection_WarnIfNotHeld(PyObject *op, const char *message)
     if (prev & _Py_CRITICAL_SECTION_TWO_MUTEXES) {
         PyCriticalSection2 *cs = (PyCriticalSection2 *)(prev & ~_Py_CRITICAL_SECTION_MASK);
         if (cs == NULL || (cs->_cs_base._cs_mutex != mutex && cs->_cs_mutex2 != mutex))
-            PyErr_WarnEx(NULL, message, 2);
+            return PyErr_WarnEx(NULL, message, 2);
     }
     else {
         PyCriticalSection *cs = (PyCriticalSection *)(prev & ~_Py_CRITICAL_SECTION_MASK);
         if (cs == NULL || cs->_cs_mutex != mutex)
-            PyErr_WarnEx(NULL, message, 2);
+            return PyErr_WarnEx(NULL, message, 2);
     }
 #endif
+    return 0;
 }
