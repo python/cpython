@@ -2486,8 +2486,12 @@ def get_type_hints(obj, globalns=None, localns=None, include_extras=False,
         else:
             nsobj = obj
             # Find globalns for the unwrapped object.
+            seen = {id(nsobj)}
             while hasattr(nsobj, '__wrapped__'):
                 nsobj = nsobj.__wrapped__
+                if id(nsobj) in seen:
+                    raise ValueError(f'wrapper loop when unwrapping {obj!r}')
+                seen.add(id(nsobj))
             globalns = getattr(nsobj, '__globals__', {})
         if localns is None:
             localns = globalns
