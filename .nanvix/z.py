@@ -218,7 +218,9 @@ class CPythonBuild(ZScript):
                 hint="Run `./z setup` first to download the sysroot.",
             )
         toolchain = self.config.get(CFG_TOOLCHAIN, config.TOOLCHAIN_DEFAULT_PATH)
-        return sysroot, toolchain
+        sysroot_p = str(self.translate_path(Path(sysroot)))
+        toolchain_p = str(self.translate_path(Path(toolchain)))
+        return sysroot_p, toolchain_p
 
     def _build_kwargs(self, release: bool = False) -> dict:
         """Return common keyword arguments for build/test/package modules."""
