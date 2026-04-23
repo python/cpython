@@ -2204,11 +2204,7 @@ _PyDumpExecutors(FILE *out)
     fprintf(out, "    node [colorscheme=greys9]\n");
     PyInterpreterState *interp = PyInterpreterState_Get();
     for (size_t i = 0; i < interp->executor_count; i++) {
-        _PyExecutorObject *exec = interp->executor_ptrs[i];
-        if (exec->vm_data.code == NULL) {
-            continue;
-        }
-        executor_to_gv(exec, out);
+        executor_to_gv(interp->executor_ptrs[i], out);
     }
     fprintf(out, "}\n\n");
     return 0;
