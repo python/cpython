@@ -1190,6 +1190,43 @@ class BaseTestTaskGroup:
                 finally:
                     tg.cancel()
 
+    async def test_taskgroup_cancel_one_winner(self):
+        async def race(*fns):
+            outcome = None
+            async def run(fn):
+                nonlocal outcome
+                outcome = await fn()
+                tg.cancel()
+
+            async with asyncio.TaskGroup() as tg:
+                for fn in fns:
+                    tg.create_task(run(fn))
+            return outcome
+
+        event = asyncio.Event()
+        record = []
+        async def fn_1():
+            record.append("1 started")
+            await event.wait()
+            record.append("1 finished")
+            return 1
+
+        async def fn_2():
+            record.append("2 started")
+            await event.wait()
+            record.append("2 finished")
+            return 2
+
+        async def fn_3():
+            record.append("3 started")
+            event.set()
+            await asyncio.sleep(10)
+            record.append("3 finished")
+            return 3
+
+        self.assertEqual(await race(fn_1, fn_2, fn_3), 1)
+        self.assertListEqual(record, ["1 started", "2 started", "3 started", "1 finished"])
+
 
 class TestTaskGroup(BaseTestTaskGroup, unittest.IsolatedAsyncioTestCase):
     loop_factory = asyncio.EventLoop
