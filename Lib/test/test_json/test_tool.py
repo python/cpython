@@ -151,7 +151,7 @@ class TestTool(unittest.TestCase):
     @force_not_colorized
     def test_jsonlines_from_file(self):
         jsonl = pathlib.Path(__file__).parent / 'json_lines.jsonl'
-        args = sys.executable, '-m', self.module, '--json-lines', jsonl
+        args = sys.executable, '-m', 'json.tool', '--json-lines', jsonl
         process = subprocess.run(args, capture_output=True, text=True, check=True)
         self.assertEqual(process.stdout, self.jsonlines_expect)
         self.assertEqual(process.stderr, '')
