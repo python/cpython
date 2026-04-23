@@ -77,11 +77,13 @@ def walk_packages(path=None, prefix='', onerror=None):
             except ImportError:
                 if onerror is not None:
                     onerror(info.name)
-            except Exception:
+            except Exception as e:
                 if onerror is not None:
                     onerror(info.name)
                 else:
-                    raise
+                    from unittest import SkipTest
+                    if not isinstance(e, SkipTest):
+                        raise
             else:
                 path = getattr(sys.modules[info.name], '__path__', None) or []
 

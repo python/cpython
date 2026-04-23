@@ -354,6 +354,26 @@ class PkgutilTests(unittest.TestCase):
             self.assertEqual(pkgutil.resolve_name('package4.submodule:attr'), 'submodule')
             self.assertEqual(pkgutil.resolve_name('package4:submodule.attr'), 'submodule')
 
+    def test_walkpackages_skips_unittest_skiptest(self):
+        skip_pkg = 'aaa_walkpackages_skiptest'
+        skip_pkg_dir = os.path.join(self.dirname, skip_pkg)
+        os.mkdir(skip_pkg_dir)
+        with open(os.path.join(skip_pkg_dir, '__init__.py'), 'w', encoding='utf-8') as f:
+            f.write('import unittest\nraise unittest.SkipTest("skip me")\n')
+
+        ok_pkg = 'bbb_walkpackages_ok'
+        ok_pkg_dir = os.path.join(self.dirname, ok_pkg)
+        os.mkdir(ok_pkg_dir)
+        with open(os.path.join(ok_pkg_dir, '__init__.py'), 'w', encoding='utf-8') as f:
+            f.write('')
+        with open(os.path.join(ok_pkg_dir, 'mod.py'), 'w', encoding='utf-8') as f:
+            f.write('')
+
+        actual = [m.name for m in pkgutil.walk_packages([self.dirname])]
+        self.assertEqual(actual, [skip_pkg, ok_pkg, f'{ok_pkg}.mod'])
+
+        sys.modules.pop(skip_pkg, None)
+        sys.modules.pop(ok_pkg, None)
 
 class PkgutilPEP302Tests(unittest.TestCase):
 

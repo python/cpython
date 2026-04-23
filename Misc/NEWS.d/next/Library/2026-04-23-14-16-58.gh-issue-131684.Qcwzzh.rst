@@ -1,0 +1,1 @@
+pkgutil.walk_packages() now ignores unittest.SkipTest by default when no onerror callback is provided, allowing iteration to continue.
