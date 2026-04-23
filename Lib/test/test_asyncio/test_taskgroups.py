@@ -1102,17 +1102,6 @@ class BaseTestTaskGroup:
         # cancellation happens here and error is more understandable
         await asyncio.sleep(0)
 
-
-class TestTaskGroup(BaseTestTaskGroup, unittest.IsolatedAsyncioTestCase):
-    loop_factory = asyncio.EventLoop
-
-class TestEagerTaskTaskGroup(BaseTestTaskGroup, unittest.IsolatedAsyncioTestCase):
-    @staticmethod
-    def loop_factory():
-        loop = asyncio.EventLoop()
-        loop.set_task_factory(asyncio.eager_task_factory)
-        return loop
-
     async def test_taskgroup_cancel_children(self):
         # (asserting that TimeoutError is not raised)
         async with asyncio.timeout(1):
@@ -1200,6 +1189,17 @@ class TestEagerTaskTaskGroup(BaseTestTaskGroup, unittest.IsolatedAsyncioTestCase
                     raise RuntimeError
                 finally:
                     tg.cancel()
+
+
+class TestTaskGroup(BaseTestTaskGroup, unittest.IsolatedAsyncioTestCase):
+    loop_factory = asyncio.EventLoop
+
+class TestEagerTaskTaskGroup(BaseTestTaskGroup, unittest.IsolatedAsyncioTestCase):
+    @staticmethod
+    def loop_factory():
+        loop = asyncio.EventLoop()
+        loop.set_task_factory(asyncio.eager_task_factory)
+        return loop
 
 
 if __name__ == "__main__":
