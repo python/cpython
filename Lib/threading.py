@@ -849,7 +849,10 @@ class BrokenBarrierError(RuntimeError):
 class serialize:
     """Wrap a non-concurrent iterator with a lock to enforce sequential access.
 
-    Applies a non-reentrant lock around calls to __next__, send, throw, and close.
+    Applies a non-reentrant lock around calls to __next__.  If the
+    wrapped iterator also defines send(), throw(), or close(), those
+    calls are serialized as well.
+
     Allows iterator and generator instances to be shared by multiple consumer
     threads.
     """
@@ -906,10 +909,12 @@ def synchronized(func):
     Can also be used as a decorator for generator functions definitions
     so that the generator instances are serialized::
 
+        import time
+
         @synchronized
         def enumerate_and_timestamp(iterable):
             for count, value in enumerate(iterable):
-                yield count, time_ns(), value
+                yield count, time.time_ns(), value
 
     """
 
@@ -934,7 +939,7 @@ def concurrent_tee(iterable, n=2):
     """
 
     if n < 0:
-        raise ValueError("n must be positive integer")
+        raise ValueError("n must be a non-negative integer")
     if n == 0:
         return ()
     iterator = _concurrent_tee(iterable)

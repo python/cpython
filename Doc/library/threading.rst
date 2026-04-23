@@ -1461,9 +1461,11 @@ of the derived iterators.
 .. class:: serialize(iterable)
 
    Return an iterator wrapper that serializes concurrent calls to
-   :meth:`~iterator.__next__` using a lock.  For generators, will also
-   serialize calls to :meth:`~generator.send`, :meth:`~generator.throw`,
-   and :meth:`~generator.close`.
+   :meth:`~iterator.__next__` using a lock.
+
+   If the wrapped iterator also defines :meth:`~generator.send`,
+   :meth:`~generator.throw`, or :meth:`~generator.close`, those calls
+   are serialized as well.
 
    This makes it possible to share a single iterator, including a generator
    iterator, between multiple threads. A lock assures that calls are handled
@@ -1474,7 +1476,9 @@ of the derived iterators.
    :func:`next` while another thread is already advancing the iterator will
    block until the active call completes.
 
-   Example::
+   Example:
+
+   .. doctest::
 
       import threading
 
@@ -1505,7 +1509,9 @@ of the derived iterators.
    This is especially useful as a :term:`decorator` for generator functions,
    allowing their generator-iterators to be consumed from multiple threads.
 
-   Example::
+   Example:
+
+   .. doctest::
 
       import threading
 
@@ -1519,7 +1525,7 @@ of the derived iterators.
       it = counter()
 
       def worker():
-          for _ in range(3):
+          for _ in range(5):
               print(next(it))
 
       threads = [threading.Thread(target=worker) for _ in range(2)]
@@ -1552,7 +1558,9 @@ of the derived iterators.
    If *n* is ``0``, return an empty tuple. If *n* is negative, raise
    :exc:`ValueError`.
 
-   Example::
+   Example:
+
+   .. doctest::
 
       import threading
 
