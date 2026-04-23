@@ -146,8 +146,14 @@ def install(
             release=release,
         )
         return
+    # When running inside Docker, repo_root maps to /mnt/workspace.
+    # Use a relative DESTDIR so it resolves correctly inside the container.
+    try:
+        rel_destdir = destdir.resolve().relative_to(repo_root.resolve())
+    except ValueError:
+        rel_destdir = destdir
     args = make_args(
-        sysroot, toolchain, "install", f"DESTDIR={destdir}",
+        sysroot, toolchain, "install", f"DESTDIR={rel_destdir}",
         platform=platform,
         process_mode=process_mode,
         memory_size=memory_size,
