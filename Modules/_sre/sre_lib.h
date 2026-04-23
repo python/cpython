@@ -1855,6 +1855,18 @@ SRE(search)(SRE_STATE* state, SRE_CODE* pattern)
             return 0;
         }
         while (status == 0 && ptr < end) {
+            if (pattern[0] == SRE_OP_AT &&
+                pattern[1] == SRE_AT_BEGINNING_LINE &&
+                !SRE_IS_LINEBREAK((int) ptr[-1]))
+            {
+                /* fast-forward to the next newline character */
+                while (ptr < end && !SRE_IS_LINEBREAK((int) *ptr)) {
+                    ptr++;
+                }
+                if (ptr >= end) {
+                    return 0;
+                }
+            }
             ptr++;
             RESET_CAPTURE_GROUP();
             TRACE(("|%p|%p|SEARCH\n", pattern, ptr));
