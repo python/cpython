@@ -712,6 +712,20 @@ class ChardataBufferTest(unittest.TestCase):
         parser.Parse(xml2, True)
         self.assertEqual(self.n, 4)
 
+    @support.requires_resource('cpu')
+    @support.requires_resource('walltime')
+    def test_heap_overflow(self):
+        # See https://github.com/python/cpython/issues/148441
+        parser = expat.ParserCreate()
+        parser.buffer_text = True
+        parser.buffer_size = 2**31 - 1 # INT_MAX
+        def handler(text):
+            pass
+        N = 2049 * (1 << 20) - 3  # 2,148,532,221 bytes of character data
+        parser.CharacterDataHandler = handler
+        xml_data = b"<r>" + b"A" * N + b"</r>"
+        self.assertEqual(parser.Parse(xml_data, True), 1)
+
 class ElementDeclHandlerTest(unittest.TestCase):
     def test_trigger_leak(self):
         # Unfixed, this test would leak the memory of the so-called
