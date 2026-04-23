@@ -598,8 +598,10 @@ add_to_trace(
     ((uint32_t)((INSTR) - ((_Py_CODEUNIT *)(CODE)->co_code_adaptive)))
 
 
-/* Branch penalty: 0 if fully biased, FITNESS_BRANCH_BALANCED if 50/50,
- * 2*FITNESS_BRANCH_BALANCED if fully against the traced direction. */
+/* Branch penalty: 0 for a fully biased branch and FITNESS_BRANCH_BALANCED for
+ * a balanced or fully off-trace branch. This keeps any single branch from
+ * consuming more than one balanced-branch cost.
+ */
 static inline int
 compute_branch_penalty(uint16_t history)
 {
@@ -607,7 +609,11 @@ compute_branch_penalty(uint16_t history)
     int taken_count = _Py_popcount32((uint32_t)history);
     int on_trace_count = branch_taken ? taken_count : 16 - taken_count;
     int off_trace = 16 - on_trace_count;
-    return off_trace * FITNESS_BRANCH_BALANCED / 8;
+    int penalty = off_trace * FITNESS_BRANCH_BALANCED / 8;
+    if (penalty > FITNESS_BRANCH_BALANCED) {
+        penalty = FITNESS_BRANCH_BALANCED;
+    }
+    return penalty;
 }
 
 /* Compute exit quality for the current trace position.
@@ -818,10 +824,9 @@ _PyJit_translate_single_bytecode_to_trace(
         goto done;
     }
 
-    // Snapshot the buffer before reserving tail slots. The later charge
-    // includes both emitted uops and capacity reserved for exits/deopts/errors.
-    _PyUOpInstruction *next_before = trace->next;
-    _PyUOpInstruction *end_before = trace->end;
+    // Snapshot remaining space so the later fitness charge reflects all buffer
+    // space this bytecode consumed, including reserved tail slots.
+    int32_t remaining_before = uop_buffer_remaining_space(trace);
 
     // One for possible _DEOPT, one because _CHECK_VALIDITY itself might _DEOPT
     trace->end -= 2;
@@ -1002,10 +1007,13 @@ _PyJit_translate_single_bytecode_to_trace(
                     _PyJitTracerTranslatorState *ts_depth = &tracer->translator_state;
                     int32_t frame_penalty = compute_frame_penalty(tstate->interp->opt_config.fitness_initial);
                     if (ts_depth->frame_depth <= 0) {
-                        // Returning from a frame we didn't enter — penalize.
-                        ts_depth->fitness -= frame_penalty;
+                        // Returning past the traced root is normal for guarded
+                        // caller continuation. Charge a small penalty so these
+                        // paths still terminate.
+                        int32_t underflow_penalty = frame_penalty / 4;
+                        ts_depth->fitness -= underflow_penalty;
                         DPRINTF(3, "  %s: underflow penalty=-%d -> fitness=%d\n",
-                                _PyOpcode_uop_name[uop], frame_penalty,
+                                _PyOpcode_uop_name[uop], underflow_penalty,
                                 ts_depth->fitness);
                     }
                     else {
@@ -1063,12 +1071,9 @@ _PyJit_translate_single_bytecode_to_trace(
     // Charge fitness by trace-buffer capacity consumed for this bytecode,
     // including both emitted uops and tail reservations.
     {
-        int32_t slots_fwd = (int32_t)(trace->next - next_before);
-        int32_t slots_rev = (int32_t)(end_before - trace->end);
-        int32_t slots_used = slots_fwd + slots_rev;
+        int32_t slots_used = remaining_before - uop_buffer_remaining_space(trace);
         tracer->translator_state.fitness -= slots_used;
-        DPRINTF(3, "  per-insn cost: -%d (fwd=%d, rev=%d) -> fitness=%d\n",
-                slots_used, slots_fwd, slots_rev,
+        DPRINTF(3, "  per-insn cost: -%d -> fitness=%d\n", slots_used,
                 tracer->translator_state.fitness);
     }
     DPRINTF(2, "Trace continuing (fitness=%d)\n", tracer->translator_state.fitness);

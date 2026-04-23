@@ -30,7 +30,7 @@ extern "C" {
  * 4. A push followed by a matching return is net-zero on frame-specific
  *    fitness, excluding per-slot costs.
  */
-#define MAX_TARGET_LENGTH          (UOP_MAX_TRACE_LENGTH / 5 * 2)
+#define MAX_TARGET_LENGTH          (UOP_MAX_TRACE_LENGTH / 2)
 #define OPTIMIZER_EFFECTIVENESS    2
 #define FITNESS_INITIAL            (MAX_TARGET_LENGTH * OPTIMIZER_EFFECTIVENESS)
 
@@ -38,7 +38,7 @@ extern "C" {
  * Higher = trace is more willing to stop here. */
 #define EXIT_QUALITY_CLOSE_LOOP      (FITNESS_INITIAL - AVG_SLOTS_PER_INSTRUCTION*4)
 #define EXIT_QUALITY_ENTER_EXECUTOR  (FITNESS_INITIAL * 1 / 8)
-#define EXIT_QUALITY_DEFAULT         (FITNESS_INITIAL / 8)
+#define EXIT_QUALITY_DEFAULT         (FITNESS_INITIAL / 40)
 #define EXIT_QUALITY_SPECIALIZABLE   (FITNESS_INITIAL / 80)
 
 /* Estimated buffer slots per bytecode, used only to derive heuristics.
@@ -51,12 +51,13 @@ extern "C" {
 #define N_BACKWARD_SLACK           10
 #define EXIT_QUALITY_BACKWARD_EDGE (EXIT_QUALITY_CLOSE_LOOP / 2 - N_BACKWARD_SLACK * AVG_SLOTS_PER_INSTRUCTION)
 
-/* Penalty for a perfectly balanced (50/50) branch.
- * 7 such branches (after per-slot cost) exhaust fitness to EXIT_QUALITY_DEFAULT.
- * The calculation assumes the branches are spread out roughly equally throughout the trace.
+/* Penalty for a balanced branch.
+ * It is sized so repeated balanced branches can drive a trace toward
+ * EXIT_QUALITY_DEFAULT, while compute_branch_penalty() keeps any single branch
+ * from dominating the budget.
  */
 #define FITNESS_BRANCH_BALANCED    ((FITNESS_INITIAL - EXIT_QUALITY_DEFAULT - \
-                                        (MAX_TARGET_LENGTH / 7 * AVG_SLOTS_PER_INSTRUCTION)) / (7))
+                                        (MAX_TARGET_LENGTH / 14 * AVG_SLOTS_PER_INSTRUCTION)) / (14))
 
 
 typedef struct _PyJitUopBuffer {
