@@ -194,25 +194,49 @@ def stage(
             print("  Using downloaded release as install cache")
     else:
         # Linux: build and install directly.
-        build_mod.build(
-            sysroot, toolchain, repo_root,
-            platform=platform,
-            process_mode=process_mode,
-            memory_size=memory_size,
-            install_prefix=install_prefix,
-            release=release,
-            run_fn=run_fn,
-        )
+        # If the python binary already exists (e.g. from a prior Docker
+        # build), skip the rebuild to avoid requiring Docker-only tooling
+        # (BUILD_PYTHON) that is not available on the host.
+        python_binary = repo_root / f"python{config.EXE}"
+        if python_binary.is_file():
+            print(f"  Skipping rebuild ({python_binary.name} already exists)")
+            # Install into staging, overriding the build dependency so
+            # make does not attempt a rebuild.
+            try:
+                rel_staging = staging.resolve().relative_to(repo_root.resolve())
+            except ValueError:
+                rel_staging = staging
+            install_args = build_mod.make_args(
+                sysroot, toolchain,
+                "-o", "build", "-o", "all",
+                "install", f"DESTDIR={rel_staging}",
+                platform=platform,
+                process_mode=process_mode,
+                memory_size=memory_size,
+                install_prefix=install_prefix,
+                release=release,
+            )
+            build_mod.run_make(install_args, cwd=repo_root, run_fn=run_fn)
+        else:
+            build_mod.build(
+                sysroot, toolchain, repo_root,
+                platform=platform,
+                process_mode=process_mode,
+                memory_size=memory_size,
+                install_prefix=install_prefix,
+                release=release,
+                run_fn=run_fn,
+            )
 
-        build_mod.install(
-            sysroot, toolchain, repo_root, staging,
-            platform=platform,
-            process_mode=process_mode,
-            memory_size=memory_size,
-            install_prefix=install_prefix,
-            release=release,
-            run_fn=run_fn,
-        )
+            build_mod.install(
+                sysroot, toolchain, repo_root, staging,
+                platform=platform,
+                process_mode=process_mode,
+                memory_size=memory_size,
+                install_prefix=install_prefix,
+                release=release,
+                run_fn=run_fn,
+            )
 
     sysroot_dir = staging / "sysroot"
 
