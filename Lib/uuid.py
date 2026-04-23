@@ -951,6 +951,13 @@ def main():
         "@x500": NAMESPACE_X500
     }
 
+    def _namespace_type(value):
+        if value in namespaces:
+            return value
+        # Validate it's a valid UUID string
+        UUID(value)
+        return value
+
     import argparse
     parser = argparse.ArgumentParser(
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
@@ -962,7 +969,8 @@ def main():
                         default="uuid4",
                         help="function to generate the UUID")
     parser.add_argument("-n", "--namespace",
-                        choices=["any UUID", *namespaces.keys()],
+                        type=_namespace_type,
+                        metavar='{any UUID,@dns,@url,@oid,@x500}',
                         help="uuid3/uuid5 only: "
                         "a UUID, or a well-known predefined UUID addressed "
                         "by namespace name")
