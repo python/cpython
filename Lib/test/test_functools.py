@@ -1,3 +1,7 @@
+# NSKIP019 https://github.com/nanvix/cpython/issues/487
+# Module is excluded from standalone mode (32 MB heap too small).  Remaining
+# skips in non-standalone modes are NSKIP001 (pickle).
+
 import abc
 import builtins
 import collections
@@ -255,6 +259,8 @@ class TestPartial:
         finally:
             f.__setstate__((capture, (), {}, {}))
 
+    # NSKIP001 https://github.com/nanvix/cpython/issues/469
+    @unittest.skipIf(support.is_nanvix, "NSKIP001: pickle corrupt on 32-bit")
     def test_pickle(self):
         with replaced_module('functools', self.module):
             f = self.partial(signature, ['asdf'], bar=[True])
@@ -338,6 +344,8 @@ class TestPartial:
         self.assertEqual(r, ((1, 2), {}))
         self.assertIs(type(r[0]), tuple)
 
+    # NSKIP001 https://github.com/nanvix/cpython/issues/469
+    @unittest.skipIf(support.is_nanvix, "NSKIP001: pickle corrupt on 32-bit")
     def test_recursive_pickle(self):
         with replaced_module('functools', self.module):
             f = self.partial(capture)
@@ -1225,6 +1233,8 @@ class TestTotalOrdering(unittest.TestCase):
             with self.assertRaises(TypeError):
                 a <= b
 
+    # NSKIP001 https://github.com/nanvix/cpython/issues/469
+    @unittest.skipIf(support.is_nanvix, "NSKIP001: pickle corrupt on 32-bit")
     def test_pickle(self):
         for proto in range(pickle.HIGHEST_PROTOCOL + 1):
             for name in '__lt__', '__gt__', '__le__', '__ge__':
@@ -1640,6 +1650,8 @@ class TestLRU:
             self.assertEqual(getattr(g, attr), getattr(f, attr))
 
     @threading_helper.requires_working_threading()
+    # NSKIP016 https://github.com/nanvix/cpython/issues/484
+    @unittest.skipIf(support.is_nanvix, "NSKIP016: exceeds Nanvix thread limit")
     def test_lru_cache_threaded(self):
         n, m = 5, 11
         def orig(x, y):
@@ -1689,6 +1701,8 @@ class TestLRU:
             sys.setswitchinterval(orig_si)
 
     @threading_helper.requires_working_threading()
+    # NSKIP016 https://github.com/nanvix/cpython/issues/484
+    @unittest.skipIf(support.is_nanvix, "NSKIP016: exceeds Nanvix thread limit")
     def test_lru_cache_threaded2(self):
         # Simultaneous call with the same arguments
         n, m = 5, 7
@@ -1717,6 +1731,8 @@ class TestLRU:
                 self.assertEqual(f.cache_info(), (0, (i+1)*n, m*n, i+1))
 
     @threading_helper.requires_working_threading()
+    # NSKIP016 https://github.com/nanvix/cpython/issues/484
+    @unittest.skipIf(support.is_nanvix, "NSKIP016: exceeds Nanvix thread limit")
     def test_lru_cache_threaded3(self):
         @self.module.lru_cache(maxsize=2)
         def f(x):
@@ -1785,6 +1801,8 @@ class TestLRU:
         self.assertEqual(b.f.cache_info(), X.f.cache_info())
         self.assertEqual(c.f.cache_info(), X.f.cache_info())
 
+    # NSKIP001 https://github.com/nanvix/cpython/issues/469
+    @unittest.skipIf(support.is_nanvix, "NSKIP001: pickle corrupt on 32-bit")
     def test_pickle(self):
         cls = self.__class__
         for f in cls.cached_func[0], cls.cached_meth, cls.cached_staticmeth:

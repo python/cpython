@@ -123,13 +123,15 @@ class TestChainMap(unittest.TestCase):
                 self.assertIs(m1, m2)
 
         # check deep copies
-        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
-            e = pickle.loads(pickle.dumps(d, proto))
-            self.assertEqual(d, e)
-            self.assertEqual(d.maps, e.maps)
-            self.assertIsNot(d, e)
-            for m1, m2 in zip(d.maps, e.maps):
-                self.assertIsNot(m1, m2, e)
+        # NSKIP001 https://github.com/nanvix/cpython/issues/469
+        if not support.is_nanvix:
+            for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+                e = pickle.loads(pickle.dumps(d, proto))
+                self.assertEqual(d, e)
+                self.assertEqual(d.maps, e.maps)
+                self.assertIsNot(d, e)
+                for m1, m2 in zip(d.maps, e.maps):
+                    self.assertIsNot(m1, m2, e)
         for e in [copy.deepcopy(d),
                   eval(repr(d))
                 ]:
@@ -566,6 +568,8 @@ class TestNamedTuple(unittest.TestCase):
         self.assertEqual(b2, tuple(b2_expected))
         self.assertEqual(b._fields, tuple(names))
 
+    # NSKIP001 https://github.com/nanvix/cpython/issues/469
+    @unittest.skipIf(support.is_nanvix, "NSKIP001: pickle corrupt on 32-bit")
     def test_pickle(self):
         p = TestNT(x=10, y=20, z=30)
         for module in (pickle,):
@@ -685,13 +689,15 @@ class TestNamedTuple(unittest.TestCase):
         self.assertRaises(AttributeError, Point.x.__set__, p, 33)
         self.assertRaises(AttributeError, Point.x.__delete__, p)
 
-        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
-            with self.subTest(proto=proto):
-                class NewPoint(tuple):
-                    x = pickle.loads(pickle.dumps(Point.x, proto))
-                    y = pickle.loads(pickle.dumps(Point.y, proto))
+        # NSKIP001 https://github.com/nanvix/cpython/issues/469
+        if not support.is_nanvix:
+            for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+                with self.subTest(proto=proto):
+                    class NewPoint(tuple):
+                        x = pickle.loads(pickle.dumps(Point.x, proto))
+                        y = pickle.loads(pickle.dumps(Point.y, proto))
 
-                np = NewPoint([1, 2])
+                    np = NewPoint([1, 2])
 
                 self.assertEqual(np.x, 1)
                 self.assertEqual(np.y, 2)
@@ -2215,9 +2221,11 @@ class TestCounter(unittest.TestCase):
         check(words.copy())
         check(copy.copy(words))
         check(copy.deepcopy(words))
-        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
-            with self.subTest(proto=proto):
-                check(pickle.loads(pickle.dumps(words, proto)))
+        # NSKIP001 https://github.com/nanvix/cpython/issues/469
+        if not support.is_nanvix:
+            for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+                with self.subTest(proto=proto):
+                    check(pickle.loads(pickle.dumps(words, proto)))
         check(eval(repr(words)))
         update_test = Counter()
         update_test.update(words)

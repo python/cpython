@@ -3,6 +3,7 @@
 import copy
 import pickle
 import unittest
+from test import support
 
 from collections import defaultdict
 
@@ -140,6 +141,8 @@ class TestDefaultDict(unittest.TestCase):
     def test_callable_arg(self):
         self.assertRaises(TypeError, defaultdict, {})
 
+    # NSKIP001 https://github.com/nanvix/cpython/issues/469
+    @unittest.skipIf(support.is_nanvix, "NSKIP001: pickle corrupt on 32-bit")
     def test_pickling(self):
         d = defaultdict(int)
         d[1]

@@ -177,13 +177,26 @@ NANVIX_TEST_LIST: list[str] = [
     "test_frame", "test_contextlib", "test_contextlib_async",
     "test_pprint", "test_reprlib",
     "test_list", "test_dict",
+    "test_listcomps", "test_dictcomps", "test_setcomps", "test_genexps",
+    "test_set",
+    "test_heapq", "test_bisect", "test_queue", "test_sort",
+    "test_iter", "test_itertools", "test_iterlen",
+    "test_generators", "test_generator_stop", "test_yield_from", "test_coroutines",
+    "test_functools", "test_funcattrs", "test_decorators",
+    "test_copy", "test_copyreg",
+    "test_collections", "test_defaultdict", "test_ordered_dict", "test_deque", "test_array",
+    "test_weakref", "test_weakset", "test_buffer",
 ]
 
 # Default batch size for regrtest VM invocations.
 DEFAULT_TEST_BATCH_SIZE = 4
 
 # Per-mode test exclusions (passed to regrtest --ignore).
-STANDALONE_EXCLUDE: list[str] = ["test_filter_dealloc", "test_tokenize"]
+STANDALONE_EXCLUDE: list[str] = [
+    "test_queue",      # NSKIP019: standalone 32 MB heap too small for module
+    "test_itertools",  # NSKIP019: standalone 32 MB heap too small for module
+    "test_functools",  # NSKIP019: standalone 32 MB heap too small for module
+]
 
 # Platform-specific nanvixd extra arguments.
 PLATFORM_NANVIXD_ARGS: dict[str, list[str]] = {
