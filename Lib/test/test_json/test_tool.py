@@ -7,7 +7,7 @@ import unittest
 import subprocess
 
 from test import support
-from test.support import os_helper
+from test.support import force_colorized, os_helper
 from test.support.script_helper import assert_python_ok
 
 
