@@ -47,7 +47,7 @@ class G(A):
     pass
 
 
-# NSKIP009 https://github.com/nanvix/cpython/issues/371
+# NSKIP009 https://github.com/nanvix/cpython/issues/477
 @unittest.skipIf(support.is_nanvix, "NSKIP009: VM crash from __class__ cell corruption")
 class TestSuper(unittest.TestCase):
 

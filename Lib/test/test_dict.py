@@ -1109,7 +1109,7 @@ class DictTest(unittest.TestCase):
         self.assertGreater(sys.getsizeof(d), before_resize)
         self.assertEqual(list(d), ['x', 2])
 
-    # NSKIP001 https://github.com/nanvix/cpython/issues/371
+    # NSKIP001 https://github.com/nanvix/cpython/issues/469
     @unittest.skipIf(support.is_nanvix, "NSKIP001: pickle corrupt on 32-bit")
     def test_iterator_pickling(self):
         for proto in range(pickle.HIGHEST_PROTOCOL + 1):
@@ -1129,7 +1129,7 @@ class DictTest(unittest.TestCase):
             del data[drop]
             self.assertEqual(list(it), list(data))
 
-    # NSKIP001 https://github.com/nanvix/cpython/issues/371
+    # NSKIP001 https://github.com/nanvix/cpython/issues/469
     @unittest.skipIf(support.is_nanvix, "NSKIP001: pickle corrupt on 32-bit")
     def test_itemiterator_pickling(self):
         for proto in range(pickle.HIGHEST_PROTOCOL + 1):
@@ -1153,7 +1153,7 @@ class DictTest(unittest.TestCase):
             del data[drop[0]]
             self.assertEqual(dict(it), data)
 
-    # NSKIP001 https://github.com/nanvix/cpython/issues/371
+    # NSKIP001 https://github.com/nanvix/cpython/issues/469
     @unittest.skipIf(support.is_nanvix, "NSKIP001: pickle corrupt on 32-bit")
     def test_valuesiterator_pickling(self):
         for proto in range(pickle.HIGHEST_PROTOCOL + 1):
@@ -1171,7 +1171,7 @@ class DictTest(unittest.TestCase):
             values = list(it) + [drop]
             self.assertEqual(sorted(values), sorted(list(data.values())))
 
-    # NSKIP001 https://github.com/nanvix/cpython/issues/371
+    # NSKIP001 https://github.com/nanvix/cpython/issues/469
     @unittest.skipIf(support.is_nanvix, "NSKIP001: pickle corrupt on 32-bit")
     def test_reverseiterator_pickling(self):
         for proto in range(pickle.HIGHEST_PROTOCOL + 1):
@@ -1191,7 +1191,7 @@ class DictTest(unittest.TestCase):
             del data[drop]
             self.assertEqual(list(it), list(reversed(data)))
 
-    # NSKIP001 https://github.com/nanvix/cpython/issues/371
+    # NSKIP001 https://github.com/nanvix/cpython/issues/469
     @unittest.skipIf(support.is_nanvix, "NSKIP001: pickle corrupt on 32-bit")
     def test_reverseitemiterator_pickling(self):
         for proto in range(pickle.HIGHEST_PROTOCOL + 1):
@@ -1215,7 +1215,7 @@ class DictTest(unittest.TestCase):
             del data[drop[0]]
             self.assertEqual(dict(it), data)
 
-    # NSKIP001 https://github.com/nanvix/cpython/issues/371
+    # NSKIP001 https://github.com/nanvix/cpython/issues/469
     @unittest.skipIf(support.is_nanvix, "NSKIP001: pickle corrupt on 32-bit")
     def test_reversevaluesiterator_pickling(self):
         for proto in range(pickle.HIGHEST_PROTOCOL + 1):

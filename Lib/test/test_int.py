@@ -796,7 +796,7 @@ class IntStrDigitLimitsTests(unittest.TestCase):
         with self.subTest(base=base):
             self._other_base_helper(base)
 
-    # NSKIP002 https://github.com/nanvix/cpython/issues/371
+    # NSKIP002 https://github.com/nanvix/cpython/issues/470
     @unittest.skipIf(support.is_nanvix, "NSKIP002: _testcapi not available")
     def test_int_max_str_digits_is_per_interpreter(self):
         # Changing the limit in one interpreter does not change others.

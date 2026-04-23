@@ -172,7 +172,7 @@ def external_getitem(self, i):
 class CodeTest(unittest.TestCase):
 
     @cpython_only
-    # NSKIP002 https://github.com/nanvix/cpython/issues/371
+    # NSKIP002 https://github.com/nanvix/cpython/issues/470
     @unittest.skipIf(is_nanvix, "NSKIP002: _testcapi not available")
     def test_newempty(self):
         import _testcapi

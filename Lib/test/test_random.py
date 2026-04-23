@@ -381,7 +381,7 @@ class TestBasicOps:
         self.assertRaises(ValueError, self.gen.getrandbits, -1)
         self.assertRaises(TypeError, self.gen.getrandbits, 10.1)
 
-    # NSKIP001 https://github.com/nanvix/cpython/issues/371
+    # NSKIP001 https://github.com/nanvix/cpython/issues/469
     @unittest.skipIf(support.is_nanvix, "NSKIP001: pickle corrupt on 32-bit")
     def test_pickling(self):
         for proto in range(pickle.HIGHEST_PROTOCOL + 1):

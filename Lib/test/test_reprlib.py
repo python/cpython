@@ -585,7 +585,7 @@ def write_file(path, text):
     with open(path, 'w', encoding='ASCII') as fp:
         fp.write(text)
 
-# NSKIP012 https://github.com/nanvix/cpython/issues/371
+# NSKIP012 https://github.com/nanvix/cpython/issues/480
 @unittest.skipIf(support.is_nanvix, "NSKIP012: rmtree/rmdir returns ENOSYS")
 class LongReprTest(unittest.TestCase):
     longname = 'areallylongpackageandmodulenametotestreprtruncation'
