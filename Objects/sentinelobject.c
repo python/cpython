@@ -6,6 +6,7 @@
 #include "pycore_interpframe.h"   // _PyFrame_IsIncomplete()
 #include "pycore_object.h"        // _PyObject_GC_TRACK/UNTRACK()
 #include "pycore_stackref.h"      // PyStackRef_AsPyObjectBorrow()
+#include "pycore_tuple.h"         // _PyTuple_FromPair
 #include "pycore_typeobject.h"    // _Py_BaseObject_RichCompare()
 #include "pycore_unionobject.h"   // _Py_union_from_tuple()
 
