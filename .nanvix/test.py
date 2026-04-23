@@ -221,8 +221,8 @@ def stage(
                 f"  Skipping rebuild ({python_binary.name} already exists"
                 " and BUILD_PYTHON is unavailable)"
             )
-            # Install into staging, overriding the build dependency so
-            # make does not attempt a rebuild.
+            # Install into staging, skipping the outer build prereq
+            # and stubbing PYTHON_FOR_BUILD for the inner make.
             build_mod.install(
                 sysroot, toolchain, repo_root, staging,
                 platform=platform,
@@ -231,7 +231,7 @@ def stage(
                 install_prefix=install_prefix,
                 release=release,
                 run_fn=run_fn,
-                extra_make_flags=["-o", "build", "-o", "all"],
+                extra_make_flags=["-o", "build", "PYTHON_FOR_BUILD=:"],
             )
         else:
             build_mod.build(
