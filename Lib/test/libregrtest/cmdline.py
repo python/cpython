@@ -134,6 +134,9 @@ resources to test.  Currently only the following are defined:
                 and 3.9 to test backwards compatibility. These tests
                 may take very long to complete.
 
+    wantobjects -    Allows to run Tkinter tests with the specified value of
+                     tkinter.wantobjects.
+
 To enable all resources except one, use '-uall,-<resource>'.  For
 example, to run all the tests except for the gui tests, give the
 option '-uall,-gui'.
@@ -390,6 +393,8 @@ def _create_parser():
                        help='remove old test_python_* directories')
     group.add_argument('--bisect', action='store_true',
                        help='if some tests fail, run test.bisect_cmd on them')
+    group.add_argument('--pythoninfo', action='store_true',
+                       help="run python -m test.pythoninfo before tests")
     group.add_argument('--dont-add-python-opts', dest='_add_python_opts',
                        action='store_false',
                        help="internal option, don't use it")

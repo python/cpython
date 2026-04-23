@@ -10,6 +10,7 @@
 #include "pycore_gc.h"            // _PyGC_CLEAR_FINALIZED()
 #include "pycore_genobject.h"     // _PyGen_SetStopIterationValue()
 #include "pycore_interpframe.h"   // _PyFrame_GetCode()
+#include "pycore_lock.h"          // _Py_yield()
 #include "pycore_modsupport.h"    // _PyArg_CheckPositional()
 #include "pycore_object.h"        // _PyObject_GC_UNTRACK()
 #include "pycore_opcode_utils.h"  // RESUME_AFTER_YIELD_FROM
@@ -37,8 +38,20 @@ static PyObject* async_gen_athrow_new(PyAsyncGenObject *, PyObject *);
     _Py_CAST(PyAsyncGenObject*, (op))
 
 #ifdef Py_GIL_DISABLED
+static bool
+gen_try_set_frame_state(PyGenObject *gen, int8_t *expected, int8_t state)
+{
+    if (*expected == FRAME_SUSPENDED_YIELD_FROM_LOCKED) {
+        // Wait for the in-progress gi_yieldfrom read to complete
+        _Py_yield();
+        *expected = _Py_atomic_load_int8_relaxed(&gen->gi_frame_state);
+        return false;
+    }
+    return _Py_atomic_compare_exchange_int8(&gen->gi_frame_state, expected, state);
+}
+
 # define _Py_GEN_TRY_SET_FRAME_STATE(gen, expected, state) \
-    _Py_atomic_compare_exchange_int8(&(gen)->gi_frame_state, &expected, (state))
+    gen_try_set_frame_state((gen), &(expected), (state))
 #else
 # define _Py_GEN_TRY_SET_FRAME_STATE(gen, expected, state) \
     ((gen)->gi_frame_state = (state), true)
@@ -280,6 +293,9 @@ gen_send_ex2(PyGenObject *gen, PyObject *arg, PyObject **presult, int exc)
 
     if (return_kind == GENERATOR_YIELD) {
         assert(result != NULL && !_PyErr_Occurred(tstate));
+#ifndef Py_GIL_DISABLED
+        assert(FRAME_STATE_SUSPENDED(gen->gi_frame_state));
+#endif
         *presult = result;
         return PYGEN_NEXT;
     }
@@ -438,6 +454,7 @@ is_resume(_Py_CODEUNIT *instr)
     return (
         code == RESUME ||
         code == RESUME_CHECK ||
+        code == RESUME_CHECK_JIT ||
         code == INSTRUMENTED_RESUME
     );
 }
@@ -467,21 +484,19 @@ gen_close(PyObject *self, PyObject *args)
             return NULL;
         }
 
-        assert(frame_state == FRAME_SUSPENDED_YIELD_FROM ||
-               frame_state == FRAME_SUSPENDED);
-
+        assert(FRAME_STATE_SUSPENDED(frame_state));
     } while (!_Py_GEN_TRY_SET_FRAME_STATE(gen, frame_state, FRAME_EXECUTING));
 
     int err = 0;
     _PyInterpreterFrame *frame = &gen->gi_iframe;
     if (frame_state == FRAME_SUSPENDED_YIELD_FROM) {
-        PyObject *yf = PyStackRef_AsPyObjectNew(_PyFrame_StackPeek(frame));
+        PyObject *yf = PyStackRef_AsPyObjectNew(_PyFrame_StackPeek(frame, 2));
         err = gen_close_iter(yf);
         Py_DECREF(yf);
     }
 
     if (is_resume(frame->instr_ptr)) {
-        bool no_unwind_tools = _PyEval_NoToolsForUnwind(_PyThreadState_GET());
+        bool no_unwind_tools = _PyEval_NoToolsForUnwind(_PyThreadState_GET(), frame);
         /* We can safely ignore the outermost try block
          * as it is automatically generated to handle
          * StopIteration. */
@@ -634,7 +649,7 @@ _gen_throw(PyGenObject *gen, int close_on_genexit,
 
     if (frame_state == FRAME_SUSPENDED_YIELD_FROM) {
         _PyInterpreterFrame *frame = &gen->gi_iframe;
-        PyObject *yf = PyStackRef_AsPyObjectNew(_PyFrame_StackPeek(frame));
+        PyObject *yf = PyStackRef_AsPyObjectNew(_PyFrame_StackPeek(frame, 2));
         PyObject *ret;
         int err;
         if (PyErr_GivenExceptionMatches(typ, PyExc_GeneratorExit) &&
@@ -873,12 +888,26 @@ static PyObject *
 gen_getyieldfrom(PyObject *self, void *Py_UNUSED(ignored))
 {
     PyGenObject *gen = _PyGen_CAST(self);
-    int8_t frame_state = FT_ATOMIC_LOAD_INT8_RELAXED(gen->gi_frame_state);
+#ifdef Py_GIL_DISABLED
+    int8_t frame_state = _Py_atomic_load_int8_relaxed(&gen->gi_frame_state);
+    do {
+        if (frame_state != FRAME_SUSPENDED_YIELD_FROM &&
+            frame_state != FRAME_SUSPENDED_YIELD_FROM_LOCKED)
+        {
+            Py_RETURN_NONE;
+        }
+    } while (!_Py_GEN_TRY_SET_FRAME_STATE(gen, frame_state, FRAME_SUSPENDED_YIELD_FROM_LOCKED));
+
+    PyObject *result = PyStackRef_AsPyObjectNew(_PyFrame_StackPeek(&gen->gi_iframe, 2));
+    _Py_atomic_store_int8_release(&gen->gi_frame_state, FRAME_SUSPENDED_YIELD_FROM);
+    return result;
+#else
+    int8_t frame_state = gen->gi_frame_state;
     if (frame_state != FRAME_SUSPENDED_YIELD_FROM) {
         Py_RETURN_NONE;
     }
-    // TODO: still not thread-safe with free threading
-    return PyStackRef_AsPyObjectNew(_PyFrame_StackPeek(&gen->gi_iframe));
+    return PyStackRef_AsPyObjectNew(_PyFrame_StackPeek(&gen->gi_iframe, 2));
+#endif
 }
 
 
@@ -896,6 +925,26 @@ gen_getsuspended(PyObject *self, void *Py_UNUSED(ignored))
     PyGenObject *gen = _PyGen_CAST(self);
     int8_t frame_state = FT_ATOMIC_LOAD_INT8_RELAXED(gen->gi_frame_state);
     return FRAME_STATE_SUSPENDED(frame_state) ? Py_True : Py_False;
+}
+
+static PyObject *
+gen_getstate(PyObject *self, void *Py_UNUSED(ignored))
+{
+    PyGenObject *gen = _PyGen_CAST(self);
+    int8_t frame_state = FT_ATOMIC_LOAD_INT8_RELAXED(gen->gi_frame_state);
+
+    static PyObject *const state_strings[] = {
+        [FRAME_CREATED] = &_Py_ID(GEN_CREATED),
+        [FRAME_SUSPENDED] = &_Py_ID(GEN_SUSPENDED),
+        [FRAME_SUSPENDED_YIELD_FROM] = &_Py_ID(GEN_SUSPENDED),
+        [FRAME_SUSPENDED_YIELD_FROM_LOCKED] = &_Py_ID(GEN_SUSPENDED),
+        [FRAME_EXECUTING] = &_Py_ID(GEN_RUNNING),
+        [FRAME_CLEARED] = &_Py_ID(GEN_CLOSED),
+    };
+
+    assert(frame_state >= 0 &&
+           (size_t)frame_state < Py_ARRAY_LENGTH(state_strings));
+    return state_strings[frame_state];
 }
 
 static PyObject *
@@ -946,6 +995,8 @@ static PyGetSetDef gen_getsetlist[] = {
     {"gi_frame", gen_getframe,  NULL, NULL},
     {"gi_suspended", gen_getsuspended,  NULL, NULL},
     {"gi_code", gen_getcode,  NULL, NULL},
+    {"gi_state", gen_getstate, NULL,
+     PyDoc_STR("state of the generator")},
     {NULL} /* Sentinel */
 };
 
@@ -1059,9 +1110,6 @@ make_gen(PyTypeObject *type, PyFunctionObject *func)
     return (PyObject *)gen;
 }
 
-static PyObject *
-compute_cr_origin(int origin_depth, _PyInterpreterFrame *current_frame);
-
 PyObject *
 _Py_MakeCoro(PyFunctionObject *func)
 {
@@ -1099,7 +1147,7 @@ _Py_MakeCoro(PyFunctionObject *func)
         assert(frame);
         assert(_PyFrame_IsIncomplete(frame));
         frame = _PyFrame_GetFirstComplete(frame->previous);
-        PyObject *cr_origin = compute_cr_origin(origin_depth, frame);
+        PyObject *cr_origin = _PyCoro_ComputeOrigin(origin_depth, frame);
         ((PyCoroObject *)coro)->cr_origin_or_finalizer = cr_origin;
         if (!cr_origin) {
             Py_DECREF(coro);
@@ -1263,6 +1311,26 @@ cr_getcode(PyObject *coro, void *Py_UNUSED(ignored))
     return _gen_getcode(_PyGen_CAST(coro), "cr_code");
 }
 
+static PyObject *
+cr_getstate(PyObject *self, void *Py_UNUSED(ignored))
+{
+    PyGenObject *gen = _PyGen_CAST(self);
+    int8_t frame_state = FT_ATOMIC_LOAD_INT8_RELAXED(gen->gi_frame_state);
+
+    static PyObject *const state_strings[] = {
+        [FRAME_CREATED] = &_Py_ID(CORO_CREATED),
+        [FRAME_SUSPENDED] = &_Py_ID(CORO_SUSPENDED),
+        [FRAME_SUSPENDED_YIELD_FROM] = &_Py_ID(CORO_SUSPENDED),
+        [FRAME_SUSPENDED_YIELD_FROM_LOCKED] = &_Py_ID(CORO_SUSPENDED),
+        [FRAME_EXECUTING] = &_Py_ID(CORO_RUNNING),
+        [FRAME_CLEARED] = &_Py_ID(CORO_CLOSED),
+    };
+
+    assert(frame_state >= 0 &&
+           (size_t)frame_state < Py_ARRAY_LENGTH(state_strings));
+    return state_strings[frame_state];
+}
+
 static PyGetSetDef coro_getsetlist[] = {
     {"__name__", gen_get_name, gen_set_name,
      PyDoc_STR("name of the coroutine")},
@@ -1274,6 +1342,8 @@ static PyGetSetDef coro_getsetlist[] = {
     {"cr_frame", cr_getframe, NULL, NULL},
     {"cr_code", cr_getcode, NULL, NULL},
     {"cr_suspended", gen_getsuspended, NULL, NULL},
+    {"cr_state", cr_getstate, NULL,
+     PyDoc_STR("state of the coroutine")},
     {NULL} /* Sentinel */
 };
 
@@ -1462,8 +1532,8 @@ PyTypeObject _PyCoroWrapper_Type = {
     0,                                          /* tp_free */
 };
 
-static PyObject *
-compute_cr_origin(int origin_depth, _PyInterpreterFrame *current_frame)
+PyObject *
+_PyCoro_ComputeOrigin(int origin_depth, _PyInterpreterFrame *current_frame)
 {
     _PyInterpreterFrame *frame = current_frame;
     /* First count how many frames we have */
@@ -1508,7 +1578,7 @@ PyCoro_New(PyFrameObject *f, PyObject *name, PyObject *qualname)
     if (origin_depth == 0) {
         ((PyCoroObject *)coro)->cr_origin_or_finalizer = NULL;
     } else {
-        PyObject *cr_origin = compute_cr_origin(origin_depth, _PyEval_GetFrame());
+        PyObject *cr_origin = _PyCoro_ComputeOrigin(origin_depth, _PyEval_GetFrame());
         ((PyCoroObject *)coro)->cr_origin_or_finalizer = cr_origin;
         if (!cr_origin) {
             Py_DECREF(coro);
@@ -1689,6 +1759,26 @@ ag_getcode(PyObject *gen, void *Py_UNUSED(ignored))
     return _gen_getcode((PyGenObject*)gen, "ag_code");
 }
 
+static PyObject *
+ag_getstate(PyObject *self, void *Py_UNUSED(ignored))
+{
+    PyGenObject *gen = _PyGen_CAST(self);
+    int8_t frame_state = FT_ATOMIC_LOAD_INT8_RELAXED(gen->gi_frame_state);
+
+    static PyObject *const state_strings[] = {
+        [FRAME_CREATED] = &_Py_ID(AGEN_CREATED),
+        [FRAME_SUSPENDED] = &_Py_ID(AGEN_SUSPENDED),
+        [FRAME_SUSPENDED_YIELD_FROM] = &_Py_ID(AGEN_SUSPENDED),
+        [FRAME_SUSPENDED_YIELD_FROM_LOCKED] = &_Py_ID(AGEN_SUSPENDED),
+        [FRAME_EXECUTING] = &_Py_ID(AGEN_RUNNING),
+        [FRAME_CLEARED] = &_Py_ID(AGEN_CLOSED),
+    };
+
+    assert(frame_state >= 0 &&
+           (size_t)frame_state < Py_ARRAY_LENGTH(state_strings));
+    return state_strings[frame_state];
+}
+
 static PyGetSetDef async_gen_getsetlist[] = {
     {"__name__", gen_get_name, gen_set_name,
      PyDoc_STR("name of the async generator")},
@@ -1699,6 +1789,8 @@ static PyGetSetDef async_gen_getsetlist[] = {
      {"ag_frame", ag_getframe, NULL, NULL},
      {"ag_code", ag_getcode, NULL, NULL},
      {"ag_suspended", gen_getsuspended, NULL, NULL},
+     {"ag_state", ag_getstate, NULL,
+      PyDoc_STR("state of the async generator")},
     {NULL} /* Sentinel */
 };
 

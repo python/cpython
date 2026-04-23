@@ -12,13 +12,16 @@ import threading
 import types
 import warnings
 
-from _colorize import get_theme
-from _pyrepl.console import InteractiveColoredConsole
+try:
+    from _colorize import get_theme
+    from _pyrepl.console import InteractiveColoredConsole as InteractiveConsole
+except ModuleNotFoundError:
+    from code import InteractiveConsole
 
 from . import futures
 
 
-class AsyncIOInteractiveConsole(InteractiveColoredConsole):
+class AsyncIOInteractiveConsole(InteractiveConsole):
 
     def __init__(self, locals, loop):
         super().__init__(locals, filename="<stdin>")
@@ -159,17 +162,29 @@ if __name__ == '__main__':
         "ps", help="Display a table of all pending tasks in a process"
     )
     ps.add_argument("pid", type=int, help="Process ID to inspect")
+    ps.add_argument(
+        "--retries",
+        type=int,
+        default=3,
+        help="Number of retries on transient attach errors",
+    )
     pstree = subparsers.add_parser(
         "pstree", help="Display a tree of all pending tasks in a process"
     )
     pstree.add_argument("pid", type=int, help="Process ID to inspect")
+    pstree.add_argument(
+        "--retries",
+        type=int,
+        default=3,
+        help="Number of retries on transient attach errors",
+    )
     args = parser.parse_args()
     match args.command:
         case "ps":
-            asyncio.tools.display_awaited_by_tasks_table(args.pid)
+            asyncio.tools.display_awaited_by_tasks_table(args.pid, retries=args.retries)
             sys.exit(0)
         case "pstree":
-            asyncio.tools.display_awaited_by_tasks_tree(args.pid)
+            asyncio.tools.display_awaited_by_tasks_tree(args.pid, retries=args.retries)
             sys.exit(0)
         case None:
             pass  # continue to the interactive shell
@@ -185,7 +200,10 @@ if __name__ == '__main__':
     if os.getenv('PYTHON_BASIC_REPL'):
         CAN_USE_PYREPL = False
     else:
-        from _pyrepl.main import CAN_USE_PYREPL
+        try:
+            from _pyrepl.main import CAN_USE_PYREPL
+        except ModuleNotFoundError:
+            CAN_USE_PYREPL = False
 
     return_code = 0
     loop = asyncio.new_event_loop()
