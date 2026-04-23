@@ -1,7 +1,7 @@
 """Interfaces for launching and remotely controlling web browsers."""
-# Maintained by Georg Brandl.
 
 import os
+import plistlib
 import shlex
 import shutil
 import sys
@@ -493,6 +493,7 @@ def register_standard_browsers():
 
     if sys.platform == 'darwin':
         register("MacOS", None, MacOS('default'))
+        register("MacOSX", None, MacOS('default'))  # backward compat alias
         register("chrome", None, MacOS('google chrome'))
         register("chromium", None, MacOS('chromium'))
         register("firefox", None, MacOS('firefox'))
@@ -628,7 +629,7 @@ if sys.platform == 'darwin':
         LaunchServices plist is not written until the user explicitly
         changes their default browser.
         """
-        import builtins, plistlib, os
+        import builtins
         plist = os.path.expanduser(
             '~/Library/Preferences/com.apple.LaunchServices/'
             'com.apple.launchservices.secure.plist'
@@ -692,11 +693,7 @@ if sys.platform == 'darwin':
     class MacOSXOSAScript(BaseBrowser):
         def __init__(self, name='default'):
             import warnings
-            warnings.warn(
-                "MacOSXOSAScript is deprecated, use MacOS instead.",
-                DeprecationWarning,
-                stacklevel=2,
-            )
+            warnings._deprecated("webbrowser.MacOSXOSAScript", remove=(3, 17))
             super().__init__(name)
 
         def open(self, url, new=0, autoraise=True):

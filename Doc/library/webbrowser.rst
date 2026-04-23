@@ -227,7 +227,7 @@ Notes:
    :class:`!MacOS` has been added as a replacement for :class:`!MacOSXOSAScript`,
    opening browsers via :program:`/usr/bin/open` instead of :program:`osascript`.
 
-.. deprecated:: next
+.. deprecated-removed:: next 3.17
    :class:`!MacOSXOSAScript` is deprecated in favour of :class:`!MacOS`.
    Using :program:`/usr/bin/open` instead of :program:`osascript` is a
    security and usability improvement: :program:`osascript` may be blocked
