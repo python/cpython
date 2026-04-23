@@ -6289,6 +6289,10 @@ _PyType_LookupStackRefAndVersion(PyTypeObject *type, PyObject *name, _PyStackRef
 
     PyObject *res_obj = PyStackRef_AsPyObjectBorrow(*out);
 #if Py_GIL_DISABLED
+    // Optimistically enable deferred refcounting for the result if it's not already enabled.
+    if (res_obj != NULL && PyType_IS_GC(Py_TYPE(res_obj)) && !_PyObject_HasDeferredRefcount(res_obj)) {
+        PyUnstable_Object_EnableDeferredRefcount(res_obj);
+    }
     update_cache_gil_disabled(entry, name, version_tag, res_obj);
 #else
     PyObject *old_value = update_cache(entry, name, version_tag, res_obj);
@@ -10995,10 +10999,12 @@ static PyObject *
 slot_tp_descr_get(PyObject *self, PyObject *obj, PyObject *type)
 {
     PyTypeObject *tp = Py_TYPE(self);
-    PyObject *get;
-
-    get = _PyType_LookupRef(tp, &_Py_ID(__get__));
-    if (get == NULL) {
+    PyThreadState *tstate = _PyThreadState_GET();
+    _PyCStackRef cref;
+    _PyThreadState_PushCStackRef(tstate, &cref);
+    _PyType_LookupStackRefAndVersion(tp, &_Py_ID(__get__), &cref.ref);
+    if (PyStackRef_IsNull(cref.ref)) {
+        _PyThreadState_PopCStackRef(tstate, &cref);
 #ifndef Py_GIL_DISABLED
         /* Avoid further slowdowns */
         if (tp->tp_descr_get == slot_tp_descr_get)
@@ -11010,9 +11016,10 @@ slot_tp_descr_get(PyObject *self, PyObject *obj, PyObject *type)
         obj = Py_None;
     if (type == NULL)
         type = Py_None;
+    PyObject *get = PyStackRef_AsPyObjectBorrow(cref.ref);
     PyObject *stack[3] = {self, obj, type};
     PyObject *res = PyObject_Vectorcall(get, stack, 3, NULL);
-    Py_DECREF(get);
+    _PyThreadState_PopCStackRef(tstate, &cref);
     return res;
 }
 
