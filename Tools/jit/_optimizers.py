@@ -95,7 +95,13 @@ class InstructionKind(enum.Enum):
     JUMP = enum.auto()
     LONG_BRANCH = enum.auto()
     SHORT_BRANCH = enum.auto()
+    CALL = enum.auto()
     RETURN = enum.auto()
+    SMALL_CONST_1 = enum.auto()
+    SMALL_CONST_2 = enum.auto()
+    SMALL_CONST_MASK = enum.auto()
+    LARGE_CONST_1 = enum.auto()
+    LARGE_CONST_2 = enum.auto()
     OTHER = enum.auto()
 
 
@@ -104,6 +110,7 @@ class Instruction:
     kind: InstructionKind
     name: str
     text: str
+    register: str | None
     target: str | None
 
     def is_branch(self) -> bool:
@@ -112,7 +119,11 @@ class Instruction:
     def update_target(self, target: str) -> "Instruction":
         assert self.target is not None
         return Instruction(
-            self.kind, self.name, self.text.replace(self.target, target), target
+            self.kind,
+            self.name,
+            self.text.replace(self.target, target),
+            self.register,
+            target,
         )
 
     def update_name_and_target(self, name: str, target: str) -> "Instruction":
@@ -121,6 +132,7 @@ class Instruction:
             self.kind,
             name,
             self.text.replace(self.name, name).replace(self.target, target),
+            self.register,
             target,
         )
 
@@ -159,6 +171,7 @@ class Optimizer:
     label_prefix: str
     symbol_prefix: str
     re_global: re.Pattern[str]
+    frame_pointers: bool
     # The first block in the linked list:
     _root: _Block = dataclasses.field(init=False, default_factory=_Block)
     _labels: dict[str, _Block] = dataclasses.field(init=False, default_factory=dict)
@@ -172,6 +185,7 @@ class Optimizer:
     )
     # Override everything that follows in subclasses:
     _supports_external_relocations = True
+    supports_small_constants = False
     _branches: typing.ClassVar[dict[str, tuple[str | None, str | None]]] = {}
     # Short branches are instructions that can branch within a micro-op,
     # but might not have the reach to branch anywhere within a trace.
@@ -179,11 +193,21 @@ class Optimizer:
     # Two groups (instruction and target):
     _re_branch: typing.ClassVar[re.Pattern[str]] = _RE_NEVER_MATCH
     # One group (target):
+    _re_call: typing.ClassVar[re.Pattern[str]] = _RE_NEVER_MATCH
+    # One group (target):
     _re_jump: typing.ClassVar[re.Pattern[str]] = _RE_NEVER_MATCH
     # No groups:
     _re_return: typing.ClassVar[re.Pattern[str]] = _RE_NEVER_MATCH
     text: str = ""
     globals: set[str] = dataclasses.field(default_factory=set)
+    _re_small_const_1 = _RE_NEVER_MATCH
+    _re_small_const_2 = _RE_NEVER_MATCH
+    _re_small_const_mask = _RE_NEVER_MATCH
+    _re_large_const_1 = _RE_NEVER_MATCH
+    _re_large_const_2 = _RE_NEVER_MATCH
+    const_reloc = "<Not supported>"
+    _frame_pointer_modify: typing.ClassVar[re.Pattern[str]] = _RE_NEVER_MATCH
+    label_index: int = 0
 
     def __post_init__(self) -> None:
         # Split the code into a linked list of basic blocks. A basic block is an
@@ -219,6 +243,11 @@ class Optimizer:
                 assert inst.target is not None
                 block.target = self._lookup_label(inst.target)
                 assert block.fallthrough
+            elif inst.kind == InstructionKind.CALL:
+                # A block ending in a call has a target and return point after call:
+                assert inst.target is not None
+                block.target = self._lookup_label(inst.target)
+                assert block.fallthrough
             elif inst.kind == InstructionKind.JUMP:
                 # A block ending in a jump has a target and no fallthrough:
                 assert inst.target is not None
@@ -239,6 +268,7 @@ class Optimizer:
 
     def _parse_instruction(self, line: str) -> Instruction:
         target = None
+        reg = None
         if match := self._re_branch.match(line):
             target = match["target"]
             name = match["instruction"]
@@ -250,13 +280,44 @@ class Optimizer:
             target = match["target"]
             name = line[: -len(target)].strip()
             kind = InstructionKind.JUMP
+        elif match := self._re_call.match(line):
+            target = match["target"]
+            name = line[: -len(target)].strip()
+            kind = InstructionKind.CALL
         elif match := self._re_return.match(line):
             name = line
             kind = InstructionKind.RETURN
+        elif match := self._re_small_const_1.match(line):
+            target = match["value"]
+            name = match["instruction"]
+            reg = match["register"]
+            kind = InstructionKind.SMALL_CONST_1
+        elif match := self._re_small_const_2.match(line):
+            target = match["value"]
+            name = match["instruction"]
+            reg = match["register"]
+            kind = InstructionKind.SMALL_CONST_2
+        elif match := self._re_small_const_mask.match(line):
+            target = match["value"]
+            name = match["instruction"]
+            reg = match["register"]
+            if reg.startswith("w"):
+                reg = "x" + reg[1:]
+            kind = InstructionKind.SMALL_CONST_MASK
+        elif match := self._re_large_const_1.match(line):
+            target = match["value"]
+            name = match["instruction"]
+            reg = match["register"]
+            kind = InstructionKind.LARGE_CONST_1
+        elif match := self._re_large_const_2.match(line):
+            target = match["value"]
+            name = match["instruction"]
+            reg = match["register"]
+            kind = InstructionKind.LARGE_CONST_2
         else:
             name, *_ = line.split(" ")
             kind = InstructionKind.OTHER
-        return Instruction(kind, name, line, target)
+        return Instruction(kind, name, line, reg, target)
 
     def _invert_branch(self, inst: Instruction, target: str) -> Instruction | None:
         assert inst.is_branch()
@@ -385,7 +446,7 @@ class Optimizer:
                 block.fallthrough = True
                 block.instructions.pop()
             # Before:
-            #    br ? FOO:
+            #    branch  FOO:
             #    ...
             #    FOO:
             #    jump BAR
@@ -449,6 +510,8 @@ class Optimizer:
         for index, block in enumerate(self._blocks()):
             if block.target and block.fallthrough:
                 branch = block.instructions[-1]
+                if branch.kind == InstructionKind.CALL:
+                    continue
                 assert branch.is_branch()
                 target = branch.target
                 assert target is not None
@@ -457,9 +520,23 @@ class Optimizer:
                     name = target[len(self.symbol_prefix) :]
                     label = f"{self.symbol_prefix}{reloc}_JIT_RELOCATION_{name}_JIT_RELOCATION_{index}:"
                     block.instructions[-1] = Instruction(
-                        InstructionKind.OTHER, "", label, None
+                        InstructionKind.OTHER, "", label, None, None
                     )
                     block.instructions.append(branch.update_target("0"))
+
+    def _fixup_constants(self) -> None:
+        "Fixup loading of constants. Overridden by OptimizerAArch64"
+        pass
+
+    def _validate(self) -> None:
+        for block in self._blocks():
+            if not block.instructions:
+                continue
+            for inst in block.instructions:
+                if self.frame_pointers:
+                    assert (
+                        self._frame_pointer_modify.match(inst.text) is None
+                    ), "Frame pointer should not be modified"
 
     def run(self) -> None:
         """Run this optimizer."""
@@ -472,6 +549,8 @@ class Optimizer:
             self._remove_redundant_jumps()
             self._remove_unreachable()
         self._fixup_external_labels()
+        self._fixup_constants()
+        self._validate()
         self.path.write_text(self._body())
 
 
@@ -487,10 +566,209 @@ class OptimizerAArch64(Optimizer):  # pylint: disable = too-few-public-methods
         rf"\s*(?P<instruction>{'|'.join(_branch_patterns)})\s+(.+,\s+)*(?P<target>[\w.]+)"
     )
 
+    # https://developer.arm.com/documentation/ddi0406/b/Application-Level-Architecture/Instruction-Details/Alphabetical-list-of-instructions/BL--BLX--immediate-
+    _re_call = re.compile(r"\s*blx?\s+(?P<target>[\w.]+)")
     # https://developer.arm.com/documentation/ddi0602/2025-03/Base-Instructions/B--Branch-
     _re_jump = re.compile(r"\s*b\s+(?P<target>[\w.]+)")
     # https://developer.arm.com/documentation/ddi0602/2025-09/Base-Instructions/RET--Return-from-subroutine-
     _re_return = re.compile(r"\s*ret\b")
+
+    supports_small_constants = True
+    _re_small_const_1 = re.compile(
+        r"\s*(?P<instruction>adrp)\s+(?P<register>x\d\d?),.*(?P<value>_JIT_OP(ARG|ERAND(0|1))_(16|32)).*"
+    )
+    _re_small_const_2 = re.compile(
+        r"\s*(?P<instruction>ldr)\s+(?P<register>x\d\d?),.*(?P<value>_JIT_OP(ARG|ERAND(0|1))_(16|32)).*"
+    )
+    _re_small_const_mask = re.compile(
+        r"\s*(?P<instruction>and)\s+[xw]\d\d?, *(?P<register>[xw]\d\d?).*(?P<value>0xffff)"
+    )
+    _re_large_const_1 = re.compile(
+        r"\s*(?P<instruction>adrp)\s+(?P<register>x\d\d?),.*:got:(?P<value>[_A-Za-z0-9]+).*"
+    )
+    _re_large_const_2 = re.compile(
+        r"\s*(?P<instruction>ldr)\s+(?P<register>x\d\d?),.*:got_lo12:(?P<value>[_A-Za-z0-9]+).*"
+    )
+    const_reloc = "CUSTOM_AARCH64_CONST"
+    _frame_pointer_modify = re.compile(r"\s*stp\s+x29.*")
+
+    def _make_temp_label(self, note: object = None) -> Instruction:
+        marker = f"jit_temp_{self.label_index}:"
+        if note is not None:
+            marker = f"{marker[:-1]}_{note}:"
+        self.label_index += 1
+        return Instruction(InstructionKind.OTHER, "", marker, None, None)
+
+    def _both_registers_same(self, inst: Instruction) -> bool:
+        reg = inst.register
+        assert reg is not None
+        if reg not in inst.text:
+            reg = "w" + reg[1:]
+        return inst.text.count(reg) == 2
+
+    def _fixup_small_constant_pair(
+        self, output: list[Instruction], label_index: int, inst: Instruction
+    ) -> str | None:
+        first = output[label_index + 1]
+        reg = first.register
+        if reg is None or inst.register != reg:
+            output.append(
+                Instruction(InstructionKind.OTHER, "", "# registers differ", None, None)
+            )
+            output.append(inst)
+            return None
+        assert first.target is not None
+        if first.target != inst.target:
+            output.append(
+                Instruction(InstructionKind.OTHER, "", "# targets differ", None, None)
+            )
+            output.append(inst)
+            return None
+        if not self._both_registers_same(inst):
+            output.append(
+                Instruction(
+                    InstructionKind.OTHER, "", "# not same register", None, None
+                )
+            )
+            output.append(inst)
+            return None
+        pre, _ = first.text.split(first.name)
+        output[label_index + 1] = Instruction(
+            InstructionKind.OTHER,
+            "movz",
+            f"{pre}movz {reg}, 0",
+            reg,
+            None,
+        )
+        label_text = f"{self.const_reloc}16a_JIT_RELOCATION_CONST{first.target[:-3]}_JIT_RELOCATION_{self.label_index}:"
+        self.label_index += 1
+        output[label_index] = Instruction(
+            InstructionKind.OTHER, "", label_text, None, None
+        )
+        assert first.target.endswith("16") or first.target.endswith("32")
+        if first.target.endswith("32"):
+            label_text = f"{self.const_reloc}16b_JIT_RELOCATION_CONST{first.target[:-3]}_JIT_RELOCATION_{self.label_index}:"
+            self.label_index += 1
+            output.append(
+                Instruction(InstructionKind.OTHER, "", label_text, None, None)
+            )
+            pre, _ = inst.text.split(inst.name)
+            output.append(
+                Instruction(
+                    InstructionKind.OTHER,
+                    "movk",
+                    f"{pre}movk {reg}, 0, lsl #16",
+                    reg,
+                    None,
+                )
+            )
+        return reg
+
+    def may_use_reg(self, inst: Instruction, reg: str | None) -> bool:
+        "Return False if `reg` is not explicitly used by this instruction"
+        if reg is None:
+            return False
+        assert reg.startswith("w") or reg.startswith("x")
+        xreg = f"x{reg[1:]}"
+        wreg = f"w{reg[1:]}"
+        if wreg in inst.text:
+            return True
+        if xreg in inst.text:
+            # Exclude false positives like 0x80 for x8
+            count = inst.text.count(xreg)
+            number_count = inst.text.count("0" + xreg)
+            return count > number_count
+        return False
+
+    def _fixup_large_constant_pair(
+        self, output: list[Instruction], label_index: int, inst: Instruction
+    ) -> None:
+        first = output[label_index + 1]
+        reg = first.register
+        if reg is None or inst.register != reg:
+            output.append(inst)
+            return
+        assert first.target is not None
+        if first.target != inst.target:
+            output.append(inst)
+            return
+        label = f"{self.const_reloc}33a_JIT_PAIR_{first.target}_JIT_PAIR_{self.label_index}:"
+        output[label_index] = Instruction(InstructionKind.OTHER, "", label, None, None)
+        label = (
+            f"{self.const_reloc}33b_JIT_PAIR_{inst.target}_JIT_PAIR_{self.label_index}:"
+        )
+        self.label_index += 1
+        output.append(Instruction(InstructionKind.OTHER, "", label, None, None))
+        output.append(inst)
+
+    def _fixup_mask(self, output: list[Instruction], inst: Instruction) -> None:
+        if self._both_registers_same(inst):
+            # Nop
+            pass
+        else:
+            output.append(inst)
+
+    def _fixup_constants(self) -> None:
+        for block in self._blocks():
+            fixed: list[Instruction] = []
+            small_const_part: dict[str, int | None] = {}
+            small_const_whole: dict[str, str | None] = {}
+            large_const_part: dict[str, int | None] = {}
+            for inst in block.instructions:
+                if inst.kind == InstructionKind.SMALL_CONST_1:
+                    assert inst.register is not None
+                    small_const_part[inst.register] = len(fixed)
+                    small_const_whole[inst.register] = None
+                    large_const_part[inst.register] = None
+                    fixed.append(self._make_temp_label(inst.register))
+                    fixed.append(inst)
+                elif inst.kind == InstructionKind.SMALL_CONST_2:
+                    assert inst.register is not None
+                    index = small_const_part.get(inst.register)
+                    small_const_part[inst.register] = None
+                    if index is None:
+                        fixed.append(inst)
+                        continue
+                    small_const_whole[inst.register] = self._fixup_small_constant_pair(
+                        fixed, index, inst
+                    )
+                    small_const_part[inst.register] = None
+                elif inst.kind == InstructionKind.SMALL_CONST_MASK:
+                    assert inst.register is not None
+                    reg = small_const_whole.get(inst.register)
+                    if reg is not None:
+                        self._fixup_mask(fixed, inst)
+                    else:
+                        fixed.append(inst)
+                elif inst.kind == InstructionKind.LARGE_CONST_1:
+                    assert inst.register is not None
+                    small_const_part[inst.register] = None
+                    small_const_whole[inst.register] = None
+                    large_const_part[inst.register] = len(fixed)
+                    fixed.append(self._make_temp_label())
+                    fixed.append(inst)
+                elif inst.kind == InstructionKind.LARGE_CONST_2:
+                    assert inst.register is not None
+                    small_const_part[inst.register] = None
+                    small_const_whole[inst.register] = None
+                    index = large_const_part.get(inst.register)
+                    large_const_part[inst.register] = None
+                    if index is None:
+                        fixed.append(inst)
+                        continue
+                    self._fixup_large_constant_pair(fixed, index, inst)
+                else:
+                    for reg in small_const_part:
+                        if self.may_use_reg(inst, reg):
+                            small_const_part[reg] = None
+                    for reg in small_const_whole:
+                        if self.may_use_reg(inst, reg):
+                            small_const_whole[reg] = None
+                    for reg in small_const_part:
+                        if self.may_use_reg(inst, reg):
+                            large_const_part[reg] = None
+                    fixed.append(inst)
+            block.instructions = fixed
 
 
 class OptimizerX86(Optimizer):  # pylint: disable = too-few-public-methods
@@ -501,7 +779,10 @@ class OptimizerX86(Optimizer):  # pylint: disable = too-few-public-methods
     _re_branch = re.compile(
         rf"\s*(?P<instruction>{'|'.join(_X86_BRANCHES)})\s+(?P<target>[\w.]+)"
     )
+    # https://www.felixcloutier.com/x86/call
+    _re_call = re.compile(r"\s*callq?\s+(?P<target>[\w.]+)")
     # https://www.felixcloutier.com/x86/jmp
     _re_jump = re.compile(r"\s*jmp\s+(?P<target>[\w.]+)")
     # https://www.felixcloutier.com/x86/ret
-    _re_return = re.compile(r"\s*ret\b")
+    _re_return = re.compile(r"\s*retq?\b")
+    _frame_pointer_modify = re.compile(r"\s*movq?\s+%(\w+),\s+%rbp.*")

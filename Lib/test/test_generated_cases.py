@@ -29,12 +29,13 @@ skip_if_different_mount_drives()
 
 test_tools.skip_if_missing("cases_generator")
 with test_tools.imports_under_tool("cases_generator"):
-    from analyzer import StackItem
+    from analyzer import StackItem, analyze_files
     from cwriter import CWriter
     import parser
     from stack import Local, Stack
     import tier1_generator
     import optimizer_generator
+    import record_function_generator
 
 
 def handle_stderr():
@@ -1890,6 +1891,260 @@ class TestGeneratedCases(unittest.TestCase):
         """
         self.run_cases_test(input, output)
 
+    def test_recording_after_specializing_with_cache(self):
+        input = """
+        specializing op(SPEC, (counter/1 --)) {
+            spam;
+        }
+
+        tier2 op(REC, (--)) {
+            RECORD_VALUE(0);
+        }
+
+        op(BODY, (--)) {
+            ham;
+        }
+
+        macro(OP) = SPEC + unused/2 + REC + BODY;
+        """
+        output = """
+        TARGET(OP) {
+            #if _Py_TAIL_CALL_INTERP
+            int opcode = OP;
+            (void)(opcode);
+            #endif
+            _Py_CODEUNIT* const this_instr = next_instr;
+            (void)this_instr;
+            frame->instr_ptr = next_instr;
+            next_instr += 4;
+            INSTRUCTION_STATS(OP);
+            // SPEC
+            {
+                uint16_t counter = read_u16(&this_instr[1].cache);
+                (void)counter;
+                spam;
+            }
+            /* Skip 2 cache entries */
+            // BODY
+            {
+                ham;
+            }
+            DISPATCH();
+        }
+        """
+        self.run_cases_test(input, output)
+
+    def test_recording_after_non_specializing(self):
+        input = """
+        op(REGULAR, (--)) {
+            spam;
+        }
+
+        tier2 op(REC, (--)) {
+            RECORD_VALUE(0);
+        }
+
+        macro(OP) = REGULAR + REC;
+        """
+        with self.assertRaisesRegex(SyntaxError, "Recording uop"):
+            self.run_cases_test(input, "")
+
+    def test_multiple_consecutive_recording_uops(self):
+        """Multiple consecutive recording uops at the start of a macro are legal."""
+        input = """
+        tier2 op(_RECORD_A, (a, b -- a, b)) {
+            RECORD_VALUE(a);
+        }
+        tier2 op(_RECORD_B, (a, b -- a, b)) {
+            RECORD_VALUE(b);
+        }
+        op(_DO_STUFF, (a, b -- res)) {
+            res = a;
+            INPUTS_DEAD();
+        }
+        macro(OP) = _RECORD_A + _RECORD_B + _DO_STUFF;
+        """
+        output = """
+        TARGET(OP) {
+            #if _Py_TAIL_CALL_INTERP
+            int opcode = OP;
+            (void)(opcode);
+            #endif
+            frame->instr_ptr = next_instr;
+            next_instr += 1;
+            INSTRUCTION_STATS(OP);
+            _PyStackRef a;
+            _PyStackRef res;
+            // _DO_STUFF
+            {
+                a = stack_pointer[-2];
+                res = a;
+            }
+            stack_pointer[-2] = res;
+            stack_pointer += -1;
+            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+            DISPATCH();
+        }
+        """
+        self.run_cases_test(input, output)
+
+    def test_multiple_recording_uops_after_specializing(self):
+        """Multiple recording uops after a specializing uop are legal."""
+        input = """
+        specializing op(_SPECIALIZE_OP, (counter/1, a, b -- a, b)) {
+            SPAM();
+        }
+        tier2 op(_RECORD_A, (a, b -- a, b)) {
+            RECORD_VALUE(a);
+        }
+        tier2 op(_RECORD_B, (a, b -- a, b)) {
+            RECORD_VALUE(b);
+        }
+        op(_DO_STUFF, (a, b -- res)) {
+            res = a;
+            INPUTS_DEAD();
+        }
+        macro(OP) = _SPECIALIZE_OP + _RECORD_A + _RECORD_B + unused/2 + _DO_STUFF;
+        """
+        output = """
+        TARGET(OP) {
+            #if _Py_TAIL_CALL_INTERP
+            int opcode = OP;
+            (void)(opcode);
+            #endif
+            _Py_CODEUNIT* const this_instr = next_instr;
+            (void)this_instr;
+            frame->instr_ptr = next_instr;
+            next_instr += 4;
+            INSTRUCTION_STATS(OP);
+            _PyStackRef a;
+            _PyStackRef res;
+            // _SPECIALIZE_OP
+            {
+                uint16_t counter = read_u16(&this_instr[1].cache);
+                (void)counter;
+                SPAM();
+            }
+            /* Skip 2 cache entries */
+            // _DO_STUFF
+            {
+                a = stack_pointer[-2];
+                res = a;
+            }
+            stack_pointer[-2] = res;
+            stack_pointer += -1;
+            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+            DISPATCH();
+        }
+        """
+        self.run_cases_test(input, output)
+
+    def test_recording_uop_between_real_uops_rejected(self):
+        """A recording uop sandwiched between real uops is rejected."""
+        input = """
+        tier2 op(_RECORD_A, (a, b -- a, b)) {
+            RECORD_VALUE(a);
+        }
+        op(_FIRST, (a, b -- a, b)) {
+            first(a);
+        }
+        tier2 op(_RECORD_B, (a, b -- a, b)) {
+            RECORD_VALUE(b);
+        }
+        macro(OP) = _RECORD_A + _FIRST + _RECORD_B;
+        """
+        with self.assertRaisesRegex(SyntaxError,
+                                    "must precede all "
+                                    "non-recording, non-specializing uops"):
+            self.run_cases_test(input, "")
+
+
+class TestRecorderTableGeneration(unittest.TestCase):
+
+    def setUp(self) -> None:
+        super().setUp()
+        self.maxDiff = None
+        self.temp_dir = tempfile.gettempdir()
+        self.temp_input_filename = os.path.join(self.temp_dir, "input.txt")
+
+    def tearDown(self) -> None:
+        try:
+            os.remove(self.temp_input_filename)
+        except FileNotFoundError:
+            pass
+        super().tearDown()
+
+    def generate_tables(self, input: str) -> str:
+        import io
+        with open(self.temp_input_filename, "w+") as f:
+            f.write(parser.BEGIN_MARKER)
+            f.write(input)
+            f.write(parser.END_MARKER)
+        with handle_stderr():
+            analysis = analyze_files([self.temp_input_filename])
+        buf = io.StringIO()
+        out = CWriter(buf, 0, False)
+        record_function_generator.generate_recorder_tables(analysis, out)
+        return buf.getvalue()
+
+    def test_single_recording_uop_generates_count(self):
+        input = """
+        tier2 op(_RECORD_TOS, (value -- value)) {
+            RECORD_VALUE(value);
+        }
+        op(_DO_STUFF, (value -- res)) {
+            res = value;
+        }
+        macro(OP) = _RECORD_TOS + _DO_STUFF;
+        """
+        output = self.generate_tables(input)
+        self.assertIn("_RECORD_TOS_INDEX", output)
+        self.assertIn("[OP] = {1, {_RECORD_TOS_INDEX}}", output)
+
+    def test_three_recording_uops_generate_count_3_in_order(self):
+        input = """
+        tier2 op(_RECORD_X, (a, b, c -- a, b, c)) {
+            RECORD_VALUE(a);
+        }
+        tier2 op(_RECORD_Y, (a, b, c -- a, b, c)) {
+            RECORD_VALUE(b);
+        }
+        tier2 op(_RECORD_Z, (a, b, c -- a, b, c)) {
+            RECORD_VALUE(c);
+        }
+        op(_DO_STUFF, (a, b, c -- res)) {
+            res = a;
+        }
+        macro(OP) = _RECORD_X + _RECORD_Y + _RECORD_Z + _DO_STUFF;
+        """
+        output = self.generate_tables(input)
+        self.assertIn(
+            "[OP] = {3, {_RECORD_X_INDEX, _RECORD_Y_INDEX, _RECORD_Z_INDEX}}",
+            output,
+        )
+
+    def test_four_recording_uops_rejected(self):
+        input = """
+        tier2 op(_RECORD_A, (a, b, c, d -- a, b, c, d)) {
+            RECORD_VALUE(a);
+        }
+        tier2 op(_RECORD_B, (a, b, c, d -- a, b, c, d)) {
+            RECORD_VALUE(b);
+        }
+        tier2 op(_RECORD_C, (a, b, c, d -- a, b, c, d)) {
+            RECORD_VALUE(c);
+        }
+        tier2 op(_RECORD_D, (a, b, c, d -- a, b, c, d)) {
+            RECORD_VALUE(d);
+        }
+        op(_DO_STUFF, (a, b, c, d -- res)) {
+            res = a;
+        }
+        macro(OP) = _RECORD_A + _RECORD_B + _RECORD_C + _RECORD_D + _DO_STUFF;
+        """
+        with self.assertRaisesRegex(ValueError, "exceeds MAX_RECORDED_VALUES"):
+            self.generate_tables(input)
+
 
 class TestGeneratedAbstractCases(unittest.TestCase):
     def setUp(self) -> None:
@@ -2238,7 +2493,7 @@ class TestGeneratedAbstractCases(unittest.TestCase):
         """
         input2 = """
         op(OP, (foo -- res)) {
-            REPLACE_OPCODE_IF_EVALUATES_PURE(foo);
+            REPLACE_OPCODE_IF_EVALUATES_PURE(foo, res);
             res = sym_new_known(ctx, foo);
         }
         """
@@ -2278,7 +2533,7 @@ class TestGeneratedAbstractCases(unittest.TestCase):
         """
         input2 = """
         op(OP, (foo -- res)) {
-            REPLACE_OPCODE_IF_EVALUATES_PURE(foo);
+            REPLACE_OPCODE_IF_EVALUATES_PURE(foo, res);
             res = foo;
         }
         """
@@ -2322,7 +2577,7 @@ class TestGeneratedAbstractCases(unittest.TestCase):
         """
         input2 = """
         op(OP, (foo -- res)) {
-            REPLACE_OPCODE_IF_EVALUATES_PURE(foo);
+            REPLACE_OPCODE_IF_EVALUATES_PURE(foo, res);
             res = foo;
         }
         """
@@ -2368,7 +2623,7 @@ class TestGeneratedAbstractCases(unittest.TestCase):
         """
         input2 = """
         op(OP, (foo -- res)) {
-            REPLACE_OPCODE_IF_EVALUATES_PURE(foo);
+            REPLACE_OPCODE_IF_EVALUATES_PURE(foo, res);
             res = sym_new_known(ctx, foo);
         }
         """
@@ -2415,7 +2670,7 @@ class TestGeneratedAbstractCases(unittest.TestCase):
         """
         input2 = """
         op(OP, (foo -- res)) {
-            REPLACE_OPCODE_IF_EVALUATES_PURE(foo);
+            REPLACE_OPCODE_IF_EVALUATES_PURE(foo, res);
             res = sym_new_known(ctx, foo);
         }
         """
@@ -2449,6 +2704,172 @@ class TestGeneratedAbstractCases(unittest.TestCase):
         """
         self.run_cases_test(input, input2, output)
 
+    def test_replace_opcode_binop_one_output(self):
+        input = """
+        pure op(OP, (left, right -- res)) {
+            res = foo(left, right);
+        }
+        """
+        input2 = """
+        op(OP, (left, right -- res)) {
+            res = sym_new_non_null(ctx, foo);
+            REPLACE_OPCODE_IF_EVALUATES_PURE(left, right, res);
+        }
+        """
+        output = """
+        case OP: {
+            JitOptRef right;
+            JitOptRef left;
+            JitOptRef res;
+            right = stack_pointer[-1];
+            left = stack_pointer[-2];
+            res = sym_new_non_null(ctx, foo);
+            if (
+                sym_is_safe_const(ctx, left) &&
+                sym_is_safe_const(ctx, right)
+            ) {
+                JitOptRef left_sym = left;
+                JitOptRef right_sym = right;
+                _PyStackRef left = sym_get_const_as_stackref(ctx, left_sym);
+                _PyStackRef right = sym_get_const_as_stackref(ctx, right_sym);
+                _PyStackRef res_stackref;
+                /* Start of uop copied from bytecodes for constant evaluation */
+                res_stackref = foo(left, right);
+                /* End of uop copied from bytecodes for constant evaluation */
+                res = sym_new_const_steal(ctx, PyStackRef_AsPyObjectSteal(res_stackref));
+                CHECK_STACK_BOUNDS(-1);
+                stack_pointer[-2] = res;
+                stack_pointer += -1;
+                ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+                break;
+            }
+            CHECK_STACK_BOUNDS(-1);
+            stack_pointer[-2] = res;
+            stack_pointer += -1;
+            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+            break;
+        }
+        """
+        self.run_cases_test(input, input2, output)
+
+    def test_replace_opcode_binop_one_output_insert(self):
+        input = """
+        pure op(OP, (left, right -- res, l, r)) {
+            res = foo(left, right);
+            l = left;
+            r = right;
+        }
+        """
+        input2 = """
+        op(OP, (left, right -- res, l, r)) {
+            res = sym_new_non_null(ctx, foo);
+            l = left;
+            r = right;
+            REPLACE_OPCODE_IF_EVALUATES_PURE(left, right, res);
+        }
+        """
+        output = """
+        case OP: {
+            JitOptRef right;
+            JitOptRef left;
+            JitOptRef res;
+            JitOptRef l;
+            JitOptRef r;
+            right = stack_pointer[-1];
+            left = stack_pointer[-2];
+            res = sym_new_non_null(ctx, foo);
+            l = left;
+            r = right;
+            if (
+                sym_is_safe_const(ctx, left) &&
+                sym_is_safe_const(ctx, right)
+            ) {
+                JitOptRef left_sym = left;
+                JitOptRef right_sym = right;
+                _PyStackRef left = sym_get_const_as_stackref(ctx, left_sym);
+                _PyStackRef right = sym_get_const_as_stackref(ctx, right_sym);
+                _PyStackRef res_stackref;
+                _PyStackRef l_stackref;
+                _PyStackRef r_stackref;
+                /* Start of uop copied from bytecodes for constant evaluation */
+                res_stackref = foo(left, right);
+                l_stackref = left;
+                r_stackref = right;
+                /* End of uop copied from bytecodes for constant evaluation */
+                (void)l_stackref;
+                (void)r_stackref;
+                res = sym_new_const_steal(ctx, PyStackRef_AsPyObjectSteal(res_stackref));
+                CHECK_STACK_BOUNDS(1);
+                stack_pointer[-2] = res;
+                stack_pointer[-1] = l;
+                stack_pointer[0] = r;
+                stack_pointer += 1;
+                ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+                break;
+            }
+            CHECK_STACK_BOUNDS(1);
+            stack_pointer[-2] = res;
+            stack_pointer[-1] = l;
+            stack_pointer[0] = r;
+            stack_pointer += 1;
+            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+            break;
+        }
+        """
+        self.run_cases_test(input, input2, output)
+
+    def test_replace_opcode_unaryop_one_output_insert(self):
+        input = """
+        pure op(OP, (left -- res, l)) {
+            res = foo(left);
+            l = left;
+        }
+        """
+        input2 = """
+        op(OP, (left -- res, l)) {
+            res = sym_new_non_null(ctx, foo);
+            l = left;
+            REPLACE_OPCODE_IF_EVALUATES_PURE(left, res);
+        }
+        """
+        output = """
+        case OP: {
+            JitOptRef left;
+            JitOptRef res;
+            JitOptRef l;
+            left = stack_pointer[-1];
+            res = sym_new_non_null(ctx, foo);
+            l = left;
+            if (
+                sym_is_safe_const(ctx, left)
+            ) {
+                JitOptRef left_sym = left;
+                _PyStackRef left = sym_get_const_as_stackref(ctx, left_sym);
+                _PyStackRef res_stackref;
+                _PyStackRef l_stackref;
+                /* Start of uop copied from bytecodes for constant evaluation */
+                res_stackref = foo(left);
+                l_stackref = left;
+                /* End of uop copied from bytecodes for constant evaluation */
+                (void)l_stackref;
+                res = sym_new_const_steal(ctx, PyStackRef_AsPyObjectSteal(res_stackref));
+                CHECK_STACK_BOUNDS(1);
+                stack_pointer[-1] = res;
+                stack_pointer[0] = l;
+                stack_pointer += 1;
+                ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+                break;
+            }
+            CHECK_STACK_BOUNDS(1);
+            stack_pointer[-1] = res;
+            stack_pointer[0] = l;
+            stack_pointer += 1;
+            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+            break;
+        }
+        """
+        self.run_cases_test(input, input2, output)
+
     def test_replace_opocode_uop_reject_array_effects(self):
         input = """
         pure op(OP, (foo[2] -- res)) {
@@ -2462,7 +2883,7 @@ class TestGeneratedAbstractCases(unittest.TestCase):
         """
         input2 = """
         op(OP, (foo[2] -- res)) {
-            REPLACE_OPCODE_IF_EVALUATES_PURE(foo);
+            REPLACE_OPCODE_IF_EVALUATES_PURE(foo, res);
             res = sym_new_unknown(ctx);
         }
         """
@@ -2471,6 +2892,31 @@ class TestGeneratedAbstractCases(unittest.TestCase):
         with self.assertRaisesRegex(SyntaxError,
                                     "Pure evaluation cannot take array-like inputs"):
             self.run_cases_test(input, input2, output)
+
+    def test_overridden_abstract_with_multiple_caches(self):
+        input = """
+        op(OP, (version/1, unused/1, index/1, value -- res)) {
+            res = SPAM(version, index, value);
+        }
+        """
+        input2 = """
+        op(OP, (value -- res)) {
+            res = eggs(version, index, value);
+        }
+        """
+        output = """
+        case OP: {
+            JitOptRef value;
+            JitOptRef res;
+            value = stack_pointer[-1];
+            uint16_t version = (uint16_t)this_instr->operand0;
+            uint16_t index = (uint16_t)this_instr->operand1;
+            res = eggs(version, index, value);
+            stack_pointer[-1] = res;
+            break;
+        }
+        """
+        self.run_cases_test(input, input2, output)
 
 if __name__ == "__main__":
     unittest.main()

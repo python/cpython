@@ -194,18 +194,18 @@ write_bytes_lock_held(bytesio *self, PyObject *b)
 {
     _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(self);
 
-    if (check_closed(self)) {
-        return -1;
-    }
-    if (check_exports(self)) {
-        return -1;
-    }
-
     Py_buffer buf;
+    Py_ssize_t len;
     if (PyObject_GetBuffer(b, &buf, PyBUF_CONTIG_RO) < 0) {
         return -1;
     }
-    Py_ssize_t len = buf.len;
+
+    if (check_closed(self) || check_exports(self)) {
+        len = -1;
+        goto done;
+    }
+
+    len = buf.len;
     if (len == 0) {
         goto done;
     }

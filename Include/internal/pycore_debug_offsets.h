@@ -110,7 +110,14 @@ typedef struct _Py_DebugOffsets {
         uint64_t status;
         uint64_t holds_gil;
         uint64_t gil_requested;
+        uint64_t current_exception;
+        uint64_t exc_state;
     } thread_state;
+
+    // Exception stack item offset
+    struct {
+        uint64_t exc_value;
+    } err_stackitem;
 
     // InterpreterFrame offset;
     struct _interpreter_frame {
@@ -215,6 +222,8 @@ typedef struct _Py_DebugOffsets {
         uint64_t size;
         uint64_t collecting;
         uint64_t frame;
+        uint64_t generation_stats_size;
+        uint64_t generation_stats;
     } gc;
 
     // Generator object offset;
@@ -282,6 +291,11 @@ typedef struct _Py_DebugOffsets {
         .status = offsetof(PyThreadState, _status), \
         .holds_gil = offsetof(PyThreadState, holds_gil), \
         .gil_requested = offsetof(PyThreadState, gil_requested), \
+        .current_exception = offsetof(PyThreadState, current_exception), \
+        .exc_state = offsetof(PyThreadState, exc_state), \
+    }, \
+    .err_stackitem = { \
+        .exc_value = offsetof(_PyErr_StackItem, exc_value), \
     }, \
     .interpreter_frame = { \
         .size = sizeof(_PyInterpreterFrame), \
@@ -361,6 +375,8 @@ typedef struct _Py_DebugOffsets {
         .size = sizeof(struct _gc_runtime_state), \
         .collecting = offsetof(struct _gc_runtime_state, collecting), \
         .frame = offsetof(struct _gc_runtime_state, frame), \
+        .generation_stats_size = sizeof(struct gc_stats), \
+        .generation_stats = offsetof(struct _gc_runtime_state, generation_stats), \
     }, \
     .gen_object = { \
         .size = sizeof(PyGenObject), \

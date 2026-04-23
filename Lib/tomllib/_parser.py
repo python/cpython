@@ -18,39 +18,40 @@ from ._re import (
 TYPE_CHECKING = False
 if TYPE_CHECKING:
     from collections.abc import Iterable
-    from typing import IO, Any
+    from typing import IO, Any, Final
 
     from ._types import Key, ParseFloat, Pos
 
-ASCII_CTRL = frozenset(chr(i) for i in range(32)) | frozenset(chr(127))
+ASCII_CTRL: Final = frozenset(chr(i) for i in range(32)) | frozenset(chr(127))
 
 # Neither of these sets include quotation mark or backslash. They are
 # currently handled as separate cases in the parser functions.
-ILLEGAL_BASIC_STR_CHARS = ASCII_CTRL - frozenset("\t")
-ILLEGAL_MULTILINE_BASIC_STR_CHARS = ASCII_CTRL - frozenset("\t\n")
+ILLEGAL_BASIC_STR_CHARS: Final = ASCII_CTRL - frozenset("\t")
+ILLEGAL_MULTILINE_BASIC_STR_CHARS: Final = ASCII_CTRL - frozenset("\t\n")
 
-ILLEGAL_LITERAL_STR_CHARS = ILLEGAL_BASIC_STR_CHARS
-ILLEGAL_MULTILINE_LITERAL_STR_CHARS = ILLEGAL_MULTILINE_BASIC_STR_CHARS
+ILLEGAL_LITERAL_STR_CHARS: Final = ILLEGAL_BASIC_STR_CHARS
+ILLEGAL_MULTILINE_LITERAL_STR_CHARS: Final = ILLEGAL_MULTILINE_BASIC_STR_CHARS
 
-ILLEGAL_COMMENT_CHARS = ILLEGAL_BASIC_STR_CHARS
+ILLEGAL_COMMENT_CHARS: Final = ILLEGAL_BASIC_STR_CHARS
 
-TOML_WS = frozenset(" \t")
-TOML_WS_AND_NEWLINE = TOML_WS | frozenset("\n")
-BARE_KEY_CHARS = frozenset(
+TOML_WS: Final = frozenset(" \t")
+TOML_WS_AND_NEWLINE: Final = TOML_WS | frozenset("\n")
+BARE_KEY_CHARS: Final = frozenset(
     "abcdefghijklmnopqrstuvwxyz" "ABCDEFGHIJKLMNOPQRSTUVWXYZ" "0123456789" "-_"
 )
-KEY_INITIAL_CHARS = BARE_KEY_CHARS | frozenset("\"'")
-HEXDIGIT_CHARS = frozenset("abcdef" "ABCDEF" "0123456789")
+KEY_INITIAL_CHARS: Final = BARE_KEY_CHARS | frozenset("\"'")
+HEXDIGIT_CHARS: Final = frozenset("abcdef" "ABCDEF" "0123456789")
 
-BASIC_STR_ESCAPE_REPLACEMENTS = MappingProxyType(
+BASIC_STR_ESCAPE_REPLACEMENTS: Final = MappingProxyType(
     {
         "\\b": "\u0008",  # backspace
         "\\t": "\u0009",  # tab
-        "\\n": "\u000A",  # linefeed
-        "\\f": "\u000C",  # form feed
-        "\\r": "\u000D",  # carriage return
+        "\\n": "\u000a",  # linefeed
+        "\\f": "\u000c",  # form feed
+        "\\r": "\u000d",  # carriage return
+        "\\e": "\u001b",  # escape
         '\\"': "\u0022",  # quote
-        "\\\\": "\u005C",  # backslash
+        "\\\\": "\u005c",  # backslash
     }
 )
 
@@ -133,7 +134,7 @@ def load(fp: IO[bytes], /, *, parse_float: ParseFloat = float) -> dict[str, Any]
     return loads(s, parse_float=parse_float)
 
 
-def loads(s: str, /, *, parse_float: ParseFloat = float) -> dict[str, Any]:  # noqa: C901
+def loads(s: str, /, *, parse_float: ParseFloat = float) -> dict[str, Any]:
     """Parse TOML from a string."""
 
     # The spec allows converting "\r\n" to "\n", even in string
@@ -208,10 +209,10 @@ class Flags:
     """Flags that map to parsed keys/namespaces."""
 
     # Marks an immutable namespace (inline array or inline table).
-    FROZEN = 0
+    FROZEN: Final = 0
     # Marks a nest that has been explicitly created and can no longer
     # be opened using the "[table]" syntax.
-    EXPLICIT_NEST = 1
+    EXPLICIT_NEST: Final = 1
 
     def __init__(self) -> None:
         self._flags: dict[str, dict[Any, Any]] = {}
@@ -257,8 +258,8 @@ class Flags:
             cont = inner_cont["nested"]
         key_stem = key[-1]
         if key_stem in cont:
-            cont = cont[key_stem]
-            return flag in cont["flags"] or flag in cont["recursive_flags"]
+            inner_cont = cont[key_stem]
+            return flag in inner_cont["flags"] or flag in inner_cont["recursive_flags"]
         return False
 
 
@@ -515,7 +516,7 @@ def parse_inline_table(src: str, pos: Pos, parse_float: ParseFloat) -> tuple[Pos
     nested_dict = NestedDict()
     flags = Flags()
 
-    pos = skip_chars(src, pos, TOML_WS)
+    pos = skip_comments_and_array_ws(src, pos)
     if src.startswith("}", pos):
         return pos + 1, nested_dict.dict
     while True:
@@ -530,16 +531,18 @@ def parse_inline_table(src: str, pos: Pos, parse_float: ParseFloat) -> tuple[Pos
         if key_stem in nest:
             raise TOMLDecodeError(f"Duplicate inline table key {key_stem!r}", src, pos)
         nest[key_stem] = value
-        pos = skip_chars(src, pos, TOML_WS)
+        pos = skip_comments_and_array_ws(src, pos)
         c = src[pos : pos + 1]
         if c == "}":
             return pos + 1, nested_dict.dict
         if c != ",":
             raise TOMLDecodeError("Unclosed inline table", src, pos)
+        pos += 1
+        pos = skip_comments_and_array_ws(src, pos)
+        if src.startswith("}", pos):
+            return pos + 1, nested_dict.dict
         if isinstance(value, (dict, list)):
             flags.set(key, Flags.FROZEN, recursive=True)
-        pos += 1
-        pos = skip_chars(src, pos, TOML_WS)
 
 
 def parse_basic_str_escape(
@@ -561,6 +564,8 @@ def parse_basic_str_escape(
             pos += 1
         pos = skip_chars(src, pos, TOML_WS_AND_NEWLINE)
         return pos, ""
+    if escape_id == "\\x":
+        return parse_hex_char(src, pos, 2)
     if escape_id == "\\u":
         return parse_hex_char(src, pos, 4)
     if escape_id == "\\U":
@@ -660,7 +665,7 @@ def parse_basic_str(src: str, pos: Pos, *, multiline: bool) -> tuple[Pos, str]:
         pos += 1
 
 
-def parse_value(  # noqa: C901
+def parse_value(
     src: str, pos: Pos, parse_float: ParseFloat
 ) -> tuple[Pos, Any]:
     try:

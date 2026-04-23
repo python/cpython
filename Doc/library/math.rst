@@ -720,7 +720,7 @@ Special functions
 Number-theoretic functions
 --------------------------
 
-For backward compatibility, the :mod:`math` module provides also aliases of
+For backward compatibility, the :mod:`!math` module provides also aliases of
 the following functions from the :mod:`math.integer` module:
 
 .. list-table::
@@ -781,9 +781,8 @@ the following functions from the :mod:`math.integer` module:
    Floats with integral values (like ``5.0``) are no longer accepted in the
    :func:`factorial` function.
 
-.. deprecated:: 3.15
-   These aliases are :term:`soft deprecated` in favor of the
-   :mod:`math.integer` functions.
+.. soft-deprecated:: 3.15
+   Use the :mod:`math.integer` functions instead of these aliases.
 
 
 Constants
@@ -846,7 +845,7 @@ Constants
 
 .. impl-detail::
 
-   The :mod:`math` module consists mostly of thin wrappers around the platform C
+   The :mod:`!math` module consists mostly of thin wrappers around the platform C
    math library functions.  Behavior in exceptional cases follows Annex F of
    the C99 standard where appropriate.  The current implementation will raise
    :exc:`ValueError` for invalid operations like ``sqrt(-1.0)`` or ``log(0.0)``

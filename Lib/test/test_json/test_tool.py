@@ -14,6 +14,7 @@ from _colorize import get_theme
 
 
 @support.requires_subprocess()
+@support.skip_if_pgo_task
 class TestMain(unittest.TestCase):
     data = """
 
@@ -328,6 +329,7 @@ class TestMain(unittest.TestCase):
 
 
 @support.requires_subprocess()
+@support.skip_if_pgo_task
 class TestTool(TestMain):
     module = 'json.tool'
 
