@@ -79,7 +79,7 @@ def run_make(
             ``subprocess.run`` with check=True.
     """
     if run_fn:
-        run_fn(*args, cwd=cwd, docker=False, kvm=kvm)
+        run_fn(*args, cwd=cwd, kvm=kvm)
     else:
         subprocess.run(args, cwd=cwd, check=True)
 
