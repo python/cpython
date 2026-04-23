@@ -641,7 +641,7 @@ class SysModuleTest(unittest.TestCase):
         self.assertIsInstance(sys.exec_prefix, str)
         self.assertIsInstance(sys.base_exec_prefix, str)
         self.assertIsInstance(sys.executable, str)
-        self.assertEqual(len(sys.float_info), 12)
+        self.assertEqual(len(sys.float_info), 11)
         self.assertEqual(sys.float_info.radix, 2)
         self.assertEqual(len(sys.int_info), 4)
         self.assertTrue(sys.int_info.bits_per_digit % 5 == 0)
@@ -1798,7 +1798,7 @@ class SizeofTest(unittest.TestCase):
         check((1,2,3), vsize('') + self.P + 3*self.P)
         # type
         # static type: PyTypeObject
-        fmt = 'P2nPI13Pl4Pn9Pn12PIPc'
+        fmt = 'P2nPI13Pl4Pn9Pn12PI2Pc'
         s = vsize(fmt)
         check(int, s)
         typeid = 'n' if support.Py_GIL_DISABLED else ''
