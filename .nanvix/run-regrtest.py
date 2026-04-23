@@ -20,7 +20,6 @@
 # Environment variables:
 #   NANVIX_TEST_LIST_FILE  - path to the test list file (default: test-list.txt)
 #   REGRTEST_TIMEOUT       - per-test timeout in seconds (default: 120)
-#   NANVIX_EXCLUDE_TESTS   - space-separated patterns passed to regrtest --ignore
 
 import os
 import sys
@@ -58,10 +57,6 @@ def main() -> int:
     # -- Build regrtest arguments ----------------------------------------------
     timeout = os.environ.get("REGRTEST_TIMEOUT", "120")
     args = [f"--timeout={timeout}"] + modules
-
-    excludes = os.environ.get("NANVIX_EXCLUDE_TESTS", "").split()
-    for pat in excludes:
-        args.extend(["-i", pat])
 
     # -- Run -------------------------------------------------------------------
     sys.argv[1:] = args

@@ -454,8 +454,6 @@ def run_regrtest(
     nanvixd_extra = nanvixd_extra or config.PLATFORM_NANVIXD_ARGS.get(platform, [])
     standalone = process_mode == "standalone"
 
-    print(f"Test: regrtest ({len(test_list)} modules, {process_mode})...")
-
     sysroot = staging / "sysroot"
     run_tests_script = repo_root / ".nanvix" / "run-tests.py"
 
@@ -472,7 +470,8 @@ def run_regrtest(
             extra_str += " " + " ".join(nanvixd_extra)
         env["NANVIXD_EXTRA_ARGS"] = extra_str
         env["NANVIX_STANDALONE"] = "1"
-        env["NANVIX_EXCLUDE_TESTS"] = " ".join(config.STANDALONE_EXCLUDE)
+        exclude_set = set(config.STANDALONE_EXCLUDE)
+        test_list = [m for m in test_list if m not in exclude_set]
     else:
         # Direct mode: host filesystem, no ramfs.
         if nanvixd_extra:
@@ -483,6 +482,7 @@ def run_regrtest(
 
     cmd = [sys.executable, str(run_tests_script)] + test_list
 
+    print(f"Test: regrtest ({len(test_list)} modules, {process_mode})...")
     result = subprocess.run(cmd, cwd=sysroot, env=env)
     if result.returncode != 0:
         raise RuntimeError(
