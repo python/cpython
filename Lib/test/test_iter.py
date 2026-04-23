@@ -129,7 +129,7 @@ class TestCase(unittest.TestCase):
         self.assertEqual(res, seq)
 
     # Helper to check picklability
-    # NSKIP001 https://github.com/nanvix/cpython/issues/371
+    # NSKIP001 https://github.com/nanvix/cpython/issues/469
     _nanvix_pickle_warned = False
     def check_pickle(self, itorg, seq):
         if support.is_nanvix:
@@ -209,7 +209,7 @@ class TestCase(unittest.TestCase):
     def test_seq_class_iter(self):
         self.check_iterator(iter(SequenceClass(10)), list(range(10)))
 
-    # NSKIP001 https://github.com/nanvix/cpython/issues/371
+    # NSKIP001 https://github.com/nanvix/cpython/issues/469
     @unittest.skipIf(support.is_nanvix, "NSKIP001: pickle corrupt on 32-bit")
     def test_mutating_seq_class_iter_pickle(self):
         orig = SequenceClass(5)

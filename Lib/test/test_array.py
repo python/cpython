@@ -271,7 +271,7 @@ class BaseTest:
         for protocol in range(3, pickle.HIGHEST_PROTOCOL + 1):
             self.assertIs(a.__reduce_ex__(protocol)[0], array_reconstructor)
 
-    # NSKIP001 https://github.com/nanvix/cpython/issues/371
+    # NSKIP001 https://github.com/nanvix/cpython/issues/469
     @unittest.skipIf(support.is_nanvix, "NSKIP001: pickle corrupt on 32-bit")
     def test_pickle(self):
         for protocol in range(pickle.HIGHEST_PROTOCOL + 1):
@@ -288,7 +288,7 @@ class BaseTest:
             self.assertEqual(a.x, b.x)
             self.assertEqual(type(a), type(b))
 
-    # NSKIP001 https://github.com/nanvix/cpython/issues/371
+    # NSKIP001 https://github.com/nanvix/cpython/issues/469
     @unittest.skipIf(support.is_nanvix, "NSKIP001: pickle corrupt on 32-bit")
     def test_pickle_for_empty_array(self):
         for protocol in range(pickle.HIGHEST_PROTOCOL + 1):
@@ -305,7 +305,7 @@ class BaseTest:
             self.assertEqual(a.x, b.x)
             self.assertEqual(type(a), type(b))
 
-    # NSKIP001 https://github.com/nanvix/cpython/issues/371
+    # NSKIP001 https://github.com/nanvix/cpython/issues/469
     @unittest.skipIf(support.is_nanvix, "NSKIP001: pickle corrupt on 32-bit")
     def test_iterator_pickle(self):
         orig = array.array(self.typecode, self.example)
@@ -361,7 +361,7 @@ class BaseTest:
         self.assertEqual(list(a), list(self.example))
         self.assertEqual(list(reversed(a)), list(iter(a))[::-1])
 
-    # NSKIP001 https://github.com/nanvix/cpython/issues/371
+    # NSKIP001 https://github.com/nanvix/cpython/issues/469
     @unittest.skipIf(support.is_nanvix, "NSKIP001: pickle corrupt on 32-bit")
     def test_reverse_iterator_picking(self):
         orig = array.array(self.typecode, self.example)
@@ -452,7 +452,7 @@ class BaseTest:
             array.array(self.typecode, self.example + self.example[:1])
         )
 
-    # NSKIP008 https://github.com/nanvix/cpython/issues/371
+    # NSKIP008 https://github.com/nanvix/cpython/issues/476
     @unittest.skipIf(support.is_nanvix, "NSKIP008: tempfile names garbled")
     def test_tofromfile(self):
         a = array.array(self.typecode, 2*self.example)
@@ -476,7 +476,7 @@ class BaseTest:
                 f.close()
             os_helper.unlink(os_helper.TESTFN)
 
-    # NSKIP008 https://github.com/nanvix/cpython/issues/371
+    # NSKIP008 https://github.com/nanvix/cpython/issues/476
     @unittest.skipIf(support.is_nanvix, "NSKIP008: tempfile names garbled")
     def test_fromfile_ioerror(self):
         # Issue #5395: Check if fromfile raises a proper OSError
@@ -489,7 +489,7 @@ class BaseTest:
             f.close()
             os_helper.unlink(os_helper.TESTFN)
 
-    # NSKIP008 https://github.com/nanvix/cpython/issues/371
+    # NSKIP008 https://github.com/nanvix/cpython/issues/476
     @unittest.skipIf(support.is_nanvix, "NSKIP008: tempfile names garbled")
     def test_filewrite(self):
         a = array.array(self.typecode, 2*self.example)

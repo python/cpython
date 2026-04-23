@@ -225,7 +225,7 @@ class TestJointOps:
         self.assertFalse(set('a').issubset('cbs'))
         self.assertFalse(set('cbs').issuperset('a'))
 
-    # NSKIP001 https://github.com/nanvix/cpython/issues/371
+    # NSKIP001 https://github.com/nanvix/cpython/issues/469
     @unittest.skipIf(support.is_nanvix, "NSKIP001: pickle corrupt on 32-bit")
     def test_pickling(self):
         for i in range(pickle.HIGHEST_PROTOCOL + 1):
@@ -241,7 +241,7 @@ class TestJointOps:
                 self.assertFalse(hasattr(self.s, 'y'))
                 del self.s.x, self.s.z
 
-    # NSKIP001 https://github.com/nanvix/cpython/issues/371
+    # NSKIP001 https://github.com/nanvix/cpython/issues/469
     @unittest.skipIf(support.is_nanvix, "NSKIP001: pickle corrupt on 32-bit")
     def test_iterator_pickling(self):
         for proto in range(pickle.HIGHEST_PROTOCOL + 1):
@@ -927,7 +927,7 @@ class TestBasicOps:
         setiter = iter(self.set)
         self.assertEqual(setiter.__length_hint__(), len(self.set))
 
-    # NSKIP001 https://github.com/nanvix/cpython/issues/371
+    # NSKIP001 https://github.com/nanvix/cpython/issues/469
     @unittest.skipIf(support.is_nanvix, "NSKIP001: pickle corrupt on 32-bit")
     def test_pickling(self):
         for proto in range(pickle.HIGHEST_PROTOCOL + 1):

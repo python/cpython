@@ -2120,8 +2120,8 @@ class CoroutineTest(unittest.TestCase):
         finally:
             aw.close()
 
-    # NSKIP013 https://github.com/nanvix/cpython/issues/371
-    @unittest.skipIf(support.is_nanvix, "NSKIP013: event loop interferes with coro warning in standalone")
+    # NSKIP017 https://github.com/nanvix/cpython/issues/485
+    @unittest.skipIf(support.is_nanvix, "NSKIP017: event loop interferes with coro warning in standalone")
     def test_fatal_coro_warning(self):
         # Issue 27811
         async def func(): pass
@@ -2255,7 +2255,7 @@ class CoroutineTest(unittest.TestCase):
     support.is_emscripten or support.is_wasi,
     "asyncio does not work under Emscripten/WASI yet."
 )
-# NSKIP014 https://github.com/nanvix/cpython/issues/371
+# NSKIP014 https://github.com/nanvix/cpython/issues/482
 @unittest.skipIf(support.is_nanvix, "NSKIP014: asyncio needs poll/selectors, unavailable in standalone")
 class CoroAsyncIOCompatTest(unittest.TestCase):
 
@@ -2448,7 +2448,7 @@ class UnawaitedWarningDuringShutdownTest(unittest.TestCase):
         assert_python_ok("-c", code)
 
 
-# NSKIP002 https://github.com/nanvix/cpython/issues/371
+# NSKIP002 https://github.com/nanvix/cpython/issues/470
 @unittest.skipIf(support.is_nanvix, "NSKIP002: _testcapi not available")
 @support.cpython_only
 class CAPITest(unittest.TestCase):

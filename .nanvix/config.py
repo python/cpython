@@ -193,9 +193,9 @@ DEFAULT_TEST_BATCH_SIZE = 4
 
 # Per-mode test exclusions (passed to regrtest --ignore).
 STANDALONE_EXCLUDE: list[str] = [
-    "test_queue",      # NSKIP015: OOM (thread stacks exhaust 32MB standalone heap)
-    "test_itertools",  # NSKIP015: OOM (large test data exhaust 32MB standalone heap)
-    "test_functools",  # NSKIP015: OOM (large test data exhaust 32MB standalone heap)
+    "test_queue",      # NSKIP019: standalone 32 MB heap too small for module
+    "test_itertools",  # NSKIP019: standalone 32 MB heap too small for module
+    "test_functools",  # NSKIP019: standalone 32 MB heap too small for module
 ]
 
 # Platform-specific nanvixd extra arguments.

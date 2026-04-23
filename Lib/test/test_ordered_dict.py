@@ -321,7 +321,7 @@ class OrderedDictTests:
         self.assertIsNot(dup.z, od.z)
         self.assertFalse(hasattr(dup, 'y'))
         # pickle directly pulls the module, so we have to fake it
-        # NSKIP001 https://github.com/nanvix/cpython/issues/371
+        # NSKIP001 https://github.com/nanvix/cpython/issues/469
         if not support.is_nanvix:
             with replaced_module('collections', self.module):
                 for proto in range(pickle.HIGHEST_PROTOCOL + 1):
@@ -358,7 +358,7 @@ class OrderedDictTests:
         self.assertEqual(od.__dict__['x'], 10)
         self.assertEqual(od.__reduce__()[2], {'x': 10})
 
-    # NSKIP001 https://github.com/nanvix/cpython/issues/371
+    # NSKIP001 https://github.com/nanvix/cpython/issues/469
     @unittest.skipIf(support.is_nanvix, "NSKIP001: pickle corrupt on 32-bit")
     def test_pickle_recursive(self):
         OrderedDict = self.OrderedDict
@@ -825,7 +825,7 @@ class CPythonOrderedDictTests(OrderedDictTests, unittest.TestCase):
                 del od['c']
         self.assertEqual(list(od), list('bdeaf'))
 
-    # NSKIP001 https://github.com/nanvix/cpython/issues/371
+    # NSKIP001 https://github.com/nanvix/cpython/issues/469
     @unittest.skipIf(support.is_nanvix, "NSKIP001: pickle corrupt on 32-bit")
     def test_iterators_pickling(self):
         OrderedDict = self.OrderedDict

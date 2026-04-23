@@ -123,7 +123,7 @@ class TestChainMap(unittest.TestCase):
                 self.assertIs(m1, m2)
 
         # check deep copies
-        # NSKIP001 https://github.com/nanvix/cpython/issues/371
+        # NSKIP001 https://github.com/nanvix/cpython/issues/469
         if not support.is_nanvix:
             for proto in range(pickle.HIGHEST_PROTOCOL + 1):
                 e = pickle.loads(pickle.dumps(d, proto))
@@ -568,7 +568,7 @@ class TestNamedTuple(unittest.TestCase):
         self.assertEqual(b2, tuple(b2_expected))
         self.assertEqual(b._fields, tuple(names))
 
-    # NSKIP001 https://github.com/nanvix/cpython/issues/371
+    # NSKIP001 https://github.com/nanvix/cpython/issues/469
     @unittest.skipIf(support.is_nanvix, "NSKIP001: pickle corrupt on 32-bit")
     def test_pickle(self):
         p = TestNT(x=10, y=20, z=30)
@@ -689,7 +689,7 @@ class TestNamedTuple(unittest.TestCase):
         self.assertRaises(AttributeError, Point.x.__set__, p, 33)
         self.assertRaises(AttributeError, Point.x.__delete__, p)
 
-        # NSKIP001 https://github.com/nanvix/cpython/issues/371
+        # NSKIP001 https://github.com/nanvix/cpython/issues/469
         if not support.is_nanvix:
             for proto in range(pickle.HIGHEST_PROTOCOL + 1):
                 with self.subTest(proto=proto):
@@ -2221,7 +2221,7 @@ class TestCounter(unittest.TestCase):
         check(words.copy())
         check(copy.copy(words))
         check(copy.deepcopy(words))
-        # NSKIP001 https://github.com/nanvix/cpython/issues/371
+        # NSKIP001 https://github.com/nanvix/cpython/issues/469
         if not support.is_nanvix:
             for proto in range(pickle.HIGHEST_PROTOCOL + 1):
                 with self.subTest(proto=proto):
