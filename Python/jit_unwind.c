@@ -36,6 +36,7 @@
 enum {
     DWRF_CFA_nop = 0x0,                    // No operation
     DWRF_CFA_offset_extended = 0x5,        // Extended offset instruction
+    DWRF_CFA_register = 0x9,               // Register contains saved value
     DWRF_CFA_def_cfa = 0xc,               // Define CFA rule
     DWRF_CFA_def_cfa_register = 0xd,      // Define CFA register
     DWRF_CFA_def_cfa_offset = 0xe,        // Define CFA offset
@@ -74,6 +75,7 @@ enum {
     DWRF_REG_RA,    // Return address (RIP)
 #elif defined(__aarch64__) && defined(__AARCH64EL__) && !defined(__ILP32__)
     /* AArch64 register numbering */
+    DWRF_REG_JIT_RA = 28,  // Reserved x28 holds the return PC into _PyJIT_Entry
     DWRF_REG_FP = 29,  // Frame Pointer
     DWRF_REG_RA = 30,  // Link register (return address)
     DWRF_REG_SP = 31,  // Stack pointer
@@ -99,7 +101,6 @@ typedef struct ELFObjectContext {
     uint8_t* fde_p;        // Start of FDE data (for PC-relative calculations)
     uintptr_t code_addr;   // Address of the code section
     size_t code_size;      // Size of the code section
-    const _PyJitUnwind_ShimCfi* shim_cfi;  // GDB emitter: NULL => executor
 } ELFObjectContext;
 
 // =============================================================================
@@ -185,7 +186,6 @@ static void elfctx_append_uleb128(ELFObjectContext* ctx, uint32_t v) {
 #define DWRF_UV(x) (ctx->p = p, elfctx_append_uleb128(ctx, (x)), p = ctx->p) // Write ULEB128
 #define DWRF_SV(x) (ctx->p = p, elfctx_append_sleb128(ctx, (x)), p = ctx->p) // Write SLEB128
 #define DWRF_STR(str) (ctx->p = p, elfctx_append_string(ctx, (str)), p = ctx->p) // Write string
-#define DWRF_BYTES(buf, len) (memcpy(p, (buf), (len)), p += (len))                // Splice in raw bytes
 
 /* Align to specified boundary with NOP instructions */
 #define DWRF_ALIGNNOP(s)                                          \
@@ -219,8 +219,7 @@ static inline void elf_init_ehframe(ELFObjectContext* ctx, int absolute_addr) {
 }
 
 size_t
-_PyJitUnwind_EhFrameSize(int absolute_addr,
-                         const _PyJitUnwind_ShimCfi *shim_cfi)
+_PyJitUnwind_EhFrameSize(int absolute_addr)
 {
     /* The .eh_frame we emit is small and bounded; keep a generous buffer. */
     uint8_t scratch[512];
@@ -231,7 +230,6 @@ _PyJitUnwind_EhFrameSize(int absolute_addr,
     ctx.code_addr = 0;
     ctx.startp = ctx.p = scratch;
     ctx.fde_p = NULL;
-    ctx.shim_cfi = shim_cfi;
     /* Generate once into scratch to learn the required size. */
     elf_init_ehframe(&ctx, absolute_addr);
     ptrdiff_t size = ctx.p - ctx.startp;
@@ -242,14 +240,13 @@ _PyJitUnwind_EhFrameSize(int absolute_addr,
 size_t
 _PyJitUnwind_BuildEhFrame(uint8_t *buffer, size_t buffer_size,
                         const void *code_addr, size_t code_size,
-                        int absolute_addr,
-                        const _PyJitUnwind_ShimCfi *shim_cfi)
+                        int absolute_addr)
 {
     if (buffer == NULL || code_addr == NULL || code_size == 0) {
         return 0;
     }
     /* Generate the frame twice: once to size-check, once to write. */
-    size_t required = _PyJitUnwind_EhFrameSize(absolute_addr, shim_cfi);
+    size_t required = _PyJitUnwind_EhFrameSize(absolute_addr);
     if (required == 0 || required > buffer_size) {
         return 0;
     }
@@ -258,7 +255,6 @@ _PyJitUnwind_BuildEhFrame(uint8_t *buffer, size_t buffer_size,
     ctx.code_addr = (uintptr_t)code_addr;
     ctx.startp = ctx.p = buffer;
     ctx.fde_p = NULL;
-    ctx.shim_cfi = shim_cfi;
     elf_init_ehframe(&ctx, absolute_addr);
     size_t written = (size_t)(ctx.p - ctx.startp);
     /* The frame size is independent of code_addr/code_size (fixed-width fields). */
@@ -620,73 +616,54 @@ static void elf_init_ehframe_perf(ELFObjectContext* ctx) {
 /*
  * Build .eh_frame data for the GDB JIT interface.
  *
- * Two region kinds share the same ELF layout but diverge on CFI source:
+ * The CIE's initial CFI hard-codes the steady-state frame layout for the
+ * executor region:
  *
- * - Executor (shim_cfi == NULL). The CIE's initial CFI hard-codes the
- *   pinned-frame-pointer steady state (CFA = %rbp+16 / x29+96 with the
- *   frame record saved there). Executor stencils never touch the frame
- *   pointer — enforced by Tools/jit/_optimizers.py _validate() and
- *   -mframe-pointer=reserved — so that rule is valid at every PC and
- *   the FDE body is empty.
+ *   x86_64:  CFA = %rbp + 16, return-to-_PyJIT_Entry PC at cfa-72
+ *   AArch64: CFA = x29 + 96, return-to-_PyJIT_Entry PC in reserved x28
  *
- * - Shim (shim_cfi != NULL). Tools/jit captures the shim's compiled
- *   .eh_frame at build time; we splice the CIE-initial-CFI and FDE-CFI
- *   byte blobs into a freshly-built ELF with our chosen (absolute) FDE
- *   pointer encoding. Whatever prologue clang emits is described
- *   accurately, regardless of target or flags.
+ * Executor stencils never touch the frame pointer — enforced by
+ * Tools/jit/_optimizers.py _validate() and -mframe-pointer=reserved — so
+ * that rule is valid at every PC and the FDE body is empty. On AArch64,
+ * _START_EXECUTOR copies the entry x30 into reserved x28 once and the
+ * executor stencils preserve x28 thereafter.
  */
 static void elf_init_ehframe_gdb(ELFObjectContext* ctx) {
     int fde_ptr_enc = DWRF_EH_PE_absptr;
     uint8_t* p = ctx->p;
     uint8_t* framep = p;
-    const _PyJitUnwind_ShimCfi* shim = ctx->shim_cfi;
 
     DWRF_SECTION(CIE,
         DWRF_U32(0);                          // CIE ID
         DWRF_U8(DWRF_CIE_VERSION);
         DWRF_STR("zR");                       // aug data length + FDE ptr encoding follow
-        if (shim != NULL) {
-            DWRF_UV(shim->code_align);
-            DWRF_SV(shim->data_align);
-            DWRF_U8(shim->ra_column);
-        }
-        else {
 #ifdef __x86_64__
-            DWRF_UV(1);                       // x86_64: 1 byte per instruction
+        DWRF_UV(1);                           // x86_64: 1 byte per instruction
 #elif defined(__aarch64__) && defined(__AARCH64EL__) && !defined(__ILP32__)
-            DWRF_UV(4);                       // AArch64: 4 bytes per instruction
+        DWRF_UV(4);                           // AArch64: 4 bytes per instruction
 #endif
-            DWRF_SV(-(int64_t)sizeof(uintptr_t));
-            DWRF_U8(DWRF_REG_RA);
-        }
+        DWRF_SV(-(int64_t)sizeof(uintptr_t));
+        DWRF_U8(DWRF_REG_RA);
         DWRF_UV(1);                           // Augmentation data length
         DWRF_U8(fde_ptr_enc);                 // FDE pointer encoding
 
-        if (shim != NULL) {
-            DWRF_BYTES(shim->cie_init_cfi, shim->cie_init_cfi_size);
-        }
-        else {
-            /* Executor steady-state rule (our invariant, not the compiler's). */
+        /* Executor steady-state rule (our invariant, not the compiler's). */
 #ifdef __x86_64__
-            DWRF_U8(DWRF_CFA_def_cfa);        // CFA = %rbp + 16
-            DWRF_UV(DWRF_REG_BP);
-            DWRF_UV(16);
-            DWRF_U8(DWRF_CFA_offset | DWRF_REG_RA);
-            DWRF_UV(1);
-            DWRF_U8(DWRF_CFA_offset | DWRF_REG_BP);
-            DWRF_UV(2);
+        DWRF_U8(DWRF_CFA_def_cfa);            // CFA = %rbp + 16
+        DWRF_UV(DWRF_REG_BP);
+        DWRF_UV(16);
+        DWRF_U8(DWRF_CFA_offset | DWRF_REG_RA);
+        DWRF_UV(9);                           // return-to-_PyJIT_Entry at cfa-72
 #elif defined(__aarch64__) && defined(__AARCH64EL__) && !defined(__ILP32__)
-            DWRF_U8(DWRF_CFA_def_cfa);        // CFA = x29 + 96
-            DWRF_UV(DWRF_REG_FP);
-            DWRF_UV(96);
-            DWRF_U8(DWRF_CFA_offset | DWRF_REG_FP);
-            DWRF_UV(12);                      // saved x29 at cfa-96
-            DWRF_U8(DWRF_CFA_offset | DWRF_REG_RA);
-            DWRF_UV(11);                      // x30 at cfa-88
+        DWRF_U8(DWRF_CFA_def_cfa);            // CFA = x29 + 96
+        DWRF_UV(DWRF_REG_FP);
+        DWRF_UV(96);
+        DWRF_U8(DWRF_CFA_register);           // Return PC lives in reserved x28
+        DWRF_UV(DWRF_REG_RA);
+        DWRF_UV(DWRF_REG_JIT_RA);
 #else
 #    error "Unsupported target architecture"
 #endif
-        }
         DWRF_ALIGNNOP(sizeof(uintptr_t));
     )
 
@@ -695,9 +672,6 @@ static void elf_init_ehframe_gdb(ELFObjectContext* ctx) {
         DWRF_ADDR(ctx->code_addr);            // Absolute code start
         DWRF_ADDR((uintptr_t)ctx->code_size); // Code range covered
         DWRF_U8(0);                           // Augmentation data length (none)
-        if (shim != NULL) {
-            DWRF_BYTES(shim->fde_cfi, shim->fde_cfi_size);
-        }
         DWRF_ALIGNNOP(sizeof(uintptr_t));
     )
 
@@ -939,8 +913,7 @@ void *
 _PyJitUnwind_GdbRegisterCode(const void *code_addr,
                              size_t code_size,
                              const char *entry,
-                             const char *filename,
-                             const _PyJitUnwind_ShimCfi *shim_cfi)
+                             const char *filename)
 {
 #if defined(__linux__) && defined(__ELF__)
     /* GDB expects a stable symbol name and absolute addresses in .eh_frame. */
@@ -959,7 +932,7 @@ _PyJitUnwind_GdbRegisterCode(const void *code_addr,
 
     uint8_t buffer[1024];
     size_t eh_frame_size = _PyJitUnwind_BuildEhFrame(
-        buffer, sizeof(buffer), code_addr, code_size, 1, shim_cfi);
+        buffer, sizeof(buffer), code_addr, code_size, 1);
     if (eh_frame_size == 0) {
         PyMem_RawFree(name);
         return NULL;
@@ -974,7 +947,6 @@ _PyJitUnwind_GdbRegisterCode(const void *code_addr,
     (void)code_size;
     (void)entry;
     (void)filename;
-    (void)shim_cfi;
     return NULL;
 #endif
 }

@@ -22444,6 +22444,9 @@
             #ifndef _Py_JIT
             assert(current_executor == (_PyExecutorObject*)executor);
             #endif
+            _PyFrame_SetStackPointer(frame, stack_pointer);
+            _Py_JIT_CAPTURE_CALLER_PC();
+            stack_pointer = _PyFrame_GetStackPointer(frame);
             assert(tstate->jit_exit == NULL || tstate->jit_exit->executor == current_executor);
             tstate->current_executor = (PyObject *)current_executor;
             if (!current_executor->vm_data.valid) {
@@ -22458,6 +22461,9 @@
                     JUMP_TO_JUMP_TARGET();
                 }
             }
+            _tos_cache0 = PyStackRef_ZERO_BITS;
+            _tos_cache1 = PyStackRef_ZERO_BITS;
+            _tos_cache2 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(0);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;

@@ -12,7 +12,6 @@ import tempfile
 import typing
 import shlex
 
-import _eh_frame
 import _llvm
 import _optimizers
 import _schema
@@ -201,6 +200,10 @@ class _Target(typing.Generic[_S, _R]):
         ]
         if self.frame_pointers:
             args_s += ["-Xclang", "-mframe-pointer=reserved"]
+            if self.triple.startswith("aarch64-"):
+                # Keep x28 free so _START_EXECUTOR can stash the return-to-_PyJIT_Entry
+                # PC there for a single executor-wide unwind rule.
+                args_s += ["-ffixed-x28"]
         args_s += self._compile_args()
         # Allow user-provided CFLAGS to override any defaults
         args_s += shlex.split(self.cflags)
@@ -455,7 +458,6 @@ class _ELF(
         self, section: _schema.ELFSection, group: _stencils.StencilGroup
     ) -> None:
         section_type = section["Type"]["Name"]
-        section_name = section["Name"]["Name"]
         flags = {flag["Name"] for flag in section["Flags"]["Flags"]}
         if section_type == "SHT_RELA":
             assert "SHF_INFO_LINK" in flags, flags
@@ -474,15 +476,6 @@ class _ELF(
                 relocation = wrapped_relocation["Relocation"]
                 hole = self._handle_relocation(base, relocation, stencil.body)
                 stencil.holes.append(hole)
-        elif section_name == ".eh_frame":
-            if "SHF_ALLOC" not in flags:
-                return
-            # LLVM 21 emits x86_64 .eh_frame as SHT_X86_64_UNWIND.
-            assert section_type in {"SHT_PROGBITS", "SHT_X86_64_UNWIND"}, (
-                section_type
-            )
-            group.shim_cfi = _eh_frame.parse(bytes(section["SectionData"]["Bytes"]))
-            return
         elif section_type == "SHT_PROGBITS":
             if "SHF_ALLOC" not in flags:
                 return

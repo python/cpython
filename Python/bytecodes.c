@@ -6118,6 +6118,11 @@ dummy_func(
 #ifndef _Py_JIT
             assert(current_executor == (_PyExecutorObject*)executor);
 #endif
+            // Keep the return-to-_PyJIT_Entry PC in a reserved
+            // callee-saved register so the executor-wide GDB FDE can
+            // always materialize _PyJIT_Entry as the immediate caller
+            // frame.
+            _Py_JIT_CAPTURE_CALLER_PC();
             assert(tstate->jit_exit == NULL || tstate->jit_exit->executor == current_executor);
             tstate->current_executor = (PyObject *)current_executor;
             if (!current_executor->vm_data.valid) {

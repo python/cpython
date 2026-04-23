@@ -6,38 +6,6 @@ import math
 import _stencils
 
 
-def _byte_rows(blob: bytes, per_row: int) -> typing.Iterator[str]:
-    for i in range(0, len(blob), per_row):
-        yield " ".join(f"{b:#04x}," for b in blob[i : i + per_row])
-
-
-def _dump_shim_cfi(group: _stencils.StencilGroup) -> typing.Iterator[str]:
-    # Only ELF objects carry a .eh_frame we can capture; on Mach-O and
-    # COFF the unwind info lives in different sections (and the GDB JIT
-    # interface this feeds is Linux+ELF-only anyway — see the #ifdef in
-    # Python/jit.c jit_record_code()). Custom CFLAGS may also suppress
-    # the shim's .eh_frame even on Linux+ELF, so always emit a feature
-    # guard before any optional symbol definitions.
-    cfi = group.shim_cfi
-    if cfi is None:
-        yield "#define _Py_JIT_HAS_SHIM_CFI 0"
-        yield ""
-        return
-    yield "#define _Py_JIT_HAS_SHIM_CFI 1"
-    for name, blob in (
-        ("_Py_jit_shim_cie_init_cfi", cfi.cie_init_cfi),
-        ("_Py_jit_shim_fde_cfi",      cfi.fde_cfi),
-    ):
-        yield f"static const uint8_t {name}[{len(blob)}] = {{"
-        for row in _byte_rows(blob, per_row=12):
-            yield f"    {row}"
-        yield "};"
-    yield f"#define _Py_jit_shim_code_align {cfi.code_align}"
-    yield f"#define _Py_jit_shim_data_align {cfi.data_align}"
-    yield f"#define _Py_jit_shim_ra_column  {cfi.ra_column}"
-    yield ""
-
-
 def _dump_footer(
     groups: dict[str, _stencils.StencilGroup], symbols: dict[str, int]
 ) -> typing.Iterator[str]:
@@ -80,7 +48,8 @@ def _dump_stencil(opname: str, group: _stencils.StencilGroup) -> typing.Iterator
         stripped = stencil.body.rstrip(b"\x00")
         if stripped:
             yield f"    const unsigned char {part}_body[{len(stencil.body)}] = {{"
-            for row in _byte_rows(stripped, per_row=8):
+            for i in range(0, len(stripped), 8):
+                row = " ".join(f"{byte:#04x}," for byte in stripped[i : i + 8])
                 yield f"        {row}"
             yield "    };"
     # Data is written first (so relaxations in the code work properly):

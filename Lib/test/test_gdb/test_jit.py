@@ -9,17 +9,13 @@ from .util import setup_module, DebuggerTests
 
 JIT_SAMPLE_SCRIPT = os.path.join(os.path.dirname(__file__), "gdb_jit_sample.py")
 # In batch GDB, break in builtin_id() while it is running under JIT,
-# then repeatedly "finish" until the selected frame is the JIT entry.
-# That gives a deterministic backtrace starting with py::jit_entry:<jit>.
+# then repeatedly "finish" until the selected frame is the JIT executor.
+# That gives a deterministic backtrace starting with py::jit:executor.
 #
 # builtin_id() sits only a few helper frames above the JIT entry on this path.
 # This bound is just a generous upper limit so the test fails clearly if the
 # expected stack shape changes.
 MAX_FINISH_STEPS = 20
-# Break directly on the lazy shim entry in the binary, then single-step just
-# enough to let it install the compiled JIT entry and set a temporary
-# breakpoint on the resulting address.
-MAX_ENTRY_SETUP_STEPS = 20
 # After landing on the JIT entry frame, single-step a bounded number of
 # instructions further into the blob so the backtrace is taken from JIT code
 # itself rather than the immediate helper-return site. The exact number of
@@ -28,11 +24,13 @@ MAX_ENTRY_SETUP_STEPS = 20
 # JIT region, instead of asserting against a misleading backtrace.
 MAX_JIT_ENTRY_STEPS = 4
 EVAL_FRAME_RE = r"(_PyEval_EvalFrameDefault|_PyEval_Vector)"
+JIT_ENTRY_RE = r"_PyJIT_Entry"
+JIT_EXECUTOR_FRAME = "py::jit:executor"
 BACKTRACE_FRAME_RE = re.compile(r"^#\d+\s+.*$", re.MULTILINE)
 
-FINISH_TO_JIT_ENTRY = (
+FINISH_TO_JIT_EXECUTOR = (
     "python exec(\"import gdb\\n"
-    "target = 'py::jit_entry:<jit>'\\n"
+    f"target = {JIT_EXECUTOR_FRAME!r}\\n"
     f"for _ in range({MAX_FINISH_STEPS}):\\n"
     "    frame = gdb.selected_frame()\\n"
     "    if frame is not None and frame.name() == target:\\n"
@@ -41,21 +39,9 @@ FINISH_TO_JIT_ENTRY = (
     "else:\\n"
     "    raise RuntimeError('did not reach %s' % target)\\n\")"
 )
-BREAK_IN_COMPILED_JIT_ENTRY = (
+STEP_INSIDE_JIT_EXECUTOR = (
     "python exec(\"import gdb\\n"
-    "lazy = int(gdb.parse_and_eval('(void*)_Py_LazyJitShim'))\\n"
-    f"for _ in range({MAX_ENTRY_SETUP_STEPS}):\\n"
-    "    entry = int(gdb.parse_and_eval('(void*)_Py_jit_entry'))\\n"
-    "    if entry != lazy:\\n"
-    "        gdb.execute('tbreak *0x%x' % entry)\\n"
-    "        break\\n"
-    "    gdb.execute('next')\\n"
-    "else:\\n"
-    "    raise RuntimeError('compiled JIT entry was not installed')\\n\")"
-)
-STEP_INSIDE_JIT_ENTRY = (
-    "python exec(\"import gdb\\n"
-    "target = 'py::jit_entry:<jit>'\\n"
+    f"target = {JIT_EXECUTOR_FRAME!r}\\n"
     f"for _ in range({MAX_JIT_ENTRY_STEPS}):\\n"
     "    frame = gdb.selected_frame()\\n"
     "    if frame is None or frame.name() != target:\\n"
@@ -103,10 +89,12 @@ class JitBacktraceTests(DebuggerTests):
     def _assert_jit_backtrace_shape(self, gdb_output, *, anchor_at_top):
         # Shape assertions applied to every JIT backtrace we produce:
         #   1. The synthetic JIT symbol appears exactly once. A second
-        #      py::jit_entry:<jit> frame would mean the unwinder is
+        #      py::jit:executor frame would mean the unwinder is
         #      materializing two native frames for a single logical JIT
         #      region, or failing to unwind out of the region entirely.
-        #   2. At least one _PyEval_EvalFrameDefault / _PyEval_Vector
+        #   2. The linked shim frame appears exactly once after the
+        #      synthetic JIT frame and before the eval loop.
+        #   3. At least one _PyEval_EvalFrameDefault / _PyEval_Vector
         #      frame appears after the JIT frame, proving the unwinder
         #      climbs back out of the JIT region into the eval loop.
         #      Helper frames from inside the JITted region may still
@@ -116,11 +104,18 @@ class JitBacktraceTests(DebuggerTests):
         frames = self._extract_backtrace_frames(gdb_output)
         backtrace = "\n".join(frames)
 
-        jit_frames = [frame for frame in frames if "py::jit_entry:<jit>" in frame]
+        jit_frames = [frame for frame in frames if JIT_EXECUTOR_FRAME in frame]
         jit_count = len(jit_frames)
         self.assertEqual(
             jit_count, 1,
-            f"expected exactly 1 py::jit_entry:<jit> frame, got {jit_count}\n"
+            f"expected exactly 1 {JIT_EXECUTOR_FRAME} frame, got {jit_count}\n"
+            f"backtrace:\n{backtrace}",
+        )
+        jit_entry_frames = [frame for frame in frames if re.search(JIT_ENTRY_RE, frame)]
+        jit_entry_count = len(jit_entry_frames)
+        self.assertEqual(
+            jit_entry_count, 1,
+            f"expected exactly 1 _PyJIT_Entry frame, got {jit_entry_count}\n"
             f"backtrace:\n{backtrace}",
         )
         eval_frames = [frame for frame in frames if re.search(EVAL_FRAME_RE, frame)]
@@ -131,7 +126,15 @@ class JitBacktraceTests(DebuggerTests):
             f"backtrace:\n{backtrace}",
         )
         jit_frame_index = next(
-            i for i, frame in enumerate(frames) if "py::jit_entry:<jit>" in frame
+            i for i, frame in enumerate(frames) if JIT_EXECUTOR_FRAME in frame
+        )
+        jit_entry_index = next(
+            i for i, frame in enumerate(frames) if re.search(JIT_ENTRY_RE, frame)
+        )
+        self.assertGreater(
+            jit_entry_index, jit_frame_index,
+            "expected _PyJIT_Entry after the synthetic JIT frame\n"
+            f"backtrace:\n{backtrace}",
         )
         eval_after_jit = any(
             re.search(EVAL_FRAME_RE, frame)
@@ -142,10 +145,23 @@ class JitBacktraceTests(DebuggerTests):
             f"expected an eval frame after the JIT frame\n"
             f"backtrace:\n{backtrace}",
         )
+        eval_after_entry = any(
+            re.search(EVAL_FRAME_RE, frame)
+            for frame in frames[jit_entry_index + 1:]
+        )
+        self.assertTrue(
+            eval_after_entry,
+            "expected an eval frame after _PyJIT_Entry\n"
+            f"backtrace:\n{backtrace}",
+        )
         relevant_end = max(
             i
             for i, frame in enumerate(frames)
-            if "py::jit_entry:<jit>" in frame or re.search(EVAL_FRAME_RE, frame)
+            if (
+                JIT_EXECUTOR_FRAME in frame
+                or re.search(JIT_ENTRY_RE, frame)
+                or re.search(EVAL_FRAME_RE, frame)
+            )
         )
         truncated_frames = [
             frame for frame in frames[: relevant_end + 1]
@@ -159,24 +175,8 @@ class JitBacktraceTests(DebuggerTests):
         if anchor_at_top:
             self.assertRegex(
                 frames[0],
-                re.compile(r"^#0\s+py::jit_entry:<jit>"),
+                re.compile(rf"^#0\s+{re.escape(JIT_EXECUTOR_FRAME)}"),
             )
-
-    def test_bt_shows_compiled_jit_entry(self):
-        gdb_output = self.get_stack_trace(
-            script=JIT_SAMPLE_SCRIPT,
-            breakpoint="_Py_LazyJitShim",
-            cmds_after_breakpoint=[
-                BREAK_IN_COMPILED_JIT_ENTRY,
-                "continue",
-                "bt",
-            ],
-            PYTHON_JIT="1",
-        )
-        # GDB registers the compiled JIT entry and per-trace JIT regions under
-        # the same synthetic symbol name; breaking at the entry PC pins the
-        # JIT frame at #0.
-        self._assert_jit_backtrace_shape(gdb_output, anchor_at_top=True)
 
     def test_bt_unwinds_through_jit_frames(self):
         gdb_output = self.get_stack_trace(
@@ -185,20 +185,19 @@ class JitBacktraceTests(DebuggerTests):
             PYTHON_JIT="1",
         )
         # The executor should appear as a named JIT frame and unwind back into
-        # the eval loop. Whether GDB also materializes a separate shim frame is
-        # an implementation detail of the synthetic executor CFI.
+        # the eval loop.
         self._assert_jit_backtrace_shape(gdb_output, anchor_at_top=False)
 
-    def test_bt_unwinds_from_inside_jit_entry(self):
+    def test_bt_unwinds_from_inside_jit_executor(self):
         gdb_output = self.get_stack_trace(
             script=JIT_SAMPLE_SCRIPT,
             cmds_after_breakpoint=[
-                FINISH_TO_JIT_ENTRY,
-                STEP_INSIDE_JIT_ENTRY,
+                FINISH_TO_JIT_EXECUTOR,
+                STEP_INSIDE_JIT_EXECUTOR,
                 "bt",
             ],
             PYTHON_JIT="1",
         )
-        # Once the selected PC is inside the JIT entry, we require that GDB
+        # Once the selected PC is inside the JIT executor, we require that GDB
         # identifies the JIT frame at #0 and keeps unwinding into _PyEval_*.
         self._assert_jit_backtrace_shape(gdb_output, anchor_at_top=True)

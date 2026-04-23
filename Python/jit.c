@@ -63,8 +63,7 @@ jit_error(const char *message)
 
 static void *
 jit_record_code(const void *code_addr, size_t code_size,
-                const char *entry, const char *filename,
-                const _PyJitUnwind_ShimCfi *shim_cfi)
+                const char *entry, const char *filename)
 {
 #ifdef PY_HAVE_PERF_TRAMPOLINE
     _PyPerf_Callbacks callbacks;
@@ -78,19 +77,15 @@ jit_record_code(const void *code_addr, size_t code_size,
 
 #if defined(__linux__) && defined(__ELF__)
     return _PyJitUnwind_GdbRegisterCode(
-        code_addr, code_size, entry, filename, shim_cfi);
+        code_addr, code_size, entry, filename);
 #else
     (void)code_addr;
     (void)code_size;
     (void)entry;
     (void)filename;
-    (void)shim_cfi;
     return NULL;
 #endif
 }
-
-static size_t _Py_jit_shim_size = 0;
-static void *_Py_jit_shim_gdb_handle = NULL;
 
 static int
 address_in_executor_array(_PyExecutorObject **ptrs, size_t count, uintptr_t addr)
@@ -749,9 +744,8 @@ _PyJIT_Compile(_PyExecutorObject *executor, const _PyUOpInstruction trace[], siz
     executor->jit_size = total_size;
     executor->jit_gdb_handle = jit_record_code(memory,
                     code_size + state.trampolines.size,
-                    "jit_entry",
-                    "<jit>",
-                    /*shim_cfi=*/NULL);
+                    "jit",
+                    "executor");
     return 0;
 }
 
