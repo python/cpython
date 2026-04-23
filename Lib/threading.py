@@ -849,8 +849,8 @@ class BrokenBarrierError(RuntimeError):
 class serialize:
     """Wrap a non-concurrent iterator with a lock to enforce sequential access.
 
-    Applies a non-reentrant lock around calls to __next__, allowing
-    iterator and generator instances to be shared by multiple consumer
+    Applies a non-reentrant lock around calls to __next__, send, throw, and close.
+    Allows iterator and generator instances to be shared by multiple consumer
     threads.
     """
 
@@ -866,6 +866,30 @@ class serialize:
     def __next__(self):
         with self.lock:
             return next(self.iterator)
+
+    def send(self, value, /):
+        """Send a value to a generator.
+
+        Raises AttributeError if not a generator.
+        """
+        with self.lock:
+            return self.iterator.send(value)
+
+    def throw(self, *args):
+        """Call throw() on a generator.
+
+        Raises AttributeError if not a generator.
+        """
+        with self.lock:
+            return self.iterator.throw(*args)
+
+    def close(self):
+        """Call close() on a generator.
+
+        Raises AttributeError if not a generator.
+        """
+        with self.lock:
+            return self.iterator.close()
 
 
 def synchronized(func):

@@ -1461,7 +1461,9 @@ of the derived iterators.
 .. class:: serialize(iterable)
 
    Return an iterator wrapper that serializes concurrent calls to
-   :meth:`~iterator.__next__` using a lock.
+   :meth:`~iterator.__next__` using a lock.  For generators, will also
+   serialize calls to :meth:`~generator.send`, :meth:`~generator.throw`,
+   and :meth:`~generator.close`.
 
    This makes it possible to share a single iterator, including a generator
    iterator, between multiple threads. A lock assures that calls are handled
