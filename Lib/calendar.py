@@ -30,7 +30,7 @@ error = ValueError
 # Exceptions raised for bad input
 # This is trick for backward compatibility. Since 3.13, we will raise IllegalMonthError instead of
 # IndexError for bad month number(out of 1-12). But we can't remove IndexError for backward compatibility.
-class IllegalMonthError(ValueError, IndexError):
+class IllegalMonthError(ValueError):
     def __init__(self, month):
         self.month = month
     def __str__(self):

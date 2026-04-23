@@ -667,5 +667,4 @@ Resources
 .. [#] The paper *A Monotonic Superclass Linearization for Dylan*:
        https://doi.org/10.1145/236337.236343
 
-.. [#] Guido van Rossum's essay, *Unifying types and classes in Python 2.2*:
-       https://web.archive.org/web/20140210194412/http://www.python.org/download/releases/2.2.2/descrintro
+.. [#] Guido van Rossum's essay, *Unifying types and classes in Python 2.2*
