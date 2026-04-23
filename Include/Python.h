@@ -9,10 +9,11 @@
 // is not needed.
 
 
-// Include Python header files
-#include "patchlevel.h"
-#include "pyconfig.h"
-#include "pymacconfig.h"
+// Include Python configuration headers
+#include "patchlevel.h"     // the Python version
+#include "pyconfig.h"       // information from configure
+#include "pymacconfig.h"    // overrides for pyconfig
+#include "pyabi.h"          // feature/ABI selection
 
 
 // Include standard header files
@@ -46,13 +47,11 @@
 #  endif
 #endif
 
-#if defined(Py_GIL_DISABLED)
-#  if defined(_MSC_VER)
-#    include <intrin.h>             // __readgsqword()
-#  endif
-
-#  if defined(__MINGW32__)
-#    include <intrin.h>             // __readgsqword()
+#if !defined(Py_LIMITED_API)
+#  if defined(Py_GIL_DISABLED)
+#    if defined(_MSC_VER) || defined(__MINGW32__)
+#      include <intrin.h>             // __readgsqword()
+#    endif
 #  endif
 #endif // Py_GIL_DISABLED
 
@@ -67,6 +66,7 @@ __pragma(warning(disable: 4201))
 
 // Include Python header files
 #include "pyport.h"
+#include "exports.h"
 #include "pymacro.h"
 #include "pymath.h"
 #include "pymem.h"
