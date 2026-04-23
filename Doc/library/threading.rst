@@ -1441,22 +1441,22 @@ Currently, :class:`Lock`, :class:`RLock`, :class:`Condition`,
 Iterator synchronization
 ------------------------
 
-By default, Python iterators do not support concurrent use. Most iterators make
+By default, Python iterators do not support concurrent access. Most iterators make
 no guarantees when accessed simultaneously from multiple threads. Generator
 iterators, for example, raise :exc:`ValueError` if one of their iterator methods
 is called while the generator is already executing. The tools in this section
 allow reliable concurrency support to be added to ordinary iterators and
 iterator-producing callables.
 
-Use :class:`serialize` when multiple threads should share a single iterator and
+The :class:`serialize` wrapper lets multiple threads share a single iterator and
 take turns consuming from it. While one thread is running ``__next__()``, the
 others block until the iterator becomes available. Each value produced by the
 underlying iterator is delivered to exactly one caller.
 
-Use :func:`concurrent_tee` when multiple threads should each receive the full
+The :func:`concurrent_tee` function lets multiple threads each receive the full
 stream of values from one underlying iterator. It creates independent iterators
-that all draw from the same source. Values are buffered until every derived
-iterator has received them.
+that all draw from the same source. Values are buffered until consumed by all
+of the derived iterators.
 
 .. class:: serialize(iterable)
 
@@ -1466,8 +1466,8 @@ iterator has received them.
    This makes it possible to share a single iterator, including a generator
    iterator, between multiple threads. Calls are handled one at a time in
    arrival order determined by lock acquisition. No values are duplicated or
-   skipped by the wrapper itself; each item produced by the underlying iterator
-   is returned to exactly one caller.
+   skipped by the wrapper itself. Each item produced by the underlying iterator
+   is given to exactly one caller.
 
    This wrapper does not copy or buffer values. Threads that call
    :func:`next` while another thread is already advancing the iterator will
@@ -1501,8 +1501,8 @@ iterator has received them.
    Wrap an iterator-producing callable so that each iterator it returns is
    automatically passed through :class:`serialize`.
 
-   This is especially useful as a decorator for generator functions that may be
-   consumed from multiple threads.
+   This is especially useful as a :term:`decorator` for generator functions,
+   allowing their generator-iterators to be consumed from multiple threads.
 
    Example::
 
@@ -1541,8 +1541,7 @@ iterator has received them.
    the same order.
 
    Internally, values are buffered until every derived iterator has consumed
-   them. As a result, if one consumer falls far behind the others, the buffer
-   may grow without bound.
+   them.
 
    The returned iterators share the same underlying synchronization lock. Each
    individual derived iterator is intended to be consumed by one thread at a
@@ -1570,4 +1569,4 @@ iterator has received them.
       t1.join()
       t2.join()
 
-   Here, both threads see the full sequence ``0`` through ``4``.
+   In this example, both consumer threads see the full sequence ``0`` through ``4``.
