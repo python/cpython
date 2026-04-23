@@ -431,7 +431,6 @@ class MacOSXOSAScriptTest(unittest.TestCase):
         self.popen_pipe = MockPopenPipe(cmd, mode)
         return self.popen_pipe
 
-
     def test_default_open(self):
         url = "https://python.org"
         self.browser.open(url)
