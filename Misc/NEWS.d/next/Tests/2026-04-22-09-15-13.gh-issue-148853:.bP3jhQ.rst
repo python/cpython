@@ -1,2 +1,0 @@
-Fix tests failing on FreeBSD in :func:`test.support.in_systemd_nspawn_sync_suppressed`
-due to unreadable /run directory.
