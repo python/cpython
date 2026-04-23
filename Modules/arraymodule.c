@@ -14,6 +14,7 @@
 #include "pycore_floatobject.h"   // _PY_FLOAT_BIG_ENDIAN
 #include "pycore_modsupport.h"    // _PyArg_NoKeywords()
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
+#include "pycore_tuple.h"         // _PyTuple_FromPairSteal
 #include "pycore_weakref.h"       // FT_CLEAR_WEAKREFS()
 
 #include <stddef.h>               // offsetof()
@@ -119,10 +120,12 @@ enum machine_format_code {
     IEEE_754_FLOAT_COMPLEX_LE = 22,
     IEEE_754_FLOAT_COMPLEX_BE = 23,
     IEEE_754_DOUBLE_COMPLEX_LE = 24,
-    IEEE_754_DOUBLE_COMPLEX_BE = 25
+    IEEE_754_DOUBLE_COMPLEX_BE = 25,
+    IEEE_754_FLOAT16_LE = 26,
+    IEEE_754_FLOAT16_BE = 27
 };
 #define MACHINE_FORMAT_CODE_MIN 0
-#define MACHINE_FORMAT_CODE_MAX 25
+#define MACHINE_FORMAT_CODE_MAX 27
 
 
 /*
@@ -612,6 +615,32 @@ QQ_setitem(arrayobject *ap, Py_ssize_t i, PyObject *v)
 }
 
 static PyObject *
+e_getitem(arrayobject *ap, Py_ssize_t i)
+{
+    double x = PyFloat_Unpack2(ap->ob_item + sizeof(short)*i,
+                               PY_LITTLE_ENDIAN);
+
+    return PyFloat_FromDouble(x);
+}
+
+static int
+e_setitem(arrayobject *ap, Py_ssize_t i, PyObject *v)
+{
+    float x;
+    if (!PyArg_Parse(v, "f;array item must be float", &x)) {
+        return -1;
+    }
+
+    CHECK_ARRAY_BOUNDS(ap, i);
+
+    if (i >= 0) {
+        return PyFloat_Pack2(x, ap->ob_item + sizeof(short)*i,
+                             PY_LITTLE_ENDIAN);
+    }
+    return 0;
+}
+
+static PyObject *
 f_getitem(arrayobject *ap, Py_ssize_t i)
 {
     return PyFloat_FromDouble((double) ((float *)ap->ob_item)[i]);
@@ -751,6 +780,7 @@ static const struct arraydescr descriptors[] = {
     {'L', sizeof(long), LL_getitem, LL_setitem, LL_compareitems, "L", 1, 0},
     {'q', sizeof(long long), q_getitem, q_setitem, q_compareitems, "q", 1, 1},
     {'Q', sizeof(long long), QQ_getitem, QQ_setitem, QQ_compareitems, "Q", 1, 0},
+    {'e', sizeof(short), e_getitem, e_setitem, NULL, "e", 0, 0},
     {'f', sizeof(float), f_getitem, f_setitem, NULL, "f", 0, 0},
     {'d', sizeof(double), d_getitem, d_setitem, NULL, "d", 0, 0},
     {'F', 2*sizeof(float), cf_getitem, cf_setitem, NULL, "F", 0, 0},
@@ -1513,27 +1543,17 @@ static PyObject *
 array_array_buffer_info_impl(arrayobject *self)
 /*[clinic end generated code: output=9b2a4ec3ae7e98e7 input=63d9ad83ba60cda8]*/
 {
-    PyObject *retval = NULL, *v;
-
-    retval = PyTuple_New(2);
-    if (!retval)
-        return NULL;
-
-    v = PyLong_FromVoidPtr(self->ob_item);
-    if (v == NULL) {
-        Py_DECREF(retval);
+    PyObject* item1 = PyLong_FromVoidPtr(self->ob_item);
+    if (item1 == NULL) {
         return NULL;
     }
-    PyTuple_SET_ITEM(retval, 0, v);
-
-    v = PyLong_FromSsize_t(Py_SIZE(self));
-    if (v == NULL) {
-        Py_DECREF(retval);
+    PyObject* item2 = PyLong_FromSsize_t(Py_SIZE(self));
+    if (item2 == NULL) {
+        Py_DECREF(item1);
         return NULL;
     }
-    PyTuple_SET_ITEM(retval, 1, v);
 
-    return retval;
+    return _PyTuple_FromPairSteal(item1, item2);
 }
 
 /*[clinic input]
@@ -2090,6 +2110,8 @@ static const struct mformatdescr {
     {8, 0, 1},                  /* 23: IEEE_754_FLOAT_COMPLEX_BE */
     {16, 0, 0},                 /* 24: IEEE_754_DOUBLE_COMPLEX_LE */
     {16, 0, 1},                 /* 25: IEEE_754_DOUBLE_COMPLEX_BE */
+    {2, 0, 0},                  /* 26: IEEE_754_FLOAT16_LE */
+    {2, 0, 1}                   /* 27: IEEE_754_FLOAT16_BE */
 };
 
 
@@ -2123,6 +2145,9 @@ typecode_to_mformat_code(char typecode)
 
     case 'w':
         return UTF32_LE + is_big_endian;
+
+    case 'e':
+        return _PY_FLOAT_BIG_ENDIAN ? IEEE_754_FLOAT16_BE : IEEE_754_FLOAT16_LE;
 
     case 'f':
         return _PY_FLOAT_BIG_ENDIAN ? IEEE_754_FLOAT_BE : IEEE_754_FLOAT_LE;
@@ -2214,13 +2239,10 @@ make_array(PyTypeObject *arraytype, char typecode, PyObject *items)
     if (typecode_obj == NULL)
         return NULL;
 
-    new_args = PyTuple_New(2);
+    new_args = _PyTuple_FromPairSteal(typecode_obj, Py_NewRef(items));
     if (new_args == NULL) {
-        Py_DECREF(typecode_obj);
         return NULL;
     }
-    PyTuple_SET_ITEM(new_args, 0, typecode_obj);
-    PyTuple_SET_ITEM(new_args, 1, Py_NewRef(items));
 
     array_obj = array_new(arraytype, new_args, NULL);
     Py_DECREF(new_args);
@@ -2309,6 +2331,27 @@ array__array_reconstructor_impl(PyObject *module, PyTypeObject *arraytype,
         return NULL;
     }
     switch (mformat_code) {
+    case IEEE_754_FLOAT16_LE:
+    case IEEE_754_FLOAT16_BE: {
+        Py_ssize_t i;
+        int le = (mformat_code == IEEE_754_FLOAT_LE) ? 1 : 0;
+        Py_ssize_t itemcount = Py_SIZE(items) / 2;
+        const char *memstr = PyBytes_AS_STRING(items);
+
+        converted_items = PyList_New(itemcount);
+        if (converted_items == NULL)
+            return NULL;
+        for (i = 0; i < itemcount; i++) {
+            PyObject *pyfloat = PyFloat_FromDouble(
+                PyFloat_Unpack2(&memstr[i * 2], le));
+            if (pyfloat == NULL) {
+                Py_DECREF(converted_items);
+                return NULL;
+            }
+            PyList_SET_ITEM(converted_items, i, pyfloat);
+        }
+        break;
+    }
     case IEEE_754_FLOAT_LE:
     case IEEE_754_FLOAT_BE: {
         Py_ssize_t i;
@@ -3010,8 +3053,10 @@ array_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
                 len = 0;
 
             a = newarrayobject(type, len, descr);
-            if (a == NULL)
+            if (a == NULL) {
+                Py_XDECREF(it);
                 return NULL;
+            }
 
             if (len > 0 && !array_Check(initial, state)) {
                 Py_ssize_t i;
@@ -3020,11 +3065,13 @@ array_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
                         PySequence_GetItem(initial, i);
                     if (v == NULL) {
                         Py_DECREF(a);
+                        Py_XDECREF(it);
                         return NULL;
                     }
                     if (setarrayitem(a, i, v) != 0) {
                         Py_DECREF(v);
                         Py_DECREF(a);
+                        Py_XDECREF(it);
                         return NULL;
                     }
                     Py_DECREF(v);
@@ -3036,6 +3083,7 @@ array_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
                 v = array_array_frombytes((PyObject *)a, initial);
                 if (v == NULL) {
                     Py_DECREF(a);
+                    Py_XDECREF(it);
                     return NULL;
                 }
                 Py_DECREF(v);
@@ -3046,6 +3094,7 @@ array_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
                     wchar_t *ustr = PyUnicode_AsWideCharString(initial, &n);
                     if (ustr == NULL) {
                         Py_DECREF(a);
+                        Py_XDECREF(it);
                         return NULL;
                     }
 
@@ -3066,6 +3115,7 @@ array_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
                     Py_UCS4 *ustr = PyUnicode_AsUCS4Copy(initial);
                     if (ustr == NULL) {
                         Py_DECREF(a);
+                        Py_XDECREF(it);
                         return NULL;
                     }
 
@@ -3093,6 +3143,7 @@ array_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
             return a;
         }
     }
+    Py_XDECREF(it);
     PyErr_SetString(PyExc_ValueError,
         "bad typecode (must be b, B, u, w, h, H, i, I, l, L, q, Q, f or d)");
     return NULL;
@@ -3129,6 +3180,7 @@ The following type codes are defined:\n\
     'L'         unsigned integer   4\n\
     'q'         signed integer     8 (see note)\n\
     'Q'         unsigned integer   8 (see note)\n\
+    'e'         16-bit IEEE floats 2\n\
     'f'         floating-point     4\n\
     'd'         floating-point     8\n\
     'F'         float complex      8\n\

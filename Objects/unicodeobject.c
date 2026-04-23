@@ -8350,7 +8350,7 @@ charmap_decode_mapping(const char *s,
                 goto Undefined;
             if (value < 0 || value > MAX_UNICODE) {
                 PyErr_Format(PyExc_TypeError,
-                             "character mapping must be in range(0x%x)",
+                             "character mapping must be in range(0x%lx)",
                              (unsigned long)MAX_UNICODE + 1);
                 goto onError;
             }
@@ -9141,8 +9141,8 @@ charmaptranslate_lookup(Py_UCS4 c, PyObject *mapping, PyObject **result, Py_UCS4
         long value = PyLong_AsLong(x);
         if (value < 0 || value > MAX_UNICODE) {
             PyErr_Format(PyExc_ValueError,
-                         "character mapping must be in range(0x%x)",
-                         MAX_UNICODE+1);
+                         "character mapping must be in range(0x%lx)",
+                         (unsigned long)MAX_UNICODE + 1);
             Py_DECREF(x);
             return -1;
         }
@@ -12561,7 +12561,6 @@ PyUnicode_Replace(PyObject *str,
 }
 
 /*[clinic input]
-@permit_long_docstring_body
 str.replace as unicode_replace
 
     old: unicode
@@ -12573,14 +12572,14 @@ str.replace as unicode_replace
 
 Return a copy with all occurrences of substring old replaced by new.
 
-If the optional argument count is given, only the first count occurrences are
-replaced.
+If count is given, only the first count occurrences are replaced.
+If count is not specified or -1, then all occurrences are replaced.
 [clinic start generated code]*/
 
 static PyObject *
 unicode_replace_impl(PyObject *self, PyObject *old, PyObject *new,
                      Py_ssize_t count)
-/*[clinic end generated code: output=b63f1a8b5eebf448 input=f27ca92ac46b65a1]*/
+/*[clinic end generated code: output=b63f1a8b5eebf448 input=d15a6886b05e2edc]*/
 {
     return replace(self, old, new, count);
 }
@@ -13983,6 +13982,20 @@ onError:
     return NULL;
 }
 
+static _PyObjectIndexPair
+unicode_iteritem(PyObject *obj, Py_ssize_t index)
+{
+    if (index >= PyUnicode_GET_LENGTH(obj)) {
+        return (_PyObjectIndexPair) { .object = NULL, .index = index };
+    }
+    const void *data = PyUnicode_DATA(obj);
+    int kind = PyUnicode_KIND(obj);
+    Py_UCS4 ch = PyUnicode_READ(kind, data, index);
+    PyObject *result = unicode_char(ch);
+    index = (result == NULL) ? -1 : index + 1;
+    return (_PyObjectIndexPair) { .object = result, .index = index };
+}
+
 void
 _PyUnicode_ExactDealloc(PyObject *op)
 {
@@ -14048,6 +14061,7 @@ PyTypeObject PyUnicode_Type = {
     unicode_new,                  /* tp_new */
     PyObject_Free,                /* tp_free */
     .tp_vectorcall = unicode_vectorcall,
+    ._tp_iteritem = unicode_iteritem,
 };
 
 /* Initialize the Unicode implementation */

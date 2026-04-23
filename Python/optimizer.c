@@ -496,8 +496,10 @@ _PyUOp_Replacements[MAX_UOP_ID + 1] = {
     [_ITER_JUMP_LIST] = _GUARD_NOT_EXHAUSTED_LIST,
     [_ITER_JUMP_TUPLE] = _GUARD_NOT_EXHAUSTED_TUPLE,
     [_FOR_ITER] = _FOR_ITER_TIER_TWO,
+    [_FOR_ITER_VIRTUAL] = _FOR_ITER_VIRTUAL_TIER_TWO,
     [_ITER_NEXT_LIST] = _ITER_NEXT_LIST_TIER_TWO,
     [_CHECK_PERIODIC_AT_END] = _TIER2_RESUME_CHECK,
+    [_LOAD_BYTECODE] = _NOP,
 };
 
 static const uint8_t
@@ -866,6 +868,7 @@ _PyJit_translate_single_bytecode_to_trace(
             assert(nuops > 0);
             uint32_t orig_oparg = oparg;  // For OPARG_TOP/BOTTOM
             uint32_t orig_target = target;
+            int record_idx = 0;
             for (int i = 0; i < nuops; i++) {
                 oparg = orig_oparg;
                 target = orig_target;
@@ -946,8 +949,9 @@ _PyJit_translate_single_bytecode_to_trace(
                     operand = next->op.arg;
                 }
                 else if (_PyUop_Flags[uop] & HAS_RECORDS_VALUE_FLAG) {
-                    PyObject *recorded_value = tracer->prev_state.recorded_value;
-                    tracer->prev_state.recorded_value = NULL;
+                    PyObject *recorded_value = tracer->prev_state.recorded_values[record_idx];
+                    tracer->prev_state.recorded_values[record_idx] = NULL;
+                    record_idx++;
                     operand = (uintptr_t)recorded_value;
                 }
                 // All other instructions
@@ -1060,12 +1064,16 @@ _PyJit_TryInitializeTracing(
     tracer->prev_state.instr_frame = frame;
     tracer->prev_state.instr_oparg = oparg;
     tracer->prev_state.instr_stacklevel = tracer->initial_state.stack_depth;
-    tracer->prev_state.recorded_value = NULL;
-    uint8_t record_func_index = _PyOpcode_RecordFunctionIndices[curr_instr->op.code];
-    if (record_func_index) {
-        _Py_RecordFuncPtr record_func = _PyOpcode_RecordFunctions[record_func_index];
-        record_func(frame, stack_pointer, oparg, &tracer->prev_state.recorded_value);
+    tracer->prev_state.recorded_count = 0;
+    for (int i = 0; i < MAX_RECORDED_VALUES; i++) {
+        tracer->prev_state.recorded_values[i] = NULL;
     }
+    const _PyOpcodeRecordEntry *record_entry = &_PyOpcode_RecordEntries[curr_instr->op.code];
+    for (int i = 0; i < record_entry->count; i++) {
+        _Py_RecordFuncPtr record_func = _PyOpcode_RecordFunctions[record_entry->indices[i]];
+        record_func(frame, stack_pointer, oparg, &tracer->prev_state.recorded_values[i]);
+    }
+    tracer->prev_state.recorded_count = record_entry->count;
     assert(curr_instr->op.code == JUMP_BACKWARD_JIT || curr_instr->op.code == RESUME_CHECK_JIT || (exit != NULL));
     tracer->initial_state.jump_backward_instr = curr_instr;
 
@@ -1117,7 +1125,10 @@ _PyJit_FinalizeTracing(PyThreadState *tstate, int err)
     Py_CLEAR(tracer->initial_state.func);
     Py_CLEAR(tracer->initial_state.executor);
     Py_CLEAR(tracer->prev_state.instr_code);
-    Py_CLEAR(tracer->prev_state.recorded_value);
+    for (int i = 0; i < MAX_RECORDED_VALUES; i++) {
+        Py_CLEAR(tracer->prev_state.recorded_values[i]);
+    }
+    tracer->prev_state.recorded_count = 0;
     uop_buffer_init(buffer, &tracer->uop_array[0], UOP_MAX_TRACE_LENGTH);
     tracer->is_tracing = false;
 }

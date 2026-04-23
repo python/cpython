@@ -248,7 +248,7 @@ struct _gc_runtime_state {
     struct gc_generation old[2];
     /* a permanent generation which won't be collected */
     struct gc_generation permanent_generation;
-    struct gc_stats generation_stats;
+    struct gc_stats *generation_stats;
     /* true if we are currently running the collector */
     int collecting;
     // The frame that started the current collection. It might be NULL even when
@@ -927,6 +927,7 @@ struct _is {
     PyObject *builtins_copy;
     // Initialized to _PyEval_EvalFrameDefault().
     _PyFrameEvalFunction eval_frame;
+    int eval_frame_allow_specialization;
 
     PyFunction_WatchCallback func_watchers[FUNC_MAX_WATCHERS];
     // One bit is set for each non-NULL entry in func_watchers

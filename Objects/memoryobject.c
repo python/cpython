@@ -1676,6 +1676,10 @@ fix_error_int(const char *fmt)
     return -1;
 }
 
+// UNPACK_TO_BOOL: Return 0 if PTR represents "false", and 1 otherwise.
+static const _Bool bool_false = 0;
+#define UNPACK_TO_BOOL(PTR) (memcmp((PTR), &bool_false, sizeof(_Bool)) != 0)
+
 /* Accept integer objects or objects with an __index__() method. */
 static long
 pylong_as_ld(PyObject *item)
@@ -1811,7 +1815,7 @@ unpack_single(PyMemoryViewObject *self, const char *ptr, const char *fmt)
     case 'l': UNPACK_SINGLE(ld, ptr, long); goto convert_ld;
 
     /* boolean */
-    case '?': UNPACK_SINGLE(ld, ptr, _Bool); goto convert_bool;
+    case '?': ld = UNPACK_TO_BOOL(ptr); goto convert_bool;
 
     /* unsigned integers */
     case 'H': UNPACK_SINGLE(lu, ptr, unsigned short); goto convert_lu;
@@ -2358,7 +2362,7 @@ memoryview.hex
 
     sep: object = NULL
         An optional single character or byte to separate hex bytes.
-    bytes_per_sep: int = 1
+    bytes_per_sep: Py_ssize_t = 1
         How many bytes between separators.  Positive values count from the
         right, negative values count from the left.
 
@@ -2378,8 +2382,8 @@ Example:
 
 static PyObject *
 memoryview_hex_impl(PyMemoryViewObject *self, PyObject *sep,
-                    int bytes_per_sep)
-/*[clinic end generated code: output=430ca760f94f3ca7 input=539f6a3a5fb56946]*/
+                    Py_ssize_t bytes_per_sep)
+/*[clinic end generated code: output=c9bb00c7a8e86056 input=dc48a56ed3b058ae]*/
 {
     Py_buffer *src = VIEW_ADDR(self);
 
@@ -2472,7 +2476,7 @@ ptr_from_tuple(const Py_buffer *view, PyObject *tup)
 
     if (nindices > view->ndim) {
         PyErr_Format(PyExc_TypeError,
-                     "cannot index %zd-dimension view with %zd-element tuple",
+                     "cannot index %d-dimension view with %zd-element tuple",
                      view->ndim, nindices);
         return NULL;
     }
@@ -3029,7 +3033,7 @@ unpack_cmp(const char *p, const char *q, char fmt,
     case 'l': CMP_SINGLE(p, q, long); return equal;
 
     /* boolean */
-    case '?': CMP_SINGLE(p, q, _Bool); return equal;
+    case '?': return UNPACK_TO_BOOL(p) == UNPACK_TO_BOOL(q);
 
     /* unsigned integers */
     case 'H': CMP_SINGLE(p, q, unsigned short); return equal;
