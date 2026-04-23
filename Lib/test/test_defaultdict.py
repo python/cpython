@@ -2,7 +2,9 @@
 
 import copy
 import pickle
+import sys
 import unittest
+import warnings
 
 from collections import defaultdict
 
@@ -48,14 +50,16 @@ class TestDefaultDict(unittest.TestCase):
         self.assertRaises(TypeError, defaultdict, 1)
 
     def test_missing(self):
-        d1 = defaultdict()
-        self.assertRaises(KeyError, d1.__missing__, 42)
-        d1.default_factory = list
-        v1 = d1.__missing__(42)
-        self.assertEqual(v1, [])
-        v2 = d1.__missing__(42)
-        self.assertEqual(v2, [])
-        self.assertIsNot(v2, v1)
+        with warnings.catch_warnings(record=True, action='always') as w:
+            d1 = defaultdict()
+            self.assertRaises(KeyError, d1.__missing__, 42)
+            d1.default_factory = list
+            v1 = d1.__missing__(42)
+            self.assertEqual(v1, [])
+            v2 = d1.__missing__(42)
+            self.assertEqual(v2, [])
+            self.assertIsNot(v2, v1)
+        self.assertEqual(len(w), 0 if sys._is_gil_enabled() else 3)
 
     def test_repr(self):
         d1 = defaultdict()
