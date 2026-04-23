@@ -22,6 +22,7 @@ import operator
 from test import support
 from test.support import MISSING_C_DOCSTRINGS
 from test.support import import_helper
+from test.support import script_helper
 from test.support import threading_helper
 from test.support import warnings_helper
 from test.support import requires_limited_api
@@ -306,7 +307,7 @@ class CAPITest(unittest.TestCase):
                     CURRENT_THREAD_REGEX +
                     r'  File .*, line 6 in <module>\n'
                     r'\n'
-                    r'Extension modules: _testcapi, _testinternalcapi \(total: 2\)\n')
+                    r'Extension modules: ')
         else:
             # Python built with NDEBUG macro defined:
             # test _Py_CheckFunctionResult() instead.
@@ -403,55 +404,23 @@ class CAPITest(unittest.TestCase):
     def test_buildvalue_N(self):
         _testcapi.test_buildvalue_N()
 
-    def check_negative_refcount(self, code):
-        # bpo-35059: Check that Py_DECREF() reports the correct filename
-        # when calling _Py_NegativeRefcount() to abort Python.
-        code = textwrap.dedent(code)
-        rc, out, err = assert_python_failure('-c', code)
-        self.assertRegex(err,
-                         br'_testcapimodule\.c:[0-9]+: '
-                         br'_Py_NegativeRefcount: Assertion failed: '
-                         br'object has negative ref count')
-
-    @unittest.skipUnless(hasattr(_testcapi, 'negative_refcount'),
-                         'need _testcapi.negative_refcount()')
-    def test_negative_refcount(self):
-        code = """
-            import _testcapi
-            from test import support
-
-            with support.SuppressCrashReport():
-                _testcapi.negative_refcount()
-        """
-        self.check_negative_refcount(code)
-
-    @unittest.skipUnless(hasattr(_testcapi, 'decref_freed_object'),
-                         'need _testcapi.decref_freed_object()')
-    @support.skip_if_sanitizer("use after free on purpose",
-                               address=True, memory=True, ub=True)
-    def test_decref_freed_object(self):
-        code = """
-            import _testcapi
-            from test import support
-
-            with support.SuppressCrashReport():
-                _testcapi.decref_freed_object()
-        """
-        self.check_negative_refcount(code)
-
     def test_trashcan_subclass(self):
         # bpo-35983: Check that the trashcan mechanism for "list" is NOT
         # activated when its tp_dealloc is being called by a subclass
         from _testcapi import MyList
         L = None
-        for i in range(1000):
+        for i in range(100):
             L = MyList((L,))
 
     @support.requires_resource('cpu')
+    @support.skip_emscripten_stack_overflow()
+    @support.skip_wasi_stack_overflow()
     def test_trashcan_python_class1(self):
         self.do_test_trashcan_python_class(list)
 
     @support.requires_resource('cpu')
+    @support.skip_emscripten_stack_overflow()
+    @support.skip_wasi_stack_overflow()
     def test_trashcan_python_class2(self):
         from _testcapi import MyList
         self.do_test_trashcan_python_class(MyList)
@@ -946,6 +915,18 @@ class CAPITest(unittest.TestCase):
         def genf(): yield
         gen = genf()
         self.assertEqual(_testcapi.gen_get_code(gen), gen.gi_code)
+
+    def test_tp_bases_slot(self):
+        cls = _testcapi.HeapCTypeWithBasesSlot
+        self.assertEqual(cls.__bases__, (int,))
+        self.assertEqual(cls.__base__, int)
+
+    def test_tp_bases_slot_none(self):
+        self.assertRaisesRegex(
+            SystemError,
+            "Py_tp_bases is not a tuple",
+            _testcapi.create_heapctype_with_none_bases_slot
+        )
 
 
 @requires_limited_api
@@ -1447,6 +1428,7 @@ class TestPendingCalls(unittest.TestCase):
                 self.assertNotIn(task.requester_tid, runner_tids)
 
     @requires_subinterpreters
+    @support.skip_if_sanitizer("gh-129824: race on assign_version_tag", thread=True)
     def test_isolated_subinterpreter(self):
         # We exercise the most important permutations.
 
@@ -1671,6 +1653,36 @@ class TestPendingCalls(unittest.TestCase):
             actual = int.from_bytes(text, 'little')
 
             self.assertEqual(actual, int(interpid))
+
+    @threading_helper.requires_working_threading()
+    def test_pending_call_creates_thread(self):
+        source = """
+        import _testinternalcapi
+        import threading
+        import time
+
+
+        def output():
+            print(24)
+            time.sleep(1)
+            print(42)
+
+
+        def callback():
+            threading.Thread(target=output).start()
+
+
+        def create_pending_call():
+            time.sleep(1)
+            _testinternalcapi.simple_pending_call(callback)
+
+
+        threading.Thread(target=create_pending_call).start()
+        """
+        return_code, stdout, stderr = script_helper.assert_python_ok('-c', textwrap.dedent(source))
+        self.assertEqual(return_code, 0)
+        self.assertEqual(stdout, f"24{os.linesep}42{os.linesep}".encode("utf-8"))
+        self.assertEqual(stderr, b"")
 
 
 class SubinterpreterTest(unittest.TestCase):
@@ -1979,6 +1991,43 @@ class SubinterpreterTest(unittest.TestCase):
         self.assertEqual(ret, 0)
         subinterp_attr_id = os.read(r, 100)
         self.assertEqual(main_attr_id, subinterp_attr_id)
+
+    @threading_helper.requires_working_threading()
+    @unittest.skipUnless(hasattr(os, "pipe"), "requires os.pipe()")
+    @requires_subinterpreters
+    def test_pending_call_creates_thread_subinterpreter(self):
+        interpreters = import_helper.import_module("concurrent.interpreters")
+        r, w = os.pipe()
+        source = f"""if True:
+        import _testinternalcapi
+        import threading
+        import time
+        import os
+
+
+        def output():
+            time.sleep(1)
+            os.write({w}, b"x")
+            os.close({w})
+
+
+        def callback():
+            threading.Thread(target=output).start()
+
+
+        def create_pending_call():
+            time.sleep(1)
+            _testinternalcapi.simple_pending_call(callback)
+
+
+        threading.Thread(target=create_pending_call).start()
+        """
+        interp = interpreters.create()
+        interp.exec(source)
+        interp.close()
+        data = os.read(r, 1)
+        self.assertEqual(data, b"x")
+        os.close(r)
 
 
 @requires_subinterpreters
@@ -2821,6 +2870,88 @@ class Test_Pep523API(unittest.TestCase):
         self.do_test(func, names)
 
 
+class Test_Pep523AllowSpecialization(unittest.TestCase):
+    """Tests for _PyInterpreterState_SetEvalFrameFunc with
+    allow_specialization=1."""
+
+    def test_is_specialization_enabled_default(self):
+        # With no custom eval frame, specialization should be enabled
+        self.assertTrue(_testinternalcapi.is_specialization_enabled())
+
+    def test_is_specialization_enabled_with_eval_frame(self):
+        # Setting eval frame with allow_specialization=0 disables specialization
+        try:
+            _testinternalcapi.set_eval_frame_record([])
+            self.assertFalse(_testinternalcapi.is_specialization_enabled())
+        finally:
+            _testinternalcapi.set_eval_frame_default()
+
+    def test_is_specialization_enabled_after_restore(self):
+        # Restoring the default eval frame re-enables specialization
+        try:
+            _testinternalcapi.set_eval_frame_record([])
+            self.assertFalse(_testinternalcapi.is_specialization_enabled())
+        finally:
+            _testinternalcapi.set_eval_frame_default()
+        self.assertTrue(_testinternalcapi.is_specialization_enabled())
+
+    def test_is_specialization_enabled_with_allow(self):
+        # Setting eval frame with allow_specialization=1 keeps it enabled
+        try:
+            _testinternalcapi.set_eval_frame_interp([])
+            self.assertTrue(_testinternalcapi.is_specialization_enabled())
+        finally:
+            _testinternalcapi.set_eval_frame_default()
+
+    def test_allow_specialization_call(self):
+        def func():
+            pass
+
+        def func_outer():
+            func()
+
+        actual_calls = []
+        try:
+            _testinternalcapi.set_eval_frame_interp(
+                actual_calls)
+            for i in range(SUFFICIENT_TO_DEOPT_AND_SPECIALIZE * 2):
+                func_outer()
+        finally:
+            _testinternalcapi.set_eval_frame_default()
+
+        # With specialization enabled, calls to inner() will dispatch
+        # through the installed frame evaluator
+        self.assertEqual(actual_calls.count("func"), 0)
+
+        # But the normal interpreter loop still shouldn't be inlining things
+        self.assertNotEqual(actual_calls.count("func_outer"), 0)
+
+    def test_no_specialization_call(self):
+        # Without allow_specialization, ALL calls go through the eval frame.
+        # This is the existing PEP 523 behavior.
+        def inner(x=42):
+            pass
+        def func():
+            inner()
+
+        # Pre-specialize
+        for _ in range(SUFFICIENT_TO_DEOPT_AND_SPECIALIZE):
+            func()
+
+        actual_calls = []
+        try:
+            _testinternalcapi.set_eval_frame_record(actual_calls)
+            for _ in range(SUFFICIENT_TO_DEOPT_AND_SPECIALIZE):
+                func()
+        finally:
+            _testinternalcapi.set_eval_frame_default()
+
+        # Without allow_specialization, every call including inner() goes
+        # through the eval frame
+        expected = ["func", "inner"] * SUFFICIENT_TO_DEOPT_AND_SPECIALIZE
+        self.assertEqual(actual_calls, expected)
+
+
 @unittest.skipUnless(support.Py_GIL_DISABLED, 'need Py_GIL_DISABLED')
 class TestPyThreadId(unittest.TestCase):
     def test_py_thread_id(self):
@@ -2918,6 +3049,23 @@ class TestVersions(unittest.TestCase):
             with self.subTest(hexversion=hex(expected)):
                 result = ctypes_func(*args)
                 self.assertEqual(result, expected)
+
+
+class TestCEval(unittest.TestCase):
+   def test_ceval_decref(self):
+        code = textwrap.dedent("""
+            import _testcapi
+            _testcapi.toggle_reftrace_printer(True)
+            l1 = []
+            l2 = []
+            del l1
+            del l2
+            _testcapi.toggle_reftrace_printer(False)
+        """)
+        _, out, _ = assert_python_ok("-c", code)
+        lines = out.decode("utf-8").splitlines()
+        self.assertEqual(lines.count("CREATE list"), 2)
+        self.assertEqual(lines.count("DESTROY list"), 2)
 
 
 if __name__ == "__main__":

@@ -4,18 +4,21 @@ on:
   schedule:
   - cron: "0 */6 * * *"
 
+permissions:
+  contents: read
+
 jobs:
   stale:
     if: github.repository_owner == 'python'
-
     runs-on: ubuntu-latest
     permissions:
+      actions: write
       pull-requests: write
     timeout-minutes: 10
 
     steps:
     - name: "Check PRs"
-      uses: actions/stale@v9
+      uses: actions/stale@b5d41d4e1d5dceea10e7104786b73624c18a190f # v10.2.0
       with:
         repo-token: ${{ secrets.GITHUB_TOKEN }}
         stale-pr-message: 'This PR is stale because it has been open for 30 days with no activity.'

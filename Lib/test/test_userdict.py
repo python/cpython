@@ -1,8 +1,18 @@
 # Check every path through every method of UserDict
 
-from test import mapping_tests, support
+from collections import UserDict
+from test import mapping_tests
 import unittest
 import collections
+import types
+
+
+class UserDictSubclass(UserDict):
+    pass
+
+class UserDictSubclass2(UserDict):
+    pass
+
 
 d0 = {}
 d1 = {"one": 1}
@@ -155,6 +165,25 @@ class UserDictTest(mapping_tests.TestHashMappingProtocol):
         self.assertRaises(TypeError, collections.UserDict, (), ())
         self.assertRaises(TypeError, collections.UserDict.__init__)
 
+    def test_data(self):
+        u = UserDict()
+        self.assertEqual(u.data, {})
+        self.assertIs(type(u.data), dict)
+        d = {'a': 1, 'b': 2}
+        u = UserDict(d)
+        self.assertEqual(u.data, d)
+        self.assertIsNot(u.data, d)
+        self.assertIs(type(u.data), dict)
+        u = UserDict(u)
+        self.assertEqual(u.data, d)
+        self.assertIs(type(u.data), dict)
+        u = UserDict([('a', 1), ('b', 2)])
+        self.assertEqual(u.data, d)
+        self.assertIs(type(u.data), dict)
+        u = UserDict(a=1, b=2)
+        self.assertEqual(u.data, d)
+        self.assertIs(type(u.data), dict)
+
     def test_update(self):
         for kw in 'self', 'dict', 'other', 'iterable':
             d = collections.UserDict()
@@ -166,7 +195,7 @@ class UserDictTest(mapping_tests.TestHashMappingProtocol):
 
     def test_missing(self):
         # Make sure UserDict doesn't have a __missing__ method
-        self.assertEqual(hasattr(collections.UserDict, "__missing__"), False)
+        self.assertNotHasAttr(collections.UserDict, "__missing__")
         # Test several cases:
         # (D) subclass defines __missing__ method returning a value
         # (E) subclass defines __missing__ method raising RuntimeError
@@ -213,11 +242,70 @@ class UserDictTest(mapping_tests.TestHashMappingProtocol):
         else:
             self.fail("g[42] didn't raise KeyError")
 
-    # Decorate existing test with recursion limit, because
-    # the test is for C structure, but `UserDict` is a Python structure.
-    test_repr_deep = support.infinite_recursion(25)(
-        mapping_tests.TestHashMappingProtocol.test_repr_deep,
-    )
+    test_repr_deep = mapping_tests.TestHashMappingProtocol.test_repr_deep
+
+    def test_mixed_or(self):
+        for t in UserDict, dict, frozendict, types.MappingProxyType:
+            with self.subTest(t.__name__):
+                u = UserDict({0: 'a', 1: 'b'}) | t({1: 'c', 2: 'd'})
+                self.assertEqual(u, {0: 'a', 1: 'c', 2: 'd'})
+                self.assertIs(type(u), UserDict)
+
+                u = t({0: 'a', 1: 'b'}) | UserDict({1: 'c', 2: 'd'})
+                self.assertEqual(u, {0: 'a', 1: 'c', 2: 'd'})
+                self.assertIs(type(u), UserDict)
+
+        u = UserDict({0: 'a', 1: 'b'}) | UserDictSubclass({1: 'c', 2: 'd'})
+        self.assertEqual(u, {0: 'a', 1: 'c', 2: 'd'})
+        self.assertIs(type(u), UserDict)
+
+        u = UserDictSubclass({0: 'a', 1: 'b'}) | UserDict({1: 'c', 2: 'd'})
+        self.assertEqual(u, {0: 'a', 1: 'c', 2: 'd'})
+        self.assertIs(type(u), UserDictSubclass)
+
+        u = UserDictSubclass({0: 'a', 1: 'b'}) |  UserDictSubclass2({1: 'c', 2: 'd'})
+        self.assertEqual(u, {0: 'a', 1: 'c', 2: 'd'})
+        self.assertIs(type(u), UserDictSubclass)
+
+        u = UserDict({1: 'c', 2: 'd'}).__ror__(UserDict({0: 'a', 1: 'b'}))
+        self.assertEqual(u, {0: 'a', 1: 'c', 2: 'd'})
+        self.assertIs(type(u), UserDict)
+
+        u = UserDictSubclass({1: 'c', 2: 'd'}).__ror__(UserDictSubclass2({0: 'a', 1: 'b'}))
+        self.assertEqual(u, {0: 'a', 1: 'c', 2: 'd'})
+        self.assertIs(type(u), UserDictSubclass)
+
+    def test_mixed_ior(self):
+        for t in UserDict, dict, frozendict, types.MappingProxyType:
+            with self.subTest(t.__name__):
+                u = u2 = UserDict({0: 'a', 1: 'b'})
+                u |= t({1: 'c', 2: 'd'})
+                self.assertEqual(u, {0: 'a', 1: 'c', 2: 'd'})
+                self.assertIs(type(u), UserDict)
+                self.assertIs(u, u2)
+
+        u = dict({0: 'a', 1: 'b'})
+        u |= UserDict({1: 'c', 2: 'd'})
+        self.assertEqual(u, {0: 'a', 1: 'c', 2: 'd'})
+        self.assertIs(type(u), dict)
+
+        u = u2 = UserDict({0: 'a', 1: 'b'})
+        u |= UserDictSubclass({1: 'c', 2: 'd'})
+        self.assertEqual(u, {0: 'a', 1: 'c', 2: 'd'})
+        self.assertIs(type(u), UserDict)
+        self.assertIs(u, u2)
+
+        u = u2 = UserDictSubclass({0: 'a', 1: 'b'})
+        u |= UserDict({1: 'c', 2: 'd'})
+        self.assertEqual(u, {0: 'a', 1: 'c', 2: 'd'})
+        self.assertIs(type(u), UserDictSubclass)
+        self.assertIs(u, u2)
+
+        u = u2 = UserDictSubclass({0: 'a', 1: 'b'})
+        u |= UserDictSubclass2({1: 'c', 2: 'd'})
+        self.assertEqual(u, {0: 'a', 1: 'c', 2: 'd'})
+        self.assertIs(type(u), UserDictSubclass)
+        self.assertIs(u, u2)
 
 
 if __name__ == "__main__":

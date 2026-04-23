@@ -14,27 +14,49 @@ SOURCE = 'extension.c'
 
 if not support.MS_WINDOWS:
     # C compiler flags for GCC and clang
-    CFLAGS = [
+    BASE_CFLAGS = [
         # The purpose of test_cext extension is to check that building a C
         # extension using the Python C API does not emit C compiler warnings.
         '-Werror',
+        # Enable extra checks for header files, which:
+        #  - need to be enabled somewhere inside Python headers (rather than
+        #    before including Python.h)
+        #  - should not be checked for user code
+        '-D_Py_IS_TESTCEXT',
+    ]
+
+    # C compiler flags for GCC and clang
+    PUBLIC_CFLAGS = [
+        *BASE_CFLAGS,
 
         # gh-120593: Check the 'const' qualifier
         '-Wcast-qual',
+
+        # Ask for strict(er) compliance with the standard
+        '-pedantic-errors',
     ]
     if not support.Py_GIL_DISABLED:
-        CFLAGS.append(
+        PUBLIC_CFLAGS.append(
             # gh-116869: The Python C API must be compatible with building
             # with the -Werror=declaration-after-statement compiler flag.
             '-Werror=declaration-after-statement',
         )
+    INTERNAL_CFLAGS = [*BASE_CFLAGS]
 else:
     # MSVC compiler flags
-    CFLAGS = [
-        # Display warnings level 1 to 4
-        '/W4',
+    BASE_CFLAGS = [
         # Treat all compiler warnings as compiler errors
         '/WX',
+    ]
+    PUBLIC_CFLAGS = [
+        *BASE_CFLAGS,
+        # Display warnings level 1 to 4
+        '/W4',
+    ]
+    INTERNAL_CFLAGS = [
+        *BASE_CFLAGS,
+        # Display warnings level 1 to 3
+        '/W3',
     ]
 
 
@@ -42,8 +64,15 @@ def main():
     std = os.environ.get("CPYTHON_TEST_STD", "")
     module_name = os.environ["CPYTHON_TEST_EXT_NAME"]
     limited = bool(os.environ.get("CPYTHON_TEST_LIMITED", ""))
+    abi3t = bool(os.environ.get("CPYTHON_TEST_ABI3T", ""))
+    internal = bool(int(os.environ.get("TEST_INTERNAL_C_API", "0")))
 
-    cflags = list(CFLAGS)
+    sources = [SOURCE]
+
+    if not internal:
+        cflags = list(PUBLIC_CFLAGS)
+    else:
+        cflags = list(INTERNAL_CFLAGS)
     cflags.append(f'-DMODULE_NAME={module_name}')
 
     # Add -std=STD or /std:STD (MSVC) compiler flag
@@ -67,10 +96,15 @@ def main():
         # CC env var overrides sysconfig CC variable in setuptools
         os.environ['CC'] = cmd
 
-    # Define Py_LIMITED_API macro
+    # Define opt-in macros
     if limited:
-        version = sys.hexversion
-        cflags.append(f'-DPy_LIMITED_API={version:#x}')
+        cflags.append(f'-DPy_LIMITED_API={sys.hexversion:#x}')
+
+    if abi3t:
+        cflags.append(f'-DPy_TARGET_ABI3T={sys.hexversion:#x}')
+
+    if internal:
+        cflags.append('-DTEST_INTERNAL_C_API=1')
 
     # On Windows, add PCbuild\amd64\ to include and library directories
     include_dirs = []
@@ -87,7 +121,7 @@ def main():
             print(f"Add PCbuild directory: {pcbuild}")
 
     # Display information to help debugging
-    for env_name in ('CC', 'CFLAGS'):
+    for env_name in ('CC', 'CFLAGS', 'CPPFLAGS'):
         if env_name in os.environ:
             print(f"{env_name} env var: {os.environ[env_name]!r}")
         else:
@@ -96,7 +130,7 @@ def main():
 
     ext = Extension(
         module_name,
-        sources=[SOURCE],
+        sources=sources,
         extra_compile_args=cflags,
         include_dirs=include_dirs,
         library_dirs=library_dirs)

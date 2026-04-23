@@ -111,8 +111,17 @@ def _enter_context(cm, addcleanup):
         enter = cls.__enter__
         exit = cls.__exit__
     except AttributeError:
-        raise TypeError(f"'{cls.__module__}.{cls.__qualname__}' object does "
-                        f"not support the context manager protocol") from None
+        msg = (f"'{cls.__module__}.{cls.__qualname__}' object does "
+               "not support the context manager protocol")
+        try:
+            cls.__aenter__
+            cls.__aexit__
+        except AttributeError:
+            pass
+        else:
+            msg += (" but it supports the asynchronous context manager "
+                    "protocol. Did you mean to use enterAsyncContext()?")
+        raise TypeError(msg) from None
     result = enter(cm)
     addcleanup(exit, cm, None, None, None)
     return result
@@ -140,9 +149,7 @@ def doModuleCleanups():
         except Exception as exc:
             exceptions.append(exc)
     if exceptions:
-        # Swallows all but first exception. If a multi-exception handler
-        # gets written we should use that here instead.
-        raise exceptions[0]
+        raise ExceptionGroup('module cleanup failed', exceptions)
 
 
 def skip(reason):
@@ -842,7 +849,7 @@ class TestCase(object):
         context = _AssertNotWarnsContext(expected_warning, self)
         return context.handle('_assertNotWarns', args, kwargs)
 
-    def assertLogs(self, logger=None, level=None):
+    def assertLogs(self, logger=None, level=None, formatter=None):
         """Fail unless a log message of level *level* or higher is emitted
         on *logger_name* or its children.  If omitted, *level* defaults to
         INFO and *logger* defaults to the root logger.
@@ -854,6 +861,8 @@ class TestCase(object):
         `records` attribute will be a list of the corresponding LogRecord
         objects.
 
+        Optionally supply `formatter` to control how messages are formatted.
+
         Example::
 
             with self.assertLogs('foo', level='INFO') as cm:
@@ -864,7 +873,7 @@ class TestCase(object):
         """
         # Lazy import to avoid importing logging if it is not needed.
         from ._log import _AssertLogsContext
-        return _AssertLogsContext(self, logger, level, no_logs=False)
+        return _AssertLogsContext(self, logger, level, no_logs=False, formatter=formatter)
 
     def assertNoLogs(self, logger=None, level=None):
         """ Fail unless no log messages of level *level* or higher are emitted

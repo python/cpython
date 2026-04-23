@@ -1,2 +1,0 @@
-Add ``test.support.reset_code``, which can be used to reset various
-bytecode-level optimizations and local instrumentation for a function.

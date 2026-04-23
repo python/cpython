@@ -8,12 +8,13 @@
 #include "pycore_ceval.h"         // _PyEval_SignalReceived()
 #include "pycore_emscripten_signal.h"  // _Py_CHECK_EMSCRIPTEN_SIGNALS
 #include "pycore_fileutils.h"     // _Py_BEGIN_SUPPRESS_IPH
-#include "pycore_frame.h"         // _PyInterpreterFrame
+#include "pycore_interpframe.h"   // _PyThreadState_GetFrame()
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
 #include "pycore_pyerrors.h"      // _PyErr_SetString()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_signal.h"        // _Py_RestoreSignals()
 #include "pycore_time.h"          // _PyTime_FromSecondsObject()
+#include "pycore_tuple.h"         // _PyTuple_FromPairSteal
 
 #ifndef MS_WINDOWS
 #  include "posixmodule.h"        // _PyLong_FromUid()
@@ -193,27 +194,16 @@ double_from_timeval(struct timeval *tv)
 static PyObject *
 itimer_retval(struct itimerval *iv)
 {
-    PyObject *r, *v;
-
-    r = PyTuple_New(2);
-    if (r == NULL)
-        return NULL;
-
-    if(!(v = PyFloat_FromDouble(double_from_timeval(&iv->it_value)))) {
-        Py_DECREF(r);
+    PyObject *value = PyFloat_FromDouble(double_from_timeval(&iv->it_value));
+    if (value == NULL) {
         return NULL;
     }
-
-    PyTuple_SET_ITEM(r, 0, v);
-
-    if(!(v = PyFloat_FromDouble(double_from_timeval(&iv->it_interval)))) {
-        Py_DECREF(r);
+    PyObject *interval = PyFloat_FromDouble(double_from_timeval(&iv->it_interval));
+    if (interval == NULL) {
+        Py_DECREF(value);
         return NULL;
     }
-
-    PyTuple_SET_ITEM(r, 1, v);
-
-    return r;
+    return _PyTuple_FromPairSteal(value, interval);
 }
 #endif
 
@@ -460,6 +450,7 @@ signal_raise_signal_impl(PyObject *module, int signalnum)
 }
 
 /*[clinic input]
+@permit_long_docstring_body
 signal.signal
 
     signalnum: int
@@ -478,7 +469,7 @@ the first is the signal number, the second is the interrupted stack frame.
 
 static PyObject *
 signal_signal_impl(PyObject *module, int signalnum, PyObject *handler)
-/*[clinic end generated code: output=b44cfda43780f3a1 input=deee84af5fa0432c]*/
+/*[clinic end generated code: output=b44cfda43780f3a1 input=7608656f34fa378b]*/
 {
     _signal_module_state *modstate = get_signal_state(module);
     PyObject *old_handler;
@@ -709,6 +700,7 @@ signal_siginterrupt_impl(PyObject *module, int signalnum, int flag)
 
 
 /*[clinic input]
+@permit_long_summary
 signal.set_wakeup_fd
 
     fd as fdobj: object
@@ -727,7 +719,7 @@ The fd must be non-blocking.
 static PyObject *
 signal_set_wakeup_fd_impl(PyObject *module, PyObject *fdobj,
                           int warn_on_full_buffer)
-/*[clinic end generated code: output=2280d72dd2a54c4f input=5b545946a28b8339]*/
+/*[clinic end generated code: output=2280d72dd2a54c4f input=1b914d48079e9274]*/
 {
     struct _Py_stat_struct status;
 #ifdef MS_WINDOWS
@@ -847,6 +839,7 @@ PySignal_SetWakeupFd(int fd)
 
 #ifdef HAVE_SETITIMER
 /*[clinic input]
+@permit_long_docstring_body
 signal.setitimer
 
     which:    int
@@ -865,7 +858,7 @@ Returns old values as a tuple: (delay, interval).
 static PyObject *
 signal_setitimer_impl(PyObject *module, int which, PyObject *seconds,
                       PyObject *interval)
-/*[clinic end generated code: output=65f9dcbddc35527b input=de43daf194e6f66f]*/
+/*[clinic end generated code: output=65f9dcbddc35527b input=ab5bf2b8f5cff3f4]*/
 {
     _signal_module_state *modstate = get_signal_state(module);
 
@@ -1180,7 +1173,13 @@ signal_sigwaitinfo_impl(PyObject *module, sigset_t sigset)
         err = sigwaitinfo(&sigset, &si);
         Py_END_ALLOW_THREADS
     } while (err == -1
-             && errno == EINTR && !(async_err = PyErr_CheckSignals()));
+             && (errno == EINTR
+#if defined(__NetBSD__)
+                 /* NetBSD's implementation violates POSIX by setting
+                  * errno to ECANCELED instead of EINTR. */
+                 || errno == ECANCELED
+#endif
+            ) && !(async_err = PyErr_CheckSignals()));
     if (err == -1)
         return (!async_err) ? PyErr_SetFromErrno(PyExc_OSError) : NULL;
 
@@ -1201,13 +1200,13 @@ signal.sigtimedwait
 
 Like sigwaitinfo(), but with a timeout.
 
-The timeout is specified in seconds, with floating-point numbers allowed.
+The timeout is specified in seconds, rounded up to nanoseconds.
 [clinic start generated code]*/
 
 static PyObject *
 signal_sigtimedwait_impl(PyObject *module, sigset_t sigset,
                          PyObject *timeout_obj)
-/*[clinic end generated code: output=59c8971e8ae18a64 input=955773219c1596cd]*/
+/*[clinic end generated code: output=59c8971e8ae18a64 input=f89af57d645e48e0]*/
 {
     PyTime_t timeout;
     if (_PyTime_FromSecondsObject(&timeout,
@@ -1623,7 +1622,7 @@ signal_module_exec(PyObject *m)
     modstate->ignore_handler = state->ignore_handler;  // borrowed ref
 
 #ifdef PYHAVE_ITIMER_ERROR
-    modstate->itimer_error = PyErr_NewException("signal.itimer_error",
+    modstate->itimer_error = PyErr_NewException("signal.ItimerError",
                                                 PyExc_OSError, NULL);
     if (modstate->itimer_error == NULL) {
         return -1;
@@ -1700,6 +1699,7 @@ _signal_module_free(void *module)
 
 
 static PyModuleDef_Slot signal_slots[] = {
+    _Py_ABI_SLOT,
     {Py_mod_exec, signal_module_exec},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {Py_mod_gil, Py_MOD_GIL_NOT_USED},
@@ -1772,16 +1772,28 @@ PyErr_CheckSignals(void)
        Python code to ensure signals are handled. Checking for the GC here
        allows long running native code to clean cycles created using the C-API
        even if it doesn't run the evaluation loop */
-    if (_Py_eval_breaker_bit_is_set(tstate, _PY_GC_SCHEDULED_BIT)) {
+    uintptr_t breaker = _Py_atomic_load_uintptr_relaxed(&tstate->eval_breaker);
+    if (breaker & _PY_GC_SCHEDULED_BIT) {
         _Py_unset_eval_breaker_bit(tstate, _PY_GC_SCHEDULED_BIT);
         _Py_RunGC(tstate);
     }
-
-    if (!_Py_ThreadCanHandleSignals(tstate->interp)) {
-        return 0;
+    if (breaker & _PY_ASYNC_EXCEPTION_BIT) {
+        if (_PyEval_RaiseAsyncExc(tstate) < 0) {
+            return -1;
+        }
     }
 
-    return _PyErr_CheckSignalsTstate(tstate);
+#if defined(Py_REMOTE_DEBUG) && defined(Py_SUPPORTS_REMOTE_DEBUG)
+    _PyRunRemoteDebugger(tstate);
+#endif
+
+    if (_Py_ThreadCanHandleSignals(tstate->interp)) {
+        if (_PyErr_CheckSignalsTstate(tstate) < 0) {
+            return -1;
+        }
+    }
+
+    return 0;
 }
 
 
@@ -1936,7 +1948,7 @@ signal_install_handlers(void)
 /* Restore signals that the interpreter has called SIG_IGN on to SIG_DFL.
  *
  * All of the code in this function must only use async-signal-safe functions,
- * listed at `man 7 signal` or
+ * listed at `man 7 signal-safety` or
  * http://www.opengroup.org/onlinepubs/009695399/functions/xsh_chap02_04.html.
  *
  * If this function is updated, update also _posix_spawn() of subprocess.py.
