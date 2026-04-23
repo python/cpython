@@ -6289,8 +6289,11 @@ _PyType_LookupStackRefAndVersion(PyTypeObject *type, PyObject *name, _PyStackRef
 
     PyObject *res_obj = PyStackRef_AsPyObjectBorrow(*out);
 #if Py_GIL_DISABLED
-    // Optimistically enable deferred refcounting for the result if it's not already enabled.
-    if (res_obj != NULL && PyType_IS_GC(Py_TYPE(res_obj)) && !_PyObject_HasDeferredRefcount(res_obj)) {
+    // Optimistically enable deferred refcounting on descriptors
+    if (res_obj != NULL &&
+        PyType_IS_GC(Py_TYPE(res_obj)) &&
+        !_PyObject_HasDeferredRefcount(res_obj) &&
+        Py_TYPE(res_obj)->tp_descr_get != NULL) {
         PyUnstable_Object_EnableDeferredRefcount(res_obj);
     }
     update_cache_gil_disabled(entry, name, version_tag, res_obj);
