@@ -1910,8 +1910,8 @@ insert_split_key(PyDictKeysObject *keys, PyObject *key, Py_hash_t hash)
     return ix;
 }
 
-static void
-insert_split_value(PyDictObject *mp, PyObject *key, PyObject *value, Py_ssize_t ix)
+void
+_PyDict_InsertSplitValue(PyDictObject *mp, PyObject *key, PyObject *value, Py_ssize_t ix)
 {
     assert(can_modify_dict(mp));
     assert(PyUnicode_CheckExact(key));
@@ -1951,7 +1951,7 @@ insertdict(PyDictObject *mp,
     if (_PyDict_HasSplitTable(mp) && PyUnicode_CheckExact(key)) {
         ix = insert_split_key(mp->ma_keys, key, hash);
         if (ix != DKIX_EMPTY) {
-            insert_split_value(mp, key, value, ix);
+            _PyDict_InsertSplitValue(mp, key, value, ix);
             Py_DECREF(key);
             Py_DECREF(value);
             return 0;
@@ -4714,7 +4714,7 @@ dict_setdefault_ref_lock_held(PyObject *d, PyObject *key, PyObject *default_valu
             PyObject *value = mp->ma_values->values[ix];
             int already_present = value != NULL;
             if (!already_present) {
-                insert_split_value(mp, key, default_value, ix);
+                _PyDict_InsertSplitValue(mp, key, default_value, ix);
                 value = default_value;
             }
             if (result) {
