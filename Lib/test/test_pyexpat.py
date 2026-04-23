@@ -227,7 +227,7 @@ class ParseTest(unittest.TestCase):
             "Character data: '\xb5'",
             "End element: 'root'",
         ]
-        for operation, expected_operation in zip(operations, expected_operations):
+        for operation, expected_operation in zip(operations, expected_operations, strict=True):
             self.assertEqual(operation, expected_operation)
 
     def test_parse_bytes(self):
@@ -275,6 +275,51 @@ class ParseTest(unittest.TestCase):
             parser.ParseFile(file)
         self.assertEqual(expat.ErrorString(cm.exception.code),
                           expat.errors.XML_ERROR_FINISHED)
+
+    @support.subTests('enc', ['UTF-8', 'utf-8', 'utf-16', 'koi8-u',
+                              'cp1125', 'cp1251', 'iso8859-5',
+                              'mac_cyrillic'])
+    def test_supportes_ecodings(self, enc):
+        out = self.Outputter()
+        parser = expat.ParserCreate()
+        self._hookup_callbacks(parser, out)
+        data = (f'<?xml version="1.0" encoding="{enc}"?>\n'
+                '<корінь атрибут="значення">зміст</корінь>').encode(enc)
+        parser.Parse(data, True)
+        self.assertEqual(out.out, [
+            ('XML declaration', ('1.0', enc, -1)),
+            "Start element: 'корінь' {'атрибут': 'значення'}",
+            "Character data: 'зміст'",
+            "End element: 'корінь'",
+        ])
+
+    @support.subTests('enc', [
+        'UTF8', 'UTF-7',
+        "unicode-escape", "raw-unicode-escape",
+        "Big5-HKSCS", "Big5",
+        "cp932", "cp949", "cp950",
+        "EUC_JIS-2004", "EUC_JISX0213", "EUC-JP", "EUC-KR",
+        "GB18030", "GB2312", "GBK",
+        "HZ-GB-2312",
+        "ISO-2022-JP", "ISO-2022-JP-1", "ISO-2022-JP-2004",
+        "ISO-2022-JP-2", "ISO-2022-JP-3", "ISO-2022-JP-EXT",
+        "ISO-2022-KR",
+        "johab",
+        "Shift_JIS", "Shift_JIS-2004", "Shift_JISX0213",
+    ])
+    def test_unsupportes_ecodings(self, enc):
+        parser = expat.ParserCreate()
+        data = (f'<?xml version="1.0" encoding="{enc}"?>\n'
+                '<root></root>').encode(enc)
+        with self.assertRaises(ValueError):
+            parser.Parse(data, True)
+
+    def test_unknown_ecoding(self):
+        parser = expat.ParserCreate()
+        data = b'<?xml version="1.0" encoding="xyz"?>\n<root></root>'
+        with self.assertRaises(LookupError):
+            parser.Parse(data, True)
+
 
 class NamespaceSeparatorTest(unittest.TestCase):
     def test_legal(self):
