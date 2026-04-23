@@ -1383,6 +1383,12 @@ class HandlerTests(unittest.TestCase):
     def test_redirect_no_path(self):
         # Issue 14132: Relative redirect strips original path
 
+        # Keep this test independent from proxy-related environment settings.
+        env = self.enterContext(os_helper.EnvironmentVarGuard())
+        for var in ("http_proxy", "https_proxy", "all_proxy", "no_proxy",
+                    "HTTP_PROXY", "HTTPS_PROXY", "ALL_PROXY", "NO_PROXY"):
+            env.pop(var, None)
+
         # clear _opener global variable
         self.addCleanup(urllib.request.urlcleanup)
 
