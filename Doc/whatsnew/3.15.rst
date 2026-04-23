@@ -1296,6 +1296,11 @@ typing
   child classes of that class cannot inherit from other disjoint bases that are
   not parent or child classes of ``C``. (Contributed by Jelle Zijlstra in :gh:`148639`.)
 
+* :class:`~typing.TypeVarTuple` now accepts ``bound``, ``covariant``,
+  ``contravariant``, and ``infer_variance`` keyword arguments, matching the
+  interface of :class:`~typing.TypeVar` and :class:`~typing.ParamSpec`.
+  ``bound`` semantics remain undefined in the specification.
+
 
 unicodedata
 -----------

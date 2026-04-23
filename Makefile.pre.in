@@ -1214,6 +1214,7 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/osdefs.h \
 		$(srcdir)/Include/osmodule.h \
 		$(srcdir)/Include/patchlevel.h \
+		$(srcdir)/Include/pyabi.h \
 		$(srcdir)/Include/pyatomic.h \
 		$(srcdir)/Include/pybuffer.h \
 		$(srcdir)/Include/pycapsule.h \
