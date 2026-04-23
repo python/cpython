@@ -194,29 +194,45 @@ def stage(
             print("  Using downloaded release as install cache")
     else:
         # Linux: build and install directly.
-        # If the python binary already exists (e.g. from a prior Docker
-        # build), skip the rebuild to avoid requiring Docker-only tooling
-        # (BUILD_PYTHON) that is not available on the host.
+        # Only skip the rebuild when the previously built binary exists,
+        # the build tree is properly configured, and the host cannot use
+        # BUILD_PYTHON (e.g. after a prior Docker build where that tool
+        # is unavailable outside the container).
         python_binary = repo_root / f"python{config.EXE}"
-        if python_binary.is_file():
-            print(f"  Skipping rebuild ({python_binary.name} already exists)")
+        configured_marker = repo_root / ".nanvix-configured"
+        pybuilddir = repo_root / "pybuilddir.txt"
+
+        # Determine whether BUILD_PYTHON is usable on the host.
+        build_python_path = Path(toolchain) / "bin" / "python3"
+        build_python_available = (
+            build_python_path.is_file()
+            or shutil.which(str(build_python_path)) is not None
+        )
+
+        can_skip_rebuild = (
+            python_binary.is_file()
+            and configured_marker.is_file()
+            and pybuilddir.is_file()
+            and not build_python_available
+        )
+
+        if can_skip_rebuild:
+            print(
+                f"  Skipping rebuild ({python_binary.name} already exists"
+                " and BUILD_PYTHON is unavailable)"
+            )
             # Install into staging, overriding the build dependency so
             # make does not attempt a rebuild.
-            try:
-                rel_staging = staging.resolve().relative_to(repo_root.resolve())
-            except ValueError:
-                rel_staging = staging
-            install_args = build_mod.make_args(
-                sysroot, toolchain,
-                "-o", "build", "-o", "all",
-                "install", f"DESTDIR={rel_staging}",
+            build_mod.install(
+                sysroot, toolchain, repo_root, staging,
                 platform=platform,
                 process_mode=process_mode,
                 memory_size=memory_size,
                 install_prefix=install_prefix,
                 release=release,
+                run_fn=run_fn,
+                extra_make_flags=["-o", "build", "-o", "all"],
             )
-            build_mod.run_make(install_args, cwd=repo_root, run_fn=run_fn)
         else:
             build_mod.build(
                 sysroot, toolchain, repo_root,

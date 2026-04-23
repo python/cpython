@@ -134,6 +134,7 @@ def install(
     install_prefix: str = config.DEFAULT_INSTALL_PREFIX,
     release: bool = False,
     run_fn=None,
+    extra_make_flags: list[str] | None = None,
 ) -> None:
     """Install CPython into a staging directory."""
     if config.IS_WINDOWS:
@@ -153,7 +154,9 @@ def install(
     except ValueError:
         rel_destdir = destdir
     args = make_args(
-        sysroot, toolchain, "install", f"DESTDIR={rel_destdir}",
+        sysroot, toolchain,
+        *(extra_make_flags or []),
+        "install", f"DESTDIR={rel_destdir}",
         platform=platform,
         process_mode=process_mode,
         memory_size=memory_size,
