@@ -1470,25 +1470,25 @@ PyUnknownEncodingHandler(void *encodingHandlerData,
     if (codec == NULL) {
         return XML_STATUS_ERROR;
     }
-    // if (!PyTuple_CheckExact(codec)) {
-    //     PyObject *attr;
-    //     if (PyObject_GetOptionalAttrString(codec, "_is_single_byte", &attr) < 0) {
-    //         Py_DECREF(codec);
-    //         return XML_STATUS_ERROR;
-    //     }
-    //     if (attr != NULL) {
-    //         int is_single_byte = PyObject_IsTrue(attr);
-    //         Py_DECREF(attr);
-    //         if (is_single_byte <= 0) {
-    //             Py_DECREF(codec);
-    //             if (is_single_byte == 0) {
-    //                 PyErr_SetString(PyExc_ValueError,
-    //                                 "multi-byte encodings are not supported");
-    //             }
-    //             return XML_STATUS_ERROR;
-    //         }
-    //     }
-    // }
+    if (!PyTuple_CheckExact(codec)) {
+        PyObject *attr;
+        if (PyObject_GetOptionalAttrString(codec, "_is_single_byte", &attr) < 0) {
+            Py_DECREF(codec);
+            return XML_STATUS_ERROR;
+        }
+        if (attr != NULL) {
+            int is_single_byte = PyObject_IsTrue(attr);
+            Py_DECREF(attr);
+            if (is_single_byte <= 0) {
+                Py_DECREF(codec);
+                if (is_single_byte == 0) {
+                    PyErr_SetString(PyExc_ValueError,
+                                    "multi-byte encodings are not supported");
+                }
+                return XML_STATUS_ERROR;
+            }
+        }
+    }
     Py_DECREF(codec);
 
     u = PyUnicode_Decode((const char*) template_buffer, 256, name, "replace");
