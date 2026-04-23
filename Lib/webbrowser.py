@@ -1,7 +1,8 @@
 """Interfaces for launching and remotely controlling web browsers."""
 
+import builtins  # because we override open
 import os
-import plistlib
+lazy import plistlib
 import shlex
 import shutil
 import sys
@@ -629,7 +630,6 @@ if sys.platform == 'darwin':
         LaunchServices plist is not written until the user explicitly
         changes their default browser.
         """
-        import builtins
         plist = os.path.expanduser(
             '~/Library/Preferences/com.apple.LaunchServices/'
             'com.apple.launchservices.secure.plist'
