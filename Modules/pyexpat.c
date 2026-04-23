@@ -393,7 +393,7 @@ my_CharacterDataHandler(void *userData, const XML_Char *data, int len)
     if (self->buffer == NULL)
         call_character_handler(self, data, len);
     else {
-        if ((self->buffer_used + len) > self->buffer_size) {
+        if (len > (self->buffer_size - self->buffer_used)) {
             if (flush_character_buffer(self) < 0)
                 return;
             /* handler might have changed; drop the rest on the floor

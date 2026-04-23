@@ -1,0 +1,2 @@
+Fix heap buffer overflow in pyexpat CharacterDataHandler, which is caused by
+two signed intergets added up.
