@@ -89,7 +89,7 @@ class ContextManagerTestCase(unittest.TestCase):
                 raise ZeroDivisionError()
         self.assertEqual(state, [1, 42, 999])
 
-    # NSKIP006 https://github.com/nanvix/cpython/issues/371
+    # NSKIP006 https://github.com/nanvix/cpython/issues/474
     @unittest.skipIf(support.is_nanvix, "NSKIP006: traceback source line formatting differs")
     def test_contextmanager_traceback(self):
         @contextmanager
@@ -433,7 +433,7 @@ class NullcontextTestCase(unittest.TestCase):
 
 class FileContextTestCase(unittest.TestCase):
 
-    # NSKIP008 https://github.com/nanvix/cpython/issues/371
+    # NSKIP008 https://github.com/nanvix/cpython/issues/476
     @unittest.skipIf(support.is_nanvix, "NSKIP008: tempfile names garbled")
     def testWithOpen(self):
         tfn = tempfile.mktemp()
@@ -838,7 +838,7 @@ class TestBaseExitStack:
             stack.push(lambda *exc: True)
             1/0
 
-    # NSKIP006 https://github.com/nanvix/cpython/issues/371
+    # NSKIP006 https://github.com/nanvix/cpython/issues/474
     @unittest.skipIf(support.is_nanvix, "NSKIP006: traceback source line formatting differs")
     def test_exit_exception_traceback(self):
         # This test captures the current behavior of ExitStack so that we know

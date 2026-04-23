@@ -241,7 +241,7 @@ class SliceTest(unittest.TestCase):
         x[1:2] = 42
         self.assertEqual(tmp, [(slice(1, 2), 42)])
 
-    # NSKIP001 https://github.com/nanvix/cpython/issues/371
+    # NSKIP001 https://github.com/nanvix/cpython/issues/469
     @unittest.skipIf(support.is_nanvix, "NSKIP001: pickle corrupt on 32-bit")
     def test_pickle(self):
         import pickle

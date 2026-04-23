@@ -1850,7 +1850,7 @@ class MathTests(unittest.TestCase):
             self.assertRaises(ValueError, math.sin, NINF)
         self.assertTrue(math.isnan(math.sin(NAN)))
 
-    # NSKIP010 https://github.com/nanvix/cpython/issues/371
+    # NSKIP010 https://github.com/nanvix/cpython/issues/478
     @unittest.skipIf(support.is_nanvix, "NSKIP010: 32-bit float precision loss")
     def testSinh(self):
         self.assertRaises(TypeError, math.sinh)

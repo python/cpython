@@ -691,28 +691,28 @@ class OperatorPickleTestCase:
                 # Can't test repr consistently with multiple keyword args
                 self.assertEqual(f2(a), f(a))
 
-# NSKIP001 https://github.com/nanvix/cpython/issues/371
+# NSKIP001 https://github.com/nanvix/cpython/issues/469
 @unittest.skipIf(support.is_nanvix, "NSKIP001: pickle corrupt on 32-bit")
 class PyPyOperatorPickleTestCase(OperatorPickleTestCase, unittest.TestCase):
     module = py_operator
     module2 = py_operator
 
 @unittest.skipUnless(c_operator, 'requires _operator')
-# NSKIP001 https://github.com/nanvix/cpython/issues/371
+# NSKIP001 https://github.com/nanvix/cpython/issues/469
 @unittest.skipIf(support.is_nanvix, "NSKIP001: pickle corrupt on 32-bit")
 class PyCOperatorPickleTestCase(OperatorPickleTestCase, unittest.TestCase):
     module = py_operator
     module2 = c_operator
 
 @unittest.skipUnless(c_operator, 'requires _operator')
-# NSKIP001 https://github.com/nanvix/cpython/issues/371
+# NSKIP001 https://github.com/nanvix/cpython/issues/469
 @unittest.skipIf(support.is_nanvix, "NSKIP001: pickle corrupt on 32-bit")
 class CPyOperatorPickleTestCase(OperatorPickleTestCase, unittest.TestCase):
     module = c_operator
     module2 = py_operator
 
 @unittest.skipUnless(c_operator, 'requires _operator')
-# NSKIP001 https://github.com/nanvix/cpython/issues/371
+# NSKIP001 https://github.com/nanvix/cpython/issues/469
 @unittest.skipIf(support.is_nanvix, "NSKIP001: pickle corrupt on 32-bit")
 class CCOperatorPickleTestCase(OperatorPickleTestCase, unittest.TestCase):
     module = c_operator

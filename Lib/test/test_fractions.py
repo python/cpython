@@ -834,7 +834,7 @@ class FractionTest(unittest.TestCase):
             s += num / fact * sign
         self.assertAlmostEqual(math.cos(1), s)
 
-    # NSKIP001 https://github.com/nanvix/cpython/issues/371
+    # NSKIP001 https://github.com/nanvix/cpython/issues/469
     @unittest.skipIf(support.is_nanvix, "NSKIP001: pickle corrupt on 32-bit")
     def test_copy_deepcopy_pickle(self):
         r = F(13, 7)

@@ -2560,7 +2560,7 @@ class PythonAPItests:
         self.assertIsInstance(Decimal(0), numbers.Number)
         self.assertNotIsInstance(Decimal(0), numbers.Real)
 
-    # NSKIP001 https://github.com/nanvix/cpython/issues/371
+    # NSKIP001 https://github.com/nanvix/cpython/issues/469
     @unittest.skipIf(support.is_nanvix, "NSKIP001: pickle corrupt on 32-bit")
     def test_pickle(self):
         for proto in range(pickle.HIGHEST_PROTOCOL + 1):
@@ -2946,7 +2946,7 @@ class ContextAPItests:
         s = _testcapi.unicode_legacy_string('ROUND_\x00UP')
         self.assertRaises(TypeError, setattr, c, 'rounding', s)
 
-    # NSKIP001 https://github.com/nanvix/cpython/issues/371
+    # NSKIP001 https://github.com/nanvix/cpython/issues/469
     @unittest.skipIf(support.is_nanvix, "NSKIP001: pickle corrupt on 32-bit")
     def test_pickle(self):
 
