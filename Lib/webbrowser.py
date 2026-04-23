@@ -498,6 +498,7 @@ def register_standard_browsers():
         register("safari", None, MacOS('safari'))
         register("opera", None, MacOS('opera'))
         register("microsoft-edge", None, MacOS('microsoft edge'))
+        register("brave", None, MacOS('brave browser'))
         # macOS can use below Unix support (but we prefer using the macOS
         # specific stuff)
 
@@ -620,24 +621,27 @@ if sys.platform == 'darwin':
         """Return the bundle ID of the default web browser.
 
         Reads the LaunchServices preferences file that macOS maintains
-        when the user sets a default browser. Returns None if the file
-        is absent or no https handler is recorded.
+        when the user sets a default browser. Returns 'com.apple.Safari'
+        if the file is absent or no https handler is recorded, because on
+        a fresh macOS installation Safari is the default browser and the
+        LaunchServices plist is not written until the user explicitly
+        changes their default browser.
         """
-        import plistlib, os
+        import builtins, plistlib, os
         plist = os.path.expanduser(
             '~/Library/Preferences/com.apple.LaunchServices/'
             'com.apple.launchservices.secure.plist'
         )
         try:
-            with open(plist, 'rb') as f:
+            with builtins.open(plist, 'rb') as f:
                 data = plistlib.load(f)
             for handler in data.get('LSHandlers', []):
                 if handler.get('LSHandlerURLScheme') == 'https':
                     return (handler.get('LSHandlerRoleAll')
                             or handler.get('LSHandlerRoleViewer'))
-        except Exception:
+        except (OSError, KeyError, ValueError):
             pass
-        return None
+        return 'com.apple.Safari'
 
     class MacOS(BaseBrowser):
         """Launcher class for macOS browsers, using /usr/bin/open.
@@ -662,6 +666,7 @@ if sys.platform == 'darwin':
             'chromium':       'org.chromium.Chromium',
             'opera':          'com.operasoftware.Opera',
             'microsoft edge': 'com.microsoft.edgemac',
+            'brave browser':  'com.brave.Browser',
         }
 
         def open(self, url, new=0, autoraise=True):
@@ -673,10 +678,7 @@ if sys.platform == 'darwin':
                     cmd = ['/usr/bin/open', url]
                 else:
                     bundle_id = _macos_default_browser_bundle_id()
-                    if bundle_id:
-                        cmd = ['/usr/bin/open', '-b', bundle_id, url]
-                    else:
-                        cmd = ['/usr/bin/open', url]
+                    cmd = ['/usr/bin/open', '-b', bundle_id, url]
             else:
                 bundle_id = self._BUNDLE_IDS.get(self.name.lower())
                 if bundle_id:

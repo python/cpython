@@ -351,29 +351,15 @@ class MacOSTest(unittest.TestCase):
         file_url = 'file:///tmp/test.html'
         browser = webbrowser.MacOS('default')
         with mock.patch('webbrowser._macos_default_browser_bundle_id',
-                        return_value='com.apple.Safari'), \
+                        return_value='com.google.Chrome'), \
              mock.patch('subprocess.run') as mock_run:
             mock_run.return_value = mock.Mock(returncode=0)
             result = browser.open(file_url)
         mock_run.assert_called_once_with(
-            ['/usr/bin/open', '-b', 'com.apple.Safari', file_url],
+            ['/usr/bin/open', '-b', 'com.google.Chrome', file_url],
             stderr=subprocess.DEVNULL,
         )
         self.assertTrue(result)
-
-    def test_default_non_http_fallback_when_no_bundle_id(self):
-        # If the bundle ID lookup fails, fall back to /usr/bin/open without -b.
-        file_url = 'file:///tmp/test.html'
-        browser = webbrowser.MacOS('default')
-        with mock.patch('webbrowser._macos_default_browser_bundle_id',
-                        return_value=None), \
-             mock.patch('subprocess.run') as mock_run:
-            mock_run.return_value = mock.Mock(returncode=0)
-            browser.open(file_url)
-        mock_run.assert_called_once_with(
-            ['/usr/bin/open', file_url],
-            stderr=subprocess.DEVNULL,
-        )
 
     def test_named_known_browser_uses_bundle_id(self):
         # Named browsers with a known bundle ID use /usr/bin/open -b.
