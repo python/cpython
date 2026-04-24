@@ -45,14 +45,22 @@ def package(
     install_prefix: str = config.DEFAULT_INSTALL_PREFIX,
     release: bool = True,
     run_fn=None,
+    nanvix_home: str | Path | None = None,
 ) -> None:
     """Package CPython release tarballs.
 
     Creates two tarballs in ``dist/``:
     - ``cpython-<platform>-<mode>-<memory>.tar.bz2`` — runtime sysroot + binary + ramfs
     - ``cpython-<platform>-<mode>-<memory>-buildroot.tar.bz2`` — build dependencies
+
+    Args:
+        nanvix_home: Host-side path to the Nanvix sysroot for local
+            file operations (mkramfs, etc.).  When Docker is active
+            *sysroot* is a container-internal path; *nanvix_home*
+            should be the original host path so that
+            ``subprocess.run`` and ``Path.is_file`` work correctly.
     """
-    nanvix_home = Path(sysroot)
+    nanvix_home = Path(nanvix_home) if nanvix_home else Path(sysroot)
     release_staging = repo_root / ".nanvix" / "release"
     dist_dir = repo_root / "dist"
     artifact = _artifact_base(platform, process_mode, memory_size)

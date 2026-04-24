@@ -337,10 +337,17 @@ class CPythonBuild(ZScript):
         sysroot, toolchain = self._get_paths()
         kwargs = self._build_kwargs(release=True)
 
+        # Pass raw host sysroot path for local file operations (mkramfs,
+        # etc.).  _get_paths() translates to Docker-internal paths when
+        # Docker is active, but package.py needs host paths for
+        # subprocess.run() and Path.is_file() calls.
+        sysroot_host = self.config.get(CFG_SYSROOT, "")
+
         package_mod.package(
             sysroot, toolchain, self.repo_root,
             **kwargs,
             run_fn=lambda *args, **kw: self.run(*args, **kw),
+            nanvix_home=sysroot_host,
         )
         package_mod.verify(
             self.repo_root,
