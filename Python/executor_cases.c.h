@@ -8845,7 +8845,7 @@
             _PyStackRef value;
             oparg = CURRENT_OPARG();
             assert(oparg < NUM_COMMON_CONSTANTS);
-            value = PyStackRef_FromPyObjectNew(tstate->interp->common_consts[oparg]);
+            value = load_common_constant(oparg);
             _tos_cache0 = value;
             SET_CURRENT_CACHED_VALUES(1);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
@@ -8859,7 +8859,7 @@
             _PyStackRef _stack_item_0 = _tos_cache0;
             oparg = CURRENT_OPARG();
             assert(oparg < NUM_COMMON_CONSTANTS);
-            value = PyStackRef_FromPyObjectNew(tstate->interp->common_consts[oparg]);
+            value = load_common_constant(oparg);
             _tos_cache1 = value;
             _tos_cache0 = _stack_item_0;
             SET_CURRENT_CACHED_VALUES(2);
@@ -8875,7 +8875,7 @@
             _PyStackRef _stack_item_1 = _tos_cache1;
             oparg = CURRENT_OPARG();
             assert(oparg < NUM_COMMON_CONSTANTS);
-            value = PyStackRef_FromPyObjectNew(tstate->interp->common_consts[oparg]);
+            value = load_common_constant(oparg);
             _tos_cache2 = value;
             _tos_cache1 = _stack_item_1;
             _tos_cache0 = _stack_item_0;

@@ -18,6 +18,7 @@
 #include "pycore_moduleobject.h"  // _PyModule_InitModuleDictWatcher()
 #include "pycore_object.h"        // _PyDebug_PrintTotalRefs()
 #include "pycore_obmalloc.h"      // _PyMem_init_obmalloc()
+#include "pycore_opcode_utils.h"  // _PyBuiltin_All, _PyBuiltin_Any
 #include "pycore_optimizer.h"     // _Py_Executors_InvalidateAll
 #include "pycore_pathconfig.h"    // _PyPathConfig_UpdateGlobal()
 #include "pycore_pyerrors.h"      // _PyErr_Occurred()
@@ -867,26 +868,33 @@ pycore_init_builtins(PyThreadState *tstate)
     }
     interp->callable_cache.len = len;
 
-    PyObject *all = PyDict_GetItemWithError(builtins_dict, &_Py_ID(all));
-    if (!all) {
+    /* Install the static all/any singletons. */
+    if (PyDict_SetItemString(builtins_dict, "all",
+                             (PyObject *)&_PyBuiltin_All) < 0) {
+        goto error;
+    }
+    if (PyDict_SetItemString(builtins_dict, "any",
+                             (PyObject *)&_PyBuiltin_Any) < 0) {
         goto error;
     }
 
-    PyObject *any = PyDict_GetItemWithError(builtins_dict, &_Py_ID(any));
-    if (!any) {
-        goto error;
-    }
-
-    interp->common_consts[CONSTANT_ASSERTIONERROR] = PyExc_AssertionError;
-    interp->common_consts[CONSTANT_NOTIMPLEMENTEDERROR] = PyExc_NotImplementedError;
-    interp->common_consts[CONSTANT_BUILTIN_TUPLE] = (PyObject*)&PyTuple_Type;
-    interp->common_consts[CONSTANT_BUILTIN_ALL] = all;
-    interp->common_consts[CONSTANT_BUILTIN_ANY] = any;
-    interp->common_consts[CONSTANT_BUILTIN_LIST] = (PyObject*)&PyList_Type;
-    interp->common_consts[CONSTANT_BUILTIN_SET] = (PyObject*)&PySet_Type;
-
-    for (int i=0; i < NUM_COMMON_CONSTANTS; i++) {
-        assert(interp->common_consts[i] != NULL);
+    _PyCommonConsts[CONSTANT_ASSERTIONERROR] = PyExc_AssertionError;
+    _PyCommonConsts[CONSTANT_NOTIMPLEMENTEDERROR] = PyExc_NotImplementedError;
+    _PyCommonConsts[CONSTANT_BUILTIN_TUPLE] = (PyObject *)&PyTuple_Type;
+    _PyCommonConsts[CONSTANT_BUILTIN_ALL] = (PyObject *)&_PyBuiltin_All;
+    _PyCommonConsts[CONSTANT_BUILTIN_ANY] = (PyObject *)&_PyBuiltin_Any;
+    _PyCommonConsts[CONSTANT_BUILTIN_LIST] = (PyObject *)&PyList_Type;
+    _PyCommonConsts[CONSTANT_BUILTIN_SET] = (PyObject *)&PySet_Type;
+    _PyCommonConsts[CONSTANT_NONE] = Py_None;
+    _PyCommonConsts[CONSTANT_EMPTY_STR] =
+        Py_GetConstantBorrowed(Py_CONSTANT_EMPTY_STR);
+    _PyCommonConsts[CONSTANT_TRUE] = Py_True;
+    _PyCommonConsts[CONSTANT_FALSE] = Py_False;
+    _PyCommonConsts[CONSTANT_MINUS_ONE] =
+        (PyObject *)&_PyLong_SMALL_INTS[_PY_NSMALLNEGINTS - 1];
+    for (int i = 0; i < NUM_COMMON_CONSTANTS; i++) {
+        assert(_PyCommonConsts[i] != NULL);
+        assert(_Py_IsImmortal(_PyCommonConsts[i]));
     }
 
     PyObject *list_append = _PyType_Lookup(&PyList_Type, &_Py_ID(append));

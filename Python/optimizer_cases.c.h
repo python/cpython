@@ -1914,7 +1914,44 @@
         case _LOAD_COMMON_CONSTANT: {
             JitOptRef value;
             assert(oparg < NUM_COMMON_CONSTANTS);
-            PyObject *val = _PyInterpreterState_GET()->common_consts[oparg];
+            PyObject *val;
+            if (oparg == CONSTANT_ASSERTIONERROR) {
+                val = PyExc_AssertionError;
+            }
+            else if (oparg == CONSTANT_NOTIMPLEMENTEDERROR) {
+                val = PyExc_NotImplementedError;
+            }
+            else if (oparg == CONSTANT_BUILTIN_TUPLE) {
+                val = (PyObject *)&PyTuple_Type;
+            }
+            else if (oparg == CONSTANT_BUILTIN_ALL) {
+                val = (PyObject *)&_PyBuiltin_All;
+            }
+            else if (oparg == CONSTANT_BUILTIN_ANY) {
+                val = (PyObject *)&_PyBuiltin_Any;
+            }
+            else if (oparg == CONSTANT_BUILTIN_LIST) {
+                val = (PyObject *)&PyList_Type;
+            }
+            else if (oparg == CONSTANT_BUILTIN_SET) {
+                val = (PyObject *)&PySet_Type;
+            }
+            else if (oparg == CONSTANT_NONE) {
+                val = Py_None;
+            }
+            else if (oparg == CONSTANT_EMPTY_STR) {
+                val = Py_GetConstantBorrowed(Py_CONSTANT_EMPTY_STR);
+            }
+            else if (oparg == CONSTANT_TRUE) {
+                val = Py_True;
+            }
+            else if (oparg == CONSTANT_FALSE) {
+                val = Py_False;
+            }
+            else {
+                assert(oparg == CONSTANT_MINUS_ONE);
+                val = (PyObject *)&_PyLong_SMALL_INTS[_PY_NSMALLNEGINTS - 1];
+            }
             ADD_OP(_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)val);
             value = PyJitRef_Borrow(sym_new_const(ctx, val));
             CHECK_STACK_BOUNDS(1);

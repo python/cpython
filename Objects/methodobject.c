@@ -25,7 +25,8 @@ static PyObject * cfunction_vectorcall_FASTCALL_KEYWORDS_METHOD(
     PyObject *func, PyObject *const *args, size_t nargsf, PyObject *kwnames);
 static PyObject * cfunction_vectorcall_NOARGS(
     PyObject *func, PyObject *const *args, size_t nargsf, PyObject *kwnames);
-static PyObject * cfunction_vectorcall_O(
+/* Non-static: used by static _PyBuiltin_All/_Any in bltinmodule.c. */
+PyObject *_PyCFunction_vectorcall_O(
     PyObject *func, PyObject *const *args, size_t nargsf, PyObject *kwnames);
 static PyObject * cfunction_call(
     PyObject *func, PyObject *args, PyObject *kwargs);
@@ -67,7 +68,7 @@ PyCMethod_New(PyMethodDef *ml, PyObject *self, PyObject *module, PyTypeObject *c
             vectorcall = cfunction_vectorcall_NOARGS;
             break;
         case METH_O:
-            vectorcall = cfunction_vectorcall_O;
+            vectorcall = _PyCFunction_vectorcall_O;
             break;
         case METH_METHOD | METH_FASTCALL | METH_KEYWORDS:
             vectorcall = cfunction_vectorcall_FASTCALL_KEYWORDS_METHOD;
@@ -511,8 +512,8 @@ cfunction_vectorcall_NOARGS(
     return result;
 }
 
-static PyObject *
-cfunction_vectorcall_O(
+PyObject *
+_PyCFunction_vectorcall_O(
     PyObject *func, PyObject *const *args, size_t nargsf, PyObject *kwnames)
 {
     PyThreadState *tstate = _PyThreadState_GET();

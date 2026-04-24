@@ -628,3 +628,19 @@ gen_try_set_executing(PyGenObject *gen)
             (PyLongObject *)PyStackRef_AsPyObjectBorrow(left),           \
             (PyLongObject *)PyStackRef_AsPyObjectBorrow(right));         \
     }
+
+static inline _PyStackRef
+load_common_constant(unsigned int oparg)
+{
+    switch (oparg) {
+        case CONSTANT_NONE:
+            return PyStackRef_None;
+        case CONSTANT_TRUE:
+            return PyStackRef_True;
+        case CONSTANT_FALSE:
+            return PyStackRef_False;
+    }
+    assert(oparg < NUM_COMMON_CONSTANTS);
+    assert(_Py_IsImmortal(_PyCommonConsts[oparg]));
+    return PyStackRef_FromPyObjectBorrow(_PyCommonConsts[oparg]);
+}

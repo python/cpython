@@ -3446,6 +3446,27 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertIn("_BUILD_LIST", uops)
         self.assertNotIn("_LOAD_COMMON_CONSTANT", uops)
 
+    def test_load_common_constant_new_literals(self):
+        def testfunc(n):
+            x = None
+            s = ""
+            t = True
+            f = False
+            m = -1
+            for _ in range(n):
+                x = None
+                s = ""
+                t = True
+                f = False
+                m = -1
+            return x, s, t, f, m
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, (None, "", True, False, -1))
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertNotIn("_LOAD_COMMON_CONSTANT", uops)
+        self.assertIn("_LOAD_CONST_INLINE_BORROW", uops)
+
     def test_load_small_int(self):
         def testfunc(n):
             x = 0

@@ -1002,7 +1002,6 @@ struct _is {
     struct ast_state ast;
     struct types_state types;
     struct callable_cache callable_cache;
-    PyObject *common_consts[NUM_COMMON_CONSTANTS];
     bool jit;
     bool compiling;
 
