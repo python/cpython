@@ -248,7 +248,16 @@ _PyRawMutex_LockSlow(_PyRawMutex *m)
 
         // Wait for us to be woken up. Note that we still have to lock the
         // mutex ourselves: it is NOT handed off to us.
-        _PySemaphore_Wait(&waiter.sema, -1);
+        //
+        // Loop until we observe an actual wakeup. A return of Py_PARK_INTR
+        // could otherwise let us exit _PySemaphore_Wait and destroy
+        // `waiter.sema` while _PyRawMutex_UnlockSlow's matching
+        // _PySemaphore_Wakeup is still pending, since the unlocker has
+        // already CAS-removed us from the waiter list without any handshake.
+        int res;
+        do {
+            res = _PySemaphore_Wait(&waiter.sema, -1);
+        } while (res != Py_PARK_OK);
     }
 
     _PySemaphore_Destroy(&waiter.sema);
