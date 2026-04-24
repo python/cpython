@@ -11120,12 +11120,11 @@
                     retval = item;
                 }
                 else {
-                    PyObject *retval_o;
                     PyObject *v_o = PyStackRef_AsPyObjectBorrow(v);
                     _PyFrame_SetStackPointer(frame, stack_pointer);
-                    PySendResult what = PyIter_Send(receiver_o, v_o, &retval_o);
+                    PySendResultPair res = _PyIter_Send(receiver_o, v_o);
                     stack_pointer = _PyFrame_GetStackPointer(frame);
-                    if (what == PYGEN_ERROR) {
+                    if (res.kind == PYGEN_ERROR) {
                         JUMP_TO_LABEL(error);
                     }
                     stack_pointer += -1;
@@ -11133,8 +11132,8 @@
                     _PyFrame_SetStackPointer(frame, stack_pointer);
                     PyStackRef_CLOSE(v);
                     stack_pointer = _PyFrame_GetStackPointer(frame);
-                    retval = PyStackRef_FromPyObjectSteal(retval_o);
-                    if (what == PYGEN_RETURN) {
+                    retval = PyStackRef_FromPyObjectSteal(res.object);
+                    if (res.kind == PYGEN_RETURN) {
                         JUMPBY(oparg);
                     }
                     stack_pointer += 1;

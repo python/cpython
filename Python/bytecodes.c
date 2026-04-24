@@ -1705,15 +1705,14 @@ dummy_func(
                 DEAD(v);
             }
             else {
-                PyObject *retval_o;
                 PyObject *v_o = PyStackRef_AsPyObjectBorrow(v);
-                PySendResult what = PyIter_Send(receiver_o, v_o, &retval_o);
-                if (what == PYGEN_ERROR) {
+                PySendResultPair res = _PyIter_Send(receiver_o, v_o);
+                if (res.kind == PYGEN_ERROR) {
                     ERROR_NO_POP();
                 }
                 PyStackRef_CLOSE(v);
-                retval = PyStackRef_FromPyObjectSteal(retval_o);
-                if (what == PYGEN_RETURN) {
+                retval = PyStackRef_FromPyObjectSteal(res.object);
+                if (res.kind == PYGEN_RETURN) {
                     JUMPBY(oparg);
                 }
             }
