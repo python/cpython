@@ -28,21 +28,25 @@ id, name, kind, dtype
 #, with '<name>='; everything after that is the value. No spaces around '='.
 #,
 #, For all types:
-#,   - 'added': Python version that added the slot *to the limited API*
 #,   - 'compat': slot number before 3.14
 #,   - 'subslots=true': contains an array of slots to be merged in
+#,   - 'duplicates': behavior if multiple slots of this type are given
+#,     - 'yes': duplicates allowed
+#,     - 'no': duplicates rejected
+#,     - default: warn
 #, For pointers:
-#,   - 'PyObject=true': This is a Python object (or NULL)
 #,   - 'null': Behavior for NULL values:
 #,      - 'reject': NULLs not allowed
 #,      - 'allow': NULLs allowed
 #,      - default is that NULL is deprecated
+#,   - 'is_name': this is the name slot (used automatically for error messages)
 #, For type slots:
 #,   - 'table': Slot table like 'nb' or 'tp'. If not specified: use the first
-#,     part of the name
+#,     part of the name (except virtual slots)
+#,   - 'field': Field name. If not specified: use the name
 #,   - 'virtual=true': Does not directly correspond to a PyTypeObject (sub)field
 
-0, "slot_end", slot, void, added=3.14
+0, "slot_end", slot, void
 1, "bf_getbuffer/mod_create", compat, void
 2, "bf_releasebuffer/mod_exec", compat, void
 3, "mp_ass_subscript/mod_multiple_interpreters", compat, void
@@ -90,8 +94,8 @@ id, name, kind, dtype
 45, "sq_length", type, func
 46, "sq_repeat", type, func
 47, "tp_alloc", type, func
-48, "tp_base", type, ptr, PyObject=true
-49, "tp_bases", type, ptr, PyObject=true
+48, "tp_base", type, ptr
+49, "tp_bases", type, ptr
 50, "tp_call", type, func
 51, "tp_clear", type, func
 52, "tp_dealloc", type, func
@@ -122,34 +126,34 @@ id, name, kind, dtype
 77, "am_await", type, func
 78, "am_aiter", type, func
 79, "am_anext", type, func
-80, "tp_finalize", type, func, added=3.5
-81, "am_send", type, func, added=3.10
-82, "tp_vectorcall", type, func, added=3.14
-83, "tp_token", type, ptr, added=3.14, table=ht, field=ht_token, null=allow, duplicates=no
+80, "tp_finalize", type, func
+81, "am_send", type, func
+82, "tp_vectorcall", type, func
+83, "tp_token", type, ptr, table=ht, field=ht_token, null=allow, duplicates=no
 84, "mod_create", mod, func, compat=1, duplicates=no
 85, "mod_exec", mod, func, compat=2, duplicates=yes
-86, "mod_multiple_interpreters", mod, uint64, compat=3, added=3.12, duplicates=no
-87, "mod_gil", mod, uint64, compat=4, added=3.13, duplicates=no
-88, "bf_getbuffer", type, func, compat=1, added=3.14
-89, "bf_releasebuffer", type, func, compat=2, added=3.14
-90, "mp_ass_subscript", type, func, compat=3, added=3.14
-91, "mp_length", type, func, compat=4, added=3.14
-92, "slot_subslots", slot, ptr, added=3.14, subslots=true, null=allow
-93, "tp_slots", type, ptr, virtual=true, added=3.14, subslots=true, null=allow
-94, "mod_slots", mod, ptr, added=3.14, subslots=true, null=allow
-95, "tp_name", type, ptr, virtual=true, added=3.14, null=reject, duplicates=no, is_name=true
-96, "tp_basicsize", type, size, added=3.14, duplicates=no
-97, "tp_extra_basicsize", type, size, virtual=true, added=3.14, duplicates=no
-98, "tp_itemsize", type, size, virtual=true, added=3.14, duplicates=no
-99, "tp_flags", type, uint64, virtual=true, added=3.14, duplicates=no
-100, "mod_name", mod, ptr, added=3.14, null=reject, duplicates=no, is_name=true
-101, "mod_doc", mod, ptr, added=3.14, null=reject, duplicates=no
-102, "mod_state_size", mod, size, added=3.14, duplicates=no
-103, "mod_methods", mod, ptr, added=3.14, null=reject, duplicates=no
-104, "mod_state_traverse", mod, func, added=3.14, null=reject, duplicates=no
-105, "mod_state_clear", mod, func, added=3.14, null=reject, duplicates=no
-106, "mod_state_free", mod, func, added=3.14, null=reject, duplicates=no
-107, "tp_metaclass", type, ptr, virtual=true, PyObject=true, added=3.14, null=reject, duplicates=no
-108, "tp_module", type, ptr, virtual=true, PyObject=true, added=3.14, null=reject, duplicates=no
-109, "mod_abi", mod, ptr, added=3.15, null=reject, duplicates=yes
-110, "mod_token", mod, ptr, added=3.15, null=reject, duplicates=no
+86, "mod_multiple_interpreters", mod, uint64, compat=3, duplicates=no
+87, "mod_gil", mod, uint64, compat=4, duplicates=no
+88, "bf_getbuffer", type, func, compat=1
+89, "bf_releasebuffer", type, func, compat=2
+90, "mp_ass_subscript", type, func, compat=3
+91, "mp_length", type, func, compat=4
+92, "slot_subslots", slot, ptr, subslots=true, null=allow
+93, "tp_slots", type, ptr, virtual=true, subslots=true, null=allow
+94, "mod_slots", mod, ptr, subslots=true, null=allow
+95, "tp_name", type, ptr, virtual=true, null=reject, duplicates=no, is_name=true
+96, "tp_basicsize", type, size, virtual=true, duplicates=no
+97, "tp_extra_basicsize", type, size, virtual=true, duplicates=no
+98, "tp_itemsize", type, size, virtual=true, duplicates=no
+99, "tp_flags", type, uint64, virtual=true, duplicates=no
+100, "mod_name", mod, ptr, null=reject, duplicates=no, is_name=true
+101, "mod_doc", mod, ptr, null=reject, duplicates=no
+102, "mod_state_size", mod, size, duplicates=no
+103, "mod_methods", mod, ptr, null=reject, duplicates=no
+104, "mod_state_traverse", mod, func, null=reject, duplicates=no
+105, "mod_state_clear", mod, func, null=reject, duplicates=no
+106, "mod_state_free", mod, func, null=reject, duplicates=no
+107, "tp_metaclass", type, ptr, virtual=true, null=reject, duplicates=no
+108, "tp_module", type, ptr, virtual=true, null=reject, duplicates=no
+109, "mod_abi", mod, ptr, null=reject, duplicates=yes
+110, "mod_token", mod, ptr, null=reject, duplicates=no

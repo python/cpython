@@ -852,8 +852,6 @@ _PySlot_Info _PySlot_InfoTable[_Py_slot_COUNT + 1] = {
         .name = "Py_tp_basicsize",
         .dtype = _PySlot_TYPE_SIZE,
         .kind = _PySlot_KIND_TYPE,
-        .type_info.slot_offset = offsetof(PyTypeObject, tp_basicsize),
-        .type_info.subslot_offset = -1,
         .duplicate_handling = _PySlot_PROBLEM_REJECT,
     },
     [97] = {
