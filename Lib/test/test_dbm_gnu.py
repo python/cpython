@@ -1,3 +1,8 @@
+from test.support import is_nanvix
+import unittest
+if is_nanvix:
+    raise unittest.SkipTest("NSKIP047: _dbm/_gdbm/_ndbm C backends N/A on Nanvix (configure.ac:7268)")  # detail: only _gdbm needed for this module
+
 from test import support
 from test.support import import_helper, cpython_only
 gdbm = import_helper.import_module("dbm.gnu") #skip if not supported
