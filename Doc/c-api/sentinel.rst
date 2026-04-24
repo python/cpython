@@ -2,7 +2,7 @@
 
 .. _sentinelobjects:
 
-Sentinel Objects
+Sentinel objects
 ----------------
 
 .. c:var:: PyTypeObject PySentinel_Type
