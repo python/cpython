@@ -118,4 +118,4 @@
 #define Py_mod_token 110
 
 #define _Py_slot_COUNT 111
-#endif
+#endif /* _PY_HAVE_SLOTS_GENERATED_H */
