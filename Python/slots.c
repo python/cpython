@@ -8,7 +8,7 @@
 #include <stdio.h>
 
 // Iterating through a recursive structure doesn't look great in a debugger.
-// Define this to get a trace on stderr.
+// Flip the #if to 1 to get a trace on stderr.
 // (The messages can also serve as code comments.)
 #if 0
 #define MSG(...) { \
@@ -27,7 +27,6 @@ kind_name(_PySlot_KIND kind)
         case _PySlot_KIND_SLOT: return "generic slot";
     }
     Py_UNREACHABLE();
-    return "<thing>";
 }
 
 static void
@@ -252,11 +251,6 @@ _PySlotIterator_Next(_PySlotIterator *it)
             }
         }
 
-        if (flags & PySlot_HAS_FALLBACK) {
-            MSG("starting to ignore fallbacks");
-            it->state->ignoring_fallbacks = true;
-        }
-
         advance(it);
         switch (_PySlot_get_dtype(result->sl_id)) {
             case _PySlot_DTYPE_VOID:
@@ -289,7 +283,7 @@ _PySlotIterator_Next(_PySlotIterator *it)
         }
         assert (result->sl_id > 0);
         assert (result->sl_id <= _Py_slot_COUNT);
-        if (it->is_first_run && handle_first_run(it) < 0) {
+        if (it->is_first_run && (handle_first_run(it) < 0)) {
             goto error;
         }
         return result->sl_id != Py_slot_end;

@@ -5352,7 +5352,10 @@ type_from_slots_or_spec(
             flags = it.current.sl_uint64;
             break;
         case Py_tp_members:
-            for (const PyMemberDef *memb = it.current.sl_ptr; memb->name != NULL; memb++) {
+            for (const PyMemberDef *memb = it.current.sl_ptr;
+                 memb->name != NULL;
+                 memb++)
+            {
                 nmembers++;
                 if (memb->flags & Py_RELATIVE_OFFSET) {
                     if (memb->offset < 0) {

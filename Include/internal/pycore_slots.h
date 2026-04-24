@@ -7,6 +7,7 @@
 
 #include <stdbool.h>
 
+/* Slot data type */
 typedef enum _PySlot_DTYPE {
     _PySlot_DTYPE_VOID,
     _PySlot_DTYPE_FUNC,
@@ -16,6 +17,10 @@ typedef enum _PySlot_DTYPE {
     _PySlot_DTYPE_UINT64,
 }_PySlot_DTYPE;
 
+/* Slot kind, used to identify:
+ * - the thing the slot initializes (type/module/special)
+ * - the struct type (PySlot/PyType_Slot/PyModuleDef_Slot)
+ */
 typedef enum _PySlot_KIND {
     _PySlot_KIND_TYPE,
     _PySlot_KIND_MOD,
@@ -81,7 +86,7 @@ _PySlotIterator_InitLegacy(_PySlotIterator *it, const void *slots,
 /* Reset a *successfully exhausted* iterator to the beginning.
  * The *slots* must be the same as for the previous
  * `_PySlotIterator_InitWithKind` call.
- * (Subsequent iterations skip some validation.)
+ * (Unlike creating a new iterator, we can skip some validation after Rewind.)
  */
 PyAPI_FUNC(void) _PySlotIterator_Rewind(_PySlotIterator *it, const void *slots);
 
