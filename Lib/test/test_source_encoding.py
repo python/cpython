@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import unittest
+from test import support
 from test.support import script_helper, captured_stdout, requires_subprocess, requires_resource
 from test.support.os_helper import TESTFN, unlink, rmtree
 from test.support.import_helper import unload
@@ -114,6 +115,9 @@ class MiscSourceEncodingTest(unittest.TestCase):
         exec(b'# coding: cp949\na = "\xaa\xa7"\n', d)
         self.assertEqual(d['a'], '\u3047')
 
+    # NSKIP021 https://github.com/nanvix/cpython/issues/501
+    @unittest.skipIf(support.is_nanvix and not support.is_nanvix_standalone,
+                     "NSKIP021: FAT VFS rename() hangs the kernel")  # detail: __import__ writes __pycache__/*.pyc via atomic os.rename
     def test_file_parse(self):
         # issue1134: all encodings outside latin-1 and utf-8 fail on
         # multiline strings and long lines (>512 columns)
@@ -326,6 +330,9 @@ class BytesSourceEncodingTest(AbstractSourceEncodingTest, unittest.TestCase):
         self.assertEqual(out.rstrip(), expected)
 
 
+# NSKIP012 https://github.com/nanvix/cpython/issues/480
+@unittest.skipIf(support.is_nanvix and not support.is_nanvix_standalone,
+                 "NSKIP012: rmdir errno 88 cascade on hosted Nanvix leaves @test_1_tmp behind, breaking setUp in subsequent tests")
 class FileSourceEncodingTest(AbstractSourceEncodingTest, unittest.TestCase):
 
     def check_script_output(self, src, expected):
