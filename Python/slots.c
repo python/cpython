@@ -40,7 +40,6 @@ init_with_kind(_PySlotIterator *it, const void *slots,
     it->state = it->states;
     it->state->any_slot = slots;
     it->state->slot_struct_kind = slot_struct_kind;
-    it->state->ignoring_fallbacks = false;
     it->kind = result_kind;
     it->name = NULL;
     it->recursion_level = 0;
@@ -141,7 +140,7 @@ _PySlotIterator_Next(_PySlotIterator *it)
         switch (it->state->slot_struct_kind) {
             case _PySlot_KIND_SLOT: {
                 MSG("copying PySlot structure");
-                it->current = *it->state->slot;  /* struct copy */
+                it->current = *it->state->slot;
             } break;
             case _PySlot_KIND_TYPE: {
                 MSG("converting PyType_Slot structure");
@@ -166,16 +165,6 @@ _PySlotIterator_Next(_PySlotIterator *it)
         PySlot *const result = &it->current;
         uint16_t flags = result->sl_flags;
 
-        if (it->state->ignoring_fallbacks) {
-            if (!(it->state->slot->sl_flags & PySlot_HAS_FALLBACK)) {
-                MSG("stopping to ignore fallbacks");
-                it->state->ignoring_fallbacks = false;
-            }
-            MSG("skipped (ignoring fallbacks)");
-            advance(it);
-            continue;
-        }
-
         MSG("slot %d, flags 0x%x, from %p",
             (int)result->sl_id, (unsigned)flags, it->state->slot);
 
@@ -194,11 +183,6 @@ _PySlotIterator_Next(_PySlotIterator *it)
             (int)result->sl_id, _PySlot_GetName(result->sl_id));
 
         if (result->sl_id == Py_slot_invalid) {
-            if (flags & (PySlot_OPTIONAL | PySlot_HAS_FALLBACK)) {
-                MSG("skipped (unknown/invalid slot)");
-                advance(it);
-                continue;
-            }
             MSG("error (unknown/invalid slot)");
             _PySlot_err_bad_slot(kind_name(it->kind), orig_id);
             goto error;
@@ -206,12 +190,6 @@ _PySlotIterator_Next(_PySlotIterator *it)
         if (result->sl_id == Py_slot_end) {
             MSG("sentinel slot, flags %x", (unsigned)flags);
             if (flags & PySlot_OPTIONAL) {
-                MSG("skipped (optional sentinel)");
-                advance(it);
-                continue;
-            }
-            const uint16_t bad_flags = PySlot_OPTIONAL | PySlot_HAS_FALLBACK;
-            if (flags & bad_flags) {
                 MSG("error (bad flags on sentinel)");
                 PyErr_Format(PyExc_SystemError,
                             "invalid flags for Py_slot_end: 0x%x",
@@ -311,7 +289,6 @@ _PySlotIterator_Next(_PySlotIterator *it)
         }
         assert (result->sl_id > 0);
         assert (result->sl_id <= _Py_slot_COUNT);
-        assert (result->sl_id <= INT_MAX);
         if (it->is_first_run && handle_first_run(it) < 0) {
             goto error;
         }

@@ -19,9 +19,8 @@ struct PySlot {
 };
 
 #define PySlot_OPTIONAL 0x01
-#define PySlot_HAS_FALLBACK 0x02
-#define PySlot_STATIC 0x08
-#define PySlot_INTPTR 0x10
+#define PySlot_STATIC 0x02
+#define PySlot_INTPTR 0x04
 
 #define Py_slot_invalid 0xffff
 

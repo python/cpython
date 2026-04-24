@@ -43,10 +43,10 @@ typedef struct _PySlotIterator_state {
         const void *any_slot;
     };
     _PySlot_KIND slot_struct_kind;
-    bool ignoring_fallbacks :1;
 } _PySlotIterator_state;
 
 #define SEEN_ENTRY_BITS (8 * sizeof(unsigned int))
+
 /* State for a slots iterator */
 typedef struct {
     _PySlotIterator_state *state;
