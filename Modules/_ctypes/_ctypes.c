@@ -2225,6 +2225,7 @@ c_void_p_from_param_impl(PyObject *type, PyTypeObject *cls, PyObject *value)
 static int
 set_stginfo_ffi_type_pointer(StgInfo *stginfo, struct fielddesc *fmt)
 {
+#if defined(_Py_FFI_SUPPORT_C_COMPLEX)
     if (!fmt->pffi_type->elements) {
         stginfo->ffi_type_pointer = *fmt->pffi_type;
     }
@@ -2244,6 +2245,10 @@ set_stginfo_ffi_type_pointer(StgInfo *stginfo, struct fielddesc *fmt)
         memcpy(stginfo->ffi_type_pointer.elements,
                fmt->pffi_type->elements, els_size);
     }
+#else
+    assert(!fmt->pffi_type->elements);
+    stginfo->ffi_type_pointer = *fmt->pffi_type;
+#endif
     return 0;
 }
 
