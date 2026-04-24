@@ -210,11 +210,6 @@ struct gc_old_stats_buffer {
     int8_t index;
 };
 
-enum _GCPhase {
-    GC_PHASE_MARK = 0,
-    GC_PHASE_COLLECT = 1
-};
-
 /* If we change this, we need to change the default value in the
    signature of gc.collect and change the size of PyStats.gc_stats */
 #define NUM_GENERATIONS 3
