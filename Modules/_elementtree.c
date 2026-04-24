@@ -564,7 +564,7 @@ element_get_attrib(ElementObject* self)
 LOCAL(PyObject*)
 element_get_text(ElementObject* self)
 {
-    /* return borrowed reference to text attribute */
+    /* return new reference to text attribute */
 
     PyObject *res = self->text;
 
@@ -579,13 +579,13 @@ element_get_text(ElementObject* self)
         }
     }
 
-    return res;
+    return Py_NewRef(res);
 }
 
 LOCAL(PyObject*)
 element_get_tail(ElementObject* self)
 {
-    /* return borrowed reference to text attribute */
+    /* return new reference to tail attribute */
 
     PyObject *res = self->tail;
 
@@ -600,7 +600,7 @@ element_get_tail(ElementObject* self)
         }
     }
 
-    return res;
+    return Py_NewRef(res);
 }
 
 static PyObject*
@@ -1350,9 +1350,9 @@ _elementtree_Element_findtext_impl(ElementObject *self, PyTypeObject *cls,
             PyObject *text = element_get_text((ElementObject *)item);
             Py_DECREF(item);
             if (text == Py_None) {
+                Py_DECREF(text);
                 return Py_GetConstant(Py_CONSTANT_EMPTY_STR);
             }
-            Py_XINCREF(text);
             return text;
         }
         Py_DECREF(item);
@@ -2056,16 +2056,14 @@ static PyObject*
 element_text_getter(PyObject *op, void *closure)
 {
     ElementObject *self = _Element_CAST(op);
-    PyObject *res = element_get_text(self);
-    return Py_XNewRef(res);
+    return element_get_text(self);
 }
 
 static PyObject*
 element_tail_getter(PyObject *op, void *closure)
 {
     ElementObject *self = _Element_CAST(op);
-    PyObject *res = element_get_tail(self);
-    return Py_XNewRef(res);
+    return element_get_tail(self);
 }
 
 static PyObject*
@@ -2308,16 +2306,14 @@ elementiter_next(PyObject *op)
         continue;
 
 gettext:
+        Py_DECREF(elem);
         if (!text) {
-            Py_DECREF(elem);
             return NULL;
         }
         if (text == Py_None) {
-            Py_DECREF(elem);
+            Py_DECREF(text);
         }
         else {
-            Py_INCREF(text);
-            Py_DECREF(elem);
             rc = PyObject_IsTrue(text);
             if (rc > 0)
                 return text;
