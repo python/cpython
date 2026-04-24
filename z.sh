@@ -7,7 +7,7 @@
 
 set -euo pipefail
 
-PINNED_VERSION="0.7.25"
+PINNED_VERSION="0.7.26"
 RAW_ZUTIL_VERSION="${NANVIX_ZUTIL_VERSION:-$PINNED_VERSION}"
 ZUTIL_VERSION="${RAW_ZUTIL_VERSION#v}"
 REPO_ROOT="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd -P)"
