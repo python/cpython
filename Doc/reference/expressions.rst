@@ -48,9 +48,16 @@ Atoms
 .. index:: atom
 
 Atoms are the most basic elements of expressions.
-The simplest atoms are :ref:`names <identifiers>` or literals.
-Forms enclosed in parentheses, brackets or braces are also categorized
-syntactically as atoms.
+The simplest atoms are :ref:`builtin constants <atom-singletons>`,
+:ref:`names <identifiers>` and :ref:`literals <atom-literals>`.
+More complex atoms are enclosed in paired delimiters:
+
+- ``()`` (parentheses): :ref:`groups <parenthesized>`,
+  :ref:`tuple displays <tuple-display>`,
+  :ref:`yield atoms <yieldexpr>`, and
+  :ref:`generator expressions <genexpr>`;
+- ``[]`` (square brackets): :ref:`list displays <lists>`;
+- ``{}`` (curly braces): :ref:`dictionary <dict>` and :ref:`set <set>` displays.
 
 Formally, the syntax for atoms is:
 
@@ -58,21 +65,25 @@ Formally, the syntax for atoms is:
    :group: python-grammar
 
    atom:
-      | 'True'
-      | 'False'
-      | 'None'
-      | '...'
+      | `builtin_constant`
       | `identifier`
       | `literal`
-      | `enclosure`
-   enclosure:
-      | `parenth_form`
-      | `list_display`
-      | `dict_display`
-      | `set_display`
-      | `generator_expression`
+      | `parenthesized_enclosure`
+      | `bracketed_enclosure`
+      | `braced_enclosure`
+   parenthesized_enclosure:
+      | `group`
+      | `tuple`
       | `yield_atom`
-
+      | `generator_expression`
+   bracketed_enclosure:
+      | `listcomp`
+      | `list`
+   braced_enclosure:
+      | `dictcomp`
+      | `dict`
+      | `setcomp`
+      | `set`
 
 .. _atom-singletons:
 
@@ -98,6 +109,13 @@ Evaluation of these atoms yields the corresponding value.
          False = 123
          ^^^^^
       SyntaxError: cannot assign to False
+
+Formally, the syntax for built-in constants is:
+
+.. grammar-snippet::
+   :group: python-grammar
+
+   builtin_constant: 'True' | 'False' | 'None' | '...'
 
 .. _atom-identifiers:
 
@@ -201,6 +219,7 @@ The formal grammar for literals is:
 
    literal: `strings` | `NUMBER`
 
+.. _literals-identity:
 
 .. index::
    triple: immutable; data; type
@@ -309,96 +328,581 @@ Formally:
    strings: (`STRING` | `fstring`)+ | `tstring`+
 
 
-.. _parenthesized:
-
-Parenthesized forms
--------------------
-
 .. index::
    single: parenthesized form
-   single: () (parentheses); tuple display
+   single: () (parentheses)
 
-A parenthesized form is an optional expression list enclosed in parentheses:
+.. _parenthesized-forms:
+.. _parenthesized:
 
-.. productionlist:: python-grammar
-   parenth_form: "(" [`starred_expression`] ")"
+Parenthesized groups
+--------------------
 
-A parenthesized expression list yields whatever that expression list yields: if
-the list contains at least one comma, it yields a tuple; otherwise, it yields
-the single expression that makes up the expression list.
+A :dfn:`parenthesized group` is an expression enclosed in parentheses.
+The group evaluates to the same value as the expression inside.
 
-.. index:: pair: empty; tuple
+Groups are used to override or clarify
+:ref:`operator precedence <operator-precedence>`,
+in the same way as in math notation.
+For example::
 
-An empty pair of parentheses yields an empty tuple object.  Since tuples are
-immutable, the same rules as for literals apply (i.e., two occurrences of the empty
-tuple may or may not yield the same object).
+   >>> 3 << 2 | 4
+   12
+   >>> 3 << (2 | 4)   # Override precedence of the | (bitwise OR)
+   192
+   >>> (3 << 2) | 4   # Same as without parentheses (but more clear)
+   12
 
-.. index::
-   single: comma
-   single: , (comma)
+Note that not everything in parentheses is a *group*.
+Specifically, a parenthesized group must include exactly one expression,
+and cannot end with a comma.
+See :ref:`tuple displays <tuple-display>` and
+:ref:`generator expressions <genexpr>` for other parenthesized forms.
 
-Note that tuples are not formed by the parentheses, but rather by use of the
-comma.  The exception is the empty tuple, for which parentheses *are*
-required --- allowing unparenthesized "nothing" in expressions would cause
-ambiguities and allow common typos to pass uncaught.
+Formally, the syntax for groups is:
 
+.. grammar-snippet::
+   :group: python-grammar
 
-.. _comprehensions:
+   group: '(' `assignment_expression` ')'
 
-Displays for lists, sets and dictionaries
------------------------------------------
+.. _displays-for-lists-sets-and-dictionaries:
+.. _displays:
+
+Container displays
+------------------
 
 .. index:: single: comprehensions
 
-For constructing a list, a set or a dictionary Python provides special syntax
-called "displays", each of them in two flavors:
+For constructing builtin containers (lists, sets, tuples or dictionaries),
+Python provides special syntax called :dfn:`displays`.
+There are subtle differences between the four kinds of displays,
+detailed in the following sections.
+All displays, however, consist of comma-separated items enclosed in paired
+delimiters.
 
-* either the container contents are listed explicitly, or
+For example, a *list display* is a series of expressions enclosed in
+square brackets::
 
-* they are computed via a set of looping and filtering instructions, called a
-  :dfn:`comprehension`.
+   >>> ["one", "two", "three"]
+   ['one', 'two', 'three']
+   >>> [1 + 2, 2 + 3]
+   [3, 5]
+
+In list, tuple and dictionary (but not set) displays, the series may be empty::
+
+   >>> []  # empty list
+   []
+   >>> ()  # empty tuple
+   []
+   >>> {}  # empty dictionary
+   {}
+
+.. index:: pair: trailing; comma
+
+If the series is not empty, the items may be followed by an additional comma,
+which has no effect::
+
+   >>> ["one", "two", "three",]  # note comma after "three"
+   ['one', 'two', 'three']
+
+.. note::
+
+   The trailing comma is often used for displays that span multiple lines
+   (using :ref:`implicit line joining <implicit-joining>`),
+   so when a future programmer adds a new entry at the end, they do not
+   need to modify an existing line::
+
+      >>> [
+      ...     'one',
+      ...     'two',
+      ...     'three',
+      ... ]
+      ['one', 'two', 'three']
+
+At runtime, when a display is evaluated, the listed items are evaluated from
+left to right and placed into a new container of the appropriate type.
 
 .. index::
+   pair: iterable; unpacking
+   single: * (asterisk); in expression lists
+
+For tuple, list and set (but not dict) displays, any item in the display may
+be prefixed with an asterisk (``*``).
+This denotes :ref:`iterable unpacking  <iterable-unpacking>`.
+At runtime, the asterisk-prefixed expression must evaluate to an iterable,
+whose contents are inserted into the container at the location of
+the unpacking. For example::
+
+   >>> numbers = (1, 2)
+   >>> [*numbers, 'word', *numbers]
+   [1, 2, 'word', 1, 2]
+
+Dictionary displays use a similar mechanism called
+*dictionary unpacking*, denoted with a double
+asterisk (``**``).
+See :ref:`dict` for details.
+
+A more advanced form of displays are :dfn:`comprehensions`, where items are
+computed via a set of looping and filtering instructions.
+See the :ref:`comprehensions` section for details.
+
+.. versionadded:: 3.5
+   Iterable and dictionary unpacking in displays, originally proposed
+   by :pep:`448`.
+
+
+.. _lists:
+
+List displays
+^^^^^^^^^^^^^
+
+.. index::
+   pair: list; display
+   pair: list; comprehensions
+   pair: empty; list
+   pair: object; list
+   single: [] (square brackets); list expression
+   single: , (comma); expression list
+
+A :dfn:`list display` is a possibly empty series of expressions enclosed in
+square brackets. For example::
+
+   >>> ["one", "two", "three"]
+   ['one', 'two', 'three']
+   >>> ["one"]  # One-element list
+   ['one']
+   >>> []       # empty list
+   []
+
+See :ref:`displays` for general information on displays.
+
+The formal grammar for list displays is:
+
+.. grammar-snippet::
+   :group: python-grammar
+
+   list: '[' [`flexible_expression_list`] ']'
+
+
+.. _set:
+
+Set displays
+^^^^^^^^^^^^
+
+.. index::
+   pair: set; display
+   pair: set; comprehensions
+   pair: object; set
+   single: {} (curly brackets); set expression
+   single: , (comma); expression list
+
+A :dfn:`set display` is a *non-empty* series of expressions enclosed in
+curly braces. For example::
+
+   >>> {"one", "two", "three"}
+   {'one', 'three', 'two'}
+   >>> {"one"}  # One-element set
+   {'one'}
+
+See :ref:`displays` for general information on displays.
+
+There is no special syntax for the empty set.
+The ``{}`` literal is a :ref:`dictionary display <dict>` that constructs an
+empty dictionary.
+Call :class:`set() <set>` with no arguments to get an empty set.
+
+The formal grammar for set displays is:
+
+.. grammar-snippet::
+   :group: python-grammar
+
+   set: '{' `flexible_expression_list` '}'
+
+
+.. index::
+   single: tuple display
+   single: comma
+   single: , (comma)
+
+.. _tuple-display:
+
+.. index:: pair: empty; tuple
+
+Tuple displays
+^^^^^^^^^^^^^^
+
+A :dfn:`tuple display` is a series of expressions enclosed in
+parentheses. For example::
+
+   >>> (1, 2)
+   (1, 2)
+   >>> ()  # an empty tuple
+   ()
+
+See :ref:`displays` for general information on displays.
+
+To avoid ambiguity, if a tuple display has exactly one element,
+it requires a trailing comma.
+Without it, you get a :ref:`parenthesized group <parenthesized>`::
+
+   >>> ('single',)  # single-element tuple
+   ('single',)
+   >>> ('single')   # no comma: single string
+   'single'
+
+To put it in other words, a tuple display is a parenthesized list of either:
+
+- two or more comma-separated expressions, or
+- zero or more expressions, each followed by a comma.
+
+Since tuples are immutable, :ref:`object identity rules for literals <literals-identity>`
+also apply to tuples: at runtime, two occurrences of tuples with the same
+values may or may not yield the same object.
+
+.. note::
+
+   Python's syntax also includes :ref:`expression lists <exprlists>`,
+   where a comma-separated list of expressions is *not* enclosed in parentheses
+   but evaluates to tuple.
+
+   In other words, when it comes to tuple syntax, the comma is more important
+   that the use of parentheses.
+   Only the empty tuple is spelled without a comma.
+
+
+The formal grammar for tuple displays is:
+
+.. grammar-snippet::
+   :group: python-grammar
+
+   tuple:
+      | '(' `flexible_expression` (',' `flexible_expression`)+ [','] ')'
+      | '(' `flexible_expression` ',' ')'
+      | '(' ')'
+
+.. _dict:
+
+Dictionary displays
+^^^^^^^^^^^^^^^^^^^
+
+.. index::
+   pair: dictionary; display
+   pair: dictionary; comprehensions
+   key, value, key/value pair
+   pair: object; dictionary
+   single: {} (curly brackets); dictionary expression
+   single: : (colon); in dictionary expressions
+   single: , (comma); in dictionary displays
+
+A :dfn:`dictionary display` is a possibly empty series of :dfn:`dict items`
+enclosed in curly braces.
+Each dict item is a colon-separated pair of expressions: the :dfn:`key`
+and its associated :dfn:`value`.
+For example::
+
+   >>> {1: 'one', 2: 'two'}
+   {1: 'one', 2: 'two'}
+
+At runtime, when a dictionary comprehension is evaluated, the expressions
+are evaluated from left to right.
+Each key object is used as a key into the dictionary to store the
+corresponding value.
+This means that you can specify the same key multiple times in the
+comprehension, and the final dictionary's value for a given key will be the
+last one given.
+For example::
+
+   >>> {
+   ...     1: 'this will be overridden',
+   ...     2: 'two',
+   ...     1: 'also overridden',
+   ...     1: 'one',
+   ... }
+   {1: 'one', 2: 'two'}
+
+.. index::
+   unpacking; dictionary
+   single: **; in dictionary displays
+
+.. _dict-unpacking:
+
+Instead of a key-value pair, a dict item may be an expression prefixed by
+a double asterisk ``**``. This denotes :dfn:`dictionary unpacking`.
+At runtime, the expression must evaluate to a :term:`mapping`;
+each item of the mapping is added to the new dictionary.
+As with key-value pairs, later values replace values already set by
+earlier items and unpackings.
+This may be used to override a set of defaults::
+
+   >>> defaults = {'color': 'blue', 'count': 8}
+   >>> overrides = {'color': 'yellow'}
+   >>> {**defaults, **overrides}
+   {'color': 'yellow', 'count': 8}
+
+.. versionadded:: 3.5
+   Unpacking into dictionary displays, originally proposed by :pep:`448`.
+
+The formal grammar for dict displays is:
+
+.. grammar-snippet::
+   :group: python-grammar
+
+   dict:                   '{' [`double_starred_kvpairs`] '}'
+   double_starred_kvpairs: ','.`double_starred_kvpair`+ [',']
+   double_starred_kvpair:  '**' `or_expr` | `kvpair`
+   kvpair:                 `expression` ':' `expression`
+
+
+.. index::
+   single: comprehensions
    single: for; in comprehensions
-   single: if; in comprehensions
-   single: async for; in comprehensions
 
-Common syntax elements for comprehensions are:
+.. _comprehensions:
 
-.. productionlist:: python-grammar
-   comprehension: `flexible_expression` `comp_for`
-   comp_for: ["async"] "for" `target_list` "in" `or_test` [`comp_iter`]
-   comp_iter: `comp_for` | `comp_if`
-   comp_if: "if" `or_test` [`comp_iter`]
+Comprehensions
+--------------
 
-The comprehension consists of a single expression followed by at least one
-:keyword:`!for` clause and zero or more :keyword:`!for` or :keyword:`!if`
-clauses.  In this case, the elements of the new container are those that would
-be produced by considering each of the :keyword:`!for` or :keyword:`!if`
-clauses a block, nesting from left to right, and evaluating the expression to
-produce an element each time the innermost block is reached.  If the expression
-is starred, the result will instead be unpacked to produce zero or more
-elements.
+List, set and dictionary :dfn:`comprehensions` are a form of
+:ref:`container displays <displays>` where items are computed via a set of
+looping and filtering instructions rather than listed explicitly.
 
-However, aside from the iterable expression in the leftmost :keyword:`!for` clause,
-the comprehension is executed in a separate implicitly nested scope. This ensures
-that names assigned to in the target list don't "leak" into the enclosing scope.
+In its simplest form, a comprehension consists of a single expression
+followed by a :keyword:`!for` clause.
+The :keyword:`!for` clause has the same syntax as the header of a
+:ref:`for statement <for>`, without a trailing colon.
+
+For example, a list of the first ten squares is::
+
+   >>> [x**2 for x in range(10)]
+   [0, 1, 4, 9, 16, 25, 36, 49, 64, 81]
+
+At run time, a list comprehension creates a new list.
+The expression after :keyword:`!in` must evaluate to an :term:`iterable`.
+For each element of this iterable, the element is bound to the :keyword:`!for`
+clause's target as in a :keyword:`!for` statement, then the expression
+before :keyword:`!for` is evaluated with the target in scope and the result
+is added to the new list.
+Thus, the example above is roughly equivalent to defining and calling
+the following function::
+
+   def make_list_of_squares(iterable):
+       result = []
+       for x in iterable:
+           result.append(x**2)
+       return result
+
+   make_list_of_squares(range(10))
+
+Set comprehensions work similarly.
+For example, here is a set of lowercase letters::
+
+   >>> {x.lower() for x in ['a', 'A', 'b', 'C']}
+   {'c', 'a', 'b'}
+
+At run time, this corresponds roughly to calling this function::
+
+   def make_lowercase_set(iterable):
+       result = set(iterable)
+       for x in iterable:
+           result.append(x.lower())
+       return result
+
+   make_lowercase_set(['a', 'A', 'b', 'C'])
+
+Dictionary comprehensions start with a colon-separated key-value pair instead
+of an expression. For example::
+
+   >>> {func.__name__: func for func in [print, hex, any]}
+   {'print': <built-in function print>,
+    'hex': <built-in function hex>,
+    'any': <built-in function any>}
+
+At run time, this corresponds roughly to::
+
+   def make_dict_mapping_names_to_functions(iterable):
+       result = {}
+       for func in iterable:
+           result[func.__name__] = func
+       return result
+
+   iterable([print, hex, any])
+
+As in other kinds of dictionary displays, the same key may be specified
+multiple times.
+Earlier values are overwritten by ones that are evaluated later.
+
+There are no *tuple comprehensions*.
+A similar syntax is instead used for :ref:`generator expressions <genexpr>`,
+from which you can construct a tuple like this::
+
+   >>> tuple(x**2 for x in range(10))
+   (0, 1, 4, 9, 16, 25, 36, 49, 64, 81)
+
+.. versionchanged:: 3.8
+   Prior to Python 3.8, in dict comprehensions, the evaluation order of key
+   and value was not well-defined.  In CPython, the value was evaluated before
+   the key.  Starting with 3.8, the key is evaluated before the value, as
+   proposed by :pep:`572`.
+
+
+.. index:: single: if; in comprehensions
+
+Filtering in comprehensions
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The :keyword:`!for` clause may be followed by an :keyword:`!if` clause
+with an expression.
+
+For example, a list of names from the :mod:`math` module
+that start with ``f`` is::
+
+   >>> [name for name in vars(math) if name.startswith('f')]
+   ['fabs', 'factorial', 'floor', 'fma', 'fmod', 'frexp', 'fsum']
+
+At run time, the expression after :keyword:`!if` is evaluated before
+each element is added to the resulting container, and if it is false,
+the element is skipped.
+Thus, the above example roughly corresponds to defining and calling the
+following function::
+
+   def get_math_f_names(iterable):
+       result = []
+       for name in iterable:
+           if name.startswith('f'):
+              result.append(name)
+       return result
+
+   get_math_f_names(vars(math))
+
+Filtering is a special case of more complex comprehensions.
+See the next section for a more formal description.
+
+
+.. _complex-comprehensions:
+
+Complex comprehensions
+^^^^^^^^^^^^^^^^^^^^^^
+
+Generally, a comprehension's initial :keyword:`!for` clause may be followed by
+zero or more additional :keyword:`!for` or :keyword:`!if` clauses.
+For example, here is a list of names exposed by two Python modules,
+filtered to only include names that start with ``a``::
+
+   >>> import array
+   >>> import math
+   >>> [
+   ...     name
+   ...     for module in [array, math]
+   ...     for name in vars(module)
+   ...     if name.startswith('a')
+   ... ]
+   ['array', 'acos', 'acosh', 'asin', 'asinh', 'atan', 'atan2', 'atanh']
+
+At run time, this roughly corresponds to defining and calling::
+
+   def get_a_names(iterable):
+       result = []
+       for module in iterable:
+           for name in vars(module):
+               if name.startswith('a'):
+                   result.append(name)
+       return result
+
+   get_a_names([array, math])
+
+The elements of the new container are those that would be produced by
+considering each of the :keyword:`!for` or :keyword:`!if` clauses a block,
+nesting from left to right, and evaluating the expression to produce an
+element (or dictionary entry) each time the innermost block is reached.
+
+Aside from the iterable expression in the leftmost :keyword:`!for` clause,
+the comprehension is executed in a separate implicitly nested scope.
+This ensures that names assigned to in the target list don't "leak" into
+the enclosing scope.
+For example::
+
+   >>> x = 'old value'
+   >>> [x**2 for x in range(10)]  # this `x` is local to the comprehension
+   >>> x
+   'old value'
 
 The iterable expression in the leftmost :keyword:`!for` clause is evaluated
 directly in the enclosing scope and then passed as an argument to the implicitly
-nested scope. Subsequent :keyword:`!for` clauses and any filter condition in the
+nested scope.
+
+Subsequent :keyword:`!for` clauses and any filter condition in the
 leftmost :keyword:`!for` clause cannot be evaluated in the enclosing scope as
-they may depend on the values obtained from the leftmost iterable. For example:
-``[x*y for x in range(10) for y in range(x, x+10)]``.
+they may depend on the values obtained from the leftmost iterable.
 
 To ensure the comprehension always results in a container of the appropriate
 type, ``yield`` and ``yield from`` expressions are prohibited in the implicitly
 nested scope.
 
+:ref:`Assignment expressions <assignment-expressions>` are not allowed
+inside comprehension iterable expressions (that is, the expressions after
+the :keyword:`!in` keyword), nor anywhere within comprehensions that
+appear directly in a class definition.
+
+.. versionchanged:: 3.8
+   ``yield`` and ``yield from`` prohibited in the implicitly nested scope.
+
+
+Unpacking in comprehensions
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+If the expression of a list or set comprehension is starred, the result will
+be :ref:`unpacked <iterable-unpacking>` to produce
+zero or more elements.
+
+This is often used for "flattening" lists, for example::
+
+   >>> students = ['Petr', 'Blaise', 'Jarka']
+   >>> teachers = ['Salim', 'Bartosz']
+   >>> lists_of_people = [students, teachers]
+   >>> [*people for people in lists_of_people]
+   ['Petr', 'Blaise', 'Jarka', 'Salim', 'Bartosz']
+
+At run time, this comprehension roughly corresponds to::
+
+   def flatten_names(lists_of_people):
+       result = []
+       for people in lists_of_people:
+           result.extend(people)
+       return result
+
+In dict comprehensions, a double-starred expression will be evaluated and
+then unpacked using :ref:`dictionary unpacking <dict-unpacking>`,
+inserting zero or more key/value pairs into the new dictionary.
+As in other kinds of dictionary displays, if the same key is specified
+multiple times, the associated value in the resulting dictionary
+will be the last one specified.
+
+For example::
+
+   >>> system_defaults = {'color': 'blue', 'count': 8}
+   >>> user_defaults = {'color': 'yellow'}
+   >>> overrides = {'count': 5}
+
+   >>> configuration_sets = [system_defaults, user_defaults, overrides]
+
+   >>> {**d for d in configuration_sets}
+   {'color': 'yellow', 'count': 5}
+
+.. versionadded:: 3.15
+
+   Unpacking in comprehensions using the ``*`` and ``**`` operators
+   was introduced in :pep:`798`.
+
+
 .. index::
+   single: async for; in comprehensions
    single: await; in comprehensions
 
-Since Python 3.6, in an :keyword:`async def` function, an :keyword:`!async for`
+Asynchronous comprehensions
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+In an :keyword:`async def` function, an :keyword:`!async for`
 clause may be used to iterate over a :term:`asynchronous iterator`.
 A comprehension in an :keyword:`!async def` function may consist of either a
 :keyword:`!for` or :keyword:`!async for` clause following the leading
@@ -410,153 +914,37 @@ If a comprehension contains :keyword:`!async for` clauses, or if it contains
 the iterable expression in the leftmost :keyword:`!for` clause, it is called an
 :dfn:`asynchronous comprehension`. An asynchronous comprehension may suspend the
 execution of the coroutine function in which it appears.
-See also :pep:`530`.
 
 .. versionadded:: 3.6
-   Asynchronous comprehensions were introduced.
 
-.. versionchanged:: 3.8
-   ``yield`` and ``yield from`` prohibited in the implicitly nested scope.
+   Asynchronous comprehensions were introduced in :pep:`530`.
 
 .. versionchanged:: 3.11
    Asynchronous comprehensions are now allowed inside comprehensions in
    asynchronous functions. Outer comprehensions implicitly become
    asynchronous.
 
-.. versionchanged:: 3.15
-   Unpacking with the ``*`` operator is now allowed in the expression.
+.. _comprehension-grammar:
 
+Formal grammar for comprehensions
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-.. _lists:
+The formal grammar for comprehensions is:
 
-List displays
--------------
+.. grammar-snippet::
+   :group: python-grammar
 
-.. index::
-   pair: list; display
-   pair: list; comprehensions
-   pair: empty; list
-   pair: object; list
-   single: [] (square brackets); list expression
-   single: , (comma); expression list
+   listcomp:      '[' `comprehension` ']'
+   setcomp:       '{' `comprehension` '}'
+   comprehension: `flexible_expression` `for_if_clause`+
 
-A list display is a possibly empty series of expressions enclosed in square
-brackets:
+   dictcomp:
+       | '{' `kvpair` `for_if_clause`+ '}'
+       | '{' '**' `expression` `for_if_clause`+ '}'
 
-.. productionlist:: python-grammar
-   list_display: "[" [`flexible_expression_list` | `comprehension`] "]"
+   for_if_clause:
+       | ['async'] 'for' `target_list` 'in' `or_test` ('if' `or_test`)*
 
-A list display yields a new list object, the contents being specified by either
-a list of expressions or a comprehension.  When a comma-separated list of
-expressions is supplied, its elements are evaluated from left to right and
-placed into the list object in that order.  When a comprehension is supplied,
-the list is constructed from the elements resulting from the comprehension.
-
-
-.. _set:
-
-Set displays
-------------
-
-.. index::
-   pair: set; display
-   pair: set; comprehensions
-   pair: object; set
-   single: {} (curly brackets); set expression
-   single: , (comma); expression list
-
-A set display is denoted by curly braces and distinguishable from dictionary
-displays by the lack of colons separating keys and values:
-
-.. productionlist:: python-grammar
-   set_display: "{" (`flexible_expression_list` | `comprehension`) "}"
-
-A set display yields a new mutable set object, the contents being specified by
-either a sequence of expressions or a comprehension.  When a comma-separated
-list of expressions is supplied, its elements are evaluated from left to right
-and added to the set object.  When a comprehension is supplied, the set is
-constructed from the elements resulting from the comprehension.
-
-An empty set cannot be constructed with ``{}``; this literal constructs an empty
-dictionary.
-
-
-.. _dict:
-
-Dictionary displays
--------------------
-
-.. index::
-   pair: dictionary; display
-   pair: dictionary; comprehensions
-   key, value, key/value pair
-   pair: object; dictionary
-   single: {} (curly brackets); dictionary expression
-   single: : (colon); in dictionary expressions
-   single: , (comma); in dictionary displays
-
-A dictionary display is a possibly empty series of dict items (key/value pairs)
-enclosed in curly braces:
-
-.. productionlist:: python-grammar
-   dict_display: "{" [`dict_item_list` | `dict_comprehension`] "}"
-   dict_item_list: `dict_item` ("," `dict_item`)* [","]
-   dict_comprehension: `dict_item` `comp_for`
-   dict_item: `expression` ":" `expression` | "**" `or_expr`
-
-A dictionary display yields a new dictionary object.
-
-If a comma-separated sequence of dict items is given, they are evaluated
-from left to right to define the entries of the dictionary: each key object is
-used as a key into the dictionary to store the corresponding value.  This means
-that you can specify the same key multiple times in the dict item list, and the
-final dictionary's value for that key will be the last one given.
-
-.. index::
-   unpacking; dictionary
-   single: **; in dictionary displays
-
-A double asterisk ``**`` denotes :dfn:`dictionary unpacking`.
-Its operand must be a :term:`mapping`.  Each mapping item is added
-to the new dictionary.  Later values replace values already set by
-earlier dict items and earlier dictionary unpackings.
-
-.. versionadded:: 3.5
-   Unpacking into dictionary displays, originally proposed by :pep:`448`.
-
-A dict comprehension may take one of two forms:
-
-- The first form  uses two expressions separated with a colon followed by the
-  usual "for" and "if" clauses.  When the comprehension is run, the resulting
-  key and value elements are inserted in the new dictionary in the order they
-  are produced.
-
-- The second form uses a single expression prefixed by the ``**`` dictionary
-  unpacking operator followed by the usual "for" and "if" clauses.  When the
-  comprehension is evaluated, the expression is evaluated and then unpacked,
-  inserting zero or more key/value pairs into the new dictionary.
-
-Both forms of dictionary comprehension retain the property that if the same key
-is specified multiple times, the associated value in the resulting dictionary
-will be the last one specified.
-
-.. index:: pair: immutable; object
-           hashable
-
-Restrictions on the types of the key values are listed earlier in section
-:ref:`types`.  (To summarize, the key type should be :term:`hashable`, which excludes
-all mutable objects.)  Clashes between duplicate keys are not detected; the last
-value (textually rightmost in the display) stored for a given key value
-prevails.
-
-.. versionchanged:: 3.8
-   Prior to Python 3.8, in dict comprehensions, the evaluation order of key
-   and value was not well-defined.  In CPython, the value was evaluated before
-   the key.  Starting with 3.8, the key is evaluated before the value, as
-   proposed by :pep:`572`.
-
-.. versionchanged:: 3.15
-   Unpacking with the ``**`` operator is now allowed in dictionary comprehensions.
 
 .. _genexpr:
 
@@ -571,7 +959,7 @@ Generator expressions
 A generator expression is a compact generator notation in parentheses:
 
 .. productionlist:: python-grammar
-   generator_expression: "(" `flexible_expression` `comp_for` ")"
+   generator_expression: "(" `comprehension` ")"
 
 A generator expression yields a new generator object.  Its syntax is the same as
 for comprehensions, except that it is enclosed in parentheses instead of
@@ -2178,6 +2566,10 @@ functions created with lambda expressions cannot contain statements or
 annotations.
 
 
+.. index::
+   single: comma
+   single: , (comma)
+
 .. _exprlists:
 
 Expression lists
@@ -2202,21 +2594,6 @@ containing at least one comma yields a tuple.  The length of
 the tuple is the number of expressions in the list.  The expressions are
 evaluated from left to right.
 
-.. index::
-   pair: iterable; unpacking
-   single: * (asterisk); in expression lists
-
-An asterisk ``*`` denotes :dfn:`iterable unpacking`.  Its operand must be
-an :term:`iterable`.  The iterable is expanded into a sequence of items,
-which are included in the new tuple, list, or set, at the site of
-the unpacking.
-
-.. versionadded:: 3.5
-   Iterable unpacking in expression lists, originally proposed by :pep:`448`.
-
-.. versionadded:: 3.11
-   Any item in an expression list may be starred. See :pep:`646`.
-
 .. index:: pair: trailing; comma
 
 A trailing comma is required only to create a one-item tuple,
@@ -2225,6 +2602,32 @@ A single expression without a
 trailing comma doesn't create a tuple, but rather yields the value of that
 expression. (To create an empty tuple, use an empty pair of parentheses:
 ``()``.)
+
+
+.. _iterable-unpacking:
+
+.. index::
+   pair: iterable; unpacking
+   single: * (asterisk); in expression lists
+
+Iterable unpacking
+------------------
+
+In an expression list or tuple, list or set display, any expression
+may be prefixed with an asterisk (``*``).
+This denotes :dfn:`iterable unpacking`.
+
+At runtime, the asterisk-prefixed expression must evaluate
+to an :term:`iterable`.
+The iterable is expanded into a sequence of items,
+which are included in the new tuple, list, or set, at the site of
+the unpacking.
+
+.. versionadded:: 3.5
+   Iterable unpacking in expression lists, originally proposed by :pep:`448`.
+
+.. versionadded:: 3.11
+   Any item in an expression list may be starred. See :pep:`646`.
 
 
 .. _evalorder:
@@ -2249,6 +2652,7 @@ their suffixes::
 
 
 .. _operator-summary:
+.. _operator-precedence:
 
 Operator precedence
 ===================
