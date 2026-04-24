@@ -209,7 +209,6 @@ class XMLRPCTestCase(unittest.TestCase):
         self.assertEqual(xmlrpclib.loads(strg)[1], methodname)
 
     def test_dump_escape_methodname(self):
-        # gh-148954: test that methodname is sanitized in dumps()
         payload = 'foo</methodName><injected attr="evil"/><methodName>bar'
         s = xmlrpclib.dumps((), methodname=payload)
         self.assertIn(
