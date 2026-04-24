@@ -5376,7 +5376,7 @@ class TestZeroArgumentSuperWithSlots(unittest.TestCase):
         self.assertIs(A().cls(), B)
 
     def test_empty_class_cell(self):
-        # gh-148947: Make sure that if the class cell is empty, we don't crash.
+        # gh-148947: Make sure that we explicitly handle the empty class cell.
         def maker():
             if False:
                 __class__ = 42
