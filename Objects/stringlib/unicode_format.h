@@ -4,6 +4,7 @@
 
 #include "pycore_complexobject.h" // _PyComplex_FormatAdvancedWriter()
 #include "pycore_floatobject.h"   // _PyFloat_FormatAdvancedWriter()
+#include "pycore_tuple.h"         // _PyTuple_FromPairSteal
 
 /************************************************************************/
 /***********   Global data structures and forward declarations  *********/
@@ -1100,7 +1101,7 @@ static PyTypeObject PyFormatterIter_Type = {
    describing the parsed elements.  It's a wrapper around
    stringlib/string_format.h's MarkupIterator */
 static PyObject *
-formatter_parser(PyObject *ignored, PyObject *self)
+formatter_parser(PyObject *Py_UNUSED(module), PyObject *self)
 {
     formatteriterobject *it;
 
@@ -1172,7 +1173,7 @@ fieldnameiter_next(PyObject *op)
 
         is_attr_obj = PyBool_FromLong(is_attr);
         if (is_attr_obj == NULL)
-            goto done;
+            goto error;
 
         /* either an integer or a string */
         if (idx != -1)
@@ -1180,12 +1181,12 @@ fieldnameiter_next(PyObject *op)
         else
             obj = SubString_new_object(&name);
         if (obj == NULL)
-            goto done;
+            goto error;
 
         /* return a tuple of values */
-        result = PyTuple_Pack(2, is_attr_obj, obj);
+        return _PyTuple_FromPairSteal(is_attr_obj, obj);
 
-    done:
+    error:
         Py_XDECREF(is_attr_obj);
         Py_XDECREF(obj);
         return result;
@@ -1236,7 +1237,7 @@ static PyTypeObject PyFieldNameIter_Type = {
    field_name_split.  The iterator it returns is a
    FieldNameIterator */
 static PyObject *
-formatter_field_name_split(PyObject *ignored, PyObject *self)
+formatter_field_name_split(PyObject *Py_UNUSED(module), PyObject *self)
 {
     SubString first;
     Py_ssize_t first_idx;
@@ -1262,7 +1263,7 @@ formatter_field_name_split(PyObject *ignored, PyObject *self)
        first_obj in that case. */
     if (!field_name_split((PyObject*)self, 0, PyUnicode_GET_LENGTH(self),
                           &first, &first_idx, &it->it_field, NULL))
-        goto done;
+        goto error;
 
     /* first becomes an integer, if possible; else a string */
     if (first_idx != -1)
@@ -1271,12 +1272,12 @@ formatter_field_name_split(PyObject *ignored, PyObject *self)
         /* convert "first" into a string object */
         first_obj = SubString_new_object(&first);
     if (first_obj == NULL)
-        goto done;
+        goto error;
 
     /* return a tuple of values */
-    result = PyTuple_Pack(2, first_obj, it);
+    return _PyTuple_FromPairSteal(first_obj, (PyObject *)it);
 
-done:
+error:
     Py_XDECREF(it);
     Py_XDECREF(first_obj);
     return result;

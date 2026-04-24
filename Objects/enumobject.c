@@ -6,6 +6,7 @@
 #include "pycore_modsupport.h"    // _PyArg_NoKwnames()
 #include "pycore_object.h"        // _PyObject_GC_TRACK()
 #include "pycore_unicodeobject.h" // _PyUnicode_EqualToASCIIString
+#include "pycore_tuple.h"         // _PyTuple_Recycle()
 
 #include "clinic/enumobject.c.h"
 
@@ -77,7 +78,7 @@ enum_new_impl(PyTypeObject *type, PyObject *iterable, PyObject *start)
         Py_DECREF(en);
         return NULL;
     }
-    en->en_result = PyTuple_Pack(2, Py_None, Py_None);
+    en->en_result = _PyTuple_FromPairSteal(Py_None, Py_None);
     if (en->en_result == NULL) {
         Py_DECREF(en);
         return NULL;
@@ -147,7 +148,7 @@ enumerate_vectorcall(PyObject *type, PyObject *const *args,
     }
 
     PyErr_Format(PyExc_TypeError,
-        "enumerate() takes at most 2 arguments (%d given)", nargs + nkwargs);
+        "enumerate() takes at most 2 arguments (%zd given)", nargs + nkwargs);
     return NULL;
 }
 
@@ -177,14 +178,16 @@ enum_traverse(PyObject *op, visitproc visit, void *arg)
 static inline PyObject *
 increment_longindex_lock_held(enumobject *en)
 {
-    PyObject *next_index = en->en_longindex;
-    if (next_index == NULL) {
-        next_index = PyLong_FromSsize_t(PY_SSIZE_T_MAX);
-        if (next_index == NULL) {
+    if (en->en_longindex == NULL) {
+        en->en_longindex = PyLong_FromSsize_t(PY_SSIZE_T_MAX);
+        if (en->en_longindex == NULL) {
             return NULL;
         }
     }
-    assert(next_index != NULL);
+    assert(en->en_longindex != NULL);
+    // We hold one reference to "next_index" (a.k.a. the old value of
+    // en->en_longindex); we'll either return it or keep it in en->en_longindex
+    PyObject *next_index = en->en_longindex;
     PyObject *stepped_up = PyNumber_Add(next_index, en->one);
     if (stepped_up == NULL) {
         return NULL;
@@ -220,20 +223,10 @@ enum_next_long(enumobject *en, PyObject* next_item)
         Py_DECREF(old_item);
         // bpo-42536: The GC may have untracked this result tuple. Since we're
         // recycling it, make sure it's tracked again:
-        if (!_PyObject_GC_IS_TRACKED(result)) {
-            _PyObject_GC_TRACK(result);
-        }
+        _PyTuple_Recycle(result);
         return result;
     }
-    result = PyTuple_New(2);
-    if (result == NULL) {
-        Py_DECREF(next_index);
-        Py_DECREF(next_item);
-        return NULL;
-    }
-    PyTuple_SET_ITEM(result, 0, next_index);
-    PyTuple_SET_ITEM(result, 1, next_item);
-    return result;
+    return _PyTuple_FromPairSteal(next_index, next_item);
 }
 
 static PyObject *
@@ -272,20 +265,10 @@ enum_next(PyObject *op)
         Py_DECREF(old_item);
         // bpo-42536: The GC may have untracked this result tuple. Since we're
         // recycling it, make sure it's tracked again:
-        if (!_PyObject_GC_IS_TRACKED(result)) {
-            _PyObject_GC_TRACK(result);
-        }
+        _PyTuple_Recycle(result);
         return result;
     }
-    result = PyTuple_New(2);
-    if (result == NULL) {
-        Py_DECREF(next_index);
-        Py_DECREF(next_item);
-        return NULL;
-    }
-    PyTuple_SET_ITEM(result, 0, next_index);
-    PyTuple_SET_ITEM(result, 1, next_item);
-    return result;
+    return _PyTuple_FromPairSteal(next_index, next_item);
 }
 
 static PyObject *
@@ -370,7 +353,7 @@ typedef struct {
 @classmethod
 reversed.__new__ as reversed_new
 
-    sequence as seq: object
+    object as seq: object
     /
 
 Return a reverse iterator over the values of the given sequence.
@@ -378,7 +361,7 @@ Return a reverse iterator over the values of the given sequence.
 
 static PyObject *
 reversed_new_impl(PyTypeObject *type, PyObject *seq)
-/*[clinic end generated code: output=f7854cc1df26f570 input=aeb720361e5e3f1d]*/
+/*[clinic end generated code: output=f7854cc1df26f570 input=4781869729e3ba50]*/
 {
     Py_ssize_t n;
     PyObject *reversed_meth;

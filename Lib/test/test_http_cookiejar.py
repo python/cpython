@@ -4,6 +4,7 @@ import os
 import stat
 import sys
 import re
+from test import support
 from test.support import os_helper
 from test.support import warnings_helper
 import time
@@ -105,8 +106,7 @@ class DateTimeTests(unittest.TestCase):
             self.assertEqual(http2time(s.lower()), test_t, s.lower())
             self.assertEqual(http2time(s.upper()), test_t, s.upper())
 
-    def test_http2time_garbage(self):
-        for test in [
+    @support.subTests('test', [
             '',
             'Garbage',
             'Mandag 16. September 1996',
@@ -121,10 +121,9 @@ class DateTimeTests(unittest.TestCase):
             '08-01-3697739',
             '09 Feb 19942632 22:23:32 GMT',
             'Wed, 09 Feb 1994834 22:23:32 GMT',
-            ]:
-            self.assertIsNone(http2time(test),
-                              "http2time(%s) is not None\n"
-                              "http2time(test) %s" % (test, http2time(test)))
+        ])
+    def test_http2time_garbage(self, test):
+        self.assertIsNone(http2time(test))
 
     def test_http2time_redos_regression_actually_completes(self):
         # LOOSE_HTTP_DATE_RE was vulnerable to malicious input which caused catastrophic backtracking (REDoS).
@@ -149,9 +148,7 @@ class DateTimeTests(unittest.TestCase):
         self.assertEqual(parse_date("1994-02-03 19:45:29 +0530"),
                          (1994, 2, 3, 14, 15, 29))
 
-    def test_iso2time_formats(self):
-        # test iso2time for supported dates.
-        tests = [
+    @support.subTests('s', [
             '1994-02-03 00:00:00 -0000', # ISO 8601 format
             '1994-02-03 00:00:00 +0000', # ISO 8601 format
             '1994-02-03 00:00:00',       # zone is optional
@@ -164,16 +161,15 @@ class DateTimeTests(unittest.TestCase):
             # A few tests with extra space at various places
             '  1994-02-03 ',
             '  1994-02-03T00:00:00  ',
-        ]
-
+        ])
+    def test_iso2time_formats(self, s):
+        # test iso2time for supported dates.
         test_t = 760233600  # assume broken POSIX counting of seconds
-        for s in tests:
-            self.assertEqual(iso2time(s), test_t, s)
-            self.assertEqual(iso2time(s.lower()), test_t, s.lower())
-            self.assertEqual(iso2time(s.upper()), test_t, s.upper())
+        self.assertEqual(iso2time(s), test_t, s)
+        self.assertEqual(iso2time(s.lower()), test_t, s.lower())
+        self.assertEqual(iso2time(s.upper()), test_t, s.upper())
 
-    def test_iso2time_garbage(self):
-        for test in [
+    @support.subTests('test', [
             '',
             'Garbage',
             'Thursday, 03-Feb-94 00:00:00 GMT',
@@ -186,9 +182,9 @@ class DateTimeTests(unittest.TestCase):
             '01-01-1980 00:00:62',
             '01-01-1980T00:00:62',
             '19800101T250000Z',
-            ]:
-            self.assertIsNone(iso2time(test),
-                              "iso2time(%r)" % test)
+        ])
+    def test_iso2time_garbage(self, test):
+        self.assertIsNone(iso2time(test))
 
     def test_iso2time_performance_regression(self):
         # If ISO_DATE_RE regresses to quadratic complexity, this test will take a very long time to succeed.
@@ -199,24 +195,23 @@ class DateTimeTests(unittest.TestCase):
 
 class HeaderTests(unittest.TestCase):
 
-    def test_parse_ns_headers(self):
-        # quotes should be stripped
-        expected = [[('foo', 'bar'), ('expires', 2209069412), ('version', '0')]]
-        for hdr in [
+    @support.subTests('hdr', [
             'foo=bar; expires=01 Jan 2040 22:23:32 GMT',
             'foo=bar; expires="01 Jan 2040 22:23:32 GMT"',
-            ]:
-            self.assertEqual(parse_ns_headers([hdr]), expected)
-
-    def test_parse_ns_headers_version(self):
-
+        ])
+    def test_parse_ns_headers(self, hdr):
         # quotes should be stripped
-        expected = [[('foo', 'bar'), ('version', '1')]]
-        for hdr in [
+        expected = [[('foo', 'bar'), ('expires', 2209069412), ('version', '0')]]
+        self.assertEqual(parse_ns_headers([hdr]), expected)
+
+    @support.subTests('hdr', [
             'foo=bar; version="1"',
             'foo=bar; Version="1"',
-            ]:
-            self.assertEqual(parse_ns_headers([hdr]), expected)
+        ])
+    def test_parse_ns_headers_version(self, hdr):
+        # quotes should be stripped
+        expected = [[('foo', 'bar'), ('version', '1')]]
+        self.assertEqual(parse_ns_headers([hdr]), expected)
 
     def test_parse_ns_headers_special_names(self):
         # names such as 'expires' are not special in first name=value pair
@@ -226,8 +221,7 @@ class HeaderTests(unittest.TestCase):
         expected = [[("expires", "01 Jan 2040 22:23:32 GMT"), ("version", "0")]]
         self.assertEqual(parse_ns_headers([hdr]), expected)
 
-    def test_join_header_words(self):
-        for src, expected in [
+    @support.subTests('src,expected', [
             ([[("foo", None), ("bar", "baz")]], "foo; bar=baz"),
             (([]), ""),
             (([[]]), ""),
@@ -237,12 +231,11 @@ class HeaderTests(unittest.TestCase):
              'n; foo="foo;_", bar=foo_bar'),
             ([[("n", "m"), ("foo", None)], [("bar", "foo_bar")]],
              'n=m; foo, bar=foo_bar'),
-        ]:
-            with self.subTest(src=src):
-                self.assertEqual(join_header_words(src), expected)
+        ])
+    def test_join_header_words(self, src, expected):
+        self.assertEqual(join_header_words(src), expected)
 
-    def test_split_header_words(self):
-        tests = [
+    @support.subTests('arg,expect', [
             ("foo", [[("foo", None)]]),
             ("foo=bar", [[("foo", "bar")]]),
             ("   foo   ", [[("foo", None)]]),
@@ -259,24 +252,22 @@ class HeaderTests(unittest.TestCase):
             (r'foo; bar=baz, spam=, foo="\,\;\"", bar= ',
              [[("foo", None), ("bar", "baz")],
               [("spam", "")], [("foo", ',;"')], [("bar", "")]]),
-            ]
-
-        for arg, expect in tests:
-            try:
-                result = split_header_words([arg])
-            except:
-                import traceback, io
-                f = io.StringIO()
-                traceback.print_exc(None, f)
-                result = "(error -- traceback follows)\n\n%s" % f.getvalue()
-            self.assertEqual(result,  expect, """
+        ])
+    def test_split_header_words(self, arg, expect):
+        try:
+            result = split_header_words([arg])
+        except:
+            import traceback, io
+            f = io.StringIO()
+            traceback.print_exc(None, f)
+            result = "(error -- traceback follows)\n\n%s" % f.getvalue()
+        self.assertEqual(result,  expect, """
 When parsing: '%s'
 Expected:     '%s'
 Got:          '%s'
 """ % (arg, expect, result))
 
-    def test_roundtrip(self):
-        tests = [
+    @support.subTests('arg,expect', [
             ("foo", "foo"),
             ("foo=bar", "foo=bar"),
             ("   foo   ", "foo"),
@@ -285,11 +276,21 @@ Got:          '%s'
             ("foo=bar;bar=baz", "foo=bar; bar=baz"),
             ('foo bar baz', "foo; bar; baz"),
             (r'foo="\"" bar="\\"', r'foo="\""; bar="\\"'),
+            ("föo=bär", 'föo="bär"'),
             ('foo,,,bar', 'foo, bar'),
             ('foo=bar,bar=baz', 'foo=bar, bar=baz'),
+            ("foo=\n", 'foo=""'),
+            ('foo="\n"', 'foo="\n"'),
+            ('foo=bar\n', 'foo=bar'),
+            ('foo="bar\n"', 'foo="bar\n"'),
+            ('foo=bar\nbaz', 'foo=bar; baz'),
+            ('foo="bar\nbaz"', 'foo="bar\nbaz"'),
 
             ('text/html; charset=iso-8859-1',
-             'text/html; charset="iso-8859-1"'),
+             'text/html; charset=iso-8859-1'),
+
+            ('text/html; charset="iso-8859/1"',
+             'text/html; charset="iso-8859/1"'),
 
             ('foo="bar"; port="80,81"; discard, bar=baz',
              'foo=bar; port="80,81"; discard, bar=baz'),
@@ -297,14 +298,13 @@ Got:          '%s'
             (r'Basic realm="\"foo\\\\bar\""',
              r'Basic; realm="\"foo\\\\bar\""'),
 
-            ('n; foo="foo;_", bar=foo!_',
-             'n; foo="foo;_", bar="foo!_"'),
-            ]
-
-        for arg, expect in tests:
-            input = split_header_words([arg])
-            res = join_header_words(input)
-            self.assertEqual(res, expect, """
+            ('n; foo="foo;_", bar="foo,_"',
+             'n; foo="foo;_", bar="foo,_"'),
+        ])
+    def test_roundtrip(self, arg, expect):
+        input = split_header_words([arg])
+        res = join_header_words(input)
+        self.assertEqual(res, expect, """
 When parsing: '%s'
 Expected:     '%s'
 Got:          '%s'
@@ -506,14 +506,7 @@ class CookieTests(unittest.TestCase):
 ##   just the 7 special TLD's listed in their spec. And folks rely on
 ##   that...
 
-    def test_domain_return_ok(self):
-        # test optimization: .domain_return_ok() should filter out most
-        # domains in the CookieJar before we try to access them (because that
-        # may require disk access -- in particular, with MSIECookieJar)
-        # This is only a rough check for performance reasons, so it's not too
-        # critical as long as it's sufficiently liberal.
-        pol = DefaultCookiePolicy()
-        for url, domain, ok in [
+    @support.subTests('url,domain,ok', [
             ("http://foo.bar.com/", "blah.com", False),
             ("http://foo.bar.com/", "rhubarb.blah.com", False),
             ("http://foo.bar.com/", "rhubarb.foo.bar.com", False),
@@ -533,11 +526,18 @@ class CookieTests(unittest.TestCase):
             ("http://foo/", ".local", True),
             ("http://barfoo.com", ".foo.com", False),
             ("http://barfoo.com", "foo.com", False),
-            ]:
-            request = urllib.request.Request(url)
-            r = pol.domain_return_ok(domain, request)
-            if ok: self.assertTrue(r)
-            else: self.assertFalse(r)
+        ])
+    def test_domain_return_ok(self, url, domain, ok):
+        # test optimization: .domain_return_ok() should filter out most
+        # domains in the CookieJar before we try to access them (because that
+        # may require disk access -- in particular, with MSIECookieJar)
+        # This is only a rough check for performance reasons, so it's not too
+        # critical as long as it's sufficiently liberal.
+        pol = DefaultCookiePolicy()
+        request = urllib.request.Request(url)
+        r = pol.domain_return_ok(domain, request)
+        if ok: self.assertTrue(r)
+        else: self.assertFalse(r)
 
     def test_missing_value(self):
         # missing = sign in Cookie: header is regarded by Mozilla as a missing
@@ -553,7 +553,7 @@ class CookieTests(unittest.TestCase):
         self.assertIsNone(cookie.value)
         self.assertEqual(cookie.name, '"spam"')
         self.assertEqual(lwp_cookie_str(cookie), (
-            r'"spam"; path="/foo/"; domain="www.acme.com"; '
+            r'"spam"; path="/foo/"; domain=www.acme.com; '
             'path_spec; discard; version=0'))
         old_str = repr(c)
         c.save(ignore_expires=True, ignore_discard=True)
@@ -571,10 +571,7 @@ class CookieTests(unittest.TestCase):
         self.assertEqual(interact_netscape(c, "http://www.acme.com/foo/"),
                          '"spam"; eggs')
 
-    def test_rfc2109_handling(self):
-        # RFC 2109 cookies are handled as RFC 2965 or Netscape cookies,
-        # dependent on policy settings
-        for rfc2109_as_netscape, rfc2965, version in [
+    @support.subTests('rfc2109_as_netscape,rfc2965,version', [
             # default according to rfc2965 if not explicitly specified
             (None, False, 0),
             (None, True, 1),
@@ -583,24 +580,27 @@ class CookieTests(unittest.TestCase):
             (False, True, 1),
             (True, False, 0),
             (True, True, 0),
-            ]:
-            policy = DefaultCookiePolicy(
-                rfc2109_as_netscape=rfc2109_as_netscape,
-                rfc2965=rfc2965)
-            c = CookieJar(policy)
-            interact_netscape(c, "http://www.example.com/", "ni=ni; Version=1")
-            try:
-                cookie = c._cookies["www.example.com"]["/"]["ni"]
-            except KeyError:
-                self.assertIsNone(version)  # didn't expect a stored cookie
-            else:
-                self.assertEqual(cookie.version, version)
-                # 2965 cookies are unaffected
-                interact_2965(c, "http://www.example.com/",
-                              "foo=bar; Version=1")
-                if rfc2965:
-                    cookie2965 = c._cookies["www.example.com"]["/"]["foo"]
-                    self.assertEqual(cookie2965.version, 1)
+        ])
+    def test_rfc2109_handling(self, rfc2109_as_netscape, rfc2965, version):
+        # RFC 2109 cookies are handled as RFC 2965 or Netscape cookies,
+        # dependent on policy settings
+        policy = DefaultCookiePolicy(
+            rfc2109_as_netscape=rfc2109_as_netscape,
+            rfc2965=rfc2965)
+        c = CookieJar(policy)
+        interact_netscape(c, "http://www.example.com/", "ni=ni; Version=1")
+        try:
+            cookie = c._cookies["www.example.com"]["/"]["ni"]
+        except KeyError:
+            self.assertIsNone(version)  # didn't expect a stored cookie
+        else:
+            self.assertEqual(cookie.version, version)
+            # 2965 cookies are unaffected
+            interact_2965(c, "http://www.example.com/",
+                            "foo=bar; Version=1")
+            if rfc2965:
+                cookie2965 = c._cookies["www.example.com"]["/"]["foo"]
+                self.assertEqual(cookie2965.version, 1)
 
     def test_ns_parser(self):
         c = CookieJar()
@@ -768,8 +768,7 @@ class CookieTests(unittest.TestCase):
         # Cookie is sent back to the same URI.
         self.assertEqual(interact_netscape(cj, uri), value)
 
-    def test_escape_path(self):
-        cases = [
+    @support.subTests('arg,result', [
             # quoted safe
             ("/foo%2f/bar", "/foo%2F/bar"),
             ("/foo%2F/bar", "/foo%2F/bar"),
@@ -789,9 +788,9 @@ class CookieTests(unittest.TestCase):
             ("/foo/bar\u00fc", "/foo/bar%C3%BC"),     # UTF-8 encoded
             # unicode
             ("/foo/bar\uabcd", "/foo/bar%EA%AF%8D"),  # UTF-8 encoded
-            ]
-        for arg, result in cases:
-            self.assertEqual(escape_path(arg), result)
+        ])
+    def test_escape_path(self, arg, result):
+        self.assertEqual(escape_path(arg), result)
 
     def test_request_path(self):
         # with parameters
@@ -1527,7 +1526,7 @@ class LWPCookieTests(unittest.TestCase):
         h = req.get_header("Cookie")
         self.assertIn("PART_NUMBER=ROCKET_LAUNCHER_0001", h)
         self.assertIn("CUSTOMER=WILE_E_COYOTE", h)
-        self.assertTrue(h.startswith("SHIPPING=FEDEX;"))
+        self.assertStartsWith(h, "SHIPPING=FEDEX;")
 
     def test_netscape_example_2(self):
         # Second Example transaction sequence:

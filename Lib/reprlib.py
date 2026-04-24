@@ -28,7 +28,7 @@ def recursive_repr(fillvalue='...'):
         wrapper.__doc__ = getattr(user_function, '__doc__')
         wrapper.__name__ = getattr(user_function, '__name__')
         wrapper.__qualname__ = getattr(user_function, '__qualname__')
-        wrapper.__annotations__ = getattr(user_function, '__annotations__', {})
+        wrapper.__annotate__ = getattr(user_function, '__annotate__', None)
         wrapper.__type_params__ = getattr(user_function, '__type_params__', ())
         wrapper.__wrapped__ = user_function
         return wrapper
@@ -181,7 +181,22 @@ class Repr:
         return s
 
     def repr_int(self, x, level):
-        s = builtins.repr(x) # XXX Hope this isn't too slow...
+        try:
+            s = builtins.repr(x)
+        except ValueError as exc:
+            assert 'sys.set_int_max_str_digits()' in str(exc)
+            # Those imports must be deferred due to Python's build system
+            # where the reprlib module is imported before the math module.
+            import math, sys
+            # Integers with more than sys.get_int_max_str_digits() digits
+            # are rendered differently as their repr() raises a ValueError.
+            # See https://github.com/python/cpython/issues/135487.
+            k = 1 + int(math.log10(abs(x)))
+            # Note: math.log10(abs(x)) may be overestimated or underestimated,
+            # but for simplicity, we do not compute the exact number of digits.
+            max_digits = sys.get_int_max_str_digits()
+            return (f'<{x.__class__.__name__} instance with roughly {k} '
+                    f'digits (limit at {max_digits}) at 0x{id(x):x}>')
         if len(s) > self.maxlong:
             i = max(0, (self.maxlong-3)//2)
             j = max(0, self.maxlong-3-i)
