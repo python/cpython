@@ -58,26 +58,6 @@
 #endif
 
 
-/* Defines to build Python and its standard library:
- *
- * - Py_BUILD_CORE: Build Python core. Give access to Python internals, but
- *   should not be used by third-party modules.
- * - Py_BUILD_CORE_BUILTIN: Build a Python stdlib module as a built-in module.
- * - Py_BUILD_CORE_MODULE: Build a Python stdlib module as a dynamic library.
- *
- * Py_BUILD_CORE_BUILTIN and Py_BUILD_CORE_MODULE imply Py_BUILD_CORE.
- *
- * On Windows, Py_BUILD_CORE_MODULE exports "PyInit_xxx" symbol, whereas
- * Py_BUILD_CORE_BUILTIN does not.
- */
-#if defined(Py_BUILD_CORE_BUILTIN) && !defined(Py_BUILD_CORE)
-#  define Py_BUILD_CORE
-#endif
-#if defined(Py_BUILD_CORE_MODULE) && !defined(Py_BUILD_CORE)
-#  define Py_BUILD_CORE
-#endif
-
-
 /**************************************************************************
 Symbols and macros to supply platform-independent interfaces to basic
 C language & library operations whose spellings vary across platforms.
@@ -385,17 +365,6 @@ extern "C" {
 #  define Py_NO_INLINE
 #endif
 
-#include "exports.h"
-
-#ifdef Py_LIMITED_API
-   // The internal C API must not be used with the limited C API: make sure
-   // that Py_BUILD_CORE macro is not defined in this case. These 3 macros are
-   // used by exports.h, so only undefine them afterwards.
-#  undef Py_BUILD_CORE
-#  undef Py_BUILD_CORE_BUILTIN
-#  undef Py_BUILD_CORE_MODULE
-#endif
-
 /* limits.h constants that may be missing */
 
 #ifndef INT_MAX
@@ -446,7 +415,9 @@ extern "C" {
 /*
  * Specify alignment on compilers that support it.
  */
-#if defined(__GNUC__) && __GNUC__ >= 3
+#ifdef Py_BUILD_CORE
+// always use _Py_ALIGNED_DEF instead
+#elif defined(__GNUC__) && __GNUC__ >= 3
 #define Py_ALIGNED(x) __attribute__((aligned(x)))
 #else
 #define Py_ALIGNED(x)

@@ -60,7 +60,8 @@ extern void _PyStaticType_FiniBuiltin(
 extern void _PyStaticType_ClearWeakRefs(
     PyInterpreterState *interp,
     PyTypeObject *type);
-extern managed_static_type_state * _PyStaticType_GetState(
+// Exported for external JIT support
+PyAPI_FUNC(managed_static_type_state *) _PyStaticType_GetState(
     PyInterpreterState *interp,
     PyTypeObject *type);
 
@@ -126,6 +127,10 @@ extern PyTypeObject _PyBufferWrapper_Type;
 PyAPI_FUNC(PyObject*) _PySuper_Lookup(PyTypeObject *su_type, PyObject *su_obj,
                                  PyObject *name, int *meth_found);
 
+extern PyObject *_PySuper_LookupDescr(PyTypeObject *su_type,
+                                     PyTypeObject *su_obj_type,
+                                     PyObject *name);
+
 extern PyObject* _PyType_GetFullyQualifiedName(PyTypeObject *type, char sep);
 
 // Perform the following operation, in a thread-safe way when required by the
@@ -152,8 +157,9 @@ typedef int (*_py_validate_type)(PyTypeObject *);
 // It will verify the ``ty`` through user-defined validation function ``validate``,
 // and if the validation is passed, it will set the ``tp_version`` as valid
 // tp_version_tag from the ``ty``.
-extern int _PyType_Validate(PyTypeObject *ty, _py_validate_type validate, unsigned int *tp_version);
-extern int _PyType_CacheGetItemForSpecialization(PyHeapTypeObject *ht, PyObject *descriptor, uint32_t tp_version);
+// Exported for external JIT support
+int _PyType_Validate(PyTypeObject *ty, _py_validate_type validate, unsigned int *tp_version);
+int _PyType_CacheGetItemForSpecialization(PyHeapTypeObject *ht, PyObject *descriptor, uint32_t tp_version);
 
 // Precalculates count of non-unique slots and fills wrapperbase.name_count.
 extern int _PyType_InitSlotDefs(PyInterpreterState *interp);

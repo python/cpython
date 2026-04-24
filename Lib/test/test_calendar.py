@@ -495,11 +495,16 @@ class OutputTestCase(unittest.TestCase):
             calendar.TextCalendar().formatmonth(0, 2),
             result_0_02_text
         )
+
     def test_formatmonth_with_invalid_month(self):
         with self.assertRaises(calendar.IllegalMonthError):
             calendar.TextCalendar().formatmonth(2017, 13)
         with self.assertRaises(calendar.IllegalMonthError):
             calendar.TextCalendar().formatmonth(2017, -1)
+
+    def test_illegal_month_error_bases(self):
+        self.assertIsSubclass(calendar.IllegalMonthError, ValueError)
+        self.assertIsSubclass(calendar.IllegalMonthError, IndexError)
 
     def test_formatmonthname_with_year(self):
         self.assertEqual(

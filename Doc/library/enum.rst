@@ -56,7 +56,7 @@ are not normal Python classes.  See
 
 ---------------
 
-Module Contents
+Module contents
 ---------------
 
    :class:`EnumType`
@@ -161,7 +161,7 @@ Module Contents
 
 ---------------
 
-Data Types
+Data types
 ----------
 
 
@@ -240,7 +240,7 @@ Data Types
 
    .. method:: EnumType.__len__(cls)
 
-      Returns the number of member in *cls*::
+      Returns the number of members in *cls*::
 
         >>> len(Color)
         3
@@ -341,7 +341,7 @@ Data Types
       any public methods defined on *self.__class__*::
 
          >>> from enum import Enum
-         >>> from datetime import date
+         >>> import datetime as dt
          >>> class Weekday(Enum):
          ...     MONDAY = 1
          ...     TUESDAY = 2
@@ -352,7 +352,7 @@ Data Types
          ...     SUNDAY = 7
          ...     @classmethod
          ...     def today(cls):
-         ...         print('today is %s' % cls(date.today().isoweekday()).name)
+         ...         print(f'today is {cls(dt.date.today().isoweekday()).name}')
          ...
          >>> dir(Weekday.SATURDAY)
          ['__class__', '__doc__', '__eq__', '__hash__', '__module__', 'name', 'today', 'value']
@@ -502,7 +502,7 @@ Data Types
       Using :class:`auto` with :class:`Enum` results in integers of increasing value,
       starting with ``1``.
 
-   .. versionchanged:: 3.12 Added :ref:`enum-dataclass-support`
+   .. versionchanged:: 3.12 Added :ref:`enum-dataclass-support`.
 
    .. method:: Enum._add_alias_
 
@@ -970,16 +970,16 @@ Supported ``_sunder_`` names
 
 ---------------
 
-Utilities and Decorators
+Utilities and decorators
 ------------------------
 
 .. class:: auto
 
    *auto* can be used in place of a value.  If used, the *Enum* machinery will
    call an :class:`Enum`'s :meth:`~Enum._generate_next_value_` to get an appropriate value.
-   For :class:`Enum` and :class:`IntEnum` that appropriate value will be the last value plus
-   one; for :class:`Flag` and :class:`IntFlag` it will be the first power-of-two greater
-   than the highest value; for :class:`StrEnum` it will be the lower-cased version of
+   For :class:`Enum` and :class:`IntEnum` that appropriate value will be the highest value seen
+   plus one; for :class:`Flag` and :class:`IntFlag` it will be the first power-of-two greater
+   than the highest value seen; for :class:`StrEnum` it will be the lower-cased version of
    the member's name.  Care must be taken if mixing *auto()* with manually
    specified values.
 
@@ -989,8 +989,8 @@ Utilities and Decorators
    * ``FIRST = auto()`` will work (auto() is replaced with ``1``);
    * ``SECOND = auto(), -2`` will work (auto is replaced with ``2``, so ``2, -2`` is
      used to create the ``SECOND`` enum member;
-   * ``THREE = [auto(), -3]`` will *not* work (``[<auto instance>, -3]`` is used to
-     create the ``THREE`` enum member)
+   * ``THIRD = [auto(), -3]`` will *not* work (``[<auto instance>, -3]`` is used to
+     create the ``THIRD`` enum member)
 
    .. versionchanged:: 3.11.1
 
@@ -1000,7 +1000,7 @@ Utilities and Decorators
    ``_generate_next_value_`` can be overridden to customize the values used by
    *auto*.
 
-   .. note:: in 3.13 the default ``_generate_next_value_`` will always return
+   .. note:: In version 3.13 the default ``_generate_next_value_`` will always return
              the highest member value incremented by 1, and will fail if any
              member is an incompatible type.
 
@@ -1010,7 +1010,7 @@ Utilities and Decorators
    enumerations.  It allows member attributes to have the same names as members
    themselves.
 
-   .. note:: the *property* and the member must be defined in separate classes;
+   .. note:: The *property* and the member must be defined in separate classes;
              for example, the *value* and *name* attributes are defined in the
              *Enum* class, and *Enum* subclasses can define members with the
              names ``value`` and ``name``.
