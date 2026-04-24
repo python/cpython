@@ -633,8 +633,8 @@ are always available.  They are listed here in alphabetical order.
 
    This function can also be used to execute arbitrary code objects (such as
    those created by :func:`compile`).  In this case, pass a code object instead
-   of a string or a bytes-like object.  If the code object has been compiled with ``'exec'`` as the
-   *mode* argument, :func:`eval`\'s return value will be ``None``.
+   of a string or a bytes-like object.  If the code object has been compiled with
+   ``'exec'`` as the *mode* argument, :func:`eval`\'s return value will be ``None``.
 
    Hints: dynamic execution of statements is supported by the :func:`exec`
    function.  The :func:`globals` and :func:`locals` functions
