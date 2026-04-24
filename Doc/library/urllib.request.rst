@@ -1386,7 +1386,7 @@ containing parameters::
    >>> import urllib.request
    >>> import urllib.parse
    >>> params = urllib.parse.urlencode({'spam': 1, 'eggs': 2, 'bacon': 0})
-   >>> url = "http://www.musi-cal.com/cgi-bin/query?%s" % params
+   >>> url = "https://www.python.org/search?%s" % params
    >>> with urllib.request.urlopen(url) as f:
    ...     print(f.read().decode('utf-8'))
    ...
@@ -1398,7 +1398,7 @@ from urlencode is encoded to bytes before it is sent to urlopen as data::
    >>> import urllib.parse
    >>> data = urllib.parse.urlencode({'spam': 1, 'eggs': 2, 'bacon': 0})
    >>> data = data.encode('ascii')
-   >>> with urllib.request.urlopen("http://requestb.in/xrbl82xr", data) as f:
+   >>> with urllib.request.urlopen("https://httpbin.org/post", data) as f:
    ...     print(f.read().decode('utf-8'))
    ...
 
