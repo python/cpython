@@ -24,8 +24,8 @@ MAX_FINISH_STEPS = 20
 # JIT region, instead of asserting against a misleading backtrace.
 MAX_JIT_ENTRY_STEPS = 4
 EVAL_FRAME_RE = r"(_PyEval_EvalFrameDefault|_PyEval_Vector)"
-JIT_ENTRY_RE = r"_PyJIT_Entry"
 JIT_EXECUTOR_FRAME = "py::jit:executor"
+JIT_ENTRY_SYMBOL = "_PyJIT_Entry"
 BACKTRACE_FRAME_RE = re.compile(r"^#\d+\s+.*$", re.MULTILINE)
 
 FINISH_TO_JIT_EXECUTOR = (
@@ -92,14 +92,12 @@ class JitBacktraceTests(DebuggerTests):
         #      py::jit:executor frame would mean the unwinder is
         #      materializing two native frames for a single logical JIT
         #      region, or failing to unwind out of the region entirely.
-        #   2. The linked shim frame appears exactly once after the
-        #      synthetic JIT frame and before the eval loop.
-        #   3. At least one _PyEval_EvalFrameDefault / _PyEval_Vector
-        #      frame appears after the JIT frame, proving the unwinder
-        #      climbs back out of the JIT region into the eval loop.
-        #      Helper frames from inside the JITted region may still
-        #      appear above the synthetic JIT frame in the backtrace.
-        #   4. For tests that assert a specific entry PC, the JIT frame
+        #   2. The unwinder must climb back out of the JIT region into
+        #      the eval loop. Some platforms materialize a real
+        #      _PyJIT_Entry frame between the synthetic executor frame
+        #      and _PyEval_*, while others unwind directly from the
+        #      executor into _PyEval_*. Accept both shapes.
+        #   3. For tests that assert a specific entry PC, the JIT frame
         #      is also at #0.
         frames = self._extract_backtrace_frames(gdb_output)
         backtrace = "\n".join(frames)
@@ -109,13 +107,6 @@ class JitBacktraceTests(DebuggerTests):
         self.assertEqual(
             jit_count, 1,
             f"expected exactly 1 {JIT_EXECUTOR_FRAME} frame, got {jit_count}\n"
-            f"backtrace:\n{backtrace}",
-        )
-        jit_entry_frames = [frame for frame in frames if re.search(JIT_ENTRY_RE, frame)]
-        jit_entry_count = len(jit_entry_frames)
-        self.assertEqual(
-            jit_entry_count, 1,
-            f"expected exactly 1 _PyJIT_Entry frame, got {jit_entry_count}\n"
             f"backtrace:\n{backtrace}",
         )
         eval_frames = [frame for frame in frames if re.search(EVAL_FRAME_RE, frame)]
@@ -128,30 +119,37 @@ class JitBacktraceTests(DebuggerTests):
         jit_frame_index = next(
             i for i, frame in enumerate(frames) if JIT_EXECUTOR_FRAME in frame
         )
-        jit_entry_index = next(
-            i for i, frame in enumerate(frames) if re.search(JIT_ENTRY_RE, frame)
+        frames_after_jit = frames[jit_frame_index + 1:]
+        first_eval_offset = next(
+            (
+                i for i, frame in enumerate(frames_after_jit)
+                if re.search(EVAL_FRAME_RE, frame)
+            ),
+            None,
         )
-        self.assertGreater(
-            jit_entry_index, jit_frame_index,
-            "expected _PyJIT_Entry after the synthetic JIT frame\n"
-            f"backtrace:\n{backtrace}",
-        )
-        eval_after_jit = any(
-            re.search(EVAL_FRAME_RE, frame)
-            for frame in frames[jit_frame_index + 1:]
-        )
-        self.assertTrue(
-            eval_after_jit,
+        self.assertIsNotNone(
+            first_eval_offset,
             f"expected an eval frame after the JIT frame\n"
             f"backtrace:\n{backtrace}",
         )
-        eval_after_entry = any(
-            re.search(EVAL_FRAME_RE, frame)
-            for frame in frames[jit_entry_index + 1:]
+        between_jit_and_eval = frames_after_jit[:first_eval_offset]
+        jit_entry_frames = [
+            frame for frame in between_jit_and_eval
+            if JIT_ENTRY_SYMBOL in frame
+        ]
+        self.assertLessEqual(
+            len(jit_entry_frames), 1,
+            f"expected at most one {JIT_ENTRY_SYMBOL} frame between the "
+            f"executor and eval frames\nbacktrace:\n{backtrace}",
         )
-        self.assertTrue(
-            eval_after_entry,
-            "expected an eval frame after _PyJIT_Entry\n"
+        unexpected_between = [
+            frame for frame in between_jit_and_eval
+            if JIT_ENTRY_SYMBOL not in frame
+        ]
+        self.assertFalse(
+            unexpected_between,
+            "expected only an optional _PyJIT_Entry frame between the "
+            "executor and eval frames\n"
             f"backtrace:\n{backtrace}",
         )
         relevant_end = max(
@@ -159,7 +157,7 @@ class JitBacktraceTests(DebuggerTests):
             for i, frame in enumerate(frames)
             if (
                 JIT_EXECUTOR_FRAME in frame
-                or re.search(JIT_ENTRY_RE, frame)
+                or JIT_ENTRY_SYMBOL in frame
                 or re.search(EVAL_FRAME_RE, frame)
             )
         )
@@ -186,6 +184,23 @@ class JitBacktraceTests(DebuggerTests):
         )
         # The executor should appear as a named JIT frame and unwind back into
         # the eval loop.
+        self._assert_jit_backtrace_shape(gdb_output, anchor_at_top=False)
+
+    def test_bt_handoff_from_jit_entry_to_executor(self):
+        gdb_output = self.get_stack_trace(
+            script=JIT_SAMPLE_SCRIPT,
+            breakpoint=JIT_ENTRY_SYMBOL,
+            cmds_after_breakpoint=[
+                "delete 1",
+                "tbreak builtin_id",
+                "continue",
+                "bt",
+            ],
+            PYTHON_JIT="1",
+        )
+        # If we stop first in the shim and then continue into the real JIT
+        # workload, the final backtrace should match the architecture's
+        # executor unwind contract.
         self._assert_jit_backtrace_shape(gdb_output, anchor_at_top=False)
 
     def test_bt_unwinds_from_inside_jit_executor(self):

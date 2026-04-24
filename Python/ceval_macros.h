@@ -168,21 +168,6 @@
 #define STOP_TRACING() ((void)(0));
 #endif
 
-/*
- * The executor runs inside the frame established by _PyJIT_Entry. On AArch64,
- * helper-calling stencils would otherwise leave the return-to-_PyJIT_Entry PC
- * in different places at different executor PCs. Capture the entry x30 into
- * reserved x28 once so the executor-wide GDB FDE in Python/jit_unwind.c can
- * always materialize _PyJIT_Entry as the immediate caller frame.
- */
-#if defined(_Py_JIT) && defined(__aarch64__) && defined(__AARCH64EL__) && !defined(__ILP32__)
-#  define _Py_JIT_CAPTURE_CALLER_PC() \
-    __asm__ volatile("mov x28, x30")
-#else
-#  define _Py_JIT_CAPTURE_CALLER_PC() ((void)0)
-#endif
-
-
 /* PRE_DISPATCH_GOTO() does lltrace if enabled. Normally a no-op */
 #ifdef Py_DEBUG
 #define PRE_DISPATCH_GOTO() if (frame->lltrace >= 5) { \

@@ -200,10 +200,6 @@ class _Target(typing.Generic[_S, _R]):
         ]
         if self.frame_pointers:
             args_s += ["-Xclang", "-mframe-pointer=reserved"]
-            if self.triple.startswith("aarch64-"):
-                # Keep x28 free so _START_EXECUTOR can stash the return-to-_PyJIT_Entry
-                # PC there for a single executor-wide unwind rule.
-                args_s += ["-ffixed-x28"]
         args_s += self._compile_args()
         # Allow user-provided CFLAGS to override any defaults
         args_s += shlex.split(self.cflags)
@@ -238,7 +234,7 @@ class _Target(typing.Generic[_S, _R]):
             args_o += self._shim_compile_args()
             args_o += [
                 "-c",
-                # The linked shim is a real function in the final binary, so
+                # The shim is a real function in the final binary, so
                 # keep unwind info for debuggers and stack walkers.
                 "-fasynchronous-unwind-tables",
             ]
@@ -336,7 +332,7 @@ class _COFF(
     _Target[_schema.COFFSection, _schema.COFFRelocation]
 ):  # pylint: disable = too-few-public-methods
     def _shim_compile_args(self) -> list[str]:
-        # The linked shim is part of pythoncore, not a shared extension.
+        # The shim is part of pythoncore, not a shared extension.
         # On Windows, Py_BUILD_CORE_MODULE makes public APIs import from
         # pythonXY.lib, which creates a self-dependency when linking
         # pythoncore.dll. Build the shim with builtin/core semantics.

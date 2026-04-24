@@ -36,7 +36,6 @@
 enum {
     DWRF_CFA_nop = 0x0,                    // No operation
     DWRF_CFA_offset_extended = 0x5,        // Extended offset instruction
-    DWRF_CFA_register = 0x9,               // Register contains saved value
     DWRF_CFA_def_cfa = 0xc,               // Define CFA rule
     DWRF_CFA_def_cfa_register = 0xd,      // Define CFA register
     DWRF_CFA_def_cfa_offset = 0xe,        // Define CFA offset
@@ -75,7 +74,6 @@ enum {
     DWRF_REG_RA,    // Return address (RIP)
 #elif defined(__aarch64__) && defined(__AARCH64EL__) && !defined(__ILP32__)
     /* AArch64 register numbering */
-    DWRF_REG_JIT_RA = 28,  // Reserved x28 holds the return PC into _PyJIT_Entry
     DWRF_REG_FP = 29,  // Frame Pointer
     DWRF_REG_RA = 30,  // Link register (return address)
     DWRF_REG_SP = 31,  // Stack pointer
@@ -620,13 +618,16 @@ static void elf_init_ehframe_perf(ELFObjectContext* ctx) {
  * executor region:
  *
  *   x86_64:  CFA = %rbp + 16, return-to-_PyJIT_Entry PC at cfa-72
- *   AArch64: CFA = x29 + 96, return-to-_PyJIT_Entry PC in reserved x28
+ *   AArch64: CFA = x29 + 96, caller x29 at cfa-96, caller x30 at cfa-88
  *
- * Executor stencils never touch the frame pointer — enforced by
- * Tools/jit/_optimizers.py _validate() and -mframe-pointer=reserved — so
- * that rule is valid at every PC and the FDE body is empty. On AArch64,
- * _START_EXECUTOR copies the entry x30 into reserved x28 once and the
- * executor stencils preserve x28 thereafter.
+ * The executor runs inside the frame established by _PyJIT_Entry. On AArch64
+ * we collapse that state into a single synthetic executor frame that unwinds
+ * directly into _PyEval_*. On x86_64 the normal call into the executor leaves
+ * a real return slot back into _PyJIT_Entry, so the executor FDE materializes
+ * _PyJIT_Entry as the caller frame. Executor stencils never touch the frame
+ * pointer — enforced by Tools/jit/_optimizers.py _validate() and
+ * -mframe-pointer=reserved — so the steady-state rule is valid at every PC
+ * and the FDE body is empty.
  */
 static void elf_init_ehframe_gdb(ELFObjectContext* ctx) {
     int fde_ptr_enc = DWRF_EH_PE_absptr;
@@ -658,9 +659,10 @@ static void elf_init_ehframe_gdb(ELFObjectContext* ctx) {
         DWRF_U8(DWRF_CFA_def_cfa);            // CFA = x29 + 96
         DWRF_UV(DWRF_REG_FP);
         DWRF_UV(96);
-        DWRF_U8(DWRF_CFA_register);           // Return PC lives in reserved x28
-        DWRF_UV(DWRF_REG_RA);
-        DWRF_UV(DWRF_REG_JIT_RA);
+        DWRF_U8(DWRF_CFA_offset | DWRF_REG_FP);
+        DWRF_UV(12);                          // caller x29 at cfa-96
+        DWRF_U8(DWRF_CFA_offset | DWRF_REG_RA);
+        DWRF_UV(11);                          // caller x30 at cfa-88
 #else
 #    error "Unsupported target architecture"
 #endif
