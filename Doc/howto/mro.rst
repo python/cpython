@@ -10,7 +10,7 @@ The Python 2.3 Method Resolution Order
    The Method Resolution Order discussed here was *introduced* in Python 2.3,
    but it is still used in later versions -- including Python 3.
 
-By `Michele Simionato <https://www.phyast.pitt.edu/~micheles/>`__.
+By Michele Simionato.
 
 :Abstract:
 
