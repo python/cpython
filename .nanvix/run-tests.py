@@ -68,6 +68,7 @@ def run_batch(
             python_arg = (
                 f"{regrtest_args};PYTHONHOME=/ PYTHONDONTWRITEBYTECODE=1"
                 f" TMPDIR=/tmp"
+                f" NANVIX_STANDALONE=1"
                 f" _PYTHON_SYSCONFIGDATA_NAME={SYSCONFIGDATA_NAME}"
             )
 

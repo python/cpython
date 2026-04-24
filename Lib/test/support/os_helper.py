@@ -154,6 +154,17 @@ else:
     TESTFN_NONASCII = None
 TESTFN = TESTFN_NONASCII or TESTFN_ASCII
 
+# NSKIP008 https://github.com/nanvix/cpython/issues/476
+# Nanvix FAT VFS driver panics on non-ASCII filenames (byte-boundary panic in
+# rust-fatfs).  Force TESTFN to the ASCII-only variant so that test modules
+# which use TESTFN for temporary file names don't crash the standalone VM.
+if support.is_nanvix:
+    FS_NONASCII = ''
+    TESTFN_NONASCII = None
+    TESTFN_UNENCODABLE = None
+    TESTFN_UNDECODABLE = None
+    TESTFN = TESTFN_ASCII
+
 
 def make_bad_fd():
     """
