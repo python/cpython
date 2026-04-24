@@ -1075,51 +1075,42 @@ class TypeParamsTypeVarTest(unittest.TestCase):
 
 class TypeParamsTypeVarTupleTest(unittest.TestCase):
     def test_typevartuple_01(self):
-        code = """def func1[*A: str](): pass"""
-        check_syntax_error(self, code, "cannot use bound with TypeVarTuple")
-        code = """def func1[*A: (int, str)](): pass"""
-        check_syntax_error(self, code, "cannot use constraints with TypeVarTuple")
-        code = """class X[*A: str]: pass"""
-        check_syntax_error(self, code, "cannot use bound with TypeVarTuple")
-        code = """class X[*A: (int, str)]: pass"""
-        check_syntax_error(self, code, "cannot use constraints with TypeVarTuple")
-        code = """type X[*A: str] = int"""
-        check_syntax_error(self, code, "cannot use bound with TypeVarTuple")
-        code = """type X[*A: (int, str)] = int"""
-        check_syntax_error(self, code, "cannot use constraints with TypeVarTuple")
+        def func1[*A: str, *B: str | int]():
+            return A, B
 
-    def test_typevartuple_02(self):
-        def func1[*A]():
-            return A
+        a, b = func1()
 
-        a = func1()
         self.assertIsInstance(a, TypeVarTuple)
+        self.assertEqual(a.__bound__, str)
+        self.assertTrue(a.__infer_variance__)
+        self.assertFalse(a.__covariant__)
+        self.assertFalse(a.__contravariant__)
+
+        self.assertIsInstance(b, TypeVarTuple)
+        self.assertEqual(b.__bound__, str | int)
+        self.assertTrue(b.__infer_variance__)
+        self.assertFalse(b.__covariant__)
+        self.assertFalse(b.__contravariant__)
 
 
 class TypeParamsTypeVarParamSpecTest(unittest.TestCase):
     def test_paramspec_01(self):
-        code = """def func1[**A: str](): pass"""
-        check_syntax_error(self, code, "cannot use bound with ParamSpec")
-        code = """def func1[**A: (int, str)](): pass"""
-        check_syntax_error(self, code, "cannot use constraints with ParamSpec")
-        code = """class X[**A: str]: pass"""
-        check_syntax_error(self, code, "cannot use bound with ParamSpec")
-        code = """class X[**A: (int, str)]: pass"""
-        check_syntax_error(self, code, "cannot use constraints with ParamSpec")
-        code = """type X[**A: str] = int"""
-        check_syntax_error(self, code, "cannot use bound with ParamSpec")
-        code = """type X[**A: (int, str)] = int"""
-        check_syntax_error(self, code, "cannot use constraints with ParamSpec")
+        def func1[**A: [str], **B: [str | int]]():
+            return A, B
 
-    def test_paramspec_02(self):
-        def func1[**A]():
-            return A
+        a, b = func1()
 
-        a = func1()
         self.assertIsInstance(a, ParamSpec)
+        self.assertEqual(a.__bound__, [str])
         self.assertTrue(a.__infer_variance__)
         self.assertFalse(a.__covariant__)
         self.assertFalse(a.__contravariant__)
+
+        self.assertIsInstance(b, ParamSpec)
+        self.assertEqual(b.__bound__, [str | int])
+        self.assertTrue(b.__infer_variance__)
+        self.assertFalse(b.__covariant__)
+        self.assertFalse(b.__contravariant__)
 
 
 class TypeParamsTypeParamsDunder(unittest.TestCase):
@@ -1264,7 +1255,7 @@ class TypeParamsWeakRefTest(unittest.TestCase):
             P,
             P.args,
             P.kwargs,
-            TypeVarTuple('Ts'),
+            TypeVarTuple('Ts', bound=int),
             OldStyle,
             OldStyle[int],
             OldStyle(),
@@ -1422,22 +1413,26 @@ class TestEvaluateFunctions(unittest.TestCase):
     def test_general(self):
         type Alias = int
         Alias2 = TypeAliasType("Alias2", int)
-        def f[T: int = int, **P = int, *Ts = int](): pass
-        T, P, Ts = f.__type_params__
+        def f[T: int = int, *Ts: int = int, **P: [int] = int](): pass
+        T, Ts, P = f.__type_params__
         T2 = TypeVar("T2", bound=int, default=int)
-        P2 = ParamSpec("P2", default=int)
-        Ts2 = TypeVarTuple("Ts2", default=int)
+        Ts2 = TypeVarTuple("Ts2", bound=int, default=int)
+        P2 = ParamSpec("P2", bound=[int], default=int)
         cases = [
             Alias.evaluate_value,
             Alias2.evaluate_value,
             T.evaluate_bound,
             T.evaluate_default,
-            P.evaluate_default,
+            Ts.evaluate_bound,
             Ts.evaluate_default,
+            P.evaluate_bound,
+            P.evaluate_default,
             T2.evaluate_bound,
             T2.evaluate_default,
-            P2.evaluate_default,
+            Ts2.evaluate_bound,
             Ts2.evaluate_default,
+            P2.evaluate_bound,
+            P2.evaluate_default,
         ]
         for case in cases:
             with self.subTest(case=case):
