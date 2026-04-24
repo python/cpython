@@ -82,11 +82,11 @@ extern "C" {
 #define CONSTANT_MINUS_ONE 11
 #define NUM_COMMON_CONSTANTS 12
 
-extern PyCFunctionObject _PyBuiltin_All;
-extern PyCFunctionObject _PyBuiltin_Any;
+PyAPI_DATA(PyCFunctionObject) _PyBuiltin_All;
+PyAPI_DATA(PyCFunctionObject) _PyBuiltin_Any;
 
 /* Filled once by pycore_init_builtins; every entry is immortal. */
-extern PyObject *_PyCommonConsts[NUM_COMMON_CONSTANTS];
+PyAPI_DATA(PyObject *) _PyCommonConsts[NUM_COMMON_CONSTANTS];
 
 /* Non-static: used by static _PyBuiltin_All/_Any in bltinmodule.c. */
 extern PyObject *_PyCFunction_vectorcall_O(

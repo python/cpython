@@ -468,7 +468,7 @@ static PyMethodDef _PyBuiltin_All_methoddef = {
     "all", (PyCFunction)builtin_all, METH_O, builtin_all__doc__,
 };
 
-Py_EXPORTED_SYMBOL PyCFunctionObject _PyBuiltin_All = {
+PyCFunctionObject _PyBuiltin_All = {
     .ob_base = _PyObject_HEAD_INIT(&PyCFunction_Type),
     .m_ml = &_PyBuiltin_All_methoddef,
     .m_self = NULL,
@@ -481,7 +481,7 @@ static PyMethodDef _PyBuiltin_Any_methoddef = {
     "any", (PyCFunction)builtin_any, METH_O, builtin_any__doc__,
 };
 
-Py_EXPORTED_SYMBOL PyCFunctionObject _PyBuiltin_Any = {
+PyCFunctionObject _PyBuiltin_Any = {
     .ob_base = _PyObject_HEAD_INIT(&PyCFunction_Type),
     .m_ml = &_PyBuiltin_Any_methoddef,
     .m_self = NULL,
@@ -490,7 +490,7 @@ Py_EXPORTED_SYMBOL PyCFunctionObject _PyBuiltin_Any = {
     .vectorcall = _PyCFunction_vectorcall_O,
 };
 
-Py_EXPORTED_SYMBOL PyObject *_PyCommonConsts[NUM_COMMON_CONSTANTS];
+PyObject *_PyCommonConsts[NUM_COMMON_CONSTANTS];
 
 /*[clinic input]
 ascii as builtin_ascii

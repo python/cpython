@@ -869,12 +869,12 @@ pycore_init_builtins(PyThreadState *tstate)
     interp->callable_cache.len = len;
 
     /* Install the static all/any singletons. */
-    if (PyDict_SetItemString(builtins_dict, "all",
-                             (PyObject *)&_PyBuiltin_All) < 0) {
+    if (PyDict_SetItem(builtins_dict, &_Py_ID(all),
+                       (PyObject *)&_PyBuiltin_All) < 0) {
         goto error;
     }
-    if (PyDict_SetItemString(builtins_dict, "any",
-                             (PyObject *)&_PyBuiltin_Any) < 0) {
+    if (PyDict_SetItem(builtins_dict, &_Py_ID(any),
+                       (PyObject *)&_PyBuiltin_Any) < 0) {
         goto error;
     }
 

@@ -353,6 +353,12 @@ meth_hash(PyObject *self)
     return x;
 }
 
+static int
+cfunction_is_gc(PyObject *op)
+{
+    return !_Py_IsStaticImmortal(op);
+}
+
 
 PyTypeObject PyCFunction_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
@@ -388,6 +394,15 @@ PyTypeObject PyCFunction_Type = {
     meth_getsets,                               /* tp_getset */
     0,                                          /* tp_base */
     0,                                          /* tp_dict */
+    0,                                          /* tp_descr_get */
+    0,                                          /* tp_descr_set */
+    0,                                          /* tp_dictoffset */
+    0,                                          /* tp_init */
+    0,                                          /* tp_alloc */
+    0,                                          /* tp_new */
+    0,                                          /* tp_free */
+    /* Static immortal instances have no PyGC_Head prefix. */
+    cfunction_is_gc,                            /* tp_is_gc */
 };
 
 PyTypeObject PyCMethod_Type = {
