@@ -55,6 +55,11 @@ void *_PyJitUnwind_GdbRegisterCode(const void *code_addr,
 
 void _PyJitUnwind_GdbUnregisterCode(void *handle);
 
+void *_PyJitUnwind_GnuBacktraceRegisterCode(const void *code_addr,
+                                            size_t code_size);
+
+void _PyJitUnwind_GnuBacktraceUnregisterCode(void *handle);
+
 #endif  // defined(PY_HAVE_PERF_TRAMPOLINE) || (defined(__linux__) && defined(__ELF__))
 
 #endif  // Py_INTERNAL_JIT_UNWIND_H
