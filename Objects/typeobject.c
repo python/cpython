@@ -5241,7 +5241,6 @@ type_from_slots(PySlot *slots, PyType_Spec *spec_for_token, PyObject *bases_arg)
     const PyMemberDef *weaklistoffset_member = NULL;
     const PyMemberDef *dictoffset_member = NULL;
     const PyMemberDef *vectorcalloffset_member = NULL;
-    char *res_start;
     Py_ssize_t basicsize = 0;
     Py_ssize_t extra_basicsize = 0;
     Py_ssize_t itemsize = 0;
@@ -5570,7 +5569,6 @@ type_from_slots(PySlot *slots, PyType_Spec *spec_for_token, PyObject *bases_arg)
     if (res == NULL) {
         goto finally;
     }
-    res_start = (char*)res;
 
     type = &res->ht_type;
     /* The flags must be initialized early, before the GC traverses us */
@@ -5651,19 +5649,7 @@ type_from_slots(PySlot *slots, PyType_Spec *spec_for_token, PyObject *bases_arg)
         default:
             {
                 /* Copy other slots directly */
-                short slot_offset = it.info->type_info.slot_offset;
-                short subslot_offset = it.info->type_info.subslot_offset;
-                if (slot_offset == 0 && subslot_offset == 0) {
-                    /* slot should have been processed above */
-                }
-                else if (subslot_offset == -1) {
-                    /* Set a slot in the main PyTypeObject */
-                    *(void**)((char*)res_start + slot_offset) = it.current.sl_func;
-                }
-                else {
-                    void *procs = *(void**)((char*)res_start + slot_offset);
-                    *(void**)((char*)procs + subslot_offset) = it.current.sl_func;
-                }
+                _PySlot_heaptype_apply_field_slot(res, it.current);
             }
             break;
         }
@@ -5842,45 +5828,17 @@ PyType_GetModuleName(PyTypeObject *type)
 }
 
 void *
-PyType_GetSlot(PyTypeObject *type, int slot)
+PyType_GetSlot(PyTypeObject *type, int slot_in)
 {
-    void *parent_slot;
-    if (slot <= 0 || slot >= _Py_slot_COUNT) {
-        PyErr_BadInternalCall();
+    uint16_t slot = _PySlot_resolve_type_slot(slot_in);
+    if (slot == Py_slot_invalid) {
         return NULL;
     }
-    _PySlot_Info *slot_info = &_PySlot_InfoTable[slot];
-    if (slot_info->kind != _PySlot_KIND_TYPE) {
-        if (slot_info->kind != _PySlot_KIND_COMPAT) {
-            PyErr_BadInternalCall();
-            return NULL;
-        }
-        slot = slot_info->compat_info.type_id;
-        slot_info = &_PySlot_InfoTable[slot];
-        assert(slot_info->kind == _PySlot_KIND_TYPE);
-    }
-    short slot_offset = slot_info->type_info.slot_offset;
-    short subslot_offset = slot_info->type_info.subslot_offset;
-    if ((slot_offset == 0) && (subslot_offset == 0)) {
-        PyErr_BadInternalCall();
+    void **ptr = _PySlot_type_ptr(type, slot);
+    if (ptr == NULL) {
         return NULL;
     }
-
-    if (slot_offset >= (int)sizeof(PyTypeObject)) {
-        if (!_PyType_HasFeature(type, Py_TPFLAGS_HEAPTYPE)) {
-            return NULL;
-        }
-    }
-
-    parent_slot = *(void**)((char*)type + slot_offset);
-    if (parent_slot == NULL) {
-        return NULL;
-    }
-    /* Return slot directly if we have no sub slot. */
-    if (subslot_offset == -1) {
-        return parent_slot;
-    }
-    return *(void**)((char*)parent_slot + subslot_offset);
+    return *ptr;
 }
 
 PyObject *

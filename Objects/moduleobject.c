@@ -444,6 +444,7 @@ module_from_slots_and_spec(
         def_like = original_def;
          _PySlotIterator_InitLegacy(&it, def_like->m_slots, _PySlot_KIND_MOD);
     }
+    it.name = name;
 
         // Macro to copy a non-NULL, non-repeatable slot.
 #define COPY_NONNULL_SLOT(TYPE, SL_MEMBER, DEST)                        \
@@ -452,7 +453,7 @@ module_from_slots_and_spec(
                 PyErr_Format(                                           \
                     PyExc_SystemError,                                  \
                     "module %s: %s must not be NULL",                   \
-                    name, it.info->name);                               \
+                    name, _PySlot_GetName(it.current.sl_id));           \
                 goto error;                                             \
             }                                                           \
             DEST = (TYPE)(it.current.SL_MEMBER);                        \
@@ -470,7 +471,7 @@ module_from_slots_and_spec(
                         PyExc_SystemError,                              \
                         "module %s: %s conflicts with "                 \
                         "PyModuleDef." #MEMBER,                         \
-                        name, it.info->name);                           \
+                        name, _PySlot_GetName(it.current.sl_id));       \
                     goto error;                                         \
                 }                                                       \
             }                                                           \
@@ -486,8 +487,8 @@ module_from_slots_and_spec(
             if (DEST) {                                                 \
                 PyErr_Format(                                           \
                     PyExc_SystemError,                                  \
-                    "module %s has multiple %s slots",                  \
-                    name, it.info->name);                               \
+                    "module %s has multiple %s slots",              \
+                    name, _PySlot_GetName(it.current.sl_id));           \
                 goto error;                                             \
             }                                                           \
             COPY_NONNULL_SLOT(TYPE, SL_MEMBER, DEST)                    \
