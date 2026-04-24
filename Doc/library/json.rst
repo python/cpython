@@ -231,7 +231,7 @@ Basic Usage
    :type default: :term:`callable` | None
 
    :param bool sort_keys:
-      If ``True``, dictionaries will be outputted sorted by key.
+      If ``True``, dictionaries will be sorted by key and outputted.
       Default ``False``.
 
    .. versionchanged:: 3.2
