@@ -327,6 +327,7 @@ print_optimization_stats(FILE *out, OptimizationStats *stats)
     fprintf(out, "JIT code size: %" PRIu64 "\n", stats->jit_code_size);
     fprintf(out, "JIT trampoline size: %" PRIu64 "\n", stats->jit_trampoline_size);
     fprintf(out, "JIT data size: %" PRIu64 "\n", stats->jit_data_size);
+    fprintf(out, "JIT GOT size: %" PRIu64 "\n", stats->jit_got_size);
     fprintf(out, "JIT padding size: %" PRIu64 "\n", stats->jit_padding_size);
     fprintf(out, "JIT freed memory size: %" PRIu64 "\n", stats->jit_freed_memory_size);
 
@@ -480,6 +481,7 @@ merge_optimization_stats(OptimizationStats *dest, const OptimizationStats *src)
     dest->jit_code_size += src->jit_code_size;
     dest->jit_trampoline_size += src->jit_trampoline_size;
     dest->jit_data_size += src->jit_data_size;
+    dest->jit_got_size += src->jit_got_size;
     dest->jit_padding_size += src->jit_padding_size;
     dest->jit_freed_memory_size += src->jit_freed_memory_size;
 
