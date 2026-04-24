@@ -1,2 +1,0 @@
-Fix XML injection vulnerability in :func:`xmlrpc.client.dumps` where the ``methodname``
-was not being escaped before interpolation into the XML body.
