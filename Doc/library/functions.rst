@@ -590,7 +590,7 @@ are always available.  They are listed here in alphabetical order.
 
    :param source:
       A Python expression.
-   :type source: :class:`str` | :ref:`code object <code-objects>`
+   :type source: :class:`str` | :term:`bytes-like object` | :ref:`code object <code-objects>`
 
    :param globals:
       The global namespace (default: ``None``).
@@ -633,7 +633,7 @@ are always available.  They are listed here in alphabetical order.
 
    This function can also be used to execute arbitrary code objects (such as
    those created by :func:`compile`).  In this case, pass a code object instead
-   of a string.  If the code object has been compiled with ``'exec'`` as the
+   of a string or a bytes-like object.  If the code object has been compiled with ``'exec'`` as the
    *mode* argument, :func:`eval`\'s return value will be ``None``.
 
    Hints: dynamic execution of statements is supported by the :func:`exec`
@@ -641,7 +641,7 @@ are always available.  They are listed here in alphabetical order.
    return the current global and local dictionary, respectively, which may be
    useful to pass around for use by :func:`eval` or :func:`exec`.
 
-   If the given source is a string, then leading and trailing spaces and tabs
+   If the given source is a string or a bytes-like object, then leading and trailing spaces and tabs
    are stripped.
 
    See :func:`ast.literal_eval` for a function to evaluate strings
@@ -675,15 +675,15 @@ are always available.  They are listed here in alphabetical order.
       untrusted user-supplied input will lead to security vulnerabilities.
 
    This function supports dynamic execution of Python code. *source* must be
-   a string, a bytes-like object, or a code object.  If it is a string or a
-   bytes-like object, it is parsed as a suite of Python statements which is
-   then executed (unless a syntax error occurs). [#]_ If it is a code object,
-   it is simply executed.  In all cases, the code that's executed is expected
-   to be valid as file input (see the section :ref:`file-input` in the
-   Reference Manual). Be aware that the :keyword:`nonlocal`, :keyword:`yield`,
-   and :keyword:`return` statements may not be used outside of function
-   definitions even within the context of code passed to the :func:`exec`
-   function. The return value is ``None``.
+   a string, a bytes-like object or a code object.  If it is a string or a bytes-like object, it is parsed as
+   a suite of Python statements which is then executed (unless a syntax error
+   occurs). [#]_ If it is a code object, it is simply executed.  In all cases,
+   the code that's executed is expected to be valid as file input (see the
+   section :ref:`file-input` in the Reference Manual). Be aware that the
+   :keyword:`nonlocal`, :keyword:`yield`,  and :keyword:`return`
+   statements may not be used outside of
+   function definitions even within the context of code passed to the
+   :func:`exec` function. The return value is ``None``.
 
    In all cases, if the optional parts are omitted, the code is executed in the
    current scope.  If only *globals* is provided, it must be a dictionary
