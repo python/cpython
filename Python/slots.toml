@@ -687,7 +687,7 @@ name = 'Py_mod_exec'
 kind = 'mod'
 dtype = 'func'
 duplicates = 'allow'
-nulls = 'deprecated'
+nulls = 'reject'
 
 [86]
 name = 'Py_mod_multiple_interpreters'

@@ -446,62 +446,6 @@ module_from_slots_and_spec(
     }
     it.name = name;
 
-        // Macro to copy a non-NULL, non-repeatable slot.
-#define COPY_NONNULL_SLOT(TYPE, SL_MEMBER, DEST)                        \
-        do {                                                            \
-            if (!(TYPE)(it.current.SL_MEMBER)) {                        \
-                PyErr_Format(                                           \
-                    PyExc_SystemError,                                  \
-                    "module %s: %s must not be NULL",                   \
-                    name, _PySlot_GetName(it.current.sl_id));           \
-                goto error;                                             \
-            }                                                           \
-            DEST = (TYPE)(it.current.SL_MEMBER);                        \
-        } while (0);                                                    \
-        /////////////////////////////////////////////////////////////////
-
-        // Macro to copy a non-NULL, non-repeatable slot to def_like.
-#define COPY_DEF_SLOT(TYPE, SL_MEMBER, MEMBER)                          \
-        do {                                                            \
-            if (original_def) {                                         \
-                TYPE orig_value = (TYPE)original_def->MEMBER;           \
-                TYPE new_value = (TYPE)it.current.SL_MEMBER;            \
-                if (orig_value != new_value) {                          \
-                    PyErr_Format(                                       \
-                        PyExc_SystemError,                              \
-                        "module %s: %s conflicts with "                 \
-                        "PyModuleDef." #MEMBER,                         \
-                        name, _PySlot_GetName(it.current.sl_id));       \
-                    goto error;                                         \
-                }                                                       \
-            }                                                           \
-            COPY_NONNULL_SLOT(TYPE, SL_MEMBER, (def_like->MEMBER))      \
-        } while (0);                                                    \
-        /////////////////////////////////////////////////////////////////
-
-        // Macro to copy a non-NULL, non-repeatable slot without a
-        // corresponding PyModuleDef member.
-        // DEST must be initially NULL (so we don't need a seen_* flag).
-#define COPY_NONDEF_SLOT(TYPE, SL_MEMBER, DEST)                         \
-        do {                                                            \
-            if (DEST) {                                                 \
-                PyErr_Format(                                           \
-                    PyExc_SystemError,                                  \
-                    "module %s has multiple %s slots",              \
-                    name, _PySlot_GetName(it.current.sl_id));           \
-                goto error;                                             \
-            }                                                           \
-            COPY_NONNULL_SLOT(TYPE, SL_MEMBER, DEST)                    \
-        } while (0);                                                    \
-        /////////////////////////////////////////////////////////////////
-
-        // Define the whole common case
-#define DEF_SLOT_CASE(SLOT, TYPE, SL_MEMBER, MEMBER)                    \
-        case SLOT:                                                      \
-            COPY_DEF_SLOT(TYPE, SL_MEMBER, MEMBER);                     \
-            break;                                                      \
-        /////////////////////////////////////////////////////////////////
-
     while (_PySlotIterator_Next(&it)) {
         switch (it.current.sl_id) {
             case Py_slot_invalid:
@@ -518,34 +462,21 @@ module_from_slots_and_spec(
                             name);
                         goto error;
                     }
-                    if (!it.current.sl_func) {
-                        PyErr_Format(
-                            PyExc_SystemError,
-                            "module %s: Py_mod_exec slot must not be NULL",
-                            name);
-                        goto error;
-                    }
-                    COPY_NONDEF_SLOT(_Py_modexecfunc, sl_func, m_exec);
+                    m_exec = (_Py_modexecfunc)it.current.sl_func;
                 }
                 break;
             case Py_mod_multiple_interpreters:
                 multiple_interpreters = it.current.sl_uint64;
                 break;
             case Py_mod_gil:
-                requires_gil = (it.current.sl_uint64 != (uint64_t)Py_MOD_GIL_NOT_USED);
+                uint64_t val = it.current.sl_uint64;
+                requires_gil = (val != (uint64_t)Py_MOD_GIL_NOT_USED);
                 break;
             case Py_mod_abi:
                 if (PyABIInfo_Check(it.current.sl_ptr, name) < 0) {
                     goto error;
                 }
                 break;
-            DEF_SLOT_CASE(Py_mod_name, char*, sl_ptr, m_name)
-            DEF_SLOT_CASE(Py_mod_doc, char*, sl_ptr, m_doc)
-            DEF_SLOT_CASE(Py_mod_state_size, Py_ssize_t, sl_size, m_size)
-            DEF_SLOT_CASE(Py_mod_methods, PyMethodDef*, sl_ptr, m_methods)
-            DEF_SLOT_CASE(Py_mod_state_traverse, traverseproc, sl_func, m_traverse)
-            DEF_SLOT_CASE(Py_mod_state_clear, inquiry, sl_func, m_clear)
-            DEF_SLOT_CASE(Py_mod_state_free, freefunc, sl_func, m_free)
             case Py_mod_token:
                 if (original_def && original_def != it.current.sl_ptr) {
                     PyErr_Format(
@@ -555,13 +486,38 @@ module_from_slots_and_spec(
                         name);
                     goto error;
                 }
-                COPY_NONDEF_SLOT(void*, sl_ptr, token);
+                token = it.current.sl_ptr;
                 break;
-        }
+            // Common case: Copy a PEP 793 slot to def_like
+#define DEF_SLOT_CASE(SLOT, TYPE, SL_MEMBER, MEMBER)                        \
+            case SLOT:                                                      \
+                do {                                                        \
+                    if (original_def) {                                     \
+                        TYPE orig_value = (TYPE)original_def->MEMBER;       \
+                        TYPE new_value = (TYPE)it.current.SL_MEMBER;        \
+                        if (orig_value != new_value) {                      \
+                            PyErr_Format(                                   \
+                                PyExc_SystemError,                          \
+                                "module %s: %s conflicts with "             \
+                                "PyModuleDef." #MEMBER,                     \
+                                name, _PySlot_GetName(it.current.sl_id));   \
+                            goto error;                                     \
+                        }                                                   \
+                    }                                                       \
+                    (def_like->MEMBER) = (TYPE)it.current.SL_MEMBER;        \
+                } while (0);                                                \
+                break;                                                      \
+            /////////////////////////////////////////////////////////////////
+            DEF_SLOT_CASE(Py_mod_name, char*, sl_ptr, m_name)
+            DEF_SLOT_CASE(Py_mod_doc, char*, sl_ptr, m_doc)
+            DEF_SLOT_CASE(Py_mod_state_size, Py_ssize_t, sl_size, m_size)
+            DEF_SLOT_CASE(Py_mod_methods, PyMethodDef*, sl_ptr, m_methods)
+            DEF_SLOT_CASE(Py_mod_state_traverse,
+                          traverseproc, sl_func, m_traverse)
+            DEF_SLOT_CASE(Py_mod_state_clear, inquiry, sl_func, m_clear)
+            DEF_SLOT_CASE(Py_mod_state_free, freefunc, sl_func, m_free)
 #undef DEF_SLOT_CASE
-#undef COPY_DEF_SLOT
-#undef COPY_NONDEF_SLOT
-#undef COPY_NONNULL_SLOT
+        }
     }
     if (!original_def && !_PySlotIterator_SawSlot(&it, Py_mod_abi)) {
         PyErr_Format(
