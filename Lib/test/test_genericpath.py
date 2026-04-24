@@ -6,6 +6,11 @@ import genericpath
 import os
 import sys
 import unittest
+
+# NSKIP050 https://github.com/nanvix/cpython/issues/530
+from test import support
+if support.is_nanvix and not support.is_nanvix_standalone:
+    raise unittest.SkipTest("NSKIP050: hosted Nanvix unable to run this module cleanly (rmdir errno 88 cascade and/or other linuxd VFS issues); not bisected, see #480")
 import warnings
 from test.support import is_emscripten
 from test.support import os_helper
@@ -156,6 +161,9 @@ class GenericTest:
 
     @unittest.skipUnless(hasattr(os, "pipe"), "requires os.pipe()")
     @unittest.skipIf(is_emscripten, "Emscripten pipe fds have no stat")
+    # NSKIP023 https://github.com/nanvix/cpython/issues/503
+    @unittest.skipIf(support.is_nanvix_standalone,
+                     "NSKIP023: os.pipe() ENOSYS in standalone mode")
     def test_exists_fd(self):
         r, w = os.pipe()
         try:
@@ -215,6 +223,9 @@ class GenericTest:
         finally:
             os_helper.rmdir(filename)
 
+    # NSKIP022 https://github.com/nanvix/cpython/issues/502
+    @unittest.skipIf(support.is_nanvix,
+                     "NSKIP022: FAT VFS returns identical st_ino/st_dev for all files")
     def test_samefile(self):
         file1 = os_helper.TESTFN
         file2 = os_helper.TESTFN + "2"
@@ -249,12 +260,18 @@ class GenericTest:
         self._test_samefile_on_link_func(os.symlink)
 
     @unittest.skipUnless(hasattr(os, 'link'), 'requires os.link')
+    # NSKIP024 https://github.com/nanvix/cpython/issues/504
+    @unittest.skipIf(support.is_nanvix,
+                     "NSKIP024: os.link()/symlink()/readlink() not supported on FAT VFS")  # detail: os.link( ENOSYS despite hasattr)
     def test_samefile_on_link(self):
         try:
             self._test_samefile_on_link_func(os.link)
         except PermissionError as e:
             self.skipTest('os.link(): %s' % e)
 
+    # NSKIP022 https://github.com/nanvix/cpython/issues/502
+    @unittest.skipIf(support.is_nanvix,
+                     "NSKIP022: FAT VFS returns identical st_ino/st_dev for all files")
     def test_samestat(self):
         test_fn1 = os_helper.TESTFN
         test_fn2 = os_helper.TESTFN + "2"
@@ -292,6 +309,9 @@ class GenericTest:
         self._test_samestat_on_link_func(os.symlink)
 
     @unittest.skipUnless(hasattr(os, 'link'), 'requires os.link')
+    # NSKIP024 https://github.com/nanvix/cpython/issues/504
+    @unittest.skipIf(support.is_nanvix,
+                     "NSKIP024: os.link()/symlink()/readlink() not supported on FAT VFS")  # detail: os.link( ENOSYS despite hasattr)
     def test_samestat_on_link(self):
         try:
             self._test_samestat_on_link_func(os.link)
@@ -464,6 +484,10 @@ class CommonTest(GenericTest):
         for path in ('\x00', 'foo\x00bar', '\x00\x00', '\x00foo', 'foo\x00'):
             self.assertEqual(self.pathmodule.normpath(path), path)
 
+    # NSKIP008 https://github.com/nanvix/cpython/issues/476
+    @unittest.skipIf(support.is_nanvix,
+                     "NSKIP008: FAT VFS panics on non-ASCII filenames "
+                     "(rust-fatfs UTF-8 boundary slice in dir.rs)")
     def test_abspath_issue3426(self):
         # Check that abspath returns unicode when the arg is unicode
         # with both ASCII and non-ASCII cwds.
@@ -482,6 +506,10 @@ class CommonTest(GenericTest):
                 for path in ('', 'fuu', 'f\xf9\xf9', '/fuu', 'U:\\'):
                     self.assertIsInstance(abspath(path), str)
 
+    # NSKIP008 https://github.com/nanvix/cpython/issues/476
+    @unittest.skipIf(support.is_nanvix,
+                     "NSKIP008: FAT VFS rejects non-ASCII filenames "
+                     "(EINVAL on bytes paths, panic on str paths)")
     def test_nonascii_abspath(self):
         if (os_helper.TESTFN_UNDECODABLE
         # macOS and Emscripten deny the creation of a directory with an

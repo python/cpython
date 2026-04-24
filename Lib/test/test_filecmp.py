@@ -4,6 +4,11 @@ import shutil
 import tempfile
 import unittest
 
+# NSKIP050 https://github.com/nanvix/cpython/issues/530
+from test import support
+if support.is_nanvix and not support.is_nanvix_standalone:
+    raise unittest.SkipTest("NSKIP050: hosted Nanvix unable to run this module cleanly (rmdir errno 88 cascade and/or other linuxd VFS issues); not bisected, see #480")
+
 from test import support
 from test.support import os_helper
 
@@ -117,6 +122,9 @@ class DirCompareTestCase(unittest.TestCase):
         self.assertEqual(sorted(actual), sorted(expected))
 
 
+    # NSKIP021 https://github.com/nanvix/cpython/issues/501
+    @unittest.skipIf(support.is_nanvix,
+                     "NSKIP021: FAT VFS rename() hangs the kernel")
     def test_dircmp(self):
         # Check attributes for comparison of two identical directories
         left_dir, right_dir = self.dir, self.dir_same

@@ -186,6 +186,10 @@ NANVIX_TEST_LIST: list[str] = [
     "test_copy", "test_copyreg",
     "test_collections", "test_defaultdict", "test_ordered_dict", "test_deque", "test_array",
     "test_weakref", "test_weakset", "test_buffer",
+
+    # Filesystem & I/O — paths & helpers
+    "test_genericpath", "test_posixpath", "test_ntpath", "test_pathlib",
+    "test_fnmatch", "test_glob", "test_filecmp", "test_linecache", "test_stat",
 ]
 
 # Default batch size for regrtest VM invocations.
