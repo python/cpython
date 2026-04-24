@@ -1914,15 +1914,17 @@ aliases.
    .. versionchanged:: 3.13
       Added the *default_value* parameter.
 
-.. class:: ParamSpec(name, default_value)
+.. class:: ParamSpec(name, bound, default_value)
 
    A :class:`typing.ParamSpec`. ``name`` is the name of the parameter specification.
-   ``default_value`` is the default value; if the :class:`!ParamSpec` has no default,
-   this attribute will be set to ``None``.
+   ``bound`` is the bound, if any; a parameter specification is bounded by a
+   parameter list, so the bound is usually a :class:`List`. ``default_value``
+   is the default value; if the :class:`!ParamSpec` has no bound or no default,
+   the corresponding attribute will be set to ``None``.
 
    .. doctest::
 
-        >>> print(ast.dump(ast.parse("type Alias[**P = [int, str]] = Callable[P, int]"), indent=4))
+        >>> print(ast.dump(ast.parse("type Alias[**P: [int] = [int, str]] = Callable[P, int]"), indent=4))
         Module(
             body=[
                 TypeAlias(
@@ -1930,6 +1932,9 @@ aliases.
                     type_params=[
                         ParamSpec(
                             name='P',
+                            bound=List(
+                                elts=[
+                                    Name(id='int')]),
                             default_value=List(
                                 elts=[
                                     Name(id='int'),
@@ -1946,21 +1951,29 @@ aliases.
    .. versionchanged:: 3.13
       Added the *default_value* parameter.
 
-.. class:: TypeVarTuple(name, default_value)
+   .. versionchanged:: 3.16
+      Added the *bound* parameter.
+
+.. class:: TypeVarTuple(name, bound, default_value)
 
    A :class:`typing.TypeVarTuple`. ``name`` is the name of the type variable tuple.
-   ``default_value`` is the default value; if the :class:`!TypeVarTuple` has no
-   default, this attribute will be set to ``None``.
+   ``bound`` is the bound, if any, which applies to each type substituted for the
+   type variable tuple. ``default_value`` is the default value; if the
+   :class:`!TypeVarTuple` has no bound or no default, the corresponding attribute
+   will be set to ``None``.
 
    .. doctest::
 
-        >>> print(ast.dump(ast.parse("type Alias[*Ts = ()] = tuple[*Ts]"), indent=4))
+        >>> print(ast.dump(ast.parse("type Alias[*Ts: int = ()] = tuple[*Ts]"), indent=4))
         Module(
             body=[
                 TypeAlias(
                     name=Name(id='Alias', ctx=Store()),
                     type_params=[
-                        TypeVarTuple(name='Ts', default_value=Tuple())],
+                        TypeVarTuple(
+                            name='Ts',
+                            bound=Name(id='int'),
+                            default_value=Tuple())],
                     value=Subscript(
                         value=Name(id='tuple'),
                         slice=Tuple(
@@ -1972,6 +1985,9 @@ aliases.
 
    .. versionchanged:: 3.13
       Added the *default_value* parameter.
+
+   .. versionchanged:: 3.16
+      Added the *bound* parameter.
 
 Function and class definitions
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

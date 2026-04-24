@@ -453,12 +453,18 @@ class Unparser(NodeVisitor):
 
     def visit_TypeVarTuple(self, node):
         self.write("*" + node.name)
+        if node.bound:
+            self.write(": ")
+            self.traverse(node.bound)
         if node.default_value:
             self.write(" = ")
             self.traverse(node.default_value)
 
     def visit_ParamSpec(self, node):
         self.write("**" + node.name)
+        if node.bound:
+            self.write(": ")
+            self.traverse(node.bound)
         if node.default_value:
             self.write(" = ")
             self.traverse(node.default_value)

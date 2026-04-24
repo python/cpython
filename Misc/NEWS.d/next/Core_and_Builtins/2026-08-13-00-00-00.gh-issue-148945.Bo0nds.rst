@@ -1,0 +1,7 @@
+Add support for bounds on type variable tuples and parameter specifications in
+:ref:`type parameter lists <type-params>`, for example ``def f[*Ts: int, **P:
+[str]](): ...``. As with :class:`~typing.TypeVar` bounds, the bound is
+:ref:`lazily evaluated <lazy-evaluation>` and is exposed through the
+``__bound__`` attribute and the ``evaluate_bound`` :term:`evaluate function`.
+The :class:`ast.TypeVarTuple` and :class:`ast.ParamSpec` nodes gain a ``bound``
+field.

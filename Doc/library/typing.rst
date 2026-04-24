@@ -2109,6 +2109,30 @@ without the dedicated syntax, as documented below.
 
       .. versionadded:: 3.15
 
+   .. attribute:: __bound__
+
+      The upper bound of each of the types the type variable tuple stands for,
+      if any.
+
+      .. versionchanged:: 3.16
+
+         For type variable tuples created through
+         :ref:`type parameter syntax <type-params>`, the bound is evaluated only
+         when the attribute is accessed, not when the type variable tuple is
+         created (see :ref:`lazy-evaluation`).
+
+   .. method:: evaluate_bound
+
+      An :term:`evaluate function` corresponding to the
+      :attr:`~TypeVarTuple.__bound__` attribute.
+      When called directly, this method supports only the :attr:`~annotationlib.Format.VALUE`
+      format, which is equivalent to accessing the :attr:`~TypeVarTuple.__bound__` attribute
+      directly, but the method object can be passed to
+      :func:`annotationlib.call_evaluate_function` to evaluate the value in a
+      different format.
+
+      .. versionadded:: 3.16
+
    .. attribute:: __default__
 
       The default value of the type variable tuple, or :data:`typing.NoDefault` if it
@@ -2135,11 +2159,6 @@ without the dedicated syntax, as documented below.
 
       .. versionadded:: 3.13
 
-   Type variable tuples created with ``covariant=True`` or
-   ``contravariant=True`` can be used to declare covariant or contravariant
-   generic types.  The ``bound`` argument is also accepted, similar to
-   :class:`TypeVar`, but its actual semantics are yet to be decided.
-
    .. versionadded:: 3.11
 
    .. versionchanged:: 3.12
@@ -2155,6 +2174,12 @@ without the dedicated syntax, as documented below.
 
       Added support for the ``bound``, ``covariant``, ``contravariant``, and
       ``infer_variance`` parameters.
+
+   .. versionchanged:: 3.16
+
+      Type variable tuple bounds can now be declared using the
+      :ref:`type parameter <type-params>` syntax, and are
+      :ref:`lazily evaluated <lazy-evaluation>`.
 
 .. class:: ParamSpec(name, *, bound=None, covariant=False, contravariant=False, infer_variance=False, default=typing.NoDefault)
 
@@ -2239,6 +2264,34 @@ without the dedicated syntax, as documented below.
 
       .. versionadded:: 3.12
 
+   .. attribute:: __bound__
+
+      The upper bound of the parameter specification, if any. Because a
+      parameter specification stands for the parameters of a callable, its
+      bound is a parameter list, such as ``[int, str]``.
+
+      .. versionchanged:: 3.16
+
+         For parameter specifications created through
+         :ref:`type parameter syntax <type-params>`, the bound is evaluated only
+         when the attribute is accessed, not when the parameter specification is
+         created (see :ref:`lazy-evaluation`).
+
+         Previously, :attr:`!__bound__` was :class:`types.NoneType` rather than
+         ``None`` when no bound was given.
+
+   .. method:: evaluate_bound
+
+      An :term:`evaluate function` corresponding to the
+      :attr:`~ParamSpec.__bound__` attribute.
+      When called directly, this method supports only the :attr:`~annotationlib.Format.VALUE`
+      format, which is equivalent to accessing the :attr:`~ParamSpec.__bound__` attribute
+      directly, but the method object can be passed to
+      :func:`annotationlib.call_evaluate_function` to evaluate the value in a
+      different format.
+
+      .. versionadded:: 3.16
+
    .. attribute:: __default__
 
       The default value of the parameter specification, or :data:`typing.NoDefault` if it
@@ -2267,8 +2320,7 @@ without the dedicated syntax, as documented below.
 
    Parameter specification variables created with ``covariant=True`` or
    ``contravariant=True`` can be used to declare covariant or contravariant
-   generic types.  The ``bound`` argument is also accepted, similar to
-   :class:`TypeVar`.  However the actual semantics of these keywords are yet to
+   generic types.  However the actual semantics of these keywords are yet to
    be decided.
 
    .. versionadded:: 3.10
@@ -2281,6 +2333,12 @@ without the dedicated syntax, as documented below.
    .. versionchanged:: 3.13
 
       Support for default values was added.
+
+   .. versionchanged:: 3.16
+
+      Parameter specification bounds can now be declared using the
+      :ref:`type parameter <type-params>` syntax, and are
+      :ref:`lazily evaluated <lazy-evaluation>`.
 
    .. note::
       Only parameter specification variables defined in global scope can

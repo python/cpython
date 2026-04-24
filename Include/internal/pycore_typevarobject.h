@@ -10,7 +10,9 @@ extern "C" {
 
 extern PyObject *_Py_make_typevar(PyObject *, PyObject *, PyObject *);
 extern PyObject *_Py_make_paramspec(PyThreadState *, PyObject *);
+extern PyObject *_Py_make_paramspec_with_bound(PyObject *, PyObject *);
 extern PyObject *_Py_make_typevartuple(PyThreadState *, PyObject *);
+extern PyObject *_Py_make_typevartuple_with_bound(PyObject *, PyObject *);
 extern PyObject *_Py_make_typealias(PyThreadState *, PyObject *);
 extern PyObject *_Py_subscript_generic(PyThreadState *, PyObject *);
 extern PyObject *_Py_set_typeparam_default(PyThreadState *, PyObject *, PyObject *);

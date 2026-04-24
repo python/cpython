@@ -75,6 +75,20 @@ New features
 Other language changes
 ======================
 
+* :ref:`Type parameter lists <type-params>` now accept bounds on type variable
+  tuples and parameter specifications, using the same syntax already available
+  for :class:`~typing.TypeVar`::
+
+     def call[*Ts: int, **P: [str]](*args: *Ts, f: Callable[P, int]) -> None: ...
+
+  A :class:`~typing.TypeVarTuple` bound applies to each type the type variable
+  tuple stands for, while a :class:`~typing.ParamSpec` bound is a parameter
+  list. Like other type parameter bounds, they are
+  :ref:`lazily evaluated <lazy-evaluation>` and are available through the
+  ``__bound__`` attribute and the ``evaluate_bound``
+  :term:`evaluate function`.
+  (Contributed by KotlinIsland in :gh:`148945`.)
+
 * :meth:`memoryview.cast` now allows casting a multidimensional
   F-contiguous view to a one-dimensional view.
   (Contributed by Jaemin Park in :gh:`91484`.)
