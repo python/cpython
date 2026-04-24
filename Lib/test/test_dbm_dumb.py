@@ -13,6 +13,14 @@ from test import support
 from test.support import os_helper
 from functools import partial
 
+# NSKIP021 https://github.com/nanvix/cpython/issues/501
+# dbm.dumb uses os.rename() in _commit() (Lib/dbm/dumb.py:126) which
+# hangs the kernel on Nanvix's FAT VFS.  Skip the entire module since
+# every dbm.dumb operation that touches the directory file triggers
+# the commit path.
+if support.is_nanvix:
+    raise unittest.SkipTest("NSKIP021: FAT VFS rename() hangs the kernel")  # detail: dbm.dumb._commit( uses os.rename)
+
 _fname = os_helper.TESTFN
 
 
