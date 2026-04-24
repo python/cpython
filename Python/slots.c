@@ -81,13 +81,13 @@ _PySlotIterator_Rewind(_PySlotIterator *it, const void *slots)
 static Py_ssize_t
 seen_index(uint16_t id)
 {
-    return id / sizeof(unsigned int);
+    return id / SEEN_ENTRY_BITS;
 }
 
 static unsigned int
 seen_mask(uint16_t id)
 {
-    return ((unsigned int)1) << (id % sizeof(unsigned int));
+    return ((unsigned int)1) << (id % SEEN_ENTRY_BITS);
 }
 
 bool
