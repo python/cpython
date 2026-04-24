@@ -6,6 +6,7 @@ import unittest
 from importlib.metadata import (
     Distribution,
     PackageNotFoundError,
+    Prepared,
     distribution,
     entry_points,
     files,
@@ -313,3 +314,34 @@ class InvalidateCache(unittest.TestCase):
     def test_invalidate_cache(self):
         # No externally observable behavior, but ensures test coverage...
         importlib.invalidate_caches()
+
+
+class PreparedTests(unittest.TestCase):
+    @fixtures.parameterize(
+        # Simple
+        dict(input='sample', expected='sample'),
+        # Mixed case
+        dict(input='Sample', expected='sample'),
+        dict(input='SAMPLE', expected='sample'),
+        dict(input='SaMpLe', expected='sample'),
+        # Separator conversions
+        dict(input='sample-pkg', expected='sample_pkg'),
+        dict(input='sample.pkg', expected='sample_pkg'),
+        dict(input='sample_pkg', expected='sample_pkg'),
+        # Multiple separators
+        dict(input='sample---pkg', expected='sample_pkg'),
+        dict(input='sample___pkg', expected='sample_pkg'),
+        dict(input='sample...pkg', expected='sample_pkg'),
+        # Mixed separators
+        dict(input='sample-._pkg', expected='sample_pkg'),
+        dict(input='sample_.-pkg', expected='sample_pkg'),
+        # Complex
+        dict(input='Sample__Pkg-name.foo', expected='sample_pkg_name_foo'),
+        dict(input='Sample__Pkg.name__foo', expected='sample_pkg_name_foo'),
+        # Uppercase with separators
+        dict(input='SAMPLE-PKG', expected='sample_pkg'),
+        dict(input='Sample.Pkg', expected='sample_pkg'),
+        dict(input='SAMPLE_PKG', expected='sample_pkg'),
+    )
+    def test_normalize(self, input, expected):
+        self.assertEqual(Prepared.normalize(input), expected)

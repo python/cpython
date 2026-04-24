@@ -142,6 +142,28 @@ class CProfileTest(ProfileTest):
 
         self.assertTrue(any("throw" in func[2] for func in pr.stats.keys())),
 
+    def test_clear_with_nested_calls(self):
+        # Calling clear() during nested profiled calls should not leak
+        # ProfilerContexts. clearEntries() must walk the entire linked list,
+        # not just free the top context.
+        import _lsprof
+
+        def level3(profiler):
+            profiler.clear()
+
+        def level2(profiler):
+            level3(profiler)
+
+        def level1(profiler):
+            level2(profiler)
+
+        profiler = _lsprof.Profiler()
+        profiler.enable()
+        for _ in range(100):
+            level1(profiler)
+        profiler.disable()
+        profiler.clear()
+
     def test_bad_descriptor(self):
         # gh-132250
         # cProfile should not crash when the profiler callback fails to locate

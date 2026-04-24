@@ -14,6 +14,7 @@
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_signal.h"        // _Py_RestoreSignals()
 #include "pycore_time.h"          // _PyTime_FromSecondsObject()
+#include "pycore_tuple.h"         // _PyTuple_FromPairSteal
 
 #ifndef MS_WINDOWS
 #  include "posixmodule.h"        // _PyLong_FromUid()
@@ -193,27 +194,16 @@ double_from_timeval(struct timeval *tv)
 static PyObject *
 itimer_retval(struct itimerval *iv)
 {
-    PyObject *r, *v;
-
-    r = PyTuple_New(2);
-    if (r == NULL)
-        return NULL;
-
-    if(!(v = PyFloat_FromDouble(double_from_timeval(&iv->it_value)))) {
-        Py_DECREF(r);
+    PyObject *value = PyFloat_FromDouble(double_from_timeval(&iv->it_value));
+    if (value == NULL) {
         return NULL;
     }
-
-    PyTuple_SET_ITEM(r, 0, v);
-
-    if(!(v = PyFloat_FromDouble(double_from_timeval(&iv->it_interval)))) {
-        Py_DECREF(r);
+    PyObject *interval = PyFloat_FromDouble(double_from_timeval(&iv->it_interval));
+    if (interval == NULL) {
+        Py_DECREF(value);
         return NULL;
     }
-
-    PyTuple_SET_ITEM(r, 1, v);
-
-    return r;
+    return _PyTuple_FromPairSteal(value, interval);
 }
 #endif
 
@@ -1183,7 +1173,13 @@ signal_sigwaitinfo_impl(PyObject *module, sigset_t sigset)
         err = sigwaitinfo(&sigset, &si);
         Py_END_ALLOW_THREADS
     } while (err == -1
-             && errno == EINTR && !(async_err = PyErr_CheckSignals()));
+             && (errno == EINTR
+#if defined(__NetBSD__)
+                 /* NetBSD's implementation violates POSIX by setting
+                  * errno to ECANCELED instead of EINTR. */
+                 || errno == ECANCELED
+#endif
+            ) && !(async_err = PyErr_CheckSignals()));
     if (err == -1)
         return (!async_err) ? PyErr_SetFromErrno(PyExc_OSError) : NULL;
 
@@ -1204,13 +1200,13 @@ signal.sigtimedwait
 
 Like sigwaitinfo(), but with a timeout.
 
-The timeout is specified in seconds, with floating-point numbers allowed.
+The timeout is specified in seconds, rounded up to nanoseconds.
 [clinic start generated code]*/
 
 static PyObject *
 signal_sigtimedwait_impl(PyObject *module, sigset_t sigset,
                          PyObject *timeout_obj)
-/*[clinic end generated code: output=59c8971e8ae18a64 input=955773219c1596cd]*/
+/*[clinic end generated code: output=59c8971e8ae18a64 input=f89af57d645e48e0]*/
 {
     PyTime_t timeout;
     if (_PyTime_FromSecondsObject(&timeout,
@@ -1703,6 +1699,7 @@ _signal_module_free(void *module)
 
 
 static PyModuleDef_Slot signal_slots[] = {
+    _Py_ABI_SLOT,
     {Py_mod_exec, signal_module_exec},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {Py_mod_gil, Py_MOD_GIL_NOT_USED},
@@ -1775,20 +1772,28 @@ PyErr_CheckSignals(void)
        Python code to ensure signals are handled. Checking for the GC here
        allows long running native code to clean cycles created using the C-API
        even if it doesn't run the evaluation loop */
-    if (_Py_eval_breaker_bit_is_set(tstate, _PY_GC_SCHEDULED_BIT)) {
+    uintptr_t breaker = _Py_atomic_load_uintptr_relaxed(&tstate->eval_breaker);
+    if (breaker & _PY_GC_SCHEDULED_BIT) {
         _Py_unset_eval_breaker_bit(tstate, _PY_GC_SCHEDULED_BIT);
         _Py_RunGC(tstate);
+    }
+    if (breaker & _PY_ASYNC_EXCEPTION_BIT) {
+        if (_PyEval_RaiseAsyncExc(tstate) < 0) {
+            return -1;
+        }
     }
 
 #if defined(Py_REMOTE_DEBUG) && defined(Py_SUPPORTS_REMOTE_DEBUG)
     _PyRunRemoteDebugger(tstate);
 #endif
 
-    if (!_Py_ThreadCanHandleSignals(tstate->interp)) {
-        return 0;
+    if (_Py_ThreadCanHandleSignals(tstate->interp)) {
+        if (_PyErr_CheckSignalsTstate(tstate) < 0) {
+            return -1;
+        }
     }
 
-    return _PyErr_CheckSignalsTstate(tstate);
+    return 0;
 }
 
 

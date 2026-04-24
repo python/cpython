@@ -1112,11 +1112,13 @@ _curses_window_addstr_impl(PyCursesWindowObject *self, int group_left_1,
         attr_old = getattrs(self->win);
         if (curses_wattrset(self, attr, "addstr") < 0) {
             curses_release_wstr(strtype, wstr);
+            Py_XDECREF(bytesobj);
             return NULL;
         }
     }
 #ifdef HAVE_NCURSESW
     if (strtype == 2) {
+        assert(bytesobj == NULL);
         if (use_xy) {
             rtn = mvwaddwstr(self->win,y,x,wstr);
             funcname = "mvwaddwstr";
@@ -1130,6 +1132,9 @@ _curses_window_addstr_impl(PyCursesWindowObject *self, int group_left_1,
     else
 #endif
     {
+#ifdef HAVE_NCURSESW
+        assert(wstr == NULL);
+#endif
         const char *str = PyBytes_AS_STRING(bytesobj);
         if (use_xy) {
             rtn = mvwaddstr(self->win,y,x,str);
@@ -1210,6 +1215,7 @@ _curses_window_addnstr_impl(PyCursesWindowObject *self, int group_left_1,
         attr_old = getattrs(self->win);
         if (curses_wattrset(self, attr, "addnstr") < 0) {
             curses_release_wstr(strtype, wstr);
+            Py_XDECREF(bytesobj);
             return NULL;
         }
     }
@@ -1932,7 +1938,6 @@ PyCursesWindow_getstr(PyObject *op, PyObject *args)
     int rtn, use_xy = 0, y = 0, x = 0;
     unsigned int max_buf_size = 2048;
     unsigned int n = max_buf_size - 1;
-    PyObject *res;
 
     if (!curses_clinic_parse_optional_xy_n(args, &y, &x, &n, &use_xy,
                                            "_curses.window.instr"))
@@ -1941,11 +1946,11 @@ PyCursesWindow_getstr(PyObject *op, PyObject *args)
     }
 
     n = Py_MIN(n, max_buf_size - 1);
-    res = PyBytes_FromStringAndSize(NULL, n + 1);
-    if (res == NULL) {
+    PyBytesWriter *writer = PyBytesWriter_Create(n + 1);
+    if (writer == NULL) {
         return NULL;
     }
-    char *buf = PyBytes_AS_STRING(res);
+    char *buf = PyBytesWriter_GetData(writer);
 
     if (use_xy) {
         Py_BEGIN_ALLOW_THREADS
@@ -1965,11 +1970,10 @@ PyCursesWindow_getstr(PyObject *op, PyObject *args)
     }
 
     if (rtn == ERR) {
-        Py_DECREF(res);
+        PyBytesWriter_Discard(writer);
         return Py_GetConstant(Py_CONSTANT_EMPTY_BYTES);
     }
-    _PyBytes_Resize(&res, strlen(buf));  // 'res' is set to NULL on failure
-    return res;
+    return PyBytesWriter_FinishWithSize(writer, strlen(buf));
 }
 
 /*[clinic input]
@@ -2130,7 +2134,6 @@ PyCursesWindow_instr(PyObject *op, PyObject *args)
     int rtn, use_xy = 0, y = 0, x = 0;
     unsigned int max_buf_size = 2048;
     unsigned int n = max_buf_size - 1;
-    PyObject *res;
 
     if (!curses_clinic_parse_optional_xy_n(args, &y, &x, &n, &use_xy,
                                            "_curses.window.instr"))
@@ -2139,11 +2142,11 @@ PyCursesWindow_instr(PyObject *op, PyObject *args)
     }
 
     n = Py_MIN(n, max_buf_size - 1);
-    res = PyBytes_FromStringAndSize(NULL, n + 1);
-    if (res == NULL) {
+    PyBytesWriter *writer = PyBytesWriter_Create(n + 1);
+    if (writer == NULL) {
         return NULL;
     }
-    char *buf = PyBytes_AS_STRING(res);
+    char *buf = PyBytesWriter_GetData(writer);
 
     if (use_xy) {
         rtn = mvwinnstr(self->win, y, x, buf, n);
@@ -2153,11 +2156,10 @@ PyCursesWindow_instr(PyObject *op, PyObject *args)
     }
 
     if (rtn == ERR) {
-        Py_DECREF(res);
+        PyBytesWriter_Discard(writer);
         return Py_GetConstant(Py_CONSTANT_EMPTY_BYTES);
     }
-    _PyBytes_Resize(&res, strlen(buf));  // 'res' is set to NULL on failure
-    return res;
+    return PyBytesWriter_FinishWithSize(writer, strlen(buf));
 }
 
 /*[clinic input]
@@ -2216,6 +2218,7 @@ _curses_window_insstr_impl(PyCursesWindowObject *self, int group_left_1,
         attr_old = getattrs(self->win);
         if (curses_wattrset(self, attr, "insstr") < 0) {
             curses_release_wstr(strtype, wstr);
+            Py_XDECREF(bytesobj);
             return NULL;
         }
     }
@@ -5628,6 +5631,7 @@ cursesmodule_exec(PyObject *module)
 /* Initialization function for the module */
 
 static PyModuleDef_Slot cursesmodule_slots[] = {
+    _Py_ABI_SLOT,
     {Py_mod_exec, cursesmodule_exec},
     {Py_mod_multiple_interpreters, Py_MOD_MULTIPLE_INTERPRETERS_NOT_SUPPORTED},
     {Py_mod_gil, Py_MOD_GIL_NOT_USED},

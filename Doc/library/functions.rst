@@ -138,6 +138,8 @@ are always available.  They are listed here in alphabetical order.
       >>> f'{14:#b}', f'{14:b}'
       ('0b1110', '1110')
 
+   See also :func:`enum.bin` to represent negative values as twos-complement.
+
    See also :func:`format` for more information.
 
 
@@ -292,7 +294,9 @@ are always available.  They are listed here in alphabetical order.
       :func:`property`.
 
 
-.. function:: compile(source, filename, mode, flags=0, dont_inherit=False, optimize=-1)
+.. function:: compile(source, filename, mode, flags=0, \
+                      dont_inherit=False, optimize=-1, \
+                      *, module=None)
 
    Compile the *source* into a code or AST object.  Code objects can be executed
    by :func:`exec` or :func:`eval`.  *source* can either be a normal string, a
@@ -334,8 +338,12 @@ are always available.  They are listed here in alphabetical order.
    ``__debug__`` is true), ``1`` (asserts are removed, ``__debug__`` is false)
    or ``2`` (docstrings are removed too).
 
-   This function raises :exc:`SyntaxError` if the compiled source is invalid,
-   and :exc:`ValueError` if the source contains null bytes.
+   The optional argument *module* specifies the module name.
+   It is needed to unambiguous :ref:`filter <warning-filter>` syntax warnings
+   by module name.
+
+   This function raises :exc:`SyntaxError` or :exc:`ValueError` if the compiled
+   source is invalid.
 
    If you want to parse Python code into its AST representation, see
    :func:`ast.parse`.
@@ -370,6 +378,9 @@ are always available.  They are listed here in alphabetical order.
    .. versionadded:: 3.8
       ``ast.PyCF_ALLOW_TOP_LEVEL_AWAIT`` can now be passed in flags to enable
       support for top-level ``await``, ``async for``, and ``async with``.
+
+   .. versionadded:: 3.15
+      Added the *module* parameter.
 
 
 .. class:: complex(number=0, /)
@@ -517,7 +528,7 @@ are always available.  They are listed here in alphabetical order.
       >>> dir()   # show the names in the module namespace  # doctest: +SKIP
       ['__builtins__', '__name__', 'struct']
       >>> dir(struct)   # show the names in the struct module # doctest: +SKIP
-      ['Struct', '__all__', '__builtins__', '__cached__', '__doc__', '__file__',
+      ['Struct', '__all__', '__builtins__', '__doc__', '__file__',
        '__initializing__', '__loader__', '__name__', '__package__',
        '_clearcache', 'calcsize', 'error', 'pack', 'pack_into',
        'unpack', 'unpack_from']
@@ -583,7 +594,7 @@ are always available.  They are listed here in alphabetical order.
 
    :param globals:
       The global namespace (default: ``None``).
-   :type globals: :class:`dict` | ``None``
+   :type globals: :class:`dict` | :class:`frozendict` | ``None``
 
    :param locals:
       The local namespace (default: ``None``).
@@ -595,18 +606,19 @@ are always available.  They are listed here in alphabetical order.
    .. warning::
 
       This function executes arbitrary code. Calling it with
-      user-supplied input may lead to security vulnerabilities.
+      untrusted user-supplied input will lead to security vulnerabilities.
 
-   The *expression* argument is parsed and evaluated as a Python expression
+   The *source* argument is parsed and evaluated as a Python expression
    (technically speaking, a condition list) using the *globals* and *locals*
    mappings as global and local namespace.  If the *globals* dictionary is
    present and does not contain a value for the key ``__builtins__``, a
    reference to the dictionary of the built-in module :mod:`builtins` is
-   inserted under that key before *expression* is parsed.  That way you can
-   control what builtins are available to the executed code by inserting your
-   own ``__builtins__`` dictionary into *globals* before passing it to
-   :func:`eval`.  If the *locals* mapping is omitted it defaults to the
-   *globals* dictionary.  If both mappings are omitted, the expression is
+   inserted under that key before *source* is parsed.
+   Overriding ``__builtins__`` can be used to restrict or change the available
+   names, but this is **not** a security mechanism: the executed code can
+   still access all builtins.
+   If the *locals* mapping is omitted it defaults to the
+   *globals* dictionary.  If both mappings are omitted, the source is
    executed with the *globals* and *locals* in the environment where
    :func:`eval` is called.  Note, *eval()* will only have access to the
    :term:`nested scopes <nested scope>` (non-locals) in the enclosing
@@ -632,7 +644,7 @@ are always available.  They are listed here in alphabetical order.
    If the given source is a string, then leading and trailing spaces and tabs
    are stripped.
 
-   See :func:`ast.literal_eval` for a function that can safely evaluate strings
+   See :func:`ast.literal_eval` for a function to evaluate strings
    with expressions containing only literals.
 
    .. audit-event:: exec code_object eval
@@ -649,6 +661,10 @@ are always available.  They are listed here in alphabetical order.
       The semantics of the default *locals* namespace have been adjusted as
       described for the :func:`locals` builtin.
 
+   .. versionchanged:: 3.15
+
+      *globals* can now be a :class:`frozendict`.
+
 .. index:: pair: built-in function; exec
 
 .. function:: exec(source, /, globals=None, locals=None, *, closure=None)
@@ -656,7 +672,7 @@ are always available.  They are listed here in alphabetical order.
    .. warning::
 
       This function executes arbitrary code. Calling it with
-      user-supplied input may lead to security vulnerabilities.
+      untrusted user-supplied input will lead to security vulnerabilities.
 
    This function supports dynamic execution of Python code. *source* must be
    either a string or a code object.  If it is a string, the string is parsed as
@@ -687,9 +703,10 @@ are always available.  They are listed here in alphabetical order.
 
    If the *globals* dictionary does not contain a value for the key
    ``__builtins__``, a reference to the dictionary of the built-in module
-   :mod:`builtins` is inserted under that key.  That way you can control what
-   builtins are available to the executed code by inserting your own
-   ``__builtins__`` dictionary into *globals* before passing it to :func:`exec`.
+   :mod:`builtins` is inserted under that key.
+   Overriding ``__builtins__`` can be used to restrict or change the available
+   names, but this is **not** a security mechanism: the executed code can
+   still access all builtins.
 
    The *closure* argument specifies a closure--a tuple of cellvars.
    It's only valid when the *object* is a code object containing
@@ -725,6 +742,10 @@ are always available.  They are listed here in alphabetical order.
 
       The semantics of the default *locals* namespace have been adjusted as
       described for the :func:`locals` builtin.
+
+   .. versionchanged:: 3.15
+
+      *globals* can now be a :class:`frozendict`.
 
 
 .. function:: filter(function, iterable, /)
@@ -1733,7 +1754,7 @@ are always available.  They are listed here in alphabetical order.
             self.age = age
 
          def __repr__(self):
-            return f"Person('{self.name}', {self.age})"
+            return f"Person({self.name!r}, {self.age!r})"
 
 
 .. function:: reversed(object, /)
@@ -1813,19 +1834,19 @@ are always available.  They are listed here in alphabetical order.
    ``range(start, stop, step)``.  The *start* and *step* arguments default to
    ``None``.
 
-   Slice objects have read-only data attributes :attr:`!start`,
-   :attr:`!stop`, and :attr:`!step` which merely return the argument
-   values (or their default).  They have no other explicit functionality;
-   however, they are used by NumPy and other third-party packages.
+   Slice objects are also generated when :ref:`slicing syntax <slicings>`
+   is used.  For example: ``a[start:stop:step]`` or ``a[start:stop, i]``.
+
+   See :func:`itertools.islice` for an alternate version that returns an
+   :term:`iterator`.
 
    .. attribute:: slice.start
-   .. attribute:: slice.stop
-   .. attribute:: slice.step
+                  slice.stop
+                  slice.step
 
-   Slice objects are also generated when extended indexing syntax is used.  For
-   example: ``a[start:stop:step]`` or ``a[start:stop, i]``.  See
-   :func:`itertools.islice` for an alternate version that returns an
-   :term:`iterator`.
+      These read-only attributes are set to the argument values
+      (or their default).  They have no other explicit functionality;
+      however, they are used by NumPy and other third-party packages.
 
    .. versionchanged:: 3.12
       Slice objects are now :term:`hashable` (provided :attr:`~slice.start`,
@@ -1859,7 +1880,7 @@ are always available.  They are listed here in alphabetical order.
    the same data with other ordering tools such as :func:`max` that rely
    on a different underlying method.  Implementing all six comparisons
    also helps avoid confusion for mixed type comparisons which can call
-   reflected the :meth:`~object.__gt__` method.
+   the reflected :meth:`~object.__gt__` method.
 
    For sorting examples and a brief sorting tutorial, see :ref:`sortinghowto`.
 
@@ -2079,6 +2100,10 @@ are always available.  They are listed here in alphabetical order.
    .. versionchanged:: 3.6
       Subclasses of :class:`!type` which don't override ``type.__new__`` may no
       longer use the one-argument form to get the type of an object.
+
+   .. versionchanged:: 3.15
+
+      *dict* can now be a :class:`frozendict`.
 
 .. function:: vars()
               vars(object, /)
