@@ -13626,8 +13626,7 @@ class dict(iterable, /, **kwargs)
          1
 
       The example above shows part of the implementation of
-      "collections.Counter". A different "__missing__()" method is
-      used by "collections.defaultdict".
+      "collections.Counter".
 
    d[key] = value
 
