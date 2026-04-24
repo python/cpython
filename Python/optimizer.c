@@ -828,8 +828,7 @@ _PyJit_translate_single_bytecode_to_trace(
             _Py_FALLTHROUGH;
         case JUMP_BACKWARD_NO_INTERRUPT:
         {
-            if ((next_instr != tracer->initial_state.close_loop_instr) &&
-                (next_instr != tracer->initial_state.start_instr) &&
+            if ((next_instr != tracer->initial_state.start_instr) &&
                 uop_buffer_length(&tracer->code_buffer) > CODE_SIZE_NO_PROGRESS &&
                 // For side exits, we don't want to terminate them early.
                 tracer->initial_state.exit == NULL &&
@@ -842,8 +841,8 @@ _PyJit_translate_single_bytecode_to_trace(
                 OPT_STAT_INC(inner_loop);
                 ADD_TO_TRACE(_EXIT_TRACE, 0, 0, target);
                 uop_buffer_last(trace)->operand1 = true; // is_control_flow
-                DPRINTF(2, "JUMP_BACKWARD not to top ends trace %p %p %p\n", next_instr,
-                    tracer->initial_state.close_loop_instr, tracer->initial_state.start_instr);
+                DPRINTF(2, "JUMP_BACKWARD not to top ends trace %p %p\n", next_instr,
+                    tracer->initial_state.start_instr);
                 goto done;
             }
             break;
@@ -981,8 +980,7 @@ _PyJit_translate_single_bytecode_to_trace(
         }
     }
     // Loop back to the start
-    int is_first_instr = tracer->initial_state.close_loop_instr == next_instr ||
-        tracer->initial_state.start_instr == next_instr;
+    int is_first_instr = tracer->initial_state.start_instr == next_instr;
     if (is_first_instr && uop_buffer_length(trace) > CODE_SIZE_NO_PROGRESS) {
         if (needs_guard_ip) {
             ADD_TO_TRACE(_SET_IP, 0, (uintptr_t)next_instr, 0);
@@ -1006,7 +1004,7 @@ done:
 Py_NO_INLINE int
 _PyJit_TryInitializeTracing(
     PyThreadState *tstate, _PyInterpreterFrame *frame, _Py_CODEUNIT *curr_instr,
-    _Py_CODEUNIT *start_instr, _Py_CODEUNIT *close_loop_instr, _PyStackRef *stack_pointer, int chain_depth,
+    _PyStackRef *stack_pointer, int chain_depth,
     _PyExitData *exit, int oparg, _PyExecutorObject *current_executor)
 {
     _PyThreadStateImpl *_tstate = (_PyThreadStateImpl *)tstate;
@@ -1026,6 +1024,7 @@ _PyJit_TryInitializeTracing(
     if (oparg > 0xFFFF) {
         return 0;
     }
+    _Py_CODEUNIT *start_instr = curr_instr - (oparg > 0xFF);
     PyObject *func = PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
     if (func == NULL || !PyFunction_Check(func)) {
         return 0;
@@ -1042,7 +1041,7 @@ _PyJit_TryInitializeTracing(
         PyUnicode_AsUTF8(code->co_qualname),
         PyUnicode_AsUTF8(code->co_filename),
         code->co_firstlineno,
-        2 * INSTR_IP(close_loop_instr, code),
+        2 * INSTR_IP(curr_instr, code),
         chain_depth);
 #endif
     /* Set up tracing buffer*/
@@ -1052,7 +1051,6 @@ _PyJit_TryInitializeTracing(
     ADD_TO_TRACE(_MAKE_WARM, 0, 0, 0);
 
     tracer->initial_state.start_instr = start_instr;
-    tracer->initial_state.close_loop_instr = close_loop_instr;
     tracer->initial_state.code = (PyCodeObject *)Py_NewRef(code);
     tracer->initial_state.func = (PyFunctionObject *)Py_NewRef(func);
     tracer->initial_state.executor = (_PyExecutorObject *)Py_XNewRef(current_executor);

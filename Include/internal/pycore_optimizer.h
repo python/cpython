@@ -87,7 +87,6 @@ typedef struct _PyJitTracerInitialState {
     PyFunctionObject *func; // Strong
     struct _PyExecutorObject *executor; // Strong
     _Py_CODEUNIT *start_instr;
-    _Py_CODEUNIT *close_loop_instr;
     _Py_CODEUNIT *jump_backward_instr;
 } _PyJitTracerInitialState;
 
@@ -471,8 +470,8 @@ PyAPI_FUNC(int) _PyJit_translate_single_bytecode_to_trace(PyThreadState *tstate,
 
 PyAPI_FUNC(int)
 _PyJit_TryInitializeTracing(PyThreadState *tstate, _PyInterpreterFrame *frame,
-    _Py_CODEUNIT *curr_instr, _Py_CODEUNIT *start_instr,
-    _Py_CODEUNIT *close_loop_instr, _PyStackRef *stack_pointer, int chain_depth, _PyExitData *exit,
+    _Py_CODEUNIT *curr_instr, _PyStackRef *stack_pointer,
+    int chain_depth, _PyExitData *exit,
     int oparg, _PyExecutorObject *current_executor);
 
 PyAPI_FUNC(void) _PyJit_FinalizeTracing(PyThreadState *tstate, int err);
