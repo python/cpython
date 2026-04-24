@@ -470,6 +470,7 @@ PYTHON_OBJS=	\
 		Python/instruction_sequence.o \
 		Python/intrinsics.o \
 		Python/jit.o \
+		Python/jit_publish.o \
 		$(JIT_OBJS) \
 		Python/legacy_tracing.o \
 		Python/lock.o \
