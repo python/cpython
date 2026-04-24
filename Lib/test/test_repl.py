@@ -480,6 +480,7 @@ class TestAsyncioREPL(unittest.TestCase):
             custom=True)
         p.stdin.write("print('user code', 'executed')\n")
         output = kill_python(p)
+        self.assertEqual(p.returncode, 0)
 
         tb_hint = f'File "{startup_env["PYTHONSTARTUP"]}", line 1'
         self.assertIn(tb_hint, output)
