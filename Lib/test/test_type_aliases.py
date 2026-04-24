@@ -328,6 +328,25 @@ class TypeAliasConstructorTest(unittest.TestCase):
         self.assertEqual(TA.__type_params__, ())
         self.assertEqual(TA.__module__, __name__)
 
+    def test_with_module(self):
+        TA = TypeAliasType("TA", int, module="my.custom.pkg")
+        self.assertEqual(TA.__module__, "my.custom.pkg")
+
+    def test_repr_with_module(self):
+        TA = TypeAliasType("TA", int)
+        TA_with_module = TypeAliasType("TA", int, module="foo.bar")
+        self.assertEqual(repr(TA), repr(TA_with_module))
+
+    def test_with_module_with_exec(self):
+        ns = {}
+        exec(
+            "from typing import TypeAliasType\n"
+            "TA = TypeAliasType('TA', int, module='x.y')",
+            ns,
+            ns,
+        )
+        self.assertEqual(ns["TA"].__module__, "x.y")
+
     def test_errors(self):
         with self.assertRaises(TypeError):
             TypeAliasType()

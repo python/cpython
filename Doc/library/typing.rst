@@ -2315,7 +2315,8 @@ without the dedicated syntax, as documented below.
    .. versionadded:: 3.10
 
 
-.. class:: TypeAliasType(name, value, *, type_params=(), qualname=None)
+.. class:: TypeAliasType(name, value, *, type_params=(), qualname=None, \
+                         module=None)
 
    The type of type aliases created through the :keyword:`type` statement.
 
@@ -2327,7 +2328,19 @@ without the dedicated syntax, as documented below.
       >>> type(Alias)
       <class 'typing.TypeAliasType'>
 
+   When *module* is given, it is used as the new alias's
+   :attr:`~TypeAliasType.__module__`. When not given (or when ``None`` is
+   passed explicitly), the module is inferred from the calling frame's
+   globals. Inference can yield ``None`` when no ``__name__`` is in scope
+   (e.g. inside :func:`exec` with a fresh globals dict), or it can yield
+   an unwanted module name when an alias is built inside a factory helper
+   or generated code. Pass *module* explicitly when the inferred module
+   would be wrong or unavailable.
+
    .. versionadded:: 3.12
+
+   .. versionchanged:: 3.15
+      Added the *module* parameter.
 
    .. attribute:: __name__
 

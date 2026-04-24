@@ -2149,14 +2149,16 @@ typealias.__new__ as typealias_new
     *
     type_params: object = NULL
     qualname: object(c_default="NULL") = None
+    module: object(c_default="NULL") = None
 
 Create a TypeAliasType.
 [clinic start generated code]*/
 
 static PyObject *
 typealias_new_impl(PyTypeObject *type, PyObject *name, PyObject *value,
-                   PyObject *type_params, PyObject *qualname)
-/*[clinic end generated code: output=b7f6d9f1c577cd9c input=cbec290f8c4886ef]*/
+                   PyObject *type_params, PyObject *qualname,
+                   PyObject *module)
+/*[clinic end generated code: output=263bf69bc54213c5 input=229c9f63109a44b9]*/
 {
     if (type_params != NULL && !PyTuple_Check(type_params)) {
         PyErr_SetString(PyExc_TypeError, "type_params must be a tuple");
@@ -2179,14 +2181,19 @@ typealias_new_impl(PyTypeObject *type, PyObject *name, PyObject *value,
         }
     }
 
-    PyObject *module = caller();
-    if (module == NULL) {
-        return NULL;
+    PyObject *resolved_module;
+    if (module == NULL || module == Py_None) {
+        resolved_module = caller();
+        if (resolved_module == NULL) {
+            return NULL;
+        }
+    } else {
+        resolved_module = Py_NewRef(module);
     }
 
     PyObject *ta = (PyObject *)typealias_alloc(
-        name, qualname, checked_params, NULL, value, module);
-    Py_DECREF(module);
+        name, qualname, checked_params, NULL, value, resolved_module);
+    Py_DECREF(resolved_module);
     return ta;
 }
 

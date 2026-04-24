@@ -1,0 +1,5 @@
+Add an optional keyword-only ``module`` argument to :class:`typing.TypeAliasType`.
+When supplied, it overrides the module inferred from the calling frame, which
+can yield ``None`` (e.g. inside :func:`exec` with a fresh globals dict) or
+an unwanted module (e.g. inside factory helpers). Mirrors the long-standing
+``module`` argument of :class:`enum.Enum`'s functional API.
