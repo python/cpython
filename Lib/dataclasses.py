@@ -809,7 +809,7 @@ def _get_type_from_annotation(annotation, cls):
         return None
 
     # Note: _MODULE_IDENTIFIER_RE guarantees that path is non-empty
-    path = match.group(1).split(".")
+    path = match[1].split(".")
     root = sys.modules.get(cls.__module__)
     for path_item in path:
         root = getattr(root, path_item.strip(), None)
