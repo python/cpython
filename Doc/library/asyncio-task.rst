@@ -357,12 +357,13 @@ and reliable way to wait for all tasks in the group to finish.
 
    .. method:: cancel()
 
-      Cancel the task group.
+      Cancel the task group.  This is a non-exceptional, early exit of the
+      task group's lifetime -- useful once the group's goal has been met or
+      its services no longer needed.
 
       :meth:`~asyncio.Task.cancel` will be called on any tasks in the group that
-      aren't yet done, as well as the parent (body) of the group.  This will
-      cause the task group context manager to exit *without*
-      :exc:`asyncio.CancelledError` being raised.
+      aren't yet done, as well as the parent (body) of the group.  The task group
+      context manager will exit *without* :exc:`asyncio.CancelledError` being raised.
 
       If :meth:`cancel` is called before entering the task group, the group will be
       cancelled upon entry.  This is useful for patterns where one piece of
@@ -372,7 +373,7 @@ and reliable way to wait for all tasks in the group to finish.
       :meth:`cancel` is idempotent and may be called after the task group has
       already exited.
 
-      Ways to use :meth:`cancel`:
+      Some ways to use :meth:`cancel`:
 
       * call it from the task group body based on some condition or event
       * pass the task group instance to child tasks via :meth:`create_task`, allowing a child
@@ -393,7 +394,8 @@ Example::
 The ``async with`` statement will wait for all tasks in the group to finish.
 While waiting, new tasks may still be added to the group
 (for example, by passing ``tg`` into one of the coroutines
-and calling ``tg.create_task()`` in that coroutine).
+and calling ``tg.create_task()`` in that coroutine).  There is also opportunity
+to short-circuit the entire task group with :meth:`cancel`, based on some condition.
 Once the last task has finished and the ``async with`` block is exited,
 no new tasks may be added to the group.
 
