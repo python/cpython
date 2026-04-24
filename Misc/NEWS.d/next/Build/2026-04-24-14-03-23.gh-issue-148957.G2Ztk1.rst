@@ -1,0 +1,1 @@
+Fix a build failure caused by missing ``jit_got_size`` stats wiring.
