@@ -1,2 +1,0 @@
-Raise a ``ValueError`` when a monitoring callback funtion returns
-``DISABLE`` for events that cannot be disabled locally.

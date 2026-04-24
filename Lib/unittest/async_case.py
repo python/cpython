@@ -5,6 +5,7 @@ import warnings
 
 from .case import TestCase
 
+__unittest = True
 
 class IsolatedAsyncioTestCase(TestCase):
     # Names intentionally have a long prefix
@@ -25,12 +26,15 @@ class IsolatedAsyncioTestCase(TestCase):
     # them inside the same task.
 
     # Note: the test case modifies event loop policy if the policy was not instantiated
-    # yet.
+    # yet, unless loop_factory=asyncio.EventLoop is set.
     # asyncio.get_event_loop_policy() creates a default policy on demand but never
     # returns None
     # I believe this is not an issue in user level tests but python itself for testing
     # should reset a policy in every test module
     # by calling asyncio.set_event_loop_policy(None) in tearDownModule()
+    # or set loop_factory=asyncio.EventLoop
+
+    loop_factory = None
 
     def __init__(self, methodName='runTest'):
         super().__init__(methodName)
@@ -71,9 +75,17 @@ class IsolatedAsyncioTestCase(TestCase):
             enter = cls.__aenter__
             exit = cls.__aexit__
         except AttributeError:
-            raise TypeError(f"'{cls.__module__}.{cls.__qualname__}' object does "
-                            f"not support the asynchronous context manager protocol"
-                           ) from None
+            msg = (f"'{cls.__module__}.{cls.__qualname__}' object does "
+                   "not support the asynchronous context manager protocol")
+            try:
+                cls.__enter__
+                cls.__exit__
+            except AttributeError:
+                pass
+            else:
+                msg += (" but it supports the context manager protocol. "
+                        "Did you mean to use enterContext()?")
+            raise TypeError(msg) from None
         result = await enter(cm)
         self.addAsyncCleanup(exit, cm, None, None, None)
         return result
@@ -87,9 +99,13 @@ class IsolatedAsyncioTestCase(TestCase):
         self._callAsync(self.asyncSetUp)
 
     def _callTestMethod(self, method):
-        if self._callMaybeAsync(method) is not None:
-            warnings.warn(f'It is deprecated to return a value that is not None from a '
-                          f'test case ({method})', DeprecationWarning, stacklevel=4)
+        result = self._callMaybeAsync(method)
+        if result is not None:
+            msg = (
+                f'It is deprecated to return a value that is not None '
+                f'from a test case ({method} returned {type(result).__name__!r})',
+            )
+            warnings.warn(msg, DeprecationWarning, stacklevel=4)
 
     def _callTearDown(self):
         self._callAsync(self.asyncTearDown)
@@ -118,7 +134,7 @@ class IsolatedAsyncioTestCase(TestCase):
 
     def _setupAsyncioRunner(self):
         assert self._asyncioRunner is None, 'asyncio runner is already initialized'
-        runner = asyncio.Runner(debug=True)
+        runner = asyncio.Runner(debug=True, loop_factory=self.loop_factory)
         self._asyncioRunner = runner
 
     def _tearDownAsyncioRunner(self):

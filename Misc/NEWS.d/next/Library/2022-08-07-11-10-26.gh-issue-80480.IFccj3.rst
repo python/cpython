@@ -1,2 +1,0 @@
-Emit :exc:`DeprecationWarning` for :mod:`array`'s ``'u'`` type code,
-deprecated in docs since Python 3.3.

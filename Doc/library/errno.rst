@@ -1,5 +1,5 @@
-:mod:`errno` --- Standard errno system symbols
-==============================================
+:mod:`!errno` --- Standard errno system symbols
+===============================================
 
 .. module:: errno
    :synopsis: Standard errno system symbols.
@@ -511,6 +511,13 @@ defined by the module.  The specific list of defined symbols is available as
    Operation not supported on transport endpoint
 
 
+.. data:: ENOTSUP
+
+   Operation not supported
+
+   .. versionadded:: 3.2
+
+
 .. data:: EPFNOSUPPORT
 
    Protocol family not supported
@@ -606,6 +613,13 @@ defined by the module.  The specific list of defined symbols is available as
    No route to host
 
 
+.. data:: EHWPOISON
+
+   Memory page has hardware error.
+
+   .. versionadded:: 3.14
+
+
 .. data:: EALREADY
 
    Operation already in progress. This error is mapped to the
@@ -658,6 +672,171 @@ defined by the module.  The specific list of defined symbols is available as
 
    .. versionadded:: 3.11
 
+
+.. data:: ENOMEDIUM
+
+   No medium found
+
+
+.. data:: EMEDIUMTYPE
+
+   Wrong medium type
+
+
+.. data:: ENOKEY
+
+   Required key not available
+
+
+.. data:: EKEYEXPIRED
+
+   Key has expired
+
+
+.. data:: EKEYREVOKED
+
+   Key has been revoked
+
+
+.. data:: EKEYREJECTED
+
+   Key was rejected by service
+
+
+.. data:: ERFKILL
+
+   Operation not possible due to RF-kill
+
+
+.. data:: ELOCKUNMAPPED
+
+   Locked lock was unmapped
+
+
+.. data:: ENOTACTIVE
+
+   Facility is not active
+
+
+.. data:: EAUTH
+
+   Authentication error
+
+   .. versionadded:: 3.2
+
+
+.. data:: EBADARCH
+
+   Bad CPU type in executable
+
+   .. versionadded:: 3.2
+
+
+.. data:: EBADEXEC
+
+   Bad executable (or shared library)
+
+   .. versionadded:: 3.2
+
+
+.. data:: EBADMACHO
+
+   Malformed Mach-o file
+
+   .. versionadded:: 3.2
+
+
+.. data:: EDEVERR
+
+   Device error
+
+   .. versionadded:: 3.2
+
+
+.. data:: EFTYPE
+
+   Inappropriate file type or format
+
+   .. versionadded:: 3.2
+
+
+.. data:: ENEEDAUTH
+
+   Need authenticator
+
+   .. versionadded:: 3.2
+
+
+.. data:: ENOATTR
+
+   Attribute not found
+
+   .. versionadded:: 3.2
+
+
+.. data:: ENOPOLICY
+
+   Policy not found
+
+   .. versionadded:: 3.2
+
+
+.. data:: EPROCLIM
+
+   Too many processes
+
+   .. versionadded:: 3.2
+
+
+.. data:: EPROCUNAVAIL
+
+   Bad procedure for program
+
+   .. versionadded:: 3.2
+
+
+.. data:: EPROGMISMATCH
+
+   Program version wrong
+
+   .. versionadded:: 3.2
+
+
+.. data:: EPROGUNAVAIL
+
+   RPC prog. not avail
+
+   .. versionadded:: 3.2
+
+
+.. data:: EPWROFF
+
+   Device power is off
+
+   .. versionadded:: 3.2
+
+
+.. data:: EBADRPC
+
+   RPC struct is bad
+
+   .. versionadded:: 3.2
+
+
+.. data:: ERPCMISMATCH
+
+   RPC version wrong
+
+   .. versionadded:: 3.2
+
+
+.. data:: ESHLIBVERS
+
+   Shared library version mismatch
+
+   .. versionadded:: 3.2
+
+
 .. data:: ENOTCAPABLE
 
    Capabilities insufficient. This error is mapped to the exception
@@ -666,3 +845,24 @@ defined by the module.  The specific list of defined symbols is available as
    .. availability:: WASI, FreeBSD
 
    .. versionadded:: 3.11.1
+
+
+.. data:: ECANCELED
+
+   Operation canceled
+
+   .. versionadded:: 3.2
+
+
+.. data:: EOWNERDEAD
+
+   Owner died
+
+   .. versionadded:: 3.2
+
+
+.. data:: ENOTRECOVERABLE
+
+   State not recoverable
+
+   .. versionadded:: 3.2

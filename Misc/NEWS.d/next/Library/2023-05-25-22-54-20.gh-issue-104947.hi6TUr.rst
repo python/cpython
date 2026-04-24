@@ -1,2 +1,0 @@
-Make comparisons between :class:`pathlib.PureWindowsPath` objects consistent
-across Windows and Posix to match 3.11 behavior.

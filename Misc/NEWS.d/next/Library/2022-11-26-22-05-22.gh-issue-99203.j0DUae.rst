@@ -1,5 +1,0 @@
-Restore following CPython <= 3.10.5 behavior of :func:`shutil.make_archive`:
-do not create an empty archive if ``root_dir`` is not a directory, and, in that
-case, raise :class:`FileNotFoundError` or :class:`NotADirectoryError`
-regardless of ``format`` choice. Beyond the brought-back behavior, the function
-may now also raise these exceptions in ``dry_run`` mode.

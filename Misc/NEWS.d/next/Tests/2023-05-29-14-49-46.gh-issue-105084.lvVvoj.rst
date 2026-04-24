@@ -1,3 +1,0 @@
-When the Python build is configured ``--with-wheel-pkg-dir``, tests
-requiring the ``setuptools`` and ``wheel`` wheels will search for the wheels
-in ``WHEEL_PKG_DIR``.

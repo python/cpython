@@ -1,1 +1,0 @@
-:data:`opcode.ENABLE_SPECIALIZATION` (which was added in 3.12 but never documented or intended for external usage) is moved to :data:`_opcode.ENABLE_SPECIALIZATION` where tests can access it.

@@ -1,2 +1,0 @@
-:mod:`pydoc` is now able to show signatures which are not representable in
-Python, e.g. for ``getattr`` and ``dict.pop``.

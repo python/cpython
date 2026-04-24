@@ -1,2 +1,0 @@
-Fix compilation for platforms without :data:`!O_CLOEXEC`. The issue was
-introduced with Python 3.12b1 in :gh:`103295`. Patch by Erlend Aasland.

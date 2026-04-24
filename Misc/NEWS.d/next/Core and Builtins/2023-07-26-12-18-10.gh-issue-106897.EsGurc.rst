@@ -1,3 +1,0 @@
-Add a ``RERAISE`` event to ``sys.monitoring``, which occurs when an
-exception is reraise, either explicitly by a plain ``raise`` statement, or
-implicitly in an ``except`` or ``finally`` block.

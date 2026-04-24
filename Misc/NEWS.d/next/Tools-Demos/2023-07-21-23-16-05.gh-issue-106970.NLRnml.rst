@@ -1,4 +1,0 @@
-Fix bugs in the Argument Clinic ``destination <name> clear`` command; the
-destination buffers would never be cleared, and the ``destination``
-directive parser would simply continue to the fault handler after processing
-the command. Patch by Erlend E. Aasland.

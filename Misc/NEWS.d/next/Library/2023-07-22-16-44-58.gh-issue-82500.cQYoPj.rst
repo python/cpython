@@ -1,1 +1,0 @@
-Fix overflow on 32-bit systems with :mod:`asyncio` :func:`os.sendfile` implemention.

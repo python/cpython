@@ -1,2 +1,0 @@
-Reduce the number of materialized instances dictionaries by dematerializing
-them when possible.
