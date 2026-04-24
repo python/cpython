@@ -147,7 +147,7 @@ dummy_func(
         override op(_CHECK_PERIODIC_IF_NOT_YIELD_FROM, (--)) {
             Test_EvalFrame_Resumes++;
             if ((oparg & RESUME_OPARG_LOCATION_MASK) < RESUME_AFTER_YIELD_FROM) {
-                int err = check_periodics(tstate);
+                int err = check_periodics(tstate, 0);
                 ERROR_IF(err != 0);
             }
         }
