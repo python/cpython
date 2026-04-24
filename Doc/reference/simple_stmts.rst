@@ -948,9 +948,7 @@ Python versions older than 3.15 while using lazy imports in 3.15+::
    import pathlib  # loaded lazily
 
 Relative imports are resolved to their absolute name before the lookup, so
-the sequence must always contain fully qualified module names.  For
-``from``-style imports, the name to list is the module being imported
-*from* (the base module, left of the ``import`` keyword), not the names
+:attr:`!__lazy_modules__` must always contain fully qualified module names.  For
 imported from it::
 
    # In mypackage/mymodule.py
