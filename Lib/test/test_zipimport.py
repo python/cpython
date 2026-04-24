@@ -7,9 +7,13 @@ import struct
 import time
 import unittest
 import unittest.mock
+
+# NSKIP050 https://github.com/nanvix/cpython/issues/530
+from test import support
+if support.is_nanvix and not support.is_nanvix_standalone:
+    raise unittest.SkipTest("NSKIP050: hosted Nanvix unable to run this module cleanly (rmdir errno 88 cascade and/or other linuxd VFS issues); not bisected, see #480")
 import warnings
 
-from test import support
 from test.support import import_helper
 from test.support import os_helper
 

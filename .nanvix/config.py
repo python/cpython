@@ -193,6 +193,8 @@ NANVIX_TEST_LIST: list[str] = [
     "test_source_encoding",
     "test_os", "test_posix",
     "test_tempfile", "test_shutil",
+    "test_zipfile", "test_zipapp", "test_zipimport",
+    "test_tarfile", "test_gzip", "test_bz2", "test_zlib",
 ]
 
 # Default batch size for regrtest VM invocations.
@@ -204,6 +206,7 @@ STANDALONE_EXCLUDE: list[str] = [
     "test_itertools",  # NSKIP019: standalone 32 MB heap too small for module
     "test_functools",  # NSKIP019: standalone 32 MB heap too small for module
     "test_io",         # NSKIP019: standalone 32 MB heap too small for module
+    "test_zipfile",    # NSKIP019: standalone too slow / heap too small for module
 ]
 
 # Platform-specific nanvixd extra arguments.
