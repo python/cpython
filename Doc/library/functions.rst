@@ -675,15 +675,15 @@ are always available.  They are listed here in alphabetical order.
       untrusted user-supplied input will lead to security vulnerabilities.
 
    This function supports dynamic execution of Python code. *source* must be
-   either a string or a code object.  If it is a string, the string is parsed as
-   a suite of Python statements which is then executed (unless a syntax error
-   occurs). [#]_ If it is a code object, it is simply executed.  In all cases,
-   the code that's executed is expected to be valid as file input (see the
-   section :ref:`file-input` in the Reference Manual). Be aware that the
-   :keyword:`nonlocal`, :keyword:`yield`,  and :keyword:`return`
-   statements may not be used outside of
-   function definitions even within the context of code passed to the
-   :func:`exec` function. The return value is ``None``.
+   a string, a bytes-like object, or a code object.  If it is a string or a
+   bytes-like object, it is parsed as a suite of Python statements which is
+   then executed (unless a syntax error occurs). [#]_ If it is a code object,
+   it is simply executed.  In all cases, the code that's executed is expected
+   to be valid as file input (see the section :ref:`file-input` in the
+   Reference Manual). Be aware that the :keyword:`nonlocal`, :keyword:`yield`,
+   and :keyword:`return` statements may not be used outside of function
+   definitions even within the context of code passed to the :func:`exec`
+   function. The return value is ``None``.
 
    In all cases, if the optional parts are omitted, the code is executed in the
    current scope.  If only *globals* is provided, it must be a dictionary
