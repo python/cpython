@@ -2048,6 +2048,11 @@ gc_should_collect_mem_usage(PyThreadState *tstate)
     GCState *gcstate = &interp->gc;
     int threshold = gcstate->young.threshold;
 
+    if (gcstate->old[0].threshold == 0) {
+        // A few tests rely on immediate scheduling of the GC so we ignore the
+        // extra conditions if generations[1].threshold is set to zero.
+        return true;
+    }
     if (gcstate->deferred_count > threshold * 40) {
         // Too many new container objects since last GC, even though memory
         // use might not have increased much.  This avoids resource
@@ -2096,7 +2101,7 @@ gc_should_collect(PyThreadState *tstate)
         // objects.
         return false;
     }
-    return gc_should_collect_mem_usage(tstate);
+    return true;
 }
 
 static void
@@ -2308,6 +2313,10 @@ gc_collect_main(PyThreadState *tstate, int generation, _PyGC_Reason reason)
 
     if (reason == _Py_GC_REASON_HEAP && !gc_should_collect(tstate)) {
         // Don't collect if the threshold is not exceeded.
+        _Py_atomic_store_int(&gcstate->collecting, 0);
+        return 0;
+    }
+    if (reason == _Py_GC_REASON_HEAP && !gc_should_collect_mem_usage(tstate)) {
         _Py_atomic_store_int(&gcstate->collecting, 0);
         return 0;
     }
