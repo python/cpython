@@ -1,14 +1,14 @@
 # This file lists all PySlot values
 # This should only be used as input to Tools/build/generate_slots.py,
-# its format can change at any time (e.g. we can rename it to slots.csv)
+# its format can change at any time (e.g. we can switch to slots.csv)
 
 # Entries:
 # name: name of the slot
 # kind:
-# - 'type', 'mod': slots to create a particular object
+# - 'type', 'mod': slots to create a particular kind of object
 # - 'slot': special slots applicable to any kind of object
-# - 'compat': old IDs that nneed to be resolved
-# dtype: datat type (tag for the union of sl_ptr, sl_size, etc.)
+# - 'compat': old IDs that need to be resolved
+# dtype: data type (tag for the union of sl_ptr, sl_size, etc.)
 # equivalents: for 'compat' slots; the slots to resolve to
 # is_type_field: slot that corresponds to a field in the type object (or in
 #   an array like PyNumberMethods).
@@ -19,7 +19,9 @@
 #   - 'deprecated': issue a deprecation warning. Don't use for new slots.
 #      (typically, the problem was disallowed in docs, but allowed in practice)
 #   - 'reject': raise error
-#   The default is 'reject' (except NULL for non-pointer slots)
+#   The default for duplicate slots is 'reject'
+#   The default for NULLs is 'reject' for pointer slots; 'allow' for
+#       non-pointer ones
 
 
 [0]
@@ -827,4 +829,3 @@ duplicates = 'allow'
 name = 'Py_mod_token'
 kind = 'mod'
 dtype = 'ptr'
-

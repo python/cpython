@@ -1,6 +1,8 @@
 #!/usr/bin/python
-"""Generate type/module slot files.
+"""Generate type/module slot files
 """
+
+# See the input file (Python/slots.toml) for a description of its format.
 
 import io
 import sys
@@ -20,8 +22,6 @@ INCLUDE_PATH = REPO_ROOT / 'Include'
 DEFAULT_PUBLIC_HEADER_PATH = INCLUDE_PATH / 'slots_generated.h'
 DEFAULT_PRIVATE_HEADER_PATH = INCLUDE_PATH / 'internal/pycore_slots_generated.h'
 DEFAULT_C_PATH = REPO_ROOT / 'Python/slots_generated.c'
-
-FIRST_3_15_SLOT = 83
 
 TABLES = {
     'tp': 'ht_type',
@@ -68,19 +68,28 @@ class SlotInfo:
 
     @functools.cached_property
     def type_field(self):
+        assert self.is_type_field
         return self._data.get('field', self.name.removeprefix('Py_'))
 
     @functools.cached_property
     def type_table_ident(self):
+        assert self.is_type_field
         return self._data.get('table', self.type_field[:2])
 
     @functools.cached_property
     def duplicate_handling(self):
-        return self._data.get('duplicates')
+        return self._data.get('duplicates', 'reject')
 
     @functools.cached_property
     def null_handling(self):
-        return self._data.get('nulls')
+        try:
+            return self._data['nulls']
+        except KeyError:
+            if self.kind == 'compat':
+                return 'allow'
+            if self.dtype in {'ptr', 'func'}:
+                return 'reject'
+            return 'allow'
 
 
 def parse_slots(file):
@@ -100,6 +109,7 @@ def parse_slots(file):
 
 class CWriter:
     """Simple helper for generating C code"""
+
     def __init__(self, file):
         self.file = file
         self.indent = ''
@@ -108,7 +118,7 @@ class CWriter:
 
     def out(self, *args, **kwargs):
         """print args to the file, with current indent at the start"""
-        self.file.write(self.indent)
+        print(self.indent, end='', file=self.file)
         print(*args, file=self.file, **kwargs)
 
     __call__ = out
@@ -190,7 +200,7 @@ def write_private_header(f, slots):
                     if slot.kind == 'compat':
                         new_slot = slots_by_name[slot.equivalents[kind]]
                         out(f'case {slot.id}:')
-                        out(f'    return {new_slot.id};')
+                        out(f'    return {new_slot.name};')
                     elif slot.kind in {kind, 'slot'}:
                         good_slots.append(f'case {slot.id}:')
                 out.spam(good_slots)
@@ -207,7 +217,8 @@ def write_private_header(f, slots):
                     field = slot.type_field
                     table_ident = slot.type_table_ident
                     if table_ident == 'tp':
-                        out(f'case {slot.id}: return (void*)tp->{field};')
+                        out(f'case {slot.name}:')
+                        out(f'    return (void*)tp->{field};')
                     else:
                         if table_ident == 'ht':
                             cond = 'tp->tp_flags & Py_TPFLAGS_HEAPTYPE'
@@ -216,8 +227,9 @@ def write_private_header(f, slots):
                             table = TABLES[table_ident]
                             cond = f'tp->tp_{table}'
                             val = f'tp->tp_{table}->{field}'
-                        out(f'case {slot.id}: return ({cond})')
-                        out(f'               ? {val} : NULL;')
+                        out(f'case {slot.name}:')
+                        out(f'    if (!({cond})) return NULL;')
+                        out(f'    return (void*){val};')
         out(f'_PySlot_err_bad_slot("PyType_GetSlot", slot_id);')
         out(f'return NULL;')
     out()
@@ -237,11 +249,9 @@ def write_private_header(f, slots):
                         functype = f'({slot.functype})'
                     else:
                         functype = ''
-                    out(
-                        f'case {slot.id}:',
-                        f'ht->{table}.{field} = {functype}slot.sl_{slot.dtype};',
-                        f'break;'
-                        )
+                    out(f'case {slot.name}:')
+                    out(f'    ht->{table}.{field} = {functype}slot.sl_{slot.dtype};')
+                    out(f'    break;')
     out()
     out(f'static inline _PySlot_DTYPE')
     out(f'_PySlot_get_dtype(uint16_t slot_id)')
@@ -261,7 +271,7 @@ def write_private_header(f, slots):
         with out.block('switch (slot_id)'):
             results = collections.defaultdict(list)
             for slot in slots:
-                handling = slot.duplicate_handling or 'reject'
+                handling = slot.duplicate_handling
                 results[handling.upper()].append(f'case {slot.id}:')
             results.pop('REJECT')
             for handling, cases in results.items():
@@ -298,7 +308,7 @@ def write_c(f, slots):
     out('#include "Python.h"')
     out('#include "pycore_slots.h"   // _PySlot_names')
     out()
-    with out.block(f'char *_PySlot_names[] =', end=';'):
+    with out.block(f'const char *_PySlot_names[] =', end=';'):
         out.spam([f'"{slot.name}",' for slot in slots] + ['NULL'])
 
 

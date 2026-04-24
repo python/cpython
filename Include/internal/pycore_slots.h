@@ -29,7 +29,7 @@ typedef enum _PySlot_PROBLEM_HANDLING {
     _PySlot_PROBLEM_REJECT,
 } _PySlot_PROBLEM_HANDLING;
 
-PyAPI_DATA(char *) _PySlot_names[];
+PyAPI_DATA(const char *) _PySlot_names[];
 
 #define _PySlot_MAX_NESTING 5
 

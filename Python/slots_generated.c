@@ -3,7 +3,7 @@
 #include "Python.h"
 #include "pycore_slots.h"   // _PySlot_names
 
-char *_PySlot_names[] = {
+const char *_PySlot_names[] = {
     "Py_slot_end", "Py_bf_getbuffer/Py_mod_create",
     "Py_bf_releasebuffer/Py_mod_exec",
     "Py_mp_ass_subscript/Py_mod_multiple_interpreters",
