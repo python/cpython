@@ -324,14 +324,19 @@ handle_first_run(_PySlotIterator *it)
                              _PySlot_GetName(id));
                 return -1;
             }
-            MSG("deprecated NULL");
-            if (PyErr_WarnFormat(
-                PyExc_DeprecationWarning,
-                1,
-                "NULL value in slot %s is deprecated",
-                _PySlot_GetName(id)) < 0)
-            {
-                return -1;
+            if (it->states[0].slot_struct_kind == _PySlot_KIND_SLOT) {
+                MSG("deprecated NULL");
+                if (PyErr_WarnFormat(
+                    PyExc_DeprecationWarning,
+                    1,
+                    "NULL value in slot %s is deprecated",
+                    _PySlot_GetName(id)) < 0)
+                {
+                    return -1;
+                }
+            }
+            else {
+                MSG("unwanted NULL in legacy struct");
             }
         }
     }
@@ -352,17 +357,22 @@ handle_first_run(_PySlotIterator *it)
                     (int)it->current.sl_id);
                 return -1;
             }
-            MSG("deprecated duplicate");
-            if (PyErr_WarnFormat(
-                    PyExc_DeprecationWarning,
-                    0,
-                    "%s%s%s has multiple %s (%d) slots. This is deprecated.",
-                    kind_name(it->kind),
-                    it->name ? " " : "",
-                    it->name ? it->name : "",
-                    _PySlot_GetName(id),
-                    (int)it->current.sl_id) < 0) {
-                return -1;
+            if (it->states[0].slot_struct_kind == _PySlot_KIND_SLOT) {
+                MSG("deprecated duplicate");
+                if (PyErr_WarnFormat(
+                        PyExc_DeprecationWarning,
+                        0,
+                        "%s%s%s has multiple %s (%d) slots. This is deprecated.",
+                        kind_name(it->kind),
+                        it->name ? " " : "",
+                        it->name ? it->name : "",
+                        _PySlot_GetName(id),
+                        (int)it->current.sl_id) < 0) {
+                    return -1;
+                }
+            }
+            else {
+                MSG("unwanted duplicate in legacy struct");
             }
         }
     }
