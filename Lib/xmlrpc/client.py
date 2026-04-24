@@ -965,7 +965,7 @@ def dumps(params, methodname=None, methodresponse=None, encoding=None,
         data = (
             xmlheader,
             "<methodCall>\n"
-            "<methodName>", methodname, "</methodName>\n",
+            "<methodName>", escape(methodname), "</methodName>\n",
             data,
             "</methodCall>\n"
             )
