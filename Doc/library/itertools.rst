@@ -473,7 +473,7 @@ loops that truncate the stream.
    Roughly equivalent to::
 
       def islice(iterable, *args):
-          # islice('ABCDEFG', 2) → A B
+          # islice('ABCDEFG', 0, 2) → A B
           # islice('ABCDEFG', 2, 4) → C D
           # islice('ABCDEFG', 2, None) → C D E F G
           # islice('ABCDEFG', 0, None, 2) → A C E G
