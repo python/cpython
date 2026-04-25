@@ -76,6 +76,7 @@ class RobotFileParser:
     def _add_entry(self, entry):
         self.entries.append(entry)
         for agent in entry.useragents:
+            agent = agent.lower()
             if agent not in self.groups:
                 self.groups[agent] = entry
             else:
@@ -156,6 +157,9 @@ class RobotFileParser:
             self._add_entry(entry)
 
     def _find_entry(self, useragent):
+        entry = self.groups.get(useragent.lower())
+        if entry is not None:
+            return entry
         for entry in self.groups.values():
             if entry.applies_to(useragent):
                 return entry

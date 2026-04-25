@@ -260,22 +260,25 @@ Request-rate: whale/banana
 
 
 class UserAgentOrderingTest(BaseRobotTest, unittest.TestCase):
-    # the order of User-agent should be correct. note
-    # that this file is incorrect because "Googlebot" is a
-    # substring of "Googlebot-Mobile"
+    # the order of User-agent should not matter
     robots_txt = """\
 User-agent: Googlebot
 Disallow: /
+Allow: /folder1/
 
 User-agent: Googlebot-Mobile
 Allow: /
+Disallow: /folder1/
     """
     agent = 'Googlebot'
     bad = ['/something.jpg']
+    good = ['/folder1/myfile.html']
 
 
 class UserAgentGoogleMobileTest(UserAgentOrderingTest):
-    agent = 'Googlebot-Mobile'
+    agent = 'Googlebot-mobile'
+    bad = ['/folder1/myfile.html']
+    good = ['/something.jpg']
 
 
 class LongestMatchTest(BaseRobotTest, unittest.TestCase):
