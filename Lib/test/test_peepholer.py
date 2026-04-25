@@ -2643,7 +2643,7 @@ class OptimizeLoadFastTestCase(DirectCfgOptimizerTests):
             ("RETURN_VALUE", None, 8),
         ]
         expected = [
-            ("LOAD_FAST", 0, 1),
+            ("LOAD_FAST_BORROW", 0, 1),
             top := self.Label(),
             ("FOR_ITER", end := self.Label(), 2),
             ("STORE_FAST", 2, 3),
@@ -2653,6 +2653,39 @@ class OptimizeLoadFastTestCase(DirectCfgOptimizerTests):
             ("POP_TOP", None, 6),
             ("LOAD_COMMON_CONSTANT", 7, 7),
             ("RETURN_VALUE", None, 8),
+        ]
+        self.cfg_optimization_test(insts, expected, consts=[None])
+
+    def test_for_iter_checks_fallthrough(self):
+        insts = [
+            ("LOAD_FAST", 0, 1),
+            ("GET_ITER", 0, 2),
+            top := self.Label(),
+            ("FOR_ITER", end := self.Label(), 3),
+            ("STORE_FAST", 1, 4),
+            ("LOAD_CONST", 0, 5),
+            ("STORE_FAST", 0, 6),
+            ("JUMP", top, 7),
+            end,
+            ("END_FOR", None, 8),
+            ("POP_ITER", None, 9),
+            ("LOAD_CONST", 0, 10),
+            ("RETURN_VALUE", None, 11),
+        ]
+        expected = [
+            ("LOAD_FAST", 0, 1),
+            ("GET_ITER", 0, 2),
+            top := self.Label(),
+            ("FOR_ITER", end := self.Label(), 3),
+            ("STORE_FAST", 1, 4),
+            ("LOAD_COMMON_CONSTANT", 7, 5),
+            ("STORE_FAST", 0, 6),
+            ("JUMP", top, 7),
+            end,
+            ("END_FOR", None, 8),
+            ("POP_ITER", None, 9),
+            ("LOAD_COMMON_CONSTANT", 7, 10),
+            ("RETURN_VALUE", None, 11),
         ]
         self.cfg_optimization_test(insts, expected, consts=[None])
 
@@ -2728,6 +2761,69 @@ class OptimizeLoadFastTestCase(DirectCfgOptimizerTests):
             end,
             ("LOAD_COMMON_CONSTANT", 7, 6),
             ("RETURN_VALUE", None, 7)
+        ]
+        self.cfg_optimization_test(insts, expected, consts=[None])
+
+    def test_borrow_checks_exception_handler_edges(self):
+        insts = [
+            ("LOAD_FAST", 0, 1),
+            ("JUMP", start := self.Label(), 2),
+            start,
+            ("SETUP_FINALLY", handler := self.Label(), 3),
+            ("LOAD_CONST", 0, 4),
+            ("BINARY_OP", 0, 5),
+            ("POP_BLOCK", None, 6),
+            ("RETURN_VALUE", None, 7),
+            handler,
+            ("STORE_FAST", 1, 8),
+            ("LOAD_CONST", 0, 9),
+            ("STORE_FAST", 0, 10),
+            ("POP_TOP", None, 11),
+            ("LOAD_CONST", 0, 12),
+            ("RETURN_VALUE", None, 13),
+        ]
+        expected = [
+            ("LOAD_FAST", 0, 1),
+            ("NOP", None, 2),
+            ("SETUP_FINALLY", handler := self.Label(), 3),
+            ("LOAD_COMMON_CONSTANT", 7, 4),
+            ("BINARY_OP", 0, 5),
+            ("NOP", None, 6),
+            ("RETURN_VALUE", None, 7),
+            handler,
+            ("STORE_FAST", 1, 8),
+            ("LOAD_COMMON_CONSTANT", 7, 9),
+            ("STORE_FAST", 0, 10),
+            ("POP_TOP", None, 11),
+            ("LOAD_COMMON_CONSTANT", 7, 12),
+            ("RETURN_VALUE", None, 13),
+        ]
+        self.cfg_optimization_test(insts, expected, consts=[None])
+
+    def test_copied_reference_is_not_borrowed(self):
+        insts = [
+            ("LOAD_FAST", 0, 1),
+            ("COPY", 1, 1),
+            ("TO_BOOL", None, 1),
+            ("POP_JUMP_IF_TRUE", target := self.Label(), 1),
+            ("POP_TOP", None, 1),
+            ("LOAD_FAST", 1, 1),
+            target,
+            ("STORE_FAST", 0, 1),
+            ("LOAD_CONST", 0, 2),
+            ("RETURN_VALUE", None, 2),
+        ]
+        expected = [
+            ("LOAD_FAST", 0, 1),
+            ("COPY", 1, 1),
+            ("TO_BOOL", None, 1),
+            ("POP_JUMP_IF_TRUE", target := self.Label(), 1),
+            ("POP_TOP", None, 1),
+            ("LOAD_FAST", 1, 1),
+            target,
+            ("STORE_FAST", 0, 1),
+            ("LOAD_COMMON_CONSTANT", 7, 2),
+            ("RETURN_VALUE", None, 2),
         ]
         self.cfg_optimization_test(insts, expected, consts=[None])
 
