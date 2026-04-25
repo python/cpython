@@ -9297,7 +9297,7 @@
             INSTRUCTION_STATS(LOAD_COMMON_CONSTANT);
             _PyStackRef value;
             assert(oparg < NUM_COMMON_CONSTANTS);
-            value = load_common_constant(oparg);
+            value = load_common_constant(tstate->interp, oparg);
             stack_pointer[0] = value;
             stack_pointer += 1;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);

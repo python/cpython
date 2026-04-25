@@ -9,6 +9,7 @@
 
 #include "pycore_opcode_utils.h"
 #include "pycore_opcode_metadata.h" // OPCODE_HAS_ARG, etc
+#include "pycore_pystate.h"         // _PyInterpreterState_GET()
 
 #include <stdbool.h>
 
@@ -1319,34 +1320,8 @@ get_const_value(int opcode, int oparg, PyObject *co_consts)
         return PyLong_FromLong(oparg);
     }
     if (opcode == LOAD_COMMON_CONSTANT) {
-        switch (oparg) {
-            case CONSTANT_ASSERTIONERROR:
-                return Py_NewRef(PyExc_AssertionError);
-            case CONSTANT_NOTIMPLEMENTEDERROR:
-                return Py_NewRef(PyExc_NotImplementedError);
-            case CONSTANT_BUILTIN_TUPLE:
-                return Py_NewRef((PyObject *)&PyTuple_Type);
-            case CONSTANT_BUILTIN_ALL:
-                return Py_NewRef((PyObject *)&_PyBuiltin_All);
-            case CONSTANT_BUILTIN_ANY:
-                return Py_NewRef((PyObject *)&_PyBuiltin_Any);
-            case CONSTANT_BUILTIN_LIST:
-                return Py_NewRef((PyObject *)&PyList_Type);
-            case CONSTANT_BUILTIN_SET:
-                return Py_NewRef((PyObject *)&PySet_Type);
-            case CONSTANT_NONE:
-                return Py_NewRef(Py_None);
-            case CONSTANT_EMPTY_STR:
-                return Py_NewRef(Py_GetConstantBorrowed(Py_CONSTANT_EMPTY_STR));
-            case CONSTANT_TRUE:
-                return Py_NewRef(Py_True);
-            case CONSTANT_FALSE:
-                return Py_NewRef(Py_False);
-            case CONSTANT_MINUS_ONE:
-                return PyLong_FromLong(-1);
-            default:
-                Py_UNREACHABLE();
-        }
+        assert(oparg < NUM_COMMON_CONSTANTS);
+        return _PyInterpreterState_GET()->common_consts[oparg];
     }
 
     if (constant == NULL) {

@@ -49,6 +49,9 @@ Modules/getbuildinfo.c	-	buildinfo	-
 Modules/getbuildinfo.c	-	initialized	-
 Python/getversion.c	-	initialized	-
 Python/getversion.c	-	version	-
+## builtin singletons
+Python/bltinmodule.c	-	_PyBuiltin_All	-
+Python/bltinmodule.c	-	_PyBuiltin_Any	-
 
 ## public C-API - set during first init
 Python/bootstrap_hash.c	-	_Py_HashSecret_Initialized	-

@@ -878,23 +878,23 @@ pycore_init_builtins(PyThreadState *tstate)
         goto error;
     }
 
-    _PyCommonConsts[CONSTANT_ASSERTIONERROR] = PyExc_AssertionError;
-    _PyCommonConsts[CONSTANT_NOTIMPLEMENTEDERROR] = PyExc_NotImplementedError;
-    _PyCommonConsts[CONSTANT_BUILTIN_TUPLE] = (PyObject *)&PyTuple_Type;
-    _PyCommonConsts[CONSTANT_BUILTIN_ALL] = (PyObject *)&_PyBuiltin_All;
-    _PyCommonConsts[CONSTANT_BUILTIN_ANY] = (PyObject *)&_PyBuiltin_Any;
-    _PyCommonConsts[CONSTANT_BUILTIN_LIST] = (PyObject *)&PyList_Type;
-    _PyCommonConsts[CONSTANT_BUILTIN_SET] = (PyObject *)&PySet_Type;
-    _PyCommonConsts[CONSTANT_NONE] = Py_None;
-    _PyCommonConsts[CONSTANT_EMPTY_STR] =
+    interp->common_consts[CONSTANT_ASSERTIONERROR] = PyExc_AssertionError;
+    interp->common_consts[CONSTANT_NOTIMPLEMENTEDERROR] = PyExc_NotImplementedError;
+    interp->common_consts[CONSTANT_BUILTIN_TUPLE] = (PyObject *)&PyTuple_Type;
+    interp->common_consts[CONSTANT_BUILTIN_ALL] = (PyObject *)&_PyBuiltin_All;
+    interp->common_consts[CONSTANT_BUILTIN_ANY] = (PyObject *)&_PyBuiltin_Any;
+    interp->common_consts[CONSTANT_BUILTIN_LIST] = (PyObject *)&PyList_Type;
+    interp->common_consts[CONSTANT_BUILTIN_SET] = (PyObject *)&PySet_Type;
+    interp->common_consts[CONSTANT_NONE] = Py_None;
+    interp->common_consts[CONSTANT_EMPTY_STR] =
         Py_GetConstantBorrowed(Py_CONSTANT_EMPTY_STR);
-    _PyCommonConsts[CONSTANT_TRUE] = Py_True;
-    _PyCommonConsts[CONSTANT_FALSE] = Py_False;
-    _PyCommonConsts[CONSTANT_MINUS_ONE] =
+    interp->common_consts[CONSTANT_TRUE] = Py_True;
+    interp->common_consts[CONSTANT_FALSE] = Py_False;
+    interp->common_consts[CONSTANT_MINUS_ONE] =
         (PyObject *)&_PyLong_SMALL_INTS[_PY_NSMALLNEGINTS - 1];
     for (int i = 0; i < NUM_COMMON_CONSTANTS; i++) {
-        assert(_PyCommonConsts[i] != NULL);
-        assert(_Py_IsImmortal(_PyCommonConsts[i]));
+        assert(interp->common_consts[i] != NULL);
+        assert(_Py_IsStaticImmortal(interp->common_consts[i]));
     }
 
     PyObject *list_append = _PyType_Lookup(&PyList_Type, &_Py_ID(append));

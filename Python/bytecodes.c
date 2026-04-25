@@ -1885,7 +1885,7 @@ dummy_func(
 
         inst(LOAD_COMMON_CONSTANT, ( -- value)) {
             assert(oparg < NUM_COMMON_CONSTANTS);
-            value = load_common_constant(oparg);
+            value = load_common_constant(tstate->interp, oparg);
         }
 
         inst(LOAD_BUILD_CLASS, ( -- bc)) {

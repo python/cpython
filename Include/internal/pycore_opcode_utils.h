@@ -85,9 +85,6 @@ extern "C" {
 PyAPI_DATA(PyCFunctionObject) _PyBuiltin_All;
 PyAPI_DATA(PyCFunctionObject) _PyBuiltin_Any;
 
-/* Filled once by pycore_init_builtins; every entry is immortal. */
-PyAPI_DATA(PyObject *) _PyCommonConsts[NUM_COMMON_CONSTANTS];
-
 /* Non-static: used by static _PyBuiltin_All/_Any in bltinmodule.c. */
 extern PyObject *_PyCFunction_vectorcall_O(
     PyObject *func, PyObject *const *args, size_t nargsf, PyObject *kwnames);

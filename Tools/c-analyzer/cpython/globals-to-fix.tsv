@@ -106,9 +106,6 @@ Objects/weakrefobject.c	-	_PyWeakref_RefType	-
 Python/bltinmodule.c	-	PyFilter_Type	-
 Python/bltinmodule.c	-	PyMap_Type	-
 Python/bltinmodule.c	-	PyZip_Type	-
-Python/bltinmodule.c	-	_PyBuiltin_All	-
-Python/bltinmodule.c	-	_PyBuiltin_Any	-
-Python/bltinmodule.c	-	_PyCommonConsts	-
 Python/context.c	-	PyContextToken_Type	-
 Python/context.c	-	PyContextVar_Type	-
 Python/context.c	-	PyContext_Type	-

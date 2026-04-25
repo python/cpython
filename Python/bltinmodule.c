@@ -490,8 +490,6 @@ PyCFunctionObject _PyBuiltin_Any = {
     .vectorcall = _PyCFunction_vectorcall_O,
 };
 
-PyObject *_PyCommonConsts[NUM_COMMON_CONSTANTS];
-
 /*[clinic input]
 ascii as builtin_ascii
 

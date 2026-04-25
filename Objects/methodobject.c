@@ -394,15 +394,7 @@ PyTypeObject PyCFunction_Type = {
     meth_getsets,                               /* tp_getset */
     0,                                          /* tp_base */
     0,                                          /* tp_dict */
-    0,                                          /* tp_descr_get */
-    0,                                          /* tp_descr_set */
-    0,                                          /* tp_dictoffset */
-    0,                                          /* tp_init */
-    0,                                          /* tp_alloc */
-    0,                                          /* tp_new */
-    0,                                          /* tp_free */
-    /* Static immortal instances have no PyGC_Head prefix. */
-    cfunction_is_gc,                            /* tp_is_gc */
+    .tp_is_gc = cfunction_is_gc,
 };
 
 PyTypeObject PyCMethod_Type = {
