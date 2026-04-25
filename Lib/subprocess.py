@@ -63,7 +63,7 @@ except ImportError:
 __all__ = ["Popen", "PIPE", "STDOUT", "call", "check_call", "getstatusoutput",
            "getoutput", "check_output", "run", "CalledProcessError", "DEVNULL",
            "SubprocessError", "TimeoutExpired", "CompletedProcess",
-           "run_pipeline", "PipelineResult", "PipelineError"]
+           "run_pipeline", "CompletedPipeline", "PipelineError"]
            # NOTE: We intentionally exclude list2cmdline as it is
            # considered an internal implementation detail.  issue10838.
 
@@ -845,7 +845,7 @@ class CompletedProcess(object):
                                      self.stderr)
 
 
-class PipelineResult:
+class CompletedPipeline:
     """A pipeline of processes that have finished running.
 
     This is returned by run_pipeline().
@@ -964,7 +964,7 @@ def run_pipeline(*commands, input=None, capture_output=False, timeout=None,
     if shell=True) to execute. The stdout of each command is connected to the
     stdin of the next command in the pipeline, similar to shell pipelines.
 
-    Returns a PipelineResult instance with attributes commands, returncodes,
+    Returns a CompletedPipeline instance with attributes commands, returncodes,
     stdout, and stderr. By default, stdout and stderr are not captured, and
     those attributes will be None. Pass capture_output=True to capture both
     the final command's stdout and stderr from all commands.
@@ -1169,7 +1169,7 @@ def run_pipeline(*commands, input=None, capture_output=False, timeout=None,
                 raise TimeoutExpired(commands, timeout, stdout, stderr)
             returncodes.append(proc.returncode)
 
-        result = PipelineResult(commands, returncodes, stdout, stderr)
+        result = CompletedPipeline(commands, returncodes, stdout, stderr)
 
         if check and any(rc != 0 for rc in returncodes):
             raise PipelineError(commands, returncodes, stdout, stderr)

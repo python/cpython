@@ -268,7 +268,7 @@ underlying :class:`Popen` interface can be used directly.
                            **other_popen_kwargs)
 
    Run a pipeline of commands connected via pipes, similar to shell pipelines.
-   Wait for all commands to complete, then return a :class:`PipelineResult`
+   Wait for all commands to complete, then return a :class:`CompletedPipeline`
    instance.
 
    Each positional argument should be a command (a list of strings, or a string
@@ -321,7 +321,7 @@ underlying :class:`Popen` interface can be used directly.
    If *stdin* is specified, it is connected to the first command's standard
    input. If *stdout* is specified, it is connected to the last command's
    standard output. When *stdout* is :data:`PIPE`, the output is available
-   in the returned :class:`PipelineResult`'s :attr:`~PipelineResult.stdout`
+   in the returned :class:`CompletedPipeline`'s :attr:`~CompletedPipeline.stdout`
    attribute. Other keyword arguments are passed to each :class:`Popen` call.
    ``close_fds=False`` is rejected because inherited copies of the
    inter-process pipe ends in sibling children would prevent EOF from being
@@ -374,7 +374,7 @@ underlying :class:`Popen` interface can be used directly.
    .. versionadded:: next
 
 
-.. class:: PipelineResult
+.. class:: CompletedPipeline
 
    The return value from :func:`run_pipeline`, representing a pipeline of
    processes that have finished.

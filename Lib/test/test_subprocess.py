@@ -2156,20 +2156,20 @@ class PipelineTestCase(BaseTestCase):
         self.assertIn('HELLO', result.stdout)
         self.assertEqual(result.returncodes, [0, 0])
 
-    def test_pipeline_result_repr(self):
-        """Test PipelineResult string representation"""
+    def test_pipeline_completed_repr(self):
+        """Test CompletedPipeline string representation"""
         result = subprocess.run_pipeline(
             [sys.executable, '-c', 'print("test")'],
             [sys.executable, '-c', 'import sys; print(sys.stdin.read())'],
             capture_output=True, text=True
         )
         repr_str = repr(result)
-        self.assertIn('PipelineResult', repr_str)
+        self.assertIn('CompletedPipeline', repr_str)
         self.assertIn('commands=', repr_str)
         self.assertIn('returncodes=', repr_str)
 
     def test_pipeline_check_returncodes_method(self):
-        """Test PipelineResult.check_returncodes() method"""
+        """Test CompletedPipeline.check_returncodes() method"""
         result = subprocess.run_pipeline(
             [sys.executable, '-c', 'print("hello")'],
             [sys.executable, '-c', 'import sys; sys.exit(5)'],
