@@ -110,7 +110,7 @@ Cookie Objects
    The meaning for *attrs* is the same as in :meth:`output`.
 
    .. deprecated:: 3.15
-      :meth:`!js_output` is deprecated and will be removed in Python 3.17.
+      :meth:`!js_output` is deprecated and will be removed in Python 3.19.
       Use :meth:`output` instead.
 
 

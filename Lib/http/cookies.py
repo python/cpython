@@ -540,11 +540,12 @@ class BaseCookie(dict):
             l.append('%s=%s' % (key, repr(value.value)))
         return '<%s: %s>' % (self.__class__.__name__, _spacejoin(l))
 
-    @warnings.deprecated(
-        "http.cookies.BaseCookie.js_output() is deprecated and will "
-        "be removed in Python 3.17; use output() instead"
-    )
     def js_output(self, attrs=None):
+        warnings._deprecated(
+            "http.cookies.BaseCookie.js_output",
+            "3.19",
+            "Use output() instead"
+        )
         """Return a string suitable for JavaScript."""
         result = []
         items = sorted(self.items())

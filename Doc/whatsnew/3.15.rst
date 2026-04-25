@@ -1741,8 +1741,10 @@ New deprecations
     (Contributed by Bénédikt Tran in :gh:`134978`.)
 
 
+* :mod:`http.cookies`
+
 * :meth:`http.cookies.BaseCookie.js_output` is deprecated and will be
-  removed in Python 3.17. Use
+  removed in Python 3.19. Use
   :meth:`~http.cookies.BaseCookie.output` instead.
   (Contributed by kishorhange111 in :gh:`148849`.)
 
