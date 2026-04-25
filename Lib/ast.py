@@ -122,19 +122,26 @@ def dump(
 ):
     """
     Return a formatted dump of the tree in node.  This is mainly useful for
-    debugging purposes.  If annotate_fields is true (by default),
+    debugging purposes.
+
+    If annotate_fields is true (by default),
     the returned string will show the names and the values for fields.
     If annotate_fields is false, the result string will be more compact by
-    omitting unambiguous field names.  Attributes such as line
-    numbers and column offsets are not dumped by default.  If this is wanted,
-    include_attributes can be set to true.  If indent is a non-negative
-    integer or string, then the tree will be pretty-printed with that indent
-    level. None (the default) selects the single line representation.
-    If show_empty is False, then empty lists and fields that are None
-    will be omitted from the output for better readability.
+    omitting unambiguous field names.
+
+    Attributes such as line numbers and column offsets are not dumped by default.
+    If this is wanted, include_attributes can be set to true.
+
     If color is true, the returned string is syntax highlighted using ANSI
     escape sequences.
     If color is false (the default), colored output is always disabled.
+
+    If indent is a non-negative
+    integer or string, then the tree will be pretty-printed with that indent
+    level. None (the default) selects the single line representation.
+
+    If show_empty is False, then empty lists and fields that are None
+    will be omitted from the output for better readability.
     """
     theme = get_theme(force_color=color, force_no_color=not color).ast
 
@@ -166,13 +173,15 @@ def dump(
                         field_type = cls._field_types.get(name, object)
                         if getattr(field_type, '__origin__', ...) is list:
                             if not keywords:
-                                args_buffer.append(_format(value, level)[0])
+                                args_buffer.append('[]')
                             continue
                     elif isinstance(value, Load):
                         field_type = cls._field_types.get(name, object)
                         if field_type is expr_context:
                             if not keywords:
-                                args_buffer.append(_format(value, level)[0])
+                                args_buffer.append(
+                                    f'{theme.node}{type(value).__name__}'
+                                    f'{theme.reset}()')
                             continue
                     if not keywords:
                         args.extend(args_buffer)
