@@ -714,15 +714,14 @@ class ChardataBufferTest(unittest.TestCase):
 
     @support.requires_resource('cpu')
     @support.requires_resource('walltime')
-    def test_heap_overflow(self):
+    def test_large_character_data_no_buffer_overflow(self):
         # See https://github.com/python/cpython/issues/148441
         parser = expat.ParserCreate()
         parser.buffer_text = True
         parser.buffer_size = 2**31 - 1  # INT_MAX
-        def handler(text):
-            pass
-        N = 2049 * (1 << 20) - 3  # 2,148,532,221 bytes of character data
-        parser.CharacterDataHandler = handler
+        N = 2049 * (1 << 20) - 3  # Character data greater than INT_MAX
+        self.assertGreater(N, parser.buffer_size)
+        parser.CharacterDataHandler = lambda text: None
         xml_data = b"<r>" + b"A" * N + b"</r>"
         self.assertEqual(parser.Parse(xml_data, True), 1)
 
