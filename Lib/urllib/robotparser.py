@@ -231,7 +231,7 @@ class RuleLine:
             raise ValueError('$ not at the end of path')
         self.matcher = None
         if '*' in path:
-            pattern = re.compile(translite_pattern(path), re.DOTALL)
+            pattern = re.compile(translate_pattern(path), re.DOTALL)
             if self.fullmatch:
                 self.matcher = pattern.fullmatch
             else:
@@ -338,7 +338,7 @@ def normalize_pattern(path):
         path += '?' + query
     return path
 
-def translite_pattern(path):
+def translate_pattern(path):
     parts = list(map(re.escape, path.split('*')))
     for i in range(1, len(parts)-1):
         parts[i] = f'(?>.*?{parts[i]})'
