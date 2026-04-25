@@ -2566,11 +2566,11 @@ print(len(data.strip()))
                 result = subprocess.run_pipeline(
                     [sys.executable, '-c',
                      f'import os, sys; '
-                     f'data = os.read({rfd}, 32); '
+                     f'data = os.pread({rfd}, 32, 0); '
                      f'sys.stdout.write(data.decode() + "|")'],
                     [sys.executable, '-c',
-                     f'import os, sys; os.lseek({rfd}, 0, 0); '
-                     f'data = os.read({rfd}, 32); '
+                     f'import os, sys; '
+                     f'data = os.pread({rfd}, 32, 0); '
                      f'sys.stdout.write(sys.stdin.read() + data.decode())'],
                     pass_fds=(rfd,), capture_output=True, text=True,
                 )
