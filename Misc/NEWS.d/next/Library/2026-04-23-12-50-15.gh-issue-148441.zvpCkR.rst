@@ -1,2 +1,4 @@
-Fix heap buffer overflow in pyexpat CharacterDataHandler, which is caused by
-two signed intergets added up.
+:mod:`xml.parsers.expat`: Fix a heap buffer overflow in
+:meth:`~xml.parsers.expat.xmlparser.CharacterDataHandler`
+when the character data size exceeds the parser's
+:attr:`buffer size <xml.parsers.expat.xmlparser.buffer_size>`.
