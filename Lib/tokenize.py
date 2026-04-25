@@ -532,6 +532,31 @@ def _get_token_colors(syntax, tokenize):
     })
 
 
+def _print_tokens(tokens, *, color=False, exact=False):
+    theme = _colorize.get_theme(force_no_color=not color)
+    s = theme.syntax
+    t = theme.tokenize
+    token_colors = _get_token_colors(s, t)
+    for token in tokens:
+        token_type = token.exact_type if exact else token.type
+        token_range = (
+            f"{t.position}{token.start[0]}"
+            f"{t.delimiter},{t.position}{token.start[1]}"
+            f"{t.delimiter}-"
+            f"{t.position}{token.end[0]}"
+            f"{t.delimiter},{t.position}{token.end[1]}"
+            f"{t.delimiter}:"
+        )
+        token_color = token_colors.get(token_type, s.reset)
+        token_name = tok_name[token_type]
+        visible_range = f"{token.start[0]},{token.start[1]}-{token.end[0]},{token.end[1]}:"
+        print(
+            f"{token_range}{' ' * (20 - len(visible_range))}"
+            f"{token_color}{token_name:<15}"
+            f"{s.reset}{token.string!r:<15}"
+        )
+
+
 def _main(args=None):
     import argparse
 
@@ -572,30 +597,7 @@ def _main(args=None):
 
 
         # Output the tokenization
-        _theme = _colorize.get_theme()
-        s = _theme.syntax
-        t = _theme.tokenize
-        _token_colors = _get_token_colors(s, t)
-        for token in tokens:
-            token_type = token.type
-            if args.exact:
-                token_type = token.exact_type
-            token_range = (
-                f"{t.position}{token.start[0]}"
-                f"{t.delimiter},{t.position}{token.start[1]}"
-                f"{t.delimiter}-"
-                f"{t.position}{token.end[0]}"
-                f"{t.delimiter},{t.position}{token.end[1]}"
-                f"{t.delimiter}:"
-            )
-            color = _token_colors.get(token_type, s.reset)
-            token_name = tok_name[token_type]
-            visible_range = f"{token.start[0]},{token.start[1]}-{token.end[0]},{token.end[1]}:"
-            print(
-                f"{token_range}{' ' * (20 - len(visible_range))}"
-                f"{color}{token_name:<15}"
-                f"{s.reset}{token.string!r:<15}"
-            )
+        _print_tokens(tokens, color=True, exact=args.exact)
     except IndentationError as err:
         line, column = err.args[1][1:3]
         error(err.args[0], filename, (line, column))
