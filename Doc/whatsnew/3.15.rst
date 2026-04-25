@@ -701,6 +701,10 @@ ast
   If ``False`` (the default), colored output is always disabled.
   (Contributed by Stan Ulbrych in :gh:`148981`.)
 
+* The :ref:`command-line <ast-cli>` output is now syntax highlighted by default.
+  This can be :ref:`controlled using environment variables <using-on-controlling-color>`.
+  (Contributed by Stan Ulbrych in :gh:`148981`.)
+
 
 base64
 ------

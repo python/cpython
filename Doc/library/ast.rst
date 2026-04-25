@@ -2591,6 +2591,10 @@ Command-line usage
 
 .. versionadded:: 3.9
 
+.. versionchanged:: next
+   The output is now syntax highlighted by default. This can be
+   :ref:`controlled using environment variables <using-on-controlling-color>`.
+
 The :mod:`!ast` module can be executed as a script from the command line.
 It is as simple as:
 

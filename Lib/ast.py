@@ -142,7 +142,7 @@ def dump(
     If show_empty is False, then empty lists and fields that are None
     will be omitted from the output for better readability.
     """
-    theme = get_theme(force_color=color, force_no_color=not color).ast
+    t = get_theme(force_color=color, force_no_color=not color).ast
 
     def _format(node, level=0):
         if indent is not None:
@@ -179,8 +179,8 @@ def dump(
                         if field_type is expr_context:
                             if not keywords:
                                 args_buffer.append(
-                                    f'{theme.node}{type(value).__name__}'
-                                    f'{theme.reset}()')
+                                    f'{t.node}{type(value).__name__}'
+                                    f'{t.reset}()')
                             continue
                     if not keywords:
                         args.extend(args_buffer)
@@ -188,7 +188,7 @@ def dump(
                 value, simple = _format(value, level)
                 allsimple = allsimple and simple
                 if keywords:
-                    args.append(f'{theme.field}{name}{theme.reset}={value}')
+                    args.append(f'{t.field}{name}{t.reset}={value}')
                 else:
                     args.append(value)
             if include_attributes and node._attributes:
@@ -201,8 +201,8 @@ def dump(
                         continue
                     value, simple = _format(value, level)
                     allsimple = allsimple and simple
-                    args.append(f'{theme.attribute}{name}{theme.reset}={value}')
-            cls_name = f'{theme.node}{cls.__name__}{theme.reset}'
+                    args.append(f'{t.attribute}{name}{t.reset}={value}')
+            cls_name = f'{t.node}{cls.__name__}{t.reset}'
             if allsimple and len(args) <= 3:
                 return f'{cls_name}({", ".join(args)})', not args
             return f'{cls_name}({prefix}{sep.join(args)})', False
@@ -211,11 +211,11 @@ def dump(
                 return '[]', True
             return '[%s%s]' % (prefix, sep.join(_format(x, level)[0] for x in node)), False
         if isinstance(node, bool) or node is None or node is Ellipsis:
-            return f'{theme.keyword}{node!r}{theme.reset}', True
+            return f'{t.keyword}{node!r}{t.reset}', True
         if isinstance(node, (int, float, complex)):
-            return f'{theme.number}{node!r}{theme.reset}', True
+            return f'{t.number}{node!r}{t.reset}', True
         if isinstance(node, (str, bytes)):
-            return f'{theme.string}{node!r}{theme.reset}', True
+            return f'{t.string}{node!r}{t.reset}', True
         return repr(node), True
 
     if not isinstance(node, AST):
@@ -663,7 +663,7 @@ def main(args=None):
     import argparse
     import sys
 
-    parser = argparse.ArgumentParser(color=True)
+    parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('infile', nargs='?', default='-',
                         help='the file to parse; defaults to stdin')
     parser.add_argument('-m', '--mode', default='exec',
@@ -682,7 +682,7 @@ def main(args=None):
                              '(for example, 3.10)')
     parser.add_argument('-O', '--optimize',
                         type=int, default=-1, metavar='LEVEL',
-                        help='optimization level for parser (default -1)')
+                        help='optimization level for parser')
     parser.add_argument('--show-empty', default=False, action='store_true',
                         help='show empty lists and fields in dump output')
     args = parser.parse_args(args)
