@@ -141,9 +141,10 @@ The :mod:`!binascii` module defines the following functions:
    This should only contain whitespace characters.
 
    If *canonical* is true, non-canonical encodings are rejected with
-   :exc:`binascii.Error`.  This enforces that the ``z`` abbreviation is used
-   for all-zero groups (rather than ``!!!!!``), and that partial final groups
-   use the same padding digits the encoder would produce.
+   :exc:`binascii.Error`.  Here "canonical" means the encoding that
+   :func:`b2a_ascii85` would produce: the ``z`` abbreviation must be used
+   for all-zero groups (rather than ``!!!!!``), and partial final groups
+   must use the same padding digits as the encoder.
 
    Invalid Ascii85 data will raise :exc:`binascii.Error`.
 
@@ -190,9 +191,10 @@ The :mod:`!binascii` module defines the following functions:
    *ignorechars* should be a :term:`bytes-like object` containing characters
    to ignore from the input.
 
-   If *canonical* is true, non-canonical encodings in partial final groups
-   are rejected with :exc:`binascii.Error`.  This enforces that the padding
-   digits match what the encoder would produce.
+   If *canonical* is true, non-canonical encodings are rejected with
+   :exc:`binascii.Error`.  Here "canonical" means the encoding that
+   :func:`b2a_base85` would produce: partial final groups must use the
+   same padding digits as the encoder.
 
    Invalid Base85 data will raise :exc:`binascii.Error`.
 
