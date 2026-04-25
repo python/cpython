@@ -37,9 +37,6 @@
 #include "pycore_uniqueid.h"      // _PyObject_FinalizeUniqueIdPool()
 #include "pycore_warnings.h"      // _PyWarnings_InitState()
 #include "pycore_weakref.h"       // _PyWeakref_GET_REF()
-#ifdef _Py_JIT
-#include "pycore_jit.h"           // _PyJIT_Fini()
-#endif
 
 #if defined(PYMALLOC_USE_HUGEPAGES) && defined(MS_WINDOWS)
 #include <Windows.h>
@@ -1641,18 +1638,12 @@ Py_InitializeFromConfig(const PyConfig *config)
 void
 Py_InitializeEx(int install_sigs)
 {
-    PyStatus status;
-
-    status = _PyRuntime_Initialize();
-    if (_PyStatus_EXCEPTION(status)) {
-        Py_ExitStatusException(status);
-    }
-
     if (Py_IsInitialized()) {
         /* bpo-33932: Calling Py_Initialize() twice does nothing. */
         return;
     }
 
+    PyStatus status;
     PyConfig config;
     _PyConfig_InitCompatConfig(&config);
 
@@ -2536,11 +2527,6 @@ _Py_Finalize(_PyRuntimeState *runtime)
     // XXX Ensure finalizer errors are handled properly.
 
     finalize_interp_clear(tstate);
-
-#ifdef _Py_JIT
-    /* Free JIT shim memory */
-    _PyJIT_Fini();
-#endif
 
 #ifdef Py_TRACE_REFS
     /* Display addresses (& refcnts) of all objects still alive.
