@@ -541,10 +541,11 @@ class BaseCookie(dict):
         return '<%s: %s>' % (self.__class__.__name__, _spacejoin(l))
 
     def js_output(self, attrs=None):
-        warnings._deprecated(
-            "http.cookies.BaseCookie.js_output",
-            "3.19",
-            "Use output() instead"
+        warnings.warn(
+            "http.cookies.BaseCookie.js_output() is deprecated and will "
+            "be removed in Python 3.19; use output() instead",
+            DeprecationWarning,
+            stacklevel=2,
         )
         """Return a string suitable for JavaScript."""
         result = []
