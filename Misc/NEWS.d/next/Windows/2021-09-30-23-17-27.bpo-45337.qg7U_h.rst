@@ -1,4 +1,0 @@
-venv now warns when the created environment may need to be accessed at a
-different path, due to redirections, links or junctions. It also now
-correctly installs or upgrades components when the alternate path is
-required.

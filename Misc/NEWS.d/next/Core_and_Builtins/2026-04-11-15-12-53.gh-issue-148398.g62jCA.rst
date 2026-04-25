@@ -1,0 +1,1 @@
+Fix a bug in the JIT optimizer where class attribute loads were not invalidated after type mutation.

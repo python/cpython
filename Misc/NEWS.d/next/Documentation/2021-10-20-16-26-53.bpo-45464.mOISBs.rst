@@ -1,4 +1,0 @@
-Mention in the documentation of :ref:`Built-in Exceptions
-<bltin-exceptions>` that inheriting from multiple exception types in a
-single subclass is not recommended due to possible memory layout
-incompatibility.

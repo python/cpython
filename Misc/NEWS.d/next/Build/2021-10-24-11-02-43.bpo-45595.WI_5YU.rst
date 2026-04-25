@@ -1,2 +1,0 @@
-``setup.py`` and ``makesetup`` now track build dependencies on all Python
-header files and module specific header files.

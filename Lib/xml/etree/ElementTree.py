@@ -83,14 +83,11 @@ __all__ = [
     "SubElement",
     "tostring", "tostringlist",
     "TreeBuilder",
-    "VERSION",
     "XML", "XMLID",
     "XMLParser", "XMLPullParser",
     "register_namespace",
     "canonicalize", "C14NWriterTarget",
     ]
-
-VERSION = "1.3.0"
 
 import sys
 import re
@@ -99,6 +96,7 @@ import io
 import collections
 import collections.abc
 import contextlib
+import weakref
 
 from . import ElementPath
 
@@ -166,9 +164,9 @@ class Element:
 
     """
 
-    def __init__(self, tag, attrib={}, **extra):
-        if not isinstance(attrib, dict):
-            raise TypeError("attrib must be dict, not %s" % (
+    def __init__(self, tag, /, attrib={}, **extra):
+        if not isinstance(attrib, (dict, frozendict)):
+            raise TypeError("attrib must be dict or frozendict, not %s" % (
                 attrib.__class__.__name__,))
         self.tag = tag
         self.attrib = {**attrib, **extra}
@@ -188,19 +186,6 @@ class Element:
         """
         return self.__class__(tag, attrib)
 
-    def copy(self):
-        """Return copy of current element.
-
-        This creates a shallow copy. Subelements will be shared with the
-        original tree.
-
-        """
-        warnings.warn(
-            "elem.copy() is deprecated. Use copy.copy(elem) instead.",
-            DeprecationWarning
-            )
-        return self.__copy__()
-
     def __copy__(self):
         elem = self.makeelement(self.tag, self.attrib)
         elem.text = self.text
@@ -213,9 +198,10 @@ class Element:
 
     def __bool__(self):
         warnings.warn(
-            "The behavior of this method will change in future versions.  "
+            "Testing an element's truth value will always return True in "
+            "future versions.  "
             "Use specific 'len(elem)' or 'elem is not None' test instead.",
-            FutureWarning, stacklevel=2
+            DeprecationWarning, stacklevel=2
             )
         return len(self._children) != 0 # emulate old behaviour, for now
 
@@ -277,8 +263,15 @@ class Element:
         ValueError is raised if a matching element could not be found.
 
         """
-        # assert iselement(element)
-        self._children.remove(subelement)
+        try:
+            self._children.remove(subelement)
+        except ValueError:
+            # to align the error type with the C implementation
+            if isinstance(subelement, type) or not iselement(subelement):
+                raise TypeError('expected an Element, not %s' %
+                                type(subelement).__name__) from None
+            # to align the error message with the C implementation
+            raise ValueError(f"{subelement!r} not in {self!r}") from None
 
     def find(self, path, namespaces=None):
         """Find first matching element by tag name or path.
@@ -423,7 +416,7 @@ class Element:
                 yield t
 
 
-def SubElement(parent, tag, attrib={}, **extra):
+def SubElement(parent, tag, /, attrib={}, **extra):
     """Subelement factory which creates an element instance, and appends it
     to an existing parent.
 
@@ -534,7 +527,9 @@ class ElementTree:
 
     """
     def __init__(self, element=None, file=None):
-        # assert element is None or iselement(element)
+        if element is not None and not iselement(element):
+            raise TypeError('expected an Element, not %s' %
+                            type(element).__name__)
         self._root = element # first node
         if file:
             self.parse(file)
@@ -550,7 +545,9 @@ class ElementTree:
         with the given element.  Use with care!
 
         """
-        # assert iselement(element)
+        if not iselement(element):
+            raise TypeError('expected an Element, not %s'
+                            % type(element).__name__)
         self._root = element
 
     def parse(self, source, parser=None):
@@ -579,10 +576,7 @@ class ElementTree:
                     # it with chunks.
                     self._root = parser._parse_whole(source)
                     return self._root
-            while True:
-                data = source.read(65536)
-                if not data:
-                    break
+            while data := source.read(65536):
                 parser.feed(data)
             self._root = parser.close()
             return self._root
@@ -719,6 +713,8 @@ class ElementTree:
                                     of start/end tags
 
         """
+        if self._root is None:
+            raise TypeError('ElementTree not initialized')
         if not method:
             method = "xml"
         elif method not in _serialize:
@@ -728,16 +724,11 @@ class ElementTree:
                 encoding = "utf-8"
             else:
                 encoding = "us-ascii"
-        enc_lower = encoding.lower()
-        with _get_writer(file_or_filename, enc_lower) as write:
+        with _get_writer(file_or_filename, encoding) as (write, declared_encoding):
             if method == "xml" and (xml_declaration or
                     (xml_declaration is None and
-                     enc_lower not in ("utf-8", "us-ascii", "unicode"))):
-                declared_encoding = encoding
-                if enc_lower == "unicode":
-                    # Retrieve the default encoding for the xml declaration
-                    import locale
-                    declared_encoding = locale.getpreferredencoding()
+                     encoding.lower() != "unicode" and
+                     declared_encoding.lower() not in ("utf-8", "us-ascii"))):
                 write("<?xml version='1.0' encoding='%s'?>\n" % (
                     declared_encoding,))
             if method == "text":
@@ -762,19 +753,17 @@ def _get_writer(file_or_filename, encoding):
         write = file_or_filename.write
     except AttributeError:
         # file_or_filename is a file name
-        if encoding == "unicode":
-            file = open(file_or_filename, "w")
-        else:
-            file = open(file_or_filename, "w", encoding=encoding,
-                        errors="xmlcharrefreplace")
-        with file:
-            yield file.write
+        if encoding.lower() == "unicode":
+            encoding="utf-8"
+        with open(file_or_filename, "w", encoding=encoding,
+                  errors="xmlcharrefreplace") as file:
+            yield file.write, encoding
     else:
         # file_or_filename is a file-like object
         # encoding determines if it is a text or binary writer
-        if encoding == "unicode":
+        if encoding.lower() == "unicode":
             # use a text writer as is
-            yield write
+            yield write, getattr(file_or_filename, "encoding", None) or "utf-8"
         else:
             # wrap a binary writer with TextIOWrapper
             with contextlib.ExitStack() as stack:
@@ -805,7 +794,7 @@ def _get_writer(file_or_filename, encoding):
                 # Keep the original file open when the TextIOWrapper is
                 # destroyed
                 stack.callback(file.detach)
-                yield file.write
+                yield file.write, encoding
 
 def _namespaces(elem, default_namespace=None):
     # identify namespaces used in this tree
@@ -918,13 +907,9 @@ def _serialize_xml(write, elem, qnames, namespaces,
     if elem.tail:
         write(_escape_cdata(elem.tail))
 
-HTML_EMPTY = ("area", "base", "basefont", "br", "col", "frame", "hr",
-              "img", "input", "isindex", "link", "meta", "param")
-
-try:
-    HTML_EMPTY = set(HTML_EMPTY)
-except NameError:
-    pass
+HTML_EMPTY = {"area", "base", "basefont", "br", "col", "embed", "frame", "hr",
+              "img", "input", "isindex", "link", "meta", "param", "source",
+              "track", "wbr"}
 
 def _serialize_html(write, elem, qnames, namespaces, **kwargs):
     tag = elem.tag
@@ -1248,7 +1233,14 @@ def iterparse(source, events=None, parser=None):
     # Use the internal, undocumented _parser argument for now; When the
     # parser argument of iterparse is removed, this can be killed.
     pullparser = XMLPullParser(events=events, _parser=parser)
-    def iterator():
+
+    if not hasattr(source, "read"):
+        source = open(source, "rb")
+        close_source = True
+    else:
+        close_source = False
+
+    def iterator(source):
         try:
             while True:
                 yield from pullparser.read_events()
@@ -1259,22 +1251,34 @@ def iterparse(source, events=None, parser=None):
                 pullparser.feed(data)
             root = pullparser._close_and_return_root()
             yield from pullparser.read_events()
-            it.root = root
+            it = wr()
+            if it is not None:
+                it.root = root
         finally:
             if close_source:
                 source.close()
 
+    gen = iterator(source)
     class IterParseIterator(collections.abc.Iterator):
-        __next__ = iterator().__next__
+        __next__ = gen.__next__
+
+        def close(self):
+            nonlocal close_source
+            if close_source:
+                source.close()
+                close_source = False
+            gen.close()
+
+        def __del__(self, _warn=warnings.warn):
+            if close_source:
+                try:
+                    _warn(f"unclosed iterparse iterator {source.name!r}", ResourceWarning, stacklevel=2)
+                finally:
+                    source.close()
+
     it = IterParseIterator()
     it.root = None
-    del iterator, IterParseIterator
-
-    close_source = False
-    if not hasattr(source, "read"):
-        source = open(source, "rb")
-        close_source = True
-
+    wr = weakref.ref(it)
     return it
 
 
@@ -1329,6 +1333,11 @@ class XMLPullParser:
                 raise event
             else:
                 yield event
+
+    def flush(self):
+        if self._parser is None:
+            raise ValueError("flush() called after end of stream")
+        self._parser.flush()
 
 
 def XML(text, parser=None):
@@ -1736,6 +1745,15 @@ class XMLParser:
             del self.parser, self._parser
             del self.target, self._target
 
+    def flush(self):
+        was_enabled = self.parser.GetReparseDeferralEnabled()
+        try:
+            self.parser.SetReparseDeferralEnabled(False)
+            self.parser.Parse(b"", False)
+        except self._error as v:
+            self._raiseerror(v)
+        finally:
+            self.parser.SetReparseDeferralEnabled(was_enabled)
 
 # --------------------------------------------------------------------
 # C14N 2.0
@@ -2086,3 +2104,14 @@ except ImportError:
     pass
 else:
     _set_factories(Comment, ProcessingInstruction)
+
+
+# --------------------------------------------------------------------
+
+def __getattr__(name):
+    if name == "VERSION":
+        from warnings import _deprecated
+
+        _deprecated("VERSION", remove=(3, 20))
+        return "1.3.0"  # Do not change
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

@@ -1,2 +1,0 @@
-Update :data:`sys.version` to use ``main`` as fallback information.
-Patch by Jeong YunWon.

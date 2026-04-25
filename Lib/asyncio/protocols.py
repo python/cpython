@@ -109,10 +109,6 @@ class Protocol(BaseProtocol):
 class BufferedProtocol(BaseProtocol):
     """Interface for stream protocol with manual buffer control.
 
-    Important: this has been added to asyncio in Python 3.7
-    *on a provisional basis*!  Consider it as an experimental API that
-    might be changed or removed in Python 3.8.
-
     Event methods, such as `create_server` and `create_connection`,
     accept factories that return protocols that implement this interface.
 

@@ -26,13 +26,15 @@ Written by Marc-Andre Lemburg (mal@lemburg.com).
 
 (c) Copyright CNRI, All Rights Reserved. NO WARRANTY.
 
-"""#"
+"""
 
 import codecs
 import sys
+from _codecs import _normalize_encoding
 from . import aliases
 
 _cache = {}
+_MAXCACHE = 500
 _unknown = '--unknown--'
 _import_tail = ['*']
 _aliases = aliases.aliases
@@ -55,18 +57,13 @@ def normalize_encoding(encoding):
     if isinstance(encoding, bytes):
         encoding = str(encoding, "ascii")
 
-    chars = []
-    punct = False
-    for c in encoding:
-        if c.isalnum() or c == '.':
-            if punct and chars:
-                chars.append('_')
-            if c.isascii():
-                chars.append(c)
-            punct = False
-        else:
-            punct = True
-    return ''.join(chars)
+    if not encoding.isascii():
+        import warnings
+        warnings.warn(
+            "Support for non-ascii encoding names will be removed in 3.17",
+            DeprecationWarning, stacklevel=2)
+
+    return _normalize_encoding(encoding)
 
 def search_function(encoding):
 
@@ -115,6 +112,8 @@ def search_function(encoding):
 
     if mod is None:
         # Cache misses
+        if len(_cache) >= _MAXCACHE:
+            _cache.clear()
         _cache[encoding] = None
         return None
 
@@ -136,6 +135,8 @@ def search_function(encoding):
         entry = codecs.CodecInfo(*entry)
 
     # Cache the codec registry entry
+    if len(_cache) >= _MAXCACHE:
+        _cache.clear()
     _cache[encoding] = entry
 
     # Register its aliases (without overwriting previously registered
@@ -156,15 +157,22 @@ def search_function(encoding):
 codecs.register(search_function)
 
 if sys.platform == 'win32':
-    def _alias_mbcs(encoding):
-        try:
-            import _winapi
-            ansi_code_page = "cp%s" % _winapi.GetACP()
-            if encoding == ansi_code_page:
-                import encodings.mbcs
-                return encodings.mbcs.getregentry()
-        except ImportError:
-            # Imports may fail while we are shutting down
-            pass
+    from ._win_cp_codecs import create_win32_code_page_codec
 
-    codecs.register(_alias_mbcs)
+    def win32_code_page_search_function(encoding):
+        encoding = encoding.lower()
+        if not encoding.startswith('cp'):
+            return None
+        try:
+            cp = int(encoding[2:])
+        except ValueError:
+            return None
+        # Test if the code page is supported
+        try:
+            codecs.code_page_encode(cp, 'x')
+        except (OverflowError, OSError):
+            return None
+
+        return create_win32_code_page_codec(cp)
+
+    codecs.register(win32_code_page_search_function)

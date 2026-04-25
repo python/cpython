@@ -1,13 +1,8 @@
-:mod:`shlex` --- Simple lexical analysis
-========================================
+:mod:`!shlex` --- Simple lexical analysis
+=========================================
 
 .. module:: shlex
    :synopsis: Simple lexical analysis for Unix shell-like languages.
-
-.. moduleauthor:: Eric S. Raymond <esr@snark.thyrsus.com>
-.. moduleauthor:: Gustavo Niemeyer <niemeyer@conectiva.com>
-.. sectionauthor:: Eric S. Raymond <esr@snark.thyrsus.com>
-.. sectionauthor:: Gustavo Niemeyer <niemeyer@conectiva.com>
 
 **Source code:** :source:`Lib/shlex.py`
 
@@ -18,7 +13,7 @@ simple syntaxes resembling that of the Unix shell.  This will often be useful
 for writing minilanguages, (for example, in run control files for Python
 applications) or for parsing quoted strings.
 
-The :mod:`shlex` module defines the following functions:
+The :mod:`!shlex` module defines the following functions:
 
 
 .. function:: split(s, comments=False, posix=True)
@@ -30,15 +25,9 @@ The :mod:`shlex` module defines the following functions:
    in POSIX mode by default, but uses non-POSIX mode if the *posix* argument is
    false.
 
-   .. note::
-
-      Since the :func:`split` function instantiates a :class:`~shlex.shlex`
-      instance, passing ``None`` for *s* will read the string to split from
-      standard input.
-
-   .. deprecated:: 3.9
-      Passing ``None`` for *s* will raise an exception in future Python
-      versions.
+   .. versionchanged:: 3.12
+      Passing ``None`` for *s* argument now raises an exception, rather than
+      reading :data:`sys.stdin`.
 
 .. function:: join(split_command)
 
@@ -104,7 +93,7 @@ The :mod:`shlex` module defines the following functions:
 
    .. versionadded:: 3.3
 
-The :mod:`shlex` module defines the following class:
+The :mod:`!shlex` module defines the following class:
 
 
 .. class:: shlex(instream=None, infile=None, posix=False, punctuation_chars=False)
@@ -220,7 +209,7 @@ A :class:`~shlex.shlex` instance has the following methods:
    with the name of the current source file and the ``%d`` with the current input
    line number (the optional arguments can be used to override these).
 
-   This convenience is provided to encourage :mod:`shlex` users to generate error
+   This convenience is provided to encourage :mod:`!shlex` users to generate error
    messages in the standard, parseable format understood by Emacs and other Unix
    tools.
 
@@ -349,7 +338,7 @@ variables which either control lexical analysis or can be used for debugging:
 Parsing Rules
 -------------
 
-When operating in non-POSIX mode, :class:`~shlex.shlex` will try to obey to the
+When operating in non-POSIX mode, :class:`~shlex.shlex` will try to obey the
 following rules.
 
 * Quote characters are not recognized within words (``Do"Not"Separate`` is
@@ -372,7 +361,7 @@ following rules.
 
 * It's not possible to parse empty strings, even if quoted.
 
-When operating in POSIX mode, :class:`~shlex.shlex` will try to obey to the
+When operating in POSIX mode, :class:`~shlex.shlex` will try to obey the
 following parsing rules.
 
 * Quotes are stripped out, and do not separate words (``"Do"Not"Separate"`` is
@@ -388,7 +377,7 @@ following parsing rules.
 * Enclosing characters in quotes which are part of
   :attr:`~shlex.escapedquotes` (e.g. ``'"'``) preserves the literal value
   of all characters within the quotes, with the exception of the characters
-  mentioned in :attr:`~shlex.escape`.  The escape characters retain its
+  mentioned in :attr:`~shlex.escape`.  The escape characters retain their
   special meaning only when followed by the quote in use, or the escape
   character itself. Otherwise the escape character will be considered a
   normal character.
@@ -418,17 +407,17 @@ otherwise.  To illustrate, you can see the difference in the following snippet:
 .. doctest::
    :options: +NORMALIZE_WHITESPACE
 
-    >>> import shlex
-    >>> text = "a && b; c && d || e; f >'abc'; (def \"ghi\")"
-    >>> s = shlex.shlex(text, posix=True)
-    >>> s.whitespace_split = True
-    >>> list(s)
-    ['a', '&&', 'b;', 'c', '&&', 'd', '||', 'e;', 'f', '>abc;', '(def', 'ghi)']
-    >>> s = shlex.shlex(text, posix=True, punctuation_chars=True)
-    >>> s.whitespace_split = True
-    >>> list(s)
-    ['a', '&&', 'b', ';', 'c', '&&', 'd', '||', 'e', ';', 'f', '>', 'abc', ';',
-    '(', 'def', 'ghi', ')']
+   >>> import shlex
+   >>> text = "a && b; c && d || e; f >'abc'; (def \"ghi\")"
+   >>> s = shlex.shlex(text, posix=True)
+   >>> s.whitespace_split = True
+   >>> list(s)
+   ['a', '&&', 'b;', 'c', '&&', 'd', '||', 'e;', 'f', '>abc;', '(def', 'ghi)']
+   >>> s = shlex.shlex(text, posix=True, punctuation_chars=True)
+   >>> s.whitespace_split = True
+   >>> list(s)
+   ['a', '&&', 'b', ';', 'c', '&&', 'd', '||', 'e', ';', 'f', '>', 'abc', ';',
+   '(', 'def', 'ghi', ')']
 
 Of course, tokens will be returned which are not valid for shells, and you'll
 need to implement your own error checks on the returned tokens.
@@ -437,10 +426,10 @@ Instead of passing ``True`` as the value for the punctuation_chars parameter,
 you can pass a string with specific characters, which will be used to determine
 which characters constitute punctuation. For example::
 
-    >>> import shlex
-    >>> s = shlex.shlex("a && b || c", punctuation_chars="|")
-    >>> list(s)
-    ['a', '&', '&', 'b', '||', 'c']
+   >>> import shlex
+   >>> s = shlex.shlex("a && b || c", punctuation_chars="|")
+   >>> list(s)
+   ['a', '&', '&', 'b', '||', 'c']
 
 .. note:: When ``punctuation_chars`` is specified, the :attr:`~shlex.wordchars`
    attribute is augmented with the characters ``~-./*?=``.  That is because these

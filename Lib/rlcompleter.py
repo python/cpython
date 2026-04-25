@@ -32,7 +32,11 @@ Notes:
 import atexit
 import builtins
 import inspect
+import keyword
+import re
 import __main__
+import warnings
+import types
 
 __all__ = ["Completer"]
 
@@ -86,10 +90,11 @@ class Completer:
                 return None
 
         if state == 0:
-            if "." in text:
-                self.matches = self.attr_matches(text)
-            else:
-                self.matches = self.global_matches(text)
+            with warnings.catch_warnings(action="ignore"):
+                if "." in text:
+                    self.matches = self.attr_matches(text)
+                else:
+                    self.matches = self.global_matches(text)
         try:
             return self.matches[state]
         except IndexError:
@@ -113,18 +118,17 @@ class Completer:
         defined in self.namespace that match.
 
         """
-        import keyword
         matches = []
         seen = {"__builtins__"}
         n = len(text)
-        for word in keyword.kwlist:
+        for word in keyword.kwlist + keyword.softkwlist:
             if word[:n] == text:
                 seen.add(word)
                 if word in {'finally', 'try'}:
                     word = word + ':'
                 elif word not in {'False', 'None', 'True',
                                   'break', 'continue', 'pass',
-                                  'else'}:
+                                  'else', '_'}:
                     word = word + ' '
                 matches.append(word)
         for nspace in [self.namespace, builtins.__dict__]:
@@ -146,7 +150,6 @@ class Completer:
         with a __getattr__ hook is evaluated.
 
         """
-        import re
         m = re.match(r"(\w+(\.\w+)*)\.(\w*)", text)
         if not m:
             return []
@@ -186,7 +189,17 @@ class Completer:
                         # property method, which is not desirable.
                         matches.append(match)
                         continue
-                    if (value := getattr(thisobject, word, None)) is not None:
+
+                    if (isinstance(thisobject, types.ModuleType)
+                        and
+                        isinstance(thisobject.__dict__.get(word),
+                                   types.LazyImportType)
+                    ):
+                        value = thisobject.__dict__.get(word)
+                    else:
+                        value = getattr(thisobject, word, None)
+
+                    if value is not None:
                         matches.append(self._callable_postfix(value, match))
                     else:
                         matches.append(match)

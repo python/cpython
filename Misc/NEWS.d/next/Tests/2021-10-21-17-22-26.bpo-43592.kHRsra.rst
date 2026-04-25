@@ -1,3 +1,0 @@
-:mod:`test.libregrtest` now raises the soft resource limit for the maximum
-number of file descriptors when the default is too low for our test suite as
-was often the case on macOS.
