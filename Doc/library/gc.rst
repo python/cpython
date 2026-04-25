@@ -75,6 +75,12 @@ The :mod:`!gc` module provides the following functions:
    .. versionchanged:: 3.8
       New *generation* parameter.
 
+   .. versionchanged:: 3.14
+      Generation 1 is removed
+
+   .. versionchanged:: 3.14.5
+      Generation 1 if reintroduced to maintain GC behavior from 3.13.
+
    .. audit-event:: gc.get_objects generation gc.get_objects
 
 .. function:: get_stats()
@@ -121,6 +127,12 @@ The :mod:`!gc` module provides the following functions:
    has not exceeded 40 times *threshold0*, the collection is not run.
 
    See `Garbage collector design <https://github.com/python/cpython/blob/3.14/InternalDocs/garbage_collector.md>`_ for more information.
+
+   .. versionchanged:: 3.14
+      *threshold2* is ignored
+
+   .. versionchanged:: 3.14.5
+      *threshold2* is restored to match Python 3.13 behavior.
 
 
 .. function:: get_count()
