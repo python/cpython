@@ -892,7 +892,7 @@ fastpath:
         state = get_binascii_state(module);
         if (state) {
             unsigned char *bin_data_start = PyBytesWriter_GetData(writer);
-            PyErr_Format(state->Error,
+            PyErr_Format(ascii_len ? state->Error : state->Incomplete,
                          "Invalid base64-encoded string: "
                          "number of data characters (%zd) cannot be 1 more "
                          "than a multiple of 4",
@@ -904,7 +904,7 @@ fastpath:
     if (padded && quad_pos != 0 && quad_pos + pads < 4) {
         state = get_binascii_state(module);
         if (state) {
-            PyErr_SetString(state->Error, "Incorrect padding");
+            PyErr_SetString(state->Incomplete, "Incorrect padding");
         }
         goto error_end;
     }
@@ -1060,7 +1060,7 @@ binascii_a2b_ascii85_impl(PyObject *module, Py_buffer *data, int foldspaces,
         {
             state = get_binascii_state(module);
             if (state != NULL) {
-                PyErr_SetString(state->Error,
+                PyErr_SetString(state->Incomplete,
                                 "Ascii85 encoded byte sequences must end with b'~>'");
             }
             return NULL;
@@ -1706,7 +1706,7 @@ fastpath:
         state = get_binascii_state(module);
         if (state) {
             unsigned char *bin_data_start = PyBytesWriter_GetData(writer);
-            PyErr_Format(state->Error,
+            PyErr_Format(ascii_len ? state->Error : state->Incomplete,
                          "Invalid base32-encoded string: "
                          "number of data characters (%zd) "
                          "cannot be 1, 3, or 6 more than a multiple of 8",
@@ -1718,7 +1718,7 @@ fastpath:
     if (padded && octa_pos != 0 && octa_pos + pads < 8) {
         state = get_binascii_state(module);
         if (state) {
-            PyErr_SetString(state->Error, "Incorrect padding");
+            PyErr_SetString(state->Incomplete, "Incorrect padding");
         }
         goto error;
     }
@@ -2212,7 +2212,7 @@ binascii_a2b_hex_impl(PyObject *module, Py_buffer *hexstr,
     if (pair_pos) {
         state = get_binascii_state(module);
         if (state) {
-            PyErr_SetString(state->Error, "Odd number of hexadecimal digits");
+            PyErr_SetString(state->Incomplete, "Odd number of hexadecimal digits");
         }
         goto error;
     }
@@ -2570,7 +2570,7 @@ binascii_exec(PyObject *module)
         return -1;
     }
 
-    state->Incomplete = PyErr_NewException("binascii.Incomplete", NULL, NULL);
+    state->Incomplete = PyErr_NewException("binascii.Incomplete", state->Error, NULL);
     if (PyModule_AddObjectRef(module, "Incomplete", state->Incomplete) < 0) {
         return -1;
     }
