@@ -1,3 +1,4 @@
+import ast
 import dis
 from itertools import combinations, product
 import opcode
@@ -6,7 +7,11 @@ import textwrap
 import unittest
 
 from test import support
-from test.support.bytecode_helper import BytecodeTestCase, CfgOptimizationTestCase
+from test.support.bytecode_helper import (
+    BytecodeTestCase,
+    CfgOptimizationTestCase,
+    _testinternalcapi,
+)
 
 
 def compile_pattern_with_fast_locals(pattern):
@@ -961,6 +966,45 @@ class TestMarkingVariablesAsUnKnown(BytecodeTestCase):
 
 
 class DirectCfgOptimizerTests(CfgOptimizationTestCase):
+
+    def test_optimize_cfg_const_index_out_of_range(self):
+        insts = [
+            ('LOAD_CONST', 2, 0),
+            ('RETURN_VALUE', None, 0),
+        ]
+        seq = self.seq_from_insts(insts)
+        with self.assertRaisesRegex(ValueError, "out of range"):
+            _testinternalcapi.optimize_cfg(seq, [0, 1], 0)
+
+    def test_optimize_cfg_consts_must_be_list(self):
+        insts = [
+            ('LOAD_CONST', 0, 0),
+            ('RETURN_VALUE', None, 0),
+        ]
+        seq = self.seq_from_insts(insts)
+        with self.assertRaisesRegex(TypeError, "consts must be a list"):
+            _testinternalcapi.optimize_cfg(seq, (0,), 0)
+
+    def test_compiler_codegen_metadata_consts_roundtrips_optimize_cfg(self):
+        tree = ast.parse("x = (1, 2)", mode="exec", optimize=1)
+        insts, meta = _testinternalcapi.compiler_codegen(tree, "<s>", 0)
+        consts = meta["consts"]
+        self.assertIsInstance(consts, list)
+        _testinternalcapi.optimize_cfg(insts, consts, 0)
+
+    def test_compiler_codegen_consts_include_none_required_for_implicit_return(self):
+        tree = ast.parse("pass", mode="exec", optimize=1)
+        insts, meta = _testinternalcapi.compiler_codegen(tree, "<s>", 0)
+        consts = meta["consts"]
+        self.assertEqual(consts, [None])
+
+        load_const = opcode.opmap["LOAD_CONST"]
+        self.assertEqual(
+            [t[1] for t in insts.get_instructions() if t[0] == load_const],
+            [0],
+        )
+
+        _testinternalcapi.optimize_cfg(insts, list(consts), 0)
 
     def cfg_optimization_test(self, insts, expected_insts,
                               consts=None, expected_consts=None,
