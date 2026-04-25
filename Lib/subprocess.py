@@ -1010,6 +1010,20 @@ def run_pipeline(*commands, input=None, capture_output=False, timeout=None,
     stdin_arg = kwargs.pop('stdin', None)
     stdout_arg = kwargs.pop('stdout', None)
 
+    # Handle text-mode encoding at the pipeline boundary so every parent-side
+    # pipe stays binary. _communicate_streams_* require bytes in/out; leaving
+    # text=/encoding=/errors= in kwargs would make each Popen wrap its pipes
+    # in TextIOWrapper, which breaks the threaded Windows backend's
+    # fh.write(bytes_input)/fh.read()->bytes contract.
+    text_mode = bool(kwargs.pop('text', None)
+                     or kwargs.pop('universal_newlines', None)
+                     or kwargs.get('encoding')
+                     or kwargs.get('errors'))
+    encoding = kwargs.pop('encoding', None)
+    errors_param = kwargs.pop('errors', 'strict')
+    if text_mode and encoding is None:
+        encoding = locale.getencoding()
+
     processes = []
     stderr_reader = None    # File object for reading shared stderr (for parent)
     stderr_write_fd = None  # Write end of shared stderr pipe (for children)
@@ -1071,15 +1085,7 @@ def run_pipeline(*commands, input=None, capture_output=False, timeout=None,
         else:
             endtime = None
 
-        # Determine if we're in text mode (text= or universal_newlines=)
-        text_mode = (kwargs.get('text') or kwargs.get('universal_newlines')
-                     or kwargs.get('encoding') or kwargs.get('errors'))
-        encoding = kwargs.get('encoding')
-        errors_param = kwargs.get('errors', 'strict')
-        if text_mode and encoding is None:
-            encoding = locale.getencoding()
-
-        # Encode input if in text mode
+        # Encode input if in text mode (text_mode/encoding resolved above).
         input_data = input
         if input_data is not None and text_mode:
             input_data = input_data.encode(encoding, errors_param)
