@@ -207,6 +207,7 @@ class PipelineError(SubprocessError):
         failed: List of (index, command, returncode) tuples for failed commands.
     """
     def __init__(self, commands, returncodes, stdout=None, stderr=None):
+        super().__init__(commands, returncodes)
         self.commands = commands
         self.returncodes = returncodes
         self.stdout = stdout
@@ -863,7 +864,7 @@ class PipelineResult:
     @property
     def returncode(self):
         """Return the exit code of the final command in the pipeline."""
-        return self.returncodes[-1] if self.returncodes else None
+        return self.returncodes[-1]
 
     def __repr__(self):
         args = [f'commands={self.commands!r}',
@@ -1040,7 +1041,7 @@ def run_pipeline(*commands, input=None, capture_output=False, timeout=None,
                      or kwargs.get('encoding')
                      or kwargs.get('errors'))
     encoding = kwargs.pop('encoding', None)
-    errors_param = kwargs.pop('errors', 'strict')
+    errors_param = kwargs.pop('errors', None)
     if text_mode and encoding is None:
         encoding = locale.getencoding()
 
@@ -1108,7 +1109,7 @@ def run_pipeline(*commands, input=None, capture_output=False, timeout=None,
         # Encode input if in text mode (text_mode/encoding resolved above).
         input_data = input
         if input_data is not None and text_mode:
-            input_data = input_data.encode(encoding, errors_param)
+            input_data = input_data.encode(encoding, errors_param or 'strict')
 
         # Build list of streams to read from
         read_streams = []
@@ -1145,10 +1146,11 @@ def run_pipeline(*commands, input=None, capture_output=False, timeout=None,
         stderr = results.get(stderr_reader)
 
         # Translate newlines if in text mode (decode and convert \r\n to \n)
+        decode_errors = errors_param or 'strict'
         if text_mode and stdout is not None:
-            stdout = _translate_newlines(stdout, encoding, errors_param)
+            stdout = _translate_newlines(stdout, encoding, decode_errors)
         if text_mode and stderr is not None:
-            stderr = _translate_newlines(stderr, encoding, errors_param)
+            stderr = _translate_newlines(stderr, encoding, decode_errors)
 
         # Wait for all processes to complete (use remaining time from deadline)
         returncodes = []
