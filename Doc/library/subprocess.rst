@@ -308,6 +308,16 @@ underlying :class:`Popen` interface can be used directly.
       and decoding manually with appropriate error handling, or use
       ``errors='replace'`` or ``errors='backslashreplace'``.
 
+   .. note::
+
+      Passing ``stderr=STDOUT`` redirects each child process's stderr to its
+      own stdout file descriptor. For non-final processes in the pipeline
+      this means stderr is merged into the next process's stdin, which is
+      rarely what callers want. Only the final process's stderr ends up at
+      the pipeline's stdout destination. To merge stderr-and-stdout output
+      from the whole pipeline, use ``capture_output=True`` (or pass an
+      explicit file descriptor as *stderr*) instead of ``STDOUT``.
+
    If *stdin* is specified, it is connected to the first command's standard
    input. If *stdout* is specified, it is connected to the last command's
    standard output. When *stdout* is :data:`PIPE`, the output is available
