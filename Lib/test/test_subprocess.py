@@ -2189,6 +2189,27 @@ class PipelineTestCase(BaseTestCase):
                 capture_output=True, timeout=0.1
             )
 
+    @unittest.skipIf(mswindows, "POSIX specific test")
+    def test_pipeline_timeout_stdout_devnull_stderr_pipe(self):
+        """Timeout when stdout=DEVNULL but stderr=PIPE keeps streams distinct.
+
+        Regression: TimeoutExpired.output used to be populated with stderr
+        bytes whenever stdout was not captured.
+        """
+        try:
+            subprocess.run_pipeline(
+                [sys.executable, '-c', 'import time; time.sleep(10)'],
+                [sys.executable, '-c', 'import sys; sys.stdin.read()'],
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.PIPE,
+                timeout=0.1,
+            )
+        except subprocess.TimeoutExpired as e:
+            self.assertIsNone(e.output)
+            self.assertIsInstance(e.stderr, bytes)
+        else:
+            self.fail("TimeoutExpired not raised")
+
     def test_pipeline_error_str(self):
         """Test PipelineError string representation"""
         try:

@@ -431,7 +431,8 @@ def _communicate_io_posix(selector, stdin, input_view, input_offset,
 
 
 def _communicate_streams(stdin=None, input_data=None, read_streams=None,
-                         timeout=None, cmd_for_timeout=None):
+                         timeout=None, cmd_for_timeout=None,
+                         stdout_stream=None, stderr_stream=None):
     """
     Multiplex I/O: write input_data to stdin, read from read_streams.
 
@@ -444,6 +445,12 @@ def _communicate_streams(stdin=None, input_data=None, read_streams=None,
         read_streams: List of readable binary file objects to read from
         timeout: Timeout in seconds, or None for no timeout
         cmd_for_timeout: Value to use for TimeoutExpired.cmd
+        stdout_stream: File object in read_streams that holds stdout data,
+            or None.  Used only to populate TimeoutExpired.output on a
+            partial timeout.
+        stderr_stream: File object in read_streams that holds stderr data,
+            or None.  Used only to populate TimeoutExpired.stderr on a
+            partial timeout.
 
     Returns:
         Dict mapping each file object in read_streams to its bytes data.
@@ -461,10 +468,12 @@ def _communicate_streams(stdin=None, input_data=None, read_streams=None,
 
     if _mswindows:
         return _communicate_streams_windows(
-            stdin, input_data, read_streams, endtime, timeout, cmd_for_timeout)
+            stdin, input_data, read_streams, endtime, timeout, cmd_for_timeout,
+            stdout_stream, stderr_stream)
     else:
         return _communicate_streams_posix(
-            stdin, input_data, read_streams, endtime, timeout, cmd_for_timeout)
+            stdin, input_data, read_streams, endtime, timeout, cmd_for_timeout,
+            stdout_stream, stderr_stream)
 
 
 if _mswindows:
@@ -494,7 +503,8 @@ if _mswindows:
                 result.append(exc)
 
     def _communicate_streams_windows(stdin, input_data, read_streams,
-                                     endtime, orig_timeout, cmd_for_timeout):
+                                     endtime, orig_timeout, cmd_for_timeout,
+                                     stdout_stream=None, stderr_stream=None):
         """Windows implementation using threads."""
         threads = []
         buffers = {}
@@ -527,6 +537,13 @@ if _mswindows:
             t.start()
             threads.append((stream, t))
 
+        def _raise_timeout():
+            results = {s: (b[0] if b else b'') for s, b in buffers.items()}
+            raise TimeoutExpired(
+                cmd_for_timeout, orig_timeout,
+                output=results.get(stdout_stream),
+                stderr=results.get(stderr_stream))
+
         # Join writer thread with timeout first
         if writer_thread is not None:
             remaining = _remaining_time_helper(endtime)
@@ -535,10 +552,7 @@ if _mswindows:
             writer_thread.join(remaining)
             if writer_thread.is_alive():
                 # Timed out during write - collect partial results
-                results = {s: (b[0] if b else b'') for s, b in buffers.items()}
-                raise TimeoutExpired(
-                    cmd_for_timeout, orig_timeout,
-                    output=results.get(read_streams[0]) if read_streams else None)
+                _raise_timeout()
             # Check for write errors
             if writer_result:
                 raise writer_result[0]
@@ -551,17 +565,15 @@ if _mswindows:
             t.join(remaining)
             if t.is_alive():
                 # Collect partial results
-                results = {s: (b[0] if b else b'') for s, b in buffers.items()}
-                raise TimeoutExpired(
-                    cmd_for_timeout, orig_timeout,
-                    output=results.get(read_streams[0]) if read_streams else None)
+                _raise_timeout()
 
         # Collect results
         return {stream: (buf[0] if buf else b'') for stream, buf in buffers.items()}
 
 else:
     def _communicate_streams_posix(stdin, input_data, read_streams,
-                                   endtime, orig_timeout, cmd_for_timeout):
+                                   endtime, orig_timeout, cmd_for_timeout,
+                                   stdout_stream=None, stderr_stream=None):
         """POSIX implementation using selectors."""
         # Build output buffers for each stream
         output_buffers = {stream: [] for stream in read_streams}
@@ -595,7 +607,8 @@ else:
                        for stream, chunks in output_buffers.items()}
             raise TimeoutExpired(
                 cmd_for_timeout, orig_timeout,
-                output=results.get(read_streams[0]) if read_streams else None)
+                output=results.get(stdout_stream),
+                stderr=results.get(stderr_stream))
 
         # Build results and close all file objects
         results = {}
@@ -1108,6 +1121,8 @@ def run_pipeline(*commands, input=None, capture_output=False, timeout=None,
                 read_streams=read_streams,
                 timeout=_remaining_time_helper(endtime),
                 cmd_for_timeout=commands,
+                stdout_stream=last_proc.stdout,
+                stderr_stream=stderr_reader,
             )
         except TimeoutExpired:
             # Kill all processes on timeout
