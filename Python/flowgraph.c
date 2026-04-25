@@ -1244,6 +1244,14 @@ get_const_value(int opcode, int oparg, PyObject *co_consts)
     PyObject *constant = NULL;
     assert(OPCODE_HAS_CONST(opcode));
     if (opcode == LOAD_CONST) {
+        assert(PyList_Check(co_consts));
+        Py_ssize_t n = PyList_GET_SIZE(co_consts);
+        if (oparg < 0 || oparg >= n) {
+            PyErr_Format(PyExc_ValueError,
+                         "LOAD_CONST index %d is out of range for consts (len=%zd)",
+                         oparg, n);
+            return NULL;
+        }
         constant = PyList_GET_ITEM(co_consts, oparg);
     }
 
@@ -2045,6 +2053,12 @@ remove_unused_consts(basicblock *entryblock, PyObject *consts)
         for (int i = 0; i < b->b_iused; i++) {
             if (OPCODE_HAS_CONST(b->b_instr[i].i_opcode)) {
                 int index = b->b_instr[i].i_oparg;
+                if (index < 0 || index >= nconsts) {
+                    PyErr_Format(PyExc_ValueError,
+                                 "LOAD_CONST index %d is out of range for consts (len=%zd)",
+                                 index, nconsts);
+                    goto end;
+                }
                 index_map[index] = index;
             }
         }
