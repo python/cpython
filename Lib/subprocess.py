@@ -1176,12 +1176,15 @@ def run_pipeline(*commands, input=None, capture_output=False, timeout=None,
         return result
 
     finally:
-        # Ensure all processes are cleaned up
+        # Ensure all processes are cleaned up: kill all surviving children
+        # before waiting on any, so a hung wait() can't leave later
+        # children un-killed.
         for proc in processes:
             if proc.poll() is None:
                 proc.kill()
-                proc.wait()
-            # Close any open file handles
+        for proc in processes:
+            proc.wait()
+        for proc in processes:
             if proc.stdin and not proc.stdin.closed:
                 proc.stdin.close()
             if proc.stdout and not proc.stdout.closed:
