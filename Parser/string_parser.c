@@ -182,7 +182,7 @@ decode_unicode_with_escapes(Parser *parser, const char *s, size_t len, Token *t)
             w_len = PyUnicode_GET_LENGTH(w);
             for (i = 0; i < w_len; i++) {
                 Py_UCS4 chr = PyUnicode_READ(kind, data, i);
-                sprintf(p, "\\U%08x", chr);
+                snprintf(p, 11, "\\U%08x", chr);
                 p += 10;
             }
             /* Should be impossible to overflow */
