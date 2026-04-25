@@ -91,7 +91,7 @@ The :mod:`!binascii` module defines the following functions:
       Added the *strict_mode* parameter.
 
    .. versionchanged:: 3.15
-      Added the *alphabet*, *ignorechars*, *padded*, and *canonical* parameters.
+      Added the *alphabet*, *canonical*, *ignorechars*, and *padded* parameters.
 
 
 .. function:: b2a_base64(data, *, padded=True, alphabet=BASE64_ALPHABET, wrapcol=0, newline=True)
@@ -122,7 +122,7 @@ The :mod:`!binascii` module defines the following functions:
    Convert Ascii85 data back to binary and return the binary data.
 
    Valid Ascii85 data contains characters from the Ascii85 alphabet in groups
-   of five (except for the final group, which may have from two to four
+   of five (except for the final group, which may have from two to five
    characters). Each group encodes 32 bits of binary data in the range from
    ``0`` to ``2 ** 32 - 1``, inclusive. The special character ``z`` is
    accepted as a short form of the group ``!!!!!``, which encodes four
@@ -148,11 +148,6 @@ The :mod:`!binascii` module defines the following functions:
    Invalid Ascii85 data will raise :exc:`binascii.Error`.
 
    .. versionadded:: 3.15
-
-   .. versionchanged:: next
-      Single-character final groups are now always rejected as encoding
-      violations. Previously they were silently ignored, producing no output
-      bytes.
 
 
 .. function:: b2a_ascii85(data, /, *, foldspaces=False, wrapcol=0, pad=False, adobe=False)
@@ -184,7 +179,7 @@ The :mod:`!binascii` module defines the following functions:
    More than one line may be passed at a time.
 
    Valid Base85 data contains characters from the Base85 alphabet in groups
-   of five (except for the final group, which may have from two to four
+   of five (except for the final group, which may have from two to five
    characters). Each group encodes 32 bits of binary data in the range from
    ``0`` to ``2 ** 32 - 1``, inclusive. A single-character final group is
    always rejected as an encoding violation.
@@ -202,11 +197,6 @@ The :mod:`!binascii` module defines the following functions:
    Invalid Base85 data will raise :exc:`binascii.Error`.
 
    .. versionadded:: 3.15
-
-   .. versionchanged:: next
-      Single-character final groups are now always rejected as encoding
-      violations. Previously they were silently ignored, producing no output
-      bytes.
 
 
 .. function:: b2a_base85(data, /, *, alphabet=BASE85_ALPHABET, wrapcol=0, pad=False)

@@ -118,7 +118,7 @@ POST request.
    For more information about the strict base64 check, see :func:`binascii.a2b_base64`
 
    .. versionchanged:: 3.15
-      Added the *ignorechars*, *padded*, and *canonical* parameters.
+      Added the *canonical*, *ignorechars*, and *padded* parameters.
 
    .. deprecated:: 3.15
       Accepting the ``+`` and ``/`` characters with an alternative alphabet
@@ -216,7 +216,7 @@ POST request.
    input.
 
    .. versionchanged:: 3.15
-      Added the *ignorechars*, *padded*, and *canonical* parameters.
+      Added the *canonical*, *ignorechars*, and *padded* parameters.
 
 
 .. function:: b32hexencode(s, *, padded=True, wrapcol=0)
@@ -243,7 +243,7 @@ POST request.
    .. versionadded:: 3.10
 
    .. versionchanged:: 3.15
-      Added the *ignorechars*, *padded*, and *canonical* parameters.
+      Added the *canonical*, *ignorechars*, and *padded* parameters.
 
 
 .. function:: b16encode(s, *, wrapcol=0)
@@ -384,7 +384,7 @@ Refer to the documentation of the individual functions for more information.
    .. versionadded:: 3.4
 
    .. versionchanged:: 3.15
-      Added the *ignorechars* and *canonical* parameters.
+      Added the *canonical* and *ignorechars* parameters.
       Single-character final groups are now always rejected as encoding
       violations.
 
@@ -426,7 +426,7 @@ Refer to the documentation of the individual functions for more information.
    .. versionadded:: 3.13
 
    .. versionchanged:: 3.15
-      Added the *ignorechars* and *canonical* parameters.
+      Added the *canonical* and *ignorechars* parameters.
       Single-character final groups are now always rejected as encoding
       violations.
 
