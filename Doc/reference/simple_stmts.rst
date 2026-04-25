@@ -949,9 +949,9 @@ Python versions older than 3.15 while using lazy imports in 3.15+::
 
 Relative imports are resolved to their absolute name before the lookup, so
 :attr:`!__lazy_modules__` must always contain fully qualified module names.
-For ``from``-style imports, the name to list is the module being imported
-*from* (the base module, left of the ``import`` keyword), not the names
-imported from it::
+
+For ``from``-style imports, the relevant name is the module following
+``from``, not the names of its members::
 
    # In mypackage/mymodule.py
    __lazy_modules__ = ["mypackage", "mypackage.sub.utils"]
