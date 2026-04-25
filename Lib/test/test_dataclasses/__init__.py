@@ -71,7 +71,7 @@ class TestCase(unittest.TestCase):
         expected_output = "Field(name='id',type=None," \
                            f"default=1,default_factory={MISSING!r}," \
                            "init=True,repr=False,hash=None," \
-                           "compare=True,metadata=mappingproxy({})," \
+                           "compare=True,metadata=frozendict()," \
                            f"kw_only={MISSING!r}," \
                            "doc='Docstring'," \
                            "_field_type=None)"
@@ -927,6 +927,20 @@ class TestCase(unittest.TestCase):
 
         validate_class(C)
 
+    def test_incomplete_annotations(self):
+        # gh-142214
+        @dataclass
+        class C:
+            "doc"  # needed because otherwise we fetch the annotations at the wrong time
+            x: int
+
+        C.__annotate__ = lambda _: {}
+
+        self.assertEqual(
+            annotationlib.get_annotations(C.__init__),
+            {"return": None}
+        )
+
     def test_missing_default(self):
         # Test that MISSING works the same as a default not being
         #  specified.
@@ -1679,17 +1693,24 @@ class TestCase(unittest.TestCase):
         class GroupDict:
             id: int
             users: Dict[str, User]
+        @dataclass
+        class GroupFrozenDict:
+            id: int
+            users: frozendict[str, User]
         a = User('Alice', 1)
         b = User('Bob', 2)
         gl = GroupList(0, [a, b])
         gt = GroupTuple(0, (a, b))
         gd = GroupDict(0, {'first': a, 'second': b})
+        gfd = GroupFrozenDict(0, frozendict({'first': a, 'second': b}))
         self.assertEqual(asdict(gl), {'id': 0, 'users': [{'name': 'Alice', 'id': 1},
                                                          {'name': 'Bob', 'id': 2}]})
         self.assertEqual(asdict(gt), {'id': 0, 'users': ({'name': 'Alice', 'id': 1},
                                                          {'name': 'Bob', 'id': 2})})
-        self.assertEqual(asdict(gd), {'id': 0, 'users': {'first': {'name': 'Alice', 'id': 1},
-                                                         'second': {'name': 'Bob', 'id': 2}}})
+        expected_dict = {'id': 0, 'users': {'first': {'name': 'Alice', 'id': 1},
+                                            'second': {'name': 'Bob', 'id': 2}}}
+        self.assertEqual(asdict(gd), expected_dict)
+        self.assertEqual(asdict(gfd), expected_dict)
 
     def test_helper_asdict_builtin_object_containers(self):
         @dataclass
@@ -1870,14 +1891,21 @@ class TestCase(unittest.TestCase):
         class GroupDict:
             id: int
             users: Dict[str, User]
+        @dataclass
+        class GroupFrozenDict:
+            id: int
+            users: frozendict[str, User]
         a = User('Alice', 1)
         b = User('Bob', 2)
         gl = GroupList(0, [a, b])
         gt = GroupTuple(0, (a, b))
         gd = GroupDict(0, {'first': a, 'second': b})
+        gfd = GroupFrozenDict(0, frozendict({'first': a, 'second': b}))
         self.assertEqual(astuple(gl), (0, [('Alice', 1), ('Bob', 2)]))
         self.assertEqual(astuple(gt), (0, (('Alice', 1), ('Bob', 2))))
-        self.assertEqual(astuple(gd), (0, {'first': ('Alice', 1), 'second': ('Bob', 2)}))
+        d = {'first': ('Alice', 1), 'second': ('Bob', 2)}
+        self.assertEqual(astuple(gd), (0, d))
+        self.assertEqual(astuple(gfd), (0, frozendict(d)))
 
     def test_helper_astuple_builtin_object_containers(self):
         @dataclass
@@ -2578,6 +2606,20 @@ class TestInitAnnotate(unittest.TestCase):
 
         self.assertFalse(hasattr(E.__init__.__annotate__, "__generated_by_dataclasses__"))
 
+    def test_slots_true_init_false(self):
+        # Test that slots=True and init=False work together and
+        #  that __annotate__ is not added to __init__.
+
+        @dataclass(slots=True, init=False)
+        class F:
+            x: int
+
+        f = F()
+        f.x = 10
+        self.assertEqual(f.x, 10)
+
+        self.assertFalse(hasattr(F.__init__, "__annotate__"))
+
     def test_init_false_forwardref(self):
         # Test forward references in fields not required for __init__ annotations.
 
@@ -3024,29 +3066,41 @@ class TestHash(unittest.TestCase):
 
 
 class TestFrozen(unittest.TestCase):
-    def test_frozen(self):
-        @dataclass(frozen=True)
-        class C:
-            i: int
+    # Some tests have a subtest with a slotted dataclass.
+    # See https://github.com/python/cpython/issues/105936 for the reasons.
 
-        c = C(10)
-        self.assertEqual(c.i, 10)
-        with self.assertRaises(FrozenInstanceError):
-            c.i = 5
-        self.assertEqual(c.i, 10)
+    def test_frozen(self):
+        for slots in (False, True):
+            with self.subTest(slots=slots):
+
+                @dataclass(frozen=True, slots=slots)
+                class C:
+                    i: int
+
+                c = C(10)
+                self.assertEqual(c.i, 10)
+                with self.assertRaises(FrozenInstanceError):
+                    c.i = 5
+                self.assertEqual(c.i, 10)
+                with self.assertRaises(FrozenInstanceError):
+                    del c.i
+                self.assertEqual(c.i, 10)
 
     def test_frozen_empty(self):
-        @dataclass(frozen=True)
-        class C:
-            pass
+        for slots in (False, True):
+            with self.subTest(slots=slots):
 
-        c = C()
-        self.assertNotHasAttr(c, 'i')
-        with self.assertRaises(FrozenInstanceError):
-            c.i = 5
-        self.assertNotHasAttr(c, 'i')
-        with self.assertRaises(FrozenInstanceError):
-            del c.i
+                @dataclass(frozen=True, slots=slots)
+                class C:
+                    pass
+
+                c = C()
+                self.assertNotHasAttr(c, 'i')
+                with self.assertRaises(FrozenInstanceError):
+                    c.i = 5
+                self.assertNotHasAttr(c, 'i')
+                with self.assertRaises(FrozenInstanceError):
+                    del c.i
 
     def test_inherit(self):
         @dataclass(frozen=True)
@@ -3242,41 +3296,43 @@ class TestFrozen(unittest.TestCase):
                 d.i = 5
 
     def test_non_frozen_normal_derived(self):
-        # See bpo-32953.
+        # See bpo-32953 and https://github.com/python/cpython/issues/105936
+        for slots in (False, True):
+            with self.subTest(slots=slots):
 
-        @dataclass(frozen=True)
-        class D:
-            x: int
-            y: int = 10
+                @dataclass(frozen=True, slots=slots)
+                class D:
+                    x: int
+                    y: int = 10
 
-        class S(D):
-            pass
+                class S(D):
+                    pass
 
-        s = S(3)
-        self.assertEqual(s.x, 3)
-        self.assertEqual(s.y, 10)
-        s.cached = True
+                s = S(3)
+                self.assertEqual(s.x, 3)
+                self.assertEqual(s.y, 10)
+                s.cached = True
 
-        # But can't change the frozen attributes.
-        with self.assertRaises(FrozenInstanceError):
-            s.x = 5
-        with self.assertRaises(FrozenInstanceError):
-            s.y = 5
-        self.assertEqual(s.x, 3)
-        self.assertEqual(s.y, 10)
-        self.assertEqual(s.cached, True)
+                # But can't change the frozen attributes.
+                with self.assertRaises(FrozenInstanceError):
+                    s.x = 5
+                with self.assertRaises(FrozenInstanceError):
+                    s.y = 5
+                self.assertEqual(s.x, 3)
+                self.assertEqual(s.y, 10)
+                self.assertEqual(s.cached, True)
 
-        with self.assertRaises(FrozenInstanceError):
-            del s.x
-        self.assertEqual(s.x, 3)
-        with self.assertRaises(FrozenInstanceError):
-            del s.y
-        self.assertEqual(s.y, 10)
-        del s.cached
-        self.assertNotHasAttr(s, 'cached')
-        with self.assertRaises(AttributeError) as cm:
-            del s.cached
-        self.assertNotIsInstance(cm.exception, FrozenInstanceError)
+                with self.assertRaises(FrozenInstanceError):
+                    del s.x
+                self.assertEqual(s.x, 3)
+                with self.assertRaises(FrozenInstanceError):
+                    del s.y
+                self.assertEqual(s.y, 10)
+                del s.cached
+                self.assertNotHasAttr(s, 'cached')
+                with self.assertRaises(AttributeError) as cm:
+                    del s.cached
+                self.assertNotIsInstance(cm.exception, FrozenInstanceError)
 
     def test_non_frozen_normal_derived_from_empty_frozen(self):
         @dataclass(frozen=True)
@@ -3943,6 +3999,14 @@ class TestSlots(unittest.TestCase):
 
             return SlotsTest
 
+        # See https://github.com/python/cpython/issues/135228#issuecomment-3755979059
+        def make_frozen():
+            @dataclass(frozen=True, slots=True)
+            class SlotsTest:
+                pass
+
+            return SlotsTest
+
         def make_with_annotations():
             @dataclass(slots=True)
             class SlotsTest:
@@ -3968,7 +4032,7 @@ class TestSlots(unittest.TestCase):
 
             return SlotsTest
 
-        for make in (make_simple, make_with_annotations, make_with_annotations_and_method, make_with_forwardref):
+        for make in (make_simple, make_frozen, make_with_annotations, make_with_annotations_and_method, make_with_forwardref):
             with self.subTest(make=make):
                 C = make()
                 support.gc_collect()
@@ -5310,6 +5374,52 @@ class TestZeroArgumentSuperWithSlots(unittest.TestCase):
         # in A.foo() to B.  This normally isn't a problem, because no
         # one will be keeping a reference to the underlying class A.
         self.assertIs(A().cls(), B)
+
+    def test_empty_class_cell(self):
+        # gh-148947: Make sure that we explicitly handle the empty class cell.
+        def maker():
+            if False:
+                __class__ = 42
+
+            def method(self):
+                return __class__
+            return method
+
+        from dataclasses import dataclass
+
+        @dataclass(slots=True)
+        class X:
+            a: int
+
+            meth = maker()
+
+        with self.assertRaisesRegex(NameError, '__class__'):
+            X(1).meth()
+
+    def test_class_cell_from_other_class(self):
+        # This test fails without the "is oldcls" check in
+        # _update_func_cell_for__class__.
+        class Base:
+            def meth(self):
+                return "Base"
+
+        class Child(Base):
+            def meth(self):
+                return super().meth() + " Child"
+
+        @dataclass(slots=True)
+        class DC(Child):
+            a: int
+
+            meth = Child.meth
+
+        closure = DC.meth.__closure__
+        self.assertEqual(len(closure), 1)
+        self.assertIs(closure[0].cell_contents, Child)
+
+        self.assertEqual(DC(1).meth(), "Base Child")
+
+
 
 if __name__ == '__main__':
     unittest.main()

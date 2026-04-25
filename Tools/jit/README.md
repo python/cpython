@@ -9,7 +9,12 @@ Python 3.11 or newer is required to build the JIT.
 
 The JIT compiler does not require end users to install any third-party dependencies, but part of it must be *built* using LLVM[^why-llvm]. You are *not* required to build the rest of CPython using LLVM, or even the same version of LLVM (in fact, this is uncommon).
 
-LLVM version 21 is the officially supported version. You can modify if needed using the `LLVM_VERSION` env var during configure. Both `clang` and `llvm-readobj` need to be installed and discoverable (version suffixes, like `clang-19`, are okay). It's highly recommended that you also have `llvm-objdump` available, since this allows the build script to dump human-readable assembly for the generated code.
+LLVM version 21 is the officially supported version. Both `clang` and `llvm-readobj` need to be installed and discoverable (version suffixes, like `clang-21`, are okay). It's highly recommended that you also have `llvm-objdump` available, since this allows the build script to dump human-readable assembly for the generated code.
+
+You can customize the LLVM configuration using environment variables before running configure:
+
+- LLVM_VERSION: Specify a different LLVM version (default: 21)
+- LLVM_TOOLS_INSTALL_DIR: Point to a specific LLVM installation prefix when multiple installations exist (the tools are expected in `<dir>/bin`)
 
 It's easy to install all of the required tools:
 
@@ -43,6 +48,15 @@ Homebrew won't add any of the tools to your `$PATH`. That's okay; the build scri
 
 LLVM is downloaded automatically (along with other external binary dependencies) by `PCbuild\build.bat`.
 
+By default, the architecture of the LLVM tools is auto-detected based on the host machine. To override this, set the `PreferredToolArchitecture` environment variable before building:
+
+```sh
+set PreferredToolArchitecture=AMD64
+PCbuild\build.bat --experimental-jit
+```
+
+Valid values are`x64`, `x86` and `ARM64`.
+
 Otherwise, you can install LLVM 21 [by searching for it on LLVM's GitHub releases page](https://github.com/llvm/llvm-project/releases?q=21), clicking on "Assets", downloading the appropriate Windows installer for your platform (likely the file ending with `-win64.exe`), and running it. **When installing, be sure to select the option labeled "Add LLVM to the system PATH".**
 
 Alternatively, you can use [chocolatey](https://chocolatey.org):
@@ -53,7 +67,7 @@ choco install llvm --version=21.1.0
 
 ### Dev Containers
 
-If you are working on CPython in a [Codespaces instance](https://devguide.python.org/getting-started/setup-building/#using-codespaces), there's no 
+If you are working on CPython in a [Codespaces instance](https://devguide.python.org/getting-started/setup-building/#using-codespaces), there's no
 need to install LLVM as the Fedora 43 base image includes LLVM 21 out of the box.
 
 ## Building
@@ -72,3 +86,8 @@ If you're looking for information on how to update the JIT build dependencies, s
 [^pep-744]: [PEP 744](https://peps.python.org/pep-0744/)
 
 [^why-llvm]: Clang is specifically needed because it's the only C compiler with support for guaranteed tail calls (`musttail`), which are required by CPython's continuation-passing-style approach to JIT compilation. Since LLVM also includes other functionalities we need (namely, object file parsing and disassembly), it's convenient to only support one toolchain at this time.
+
+### Understanding JIT behavior
+
+The [example_trace_dump.py](./example_trace_dump.py) script will (when configured as described in the script) dump out the
+executors for a range of tiny programs to show the behavior of the JIT front-end.

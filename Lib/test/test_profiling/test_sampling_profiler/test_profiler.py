@@ -1,6 +1,7 @@
 """Tests for sampling profiler core functionality."""
 
 import io
+import re
 from unittest import mock
 import unittest
 
@@ -223,6 +224,46 @@ class TestSampleProfiler(unittest.TestCase):
             # Should warn about missed samples
             self.assertIn("Warning: missed", result)
             self.assertIn("samples from the expected total", result)
+
+    def test_sample_profiler_keyboard_interrupt(self):
+        mock_unwinder = mock.MagicMock()
+        mock_unwinder.get_stack_trace.side_effect = [
+            [
+                (
+                    1,
+                    [
+                        mock.MagicMock(
+                            filename="test.py", lineno=10, funcname="test_func"
+                        )
+                    ],
+                )
+            ],
+            KeyboardInterrupt(),
+        ]
+
+        with mock.patch(
+            "_remote_debugging.RemoteUnwinder"
+        ) as mock_unwinder_class:
+            mock_unwinder_class.return_value = mock_unwinder
+            profiler = SampleProfiler(
+                pid=12345, sample_interval_usec=10000, all_threads=False
+            )
+            mock_collector = mock.MagicMock()
+            times = [0.0, 0.01, 0.02, 0.03, 0.04]
+            with mock.patch("time.perf_counter", side_effect=times):
+                with io.StringIO() as output:
+                    with mock.patch("sys.stdout", output):
+                        try:
+                            profiler.sample(mock_collector, duration_sec=1.0)
+                        except KeyboardInterrupt:
+                            self.fail(
+                                "KeyboardInterrupt was not handled by the profiler"
+                            )
+                    result = output.getvalue()
+            self.assertIn("Interrupted by user.", result)
+            self.assertIn("Captured", result)
+            self.assertIn("samples", result)
+            self.assertNotIn("Warning: missed", result)
 
 
 @force_not_colorized_test_class
@@ -551,7 +592,6 @@ class TestPrintSampledStats(unittest.TestCase):
 
         # Extract just the function names for comparison
         func_names = []
-        import re
 
         for line in data_lines:
             # Function name is between the last ( and ), accounting for ANSI color codes

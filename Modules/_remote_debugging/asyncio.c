@@ -6,6 +6,7 @@
  ******************************************************************************/
 
 #include "_remote_debugging.h"
+#include "debug_offsets_validation.h"
 
 /* ============================================================================
  * ASYNCIO DEBUG ADDRESS FUNCTIONS
@@ -18,7 +19,8 @@ _Py_RemoteDebug_GetAsyncioDebugAddress(proc_handle_t* handle)
 
 #ifdef MS_WINDOWS
     // On Windows, search for asyncio debug in executable or DLL
-    address = search_windows_map_for_section(handle, "AsyncioD", L"_asyncio");
+    address = search_windows_map_for_section(handle, "AsyncioD", L"_asyncio",
+                                             NULL);
     if (address == 0) {
         // Error out: 'python' substring covers both executable and DLL
         PyObject *exc = PyErr_GetRaisedException();
@@ -27,7 +29,8 @@ _Py_RemoteDebug_GetAsyncioDebugAddress(proc_handle_t* handle)
     }
 #elif defined(__linux__) && HAVE_PROCESS_VM_READV
     // On Linux, search for asyncio debug in executable or DLL
-    address = search_linux_map_for_section(handle, "AsyncioDebug", "python");
+    address = search_linux_map_for_section(handle, "AsyncioDebug", "python",
+                                           NULL);
     if (address == 0) {
         // Error out: 'python' substring covers both executable and DLL
         PyObject *exc = PyErr_GetRaisedException();
@@ -36,10 +39,12 @@ _Py_RemoteDebug_GetAsyncioDebugAddress(proc_handle_t* handle)
     }
 #elif defined(__APPLE__) && TARGET_OS_OSX
     // On macOS, try libpython first, then fall back to python
-    address = search_map_for_section(handle, "AsyncioDebug", "libpython");
+    address = search_map_for_section(handle, "AsyncioDebug", "libpython",
+                                     NULL);
     if (address == 0) {
         PyErr_Clear();
-        address = search_map_for_section(handle, "AsyncioDebug", "python");
+        address = search_map_for_section(handle, "AsyncioDebug", "python",
+                                         NULL);
     }
     if (address == 0) {
         // Error out: 'python' substring covers both executable and DLL
@@ -67,8 +72,39 @@ read_async_debug(RemoteUnwinderObject *unwinder)
     int result = _Py_RemoteDebug_PagedReadRemoteMemory(&unwinder->handle, async_debug_addr, size, &unwinder->async_debug_offsets);
     if (result < 0) {
         set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to read AsyncioDebug offsets");
+        return result;
     }
-    return result;
+    if (_PyRemoteDebug_ValidateAsyncDebugOffsets(&unwinder->async_debug_offsets) < 0) {
+        set_exception_cause(unwinder, PyExc_RuntimeError, "Invalid AsyncioDebug offsets");
+        return PY_REMOTE_DEBUG_INVALID_ASYNC_DEBUG_OFFSETS;
+    }
+    return 0;
+}
+
+int
+ensure_async_debug_offsets(RemoteUnwinderObject *unwinder)
+{
+    // If already available, nothing to do
+    if (unwinder->async_debug_offsets_available) {
+        return 0;
+    }
+
+    // Try to load async debug offsets (the target process may have
+    // loaded asyncio since we last checked)
+    int result = read_async_debug(unwinder);
+    if (result == PY_REMOTE_DEBUG_INVALID_ASYNC_DEBUG_OFFSETS) {
+        return -1;
+    }
+    if (result < 0) {
+        PyErr_Clear();
+        PyErr_SetString(PyExc_RuntimeError, "AsyncioDebug section not available");
+        set_exception_cause(unwinder, PyExc_RuntimeError,
+            "AsyncioDebug section unavailable - asyncio module may not be loaded in target process");
+        return -1;
+    }
+
+    unwinder->async_debug_offsets_available = 1;
+    return 0;
 }
 
 /* ============================================================================
@@ -90,8 +126,17 @@ iterate_set_entries(
     }
 
     Py_ssize_t num_els = GET_MEMBER(Py_ssize_t, set_object, unwinder->debug_offsets.set_object.used);
-    Py_ssize_t set_len = GET_MEMBER(Py_ssize_t, set_object, unwinder->debug_offsets.set_object.mask) + 1;
+    Py_ssize_t mask = GET_MEMBER(Py_ssize_t, set_object, unwinder->debug_offsets.set_object.mask);
     uintptr_t table_ptr = GET_MEMBER(uintptr_t, set_object, unwinder->debug_offsets.set_object.table);
+
+    // Validate mask and num_els to prevent huge loop iterations from garbage data
+    if (mask < 0 || mask >= MAX_SET_TABLE_SIZE || num_els < 0 || num_els > mask + 1) {
+        PyErr_SetString(PyExc_RuntimeError, "Invalid set object (corrupted remote memory)");
+        set_exception_cause(unwinder, PyExc_RuntimeError,
+            "Invalid set object (corrupted remote memory)");
+        return -1;
+    }
+    Py_ssize_t set_len = mask + 1;
 
     Py_ssize_t i = 0;
     Py_ssize_t els = 0;
@@ -177,7 +222,7 @@ parse_task_name(
             set_exception_cause(unwinder, PyExc_RuntimeError, "Task name PyLong parsing failed");
             return NULL;
         }
-        return PyUnicode_FromFormat("Task-%d", res);
+        return PyUnicode_FromFormat("Task-%ld", res);
     }
 
     if(!(GET_MEMBER(unsigned long, type_obj, unwinder->debug_offsets.type_object.tp_flags) & Py_TPFLAGS_UNICODE_SUBCLASS)) {
@@ -230,7 +275,7 @@ handle_yield_from_frame(
         uintptr_t gi_await_addr;
         err = read_py_ptr(
             unwinder,
-            stackpointer_addr - sizeof(void*),
+            stackpointer_addr - sizeof(void*) * 2,
             &gi_await_addr);
         if (err) {
             set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to read gi_await address");
@@ -790,14 +835,15 @@ append_awaited_by_for_thread(
             return -1;
         }
 
-        if (GET_MEMBER(uintptr_t, task_node, unwinder->debug_offsets.llist_node.next) == 0) {
+        uintptr_t next_node = GET_MEMBER(uintptr_t, task_node, unwinder->debug_offsets.llist_node.next);
+        if (next_node == 0) {
             PyErr_SetString(PyExc_RuntimeError,
                            "Invalid linked list structure reading remote memory");
             set_exception_cause(unwinder, PyExc_RuntimeError, "NULL pointer in task linked list");
             return -1;
         }
 
-        uintptr_t task_addr = (uintptr_t)GET_MEMBER(uintptr_t, task_node, unwinder->debug_offsets.llist_node.next)
+        uintptr_t task_addr = next_node
             - (uintptr_t)unwinder->async_debug_offsets.asyncio_task_object.task_node;
 
         if (process_single_task_node(unwinder, task_addr, NULL, result) < 0) {
@@ -808,7 +854,7 @@ append_awaited_by_for_thread(
         // Read next node
         if (_Py_RemoteDebug_PagedReadRemoteMemory(
                 &unwinder->handle,
-                (uintptr_t)GET_MEMBER(uintptr_t, task_node, unwinder->debug_offsets.llist_node.next),
+                next_node,
                 sizeof(task_node),
                 task_node) < 0) {
             set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to read next task node in awaited_by");
@@ -904,6 +950,9 @@ process_running_task_chain(
     PyObject *coro_chain = PyStructSequence_GET_ITEM(task_info, 2);
     assert(coro_chain != NULL);
     if (PyList_GET_SIZE(coro_chain) != 1) {
+        PyErr_Format(PyExc_RuntimeError,
+            "Expected single-item coro chain, got %zd items",
+            PyList_GET_SIZE(coro_chain));
         set_exception_cause(unwinder, PyExc_RuntimeError, "Coro chain is not a single item");
         return -1;
     }
