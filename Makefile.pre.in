@@ -290,6 +290,7 @@ LDLIBRARYDIR=   @LDLIBRARYDIR@
 INSTSONAME=	@INSTSONAME@
 LIBRARY_DEPS=	@LIBRARY_DEPS@
 LINK_PYTHON_DEPS=@LINK_PYTHON_DEPS@
+JIT_OBJS=	@JIT_SHIM_O@
 PY_ENABLE_SHARED=	@PY_ENABLE_SHARED@
 STATIC_LIBPYTHON=	@STATIC_LIBPYTHON@
 
@@ -469,6 +470,7 @@ PYTHON_OBJS=	\
 		Python/instruction_sequence.o \
 		Python/intrinsics.o \
 		Python/jit.o \
+		$(JIT_OBJS) \
 		Python/legacy_tracing.o \
 		Python/lock.o \
 		Python/marshal.o \
@@ -1214,6 +1216,7 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/osdefs.h \
 		$(srcdir)/Include/osmodule.h \
 		$(srcdir)/Include/patchlevel.h \
+		$(srcdir)/Include/pyabi.h \
 		$(srcdir)/Include/pyatomic.h \
 		$(srcdir)/Include/pybuffer.h \
 		$(srcdir)/Include/pycapsule.h \
@@ -3203,21 +3206,37 @@ Python/emscripten_trampoline_inner.wasm: $(srcdir)/Python/emscripten_trampoline_
 Python/emscripten_trampoline_wasm.c: Python/emscripten_trampoline_inner.wasm
 	$(PYTHON_FOR_REGEN) $(srcdir)/Platforms/emscripten/prepare_external_wasm.py $< $@ getWasmTrampolineModule
 
+JIT_SHIM_BUILD_OBJS=	@JIT_SHIM_BUILD_O@
+JIT_BUILD_TARGETS=	jit_stencils.h @JIT_STENCILS_H@ $(JIT_SHIM_BUILD_OBJS)
+JIT_TARGETS=	$(JIT_BUILD_TARGETS) $(filter-out $(JIT_SHIM_BUILD_OBJS),$(JIT_OBJS))
+JIT_GENERATED_STAMP=	.jit-stamp
+
 JIT_DEPS = \
 		$(srcdir)/Tools/jit/*.c \
+		$(srcdir)/Tools/jit/*.h \
 		$(srcdir)/Tools/jit/*.py \
 		$(srcdir)/Python/executor_cases.c.h \
 		pyconfig.h
 
-jit_stencils.h @JIT_STENCILS_H@: $(JIT_DEPS)
+$(JIT_GENERATED_STAMP): $(JIT_DEPS)
 	@REGEN_JIT_COMMAND@
+	@touch $@
+
+$(JIT_BUILD_TARGETS): $(JIT_GENERATED_STAMP)
+	@if test ! -f "$@"; then \
+		rm -f $(JIT_GENERATED_STAMP); \
+		$(MAKE) $(JIT_GENERATED_STAMP); \
+		test -f "$@"; \
+	fi
+
+jit_shim-universal2-apple-darwin.o: jit_shim-aarch64-apple-darwin.o jit_shim-x86_64-apple-darwin.o
+	lipo -create -output $@ jit_shim-aarch64-apple-darwin.o jit_shim-x86_64-apple-darwin.o
 
 Python/jit.o: $(srcdir)/Python/jit.c @JIT_STENCILS_H@
 	$(CC) -c $(PY_CORE_CFLAGS) -o $@ $<
 
 .PHONY: regen-jit
-regen-jit:
-	@REGEN_JIT_COMMAND@
+regen-jit: $(JIT_TARGETS)
 
 # Some make's put the object file in the current directory
 .c.o:
@@ -3341,7 +3360,7 @@ clean-profile: clean-retain-profile clean-bolt
 # gh-141808: The JIT stencils are deliberately kept in clean-profile
 .PHONY: clean-jit-stencils
 clean-jit-stencils:
-	-rm -f jit_stencils*.h
+	-rm -f $(JIT_TARGETS) $(JIT_GENERATED_STAMP) jit_stencils*.h jit_shim*.o
 
 .PHONY: clean
 clean: clean-profile clean-jit-stencils

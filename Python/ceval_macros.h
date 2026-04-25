@@ -220,14 +220,14 @@ do { \
         DISPATCH_GOTO_NON_TRACING(); \
     }
 
-#define DISPATCH_INLINED(NEW_FRAME)                     \
-    do {                                                \
-        assert(tstate->interp->eval_frame == NULL);     \
-        _PyFrame_SetStackPointer(frame, stack_pointer); \
-        assert((NEW_FRAME)->previous == frame);         \
-        frame = tstate->current_frame = (NEW_FRAME);     \
-        CALL_STAT_INC(inlined_py_calls);                \
-        JUMP_TO_LABEL(start_frame);                      \
+#define DISPATCH_INLINED(NEW_FRAME)                              \
+    do {                                                         \
+        assert(!IS_PEP523_HOOKED(tstate));                       \
+        _PyFrame_SetStackPointer(frame, stack_pointer);          \
+        assert((NEW_FRAME)->previous == frame);                  \
+        frame = tstate->current_frame = (NEW_FRAME);             \
+        CALL_STAT_INC(inlined_py_calls);                         \
+        JUMP_TO_LABEL(start_frame);                              \
     } while (0)
 
 /* Tuple access macros */
