@@ -1707,8 +1707,13 @@ Module(
 
     def test_dump_with_color(self):
         node = ast.parse("x = 1")
+        self.assertNotIn("\x1b[", ast.dump(node))
         self.assertNotIn("\x1b[", ast.dump(node, color=False))
         self.assertIn("\x1b[", ast.dump(node, color=True))
+
+        node = ast.Constant(value="\x1b[31m")
+        self.assertEqual(ast.dump(node), "Constant(value='\\x1b[31m')")
+        self.assertIn("'\\x1b[31m'", ast.dump(node, color=True))
 
     def test_copy_location(self):
         src = ast.parse('1 + 1', mode='eval')
