@@ -1014,7 +1014,7 @@ class ElementTreeTest(unittest.TestCase):
         def bxml(encoding):
             return xml(encoding).encode(encoding)
         supported_encodings = [
-            'ascii', 'utf-8', 'utf-8-sig', 'utf-16', 'utf-16be', 'utf-16le',
+            'ascii', 'utf-8', 'utf-16', 'utf-16be', 'utf-16le',
             'iso8859-1', 'iso8859-2', 'iso8859-3', 'iso8859-4', 'iso8859-5',
             'iso8859-6', 'iso8859-7', 'iso8859-8', 'iso8859-9', 'iso8859-10',
             'iso8859-13', 'iso8859-14', 'iso8859-15', 'iso8859-16',
@@ -1025,32 +1025,34 @@ class ElementTreeTest(unittest.TestCase):
             'cp1256', 'cp1257', 'cp1258',
             'mac-cyrillic', 'mac-greek', 'mac-iceland', 'mac-latin2',
             'mac-roman', 'mac-turkish',
-            'iso2022-jp', 'iso2022-jp-1', 'iso2022-jp-2', 'iso2022-jp-2004',
-            'iso2022-jp-3', 'iso2022-jp-ext',
-            'koi8-r', 'koi8-t', 'koi8-u', 'kz1048',
-            'hz', 'ptcp154',
+            'koi8-r', 'koi8-t', 'koi8-u', 'kz1048', 'ptcp154',
         ]
         for encoding in supported_encodings:
-            self.assertEqual(ET.tostring(ET.XML(bxml(encoding))), b'<xml />')
+            with self.subTest(encoding=encoding):
+                self.assertEqual(ET.tostring(ET.XML(bxml(encoding))), b'<xml />')
 
         unsupported_ascii_compatible_encodings = [
             'big5', 'big5hkscs',
             'cp932', 'cp949', 'cp950',
             'euc-jp', 'euc-jis-2004', 'euc-jisx0213', 'euc-kr',
             'gb2312', 'gbk', 'gb18030',
-            'iso2022-kr', 'johab',
+            'iso2022-jp', 'iso2022-jp-1', 'iso2022-jp-2', 'iso2022-jp-2004',
+            'iso2022-jp-3', 'iso2022-jp-ext',
+            'iso2022-kr', 'johab', 'hz',
             'shift-jis', 'shift-jis-2004', 'shift-jisx0213',
-            'utf-7',
+            'utf-7', 'utf-8-sig', 'utf8',
         ]
         for encoding in unsupported_ascii_compatible_encodings:
-            self.assertRaises(ValueError, ET.XML, bxml(encoding))
+            with self.subTest(encoding=encoding):
+                self.assertRaises(ValueError, ET.XML, bxml(encoding))
 
         unsupported_ascii_incompatible_encodings = [
             'cp037', 'cp424', 'cp500', 'cp864', 'cp875', 'cp1026', 'cp1140',
             'utf_32', 'utf_32_be', 'utf_32_le',
         ]
         for encoding in unsupported_ascii_incompatible_encodings:
-            self.assertRaises(ET.ParseError, ET.XML, bxml(encoding))
+            with self.subTest(encoding=encoding):
+                self.assertRaises(ET.ParseError, ET.XML, bxml(encoding))
 
         self.assertRaises(ValueError, ET.XML, xml('undefined').encode('ascii'))
         self.assertRaises(LookupError, ET.XML, xml('xxx').encode('ascii'))
