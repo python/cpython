@@ -8,7 +8,7 @@
 #include "pycore_stackref.h"      // PyStackRef_AsPyObjectBorrow()
 #include "pycore_tuple.h"         // _PyTuple_FromPair
 #include "pycore_typeobject.h"    // _Py_BaseObject_RichCompare()
-#include "pycore_unionobject.h"   // _Py_union_from_tuple()
+#include "pycore_unionobject.h"   // _Py_union_type_or()
 
 typedef struct {
     PyObject_HEAD
@@ -152,18 +152,6 @@ sentinel_reduce(PyObject *op, PyObject *Py_UNUSED(ignored))
     return Py_NewRef(self->name);
 }
 
-static PyObject *
-sentinel_or(PyObject *self, PyObject *other)
-{
-    PyObject *args = _PyTuple_FromPair(self, other);
-    if (args == NULL) {
-        return NULL;
-    }
-    PyObject *result = _Py_union_from_tuple(args);
-    Py_DECREF(args);
-    return result;
-}
-
 static PyMethodDef sentinel_methods[] = {
     {"__copy__", sentinel_copy, METH_NOARGS, NULL},
     {"__deepcopy__", sentinel_deepcopy, METH_O, NULL},
@@ -178,7 +166,7 @@ static PyMemberDef sentinel_members[] = {
 };
 
 static PyNumberMethods sentinel_as_number = {
-    .nb_or = sentinel_or,
+    .nb_or = _Py_union_type_or,
 };
 
 PyDoc_STRVAR(sentinel_doc,

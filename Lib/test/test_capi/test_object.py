@@ -1,5 +1,6 @@
 import enum
 import os
+import pickle
 import sys
 import textwrap
 import unittest
@@ -66,8 +67,6 @@ class GetConstantTest(unittest.TestCase):
 class SentinelTest(unittest.TestCase):
 
     def test_pysentinel_new(self):
-        import pickle
-
         marker = _testcapi.pysentinel_new("CAPI_SENTINEL", __name__)
         self.assertIs(type(marker), sentinel)
         self.assertTrue(_testcapi.pysentinel_check(marker))

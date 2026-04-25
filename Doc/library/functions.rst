@@ -1841,10 +1841,6 @@ are always available.  They are listed here in alphabetical order.
 
    Shallow and deep copies of a sentinel object return the object itself.
 
-   Sentinels importable from their defining module by name preserve their
-   identity when pickled and unpickled.  Sentinels that are not importable by
-   module and name are not picklable.
-
    Sentinels are conventionally assigned to a variable with a matching name.
    Sentinels defined in this way can be used in :term:`type hints <type hint>`::
 
@@ -1858,7 +1854,8 @@ are always available.  They are listed here in alphabetical order.
    :mod:`Pickling <pickle>` is supported for sentinel objects that are
    placed in the global scope of a module under a name matching the sentinel's
    name, and for sentinels placed in class scopes with a name matching the
-   :term:`qualified name` of the sentinel. The identity of the sentinel is preserved
+   :term:`qualified name` of the sentinel. Other sentinels, such as those
+   defined in a function scope, are not picklable. The identity of the sentinel is preserved
    after pickling::
 
       import pickle
@@ -1871,6 +1868,8 @@ are always available.  They are listed here in alphabetical order.
           PICKLABLE = sentinel("Cls.PICKLABLE")
 
       assert pickle.loads(pickle.dumps(Cls.PICKLABLE)) is Cls.PICKLABLE
+
+   Sentinel objects have the following attributes:
 
    .. attribute:: __name__
 

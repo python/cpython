@@ -1941,6 +1941,10 @@ class BuiltinTest(ComplexesAreIdenticalMixin, unittest.TestCase):
             missing.__name__ = "CHANGED"
         with self.assertRaises(AttributeError):
             missing.__module__ = "changed"
+        with self.assertRaises(AttributeError):
+            del missing.__name__
+        with self.assertRaises(AttributeError):
+            del missing.__module__
 
     def test_sentinel_pickle(self):
         for proto in range(pickle.HIGHEST_PROTOCOL + 1):
@@ -1977,10 +1981,25 @@ class BuiltinTest(ComplexesAreIdenticalMixin, unittest.TestCase):
     def test_sentinel_union(self):
         missing = sentinel("MISSING")
 
+        self.assertIsInstance(missing | int, typing.Union)
         self.assertEqual((missing | int).__args__, (missing, int))
+        self.assertIsInstance(int | missing, typing.Union)
         self.assertEqual((int | missing).__args__, (int, missing))
         self.assertIs(missing | missing, missing)
         self.assertEqual(repr(int | missing), "int | MISSING")
+        self.assertIsInstance(missing | None, typing.Union)
+        self.assertEqual((missing | None).__args__, (missing, type(None)))
+        self.assertIsInstance(None | missing, typing.Union)
+        self.assertEqual((None | missing).__args__, (type(None), missing))
+        self.assertIsInstance(missing | list[int], typing.Union)
+        self.assertEqual((missing | list[int]).__args__, (missing, list[int]))
+        self.assertIsInstance(missing | (int | str), typing.Union)
+        self.assertEqual((missing | (int | str)).__args__, (missing, int, str))
+
+        with self.assertRaises(TypeError):
+            missing | 1
+        with self.assertRaises(TypeError):
+            1 | missing
 
     def test_round(self):
         self.assertEqual(round(0.0), 0.0)
