@@ -126,7 +126,7 @@ compile_and_marshal(const char *name, const char *text)
     if (filename == NULL) {
         return PyErr_NoMemory();
     }
-    sprintf(filename, "<frozen %s>", name);
+    snprintf(filename, strlen(name) + 10, "<frozen %s>", name);
     PyObject *code = Py_CompileStringExFlags(text, filename,
                                              Py_file_input, NULL, 0);
     free(filename);
@@ -153,7 +153,7 @@ get_varname(const char *name, const char *prefix)
     if (varname == NULL) {
         return NULL;
     }
-    (void)strcpy(varname, prefix);
+    memcpy(varname, prefix, n);
     for (size_t i = 0; name[i] != '\0'; i++) {
         if (name[i] == '.') {
             varname[n++] = '_';
