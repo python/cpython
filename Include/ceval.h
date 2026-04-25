@@ -126,7 +126,6 @@ PyAPI_FUNC(void) PyEval_ReleaseThread(PyThreadState *tstate);
 
 /* Masks and values used by FORMAT_VALUE opcode. */
 #define FVC_MASK      0x3
-#define FVC_NONE      0x0
 #define FVC_STR       0x1
 #define FVC_REPR      0x2
 #define FVC_ASCII     0x3
