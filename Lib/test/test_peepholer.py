@@ -7,12 +7,11 @@ import textwrap
 import unittest
 
 from test import support
-from test.support.bytecode_helper import BytecodeTestCase, CfgOptimizationTestCase
-
-try:
-    import _testinternalcapi
-except ImportError:
-    _testinternalcapi = None
+from test.support.bytecode_helper import (
+    BytecodeTestCase,
+    CfgOptimizationTestCase,
+    _testinternalcapi,
+)
 
 
 def compile_pattern_with_fast_locals(pattern):
