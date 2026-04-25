@@ -32,6 +32,7 @@ caller(void)
 {
     _PyInterpreterFrame *f = _PyThreadState_GET()->current_frame;
     if (f == NULL || PyStackRef_IsNull(f->f_funcobj)) {
+        assert(!PyErr_Occurred());
         Py_RETURN_NONE;
     }
     PyFunctionObject *func = _PyFrame_GetFunction(f);
