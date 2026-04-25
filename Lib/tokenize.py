@@ -532,7 +532,7 @@ def _get_token_colors(syntax, tokenize):
     })
 
 
-def _print_tokens(tokens, *, color=False, exact=False):
+def _format_tokens(tokens, *, color=False, exact=False):
     theme = _colorize.get_theme(force_no_color=not color)
     s = theme.syntax
     t = theme.tokenize
@@ -550,7 +550,7 @@ def _print_tokens(tokens, *, color=False, exact=False):
         token_color = token_colors.get(token_type, s.reset)
         token_name = tok_name[token_type]
         visible_range = f"{token.start[0]},{token.start[1]}-{token.end[0]},{token.end[1]}:"
-        print(
+        yield (
             f"{token_range}{' ' * (20 - len(visible_range))}"
             f"{token_color}{token_name:<15}"
             f"{s.reset}{token.string!r:<15}"
@@ -597,7 +597,8 @@ def _main(args=None):
 
 
         # Output the tokenization
-        _print_tokens(tokens, color=True, exact=args.exact)
+        for line in _format_tokens(tokens, color=True, exact=args.exact):
+            print(line)
     except IndentationError as err:
         line, column = err.args[1][1:3]
         error(err.args[0], filename, (line, column))
