@@ -86,7 +86,7 @@ The module :mod:`!curses` defines the following functions:
 .. function:: baudrate()
 
    Return the output speed of the terminal in bits per second.  On software
-   terminal emulators it will have a fixed high value. Included for historical
+   terminal emulators, it will have a fixed high value. Included for historical
    reasons; in former times, it was used to  write output loops for time delays and
    occasionally to change interfaces depending on the line speed.
 
