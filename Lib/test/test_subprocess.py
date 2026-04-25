@@ -2581,6 +2581,61 @@ print(len(data.strip()))
         self.assertEqual(result.returncodes, [0, 0])
         self.assertEqual(result.stdout, 'shared-content|shared-content')
 
+    def test_pipeline_stderr_pipe_normal_completion(self):
+        """stderr=PIPE captures stderr without capture_output= on the success path."""
+        result = subprocess.run_pipeline(
+            [sys.executable, '-c',
+             'import sys; print("err1", file=sys.stderr); print("out1")'],
+            [sys.executable, '-c',
+             'import sys; print("err2", file=sys.stderr); print(sys.stdin.read())'],
+            stderr=subprocess.PIPE,
+        )
+        self.assertIsNone(result.stdout)
+        self.assertIsNotNone(result.stderr)
+        self.assertIn(b'err1', result.stderr)
+        self.assertIn(b'err2', result.stderr)
+        self.assertEqual(result.returncodes, [0, 0])
+
+    def test_pipeline_errors_replace_multibyte_split(self):
+        """errors='replace' handles multi-byte stderr without raising."""
+        result = subprocess.run_pipeline(
+            [sys.executable, '-c',
+             r'import sys; sys.stderr.buffer.write("é first ".encode()); '
+             r'sys.stderr.flush(); '
+             r'sys.stdout.write("data")'],
+            [sys.executable, '-c',
+             r'import sys; sys.stderr.buffer.write("中 second".encode()); '
+             r'sys.stderr.flush(); '
+             r'sys.stdout.write(sys.stdin.read())'],
+            capture_output=True, text=True, errors='replace',
+        )
+        self.assertEqual(result.returncodes, [0, 0])
+        self.assertIsInstance(result.stderr, str)
+        self.assertIn('first', result.stderr)
+        self.assertIn('second', result.stderr)
+
+    def test_pipeline_middle_command_exits_early(self):
+        """Pipeline completes when a middle command exits without reading all input."""
+        result = subprocess.run_pipeline(
+            [sys.executable, '-c',
+             'import sys\n'
+             'try:\n'
+             '    for i in range(100000):\n'
+             '        print(f"line{i}")\n'
+             'except BrokenPipeError:\n'
+             '    pass\n'],
+            [sys.executable, '-c',
+             'import sys\n'
+             'print(sys.stdin.readline().strip())\n'],
+            [sys.executable, '-c',
+             'import sys\n'
+             'sys.stdout.write(sys.stdin.read())\n'],
+            capture_output=True, text=True, timeout=30,
+        )
+        self.assertEqual(result.stdout.strip(), 'line0')
+        self.assertEqual(result.returncodes[1], 0)
+        self.assertEqual(result.returncodes[2], 0)
+
 
 def _get_test_grp_name():
     for name_group in ('staff', 'nogroup', 'grp', 'nobody', 'nfsnobody'):
