@@ -50,6 +50,12 @@ The :mod:`!gc` module provides the following functions:
    The effect of calling ``gc.collect()`` while the interpreter is already
    performing a collection is undefined.
 
+   .. versionchanged:: 3.14
+      ``generation=1`` performs an increment of collection.
+
+   .. versionchanged:: 3.14.5
+      ``generation=1`` performs collection of the middle generation.
+
 
 .. function:: set_debug(flags)
 
