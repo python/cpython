@@ -71,6 +71,9 @@ typedef struct _PyCfgBasicblock {
     unsigned b_cold : 1;
     /* b_warm is used by the cold-detection algorithm to mark blocks which are definitely not cold */
     unsigned b_warm : 1;
+    /* Used by the borrow-safe analysis to mark visited block states. */
+    int b_dfs_visited_gen;
+    Py_ssize_t b_dfs_visited_depth;
 } basicblock;
 
 
@@ -2696,6 +2699,8 @@ typedef enum {
     STORED_AS_LOCAL = 2,
     // The loaded reference is still on the stack at the end of the basic block
     REF_UNCONSUMED  = 4,
+    // The loaded reference is duplicated on the stack
+    REF_COPIED      = 8,
 } LoadFastInstrFlag;
 
 static void
@@ -2728,6 +2733,354 @@ load_fast_push_block(basicblock ***sp, basicblock *target,
         target->b_visited = 1;
         *(*sp)++ = target;
     }
+}
+
+static bool
+is_borrow_safe(
+    basicblock *current_block,
+    Py_ssize_t depth_of_value_on_entry,
+    int original_local_idx,
+    cfg_builder *g,
+    Py_ssize_t stack_depth_on_entry,
+    int dfs_generation);
+
+static bool
+is_exception_path_borrow_safe(
+    cfg_instr *instr,
+    Py_ssize_t current_target_depth,
+    Py_ssize_t current_stack_depth,
+    int original_local_idx,
+    cfg_builder *g,
+    int dfs_generation)
+{
+    basicblock *handler = instr->i_except;
+    if (handler == NULL) {
+        return true;
+    }
+
+    Py_ssize_t unwind_depth = handler->b_startdepth - 1;
+    if (handler->b_preserve_lasti) {
+        unwind_depth--;
+    }
+    if (unwind_depth < 0) {
+        return false;
+    }
+
+    Py_ssize_t value_stack_index = current_stack_depth - current_target_depth - 1;
+    if (value_stack_index < 0) {
+        return false;
+    }
+    if (value_stack_index >= unwind_depth) {
+        return true;
+    }
+
+    Py_ssize_t handler_entry_depth = handler->b_startdepth - value_stack_index - 1;
+    return is_borrow_safe(
+        handler, handler_entry_depth, original_local_idx, g,
+        handler->b_startdepth, dfs_generation);
+}
+
+/*
+ * Recursively determine if a borrowed reference remains safe along all CFG paths.
+ *
+ * This function performs a DFS starting from 'current_block'.
+ * It tracks a specific value that was notionally loaded by a LOAD_FAST_BORROW
+ * instruction and is currently at 'depth_of_value_on_entry' on the operand stack
+ * (0 being TOS, -1 if already known to be consumed). The 'original_local_idx'
+ * is the index of the local variable from which this value was borrowed.
+ *
+ * A borrow is considered UNSAFE if, along any execution path before the
+ * borrowed value is consumed from the stack:
+ * 1. The 'original_local_idx' (the backing store for the borrow) is overwritten
+ *    (e.g., by STORE_FAST, DELETE_FAST on that local).
+ * 2. The borrowed value itself, when at the top of the stack (depth 0), is
+ *    consumed by an instruction that stores it into any local variable
+ *    (e.g., STORE_FAST).
+ * 3. The value is not consumed and the CFG path ends (e.g., end of function
+ *    without consumption) or enters a cycle where it's not consumed.
+ *
+ * The function uses the current DFS generation in conjunction with
+ * 'current_block->b_dfs_visited_gen' and 'b_dfs_visited_depth' to detect
+ * cycles within a specific DFS traversal. Revisiting the same block with the
+ * same tracked-value depth is safe because the current traversal already
+ * checked the loop body for local kills.
+ *
+ * Stack depths are tracked by:
+ * - 'depth_of_value_on_entry': The depth of the tracked item upon entering 'current_block'.
+ * - 'current_target_depth': The depth of the item as instructions in 'current_block' are processed.
+ * - 'depth_before_jump_op_effect': When a jump instruction is encountered, this
+ *      is calculated by simulating all prior instructions in 'current_block' to find
+ *      the item's depth *just before* the jump instruction itself has any stack effect.
+ *      This precise depth is then used to calculate the 'target_entry_depth' for the
+ *      recursive call to the jump's target block.
+ * - 'stack_depth_on_entry': The total operand stack depth upon entering
+ *      'current_block'. This is used to determine whether exception unwinding
+ *      pops the tracked item or leaves it live in the exception handler.
+ *
+ */
+static bool
+is_borrow_safe(
+    basicblock *current_block,
+    Py_ssize_t depth_of_value_on_entry,
+    int original_local_idx,
+    cfg_builder *g,
+    Py_ssize_t stack_depth_on_entry,
+    int dfs_generation)
+{
+    if (depth_of_value_on_entry == -1) {
+        return true;
+    }
+
+    if (current_block->b_dfs_visited_gen == dfs_generation) {
+        return current_block->b_dfs_visited_depth == depth_of_value_on_entry;
+    }
+    current_block->b_dfs_visited_gen = dfs_generation;
+    current_block->b_dfs_visited_depth = depth_of_value_on_entry;
+
+    Py_ssize_t current_target_depth = depth_of_value_on_entry;
+    Py_ssize_t current_stack_depth = stack_depth_on_entry;
+
+    for (int i = 0; i < current_block->b_iused; i++) {
+        cfg_instr *instr = &current_block->b_instr[i];
+        int opcode = instr->i_opcode;
+        int oparg = instr->i_oparg;
+
+        if ((opcode == STORE_FAST || opcode == DELETE_FAST || opcode == LOAD_FAST_AND_CLEAR) &&
+            oparg == original_local_idx) {
+            return false;
+        }
+
+        if (!is_exception_path_borrow_safe(
+                instr, current_target_depth, current_stack_depth,
+                original_local_idx, g, dfs_generation))
+        {
+            return false;
+        }
+
+        stack_effects effects_noj;
+        if (get_stack_effects(opcode, oparg, 0, &effects_noj) < 0) {
+            return false;
+        }
+        int num_popped = _PyOpcode_num_popped(opcode, oparg);
+        int num_pushed = _PyOpcode_num_pushed(opcode, oparg);
+
+        if (opcode == FOR_ITER && current_target_depth < num_popped) {
+            if (current_block->b_next && BB_HAS_FALLTHROUGH(current_block)) {
+                Py_ssize_t fallthrough_depth = current_target_depth -
+                                               num_popped + num_pushed;
+                Py_ssize_t fallthrough_stack_depth = current_stack_depth -
+                                                     num_popped + num_pushed;
+                return is_borrow_safe(
+                    current_block->b_next, fallthrough_depth, original_local_idx,
+                    g, fallthrough_stack_depth, dfs_generation);
+            }
+            return true;
+        }
+
+        if (current_target_depth < num_popped) {
+            if (opcode == STORE_FAST && current_target_depth == 0) {
+                return false;
+            }
+            return true;
+        }
+        current_target_depth = current_target_depth - num_popped + num_pushed;
+        current_stack_depth = current_stack_depth - num_popped + num_pushed;
+
+        if (HAS_TARGET(opcode)) {
+            if (i != current_block->b_iused - 1) {
+                continue; // Skip jumps that are not the last instruction in the block.
+            }
+            bool safe_on_all_branches = true;
+
+            Py_ssize_t depth_before_jump_op_effect = depth_of_value_on_entry;
+            Py_ssize_t stack_depth_before_jump_op_effect = stack_depth_on_entry;
+            for(int k=0; k < i; ++k) {
+                cfg_instr *prev_instr_in_block = &current_block->b_instr[k];
+                // Kill check for intermediate instructions
+                if ((prev_instr_in_block->i_opcode == STORE_FAST ||
+                     prev_instr_in_block->i_opcode == DELETE_FAST ||
+                     prev_instr_in_block->i_opcode == LOAD_FAST_AND_CLEAR) &&
+                    prev_instr_in_block->i_oparg == original_local_idx) {
+                    return false;
+                }
+                stack_effects prev_effects;
+                if (get_stack_effects(prev_instr_in_block->i_opcode, prev_instr_in_block->i_oparg, 0, &prev_effects) < 0) {
+                    return false;
+                }
+                int prev_popped_val = _PyOpcode_num_popped(prev_instr_in_block->i_opcode, prev_instr_in_block->i_oparg);
+                if (depth_before_jump_op_effect < prev_popped_val) {
+                    if (prev_instr_in_block->i_opcode == STORE_FAST && depth_before_jump_op_effect == 0) {
+                        return false;
+                    }
+                    return true;
+                }
+                depth_before_jump_op_effect = depth_before_jump_op_effect - prev_popped_val +
+                                             _PyOpcode_num_pushed(prev_instr_in_block->i_opcode, prev_instr_in_block->i_oparg);
+                stack_depth_before_jump_op_effect = stack_depth_before_jump_op_effect - prev_popped_val +
+                                                    _PyOpcode_num_pushed(prev_instr_in_block->i_opcode, prev_instr_in_block->i_oparg);
+            }
+
+            // Analyze jump target path
+            stack_effects effects_jump;
+            if (get_stack_effects(opcode, oparg, 1, &effects_jump) < 0) return false;
+            int jump_popped_val = _PyOpcode_num_popped(opcode, oparg);
+            Py_ssize_t target_entry_depth = depth_before_jump_op_effect;
+
+            if (target_entry_depth < jump_popped_val) {
+                if (opcode == STORE_FAST && target_entry_depth == 0) {
+                    safe_on_all_branches = false;
+                }
+            } else { // Not consumed by jump op, recurse on target.
+                target_entry_depth = target_entry_depth - jump_popped_val + _PyOpcode_num_pushed(opcode, oparg);
+                Py_ssize_t target_entry_stack_depth = stack_depth_before_jump_op_effect -
+                                                      jump_popped_val +
+                                                      _PyOpcode_num_pushed(opcode, oparg);
+                if (!is_borrow_safe(
+                        instr->i_target, target_entry_depth, original_local_idx, g,
+                        target_entry_stack_depth, dfs_generation))
+                {
+                    safe_on_all_branches = false;
+                }
+            }
+
+            // Analyze fallthrough path, if the jump path was safe.
+            if (safe_on_all_branches && current_block->b_next &&
+                BB_HAS_FALLTHROUGH(current_block))
+            {
+                if (!is_borrow_safe(
+                        current_block->b_next, current_target_depth, original_local_idx, g,
+                        current_stack_depth, dfs_generation))
+                {
+                    safe_on_all_branches = false;
+                }
+            }
+            return safe_on_all_branches;
+        }
+    }
+
+    // When the instructions finish and the value isn't consumed, check fallthrough.
+    if (current_block->b_next && BB_HAS_FALLTHROUGH(current_block)) {
+        return is_borrow_safe(
+            current_block->b_next, current_target_depth, original_local_idx, g,
+            current_stack_depth, dfs_generation);
+    }
+
+    /*
+    No further path (or no fallthrough) and value is still on stack (current_target_depth is valid).
+    This means it's unconsumed at the end of a CFG path, so it's unsafe.
+    */
+    return false;
+}
+
+
+/*
+ * Initiates a CFG wide safety check for a borrowed reference.
+ *
+ * This function is called when a LOAD_FAST instruction is a candidate for
+ * LOAD_FAST_BORROW, but its produced value ('REF_UNCONSUMED' flag is set)
+ * might live beyond the current basic block ('producer_block').
+ *
+ * It determines the immediate successor(s) of the 'producer_block' and the
+ * stack depth at which the borrowed value (identified by 'original_local_idx'
+ * and initially at 'depth_of_value_at_producer_end' from TOS) would enter
+ * these successors.
+ *
+ * It then calls 'is_borrow_safe()' for each successor path. The borrow is
+ * considered globally safe only if 'is_borrow_safe()' returns true for ALL
+ * possible successor paths.
+ *
+ * A new DFS traversal is started by incrementing '*dfs_generation_counter' to
+ * ensure that 'is_borrow_safe()' uses a fresh set of visited markers
+ * ('b_dfs_visited_gen') for its analysis.
+ *
+ */
+static bool
+check_borrow_safety_globally(
+    basicblock *producer_block,
+    Py_ssize_t depth_of_value_at_producer_end,
+    int original_local_idx,
+    Py_ssize_t stack_depth_at_producer_end,
+    cfg_builder *g,
+    int *dfs_generation_counter)
+{
+    int dfs_generation = ++*dfs_generation_counter;
+    bool overall_safety = true;
+
+    cfg_instr *last_instr = basicblock_last_instr(producer_block);
+
+    // If depth is -1, implies value was already consumed or is invalid for tracking.
+    if (depth_of_value_at_producer_end == -1) {
+        return false;
+    }
+
+    if (last_instr && HAS_TARGET(last_instr->i_opcode)) {
+        stack_effects effects_noj;
+        if (get_stack_effects(last_instr->i_opcode, last_instr->i_oparg, 0, &effects_noj) < 0) {
+            return false;
+        }
+        int fall_popped = _PyOpcode_num_popped(last_instr->i_opcode, last_instr->i_oparg);
+        int fall_pushed = _PyOpcode_num_pushed(last_instr->i_opcode, last_instr->i_oparg);
+        Py_ssize_t depth_before_jump = depth_of_value_at_producer_end + fall_popped - fall_pushed;
+        Py_ssize_t stack_depth_before_jump = stack_depth_at_producer_end + fall_popped - fall_pushed;
+
+        stack_effects effects_jump;
+        if (get_stack_effects(last_instr->i_opcode, last_instr->i_oparg, 1, &effects_jump) < 0) {
+            return false;
+        }
+        int jump_popped = _PyOpcode_num_popped(last_instr->i_opcode, last_instr->i_oparg);
+        Py_ssize_t entry_depth_for_target = depth_before_jump;
+
+        if (entry_depth_for_target < jump_popped) {
+            if (last_instr->i_opcode == STORE_FAST && entry_depth_for_target == 0) {
+                overall_safety = false;
+            }
+        } else {
+            entry_depth_for_target = entry_depth_for_target - jump_popped +
+                                     _PyOpcode_num_pushed(last_instr->i_opcode, last_instr->i_oparg);
+            Py_ssize_t entry_stack_depth_for_target = stack_depth_before_jump -
+                                                      jump_popped +
+                                                      _PyOpcode_num_pushed(last_instr->i_opcode, last_instr->i_oparg);
+            if (!is_borrow_safe(
+                    last_instr->i_target, entry_depth_for_target, original_local_idx, g,
+                    entry_stack_depth_for_target, dfs_generation))
+            {
+                overall_safety = false;
+            }
+        }
+
+        // Analyze fallthrough path, if the jump path was safe.
+        if (overall_safety && producer_block->b_next &&
+            BB_HAS_FALLTHROUGH(producer_block))
+        {
+            if (!is_borrow_safe(
+                    producer_block->b_next, depth_of_value_at_producer_end, original_local_idx, g,
+                    stack_depth_at_producer_end, dfs_generation))
+            {
+                overall_safety = false;
+            }
+        }
+    } else if (producer_block->b_next && BB_HAS_FALLTHROUGH(producer_block)) { // Standard fallthrough, no jump.
+        if (!is_borrow_safe(
+                producer_block->b_next, depth_of_value_at_producer_end, original_local_idx, g,
+                stack_depth_at_producer_end, dfs_generation))
+        {
+            overall_safety = false;
+        }
+    } else {
+        overall_safety = false;
+    }
+    return overall_safety;
+}
+
+static bool
+has_nonterminal_target_after(basicblock *block, int instr_idx)
+{
+    for (int i = instr_idx + 1; i < block->b_iused - 1; i++) {
+        if (HAS_TARGET(block->b_instr[i].i_opcode)) {
+            return true;
+        }
+    }
+    return false;
 }
 
 /*
@@ -2773,9 +3126,12 @@ optimize_load_fast(cfg_builder *g)
     int status;
     ref_stack refs = {0};
     int max_instrs = 0;
+    int dfs_generation_counter = 0;
     basicblock *entryblock = g->g_entryblock;
     for (basicblock *b = entryblock; b != NULL; b = b->b_next) {
         max_instrs = Py_MAX(max_instrs, b->b_iused);
+        b->b_dfs_visited_gen = 0;
+        b->b_dfs_visited_depth = -1;
     }
     size_t instr_flags_size = max_instrs * sizeof(uint8_t);
     uint8_t *instr_flags = PyMem_Malloc(instr_flags_size);
@@ -2877,6 +3233,9 @@ optimize_load_fast(cfg_builder *g)
                     Py_ssize_t idx = refs.size - oparg;
                     ref r = ref_stack_at(&refs, idx);
                     PUSH_REF(r.instr, r.local);
+                    if (r.instr != DUMMY_INSTR) {
+                        instr_flags[r.instr] |= REF_COPIED;
+                    }
                     break;
                 }
 
@@ -3031,17 +3390,95 @@ optimize_load_fast(cfg_builder *g)
 
         // Optimize instructions
         for (int i = 0; i < block->b_iused; i++) {
-            if (!instr_flags[i]) {
-                cfg_instr *instr = &block->b_instr[i];
-                switch (instr->i_opcode) {
-                    case LOAD_FAST:
+            cfg_instr *instr = &block->b_instr[i];
+            bool is_load_fast_type = (instr->i_opcode == LOAD_FAST || instr->i_opcode == LOAD_FAST_LOAD_FAST);
+
+            if (is_load_fast_type) {
+                bool killed_or_stored_locally = (instr_flags[i] & (SUPPORT_KILLED | STORED_AS_LOCAL));
+                if (killed_or_stored_locally) {
+                    continue; // Definitely cannot borrow due to local block issues
+                }
+                if (instr_flags[i] & REF_COPIED) {
+                    continue;
+                }
+
+                bool unconsumed_in_block = (instr_flags[i] & REF_UNCONSUMED);
+                bool can_borrow = false;
+
+                if (!unconsumed_in_block) {
+                    can_borrow = true; // Safe by local analysis, consumed in current block
+                } else if (has_nonterminal_target_after(block, i)) {
+                    can_borrow = false;
+                } else {
+                    if (instr->i_opcode == LOAD_FAST) {
+                        int local_idx = instr->i_oparg;
+                        Py_ssize_t depth_from_tos_at_block_end = -1;
+                        // Find the specific item on the `refs` stack (at end of current block simulation)
+                        for (Py_ssize_t k = 0; k < refs.size; k++) {
+                            ref r = ref_stack_at(&refs, k);
+                            if (r.instr == i && r.local == local_idx) { // Match instruction and local
+                                depth_from_tos_at_block_end = refs.size - 1 - k;
+                                break;
+                            }
+                        }
+
+                        if (depth_from_tos_at_block_end != -1) {
+                            can_borrow = check_borrow_safety_globally(
+                                block, depth_from_tos_at_block_end, local_idx,
+                                refs.size, g, &dfs_generation_counter);
+                        } else {
+                            // If REF_UNCONSUMED is set but we couldn't find its depth, assume unsafe.
+                            // This can happen if refs.size is 0, yet flag is set.
+                            can_borrow = false;
+                        }
+
+                    } else { // LOAD_FAST_LOAD_FAST
+                        can_borrow = true; // Assume true, prove false if any part is unsafe
+                        int local_idx1 = instr->i_oparg >> 4;
+                        int local_idx2 = instr->i_oparg & 15;
+                        Py_ssize_t depth1 = -1, depth2 = -1;
+
+                        // Find depths on `refs` stack for both products of this LFLF instruction `i`
+                        for (Py_ssize_t k = 0; k < refs.size; k++) {
+                            ref r = ref_stack_at(&refs, k);
+                            if (r.instr == i) {
+                                Py_ssize_t current_depth = refs.size - 1 - k;
+                                if (r.local == local_idx1 && depth1 == -1) depth1 = current_depth;
+                                else if (r.local == local_idx2 && depth2 == -1) depth2 = current_depth;
+                            }
+                        }
+
+                        bool found_any_on_stack = (depth1 != -1 || depth2 != -1);
+
+                        if (depth1 != -1) {
+                            if (!check_borrow_safety_globally(
+                                    block, depth1, local_idx1, refs.size, g,
+                                    &dfs_generation_counter))
+                            {
+                                can_borrow = false;
+                            }
+                        }
+                        if (can_borrow && depth2 != -1) {
+                            if (!check_borrow_safety_globally(
+                                    block, depth2, local_idx2, refs.size, g,
+                                    &dfs_generation_counter))
+                            {
+                                can_borrow = false;
+                            }
+                        }
+
+                        if (unconsumed_in_block && !found_any_on_stack) {
+                            can_borrow = false;
+                        }
+                    }
+                }
+
+                if (can_borrow) {
+                    if (instr->i_opcode == LOAD_FAST) {
                         instr->i_opcode = LOAD_FAST_BORROW;
-                        break;
-                    case LOAD_FAST_LOAD_FAST:
+                    } else if (instr->i_opcode == LOAD_FAST_LOAD_FAST) {
                         instr->i_opcode = LOAD_FAST_BORROW_LOAD_FAST_BORROW;
-                        break;
-                    default:
-                        break;
+                    }
                 }
             }
         }
