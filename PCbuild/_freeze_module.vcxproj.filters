@@ -400,10 +400,10 @@
     <ClCompile Include="..\Objects\rangeobject.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\Objects\setobject.c">
+    <ClCompile Include="..\Objects\sentinelobject.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\Objects\sentinelobject.c">
+    <ClCompile Include="..\Objects\setobject.c">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\Modules\signalmodule.c">

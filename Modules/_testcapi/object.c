@@ -559,8 +559,8 @@ static PyObject *
 pysentinel_new(PyObject *self, PyObject *args)
 {
     const char *name;
-    const char *module_name;
-    if (!PyArg_ParseTuple(args, "ss", &name, &module_name)) {
+    const char *module_name = NULL;
+    if (!PyArg_ParseTuple(args, "s|s", &name, &module_name)) {
         return NULL;
     }
     return PySentinel_New(name, module_name);

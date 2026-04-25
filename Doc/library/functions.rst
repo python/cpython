@@ -1846,7 +1846,7 @@ are always available.  They are listed here in alphabetical order.
    module and name are not picklable.
 
    Sentinels are conventionally assigned to a variable with a matching name.
-   Sentinels defined in this way can be used in :term:`type hints<type hint>`::
+   Sentinels defined in this way can be used in :term:`type hints <type hint>`::
 
       MISSING = sentinel("MISSING")
 
@@ -1854,6 +1854,23 @@ are always available.  They are listed here in alphabetical order.
           ...
 
    Sentinel objects support the :ref:`| <bitwise>` operator for use in type expressions.
+
+   :mod:`Pickling <pickle>` is supported for sentinel objects that are
+   placed in the global scope of a module under a name matching the sentinel's
+   name, and for sentinels placed in class scopes with a name matching the
+   :term:`qualified name` of the sentinel. The identity of the sentinel is preserved
+   after pickling::
+
+      import pickle
+
+      PICKLABLE = sentinel("PICKLABLE")
+
+      assert pickle.loads(pickle.dumps(PICKLABLE)) is PICKLABLE
+
+      class Cls:
+          PICKLABLE = sentinel("Cls.PICKLABLE")
+
+      assert pickle.loads(pickle.dumps(Cls.PICKLABLE)) is Cls.PICKLABLE
 
    .. attribute:: __name__
 

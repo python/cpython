@@ -222,10 +222,10 @@
     <ClInclude Include="..\Include\runtime_structs.h">
       <Filter>Include</Filter>
     </ClInclude>
-    <ClInclude Include="..\Include\setobject.h">
+    <ClInclude Include="..\Include\sentinelobject.h">
       <Filter>Include</Filter>
     </ClInclude>
-    <ClInclude Include="..\Include\sentinelobject.h">
+    <ClInclude Include="..\Include\setobject.h">
       <Filter>Include</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\sliceobject.h">
@@ -1277,10 +1277,10 @@
     <ClCompile Include="..\Objects\rangeobject.c">
       <Filter>Objects</Filter>
     </ClCompile>
-    <ClCompile Include="..\Objects\setobject.c">
+    <ClCompile Include="..\Objects\sentinelobject.c">
       <Filter>Objects</Filter>
     </ClCompile>
-    <ClCompile Include="..\Objects\sentinelobject.c">
+    <ClCompile Include="..\Objects\setobject.c">
       <Filter>Objects</Filter>
     </ClCompile>
     <ClCompile Include="..\Objects\sliceobject.c">

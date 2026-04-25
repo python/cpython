@@ -384,8 +384,8 @@
     <ClInclude Include="..\Include\pytypedefs.h" />
     <ClInclude Include="..\Include\rangeobject.h" />
     <ClInclude Include="..\Include\refcount.h" />
-    <ClInclude Include="..\Include\setobject.h" />
     <ClInclude Include="..\Include\sentinelobject.h" />
+    <ClInclude Include="..\Include\setobject.h" />
     <ClInclude Include="..\Include\sliceobject.h" />
     <ClInclude Include="..\Include\structmember.h" />
     <ClInclude Include="..\Include\structseq.h" />
@@ -562,8 +562,8 @@
     <ClCompile Include="..\Objects\odictobject.c" />
     <ClCompile Include="..\Objects\picklebufobject.c" />
     <ClCompile Include="..\Objects\rangeobject.c" />
-    <ClCompile Include="..\Objects\setobject.c" />
     <ClCompile Include="..\Objects\sentinelobject.c" />
+    <ClCompile Include="..\Objects\setobject.c" />
     <ClCompile Include="..\Objects\sliceobject.c" />
     <ClCompile Include="..\Objects\structseq.c" />
     <ClCompile Include="..\Objects\templateobject.c" />

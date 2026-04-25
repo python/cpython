@@ -76,6 +76,11 @@ class SentinelTest(unittest.TestCase):
         self.assertEqual(marker.__module__, __name__)
         self.assertEqual(repr(marker), "CAPI_SENTINEL")
 
+        no_module = _testcapi.pysentinel_new("NO_MODULE")
+        self.assertIs(type(no_module), sentinel)
+        self.assertEqual(no_module.__name__, "NO_MODULE")
+        self.assertIs(no_module.__module__, None)
+
         globals()["CAPI_SENTINEL"] = marker
         self.addCleanup(globals().pop, "CAPI_SENTINEL", None)
         self.assertIs(pickle.loads(pickle.dumps(marker)), marker)

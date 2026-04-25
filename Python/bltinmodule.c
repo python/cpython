@@ -3555,8 +3555,8 @@ _PyBuiltin_Init(PyInterpreterState *interp)
     SETBUILTIN("object",                &PyBaseObject_Type);
     SETBUILTIN("range",                 &PyRange_Type);
     SETBUILTIN("reversed",              &PyReversed_Type);
-    SETBUILTIN("set",                   &PySet_Type);
     SETBUILTIN("sentinel",              &PySentinel_Type);
+    SETBUILTIN("set",                   &PySet_Type);
     SETBUILTIN("slice",                 &PySlice_Type);
     SETBUILTIN("staticmethod",          &PyStaticMethod_Type);
     SETBUILTIN("str",                   &PyUnicode_Type);

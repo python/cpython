@@ -71,10 +71,6 @@ sentinel_new_impl(PyTypeObject *type, PyObject *name)
 /*[clinic end generated code: output=4af55c6048bed30d input=3ab75704f39c119c]*/
 {
     PyObject *module = caller();
-    if (module == NULL) {
-        return NULL;
-    }
-
     PyObject *self = sentinel_new_with_module(type, name, module);
     Py_DECREF(module);
     return self;
@@ -87,7 +83,9 @@ PySentinel_New(const char *name, const char *module_name)
     if (name_obj == NULL) {
         return NULL;
     }
-    PyObject *module_obj = PyUnicode_FromString(module_name);
+    PyObject *module_obj = module_name == NULL
+        ? Py_None
+        : PyUnicode_FromString(module_name);
     if (module_obj == NULL) {
         Py_DECREF(name_obj);
         return NULL;
@@ -113,7 +111,7 @@ static void
 sentinel_dealloc(PyObject *op)
 {
     _PyObject_GC_UNTRACK(op);
-    sentinel_clear(op);
+    (void)sentinel_clear(op);
     Py_TYPE(op)->tp_free(op);
 }
 
