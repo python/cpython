@@ -7,7 +7,7 @@
     2) PSF license for Python 2.2
 
     The robots.txt Exclusion Protocol is implemented as specified in
-    http://www.robotstxt.org/norobots-rfc.txt
+    RFC 9309
 """
 
 import collections
@@ -240,6 +240,8 @@ class RuleLine:
         self.allowance = allowance
 
     def applies_to(self, filename):
+        # If the filename matches the rule, return the matching length plus 1.
+        # If it does not match, return 0.
         if self.matcher is not None:
             m = self.matcher(filename)
             if m:
@@ -298,10 +300,12 @@ class Entry:
 
     def allowance(self, filename):
         """Preconditions:
-        - rules without wildcards are sorted from longest to shortest,
-          "Allow" before "Disallow"
         - our agent applies to this entry
-        - filename is URL encoded"""
+        - filename is URL encoded
+        - rules are sorted:
+          - wildcards before literal paths
+          - literal paths from longest to shortest, "Allow" before "Disallow"
+        """
         best_match = -1
         allowance = True
         for line in self.rulelines:
@@ -312,7 +316,7 @@ class Entry:
                     allowance = line.allowance
                 elif m == best_match and not allowance:
                     allowance = line.allowance
-            # Optimization.
+            # Optimization. Requires rules to be sorted.
             if line.matcher is None and (m or len(line.path) + 1 < best_match):
                 break
         return allowance
