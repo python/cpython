@@ -23,7 +23,7 @@
 
 // Do we support C99 complex types in ffi?
 // For Apple's libffi, this must be determined at runtime (see gh-128156).
-#if defined(Py_FFI_SUPPORT_C_COMPLEX)
+#if defined(_Py_FFI_SUPPORT_C_COMPLEX)
 #   if USING_APPLE_OS_LIBFFI && defined(__has_builtin)
 #       if __has_builtin(__builtin_available)
 #           define Py_FFI_COMPLEX_AVAILABLE __builtin_available(macOS 10.15, *)
@@ -431,7 +431,7 @@ typedef struct {
     visible to other threads before the `dict_final` bit is set.
 */
 
-#define STGINFO_LOCK(stginfo)   Py_BEGIN_CRITICAL_SECTION_MUT(&(stginfo)->mutex)
+#define STGINFO_LOCK(stginfo)   Py_BEGIN_CRITICAL_SECTION_MUTEX(&(stginfo)->mutex)
 #define STGINFO_UNLOCK()        Py_END_CRITICAL_SECTION()
 
 static inline uint8_t
@@ -608,25 +608,20 @@ PyStgInfo_FromAny(ctypes_state *state, PyObject *obj, StgInfo **result)
     return _stginfo_from_type(state, Py_TYPE(obj), result);
 }
 
-/* A variant of PyStgInfo_FromType that doesn't need the state,
+/* A variant of PyStgInfo_FromType that doesn't need the state
+ * and doesn't modify any refcounts,
  * so it can be called from finalization functions when the module
  * state is torn down.
  */
 static inline StgInfo *
-_PyStgInfo_FromType_NoState(PyObject *type)
+_PyStgInfo_FromType_DuringGC(PyObject *type)
 {
     PyTypeObject *PyCType_Type;
-    if (PyType_GetBaseByToken(Py_TYPE(type), &pyctype_type_spec, &PyCType_Type) < 0) {
-        return NULL;
-    }
+    PyType_GetBaseByToken_DuringGC(Py_TYPE(type), &pyctype_type_spec, &PyCType_Type);
     if (PyCType_Type == NULL) {
-        PyErr_Format(PyExc_TypeError, "expected a ctypes type, got '%N'", type);
         return NULL;
     }
-
-    StgInfo *info = PyObject_GetTypeData(type, PyCType_Type);
-    Py_DECREF(PyCType_Type);
-    return info;
+    return PyObject_GetTypeData_DuringGC(type, PyCType_Type);
 }
 
 // Initialize StgInfo on a newly created type

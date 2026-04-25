@@ -604,4 +604,4 @@ References
        pp. 213--227, 1997.
 
 [^2]: The Zephyr Abstract Syntax Description Language.:
-      https://www.cs.princeton.edu/research/techreps/TR-554-97
+      https://www.cs.princeton.edu/research/techreps/254
