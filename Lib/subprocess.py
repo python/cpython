@@ -1005,9 +1005,11 @@ def run_pipeline(*commands, input=None, capture_output=False, timeout=None,
         raise ValueError('run_pipeline requires at least 2 commands')
 
     # Validate no conflicting arguments
-    if input is not None:
-        if kwargs.get('stdin') is not None:
-            raise ValueError('stdin and input arguments may not both be used.')
+    if input is not None and kwargs.get('stdin') is not None:
+        raise ValueError('stdin and input arguments may not both be used.')
+    if kwargs.get('stdin') is PIPE:
+        raise ValueError('stdin=PIPE is not supported by run_pipeline; '
+                         'pass input= instead, or provide a file/fd')
 
     if capture_output:
         if kwargs.get('stdout') is not None or kwargs.get('stderr') is not None:

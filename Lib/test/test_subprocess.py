@@ -2115,6 +2115,16 @@ class PipelineTestCase(BaseTestCase):
         self.assertIn('stdin', str(cm.exception))
         self.assertIn('input', str(cm.exception))
 
+    def test_pipeline_stdin_pipe_rejected(self):
+        """Test that stdin=PIPE is rejected (would hang)"""
+        with self.assertRaises(ValueError) as cm:
+            subprocess.run_pipeline(
+                [sys.executable, '-c', 'pass'],
+                [sys.executable, '-c', 'pass'],
+                stdin=subprocess.PIPE
+            )
+        self.assertIn('stdin=PIPE', str(cm.exception))
+
     def test_pipeline_capture_output_conflict(self):
         """Test that capture_output conflicts with stdout/stderr"""
         with self.assertRaises(ValueError) as cm:
