@@ -124,21 +124,20 @@ def dump(
     Return a formatted dump of the tree in node.  This is mainly useful for
     debugging purposes.
 
-    If annotate_fields is true (by default),
-    the returned string will show the names and the values for fields.
-    If annotate_fields is false, the result string will be more compact by
-    omitting unambiguous field names.
+    If annotate_fields is true (by default), the returned string will show the
+    names and the values for fields. If annotate_fields is false, the result
+    string will be more compact by omitting unambiguous field names.
 
     Attributes such as line numbers and column offsets are not dumped by default.
     If this is wanted, include_attributes can be set to true.
 
     If color is true, the returned string is syntax highlighted using ANSI
-    escape sequences.
-    If color is false (the default), colored output is always disabled.
+    escape sequences. If color is false (the default), colored output is always
+    disabled.
 
-    If indent is a non-negative
-    integer or string, then the tree will be pretty-printed with that indent
-    level. None (the default) selects the single line representation.
+    If indent is a non-negative integer or string, then the tree will be
+    pretty-printed with that indent level. If indent is None (the default),
+    the tree is dumped on a single line.
 
     If show_empty is False, then empty lists and fields that are None
     will be omitted from the output for better readability.
@@ -210,7 +209,7 @@ def dump(
         elif isinstance(node, list):
             if not node:
                 return '[]', True
-            return f'[{prefix}{sep.join(_format(x, level)[0] for x in node)}]', False
+            return '[%s%s]' % (prefix, sep.join(_format(x, level)[0] for x in node)), False
         if isinstance(node, bool) or node is None or node is Ellipsis:
             return f'{theme.keyword}{node!r}{theme.reset}', True
         if isinstance(node, (int, float, complex)):
