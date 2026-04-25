@@ -173,7 +173,7 @@ def dump(
                         field_type = cls._field_types.get(name, object)
                         if getattr(field_type, '__origin__', ...) is list:
                             if not keywords:
-                                args_buffer.append('[]')
+                                args_buffer.append(repr(value))
                             continue
                     elif isinstance(value, Load):
                         field_type = cls._field_types.get(name, object)
