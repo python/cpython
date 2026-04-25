@@ -756,7 +756,7 @@ def _get_writer(file_or_filename, encoding):
         if encoding.lower() == "unicode":
             encoding="utf-8"
         with open(file_or_filename, "w", encoding=encoding,
-                  errors="xmlcharrefreplace") as file:
+                  errors="xmlcharrefreplace", newline="\n") as file:
             yield file.write, encoding
     else:
         # file_or_filename is a file-like object

@@ -4312,9 +4312,9 @@ class IOTest(unittest.TestCase):
 
         tree.write(TESTFN, encoding='ISO-8859-1')
         with open(TESTFN, 'rb') as f:
-            self.assertEqual(f.read(), convlinesep(
+            self.assertEqual(f.read(),
                              b'''<?xml version='1.0' encoding='ISO-8859-1'?>\n'''
-                             b'''<site>\xf8</site>'''))
+                             b'''<site>\xf8</site>''')
 
     def test_write_to_filename_as_unicode(self):
         self.addCleanup(os_helper.unlink, TESTFN)
@@ -4356,6 +4356,25 @@ class IOTest(unittest.TestCase):
             self.assertFalse(f.closed)
         with open(TESTFN, 'rb') as f:
             self.assertEqual(f.read(), b'''<site>&#248;</site>''')
+
+    def test_write_with_and_without_context_manager_same_output(self):
+        self.addCleanup(os_helper.unlink, TESTFN)
+        testfn2 = TESTFN + '2'
+        self.addCleanup(os_helper.unlink, testfn2)
+
+        tree = ET.ElementTree(ET.XML('''<site>\x0a</site>'''))
+        tree.write(TESTFN, encoding='utf-8')
+        with open(TESTFN, 'rb') as f:
+            output_without_context_manager = f.read()
+
+        with open(testfn2, 'wb') as f:
+            tree.write(f, encoding='utf-8')
+            self.assertFalse(f.closed)
+        with open(testfn2, 'rb') as f:
+            output_with_context_manager = f.read()
+
+        self.assertEqual(output_without_context_manager,
+                         output_with_context_manager)
 
     def test_write_to_binary_file_with_encoding(self):
         self.addCleanup(os_helper.unlink, TESTFN)
