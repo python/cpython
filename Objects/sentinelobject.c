@@ -38,6 +38,7 @@ caller(void)
     assert(PyFunction_Check(func));
     PyObject *r = PyFunction_GetModule((PyObject *)func);
     if (!r) {
+        assert(!PyErr_Occurred());
         Py_RETURN_NONE;
     }
     return Py_NewRef(r);
