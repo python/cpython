@@ -364,7 +364,7 @@ def _translate_newlines(data, encoding, errors):
 
 
 def _communicate_io_posix(selector, stdin, input_view, input_offset,
-                          output_buffers, endtime):
+                          output_buffers, endtime, *, close_on_eof=False):
     """
     Low-level POSIX I/O multiplexing loop.
 
@@ -379,6 +379,11 @@ def _communicate_io_posix(selector, stdin, input_view, input_offset,
         input_offset: Starting offset into input_view (for resume support)
         output_buffers: Dict {file_object: list} to append read chunks to
         endtime: Deadline timestamp, or None for no timeout
+        close_on_eof: If True, close output streams immediately when they
+            EOF rather than leaving them open for the caller to close.
+            Used by Popen._communicate() to match its historical behavior
+            of releasing fds as soon as the child closes the corresponding
+            pipe.
 
     Returns:
         (new_input_offset, completed)
@@ -386,7 +391,7 @@ def _communicate_io_posix(selector, stdin, input_view, input_offset,
         - completed: True if all I/O finished, False if timed out
 
     Note:
-        - Does NOT close any streams (caller decides)
+        - Closes output streams on EOF only if close_on_eof=True
         - Does NOT raise TimeoutExpired (caller handles)
         - Appends to output_buffers lists in place
     """
@@ -427,6 +432,11 @@ def _communicate_io_posix(selector, stdin, input_view, input_offset,
                 data = os.read(key.fd, 32768)
                 if not data:
                     selector.unregister(key.fileobj)
+                    if close_on_eof:
+                        try:
+                            key.fileobj.close()
+                        except OSError:
+                            pass
                 else:
                     output_buffers[key.fileobj].append(data)
 
@@ -2903,7 +2913,8 @@ class Popen:
                     input_view,
                     input_offset,
                     self._fileobj2output,
-                    endtime)
+                    endtime,
+                    close_on_eof=True)
                 if self._input:
                     self._input_offset = new_offset
 
@@ -2913,12 +2924,6 @@ class Popen:
                 raise RuntimeError(  # Impossible :)
                     '_check_timeout(..., skip_check_and_raise=True) '
                     'failed to raise TimeoutExpired.')
-
-            # Close streams now that we're done reading
-            if self.stdout:
-                self.stdout.close()
-            if self.stderr:
-                self.stderr.close()
 
             try:
                 self.wait(timeout=self._remaining_time(endtime))
