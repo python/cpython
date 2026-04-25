@@ -318,11 +318,27 @@ underlying :class:`Popen` interface can be used directly.
       from the whole pipeline, use ``capture_output=True`` (or pass an
       explicit file descriptor as *stderr*) instead of ``STDOUT``.
 
+   .. note::
+
+      When stderr is captured (via ``capture_output=True`` or
+      ``stderr=PIPE``), every command in the pipeline inherits a copy of the
+      same stderr write file descriptor. If any child spawns a daemon or
+      grandchild that keeps stderr open after the child exits, the parent's
+      read on the stderr pipe will not see EOF and :func:`run_pipeline` will
+      hang. This matches shell ``2>&1 | other`` behavior. If this is a
+      concern, either do not capture stderr, manage each command with an
+      individual :class:`Popen` so each has its own stderr pipe, or ensure
+      grandchildren fully detach (closing inherited fds) before
+      daemonizing.
+
    If *stdin* is specified, it is connected to the first command's standard
    input. If *stdout* is specified, it is connected to the last command's
    standard output. When *stdout* is :data:`PIPE`, the output is available
    in the returned :class:`CompletedPipeline`'s :attr:`~CompletedPipeline.stdout`
-   attribute. Other keyword arguments are passed to each :class:`Popen` call.
+   attribute. Other keyword arguments are passed to each :class:`Popen` call;
+   in particular *pass_fds* is forwarded to *every* command in the pipeline,
+   so any inheritable file descriptor passed via *pass_fds* is visible to all
+   children (unlike a shell, which can give each command its own fd set).
    ``close_fds=False`` is rejected because inherited copies of the
    inter-process pipe ends in sibling children would prevent EOF from being
    signaled and cause deadlocks.
@@ -396,6 +412,12 @@ underlying :class:`Popen` interface can be used directly.
 
       Exit status of the final command in the pipeline. This is a convenience
       property equivalent to ``returncodes[-1]``.
+
+      Note that this matches shell behavior *without* ``pipefail``: a zero
+      ``returncode`` does not imply that earlier commands in the pipeline
+      succeeded. To check that all commands succeeded, use
+      :meth:`check_returncodes` or pass ``check=True`` to
+      :func:`run_pipeline`.
 
    .. attribute:: stdout
 

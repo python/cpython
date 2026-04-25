@@ -991,7 +991,8 @@ def run_pipeline(*commands, input=None, capture_output=False, timeout=None,
        or handle decoding errors appropriately.
 
     Other keyword arguments are passed to each Popen call, except for stdin,
-    stdout which are managed by the pipeline.
+    stdout, and stderr (when stderr=PIPE or capture_output=True), which are
+    managed by the pipeline.
 
     Example:
         # Equivalent to: cat file.txt | grep pattern | wc -l
