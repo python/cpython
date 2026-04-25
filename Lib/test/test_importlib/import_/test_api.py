@@ -1,4 +1,4 @@
-from .. import util
+from test.test_importlib import util
 
 from importlib import machinery
 import sys
@@ -24,18 +24,6 @@ class BadSpecFinderLoader:
     @staticmethod
     def exec_module(module):
         if module.__name__ == SUBMOD_NAME:
-            raise ImportError('I cannot be loaded!')
-
-
-class BadLoaderFinder:
-    @classmethod
-    def find_module(cls, fullname, path):
-        if fullname == SUBMOD_NAME:
-            return cls
-
-    @classmethod
-    def load_module(cls, fullname):
-        if fullname == SUBMOD_NAME:
             raise ImportError('I cannot be loaded!')
 
 
@@ -96,45 +84,6 @@ class APITest:
                     self.__import__(PKG_NAME,
                                     fromlist=[SUBMOD_NAME.rpartition('.')[-1]])
                 self.assertEqual(cm.exception.name, SUBMOD_NAME)
-
-
-class OldAPITests(APITest):
-    bad_finder_loader = BadLoaderFinder
-
-    def test_raises_ModuleNotFoundError(self):
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", ImportWarning)
-            super().test_raises_ModuleNotFoundError()
-
-    def test_name_requires_rparition(self):
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", ImportWarning)
-            super().test_name_requires_rparition()
-
-    def test_negative_level(self):
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", ImportWarning)
-            super().test_negative_level()
-
-    def test_nonexistent_fromlist_entry(self):
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", ImportWarning)
-            super().test_nonexistent_fromlist_entry()
-
-    def test_fromlist_load_error_propagates(self):
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", ImportWarning)
-            super().test_fromlist_load_error_propagates
-
-    def test_blocked_fromlist(self):
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", ImportWarning)
-            super().test_blocked_fromlist()
-
-
-(Frozen_OldAPITests,
- Source_OldAPITests
- ) = util.test_both(OldAPITests, __import__=util.__import__)
 
 
 class SpecAPITests(APITest):

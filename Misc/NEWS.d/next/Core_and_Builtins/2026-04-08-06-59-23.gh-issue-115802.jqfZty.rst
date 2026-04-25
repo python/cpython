@@ -1,0 +1,1 @@
+Improve JIT code generation on Linux AArch64 by reducing the indirect call to external symbols. Patch by Diego Russo.

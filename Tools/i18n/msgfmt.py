@@ -5,8 +5,7 @@
 
 This program converts a textual Uniforum-style message catalog (.po file) into
 a binary GNU catalog (.mo file).  This is essentially the same function as the
-GNU msgfmt program, however, it is a simpler implementation.  Currently it
-does not handle plural forms but it does handle message contexts.
+GNU msgfmt program, however, it is a simpler implementation.
 
 Usage: msgfmt.py [OPTIONS] filename.po
 
@@ -25,15 +24,17 @@ Options:
         Display version information and exit.
 """
 
-import os
-import sys
-import ast
-import getopt
-import struct
 import array
+import ast
+import codecs
+import getopt
+import os
+import struct
+import sys
 from email.parser import HeaderParser
 
 __version__ = "1.2"
+
 
 MESSAGES = {}
 
@@ -112,11 +113,20 @@ def make(filename, outfile):
     try:
         with open(infile, 'rb') as f:
             lines = f.readlines()
-    except IOError as msg:
+    except OSError as msg:
         print(msg, file=sys.stderr)
         sys.exit(1)
 
+    if lines[0].startswith(codecs.BOM_UTF8):
+        print(
+            f"The file {infile} starts with a UTF-8 BOM which is not allowed in .po files.\n"
+            "Please save the file without a BOM and try again.",
+            file=sys.stderr
+        )
+        sys.exit(1)
+
     section = msgctxt = None
+    msgid = msgstr = b''
     fuzzy = 0
 
     # Start off assuming Latin-1, so everything decodes without failure,
@@ -148,13 +158,19 @@ def make(filename, outfile):
             msgctxt = b''
         elif l.startswith('msgid') and not l.startswith('msgid_plural'):
             if section == STR:
-                add(msgctxt, msgid, msgstr, fuzzy)
                 if not msgid:
+                    # Filter out POT-Creation-Date
+                    # See issue #131852
+                    msgstr = b''.join(line for line in msgstr.splitlines(True)
+                                      if not line.startswith(b'POT-Creation-Date:'))
+
                     # See whether there is an encoding declaration
                     p = HeaderParser()
                     charset = p.parsestr(msgstr.decode(encoding)).get_content_charset()
                     if charset:
                         encoding = charset
+                add(msgctxt, msgid, msgstr, fuzzy)
+                msgctxt = None
             section = ID
             l = l[5:]
             msgid = msgstr = b''
@@ -162,7 +178,7 @@ def make(filename, outfile):
         # This is a message with plural forms
         elif l.startswith('msgid_plural'):
             if section != ID:
-                print('msgid_plural not preceded by msgid on %s:%d' % (infile, lno),
+                print(f'msgid_plural not preceded by msgid on {infile}:{lno}',
                       file=sys.stderr)
                 sys.exit(1)
             l = l[12:]
@@ -173,7 +189,7 @@ def make(filename, outfile):
             section = STR
             if l.startswith('msgstr['):
                 if not is_plural:
-                    print('plural without msgid_plural on %s:%d' % (infile, lno),
+                    print(f'plural without msgid_plural on {infile}:{lno}',
                           file=sys.stderr)
                     sys.exit(1)
                 l = l.split(']', 1)[1]
@@ -181,7 +197,7 @@ def make(filename, outfile):
                     msgstr += b'\0' # Separator of the various plural forms
             else:
                 if is_plural:
-                    print('indexed msgstr required for plural on  %s:%d' % (infile, lno),
+                    print(f'indexed msgstr required for plural on {infile}:{lno}',
                           file=sys.stderr)
                     sys.exit(1)
                 l = l[6:]
@@ -197,8 +213,7 @@ def make(filename, outfile):
         elif section == STR:
             msgstr += l.encode(encoding)
         else:
-            print('Syntax error on %s:%d' % (infile, lno), \
-                  'before:', file=sys.stderr)
+            print(f'Syntax error on {infile}:{lno} before:', file=sys.stderr)
             print(l, file=sys.stderr)
             sys.exit(1)
     # Add last entry
@@ -211,7 +226,7 @@ def make(filename, outfile):
     try:
         with open(outfile,"wb") as f:
             f.write(output)
-    except IOError as msg:
+    except OSError as msg:
         print(msg, file=sys.stderr)
 
 

@@ -1,0 +1,1 @@
+Remove critical section from :c:func:`!PyCode_Addr2Line` in free-threading.

@@ -1,12 +1,20 @@
 import io
 import textwrap
 import unittest
+import random
+import sys
 from email import message_from_string, message_from_bytes
 from email.message import EmailMessage
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
 from email.generator import Generator, BytesGenerator
+import email.generator
 from email.headerregistry import Address
 from email import policy
+import email.errors
 from test.test_email import TestEmailBase, parameterize
+import test.support
+
 
 
 @parameterize
@@ -140,6 +148,39 @@ class TestGeneratorBase:
         g.flatten(msg, linesep='\n')
         self.assertEqual(s.getvalue(), self.typ(expected))
 
+    def test_flatten_linesep(self):
+        source = 'Subject: one\n two\r three\r\n four\r\n\r\ntest body\r\n'
+        msg = self.msgmaker(self.typ(source))
+        self.assertEqual(msg['Subject'], 'one two three four')
+
+        expected = 'Subject: one\n two\n three\n four\n\ntest body\n'
+        s = self.ioclass()
+        g = self.genclass(s)
+        g.flatten(msg)
+        self.assertEqual(s.getvalue(), self.typ(expected))
+
+        expected = 'Subject: one two three four\n\ntest body\n'
+        s = self.ioclass()
+        g = self.genclass(s, policy=self.policy.clone(refold_source='all'))
+        g.flatten(msg)
+        self.assertEqual(s.getvalue(), self.typ(expected))
+
+    def test_flatten_control_linesep(self):
+        source = 'Subject: one\v two\f three\x1c four\x1d five\x1e six\r\n\r\ntest body\r\n'
+        msg = self.msgmaker(self.typ(source))
+        self.assertEqual(msg['Subject'], 'one\v two\f three\x1c four\x1d five\x1e six')
+
+        expected = 'Subject: one\v two\f three\x1c four\x1d five\x1e six\n\ntest body\n'
+        s = self.ioclass()
+        g = self.genclass(s)
+        g.flatten(msg)
+        self.assertEqual(s.getvalue(), self.typ(expected))
+
+        s = self.ioclass()
+        g = self.genclass(s, policy=self.policy.clone(refold_source='all'))
+        g.flatten(msg)
+        self.assertEqual(s.getvalue(), self.typ(expected))
+
     def test_set_mangle_from_via_policy(self):
         source = textwrap.dedent("""\
             Subject: test that
@@ -216,6 +257,74 @@ class TestGeneratorBase:
         g.flatten(msg)
         self.assertEqual(s.getvalue(), self.typ(expected))
 
+    def test_keep_encoded_newlines(self):
+        msg = self.msgmaker(self.typ(textwrap.dedent("""\
+            To: nobody
+            Subject: Bad subject=?UTF-8?Q?=0A?=Bcc: injection@example.com
+
+            None
+            """)))
+        expected = textwrap.dedent("""\
+            To: nobody
+            Subject: Bad subject=?UTF-8?Q?=0A?=Bcc: injection@example.com
+
+            None
+            """)
+        s = self.ioclass()
+        g = self.genclass(s, policy=self.policy.clone(max_line_length=80))
+        g.flatten(msg)
+        self.assertEqual(s.getvalue(), self.typ(expected))
+
+    def test_keep_long_encoded_newlines(self):
+        msg = self.msgmaker(self.typ(textwrap.dedent("""\
+            To: nobody
+            Subject: Bad subject=?UTF-8?Q?=0A?=Bcc: injection@example.com
+
+            None
+            """)))
+        expected = textwrap.dedent("""\
+            To: nobody
+            Subject: Bad subject
+             =?utf-8?q?=0A?=Bcc:
+             injection@example.com
+
+            None
+            """)
+        s = self.ioclass()
+        g = self.genclass(s, policy=self.policy.clone(max_line_length=30))
+        g.flatten(msg)
+        self.assertEqual(s.getvalue(), self.typ(expected))
+
+    def _test_boundary_detection(self, linesep):
+        # Generate a boundary token in the same way as _make_boundary
+        token = random.randrange(sys.maxsize)
+
+        def _patch_random_randrange(*args, **kwargs):
+            return token
+
+        with test.support.swap_attr(
+            random, "randrange", _patch_random_randrange
+        ):
+            boundary = self.genclass._make_boundary(text=None)
+            boundary_in_part = (
+                "this goes before the boundary\n--"
+                + boundary
+                + "\nthis goes after\n"
+            )
+            msg = MIMEMultipart()
+            msg.attach(MIMEText(boundary_in_part))
+            self.genclass(self.ioclass()).flatten(msg, linesep=linesep)
+            # Generator checks the message content for the string it is about
+            # to use as a boundary ('token' in this test) and when it finds it
+            # in our attachment appends .0 to make the boundary it uses unique.
+            self.assertEqual(msg.get_boundary(), boundary + ".0")
+
+    def test_lf_boundary_detection(self):
+        self._test_boundary_detection("\n")
+
+    def test_crlf_boundary_detection(self):
+        self._test_boundary_detection("\r\n")
+
 
 class TestGenerator(TestGeneratorBase, TestEmailBase):
 
@@ -224,6 +333,47 @@ class TestGenerator(TestGeneratorBase, TestEmailBase):
     ioclass = io.StringIO
     typ = str
 
+    def test_flatten_unicode_linesep(self):
+        source = 'Subject: one\x85 two\u2028 three\u2029 four\r\n\r\ntest body\r\n'
+        msg = self.msgmaker(self.typ(source))
+        self.assertEqual(msg['Subject'], 'one\x85 two\u2028 three\u2029 four')
+
+        expected = 'Subject: =?utf-8?b?b25lwoUgdHdv4oCoIHRocmVl4oCp?= four\n\ntest body\n'
+        s = self.ioclass()
+        g = self.genclass(s)
+        g.flatten(msg)
+        self.assertEqual(s.getvalue(), self.typ(expected))
+
+        s = self.ioclass()
+        g = self.genclass(s, policy=self.policy.clone(refold_source='all'))
+        g.flatten(msg)
+        self.assertEqual(s.getvalue(), self.typ(expected))
+
+    def test_verify_generated_headers(self):
+        # gh-121650: by default the generator prevents header injection
+        class LiteralHeader(str):
+            name = 'Header'
+            def fold(self, **kwargs):
+                return self
+
+        for text in (
+            'Value\r\nBad Injection\r\n',
+            'NoNewLine'
+        ):
+            with self.subTest(text=text):
+                message = message_from_string(
+                    "Header: Value\r\n\r\nBody",
+                    policy=self.policy,
+                )
+
+                del message['Header']
+                message['Header'] = LiteralHeader(text)
+
+                with self.assertRaises(email.errors.HeaderWriteError):
+                    message.as_string()
+                with self.assertRaises(email.errors.HeaderWriteError):
+                    message.as_bytes()
+
 
 class TestBytesGenerator(TestGeneratorBase, TestEmailBase):
 
@@ -231,6 +381,98 @@ class TestBytesGenerator(TestGeneratorBase, TestEmailBase):
     genclass = BytesGenerator
     ioclass = io.BytesIO
     typ = lambda self, x: x.encode('ascii')
+
+    def test_defaults_handle_spaces_between_encoded_words_when_folded(self):
+        source = ("Уведомление о принятии в работу обращения для"
+                  " подключения услуги")
+        expected = ('Subject: =?utf-8?b?0KPQstC10LTQvtC80LvQtdC90LjQtSDQviDQv9GA0LjQvdGP0YLQuNC4?=\n'
+                    ' =?utf-8?b?INCyINGA0LDQsdC+0YLRgyDQvtCx0YDQsNGJ0LXQvdC40Y8g0LTQu9GPINC/0L4=?=\n'
+                    ' =?utf-8?b?0LTQutC70Y7Rh9C10L3QuNGPINGD0YHQu9GD0LPQuA==?=\n\n').encode('ascii')
+        msg = EmailMessage()
+        msg['Subject'] = source
+        s = io.BytesIO()
+        g = BytesGenerator(s)
+        g.flatten(msg)
+        self.assertEqual(s.getvalue(), expected)
+
+    def test_defaults_handle_spaces_when_encoded_words_is_folded_in_middle(self):
+        source = ('A very long long long long long long long long long long long long '
+                  'long long long long long long long long long long long súmmäry')
+        expected = ('Subject: A very long long long long long long long long long long long long\n'
+                    ' long long long long long long long long long long long =?utf-8?q?s=C3=BAmm?=\n'
+                    ' =?utf-8?q?=C3=A4ry?=\n\n').encode('ascii')
+        msg = EmailMessage()
+        msg['Subject'] = source
+        s = io.BytesIO()
+        g = BytesGenerator(s)
+        g.flatten(msg)
+        self.assertEqual(s.getvalue(), expected)
+
+    def test_defaults_handle_spaces_at_start_of_subject(self):
+        source = " Уведомление"
+        expected = b"Subject:  =?utf-8?b?0KPQstC10LTQvtC80LvQtdC90LjQtQ==?=\n\n"
+        msg = EmailMessage()
+        msg['Subject'] = source
+        s = io.BytesIO()
+        g = BytesGenerator(s)
+        g.flatten(msg)
+        self.assertEqual(s.getvalue(), expected)
+
+    def test_defaults_handle_spaces_at_start_of_continuation_line(self):
+        source = " ф ффффффффффффффффффф ф ф"
+        expected = (b"Subject:  "
+                    b"=?utf-8?b?0YQg0YTRhNGE0YTRhNGE0YTRhNGE0YTRhNGE0YTRhNGE0YTRhNGE0YQ=?=\n"
+                    b" =?utf-8?b?INGEINGE?=\n\n")
+        msg = EmailMessage()
+        msg['Subject'] = source
+        s = io.BytesIO()
+        g = BytesGenerator(s)
+        g.flatten(msg)
+        self.assertEqual(s.getvalue(), expected)
+
+    # gh-144156: fold between non-encoded and encoded words don't need to encoded
+    #            the separating space
+    def test_defaults_handle_spaces_at_start_of_continuation_line_2(self):
+        source = ("Re: [SOS-1495488] Commande et livraison - Demande de retour - "
+                  "bibijolie - 251210-AABBCC - Abo actualités digitales 20 semaines "
+                  "d’abonnement à 24 heures, Bilan, Tribune de Genève et tous les titres Tamedia")
+        expected = (
+            b"Subject: "
+            b"Re: [SOS-1495488] Commande et livraison - Demande de retour -\n"
+            b" bibijolie - 251210-AABBCC - Abo =?utf-8?q?actualit=C3=A9s?= digitales 20\n"
+            b" semaines =?utf-8?q?d=E2=80=99abonnement_=C3=A0?= 24 heures, Bilan, Tribune de\n"
+            b" =?utf-8?q?Gen=C3=A8ve?= et tous les titres Tamedia\n\n"
+        )
+        msg = EmailMessage()
+        msg['Subject'] = source
+        s = io.BytesIO()
+        g = BytesGenerator(s)
+        g.flatten(msg)
+        self.assertEqual(s.getvalue(), expected)
+
+    def test_ew_folding_round_trip_1(self):
+        print()
+        source = "aaaaaaaaa фффффффф "
+        msg = EmailMessage()
+        msg['Subject'] = source
+        s = io.BytesIO()
+        g = BytesGenerator(s, maxheaderlen=30)
+        g.flatten(msg)
+        flat = s.getvalue()
+        reparsed = message_from_bytes(flat, policy=policy.default)['Subject']
+        self.assertMultiLineEqual(reparsed, source)
+
+    def test_ew_folding_round_trip_2(self):
+        print()
+        source = "aaa aaaaaaa   aaa ффф фффф  "
+        msg = EmailMessage()
+        msg['Subject'] = source
+        s = io.BytesIO()
+        g = BytesGenerator(s, maxheaderlen=30)
+        g.flatten(msg)
+        flat = s.getvalue()
+        reparsed = message_from_bytes(flat, policy=policy.default)['Subject']
+        self.assertMultiLineEqual(reparsed, source)
 
     def test_cte_type_7bit_handles_unknown_8bit(self):
         source = ("Subject: Maintenant je vous présente mon "

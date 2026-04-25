@@ -1,0 +1,2 @@
+Add colour to :mod:`~http.server.BaseHTTPRequestHandler` logs, as used by
+the :mod:`http.server` CLI. Patch by Hugo van Kemenade.

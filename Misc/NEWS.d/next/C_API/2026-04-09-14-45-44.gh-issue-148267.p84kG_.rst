@@ -1,0 +1,2 @@
+Using :c:macro:`Py_LIMITED_API` on a non-Windows free-threaded build no
+longer needs an extra :c:macro:`Py_GIL_DISABLED`.

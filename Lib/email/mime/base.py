@@ -1,4 +1,4 @@
-# Copyright (C) 2001-2006 Python Software Foundation
+# Copyright (C) 2001 Python Software Foundation
 # Author: Barry Warsaw
 # Contact: email-sig@python.org
 
@@ -11,7 +11,6 @@ import email.policy
 from email import message
 
 
-
 class MIMEBase(message.Message):
     """Base class for MIME specializations."""
 

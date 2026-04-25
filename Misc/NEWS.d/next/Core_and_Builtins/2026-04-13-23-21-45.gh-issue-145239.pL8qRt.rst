@@ -1,0 +1,3 @@
+Unary plus is now accepted in :keyword:`match` literal patterns, mirroring
+the existing support for unary minus.
+Patch by Bartosz Sławecki.

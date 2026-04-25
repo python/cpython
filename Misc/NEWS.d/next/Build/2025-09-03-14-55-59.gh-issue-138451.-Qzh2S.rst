@@ -1,0 +1,1 @@
+Allow for custom LLVM path using ``LLVM_TOOLS_INSTALL_DIR`` during JIT build.

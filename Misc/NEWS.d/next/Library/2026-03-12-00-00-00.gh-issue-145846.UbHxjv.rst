@@ -1,0 +1,3 @@
+Fix memory leak in ``_lsprof`` when ``clear()`` is called during active
+profiling with nested calls. ``clearEntries()`` now walks the entire
+``currentProfilerContext`` linked list instead of only freeing the top context.

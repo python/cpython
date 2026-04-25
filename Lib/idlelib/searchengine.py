@@ -84,7 +84,7 @@ class SearchEngine:
             flags = flags | re.IGNORECASE
         try:
             prog = re.compile(pat, flags)
-        except re.error as e:
+        except re.PatternError as e:
             self.report_error(pat, e.msg, e.pos)
             return None
         return prog
@@ -165,7 +165,7 @@ class SearchEngine:
         wrapped = 0
         startline = line
         chars = text.get("%d.0" % line, "%d.0" % (line+1))
-        while 1:
+        while True:
             m = search_reverse(prog, chars[:-1], col)
             if m:
                 if ok or m.start() < col:

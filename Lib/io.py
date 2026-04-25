@@ -45,36 +45,20 @@ __all__ = ["BlockingIOError", "open", "open_code", "IOBase", "RawIOBase",
            "FileIO", "BytesIO", "StringIO", "BufferedIOBase",
            "BufferedReader", "BufferedWriter", "BufferedRWPair",
            "BufferedRandom", "TextIOBase", "TextIOWrapper",
-           "UnsupportedOperation", "SEEK_SET", "SEEK_CUR", "SEEK_END"]
+           "UnsupportedOperation", "SEEK_SET", "SEEK_CUR", "SEEK_END",
+           "DEFAULT_BUFFER_SIZE", "text_encoding", "IncrementalNewlineDecoder",
+           "Reader", "Writer"]
 
 
 import _io
 import abc
 
+from _collections_abc import _check_methods
 from _io import (DEFAULT_BUFFER_SIZE, BlockingIOError, UnsupportedOperation,
                  open, open_code, FileIO, BytesIO, StringIO, BufferedReader,
                  BufferedWriter, BufferedRWPair, BufferedRandom,
                  IncrementalNewlineDecoder, text_encoding, TextIOWrapper)
 
-
-def __getattr__(name):
-    if name == "OpenWrapper":
-        # bpo-43680: Until Python 3.9, _pyio.open was not a static method and
-        # builtins.open was set to OpenWrapper to not become a bound method
-        # when set to a class variable. _io.open is a built-in function whereas
-        # _pyio.open is a Python function. In Python 3.10, _pyio.open() is now
-        # a static method, and builtins.open() is now io.open().
-        import warnings
-        warnings.warn('OpenWrapper is deprecated, use open instead',
-                      DeprecationWarning, stacklevel=2)
-        global OpenWrapper
-        OpenWrapper = open
-        return OpenWrapper
-    raise AttributeError(name)
-
-
-# Pretend this exception was created here.
-UnsupportedOperation.__module__ = "io"
 
 # for seek()
 SEEK_SET = 0
@@ -112,3 +96,55 @@ except ImportError:
     pass
 else:
     RawIOBase.register(_WindowsConsoleIO)
+
+#
+# Static Typing Support
+#
+
+GenericAlias = type(list[int])
+
+
+class Reader(metaclass=abc.ABCMeta):
+    """Protocol for simple I/O reader instances.
+
+    This protocol only supports blocking I/O.
+    """
+
+    __slots__ = ()
+
+    @abc.abstractmethod
+    def read(self, size=..., /):
+        """Read data from the input stream and return it.
+
+        If *size* is specified, at most *size* items (bytes/characters) will be
+        read.
+        """
+
+    @classmethod
+    def __subclasshook__(cls, C):
+        if cls is Reader:
+            return _check_methods(C, "read")
+        return NotImplemented
+
+    __class_getitem__ = classmethod(GenericAlias)
+
+
+class Writer(metaclass=abc.ABCMeta):
+    """Protocol for simple I/O writer instances.
+
+    This protocol only supports blocking I/O.
+    """
+
+    __slots__ = ()
+
+    @abc.abstractmethod
+    def write(self, data, /):
+        """Write *data* to the output stream and return the number of items written."""
+
+    @classmethod
+    def __subclasshook__(cls, C):
+        if cls is Writer:
+            return _check_methods(C, "write")
+        return NotImplemented
+
+    __class_getitem__ = classmethod(GenericAlias)

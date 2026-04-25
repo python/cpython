@@ -1,5 +1,5 @@
 
-# This was taken from http://python.org/sf/1541697
+# This was taken from https://bugs.python.org/issue1541697
 # It's not technically a crasher.  It may not even truly be infinite,
 # however, I haven't waited a long time to see the result.  It takes
 # 100% of CPU while running this and should be fixed.

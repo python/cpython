@@ -17,8 +17,7 @@ return_self(PyObject *self)
 {
 #if !STRINGLIB_MUTABLE
     if (STRINGLIB_CHECK_EXACT(self)) {
-        Py_INCREF(self);
-        return self;
+        return Py_NewRef(self);
     }
 #endif
     return STRINGLIB_NEW(STRINGLIB_STR(self), STRINGLIB_LEN(self));
@@ -208,6 +207,7 @@ stringlib_center_impl(PyObject *self, Py_ssize_t width, char fillchar)
 }
 
 /*[clinic input]
+@permit_long_summary
 B.zfill as stringlib_zfill
 
     width: Py_ssize_t
@@ -220,7 +220,7 @@ The original string is never truncated.
 
 static PyObject *
 stringlib_zfill_impl(PyObject *self, Py_ssize_t width)
-/*[clinic end generated code: output=0b3c684a7f1b2319 input=2da6d7b8e9bcb19a]*/
+/*[clinic end generated code: output=0b3c684a7f1b2319 input=dfb9cbb16f521756]*/
 {
     Py_ssize_t fill;
     PyObject *s;

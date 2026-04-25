@@ -1,7 +1,29 @@
+.. release date: 2016-07-11
+.. bpo: 27278
+.. date: 9361
+.. nonce: y_HkGw
+.. original section: Library
+.. section: Security
+
+Fix os.urandom() implementation using getrandom() on Linux.  Truncate size
+to INT_MAX and loop until we collected enough random bytes, instead of
+casting a directly Py_ssize_t to int.
+
+..
+
+.. bpo: 22636
+.. date: 9357
+.. nonce: 3fQW_g
+.. original section: Library
+.. section: Security
+
+Avoid shell injection problems with ctypes.util.find_library().
+
+..
+
 .. bpo: 27473
 .. date: 9385
 .. nonce: _nOtTA
-.. release date: 2016-07-11
 .. section: Core and Builtins
 
 Fixed possible integer overflow in bytes and bytearray concatenations.
@@ -248,18 +270,6 @@ issue25782.
 
 ..
 
-.. bpo: 27278
-.. date: 9361
-.. nonce: y_HkGw
-.. original section: Library
-.. section: Security
-
-Fix os.urandom() implementation using getrandom() on Linux.  Truncate size
-to INT_MAX and loop until we collected enough random bytes, instead of
-casting a directly Py_ssize_t to int.
-
-..
-
 .. bpo: 16864
 .. date: 9360
 .. nonce: W7tJDa
@@ -286,16 +296,6 @@ Fixed ttk.TreeView selection operations with item id's containing spaces.
 
 Honor a pager set by the env var MANPAGER (in preference to one set by the
 env var PAGER).
-
-..
-
-.. bpo: 22636
-.. date: 9357
-.. nonce: 3fQW_g
-.. original section: Library
-.. section: Security
-
-Avoid shell injection problems with ctypes.util.find_library().
 
 ..
 

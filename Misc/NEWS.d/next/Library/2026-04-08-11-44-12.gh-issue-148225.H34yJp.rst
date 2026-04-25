@@ -1,0 +1,3 @@
+The :mod:`profiling.sampling` ``replay`` command now rejects non-binary
+profile files with a clear error explaining that replay only accepts files
+created with ``--binary``.

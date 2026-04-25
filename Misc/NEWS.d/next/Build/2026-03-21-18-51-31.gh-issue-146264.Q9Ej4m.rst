@@ -1,0 +1,3 @@
+Fix static module builds on non-WASI targets by linking HACL dependencies as
+static libraries when ``MODULE_BUILDTYPE=static``, preventing duplicate
+``_Py_LibHacl_*`` symbol errors at link time.

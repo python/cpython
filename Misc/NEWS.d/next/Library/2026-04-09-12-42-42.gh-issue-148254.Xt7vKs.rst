@@ -1,0 +1,2 @@
+Use singular "sec" instead of "secs" in :mod:`timeit` verbose output for
+consistency with other time units.

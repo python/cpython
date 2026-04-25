@@ -1,0 +1,3 @@
+:meth:`~datetime.datetime.strptime` now raises :exc:`ValueError` when the
+format string contains ``%d`` without a year directive.
+Using ``%e`` without a year now emits a :exc:`DeprecationWarning`.

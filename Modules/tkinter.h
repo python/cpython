@@ -16,12 +16,4 @@
                         (TK_RELEASE_LEVEL << 8) | \
                         (TK_RELEASE_SERIAL << 0))
 
-/* Protect Tk 8.4.13 and older from a deadlock that happens when trying
- * to load tk after a failed attempt. */
-#if TK_HEX_VERSION < 0x0804020e
-#define TKINTER_PROTECT_LOADTK
-#define TKINTER_LOADTK_ERRMSG \
-        "Calling Tk_Init again after a previous call failed might deadlock"
-#endif
-
 #endif /* !TKINTER_H */

@@ -1,0 +1,3 @@
+Fix quadratic backtracking in :class:`configparser.RawConfigParser` option
+parsing regexes (``OPTCRE`` and ``OPTCRE_NV``). A crafted configuration line
+with many whitespace characters could cause excessive CPU usage.

@@ -1,0 +1,3 @@
+Global :mod:`sys.monitoring` events can now be turned on and disabled on a
+per code object basis. Returning ``DISABLE`` from a callback disables the
+event for the entire code object (for the current tool).

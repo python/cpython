@@ -81,6 +81,9 @@ class SubprocessStreamProtocol(streams.FlowControlMixin,
                 self._stdin_closed.set_result(None)
             else:
                 self._stdin_closed.set_exception(exc)
+                # Since calling `wait_closed()` is not mandatory,
+                # we shouldn't log the traceback if this is not awaited.
+                self._stdin_closed._log_traceback = False
             return
         if fd == 1:
             reader = self.stdout
@@ -144,14 +147,17 @@ class Process:
 
     async def _feed_stdin(self, input):
         debug = self._loop.get_debug()
-        self.stdin.write(input)
-        if debug:
-            logger.debug(
-                '%r communicate: feed stdin (%s bytes)', self, len(input))
         try:
+            if input is not None:
+                self.stdin.write(input)
+                if debug:
+                    logger.debug(
+                        '%r communicate: feed stdin (%s bytes)', self, len(input))
+
             await self.stdin.drain()
         except (BrokenPipeError, ConnectionResetError) as exc:
-            # communicate() ignores BrokenPipeError and ConnectionResetError
+            # communicate() ignores BrokenPipeError and ConnectionResetError.
+            # write() and drain() can raise these exceptions.
             if debug:
                 logger.debug('%r communicate: stdin got %r', self, exc)
 
@@ -180,7 +186,7 @@ class Process:
         return output
 
     async def communicate(self, input=None):
-        if input is not None:
+        if self.stdin is not None:
             stdin = self._feed_stdin(input)
         else:
             stdin = self._noop()

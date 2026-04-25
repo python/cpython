@@ -1,2 +1,0 @@
-Fix a crash in the parser when reporting tokenizer errors that occur at the
-same time unclosed parentheses are detected. Patch by Pablo Galindo.
