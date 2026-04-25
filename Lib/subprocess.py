@@ -1518,7 +1518,6 @@ class Popen:
                            unused_restore_signals,
                            unused_gid, unused_gids, unused_uid,
                            unused_umask,
-                           unused_start_new_session,
                            unused_start_new_session, unused_process_group,
                            force_hide):
             """Execute program (MS Windows version)"""
@@ -1909,7 +1908,6 @@ class Popen:
                            errread, errwrite,
                            restore_signals,
                            gid, gids, uid, umask,
-                           start_new_session,
                            start_new_session, process_group,
                            unused_force_hide):
             """Execute program (POSIX version)"""
