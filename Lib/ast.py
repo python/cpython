@@ -21,6 +21,9 @@ that work tightly with the python syntax (template engines for example).
 :license: Python License.
 """
 from _ast import *
+lazy import re
+lazy import sys
+lazy from _colorize import can_colorize, get_theme
 
 
 def parse(source, filename='<unknown>', mode='exec', *,
@@ -117,7 +120,7 @@ def _convert_literal(node):
 def dump(
     node, annotate_fields=True, include_attributes=False,
     *,
-    indent=None, show_empty=False,
+    color=True, indent=None, show_empty=False,
 ):
     """
     Return a formatted dump of the tree in node.  This is mainly useful for
@@ -131,6 +134,9 @@ def dump(
     level. None (the default) selects the single line representation.
     If show_empty is False, then empty lists and fields that are None
     will be omitted from the output for better readability.
+    If color is true (the default), the result will be syntax highlighted
+    using ANSI escape sequences if the stream and environment variables permit.
+    If color is false, colored output is always disabled.
     """
     def _format(node, level=0):
         if indent is not None:
@@ -201,7 +207,38 @@ def dump(
         raise TypeError('expected AST, got %r' % node.__class__.__name__)
     if indent is not None and not isinstance(indent, str):
         indent = ' ' * indent
-    return _format(node)[0]
+    output = _format(node)[0]
+    if color:
+        if can_colorize(file=sys.stdout):
+            output = _colorize_dump(output, get_theme(tty_file=sys.stdout).ast)
+    return output
+
+
+_color_pattern = None
+
+def _colorize_dump(output, theme):
+    global _color_pattern
+    if _color_pattern is None:
+        _color_pattern = re.compile(r"""
+            (?P<string>[bB]?'(?:\\.|[^'\\])*'|[bB]?"(?:\\.|[^"\\])*") |
+            (?P<keyword>\b(?:None|True|False|Ellipsis)\b)             |
+            (?P<node>[A-Za-z_]\w*)(?=\()                              |
+            (?P<field>[a-z_]\w*)(?==)                                 |
+            (?P<number>-?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?[jJ]?)
+        """, re.VERBOSE)
+
+    color_map = {
+        "node": theme.node,
+        "field": theme.field,
+        "string": theme.string,
+        "number": theme.number,
+        "keyword": theme.keyword,
+    }
+
+    def replace(match):
+        return f"{color_map[match.lastgroup]}{match.group()}{theme.reset}"
+
+    return _color_pattern.sub(replace, output)
 
 
 def copy_location(new_node, old_node):
@@ -337,8 +374,6 @@ def _splitlines_no_ff(source, maxlines=None):
     """
     global _line_pattern
     if _line_pattern is None:
-        # lazily computed to speedup import time of `ast`
-        import re
         _line_pattern = re.compile(r"(.*?(?:\r\n|\n|\r|$))")
 
     lines = []
@@ -640,7 +675,6 @@ def unparse(ast_obj):
 
 def main(args=None):
     import argparse
-    import sys
 
     parser = argparse.ArgumentParser(color=True)
     parser.add_argument('infile', nargs='?', default='-',

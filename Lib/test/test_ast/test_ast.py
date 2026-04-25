@@ -1450,6 +1450,7 @@ class CopyTests(unittest.TestCase):
             node.__replace__(**{object(): "y"})
 
 
+@support.force_not_colorized_test_class
 class ASTHelpers_Test(unittest.TestCase):
     maxDiff = None
 
@@ -1704,6 +1705,16 @@ Module(
             empty="Module(body=[Import(names=[alias(name='_ast', asname='ast')], is_lazy=0), ImportFrom(module='module', names=[alias(name='sub')], level=0, is_lazy=0)])",
             full="Module(body=[Import(names=[alias(name='_ast', asname='ast')], is_lazy=0), ImportFrom(module='module', names=[alias(name='sub')], level=0, is_lazy=0)], type_ignores=[])",
         )
+
+    def test_dump_with_color(self):
+        node = ast.parse("x = 1")
+
+        with support.force_color(True):
+            self.assertNotIn("\x1b[", ast.dump(node, color=False))
+            self.assertIn("\x1b[", ast.dump(node, color=True))
+
+        with support.force_color(False):
+            self.assertNotIn("\x1b[", ast.dump(node, color=True))
 
     def test_copy_location(self):
         src = ast.parse('1 + 1', mode='eval')
@@ -3415,6 +3426,7 @@ class ModuleStateTests(unittest.TestCase):
         self.assertEqual(res, 0)
 
 
+@support.force_not_colorized_test_class
 class CommandLineTests(unittest.TestCase):
     def setUp(self):
         self.filename = tempfile.mktemp()
@@ -3674,6 +3686,7 @@ class CommandLineTests(unittest.TestCase):
         self.check_output(source, expect, '--show-empty')
 
 
+@support.force_not_colorized_test_class
 class ASTOptimizationTests(unittest.TestCase):
     def wrap_expr(self, expr):
         return ast.Module(body=[ast.Expr(value=expr)])
