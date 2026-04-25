@@ -696,9 +696,9 @@ ast
 ---
 
 * Add *color* parameter to :func:`~ast.dump`.
-  If ``True`` (the default), output is highlighted in color, when the stream
+  If ``True``, output is highlighted in color, when the stream
   and :ref:`environment variables <using-on-controlling-color>` permit.
-  If ``False``, colored output is always disabled.
+  If ``False`` (the default), colored output is always disabled.
   (Contributed by Stan Ulbrych in :gh:`148981`.)
 
 

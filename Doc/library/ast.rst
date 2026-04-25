@@ -2480,7 +2480,7 @@ and classes for traversing abstract syntax trees:
       node = YourTransformer().visit(node)
 
 
-.. function:: dump(node, annotate_fields=True, include_attributes=False, *, color=True, indent=None, show_empty=False)
+.. function:: dump(node, annotate_fields=True, include_attributes=False, *, color=False, indent=None, show_empty=False)
 
    Return a formatted dump of the tree in *node*.  This is mainly useful for
    debugging purposes.  If *annotate_fields* is true (by default),
@@ -2490,10 +2490,10 @@ and classes for traversing abstract syntax trees:
    numbers and column offsets are not dumped by default.  If this is wanted,
    *include_attributes* can be set to true.
 
-   If *color* is ``True`` (the default), output will be syntax highlighted using
+   If *color* is ``True``, output will be syntax highlighted using
    ANSI escape sequences, if the *stream* and :ref:`environment variables
    <using-on-controlling-color>` permit.
-   If ``False``, colored output is always disabled.
+   If ``False`` (the default), colored output is always disabled.
 
    If *indent* is a non-negative integer or string, then the tree will be
    pretty-printed with that indent level.  An indent level

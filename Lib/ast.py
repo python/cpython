@@ -120,7 +120,7 @@ def _convert_literal(node):
 def dump(
     node, annotate_fields=True, include_attributes=False,
     *,
-    color=True, indent=None, show_empty=False,
+    color=False, indent=None, show_empty=False,
 ):
     """
     Return a formatted dump of the tree in node.  This is mainly useful for
@@ -134,9 +134,9 @@ def dump(
     level. None (the default) selects the single line representation.
     If show_empty is False, then empty lists and fields that are None
     will be omitted from the output for better readability.
-    If color is true (the default), the result will be syntax highlighted
+    If color is true, the result will be syntax highlighted
     using ANSI escape sequences if the stream and environment variables permit.
-    If color is false, colored output is always disabled.
+    If color is false (the default), colored output is always disabled.
     """
     def _format(node, level=0):
         if indent is not None:
@@ -721,7 +721,7 @@ def main(args=None):
 
     tree = parse(source, name, args.mode, type_comments=args.no_type_comments,
                  feature_version=feature_version, optimize=args.optimize)
-    print(dump(tree, include_attributes=args.include_attributes,
+    print(dump(tree, include_attributes=args.include_attributes, color=True,
                indent=args.indent, show_empty=args.show_empty))
 
 if __name__ == '__main__':
