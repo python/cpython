@@ -1298,10 +1298,18 @@ def _update_func_cell_for__class__(f, oldcls, newcls):
         # This function doesn't reference __class__, so nothing to do.
         return False
     # Fix the cell to point to the new class, if it's already pointing
-    # at the old class.  I'm not convinced that the "is oldcls" test
-    # is needed, but other than performance can't hurt.
+    # at the old class.
     closure = f.__closure__[idx]
-    if closure.cell_contents is oldcls:
+
+    try:
+        contents = closure.cell_contents
+    except ValueError:
+        # Cell is empty
+        return False
+
+    # This check makes it so we avoid updating an incorrect cell if the
+    # class body contains a function that was defined in a different class.
+    if contents is oldcls:
         closure.cell_contents = newcls
         return True
     return False

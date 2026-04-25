@@ -5375,5 +5375,51 @@ class TestZeroArgumentSuperWithSlots(unittest.TestCase):
         # one will be keeping a reference to the underlying class A.
         self.assertIs(A().cls(), B)
 
+    def test_empty_class_cell(self):
+        # gh-148947: Make sure that we explicitly handle the empty class cell.
+        def maker():
+            if False:
+                __class__ = 42
+
+            def method(self):
+                return __class__
+            return method
+
+        from dataclasses import dataclass
+
+        @dataclass(slots=True)
+        class X:
+            a: int
+
+            meth = maker()
+
+        with self.assertRaisesRegex(NameError, '__class__'):
+            X(1).meth()
+
+    def test_class_cell_from_other_class(self):
+        # This test fails without the "is oldcls" check in
+        # _update_func_cell_for__class__.
+        class Base:
+            def meth(self):
+                return "Base"
+
+        class Child(Base):
+            def meth(self):
+                return super().meth() + " Child"
+
+        @dataclass(slots=True)
+        class DC(Child):
+            a: int
+
+            meth = Child.meth
+
+        closure = DC.meth.__closure__
+        self.assertEqual(len(closure), 1)
+        self.assertIs(closure[0].cell_contents, Child)
+
+        self.assertEqual(DC(1).meth(), "Base Child")
+
+
+
 if __name__ == '__main__':
     unittest.main()
