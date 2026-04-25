@@ -21,8 +21,6 @@ that work tightly with the python syntax (template engines for example).
 :license: Python License.
 """
 from _ast import *
-lazy import re
-lazy import sys
 lazy from _colorize import can_colorize, get_theme
 
 
@@ -352,6 +350,8 @@ def _splitlines_no_ff(source, maxlines=None):
     """
     global _line_pattern
     if _line_pattern is None:
+        # lazily computed to speedup import time of `ast`
+        import re
         _line_pattern = re.compile(r"(.*?(?:\r\n|\n|\r|$))")
 
     lines = []
@@ -653,6 +653,7 @@ def unparse(ast_obj):
 
 def main(args=None):
     import argparse
+    import sys
 
     parser = argparse.ArgumentParser(color=True)
     parser.add_argument('infile', nargs='?', default='-',
