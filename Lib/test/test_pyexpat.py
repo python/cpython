@@ -718,7 +718,7 @@ class ChardataBufferTest(unittest.TestCase):
         # See https://github.com/python/cpython/issues/148441
         parser = expat.ParserCreate()
         parser.buffer_text = True
-        parser.buffer_size = 2**31 - 1 # INT_MAX
+        parser.buffer_size = 2**31 - 1  # INT_MAX
         def handler(text):
             pass
         N = 2049 * (1 << 20) - 3  # 2,148,532,221 bytes of character data
