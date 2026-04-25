@@ -2508,6 +2508,79 @@ print(len(data.strip()))
         self.assertIn('echo', r)
         self.assertIn('false', r)
 
+    @unittest.skipIf(mswindows, "POSIX shell-specific")
+    def test_pipeline_shell_true(self):
+        """shell=True forwards each command to the shell."""
+        result = subprocess.run_pipeline(
+            'echo hello world',
+            'tr a-z A-Z',
+            shell=True, capture_output=True, text=True,
+        )
+        self.assertEqual(result.stdout.strip(), 'HELLO WORLD')
+        self.assertEqual(result.returncodes, [0, 0])
+
+    def test_pipeline_env(self):
+        """env= is propagated to every command in the pipeline."""
+        env = os.environ.copy()
+        env['MY_TEST_VAR'] = 'pipeline_value'
+        result = subprocess.run_pipeline(
+            [sys.executable, '-c',
+             'import os, sys; assert os.environ["MY_TEST_VAR"] == "pipeline_value"; '
+             'sys.stdout.write("first\\n")'],
+            [sys.executable, '-c',
+             'import os, sys; assert os.environ["MY_TEST_VAR"] == "pipeline_value"; '
+             'sys.stdout.write(sys.stdin.read() + "second\\n")'],
+            env=env, capture_output=True, text=True,
+        )
+        self.assertEqual(result.returncodes, [0, 0])
+        self.assertIn('first', result.stdout)
+        self.assertIn('second', result.stdout)
+
+    def test_pipeline_cwd(self):
+        """cwd= is propagated to every command in the pipeline."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            expected = os.path.realpath(tmpdir)
+            result = subprocess.run_pipeline(
+                [sys.executable, '-c',
+                 'import os, sys; sys.stdout.write(os.getcwd() + "\\n")'],
+                [sys.executable, '-c',
+                 'import os, sys; sys.stdout.write(sys.stdin.read()); '
+                 'sys.stdout.write(os.getcwd() + "\\n")'],
+                cwd=tmpdir, capture_output=True, text=True,
+            )
+        lines = result.stdout.strip().split('\n')
+        self.assertEqual(len(lines), 2)
+        for line in lines:
+            self.assertEqual(os.path.realpath(line), expected)
+        self.assertEqual(result.returncodes, [0, 0])
+
+    @unittest.skipIf(mswindows, "pass_fds POSIX-specific")
+    def test_pipeline_pass_fds(self):
+        """pass_fds= forwards an inheritable fd to every command."""
+        with tempfile.NamedTemporaryFile(mode='wb', delete=False) as f:
+            f.write(b'shared-content')
+            fname = f.name
+        try:
+            rfd = os.open(fname, os.O_RDONLY)
+            try:
+                result = subprocess.run_pipeline(
+                    [sys.executable, '-c',
+                     f'import os, sys; '
+                     f'data = os.read({rfd}, 32); '
+                     f'sys.stdout.write(data.decode() + "|")'],
+                    [sys.executable, '-c',
+                     f'import os, sys; os.lseek({rfd}, 0, 0); '
+                     f'data = os.read({rfd}, 32); '
+                     f'sys.stdout.write(sys.stdin.read() + data.decode())'],
+                    pass_fds=(rfd,), capture_output=True, text=True,
+                )
+            finally:
+                os.close(rfd)
+        finally:
+            os.unlink(fname)
+        self.assertEqual(result.returncodes, [0, 0])
+        self.assertEqual(result.stdout, 'shared-content|shared-content')
+
 
 def _get_test_grp_name():
     for name_group in ('staff', 'nogroup', 'grp', 'nobody', 'nfsnobody'):
