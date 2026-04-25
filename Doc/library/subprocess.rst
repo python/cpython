@@ -313,6 +313,9 @@ underlying :class:`Popen` interface can be used directly.
    standard output. When *stdout* is :data:`PIPE`, the output is available
    in the returned :class:`PipelineResult`'s :attr:`~PipelineResult.stdout`
    attribute. Other keyword arguments are passed to each :class:`Popen` call.
+   ``close_fds=False`` is rejected because inherited copies of the
+   inter-process pipe ends in sibling children would prevent EOF from being
+   signaled and cause deadlocks.
 
    Examples::
 

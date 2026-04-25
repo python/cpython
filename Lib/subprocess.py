@@ -1016,6 +1016,11 @@ def run_pipeline(*commands, input=None, capture_output=False, timeout=None,
             raise ValueError('stdout and stderr arguments may not be used '
                              'with capture_output.')
 
+    if kwargs.get('close_fds') is False:
+        raise ValueError(
+            'close_fds=False is not supported by run_pipeline; '
+            'inherited pipe ends would prevent EOF signaling between commands')
+
     # Determine stderr handling - all processes share the same stderr pipe
     # When capturing, we create one pipe and all processes write to it
     stderr_arg = kwargs.pop('stderr', None)
