@@ -184,6 +184,18 @@ function, class body, or ``try``/``except``/``finally`` block raises a
 (``lazy from module import *`` and ``lazy from __future__ import ...`` both
 raise :exc:`SyntaxError`).
 
+For code that cannot use the ``lazy`` keyword directly (for example, when
+supporting Python versions older than 3.15 while still using lazy
+imports on 3.15+), a module can define
+:attr:`~module.__lazy_modules__` as a container of fully qualified module
+name strings.  Regular ``import`` statements for those modules are then treated
+as lazy, with the same semantics as the ``lazy`` keyword::
+
+   __lazy_modules__ = ["json", "pathlib"]
+
+   import json     # lazy
+   import os       # still eager
+
 .. seealso:: :pep:`810` for the full specification and rationale.
 
 (Contributed by Pablo Galindo Salgado and Dino Viehland in :gh:`142349`.)
