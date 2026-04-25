@@ -2234,13 +2234,22 @@ class PipelineTestCase(BaseTestCase):
 
     @unittest.skipIf(mswindows, "POSIX specific test")
     def test_pipeline_timeout(self):
-        """Test pipeline with timeout"""
-        with self.assertRaises(subprocess.TimeoutExpired):
+        """Pipeline timeout raises TimeoutExpired with bytes-or-None
+        partial output and stderr (regardless of backend).
+        """
+        try:
             subprocess.run_pipeline(
-                [sys.executable, '-c', 'import time; time.sleep(10); print("done")'],
-                [sys.executable, '-c', 'import sys; print(sys.stdin.read())'],
-                capture_output=True, timeout=0.1
+                [sys.executable, '-c',
+                 'import time; time.sleep(10); print("done")'],
+                [sys.executable, '-c',
+                 'import sys; print(sys.stdin.read())'],
+                capture_output=True, timeout=0.1,
             )
+        except subprocess.TimeoutExpired as e:
+            self.assertTrue(e.output is None or isinstance(e.output, bytes))
+            self.assertTrue(e.stderr is None or isinstance(e.stderr, bytes))
+        else:
+            self.fail("TimeoutExpired not raised")
 
     @unittest.skipIf(mswindows, "POSIX specific test")
     def test_pipeline_timeout_stdout_devnull_stderr_pipe(self):
