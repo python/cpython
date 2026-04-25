@@ -676,8 +676,8 @@ class MorselTests(unittest.TestCase):
             morsel._key = c0  # Override private variable.
             cookie = cookies.SimpleCookie()
             cookie["cookie"] = morsel
-            with self.assertWarnsRegex(DeprecationWarning, r"BaseCookie\.js_output"):
-                with self.assertRaises(cookies.CookieError):
+            with self.assertRaises(cookies.CookieError):
+                with self.assertWarnsRegex(DeprecationWarning, r"BaseCookie\.js_output"):
                     cookie.js_output()
 
             morsel = cookies.Morsel()
@@ -685,9 +685,10 @@ class MorselTests(unittest.TestCase):
             morsel._coded_value = c0  # Override private variable.
             cookie = cookies.SimpleCookie()
             cookie["cookie"] = morsel
-            with self.assertWarnsRegex(DeprecationWarning, r"BaseCookie\.js_output"):
-                with self.assertRaises(cookies.CookieError):
+            with self.assertRaises(cookies.CookieError):
+                with self.assertWarnsRegex(DeprecationWarning, r"BaseCookie\.js_output"):
                     cookie.js_output()
+
 
 
 def load_tests(loader, tests, pattern):
