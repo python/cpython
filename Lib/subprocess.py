@@ -1027,7 +1027,7 @@ def run_pipeline(*commands, input=None, capture_output=False, timeout=None,
     # Determine stderr handling - all processes share the same stderr pipe
     # When capturing, we create one pipe and all processes write to it
     stderr_arg = kwargs.pop('stderr', None)
-    capture_stderr = capture_output or stderr_arg == PIPE
+    capture_stderr = capture_output or (stderr_arg is PIPE)
 
     # stdin is for the first process, stdout is for the last process
     stdin_arg = kwargs.pop('stdin', None)
@@ -1037,12 +1037,11 @@ def run_pipeline(*commands, input=None, capture_output=False, timeout=None,
     # Popen keeps its parent-side pipes binary. _communicate_streams_* relies
     # on a bytes-in/bytes-out contract; leaving these in kwargs would wrap the
     # pipes in TextIOWrapper and break the threaded Windows backend.
-    text_mode = bool(kwargs.pop('text', None)
-                     or kwargs.pop('universal_newlines', None)
-                     or kwargs.get('encoding')
-                     or kwargs.get('errors'))
+    text = kwargs.pop('text', None)
+    universal_newlines = kwargs.pop('universal_newlines', None)
     encoding = kwargs.pop('encoding', None)
     errors_param = kwargs.pop('errors', None)
+    text_mode = bool(text or universal_newlines or encoding or errors_param)
     if text_mode and encoding is None:
         encoding = locale.getencoding()
 
