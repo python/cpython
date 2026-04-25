@@ -59,8 +59,11 @@ The :mod:`!binascii` module defines the following functions:
 
    If *padded* is true, the last group of 4 base 64 alphabet characters must
    be padded with the '=' character.
-   If *padded* is false, the '=' character is treated as other non-alphabet
-   characters (depending on the value of *strict_mode* and *ignorechars*).
+   If *padded* is false, padding is neither required nor recognized:
+   the '=' character is not treated as padding but as a non-alphabet
+   character, which means it is silently discarded when *strict_mode* is false,
+   or causes an :exc:`~binascii.Error` when *strict_mode* is true unless
+   b'=' is included in *ignorechars*.
 
    If *ignorechars* is specified, it should be a :term:`bytes-like object`
    containing characters to ignore from the input when *strict_mode* is true.
@@ -259,7 +262,7 @@ The :mod:`!binascii` module defines the following functions:
 
    Invalid base32 data will raise :exc:`binascii.Error`.
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
 .. function:: b2a_base32(data, /, *, padded=True, alphabet=BASE32_ALPHABET, wrapcol=0)
 
@@ -277,7 +280,7 @@ The :mod:`!binascii` module defines the following functions:
    after at most every *wrapcol* characters.
    If *wrapcol* is zero (default), do not insert any newlines.
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
 .. function:: a2b_qp(data, header=False)
 
@@ -367,7 +370,7 @@ The :mod:`!binascii` module defines the following functions:
    liberal towards whitespace) is also accessible using the
    :meth:`bytes.fromhex` class method.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.15
       Added the *ignorechars* parameter.
 
 
@@ -386,55 +389,55 @@ The :mod:`!binascii` module defines the following functions:
 
    The Base 64 alphabet according to :rfc:`4648`.
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
 .. data:: URLSAFE_BASE64_ALPHABET
 
    The "URL and filename safe" Base 64 alphabet according to :rfc:`4648`.
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
 .. data:: UU_ALPHABET
 
    The uuencoding alphabet.
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
 .. data:: CRYPT_ALPHABET
 
    The Base 64 alphabet used in the :manpage:`crypt(3)` routine and in the GEDCOM format.
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
 .. data:: BINHEX_ALPHABET
 
    The Base 64 alphabet used in BinHex 4 (HQX) within the classic Mac OS.
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
 .. data:: BASE85_ALPHABET
 
    The Base85 alphabet.
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
 .. data:: ASCII85_ALPHABET
 
    The Ascii85 alphabet.
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
 .. data:: Z85_ALPHABET
 
    The `Z85 <https://rfc.zeromq.org/spec/32/>`_ alphabet.
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
 .. data:: BASE32_ALPHABET
 
    The Base 32 alphabet according to :rfc:`4648`.
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
 .. data:: BASE32HEX_ALPHABET
 
@@ -442,7 +445,7 @@ The :mod:`!binascii` module defines the following functions:
    Data encoded with this alphabet maintains its sort order during bitwise
    comparisons.
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
 
 .. seealso::
