@@ -132,6 +132,7 @@ Finis.
 import re
 import string
 import types
+import warnings
 
 __all__ = ["CookieError", "BaseCookie", "SimpleCookie"]
 
@@ -539,6 +540,10 @@ class BaseCookie(dict):
             l.append('%s=%s' % (key, repr(value.value)))
         return '<%s: %s>' % (self.__class__.__name__, _spacejoin(l))
 
+    @warnings.deprecated(
+        "http.cookies.BaseCookie.js_output() is deprecated and will "
+        "be removed in Python 3.17; use output() instead"
+    )
     def js_output(self, attrs=None):
         """Return a string suitable for JavaScript."""
         result = []
