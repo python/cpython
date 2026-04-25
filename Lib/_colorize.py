@@ -193,6 +193,7 @@ class Argparse(ThemeSection):
 class Ast(ThemeSection):
     node: str = ANSIColors.CYAN
     field: str = ANSIColors.BLUE
+    attribute: str = ANSIColors.GREY
     string: str = ANSIColors.GREEN
     number: str = ANSIColors.YELLOW
     keyword: str = ANSIColors.BOLD_BLUE

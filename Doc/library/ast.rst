@@ -2490,9 +2490,8 @@ and classes for traversing abstract syntax trees:
    numbers and column offsets are not dumped by default.  If this is wanted,
    *include_attributes* can be set to true.
 
-   If *color* is ``True``, output will be syntax highlighted using
-   ANSI escape sequences, if the *stream* and :ref:`environment variables
-   <using-on-controlling-color>` permit.
+   If *color* is ``True``, the returned string is syntax highlighted using
+   ANSI escape sequences.
    If ``False`` (the default), colored output is always disabled.
 
    If *indent* is a non-negative integer or string, then the tree will be

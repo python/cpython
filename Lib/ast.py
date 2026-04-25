@@ -134,10 +134,12 @@ def dump(
     level. None (the default) selects the single line representation.
     If show_empty is False, then empty lists and fields that are None
     will be omitted from the output for better readability.
-    If color is true, the result will be syntax highlighted
-    using ANSI escape sequences if the stream and environment variables permit.
+    If color is true, the returned string is syntax highlighted using ANSI
+    escape sequences.
     If color is false (the default), colored output is always disabled.
     """
+    theme = get_theme(force_color=color, force_no_color=not color).ast
+
     def _format(node, level=0):
         if indent is not None:
             level += 1
@@ -166,13 +168,13 @@ def dump(
                         field_type = cls._field_types.get(name, object)
                         if getattr(field_type, '__origin__', ...) is list:
                             if not keywords:
-                                args_buffer.append(repr(value))
+                                args_buffer.append(_format(value, level)[0])
                             continue
                     elif isinstance(value, Load):
                         field_type = cls._field_types.get(name, object)
                         if field_type is expr_context:
                             if not keywords:
-                                args_buffer.append(repr(value))
+                                args_buffer.append(_format(value, level)[0])
                             continue
                     if not keywords:
                         args.extend(args_buffer)
@@ -180,7 +182,7 @@ def dump(
                 value, simple = _format(value, level)
                 allsimple = allsimple and simple
                 if keywords:
-                    args.append('%s=%s' % (name, value))
+                    args.append(f'{theme.field}{name}{theme.reset}={value}')
                 else:
                     args.append(value)
             if include_attributes and node._attributes:
@@ -193,52 +195,28 @@ def dump(
                         continue
                     value, simple = _format(value, level)
                     allsimple = allsimple and simple
-                    args.append('%s=%s' % (name, value))
+                    args.append(f'{theme.attribute}{name}{theme.reset}={value}')
+            cls_name = f'{theme.node}{cls.__name__}{theme.reset}'
             if allsimple and len(args) <= 3:
-                return '%s(%s)' % (node.__class__.__name__, ', '.join(args)), not args
-            return '%s(%s%s)' % (node.__class__.__name__, prefix, sep.join(args)), False
+                return f'{cls_name}({", ".join(args)})', not args
+            return f'{cls_name}({prefix}{sep.join(args)})', False
         elif isinstance(node, list):
             if not node:
                 return '[]', True
-            return '[%s%s]' % (prefix, sep.join(_format(x, level)[0] for x in node)), False
+            return f'[{prefix}{sep.join(_format(x, level)[0] for x in node)}]', False
+        if isinstance(node, bool) or node is None or node is Ellipsis:
+            return f'{theme.keyword}{node!r}{theme.reset}', True
+        if isinstance(node, (int, float, complex)):
+            return f'{theme.number}{node!r}{theme.reset}', True
+        if isinstance(node, (str, bytes)):
+            return f'{theme.string}{node!r}{theme.reset}', True
         return repr(node), True
 
     if not isinstance(node, AST):
         raise TypeError('expected AST, got %r' % node.__class__.__name__)
     if indent is not None and not isinstance(indent, str):
         indent = ' ' * indent
-    output = _format(node)[0]
-    if color:
-        if can_colorize(file=sys.stdout):
-            output = _colorize_dump(output, get_theme(tty_file=sys.stdout).ast)
-    return output
-
-
-_color_pattern = None
-
-def _colorize_dump(output, theme):
-    global _color_pattern
-    if _color_pattern is None:
-        _color_pattern = re.compile(r"""
-            (?P<string>[bB]?'(?:\\.|[^'\\])*'|[bB]?"(?:\\.|[^"\\])*") |
-            (?P<keyword>\b(?:None|True|False|Ellipsis)\b)             |
-            (?P<node>[A-Za-z_]\w*)(?=\()                              |
-            (?P<field>[a-z_]\w*)(?==)                                 |
-            (?P<number>-?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?[jJ]?)
-        """, re.VERBOSE)
-
-    color_map = {
-        "node": theme.node,
-        "field": theme.field,
-        "string": theme.string,
-        "number": theme.number,
-        "keyword": theme.keyword,
-    }
-
-    def replace(match):
-        return f"{color_map[match.lastgroup]}{match.group()}{theme.reset}"
-
-    return _color_pattern.sub(replace, output)
+    return _format(node)[0]
 
 
 def copy_location(new_node, old_node):
@@ -721,7 +699,8 @@ def main(args=None):
 
     tree = parse(source, name, args.mode, type_comments=args.no_type_comments,
                  feature_version=feature_version, optimize=args.optimize)
-    print(dump(tree, include_attributes=args.include_attributes, color=True,
+    print(dump(tree, include_attributes=args.include_attributes,
+               color=can_colorize(file=sys.stdout),
                indent=args.indent, show_empty=args.show_empty))
 
 if __name__ == '__main__':

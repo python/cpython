@@ -1450,7 +1450,6 @@ class CopyTests(unittest.TestCase):
             node.__replace__(**{object(): "y"})
 
 
-@support.force_not_colorized_test_class
 class ASTHelpers_Test(unittest.TestCase):
     maxDiff = None
 
@@ -1708,13 +1707,8 @@ Module(
 
     def test_dump_with_color(self):
         node = ast.parse("x = 1")
-
-        with support.force_color(True):
-            self.assertNotIn("\x1b[", ast.dump(node, color=False))
-            self.assertIn("\x1b[", ast.dump(node, color=True))
-
-        with support.force_color(False):
-            self.assertNotIn("\x1b[", ast.dump(node, color=True))
+        self.assertNotIn("\x1b[", ast.dump(node, color=False))
+        self.assertIn("\x1b[", ast.dump(node, color=True))
 
     def test_copy_location(self):
         src = ast.parse('1 + 1', mode='eval')
