@@ -2416,6 +2416,65 @@ print(len(data.strip()))
             f"TimeoutExpired raised after {elapsed:.2f}s; expected ~0.5s. "
             "Input writing may have blocked without checking timeout.")
 
+    def test_pipeline_check_true_success(self):
+        """check=True with all-successful commands returns normally"""
+        result = subprocess.run_pipeline(
+            [sys.executable, '-c', 'print("ok")'],
+            [sys.executable, '-c', 'import sys; print(sys.stdin.read().strip())'],
+            capture_output=True, text=True, check=True
+        )
+        self.assertEqual(result.returncodes, [0, 0])
+        self.assertEqual(result.returncode, 0)
+        self.assertEqual(result.stdout.strip(), 'ok')
+
+    def test_pipeline_stderr_to_stdout(self):
+        """stderr=STDOUT routes the final process's stderr to stdout"""
+        result = subprocess.run_pipeline(
+            [sys.executable, '-c', 'print("data")'],
+            [sys.executable, '-c',
+             'import sys; sys.stdout.write(sys.stdin.read()); '
+             'sys.stderr.write("ERR\\n")'],
+            stdout=subprocess.PIPE, stderr=subprocess.STDOUT
+        )
+        self.assertEqual(result.returncodes, [0, 0])
+        self.assertIn(b'data', result.stdout)
+        self.assertIn(b'ERR', result.stdout)
+        self.assertIsNone(result.stderr)
+
+    def test_pipeline_intermediate_stdout_closed_in_parent(self):
+        """Intermediate stdout pipes close in parent so producer sees EOF"""
+        result = subprocess.run_pipeline(
+            [sys.executable, '-c',
+             'import sys; sys.stdout.write("x"); sys.stdout.flush(); '
+             'sys.stdout.write("y" * 200000)'],
+            [sys.executable, '-c', 'import sys; sys.stdin.read(1)'],
+            capture_output=True, timeout=10
+        )
+        self.assertEqual(result.returncodes[1], 0)
+
+    def test_pipeline_error_pickle(self):
+        """PipelineError survives a pickle round-trip"""
+        import pickle
+        err = subprocess.PipelineError(
+            [['echo', 'hi'], ['false']], [0, 1],
+            stdout=b'hi\n', stderr=b'')
+        restored = pickle.loads(pickle.dumps(err))
+        self.assertEqual(restored.commands, err.commands)
+        self.assertEqual(restored.returncodes, err.returncodes)
+        self.assertEqual(restored.stdout, err.stdout)
+        self.assertEqual(restored.stderr, err.stderr)
+        self.assertEqual(restored.failed, err.failed)
+        self.assertEqual(str(restored), str(err))
+
+    def test_pipeline_error_repr(self):
+        """repr(PipelineError(...)) is meaningful via Exception.args"""
+        err = subprocess.PipelineError(
+            [['echo', 'hi'], ['false']], [0, 1])
+        r = repr(err)
+        self.assertIn('PipelineError', r)
+        self.assertIn('echo', r)
+        self.assertIn('false', r)
+
 
 def _get_test_grp_name():
     for name_group in ('staff', 'nogroup', 'grp', 'nobody', 'nfsnobody'):
