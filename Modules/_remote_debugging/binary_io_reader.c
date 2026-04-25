@@ -24,7 +24,6 @@
 
 /* File structure sizes */
 #define FILE_FOOTER_SIZE 32
-#define SAMPLE_RECORD_HEADER_SIZE (sizeof(uint64_t) + sizeof(uint32_t) + 1)
 #define MIN_DECOMPRESS_BUFFER_SIZE (64 * 1024)  /* Minimum decompression buffer */
 
 /* Progress callback frequency */
@@ -978,7 +977,7 @@ binary_reader_replay(BinaryReader *reader, PyObject *collector, PyObject *progre
 
     while (offset < reader->sample_data_size) {
         /* Read thread_id (8 bytes) + interpreter_id (4 bytes) + encoding byte */
-        if (reader->sample_data_size - offset < SAMPLE_RECORD_HEADER_SIZE) {
+        if (reader->sample_data_size - offset < SAMPLE_HEADER_FIXED_SIZE) {
             break;  /* End of data */
         }
 
