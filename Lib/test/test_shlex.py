@@ -179,6 +179,16 @@ class ShlexTest(unittest.TestCase):
                              "%s: %s != %s" %
                              (self.data[i][0], l, self.data[i][1:]))
 
+    def test_push_source_after_eof(self):
+        for posix in (False, True):
+            with self.subTest(posix=posix):
+                lexer = shlex.shlex('a', posix=posix)
+                self.assertEqual(lexer.get_token(), 'a')
+                self.assertEqual(lexer.get_token(), lexer.eof)
+                lexer.push_source('b')
+                self.assertEqual(lexer.get_token(), 'b')
+                self.assertEqual(lexer.get_token(), lexer.eof)
+
     def testSyntaxSplitAmpersandAndPipe(self):
         """Test handling of syntax splitting of &, |"""
         # Could take these forms: &&, &, |&, ;&, ;;&
