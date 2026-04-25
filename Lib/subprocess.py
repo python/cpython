@@ -219,11 +219,13 @@ class PipelineError(SubprocessError):
         ]
 
     def __str__(self):
-        failed_info = ", ".join(
-            f"command {i} {cmd!r} returned {rc}"
-            for i, cmd, rc in self.failed
-        )
-        return f"Pipeline failed: {failed_info}"
+        LIMIT = 3
+        head = self.failed[:LIMIT]
+        parts = [f"command {i} {cmd!r} returned {rc}" for i, cmd, rc in head]
+        extra = len(self.failed) - len(head)
+        if extra > 0:
+            parts.append(f"and {extra} more")
+        return f"Pipeline failed: {', '.join(parts)}"
 
 
 if _mswindows:
@@ -322,7 +324,7 @@ DEVNULL = -3
 
 
 # Helper function for multiplexed I/O
-def _remaining_time_helper(endtime):
+def _deadline_remaining(endtime):
     """Calculate remaining time until deadline."""
     if endtime is None:
         return None
@@ -391,7 +393,7 @@ def _communicate_io_posix(selector, stdin, input_view, input_offset,
     stdin_fd = stdin.fileno() if stdin else None
 
     while selector.get_map():
-        remaining = _remaining_time_helper(endtime)
+        remaining = _deadline_remaining(endtime)
         if remaining is not None and remaining <= 0:
             return (input_offset, False)  # Timed out
 
@@ -547,7 +549,7 @@ if _mswindows:
 
         # Join writer thread with timeout first
         if writer_thread is not None:
-            remaining = _remaining_time_helper(endtime)
+            remaining = _deadline_remaining(endtime)
             if remaining is not None and remaining < 0:
                 remaining = 0
             writer_thread.join(remaining)
@@ -560,7 +562,7 @@ if _mswindows:
 
         # Join reader threads with timeout
         for stream, t in threads:
-            remaining = _remaining_time_helper(endtime)
+            remaining = _deadline_remaining(endtime)
             if remaining is not None and remaining < 0:
                 remaining = 0
             t.join(remaining)
@@ -1031,11 +1033,10 @@ def run_pipeline(*commands, input=None, capture_output=False, timeout=None,
     stdin_arg = kwargs.pop('stdin', None)
     stdout_arg = kwargs.pop('stdout', None)
 
-    # Handle text-mode encoding at the pipeline boundary so every parent-side
-    # pipe stays binary. _communicate_streams_* require bytes in/out; leaving
-    # text=/encoding=/errors= in kwargs would make each Popen wrap its pipes
-    # in TextIOWrapper, which breaks the threaded Windows backend's
-    # fh.write(bytes_input)/fh.read()->bytes contract.
+    # Load-bearing: pop text=/universal_newlines=/encoding=/errors= so each
+    # Popen keeps its parent-side pipes binary. _communicate_streams_* relies
+    # on a bytes-in/bytes-out contract; leaving these in kwargs would wrap the
+    # pipes in TextIOWrapper and break the threaded Windows backend.
     text_mode = bool(kwargs.pop('text', None)
                      or kwargs.pop('universal_newlines', None)
                      or kwargs.get('encoding')
@@ -1127,7 +1128,7 @@ def run_pipeline(*commands, input=None, capture_output=False, timeout=None,
                 stdin=stdin_stream,
                 input_data=input_data,
                 read_streams=read_streams,
-                timeout=_remaining_time_helper(endtime),
+                timeout=_deadline_remaining(endtime),
                 cmd_for_timeout=commands,
                 stdout_stream=last_proc.stdout,
                 stderr_stream=stderr_reader,
@@ -1156,7 +1157,7 @@ def run_pipeline(*commands, input=None, capture_output=False, timeout=None,
         returncodes = []
         for proc in processes:
             try:
-                remaining = _remaining_time_helper(endtime)
+                remaining = _deadline_remaining(endtime)
                 proc.wait(timeout=remaining)
             except TimeoutExpired:
                 # Kill all processes on timeout
@@ -1772,6 +1773,7 @@ class Popen:
         self.text_mode = bool(universal_newlines)
 
     def _translate_newlines(self, data, encoding, errors):
+        # Method kept for subclass back-compat; logic lives at module level.
         return _translate_newlines(data, encoding, errors)
 
     def __enter__(self):
