@@ -28,6 +28,16 @@ DEFAULT_OUTPUT = ROOT / "Python/recorder_functions.c.h"
 # Must match MAX_RECORDED_VALUES in Include/internal/pycore_optimizer.h.
 MAX_RECORDED_VALUES = 3
 
+# Map `_RECORD_*` uops to the helper that converts a raw family-recorded
+# value to the form the specialized member consumes.
+_RECORD_TRANSFORM_HELPERS: dict[str, str] = {
+    "_RECORD_TOS_TYPE": "record_trace_transform_to_type",
+    "_RECORD_NOS_TYPE": "record_trace_transform_to_type",
+    "_RECORD_NOS_GEN_FUNC": "record_trace_transform_gen_func",
+    "_RECORD_3OS_GEN_FUNC": "record_trace_transform_gen_func",
+    "_RECORD_BOUND_METHOD": "record_trace_transform_bound_method",
+}
+
 
 class RecorderEmitter(Emitter):
     def __init__(self, out: CWriter):
@@ -119,10 +129,13 @@ def generate_recorder_tables(analysis: Analysis, out: CWriter) -> None:
     record_function_indexes: dict[str, int] = dict()
     record_table: dict[str, list[str]] = {}
     record_consumer_table: dict[str, tuple[list[int], bool]] = {}
-    record_slot_keys = {
-        name: get_record_slot_kind(name)
+    record_uop_names = {
+        name
         for name, uop in analysis.uops.items()
         if uop.properties.records_value
+    }
+    record_slot_keys = {
+        name: get_record_slot_kind(name) for name in record_uop_names
     }
     index = 1
     for inst in analysis.instructions.values():
@@ -187,6 +200,38 @@ def generate_recorder_tables(analysis: Analysis, out: CWriter) -> None:
     for name in record_function_indexes:
         out.emit(f"    [{name}_INDEX] = _PyOpcode_RecordFunction{name[7:]},\n")
     out.emit("};\n")
+    generate_record_transform_dispatcher(record_uop_names, out)
+
+
+def generate_record_transform_dispatcher(
+    record_uop_names: set[str], out: CWriter
+) -> None:
+    """Emit a switch that converts a family-recorded value for a recorder uop.
+
+    Only `_RECORD_*` uops that need conversion get a case; the default
+    returns the input value unchanged. Helpers live in Python/optimizer.c.
+    """
+    cases: dict[str, list[str]] = {}
+    for record_name in record_uop_names:
+        helper = _RECORD_TRANSFORM_HELPERS.get(record_name)
+        if helper is None:
+            continue
+        cases.setdefault(helper, []).append(record_name)
+    out.emit("\n")
+    out.emit(
+        "PyObject *\n"
+        "_PyOpcode_RecordTransformValue(int uop, PyObject *value)\n"
+        "{\n"
+    )
+    out.emit("    switch (uop) {\n")
+    for helper, names in cases.items():
+        for name in names:
+            out.emit(f"        case {name}:\n")
+        out.emit(f"            return {helper}(value);\n")
+    out.emit("        default:\n")
+    out.emit("            return value;\n")
+    out.emit("    }\n")
+    out.emit("}\n")
 
 
 arg_parser = argparse.ArgumentParser(

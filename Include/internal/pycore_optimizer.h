@@ -498,6 +498,12 @@ typedef struct {
 
 PyAPI_DATA(const _PyOpcodeRecordEntry) _PyOpcode_RecordEntries[256];
 PyAPI_DATA(const _PyOpcodeRecordSlotMap) _PyOpcode_RecordSlotMaps[256];
+
+/* Convert a family-recorded value to the form a recorder uop expects.
+ * If no transform is needed, return the input value unchanged.
+ * Takes ownership of `value` and returns a new strong reference or NULL.
+ */
+PyAPI_FUNC(PyObject *) _PyOpcode_RecordTransformValue(int uop, PyObject *value);
 #endif
 
 #ifdef __cplusplus

@@ -263,3 +263,20 @@ const _Py_RecordFuncPtr _PyOpcode_RecordFunctions[8] = {
         [_RECORD_CALLABLE_KW_INDEX] = _PyOpcode_RecordFunction_CALLABLE_KW,
         [_RECORD_4OS_INDEX] = _PyOpcode_RecordFunction_4OS,
 };
+
+PyObject *
+_PyOpcode_RecordTransformValue(int uop, PyObject *value)
+{
+        switch (uop) {
+                case _RECORD_TOS_TYPE:
+                case _RECORD_NOS_TYPE:
+                    return record_trace_transform_to_type(value);
+                case _RECORD_NOS_GEN_FUNC:
+                case _RECORD_3OS_GEN_FUNC:
+                    return record_trace_transform_gen_func(value);
+                case _RECORD_BOUND_METHOD:
+                    return record_trace_transform_bound_method(value);
+                default:
+                    return value;
+        }
+}

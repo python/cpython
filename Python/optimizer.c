@@ -612,14 +612,6 @@ is_terminator(const _PyUOpInstruction *uop)
     );
 }
 
-/* Transform a recorded value before storing it in operand0.
- *
- * Family-wide recording stores the base opcode's raw value. Some uops need a
- * derived form instead, such as the value's type. A NULL entry leaves the
- * recorded value unchanged.
- */
-typedef PyObject *(*_Py_RecordTraceTransformFn)(PyObject *value);
-
 static PyObject *
 record_trace_transform_to_type(PyObject *value)
 {
@@ -662,14 +654,6 @@ record_trace_transform_bound_method(PyObject *value)
     Py_DECREF(value);
     return result;
 }
-
-static const _Py_RecordTraceTransformFn record_trace_transforms[MAX_UOP_ID + 1] = {
-    [_RECORD_TOS_TYPE] = record_trace_transform_to_type,
-    [_RECORD_NOS_TYPE] = record_trace_transform_to_type,
-    [_RECORD_NOS_GEN_FUNC] = record_trace_transform_gen_func,
-    [_RECORD_3OS_GEN_FUNC] = record_trace_transform_gen_func,
-    [_RECORD_BOUND_METHOD] = record_trace_transform_bound_method,
-};
 
 /* Returns 1 on success (added to trace), 0 on trace end.
  */
@@ -1016,10 +1000,8 @@ _PyJit_translate_single_bytecode_to_trace(
 
                     PyObject *recorded_value = tracer->prev_state.recorded_values[record_slot];
                     tracer->prev_state.recorded_values[record_slot] = NULL;
-                    _Py_RecordTraceTransformFn transform =
-                        record_slot_map->needs_family_transform ? record_trace_transforms[uop] : NULL;
-                    if (transform != NULL && recorded_value != NULL) {
-                        recorded_value = transform(recorded_value);
+                    if (record_slot_map->needs_family_transform && recorded_value != NULL) {
+                        recorded_value = _PyOpcode_RecordTransformValue(uop, recorded_value);
                     }
                     operand = (uintptr_t)recorded_value;
                 }
