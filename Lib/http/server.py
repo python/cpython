@@ -61,8 +61,6 @@ XXX To do:
 # (Actually, the latter is only true if you know the server configuration
 # at the time the request was made!)
 
-__version__ = "0.6"
-
 __all__ = [
     "HTTPServer", "ThreadingHTTPServer",
     "HTTPSServer", "ThreadingHTTPSServer",
@@ -86,6 +84,8 @@ import time
 import urllib.parse
 
 from http import HTTPStatus
+
+lazy import _colorize
 
 
 # Default error message template
@@ -115,7 +115,7 @@ DEFAULT_ERROR_CONTENT_TYPE = "text/html;charset=utf-8"
 class HTTPServer(socketserver.TCPServer):
 
     allow_reuse_address = True    # Seems to make sense in testing environment
-    allow_reuse_port = True
+    allow_reuse_port = False
 
     def server_bind(self):
         """Override server_bind to store the server name."""
@@ -280,7 +280,7 @@ class BaseHTTPRequestHandler(socketserver.StreamRequestHandler):
     # The server software version.  You may want to override this.
     # The format is multiple whitespace-separated strings,
     # where each string is of the form name[/version].
-    server_version = "BaseHTTP/" + __version__
+    server_version = "BaseHTTP"
 
     error_message_format = DEFAULT_ERROR_MESSAGE
     error_content_type = DEFAULT_ERROR_CONTENT_TYPE
@@ -302,6 +302,7 @@ class BaseHTTPRequestHandler(socketserver.StreamRequestHandler):
         error response has already been sent back.
 
         """
+        is_http_0_9 = False
         self.command = None  # set in case of error on the first line
         self.request_version = version = self.default_request_version
         self.close_connection = True
@@ -359,6 +360,7 @@ class BaseHTTPRequestHandler(socketserver.StreamRequestHandler):
                     HTTPStatus.BAD_REQUEST,
                     "Bad HTTP/0.9 request type (%r)" % command)
                 return False
+            is_http_0_9 = True
         self.command, self.path = command, path
 
         # gh-87389: The purpose of replacing '//' with '/' is to protect
@@ -367,6 +369,11 @@ class BaseHTTPRequestHandler(socketserver.StreamRequestHandler):
         # without scheme (similar to http://path) rather than a path.
         if self.path.startswith('//'):
             self.path = '/' + self.path.lstrip('/')  # Reduce to a single /
+
+        # For HTTP/0.9, headers are not expected at all.
+        if is_http_0_9:
+            self.headers = {}
+            return True
 
         # Examine the headers and look for a Connection directive.
         try:
@@ -569,6 +576,31 @@ class BaseHTTPRequestHandler(socketserver.StreamRequestHandler):
             self.wfile.write(b"".join(self._headers_buffer))
             self._headers_buffer = []
 
+    def _colorize_request(self, code, size, t):
+        try:
+            code_int = int(code)
+        except (TypeError, ValueError):
+            code_color = ""
+        else:
+            if code_int >= 500:
+                code_color = t.status_server_error
+            elif code_int >= 400:
+                code_color = t.status_client_error
+            elif code_int >= 300:
+                code_color = t.status_redirect
+            elif code_int >= 200:
+                code_color = t.status_ok
+            else:
+                code_color = t.status_informational
+
+        request_line = self.requestline.translate(self._control_char_table)
+        parts = request_line.split(None, 2)
+        if len(parts) == 3:
+            method, path, version = parts
+            request_line = f"{method} {t.path}{path}{t.reset} {version}"
+
+        return f'"{request_line}" {code_color}{code} {t.size}{size}{t.reset}'
+
     def log_request(self, code='-', size='-'):
         """Log an accepted request.
 
@@ -577,6 +609,7 @@ class BaseHTTPRequestHandler(socketserver.StreamRequestHandler):
         """
         if isinstance(code, HTTPStatus):
             code = code.value
+        self._log_request_info = (code, size)
         self.log_message('"%s" %s %s',
                          self.requestline, str(code), str(size))
 
@@ -591,7 +624,7 @@ class BaseHTTPRequestHandler(socketserver.StreamRequestHandler):
         XXX This should go to the separate error log.
 
         """
-
+        self._log_is_error = True
         self.log_message(format, *args)
 
     # https://en.wikipedia.org/wiki/List_of_Unicode_characters#Control_codes
@@ -618,12 +651,22 @@ class BaseHTTPRequestHandler(socketserver.StreamRequestHandler):
         before writing the output to stderr.
 
         """
+        message = (format % args).translate(self._control_char_table)
+        t = _colorize.get_theme(tty_file=sys.stderr).http_server
 
-        message = format % args
-        sys.stderr.write("%s - - [%s] %s\n" %
-                         (self.address_string(),
-                          self.log_date_time_string(),
-                          message.translate(self._control_char_table)))
+        info = getattr(self, "_log_request_info", None)
+        if info is not None:
+            self._log_request_info = None
+            message = self._colorize_request(*info, t)
+        elif getattr(self, "_log_is_error", False):
+            self._log_is_error = False
+            message = f"{t.error}{message}{t.reset}"
+
+        sys.stderr.write(
+            f"{t.timestamp}{self.address_string()} - - "
+            f"[{self.log_date_time_string()}]{t.reset} "
+            f"{message}\n"
+        )
 
     def version_string(self):
         """Return the server software version string."""
@@ -683,7 +726,7 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
 
     """
 
-    server_version = "SimpleHTTP/" + __version__
+    server_version = "SimpleHTTP"
     index_pages = ("index.html", "index.htm")
     extensions_map = _encodings_map_default = {
         '.gz': 'application/gzip',
@@ -980,8 +1023,8 @@ def test(HandlerClass=BaseHTTPRequestHandler,
     HandlerClass.protocol_version = protocol
 
     if tls_cert:
-        server = ThreadingHTTPSServer(addr, HandlerClass, certfile=tls_cert,
-                                      keyfile=tls_key, password=tls_password)
+        server = ServerClass(addr, HandlerClass, certfile=tls_cert,
+                             keyfile=tls_key, password=tls_password)
     else:
         server = ServerClass(addr, HandlerClass)
 
@@ -989,9 +1032,11 @@ def test(HandlerClass=BaseHTTPRequestHandler,
         host, port = httpd.socket.getsockname()[:2]
         url_host = f'[{host}]' if ':' in host else host
         protocol = 'HTTPS' if tls_cert else 'HTTP'
+        t = _colorize.get_theme().http_server
+        url = f"{protocol.lower()}://{url_host}:{port}/"
         print(
-            f"Serving {protocol} on {host} port {port} "
-            f"({protocol.lower()}://{url_host}:{port}/) ..."
+            f"{t.serving}Serving {protocol} on {host} port {port}{t.reset} "
+            f"({t.url}{url}{t.reset}) ..."
         )
         try:
             httpd.serve_forever()
@@ -1041,7 +1086,7 @@ def _main(args=None):
             parser.error(f"Failed to read TLS password file: {e}")
 
     # ensure dual-stack is not disabled; ref #38907
-    class DualStackServer(ThreadingHTTPServer):
+    class DualStackServerMixin:
 
         def server_bind(self):
             # suppress exception when protocol is IPv4
@@ -1054,9 +1099,16 @@ def _main(args=None):
             self.RequestHandlerClass(request, client_address, self,
                                      directory=args.directory)
 
+    class HTTPDualStackServer(DualStackServerMixin, ThreadingHTTPServer):
+        pass
+    class HTTPSDualStackServer(DualStackServerMixin, ThreadingHTTPSServer):
+        pass
+
+    ServerClass = HTTPSDualStackServer if args.tls_cert else HTTPDualStackServer
+
     test(
         HandlerClass=SimpleHTTPRequestHandler,
-        ServerClass=DualStackServer,
+        ServerClass=ServerClass,
         port=args.port,
         bind=args.bind,
         protocol=args.protocol,
@@ -1064,6 +1116,15 @@ def _main(args=None):
         tls_key=args.tls_key,
         tls_password=tls_key_password,
     )
+
+
+def __getattr__(name):
+    if name == "__version__":
+        from warnings import _deprecated
+
+        _deprecated("__version__", remove=(3, 20))
+        return "0.6"  # Do not change
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 
 if __name__ == '__main__':

@@ -21,10 +21,11 @@ that work tightly with the python syntax (template engines for example).
 :license: Python License.
 """
 from _ast import *
+lazy from _colorize import can_colorize, get_theme
 
 
 def parse(source, filename='<unknown>', mode='exec', *,
-          type_comments=False, feature_version=None, optimize=-1):
+          type_comments=False, feature_version=None, optimize=-1, module=None):
     """
     Parse the source into an AST node.
     Equivalent to compile(source, filename, mode, PyCF_ONLY_AST).
@@ -44,7 +45,8 @@ def parse(source, filename='<unknown>', mode='exec', *,
         feature_version = minor
     # Else it should be an int giving the minor version for 3.x.
     return compile(source, filename, mode, flags,
-                   _feature_version=feature_version, optimize=optimize)
+                   _feature_version=feature_version, optimize=optimize,
+                   module=module)
 
 
 def literal_eval(node_or_string):
@@ -57,73 +59,91 @@ def literal_eval(node_or_string):
     Caution: A complex expression can overflow the C stack and cause a crash.
     """
     if isinstance(node_or_string, str):
-        node_or_string = parse(node_or_string.lstrip(" \t"), mode='eval')
-    if isinstance(node_or_string, Expression):
+        node_or_string = parse(node_or_string.lstrip(" \t"), mode='eval').body
+    elif isinstance(node_or_string, Expression):
         node_or_string = node_or_string.body
-    def _raise_malformed_node(node):
-        msg = "malformed node or string"
-        if lno := getattr(node, 'lineno', None):
-            msg += f' on line {lno}'
-        raise ValueError(msg + f': {node!r}')
-    def _convert_num(node):
-        if not isinstance(node, Constant) or type(node.value) not in (int, float, complex):
-            _raise_malformed_node(node)
+    return _convert_literal(node_or_string)
+
+
+def _convert_literal(node):
+    """
+    Used by `literal_eval` to convert an AST node into a value.
+    """
+    if isinstance(node, Constant):
         return node.value
-    def _convert_signed_num(node):
-        if isinstance(node, UnaryOp) and isinstance(node.op, (UAdd, USub)):
-            operand = _convert_num(node.operand)
-            if isinstance(node.op, UAdd):
-                return + operand
-            else:
-                return - operand
-        return _convert_num(node)
-    def _convert(node):
-        if isinstance(node, Constant):
-            return node.value
-        elif isinstance(node, Tuple):
-            return tuple(map(_convert, node.elts))
-        elif isinstance(node, List):
-            return list(map(_convert, node.elts))
-        elif isinstance(node, Set):
-            return set(map(_convert, node.elts))
-        elif (isinstance(node, Call) and isinstance(node.func, Name) and
-              node.func.id == 'set' and node.args == node.keywords == []):
-            return set()
-        elif isinstance(node, Dict):
-            if len(node.keys) != len(node.values):
-                _raise_malformed_node(node)
-            return dict(zip(map(_convert, node.keys),
-                            map(_convert, node.values)))
-        elif isinstance(node, BinOp) and isinstance(node.op, (Add, Sub)):
-            left = _convert_signed_num(node.left)
-            right = _convert_num(node.right)
-            if isinstance(left, (int, float)) and isinstance(right, complex):
-                if isinstance(node.op, Add):
-                    return left + right
-                else:
-                    return left - right
-        return _convert_signed_num(node)
-    return _convert(node_or_string)
+    if isinstance(node, Dict) and len(node.keys) == len(node.values):
+        return dict(zip(
+            map(_convert_literal, node.keys),
+            map(_convert_literal, node.values),
+        ))
+    if isinstance(node, Tuple):
+        return tuple(map(_convert_literal, node.elts))
+    if isinstance(node, List):
+        return list(map(_convert_literal, node.elts))
+    if isinstance(node, Set):
+        return set(map(_convert_literal, node.elts))
+    if (
+        isinstance(node, Call) and isinstance(node.func, Name)
+        and node.func.id == 'set' and node.args == node.keywords == []
+    ):
+        return set()
+    if (
+        isinstance(node, UnaryOp)
+        and isinstance(node.op, (UAdd, USub))
+        and isinstance(node.operand, Constant)
+        and type(operand := node.operand.value) in (int, float, complex)
+    ):
+        if isinstance(node.op, UAdd):
+            return + operand
+        else:
+            return - operand
+    if (
+        isinstance(node, BinOp)
+        and isinstance(node.op, (Add, Sub))
+        and isinstance(node.left, (Constant, UnaryOp))
+        and isinstance(node.right, Constant)
+        and type(left := _convert_literal(node.left)) in (int, float)
+        and type(right := _convert_literal(node.right)) is complex
+    ):
+        if isinstance(node.op, Add):
+            return left + right
+        else:
+            return left - right
+    msg = "malformed node or string"
+    if lno := getattr(node, 'lineno', None):
+        msg += f' on line {lno}'
+    raise ValueError(msg + f': {node!r}')
 
 
 def dump(
     node, annotate_fields=True, include_attributes=False,
     *,
-    indent=None, show_empty=False,
+    color=False, indent=None, show_empty=False,
 ):
     """
     Return a formatted dump of the tree in node.  This is mainly useful for
-    debugging purposes.  If annotate_fields is true (by default),
-    the returned string will show the names and the values for fields.
-    If annotate_fields is false, the result string will be more compact by
-    omitting unambiguous field names.  Attributes such as line
-    numbers and column offsets are not dumped by default.  If this is wanted,
-    include_attributes can be set to true.  If indent is a non-negative
-    integer or string, then the tree will be pretty-printed with that indent
-    level. None (the default) selects the single line representation.
+    debugging purposes.
+
+    If annotate_fields is true (by default), the returned string will show the
+    names and the values for fields. If annotate_fields is false, the result
+    string will be more compact by omitting unambiguous field names.
+
+    Attributes such as line numbers and column offsets are not dumped by default.
+    If this is wanted, include_attributes can be set to true.
+
+    If color is true, the returned string is syntax highlighted using ANSI
+    escape sequences. If color is false (the default), colored output is always
+    disabled.
+
+    If indent is a non-negative integer or string, then the tree will be
+    pretty-printed with that indent level. If indent is None (the default),
+    the tree is dumped on a single line.
+
     If show_empty is False, then empty lists and fields that are None
     will be omitted from the output for better readability.
     """
+    t = get_theme(force_color=color, force_no_color=not color).ast
+
     def _format(node, level=0):
         if indent is not None:
             level += 1
@@ -147,22 +167,28 @@ def dump(
                 if value is None and getattr(cls, name, ...) is None:
                     keywords = True
                     continue
-                if (
-                    not show_empty
-                    and (value is None or value == [])
-                    # Special cases:
-                    # `Constant(value=None)` and `MatchSingleton(value=None)`
-                    and not isinstance(node, (Constant, MatchSingleton))
-                ):
-                    args_buffer.append(repr(value))
-                    continue
-                elif not keywords:
-                    args.extend(args_buffer)
-                    args_buffer = []
+                if not show_empty:
+                    if value == []:
+                        field_type = cls._field_types.get(name, object)
+                        if getattr(field_type, '__origin__', ...) is list:
+                            if not keywords:
+                                args_buffer.append(repr(value))
+                            continue
+                    elif isinstance(value, Load):
+                        field_type = cls._field_types.get(name, object)
+                        if field_type is expr_context:
+                            if not keywords:
+                                args_buffer.append(
+                                    f'{t.node}{type(value).__name__}'
+                                    f'{t.reset}()')
+                            continue
+                    if not keywords:
+                        args.extend(args_buffer)
+                        args_buffer = []
                 value, simple = _format(value, level)
                 allsimple = allsimple and simple
                 if keywords:
-                    args.append('%s=%s' % (name, value))
+                    args.append(f'{t.field}{name}{t.reset}={value}')
                 else:
                     args.append(value)
             if include_attributes and node._attributes:
@@ -175,14 +201,21 @@ def dump(
                         continue
                     value, simple = _format(value, level)
                     allsimple = allsimple and simple
-                    args.append('%s=%s' % (name, value))
+                    args.append(f'{t.attribute}{name}{t.reset}={value}')
+            cls_name = f'{t.node}{cls.__name__}{t.reset}'
             if allsimple and len(args) <= 3:
-                return '%s(%s)' % (node.__class__.__name__, ', '.join(args)), not args
-            return '%s(%s%s)' % (node.__class__.__name__, prefix, sep.join(args)), False
+                return f'{cls_name}({", ".join(args)})', not args
+            return f'{cls_name}({prefix}{sep.join(args)})', False
         elif isinstance(node, list):
             if not node:
                 return '[]', True
             return '[%s%s]' % (prefix, sep.join(_format(x, level)[0] for x in node)), False
+        if isinstance(node, bool) or node is None or node is Ellipsis:
+            return f'{t.keyword}{node!r}{t.reset}', True
+        if isinstance(node, (int, float, complex)):
+            return f'{t.number}{node!r}{t.reset}', True
+        if isinstance(node, (str, bytes)):
+            return f'{t.string}{node!r}{t.reset}', True
         return repr(node), True
 
     if not isinstance(node, AST):
@@ -630,7 +663,7 @@ def main(args=None):
     import argparse
     import sys
 
-    parser = argparse.ArgumentParser(color=True)
+    parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('infile', nargs='?', default='-',
                         help='the file to parse; defaults to stdin')
     parser.add_argument('-m', '--mode', default='exec',
@@ -649,7 +682,7 @@ def main(args=None):
                              '(for example, 3.10)')
     parser.add_argument('-O', '--optimize',
                         type=int, default=-1, metavar='LEVEL',
-                        help='optimization level for parser (default -1)')
+                        help='optimization level for parser')
     parser.add_argument('--show-empty', default=False, action='store_true',
                         help='show empty lists and fields in dump output')
     args = parser.parse_args(args)
@@ -676,6 +709,7 @@ def main(args=None):
     tree = parse(source, name, args.mode, type_comments=args.no_type_comments,
                  feature_version=feature_version, optimize=args.optimize)
     print(dump(tree, include_attributes=args.include_attributes,
+               color=can_colorize(file=sys.stdout),
                indent=args.indent, show_empty=args.show_empty))
 
 if __name__ == '__main__':

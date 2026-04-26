@@ -24,6 +24,36 @@ static inline PyCodeObject *_PyFrame_GetCode(_PyInterpreterFrame *f) {
     return (PyCodeObject *)executable;
 }
 
+// Similar to _PyFrame_GetCode(), but return NULL if the frame is invalid or
+// freed. Used by dump_frame() in Python/traceback.c. The function uses
+// heuristics to detect freed memory, it's not 100% reliable.
+static inline PyCodeObject* _Py_NO_SANITIZE_THREAD
+_PyFrame_SafeGetCode(_PyInterpreterFrame *f)
+{
+    // globals and builtins may be NULL on a legit frame, but it's unlikely.
+    // It's more likely that it's a sign of an invalid frame.
+    if (f->f_globals == NULL || f->f_builtins == NULL) {
+        return NULL;
+    }
+
+    if (PyStackRef_IsNull(f->f_executable)) {
+        return NULL;
+    }
+    void *ptr;
+    memcpy(&ptr, &f->f_executable, sizeof(f->f_executable));
+    if (_PyMem_IsPtrFreed(ptr)) {
+        return NULL;
+    }
+    PyObject *executable = PyStackRef_AsPyObjectBorrow(f->f_executable);
+    if (_PyObject_IsFreed(executable)) {
+        return NULL;
+    }
+    if (!PyCode_Check(executable)) {
+        return NULL;
+    }
+    return (PyCodeObject *)executable;
+}
+
 static inline _Py_CODEUNIT *
 _PyFrame_GetBytecode(_PyInterpreterFrame *f)
 {
@@ -37,6 +67,31 @@ _PyFrame_GetBytecode(_PyInterpreterFrame *f)
 #endif
 }
 
+// Similar to PyUnstable_InterpreterFrame_GetLasti(), but return NULL if the
+// frame is invalid or freed. Used by dump_frame() in Python/traceback.c. The
+// function uses heuristics to detect freed memory, it's not 100% reliable.
+static inline int _Py_NO_SANITIZE_THREAD
+_PyFrame_SafeGetLasti(struct _PyInterpreterFrame *f)
+{
+    // Code based on _PyFrame_GetBytecode() but replace _PyFrame_GetCode()
+    // with _PyFrame_SafeGetCode().
+    PyCodeObject *co = _PyFrame_SafeGetCode(f);
+    if (co == NULL) {
+        return -1;
+    }
+
+    _Py_CODEUNIT *bytecode;
+#ifdef Py_GIL_DISABLED
+    _PyCodeArray *tlbc = _PyCode_GetTLBCArray(co);
+    assert(f->tlbc_index >= 0 && f->tlbc_index < tlbc->size);
+    bytecode = (_Py_CODEUNIT *)tlbc->entries[f->tlbc_index];
+#else
+    bytecode = _PyCode_CODE(co);
+#endif
+
+    return (int)(f->instr_ptr - bytecode) * sizeof(_Py_CODEUNIT);
+}
+
 static inline PyFunctionObject *_PyFrame_GetFunction(_PyInterpreterFrame *f) {
     PyObject *func = PyStackRef_AsPyObjectBorrow(f->f_funcobj);
     assert(PyFunction_Check(func));
@@ -47,10 +102,10 @@ static inline _PyStackRef *_PyFrame_Stackbase(_PyInterpreterFrame *f) {
     return (f->localsplus + _PyFrame_GetCode(f)->co_nlocalsplus);
 }
 
-static inline _PyStackRef _PyFrame_StackPeek(_PyInterpreterFrame *f) {
+static inline _PyStackRef _PyFrame_StackPeek(_PyInterpreterFrame *f, int depth) {
     assert(f->stackpointer > _PyFrame_Stackbase(f));
-    assert(!PyStackRef_IsNull(f->stackpointer[-1]));
-    return f->stackpointer[-1];
+    assert(!PyStackRef_IsNull(f->stackpointer[-depth]));
+    return f->stackpointer[-depth];
 }
 
 static inline _PyStackRef _PyFrame_StackPop(_PyInterpreterFrame *f) {
@@ -94,6 +149,11 @@ static inline void _PyFrame_Copy(_PyInterpreterFrame *src, _PyInterpreterFrame *
     int stacktop = (int)(src->stackpointer - src->localsplus);
     assert(stacktop >= 0);
     dest->stackpointer = dest->localsplus + stacktop;
+    // visited is GC bookkeeping for the current stack walk, not frame state.
+    dest->visited = 0;
+#ifdef Py_DEBUG
+    dest->lltrace = src->lltrace;
+#endif
     for (int i = 0; i < stacktop; i++) {
         dest->localsplus[i] = PyStackRef_MakeHeapSafe(src->localsplus[i]);
     }
@@ -224,7 +284,7 @@ _PyThreadState_GetFrame(PyThreadState *tstate)
 
 /* For use by _PyFrame_GetFrameObject
   Do not call directly. */
-PyFrameObject *
+PyAPI_FUNC(PyFrameObject *)
 _PyFrame_MakeAndSetFrameObject(_PyInterpreterFrame *frame);
 
 /* Gets the PyFrameObject for this frame, lazily
@@ -242,7 +302,8 @@ _PyFrame_GetFrameObject(_PyInterpreterFrame *frame)
     return _PyFrame_MakeAndSetFrameObject(frame);
 }
 
-void
+// Exported for external JIT support
+PyAPI_FUNC(void)
 _PyFrame_ClearLocals(_PyInterpreterFrame *frame);
 
 /* Clears all references in the frame.
@@ -253,8 +314,10 @@ _PyFrame_ClearLocals(_PyInterpreterFrame *frame);
  * in the frame.
  * take should  be set to 1 for heap allocated
  * frames like the ones in generators and coroutines.
+ *
+ * Exported for external JIT support
  */
-void
+ PyAPI_FUNC(void)
 _PyFrame_ClearExceptCode(_PyInterpreterFrame * frame);
 
 int
@@ -278,7 +341,8 @@ _PyThreadState_HasStackSpace(PyThreadState *tstate, int size)
         size < tstate->datastack_limit - tstate->datastack_top;
 }
 
-extern _PyInterpreterFrame *
+// Exported for external JIT support
+PyAPI_FUNC(_PyInterpreterFrame *)
 _PyThreadState_PushFrame(PyThreadState *tstate, size_t size);
 
 PyAPI_FUNC(void) _PyThreadState_PopFrame(PyThreadState *tstate, _PyInterpreterFrame *frame);
@@ -339,6 +403,10 @@ _PyEvalFramePushAndInit(PyThreadState *tstate, _PyStackRef func,
                         PyObject *locals, _PyStackRef const *args,
                         size_t argcount, PyObject *kwnames,
                         _PyInterpreterFrame *previous);
+
+PyAPI_FUNC(_PyInterpreterFrame *)
+_PyEvalFramePushAndInit_Ex(PyThreadState *tstate, _PyStackRef func,
+    PyObject *locals, Py_ssize_t nargs, PyObject *callargs, PyObject *kwargs, _PyInterpreterFrame *previous);
 
 #ifdef __cplusplus
 }
