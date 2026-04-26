@@ -1108,6 +1108,26 @@ def run_pipeline(*commands, input=None, capture_output=False, timeout=None,
         raise ValueError(
             'executable= is not supported by run_pipeline')
 
+    if kwargs.get('stderr') is STDOUT:
+        raise ValueError(
+            'stderr=STDOUT at the run_pipeline level would merge each '
+            "non-final command's stderr into the next command's stdin.  "
+            'Use PipelineCommand(cmd, stderr=STDOUT) for a single command, '
+            'or capture_output=True to capture stderr from every command.')
+
+    if kwargs.get('start_new_session') or kwargs.get('process_group') is not None:
+        # run_pipeline spawns each command as a sibling child of this
+        # process, so a per-command session/group does not give the shell
+        # "one process group per pipeline" semantic that callers passing
+        # these almost certainly want.  Reject for now; a feature that
+        # places every command in a single new group is a possible
+        # follow-on.
+        raise ValueError(
+            'start_new_session and process_group are not supported by '
+            'run_pipeline; each command is spawned as a sibling child, '
+            'so a per-command session or group does not yield a single '
+            'process group for the pipeline')
+
     commands = tuple(c if isinstance(c, PipelineCommand) else PipelineCommand(c)
                      for c in commands)
 
@@ -1581,6 +1601,9 @@ class Popen:
     """
     _child_created = False  # Set here since __del__ checks it
 
+    # When adding a new keyword here, consider whether forwarding it to
+    # every command in run_pipeline() makes sense; if not, reject or
+    # special-case it there.
     def __init__(self, args, bufsize=-1, executable=None,
                  stdin=None, stdout=None, stderr=None,
                  preexec_fn=None, close_fds=True,

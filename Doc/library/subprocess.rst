@@ -316,6 +316,14 @@ underlying :class:`Popen` interface can be used directly.
    injection surface this function exists to avoid. When one command
    genuinely needs shell interpretation (a glob, or a shell builtin),
    wrap it in a :class:`PipelineCommand` with ``shell=True``.
+   ``start_new_session`` and ``process_group`` are also rejected: each
+   command is spawned as a sibling child of the calling process, so
+   applying these per command does not produce a single process group
+   spanning the pipeline. ``stderr=STDOUT`` at the pipeline level is
+   rejected because it would merge each non-final command's stderr into
+   the next command's stdin; use a :class:`PipelineCommand` with
+   ``stderr=STDOUT`` for the one command that needs it, or
+   ``capture_output=True`` to capture stderr from every command.
 
    .. rubric:: Standard error handling
 
@@ -338,11 +346,8 @@ underlying :class:`Popen` interface can be used directly.
 
    To exempt one command from the shared stderr pipe, wrap it in a
    :class:`PipelineCommand` with ``stderr=DEVNULL`` (discard) or
-   ``stderr=STDOUT`` (merge into that command's stdout). Note that
-   passing ``stderr=STDOUT`` at the *pipeline* level redirects every
-   command's stderr to its own stdout, which for non-final commands
-   means stderr feeds the next command's stdin -- rarely what callers
-   want.
+   ``stderr=STDOUT`` (merge into that command's stdout).
+   ``stderr=STDOUT`` at the *pipeline* level is rejected.
 
    Examples::
 

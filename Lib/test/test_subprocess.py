@@ -2208,6 +2208,23 @@ class PipelineTestCase(BaseTestCase):
             )
         self.assertIn('capture_output', str(cm.exception))
 
+    def test_pipeline_session_group_rejected(self):
+        """start_new_session= and process_group= are rejected.
+
+        Each command is spawned as a sibling child of this process, so
+        per-command sessions/groups would not yield a single process
+        group spanning the pipeline.
+        """
+        for kw in ({'start_new_session': True}, {'process_group': 0}):
+            with self.subTest(kw=kw):
+                with self.assertRaises(ValueError) as cm:
+                    subprocess.run_pipeline(
+                        [sys.executable, '-c', 'pass'],
+                        [sys.executable, '-c', 'pass'],
+                        **kw,
+                    )
+                self.assertIn('process group', str(cm.exception))
+
     def test_pipeline_close_fds_false_rejected(self):
         """Test that close_fds=False is rejected (would deadlock)"""
         with self.assertRaises(ValueError) as cm:
@@ -2538,19 +2555,20 @@ print(len(data.strip()))
         self.assertEqual(result.returncodes, (0, 0))
         self.assertEqual(result.stdout.strip(), 'ok')
 
-    def test_pipeline_stderr_to_stdout(self):
-        """stderr=STDOUT routes the final process's stderr to stdout"""
-        result = subprocess.run_pipeline(
-            [sys.executable, '-c', 'print("data")'],
-            [sys.executable, '-c',
-             'import sys; sys.stdout.write(sys.stdin.read()); '
-             'sys.stderr.write("ERR\\n")'],
-            stdout=subprocess.PIPE, stderr=subprocess.STDOUT
-        )
-        self.assertEqual(result.returncodes, [0, 0])
-        self.assertIn(b'data', result.stdout)
-        self.assertIn(b'ERR', result.stdout)
-        self.assertIsNone(result.stderr)
+    def test_pipeline_stderr_to_stdout_rejected(self):
+        """stderr=STDOUT at the pipeline level is rejected.
+
+        It would merge each non-final command's stderr into the next
+        command's stdin; PipelineCommand(stderr=STDOUT) is the
+        per-command spelling.
+        """
+        with self.assertRaises(ValueError) as cm:
+            subprocess.run_pipeline(
+                [sys.executable, '-c', 'pass'],
+                [sys.executable, '-c', 'pass'],
+                stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+            )
+        self.assertIn('PipelineCommand', str(cm.exception))
 
     def test_pipeline_intermediate_stdout_closed_in_parent(self):
         """Parent closes intermediate stdout so an early-exiting consumer
