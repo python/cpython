@@ -950,6 +950,10 @@ def run(*popenargs,
     return CompletedProcess(process.args, retcode, stdout, stderr)
 
 
+# Future extension point: an opt-in Stage(cmd, **overrides) wrapper could
+# be accepted in place of a bare command to allow per-stage overrides
+# (e.g. stderr=STDOUT, pass_fds, env, cwd) for shell-pipeline-like
+# topologies.
 def run_pipeline(*commands, input=None, capture_output=False, timeout=None,
                  check=False, **kwargs):
     """Run a pipeline of commands connected via pipes.
