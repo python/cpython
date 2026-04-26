@@ -1361,6 +1361,7 @@ def _unpack_tarfile(filename, extract_dir, *, filter=None):
 _UNPACK_FORMATS = {
     'tar':   (['.tar'], _unpack_tarfile, [], "uncompressed tar file"),
     'zip':   (['.zip'], _unpack_zipfile, [], "ZIP file"),
+    'whl': (['.whl'], _unpack_zipfile, [], "Wheel file"),
 }
 
 if _ZLIB_SUPPORTED:
