@@ -26,6 +26,8 @@ import threading
 import gc
 import textwrap
 import json
+import array
+import pickle
 from test.support.os_helper import FakePath
 
 try:
@@ -2074,7 +2076,6 @@ class PipelineTestCase(BaseTestCase):
         This tests the fix for gh-134453 where non-byte memoryviews
         had incorrect length tracking on POSIX, causing data truncation.
         """
-        import array
         # Create an array of 32-bit integers large enough to trigger
         # chunked writing behavior (> PIPE_BUF)
         pipe_buf = getattr(select, 'PIPE_BUF', 512)
@@ -2232,7 +2233,6 @@ class PipelineTestCase(BaseTestCase):
         self.assertIn('err1', result.stderr)
         self.assertIn('err2', result.stderr)
 
-    @unittest.skipIf(mswindows, "POSIX specific test")
     def test_pipeline_timeout(self):
         """Pipeline timeout raises TimeoutExpired with bytes-or-None
         partial output and stderr (regardless of backend).
@@ -2484,7 +2484,8 @@ print(len(data.strip()))
         self.assertIsNone(result.stderr)
 
     def test_pipeline_intermediate_stdout_closed_in_parent(self):
-        """Intermediate stdout pipes close in parent so producer sees EOF"""
+        """Parent closes intermediate stdout so an early-exiting consumer
+        does not leave the producer blocked on a full pipe."""
         result = subprocess.run_pipeline(
             [sys.executable, '-c',
              'import sys; sys.stdout.write("x"); sys.stdout.flush(); '
@@ -2496,7 +2497,6 @@ print(len(data.strip()))
 
     def test_pipeline_error_pickle(self):
         """PipelineError survives a pickle round-trip"""
-        import pickle
         err = subprocess.PipelineError(
             [['echo', 'hi'], ['false']], [0, 1],
             stdout=b'hi\n', stderr=b'')
