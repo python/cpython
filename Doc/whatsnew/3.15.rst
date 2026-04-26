@@ -184,6 +184,18 @@ function, class body, or ``try``/``except``/``finally`` block raises a
 (``lazy from module import *`` and ``lazy from __future__ import ...`` both
 raise :exc:`SyntaxError`).
 
+For code that cannot use the ``lazy`` keyword directly (for example, when
+supporting Python versions older than 3.15 while still using lazy
+imports on 3.15+), a module can define
+:attr:`~module.__lazy_modules__` as a container of fully qualified module
+name strings.  Regular ``import`` statements for those modules are then treated
+as lazy, with the same semantics as the ``lazy`` keyword::
+
+   __lazy_modules__ = ["json", "pathlib"]
+
+   import json     # lazy
+   import os       # still eager
+
 .. seealso:: :pep:`810` for the full specification and rationale.
 
 (Contributed by Pablo Galindo Salgado and Dino Viehland in :gh:`142349`.)
@@ -260,7 +272,7 @@ The :mod:`profile` module is deprecated and will be removed in Python 3.17.
 Tachyon: High frequency statistical sampling profiler
 -----------------------------------------------------
 
-.. image:: ../library/tachyon-logo.png
+.. image:: ../../Lib/profiling/sampling/_assets/tachyon-logo.png
    :alt: Tachyon profiler logo
    :align: center
    :width: 200px
@@ -692,6 +704,20 @@ array
   (Contributed by Sergey B Kirpichev in :gh:`146238`.)
 
 
+ast
+---
+
+* Add *color* parameter to :func:`~ast.dump`.
+  If ``True``, the returned string is syntax highlighted using ANSI escape
+  sequences.
+  If ``False`` (the default), colored output is always disabled.
+  (Contributed by Stan Ulbrych in :gh:`148981`.)
+
+* The :ref:`command-line <ast-cli>` output is now syntax highlighted by default.
+  This can be :ref:`controlled using environment variables <using-on-controlling-color>`.
+  (Contributed by Stan Ulbrych in :gh:`148981`.)
+
+
 base64
 ------
 
@@ -716,6 +742,15 @@ base64
   :func:`~base64.b64decode`, :func:`~base64.b85decode`, and
   :func:`~base64.z85decode`.
   (Contributed by Serhiy Storchaka in :gh:`144001` and :gh:`146431`.)
+
+* Added the *canonical* parameter in
+  :func:`~base64.b32decode`, :func:`~base64.b32hexdecode`,
+  :func:`~base64.b64decode`, :func:`~base64.urlsafe_b64decode`,
+  :func:`~base64.a85decode`, :func:`~base64.b85decode`, and
+  :func:`~base64.z85decode`,
+  to reject encodings with non-zero padding bits or other non-canonical
+  forms.
+  (Contributed by Gregory P. Smith in :gh:`146311`.)
 
 
 binascii
@@ -749,6 +784,10 @@ binascii
 * Added the *ignorechars* parameter in :func:`~binascii.a2b_hex`,
   :func:`~binascii.unhexlify`, and :func:`~binascii.a2b_base64`.
   (Contributed by Serhiy Storchaka in :gh:`144001` and :gh:`146431`.)
+
+* Added the *canonical* parameter in :func:`~binascii.a2b_base64`,
+  to reject encodings with non-zero padding bits.
+  (Contributed by Gregory P. Smith in :gh:`146311`.)
 
 
 calendar
@@ -1644,6 +1683,14 @@ threading
   implementation of :class:`~threading.RLock` objects. This was deprecated
   in Python 3.14.
   (Contributed by Bénédikt Tran in :gh:`134087`.)
+
+
+types
+-----
+
+* Removed deprecated in :pep:`626` since Python 3.12
+  :attr:`!codeobject.co_lnotab` from :class:`types.CodeType`.
+  (Contributed by Nikita Sobolev in :gh:`134690`.)
 
 
 typing

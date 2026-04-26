@@ -190,6 +190,17 @@ class Argparse(ThemeSection):
 
 
 @dataclass(frozen=True, kw_only=True)
+class Ast(ThemeSection):
+    node: str = ANSIColors.CYAN
+    field: str = ANSIColors.BLUE
+    attribute: str = ANSIColors.GREY
+    string: str = ANSIColors.GREEN
+    number: str = ANSIColors.YELLOW
+    keyword: str = ANSIColors.BOLD_BLUE
+    reset: str = ANSIColors.RESET
+
+
+@dataclass(frozen=True, kw_only=True)
 class Difflib(ThemeSection):
     """A 'git diff'-like theme for `difflib.unified_diff`."""
     added: str = ANSIColors.GREEN
@@ -405,6 +416,7 @@ class Theme:
     below.
     """
     argparse: Argparse = field(default_factory=Argparse)
+    ast: Ast = field(default_factory=Ast)
     difflib: Difflib = field(default_factory=Difflib)
     fancycompleter: FancyCompleter = field(default_factory=FancyCompleter)
     http_server: HttpServer = field(default_factory=HttpServer)
@@ -418,6 +430,7 @@ class Theme:
         self,
         *,
         argparse: Argparse | None = None,
+        ast: Ast | None = None,
         difflib: Difflib | None = None,
         fancycompleter: FancyCompleter | None = None,
         http_server: HttpServer | None = None,
@@ -434,6 +447,7 @@ class Theme:
         """
         return type(self)(
             argparse=argparse or self.argparse,
+            ast=ast or self.ast,
             difflib=difflib or self.difflib,
             fancycompleter=fancycompleter or self.fancycompleter,
             http_server=http_server or self.http_server,
@@ -454,6 +468,7 @@ class Theme:
         """
         return cls(
             argparse=Argparse.no_colors(),
+            ast=Ast.no_colors(),
             difflib=Difflib.no_colors(),
             fancycompleter=FancyCompleter.no_colors(),
             http_server=HttpServer.no_colors(),
