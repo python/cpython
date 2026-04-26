@@ -87,7 +87,7 @@ The module :mod:`!curses` defines the following functions:
 
    Return the output speed of the terminal in bits per second.  On software
    terminal emulators, it will have a fixed high value. Included for historical
-   reasons; in former times, it was used to  write output loops for time delays and
+   reasons; in former times, it was used to write output loops for time delays and
    occasionally to change interfaces depending on the line speed.
 
 
@@ -140,7 +140,7 @@ The module :mod:`!curses` defines the following functions:
 .. function:: def_prog_mode()
 
    Save the current terminal mode as the "program" mode, the mode when the running
-   program is using curses (Its counterpart is the "shell" mode, for when the
+   program is using curses (its counterpart is the "shell" mode, for when the
    program is not in curses). Subsequent calls to :func:`reset_prog_mode` will
    restore this mode.
 
@@ -148,7 +148,7 @@ The module :mod:`!curses` defines the following functions:
 .. function:: def_shell_mode()
 
    Save the current terminal mode as the "shell" mode, the mode when the running
-   program is not using curses (Its counterpart is the "program" mode, when the
+   program is not using curses (its counterpart is the "program" mode, when the
    program is using curses capabilities). Subsequent calls to
    :func:`reset_shell_mode` will restore this mode.
 
