@@ -85,7 +85,7 @@ The :mod:`!gc` module provides the following functions:
       Generation 1 is removed
 
    .. versionchanged:: 3.14.5
-      Generation 1 if reintroduced to maintain GC behavior from 3.13.
+      Generation 1 is reintroduced to maintain GC behavior from 3.13.
 
    .. audit-event:: gc.get_objects generation gc.get_objects
 
