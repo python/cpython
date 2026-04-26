@@ -644,6 +644,7 @@ LIBMPDEC_HEADERS= \
 # pyexpat's expat library
 
 LIBEXPAT_OBJS= \
+		Modules/expat/_pyexpat_random.o \
 		Modules/expat/xmlparse.o \
 		Modules/expat/xmlrole.o \
 		Modules/expat/xmltok.o
@@ -659,6 +660,18 @@ LIBEXPAT_HEADERS= \
 		Modules/expat/latin1tab.h \
 		Modules/expat/nametab.h \
 		Modules/expat/pyexpatns.h \
+		Modules/expat/random_arc4random.c \
+		Modules/expat/random_arc4random.h \
+		Modules/expat/random_arc4random_buf.c \
+		Modules/expat/random_arc4random_buf.h \
+		Modules/expat/random_dev_urandom.c \
+		Modules/expat/random_dev_urandom.h \
+		Modules/expat/random_getentropy.c \
+		Modules/expat/random_getentropy.h \
+		Modules/expat/random_getrandom.c \
+		Modules/expat/random_getrandom.h \
+		Modules/expat/random_rand_s.c \
+		Modules/expat/random_rand_s.h \
 		Modules/expat/siphash.h \
 		Modules/expat/utf8tab.h \
 		Modules/expat/xmlrole.h \
@@ -1528,6 +1541,9 @@ Modules/expat/xmlrole.o: $(srcdir)/Modules/expat/xmlrole.c $(LIBEXPAT_HEADERS) $
 
 Modules/expat/xmltok.o: $(srcdir)/Modules/expat/xmltok.c $(LIBEXPAT_HEADERS) $(PYTHON_HEADERS)
 	$(CC) -c $(LIBEXPAT_CFLAGS) -o $@ $(srcdir)/Modules/expat/xmltok.c
+
+Modules/expat/_pyexpat_random.o: $(srcdir)/Modules/expat/_pyexpat_random.c $(LIBEXPAT_HEADERS) $(PYTHON_HEADERS)
+	$(CC) -c $(LIBEXPAT_CFLAGS) -o $@ $(srcdir)/Modules/expat/_pyexpat_random.c
 
 $(LIBEXPAT_A): $(LIBEXPAT_OBJS)
 	-rm -f $@

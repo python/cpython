@@ -37,6 +37,18 @@ lib_files=(
   internal.h
   latin1tab.h
   nametab.h
+  random_arc4random.c
+  random_arc4random.h
+  random_arc4random_buf.c
+  random_arc4random_buf.h
+  random_dev_urandom.c
+  random_dev_urandom.h
+  random_getentropy.c
+  random_getentropy.h
+  random_getrandom.c
+  random_getrandom.h
+  random_rand_s.c
+  random_rand_s.h
   siphash.h
   utf8tab.h
   winconfig.h

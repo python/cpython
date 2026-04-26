@@ -16,6 +16,20 @@
       "fileName": "Modules/expat/COPYING"
     },
     {
+      "SPDXID": "SPDXRef-FILE-Modules-expat-pyexpat-random.c",
+      "checksums": [
+        {
+          "algorithm": "SHA1",
+          "checksumValue": "72940a3fe2d9490900fa00e3d0fb51d20cc72e5b"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "e6008486a356aa81b4ff9b00656aa072b44c532906b41a304cee0339039fdda7"
+        }
+      ],
+      "fileName": "Modules/expat/_pyexpat_random.c"
+    },
+    {
       "SPDXID": "SPDXRef-FILE-Modules-expat-ascii.h",
       "checksums": [
         {
@@ -126,6 +140,174 @@
         }
       ],
       "fileName": "Modules/expat/nametab.h"
+    },
+    {
+      "SPDXID": "SPDXRef-FILE-Modules-expat-random-arc4random.c",
+      "checksums": [
+        {
+          "algorithm": "SHA1",
+          "checksumValue": "e550e91812fe8c2c1183073d1b637992ce28bb92"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "18447dc342183cda691c43b5325ab9aabf7763022fb9fefb26f30758d509ad72"
+        }
+      ],
+      "fileName": "Modules/expat/random_arc4random.c"
+    },
+    {
+      "SPDXID": "SPDXRef-FILE-Modules-expat-random-arc4random.h",
+      "checksums": [
+        {
+          "algorithm": "SHA1",
+          "checksumValue": "6b5685f11bcbab151fb0b992d777700ba00b13fd"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "f07b8dd117765caa4a8c69b4d443b2a8e594822fecfae290f5c8954c77e797f1"
+        }
+      ],
+      "fileName": "Modules/expat/random_arc4random.h"
+    },
+    {
+      "SPDXID": "SPDXRef-FILE-Modules-expat-random-arc4random-buf.c",
+      "checksums": [
+        {
+          "algorithm": "SHA1",
+          "checksumValue": "a31a0986540f4ec351e85ada798ee54e88548397"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "b22d98b10443a6cdfcae1fafa2800c4b99c8da839b95fb4c6f9ad286dba918d7"
+        }
+      ],
+      "fileName": "Modules/expat/random_arc4random_buf.c"
+    },
+    {
+      "SPDXID": "SPDXRef-FILE-Modules-expat-random-arc4random-buf.h",
+      "checksums": [
+        {
+          "algorithm": "SHA1",
+          "checksumValue": "13ed242a2974033274c8affcff62b49a1a1de120"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "35f51f27d305b2dfd1a6256fb489495738293bb442cca73222b802b82c7c42bf"
+        }
+      ],
+      "fileName": "Modules/expat/random_arc4random_buf.h"
+    },
+    {
+      "SPDXID": "SPDXRef-FILE-Modules-expat-random-dev-urandom.c",
+      "checksums": [
+        {
+          "algorithm": "SHA1",
+          "checksumValue": "dd196972590e89b9ec45cf3bc27ab0c82f9e5958"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "c7d68fb6652c645eb915a18d22268b1846cc0019febee0061a4e74205c1051cb"
+        }
+      ],
+      "fileName": "Modules/expat/random_dev_urandom.c"
+    },
+    {
+      "SPDXID": "SPDXRef-FILE-Modules-expat-random-dev-urandom.h",
+      "checksums": [
+        {
+          "algorithm": "SHA1",
+          "checksumValue": "f678a6ae74bb7d83342c035f2343ffec20dd27ba"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "1c417526f3c63bf327f5cf55e98d7702f5fd549d404d08a3d3460d2aefb25fcc"
+        }
+      ],
+      "fileName": "Modules/expat/random_dev_urandom.h"
+    },
+    {
+      "SPDXID": "SPDXRef-FILE-Modules-expat-random-getentropy.c",
+      "checksums": [
+        {
+          "algorithm": "SHA1",
+          "checksumValue": "d7af986f3a2c449b15d161add50d2f3eb5fd3915"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "bc55abfa2da705fd6cc3ae515551790335fc19592dec0a67b6d3f8340c7d7898"
+        }
+      ],
+      "fileName": "Modules/expat/random_getentropy.c"
+    },
+    {
+      "SPDXID": "SPDXRef-FILE-Modules-expat-random-getentropy.h",
+      "checksums": [
+        {
+          "algorithm": "SHA1",
+          "checksumValue": "69593aef3759f2b850a502c799d2e4c7bd9b448e"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "e3b8c0ae84db0f29743b19eac2cfb1a45d945f34e8e661f901ad7a1e4263d0d7"
+        }
+      ],
+      "fileName": "Modules/expat/random_getentropy.h"
+    },
+    {
+      "SPDXID": "SPDXRef-FILE-Modules-expat-random-getrandom.c",
+      "checksums": [
+        {
+          "algorithm": "SHA1",
+          "checksumValue": "89e2956dec9e7f168c922c76c3d513aa29f8f9f5"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "2350c1b11986ac846bbd781a74fb2781ad84831dfad1695fe304bd670c9eabd2"
+        }
+      ],
+      "fileName": "Modules/expat/random_getrandom.c"
+    },
+    {
+      "SPDXID": "SPDXRef-FILE-Modules-expat-random-getrandom.h",
+      "checksums": [
+        {
+          "algorithm": "SHA1",
+          "checksumValue": "2ac5e93abb939f4cacab24394dcebc721f9ce216"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "8753352bbbb276bfbde4908ea886e4cd8e6b63ae578ba6f9bf8046fd1ca7e3b8"
+        }
+      ],
+      "fileName": "Modules/expat/random_getrandom.h"
+    },
+    {
+      "SPDXID": "SPDXRef-FILE-Modules-expat-random-rand-s.c",
+      "checksums": [
+        {
+          "algorithm": "SHA1",
+          "checksumValue": "813d116d4e8f9ccd86dc03302289545a5d6eaa1a"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "dddf9803dcf5a08b6fbc809bd53cbb0a0d92e46232df3aa5e0840b5488b5a972"
+        }
+      ],
+      "fileName": "Modules/expat/random_rand_s.c"
+    },
+    {
+      "SPDXID": "SPDXRef-FILE-Modules-expat-random-rand-s.h",
+      "checksums": [
+        {
+          "algorithm": "SHA1",
+          "checksumValue": "ac4db3c64191eea8528887d407e5e2321757f14b"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "6f77bc881012fc32fd3613636d8c3580fed1aec3df5278910290f7b4f155564f"
+        }
+      ],
+      "fileName": "Modules/expat/random_rand_s.h"
     },
     {
       "SPDXID": "SPDXRef-FILE-Modules-expat-siphash.h",
@@ -1821,6 +2003,11 @@
       "spdxElementId": "SPDXRef-PACKAGE-expat"
     },
     {
+      "relatedSpdxElement": "SPDXRef-FILE-Modules-expat-pyexpat-random.c",
+      "relationshipType": "CONTAINS",
+      "spdxElementId": "SPDXRef-PACKAGE-expat"
+    },
+    {
       "relatedSpdxElement": "SPDXRef-FILE-Modules-expat-ascii.h",
       "relationshipType": "CONTAINS",
       "spdxElementId": "SPDXRef-PACKAGE-expat"
@@ -1857,6 +2044,66 @@
     },
     {
       "relatedSpdxElement": "SPDXRef-FILE-Modules-expat-nametab.h",
+      "relationshipType": "CONTAINS",
+      "spdxElementId": "SPDXRef-PACKAGE-expat"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-FILE-Modules-expat-random-arc4random.c",
+      "relationshipType": "CONTAINS",
+      "spdxElementId": "SPDXRef-PACKAGE-expat"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-FILE-Modules-expat-random-arc4random.h",
+      "relationshipType": "CONTAINS",
+      "spdxElementId": "SPDXRef-PACKAGE-expat"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-FILE-Modules-expat-random-arc4random-buf.c",
+      "relationshipType": "CONTAINS",
+      "spdxElementId": "SPDXRef-PACKAGE-expat"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-FILE-Modules-expat-random-arc4random-buf.h",
+      "relationshipType": "CONTAINS",
+      "spdxElementId": "SPDXRef-PACKAGE-expat"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-FILE-Modules-expat-random-dev-urandom.c",
+      "relationshipType": "CONTAINS",
+      "spdxElementId": "SPDXRef-PACKAGE-expat"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-FILE-Modules-expat-random-dev-urandom.h",
+      "relationshipType": "CONTAINS",
+      "spdxElementId": "SPDXRef-PACKAGE-expat"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-FILE-Modules-expat-random-getentropy.c",
+      "relationshipType": "CONTAINS",
+      "spdxElementId": "SPDXRef-PACKAGE-expat"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-FILE-Modules-expat-random-getentropy.h",
+      "relationshipType": "CONTAINS",
+      "spdxElementId": "SPDXRef-PACKAGE-expat"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-FILE-Modules-expat-random-getrandom.c",
+      "relationshipType": "CONTAINS",
+      "spdxElementId": "SPDXRef-PACKAGE-expat"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-FILE-Modules-expat-random-getrandom.h",
+      "relationshipType": "CONTAINS",
+      "spdxElementId": "SPDXRef-PACKAGE-expat"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-FILE-Modules-expat-random-rand-s.c",
+      "relationshipType": "CONTAINS",
+      "spdxElementId": "SPDXRef-PACKAGE-expat"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-FILE-Modules-expat-random-rand-s.h",
       "relationshipType": "CONTAINS",
       "spdxElementId": "SPDXRef-PACKAGE-expat"
     },
