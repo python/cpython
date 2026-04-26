@@ -129,11 +129,11 @@ def generate_recorder_tables(analysis: Analysis, out: CWriter) -> None:
     record_function_indexes: dict[str, int] = dict()
     record_table: dict[str, list[str]] = {}
     record_consumer_table: dict[str, tuple[list[int], bool]] = {}
-    record_uop_names = {
+    record_uop_names = [
         name
         for name, uop in analysis.uops.items()
         if uop.properties.records_value
-    }
+    ]
     record_slot_keys = {
         name: get_record_slot_kind(name) for name in record_uop_names
     }
@@ -204,7 +204,7 @@ def generate_recorder_tables(analysis: Analysis, out: CWriter) -> None:
 
 
 def generate_record_transform_dispatcher(
-    record_uop_names: set[str], out: CWriter
+    record_uop_names: list[str], out: CWriter
 ) -> None:
     """Emit a switch that converts a family-recorded value for a recorder uop.
 
