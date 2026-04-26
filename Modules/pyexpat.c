@@ -1535,8 +1535,7 @@ newxmlparseobject(pyexpat_state *state, const char *encoding,
     }
 #if XML_COMBINED_VERSION >= 20800
     /* This feature was added upstream in libexpat 2.8.0. */
-    XML_SetHashSalt16Bytes(self->itself,
-                           (const uint8_t *)_Py_HashSecret.uc);
+    XML_SetHashSalt16Bytes(self->itself, _Py_HashSecret.expat.hashsalt16);
 #elif XML_COMBINED_VERSION >= 20100
     /* This feature was added upstream in libexpat 2.1.0. */
     XML_SetHashSalt(self->itself,

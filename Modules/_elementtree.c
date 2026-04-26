@@ -3738,7 +3738,7 @@ _elementtree_XMLParser___init___impl(XMLParserObject *self, PyObject *target,
     // Prefer 16-byte entropy, only expat >= 2.8.0. See gh-149018
     if (EXPAT(st, SetHashSalt16Bytes) != NULL) {
         EXPAT(st, SetHashSalt16Bytes)(self->parser,
-                                      (const uint8_t *)_Py_HashSecret.uc);
+                                      _Py_HashSecret.expat.hashsalt16);
     }
     else if (EXPAT(st, SetHashSalt) != NULL) {
         EXPAT(st, SetHashSalt)(self->parser,
