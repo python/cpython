@@ -2909,8 +2909,36 @@ sys_get_lazy_imports_impl(PyObject *module)
     }
 }
 
+PyDoc_STRVAR(sys_getattr_doc,
+"__getattr__($module, name, /)\n"
+"--\n"
+"\n"
+"Module-level fallback attribute access for sys.\n"
+"\n"
+"Used to expose dynamic, snapshot-style attributes such as\n"
+"``sys.lazy_modules``, which is rebuilt on each access as a\n"
+"``frozendict[str, frozenset[str]]`` view of the lazy import registry.");
+
+static PyObject *
+sys_getattr(PyObject *self, PyObject *name)
+{
+    if (!PyUnicode_Check(name)) {
+        PyErr_Format(PyExc_TypeError,
+                     "attribute name must be string, not '%T'", name);
+        return NULL;
+    }
+    if (_PyUnicode_EqualToASCIIString(name, "lazy_modules")) {
+        PyInterpreterState *interp = _PyInterpreterState_GET();
+        return _PyImport_GetLazyModulesSnapshot(interp);
+    }
+    PyErr_Format(PyExc_AttributeError,
+                 "module 'sys' has no attribute %R", name);
+    return NULL;
+}
+
 static PyMethodDef sys_methods[] = {
     /* Might as well keep this in alphabetic order */
+    {"__getattr__", sys_getattr, METH_O, sys_getattr_doc},
     SYS_ADDAUDITHOOK_METHODDEF
     SYS_AUDIT_METHODDEF
     {"breakpointhook", _PyCFunction_CAST(sys_breakpointhook),
@@ -4353,12 +4381,10 @@ _PySys_Create(PyThreadState *tstate, PyObject **sysmod_p)
         goto error;
     }
 
-    PyObject *lazy_modules = _PyImport_InitLazyModules(interp); // borrowed reference
-    if (lazy_modules == NULL) {
-        goto error;
-    }
-
-    if (PyDict_SetItemString(sysdict, "lazy_modules", lazy_modules) < 0) {
+    // The lazy import registry is kept private. ``sys.lazy_modules`` is
+    // exposed via ``sys.__getattr__`` as a frozendict snapshot built on
+    // each access (see ``sys_getattr``).
+    if (_PyImport_InitLazyModules(interp) == NULL) {
         goto error;
     }
 

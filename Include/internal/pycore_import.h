@@ -84,6 +84,8 @@ extern void _PyImport_ClearModulesByIndex(PyInterpreterState *interp);
 extern PyObject * _PyImport_InitLazyModules(
     PyInterpreterState *interp);
 extern void _PyImport_ClearLazyModules(PyInterpreterState *interp);
+extern PyObject * _PyImport_GetLazyModulesSnapshot(
+    PyInterpreterState *interp);
 
 extern int _PyImport_InitDefaultImportFunc(PyInterpreterState *interp);
 extern int _PyImport_IsDefaultImportFunc(

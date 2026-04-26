@@ -282,6 +282,48 @@ _PyImport_ClearLazyModules(PyInterpreterState *interp)
     Py_CLEAR(LAZY_MODULES(interp));
 }
 
+PyObject *
+_PyImport_GetLazyModulesSnapshot(PyInterpreterState *interp)
+{
+    PyObject *lazy_modules = LAZY_MODULES(interp);
+    if (lazy_modules == NULL) {
+        return PyFrozenDict_New(NULL);
+    }
+
+    PyObject *tmp = PyDict_New();
+    if (tmp == NULL) {
+        return NULL;
+    }
+
+    int err = 0;
+    Py_BEGIN_CRITICAL_SECTION(lazy_modules);
+    Py_ssize_t pos = 0;
+    PyObject *key, *value;
+    while (PyDict_Next(lazy_modules, &pos, &key, &value)) {
+        PyObject *frozen = PyFrozenSet_New(value);
+        if (frozen == NULL) {
+            err = -1;
+            break;
+        }
+        if (PyDict_SetItem(tmp, key, frozen) < 0) {
+            Py_DECREF(frozen);
+            err = -1;
+            break;
+        }
+        Py_DECREF(frozen);
+    }
+    Py_END_CRITICAL_SECTION();
+
+    if (err < 0) {
+        Py_DECREF(tmp);
+        return NULL;
+    }
+
+    PyObject *snapshot = PyFrozenDict_New(tmp);
+    Py_DECREF(tmp);
+    return snapshot;
+}
+
 static int
 import_ensure_initialized(PyInterpreterState *interp, PyObject *mod, PyObject *name)
 {
@@ -5672,6 +5714,26 @@ error:
     return ret;
 }
 
+/*[clinic input]
+_imp._clear_lazy_modules
+
+Clear the per-interpreter lazy import registry.
+
+(internal-only) Used by the test suite to reset state between tests.
+[clinic start generated code]*/
+
+static PyObject *
+_imp__clear_lazy_modules_impl(PyObject *module)
+/*[clinic end generated code: output=8c1e605969f1d16b input=0c01a8d30cdebed2]*/
+{
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    PyObject *lazy_modules = LAZY_MODULES(interp);
+    if (lazy_modules != NULL) {
+        PyDict_Clear(lazy_modules);
+    }
+    Py_RETURN_NONE;
+}
+
 PyDoc_STRVAR(doc_imp,
 "(Extremely) low-level import machinery bits as used by importlib.");
 
@@ -5696,6 +5758,7 @@ static PyMethodDef imp_methods[] = {
     _IMP__FIX_CO_FILENAME_METHODDEF
     _IMP_SOURCE_HASH_METHODDEF
     _IMP__SET_LAZY_ATTRIBUTES_METHODDEF
+    _IMP__CLEAR_LAZY_MODULES_METHODDEF
     {NULL, NULL}  /* sentinel */
 };
 

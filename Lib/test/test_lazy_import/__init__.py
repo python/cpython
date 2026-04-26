@@ -1,5 +1,6 @@
 """Tests for PEP 810 lazy imports."""
 
+import _imp
 import io
 import dis
 import subprocess
@@ -31,7 +32,7 @@ class LazyImportTests(unittest.TestCase):
 
         sys.set_lazy_imports_filter(None)
         sys.set_lazy_imports("normal")
-        sys.lazy_modules.clear()
+        _imp._clear_lazy_modules()
 
     def test_basic_unused(self):
         """Lazy imported module should not be loaded if never accessed."""
@@ -484,9 +485,28 @@ class SysLazyImportsAPITests(unittest.TestCase):
         sys.set_lazy_imports_filter(my_filter)
         self.assertIs(sys.get_lazy_imports_filter(), my_filter)
 
-    def test_lazy_modules_attribute_is_dict(self):
-        """sys.lazy_modules should be a dict per PEP 810."""
-        self.assertIsInstance(sys.lazy_modules, dict)
+    def test_lazy_modules_attribute_is_frozendict(self):
+        """sys.lazy_modules should be a frozendict snapshot."""
+        snapshot = sys.lazy_modules
+        self.assertIsInstance(snapshot, frozendict)
+        for value in snapshot.values():
+            self.assertIsInstance(value, frozenset)
+
+    def test_lazy_modules_returns_fresh_snapshot(self):
+        """Each access of sys.lazy_modules should return a fresh snapshot."""
+        first = sys.lazy_modules
+        second = sys.lazy_modules
+        # Snapshots are independent objects, even though they may compare equal.
+        self.assertIsNot(first, second)
+        self.assertEqual(first, second)
+
+    def test_lazy_modules_is_immutable(self):
+        """Mutation through sys.lazy_modules must not be possible."""
+        snapshot = sys.lazy_modules
+        with self.assertRaises(TypeError):
+            snapshot["foo"] = frozenset()
+        with self.assertRaises(AttributeError):
+            snapshot.clear()
 
     @support.requires_subprocess()
     def test_lazy_modules_tracks_lazy_imports(self):
@@ -966,8 +986,8 @@ class SysLazyModulesTrackingTests(unittest.TestCase):
 
     def test_lazy_modules_is_per_interpreter(self):
         """Each interpreter should have independent sys.lazy_modules."""
-        # Basic test that sys.lazy_modules exists and is a dict
-        self.assertIsInstance(sys.lazy_modules, dict)
+        # Basic test that sys.lazy_modules exists and is an immutable snapshot.
+        self.assertIsInstance(sys.lazy_modules, frozendict)
 
     def test_lazy_module_without_children_is_tracked(self):
         code = textwrap.dedent("""
@@ -1804,7 +1824,9 @@ class ThreadSafetyTests(unittest.TestCase):
                 t.join()
 
             assert not errors, f"Errors: {errors}"
-            assert isinstance(sys.lazy_modules, dict), "sys.lazy_modules is not a dict"
+            assert isinstance(sys.lazy_modules, frozendict), (
+                "sys.lazy_modules is not a frozendict"
+            )
             print("OK")
         """)
 
