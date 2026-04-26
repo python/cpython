@@ -2360,7 +2360,7 @@ class PipelineTestCase(BaseTestCase):
         promptly rather than hanging until command 0's sleep finishes.
         """
         start = time.monotonic()
-        with self.assertRaises(NONEXISTING_ERRORS):
+        with self.assertRaises(NONEXISTING_ERRORS) as cm:
             subprocess.run_pipeline(
                 [sys.executable, '-c', 'import time; time.sleep(60)'],
                 NONEXISTING_CMD,
@@ -2370,6 +2370,10 @@ class PipelineTestCase(BaseTestCase):
         self.assertLess(elapsed, 30,
             "run_pipeline did not promptly clean up the running first "
             "command after the second command failed to spawn")
+        notes = getattr(cm.exception, '__notes__', [])
+        self.assertTrue(
+            any('commands[1]' in n for n in notes),
+            f'expected a which-command note on the OSError; got {notes!r}')
 
     def test_pipeline_explicit_stdout_pipe(self):
         """Test pipeline with explicit stdout=PIPE"""

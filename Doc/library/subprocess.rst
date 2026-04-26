@@ -391,7 +391,7 @@ underlying :class:`Popen` interface can be used directly.
       ... )
       Traceback (most recent call last):
         ...
-      subprocess.PipelineError: Pipeline failed: command 1 ['false'] returned 1
+      subprocess.PipelineError: Pipeline failed: ['false'] (commands[1]) returned 1
 
    .. versionadded:: next
 

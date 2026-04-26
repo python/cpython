@@ -241,8 +241,8 @@ class PipelineError(SubprocessError):
                 cmd_display = cmd.args
             else:
                 cmd_display = cmd
-            parts.append(f"command {i} {cmd_display!r} {detail}")
-        return f"Pipeline failed: {', '.join(parts)}"
+            parts.append(f"{cmd_display!r} (commands[{i}]) {detail}")
+        return f"Pipeline failed: {'; '.join(parts)}"
 
 
 if _mswindows:
@@ -1199,8 +1199,14 @@ def run_pipeline(*commands, input=None, capture_output=False, timeout=None,
                 if cmd.shell:
                     cmd_kwargs['shell'] = True
 
-            proc = Popen(cmd.args, stdin=proc_stdin, stdout=proc_stdout,
-                         stderr=proc_stderr, **cmd_kwargs)
+            try:
+                proc = Popen(cmd.args, stdin=proc_stdin, stdout=proc_stdout,
+                             stderr=proc_stderr, **cmd_kwargs)
+            except OSError as e:
+                e.add_note(
+                    f'raised while starting {cmd!r} '
+                    f'(run_pipeline commands[{i}])')
+                raise
             processes.append(proc)
 
             # Close the parent's copy of the previous process's stdout
