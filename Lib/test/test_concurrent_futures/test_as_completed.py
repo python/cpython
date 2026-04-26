@@ -7,6 +7,7 @@ from concurrent.futures._base import (
     CANCELLED_AND_NOTIFIED, FINISHED, Future)
 
 from test import support
+from test.support import warnings_helper
 
 from .util import (
     PENDING_FUTURE, RUNNING_FUTURE,
@@ -19,6 +20,7 @@ def mul(x, y):
 
 
 class AsCompletedTests:
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     def test_no_timeout(self):
         future1 = self.executor.submit(mul, 2, 21)
         future2 = self.executor.submit(mul, 7, 6)
@@ -35,6 +37,7 @@ class AsCompletedTests:
                  future1, future2]),
                 completed)
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     def test_future_times_out(self):
         """Test ``futures.as_completed`` timing out before
         completing it's final future."""
@@ -62,6 +65,7 @@ class AsCompletedTests:
                 # Check that ``future`` wasn't completed.
                 self.assertEqual(completed_futures, already_completed)
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     def test_duplicate_futures(self):
         # Issue 20367. Duplicate futures should not raise exceptions or give
         # duplicate responses.

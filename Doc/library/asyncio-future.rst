@@ -75,6 +75,7 @@ Future Functions
       Deprecation warning is emitted if *future* is not a Future-like object
       and *loop* is not specified and there is no running event loop.
 
+.. _asyncio-future-obj:
 
 Future Object
 =============
@@ -194,6 +195,10 @@ Future Object
       If the Future is already *done* or *cancelled*, return ``False``.
       Otherwise, change the Future's state to *cancelled*,
       schedule the callbacks, and return ``True``.
+
+      The optional string argument *msg* is passed as the argument to the
+      :exc:`CancelledError` exception raised when a cancelled Future
+      is awaited.
 
       .. versionchanged:: 3.9
          Added the *msg* parameter.

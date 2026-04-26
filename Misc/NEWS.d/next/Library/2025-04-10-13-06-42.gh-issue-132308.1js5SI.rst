@@ -1,3 +1,0 @@
-A :class:`traceback.TracebackException` now correctly renders the  ``__context__``
-and ``__cause__`` attributes from :ref:`falsey <truth>` :class:`Exception`,
-and the ``exceptions`` attribute from falsey :class:`ExceptionGroup`.

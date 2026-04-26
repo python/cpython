@@ -37,6 +37,19 @@ Tuple Objects
    or ``NULL`` with an exception set on failure.
 
 
+.. c:function:: PyObject* PyTuple_FromArray(PyObject *const *array, Py_ssize_t size)
+
+   Create a tuple of *size* items and copy references from *array* to the new
+   tuple.
+
+   *array* can be NULL if *size* is ``0``.
+
+   On success, return a new reference.
+   On error, set an exception and return ``NULL``.
+
+   .. versionadded:: 3.15
+
+
 .. c:function:: PyObject* PyTuple_Pack(Py_ssize_t n, ...)
 
    Return a new tuple object of size *n*,
@@ -48,7 +61,7 @@ Tuple Objects
 .. c:function:: Py_ssize_t PyTuple_Size(PyObject *p)
 
    Take a pointer to a tuple object, and return the size of that tuple.
-   On error, return ``-1`` and with an exception set.
+   On error, return ``-1`` with an exception set.
 
 
 .. c:function:: Py_ssize_t PyTuple_GET_SIZE(PyObject *p)
@@ -86,7 +99,8 @@ Tuple Objects
 
    Insert a reference to object *o* at position *pos* of the tuple pointed to by
    *p*.  Return ``0`` on success.  If *pos* is out of bounds, return ``-1``
-   and set an :exc:`IndexError` exception.
+   and set an :exc:`IndexError` exception. This function should only be used to fill in brand new tuples;
+   using it on an existing tuple is thread-unsafe.
 
    .. note::
 
@@ -97,7 +111,7 @@ Tuple Objects
 .. c:function:: void PyTuple_SET_ITEM(PyObject *p, Py_ssize_t pos, PyObject *o)
 
    Like :c:func:`PyTuple_SetItem`, but does no error checking, and should *only* be
-   used to fill in brand new tuples.
+   used to fill in brand new tuples, using it on an existing tuple is thread-unsafe.
 
    Bounds checking is performed as an assertion if Python is built in
    :ref:`debug mode <debug-build>` or :option:`with assertions <--with-assertions>`.
@@ -135,8 +149,11 @@ Tuple Objects
 Struct Sequence Objects
 -----------------------
 
-Struct sequence objects are the C equivalent of :func:`~collections.namedtuple`
-objects, i.e. a sequence whose items can also be accessed through attributes.
+A struct sequence object is a :term:`named tuple`, that is, a sequence
+whose items can also be accessed through attributes.
+It is similar to :func:`collections.namedtuple`, but provides a slightly
+different interface.
+
 To create a struct sequence, you first have to create a specific struct sequence
 type.
 
@@ -220,6 +237,8 @@ type.
 .. c:function:: PyObject* PyStructSequence_GetItem(PyObject *p, Py_ssize_t pos)
 
    Return the object at position *pos* in the struct sequence pointed to by *p*.
+   The returned reference is borrowed from the struct sequence *p*
+   (that is: it is only valid as long as you hold a reference to *p*).
 
    Bounds checking is performed as an assertion if Python is built in
    :ref:`debug mode <debug-build>` or :option:`with assertions <--with-assertions>`.

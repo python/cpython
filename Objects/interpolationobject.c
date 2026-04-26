@@ -54,7 +54,7 @@ typedef struct {
 Interpolation.__new__ as interpolation_new
 
     value: object
-    expression: object(subclass_of='&PyUnicode_Type')
+    expression: object(subclass_of='&PyUnicode_Type', c_default='&_Py_STR(empty)') = ""
     conversion: object(converter='_conversion_converter') = None
     format_spec: object(subclass_of='&PyUnicode_Type', c_default='&_Py_STR(empty)') = ""
 [clinic start generated code]*/
@@ -63,7 +63,7 @@ static PyObject *
 interpolation_new_impl(PyTypeObject *type, PyObject *value,
                        PyObject *expression, PyObject *conversion,
                        PyObject *format_spec)
-/*[clinic end generated code: output=6488e288765bc1a9 input=d91711024068528c]*/
+/*[clinic end generated code: output=6488e288765bc1a9 input=fc5c285c1dd23d36]*/
 {
     interpolationobject *self = PyObject_GC_New(interpolationobject, type);
     if (!self) {
@@ -137,6 +137,8 @@ interpolation_reduce(PyObject *op, PyObject *Py_UNUSED(dummy))
 static PyMethodDef interpolation_methods[] = {
     {"__reduce__", interpolation_reduce, METH_NOARGS,
         PyDoc_STR("__reduce__() -> (cls, state)")},
+    {"__class_getitem__", Py_GenericAlias,
+        METH_O|METH_CLASS, PyDoc_STR("See PEP 585")},
     {NULL, NULL},
 };
 

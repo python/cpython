@@ -1,2 +1,0 @@
-The iOS testbed will now select the most recently released "SE-class" device
-for testing if a device isn't explicitly specified.

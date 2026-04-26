@@ -9,10 +9,9 @@ import os
 import struct
 import sys
 import unittest
-import warnings
 from subprocess import PIPE, Popen
 from test.support import catch_unraisable_exception
-from test.support import import_helper
+from test.support import force_not_colorized_test_class, import_helper
 from test.support import os_helper
 from test.support import _4G, bigmemtest, requires_subprocess
 from test.support.script_helper import assert_python_ok, assert_python_failure
@@ -331,13 +330,13 @@ class TestGzip(BaseTest):
     def test_1647484(self):
         for mode in ('wb', 'rb'):
             with gzip.GzipFile(self.filename, mode) as f:
-                self.assertTrue(hasattr(f, "name"))
+                self.assertHasAttr(f, "name")
                 self.assertEqual(f.name, self.filename)
 
     def test_paddedfile_getattr(self):
         self.test_write()
         with gzip.GzipFile(self.filename, 'rb') as f:
-            self.assertTrue(hasattr(f.fileobj, "name"))
+            self.assertHasAttr(f.fileobj, "name")
             self.assertEqual(f.fileobj.name, self.filename)
 
     def test_mtime(self):
@@ -345,7 +344,7 @@ class TestGzip(BaseTest):
         with gzip.GzipFile(self.filename, 'w', mtime = mtime) as fWrite:
             fWrite.write(data1)
         with gzip.GzipFile(self.filename) as fRead:
-            self.assertTrue(hasattr(fRead, 'mtime'))
+            self.assertHasAttr(fRead, 'mtime')
             self.assertIsNone(fRead.mtime)
             dataRead = fRead.read()
             self.assertEqual(dataRead, data1)
@@ -354,7 +353,7 @@ class TestGzip(BaseTest):
     def test_metadata(self):
         mtime = 123456789
 
-        with gzip.GzipFile(self.filename, 'w', mtime = mtime) as fWrite:
+        with gzip.GzipFile(self.filename, 'w', mtime = mtime, compresslevel = 9) as fWrite:
             fWrite.write(data1)
 
         with open(self.filename, 'rb') as fRead:
@@ -460,7 +459,7 @@ class TestGzip(BaseTest):
             self.assertEqual(d, data1 * 50, "Incorrect data in file")
 
     def test_gzip_BadGzipFile_exception(self):
-        self.assertTrue(issubclass(gzip.BadGzipFile, OSError))
+        self.assertIsSubclass(gzip.BadGzipFile, OSError)
 
     def test_bad_gzip_file(self):
         with open(self.filename, 'wb') as file:
@@ -640,7 +639,7 @@ class TestGzip(BaseTest):
             with open(self.filename, mode) as f:
                 with gzip.GzipFile(fileobj=f) as g:
                     self.assertEqual(g.mode, gzip.READ)
-        for mode in "wb", "ab", "xb":
+        for mode in "wb", "ab", "xb", "wb+", "ab+", "xb+":
             if "x" in mode:
                 os_helper.unlink(self.filename)
             with open(self.filename, mode) as f:
@@ -1058,6 +1057,7 @@ def create_and_remove_directory(directory):
     return decorator
 
 
+@force_not_colorized_test_class
 class TestCommandLine(unittest.TestCase):
     data = b'This is a simple test with gzip'
 
