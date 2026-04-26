@@ -268,14 +268,14 @@ PyObject *
 _PyOpcode_RecordTransformValue(int uop, PyObject *value)
 {
         switch (uop) {
-                case _RECORD_TOS_TYPE:
-                case _RECORD_NOS_TYPE:
-                    return record_trace_transform_to_type(value);
-                case _RECORD_NOS_GEN_FUNC:
                 case _RECORD_3OS_GEN_FUNC:
+                case _RECORD_NOS_GEN_FUNC:
                     return record_trace_transform_gen_func(value);
                 case _RECORD_BOUND_METHOD:
                     return record_trace_transform_bound_method(value);
+                case _RECORD_TOS_TYPE:
+                case _RECORD_NOS_TYPE:
+                    return record_trace_transform_to_type(value);
                 default:
                     return value;
         }
