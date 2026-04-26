@@ -686,7 +686,7 @@ nulls = 'deprecated'
 name = 'Py_mod_exec'
 kind = 'mod'
 dtype = 'func'
-duplicates = 'allow'
+duplicates = 'allow'  # only alowed in PyModuleDef.m_slots
 nulls = 'reject'
 
 [86]
