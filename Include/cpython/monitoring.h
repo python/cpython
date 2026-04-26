@@ -29,9 +29,9 @@ extern "C" {
 /* Other events, mainly exceptions.
  * These can now be turned on and disabled on a per code object basis. */
 
-#define PY_MONITORING_EVENT_PY_UNWIND 11
+#define PY_MONITORING_EVENT_RAISE 11
 #define PY_MONITORING_EVENT_EXCEPTION_HANDLED 12
-#define PY_MONITORING_EVENT_RAISE 13
+#define PY_MONITORING_EVENT_PY_UNWIND 13
 #define PY_MONITORING_EVENT_PY_THROW 14
 #define PY_MONITORING_EVENT_RERAISE 15
 
