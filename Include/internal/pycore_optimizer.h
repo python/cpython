@@ -15,6 +15,50 @@ extern "C" {
 #include "pycore_optimizer_types.h"
 #include <stdbool.h>
 
+/* Fitness controls how long a trace can grow.
+ * Starts at FITNESS_INITIAL, then decreases from per-bytecode buffer usage
+ * plus branch/frame heuristics. The trace stops when fitness drops below the
+ * current exit_quality.
+ *
+ * Design targets for the constants below:
+ * 1. Reaching the abstract frame-depth limit should drop fitness below
+ *    EXIT_QUALITY_SPECIALIZABLE.
+ * 2. A backward edge should leave budget for roughly N_BACKWARD_SLACK more
+ *    bytecodes, assuming AVG_SLOTS_PER_INSTRUCTION.
+ * 3. Roughly seven balanced branches should reduce fitness to
+ *    EXIT_QUALITY_DEFAULT after per-slot costs.
+ * 4. A push followed by a matching return is net-zero on frame-specific
+ *    fitness, excluding per-slot costs.
+ */
+#define MAX_TARGET_LENGTH          (UOP_MAX_TRACE_LENGTH / 2)
+#define OPTIMIZER_EFFECTIVENESS    2
+#define FITNESS_INITIAL            (MAX_TARGET_LENGTH * OPTIMIZER_EFFECTIVENESS)
+
+/* Exit quality thresholds: trace stops when fitness < exit_quality.
+ * Higher = trace is more willing to stop here. */
+#define EXIT_QUALITY_CLOSE_LOOP      (FITNESS_INITIAL - AVG_SLOTS_PER_INSTRUCTION*4)
+#define EXIT_QUALITY_ENTER_EXECUTOR  (FITNESS_INITIAL * 1 / 8)
+#define EXIT_QUALITY_DEFAULT         (FITNESS_INITIAL / 40)
+#define EXIT_QUALITY_SPECIALIZABLE   (FITNESS_INITIAL / 80)
+
+/* Estimated buffer slots per bytecode, used only to derive heuristics.
+ * Runtime charging uses trace-buffer capacity consumed for each bytecode. */
+#define AVG_SLOTS_PER_INSTRUCTION  6
+
+/* Heuristic backward-edge exit quality: leave room for about 1 unroll and
+ * N_BACKWARD_SLACK more bytecodes before reaching EXIT_QUALITY_CLOSE_LOOP,
+ * based on AVG_SLOTS_PER_INSTRUCTION. */
+#define N_BACKWARD_SLACK           10
+#define EXIT_QUALITY_BACKWARD_EDGE (EXIT_QUALITY_CLOSE_LOOP / 2 - N_BACKWARD_SLACK * AVG_SLOTS_PER_INSTRUCTION)
+
+/* Penalty for a balanced branch.
+ * It is sized so repeated balanced branches can drive a trace toward
+ * EXIT_QUALITY_DEFAULT, while compute_branch_penalty() keeps any single branch
+ * from dominating the budget.
+ */
+#define FITNESS_BRANCH_BALANCED    ((FITNESS_INITIAL - EXIT_QUALITY_DEFAULT - \
+                                        (MAX_TARGET_LENGTH / 14 * AVG_SLOTS_PER_INSTRUCTION)) / (14))
+
 
 typedef struct _PyJitUopBuffer {
     _PyUOpInstruction *start;
@@ -103,7 +147,8 @@ typedef struct _PyJitTracerPreviousState {
 } _PyJitTracerPreviousState;
 
 typedef struct _PyJitTracerTranslatorState {
-    int jump_backward_seen;
+    int32_t fitness;              // Current trace fitness, starts high, decrements
+    int frame_depth;              // Current inline depth (0 = root frame)
 } _PyJitTracerTranslatorState;
 
 typedef struct _PyJitTracerState {

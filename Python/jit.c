@@ -60,8 +60,6 @@ jit_error(const char *message)
     PyErr_Format(PyExc_RuntimeWarning, "JIT %s (%d)", message, hint);
 }
 
-static size_t _Py_jit_shim_size = 0;
-
 static int
 address_in_executor_array(_PyExecutorObject **ptrs, size_t count, uintptr_t addr)
 {
@@ -103,13 +101,6 @@ _PyJIT_AddressInJitCode(PyInterpreterState *interp, uintptr_t addr)
 {
     if (interp == NULL) {
         return 0;
-    }
-    if (_Py_jit_entry != _Py_LazyJitShim && _Py_jit_shim_size != 0) {
-        uintptr_t start = (uintptr_t)_Py_jit_entry;
-        uintptr_t end = start + _Py_jit_shim_size;
-        if (addr >= start && addr < end) {
-            return 1;
-        }
     }
     if (address_in_executor_array(interp->executor_ptrs, interp->executor_count, addr)) {
         return 1;
@@ -727,75 +718,6 @@ _PyJIT_Compile(_PyExecutorObject *executor, const _PyUOpInstruction trace[], siz
     return 0;
 }
 
-/* One-off compilation of the jit entry shim
- * We compile this once only as it effectively a normal
- * function, but we need to use the JIT because it needs
- * to understand the jit-specific calling convention.
- * Don't forget to call _PyJIT_Fini later!
- */
-static _PyJitEntryFuncPtr
-compile_shim(void)
-{
-    _PyExecutorObject dummy;
-    const StencilGroup *group;
-    size_t code_size = 0;
-    size_t data_size = 0;
-    jit_state state = {0};
-    group = &shim;
-    code_size += group->code_size;
-    data_size += group->data_size;
-    combine_symbol_mask(group->trampoline_mask, state.trampolines.mask);
-    combine_symbol_mask(group->got_mask, state.got_symbols.mask);
-    // Round up to the nearest page:
-    size_t page_size = get_page_size();
-    assert((page_size & (page_size - 1)) == 0);
-    size_t code_padding = DATA_ALIGN - ((code_size + state.trampolines.size) & (DATA_ALIGN - 1));
-    size_t padding = page_size - ((code_size + state.trampolines.size + code_padding + data_size + state.got_symbols.size) & (page_size - 1));
-    size_t total_size = code_size + state.trampolines.size + code_padding + data_size + state.got_symbols.size + padding;
-    unsigned char *memory = jit_alloc(total_size);
-    if (memory == NULL) {
-        return NULL;
-    }
-    unsigned char *code = memory;
-    state.trampolines.mem = memory + code_size;
-    unsigned char *data = memory + code_size + state.trampolines.size + code_padding;
-    state.got_symbols.mem = data + data_size;
-    // Compile the shim, which handles converting between the native
-    // calling convention and the calling convention used by jitted code
-    // (which may be different for efficiency reasons).
-    group = &shim;
-    group->emit(code, data, &dummy, NULL, &state);
-    code += group->code_size;
-    data += group->data_size;
-    assert(code == memory + code_size);
-    assert(data == memory + code_size + state.trampolines.size + code_padding + data_size);
-    if (mark_executable(memory, total_size)) {
-        jit_free(memory, total_size);
-        return NULL;
-    }
-    _Py_jit_shim_size = total_size;
-    return (_PyJitEntryFuncPtr)memory;
-}
-
-static PyMutex lazy_jit_mutex = { 0 };
-
-_Py_CODEUNIT *
-_Py_LazyJitShim(
-    _PyExecutorObject *executor, _PyInterpreterFrame *frame, _PyStackRef *stack_pointer, PyThreadState *tstate
-) {
-    PyMutex_Lock(&lazy_jit_mutex);
-    if (_Py_jit_entry == _Py_LazyJitShim) {
-        _PyJitEntryFuncPtr shim = compile_shim();
-        if (shim == NULL) {
-            PyMutex_Unlock(&lazy_jit_mutex);
-            Py_FatalError("Cannot allocate core JIT code");
-        }
-        _Py_jit_entry = shim;
-    }
-    PyMutex_Unlock(&lazy_jit_mutex);
-    return _Py_jit_entry(executor, frame, stack_pointer, tstate);
-}
-
 // Free executor's memory allocated with _PyJIT_Compile
 void
 _PyJIT_Free(_PyExecutorObject *executor)
@@ -810,24 +732,6 @@ _PyJIT_Free(_PyExecutorObject *executor)
                                    "freeing JIT memory");
         }
     }
-}
-
-// Free shim memory allocated with compile_shim
-void
-_PyJIT_Fini(void)
-{
-    PyMutex_Lock(&lazy_jit_mutex);
-    unsigned char *memory = (unsigned char *)_Py_jit_entry;
-    size_t size = _Py_jit_shim_size;
-    if (size) {
-        _Py_jit_entry = _Py_LazyJitShim;
-        _Py_jit_shim_size = 0;
-        if (jit_free(memory, size)) {
-            PyErr_FormatUnraisable("Exception ignored while "
-                                   "freeing JIT entry code");
-        }
-    }
-    PyMutex_Unlock(&lazy_jit_mutex);
 }
 
 #endif  // _Py_JIT
