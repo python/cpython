@@ -1639,7 +1639,7 @@ specialize_class_call(PyObject *callable, _Py_CODEUNIT *instr, int nargs)
     assert(PyType_Check(callable));
     PyTypeObject *tp = _PyType_CAST(callable);
     if (tp->tp_flags & Py_TPFLAGS_IMMUTABLETYPE) {
-        if (nargs == 1) {
+        if (nargs == 1 && CALL_ARGCOUNT(instr->op.arg) == 1) {
             if (tp == &PyUnicode_Type) {
                 specialize(instr, CALL_STR_1);
                 return 0;
@@ -1707,7 +1707,8 @@ specialize_method_descriptor(PyMethodDescrObject *descr, PyObject *self_or_null,
             }
             PyInterpreterState *interp = _PyInterpreterState_GET();
             PyObject *list_append = interp->callable_cache.list_append;
-            if ((PyObject *)descr == list_append) {
+            if ((PyObject *)descr == list_append &&
+                CALL_ARGCOUNT(instr->op.arg) == 1) {
                 assert(self_or_null != NULL);
                 if (PyList_CheckExact(self_or_null)) {
                     specialize(instr, CALL_LIST_APPEND);
