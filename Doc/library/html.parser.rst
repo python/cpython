@@ -311,7 +311,7 @@ further parsing:
    End tag  : script
 
 Attribute names are converted to lowercase, quotes from attribute values removed,
-and ``None`` is returned as *value* for empty attributes (such as `checked`):
+and ``None`` is returned as *value* for empty attributes (such as ``checked``):
 
 .. doctest::
 
