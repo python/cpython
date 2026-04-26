@@ -10,7 +10,6 @@
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_runtime.h"       // _Py_ID()
 #include "pycore_structseq.h"     // _PyStructSequence_FiniBuiltin()
-#include "pycore_sysmodule.h"     // _PySys_GetOptionalAttr()
 #include "pycore_traceback.h"     // _PyTraceBack_FromFrame()
 #include "pycore_unicodeobject.h" // _PyUnicode_Equal()
 
@@ -247,13 +246,23 @@ PyErr_SetObject(PyObject *exception, PyObject *value)
     _PyErr_SetObject(tstate, exception, value);
 }
 
-/* Set a key error with the specified argument, wrapping it in a
- * tuple automatically so that tuple keys are not unpacked as the
- * exception arguments. */
+/* Set a key error with the specified argument. This function should be used to
+ * raise a KeyError with an argument instead of PyErr_SetObject(PyExc_KeyError,
+ * arg) which has a special behavior. PyErr_SetObject() unpacks arg if it's a
+ * tuple, and it uses arg instead of creating a new exception if arg is an
+ * exception.
+ *
+ * If an exception is already set, override the exception. */
 void
 _PyErr_SetKeyError(PyObject *arg)
 {
     PyThreadState *tstate = _PyThreadState_GET();
+
+    // PyObject_CallOneArg() must not be called with an exception set,
+    // otherwise _Py_CheckFunctionResult() can fail if the function returned
+    // a result with an excception set.
+    _PyErr_Clear(tstate);
+
     PyObject *exc = PyObject_CallOneArg(PyExc_KeyError, arg);
     if (!exc) {
         /* caller will expect error to be set anyway */
@@ -1445,12 +1454,16 @@ make_unraisable_hook_args(PyThreadState *tstate, PyObject *exc_type,
 
    It can be called to log the exception of a custom sys.unraisablehook.
 
-   Do nothing if sys.stderr attribute doesn't exist or is set to None. */
+   This assumes 'file' is neither NULL nor None.
+ */
 static int
 write_unraisable_exc_file(PyThreadState *tstate, PyObject *exc_type,
                           PyObject *exc_value, PyObject *exc_tb,
                           PyObject *err_msg, PyObject *obj, PyObject *file)
 {
+    assert(file != NULL);
+    assert(!Py_IsNone(file));
+
     if (obj != NULL && obj != Py_None) {
         if (err_msg != NULL && err_msg != Py_None) {
             if (PyFile_WriteObject(err_msg, file, Py_PRINT_RAW) < 0) {
@@ -1484,6 +1497,27 @@ write_unraisable_exc_file(PyThreadState *tstate, PyObject *exc_type,
             return -1;
         }
     }
+
+    // Try printing the exception using the stdlib module.
+    // If this fails, then we have to use the C implementation.
+    PyObject *print_exception_fn = PyImport_ImportModuleAttrString("traceback",
+                                                                   "_print_exception_bltin");
+    if (print_exception_fn != NULL && PyCallable_Check(print_exception_fn)) {
+        PyObject *args[2] = {exc_value, file};
+        PyObject *result = PyObject_Vectorcall(print_exception_fn, args, 2, NULL);
+        int ok = (result != NULL);
+        Py_DECREF(print_exception_fn);
+        Py_XDECREF(result);
+        if (ok) {
+            // Nothing else to do
+            return 0;
+        }
+    }
+    else {
+        Py_XDECREF(print_exception_fn);
+    }
+    // traceback module failed, fall back to pure C
+    _PyErr_Clear(tstate);
 
     if (exc_tb != NULL && exc_tb != Py_None) {
         if (PyTraceBack_Print(exc_tb, file) < 0) {
@@ -1570,7 +1604,7 @@ write_unraisable_exc(PyThreadState *tstate, PyObject *exc_type,
                      PyObject *obj)
 {
     PyObject *file;
-    if (_PySys_GetOptionalAttr(&_Py_ID(stderr), &file) < 0) {
+    if (PySys_GetOptionalAttr(&_Py_ID(stderr), &file) < 0) {
         return -1;
     }
     if (file == NULL || file == Py_None) {
@@ -1632,6 +1666,7 @@ format_unraisable_v(const char *format, va_list va, PyObject *obj)
     _Py_EnsureTstateNotNULL(tstate);
 
     PyObject *err_msg = NULL;
+    PyObject *hook = NULL;
     PyObject *exc_type, *exc_value, *exc_tb;
     _PyErr_Fetch(tstate, &exc_type, &exc_value, &exc_tb);
 
@@ -1676,8 +1711,7 @@ format_unraisable_v(const char *format, va_list va, PyObject *obj)
         goto error;
     }
 
-    PyObject *hook;
-    if (_PySys_GetOptionalAttr(&_Py_ID(unraisablehook), &hook) < 0) {
+    if (PySys_GetOptionalAttr(&_Py_ID(unraisablehook), &hook) < 0) {
         Py_DECREF(hook_args);
         err_msg_str = NULL;
         obj = NULL;
@@ -1689,7 +1723,6 @@ format_unraisable_v(const char *format, va_list va, PyObject *obj)
     }
 
     if (_PySys_Audit(tstate, "sys.unraisablehook", "OO", hook, hook_args) < 0) {
-        Py_DECREF(hook);
         Py_DECREF(hook_args);
         err_msg_str = "Exception ignored in audit hook";
         obj = NULL;
@@ -1697,13 +1730,11 @@ format_unraisable_v(const char *format, va_list va, PyObject *obj)
     }
 
     if (hook == Py_None) {
-        Py_DECREF(hook);
         Py_DECREF(hook_args);
         goto default_hook;
     }
 
     PyObject *res = PyObject_CallOneArg(hook, hook_args);
-    Py_DECREF(hook);
     Py_DECREF(hook_args);
     if (res != NULL) {
         Py_DECREF(res);
@@ -1733,6 +1764,7 @@ done:
     Py_XDECREF(exc_value);
     Py_XDECREF(exc_tb);
     Py_XDECREF(err_msg);
+    Py_XDECREF(hook);
     _PyErr_Clear(tstate); /* Just in case */
 }
 
@@ -1936,10 +1968,11 @@ _PyErr_RaiseSyntaxError(PyObject *msg, PyObject *filename, int lineno, int col_o
 */
 int
 _PyErr_EmitSyntaxWarning(PyObject *msg, PyObject *filename, int lineno, int col_offset,
-                         int end_lineno, int end_col_offset)
+                         int end_lineno, int end_col_offset,
+                         PyObject *module)
 {
-    if (_PyErr_WarnExplicitObjectWithContext(PyExc_SyntaxWarning, msg,
-                                             filename, lineno) < 0)
+    if (PyErr_WarnExplicitObject(PyExc_SyntaxWarning, msg, filename, lineno,
+                                 module, NULL) < 0)
     {
         if (PyErr_ExceptionMatches(PyExc_SyntaxWarning)) {
             /* Replace the SyntaxWarning exception with a SyntaxError

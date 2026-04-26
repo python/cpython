@@ -1,3 +1,4 @@
+import ast
 import dis
 import gc
 from itertools import combinations, product
@@ -292,6 +293,7 @@ class TestTranforms(BytecodeTestCase):
             ('---x', 'UNARY_NEGATIVE', None, False, None, None),
             ('~~~x', 'UNARY_INVERT', None, False, None, None),
             ('+++x', 'CALL_INTRINSIC_1', intrinsic_positive, False, None, None),
+            ('~True', 'UNARY_INVERT', None, False, None, None),
         ]
 
         for (
@@ -718,9 +720,9 @@ class TestTranforms(BytecodeTestCase):
         self.assertEqual(format('x = %d!', 1234), 'x = 1234!')
         self.assertEqual(format('x = %x!', 1234), 'x = 4d2!')
         self.assertEqual(format('x = %f!', 1234), 'x = 1234.000000!')
-        self.assertEqual(format('x = %s!', 1234.5678901), 'x = 1234.5678901!')
-        self.assertEqual(format('x = %f!', 1234.5678901), 'x = 1234.567890!')
-        self.assertEqual(format('x = %d!', 1234.5678901), 'x = 1234!')
+        self.assertEqual(format('x = %s!', 1234.0000625), 'x = 1234.0000625!')
+        self.assertEqual(format('x = %f!', 1234.0000625), 'x = 1234.000063!')
+        self.assertEqual(format('x = %d!', 1234.0000625), 'x = 1234!')
         self.assertEqual(format('x = %s%% %%%%', 1234), 'x = 1234% %%')
         self.assertEqual(format('x = %s!', '%% %s'), 'x = %% %s!')
         self.assertEqual(format('x = %s, y = %d', 12, 34), 'x = 12, y = 34')
@@ -732,22 +734,27 @@ class TestTranforms(BytecodeTestCase):
         with self.assertRaisesRegex(TypeError,
                     'not all arguments converted during string formatting'):
             eval("'%s' % (x, y)", {'x': 1, 'y': 2})
-        with self.assertRaisesRegex(ValueError, 'incomplete format'):
+        with self.assertRaisesRegex(ValueError, 'stray % at position 2'):
             eval("'%s%' % (x,)", {'x': 1234})
-        with self.assertRaisesRegex(ValueError, 'incomplete format'):
+        with self.assertRaisesRegex(ValueError, 'stray % at position 4'):
             eval("'%s%%%' % (x,)", {'x': 1234})
         with self.assertRaisesRegex(TypeError,
                     'not enough arguments for format string'):
             eval("'%s%z' % (x,)", {'x': 1234})
-        with self.assertRaisesRegex(ValueError, 'unsupported format character'):
+        with self.assertRaisesRegex(ValueError,
+                    'unsupported format %z at position 2'):
             eval("'%s%z' % (x, 5)", {'x': 1234})
-        with self.assertRaisesRegex(TypeError, 'a real number is required, not str'):
+        with self.assertRaisesRegex(TypeError,
+                'format argument 1: %d requires a real number, not str'):
             eval("'%d' % (x,)", {'x': '1234'})
-        with self.assertRaisesRegex(TypeError, 'an integer is required, not float'):
+        with self.assertRaisesRegex(TypeError,
+                'format argument 1: %x requires an integer, not float'):
             eval("'%x' % (x,)", {'x': 1234.56})
-        with self.assertRaisesRegex(TypeError, 'an integer is required, not str'):
+        with self.assertRaisesRegex(TypeError,
+                'format argument 1: %x requires an integer, not str'):
             eval("'%x' % (x,)", {'x': '1234'})
-        with self.assertRaisesRegex(TypeError, 'must be real number, not str'):
+        with self.assertRaisesRegex(TypeError,
+                'format argument 1: %f requires a real number, not str'):
             eval("'%f' % (x,)", {'x': '1234'})
         with self.assertRaisesRegex(TypeError,
                     'not enough arguments for format string'):
@@ -1115,8 +1122,62 @@ class TestMarkingVariablesAsUnKnown(BytecodeTestCase):
         self.assertInBytecode(f, "LOAD_FAST_BORROW")
         self.assertNotInBytecode(f, "LOAD_FAST_CHECK")
 
+    def test_import_from_doesnt_clobber_load_fast_borrow(self):
+        def f(self):
+            if x: pass
+            self.x
+            from shutil import ExecError
+            print(ExecError)
+        self.assertInBytecode(f, "LOAD_FAST_BORROW", "self")
 
 class DirectCfgOptimizerTests(CfgOptimizationTestCase):
+
+    def test_optimize_cfg_const_index_out_of_range(self):
+        insts = [
+            ('LOAD_CONST', 2, 0),
+            ('RETURN_VALUE', None, 0),
+        ]
+        seq = self.seq_from_insts(insts)
+        with self.assertRaisesRegex(ValueError, "out of range"):
+            _testinternalcapi.optimize_cfg(seq, [0, 1], 0)
+
+    def test_optimize_cfg_consts_must_be_list(self):
+        insts = [
+            ('LOAD_CONST', 0, 0),
+            ('RETURN_VALUE', None, 0),
+        ]
+        seq = self.seq_from_insts(insts)
+        with self.assertRaisesRegex(TypeError, "consts must be a list"):
+            _testinternalcapi.optimize_cfg(seq, (0,), 0)
+
+    def test_compiler_codegen_metadata_consts_roundtrips_optimize_cfg(self):
+        tree = ast.parse("x = (1, 2)", mode="exec", optimize=1)
+        insts, meta = _testinternalcapi.compiler_codegen(tree, "<s>", 0)
+        consts = meta["consts"]
+        self.assertIsInstance(consts, list)
+        _testinternalcapi.optimize_cfg(insts, consts, 0)
+
+    def test_compiler_codegen_consts_include_none_required_for_implicit_return(self):
+        # Module "pass" only needs the const table entry for None once
+        # _PyCodegen_AddReturnAtEnd runs. If metadata["consts"] were taken
+        # before that, the list would not match LOAD_CONST opargs (here: 0
+        # for None), and optimize_cfg would read out of range.
+        tree = ast.parse("pass", mode="exec", optimize=1)
+        insts, meta = _testinternalcapi.compiler_codegen(tree, "<s>", 0)
+        consts = meta["consts"]
+        self.assertEqual(consts, [None])
+
+        load_const = opcode.opmap["LOAD_CONST"]
+        self.assertEqual(
+            [t[1] for t in insts.get_instructions() if t[0] == load_const],
+            [0],
+        )
+
+        # As if consts were snapshotted before AddReturnAtEnd: still LOAD_CONST 0, no row.
+        with self.assertRaisesRegex(ValueError, "out of range"):
+            _testinternalcapi.optimize_cfg(insts, [], 0)
+
+        _testinternalcapi.optimize_cfg(insts, list(consts), 0)
 
     def cfg_optimization_test(self, insts, expected_insts,
                               consts=None, expected_consts=None,
@@ -1457,7 +1518,7 @@ class DirectCfgOptimizerTests(CfgOptimizationTestCase):
             ('LOAD_SMALL_INT', 1, 0),
             ('LOAD_SMALL_INT', 2, 0),
             ('BUILD_LIST', 2, 0),
-            ('GET_ITER', None, 0),
+            ('GET_ITER', 0, 0),
             start := self.Label(),
             ('FOR_ITER', end := self.Label(), 0),
             ('STORE_FAST', 0, 0),
@@ -1470,7 +1531,7 @@ class DirectCfgOptimizerTests(CfgOptimizationTestCase):
         ]
         after = [
             ('LOAD_CONST', 1, 0),
-            ('GET_ITER', None, 0),
+            ('GET_ITER', 0, 0),
             start := self.Label(),
             ('FOR_ITER', end := self.Label(), 0),
             ('STORE_FAST', 0, 0),
@@ -1488,7 +1549,7 @@ class DirectCfgOptimizerTests(CfgOptimizationTestCase):
             ('LOAD_SMALL_INT', 1, 0),
             ('LOAD_NAME', 0, 0),
             ('BUILD_LIST', 2, 0),
-            ('GET_ITER', None, 0),
+            ('GET_ITER', 0, 0),
             start := self.Label(),
             ('FOR_ITER', end := self.Label(), 0),
             ('STORE_FAST', 0, 0),
@@ -1503,7 +1564,7 @@ class DirectCfgOptimizerTests(CfgOptimizationTestCase):
             ('LOAD_SMALL_INT', 1, 0),
             ('LOAD_NAME', 0, 0),
             ('BUILD_TUPLE', 2, 0),
-            ('GET_ITER', None, 0),
+            ('GET_ITER', 0, 0),
             start := self.Label(),
             ('FOR_ITER', end := self.Label(), 0),
             ('STORE_FAST', 0, 0),
@@ -1522,7 +1583,7 @@ class DirectCfgOptimizerTests(CfgOptimizationTestCase):
             ('LOAD_SMALL_INT', 1, 0),
             ('LOAD_SMALL_INT', 2, 0),
             ('BUILD_SET', 2, 0),
-            ('GET_ITER', None, 0),
+            ('GET_ITER', 0, 0),
             start := self.Label(),
             ('FOR_ITER', end := self.Label(), 0),
             ('STORE_FAST', 0, 0),
@@ -1535,7 +1596,7 @@ class DirectCfgOptimizerTests(CfgOptimizationTestCase):
         ]
         after = [
             ('LOAD_CONST', 1, 0),
-            ('GET_ITER', None, 0),
+            ('GET_ITER', 0, 0),
             start := self.Label(),
             ('FOR_ITER', end := self.Label(), 0),
             ('STORE_FAST', 0, 0),
@@ -1554,7 +1615,7 @@ class DirectCfgOptimizerTests(CfgOptimizationTestCase):
             ('LOAD_SMALL_INT', 1, 0),
             ('LOAD_NAME', 0, 0),
             ('BUILD_SET', 2, 0),
-            ('GET_ITER', None, 0),
+            ('GET_ITER', 0, 0),
             start := self.Label(),
             ('FOR_ITER', end := self.Label(), 0),
             ('STORE_FAST', 0, 0),
@@ -2343,7 +2404,7 @@ class DirectCfgOptimizerTests(CfgOptimizationTestCase):
             ("LOAD_FAST", 1, 4),
             ("LIST_EXTEND", 1, 5),
             ("CALL_INTRINSIC_1", INTRINSIC_LIST_TO_TUPLE, 6),
-            ("GET_ITER", None, 7),
+            ("GET_ITER", 0, 7),
             top := self.Label(),
             ("FOR_ITER", end := self.Label(), 8),
             ("STORE_FAST", 2, 9),
@@ -2361,7 +2422,7 @@ class DirectCfgOptimizerTests(CfgOptimizationTestCase):
             ("LOAD_FAST_BORROW", 1, 4),
             ("LIST_EXTEND", 1, 5),
             ("NOP", None, 6),  # ("CALL_INTRINSIC_1", INTRINSIC_LIST_TO_TUPLE, 6),
-            ("GET_ITER", None, 7),
+            ("GET_ITER", 0, 7),
             top := self.Label(),
             ("FOR_ITER", end := self.Label(), 8),
             ("STORE_FAST", 2, 9),
@@ -2614,6 +2675,90 @@ class OptimizeLoadFastTestCase(DirectCfgOptimizerTests):
         ]
         self.cfg_optimization_test(insts, expected, consts=[None])
 
+    def test_format_simple(self):
+        # FORMAT_SIMPLE will leave its operand on the stack if it's a unicode
+        # object. We treat it conservatively and assume that it always leaves
+        # its operand on the stack.
+        insts = [
+            ("LOAD_FAST", 0, 1),
+            ("FORMAT_SIMPLE", None, 2),
+            ("STORE_FAST", 1, 3),
+        ]
+        self.check(insts, insts)
+
+        insts = [
+            ("LOAD_FAST", 0, 1),
+            ("FORMAT_SIMPLE", None, 2),
+            ("POP_TOP", None, 3),
+        ]
+        expected = [
+            ("LOAD_FAST_BORROW", 0, 1),
+            ("FORMAT_SIMPLE", None, 2),
+            ("POP_TOP", None, 3),
+        ]
+        self.check(insts, expected)
+
+    def test_set_function_attribute(self):
+        # SET_FUNCTION_ATTRIBUTE leaves the function on the stack
+        insts = [
+            ("LOAD_CONST", 0, 1),
+            ("LOAD_FAST", 0, 2),
+            ("SET_FUNCTION_ATTRIBUTE", 2, 3),
+            ("STORE_FAST", 1, 4),
+            ("LOAD_CONST", 0, 5),
+            ("RETURN_VALUE", None, 6)
+        ]
+        self.cfg_optimization_test(insts, insts, consts=[None])
+
+        insts = [
+            ("LOAD_CONST", 0, 1),
+            ("LOAD_FAST", 0, 2),
+            ("SET_FUNCTION_ATTRIBUTE", 2, 3),
+            ("RETURN_VALUE", None, 4)
+        ]
+        expected = [
+            ("LOAD_CONST", 0, 1),
+            ("LOAD_FAST_BORROW", 0, 2),
+            ("SET_FUNCTION_ATTRIBUTE", 2, 3),
+            ("RETURN_VALUE", None, 4)
+        ]
+        self.cfg_optimization_test(insts, expected, consts=[None])
+
+    def test_get_yield_from_iter(self):
+        insts = [
+            ("LOAD_FAST", 0, 1),
+            ("GET_ITER", 1, 2),
+            ("PUSH_NULL", None, 3),
+            ("LOAD_CONST", 0, 4),
+            send := self.Label(),
+            ("SEND", end := self.Label(), 6),
+            ("YIELD_VALUE", 1, 7),
+            ("RESUME", 2, 8),
+            ("JUMP", send, 9),
+            end,
+            ("END_SEND", None, 10),
+            ("LOAD_CONST", 0, 11),
+            ("RETURN_VALUE", None, 12),
+        ]
+        self.cfg_optimization_test(insts, insts, consts=[None])
+
+    def test_push_exc_info(self):
+        insts = [
+            ("LOAD_FAST", 0, 1),
+            ("PUSH_EXC_INFO", None, 2),
+        ]
+        self.check(insts, insts)
+
+    def test_load_special(self):
+        # LOAD_SPECIAL may leave self on the stack
+        insts = [
+            ("LOAD_FAST", 0, 1),
+            ("LOAD_SPECIAL", 0, 2),
+            ("STORE_FAST", 1, 3),
+        ]
+        self.check(insts, insts)
+
+
     def test_del_in_finally(self):
         # This loads `obj` onto the stack, executes `del obj`, then returns the
         # `obj` from the stack. See gh-133371 for more details.
@@ -2629,6 +2774,14 @@ class OptimizeLoadFastTestCase(DirectCfgOptimizerTests):
         # interpreter finalization, so run it here manually.
         gc.collect()
         self.assertEqual(obj, [42])
+
+    def test_format_simple_unicode(self):
+        # Repro from gh-134889
+        def f():
+            var = f"{1}"
+            var = f"{var}"
+            return var
+        self.assertEqual(f(), "1")
 
 
 

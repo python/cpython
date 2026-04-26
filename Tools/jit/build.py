@@ -39,16 +39,29 @@ if __name__ == "__main__":
     parser.add_argument(
         "-v", "--verbose", action="store_true", help="echo commands as they are run"
     )
+    parser.add_argument(
+        "--cflags", help="additional flags to pass to the compiler", default=""
+    )
+    parser.add_argument("--llvm-version", help="LLVM version to use")
+    parser.add_argument(
+        "--llvm-tools-install-dir", help="Installation location of LLVM tools"
+    )
     args = parser.parse_args()
     for target in args.target:
         target.debug = args.debug
         target.force = args.force
         target.verbose = args.verbose
+        target.cflags = args.cflags
         target.pyconfig_dir = args.pyconfig_dir
+        if args.llvm_version:
+            target.llvm_version = args.llvm_version
+        if args.llvm_tools_install_dir:
+            target.llvm_tools_install_dir = args.llvm_tools_install_dir
         target.build(
             comment=comment,
             force=args.force,
             jit_stencils=args.output_dir / f"jit_stencils-{target.triple}.h",
+            jit_shim_object=args.output_dir / f"jit_shim-{target.triple}.o",
         )
     jit_stencils_h = args.output_dir / "jit_stencils.h"
     lines = [f"// {comment}\n"]
