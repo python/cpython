@@ -1209,9 +1209,9 @@ Window Objects
    The 6 optional arguments can only be specified when the window is a pad created
    with :func:`newpad`.  The additional parameters are needed to indicate what part
    of the pad and screen are involved. *pminrow* and *pmincol* specify the upper
-   left-hand corner of the rectangle to be displayed in the pad.  *sminrow*,
+   left-corner of the rectangle to be displayed in the pad.  *sminrow*,
    *smincol*, *smaxrow*, and *smaxcol* specify the edges of the rectangle to be
-   displayed on the screen.  The lower right-hand corner of the rectangle to be
+   displayed on the screen.  The lower-right corner of the rectangle to be
    displayed in the pad is calculated from the screen coordinates, since the
    rectangles must be the same size.  Both rectangles must be entirely contained
    within their respective structures.  Negative values of *pminrow*, *pmincol*,
@@ -1720,9 +1720,9 @@ falls back on a crude printable ASCII approximation.
 +------------------------+------------------------------------------+
 | .. data:: ACS_LEQUAL   | less-than-or-equal-to                    |
 +------------------------+------------------------------------------+
-| .. data:: ACS_LLCORNER | lower left-hand corner                   |
+| .. data:: ACS_LLCORNER | lower-left corner                        |
 +------------------------+------------------------------------------+
-| .. data:: ACS_LRCORNER | lower right-hand corner                  |
+| .. data:: ACS_LRCORNER | lower-right corner                       |
 +------------------------+------------------------------------------+
 | .. data:: ACS_LTEE     | left tee                                 |
 +------------------------+------------------------------------------+
@@ -1841,9 +1841,9 @@ The module :mod:`!curses.textpad` defines the following function:
 
    Draw a rectangle.  The first argument must be a window object; the remaining
    arguments are coordinates relative to that window.  The second and third
-   arguments are the y and x coordinates of the upper left-hand corner of the
+   arguments are the y and x coordinates of the upper-left corner of the
    rectangle to be drawn; the fourth and fifth arguments are the y and x
-   coordinates of the lower right-hand corner. The rectangle will be drawn using
+   coordinates of the lower-right corner. The rectangle will be drawn using
    VT100/IBM PC forms characters on terminals that make this possible (including
    xterm and most other software terminal emulators).  Otherwise it will be drawn
    with ASCII  dashes, vertical bars, and plus signs.
@@ -1862,7 +1862,7 @@ You can instantiate a :class:`Textbox` object as follows:
    Return a textbox widget object.  The *win* argument should be a curses
    :ref:`window <curses-window-objects>` object in which the textbox is to
    be contained. The edit cursor of the textbox is initially located at the
-   upper left-hand corner of the containing window, with coordinates ``(0, 0)``.
+   upper-left corner of the containing window, with coordinates ``(0, 0)``.
    The instance's :attr:`stripspaces` flag is initially on.
 
    :class:`Textbox` objects have the following methods:
