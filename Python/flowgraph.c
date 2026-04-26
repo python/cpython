@@ -1509,7 +1509,6 @@ instr_make_load_const(cfg_instr *instr, PyObject *newconst,
     if (res > 0) {
         return SUCCESS;
     }
-    int oparg = add_const(newconst, consts, const_cache);
     int oparg = add_const(newconst, consts, const_cache, consts_index);
     RETURN_IF_ERROR(oparg);
     INSTR_SET_OP1(instr, LOAD_CONST, oparg);
