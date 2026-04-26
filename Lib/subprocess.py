@@ -843,6 +843,8 @@ class Popen:
 
       startupinfo and creationflags (Windows only)
 
+      force_hide (Windows only)
+
       restore_signals (POSIX only)
 
       start_new_session (POSIX only)
@@ -875,7 +877,8 @@ class Popen:
                  restore_signals=True, start_new_session=False,
                  pass_fds=(), *, user=None, group=None, extra_groups=None,
                  encoding=None, errors=None, text=None, umask=-1, pipesize=-1,
-                 process_group=None):
+                 process_group=None,
+                 force_hide=False):
         """Create new Popen instance."""
         if not _can_fork_exec:
             raise OSError(
@@ -919,6 +922,9 @@ class Popen:
                                  "platforms")
             if creationflags != 0:
                 raise ValueError("creationflags is only supported on Windows "
+                                 "platforms")
+            if force_hide:
+                raise ValueError("force_hide is only supported on Windows "
                                  "platforms")
 
         self.args = args
@@ -1097,7 +1103,9 @@ class Popen:
                                 errread, errwrite,
                                 restore_signals,
                                 gid, gids, uid, umask,
-                                start_new_session, process_group)
+                                start_new_session,
+                                process_group,
+                                force_hide)
         except:
             # Cleanup if the child failed starting.
             for f in filter(None, (self.stdin, self.stdout, self.stderr)):
@@ -1510,7 +1518,8 @@ class Popen:
                            unused_restore_signals,
                            unused_gid, unused_gids, unused_uid,
                            unused_umask,
-                           unused_start_new_session, unused_process_group):
+                           unused_start_new_session, unused_process_group,
+                           force_hide):
             """Execute program (MS Windows version)"""
 
             assert not pass_fds, "pass_fds not supported on Windows."
@@ -1574,9 +1583,24 @@ class Popen:
                     # the ones in the handle_list
                     close_fds = False
 
-            if shell:
+            if force_hide or shell:
+                # We pass SW_HIDE to the process so that it will not display any
+                # window even if it normally would.
                 startupinfo.dwFlags |= _winapi.STARTF_USESHOWWINDOW
                 startupinfo.wShowWindow = _winapi.SW_HIDE
+
+            if force_hide and not (creationflags & _winapi.DETACHED_PROCESS):
+                # If the child process is flagged as SUBSYSTEM_CONSOLE, then
+                # it either inherits the console of its parent, if the parent
+                # has one, or allocates a new console. An inherited console may
+                # be visible even if SW_HIDE is set. By setting the creation
+                # flag CREATE_NEW_CONSOLE, the child is forced to allocate a
+                # new console that will have a hidden window.
+                # Note: CREATE_NEW_CONSOLE cannot be used with DETACHED_PROCESS.
+                creationflags |= _winapi.CREATE_NEW_CONSOLE
+
+            if shell:
+                comspec = os.environ.get("COMSPEC", "cmd.exe")
                 if not executable:
                     # gh-101283: without a fully-qualified path, before Windows
                     # checks the system directories, it first looks in the
@@ -1884,7 +1908,8 @@ class Popen:
                            errread, errwrite,
                            restore_signals,
                            gid, gids, uid, umask,
-                           start_new_session, process_group):
+                           start_new_session, process_group,
+                           unused_force_hide):
             """Execute program (POSIX version)"""
 
             if isinstance(args, (str, bytes)):
