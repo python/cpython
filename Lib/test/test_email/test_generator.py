@@ -300,7 +300,8 @@ class TestGeneratorBase:
         # non-ascii is not permitted in any part of an addr-spec.  If the
         # programmer generated it, it's an error.  (See also
         # test_non_ascii_addr_spec_preserved below.)
-        g = self.genclass(self.ioclass(), policy=self.policy.clone(utf8=False))
+        p = self.policy.clone(utf8=False, max_line_length=20)
+        g = self.genclass(self.ioclass(), policy=p)
         # XXX The particular part detected here isn't part of a behavioral
         # spec and may change in the future.
         cases = [
@@ -317,6 +318,12 @@ class TestGeneratorBase:
                 'wők@example.com',
                 'addr-spec',
                 ),
+            (
+                '"a lőng quoted string as the local part"@example.com',
+                'a lőng quoted string as the local part',
+                'local-part',
+                ),
+
         ]
         for address, badtoken, partname in cases:
             with self.subTest(address=address):
@@ -332,6 +339,25 @@ class TestGeneratorBase:
                     email.errors.HeaderWriteError, expected_error
                 ):
                     g.flatten(msg)
+
+    def test_local_part_quoted_string_wrapped_correctly(self):
+        msg = self.msgmaker(self.typ(textwrap.dedent("""\
+            To: <"a long local part in a quoted string"@example.com>
+            Subject: test
+
+            None
+            """)), policy=self.policy.clone(max_line_length=20))
+        expected = textwrap.dedent("""\
+            To: <"a long local part in a
+             quoted string"@example.com>
+            Subject: test
+
+            None
+            """)
+        s = self.ioclass()
+        g = self.genclass(s, policy=self.policy.clone(max_line_length=30))
+        g.flatten(msg)
+        self.assertEqual(s.getvalue(), self.typ(expected))
 
     def _test_boundary_detection(self, linesep):
         # Generate a boundary token in the same way as _make_boundary
