@@ -1554,6 +1554,66 @@ class MixedLazyEagerImportTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, f"stdout: {result.stdout}, stderr: {result.stderr}")
         self.assertIn("OK", result.stdout)
 
+    def test_reload_after_lazy_reification_keeps_single_module_object(self):
+        """Reloading a reified lazy module should keep identity with globals/sys.modules."""
+        code = textwrap.dedent("""
+            import importlib
+            import sys
+
+            lazy import json as lazy_json
+
+            # Trigger reification.
+            assert lazy_json.dumps({"x": 1}) == '{"x": 1}'
+            before_reload = lazy_json
+            assert before_reload is sys.modules["json"]
+
+            reloaded = importlib.reload(lazy_json)
+            assert reloaded is before_reload
+            assert lazy_json is sys.modules["json"]
+            print("OK")
+        """)
+        result = subprocess.run(
+            [sys.executable, "-c", code],
+            capture_output=True,
+            text=True
+        )
+        self.assertEqual(result.returncode, 0, f"stdout: {result.stdout}, stderr: {result.stderr}")
+        self.assertIn("OK", result.stdout)
+
+    def test_reimport_after_deleting_sys_modules_entry_creates_new_module(self):
+        """Deleting sys.modules entry should force a fresh module on next import."""
+        code = textwrap.dedent("""
+            import sys
+
+            lazy import json as lazy_json
+            assert "json" not in sys.modules
+
+            # Reify lazy binding.
+            assert lazy_json.dumps({"x": 1}) == '{"x": 1}'
+            first_obj = lazy_json
+            first_id = id(first_obj)
+            assert first_obj is sys.modules["json"]
+
+            # Remove import cache entry; existing binding should still work.
+            del sys.modules["json"]
+            assert "json" not in sys.modules
+            assert lazy_json.dumps({"x": 2}) == '{"x": 2}'
+
+            import json as second_obj
+            second_id = id(second_obj)
+            assert "json" in sys.modules
+            assert second_obj is sys.modules["json"]
+            assert first_id != second_id
+            print("OK")
+        """)
+        result = subprocess.run(
+            [sys.executable, "-c", code],
+            capture_output=True,
+            text=True
+        )
+        self.assertEqual(result.returncode, 0, f"stdout: {result.stdout}, stderr: {result.stderr}")
+        self.assertIn("OK", result.stdout)
+
 
 class RelativeImportTests(unittest.TestCase):
     """Tests for relative imports with lazy keyword."""
