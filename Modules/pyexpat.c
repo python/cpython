@@ -1533,7 +1533,11 @@ newxmlparseobject(pyexpat_state *state, const char *encoding,
         Py_DECREF(self);
         return NULL;
     }
-#if XML_COMBINED_VERSION >= 20100
+#if XML_COMBINED_VERSION >= 20800
+    /* This feature was added upstream in libexpat 2.8.0. */
+    XML_SetHashSalt16Bytes(self->itself,
+                           (const uint8_t *)_Py_HashSecret.uc);
+#elif XML_COMBINED_VERSION >= 20100
     /* This feature was added upstream in libexpat 2.1.0. */
     XML_SetHashSalt(self->itself,
                     (unsigned long)_Py_HashSecret.expat.hashsalt);
@@ -2426,6 +2430,11 @@ pyexpat_exec(PyObject *mod)
     capi->SetHashSalt = XML_SetHashSalt;
 #else
     capi->SetHashSalt = NULL;
+#endif
+#if XML_COMBINED_VERSION >= 20800
+    capi->SetHashSalt16Bytes = XML_SetHashSalt16Bytes;
+#else
+    capi->SetHashSalt16Bytes = NULL;
 #endif
 #if XML_COMBINED_VERSION >= 20600
     capi->SetReparseDeferralEnabled = XML_SetReparseDeferralEnabled;
