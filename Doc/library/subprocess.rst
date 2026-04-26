@@ -334,8 +334,8 @@ underlying :class:`Popen` interface can be used directly.
 
    * In text mode the interleaving can split multi-byte characters across
      writes from different processes. If that is a concern, capture in
-     binary mode and decode yourself, or pass ``errors='replace'`` or
-     ``errors='backslashreplace'``.
+     binary mode and decode yourself, or pass ``errors="replace"`` or
+     ``errors="backslashreplace"``.
 
    * If any child spawns a grandchild process that keeps the inherited
      stderr file descriptor open after the child itself exits, the
@@ -354,8 +354,8 @@ underlying :class:`Popen` interface can be used directly.
       >>> import subprocess
       >>> # Equivalent to: echo "hello world" | tr a-z A-Z
       >>> result = subprocess.run_pipeline(
-      ...     ['echo', 'hello world'],
-      ...     ['tr', 'a-z', 'A-Z'],
+      ...     ["echo", "hello world"],
+      ...     ["tr", "a-z", "A-Z"],
       ...     capture_output=True, text=True
       ... )
       >>> result.stdout
@@ -365,9 +365,9 @@ underlying :class:`Popen` interface can be used directly.
 
       >>> # Pipeline with three commands
       >>> result = subprocess.run_pipeline(
-      ...     ['echo', 'one\ntwo\nthree'],
-      ...     ['sort'],
-      ...     ['head', '-n', '2'],
+      ...     ["echo", "one\ntwo\nthree"],
+      ...     ["sort"],
+      ...     ["head", "-n", "2"],
       ...     capture_output=True, text=True
       ... )
       >>> result.stdout
@@ -375,9 +375,9 @@ underlying :class:`Popen` interface can be used directly.
 
       >>> # Using input parameter
       >>> result = subprocess.run_pipeline(
-      ...     ['cat'],
-      ...     ['wc', '-l'],
-      ...     input='line1\nline2\nline3\n',
+      ...     ["cat"],
+      ...     ["wc", "-l"],
+      ...     input="line1\nline2\nline3\n",
       ...     capture_output=True, text=True
       ... )
       >>> result.stdout.strip()
@@ -385,8 +385,8 @@ underlying :class:`Popen` interface can be used directly.
 
       >>> # Error handling with check=True
       >>> subprocess.run_pipeline(
-      ...     ['echo', 'hello'],
-      ...     ['false'],  # exits with status 1
+      ...     ["echo", "hello"],
+      ...     ["false"],  # exits with status 1
       ...     check=True
       ... )
       Traceback (most recent call last):
@@ -468,10 +468,10 @@ underlying :class:`Popen` interface can be used directly.
    keep the pipeline's stderr handling::
 
       >>> from subprocess import run_pipeline, PipelineCommand, DEVNULL
-      >>> with open('out.gz', 'wb') as f:
+      >>> with open("out.gz", "wb") as f:
       ...     result = run_pipeline(
-      ...         PipelineCommand(['dd', 'if=infile', 'bs=1M'], stderr=DEVNULL),
-      ...         ['pigz'],
+      ...         PipelineCommand(["dd", "if=infile", "bs=1M"], stderr=DEVNULL),
+      ...         ["pigz"],
       ...         stdout=f, check=True,
       ...     )
 

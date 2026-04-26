@@ -215,7 +215,7 @@ class PipelineError(SubprocessError):
         commands = tuple(commands)
         returncodes = tuple(returncodes)
         assert len(commands) == len(returncodes), (
-            f'{len(commands)=} != {len(returncodes)=}')
+            f"{len(commands)=} != {len(returncodes)=}")
         super().__init__(commands, returncodes)
         self.commands = commands
         self.returncodes = returncodes
@@ -877,21 +877,21 @@ class PipelineCommand:
     argv sequence.
     """
 
-    __slots__ = ('args', 'stderr', 'env', 'cwd', 'shell')
+    __slots__ = ("args", "stderr", "env", "cwd", "shell")
 
     def __init__(self, args, /, *, stderr=None, env=None, cwd=None,
                  shell=False):
         if stderr not in (None, STDOUT, DEVNULL):
             raise ValueError(
-                'PipelineCommand stderr must be None, STDOUT, or DEVNULL')
+                "PipelineCommand stderr must be None, STDOUT, or DEVNULL")
         if shell:
             if not isinstance(args, str):
                 raise TypeError(
-                    'PipelineCommand with shell=True requires a str command')
+                    "PipelineCommand with shell=True requires a str command")
         elif isinstance(args, str):
             raise TypeError(
-                'PipelineCommand args must be a sequence of program '
-                'arguments, not a str (use shell=True for a shell command)')
+                "PipelineCommand args must be a sequence of program "
+                "arguments, not a str (use shell=True for a shell command)")
         self.args = args
         self.stderr = stderr
         self.env = env
@@ -904,23 +904,23 @@ class PipelineCommand:
                 or self.cwd is not None or self.shell)
 
     def __repr__(self):
-        parts = [f'{self.args!r}']
+        parts = [f"{self.args!r}"]
         if self.stderr is STDOUT:
-            parts.append('stderr=STDOUT')
+            parts.append("stderr=STDOUT")
         elif self.stderr is DEVNULL:
-            parts.append('stderr=DEVNULL')
+            parts.append("stderr=DEVNULL")
         if self.env is not None:
             # env is commonly large and may contain credentials; don't
             # dump its contents into tracebacks via PipelineError.__str__.
             try:
                 n = len(self.env)
             except TypeError:
-                n = '?'
-            parts.append(f'env=<{n} entries>')
+                n = "?"
+            parts.append(f"env=<{n} entries>")
         if self.cwd is not None:
-            parts.append(f'cwd={self.cwd!r}')
+            parts.append(f"cwd={self.cwd!r}")
         if self.shell:
-            parts.append('shell=True')
+            parts.append("shell=True")
         return f"{type(self).__name__}({', '.join(parts)})"
 
 
@@ -942,12 +942,12 @@ class CompletedPipeline:
         self.stderr = stderr
 
     def __repr__(self):
-        args = [f'commands={self.commands!r}',
-                f'returncodes={self.returncodes!r}']
+        args = [f"commands={self.commands!r}",
+                f"returncodes={self.returncodes!r}"]
         if self.stdout is not None:
-            args.append(f'stdout={self.stdout!r}')
+            args.append(f"stdout={self.stdout!r}")
         if self.stderr is not None:
-            args.append(f'stderr={self.stderr!r}')
+            args.append(f"stderr={self.stderr!r}")
         return f"{type(self).__name__}({', '.join(args)})"
 
     __class_getitem__ = classmethod(types.GenericAlias)
@@ -1072,50 +1072,50 @@ def run_pipeline(*commands, input=None, capture_output=False, timeout=None,
     Example:
         # Equivalent to: cat file.txt | grep pattern | wc -l
         result = run_pipeline(
-            ['cat', 'file.txt'],
-            ['grep', 'pattern'],
-            ['wc', '-l'],
+            ["cat", "file.txt"],
+            ["grep", "pattern"],
+            ["wc", "-l"],
             capture_output=True, text=True
         )
         print(result.stdout)  # "42\\n"
         print(result.returncodes)  # (0, 0, 0)
     """
     if len(commands) < 2:
-        raise ValueError('run_pipeline requires at least 2 commands')
+        raise ValueError("run_pipeline requires at least 2 commands")
 
-    if input is not None and kwargs.get('stdin') is not None:
-        raise ValueError('stdin and input arguments may not both be used.')
-    if kwargs.get('stdin') is PIPE:
-        raise ValueError('stdin=PIPE is not supported by run_pipeline; '
-                         'pass input= instead, or provide a file/fd')
+    if input is not None and kwargs.get("stdin") is not None:
+        raise ValueError("stdin and input arguments may not both be used.")
+    if kwargs.get("stdin") is PIPE:
+        raise ValueError("stdin=PIPE is not supported by run_pipeline; "
+                         "pass input= instead, or provide a file/fd")
 
     if capture_output:
-        if kwargs.get('stdout') is not None or kwargs.get('stderr') is not None:
-            raise ValueError('stdout and stderr arguments may not be used '
-                             'with capture_output.')
+        if kwargs.get("stdout") is not None or kwargs.get("stderr") is not None:
+            raise ValueError("stdout and stderr arguments may not be used "
+                             "with capture_output.")
 
-    if kwargs.get('close_fds') is False:
+    if kwargs.get("close_fds") is False:
         raise ValueError(
-            'close_fds=False is not supported by run_pipeline; '
-            'inherited pipe ends would prevent EOF signaling between commands')
+            "close_fds=False is not supported by run_pipeline; "
+            "inherited pipe ends would prevent EOF signaling between commands")
 
-    if kwargs.get('shell'):
+    if kwargs.get("shell"):
         raise ValueError(
-            'shell=True is not supported by run_pipeline; the pipeline itself '
-            'replaces the shell.  Use PipelineCommand(cmd, shell=True) for a '
-            'single command that needs shell interpretation.')
-    if kwargs.get('executable') is not None:
+            "shell=True is not supported by run_pipeline; the pipeline itself "
+            "replaces the shell.  Use PipelineCommand(cmd, shell=True) for a "
+            "single command that needs shell interpretation.")
+    if kwargs.get("executable") is not None:
         raise ValueError(
-            'executable= is not supported by run_pipeline')
+            "executable= is not supported by run_pipeline")
 
-    if kwargs.get('stderr') is STDOUT:
+    if kwargs.get("stderr") is STDOUT:
         raise ValueError(
-            'stderr=STDOUT at the run_pipeline level would merge each '
+            "stderr=STDOUT at the run_pipeline level would merge each "
             "non-final command's stderr into the next command's stdin.  "
-            'Use PipelineCommand(cmd, stderr=STDOUT) for a single command, '
-            'or capture_output=True to capture stderr from every command.')
+            "Use PipelineCommand(cmd, stderr=STDOUT) for a single command, "
+            "or capture_output=True to capture stderr from every command.")
 
-    if kwargs.get('start_new_session') or kwargs.get('process_group') is not None:
+    if kwargs.get("start_new_session") or kwargs.get("process_group") is not None:
         # run_pipeline spawns each command as a sibling child of this
         # process, so a per-command session/group does not give the shell
         # "one process group per pipeline" semantic that callers passing
@@ -1123,28 +1123,28 @@ def run_pipeline(*commands, input=None, capture_output=False, timeout=None,
         # places every command in a single new group is a possible
         # follow-on.
         raise ValueError(
-            'start_new_session and process_group are not supported by '
-            'run_pipeline; each command is spawned as a sibling child, '
-            'so a per-command session or group does not yield a single '
-            'process group for the pipeline')
+            "start_new_session and process_group are not supported by "
+            "run_pipeline; each command is spawned as a sibling child, "
+            "so a per-command session or group does not yield a single "
+            "process group for the pipeline")
 
     commands = tuple(c if isinstance(c, PipelineCommand) else PipelineCommand(c)
                      for c in commands)
 
-    stderr_arg = kwargs.pop('stderr', None)
+    stderr_arg = kwargs.pop("stderr", None)
     capture_stderr = capture_output or (stderr_arg is PIPE)
 
-    stdin_arg = kwargs.pop('stdin', None)
-    stdout_arg = kwargs.pop('stdout', None)
+    stdin_arg = kwargs.pop("stdin", None)
+    stdout_arg = kwargs.pop("stdout", None)
 
     # Load-bearing: pop text=/universal_newlines=/encoding=/errors= so each
     # Popen keeps its parent-side pipes binary. _communicate_streams_* relies
     # on a bytes-in/bytes-out contract; leaving these in kwargs would wrap the
     # pipes in TextIOWrapper and break the threaded Windows backend.
-    text = kwargs.pop('text', None)
-    universal_newlines = kwargs.pop('universal_newlines', None)
-    encoding = kwargs.pop('encoding', None)
-    errors_param = kwargs.pop('errors', None)
+    text = kwargs.pop("text", None)
+    universal_newlines = kwargs.pop("universal_newlines", None)
+    encoding = kwargs.pop("encoding", None)
+    errors_param = kwargs.pop("errors", None)
     text_mode = bool(text or universal_newlines or encoding or errors_param)
     if text_mode and encoding is None:
         encoding = locale.getencoding()
@@ -1193,19 +1193,19 @@ def run_pipeline(*commands, input=None, capture_output=False, timeout=None,
             if cmd.env is not None or cmd.cwd is not None or cmd.shell:
                 cmd_kwargs = dict(kwargs)
                 if cmd.env is not None:
-                    cmd_kwargs['env'] = cmd.env
+                    cmd_kwargs["env"] = cmd.env
                 if cmd.cwd is not None:
-                    cmd_kwargs['cwd'] = cmd.cwd
+                    cmd_kwargs["cwd"] = cmd.cwd
                 if cmd.shell:
-                    cmd_kwargs['shell'] = True
+                    cmd_kwargs["shell"] = True
 
             try:
                 proc = Popen(cmd.args, stdin=proc_stdin, stdout=proc_stdout,
                              stderr=proc_stderr, **cmd_kwargs)
             except OSError as e:
                 e.add_note(
-                    f'raised while starting {cmd!r} '
-                    f'(run_pipeline commands[{i}])')
+                    f"raised while starting {cmd!r} "
+                    f"(run_pipeline commands[{i}])")
                 raise
             processes.append(proc)
 
@@ -1231,7 +1231,7 @@ def run_pipeline(*commands, input=None, capture_output=False, timeout=None,
 
         input_data = input
         if input_data is not None and text_mode:
-            input_data = input_data.encode(encoding, errors_param or 'strict')
+            input_data = input_data.encode(encoding, errors_param or "strict")
 
         read_streams = []
         if last_proc.stdout is not None:
@@ -1265,7 +1265,7 @@ def run_pipeline(*commands, input=None, capture_output=False, timeout=None,
         stdout = results.get(last_proc.stdout)
         stderr = results.get(stderr_reader)
 
-        decode_errors = errors_param or 'strict'
+        decode_errors = errors_param or "strict"
         if text_mode and stdout is not None:
             stdout = _translate_newlines(stdout, encoding, decode_errors)
         if text_mode and stderr is not None:
