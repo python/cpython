@@ -962,15 +962,14 @@ def run(*popenargs,
 
 # Future extension point: an opt-in Stage(cmd, **overrides) wrapper could
 # be accepted in place of a bare command to allow per-stage overrides
-# (e.g. stderr=STDOUT, pass_fds, env, cwd) for shell-pipeline-like
-# topologies.
+# (e.g. stderr, shell, env) for shell-pipeline-like topologies.
 def run_pipeline(*commands, input=None, capture_output=False, timeout=None,
                  check=False, **kwargs):
     """Run a pipeline of commands connected via pipes.
 
-    Each positional argument should be a command (list of strings or a string
-    if shell=True) to execute. The stdout of each command is connected to the
-    stdin of the next command in the pipeline, similar to shell pipelines.
+    Each positional argument should be a command (a sequence of strings) to
+    execute. The stdout of each command is connected to the stdin of the next
+    command in the pipeline, similar to shell pipelines.
 
     Returns a CompletedPipeline instance with attributes commands, returncodes,
     stdout, and stderr. By default, stdout and stderr are not captured, and
@@ -1031,6 +1030,14 @@ def run_pipeline(*commands, input=None, capture_output=False, timeout=None,
         raise ValueError(
             'close_fds=False is not supported by run_pipeline; '
             'inherited pipe ends would prevent EOF signaling between commands')
+
+    if kwargs.get('shell'):
+        raise ValueError(
+            'shell=True is not supported by run_pipeline; the pipeline itself '
+            'replaces the shell.  Pass each stage as an argv sequence.')
+    if kwargs.get('executable') is not None:
+        raise ValueError(
+            'executable= is not supported by run_pipeline')
 
     stderr_arg = kwargs.pop('stderr', None)
     capture_stderr = capture_output or (stderr_arg is PIPE)

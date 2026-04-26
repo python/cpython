@@ -271,9 +271,9 @@ underlying :class:`Popen` interface can be used directly.
    Wait for all commands to complete, then return a :class:`CompletedPipeline`
    instance.
 
-   Each positional argument should be a command (a list of strings, or a string
-   if ``shell=True``) to execute. The standard output of each command is
-   connected to the standard input of the next command in the pipeline.
+   Each positional argument should be a command (a sequence of strings) to
+   execute. The standard output of each command is connected to the standard
+   input of the next command in the pipeline.
 
    This function requires at least two commands. For a single command, use
    :func:`run` instead.
@@ -341,7 +341,10 @@ underlying :class:`Popen` interface can be used directly.
    children (unlike a shell, which can give each command its own fd set).
    ``close_fds=False`` is rejected because inherited copies of the
    inter-process pipe ends in sibling children would prevent EOF from being
-   signaled and cause deadlocks.
+   signaled and cause deadlocks. ``shell=True`` and ``executable=`` are also
+   rejected: the pipeline itself replaces the shell, and per-stage shell
+   interpretation would re-introduce the quoting and injection surface this
+   function exists to avoid.
 
    Examples::
 
@@ -397,8 +400,7 @@ underlying :class:`Popen` interface can be used directly.
 
    .. attribute:: commands
 
-      The list of commands used to launch the pipeline. Each command is a list
-      of strings (or a string if ``shell=True`` was used).
+      The list of commands used to launch the pipeline.
 
    .. attribute:: returncodes
 

@@ -2588,16 +2588,25 @@ print(len(data.strip()))
         self.assertIn('echo', r)
         self.assertIn('false', r)
 
-    @unittest.skipIf(mswindows, "POSIX shell-specific")
-    def test_pipeline_shell_true(self):
-        """shell=True forwards each command to the shell."""
-        result = subprocess.run_pipeline(
-            'echo hello world',
-            'tr a-z A-Z',
-            shell=True, capture_output=True, text=True,
-        )
-        self.assertEqual(result.stdout.strip(), 'HELLO WORLD')
-        self.assertEqual(result.returncodes, [0, 0])
+    def test_pipeline_shell_rejected(self):
+        """shell=True is rejected; the pipeline replaces the shell."""
+        with self.assertRaises(ValueError) as cm:
+            subprocess.run_pipeline(
+                'echo hello world',
+                'tr a-z A-Z',
+                shell=True, capture_output=True,
+            )
+        self.assertIn('shell=True', str(cm.exception))
+
+    def test_pipeline_executable_rejected(self):
+        """executable= is rejected (only meaningful with shell=)."""
+        with self.assertRaises(ValueError) as cm:
+            subprocess.run_pipeline(
+                [sys.executable, '-c', 'pass'],
+                [sys.executable, '-c', 'pass'],
+                executable=sys.executable,
+            )
+        self.assertIn('executable', str(cm.exception))
 
     def test_pipeline_env(self):
         """env= is propagated to every command in the pipeline."""
