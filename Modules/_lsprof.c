@@ -292,9 +292,10 @@ static void clearEntries(ProfilerObject *pObj)
     RotatingTree_Enum(pObj->profilerEntries, freeEntry, NULL);
     pObj->profilerEntries = EMPTY_ROTATING_TREE;
     /* release the memory hold by the ProfilerContexts */
-    if (pObj->currentProfilerContext) {
-        PyMem_Free(pObj->currentProfilerContext);
-        pObj->currentProfilerContext = NULL;
+    while (pObj->currentProfilerContext) {
+        ProfilerContext *pContext = pObj->currentProfilerContext;
+        pObj->currentProfilerContext = pContext->previous;
+        PyMem_Free(pContext);
     }
     while (pObj->freelistProfilerContext) {
         ProfilerContext *c = pObj->freelistProfilerContext;
@@ -702,6 +703,7 @@ PyObject* get_cfunc_from_callable(PyObject* callable, PyObject* self_arg, PyObje
         if (PyCFunction_Check(meth)) {
             return (PyObject*)((PyCFunctionObject *)meth);
         }
+        Py_DECREF(meth);
     }
     return NULL;
 }
@@ -961,6 +963,8 @@ profiler_traverse(PyObject *op, visitproc visit, void *arg)
     ProfilerObject *self = ProfilerObject_CAST(op);
     Py_VISIT(Py_TYPE(op));
     Py_VISIT(self->externalTimer);
+    Py_VISIT(self->missing);
+
     return 0;
 }
 
@@ -979,6 +983,7 @@ profiler_dealloc(PyObject *op)
 
     flush_unmatched(self);
     clearEntries(self);
+    Py_XDECREF(self->missing);
     Py_XDECREF(self->externalTimer);
     PyTypeObject *tp = Py_TYPE(self);
     tp->tp_free(self);
@@ -1017,7 +1022,7 @@ profiler_init_impl(ProfilerObject *self, PyObject *timer, double timeunit,
     if (!monitoring) {
         return -1;
     }
-    self->missing = PyObject_GetAttrString(monitoring, "MISSING");
+    Py_XSETREF(self->missing, PyObject_GetAttrString(monitoring, "MISSING"));
     if (!self->missing) {
         Py_DECREF(monitoring);
         return -1;
@@ -1121,6 +1126,7 @@ _lsprof_exec(PyObject *module)
 }
 
 static PyModuleDef_Slot _lsprofslots[] = {
+    _Py_ABI_SLOT,
     {Py_mod_exec, _lsprof_exec},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {Py_mod_gil, Py_MOD_GIL_NOT_USED},
