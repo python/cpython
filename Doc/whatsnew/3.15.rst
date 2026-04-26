@@ -1244,6 +1244,15 @@ tkinter
   (Contributed by Matthias Kievernagel and Serhiy Storchaka in :gh:`47655`.)
 
 
+tokenize
+--------
+
+* The output of the :mod:`tokenize` :ref:`command-line interface
+  <tokenize-cli>` is colored by default. This can be controlled with
+  :ref:`environment variables <using-on-controlling-color>`.
+  (Contributed by Hugo van Kemenade in :gh:`148991`.)
+
+
 .. _whatsnew315-tomllib-1-1-0:
 
 tomllib

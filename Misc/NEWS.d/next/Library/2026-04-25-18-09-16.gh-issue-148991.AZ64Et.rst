@@ -1,0 +1,1 @@
+Add colour to :mod:`tokenize` CLI output. Patch by Hugo van Kemenade.
