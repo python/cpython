@@ -271,18 +271,20 @@ underlying :class:`Popen` interface can be used directly.
    Wait for all commands to complete, then return a :class:`CompletedPipeline`
    instance.
 
-   Each positional argument should be a command (a sequence of strings) to
-   execute. The standard output of each command is connected to the standard
-   input of the next command in the pipeline.
+   Each positional argument should be a command: either a sequence of
+   program arguments, or a :class:`PipelineCommand` wrapping one with
+   per-command overrides. Bare sequences are wrapped in a
+   :class:`PipelineCommand` on entry. The standard output of each
+   command is connected to the standard input of the next command in the
+   pipeline.
 
    This function requires at least two commands. For a single command, use
    :func:`run` instead.
 
    If *capture_output* is true, the standard output of the final command and
-   the standard error of all commands will be captured. All processes in the
-   pipeline share a single stderr pipe, so their error output will be
-   interleaved. The *stdout* and *stderr* arguments may not be supplied at
-   the same time as *capture_output*.
+   the standard error of all commands will be captured (see *Standard
+   error handling* below). The *stdout* and *stderr* arguments may not be
+   supplied at the same time as *capture_output*.
 
    A *timeout* may be specified in seconds. If the timeout expires, all
    child processes will be killed and waited for, and then a
@@ -299,52 +301,48 @@ underlying :class:`Popen` interface can be used directly.
    If *encoding* or *errors* are specified, or *text* is true, file objects
    are opened in text mode using the specified encoding and errors.
 
-   .. note::
-
-      When using ``text=True`` with ``capture_output=True`` or ``stderr=PIPE``,
-      be aware that stderr output from multiple processes may be interleaved
-      in ways that produce incomplete multi-byte character sequences. For
-      reliable text decoding of stderr, consider capturing in binary mode
-      and decoding manually with appropriate error handling, or use
-      ``errors='replace'`` or ``errors='backslashreplace'``.
-
-   .. note::
-
-      Passing ``stderr=STDOUT`` redirects each child process's stderr to its
-      own stdout file descriptor. For non-final processes in the pipeline
-      this means stderr is merged into the next process's stdin, which is
-      rarely what callers want. Only the final process's stderr ends up at
-      the pipeline's stdout destination. To merge stderr-and-stdout output
-      from the whole pipeline, use ``capture_output=True`` (or pass an
-      explicit file descriptor as *stderr*) instead of ``STDOUT``.
-
-   .. note::
-
-      When stderr is captured (via ``capture_output=True`` or
-      ``stderr=PIPE``), every command in the pipeline inherits a copy of the
-      same stderr write file descriptor. If any child spawns a daemon or
-      grandchild that keeps stderr open after the child exits, the parent's
-      read on the stderr pipe will not see EOF and :func:`run_pipeline` will
-      hang. This matches shell ``2>&1 | other`` behavior. If this is a
-      concern, either do not capture stderr, manage each command with an
-      individual :class:`Popen` so each has its own stderr pipe, or ensure
-      grandchildren fully detach (closing inherited fds) before
-      daemonizing.
-
    If *stdin* is specified, it is connected to the first command's standard
    input. If *stdout* is specified, it is connected to the last command's
    standard output. When *stdout* is :data:`PIPE`, the output is available
-   in the returned :class:`CompletedPipeline`'s :attr:`~CompletedPipeline.stdout`
-   attribute. Other keyword arguments are passed to each :class:`Popen` call;
-   in particular *pass_fds* is forwarded to *every* command in the pipeline,
-   so any inheritable file descriptor passed via *pass_fds* is visible to all
-   children (unlike a shell, which can give each command its own fd set).
-   ``close_fds=False`` is rejected because inherited copies of the
-   inter-process pipe ends in sibling children would prevent EOF from being
-   signaled and cause deadlocks. ``shell=True`` and ``executable=`` are also
-   rejected: the pipeline itself replaces the shell, and per-stage shell
-   interpretation would re-introduce the quoting and injection surface this
-   function exists to avoid.
+   in the returned :class:`CompletedPipeline`'s
+   :attr:`~CompletedPipeline.stdout` attribute.
+
+   Other keyword arguments are passed to every command's :class:`Popen`
+   call. ``close_fds=False`` is rejected because inherited copies of the
+   inter-process pipe ends in sibling children would prevent EOF from
+   being signaled and cause deadlocks. ``shell=True`` and ``executable=``
+   are also rejected: the pipeline itself replaces the shell, and
+   per-command shell interpretation would re-introduce the quoting and
+   injection surface this function exists to avoid. When one command
+   genuinely needs shell interpretation (a glob, or a shell builtin),
+   wrap it in a :class:`PipelineCommand` with ``shell=True``.
+
+   .. rubric:: Standard error handling
+
+   When stderr is captured (via ``capture_output=True`` or ``stderr=PIPE``),
+   every command in the pipeline writes to a single shared pipe, and the
+   captured :attr:`~CompletedPipeline.stderr` is the interleaved output of
+   all of them. Two consequences follow from the shared pipe:
+
+   * In text mode the interleaving can split multi-byte characters across
+     writes from different processes. If that is a concern, capture in
+     binary mode and decode yourself, or pass ``errors='replace'`` or
+     ``errors='backslashreplace'``.
+
+   * If any child spawns a grandchild process that keeps the inherited
+     stderr file descriptor open after the child itself exits, the
+     parent's read on the stderr pipe will not see EOF and
+     :func:`run_pipeline` will block. Either do not capture stderr, or
+     ensure such grandchildren fully detach (closing inherited fds) before
+     daemonizing.
+
+   To exempt one command from the shared stderr pipe, wrap it in a
+   :class:`PipelineCommand` with ``stderr=DEVNULL`` (discard) or
+   ``stderr=STDOUT`` (merge into that command's stdout). Note that
+   passing ``stderr=STDOUT`` at the *pipeline* level redirects every
+   command's stderr to its own stdout, which for non-final commands
+   means stderr feeds the next command's stdin -- rarely what callers
+   want.
 
    Examples::
 
@@ -358,7 +356,7 @@ underlying :class:`Popen` interface can be used directly.
       >>> result.stdout
       'HELLO WORLD\n'
       >>> result.returncodes
-      [0, 0]
+      (0, 0)
 
       >>> # Pipeline with three commands
       >>> result = subprocess.run_pipeline(
@@ -400,26 +398,18 @@ underlying :class:`Popen` interface can be used directly.
 
    .. attribute:: commands
 
-      The list of commands used to launch the pipeline.
+      The commands used to launch the pipeline, as a tuple of
+      :class:`PipelineCommand` instances. Bare argv sequences passed to
+      :func:`run_pipeline` are wrapped, so every element has ``.args``
+      and the override attributes.
 
    .. attribute:: returncodes
 
-      List of exit status codes for each command in the pipeline. Typically,
+      Tuple of exit status codes for each command in the pipeline. Typically,
       an exit status of 0 indicates that the command ran successfully.
 
       A negative value ``-N`` indicates that the command was terminated by
       signal ``N`` (POSIX only).
-
-   .. attribute:: returncode
-
-      Exit status of the final command in the pipeline. This is a convenience
-      property equivalent to ``returncodes[-1]``.
-
-      Note that this matches shell behavior *without* ``pipefail``: a zero
-      ``returncode`` does not imply that earlier commands in the pipeline
-      succeeded. To check that all commands succeeded, use
-      :meth:`check_returncodes` or pass ``check=True`` to
-      :func:`run_pipeline`.
 
    .. attribute:: stdout
 
@@ -435,8 +425,50 @@ underlying :class:`Popen` interface can be used directly.
 
    .. method:: check_returncodes()
 
-      If any command's :attr:`returncode` is non-zero, raise a
+      If any element of :attr:`returncodes` is non-zero, raise a
       :exc:`PipelineError`.
+
+   .. versionadded:: next
+
+
+.. class:: PipelineCommand(args, /, *, stderr=None, env=None, cwd=None, \
+                           shell=False)
+
+   One command in a :func:`run_pipeline` call. :func:`run_pipeline`
+   wraps each bare argv sequence it receives in a :class:`PipelineCommand`,
+   so :attr:`CompletedPipeline.commands` and :attr:`PipelineError.commands`
+   always hold instances of this class.
+
+   Construct one explicitly when a single command needs different stderr
+   handling, a different *env* or *cwd*, or shell interpretation. Any
+   override left at its default means the corresponding
+   :func:`run_pipeline` keyword applies to this command as it would to a
+   bare argv sequence.
+
+   *args* is a sequence of program arguments, or a string if *shell* is
+   true. Passing a string with ``shell=False`` (or a sequence with
+   ``shell=True``) raises :exc:`TypeError`.
+
+   *stderr* may be ``None`` (use the pipeline's shared stderr handling),
+   :data:`DEVNULL` (discard this command's stderr), or :data:`STDOUT`
+   (merge this command's stderr into its stdout stream). Any other value
+   raises :exc:`ValueError`.
+
+   *env* and *cwd*, if given, replace the pipeline-level *env* and *cwd*
+   for this command only.
+
+   *shell*, if true, runs this command's *args* through the shell.
+
+   Example -- discard the noisy stderr of one command while the rest
+   keep the pipeline's stderr handling::
+
+      >>> from subprocess import run_pipeline, PipelineCommand, DEVNULL
+      >>> with open('out.gz', 'wb') as f:
+      ...     result = run_pipeline(
+      ...         PipelineCommand(['dd', 'if=infile', 'bs=1M'], stderr=DEVNULL),
+      ...         ['pigz'],
+      ...         stdout=f, check=True,
+      ...     )
 
    .. versionadded:: next
 
@@ -448,23 +480,21 @@ underlying :class:`Popen` interface can be used directly.
    that returned a non-zero exit status. This is similar to the shell's
    ``pipefail`` behavior.
 
-   :exc:`PipelineError` is a *sibling* of :exc:`CalledProcessError`, not a
-   subclass: a pipeline carries N commands and N return codes, so there is
-   no single ``returncode`` or ``cmd`` value an existing
-   ``except CalledProcessError:`` handler could be shown without being
-   misleading.  To handle both single-command and pipeline failures with
-   one ``except`` clause, catch :exc:`SubprocessError` (which is also the
-   common base of :exc:`TimeoutExpired`).  Retry helpers and decorators
-   that match on :exc:`CalledProcessError` will not catch pipeline
-   failures by default.
+   :exc:`PipelineError` is a sibling of :exc:`CalledProcessError`, not a
+   subclass.  To handle both single-command and pipeline failures with
+   one ``except`` clause, catch :exc:`SubprocessError` (which is also
+   the common base of :exc:`TimeoutExpired`).  Retry helpers and
+   decorators that match on :exc:`CalledProcessError` will not catch
+   pipeline failures by default.
 
    .. attribute:: commands
 
-      List of commands that were used in the pipeline.
+      The commands used in the pipeline, as a tuple of
+      :class:`PipelineCommand` instances.
 
    .. attribute:: returncodes
 
-      List of exit status codes for each command in the pipeline.
+      Tuple of exit status codes for each command in the pipeline.
 
    .. attribute:: stdout
 
@@ -477,7 +507,7 @@ underlying :class:`Popen` interface can be used directly.
 
    .. attribute:: failed
 
-      List of ``(index, command, returncode)`` tuples for each command
+      Tuple of ``(index, command, returncode)`` triples for each command
       that returned a non-zero exit status. The *index* is the position
       of the command in the pipeline (0-based).
 
@@ -1620,12 +1650,13 @@ becomes::
                          capture_output=True, check=True)
    output = result.stdout
 
-:func:`run_pipeline` connects the stages, closes the parent's copies of the
-intermediate pipe ends, waits for every process, and (with ``check=True``)
-raises :exc:`PipelineError` if *any* stage fails -- equivalent to the
+:func:`run_pipeline` connects the commands, closes the parent's copies of
+the intermediate pipe ends, waits for every process, and (with
+``check=True``) raises :exc:`PipelineError` if *any* command fails --
+equivalent to the
 shell's ``set -o pipefail`` without needing a shell.
 
-If you need to read the final stage's output incrementally rather than
+If you need to read the final command's output incrementally rather than
 waiting for the whole pipeline to finish (for example, streaming a large
 decompressed file), chain :class:`Popen` instances directly::
 
@@ -1637,11 +1668,11 @@ decompressed file), chain :class:`Popen` instances directly::
    p2.wait()
    p1.wait()
    if p1.returncode or p2.returncode:
-       ...  # handle failure in either stage
+       ...  # handle failure in either command
 
 The ``p1.stdout.close()`` call after starting p2 is important in order for
 p1 to receive a SIGPIPE if p2 exits before p1.  Each process must be
-waited on and its return code checked to detect failure in any stage.
+waited on and its return code checked to detect failure in any command.
 
 
 Replacing :func:`os.system`

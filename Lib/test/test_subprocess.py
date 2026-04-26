@@ -2072,8 +2072,7 @@ class PipelineTestCase(BaseTestCase):
             capture_output=True, text=True
         )
         self.assertEqual(result.stdout.strip(), 'HELLO WORLD')
-        self.assertEqual(result.returncodes, [0, 0])
-        self.assertEqual(result.returncode, 0)
+        self.assertEqual(result.returncodes, (0, 0))
 
     def test_pipeline_three_commands(self):
         """Test pipeline with three commands"""
@@ -2084,7 +2083,7 @@ class PipelineTestCase(BaseTestCase):
             capture_output=True, text=True
         )
         self.assertEqual(result.stdout.strip(), 'ONE\nTHREE\nTWO')
-        self.assertEqual(result.returncodes, [0, 0, 0])
+        self.assertEqual(result.returncodes, (0, 0, 0))
 
     def test_pipeline_with_input(self):
         """Test pipeline with input data"""
@@ -2094,7 +2093,7 @@ class PipelineTestCase(BaseTestCase):
             input='hello', capture_output=True, text=True
         )
         self.assertEqual(result.stdout.strip(), '5')
-        self.assertEqual(result.returncodes, [0, 0])
+        self.assertEqual(result.returncodes, (0, 0))
 
     def test_pipeline_memoryview_input(self):
         """Test pipeline with memoryview input (byte elements)"""
@@ -2108,7 +2107,7 @@ class PipelineTestCase(BaseTestCase):
             input=mv, capture_output=True
         )
         self.assertEqual(result.stdout, test_data.upper())
-        self.assertEqual(result.returncodes, [0, 0])
+        self.assertEqual(result.returncodes, (0, 0))
 
     def test_pipeline_memoryview_input_nonbyte(self):
         """Test pipeline with non-byte memoryview input (e.g., int32).
@@ -2135,7 +2134,7 @@ class PipelineTestCase(BaseTestCase):
         )
         self.assertEqual(result.stdout, expected_bytes,
                          msg=f"{len(result.stdout)=} != {len(expected_bytes)=}")
-        self.assertEqual(result.returncodes, [0, 0])
+        self.assertEqual(result.returncodes, (0, 0))
 
     def test_pipeline_bytes_mode(self):
         """Test pipeline in binary mode"""
@@ -2145,7 +2144,7 @@ class PipelineTestCase(BaseTestCase):
             capture_output=True
         )
         self.assertEqual(result.stdout, b'HELLO')
-        self.assertEqual(result.returncodes, [0, 0])
+        self.assertEqual(result.returncodes, (0, 0))
 
     def test_pipeline_error_check(self):
         """Test that check=True raises PipelineError on failure"""
@@ -2158,7 +2157,7 @@ class PipelineTestCase(BaseTestCase):
         exc = cm.exception
         self.assertEqual(len(exc.failed), 1)
         self.assertEqual(exc.failed[0][0], 1)  # Second command failed
-        self.assertEqual(exc.returncodes, [0, 1])
+        self.assertEqual(exc.returncodes, (0, 1))
 
     def test_pipeline_first_command_fails(self):
         """Test pipeline where first command fails"""
@@ -2228,7 +2227,7 @@ class PipelineTestCase(BaseTestCase):
         )
         self.assertIsInstance(result.stdout, str)
         self.assertIn('HELLO', result.stdout)
-        self.assertEqual(result.returncodes, [0, 0])
+        self.assertEqual(result.returncodes, (0, 0))
 
     def test_pipeline_completed_repr(self):
         """Test CompletedPipeline string representation"""
@@ -2261,7 +2260,7 @@ class PipelineTestCase(BaseTestCase):
         )
         self.assertEqual(result.stdout, None)
         self.assertEqual(result.stderr, None)
-        self.assertEqual(result.returncodes, [0, 0])
+        self.assertEqual(result.returncodes, (0, 0))
 
     def test_pipeline_stderr_capture(self):
         """Test that stderr is captured from all processes"""
@@ -2336,12 +2335,12 @@ class PipelineTestCase(BaseTestCase):
         self.assertNotIn('-15', msg)
 
     def test_pipeline_spawn_failure_cleans_up(self):
-        """Popen failing mid-pipeline propagates and reaps earlier stages.
+        """Popen failing mid-pipeline propagates and reaps earlier commands.
 
-        Stage 0 starts and would sleep 60s; stage 1's executable does not
-        exist so Popen raises before stage 1 ever runs. The finally block
-        must kill and wait on stage 0 so this call returns promptly rather
-        than hanging until stage 0's sleep finishes.
+        Command 0 starts and would sleep 60s; command 1's executable does
+        not exist so Popen raises before command 1 ever runs. The finally
+        block must kill and wait on command 0 so this call returns
+        promptly rather than hanging until command 0's sleep finishes.
         """
         start = time.monotonic()
         with self.assertRaises(NONEXISTING_ERRORS):
@@ -2353,7 +2352,7 @@ class PipelineTestCase(BaseTestCase):
         elapsed = time.monotonic() - start
         self.assertLess(elapsed, 30,
             "run_pipeline did not promptly clean up the running first "
-            "stage after the second stage failed to spawn")
+            "command after the second command failed to spawn")
 
     def test_pipeline_explicit_stdout_pipe(self):
         """Test pipeline with explicit stdout=PIPE"""
@@ -2390,7 +2389,7 @@ class PipelineTestCase(BaseTestCase):
             stdout=subprocess.DEVNULL
         )
         self.assertIsNone(result.stdout)
-        self.assertEqual(result.returncodes, [0, 0])
+        self.assertEqual(result.returncodes, (0, 0))
 
     def test_pipeline_large_data_no_deadlock(self):
         """Test that large data doesn't cause pipe buffer deadlock.
@@ -2425,7 +2424,7 @@ class PipelineTestCase(BaseTestCase):
         # Second process strips whitespace (removes trailing newline) then counts
         expected_len = 256 * 1024 * 2  # doubled data, newline stripped
         self.assertEqual(result.stdout.strip(), str(expected_len))
-        self.assertEqual(result.returncodes, [0, 0])
+        self.assertEqual(result.returncodes, (0, 0))
 
     def test_pipeline_large_data_three_stages(self):
         """Test large data through a three-stage pipeline.
@@ -2448,7 +2447,7 @@ class PipelineTestCase(BaseTestCase):
             input=large_data, capture_output=True, text=True, timeout=30
         )
 
-        self.assertEqual(result.returncodes, [0, 0, 0])
+        self.assertEqual(result.returncodes, (0, 0, 0))
         # Just verify we got a reasonable numeric output without deadlock
         output_len = int(result.stdout.strip())
         self.assertGreater(output_len, len(large_data))
@@ -2494,7 +2493,7 @@ print(len(data.strip()))
         # > stderr_size (one stage's worth) confirms both stages' bytes
         # survived multiplexing through the shared stderr pipe.
         self.assertGreater(len(result.stderr), stderr_size)
-        self.assertEqual(result.returncodes, [0, 0])
+        self.assertEqual(result.returncodes, (0, 0))
 
     def test_pipeline_timeout_large_input(self):
         """Test that timeout is enforced with large input to a slow pipeline.
@@ -2536,8 +2535,7 @@ print(len(data.strip()))
             [sys.executable, '-c', 'import sys; print(sys.stdin.read().strip())'],
             capture_output=True, text=True, check=True
         )
-        self.assertEqual(result.returncodes, [0, 0])
-        self.assertEqual(result.returncode, 0)
+        self.assertEqual(result.returncodes, (0, 0))
         self.assertEqual(result.stdout.strip(), 'ok')
 
     def test_pipeline_stderr_to_stdout(self):
@@ -2621,7 +2619,7 @@ print(len(data.strip()))
              'sys.stdout.write(sys.stdin.read() + "second\\n")'],
             env=env, capture_output=True, text=True,
         )
-        self.assertEqual(result.returncodes, [0, 0])
+        self.assertEqual(result.returncodes, (0, 0))
         self.assertIn('first', result.stdout)
         self.assertIn('second', result.stdout)
 
@@ -2641,7 +2639,7 @@ print(len(data.strip()))
         self.assertEqual(len(lines), 2)
         for line in lines:
             self.assertEqual(os.path.realpath(line), expected)
-        self.assertEqual(result.returncodes, [0, 0])
+        self.assertEqual(result.returncodes, (0, 0))
 
     @unittest.skipIf(mswindows, "pass_fds POSIX-specific")
     def test_pipeline_pass_fds(self):
@@ -2667,7 +2665,7 @@ print(len(data.strip()))
                 os.close(rfd)
         finally:
             os.unlink(fname)
-        self.assertEqual(result.returncodes, [0, 0])
+        self.assertEqual(result.returncodes, (0, 0))
         self.assertEqual(result.stdout, 'shared-content|shared-content')
 
     def test_pipeline_stderr_pipe_normal_completion(self):
@@ -2683,7 +2681,7 @@ print(len(data.strip()))
         self.assertIsNotNone(result.stderr)
         self.assertIn(b'err1', result.stderr)
         self.assertIn(b'err2', result.stderr)
-        self.assertEqual(result.returncodes, [0, 0])
+        self.assertEqual(result.returncodes, (0, 0))
 
     def test_pipeline_errors_replace_multibyte_split(self):
         """errors='replace' handles multi-byte stderr without raising."""
@@ -2698,7 +2696,7 @@ print(len(data.strip()))
              r'sys.stdout.write(sys.stdin.read())'],
             capture_output=True, text=True, errors='replace',
         )
-        self.assertEqual(result.returncodes, [0, 0])
+        self.assertEqual(result.returncodes, (0, 0))
         self.assertIsInstance(result.stderr, str)
         self.assertIn('first', result.stderr)
         self.assertIn('second', result.stderr)
@@ -2724,6 +2722,294 @@ print(len(data.strip()))
         self.assertEqual(result.stdout.strip(), 'line0')
         self.assertEqual(result.returncodes[1], 0)
         self.assertEqual(result.returncodes[2], 0)
+
+
+class PipelineCommandTestCase(BaseTestCase):
+    """Tests for subprocess.PipelineCommand and its run_pipeline integration."""
+
+    def test_command_repr(self):
+        """repr shows args and only the overrides that are set."""
+        s = subprocess.PipelineCommand(['ls'])
+        self.assertEqual(repr(s), "PipelineCommand(['ls'])")
+        s = subprocess.PipelineCommand(['ls'], stderr=subprocess.DEVNULL,
+                                       cwd='/tmp')
+        r = repr(s)
+        self.assertIn('stderr=DEVNULL', r)
+        self.assertIn("cwd='/tmp'", r)
+        self.assertNotIn('env=', r)
+        self.assertNotIn('shell=', r)
+        s = subprocess.PipelineCommand('echo hi', shell=True,
+                                       stderr=subprocess.STDOUT)
+        r = repr(s)
+        self.assertIn('stderr=STDOUT', r)
+        self.assertIn('shell=True', r)
+
+    def test_command_repr_env_not_dumped(self):
+        """repr summarizes env rather than dumping its contents.
+
+        env is commonly a copy of os.environ (large, may contain
+        credentials); a PipelineCommand that ends up in a PipelineError
+        traceback should not echo it verbatim.
+        """
+        s = subprocess.PipelineCommand(['ls'], env={'A': '1', 'SECRET': 'x'})
+        r = repr(s)
+        self.assertIn('env=<2 entries>', r)
+        self.assertNotIn('SECRET', r)
+        self.assertNotIn("'A'", r)
+
+    def test_command_stderr_validation(self):
+        """stderr only accepts None, STDOUT, or DEVNULL."""
+        for bad in (subprocess.PIPE, 2, io.BytesIO()):
+            with self.subTest(stderr=bad):
+                with self.assertRaises(ValueError):
+                    subprocess.PipelineCommand(['x'], stderr=bad)
+
+    def test_command_args_type_validation(self):
+        """args must be str iff shell=True."""
+        with self.assertRaises(TypeError):
+            subprocess.PipelineCommand('echo hi')
+        with self.assertRaises(TypeError):
+            subprocess.PipelineCommand(['echo', 'hi'], shell=True)
+        subprocess.PipelineCommand('echo hi', shell=True)
+        subprocess.PipelineCommand(['echo', 'hi'])
+        subprocess.PipelineCommand(('echo', 'hi'))
+
+    def test_command_unknown_kwarg_rejected(self):
+        """Only the documented overrides are accepted."""
+        with self.assertRaises(TypeError):
+            subprocess.PipelineCommand(['x'], stdout=subprocess.DEVNULL)
+        with self.assertRaises(TypeError):
+            subprocess.PipelineCommand(['x'], pass_fds=(3,))
+
+    def test_command_args_positional_only(self):
+        """The args parameter is positional-only."""
+        with self.assertRaises(TypeError):
+            subprocess.PipelineCommand(args=['x'])
+
+    def test_command_pickle(self):
+        """PipelineCommand survives a pickle round-trip."""
+        s = subprocess.PipelineCommand(['ls', '-l'],
+                                       stderr=subprocess.DEVNULL,
+                                       env={'X': '1'}, cwd='/tmp')
+        s2 = pickle.loads(pickle.dumps(s))
+        self.assertEqual(s2.args, s.args)
+        self.assertEqual(s2.stderr, s.stderr)
+        self.assertEqual(s2.env, s.env)
+        self.assertEqual(s2.cwd, s.cwd)
+        self.assertEqual(s2.shell, s.shell)
+
+    def test_command_no_override_equals_bare_command(self):
+        """A PipelineCommand with no overrides behaves like a bare argv."""
+        result = subprocess.run_pipeline(
+            subprocess.PipelineCommand(
+                [sys.executable, '-c', 'print("hello")']),
+            [sys.executable, '-c',
+             'import sys; print(sys.stdin.read().upper())'],
+            capture_output=True, text=True,
+        )
+        self.assertEqual(result.stdout.strip(), 'HELLO')
+        self.assertEqual(result.returncodes, (0, 0))
+
+    def test_command_stderr_overrides_pipeline_stderr(self):
+        """A command's stderr= takes precedence over the pipeline-level stderr.
+
+        Command 0 with stderr=DEVNULL discards its stderr even though the
+        pipeline-level stderr= sends every other command's stderr to a
+        file.
+        """
+        with tempfile.NamedTemporaryFile(mode='w', delete=False) as f:
+            fname = f.name
+        try:
+            with open(fname, 'w') as logf:
+                subprocess.run_pipeline(
+                    subprocess.PipelineCommand(
+                        [sys.executable, '-c',
+                         'import sys; print("E0", file=sys.stderr); '
+                         'print("out")'],
+                        stderr=subprocess.DEVNULL),
+                    [sys.executable, '-c',
+                     'import sys; print("E1", file=sys.stderr); '
+                     'print(sys.stdin.read())'],
+                    stderr=logf, stdout=subprocess.PIPE, text=True,
+                )
+            with open(fname) as logf:
+                log = logf.read()
+        finally:
+            os.unlink(fname)
+        self.assertNotIn('E0', log)
+        self.assertIn('E1', log)
+
+    def test_command_stderr_devnull(self):
+        """stderr=DEVNULL on one command discards only that command's stderr."""
+        result = subprocess.run_pipeline(
+            subprocess.PipelineCommand(
+                [sys.executable, '-c',
+                 'import sys; print("E0", file=sys.stderr); print("out")'],
+                stderr=subprocess.DEVNULL),
+            [sys.executable, '-c',
+             'import sys; print("E1", file=sys.stderr); '
+             'print(sys.stdin.read())'],
+            capture_output=True, text=True,
+        )
+        self.assertNotIn('E0', result.stderr)
+        self.assertIn('E1', result.stderr)
+        self.assertIn('out', result.stdout)
+
+    def test_command_stderr_stdout_middle(self):
+        """stderr=STDOUT on a non-final command merges into the next stdin.
+
+        Both stdout and stderr of that command feed the next command,
+        and neither appears in the pipeline's captured stderr.
+        """
+        result = subprocess.run_pipeline(
+            [sys.executable, '-c', 'print("a")'],
+            subprocess.PipelineCommand(
+                [sys.executable, '-c',
+                 'import sys; sys.stderr.write("ERR\\n"); '
+                 'sys.stderr.flush(); '
+                 'sys.stdout.write(sys.stdin.read())'],
+                stderr=subprocess.STDOUT),
+            [sys.executable, '-c',
+             'import sys; sys.stdout.write(sys.stdin.read())'],
+            capture_output=True, text=True,
+        )
+        self.assertIn('ERR', result.stdout)
+        self.assertIn('a', result.stdout)
+        self.assertNotIn('ERR', result.stderr)
+        self.assertEqual(result.returncodes, (0, 0, 0))
+
+    def test_command_stderr_stdout_last(self):
+        """stderr=STDOUT on the final command merges into result.stdout."""
+        result = subprocess.run_pipeline(
+            [sys.executable, '-c', 'print("data")'],
+            subprocess.PipelineCommand(
+                [sys.executable, '-c',
+                 'import sys; sys.stdout.write(sys.stdin.read()); '
+                 'sys.stderr.write("ERR\\n")'],
+                stderr=subprocess.STDOUT),
+            stdout=subprocess.PIPE,
+        )
+        self.assertIn(b'data', result.stdout)
+        self.assertIn(b'ERR', result.stdout)
+        self.assertIsNone(result.stderr)
+        self.assertEqual(result.returncodes, (0, 0))
+
+    def test_command_env_override(self):
+        """A command's env= replaces the pipeline-level env for that command."""
+        env_pipe = os.environ | {'MARK': 'pipe'}
+        env_cmd = os.environ | {'MARK': 'cmd'}
+        result = subprocess.run_pipeline(
+            [sys.executable, '-c',
+             'import os; print(os.environ["MARK"])'],
+            subprocess.PipelineCommand(
+                [sys.executable, '-c',
+                 'import os, sys; '
+                 'print(sys.stdin.read().strip(), os.environ["MARK"])'],
+                env=env_cmd),
+            env=env_pipe, capture_output=True, text=True, check=True,
+        )
+        self.assertEqual(result.stdout.strip(), 'pipe cmd')
+
+    def test_command_cwd_override(self):
+        """A command's cwd= replaces the pipeline-level cwd for that command."""
+        with tempfile.TemporaryDirectory() as d_pipe, \
+             tempfile.TemporaryDirectory() as d_cmd:
+            d_pipe_r = os.path.realpath(d_pipe)
+            d_cmd_r = os.path.realpath(d_cmd)
+            result = subprocess.run_pipeline(
+                [sys.executable, '-c',
+                 'import os; print(os.getcwd())'],
+                subprocess.PipelineCommand(
+                    [sys.executable, '-c',
+                     'import os, sys; '
+                     'print(sys.stdin.read().strip()); print(os.getcwd())'],
+                    cwd=d_cmd),
+                cwd=d_pipe, capture_output=True, text=True, check=True,
+            )
+        lines = [os.path.realpath(p) for p in result.stdout.strip().split('\n')]
+        self.assertEqual(lines, [d_pipe_r, d_cmd_r])
+
+    @unittest.skipIf(mswindows, "POSIX shell-specific")
+    def test_command_shell_true(self):
+        """shell=True on a single command runs it through the shell."""
+        result = subprocess.run_pipeline(
+            [sys.executable, '-c', 'print("hello world")'],
+            subprocess.PipelineCommand('tr a-z A-Z', shell=True),
+            capture_output=True, text=True,
+        )
+        self.assertEqual(result.stdout.strip(), 'HELLO WORLD')
+        self.assertEqual(result.returncodes, (0, 0))
+
+    def test_commands_are_normalized(self):
+        """CompletedPipeline.commands always holds PipelineCommand instances.
+
+        Bare argv sequences are wrapped on entry; an explicit
+        PipelineCommand passes through by identity.
+        """
+        explicit = subprocess.PipelineCommand(
+            [sys.executable, '-c', 'import sys; print(sys.stdin.read())'])
+        bare = [sys.executable, '-c', 'print("x")']
+        result = subprocess.run_pipeline(bare, explicit, capture_output=True)
+        for c in result.commands:
+            self.assertIsInstance(c, subprocess.PipelineCommand)
+        self.assertIs(result.commands[1], explicit)
+        self.assertEqual(result.commands[0].args, bare)
+        self.assertIn('PipelineCommand', repr(result))
+
+    def test_bare_str_command_rejected(self):
+        """A bare str positional is rejected before any process spawns.
+
+        Normalization runs each bare positional through
+        PipelineCommand(), whose strict args check refuses a str when
+        shell is not set.
+        """
+        with self.assertRaises(TypeError) as cm:
+            subprocess.run_pipeline('echo hi', 'tr a-z A-Z')
+        self.assertIn('sequence of program arguments', str(cm.exception))
+
+    def test_command_in_pipeline_error(self):
+        """PipelineError.commands and .failed hold PipelineCommand instances."""
+        explicit = subprocess.PipelineCommand(
+            [sys.executable, '-c', 'import sys; sys.exit(7)'],
+            stderr=subprocess.DEVNULL)
+        try:
+            subprocess.run_pipeline(
+                [sys.executable, '-c', 'print("x")'],
+                explicit,
+                capture_output=True, check=True,
+            )
+        except subprocess.PipelineError as e:
+            self.assertEqual(e.returncodes, (0, 7))
+            self.assertIsInstance(e.commands, tuple)
+            self.assertIsInstance(e.returncodes, tuple)
+            self.assertIsInstance(e.failed, tuple)
+            for c in e.commands:
+                self.assertIsInstance(c, subprocess.PipelineCommand)
+            self.assertEqual(len(e.failed), 1)
+            idx, cmd, rc = e.failed[0]
+            self.assertEqual(idx, 1)
+            self.assertIs(cmd, explicit)
+            self.assertEqual(rc, 7)
+            # An override-carrying command shows its full repr in str(e).
+            self.assertIn('PipelineCommand', str(e))
+            self.assertIn('stderr=DEVNULL', str(e))
+        else:
+            self.fail('PipelineError not raised')
+
+    def test_pipeline_error_str_shows_args_when_no_overrides(self):
+        """str(PipelineError) shows bare args for commands without overrides.
+
+        Avoids the "command 1 PipelineCommand(['false'])" stutter in
+        tracebacks for the common case where the caller passed plain
+        argv sequences.
+        """
+        err = subprocess.PipelineError(
+            [subprocess.PipelineCommand(['true']),
+             subprocess.PipelineCommand(['false'])],
+            [0, 1])
+        msg = str(err)
+        self.assertIn("['false']", msg)
+        self.assertNotIn('PipelineCommand', msg)
 
 
 def _get_test_grp_name():

@@ -17,6 +17,10 @@ Main API
 ========
 run(...): Runs a command, waits for it to complete, then returns a
           CompletedProcess instance.
+run_pipeline(...): Runs a pipeline of commands connected via pipes,
+          waits for all to complete, then returns a CompletedPipeline
+          instance.  Each command may be a bare argv sequence or a
+          PipelineCommand with per-command overrides.
 Popen(...): A class for flexibly executing a command in a new process
 
 Constants
@@ -63,7 +67,8 @@ except ImportError:
 __all__ = ["Popen", "PIPE", "STDOUT", "call", "check_call", "getstatusoutput",
            "getoutput", "check_output", "run", "CalledProcessError", "DEVNULL",
            "SubprocessError", "TimeoutExpired", "CompletedProcess",
-           "run_pipeline", "CompletedPipeline", "PipelineError"]
+           "run_pipeline", "CompletedPipeline", "PipelineError",
+           "PipelineCommand"]
            # NOTE: We intentionally exclude list2cmdline as it is
            # considered an internal implementation detail.  issue10838.
 
@@ -200,23 +205,27 @@ class PipelineError(SubprocessError):
     commands in the pipeline return a non-zero exit status.
 
     Attributes:
-        commands: List of commands in the pipeline (each a list of strings).
-        returncodes: List of return codes corresponding to each command.
+        commands: Tuple of PipelineCommand instances for each command.
+        returncodes: Tuple of return codes corresponding to each command.
         stdout: Standard output from the final command (if captured).
         stderr: Standard error output (if captured).
-        failed: List of (index, command, returncode) tuples for failed commands.
+        failed: Tuple of (index, command, returncode) for each failed command.
     """
     def __init__(self, commands, returncodes, stdout=None, stderr=None):
+        commands = tuple(commands)
+        returncodes = tuple(returncodes)
+        assert len(commands) == len(returncodes), (
+            f'{len(commands)=} != {len(returncodes)=}')
         super().__init__(commands, returncodes)
         self.commands = commands
         self.returncodes = returncodes
         self.stdout = stdout
         self.stderr = stderr
-        self.failed = [
+        self.failed = tuple(
             (i, cmd, rc)
             for i, (cmd, rc) in enumerate(zip(commands, returncodes))
             if rc != 0
-        ]
+        )
 
     def __str__(self):
         parts = []
@@ -228,7 +237,11 @@ class PipelineError(SubprocessError):
                     detail = f"died with unknown signal {-rc}"
             else:
                 detail = f"returned {rc}"
-            parts.append(f"command {i} {cmd!r} {detail}")
+            if isinstance(cmd, PipelineCommand) and not cmd._has_overrides():
+                cmd_display = cmd.args
+            else:
+                cmd_display = cmd
+            parts.append(f"command {i} {cmd_display!r} {detail}")
         return f"Pipeline failed: {', '.join(parts)}"
 
 
@@ -849,28 +862,84 @@ class CompletedProcess(object):
                                      self.stderr)
 
 
+class PipelineCommand:
+    """One command in a run_pipeline() pipeline.
+
+    run_pipeline() accepts each command either as a bare argv sequence or
+    as a PipelineCommand; bare sequences are wrapped on entry, so
+    CompletedPipeline.commands and PipelineError.commands always hold
+    PipelineCommand instances.
+
+    Construct one explicitly when a single command needs different stderr
+    handling, a shell, or its own env/cwd.  Any override left at its
+    default of None (or False for shell) means the corresponding
+    run_pipeline() keyword applies to this command as it would to a bare
+    argv sequence.
+    """
+
+    __slots__ = ('args', 'stderr', 'env', 'cwd', 'shell')
+
+    def __init__(self, args, /, *, stderr=None, env=None, cwd=None,
+                 shell=False):
+        if stderr not in (None, STDOUT, DEVNULL):
+            raise ValueError(
+                'PipelineCommand stderr must be None, STDOUT, or DEVNULL')
+        if shell:
+            if not isinstance(args, str):
+                raise TypeError(
+                    'PipelineCommand with shell=True requires a str command')
+        elif isinstance(args, str):
+            raise TypeError(
+                'PipelineCommand args must be a sequence of program '
+                'arguments, not a str (use shell=True for a shell command)')
+        self.args = args
+        self.stderr = stderr
+        self.env = env
+        self.cwd = cwd
+        self.shell = shell
+
+    def _has_overrides(self):
+        """True if any keyword override differs from its default."""
+        return (self.stderr is not None or self.env is not None
+                or self.cwd is not None or self.shell)
+
+    def __repr__(self):
+        parts = [f'{self.args!r}']
+        if self.stderr is STDOUT:
+            parts.append('stderr=STDOUT')
+        elif self.stderr is DEVNULL:
+            parts.append('stderr=DEVNULL')
+        if self.env is not None:
+            # env is commonly large and may contain credentials; don't
+            # dump its contents into tracebacks via PipelineError.__str__.
+            try:
+                n = len(self.env)
+            except TypeError:
+                n = '?'
+            parts.append(f'env=<{n} entries>')
+        if self.cwd is not None:
+            parts.append(f'cwd={self.cwd!r}')
+        if self.shell:
+            parts.append('shell=True')
+        return f"{type(self).__name__}({', '.join(parts)})"
+
+
 class CompletedPipeline:
     """A pipeline of processes that have finished running.
 
     This is returned by run_pipeline().
 
     Attributes:
-        commands: List of commands in the pipeline (each command is a list).
-        returncodes: List of return codes for each command in the pipeline.
-        returncode: The return code of the final command (for convenience).
+        commands: Tuple of PipelineCommand instances for each command.
+        returncodes: Tuple of return codes for each command in the pipeline.
         stdout: The standard output of the final command (None if not captured).
         stderr: The standard error output (None if not captured).
     """
     def __init__(self, commands, returncodes, stdout=None, stderr=None):
-        self.commands = list(commands)
-        self.returncodes = list(returncodes)
+        self.commands = tuple(commands)
+        self.returncodes = tuple(returncodes)
         self.stdout = stdout
         self.stderr = stderr
-
-    @property
-    def returncode(self):
-        """Return the exit code of the final command in the pipeline."""
-        return self.returncodes[-1]
 
     def __repr__(self):
         args = [f'commands={self.commands!r}',
@@ -960,15 +1029,14 @@ def run(*popenargs,
     return CompletedProcess(process.args, retcode, stdout, stderr)
 
 
-# Future extension point: an opt-in Stage(cmd, **overrides) wrapper could
-# be accepted in place of a bare command to allow per-stage overrides
-# (e.g. stderr, shell, env) for shell-pipeline-like topologies.
 def run_pipeline(*commands, input=None, capture_output=False, timeout=None,
                  check=False, **kwargs):
     """Run a pipeline of commands connected via pipes.
 
-    Each positional argument should be a command (a sequence of strings) to
-    execute. The stdout of each command is connected to the stdin of the next
+    Each positional argument should be a command: either a sequence of
+    program arguments, or a PipelineCommand wrapping one with per-command
+    overrides.  Bare sequences are wrapped in a PipelineCommand on entry.
+    The stdout of each command is connected to the stdin of the next
     command in the pipeline, similar to shell pipelines.
 
     Returns a CompletedPipeline instance with attributes commands, returncodes,
@@ -1010,7 +1078,7 @@ def run_pipeline(*commands, input=None, capture_output=False, timeout=None,
             capture_output=True, text=True
         )
         print(result.stdout)  # "42\\n"
-        print(result.returncodes)  # [0, 0, 0]
+        print(result.returncodes)  # (0, 0, 0)
     """
     if len(commands) < 2:
         raise ValueError('run_pipeline requires at least 2 commands')
@@ -1034,10 +1102,14 @@ def run_pipeline(*commands, input=None, capture_output=False, timeout=None,
     if kwargs.get('shell'):
         raise ValueError(
             'shell=True is not supported by run_pipeline; the pipeline itself '
-            'replaces the shell.  Pass each stage as an argv sequence.')
+            'replaces the shell.  Use PipelineCommand(cmd, shell=True) for a '
+            'single command that needs shell interpretation.')
     if kwargs.get('executable') is not None:
         raise ValueError(
             'executable= is not supported by run_pipeline')
+
+    commands = tuple(c if isinstance(c, PipelineCommand) else PipelineCommand(c)
+                     for c in commands)
 
     stderr_arg = kwargs.pop('stderr', None)
     capture_stderr = capture_output or (stderr_arg is PIPE)
@@ -1063,8 +1135,8 @@ def run_pipeline(*commands, input=None, capture_output=False, timeout=None,
 
     try:
         # One shared stderr pipe across all children: lets stderr from any
-        # stage reach the parent through a single read end, which the I/O
-        # loop multiplexes alongside stdout.
+        # command reach the parent through a single read end, which the
+        # I/O loop multiplexes alongside stdout.
         if capture_stderr:
             stderr_read_fd, stderr_write_fd = os.pipe()
             stderr_reader = os.fdopen(stderr_read_fd, 'rb')
@@ -1089,13 +1161,26 @@ def run_pipeline(*commands, input=None, capture_output=False, timeout=None,
             else:
                 proc_stdout = PIPE
 
-            if capture_stderr:
+            if cmd.stderr is not None:
+                assert cmd.stderr in (STDOUT, DEVNULL), cmd.stderr
+                proc_stderr = cmd.stderr
+            elif capture_stderr:
                 proc_stderr = stderr_write_fd
             else:
                 proc_stderr = stderr_arg
 
-            proc = Popen(cmd, stdin=proc_stdin, stdout=proc_stdout,
-                         stderr=proc_stderr, **kwargs)
+            cmd_kwargs = kwargs
+            if cmd.env is not None or cmd.cwd is not None or cmd.shell:
+                cmd_kwargs = dict(kwargs)
+                if cmd.env is not None:
+                    cmd_kwargs['env'] = cmd.env
+                if cmd.cwd is not None:
+                    cmd_kwargs['cwd'] = cmd.cwd
+                if cmd.shell:
+                    cmd_kwargs['shell'] = True
+
+            proc = Popen(cmd.args, stdin=proc_stdin, stdout=proc_stdout,
+                         stderr=proc_stderr, **cmd_kwargs)
             processes.append(proc)
 
             # Close the parent's copy of the previous process's stdout
