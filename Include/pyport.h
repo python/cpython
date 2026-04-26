@@ -58,26 +58,6 @@
 #endif
 
 
-/* Defines to build Python and its standard library:
- *
- * - Py_BUILD_CORE: Build Python core. Give access to Python internals, but
- *   should not be used by third-party modules.
- * - Py_BUILD_CORE_BUILTIN: Build a Python stdlib module as a built-in module.
- * - Py_BUILD_CORE_MODULE: Build a Python stdlib module as a dynamic library.
- *
- * Py_BUILD_CORE_BUILTIN and Py_BUILD_CORE_MODULE imply Py_BUILD_CORE.
- *
- * On Windows, Py_BUILD_CORE_MODULE exports "PyInit_xxx" symbol, whereas
- * Py_BUILD_CORE_BUILTIN does not.
- */
-#if defined(Py_BUILD_CORE_BUILTIN) && !defined(Py_BUILD_CORE)
-#  define Py_BUILD_CORE
-#endif
-#if defined(Py_BUILD_CORE_MODULE) && !defined(Py_BUILD_CORE)
-#  define Py_BUILD_CORE
-#endif
-
-
 /**************************************************************************
 Symbols and macros to supply platform-independent interfaces to basic
 C language & library operations whose spellings vary across platforms.
@@ -385,17 +365,6 @@ extern "C" {
 #  define Py_NO_INLINE
 #endif
 
-#include "exports.h"
-
-#ifdef Py_LIMITED_API
-   // The internal C API must not be used with the limited C API: make sure
-   // that Py_BUILD_CORE macro is not defined in this case. These 3 macros are
-   // used by exports.h, so only undefine them afterwards.
-#  undef Py_BUILD_CORE
-#  undef Py_BUILD_CORE_BUILTIN
-#  undef Py_BUILD_CORE_MODULE
-#endif
-
 /* limits.h constants that may be missing */
 
 #ifndef INT_MAX
@@ -446,7 +415,9 @@ extern "C" {
 /*
  * Specify alignment on compilers that support it.
  */
-#if defined(__GNUC__) && __GNUC__ >= 3
+#ifdef Py_BUILD_CORE
+// always use _Py_ALIGNED_DEF instead
+#elif defined(__GNUC__) && __GNUC__ >= 3
 #define Py_ALIGNED(x) __attribute__((aligned(x)))
 #else
 #define Py_ALIGNED(x)
@@ -504,13 +475,20 @@ extern "C" {
  * Thread support is stubbed and any attempt to create a new thread fails.
  */
 #if (!defined(HAVE_PTHREAD_STUBS) && \
+     !defined(__wasi__) && \
       (!defined(__EMSCRIPTEN__) || defined(__EMSCRIPTEN_PTHREADS__)))
 #  define Py_CAN_START_THREADS 1
 #endif
 
-#ifdef WITH_THREAD
-// HAVE_THREAD_LOCAL is just defined here for compatibility's sake
+
+/* gh-142163: Some libraries rely on HAVE_THREAD_LOCAL being undefined, so
+ * we can only define it only when Py_BUILD_CORE is set.*/
+#ifdef Py_BUILD_CORE
+// This is no longer coupled to _Py_thread_local.
 #  define HAVE_THREAD_LOCAL 1
+#endif
+
+#ifdef WITH_THREAD
 #  ifdef thread_local
 #    define _Py_thread_local thread_local
 #  elif __STDC_VERSION__ >= 201112L && !defined(__STDC_NO_THREADS__)
@@ -560,8 +538,11 @@ extern "C" {
 //
 // Example: _Py_TYPEOF(x) x_copy = (x);
 //
-// The macro is only defined if GCC or clang compiler is used.
-#if defined(__GNUC__) || defined(__clang__)
+// On C23, use typeof(). Otherwise, the macro is only defined
+// if GCC or clang compiler is used.
+#if defined (__STDC_VERSION__) && __STDC_VERSION__ >= 202311L
+#  define _Py_TYPEOF(expr) typeof(expr)
+#elif defined(__GNUC__) || defined(__clang__)
 #  define _Py_TYPEOF(expr) __typeof__(expr)
 #endif
 
@@ -674,6 +655,12 @@ extern "C" {
 #  define _Py_NONSTRING __attribute__((nonstring))
 #else
 #  define _Py_NONSTRING
+#endif
+
+
+// Assume the stack grows down unless specified otherwise
+#ifndef _Py_STACK_GROWS_DOWN
+#  define _Py_STACK_GROWS_DOWN 1
 #endif
 
 

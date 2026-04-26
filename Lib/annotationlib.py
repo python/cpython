@@ -47,6 +47,7 @@ _SLOTS = (
     "__cell__",
     "__owner__",
     "__stringifier_dict__",
+    "__resolved_str_cache__",
 )
 
 
@@ -94,6 +95,7 @@ class ForwardRef:
         # value later.
         self.__code__ = None
         self.__ast_node__ = None
+        self.__resolved_str_cache__ = None
 
     def __init_subclass__(cls, /, *args, **kwds):
         raise TypeError("Cannot subclass ForwardRef")
@@ -113,7 +115,7 @@ class ForwardRef:
         """
         match format:
             case Format.STRING:
-                return self.__forward_arg__
+                return self.__resolved_str__
             case Format.VALUE:
                 is_forwardref_format = False
             case Format.FORWARDREF:
@@ -150,33 +152,42 @@ class ForwardRef:
         if globals is None:
             globals = {}
 
+        if type_params is None and owner is not None:
+            type_params = getattr(owner, "__type_params__", None)
+
         if locals is None:
             locals = {}
             if isinstance(owner, type):
                 locals.update(vars(owner))
+        elif (
+            type_params is not None
+            or isinstance(self.__cell__, dict)
+            or self.__extra_names__
+        ):
+            # Create a new locals dict if necessary,
+            # to avoid mutating the argument.
+            locals = dict(locals)
 
-        if type_params is None and owner is not None:
-            # "Inject" type parameters into the local namespace
-            # (unless they are shadowed by assignments *in* the local namespace),
-            # as a way of emulating annotation scopes when calling `eval()`
-            type_params = getattr(owner, "__type_params__", None)
-
-        # Type parameters exist in their own scope, which is logically
-        # between the locals and the globals. We simulate this by adding
-        # them to the globals. Similar reasoning applies to nonlocals stored in cells.
-        if type_params is not None or isinstance(self.__cell__, dict):
-            globals = dict(globals)
+        # "Inject" type parameters into the local namespace
+        # (unless they are shadowed by assignments *in* the local namespace),
+        # as a way of emulating annotation scopes when calling `eval()`
         if type_params is not None:
             for param in type_params:
-                globals[param.__name__] = param
+                locals.setdefault(param.__name__, param)
+
+        # Similar logic can be used for nonlocals, which should not
+        # override locals.
         if isinstance(self.__cell__, dict):
-            for cell_name, cell_value in self.__cell__.items():
+            for cell_name, cell in self.__cell__.items():
                 try:
-                    globals[cell_name] = cell_value.cell_contents
+                    cell_value = cell.cell_contents
                 except ValueError:
                     pass
+                else:
+                    locals.setdefault(cell_name, cell_value)
+
         if self.__extra_names__:
-            locals = {**locals, **self.__extra_names__}
+            locals.update(self.__extra_names__)
 
         arg = self.__forward_arg__
         if arg.isidentifier() and not keyword.iskeyword(arg):
@@ -250,6 +261,24 @@ class ForwardRef:
         )
 
     @property
+    def __resolved_str__(self):
+        # __forward_arg__ with any names from __extra_names__ replaced
+        # with the type_repr of the value they represent
+        if self.__resolved_str_cache__ is None:
+            resolved_str = self.__forward_arg__
+            names = self.__extra_names__
+
+            if names:
+                visitor = _ExtraNameFixer(names)
+                ast_expr = ast.parse(resolved_str, mode="eval").body
+                node = visitor.visit(ast_expr)
+                resolved_str = ast.unparse(node)
+
+            self.__resolved_str_cache__ = resolved_str
+
+        return self.__resolved_str_cache__
+
+    @property
     def __forward_code__(self):
         if self.__code__ is not None:
             return self.__code__
@@ -270,7 +299,13 @@ class ForwardRef:
             # because dictionaries are not hashable.
             and self.__globals__ is other.__globals__
             and self.__forward_is_class__ == other.__forward_is_class__
-            and self.__cell__ == other.__cell__
+            # Two separate cells are always considered unequal in forward refs.
+            and (
+                {name: id(cell) for name, cell in self.__cell__.items()}
+                == {name: id(cell) for name, cell in other.__cell__.items()}
+                if isinstance(self.__cell__, dict) and isinstance(other.__cell__, dict)
+                else self.__cell__ is other.__cell__
+            )
             and self.__owner__ == other.__owner__
             and (
                 (tuple(sorted(self.__extra_names__.items())) if self.__extra_names__ else None) ==
@@ -284,7 +319,10 @@ class ForwardRef:
             self.__forward_module__,
             id(self.__globals__),  # dictionaries are not hashable, so hash by identity
             self.__forward_is_class__,
-            tuple(sorted(self.__cell__.items())) if isinstance(self.__cell__, dict) else self.__cell__,
+            (  # cells are not hashable as well
+                tuple(sorted([(name, id(cell)) for name, cell in self.__cell__.items()]))
+                if isinstance(self.__cell__, dict) else id(self.__cell__),
+            ),
             self.__owner__,
             tuple(sorted(self.__extra_names__.items())) if self.__extra_names__ else None,
         ))
@@ -303,7 +341,7 @@ class ForwardRef:
             extra.append(", is_class=True")
         if self.__owner__ is not None:
             extra.append(f", owner={self.__owner__!r}")
-        return f"ForwardRef({self.__forward_arg__!r}{''.join(extra)})"
+        return f"ForwardRef({self.__resolved_str__!r}{''.join(extra)})"
 
 
 _Template = type(t"")
@@ -339,6 +377,7 @@ class _Stringifier:
         self.__cell__ = cell
         self.__owner__ = owner
         self.__stringifier_dict__ = stringifier_dict
+        self.__resolved_str_cache__ = None  # Needed for ForwardRef
 
     def __convert_to_ast(self, other):
         if isinstance(other, _Stringifier):
@@ -835,14 +874,9 @@ def call_annotate_function(annotate, format, *, owner=None, _is_evaluate=False):
 def _build_closure(annotate, owner, is_class, stringifier_dict, *, allow_evaluation):
     if not annotate.__closure__:
         return None, None
-    freevars = annotate.__code__.co_freevars
     new_closure = []
     cell_dict = {}
-    for i, cell in enumerate(annotate.__closure__):
-        if i < len(freevars):
-            name = freevars[i]
-        else:
-            name = "__cell__"
+    for name, cell in zip(annotate.__code__.co_freevars, annotate.__closure__, strict=True):
         cell_dict[name] = cell
         new_cell = None
         if allow_evaluation:
@@ -906,7 +940,7 @@ def get_annotations(
     does not exist, the __annotate__ function is called. The
     FORWARDREF format uses __annotations__ if it exists and can be
     evaluated, and otherwise falls back to calling the __annotate__ function.
-    The SOURCE format tries __annotate__ first, and falls back to
+    The STRING format tries __annotate__ first, and falls back to
     using __annotations__, stringified using annotations_to_string().
 
     This function handles several details for you:
@@ -1024,13 +1058,26 @@ def get_annotations(
             obj_globals = obj_locals = unwrap = None
 
         if unwrap is not None:
+            # Use an id-based visited set to detect cycles in the __wrapped__
+            # and functools.partial.func chain (e.g. f.__wrapped__ = f).
+            # On cycle detection we stop and use whatever __globals__ we have
+            # found so far, mirroring the approach of inspect.unwrap().
+            _seen_ids = {id(unwrap)}
             while True:
                 if hasattr(unwrap, "__wrapped__"):
-                    unwrap = unwrap.__wrapped__
+                    candidate = unwrap.__wrapped__
+                    if id(candidate) in _seen_ids:
+                        break
+                    _seen_ids.add(id(candidate))
+                    unwrap = candidate
                     continue
                 if functools := sys.modules.get("functools"):
                     if isinstance(unwrap, functools.partial):
-                        unwrap = unwrap.func
+                        candidate = unwrap.func
+                        if id(candidate) in _seen_ids:
+                            break
+                        _seen_ids.add(id(candidate))
+                        unwrap = candidate
                         continue
                 break
             if hasattr(unwrap, "__globals__"):
@@ -1092,7 +1139,7 @@ def _rewrite_star_unpack(arg):
     """If the given argument annotation expression is a star unpack e.g. `'*Ts'`
        rewrite it to a valid expression.
        """
-    if arg.startswith("*"):
+    if arg.lstrip().startswith("*"):
         return f"({arg},)[0]"  # E.g. (*Ts,)[0] or (*tuple[int, int],)[0]
     else:
         return arg
@@ -1137,3 +1184,14 @@ def _get_dunder_annotations(obj):
     if not isinstance(ann, dict):
         raise ValueError(f"{obj!r}.__annotations__ is neither a dict nor None")
     return ann
+
+
+class _ExtraNameFixer(ast.NodeTransformer):
+    """Fixer for __extra_names__ items in ForwardRef __repr__ and string evaluation"""
+    def __init__(self, extra_names):
+        self.extra_names = extra_names
+
+    def visit_Name(self, node: ast.Name):
+        if (new_name := self.extra_names.get(node.id, _sentinel)) is not _sentinel:
+            node = ast.Name(id=type_repr(new_name))
+        return node

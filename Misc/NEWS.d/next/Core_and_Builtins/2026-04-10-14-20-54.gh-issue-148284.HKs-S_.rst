@@ -1,0 +1,1 @@
+Fix high stack consumption in Python's interpreter loop on Clang 22 by setting function limits for inlining when building with computed gotos.

@@ -45,9 +45,12 @@ single-phase initialization.
 Multi-Phase Initialization
 ..........................
 
-Extensions that use multi-phase initialization (i.e.,
-:c:func:`PyModuleDef_Init`) should add a :c:data:`Py_mod_gil` slot in the
-module definition.  If your extension supports older versions of CPython,
+Extensions that use :ref:`multi-phase initialization <multi-phase-initialization>`
+(functions like :c:func:`PyModuleDef_Init`,
+:c:func:`PyModExport_* <PyModExport_modulename>` export hook,
+:c:func:`PyModule_FromSlotsAndSpec`) should add a
+:c:data:`Py_mod_gil` slot in the module definition.
+If your extension supports older versions of CPython,
 you should guard the slot with a :c:data:`PY_VERSION_HEX` check.
 
 ::
@@ -60,18 +63,12 @@ you should guard the slot with a :c:data:`PY_VERSION_HEX` check.
         {0, NULL}
     };
 
-    static struct PyModuleDef moduledef = {
-        PyModuleDef_HEAD_INIT,
-        .m_slots = module_slots,
-        ...
-    };
-
 
 Single-Phase Initialization
 ...........................
 
-Extensions that use single-phase initialization (i.e.,
-:c:func:`PyModule_Create`) should call :c:func:`PyUnstable_Module_SetGIL` to
+Extensions that use legacy :ref:`single-phase initialization <single-phase-initialization>`
+(that is, :c:func:`PyModule_Create`) should call :c:func:`PyUnstable_Module_SetGIL` to
 indicate that they support running with the GIL disabled.  The function is
 only defined in the free-threaded build, so you should guard the call with
 ``#ifdef Py_GIL_DISABLED`` to avoid compilation errors in the regular build.
@@ -387,6 +384,30 @@ Important Considerations
   internal extension state, standard mutexes or other synchronization
   primitives might be more appropriate.
 
+.. _per-object-locks:
+
+Per-Object Locks (``ob_mutex``)
+...............................
+
+In the free-threaded build, each Python object contains a :c:member:`~PyObject.ob_mutex`
+field of type :c:type:`PyMutex`.  This mutex is **reserved for use by the
+critical section API** (:c:macro:`Py_BEGIN_CRITICAL_SECTION` /
+:c:macro:`Py_END_CRITICAL_SECTION`).
+
+.. warning::
+
+   Do **not** lock ``ob_mutex`` directly with ``PyMutex_Lock(&obj->ob_mutex)``.
+   Mixing direct ``PyMutex_Lock`` calls with the critical section API on the
+   same mutex can cause deadlocks.
+
+Even if your own code never uses critical sections on a particular object type,
+**CPython internals may use the critical section API on any Python object**.
+
+If your extension type needs its own lock, add a separate :c:type:`PyMutex`
+field (or another synchronization primitive) to your object struct.
+:c:type:`PyMutex` is very lightweight, so there is negligible cost to having
+an additional one.
+
 
 Building Extensions for the Free-Threaded Build
 ===============================================
@@ -395,11 +416,9 @@ C API extensions need to be built specifically for the free-threaded build.
 The wheels, shared libraries, and binaries are indicated by a ``t`` suffix.
 
 * `pypa/manylinux <https://github.com/pypa/manylinux>`_ supports the
-  free-threaded build, with the ``t`` suffix, such as ``python3.13t``.
-* `pypa/cibuildwheel <https://github.com/pypa/cibuildwheel>`_ supports the
-  free-threaded build on Python 3.13 and 3.14. On Python 3.14, free-threaded
-  wheels will be built by default. On Python 3.13, you will need to set
-  `CIBW_ENABLE to cpython-freethreading <https://cibuildwheel.pypa.io/en/stable/options/#enable>`_.
+  free-threaded build, with the ``t`` suffix, such as ``python3.14t``.
+* `pypa/cibuildwheel <https://github.com/pypa/cibuildwheel>`_ supports
+  building wheels for the free-threaded build of Python 3.14 and newer.
 
 Limited C API and Stable ABI
 ............................
