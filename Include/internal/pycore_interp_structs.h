@@ -227,6 +227,9 @@ struct _gc_runtime_state {
     /* a list of callbacks to be invoked when collection is performed */
     PyObject *callbacks;
 
+    /* The number of live objects. */
+    Py_ssize_t heap_size;
+
     /* This is the number of objects that survived the last full
        collection. It approximates the number of long lived objects
        tracked by the GC.
@@ -261,7 +264,8 @@ struct _gc_runtime_state {
         { .threshold = 2000, }, \
         { .threshold = 10, }, \
         { .threshold = 10, }, \
-    },
+    }, \
+    .heap_size = 0,
 #else
 #define GC_GENERATION_INIT \
     .young = { .threshold = 2000, }, \
