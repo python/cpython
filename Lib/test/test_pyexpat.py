@@ -715,7 +715,7 @@ class ChardataBufferTest(unittest.TestCase):
     @support.requires_resource('cpu')
     @support.requires_resource('walltime')
     @support.bigmemtest(size=2**31, memuse=4, dry_run=False)
-    def test_large_character_data_no_buffer_overflow(self):
+    def test_large_character_data_does_not_crash(self):
         # See https://github.com/python/cpython/issues/148441
         parser = expat.ParserCreate()
         parser.buffer_text = True
