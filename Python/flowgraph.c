@@ -963,7 +963,7 @@ label_exception_targets(basicblock *entryblock) {
             }
             else if (instr->i_opcode == RESUME) {
                 instr->i_except = handler;
-                if (instr->i_oparg != RESUME_AT_FUNC_START) {
+                if (instr->i_oparg != RESUME_AT_FUNC_START && instr->i_oparg != RESUME_AT_GEN_EXPR_START) {
                     assert(last_yield_except_depth >= 0);
                     if (last_yield_except_depth == 1) {
                         instr->i_oparg |= RESUME_OPARG_DEPTH1_MASK;
@@ -1309,6 +1309,14 @@ get_const_value(int opcode, int oparg, PyObject *co_consts)
     PyObject *constant = NULL;
     assert(loads_const(opcode));
     if (opcode == LOAD_CONST) {
+        assert(PyList_Check(co_consts));
+        Py_ssize_t n = PyList_GET_SIZE(co_consts);
+        if (oparg < 0 || oparg >= n) {
+            PyErr_Format(PyExc_ValueError,
+                         "LOAD_CONST index %d is out of range for consts (len=%zd)",
+                         oparg, n);
+            return NULL;
+        }
         constant = PyList_GET_ITEM(co_consts, oparg);
     }
     if (opcode == LOAD_SMALL_INT) {
@@ -2167,6 +2175,9 @@ basicblock_optimize_load_const(PyObject *const_cache, basicblock *bb, PyObject *
         cfg_instr *inst = &bb->b_instr[i];
         if (inst->i_opcode == LOAD_CONST) {
             PyObject *constant = get_const_value(inst->i_opcode, inst->i_oparg, consts);
+            if (constant == NULL) {
+                return ERROR;
+            }
             int res = maybe_instr_make_load_smallint(inst, constant, consts, const_cache);
             Py_DECREF(constant);
             if (res < 0) {
@@ -4062,6 +4073,10 @@ _PyCompile_OptimizeCfg(PyObject *seq, PyObject *consts, int nlocals)
 {
     if (!_PyInstructionSequence_Check(seq)) {
         PyErr_SetString(PyExc_ValueError, "expected an instruction sequence");
+        return NULL;
+    }
+    if (!PyList_Check(consts)) {
+        PyErr_SetString(PyExc_TypeError, "consts must be a list");
         return NULL;
     }
     PyObject *const_cache = PyDict_New();
