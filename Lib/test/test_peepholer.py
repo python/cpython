@@ -2444,6 +2444,133 @@ class DirectCfgOptimizerTests(CfgOptimizationTestCase):
         self.assertEqual(b, [3, 2, 1, 0])
         self.assertEqual(items, [])
 
+    def test_fold_constant_big_list_for_iter(self):
+        # for x in [c1, c2, ..., cN] (N > 30) should fold to LOAD_CONST tuple
+        consts = 35
+        before = (
+            [("BUILD_LIST", 0, 1)] +
+            [("LOAD_CONST", 0, 2), ("LIST_APPEND", 1, 3)] * consts +
+            [("GET_ITER", 0, 4),
+             top := self.Label(),
+             ("FOR_ITER", end := self.Label(), 5),
+             ("STORE_FAST", 0, 6),
+             ("JUMP", top, 7),
+             end,
+             ("END_FOR", None, 8),
+             ("POP_ITER", None, 9),
+             ("LOAD_CONST", 0, 10),
+             ("RETURN_VALUE", None, 11)]
+        )
+        after = [
+            ("LOAD_CONST", 1, 3),
+            ("GET_ITER", 0, 4),
+            top := self.Label(),
+            ("FOR_ITER", end := self.Label(), 5),
+            ("STORE_FAST", 0, 6),
+            ("JUMP", top, 7),
+            end,
+            ("END_FOR", None, 8),
+            ("POP_ITER", None, 9),
+            ("LOAD_CONST", 0, 10),
+            ("RETURN_VALUE", None, 11),
+        ]
+        result_const = tuple(["test"] * consts)
+        self.cfg_optimization_test(before, after, consts=["test"],
+                                   expected_consts=["test", result_const])
+
+    def test_fold_constant_big_set_for_iter(self):
+        # for x in {c1, c2, ..., cN} (N > 30) should fold to LOAD_CONST frozenset
+        before = [
+            ("BUILD_SET", 0, 1),
+            ("LOAD_SMALL_INT", 1, 2), ("SET_ADD", 1, 3),
+            ("LOAD_SMALL_INT", 2, 4), ("SET_ADD", 1, 5),
+            ("LOAD_SMALL_INT", 3, 6), ("SET_ADD", 1, 7),
+            ("GET_ITER", 0, 8),
+            top := self.Label(),
+            ("FOR_ITER", end := self.Label(), 9),
+            ("STORE_FAST", 0, 10),
+            ("JUMP", top, 11),
+            end,
+            ("END_FOR", None, 12),
+            ("POP_ITER", None, 13),
+            ("LOAD_CONST", 0, 14),
+            ("RETURN_VALUE", None, 15),
+        ]
+        after = [
+            ("LOAD_CONST", 1, 7),
+            ("GET_ITER", 0, 8),
+            top := self.Label(),
+            ("FOR_ITER", end := self.Label(), 9),
+            ("STORE_FAST", 0, 10),
+            ("JUMP", top, 11),
+            end,
+            ("END_FOR", None, 12),
+            ("POP_ITER", None, 13),
+            ("LOAD_CONST", 0, 14),
+            ("RETURN_VALUE", None, 15),
+        ]
+        self.cfg_optimization_test(before, after, consts=[None],
+                                   expected_consts=[None, frozenset({1, 2, 3})])
+
+    def test_fold_constant_big_list_contains_op(self):
+        # x in [c1, c2, ..., cN] (N > 30) should fold to LOAD_CONST tuple
+        before = [
+            ("LOAD_FAST", 0, 1),
+            ("BUILD_LIST", 0, 2),
+            ("LOAD_SMALL_INT", 1, 3), ("LIST_APPEND", 1, 4),
+            ("LOAD_SMALL_INT", 2, 5), ("LIST_APPEND", 1, 6),
+            ("LOAD_SMALL_INT", 3, 7), ("LIST_APPEND", 1, 8),
+            ("CONTAINS_OP", 0, 9),
+            ("RETURN_VALUE", None, 10),
+        ]
+        after = [
+            ("LOAD_FAST_BORROW", 0, 1),
+            ("LOAD_CONST", 1, 8),
+            ("CONTAINS_OP", 0, 9),
+            ("RETURN_VALUE", None, 10),
+        ]
+        self.cfg_optimization_test(before, after, consts=[None],
+                                   expected_consts=[None, (1, 2, 3)])
+
+    def test_fold_constant_big_set_contains_op(self):
+        # x in {c1, c2, ..., cN} (N > 30) should fold to LOAD_CONST frozenset
+        before = [
+            ("LOAD_FAST", 0, 1),
+            ("BUILD_SET", 0, 2),
+            ("LOAD_SMALL_INT", 1, 3), ("SET_ADD", 1, 4),
+            ("LOAD_SMALL_INT", 2, 5), ("SET_ADD", 1, 6),
+            ("LOAD_SMALL_INT", 3, 7), ("SET_ADD", 1, 8),
+            ("CONTAINS_OP", 0, 9),
+            ("RETURN_VALUE", None, 10),
+        ]
+        after = [
+            ("LOAD_FAST_BORROW", 0, 1),
+            ("LOAD_CONST", 1, 8),
+            ("CONTAINS_OP", 0, 9),
+            ("RETURN_VALUE", None, 10),
+        ]
+        self.cfg_optimization_test(before, after, consts=[None],
+                                   expected_consts=[None, frozenset({1, 2, 3})])
+
+    def test_no_fold_big_list_for_iter_with_non_const(self):
+        same = [
+            ("BUILD_LIST", 0, 1),
+            ("LOAD_SMALL_INT", 1, 2), ("LIST_APPEND", 1, 3),
+            ("LOAD_FAST_BORROW", 0, 4), ("LIST_APPEND", 1, 5),
+            ("LOAD_SMALL_INT", 3, 6), ("LIST_APPEND", 1, 7),
+            ("GET_ITER", 0, 8),
+            top := self.Label(),
+            ("FOR_ITER", end := self.Label(), 9),
+            ("STORE_FAST", 1, 10),
+            ("JUMP", top, 11),
+            end,
+            ("END_FOR", None, 12),
+            ("POP_ITER", None, 13),
+            ("LOAD_CONST", 0, 14),
+            ("RETURN_VALUE", None, 15),
+        ]
+        self.cfg_optimization_test(same, same, consts=[None])
+
 
 class OptimizeLoadFastTestCase(DirectCfgOptimizerTests):
     def make_bb(self, insts):
