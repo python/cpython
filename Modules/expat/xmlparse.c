@@ -135,9 +135,9 @@
 #  include "random_getrandom.h"
 #endif /* defined(HAVE_GETRANDOM) || defined(HAVE_SYSCALL_GETRANDOM) */
 
-#if defined(_WIN32)
+#if defined(_WIN32) && ! defined(XML_POOR_ENTROPY)
 #  include "random_rand_s.h"
-#endif /* defined(_WIN32) */
+#endif /* defined(_WIN32) && ! defined(XML_POOR_ENTROPY) */
 
 #if ! defined(HAVE_GETRANDOM) && ! defined(HAVE_SYSCALL_GETRANDOM)             \
     && ! defined(HAVE_ARC4RANDOM_BUF) && ! defined(HAVE_ARC4RANDOM)            \
@@ -1088,7 +1088,7 @@ generate_hash_secret_salt(void) {
   return ENTROPY_DEBUG("arc4random", entropy);
 #else
   /* Try high quality providers first .. */
-#  ifdef _WIN32
+#  if defined(_WIN32) && ! defined(XML_POOR_ENTROPY)
   if (writeRandomBytes_rand_s(&entropy, sizeof(entropy))) {
     return ENTROPY_DEBUG("rand_s", entropy);
   }

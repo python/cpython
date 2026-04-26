@@ -64,6 +64,18 @@ This may be due to source changes and will require updating this script" >&2
   exit 1
 fi
 
+# Step 4: Skip the Windows rand_s entropy path in xmlparse.c when
+# XML_POOR_ENTROPY is set.
+sed -z -i 's|#if defined(_WIN32)\n#  include "random_rand_s\.h"\n#endif /\* defined(_WIN32) \*/|#if defined(_WIN32) \&\& ! defined(XML_POOR_ENTROPY)\n#  include "random_rand_s.h"\n#endif /* defined(_WIN32) \&\& ! defined(XML_POOR_ENTROPY) */|' xmlparse.c
+sed -z -i 's|#  ifdef _WIN32\n  if (writeRandomBytes_rand_s|#  if defined(_WIN32) \&\& ! defined(XML_POOR_ENTROPY)\n  if (writeRandomBytes_rand_s|' xmlparse.c
+
+if ! grep -q '#if defined(_WIN32) && ! defined(XML_POOR_ENTROPY)' xmlparse.c; then
+  echo "
+Error: rand_s gate not patched in xmlparse.c;
+This may be due to source changes and will require updating this script" >&2
+  exit 1
+fi
+
 echo '
 Updated! next steps:
 - Verify all is okay:
