@@ -717,6 +717,13 @@ ast
   This can be :ref:`controlled using environment variables <using-on-controlling-color>`.
   (Contributed by Stan Ulbrych in :gh:`148981`.)
 
+asyncio
+-------
+* Added :meth:`~asyncio.TaskGroup.cancel` to allow early termination of a task group --
+  e.g. when the goal of the tasks has been achieved or their services no longer needed.
+  Previously this would involve unintuitive boilerplate such as an extra task raising
+  a custom exception which is then suppressed as it exits TaskGroup.
+  (Contributed by John Belmonte in :gh:`127214`.)
 
 base64
 ------

@@ -394,8 +394,8 @@ Example::
 The ``async with`` statement will wait for all tasks in the group to finish.
 While waiting, new tasks may still be added to the group
 (for example, by passing ``tg`` into one of the coroutines
-and calling ``tg.create_task()`` in that coroutine).  There is also opportunity
-to short-circuit the entire task group with ``tg.cancel()``, based on some condition.
+and calling ``tg.create_task()`` in that coroutine).  There is also opportunity to
+request termination of the entire task group with ``tg.cancel()``, based on some condition.
 Once the last task has finished and the ``async with`` block is exited,
 no new tasks may be added to the group.
 
