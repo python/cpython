@@ -160,6 +160,7 @@ class GenopsTests(unittest.TestCase):
             next(it)
 
 
+@support.force_not_colorized_test_class
 class DisTests(unittest.TestCase):
     maxDiff = None
 
@@ -518,6 +519,7 @@ class MiscTestCase(unittest.TestCase):
         support.check__all__(self, pickletools, not_exported=not_exported)
 
 
+@support.force_not_colorized_test_class
 class CommandLineTest(unittest.TestCase):
     def setUp(self):
         self.filename = tempfile.mktemp()
