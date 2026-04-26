@@ -219,12 +219,16 @@ class PipelineError(SubprocessError):
         ]
 
     def __str__(self):
-        LIMIT = 3
-        head = self.failed[:LIMIT]
-        parts = [f"command {i} {cmd!r} returned {rc}" for i, cmd, rc in head]
-        extra = len(self.failed) - len(head)
-        if extra > 0:
-            parts.append(f"and {extra} more")
+        parts = []
+        for i, cmd, rc in self.failed:
+            if rc and rc < 0:
+                try:
+                    detail = f"died with {signal.Signals(-rc)!r}"
+                except ValueError:
+                    detail = f"died with unknown signal {-rc}"
+            else:
+                detail = f"returned {rc}"
+            parts.append(f"command {i} {cmd!r} {detail}")
         return f"Pipeline failed: {', '.join(parts)}"
 
 
