@@ -2284,6 +2284,37 @@ class PipelineTestCase(BaseTestCase):
             error_str = str(e)
             self.assertIn('Pipeline failed', error_str)
 
+    @unittest.skipIf(mswindows, "negative returncodes are POSIX signal-deaths")
+    def test_pipeline_error_str_signal(self):
+        """PipelineError renders negative returncodes as signal deaths,
+        matching CalledProcessError."""
+        err = subprocess.PipelineError(
+            [['a'], ['b']], [0, -signal.SIGTERM])
+        msg = str(err)
+        self.assertIn('died with', msg)
+        self.assertIn('SIGTERM', msg)
+        self.assertNotIn('-15', msg)
+
+    def test_pipeline_spawn_failure_cleans_up(self):
+        """Popen failing mid-pipeline propagates and reaps earlier stages.
+
+        Stage 0 starts and would sleep 60s; stage 1's executable does not
+        exist so Popen raises before stage 1 ever runs. The finally block
+        must kill and wait on stage 0 so this call returns promptly rather
+        than hanging until stage 0's sleep finishes.
+        """
+        start = time.monotonic()
+        with self.assertRaises(NONEXISTING_ERRORS):
+            subprocess.run_pipeline(
+                [sys.executable, '-c', 'import time; time.sleep(60)'],
+                NONEXISTING_CMD,
+                capture_output=True,
+            )
+        elapsed = time.monotonic() - start
+        self.assertLess(elapsed, 30,
+            "run_pipeline did not promptly clean up the running first "
+            "stage after the second stage failed to spawn")
+
     def test_pipeline_explicit_stdout_pipe(self):
         """Test pipeline with explicit stdout=PIPE"""
         result = subprocess.run_pipeline(
