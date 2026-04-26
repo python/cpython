@@ -18,6 +18,12 @@
 #
 # See also the section "Build instructions" in the README file.
 
+# Run in POSIX-conforming mode. Among other things this guarantees that the
+# shell is invoked with -e (so complex recipes fail on the first error),
+# which avoids relying on SHELL = /bin/sh -e -- AIX make interprets that as
+# a literal path and fails to find an executable named "/bin/sh -e".
+.POSIX:
+
 # === Variables set by makesetup ===
 
 MODBUILT_NAMES=    _MODBUILT_NAMES_
@@ -61,8 +67,10 @@ DSYMUTIL_PATH=  @DSYMUTIL_PATH@
 
 GNULD=		@GNULD@
 
-# Shell used by make (some versions default to the login shell, which is bad)
-SHELL=		/bin/sh -e
+# Shell used by make (some versions default to the login shell, which is bad).
+# The shell is invoked with -e via the .POSIX: special target above, which
+# applies under POSIX make implementations and to GNU make in POSIX mode.
+SHELL=		/bin/sh
 
 # Use this to make a link between python$(VERSION) and python in $(BINDIR)
 LN=		@LN@

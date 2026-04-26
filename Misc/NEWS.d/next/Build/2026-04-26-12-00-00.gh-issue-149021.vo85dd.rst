@@ -1,0 +1,6 @@
+Fix build on AIX by no longer setting ``SHELL = /bin/sh -e`` in the
+top-level :file:`Makefile`.  AIX :program:`make` interprets ``SHELL`` as a
+literal executable path, so the embedded ``-e`` flag caused
+:samp:`/bin/sh -e: not found`.  The makefile now sets ``SHELL = /bin/sh``
+and declares the ``.POSIX:`` special target, which causes both POSIX
+:program:`make` and GNU :program:`make` to invoke the shell with ``-e``.
