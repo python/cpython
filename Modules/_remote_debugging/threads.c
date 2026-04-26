@@ -192,7 +192,7 @@ get_thread_status(RemoteUnwinderObject *unwinder, uint64_t tid, uint64_t pthread
     char stat_path[256];
     char buffer[2048] = "";
 
-    snprintf(stat_path, sizeof(stat_path), "/proc/%d/task/%lu/stat", unwinder->handle.pid, tid);
+    snprintf(stat_path, sizeof(stat_path), "/proc/%d/task/%" PRIu64 "/stat", unwinder->handle.pid, tid);
 
     int fd = open(stat_path, O_RDONLY);
     if (fd == -1) {
@@ -313,19 +313,6 @@ unwind_stack_for_thread(
     STATS_ADD(unwinder, memory_bytes_read, unwinder->debug_offsets.thread_state.size);
 
     long tid = GET_MEMBER(long, ts, unwinder->debug_offsets.thread_state.native_thread_id);
-
-    // Read GC collecting state from the interpreter (before any skip checks)
-    uintptr_t interp_addr = GET_MEMBER(uintptr_t, ts, unwinder->debug_offsets.thread_state.interp);
-
-    // Read the GC runtime state from the interpreter state
-    uintptr_t gc_addr = interp_addr + unwinder->debug_offsets.interpreter_state.gc;
-    char gc_state[SIZEOF_GC_RUNTIME_STATE];
-    if (_Py_RemoteDebug_PagedReadRemoteMemory(&unwinder->handle, gc_addr, unwinder->debug_offsets.gc.size, gc_state) < 0) {
-        set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to read GC state");
-        goto error;
-    }
-    STATS_INC(unwinder, memory_reads);
-    STATS_ADD(unwinder, memory_bytes_read, unwinder->debug_offsets.gc.size);
 
     // Calculate thread status using flags (always)
     int status_flags = 0;

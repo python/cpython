@@ -1526,6 +1526,17 @@ fi],
 [AC_MSG_RESULT([yes])])
 AC_SUBST([STATIC_LIBPYTHON])
 
+AC_MSG_CHECKING([for --enable-static-libpython-for-interpreter])
+AC_ARG_ENABLE([static-libpython-for-interpreter],
+   AS_HELP_STRING([--enable-static-libpython-for-interpreter],
+                  [even with --enable-shared, statically link libpython into the interpreter (default is to use the shared library)]))
+
+if test -z "$enable_static_libpython_for_interpreter"
+then
+  enable_static_libpython_for_interpreter="no"
+fi
+AC_MSG_RESULT([$enable_static_libpython_for_interpreter])
+
 AC_MSG_CHECKING([for --enable-profiling])
 AC_ARG_ENABLE([profiling],
               AS_HELP_STRING([--enable-profiling], [enable C-level code profiling with gprof (default is no)]))
@@ -1679,7 +1690,11 @@ if test "$PY_ENABLE_SHARED" = 1 || test "$enable_framework" ; then
         LIBRARY_DEPS="\$(LIBRARY) $LIBRARY_DEPS"
     fi
     # Link Python program to the shared library
-    LINK_PYTHON_OBJS='$(BLDLIBRARY)'
+    if test "$enable_static_libpython_for_interpreter" = "yes"; then
+        LINK_PYTHON_OBJS='$(LIBRARY_OBJS)'
+    else
+        LINK_PYTHON_OBJS='$(BLDLIBRARY)'
+    fi
 else
     if test "$STATIC_LIBPYTHON" = 0; then
         # Build Python needs object files but don't need to build
@@ -2090,10 +2105,32 @@ case "$ac_cv_cc_name" in
     fi
     ;;
   gcc)
-    AX_CHECK_COMPILE_FLAG(
-        [-fprofile-update=atomic],
-        [PGO_PROF_GEN_FLAG="-fprofile-generate -fprofile-update=atomic"],
-        [PGO_PROF_GEN_FLAG="-fprofile-generate"])
+    # Check for 32-bit x86 ISA
+    AC_CACHE_CHECK([for i686], [ac_cv_i686], [
+        AC_COMPILE_IFELSE([
+            AC_LANG_PROGRAM([
+                #ifdef __i386__
+                #  error "i386"
+                #endif
+            ], [])
+        ],[ac_cv_i686=no],[ac_cv_i686=yes])
+    ])
+
+    PGO_PROF_GEN_FLAG="-fprofile-generate"
+
+    # Use -fprofile-update=atomic to fix a random GCC internal error on PGO
+    # build (gh-145801) caused by corruption of profile data (.gcda files).
+    #
+    # gh-148535: On i686, using -fprofile-update=atomic makes the PGO build
+    # way slower (up to 47x slower). So far, the GCC internal error on PGO
+    # build was not seen on i686, so don't use this flag on i686.
+    AS_VAR_IF([ac_cv_i686], [no], [
+        AX_CHECK_COMPILE_FLAG(
+            [-fprofile-update=atomic],
+            [PGO_PROF_GEN_FLAG="$PGO_PROF_GEN_FLAG -fprofile-update=atomic"],
+            [])
+    ])
+
     PGO_PROF_USE_FLAG="-fprofile-use -fprofile-correction"
     LLVM_PROF_MERGER="true"
     LLVM_PROF_FILE=""
@@ -2161,11 +2198,14 @@ if test "$Py_BOLT" = 'true' ; then
   fi
 fi
 
-dnl Enable BOLT of libpython if built.
+dnl Enable BOLT of libpython if built and used by the python3 binary.
+dnl (If it is built but not used, we cannot profile it.)
 AC_SUBST([BOLT_BINARIES])
 BOLT_BINARIES='$(BUILDPYTHON)'
 AS_VAR_IF([enable_shared], [yes], [
-  BOLT_BINARIES="${BOLT_BINARIES} \$(INSTSONAME)"
+  AS_VAR_IF([enable_static_libpython_for_interpreter], [no], [
+    BOLT_BINARIES="${BOLT_BINARIES} \$(INSTSONAME)"
+  ])
 ])
 
 AC_ARG_VAR(
@@ -2810,7 +2850,7 @@ AS_VAR_IF([jit_flags],
           [],
           [AS_VAR_APPEND([CFLAGS_NODIST], [" $jit_flags"])
            AS_VAR_SET([REGEN_JIT_COMMAND],
-                      ["\$(PYTHON_FOR_REGEN) \$(srcdir)/Tools/jit/build.py ${ARCH_TRIPLES:-$host} --output-dir . --pyconfig-dir . --cflags=\"$CFLAGS_JIT\" --llvm-version=\"$LLVM_VERSION\""])
+                      ["\$(PYTHON_FOR_REGEN) \$(srcdir)/Tools/jit/build.py ${ARCH_TRIPLES:-$host} --output-dir . --pyconfig-dir . --cflags=\"$CFLAGS_JIT\" --llvm-version=\"$LLVM_VERSION\" --llvm-tools-install-dir=\"$LLVM_TOOLS_INSTALL_DIR\""])
            AS_VAR_IF([Py_DEBUG],
                      [true],
                      [AS_VAR_APPEND([REGEN_JIT_COMMAND], [" --debug"])],
@@ -8217,7 +8257,7 @@ AC_SUBST([LIBHACL_BLAKE2_SIMD256_OBJS])
 # HACL*-based cryptographic primitives
 
 AC_MSG_CHECKING([for HACL* library linking type])
-if test "$ac_sys_system" = "WASI"; then
+if test "$ac_sys_system" = "WASI" || test "$MODULE_BUILDTYPE" = "static"; then
   LIBHACL_LDEPS_LIBTYPE=STATIC
   AC_MSG_RESULT([static])
 else
@@ -8344,33 +8384,52 @@ PY_STDLIB_MOD([xxlimited_35], [test "$TEST_MODULES" = yes], [test "$ac_cv_func_d
 
 # Determine JIT stencils header files based on target platform
 JIT_STENCILS_H=""
-AS_VAR_IF([enable_experimental_jit], [no],
+JIT_SHIM_O=""
+JIT_SHIM_BUILD_O=""
+AS_VAR_IF([jit_flags],
   [],
-  [case "$host" in
-    aarch64-apple-darwin*)
-      JIT_STENCILS_H="jit_stencils-aarch64-apple-darwin.h"
-      ;;
-    x86_64-apple-darwin*)
-      JIT_STENCILS_H="jit_stencils-x86_64-apple-darwin.h"
-      ;;
-    aarch64-pc-windows-msvc)
-      JIT_STENCILS_H="jit_stencils-aarch64-pc-windows-msvc.h"
-      ;;
-    i686-pc-windows-msvc)
-      JIT_STENCILS_H="jit_stencils-i686-pc-windows-msvc.h"
-      ;;
-    x86_64-pc-windows-msvc)
-      JIT_STENCILS_H="jit_stencils-x86_64-pc-windows-msvc.h"
-      ;;
-    aarch64-*-linux-gnu)
-      JIT_STENCILS_H="jit_stencils-aarch64-unknown-linux-gnu.h"
-      ;;
-    x86_64-*-linux-gnu)
-      JIT_STENCILS_H="jit_stencils-x86_64-unknown-linux-gnu.h"
-      ;;
-  esac])
+  [],
+  [if test "${enable_universalsdk}" && test "$UNIVERSAL_ARCHS" = "universal2"; then
+     JIT_STENCILS_H="jit_stencils-aarch64-apple-darwin.h jit_stencils-x86_64-apple-darwin.h"
+     JIT_SHIM_O="jit_shim-universal2-apple-darwin.o"
+     JIT_SHIM_BUILD_O="jit_shim-aarch64-apple-darwin.o jit_shim-x86_64-apple-darwin.o"
+   else
+     case "$host" in
+       aarch64-apple-darwin*)
+         JIT_STENCILS_H="jit_stencils-aarch64-apple-darwin.h"
+         JIT_SHIM_O="jit_shim-aarch64-apple-darwin.o"
+         ;;
+       x86_64-apple-darwin*)
+         JIT_STENCILS_H="jit_stencils-x86_64-apple-darwin.h"
+         JIT_SHIM_O="jit_shim-x86_64-apple-darwin.o"
+         ;;
+       aarch64-pc-windows-msvc)
+         JIT_STENCILS_H="jit_stencils-aarch64-pc-windows-msvc.h"
+         JIT_SHIM_O="jit_shim-aarch64-pc-windows-msvc.o"
+         ;;
+       i686-pc-windows-msvc)
+         JIT_STENCILS_H="jit_stencils-i686-pc-windows-msvc.h"
+         JIT_SHIM_O="jit_shim-i686-pc-windows-msvc.o"
+         ;;
+       x86_64-pc-windows-msvc)
+         JIT_STENCILS_H="jit_stencils-x86_64-pc-windows-msvc.h"
+         JIT_SHIM_O="jit_shim-x86_64-pc-windows-msvc.o"
+         ;;
+       aarch64-*-linux-gnu)
+         JIT_STENCILS_H="jit_stencils-aarch64-unknown-linux-gnu.h"
+         JIT_SHIM_O="jit_shim-aarch64-unknown-linux-gnu.o"
+         ;;
+       x86_64-*-linux-gnu)
+         JIT_STENCILS_H="jit_stencils-x86_64-unknown-linux-gnu.h"
+         JIT_SHIM_O="jit_shim-x86_64-unknown-linux-gnu.o"
+         ;;
+     esac
+     JIT_SHIM_BUILD_O="$JIT_SHIM_O"
+   fi])
 
 AC_SUBST([JIT_STENCILS_H])
+AC_SUBST([JIT_SHIM_O])
+AC_SUBST([JIT_SHIM_BUILD_O])
 
 # substitute multiline block, must come after last PY_STDLIB_MOD()
 AC_SUBST([MODULE_BLOCK])

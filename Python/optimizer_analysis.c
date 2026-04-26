@@ -119,14 +119,15 @@ static int
 get_mutations(PyObject* dict) {
     assert(PyDict_CheckExact(dict));
     PyDictObject *d = (PyDictObject *)dict;
-    return (d->_ma_watcher_tag >> DICT_MAX_WATCHERS) & ((1 << DICT_WATCHED_MUTATION_BITS)-1);
+    uint64_t tag = FT_ATOMIC_LOAD_UINT64_RELAXED(d->_ma_watcher_tag);
+    return (tag >> DICT_MAX_WATCHERS) & ((1 << DICT_WATCHED_MUTATION_BITS) - 1);
 }
 
 static void
 increment_mutations(PyObject* dict) {
     assert(PyDict_CheckExact(dict));
     PyDictObject *d = (PyDictObject *)dict;
-    d->_ma_watcher_tag += (1 << DICT_MAX_WATCHERS);
+    FT_ATOMIC_ADD_UINT64(d->_ma_watcher_tag, (1 << DICT_MAX_WATCHERS));
 }
 
 /* The first two dict watcher IDs are reserved for CPython,
@@ -256,6 +257,7 @@ add_op(JitOptContext *ctx, _PyUOpInstruction *this_instr,
 #define sym_get_probable_type _Py_uop_sym_get_probable_type
 #define sym_matches_type _Py_uop_sym_matches_type
 #define sym_matches_type_version _Py_uop_sym_matches_type_version
+#define sym_get_type_version _Py_uop_sym_get_type_version
 #define sym_set_null(SYM) _Py_uop_sym_set_null(ctx, SYM)
 #define sym_set_non_null(SYM) _Py_uop_sym_set_non_null(ctx, SYM)
 #define sym_set_type(SYM, TYPE) _Py_uop_sym_set_type(ctx, SYM, TYPE)
@@ -282,8 +284,6 @@ add_op(JitOptContext *ctx, _PyUOpInstruction *this_instr,
 #define sym_get_probable_func_code _Py_uop_sym_get_probable_func_code
 #define sym_get_probable_value _Py_uop_sym_get_probable_value
 #define sym_set_stack_depth(DEPTH, SP) _Py_uop_sym_set_stack_depth(ctx, DEPTH, SP)
-#define sym_get_func_version _Py_uop_sym_get_func_version
-#define sym_set_func_version _Py_uop_sym_set_func_version
 
 /* Comparison oparg masks */
 #define COMPARE_LT_MASK 2
@@ -397,8 +397,10 @@ lookup_attr(JitOptContext *ctx, _PyBloomFilter *dependencies, _PyUOpInstruction 
             if (suffix != _NOP) {
                 ADD_OP(suffix, 2, 0);
             }
-            PyType_Watch(TYPE_WATCHER_ID, (PyObject *)type);
-            _Py_BloomFilter_Add(dependencies, type);
+            if ((type->tp_flags & Py_TPFLAGS_IMMUTABLETYPE) == 0) {
+                PyType_Watch(TYPE_WATCHER_ID, (PyObject *)type);
+                _Py_BloomFilter_Add(dependencies, type);
+            }
             return sym_new_const(ctx, lookup);
         }
     }
@@ -466,10 +468,13 @@ lookup_super_attr(JitOptContext *ctx, _PyBloomFilter *dependencies,
     if (suffix != _NOP) {
         ADD_OP(suffix, 2, 0);
     }
-    PyType_Watch(TYPE_WATCHER_ID, (PyObject *)su_type);
-    _Py_BloomFilter_Add(dependencies, su_type);
-    PyType_Watch(TYPE_WATCHER_ID, (PyObject *)obj_type);
-    _Py_BloomFilter_Add(dependencies, obj_type);
+    // if obj_type is immutable, then all its superclasses are immutable
+    if ((obj_type->tp_flags & Py_TPFLAGS_IMMUTABLETYPE) == 0) {
+        PyType_Watch(TYPE_WATCHER_ID, (PyObject *)su_type);
+        _Py_BloomFilter_Add(dependencies, su_type);
+        PyType_Watch(TYPE_WATCHER_ID, (PyObject *)obj_type);
+        _Py_BloomFilter_Add(dependencies, obj_type);
+    }
     return sym_new_const_steal(ctx, lookup);
 }
 
@@ -677,9 +682,7 @@ const uint16_t op_without_push[MAX_UOP_ID + 1] = {
     [_LOAD_FAST] = _NOP,
     [_LOAD_FAST_BORROW] = _NOP,
     [_LOAD_SMALL_INT] = _NOP,
-    [_POP_TOP_LOAD_CONST_INLINE] = _POP_TOP,
-    [_POP_TOP_LOAD_CONST_INLINE_BORROW] = _POP_TOP,
-    [_POP_TWO_LOAD_CONST_INLINE_BORROW] = _POP_TWO,
+    [_PUSH_NULL] = _NOP,
 };
 
 const bool op_skip[MAX_UOP_ID + 1] = {
@@ -695,16 +698,6 @@ const uint16_t op_without_pop[MAX_UOP_ID + 1] = {
     [_POP_TOP_INT] = _NOP,
     [_POP_TOP_FLOAT] = _NOP,
     [_POP_TOP_UNICODE] = _NOP,
-    [_POP_TOP_LOAD_CONST_INLINE] = _LOAD_CONST_INLINE,
-    [_POP_TOP_LOAD_CONST_INLINE_BORROW] = _LOAD_CONST_INLINE_BORROW,
-    [_POP_TWO] = _POP_TOP,
-    [_POP_TWO_LOAD_CONST_INLINE_BORROW] = _POP_TOP_LOAD_CONST_INLINE_BORROW,
-    [_POP_CALL_TWO] = _POP_CALL_ONE,
-    [_POP_CALL_ONE] = _POP_CALL,
-};
-
-const uint16_t op_without_pop_null[MAX_UOP_ID + 1] = {
-    [_POP_CALL] = _POP_TOP,
 };
 
 
@@ -739,10 +732,10 @@ remove_unneeded_uops(_PyUOpInstruction *buffer, int buffer_size)
             default:
             {
                 // Cancel out pushes and pops, repeatedly. So:
-                //     _LOAD_FAST + _POP_TWO_LOAD_CONST_INLINE_BORROW + _POP_TOP
+                //     _LOAD_FAST + _POP_TOP + _POP_TOP + _LOAD_CONST_INLINE_BORROW + _POP_TOP
                 // ...becomes:
-                //     _NOP + _POP_TOP + _NOP
-                while (op_without_pop[opcode] || op_without_pop_null[opcode]) {
+                //     _NOP + _NOP + _POP_TOP + _NOP + _NOP
+                while (op_without_pop[opcode]) {
                     _PyUOpInstruction *last = &buffer[pc - 1];
                     while (op_skip[last->opcode]) {
                         last--;
@@ -754,14 +747,6 @@ remove_unneeded_uops(_PyUOpInstruction *buffer, int buffer_size)
                             opcode = last->opcode;
                             pc = (int)(last - buffer);
                         }
-                    }
-                    else if (last->opcode == _PUSH_NULL) {
-                        // Handle _POP_CALL separately.
-                        // This looks for a preceding _PUSH_NULL instruction and
-                        // simplifies to _POP_TOP.
-                        last->opcode = _NOP;
-                        opcode = buffer[pc].opcode = op_without_pop_null[opcode];
-                        assert(opcode);
                     }
                     else {
                         break;

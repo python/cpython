@@ -156,6 +156,9 @@
     <ClInclude Include="..\Include\py_curses.h">
       <Filter>Include</Filter>
     </ClInclude>
+    <ClInclude Include="..\Include\pyabi.h">
+      <Filter>Include</Filter>
+    </ClInclude>
     <ClInclude Include="..\Include\pyatomic.h">
       <Filter>Include</Filter>
     </ClInclude>

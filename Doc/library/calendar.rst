@@ -54,13 +54,13 @@ interpreted as prescribed by the ISO 8601 standard.  Year 0 is 1 BC, year -1 is
 
    .. method:: setfirstweekday(firstweekday)
 
-      Set the first weekday to *firstweekday*, passed as an :class:`int` (0--6)
+      Set the first weekday to *firstweekday*, passed as an :class:`int` (0--6).
 
       Identical to setting the :attr:`~Calendar.firstweekday` property.
 
    .. method:: iterweekdays()
 
-      Return an iterator for the week day numbers that will be used for one
+      Return an iterator for the weekday numbers that will be used for one
       week.  The first value from the iterator will be the same as the value of
       the :attr:`~Calendar.firstweekday` property.
 
@@ -86,7 +86,7 @@ interpreted as prescribed by the ISO 8601 standard.  Year 0 is 1 BC, year -1 is
       Return an iterator for the month *month* in the year *year* similar to
       :meth:`itermonthdates`, but not restricted by the :class:`datetime.date`
       range. Days returned will be tuples consisting of a day of the month
-      number and a week day number.
+      number and a weekday number.
 
 
    .. method:: itermonthdays3(year, month)
@@ -408,7 +408,7 @@ For simple text calendars this module provides the following functions.
 
 .. function:: monthrange(year, month)
 
-   Returns weekday of first day of the month and number of days in month,  for the
+   Returns weekday of first day of the month and number of days in month, for the
    specified *year* and *month*.
 
 
@@ -446,7 +446,7 @@ For simple text calendars this module provides the following functions.
    An unrelated but handy function that takes a time tuple such as returned by
    the :func:`~time.gmtime` function in the :mod:`time` module, and returns the
    corresponding Unix timestamp value, assuming an epoch of 1970, and the POSIX
-   encoding.  In fact, :func:`time.gmtime` and :func:`timegm` are each others'
+   encoding.  In fact, :func:`time.gmtime` and :func:`timegm` are each other's
    inverse.
 
 
@@ -580,8 +580,13 @@ The :mod:`!calendar` module defines the following exceptions:
 
 .. exception:: IllegalMonthError(month)
 
-   A subclass of :exc:`ValueError`,
+   A subclass of :exc:`ValueError` and :exc:`IndexError`,
    raised when the given month number is outside of the range 1-12 (inclusive).
+
+   .. versionchanged:: 3.12
+      :exc:`IllegalMonthError` is now also a subclass of
+      :exc:`ValueError`. New code should avoid catching
+      :exc:`IndexError`.
 
    .. attribute:: month
 

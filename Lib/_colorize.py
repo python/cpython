@@ -1,3 +1,4 @@
+import builtins
 import os
 import sys
 
@@ -189,6 +190,17 @@ class Argparse(ThemeSection):
 
 
 @dataclass(frozen=True, kw_only=True)
+class Ast(ThemeSection):
+    node: str = ANSIColors.CYAN
+    field: str = ANSIColors.BLUE
+    attribute: str = ANSIColors.GREY
+    string: str = ANSIColors.GREEN
+    number: str = ANSIColors.YELLOW
+    keyword: str = ANSIColors.BOLD_BLUE
+    reset: str = ANSIColors.RESET
+
+
+@dataclass(frozen=True, kw_only=True)
 class Calendar(ThemeSection):
     header: str = ANSIColors.BOLD
     highlight: str = ANSIColors.BLACK + ANSIColors.BACKGROUND_YELLOW
@@ -210,25 +222,25 @@ class Difflib(ThemeSection):
 @dataclass(frozen=True, kw_only=True)
 class FancyCompleter(ThemeSection):
     # functions and methods
-    function: str = ANSIColors.BOLD_BLUE
-    builtin_function_or_method: str = ANSIColors.BOLD_BLUE
-    method: str = ANSIColors.BOLD_CYAN
-    method_wrapper: str = ANSIColors.BOLD_CYAN
-    wrapper_descriptor: str = ANSIColors.BOLD_CYAN
-    method_descriptor: str = ANSIColors.BOLD_CYAN
+    function: builtins.str = ANSIColors.BOLD_BLUE
+    builtin_function_or_method: builtins.str = ANSIColors.BOLD_BLUE
+    method: builtins.str = ANSIColors.BOLD_CYAN
+    method_wrapper: builtins.str = ANSIColors.BOLD_CYAN
+    wrapper_descriptor: builtins.str = ANSIColors.BOLD_CYAN
+    method_descriptor: builtins.str = ANSIColors.BOLD_CYAN
 
     # numbers
-    int: str = ANSIColors.BOLD_YELLOW
-    float: str = ANSIColors.BOLD_YELLOW
-    complex: str = ANSIColors.BOLD_YELLOW
-    bool: str = ANSIColors.BOLD_YELLOW
+    int: builtins.str = ANSIColors.BOLD_YELLOW
+    float: builtins.str = ANSIColors.BOLD_YELLOW
+    complex: builtins.str = ANSIColors.BOLD_YELLOW
+    bool: builtins.str = ANSIColors.BOLD_YELLOW
 
     # others
-    type: str = ANSIColors.BOLD_MAGENTA
-    module: str = ANSIColors.CYAN
-    NoneType: str = ANSIColors.GREY
-    bytes: str = ANSIColors.BOLD_GREEN
-    str: str = ANSIColors.BOLD_GREEN
+    type: builtins.str = ANSIColors.BOLD_MAGENTA
+    module: builtins.str = ANSIColors.CYAN
+    NoneType: builtins.str = ANSIColors.GREY
+    bytes: builtins.str = ANSIColors.BOLD_GREEN
+    str: builtins.str = ANSIColors.BOLD_GREEN
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -383,6 +395,14 @@ class Timeit(ThemeSection):
 
 
 @dataclass(frozen=True, kw_only=True)
+class Tokenize(ThemeSection):
+    whitespace: str = ANSIColors.GREY
+    error: str = ANSIColors.BOLD_RED
+    position: str = ANSIColors.GREY
+    delimiter: str = ANSIColors.RESET
+
+
+@dataclass(frozen=True, kw_only=True)
 class Traceback(ThemeSection):
     type: str = ANSIColors.BOLD_MAGENTA
     message: str = ANSIColors.MAGENTA
@@ -412,6 +432,7 @@ class Theme:
     below.
     """
     argparse: Argparse = field(default_factory=Argparse)
+    ast: Ast = field(default_factory=Ast)
     calendar: Calendar = field(default_factory=Calendar)
     difflib: Difflib = field(default_factory=Difflib)
     fancycompleter: FancyCompleter = field(default_factory=FancyCompleter)
@@ -419,6 +440,7 @@ class Theme:
     live_profiler: LiveProfiler = field(default_factory=LiveProfiler)
     syntax: Syntax = field(default_factory=Syntax)
     timeit: Timeit = field(default_factory=Timeit)
+    tokenize: Tokenize = field(default_factory=Tokenize)
     traceback: Traceback = field(default_factory=Traceback)
     unittest: Unittest = field(default_factory=Unittest)
 
@@ -426,6 +448,7 @@ class Theme:
         self,
         *,
         argparse: Argparse | None = None,
+        ast: Ast | None = None,
         calendar: Calendar | None = None,
         difflib: Difflib | None = None,
         fancycompleter: FancyCompleter | None = None,
@@ -433,6 +456,7 @@ class Theme:
         live_profiler: LiveProfiler | None = None,
         syntax: Syntax | None = None,
         timeit: Timeit | None = None,
+        tokenize: Tokenize | None = None,
         traceback: Traceback | None = None,
         unittest: Unittest | None = None,
     ) -> Self:
@@ -443,6 +467,7 @@ class Theme:
         """
         return type(self)(
             argparse=argparse or self.argparse,
+            ast=ast or self.ast,
             calendar=calendar or self.calendar,
             difflib=difflib or self.difflib,
             fancycompleter=fancycompleter or self.fancycompleter,
@@ -450,6 +475,7 @@ class Theme:
             live_profiler=live_profiler or self.live_profiler,
             syntax=syntax or self.syntax,
             timeit=timeit or self.timeit,
+            tokenize=tokenize or self.tokenize,
             traceback=traceback or self.traceback,
             unittest=unittest or self.unittest,
         )
@@ -464,6 +490,7 @@ class Theme:
         """
         return cls(
             argparse=Argparse.no_colors(),
+            ast=Ast.no_colors(),
             calendar=Calendar.no_colors(),
             difflib=Difflib.no_colors(),
             fancycompleter=FancyCompleter.no_colors(),
@@ -471,6 +498,7 @@ class Theme:
             live_profiler=LiveProfiler.no_colors(),
             syntax=Syntax.no_colors(),
             timeit=Timeit.no_colors(),
+            tokenize=Tokenize.no_colors(),
             traceback=Traceback.no_colors(),
             unittest=Unittest.no_colors(),
         )

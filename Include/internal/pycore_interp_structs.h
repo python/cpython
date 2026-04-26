@@ -449,6 +449,9 @@ typedef struct _PyOptimizationConfig {
     uint16_t side_exit_initial_value;
     uint16_t side_exit_initial_backoff;
 
+    // Trace fitness thresholds
+    uint16_t fitness_initial;
+
     // Optimization flags
     bool specialization_enabled;
     bool uops_optimize_enabled;
@@ -927,6 +930,7 @@ struct _is {
     PyObject *builtins_copy;
     // Initialized to _PyEval_EvalFrameDefault().
     _PyFrameEvalFunction eval_frame;
+    int eval_frame_allow_specialization;
 
     PyFunction_WatchCallback func_watchers[FUNC_MAX_WATCHERS];
     // One bit is set for each non-NULL entry in func_watchers
