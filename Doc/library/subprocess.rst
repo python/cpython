@@ -448,6 +448,16 @@ underlying :class:`Popen` interface can be used directly.
    that returned a non-zero exit status. This is similar to the shell's
    ``pipefail`` behavior.
 
+   :exc:`PipelineError` is a *sibling* of :exc:`CalledProcessError`, not a
+   subclass: a pipeline carries N commands and N return codes, so there is
+   no single ``returncode`` or ``cmd`` value an existing
+   ``except CalledProcessError:`` handler could be shown without being
+   misleading.  To handle both single-command and pipeline failures with
+   one ``except`` clause, catch :exc:`SubprocessError` (which is also the
+   common base of :exc:`TimeoutExpired`).  Retry helpers and decorators
+   that match on :exc:`CalledProcessError` will not catch pipeline
+   failures by default.
+
    .. attribute:: commands
 
       List of commands that were used in the pipeline.
@@ -1606,24 +1616,32 @@ Replacing shell pipeline
 
 becomes::
 
+   result = run_pipeline(["dmesg"], ["grep", "hda"],
+                         capture_output=True, check=True)
+   output = result.stdout
+
+:func:`run_pipeline` connects the stages, closes the parent's copies of the
+intermediate pipe ends, waits for every process, and (with ``check=True``)
+raises :exc:`PipelineError` if *any* stage fails -- equivalent to the
+shell's ``set -o pipefail`` without needing a shell.
+
+If you need to read the final stage's output incrementally rather than
+waiting for the whole pipeline to finish (for example, streaming a large
+decompressed file), chain :class:`Popen` instances directly::
+
    p1 = Popen(["dmesg"], stdout=PIPE)
    p2 = Popen(["grep", "hda"], stdin=p1.stdout, stdout=PIPE)
    p1.stdout.close()  # Allow p1 to receive a SIGPIPE if p2 exits.
-   output = p2.communicate()[0]
+   for line in p2.stdout:
+       ...
+   p2.wait()
+   p1.wait()
+   if p1.returncode or p2.returncode:
+       ...  # handle failure in either stage
 
-The ``p1.stdout.close()`` call after starting the p2 is important in order for
-p1 to receive a SIGPIPE if p2 exits before p1.
-
-Alternatively, for trusted input, the shell's own pipeline support may still
-be used directly:
-
-.. code-block:: bash
-
-   output=$(dmesg | grep hda)
-
-becomes::
-
-   output = check_output("dmesg | grep hda", shell=True)
+The ``p1.stdout.close()`` call after starting p2 is important in order for
+p1 to receive a SIGPIPE if p2 exits before p1.  Each process must be
+waited on and its return code checked to detect failure in any stage.
 
 
 Replacing :func:`os.system`
