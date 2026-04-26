@@ -59,15 +59,6 @@ The following exception classes are defined in the :mod:`!email.errors` module:
    headers.
 
 
-.. exception:: InvalidMailboxError()
-
-   Raised when serializing a message with an address header that contains
-   a mailbox incompatible with the policy in use.
-   (See :attr:`email.policy.EmailPolicy.utf8`.)
-
-   .. versionadded:: 3.15
-
-
 .. exception:: MessageDefect()
 
    This is the base class for all defects found when parsing email messages.

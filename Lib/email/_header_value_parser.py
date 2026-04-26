@@ -157,10 +157,7 @@ class TokenList(list):
     def startswith_fws(self):
         return self[0].startswith_fws()
 
-    @property
-    def as_ew_allowed(self):
-        """True if all top level tokens of this part may be RFC2047 encoded."""
-        return all(part.as_ew_allowed for part in self)
+    as_ew_allowed = True
 
     @property
     def comments(self):
@@ -429,6 +426,7 @@ class NameAddr(TokenList):
 class AngleAddr(TokenList):
 
     token_type = 'angle-addr'
+    as_ew_allowed = False
 
     @property
     def local_part(self):
@@ -847,26 +845,22 @@ class ParameterizedHeaderValue(TokenList):
 
 class ContentType(ParameterizedHeaderValue):
     token_type = 'content-type'
-    as_ew_allowed = False
     maintype = 'text'
     subtype = 'plain'
 
 
 class ContentDisposition(ParameterizedHeaderValue):
     token_type = 'content-disposition'
-    as_ew_allowed = False
     content_disposition = None
 
 
 class ContentTransferEncoding(TokenList):
     token_type = 'content-transfer-encoding'
-    as_ew_allowed = False
     cte = '7bit'
 
 
 class HeaderLabel(TokenList):
     token_type = 'header-label'
-    as_ew_allowed = False
 
 
 class MsgID(TokenList):
@@ -2838,13 +2832,68 @@ def _steal_trailing_WSP_if_exists(lines):
 
 
 def _refold_parse_tree(parse_tree, *, policy):
-    """Return string of contents of parse_tree folded according to RFC rules.
-
-    """
     # max_line_length 0/None means no limit, ie: infinitely long.
     maxlen = policy.max_line_length or sys.maxsize
     encoding = 'utf-8' if policy.utf8 else 'us-ascii'
     lines = ['']  # Folded lines to be output
+    if parse_tree.as_ew_allowed:
+        _refold_with_ew(parse_tree, lines, maxlen, encoding, policy=policy)
+    else:
+        _refold_without_ew(parse_tree, lines, maxlen, encoding, policy=policy)
+    return policy.linesep.join(lines) + policy.linesep
+
+def _refold_without_ew(parse_tree, lines, maxlen, encoding, *, policy):
+    parts = list(parse_tree)
+    while parts:
+        part = parts.pop(0)
+        tstr = str(part)
+        try:
+            tstr.encode(encoding)
+        except UnicodeEncodeError:
+            if any(isinstance(x, errors.UndecodableBytesDefect)
+                   for x in part.all_defects):
+                # There is garbage data from parsing a message in binary mode,
+                # just pass it through.  Not good, but the best we can do.
+                pass
+            elif policy.utf8:
+                # If this happens, it's a programmer error.
+                raise
+            else:
+                raise errors.HeaderWriteError(
+                    f"Non-ASCII {part.token_type} '{part}' is invalid"
+                    " under current policy setting (utf8=False)"
+                )
+        if len(tstr) <= maxlen - len(lines[-1]):
+            lines[-1] += tstr
+            continue
+        # This part is too long to fit.  The RFC wants us to break at
+        # "major syntactic breaks", so unless we don't consider this
+        # to be one, check if it will fit on the next line by itself.
+        if (part.syntactic_break and
+                len(tstr) + 1 <= maxlen):
+            newline = _steal_trailing_WSP_if_exists(lines)
+            if newline or part.startswith_fws():
+                lines.append(newline + tstr)
+                continue
+        if not hasattr(part, 'encode'):
+            # It's not a terminal, try folding the subparts.
+            newparts = list(part)
+            parts = newparts + parts
+            continue
+        # We can't figure out how to wrap, it, so give up.
+        newline = _steal_trailing_WSP_if_exists(lines)
+        if newline or part.startswith_fws():
+            lines.append(newline + tstr)
+        else:
+            # We can't fold it onto the next line either...
+            lines[-1] += tstr
+    return
+
+
+def _refold_with_ew(parse_tree, lines, maxlen, encoding, *, policy):
+    """Return string of contents of parse_tree folded according to RFC rules.
+
+    """
     last_word_is_ew = False
     last_ew = None  # if there is an encoded word in the last line of lines,
                     # points to the encoded word's first character
@@ -2885,7 +2934,10 @@ def _refold_parse_tree(parse_tree, *, policy):
             want_encoding = True
 
         if want_encoding and not wrap_as_ew_blocked:
-            if not part.as_ew_allowed:
+            if any(
+                    not x.as_ew_allowed for x in part
+                    if hasattr(x, 'as_ew_allowed')
+                ):
                 want_encoding = False
                 last_ew = None
                 if part.syntactic_break:
@@ -2966,6 +3018,8 @@ def _refold_parse_tree(parse_tree, *, policy):
                     [ValueTerminal(make_quoted_pairs(p), 'ptext')
                      for p in newparts] +
                     [ValueTerminal('"', 'ptext')])
+                _refold_without_ew(newparts, lines, maxlen, encoding, policy=policy)
+                continue
             if part.token_type == 'comment':
                 newparts = (
                     [ValueTerminal('(', 'ptext')] +
@@ -2993,7 +3047,7 @@ def _refold_parse_tree(parse_tree, *, policy):
             lines[-1] += tstr
         last_word_is_ew = last_word_is_ew and not bool(tstr.strip(_WSP))
 
-    return policy.linesep.join(lines) + policy.linesep
+    return
 
 def _fold_as_ew(to_encode, lines, maxlen, last_ew, ew_combine_allowed, charset, last_word_is_ew):
     """Fold string to_encode into lines as encoded word, combining if allowed.
