@@ -362,84 +362,6 @@ def _translate_newlines(data, encoding, errors):
     return data.replace("\r\n", "\n").replace("\r", "\n")
 
 
-def _communicate_io_posix(selector, stdin, input_view, input_offset,
-                          output_buffers, endtime, *, close_on_eof=False):
-    """
-    Low-level POSIX I/O multiplexing loop.
-
-    This is the common core used by both _communicate_streams() and
-    Popen._communicate(). It handles the select loop for reading/writing
-    but does not manage stream lifecycle or raise timeout exceptions.
-
-    Args:
-        selector: A _PopenSelector with streams already registered
-        stdin: Writable file object for input, or None
-        input_view: memoryview of input bytes, or None
-        input_offset: Starting offset into input_view (for resume support)
-        output_buffers: Dict {file_object: list} to append read chunks to
-        endtime: Deadline timestamp, or None for no timeout
-        close_on_eof: If True, close output streams immediately when they
-            EOF rather than leaving them open for the caller to close.
-            Used by Popen._communicate() to match its historical behavior
-            of releasing fds as soon as the child closes the corresponding
-            pipe.
-
-    Returns:
-        (new_input_offset, completed)
-        - new_input_offset: How many bytes of input were written
-        - completed: True if all I/O finished, False if timed out
-
-    Note:
-        - Closes output streams on EOF only if close_on_eof=True
-        - Does NOT raise TimeoutExpired (caller handles)
-        - Appends to output_buffers lists in place
-    """
-    stdin_fd = stdin.fileno() if stdin else None
-
-    while selector.get_map():
-        remaining = _deadline_remaining(endtime)
-        if remaining is not None and remaining <= 0:
-            return (input_offset, False)  # Timed out
-
-        ready = selector.select(remaining)
-
-        # Check timeout after select (may have woken spuriously)
-        if endtime is not None and _time() > endtime:
-            return (input_offset, False)  # Timed out
-
-        for key, events in ready:
-            if key.fd == stdin_fd:
-                chunk = input_view[input_offset:input_offset + _PIPE_BUF]
-                try:
-                    input_offset += os.write(key.fd, chunk)
-                except BrokenPipeError:
-                    selector.unregister(key.fd)
-                    try:
-                        stdin.close()
-                    except BrokenPipeError:
-                        pass
-                else:
-                    if input_offset >= len(input_view):
-                        selector.unregister(key.fd)
-                        try:
-                            stdin.close()
-                        except BrokenPipeError:
-                            pass
-            elif key.fileobj in output_buffers:
-                data = os.read(key.fd, 32768)
-                if not data:
-                    selector.unregister(key.fileobj)
-                    if close_on_eof:
-                        try:
-                            key.fileobj.close()
-                        except OSError:
-                            pass
-                else:
-                    output_buffers[key.fileobj].append(data)
-
-    return (input_offset, True)  # Completed
-
-
 def _communicate_streams(stdin=None, input_data=None, read_streams=None,
                          timeout=None, cmd_for_timeout=None,
                          stdout_stream=None, stderr_stream=None):
@@ -571,9 +493,93 @@ if _mswindows:
             if t.is_alive():
                 _raise_timeout()
 
-        return {stream: (buf[0] if buf else b'') for stream, buf in buffers.items()}
+        results = {stream: (buf[0] if buf else b'')
+                   for stream, buf in buffers.items()}
+        for stream in read_streams:
+            try:
+                stream.close()
+            except OSError:
+                pass
+        return results
 
 else:
+    def _communicate_io_posix(selector, stdin, input_view, input_offset,
+                              output_buffers, endtime, *, close_on_eof=False):
+        """
+        Low-level POSIX I/O multiplexing loop.
+
+        This is the common core used by both _communicate_streams() and
+        Popen._communicate(). It handles the select loop for reading/writing
+        but does not manage stream lifecycle or raise timeout exceptions.
+
+        Args:
+            selector: A _PopenSelector with streams already registered
+            stdin: Writable file object for input, or None
+            input_view: memoryview of input bytes, or None
+            input_offset: Starting offset into input_view (for resume support)
+            output_buffers: Dict {file_object: list} to append read chunks to
+            endtime: Deadline timestamp, or None for no timeout
+            close_on_eof: If True, close output streams immediately when they
+                EOF rather than leaving them open for the caller to close.
+                Used by Popen._communicate() to match its historical behavior
+                of releasing fds as soon as the child closes the corresponding
+                pipe.
+
+        Returns:
+            (new_input_offset, completed)
+            - new_input_offset: How many bytes of input were written
+            - completed: True if all I/O finished, False if timed out
+
+        Note:
+            - Closes output streams on EOF only if close_on_eof=True
+            - Does NOT raise TimeoutExpired (caller handles)
+            - Appends to output_buffers lists in place
+        """
+        stdin_fd = stdin.fileno() if stdin else None
+
+        while selector.get_map():
+            remaining = _deadline_remaining(endtime)
+            if remaining is not None and remaining <= 0:
+                return (input_offset, False)  # Timed out
+
+            ready = selector.select(remaining)
+
+            # Check timeout after select (may have woken spuriously)
+            if endtime is not None and _time() > endtime:
+                return (input_offset, False)  # Timed out
+
+            for key, events in ready:
+                if key.fd == stdin_fd:
+                    chunk = input_view[input_offset:input_offset + _PIPE_BUF]
+                    try:
+                        input_offset += os.write(key.fd, chunk)
+                    except BrokenPipeError:
+                        selector.unregister(key.fd)
+                        try:
+                            stdin.close()
+                        except BrokenPipeError:
+                            pass
+                    else:
+                        if input_offset >= len(input_view):
+                            selector.unregister(key.fd)
+                            try:
+                                stdin.close()
+                            except BrokenPipeError:
+                                pass
+                elif key.fileobj in output_buffers:
+                    data = os.read(key.fd, 32768)
+                    if not data:
+                        selector.unregister(key.fileobj)
+                        if close_on_eof:
+                            try:
+                                key.fileobj.close()
+                            except OSError:
+                                pass
+                    else:
+                        output_buffers[key.fileobj].append(data)
+
+        return (input_offset, True)  # Completed
+
     def _communicate_streams_posix(stdin, input_data, read_streams,
                                    endtime, orig_timeout, cmd_for_timeout,
                                    stdout_stream=None, stderr_stream=None):
