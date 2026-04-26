@@ -538,7 +538,6 @@ def _format_tokens(tokens, *, color=False, exact=False):
     t = theme.tokenize
     token_colors = _get_token_colors(s, t)
     for token in tokens:
-        token_type = token.exact_type if exact else token.type
         token_range = (
             f"{t.position}{token.start[0]}"
             f"{t.delimiter},{t.position}{token.start[1]}"
@@ -547,8 +546,8 @@ def _format_tokens(tokens, *, color=False, exact=False):
             f"{t.delimiter},{t.position}{token.end[1]}"
             f"{t.delimiter}:"
         )
-        token_color = token_colors.get(token_type, s.reset)
-        token_name = tok_name[token_type]
+        token_color = token_colors.get(token.type, s.reset)
+        token_name = tok_name[token.exact_type if exact else token.type]
         visible_range = f"{token.start[0]},{token.start[1]}-{token.end[0]},{token.end[1]}:"
         yield (
             f"{token_range}{' ' * (20 - len(visible_range))}"
