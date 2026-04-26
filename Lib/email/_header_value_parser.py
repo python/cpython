@@ -2858,6 +2858,11 @@ def _refold_parse_tree(parse_tree, *, policy):
         if part is end_ew_not_allowed:
             wrap_as_ew_blocked -= 1
             continue
+        if part.token_type == 'mime-parameters':
+            # Mime parameter folding (using RFC2231) is extra special.
+            _fold_mime_parameters(part, lines, maxlen, encoding)
+            last_word_is_ew = False
+            continue
         tstr = str(part)
         if not want_encoding:
             if part.token_type in ('ptext', 'vtext'):
@@ -2878,12 +2883,6 @@ def _refold_parse_tree(parse_tree, *, policy):
                 # 'charset' property on the policy.
                 charset = 'utf-8'
             want_encoding = True
-
-        if part.token_type == 'mime-parameters':
-            # Mime parameter folding (using RFC2231) is extra special.
-            _fold_mime_parameters(part, lines, maxlen, encoding)
-            last_word_is_ew = False
-            continue
 
         if want_encoding and not wrap_as_ew_blocked:
             if not part.as_ew_allowed:
