@@ -323,7 +323,6 @@ STDOUT = -2
 DEVNULL = -3
 
 
-# Helper function for multiplexed I/O
 def _deadline_remaining(endtime):
     """Calculate remaining time until deadline."""
     if endtime is None:
@@ -410,7 +409,6 @@ def _communicate_io_posix(selector, stdin, input_view, input_offset,
 
         for key, events in ready:
             if key.fd == stdin_fd:
-                # Write chunk to stdin
                 chunk = input_view[input_offset:input_offset + _PIPE_BUF]
                 try:
                     input_offset += os.write(key.fd, chunk)
@@ -428,7 +426,6 @@ def _communicate_io_posix(selector, stdin, input_view, input_offset,
                         except BrokenPipeError:
                             pass
             elif key.fileobj in output_buffers:
-                # Read chunk from output stream
                 data = os.read(key.fd, 32768)
                 if not data:
                     selector.unregister(key.fileobj)
@@ -524,7 +521,6 @@ if _mswindows:
         writer_thread = None
         writer_result = []
 
-        # Start writer thread to send input to stdin
         if stdin and input_data:
             writer_thread = threading.Thread(
                 target=_writer_thread_func,
@@ -532,7 +528,6 @@ if _mswindows:
             writer_thread.daemon = True
             writer_thread.start()
         elif stdin:
-            # No input data, just close stdin
             try:
                 stdin.close()
             except BrokenPipeError:
@@ -541,7 +536,6 @@ if _mswindows:
                 if exc.errno != errno.EINVAL:
                     raise
 
-        # Start reader threads for each stream
         for stream in read_streams:
             buf = []
             buffers[stream] = buf
@@ -557,30 +551,26 @@ if _mswindows:
                 output=results.get(stdout_stream),
                 stderr=results.get(stderr_stream))
 
-        # Join writer thread with timeout first
+        # Drain the writer before any reader so a stalled write surfaces as
+        # the timeout source, not a partial read.
         if writer_thread is not None:
             remaining = _deadline_remaining(endtime)
             if remaining is not None and remaining < 0:
                 remaining = 0
             writer_thread.join(remaining)
             if writer_thread.is_alive():
-                # Timed out during write - collect partial results
                 _raise_timeout()
-            # Check for write errors
             if writer_result:
                 raise writer_result[0]
 
-        # Join reader threads with timeout
         for stream, t in threads:
             remaining = _deadline_remaining(endtime)
             if remaining is not None and remaining < 0:
                 remaining = 0
             t.join(remaining)
             if t.is_alive():
-                # Collect partial results
                 _raise_timeout()
 
-        # Collect results
         return {stream: (buf[0] if buf else b'') for stream, buf in buffers.items()}
 
 else:
@@ -588,10 +578,8 @@ else:
                                    endtime, orig_timeout, cmd_for_timeout,
                                    stdout_stream=None, stderr_stream=None):
         """POSIX implementation using selectors."""
-        # Build output buffers for each stream
         output_buffers = {stream: [] for stream in read_streams}
 
-        # Prepare stdin
         if stdin:
             _flush_stdin(stdin)
             if not input_data:
@@ -599,9 +587,8 @@ else:
                     stdin.close()
                 except BrokenPipeError:
                     pass
-                stdin = None  # Don't register with selector
+                stdin = None  # don't register with selector
 
-        # Prepare input data
         input_view = _make_input_view(input_data)
 
         with _PopenSelector() as selector:
@@ -610,12 +597,10 @@ else:
             for stream in read_streams:
                 selector.register(stream, selectors.EVENT_READ)
 
-            # Run the common I/O loop
             _, completed = _communicate_io_posix(
                 selector, stdin, input_view, 0, output_buffers, endtime)
 
         if not completed:
-            # Timed out - collect partial results
             results = {stream: b''.join(chunks)
                        for stream, chunks in output_buffers.items()}
             raise TimeoutExpired(
@@ -623,7 +608,6 @@ else:
                 output=results.get(stdout_stream),
                 stderr=results.get(stderr_stream))
 
-        # Build results and close all file objects
         results = {}
         for stream, chunks in output_buffers.items():
             results[stream] = b''.join(chunks)
@@ -1018,7 +1002,6 @@ def run_pipeline(*commands, input=None, capture_output=False, timeout=None,
     if len(commands) < 2:
         raise ValueError('run_pipeline requires at least 2 commands')
 
-    # Validate no conflicting arguments
     if input is not None and kwargs.get('stdin') is not None:
         raise ValueError('stdin and input arguments may not both be used.')
     if kwargs.get('stdin') is PIPE:
@@ -1035,12 +1018,9 @@ def run_pipeline(*commands, input=None, capture_output=False, timeout=None,
             'close_fds=False is not supported by run_pipeline; '
             'inherited pipe ends would prevent EOF signaling between commands')
 
-    # Determine stderr handling - all processes share the same stderr pipe
-    # When capturing, we create one pipe and all processes write to it
     stderr_arg = kwargs.pop('stderr', None)
     capture_stderr = capture_output or (stderr_arg is PIPE)
 
-    # stdin is for the first process, stdout is for the last process
     stdin_arg = kwargs.pop('stdin', None)
     stdout_arg = kwargs.pop('stdout', None)
 
@@ -1061,7 +1041,9 @@ def run_pipeline(*commands, input=None, capture_output=False, timeout=None,
     stderr_write_fd = None  # Write end of shared stderr pipe (for children)
 
     try:
-        # Create a single stderr pipe that all processes will share
+        # One shared stderr pipe across all children: lets stderr from any
+        # stage reach the parent through a single read end, which the I/O
+        # loop multiplexes alongside stdout.
         if capture_stderr:
             stderr_read_fd, stderr_write_fd = os.pipe()
             stderr_reader = os.fdopen(stderr_read_fd, 'rb')
@@ -1070,25 +1052,22 @@ def run_pipeline(*commands, input=None, capture_output=False, timeout=None,
             is_first = (i == 0)
             is_last = (i == len(commands) - 1)
 
-            # Determine stdin for this process
             if is_first:
                 if input is not None:
                     proc_stdin = PIPE
                 else:
-                    proc_stdin = stdin_arg  # Could be None, PIPE, fd, or file
+                    proc_stdin = stdin_arg  # may be None, PIPE, fd, or file
             else:
                 proc_stdin = processes[-1].stdout
 
-            # Determine stdout for this process
             if is_last:
                 if capture_output:
                     proc_stdout = PIPE
                 else:
-                    proc_stdout = stdout_arg  # Could be None, PIPE, fd, or file
+                    proc_stdout = stdout_arg  # may be None, PIPE, fd, or file
             else:
                 proc_stdout = PIPE
 
-            # All processes share the same stderr pipe (write end)
             if capture_stderr:
                 proc_stderr = stderr_write_fd
             else:
@@ -1103,7 +1082,9 @@ def run_pipeline(*commands, input=None, capture_output=False, timeout=None,
             if not is_first and processes[-2].stdout is not None:
                 processes[-2].stdout.close()
 
-        # Close the write end of stderr pipe in parent - children have it
+        # The parent must drop its write end so children's writes are the
+        # only ones keeping the pipe open; otherwise the reader never
+        # sees EOF after all children exit.
         if stderr_write_fd is not None:
             os.close(stderr_write_fd)
             stderr_write_fd = None
@@ -1111,26 +1092,24 @@ def run_pipeline(*commands, input=None, capture_output=False, timeout=None,
         first_proc = processes[0]
         last_proc = processes[-1]
 
-        # Calculate deadline for timeout (used throughout)
         if timeout is not None:
             endtime = _time() + timeout
         else:
             endtime = None
 
-        # Encode input if in text mode (text_mode/encoding resolved above).
         input_data = input
         if input_data is not None and text_mode:
             input_data = input_data.encode(encoding, errors_param or 'strict')
 
-        # Build list of streams to read from
         read_streams = []
         if last_proc.stdout is not None:
             read_streams.append(last_proc.stdout)
         if stderr_reader is not None:
             read_streams.append(stderr_reader)
 
-        # Use multiplexed I/O to handle stdin/stdout/stderr concurrently
-        # This avoids deadlocks from pipe buffer limits
+        # Drive stdin, stdout, and stderr concurrently: any one of them
+        # filling its kernel pipe buffer would otherwise block a child
+        # whose progress depends on another stream draining.
         stdin_stream = first_proc.stdin if input is not None else None
 
         try:
@@ -1144,7 +1123,6 @@ def run_pipeline(*commands, input=None, capture_output=False, timeout=None,
                 stderr_stream=stderr_reader,
             )
         except TimeoutExpired:
-            # Kill all processes on timeout
             for p in processes:
                 if p.poll() is None:
                     p.kill()
@@ -1152,25 +1130,21 @@ def run_pipeline(*commands, input=None, capture_output=False, timeout=None,
                 p.wait()
             raise
 
-        # Extract results
         stdout = results.get(last_proc.stdout)
         stderr = results.get(stderr_reader)
 
-        # Translate newlines if in text mode (decode and convert \r\n to \n)
         decode_errors = errors_param or 'strict'
         if text_mode and stdout is not None:
             stdout = _translate_newlines(stdout, encoding, decode_errors)
         if text_mode and stderr is not None:
             stderr = _translate_newlines(stderr, encoding, decode_errors)
 
-        # Wait for all processes to complete (use remaining time from deadline)
         returncodes = []
         for proc in processes:
             try:
                 remaining = _deadline_remaining(endtime)
                 proc.wait(timeout=remaining)
             except TimeoutExpired:
-                # Kill all processes on timeout
                 for p in processes:
                     if p.poll() is None:
                         p.kill()
@@ -1783,7 +1757,7 @@ class Popen:
         self.text_mode = bool(universal_newlines)
 
     def _translate_newlines(self, data, encoding, errors):
-        # Method kept for subclass back-compat; logic lives at module level.
+        # Subclass-overridable hook; defers to the module-level helper.
         return _translate_newlines(data, encoding, errors)
 
     def __enter__(self):
@@ -2904,9 +2878,11 @@ class Popen:
                 if self.stderr and not self.stderr.closed:
                     selector.register(self.stderr, selectors.EVENT_READ)
 
-                # Use the common I/O loop (supports resume via _input_offset)
                 stdin_to_write = (self.stdin if self.stdin and self._input
                                   and not self.stdin.closed else None)
+                # Persist the returned offset on self so a subsequent
+                # communicate() after a TimeoutExpired resumes mid-input
+                # rather than re-sending bytes the child already consumed.
                 new_offset, completed = _communicate_io_posix(
                     selector,
                     stdin_to_write,

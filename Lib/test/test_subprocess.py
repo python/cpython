@@ -2418,10 +2418,10 @@ print(len(data.strip()))
         )
 
         self.assertEqual(result.stdout.strip(), str(data_size))
-        # Verify both processes wrote to stderr
         self.assertIn('stage1 done', result.stderr)
         self.assertIn('stage2 done', result.stderr)
-        # Verify large stderr was captured (at least most of it)
+        # > stderr_size (one stage's worth) confirms both stages' bytes
+        # survived multiplexing through the shared stderr pipe.
         self.assertGreater(len(result.stderr), stderr_size)
         self.assertEqual(result.returncodes, [0, 0])
 
