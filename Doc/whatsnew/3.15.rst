@@ -540,9 +540,22 @@ Other language changes
 
   (Contributed by Adam Turner in :gh:`133711`; PEP 686 written by Inada Naoki.)
 
+  .. _whatsnew315-color-exceptions:
+
 * Unraisable exceptions are now highlighted with color by default. This can be
   controlled by :ref:`environment variables <using-on-controlling-color>`.
   (Contributed by Peter Bierma in :gh:`134170`.)
+
+* More color in
+  :ref:`argparse <whatsnew315-color-argparse>`,
+  :ref:`ast <whatsnew315-color-ast>`,
+  :ref:`difflib <whatsnew315-color-difflib>`,
+  :ref:`http.server <whatsnew315-color-http.server>`,
+  :ref:`PyREPL tab completion <whatsnew315-pyrepl-completion>`,
+  :ref:`sqlite3 <whatsnew315-color-sqlite3>`,
+  :ref:`timeit <whatsnew315-color-timeit>`,
+  :ref:`tokenize <whatsnew315-color-tokenize>` and
+  :ref:`unraisable exceptions <whatsnew315-color-exceptions>`
 
 * The :meth:`~object.__repr__` of :class:`ImportError` and :class:`ModuleNotFoundError`
   now shows "name" and "path" as ``name=<name>`` and ``path=<path>`` if they were given
@@ -685,6 +698,19 @@ Other language changes
   (Contributed by Gregory P. Smith in :gh:`83065`.)
 
 
+Default interactive shell
+=========================
+
+.. _whatsnew315-pyrepl-completion:
+
+* Tab completions are now colored by object kind, based on
+  :pypi:`fancycompleter`.
+  Set :envvar:`PYTHON_BASIC_COMPLETER` to fall back to :mod:`rlcompleter`.
+  This can also be controlled by :ref:`environment variables
+  <using-on-controlling-color>`.
+  (Contributed by Antonio Cuni and Pablo Galindo in :gh:`130472`.)
+
+
 New modules
 ===========
 
@@ -709,6 +735,8 @@ argparse
 * Changed the *suggest_on_error* parameter of :class:`argparse.ArgumentParser` to
   default to ``True``. This enables suggestions for mistyped arguments by default.
   (Contributed by Jakob Schluse in :gh:`140450`.)
+
+  .. _whatsnew315-color-argparse:
 
 * Added backtick markup support in description and epilog text to highlight
   inline code when color output is enabled.
@@ -735,6 +763,8 @@ ast
   sequences.
   If ``False`` (the default), colored output is always disabled.
   (Contributed by Stan Ulbrych in :gh:`148981`.)
+
+  .. _whatsnew315-color-ast:
 
 * The :ref:`command-line <ast-cli>` output is now syntax highlighted by default.
   This can be :ref:`controlled using environment variables <using-on-controlling-color>`.
@@ -948,6 +978,8 @@ http.cookies
 http.server
 -----------
 
+  .. _whatsnew315-color-http.server:
+
 * The logging of :mod:`~http.server.BaseHTTPRequestHandler`,
   as used by the :ref:`command-line interface <http-server-cli>`,
   is colored by default.
@@ -1125,6 +1157,8 @@ sqlite3
   * SQL keyword completion on <tab>.
     (Contributed by Long Tan in :gh:`133393`.)
 
+  .. _whatsnew315-color-sqlite3:
+
   * Prompts, error messages, and help text are now colored.
     This is enabled by default, see :ref:`using-on-controlling-color` for
     details.
@@ -1256,10 +1290,13 @@ tarfile
 timeit
 ------
 
+  .. _whatsnew315-color-timeit:
+
 * The output of the :mod:`timeit` command-line interface is colored by default.
   This can be controlled with
   :ref:`environment variables <using-on-controlling-color>`.
   (Contributed by Hugo van Kemenade in :gh:`146609`.)
+
 * The command-line interface now colorizes error tracebacks
   by default. This can be controlled with
   :ref:`environment variables <using-on-controlling-color>`.
@@ -1298,6 +1335,8 @@ tkinter
 
 tokenize
 --------
+
+  .. _whatsnew315-color-tokenize:
 
 * The output of the :mod:`tokenize` :ref:`command-line interface
   <tokenize-cli>` is colored by default. This can be controlled with
