@@ -1840,15 +1840,17 @@ hash as builtin_hash
     obj: object
     /
 
-Return the hash value for the given object.
+Return the integer hash value for the given object.
 
-Two objects that compare equal must also have the same hash value, but the
-reverse is not necessarily true.
+Two objects that compare equal must also have the same hash value, but
+the reverse is not necessarily true.  Hash values may differ between
+Python processes.  Not all objects are hashable; calling hash() on an
+unhashable object raises TypeError.
 [clinic start generated code]*/
 
 static PyObject *
 builtin_hash(PyObject *module, PyObject *obj)
-/*[clinic end generated code: output=237668e9d7688db7 input=58c48be822bf9c54]*/
+/*[clinic end generated code: output=237668e9d7688db7 input=70a242ff65f6717c]*/
 {
     Py_hash_t x;
 
