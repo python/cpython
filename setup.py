@@ -1773,7 +1773,6 @@ class PyBuildExt(build_ext):
         if '--with-system-expat' in sysconfig.get_config_var("CONFIG_ARGS"):
             expat_inc = []
             define_macros = []
-            undef_macros = []
             extra_compile_args = []
             expat_lib = ['expat']
             expat_sources = []
@@ -1785,13 +1784,6 @@ class PyBuildExt(build_ext):
                 # bpo-30947: Python uses best available entropy sources to
                 # call XML_SetHashSalt(), expat entropy sources are not needed
                 ('XML_POOR_ENTROPY', '1'),
-            ]
-            undef_macros = [
-                'HAVE_ARC4RANDOM',
-                'HAVE_ARC4RANDOM_BUF',
-                'HAVE_GETENTROPY',
-                'HAVE_GETRANDOM',
-                'HAVE_SYSCALL_GETRANDOM',
             ]
             extra_compile_args = []
             # bpo-44394: libexpat uses isnan() of math.h and needs linkage
@@ -1821,7 +1813,6 @@ class PyBuildExt(build_ext):
 
         self.add(Extension('pyexpat',
                            define_macros=define_macros,
-                           undef_macros=undef_macros,
                            extra_compile_args=extra_compile_args,
                            include_dirs=expat_inc,
                            libraries=expat_lib,
@@ -1835,7 +1826,6 @@ class PyBuildExt(build_ext):
             define_macros.append(('USE_PYEXPAT_CAPI', None))
             self.add(Extension('_elementtree',
                                define_macros=define_macros,
-                               undef_macros=undef_macros,
                                include_dirs=expat_inc,
                                libraries=expat_lib,
                                sources=['_elementtree.c'],
