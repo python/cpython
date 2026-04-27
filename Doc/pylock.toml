@@ -2,7 +2,6 @@
 #    uv pip compile Doc/requirements.txt --exclude-newer P14D --no-cache --output-file Doc/pylock.toml --python-version 3.12 --universal
 lock-version = "1.0"
 created-by = "uv"
-requires-python = ">=3.12"
 
 [[packages]]
 name = "alabaster"
