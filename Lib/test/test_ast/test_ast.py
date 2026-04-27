@@ -25,7 +25,7 @@ except ImportError:
 
 from test import support
 from test.support import os_helper
-from test.support import skip_emscripten_stack_overflow, skip_wasi_stack_overflow
+from test.support import skip_emscripten_stack_overflow, skip_wasi_stack_overflow, skip_if_unlimited_stack_size
 from test.support.ast_helper import ASTTestMixin
 from test.support.import_helper import ensure_lazy_imports
 from test.test_ast.utils import to_tuple
@@ -989,6 +989,7 @@ class AST_Tests(unittest.TestCase):
         enum._test_simple_enum(_Precedence, _ast_unparse._Precedence)
 
     @support.cpython_only
+    @skip_if_unlimited_stack_size
     @skip_wasi_stack_overflow()
     @skip_emscripten_stack_overflow()
     def test_ast_recursion_limit(self):
@@ -1127,6 +1128,7 @@ class CopyTests(unittest.TestCase):
                     ast2 = pickle.loads(pickle.dumps(tree, protocol))
                     self.assertEqual(to_tuple(ast2), to_tuple(tree))
 
+    @skip_if_unlimited_stack_size
     def test_copy_with_parents(self):
         # gh-120108
         code = """
@@ -1441,6 +1443,13 @@ class CopyTests(unittest.TestCase):
         self.assertIs(node.ctx, context)
         self.assertRaises(AttributeError, getattr, node, 'unknown')
 
+    def test_replace_non_str_kwarg(self):
+        node = ast.Name(id="x")
+        errmsg = "got an unexpected keyword argument <object object"
+        with self.assertRaisesRegex(TypeError, errmsg):
+            node.__replace__(**{object(): "y"})
+
+
 class ASTHelpers_Test(unittest.TestCase):
     maxDiff = None
 
@@ -1692,9 +1701,19 @@ Module(
 
         check_text(
             "import _ast as ast; from module import sub",
-            empty="Module(body=[Import(names=[alias(name='_ast', asname='ast')]), ImportFrom(module='module', names=[alias(name='sub')], level=0)])",
-            full="Module(body=[Import(names=[alias(name='_ast', asname='ast')]), ImportFrom(module='module', names=[alias(name='sub')], level=0)], type_ignores=[])",
+            empty="Module(body=[Import(names=[alias(name='_ast', asname='ast')], is_lazy=0), ImportFrom(module='module', names=[alias(name='sub')], level=0, is_lazy=0)])",
+            full="Module(body=[Import(names=[alias(name='_ast', asname='ast')], is_lazy=0), ImportFrom(module='module', names=[alias(name='sub')], level=0, is_lazy=0)], type_ignores=[])",
         )
+
+    def test_dump_with_color(self):
+        node = ast.parse("x = 1")
+        self.assertNotIn("\x1b[", ast.dump(node))
+        self.assertNotIn("\x1b[", ast.dump(node, color=False))
+        self.assertIn("\x1b[", ast.dump(node, color=True))
+
+        node = ast.Constant(value="\x1b[31m")
+        self.assertEqual(ast.dump(node), "Constant(value='\\x1b[31m')")
+        self.assertIn("'\\x1b[31m'", ast.dump(node, color=True))
 
     def test_copy_location(self):
         src = ast.parse('1 + 1', mode='eval')
@@ -1974,6 +1993,7 @@ Module(
         exec(code, ns)
         self.assertIn('sleep', ns)
 
+    @skip_if_unlimited_stack_size
     @skip_emscripten_stack_overflow()
     def test_recursion_direct(self):
         e = ast.UnaryOp(op=ast.Not(), lineno=0, col_offset=0, operand=ast.Constant(1))
@@ -1982,6 +2002,7 @@ Module(
             with support.infinite_recursion():
                 compile(ast.Expression(e), "<test>", "eval")
 
+    @skip_if_unlimited_stack_size
     @skip_emscripten_stack_overflow()
     def test_recursion_indirect(self):
         e = ast.UnaryOp(op=ast.Not(), lineno=0, col_offset=0, operand=ast.Constant(1))
@@ -3300,6 +3321,27 @@ class ASTConstructorTests(unittest.TestCase):
         self.assertIs(obj.a, None)
         self.assertEqual(obj.b, [])
 
+    def test_non_str_kwarg(self):
+        warn_msg = "got an unexpected keyword argument <object object"
+        with (
+            self.assertRaises(TypeError),
+            self.assertWarnsRegex(DeprecationWarning, warn_msg),
+        ):
+            ast.Name(**{object(): 'y'})
+
+        class FakeStr:
+            def __init__(self, value):
+                self.value = value
+
+            def __hash__(self):
+                return hash(self.value)
+
+            def __eq__(self, other):
+                return isinstance(other, str) and self.value == other
+
+        with self.assertRaisesRegex(TypeError, "got multiple values for argument"):
+            ast.Name("x", **{FakeStr('id'): 'y'})
+
 
 @support.cpython_only
 class ModuleStateTests(unittest.TestCase):
@@ -3383,6 +3425,7 @@ class ModuleStateTests(unittest.TestCase):
         self.assertEqual(res, 0)
 
 
+@support.force_not_colorized_test_class
 class CommandLineTests(unittest.TestCase):
     def setUp(self):
         self.filename = tempfile.mktemp()

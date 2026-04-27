@@ -22,6 +22,7 @@ import selectors
 import sysconfig
 import select
 import shutil
+import socket
 import threading
 import gc
 import textwrap
@@ -1044,19 +1045,49 @@ class ProcessTestCase(BaseTestCase):
         # On Windows, stdin writing must also honor the timeout rather than
         # blocking indefinitely when the pipe buffer fills.
 
-        # Input larger than typical pipe buffer (4-64KB on Windows)
-        input_data = b"x" * (128 * 1024)
+        input_data = b"x" * (128 * 1024)  # > typical pipe buffer
+
+        # Cross-platform wake mechanism: the slow reader connects to a
+        # loopback TCP socket and blocks in select() on it (capped at 9s
+        # as a safety net we don't expect to hit). After phase 1 raises
+        # TimeoutExpired, the parent sends a byte to release the child so
+        # it drains stdin. A socket (rather than a raw pipe) is required
+        # because Windows select() only supports sockets, not arbitrary
+        # file descriptors.
+        server = socket.create_server(('127.0.0.1', 0), backlog=1)
+        server.settimeout(10)  # bound the accept() if the child fails to start
+        port = server.getsockname()[1]
+        # The child sends one byte (low byte of its PID) first so the parent
+        # can detect the rare case of an unrelated process on the same host
+        # connecting to our ephemeral port before our child does. A single
+        # byte gives 1/256 collision odds, which is plenty for flake-prevention.
+        slow_reader = (
+            "import os, socket, sys, select; "
+            f"s = socket.create_connection(('127.0.0.1', {port}), timeout=9); "
+            "s.sendall(bytes([os.getpid() & 0xff])); "
+            "select.select([s], [], [], 9); "
+            "sys.stdout.buffer.write(sys.stdin.buffer.read())"
+        )
 
         p = subprocess.Popen(
-            [sys.executable, "-c",
-             "import sys, time; "
-             "time.sleep(30); "  # Don't read stdin for a long time
-             "sys.stdout.buffer.write(sys.stdin.buffer.read())"],
+            [sys.executable, "-c", slow_reader],
             stdin=subprocess.PIPE,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE)
 
+        conn = None
         try:
+            conn, _ = server.accept()
+            server.close()
+            server = None
+
+            conn.settimeout(5)
+            peer_byte = conn.recv(1)
+            conn.settimeout(None)
+            self.assertEqual(peer_byte, bytes([p.pid & 0xff]),
+                f"loopback handshake byte {peer_byte!r} != "
+                f"low byte of child PID {p.pid} ({p.pid & 0xff:#x})")
+
             timeout = 0.2
             start = time.monotonic()
             try:
@@ -1065,7 +1096,7 @@ class ProcessTestCase(BaseTestCase):
                 elapsed = time.monotonic() - start
                 self.fail(
                     f"TimeoutExpired not raised. communicate() completed in "
-                    f"{elapsed:.2f}s, but subprocess sleeps for 30s. "
+                    f"{elapsed:.2f}s, but slow reader stalls for up to 9s. "
                     "Stdin writing blocked without enforcing timeout.")
             except subprocess.TimeoutExpired:
                 elapsed = time.monotonic() - start
@@ -1073,10 +1104,15 @@ class ProcessTestCase(BaseTestCase):
             # Timeout should occur close to the specified timeout value,
             # not after waiting for the subprocess to finish sleeping.
             # Allow generous margin for slow CI, but must be well under
-            # the subprocess sleep time.
+            # the slow-reader's stall cap.
             self.assertLess(elapsed, 5.0,
                 f"TimeoutExpired raised after {elapsed:.2f}s; expected ~{timeout}s. "
                 "Stdin writing blocked without checking timeout.")
+
+            # Release the slow reader so it stops blocking and drains stdin.
+            conn.sendall(b'go')
+            conn.close()
+            conn = None
 
             # After timeout, continue communication. The remaining input
             # should be sent and we should receive all data back.
@@ -1085,6 +1121,43 @@ class ProcessTestCase(BaseTestCase):
             # Verify all input was eventually received by the subprocess
             self.assertEqual(len(stdout), len(input_data),
                 f"Expected {len(input_data)} bytes output but got {len(stdout)}")
+            self.assertEqual(stdout, input_data)
+        finally:
+            if conn is not None:
+                conn.close()
+            if server is not None:
+                server.close()
+            p.kill()
+            p.wait()
+
+    def test_communicate_timeout_resume_partial_write(self):
+        """Resume writing input after a partial-write TimeoutExpired.
+
+        Exercises the _input_offset bookkeeping across the
+        _communicate_io_posix factoring: a first communicate() must time out
+        mid-write, and a subsequent communicate() must finish delivering the
+        remaining bytes so the child receives the full input intact.
+        """
+        # 1 MiB easily exceeds typical pipe buffers (~64 KiB) so writing
+        # blocks once the buffer fills before the child starts reading.
+        input_data = bytes(range(256)) * 4096  # 1 MiB, distinctive pattern
+        self.assertEqual(len(input_data), 1024 * 1024)
+
+        p = subprocess.Popen(
+            [sys.executable, "-c",
+             "import sys, time; "
+             "time.sleep(0.5); "
+             "sys.stdout.buffer.write(sys.stdin.buffer.read())"],
+            stdin=subprocess.PIPE,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE)
+        try:
+            with self.assertRaises(subprocess.TimeoutExpired):
+                p.communicate(input_data, timeout=0.05)
+
+            # Resume: no new input, generous timeout to avoid CI flakes.
+            stdout, stderr = p.communicate(timeout=support.LONG_TIMEOUT)
+            self.assertEqual(len(stdout), len(input_data))
             self.assertEqual(stdout, input_data)
         finally:
             p.kill()
@@ -1423,6 +1496,8 @@ class ProcessTestCase(BaseTestCase):
     def test_wait_timeout(self):
         p = subprocess.Popen([sys.executable,
                               "-c", "import time; time.sleep(0.3)"])
+        with self.assertRaises(subprocess.TimeoutExpired) as c:
+            p.wait(timeout=0)
         with self.assertRaises(subprocess.TimeoutExpired) as c:
             p.wait(timeout=0.0001)
         self.assertIn("0.0001", str(c.exception))  # For coverage of __str__.
@@ -4093,6 +4168,123 @@ class ContextManagerTests(BaseTestCase):
         self.assertEqual(proc.returncode, 0)
         self.assertTrue(proc.stdin.closed)
 
+
+
+class FastWaitTestCase(BaseTestCase):
+    """Tests for efficient (pidfd_open() + poll() / kqueue()) process
+    waiting in subprocess.Popen.wait().
+    """
+    CAN_USE_PIDFD_OPEN = subprocess._CAN_USE_PIDFD_OPEN
+    CAN_USE_KQUEUE = subprocess._CAN_USE_KQUEUE
+    COMMAND = [sys.executable, "-c", "import time; time.sleep(0.3)"]
+    WAIT_TIMEOUT = 0.0001  # 0.1 ms
+
+    def assert_fast_waitpid_error(self, patch_point):
+        # Emulate a case where pidfd_open() or kqueue() fails.
+        # Busy-poll wait should be used as fallback.
+        exc = OSError(errno.EMFILE, os.strerror(errno.EMFILE))
+        with mock.patch(patch_point, side_effect=exc) as m:
+            p = subprocess.Popen(self.COMMAND)
+            with self.assertRaises(subprocess.TimeoutExpired):
+                p.wait(self.WAIT_TIMEOUT)
+            self.assertEqual(p.wait(timeout=support.SHORT_TIMEOUT), 0)
+        self.assertTrue(m.called)
+
+    @unittest.skipIf(not CAN_USE_PIDFD_OPEN, reason="needs pidfd_open()")
+    def test_wait_pidfd_open_error(self):
+        self.assert_fast_waitpid_error("os.pidfd_open")
+
+    @unittest.skipIf(not CAN_USE_KQUEUE, reason="needs kqueue() for proc")
+    def test_wait_kqueue_error(self):
+        self.assert_fast_waitpid_error("select.kqueue")
+
+    @unittest.skipIf(not CAN_USE_KQUEUE, reason="needs kqueue() for proc")
+    def test_kqueue_control_error(self):
+        # Emulate a case where kqueue.control() fails. Busy-poll wait
+        # should be used as fallback.
+        p = subprocess.Popen(self.COMMAND)
+        kq_mock = mock.Mock()
+        kq_mock.control.side_effect = OSError(
+            errno.EPERM, os.strerror(errno.EPERM)
+        )
+        kq_mock.close = mock.Mock()
+
+        with mock.patch("select.kqueue", return_value=kq_mock) as m:
+            with self.assertRaises(subprocess.TimeoutExpired):
+                p.wait(self.WAIT_TIMEOUT)
+            self.assertEqual(p.wait(timeout=support.SHORT_TIMEOUT), 0)
+        self.assertTrue(m.called)
+
+    def assert_wait_race_condition(self, patch_target, real_func):
+        # Call pidfd_open() / kqueue(), then terminate the process.
+        # Make sure that the wait call (poll() / kqueue.control())
+        # still works for a terminated PID.
+        p = subprocess.Popen(self.COMMAND)
+
+        def wrapper(*args, **kwargs):
+            ret = real_func(*args, **kwargs)
+            try:
+                os.kill(p.pid, signal.SIGTERM)
+                os.waitpid(p.pid, 0)
+            except OSError:
+                pass
+            return ret
+
+        with mock.patch(patch_target, side_effect=wrapper) as m:
+            status = p.wait(timeout=support.SHORT_TIMEOUT)
+        self.assertTrue(m.called)
+        self.assertEqual(status, 0)
+
+    @unittest.skipIf(not CAN_USE_PIDFD_OPEN, reason="needs pidfd_open()")
+    def test_pidfd_open_race(self):
+        self.assert_wait_race_condition("os.pidfd_open", os.pidfd_open)
+
+    @unittest.skipIf(not CAN_USE_KQUEUE, reason="needs kqueue() for proc")
+    def test_kqueue_race(self):
+        self.assert_wait_race_condition("select.kqueue", select.kqueue)
+
+    def assert_notification_without_immediate_reap(self, patch_target):
+        # Verify fallback to busy polling when poll() / kqueue()
+        # succeeds, but waitpid(pid, WNOHANG) returns (0, 0).
+        def waitpid_wrapper(pid, flags):
+            nonlocal ncalls
+            ncalls += 1
+            if ncalls == 1:
+                return (0, 0)
+            return real_waitpid(pid, flags)
+
+        ncalls = 0
+        real_waitpid = os.waitpid
+        with mock.patch.object(subprocess.Popen, patch_target, return_value=True) as m1:
+            with mock.patch("os.waitpid", side_effect=waitpid_wrapper) as m2:
+                p = subprocess.Popen(self.COMMAND)
+                with self.assertRaises(subprocess.TimeoutExpired):
+                    p.wait(self.WAIT_TIMEOUT)
+                self.assertEqual(p.wait(timeout=support.SHORT_TIMEOUT), 0)
+        self.assertTrue(m1.called)
+        self.assertTrue(m2.called)
+
+    @unittest.skipIf(not CAN_USE_PIDFD_OPEN, reason="needs pidfd_open()")
+    def test_pidfd_open_notification_without_immediate_reap(self):
+        self.assert_notification_without_immediate_reap("_wait_pidfd")
+
+    @unittest.skipIf(not CAN_USE_KQUEUE, reason="needs kqueue() for proc")
+    def test_kqueue_notification_without_immediate_reap(self):
+        self.assert_notification_without_immediate_reap("_wait_kqueue")
+
+    @unittest.skipUnless(
+        CAN_USE_PIDFD_OPEN or CAN_USE_KQUEUE,
+        "fast wait mechanism not available"
+    )
+    def test_fast_path_avoid_busy_loop(self):
+        # assert that the busy loop is not called as long as the fast
+        # wait is available
+        with mock.patch('time.sleep') as m:
+            p = subprocess.Popen(self.COMMAND)
+            with self.assertRaises(subprocess.TimeoutExpired):
+                p.wait(self.WAIT_TIMEOUT)
+            self.assertEqual(p.wait(timeout=support.LONG_TIMEOUT), 0)
+        self.assertFalse(m.called)
 
 if __name__ == "__main__":
     unittest.main()

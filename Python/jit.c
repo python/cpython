@@ -11,9 +11,11 @@
 #include "pycore_floatobject.h"
 #include "pycore_frame.h"
 #include "pycore_function.h"
+#include "pycore_import.h"
 #include "pycore_interpframe.h"
 #include "pycore_interpolation.h"
 #include "pycore_intrinsics.h"
+#include "pycore_lazyimportobject.h"
 #include "pycore_list.h"
 #include "pycore_long.h"
 #include "pycore_mmap.h"
@@ -58,6 +60,57 @@ jit_error(const char *message)
     PyErr_Format(PyExc_RuntimeWarning, "JIT %s (%d)", message, hint);
 }
 
+static int
+address_in_executor_array(_PyExecutorObject **ptrs, size_t count, uintptr_t addr)
+{
+    for (size_t i = 0; i < count; i++) {
+        _PyExecutorObject *exec = ptrs[i];
+        if (exec->jit_code == NULL || exec->jit_size == 0) {
+            continue;
+        }
+        uintptr_t start = (uintptr_t)exec->jit_code;
+        uintptr_t end = start + exec->jit_size;
+        if (addr >= start && addr < end) {
+            return 1;
+        }
+    }
+    return 0;
+}
+
+static int
+address_in_executor_list(_PyExecutorObject *head, uintptr_t addr)
+{
+    for (_PyExecutorObject *exec = head;
+         exec != NULL;
+         exec = exec->vm_data.links.next)
+    {
+        if (exec->jit_code == NULL || exec->jit_size == 0) {
+            continue;
+        }
+        uintptr_t start = (uintptr_t)exec->jit_code;
+        uintptr_t end = start + exec->jit_size;
+        if (addr >= start && addr < end) {
+            return 1;
+        }
+    }
+    return 0;
+}
+
+PyAPI_FUNC(int)
+_PyJIT_AddressInJitCode(PyInterpreterState *interp, uintptr_t addr)
+{
+    if (interp == NULL) {
+        return 0;
+    }
+    if (address_in_executor_array(interp->executor_ptrs, interp->executor_count, addr)) {
+        return 1;
+    }
+    if (address_in_executor_list(interp->executor_deletion_list_head, addr)) {
+        return 1;
+    }
+    return 0;
+}
+
 static unsigned char *
 jit_alloc(size_t size)
 {
@@ -77,7 +130,7 @@ jit_alloc(size_t size)
     unsigned char *memory = mmap(NULL, size, prot, flags, -1, 0);
     int failed = memory == MAP_FAILED;
     if (!failed) {
-        _PyAnnotateMemoryMap(memory, size, "cpython:jit");
+        (void)_PyAnnotateMemoryMap(memory, size, "cpython:jit");
     }
 #endif
     if (failed) {
@@ -119,7 +172,7 @@ mark_executable(unsigned char *memory, size_t size)
         jit_error("unable to flush instruction cache");
         return -1;
     }
-    int old;
+    DWORD old;
     int failed = !VirtualProtect(memory, size, PAGE_EXECUTE_READ, &old);
 #else
     __builtin___clear_cache((char *)memory, (char *)memory + size);
@@ -293,15 +346,11 @@ patch_aarch64_12(unsigned char *location, uint64_t value)
     set_bits(loc32, 10, value, shift, 12);
 }
 
-// Relaxable 12-bit low part of an absolute address. Pairs nicely with
-// patch_aarch64_21rx (below).
+// Relaxable 12-bit low part of an absolute address.
+// Usually paired with patch_aarch64_21rx (below).
 void
 patch_aarch64_12x(unsigned char *location, uint64_t value)
 {
-    // This can *only* be relaxed if it occurs immediately before a matching
-    // patch_aarch64_21rx. If that happens, the JIT build step will replace both
-    // calls with a single call to patch_aarch64_33rx. Otherwise, we end up
-    // here, and the instruction is patched normally:
     patch_aarch64_12(location, value);
 }
 
@@ -366,14 +415,10 @@ patch_aarch64_21r(unsigned char *location, uint64_t value)
 }
 
 // Relaxable 21-bit count of pages between this page and an absolute address's
-// page. Pairs nicely with patch_aarch64_12x (above).
+// page. Usually paired with patch_aarch64_12x (above).
 void
 patch_aarch64_21rx(unsigned char *location, uint64_t value)
 {
-    // This can *only* be relaxed if it occurs immediately before a matching
-    // patch_aarch64_12x. If that happens, the JIT build step will replace both
-    // calls with a single call to patch_aarch64_33rx. Otherwise, we end up
-    // here, and the instruction is patched normally:
     patch_aarch64_21r(location, value);
 }
 
@@ -409,42 +454,52 @@ patch_aarch64_26r(unsigned char *location, uint64_t value)
 
 // A pair of patch_aarch64_21rx and patch_aarch64_12x.
 void
-patch_aarch64_33rx(unsigned char *location, uint64_t value)
+patch_aarch64_33rx(unsigned char *location_a, unsigned char *location_b, uint64_t value)
 {
-    uint32_t *loc32 = (uint32_t *)location;
+    uint32_t *loc32_a = (uint32_t *)location_a;
+    uint32_t *loc32_b = (uint32_t *)location_b;
     // Try to relax the pair of GOT loads into an immediate value:
-    assert(IS_AARCH64_ADRP(*loc32));
-    unsigned char reg = get_bits(loc32[0], 0, 5);
-    assert(IS_AARCH64_LDR_OR_STR(loc32[1]));
+    assert(IS_AARCH64_ADRP(*loc32_a));
+    assert(IS_AARCH64_LDR_OR_STR(*loc32_b));
+    unsigned char reg = get_bits(*loc32_a, 0, 5);
     // There should be only one register involved:
-    assert(reg == get_bits(loc32[1], 0, 5));  // ldr's output register.
-    assert(reg == get_bits(loc32[1], 5, 5));  // ldr's input register.
+    assert(reg == get_bits(*loc32_a, 0, 5));  // ldr's output register.
+    assert(reg == get_bits(*loc32_b, 5, 5));  // ldr's input register.
     uint64_t relaxed = *(uint64_t *)value;
     if (relaxed < (1UL << 16)) {
         // adrp reg, AAA; ldr reg, [reg + BBB] -> movz reg, XXX; nop
-        loc32[0] = 0xD2800000 | (get_bits(relaxed, 0, 16) << 5) | reg;
-        loc32[1] = 0xD503201F;
+        *loc32_a = 0xD2800000 | (get_bits(relaxed, 0, 16) << 5) | reg;
+        *loc32_b = 0xD503201F;
         return;
     }
     if (relaxed < (1ULL << 32)) {
         // adrp reg, AAA; ldr reg, [reg + BBB] -> movz reg, XXX; movk reg, YYY
-        loc32[0] = 0xD2800000 | (get_bits(relaxed,  0, 16) << 5) | reg;
-        loc32[1] = 0xF2A00000 | (get_bits(relaxed, 16, 16) << 5) | reg;
+        *loc32_a = 0xD2800000 | (get_bits(relaxed,  0, 16) << 5) | reg;
+        *loc32_b = 0xF2A00000 | (get_bits(relaxed, 16, 16) << 5) | reg;
         return;
     }
-    relaxed = value - (uintptr_t)location;
+    int64_t page_delta = (relaxed >> 12) - ((uintptr_t)location_a >> 12);
+    if (page_delta >= -(1L << 20) &&
+        page_delta < (1L << 20))
+    {
+        // adrp reg, AAA; ldr reg, [reg + BBB] -> adrp reg, AAA; add reg, reg, BBB
+        patch_aarch64_21rx(location_a, relaxed);
+        *loc32_b = 0x91000000 | get_bits(relaxed, 0, 12) << 10 | reg << 5 | reg;
+        return;
+    }
+    relaxed = value - (uintptr_t)location_a;
     if ((relaxed & 0x3) == 0 &&
         (int64_t)relaxed >= -(1L << 19) &&
         (int64_t)relaxed < (1L << 19))
     {
         // adrp reg, AAA; ldr reg, [reg + BBB] -> ldr reg, XXX; nop
-        loc32[0] = 0x58000000 | (get_bits(relaxed, 2, 19) << 5) | reg;
-        loc32[1] = 0xD503201F;
+        *loc32_a = 0x58000000 | (get_bits(relaxed, 2, 19) << 5) | reg;
+        *loc32_b = 0xD503201F;
         return;
     }
     // Couldn't do it. Just patch the two instructions normally:
-    patch_aarch64_21rx(location, value);
-    patch_aarch64_12x(location + 4, value);
+    patch_aarch64_21rx(location_a, value);
+    patch_aarch64_12x(location_b, value);
 }
 
 // Relaxable 32-bit relative address.
@@ -663,73 +718,7 @@ _PyJIT_Compile(_PyExecutorObject *executor, const _PyUOpInstruction trace[], siz
     return 0;
 }
 
-/* One-off compilation of the jit entry trampoline
- * We compile this once only as it effectively a normal
- * function, but we need to use the JIT because it needs
- * to understand the jit-specific calling convention.
- */
-static _PyJitEntryFuncPtr
-compile_trampoline(void)
-{
-    _PyExecutorObject dummy;
-    const StencilGroup *group;
-    size_t code_size = 0;
-    size_t data_size = 0;
-    jit_state state = {0};
-    group = &trampoline;
-    code_size += group->code_size;
-    data_size += group->data_size;
-    combine_symbol_mask(group->trampoline_mask, state.trampolines.mask);
-    combine_symbol_mask(group->got_mask, state.got_symbols.mask);
-    // Round up to the nearest page:
-    size_t page_size = get_page_size();
-    assert((page_size & (page_size - 1)) == 0);
-    size_t code_padding = DATA_ALIGN - ((code_size + state.trampolines.size) & (DATA_ALIGN - 1));
-    size_t padding = page_size - ((code_size + state.trampolines.size + code_padding + data_size + state.got_symbols.size) & (page_size - 1));
-    size_t total_size = code_size + state.trampolines.size + code_padding + data_size + state.got_symbols.size + padding;
-    unsigned char *memory = jit_alloc(total_size);
-    if (memory == NULL) {
-        return NULL;
-    }
-    unsigned char *code = memory;
-    state.trampolines.mem = memory + code_size;
-    unsigned char *data = memory + code_size + state.trampolines.size + code_padding;
-    state.got_symbols.mem = data + data_size;
-    // Compile the shim, which handles converting between the native
-    // calling convention and the calling convention used by jitted code
-    // (which may be different for efficiency reasons).
-    group = &trampoline;
-    group->emit(code, data, &dummy, NULL, &state);
-    code += group->code_size;
-    data += group->data_size;
-    assert(code == memory + code_size);
-    assert(data == memory + code_size + state.trampolines.size + code_padding + data_size);
-    if (mark_executable(memory, total_size)) {
-        jit_free(memory, total_size);
-        return NULL;
-    }
-    return (_PyJitEntryFuncPtr)memory;
-}
-
-static PyMutex lazy_jit_mutex = { 0 };
-
-_Py_CODEUNIT *
-_Py_LazyJitTrampoline(
-    _PyExecutorObject *executor, _PyInterpreterFrame *frame, _PyStackRef *stack_pointer, PyThreadState *tstate
-) {
-    PyMutex_Lock(&lazy_jit_mutex);
-    if (_Py_jit_entry == _Py_LazyJitTrampoline) {
-        _PyJitEntryFuncPtr trampoline = compile_trampoline();
-        if (trampoline == NULL) {
-            PyMutex_Unlock(&lazy_jit_mutex);
-            Py_FatalError("Cannot allocate core JIT code");
-        }
-        _Py_jit_entry = trampoline;
-    }
-    PyMutex_Unlock(&lazy_jit_mutex);
-    return _Py_jit_entry(executor, frame, stack_pointer, tstate);
-}
-
+// Free executor's memory allocated with _PyJIT_Compile
 void
 _PyJIT_Free(_PyExecutorObject *executor)
 {

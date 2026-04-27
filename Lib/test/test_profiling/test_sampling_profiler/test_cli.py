@@ -1,8 +1,10 @@
 """Tests for sampling profiler CLI argument parsing and functionality."""
 
 import io
+import os
 import subprocess
 import sys
+import tempfile
 import unittest
 from unittest import mock
 
@@ -13,10 +15,10 @@ except ImportError:
         "Test only runs when _remote_debugging is available"
     )
 
-from test.support import is_emscripten, requires_subprocess
+from test.support import is_emscripten, requires_remote_subprocess_debugging
 
 from profiling.sampling.cli import main
-
+from profiling.sampling.errors import SamplingScriptNotFoundError, SamplingModuleNotFoundError, SamplingUnknownProcessError
 
 class TestSampleProfilerCLI(unittest.TestCase):
     def _setup_sync_mocks(self, mock_socket, mock_popen):
@@ -64,7 +66,7 @@ class TestSampleProfilerCLI(unittest.TestCase):
         self.assertEqual(coordinator_cmd[5:], expected_target_args)
 
     @unittest.skipIf(is_emscripten, "socket.SO_REUSEADDR does not exist")
-    @requires_subprocess()
+    @requires_remote_subprocess_debugging()
     def test_cli_module_argument_parsing(self):
         test_args = ["profiling.sampling.cli", "run", "-m", "mymodule"]
 
@@ -84,7 +86,7 @@ class TestSampleProfilerCLI(unittest.TestCase):
             mock_sample.assert_called_once()
 
     @unittest.skipIf(is_emscripten, "socket.SO_REUSEADDR does not exist")
-    @requires_subprocess()
+    @requires_remote_subprocess_debugging()
     def test_cli_module_with_arguments(self):
         test_args = [
             "profiling.sampling.cli",
@@ -203,12 +205,12 @@ class TestSampleProfilerCLI(unittest.TestCase):
         with (
             mock.patch("sys.argv", test_args),
             mock.patch("sys.stderr", io.StringIO()) as mock_stderr,
-            self.assertRaises(SystemExit) as cm,
+            self.assertRaises(SamplingScriptNotFoundError) as cm,
         ):
             main()
 
         # Verify the error is about the non-existent script
-        self.assertIn("12345", str(cm.exception.code))
+        self.assertIn("12345", str(cm.exception))
 
     def test_cli_no_target_specified(self):
         # In new CLI, must specify a subcommand
@@ -226,12 +228,12 @@ class TestSampleProfilerCLI(unittest.TestCase):
         self.assertIn("invalid choice", error_msg)
 
     @unittest.skipIf(is_emscripten, "socket.SO_REUSEADDR does not exist")
-    @requires_subprocess()
+    @requires_remote_subprocess_debugging()
     def test_cli_module_with_profiler_options(self):
         test_args = [
             "profiling.sampling.cli",
             "run",
-            "-i",
+            "-r",
             "1000",
             "-d",
             "30",
@@ -264,8 +266,8 @@ class TestSampleProfilerCLI(unittest.TestCase):
         test_args = [
             "profiling.sampling.cli",
             "run",
-            "-i",
-            "2000",
+            "-r",
+            "500",
             "-d",
             "60",
             "--collapsed",
@@ -307,7 +309,7 @@ class TestSampleProfilerCLI(unittest.TestCase):
         self.assertIn("required: target", error_msg)  # argparse error for missing positional arg
 
     @unittest.skipIf(is_emscripten, "socket.SO_REUSEADDR does not exist")
-    @requires_subprocess()
+    @requires_remote_subprocess_debugging()
     def test_cli_long_module_option(self):
         test_args = [
             "profiling.sampling.cli",
@@ -436,6 +438,7 @@ class TestSampleProfilerCLI(unittest.TestCase):
 
         with (
             mock.patch("sys.argv", test_args),
+            mock.patch("profiling.sampling.cli._is_process_running", return_value=True),
             mock.patch("profiling.sampling.cli.sample") as mock_sample,
         ):
             main()
@@ -475,6 +478,7 @@ class TestSampleProfilerCLI(unittest.TestCase):
         for test_args, expected_filename, expected_format in test_cases:
             with (
                 mock.patch("sys.argv", test_args),
+                mock.patch("profiling.sampling.cli._is_process_running", return_value=True),
                 mock.patch("profiling.sampling.cli.sample") as mock_sample,
             ):
                 main()
@@ -513,6 +517,7 @@ class TestSampleProfilerCLI(unittest.TestCase):
 
         with (
             mock.patch("sys.argv", test_args),
+            mock.patch("profiling.sampling.cli._is_process_running", return_value=True),
             mock.patch("profiling.sampling.cli.sample") as mock_sample,
         ):
             main()
@@ -534,6 +539,7 @@ class TestSampleProfilerCLI(unittest.TestCase):
 
             with (
                 mock.patch("sys.argv", test_args),
+                mock.patch("profiling.sampling.cli._is_process_running", return_value=True),
                 mock.patch("profiling.sampling.cli.sample") as mock_sample,
             ):
                 main()
@@ -547,6 +553,7 @@ class TestSampleProfilerCLI(unittest.TestCase):
 
         with (
             mock.patch("sys.argv", test_args),
+            mock.patch("profiling.sampling.cli._is_process_running", return_value=True),
             mock.patch("profiling.sampling.cli.sample") as mock_sample,
         ):
             main()
@@ -562,6 +569,7 @@ class TestSampleProfilerCLI(unittest.TestCase):
 
         with (
             mock.patch("sys.argv", test_args),
+            mock.patch("profiling.sampling.cli._is_process_running", return_value=True),
             mock.patch("profiling.sampling.cli.sample") as mock_sample,
         ):
             main()
@@ -576,6 +584,7 @@ class TestSampleProfilerCLI(unittest.TestCase):
 
         with (
             mock.patch("sys.argv", test_args),
+            mock.patch("profiling.sampling.cli._is_process_running", return_value=True),
             mock.patch("profiling.sampling.cli.sample") as mock_sample,
         ):
             main()
@@ -697,14 +706,56 @@ class TestSampleProfilerCLI(unittest.TestCase):
     def test_run_nonexistent_script_exits_cleanly(self):
         """Test that running a non-existent script exits with a clean error."""
         with mock.patch("sys.argv", ["profiling.sampling.cli", "run", "/nonexistent/script.py"]):
-            with self.assertRaises(SystemExit) as cm:
+            with self.assertRaisesRegex(SamplingScriptNotFoundError, "Script '[\\w/.]+' not found."):
                 main()
-        self.assertIn("Script not found", str(cm.exception.code))
 
     @unittest.skipIf(is_emscripten, "subprocess not available")
     def test_run_nonexistent_module_exits_cleanly(self):
         """Test that running a non-existent module exits with a clean error."""
         with mock.patch("sys.argv", ["profiling.sampling.cli", "run", "-m", "nonexistent_module_xyz"]):
-            with self.assertRaises(SystemExit) as cm:
+            with self.assertRaisesRegex(SamplingModuleNotFoundError, "Module '[\\w/.]+' not found."):
                 main()
-        self.assertIn("Module not found", str(cm.exception.code))
+
+    @unittest.skipIf(is_emscripten, "subprocess not available")
+    def test_cli_attach_nonexistent_pid(self):
+        fake_pid = "99999"
+        with mock.patch("sys.argv", ["profiling.sampling.cli", "attach", fake_pid]):
+            with self.assertRaises(SamplingUnknownProcessError) as cm:
+                main()
+
+            self.assertIn(fake_pid, str(cm.exception))
+
+    def test_cli_replay_rejects_non_binary_profile(self):
+        with tempfile.TemporaryDirectory() as tempdir:
+            profile = os.path.join(tempdir, "output.prof")
+            with open(profile, "wb") as file:
+                file.write(b"not a binary sampling profile")
+
+            with mock.patch("sys.argv", ["profiling.sampling.cli", "replay", profile]):
+                with self.assertRaises(SystemExit) as cm:
+                    main()
+
+        error = str(cm.exception)
+        self.assertIn("not a binary sampling profile", error)
+        self.assertIn("--binary", error)
+
+    def test_cli_replay_reader_errors_exit_cleanly(self):
+        with tempfile.TemporaryDirectory() as tempdir:
+            profile = os.path.join(tempdir, "output.bin")
+            with open(profile, "wb") as file:
+                file.write(b"HCAT" + (b"\0" * 60))
+
+            with (
+                mock.patch("sys.argv", ["profiling.sampling.cli", "replay", profile]),
+                mock.patch(
+                    "profiling.sampling.cli.BinaryReader",
+                    side_effect=ValueError("Unsupported format version 2"),
+                ),
+            ):
+                with self.assertRaises(SystemExit) as cm:
+                    main()
+
+        self.assertEqual(
+            str(cm.exception),
+            "Error: Unsupported format version 2",
+        )

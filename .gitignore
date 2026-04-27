@@ -5,6 +5,7 @@
 *.cover
 *.iml
 *.o
+*.o.tmp
 *.lto
 *.a
 *.so
@@ -45,6 +46,7 @@ gmon.out
 .pytest_cache/
 .ruff_cache/
 .DS_Store
+.pixi/
 
 *.exe
 
@@ -136,7 +138,7 @@ Tools/unicode/data/
 /config.status
 /config.status.lineno
 /.ccache
-/cross-build/
+/cross-build*/
 /jit_stencils*.h
 /platform
 /profile-clean-stamp

@@ -308,6 +308,9 @@ set_add_entry_takeref(PySetObject *so, PyObject *key, Py_hash_t hash)
   found_unused_or_dummy:
     if (freeslot == NULL)
         goto found_unused;
+    if (freeslot->hash != -1) {
+        goto restart;
+    }
     FT_ATOMIC_STORE_SSIZE_RELAXED(so->used, so->used + 1);
     FT_ATOMIC_STORE_SSIZE_RELAXED(freeslot->hash, hash);
     FT_ATOMIC_STORE_PTR_RELEASE(freeslot->key, key);
@@ -445,7 +448,7 @@ set_lookkey_threadsafe(PySetObject *so, PyObject *key, Py_hash_t hash)
     }
     ensure_shared_on_read(so);
     setentry *table = FT_ATOMIC_LOAD_PTR_ACQUIRE(so->table);
-    size_t mask = FT_ATOMIC_LOAD_SSIZE_RELAXED(so->mask);
+    size_t mask = FT_ATOMIC_LOAD_SSIZE_ACQUIRE(so->mask);
     if (table == NULL || table != FT_ATOMIC_LOAD_PTR_ACQUIRE(so->table)) {
         return set_lookkey(so, key, hash, &entry);
     }
@@ -532,7 +535,7 @@ set_table_resize(PySetObject *so, Py_ssize_t minused)
     assert(newtable != oldtable);
     set_zero_table(newtable, newsize);
     FT_ATOMIC_STORE_PTR_RELEASE(so->table, NULL);
-    FT_ATOMIC_STORE_SSIZE_RELAXED(so->mask, newsize - 1);
+    FT_ATOMIC_STORE_SSIZE_RELEASE(so->mask, newsize - 1);
 
     /* Copy the data over; this is refcount-neutral for active entries;
        dummy entries aren't copied over, of course */
@@ -634,7 +637,7 @@ set_empty_to_minsize(PySetObject *so)
     set_zero_table(so->smalltable, PySet_MINSIZE);
     so->fill = 0;
     FT_ATOMIC_STORE_SSIZE_RELAXED(so->used, 0);
-    FT_ATOMIC_STORE_SSIZE_RELAXED(so->mask, PySet_MINSIZE - 1);
+    FT_ATOMIC_STORE_SSIZE_RELEASE(so->mask, PySet_MINSIZE - 1);
     FT_ATOMIC_STORE_SSIZE_RELAXED(so->hash, -1);
     FT_ATOMIC_STORE_PTR_RELEASE(so->table, so->smalltable);
 }
@@ -961,7 +964,10 @@ _shuffle_bits(Py_uhash_t h)
 
    This hash algorithm can be used on either a frozenset or a set.
    When it is used on a set, it computes the hash value of the equivalent
-   frozenset without creating a new frozenset object. */
+   frozenset without creating a new frozenset object.
+
+   If you update this code, update also frozendict_hash() which copied this
+   code. */
 
 static Py_hash_t
 frozenset_hash_impl(PyObject *self)
@@ -1180,10 +1186,14 @@ set_iter(PyObject *so)
 static int
 set_update_dict_lock_held(PySetObject *so, PyObject *other)
 {
-    assert(PyDict_CheckExact(other));
+    assert(PyAnyDict_CheckExact(other));
 
     _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(so);
-    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(other);
+#ifdef Py_DEBUG
+    if (!PyFrozenDict_CheckExact(other)) {
+        _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(other);
+    }
+#endif
 
     /* Do one big resize at the start, rather than
     * incrementally resizing as we insert new keys.  Expect
@@ -1239,7 +1249,7 @@ set_update_lock_held(PySetObject *so, PyObject *other)
     if (PyAnySet_Check(other)) {
         return set_merge_lock_held(so, other);
     }
-    else if (PyDict_CheckExact(other)) {
+    else if (PyAnyDict_CheckExact(other)) {
         return set_update_dict_lock_held(so, other);
     }
     return set_update_iterable_lock_held(so, other);
@@ -1264,6 +1274,9 @@ set_update_local(PySetObject *so, PyObject *other)
         Py_END_CRITICAL_SECTION();
         return rv;
     }
+    else if (PyFrozenDict_CheckExact(other)) {
+        return set_update_dict_lock_held(so, other);
+    }
     return set_update_iterable_lock_held(so, other);
 }
 
@@ -1285,6 +1298,13 @@ set_update_internal(PySetObject *so, PyObject *other)
         Py_BEGIN_CRITICAL_SECTION2(so, other);
         rv = set_update_dict_lock_held(so, other);
         Py_END_CRITICAL_SECTION2();
+        return rv;
+    }
+    else if (PyFrozenDict_CheckExact(other)) {
+        int rv;
+        Py_BEGIN_CRITICAL_SECTION(so);
+        rv = set_update_dict_lock_held(so, other);
+        Py_END_CRITICAL_SECTION();
         return rv;
     }
     else {
@@ -1365,6 +1385,26 @@ make_new_set_basetype(PyTypeObject *type, PyObject *iterable)
     return make_new_set(type, iterable);
 }
 
+// gh-140232: check whether a frozenset can be untracked from the GC
+static void
+_PyFrozenSet_MaybeUntrack(PyObject *op)
+{
+    assert(op != NULL);
+    // subclasses of a frozenset can generate reference cycles, so do not untrack
+    if (!PyFrozenSet_CheckExact(op)) {
+        return;
+    }
+    // if no elements of a frozenset are tracked by the GC, we untrack the object
+    Py_ssize_t pos = 0;
+    setentry *entry;
+    while (set_next((PySetObject *)op, &pos, &entry)) {
+        if (_PyObject_GC_MAY_BE_TRACKED(entry->key)) {
+            return;
+        }
+    }
+    _PyObject_GC_UNTRACK(op);
+}
+
 static PyObject *
 make_new_frozenset(PyTypeObject *type, PyObject *iterable)
 {
@@ -1376,7 +1416,11 @@ make_new_frozenset(PyTypeObject *type, PyObject *iterable)
         /* frozenset(f) is idempotent */
         return Py_NewRef(iterable);
     }
-    return make_new_set(type, iterable);
+    PyObject *obj = make_new_set(type, iterable);
+    if (obj != NULL) {
+        _PyFrozenSet_MaybeUntrack(obj);
+    }
+    return obj;
 }
 
 static PyObject *
@@ -1420,6 +1464,17 @@ set_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     return make_new_set(type, NULL);
 }
 
+#ifdef Py_GIL_DISABLED
+static void
+copy_small_table(setentry *dest, setentry *src)
+{
+    for (Py_ssize_t i = 0; i < PySet_MINSIZE; i++) {
+        _Py_atomic_store_ptr_release(&dest[i].key, src[i].key);
+        _Py_atomic_store_ssize_relaxed(&dest[i].hash, src[i].hash);
+    }
+}
+#endif
+
 /* set_swap_bodies() switches the contents of any two sets by moving their
    internal data pointers and, if needed, copying the internal smalltables.
    Semantically equivalent to:
@@ -1449,8 +1504,8 @@ set_swap_bodies(PySetObject *a, PySetObject *b)
     FT_ATOMIC_STORE_SSIZE_RELAXED(a->used, b->used);
     FT_ATOMIC_STORE_SSIZE_RELAXED(b->used, t);
     t = a->mask;
-    FT_ATOMIC_STORE_SSIZE_RELAXED(a->mask, b->mask);
-    FT_ATOMIC_STORE_SSIZE_RELAXED(b->mask, t);
+    FT_ATOMIC_STORE_SSIZE_RELEASE(a->mask, b->mask);
+    FT_ATOMIC_STORE_SSIZE_RELEASE(b->mask, t);
 
     u = a_table;
     if (a_table == a->smalltable)
@@ -1462,8 +1517,13 @@ set_swap_bodies(PySetObject *a, PySetObject *b)
 
     if (a_table == a->smalltable || b_table == b->smalltable) {
         memcpy(tab, a->smalltable, sizeof(tab));
+#ifndef Py_GIL_DISABLED
         memcpy(a->smalltable, b->smalltable, sizeof(tab));
         memcpy(b->smalltable, tab, sizeof(tab));
+#else
+        copy_small_table(a->smalltable, b->smalltable);
+        copy_small_table(b->smalltable, tab);
+#endif
     }
 
     if (PyType_IsSubtype(Py_TYPE(a), &PyFrozenSet_Type)  &&
@@ -1987,7 +2047,7 @@ set_difference(PySetObject *so, PyObject *other)
     if (PyAnySet_Check(other)) {
         other_size = PySet_GET_SIZE(other);
     }
-    else if (PyDict_CheckExact(other)) {
+    else if (PyAnyDict_CheckExact(other)) {
         other_size = PyDict_GET_SIZE(other);
     }
     else {
@@ -2004,7 +2064,7 @@ set_difference(PySetObject *so, PyObject *other)
     if (result == NULL)
         return NULL;
 
-    if (PyDict_CheckExact(other)) {
+    if (PyAnyDict_CheckExact(other)) {
         while (set_next(so, &pos, &entry)) {
             key = entry->key;
             hash = entry->hash;
@@ -2126,7 +2186,11 @@ static int
 set_symmetric_difference_update_dict(PySetObject *so, PyObject *other)
 {
     _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(so);
-    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(other);
+#ifdef Py_DEBUG
+    if (!PyFrozenDict_CheckExact(other)) {
+        _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(other);
+    }
+#endif
 
     Py_ssize_t pos = 0;
     PyObject *key, *value;
@@ -2199,6 +2263,11 @@ set_symmetric_difference_update_impl(PySetObject *so, PyObject *other)
         Py_BEGIN_CRITICAL_SECTION2(so, other);
         rv = set_symmetric_difference_update_dict(so, other);
         Py_END_CRITICAL_SECTION2();
+    }
+    else if (PyFrozenDict_CheckExact(other)) {
+        Py_BEGIN_CRITICAL_SECTION(so);
+        rv = set_symmetric_difference_update_dict(so, other);
+        Py_END_CRITICAL_SECTION();
     }
     else if (PyAnySet_Check(other)) {
         Py_BEGIN_CRITICAL_SECTION2(so, other);
@@ -2913,7 +2982,11 @@ PySet_New(PyObject *iterable)
 PyObject *
 PyFrozenSet_New(PyObject *iterable)
 {
-    return make_new_set(&PyFrozenSet_Type, iterable);
+    PyObject *result = make_new_set(&PyFrozenSet_Type, iterable);
+    if (result != NULL) {
+        _PyFrozenSet_MaybeUntrack(result);
+    }
+    return result;
 }
 
 Py_ssize_t
@@ -2950,14 +3023,14 @@ PySet_Contains(PyObject *anyset, PyObject *key)
         PyErr_BadInternalCall();
         return -1;
     }
-    if (PyFrozenSet_CheckExact(anyset)) {
-        return set_contains_key((PySetObject *)anyset, key);
+
+    PySetObject *so = (PySetObject *)anyset;
+    Py_hash_t hash = _PyObject_HashFast(key);
+    if (hash == -1) {
+        set_unhashable_type(key);
+        return -1;
     }
-    int rv;
-    Py_BEGIN_CRITICAL_SECTION(anyset);
-    rv = set_contains_key((PySetObject *)anyset, key);
-    Py_END_CRITICAL_SECTION();
-    return rv;
+    return set_contains_entry(so, key, hash);
 }
 
 int
@@ -2991,6 +3064,11 @@ PySet_Add(PyObject *anyset, PyObject *key)
         // API limits the usage of `PySet_Add` to "fill in the values of brand
         // new frozensets before they are exposed to other code". In this case,
         // this can be done without a lock.
+        // Since another key is added to the set, we must track the frozenset
+        // if needed.
+        if (PyFrozenSet_CheckExact(anyset) && !PyObject_GC_IsTracked(anyset) && PyObject_GC_IsTracked(key)) {
+            _PyObject_GC_TRACK(anyset);
+        }
         return set_add_key((PySetObject *)anyset, key);
     }
 

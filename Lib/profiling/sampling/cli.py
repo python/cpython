@@ -2,19 +2,27 @@
 
 import argparse
 import importlib.util
+import locale
 import os
+import re
 import selectors
 import socket
 import subprocess
 import sys
 import time
+import webbrowser
+from contextlib import nullcontext
 
-from .sample import sample, sample_live
+from .errors import SamplingUnknownProcessError, SamplingModuleNotFoundError, SamplingScriptNotFoundError
+from .sample import sample, sample_live, _is_process_running
 from .pstats_collector import PstatsCollector
-from .stack_collector import CollapsedStackCollector, FlamegraphCollector
+from .stack_collector import CollapsedStackCollector, FlamegraphCollector, DiffFlamegraphCollector
 from .heatmap_collector import HeatmapCollector
 from .gecko_collector import GeckoCollector
+from .binary_collector import BinaryCollector
+from .binary_reader import BinaryReader
 from .constants import (
+    MICROSECONDS_PER_SECOND,
     PROFILING_MODE_ALL,
     PROFILING_MODE_WALL,
     PROFILING_MODE_CPU,
@@ -29,6 +37,12 @@ from .constants import (
 )
 
 try:
+    from ._child_monitor import ChildProcessMonitor
+except ImportError:
+    # _remote_debugging module not available on this platform (e.g., WASI)
+    ChildProcessMonitor = None
+
+try:
     from .live_collector import LiveStatsCollector
 except ImportError:
     LiveStatsCollector = None
@@ -40,6 +54,13 @@ class CustomFormatter(
 ):
     """Custom formatter that combines default values display with raw description formatting."""
     pass
+
+
+class DiffFlamegraphAction(argparse.Action):
+    """Custom action for --diff-flamegraph that sets both format and baseline path."""
+    def __call__(self, parser, namespace, values, option_string=None):
+        namespace.format = 'diff_flamegraph'
+        namespace.diff_baseline = values
 
 
 _HELP_DESCRIPTION = """Sample a process's stack frames and generate profiling data.
@@ -61,27 +82,112 @@ Use `python -m profiling.sampling <command> --help` for command-specific help.""
 
 
 # Constants for socket synchronization
-_SYNC_TIMEOUT = 5.0
-_PROCESS_KILL_TIMEOUT = 2.0
+_SYNC_TIMEOUT_SEC = 5.0
+_PROCESS_KILL_TIMEOUT_SEC = 2.0
 _READY_MESSAGE = b"ready"
 _RECV_BUFFER_SIZE = 1024
+_BINARY_PROFILE_HEADER_SIZE = 64
+_BINARY_PROFILE_MAGICS = (b"HCAT", b"TACH")
 
 # Format configuration
 FORMAT_EXTENSIONS = {
     "pstats": "pstats",
     "collapsed": "txt",
     "flamegraph": "html",
+    "diff_flamegraph": "html",
     "gecko": "json",
     "heatmap": "html",
+    "binary": "bin",
 }
 
 COLLECTOR_MAP = {
     "pstats": PstatsCollector,
     "collapsed": CollapsedStackCollector,
     "flamegraph": FlamegraphCollector,
+    "diff_flamegraph": DiffFlamegraphCollector,
     "gecko": GeckoCollector,
     "heatmap": HeatmapCollector,
+    "binary": BinaryCollector,
 }
+
+def _setup_child_monitor(args, parent_pid):
+    # Build CLI args for child profilers (excluding --subprocesses to avoid recursion)
+    child_cli_args = _build_child_profiler_args(args)
+
+    # Build output pattern
+    output_pattern = _build_output_pattern(args)
+
+    return ChildProcessMonitor(
+        pid=parent_pid,
+        cli_args=child_cli_args,
+        output_pattern=output_pattern,
+    )
+
+
+def _get_child_monitor_context(args, pid):
+    if getattr(args, 'subprocesses', False):
+        return _setup_child_monitor(args, pid)
+    return nullcontext()
+
+
+def _build_child_profiler_args(args):
+    child_args = []
+
+    # Sampling options
+    hz = MICROSECONDS_PER_SECOND // args.sample_interval_usec
+    child_args.extend(["-r", str(hz)])
+    if args.duration is not None:
+        child_args.extend(["-d", str(args.duration)])
+    if args.all_threads:
+        child_args.append("-a")
+    if args.realtime_stats:
+        child_args.append("--realtime-stats")
+    if args.native:
+        child_args.append("--native")
+    if not args.gc:
+        child_args.append("--no-gc")
+    if args.opcodes:
+        child_args.append("--opcodes")
+    if args.async_aware:
+        child_args.append("--async-aware")
+        async_mode = getattr(args, 'async_mode', 'running')
+        if async_mode != "running":
+            child_args.extend(["--async-mode", async_mode])
+
+    # Mode options
+    mode = getattr(args, 'mode', 'wall')
+    if mode != "wall":
+        child_args.extend(["--mode", mode])
+
+    # Format options (skip pstats as it's the default)
+    if args.format != "pstats":
+        child_args.append(f"--{args.format}")
+
+    return child_args
+
+
+def _build_output_pattern(args):
+    """Build output filename pattern for child profilers.
+
+    The pattern uses {pid} as a placeholder which will be replaced with the
+    actual child PID using str.replace(), so user filenames with braces are safe.
+    """
+    if args.outfile:
+        # User specified output - add PID to filename
+        base, ext = os.path.splitext(args.outfile)
+        if ext:
+            return f"{base}_{{pid}}{ext}"
+        else:
+            return f"{args.outfile}_{{pid}}"
+    else:
+        # Use default pattern based on format (consistent _ separator)
+        extension = FORMAT_EXTENSIONS.get(args.format, "txt")
+        if args.format == "heatmap":
+            return "heatmap_{pid}"
+        if args.format == "pstats":
+            # pstats defaults to stdout, but for subprocesses we need files
+            return "profile_{pid}.pstats"
+        return f"{args.format}_{{pid}}.{extension}"
 
 
 def _parse_mode(mode_string):
@@ -98,7 +204,7 @@ def _parse_mode(mode_string):
 def _check_process_died(process):
     """Check if process died and raise an error with stderr if available."""
     if process.poll() is None:
-        return  # Process still running
+        return
 
     # Process died - try to get stderr for error message
     stderr_msg = ""
@@ -152,7 +258,7 @@ def _run_with_sync(original_cmd, suppress_output=False):
         sync_sock.bind(("127.0.0.1", 0))  # Let OS choose a free port
         sync_port = sync_sock.getsockname()[1]
         sync_sock.listen(1)
-        sync_sock.settimeout(_SYNC_TIMEOUT)
+        sync_sock.settimeout(_SYNC_TIMEOUT_SEC)
 
         # Get current working directory to preserve it
         cwd = os.getcwd()
@@ -181,18 +287,13 @@ def _run_with_sync(original_cmd, suppress_output=False):
         process = subprocess.Popen(cmd, **popen_kwargs)
 
         try:
-            _wait_for_ready_signal(sync_sock, process, _SYNC_TIMEOUT)
-
-            # Close stderr pipe if we were capturing it
-            if process.stderr:
-                process.stderr.close()
-
+            _wait_for_ready_signal(sync_sock, process, _SYNC_TIMEOUT_SEC)
         except socket.timeout:
             # If we timeout, kill the process and raise an error
             if process.poll() is None:
                 process.terminate()
                 try:
-                    process.wait(timeout=_PROCESS_KILL_TIMEOUT)
+                    process.wait(timeout=_PROCESS_KILL_TIMEOUT_SEC)
                 except subprocess.TimeoutExpired:
                     process.kill()
                     process.wait()
@@ -203,24 +304,72 @@ def _run_with_sync(original_cmd, suppress_output=False):
         return process
 
 
+_RATE_PATTERN = re.compile(r'''
+      ^                   # Start of string
+      (                   # Group 1: The numeric value
+          \d+             #   One or more digits (integer part)
+          (?:\.\d+)?      #   Optional: decimal point followed by digits
+      )                   #   Examples: "10", "0.5", "100.25"
+      (                   # Group 2: Optional unit suffix
+          hz              #   "hz" - hertz
+          | khz           #   "khz" - kilohertz
+          | k             #   "k" - shorthand for kilohertz
+      )?                  #   Suffix is optional (bare number = Hz)
+      $                   # End of string
+  ''', re.VERBOSE | re.IGNORECASE)
+
+
+def _parse_sampling_rate(rate_str: str) -> int:
+    """Parse sampling rate string to microseconds."""
+    rate_str = rate_str.strip().lower()
+
+    match = _RATE_PATTERN.match(rate_str)
+    if not match:
+        raise argparse.ArgumentTypeError(
+            f"Invalid sampling rate format: {rate_str}. "
+            "Expected: number followed by optional suffix (hz, khz, k) with no spaces (e.g., 10khz)"
+        )
+
+    number_part = match.group(1)
+    suffix = match.group(2) or ''
+
+    # Determine multiplier based on suffix
+    suffix_map = {
+        'hz': 1,
+        'khz': 1000,
+        'k': 1000,
+    }
+    multiplier = suffix_map.get(suffix, 1)
+    hz = float(number_part) * multiplier
+    if hz <= 0:
+        raise argparse.ArgumentTypeError(f"Sampling rate must be positive: {rate_str}")
+
+    interval_usec = int(MICROSECONDS_PER_SECOND / hz)
+    if interval_usec < 1:
+        raise argparse.ArgumentTypeError(f"Sampling rate too high: {rate_str}")
+
+    return interval_usec
+
+
 def _add_sampling_options(parser):
     """Add sampling configuration options to a parser."""
     sampling_group = parser.add_argument_group("Sampling configuration")
     sampling_group.add_argument(
-        "-i",
-        "--interval",
-        type=int,
-        default=100,
-        metavar="MICROSECONDS",
-        help="sampling interval",
+        "-r",
+        "--sampling-rate",
+        type=_parse_sampling_rate,
+        default="1khz",
+        metavar="RATE",
+        dest="sample_interval_usec",
+        help="sampling rate (e.g., 10000, 10khz, 10k)",
     )
     sampling_group.add_argument(
         "-d",
         "--duration",
         type=int,
-        default=10,
+        default=None,
         metavar="SECONDS",
-        help="Sampling duration",
+        help="Sampling duration (default: run to completion)",
     )
     sampling_group.add_argument(
         "-a",
@@ -255,6 +404,18 @@ def _add_sampling_options(parser):
         action="store_true",
         help="Enable async-aware profiling (uses task-based stack reconstruction)",
     )
+    sampling_group.add_argument(
+        "--subprocesses",
+        action="store_true",
+        help="Also profile subprocesses. Each subprocess gets its own profiler and output file.",
+    )
+    sampling_group.add_argument(
+        "--blocking",
+        action="store_true",
+        help="Stop all threads in target process before sampling to get consistent snapshots. "
+        "Uses thread_suspend on macOS and ptrace on Linux. Adds overhead but ensures memory "
+        "reads are from a frozen state.",
+    )
 
 
 def _add_mode_options(parser):
@@ -278,7 +439,7 @@ def _add_mode_options(parser):
     )
 
 
-def _add_format_options(parser):
+def _add_format_options(parser, include_compression=True, include_binary=True):
     """Add output format options to a parser."""
     output_group = parser.add_argument_group("Output options")
     format_group = output_group.add_mutually_exclusive_group()
@@ -317,14 +478,42 @@ def _add_format_options(parser):
         dest="format",
         help="Generate interactive HTML heatmap visualization with line-level sample counts",
     )
-    parser.set_defaults(format="pstats")
+    format_group.add_argument(
+        "--diff-flamegraph",
+        metavar="BASELINE",
+        action=DiffFlamegraphAction,
+        help="Generate differential flamegraph comparing current profile to BASELINE binary file",
+    )
+    if include_binary:
+        format_group.add_argument(
+            "--binary",
+            action="store_const",
+            const="binary",
+            dest="format",
+            help="Generate high-performance binary format (use 'replay' command to convert)",
+        )
+    parser.set_defaults(format="pstats", diff_baseline=None)
+
+    if include_compression:
+        output_group.add_argument(
+            "--compression",
+            choices=["auto", "zstd", "none"],
+            default="auto",
+            help="Compression for binary format: auto (use zstd if available), zstd, none",
+        )
 
     output_group.add_argument(
         "-o",
         "--output",
         dest="outfile",
-        help="Output path (default: stdout for pstats, auto-generated for others). "
-        "For heatmap: directory name (default: heatmap_PID)",
+        help="Output path (default: stdout for pstats text; with -o, pstats is binary). "
+        "Auto-generated for other formats. For heatmap: directory name (default: heatmap_PID)",
+    )
+    output_group.add_argument(
+        "--browser",
+        action="store_true",
+        help="Automatically open HTML output (flamegraph, heatmap) in browser. "
+        "When using --subprocesses, only the main process opens the browser",
     )
 
 
@@ -372,16 +561,19 @@ def _sort_to_mode(sort_choice):
     }
     return sort_map.get(sort_choice, SORT_MODE_NSAMPLES)
 
-
-def _create_collector(format_type, interval, skip_idle, opcodes=False):
+def _create_collector(format_type, sample_interval_usec, skip_idle, opcodes=False,
+                      output_file=None, compression='auto', diff_baseline=None):
     """Create the appropriate collector based on format type.
 
     Args:
-        format_type: The output format ('pstats', 'collapsed', 'flamegraph', 'gecko', 'heatmap')
-        interval: Sampling interval in microseconds
+        format_type: The output format ('pstats', 'collapsed', 'flamegraph', 'gecko', 'heatmap', 'binary', 'diff_flamegraph')
+        sample_interval_usec: Sampling interval in microseconds
         skip_idle: Whether to skip idle samples
         opcodes: Whether to collect opcode information (only used by gecko format
                  for creating interval markers in Firefox Profiler)
+        output_file: Output file path (required for binary format)
+        compression: Compression type for binary format ('auto', 'zstd', 'none')
+        diff_baseline: Path to baseline binary file for differential flamegraph
 
     Returns:
         A collector instance of the appropriate type
@@ -390,13 +582,31 @@ def _create_collector(format_type, interval, skip_idle, opcodes=False):
     if collector_class is None:
         raise ValueError(f"Unknown format: {format_type}")
 
+    if format_type == "diff_flamegraph":
+        if diff_baseline is None:
+            raise ValueError("Differential flamegraph requires a baseline file")
+        if not os.path.exists(diff_baseline):
+            raise ValueError(f"Baseline file not found: {diff_baseline}")
+        return collector_class(
+            sample_interval_usec,
+            baseline_binary_path=diff_baseline,
+            skip_idle=skip_idle
+        )
+
+    # Binary format requires output file and compression
+    if format_type == "binary":
+        if output_file is None:
+            raise ValueError("Binary format requires an output file")
+        return collector_class(output_file, sample_interval_usec, skip_idle=skip_idle,
+                              compression=compression)
+
     # Gecko format never skips idle (it needs both GIL and CPU data)
     # and is the only format that uses opcodes for interval markers
     if format_type == "gecko":
         skip_idle = False
-        return collector_class(interval, skip_idle=skip_idle, opcodes=opcodes)
+        return collector_class(sample_interval_usec, skip_idle=skip_idle, opcodes=opcodes)
 
-    return collector_class(interval, skip_idle=skip_idle)
+    return collector_class(sample_interval_usec, skip_idle=skip_idle)
 
 
 def _generate_output_filename(format_type, pid):
@@ -413,7 +623,115 @@ def _generate_output_filename(format_type, pid):
     # For heatmap, use cleaner directory name without extension
     if format_type == "heatmap":
         return f"heatmap_{pid}"
-    return f"{format_type}.{pid}.{extension}"
+    return f"{format_type}_{pid}.{extension}"
+
+
+def _open_in_browser(path):
+    """Open a file or directory in the default web browser.
+
+    Args:
+        path: File path or directory path to open
+
+    For directories (heatmap), opens the index.html file inside.
+    """
+    abs_path = os.path.abspath(path)
+
+    # For heatmap directories, open the index.html file
+    if os.path.isdir(abs_path):
+        index_path = os.path.join(abs_path, 'index.html')
+        if os.path.exists(index_path):
+            abs_path = index_path
+        else:
+            print(f"Warning: Could not find index.html in {path}", file=sys.stderr)
+            return
+
+    file_url = f"file://{abs_path}"
+    try:
+        webbrowser.open(file_url)
+    except Exception as e:
+        print(f"Warning: Could not open browser: {e}", file=sys.stderr)
+
+
+def _validate_replay_input_file(filename):
+    """Validate that the replay input looks like a sampling binary profile."""
+    try:
+        with open(filename, "rb") as file:
+            header = file.read(_BINARY_PROFILE_HEADER_SIZE)
+    except OSError as exc:
+        sys.exit(f"Error: Could not read input file {filename}: {exc}")
+
+    if (
+        len(header) < _BINARY_PROFILE_HEADER_SIZE
+        or header[:4] not in _BINARY_PROFILE_MAGICS
+    ):
+        sys.exit(
+            "Error: Input file is not a binary sampling profile. "
+            "The replay command only accepts files created with --binary"
+        )
+
+
+def _replay_with_reader(args, reader):
+    """Replay samples from an open binary reader."""
+    info = reader.get_info()
+    interval = info['sample_interval_us']
+
+    print(f"Replaying {info['sample_count']} samples from {args.input_file}")
+    print(f"  Sample interval: {interval} us")
+    print(
+        "  Compression: "
+        f"{'zstd' if info.get('compression_type', 0) == 1 else 'none'}"
+    )
+
+    collector = _create_collector(
+        args.format, interval, skip_idle=False,
+        diff_baseline=args.diff_baseline
+    )
+
+    def progress_callback(current, total):
+        if total > 0:
+            pct = current / total
+            bar_width = 40
+            filled = int(bar_width * pct)
+            bar = '█' * filled + '░' * (bar_width - filled)
+            print(
+                f"\r  [{bar}] {pct*100:5.1f}% ({current:,}/{total:,})",
+                end="",
+                flush=True,
+            )
+
+    count = reader.replay_samples(collector, progress_callback)
+    print()
+
+    if args.format == "pstats":
+        if args.outfile:
+            collector.export(args.outfile)
+        else:
+            sort_choice = (
+                args.sort if args.sort is not None else "nsamples"
+            )
+            limit = args.limit if args.limit is not None else 15
+            sort_mode = _sort_to_mode(sort_choice)
+            collector.print_stats(
+                sort_mode, limit, not args.no_summary,
+                PROFILING_MODE_WALL
+            )
+    else:
+        filename = (
+            args.outfile
+            or _generate_output_filename(args.format, os.getpid())
+        )
+        collector.export(filename)
+
+        # Auto-open browser for HTML output if --browser flag is set
+        if (
+            args.format in (
+                'flamegraph', 'diff_flamegraph', 'heatmap'
+            )
+            and getattr(args, 'browser', False)
+        ):
+            _open_in_browser(filename)
+
+    print(f"Replayed {count} samples")
 
 
 def _handle_output(collector, args, pid, mode):
@@ -425,9 +743,19 @@ def _handle_output(collector, args, pid, mode):
         pid: Process ID (for generating filenames)
         mode: Profiling mode used
     """
-    if args.format == "pstats":
+    if args.format == "binary":
+        # Binary format already wrote to file incrementally, just finalize
+        collector.export(None)
+        filename = collector.filename
+        print(f"Binary profile written to {filename} ({collector.total_samples} samples)")
+    elif args.format == "pstats":
         if args.outfile:
-            collector.export(args.outfile)
+            # If outfile is a directory, generate filename inside it
+            if os.path.isdir(args.outfile):
+                filename = os.path.join(args.outfile, _generate_output_filename(args.format, pid))
+                collector.export(filename)
+            else:
+                collector.export(args.outfile)
         else:
             # Print to stdout with defaults applied
             sort_choice = args.sort if args.sort is not None else "nsamples"
@@ -438,8 +766,16 @@ def _handle_output(collector, args, pid, mode):
             )
     else:
         # Export to file
-        filename = args.outfile or _generate_output_filename(args.format, pid)
+        if args.outfile and os.path.isdir(args.outfile):
+            # If outfile is a directory, generate filename inside it
+            filename = os.path.join(args.outfile, _generate_output_filename(args.format, pid))
+        else:
+            filename = args.outfile or _generate_output_filename(args.format, pid)
         collector.export(filename)
+
+        # Auto-open browser for HTML output if --browser flag is set
+        if args.format in ('flamegraph', 'diff_flamegraph', 'heatmap') and getattr(args, 'browser', False):
+            _open_in_browser(filename)
 
 
 def _validate_args(args, parser):
@@ -449,14 +785,37 @@ def _validate_args(args, parser):
         args: Parsed command-line arguments
         parser: ArgumentParser instance for error reporting
     """
+    # Replay command has no special validation needed
+    if getattr(args, 'command', None) == "replay":
+        return
+
+    # Warn about blocking mode with aggressive sampling intervals
+    if args.blocking and args.sample_interval_usec < 100:
+        print(
+            f"Warning: --blocking with a {args.sample_interval_usec} µs interval will stop all threads "
+            f"{1_000_000 // args.sample_interval_usec} times per second. "
+            "Consider using --sampling-rate 1khz or lower to reduce overhead.",
+            file=sys.stderr
+        )
+
     # Check if live mode is available
     if hasattr(args, 'live') and args.live and LiveStatsCollector is None:
         parser.error(
             "Live mode requires the curses module, which is not available."
         )
 
+    # --subprocesses is incompatible with --live
+    if hasattr(args, 'subprocesses') and args.subprocesses:
+        if ChildProcessMonitor is None:
+            parser.error(
+                "--subprocesses is not available on this platform "
+                "(requires _remote_debugging module)."
+            )
+        if hasattr(args, 'live') and args.live:
+            parser.error("--subprocesses is incompatible with --live mode.")
+
     # Async-aware mode is incompatible with --native, --no-gc, --mode, and --all-threads
-    if args.async_aware:
+    if getattr(args, 'async_aware', False):
         issues = []
         if args.native:
             issues.append("--native")
@@ -473,7 +832,7 @@ def _validate_args(args, parser):
             )
 
     # --async-mode requires --async-aware
-    if hasattr(args, 'async_mode') and args.async_mode != "running" and not args.async_aware:
+    if hasattr(args, 'async_mode') and args.async_mode != "running" and not getattr(args, 'async_aware', False):
         parser.error("--async-mode requires --async-aware to be enabled.")
 
     # Live mode is incompatible with format options
@@ -501,15 +860,15 @@ def _validate_args(args, parser):
         return
 
     # Validate gecko mode doesn't use non-wall mode
-    if args.format == "gecko" and args.mode != "wall":
+    if args.format == "gecko" and getattr(args, 'mode', 'wall') != "wall":
         parser.error(
             "--mode option is incompatible with --gecko. "
             "Gecko format automatically includes both GIL-holding and CPU status analysis."
         )
 
     # Validate --opcodes is only used with compatible formats
-    opcodes_compatible_formats = ("live", "gecko", "flamegraph", "heatmap")
-    if args.opcodes and args.format not in opcodes_compatible_formats:
+    opcodes_compatible_formats = ("live", "gecko", "flamegraph", "diff_flamegraph", "heatmap", "binary")
+    if getattr(args, 'opcodes', False) and args.format not in opcodes_compatible_formats:
         parser.error(
             f"--opcodes is only compatible with {', '.join('--' + f for f in opcodes_compatible_formats)}."
         )
@@ -533,6 +892,16 @@ def _validate_args(args, parser):
 
 def main():
     """Main entry point for the CLI."""
+    # Set locale for number formatting, restore on exit
+    old_locale = locale.setlocale(locale.LC_ALL, None)
+    locale.setlocale(locale.LC_ALL, "")
+    try:
+        _main()
+    finally:
+        locale.setlocale(locale.LC_ALL, old_locale)
+
+
+def _main():
     # Create the main parser
     parser = argparse.ArgumentParser(
         description=_HELP_DESCRIPTION,
@@ -558,8 +927,8 @@ Examples:
   # Generate flamegraph from a script
   `python -m profiling.sampling run --flamegraph -o output.html script.py`
 
-  # Profile with custom interval and duration
-  `python -m profiling.sampling run -i 50 -d 30 script.py`
+  # Profile with custom rate and duration
+  `python -m profiling.sampling run -r 5khz -d 30 script.py`
 
   # Save collapsed stacks to file
   `python -m profiling.sampling run --collapsed -o stacks.txt script.py`
@@ -621,6 +990,30 @@ Examples:
     _add_format_options(attach_parser)
     _add_pstats_options(attach_parser)
 
+    # === REPLAY COMMAND ===
+    replay_parser = subparsers.add_parser(
+        "replay",
+        help="Replay a binary profile and convert to another format",
+        formatter_class=CustomFormatter,
+        description="""Replay a binary profile file and convert to another format
+
+Examples:
+  # Convert binary to flamegraph
+  `python -m profiling.sampling replay --flamegraph -o output.html profile.bin`
+
+  # Convert binary to pstats and print to stdout
+  `python -m profiling.sampling replay profile.bin`
+
+  # Convert binary to gecko format
+  `python -m profiling.sampling replay --gecko -o profile.json profile.bin`""",
+    )
+    replay_parser.add_argument(
+        "input_file",
+        help="Binary profile file to replay",
+    )
+    _add_format_options(replay_parser, include_compression=False, include_binary=False)
+    _add_pstats_options(replay_parser)
+
     # Parse arguments
     args = parser.parse_args()
 
@@ -631,6 +1024,7 @@ Examples:
     command_handlers = {
         "run": _handle_run,
         "attach": _handle_attach,
+        "replay": _handle_replay,
     }
 
     # Execute the appropriate command
@@ -643,6 +1037,8 @@ Examples:
 
 def _handle_attach(args):
     """Handle the 'attach' command."""
+    if not _is_process_running(args.pid):
+        raise SamplingUnknownProcessError(args.pid)
     # Check if live mode is requested
     if args.live:
         _handle_live_attach(args, args.pid)
@@ -660,25 +1056,33 @@ def _handle_attach(args):
         mode != PROFILING_MODE_WALL if mode != PROFILING_MODE_ALL else False
     )
 
-    # Create the appropriate collector
-    collector = _create_collector(args.format, args.interval, skip_idle, args.opcodes)
+    output_file = None
+    if args.format == "binary":
+        output_file = args.outfile or _generate_output_filename(args.format, args.pid)
 
-    # Sample the process
-    collector = sample(
-        args.pid,
-        collector,
-        duration_sec=args.duration,
-        all_threads=args.all_threads,
-        realtime_stats=args.realtime_stats,
-        mode=mode,
-        async_aware=args.async_mode if args.async_aware else None,
-        native=args.native,
-        gc=args.gc,
-        opcodes=args.opcodes,
+    # Create the appropriate collector
+    collector = _create_collector(
+        args.format, args.sample_interval_usec, skip_idle, args.opcodes,
+        output_file=output_file,
+        compression=getattr(args, 'compression', 'auto'),
+        diff_baseline=args.diff_baseline
     )
 
-    # Handle output
-    _handle_output(collector, args, args.pid, mode)
+    with _get_child_monitor_context(args, args.pid):
+        collector = sample(
+            args.pid,
+            collector,
+            duration_sec=args.duration,
+            all_threads=args.all_threads,
+            realtime_stats=args.realtime_stats,
+            mode=mode,
+            async_aware=args.async_mode if args.async_aware else None,
+            native=args.native,
+            gc=args.gc,
+            opcodes=args.opcodes,
+            blocking=args.blocking,
+        )
+        _handle_output(collector, args, args.pid, mode)
 
 
 def _handle_run(args):
@@ -694,13 +1098,13 @@ def _handle_run(args):
             added_cwd = True
         try:
             if importlib.util.find_spec(args.target) is None:
-                sys.exit(f"Error: Module not found: {args.target}")
+                raise SamplingModuleNotFoundError(args.target)
         finally:
             if added_cwd:
                 sys.path.remove(cwd)
     else:
         if not os.path.exists(args.target):
-            sys.exit(f"Error: Script not found: {args.target}")
+            raise SamplingScriptNotFoundError(args.target)
 
     # Check if live mode is requested
     if args.live:
@@ -731,35 +1135,44 @@ def _handle_run(args):
         mode != PROFILING_MODE_WALL if mode != PROFILING_MODE_ALL else False
     )
 
+    output_file = None
+    if args.format == "binary":
+        output_file = args.outfile or _generate_output_filename(args.format, process.pid)
+
     # Create the appropriate collector
-    collector = _create_collector(args.format, args.interval, skip_idle, args.opcodes)
+    collector = _create_collector(
+        args.format, args.sample_interval_usec, skip_idle, args.opcodes,
+        output_file=output_file,
+        compression=getattr(args, 'compression', 'auto'),
+        diff_baseline=args.diff_baseline
+    )
 
-    # Profile the subprocess
-    try:
-        collector = sample(
-            process.pid,
-            collector,
-            duration_sec=args.duration,
-            all_threads=args.all_threads,
-            realtime_stats=args.realtime_stats,
-            mode=mode,
-            async_aware=args.async_mode if args.async_aware else None,
-            native=args.native,
-            gc=args.gc,
-            opcodes=args.opcodes,
-        )
-
-        # Handle output
-        _handle_output(collector, args, process.pid, mode)
-    finally:
-        # Clean up the subprocess
-        if process.poll() is None:
-            process.terminate()
-            try:
-                process.wait(timeout=_PROCESS_KILL_TIMEOUT)
-            except subprocess.TimeoutExpired:
-                process.kill()
-                process.wait()
+    with _get_child_monitor_context(args, process.pid):
+        try:
+            collector = sample(
+                process.pid,
+                collector,
+                duration_sec=args.duration,
+                all_threads=args.all_threads,
+                realtime_stats=args.realtime_stats,
+                mode=mode,
+                async_aware=args.async_mode if args.async_aware else None,
+                native=args.native,
+                gc=args.gc,
+                opcodes=args.opcodes,
+                blocking=args.blocking,
+            )
+            _handle_output(collector, args, process.pid, mode)
+        finally:
+            # Terminate the main subprocess - child profilers finish when their
+            # target processes exit
+            if process.poll() is None:
+                process.terminate()
+                try:
+                    process.wait(timeout=_PROCESS_KILL_TIMEOUT_SEC)
+                except subprocess.TimeoutExpired:
+                    process.kill()
+                    process.wait()
 
 
 def _handle_live_attach(args, pid):
@@ -771,7 +1184,7 @@ def _handle_live_attach(args, pid):
 
     # Create live collector with default settings
     collector = LiveStatsCollector(
-        args.interval,
+        args.sample_interval_usec,
         skip_idle=skip_idle,
         sort_by="tottime",  # Default initial sort
         limit=20,  # Default limit
@@ -793,6 +1206,7 @@ def _handle_live_attach(args, pid):
         native=args.native,
         gc=args.gc,
         opcodes=args.opcodes,
+        blocking=args.blocking,
     )
 
 
@@ -817,7 +1231,7 @@ def _handle_live_run(args):
 
     # Create live collector with default settings
     collector = LiveStatsCollector(
-        args.interval,
+        args.sample_interval_usec,
         skip_idle=skip_idle,
         sort_by="tottime",  # Default initial sort
         limit=20,  # Default limit
@@ -840,16 +1254,44 @@ def _handle_live_run(args):
             native=args.native,
             gc=args.gc,
             opcodes=args.opcodes,
+            blocking=args.blocking,
         )
     finally:
-        # Clean up the subprocess
-        if process.poll() is None:
+        # Clean up the subprocess and get any error output
+        returncode = process.poll()
+        if returncode is None:
+            # Process still running - terminate it
             process.terminate()
             try:
-                process.wait(timeout=_PROCESS_KILL_TIMEOUT)
+                process.wait(timeout=_PROCESS_KILL_TIMEOUT_SEC)
             except subprocess.TimeoutExpired:
                 process.kill()
-                process.wait()
+        # Ensure process is fully terminated
+        process.wait()
+        # Read any stderr output (tracebacks, errors, etc.)
+        if process.stderr:
+            with process.stderr:
+                try:
+                    stderr = process.stderr.read()
+                    if stderr:
+                        print(stderr.decode(), file=sys.stderr)
+                except (OSError, ValueError):
+                    # Ignore errors if pipe is already closed
+                    pass
+
+
+def _handle_replay(args):
+    """Handle the 'replay' command - convert binary profile to another format."""
+    if not os.path.exists(args.input_file):
+        sys.exit(f"Error: Input file not found: {args.input_file}")
+
+    _validate_replay_input_file(args.input_file)
+
+    try:
+        with BinaryReader(args.input_file) as reader:
+            _replay_with_reader(args, reader)
+    except (OSError, ValueError) as exc:
+        sys.exit(f"Error: {exc}")
 
 
 if __name__ == "__main__":
