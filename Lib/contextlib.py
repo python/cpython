@@ -6,9 +6,11 @@ import sys
 import _collections_abc
 from collections import deque
 from functools import wraps
-lazy from inspect import isasyncgenfunction as _isasyncgenfunction
-lazy from inspect import iscoroutinefunction as _iscoroutinefunction
-lazy from inspect import isgeneratorfunction as _isgeneratorfunction
+lazy from inspect import (
+    isasyncgenfunction as _isasyncgenfunction,
+    iscoroutinefunction as _iscoroutinefunction,
+    isgeneratorfunction as _isgeneratorfunction,
+)
 from types import GenericAlias
 
 __all__ = ["asynccontextmanager", "contextmanager", "closing", "nullcontext",
