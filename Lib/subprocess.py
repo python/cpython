@@ -301,6 +301,83 @@ else:
     else:
         _PopenSelector = selectors.SelectSelector
 
+    def _communicate_io_posix(selector, stdin, input_view, input_offset,
+                              output_buffers, endtime, *, close_on_eof=False):
+        """
+        Low-level POSIX I/O multiplexing loop.
+
+        This is the common core used by both _communicate_streams() and
+        Popen._communicate(). It handles the select loop for reading/writing
+        but does not manage stream lifecycle or raise timeout exceptions.
+
+        Args:
+            selector: A _PopenSelector with streams already registered
+            stdin: Writable file object for input, or None
+            input_view: memoryview of input bytes, or None
+            input_offset: Starting offset into input_view (for resume support)
+            output_buffers: Dict {file_object: list} to append read chunks to
+            endtime: Deadline timestamp, or None for no timeout
+            close_on_eof: If True, close output streams immediately when they
+                EOF rather than leaving them open for the caller to close.
+                Used by Popen._communicate() to match its historical behavior
+                of releasing fds as soon as the child closes the corresponding
+                pipe.
+
+        Returns:
+            (new_input_offset, completed)
+            - new_input_offset: How many bytes of input were written
+            - completed: True if all I/O finished, False if timed out
+
+        Note:
+            - Closes output streams on EOF only if close_on_eof=True
+            - Does NOT raise TimeoutExpired (caller handles)
+            - Appends to output_buffers lists in place
+        """
+        stdin_fd = stdin.fileno() if stdin else None
+
+        while selector.get_map():
+            remaining = _deadline_remaining(endtime)
+            if remaining is not None and remaining <= 0:
+                return (input_offset, False)  # Timed out
+
+            ready = selector.select(remaining)
+
+            # Check timeout after select (may have woken spuriously)
+            if endtime is not None and _time() > endtime:
+                return (input_offset, False)  # Timed out
+
+            for key, events in ready:
+                if key.fd == stdin_fd:
+                    chunk = input_view[input_offset:input_offset + _PIPE_BUF]
+                    try:
+                        input_offset += os.write(key.fd, chunk)
+                    except BrokenPipeError:
+                        selector.unregister(key.fd)
+                        try:
+                            stdin.close()
+                        except BrokenPipeError:
+                            pass
+                    else:
+                        if input_offset >= len(input_view):
+                            selector.unregister(key.fd)
+                            try:
+                                stdin.close()
+                            except BrokenPipeError:
+                                pass
+                elif key.fileobj in output_buffers:
+                    data = os.read(key.fd, 32768)
+                    if not data:
+                        selector.unregister(key.fileobj)
+                        if close_on_eof:
+                            try:
+                                key.fileobj.close()
+                            except OSError:
+                                pass
+                    else:
+                        output_buffers[key.fileobj].append(data)
+
+        return (input_offset, True)  # Completed
+
 
 if _mswindows:
     # On Windows we just need to close `Popen._handle` when we no longer need
@@ -352,7 +429,7 @@ def _flush_stdin(stdin):
     try:
         stdin.flush()
     except BrokenPipeError:
-        pass
+        pass  # communicate() must ignore BrokenPipeError.
     except ValueError:
         # Ignore ValueError: I/O operation on closed file.
         if not stdin.closed:
@@ -520,83 +597,6 @@ if _mswindows:
         return results
 
 else:
-    def _communicate_io_posix(selector, stdin, input_view, input_offset,
-                              output_buffers, endtime, *, close_on_eof=False):
-        """
-        Low-level POSIX I/O multiplexing loop.
-
-        This is the common core used by both _communicate_streams() and
-        Popen._communicate(). It handles the select loop for reading/writing
-        but does not manage stream lifecycle or raise timeout exceptions.
-
-        Args:
-            selector: A _PopenSelector with streams already registered
-            stdin: Writable file object for input, or None
-            input_view: memoryview of input bytes, or None
-            input_offset: Starting offset into input_view (for resume support)
-            output_buffers: Dict {file_object: list} to append read chunks to
-            endtime: Deadline timestamp, or None for no timeout
-            close_on_eof: If True, close output streams immediately when they
-                EOF rather than leaving them open for the caller to close.
-                Used by Popen._communicate() to match its historical behavior
-                of releasing fds as soon as the child closes the corresponding
-                pipe.
-
-        Returns:
-            (new_input_offset, completed)
-            - new_input_offset: How many bytes of input were written
-            - completed: True if all I/O finished, False if timed out
-
-        Note:
-            - Closes output streams on EOF only if close_on_eof=True
-            - Does NOT raise TimeoutExpired (caller handles)
-            - Appends to output_buffers lists in place
-        """
-        stdin_fd = stdin.fileno() if stdin else None
-
-        while selector.get_map():
-            remaining = _deadline_remaining(endtime)
-            if remaining is not None and remaining <= 0:
-                return (input_offset, False)  # Timed out
-
-            ready = selector.select(remaining)
-
-            # Check timeout after select (may have woken spuriously)
-            if endtime is not None and _time() > endtime:
-                return (input_offset, False)  # Timed out
-
-            for key, events in ready:
-                if key.fd == stdin_fd:
-                    chunk = input_view[input_offset:input_offset + _PIPE_BUF]
-                    try:
-                        input_offset += os.write(key.fd, chunk)
-                    except BrokenPipeError:
-                        selector.unregister(key.fd)
-                        try:
-                            stdin.close()
-                        except BrokenPipeError:
-                            pass
-                    else:
-                        if input_offset >= len(input_view):
-                            selector.unregister(key.fd)
-                            try:
-                                stdin.close()
-                            except BrokenPipeError:
-                                pass
-                elif key.fileobj in output_buffers:
-                    data = os.read(key.fd, 32768)
-                    if not data:
-                        selector.unregister(key.fileobj)
-                        if close_on_eof:
-                            try:
-                                key.fileobj.close()
-                            except OSError:
-                                pass
-                    else:
-                        output_buffers[key.fileobj].append(data)
-
-        return (input_offset, True)  # Completed
-
     def _communicate_streams_posix(stdin, input_data, read_streams,
                                    endtime, orig_timeout, cmd_for_timeout,
                                    stdout_stream=None, stderr_stream=None):
@@ -2020,7 +2020,7 @@ class Popen:
                 # See the detailed comment in .wait().
                 if timeout is not None:
                     sigint_timeout = min(self._sigint_wait_secs,
-                                         self._remaining_time(endtime))
+                                         _deadline_remaining(endtime))
                 else:
                     sigint_timeout = self._sigint_wait_secs
                 self._sigint_wait_secs = 0  # nothing else should wait.
@@ -2033,7 +2033,7 @@ class Popen:
             finally:
                 self._communication_started = True
             try:
-                self.wait(timeout=self._remaining_time(endtime))
+                self.wait(timeout=_deadline_remaining(endtime))
             except TimeoutExpired as exc:
                 exc.timeout = timeout
                 raise
@@ -2045,14 +2045,6 @@ class Popen:
         """Check if child process has terminated. Set and return returncode
         attribute."""
         return self._internal_poll()
-
-
-    def _remaining_time(self, endtime):
-        """Convenience for _communicate when computing timeouts."""
-        if endtime is None:
-            return None
-        else:
-            return endtime - _time()
 
 
     def _check_timeout(self, endtime, orig_timeout, stdout_seq, stderr_seq,
@@ -2080,7 +2072,7 @@ class Popen:
             # generated SIGINT and will exit rapidly.
             if timeout is not None:
                 sigint_timeout = min(self._sigint_wait_secs,
-                                     self._remaining_time(endtime))
+                                     _deadline_remaining(endtime))
             else:
                 sigint_timeout = self._sigint_wait_secs
             self._sigint_wait_secs = 0  # nothing else should wait.
@@ -2447,7 +2439,7 @@ class Popen:
             # thread remains writing and the fd left open in case the user
             # calls communicate again.
             if hasattr(self, "_stdin_thread"):
-                self._stdin_thread.join(self._remaining_time(endtime))
+                self._stdin_thread.join(_deadline_remaining(endtime))
                 if self._stdin_thread.is_alive():
                     raise TimeoutExpired(self.args, orig_timeout)
 
@@ -2455,11 +2447,11 @@ class Popen:
             # threads remain reading and the fds left open in case the user
             # calls communicate again.
             if self.stdout is not None:
-                self.stdout_thread.join(self._remaining_time(endtime))
+                self.stdout_thread.join(_deadline_remaining(endtime))
                 if self.stdout_thread.is_alive():
                     raise TimeoutExpired(self.args, orig_timeout)
             if self.stderr is not None:
-                self.stderr_thread.join(self._remaining_time(endtime))
+                self.stderr_thread.join(_deadline_remaining(endtime))
                 if self.stderr_thread.is_alive():
                     raise TimeoutExpired(self.args, orig_timeout)
 
@@ -2953,7 +2945,7 @@ class Popen:
                                 break
                         finally:
                             self._waitpid_lock.release()
-                    remaining = self._remaining_time(endtime)
+                    remaining = _deadline_remaining(endtime)
                     if remaining <= 0:
                         raise TimeoutExpired(self.args, timeout)
                     delay = min(delay * 2, remaining, .05)
@@ -3037,7 +3029,7 @@ class Popen:
                     'failed to raise TimeoutExpired.')
 
             try:
-                self.wait(timeout=self._remaining_time(endtime))
+                self.wait(timeout=_deadline_remaining(endtime))
             except TimeoutExpired as exc:
                 exc.timeout = orig_timeout
                 raise

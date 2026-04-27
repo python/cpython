@@ -190,6 +190,17 @@ class Argparse(ThemeSection):
 
 
 @dataclass(frozen=True, kw_only=True)
+class Ast(ThemeSection):
+    node: str = ANSIColors.CYAN
+    field: str = ANSIColors.BLUE
+    attribute: str = ANSIColors.GREY
+    string: str = ANSIColors.GREEN
+    number: str = ANSIColors.YELLOW
+    keyword: str = ANSIColors.BOLD_BLUE
+    reset: str = ANSIColors.RESET
+
+
+@dataclass(frozen=True, kw_only=True)
 class Difflib(ThemeSection):
     """A 'git diff'-like theme for `difflib.unified_diff`."""
     added: str = ANSIColors.GREEN
@@ -376,6 +387,14 @@ class Timeit(ThemeSection):
 
 
 @dataclass(frozen=True, kw_only=True)
+class Tokenize(ThemeSection):
+    whitespace: str = ANSIColors.GREY
+    error: str = ANSIColors.BOLD_RED
+    position: str = ANSIColors.GREY
+    delimiter: str = ANSIColors.RESET
+
+
+@dataclass(frozen=True, kw_only=True)
 class Traceback(ThemeSection):
     type: str = ANSIColors.BOLD_MAGENTA
     message: str = ANSIColors.MAGENTA
@@ -405,12 +424,14 @@ class Theme:
     below.
     """
     argparse: Argparse = field(default_factory=Argparse)
+    ast: Ast = field(default_factory=Ast)
     difflib: Difflib = field(default_factory=Difflib)
     fancycompleter: FancyCompleter = field(default_factory=FancyCompleter)
     http_server: HttpServer = field(default_factory=HttpServer)
     live_profiler: LiveProfiler = field(default_factory=LiveProfiler)
     syntax: Syntax = field(default_factory=Syntax)
     timeit: Timeit = field(default_factory=Timeit)
+    tokenize: Tokenize = field(default_factory=Tokenize)
     traceback: Traceback = field(default_factory=Traceback)
     unittest: Unittest = field(default_factory=Unittest)
 
@@ -418,12 +439,14 @@ class Theme:
         self,
         *,
         argparse: Argparse | None = None,
+        ast: Ast | None = None,
         difflib: Difflib | None = None,
         fancycompleter: FancyCompleter | None = None,
         http_server: HttpServer | None = None,
         live_profiler: LiveProfiler | None = None,
         syntax: Syntax | None = None,
         timeit: Timeit | None = None,
+        tokenize: Tokenize | None = None,
         traceback: Traceback | None = None,
         unittest: Unittest | None = None,
     ) -> Self:
@@ -434,12 +457,14 @@ class Theme:
         """
         return type(self)(
             argparse=argparse or self.argparse,
+            ast=ast or self.ast,
             difflib=difflib or self.difflib,
             fancycompleter=fancycompleter or self.fancycompleter,
             http_server=http_server or self.http_server,
             live_profiler=live_profiler or self.live_profiler,
             syntax=syntax or self.syntax,
             timeit=timeit or self.timeit,
+            tokenize=tokenize or self.tokenize,
             traceback=traceback or self.traceback,
             unittest=unittest or self.unittest,
         )
@@ -454,12 +479,14 @@ class Theme:
         """
         return cls(
             argparse=Argparse.no_colors(),
+            ast=Ast.no_colors(),
             difflib=Difflib.no_colors(),
             fancycompleter=FancyCompleter.no_colors(),
             http_server=HttpServer.no_colors(),
             live_profiler=LiveProfiler.no_colors(),
             syntax=Syntax.no_colors(),
             timeit=Timeit.no_colors(),
+            tokenize=Tokenize.no_colors(),
             traceback=Traceback.no_colors(),
             unittest=Unittest.no_colors(),
         )

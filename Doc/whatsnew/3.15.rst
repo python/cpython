@@ -704,6 +704,20 @@ array
   (Contributed by Sergey B Kirpichev in :gh:`146238`.)
 
 
+ast
+---
+
+* Add *color* parameter to :func:`~ast.dump`.
+  If ``True``, the returned string is syntax highlighted using ANSI escape
+  sequences.
+  If ``False`` (the default), colored output is always disabled.
+  (Contributed by Stan Ulbrych in :gh:`148981`.)
+
+* The :ref:`command-line <ast-cli>` output is now syntax highlighted by default.
+  This can be :ref:`controlled using environment variables <using-on-controlling-color>`.
+  (Contributed by Stan Ulbrych in :gh:`148981`.)
+
+
 base64
 ------
 
@@ -1242,6 +1256,15 @@ tkinter
   and :attr:`!detail` for ``Enter``, ``Leave``, ``FocusIn``, ``FocusOut``,
   and ``ConfigureRequest`` events.
   (Contributed by Matthias Kievernagel and Serhiy Storchaka in :gh:`47655`.)
+
+
+tokenize
+--------
+
+* The output of the :mod:`tokenize` :ref:`command-line interface
+  <tokenize-cli>` is colored by default. This can be controlled with
+  :ref:`environment variables <using-on-controlling-color>`.
+  (Contributed by Hugo van Kemenade in :gh:`148991`.)
 
 
 .. _whatsnew315-tomllib-1-1-0:
