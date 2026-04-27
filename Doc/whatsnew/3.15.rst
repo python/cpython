@@ -2092,14 +2092,6 @@ Changed C APIs
   for ``NULL`` should be updated to call :c:macro:`PyDateTime_IMPORT` instead.
   (Contributed by Kumar Aditya in :gh:`141563`.)
 
-Porting to Python 3.15
-----------------------
-
-* Private functions promoted to public C APIs:
-
-  The |pythoncapi_compat_project| can be used to get most of these new
-  functions on Python 3.14 and older.
-
 
 Removed C APIs
 --------------
