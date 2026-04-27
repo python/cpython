@@ -8,7 +8,7 @@
 
 --------------
 
-The :mod:`!curses.ascii` module supplies name constants for ASCII characters and
+The :mod:`!curses.ascii` module supplies named constants for ASCII characters and
 functions to test membership in various ASCII character classes.  The constants
 supplied are names for control characters as follows:
 
@@ -97,7 +97,7 @@ C library:
 
 .. function:: isalnum(c)
 
-   Checks for an ASCII alphanumeric character; it is equivalent to ``isalpha(c) or
+   Checks for an ASCII alpha-numeric character; it is equivalent to ``isalpha(c) or
    isdigit(c)``.
 
 
@@ -114,7 +114,7 @@ C library:
 
 .. function:: isblank(c)
 
-   Checks for an ASCII whitespace character; space or horizontal tab.
+   Checks for an ASCII white-space character; space or horizontal tab.
 
 
 .. function:: iscntrl(c)
@@ -130,7 +130,7 @@ C library:
 
 .. function:: isgraph(c)
 
-   Checks for ASCII any printable character except space.
+   Checks for any printable ASCII character except space.
 
 
 .. function:: islower(c)
@@ -140,12 +140,12 @@ C library:
 
 .. function:: isprint(c)
 
-   Checks for any ASCII printable character including space.
+   Checks for any printable ASCII character including space.
 
 
 .. function:: ispunct(c)
 
-   Checks for any printable ASCII character which is not a space or an alphanumeric
+   Checks for any printable ASCII character which is not a space or an alpha-numeric
    character.
 
 
@@ -157,7 +157,7 @@ C library:
 
 .. function:: isupper(c)
 
-   Checks for an ASCII uppercase letter.
+   Checks for an ASCII upper-case letter.
 
 
 .. function:: isxdigit(c)
@@ -214,8 +214,8 @@ it returns a string.
 
    Return a string representation of the ASCII character *c*.  If *c* is printable,
    this string is the character itself.  If the character is a control character
-   (0x00--0x1f) the string consists of a caret (``'^'``) followed by the
-   corresponding uppercase letter. If the character is an ASCII delete (0x7f) the
+   (0x00--0x1f), the string consists of a caret (``'^'``) followed by the
+   corresponding upper-case letter. If the character is an ASCII delete (0x7f), the
    string is ``'^?'``.  If the character has its meta bit (0x80) set, the meta bit
    is stripped, the preceding rules applied, and ``'!'`` prepended to the result.
 
