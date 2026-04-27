@@ -1,1 +1,1 @@
-Add support for :data:`!socket.SO_PASSRIGHTS` on linux.
+Add support for :data:`!socket.SO_PASSRIGHTS` on Linux.
