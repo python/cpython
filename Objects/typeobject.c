@@ -5305,12 +5305,6 @@ type_from_slots_or_spec(
             break;
         case Py_tp_bases:
             bases_slot = it.current.sl_ptr;
-            if (!PyTuple_Check(bases_slot)) {
-                PyErr_SetString(
-                    PyExc_SystemError,
-                    "Py_tp_bases is not a tuple");
-                goto finally;
-            }
             break;
         case Py_tp_base:
             if (!_PySlotIterator_SawSlot(&it, Py_tp_bases)) {

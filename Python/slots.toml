@@ -587,7 +587,7 @@ name = 'Py_tp_members'
 kind = 'type'
 is_type_field = true
 dtype = 'ptr'
-nulls = 'deprecated'
+nulls = 'reject'
 must_be_static = true
 
 [73]

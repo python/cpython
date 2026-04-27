@@ -474,20 +474,28 @@ For example, use:
 * :c:data:`Py_nb_add` to set :c:member:`PyNumberMethods.nb_add`
 * :c:data:`Py_sq_length` to set :c:member:`PySequenceMethods.sq_length`
 
-An additional slot is supported that does not correspond to a
-:c:type:`!PyTypeObject` struct field:
+The following slots need additional considerations when specified as slots:
+
+* :c:data:`Py_tp_name`
+* :c:data:`Py_tp_basicsize` and :c:data:`Py_tp_extra_basicsize`
+* :c:data:`Py_tp_itemsize`
+* :c:data:`Py_tp_flags`
+
+Additional slots do not directly correspond to a :c:type:`!PyTypeObject`
+struct field:
 
 * :c:data:`Py_tp_token`
+* :c:data:`Py_tp_metaclass`
+* :c:data:`Py_tp_module`
 
 The following “offset” fields cannot be set using :c:type:`PyType_Slot`:
 
 * :c:member:`~PyTypeObject.tp_weaklistoffset`
-   (use :c:macro:`Py_TPFLAGS_MANAGED_WEAKREF` instead if possible)
+  (use :c:macro:`Py_TPFLAGS_MANAGED_WEAKREF` instead if possible)
 * :c:member:`~PyTypeObject.tp_dictoffset`
-   (use :c:macro:`Py_TPFLAGS_MANAGED_DICT` instead if possible)
+  (use :c:macro:`Py_TPFLAGS_MANAGED_DICT` instead if possible)
 * :c:member:`~PyTypeObject.tp_vectorcall_offset`
-   (use ``"__vectorcalloffset__"`` in
-   :ref:`PyMemberDef <pymemberdef-offsets>`)
+  (use ``"__vectorcalloffset__"`` in :ref:`PyMemberDef <pymemberdef-offsets>`)
 
 If it is not possible to switch to a ``MANAGED`` flag (for example,
 for vectorcall or to support Python older than 3.12), specify the
@@ -499,10 +507,10 @@ The following internal fields cannot be set at all when creating a heap
 type:
 
 * :c:member:`~PyTypeObject.tp_dict`,
-   :c:member:`~PyTypeObject.tp_mro`,
-   :c:member:`~PyTypeObject.tp_cache`,
-   :c:member:`~PyTypeObject.tp_subclasses`, and
-   :c:member:`~PyTypeObject.tp_weaklist`.
+  :c:member:`~PyTypeObject.tp_mro`,
+  :c:member:`~PyTypeObject.tp_cache`,
+  :c:member:`~PyTypeObject.tp_subclasses`, and
+  :c:member:`~PyTypeObject.tp_weaklist`.
 
 The :c:data:`Py_tp_base` slot is equivalent to :c:data:`Py_tp_bases`;
 both may be set either to a type or a tuple of types.
@@ -513,7 +521,7 @@ Slot values may not be ``NULL``, except for the following:
 
 * :c:data:`Py_tp_doc`
 * :c:data:`Py_tp_token` (for clarity, prefer :c:data:`Py_TP_USE_SPEC`
-   rather than ``NULL``)
+  rather than ``NULL``)
 
 .. versionchanged:: 3.9
    Slots in :c:type:`PyBufferProcs` may be set in the unlimited API.
@@ -528,8 +536,8 @@ Slot values may not be ``NULL``, except for the following:
    using :c:data:`Py_tp_vectorcall`.  See the field's documentation
    for details.
 
-The following slots do not correspond to public fields in the
-underlying structures:
+The following slots correspond to fields in the underlying type structure,
+but need extra remarks for use slots:
 
 .. c:macro:: Py_tp_name
 
@@ -612,12 +620,12 @@ underlying structures:
    in the following situations:
 
    - The base is not variable-sized (its
-      :c:member:`~PyTypeObject.tp_itemsize`).
+     :c:member:`~PyTypeObject.tp_itemsize`).
    - The requested :c:member:`PyType_Spec.basicsize` is positive,
-      suggesting that the memory layout of the base class is known.
+     suggesting that the memory layout of the base class is known.
    - The requested :c:member:`PyType_Spec.basicsize` is zero,
-      suggesting that the subclass does not access the instance's memory
-      directly.
+     suggesting that the subclass does not access the instance's memory
+     directly.
    - With the :c:macro:`Py_TPFLAGS_ITEMS_AT_END` flag.
 
    This may not be used in :c:member:`PyType_Spec.slots`.
@@ -642,6 +650,9 @@ underlying structures:
    Use :c:func:`PyType_GetFlags` instead.
 
    .. versionadded:: next
+
+The following slots do not correspond to public fields in the
+underlying structures:
 
 .. c:macro:: Py_tp_metaclass
 
@@ -734,7 +745,7 @@ underlying structures:
 
 
 Soft-deprecated API
-...................
+-------------------
 
 The following functions are :term:`soft deprecated`.
 They will continue to work, but new features will be added as slots for

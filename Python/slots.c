@@ -177,11 +177,15 @@ _PySlotIterator_Next(_PySlotIterator *it)
             default:
                 Py_UNREACHABLE();
         }
-        MSG("resolved to slot %s (%d)",
+        MSG("resolved to slot %d (%s)",
             (int)result->sl_id, _PySlot_GetName(result->sl_id));
 
         if (result->sl_id == Py_slot_invalid) {
             MSG("error (unknown/invalid slot)");
+            if (flags & PySlot_OPTIONAL) {
+                advance(it);
+                continue;
+            }
             _PySlot_err_bad_slot(kind_name(it->kind), orig_id);
             goto error;
         }
@@ -304,14 +308,11 @@ handle_first_run(_PySlotIterator *it)
         if (!(it->current.sl_flags & PySlot_STATIC)
             && (it->state->slot_struct_kind == _PySlot_KIND_SLOT))
         {
-            if (PyErr_WarnFormat(
-                PyExc_DeprecationWarning,
-                1,
+            PyErr_Format(
+                PyExc_SystemError,
                 "%s must requires PySlot_STATIC",
-                _PySlot_GetName(id)) < 0)
-            {
-                return -1;
-            }
+                _PySlot_GetName(id));
+            return -1;
         }
     }
 

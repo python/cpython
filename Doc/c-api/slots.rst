@@ -118,7 +118,7 @@ Entries of the slots array use the following structure:
          If the slot ID is unknown, the interpreter should ignore the
          slot, rather than fail.
 
-         For example, if Python 3.16 adds a new feature with a new slot ID,
+         For example, if Python 3.16 adds a new feature with a new slot ID,attr
          the corresponding slot may be marked :c:macro:`!PySlot_OPTIONAL`
          so that Python 3.15 ignores it.
 
@@ -185,9 +185,9 @@ Convenience macros
              PySlot_PTR_STATIC(name, value)
 
    Convenience macros for use in C++11-compatible code.
-   This version of C++ does not allow setting union members in literals,
-   these macros set the :c:macro:`PySlot_INTPTR` flag and cast the value
-   to ``(void*)``.
+   This version of C++ does not allow setting arbitrary union members in
+   literals, these macros set the :c:macro:`PySlot_INTPTR` flag and cast
+   the value to ``(void*)``.
 
    Defined as::
 
