@@ -467,12 +467,35 @@ Functions and classes provided:
       statements. If this is not the case, then the original construct with the
       explicit :keyword:`!with` statement inside the function should be used.
 
+   When the decorated callable is a generator function, coroutine function, or
+   asynchronous generator function, the returned wrapper is of the same kind
+   and keeps the context manager open for the lifetime of the iteration or
+   await rather than only for the call that creates the generator or coroutine
+   object.  Wrapped generators and asynchronous generators are explicitly
+   closed when iteration ends, as if by :func:`closing` or :func:`aclosing`.
+
+   .. note::
+      For asynchronous generators the wrapper re-yields each value with
+      ``async for``; values sent with :meth:`~agen.asend` and exceptions
+      thrown with :meth:`~agen.athrow` are not forwarded to the wrapped
+      generator.
+
    .. versionadded:: 3.2
+
+   .. versionchanged:: next
+      Decorating a generator function, coroutine function, or asynchronous
+      generator function now keeps the context manager open across iteration
+      or await.  Previously the context manager exited as soon as the
+      generator or coroutine object was created.
 
 
 .. class:: AsyncContextDecorator
 
-   Similar to :class:`ContextDecorator` but only for asynchronous functions.
+   Similar to :class:`ContextDecorator`, but the context manager is entered
+   and exited with :keyword:`async with`.  The decorated callable may be a
+   coroutine function, an asynchronous generator function, a synchronous
+   generator function, or an ordinary function; the returned wrapper is always
+   awaitable (or async-iterable for generator inputs).
 
    Example of ``AsyncContextDecorator``::
 
@@ -509,6 +532,12 @@ Functions and classes provided:
       Finishing
 
    .. versionadded:: 3.10
+
+   .. versionchanged:: next
+      Decorating a generator function, asynchronous generator function, or
+      ordinary synchronous function is now supported, and the context manager
+      is kept open across iteration rather than only for the call that
+      creates the generator object.
 
 
 .. class:: ExitStack()
