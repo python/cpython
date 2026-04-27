@@ -543,7 +543,7 @@ class BaseCookie(dict):
     def js_output(self, attrs=None):
         warnings._deprecated(
             "http.cookies.BaseCookie.js_output",
-            message=warnings._DEPRECATED_MSG + "; use output() instead",
+            warnings._DEPRECATED_MSG + "; use output() instead",
             remove=(3, 19),
         )
         """Return a string suitable for JavaScript."""
