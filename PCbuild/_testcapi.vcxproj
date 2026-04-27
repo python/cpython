@@ -125,6 +125,8 @@
     <ClCompile Include="..\Modules\_testcapi\immortal.c" />
     <ClCompile Include="..\Modules\_testcapi\gc.c" />
     <ClCompile Include="..\Modules\_testcapi\run.c" />
+    <ClCompile Include="..\Modules\_testcapi\modsupport.c" />
+    <ClCompile Include="..\Modules\_testcapi\module.c" />
     <ClCompile Include="..\Modules\_testcapi\monitoring.c" />
     <ClCompile Include="..\Modules\_testcapi\config.c" />
     <ClCompile Include="..\Modules\_testcapi\import.c" />

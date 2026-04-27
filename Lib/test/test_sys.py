@@ -1,6 +1,5 @@
 import builtins
 import codecs
-import _datetime
 import gc
 import io
 import locale
@@ -494,7 +493,7 @@ class SysModuleTest(unittest.TestCase):
             self.assertIs(f, f2)
         self.assertIsNone(sys._getframemodulename(i))
 
-    # sys._current_frames() is a CPython-only gimmick.
+    @support.cpython_only  # sys._current_frames() is a CPython-only gimmick.
     @threading_helper.reap_threads
     @threading_helper.requires_working_threading()
     def test_current_frames(self):
@@ -730,14 +729,24 @@ class SysModuleTest(unittest.TestCase):
         self.assertEqual(len(info), 3)
         self.assertIn(info.name, ('nt', 'pthread', 'pthread-stubs', 'solaris', None))
         self.assertIn(info.lock, ('pymutex', None))
-        if sys.platform.startswith(("linux", "android", "freebsd")):
+        if sys.platform.startswith(("linux", "android", "freebsd", "wasi")):
             self.assertEqual(info.name, "pthread")
         elif sys.platform == "win32":
             self.assertEqual(info.name, "nt")
         elif sys.platform == "emscripten":
             self.assertIn(info.name, {"pthread", "pthread-stubs"})
-        elif sys.platform == "wasi":
-            self.assertEqual(info.name, "pthread-stubs")
+
+    def test_abi_info(self):
+        info = sys.abi_info
+        info_keys = {'pointer_bits', 'free_threaded', 'debug', 'byteorder'}
+        self.assertEqual(set(vars(info)), info_keys)
+        pointer_bits = 64 if sys.maxsize > 2**32 else 32
+        self.assertEqual(info.pointer_bits, pointer_bits)
+        self.assertEqual(info.free_threaded,
+                         bool(sysconfig.get_config_var('Py_GIL_DISABLED')))
+        self.assertEqual(info.debug,
+                         bool(sysconfig.get_config_var('Py_DEBUG')))
+        self.assertEqual(info.byteorder, sys.byteorder)
 
     @unittest.skipUnless(support.is_emscripten, "only available on Emscripten")
     def test_emscripten_info(self):
@@ -849,22 +858,34 @@ class SysModuleTest(unittest.TestCase):
                     '''))
                 self.assertTrue(sys._is_interned(s))
 
-    def test_sys_flags(self):
+    def test_sys_flags_indexable_attributes(self):
         self.assertTrue(sys.flags)
-        attrs = ("debug",
+        # We've stopped assigning sequence indices to new sys.flags attributes:
+        # https://github.com/python/cpython/issues/122575#issuecomment-2416497086
+        indexable_attrs = ("debug",
                  "inspect", "interactive", "optimize",
                  "dont_write_bytecode", "no_user_site", "no_site",
                  "ignore_environment", "verbose", "bytes_warning", "quiet",
                  "hash_randomization", "isolated", "dev_mode", "utf8_mode",
                  "warn_default_encoding", "safe_path", "int_max_str_digits")
-        for attr in attrs:
+        for attr_idx, attr in enumerate(indexable_attrs):
             self.assertHasAttr(sys.flags, attr)
             attr_type = bool if attr in ("dev_mode", "safe_path") else int
             self.assertEqual(type(getattr(sys.flags, attr)), attr_type, attr)
+            attr_value = getattr(sys.flags, attr)
+            self.assertEqual(sys.flags[attr_idx], attr_value,
+                             msg=f"sys.flags .{attr} vs [{attr_idx}]")
         self.assertTrue(repr(sys.flags))
-        self.assertEqual(len(sys.flags), len(attrs))
+        self.assertEqual(len(sys.flags), 18, msg="Do not increase, see GH-122575")
 
         self.assertIn(sys.flags.utf8_mode, {0, 1, 2})
+
+    def test_sys_flags_name_only_attributes(self):
+        # non-tuple sequence fields (name only sys.flags attributes)
+        self.assertIsInstance(sys.flags.gil, int|type(None))
+        self.assertIsInstance(sys.flags.thread_inherit_context, int|type(None))
+        self.assertIsInstance(sys.flags.context_aware_warnings, int|type(None))
+        self.assertIsInstance(sys.flags.lazy_imports, int|type(None))
 
     def assert_raise_on_new_sys_type(self, sys_attr):
         # Users are intentionally prevented from creating new instances of
@@ -1340,6 +1361,7 @@ class SysModuleTest(unittest.TestCase):
 
 
 @test.support.cpython_only
+@test.support.force_not_colorized_test_class
 class UnraisableHookTest(unittest.TestCase):
     def test_original_unraisablehook(self):
         _testcapi = import_helper.import_module('_testcapi')
@@ -1481,6 +1503,7 @@ class UnraisableHookTest(unittest.TestCase):
     def test_custom_unraisablehook_fail(self):
         _testcapi = import_helper.import_module('_testcapi')
         from _testcapi import err_writeunraisable
+
         def hook_func(*args):
             raise Exception("hook_func failed")
 
@@ -1570,7 +1593,7 @@ class SizeofTest(unittest.TestCase):
         samples = [b'', b'u'*100000]
         for sample in samples:
             x = bytearray(sample)
-            check(x, vsize('n2Pi') + x.__alloc__())
+            check(x, vsize('n2PiP') + x.__alloc__())
         # bytearray_iterator
         check(iter(bytearray()), size('nP'))
         # bytes
@@ -1712,9 +1735,10 @@ class SizeofTest(unittest.TestCase):
         check(int(PyLong_BASE**2), vsize('') + 3*self.longdigit)
         # module
         if support.Py_GIL_DISABLED:
-            check(unittest, size('PPPPPP'))
+            md_gil = '?'
         else:
-            check(unittest, size('PPPPP'))
+            md_gil = ''
+        check(unittest, size('PPPP?' + md_gil + 'NPPPPP'))
         # None
         check(None, size(''))
         # NotImplementedType
@@ -1729,7 +1753,12 @@ class SizeofTest(unittest.TestCase):
             x = property(getx, setx, delx, "")
             check(x, size('5Pi'))
         # PyCapsule
-        check(_datetime.datetime_CAPI, size('6P'))
+        try:
+            import _datetime
+        except ModuleNotFoundError:
+            pass
+        else:
+            check(_datetime.datetime_CAPI, size('6P'))
         # rangeiterator
         check(iter(range(1)), size('3l'))
         check(iter(range(2**65)), size('3P'))
@@ -1769,7 +1798,7 @@ class SizeofTest(unittest.TestCase):
         check((1,2,3), vsize('') + self.P + 3*self.P)
         # type
         # static type: PyTypeObject
-        fmt = 'P2nPI13Pl4Pn9Pn12PIPc'
+        fmt = 'P2nPI13Pl4Pn9Pn12PI2Pc'
         s = vsize(fmt)
         check(int, s)
         typeid = 'n' if support.Py_GIL_DISABLED else ''
@@ -1863,7 +1892,10 @@ class SizeofTest(unittest.TestCase):
         check(S(), set(), '3P')
         class FS(frozenset):
             __slots__ = 'a', 'b', 'c'
-        check(FS(), frozenset(), '3P')
+
+        class mytuple(tuple):
+            pass
+        check(FS([mytuple()]), frozenset([mytuple()]), '3P')
         from collections import OrderedDict
         class OD(OrderedDict):
             __slots__ = 'a', 'b', 'c'
@@ -1887,10 +1919,16 @@ class SizeofTest(unittest.TestCase):
         # symtable entry
         # XXX
         # sys.flags
-        # FIXME: The +3 is for the 'gil', 'thread_inherit_context' and
-        # 'context_aware_warnings' flags and will not be necessary once
-        # gh-122575 is fixed
-        check(sys.flags, vsize('') + self.P + self.P * (3 + len(sys.flags)))
+        # FIXME: The non_sequence_fields adjustment is for these flags:
+        # - 'gil'
+        # - 'thread_inherit_context'
+        # - 'context_aware_warnings'
+        # - 'lazy_imports'
+        # Not needing to increment this every time we add a new field
+        # per GH-122575 would be nice...
+        # Q: What is the actual point of this sys.flags C size derived from PyStructSequence_Field array assertion?
+        non_sequence_fields = 4
+        check(sys.flags, vsize('') + self.P + self.P * (non_sequence_fields + len(sys.flags)))
 
     def test_asyncgen_hooks(self):
         old = sys.get_asyncgen_hooks()
@@ -2239,9 +2277,10 @@ class TestSysJIT(unittest.TestCase):
 
             def frame_3_jit() -> None:
                 # JITs just before the last loop:
-                for i in range(_testinternalcapi.TIER2_THRESHOLD + 1):
+                # 1 extra iteration for tracing.
+                for i in range(_testinternalcapi.TIER2_THRESHOLD + 2):
                     # Careful, doing this in the reverse order breaks tracing:
-                    expected = {enabled} and i == _testinternalcapi.TIER2_THRESHOLD
+                    expected = {enabled} and i >= _testinternalcapi.TIER2_THRESHOLD
                     assert sys._jit.is_active() is expected
                     frame_2_jit(expected)
                     assert sys._jit.is_active() is expected

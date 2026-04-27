@@ -1,3 +1,0 @@
-:mod:`ipaddress`: fix collisions in :meth:`~object.__hash__` for
-:class:`~ipaddress.IPv4Network` and :class:`~ipaddress.IPv6Network`
-objects.

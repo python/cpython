@@ -36,21 +36,21 @@ Hash objects have these methods:
                  efficiently compute the digests of data that share a common
                  initial substring.
 
-Assuming that Python has been built with MD5 support, the following computes
-the MD5 digest of the byte string b'Nobody inspects the spammish repetition':
+Assuming that Python has been built with SHA-2 support, the SHA-256 digest
+of the byte string b'Nobody inspects the spammish repetition' is computed
+as follows:
 
     >>> import hashlib
-    >>> m = hashlib.md5()
+    >>> m = hashlib.sha256()
     >>> m.update(b"Nobody inspects")
     >>> m.update(b" the spammish repetition")
-    >>> m.digest()
-    b'\xbbd\x9c\x83\xdd\x1e\xa5\xc9\xd9\xde\xc9\xa1\x8d\xf0\xff\xe9'
+    >>> m.digest()  # doctest: +ELLIPSIS
+    b'\x03\x1e\xdd}Ae\x15\x93\xc5\xfe\\\x00o\xa5u+7...'
 
 More condensed:
 
-    >>> hashlib.md5(b"Nobody inspects the spammish repetition").hexdigest()
-    'bb649c83dd1ea5c9d9dec9a18df0ffe9'
-
+    >>> hashlib.sha256(b"Nobody inspects the spammish repetition").hexdigest()
+    '031edd7d41651593c5fe5c006fa5752b37fddff7bc4e843aa6af0c950f4b9406'
 """
 
 # This tuple and __get_builtin_constructor() must be modified if a new

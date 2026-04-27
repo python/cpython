@@ -6,9 +6,6 @@ XML Processing Modules
 .. module:: xml
    :synopsis: Package containing XML processing modules
 
-.. sectionauthor:: Christian Heimes <christian@python.org>
-.. sectionauthor:: Georg Brandl <georg@python.org>
-
 **Source code:** :source:`Lib/xml/`
 
 --------------
@@ -20,7 +17,7 @@ Python's interfaces for processing XML are grouped in the ``xml`` package.
    If you need to parse untrusted or unauthenticated data, see
    :ref:`xml-security`.
 
-It is important to note that modules in the :mod:`xml` package require that
+It is important to note that modules in the :mod:`!xml` package require that
 there be at least one SAX-compliant XML parser available. The Expat parser is
 included with Python, so the :mod:`xml.parsers.expat` module will always be
 available.
@@ -53,11 +50,22 @@ XML security
 
 An attacker can abuse XML features to carry out denial of service attacks,
 access local files, generate network connections to other machines, or
-circumvent firewalls.
+circumvent firewalls when attacker-controlled XML is being parsed,
+in Python or elsewhere.
 
-Expat versions lower that 2.6.0 may be vulnerable to "billion laughs",
-"quadratic blowup" and "large tokens". Python may be vulnerable if it uses such
-older versions of Expat as a system-provided library.
+The built-in XML parsers of Python rely on the library `libexpat`_, commonly
+called Expat, for parsing XML.
+
+By default, Expat itself does not access local files or create network
+connections.
+
+Expat versions lower than 2.7.2 may be vulnerable to the "billion laughs",
+"quadratic blowup" and "large tokens" vulnerabilities, or to disproportional
+use of dynamic memory.
+Python bundles a copy of Expat, and whether Python uses the bundled or a
+system-wide Expat, depends on how the Python interpreter
+:option:`has been configured <--with-system-expat>` in your environment.
+Python may be vulnerable if it uses such older versions of Expat.
 Check :const:`!pyexpat.EXPAT_VERSION`.
 
 :mod:`xmlrpc` is **vulnerable** to the "decompression bomb" attack.
@@ -90,5 +98,6 @@ large tokens
   be used to cause denial of service in the application parsing XML.
   The issue is known as :cve:`2023-52425`.
 
+.. _libexpat: https://github.com/libexpat/libexpat
 .. _Billion Laughs: https://en.wikipedia.org/wiki/Billion_laughs
 .. _ZIP bomb: https://en.wikipedia.org/wiki/Zip_bomb
