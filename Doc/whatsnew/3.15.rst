@@ -830,6 +830,15 @@ contextlib
   consistency with the :keyword:`with` and :keyword:`async with` statements.
   (Contributed by Serhiy Storchaka in :gh:`144386`.)
 
+* :class:`~contextlib.ContextDecorator` and
+  :class:`~contextlib.AsyncContextDecorator` (and therefore
+  :func:`~contextlib.contextmanager` and :func:`~contextlib.asynccontextmanager`
+  used as decorators) now detect generator functions, coroutine functions, and
+  asynchronous generator functions and keep the context manager open across
+  iteration or await.  Previously the context manager exited as soon as the
+  generator or coroutine object was created.
+  (Contributed by Alex Grönholm in :gh:`125862`.)
+
 
 dataclasses
 -----------
