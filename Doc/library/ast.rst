@@ -131,6 +131,14 @@ Node classes
    Simple indices are represented by their value, extended slices are
    represented as tuples.
 
+.. versionchanged:: 3.13
+
+    AST node constructors were changed to provide sensible defaults for omitted
+    fields: optional fields now default to ``None``, list fields default to an
+    empty list, and fields of type :class:`!ast.expr_context` default to
+    :class:`Load() <ast.Load>`. Previously, omitted attributes would not exist on constructed
+    nodes (accessing them raised :exc:`AttributeError`).
+
 .. versionchanged:: 3.14
 
     The :meth:`~object.__repr__` output of :class:`~ast.AST` nodes includes
@@ -2472,7 +2480,7 @@ and classes for traversing abstract syntax trees:
       node = YourTransformer().visit(node)
 
 
-.. function:: dump(node, annotate_fields=True, include_attributes=False, *, indent=None, show_empty=False)
+.. function:: dump(node, annotate_fields=True, include_attributes=False, *, color=False, indent=None, show_empty=False)
 
    Return a formatted dump of the tree in *node*.  This is mainly useful for
    debugging purposes.  If *annotate_fields* is true (by default),
@@ -2481,6 +2489,10 @@ and classes for traversing abstract syntax trees:
    omitting unambiguous field names.  Attributes such as line
    numbers and column offsets are not dumped by default.  If this is wanted,
    *include_attributes* can be set to true.
+
+   If *color* is ``True``, the returned string is syntax highlighted using
+   ANSI escape sequences.
+   If ``False`` (the default), colored output is always disabled.
 
    If *indent* is a non-negative integer or string, then the tree will be
    pretty-printed with that indent level.  An indent level
@@ -2518,6 +2530,9 @@ and classes for traversing abstract syntax trees:
 
    .. versionchanged:: 3.15
       Omit optional ``Load()`` values by default.
+
+   .. versionchanged:: next
+      Added the *color* parameter.
 
 
 .. _ast-compiler-flags:
@@ -2575,6 +2590,10 @@ Command-line usage
 ------------------
 
 .. versionadded:: 3.9
+
+.. versionchanged:: next
+   The output is now syntax highlighted by default. This can be
+   :ref:`controlled using environment variables <using-on-controlling-color>`.
 
 The :mod:`!ast` module can be executed as a script from the command line.
 It is as simple as:

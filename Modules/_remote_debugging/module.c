@@ -7,6 +7,7 @@
 
 #include "_remote_debugging.h"
 #include "binary_io.h"
+#include "debug_offsets_validation.h"
 
 /* Forward declarations for clinic-generated code */
 typedef struct {
@@ -240,7 +241,7 @@ validate_debug_offsets(struct _Py_DebugOffsets *debug_offsets)
         return -1;
     }
 
-    return 0;
+    return _PyRemoteDebug_ValidateDebugOffsetsLayout(debug_offsets);
 }
 
 /* ============================================================================
@@ -374,7 +375,11 @@ _remote_debugging_RemoteUnwinder___init___impl(RemoteUnwinderObject *self,
 
     // Try to read async debug offsets, but don't fail if they're not available
     self->async_debug_offsets_available = 1;
-    if (read_async_debug(self) < 0) {
+    int async_debug_result = read_async_debug(self);
+    if (async_debug_result == PY_REMOTE_DEBUG_INVALID_ASYNC_DEBUG_OFFSETS) {
+        return -1;
+    }
+    if (async_debug_result < 0) {
         PyErr_Clear();
         memset(&self->async_debug_offsets, 0, sizeof(self->async_debug_offsets));
         self->async_debug_offsets_available = 0;
@@ -420,6 +425,7 @@ _remote_debugging_RemoteUnwinder___init___impl(RemoteUnwinderObject *self,
 
 #if defined(__APPLE__)
     self->thread_id_offset = 0;
+    self->thread_id_offset_initialized = 0;
 #endif
 
 #ifdef MS_WINDOWS
@@ -583,11 +589,16 @@ _remote_debugging_RemoteUnwinder_get_stack_trace_impl(RemoteUnwinderObject *self
             current_tstate = self->tstate_addr;
         }
 
+        // Acquire main thread state information
+        uintptr_t main_thread_tstate = GET_MEMBER(uintptr_t, interp_state_buffer,
+                self->debug_offsets.interpreter_state.threads_main);
+
         while (current_tstate != 0) {
             uintptr_t prev_tstate = current_tstate;
             PyObject* frame_info = unwind_stack_for_thread(self, &current_tstate,
                                                            gil_holder_tstate,
-                                                           gc_frame);
+                                                           gc_frame,
+                                                           main_thread_tstate);
             if (!frame_info) {
                 // Check if this was an intentional skip due to mode-based filtering
                 if ((self->mode == PROFILING_MODE_CPU || self->mode == PROFILING_MODE_GIL ||
@@ -1205,6 +1216,9 @@ _remote_debugging_exec(PyObject *m)
         return -1;
     }
     if (PyModule_AddIntConstant(m, "THREAD_STATUS_HAS_EXCEPTION", THREAD_STATUS_HAS_EXCEPTION) < 0) {
+        return -1;
+    }
+    if (PyModule_AddIntConstant(m, "THREAD_STATUS_MAIN_THREAD", THREAD_STATUS_MAIN_THREAD) < 0) {
         return -1;
     }
 
@@ -1831,6 +1845,7 @@ static PyMethodDef remote_debugging_methods[] = {
 };
 
 static PyModuleDef_Slot remote_debugging_slots[] = {
+    _Py_ABI_SLOT,
     {Py_mod_exec, _remote_debugging_exec},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {Py_mod_gil, Py_MOD_GIL_NOT_USED},
