@@ -562,12 +562,13 @@ dynamic_exit_uop[MAX_UOP_ID + 1] = {
 
 static inline void
 add_to_trace(
-    _PyJitUopBuffer *trace,
+    _PyJitTracerState *tracer,
     uint16_t opcode,
     uint16_t oparg,
     uint64_t operand,
     uint32_t target)
 {
+    _PyJitUopBuffer *trace = &tracer->code_buffer;
     _PyUOpInstruction *inst = trace->next;
     inst->opcode = opcode;
     inst->format = UOP_FORMAT_TARGET;
@@ -576,6 +577,7 @@ add_to_trace(
     inst->operand0 = operand;
 #ifdef Py_STATS
     inst->execution_count = 0;
+    inst->fitness = tracer->translator_state.fitness;
 #endif
     trace->next++;
 }
@@ -583,7 +585,7 @@ add_to_trace(
 
 #ifdef Py_DEBUG
 #define ADD_TO_TRACE(OPCODE, OPARG, OPERAND, TARGET) \
-    add_to_trace(trace, (OPCODE), (OPARG), (OPERAND), (TARGET)); \
+    add_to_trace(tracer, (OPCODE), (OPARG), (OPERAND), (TARGET)); \
     if (lltrace >= 2) { \
         printf("%4d ADD_TO_TRACE: ", uop_buffer_length(trace)); \
         _PyUOpPrint(uop_buffer_last(trace)); \
@@ -591,7 +593,7 @@ add_to_trace(
     }
 #else
 #define ADD_TO_TRACE(OPCODE, OPARG, OPERAND, TARGET) \
-    add_to_trace(trace, (OPCODE), (OPARG), (OPERAND), (TARGET))
+    add_to_trace(tracer, (OPCODE), (OPARG), (OPERAND), (TARGET))
 #endif
 
 #define INSTR_IP(INSTR, CODE) \
@@ -1133,6 +1135,9 @@ _PyJit_TryInitializeTracing(
     /* Set up tracing buffer*/
     _PyJitUopBuffer *trace = &tracer->code_buffer;
     uop_buffer_init(trace, &tracer->uop_array[0], UOP_MAX_TRACE_LENGTH);
+    _PyJitTracerTranslatorState *ts = &tracer->translator_state;
+    ts->fitness = tstate->interp->opt_config.fitness_initial;
+    ts->frame_depth = 0;
     ADD_TO_TRACE(_START_EXECUTOR, 0, (uintptr_t)start_instr, INSTR_IP(start_instr, code));
     ADD_TO_TRACE(_MAKE_WARM, 0, 0, 0);
 
@@ -1162,10 +1167,6 @@ _PyJit_TryInitializeTracing(
     assert(curr_instr->op.code == JUMP_BACKWARD_JIT || curr_instr->op.code == RESUME_CHECK_JIT || (exit != NULL));
     tracer->initial_state.jump_backward_instr = curr_instr;
 
-    const _PyOptimizationConfig *cfg = &tstate->interp->opt_config;
-    _PyJitTracerTranslatorState *ts = &tracer->translator_state;
-    ts->fitness = cfg->fitness_initial;
-    ts->frame_depth = 0;
     DPRINTF(3, "Fitness init: chain_depth=%d, fitness=%d\n",
             chain_depth, ts->fitness);
 
@@ -1300,6 +1301,7 @@ static void make_exit(_PyUOpInstruction *inst, int opcode, int target, bool is_c
     inst->target = target;
     inst->operand1 = is_control_flow;
 #ifdef Py_STATS
+    inst->fitness = 0;
     inst->execution_count = 0;
 #endif
 }
@@ -2100,8 +2102,8 @@ write_row_for_uop(_PyExecutorObject *executor, uint32_t i, FILE *out)
 #ifdef Py_STATS
     const char *bg_color = get_background_color(inst, executor->trace[0].execution_count);
     const char *color = get_foreground_color(inst, executor->trace[0].execution_count);
-    fprintf(out, "        <tr><td port=\"i%d\" border=\"1\" color=\"%s\" bgcolor=\"%s\" ><font color=\"%s\"> %s &nbsp;--&nbsp; %" PRIu64 "</font></td></tr>\n",
-        i, color, bg_color, color, opname, inst->execution_count);
+    fprintf(out, "        <tr><td port=\"i%d\" border=\"1\" color=\"%s\" bgcolor=\"%s\" ><font color=\"%s\"> %s [%d]&nbsp;--&nbsp; %" PRIu64 "</font></td></tr>\n",
+        i, color, bg_color, color, opname, inst->fitness, inst->execution_count);
 #else
     const char *color = (_PyUop_Uncached[inst->opcode] == _DEOPT) ? RED : BLACK;
     fprintf(out, "        <tr><td port=\"i%d\" border=\"1\" color=\"%s\" >%s op0=%" PRIu64 "</td></tr>\n", i, color, opname, inst->operand0);
