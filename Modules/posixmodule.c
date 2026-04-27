@@ -18391,6 +18391,17 @@ all_ins(PyObject *m)
     /* STATX_ATTR_* constants are in the stat module */
 #endif /* HAVE_STATX */
 
+    /* Block size for the st_blocks field of stat(2).
+     * st_blocks is in 512-byte units on most platforms. DEV_BSIZE (or BSIZE
+     * as a fallback) from sys/param.h gives the actual platform value. */
+#if defined(HAVE_STRUCT_STAT_ST_BLOCKS)
+#  if defined(DEV_BSIZE)
+    if (PyModule_AddIntConstant(m, "DEV_BSIZE", DEV_BSIZE)) return -1;
+#  elif defined(BSIZE)
+    if (PyModule_AddIntConstant(m, "DEV_BSIZE", BSIZE)) return -1;
+#  endif
+#endif
+
 #if defined(__APPLE__)
     if (PyModule_AddIntConstant(m, "_COPYFILE_DATA", COPYFILE_DATA)) return -1;
     if (PyModule_AddIntConstant(m, "_COPYFILE_STAT", COPYFILE_STAT)) return -1;

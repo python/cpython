@@ -2663,6 +2663,16 @@ features:
    .. versionadded:: 3.15
 
 
+.. data:: DEV_BSIZE
+
+   The size, in bytes, of a block as reported by the :attr:`~os.stat_result.st_blocks`
+   field of :class:`~os.stat_result`.  This is typically 512 bytes.
+
+   :ref:`Availability <availability>`: Unix.
+
+   .. versionadded:: 3.15
+
+
 .. function:: pathconf(path, name)
 
    Return system configuration information relevant to a named file. *name*
