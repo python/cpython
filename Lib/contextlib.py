@@ -1,6 +1,4 @@
 """Utilities for with-statement contexts.  See PEP 343."""
-from inspect import isasyncgenfunction, iscoroutinefunction, \
-    isgeneratorfunction
 
 import abc
 import os
@@ -8,6 +6,9 @@ import sys
 import _collections_abc
 from collections import deque
 from functools import wraps
+from inspect import isasyncgenfunction as _isasyncgenfunction
+from inspect import iscoroutinefunction as _iscoroutinefunction
+from inspect import isgeneratorfunction as _isgeneratorfunction
 from types import GenericAlias
 
 __all__ = ["asynccontextmanager", "contextmanager", "closing", "nullcontext",
@@ -101,11 +102,11 @@ class ContextDecorator(object):
                         yield value
 
         wrapper = wraps(func)
-        if isasyncgenfunction(func):
+        if _isasyncgenfunction(func):
             return wrapper(asyncgen_inner)
-        elif iscoroutinefunction(func):
+        elif _iscoroutinefunction(func):
             return wrapper(async_inner)
-        elif isgeneratorfunction(func):
+        elif _isgeneratorfunction(func):
             return wrapper(gen_inner)
         else:
             return wrapper(inner)
@@ -143,11 +144,11 @@ class AsyncContextDecorator(object):
                     yield value
 
         wrapper = wraps(func)
-        if isasyncgenfunction(func):
+        if _isasyncgenfunction(func):
             return wrapper(asyncgen_inner)
-        elif iscoroutinefunction(func):
+        elif _iscoroutinefunction(func):
             return wrapper(async_inner)
-        elif isgeneratorfunction(func):
+        elif _isgeneratorfunction(func):
             return wrapper(gen_inner)
         else:
             return wrapper(inner)
