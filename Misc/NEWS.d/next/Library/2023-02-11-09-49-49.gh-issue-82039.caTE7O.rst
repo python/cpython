@@ -1,0 +1,2 @@
+:meth:`http.cookiejar.FileCookieJar.load` now checks the first, format
+signature line in a case-insensitive manner. Patch by Ashley Harvey.
