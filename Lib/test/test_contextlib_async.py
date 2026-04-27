@@ -460,6 +460,56 @@ class AsyncContextManagerTestCase(unittest.TestCase):
         self.assertEqual(state, [1, "something", "second item", 999])
 
     @_async_test
+    async def test_decorator_decorate_asyncgen_function_exception(self):
+        @asynccontextmanager
+        async def context():
+            state.append("enter")
+            try:
+                yield
+            finally:
+                state.append("exit")
+
+        state = []
+        @context()
+        async def test():
+            state.append("body")
+            yield
+            raise ZeroDivisionError
+
+        with self.assertRaises(ZeroDivisionError):
+            async for _ in test():
+                pass
+        self.assertEqual(state, ["enter", "body", "exit"])
+
+    @_async_test
+    async def test_decorator_decorate_asyncgen_function_early_stop(self):
+        @asynccontextmanager
+        async def context():
+            state.append("enter")
+            try:
+                yield
+            finally:
+                state.append("exit")
+
+        state = []
+        @context()
+        async def test():
+            try:
+                yield 1
+                yield 2
+            finally:
+                state.append("inner closed")
+
+        agen = test()
+        async for value in agen:
+            self.assertEqual(value, 1)
+            break
+        await agen.aclose()
+        # aclosing() ensures the inner async generator is closed before
+        # the context manager exits.
+        self.assertEqual(state, ["enter", "inner closed", "exit"])
+
+    @_async_test
     async def test_decorator_with_exception(self):
         entered = False
 

@@ -104,7 +104,7 @@ class ContextDecorator(object):
 
             def gen_inner(*args, **kwds):
                 with self._recreate_cm(), closing(func(*args, **kwds)) as gen:
-                    yield from gen
+                    return (yield from gen)
 
             return wrapper(gen_inner)
         else:

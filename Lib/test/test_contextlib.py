@@ -694,10 +694,68 @@ class TestContextDecorator(unittest.TestCase):
             state.append(x)
             yield
             state.append("second item")
+            return "result"
 
-        for _ in test("something"):
+        gen = test("something")
+        for _ in gen:
             self.assertEqual(state, [1, "something"])
         self.assertEqual(state, [1, "something", "second item", 999])
+
+        # The wrapped generator's return value is preserved.
+        state = []
+        gen = test("something")
+        with self.assertRaises(StopIteration) as cm:
+            while True:
+                next(gen)
+        self.assertEqual(cm.exception.value, "result")
+
+
+    def test_contextmanager_decorate_generator_function_exception(self):
+        @contextmanager
+        def woohoo():
+            state.append("enter")
+            try:
+                yield
+            finally:
+                state.append("exit")
+
+        state = []
+        @woohoo()
+        def test():
+            state.append("body")
+            yield
+            raise ZeroDivisionError
+
+        with self.assertRaises(ZeroDivisionError):
+            for _ in test():
+                pass
+        self.assertEqual(state, ["enter", "body", "exit"])
+
+
+    def test_contextmanager_decorate_generator_function_early_stop(self):
+        @contextmanager
+        def woohoo():
+            state.append("enter")
+            try:
+                yield
+            finally:
+                state.append("exit")
+
+        state = []
+        @woohoo()
+        def test():
+            try:
+                yield 1
+                yield 2
+            finally:
+                state.append("inner closed")
+
+        gen = test()
+        self.assertEqual(next(gen), 1)
+        gen.close()
+        # closing() ensures the inner generator is closed before the
+        # context manager exits.
+        self.assertEqual(state, ["enter", "inner closed", "exit"])
 
 
     def test_contextmanager_decorate_coroutine_function(self):
@@ -713,11 +771,11 @@ class TestContextDecorator(unittest.TestCase):
             self.assertEqual(state, [1])
             state.append(x)
 
-        coro = test('something')
+        coro = test("something")
         with self.assertRaises(StopIteration):
             coro.send(None)
 
-        self.assertEqual(state, [1, 'something', 999])
+        self.assertEqual(state, [1, "something", 999])
 
 
     def test_contextmanager_decorate_asyncgen_function(self):
@@ -735,17 +793,13 @@ class TestContextDecorator(unittest.TestCase):
             yield
             state.append("second item")
 
-        async def run_test():
-            async for _ in test("something"):
-                self.assertEqual(state, [1, "something"])
-
-        agen = test('something')
+        agen = test("something")
         with self.assertRaises(StopIteration):
             agen.asend(None).send(None)
         with self.assertRaises(StopAsyncIteration):
             agen.asend(None).send(None)
 
-        self.assertEqual(state, [1, 'something', "second item", 999])
+        self.assertEqual(state, [1, "something", "second item", 999])
 
 
 class TestBaseExitStack:
