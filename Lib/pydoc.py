@@ -2239,6 +2239,8 @@ class ModuleScanner:
                 except SyntaxError:
                     # raised by tests for bad coding cookies or BOM
                     continue
+                if spec is None:
+                    continue
                 loader = spec.loader
                 if hasattr(loader, 'get_source'):
                     try:
