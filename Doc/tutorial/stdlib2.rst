@@ -178,14 +178,13 @@ tasks in background while the main program continues to run::
 
    class AsyncZip(threading.Thread):
        def __init__(self, infile, outfile):
-           threading.Thread.__init__(self)
+           super().__init__()
            self.infile = infile
            self.outfile = outfile
 
        def run(self):
-           f = zipfile.ZipFile(self.outfile, 'w', zipfile.ZIP_DEFLATED)
-           f.write(self.infile)
-           f.close()
+           with zipfile.ZipFile(self.outfile, 'w', zipfile.ZIP_DEFLATED) as f:
+               f.write(self.infile)
            print('Finished background zip of:', self.infile)
 
    background = AsyncZip('mydata.txt', 'myarchive.zip')
