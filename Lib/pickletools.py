@@ -2394,6 +2394,38 @@ def optimize(p):
 ##############################################################################
 # A symbolic pickle disassembler.
 
+# Group opcode names into categories for colourised CLI output.
+_opcode_categories = frozendict(
+    op_call=frozenset({
+        "BUILD", "EXT1", "EXT2", "EXT4", "GLOBAL", "INST", "NEWOBJ",
+        "NEWOBJ_EX", "OBJ", "REDUCE", "STACK_GLOBAL",
+    }),
+    op_container=frozenset({
+        "ADDITEMS", "APPEND", "APPENDS", "DICT", "EMPTY_DICT", "EMPTY_LIST",
+        "EMPTY_SET", "EMPTY_TUPLE", "FROZENSET", "LIST", "SETITEM",
+        "SETITEMS", "TUPLE", "TUPLE1", "TUPLE2", "TUPLE3",
+    }),
+    op_literal=frozenset({
+        "BINBYTES", "BINBYTES8", "BINFLOAT", "BININT", "BININT1", "BININT2",
+        "BINSTRING", "BINUNICODE", "BINUNICODE8", "BYTEARRAY8", "FLOAT",
+        "INT", "LONG", "LONG1", "LONG4", "NEWFALSE", "NEWTRUE", "NEXT_BUFFER",
+        "NONE", "READONLY_BUFFER", "SHORT_BINBYTES", "SHORT_BINSTRING",
+        "SHORT_BINUNICODE", "STRING", "UNICODE",
+    }),
+    op_memo=frozenset({
+        "BINGET", "BINPUT", "GET", "LONG_BINGET", "LONG_BINPUT", "MEMOIZE",
+        "PUT",
+    }),
+    op_meta=frozenset({"BINPERSID", "FRAME", "PERSID", "PROTO"}),
+    op_stack=frozenset({"DUP", "MARK", "POP", "POP_MARK", "STOP"}),
+)
+_opcode_color_attr = frozendict({
+    name: attr
+    for attr, names in _opcode_categories.items()
+    for name in names
+})
+
+
 def dis(pickle, out=None, memo=None, indentlevel=4, annotate=0):
     """Produce a symbolic disassembly of a pickle.
 
@@ -2450,10 +2482,13 @@ def dis(pickle, out=None, memo=None, indentlevel=4, annotate=0):
         if pos is not None:
             print(f"{t.position}{pos:5d}:{t.reset}", end=' ', file=out)
 
+        opcode_color = getattr(
+            t, _opcode_color_attr.get(opcode.name, "op_meta")
+        )
         line = (
             f"{t.opcode_code}{repr(opcode.code)[1:-1]:<4}{t.reset} "
             f"{indentchunk * len(markstack)}"
-            f"{t.opcode_name}{opcode.name}{t.reset}"
+            f"{opcode_color}{opcode.name}{t.reset}"
         )
 
         maxproto = max(maxproto, opcode.proto)
