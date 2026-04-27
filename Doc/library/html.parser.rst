@@ -141,7 +141,7 @@ implementations do nothing (except for :meth:`~HTMLParser.handle_startendtag`):
    argument is a list of ``(name, value)`` pairs containing the attributes found
    inside the tag's ``<>`` brackets.  The *name* will be translated to lower case,
    and quotes in the *value* have been removed, and character and entity references
-   have been replaced.
+   have been replaced.  For empty attributes, *value* is ``None``.
 
    For instance, for the tag ``<A HREF="https://www.cwi.nl/">``, this method
    would be called as ``handle_starttag('a', [('href', 'https://www.cwi.nl/')])``.
@@ -316,6 +316,18 @@ without further parsing:
         attr: ('type', 'text/javascript')
    Data     : alert("<strong>hello! &#9786;</strong>");
    End tag  : script
+
+Attribute names are converted to lowercase, quotes from attribute values removed,
+and ``None`` is returned as *value* for empty attributes (such as ``checked``):
+
+.. doctest::
+
+   >>> parser.feed("<input TYPE='checkbox' checked required='' disabled=disabled>")
+   Start tag: input
+        attr: ('type', 'checkbox')
+        attr: ('checked', None)
+        attr: ('required', '')
+        attr: ('disabled', 'disabled')
 
 Parsing comments:
 
