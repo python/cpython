@@ -6,7 +6,7 @@ Definition slots
 ================
 
 To define :ref:`module objects <moduleobjects>` and
-:ref:`classes <creating-heap-types>`, you may use
+:ref:`classes <creating-heap-types>` using the C API, you may use
 an array of *slots* -- essentally, key-value pairs that describe features
 of the object to create.
 This decouples the data from the structures used at runtime, allowing CPython
@@ -29,6 +29,13 @@ explicitly marked with :c:macro:`PySlot_STATIC`.
 
 Except when documented otherwise, multiple slots with the same ID
 (:c:member:`~PySlot.sl_id`) may not occur in a single slots array.
+
+.. versionadded:: next
+
+   Slot arrays generalize an earlier way of defining objects:
+   using :c:type:`PyType_Spec` with :c:type:`PyType_Slot` for types, and
+   :c:type:`PyModuleDef` with :c:type:`PyModuleDef_Slot` for modules.
+   The earlier API is :term:`soft deprecated`; there are no plans to remove it.
 
 Entries of the slots array use the following structure:
 
