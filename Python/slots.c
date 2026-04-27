@@ -318,7 +318,7 @@ handle_first_run(_PySlotIterator *it)
         {
             PyErr_Format(
                 PyExc_SystemError,
-                "%s must requires PySlot_STATIC",
+                "%s requires PySlot_STATIC",
                 _PySlot_GetName(id));
             return -1;
         }

@@ -285,8 +285,8 @@ class ModuleSlotsTests(unittest.TestCase):
         if slot_number in {3, 86, 4, 87, 102}:
             # Py_mod_mult.interp., Py_mod_gil, Py_mod_state_size
             return
-        elif slot_number > 85:
-            # new slots
+        elif slot_number in {2, 85} or slot_number > 85:
+            # Py_mod_exec, new slots
             ctx = self.assertRaisesRegex(SystemError, "NULL not allowed")
             ctx_old = ctx
         else:

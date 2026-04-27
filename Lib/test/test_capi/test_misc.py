@@ -923,8 +923,8 @@ class CAPITest(unittest.TestCase):
 
     def test_tp_bases_slot_none(self):
         self.assertRaisesRegex(
-            SystemError,
-            "Py_tp_bases is not a tuple",
+            TypeError,
+            "metaclass conflict",
             _testcapi.create_heapctype_with_none_bases_slot
         )
 

@@ -1240,7 +1240,7 @@ PyModExport__test_from_modexport_smoke(void)
         PySlot_DATA(Py_mod_doc, "the expected docstring"),
         PySlot_FUNC(Py_mod_exec, modexport_smoke_exec),
         PySlot_SIZE(Py_mod_state_size, (void*)sizeof(int)),
-        PySlot_FUNC(Py_mod_methods, methods),
+        PySlot_STATIC_DATA(Py_mod_methods, methods),
         PySlot_FUNC(Py_mod_state_free, modexport_smoke_free),
         PySlot_DATA(Py_mod_token, (void*)&modexport_smoke_test_token),
         PySlot_DATA(Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED),

@@ -94,7 +94,7 @@ module_from_slots_methods(PyObject *self, PyObject *spec)
 {
     PySlot slots[] = {
         PySlot_DATA(Py_mod_abi, &abi_info),
-        PySlot_DATA(Py_mod_methods, a_methoddef_array),
+        PySlot_STATIC_DATA(Py_mod_methods, a_methoddef_array),
         PySlot_DATA(Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED),
         PySlot_DATA(Py_mod_gil, Py_MOD_GIL_NOT_USED),
         PySlot_END,
@@ -243,8 +243,8 @@ module_from_slots_repeat_slot(PyObject *self, PyObject *spec)
     }
     const PySlot slots[] = {
         PySlot_DATA(Py_mod_abi, &abi_info),
-        PySlot_PTR(slot_id, "anything"),
-        PySlot_PTR(slot_id, "anything_else"),
+        PySlot_PTR_STATIC(slot_id, "anything"),
+        PySlot_PTR_STATIC(slot_id, "anything_else"),
         PySlot_DATA(Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED),
         PySlot_DATA(Py_mod_gil, Py_MOD_GIL_NOT_USED),
         PySlot_END,
@@ -261,7 +261,7 @@ module_from_slots_null_slot(PyObject *self, PyObject *spec)
     }
     const PySlot slots[] = {
         PySlot_DATA(Py_mod_abi, &abi_info),
-        PySlot_PTR(slot_id, NULL),
+        PySlot_PTR_STATIC(slot_id, NULL),
         PySlot_DATA(Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED),
         PySlot_DATA(Py_mod_gil, Py_MOD_GIL_NOT_USED),
         PySlot_END,

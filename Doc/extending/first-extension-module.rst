@@ -259,7 +259,7 @@ Rather than ``NULL``, the export hook should return the information needed to
 create a module.
 Let's start with the basics: the name and docstring.
 
-The information should be defined in a ``static`` array of
+The information should be defined in an array of
 :c:type:`PySlot` entries, which are essentially key-value pairs.
 Define this array just before your export hook:
 
@@ -268,11 +268,15 @@ Define this array just before your export hook:
    PyABIInfo_VAR(abi_info);
 
    static PySlot spam_slots[] = {
-      PySlot_DATA(Py_mod_abi, &abi_info),
-      PySlot_DATA(Py_mod_name, "spam"),
-      PySlot_DATA(Py_mod_doc, "A wonderful module with an example function"),
+      PySlot_STATIC_DATA(Py_mod_abi, &abi_info),
+      PySlot_STATIC_DATA(Py_mod_name, "spam"),
+      PySlot_STATIC_DATA(Py_mod_doc, "A wonderful module with an example function"),
       PySlot_END
    };
+
+The :c:macro:`PySlot_STATIC_DATA` macro is used when the slot value
+(here: ``&abi_info``, ``"spam"``, and the docstring) is a pointer to constant,
+statically allocated data.
 
 The ``PyABIInfo_VAR(abi_info);`` macro and the :c:data:`Py_mod_abi` slot
 are a bit of boilerplate that helps prevent extensions compiled for
