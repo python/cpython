@@ -642,7 +642,6 @@ def _parse(source, state, verbose, nested, first=False):
                 min, max = 0, 1
             elif this == "*":
                 min, max = 0, MAXREPEAT
-
             elif this == "+":
                 min, max = 1, MAXREPEAT
             elif this == "{":
@@ -652,14 +651,45 @@ def _parse(source, state, verbose, nested, first=False):
 
                 min, max = 0, MAXREPEAT
                 lo = hi = ""
+                invalid = ""
+                while source.next in WHITESPACE:
+                    invalid = invalid or " "
+                    sourceget()
+                if sourcematch("-"):
+                    invalid = invalid or ("-" if source.next in DIGITS else "*")
                 while source.next in DIGITS:
                     lo += sourceget()
+                while source.next in WHITESPACE:
+                    invalid = invalid or " "
+                    sourceget()
                 if sourcematch(","):
+                    while source.next in WHITESPACE:
+                        invalid = invalid or " "
+                        sourceget()
+                    if sourcematch("-"):
+                        invalid = invalid or ("-" if source.next in DIGITS else "*")
                     while source.next in DIGITS:
                         hi += sourceget()
+                    while source.next in WHITESPACE:
+                        invalid = invalid or " "
+                        sourceget()
                 else:
                     hi = lo
-                if not sourcematch("}"):
+                if not sourcematch("}") or invalid:
+                    if invalid == " " and (lo or hi):
+                        import warnings
+                        warnings.warn(
+                            'ambiguous syntax: spaces are not allowed around '
+                            'the repetition numbers at position %d' % (here - 1),
+                            DeprecationWarning, stacklevel=nested + 6
+                        )
+                    elif invalid == "-":
+                        import warnings
+                        warnings.warn(
+                            'ambiguous syntax: negative repetition number '
+                            'at position %d' % (here - 1),
+                            DeprecationWarning, stacklevel=nested + 6
+                        )
                     subpatternappend((LITERAL, _ord(this)))
                     source.seek(here)
                     continue
