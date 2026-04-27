@@ -1301,6 +1301,7 @@ static void make_exit(_PyUOpInstruction *inst, int opcode, int target, bool is_c
     inst->target = target;
     inst->operand1 = is_control_flow;
 #ifdef Py_STATS
+    inst->fitness = 0;
     inst->execution_count = 0;
 #endif
 }
