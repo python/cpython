@@ -6405,7 +6405,9 @@
                 iter = stack_pointer[-2];
                 PyObject *iter_o = PyStackRef_AsPyObjectBorrow(iter);
                 Py_ssize_t index = PyStackRef_UntagInt(null_or_index);
-                _PyObjectIndexPair next_index = CALL_TP_ITERITEM(iter_o, index);
+                _PyFrame_SetStackPointer(frame, stack_pointer);
+                _PyObjectIndexPair next_index = Py_TYPE(iter_o)->_tp_iteritem(iter_o, index);
+                stack_pointer = _PyFrame_GetStackPointer(frame);
                 PyObject *next_o = next_index.object;
                 index = next_index.index;
                 if (next_o == NULL) {
@@ -11317,7 +11319,9 @@
                 iter = stack_pointer[-3];
                 PyObject *iter_o = PyStackRef_AsPyObjectBorrow(iter);
                 Py_ssize_t index = PyStackRef_UntagInt(null_or_index);
-                _PyObjectIndexPair next_index = CALL_TP_ITERITEM(iter_o, index);
+                _PyFrame_SetStackPointer(frame, stack_pointer);
+                _PyObjectIndexPair next_index = Py_TYPE(iter_o)->_tp_iteritem(iter_o, index);
+                stack_pointer = _PyFrame_GetStackPointer(frame);
                 PyObject *next_o = next_index.object;
                 index = next_index.index;
                 if (next_o == NULL) {

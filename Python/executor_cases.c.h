@@ -14699,83 +14699,6 @@
 
         /* _FOR_ITER_VIRTUAL is not a viable micro-op for tier 2 because it is replaced */
 
-        case _FOR_ITER_VIRTUAL_TIER_TWO_r03: {
-            CHECK_CURRENT_CACHED_VALUES(0);
-            assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
-            _PyStackRef null_or_index;
-            _PyStackRef iter;
-            _PyStackRef next;
-            null_or_index = stack_pointer[-1];
-            iter = stack_pointer[-2];
-            PyObject *iter_o = PyStackRef_AsPyObjectBorrow(iter);
-            Py_ssize_t index = PyStackRef_UntagInt(null_or_index);
-            _PyObjectIndexPair next_index = CALL_TP_ITERITEM(iter_o, index);
-            PyObject *next_o = next_index.object;
-            index = next_index.index;
-            if (next_o == NULL) {
-                if (index < 0) {
-                    SET_CURRENT_CACHED_VALUES(0);
-                    JUMP_TO_ERROR();
-                }
-                if (true) {
-                    UOP_STAT_INC(uopcode, miss);
-                    SET_CURRENT_CACHED_VALUES(0);
-                    JUMP_TO_JUMP_TARGET();
-                }
-            }
-            next = PyStackRef_FromPyObjectSteal(next_o);
-            null_or_index = PyStackRef_TagInt(index);
-            _tos_cache2 = next;
-            _tos_cache1 = null_or_index;
-            _tos_cache0 = iter;
-            SET_CURRENT_CACHED_VALUES(3);
-            stack_pointer += -2;
-            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
-            assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
-            break;
-        }
-
-        case _FOR_ITER_VIRTUAL_TIER_TWO_r13: {
-            CHECK_CURRENT_CACHED_VALUES(1);
-            assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
-            _PyStackRef null_or_index;
-            _PyStackRef iter;
-            _PyStackRef next;
-            _PyStackRef _stack_item_0 = _tos_cache0;
-            null_or_index = _stack_item_0;
-            iter = stack_pointer[-1];
-            PyObject *iter_o = PyStackRef_AsPyObjectBorrow(iter);
-            Py_ssize_t index = PyStackRef_UntagInt(null_or_index);
-            _PyObjectIndexPair next_index = CALL_TP_ITERITEM(iter_o, index);
-            PyObject *next_o = next_index.object;
-            index = next_index.index;
-            if (next_o == NULL) {
-                if (index < 0) {
-                    stack_pointer[0] = null_or_index;
-                    stack_pointer += 1;
-                    ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
-                    SET_CURRENT_CACHED_VALUES(0);
-                    JUMP_TO_ERROR();
-                }
-                if (true) {
-                    UOP_STAT_INC(uopcode, miss);
-                    _tos_cache0 = null_or_index;
-                    SET_CURRENT_CACHED_VALUES(1);
-                    JUMP_TO_JUMP_TARGET();
-                }
-            }
-            next = PyStackRef_FromPyObjectSteal(next_o);
-            null_or_index = PyStackRef_TagInt(index);
-            _tos_cache2 = next;
-            _tos_cache1 = null_or_index;
-            _tos_cache0 = iter;
-            SET_CURRENT_CACHED_VALUES(3);
-            stack_pointer += -1;
-            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
-            assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
-            break;
-        }
-
         case _FOR_ITER_VIRTUAL_TIER_TWO_r23: {
             CHECK_CURRENT_CACHED_VALUES(2);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
@@ -14788,15 +14711,17 @@
             iter = _stack_item_0;
             PyObject *iter_o = PyStackRef_AsPyObjectBorrow(iter);
             Py_ssize_t index = PyStackRef_UntagInt(null_or_index);
-            _PyObjectIndexPair next_index = CALL_TP_ITERITEM(iter_o, index);
+            stack_pointer[0] = iter;
+            stack_pointer[1] = null_or_index;
+            stack_pointer += 2;
+            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+            _PyFrame_SetStackPointer(frame, stack_pointer);
+            _PyObjectIndexPair next_index = Py_TYPE(iter_o)->_tp_iteritem(iter_o, index);
+            stack_pointer = _PyFrame_GetStackPointer(frame);
             PyObject *next_o = next_index.object;
             index = next_index.index;
             if (next_o == NULL) {
                 if (index < 0) {
-                    stack_pointer[0] = iter;
-                    stack_pointer[1] = null_or_index;
-                    stack_pointer += 2;
-                    ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
                     SET_CURRENT_CACHED_VALUES(0);
                     JUMP_TO_ERROR();
                 }
@@ -14805,6 +14730,8 @@
                     _tos_cache1 = null_or_index;
                     _tos_cache0 = iter;
                     SET_CURRENT_CACHED_VALUES(2);
+                    stack_pointer += -2;
+                    ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
                     JUMP_TO_JUMP_TARGET();
                 }
             }
@@ -14814,6 +14741,8 @@
             _tos_cache1 = null_or_index;
             _tos_cache0 = iter;
             SET_CURRENT_CACHED_VALUES(3);
+            stack_pointer += -2;
+            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
         }

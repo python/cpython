@@ -718,7 +718,6 @@ NON_ESCAPING_FUNCTIONS = (
     "_PyStolenTuple_Free",
     "PyObject_GC_UnTrack",
     "_PyErr_ExceptionMatches",
-    "CALL_TP_ITERITEM",
 )
 
 
