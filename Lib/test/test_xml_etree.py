@@ -1009,12 +1009,12 @@ class ElementTreeTest(unittest.TestCase):
         check("cp437", '\u221a')
         check("mac-roman", '\u02da')
 
-        def xml(encoding):
-            return "<?xml version='1.0' encoding='%s'?><xml />" % encoding
-        def bxml(encoding):
-            return xml(encoding).encode(encoding)
+        def xml(encoding, body=''):
+            return "<?xml version='1.0' encoding='%s'?><xml>%s</xml>" % (encoding, body)
+        def bxml(encoding, body=''):
+            return xml(encoding, body).encode(encoding)
         supported_encodings = [
-            'ascii', 'utf-8', 'utf-16', 'utf-16be', 'utf-16le',
+            'utf-8', 'utf-16', 'utf-16be', 'utf-16le',
             'iso8859-1', 'iso8859-2', 'iso8859-3', 'iso8859-4', 'iso8859-5',
             'iso8859-6', 'iso8859-7', 'iso8859-8', 'iso8859-9', 'iso8859-10',
             'iso8859-13', 'iso8859-14', 'iso8859-15', 'iso8859-16',
@@ -1030,6 +1030,9 @@ class ElementTreeTest(unittest.TestCase):
         for encoding in supported_encodings:
             with self.subTest(encoding=encoding):
                 self.assertEqual(ET.tostring(ET.XML(bxml(encoding))), b'<xml />')
+                c = 'éπя\u05d0\u060c€'.encode(encoding, 'ignore').decode(encoding)[0]
+                self.assertEqual(ET.tostring(ET.XML(bxml(encoding, c))),
+                                 ('<xml>&#%d;</xml>' % ord(c)).encode())
 
         unsupported_ascii_compatible_encodings = [
             'big5', 'big5hkscs',
