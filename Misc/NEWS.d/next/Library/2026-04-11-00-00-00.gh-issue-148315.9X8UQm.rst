@@ -1,0 +1,4 @@
+:mod:`venv`: Shell-quote the ``command = ...`` line written to
+``pyvenv.cfg`` so that paths containing whitespace (for example a Windows
+user directory with a space) are preserved faithfully and the recorded
+command can be re-executed.
