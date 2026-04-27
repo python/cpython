@@ -2745,6 +2745,40 @@ print(len(data.strip()))
         self.assertEqual(result.returncodes[1], 0)
         self.assertEqual(result.returncodes[2], 0)
 
+    def test_pipeline_brokenpipe_mid_input_write(self):
+        """The first command exits while input is still being written.
+
+        Exercises the BrokenPipeError handler in the I/O loop's stdin
+        write path: the input is larger than typical pipe buffers, the
+        first command reads a single byte then exits, and the
+        remaining writes must fail gracefully.
+        """
+        big = b"x" * (4 * 1024 * 1024)
+        result = subprocess.run_pipeline(
+            [sys.executable, "-c",
+             "import sys; sys.stdin.buffer.read(1); sys.exit(0)"],
+            [sys.executable, "-c", "import sys; sys.stdin.read()"],
+            input=big, capture_output=True, timeout=60,
+        )
+        self.assertEqual(result.returncodes, (0, 0))
+
+    def test_pipeline_timeout_after_io_completes(self):
+        """Timeout fires after I/O completes but a process is still running.
+
+        The final command closes its stdout (so the I/O loop sees EOF
+        and finishes) and then sleeps, so the per-process wait() is
+        what times out rather than the I/O loop.
+        """
+        with self.assertRaises(subprocess.TimeoutExpired) as cm:
+            subprocess.run_pipeline(
+                [sys.executable, "-c", "pass"],
+                [sys.executable, "-c",
+                 "import sys, os, time; "
+                 "sys.stdout.close(); os.close(1); time.sleep(60)"],
+                stdout=subprocess.PIPE, timeout=0.5,
+            )
+        self.assertIsNotNone(cm.exception.output)
+
 
 class PipelineCommandTestCase(BaseTestCase):
     """Tests for subprocess.PipelineCommand and its run_pipeline integration."""
