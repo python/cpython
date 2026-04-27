@@ -1,0 +1,1 @@
+Reduce the import time of :mod:`dataclasses` module by ~20%.

@@ -1,0 +1,2 @@
+Implement :pep:`800`, adding the :deco:`typing.disjoint_base` decorator.
+Patch by Jelle Zijlstra.

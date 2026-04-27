@@ -1115,7 +1115,7 @@ _PyStackRef
 _PyEval_GetIter(_PyStackRef iterable, _PyStackRef *index_or_null, int yield_from)
 {
     PyTypeObject *tp = PyStackRef_TYPE(iterable);
-    if (tp == &PyTuple_Type || tp == &PyList_Type) {
+    if (tp->_tp_iteritem != NULL) {
         /* Leave iterable on stack and pushed tagged 0 */
         *index_or_null = PyStackRef_TagInt(0);
         return iterable;
@@ -1305,7 +1305,7 @@ early_exit:
 }
 #ifdef _Py_TIER2
 #ifdef _Py_JIT
-_PyJitEntryFuncPtr _Py_jit_entry = _Py_LazyJitShim;
+_PyJitEntryFuncPtr _Py_jit_entry = _PyJIT;
 #else
 _PyJitEntryFuncPtr _Py_jit_entry = _PyTier2Interpreter;
 #endif
@@ -2411,15 +2411,16 @@ void
 _PyEval_MonitorRaise(PyThreadState *tstate, _PyInterpreterFrame *frame,
               _Py_CODEUNIT *instr)
 {
-    if (no_tools_for_global_event(tstate, PY_MONITORING_EVENT_RAISE)) {
+    if (no_tools_for_local_event(tstate, frame, PY_MONITORING_EVENT_RAISE)) {
         return;
     }
     do_monitor_exc(tstate, frame, instr, PY_MONITORING_EVENT_RAISE);
 }
 
 bool
-_PyEval_NoToolsForUnwind(PyThreadState *tstate) {
-    return no_tools_for_global_event(tstate, PY_MONITORING_EVENT_PY_UNWIND);
+_PyEval_NoToolsForUnwind(PyThreadState *tstate, _PyInterpreterFrame *frame)
+{
+    return no_tools_for_local_event(tstate, frame, PY_MONITORING_EVENT_PY_UNWIND);
 }
 
 
@@ -3413,7 +3414,7 @@ _PyEval_FormatKwargsError(PyThreadState *tstate, PyObject *func, PyObject *kwarg
         _PyErr_Format(
             tstate, PyExc_TypeError,
             "%V got multiple values for keyword argument '%S'",
-            funcstr, "finction", dupkey);
+            funcstr, "function", dupkey);
         Py_XDECREF(funcstr);
         return;
     }
@@ -3702,36 +3703,24 @@ _PyEval_LoadName(PyThreadState *tstate, _PyInterpreterFrame *frame, PyObject *na
     return value;
 }
 
-static _PyStackRef
-foriter_next(PyObject *seq, _PyStackRef index)
-{
-    assert(PyStackRef_IsTaggedInt(index));
-    assert(PyTuple_CheckExact(seq) || PyList_CheckExact(seq));
-    intptr_t i = PyStackRef_UntagInt(index);
-    if (PyTuple_CheckExact(seq)) {
-        size_t size = PyTuple_GET_SIZE(seq);
-        if ((size_t)i >= size) {
-            return PyStackRef_NULL;
-        }
-        return PyStackRef_FromPyObjectNew(PyTuple_GET_ITEM(seq, i));
-    }
-    PyObject *item = _PyList_GetItemRef((PyListObject *)seq, i);
-    if (item == NULL) {
-        return PyStackRef_NULL;
-    }
-    return PyStackRef_FromPyObjectSteal(item);
-}
-
 _PyStackRef _PyForIter_VirtualIteratorNext(PyThreadState* tstate, _PyInterpreterFrame* frame, _PyStackRef iter, _PyStackRef* index_ptr)
 {
     PyObject *iter_o = PyStackRef_AsPyObjectBorrow(iter);
     _PyStackRef index = *index_ptr;
     if (PyStackRef_IsTaggedInt(index)) {
-        *index_ptr = PyStackRef_IncrementTaggedIntNoOverflow(index);
-        return foriter_next(iter_o, index);
+        intptr_t i = PyStackRef_UntagInt(index);
+        assert(i >= 0);
+        _PyObjectIndexPair next_index = Py_TYPE(iter_o)->_tp_iteritem(iter_o, i);
+        i = next_index.index;
+        PyObject *next = next_index.object;
+        if (next == NULL) {
+            return i < 0 ? PyStackRef_ERROR : PyStackRef_NULL;
+        }
+        *index_ptr = PyStackRef_TagInt(i);
+        return PyStackRef_FromPyObjectSteal(next);
     }
-    PyObject *next_o = (*Py_TYPE(iter_o)->tp_iternext)(iter_o);
-    if (next_o == NULL) {
+    PyObject *next = (*Py_TYPE(iter_o)->tp_iternext)(iter_o);
+    if (next == NULL) {
         if (_PyErr_Occurred(tstate)) {
             if (_PyErr_ExceptionMatches(tstate, PyExc_StopIteration)) {
                 _PyEval_MonitorRaise(tstate, frame, frame->instr_ptr);
@@ -3743,7 +3732,7 @@ _PyStackRef _PyForIter_VirtualIteratorNext(PyThreadState* tstate, _PyInterpreter
         }
         return PyStackRef_NULL;
     }
-    return PyStackRef_FromPyObjectSteal(next_o);
+    return PyStackRef_FromPyObjectSteal(next);
 }
 
 /* Check if a 'cls' provides the given special method. */

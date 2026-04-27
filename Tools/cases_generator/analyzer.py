@@ -1132,9 +1132,7 @@ def add_macro(
     macro: parser.Macro, instructions: dict[str, Instruction], uops: dict[str, Uop]
 ) -> None:
     parts: list[Part] = []
-    # Track the last non-specializing uop seen, so that recording uops
-    # can follow specializing ones without triggering the position check.
-    prev_uop: Uop | None = None
+    seen_real_uop = False
     for part in macro.uops:
         match part:
             case parser.OpName():
@@ -1146,14 +1144,15 @@ def add_macro(
                             f"No Uop named {part.name}", macro.tokens[0]
                         )
                     uop = uops[part.name]
-                    if uop.properties.records_value and prev_uop is not None:
-                        raise analysis_error(
-                            f"Recording uop {part.name} is not allowed "
-                            f"after non-specializing uops in macro",
-                            macro.tokens[0])
+                    if uop.properties.records_value:
+                        if seen_real_uop:
+                            raise analysis_error(
+                                f"Recording uop {part.name} must precede all "
+                                f"non-recording, non-specializing uops in macro",
+                                macro.tokens[0])
+                    elif "specializing" not in uop.annotations:
+                        seen_real_uop = True
                     parts.append(uop)
-                    if "specializing" not in uop.annotations:
-                        prev_uop = uop
             case parser.CacheEffect():
                 parts.append(Skip(part.size))
             case _:

@@ -1,12 +1,12 @@
 import sys
 import types
-import inspect
 import keyword
 import itertools
 import annotationlib
 import abc
 from reprlib import recursive_repr
 lazy import copy
+lazy import inspect
 lazy import re
 
 
@@ -988,6 +988,28 @@ _hash_action = {(False, False, False, False): None,
 # See https://bugs.python.org/issue32929#msg312829 for an if-statement
 # version of this table.
 
+# A non-data descriptor to autogenerate class docstring
+# from the signature of its __init__ method on demand.
+# The primary reason is to be able to lazy import `inspect` module.
+class _AutoDocstring:
+
+    def __get__(self, _obj, cls):
+        try:
+            # In some cases fetching a signature is not possible.
+            # But, we surely should not fail in this case.
+            text_sig = str(inspect.signature(
+                 cls,
+                 annotation_format=annotationlib.Format.FORWARDREF,
+            )).replace(' -> None', '')
+        except TypeError, ValueError:
+            text_sig = ''
+
+        doc = cls.__name__ + text_sig
+        setattr(cls, '__doc__', doc)
+        return doc
+
+_auto_docstring = _AutoDocstring()
+
 
 def _process_class(cls, init, repr, eq, order, unsafe_hash, frozen,
                    match_args, kw_only, slots, weakref_slot):
@@ -1215,23 +1237,13 @@ def _process_class(cls, init, repr, eq, order, unsafe_hash, frozen,
     if hash_action:
         cls.__hash__ = hash_action(cls, field_list, func_builder)
 
-    # Generate the methods and add them to the class.  This needs to be done
-    # before the __doc__ logic below, since inspect will look at the __init__
-    # signature.
+    # Generate the methods and add them to the class.
     func_builder.add_fns_to_class(cls)
 
     if not getattr(cls, '__doc__'):
-        # Create a class doc-string.
-        try:
-            # In some cases fetching a signature is not possible.
-            # But, we surely should not fail in this case.
-            text_sig = str(inspect.signature(
-                cls,
-                annotation_format=annotationlib.Format.FORWARDREF,
-            )).replace(' -> None', '')
-        except (TypeError, ValueError):
-            text_sig = ''
-        cls.__doc__ = (cls.__name__ + text_sig)
+        # Create a class doc-string lazily via descriptor protocol
+        # to avoid importing `inspect` module.
+        cls.__doc__ = _auto_docstring
 
     if match_args:
         # I could probably compute this once.
@@ -1298,10 +1310,18 @@ def _update_func_cell_for__class__(f, oldcls, newcls):
         # This function doesn't reference __class__, so nothing to do.
         return False
     # Fix the cell to point to the new class, if it's already pointing
-    # at the old class.  I'm not convinced that the "is oldcls" test
-    # is needed, but other than performance can't hurt.
+    # at the old class.
     closure = f.__closure__[idx]
-    if closure.cell_contents is oldcls:
+
+    try:
+        contents = closure.cell_contents
+    except ValueError:
+        # Cell is empty
+        return False
+
+    # This check makes it so we avoid updating an incorrect cell if the
+    # class body contains a function that was defined in a different class.
+    if contents is oldcls:
         closure.cell_contents = newcls
         return True
     return False
@@ -1383,8 +1403,10 @@ def _add_slots(cls, is_frozen, weakref_slot, defined_fields):
     # make an update, since all closures for a class will share a
     # given cell.
     for member in newcls.__dict__.values():
+
         # If this is a wrapped function, unwrap it.
-        member = inspect.unwrap(member)
+        if not isinstance(member, type) and hasattr(member, '__wrapped__'):
+            member = inspect.unwrap(member)
 
         if isinstance(member, types.FunctionType):
             if _update_func_cell_for__class__(member, cls, newcls):
@@ -1496,7 +1518,8 @@ def asdict(obj, *, dict_factory=dict):
     If given, 'dict_factory' will be used instead of built-in dict.
     The function applies recursively to field values that are
     dataclass instances. This will also look into built-in containers:
-    tuples, lists, and dicts. Other objects are copied with 'copy.deepcopy()'.
+    tuples, lists, dicts, and frozendicts. Other objects are copied
+    with 'copy.deepcopy()'.
     """
     if not _is_dataclass_instance(obj):
         raise TypeError("asdict() should be called on dataclass instances")
@@ -1552,7 +1575,7 @@ def _asdict_inner(obj, dict_factory):
             return obj_type(*[_asdict_inner(v, dict_factory) for v in obj])
         else:
             return obj_type(_asdict_inner(v, dict_factory) for v in obj)
-    elif issubclass(obj_type, dict):
+    elif issubclass(obj_type, (dict, frozendict)):
         if hasattr(obj_type, 'default_factory'):
             # obj is a defaultdict, which has a different constructor from
             # dict as it requires the default_factory as its first arg.
@@ -1587,7 +1610,8 @@ def astuple(obj, *, tuple_factory=tuple):
     If given, 'tuple_factory' will be used instead of built-in tuple.
     The function applies recursively to field values that are
     dataclass instances. This will also look into built-in containers:
-    tuples, lists, and dicts. Other objects are copied with 'copy.deepcopy()'.
+    tuples, lists, dicts, and frozendicts. Other objects are copied
+    with 'copy.deepcopy()'.
     """
 
     if not _is_dataclass_instance(obj):
@@ -1616,7 +1640,7 @@ def _astuple_inner(obj, tuple_factory):
         # generator (which is not true for namedtuples, handled
         # above).
         return type(obj)(_astuple_inner(v, tuple_factory) for v in obj)
-    elif isinstance(obj, dict):
+    elif isinstance(obj, (dict, frozendict)):
         obj_type = type(obj)
         if hasattr(obj_type, 'default_factory'):
             # obj is a defaultdict, which has a different constructor from
