@@ -2714,22 +2714,20 @@ _Py_Specialize_ForIter(_PyStackRef iter, _PyStackRef null_or_index, _Py_CODEUNIT
             return;
         }
     }
-    else {
-        if (tp->_tp_iteritem != NULL) {
-            if (tp == &PyList_Type) {
-    #ifdef Py_GIL_DISABLED
-                // Only specialize for lists owned by this thread or shared
-                if (!_Py_IsOwnedByCurrentThread(iter_o) && !_PyObject_GC_IS_SHARED(iter_o)) {
-                    goto failure;
-                }
-    #endif
-                specialize(instr, FOR_ITER_LIST);
-                return;
+    else if (tp == &PyList_Type) {
+        #ifdef Py_GIL_DISABLED
+            // Only specialize for lists owned by this thread or shared
+            if (!_Py_IsOwnedByCurrentThread(iter_o) && !_PyObject_GC_IS_SHARED(iter_o)) {
+                goto failure;
             }
-            else if (tp == &PyTuple_Type) {
-                specialize(instr, FOR_ITER_TUPLE);
-                return;
-            }
+        #endif
+        specialize(instr, FOR_ITER_LIST);
+        return;
+    }
+    else if (tp->_tp_iteritem != NULL) {
+        if (tp == &PyTuple_Type) {
+            specialize(instr, FOR_ITER_TUPLE);
+            return;
         }
         specialize(instr, FOR_ITER_VIRTUAL);
         return;
