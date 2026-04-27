@@ -513,7 +513,7 @@ binascii_a2b_uu_impl(PyObject *module, Py_buffer *data)
         if (state == NULL) {
             return NULL;
         }
-        PyErr_SetString(state->Error, "Empty string");
+        PyErr_SetString(state->Error, "Missing length byte");
         return NULL;
     }
     bin_len = (*ascii_data++ - ' ') & 077;
