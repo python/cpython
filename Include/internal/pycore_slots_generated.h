@@ -698,4 +698,16 @@ _PySlot_get_null_handling(uint16_t slot_id)
     }
 }
 
+static inline bool
+_PySlot_get_must_be_static(uint16_t slot_id)
+{
+    switch (slot_id) {
+        case Py_tp_methods: return true;
+        case Py_tp_members: return true;
+        case Py_tp_getset: return true;
+        case Py_mod_methods: return true;
+    }
+    return false;
+}
+
 #endif /* _PY_HAVE_INTERNAL_SLOTS_GENERATED_H */

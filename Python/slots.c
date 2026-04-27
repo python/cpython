@@ -70,7 +70,6 @@ _PySlotIterator_Rewind(_PySlotIterator *it, const void *slots)
     assert (it->is_at_end);
     assert (it->recursion_level == 0);
     assert (it->state == it->states);
-    assert (!it->state->ignoring_fallbacks);
     it->is_at_end = false;
     it->state->any_slot = slots;
     it->is_first_run = false;
@@ -300,6 +299,21 @@ static int
 handle_first_run(_PySlotIterator *it)
 {
     int id = it->current.sl_id;
+
+    if (_PySlot_get_must_be_static(id)) {
+        if (!(it->current.sl_flags & PySlot_STATIC)
+            && (it->state->slot_struct_kind == _PySlot_KIND_SLOT))
+        {
+            if (PyErr_WarnFormat(
+                PyExc_DeprecationWarning,
+                1,
+                "%s must requires PySlot_STATIC",
+                _PySlot_GetName(id)) < 0)
+            {
+                return -1;
+            }
+        }
+    }
 
     _PySlot_PROBLEM_HANDLING null_handling = _PySlot_get_null_handling(id);
     if (null_handling != _PySlot_PROBLEM_ALLOW) {

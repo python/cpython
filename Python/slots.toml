@@ -22,6 +22,7 @@
 #   The default for duplicate slots is 'reject'
 #   The default for NULLs is 'reject' for pointer slots; 'allow' for
 #       non-pointer ones
+# must_be_static: true if slot needs the PySlot_STATIC flag (in PySlot struct)
 
 
 [0]
@@ -523,6 +524,7 @@ is_type_field = true
 dtype = 'ptr'
 duplicates = 'deprecated'
 nulls = 'deprecated'
+must_be_static = true
 
 [65]
 name = 'Py_tp_new'
@@ -586,6 +588,7 @@ kind = 'type'
 is_type_field = true
 dtype = 'ptr'
 nulls = 'deprecated'
+must_be_static = true
 
 [73]
 name = 'Py_tp_getset'
@@ -594,6 +597,7 @@ is_type_field = true
 dtype = 'ptr'
 duplicates = 'deprecated'
 nulls = 'deprecated'
+must_be_static = true
 
 [74]
 name = 'Py_tp_free'
@@ -793,6 +797,7 @@ dtype = 'size'
 name = 'Py_mod_methods'
 kind = 'mod'
 dtype = 'ptr'
+must_be_static = true
 
 [104]
 name = 'Py_mod_state_traverse'

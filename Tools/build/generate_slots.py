@@ -91,6 +91,10 @@ class SlotInfo:
                 return 'reject'
             return 'allow'
 
+    @functools.cached_property
+    def must_be_static(self):
+        return self._data.get('must_be_static', False)
+
 
 def parse_slots(file):
     toml_contents = tomllib.load(file)
@@ -299,6 +303,16 @@ def write_private_header(f, slots):
                 out(f'    return _PySlot_PROBLEM_{handling};')
             out(f'default:')
             out(f'    return _PySlot_PROBLEM_REJECT;')
+    out()
+    out(f'static inline bool')
+    out(f'_PySlot_get_must_be_static(uint16_t slot_id)')
+    with out.block():
+        with out.block('switch (slot_id)'):
+            cases = []
+            for slot in slots:
+                if slot.must_be_static:
+                    out(f'case {slot.name}: return true;')
+        out(f'return false;')
     out()
     out(f'#endif /* _PY_HAVE_INTERNAL_SLOTS_GENERATED_H */')
 
