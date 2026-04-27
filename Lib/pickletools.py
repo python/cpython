@@ -2583,7 +2583,8 @@ def dis(pickle, out=None, memo=None, indentlevel=4, annotate=0):
         stack.extend(after)
 
     print(
-        f"highest protocol among opcodes = {t.proto}{maxproto}{t.reset}",
+        "highest protocol among opcodes =",
+        f"{t.proto}{maxproto}{t.reset}",
         file=out,
     )
     if stack:
