@@ -170,12 +170,6 @@ PyAPI_FUNC(PyObject *) PyCodec_NameReplaceErrors(PyObject *exc);
 PyAPI_DATA(const char *) Py_hexdigits;
 #endif
 
-#ifndef Py_LIMITED_API
-PyAPI_FUNC(PyObject*) _PyCodec_LookupTextEncoding(
-   const char *encoding,
-   const char *alternate_command);
-#endif
-
 #ifdef __cplusplus
 }
 #endif
