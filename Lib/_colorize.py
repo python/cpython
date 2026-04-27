@@ -367,7 +367,6 @@ class Pickletools(ThemeSection):
     mark: str = ANSIColors.GREY
     op_call: str = ANSIColors.GREEN
     op_container: str = ANSIColors.INTENSE_BLUE
-    op_literal: str = ANSIColors.CYAN
     op_memo: str = ANSIColors.MAGENTA
     op_meta: str = ANSIColors.GREY
     op_stack: str = ANSIColors.BOLD_RED

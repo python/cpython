@@ -2405,19 +2405,12 @@ _opcode_categories = frozendict(
         "EMPTY_SET", "EMPTY_TUPLE", "FROZENSET", "LIST", "SETITEM",
         "SETITEMS", "TUPLE", "TUPLE1", "TUPLE2", "TUPLE3",
     }),
-    op_literal=frozenset({
-        "BINBYTES", "BINBYTES8", "BINFLOAT", "BININT", "BININT1", "BININT2",
-        "BINSTRING", "BINUNICODE", "BINUNICODE8", "BYTEARRAY8", "FLOAT",
-        "INT", "LONG", "LONG1", "LONG4", "NEWFALSE", "NEWTRUE", "NEXT_BUFFER",
-        "NONE", "READONLY_BUFFER", "SHORT_BINBYTES", "SHORT_BINSTRING",
-        "SHORT_BINUNICODE", "STRING", "UNICODE",
-    }),
     op_memo=frozenset({
         "BINGET", "BINPUT", "GET", "LONG_BINGET", "LONG_BINPUT", "MEMOIZE",
         "PUT",
     }),
-    op_meta=frozenset({"BINPERSID", "FRAME", "PERSID", "PROTO"}),
-    op_stack=frozenset({"DUP", "MARK", "POP", "POP_MARK", "STOP"}),
+    op_meta=frozenset({"BINPERSID", "FRAME", "MARK", "PERSID", "PROTO"}),
+    op_stack=frozenset({"DUP", "POP", "POP_MARK", "STOP"}),
 )
 _opcode_color_attr = frozendict({
     name: attr
@@ -2482,13 +2475,13 @@ def dis(pickle, out=None, memo=None, indentlevel=4, annotate=0):
         if pos is not None:
             print(f"{t.position}{pos:5d}:{t.reset}", end=' ', file=out)
 
-        opcode_color = getattr(
-            t, _opcode_color_attr.get(opcode.name, "op_meta")
-        )
+        attr = _opcode_color_attr.get(opcode.name)
+        opcode_color = getattr(t, attr) if attr else ""
+        opcode_reset = t.reset if attr else ""
         line = (
             f"{t.opcode_code}{repr(opcode.code)[1:-1]:<4}{t.reset} "
             f"{indentchunk * len(markstack)}"
-            f"{opcode_color}{opcode.name}{t.reset}"
+            f"{opcode_color}{opcode.name}{opcode_reset}"
         )
 
         maxproto = max(maxproto, opcode.proto)
