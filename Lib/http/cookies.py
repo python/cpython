@@ -132,7 +132,7 @@ Finis.
 import re
 import string
 import types
-import warnings
+lazy import warnings
 
 __all__ = ["CookieError", "BaseCookie", "SimpleCookie"]
 
