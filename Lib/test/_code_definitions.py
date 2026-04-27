@@ -57,6 +57,13 @@ def spam_with_globals_and_builtins():
     print(res)
 
 
+def spam_with_global_and_attr_same_name():
+    try:
+        spam_minimal.spam_minimal
+    except AttributeError:
+        pass
+
+
 def spam_full_args(a, b, /, c, d, *args, e, f, **kwargs):
     return (a, b, c, d, e, f, args, kwargs)
 
@@ -190,6 +197,7 @@ TOP_FUNCTIONS = [
     spam_minimal,
     spam_with_builtins,
     spam_with_globals_and_builtins,
+    spam_with_global_and_attr_same_name,
     spam_full_args,
     spam_full_args_with_defaults,
     spam_args_attrs_and_builtins,
@@ -258,6 +266,7 @@ STATELESS_CODE = [
     script_with_globals,
     spam_full_args_with_defaults,
     spam_with_globals_and_builtins,
+    spam_with_global_and_attr_same_name,
     spam_full,
 ]
 
@@ -275,6 +284,7 @@ SCRIPT_FUNCTIONS = [
     *PURE_SCRIPT_FUNCTIONS,
     script_with_globals,
     spam_with_globals_and_builtins,
+    spam_with_global_and_attr_same_name,
 ]
 
 

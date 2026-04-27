@@ -1,3 +1,0 @@
-If possible, ensure that :func:`uuid.getnode` returns the same result even
-across different processes. Previously, the result was constant only within
-the same process. Patch by Bénédikt Tran.
