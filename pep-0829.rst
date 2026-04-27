@@ -1,0 +1,554 @@
+PEP: 829
+Title: Structured Startup Configuration via .site.toml Files
+Author: Barry Warsaw <barry@python.org>
+Status: Draft
+Type: Standards Track
+Topic: Packaging
+Created: 31-Mar-2026
+Python-Version: 3.15
+Post-History:
+
+
+Abstract
+========
+
+This PEP proposes a TOML-based configuration file format to replace
+the ``.pth`` file mechanism used by ``site.py`` during interpreter
+startup.  The new format, using files named ``<package>.site.toml``,
+provides structured configuration for extending ``sys.path`` and
+executing package initialization code, replacing the current ad-hoc
+``.pth`` format that conflates path configuration with arbitrary code
+execution.
+
+
+Motivation
+==========
+
+Python's ``.pth`` files (processed by ``Lib/site.py`` at startup)
+support two functions:
+
+#. **Extending** ``sys.path`` -- Lines in this file (excluding
+   comments and lines that start with ``import``) name directories to
+   be appended to ``sys.path``.  Relative paths are implicitly
+   anchored at the site-packages directory.
+
+#. **Executing code** -- lines starting with ``import`` (or
+   ``import\\t``) are executed immediately by passing the source string
+   to ``exec()``.
+
+This design has several problems:
+
+#. Code execution is a side effect of the implementation.  Lines that
+   start with ``import`` can be extended by separating multiple
+   statements with a semicolon.  As long as all the code to be
+   executed appears on the same line, it all gets executed when the
+   ``.pth`` file is processed.
+
+#. ``.pth`` files are essentially unstructured, leading to contents
+   which are difficult to reason about or verify, and often even
+   difficult to read.  It mixes two potentially useful features with
+   different security constraints, and no way to separate out these
+   concerns.
+
+#. The lack of ``.pth`` file structure also means there's no way to
+   express metadata, no future-proofing of the format, and no defined
+   execution or processing order of the contents.
+
+#. Using ``exec()`` on the file contents during interpreter startup is
+   a broad attack surface.
+
+#. There is no explicit concept of an entry point, which is an
+   established pattern in Python packaging.  Packages that require
+   code execution and initialization at startup abuse ``import`` lines
+   rather than explicitly declaring entry points.
+
+
+Specification
+=============
+
+This PEP defines a new file format called ``<package>.site.toml``
+which addresses all of the stated problems with ``.pth`` files.  Like
+``.pth`` files, ``<package>.site.toml`` files are processed at Python
+startup time by the ``site.py`` module, which means that the ``-S``
+option, which disables ``site.py`` also disables
+``<package>.site.toml`` files.
+
+The standard library ``tomllib`` package is used to read and process
+``<package>.site.toml`` files.
+
+Any parsing errors cause the entire ``<package>.site.toml`` file to be
+ignored and not processed (but it still supersedes any parallel
+``<package>.pth`` file).  Any errors that occur when importing entry
+point modules or calling entry point functions are reported but do no
+abort the Python executable.
+
+
+File Naming and Discovery
+-------------------------
+
+* As with ``.pth`` files, packages may optionally install a single
+  ``<package>.site.toml``, just like the current ``.pth`` file
+  convention.
+
+* The naming convention is ``<package>.site.toml``.  The ``.site``
+  marker distinguishes these from other TOML files that might exist in
+  site-packages and describes the file's purpose (processed by
+  ``site.py``).
+
+* ``<package>.site.toml`` files live in the same site-packages directories
+  where ``.pth`` files are found today.
+
+* The discovery rules for ``<package>.site.toml`` files is the same as
+  ``.pth`` files today.  File names that start with a single ``.``
+  (e.g. ``.site.toml``) and files with OS-level hidden attributes (``UF_HIDDEN``,
+  ``FILE_ATTRIBUTE_HIDDEN``) are excluded.
+
+* The processing order is alphabetical by filename, matching ``.pth``
+  behavior.
+
+* If both ``<package>.site.toml`` and ``<package>.pth`` exist in the same
+  directory, only the ``<package>.site.toml`` file is processed.
+
+
+Processing Model
+----------------
+
+All ``<package>.site.toml`` files in a given site-packages directory
+are read and parsed into an intermediate data structure before any
+processing (i.e. path extension or entry point execution) occurs.
+This two-phase approach (read then process) enables:
+
+* A future **policy mechanism** that can inspect and modify the collected data
+  before execution (e.g., disabling entry points for specific packages or
+  enforcing path restrictions).  **NOTE**: Such a policy framework is
+  explicitly out-of-scope for this PEP.
+
+* Future finer-grained control over the processing of path extensions
+  and entry point execution.  For example, one could imagine special
+  ``-X`` options, environment variables, or other types of
+  configuration that allow path extensions only, or can explicitly
+  manage allow or deny lists of entry points.  **NOTE**: Such
+  configuration options are explicitly out-of-scope for this PEP.
+
+* Better error reporting.  All parsing, format, and data type errors
+  can be surfaced before any processing occurs.
+
+Within each site-packages directory, the processing order is:
+
+#. Discover and parse all ``<package>.site.toml`` files (alphabetically).
+#. Process all ``[paths]`` entries from the parsed data.
+#. Execute all ``[entrypoints]`` entries from the parsed data.
+#. Process any remaining ``<package>.pth`` files that are not superseded by a
+   ``<package>.site.toml`` file.
+
+This ensures that path extensions are in place before any entry point code
+runs, and that ``<package>.site.toml``-declared paths are available to both
+entry point imports and ``<package>.pth`` import lines.
+
+
+<package>.site.toml file schema
+-------------------------------
+
+A ``<package>.site.toml`` file is defined to have three sections, all of which
+are optional:
+
+.. code-block:: toml
+
+    [metadata]
+    schema_version = 1
+    package = "foo"
+    version = "2.3.4"
+    author = "A Person <aperson@example.com>"
+
+    [paths]
+    dirs = ["../lib", "/opt/mylib", "{sitedir}/extra"]
+
+    [entrypoints]
+    init = ["foo.startup:initialize", "foo.plugins"]
+
+
+``[metadata]``
+''''''''''''''
+
+This section contains package and/or file metadata.  There are no required
+keys, and no semantics are assigned to any keys in this section *except* for
+the optional ``schema_version`` key (see below).  Any additional keys are
+permitted and preserved.
+
+Defined keys:
+
+``schema_version`` (integer, recommended)
+    The TOML file schema version number.  Must be the integer ``1`` for this
+    specification.  If present, Python guarantees forward-compatible handling:
+    future versions will either process the file according to the declared
+    schema or skip it with a clear diagnostic.  If the
+    ``schema_version`` is present but has an unsupported value, the
+    entire file is skipped.  If ``schema_version`` is omitted, the file is processed
+    on a best-effort basis with no forward-compatibility guarantees.
+
+Recommended keys:
+
+``package`` (string)
+    The package name.
+
+``version`` (string)
+    The package version.
+
+``author`` (string)
+    The package author.  Should be
+    ``email.utils.parseaddr()``-compatible, e.g.,
+    ``"A person <aperson@example.com>"`` or
+    ``"aperson@example.com"``.
+
+
+``[paths]``
+'''''''''''
+
+Defined keys:
+
+``dirs``
+    A list of strings specifying directories to append to ``sys.path``.
+
+Path entries use a hybrid resolution scheme:
+
+* **Relative paths** are anchored at the site-packages directory (sitedir),
+  matching current ``.pth`` behavior.  For example, ``../lib`` in a file under
+  ``/usr/lib/python3.15/site-packages/`` resolves to
+  ``/usr/lib/python3.15/lib``.
+
+* **Absolute paths** are preserved as-is.  For example, ``/opt/mylib`` is used
+  exactly as written.
+
+* **Placeholder variables** are supported using ``{name}`` syntax.  The
+  placeholder ``{sitedir}`` expands to the site-packages directory where the
+  ``<package>.site.toml`` file was found.  Thus ``{sitedir}/relpath`` and
+  ``relpath`` resolve to the same path and this is the explicit form
+  of the relative path form.
+
+While only ``{sitedir}`` is defined in this PEP, additional
+placeholder variables (e.g., ``{prefix}``, ``{exec_prefix}``,
+``{userbase}``) may be defined in future PEPs.
+
+If ``dirs`` is not a list of strings, a warning is emitted (visible
+with ``-v``) and the section is skipped.
+
+Directories that do not exist on the filesystem are silently skipped,
+matching ``<package>.pth`` behavior.  Duplicate paths are
+de-duplicated, also matching ``<package>.pth`` behavior.
+
+
+``[entrypoints]``
+'''''''''''''''''
+
+``init`` -- a list of strings specifying entry point references to
+execute at startup.  Each item uses the standard Python entry point
+syntax: ``package.module:callable``.
+
+* The ``:callable`` portion is optional.  If omitted (e.g.,
+  ``package.module``), the module is imported via
+  ``importlib.import_module()`` but nothing is called.  This covers the common
+  ``<package>.pth`` pattern of ``import foo`` for side effects.
+
+* Callables are invoked with no arguments.
+
+* Entries are executed in the listed order.
+
+* The ``[extras]`` syntax from the packaging entry point spec is not
+  supported; it is installer metadata and has no meaning at
+  interpreter startup.
+
+
+General Schema Rules
+''''''''''''''''''''
+
+* All three sections are optional.  An empty ``<package>.site.toml``
+  file is a valid no-op.
+
+* Unknown tables are silently ignored, providing forward compatibility for
+  future extensions.
+
+* ``[paths]`` is always processed before ``[entrypoints]``, regardless of the
+  order the sections appear in the TOML file.
+
+
+Error Handling
+--------------
+
+Errors are handled differently depending on the phase:
+
+Phase 1: Reading and Parsing
+    If a ``<package>.site.toml`` file cannot be opened, decoded, or parsed as
+    valid TOML, it is skipped and processing continues to the next file.
+    Errors are reported only when ``-v`` (verbose) is given.  Importantly,
+    a ``<package>.site.toml`` file that fails to parse **still supersedes**
+    its corresponding ``<package>.pth`` file.  The existence of the
+    ``<package>.site.toml`` file is sufficient to suppress
+    ``<package>.pth`` processing, regardless of whether the TOML file
+    parses successfully.  This prevents confusing dual-execution
+    scenarios and ensures that a broken ``<package>.site.toml`` is
+    noticed rather than silently masked by fallback to the
+    ``<package>.pth`` file.
+
+Phase 2: Execution
+    If a path entry or entry point raises an exception during processing, the
+    traceback is printed to ``sys.stderr``, the failing entry is skipped, and
+    processing continues with the remaining entries in that file and
+    subsequent files.
+
+This is a deliberate improvement over ``.pth`` behavior, which aborts
+processing the remainder of a file on the first error.
+
+
+Rationale
+=========
+
+TOML as the configuration format
+    TOML is already used by ``pyproject.toml`` and is familiar to the Python
+    packaging ecosystem.  It is an easily human readable and writable format
+    that aids in validation and auditing.  TOML files are structured and
+    typed, and can be easily reasoned about.  TOML files allows for easy
+    future extensibility.  The ``tomllib`` module is available in the standard
+    library since Python 3.11.
+
+The ``<package>.site.toml`` naming convention
+    A double extension clearly communicates purpose: the ``.site`` marker
+    indicates this is a site-startup configuration file, while ``.toml``
+    indicates the format.  This avoids ambiguity with other TOML files that
+    might exist in site-packages now or in the future.  The package name
+    prefix preserves the current ``<package>.pth`` convention of a single
+    startup file per package.
+
+Hybrid path resolution
+    Implicit relative path joining (matching ``<package>.pth`` behavior)
+    provides a smooth migration path, while ``{sitedir}`` and future
+    placeholder variables offer explicit, extensible alternatives.  As with
+    ``<package>.pth`` files, absolute paths are preserved and used verbatim.
+
+``importlib.import_module()`` instead of ``exec()``
+    Using the standard import machinery is more predictable and auditable than
+    ``exec()``.  It integrates with the import system's hooks and logging, and
+    the ``package.module:callable`` syntax is already well-established in the
+    Python packaging ecosystem (e.g., ``console_scripts``).  Allowing for
+    optional ``:callable`` syntax preserves the import-side-effect
+    functionality of ``<package>.pth`` files, making migration easier.
+
+Two-phase processing
+    Reading all configuration before executing any of it provides a natural
+    extension point for future policy mechanisms and makes error reporting
+    more predictable.
+
+Alphabetical ordering with no priority mechanism
+    Packages are installed independently, and there is no external arbiter of
+    priority.  Alphabetical ordering matches ``<package>.pth`` behavior and is
+    simple to reason about.  Priority could be addressed by a future site-wide
+    policy configuration.
+
+``schema_version`` as recommended, not required
+    Requiring ``schema_version`` would make the simplest valid file more
+    verbose.  Making it recommended strikes a balance: files that include it
+    get forward-compatibility guarantees, while simple files that omit it
+    still work on a best-effort basis.
+
+Continue on error rather than abort
+    The ``<package>.pth`` behavior of aborting the rest of a file on the first
+    error is unnecessarily harsh.  If a package declares three entry points
+    and one fails, the other two should still run.
+
+
+Backwards Compatibility
+=======================
+
+* ``<package>.pth`` file processing is **not** removed.  Both
+  ``<package>.pth`` and ``<package>.site.toml`` files are discovered
+  in parallel within each site-packages directory.  This preserves
+  backward compatibility for all existing (pre-migration) packages.
+  Deprecation of ``<package>.pth`` files is out-of-scope for this PEP.
+
+* When ``<package>.site.toml`` exists alongside ``<package>.pth``, the
+  ``<package>.site.toml`` takes precedence and the ``<package>.pth`` file is
+  skipped, providing for a natural migration path and easy compatibility with
+  older versions of Python which are unaware of ``<package>.site.toml`` files.
+
+* Within a site-packages directory, all ``<package>.site.toml`` files
+  are fully processed (paths and entry points) before any remaining
+  ``<package>.pth`` files.
+
+* The ``site.addsitedir()`` public API retains its existing signature
+  and continues to accept ``known_paths``.
+
+
+Security Implications
+=====================
+
+This PEP improves the security posture of interpreter startup:
+
+* ``<package>.site.toml`` files replace ``exec()`` with
+  ``importlib.import_module()`` and explicit ``getattr()`` calls,
+  which are more constrained and auditable.
+
+* ``io.open_code()`` is used to read ``<package>.site.toml`` files, ensuring
+  that audit hooks (:pep:`578`) can monitor file access.
+
+* The two-phase processing model creates a natural point where a future policy
+  mechanism could inspect and restrict what gets executed.
+
+* The ``package.module:callable`` syntax limits execution to
+  importable modules and their attributes, unlike ``exec()`` which can
+  run arbitrary code.
+
+The overall attack surface is not eliminated -- a malicious
+``<package>.site.toml`` file can still cause arbitrary code execution via
+``init`` entrypoints, but the mechanism proposed in this PEP is more
+structured, auditable, and amenable to policy controls.
+
+
+How to Teach This
+=================
+
+For package authors
+-------------------
+
+If your package currently ships a ``<package>.pth`` file, you can migrate to a
+``<package>.site.toml`` file.  The equivalent of a ``<package>.pth`` file
+containing a directory name is:
+
+.. code-block:: toml
+
+    [paths]
+    dirs = ["my_directory"]
+
+The equivalent of a ``<package>.pth`` file containing ``import my_package``
+is:
+
+.. code-block:: toml
+
+    [entrypoints]
+    init = ["my_package"]
+
+If your ``<package>.pth`` file calls a specific function, use the
+``module:callable`` syntax:
+
+.. code-block:: toml
+
+    [entrypoints]
+    init = ["my_package.startup:initialize"]
+
+If your ``<package>.pth`` file includes arbitrary code, put that code in a
+start up function and use the ``module:callable`` syntax.
+
+Both ``<package>.pth`` and ``<package>.site.toml`` can coexist during
+migration.  If both exist for the same package, only the ``<package>.site.toml`` is
+processed.  Thus, it is recommended that packages compatible with older
+Pythons ship both files.
+
+For tool authors
+----------------
+
+ Build backends and installers should generate ``<package>.site.toml`` files
+ alongside or instead of ``<package>.pth`` files, depending on the package's
+ Python support matrix.  The TOML format is easy to generate programmatically
+ using ``tomllib`` (for reading) or string formatting (for writing, since the
+ schema is simple).
+
+
+Reference Implementation
+=========================
+
+A reference implementation is provided as modifications to ``Lib/site.py``,
+adding the following:
+
+* ``_SiteTOMLData`` -- a ``__slots__`` class holding parsed data from
+  a single ``<package>.site.toml`` file (metadata, dirs, init).
+
+* ``_read_site_toml(sitedir, name)`` -- reads and parses a single
+  ``<package>.site.toml`` file, validates types, and returns a
+  ``_SiteTOMLData`` instance or ``None`` on error.
+
+* ``_process_site_toml_paths(toml_data_list, known_paths)`` --
+  processes ``[paths].dirs`` from all parsed files, expanding
+  placeholders and adding directories to ``sys.path`` as appropriate.
+
+* ``_process_site_toml_entrypoints(toml_data_list)`` -- executes
+  ``[entrypoints].init`` from all parsed files.
+
+* Modified ``addsitedir()`` -- orchestrates the three-phase flow:
+  discover and parse ``<package>.site.toml`` files, process paths and
+  entry points, then process remaining ``<package>.pth`` files.
+
+Tests are provided in ``Lib/test/test_site.py`` in the
+``SiteTomlTests`` class.
+
+
+Rejected Ideas
+==============
+
+Single configuration file instead of per-package files
+    A single site-wide configuration file was considered but rejected
+    because it would require coordination between independently
+    installed packages and would not mirror the ``<package>.pth``
+    convention that tools already understand.
+
+JSON instead of TOML
+    JSON lacks comments and is less human-friendly.  TOML is already
+    the standard configuration format in the Python ecosystem via
+    ``pyproject.toml``.
+
+YAML instead of TOML
+    YAML is not in the standard library and has well-documented
+    parsing pitfalls.
+
+Python instead of TOML
+    Python is imperative, TOML is declarative.  Thus TOML files are
+    much more readily validated and reasoned about.
+
+``$schema`` URL reference
+    Unlike JSON, TOML has no standard ``$schema`` convention.  A
+    simple integer ``schema_version`` is sufficient and
+    self-contained.
+
+Required ``schema_version``
+    Requiring ``schema_version`` would make the simplest valid file
+    more verbose without significant benefit.  The recommended-but-
+    optional approach balances simplicity with future-proofing.
+
+Separate ``load`` and ``execute`` keys in ``[entrypoints]``
+    Splitting import-only and callable entry points into separate lists
+    was considered but rejected because it complicates execution
+    ordering.  A single ``init`` list with both forms keeps ordering
+    explicit.
+
+Priority or weight field for processing order
+    Since packages are installed independently, there is no arbiter of
+    priority.  Alphabetical ordering matches ``<package>.pth``
+    behavior.  Priority could be addressed by a future site-wide
+    policy configuration file, not per-package metadata.
+
+Passing arguments to callables
+    Callables are invoked with no arguments for simplicity and parity
+    with existing ``<package>.pth`` import behavior.  Future PEPs may
+    define an optional context argument (e.g., the parsed TOML data or
+    a site info object).
+
+
+Open Issues
+===========
+
+* Should a warning be emitted when both ``<package>.pth`` and
+  ``<package>.site.toml`` coexist?
+
+* Should future ``-X`` options provide fine-grained control over
+  error reporting, unknown table warnings, and entry point execution?
+
+* Should callables receive context (e.g., the path to the
+  ``<package>.site.toml`` file, the parsed TOML data, or a site info object)?
+
+* What additional placeholder variables should be supported beyond
+  ``{sitedir}``?  Candidates include ``{prefix}``, ``{exec_prefix}``, and
+  ``{userbase}``.
+
+
+Copyright
+=========
+
+This document is placed in the public domain or under the
+CC0-1.0-Universal license, whichever is more permissive.
