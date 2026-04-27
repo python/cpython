@@ -151,7 +151,7 @@ C library:
 
 .. function:: isspace(c)
 
-   Checks for ASCII whitespace characters; space, line feed, carriage return, form
+   Checks for whitespace ASCII characters; space, line feed, carriage return, form
    feed, horizontal tab, vertical tab.
 
 
