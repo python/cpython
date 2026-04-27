@@ -1,1 +1,0 @@
-Make concurrent iteration over :class:`itertools.zip_longest` safe under free-threading.
