@@ -5271,12 +5271,15 @@
             }
             else if (is_truediv
                  && (lhs_int || lhs_float) && (rhs_int || rhs_float)) {
+                ADD_OP(_BINARY_OP, oparg, 0);
                 res = PyJitRef_MakeUnique(sym_new_type(ctx, &PyFloat_Type));
             }
             else if (!((lhs_int || lhs_float) && (rhs_int || rhs_float))) {
+                ADD_OP(_BINARY_OP, oparg, 0);
                 res = sym_new_unknown(ctx);
             }
             else if (oparg == NB_POWER || oparg == NB_INPLACE_POWER) {
+                ADD_OP(_BINARY_OP, oparg, 0);
                 if (rhs_float) {
                     res = sym_new_unknown(ctx);
                 }
@@ -5294,9 +5297,11 @@
                 }
             }
             else if (lhs_int && rhs_int) {
+                ADD_OP(_BINARY_OP, oparg, 0);
                 res = sym_new_type(ctx, &PyLong_Type);
             }
             else {
+                ADD_OP(_BINARY_OP, oparg, 0);
                 res = PyJitRef_MakeUnique(sym_new_type(ctx, &PyFloat_Type));
             }
             CHECK_STACK_BOUNDS(1);

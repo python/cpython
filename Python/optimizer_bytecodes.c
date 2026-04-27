@@ -334,15 +334,20 @@ dummy_func(void) {
             }
             res = PyJitRef_MakeUnique(sym_new_type(ctx, &PyFloat_Type));
         }
+        // The branches above emit a specialized binary op; every branch below
+        // must explicitly emit _BINARY_OP.
         else if (is_truediv
                 && (lhs_int || lhs_float) && (rhs_int || rhs_float)) {
+            ADD_OP(_BINARY_OP, oparg, 0);
             res = PyJitRef_MakeUnique(sym_new_type(ctx, &PyFloat_Type));
         }
         else if (!((lhs_int || lhs_float) && (rhs_int || rhs_float))) {
             // There's something other than an int or float involved:
+            ADD_OP(_BINARY_OP, oparg, 0);
             res = sym_new_unknown(ctx);
         }
         else if (oparg == NB_POWER || oparg == NB_INPLACE_POWER) {
+            ADD_OP(_BINARY_OP, oparg, 0);
             // This one's fun... the *type* of the result depends on the
             // *values* being exponentiated. However, exponents with one
             // constant part are reasonably common, so it's probably worth
@@ -377,9 +382,11 @@ dummy_func(void) {
             }
         }
         else if (lhs_int && rhs_int) {
+            ADD_OP(_BINARY_OP, oparg, 0);
             res = sym_new_type(ctx, &PyLong_Type);
         }
         else {
+            ADD_OP(_BINARY_OP, oparg, 0);
             res = PyJitRef_MakeUnique(sym_new_type(ctx, &PyFloat_Type));
         }
     }
