@@ -3075,13 +3075,12 @@ class AbstractPickleTests:
         array_types = [bytearray]
         if self.py_version >= (3, 4):
             array_types += [ZeroCopyBytearray]
-        for proto in protocols[5:]:
+        for proto in protocols:
             for array_type in array_types:
                 for s in b'', b'xyz', b'xyz'*100:
                     with self.subTest(proto=proto, array_type=array_type, s=s, independent=False):
                         b = array_type(s)
                         p = self.dumps((b, b), proto)
-                        import pickletools; pickletools.dis(p)
                         b1, b2 = self.loads(p)
                         self.assertIs(b1, b2)
 
