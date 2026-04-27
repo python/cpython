@@ -5490,17 +5490,6 @@ type_from_slots_or_spec(
      * (This is convoluted for backwards compatibility -- preserving priority
      * of the various ways to specify bases)
      */
-    if ((bases_in ? 1 : 0)
-        + (_PySlotIterator_SawSlot(&it, Py_tp_bases) ? 1 : 0)
-        + (_PySlotIterator_SawSlot(&it, Py_tp_base) ? 1 : 0)
-        > 1)
-    {
-        if (PyErr_WarnFormat(PyExc_DeprecationWarning, 1,
-                "type %s specifies multiple of: bases argument, Py_tp_bases, "
-                "and Py_tp_base. This will become an error in Python 3.20.",
-                it.name))
-            goto finally;
-    }
     if (!bases_in) {
         bases_in = bases_slot;
     }

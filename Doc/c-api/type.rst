@@ -506,7 +506,7 @@ type:
 
 The :c:data:`Py_tp_base` slot is equivalent to :c:data:`Py_tp_bases`;
 both may be set either to a type or a tuple of types.
-Specifying both is deprecated; in this case the value of :c:data:`Py_tp_bases`
+If both are specified, the value of :c:data:`Py_tp_bases`
 is used.
 
 Slot values may not be ``NULL``, except for the following:
@@ -527,11 +527,6 @@ Slot values may not be ``NULL``, except for the following:
    The field :c:member:`~PyTypeObject.tp_vectorcall` can now be set
    using :c:data:`Py_tp_vectorcall`.  See the field's documentation
    for details.
-
-.. versionchanged:: next
-
-   Specifying both :c:data:`Py_tp_base` and :c:data:`Py_tp_bases`
-   is deprecated.
 
 The following slots do not correspond to public fields in the
 underlying structures:
@@ -756,8 +751,6 @@ They will continue to work, but new features will be added as slots for
    A non-``NULL`` *bases* argument corresponds to the :c:data:`Py_tp_bases`
    slot, and takes precedence over :c:data:`Py_tp_bases` and
    :c:data:`Py_tp_bases` slots.
-   Specifying more than one of *bases*, :c:data:`Py_tp_bases` and
-   :c:data:`Py_tp_bases` is deprecated.
 
    A non-``NULL`` *module* argument corresponds to the
    :c:macro:`Py_tp_module` slot.
