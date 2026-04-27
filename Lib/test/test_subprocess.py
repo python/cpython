@@ -2150,7 +2150,7 @@ class PipelineTestCase(BaseTestCase):
         """Test that check=True raises PipelineError on failure"""
         with self.assertRaises(subprocess.PipelineError) as cm:
             subprocess.run_pipeline(
-                [sys.executable, "-c", 'print("hello")'],
+                [sys.executable, "-c", "pass"],
                 [sys.executable, "-c", "import sys; sys.exit(1)"],
                 capture_output=True, check=True
             )
@@ -2261,7 +2261,7 @@ class PipelineTestCase(BaseTestCase):
     def test_pipeline_check_returncodes_method(self):
         """Test CompletedPipeline.check_returncodes() method"""
         result = subprocess.run_pipeline(
-            [sys.executable, "-c", 'print("hello")'],
+            [sys.executable, "-c", "pass"],
             [sys.executable, "-c", "import sys; sys.exit(5)"],
             capture_output=True
         )
@@ -2996,7 +2996,10 @@ class PipelineCommandTestCase(BaseTestCase):
             stderr=subprocess.DEVNULL)
         try:
             subprocess.run_pipeline(
-                [sys.executable, "-c", 'print("x")'],
+                # cmd0 must not write to stdout: cmd1 exits without
+                # reading, and a flush to a readerless pipe during
+                # interpreter shutdown can yield exit code 120.
+                [sys.executable, "-c", "pass"],
                 explicit,
                 capture_output=True, check=True,
             )
