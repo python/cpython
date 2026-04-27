@@ -211,6 +211,14 @@ _PySlotIterator_Next(_PySlotIterator *it)
                 advance(it);
                 continue;
             }
+            if ((it->states[0].slot_struct_kind == _PySlot_KIND_MOD)
+                && (it->state->slot_struct_kind == _PySlot_KIND_SLOT)
+                && !(result->sl_flags & PySlot_STATIC))
+            {
+                PyErr_Format(PyExc_SystemError,
+                             "slots included from PyModuleDef must be static");
+                goto error;
+            }
             it->recursion_level++;
             MSG("recursing into level %d", it->recursion_level);
             if (it->recursion_level >= _PySlot_MAX_NESTING) {

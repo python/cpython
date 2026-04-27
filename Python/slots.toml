@@ -691,7 +691,7 @@ name = 'Py_mod_exec'
 kind = 'mod'
 dtype = 'func'
 duplicates = 'allow'  # only alowed in PyModuleDef.m_slots
-nulls = 'reject'
+nulls = 'deprecated'
 
 [86]
 name = 'Py_mod_multiple_interpreters'

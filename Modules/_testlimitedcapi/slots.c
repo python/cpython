@@ -314,7 +314,7 @@ type_from_null_slot(PyObject* module, PyObject *args)
 }
 
 static PyObject *
-type_from_null_spec_slot(PyObject* module, PyObject *args)
+type_from_null_spec_slot(PyObject* Py_UNUSED(module), PyObject *args)
 {
     long slot_number;
     if (!PyArg_ParseTuple(args, "l", &slot_number)) {
@@ -330,6 +330,21 @@ type_from_null_spec_slot(PyObject* module, PyObject *args)
 }
 
 static PyObject *
+demo_create(PyObject *spec, PyModuleDef *def)
+{
+    assert(def == NULL);
+    return Py_NewRef(spec);
+}
+
+static int
+demo_exec(PyObject *mod)
+{
+    return PyModule_AddStringConstant(mod, "exec_done", "yes");
+}
+
+static PyMethodDef TestMethods[];
+
+static PyObject *
 module_from_slots(PyObject* Py_UNUSED(module), PyObject *args)
 {
     PyObject *spec;
@@ -337,9 +352,10 @@ module_from_slots(PyObject* Py_UNUSED(module), PyObject *args)
     if (!PyArg_ParseTuple(args, "sO", &case_name, &spec)) {
         return NULL;
     }
+    PyObject *mod = NULL;
 #define CASE(NAME)                                                          \
     if (strcmp(case_name, NAME) == 0) {                                     \
-        return PyModule_FromSlotsAndSpec((PySlot[]) {                       \
+        mod = PyModule_FromSlotsAndSpec((PySlot[]) {                        \
             PySlot_DATA(Py_mod_abi, &abi_info),                             \
     /////////////////////////////////////////////////////////////////////////
 #define ENDCASE()                                                           \
@@ -353,11 +369,264 @@ module_from_slots(PyObject* Py_UNUSED(module), PyObject *args)
     CASE("foreign_slot")
         PySlot_DATA(Py_tp_name, "this is not a type"),
     ENDCASE()
+    CASE("state_size")
+        PySlot_SIZE(Py_mod_state_size, 42),
+    ENDCASE()
+    CASE("multi_interp")
+        PySlot_DATA(Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED),
+    ENDCASE()
+    CASE("gil")
+        PySlot_DATA(Py_mod_gil, Py_MOD_GIL_NOT_USED),
+    ENDCASE()
+    CASE("exec")
+        PySlot_FUNC(Py_mod_exec, demo_exec),
+    ENDCASE()
+    CASE("optional_end")
+        {.sl_flags=PySlot_OPTIONAL},
+    ENDCASE()
+    CASE("invalid")
+        {.sl_id=Py_slot_invalid},
+    ENDCASE()
+    CASE("invalid_fbad")
+        {.sl_id=0xfbad},
+    ENDCASE()
+    CASE("optional_invalid")
+        {.sl_id=Py_slot_invalid, .sl_flags=PySlot_OPTIONAL},
+        PySlot_SIZE(Py_mod_exec, demo_exec),
+    ENDCASE()
+    CASE("optional_invalid_fbad")
+        {.sl_id=0xfbad, .sl_flags=PySlot_OPTIONAL},
+        PySlot_SIZE(Py_mod_exec, demo_exec),
+    ENDCASE()
+    CASE("old_slot_numbers")
+        PySlot_FUNC(2, demo_exec),
+        PySlot_DATA(3, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED),
+        PySlot_FUNC(4, Py_MOD_GIL_NOT_USED),
+    ENDCASE()
+    CASE("new_slot_numbers")
+        PySlot_FUNC(85, demo_exec),
+        PySlot_FUNC(86, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED),
+        PySlot_FUNC(87, Py_MOD_GIL_NOT_USED),
+    ENDCASE()
+    CASE("old_slot_number_create")
+        PySlot_FUNC(1, demo_create),
+        PySlot_DATA(3, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED),
+        PySlot_FUNC(4, Py_MOD_GIL_NOT_USED),
+    ENDCASE()
+    CASE("new_slot_number_create")
+        PySlot_FUNC(84, demo_create),
+    ENDCASE()
+    CASE("nonstatic_mod_methods")
+        PySlot_DATA(Py_mod_methods, TestMethods),
+    ENDCASE()
+    CASE("intptr_methods")
+        PySlot_PTR_STATIC(Py_mod_methods, TestMethods),
+    ENDCASE()
+    CASE("nested")
+        PySlot_FUNC(Py_mod_exec, demo_exec),
+        PySlot_DATA(Py_slot_subslots, ((PySlot[]) {
+            PySlot_DATA(Py_mod_doc, "doc"),
+            PySlot_END,
+        })),
+    ENDCASE()
+    CASE("nested_max")
+        PySlot_FUNC(Py_mod_exec, demo_exec),
+        PySlot_DATA(Py_slot_subslots, ((PySlot[]) {
+            PySlot_DATA(Py_slot_subslots, ((PySlot[]) {
+                PySlot_DATA(Py_slot_subslots, ((PySlot[]) {
+                    PySlot_SIZE(Py_mod_state_size, 53),
+                    PySlot_DATA(Py_slot_subslots, ((PySlot[]) {
+                        PySlot_DATA(Py_mod_doc, "doc"),
+                        PySlot_END
+                    })),
+                    PySlot_END,
+                })),
+                PySlot_END,
+            })),
+            PySlot_END,
+        })),
+    ENDCASE()
+    CASE("nested_over_limit")
+        PySlot_FUNC(Py_mod_exec, demo_exec),
+        PySlot_DATA(Py_slot_subslots, ((PySlot[]) {
+            PySlot_DATA(Py_slot_subslots, ((PySlot[]) {
+                PySlot_DATA(Py_slot_subslots, ((PySlot[]) {
+                    PySlot_SIZE(Py_mod_state_size, 53),
+                    PySlot_DATA(Py_slot_subslots, ((PySlot[]) {
+                        PySlot_DATA(Py_mod_doc, "doc"),
+                        PySlot_DATA(Py_slot_subslots, ((PySlot[]) {
+                            PySlot_END
+                        })),
+                        PySlot_END
+                    })),
+                    PySlot_END,
+                })),
+                PySlot_END,
+            })),
+            PySlot_END,
+        })),
+    ENDCASE()
+    CASE("nested_old")
+        PySlot_FUNC(Py_mod_exec, demo_exec),
+        PySlot_DATA(Py_mod_slots, ((PyModuleDef_Slot[]) {
+            {Py_mod_doc, "doc"},
+            {0},
+        })),
+    ENDCASE()
+    CASE("nested_old_max")
+        PySlot_FUNC(Py_mod_exec, demo_exec),
+        PySlot_DATA(Py_mod_slots, ((PyModuleDef_Slot[]) {
+            {Py_mod_slots, ((PyModuleDef_Slot[]) {
+                {Py_mod_state_size, (void*)(intptr_t)53},
+                {Py_mod_slots, ((PyModuleDef_Slot[]) {
+                    {Py_mod_slots, ((PyModuleDef_Slot[]) {
+                        {Py_mod_doc, "doc"},
+                        {0},
+                    })},
+                    {0},
+                })},
+                {0},
+            })},
+            {0},
+        })),
+    ENDCASE()
+    CASE("nested_old_over_limit")
+        PySlot_FUNC(Py_mod_exec, demo_exec),
+        PySlot_DATA(Py_mod_slots, ((PyModuleDef_Slot[]) {
+            {Py_mod_slots, ((PyModuleDef_Slot[]) {
+                {Py_mod_state_size, (void*)(intptr_t)53},
+                {Py_mod_slots, ((PyModuleDef_Slot[]) {
+                    {Py_mod_slots, ((PyModuleDef_Slot[]) {
+                        {Py_mod_slots, ((PyModuleDef_Slot[]) {
+                            {Py_mod_doc, "doc"},
+                            {0},
+                        })},
+                        {0},
+                    })},
+                    {0},
+                })},
+                {0},
+            })},
+            {0},
+        })),
+    ENDCASE()
+    CASE("nested_pingpong")
+        PySlot_FUNC(Py_mod_exec, demo_exec),
+        PySlot_DATA(Py_mod_slots, ((PyModuleDef_Slot[]) {
+            {Py_slot_subslots, ((PySlot[]) {
+                PySlot_DATA(Py_mod_slots, ((PyModuleDef_Slot[]) {
+                    {Py_mod_state_size, (void*)(intptr_t)53},
+                    {Py_slot_subslots, ((PySlot[]) {
+                        PySlot_DATA(Py_mod_doc, "doc"),
+                        PySlot_END
+                    })},
+                    {0},
+                })),
+                PySlot_END,
+            })},
+            {0},
+        })),
+    ENDCASE()
+    CASE("repeat_create")
+        PySlot_DATA(Py_mod_create, demo_create),
+        PySlot_DATA(Py_mod_create, demo_create),
+        PySlot_DATA(Py_mod_create, demo_create),
+    ENDCASE()
+    CASE("repeat_gil")
+        PySlot_DATA(Py_mod_gil, Py_MOD_GIL_NOT_USED),
+        PySlot_DATA(Py_mod_gil, Py_MOD_GIL_NOT_USED),
+        PySlot_DATA(Py_mod_gil, Py_MOD_GIL_NOT_USED),
+    ENDCASE()
+    CASE("repeat_exec")
+        PySlot_FUNC(Py_mod_exec, demo_exec),
+        PySlot_FUNC(Py_mod_exec, demo_exec),
+    ENDCASE()
 
 #undef CASE
 #undef ENDCASE
-    PyErr_Format(PyExc_AssertionError, "bad case: %s", case_name);
-    return NULL;
+    if (!mod) {
+        if (!PyErr_Occurred()) {
+            PyErr_Format(PyExc_AssertionError, "bad case: %s", case_name);
+            return NULL;
+        }
+        return NULL;
+    }
+    if (PyModule_Check(mod)) {
+        Py_ssize_t size;
+        if (PyModule_GetStateSize(mod, &size) < 0) {
+            Py_DECREF(mod);
+            return NULL;
+        }
+        if (PyModule_AddIntConstant(mod, "state_size", size) < 0) {
+            Py_DECREF(mod);
+            return NULL;
+        }
+        if (PyModule_Exec(mod) < 0) {
+            return NULL;
+        }
+    }
+    return mod;
+}
+
+static PyObject *
+module_from_null_slot(PyObject* Py_UNUSED(module), PyObject *args)
+{
+    long slot_number;
+    PyObject *spec;
+    if (!PyArg_ParseTuple(args, "lO", &slot_number, &spec)) {
+        return NULL;
+    }
+    return PyModule_FromSlotsAndSpec((PySlot[]) {
+        PySlot_DATA(Py_mod_abi, &abi_info),
+        PySlot_DATA(Py_mod_name, "mymod"),
+        PySlot_PTR_STATIC(slot_number, NULL),
+        PySlot_END
+    }, spec);
+}
+
+static PyObject *
+module_from_null_def_slot(PyObject* Py_UNUSED(module), PyObject *args)
+{
+    long slot_number;
+    PyObject *spec;
+    if (!PyArg_ParseTuple(args, "lO", &slot_number, &spec)) {
+        return NULL;
+    }
+    static PyModuleDef_Slot slots[] = {
+        {0, NULL},
+        {0},
+    };
+    static PyModuleDef def = {
+        .m_name = "mymod",
+        .m_slots = slots,
+    };
+    // hack: def is supposed to be constant.
+    // Don't do this at home; use PyModule_FromSlotsAndSpec throwaway
+    // definitions!
+    slots[0].slot = slot_number;
+    return PyModule_FromDefAndSpec2(&def, spec, PYTHON_ABI_VERSION);
+}
+
+static PyObject *
+module_from_def_nonstatic_nested(PyObject* Py_UNUSED(module), PyObject *spec)
+{
+    static PyModuleDef_Slot subsubslots[] = {
+        {Py_mod_exec, demo_exec},
+        {0},
+    };
+    static PySlot subslots[] = {
+        PySlot_DATA(Py_mod_slots, subsubslots),
+        PySlot_END,
+    };
+    static PyModuleDef_Slot slots[] = {
+        {Py_slot_subslots, subslots},
+        {0},
+    };
+    static PyModuleDef def = {
+        .m_name = "mymod",
+        .m_slots = slots,
+    };
+    return PyModule_FromDefAndSpec2(&def, spec, PYTHON_ABI_VERSION);
 }
 
 static PyMethodDef TestMethods[] = {
@@ -365,6 +634,9 @@ static PyMethodDef TestMethods[] = {
     {"type_from_null_slot", type_from_null_slot, METH_VARARGS},
     {"type_from_null_spec_slot", type_from_null_spec_slot, METH_VARARGS},
     {"module_from_slots", module_from_slots, METH_VARARGS},
+    {"module_from_null_slot", module_from_null_slot, METH_VARARGS},
+    {"module_from_null_def_slot", module_from_null_def_slot, METH_VARARGS},
+    {"module_from_def_nonstatic_nested", module_from_def_nonstatic_nested, METH_O},
     {NULL},
 };
 

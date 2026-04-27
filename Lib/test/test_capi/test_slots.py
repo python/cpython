@@ -1,4 +1,5 @@
 from test.support import import_helper, subTests
+import importlib.machinery
 import contextlib
 import unittest
 import types
@@ -149,7 +150,7 @@ class TypeSlotsTests(unittest.TestCase):
     @subTests("slot_number", [
         *range(1, 83),      # Original slots
         *range(88, 92),     # New compat slot values
-        *range(95, 99),     # Slots for PyTypeDef fields
+        *range(95, 99),     # Slots for PyType_Spec fields
         *range(107, 109),   # Slots for PyType_FromMetaclass args
     ])
     def test_null_slot_handling(self, slot_number):
@@ -187,3 +188,120 @@ class ModuleSlotsTests(unittest.TestCase):
     def test_type_slot_in_module(self):
         with self.assertRaisesRegex(SystemError, "invalid.* 95 .*Py_tp_name"):
             _testlimitedcapi.module_from_slots("foreign_slot", FakeSpec())
+
+    def test_size_slots(self):
+        mod = _testlimitedcapi.module_from_slots("state_size", FakeSpec())
+        self.assertEqual(mod.state_size, 42)
+
+    def test_flag_slots(self):
+        mod = _testlimitedcapi.module_from_slots("multi_interp", FakeSpec())
+        mod = _testlimitedcapi.module_from_slots("gil", FakeSpec())
+
+    def test_exec_slot(self):
+        mod = _testlimitedcapi.module_from_slots("exec", FakeSpec())
+        self.assertEqual(mod.exec_done, "yes")
+
+    def test_optional_end(self):
+        with self.assertRaisesRegex(SystemError, "invalid flags.*Py_slot_end"):
+            _testlimitedcapi.module_from_slots("optional_end", FakeSpec())
+
+    def test_invalid(self):
+        with self.assertRaisesRegex(SystemError, "Py_slot_invalid"):
+            _testlimitedcapi.module_from_slots("invalid", FakeSpec())
+        with self.assertRaisesRegex(SystemError, f"slot ID {0xfbad}"):
+            _testlimitedcapi.module_from_slots("invalid_fbad", FakeSpec())
+
+        mod = _testlimitedcapi.module_from_slots("optional_invalid", FakeSpec())
+        self.assertEqual(mod.exec_done, "yes")
+
+        mod = _testlimitedcapi.module_from_slots("optional_invalid_fbad", FakeSpec())
+        self.assertEqual(mod.exec_done, "yes")
+
+    @subTests("case_name", ["old_slot_numbers", "new_slot_numbers"])
+    def test_compat_slot_numbers(self, case_name):
+        mod = _testlimitedcapi.module_from_slots(case_name, FakeSpec())
+        self.assertEqual(mod.exec_done, "yes")
+
+    @subTests("case_name", ["old_slot_number_create", "new_slot_number_create"])
+    def test_compat_slot_number_create(self, case_name):
+        spec = FakeSpec()
+        mod = _testlimitedcapi.module_from_slots(case_name, spec)
+        self.assertIs(mod, spec)
+
+    def test_nonstatic_mod_methods(self):
+        with self.assertRaisesRegex(SystemError, "Py_mod_methods.*STATIC"):
+            _testlimitedcapi.module_from_slots("nonstatic_mod_methods",
+                                               FakeSpec())
+
+    def test_intptr_methods(self):
+        mod = _testlimitedcapi.module_from_slots("intptr_methods",
+                                                 FakeSpec())
+        self.assertEqual(mod.type_from_slots.__name__, "type_from_slots")
+
+    def test_nested(self):
+        mod = _testlimitedcapi.module_from_slots("nested", FakeSpec())
+        self.assertEqual(mod.exec_done, "yes")
+        self.assertEqual(mod.__doc__, "doc")
+
+        mod = _testlimitedcapi.module_from_slots("nested_max", FakeSpec())
+        self.assertEqual(mod.exec_done, "yes")
+        self.assertEqual(mod.state_size, 53)
+        self.assertEqual(mod.__doc__, "doc")
+
+        with self.assertRaisesRegex(SystemError, "too many levels"):
+            _testlimitedcapi.module_from_slots("nested_over_limit", FakeSpec())
+
+        mod = _testlimitedcapi.module_from_slots("nested_old", FakeSpec())
+        self.assertEqual(mod.exec_done, "yes")
+        self.assertEqual(mod.__doc__, "doc")
+
+        mod = _testlimitedcapi.module_from_slots("nested_old_max", FakeSpec())
+        self.assertEqual(mod.exec_done, "yes")
+        self.assertEqual(mod.state_size, 53)
+        self.assertEqual(mod.__doc__, "doc")
+
+        with self.assertRaisesRegex(SystemError, "too many levels"):
+            _testlimitedcapi.module_from_slots("nested_old_over_limit", FakeSpec())
+
+        mod = _testlimitedcapi.module_from_slots("nested_pingpong", FakeSpec())
+        self.assertEqual(mod.exec_done, "yes")
+        self.assertEqual(mod.state_size, 53)
+        self.assertEqual(mod.__doc__, "doc")
+
+    def test_nested_nonstatic_from_def(self):
+        with self.assertRaisesRegex(SystemError, "must be static"):
+            _testlimitedcapi.module_from_def_nonstatic_nested(FakeSpec())
+
+    # Slot names aren't exposed to Python yet; see Include/slots_generated.h
+    # for the definitions.
+
+    @subTests("slot_number", [
+        *range(1, 5),       # Old compat slot values
+        *range(84, 88),     # New compat slot values
+        *range(100, 107),   # Slots for PyModuleDef fields
+        *range(109, 111),   # Slots new in 3.15
+    ])
+    def test_null_slot_handling(self, slot_number):
+        if slot_number in {3, 86, 4, 87, 102}:
+            # Py_mod_mult.interp., Py_mod_gil, Py_mod_state_size
+            return
+        elif slot_number > 85:
+            # new slots
+            ctx = self.assertRaisesRegex(SystemError, "NULL not allowed")
+            ctx_old = ctx
+        else:
+            ctx = self.assertWarnsRegex(DeprecationWarning, "NULL")
+            ctx_old = contextlib.nullcontext()
+        with ctx:
+            _testlimitedcapi.module_from_null_slot(slot_number, FakeSpec())
+        with ctx_old:
+            _testlimitedcapi.module_from_null_def_slot(slot_number,
+                                                        FakeSpec())
+
+    def test_repeat_error(self):
+        with self.assertRaisesRegex(SystemError, "multiple"):
+            _testlimitedcapi.module_from_slots("repeat_create", FakeSpec())
+        with self.assertRaisesRegex(SystemError, "multiple"):
+            _testlimitedcapi.module_from_slots("repeat_exec", FakeSpec())
+        with self.assertRaisesRegex(SystemError, "multiple"):
+            _testlimitedcapi.module_from_slots("repeat_gil", FakeSpec())
