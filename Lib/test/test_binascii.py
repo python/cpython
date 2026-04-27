@@ -1307,6 +1307,10 @@ class BinASCIITest(unittest.TestCase):
         self.assertRaises(binascii.Error, binascii.a2b_uu, b"\xff\x00")
         self.assertRaises(binascii.Error, binascii.a2b_uu, b"!!!!")
         self.assertRaises(binascii.Error, binascii.b2a_uu, 46*b"!")
+        self.assertRaises(binascii.Error, binascii.a2b_uu,
+                          self.type2test(b""))
+        self.assertRaises(binascii.Error, binascii.a2b_uu,
+                          self.type2test(b"#86)C")[:0])
 
         # Issue #7701 (crash on a pydebug build)
         self.assertEqual(binascii.b2a_uu(b'x'), b'!>   \n')
@@ -1522,6 +1526,9 @@ class BinASCIITest(unittest.TestCase):
                 binascii.crc_hqx(empty, 0)
                 continue
             f = getattr(binascii, func)
+            if func == 'a2b_uu':
+                self.assertRaises(binascii.Error, f, empty)
+                continue
             try:
                 f(empty)
             except Exception as err:
