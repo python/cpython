@@ -1208,8 +1208,8 @@ Window Objects
 
    The 6 optional arguments can only be specified when the window is a pad created
    with :func:`newpad`.  The additional parameters are needed to indicate what part
-   of the pad and screen are involved. *pminrow* and *pmincol* specify the upper
-   left-corner of the rectangle to be displayed in the pad.  *sminrow*,
+   of the pad and screen are involved. *pminrow* and *pmincol* specify the
+   upper-left corner of the rectangle to be displayed in the pad.  *sminrow*,
    *smincol*, *smaxrow*, and *smaxcol* specify the edges of the rectangle to be
    displayed on the screen.  The lower-right corner of the rectangle to be
    displayed in the pad is calculated from the screen coordinates, since the
