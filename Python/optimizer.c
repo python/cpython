@@ -661,8 +661,7 @@ is_terminator(const _PyUOpInstruction *uop)
 static PyObject *
 record_trace_transform_to_type(PyObject *value)
 {
-    PyObject *tp = (PyObject *)Py_TYPE(value);
-    Py_INCREF(tp);
+    PyObject *tp = Py_NewRef((PyObject *)Py_TYPE(value));
     Py_DECREF(value);
     return tp;
 }
@@ -675,11 +674,9 @@ record_trace_transform_gen_func(PyObject *value)
 {
     PyObject *func = NULL;
     if (PyGen_Check(value)) {
-        PyGenObject *gen = (PyGenObject *)value;
-        _PyStackRef f = gen->gi_iframe.f_funcobj;
+        _PyStackRef f = ((PyGenObject *)value)->gi_iframe.f_funcobj;
         if (!PyStackRef_IsNull(f)) {
-            func = PyStackRef_AsPyObjectBorrow(f);
-            Py_INCREF(func);
+            func = Py_NewRef(PyStackRef_AsPyObjectBorrow(f));
         }
     }
     Py_DECREF(value);
@@ -692,13 +689,11 @@ record_trace_transform_gen_func(PyObject *value)
 static PyObject *
 record_trace_transform_bound_method(PyObject *value)
 {
-    PyObject *result = NULL;
     if (Py_TYPE(value) == &PyMethod_Type) {
-        result = value;
-        Py_INCREF(result);
+        return value;
     }
     Py_DECREF(value);
-    return result;
+    return NULL;
 }
 
 /* Returns 1 on success (added to trace), 0 on trace end.
@@ -1074,14 +1069,14 @@ _PyJit_translate_single_bytecode_to_trace(
                 else if (_PyUop_Flags[uop] & HAS_RECORDS_VALUE_FLAG) {
                     assert(record_idx < record_slot_map->count);
                     uint8_t record_slot = record_slot_map->slots[record_idx];
-                    record_idx++;
                     assert(record_slot < tracer->prev_state.recorded_count);
-
                     PyObject *recorded_value = tracer->prev_state.recorded_values[record_slot];
                     tracer->prev_state.recorded_values[record_slot] = NULL;
-                    if (record_slot_map->needs_family_transform && recorded_value != NULL) {
+                    if ((record_slot_map->transform_mask & (1u << record_idx)) &&
+                        recorded_value != NULL) {
                         recorded_value = _PyOpcode_RecordTransformValue(uop, recorded_value);
                     }
+                    record_idx++;
                     operand = (uintptr_t)recorded_value;
                 }
                 // All other instructions

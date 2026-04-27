@@ -537,7 +537,7 @@ typedef struct {
 
 typedef struct {
     uint8_t count;
-    uint8_t needs_family_transform;
+    uint8_t transform_mask;
     uint8_t slots[MAX_RECORDED_VALUES];
 } _PyOpcodeRecordSlotMap;
 

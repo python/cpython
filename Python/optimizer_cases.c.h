@@ -5668,13 +5668,6 @@
             break;
         }
 
-        case _RECORD_3OS: {
-            JitOptRef gen;
-            gen = stack_pointer[-3];
-            sym_set_recorded_value(gen, (PyObject *)this_instr->operand0);
-            break;
-        }
-
         case _RECORD_NOS_GEN_FUNC: {
             JitOptRef nos;
             nos = stack_pointer[-2];

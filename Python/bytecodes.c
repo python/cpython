@@ -509,7 +509,7 @@ dummy_func(
             res = err ? PyStackRef_True : PyStackRef_False;
         }
 
-        macro(TO_BOOL) = _SPECIALIZE_TO_BOOL + _RECORD_TOS + unused/2 + _TO_BOOL;
+        macro(TO_BOOL) = _SPECIALIZE_TO_BOOL + unused/2 + _TO_BOOL;
 
         inst(TO_BOOL_BOOL, (unused/1, unused/2, value -- value)) {
             EXIT_IF(!PyStackRef_BoolCheck(value));
@@ -1731,7 +1731,7 @@ dummy_func(
             PyStackRef_CLOSE(v);
         }
 
-        macro(SEND) = _SPECIALIZE_SEND + _RECORD_3OS + _SEND;
+        macro(SEND) = _SPECIALIZE_SEND + _SEND;
 
         op(_SEND_GEN_FRAME, (receiver, null, v -- receiver, null, gen_frame)) {
             PyGenObject *gen = (PyGenObject *)PyStackRef_AsPyObjectBorrow(receiver);
@@ -2085,7 +2085,7 @@ dummy_func(
             ERROR_IF(err);
         }
 
-        macro(STORE_ATTR) = _SPECIALIZE_STORE_ATTR + _RECORD_TOS + unused/3 + _STORE_ATTR;
+        macro(STORE_ATTR) = _SPECIALIZE_STORE_ATTR + unused/3 + _STORE_ATTR;
 
         inst(DELETE_ATTR, (owner --)) {
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
@@ -2684,7 +2684,6 @@ dummy_func(
 
         macro(LOAD_SUPER_ATTR) =
             _SPECIALIZE_LOAD_SUPER_ATTR +
-            _RECORD_NOS +
             _LOAD_SUPER_ATTR +
             _PUSH_NULL_CONDITIONAL;
 
@@ -2802,7 +2801,6 @@ dummy_func(
 
         macro(LOAD_ATTR) =
             _SPECIALIZE_LOAD_ATTR +
-            _RECORD_TOS +
             unused/8 +
             _LOAD_ATTR;
 
@@ -3766,7 +3764,7 @@ dummy_func(
             next = item;
         }
 
-        macro(FOR_ITER) = _SPECIALIZE_FOR_ITER + _RECORD_NOS + _FOR_ITER;
+        macro(FOR_ITER) = _SPECIALIZE_FOR_ITER + _FOR_ITER;
 
         op(_FOR_ITER_TIER_TWO, (iter, null_or_index -- iter, null_or_index, next)) {
             _PyStackRef item = _PyForIter_VirtualIteratorNext(tstate, frame, iter, &null_or_index);
@@ -4371,7 +4369,7 @@ dummy_func(
             ERROR_IF(err);
         }
 
-        macro(CALL) = _SPECIALIZE_CALL + _RECORD_CALLABLE + unused/2 + _MAYBE_EXPAND_METHOD + _DO_CALL + _CHECK_PERIODIC_AT_END;
+        macro(CALL) = _SPECIALIZE_CALL + unused/2 + _MAYBE_EXPAND_METHOD + _DO_CALL + _CHECK_PERIODIC_AT_END;
         macro(INSTRUMENTED_CALL) = unused/3 + _MAYBE_EXPAND_METHOD + _MONITOR_CALL + _DO_CALL + _CHECK_PERIODIC_AT_END;
 
         op(_PY_FRAME_GENERAL, (callable, self_or_null, args[oparg] -- new_frame)) {
@@ -5481,7 +5479,6 @@ dummy_func(
 
         macro(CALL_KW) =
             _SPECIALIZE_CALL_KW +
-            _RECORD_CALLABLE_KW +
             unused/2 +
             _MAYBE_EXPAND_METHOD_KW +
             _DO_CALL_KW;
@@ -5645,7 +5642,6 @@ dummy_func(
 
         macro(CALL_FUNCTION_EX) =
             _SPECIALIZE_CALL_FUNCTION_EX +
-            _RECORD_4OS +
             _MAKE_CALLARGS_A_TUPLE +
             _DO_CALL_FUNCTION_EX +
             _CHECK_PERIODIC_AT_END;
@@ -5855,7 +5851,7 @@ dummy_func(
             DEAD(rhs);
         }
 
-        macro(BINARY_OP) = _SPECIALIZE_BINARY_OP + _RECORD_TOS + _RECORD_NOS + unused/4 + _BINARY_OP + POP_TOP + POP_TOP;
+        macro(BINARY_OP) = _SPECIALIZE_BINARY_OP + _RECORD_TOS_TYPE + _RECORD_NOS_TYPE + unused/4 + _BINARY_OP + POP_TOP + POP_TOP;
 
         pure replicate(2:4) inst(SWAP, (bottom, unused[oparg-2], top --
                     bottom, unused[oparg-2], top)) {
@@ -6310,10 +6306,6 @@ dummy_func(
 
         tier2 op(_RECORD_NOS_TYPE, (nos, tos -- nos, tos)) {
             RECORD_VALUE(Py_TYPE(PyStackRef_AsPyObjectBorrow(nos)));
-        }
-
-        tier2 op(_RECORD_3OS, (gen, nos, tos -- gen, nos, tos)) {
-            RECORD_VALUE(PyStackRef_AsPyObjectBorrow(gen));
         }
 
         tier2 op(_RECORD_NOS_GEN_FUNC, (nos, tos -- nos, tos)) {

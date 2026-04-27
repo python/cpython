@@ -2542,10 +2542,6 @@ dummy_func(void) {
         sym_set_recorded_type(nos, tp);
     }
 
-    op(_RECORD_3OS, (gen, nos, tos -- gen, nos, tos)) {
-        sym_set_recorded_value(gen, (PyObject *)this_instr->operand0);
-    }
-
     op(_RECORD_4OS, (value, _3os, nos, tos -- value, _3os, nos, tos)) {
         sym_set_recorded_value(value, (PyObject *)this_instr->operand0);
     }
