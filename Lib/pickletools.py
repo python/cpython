@@ -2470,7 +2470,7 @@ def dis(pickle, out=None, memo=None, indentlevel=4, annotate=0):
     indentchunk = ' ' * indentlevel
     errormsg = None
     annocol = annotate  # column hint for annotations
-    t = get_theme(tty_file=out if out is not None else sys.stdout).pickletools
+    t = get_theme(tty_file=out).pickletools
     for opcode, arg, pos in genops(pickle):
         if pos is not None:
             print(f"{t.position}{pos:5d}:{t.reset}", end=' ', file=out)
