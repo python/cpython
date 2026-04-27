@@ -412,6 +412,53 @@ class ThreadTests(BaseTestCase):
             t.join()
         # else the thread is still running, and we have no way to kill it
 
+    @cpython_only
+    @unittest.skipUnless(hasattr(signal, "pthread_kill"), "need pthread_kill")
+    @unittest.skipUnless(hasattr(signal, "SIGUSR1"), "need SIGUSR1")
+    def test_PyThreadState_SetAsyncExc_interrupts_sleep(self):
+        _testcapi = import_module("_testlimitedcapi")
+
+        worker_started = threading.Event()
+
+        class InjectedException(Exception):
+            """Custom exception for testing"""
+
+        caught_exception = None
+
+        def catch_exception():
+            nonlocal caught_exception
+            day_as_seconds = 60 * 60 * 24
+            try:
+                worker_started.set()
+                time.sleep(day_as_seconds)
+            except InjectedException as exc:
+                caught_exception = exc
+
+        thread = threading.Thread(target=catch_exception)
+        thread.start()
+        worker_started.wait()
+
+        signal.signal(signal.SIGUSR1, lambda sig, frame: None)
+
+        result = _testcapi.threadstate_set_async_exc(
+            thread.ident, InjectedException)
+        self.assertEqual(result, 1)
+
+        for _ in support.sleeping_retry(support.SHORT_TIMEOUT):
+            if not thread.is_alive():
+                break
+            try:
+                signal.pthread_kill(thread.ident, signal.SIGUSR1)
+            except OSError:
+                # The thread might have terminated between the is_alive check
+                # and the pthread_kill
+                break
+
+        thread.join()
+        signal.signal(signal.SIGUSR1, signal.SIG_DFL)
+
+        self.assertIsInstance(caught_exception, InjectedException)
+
     def test_limbo_cleanup(self):
         # Issue 7481: Failure to start thread should cleanup the limbo map.
         def fail_new_thread(*args, **kwargs):

@@ -1,0 +1,1 @@
+Errors during the PGO training job on Windows are no longer ignored, and a non-zero return code will cause the build to fail.

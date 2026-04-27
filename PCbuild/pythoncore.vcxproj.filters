@@ -156,6 +156,9 @@
     <ClInclude Include="..\Include\py_curses.h">
       <Filter>Include</Filter>
     </ClInclude>
+    <ClInclude Include="..\Include\pyabi.h">
+      <Filter>Include</Filter>
+    </ClInclude>
     <ClInclude Include="..\Include\pyatomic.h">
       <Filter>Include</Filter>
     </ClInclude>
@@ -735,6 +738,9 @@
     <ClInclude Include="..\Include\internal\pycore_long.h">
       <Filter>Include\internal</Filter>
     </ClInclude>
+    <ClInclude Include="..\Include\internal\pycore_lazyimportobject.h">
+      <Filter>Include\internal</Filter>
+    </ClInclude>
     <ClInclude Include="..\Include\internal\pycore_mmap.h">
       <Filter>Include\internal</Filter>
     </ClInclude>
@@ -1248,6 +1254,9 @@
       <Filter>Objects</Filter>
     </ClCompile>
     <ClCompile Include="..\Objects\methodobject.c">
+      <Filter>Objects</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Objects\lazyimportobject.c">
       <Filter>Objects</Filter>
     </ClCompile>
     <ClCompile Include="..\Objects\moduleobject.c">

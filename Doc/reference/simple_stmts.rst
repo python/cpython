@@ -743,14 +743,15 @@ The :keyword:`!import` statement
    pair: name; binding
    pair: keyword; from
    pair: keyword; as
+   pair: keyword; lazy
    pair: exception; ImportError
    single: , (comma); import statement
 
 .. productionlist:: python-grammar
-   import_stmt: "import" `module` ["as" `identifier`] ("," `module` ["as" `identifier`])*
-              : | "from" `relative_module` "import" `identifier` ["as" `identifier`]
+   import_stmt: ["lazy"] "import" `module` ["as" `identifier`] ("," `module` ["as" `identifier`])*
+              : | ["lazy"] "from" `relative_module` "import" `identifier` ["as" `identifier`]
               : ("," `identifier` ["as" `identifier`])*
-              : | "from" `relative_module` "import" "(" `identifier` ["as" `identifier`]
+              : | ["lazy"] "from" `relative_module` "import" "(" `identifier` ["as" `identifier`]
               : ("," `identifier` ["as" `identifier`])* [","] ")"
               : | "from" `relative_module` "import" "*"
    module: (`identifier` ".")* `identifier`
@@ -831,7 +832,9 @@ where the :keyword:`import` statement occurs.
 
 The *public names* defined by a module are determined by checking the module's
 namespace for a variable named ``__all__``; if defined, it must be a sequence
-of strings which are names defined or imported by that module.  The names
+of strings which are names defined or imported by that module.
+Names containing non-ASCII characters must be in the `normalization form`_
+NFKC; see :ref:`lexical-names-nonascii` for details.  The names
 given in ``__all__`` are all considered public and are required to exist.  If
 ``__all__`` is not defined, the set of public names includes all names found
 in the module's namespace which do not begin with an underscore character
@@ -864,6 +867,108 @@ the :ref:`relativeimports` section.
 determine dynamically the modules to be loaded.
 
 .. audit-event:: import module,filename,sys.path,sys.meta_path,sys.path_hooks import
+
+.. _normalization form: https://www.unicode.org/reports/tr15/#Norm_Forms
+
+.. _lazy-imports:
+.. _lazy:
+
+Lazy imports
+------------
+
+.. index::
+   pair: lazy; import
+   single: lazy import
+
+The :keyword:`lazy` keyword is a :ref:`soft keyword <soft-keywords>` that
+only has special meaning when it appears immediately before an
+:keyword:`import` or :keyword:`from` statement. When an import statement is
+preceded by the :keyword:`lazy` keyword, the import becomes *lazy*: the
+module is not loaded immediately at the import statement. Instead, a lazy
+proxy object is created and bound to the name. The actual module is loaded
+on first use of that name.
+
+Lazy imports are only permitted at module scope. Using :keyword:`lazy`
+inside a function, class body, or
+:keyword:`try`/:keyword:`except`/:keyword:`finally` block raises a
+:exc:`SyntaxError`. Star imports cannot be lazy (``lazy from module import
+*`` is a syntax error), and :ref:`future statements <future>` cannot be
+lazy.
+
+When using ``lazy from ... import``, each imported name is bound to a lazy
+proxy object. The first access to any of these names triggers loading of the
+entire module and resolves only that specific name to its actual value.
+Other names remain as lazy proxies until they are accessed.
+
+Example::
+
+   lazy import json
+   import sys
+
+   print('json' in sys.modules)  # False - json module not yet loaded
+
+   # First use triggers loading
+   result = json.dumps({"hello": "world"})
+
+   print('json' in sys.modules)  # True - now loaded
+
+If an error occurs during module loading (such as :exc:`ImportError` or
+:exc:`SyntaxError`), it is raised at the point where the lazy import is first
+used, not at the import statement itself.
+
+See :pep:`810` for the full specification of lazy imports.
+
+.. versionadded:: 3.15
+
+.. _lazy-modules-compat:
+
+Compatibility via ``__lazy_modules__``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. index::
+   single: __lazy_modules__
+
+As an alternative to using the :keyword:`lazy` keyword, a module can opt
+into lazy loading for specific imports by defining a module-level
+:attr:`~module.__lazy_modules__` variable.  When present, it must be a
+container of fully qualified module name strings.  Any regular (non-``lazy``)
+:keyword:`import` statement at module scope whose target appears in
+:attr:`!__lazy_modules__` is treated as a lazy import, exactly as if the
+:keyword:`lazy` keyword had been used.
+
+This provides a way to enable lazy loading for specific dependencies without
+changing individual ``import`` statements. This is useful when supporting
+Python versions older than 3.15 while using lazy imports in 3.15+::
+
+   __lazy_modules__ = ["json", "pathlib"]
+
+   import json     # loaded lazily (name is in __lazy_modules__)
+   import os       # loaded eagerly (name not in __lazy_modules__)
+
+   import pathlib  # loaded lazily
+
+Relative imports are resolved to their absolute name before the lookup, so
+:attr:`!__lazy_modules__` must always contain fully qualified module names.
+
+For ``from``-style imports, the relevant name is the module following
+``from``, not the names of its members::
+
+   # In mypackage/mymodule.py
+   __lazy_modules__ = ["mypackage", "mypackage.sub.utils"]
+
+   from . import helper         # loaded lazily: . resolves to mypackage
+   from .sub.utils import func  # loaded lazily: .sub.utils resolves to mypackage.sub.utils
+   import json                  # loaded eagerly (not in __lazy_modules__)
+
+Imports inside functions, class bodies, or
+:keyword:`try`/:keyword:`except`/:keyword:`finally` blocks are always eager,
+regardless of :attr:`!__lazy_modules__`.
+
+Setting ``-X lazy_imports=none`` (or the :envvar:`PYTHON_LAZY_IMPORTS`
+environment variable to ``none``) overrides :attr:`!__lazy_modules__` and
+forces all imports to be eager.
+
+.. versionadded:: 3.15
 
 .. _future:
 

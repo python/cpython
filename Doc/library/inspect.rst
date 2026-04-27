@@ -9,14 +9,11 @@
 .. module:: inspect
    :synopsis: Extract information and source code from live objects.
 
-.. moduleauthor:: Ka-Ping Yee <ping@lfw.org>
-.. sectionauthor:: Ka-Ping Yee <ping@lfw.org>
-
 **Source code:** :source:`Lib/inspect.py`
 
 --------------
 
-The :mod:`inspect` module provides several useful functions to help get
+The :mod:`!inspect` module provides several useful functions to help get
 information about live objects such as modules, classes, methods, functions,
 tracebacks, frame objects, and code objects.  For example, it can help you
 examine the contents of a class, retrieve the source code of a method, extract
@@ -198,10 +195,6 @@ attributes (see :ref:`import-mod-attrs` for module attributes):
 |                 |                   | read more :ref:`here      |
 |                 |                   | <inspect-module-co-flags>`|
 +-----------------+-------------------+---------------------------+
-|                 | co_lnotab         | encoded mapping of line   |
-|                 |                   | numbers to bytecode       |
-|                 |                   | indices                   |
-+-----------------+-------------------+---------------------------+
 |                 | co_freevars       | tuple of names of free    |
 |                 |                   | variables (referenced via |
 |                 |                   | a function's closure)     |
@@ -360,7 +353,7 @@ attributes (see :ref:`import-mod-attrs` for module attributes):
 
    Add ``f_generator`` attribute to frames.
 
-.. versionchanged:: next
+.. versionchanged:: 3.15
 
    Add ``gi_state`` attribute to generators, ``cr_state`` attribute to
    coroutines, and ``ag_state`` attribute to async generators.
@@ -1791,7 +1784,7 @@ which is a bitmap of the following flags:
    The flags are specific to CPython, and may not be defined in other
    Python implementations.  Furthermore, the flags are an implementation
    detail, and can be removed or deprecated in future Python releases.
-   It's recommended to use public APIs from the :mod:`inspect` module
+   It's recommended to use public APIs from the :mod:`!inspect` module
    for any introspection needs.
 
 
@@ -1833,7 +1826,7 @@ Buffer flags
 Command-line interface
 ----------------------
 
-The :mod:`inspect` module also provides a basic introspection capability
+The :mod:`!inspect` module also provides a basic introspection capability
 from the command line.
 
 .. program:: inspect
