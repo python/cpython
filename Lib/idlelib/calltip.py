@@ -51,8 +51,7 @@ class Calltip:
         self.open_calltip(False)
 
     def refresh_calltip_event(self, event):
-        if self.active_calltip and self.active_calltip.tipwindow:
-            self.open_calltip(False)
+        self.open_calltip(False)
 
     def open_calltip(self, evalfuncs):
         """Maybe close an existing calltip and maybe open a new calltip.
