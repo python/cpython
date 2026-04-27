@@ -123,7 +123,7 @@ Handlers only handle exceptions that occur in the corresponding *try clause*,
 not in other handlers of the same :keyword:`!try` statement.  An *except clause*
 may name multiple exceptions, for example::
 
-   ... except RuntimeError, TypeError, NameError:
+   ... except (RuntimeError, TypeError, NameError):
    ...     pass
 
 A class in an :keyword:`except` clause matches exceptions which are instances of the
