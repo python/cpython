@@ -2689,6 +2689,59 @@
     added = '3.15'
 [function.PyType_GetModuleByToken_DuringGC]
     added = '3.15'
+[struct.PySlot]
+    added = '3.15'
+    struct_abi_kind = 'full-abi'
+[function.PyType_FromSlots]
+    added = '3.15'
+[const.PySlot_OPTIONAL]
+    added = '3.15'
+[const.PySlot_STATIC]
+    added = '3.15'
+[const.PySlot_INTPTR]
+    added = '3.15'
+[macro.PySlot_DATA]
+    added = '3.15'
+[macro.PySlot_FUNC]
+    added = '3.15'
+[macro.PySlot_SIZE]
+    added = '3.15'
+[macro.PySlot_INT64]
+    added = '3.15'
+[macro.PySlot_UINT64]
+    added = '3.15'
+[macro.PySlot_STATIC_DATA]
+    added = '3.15'
+[macro.PySlot_END]
+    added = '3.15'
+[macro.PySlot_PTR]
+    added = '3.15'
+[macro.PySlot_PTR_STATIC]
+    added = '3.15'
+[const.Py_slot_end]
+    added = '3.15'
+[const.Py_slot_invalid]
+    added = '3.15'
+[const.Py_slot_subslots]
+    added = '3.15'
+[const.Py_tp_slots]
+    added = '3.15'
+[const.Py_mod_slots]
+    added = '3.15'
+[const.Py_tp_name]
+    added = '3.15'
+[const.Py_tp_basicsize]
+    added = '3.15'
+[const.Py_tp_extra_basicsize]
+    added = '3.15'
+[const.Py_tp_itemsize]
+    added = '3.15'
+[const.Py_tp_flags]
+    added = '3.15'
+[const.Py_tp_metaclass]
+    added = '3.15'
+[const.Py_tp_module]
+    added = '3.15'
 
 # PEP 757 import/export API.
 

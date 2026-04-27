@@ -32,7 +32,7 @@ Except when documented otherwise, multiple slots with the same ID
 
 Entries of the slots array use the following structure:
 
-.. c:struct:: PySlot
+.. c:type:: PySlot
 
    An entry in a slots array. Defined as:
 
