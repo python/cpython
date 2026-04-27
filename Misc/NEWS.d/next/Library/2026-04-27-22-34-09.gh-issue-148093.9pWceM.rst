@@ -1,0 +1,1 @@
+Fix :func:`binascii.a2b_uu` reading past the end of an empty input buffer.
