@@ -751,7 +751,7 @@ nulls = 'allow'
 name = 'Py_mod_slots'
 kind = 'mod'
 dtype = 'ptr'
-n.ulls = 'allow'
+nulls = 'allow'
 
 [95]
 name = 'Py_tp_name'

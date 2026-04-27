@@ -84,9 +84,9 @@ For example, a module called ``spam`` would be defined like this::
    PyABIInfo_VAR(abi_info);
 
    static PySlot spam_slots[] = {
-       PySlot_DATA(Py_mod_abi, &abi_info),
-       PySlot_DATA(Py_mod_name, "spam"),
-       PySlot_DATA(Py_mod_init, spam_init_function),
+       PySlot_STATIC_DATA(Py_mod_abi, &abi_info),
+       PySlot_STATIC_DATA(Py_mod_name, "spam"),
+       PySlot_FUNC(Py_mod_init, spam_init_function),
        ...
        PySlot_END
    };

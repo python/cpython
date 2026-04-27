@@ -26,7 +26,7 @@ demo_getbuffer(PyObject *exporter, Py_buffer *view, int flags)
     return PyBuffer_FillInfo(view, exporter, "buf", 4, 1, flags);
 }
 
-// releasebufferproc: release buffer; increment a counter
+// releasebufferproc: release buffer; decrement a counter
 static void
 demo_releasebuffer(PyObject *exporter, Py_buffer *view)
 {

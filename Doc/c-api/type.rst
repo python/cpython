@@ -417,12 +417,12 @@ The following function is used to create :ref:`heap types <heap-types>`:
    However, sometimes slot values are not statically known at compile time.
    For example, slots like :c:data:`Py_tp_bases`, :c:data:`Py_tp_metaclass`
    and :c:data:`Py_tp_module` require live Python objects.
-   In this case, it is recommended to put such slots on the heap,
+   In this case, it is recommended to put such slots on the stack,
    and use :c:macro:`Py_slot_subslots` to refer to an array of static slots.
    For example::
 
       static const PySlot my_slots[] = {
-         PySlot_DATA(Py_tp_name, "MyClass"),
+         PySlot_STATIC_DATA(Py_tp_name, "MyClass"),
          PySlot_FUNC(Py_tp_repr, my_repr_func),
          ...
          PySlot_END
@@ -430,7 +430,7 @@ The following function is used to create :ref:`heap types <heap-types>`:
 
       PyObject *make_my_class(PyObject *module) {
          PySlot all_slots[] = {
-            PySlot_DATA(Py_slot_subslots, my_slots),
+            PySlot_STATIC_DATA(Py_slot_subslots, my_slots),
             PySlot_DATA(Py_tp_module, module),
             PySlot_END
          };
@@ -442,7 +442,7 @@ modified, for example by setting attributes on them, as with classes defined
 in Python code.
 Sometimes, such modifications are necessary to fully initialize a type,
 but you may wish to prevent users from changing the type after
-the initialisation is done:
+the initialization is done:
 
 .. c:function:: int PyType_Freeze(PyTypeObject *type)
 
@@ -537,7 +537,7 @@ Slot values may not be ``NULL``, except for the following:
    for details.
 
 The following slots correspond to fields in the underlying type structure,
-but need extra remarks for use slots:
+but need extra remarks for use as slots:
 
 .. c:macro:: Py_tp_name
 
@@ -554,7 +554,7 @@ but need extra remarks for use slots:
       CPython processes slots in order.
       It is recommended to put ``Py_tp_name`` at the beginning of the slots
       array, so that if processing of a later slots fails, error messages
-      can include the class name.
+      can include the name.
 
    .. versionadded:: next
 
@@ -590,8 +590,8 @@ but need extra remarks for use slots:
 
    The value must be positive.
    To specify that instances need no additional size (that is, size should be
-   inherited), omit the :c:macro:`!Py_tp_extra_basicsize` slot; do not set it
-   to zero.
+   inherited), omit the :c:macro:`!Py_tp_extra_basicsize` slot rather than
+   set it to zero.
 
    Specifying both :c:macro:`Py_tp_basicsize` and
    :c:macro:`!Py_tp_extra_basicsize` is an error.

@@ -849,6 +849,7 @@ _PySlot_get_null_handling(uint16_t slot_id)
         case Py_mod_gil:
         case Py_slot_subslots:
         case Py_tp_slots:
+        case Py_mod_slots:
         case Py_tp_basicsize:
         case Py_tp_extra_basicsize:
         case Py_tp_itemsize:
