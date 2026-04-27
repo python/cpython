@@ -1,1 +1,4 @@
-Improved ``@contextmanager`` and ``@asynccontextmanager`` to work correctly with generators, coroutine functions and async generators when the wrapped callables are used as decorators
+The :func:`contextlib.contextmanager` and
+:func:`contextlib.asynccontextmanager` decorators now work correctly with
+generators, coroutine functions, and async generators when the wrapped
+callables are used as decorators.
