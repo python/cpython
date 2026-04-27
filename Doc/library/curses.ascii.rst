@@ -97,7 +97,7 @@ C library:
 
 .. function:: isalnum(c)
 
-   Checks for an ASCII alpha-numeric character; it is equivalent to ``isalpha(c) or
+   Checks for an ASCII alphanumeric character; it is equivalent to ``isalpha(c) or
    isdigit(c)``.
 
 
@@ -114,7 +114,7 @@ C library:
 
 .. function:: isblank(c)
 
-   Checks for an ASCII white-space character; space or horizontal tab.
+   Checks for an ASCII whitespace character; space or horizontal tab.
 
 
 .. function:: iscntrl(c)
@@ -145,19 +145,19 @@ C library:
 
 .. function:: ispunct(c)
 
-   Checks for any printable ASCII character which is not a space or an alpha-numeric
+   Checks for any printable ASCII character which is not a space or an alphanumeric
    character.
 
 
 .. function:: isspace(c)
 
-   Checks for ASCII white-space characters; space, line feed, carriage return, form
+   Checks for ASCII whitespace characters; space, line feed, carriage return, form
    feed, horizontal tab, vertical tab.
 
 
 .. function:: isupper(c)
 
-   Checks for an ASCII upper-case letter.
+   Checks for an ASCII uppercase letter.
 
 
 .. function:: isxdigit(c)
@@ -215,7 +215,7 @@ it returns a string.
    Return a string representation of the ASCII character *c*.  If *c* is printable,
    this string is the character itself.  If the character is a control character
    (0x00--0x1f), the string consists of a caret (``'^'``) followed by the
-   corresponding upper-case letter. If the character is an ASCII delete (0x7f), the
+   corresponding uppercase letter. If the character is an ASCII delete (0x7f), the
    string is ``'^?'``.  If the character has its meta bit (0x80) set, the meta bit
    is stripped, the preceding rules applied, and ``'!'`` prepended to the result.
 
