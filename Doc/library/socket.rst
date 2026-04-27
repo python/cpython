@@ -484,10 +484,8 @@ The AF_* and SOCK_* constants are now :class:`AddressFamily` and
    .. versionchanged:: 3.14
       Added support for ``TCP_QUICKACK`` on Windows platforms when available.
 
-   .. versionchanged:: 3.15
-      ``IPV6_HDRINCL`` was added.
-
    .. versionchanged:: next
+      ``IPV6_HDRINCL`` was added.
       Added support for ``SO_PASSRIGHTS`` on Linux platforms when available.
 
 
