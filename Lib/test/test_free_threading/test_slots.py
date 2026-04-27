@@ -16,18 +16,19 @@ def run_in_threads(targets):
         thread.join()
 
 
+class Spam:
+    __slots__ = [
+        "eggs",
+    ]
+
+    def __init__(self, initial_value):
+        self.eggs = initial_value
+
+
 @threading_helper.requires_working_threading()
 class TestSlots(TestCase):
 
     def test_object(self):
-        class Spam:
-            __slots__ = [
-                "eggs",
-            ]
-
-            def __init__(self, initial_value):
-                self.eggs = initial_value
-
         spam = Spam(0)
         iters = 20_000
 
@@ -48,44 +49,18 @@ class TestSlots(TestCase):
         # removes the attribute atomically, thus avoiding non-sequentially-
         # consistent behaviors.
         # https://github.com/python/cpython/issues/146270
-
-        class Spam:
-            __slots__ = [
-                "eggs",
-                "foo",
-            ]
-
-        spam = Spam()
-        non_seq_cst_behaviour_observed = False
-
-        def deleter():
-            barrier.wait()
+        def deleter(spam, successes):
             try:
                 del spam.eggs
+                successes.append(True)
             except AttributeError:
-                pass
-            else:
-                try:
-                    del spam.foo
-                except AttributeError:
-                    nonlocal non_seq_cst_behaviour_observed
-                    non_seq_cst_behaviour_observed = True
-                    # The fact that the else branch was reached implies that
-                    # the `del spam.eggs` call was successful. If that were
-                    # atomic, there is no way for two threads to enter the else
-                    # branch, therefore it must be that only one thread
-                    # attempts to `del spam.foo`. Thus, hitting an
-                    # AttributeError here is non-sequentially-consistent,
-                    # falsifying the assumption that `del spam.eggs` was
-                    # atomic. The test fails if this point is reached.
+                successes.append(False)
 
         for _ in range(10):
-            spam.eggs = 0
-            spam.foo = 0
-            barrier = _testcapi.SpinningBarrier(2)
-            # threading.Barrier would not create enough contention here
-            run_in_threads([deleter, deleter])
-            self.assertFalse(non_seq_cst_behaviour_observed)
+            spam = Spam(0)
+            successes = []
+            threading_helper.run_concurrently(deleter, nthreads=4, args=(spam, successes))
+            self.assertEqual(sum(successes), 1)
 
     def test_T_BOOL(self):
         spam_old = _testcapi._test_structmembersType_OldAPI()

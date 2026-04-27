@@ -542,7 +542,6 @@ Modules/_testcapimodule.c	-	meth_class_methods	-
 Modules/_testcapimodule.c	-	meth_instance_methods	-
 Modules/_testcapimodule.c	-	meth_static_methods	-
 Modules/_testcapimodule.c	-	ml	-
-Modules/_testcapimodule.c	-	SpinningBarrier_Type	-
 Modules/_testcapimodule.c	-	str1	-
 Modules/_testcapimodule.c	-	str2	-
 Modules/_testcapimodule.c	-	test_c_thread	-

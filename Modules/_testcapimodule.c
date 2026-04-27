@@ -2642,108 +2642,6 @@ test_soft_deprecated_macros(PyObject *Py_UNUSED(self), PyObject *Py_UNUSED(args)
     Py_RETURN_NONE;
 }
 
-/**
- * A spinning barrier is a multithreading barrier similar to threading.Barrier,
- * except that it never parks threads that are waiting on the barrier.
- *
- * This is useful in scenarios where it is desirable to increase contention on
- * the code that follows the barrier. For instance, consider this test:
- *
- * def test_my_method_is_atomic():
- *     x = MyClass()
- *     b = _testcapi.SpinningBarrier()
- *
- *     def thread():
- *         b.wait()
- *         x.my_method()
- *
- *     for _ in range(1_000):
- *         threads = [Thread(target=thread), Thread(target=thread)]
- *         for t in threads: t.start()
- *         for t in threads: t.join()
- *
- * It can be desirable (and sometimes necessary) to increase the contention
- * on x's internal data structure by avoiding threads parking.
- * Here, not parking may become necessary when the code in my_method() is so
- * short that contention-related code paths are never exercised otherwise.
- *
- * It is roughly equivalent to this Python class:
- *
- * class SpinningBarrier:
- *     def __init__(self, parties: int):
- *         self.parties = AtomicInt(parties)  # if only we had atomic integers
- *
- *     def wait(self):
- *         v = self.parties.decrement_and_get()
- *         while True:
- *             if v < 0:
- *                 raise ValueError("wait was called too many times")
- *             if v == 0:
- *                 return
- *             v = self.parties.get()
- *
- */
-
-typedef struct {
-    PyObject_HEAD
-    int parties;
-} SpinningBarrier;
-
-int
-SpinningBarrier_init(PyObject *self, PyObject *args, PyObject *kwargs)
-{
-    int parties = 0;
-    const char *kwlist[] = {"parties", NULL};
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "i", (char **)kwlist, &parties)) {
-        return -1;
-    }
-    if (parties <= 0) {
-        PyErr_SetString(PyExc_ValueError, "parties must be greater than zero");
-        return -1;
-    }
-
-    SpinningBarrier *self_b = (SpinningBarrier *) self;
-    self_b->parties = parties;
-
-    return 0;
-}
-
-PyObject *
-SpinningBarrier_wait(PyObject *self, PyObject *Py_UNUSED(args))
-{
-    SpinningBarrier *self_b = (SpinningBarrier *) self;
-    const long decremented = _Py_atomic_add_int(&self_b->parties, -1) - 1;
-    long v = decremented;
-    while (1) {
-        if (v < 0) {
-            PyErr_SetString(PyExc_ValueError, "wait was called too many times");
-            return NULL;
-        }
-        if (v == 0) {
-            return PyLong_FromLong(decremented);
-        }
-        v = _Py_atomic_load_int_relaxed(&self_b->parties);
-        if (PyErr_CheckSignals()) {
-            return NULL;
-        }
-    }
-}
-
-static PyMethodDef SpinningBarrier_methods[] = {
-    {"wait", SpinningBarrier_wait, METH_NOARGS},
-    {NULL, NULL},
-};
-
-static PyTypeObject SpinningBarrier_Type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
-    .tp_name = "SpinningBarrier",
-    .tp_basicsize = sizeof(SpinningBarrier),
-    .tp_new = PyType_GenericNew,
-    .tp_free = PyObject_Free,
-    .tp_init = &SpinningBarrier_init,
-    .tp_methods = SpinningBarrier_methods,
-};
-
 static PyMethodDef TestMethods[] = {
     {"set_errno",               set_errno,                       METH_VARARGS},
     {"test_config",             test_config,                     METH_NOARGS},
@@ -3470,12 +3368,6 @@ _testcapi_exec(PyObject *m)
         return -1;
     Py_INCREF(&MethStatic_Type);
     PyModule_AddObject(m, "MethStatic", (PyObject *)&MethStatic_Type);
-
-    if (PyType_Ready(&SpinningBarrier_Type) < 0) {
-        return -1;
-    }
-    Py_INCREF(&SpinningBarrier_Type);
-    PyModule_AddObject(m, "SpinningBarrier", (PyObject *)&SpinningBarrier_Type);
 
     PyModule_AddObject(m, "CHAR_MAX", PyLong_FromLong(CHAR_MAX));
     PyModule_AddObject(m, "CHAR_MIN", PyLong_FromLong(CHAR_MIN));
