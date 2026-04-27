@@ -140,20 +140,6 @@ class CWriter:
         self.indent = old_indent
         self.out('}' + end)
 
-    def spam(self, segments):
-        """Write *segments*, putting as many as will fit on a single line"""
-        maxlen = 79-len(self.indent)
-        segments = iter(segments)
-        current_line = next(segments)
-        for segment in segments:
-            if len(current_line) + 1 + len(segment) > maxlen:
-                self.out(current_line)
-                current_line = segment
-            else:
-                current_line += ' ' + segment
-        if current_line:
-            self.out(current_line)
-
 
 def write_public_header(f, slots):
     out = CWriter(f)
@@ -206,8 +192,9 @@ def write_private_header(f, slots):
                         out(f'case {slot.id}:')
                         out(f'    return {new_slot.name};')
                     elif slot.kind in {kind, 'slot'}:
-                        good_slots.append(f'case {slot.id}:')
-                out.spam(good_slots)
+                        good_slots.append(f'case {slot.name}:')
+                for case in good_slots:
+                    out(case)
                 out(f'    return slot_id;')
                 out(f'default:')
                 out(f'    return Py_slot_invalid;')
@@ -275,11 +262,14 @@ def write_private_header(f, slots):
         with out.block('switch (slot_id)'):
             results = collections.defaultdict(list)
             for slot in slots:
+                if slot.kind == 'compat':
+                    continue
                 handling = slot.duplicate_handling
-                results[handling.upper()].append(f'case {slot.id}:')
+                results[handling.upper()].append(f'case {slot.name}:')
             results.pop('REJECT')
             for handling, cases in results.items():
-                out.spam(cases)
+                for case in cases:
+                    out(case)
                 out(f'    return _PySlot_PROBLEM_{handling};')
             out(f'default:')
             out(f'    return _PySlot_PROBLEM_REJECT;')
@@ -290,16 +280,19 @@ def write_private_header(f, slots):
         with out.block('switch (slot_id)'):
             results = collections.defaultdict(list)
             for slot in slots:
+                if slot.kind == 'compat':
+                    continue
                 handling = slot.null_handling
                 if handling is None:
                     if slot.kind != 'compat' and slot.dtype in {'ptr', 'func'}:
                         handling = 'reject'
                     else:
                         handling = 'allow'
-                results[handling.upper()].append(f'case {slot.id}:')
+                results[handling.upper()].append(f'case {slot.name}:')
             results.pop('REJECT')
             for handling, cases in results.items():
-                out.spam(cases)
+                for case in cases:
+                    out(case)
                 out(f'    return _PySlot_PROBLEM_{handling};')
             out(f'default:')
             out(f'    return _PySlot_PROBLEM_REJECT;')
@@ -323,7 +316,9 @@ def write_c(f, slots):
     out('#include "pycore_slots.h"   // _PySlot_names')
     out()
     with out.block(f'const char *_PySlot_names[] =', end=';'):
-        out.spam([f'"{slot.name}",' for slot in slots] + ['NULL'])
+        for slot in slots:
+            out(f'"{slot.name}",')
+        out('NULL')
 
 
 @contextlib.contextmanager

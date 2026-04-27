@@ -15,18 +15,99 @@ _PySlot_resolve_type_slot(uint16_t slot_id)
             return Py_mp_ass_subscript;
         case 4:
             return Py_mp_length;
-        case 0: case 5: case 6: case 7: case 8: case 9: case 10: case 11:
-        case 12: case 13: case 14: case 15: case 16: case 17: case 18: case 19:
-        case 20: case 21: case 22: case 23: case 24: case 25: case 26: case 27:
-        case 28: case 29: case 30: case 31: case 32: case 33: case 34: case 35:
-        case 36: case 37: case 38: case 39: case 40: case 41: case 42: case 43:
-        case 44: case 45: case 46: case 47: case 48: case 49: case 50: case 51:
-        case 52: case 53: case 54: case 55: case 56: case 57: case 58: case 59:
-        case 60: case 61: case 62: case 63: case 64: case 65: case 66: case 67:
-        case 68: case 69: case 70: case 71: case 72: case 73: case 74: case 75:
-        case 76: case 77: case 78: case 79: case 80: case 81: case 82: case 83:
-        case 88: case 89: case 90: case 91: case 92: case 93: case 95: case 96:
-        case 97: case 98: case 99: case 107: case 108:
+        case Py_slot_end:
+        case Py_mp_subscript:
+        case Py_nb_absolute:
+        case Py_nb_add:
+        case Py_nb_and:
+        case Py_nb_bool:
+        case Py_nb_divmod:
+        case Py_nb_float:
+        case Py_nb_floor_divide:
+        case Py_nb_index:
+        case Py_nb_inplace_add:
+        case Py_nb_inplace_and:
+        case Py_nb_inplace_floor_divide:
+        case Py_nb_inplace_lshift:
+        case Py_nb_inplace_multiply:
+        case Py_nb_inplace_or:
+        case Py_nb_inplace_power:
+        case Py_nb_inplace_remainder:
+        case Py_nb_inplace_rshift:
+        case Py_nb_inplace_subtract:
+        case Py_nb_inplace_true_divide:
+        case Py_nb_inplace_xor:
+        case Py_nb_int:
+        case Py_nb_invert:
+        case Py_nb_lshift:
+        case Py_nb_multiply:
+        case Py_nb_negative:
+        case Py_nb_or:
+        case Py_nb_positive:
+        case Py_nb_power:
+        case Py_nb_remainder:
+        case Py_nb_rshift:
+        case Py_nb_subtract:
+        case Py_nb_true_divide:
+        case Py_nb_xor:
+        case Py_sq_ass_item:
+        case Py_sq_concat:
+        case Py_sq_contains:
+        case Py_sq_inplace_concat:
+        case Py_sq_inplace_repeat:
+        case Py_sq_item:
+        case Py_sq_length:
+        case Py_sq_repeat:
+        case Py_tp_alloc:
+        case Py_tp_base:
+        case Py_tp_bases:
+        case Py_tp_call:
+        case Py_tp_clear:
+        case Py_tp_dealloc:
+        case Py_tp_del:
+        case Py_tp_descr_get:
+        case Py_tp_descr_set:
+        case Py_tp_doc:
+        case Py_tp_getattr:
+        case Py_tp_getattro:
+        case Py_tp_hash:
+        case Py_tp_init:
+        case Py_tp_is_gc:
+        case Py_tp_iter:
+        case Py_tp_iternext:
+        case Py_tp_methods:
+        case Py_tp_new:
+        case Py_tp_repr:
+        case Py_tp_richcompare:
+        case Py_tp_setattr:
+        case Py_tp_setattro:
+        case Py_tp_str:
+        case Py_tp_traverse:
+        case Py_tp_members:
+        case Py_tp_getset:
+        case Py_tp_free:
+        case Py_nb_matrix_multiply:
+        case Py_nb_inplace_matrix_multiply:
+        case Py_am_await:
+        case Py_am_aiter:
+        case Py_am_anext:
+        case Py_tp_finalize:
+        case Py_am_send:
+        case Py_tp_vectorcall:
+        case Py_tp_token:
+        case Py_bf_getbuffer:
+        case Py_bf_releasebuffer:
+        case Py_mp_ass_subscript:
+        case Py_mp_length:
+        case Py_slot_subslots:
+        case Py_tp_slots:
+        case Py_tp_name:
+        case Py_tp_basicsize:
+        case Py_tp_extra_basicsize:
+        case Py_tp_itemsize:
+        case Py_tp_flags:
+        case Py_tp_metaclass:
+        case Py_tp_module:
             return slot_id;
         default:
             return Py_slot_invalid;
@@ -45,9 +126,22 @@ _PySlot_resolve_mod_slot(uint16_t slot_id)
             return Py_mod_multiple_interpreters;
         case 4:
             return Py_mod_gil;
-        case 0: case 84: case 85: case 86: case 87: case 92: case 94: case 100:
-        case 101: case 102: case 103: case 104: case 105: case 106: case 109:
-        case 110:
+        case Py_slot_end:
+        case Py_mod_create:
+        case Py_mod_exec:
+        case Py_mod_multiple_interpreters:
+        case Py_mod_gil:
+        case Py_slot_subslots:
+        case Py_mod_slots:
+        case Py_mod_name:
+        case Py_mod_doc:
+        case Py_mod_state_size:
+        case Py_mod_methods:
+        case Py_mod_state_traverse:
+        case Py_mod_state_clear:
+        case Py_mod_state_free:
+        case Py_mod_abi:
+        case Py_mod_token:
             return slot_id;
         default:
             return Py_slot_invalid;
@@ -654,19 +748,90 @@ static inline _PySlot_PROBLEM_HANDLING
 _PySlot_get_duplicate_handling(uint16_t slot_id)
 {
     switch (slot_id) {
-        case 5: case 6: case 7: case 8: case 9: case 10: case 11: case 12:
-        case 13: case 14: case 15: case 16: case 17: case 18: case 19: case 20:
-        case 21: case 22: case 23: case 24: case 25: case 26: case 27: case 28:
-        case 29: case 30: case 31: case 32: case 33: case 34: case 35: case 36:
-        case 37: case 38: case 39: case 40: case 41: case 42: case 43: case 44:
-        case 45: case 46: case 47: case 48: case 49: case 50: case 51: case 52:
-        case 53: case 54: case 55: case 57: case 58: case 59: case 60: case 61:
-        case 62: case 63: case 64: case 65: case 66: case 67: case 68: case 69:
-        case 70: case 71: case 73: case 74: case 75: case 76: case 77: case 78:
-        case 79: case 80: case 81: case 82: case 83: case 88: case 89: case 90:
-        case 91:
+        case Py_mp_subscript:
+        case Py_nb_absolute:
+        case Py_nb_add:
+        case Py_nb_and:
+        case Py_nb_bool:
+        case Py_nb_divmod:
+        case Py_nb_float:
+        case Py_nb_floor_divide:
+        case Py_nb_index:
+        case Py_nb_inplace_add:
+        case Py_nb_inplace_and:
+        case Py_nb_inplace_floor_divide:
+        case Py_nb_inplace_lshift:
+        case Py_nb_inplace_multiply:
+        case Py_nb_inplace_or:
+        case Py_nb_inplace_power:
+        case Py_nb_inplace_remainder:
+        case Py_nb_inplace_rshift:
+        case Py_nb_inplace_subtract:
+        case Py_nb_inplace_true_divide:
+        case Py_nb_inplace_xor:
+        case Py_nb_int:
+        case Py_nb_invert:
+        case Py_nb_lshift:
+        case Py_nb_multiply:
+        case Py_nb_negative:
+        case Py_nb_or:
+        case Py_nb_positive:
+        case Py_nb_power:
+        case Py_nb_remainder:
+        case Py_nb_rshift:
+        case Py_nb_subtract:
+        case Py_nb_true_divide:
+        case Py_nb_xor:
+        case Py_sq_ass_item:
+        case Py_sq_concat:
+        case Py_sq_contains:
+        case Py_sq_inplace_concat:
+        case Py_sq_inplace_repeat:
+        case Py_sq_item:
+        case Py_sq_length:
+        case Py_sq_repeat:
+        case Py_tp_alloc:
+        case Py_tp_base:
+        case Py_tp_bases:
+        case Py_tp_call:
+        case Py_tp_clear:
+        case Py_tp_dealloc:
+        case Py_tp_del:
+        case Py_tp_descr_get:
+        case Py_tp_descr_set:
+        case Py_tp_getattr:
+        case Py_tp_getattro:
+        case Py_tp_hash:
+        case Py_tp_init:
+        case Py_tp_is_gc:
+        case Py_tp_iter:
+        case Py_tp_iternext:
+        case Py_tp_methods:
+        case Py_tp_new:
+        case Py_tp_repr:
+        case Py_tp_richcompare:
+        case Py_tp_setattr:
+        case Py_tp_setattro:
+        case Py_tp_str:
+        case Py_tp_traverse:
+        case Py_tp_getset:
+        case Py_tp_free:
+        case Py_nb_matrix_multiply:
+        case Py_nb_inplace_matrix_multiply:
+        case Py_am_await:
+        case Py_am_aiter:
+        case Py_am_anext:
+        case Py_tp_finalize:
+        case Py_am_send:
+        case Py_tp_vectorcall:
+        case Py_tp_token:
+        case Py_bf_getbuffer:
+        case Py_bf_releasebuffer:
+        case Py_mp_ass_subscript:
+        case Py_mp_length:
             return _PySlot_PROBLEM_DEPRECATED;
-        case 85: case 109:
+        case Py_mod_exec:
+        case Py_mod_abi:
             return _PySlot_PROBLEM_ALLOW;
         default:
             return _PySlot_PROBLEM_REJECT;
@@ -677,21 +842,100 @@ static inline _PySlot_PROBLEM_HANDLING
 _PySlot_get_null_handling(uint16_t slot_id)
 {
     switch (slot_id) {
-        case 0: case 1: case 2: case 3: case 4: case 56: case 83: case 86:
-        case 87: case 92: case 93: case 96: case 97: case 98: case 99:
-        case 102:
+        case Py_slot_end:
+        case Py_tp_doc:
+        case Py_tp_token:
+        case Py_mod_multiple_interpreters:
+        case Py_mod_gil:
+        case Py_slot_subslots:
+        case Py_tp_slots:
+        case Py_tp_basicsize:
+        case Py_tp_extra_basicsize:
+        case Py_tp_itemsize:
+        case Py_tp_flags:
+        case Py_mod_state_size:
             return _PySlot_PROBLEM_ALLOW;
-        case 5: case 6: case 7: case 8: case 9: case 10: case 11: case 12:
-        case 13: case 14: case 15: case 16: case 17: case 18: case 19: case 20:
-        case 21: case 22: case 23: case 24: case 25: case 26: case 27: case 28:
-        case 29: case 30: case 31: case 32: case 33: case 34: case 35: case 36:
-        case 37: case 38: case 39: case 40: case 41: case 42: case 43: case 44:
-        case 45: case 46: case 47: case 48: case 49: case 50: case 51: case 52:
-        case 53: case 54: case 55: case 57: case 58: case 59: case 60: case 61:
-        case 62: case 63: case 64: case 65: case 66: case 67: case 68: case 69:
-        case 70: case 71: case 73: case 74: case 75: case 76: case 77: case 78:
-        case 79: case 80: case 81: case 82: case 84: case 88: case 89: case 90:
-        case 91:
+        case Py_mp_subscript:
+        case Py_nb_absolute:
+        case Py_nb_add:
+        case Py_nb_and:
+        case Py_nb_bool:
+        case Py_nb_divmod:
+        case Py_nb_float:
+        case Py_nb_floor_divide:
+        case Py_nb_index:
+        case Py_nb_inplace_add:
+        case Py_nb_inplace_and:
+        case Py_nb_inplace_floor_divide:
+        case Py_nb_inplace_lshift:
+        case Py_nb_inplace_multiply:
+        case Py_nb_inplace_or:
+        case Py_nb_inplace_power:
+        case Py_nb_inplace_remainder:
+        case Py_nb_inplace_rshift:
+        case Py_nb_inplace_subtract:
+        case Py_nb_inplace_true_divide:
+        case Py_nb_inplace_xor:
+        case Py_nb_int:
+        case Py_nb_invert:
+        case Py_nb_lshift:
+        case Py_nb_multiply:
+        case Py_nb_negative:
+        case Py_nb_or:
+        case Py_nb_positive:
+        case Py_nb_power:
+        case Py_nb_remainder:
+        case Py_nb_rshift:
+        case Py_nb_subtract:
+        case Py_nb_true_divide:
+        case Py_nb_xor:
+        case Py_sq_ass_item:
+        case Py_sq_concat:
+        case Py_sq_contains:
+        case Py_sq_inplace_concat:
+        case Py_sq_inplace_repeat:
+        case Py_sq_item:
+        case Py_sq_length:
+        case Py_sq_repeat:
+        case Py_tp_alloc:
+        case Py_tp_base:
+        case Py_tp_bases:
+        case Py_tp_call:
+        case Py_tp_clear:
+        case Py_tp_dealloc:
+        case Py_tp_del:
+        case Py_tp_descr_get:
+        case Py_tp_descr_set:
+        case Py_tp_getattr:
+        case Py_tp_getattro:
+        case Py_tp_hash:
+        case Py_tp_init:
+        case Py_tp_is_gc:
+        case Py_tp_iter:
+        case Py_tp_iternext:
+        case Py_tp_methods:
+        case Py_tp_new:
+        case Py_tp_repr:
+        case Py_tp_richcompare:
+        case Py_tp_setattr:
+        case Py_tp_setattro:
+        case Py_tp_str:
+        case Py_tp_traverse:
+        case Py_tp_getset:
+        case Py_tp_free:
+        case Py_nb_matrix_multiply:
+        case Py_nb_inplace_matrix_multiply:
+        case Py_am_await:
+        case Py_am_aiter:
+        case Py_am_anext:
+        case Py_tp_finalize:
+        case Py_am_send:
+        case Py_tp_vectorcall:
+        case Py_mod_create:
+        case Py_bf_getbuffer:
+        case Py_bf_releasebuffer:
+        case Py_mp_ass_subscript:
+        case Py_mp_length:
             return _PySlot_PROBLEM_DEPRECATED;
         default:
             return _PySlot_PROBLEM_REJECT;
