@@ -6,9 +6,9 @@ import sys
 import _collections_abc
 from collections import deque
 from functools import wraps
-from inspect import isasyncgenfunction as _isasyncgenfunction
-from inspect import iscoroutinefunction as _iscoroutinefunction
-from inspect import isgeneratorfunction as _isgeneratorfunction
+lazy from inspect import isasyncgenfunction as _isasyncgenfunction
+lazy from inspect import iscoroutinefunction as _iscoroutinefunction
+lazy from inspect import isgeneratorfunction as _isgeneratorfunction
 from types import GenericAlias
 
 __all__ = ["asynccontextmanager", "contextmanager", "closing", "nullcontext",
@@ -83,32 +83,36 @@ class ContextDecorator(object):
         return self
 
     def __call__(self, func):
-        def inner(*args, **kwds):
-            with self._recreate_cm():
-                return func(*args, **kwds)
-
-        def gen_inner(*args, **kwds):
-            with self._recreate_cm(), closing(func(*args, **kwds)) as gen:
-                yield from gen
-
-        async def async_inner(*args, **kwds):
-            with self._recreate_cm():
-                return await func(*args, **kwds)
-
-        async def asyncgen_inner(*args, **kwds):
-            with self._recreate_cm():
-                async with aclosing(func(*args, **kwds)) as gen:
-                    async for value in gen:
-                        yield value
-
         wrapper = wraps(func)
         if _isasyncgenfunction(func):
+
+            async def asyncgen_inner(*args, **kwds):
+                with self._recreate_cm():
+                    async with aclosing(func(*args, **kwds)) as gen:
+                        async for value in gen:
+                            yield value
+
             return wrapper(asyncgen_inner)
         elif _iscoroutinefunction(func):
+
+            async def async_inner(*args, **kwds):
+                with self._recreate_cm():
+                    return await func(*args, **kwds)
+
             return wrapper(async_inner)
         elif _isgeneratorfunction(func):
+
+            def gen_inner(*args, **kwds):
+                with self._recreate_cm(), closing(func(*args, **kwds)) as gen:
+                    yield from gen
+
             return wrapper(gen_inner)
         else:
+
+            def inner(*args, **kwds):
+                with self._recreate_cm():
+                    return func(*args, **kwds)
+
             return wrapper(inner)
 
 
@@ -121,36 +125,40 @@ class AsyncContextDecorator(object):
         return self
 
     def __call__(self, func):
-        async def inner(*args, **kwds):
-            async with self._recreate_cm():
-                return func(*args, **kwds)
-
-        async def gen_inner(*args, **kwds):
-            async with self._recreate_cm():
-                with closing(func(*args, **kwds)) as gen:
-                    for value in gen:
-                        yield value
-
-        async def async_inner(*args, **kwds):
-            async with self._recreate_cm():
-                return await func(*args, **kwds)
-
-        async def asyncgen_inner(*args, **kwds):
-            async with (
-                self._recreate_cm(),
-                aclosing(func(*args, **kwds)) as gen
-            ):
-                async for value in gen:
-                    yield value
-
         wrapper = wraps(func)
         if _isasyncgenfunction(func):
+
+            async def asyncgen_inner(*args, **kwds):
+                async with (
+                    self._recreate_cm(),
+                    aclosing(func(*args, **kwds)) as gen
+                ):
+                    async for value in gen:
+                        yield value
+
             return wrapper(asyncgen_inner)
         elif _iscoroutinefunction(func):
+
+            async def async_inner(*args, **kwds):
+                async with self._recreate_cm():
+                    return await func(*args, **kwds)
+
             return wrapper(async_inner)
         elif _isgeneratorfunction(func):
+
+            async def gen_inner(*args, **kwds):
+                async with self._recreate_cm():
+                    with closing(func(*args, **kwds)) as gen:
+                        for value in gen:
+                            yield value
+
             return wrapper(gen_inner)
         else:
+
+            async def inner(*args, **kwds):
+                async with self._recreate_cm():
+                    return func(*args, **kwds)
+
             return wrapper(inner)
 
 
