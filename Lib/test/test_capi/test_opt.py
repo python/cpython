@@ -3919,6 +3919,38 @@ class TestUopsOptimization(unittest.TestCase):
         expected = TIER2_THRESHOLD * (5.0 / Fraction(4))
         self.assertAlmostEqual(res, float(expected))
 
+    def test_float_truediv_partial_float_no_stack_underflow(self):
+        # gh-149049: a speculative _GUARD_*_FLOAT for a partially-float
+        # truediv/remainder must not drop the original _BINARY_OP.
+        def truediv(args):
+            n, = args
+            nan = float("nan")
+            def victim(a=0, b=nan, c=2):
+                return (a + b) / c
+            for _ in range(n):
+                victim()
+
+        def remainder(args):
+            n, = args
+            nan = float("nan")
+            def victim(a=0, b=nan, c=2):
+                return (a + b) % c
+            for _ in range(n):
+                victim()
+
+        for testfunc in (truediv, remainder):
+            with self.subTest(op=testfunc.__name__):
+                # Iterations must be high enough that the buggy trace
+                # is not only built but executed (where it underflows).
+                _, ex = self._run_with_optimizer(
+                    testfunc, (TIER2_THRESHOLD * 10,))
+                self.assertIsNotNone(ex)
+                uops = get_opnames(ex)
+                self.assertTrue(
+                    "_GUARD_TOS_FLOAT" in uops or "_GUARD_NOS_FLOAT" in uops,
+                    uops,
+                )
+
     def test_int_add_inplace_unique_lhs(self):
         # a * b produces a unique compact int; adding c reuses it in place
         def testfunc(args):
