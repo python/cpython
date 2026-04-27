@@ -225,7 +225,7 @@ write_str(stringio *self, PyObject *obj)
 
     if (self->state == STATE_ACCUMULATING) {
         if (self->string_size == self->pos) {
-            if (PyUnicodeWriter_WriteStr(self->writer, decoded))
+            if (_PyUnicodeWriter_WriteStr((_PyUnicodeWriter*)self->writer, decoded))
                 goto fail;
             goto success;
         }
