@@ -1,0 +1,6 @@
+Fix a crash in :func:`contextvars.Context.run` where a re-entrant GC
+invocation (triggered by ``_PyHamt_Assoc`` or ``_PyHamt_Without``
+allocating nodes) could free the current HAMT while it was still being
+traversed.  The fix holds a strong reference to the old ``ctx_vars``
+across the hazardous call in ``contextvar_set`` and ``contextvar_del``.
+
