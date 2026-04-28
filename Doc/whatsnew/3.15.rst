@@ -1741,9 +1741,8 @@ New deprecations
 
 * :mod:`shlex`:
 
-  * :func:`shlex.quote` has a new keyword-only parameter *force* that ensures
-    a string will always be quoted, even if it is already safe for a shell
-    without being quoted.
+  * Add keyword-only parameter *force* to :func:`shlex.quote` to force quoting
+    a string, even if it is already safe for a shell without being quoted.
 
     (Contributed by Jay Berry in :gh:`148846`.)
 
