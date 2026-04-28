@@ -102,11 +102,11 @@ void _PyOpcode_RecordFunction_CODE(_PyInterpreterFrame *frame, _PyStackRef *stac
 #define _RECORD_NOS_INDEX 2
 #define _RECORD_3OS_GEN_FUNC_INDEX 3
 #define _RECORD_NOS_GEN_FUNC_INDEX 4
-#define _RECORD_CALLABLE_INDEX 5
-#define _RECORD_BOUND_METHOD_INDEX 6
-#define _RECORD_CALLABLE_KW_INDEX 7
-#define _RECORD_4OS_INDEX 8
-#define _RECORD_NOS_TYPE_INDEX 9
+#define _RECORD_NOS_TYPE_INDEX 5
+#define _RECORD_CALLABLE_INDEX 6
+#define _RECORD_BOUND_METHOD_INDEX 7
+#define _RECORD_CALLABLE_KW_INDEX 8
+#define _RECORD_4OS_INDEX 9
 
 const _PyOpcodeRecordEntry _PyOpcode_RecordEntries[256] = {
         [TO_BOOL_ALWAYS_TRUE] = {1, {_RECORD_TOS_TYPE_INDEX}},
@@ -125,6 +125,7 @@ const _PyOpcodeRecordEntry _PyOpcode_RecordEntries[256] = {
         [GET_ITER] = {1, {_RECORD_TOS_TYPE_INDEX}},
         [GET_ITER_SELF] = {1, {_RECORD_TOS_TYPE_INDEX}},
         [GET_ITER_VIRTUAL] = {1, {_RECORD_TOS_TYPE_INDEX}},
+        [FOR_ITER] = {2, {_RECORD_NOS_GEN_FUNC_INDEX, _RECORD_NOS_TYPE_INDEX}},
         [FOR_ITER_GEN] = {1, {_RECORD_NOS_GEN_FUNC_INDEX}},
         [LOAD_SPECIAL] = {1, {_RECORD_TOS_TYPE_INDEX}},
         [LOAD_ATTR_METHOD_WITH_VALUES] = {1, {_RECORD_TOS_TYPE_INDEX}},
@@ -157,9 +158,9 @@ const _Py_RecordFuncPtr _PyOpcode_RecordFunctions[10] = {
         [_RECORD_NOS_INDEX] = _PyOpcode_RecordFunction_NOS,
         [_RECORD_3OS_GEN_FUNC_INDEX] = _PyOpcode_RecordFunction_3OS_GEN_FUNC,
         [_RECORD_NOS_GEN_FUNC_INDEX] = _PyOpcode_RecordFunction_NOS_GEN_FUNC,
+        [_RECORD_NOS_TYPE_INDEX] = _PyOpcode_RecordFunction_NOS_TYPE,
         [_RECORD_CALLABLE_INDEX] = _PyOpcode_RecordFunction_CALLABLE,
         [_RECORD_BOUND_METHOD_INDEX] = _PyOpcode_RecordFunction_BOUND_METHOD,
         [_RECORD_CALLABLE_KW_INDEX] = _PyOpcode_RecordFunction_CALLABLE_KW,
         [_RECORD_4OS_INDEX] = _PyOpcode_RecordFunction_4OS,
-        [_RECORD_NOS_TYPE_INDEX] = _PyOpcode_RecordFunction_NOS_TYPE,
 };

@@ -3764,7 +3764,7 @@ dummy_func(
             next = item;
         }
 
-        macro(FOR_ITER) = _SPECIALIZE_FOR_ITER + _FOR_ITER;
+        macro(FOR_ITER) = _SPECIALIZE_FOR_ITER + _RECORD_NOS_GEN_FUNC + _RECORD_NOS_TYPE + _FOR_ITER;
 
         op(_FOR_ITER_TIER_TWO, (iter, null_or_index -- iter, null_or_index, next)) {
             _PyStackRef item = _PyForIter_VirtualIteratorNext(tstate, frame, iter, &null_or_index);
@@ -3777,6 +3777,30 @@ dummy_func(
                 EXIT_IF(true);
             }
             next = item;
+        }
+
+        tier2 op(_GUARD_TYPE_ITER, (expected_type/4, iter, null_or_index -- iter, null_or_index)) {
+            PyObject *iter_o = PyStackRef_AsPyObjectBorrow(iter);
+            EXIT_IF(Py_TYPE(iter_o) != (PyTypeObject *)expected_type);
+        }
+
+        tier2 op(_ITER_NEXT_INLINE, (iternext_fn/4, iter, null_or_index -- iter, null_or_index, next)) {
+            volatile iternextfunc iternext_v = (iternextfunc)iternext_fn;
+            PyObject *item = iternext_v(PyStackRef_AsPyObjectBorrow(iter));
+            if (item == NULL) {
+                if (_PyErr_Occurred(tstate)) {
+                    if (_PyErr_ExceptionMatches(tstate, PyExc_StopIteration)) {
+                        _PyEval_MonitorRaise(tstate, frame, frame->instr_ptr);
+                        _PyErr_Clear(tstate);
+                    }
+                    else {
+                        ERROR_NO_POP();
+                    }
+                }
+                EXIT_IF(true);
+            }
+            STAT_INC(FOR_ITER, hit);
+            next = PyStackRef_FromPyObjectSteal(item);
         }
 
         op(_GUARD_NOS_ITER_VIRTUAL, (iter, null_or_index -- iter, null_or_index)) {

@@ -598,7 +598,7 @@ class TestUops(unittest.TestCase):
         ex = get_first_executor(testfunc)
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
-        self.assertIn("_FOR_ITER_TIER_TWO", uops)
+        self.assertIn("_ITER_NEXT_INLINE", uops)
 
 
 @requires_specialization
@@ -1461,7 +1461,132 @@ class TestUopsOptimization(unittest.TestCase):
         res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
         self.assertEqual(res, TIER2_THRESHOLD * (TIER2_THRESHOLD - 1) // 2)
         self.assertIsNotNone(ex)
-        self.assertIn("_FOR_ITER_TIER_TWO", get_opnames(ex))
+        self.assertIn("_ITER_NEXT_INLINE", get_opnames(ex))
+
+    def test_for_iter_direct_dict_items(self):
+        def testfunc(n):
+            d = {i: i * 2 for i in range(10)}
+            total = 0
+            for _ in range(n):
+                for k, v in d.items():
+                    total += k + v
+            return total
+
+        expected = 0
+        d = {i: i * 2 for i in range(10)}
+        for _ in range(TIER2_THRESHOLD):
+            for k, v in d.items():
+                expected += k + v
+
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, expected)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertIn("_ITER_NEXT_INLINE", uops)
+        self.assertNotIn("_FOR_ITER_TIER_TWO", uops)
+
+    def test_for_iter_direct_dict_keys(self):
+        def testfunc(n):
+            d = {i: i for i in range(10)}
+            total = 0
+            for _ in range(n):
+                for k in d.keys():
+                    total += k
+            return total
+
+        expected = TIER2_THRESHOLD * sum(range(10))
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, expected)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertIn("_ITER_NEXT_INLINE", uops)
+        self.assertNotIn("_FOR_ITER_TIER_TWO", uops)
+
+    def test_for_iter_direct_dict_values(self):
+        def testfunc(n):
+            d = {i: i * 3 for i in range(10)}
+            total = 0
+            for _ in range(n):
+                for v in d.values():
+                    total += v
+            return total
+
+        expected = TIER2_THRESHOLD * sum(i * 3 for i in range(10))
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, expected)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertIn("_ITER_NEXT_INLINE", uops)
+        self.assertNotIn("_FOR_ITER_TIER_TWO", uops)
+
+    def test_for_iter_direct_set(self):
+        def testfunc(n):
+            s = set(range(10))
+            total = 0
+            for _ in range(n):
+                for x in s:
+                    total += x
+            return total
+
+        expected = TIER2_THRESHOLD * sum(range(10))
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, expected)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertIn("_ITER_NEXT_INLINE", uops)
+        self.assertNotIn("_FOR_ITER_TIER_TWO", uops)
+
+    def test_for_iter_direct_reversed(self):
+        def testfunc(n):
+            lst = list(range(10))
+            total = 0
+            for _ in range(n):
+                for x in reversed(lst):
+                    total += x
+            return total
+
+        expected = TIER2_THRESHOLD * sum(range(10))
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, expected)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertIn("_ITER_NEXT_INLINE", uops)
+        self.assertNotIn("_FOR_ITER_TIER_TWO", uops)
+
+    def test_for_iter_direct_enumerate(self):
+        def testfunc(n):
+            lst = list(range(10))
+            total = 0
+            for _ in range(n):
+                for i, x in enumerate(lst):
+                    total += i + x
+            return total
+
+        expected = TIER2_THRESHOLD * sum(i + x for i, x in enumerate(range(10)))
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, expected)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertIn("_ITER_NEXT_INLINE", uops)
+        self.assertNotIn("_FOR_ITER_TIER_TWO", uops)
+
+    def test_for_iter_direct_zip(self):
+        def testfunc(n):
+            a = list(range(10))
+            b = list(range(10, 20))
+            total = 0
+            for _ in range(n):
+                for x, y in zip(a, b):
+                    total += x + y
+            return total
+
+        expected = TIER2_THRESHOLD * sum(x + y for x, y in zip(range(10), range(10, 20)))
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, expected)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertIn("_ITER_NEXT_INLINE", uops)
+        self.assertNotIn("_FOR_ITER_TIER_TWO", uops)
 
     def test_modified_local_is_seen_by_optimized_code(self):
         l = sys._getframe().f_locals
