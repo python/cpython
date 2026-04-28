@@ -65,9 +65,9 @@ USER_SITE = None
 USER_BASE = None
 
 
-def _trace(message):
+def _trace(message, exc=None):
     if sys.flags.verbose:
-        print(message, file=sys.stderr)
+        _print_error(message, exc)
 
 
 def _print_error(message, exc=None):
@@ -166,7 +166,7 @@ def _read_pthstart_file(sitedir, name, suffix):
     try:
         st = os.lstat(filename)
     except OSError as exc:
-        _print_error(f"Cannot stat {filename!r}", exc)
+        _trace(f"Cannot stat {filename!r}", exc)
         return None, filename
 
     if ((getattr(st, 'st_flags', 0) & stat.UF_HIDDEN) or
@@ -179,7 +179,7 @@ def _read_pthstart_file(sitedir, name, suffix):
         with io.open_code(filename) as f:
             raw_content = f.read()
     except OSError as exc:
-        _print_error(f"Cannot read {filename!r}", exc)
+        _trace(f"Cannot read {filename!r}", exc)
         return None, filename
 
     try:
@@ -224,8 +224,7 @@ def _read_pth_file(sitedir, name, known_paths):
         try:
             dir_, dircase = makepath(sitedir, line)
         except Exception as exc:
-            _print_error(
-                f"Error in {filename!r}, line {n:d}: {line!r}", exc)
+            _trace(f"Error in {filename!r}, line {n:d}: {line!r}", exc)
             continue
 
         if dircase in known_paths:
