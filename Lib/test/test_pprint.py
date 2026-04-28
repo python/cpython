@@ -190,7 +190,7 @@ class QueryTestCase(unittest.TestCase):
         # that do not support color
         stream = io.StringIO()
         with unittest.mock.patch.dict(
-            "os.environ", {"FORCE_COLOR": "", "NO_COLOR": "1"}
+            "os.environ", {"FORCE_COLOR": "", "NO_COLOR": ""}
         ):
             pprint.pprint(obj, stream=stream, color=True)
             result = stream.getvalue()
