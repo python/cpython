@@ -575,6 +575,7 @@ Modules/_testinternalcapi.c	-	Test_EvalFrame_Resumes	-
 Modules/_testinternalcapi.c	-	Test_EvalFrame_Loads	-
 Modules/_testinternalcapi/interpreter.c	-	Test_EvalFrame_Resumes	-
 Modules/_testinternalcapi/interpreter.c	-	Test_EvalFrame_Loads	-
+Modules/_testlimitedcapi/slots.c	-	TestMethods	-
 Modules/_testmultiphase.c	-	Example_Type_slots	-
 Modules/_testmultiphase.c	-	Example_Type_spec	-
 Modules/_testmultiphase.c	-	Example_methods	-
