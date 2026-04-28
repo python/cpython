@@ -17,8 +17,7 @@ PyDoc_STRVAR(faulthandler_dump_traceback_py__doc__,
 "Dump the traceback of the current thread into file.\n"
 "\n"
 "Dump the traceback of all threads if all_threads is true. max_threads\n"
-"caps the number of threads dumped; a \"...\" marker is written if there\n"
-"are more.");
+"caps the number of threads dumped.");
 
 #define FAULTHANDLER_DUMP_TRACEBACK_PY_METHODDEF    \
     {"dump_traceback", _PyCFunction_CAST(faulthandler_dump_traceback_py), METH_FASTCALL|METH_KEYWORDS, faulthandler_dump_traceback_py__doc__},
@@ -166,7 +165,8 @@ exit:
 }
 
 PyDoc_STRVAR(faulthandler_py_enable__doc__,
-"enable($module, /, file=sys.stderr, all_threads=True, c_stack=True)\n"
+"enable($module, /, file=sys.stderr, all_threads=True, c_stack=True, *,\n"
+"       max_threads=100)\n"
 "--\n"
 "\n"
 "Enable the fault handler.");
@@ -176,7 +176,8 @@ PyDoc_STRVAR(faulthandler_py_enable__doc__,
 
 static PyObject *
 faulthandler_py_enable_impl(PyObject *module, PyObject *file,
-                            int all_threads, int c_stack);
+                            int all_threads, int c_stack,
+                            unsigned int max_threads);
 
 static PyObject *
 faulthandler_py_enable(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
@@ -184,7 +185,7 @@ faulthandler_py_enable(PyObject *module, PyObject *const *args, Py_ssize_t nargs
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 
-    #define NUM_KEYWORDS 3
+    #define NUM_KEYWORDS 4
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
@@ -193,7 +194,7 @@ faulthandler_py_enable(PyObject *module, PyObject *const *args, Py_ssize_t nargs
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
         .ob_hash = -1,
-        .ob_item = { &_Py_ID(file), &_Py_ID(all_threads), &_Py_ID(c_stack), },
+        .ob_item = { &_Py_ID(file), &_Py_ID(all_threads), &_Py_ID(c_stack), &_Py_ID(max_threads), },
     };
     #undef NUM_KEYWORDS
     #define KWTUPLE (&_kwtuple.ob_base.ob_base)
@@ -202,18 +203,19 @@ faulthandler_py_enable(PyObject *module, PyObject *const *args, Py_ssize_t nargs
     #  define KWTUPLE NULL
     #endif  // !Py_BUILD_CORE
 
-    static const char * const _keywords[] = {"file", "all_threads", "c_stack", NULL};
+    static const char * const _keywords[] = {"file", "all_threads", "c_stack", "max_threads", NULL};
     static _PyArg_Parser _parser = {
         .keywords = _keywords,
         .fname = "enable",
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[3];
+    PyObject *argsbuf[4];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
     PyObject *file = NULL;
     int all_threads = 1;
     int c_stack = 1;
+    unsigned int max_threads = 100;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
             /*minpos*/ 0, /*maxpos*/ 3, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
@@ -238,12 +240,24 @@ faulthandler_py_enable(PyObject *module, PyObject *const *args, Py_ssize_t nargs
             goto skip_optional_pos;
         }
     }
-    c_stack = PyObject_IsTrue(args[2]);
-    if (c_stack < 0) {
-        goto exit;
+    if (args[2]) {
+        c_stack = PyObject_IsTrue(args[2]);
+        if (c_stack < 0) {
+            goto exit;
+        }
+        if (!--noptargs) {
+            goto skip_optional_pos;
+        }
     }
 skip_optional_pos:
-    return_value = faulthandler_py_enable_impl(module, file, all_threads, c_stack);
+    if (!noptargs) {
+        goto skip_optional_kwonly;
+    }
+    if (!_PyLong_UnsignedInt_Converter(args[3], &max_threads)) {
+        goto exit;
+    }
+skip_optional_kwonly:
+    return_value = faulthandler_py_enable_impl(module, file, all_threads, c_stack, max_threads);
 
 exit:
     return return_value;
@@ -304,8 +318,7 @@ PyDoc_STRVAR(faulthandler_dump_traceback_later__doc__,
 "\n"
 "If repeat is true, the tracebacks of all threads are dumped every timeout\n"
 "seconds. If exit is true, call _exit(1) which is not safe. max_threads\n"
-"caps the number of threads dumped; a \"...\" marker is written if there\n"
-"are more.");
+"caps the number of threads dumped.");
 
 #define FAULTHANDLER_DUMP_TRACEBACK_LATER_METHODDEF    \
     {"dump_traceback_later", _PyCFunction_CAST(faulthandler_dump_traceback_later), METH_FASTCALL|METH_KEYWORDS, faulthandler_dump_traceback_later__doc__},
@@ -718,4 +731,4 @@ exit:
 #ifndef FAULTHANDLER__RAISE_EXCEPTION_METHODDEF
     #define FAULTHANDLER__RAISE_EXCEPTION_METHODDEF
 #endif /* !defined(FAULTHANDLER__RAISE_EXCEPTION_METHODDEF) */
-/*[clinic end generated code: output=b477248ff88dc172 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=c11f71a7f495ba96 input=a9049054013a1b77]*/

@@ -722,7 +722,7 @@ class FaultHandlerTests(unittest.TestCase):
     def test_dump_traceback_max_threads(self):
         # max_threads caps the dump and writes "...\n" when truncated.
         # Spawn N worker threads, dump with cap < N, and verify the
-        # marker is present and at most CAP thread headers are written.
+        # marker is present and exactly CAP thread headers are written.
         code = dedent("""
             import faulthandler
             import sys
@@ -749,31 +749,42 @@ class FaultHandlerTests(unittest.TestCase):
                 for t in threads:
                     t.join()
         """).strip()
-        # spawn_python merges stderr into stdout by default.
-        with support.SuppressCrashReport():
-            process = script_helper.spawn_python('-c', code)
-            with process:
-                output, _ = process.communicate()
-                process.wait()
-        # Truncation marker is written when the cap is hit.
-        self.assertIn(b"...\n", output)
-        # Cap of 3 means at most 3 thread headers in the dump.
-        self.assertLessEqual(output.count(b"Thread 0x"), 3)
+        proc = script_helper.assert_python_ok('-c', code)
+        output = proc.err
+        # Truncation marker is written on its own line when the cap is hit.
+        self.assertIn(b"\n...\n", output)
+        # Cap of 3 means exactly 3 thread headers in the dump.
+        self.assertEqual(output.count(b"Thread 0x"), 3)
 
-    def test_dump_traceback_max_threads_default(self):
-        # The default max_threads of 100 preserves historical behavior:
-        # no truncation when the live thread count is below the cap.
+    @skip_segfault_on_android
+    def test_enable_max_threads(self):
+        # enable(max_threads=N) caps the thread dump produced when a
+        # fatal signal fires.
         code = dedent("""
             import faulthandler
-            import sys
-            faulthandler.dump_traceback(file=sys.stderr)
+            import threading
+
+            NTHREADS = 6
+            CAP = 3
+
+            ready = threading.Barrier(NTHREADS + 1)
+            stop = threading.Event()
+
+            def worker():
+                ready.wait()
+                stop.wait()
+
+            for _ in range(NTHREADS):
+                threading.Thread(target=worker, daemon=True).start()
+            ready.wait()
+            faulthandler.enable(max_threads=CAP)
+            faulthandler._sigsegv()
         """).strip()
-        with support.SuppressCrashReport():
-            process = script_helper.spawn_python('-c', code)
-            with process:
-                output, _ = process.communicate()
-                process.wait()
-        self.assertNotIn(b"...\n", output)
+        output, exitcode = self.get_output(code)
+        output = '\n'.join(output)
+        # Cap of 3 means the dump is truncated with "..." on its own line.
+        self.assertIn("\n...\n", output)
+        self.assertNotEqual(exitcode, 0)
 
     @unittest.skipIf(not hasattr(faulthandler, "register"),
                      "need faulthandler.register")

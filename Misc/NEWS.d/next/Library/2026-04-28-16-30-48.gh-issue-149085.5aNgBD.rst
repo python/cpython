@@ -1,7 +1,2 @@
-Add a *max_threads* keyword argument to :func:`faulthandler.dump_traceback`
-and :func:`faulthandler.dump_traceback_later`, raising the per-call cap on
-the number of threads dumped (previously a hard-coded ``MAX_NTHREADS = 100``
-in :file:`Python/traceback.c`). Useful for server processes with many
-worker or gRPC threads, where dump order (newest-thread-first) means the
-historical 100-thread cap silently elided the main thread. The default of
-``100`` preserves existing behavior.
+Add a *max_threads* keyword argument to :func:`faulthandler.dump_traceback`,
+:func:`faulthandler.dump_traceback_later`, and :func:`faulthandler.enable`.
