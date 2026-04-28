@@ -4,6 +4,11 @@ import shutil
 import sys
 import unittest
 
+# NSKIP050 https://github.com/nanvix/cpython/issues/530
+from test import support
+if support.is_nanvix and not support.is_nanvix_standalone:
+    raise unittest.SkipTest("NSKIP050: hosted Nanvix unable to run this module cleanly (rmdir errno 88 cascade and/or other linuxd VFS issues)")  # detail: not bisected, see #530
+
 from test.support.os_helper import (TESTFN, skip_unless_symlink,
                                     can_symlink, create_empty_file, change_cwd)
 

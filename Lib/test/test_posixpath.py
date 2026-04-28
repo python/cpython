@@ -2,6 +2,11 @@ import os
 import posixpath
 import sys
 import unittest
+
+# NSKIP050 https://github.com/nanvix/cpython/issues/530
+from test import support
+if support.is_nanvix and not support.is_nanvix_standalone:
+    raise unittest.SkipTest("NSKIP050: hosted Nanvix unable to run this module cleanly (rmdir errno 88 cascade and/or other linuxd VFS issues)")  # detail: not bisected, see #530
 from posixpath import realpath, abspath, dirname, basename
 from test import test_genericpath
 from test.support import import_helper
@@ -207,6 +212,9 @@ class PosixPathTest(unittest.TestCase):
         self.assertIs(posixpath.ismount(FakePath("/")), True)
         self.assertIs(posixpath.ismount(FakePath(b"/")), True)
 
+    # NSKIP022 https://github.com/nanvix/cpython/issues/502
+    @unittest.skipIf(support.is_nanvix,
+                     "NSKIP022: FAT VFS returns identical st_ino/st_dev for all files")  # detail: ismount cascade
     def test_ismount_non_existent(self):
         # Non-existent mountpoint.
         self.assertIs(posixpath.ismount(ABSTFN), False)
