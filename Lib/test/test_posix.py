@@ -53,7 +53,7 @@ requires_sched = unittest.skipUnless(_supports_sched(), 'requires POSIX schedule
 
 # NSKIP053 https://github.com/nanvix/cpython/issues/533
 @unittest.skipIf(support.is_nanvix and not support.is_nanvix_standalone,
-                 "NSKIP053: hosted Nanvix hangs the VM somewhere in this class; root cause not bisected, see #480")
+                 "NSKIP053: hosted Nanvix hangs the VM somewhere in this class; root cause not bisected")  # detail: see #533
 class PosixTester(unittest.TestCase):
 
     def setUp(self):
@@ -186,7 +186,7 @@ class PosixTester(unittest.TestCase):
 
     # NSKIP037 https://github.com/nanvix/cpython/issues/517
     @unittest.skipIf(support.is_nanvix,
-                     "NSKIP037: os.truncate() not implemented on Nanvix")
+                     "NSKIP037: os.truncate() not supported")
     @unittest.skipUnless(hasattr(posix, 'truncate'), "test needs posix.truncate()")
     def test_truncate(self):
         with open(os_helper.TESTFN, 'w') as fp:
@@ -524,7 +524,7 @@ class PosixTester(unittest.TestCase):
 
     # NSKIP041 https://github.com/nanvix/cpython/issues/521
     @unittest.skipIf(support.is_nanvix,
-                     "NSKIP041: os.writev() returns ENOSPC instead of EINVAL on overflow")
+                     "NSKIP041: os.writev() not supported")  # detail: ENOSPC instead of EINVAL on overflow
     @unittest.skipUnless(hasattr(posix, 'writev'), "test needs posix.writev()")
     @requires_32b
     def test_writev_overflow_32bits(self):
@@ -596,7 +596,7 @@ class PosixTester(unittest.TestCase):
                          'test needs posix.dup2()')
     # NSKIP030 https://github.com/nanvix/cpython/issues/510
     @unittest.skipIf(support.is_nanvix,
-                     "NSKIP030: os.dup2() not implemented on Nanvix")
+                     "NSKIP030: os.dup2() accepts invalid fd silently")
     @unittest.skipIf(support.is_wasi, "WASI does not have dup2()")
     def test_dup2(self):
         fp1 = open(os_helper.TESTFN)
@@ -820,7 +820,7 @@ class PosixTester(unittest.TestCase):
 
     # NSKIP042 https://github.com/nanvix/cpython/issues/522
     @unittest.skipIf(support.is_nanvix,
-                     "NSKIP042: os.chown() is a no-op on FAT VFS")
+                     "NSKIP042: os.chown() not supported")  # detail: no-op on FAT VFS
     @unittest.skipUnless(hasattr(os, "chown"), "requires os.chown()")
     @unittest.skipIf(support.is_emscripten, "getgid() is a stub")
     def test_chown(self):
@@ -1502,7 +1502,7 @@ class PosixTester(unittest.TestCase):
 # tests for the posix *at functions follow
 # NSKIP053 https://github.com/nanvix/cpython/issues/533
 @unittest.skipIf(support.is_nanvix and not support.is_nanvix_standalone,
-                 "NSKIP053: hosted Nanvix hangs the VM somewhere in this class; root cause not bisected, see #480")
+                 "NSKIP053: hosted Nanvix hangs the VM somewhere in this class; root cause not bisected")  # detail: see #533
 class TestPosixDirFd(unittest.TestCase):
     count = 0
 

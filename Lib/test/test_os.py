@@ -1181,7 +1181,7 @@ class EnvironTests(mapping_tests.BasicTestMappingProtocol):
 
     # NSKIP033 https://github.com/nanvix/cpython/issues/513
     @unittest.skipIf(support.is_nanvix,
-                     "NSKIP033: os.putenv('', val) does not raise")
+                     "NSKIP033: os.putenv() accepts invalid input silently")  # detail: empty name, =name, embedded NUL etc. do not raise
     # On OS X < 10.6, unsetenv() doesn't return a value (bpo-13415).
     @support.requires_mac_ver(10, 6)
     def test_putenv_unsetenv_error(self):
@@ -2374,7 +2374,7 @@ class TestInvalidFD(unittest.TestCase):
 
     # NSKIP030 https://github.com/nanvix/cpython/issues/510
     @unittest.skipIf(support.is_nanvix,
-                     "NSKIP030: os.dup2() not implemented on Nanvix")
+                     "NSKIP030: os.dup2() accepts invalid fd silently")
     @unittest.skipUnless(hasattr(os, 'dup2'), 'test needs os.dup2()')
     def test_dup2(self):
         self.check(os.dup2, 20)
@@ -2386,7 +2386,7 @@ class TestInvalidFD(unittest.TestCase):
     )
     # NSKIP030 https://github.com/nanvix/cpython/issues/510
     @unittest.skipIf(support.is_nanvix,
-                     "NSKIP030: os.dup2() not implemented on Nanvix")
+                     "NSKIP030: os.dup2() accepts invalid fd silently")
     def test_dup2_negative_fd(self):
         valid_fd = os.open(__file__, os.O_RDONLY)
         self.addCleanup(os.close, valid_fd)
@@ -2464,7 +2464,7 @@ class TestInvalidFD(unittest.TestCase):
                          'needs os.get_blocking() and os.set_blocking()')
     # NSKIP031 https://github.com/nanvix/cpython/issues/511
     @unittest.skipIf(support.is_nanvix,
-                     "NSKIP031: os.set_blocking() is a no-op on Nanvix")
+                     "NSKIP031: os.set_blocking() accepts invalid fd silently")  # detail: no-op on Nanvix
     def test_blocking(self):
         self.check(os.get_blocking)
         self.check(os.set_blocking, True)
