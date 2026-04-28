@@ -410,8 +410,8 @@ instantiation, of which this module provides three different variants:
       response headers to add to each successful HTTP status 200 response. These
       headers are not included in other status code responses.
 
-      Headers that the server sends automatically (for instance Content-Type)
-      will not be overwritten by extra_response_headers.
+      Headers that the server sends automatically such as ``Content-Type``
+      will not be overwritten by :attr:`!extra_response_headers`.
 
    The :class:`SimpleHTTPRequestHandler` class defines the following methods:
 
@@ -445,7 +445,7 @@ instantiation, of which this module provides three different variants:
       followed by a ``'Content-Length:'`` header with the file's size and a
       ``'Last-Modified:'`` header with the file's modification time.
 
-      The instance attribute ``extra_response_headers`` is a sequence of
+      The instance attribute :attr:`extra_response_headers` is a sequence of
       ``(name, value)`` pairs containing user-defined extra response headers.
 
       Then follows a blank line signifying the end of the headers, and then the
