@@ -186,6 +186,16 @@ class QueryTestCase(unittest.TestCase):
             result = stream.getvalue()
             self.assertNotIn("\x1b[", result)
 
+        # color=True should produce no ANSI codes for streams
+        # that do not support color
+        stream = io.StringIO()
+        with unittest.mock.patch.dict(
+            "os.environ", {"FORCE_COLOR": "", "NO_COLOR": "1"}
+        ):
+            pprint.pprint(obj, stream=stream, color=True)
+            result = stream.getvalue()
+            self.assertNotIn("\x1b[", result)
+
     def test_color_prettyprinter(self):
         """Test PrettyPrinter color parameter."""
         obj = {"key": "value"}
