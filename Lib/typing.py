@@ -2486,8 +2486,12 @@ def get_type_hints(obj, globalns=None, localns=None, include_extras=False,
         else:
             nsobj = obj
             # Find globalns for the unwrapped object.
+            seen = {id(nsobj)}
             while hasattr(nsobj, '__wrapped__'):
                 nsobj = nsobj.__wrapped__
+                if id(nsobj) in seen:
+                    raise ValueError(f'wrapper loop when unwrapping {obj!r}')
+                seen.add(id(nsobj))
             globalns = getattr(nsobj, '__globals__', {})
         if localns is None:
             localns = globalns
@@ -3146,31 +3150,7 @@ def _namedtuple_mro_entries(bases):
 NamedTuple.__mro_entries__ = _namedtuple_mro_entries
 
 
-class _SingletonMeta(type):
-    def __setattr__(cls, attr, value):
-        # TypeError is consistent with the behavior of NoneType
-        raise TypeError(
-                f"cannot set {attr!r} attribute of immutable type {cls.__name__!r}"
-                )
-
-
-class _NoExtraItemsType(metaclass=_SingletonMeta):
-    """The type of the NoExtraItems singleton."""
-
-    __slots__ = ()
-
-    def __new__(cls):
-        return globals().get("NoExtraItems") or object.__new__(cls)
-
-    def __repr__(self):
-        return 'typing.NoExtraItems'
-
-    def __reduce__(self):
-        return 'NoExtraItems'
-
-NoExtraItems = _NoExtraItemsType()
-del _NoExtraItemsType
-del _SingletonMeta
+NoExtraItems = sentinel("NoExtraItems")
 
 
 def _get_typeddict_qualifiers(annotation_type):
@@ -3612,7 +3592,7 @@ class IO(Generic[AnyStr]):
         pass
 
     @abstractmethod
-    def read(self, n: int = -1) -> AnyStr:
+    def read(self, n: int = -1, /) -> AnyStr:
         pass
 
     @abstractmethod
@@ -3620,15 +3600,15 @@ class IO(Generic[AnyStr]):
         pass
 
     @abstractmethod
-    def readline(self, limit: int = -1) -> AnyStr:
+    def readline(self, limit: int = -1, /) -> AnyStr:
         pass
 
     @abstractmethod
-    def readlines(self, hint: int = -1) -> list[AnyStr]:
+    def readlines(self, hint: int = -1, /) -> list[AnyStr]:
         pass
 
     @abstractmethod
-    def seek(self, offset: int, whence: int = 0) -> int:
+    def seek(self, offset: int, whence: int = 0, /) -> int:
         pass
 
     @abstractmethod
@@ -3640,7 +3620,7 @@ class IO(Generic[AnyStr]):
         pass
 
     @abstractmethod
-    def truncate(self, size: int | None = None) -> int:
+    def truncate(self, size: int | None = None, /) -> int:
         pass
 
     @abstractmethod
@@ -3648,11 +3628,11 @@ class IO(Generic[AnyStr]):
         pass
 
     @abstractmethod
-    def write(self, s: AnyStr) -> int:
+    def write(self, s: AnyStr, /) -> int:
         pass
 
     @abstractmethod
-    def writelines(self, lines: list[AnyStr]) -> None:
+    def writelines(self, lines: list[AnyStr], /) -> None:
         pass
 
     @abstractmethod
@@ -3660,7 +3640,7 @@ class IO(Generic[AnyStr]):
         pass
 
     @abstractmethod
-    def __exit__(self, type, value, traceback) -> None:
+    def __exit__(self, type, value, traceback, /) -> None:
         pass
 
 
@@ -3670,7 +3650,7 @@ class BinaryIO(IO[bytes]):
     __slots__ = ()
 
     @abstractmethod
-    def write(self, s: bytes | bytearray) -> int:
+    def write(self, s: bytes | bytearray, /) -> int:
         pass
 
     @abstractmethod
