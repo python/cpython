@@ -4,9 +4,17 @@ import shelve
 import pickle
 import os
 
+from test import support
 from test.support import os_helper
 from collections.abc import MutableMapping
 from test.test_dbm import dbm_iterator
+
+# NSKIP021 https://github.com/nanvix/cpython/issues/501
+# shelve layers pickle over dbm.  The default dbm backend on Nanvix
+# is dbm.dumb (since _dbm/_gdbm/_ndbm are N/A — see configure.ac:7268),
+# and dbm.dumb._commit() uses os.rename which hangs the kernel.
+if support.is_nanvix:
+    raise unittest.SkipTest("NSKIP021: FAT VFS rename() hangs the kernel")  # detail: shelve uses dbm.dumb whose _commit() uses os.rename
 
 def L1(s):
     return s.decode("latin-1")
