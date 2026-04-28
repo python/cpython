@@ -99,7 +99,7 @@ The :mod:`!shlex` module defines the following functions:
 
       >>> from shlex import quote
       >>> filenames = ['my first file', 'file2', 'file 3']
-      >>> filenames_some_escaped = [quote(f, force=False) for f in filenames]
+      >>> filenames_some_escaped = [quote(f) for f in filenames]
       >>> filenames_some_escaped
       ["'my first file'", 'file2', "'file 3'"]
       >>> filenames_all_escaped = [quote(f, force=True) for f in filenames]
