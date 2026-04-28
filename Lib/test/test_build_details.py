@@ -154,6 +154,7 @@ class CPythonBuildDetailsTests(unittest.TestCase, FormatTestsBase):
         self.assertTrue(os.path.exists(os.path.join(value['pkgconfig_path'], f'python-{version}.pc')))
 
 
+@unittest.skipIf('_PYTHON_SYSCONFIGDATA_NAME' in os.environ, 'Cross-compiling')
 @unittest.skipIf(os.name != 'posix', 'Feature only implemented on POSIX right now')
 @unittest.skipIf(is_wasm32, 'Feature not available on WebAssembly builds')
 class BuildDetailsRelativePathsTests(unittest.TestCase):
