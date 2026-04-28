@@ -46,7 +46,7 @@ arguments for the action.''')
 Event.kwargs.__doc__ = ('''kwargs is a dictionary holding the keyword
 arguments for the action.''')
 
-_sentinel = object()
+_sentinel = sentinel("_sentinel")
 
 class scheduler:
 

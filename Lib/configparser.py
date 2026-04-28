@@ -372,11 +372,6 @@ class UnnamedSectionDisabledError(Error):
         Error.__init__(self, "Support for UNNAMED_SECTION is disabled.")
 
 
-class _UnnamedSection:
-
-    def __repr__(self):
-        return "<UNNAMED_SECTION>"
-
 class InvalidWriteError(Error):
     """Raised when attempting to write data that the parser would read back differently.
     ex: writing a key which begins with the section header pattern would read back as a
@@ -386,13 +381,13 @@ class InvalidWriteError(Error):
         Error.__init__(self, msg)
 
 
-UNNAMED_SECTION = _UnnamedSection()
+UNNAMED_SECTION = sentinel("<UNNAMED_SECTION>")
 
 
 # Used in parser getters to indicate the default behaviour when a specific
 # option is not found it to raise an exception. Created to enable `None` as
 # a valid fallback value.
-_UNSET = object()
+_UNSET = sentinel("_UNSET")
 
 
 class Interpolation:
