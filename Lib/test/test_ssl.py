@@ -5060,10 +5060,11 @@ class ThreadedTests(unittest.TestCase):
                 # The _SSLSocket remembers the previous EOF error
                 # and raises again SSLEOFError
                 sslobj.read(1024)
-            with open(__file__, "rb") as fp:
-                fd = fp.fileno()
-                with self.assertRaises(ssl.SSLEOFError):
-                    sslobj.sendfile(fd, 0, 1)
+            if hasattr(sslobj, 'sendfile'):
+                with open(__file__, "rb") as fp:
+                    fd = fp.fileno()
+                    with self.assertRaises(ssl.SSLEOFError):
+                        sslobj.sendfile(fd, 0, 1)
             with self.assertRaises(ssl.SSLEOFError):
                 sslobj.write(b'client2\n')
 
