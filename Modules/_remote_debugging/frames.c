@@ -105,14 +105,54 @@ copy_stack_chunks(RemoteUnwinderObject *unwinder,
         return -1;
     }
 
-    // Process this chunk
-    if (process_single_stack_chunk(unwinder, chunk_addr, &chunks[count]) < 0) {
-        set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to process stack chunk");
-        goto error;
+    const size_t MAX_STACK_CHUNKS = 4096;
+    while (chunk_addr != 0) {
+        if (count >= MAX_STACK_CHUNKS) {
+            PyErr_Format(PyExc_RuntimeError,
+                         "Too many stack chunks (%zu) - possible corrupted remote memory",
+                         count);
+            set_exception_cause(unwinder, PyExc_RuntimeError,
+                                "Too many stack chunks");
+            goto error;
+        }
+
+        if (count >= max_chunks) {
+            max_chunks *= 2;
+            StackChunkInfo *new_chunks = PyMem_RawRealloc(
+                chunks, max_chunks * sizeof(StackChunkInfo));
+            if (!new_chunks) {
+                PyErr_NoMemory();
+                set_exception_cause(unwinder, PyExc_MemoryError,
+                                    "Failed to grow stack chunks array");
+                goto error;
+            }
+            chunks = new_chunks;
+        }
+
+        uintptr_t prev_addr = chunk_addr;
+        if (process_single_stack_chunk(unwinder, chunk_addr,
+                                       &chunks[count]) < 0) {
+            set_exception_cause(unwinder, PyExc_RuntimeError,
+                                "Failed to process stack chunk");
+            goto error;
+        }
+        STATS_INC(unwinder, stack_chunks_copied);
+
+        chunk_addr = GET_MEMBER(uintptr_t, chunks[count].local_copy,
+                                offsetof(_PyStackChunk, previous));
+        count++;
+
+        if (chunk_addr == prev_addr) {
+            PyErr_SetString(PyExc_RuntimeError,
+                            "Stack chunk cycle detected (corrupted remote memory)");
+            set_exception_cause(unwinder, PyExc_RuntimeError,
+                                "Stack chunk cycle detected");
+            goto error;
+        }
     }
 
     out_chunks->chunks = chunks;
-    out_chunks->count = 1;
+    out_chunks->count = count;
     return 0;
 
 error:
