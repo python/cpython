@@ -580,8 +580,13 @@ The :mod:`!calendar` module defines the following exceptions:
 
 .. exception:: IllegalMonthError(month)
 
-   A subclass of :exc:`ValueError`,
+   A subclass of :exc:`ValueError` and :exc:`IndexError`,
    raised when the given month number is outside of the range 1-12 (inclusive).
+
+   .. versionchanged:: 3.12
+      :exc:`IllegalMonthError` is now also a subclass of
+      :exc:`ValueError`. New code should avoid catching
+      :exc:`IndexError`.
 
    .. attribute:: month
 

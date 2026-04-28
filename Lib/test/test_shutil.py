@@ -2136,8 +2136,6 @@ class TestArchives(BaseTest, unittest.TestCase):
     def check_unpack_archive(self, format, **kwargs):
         self.check_unpack_archive_with_converter(
             format, lambda path: path, **kwargs)
-        self.check_unpack_archive_with_converter(
-            format, FakePath, **kwargs)
         self.check_unpack_archive_with_converter(format, FakePath, **kwargs)
 
     def check_unpack_archive_with_converter(self, format, converter, **kwargs):
@@ -2193,6 +2191,71 @@ class TestArchives(BaseTest, unittest.TestCase):
         self.check_unpack_archive('zip')
         with self.assertRaises(TypeError):
             self.check_unpack_archive('zip', filter='data')
+
+    def test_unpack_archive_zip_badpaths(self):
+        srcdir = self.mkdtemp()
+        zipname = os.path.join(srcdir, 'test.zip')
+        abspath = os.path.join(srcdir, 'abspath')
+        with zipfile.ZipFile(zipname, 'w') as zf:
+            zf.writestr(abspath, 'badfile')
+            zf.writestr(os.sep + abspath, 'badfile')
+            zf.writestr('/abspath', 'badfile')
+            zf.writestr('C:/abspath', 'badfile')
+            zf.writestr('D:\\abspath', 'badfile')
+            zf.writestr('E:abspath', 'badfile')
+            zf.writestr('F:/G:/abspath', 'badfile')
+            zf.writestr('//server/share/abspath', 'badfile')
+            zf.writestr('\\\\server2\\share\\abspath', 'badfile')
+            zf.writestr('../relpath', 'badfile')
+            zf.writestr(os.pardir + os.sep + 'relpath2', 'badfile')
+            zf.writestr('good/file', 'goodfile')
+            zf.writestr('good..file', 'goodfile')
+
+        dstdir = os.path.join(self.mkdtemp(), 'dst')
+        unpack_archive(zipname, dstdir)
+        self.assertTrue(os.path.isfile(os.path.join(dstdir, 'good', 'file')))
+        self.assertTrue(os.path.isfile(os.path.join(dstdir, 'good..file')))
+        self.assertFalse(os.path.exists(abspath))
+        self.assertFalse(os.path.exists(os.path.join(dstdir, 'abspath')))
+        self.assertFalse(os.path.exists(os.path.join(dstdir, 'G_')))
+        self.assertFalse(os.path.exists(os.path.join(dstdir, 'server')))
+        if os.name != 'nt':
+            self.assertTrue(os.path.isfile(os.path.join(dstdir, 'C:', 'abspath')))
+            self.assertTrue(os.path.isfile(os.path.join(dstdir, 'D:\\abspath')))
+            self.assertTrue(os.path.isfile(os.path.join(dstdir, 'E:abspath')))
+            self.assertTrue(os.path.isfile(os.path.join(dstdir, 'F:', 'G:', 'abspath')))
+            self.assertTrue(os.path.isfile(os.path.join(dstdir, '\\\\server2\\share\\abspath')))
+        if os.pardir == '..':
+            self.assertFalse(os.path.exists(os.path.join(dstdir, '..', 'relpath')))
+            self.assertFalse(os.path.exists(os.path.join(dstdir, 'relpath')))
+        else:
+            self.assertTrue(os.path.isfile(os.path.join(dstdir, '..', 'relpath')))
+        self.assertFalse(os.path.exists(os.path.join(dstdir, os.pardir, 'relpath2')))
+        self.assertFalse(os.path.exists(os.path.join(dstdir, 'relpath2')))
+
+        dstdir2 = os.path.join(self.mkdtemp(), 'dst')
+        os.mkdir(dstdir2)
+        with os_helper.change_cwd(dstdir2):
+            unpack_archive(zipname, '')
+            self.assertTrue(os.path.isfile(os.path.join('good', 'file')))
+            self.assertTrue(os.path.isfile('good..file'))
+            self.assertFalse(os.path.exists(abspath))
+            self.assertFalse(os.path.exists('abspath'))
+            self.assertFalse(os.path.exists('C_'))
+            self.assertFalse(os.path.exists('server'))
+            if os.name != 'nt':
+                self.assertTrue(os.path.isfile(os.path.join('C:', 'abspath')))
+                self.assertTrue(os.path.isfile('D:\\abspath'))
+                self.assertTrue(os.path.isfile('E:abspath'))
+                self.assertTrue(os.path.isfile(os.path.join('F:', 'G:', 'abspath')))
+                self.assertTrue(os.path.isfile('\\\\server2\\share\\abspath'))
+            if os.pardir == '..':
+                self.assertFalse(os.path.exists(os.path.join('..', 'relpath')))
+                self.assertFalse(os.path.exists('relpath'))
+            else:
+                self.assertTrue(os.path.isfile(os.path.join('..', 'relpath')))
+            self.assertFalse(os.path.exists(os.path.join(os.pardir, 'relpath2')))
+            self.assertFalse(os.path.exists('relpath2'))
 
     def test_unpack_registry(self):
 

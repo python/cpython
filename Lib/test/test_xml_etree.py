@@ -3271,6 +3271,16 @@ class BadElementPathTest(ElementTestCase, unittest.TestCase):
                 e.extend([ET.Element('bar')])
                 e.findtext(cls(e, 'x'))
 
+    def test_findtext_with_mutating_non_none_text(self):
+        for cls in [MutationDeleteElementPath, MutationClearElementPath]:
+            with self.subTest(cls):
+                e = ET.Element('foo')
+                child = ET.Element('bar')
+                child.text = str(object())
+                e.append(child)
+                del child
+                repr(e.findtext(cls(e, 'x')))
+
     def test_findtext_with_error(self):
         e = ET.Element('foo')
         e.extend([ET.Element('bar')])
