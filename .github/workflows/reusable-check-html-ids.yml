@@ -1,0 +1,67 @@
+name: Reusable check HTML IDs
+
+on:
+  workflow_call:
+
+permissions:
+  contents: read
+
+env:
+  FORCE_COLOR: 1
+
+jobs:
+  check-html-ids:
+    name: 'Check for removed HTML IDs'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: 'Check out PR head'
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+          ref: ${{ github.event.pull_request.head.sha }}
+      - name: 'Find merge base'
+        id: merge-base
+        run: |
+          BASE="${{ github.event.pull_request.base.sha }}"
+          HEAD="${{ github.event.pull_request.head.sha }}"
+          git fetch --depth=$((${{ github.event.pull_request.commits }} + 10)) --no-tags origin "$BASE" "$HEAD"
+
+          if ! MERGE_BASE=$(git merge-base "$BASE" "$HEAD" 2>/dev/null); then
+            git fetch --deepen=1 --no-tags origin "$BASE" "$HEAD"
+
+            OLDEST=$(git rev-list --reflog --max-parents=0 --reverse "${BASE}^" "${HEAD}^" | head -1)
+            TIMESTAMP=$(git show --format=%at --no-patch "$OLDEST")
+
+            git fetch --shallow-since="$TIMESTAMP" --no-tags origin "$BASE" "$HEAD"
+
+            MERGE_BASE=$(git merge-base "$BASE" "$HEAD")
+          fi
+          echo "sha=$MERGE_BASE" >> "$GITHUB_OUTPUT"
+      - name: 'Create worktree at merge base'
+        env:
+          MERGE_BASE: ${{ steps.merge-base.outputs.sha }}
+        run: git worktree add /tmp/merge-base "$MERGE_BASE" --detach
+      - name: 'Set up Python'
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+        with:
+          python-version: '3'
+          cache: 'pip'
+          cache-dependency-path: 'Doc/requirements.txt'
+      - name: 'Install build dependencies'
+        run: make -C /tmp/merge-base/Doc/ venv
+      - name: 'Build HTML documentation'
+        run: make -C /tmp/merge-base/Doc/ SPHINXOPTS="--quiet" html
+      - name: 'Collect HTML IDs'
+        run: python Doc/tools/check-html-ids.py collect /tmp/merge-base/Doc/build/html -o /tmp/html-ids-base.json.gz
+      - name: 'Download PR head HTML IDs'
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: html-ids-head.json.gz
+          path: /tmp
+      - name: 'Check for removed HTML IDs'
+        run: |
+          # shellcheck disable=SC2046
+          python Doc/tools/check-html-ids.py -v check \
+            /tmp/html-ids-base.json.gz /tmp/html-ids-head.json.gz \
+            $([ -f Doc/tools/removed-ids.txt ] && echo "--exclude-file Doc/tools/removed-ids.txt")
