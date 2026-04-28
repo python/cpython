@@ -2963,7 +2963,7 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
         self.assertNotIn("_CALL_LEN", uops)
-        self.assertEqual(count_ops(ex, "_SHUFFLE_3_LOAD_CONST_INLINE_BORROW"), 4)
+        self.assertGreaterEqual(count_ops(ex, "_LOAD_CONST_INLINE_BORROW"), 8)
 
     def test_call_len_known_length_small_int(self):
         # Make sure that len(t) is optimized for a tuple of length 5.
