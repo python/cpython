@@ -50,8 +50,8 @@ The :mod:`!shlex` module defines the following functions:
    string that can safely be used as one token in a shell command line, for
    cases where you cannot use a list.
 
-   If *force* is :const:`True` then *s* will be quoted even if it is already
-   safe for a shell without being quoted.
+   If *force* is :const:`True`, then *s* is unconditionally quoted,
+   even if it is already safe for a shell without being quoted.
 
    .. _shlex-quote-warning:
 

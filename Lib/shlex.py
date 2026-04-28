@@ -320,8 +320,8 @@ def join(split_command):
 def quote(s, *, force=False):
     """Return a shell-escaped version of the string *s*.
 
-    If *force* is *True* then *s* will be quoted even if it is
-    already safe for a shell without being quoted.
+    If *force* is *True*, then *s* is unconditionally quoted,
+    even if it is already safe for a shell without being quoted.
     """
     if not s:
         return "''"
