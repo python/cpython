@@ -120,7 +120,9 @@ PyAPI_FUNC(void) PyGILState_Release(PyGILState_STATE);
 PyAPI_FUNC(PyThreadState *) PyGILState_GetThisThreadState(void);
 
 
-/* PEP 788 -- Interpreter guards and views. */
+/* PEP 788 -- Protection against interpreter finalization */
+
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= _Py_PACK_VERSION(3, 15)
 
 typedef struct _PyInterpreterGuard PyInterpreterGuard;
 typedef struct _PyInterpreterView PyInterpreterView;
@@ -136,6 +138,8 @@ PyAPI_FUNC(PyInterpreterView *) PyInterpreterView_FromMain(void);
 PyAPI_FUNC(PyThreadState *) PyThreadState_Ensure(PyInterpreterGuard *guard);
 PyAPI_FUNC(PyThreadState *) PyThreadState_EnsureFromView(PyInterpreterView *view);
 PyAPI_FUNC(void) PyThreadState_Release(PyThreadState *tstate);
+
+#endif
 
 #ifndef Py_LIMITED_API
 #  define Py_CPYTHON_PYSTATE_H
