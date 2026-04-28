@@ -989,10 +989,8 @@ def main():
         else:
             try:
                 namespace = UUID(namespace)
-            except ValueError as e:
-                parser.error(
-                    f"{str(e)}: '{args.namespace}'."
-                )
+            except ValueError as exc:
+                parser.error(f"{exc}: {args.namespace!r}")
         for _ in range(args.count):
             print(uuid_func(namespace, name))
     else:
