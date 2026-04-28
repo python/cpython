@@ -499,7 +499,6 @@ _PyUOp_Replacements[MAX_UOP_ID + 1] = {
     [_FOR_ITER_VIRTUAL] = _FOR_ITER_VIRTUAL_TIER_TWO,
     [_ITER_NEXT_LIST] = _ITER_NEXT_LIST_TIER_TWO,
     [_CHECK_PERIODIC_AT_END] = _TIER2_RESUME_CHECK,
-    [_CHECK_PERIODIC_AT_END_PENDING] = _TIER2_RESUME_CHECK,
     [_LOAD_BYTECODE] = _NOP,
 };
 
@@ -1032,6 +1031,9 @@ _PyJit_translate_single_bytecode_to_trace(
                     tracer->prev_state.recorded_values[record_idx] = NULL;
                     record_idx++;
                     operand = (uintptr_t)recorded_value;
+                }
+                else if (uop == _CHECK_PERIODIC_IF_INTERRUPTIBLE) {
+                    target = orig_target + 1 + _PyOpcode_Caches[_PyOpcode_Deopt[opcode]];
                 }
                 // All other instructions
                 ADD_TO_TRACE(uop, oparg, operand, target);

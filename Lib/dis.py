@@ -645,8 +645,8 @@ class ArgResolver:
                 argrepr = _intrinsic_2_descs[arg]
             elif deop in (CALL, INSTRUMENTED_CALL):
                 argval = arg >> 1
-                if arg & 1:
-                    argrepr = f"{argval} + skip_pending"
+                if not (arg & 1):
+                    argrepr = f"{argval} + no_interrupt"
                 elif argval:
                     argrepr = str(argval)
             elif deop == LOAD_COMMON_CONSTANT:

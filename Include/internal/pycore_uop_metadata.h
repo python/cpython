@@ -37,6 +37,7 @@ extern const uint16_t _PyUop_Uncached[MAX_UOP_REGS_ID+1];
 const uint32_t _PyUop_Flags[MAX_UOP_ID+1] = {
     [_NOP] = HAS_PURE_FLAG,
     [_CHECK_PERIODIC] = HAS_EVAL_BREAK_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
+    [_CHECK_PERIODIC_IF_INTERRUPTIBLE] = HAS_ARG_FLAG | HAS_EVAL_BREAK_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
     [_CHECK_PERIODIC_IF_NOT_YIELD_FROM] = HAS_ARG_FLAG | HAS_EVAL_BREAK_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
     [_RESUME_CHECK] = HAS_DEOPT_FLAG,
     [_LOAD_FAST_CHECK] = HAS_ARG_FLAG | HAS_LOCAL_FLAG | HAS_ERROR_FLAG,
@@ -455,6 +456,15 @@ const _PyUopCachingInfo _PyUop_Caching[MAX_UOP_ID+1] = {
         .best = { 0, 0, 0, 0 },
         .entries = {
             { 0, 0, _CHECK_PERIODIC_r00 },
+            { -1, -1, -1 },
+            { -1, -1, -1 },
+            { -1, -1, -1 },
+        },
+    },
+    [_CHECK_PERIODIC_IF_INTERRUPTIBLE] = {
+        .best = { 0, 0, 0, 0 },
+        .entries = {
+            { 0, 0, _CHECK_PERIODIC_IF_INTERRUPTIBLE_r00 },
             { -1, -1, -1 },
             { -1, -1, -1 },
             { -1, -1, -1 },
@@ -3870,6 +3880,7 @@ const uint16_t _PyUop_Uncached[MAX_UOP_REGS_ID+1] = {
     [_NOP_r22] = _NOP,
     [_NOP_r33] = _NOP,
     [_CHECK_PERIODIC_r00] = _CHECK_PERIODIC,
+    [_CHECK_PERIODIC_IF_INTERRUPTIBLE_r00] = _CHECK_PERIODIC_IF_INTERRUPTIBLE,
     [_CHECK_PERIODIC_IF_NOT_YIELD_FROM_r00] = _CHECK_PERIODIC_IF_NOT_YIELD_FROM,
     [_RESUME_CHECK_r00] = _RESUME_CHECK,
     [_RESUME_CHECK_r11] = _RESUME_CHECK,
@@ -5041,6 +5052,8 @@ const char *const _PyOpcode_uop_name[MAX_UOP_REGS_ID+1] = {
     [_CHECK_PEP_523_r33] = "_CHECK_PEP_523_r33",
     [_CHECK_PERIODIC] = "_CHECK_PERIODIC",
     [_CHECK_PERIODIC_r00] = "_CHECK_PERIODIC_r00",
+    [_CHECK_PERIODIC_IF_INTERRUPTIBLE] = "_CHECK_PERIODIC_IF_INTERRUPTIBLE",
+    [_CHECK_PERIODIC_IF_INTERRUPTIBLE_r00] = "_CHECK_PERIODIC_IF_INTERRUPTIBLE_r00",
     [_CHECK_PERIODIC_IF_NOT_YIELD_FROM] = "_CHECK_PERIODIC_IF_NOT_YIELD_FROM",
     [_CHECK_PERIODIC_IF_NOT_YIELD_FROM_r00] = "_CHECK_PERIODIC_IF_NOT_YIELD_FROM_r00",
     [_CHECK_RECURSION_LIMIT] = "_CHECK_RECURSION_LIMIT",
@@ -6107,6 +6120,8 @@ int _PyUop_num_popped(int opcode, int oparg)
             return 0;
         case _CHECK_PERIODIC:
             return 0;
+        case _CHECK_PERIODIC_IF_INTERRUPTIBLE:
+            return 0;
         case _CHECK_PERIODIC_IF_NOT_YIELD_FROM:
             return 0;
         case _RESUME_CHECK:
@@ -6192,7 +6207,7 @@ int _PyUop_num_popped(int opcode, int oparg)
         case _POP_TOP_UNICODE:
             return 1;
         case _POP_TOP_OPARG:
-            return (CALL_ARGCOUNT(oparg));
+            return (oparg >> 1);
         case _PUSH_NULL:
             return 0;
         case _END_FOR:
@@ -6608,7 +6623,7 @@ int _PyUop_num_popped(int opcode, int oparg)
         case _MAYBE_EXPAND_METHOD:
             return 0;
         case _PY_FRAME_GENERAL:
-            return 2 + (CALL_ARGCOUNT(oparg));
+            return 2 + (oparg >> 1);
         case _CHECK_FUNCTION_VERSION:
             return 0;
         case _CHECK_FUNCTION_VERSION_INLINE:
@@ -6620,7 +6635,7 @@ int _PyUop_num_popped(int opcode, int oparg)
         case _CHECK_IS_NOT_PY_CALLABLE:
             return 0;
         case _CALL_NON_PY_GENERAL:
-            return 2 + (CALL_ARGCOUNT(oparg));
+            return 2 + (oparg >> 1);
         case _CHECK_CALL_BOUND_METHOD_EXACT_ARGS:
             return 0;
         case _INIT_CALL_BOUND_METHOD_EXACT_ARGS:
@@ -6634,17 +6649,17 @@ int _PyUop_num_popped(int opcode, int oparg)
         case _CHECK_RECURSION_REMAINING:
             return 0;
         case _INIT_CALL_PY_EXACT_ARGS_0:
-            return 2 + (CALL_ARGCOUNT(oparg));
+            return 2 + (oparg >> 1);
         case _INIT_CALL_PY_EXACT_ARGS_1:
-            return 2 + (CALL_ARGCOUNT(oparg));
+            return 2 + (oparg >> 1);
         case _INIT_CALL_PY_EXACT_ARGS_2:
-            return 2 + (CALL_ARGCOUNT(oparg));
+            return 2 + (oparg >> 1);
         case _INIT_CALL_PY_EXACT_ARGS_3:
-            return 2 + (CALL_ARGCOUNT(oparg));
+            return 2 + (oparg >> 1);
         case _INIT_CALL_PY_EXACT_ARGS_4:
-            return 2 + (CALL_ARGCOUNT(oparg));
+            return 2 + (oparg >> 1);
         case _INIT_CALL_PY_EXACT_ARGS:
-            return 2 + (CALL_ARGCOUNT(oparg));
+            return 2 + (oparg >> 1);
         case _PUSH_FRAME:
             return 1;
         case _GUARD_NOS_NULL:
@@ -6670,7 +6685,7 @@ int _PyUop_num_popped(int opcode, int oparg)
         case _ALLOCATE_OBJECT:
             return 0;
         case _CREATE_INIT_FRAME:
-            return 2 + (CALL_ARGCOUNT(oparg));
+            return 2 + (oparg >> 1);
         case _EXIT_INIT_CHECK:
             return 1;
         case _GUARD_CALLABLE_BUILTIN_CLASS:
@@ -6680,7 +6695,7 @@ int _PyUop_num_popped(int opcode, int oparg)
         case _GUARD_CALLABLE_BUILTIN_O:
             return 0;
         case _CALL_BUILTIN_O:
-            return 2 + (CALL_ARGCOUNT(oparg));
+            return 2 + (oparg >> 1);
         case _GUARD_CALLABLE_BUILTIN_FAST:
             return 0;
         case _CALL_BUILTIN_FAST:
@@ -6704,11 +6719,11 @@ int _PyUop_num_popped(int opcode, int oparg)
         case _GUARD_CALLABLE_METHOD_DESCRIPTOR_O:
             return 0;
         case _CALL_METHOD_DESCRIPTOR_O:
-            return 2 + (CALL_ARGCOUNT(oparg));
+            return 2 + (oparg >> 1);
         case _CHECK_RECURSION_LIMIT:
             return 0;
         case _CALL_METHOD_DESCRIPTOR_O_INLINE:
-            return 1 + (CALL_ARGCOUNT(oparg));
+            return 1 + (oparg >> 1);
         case _GUARD_CALLABLE_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS:
             return 0;
         case _CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS:
@@ -6718,9 +6733,9 @@ int _PyUop_num_popped(int opcode, int oparg)
         case _GUARD_CALLABLE_METHOD_DESCRIPTOR_NOARGS:
             return 0;
         case _CALL_METHOD_DESCRIPTOR_NOARGS:
-            return 2 + (CALL_ARGCOUNT(oparg));
+            return 2 + (oparg >> 1);
         case _CALL_METHOD_DESCRIPTOR_NOARGS_INLINE:
-            return 1 + (CALL_ARGCOUNT(oparg));
+            return 1 + (oparg >> 1);
         case _GUARD_CALLABLE_METHOD_DESCRIPTOR_FAST:
             return 0;
         case _CALL_METHOD_DESCRIPTOR_FAST:

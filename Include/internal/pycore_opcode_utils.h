@@ -87,10 +87,6 @@ extern "C" {
 #define RESUME_OPARG_LOCATION_MASK 0x7
 #define RESUME_OPARG_DEPTH1_MASK 0x8
 
-#define CALL_OPARG_SKIP_PENDING_MASK 0x1
-#define CALL_ARGCOUNT(oparg) ((oparg) >> 1)
-#define CALL_OPARG(argcount, skip) (((argcount) << 1) | (skip))
-
 #define GET_ITER_YIELD_FROM 1
 #define GET_ITER_YIELD_FROM_NO_CHECK 2
 #define GET_ITER_YIELD_FROM_CORO_CHECK 3

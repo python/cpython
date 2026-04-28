@@ -296,7 +296,7 @@ Known values:
     Python 3.15a8 3663 (Merge GET_ITER and GET_YIELD_FROM_ITER. Modify SEND to make it a bit more like FOR_ITER)
     Python 3.15a8 3664 (Fix __qualname__ for __annotate__ functions)
     Python 3.15a8 3665 (Add FOR_ITER_VIRTUAL and GET_ITER specializations)
-    Python 3.15a9 3666 (Pack CALL oparg as (argcount<<1) | skip_periodic; gh-148874)
+    Python 3.15a9 3666 (Pack CALL oparg as (argcount<<1) | interruptible; gh-148874)
 
 
     Python 3.16 will start with 3700

@@ -505,13 +505,11 @@ do {                                                   \
 #define IS_PEP523_HOOKED(tstate) (tstate->interp->eval_frame != NULL)
 
 static inline int
-check_periodics(PyThreadState *tstate, int skip_pending) {
+check_periodics(PyThreadState *tstate) {
     _Py_CHECK_EMSCRIPTEN_SIGNALS_PERIODICALLY();
     QSBR_QUIESCENT_STATE(tstate);
     if (_Py_atomic_load_uintptr_relaxed(&tstate->eval_breaker) & _PY_EVAL_EVENTS_MASK) {
-        if (!skip_pending) {
-            return _Py_HandlePending(tstate);
-        }
+        return _Py_HandlePending(tstate);
     }
     return 0;
 }
