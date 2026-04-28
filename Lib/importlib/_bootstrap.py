@@ -446,7 +446,6 @@ class _HierarchicalLockManager:
         self._locks = []
 
     def __enter__(self):
-        # Acquire locks for all modules in hierarchy order (parent to child)
         try:
             for module_name in self._module_chain:
                 # Only acquire lock if module is not already fully loaded
@@ -478,7 +477,6 @@ class _HierarchicalLockManager:
         return self
 
     def __exit__(self, *args, **kwargs):
-        # Release locks in reverse order (child to parent)
         for module_name, lock in reversed(self._locks):
             lock.release()
         self._locks.clear()
@@ -1337,7 +1335,6 @@ def _find_and_load(name, import_):
     if (module is _NEEDS_LOADING or
         getattr(getattr(module, "__spec__", None), "_initializing", False)):
 
-        # Use hierarchical locking for nested modules to prevent deadlocks
         if '.' in name:
             lock_manager = _HierarchicalLockManager(name)
         else:

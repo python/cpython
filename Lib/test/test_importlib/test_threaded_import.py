@@ -380,7 +380,6 @@ raise RuntimeError("Intentional import failure")
 
         # Run multiple times to increase chance of hitting race condition
         for i in range(10):
-            # Clear modules between runs
             for mod in ['hier_deadlock_pkg', 'hier_deadlock_pkg.subpackage',
                        'hier_deadlock_pkg.subpackage.module']:
                 sys.modules.pop(mod, None)
