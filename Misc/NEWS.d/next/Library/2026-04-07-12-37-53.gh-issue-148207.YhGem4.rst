@@ -1,0 +1,3 @@
+:class:`typing.TypeVarTuple` now accepts ``bound``, ``covariant``,
+``contravariant``, and ``infer_variance`` parameters, matching the interface
+of :class:`typing.TypeVar` and :class:`typing.ParamSpec`.
