@@ -1294,8 +1294,8 @@ as internal buffering of data.
 
       This function is intended for low-level I/O.  For normal usage, use the
       built-in function :func:`open`, which returns a :term:`file object` with
-      :meth:`~file.read` and :meth:`~file.write` methods (and many more).  To
-      wrap a file descriptor in a file object, use :func:`fdopen`.
+      :meth:`~io.BufferedIOBase.read` and :meth:`~io.BufferedIOBase.write` methods.
+      To wrap a file descriptor in a file object, use :func:`fdopen`.
 
    .. versionchanged:: 3.3
       Added the *dir_fd* parameter.
@@ -1670,7 +1670,7 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
       descriptor as returned by :func:`os.open` or :func:`pipe`.  To read a
       "file object" returned by the built-in function :func:`open` or by
       :func:`popen` or :func:`fdopen`, or :data:`sys.stdin`, use its
-      :meth:`~file.read` or :meth:`~file.readline` methods.
+      :meth:`~io.TextIOBase.read` or :meth:`~io.IOBase.readline` methods.
 
    .. versionchanged:: 3.5
       If the system call is interrupted and the signal handler does not raise an
@@ -1905,7 +1905,7 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
       descriptor as returned by :func:`os.open` or :func:`pipe`.  To write a "file
       object" returned by the built-in function :func:`open` or by :func:`popen` or
       :func:`fdopen`, or :data:`sys.stdout` or :data:`sys.stderr`, use its
-      :meth:`~file.write` method.
+      :meth:`~io.TextIOBase.write` method.
 
    .. versionchanged:: 3.5
       If the system call is interrupted and the signal handler does not raise an
@@ -2408,6 +2408,10 @@ features:
 
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object`.
+
+   .. versionchanged:: 3.15
+      ``os.listdir(-1)`` now fails with ``OSError(errno.EBADF)`` rather than
+      listing the current directory.
 
 
 .. function:: listdrives()
@@ -2938,6 +2942,10 @@ features:
 
    .. versionchanged:: 3.7
       Added support for :ref:`file descriptors <path_fd>` on Unix.
+
+   .. versionchanged:: 3.15
+      ``os.scandir(-1)`` now fails with ``OSError(errno.EBADF)`` rather than
+      listing the current directory.
 
 
 .. class:: DirEntry
@@ -4574,6 +4582,10 @@ These functions are all available on Linux only.
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object`.
 
+   .. versionchanged:: 3.15
+      ``os.listxattr(-1)`` now fails with ``OSError(errno.EBADF)`` rather than
+      listing extended attributes of the current directory.
+
 
 .. function:: removexattr(path, attribute, *, follow_symlinks=True)
 
@@ -4708,7 +4720,7 @@ to be ignored.
    The current process is replaced immediately. Open file objects and
    descriptors are not flushed, so if there may be data buffered
    on these open files, you should flush them using
-   :func:`sys.stdout.flush` or :func:`os.fsync` before calling an
+   :func:`~io.IOBase.flush` or :func:`os.fsync` before calling an
    :func:`exec\* <execl>` function.
 
    The "l" and "v" variants of the :func:`exec\* <execl>` functions differ in how
@@ -5098,9 +5110,8 @@ written in Python, such as a mail server's external command delivery program.
       Use :class:`subprocess.Popen` or :func:`subprocess.run` to
       control options like encodings.
 
-   .. deprecated:: 3.14
-      The function is :term:`soft deprecated` and should no longer be used to
-      write new code. The :mod:`subprocess` module is recommended instead.
+   .. soft-deprecated:: 3.14
+      The :mod:`subprocess` module is recommended instead.
 
 
 .. function:: posix_spawn(path, argv, env, *, file_actions=None, \
@@ -5328,9 +5339,8 @@ written in Python, such as a mail server's external command delivery program.
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object`.
 
-   .. deprecated:: 3.14
-      These functions are :term:`soft deprecated` and should no longer be used
-      to write new code. The :mod:`subprocess` module is recommended instead.
+   .. soft-deprecated:: 3.14
+      The :mod:`subprocess` module is recommended instead.
 
 
 .. data:: P_NOWAIT

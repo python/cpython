@@ -1,3 +1,4 @@
+import ast
 import dis
 import gc
 from itertools import combinations, product
@@ -1131,6 +1132,53 @@ class TestMarkingVariablesAsUnKnown(BytecodeTestCase):
 
 class DirectCfgOptimizerTests(CfgOptimizationTestCase):
 
+    def test_optimize_cfg_const_index_out_of_range(self):
+        insts = [
+            ('LOAD_CONST', 2, 0),
+            ('RETURN_VALUE', None, 0),
+        ]
+        seq = self.seq_from_insts(insts)
+        with self.assertRaisesRegex(ValueError, "out of range"):
+            _testinternalcapi.optimize_cfg(seq, [0, 1], 0)
+
+    def test_optimize_cfg_consts_must_be_list(self):
+        insts = [
+            ('LOAD_CONST', 0, 0),
+            ('RETURN_VALUE', None, 0),
+        ]
+        seq = self.seq_from_insts(insts)
+        with self.assertRaisesRegex(TypeError, "consts must be a list"):
+            _testinternalcapi.optimize_cfg(seq, (0,), 0)
+
+    def test_compiler_codegen_metadata_consts_roundtrips_optimize_cfg(self):
+        tree = ast.parse("x = (1, 2)", mode="exec", optimize=1)
+        insts, meta = _testinternalcapi.compiler_codegen(tree, "<s>", 0)
+        consts = meta["consts"]
+        self.assertIsInstance(consts, list)
+        _testinternalcapi.optimize_cfg(insts, consts, 0)
+
+    def test_compiler_codegen_consts_include_none_required_for_implicit_return(self):
+        # Module "pass" only needs the const table entry for None once
+        # _PyCodegen_AddReturnAtEnd runs. If metadata["consts"] were taken
+        # before that, the list would not match LOAD_CONST opargs (here: 0
+        # for None), and optimize_cfg would read out of range.
+        tree = ast.parse("pass", mode="exec", optimize=1)
+        insts, meta = _testinternalcapi.compiler_codegen(tree, "<s>", 0)
+        consts = meta["consts"]
+        self.assertEqual(consts, [None])
+
+        load_const = opcode.opmap["LOAD_CONST"]
+        self.assertEqual(
+            [t[1] for t in insts.get_instructions() if t[0] == load_const],
+            [0],
+        )
+
+        # As if consts were snapshotted before AddReturnAtEnd: still LOAD_CONST 0, no row.
+        with self.assertRaisesRegex(ValueError, "out of range"):
+            _testinternalcapi.optimize_cfg(insts, [], 0)
+
+        _testinternalcapi.optimize_cfg(insts, list(consts), 0)
+
     def cfg_optimization_test(self, insts, expected_insts,
                               consts=None, expected_consts=None,
                               nlocals=0):
@@ -1470,7 +1518,7 @@ class DirectCfgOptimizerTests(CfgOptimizationTestCase):
             ('LOAD_SMALL_INT', 1, 0),
             ('LOAD_SMALL_INT', 2, 0),
             ('BUILD_LIST', 2, 0),
-            ('GET_ITER', None, 0),
+            ('GET_ITER', 0, 0),
             start := self.Label(),
             ('FOR_ITER', end := self.Label(), 0),
             ('STORE_FAST', 0, 0),
@@ -1483,7 +1531,7 @@ class DirectCfgOptimizerTests(CfgOptimizationTestCase):
         ]
         after = [
             ('LOAD_CONST', 1, 0),
-            ('GET_ITER', None, 0),
+            ('GET_ITER', 0, 0),
             start := self.Label(),
             ('FOR_ITER', end := self.Label(), 0),
             ('STORE_FAST', 0, 0),
@@ -1501,7 +1549,7 @@ class DirectCfgOptimizerTests(CfgOptimizationTestCase):
             ('LOAD_SMALL_INT', 1, 0),
             ('LOAD_NAME', 0, 0),
             ('BUILD_LIST', 2, 0),
-            ('GET_ITER', None, 0),
+            ('GET_ITER', 0, 0),
             start := self.Label(),
             ('FOR_ITER', end := self.Label(), 0),
             ('STORE_FAST', 0, 0),
@@ -1516,7 +1564,7 @@ class DirectCfgOptimizerTests(CfgOptimizationTestCase):
             ('LOAD_SMALL_INT', 1, 0),
             ('LOAD_NAME', 0, 0),
             ('BUILD_TUPLE', 2, 0),
-            ('GET_ITER', None, 0),
+            ('GET_ITER', 0, 0),
             start := self.Label(),
             ('FOR_ITER', end := self.Label(), 0),
             ('STORE_FAST', 0, 0),
@@ -1535,7 +1583,7 @@ class DirectCfgOptimizerTests(CfgOptimizationTestCase):
             ('LOAD_SMALL_INT', 1, 0),
             ('LOAD_SMALL_INT', 2, 0),
             ('BUILD_SET', 2, 0),
-            ('GET_ITER', None, 0),
+            ('GET_ITER', 0, 0),
             start := self.Label(),
             ('FOR_ITER', end := self.Label(), 0),
             ('STORE_FAST', 0, 0),
@@ -1548,7 +1596,7 @@ class DirectCfgOptimizerTests(CfgOptimizationTestCase):
         ]
         after = [
             ('LOAD_CONST', 1, 0),
-            ('GET_ITER', None, 0),
+            ('GET_ITER', 0, 0),
             start := self.Label(),
             ('FOR_ITER', end := self.Label(), 0),
             ('STORE_FAST', 0, 0),
@@ -1567,7 +1615,7 @@ class DirectCfgOptimizerTests(CfgOptimizationTestCase):
             ('LOAD_SMALL_INT', 1, 0),
             ('LOAD_NAME', 0, 0),
             ('BUILD_SET', 2, 0),
-            ('GET_ITER', None, 0),
+            ('GET_ITER', 0, 0),
             start := self.Label(),
             ('FOR_ITER', end := self.Label(), 0),
             ('STORE_FAST', 0, 0),
@@ -2356,7 +2404,7 @@ class DirectCfgOptimizerTests(CfgOptimizationTestCase):
             ("LOAD_FAST", 1, 4),
             ("LIST_EXTEND", 1, 5),
             ("CALL_INTRINSIC_1", INTRINSIC_LIST_TO_TUPLE, 6),
-            ("GET_ITER", None, 7),
+            ("GET_ITER", 0, 7),
             top := self.Label(),
             ("FOR_ITER", end := self.Label(), 8),
             ("STORE_FAST", 2, 9),
@@ -2374,7 +2422,7 @@ class DirectCfgOptimizerTests(CfgOptimizationTestCase):
             ("LOAD_FAST_BORROW", 1, 4),
             ("LIST_EXTEND", 1, 5),
             ("NOP", None, 6),  # ("CALL_INTRINSIC_1", INTRINSIC_LIST_TO_TUPLE, 6),
-            ("GET_ITER", None, 7),
+            ("GET_ITER", 0, 7),
             top := self.Label(),
             ("FOR_ITER", end := self.Label(), 8),
             ("STORE_FAST", 2, 9),
@@ -2677,20 +2725,20 @@ class OptimizeLoadFastTestCase(DirectCfgOptimizerTests):
         self.cfg_optimization_test(insts, expected, consts=[None])
 
     def test_get_yield_from_iter(self):
-        # GET_YIELD_FROM_ITER may leave its operand on the stack
         insts = [
             ("LOAD_FAST", 0, 1),
-            ("GET_YIELD_FROM_ITER", None, 2),
-            ("LOAD_CONST", 0, 3),
+            ("GET_ITER", 1, 2),
+            ("PUSH_NULL", None, 3),
+            ("LOAD_CONST", 0, 4),
             send := self.Label(),
-            ("SEND", end := self.Label(), 5),
-            ("YIELD_VALUE", 1, 6),
-            ("RESUME", 2, 7),
-            ("JUMP", send, 8),
+            ("SEND", end := self.Label(), 6),
+            ("YIELD_VALUE", 1, 7),
+            ("RESUME", 2, 8),
+            ("JUMP", send, 9),
             end,
-            ("END_SEND", None, 9),
-            ("LOAD_CONST", 0, 10),
-            ("RETURN_VALUE", None, 11),
+            ("END_SEND", None, 10),
+            ("LOAD_CONST", 0, 11),
+            ("RETURN_VALUE", None, 12),
         ]
         self.cfg_optimization_test(insts, insts, consts=[None])
 

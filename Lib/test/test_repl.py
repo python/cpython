@@ -5,6 +5,7 @@ import select
 import subprocess
 import sys
 import unittest
+from contextlib import contextmanager
 from functools import partial
 from textwrap import dedent
 from test import support
@@ -65,6 +66,19 @@ def spawn_repl(*args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, custom=F
 
 
 spawn_asyncio_repl = partial(spawn_repl, "-m", "asyncio", custom=True)
+
+
+@contextmanager
+def temp_pythonstartup(*, source: str, histfile: str = ".pythonhist"):
+    """Create environment variables for a PYTHONSTARTUP script in a temporary directory."""
+    with os_helper.temp_dir() as tmpdir:
+        filename = os.path.join(tmpdir, "pythonstartup.py")
+        with open(filename, "w") as f:
+            f.write(source)
+        yield {
+            "PYTHONSTARTUP": filename,
+            "PYTHON_HISTORY": os.path.join(tmpdir, histfile)
+        }
 
 
 def run_on_interactive_mode(source):
@@ -276,8 +290,6 @@ class TestInteractiveInterpreter(unittest.TestCase):
         """) % script
         self.assertIn(expected, output)
 
-
-
     def test_runsource_show_syntax_error_location(self):
         user_input = dedent("""def f(x, x): ...
                             """)
@@ -426,6 +438,13 @@ class TestAsyncioREPL(unittest.TestCase):
         p = spawn_asyncio_repl()
         p.stdin.write(user_input)
         user_input2 = "async def set_var(): var.set('ok')\n"
+        try:
+            import _pyrepl # noqa: F401
+        except ModuleNotFoundError:
+            # If we're going to be forced into the regular REPL, then we need an
+            # extra newline here. Omit it by default to catch any breakage to
+            # the new REPL's behavior.
+            user_input2 += "\n"
         p.stdin.write(user_input2)
         user_input3 = "await set_var()\n"
         p.stdin.write(user_input3)
@@ -441,6 +460,33 @@ class TestAsyncioREPL(unittest.TestCase):
         output = kill_python(p)
         self.assertEqual(p.returncode, 0)
         self.assertEqual(output[:3], ">>>")
+
+    @support.force_not_colorized
+    @support.subTests(
+        ("startup_code", "expected_error"),
+        [
+            ("some invalid syntax\n", "SyntaxError: invalid syntax"),
+            ("1/0\n", "ZeroDivisionError: division by zero"),
+        ],
+    )
+    def test_pythonstartup_failure(self, startup_code, expected_error):
+        startup_env = self.enterContext(
+            temp_pythonstartup(source=startup_code, histfile=".asyncio_history"))
+
+        p = spawn_repl(
+            "-qm", "asyncio",
+            env=os.environ | startup_env,
+            isolated=False,
+            custom=True)
+        p.stdin.write("print('user code', 'executed')\n")
+        output = kill_python(p)
+        self.assertEqual(p.returncode, 0)
+
+        tb_hint = f'File "{startup_env["PYTHONSTARTUP"]}", line 1'
+        self.assertIn(tb_hint, output)
+        self.assertIn(expected_error, output)
+
+        self.assertIn("user code executed", output)
 
 
 if __name__ == "__main__":
