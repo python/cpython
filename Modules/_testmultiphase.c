@@ -1055,7 +1055,7 @@ PyModExport__test_from_modexport(void)
         PySlot_DATA(Py_mod_abi, &abi_info),
         PySlot_DATA(Py_mod_name, "_test_from_modexport"),
         PySlot_DATA(Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED),
-        PySlot_DATA(Py_mod_gil, Py_MOD_GIL_USED),
+        PySlot_DATA(Py_mod_gil, Py_MOD_GIL_NOT_USED),
         PySlot_END,
     };
     return slots;

@@ -589,10 +589,20 @@ module_from_null_slot(PyObject* Py_UNUSED(module), PyObject *args)
     if (!PyArg_ParseTuple(args, "lO", &slot_number, &spec)) {
         return NULL;
     }
+    uint16_t maybe_gil_slot = Py_mod_gil;
+    if ((slot_number == 4) || (slot_number == 87)) {
+        // Do not repeat the GIL slot
+        maybe_gil_slot = Py_slot_invalid;
+    }
     return PyModule_FromSlotsAndSpec((PySlot[]) {
         PySlot_DATA(Py_mod_abi, &abi_info),
         PySlot_DATA(Py_mod_name, "mymod"),
         PySlot_PTR_STATIC((uint16_t)slot_number, NULL),
+        {
+            .sl_id=maybe_gil_slot,
+            .sl_flags=PySlot_OPTIONAL,
+            .sl_ptr=Py_MOD_GIL_NOT_USED,
+        },
         PySlot_END
     }, spec);
 }
