@@ -69,6 +69,8 @@ Summary -- Release highlights
   <whatsnew315-lazy-imports>`
 * :pep:`814`: :ref:`Add frozendict built-in type
   <whatsnew315-frozendict>`
+* :pep:`661`: :ref:`Add sentinel built-in type
+  <whatsnew315-sentinel>`
 * :pep:`799`: :ref:`A dedicated profiling package for organizing Python
   profiling tools <whatsnew315-profiling-package>`
 * :pep:`799`: :ref:`Tachyon: High frequency statistical sampling profiler
@@ -245,6 +247,20 @@ to accept also other mapping types such as :class:`~types.MappingProxyType`.
 .. seealso:: :pep:`814` for the full specification and rationale.
 
 (Contributed by Victor Stinner and Donghee Na in :gh:`141510`.)
+
+
+.. _whatsnew315-sentinel:
+
+:pep:`661`: Add sentinel built-in type
+--------------------------------------
+
+A new :class:`sentinel` type is added to the :mod:`builtins` module for
+creating unique sentinel values with a concise representation.  Sentinel
+objects preserve identity when copied, support use in type expressions with
+the ``|`` operator, and can be pickled when they are importable by module and
+name.
+
+(PEP by Tal Einat; contributed by Jelle Zijlstra in :gh:`148829`.)
 
 
 .. _whatsnew315-profiling-package:
