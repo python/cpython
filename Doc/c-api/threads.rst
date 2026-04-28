@@ -551,7 +551,7 @@ will hang the process during interpreter finalization (see
    .. versionadded:: 3.4
 
    .. soft-deprecated:: 3.15
-      Use :c:expr:`PyThreadState_GetUnchecked() != NULL` instead.
+      Use ``PyThreadState_GetUnchecked() != NULL`` instead.
 
 
 .. _fork-and-threads:
@@ -905,7 +905,7 @@ pointer and a void pointer argument.
       possible.  If the main thread is busy executing a system call,
       *func* won't be called before the system call returns.  This
       function is generally **not** suitable for calling Python code from
-      arbitrary C threads.  Instead, use the :ref:`PyGILState API<gilstate>`.
+      arbitrary C threads.  Instead, use :c:func:`PyThreadState_EnsureFromView`.
 
    .. versionadded:: 3.1
 
