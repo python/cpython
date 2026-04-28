@@ -19,13 +19,13 @@ are always available.  They are listed here in alphabetical order.
 | |  :func:`ascii`        | |  :func:`filter`     | |  :func:`map`        | |  **S**                |
 | |                       | |  :func:`float`      | |  :func:`max`        | |  |func-set|_          |
 | |  **B**                | |  :func:`format`     | |  |func-memoryview|_ | |  :func:`setattr`      |
-| |  :func:`bin`          | |  |func-frozenset|_  | |  :func:`min`        | |  :func:`slice`        |
-| |  :func:`bool`         | |                     | |                     | |  :func:`sorted`       |
-| |  :func:`breakpoint`   | |  **G**              | |  **N**              | |  :func:`staticmethod` |
-| |  |func-bytearray|_    | |  :func:`getattr`    | |  :func:`next`       | |  |func-str|_          |
-| |  |func-bytes|_        | |  :func:`globals`    | |                     | |  :func:`sum`          |
-| |                       | |                     | |  **O**              | |  :func:`super`        |
-| |  **C**                | |  **H**              | |  :func:`object`     | |                       |
+| |  :func:`bin`          | |  |func-frozenset|_  | |  :func:`min`        | |  :func:`sentinel`     |
+| |  :func:`bool`         | |                     | |                     | |  :func:`slice`        |
+| |  :func:`breakpoint`   | |  **G**              | |  **N**              | |  :func:`sorted`       |
+| |  |func-bytearray|_    | |  :func:`getattr`    | |  :func:`next`       | |  :func:`staticmethod` |
+| |  |func-bytes|_        | |  :func:`globals`    | |                     | |  |func-str|_          |
+| |                       | |                     | |  **O**              | |  :func:`sum`          |
+| |  **C**                | |  **H**              | |  :func:`object`     | |  :func:`super`        |
 | |  :func:`callable`     | |  :func:`hasattr`    | |  :func:`oct`        | |  **T**                |
 | |  :func:`chr`          | |  :func:`hash`       | |  :func:`open`       | |  |func-tuple|_        |
 | |  :func:`classmethod`  | |  :func:`help`       | |  :func:`ord`        | |  :func:`type`         |
@@ -594,7 +594,7 @@ are always available.  They are listed here in alphabetical order.
 
    :param globals:
       The global namespace (default: ``None``).
-   :type globals: :class:`dict` | ``None``
+   :type globals: :class:`dict` | :class:`frozendict` | ``None``
 
    :param locals:
       The local namespace (default: ``None``).
@@ -606,17 +606,18 @@ are always available.  They are listed here in alphabetical order.
    .. warning::
 
       This function executes arbitrary code. Calling it with
-      user-supplied input may lead to security vulnerabilities.
+      untrusted user-supplied input will lead to security vulnerabilities.
 
    The *source* argument is parsed and evaluated as a Python expression
    (technically speaking, a condition list) using the *globals* and *locals*
    mappings as global and local namespace.  If the *globals* dictionary is
    present and does not contain a value for the key ``__builtins__``, a
    reference to the dictionary of the built-in module :mod:`builtins` is
-   inserted under that key before *source* is parsed.  That way you can
-   control what builtins are available to the executed code by inserting your
-   own ``__builtins__`` dictionary into *globals* before passing it to
-   :func:`eval`.  If the *locals* mapping is omitted it defaults to the
+   inserted under that key before *source* is parsed.
+   Overriding ``__builtins__`` can be used to restrict or change the available
+   names, but this is **not** a security mechanism: the executed code can
+   still access all builtins.
+   If the *locals* mapping is omitted it defaults to the
    *globals* dictionary.  If both mappings are omitted, the source is
    executed with the *globals* and *locals* in the environment where
    :func:`eval` is called.  Note, *eval()* will only have access to the
@@ -643,7 +644,7 @@ are always available.  They are listed here in alphabetical order.
    If the given source is a string, then leading and trailing spaces and tabs
    are stripped.
 
-   See :func:`ast.literal_eval` for a function that can safely evaluate strings
+   See :func:`ast.literal_eval` for a function to evaluate strings
    with expressions containing only literals.
 
    .. audit-event:: exec code_object eval
@@ -660,6 +661,10 @@ are always available.  They are listed here in alphabetical order.
       The semantics of the default *locals* namespace have been adjusted as
       described for the :func:`locals` builtin.
 
+   .. versionchanged:: 3.15
+
+      *globals* can now be a :class:`frozendict`.
+
 .. index:: pair: built-in function; exec
 
 .. function:: exec(source, /, globals=None, locals=None, *, closure=None)
@@ -667,7 +672,7 @@ are always available.  They are listed here in alphabetical order.
    .. warning::
 
       This function executes arbitrary code. Calling it with
-      user-supplied input may lead to security vulnerabilities.
+      untrusted user-supplied input will lead to security vulnerabilities.
 
    This function supports dynamic execution of Python code. *source* must be
    either a string or a code object.  If it is a string, the string is parsed as
@@ -698,9 +703,10 @@ are always available.  They are listed here in alphabetical order.
 
    If the *globals* dictionary does not contain a value for the key
    ``__builtins__``, a reference to the dictionary of the built-in module
-   :mod:`builtins` is inserted under that key.  That way you can control what
-   builtins are available to the executed code by inserting your own
-   ``__builtins__`` dictionary into *globals* before passing it to :func:`exec`.
+   :mod:`builtins` is inserted under that key.
+   Overriding ``__builtins__`` can be used to restrict or change the available
+   names, but this is **not** a security mechanism: the executed code can
+   still access all builtins.
 
    The *closure* argument specifies a closure--a tuple of cellvars.
    It's only valid when the *object* is a code object containing
@@ -736,6 +742,10 @@ are always available.  They are listed here in alphabetical order.
 
       The semantics of the default *locals* namespace have been adjusted as
       described for the :func:`locals` builtin.
+
+   .. versionchanged:: 3.15
+
+      *globals* can now be a :class:`frozendict`.
 
 
 .. function:: filter(function, iterable, /)
@@ -1744,7 +1754,7 @@ are always available.  They are listed here in alphabetical order.
             self.age = age
 
          def __repr__(self):
-            return f"Person('{self.name}', {self.age})"
+            return f"Person({self.name!r}, {self.age!r})"
 
 
 .. function:: reversed(object, /)
@@ -1815,6 +1825,61 @@ are always available.  They are listed here in alphabetical order.
       compilation time, one must manually mangle a private attribute's
       (attributes with two leading underscores) name in order to set it with
       :func:`setattr`.
+
+
+.. class:: sentinel(name, /)
+
+   Return a new unique sentinel object.  *name* must be a :class:`str`, and is
+   used as the returned object's representation::
+
+      >>> MISSING = sentinel("MISSING")
+      >>> MISSING
+      MISSING
+
+   Sentinel objects are truthy and compare equal only to themselves.  They are
+   intended to be compared with the :keyword:`is` operator.
+
+   Shallow and deep copies of a sentinel object return the object itself.
+
+   Sentinels are conventionally assigned to a variable with a matching name.
+   Sentinels defined in this way can be used in :term:`type hints <type hint>`::
+
+      MISSING = sentinel("MISSING")
+
+      def next_value(default: int | MISSING = MISSING):
+          ...
+
+   Sentinel objects support the :ref:`| <bitwise>` operator for use in type expressions.
+
+   :mod:`Pickling <pickle>` is supported for sentinel objects that are
+   placed in the global scope of a module under a name matching the sentinel's
+   name, and for sentinels placed in class scopes with a name matching the
+   :term:`qualified name` of the sentinel. Other sentinels, such as those
+   defined in a function scope, are not picklable. The identity of the sentinel is preserved
+   after pickling::
+
+      import pickle
+
+      PICKLABLE = sentinel("PICKLABLE")
+
+      assert pickle.loads(pickle.dumps(PICKLABLE)) is PICKLABLE
+
+      class Cls:
+          PICKLABLE = sentinel("Cls.PICKLABLE")
+
+      assert pickle.loads(pickle.dumps(Cls.PICKLABLE)) is Cls.PICKLABLE
+
+   Sentinel objects have the following attributes:
+
+   .. attribute:: __name__
+
+      The sentinel's name.
+
+   .. attribute:: __module__
+
+      The name of the module where the sentinel was created.
+
+   .. versionadded:: next
 
 
 .. class:: slice(stop, /)
@@ -2090,6 +2155,10 @@ are always available.  They are listed here in alphabetical order.
    .. versionchanged:: 3.6
       Subclasses of :class:`!type` which don't override ``type.__new__`` may no
       longer use the one-argument form to get the type of an object.
+
+   .. versionchanged:: 3.15
+
+      *dict* can now be a :class:`frozendict`.
 
 .. function:: vars()
               vars(object, /)

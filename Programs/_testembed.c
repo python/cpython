@@ -1991,6 +1991,35 @@ static int test_init_run_main(void)
 }
 
 
+static int test_init_main(void)
+{
+    PyConfig config;
+    PyConfig_InitPythonConfig(&config);
+
+    configure_init_main(&config);
+    config._init_main = 0;
+    init_from_config_clear(&config);
+
+    assert(Py_IsInitialized() == 0);
+
+    /* sys.stdout don't exist yet: it is created by _Py_InitializeMain() */
+    int res = PyRun_SimpleString(
+        "import sys; "
+        "print('Run Python code before _Py_InitializeMain', "
+               "file=sys.stderr)");
+    if (res < 0) {
+        exit(1);
+    }
+
+    PyStatus status = _Py_InitializeMain();
+    if (PyStatus_Exception(status)) {
+        Py_ExitStatusException(status);
+    }
+
+    return Py_RunMain();
+}
+
+
 static int test_run_main(void)
 {
     PyConfig config;
@@ -2174,6 +2203,52 @@ static int test_init_in_background_thread(void)
         return -1;
     }
     return PyThread_join_thread(handle);
+}
+
+/* gh-146302: Py_IsInitialized() must not return true during site import. */
+static int _initialized_during_site_import = -1;  /* -1 = not observed */
+
+static int hook_check_initialized_on_site_import(
+    const char *event, PyObject *args, void *userData)
+{
+    if (strcmp(event, "import") == 0 && args != NULL) {
+        PyObject *name = PyTuple_GetItem(args, 0);
+        if (name != NULL && PyUnicode_Check(name)
+            && PyUnicode_CompareWithASCIIString(name, "site") == 0
+            && _initialized_during_site_import == -1)
+        {
+            _initialized_during_site_import = Py_IsInitialized();
+        }
+    }
+    return 0;
+}
+
+static int test_isinitialized_false_during_site_import(void)
+{
+    _initialized_during_site_import = -1;
+
+    /* Register audit hook before initialization */
+    PySys_AddAuditHook(hook_check_initialized_on_site_import, NULL);
+
+    _testembed_initialize();
+
+    if (_initialized_during_site_import == -1) {
+        error("audit hook never observed site import");
+        Py_Finalize();
+        return 1;
+    }
+    if (_initialized_during_site_import != 0) {
+        error("Py_IsInitialized() was true during site import");
+        Py_Finalize();
+        return 1;
+    }
+    if (!Py_IsInitialized()) {
+        error("Py_IsInitialized() was false after Py_Initialize()");
+        return 1;
+    }
+
+    Py_Finalize();
+    return 0;
 }
 
 
@@ -2649,6 +2724,7 @@ static struct TestCase TestCases[] = {
     {"test_preinit_parse_argv", test_preinit_parse_argv},
     {"test_preinit_dont_parse_argv", test_preinit_dont_parse_argv},
     {"test_init_run_main", test_init_run_main},
+    {"test_init_main", test_init_main},
     {"test_init_sys_add", test_init_sys_add},
     {"test_init_setpath", test_init_setpath},
     {"test_init_setpath_config", test_init_setpath_config},
@@ -2665,6 +2741,7 @@ static struct TestCase TestCases[] = {
     {"test_init_use_frozen_modules", test_init_use_frozen_modules},
     {"test_init_main_interpreter_settings", test_init_main_interpreter_settings},
     {"test_init_in_background_thread", test_init_in_background_thread},
+    {"test_isinitialized_false_during_site_import", test_isinitialized_false_during_site_import},
 
     // Audit
     {"test_open_code_hook", test_open_code_hook},

@@ -1423,6 +1423,21 @@ class TestSpecializer(TestBase):
         self.assert_specialized(binary_op_add_extend, "BINARY_OP_EXTEND")
         self.assert_no_opcode(binary_op_add_extend, "BINARY_OP")
 
+        def binary_op_add_extend_sequences():
+            l1 = [1, 2]
+            l2 = [None]
+            t1 = (1, 2)
+            t2 = (None,)
+            for _ in range(100):
+                list_sum = l1 + l2
+                self.assertEqual(list_sum, [1, 2, None])
+                tuple_sum = t1 + t2
+                self.assertEqual(tuple_sum, (1, 2, None))
+
+        binary_op_add_extend_sequences()
+        self.assert_specialized(binary_op_add_extend_sequences, "BINARY_OP_EXTEND")
+        self.assert_no_opcode(binary_op_add_extend_sequences, "BINARY_OP")
+
         def binary_op_zero_division():
             def compactlong_lhs(arg):
                 42 / arg
@@ -1887,6 +1902,30 @@ class TestSpecializer(TestBase):
 
     @cpython_only
     @requires_specialization
+    def test_store_subscr(self):
+        def store_subscr_dict():
+            for _ in range(_testinternalcapi.SPECIALIZATION_THRESHOLD):
+                a = {1: 2, 2: 3}
+                a[1] = 4
+                self.assertEqual(a[1], 4)
+
+        store_subscr_dict()
+        self.assert_specialized(store_subscr_dict, "STORE_SUBSCR_DICT")
+        self.assert_no_opcode(store_subscr_dict, "STORE_SUBSCR")
+
+        def store_subscr_frozen_dict():
+            dicts = [{1: 2}, frozendict({1: 2})]
+            for i in range(_testinternalcapi.SPECIALIZATION_THRESHOLD + 1):
+                d = dicts[i == _testinternalcapi.SPECIALIZATION_THRESHOLD]
+                d[1] = 3
+
+        with self.assertRaises(TypeError):
+            store_subscr_frozen_dict()
+        self.assert_specialized(store_subscr_frozen_dict, "STORE_SUBSCR_DICT")
+        self.assert_no_opcode(store_subscr_frozen_dict, "STORE_SUBSCR")
+
+    @cpython_only
+    @requires_specialization
     def test_compare_op(self):
         def compare_op_int():
             for _ in range(_testinternalcapi.SPECIALIZATION_THRESHOLD):
@@ -1940,6 +1979,15 @@ class TestSpecializer(TestBase):
         self.assert_specialized(for_iter_tuple, "FOR_ITER_TUPLE")
         self.assert_no_opcode(for_iter_tuple, "FOR_ITER")
 
+        s = "abcdefghij"
+        def for_iter_str():
+            for i in s:
+                self.assertIn(i, s)
+
+        for_iter_str()
+        self.assert_specialized(for_iter_str, "FOR_ITER_VIRTUAL")
+        self.assert_no_opcode(for_iter_str, "FOR_ITER")
+
         r = range(10)
         def for_iter_range():
             for i in r:
@@ -1956,6 +2004,30 @@ class TestSpecializer(TestBase):
         for_iter_generator()
         self.assert_specialized(for_iter_generator, "FOR_ITER_GEN")
         self.assert_no_opcode(for_iter_generator, "FOR_ITER")
+
+    @cpython_only
+    @requires_specialization
+    def test_get_iter(self):
+        L = list(range(10))
+        def get_iter_list():
+            n = 10
+            while n:
+                n -= 1
+                for i in L:
+                    break
+        get_iter_list()
+        self.assert_specialized(get_iter_list, "GET_ITER_VIRTUAL")
+        self.assert_no_opcode(get_iter_list, "GET_ITER")
+
+        def get_iter_gen():
+            n = 10
+            while n:
+                n -= 1
+                for i in (i for i in range(10)):
+                    break
+        get_iter_gen()
+        self.assert_specialized(get_iter_gen, "GET_ITER_SELF")
+        self.assert_no_opcode(get_iter_gen, "GET_ITER")
 
     @cpython_only
     @requires_specialization
@@ -2021,6 +2093,26 @@ class TestSpecializer(TestBase):
             self.assert_no_opcode(load_module_attr_missing, "LOAD_ATTR_MODULE")
         finally:
             sys.modules.pop("test_module_with_getattr", None)
+
+
+    @cpython_only
+    @requires_specialization
+    def test_load_attr_enum(self):
+        import enum
+
+        class Color(enum.IntEnum):
+            RED = 1
+            GREEN = 2
+            BLUE = 3
+
+        def load_enum_member():
+            for _ in range(_testinternalcapi.SPECIALIZATION_THRESHOLD):
+                x = Color.RED
+                assert x == 1
+
+        load_enum_member()
+        self.assert_specialized(load_enum_member,
+                                "LOAD_ATTR_CLASS_WITH_METACLASS_CHECK")
 
 
 if __name__ == "__main__":

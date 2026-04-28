@@ -3,10 +3,12 @@
 * Reference count annotations for C API functions.
 * Stable ABI annotations
 * Limited API annotations
+* Thread safety annotations for C API functions.
 
 Configuration:
 * Set ``refcount_file`` to the path to the reference count data file.
 * Set ``stable_abi_file`` to the path to stable ABI list.
+* Set ``threadsafety_file`` to the path to the thread safety data file.
 """
 
 from __future__ import annotations
@@ -46,6 +48,15 @@ class RefCountEntry:
     result_type: str = ""
     # Reference count effect for the return value.
     result_refs: int | None = None
+
+
+@dataclasses.dataclass(frozen=True, slots=True)
+class ThreadSafetyEntry:
+    # Name of the function.
+    name: str
+    # Thread safety level.
+    # One of: 'incompatible', 'compatible', 'safe'.
+    level: str
 
 
 @dataclasses.dataclass(frozen=True, slots=True)
@@ -113,10 +124,42 @@ def read_stable_abi_data(stable_abi_file: Path) -> dict[str, StableABIEntry]:
     return stable_abi_data
 
 
+_VALID_THREADSAFETY_LEVELS = frozenset({
+    "incompatible",
+    "compatible",
+    "distinct",
+    "shared",
+    "atomic",
+})
+
+
+def read_threadsafety_data(
+    threadsafety_filename: Path,
+) -> dict[str, ThreadSafetyEntry]:
+    threadsafety_data = {}
+    for line in threadsafety_filename.read_text(encoding="utf8").splitlines():
+        line = line.strip()
+        if not line or line.startswith("#"):
+            continue
+        # Each line is of the form: function_name : level : [comment]
+        parts = line.split(":", 2)
+        if len(parts) < 2:
+            raise ValueError(f"Wrong field count in {line!r}")
+        name, level = parts[0].strip(), parts[1].strip()
+        if level not in _VALID_THREADSAFETY_LEVELS:
+            raise ValueError(
+                f"Unknown thread safety level {level!r} for {name!r}. "
+                f"Valid levels: {sorted(_VALID_THREADSAFETY_LEVELS)}"
+            )
+        threadsafety_data[name] = ThreadSafetyEntry(name=name, level=level)
+    return threadsafety_data
+
+
 def add_annotations(app: Sphinx, doctree: nodes.document) -> None:
     state = app.env.domaindata["c_annotations"]
     refcount_data = state["refcount_data"]
     stable_abi_data = state["stable_abi_data"]
+    threadsafety_data = state["threadsafety_data"]
     for node in doctree.findall(addnodes.desc_content):
         par = node.parent
         if par["domain"] != "c":
@@ -125,6 +168,12 @@ def add_annotations(app: Sphinx, doctree: nodes.document) -> None:
             continue
         name = par[0]["ids"][0].removeprefix("c.")
         objtype = par["objtype"]
+
+        # Thread safety annotation — inserted first so it appears last (bottom-most)
+        # among all annotations.
+        if entry := threadsafety_data.get(name):
+            annotation = _threadsafety_annotation(entry.level)
+            node.insert(0, annotation)
 
         # Stable ABI annotation.
         if record := stable_abi_data.get(name):
@@ -200,18 +249,17 @@ def _stable_abi_annotation(
         reftype="ref",
         refexplicit="False",
     )
-    struct_abi_kind = record.struct_abi_kind
-    if struct_abi_kind in {"opaque", "members"}:
-        ref_node += nodes.Text(sphinx_gettext("Limited API"))
-    else:
-        ref_node += nodes.Text(sphinx_gettext("Stable ABI"))
+    ref_node += nodes.Text(sphinx_gettext("Stable ABI"))
     emph_node += ref_node
+    struct_abi_kind = record.struct_abi_kind
     if struct_abi_kind == "opaque":
         emph_node += nodes.Text(" " + sphinx_gettext("(as an opaque struct)"))
     elif struct_abi_kind == "full-abi":
         emph_node += nodes.Text(
             " " + sphinx_gettext("(including all members)")
         )
+    elif struct_abi_kind in {"members", "abi3t-opaque"}:
+        emph_node += nodes.Text(" " + sphinx_gettext("(see below)"))
     if record.ifdef_note:
         emph_node += nodes.Text(f" {record.ifdef_note}")
     if stable_added == "3.2":
@@ -222,11 +270,7 @@ def _stable_abi_annotation(
             " " + sphinx_gettext("since version %s") % stable_added
         )
     emph_node += nodes.Text(".")
-    if struct_abi_kind == "members":
-        msg = " " + sphinx_gettext(
-            "(Only some members are part of the stable ABI.)"
-        )
-        emph_node += nodes.Text(msg)
+
     return emph_node
 
 
@@ -256,6 +300,48 @@ def _unstable_api_annotation() -> nodes.admonition:
     )
 
 
+def _threadsafety_annotation(level: str) -> nodes.emphasis:
+    match level:
+        case "incompatible":
+            display = sphinx_gettext("Not safe to call from multiple threads")
+            reftarget = "threadsafety-level-incompatible"
+        case "compatible":
+            display = sphinx_gettext(
+                "Safe to call from multiple threads"
+                " with external synchronization only"
+            )
+            reftarget = "threadsafety-level-compatible"
+        case "distinct":
+            display = sphinx_gettext(
+                "Safe to call without external synchronization"
+                " on distinct objects"
+            )
+            reftarget = "threadsafety-level-distinct"
+        case "shared":
+            display = sphinx_gettext(
+                "Safe for concurrent use on the same object"
+            )
+            reftarget = "threadsafety-level-shared"
+        case "atomic":
+            display = sphinx_gettext("Atomic")
+            reftarget = "threadsafety-level-atomic"
+        case _:
+            raise AssertionError(f"Unknown thread safety level {level!r}")
+    ref_node = addnodes.pending_xref(
+        display,
+        nodes.Text(display),
+        refdomain="std",
+        reftarget=reftarget,
+        reftype="ref",
+        refexplicit="True",
+    )
+    prefix = " " + sphinx_gettext("Thread safety:") + " "
+    classes = ["threadsafety", f"threadsafety-{level}"]
+    return nodes.emphasis(
+        "", prefix, ref_node, nodes.Text("."), classes=classes
+    )
+
+
 def _return_value_annotation(result_refs: int | None) -> nodes.emphasis:
     classes = ["refcount"]
     if result_refs is None:
@@ -282,6 +368,33 @@ class LimitedAPIList(SphinxDirective):
             f"* :c:{record.role}:`{record.name}`"
             for record in state["stable_abi_data"].values()
         ]
+        node = nodes.paragraph()
+        self.state.nested_parse(StringList(content), 0, node)
+        return [node]
+
+
+class VersionHexCheatsheet(SphinxDirective):
+    """Show results of Py_PACK_VERSION(3, x) for a few relevant Python versions
+
+    This is useful for defining version before Python.h is included.
+    It should auto-update with the version being documented, so it must be an
+    extension.
+    """
+
+    has_content = False
+    required_arguments = 0
+    optional_arguments = 0
+    final_argument_whitespace = True
+
+    def run(self) -> list[nodes.Node]:
+        content = [
+            ".. code-block:: c",
+            "",
+        ]
+        current_minor = int(self.config.version.removeprefix('3.'))
+        for minor in range(current_minor - 5, current_minor + 1):
+            value = (3 << 24) | (minor << 16)
+            content.append(f'    {value:#x}  /* Py_PACK_VERSION(3.{minor}) */')
         node = nodes.paragraph()
         self.state.nested_parse(StringList(content), 0, node)
         return [node]
@@ -342,12 +455,17 @@ def init_annotations(app: Sphinx) -> None:
     state["stable_abi_data"] = read_stable_abi_data(
         Path(app.srcdir, app.config.stable_abi_file)
     )
+    state["threadsafety_data"] = read_threadsafety_data(
+        Path(app.srcdir, app.config.threadsafety_file)
+    )
 
 
 def setup(app: Sphinx) -> ExtensionMetadata:
     app.add_config_value("refcount_file", "", "env", types={str})
     app.add_config_value("stable_abi_file", "", "env", types={str})
+    app.add_config_value("threadsafety_file", "", "env", types={str})
     app.add_directive("limited-api-list", LimitedAPIList)
+    app.add_directive("version-hex-cheatsheet", VersionHexCheatsheet)
     app.add_directive("corresponding-type-slot", CorrespondingTypeSlot)
     app.connect("builder-inited", init_annotations)
     app.connect("doctree-read", add_annotations)
