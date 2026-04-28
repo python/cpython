@@ -112,6 +112,7 @@ Other Objects
    picklebuffer.rst
    weakref.rst
    capsule.rst
+   sentinel.rst
    frame.rst
    gen.rst
    coro.rst
