@@ -562,6 +562,7 @@ OBJECT_OBJS=	\
 		Objects/obmalloc.o \
 		Objects/picklebufobject.o \
 		Objects/rangeobject.o \
+		Objects/sentinelobject.o \
 		Objects/setobject.o \
 		Objects/sliceobject.o \
 		Objects/structseq.o \
@@ -1242,6 +1243,7 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/pytypedefs.h \
 		$(srcdir)/Include/rangeobject.h \
 		$(srcdir)/Include/refcount.h \
+		$(srcdir)/Include/sentinelobject.h \
 		$(srcdir)/Include/setobject.h \
 		$(srcdir)/Include/sliceobject.h \
 		$(srcdir)/Include/slots.h \
