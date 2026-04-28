@@ -1,7 +1,11 @@
-from test.support import is_nanvix
+from test import support
 import unittest
-if is_nanvix:
-    raise unittest.SkipTest("NSKIP045: mmap C extension N/A on Nanvix (configure.ac:7273)")
+try:
+    import mmap
+except ImportError:
+    if support.is_nanvix:
+        raise unittest.SkipTest("NSKIP045: mmap C extension N/A on Nanvix")
+    raise
 
 from test.support import (
     requires, _2G, _4G, gc_collect, cpython_only, is_emscripten

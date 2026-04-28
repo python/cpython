@@ -4,7 +4,7 @@
 from test.support import is_nanvix
 import unittest
 if is_nanvix:
-    raise unittest.SkipTest("NSKIP015: test requires >2 GB disk I/O; exceeds Nanvix VM resources")
+    raise unittest.SkipTest("NSKIP015: OOM — test allocation exceeds available heap")  # detail: test requires >2 GB disk I/O
 
 import os
 import stat

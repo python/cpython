@@ -6,7 +6,6 @@ if is_nanvix:
 from test import support
 from test.support import import_helper, cpython_only
 gdbm = import_helper.import_module("dbm.gnu") #skip if not supported
-import unittest
 import os
 from test.support.os_helper import TESTFN, TESTFN_NONASCII, unlink, FakePath
 
