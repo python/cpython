@@ -1079,6 +1079,11 @@ _ssl__SSLSocket_do_handshake_impl(PySSLSocket *self)
         return NULL;
     }
 
+    if (self->got_eof_error) {
+        set_eof_error(self);
+        goto error;
+    }
+
     timeout = GET_SOCKET_TIMEOUT(sock);
     has_timeout = (timeout > 0);
     if (has_timeout) {
@@ -2664,15 +2669,15 @@ _ssl__SSLSocket_sendfile_impl(PySSLSocket *self, int fd, Py_off_t offset,
         return NULL;
     }
 
+    if (self->got_eof_error) {
+        set_eof_error(self);
+        goto error;
+    }
+
     timeout = GET_SOCKET_TIMEOUT(sock);
     has_timeout = (timeout > 0);
     if (has_timeout) {
         deadline = _PyDeadline_Init(timeout);
-    }
-
-    if (self->got_eof_error) {
-        set_eof_error(self);
-        goto error;
     }
 
     sockstate = PySSL_select(sock, 1, timeout);
@@ -2796,15 +2801,15 @@ _ssl__SSLSocket_write_impl(PySSLSocket *self, Py_buffer *b)
         return NULL;
     }
 
+    if (self->got_eof_error) {
+        set_eof_error(self);
+        goto error;
+    }
+
     timeout = GET_SOCKET_TIMEOUT(sock);
     has_timeout = (timeout > 0);
     if (has_timeout) {
         deadline = _PyDeadline_Init(timeout);
-    }
-
-    if (self->got_eof_error) {
-        set_eof_error(self);
-        goto error;
     }
 
     sockstate = PySSL_select(sock, 1, timeout);

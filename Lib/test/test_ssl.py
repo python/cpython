@@ -5067,6 +5067,13 @@ class ThreadedTests(unittest.TestCase):
                         sslobj.sendfile(fd, 0, 1)
             with self.assertRaises(ssl.SSLEOFError):
                 sslobj.write(b'client2\n')
+            with self.assertRaises(ssl.SSLEOFError):
+                sslsock.do_handshake()
+
+            self.assertEqual(sslsock.pending(), 0)
+            with self.assertRaises(OSError) as cm:
+                sslsock.shutdown(socket.SHUT_WR)
+            self.assertEqual(cm.exception.errno, errno.ENOTCONN)
 
         server.join()
 
