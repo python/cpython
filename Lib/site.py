@@ -252,13 +252,9 @@ def _read_start_file(sitedir, name):
         line = line.strip()
         if len(line) == 0 or line.startswith("#"):
             continue
-
-        # Validate mandatory colon-form: pkg.mod:callable.
-        if ':' not in line:
-            _trace(f"In {filename!r}, line {n:d}: "
-                   f"skipping invalid entry point: {line}")
-            continue
-
+        # Syntax validation is deferred to entry-point execution time,
+        # where pkgutil.resolve_name(strict=True) enforces the
+        # pkg.mod:callable form.
         entrypoints.append(line)
 
 
@@ -312,15 +308,25 @@ def _execute_start_entrypoints():
 
     Called after all site-packages directories have been processed so that
     sys.path is fully populated before any entry point code runs.  Uses
-    pkgutil.resolve_name() for resolution.  While that function accepts a
-    looser constraint on the input string, we enforce the :callable syntax
-    when the .start file is parsed.
+    pkgutil.resolve_name(strict=True) which both validates the strict
+    pkg.mod:callable form and resolves the entry point in one step.
     """
     for filename, entrypoints in _pending_entrypoints.items():
         for entrypoint in entrypoints:
             try:
                 _trace(f"Executing entry point: {entrypoint} from {filename}")
-                callable_ = pkgutil.resolve_name(entrypoint)
+                callable_ = pkgutil.resolve_name(entrypoint, strict=True)
+            except ValueError as exc:
+                _print_error(
+                    f"Invalid entry point syntax in {filename}: "
+                    f"{entrypoint!r}", exc)
+                continue
+            except Exception as exc:
+                _print_error(
+                    f"Error resolving entry point {entrypoint} "
+                    f"from {filename}", exc)
+                continue
+            try:
                 callable_()
             except Exception as exc:
                 _print_error(

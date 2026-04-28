@@ -986,12 +986,28 @@ class StartFileTests(unittest.TestCase):
         fullname = os.path.join(self.sitedir, 'foo.start')
         self.assertEqual(site._pending_entrypoints[fullname], ['os.path:join'])
 
-    def test_read_start_file_missing_colon_skipped(self):
-        # Entry points without the mandatory colon are skipped.
-        self._make_start("os.path\nos.path:join\n", name='foo')
+    def test_read_start_file_accepts_all_non_blank_lines(self):
+        # Syntax validation is deferred to entry-point execution time
+        # (where pkgutil.resolve_name(strict=True) enforces the strict
+        # pkg.mod:callable form), so parsing accepts every non-blank,
+        # non-comment line, including syntactically invalid ones.
+        content = (
+            "os.path\n"                 # no colon
+            "pkg.mod:\n"                # empty callable
+            ":callable\n"               # empty module
+            "pkg.mod:callable:extra\n"  # multiple colons
+            "os.path:join\n"            # valid
+        )
+        self._make_start(content, name='foo')
         site._read_start_file(self.sitedir, 'foo.start')
         fullname = os.path.join(self.sitedir, 'foo.start')
-        self.assertEqual(site._pending_entrypoints[fullname], ['os.path:join'])
+        self.assertEqual(site._pending_entrypoints[fullname], [
+            'os.path',
+            'pkg.mod:',
+            ':callable',
+            'pkg.mod:callable:extra',
+            'os.path:join',
+        ])
 
     def test_read_start_file_empty(self):
         # PEP 829: an empty .start file is still registered as present
@@ -1117,6 +1133,26 @@ def startup():
             site._execute_start_entrypoints()
         self.assertIn('nosuchmodule_xyz', err.getvalue())
         # os.path:join should still have been called (no exception for it)
+
+    def test_execute_entrypoints_strict_syntax_rejection(self):
+        # PEP 829: only the strict pkg.mod:callable form is valid.
+        # At entry-point execution, pkgutil.resolve_name(strict=True)
+        # raises ValueError for invalid syntax; the invalid entry is
+        # reported and execution continues with the next one.
+        fullname = os.path.join(self.sitedir, 'bad.start')
+        site._pending_entrypoints[fullname] = [
+            'os.path',                  # no colon
+            'pkg.mod:',                 # empty callable
+            ':callable',                # empty module
+            'pkg.mod:callable:extra',   # multiple colons
+        ]
+        with captured_stderr() as err:
+            site._execute_start_entrypoints()
+        out = err.getvalue()
+        self.assertIn('Invalid entry point syntax', out)
+        for bad in ('os.path', 'pkg.mod:', ':callable',
+                    'pkg.mod:callable:extra'):
+            self.assertIn(bad, out)
 
     def test_execute_entrypoints_callable_error(self):
         # Callable that raises prints traceback but continues.
