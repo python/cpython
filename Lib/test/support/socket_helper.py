@@ -154,7 +154,15 @@ def skip_unless_bind_unix_socket(test):
     if _bind_nix_socket_error is None:
         from .os_helper import TESTFN, unlink
         path = TESTFN + "can_bind_unix_socket"
-        with socket.socket(socket.AF_UNIX) as sock:
+        try:
+            _sock = socket.socket(socket.AF_UNIX)
+        except OSError as e:
+            # NSKIP020 https://github.com/nanvix/cpython/issues/500
+            # Nanvix standalone does not support AF_UNIX socket creation;
+            # socket() raises OSError before bind() is reached.
+            _bind_nix_socket_error = e
+            return unittest.skip('Requires a functional unix bind(): %s' % e)(test)
+        with _sock as sock:
             try:
                 sock.bind(path)
                 _bind_nix_socket_error = False

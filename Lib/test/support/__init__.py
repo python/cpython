@@ -5,6 +5,7 @@ if __name__ != 'test.support':
 
 import contextlib
 import dataclasses
+import errno
 import functools
 import opcode
 import os
@@ -192,6 +193,9 @@ def get_original_stdout():
     return _original_stdout or sys.stdout
 
 
+# NSKIP012: warn-once flag for rmdir errno-88 swallow under hosted Nanvix.
+_nanvix_nskip012_warned = False
+
 def _force_run(path, func, *args):
     try:
         return func(*args)
@@ -201,6 +205,29 @@ def _force_run(path, func, *args):
             print('%s: %s' % (err.__class__.__name__, err))
         raise
     except OSError as err:
+        # NSKIP012 (hosted flavor): linuxd returns errno 88 from rmdir() on
+        # non-empty directories instead of POSIX ENOTEMPTY.  This is a
+        # distinct flavor of NSKIP012 from the standalone ENOSYS case
+        # (handled in os_helper.rmtree/rmdir); both are umbrella'd under
+        # #480 as "rmdir cleanup misbehavior on Nanvix".  Swallow the
+        # cleanup error here (regrtest's _rmtree calls _force_run for
+        # every leaf); the test's actual assertions are already done by
+        # the time framework teardown runs.  Standalone path doesn't go
+        # through linuxd and is unaffected, so gate on
+        # `is_nanvix and not is_nanvix_standalone`.  Restrict to os.rmdir
+        # so we don't mask unrelated errno-88 failures from other ops
+        # (_force_run is also used for unlink and listdir).
+        if (err.errno == 88 and is_nanvix and not is_nanvix_standalone
+                and func is os.rmdir):
+            global _nanvix_nskip012_warned
+            if not _nanvix_nskip012_warned:
+                print_warning(
+                    "NSKIP012: swallowing rmdir errno 88 on hosted Nanvix "
+                    "(linuxd returns 88 for non-empty dir instead of "
+                    f"ENOTEMPTY = {errno.ENOTEMPTY}); see issue #480"
+                )
+                _nanvix_nskip012_warned = True
+            return None
         if verbose >= 2:
             print('%s: %s' % (err.__class__.__name__, err))
             print('re-run %s%r' % (func.__name__, args))
@@ -540,6 +567,22 @@ else:
 is_emscripten = sys.platform == "emscripten"
 is_wasi = sys.platform == "wasi"
 is_nanvix = sys.platform == "nanvix"
+
+# Nanvix VFS-topology discrimination.
+#
+# Nanvix has two filesystem topologies that exhibit different bug surfaces:
+#   * standalone - guest runs against an in-memory FAT ramfs VFS
+#   * hosted     - guest accesses host filesystem via linuxd passthrough
+#                  (covers both single-process and multi-process deployment
+#                  modes, which share the same VFS path)
+#
+# The active topology is published by the test harness via NANVIX_STANDALONE
+# (.nanvix/test.py sets it, .nanvix/run-tests.py forwards it into the guest
+# via nanvixd's semicolon-env trick).  When the variable is unset on Nanvix
+# we treat the run as hosted (the default deployment mode).
+#
+# To gate hosted-only behavior, write `is_nanvix and not is_nanvix_standalone`.
+is_nanvix_standalone = is_nanvix and os.environ.get("NANVIX_STANDALONE") == "1"
 
 # TODO: enable fork support once nanvix implements it
 # (https://github.com/nanvix/nanvix/issues/321)
