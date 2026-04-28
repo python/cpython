@@ -178,6 +178,7 @@ example usage in the Python source distribution.
    declaration.
 
 
+.. _non-python-created-threads:
 .. _c-api-foreign-threads:
 
 
@@ -431,7 +432,7 @@ Attaching/detaching thread states
             PyThreadState_Swap(old_tstate);
       }
 
-
+.. _legacy-api:
 .. _gilstate:
 
 GIL-state APIs
