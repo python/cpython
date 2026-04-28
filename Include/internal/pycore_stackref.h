@@ -212,6 +212,32 @@ _PyStackRef_FromPyObjectBorrow(PyObject *obj, const char *filename, int linenumb
 }
 #define PyStackRef_FromPyObjectBorrow(obj) _PyStackRef_FromPyObjectBorrow(_PyObject_CAST(obj), __FILE__, __LINE__)
 
+/* Tag a PyObject pointer as a borrowed operand for BORROW variants. */
+static inline uintptr_t
+PyStackRef_TagBorrow(PyObject *obj)
+{
+    return (uintptr_t)obj | Py_TAG_REFCNT;
+}
+
+/* Strip tag bits from a pre-tagged operand to recover the PyObject pointer. */
+static inline PyObject *
+PyStackRef_UntagBorrow(PyObject *tagged)
+{
+    return (PyObject *)((uintptr_t)tagged & ~Py_TAG_BITS);
+}
+
+/* Create a stackref from a pre-tagged operand (tag bits already set).
+   Used by _LOAD_CONST_INLINE_BORROW variants where the operand is
+   tagged at trace creation time to avoid tagging on every execution. */
+static inline _PyStackRef
+_PyStackRef_FromPreTagged(PyObject *tagged, const char *filename, int linenumber)
+{
+    assert((uintptr_t)tagged & Py_TAG_REFCNT);
+    PyObject *obj = (PyObject *)((uintptr_t)tagged & ~Py_TAG_BITS);
+    return _Py_stackref_create(obj, Py_TAG_REFCNT, filename, linenumber);
+}
+#define PyStackRef_FromPreTagged(tagged) _PyStackRef_FromPreTagged(_PyObject_CAST(tagged), __FILE__, __LINE__)
+
 static inline void
 _PyStackRef_CLOSE(_PyStackRef ref, const char *filename, int linenumber)
 {
@@ -615,6 +641,30 @@ PyStackRef_FromPyObjectBorrow(PyObject *obj)
 {
     assert(obj != NULL);
     return (_PyStackRef){ .bits = (uintptr_t)obj | Py_TAG_REFCNT};
+}
+
+/* Tag a PyObject pointer as a borrowed operand for BORROW variants. */
+static inline uintptr_t
+PyStackRef_TagBorrow(PyObject *obj)
+{
+    return (uintptr_t)obj | Py_TAG_REFCNT;
+}
+
+/* Strip tag bits from a pre-tagged operand to recover the PyObject pointer. */
+static inline PyObject *
+PyStackRef_UntagBorrow(PyObject *tagged)
+{
+    return (PyObject *)((uintptr_t)tagged & ~Py_TAG_BITS);
+}
+
+/* Create a stackref from a pre-tagged operand (tag bits already set).
+   Used by _LOAD_CONST_INLINE_BORROW variants where the operand is
+   tagged at trace creation time to avoid tagging on every execution. */
+static inline _PyStackRef
+PyStackRef_FromPreTagged(PyObject *tagged)
+{
+    assert((uintptr_t)tagged & Py_TAG_REFCNT);
+    return (_PyStackRef){ .bits = (uintptr_t)tagged };
 }
 
 /* WARNING: This macro evaluates its argument more than once */

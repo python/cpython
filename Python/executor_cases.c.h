@@ -22300,7 +22300,7 @@
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             _PyStackRef value;
             PyObject *ptr = (PyObject *)CURRENT_OPERAND0_64();
-            value = PyStackRef_FromPyObjectBorrow(ptr);
+            value = PyStackRef_FromPreTagged(ptr);
             _tos_cache0 = value;
             SET_CURRENT_CACHED_VALUES(1);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
@@ -22313,7 +22313,7 @@
             _PyStackRef value;
             _PyStackRef _stack_item_0 = _tos_cache0;
             PyObject *ptr = (PyObject *)CURRENT_OPERAND0_64();
-            value = PyStackRef_FromPyObjectBorrow(ptr);
+            value = PyStackRef_FromPreTagged(ptr);
             _tos_cache1 = value;
             _tos_cache0 = _stack_item_0;
             SET_CURRENT_CACHED_VALUES(2);
@@ -22328,7 +22328,7 @@
             _PyStackRef _stack_item_0 = _tos_cache0;
             _PyStackRef _stack_item_1 = _tos_cache1;
             PyObject *ptr = (PyObject *)CURRENT_OPERAND0_64();
-            value = PyStackRef_FromPyObjectBorrow(ptr);
+            value = PyStackRef_FromPreTagged(ptr);
             _tos_cache2 = value;
             _tos_cache1 = _stack_item_1;
             _tos_cache0 = _stack_item_0;
@@ -22348,7 +22348,7 @@
             arg = stack_pointer[-1];
             callable = stack_pointer[-3];
             PyObject *ptr = (PyObject *)CURRENT_OPERAND0_64();
-            res = PyStackRef_FromPyObjectBorrow(ptr);
+            res = PyStackRef_FromPreTagged(ptr);
             a = arg;
             c = callable;
             _tos_cache2 = c;
@@ -22373,7 +22373,7 @@
             arg = _stack_item_0;
             callable = stack_pointer[-2];
             PyObject *ptr = (PyObject *)CURRENT_OPERAND0_64();
-            res = PyStackRef_FromPyObjectBorrow(ptr);
+            res = PyStackRef_FromPreTagged(ptr);
             a = arg;
             c = callable;
             _tos_cache2 = c;
@@ -22399,7 +22399,7 @@
             arg = _stack_item_1;
             callable = stack_pointer[-1];
             PyObject *ptr = (PyObject *)CURRENT_OPERAND0_64();
-            res = PyStackRef_FromPyObjectBorrow(ptr);
+            res = PyStackRef_FromPreTagged(ptr);
             a = arg;
             c = callable;
             _tos_cache2 = c;
@@ -22426,7 +22426,7 @@
             arg = _stack_item_2;
             callable = _stack_item_0;
             PyObject *ptr = (PyObject *)CURRENT_OPERAND0_64();
-            res = PyStackRef_FromPyObjectBorrow(ptr);
+            res = PyStackRef_FromPreTagged(ptr);
             a = arg;
             c = callable;
             _tos_cache2 = c;

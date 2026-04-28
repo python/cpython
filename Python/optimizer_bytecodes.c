@@ -890,7 +890,7 @@ dummy_func(void) {
     }
 
     op(_LOAD_CONST_INLINE_BORROW, (ptr/4 -- value)) {
-        value = PyJitRef_Borrow(sym_new_const(ctx, ptr));
+        value = PyJitRef_Borrow(sym_new_const(ctx, PyStackRef_UntagBorrow(ptr)));
     }
 
     op(_POP_TOP_OPARG, (args[oparg] --)) {

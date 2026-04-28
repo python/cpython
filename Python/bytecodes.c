@@ -6104,11 +6104,11 @@ dummy_func(
         }
 
         tier2 pure op(_LOAD_CONST_INLINE_BORROW, (ptr/4 -- value)) {
-            value = PyStackRef_FromPyObjectBorrow(ptr);
+            value = PyStackRef_FromPreTagged(ptr);
         }
 
         tier2 op(_SHUFFLE_3_LOAD_CONST_INLINE_BORROW, (ptr/4, callable, null, arg -- res, a, c)) {
-            res = PyStackRef_FromPyObjectBorrow(ptr);
+            res = PyStackRef_FromPreTagged(ptr);
             a = arg;
             c = callable;
             INPUTS_DEAD();

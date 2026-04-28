@@ -177,12 +177,13 @@ convert_global_to_const(_PyUOpInstruction *inst, PyObject *obj)
     if (res == NULL) {
         return NULL;
     }
-    if (_Py_IsImmortal(res)) {
+    bool borrow = _Py_IsImmortal(res);
+    if (borrow) {
         inst->opcode = _LOAD_CONST_INLINE_BORROW;
     } else {
         inst->opcode = _LOAD_CONST_INLINE;
     }
-    inst->operand0 = (uint64_t)res;
+    inst->operand0 = borrow ? PyStackRef_TagBorrow(res) : (uint64_t)res;
     return res;
 }
 
@@ -233,7 +234,13 @@ add_op(JitOptContext *ctx, _PyUOpInstruction *this_instr,
     out->format = this_instr->format;
     out->oparg = (oparg);
     out->target = this_instr->target;
-    out->operand0 = (operand0);
+    if (opcode == _LOAD_CONST_INLINE_BORROW ||
+        opcode == _SHUFFLE_3_LOAD_CONST_INLINE_BORROW) {
+        out->operand0 = PyStackRef_TagBorrow((PyObject *)operand0);
+    }
+    else {
+        out->operand0 = (operand0);
+    }
     out->operand1 = this_instr->operand1;
 #ifdef Py_STATS
     out->fitness = this_instr->fitness;

@@ -600,6 +600,7 @@ NON_ESCAPING_FUNCTIONS = (
     "PyStackRef_CLOSE_SPECIALIZED",
     "PyStackRef_DUP",
     "PyStackRef_False",
+    "PyStackRef_FromPreTagged",
     "PyStackRef_FromPyObjectBorrow",
     "PyStackRef_FromPyObjectNew",
     "PyStackRef_FromPyObjectSteal",
@@ -766,7 +767,7 @@ def escaping_call_in_simple_stmt(stmt: SimpleStmt, result: dict[SimpleStmt, Esca
                 continue
             #if not tkn.text.startswith(("Py", "_Py", "monitor")):
             #    continue
-            if tkn.text.startswith(("sym_", "optimize_", "PyJitRef")):
+            if tkn.text.startswith(("sym_", "optimize_", "PyJitRef", "PyStackRef_Tag", "PyStackRef_Untag")):
                 # Optimize functions
                 continue
             if tkn.text.endswith("Check"):
