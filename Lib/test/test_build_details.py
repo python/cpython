@@ -6,7 +6,6 @@ import sysconfig
 import string
 import unittest
 import sysconfig._build_details as build_details
-from pathlib import Path
 
 from test.support import is_android, is_apple_mobile, is_wasm32
 
