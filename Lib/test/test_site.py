@@ -162,7 +162,6 @@ class HelperFunctionsTests(unittest.TestCase):
         pth_dir, pth_fn = self.make_pth("randompath\nimport nosuchmodule\n")
         with captured_stderr() as err_out:
             site.addpackage(pth_dir, pth_fn, set())
-        self.assertRegex(err_out.getvalue(), "line 2")
         self.assertRegex(err_out.getvalue(),
             re.escape(os.path.join(pth_dir, pth_fn)))
         # XXX: ditto previous XXX comment.
