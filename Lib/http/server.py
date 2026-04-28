@@ -466,7 +466,7 @@ class BaseHTTPRequestHandler(socketserver.StreamRequestHandler):
     def handle(self):
         """Handle multiple requests if necessary."""
         self.close_connection = True
-        self.default_response_headers = []
+        self._default_response_headers = []
 
         self.handle_one_request()
         while not self.close_connection:
@@ -552,15 +552,15 @@ class BaseHTTPRequestHandler(socketserver.StreamRequestHandler):
                     (self.protocol_version, code, message)).encode(
                         'latin-1', 'strict'))
 
-    def send_header(self, keyword, value, is_extra=False):
+    def send_header(self, keyword, value, _is_extra=False):
         """Send a MIME header to the headers buffer."""
         if self.request_version != 'HTTP/0.9':
             if not hasattr(self, '_headers_buffer'):
                 self._headers_buffer = []
             self._headers_buffer.append(
                 ("%s: %s\r\n" % (keyword, value)).encode('latin-1', 'strict'))
-            if not is_extra and hasattr(self, 'default_response_headers'):
-                self.default_response_headers.append((keyword, value))
+            if not _is_extra and hasattr(self, '_default_response_headers'):
+                self._default_response_headers.append((keyword, value))
 
         if keyword.lower() == 'connection':
             if value.lower() == 'close':
@@ -763,10 +763,12 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
     def _send_extra_response_headers(self):
         """Send the headers stored in self.extra_response_headers"""
         if self.extra_response_headers is not None:
+            default_headers = {h.lower() for h, _ in self._default_response_headers}
             for header, value in self.extra_response_headers:
-                # Don't send the header if it's already sent as part of the default response headers
-                if header.lower() not in (h.lower() for h, _ in self.default_response_headers):
-                    self.send_header(header, value, is_extra=True)
+                # Don't send the header if it's already sent
+                # as part of the default response headers
+                if header not in default_headers:
+                    self.send_header(header, value, _is_extra=True)
 
     def send_head(self):
         """Common code for GET and HEAD commands.
