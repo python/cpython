@@ -2738,12 +2738,14 @@ test_thread_state_ensure(void)
 static int
 test_main_interpreter_view(void)
 {
-    assert(PyInterpreterView_FromMain() == NULL);
-    _testembed_initialize();
-
-    // Main interpreter is initialized and ready.
     PyInterpreterView *view = PyInterpreterView_FromMain();
     assert(view != NULL);
+    // These should fail -- the main interpreter is not available yet.
+    assert(PyInterpreterGuard_FromView(view) == NULL);
+    assert(PyThreadState_EnsureFromView(view) == NULL);
+
+    _testembed_initialize();
+    // Main interpreter is initialized and ready at this point.
 
     PyInterpreterGuard *guard = PyInterpreterGuard_FromView(view);
     assert(guard != NULL);
