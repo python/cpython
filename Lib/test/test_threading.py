@@ -2476,6 +2476,17 @@ class ThreadingIteratorToolsTests(BaseTestCase):
         it.throw(ValueError)
         it.close()
 
+    def test_serialize_next_exception(self):
+        # Verify exception pass through for calls to next()
+
+        def f():
+            raise RuntimeError
+            yield None
+
+        g = threading.serialize(f())
+        with self.assertRaises(RuntimeError):
+            next(g)
+
     def test_synchronized_serializes_generator_instances(self):
         unique = 10
         repetitions = 5
