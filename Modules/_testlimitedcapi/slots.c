@@ -308,7 +308,7 @@ type_from_null_slot(PyObject* module, PyObject *args)
     return PyType_FromSlots((PySlot[]) {
         PySlot_DATA(Py_tp_name, "_testlimitedcapi.MyType"),
         PySlot_DATA(Py_tp_module, module),
-        PySlot_PTR_STATIC(slot_number, NULL),
+        PySlot_PTR_STATIC((uint16_t)slot_number, NULL),
         PySlot_END
     });
 }
@@ -342,7 +342,7 @@ demo_exec(PyObject *mod)
     return PyModule_AddStringConstant(mod, "exec_done", "yes");
 }
 
-static PyMethodDef TestMethods[];
+static PyMethodDef *TestMethods;
 
 static PyObject *
 module_from_slots(PyObject* Py_UNUSED(module), PyObject *args)
@@ -555,7 +555,7 @@ module_from_slots(PyObject* Py_UNUSED(module), PyObject *args)
             Py_DECREF(mod);
             return NULL;
         }
-        if (PyModule_AddIntConstant(mod, "state_size", size) < 0) {
+        if (PyModule_AddIntConstant(mod, "state_size", (long)size) < 0) {
             Py_DECREF(mod);
             return NULL;
         }
@@ -576,7 +576,7 @@ module_from_gil_slot(PyObject* Py_UNUSED(module), PyObject *args)
     }
     return PyModule_FromSlotsAndSpec((PySlot[]) {
         PySlot_DATA(Py_mod_abi, &abi_info),
-        PySlot_PTR_STATIC(slot_number, Py_MOD_GIL_NOT_USED),
+        PySlot_PTR_STATIC((uint16_t)slot_number, Py_MOD_GIL_NOT_USED),
         PySlot_END
     }, spec);
 }
@@ -592,12 +592,12 @@ module_from_null_slot(PyObject* Py_UNUSED(module), PyObject *args)
     return PyModule_FromSlotsAndSpec((PySlot[]) {
         PySlot_DATA(Py_mod_abi, &abi_info),
         PySlot_DATA(Py_mod_name, "mymod"),
-        PySlot_PTR_STATIC(slot_number, NULL),
+        PySlot_PTR_STATIC((uint16_t)slot_number, NULL),
         PySlot_END
     }, spec);
 }
 
-static PyMethodDef TestMethods[] = {
+static PyMethodDef _TestMethods[] = {
     {"type_from_slots", type_from_slots, METH_VARARGS},
     {"module_from_gil_slot", module_from_gil_slot, METH_VARARGS},
     {"type_from_null_slot", type_from_null_slot, METH_VARARGS},
@@ -606,6 +606,7 @@ static PyMethodDef TestMethods[] = {
     {"module_from_null_slot", module_from_null_slot, METH_VARARGS},
     {NULL},
 };
+static PyMethodDef *TestMethods = _TestMethods;
 
 int
 _PyTestLimitedCAPI_Init_Slots(PyObject *m)
