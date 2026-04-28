@@ -604,6 +604,8 @@ which led to other issues (see the warning note at
 Gross? Yes. Starting in Python 3.15, there are a number of C APIs that make
 it possible to avoid these issues by temporarily preventing finalization:
 
+.. _interpreter-guards:
+
 .. seealso::
 
    :pep:`788`
@@ -702,6 +704,8 @@ it possible to avoid these issues by temporarily preventing finalization:
 
    .. versionadded:: next
 
+
+.. _interpreter-views:
 
 Interpreter views
 -----------------

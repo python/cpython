@@ -61,9 +61,9 @@ as in a :c:macro:`Py_BEGIN_ALLOW_THREADS` block or in a fresh thread, will the
 thread not have an attached thread state.
 If uncertain, check if :c:func:`PyThreadState_GetUnchecked` returns ``NULL``.
 
-If it turns out that you do need to create a thread state, call :c:func:`PyThreadState_New`
-followed by :c:func:`PyThreadState_Swap`, or use the dangerous
-:c:func:`PyGILState_Ensure` function.
+If it turns out that you do need to create a thread state, it is recommended to
+use :c:func:`PyThreadState_Ensure` or :c:func:`PyThreadState_EnsureFromView`,
+which will manage the thread state for you.
 
 
 .. _detaching-thread-state:
@@ -247,6 +247,11 @@ Some notes about this:
 
 .. seealso::
    :pep:`788`
+
+.. _c-api-attach-detach:
+
+Attaching/detaching thread states
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. c:function:: PyThreadState *PyThreadState_Ensure(PyInterpreterGuard *guard)
 
