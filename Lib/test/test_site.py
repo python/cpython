@@ -1048,6 +1048,31 @@ class StartFileTests(unittest.TestCase):
         self.assertEqual(site._pending_entrypoints[fullname],
                          ['os.path:join', 'os.path:join'])
 
+    def test_read_start_file_accepts_utf8_bom(self):
+        # PEP 829: .start files MUST be utf-8-sig (UTF-8 with optional BOM).
+        filepath = os.path.join(self.tmpdir, 'foo.start')
+        with open(filepath, 'wb') as f:
+            f.write(b'\xef\xbb\xbf' + b'os.path:join\n')
+        site._read_start_file(self.sitedir, 'foo.start')
+        fullname = os.path.join(self.sitedir, 'foo.start')
+        self.assertEqual(
+            site._pending_entrypoints[fullname], ['os.path:join'])
+
+    def test_read_start_file_invalid_utf8_silently_skipped(self):
+        # PEP 829: .start files MUST be utf-8-sig.  Unlike .pth, there is
+        # no locale-encoding fallback -- a .start file that is not valid
+        # UTF-8 is silently skipped, with no key registered in
+        # _pending_entrypoints and no output to stderr (parsing errors
+        # are reported only under -v).
+        filepath = os.path.join(self.tmpdir, 'foo.start')
+        with open(filepath, 'wb') as f:
+            # Bare continuation byte -- invalid as a UTF-8 start byte.
+            f.write(b'\x80\x80\x80\n')
+        with captured_stderr() as err:
+            site._read_start_file(self.sitedir, 'foo.start')
+        self.assertEqual(site._pending_entrypoints, {})
+        self.assertEqual(err.getvalue(), "")
+
     def test_two_start_files_with_duplicates_not_deduplicated(self):
         self._make_start("os.path:join", name="foo")
         self._make_start("os.path:join", name="bar")
@@ -1098,6 +1123,23 @@ class StartFileTests(unittest.TestCase):
         os.mkdir(subdir)
         self._make_pth("abc\x00def\ngoodpath\n", name='foo')
         with captured_stderr():
+            site._read_pth_file(self.sitedir, 'foo.pth', set())
+        fullname = os.path.join(self.sitedir, 'foo.pth')
+        self.assertIn(subdir, site._pending_syspaths.get(fullname, []))
+
+    def test_read_pth_file_locale_fallback(self):
+        # PEP 829: .pth files that fail UTF-8 decoding fall back to the
+        # locale encoding for backward compatibility (deprecated in
+        # 3.15, to be removed in 3.20).  Mock locale.getencoding() so
+        # the test does not depend on the host's actual locale.
+        subdir = os.path.join(self.sitedir, 'mylib')
+        os.mkdir(subdir)
+        filepath = os.path.join(self.tmpdir, 'foo.pth')
+        # \xe9 is invalid UTF-8 but valid in latin-1.
+        with open(filepath, 'wb') as f:
+            f.write(b'# caf\xe9 comment\nmylib\n')
+        with mock.patch('locale.getencoding', return_value='latin-1'), \
+                captured_stderr():
             site._read_pth_file(self.sitedir, 'foo.pth', set())
         fullname = os.path.join(self.sitedir, 'foo.pth')
         self.assertIn(subdir, site._pending_syspaths.get(fullname, []))
