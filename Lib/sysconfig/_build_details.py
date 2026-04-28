@@ -282,10 +282,14 @@ class BuildDetailsV1(SchemaBase, schema=(1, 0)):
         LIBRARY = sysconfig.get_config_var('LIBRARY')
         PY3LIBRARY = sysconfig.get_config_var('PY3LIBRARY')
         LIBPYTHON = sysconfig.get_config_var('LIBPYTHON')
+        STATIC_LIBPYTHON = sysconfig.get_config_var('STATIC_LIBPYTHON')
+        PYTHONFRAMEWORK = sysconfig.get_config_var('PYTHONFRAMEWORK')
 
         LIBDIR = pathlib.Path(sysconfig.get_config_var('LIBDIR'))
         LIBPC = pathlib.Path(sysconfig.get_config_var('LIBPC'))
+        LIBPL = pathlib.Path(sysconfig.get_config_var('LIBPL'))
         INCLUDEPY = pathlib.Path(sysconfig.get_config_var('INCLUDEPY'))
+        PYTHONFRAMEWORKPREFIX = pathlib.Path(sysconfig.get_config_var('PYTHONFRAMEWORKPREFIX'))
 
         interpreter_name = 'python' + sysconfig.get_config_var('LDVERSION') + sysconfig.get_config_var('EXE')
 
@@ -314,12 +318,22 @@ class BuildDetailsV1(SchemaBase, schema=(1, 0)):
             headers=INCLUDEPY,
         )
 
+        print(f'{PYTHONFRAMEWORK=!r}')
+
         if os.name == 'posix':
             # On POSIX, LIBRARY is always the static library, while LDLIBRARY is the
             # dynamic library if enabled, otherwise it's the static library.
             # If LIBRARY != LDLIBRARY, support for the dynamic library is enabled.
             has_dynamic_library = LDLIBRARY != LIBRARY
-            has_static_library = sysconfig.get_config_var('STATIC_LIBPYTHON')
+            # macOS framework builds don't install the static library (see libainstall).
+            has_static_library = STATIC_LIBPYTHON and not PYTHONFRAMEWORK
+            # The static library is only installed into LIBDIR when it is also
+            # LDLIBRARY; otherwise it is only installed into LIBPL.
+            static_library_dir = LIBPL if has_dynamic_library else LIBDIR
+            # In framework builds, LDLIBRARY is the path of the framework library
+            # relative to PYTHONFRAMEWORKPREFIX (e.g.
+            # Python.framework/Versions/3.X/Python), not a file in LIBDIR.
+            dynamic_library_dir = PYTHONFRAMEWORKPREFIX if PYTHONFRAMEWORK else LIBDIR
         elif os.name == 'nt':
             # Windows can only use a dynamic library or a static library.
             # If it's using a dynamic library, sys.dllhandle will be set.
@@ -327,6 +341,8 @@ class BuildDetailsV1(SchemaBase, schema=(1, 0)):
             # More context: https://github.com/python/cpython/issues/110234
             has_dynamic_library = hasattr(sys, 'dllhandle')
             has_static_library = not has_dynamic_library
+            static_library_dir = LIBDIR
+            dynamic_library_dir = LIBDIR
         else:
             raise NotADirectoryError(f'Unknown platform: {os.name}')
 
@@ -347,18 +363,18 @@ class BuildDetailsV1(SchemaBase, schema=(1, 0)):
                     data.abi.stable_abi_suffix = suffix
                     break
 
-            data.libpython.dynamic = LIBDIR / LDLIBRARY
+            data.libpython.dynamic = dynamic_library_dir / LDLIBRARY
             # FIXME: Not sure if windows has a different dll for the stable ABI, and
             #        even if it does, currently we don't have a way to get its name.
             if PY3LIBRARY:
-                data.libpython.dynamic_stableabi = LIBDIR / PY3LIBRARY
+                data.libpython.dynamic_stableabi = dynamic_library_dir / PY3LIBRARY
 
             # Os POSIX, this is defined by the LIBPYTHON Makefile variable not being
             # empty. On Windows, don't link extensions — LIBPYTHON won't be defined,
             data.libpython.link_extensions = bool(LIBPYTHON)
 
         if has_static_library:
-            data.libpython.static = LIBDIR / LIBRARY
+            data.libpython.static = static_library_dir / LIBRARY
 
         if LIBPC:
             data.c_api.pkgconfig_path = LIBPC
