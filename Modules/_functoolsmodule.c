@@ -27,7 +27,6 @@ class _functools._lru_cache_wrapper "PyObject *" "&lru_cache_type_spec"
 typedef struct _functools_state {
     /* this object is used delimit args and keywords in the cache keys */
     PyObject *kwd_mark;
-    PyTypeObject *placeholder_type;
     PyObject *placeholder;  // strong reference (singleton)
     PyTypeObject *partial_type;
     PyTypeObject *keyobject_type;
@@ -54,77 +53,6 @@ typedef struct {
 
 static inline _functools_state *
 get_functools_state_by_type(PyTypeObject *type);
-
-PyDoc_STRVAR(placeholder_doc,
-"The type of the Placeholder singleton.\n\n"
-"Used as a placeholder for partial arguments.");
-
-static PyObject *
-placeholder_repr(PyObject *op)
-{
-    return PyUnicode_FromString("Placeholder");
-}
-
-static PyObject *
-placeholder_reduce(PyObject *op, PyObject *Py_UNUSED(ignored))
-{
-    return PyUnicode_FromString("Placeholder");
-}
-
-static PyMethodDef placeholder_methods[] = {
-    {"__reduce__", placeholder_reduce, METH_NOARGS, NULL},
-    {NULL, NULL}
-};
-
-static void
-placeholder_dealloc(PyObject* self)
-{
-    PyObject_GC_UnTrack(self);
-    PyTypeObject *tp = Py_TYPE(self);
-    tp->tp_free((PyObject*)self);
-    Py_DECREF(tp);
-}
-
-static PyObject *
-placeholder_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
-{
-    if (PyTuple_GET_SIZE(args) || (kwargs && PyDict_GET_SIZE(kwargs))) {
-        PyErr_SetString(PyExc_TypeError, "PlaceholderType takes no arguments");
-        return NULL;
-    }
-    _functools_state *state = get_functools_state_by_type(type);
-    if (state->placeholder != NULL) {
-        return Py_NewRef(state->placeholder);
-    }
-
-    PyObject *placeholder = PyType_GenericNew(type, NULL, NULL);
-    if (placeholder == NULL) {
-        return NULL;
-    }
-
-    if (state->placeholder == NULL) {
-        state->placeholder = Py_NewRef(placeholder);
-    }
-    return placeholder;
-}
-
-static PyType_Slot placeholder_type_slots[] = {
-    {Py_tp_dealloc, placeholder_dealloc},
-    {Py_tp_repr, placeholder_repr},
-    {Py_tp_doc, (void *)placeholder_doc},
-    {Py_tp_methods, placeholder_methods},
-    {Py_tp_new, placeholder_new},
-    {Py_tp_traverse, _PyObject_VisitType},
-    {0, 0}
-};
-
-static PyType_Spec placeholder_type_spec = {
-    .name = "functools._PlaceholderType",
-    .basicsize = sizeof(placeholderobject),
-    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_IMMUTABLETYPE | Py_TPFLAGS_HAVE_GC,
-    .slots = placeholder_type_slots
-};
-
 
 typedef struct {
     PyObject_HEAD
@@ -1927,16 +1855,7 @@ _functools_exec(PyObject *module)
         return -1;
     }
 
-    state->placeholder_type = (PyTypeObject *)PyType_FromModuleAndSpec(module,
-        &placeholder_type_spec, NULL);
-    if (state->placeholder_type == NULL) {
-        return -1;
-    }
-    if (PyModule_AddType(module, state->placeholder_type) < 0) {
-        return -1;
-    }
-
-    PyObject *placeholder = PyObject_CallNoArgs((PyObject *)state->placeholder_type);
+    PyObject *placeholder = PySentinel_New("Placeholder", "functools");
     if (placeholder == NULL) {
         return -1;
     }
@@ -1944,7 +1863,7 @@ _functools_exec(PyObject *module)
         Py_DECREF(placeholder);
         return -1;
     }
-    Py_DECREF(placeholder);
+    state->placeholder = placeholder;
 
     state->partial_type = (PyTypeObject *)PyType_FromModuleAndSpec(module,
         &partial_type_spec, NULL);
@@ -1990,7 +1909,6 @@ _functools_traverse(PyObject *module, visitproc visit, void *arg)
 {
     _functools_state *state = get_functools_state(module);
     Py_VISIT(state->kwd_mark);
-    Py_VISIT(state->placeholder_type);
     Py_VISIT(state->placeholder);
     Py_VISIT(state->partial_type);
     Py_VISIT(state->keyobject_type);
@@ -2003,7 +1921,6 @@ _functools_clear(PyObject *module)
 {
     _functools_state *state = get_functools_state(module);
     Py_CLEAR(state->kwd_mark);
-    Py_CLEAR(state->placeholder_type);
     Py_CLEAR(state->placeholder);
     Py_CLEAR(state->partial_type);
     Py_CLEAR(state->keyobject_type);
