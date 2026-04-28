@@ -1,3 +1,1 @@
-Fix :mod:`pdb` to accept standard ``--`` end of options separator,
-which was inadvertently rejected since the switch from :mod:`getopt` to
-:mod:`argparse` in Python 3.13. Reported by haampie. Patched by Shrey Naithani.
+Fix :mod:`pdb` to accept standard -- end of options separator. Reported by haampie. Patched by Shrey Naithani.
