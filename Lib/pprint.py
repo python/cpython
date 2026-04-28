@@ -213,17 +213,27 @@ class PrettyPrinter:
         self._color = color
 
     def pprint(self, object):
-        if self._stream is not None:
+        if self._stream is None:
+            return
+
+        use_color = False
+        if self._color:
             try:
-                if self._color and _colorize.can_colorize(file=self._stream):
-                    sio = _StringIO()
-                    self._format(object, sio, 0, 0, {}, 0)
-                    self._stream.write(_colorize_output(sio.getvalue()))
-                else:
-                    self._format(object, self._stream, 0, 0, {}, 0)
+                if _colorize.can_colorize(file=self._stream):
+                    # Attempt to reify lazy imports, or ImportError
+                    gen_colors, disp_str
+                    use_color = True
             except ImportError:
-                self._format(object, self._stream, 0, 0, {}, 0)
-            self._stream.write("\n")
+                pass
+
+        if use_color:
+            sio = _StringIO()
+            self._format(object, sio, 0, 0, {}, 0)
+            self._stream.write(_colorize_output(sio.getvalue()))
+        else:
+            self._format(object, self._stream, 0, 0, {}, 0)
+
+        self._stream.write("\n")
 
     def pformat(self, object):
         sio = _StringIO()
