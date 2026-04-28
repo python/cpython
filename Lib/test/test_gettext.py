@@ -280,7 +280,7 @@ class GettextTestCase2(GettextBaseTest):
         self.assertEqual(gettext.dgettext('gettext', 'nudge nudge'), 'wink wink')
 
     def test_dpgettext(self):
-        self.assertEqual(gettext.dpgettext('gettext','my context', 'nudge nudge'), 'wink wink (in "my context")')
+        self.assertEqual(gettext.dpgettext('gettext', 'my context', 'nudge nudge'), 'wink wink (in "my context")')
 
     def test_dngettext_singular(self):
         self.assertEqual(gettext.dngettext('gettext', 'There is %s file', 'There are %s files', 1), 'Hay %s fichero')
