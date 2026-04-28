@@ -994,7 +994,7 @@ pybuilddir.txt: $(PYTHON_FOR_BUILD_DEPS)
 	fi
 
 $(BUILD_DETAILS): pybuilddir.txt
-	$(RUNSHARED) $(PYTHON_FOR_BUILD) $(srcdir)/Tools/build/generate-build-details.py `cat pybuilddir.txt`/$(BUILD_DETAILS)
+	$(RUNSHARED) $(PYTHON_FOR_BUILD) -m sysconfig._build_details `cat pybuilddir.txt`/$(BUILD_DETAILS)
 
 # Build static library
 $(LIBRARY): $(LIBRARY_OBJS)
