@@ -93,16 +93,16 @@ and lines beginning with ``#`` are skipped.
 For backward compatibility, lines starting with ``import`` (followed by space
 or tab) are executed with :func:`exec`.
 
+.. versionchanged:: 3.15
+
+   ``import`` lines in :file:`{name}.pth` are ignored when a :ref:`matching
+   <site-start-files>` :file:`{name}.start` file exists.
+
 .. deprecated-removed:: 3.15 3.20
 
    ``import`` lines in :file:`{name}.pth` files are deprecated and will be
    silently ignored in Python 3.18 and 3.19.  In Python 3.20 a warning will be
    produced for ``import`` lines in :file:`{name}.pth` files.
-
-.. versionchanged:: 3.15
-
-   ``import`` lines in :file:`{name}.pth` are ignored when a :ref:`matching
-   <site-start-files>` :file:`{name}.start` file exists.
 
 
 .. _site-start-files:
