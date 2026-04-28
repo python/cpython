@@ -1,7 +1,12 @@
 from pathlib import Path
+from test import support
 from test.support.import_helper import unload, CleanImport
 from test.support.warnings_helper import check_warnings, ignore_warnings
 import unittest
+
+# NSKIP050 https://github.com/nanvix/cpython/issues/530
+if support.is_nanvix and not support.is_nanvix_standalone:
+    raise unittest.SkipTest("NSKIP050: hosted Nanvix unable to run this module cleanly (rmdir errno 88 cascade and/or other linuxd VFS issues)")  # detail: not bisected, see #530
 import sys
 import importlib
 from importlib.util import spec_from_file_location
@@ -227,6 +232,9 @@ class PkgutilTests(unittest.TestCase):
         with self.assertRaises((TypeError, ValueError)):
             list(pkgutil.walk_packages(bytes_input))
 
+    # NSKIP008 https://github.com/nanvix/cpython/issues/476
+    @unittest.skipIf(support.is_nanvix,
+                     "NSKIP008: rust-fatfs panics on non-ASCII (Devanagari/CJK) filenames")
     def test_name_resolution(self):
         import logging
         import logging.handlers

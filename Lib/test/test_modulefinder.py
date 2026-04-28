@@ -4,9 +4,12 @@ import importlib.machinery
 import py_compile
 import shutil
 import unittest
-import tempfile
 
+# NSKIP050 https://github.com/nanvix/cpython/issues/530
 from test import support
+if support.is_nanvix and not support.is_nanvix_standalone:
+    raise unittest.SkipTest("NSKIP050: hosted Nanvix unable to run this module cleanly (rmdir errno 88 cascade and/or other linuxd VFS issues)")  # detail: not bisected, see #530
+import tempfile
 
 import modulefinder
 
@@ -380,6 +383,9 @@ class ModuleFinderTest(unittest.TestCase):
     def test_same_name_as_bad(self):
         self._do_test(same_name_as_bad_test)
 
+    # NSKIP021 https://github.com/nanvix/cpython/issues/501
+    @unittest.skipIf(support.is_nanvix,
+                     "NSKIP021: FAT VFS rename() hangs the kernel")  # detail: py_compile.compile( uses os.replace)
     def test_bytecode(self):
         base_path = os.path.join(self.test_dir, 'a')
         source_path = base_path + importlib.machinery.SOURCE_SUFFIXES[0]
@@ -400,6 +406,9 @@ class ModuleFinderTest(unittest.TestCase):
         expected = "co_filename %r changed to %r" % (old_path, new_path)
         self.assertIn(expected, output)
 
+    # NSKIP019 https://github.com/nanvix/cpython/issues/487
+    @unittest.skipIf(support.is_nanvix,
+                     "NSKIP019: 2**16 constants in compiled module exceed standalone 32MB heap")
     def test_extended_opargs(self):
         extended_opargs_test = [
             "a",
