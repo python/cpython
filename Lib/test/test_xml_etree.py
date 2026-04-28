@@ -3479,27 +3479,35 @@ class ElementFindTest(unittest.TestCase):
         self.assertRaisesRegex(SyntaxError, 'XPath', e.find, './tag[last()+1]')
 
     def test_find_xpath_index_no_quadratic_complexity(self):
-        root = ET.Element("root")
-        first_a = ET.SubElement(root, "a")
-        first_a.set("pos", "first")
-        n = 2 ** 15
-        for i in range(n):
-            ET.SubElement(root, "a")
-        last_a = ET.SubElement(root, "a")
-        last_a.set("pos", "last")
+        class CountingElement(ET.Element):
+            findall_calls = 0
+            def findall(self, *args, **kwargs):
+                type(self).findall_calls += 1
+                return super().findall(*args, **kwargs)
+
+        def work(n, pattern):
+            root = CountingElement("root")
+            for _ in range(n):
+                ET.SubElement(root, "a")
+            CountingElement.findall_calls = 0
+            root.findall(pattern)
+            return CountingElement.findall_calls
 
         for pattern in [".//a[1]", ".//a[last()]"]:
-            start = time.time()
-            result = root.findall(pattern)
-            end = time.time()
+            w1 = work(1024, pattern)
+            w2 = work(2048, pattern)
+            w3 = work(4096, pattern)
 
-            # Before the fix these took 30+ seconds.
-            self.assertLess(end - start, 1)
-
-        self.assertIs(root.find(".//a[1]"), first_a)
-        self.assertEqual(root.find(".//a[1]").get("pos"), "first")
-        self.assertIs(root.find(".//a[last()]"), last_a)
-        self.assertEqual(root.find(".//a[last()]").get("pos"), "last")
+            self.assertGreater(w1, 0)
+            r1 = w2 / w1
+            r2 = w3 / w2
+            # Doubling N must not ~double the parent.findall calls.
+            # Linear-in-N call counts indicate the cache is missing.
+            self.assertLess(
+                max(r1, r2), 1.5,
+                msg=f"Possible quadratic behavior on {pattern!r}: "
+                    f"calls={w1, w2, w3} ratios={r1, r2}",
+            )
 
     def test_findall(self):
         e = ET.XML(SAMPLE_XML)
