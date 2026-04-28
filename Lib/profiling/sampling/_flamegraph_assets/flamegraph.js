@@ -1063,11 +1063,7 @@ function populateStats(data) {
     funcname = funcname || 'unknown';
 
     if (filename !== 'unknown' && funcname !== 'unknown' && node.value > 0) {
-      let childrenValue = 0;
-      if (node.children) {
-        childrenValue = node.children.reduce((sum, child) => sum + child.value, 0);
-      }
-      const directSamples = Math.max(0, node.value - childrenValue);
+      const directSamples = node.self || 0;
 
       const funcKey = `${filename}:${node.lineno || '?'}:${funcname}`;
 
@@ -1345,14 +1341,13 @@ function processLeaf(invertedRoot, path, leafNode, isDifferential) {
 }
 
 function traverseInvert(path, currentNode, invertedRoot, isDifferential) {
-  const children = currentNode.children || [];
-  const childThreads = new Set(children.flatMap(c => c.threads || []));
-  const selfThreads = (currentNode.threads || []).filter(t => !childThreads.has(t));
+  const selfValue = currentNode.self || 0;
 
-  if (selfThreads.length > 0) {
-    processLeaf(invertedRoot, path, { ...currentNode, threads: selfThreads }, isDifferential);
+  if (selfValue > 0) {
+    processLeaf(invertedRoot, path, { ...currentNode, value: selfValue }, isDifferential);
   }
 
+  const children = currentNode.children || [];
   children.forEach(child => traverseInvert(path.concat([child]), child, invertedRoot, isDifferential));
 }
 
