@@ -661,6 +661,13 @@ Other language changes
   the existing support for unary minus.
   (Contributed by Bartosz Sławecki in :gh:`145239`.)
 
+* The import system now acquires per-module locks in hierarchical order
+  (parent packages before their submodules). This fixes a long-standing
+  deadlock where one thread importing ``pkg.sub`` and another importing
+  ``pkg.sub.mod`` could each block the other when ``pkg/sub/__init__.py``
+  imports ``pkg.sub.mod``.
+  (Contributed by Gregory P. Smith in :gh:`83065`.)
+
 
 New modules
 ===========
