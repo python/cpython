@@ -424,6 +424,64 @@ class _ModuleLockManager:
         self._lock.release()
 
 
+def _get_module_chain(name):
+    """Return the chain of dotted-name prefixes from root to leaf.
+
+    For example: 'a.b.c' -> ['a', 'a.b', 'a.b.c']
+    """
+    parts = name.split('.')
+    return ['.'.join(parts[:i+1]) for i in range(len(parts))]
+
+
+class _HierarchicalLockManager:
+    """Manages acquisition of multiple module locks in hierarchical order.
+
+    This prevents deadlocks by ensuring all threads acquire locks in the
+    same order (parent modules before child modules).
+    """
+
+    def __init__(self, name):
+        self._name = name
+        self._module_chain = _get_module_chain(name)
+        self._locks = []
+
+    def __enter__(self):
+        try:
+            for module_name in self._module_chain:
+                # Only acquire lock if module is not already fully loaded
+                module = sys.modules.get(module_name)
+                if (module is None or
+                    getattr(getattr(module, "__spec__", None),
+                            "_initializing", False)):
+                    lock = _get_module_lock(module_name)
+                    try:
+                        lock.acquire()
+                    except _DeadlockError:
+                        if module_name == self._name:
+                            raise
+                        # The parent is being initialised by a thread that
+                        # is (transitively) waiting on a lock we hold.
+                        # Apply the same policy as _lock_unlock_module():
+                        # accept a partially-initialised parent for circular
+                        # imports rather than failing the whole chain.
+                        continue
+                    self._locks.append((module_name, lock))
+        except:
+            # __exit__ is not called when __enter__ raises (e.g. _DeadlockError
+            # on the leaf lock, or KeyboardInterrupt), so release whatever we
+            # already hold to avoid permanently leaking held module locks.
+            for module_name, lock in reversed(self._locks):
+                lock.release()
+            self._locks.clear()
+            raise
+        return self
+
+    def __exit__(self, *args, **kwargs):
+        for module_name, lock in reversed(self._locks):
+            lock.release()
+        self._locks.clear()
+
+
 # The following two functions are for consumption by Python/import.c.
 
 def _get_module_lock(name):
@@ -1276,7 +1334,13 @@ def _find_and_load(name, import_):
     module = sys.modules.get(name, _NEEDS_LOADING)
     if (module is _NEEDS_LOADING or
         getattr(getattr(module, "__spec__", None), "_initializing", False)):
-        with _ModuleLockManager(name):
+
+        if '.' in name:
+            lock_manager = _HierarchicalLockManager(name)
+        else:
+            lock_manager = _ModuleLockManager(name)
+
+        with lock_manager:
             module = sys.modules.get(name, _NEEDS_LOADING)
             if module is _NEEDS_LOADING:
                 return _find_and_load_unlocked(name, import_)
