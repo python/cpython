@@ -154,8 +154,8 @@ the remaining entry points.
 
 .. note::
 
-   While :func:`pkgutil.resolve_name` itself doesn't require the ``:callable``
-   suffix, :file:`{name}.start` file lines require this stricter syntax.
+   :file:`{name}.start` files invoke :func:`pkgutil.resolve_name` with
+   ``strict=True``, which requires the full ``pkg.mod:callable`` form.
 
 .. versionchanged:: 3.13
 
@@ -164,8 +164,8 @@ the remaining entry points.
 
 .. deprecated-removed:: 3.15 3.20
 
-   :file:`{name}.pth` files in any encoding other than ``utf-8-sig`` is
-   deprecated in Python 3.15, and support for decoding from the locale
+   Decoding :file:`{name}.pth` files in any encoding other than ``utf-8-sig``
+   is deprecated in Python 3.15, and support for decoding from the locale
    encoding will be removed in Python 3.20.
 
 .. versionchanged:: 3.15
@@ -174,8 +174,8 @@ the remaining entry points.
    the deprecation period, such lines are still executed, but a diagnostic
    message is emitted when the :option:`-v` flag is given.  If a
    :file:`{name}.start` file with the same base name exists, ``import`` lines
-   :file:`{name}.pth` files are silently ignored.  See :ref:`site-start-files`
-   and :pep:`829`.
+   in :file:`{name}.pth` files are silently ignored.  See
+   :ref:`site-start-files` and :pep:`829`.
 
    Errors on individual lines no longer abort processing of the rest of the
    file.  Each error is reported and the remaining lines continue to be

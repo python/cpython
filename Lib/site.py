@@ -261,9 +261,6 @@ def _extend_syspath():
     # We've already filtered out duplicates, either in the existing sys.path
     # or in all the .pth files we've seen.  We've also abspath/normpath'd all
     # the entries, so all that's left to do is to ensure that the path exists.
-    #
-    # Return the list of paths added to maintain the *undocumented* behavior
-    # of addpackage().
     for filename, dirs in _pending_syspaths.items():
         for dir_ in dirs:
             if os.path.exists(dir_):
