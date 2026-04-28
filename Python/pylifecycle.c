@@ -3342,7 +3342,9 @@ _Py_FatalError_DumpTracebacks(int fd, PyInterpreterState *interp,
 
     /* display the current Python stack */
 #ifndef Py_GIL_DISABLED
-    _Py_DumpTracebackThreads(fd, interp, tstate);
+    /* Fatal-error path has no caller-supplied cap; use the historical
+       default. */
+    _Py_DumpTracebackThreads(fd, interp, tstate, _Py_TRACEBACK_MAX_NTHREADS);
 #else
     _Py_DumpTraceback(fd, tstate);
 #endif

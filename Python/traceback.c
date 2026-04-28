@@ -55,7 +55,9 @@
 
 #define MAX_STRING_LENGTH 500
 #define MAX_FRAME_DEPTH 100
-#define MAX_NTHREADS 100
+/* The historical default thread-dump cap is declared as
+   _Py_TRACEBACK_MAX_NTHREADS in pycore_traceback.h so callers of
+   _Py_DumpTracebackThreads can reference it directly. */
 
 /* Function from Parser/tokenizer/file_tokenizer.c */
 extern char* _PyTokenizer_FindEncodingFilename(int, PyObject *);
@@ -1265,7 +1267,8 @@ write_thread_id(int fd, PyThreadState *tstate, int is_current)
    handlers if signals were received. */
 const char* _Py_NO_SANITIZE_THREAD
 _Py_DumpTracebackThreads(int fd, PyInterpreterState *interp,
-                         PyThreadState *current_tstate)
+                         PyThreadState *current_tstate,
+                         unsigned int max_nthreads)
 {
     if (current_tstate == NULL) {
         /* _Py_DumpTracebackThreads() is called from signal handlers by
@@ -1316,7 +1319,7 @@ _Py_DumpTracebackThreads(int fd, PyInterpreterState *interp,
     {
         if (nthreads != 0)
             PUTS(fd, "\n");
-        if (nthreads >= MAX_NTHREADS) {
+        if (nthreads >= max_nthreads) {
             PUTS(fd, "...\n");
             break;
         }

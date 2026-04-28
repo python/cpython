@@ -58,10 +58,19 @@ extern void _Py_DumpTraceback(
 
    This function is signal safe. */
 
+/* The historical per-call cap on the number of threads dumped by
+   _Py_DumpTracebackThreads; surfaced as the public default for the
+   max_threads kwarg on faulthandler.dump_traceback{,_later}. */
+#define _Py_TRACEBACK_MAX_NTHREADS 100
+
+/* max_nthreads is the per-call cap. Pass _Py_TRACEBACK_MAX_NTHREADS
+   for the historical default; user-facing callers should use the
+   clinic-supplied default of the public Python API. */
 extern const char* _Py_DumpTracebackThreads(
     int fd,
     PyInterpreterState *interp,
-    PyThreadState *current_tstate);
+    PyThreadState *current_tstate,
+    unsigned int max_nthreads);
 
 /* Write a Unicode object into the file descriptor fd. Encode the string to
    ASCII using the backslashreplace error handler.

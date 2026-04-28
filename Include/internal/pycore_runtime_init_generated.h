@@ -1895,6 +1895,7 @@ extern "C" {
     INIT_ID(mask), \
     INIT_ID(match), \
     INIT_ID(max_length), \
+    INIT_ID(max_threads), \
     INIT_ID(maxdigits), \
     INIT_ID(maxevents), \
     INIT_ID(maxlen), \

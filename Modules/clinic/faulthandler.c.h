@@ -10,19 +10,23 @@ preserve
 #include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
 
 PyDoc_STRVAR(faulthandler_dump_traceback_py__doc__,
-"dump_traceback($module, /, file=sys.stderr, all_threads=True)\n"
+"dump_traceback($module, /, file=sys.stderr, all_threads=True, *,\n"
+"               max_threads=100)\n"
 "--\n"
 "\n"
 "Dump the traceback of the current thread into file.\n"
 "\n"
-"Dump the traceback of all threads if all_threads is true.");
+"Dump the traceback of all threads if all_threads is true. max_threads\n"
+"caps the number of threads dumped; a \"...\" marker is written if there\n"
+"are more.");
 
 #define FAULTHANDLER_DUMP_TRACEBACK_PY_METHODDEF    \
     {"dump_traceback", _PyCFunction_CAST(faulthandler_dump_traceback_py), METH_FASTCALL|METH_KEYWORDS, faulthandler_dump_traceback_py__doc__},
 
 static PyObject *
 faulthandler_dump_traceback_py_impl(PyObject *module, PyObject *file,
-                                    int all_threads);
+                                    int all_threads,
+                                    unsigned int max_threads);
 
 static PyObject *
 faulthandler_dump_traceback_py(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
@@ -30,7 +34,7 @@ faulthandler_dump_traceback_py(PyObject *module, PyObject *const *args, Py_ssize
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 
-    #define NUM_KEYWORDS 2
+    #define NUM_KEYWORDS 3
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
@@ -39,7 +43,7 @@ faulthandler_dump_traceback_py(PyObject *module, PyObject *const *args, Py_ssize
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
         .ob_hash = -1,
-        .ob_item = { &_Py_ID(file), &_Py_ID(all_threads), },
+        .ob_item = { &_Py_ID(file), &_Py_ID(all_threads), &_Py_ID(max_threads), },
     };
     #undef NUM_KEYWORDS
     #define KWTUPLE (&_kwtuple.ob_base.ob_base)
@@ -48,17 +52,18 @@ faulthandler_dump_traceback_py(PyObject *module, PyObject *const *args, Py_ssize
     #  define KWTUPLE NULL
     #endif  // !Py_BUILD_CORE
 
-    static const char * const _keywords[] = {"file", "all_threads", NULL};
+    static const char * const _keywords[] = {"file", "all_threads", "max_threads", NULL};
     static _PyArg_Parser _parser = {
         .keywords = _keywords,
         .fname = "dump_traceback",
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[2];
+    PyObject *argsbuf[3];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
     PyObject *file = NULL;
     int all_threads = 1;
+    unsigned int max_threads = 100;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
             /*minpos*/ 0, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
@@ -74,12 +79,24 @@ faulthandler_dump_traceback_py(PyObject *module, PyObject *const *args, Py_ssize
             goto skip_optional_pos;
         }
     }
-    all_threads = PyObject_IsTrue(args[1]);
-    if (all_threads < 0) {
-        goto exit;
+    if (args[1]) {
+        all_threads = PyObject_IsTrue(args[1]);
+        if (all_threads < 0) {
+            goto exit;
+        }
+        if (!--noptargs) {
+            goto skip_optional_pos;
+        }
     }
 skip_optional_pos:
-    return_value = faulthandler_dump_traceback_py_impl(module, file, all_threads);
+    if (!noptargs) {
+        goto skip_optional_kwonly;
+    }
+    if (!_PyLong_UnsignedInt_Converter(args[2], &max_threads)) {
+        goto exit;
+    }
+skip_optional_kwonly:
+    return_value = faulthandler_dump_traceback_py_impl(module, file, all_threads, max_threads);
 
 exit:
     return return_value;
@@ -280,13 +297,15 @@ exit:
 
 PyDoc_STRVAR(faulthandler_dump_traceback_later__doc__,
 "dump_traceback_later($module, /, timeout, repeat=False,\n"
-"                     file=sys.stderr, exit=False)\n"
+"                     file=sys.stderr, exit=False, *, max_threads=100)\n"
 "--\n"
 "\n"
 "Dump the traceback of all threads in timeout seconds.\n"
 "\n"
 "If repeat is true, the tracebacks of all threads are dumped every timeout\n"
-"seconds. If exit is true, call _exit(1) which is not safe.");
+"seconds. If exit is true, call _exit(1) which is not safe. max_threads\n"
+"caps the number of threads dumped; a \"...\" marker is written if there\n"
+"are more.");
 
 #define FAULTHANDLER_DUMP_TRACEBACK_LATER_METHODDEF    \
     {"dump_traceback_later", _PyCFunction_CAST(faulthandler_dump_traceback_later), METH_FASTCALL|METH_KEYWORDS, faulthandler_dump_traceback_later__doc__},
@@ -294,7 +313,8 @@ PyDoc_STRVAR(faulthandler_dump_traceback_later__doc__,
 static PyObject *
 faulthandler_dump_traceback_later_impl(PyObject *module,
                                        PyObject *timeout_obj, int repeat,
-                                       PyObject *file, int exit);
+                                       PyObject *file, int exit,
+                                       unsigned int max_threads);
 
 static PyObject *
 faulthandler_dump_traceback_later(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
@@ -302,7 +322,7 @@ faulthandler_dump_traceback_later(PyObject *module, PyObject *const *args, Py_ss
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 
-    #define NUM_KEYWORDS 4
+    #define NUM_KEYWORDS 5
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
@@ -311,7 +331,7 @@ faulthandler_dump_traceback_later(PyObject *module, PyObject *const *args, Py_ss
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
         .ob_hash = -1,
-        .ob_item = { &_Py_ID(timeout), &_Py_ID(repeat), &_Py_ID(file), &_Py_ID(exit), },
+        .ob_item = { &_Py_ID(timeout), &_Py_ID(repeat), &_Py_ID(file), &_Py_ID(exit), &_Py_ID(max_threads), },
     };
     #undef NUM_KEYWORDS
     #define KWTUPLE (&_kwtuple.ob_base.ob_base)
@@ -320,19 +340,20 @@ faulthandler_dump_traceback_later(PyObject *module, PyObject *const *args, Py_ss
     #  define KWTUPLE NULL
     #endif  // !Py_BUILD_CORE
 
-    static const char * const _keywords[] = {"timeout", "repeat", "file", "exit", NULL};
+    static const char * const _keywords[] = {"timeout", "repeat", "file", "exit", "max_threads", NULL};
     static _PyArg_Parser _parser = {
         .keywords = _keywords,
         .fname = "dump_traceback_later",
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[4];
+    PyObject *argsbuf[5];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     PyObject *timeout_obj;
     int repeat = 0;
     PyObject *file = NULL;
     int exit = 0;
+    unsigned int max_threads = 100;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
             /*minpos*/ 1, /*maxpos*/ 4, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
@@ -358,12 +379,24 @@ faulthandler_dump_traceback_later(PyObject *module, PyObject *const *args, Py_ss
             goto skip_optional_pos;
         }
     }
-    exit = PyObject_IsTrue(args[3]);
-    if (exit < 0) {
-        goto exit;
+    if (args[3]) {
+        exit = PyObject_IsTrue(args[3]);
+        if (exit < 0) {
+            goto exit;
+        }
+        if (!--noptargs) {
+            goto skip_optional_pos;
+        }
     }
 skip_optional_pos:
-    return_value = faulthandler_dump_traceback_later_impl(module, timeout_obj, repeat, file, exit);
+    if (!noptargs) {
+        goto skip_optional_kwonly;
+    }
+    if (!_PyLong_UnsignedInt_Converter(args[4], &max_threads)) {
+        goto exit;
+    }
+skip_optional_kwonly:
+    return_value = faulthandler_dump_traceback_later_impl(module, timeout_obj, repeat, file, exit, max_threads);
 
 exit:
     return return_value;
@@ -685,4 +718,4 @@ exit:
 #ifndef FAULTHANDLER__RAISE_EXCEPTION_METHODDEF
     #define FAULTHANDLER__RAISE_EXCEPTION_METHODDEF
 #endif /* !defined(FAULTHANDLER__RAISE_EXCEPTION_METHODDEF) */
-/*[clinic end generated code: output=31bf0149d0d02ccf input=a9049054013a1b77]*/
+/*[clinic end generated code: output=b477248ff88dc172 input=a9049054013a1b77]*/

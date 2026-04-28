@@ -68,6 +68,8 @@ struct _faulthandler_runtime_state {
         int exit;
         char *header;
         size_t header_len;
+        /* Thread-count cap passed to _Py_DumpTracebackThreads. */
+        unsigned int max_nthreads;
         /* The main thread always holds this lock. It is only released when
            faulthandler_thread() is interrupted before this thread exits, or at
            Python exit. */

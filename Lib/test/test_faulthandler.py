@@ -719,6 +719,62 @@ class FaultHandlerTests(unittest.TestCase):
     def test_dump_traceback_later_twice(self):
         self.check_dump_traceback_later(loops=2)
 
+    def test_dump_traceback_max_threads(self):
+        # max_threads caps the dump and writes "...\n" when truncated.
+        # Spawn N worker threads, dump with cap < N, and verify the
+        # marker is present and at most CAP thread headers are written.
+        code = dedent("""
+            import faulthandler
+            import sys
+            import threading
+
+            NTHREADS = 6
+            CAP = 3
+
+            ready = threading.Barrier(NTHREADS + 1)
+            stop = threading.Event()
+
+            def worker():
+                ready.wait()
+                stop.wait()
+
+            threads = [threading.Thread(target=worker) for _ in range(NTHREADS)]
+            for t in threads:
+                t.start()
+            ready.wait()
+            try:
+                faulthandler.dump_traceback(file=sys.stderr, max_threads=CAP)
+            finally:
+                stop.set()
+                for t in threads:
+                    t.join()
+        """).strip()
+        # spawn_python merges stderr into stdout by default.
+        with support.SuppressCrashReport():
+            process = script_helper.spawn_python('-c', code)
+            with process:
+                output, _ = process.communicate()
+                process.wait()
+        # Truncation marker is written when the cap is hit.
+        self.assertIn(b"...\n", output)
+        # Cap of 3 means at most 3 thread headers in the dump.
+        self.assertLessEqual(output.count(b"Thread 0x"), 3)
+
+    def test_dump_traceback_max_threads_default(self):
+        # The default max_threads of 100 preserves historical behavior:
+        # no truncation when the live thread count is below the cap.
+        code = dedent("""
+            import faulthandler
+            import sys
+            faulthandler.dump_traceback(file=sys.stderr)
+        """).strip()
+        with support.SuppressCrashReport():
+            process = script_helper.spawn_python('-c', code)
+            with process:
+                output, _ = process.communicate()
+                process.wait()
+        self.assertNotIn(b"...\n", output)
+
     @unittest.skipIf(not hasattr(faulthandler, "register"),
                      "need faulthandler.register")
     def check_register(self, filename=False, all_threads=False,
