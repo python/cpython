@@ -71,7 +71,7 @@ the user site prefixes are also implicitly not searched for site-packages.
    single: # (hash); comment
    pair: statement; import
 
-The ``site.py`` module recognizes two startup configuration files of the form
+The :mod:`!site` module recognizes two startup configuration files of the form
 :file:`{name}.pth` for path configurations, and :file:`{name}.start` for
 pre-first-line code execution.  Both files can exist in one of the four
 directories mentioned above.  Within each directory, these files are sorted
@@ -106,7 +106,7 @@ or tab) are executed with :func:`exec`.
 .. _site-start-files:
 
 Startup entry points (:file:`.start` files)
---------------------------------------------
+-------------------------------------------
 
 .. versionadded:: 3.15
 
