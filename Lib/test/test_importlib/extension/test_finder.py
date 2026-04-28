@@ -5,6 +5,14 @@ machinery = util.import_importlib('importlib.machinery')
 import unittest
 import sys
 
+from test.support import is_nanvix
+
+# NSKIP054 https://github.com/nanvix/cpython/issues/553
+if is_nanvix:
+    raise unittest.SkipTest(
+        "NSKIP054: Nanvix is built static-only; no dynamic extension modules (.so) available"
+    )
+
 
 class FinderTests(abc.FinderTests):
 

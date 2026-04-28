@@ -1,4 +1,5 @@
 from test.test_importlib import util
+from test import support
 
 machinery = util.import_importlib('importlib.machinery')
 
@@ -11,6 +12,11 @@ import types
 import unicodedata
 import unittest
 import warnings
+
+
+# NSKIP021 https://github.com/nanvix/cpython/issues/501
+if support.is_nanvix_standalone:
+    raise unittest.SkipTest("NSKIP021: FAT VFS rename() hangs the kernel")
 
 
 CODING_RE = re.compile(r'^[ \t\f]*#.*?coding[:=][ \t]*([-\w.]+)', re.ASCII)

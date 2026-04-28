@@ -8,7 +8,11 @@ import unittest
 
 from importlib.util import cache_from_source
 from test.support.os_helper import create_empty_file
+from test import support
 
+# NSKIP012 https://github.com/nanvix/cpython/issues/480
+@unittest.skipIf(support.is_nanvix and not support.is_nanvix_standalone,
+                 "NSKIP012: rmtree/rmdir cleanup failures on Nanvix (ENOSYS standalone, errno 88 hosted)")
 class TestImport(unittest.TestCase):
 
     def __init__(self, *args, **kw):
@@ -45,6 +49,11 @@ class TestImport(unittest.TestCase):
         with open(self.module_path, 'w', encoding='utf-8') as f:
             f.write(contents)
 
+    # NSKIP021 https://github.com/nanvix/cpython/issues/501
+    # NSKIP055 https://github.com/nanvix/cpython/issues/552
+    @unittest.skipIf(support.is_nanvix_standalone, "NSKIP021: FAT VFS rename() hangs the kernel")
+    @unittest.skipIf(support.is_nanvix and not support.is_nanvix_standalone,
+                     "NSKIP055: linuxd rename()/replace() hangs the kernel on hosted Nanvix")
     def test_package_import__semantics(self):
 
         # Generate a couple of broken modules to try importing.

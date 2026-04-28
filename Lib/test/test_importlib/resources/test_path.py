@@ -2,8 +2,20 @@ import io
 import unittest
 
 from importlib import resources
+from test.support import is_nanvix, is_nanvix_standalone
 from . import data01
 from . import util
+
+
+# NSKIP012 https://github.com/nanvix/cpython/issues/480
+# detail: on hosted Nanvix the cleanup-via-shutil.rmtree path triggers an
+# rmdir errno-88 cascade, leaving stale directories that exhaust
+# tempfile.mkdtemp's candidate-name search.  Skip the whole module on
+# hosted; standalone is unaffected.
+if is_nanvix and not is_nanvix_standalone:
+    raise unittest.SkipTest(
+        "NSKIP012: rmtree/rmdir cleanup failures on Nanvix (ENOSYS standalone, errno 88 hosted)"
+    )
 
 
 class CommonTests(util.CommonTests, unittest.TestCase):

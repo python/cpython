@@ -11,7 +11,15 @@ import warnings
 import importlib.util
 import importlib
 from test.support import MISSING_C_DOCSTRINGS
+from test.support import is_nanvix
 from test.support.script_helper import assert_python_failure
+
+# NSKIP054 https://github.com/nanvix/cpython/issues/553
+if is_nanvix:
+    raise unittest.SkipTest(
+        "NSKIP054: Nanvix is built static-only; no dynamic extension modules (.so) available"
+    )
+
 
 
 class LoaderTests:

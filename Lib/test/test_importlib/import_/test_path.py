@@ -1,4 +1,5 @@
 from test.test_importlib import util
+from test.support import is_nanvix, is_nanvix_standalone
 
 importlib = util.import_importlib('importlib')
 machinery = util.import_importlib('importlib.machinery')
@@ -131,6 +132,9 @@ class FinderTests:
             got = self.machinery.PathFinder.find_spec('whatever', [path])
         self.assertEqual(got, success_finder.spec)
 
+    # NSKIP012 https://github.com/nanvix/cpython/issues/480
+    @unittest.skipIf(is_nanvix and not is_nanvix_standalone,
+                     "NSKIP012: rmtree/rmdir cleanup failures on Nanvix (ENOSYS standalone, errno 88 hosted)")
     def test_deleted_cwd(self):
         # Issue #22834
         old_dir = os.getcwd()

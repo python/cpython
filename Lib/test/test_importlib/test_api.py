@@ -8,6 +8,7 @@ import os.path
 import sys
 from test.support import import_helper
 from test.support import os_helper
+from test import support
 import types
 import unittest
 import warnings
@@ -222,6 +223,11 @@ class ReloadTests:
             self.assertIs(reloaded, types)
             self.assertIs(sys.modules['types'], types)
 
+    # NSKIP021 https://github.com/nanvix/cpython/issues/501
+    # NSKIP055 https://github.com/nanvix/cpython/issues/552
+    @unittest.skipIf(support.is_nanvix_standalone, "NSKIP021: FAT VFS rename() hangs the kernel")
+    @unittest.skipIf(support.is_nanvix and not support.is_nanvix_standalone,
+                     "NSKIP055: linuxd rename()/replace() hangs the kernel on hosted Nanvix")
     def test_reload_location_changed(self):
         name = 'spam'
         with os_helper.temp_cwd(None) as cwd:
@@ -273,6 +279,11 @@ class ReloadTests:
                     self.maxDiff = None
                     self.assertEqual(ns, expected)
 
+    # NSKIP021 https://github.com/nanvix/cpython/issues/501
+    # NSKIP055 https://github.com/nanvix/cpython/issues/552
+    @unittest.skipIf(support.is_nanvix_standalone, "NSKIP021: FAT VFS rename() hangs the kernel")
+    @unittest.skipIf(support.is_nanvix and not support.is_nanvix_standalone,
+                     "NSKIP055: linuxd rename()/replace() hangs the kernel on hosted Nanvix")
     def test_reload_namespace_changed(self):
         name = 'spam'
         with os_helper.temp_cwd(None) as cwd:
@@ -332,6 +343,11 @@ class ReloadTests:
                     self.assertEqual(loader.path, init_path)
                     self.assertEqual(ns, expected)
 
+    # NSKIP021 https://github.com/nanvix/cpython/issues/501
+    # NSKIP055 https://github.com/nanvix/cpython/issues/552
+    @unittest.skipIf(support.is_nanvix_standalone, "NSKIP021: FAT VFS rename() hangs the kernel")
+    @unittest.skipIf(support.is_nanvix and not support.is_nanvix_standalone,
+                     "NSKIP055: linuxd rename()/replace() hangs the kernel on hosted Nanvix")
     def test_reload_submodule(self):
         # See #19851.
         name = 'spam'

@@ -82,11 +82,23 @@ def run_batch(
         else:
             # Direct mode: separate argv elements, invoke run-regrtest.py
             # in the guest.  --tmpdir must come before the module list.
+            #
+            # -B (no bytecode) is mandatory on hosted Nanvix: writing a
+            # __pycache__/*.pyc via os.replace hangs the guest kernel
+            # indefinitely (see NSKIP055 — linuxd's rename handler never
+            # returns, the VM becomes unresponsive, and the test harness
+            # hits its 600s wall-clock timeout).  Without -B, importing
+            # any source file whose mtime is newer than its compiled pyc
+            # — which happens after every code edit, since the
+            # install-time compileall snapshot goes stale — locks up the
+            # VM.  Mirrors the standalone branch above which sets -B for
+            # NSKIP021 (FAT VFS rename hang).
             cmd = [
                 NANVIXD,
                 *nanvixd_extra,
                 "--",
                 PYTHON_BIN,
+                "-B",
                 "./run-regrtest.py",
                 "--tmpdir",
                 batch_tmpdir,

@@ -7,9 +7,15 @@ importlib = util.import_importlib('importlib')
 machinery = util.import_importlib('importlib.machinery')
 
 import os
-from test.support import os_helper
+from test.support import os_helper, is_nanvix_standalone
 import unittest
 import warnings
+
+# NSKIP043 https://github.com/nanvix/cpython/issues/523
+if is_nanvix_standalone:
+    raise unittest.SkipTest(
+        "NSKIP043: FAT VFS case-insensitivity / 8.3 short-name retention"
+    )
 
 
 @util.case_insensitive_tests
