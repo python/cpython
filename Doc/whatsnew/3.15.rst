@@ -69,6 +69,8 @@ Summary -- Release highlights
   <whatsnew315-lazy-imports>`
 * :pep:`814`: :ref:`Add frozendict built-in type
   <whatsnew315-frozendict>`
+* :pep:`661`: :ref:`Add sentinel built-in type
+  <whatsnew315-sentinel>`
 * :pep:`799`: :ref:`A dedicated profiling package for organizing Python
   profiling tools <whatsnew315-profiling-package>`
 * :pep:`799`: :ref:`Tachyon: High frequency statistical sampling profiler
@@ -245,6 +247,20 @@ to accept also other mapping types such as :class:`~types.MappingProxyType`.
 .. seealso:: :pep:`814` for the full specification and rationale.
 
 (Contributed by Victor Stinner and Donghee Na in :gh:`141510`.)
+
+
+.. _whatsnew315-sentinel:
+
+:pep:`661`: Add sentinel built-in type
+--------------------------------------
+
+A new :class:`sentinel` type is added to the :mod:`builtins` module for
+creating unique sentinel values with a concise representation.  Sentinel
+objects preserve identity when copied, support use in type expressions with
+the ``|`` operator, and can be pickled when they are importable by module and
+name.
+
+(PEP by Tal Einat; contributed by Jelle Zijlstra in :gh:`148829`.)
 
 
 .. _whatsnew315-profiling-package:
@@ -661,6 +677,13 @@ Other language changes
   the existing support for unary minus.
   (Contributed by Bartosz Sławecki in :gh:`145239`.)
 
+* The import system now acquires per-module locks in hierarchical order
+  (parent packages before their submodules). This fixes a long-standing
+  deadlock where one thread importing ``pkg.sub`` and another importing
+  ``pkg.sub.mod`` could each block the other when ``pkg/sub/__init__.py``
+  imports ``pkg.sub.mod``.
+  (Contributed by Gregory P. Smith in :gh:`83065`.)
+
 
 New modules
 ===========
@@ -716,6 +739,17 @@ ast
 * The :ref:`command-line <ast-cli>` output is now syntax highlighted by default.
   This can be :ref:`controlled using environment variables <using-on-controlling-color>`.
   (Contributed by Stan Ulbrych in :gh:`148981`.)
+
+
+asyncio
+-------
+
+* Added :meth:`TaskGroup.cancel <asyncio.TaskGroup.cancel>` to allow early
+  termination of a task group, for instance, when the goal of the tasks has
+  been achieved or their services are no longer needed.
+  Previously this would involve unintuitive boilerplate such as an extra task
+  raising a custom exception which is then suppressed as it exits the task group.
+  (Contributed by John Belmonte in :gh:`127214`.)
 
 
 base64
@@ -829,6 +863,15 @@ contextlib
   :class:`~contextlib.ExitStack` and :class:`contextlib.AsyncExitStack`, for
   consistency with the :keyword:`with` and :keyword:`async with` statements.
   (Contributed by Serhiy Storchaka in :gh:`144386`.)
+
+* :class:`~contextlib.ContextDecorator` and
+  :class:`~contextlib.AsyncContextDecorator` (and therefore
+  :func:`~contextlib.contextmanager` and :func:`~contextlib.asynccontextmanager`
+  used as decorators) now detect generator functions, coroutine functions, and
+  asynchronous generator functions and keep the context manager open across
+  iteration or await.  Previously the context manager exited as soon as the
+  generator or coroutine object was created.
+  (Contributed by Alex Grönholm & Gregory P. Smith in :gh:`125862`.)
 
 
 dataclasses
@@ -1244,6 +1287,15 @@ tkinter
   (Contributed by Matthias Kievernagel and Serhiy Storchaka in :gh:`47655`.)
 
 
+tokenize
+--------
+
+* The output of the :mod:`tokenize` :ref:`command-line interface
+  <tokenize-cli>` is colored by default. This can be controlled with
+  :ref:`environment variables <using-on-controlling-color>`.
+  (Contributed by Hugo van Kemenade in :gh:`148991`.)
+
+
 .. _whatsnew315-tomllib-1-1-0:
 
 tomllib
@@ -1594,6 +1646,16 @@ This was made possible by a refactoring of JIT data structures.
 
 Removed
 ========
+
+ast
+---
+
+* The constructors of :ref:`AST nodes <ast_nodes>` now raise a :exc:`TypeError`
+  when a required argument is omitted or when a keyword argument that does not
+  map to a field on the AST node is passed. These cases had previously raised a
+  :exc:`DeprecationWarning` since Python 3.13.
+  (Contributed by Brian Schubert and Jelle Zijlstra in :gh:`137600` and :gh:`105858`.)
+
 
 collections.abc
 ---------------
