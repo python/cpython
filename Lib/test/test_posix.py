@@ -51,6 +51,9 @@ def _supports_sched():
 requires_sched = unittest.skipUnless(_supports_sched(), 'requires POSIX scheduler API')
 
 
+# NSKIP053 https://github.com/nanvix/cpython/issues/533
+@unittest.skipIf(support.is_nanvix and not support.is_nanvix_standalone,
+                 "NSKIP053: hosted Nanvix hangs the VM somewhere in this class; root cause not bisected")  # detail: see #533
 class PosixTester(unittest.TestCase):
 
     def setUp(self):
@@ -181,6 +184,9 @@ class PosixTester(unittest.TestCase):
         finally:
             fp.close()
 
+    # NSKIP037 https://github.com/nanvix/cpython/issues/517
+    @unittest.skipIf(support.is_nanvix,
+                     "NSKIP037: os.truncate() not supported")
     @unittest.skipUnless(hasattr(posix, 'truncate'), "test needs posix.truncate()")
     def test_truncate(self):
         with open(os_helper.TESTFN, 'w') as fp:
@@ -388,6 +394,9 @@ class PosixTester(unittest.TestCase):
         finally:
             os.close(fd)
 
+    # NSKIP040 https://github.com/nanvix/cpython/issues/520
+    @unittest.skipIf(support.is_nanvix,
+                     "NSKIP040: os.pwritev() with overflow-sized iovecs hangs on Nanvix")
     @unittest.skipUnless(hasattr(posix, 'pwritev'), "test needs posix.pwritev()")
     @requires_32b
     def test_pwritev_overflow_32bits(self):
@@ -439,6 +448,9 @@ class PosixTester(unittest.TestCase):
 
     @unittest.skipUnless(hasattr(posix, 'posix_fadvise'),
         "test needs posix.posix_fadvise()")
+    # NSKIP038 https://github.com/nanvix/cpython/issues/518
+    @unittest.skipIf(support.is_nanvix,
+                     "NSKIP038: os.posix_fadvise() not implemented on Nanvix")
     def test_posix_fadvise_errno(self):
         try:
             posix.posix_fadvise(-42, 0, 0, posix.POSIX_FADV_WILLNEED)
@@ -446,6 +458,9 @@ class PosixTester(unittest.TestCase):
             if inst.errno != errno.EBADF:
                 raise
 
+    # NSKIP034 https://github.com/nanvix/cpython/issues/514
+    @unittest.skipIf(support.is_nanvix_standalone,
+                     "NSKIP034: os.utime(times) does not modify mtime/atime on FAT VFS")
     @unittest.skipUnless(os.utime in os.supports_fd, "test needs fd support in os.utime")
     def test_utime_with_fd(self):
         now = time.time()
@@ -467,6 +482,9 @@ class PosixTester(unittest.TestCase):
         finally:
             os.close(fd)
 
+    # NSKIP034 https://github.com/nanvix/cpython/issues/514
+    @unittest.skipIf(support.is_nanvix_standalone,
+                     "NSKIP034: os.utime(times) does not modify mtime/atime on FAT VFS")
     @unittest.skipUnless(os.utime in os.supports_follow_symlinks, "test needs follow_symlinks support in os.utime")
     def test_utime_nofollow_symlinks(self):
         now = time.time()
@@ -504,6 +522,9 @@ class PosixTester(unittest.TestCase):
         finally:
             os.close(fd)
 
+    # NSKIP041 https://github.com/nanvix/cpython/issues/521
+    @unittest.skipIf(support.is_nanvix,
+                     "NSKIP041: os.writev() not supported")  # detail: ENOSPC instead of EINVAL on overflow
     @unittest.skipUnless(hasattr(posix, 'writev'), "test needs posix.writev()")
     @requires_32b
     def test_writev_overflow_32bits(self):
@@ -552,6 +573,9 @@ class PosixTester(unittest.TestCase):
 
     @unittest.skipUnless(hasattr(posix, 'dup'),
                          'test needs posix.dup()')
+    # NSKIP035 https://github.com/nanvix/cpython/issues/515
+    @unittest.skipIf(support.is_nanvix,
+                     "NSKIP035: os.dup() raises ENOTSUP via fcntl(F_DUPFD_CLOEXEC)")
     @unittest.skipIf(support.is_wasi, "WASI does not have dup()")
     def test_dup(self):
         fp = open(os_helper.TESTFN)
@@ -570,6 +594,9 @@ class PosixTester(unittest.TestCase):
 
     @unittest.skipUnless(hasattr(posix, 'dup2'),
                          'test needs posix.dup2()')
+    # NSKIP030 https://github.com/nanvix/cpython/issues/510
+    @unittest.skipIf(support.is_nanvix,
+                     "NSKIP030: os.dup2() accepts invalid fd silently")
     @unittest.skipIf(support.is_wasi, "WASI does not have dup2()")
     def test_dup2(self):
         fp1 = open(os_helper.TESTFN)
@@ -791,6 +818,9 @@ class PosixTester(unittest.TestCase):
             self.assertRaises(TypeError, chown_func, first_param, uid, t(gid))
             check_stat(uid, gid)
 
+    # NSKIP042 https://github.com/nanvix/cpython/issues/522
+    @unittest.skipIf(support.is_nanvix,
+                     "NSKIP042: os.chown() not supported")  # detail: no-op on FAT VFS
     @unittest.skipUnless(hasattr(os, "chown"), "requires os.chown()")
     @unittest.skipIf(support.is_emscripten, "getgid() is a stub")
     def test_chown(self):
@@ -826,6 +856,9 @@ class PosixTester(unittest.TestCase):
         self._test_all_chown_common(posix.lchown, os_helper.TESTFN,
                                     getattr(posix, 'lstat', None))
 
+    # NSKIP036 https://github.com/nanvix/cpython/issues/516
+    @unittest.skipIf(support.is_nanvix,
+                     "NSKIP036: os.chdir() succeeds on non-directory targets")
     @unittest.skipUnless(hasattr(posix, 'chdir'), 'test needs posix.chdir()')
     def test_chdir(self):
         posix.chdir(os.curdir)
@@ -879,6 +912,9 @@ class PosixTester(unittest.TestCase):
     def test_strerror(self):
         self.assertTrue(posix.strerror(0))
 
+    # NSKIP023 https://github.com/nanvix/cpython/issues/503
+    @unittest.skipIf(support.is_nanvix,
+                     "NSKIP023: os.pipe() ENOSYS in standalone mode")
     @unittest.skipUnless(hasattr(posix, 'pipe'), 'test needs posix.pipe()')
     def test_pipe(self):
         reader, writer = posix.pipe()
@@ -922,6 +958,9 @@ class PosixTester(unittest.TestCase):
         self.assertRaises(OverflowError, os.pipe2, _testcapi.INT_MAX + 1)
         self.assertRaises(OverflowError, os.pipe2, _testcapi.UINT_MAX + 1)
 
+    # NSKIP034 https://github.com/nanvix/cpython/issues/514
+    @unittest.skipIf(support.is_nanvix_standalone,
+                     "NSKIP034: os.utime(times) does not modify mtime/atime on FAT VFS")
     @unittest.skipUnless(hasattr(posix, 'utime'), 'test needs posix.utime()')
     def test_utime(self):
         now = time.time()
@@ -971,11 +1010,17 @@ class PosixTester(unittest.TestCase):
         target = self.tempdir()
         self.check_chmod(posix.chmod, target)
 
+    # NSKIP027 https://github.com/nanvix/cpython/issues/507
+    @unittest.skipIf(support.is_nanvix,
+                     "NSKIP027: FAT VFS does not honor file mode bits")
     @unittest.skipUnless(hasattr(posix, 'lchmod'), 'test needs os.lchmod()')
     def test_lchmod_file(self):
         self.check_chmod(posix.lchmod, os_helper.TESTFN)
         self.check_chmod(posix.chmod, os_helper.TESTFN, follow_symlinks=False)
 
+    # NSKIP027 https://github.com/nanvix/cpython/issues/507
+    @unittest.skipIf(support.is_nanvix,
+                     "NSKIP027: FAT VFS does not honor file mode bits")
     @unittest.skipUnless(hasattr(posix, 'lchmod'), 'test needs os.lchmod()')
     def test_lchmod_dir(self):
         target = self.tempdir()
@@ -1385,6 +1430,9 @@ class PosixTester(unittest.TestCase):
                 # http://lists.freebsd.org/pipermail/freebsd-amd64/2012-January/014332.html
                 raise unittest.SkipTest("OSError raised!")
 
+    # NSKIP021 https://github.com/nanvix/cpython/issues/501
+    @unittest.skipIf(support.is_nanvix,
+                     "NSKIP021: FAT VFS rename() hangs the kernel")
     def test_path_error2(self):
         """
         Test functions that call path_error2(), providing two filenames in their exceptions.
@@ -1452,6 +1500,9 @@ class PosixTester(unittest.TestCase):
 
 
 # tests for the posix *at functions follow
+# NSKIP053 https://github.com/nanvix/cpython/issues/533
+@unittest.skipIf(support.is_nanvix and not support.is_nanvix_standalone,
+                 "NSKIP053: hosted Nanvix hangs the VM somewhere in this class; root cause not bisected")  # detail: see #533
 class TestPosixDirFd(unittest.TestCase):
     count = 0
 
@@ -1474,6 +1525,9 @@ class TestPosixDirFd(unittest.TestCase):
             self.addCleanup(posix.unlink, fullname)
             yield (dir_fd, name, fullname)
 
+    # NSKIP039 https://github.com/nanvix/cpython/issues/519
+    @unittest.skipIf(support.is_nanvix,
+                     "NSKIP039: *at() syscalls return wrong errno with dir_fd on Nanvix")
     @unittest.skipUnless(os.access in os.supports_dir_fd, "test needs dir_fd support for os.access()")
     def test_access_dir_fd(self):
         with self.prepare_file() as (dir_fd, name, fullname):
@@ -1515,6 +1569,9 @@ class TestPosixDirFd(unittest.TestCase):
             self.assertRaises(OverflowError,
                     posix.stat, name, dir_fd=10**20)
 
+    # NSKIP034 https://github.com/nanvix/cpython/issues/514
+    @unittest.skipIf(support.is_nanvix_standalone,
+                     "NSKIP034: os.utime(times) does not modify mtime/atime on FAT VFS")
     @unittest.skipUnless(os.utime in os.supports_dir_fd, "test needs dir_fd support in os.utime()")
     def test_utime_dir_fd(self):
         with self.prepare_file() as (dir_fd, name, fullname):
@@ -1554,6 +1611,9 @@ class TestPosixDirFd(unittest.TestCase):
         hasattr(os, "link") and os.link in os.supports_dir_fd,
         "test needs dir_fd support in os.link()"
     )
+    # NSKIP024 https://github.com/nanvix/cpython/issues/504
+    @unittest.skipIf(support.is_nanvix,
+                     "NSKIP024: os.link()/symlink()/readlink() not supported on FAT VFS")  # detail: os.link()
     def test_link_dir_fd(self):
         with self.prepare_file() as (dir_fd, name, fullname), \
              self.prepare() as (dir_fd2, linkname, fulllinkname):
@@ -1566,6 +1626,9 @@ class TestPosixDirFd(unittest.TestCase):
             self.assertEqual(posix.stat(fullname)[1],
                 posix.stat(fulllinkname)[1])
 
+    # NSKIP039 https://github.com/nanvix/cpython/issues/519
+    @unittest.skipIf(support.is_nanvix,
+                     "NSKIP039: *at() syscalls return wrong errno with dir_fd on Nanvix")
     @unittest.skipUnless(os.mkdir in os.supports_dir_fd, "test needs dir_fd support in os.mkdir()")
     def test_mkdir_dir_fd(self):
         with self.prepare() as (dir_fd, name, fullname):
@@ -1607,12 +1670,18 @@ class TestPosixDirFd(unittest.TestCase):
 
     @unittest.skipUnless(hasattr(os, 'readlink') and (os.readlink in os.supports_dir_fd),
                          "test needs dir_fd support in os.readlink()")
+    # NSKIP024 https://github.com/nanvix/cpython/issues/504
+    @unittest.skipIf(support.is_nanvix,
+                     "NSKIP024: os.link()/symlink()/readlink() not supported on FAT VFS")  # detail: os.symlink( (test setup))
     def test_readlink_dir_fd(self):
         with self.prepare() as (dir_fd, name, fullname):
             os.symlink('symlink', fullname)
             self.addCleanup(posix.unlink, fullname)
             self.assertEqual(posix.readlink(name, dir_fd=dir_fd), 'symlink')
 
+    # NSKIP039 https://github.com/nanvix/cpython/issues/519
+    @unittest.skipIf(support.is_nanvix,
+                     "NSKIP039: *at() syscalls return wrong errno with dir_fd on Nanvix")
     @unittest.skipUnless(os.rename in os.supports_dir_fd, "test needs dir_fd support in os.rename()")
     def test_rename_dir_fd(self):
         with self.prepare_file() as (dir_fd, name, fullname), \
@@ -1622,6 +1691,9 @@ class TestPosixDirFd(unittest.TestCase):
             posix.stat(fullname2) # should not raise exception
             posix.rename(fullname2, fullname)
 
+    # NSKIP024 https://github.com/nanvix/cpython/issues/504
+    @unittest.skipIf(support.is_nanvix,
+                     "NSKIP024: os.link()/symlink()/readlink() not supported on FAT VFS")  # detail: os.symlink()
     @unittest.skipUnless(os.symlink in os.supports_dir_fd, "test needs dir_fd support in os.symlink()")
     def test_symlink_dir_fd(self):
         with self.prepare() as (dir_fd, name, fullname):
@@ -1629,6 +1701,9 @@ class TestPosixDirFd(unittest.TestCase):
             self.addCleanup(posix.unlink, fullname)
             self.assertEqual(posix.readlink(fullname), 'symlink')
 
+    # NSKIP039 https://github.com/nanvix/cpython/issues/519
+    @unittest.skipIf(support.is_nanvix,
+                     "NSKIP039: *at() syscalls return wrong errno with dir_fd on Nanvix")
     @unittest.skipUnless(os.unlink in os.supports_dir_fd, "test needs dir_fd support in os.unlink()")
     def test_unlink_dir_fd(self):
         with self.prepare() as (dir_fd, name, fullname):
