@@ -542,11 +542,39 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
             else if (c == EOF && PyErr_Occurred()) {
                 return MAKE_TOKEN(ERRORTOKEN);
             }
+            else if (c == '/') {
+                int c2 = tok_nextc(tok);
+                if (c2 == '*') {
+                    /* Consume block comment as part of indentation/whitespace */
+                    int prev = 0;
+                    int ch;
+                    while (1) {
+                        ch = tok_nextc(tok);
+                        if (ch == EOF) {
+                            tok->done = E_EOFS;
+                            return MAKE_TOKEN(ERRORTOKEN);
+                        }
+                        if (ch == '\n') {
+                            tok->lineno++;
+                        }
+                        if (prev == '*' && ch == '/') {
+                            break;
+                        }
+                        prev = ch;
+                    }
+                    /* Continue looking for more whitespace/comments */
+                    continue;
+                } else {
+                    tok_backup(tok, c2);
+                    break;
+                }
+            }
             else {
                 break;
             }
         }
         tok_backup(tok, c);
+
         if (c == '#' || c == '\n' || c == '\r') {
             /* Lines with only whitespace and/or comments
                shouldn't affect the indentation and are
@@ -723,6 +751,40 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
             p_end = tok->cur;
             tok->comment_newline = blankline;
             return MAKE_TOKEN(COMMENT);
+        }
+    }
+
+    /* Skip C-style block comment (slash-star ... star-slash) */
+    if (c == '/') {
+        int c2 = tok_nextc(tok);
+        if (c2 == '*') {
+            /* Consume everything until the closing star-slash sequence */
+            int prev = 0;
+            int ch;
+            while (1) {
+                ch = tok_nextc(tok);
+                if (ch == EOF) {
+                    tok->done = E_EOFS;
+                    _PyTokenizer_syntaxerror(tok,
+                        "unterminated C-style block comment (/* ... */) "
+                        "— missing closing */");
+                    return MAKE_TOKEN(ERRORTOKEN);
+                }
+                if (ch == '\n') {
+                    tok->lineno++;
+                    tok->atbol = 1;
+                }
+                if (prev == '*' && ch == '/') {
+                    break;  /* found closing star-slash */
+                }
+                prev = ch;
+            }
+            /* Restart token loop: treat block comment as whitespace */
+            goto again;
+        }
+        else {
+            /* Plain '/' operator: put c2 back, fall through to operator handling */
+            tok_backup(tok, c2);
         }
     }
 
