@@ -327,6 +327,18 @@
             int already_bool = optimize_to_bool(this_instr, ctx, value, &res,
                 _POP_TOP, _NOP);
             if (!already_bool) {
+                PyTypeObject *tp = sym_get_type(value);
+                if (tp == &PyDict_Type) {
+                    REPLACE_OP(this_instr, _TO_BOOL_DICT, 0, 0);
+                }
+                else if (tp == &PySet_Type || tp == &PyFrozenSet_Type) {
+                    REPLACE_OP(this_instr, _TO_BOOL_ANY_SET, 0, 0);
+                }
+                else if (tp == &PyTuple_Type ||
+                     tp == &PyBytes_Type ||
+                     tp == &PyByteArray_Type) {
+                    REPLACE_OP(this_instr, _TO_BOOL_SIZED, 0, 0);
+                }
                 res = sym_new_truthiness(ctx, value, true);
             }
             stack_pointer[-1] = res;
@@ -494,6 +506,27 @@
             stack_pointer[0] = v;
             stack_pointer += 1;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+            break;
+        }
+
+        case _TO_BOOL_DICT: {
+            JitOptRef res;
+            res = sym_new_not_null(ctx);
+            stack_pointer[-1] = res;
+            break;
+        }
+
+        case _TO_BOOL_SIZED: {
+            JitOptRef res;
+            res = sym_new_not_null(ctx);
+            stack_pointer[-1] = res;
+            break;
+        }
+
+        case _TO_BOOL_ANY_SET: {
+            JitOptRef res;
+            res = sym_new_not_null(ctx);
+            stack_pointer[-1] = res;
             break;
         }
 

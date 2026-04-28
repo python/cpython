@@ -4626,6 +4626,174 @@ class TestUopsOptimization(unittest.TestCase):
         uops = get_opnames(ex)
         self.assertNotIn("_REPLACE_WITH_TRUE", uops)
 
+    def test_to_bool_kwargs_dict(self):
+        """**kwargs is known to be dict, so TO_BOOL specializes to _TO_BOOL_DICT."""
+        def inner(**kwargs):
+            cnt = 0
+            for i in range(TIER2_THRESHOLD):
+                if kwargs:
+                    cnt += 1
+            return cnt
+
+        def f(n):
+            return inner(a=1, b=2)
+
+        res, ex = self._run_with_optimizer(f, TIER2_THRESHOLD)
+        self.assertEqual(res, TIER2_THRESHOLD)
+        ex_inner = get_first_executor(inner)
+        self.assertIsNotNone(ex_inner)
+        uops = get_opnames(ex_inner)
+        self.assertIn("_TO_BOOL_DICT", uops)
+        self.assertNotIn("_TO_BOOL", uops)
+
+    def test_to_bool_kwargs_empty_dict(self):
+        """**kwargs is known to be dict even when empty."""
+        def inner(**kwargs):
+            cnt = 0
+            for i in range(TIER2_THRESHOLD):
+                if not kwargs:
+                    cnt += 1
+            return cnt
+
+        def f(n):
+            return inner()
+
+        res, ex = self._run_with_optimizer(f, TIER2_THRESHOLD)
+        self.assertEqual(res, TIER2_THRESHOLD)
+        ex_inner = get_first_executor(inner)
+        self.assertIsNotNone(ex_inner)
+        uops = get_opnames(ex_inner)
+        self.assertIn("_TO_BOOL_DICT", uops)
+        self.assertNotIn("_TO_BOOL", uops)
+
+    def test_to_bool_varargs_tuple(self):
+        """*args is known to be tuple, so TO_BOOL specializes to _TO_BOOL_SIZED."""
+        def inner(*args):
+            cnt = 0
+            for i in range(TIER2_THRESHOLD):
+                if args:
+                    cnt += 1
+            return cnt
+
+        def f(n):
+            return inner(1, 2, 3)
+
+        res, ex = self._run_with_optimizer(f, TIER2_THRESHOLD)
+        self.assertEqual(res, TIER2_THRESHOLD)
+        ex_inner = get_first_executor(inner)
+        self.assertIsNotNone(ex_inner)
+        uops = get_opnames(ex_inner)
+        self.assertIn("_TO_BOOL_SIZED", uops)
+        self.assertNotIn("_TO_BOOL", uops)
+
+    def test_to_bool_varargs_empty_tuple(self):
+        """*args is known to be tuple even when empty."""
+        def inner(*args):
+            cnt = 0
+            for i in range(TIER2_THRESHOLD):
+                if not args:
+                    cnt += 1
+            return cnt
+
+        def f(n):
+            return inner()
+
+        res, ex = self._run_with_optimizer(f, TIER2_THRESHOLD)
+        self.assertEqual(res, TIER2_THRESHOLD)
+        ex_inner = get_first_executor(inner)
+        self.assertIsNotNone(ex_inner)
+        uops = get_opnames(ex_inner)
+        self.assertIn("_TO_BOOL_SIZED", uops)
+        self.assertNotIn("_TO_BOOL", uops)
+
+    def test_to_bool_args_and_kwargs(self):
+        """Combined *args and **kwargs both get correct types."""
+        def inner(*args, **kwargs):
+            cnt = 0
+            for i in range(TIER2_THRESHOLD):
+                if args and kwargs:
+                    cnt += 1
+            return cnt
+
+        def f(n):
+            return inner(1, 2, a=3)
+
+        res, ex = self._run_with_optimizer(f, TIER2_THRESHOLD)
+        self.assertEqual(res, TIER2_THRESHOLD)
+        ex_inner = get_first_executor(inner)
+        self.assertIsNotNone(ex_inner)
+        uops = get_opnames(ex_inner)
+        self.assertIn("_TO_BOOL_SIZED", uops)
+        self.assertIn("_TO_BOOL_DICT", uops)
+        self.assertNotIn("_TO_BOOL", uops)
+
+    def test_to_bool_args_kwargs_with_regular_params(self):
+        """*args/**kwargs slot calculation is correct with regular params."""
+        def inner(x, y, *args, key=None, **kwargs):
+            cnt = 0
+            for i in range(TIER2_THRESHOLD):
+                if args and kwargs:
+                    cnt += 1
+            return cnt
+
+        def f(n):
+            return inner(1, 2, 3, 4, key="v", extra=5)
+
+        res, ex = self._run_with_optimizer(f, TIER2_THRESHOLD)
+        self.assertEqual(res, TIER2_THRESHOLD)
+        ex_inner = get_first_executor(inner)
+        self.assertIsNotNone(ex_inner)
+        uops = get_opnames(ex_inner)
+        self.assertIn("_TO_BOOL_SIZED", uops)
+        self.assertIn("_TO_BOOL_DICT", uops)
+        self.assertNotIn("_TO_BOOL", uops)
+
+    def test_to_bool_kwargs_only_no_varargs(self):
+        """**kwargs without *args gets correct dict type."""
+        def inner(x, **kwargs):
+            cnt = 0
+            for i in range(TIER2_THRESHOLD):
+                if kwargs:
+                    cnt += 1
+            return cnt
+
+        def f(n):
+            return inner(1, a=2)
+
+        res, ex = self._run_with_optimizer(f, TIER2_THRESHOLD)
+        self.assertEqual(res, TIER2_THRESHOLD)
+        ex_inner = get_first_executor(inner)
+        self.assertIsNotNone(ex_inner)
+        uops = get_opnames(ex_inner)
+        self.assertIn("_TO_BOOL_DICT", uops)
+        self.assertNotIn("_TO_BOOL", uops)
+
+    def test_to_bool_set_with_dummy_entries(self):
+        """Sets with dummy entries (after discard) must evaluate as falsy.
+
+        PySetObject does not use PyObject_VAR_HEAD; reading ob_size at that
+        offset accidentally reads `fill`, which counts both live *and* dummy
+        (deleted) entries.  A set whose items have all been discarded must
+        still be falsy even after the JIT specialises TO_BOOL to
+        _TO_BOOL_ANY_SET.
+        """
+        def f(n):
+            cnt = 0
+            for _ in range(n):
+                s = {1}
+                s.discard(1)   # leaves a dummy entry; fill == 1, used == 0
+                if s:          # emits TO_BOOL; specialises to _TO_BOOL_ANY_SET
+                    cnt += 1
+            return cnt
+
+        res, ex = self._run_with_optimizer(f, TIER2_THRESHOLD)
+        # `if s` must be false for every iteration -- the set is empty after
+        # discard(), even though the dummy entry makes fill != 0.
+        self.assertEqual(res, 0)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertIn("_TO_BOOL_ANY_SET", uops)
+
     def test_attr_promotion_failure(self):
         # We're not testing for any specific uops here, just
         # testing it doesn't crash.
