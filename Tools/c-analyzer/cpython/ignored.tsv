@@ -198,6 +198,9 @@ Python/pystate.c	-	_Py_tss_tstate	-
 Python/pystate.c	-	_Py_tss_gilstate	-
 Python/pystate.c	-	_Py_tss_interp	-
 
+# Global sentinel that is fine to share across interpreters
+Python/pystate.c  - NO_TSTATE_SENTINEL -
+
 ##-----------------------
 ## should be const
 # XXX Make them const.

@@ -2300,16 +2300,37 @@ make_pre_finalization_calls(PyThreadState *tstate, int subinterpreters)
 
         if (subinterpreters) {
             /* Clean up any lingering subinterpreters.
-
-            Two preconditions need to be met here:
-
-                - This has to happen before _PyRuntimeState_SetFinalizing is
-                called, or else threads might get prematurely blocked.
-                - The world must not be stopped, as finalizers can run.
-            */
+             * Two preconditions need to be met here:
+             * 1. This has to happen before _PyRuntimeState_SetFinalizing is
+             *    called, or else threads might get prematurely blocked.
+             * 2. The world must not be stopped, as finalizers can run.
+             */
             finalize_subinterpreters();
         }
 
+        /* Wait on finalization guards.
+         *
+         * To avoid eating CPU cycles, we use an event to signal when we reach
+         * zero remaining guards. But, this isn't atomic! This event can be reset
+         * later if another thread creates a new finalization guard. The actual
+         * atomic check is made below, when we hold the finalization guard lock.
+         * Again, this is purely an optimization to avoid overloading the CPU.
+         */
+        if (_Py_atomic_load_ssize_relaxed(&interp->finalization_guards.countdown) > 0) {
+            for (;;) {
+                PyTime_t wait_ns = 1000 * 1000;  // 1ms
+                if (PyEvent_WaitTimed(&interp->finalization_guards.done, wait_ns, /*detach=*/1)) {
+                    break;
+                }
+
+                // For debugging purposes, we emit a fatal error if someone
+                // CTRL^C'ed the process.
+                if (PyErr_CheckSignals()) {
+                    PyErr_FormatUnraisable("Exception ignored while waiting on finalization guards");
+                    Py_FatalError("Interrupted while waiting on finalization guard");
+                }
+            }
+        }
 
         /* Stop the world to prevent other threads from creating threads or
          * atexit callbacks. On the default build, this is simply locked by
@@ -2321,18 +2342,26 @@ make_pre_finalization_calls(PyThreadState *tstate, int subinterpreters)
         // XXX Why does _PyThreadState_DeleteList() rely on all interpreters
         // being stopped?
         _PyEval_StopTheWorldAll(interp->runtime);
+        _PyRWMutex_Lock(&interp->finalization_guards.lock);
         int has_subinterpreters = subinterpreters
                                     ? runtime_has_subinterpreters(interp->runtime)
                                     : 0;
+        // TODO: The interpreter guard countdown isn't very efficient. We should
+        // wait on an event or something like that.
         int should_continue = (interp_has_threads(interp)
                               || interp_has_atexit_callbacks(interp)
                               || interp_has_pending_calls(interp)
-                              || has_subinterpreters);
+                              || has_subinterpreters
+                              || _Py_atomic_load_ssize_acquire(&interp->finalization_guards.countdown) > 0);
         if (!should_continue) {
             break;
         }
+        // Temporarily let other threads execute
+        _PyThreadState_Detach(tstate);
+        _PyRWMutex_Unlock(&interp->finalization_guards.lock);
         _PyEval_StartTheWorldAll(interp->runtime);
         PyMutex_Unlock(&interp->ceval.pending.mutex);
+        _PyThreadState_Attach(tstate);
     }
     assert(PyMutex_IsLocked(&interp->ceval.pending.mutex));
     ASSERT_WORLD_STOPPED(interp);
@@ -2393,6 +2422,7 @@ _Py_Finalize(_PyRuntimeState *runtime)
     for (PyThreadState *p = list; p != NULL; p = p->next) {
         _PyThreadState_SetShuttingDown(p);
     }
+    _PyRWMutex_Unlock(&tstate->interp->finalization_guards.lock);
     _PyEval_StartTheWorldAll(runtime);
     PyMutex_Unlock(&tstate->interp->ceval.pending.mutex);
 
@@ -2775,6 +2805,7 @@ Py_EndInterpreter(PyThreadState *tstate)
         _PyThreadState_SetShuttingDown(p);
     }
 
+    _PyRWMutex_Unlock(&interp->finalization_guards.lock);
     _PyEval_StartTheWorldAll(interp->runtime);
     PyMutex_Unlock(&interp->ceval.pending.mutex);
     _PyThreadState_DeleteList(list, /*is_after_fork=*/0);
