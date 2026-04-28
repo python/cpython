@@ -1,4 +1,3 @@
-import importlib
 import json
 import os
 import os.path
@@ -6,28 +5,10 @@ import sys
 import sysconfig
 import string
 import unittest
+import sysconfig._build_details as build_details
 from pathlib import Path
 
 from test.support import is_android, is_apple_mobile, is_wasm32
-
-BASE_PATH = Path(
-    __file__,  # Lib/test/test_build_details.py
-    '..',  # Lib/test
-    '..',  # Lib
-    '..',  # <src/install dir>
-).resolve()
-MODULE_PATH = BASE_PATH / 'Tools' / 'build' / 'generate-build-details.py'
-
-try:
-    # Import "generate-build-details.py" as "generate_build_details"
-    spec = importlib.util.spec_from_file_location(
-        "generate_build_details", MODULE_PATH
-    )
-    generate_build_details = importlib.util.module_from_spec(spec)
-    sys.modules["generate_build_details"] = generate_build_details
-    spec.loader.exec_module(generate_build_details)
-except (FileNotFoundError, ImportError):
-    generate_build_details = None
 
 
 class FormatTestsBase:
@@ -174,23 +155,18 @@ class CPythonBuildDetailsTests(unittest.TestCase, FormatTestsBase):
         self.assertTrue(os.path.exists(os.path.join(value['pkgconfig_path'], f'python-{version}.pc')))
 
 
-@unittest.skipIf(
-    generate_build_details is None,
-    "Failed to import generate-build-details"
-)
 @unittest.skipIf(os.name != 'posix', 'Feature only implemented on POSIX right now')
 @unittest.skipIf(is_wasm32, 'Feature not available on WebAssembly builds')
 class BuildDetailsRelativePathsTests(unittest.TestCase):
     @property
     def build_details_absolute_paths(self):
-        data = generate_build_details.generate_data(schema_version='1.0')
-        return json.loads(json.dumps(data))
+        json_data = build_details.BuildDetails.from_interpreter().as_json()
+        return json.loads(json_data)
 
     @property
     def build_details_relative_paths(self):
-        data = self.build_details_absolute_paths
-        generate_build_details.make_paths_relative(data, config_path=None)
-        return data
+        json_data = build_details.BuildDetails.from_interpreter().as_relocatable().as_json()
+        return json.loads(json_data)
 
     def test_round_trip(self):
         data_abs_path = self.build_details_absolute_paths
