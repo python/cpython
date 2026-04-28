@@ -320,6 +320,7 @@ def _execute_start_entrypoints():
 def flush_pth_start():
     """Flush all pending sys.path and entry points."""
     _extend_syspath()
+    # Stop exec'ing `import` lines in Python 3.18.
     _exec_imports()
     _execute_start_entrypoints()
     _pending_syspaths.clear()
