@@ -2468,8 +2468,8 @@ class ThreadingIteratorToolsTests(BaseTestCase):
 
         # Manually create the serialize object to inspect the lock
         it = threading.serialize([])
-        mock_gen = LockCheckingGenerator(it.lock)
-        it.iterator = mock_gen
+        mock_gen = LockCheckingGenerator(it._lock)
+        it._iterator = mock_gen
 
         # These should not raise RuntimeError
         it.send(1)

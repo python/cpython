@@ -857,42 +857,42 @@ class serialize:
     threads.
     """
 
-    __slots__ = ('iterator', 'lock')
+    __slots__ = ('_iterator', '_lock')
 
     def __init__(self, iterable):
-        self.iterator = iter(iterable)
-        self.lock = Lock()
+        self._iterator = iter(iterable)
+        self._lock = Lock()
 
     def __iter__(self):
         return self
 
     def __next__(self):
-        with self.lock:
-            return next(self.iterator)
+        with self._lock:
+            return next(self._iterator)
 
     def send(self, value, /):
         """Send a value to a generator.
 
         Raises AttributeError if not a generator.
         """
-        with self.lock:
-            return self.iterator.send(value)
+        with self._lock:
+            return self._iterator.send(value)
 
     def throw(self, *args):
         """Call throw() on a generator.
 
         Raises AttributeError if not a generator.
         """
-        with self.lock:
-            return self.iterator.throw(*args)
+        with self._lock:
+            return self._iterator.throw(*args)
 
     def close(self):
         """Call close() on a generator.
 
         Raises AttributeError if not a generator.
         """
-        with self.lock:
-            return self.iterator.close()
+        with self._lock:
+            return self._iterator.close()
 
 
 def synchronized(func):
