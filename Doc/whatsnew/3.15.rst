@@ -837,7 +837,7 @@ contextlib
   asynchronous generator functions and keep the context manager open across
   iteration or await.  Previously the context manager exited as soon as the
   generator or coroutine object was created.
-  (Contributed by Alex Grönholm in :gh:`125862`.)
+  (Contributed by Alex Grönholm & Gregory P. Smith in :gh:`125862`.)
 
 
 dataclasses
