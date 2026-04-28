@@ -1193,7 +1193,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
 #if !_Py_TAIL_CALL_INTERP
     uint8_t opcode;    /* Current opcode */
     int oparg;         /* Current opcode argument, if any */
-    assert(tstate->current_frame == NULL || tstate->current_frame->stackpointer != NULL);
+    assert(_PyFrame_StackpointerSaved());
 #if !USE_COMPUTED_GOTOS
     uint8_t tracing_mode = 0;
     uint8_t dispatch_code;
@@ -1952,7 +1952,7 @@ clear_gen_frame(PyThreadState *tstate, _PyInterpreterFrame * frame)
 }
 
 void
-_PyEval_FrameClearAndPop(PyThreadState *tstate, _PyInterpreterFrame * frame)
+_PyEval_FrameClearAndPop(PyThreadState *tstate, _PyInterpreterFrame *frame)
 {
     // Update last_profiled_frame for remote profiler frame caching.
     // By this point, tstate->current_frame is already set to the parent frame.
@@ -2401,7 +2401,6 @@ Error:
 }
 
 
-
 void
 _PyEval_MonitorRaise(PyThreadState *tstate, _PyInterpreterFrame *frame,
               _Py_CODEUNIT *instr)
@@ -2576,7 +2575,7 @@ _PyEval_GetBuiltins(PyThreadState *tstate)
 {
     _PyInterpreterFrame *frame = _PyThreadState_GetFrame(tstate);
     if (frame != NULL) {
-        return frame->f_builtins;
+        return _PyFrame_GetBuiltins(frame);
     }
     return tstate->interp->builtins;
 }
@@ -2690,7 +2689,7 @@ _PyEval_GetGlobals(PyThreadState *tstate)
     if (current_frame == NULL) {
         return NULL;
     }
-    return current_frame->f_globals;
+    return _PyFrame_GetGlobals(current_frame);
 }
 
 PyObject *
@@ -2824,7 +2823,7 @@ PyObject* PyEval_GetFrameGlobals(void)
     if (current_frame == NULL) {
         return NULL;
     }
-    return Py_XNewRef(current_frame->f_globals);
+    return Py_XNewRef(_PyFrame_GetGlobals(current_frame));
 }
 
 PyObject* PyEval_GetFrameBuiltins(void)
