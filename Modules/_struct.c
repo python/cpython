@@ -1,7 +1,7 @@
 /* struct module -- pack values into and (out of) bytes objects */
 
 /* New version supporting byte order, alignment and size options,
-   character strings, and unsigned numbers */
+   byte strings, and unsigned numbers */
 
 #ifndef Py_BUILD_CORE_BUILTIN
 #  define Py_BUILD_CORE_MODULE 1
@@ -2297,7 +2297,7 @@ Struct_iter_unpack_impl(PyStructObject *self, PyObject *buffer)
  *
  * Takes a struct object, a tuple of arguments, and offset in that tuple of
  * argument for where to start processing the arguments for packing, and a
- * character buffer for writing the packed string.  The caller must insure
+ * character buffer for writing the packed data.  The caller must ensure
  * that the buffer may contain the required length for packing the arguments.
  * 0 is returned on success, 1 is returned if there is an error.
  *
@@ -2774,8 +2774,8 @@ static struct PyMethodDef module_functions[] = {
 
 PyDoc_STRVAR(module_doc,
 "Functions to convert between Python values and C structs.\n\
-Python bytes objects are used to hold the data representing the C struct\n\
-and also as format strings (explained below) to describe the layout of data\n\
+Python bytes objects are used to hold the data representing the C struct.\n\
+The format string (explained below) describes the layout of data\n\
 in the C struct.\n\
 \n\
 The optional first format char indicates byte order, size and alignment:\n\
@@ -2785,19 +2785,18 @@ The optional first format char indicates byte order, size and alignment:\n\
   >: big-endian, std. size & alignment\n\
   !: same as >\n\
 \n\
-The remaining chars indicate types of args and must match exactly;\n\
+The remaining characters indicate types of args and must match exactly;\n\
 these can be preceded by a decimal repeat count:\n\
-  x: pad byte (no data); c:char; b:signed byte; B:unsigned byte;\n\
-  ?:_Bool; h:short; H:unsigned short; i:int; I:unsigned int;\n\
-  l:long; L:unsigned long; f:float; d:double; e:half-float.\n\
-  F:float complex; D:double complex.\n\
+  x: pad byte (no data); c: char; b: signed byte; B: unsigned byte;\n\
+  ?: _Bool; h: short; H: unsigned short; i: int; I: unsigned int;\n\
+  l: long; L: unsigned long; q: long long; Q: unsigned long long;\n\
+  f: float; d: double; e: half-float;\n\
+  F: float complex; D: double complex.\n\
 Special cases (preceding decimal count indicates length):\n\
-  s:string (array of char); p: pascal string (with count byte).\n\
+  s: byte string (array of char); p: Pascal string (with count byte).\n\
 Special cases (only available in native format):\n\
-  n:ssize_t; N:size_t;\n\
-  P:an integer type that is wide enough to hold a pointer.\n\
-Special case (not in native mode unless 'long long' in platform C):\n\
-  q:long long; Q:unsigned long long\n\
+  n: ssize_t; N: size_t;\n\
+  P: an integer type that is wide enough to hold a pointer.\n\
 Whitespace between formats is ignored.\n\
 \n\
 The variable struct.error is an exception raised on errors.\n");

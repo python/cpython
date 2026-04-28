@@ -23,9 +23,13 @@ typedef _Py_CODEUNIT *(*jit_func)(
     _PyStackRef _tos_cache0, _PyStackRef _tos_cache1, _PyStackRef _tos_cache2
 );
 
+_Py_CODEUNIT *_PyJIT(
+    _PyExecutorObject *executor, _PyInterpreterFrame *frame,
+    _PyStackRef *stack_pointer, PyThreadState *tstate
+);
+
 int _PyJIT_Compile(_PyExecutorObject *executor, const _PyUOpInstruction *trace, size_t length);
 void _PyJIT_Free(_PyExecutorObject *executor);
-void _PyJIT_Fini(void);
 PyAPI_FUNC(int) _PyJIT_AddressInJitCode(PyInterpreterState *interp, uintptr_t addr);
 
 #endif  // _Py_JIT
