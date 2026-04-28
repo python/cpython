@@ -757,6 +757,9 @@ class FaultHandlerTests(unittest.TestCase):
         self.assertEqual(output.count(b"Thread 0x"), 3)
 
     @skip_segfault_on_android
+    @unittest.skipIf(support.Py_GIL_DISABLED,
+                     "fatal-signal handler only dumps the current thread "
+                     "when the GIL is disabled")
     def test_enable_max_threads(self):
         # enable(max_threads=N) caps the thread dump produced when a
         # fatal signal fires.
