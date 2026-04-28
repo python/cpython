@@ -155,10 +155,11 @@ _pending_importexecs = {}
 def _read_pthstart_file(sitedir, name, suffix):
     """Parse a .start or .pth file and return (lines, filename).
 
-    Always returns a 2-tuple.  On failure (hidden, unreadable, etc.),
-    returns ([], filename) so callers can proceed without checking.
+    On success, ``lines`` is a (possibly empty) list of the file's lines.
+    On failure (file missing, hidden, unreadable, or .start with bad
+    encoding), ``lines`` is ``None`` so callers can distinguish a
+    successfully-read empty file from one that could not be read.
     """
-    content = ""
     filename = os.path.join(sitedir, name)
     _trace(f"Reading startup configuration file: {filename}")
 
@@ -166,12 +167,12 @@ def _read_pthstart_file(sitedir, name, suffix):
         st = os.lstat(filename)
     except OSError as exc:
         _print_error(f"Cannot stat {filename!r}", exc)
-        return [], filename
+        return None, filename
 
     if ((getattr(st, 'st_flags', 0) & stat.UF_HIDDEN) or
         (getattr(st, 'st_file_attributes', 0) & stat.FILE_ATTRIBUTE_HIDDEN)):
         _trace(f"Skipping hidden {suffix} file: {filename!r}")
-        return [], filename
+        return None, filename
 
     _trace(f"Processing {suffix} file: {filename!r}")
     try:
@@ -179,7 +180,7 @@ def _read_pthstart_file(sitedir, name, suffix):
             raw_content = f.read()
     except OSError as exc:
         _print_error(f"Cannot read {filename!r}", exc)
-        return [], filename
+        return None, filename
 
     try:
         # Accept BOM markers in .start and .pth files as we do in source files (Windows PowerShell
@@ -193,7 +194,7 @@ def _read_pthstart_file(sitedir, name, suffix):
             content = raw_content.decode(locale.getencoding())
             _trace(f"Using fallback encoding {locale.getencoding()!r}")
         else:
-            return [], filename
+            return None, filename
 
     return content.splitlines(), filename
 
@@ -205,6 +206,8 @@ def _read_pth_file(sitedir, name, known_paths):
     file (PEP 829).
     """
     lines, filename = _read_pthstart_file(sitedir, name, ".pth")
+    if lines is None:
+        return
 
     for n, line in enumerate(lines, 1):
         line = line.strip()
@@ -236,6 +239,14 @@ def _read_pth_file(sitedir, name, known_paths):
 def _read_start_file(sitedir, name):
     """Parse a .start file and return a list of entry point strings."""
     lines, filename = _read_pthstart_file(sitedir, name, ".start")
+    if lines is None:
+        return
+
+    # PEP 829: the *presence* of a matching .start file disables `import`
+    # line processing in the matched .pth file, regardless of whether the
+    # .start file produced any entry points.  Register the filename as a
+    # key now so an empty (or comment-only) .start file still suppresses.
+    entrypoints = _pending_entrypoints.setdefault(filename, [])
 
     for n, line in enumerate(lines, 1):
         line = line.strip()
@@ -248,7 +259,7 @@ def _read_start_file(sitedir, name):
                    f"skipping invalid entry point: {line}")
             continue
 
-        _pending_entrypoints.setdefault(filename, []).append(line)
+        entrypoints.append(line)
 
 
 def _extend_syspath():

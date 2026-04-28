@@ -935,16 +935,13 @@ class StartFileTests(unittest.TestCase):
         site._pending_importexecs.clear()
 
     def tearDown(self):
-        site._pending_entrypoints.clear()
-        site._pending_entrypoints.update(self.saved_entrypoints)
-        site._pending_syspaths.clear()
-        site._pending_syspaths.update(self.saved_syspaths)
-        site._pending_importexecs.clear()
-        site._pending_importexecs.update(self.saved_importexecs)
+        site._pending_entrypoints = self.saved_entrypoints.copy()
+        site._pending_syspaths = self.saved_syspaths.copy()
+        site._pending_importexecs = self.saved_importexecs.copy()
 
     def _make_start(self, content, name='testpkg'):
         """Write a <name>.start file and return its basename."""
-        basename = name + '.start'
+        basename = f"{name}.start"
         filepath = os.path.join(self.tmpdir, basename)
         with open(filepath, 'w', encoding='utf-8') as f:
             f.write(content)
@@ -952,7 +949,7 @@ class StartFileTests(unittest.TestCase):
 
     def _make_pth(self, content, name='testpkg'):
         """Write a <name>.pth file and return its basename."""
-        basename = name + '.pth'
+        basename = f"{name}.pth"
         filepath = os.path.join(self.tmpdir, basename)
         with open(filepath, 'w', encoding='utf-8') as f:
             f.write(content)
@@ -965,6 +962,9 @@ class StartFileTests(unittest.TestCase):
             for entry in entries:
                 result.append((filename, entry))
         return result
+
+    def _just_entrypoints(self):
+        return [entry for filename, entry in self._all_entrypoints()]
 
     # --- _read_start_file tests ---
 
@@ -995,14 +995,21 @@ class StartFileTests(unittest.TestCase):
         self.assertEqual(site._pending_entrypoints[fullname], ['os.path:join'])
 
     def test_read_start_file_empty(self):
+        # PEP 829: an empty .start file is still registered as present
+        # (with an empty entry-point list) so that it suppresses `import`
+        # lines in any matching .pth file.
         self._make_start("", name='foo')
         site._read_start_file(self.sitedir, 'foo.start')
-        self.assertEqual(site._pending_entrypoints, {})
+        fullname = os.path.join(self.sitedir, 'foo.start')
+        self.assertEqual(site._pending_entrypoints, {fullname: []})
 
     def test_read_start_file_comments_only(self):
+        # As with an empty file, a comments-only .start file is registered
+        # as present so it can suppress matching .pth `import` lines.
         self._make_start("# just a comment\n# another\n", name='foo')
         site._read_start_file(self.sitedir, 'foo.start')
-        self.assertEqual(site._pending_entrypoints, {})
+        fullname = os.path.join(self.sitedir, 'foo.start')
+        self.assertEqual(site._pending_entrypoints, {fullname: []})
 
     def test_read_start_file_nonexistent(self):
         with captured_stderr():
@@ -1024,6 +1031,14 @@ class StartFileTests(unittest.TestCase):
         site._read_start_file(self.sitedir, 'foo.start')
         fullname = os.path.join(self.sitedir, 'foo.start')
         self.assertEqual(site._pending_entrypoints[fullname],
+                         ['os.path:join', 'os.path:join'])
+
+    def test_two_start_files_with_duplicates_not_deduplicated(self):
+        self._make_start("os.path:join", name="foo")
+        self._make_start("os.path:join", name="bar")
+        site._read_start_file(self.sitedir, 'foo.start')
+        site._read_start_file(self.sitedir, 'bar.start')
+        self.assertEqual(self._just_entrypoints(),
                          ['os.path:join', 'os.path:join'])
 
     # --- _read_pth_file tests ---
@@ -1060,7 +1075,7 @@ class StartFileTests(unittest.TestCase):
         all_dirs = []
         for dirs in site._pending_syspaths.values():
             all_dirs.extend(dirs)
-        self.assertEqual(all_dirs.count(subdir), 1)
+        self.assertEqual(all_dirs, [subdir])
 
     def test_read_pth_file_bad_line_continues(self):
         # PEP 829: errors on individual lines don't abort the file.
@@ -1163,6 +1178,27 @@ def bump():
         site._pending_entrypoints[start_fullname] = ['os.path:join']
         # Should execute the import line without error.
         site._exec_imports()
+
+    def test_exec_imports_suppressed_by_empty_matching_start(self):
+        self._make_start("", name='foo')
+        self._make_pth("import epmod; epmod.startup()", name='foo')
+        mod_dir = os.path.join(self.sitedir, 'epmod')
+        os.mkdir(mod_dir)
+        init_file = os.path.join(mod_dir, '__init__.py')
+        with open(init_file, 'w') as f:
+            f.write("""\
+called = False
+def startup():
+    global called
+    called = True
+""")
+        sys.path.insert(0, self.sitedir)
+        self.addCleanup(sys.modules.pop, 'epmod', None)
+        site._read_pth_file(self.sitedir, 'foo.pth', set())
+        site._read_start_file(self.sitedir, 'foo.start')
+        site._exec_imports()
+        import epmod
+        self.assertFalse(epmod.called)
 
     # --- _extend_syspath tests ---
 
