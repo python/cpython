@@ -85,7 +85,7 @@ Summary -- Release highlights
 * :pep:`800`: Disjoint bases in the type system
 * :pep:`782`: :ref:`A new PyBytesWriter C API to create a Python bytes object
   <whatsnew315-pybyteswriter>`
-* :pep:`803`: :ref:`Stable ABI for Free-Threaded Builds <whatsnew315-abi3t>`
+* :pep:`803`: :ref:`Stable ABI for free-threaded builds <whatsnew315-abi3t>`
 * :pep:`793`: PyModExport: A new entry point for C extension modules
 * :ref:`The JIT compiler has been significantly upgraded <whatsnew315-jit>`
 * :ref:`Improved error messages <whatsnew315-improved-error-messages>`
@@ -414,7 +414,7 @@ agen() for x in a)``.
 
 .. _whatsnew315-abi3t:
 
-:pep:`803`: ``abi3t`` -- Stable ABI for Free-Threaded Builds
+:pep:`803`: ``abi3t`` -- Stable ABI for free-threaded builds
 ------------------------------------------------------------
 
 C extensions that target the :ref:`Stable ABI <stable-abi>` can now be
