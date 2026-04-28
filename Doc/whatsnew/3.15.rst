@@ -741,6 +741,17 @@ ast
   (Contributed by Stan Ulbrych in :gh:`148981`.)
 
 
+asyncio
+-------
+
+* Added :meth:`TaskGroup.cancel <asyncio.TaskGroup.cancel>` to allow early
+  termination of a task group, for instance, when the goal of the tasks has
+  been achieved or their services are no longer needed.
+  Previously this would involve unintuitive boilerplate such as an extra task
+  raising a custom exception which is then suppressed as it exits the task group.
+  (Contributed by John Belmonte in :gh:`127214`.)
+
+
 base64
 ------
 
