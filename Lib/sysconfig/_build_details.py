@@ -235,7 +235,7 @@ class BuildDetailsV1(SchemaBase, schema=(1, 0)):
                 continue
             value = getattr(obj, field.name)
             if isinstance(value, pathlib.Path):
-                changes[field.name] = value.absolute().relative_to(origin)
+                changes[field.name] = value.relative_to(origin)
             elif isinstance(value, SchemaBase):
                 changes[field.name] = self._relocate(value, origin)
         return dataclasses.replace(obj, **changes)
@@ -287,13 +287,11 @@ class BuildDetailsV1(SchemaBase, schema=(1, 0)):
         LIBPC = pathlib.Path(sysconfig.get_config_var('LIBPC'))
         INCLUDEPY = pathlib.Path(sysconfig.get_config_var('INCLUDEPY'))
 
-        installed_base = pathlib.Path(sysconfig.get_config_var('installed_base'))
-
         interpreter_name = 'python' + sysconfig.get_config_var('LDVERSION') + sysconfig.get_config_var('EXE')
 
         data = types.SimpleNamespace()
 
-        data.base_prefix = installed_base.absolute()
+        data.base_prefix = sysconfig.get_config_var('installed_base')
         data.base_interpreter = default_scheme_paths.scripts / interpreter_name
         data.platform = sysconfig.get_platform()
         data.language = LanguageV1(
@@ -396,7 +394,7 @@ def generate(path: _PathType, relative_paths=False) -> None:
     if relative_paths:
         data = data.as_relocatable()
         # If relative_paths is enabled, we also make base_prefix relative.
-        data.base_prefix = data.base_prefix.relative_to(path.absolute())
+        data.base_prefix = data.base_prefix.relative_to(path)
 
     with open(path, 'w', encoding='utf-8') as f:
         f.write(data.as_json() + '\n')
