@@ -859,10 +859,10 @@ def main():
     # PEP 829: flush accumulated data from all .pth and .start files.
     # Paths are extended first, then deprecated import lines are exec'd,
     # and finally .start entry points are executed — ensuring sys.path is
-    # fully populated before any startup code runs.
-    _extend_syspath()
-    _exec_imports()
-    _execute_start_entrypoints()
+    # fully populated before any startup code runs.  flush_pth_start()
+    # also clears the pending state so a later addsitedir() call does
+    # not re-apply already-processed data.
+    flush_pth_start()
     setquit()
     setcopyright()
     sethelper()
