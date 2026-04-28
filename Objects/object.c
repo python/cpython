@@ -2597,6 +2597,7 @@ static PyTypeObject* static_types[] = {
     &PyRange_Type,
     &PyReversed_Type,
     &PySTEntry_Type,
+    &PySentinel_Type,
     &PySeqIter_Type,
     &PySetIter_Type,
     &PySet_Type,
