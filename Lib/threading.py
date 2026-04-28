@@ -855,6 +855,12 @@ class serialize:
 
     Allows iterator and generator instances to be shared by multiple consumer
     threads.
+
+    For example, itertools.count does not make thread-safe instances,
+    but that is easily fixed with:
+
+        atomic_counter = synchronized(itertools.count())
+
     """
 
     __slots__ = ('_iterator', '_lock')
