@@ -315,7 +315,7 @@ def write_c(f, slots):
     out('#include "Python.h"')
     out('#include "pycore_slots.h"   // _PySlot_names')
     out()
-    with out.block(f'const char *_PySlot_names[] =', end=';'):
+    with out.block(f'const char *const _PySlot_names[] =', end=';'):
         for slot in slots:
             out(f'"{slot.name}",')
         out('NULL')

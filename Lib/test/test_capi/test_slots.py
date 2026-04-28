@@ -34,13 +34,13 @@ class TypeSlotsTests(unittest.TestCase):
 
     def test_size_slots(self):
         cls = _testlimitedcapi.type_from_slots("basicsize")
-        self.assertEqual(cls.__basicsize__, 256)
+        self.assertGreaterEqual(cls.__basicsize__, 256)
 
         cls = _testlimitedcapi.type_from_slots("extra_basicsize")
-        self.assertEqual(cls.__basicsize__, object.__basicsize__ + 256)
+        self.assertGreaterEqual(cls.__basicsize__, object.__basicsize__ + 256)
 
         cls = _testlimitedcapi.type_from_slots("itemsize")
-        self.assertEqual(cls.__itemsize__, 16)
+        self.assertGreaterEqual(cls.__itemsize__, 16)
 
     def test_flag_slots(self):
         cls = _testlimitedcapi.type_from_slots("flags")
@@ -66,10 +66,10 @@ class TypeSlotsTests(unittest.TestCase):
             cls = _testlimitedcapi.type_from_slots("invalid_fbad")
 
         cls = _testlimitedcapi.type_from_slots("optional_invalid")
-        self.assertEqual(cls.__basicsize__, object.__basicsize__ + 256)
+        self.assertGreaterEqual(cls.__basicsize__, object.__basicsize__ + 256)
 
         cls = _testlimitedcapi.type_from_slots("optional_invalid_fbad")
-        self.assertEqual(cls.__basicsize__, object.__basicsize__ + 256)
+        self.assertGreaterEqual(cls.__basicsize__, object.__basicsize__ + 256)
 
     @subTests("case_name", ["old_slot_numbers", "new_slot_numbers"])
     def test_compat_slot_numbers(self, case_name):

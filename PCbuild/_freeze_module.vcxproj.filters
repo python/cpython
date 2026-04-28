@@ -418,6 +418,9 @@
     <ClCompile Include="..\Python\slots.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\Python\slots_generated.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="..\Python\specialize.c">
       <Filter>Source Files</Filter>
     </ClCompile>
