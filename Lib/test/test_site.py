@@ -19,6 +19,7 @@ import builtins
 import glob
 import io
 import os
+import re
 import shutil
 import stat
 import subprocess
@@ -66,16 +67,6 @@ def tearDownModule():
 class HelperFunctionsTests(unittest.TestCase):
     """Tests for helper functions.
     """
-
-    @classmethod
-    def setUpClass(cls):
-        cls._addpackage_token = support.ignore_deprecations_from(
-            "site", like=r".*addpackage.*"
-        )
-
-    @classmethod
-    def tearDownClass(cls):
-        support.clear_ignored_deprecations(cls._addpackage_token)
 
     def setUp(self):
         """Save a copy of sys.path"""
@@ -156,6 +147,12 @@ class HelperFunctionsTests(unittest.TestCase):
         pth_dir, pth_fn = self.make_pth("import bad-syntax\n")
         with captured_stderr() as err_out:
             site.addpackage(pth_dir, pth_fn, set())
+        self.assertRegex(err_out.getvalue(), "line 1")
+        self.assertRegex(err_out.getvalue(),
+            re.escape(os.path.join(pth_dir, pth_fn)))
+        # XXX: the previous two should be independent checks so that the
+        # order doesn't matter.  The next three could be a single check
+        # but my regex foo isn't good enough to write it.
         self.assertRegex(err_out.getvalue(), 'Traceback')
         self.assertRegex(err_out.getvalue(), r'import bad-syntax')
         self.assertRegex(err_out.getvalue(), 'SyntaxError')
@@ -165,6 +162,10 @@ class HelperFunctionsTests(unittest.TestCase):
         pth_dir, pth_fn = self.make_pth("randompath\nimport nosuchmodule\n")
         with captured_stderr() as err_out:
             site.addpackage(pth_dir, pth_fn, set())
+        self.assertRegex(err_out.getvalue(), "line 2")
+        self.assertRegex(err_out.getvalue(),
+            re.escape(os.path.join(pth_dir, pth_fn)))
+        # XXX: ditto previous XXX comment.
         self.assertRegex(err_out.getvalue(), 'Traceback')
         self.assertRegex(err_out.getvalue(), 'ModuleNotFoundError')
 
@@ -176,9 +177,7 @@ class HelperFunctionsTests(unittest.TestCase):
 
     def test_addpackage_import_bad_pth_file(self):
         # Issue 5258
-        # A .pth line with null bytes should not add anything to sys.path.
         pth_dir, pth_fn = self.make_pth("abc\x00def\n")
-        site.addpackage(pth_dir, pth_fn, set())
         for path in sys.path:
             if isinstance(path, str):
                 self.assertNotIn("abc\x00def", path)
@@ -192,6 +191,22 @@ class HelperFunctionsTests(unittest.TestCase):
         try:
             pth_file.create()
             site.addsitedir(pth_file.base_dir)
+            self.pth_file_tests(pth_file)
+        finally:
+            pth_file.cleanup()
+
+    def test_addsitedir_explicit_flush(self):
+        # addsitedir() reads .pth files and, when called standalone
+        # (known_paths=None).  Flushes paths and import lines explicitly.
+        pth_file = PthFile()
+        pth_file.cleanup(prep=True) # Make sure that nothing is pre-existing
+                                    # that is tested for
+        try:
+            pth_file.create()
+            # Providing known_paths=set() prevents flushing.
+            site.addsitedir(pth_file.base_dir, set())
+            self.assertNotIn(pth_file.imported, sys.modules)
+            site.flush_pth_start()
             self.pth_file_tests(pth_file)
         finally:
             pth_file.cleanup()
@@ -397,21 +412,7 @@ class HelperFunctionsTests(unittest.TestCase):
                 self.assertEqual(sys.stderr.getvalue(), out)
 
 
-class AddpackageDeprecationTests(unittest.TestCase):
-    """Test that site.addpackage() is deprecated (PEP 829)."""
-
-    def test_addpackage_emits_deprecation_warning(self):
-        with os_helper.temp_dir() as tmpdir:
-            pth_fn = os.path.join(tmpdir, 'test.pth')
-            with open(pth_fn, 'w', encoding='utf-8') as f:
-                f.write('\n')
-            with self.assertWarns(DeprecationWarning) as cm:
-                site.addpackage(tmpdir, 'test.pth', set())
-            self.assertIn('addpackage', str(cm.warning))
-            self.assertIn('addsitedir', str(cm.warning))
-
-
-class PthFile(object):
+class PthFile:
     """Helper class for handling testing of .pth files"""
 
     def __init__(self, filename_base=TESTFN, imported="time",

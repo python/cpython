@@ -28,9 +28,9 @@ directory:
 - <name>.pth files extend sys.path with additional directories (one per
   line).  Lines starting with "import" are deprecated (see PEP 829).
 
-- <name>.start files specify startup entry points using the
-  pkg.mod:callable syntax.  These are resolved via pkgutil.resolve_name()
-  and called with no arguments.
+- <name>.start files specify startup entry points using the pkg.mod:callable
+  syntax.  These are resolved via pkgutil.resolve_name() and called with no
+  arguments.
 
 All .pth path extensions are applied before any .start entry points are
 executed, ensuring that paths are available before startup code runs.
@@ -186,11 +186,14 @@ def _read_pthstart_file(sitedir, name, suffix):
         # 5.1 makes it hard to emit UTF-8 files without a BOM).
         content = raw_content.decode("utf-8-sig")
     except UnicodeDecodeError:
-        # Fallback to locale encoding for backward compatibility.  We will deprecate this fallback
-        # in the future.
-        content = raw_content.decode(locale.getencoding())
-        _trace(f"Cannot read {filename!r} as UTF-8. "
-               f"Using fallback encoding {locale.getencoding()!r}")
+        _trace(f"Cannot read {filename!r} as UTF-8.")
+        # For .pth files only, and then only until Python 3.20, fallback to locale encoding for
+        # backward compatibility.
+        if suffix == ".pth":
+            content = raw_content.decode(locale.getencoding())
+            _trace(f"Using fallback encoding {locale.getencoding()!r}")
+        else:
+            return [], filename
 
     return content.splitlines(), filename
 
@@ -208,12 +211,15 @@ def _read_pth_file(sitedir, name, known_paths):
         if len(line) == 0 or line.startswith("#"):
             continue
 
+        # In Python 3.18 and 3.19, `import` lines are silently ignored.  In
+        # Python 3.20 and beyond, issue a warning when `import` lines in .pth
+        # files are detected.
         if line.startswith("import ") or line.startswith("import\t"):
             _pending_importexecs.setdefault(filename, []).append(line)
             continue
 
         try:
-            dir, dircase = makepath(sitedir, line)
+            dir_, dircase = makepath(sitedir, line)
         except Exception as exc:
             _print_error(
                 f"Error in {filename!r}, line {n:d}: {line!r}", exc)
@@ -221,9 +227,9 @@ def _read_pth_file(sitedir, name, known_paths):
 
         if dircase in known_paths:
             _trace(f"In {filename!r}, line {n:d}: "
-                   f"skipping duplicate sys.path entry: {dir}")
+                   f"skipping duplicate sys.path entry: {dir_}")
         else:
-            _pending_syspaths.setdefault(filename, []).append(dir)
+            _pending_syspaths.setdefault(filename, []).append(dir_)
             known_paths.add(dircase)
 
 
@@ -249,14 +255,17 @@ def _extend_syspath():
     # We've already filtered out duplicates, either in the existing sys.path
     # or in all the .pth files we've seen.  We've also abspath/normpath'd all
     # the entries, so all that's left to do is to ensure that the path exists.
+    #
+    # Return the list of paths added to maintain the *undocumented* behavior
+    # of addpackage().
     for filename, dirs in _pending_syspaths.items():
-        for dir in dirs:
-            if os.path.exists(dir):
-                _trace(f"Extending sys.path with {dir} from {filename}")
-                sys.path.append(dir)
+        for dir_ in dirs:
+            if os.path.exists(dir_):
+                _trace(f"Extending sys.path with {dir_} from {filename}")
+                sys.path.append(dir_)
             else:
                 _print_error(
-                    f"In {filename}: {dir} does not exist; "
+                    f"In {filename}: {dir_} does not exist; "
                     f"skipping sys.path append")
 
 
@@ -292,7 +301,9 @@ def _execute_start_entrypoints():
 
     Called after all site-packages directories have been processed so that
     sys.path is fully populated before any entry point code runs.  Uses
-    pkgutil.resolve_name() for resolution.
+    pkgutil.resolve_name() for resolution.  While that function accepts a
+    looser constraint on the input string, we enforce the :callable syntax
+    when the .start file is parsed.
     """
     for filename, entrypoints in _pending_entrypoints.items():
         for entrypoint in entrypoints:
@@ -306,27 +317,25 @@ def _execute_start_entrypoints():
                     exc)
 
 
-def addpackage(sitedir, name, known_paths):
-    """Process a .pth file within the site-packages directory.
+def flush_pth_start():
+    """Flush all pending sys.path and entry points."""
+    _extend_syspath()
+    _exec_imports()
+    _execute_start_entrypoints()
+    _pending_syspaths.clear()
+    _pending_importexecs.clear()
+    _pending_entrypoints.clear()
 
-    .. deprecated:: 3.15
-       Use :func:`addsitedir` instead.
-    """
-    _warn(
-        "site.addpackage() is deprecated, use site.addsitedir() instead.",
-        DeprecationWarning,
-        stacklevel=2,
-    )
+
+def addpackage(sitedir, name, known_paths):
+    """Process a .pth file within the site-packages directory."""
     if known_paths is None:
         known_paths = _init_pathinfo()
         reset = True
     else:
         reset = False
     _read_pth_file(sitedir, name, known_paths)
-    _extend_syspath()
-    _exec_imports()
-    _pending_syspaths.clear()
-    _pending_importexecs.clear()
+    flush_pth_start()
     if reset:
         known_paths = None
     return known_paths
@@ -372,12 +381,7 @@ def addsitedir(sitedir, known_paths=None):
     # If standalone call (not from main()), flush immediately
     # so the caller sees the effect.
     if reset:
-        _extend_syspath()
-        _exec_imports()
-        _execute_start_entrypoints()
-        _pending_syspaths.clear()
-        _pending_importexecs.clear()
-        _pending_entrypoints.clear()
+        flush_pth_start()
         known_paths = None
 
     return known_paths

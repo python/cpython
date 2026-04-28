@@ -93,6 +93,18 @@ and lines beginning with ``#`` are skipped.
 For backward compatibility, lines starting with ``import`` (followed by space
 or tab) are executed with :func:`exec`.
 
+.. deprecated-removed:: 3.15 3.20
+
+   ``import`` lines in :file:`{name}.pth` files are deprecated and will be
+   silently ignored in Python 3.18 and 3.19.  In Python 3.20 a warning will be
+   produced for ``import`` lines in :file:`{name}.pth` files.
+
+.. versionchanged:: 3.15
+
+   ``import`` lines in :file:`{name}.pth` are ignored when a :ref:`matching
+   <site-start-files>` :file:`{name}.start` file exists.
+
+
 .. _site-start-files:
 
 Startup entry points (:file:`.start` files)
@@ -116,14 +128,16 @@ have been applied to :data:`sys.path`, ensuring that paths are available
 before any startup code runs.
 
 Unlike :data:`sys.path` extensions from :file:`.pth` files, duplicate entry
-points are **not** deduplicated --- if an entry point appears more than once,
+points are **not** de-duplicated --- if an entry point appears more than once,
 it will be called more than once.
 
 If an exception occurs during resolution or invocation of an entry point,
 a traceback is printed to :data:`sys.stderr` and processing continues with
 the remaining entry points.
 
-:pep:`829` defined the specification for these features.
+:file:`.start` files must be encoded in UTF-8.
+
+:pep:`829` defined the original specification for these features.
 
 .. note::
 
@@ -133,15 +147,26 @@ the remaining entry points.
 
 .. note::
 
-   Executable lines (i.e. ``import`` lines in a :file:`.pth` file or
+   Executable lines (i.e. ``import`` lines in a :file:`{name}.pth` file or
    :file:`{name}.start` entry points) are always run at Python startup (unless
    :option:`-S` is given to disable the ``site.py`` module entirely),
    regardless of whether a particular module is actually going to be used.
+
+.. note::
+
+   While :func:`pkgutil.resolve_name` itself doesn't require the ``:callable``
+   suffix, :file:`{name}.start` file lines require this stricter syntax.
 
 .. versionchanged:: 3.13
 
    The :file:`.pth` files are now decoded by UTF-8 at first and then by the
    :term:`locale encoding` if it fails.
+
+.. deprecated-removed:: 3.15 3.20
+
+   :file:`{name}.pth` files in any encoding other than ``utf-8-sig`` is
+   deprecated in Python 3.15, and support for decoding from the locale
+   encoding will be removed in Python 3.20.
 
 .. versionchanged:: 3.15
 
@@ -152,8 +177,6 @@ the remaining entry points.
    :file:`{name}.pth` files are silently ignored.  See :ref:`site-start-files`
    and :pep:`829`.
 
-.. versionchanged:: 3.15
-
    Errors on individual lines no longer abort processing of the rest of the
    file.  Each error is reported and the remaining lines continue to be
    processed.
@@ -161,6 +184,7 @@ the remaining entry points.
 .. index::
    single: package
    triple: path; configuration; file
+
 
 Startup file examples
 ---------------------
@@ -224,7 +248,9 @@ line after the first semi-colon into the ``callable()`` function.
 
 If your package must straddle older Pythons that do not support :pep:`829`
 and newer Pythons that do, change the ``import`` lines in your
-:file:`{name}.pth` to use the following form::
+:file:`{name}.pth` to use the following form:
+
+.. code-block:: python
 
    import pkg.mod; pkg.mod.callable()
 
