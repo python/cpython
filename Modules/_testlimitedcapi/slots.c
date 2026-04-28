@@ -397,19 +397,19 @@ module_from_slots(PyObject* Py_UNUSED(module), PyObject *args)
         PySlot_SIZE(Py_mod_exec, demo_exec),
     ENDCASE()
     CASE("old_slot_numbers")
+        // 1: see old_slot_number_create case
         PySlot_FUNC(2, demo_exec),
         PySlot_DATA(3, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED),
-        PySlot_FUNC(4, Py_MOD_GIL_NOT_USED),
+        // 4: see module_from_gil_slot function
     ENDCASE()
     CASE("new_slot_numbers")
+        // 84: see new_slot_number_create case
         PySlot_FUNC(85, demo_exec),
         PySlot_FUNC(86, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED),
-        PySlot_FUNC(87, Py_MOD_GIL_NOT_USED),
+        // 87: see module_from_gil_slot function
     ENDCASE()
     CASE("old_slot_number_create")
         PySlot_FUNC(1, demo_create),
-        PySlot_DATA(3, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED),
-        PySlot_FUNC(4, Py_MOD_GIL_NOT_USED),
     ENDCASE()
     CASE("new_slot_number_create")
         PySlot_FUNC(84, demo_create),
@@ -567,6 +567,21 @@ module_from_slots(PyObject* Py_UNUSED(module), PyObject *args)
 }
 
 static PyObject *
+module_from_gil_slot(PyObject* Py_UNUSED(module), PyObject *args)
+{
+    long slot_number;
+    PyObject *spec;
+    if (!PyArg_ParseTuple(args, "lO", &slot_number, &spec)) {
+        return NULL;
+    }
+    return PyModule_FromSlotsAndSpec((PySlot[]) {
+        PySlot_DATA(Py_mod_abi, &abi_info),
+        PySlot_PTR_STATIC(slot_number, Py_MOD_GIL_NOT_USED),
+        PySlot_END
+    }, spec);
+}
+
+static PyObject *
 module_from_null_slot(PyObject* Py_UNUSED(module), PyObject *args)
 {
     long slot_number;
@@ -584,6 +599,7 @@ module_from_null_slot(PyObject* Py_UNUSED(module), PyObject *args)
 
 static PyMethodDef TestMethods[] = {
     {"type_from_slots", type_from_slots, METH_VARARGS},
+    {"module_from_gil_slot", module_from_gil_slot, METH_VARARGS},
     {"type_from_null_slot", type_from_null_slot, METH_VARARGS},
     {"type_from_null_spec_slot", type_from_null_spec_slot, METH_VARARGS},
     {"module_from_slots", module_from_slots, METH_VARARGS},

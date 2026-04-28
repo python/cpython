@@ -99,7 +99,7 @@ Entries of the slots array use the following structure:
 
          The flag applies even to data the slot points to “indirectly”,
          except for slots nested via :c:macro:`Py_slot_subslots` which may
-         have their own :c:macro:`!PySlot_STATIC`` flags.
+         have their own :c:macro:`!PySlot_STATIC` flags.
          For example, if applied to a :c:macro:`Py_tp_members` slot that
          points to an array of :c:type:`PyMemberDef` structures,
          then the entire array, as well as the name and doc strings

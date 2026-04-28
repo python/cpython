@@ -1,8 +1,8 @@
 from test.support import import_helper, subTests
-import importlib.machinery
 import contextlib
 import unittest
 import types
+import sys
 
 _testlimitedcapi = import_helper.import_module('_testlimitedcapi')
 _testcapi = import_helper.import_module('_testcapi')
@@ -227,6 +227,13 @@ class ModuleSlotsTests(unittest.TestCase):
         spec = FakeSpec()
         mod = _testlimitedcapi.module_from_slots(case_name, spec)
         self.assertIs(mod, spec)
+
+    @subTests("slot_number", [4, 87])
+    def test_compat_slot_number_gil(self, slot_number):
+        spec = FakeSpec()
+        gil_enabled = sys._is_gil_enabled()
+        mod = _testlimitedcapi.module_from_gil_slot(slot_number, spec)
+        self.assertEqual(gil_enabled, sys._is_gil_enabled())
 
     def test_nonstatic_mod_methods(self):
         with self.assertRaisesRegex(SystemError, "Py_mod_methods.*STATIC"):
