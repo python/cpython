@@ -282,7 +282,7 @@ def generate_tier2(
             out.emit("assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());\n")
             declare_variables(uop, out)
             stack = Stack()
-            stack.push_cache([f"_tos_cache{i}" for i in range(inputs)], out)
+            stack.push_cache(uop.name, [f"_tos_cache{i}" for i in range(inputs)], outputs, out)
             stack._print(out)
             reachable, stack = write_uop(uop, emitter, stack, outputs)
             out.start_line()

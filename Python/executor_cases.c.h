@@ -17042,6 +17042,7 @@
             _PyStackRef arg;
             _PyStackRef res;
             _PyStackRef a;
+            Py_GCC_ATTRIBUTE((unused))
             _PyStackRef _stack_item_0 = _tos_cache0;
             oparg = CURRENT_OPARG();
             arg = _stack_item_0;
@@ -17065,7 +17066,9 @@
             _PyStackRef arg;
             _PyStackRef res;
             _PyStackRef a;
+            Py_GCC_ATTRIBUTE((unused))
             _PyStackRef _stack_item_0 = _tos_cache0;
+            Py_GCC_ATTRIBUTE((unused))
             _PyStackRef _stack_item_1 = _tos_cache1;
             oparg = CURRENT_OPARG();
             arg = _stack_item_1;
@@ -17089,8 +17092,11 @@
             _PyStackRef arg;
             _PyStackRef res;
             _PyStackRef a;
+            Py_GCC_ATTRIBUTE((unused))
             _PyStackRef _stack_item_0 = _tos_cache0;
+            Py_GCC_ATTRIBUTE((unused))
             _PyStackRef _stack_item_1 = _tos_cache1;
+            Py_GCC_ATTRIBUTE((unused))
             _PyStackRef _stack_item_2 = _tos_cache2;
             oparg = CURRENT_OPARG();
             arg = _stack_item_2;
@@ -22369,6 +22375,7 @@
             _PyStackRef res;
             _PyStackRef a;
             _PyStackRef c;
+            Py_GCC_ATTRIBUTE((unused))
             _PyStackRef _stack_item_0 = _tos_cache0;
             arg = _stack_item_0;
             callable = stack_pointer[-2];
@@ -22394,7 +22401,9 @@
             _PyStackRef res;
             _PyStackRef a;
             _PyStackRef c;
+            Py_GCC_ATTRIBUTE((unused))
             _PyStackRef _stack_item_0 = _tos_cache0;
+            Py_GCC_ATTRIBUTE((unused))
             _PyStackRef _stack_item_1 = _tos_cache1;
             arg = _stack_item_1;
             callable = stack_pointer[-1];
@@ -22420,8 +22429,11 @@
             _PyStackRef res;
             _PyStackRef a;
             _PyStackRef c;
+            Py_GCC_ATTRIBUTE((unused))
             _PyStackRef _stack_item_0 = _tos_cache0;
+            Py_GCC_ATTRIBUTE((unused))
             _PyStackRef _stack_item_1 = _tos_cache1;
+            Py_GCC_ATTRIBUTE((unused))
             _PyStackRef _stack_item_2 = _tos_cache2;
             arg = _stack_item_2;
             callable = _stack_item_0;
