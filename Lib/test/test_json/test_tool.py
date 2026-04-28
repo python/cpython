@@ -10,6 +10,9 @@ from test.support import os_helper
 from test.support.script_helper import assert_python_ok
 
 
+# NSKIP003 https://github.com/nanvix/cpython/issues/471
+@unittest.skipIf(support.is_nanvix,
+                 "NSKIP003: no subprocess support")  # detail: no fork()/exec() on Nanvix
 @support.requires_subprocess()
 class TestTool(unittest.TestCase):
     data = """

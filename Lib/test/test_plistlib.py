@@ -551,6 +551,9 @@ class TestPlistlib(unittest.TestCase):
     def test_uid_index(self):
         self.assertEqual(operator.index(UID(1)), 1)
 
+    # NSKIP056 https://github.com/nanvix/cpython/issues/555
+    @unittest.skipIf(support.is_nanvix,
+                     "NSKIP056: Newlib %zd format directive leaks into _pickle output")
     def test_uid_pickle(self):
         for proto in range(pickle.HIGHEST_PROTOCOL + 1):
             self.assertEqual(pickle.loads(pickle.dumps(UID(19), protocol=proto)), UID(19))
@@ -907,6 +910,9 @@ class TestBinaryPlistlib(unittest.TestCase):
         b = plistlib.loads(plistlib.dumps(a, fmt=plistlib.FMT_BINARY))
         self.assertIs(b['x'], b)
 
+    # NSKIP015 https://github.com/nanvix/cpython/issues/483
+    @unittest.skipIf(support.is_nanvix,
+                     "NSKIP015: OOM — test allocation exceeds available heap")
     def test_deep_nesting(self):
         tests = [50, 100_000] if support.is_wasi else [50, 600, 100_000]
         for N in tests:

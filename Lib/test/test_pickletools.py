@@ -5,6 +5,13 @@ from test.pickletester import AbstractPickleTests
 import doctest
 import unittest
 
+
+# NSKIP056 https://github.com/nanvix/cpython/issues/555
+if support.is_nanvix:
+    raise unittest.SkipTest(
+        "NSKIP056: Newlib %zd format directive leaks into _pickle output")
+
+
 class OptimizedPickleTests(AbstractPickleTests, unittest.TestCase):
 
     def dumps(self, arg, proto=None, **kwargs):

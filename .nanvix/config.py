@@ -176,6 +176,7 @@ NANVIX_TEST_LIST: list[str] = [
     "test_exception_group", "test_exceptions", "test_raise", "test_traceback",
     "test_frame", "test_contextlib", "test_contextlib_async",
     "test_pprint", "test_reprlib",
+    "test_format", "test_print", "test_textwrap", "test_difflib",
     "test_list", "test_dict",
     "test_listcomps", "test_dictcomps", "test_setcomps", "test_genexps",
     "test_set",
@@ -198,6 +199,21 @@ NANVIX_TEST_LIST: list[str] = [
     "test_dbm_dumb", "test_shelve",
     "test_import", "test_pkgutil", "test_modulefinder",
     "test_importlib",
+    "test_base64", "test_binascii", "test_quopri", "test_uu",
+    "test_string", "test_string_literals", "test_unicode", "test_unicodedata",
+    "test_ucn", "test_utf8_mode", "test_utf8source",
+    "test_codecs", "test_multibytecodec",
+    "test_codecencodings_cn", "test_codecencodings_hk",
+    "test_codecencodings_iso2022", "test_codecencodings_jp",
+    "test_codecencodings_kr", "test_codecencodings_tw",
+    "test_codecmaps_cn", "test_codecmaps_hk", "test_codecmaps_jp",
+    "test_codecmaps_kr", "test_codecmaps_tw",
+    # #323 wave 6 — pickle and marshal
+    "test_pickle", "test_picklebuffer", "test_pickletools", "test_marshal",
+    # #323 wave 7 — json sub-package
+    "test_json",
+    # #323 wave 8 — regex and plistlib
+    "test_re", "test_plistlib",
 ]
 
 # Default batch size for regrtest VM invocations.
@@ -211,6 +227,7 @@ STANDALONE_EXCLUDE: list[str] = [
     "test_io",         # NSKIP019: standalone 32 MB heap too small for module
     "test_zipfile",    # NSKIP019: standalone too slow / heap too small for module
     "test_import",     # NSKIP019: standalone 32 MB heap too small for module
+    "test_unicode",    # NSKIP019: standalone 32 MB heap too small for module
 ]
 
 # Platform-specific nanvixd extra arguments.

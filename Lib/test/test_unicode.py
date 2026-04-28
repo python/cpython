@@ -227,6 +227,9 @@ class UnicodeTest(string_tests.CommonTest,
                 tuple(iterator)
                 self.assertRaises(StopIteration, next, iterator)
 
+    # NSKIP056 https://github.com/nanvix/cpython/issues/555
+    @unittest.skipIf(support.is_nanvix,
+                     "NSKIP056: Newlib %zd format directive leaks into _pickle output")
     def test_pickle_iterator(self):
         cases = ['abc', '🚀🚀🚀', "\u1111\u2222\u3333"]
         for case in cases:
@@ -236,6 +239,15 @@ class UnicodeTest(string_tests.CommonTest,
                     with self.subTest(proto=proto):
                         pickled = "".join(pickle.loads(pickle.dumps(it, proto)))
                         self.assertEqual(case, pickled)
+
+    # NSKIP004 https://github.com/nanvix/cpython/issues/472
+    # Override of CommonTest.test_adaptive_find — the inherited fixture
+    # builds a multi-MB haystack/needle that MemoryErrors on Nanvix's
+    # 32 MB sysalloc heap.  See vault findings_standalone.md (wave 3).
+    @unittest.skipIf(support.is_nanvix,
+                     "NSKIP004: 32-bit integer overflow")  # detail: haystack + needle build trips MemoryError on 32 MB heap
+    def test_adaptive_find(self):
+        super().test_adaptive_find()
 
     def test_count(self):
         string_tests.CommonTest.test_count(self)
@@ -2272,6 +2284,9 @@ class UnicodeTest(string_tests.CommonTest,
         self.assertRaises(ValueError, complex, "\ud800")
         self.assertRaises(ValueError, complex, "\udf00")
 
+    # NSKIP004 https://github.com/nanvix/cpython/issues/472
+    @unittest.skipIf(support.is_nanvix,
+                     "NSKIP004: 32-bit integer overflow")  # detail: ''.join(map(chr, range(0,0xd800)+...)) MemoryError on 32 MB heap
     def test_codecs(self):
         # Encoding
         self.assertEqual('hello'.encode('ascii'), b'hello')
