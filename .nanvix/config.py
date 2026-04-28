@@ -192,6 +192,7 @@ NANVIX_TEST_LIST: list[str] = [
     "test_io", "test_fileio", "test_file", "test_file_eintr",
     "test_source_encoding",
     "test_os", "test_posix",
+    "test_tempfile", "test_shutil",
 ]
 
 # Default batch size for regrtest VM invocations.

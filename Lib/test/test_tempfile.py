@@ -16,7 +16,11 @@ import shutil
 from unittest import mock
 
 import unittest
+
+# NSKIP050 https://github.com/nanvix/cpython/issues/530
 from test import support
+if support.is_nanvix and not support.is_nanvix_standalone:
+    raise unittest.SkipTest("NSKIP050: hosted Nanvix unable to run this module cleanly (rmdir errno 88 cascade and/or other linuxd VFS issues)")  # detail: not bisected, see #530
 from test.support import os_helper
 from test.support import script_helper
 from test.support import warnings_helper
@@ -358,6 +362,9 @@ class TestBadTempdir:
                 with self.assertRaises(FileNotFoundError):
                     self.make_temp()
 
+    # NSKIP026 https://github.com/nanvix/cpython/issues/506
+    @unittest.skipIf(support.is_nanvix,
+                     "NSKIP026: FAT VFS returns wrong errno for path-edge cases")  # detail: path-under-file returns EINVAL not NotADirectoryError
     def test_non_directory(self):
         with _inside_empty_temp_dir():
             tempdir = os.path.join(tempfile.tempdir, 'file')
@@ -431,6 +438,9 @@ class TestMkstempInner(TestBadTempdir, BaseTestCase):
         with self.assertRaises(TypeError):
             self.do_create(dir=dir_b, pre=b"", suf="").write(b"blat")
 
+    # NSKIP035 https://github.com/nanvix/cpython/issues/515
+    @unittest.skipIf(support.is_nanvix,
+                     "NSKIP035: os.dup() raises ENOTSUP via fcntl(F_DUPFD_CLOEXEC)")  # detail: leads to EMFILE in tight tempfile loops
     def test_basic_many(self):
         # _mkstemp_inner can create many files (stochastic)
         extant = list(range(TEST_FILES))
@@ -518,6 +528,9 @@ class TestMkstempInner(TestBadTempdir, BaseTestCase):
                                        tempfile._bin_openflags,
                                        str)
 
+    # NSKIP043 https://github.com/nanvix/cpython/issues/523
+    @unittest.skipIf(support.is_nanvix,
+                     "NSKIP043: FAT VFS case-insensitivity / 8.3 short-name retention")  # detail: case-insensitive mkstemp candidate-name collision detection fails
     def test_collision_with_existing_file(self):
         # _mkstemp_inner tries another name when a file with
         # the chosen name already exists
@@ -531,6 +544,9 @@ class TestMkstempInner(TestBadTempdir, BaseTestCase):
             os.close(fd2)
             self.assertTrue(name2.endswith('bbb'))
 
+    # NSKIP043 https://github.com/nanvix/cpython/issues/523
+    @unittest.skipIf(support.is_nanvix,
+                     "NSKIP043: FAT VFS case-insensitivity / 8.3 short-name retention")  # detail: case-insensitive mkstemp candidate-name collision detection fails
     def test_collision_with_existing_directory(self):
         # _mkstemp_inner tries another name when a directory with
         # the chosen name already exists
@@ -765,6 +781,9 @@ class TestMkdtemp(TestBadTempdir, BaseTestCase):
         with self.assertRaises(TypeError):
             os.rmdir(self.do_create(dir="", pre=b"aa", suf=b".txt"))
 
+    # NSKIP035 https://github.com/nanvix/cpython/issues/515
+    @unittest.skipIf(support.is_nanvix,
+                     "NSKIP035: os.dup() raises ENOTSUP via fcntl(F_DUPFD_CLOEXEC)")  # detail: leads to EMFILE in tight tempfile loops
     def test_basic_many(self):
         # mkdtemp can create many directories (stochastic)
         extant = list(range(TEST_FILES))
@@ -803,6 +822,9 @@ class TestMkdtemp(TestBadTempdir, BaseTestCase):
         finally:
             os.rmdir(dir)
 
+    # NSKIP043 https://github.com/nanvix/cpython/issues/523
+    @unittest.skipIf(support.is_nanvix,
+                     "NSKIP043: FAT VFS case-insensitivity / 8.3 short-name retention")  # detail: case-insensitive mkstemp candidate-name collision detection fails
     def test_collision_with_existing_file(self):
         # mkdtemp tries another name when a file with
         # the chosen name already exists
@@ -814,6 +836,9 @@ class TestMkdtemp(TestBadTempdir, BaseTestCase):
             dir = tempfile.mkdtemp()
             self.assertTrue(dir.endswith('bbb'))
 
+    # NSKIP043 https://github.com/nanvix/cpython/issues/523
+    @unittest.skipIf(support.is_nanvix,
+                     "NSKIP043: FAT VFS case-insensitivity / 8.3 short-name retention")  # detail: case-insensitive mkstemp candidate-name collision detection fails
     def test_collision_with_existing_directory(self):
         # mkdtemp tries another name when a directory with
         # the chosen name already exists
@@ -978,6 +1003,9 @@ class TestNamedTemporaryFile(BaseTestCase):
         self.assertTrue(os.path.exists(f.name),
                         "NamedTemporaryFile %s does not exist" % f.name)
 
+    # NSKIP043 https://github.com/nanvix/cpython/issues/523
+    @unittest.skipIf(support.is_nanvix,
+                     "NSKIP043: FAT VFS case-insensitivity / 8.3 short-name retention")  # detail: 8.3 short-name entries retained after unlink
     def test_del_on_close(self):
         # A NamedTemporaryFile is deleted when closed
         dir = tempfile.mkdtemp()
@@ -1192,6 +1220,9 @@ class TestSpooledTemporaryFile(BaseTestCase):
             'IOBase/BufferedIOBase/TextIOBase'
         )
 
+    # NSKIP043 https://github.com/nanvix/cpython/issues/523
+    @unittest.skipIf(support.is_nanvix,
+                     "NSKIP043: FAT VFS case-insensitivity / 8.3 short-name retention")  # detail: 8.3 short-name entries retained after unlink
     def test_del_on_close(self):
         # A SpooledTemporaryFile is deleted when closed
         dir = tempfile.mkdtemp()
