@@ -19,7 +19,7 @@ from functools import partial
 # every dbm.dumb operation that touches the directory file triggers
 # the commit path.
 if support.is_nanvix:
-    raise unittest.SkipTest("NSKIP021: FAT VFS rename() hangs the kernel")  # detail: dbm.dumb._commit( uses os.rename)
+    raise unittest.SkipTest("NSKIP021: FAT VFS rename() hangs the kernel")  # detail: dbm.dumb._commit() uses os.rename
 
 _fname = os_helper.TESTFN
 
