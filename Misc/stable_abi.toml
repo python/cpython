@@ -1,4 +1,4 @@
-# This file lists the contents of the Limited API and Stable ABI.
+# This file lists the contents of Limited API and Stable ABI.
 # Please append new items at the end.
 
 # The syntax of this file is not fixed.
@@ -46,15 +46,24 @@
 #   - 'opaque': No members are part of the ABI, nor is the size. The Limited
 #     API only handles these via pointers. The C definition should be
 #     incomplete (opaque).
-#   - 'members': Only specific members are part of the stable ABI.
-#     The struct's size may change, so it can't be used in arrays.
+#   - 'abi3t-opaque': 'full-abi' in abi3; 'opaque' in abi3t.
+#     For docs, the generated annotation refers to details that need to
+#     be added to the ReST file manually.
+#   - 'members':
+#     - 'opaque' in abi3t.
+#     - In abi3, only specific members are part of the stable ABI.
+#       The struct's size may change, so it can't be used in arrays.
 #     Do not add new structs of this kind without an extremely good reason.
+#     For docs, the generated annotation refers to details that need to
+#     be added to the ReST file manually.
 # - members: For `struct` with struct_abi_kind = 'members', a list of the
 #   exposed members.
 # - doc: for `feature_macro`, the blurb added in documentation
 # - windows: for `feature_macro`, this macro is defined on Windows.
 #   (This info is used to generate the DLL manifest and needs to be available
 #   on all platforms.)
+# - abi3t_opaque: In abi3t, this struct is opaque (as if `struct_abi_kind`
+#   was 'opaque' and `members` was missing).
 
 # Removing items from this file is generally not allowed, and additions should
 # be considered with that in mind. See the devguide for exact rules:
@@ -107,10 +116,10 @@
     struct_abi_kind = 'full-abi'
 [struct.PyModuleDef_Base]
     added = '3.2'
-    struct_abi_kind = 'full-abi'
+    struct_abi_kind = 'abi3t-opaque'
 [struct.PyModuleDef]
     added = '3.2'
-    struct_abi_kind = 'full-abi'
+    struct_abi_kind = 'abi3t-opaque'
 [struct.PyStructSequence_Field]
     added = '3.2'
     struct_abi_kind = 'full-abi'
