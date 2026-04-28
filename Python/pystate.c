@@ -3484,7 +3484,7 @@ PyInterpreterView_FromMain(void)
 // thread state was attached.
 // To do this, we just use the memory address of a global variable and
 // cast it to a PyThreadState *.
-static int NO_TSTATE_SENTINEL = 0;
+static const int NO_TSTATE_SENTINEL = 0;
 
 PyThreadState *
 PyThreadState_Ensure(PyInterpreterGuard *guard)
