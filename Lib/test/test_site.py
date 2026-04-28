@@ -1341,6 +1341,39 @@ def startup():
         fullname = os.path.join(self.sitedir, 'foo.pth')
         self.assertIn(subdir, site._pending_syspaths.get(fullname, []))
 
+    def test_pth_path_is_available_to_start_entrypoint(self):
+        # Core PEP 829 invariant: all .pth path extensions are applied to
+        # sys.path *before* any .start entry point runs, so an entry
+        # point may live in a module reachable only via a .pth-extended
+        # path.  If the flush phases were inverted, resolving the entry
+        # point would fail with ModuleNotFoundError.
+        extdir = os.path.join(self.sitedir, 'extdir')
+        os.mkdir(extdir)
+        modpath = os.path.join(extdir, 'mod.py')
+        with open(modpath, 'w') as f:
+            f.write("""\
+called = False
+def hook():
+    global called
+    called = True
+""")
+        self.addCleanup(sys.modules.pop, 'mod', None)
+
+        # extdir is not on sys.path; only the .pth file makes it so.
+        self.assertNotIn(extdir, sys.path)
+        self._make_pth("extdir\n", name='extlib')
+        self._make_start("mod:hook\n", name='extlib')
+
+        # Standalone addsitedir() triggers the full flush sequence.
+        site.addsitedir(self.sitedir)
+
+        self.assertIn(extdir, sys.path)
+        import mod
+        self.assertTrue(
+            mod.called,
+            "entry point did not run; .pth path was likely not applied "
+            "before .start entry-point execution")
+
 
 if __name__ == "__main__":
     unittest.main()
