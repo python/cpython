@@ -5032,6 +5032,9 @@ class ThreadedTests(unittest.TestCase):
                         raise cm.exc_value
 
     def test_got_eof(self):
+        # gh-148292: Test that _ssl._SSLSocket behaves the same on all OpenSSL
+        # versions on calling methods after EOF (after the first SSLEOFError).
+
         server = TestEOFServer()
         server.start()
         if not server.listening.wait(support.SHORT_TIMEOUT):
@@ -5071,9 +5074,14 @@ class ThreadedTests(unittest.TestCase):
                 sslsock.do_handshake()
 
             self.assertEqual(sslsock.pending(), 0)
-            with self.assertRaises(OSError) as cm:
+            try:
                 sslsock.shutdown(socket.SHUT_WR)
-            self.assertEqual(cm.exception.errno, errno.ENOTCONN)
+            except OSError as exc:
+                self.assertEqual(exc.errno, errno.ENOTCONN)
+            else:
+                # On Windows and on OpenSSL 1.1.1, shutdown() doesn't
+                # raise an error
+                pass
 
         server.join()
 
