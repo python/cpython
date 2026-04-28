@@ -753,8 +753,7 @@ class TestContextDecorator(unittest.TestCase):
         gen = test()
         self.assertEqual(next(gen), 1)
         gen.close()
-        # closing() ensures the inner generator is closed before the
-        # context manager exits.
+        # The inner generator is closed before the context manager exits.
         self.assertEqual(state, ["enter", "inner closed", "exit"])
 
 

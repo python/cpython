@@ -505,8 +505,8 @@ class AsyncContextManagerTestCase(unittest.TestCase):
             self.assertEqual(value, 1)
             break
         await agen.aclose()
-        # aclosing() ensures the inner async generator is closed before
-        # the context manager exits.
+        # The inner async generator is closed before the context
+        # manager exits.
         self.assertEqual(state, ["enter", "inner closed", "exit"])
 
     @_async_test
