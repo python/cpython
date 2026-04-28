@@ -492,10 +492,15 @@ Functions and classes provided:
 .. class:: AsyncContextDecorator
 
    Similar to :class:`ContextDecorator`, but the context manager is entered
-   and exited with :keyword:`async with`.  The decorated callable may be a
-   coroutine function, an asynchronous generator function, a synchronous
-   generator function, or an ordinary function; the returned wrapper is always
-   awaitable (or async-iterable for generator inputs).
+   and exited with :keyword:`async with`.  Decorate coroutine functions and
+   asynchronous generator functions with this class; the returned wrapper is
+   of the same kind.
+
+   .. note::
+      Synchronous functions and generators are accepted, but the wrapper is
+      always asynchronous, so the decorated callable must then be awaited or
+      iterated with ``async for``.  If that change of calling convention is
+      not intended, use :class:`ContextDecorator` instead.
 
    Example of ``AsyncContextDecorator``::
 
@@ -534,10 +539,11 @@ Functions and classes provided:
    .. versionadded:: 3.10
 
    .. versionchanged:: next
-      Decorating a generator function, asynchronous generator function, or
-      ordinary synchronous function is now supported, and the context manager
-      is kept open across iteration rather than only for the call that
-      creates the generator object.
+      Decorating an asynchronous generator function now keeps the context
+      manager open across iteration.  Previously the context manager exited
+      as soon as the generator object was created.  Synchronous functions
+      and synchronous generator functions are also now accepted, with an
+      asynchronous wrapper returned.
 
 
 .. class:: ExitStack()
