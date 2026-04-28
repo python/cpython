@@ -1,0 +1,2 @@
+:data:`dataclasses.MISSING` and :data:`dataclasses.KW_ONLY` are now
+instances of :class:`sentinel`.
