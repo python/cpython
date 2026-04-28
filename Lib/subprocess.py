@@ -1094,7 +1094,7 @@ def run_pipeline(*commands, input=None, capture_output=False, timeout=None,
             raise ValueError("stdout and stderr arguments may not be used "
                              "with capture_output.")
 
-    if kwargs.get("close_fds") is False:
+    if not kwargs.get("close_fds", True):
         raise ValueError(
             "close_fds=False is not supported by run_pipeline; "
             "inherited pipe ends would prevent EOF signaling between commands")

@@ -2226,14 +2226,16 @@ class PipelineTestCase(BaseTestCase):
                 self.assertIn("process group", str(cm.exception))
 
     def test_pipeline_close_fds_false_rejected(self):
-        """Test that close_fds=False is rejected (would deadlock)"""
-        with self.assertRaises(ValueError) as cm:
-            subprocess.run_pipeline(
-                [sys.executable, "-c", "pass"],
-                [sys.executable, "-c", "pass"],
-                close_fds=False
-            )
-        self.assertIn("close_fds", str(cm.exception))
+        """Any falsy close_fds is rejected (would deadlock)."""
+        for value in (False, 0, None):
+            with self.subTest(close_fds=value):
+                with self.assertRaises(ValueError) as cm:
+                    subprocess.run_pipeline(
+                        [sys.executable, "-c", "pass"],
+                        [sys.executable, "-c", "pass"],
+                        close_fds=value,
+                    )
+                self.assertIn("close_fds", str(cm.exception))
 
     def test_pipeline_universal_newlines(self):
         """Test that universal_newlines=True works like text=True"""
