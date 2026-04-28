@@ -2665,6 +2665,35 @@ class Test_testinternalcapi(unittest.TestCase):
     locals().update(get_test_funcs(_testinternalcapi,
                                    exclude_prefix='test_lock_'))
 
+    @support.skip_emscripten_stack_overflow()
+    @support.skip_wasi_stack_overflow()
+    def test_datastack_caches_multiple_chunks(self):
+        code = textwrap.dedent("""
+            import struct
+            import sys
+            import _testinternalcapi
+
+            def recurse(n):
+                _a=_b=_c=_d=_e=_f=_g=_h=_i=_j=None
+                _k=_l=_m=_n=_o=_p=_q=_r=_s=_t=None
+                if n:
+                    recurse(n - 1)
+
+            words_per_chunk = 16 * 1024 // struct.calcsize("P")
+            frame_words = _testinternalcapi.get_co_framesize(recurse.__code__)
+            depth = max(64, 12 * words_per_chunk // frame_words + 32)
+            sys.setrecursionlimit(depth + 100)
+
+            recurse(depth)
+
+            count, total_size = _testinternalcapi.get_datastack_cache_stats()
+            assert count >= 2, (count, total_size, frame_words, depth)
+            assert total_size <= 8 * 16 * 1024, (
+                count, total_size, frame_words, depth
+            )
+        """)
+        assert_python_ok("-c", code)
+
 
 @threading_helper.requires_working_threading()
 class Test_PyLock(unittest.TestCase):
