@@ -27,6 +27,7 @@ import sys
 import sysconfig
 import tempfile
 from textwrap import dedent
+from types import SimpleNamespace
 import urllib.error
 import urllib.request
 from unittest import mock
@@ -1126,6 +1127,36 @@ class StartFileTests(unittest.TestCase):
             site._read_pth_file(self.sitedir, 'foo.pth', set())
         fullname = os.path.join(self.sitedir, 'foo.pth')
         self.assertIn(subdir, site._pending_syspaths.get(fullname, []))
+
+    def _flags_with_verbose(self, verbose):
+        # Build a sys.flags clone with verbose overridden but every
+        # other field preserved, so unrelated reads like
+        # sys.flags.optimize during io.open_code() continue to work.
+        attrs = {name: getattr(sys.flags, name)
+                 for name in sys.flags.__match_args__}
+        attrs['verbose'] = verbose
+        return SimpleNamespace(**attrs)
+
+    def test_read_pth_file_parse_error_silent_by_default(self):
+        # PEP 829: parse-time errors are silent unless -v is given.
+        # Force the error path by making makepath() raise.
+        self._make_pth("badline\n", name='foo')
+        with mock.patch('site.makepath', side_effect=ValueError("boom")), \
+                mock.patch('sys.flags', self._flags_with_verbose(False)), \
+                captured_stderr() as err:
+            site._read_pth_file(self.sitedir, 'foo.pth', set())
+        self.assertEqual(err.getvalue(), "")
+
+    def test_read_pth_file_parse_error_reported_under_verbose(self):
+        # PEP 829: parse-time errors are reported when -v is given.
+        self._make_pth("badline\n", name='foo')
+        with mock.patch('site.makepath', side_effect=ValueError("boom")), \
+                mock.patch('sys.flags', self._flags_with_verbose(True)), \
+                captured_stderr() as err:
+            site._read_pth_file(self.sitedir, 'foo.pth', set())
+        out = err.getvalue()
+        self.assertIn('Error in', out)
+        self.assertIn('foo.pth', out)
 
     def test_read_pth_file_locale_fallback(self):
         # PEP 829: .pth files that fail UTF-8 decoding fall back to the
