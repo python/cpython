@@ -3,7 +3,7 @@
     <Fragment>
         <ComponentGroup Id="core_dll">
             <Component Id="python_abi3tcompat.dll" Directory="abi3t_compat" Guid="*">
-                <File Id="python_abi3tcompat.dll" Name="python$(var.MajorVersionNumber)t.dll" Source="!(bindpath.build)\python$(var.MajorVersionNumber)t.dll" KeyPath="yes" />
+                <File Id="python_abi3tcompat.dll" Name="python$(var.MajorVersionNumber)t.dll" Source="python$(var.MajorVersionNumber)t.dll" KeyPath="yes" />
             </Component>
             <Component Id="python_stable.dll" Directory="InstallDirectory" Guid="*">
                 <File Id="python_stable.dll" Name="python$(var.MajorVersionNumber).dll" KeyPath="yes" />
