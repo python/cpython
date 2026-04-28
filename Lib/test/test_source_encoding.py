@@ -332,7 +332,7 @@ class BytesSourceEncodingTest(AbstractSourceEncodingTest, unittest.TestCase):
 
 # NSKIP012 https://github.com/nanvix/cpython/issues/480
 @unittest.skipIf(support.is_nanvix and not support.is_nanvix_standalone,
-                 "NSKIP012: rmdir errno 88 cascade on hosted Nanvix leaves @test_1_tmp behind, breaking setUp in subsequent tests")
+                 "NSKIP012: rmtree/rmdir returns ENOSYS")  # detail: rmdir errno 88 cascade on hosted Nanvix leaves @test_1_tmp behind, breaking setUp in subsequent tests
 class FileSourceEncodingTest(AbstractSourceEncodingTest, unittest.TestCase):
 
     def check_script_output(self, src, expected):
