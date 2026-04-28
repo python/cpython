@@ -4173,6 +4173,20 @@ def bœr():
         stdout, stderr = self.run_pdb_script(script, commands, script_args=["--bar", "foo"])
         self.assertIn("['--bar', 'foo']", stdout)
 
+    def test_run_script_with_double_dash(self):
+        script = "import sys; print(sys.argv)"
+        commands = "continue\nquit"
+        filename = 'main.py'
+        with open(filename, 'w') as f:
+            f.write(script)
+        self.addCleanup(os_helper.unlink, filename)
+        stdout, _ = self._run_pdb(["--", filename, "-c", "example"], commands)
+        self.assertIn(f"['{filename}', '-c', 'example']", stdout)
+        stdout, _ = self._run_pdb(["-c", "continue", "--", filename, "-c", "example"], "quit")
+        self.assertIn(f"['{filename}', '-c', 'example']", stdout)
+        stdout, stderr = self._run_pdb(["--"], "", expected_returncode=2)
+        self.assertIn("pdb: error: missing script or module to run", stderr)
+
     def test_breakpoint(self):
         script = """
             if __name__ == '__main__':
@@ -4752,6 +4766,26 @@ def bœr():
         stdout, stderr = self.run_pdb_script(script, commands)
         self.assertIn("The specified object 'C.foo' is not a function", stdout)
 
+    def test_end_of_options_separator(self):
+        # gh-148615: Test parsing when '--' separator is used
+        script = "import sys; print(f'ARGS: {sys.argv[1:]}')"
+        with open(os_helper.TESTFN, 'w', encoding='utf-8') as f:
+            f.write(script)
+        stdout, _ = self._run_pdb(['--', os_helper.TESTFN, '-foo'], 'c\nq')
+        self.assertIn("ARGS: ['-foo']", stdout)
+        stdout, _ = self._run_pdb(['-c', 'continue', '--', os_helper.TESTFN, '-c', 'foo'], 'q')
+        self.assertIn("ARGS: ['-c', 'foo']", stdout)
+        stdout, stderr = self._run_pdb(['--'], 'q', expected_returncode=2)
+        self.assertIn("missing script or module to run", stderr)
+        stdout, stderr = self._run_pdb(['-x', '--', os_helper.TESTFN], 'q', expected_returncode=2)
+        self.assertIn("unrecognized arguments: -x", stderr)
+        stdout, _ = self._run_pdb([os_helper.TESTFN, '--', 'arg'], 'c\nq')
+        self.assertIn("ARGS: ['--', 'arg']", stdout)
+        with os_helper.temp_cwd():
+            with open('mymod.py', 'w', encoding='utf-8') as f:
+                f.write(script)
+            stdout, _ = self._run_pdb(['-m', 'mymod', '--', 'arg'], 'c\nq')
+            self.assertIn("ARGS: ['--', 'arg']", stdout)
 
 class ChecklineTests(unittest.TestCase):
     def setUp(self):
