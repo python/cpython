@@ -90,6 +90,7 @@ Summary -- Release highlights
 * :ref:`Improved error messages <whatsnew315-improved-error-messages>`
 * :ref:`The official Windows 64-bit binaries now use the tail-calling interpreter
   <whatsnew315-windows-tail-calling-interpreter>`
+* :pep:`829`: Package Startup Configuration Files
 
 New features
 ============
