@@ -101,8 +101,11 @@
     <ClCompile Include="..\Modules\xxlimited_35.c" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="python3dll.vcxproj">
+    <ProjectReference Include="python3dll.vcxproj" Condition="$(DisableGil) != 'true'">
       <Project>{885d4898-d08d-4091-9c40-c700cfe3fc5a}</Project>
+    </ProjectReference>
+    <ProjectReference Include="python3tdll.vcxproj" Condition="$(DisableGil) == 'true'">
+      <Project>{947BB5F5-6025-4A4F-8182-1B175469F8D2}</Project>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

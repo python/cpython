@@ -68,14 +68,14 @@
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{947BB5F5-6025-4A4F-8182-1B175469F8D2}</ProjectGuid>
-    <RootNamespace>abi3t-compat</RootNamespace>
+    <RootNamespace>python3tdll</RootNamespace>
     <Keyword>Win32Proj</Keyword>
     <SupportPGO>false</SupportPGO>
   </PropertyGroup>
   <Import Project="python.props" />
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Label="Configuration">
-    <TargetName>$(PyAbi3tCompatDllName)</TargetName>
+    <TargetName>python3t</TargetName>
     <ConfigurationType>DynamicLibrary</ConfigurationType>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
@@ -89,12 +89,9 @@
   <PropertyGroup>
     <_ProjectFileVersion>10.0.30319.1</_ProjectFileVersion>
   </PropertyGroup>
-  <PropertyGroup>
-    <OutDir>$(BuildPath)$(PyAbi3tCompatDllDir)\</OutDir>
-  </PropertyGroup>
   <ItemDefinitionGroup>
     <ClCompile>
-      <PreprocessorDefinitions>PYTHON_DLL_NAME="$(PyDllName)";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>PYTHON_DLL_NAME="python3t$(PyDebugExt)";%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <BufferSecurityCheck>false</BufferSecurityCheck>
     </ClCompile>
     <Link>

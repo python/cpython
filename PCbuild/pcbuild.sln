@@ -105,7 +105,7 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "_multiprocessing", "_multip
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "python3dll", "python3dll.vcxproj", "{885D4898-D08D-4091-9C40-C700CFE3FC5A}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "abi3t-compat", "abi3t-compat.vcxproj", "{947BB5F5-6025-4A4F-8182-1B175469F8D2}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "python3tdll", "python3tdll.vcxproj", "{947BB5F5-6025-4A4F-8182-1B175469F8D2}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "xxlimited", "xxlimited.vcxproj", "{F749B822-B489-4CA5-A3AD-CE078F5F338A}"
 EndProject
