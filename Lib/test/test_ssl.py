@@ -2843,6 +2843,36 @@ class ThreadedEchoServer(threading.Thread):
     def stop(self):
         self.active = False
 
+class TestEOFServer(threading.Thread):
+    def __init__(self):
+        super().__init__()
+        self.listening = threading.Event()
+        self.address = None
+
+    def run(self):
+        context = ssl.create_default_context(ssl.Purpose.CLIENT_AUTH)
+        context.load_cert_chain(CERTFILE)
+        server_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        with server_sock:
+            server_sock.bind((HOST, 0))
+            server_sock.listen(5)
+
+            self.address = server_sock.getsockname()
+            self.listening.set()
+
+            sock, addr = server_sock.accept()
+            sslconn = context.wrap_socket(sock, server_side=True)
+            with sslconn:
+                request = b''
+                while True:
+                    chunk = sslconn.recv(1024)
+                    request += chunk
+                    if b'\n' in request:
+                        break
+
+                sslconn.sendall(b'server\n')
+                sslconn.shutdown(socket.SHUT_WR)
+
 class AsyncoreEchoServer(threading.Thread):
 
     # this one's based on asyncore.dispatcher
@@ -5000,6 +5030,44 @@ class ThreadedTests(unittest.TestCase):
                     thread.join()
                     if cm.exc_value is not None:
                         raise cm.exc_value
+
+    def test_got_eof(self):
+        server = TestEOFServer()
+        server.start()
+        if not server.listening.wait(support.SHORT_TIMEOUT):
+            raise RuntimeError("server took too long")
+
+        context = ssl.create_default_context(cafile=CERTFILE)
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock.settimeout(support.SHORT_TIMEOUT)
+        sock.connect(server.address)
+        sslsock = context.wrap_socket(sock, server_hostname='localhost')
+        with sslsock:
+            sslsock.sendall(b'client\n')
+            # test the _ssl._SSLSocket object, not ssl.SSLSocket
+            sslobj = sslsock._sslobj
+
+            data = sslobj.read(1024)
+            self.assertEqual(data, b'server\n')
+
+            # The second read gets EOF error and sets got_eof_error to 1
+            with self.assertRaises(ssl.SSLEOFError):
+                sslobj.read(1024)
+
+            # Following read(), sendfile() and write() calls must raise
+            # SSLEOFError
+            with self.assertRaises(ssl.SSLEOFError):
+                # The _SSLSocket remembers the previous EOF error
+                # and raises again SSLEOFError
+                sslobj.read(1024)
+            with open(__file__, "rb") as fp:
+                fd = fp.fileno()
+                with self.assertRaises(ssl.SSLEOFError):
+                    sslobj.sendfile(fd, 0, 1)
+            with self.assertRaises(ssl.SSLEOFError):
+                sslobj.write(b'client2\n')
+
+        server.join()
 
 
 @unittest.skipUnless(has_tls_version('TLSv1_3') and ssl.HAS_PHA,
