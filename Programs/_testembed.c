@@ -2738,6 +2738,7 @@ test_thread_state_ensure(void)
 static int
 test_main_interpreter_view(void)
 {
+    assert(PyInterpreterView_FromMain() == NULL);
     _testembed_initialize();
 
     // Main interpreter is initialized and ready.
