@@ -13,10 +13,14 @@ import stat
 
 import unittest
 import unittest.mock
+
+# NSKIP050 https://github.com/nanvix/cpython/issues/530
+from test import support
+if support.is_nanvix and not support.is_nanvix_standalone:
+    raise unittest.SkipTest("NSKIP050: hosted Nanvix unable to run this module cleanly (rmdir errno 88 cascade and/or other linuxd VFS issues)")  # detail: not bisected, see #530
 import tarfile
 
 from test import archiver_tests
-from test import support
 from test.support import os_helper
 from test.support import script_helper
 from test.support import warnings_helper
@@ -718,6 +722,9 @@ class MiscReadTestBase(CommonReadTest):
         finally:
             os_helper.rmtree(DIR)
 
+    # NSKIP044 https://github.com/nanvix/cpython/issues/524
+    @unittest.skipIf(support.is_nanvix,
+                     "NSKIP044: tarfile/archive workflow corruption on Nanvix VFS")  # detail: extractall via pathlike name
     def test_extractall_pathlike_name(self):
         DIR = pathlib.Path(TEMPDIR) / "extractall"
         with os_helper.temp_dir(DIR), \
@@ -728,6 +735,9 @@ class MiscReadTestBase(CommonReadTest):
                 path = DIR / tarinfo.name
                 self.assertEqual(os.path.getmtime(path), tarinfo.mtime)
 
+    # NSKIP044 https://github.com/nanvix/cpython/issues/524
+    @unittest.skipIf(support.is_nanvix,
+                     "NSKIP044: tarfile/archive workflow corruption on Nanvix VFS")  # detail: extract via pathlike name
     def test_extract_pathlike_name(self):
         dirtype = "ustar/dirtype"
         DIR = pathlib.Path(TEMPDIR) / "extractall"
@@ -1227,6 +1237,9 @@ class WriteTestBase(TarTest):
         self.assertFalse(fobj.closed)
         self.assertEqual(data, fobj.getvalue())
 
+    # NSKIP044 https://github.com/nanvix/cpython/issues/524
+    @unittest.skipIf(support.is_nanvix,
+                     "NSKIP044: tarfile/archive workflow corruption on Nanvix VFS")  # detail: read truncated unexpectedly
     def test_eof_marker(self):
         # Make sure an end of archive marker is written (two zero blocks).
         # tarfile insists on aligning archives to a 20 * 512 byte recordsize.
@@ -1345,6 +1358,9 @@ class WriteTest(WriteTestBase, unittest.TestCase):
 
     @unittest.skipUnless(hasattr(os, "link"),
                          "Missing hardlink implementation")
+    # NSKIP044 https://github.com/nanvix/cpython/issues/524
+    @unittest.skipIf(support.is_nanvix,
+                     "NSKIP044: tarfile/archive workflow corruption on Nanvix VFS")  # detail: link member size handling
     def test_link_size(self):
         link = os.path.join(TEMPDIR, "link")
         target = os.path.join(TEMPDIR, "link_target")
@@ -1570,6 +1586,9 @@ class StreamWriteTest(WriteTestBase, unittest.TestCase):
     prefix = "w|"
     decompressor = None
 
+    # NSKIP044 https://github.com/nanvix/cpython/issues/524
+    @unittest.skipIf(support.is_nanvix,
+                     "NSKIP044: tarfile/archive workflow corruption on Nanvix VFS")  # detail: stream padding read truncated
     def test_stream_padding(self):
         # Test for bug #1543303.
         tar = tarfile.open(tmpname, self.mode)
@@ -1592,6 +1611,9 @@ class StreamWriteTest(WriteTestBase, unittest.TestCase):
         support.is_emscripten or support.is_wasi,
         "Emscripten's/WASI's umask is a stub."
     )
+    # NSKIP027 https://github.com/nanvix/cpython/issues/507
+    @unittest.skipIf(support.is_nanvix,
+                     "NSKIP027: FAT VFS does not honor file mode bits")
     def test_file_mode(self):
         # Test for issue #8464: Create files with correct
         # permissions.
@@ -1972,6 +1994,9 @@ class HardlinkTest(unittest.TestCase):
         os_helper.unlink(self.foo)
         os_helper.unlink(self.bar)
 
+    # NSKIP024 https://github.com/nanvix/cpython/issues/504
+    @unittest.skipIf(support.is_nanvix,
+                     "NSKIP024: os.link()/symlink()/readlink() not supported on FAT VFS")  # detail: tar fixture creates hardlink
     def test_add_twice(self):
         # The same name will be added as a REGTYPE every
         # time regardless of st_nlink.
@@ -1979,11 +2004,17 @@ class HardlinkTest(unittest.TestCase):
         self.assertEqual(tarinfo.type, tarfile.REGTYPE,
                 "add file as regular failed")
 
+    # NSKIP024 https://github.com/nanvix/cpython/issues/504
+    @unittest.skipIf(support.is_nanvix,
+                     "NSKIP024: os.link()/symlink()/readlink() not supported on FAT VFS")  # detail: os.link()
     def test_add_hardlink(self):
         tarinfo = self.tar.gettarinfo(self.bar)
         self.assertEqual(tarinfo.type, tarfile.LNKTYPE,
                 "add file as hardlink failed")
 
+    # NSKIP024 https://github.com/nanvix/cpython/issues/504
+    @unittest.skipIf(support.is_nanvix,
+                     "NSKIP024: os.link()/symlink()/readlink() not supported on FAT VFS")  # detail: os.link()
     def test_dereference_hardlink(self):
         self.tar.dereference = True
         tarinfo = self.tar.gettarinfo(self.bar)
@@ -3101,6 +3132,9 @@ class ReplaceTests(ReadTest, unittest.TestCase):
             member.replace(offset=123456789)
 
 
+# NSKIP024 https://github.com/nanvix/cpython/issues/504
+@unittest.skipIf(support.is_nanvix,
+                 "NSKIP024: os.link()/symlink()/readlink() not supported on FAT VFS")  # detail: tar fixture hardlink members; setUpClass extractall fails
 class NoneInfoExtractTests(ReadTest):
     # These mainly check that all kinds of members are extracted successfully
     # if some metadata is None.
@@ -3147,6 +3181,9 @@ class NoneInfoExtractTests(ReadTest):
             self.check_files_present(DIR)
             yield DIR
 
+    # NSKIP034 https://github.com/nanvix/cpython/issues/514
+    @unittest.skipIf(support.is_nanvix,
+                     "NSKIP034: os.utime(times) does not modify mtime/atime on FAT VFS")  # detail: through tarfile extractall
     def test_extractall_none_mtime(self):
         # mtimes of extracted files should be later than 'now' -- the mtime
         # of a previously created directory.
@@ -3163,6 +3200,9 @@ class NoneInfoExtractTests(ReadTest):
                     else:
                         self.assertGreaterEqual(path.stat().st_mtime, now)
 
+    # NSKIP027 https://github.com/nanvix/cpython/issues/507
+    @unittest.skipIf(support.is_nanvix,
+                     "NSKIP027: FAT VFS does not honor file mode bits")  # detail: through tarfile extractall
     def test_extractall_none_mode(self):
         # modes of directories and regular files should match the mode
         # of a "normally" created directory or regular file
@@ -3179,22 +3219,37 @@ class NoneInfoExtractTests(ReadTest):
                         self.assertEqual(path.stat().st_mode,
                                          regular_file_mode)
 
+    # NSKIP042 https://github.com/nanvix/cpython/issues/522
+    @unittest.skipIf(support.is_nanvix,
+                     "NSKIP042: os.chown() is a no-op on FAT VFS")
     def test_extractall_none_uid(self):
         with self.extract_with_none('uid'):
             pass
 
+    # NSKIP042 https://github.com/nanvix/cpython/issues/522
+    @unittest.skipIf(support.is_nanvix,
+                     "NSKIP042: os.chown() is a no-op on FAT VFS")
     def test_extractall_none_gid(self):
         with self.extract_with_none('gid'):
             pass
 
+    # NSKIP042 https://github.com/nanvix/cpython/issues/522
+    @unittest.skipIf(support.is_nanvix,
+                     "NSKIP042: os.chown() is a no-op on FAT VFS")
     def test_extractall_none_uname(self):
         with self.extract_with_none('uname'):
             pass
 
+    # NSKIP042 https://github.com/nanvix/cpython/issues/522
+    @unittest.skipIf(support.is_nanvix,
+                     "NSKIP042: os.chown() is a no-op on FAT VFS")
     def test_extractall_none_gname(self):
         with self.extract_with_none('gname'):
             pass
 
+    # NSKIP042 https://github.com/nanvix/cpython/issues/522
+    @unittest.skipIf(support.is_nanvix,
+                     "NSKIP042: os.chown() is a no-op on FAT VFS")
     def test_extractall_none_ownership(self):
         with self.extract_with_none('uid', 'gid', 'uname', 'gname'):
             pass
@@ -4109,6 +4164,9 @@ class TestExtractionFilters(unittest.TestCase):
             self.expect_exception(TypeError)  # errorlevel is not int
 
 
+# NSKIP044 https://github.com/nanvix/cpython/issues/524
+@unittest.skipIf(support.is_nanvix,
+                 "NSKIP044: tarfile/archive workflow corruption on Nanvix VFS")  # detail: overwrite tests fail on FAT VFS quirks
 class OverwriteTests(archiver_tests.OverwriteTests, unittest.TestCase):
     testdir = os.path.join(TEMPDIR, "testoverwrite")
 

@@ -19,6 +19,7 @@ from random import randint, random, randbytes
 
 from test import archiver_tests
 from test.support import script_helper
+from test import support
 from test.support import (
     findfile, requires_zlib, requires_bz2, requires_lzma,
     captured_stdout, captured_stderr, requires_subprocess
@@ -3221,6 +3222,9 @@ class TestExecutablePrependedZip(unittest.TestCase):
         self.assertIn(b'number in executable: 5', output)
 
 
+# NSKIP008 https://github.com/nanvix/cpython/issues/476
+@unittest.skipIf(support.is_nanvix,
+                 "NSKIP008: rust-fatfs panics on non-ASCII (CJK) filenames")
 class EncodedMetadataTests(unittest.TestCase):
     file_names = ['\u4e00', '\u4e8c', '\u4e09']  # Han 'one', 'two', 'three'
     file_content = [

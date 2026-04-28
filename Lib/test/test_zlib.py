@@ -242,6 +242,9 @@ class CompressTestCase(BaseCompressTestCase, unittest.TestCase):
 
     # Memory use of the following functions takes into account overallocation
 
+    # NSKIP019 https://github.com/nanvix/cpython/issues/487
+    @unittest.skipIf(support.is_nanvix,
+                     "NSKIP019: 10MB allocation exceeds standalone 32MB heap")
     @bigmemtest(size=_1G + 1024 * 1024, memuse=3)
     def test_big_compress_buffer(self, size):
         compress = lambda s: zlib.compress(s, 1)
@@ -754,6 +757,9 @@ class CompressObjectTestCase(BaseCompressTestCase, unittest.TestCase):
 
     # Memory use of the following functions takes into account overallocation
 
+    # NSKIP019 https://github.com/nanvix/cpython/issues/487
+    @unittest.skipIf(support.is_nanvix,
+                     "NSKIP019: 10MB allocation exceeds standalone 32MB heap")
     @bigmemtest(size=_1G + 1024 * 1024, memuse=3)
     def test_big_compress_buffer(self, size):
         c = zlib.compressobj(1)
