@@ -71,8 +71,6 @@ the user site prefixes are also implicitly not searched for site-packages.
    single: # (hash); comment
    pair: statement; import
 
-.. _startup-configuration-files:
-
 The ``site.py`` module recognizes two startup configuration files of the form
 :file:`{name}.pth` for path configurations, and :file:`{name}.start` for
 pre-first-line code execution.  Both files can exist in one of the four
