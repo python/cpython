@@ -172,6 +172,7 @@ class CPythonBuildDetailsTests(unittest.TestCase, FormatTestsBase):
             self.assertEqual(f.read(8), b'!<arch>\n')
 
 
+@unittest.skipIf('_PYTHON_SYSCONFIGDATA_NAME' in os.environ, 'Cross-compiling')
 @unittest.skipIf(os.name != 'posix', 'Feature only implemented on POSIX right now')
 @unittest.skipIf(is_wasm32, 'Feature not available on WebAssembly builds')
 class BuildDetailsRelativePathsTests(unittest.TestCase):
