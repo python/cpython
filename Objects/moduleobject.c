@@ -469,8 +469,10 @@ module_from_slots_and_spec(
                 multiple_interpreters = it.current.sl_uint64;
                 break;
             case Py_mod_gil:
-                uint64_t val = it.current.sl_uint64;
-                requires_gil = (val != (uint64_t)Py_MOD_GIL_NOT_USED);
+                {
+                    uint64_t val = it.current.sl_uint64;
+                    requires_gil = (val != (uint64_t)Py_MOD_GIL_NOT_USED);
+                }
                 break;
             case Py_mod_abi:
                 if (PyABIInfo_Check(it.current.sl_ptr, name) < 0) {
@@ -781,14 +783,16 @@ PyModule_ExecDef(PyObject *module, PyModuleDef *def)
     _PySlotIterator it;
     _PySlotIterator_InitLegacy(&it, def->m_slots, _PySlot_KIND_MOD);
     while (_PySlotIterator_Next(&it)) {
+        _Py_modexecfunc func;
         switch (it.current.sl_id) {
             case Py_slot_invalid:
                 return -1;
             case Py_mod_exec:
-                _Py_modexecfunc func = (_Py_modexecfunc)it.current.sl_func;
+                func = (_Py_modexecfunc)it.current.sl_func;
                 if (run_exec_func(module, func) < 0) {
                     return -1;
                 }
+                break;
         }
     }
     return 0;

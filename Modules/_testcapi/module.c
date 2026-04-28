@@ -466,6 +466,53 @@ pymodule_get_state_size(PyObject *self, PyObject *module)
     return PyLong_FromSsize_t(size);
 }
 
+static PyObject *
+module_from_null_def_slot(PyObject* Py_UNUSED(module), PyObject *args)
+{
+    long slot_number;
+    PyObject *spec;
+    if (!PyArg_ParseTuple(args, "lO", &slot_number, &spec)) {
+        return NULL;
+    }
+    static PyModuleDef_Slot slots[] = {
+        {0, NULL},
+        {0},
+    };
+    static PyModuleDef def = {
+        PyModuleDef_HEAD_INIT,
+        .m_name = "mymod",
+        .m_slots = slots,
+    };
+    // hack: def is supposed to be constant.
+    // Don't do this at home; use PyModule_FromSlotsAndSpec throwaway
+    // definitions!
+    slots[0].slot = slot_number;
+    return PyModule_FromDefAndSpec(&def, spec);
+}
+
+static PyObject *
+module_from_def_nonstatic_nested(PyObject* Py_UNUSED(module), PyObject *spec)
+{
+    static PyModuleDef_Slot subsubslots[] = {
+        {Py_mod_gil, Py_MOD_GIL_NOT_USED},
+        {0},
+    };
+    static PySlot subslots[] = {
+        PySlot_DATA(Py_mod_slots, subsubslots),
+        PySlot_END,
+    };
+    static PyModuleDef_Slot slots[] = {
+        {Py_slot_subslots, subslots},
+        {0},
+    };
+    static PyModuleDef def = {
+        PyModuleDef_HEAD_INIT,
+        .m_name = "mymod",
+        .m_slots = slots,
+    };
+    return PyModule_FromDefAndSpec(&def, spec);
+}
+
 static PyMethodDef test_methods[] = {
     {"module_from_slots_empty", module_from_slots_empty, METH_O},
     {"module_from_slots_minimal", module_from_slots_minimal, METH_O},
@@ -489,6 +536,8 @@ static PyMethodDef test_methods[] = {
     {"pymodule_get_def", pymodule_get_def, METH_O},
     {"pymodule_get_state_size", pymodule_get_state_size, METH_O},
     {"pymodule_exec", pymodule_exec, METH_O},
+    {"module_from_null_def_slot", module_from_null_def_slot, METH_VARARGS},
+    {"module_from_def_nonstatic_nested", module_from_def_nonstatic_nested, METH_O},
     {NULL},
 };
 

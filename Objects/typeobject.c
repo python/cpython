@@ -5343,7 +5343,7 @@ type_from_slots_or_spec(
             break;
         case Py_tp_flags:
             NO_SPEC;
-            flags = it.current.sl_uint64;
+            flags = (int)it.current.sl_uint64;
             break;
         case Py_tp_members:
             for (const PyMemberDef *memb = it.current.sl_ptr;

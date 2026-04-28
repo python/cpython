@@ -225,6 +225,7 @@ def add_traceback_cli(parser):
             except NotImplementedError:
                 raise  # re-raise
             except Exception as exc:
+                raise
                 if not showtb:
                     sys.exit(f'ERROR: {exc}')
                 raise  # re-raise

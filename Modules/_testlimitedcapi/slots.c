@@ -182,7 +182,7 @@ type_from_slots(PyObject* module, PyObject *args)
                 PySlot_DATA(Py_slot_subslots, ((PySlot[]) {
                     PySlot_FUNC(Py_nb_true_divide, binop_456),
                     PySlot_DATA(Py_slot_subslots, ((PySlot[]) {
-                        PySlot_FUNC(Py_nb_power, binop_567),
+                        PySlot_FUNC(Py_nb_remainder, binop_567),
                         PySlot_END
                     })),
                     PySlot_END,
@@ -201,7 +201,7 @@ type_from_slots(PyObject* module, PyObject *args)
                 PySlot_DATA(Py_slot_subslots, ((PySlot[]) {
                     PySlot_FUNC(Py_nb_true_divide, binop_456),
                     PySlot_DATA(Py_slot_subslots, ((PySlot[]) {
-                        PySlot_FUNC(Py_nb_power, binop_567),
+                        PySlot_FUNC(Py_nb_remainder, binop_567),
                         PySlot_DATA(Py_slot_subslots, ((PySlot[]) {
                             PySlot_FUNC(Py_nb_xor, binop_678),
                             PySlot_END
@@ -231,7 +231,7 @@ type_from_slots(PyObject* module, PyObject *args)
                 {Py_tp_slots, ((PyType_Slot[]) {
                     {Py_nb_true_divide, binop_456},
                     {Py_tp_slots, ((PyType_Slot[]) {
-                        {Py_nb_power, binop_567},
+                        {Py_nb_remainder, binop_567},
                         {0},
                     })},
                     {0},
@@ -250,7 +250,7 @@ type_from_slots(PyObject* module, PyObject *args)
                 {Py_tp_slots, ((PyType_Slot[]) {
                     {Py_nb_true_divide, binop_456},
                     {Py_tp_slots, ((PyType_Slot[]) {
-                        {Py_nb_power, binop_567},
+                        {Py_nb_remainder, binop_567},
                         {Py_tp_slots, ((PyType_Slot[]) {
                             {Py_nb_xor, binop_678},
                             {0},
@@ -273,7 +273,7 @@ type_from_slots(PyObject* module, PyObject *args)
                 PySlot_DATA(Py_tp_slots, ((PyType_Slot[]) {
                     {Py_nb_true_divide, binop_456},
                     {Py_slot_subslots, ((PySlot[]) {
-                        PySlot_FUNC(Py_nb_power, binop_567),
+                        PySlot_FUNC(Py_nb_remainder, binop_567),
                         PySlot_END
                     })},
                     {0},
@@ -357,6 +357,7 @@ module_from_slots(PyObject* Py_UNUSED(module), PyObject *args)
     if (strcmp(case_name, NAME) == 0) {                                     \
         mod = PyModule_FromSlotsAndSpec((PySlot[]) {                        \
             PySlot_DATA(Py_mod_abi, &abi_info),                             \
+            PySlot_DATA(Py_mod_gil, Py_MOD_GIL_NOT_USED),                   \
     /////////////////////////////////////////////////////////////////////////
 #define ENDCASE()                                                           \
             PySlot_END                                                      \
@@ -374,9 +375,6 @@ module_from_slots(PyObject* Py_UNUSED(module), PyObject *args)
     ENDCASE()
     CASE("multi_interp")
         PySlot_DATA(Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED),
-    ENDCASE()
-    CASE("gil")
-        PySlot_DATA(Py_mod_gil, Py_MOD_GIL_NOT_USED),
     ENDCASE()
     CASE("exec")
         PySlot_FUNC(Py_mod_exec, demo_exec),
@@ -584,59 +582,12 @@ module_from_null_slot(PyObject* Py_UNUSED(module), PyObject *args)
     }, spec);
 }
 
-static PyObject *
-module_from_null_def_slot(PyObject* Py_UNUSED(module), PyObject *args)
-{
-    long slot_number;
-    PyObject *spec;
-    if (!PyArg_ParseTuple(args, "lO", &slot_number, &spec)) {
-        return NULL;
-    }
-    static PyModuleDef_Slot slots[] = {
-        {0, NULL},
-        {0},
-    };
-    static PyModuleDef def = {
-        .m_name = "mymod",
-        .m_slots = slots,
-    };
-    // hack: def is supposed to be constant.
-    // Don't do this at home; use PyModule_FromSlotsAndSpec throwaway
-    // definitions!
-    slots[0].slot = slot_number;
-    return PyModule_FromDefAndSpec2(&def, spec, PYTHON_ABI_VERSION);
-}
-
-static PyObject *
-module_from_def_nonstatic_nested(PyObject* Py_UNUSED(module), PyObject *spec)
-{
-    static PyModuleDef_Slot subsubslots[] = {
-        {Py_mod_exec, demo_exec},
-        {0},
-    };
-    static PySlot subslots[] = {
-        PySlot_DATA(Py_mod_slots, subsubslots),
-        PySlot_END,
-    };
-    static PyModuleDef_Slot slots[] = {
-        {Py_slot_subslots, subslots},
-        {0},
-    };
-    static PyModuleDef def = {
-        .m_name = "mymod",
-        .m_slots = slots,
-    };
-    return PyModule_FromDefAndSpec2(&def, spec, PYTHON_ABI_VERSION);
-}
-
 static PyMethodDef TestMethods[] = {
     {"type_from_slots", type_from_slots, METH_VARARGS},
     {"type_from_null_slot", type_from_null_slot, METH_VARARGS},
     {"type_from_null_spec_slot", type_from_null_spec_slot, METH_VARARGS},
     {"module_from_slots", module_from_slots, METH_VARARGS},
     {"module_from_null_slot", module_from_null_slot, METH_VARARGS},
-    {"module_from_null_def_slot", module_from_null_def_slot, METH_VARARGS},
-    {"module_from_def_nonstatic_nested", module_from_def_nonstatic_nested, METH_O},
     {NULL},
 };
 

@@ -5,6 +5,7 @@ import unittest
 import types
 
 _testlimitedcapi = import_helper.import_module('_testlimitedcapi')
+_testcapi = import_helper.import_module('_testcapi')
 
 class FakeSpec:
     name = 'module'
@@ -118,7 +119,7 @@ class TypeSlotsTests(unittest.TestCase):
         self.assertEqual(cls() - 1, 234)
         self.assertEqual(cls() * 1, 345)
         self.assertEqual(cls() / 1, 456)
-        self.assertEqual(cls() ** 1, 567)
+        self.assertEqual(cls() % 1, 567)
 
         with self.assertRaisesRegex(SystemError, "too many levels"):
             _testlimitedcapi.type_from_slots("nested_over_limit")
@@ -132,7 +133,7 @@ class TypeSlotsTests(unittest.TestCase):
         self.assertEqual(cls() - 1, 234)
         self.assertEqual(cls() * 1, 345)
         self.assertEqual(cls() / 1, 456)
-        self.assertEqual(cls() ** 1, 567)
+        self.assertEqual(cls() % 1, 567)
 
         with self.assertRaisesRegex(SystemError, "too many levels"):
             _testlimitedcapi.type_from_slots("nested_old_over_limit")
@@ -142,7 +143,7 @@ class TypeSlotsTests(unittest.TestCase):
         self.assertEqual(cls() - 1, 234)
         self.assertEqual(cls() * 1, 345)
         self.assertEqual(cls() / 1, 456)
-        self.assertEqual(cls() ** 1, 567)
+        self.assertEqual(cls() % 1, 567)
 
     # Slot names aren't exposed to Python yet; see Include/slots_generated.h
     # for the definitions.
@@ -195,7 +196,6 @@ class ModuleSlotsTests(unittest.TestCase):
 
     def test_flag_slots(self):
         mod = _testlimitedcapi.module_from_slots("multi_interp", FakeSpec())
-        mod = _testlimitedcapi.module_from_slots("gil", FakeSpec())
 
     def test_exec_slot(self):
         mod = _testlimitedcapi.module_from_slots("exec", FakeSpec())
@@ -270,7 +270,7 @@ class ModuleSlotsTests(unittest.TestCase):
 
     def test_nested_nonstatic_from_def(self):
         with self.assertRaisesRegex(SystemError, "must be static"):
-            _testlimitedcapi.module_from_def_nonstatic_nested(FakeSpec())
+            _testcapi.module_from_def_nonstatic_nested(FakeSpec())
 
     # Slot names aren't exposed to Python yet; see Include/slots_generated.h
     # for the definitions.
@@ -295,8 +295,8 @@ class ModuleSlotsTests(unittest.TestCase):
         with ctx:
             _testlimitedcapi.module_from_null_slot(slot_number, FakeSpec())
         with ctx_old:
-            _testlimitedcapi.module_from_null_def_slot(slot_number,
-                                                        FakeSpec())
+            _testcapi.module_from_null_def_slot(slot_number,
+                                                FakeSpec())
 
     def test_repeat_error(self):
         with self.assertRaisesRegex(SystemError, "multiple"):
