@@ -757,6 +757,33 @@ class TestContextDecorator(unittest.TestCase):
         self.assertEqual(state, ["enter", "inner closed", "exit"])
 
 
+    def test_contextmanager_decorate_generator_function_send_throw(self):
+        @contextmanager
+        def woohoo():
+            yield
+
+        @woohoo()
+        def test():
+            received = yield "first"
+            state.append(("received", received))
+            try:
+                yield "second"
+            except ValueError as exc:
+                state.append(("caught", type(exc)))
+                yield "after throw"
+
+        # .send() and .throw() are forwarded to the wrapped generator.
+        state = []
+        gen = test()
+        self.assertEqual(next(gen), "first")
+        self.assertEqual(gen.send("VALUE"), "second")
+        self.assertEqual(gen.throw(ValueError), "after throw")
+        gen.close()
+        self.assertEqual(
+            state, [("received", "VALUE"), ("caught", ValueError)]
+        )
+
+
     def test_contextmanager_decorate_coroutine_function(self):
         @contextmanager
         def woohoo(y):

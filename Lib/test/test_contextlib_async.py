@@ -510,6 +510,37 @@ class AsyncContextManagerTestCase(unittest.TestCase):
         self.assertEqual(state, ["enter", "inner closed", "exit"])
 
     @_async_test
+    async def test_decorator_decorate_asyncgen_function_asend_athrow(self):
+        @asynccontextmanager
+        async def context():
+            yield
+
+        @context()
+        async def test():
+            try:
+                received = yield "first"
+                state.append(("received", received))
+                yield "second"
+            except ValueError:
+                state.append("inner saw ValueError")
+                raise
+            finally:
+                state.append("inner closed")
+
+        # asend() values and athrow() exceptions are not forwarded to the
+        # wrapped generator (a documented limitation).
+        state = []
+        agen = test()
+        self.assertEqual(await agen.__anext__(), "first")
+        self.assertEqual(await agen.asend("VALUE"), "second")
+        # The inner generator received None, not "VALUE".
+        self.assertEqual(state, [("received", None)])
+        with self.assertRaises(ValueError):
+            await agen.athrow(ValueError)
+        # The inner generator was closed, not thrown into.
+        self.assertEqual(state, [("received", None), "inner closed"])
+
+    @_async_test
     async def test_decorator_with_exception(self):
         entered = False
 
