@@ -1634,6 +1634,7 @@ extern "C" {
     INIT_ID(callable), \
     INIT_ID(callback), \
     INIT_ID(cancel), \
+    INIT_ID(canonical), \
     INIT_ID(capath), \
     INIT_ID(capitals), \
     INIT_ID(category), \

@@ -28,7 +28,7 @@ class TestImportTime(unittest.TestCase):
     @cpython_only
     def test_lazy_import(self):
         import_helper.ensure_lazy_imports(
-            "_colorize", {"copy", "re"}
+            "_colorize", {"copy", "re", "inspect"}
         )
 
 

@@ -1081,13 +1081,17 @@ _testinternalcapi.compiler_codegen -> object
   compile_mode: int = 0
 
 Apply compiler code generation to an AST.
+
+Return (instruction_sequence, metadata).  metadata maps "argcount",
+"posonlyargcount", "kwonlyargcount" to ints and "consts" to the list of
+constants in LOAD_CONST index order (for use with optimize_cfg).
 [clinic start generated code]*/
 
 static PyObject *
 _testinternalcapi_compiler_codegen_impl(PyObject *module, PyObject *ast,
                                         PyObject *filename, int optimize,
                                         int compile_mode)
-/*[clinic end generated code: output=40a68f6e13951cc8 input=a0e00784f1517cd7]*/
+/*[clinic end generated code: output=40a68f6e13951cc8 input=e0c65e5c80efe30e]*/
 {
     PyCompilerFlags *flags = NULL;
     return _PyCompile_CodeGen(ast, filename, flags, optimize, compile_mode);
@@ -1103,12 +1107,15 @@ _testinternalcapi.optimize_cfg -> object
   nlocals: int
 
 Apply compiler optimizations to an instruction list.
+
+consts must be a list aligned with LOAD_CONST opargs (the "consts" entry
+from the metadata dict returned by compiler_codegen for the same unit).
 [clinic start generated code]*/
 
 static PyObject *
 _testinternalcapi_optimize_cfg_impl(PyObject *module, PyObject *instructions,
                                     PyObject *consts, int nlocals)
-/*[clinic end generated code: output=57c53c3a3dfd1df0 input=6a96d1926d58d7e5]*/
+/*[clinic end generated code: output=57c53c3a3dfd1df0 input=905c3d935e063b27]*/
 {
     return _PyCompile_OptimizeCfg(instructions, consts, nlocals);
 }

@@ -1,0 +1,1 @@
+Add :meth:`~asyncio.TaskGroup.cancel` which cancels unfinished tasks and exits the group without error.

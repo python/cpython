@@ -3409,7 +3409,7 @@ _PyEval_FormatKwargsError(PyThreadState *tstate, PyObject *func, PyObject *kwarg
         _PyErr_Format(
             tstate, PyExc_TypeError,
             "%V got multiple values for keyword argument '%S'",
-            funcstr, "finction", dupkey);
+            funcstr, "function", dupkey);
         Py_XDECREF(funcstr);
         return;
     }

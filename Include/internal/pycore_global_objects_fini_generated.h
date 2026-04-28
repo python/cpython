@@ -1636,6 +1636,7 @@ _PyStaticObjects_CheckRefcnt(PyInterpreterState *interp) {
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(callable));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(callback));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(cancel));
+    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(canonical));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(capath));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(capitals));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(category));

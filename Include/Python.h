@@ -117,6 +117,7 @@ __pragma(warning(disable: 4201))
 #include "cpython/genobject.h"
 #include "descrobject.h"
 #include "genericaliasobject.h"
+#include "sentinelobject.h"
 #include "warnings.h"
 #include "weakrefobject.h"
 #include "structseq.h"

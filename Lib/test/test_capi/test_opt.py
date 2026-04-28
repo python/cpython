@@ -1427,9 +1427,13 @@ class TestUopsOptimization(unittest.TestCase):
             for _ in gen(n):
                 pass
         testfunc(TIER2_THRESHOLD * 2)
+        # The generator may be inlined into testfunc's trace,
+        # so check whichever executor contains _YIELD_VALUE.
         gen_ex = get_first_executor(gen)
-        self.assertIsNotNone(gen_ex)
-        uops = get_opnames(gen_ex)
+        testfunc_ex = get_first_executor(testfunc)
+        ex = gen_ex or testfunc_ex
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
         self.assertNotIn("_MAKE_HEAP_SAFE", uops)
         self.assertIn("_YIELD_VALUE", uops)
 
