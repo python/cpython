@@ -1,3 +1,8 @@
+from test.support import is_nanvix
+import unittest
+if is_nanvix:
+    raise unittest.SkipTest("NSKIP015: OOM — test allocation exceeds available heap")  # detail: test requires 4 GB+ ZIP entries
+
 # Tests of the full ZIP64 functionality of zipfile
 # The support.requires call is the only reason for keeping this separate
 # from test_zipfile

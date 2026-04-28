@@ -1,10 +1,14 @@
 """Test largefile support on system where this makes sense.
 """
 
+from test.support import is_nanvix
+import unittest
+if is_nanvix:
+    raise unittest.SkipTest("NSKIP015: OOM — test allocation exceeds available heap")  # detail: test requires >2 GB disk I/O
+
 import os
 import stat
 import sys
-import unittest
 import socket
 import shutil
 import threading
