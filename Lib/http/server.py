@@ -552,7 +552,7 @@ class BaseHTTPRequestHandler(socketserver.StreamRequestHandler):
                     (self.protocol_version, code, message)).encode(
                         'latin-1', 'strict'))
 
-    def send_header(self, keyword, value, _is_extra=False):
+    def send_header(self, keyword, value, *, _is_extra=False):
         """Send a MIME header to the headers buffer."""
         if self.request_version != 'HTTP/0.9':
             if not hasattr(self, '_headers_buffer'):
