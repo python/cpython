@@ -1,3 +1,4 @@
+from test import support
 from test.support import (gc_collect, bigmemtest, _2G,
                           cpython_only, captured_stdout,
                           check_disallow_instantiation, is_emscripten, is_wasi,
@@ -1157,6 +1158,9 @@ class ReTests(unittest.TestCase):
         res = re.findall(re.escape('\u2620'.encode('utf-8')), b)
         self.assertEqual(len(res), 2)
 
+    # NSKIP056 https://github.com/nanvix/cpython/issues/555
+    @unittest.skipIf(support.is_nanvix,
+                     "NSKIP056: Newlib %zd format directive leaks into _pickle output")
     def test_pickling(self):
         import pickle
         oldpat = re.compile('a(?:b|(c|e){1,2}?|d)+?(.)', re.UNICODE)

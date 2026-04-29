@@ -32,6 +32,12 @@ except ImportError:
     has_c_implementation = False
 
 
+# NSKIP056 https://github.com/nanvix/cpython/issues/555
+if support.is_nanvix:
+    raise unittest.SkipTest(
+        "NSKIP056: Newlib %zd format directive leaks into _pickle output")
+
+
 class PyPickleTests(AbstractPickleModuleTests, unittest.TestCase):
     dump = staticmethod(pickle._dump)
     dumps = staticmethod(pickle._dumps)

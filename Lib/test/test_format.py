@@ -477,6 +477,8 @@ class FormatTest(unittest.TestCase):
             format(c, ".%sf" % (sys.maxsize + 1))
 
     @support.cpython_only
+    # NSKIP002 https://github.com/nanvix/cpython/issues/470
+    @unittest.skipIf(support.is_nanvix, "NSKIP002: _testcapi not available")
     def test_precision_c_limits(self):
         from _testcapi import INT_MAX
 

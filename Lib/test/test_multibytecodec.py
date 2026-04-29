@@ -56,6 +56,9 @@ class Test_MultibyteCodec(unittest.TestCase):
         for enc in ALL_CJKENCODINGS:
             self.assertEqual(data.encode(enc, "test.ignore"), b'')
 
+    # NSKIP050 https://github.com/nanvix/cpython/issues/530
+    @unittest.skipIf(support.is_nanvix and not support.is_nanvix_standalone,
+                     "NSKIP050: hosted Nanvix unable to run this module cleanly (rmdir errno 88 cascade and/or other linuxd VFS issues)")  # detail: os_helper.unlink(TESTFN) raises EPERM (errno 1) on hosted Nanvix when TESTFN does not exist; on Linux it is silently swallowed
     def test_codingspec(self):
         try:
             for enc in ALL_CJKENCODINGS:
@@ -209,6 +212,9 @@ class Test_IncrementalEncoder(unittest.TestCase):
         self.assertEqual(encoder.encode('\xff'), b'\\xff')
         self.assertEqual(encoder.encode('\n'), b'\n')
 
+    # NSKIP002 https://github.com/nanvix/cpython/issues/470
+    @unittest.skipIf(support.is_nanvix,
+                     "NSKIP002: _testcapi not available")  # detail: _testcapi / _testinternalcapi not built on Nanvix
     @support.cpython_only
     def test_subinterp(self):
         # bpo-42846: Test a CJK codec in a subinterpreter

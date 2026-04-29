@@ -34,6 +34,19 @@ import tempfile
 import unittest
 import warnings
 
+from test import support
+
+# NSKIP055 https://github.com/nanvix/cpython/issues/552
+# Module exercises __import__ of freshly-written /tmp source files, which
+# triggers __pycache__/*.pyc atomic os.rename and hangs the kernel on
+# hosted Nanvix (linuxd rename hang). Standalone is unaffected (FAT VFS
+# rename is the separately-tracked NSKIP021 surface, which test_string_literals
+# does not hit because the import path used here goes through tempfile and ramfs
+# does not exhibit it). Skip the whole module on hosted only.
+if support.is_nanvix and not support.is_nanvix_standalone:
+    raise unittest.SkipTest(
+        "NSKIP055: linuxd rename()/replace() hangs the kernel on hosted Nanvix")
+
 
 TEMPLATE = r"""# coding: %s
 a = 'x'
