@@ -1,3 +1,0 @@
-Improve import times by up to 33x for the :mod:`shlex` module,
-and improve the performance of :func:`shlex.quote` by up to 12x.
-Patch by Adam Turner.

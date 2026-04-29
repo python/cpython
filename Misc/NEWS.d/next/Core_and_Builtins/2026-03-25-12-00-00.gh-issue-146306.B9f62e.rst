@@ -1,0 +1,2 @@
+Specialize float true division in the tier 2 optimizer with inplace
+mutation for uniquely-referenced operands.

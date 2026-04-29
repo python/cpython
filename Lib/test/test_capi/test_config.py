@@ -3,7 +3,6 @@ Tests PyConfig_Get() and PyConfig_Set() C API (PEP 741).
 """
 import os
 import sys
-import sysconfig
 import types
 import unittest
 from test import support
@@ -57,13 +56,15 @@ class CAPITests(unittest.TestCase):
             ("home", str | None, None),
             ("thread_inherit_context", int, None),
             ("context_aware_warnings", int, None),
-            ("import_time", bool, None),
+            ("import_time", int, None),
             ("inspect", bool, None),
             ("install_signal_handlers", bool, None),
             ("int_max_str_digits", int, None),
             ("interactive", bool, None),
             ("isolated", bool, None),
+            ("lazy_imports", int, None),
             ("malloc_stats", bool, None),
+            ("pymalloc_hugepages", bool, None),
             ("module_search_paths", list[str], "path"),
             ("optimization_level", int, None),
             ("orig_argv", list[str], "orig_argv"),

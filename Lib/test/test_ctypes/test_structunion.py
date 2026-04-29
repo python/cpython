@@ -11,6 +11,8 @@ from ._support import (_CData, PyCStructType, UnionType,
                        Py_TPFLAGS_DISALLOW_INSTANTIATION,
                        Py_TPFLAGS_IMMUTABLETYPE)
 from struct import calcsize
+import contextlib
+from test.support import MS_WINDOWS
 
 
 class StructUnionTestBase:
@@ -334,6 +336,22 @@ class StructUnionTestBase:
         self.assertIn("in_dll", dir(type(self.cls)))
         self.assertIn("from_address", dir(type(self.cls)))
         self.assertIn("in_dll", dir(type(self.cls)))
+
+    def test_pack_layout_switch(self):
+        # Setting _pack_ implicitly sets default layout to MSVC;
+        # this is deprecated on non-Windows platforms.
+        if MS_WINDOWS:
+            warn_context = contextlib.nullcontext()
+        else:
+            warn_context = self.assertWarns(DeprecationWarning)
+        with warn_context:
+            class X(self.cls):
+                _pack_ = 1
+                # _layout_ missing
+                _fields_ = [('a', c_int8, 1), ('b', c_int16, 2)]
+
+        # Check MSVC layout (bitfields of different types aren't combined)
+        self.check_sizeof(X, struct_size=3, union_size=2)
 
 
 class StructureTestCase(unittest.TestCase, StructUnionTestBase):

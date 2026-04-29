@@ -11,8 +11,10 @@
 #include "pycore_code.h"             // _PyCode_New()
 #include "pycore_hashtable.h"        // _Py_hashtable_t
 #include "pycore_long.h"             // _PyLong_IsZero()
+#include "pycore_object.h"           // _PyObject_IsUniquelyReferenced
 #include "pycore_pystate.h"          // _PyInterpreterState_GET()
 #include "pycore_setobject.h"        // _PySet_NextEntryRef()
+#include "pycore_tuple.h"            // _PyTuple_FromPairSteal
 #include "pycore_unicodeobject.h"    // _PyUnicode_InternImmortal()
 
 #include "marshal.h"                 // Py_MARSHAL_VERSION
@@ -38,7 +40,7 @@ module marshal
  * On Windows PGO builds, the r_object function overallocates its stack and
  * can cause a stack overflow. We reduce the maximum depth for all Windows
  * releases to protect against this.
- * #if defined(MS_WINDOWS) && defined(_DEBUG)
+ * #if defined(MS_WINDOWS) && defined(Py_DEBUG)
  */
 #if defined(MS_WINDOWS)
 #  define MAX_MARSHAL_STACK_DEPTH 1000
@@ -66,6 +68,7 @@ module marshal
 #define TYPE_TUPLE              '('  // See also TYPE_SMALL_TUPLE.
 #define TYPE_LIST               '['
 #define TYPE_DICT               '{'
+#define TYPE_FROZENDICT         '}'
 #define TYPE_CODE               'c'
 #define TYPE_UNICODE            'u'
 #define TYPE_UNKNOWN            '?'
@@ -309,7 +312,7 @@ w_PyLong(const PyLongObject *ob, char flag, WFILE *p)
     }
     if (!long_export.digits) {
         int8_t sign = long_export.value < 0 ? -1 : 1;
-        uint64_t abs_value = Py_ABS(long_export.value);
+        uint64_t abs_value = _Py_ABS_CAST(uint64_t, long_export.value);
         uint64_t d = abs_value;
         long l = 0;
 
@@ -379,7 +382,6 @@ static int
 w_ref(PyObject *v, char *flag, WFILE *p)
 {
     _Py_hashtable_entry_t *entry;
-    int w;
 
     if (p->version < 3 || p->hashtable == NULL)
         return 0; /* not writing object references */
@@ -388,7 +390,7 @@ w_ref(PyObject *v, char *flag, WFILE *p)
      * But we use TYPE_REF always for interned string, to PYC file stable
      * as possible.
      */
-    if (Py_REFCNT(v) == 1 &&
+    if (_PyObject_IsUniquelyReferenced(v) &&
             !(PyUnicode_CheckExact(v) && PyUnicode_CHECK_INTERNED(v))) {
         return 0;
     }
@@ -396,20 +398,28 @@ w_ref(PyObject *v, char *flag, WFILE *p)
     entry = _Py_hashtable_get_entry(p->hashtable, v);
     if (entry != NULL) {
         /* write the reference index to the stream */
-        w = (int)(uintptr_t)entry->value;
+        uintptr_t w = (uintptr_t)entry->value;
+        if (w & 0x80000000LU) {
+            PyErr_Format(PyExc_ValueError, "cannot marshal recursion %T objects", v);
+            goto err;
+        }
         /* we don't store "long" indices in the dict */
-        assert(0 <= w && w <= 0x7fffffff);
+        assert(w <= 0x7fffffff);
         w_byte(TYPE_REF, p);
-        w_long(w, p);
+        w_long((int)w, p);
         return 1;
     } else {
-        size_t s = p->hashtable->nentries;
+        size_t w = p->hashtable->nentries;
         /* we don't support long indices */
-        if (s >= 0x7fffffff) {
+        if (w >= 0x7fffffff) {
             PyErr_SetString(PyExc_ValueError, "too many objects");
             goto err;
         }
-        w = (int)s;
+        // Corresponding code should call w_complete() after
+        // writing the object.
+        if (PyCode_Check(v) || PySlice_Check(v) || PyFrozenDict_CheckExact(v)) {
+            w |= 0x80000000LU;
+        }
         if (_Py_hashtable_set(p->hashtable, Py_NewRef(v),
                               (void *)(uintptr_t)w) < 0) {
             Py_DECREF(v);
@@ -424,12 +434,37 @@ err:
 }
 
 static void
+w_complete(PyObject *v, WFILE *p)
+{
+    if (p->version < 3 || p->hashtable == NULL) {
+        return;
+    }
+    if (_PyObject_IsUniquelyReferenced(v)) {
+        return;
+    }
+
+    _Py_hashtable_entry_t *entry = _Py_hashtable_get_entry(p->hashtable, v);
+    if (entry == NULL) {
+        return;
+    }
+    assert(entry != NULL);
+    uintptr_t w = (uintptr_t)entry->value;
+    assert(w & 0x80000000LU);
+    w &= ~0x80000000LU;
+    entry->value = (void *)(uintptr_t)w;
+}
+
+static void
 w_complex_object(PyObject *v, char flag, WFILE *p);
 
 static void
 w_object(PyObject *v, WFILE *p)
 {
     char flag = '\0';
+
+    if (p->error != WFERR_OK) {
+        return;
+    }
 
     p->depth++;
 
@@ -570,10 +605,21 @@ w_complex_object(PyObject *v, char flag, WFILE *p)
             w_object(PyList_GET_ITEM(v, i), p);
         }
     }
-    else if (PyDict_CheckExact(v)) {
+    else if (PyAnyDict_CheckExact(v)) {
         Py_ssize_t pos;
         PyObject *key, *value;
-        W_TYPE(TYPE_DICT, p);
+        if (PyFrozenDict_CheckExact(v)) {
+            if (p->version < 6) {
+                w_byte(TYPE_UNKNOWN, p);
+                p->error = WFERR_UNMARSHALLABLE;
+                return;
+            }
+
+            W_TYPE(TYPE_FROZENDICT, p);
+        }
+        else {
+            W_TYPE(TYPE_DICT, p);
+        }
         /* This one is NULL object terminated! */
         pos = 0;
         while (PyDict_Next(v, &pos, &key, &value)) {
@@ -581,6 +627,9 @@ w_complex_object(PyObject *v, char flag, WFILE *p)
             w_object(value, p);
         }
         w_object((PyObject *)NULL, p);
+        if (PyFrozenDict_CheckExact(v)) {
+            w_complete(v, p);
+        }
     }
     else if (PyAnySet_CheckExact(v)) {
         PyObject *value;
@@ -612,9 +661,7 @@ w_complex_object(PyObject *v, char flag, WFILE *p)
                 Py_DECREF(value);
                 break;
             }
-            PyObject *pair = PyTuple_Pack(2, dump, value);
-            Py_DECREF(dump);
-            Py_DECREF(value);
+            PyObject *pair = _PyTuple_FromPairSteal(dump, value);
             if (pair == NULL) {
                 p->error = WFERR_NOMEMORY;
                 break;
@@ -668,6 +715,7 @@ w_complex_object(PyObject *v, char flag, WFILE *p)
         w_object(co->co_linetable, p);
         w_object(co->co_exceptiontable, p);
         Py_DECREF(co_code);
+        w_complete(v, p);
     }
     else if (PyObject_CheckBuffer(v)) {
         /* Write unknown bytes-like objects as a bytes object */
@@ -693,6 +741,7 @@ w_complex_object(PyObject *v, char flag, WFILE *p)
         w_object(slice->start, p);
         w_object(slice->stop, p);
         w_object(slice->step, p);
+        w_complete(v, p);
     }
     else {
         W_TYPE(TYPE_UNKNOWN, p);
@@ -1415,10 +1464,21 @@ r_object(RFILE *p)
         break;
 
     case TYPE_DICT:
+    case TYPE_FROZENDICT:
         v = PyDict_New();
-        R_REF(v);
-        if (v == NULL)
+        if (v == NULL) {
             break;
+        }
+        if (type == TYPE_DICT) {
+            R_REF(v);
+        }
+        else {
+            idx = r_ref_reserve(flag, p);
+            if (idx < 0) {
+                Py_CLEAR(v);
+                break;
+            }
+        }
         for (;;) {
             PyObject *key, *val;
             key = r_object(p);
@@ -1438,7 +1498,10 @@ r_object(RFILE *p)
             Py_DECREF(val);
         }
         if (PyErr_Occurred()) {
-            Py_SETREF(v, NULL);
+            Py_CLEAR(v);
+        }
+        if (type == TYPE_FROZENDICT && v != NULL) {
+            Py_SETREF(v, PyFrozenDict_New(v));
         }
         retval = v;
         break;
@@ -1656,6 +1719,9 @@ r_object(RFILE *p)
     case TYPE_SLICE:
     {
         Py_ssize_t idx = r_ref_reserve(flag, p);
+        if (idx < 0) {
+            break;
+        }
         PyObject *stop = NULL;
         PyObject *step = NULL;
         PyObject *start = r_object(p);
@@ -1994,6 +2060,8 @@ marshal_load_impl(PyObject *module, PyObject *file, int allow_code)
 }
 
 /*[clinic input]
+@permit_long_summary
+@permit_long_docstring_body
 marshal.dumps
 
     value: object
@@ -2014,7 +2082,7 @@ unsupported type.
 static PyObject *
 marshal_dumps_impl(PyObject *module, PyObject *value, int version,
                    int allow_code)
-/*[clinic end generated code: output=115f90da518d1d49 input=167eaecceb63f0a8]*/
+/*[clinic end generated code: output=115f90da518d1d49 input=80cd3f30c1637ade]*/
 {
     return _PyMarshal_WriteObjectToString(value, version, allow_code);
 }
@@ -2104,6 +2172,7 @@ marshal_module_exec(PyObject *mod)
 }
 
 static PyModuleDef_Slot marshalmodule_slots[] = {
+     _Py_ABI_SLOT,
     {Py_mod_exec, marshal_module_exec},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {Py_mod_gil, Py_MOD_GIL_NOT_USED},

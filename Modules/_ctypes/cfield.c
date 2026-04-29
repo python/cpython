@@ -14,10 +14,6 @@
 #include <ffi.h>
 #include "ctypes.h"
 
-#if defined(Py_HAVE_C_COMPLEX) && defined(Py_FFI_SUPPORT_C_COMPLEX)
-#  include "../_complex.h"        // complex
-#endif
-
 #define CTYPES_CFIELD_CAPSULE_NAME_PYMEM "_ctypes/cfield.c pymem"
 
 /*[clinic input]
@@ -164,8 +160,8 @@ PyCField_new_impl(PyTypeObject *type, PyObject *name, PyObject *proto,
         if ((bitfield_size + bit_offset) > byte_size * 8) {
             PyErr_Format(
                 PyExc_ValueError,
-                "bit field %R overflows its type (%zd + %zd >= %zd)",
-                name, bit_offset, byte_size*8);
+                "bit field %R overflows its type (%zd + %zd > %zd)",
+                name, bit_offset, bitfield_size, byte_size * 8);
             goto error;
         }
     }
@@ -763,18 +759,25 @@ d_get(void *ptr, Py_ssize_t size)
     return PyFloat_FromDouble(val);
 }
 
-#if defined(Py_HAVE_C_COMPLEX) && defined(Py_FFI_SUPPORT_C_COMPLEX)
+#if defined(_Py_FFI_SUPPORT_C_COMPLEX)
+
+/* We don't use _Complex types here, using arrays instead, as the C11+
+   standard says: "Each complex type has the same representation and alignment
+   requirements as an array type containing exactly two elements of the
+   corresponding real type; the first element is equal to the real part, and
+   the second element to the imaginary part, of the complex number." */
+
 /* D: double complex */
 static PyObject *
 D_set(void *ptr, PyObject *value, Py_ssize_t size)
 {
-    assert(NUM_BITS(size) || (size == sizeof(double complex)));
+    assert(NUM_BITS(size) || (size == 2*sizeof(double)));
     Py_complex c = PyComplex_AsCComplex(value);
 
     if (c.real == -1 && PyErr_Occurred()) {
         return NULL;
     }
-    double complex x = CMPLX(c.real, c.imag);
+    double x[2] = {c.real, c.imag};
     memcpy(ptr, &x, sizeof(x));
     _RET(value);
 }
@@ -782,24 +785,62 @@ D_set(void *ptr, PyObject *value, Py_ssize_t size)
 static PyObject *
 D_get(void *ptr, Py_ssize_t size)
 {
-    assert(NUM_BITS(size) || (size == sizeof(double complex)));
-    double complex x;
+    assert(NUM_BITS(size) || (size == 2*sizeof(double)));
+    double x[2];
 
     memcpy(&x, ptr, sizeof(x));
-    return PyComplex_FromDoubles(creal(x), cimag(x));
+    return PyComplex_FromDoubles(x[0], x[1]);
+}
+
+static PyObject *
+D_set_sw(void *ptr, PyObject *value, Py_ssize_t size)
+{
+    assert(NUM_BITS(size) || (size == 2*sizeof(double)));
+    Py_complex c = PyComplex_AsCComplex(value);
+
+    if (c.real == -1 && PyErr_Occurred()) {
+        return NULL;
+    }
+#ifdef WORDS_BIGENDIAN
+    if (PyFloat_Pack8(c.real, ptr, 1)
+        || PyFloat_Pack8(c.imag, ptr + sizeof(double), 1))
+    {
+        return NULL;
+    }
+#else
+    if (PyFloat_Pack8(c.real, ptr, 0)
+        || PyFloat_Pack8(c.imag, ptr + sizeof(double), 0))
+    {
+        return NULL;
+    }
+#endif
+    _RET(value);
+}
+
+static PyObject *
+D_get_sw(void *ptr, Py_ssize_t size)
+{
+    assert(NUM_BITS(size) || (size == 2*sizeof(double)));
+#ifdef WORDS_BIGENDIAN
+    return PyComplex_FromDoubles(PyFloat_Unpack8(ptr, 1),
+                                 PyFloat_Unpack8(ptr + sizeof(double), 1));
+#else
+    return PyComplex_FromDoubles(PyFloat_Unpack8(ptr, 0),
+                                 PyFloat_Unpack8(ptr + sizeof(double), 0));
+#endif
 }
 
 /* F: float complex */
 static PyObject *
 F_set(void *ptr, PyObject *value, Py_ssize_t size)
 {
-    assert(NUM_BITS(size) || (size == sizeof(float complex)));
+    assert(NUM_BITS(size) || (size == 2*sizeof(float)));
     Py_complex c = PyComplex_AsCComplex(value);
 
     if (c.real == -1 && PyErr_Occurred()) {
         return NULL;
     }
-    float complex x = CMPLXF((float)c.real, (float)c.imag);
+    float x[2] = {(float)c.real, (float)c.imag};
     memcpy(ptr, &x, sizeof(x));
     _RET(value);
 }
@@ -807,24 +848,62 @@ F_set(void *ptr, PyObject *value, Py_ssize_t size)
 static PyObject *
 F_get(void *ptr, Py_ssize_t size)
 {
-    assert(NUM_BITS(size) || (size == sizeof(float complex)));
-    float complex x;
+    assert(NUM_BITS(size) || (size == 2*sizeof(float)));
+    float x[2];
 
     memcpy(&x, ptr, sizeof(x));
-    return PyComplex_FromDoubles(crealf(x), cimagf(x));
+    return PyComplex_FromDoubles(x[0], x[1]);
+}
+
+static PyObject *
+F_set_sw(void *ptr, PyObject *value, Py_ssize_t size)
+{
+    assert(NUM_BITS(size) || (size == 2*sizeof(float)));
+    Py_complex c = PyComplex_AsCComplex(value);
+
+    if (c.real == -1 && PyErr_Occurred()) {
+        return NULL;
+    }
+#ifdef WORDS_BIGENDIAN
+    if (PyFloat_Pack4(c.real, ptr, 1)
+        || PyFloat_Pack4(c.imag, ptr + sizeof(float), 1))
+    {
+        return NULL;
+    }
+#else
+    if (PyFloat_Pack4(c.real, ptr, 0)
+        || PyFloat_Pack4(c.imag, ptr + sizeof(float), 0))
+    {
+        return NULL;
+    }
+#endif
+    _RET(value);
+}
+
+static PyObject *
+F_get_sw(void *ptr, Py_ssize_t size)
+{
+    assert(NUM_BITS(size) || (size == 2*sizeof(float)));
+#ifdef WORDS_BIGENDIAN
+    return PyComplex_FromDoubles(PyFloat_Unpack4(ptr, 1),
+                                 PyFloat_Unpack4(ptr + sizeof(float), 1));
+#else
+    return PyComplex_FromDoubles(PyFloat_Unpack4(ptr, 0),
+                                 PyFloat_Unpack4(ptr + sizeof(float), 0));
+#endif
 }
 
 /* G: long double complex */
 static PyObject *
 G_set(void *ptr, PyObject *value, Py_ssize_t size)
 {
-    assert(NUM_BITS(size) || (size == sizeof(long double complex)));
+    assert(NUM_BITS(size) || (size == 2*sizeof(long double)));
     Py_complex c = PyComplex_AsCComplex(value);
 
     if (c.real == -1 && PyErr_Occurred()) {
         return NULL;
     }
-    long double complex x = CMPLXL(c.real, c.imag);
+    long double x[2] = {c.real, c.imag};
     memcpy(ptr, &x, sizeof(x));
     _RET(value);
 }
@@ -832,11 +911,11 @@ G_set(void *ptr, PyObject *value, Py_ssize_t size)
 static PyObject *
 G_get(void *ptr, Py_ssize_t size)
 {
-    assert(NUM_BITS(size) || (size == sizeof(long double complex)));
-    long double complex x;
+    assert(NUM_BITS(size) || (size == 2*sizeof(long double)));
+    long double x[2];
 
     memcpy(&x, ptr, sizeof(x));
-    return PyComplex_FromDoubles((double)creall(x), (double)cimagl(x));
+    return PyComplex_FromDoubles((double)x[0], (double)x[1]);
 }
 #endif
 
@@ -1250,7 +1329,7 @@ Z_get(void *ptr, Py_ssize_t size)
     wchar_t *p;
     p = *(wchar_t **)ptr;
     if (p) {
-        return PyUnicode_FromWideChar(p, wcslen(p));
+        return PyUnicode_FromWideChar(p, -1);
     } else {
         Py_RETURN_NONE;
     }
@@ -1596,10 +1675,12 @@ for base_code, base_c_type in [
     ///////////////////////////////////////////////////////////////////////////
 
     TABLE_ENTRY_SW(d, &ffi_type_double);
-#if defined(Py_HAVE_C_COMPLEX) && defined(Py_FFI_SUPPORT_C_COMPLEX)
+#if defined(_Py_FFI_SUPPORT_C_COMPLEX)
     if (Py_FFI_COMPLEX_AVAILABLE) {
         TABLE_ENTRY(D, &ffi_type_complex_double);
+        TABLE_ENTRY_SW(D, &ffi_type_complex_double);
         TABLE_ENTRY(F, &ffi_type_complex_float);
+        TABLE_ENTRY_SW(F, &ffi_type_complex_float);
         TABLE_ENTRY(G, &ffi_type_complex_longdouble);
     }
 #endif

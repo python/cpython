@@ -1,7 +1,7 @@
 extend = "../../.ruff.toml"  # Inherit the project-wide settings
 
 [per-file-target-version]
-"deepfreeze.py" = "py310"
+"deepfreeze.py" = "py311"  # requires `code.co_exceptiontable`
 "stable_abi.py" = "py311"  # requires 'tomllib'
 
 [format]
@@ -29,7 +29,6 @@ ignore = [
     "F541",    # f-string without any placeholders
     "PYI024",  # Use `typing.NamedTuple` instead of `collections.namedtuple`
     "PYI025",  # Use `from collections.abc import Set as AbstractSet`
-    "UP038",   # Use `X | Y` in `isinstance` call instead of `(X, Y)`
 ]
 
 [lint.per-file-ignores]

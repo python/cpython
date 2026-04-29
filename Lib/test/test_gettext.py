@@ -6,7 +6,8 @@ import unittest.mock
 from functools import partial
 
 from test import support
-from test.support import os_helper
+from test.support import cpython_only, os_helper
+from test.support.import_helper import ensure_lazy_imports
 
 
 # TODO:
@@ -930,6 +931,17 @@ class MiscTestCase(unittest.TestCase):
     def test__all__(self):
         support.check__all__(self, gettext,
                              not_exported={'c2py', 'ENOENT'})
+
+    @cpython_only
+    def test_lazy_import(self):
+        ensure_lazy_imports("gettext", {"re", "warnings", "locale"})
+
+
+class TranslationFallbackTestCase(unittest.TestCase):
+    def test_translation_fallback(self):
+        with os_helper.temp_cwd() as tempdir:
+            t = gettext.translation('gettext', localedir=tempdir, fallback=True)
+            self.assertIsInstance(t, gettext.NullTranslations)
 
 
 if __name__ == '__main__':

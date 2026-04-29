@@ -9,6 +9,7 @@ import unicodedata
 import _colorize
 
 from collections import deque
+from dataclasses import dataclass
 from io import StringIO
 from tokenize import TokenInfo as TI
 from typing import Iterable, Iterator, Match, NamedTuple, Self
@@ -16,11 +17,18 @@ from typing import Iterable, Iterator, Match, NamedTuple, Self
 from .types import CharBuffer, CharWidths
 from .trace import trace
 
+
 ANSI_ESCAPE_SEQUENCE = re.compile(r"\x1b\[[ -@]*[A-~]")
 ZERO_WIDTH_BRACKET = re.compile(r"\x01.*?\x02")
 ZERO_WIDTH_TRANS = str.maketrans({"\x01": "", "\x02": ""})
-IDENTIFIERS_AFTER = {"def", "class"}
-BUILTINS = {str(name) for name in dir(builtins) if not name.startswith('_')}
+IDENTIFIERS_AFTER = frozenset({"def", "class"})
+KEYWORD_CONSTANTS = frozenset({"True", "False", "None"})
+BUILTINS = frozenset({str(name) for name in dir(builtins) if not name.startswith('_')})
+
+
+def THEME(**kwargs):
+    # Not cached: the user can modify the theme inside the interactive session.
+    return _colorize.get_theme(**kwargs).syntax
 
 
 class Span(NamedTuple):
@@ -36,21 +44,48 @@ class Span(NamedTuple):
 
     @classmethod
     def from_token(cls, token: TI, line_len: list[int]) -> Self:
+        end_offset = -1
+        if (token.type in {T.FSTRING_MIDDLE, T.TSTRING_MIDDLE}
+            and token.string.endswith(("{", "}"))):
+            # gh-134158: a visible trailing brace comes from a double brace in input
+            end_offset += 1
+
         return cls(
             line_len[token.start[0] - 1] + token.start[1],
-            line_len[token.end[0] - 1] + token.end[1] - 1,
+            line_len[token.end[0] - 1] + token.end[1] + end_offset,
         )
 
 
 class ColorSpan(NamedTuple):
     span: Span
-    tag: _colorize.ColorTag
+    tag: str
+
+
+class StyledChar(NamedTuple):
+    text: str
+    width: int
+    tag: str | None = None
+
+
+def _ascii_control_repr(c: str) -> str | None:
+    code = ord(c)
+    if code < 32:
+        return "^" + chr(code + 64)
+    if code == 127:
+        return "^?"
+    return None
 
 
 @functools.cache
 def str_width(c: str) -> int:
     if ord(c) < 128:
         return 1
+    # gh-139246 for zero-width joiner and combining characters
+    if unicodedata.combining(c):
+        return 0
+    category = unicodedata.category(c)
+    if category == "Cf" and c != "\u00ad":
+        return 0
     w = unicodedata.east_asian_width(c)
     if w in ("N", "Na", "H", "A"):
         return 1
@@ -97,6 +132,8 @@ def gen_colors(buffer: str) -> Iterator[ColorSpan]:
         for color in gen_colors_from_token_stream(gen, line_lengths):
             yield color
             last_emitted = color
+    except SyntaxError:
+        return
     except tokenize.TokenError as te:
         yield from recover_unterminated_string(
             te, line_lengths, last_emitted, buffer
@@ -135,7 +172,7 @@ def recover_unterminated_string(
 
         span = Span(start, end)
         trace("yielding span {a} -> {b}", a=span.start, b=span.end)
-        yield ColorSpan(span, "STRING")
+        yield ColorSpan(span, "string")
     else:
         trace(
             "unhandled token error({buffer}) = {te}",
@@ -164,28 +201,31 @@ def gen_colors_from_token_stream(
                 | T.TSTRING_START | T.TSTRING_MIDDLE | T.TSTRING_END
             ):
                 span = Span.from_token(token, line_lengths)
-                yield ColorSpan(span, "STRING")
+                yield ColorSpan(span, "string")
             case T.COMMENT:
                 span = Span.from_token(token, line_lengths)
-                yield ColorSpan(span, "COMMENT")
+                yield ColorSpan(span, "comment")
             case T.NUMBER:
                 span = Span.from_token(token, line_lengths)
-                yield ColorSpan(span, "NUMBER")
+                yield ColorSpan(span, "number")
             case T.OP:
                 if token.string in "([{":
                     bracket_level += 1
                 elif token.string in ")]}":
                     bracket_level -= 1
                 span = Span.from_token(token, line_lengths)
-                yield ColorSpan(span, "OP")
+                yield ColorSpan(span, "op")
             case T.NAME:
                 if is_def_name:
                     is_def_name = False
                     span = Span.from_token(token, line_lengths)
-                    yield ColorSpan(span, "DEFINITION")
+                    yield ColorSpan(span, "definition")
                 elif keyword.iskeyword(token.string):
+                    span_cls = "keyword"
+                    if token.string in KEYWORD_CONSTANTS:
+                        span_cls = "keyword_constant"
                     span = Span.from_token(token, line_lengths)
-                    yield ColorSpan(span, "KEYWORD")
+                    yield ColorSpan(span, span_cls)
                     if token.string in IDENTIFIERS_AFTER:
                         is_def_name = True
                 elif (
@@ -194,14 +234,17 @@ def gen_colors_from_token_stream(
                     and is_soft_keyword_used(prev_token, token, next_token)
                 ):
                     span = Span.from_token(token, line_lengths)
-                    yield ColorSpan(span, "SOFT_KEYWORD")
-                elif token.string in BUILTINS:
+                    yield ColorSpan(span, "soft_keyword")
+                elif (
+                    token.string in BUILTINS
+                    and not (prev_token and prev_token.exact_type == T.DOT)
+                ):
                     span = Span.from_token(token, line_lengths)
-                    yield ColorSpan(span, "BUILTIN")
+                    yield ColorSpan(span, "builtin")
 
 
-keyword_first_sets_match = {"False", "None", "True", "await", "lambda", "not"}
-keyword_first_sets_case = {"False", "None", "True"}
+keyword_first_sets_match = frozenset({"False", "None", "True", "await", "lambda", "not"})
+keyword_first_sets_case = frozenset({"False", "None", "True"})
 
 
 def is_soft_keyword_used(*tokens: TI | None) -> bool:
@@ -228,14 +271,14 @@ def is_soft_keyword_used(*tokens: TI | None) -> bool:
                 return s in keyword_first_sets_match
             return True
         case (
-            None | TI(T.NEWLINE) | TI(T.INDENT) | TI(string=":"),
+            None | TI(T.NEWLINE) | TI(T.INDENT) | TI(T.DEDENT) | TI(string=":"),
             TI(string="case"),
             TI(T.NUMBER | T.STRING | T.FSTRING_START | T.TSTRING_START)
             | TI(T.OP, string="(" | "*" | "-" | "[" | "{")
         ):
             return True
         case (
-            None | TI(T.NEWLINE) | TI(T.INDENT) | TI(string=":"),
+            None | TI(T.NEWLINE) | TI(T.INDENT) | TI(T.DEDENT) | TI(string=":"),
             TI(string="case"),
             TI(T.NAME, string=s)
         ):
@@ -244,12 +287,82 @@ def is_soft_keyword_used(*tokens: TI | None) -> bool:
             return True
         case (TI(string="case"), TI(string="_"), TI(string=":")):
             return True
+        case (
+            None | TI(T.NEWLINE) | TI(T.INDENT) | TI(T.DEDENT) | TI(string=":"),
+            TI(string="type"),
+            TI(T.NAME, string=s)
+        ):
+            return not keyword.iskeyword(s)
+        case (
+            None | TI(T.NEWLINE) | TI(T.INDENT) | TI(T.DEDENT) | TI(string=":" | ";"),
+            TI(string="lazy"),
+            TI(string="import") | TI(string="from")
+        ):
+            return True
         case _:
             return False
 
 
+def iter_display_chars(
+    buffer: str,
+    colors: list[ColorSpan] | None = None,
+    start_index: int = 0,
+) -> Iterator[StyledChar]:
+    """Yield visible display characters with widths and semantic color tags.
+
+    Note: ``colors`` is consumed in place as spans are processed -- callers
+    that split a buffer across multiple calls rely on this mutation to track
+    which spans have already been handled.
+    """
+
+    if not buffer:
+        return
+
+    color_idx = 0
+    if colors:
+        while color_idx < len(colors) and colors[color_idx].span.end < start_index:
+            color_idx += 1
+
+    active_tag = None
+    if colors and color_idx < len(colors) and colors[color_idx].span.start < start_index:
+        active_tag = colors[color_idx].tag
+
+    for i, c in enumerate(buffer, start_index):
+        if colors and color_idx < len(colors) and colors[color_idx].span.start == i:
+            active_tag = colors[color_idx].tag
+
+        if control := _ascii_control_repr(c):
+            text = control
+            width = len(control)
+        elif ord(c) < 128:
+            text = c
+            width = 1
+        elif unicodedata.category(c).startswith("C"):
+            text = r"\u%04x" % ord(c)
+            width = len(text)
+        else:
+            text = c
+            width = str_width(c)
+
+        yield StyledChar(text, width, active_tag)
+
+        if colors and color_idx < len(colors) and colors[color_idx].span.end == i:
+            color_idx += 1
+            active_tag = None
+            # Check if the next span starts at the same position
+            if color_idx < len(colors) and colors[color_idx].span.start == i:
+                active_tag = colors[color_idx].tag
+
+    # Remove consumed spans so callers see the mutation
+    if color_idx > 0 and colors:
+        del colors[:color_idx]
+
+
 def disp_str(
-    buffer: str, colors: list[ColorSpan] | None = None, start_index: int = 0
+    buffer: str,
+    colors: list[ColorSpan] | None = None,
+    start_index: int = 0,
+    force_color: bool = False,
 ) -> tuple[CharBuffer, CharWidths]:
     r"""Decompose the input buffer into a printable variant with applied colors.
 
@@ -280,52 +393,18 @@ def disp_str(
     (['\x1b[1;34mw', 'h', 'i', 'l', 'e\x1b[0m', ' ', '1', ':'], [1, 1, 1, 1, 1, 1, 1, 1])
 
     """
+    styled_chars = list(iter_display_chars(buffer, colors, start_index))
     chars: CharBuffer = []
     char_widths: CharWidths = []
+    theme = THEME(force_color=force_color)
 
-    if not buffer:
-        return chars, char_widths
-
-    while colors and colors[0].span.end < start_index:
-        # move past irrelevant spans
-        colors.pop(0)
-
-    pre_color = ""
-    post_color = ""
-    if colors and colors[0].span.start < start_index:
-        # looks like we're continuing a previous color (e.g. a multiline str)
-        pre_color = _colorize.theme[colors[0].tag]
-
-    for i, c in enumerate(buffer, start_index):
-        if colors and colors[0].span.start == i:  # new color starts now
-            pre_color = _colorize.theme[colors[0].tag]
-
-        if c == "\x1a":  # CTRL-Z on Windows
-            chars.append(c)
-            char_widths.append(2)
-        elif ord(c) < 128:
-            chars.append(c)
-            char_widths.append(1)
-        elif unicodedata.category(c).startswith("C"):
-            c = r"\u%04x" % ord(c)
-            chars.append(c)
-            char_widths.append(len(c))
-        else:
-            chars.append(c)
-            char_widths.append(str_width(c))
-
-        if colors and colors[0].span.end == i:  # current color ends now
-            post_color = _colorize.theme["RESET"]
-            colors.pop(0)
-
-        chars[-1] = pre_color + chars[-1] + post_color
-        pre_color = ""
-        post_color = ""
-
-    if colors and colors[0].span.start < i and colors[0].span.end > i:
-        # even though the current color should be continued, reset it for now.
-        # the next call to `disp_str()` will revive it.
-        chars[-1] += _colorize.theme["RESET"]
+    for index, styled_char in enumerate(styled_chars):
+        previous_tag = styled_chars[index - 1].tag if index else None
+        next_tag = styled_chars[index + 1].tag if index + 1 < len(styled_chars) else None
+        prefix = theme[styled_char.tag] if styled_char.tag and styled_char.tag != previous_tag else ""
+        suffix = theme.reset if styled_char.tag and styled_char.tag != next_tag else ""
+        chars.append(prefix + styled_char.text + suffix)
+        char_widths.append(styled_char.width)
 
     return chars, char_widths
 
@@ -343,13 +422,35 @@ def prev_next_window[T](
     """
 
     iterator = iter(iterable)
-    window = deque((None, next(iterator)), maxlen=3)
+    try:
+        first = next(iterator)
+    except StopIteration:
+        return
+    window = deque((None, first), maxlen=3)
     try:
         for x in iterator:
             window.append(x)
             yield tuple(window)
-    except Exception:
-        raise
     finally:
         window.append(None)
         yield tuple(window)
+
+
+@dataclass(frozen=True, slots=True)
+class StyleRef:
+    tag: str | None = None  # From THEME().syntax, e.g. "keyword", "builtin"
+    sgr: str = ""
+
+    @classmethod
+    def from_tag(cls, tag: str, sgr: str = "") -> Self:
+        return cls(tag=tag, sgr=sgr)
+
+    @classmethod
+    def from_sgr(cls, sgr: str) -> Self:
+        if not sgr:
+            return cls()
+        return cls(sgr=sgr)
+
+    @property
+    def is_plain(self) -> bool:
+        return self.tag is None and not self.sgr

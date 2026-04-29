@@ -1,2 +1,0 @@
-Make :class:`argparse.ArgumentParser`'s ``suggest_on_error`` a keyword-only
-parameter. Patch by Hugo van Kemenade.
