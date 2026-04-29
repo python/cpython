@@ -292,6 +292,8 @@ function createPythonTooltip(data) {
     }
 
     const timeMs = (d.data.value / 1000).toFixed(2);
+    const selfSamples = d.data.self || 0;
+    const selfMs = (selfSamples / 1000).toFixed(2);
     const percentage = ((d.data.value / data.value) * 100).toFixed(2);
     const calls = d.data.calls || 0;
     const childCount = d.children ? d.children.length : 0;
@@ -403,8 +405,13 @@ function createPythonTooltip(data) {
         ${fileLocationHTML}
       </div>
       <div class="tooltip-stats">
-        <span class="tooltip-stat-label">Execution Time:</span>
+        <span class="tooltip-stat-label">Total Time:</span>
         <span class="tooltip-stat-value">${timeMs} ms</span>
+
+        ${selfSamples > 0 ? `
+          <span class="tooltip-stat-label">Self Time:</span>
+          <span class="tooltip-stat-value">${selfMs} ms</span>
+        ` : ''}
 
         <span class="tooltip-stat-label">Percentage:</span>
         <span class="tooltip-stat-value accent">${percentage}%</span>
@@ -1056,11 +1063,7 @@ function populateStats(data) {
     funcname = funcname || 'unknown';
 
     if (filename !== 'unknown' && funcname !== 'unknown' && node.value > 0) {
-      let childrenValue = 0;
-      if (node.children) {
-        childrenValue = node.children.reduce((sum, child) => sum + child.value, 0);
-      }
-      const directSamples = Math.max(0, node.value - childrenValue);
+      const directSamples = node.self || 0;
 
       const funcKey = `${filename}:${node.lineno || '?'}:${funcname}`;
 
@@ -1271,6 +1274,7 @@ function accumulateInvertedNode(parent, stackFrame, leaf, isDifferential) {
     const newNode = {
       name: stackFrame.name,
       value: 0,
+      self: 0,
       children: {},
       filename: stackFrame.filename,
       lineno: stackFrame.lineno,
@@ -1293,6 +1297,7 @@ function accumulateInvertedNode(parent, stackFrame, leaf, isDifferential) {
 
   const node = parent.children[key];
   node.value += leaf.value;
+  node.self += stackFrame.self || 0;
   if (leaf.threads) {
     leaf.threads.forEach(t => node.threads.add(t));
   }
@@ -1336,14 +1341,13 @@ function processLeaf(invertedRoot, path, leafNode, isDifferential) {
 }
 
 function traverseInvert(path, currentNode, invertedRoot, isDifferential) {
-  const children = currentNode.children || [];
-  const childThreads = new Set(children.flatMap(c => c.threads || []));
-  const selfThreads = (currentNode.threads || []).filter(t => !childThreads.has(t));
+  const selfValue = currentNode.self || 0;
 
-  if (selfThreads.length > 0) {
-    processLeaf(invertedRoot, path, { ...currentNode, threads: selfThreads }, isDifferential);
+  if (selfValue > 0) {
+    processLeaf(invertedRoot, path, { ...currentNode, value: selfValue }, isDifferential);
   }
 
+  const children = currentNode.children || [];
   children.forEach(child => traverseInvert(path.concat([child]), child, invertedRoot, isDifferential));
 }
 

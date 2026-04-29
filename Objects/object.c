@@ -688,6 +688,8 @@ PyObject_Print(PyObject *op, FILE *fp, int flags)
             ret = -1;
         }
     }
+
+    _Py_LeaveRecursiveCall();
     return ret;
 }
 
@@ -2595,6 +2597,7 @@ static PyTypeObject* static_types[] = {
     &PyRange_Type,
     &PyReversed_Type,
     &PySTEntry_Type,
+    &PySentinel_Type,
     &PySeqIter_Type,
     &PySetIter_Type,
     &PySet_Type,
@@ -2766,9 +2769,9 @@ _Py_SetImmortalUntracked(PyObject *op)
         return;
     }
 #ifdef Py_GIL_DISABLED
-    op->ob_tid = _Py_UNOWNED_TID;
-    op->ob_ref_local = _Py_IMMORTAL_REFCNT_LOCAL;
-    op->ob_ref_shared = 0;
+    _Py_atomic_store_uintptr_relaxed(&op->ob_tid, _Py_UNOWNED_TID);
+    _Py_atomic_store_uint32_relaxed(&op->ob_ref_local, _Py_IMMORTAL_REFCNT_LOCAL);
+    _Py_atomic_store_ssize_relaxed(&op->ob_ref_shared, 0);
     _Py_atomic_or_uint8(&op->ob_gc_bits, _PyGC_BITS_DEFERRED);
 #elif SIZEOF_VOID_P > 4
     op->ob_flags = _Py_IMMORTAL_FLAGS;

@@ -574,8 +574,12 @@ init_code(PyCodeObject *co, struct _PyCodeConstructor *con)
     co->co_tlbc->entries[0] = co->co_code_adaptive;
 #endif
     int entry_point = 0;
-    while (entry_point < Py_SIZE(co) &&
-        _PyCode_CODE(co)[entry_point].op.code != RESUME) {
+    while (entry_point < Py_SIZE(co)) {
+        if (_PyCode_CODE(co)[entry_point].op.code == RESUME &&
+           (_PyCode_CODE(co)[entry_point].op.arg & RESUME_OPARG_LOCATION_MASK) != RESUME_AT_GEN_EXPR_START
+        ) {
+            break;
+        }
         entry_point++;
     }
     co->_co_firsttraceable = entry_point;
@@ -1008,14 +1012,18 @@ failed:
  * source location tracking (co_lines/co_positions)
  ******************/
 
-static int
-_PyCode_Addr2Line(PyCodeObject *co, int addrq)
+int
+PyCode_Addr2Line(PyCodeObject *co, int addrq)
 {
     if (addrq < 0) {
         return co->co_firstlineno;
     }
-    if (co->_co_monitoring && co->_co_monitoring->lines) {
-        return _Py_Instrumentation_GetLine(co, addrq/sizeof(_Py_CODEUNIT));
+    _PyCoMonitoringData *data = _Py_atomic_load_ptr_acquire(&co->_co_monitoring);
+    if (data) {
+        _PyCoLineInstrumentationData *lines = _Py_atomic_load_ptr_acquire(&data->lines);
+        if (lines) {
+            return _Py_Instrumentation_GetLine(co, lines, addrq/sizeof(_Py_CODEUNIT));
+        }
     }
     assert(addrq >= 0 && addrq < _PyCode_NBYTES(co));
     PyCodeAddressRange bounds;
@@ -1030,7 +1038,7 @@ _PyCode_SafeAddr2Line(PyCodeObject *co, int addrq)
         return co->co_firstlineno;
     }
     if (co->_co_monitoring && co->_co_monitoring->lines) {
-        return _Py_Instrumentation_GetLine(co, addrq/sizeof(_Py_CODEUNIT));
+        return _Py_Instrumentation_GetLine(co, co->_co_monitoring->lines, addrq/sizeof(_Py_CODEUNIT));
     }
     if (!(addrq >= 0 && addrq < _PyCode_NBYTES(co))) {
         return -1;
@@ -1038,16 +1046,6 @@ _PyCode_SafeAddr2Line(PyCodeObject *co, int addrq)
     PyCodeAddressRange bounds;
     _PyCode_InitAddressRange(co, &bounds);
     return _PyCode_CheckLineNumber(addrq, &bounds);
-}
-
-int
-PyCode_Addr2Line(PyCodeObject *co, int addrq)
-{
-    int lineno;
-    Py_BEGIN_CRITICAL_SECTION(co);
-    lineno = _PyCode_Addr2Line(co, addrq);
-    Py_END_CRITICAL_SECTION();
-    return lineno;
 }
 
 void
@@ -1296,77 +1294,6 @@ _PyLineTable_NextAddressRange(PyCodeAddressRange *range)
     advance(range);
     assert(range->ar_end > range->ar_start);
     return 1;
-}
-
-static int
-emit_pair(PyObject **bytes, int *offset, int a, int b)
-{
-    Py_ssize_t len = PyBytes_GET_SIZE(*bytes);
-    if (*offset + 2 >= len) {
-        if (_PyBytes_Resize(bytes, len * 2) < 0)
-            return 0;
-    }
-    unsigned char *lnotab = (unsigned char *) PyBytes_AS_STRING(*bytes);
-    lnotab += *offset;
-    *lnotab++ = a;
-    *lnotab++ = b;
-    *offset += 2;
-    return 1;
-}
-
-static int
-emit_delta(PyObject **bytes, int bdelta, int ldelta, int *offset)
-{
-    while (bdelta > 255) {
-        if (!emit_pair(bytes, offset, 255, 0)) {
-            return 0;
-        }
-        bdelta -= 255;
-    }
-    while (ldelta > 127) {
-        if (!emit_pair(bytes, offset, bdelta, 127)) {
-            return 0;
-        }
-        bdelta = 0;
-        ldelta -= 127;
-    }
-    while (ldelta < -128) {
-        if (!emit_pair(bytes, offset, bdelta, -128)) {
-            return 0;
-        }
-        bdelta = 0;
-        ldelta += 128;
-    }
-    return emit_pair(bytes, offset, bdelta, ldelta);
-}
-
-static PyObject *
-decode_linetable(PyCodeObject *code)
-{
-    PyCodeAddressRange bounds;
-    PyObject *bytes;
-    int table_offset = 0;
-    int code_offset = 0;
-    int line = code->co_firstlineno;
-    bytes = PyBytes_FromStringAndSize(NULL, 64);
-    if (bytes == NULL) {
-        return NULL;
-    }
-    _PyCode_InitAddressRange(code, &bounds);
-    while (_PyLineTable_NextAddressRange(&bounds)) {
-        if (bounds.opaque.computed_line != line) {
-            int bdelta = bounds.ar_start - code_offset;
-            int ldelta = bounds.opaque.computed_line - line;
-            if (!emit_delta(&bytes, bdelta, ldelta, &table_offset)) {
-                Py_DECREF(bytes);
-                return NULL;
-            }
-            code_offset = bounds.ar_start;
-            line = bounds.opaque.computed_line;
-        }
-    }
-    _PyBytes_Resize(&bytes, table_offset);
-    return bytes;
 }
 
 
@@ -2742,18 +2669,6 @@ static PyMemberDef code_memberlist[] = {
 
 
 static PyObject *
-code_getlnotab(PyObject *self, void *closure)
-{
-    PyCodeObject *code = _PyCodeObject_CAST(self);
-    if (PyErr_WarnEx(PyExc_DeprecationWarning,
-                     "co_lnotab is deprecated, use co_lines instead.",
-                     1) < 0) {
-        return NULL;
-    }
-    return decode_linetable(code);
-}
-
-static PyObject *
 code_getvarnames(PyObject *self, void *closure)
 {
     PyCodeObject *code = _PyCodeObject_CAST(self);
@@ -2790,7 +2705,6 @@ code_getcode(PyObject *self, void *closure)
 }
 
 static PyGetSetDef code_getsetlist[] = {
-    {"co_lnotab",         code_getlnotab,       NULL, NULL},
     {"_co_code_adaptive", code_getcodeadaptive, NULL, NULL},
     // The following old names are kept for backward compatibility.
     {"co_varnames",       code_getvarnames,     NULL, NULL},

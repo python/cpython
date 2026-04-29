@@ -330,8 +330,8 @@ init_runtime(_PyRuntimeState *runtime,
 {
     assert(!runtime->preinitializing);
     assert(!runtime->preinitialized);
-    assert(!runtime->core_initialized);
-    assert(!runtime->initialized);
+    assert(!_PyRuntimeState_GetCoreInitialized(runtime));
+    assert(!_PyRuntimeState_GetInitialized(runtime));
     assert(!runtime->_initialized);
 
     runtime->open_code_hook = open_code_hook;
@@ -489,11 +489,6 @@ free_interpreter(PyInterpreterState *interp)
 static inline int check_interpreter_whence(long);
 #endif
 
-extern _Py_CODEUNIT *
-_Py_LazyJitShim(
-    struct _PyExecutorObject *exec, _PyInterpreterFrame *frame, _PyStackRef *stack_pointer, PyThreadState *tstate
-);
-
 /* Get the interpreter state to a minimal consistent state.
    Further init happens in pylifecycle.c before it can be used.
    All fields not initialized here are expected to be zeroed out,
@@ -634,6 +629,11 @@ init_interpreter(PyInterpreterState *interp,
     init_policy(&interp->opt_config.side_exit_initial_backoff,
                 "PYTHON_JIT_SIDE_EXIT_INITIAL_BACKOFF",
                 SIDE_EXIT_INITIAL_BACKOFF, 0, MAX_BACKOFF);
+
+    // Trace fitness configuration
+    init_policy(&interp->opt_config.fitness_initial,
+                "PYTHON_JIT_FITNESS_INITIAL",
+                FITNESS_INITIAL, EXIT_QUALITY_CLOSE_LOOP, UOP_MAX_TRACE_LENGTH - 1);
 
     interp->opt_config.specialization_enabled = !is_env_enabled("PYTHON_SPECIALIZATION_OFF");
     interp->opt_config.uops_optimize_enabled = !is_env_disabled("PYTHON_UOPS_OPTIMIZE");
@@ -3026,7 +3026,30 @@ _PyInterpreterState_SetEvalFrameFunc(PyInterpreterState *interp,
     RARE_EVENT_INC(set_eval_frame_func);
     _PyEval_StopTheWorld(interp);
     interp->eval_frame = eval_frame;
+    // reset when evaluator is reset
+    interp->eval_frame_allow_specialization = 0;
     _PyEval_StartTheWorld(interp);
+}
+
+void
+_PyInterpreterState_SetEvalFrameAllowSpecialization(PyInterpreterState *interp,
+                                                    int allow_specialization)
+{
+    if (allow_specialization == interp->eval_frame_allow_specialization) {
+        return;
+    }
+    _Py_Executors_InvalidateAll(interp, 1);
+    RARE_EVENT_INC(set_eval_frame_func);
+    _PyEval_StopTheWorld(interp);
+    interp->eval_frame_allow_specialization = allow_specialization;
+    _PyEval_StartTheWorld(interp);
+}
+
+int
+_PyInterpreterState_IsSpecializationEnabled(PyInterpreterState *interp)
+{
+    return interp->eval_frame == NULL
+        || interp->eval_frame_allow_specialization;
 }
 
 

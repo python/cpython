@@ -77,7 +77,7 @@ Notes:
    as :c:expr:`_Float16` type, if the compiler supports the Annex H
    of the C23 standard.
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
 (4)
    Complex types (``F`` and ``D``) are available unconditionally,
