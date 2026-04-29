@@ -30,14 +30,16 @@
 #include "pycore_stats.h"         // _PyStats_InterpInit()
 #include "pycore_sysmodule.h"     // _PySys_ClearAttrString()
 #include "pycore_traceback.h"     // _Py_DumpTracebackThreads()
+#include "pycore_tuple.h"         // _PyTuple_FromPair
 #include "pycore_typeobject.h"    // _PyTypes_InitTypes()
 #include "pycore_typevarobject.h" // _Py_clear_generic_types()
 #include "pycore_unicodeobject.h" // _PyUnicode_InitTypes()
 #include "pycore_uniqueid.h"      // _PyObject_FinalizeUniqueIdPool()
 #include "pycore_warnings.h"      // _PyWarnings_InitState()
 #include "pycore_weakref.h"       // _PyWeakref_GET_REF()
-#ifdef _Py_JIT
-#include "pycore_jit.h"           // _PyJIT_Fini()
+
+#if defined(PYMALLOC_USE_HUGEPAGES) && defined(MS_WINDOWS)
+#include <Windows.h>
 #endif
 
 #include "opcode.h"
@@ -165,13 +167,13 @@ int (*_PyOS_mystrnicmp_hack)(const char *, const char *, Py_ssize_t) = \
 int
 _Py_IsCoreInitialized(void)
 {
-    return _PyRuntime.core_initialized;
+    return _PyRuntimeState_GetCoreInitialized(&_PyRuntime);
 }
 
 int
 Py_IsInitialized(void)
 {
-    return _PyRuntime.initialized;
+    return _PyRuntimeState_GetInitialized(&_PyRuntime);
 }
 
 
@@ -485,12 +487,47 @@ pyinit_core_reconfigure(_PyRuntimeState *runtime,
     return _PyStatus_OK();
 }
 
+#if defined(PYMALLOC_USE_HUGEPAGES) && defined(MS_WINDOWS)
+static PyStatus
+get_huge_pages_privilege(void)
+{
+    HANDLE hToken;
+    if (!OpenProcessToken(GetCurrentProcess(), TOKEN_ADJUST_PRIVILEGES | TOKEN_QUERY, &hToken))
+    {
+        return _PyStatus_ERR("failed to open process token");
+    }
+    TOKEN_PRIVILEGES tp;
+    if (!LookupPrivilegeValue(NULL, SE_LOCK_MEMORY_NAME, &tp.Privileges[0].Luid))
+    {
+        CloseHandle(hToken);
+        return _PyStatus_ERR("failed to lookup SeLockMemoryPrivilege for huge pages");
+    }
+    tp.PrivilegeCount = 1;
+    tp.Privileges[0].Attributes = SE_PRIVILEGE_ENABLED;
+    // AdjustTokenPrivileges can return with nonzero status (i.e. success)
+    // but without having all privileges adjusted (ERROR_NOT_ALL_ASSIGNED).
+    BOOL status = AdjustTokenPrivileges(hToken, FALSE, &tp, sizeof(TOKEN_PRIVILEGES), NULL, NULL);
+    DWORD error = GetLastError();
+    if (!status || (error != ERROR_SUCCESS))
+    {
+        CloseHandle(hToken);
+        return _PyStatus_ERR(
+            "SeLockMemoryPrivilege not held; "
+            "grant it via Local Security Policy or disable PYTHON_PYMALLOC_HUGEPAGES");
+    }
+    if (!CloseHandle(hToken))
+    {
+        return _PyStatus_ERR("failed to close process token handle");
+    }
+    return _PyStatus_OK();
+}
+#endif
 
 static PyStatus
 pycore_init_runtime(_PyRuntimeState *runtime,
                     const PyConfig *config)
 {
-    if (runtime->initialized) {
+    if (_PyRuntimeState_GetInitialized(runtime)) {
         return _PyStatus_ERR("main interpreter already initialized");
     }
 
@@ -498,6 +535,15 @@ pycore_init_runtime(_PyRuntimeState *runtime,
     if (_PyStatus_EXCEPTION(status)) {
         return status;
     }
+
+#if defined(PYMALLOC_USE_HUGEPAGES) && defined(MS_WINDOWS)
+    if (runtime->allocators.use_hugepages) {
+        status = get_huge_pages_privilege();
+        if (_PyStatus_EXCEPTION(status)) {
+            return status;
+        }
+    }
+#endif
 
     /* Py_Finalize leaves _Py_Finalizing set in order to help daemon
      * threads behave a little more gracefully at interpreter shutdown.
@@ -705,8 +751,6 @@ static PyStatus
 pycore_init_global_objects(PyInterpreterState *interp)
 {
     PyStatus status;
-
-    _PyFloat_InitState(interp);
 
     status = _PyUnicode_InitGlobalObjects(interp);
     if (_PyStatus_EXCEPTION(status)) {
@@ -985,7 +1029,7 @@ pyinit_config(_PyRuntimeState *runtime,
     }
 
     /* Only when we get here is the runtime core fully initialized */
-    runtime->core_initialized = 1;
+    _PyRuntimeState_SetCoreInitialized(runtime, 1);
     return _PyStatus_OK();
 }
 
@@ -1171,6 +1215,54 @@ pyinit_main_reconfigure(PyThreadState *tstate)
 
 
 #ifdef Py_DEBUG
+// Equivalent to the Python code:
+//
+//     for part in attr.split('.'):
+//         obj = getattr(obj, part)
+static PyObject*
+presite_resolve_name(PyObject *obj, PyObject *attr)
+{
+    obj = Py_NewRef(obj);
+    attr = Py_NewRef(attr);
+    PyObject *res;
+
+    while (1) {
+        Py_ssize_t len = PyUnicode_GET_LENGTH(attr);
+        Py_ssize_t pos = PyUnicode_FindChar(attr, '.', 0, len, 1);
+        if (pos < 0) {
+            break;
+        }
+
+        PyObject *name = PyUnicode_Substring(attr, 0, pos);
+        if (name == NULL) {
+            goto error;
+        }
+        res = PyObject_GetAttr(obj, name);
+        Py_DECREF(name);
+        if (res == NULL) {
+            goto error;
+        }
+        Py_SETREF(obj, res);
+
+        PyObject *suffix = PyUnicode_Substring(attr, pos + 1, len);
+        if (suffix == NULL) {
+            goto error;
+        }
+        Py_SETREF(attr, suffix);
+    }
+
+    res = PyObject_GetAttr(obj, attr);
+    Py_DECREF(obj);
+    Py_DECREF(attr);
+    return res;
+
+error:
+    Py_DECREF(obj);
+    Py_DECREF(attr);
+    return NULL;
+}
+
+
 static void
 run_presite(PyThreadState *tstate)
 {
@@ -1181,22 +1273,68 @@ run_presite(PyThreadState *tstate)
         return;
     }
 
-    PyObject *presite_modname = PyUnicode_FromWideChar(
-        config->run_presite,
-        wcslen(config->run_presite)
-    );
-    if (presite_modname == NULL) {
-        fprintf(stderr, "Could not convert pre-site module name to unicode\n");
+    PyObject *presite = PyUnicode_FromWideChar(config->run_presite, -1);
+    if (presite == NULL) {
+        fprintf(stderr, "Could not convert pre-site command to Unicode\n");
+        _PyErr_Print(tstate);
+        return;
+    }
+
+    // Accept "mod_name" and "mod_name:func_name" entry point syntax
+    Py_ssize_t len = PyUnicode_GET_LENGTH(presite);
+    Py_ssize_t pos = PyUnicode_FindChar(presite, ':', 0, len, 1);
+    PyObject *mod_name = NULL;
+    PyObject *func_name = NULL;
+    PyObject *module = NULL;
+    if (pos > 0) {
+        mod_name = PyUnicode_Substring(presite, 0, pos);
+        if (mod_name == NULL) {
+            goto error;
+        }
+
+        func_name = PyUnicode_Substring(presite, pos + 1, len);
+        if (func_name == NULL) {
+            goto error;
+        }
     }
     else {
-        PyObject *presite = PyImport_Import(presite_modname);
-        if (presite == NULL) {
-            fprintf(stderr, "pre-site import failed:\n");
-            _PyErr_Print(tstate);
-        }
-        Py_XDECREF(presite);
-        Py_DECREF(presite_modname);
+        mod_name = Py_NewRef(presite);
     }
+
+    // mod_name can contain dots (ex: "math.integer")
+    module = PyImport_Import(mod_name);
+    if (module == NULL) {
+        goto error;
+    }
+
+    if (func_name != NULL) {
+        PyObject *func = presite_resolve_name(module, func_name);
+        if (func == NULL) {
+            goto error;
+        }
+
+        PyObject *res = PyObject_CallNoArgs(func);
+        Py_DECREF(func);
+        if (res == NULL) {
+            goto error;
+        }
+        Py_DECREF(res);
+    }
+
+    Py_DECREF(presite);
+    Py_DECREF(mod_name);
+    Py_XDECREF(func_name);
+    Py_DECREF(module);
+    return;
+
+error:
+    fprintf(stderr, "pre-site failed:\n");
+    _PyErr_Print(tstate);
+
+    Py_DECREF(presite);
+    Py_XDECREF(mod_name);
+    Py_XDECREF(func_name);
+    Py_XDECREF(module);
 }
 #endif
 
@@ -1218,7 +1356,7 @@ init_interp_main(PyThreadState *tstate)
          * or pure Python code in the standard library won't work.
          */
         if (is_main_interp) {
-            interp->runtime->initialized = 1;
+            _PyRuntimeState_SetInitialized(interp->runtime, 1);
         }
         return _PyStatus_OK();
     }
@@ -1330,8 +1468,6 @@ init_interp_main(PyThreadState *tstate)
             Py_XDECREF(warnings_module);
         }
         Py_XDECREF(warnoptions);
-
-        interp->runtime->initialized = 1;
     }
 
     if (config->site_import) {
@@ -1427,6 +1563,10 @@ init_interp_main(PyThreadState *tstate)
 
     assert(!_PyErr_Occurred(tstate));
 
+    if (is_main_interp) {
+        _PyRuntimeState_SetInitialized(interp->runtime, 1);
+    }
+
     return _PyStatus_OK();
 }
 
@@ -1446,11 +1586,11 @@ static PyStatus
 pyinit_main(PyThreadState *tstate)
 {
     PyInterpreterState *interp = tstate->interp;
-    if (!interp->runtime->core_initialized) {
+    if (!_PyRuntimeState_GetCoreInitialized(interp->runtime)) {
         return _PyStatus_ERR("runtime core not initialized");
     }
 
-    if (interp->runtime->initialized) {
+    if (_PyRuntimeState_GetInitialized(interp->runtime)) {
         return pyinit_main_reconfigure(tstate);
     }
 
@@ -1498,19 +1638,12 @@ Py_InitializeFromConfig(const PyConfig *config)
 void
 Py_InitializeEx(int install_sigs)
 {
-    PyStatus status;
-
-    status = _PyRuntime_Initialize();
-    if (_PyStatus_EXCEPTION(status)) {
-        Py_ExitStatusException(status);
-    }
-    _PyRuntimeState *runtime = &_PyRuntime;
-
-    if (runtime->initialized) {
+    if (Py_IsInitialized()) {
         /* bpo-33932: Calling Py_Initialize() twice does nothing. */
         return;
     }
 
+    PyStatus status;
     PyConfig config;
     _PyConfig_InitCompatConfig(&config);
 
@@ -1527,6 +1660,18 @@ void
 Py_Initialize(void)
 {
     Py_InitializeEx(1);
+}
+
+
+PyStatus
+_Py_InitializeMain(void)
+{
+    PyStatus status = _PyRuntime_Initialize();
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
+    }
+    PyThreadState *tstate = _PyThreadState_GET();
+    return pyinit_main(tstate);
 }
 
 
@@ -1603,7 +1748,7 @@ finalize_remove_modules(PyObject *modules, int verbose)
         if (weaklist != NULL) { \
             PyObject *wr = PyWeakref_NewRef(mod, NULL); \
             if (wr) { \
-                PyObject *tup = PyTuple_Pack(2, name, wr); \
+                PyObject *tup = _PyTuple_FromPair(name, wr); \
                 if (!tup || PyList_Append(weaklist, tup) < 0) { \
                     PyErr_FormatUnraisable("Exception ignored while removing modules"); \
                 } \
@@ -1750,6 +1895,12 @@ finalize_modules(PyThreadState *tstate)
     interp->compiling = false;
 #ifdef _Py_TIER2
     _Py_Executors_InvalidateAll(interp, 0);
+    PyMem_Free(interp->executor_blooms);
+    PyMem_Free(interp->executor_ptrs);
+    interp->executor_blooms = NULL;
+    interp->executor_ptrs = NULL;
+    interp->executor_count = 0;
+    interp->executor_capacity = 0;
 #endif
 
     // Stop watching __builtin__ modifications
@@ -2193,7 +2344,7 @@ _Py_Finalize(_PyRuntimeState *runtime)
     int status = 0;
 
     /* Bail out early if already finalized (or never initialized). */
-    if (!runtime->initialized) {
+    if (!_PyRuntimeState_GetInitialized(runtime)) {
         return status;
     }
 
@@ -2228,8 +2379,8 @@ _Py_Finalize(_PyRuntimeState *runtime)
        when they attempt to take the GIL (ex: PyEval_RestoreThread()). */
     _PyInterpreterState_SetFinalizing(tstate->interp, tstate);
     _PyRuntimeState_SetFinalizing(runtime, tstate);
-    runtime->initialized = 0;
-    runtime->core_initialized = 0;
+    _PyRuntimeState_SetInitialized(runtime, 0);
+    _PyRuntimeState_SetCoreInitialized(runtime, 0);
 
     // XXX Call something like _PyImport_Disable() here?
 
@@ -2377,11 +2528,6 @@ _Py_Finalize(_PyRuntimeState *runtime)
 
     finalize_interp_clear(tstate);
 
-#ifdef _Py_JIT
-    /* Free JIT shim memory */
-    _PyJIT_Fini();
-#endif
-
 #ifdef Py_TRACE_REFS
     /* Display addresses (& refcnts) of all objects still alive.
      * An address can be used to find the repr of the object, printed
@@ -2455,7 +2601,7 @@ new_interpreter(PyThreadState **tstate_p,
     }
     _PyRuntimeState *runtime = &_PyRuntime;
 
-    if (!runtime->initialized) {
+    if (!_PyRuntimeState_GetInitialized(runtime)) {
         return _PyStatus_ERR("Py_Initialize must be called first");
     }
 
@@ -3295,10 +3441,10 @@ fatal_error_dump_runtime(int fd, _PyRuntimeState *runtime)
         _Py_DumpHexadecimal(fd, (uintptr_t)finalizing, sizeof(finalizing) * 2);
         PUTS(fd, ")");
     }
-    else if (runtime->initialized) {
+    else if (_PyRuntimeState_GetInitialized(runtime)) {
         PUTS(fd, "initialized");
     }
-    else if (runtime->core_initialized) {
+    else if (_PyRuntimeState_GetCoreInitialized(runtime)) {
         PUTS(fd, "core initialized");
     }
     else if (runtime->preinitialized) {

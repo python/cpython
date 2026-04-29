@@ -1170,7 +1170,8 @@ time_tzset(PyObject *self, PyObject *unused)
 
     /* Reset timezone, altzone, daylight and tzname */
     if (init_timezone(m) < 0) {
-         return NULL;
+        Py_DECREF(m);
+        return NULL;
     }
     Py_DECREF(m);
     if (PyErr_Occurred())
@@ -2184,6 +2185,7 @@ time_module_free(void *module)
 
 
 static struct PyModuleDef_Slot time_slots[] = {
+    _Py_ABI_SLOT,
     {Py_mod_exec, time_exec},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {Py_mod_gil, Py_MOD_GIL_NOT_USED},

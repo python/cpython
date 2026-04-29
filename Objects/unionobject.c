@@ -61,7 +61,7 @@ union_hash(PyObject *self)
         }
         // The unhashable values somehow became hashable again. Still raise
         // an error.
-        PyErr_Format(PyExc_TypeError, "union contains %d unhashable elements", n);
+        PyErr_Format(PyExc_TypeError, "union contains %zd unhashable elements", n);
         return -1;
     }
     return PyObject_Hash(alias->hashable_args);
@@ -245,6 +245,7 @@ is_unionable(PyObject *obj)
 {
     if (obj == Py_None ||
         PyType_Check(obj) ||
+        PySentinel_Check(obj) ||
         _PyGenericAlias_Check(obj) ||
         _PyUnion_Check(obj) ||
         Py_IS_TYPE(obj, &_PyTypeAlias_Type)) {

@@ -1212,19 +1212,22 @@ def make_archive(base_name, format, root_dir=None, base_dir=None, verbose=0,
     for arg, val in format_info[1]:
         kwargs[arg] = val
 
+    base_name = os.fspath(base_name)
+
     if base_dir is None:
         base_dir = os.curdir
+    else:
+        base_dir = os.fspath(base_dir)
 
     supports_root_dir = getattr(func, 'supports_root_dir', False)
     save_cwd = None
     if root_dir is not None:
+        root_dir = os.fspath(root_dir)
         stmd = os.stat(root_dir).st_mode
         if not stat.S_ISDIR(stmd):
             raise NotADirectoryError(errno.ENOTDIR, 'Not a directory', root_dir)
 
         if supports_root_dir:
-            # Support path-like base_name here for backwards-compatibility.
-            base_name = os.fspath(base_name)
             kwargs['root_dir'] = root_dir
         else:
             save_cwd = os.getcwd()
@@ -1314,27 +1317,9 @@ def _unpack_zipfile(filename, extract_dir):
     if not zipfile.is_zipfile(filename):
         raise ReadError("%s is not a zip file" % filename)
 
-    zip = zipfile.ZipFile(filename)
-    try:
-        for info in zip.infolist():
-            name = info.filename
-
-            # don't extract absolute paths or ones with .. in them
-            if name.startswith('/') or '..' in name:
-                continue
-
-            targetpath = os.path.join(extract_dir, *name.split('/'))
-            if not targetpath:
-                continue
-
-            _ensure_directory(targetpath)
-            if not name.endswith('/'):
-                # file
-                with zip.open(name, 'r') as source, \
-                        open(targetpath, 'wb') as target:
-                    copyfileobj(source, target)
-    finally:
-        zip.close()
+    with zipfile.ZipFile(filename) as zip:
+        zip._ignore_invalid_names = True
+        zip.extractall(extract_dir)
 
 def _unpack_tarfile(filename, extract_dir, *, filter=None):
     """Unpack tar/tar.gz/tar.bz2/tar.xz/tar.zst `filename` to `extract_dir`
