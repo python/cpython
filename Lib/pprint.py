@@ -38,9 +38,11 @@ import collections as _collections
 import sys as _sys
 import types as _types
 from io import StringIO as _StringIO
-
 lazy import _colorize
+lazy import re
 lazy from _pyrepl.utils import disp_str, gen_colors
+lazy from dataclasses import fields as dataclass_fields
+lazy from dataclasses import is_dataclass
 
 __all__ = ["pprint","pformat","isreadable","isrecursive","saferepr",
            "PrettyPrinter", "pp"]
@@ -263,9 +265,6 @@ class PrettyPrinter:
         max_width = self._width - indent - allowance
         if len(rep) > max_width:
             p = self._dispatch.get(type(object).__repr__, None)
-            # Lazy import to improve module import time
-            from dataclasses import is_dataclass
-
             if p is not None:
                 context[objid] = 1
                 p(self, object, stream, indent, allowance, context, level + 1)
@@ -306,9 +305,6 @@ class PrettyPrinter:
             write((self._indent_per_level - 1) * " ")
 
     def _pprint_dataclass(self, object, stream, indent, allowance, context, level):
-        # Lazy import to improve module import time
-        from dataclasses import fields as dataclass_fields
-
         cls_name = object.__class__.__name__
         if self._expand:
             indent += self._indent_per_level
@@ -488,9 +484,6 @@ class PrettyPrinter:
             if len(rep) <= max_width1:
                 chunks.append(rep)
             else:
-                # Lazy import to improve module import time
-                import re
-
                 # A list of alternating (non-space, space) strings
                 parts = re.findall(r'\S*\s*', line)
                 assert parts
