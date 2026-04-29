@@ -315,9 +315,9 @@ static uintptr_t return_pointer_as_int(char* p) {
 static inline uintptr_t
 _Py_get_machine_stack_pointer(void) {
     uintptr_t result;
-#if !defined(_MSC_VER) && defined(_M_ARM64)
+#if defined(_M_ARM64)
     result = __getReg(31);
-#elif defined(_MSC_VER) && defined(_M_X64)
+#elif defined(_M_X64)
     result = (uintptr_t)_AddressOfReturnAddress();
 #elif defined(__aarch64__)
     __asm__ ("mov %0, sp" : "=r" (result));
