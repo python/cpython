@@ -88,7 +88,7 @@ class ModuleCompleter:
             # no completions are available
             return [], None
 
-    def complete(self, from_name: str | None, name: str | None) -> tuple[list[str], CompletionAction | None]:
+    def complete(self, from_name: str | None, name: str | None, space_end: bool) -> tuple[list[str], CompletionAction | None]:
         if from_name is None:
             # import x.y.z<tab>
             assert name is not None
@@ -97,10 +97,17 @@ class ModuleCompleter:
             return [self.format_completion(path, module) for module in modules], None
 
         if name is None:
+            if space_end and from_name:
+                # from x.y.z <tab>
+                return (["import "], None)
             # from x.y.z<tab>
             path, prefix = self.get_path_and_prefix(from_name)
             modules = self.find_modules(path, prefix)
-            return [self.format_completion(path, module) for module in modules], None
+            names = [self.format_completion(path, module) for module in modules]
+            if names == [from_name]:
+                # Exact match already written: continue with import statement
+                names = [f"{from_name} import "]
+            return names, None
 
         # from x.y import z<tab>
         submodules = self.find_modules(from_name, name)
@@ -307,11 +314,12 @@ class ImportParser:
     suitable for autocomplete suggestions.
 
     Examples:
-        - import foo          -> Result(from_name=None, name='foo')
-        - import foo.         -> Result(from_name=None, name='foo.')
-        - from foo            -> Result(from_name='foo', name=None)
-        - from foo import bar -> Result(from_name='foo', name='bar')
-        - from .foo import (  -> Result(from_name='.foo', name='')
+        - `import foo`          -> Result(from_name=None, name='foo')
+        - `import foo.`         -> Result(from_name=None, name='foo.')
+        - `from foo`            -> Result(from_name='foo', name=None)
+        - `from foo `           -> Result(from_name='foo', name=None, space_end=True)
+        - `from foo import bar` -> Result(from_name='foo', name='bar')
+        - `from .foo import (`  -> Result(from_name='.foo', name='')
 
     Note that the parser works in reverse order, starting from the
     last token in the input string. This makes the parser more robust
@@ -341,10 +349,10 @@ class ImportParser:
             tokens = []
         self.tokens = TokenQueue(tokens[::-1])
 
-    def parse(self) -> tuple[str | None, str | None] | None:
+    def parse(self) -> tuple[str | None, str | None, bool] | None:
         if not (res := self._parse()):
             return None
-        return res.from_name, res.name
+        return res.from_name, res.name, res.space_end
 
     def _parse(self) -> Result | None:
         with self.tokens.save_state():
@@ -354,7 +362,7 @@ class ImportParser:
 
     def parse_import(self) -> Result:
         if self.code.rstrip().endswith('import') and self.code.endswith(' '):
-            return Result(name='')
+            return Result(name='', space_end=True)
         if self.tokens.peek_string(','):
             name = ''
         else:
@@ -367,27 +375,32 @@ class ImportParser:
             self.tokens.pop()
             self.parse_dotted_as_name()
         if self.tokens.peek_string('import'):
-            return Result(name=name)
+            return Result(name=name, space_end=self.code.endswith(' '))
         raise ParseError('parse_import')
 
     def parse_from_import(self) -> Result:
+        space_end = self.code.endswith(' ')
         stripped = self.code.rstrip()
-        if stripped.endswith('import') and self.code.endswith(' '):
-            return Result(from_name=self.parse_empty_from_import(), name='')
-        if stripped.endswith('from') and self.code.endswith(' '):
-            return Result(from_name='')
+        if stripped.endswith('import') and space_end:
+            from_name = self.parse_empty_from_import()
+            return Result(from_name=from_name, name='', space_end=space_end)
+        if stripped.endswith('from') and space_end:
+            return Result(from_name='', space_end=space_end)
         if self.tokens.peek_string('(') or self.tokens.peek_string(','):
-            return Result(from_name=self.parse_empty_from_import(), name='')
-        if self.code.endswith(' '):
-            raise ParseError('parse_from_import')
+            from_name = self.parse_empty_from_import()
+            return Result(from_name=from_name, name='', space_end=space_end)
         name = self.parse_dotted_name()
         if '.' in name:
+            if name.endswith(".") and space_end:
+                raise ParseError('parse_from_import')
             self.tokens.pop_string('from')
-            return Result(from_name=name)
+            return Result(from_name=name, space_end=space_end)
         if self.tokens.peek_string('from'):
-            return Result(from_name=name)
+            return Result(from_name=name, space_end=space_end)
+        if space_end:
+            raise ParseError('parse_from_import')
         from_name = self.parse_empty_from_import()
-        return Result(from_name=from_name, name=name)
+        return Result(from_name=from_name, name=name, space_end=space_end)
 
     def parse_empty_from_import(self) -> str:
         if self.tokens.peek_string(','):
@@ -453,10 +466,11 @@ class ParseError(Exception):
     pass
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, kw_only=True)
 class Result:
     from_name: str | None = None
     name: str | None = None
+    space_end: bool
 
 
 class TokenQueue:
