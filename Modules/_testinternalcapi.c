@@ -1863,7 +1863,8 @@ static PyObject *
 check_pyobject_freed_is_freed(PyObject *self, PyObject *Py_UNUSED(args))
 {
     /* ASan or TSan would report an use-after-free error */
-#if defined(_Py_ADDRESS_SANITIZER) || defined(_Py_THREAD_SANITIZER)
+#if defined(_Py_ADDRESS_SANITIZER) || defined(_Py_THREAD_SANITIZER) || \
+    defined(_Py_HWADDRESS_SANITIZER)
     Py_RETURN_NONE;
 #else
     PyObject *op = PyObject_CallNoArgs((PyObject *)&PyBaseObject_Type);
