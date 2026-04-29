@@ -514,7 +514,7 @@ fill_and_set_sslerror(_sslmodulestate *state,
     PyObject *init_value, *msg, *key;
     PyUnicodeWriter *writer = NULL;
 
-    if (ssl_errno == PY_SSL_ERROR_EOF) {
+    if (ssl_errno == PY_SSL_ERROR_EOF && sslsock != NULL) {
         sslsock->got_eof_error = 1;
     }
 
