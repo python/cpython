@@ -382,6 +382,10 @@ class PdbPyReplInput:
         from _pyrepl.simple_interact import _more_lines
 
         def more_lines(text):
+            if text.strip() == "\x1a":
+                # Ctrl + Z raises EOFError to quit pdb
+                # This is similarly handled in simple_interact.py
+                raise EOFError
             cmd, _, line = self.pdb_instance.parseline(text)
             if not line or not cmd:
                 return False
