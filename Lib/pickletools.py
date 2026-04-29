@@ -2211,6 +2211,32 @@ for i, d in enumerate(opcodes):
     name2i[d.name] = i
     code2i[d.code] = i
 
+# Group opcode names into categories for colourised CLI output.
+_opcode_categories = frozendict(
+    op_call=frozenset({
+        "BUILD", "EXT1", "EXT2", "EXT4", "GLOBAL", "INST", "NEWOBJ",
+        "NEWOBJ_EX", "OBJ", "REDUCE", "STACK_GLOBAL",
+    }),
+    op_container=frozenset({
+        "ADDITEMS", "APPEND", "APPENDS", "DICT", "EMPTY_DICT", "EMPTY_LIST",
+        "EMPTY_SET", "EMPTY_TUPLE", "FROZENSET", "LIST", "SETITEM",
+        "SETITEMS", "TUPLE", "TUPLE1", "TUPLE2", "TUPLE3",
+    }),
+    op_memo=frozenset({
+        "BINGET", "BINPUT", "GET", "LONG_BINGET", "LONG_BINPUT", "MEMOIZE",
+        "PUT",
+    }),
+    op_meta=frozenset({"BINPERSID", "FRAME", "MARK", "PERSID", "PROTO"}),
+    op_stack=frozenset({"DUP", "POP", "POP_MARK", "STOP"}),
+)
+_opcode_color_attr = frozendict({
+    name: attr
+    for attr, names in _opcode_categories.items()
+    for name in names
+})
+assert _opcode_color_attr.keys() <= name2i.keys(), (
+    f"unknown opcodes: {_opcode_color_attr.keys() - name2i.keys()}"
+)
 del name2i, code2i, i, d
 
 ##############################################################################
@@ -2393,31 +2419,6 @@ def optimize(p):
 
 ##############################################################################
 # A symbolic pickle disassembler.
-
-# Group opcode names into categories for colourised CLI output.
-_opcode_categories = frozendict(
-    op_call=frozenset({
-        "BUILD", "EXT1", "EXT2", "EXT4", "GLOBAL", "INST", "NEWOBJ",
-        "NEWOBJ_EX", "OBJ", "REDUCE", "STACK_GLOBAL",
-    }),
-    op_container=frozenset({
-        "ADDITEMS", "APPEND", "APPENDS", "DICT", "EMPTY_DICT", "EMPTY_LIST",
-        "EMPTY_SET", "EMPTY_TUPLE", "FROZENSET", "LIST", "SETITEM",
-        "SETITEMS", "TUPLE", "TUPLE1", "TUPLE2", "TUPLE3",
-    }),
-    op_memo=frozenset({
-        "BINGET", "BINPUT", "GET", "LONG_BINGET", "LONG_BINPUT", "MEMOIZE",
-        "PUT",
-    }),
-    op_meta=frozenset({"BINPERSID", "FRAME", "MARK", "PERSID", "PROTO"}),
-    op_stack=frozenset({"DUP", "POP", "POP_MARK", "STOP"}),
-)
-_opcode_color_attr = frozendict({
-    name: attr
-    for attr, names in _opcode_categories.items()
-    for name in names
-})
-
 
 def dis(pickle, out=None, memo=None, indentlevel=4, annotate=0):
     """Produce a symbolic disassembly of a pickle.
