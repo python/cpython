@@ -22,6 +22,7 @@ if __name__ == "__main__":
     __path__ = [str(Path(__file__).resolve().parent)]
 
 from .support.appxmanifest import *
+from .support.builddetails import *
 from .support.catalog import *
 from .support.constants import *
 from .support.filesets import *
@@ -308,6 +309,9 @@ def get_layout(ns):
             yield dest, src
 
     for dest, src in get_appx_layout(ns):
+        yield dest, src
+
+    for dest, src in get_builddetails(ns):
         yield dest, src
 
     if ns.include_cat:
