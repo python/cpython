@@ -271,6 +271,7 @@ html_theme_options = {
     'collapsiblesidebar': True,
     'issues_url': '/bugs.html',
     'license_url': '/license.html',
+    'navigation_with_keys': True,  # Inherited from basic theme
     'root_include_title': False,  # We use the version switcher instead.
 }
 
