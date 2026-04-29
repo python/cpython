@@ -60,7 +60,7 @@
       <BuildInParallel>false</BuildInParallel>
     </Projects>
     <!-- python3.dll -->
-    <Projects Include="python3dll.vcxproj" Condition="$(DisableGil) != 'true'" />
+    <Projects Include="python3dll.vcxproj" />
     <!-- python3t.dll -->
     <Projects Include="python3tdll.vcxproj" />
     <!-- py[w].exe -->
