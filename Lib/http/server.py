@@ -761,7 +761,7 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
             f.close()
 
     def _send_extra_response_headers(self):
-        """Send the headers stored in self.extra_response_headers"""
+        """Send the headers stored in self.extra_response_headers."""
         if self.extra_response_headers is not None:
             default_headers = {h.lower() for h, _ in self._default_response_headers}
             for header, value in self.extra_response_headers:
