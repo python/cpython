@@ -207,14 +207,6 @@ instantiation, of which this module provides three different variants:
       header (using :meth:`send_header`) in all of its responses to clients.
       For backwards compatibility, the setting defaults to ``'HTTP/1.0'``.
 
-   .. attribute:: default_content_type
-
-      Specifies the Content-Type header value sent when the MIME type
-      cannot be guessed from the file extension of the requested URL.
-      By default, it is set to ``'application/octet-stream'``.
-
-      .. versionadded:: next
-
    .. attribute:: MessageClass
 
       Specifies an :class:`email.message.Message`\ -like class to parse HTTP
@@ -397,6 +389,14 @@ instantiation, of which this module provides three different variants:
 
       This will be ``"SimpleHTTP/" + __version__``, where ``__version__`` is
       defined at the module level.
+
+   .. attribute:: default_content_type
+
+      Specifies the Content-Type header value sent when the MIME type
+      cannot be guessed from the file extension of the requested URL.
+      By default, it is set to ``'application/octet-stream'``.
+
+      .. versionadded:: next
 
    .. attribute:: extensions_map
 

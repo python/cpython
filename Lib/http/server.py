@@ -290,7 +290,6 @@ class BaseHTTPRequestHandler(socketserver.StreamRequestHandler):
     # the client gets back when sending a malformed request line.
     # Most web servers default to HTTP 0.9, i.e. don't send a status line.
     default_request_version = "HTTP/0.9"
-    default_content_type = "application/octet-stream"
 
     def parse_request(self):
         """Parse a request (internal).
@@ -728,6 +727,7 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
     """
 
     server_version = "SimpleHTTP"
+    default_content_type = "application/octet-stream"
     index_pages = ("index.html", "index.htm")
     extensions_map = _encodings_map_default = {
         '.gz': 'application/gzip',
@@ -1011,10 +1011,10 @@ def _get_best_family(*address):
     return family, sockaddr
 
 
-def test(HandlerClass=BaseHTTPRequestHandler,
+def test(HandlerClass=SimpleHTTPRequestHandler,
          ServerClass=ThreadingHTTPServer,
          protocol="HTTP/1.0", port=8000, bind=None,
-         content_type=BaseHTTPRequestHandler.default_content_type,
+         content_type=SimpleHTTPRequestHandler.default_content_type,
          tls_cert=None, tls_key=None, tls_password=None):
     """Test the HTTP request handler class.
 
@@ -1064,7 +1064,7 @@ def _main(args=None):
                         help='conform to this HTTP version '
                              '(default: %(default)s)')
     parser.add_argument('--content-type',
-                        default=BaseHTTPRequestHandler.default_content_type,
+                        default=SimpleHTTPRequestHandler.default_content_type,
                         help='default content type for unknown extensions '
                              '(default: %(default)s)')
     parser.add_argument('--tls-cert', metavar='PATH',
