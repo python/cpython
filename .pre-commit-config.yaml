@@ -55,13 +55,13 @@ repos:
         args: [--exit-non-zero-on-fix, --config=Tools/build/.ruff.toml]
         files: ^Tools/build/check_warnings.py
       - id: ruff-format
-        name: Run Ruff (format) on Tools/wasm/
-        args: [--exit-non-zero-on-fix, --config=Tools/wasm/.ruff.toml]
-        files: ^Tools/wasm/
-      - id: ruff-format
         name: Run Ruff (format) on Tools/jit/
         args: [--config=Tools/jit/.ruff.toml]
         files: ^Tools/jit/
+      - id: ruff-format
+        name: Run Ruff (format) on Tools/wasm/
+        args: [--exit-non-zero-on-fix, --config=Tools/wasm/.ruff.toml]
+        files: ^Tools/wasm/
 
   - repo: https://github.com/Lucas-C/pre-commit-hooks
     rev: ad1b27d73581aa16cca06fc4a0761fc563ffe8e8  # frozen: v1.5.6
