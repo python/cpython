@@ -584,6 +584,8 @@ SYMBOL_NAMES = (
     "PyObject_GetAttrString",
     "PyObject_GetBuffer",
     "PyObject_GetItem",
+    "PyObject_GetItemData",
+    "PyObject_GetItemData_DuringGC",
     "PyObject_GetIter",
     "PyObject_GetOptionalAttr",
     "PyObject_GetOptionalAttrString",
