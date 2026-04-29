@@ -7271,7 +7271,6 @@ AS_CASE([$ac_sys_system],
       [_multiprocessing],
       [audioop],
       [_posixshmem],
-      [fcntl],
       [grp],
       [ossaudiodev],
       [resource],
@@ -7303,8 +7302,7 @@ AS_CASE([$ac_sys_system],
       [_testimportmultiple],
       [_testmultiphase],
       [_testsinglephase],
-      [_testclinic],
-    )
+      [_testclinic])
   ],
   [Emscripten|WASI], [
     dnl subprocess and multiprocessing are not supported (no fork syscall).
