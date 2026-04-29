@@ -72,8 +72,7 @@ The :mod:`!bdb` module also defines two classes:
    .. method:: bpprint(out=None)
 
       Print the output of :meth:`bpformat` to the file *out*, or if it is
-Print the output of :meth:`bpformat` to the file *out*; if *out* is
-``None``, print to standard output.
+      ``None``, to standard output.
 
    :class:`Breakpoint` instances have the following attributes:
 
