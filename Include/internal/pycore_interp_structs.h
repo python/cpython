@@ -449,6 +449,9 @@ typedef struct _PyOptimizationConfig {
     uint16_t side_exit_initial_value;
     uint16_t side_exit_initial_backoff;
 
+    // Trace fitness thresholds
+    uint16_t fitness_initial;
+
     // Optimization flags
     bool specialization_enabled;
     bool uops_optimize_enabled;
@@ -528,7 +531,7 @@ struct _py_func_state {
 
 /* For now we hard-code this to a value for which we are confident
    all the static builtin types will fit (for all builds). */
-#define _Py_MAX_MANAGED_STATIC_BUILTIN_TYPES 202
+#define _Py_MAX_MANAGED_STATIC_BUILTIN_TYPES 203
 #define _Py_MAX_MANAGED_STATIC_EXT_TYPES 10
 #define _Py_MAX_MANAGED_STATIC_TYPES \
     (_Py_MAX_MANAGED_STATIC_BUILTIN_TYPES + _Py_MAX_MANAGED_STATIC_EXT_TYPES)

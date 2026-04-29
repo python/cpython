@@ -17,7 +17,7 @@
 
 --------------
 
-.. image:: tachyon-logo.png
+.. image:: ../../Lib/profiling/sampling/_assets/tachyon-logo.png
    :alt: Tachyon logo
    :align: center
    :width: 300px
