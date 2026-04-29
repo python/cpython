@@ -332,8 +332,8 @@ Attaching/detaching thread states
 
    *view* must not be ``NULL``. If the interpreter referenced by *view* has been
    finalized or is currently finalizing, then this function returns ``NULL`` without
-   setting an exception. This function may also return ``NULL`` to indicate that the
-   process is out of memory.
+   setting an exception. This function may also return ``NULL`` on other errors,
+   such memory allocation failure.
 
    The interpreter referenced by *view* will be implicitly guarded. The
    guard will be released upon the corresponding :c:func:`PyThreadState_Release`
