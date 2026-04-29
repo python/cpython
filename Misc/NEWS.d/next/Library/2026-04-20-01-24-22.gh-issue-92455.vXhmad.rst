@@ -1,0 +1,3 @@
+Fix :mod:`mimetypes` to prefer case-sensitive matches for MIME type suffixes
+registered with :func:`mimetypes.add_type` before falling back to
+case-insensitive matches. Contributed by Xiao Yuan.
