@@ -28,7 +28,8 @@ If you are the distributor, see <a class="reference internal" href="../using/con
 possible to have multiple editor windows simultaneously.  On Windows and
 Linux, each has its own top menu.  Each menu documented below indicates
 which window type it is associated with.</p>
-<p>Output windows, such as used for Edit =&gt; Find in Files, are a subtype of editor
+<p>Output windows, such as used for <span class="menuselection"><span class="accelerator">E</span>dit ‣ Find in Files</span>,
+are a subtype of editor
 window.  They currently have the same top menu but a different
 default title and context menu.</p>
 <p>On macOS, there is one application menu.  It dynamically changes according
@@ -37,119 +38,119 @@ described below are moved around to conform to Apple guidelines.</p>
 <section id="file-menu-shell-and-editor">
 <h3>File menu (Shell and Editor)<a class="headerlink" href="#file-menu-shell-and-editor" title="Link to this heading">¶</a></h3>
 <dl class="simple">
-<dt>New File</dt><dd><p>Create a new file editing window.</p>
+<dt><span class="guilabel"><span class="accelerator">N</span>ew File</span></dt><dd><p>Create a new file editing window.</p>
 </dd>
-<dt>Open…</dt><dd><p>Open an existing file with an Open dialog.</p>
+<dt><span class="guilabel"><span class="accelerator">O</span>pen…</span></dt><dd><p>Open an existing file with an Open dialog.</p>
 </dd>
-<dt>Open Module…</dt><dd><p>Open an existing module (searches sys.path).</p>
+<dt><span class="guilabel">Open <span class="accelerator">M</span>odule…</span></dt><dd><p>Open an existing module (searches sys.path).</p>
 </dd>
-<dt>Recent Files</dt><dd><p>Open a list of recent files.  Click one to open it.</p>
+<dt><span class="guilabel"><span class="accelerator">R</span>ecent Files</span></dt><dd><p>Open a list of recent files.  Click one to open it.</p>
 </dd>
 </dl>
 <dl class="simple" id="index-1">
-<dt>Module Browser</dt><dd><p>Show functions, classes, and methods in the current Editor file in a
+<dt><span class="guilabel">Module <span class="accelerator">B</span>rowser</span></dt><dd><p>Show functions, classes, and methods in the current Editor file in a
 tree structure.  In the shell, open a module first.</p>
 </dd>
-<dt>Path Browser</dt><dd><p>Show sys.path directories, modules, functions, classes and methods in a
+<dt><span class="guilabel"><span class="accelerator">P</span>ath Browser</span></dt><dd><p>Show sys.path directories, modules, functions, classes and methods in a
 tree structure.</p>
 </dd>
-<dt>Save</dt><dd><p>Save the current window to the associated file, if there is one.  Windows
+<dt><span class="guilabel"><span class="accelerator">S</span>ave</span></dt><dd><p>Save the current window to the associated file, if there is one.  Windows
 that have been changed since being opened or last saved have a * before
 and after the window title.  If there is no associated file,
 do Save As instead.</p>
 </dd>
-<dt>Save As…</dt><dd><p>Save the current window with a Save As dialog.  The file saved becomes the
+<dt><span class="guilabel">Save <span class="accelerator">A</span>s…</span></dt><dd><p>Save the current window with a Save As dialog.  The file saved becomes the
 new associated file for the window. (If your file manager is set to hide
 extensions, the current extension will be omitted in the file name box.
 If the new filename has no ‘.’, ‘.py’ and ‘.txt’ will be added for Python
 and text files, except that on macOS Aqua,’.py’ is added for all files.)</p>
 </dd>
-<dt>Save Copy As…</dt><dd><p>Save the current window to different file without changing the associated
+<dt><span class="guilabel">Save Cop<span class="accelerator">y</span> As…</span></dt><dd><p>Save the current window to different file without changing the associated
 file.  (See Save As note above about filename extensions.)</p>
 </dd>
-<dt>Print Window</dt><dd><p>Print the current window to the default printer.</p>
+<dt><span class="guilabel">Prin<span class="accelerator">t</span> Window</span></dt><dd><p>Print the current window to the default printer.</p>
 </dd>
-<dt>Close Window</dt><dd><p>Close the current window (if an unsaved editor, ask to save; if an unsaved
+<dt><span class="guilabel"><span class="accelerator">C</span>lose Window</span></dt><dd><p>Close the current window (if an unsaved editor, ask to save; if an unsaved
 Shell, ask to quit execution).  Calling <code class="docutils literal notranslate"><span class="pre">exit()</span></code> or <code class="docutils literal notranslate"><span class="pre">close()</span></code> in the Shell
 window also closes Shell.  If this is the only window, also exit IDLE.</p>
 </dd>
-<dt>Exit IDLE</dt><dd><p>Close all windows and quit IDLE (ask to save unsaved edit windows).</p>
+<dt><span class="guilabel">E<span class="accelerator">x</span>it IDLE</span></dt><dd><p>Close all windows and quit IDLE (ask to save unsaved edit windows).</p>
 </dd>
 </dl>
 </section>
 <section id="edit-menu-shell-and-editor">
 <h3>Edit menu (Shell and Editor)<a class="headerlink" href="#edit-menu-shell-and-editor" title="Link to this heading">¶</a></h3>
 <dl class="simple">
-<dt>Undo</dt><dd><p>Undo the last change to the current window.  A maximum of 1000 changes may
+<dt><span class="guilabel"><span class="accelerator">U</span>ndo</span></dt><dd><p>Undo the last change to the current window.  A maximum of 1000 changes may
 be undone.</p>
 </dd>
-<dt>Redo</dt><dd><p>Redo the last undone change to the current window.</p>
+<dt><span class="guilabel"><span class="accelerator">R</span>edo</span></dt><dd><p>Redo the last undone change to the current window.</p>
 </dd>
-<dt>Select All</dt><dd><p>Select the entire contents of the current window.</p>
+<dt><span class="guilabel">Select <span class="accelerator">A</span>ll</span></dt><dd><p>Select the entire contents of the current window.</p>
 </dd>
-<dt>Cut</dt><dd><p>Copy selection into the system-wide clipboard; then delete the selection.</p>
+<dt><span class="guilabel">Cu<span class="accelerator">t</span></span></dt><dd><p>Copy selection into the system-wide clipboard; then delete the selection.</p>
 </dd>
-<dt>Copy</dt><dd><p>Copy selection into the system-wide clipboard.</p>
+<dt><span class="guilabel"><span class="accelerator">C</span>opy</span></dt><dd><p>Copy selection into the system-wide clipboard.</p>
 </dd>
-<dt>Paste</dt><dd><p>Insert contents of the system-wide clipboard into the current window.</p>
+<dt><span class="guilabel"><span class="accelerator">P</span>aste</span></dt><dd><p>Insert contents of the system-wide clipboard into the current window.</p>
 </dd>
 </dl>
 <p>The clipboard functions are also available in context menus.</p>
 <dl class="simple">
-<dt>Find…</dt><dd><p>Open a search dialog with many options</p>
+<dt><span class="guilabel"><span class="accelerator">F</span>ind…</span></dt><dd><p>Open a search dialog with many options</p>
 </dd>
-<dt>Find Again</dt><dd><p>Repeat the last search, if there is one.</p>
+<dt><span class="guilabel">Find A<span class="accelerator">g</span>ain</span></dt><dd><p>Repeat the last search, if there is one.</p>
 </dd>
-<dt>Find Selection</dt><dd><p>Search for the currently selected string, if there is one.</p>
+<dt><span class="guilabel">Find <span class="accelerator">S</span>election</span></dt><dd><p>Search for the currently selected string, if there is one.</p>
 </dd>
-<dt>Find in Files…</dt><dd><p>Open a file search dialog.  Put results in a new output window.</p>
+<dt><span class="guilabel">Find in Files…</span></dt><dd><p>Open a file search dialog.  Put results in a new output window.</p>
 </dd>
-<dt>Replace…</dt><dd><p>Open a search-and-replace dialog.</p>
+<dt><span class="guilabel">R<span class="accelerator">e</span>place…</span></dt><dd><p>Open a search-and-replace dialog.</p>
 </dd>
-<dt>Go to Line</dt><dd><p>Move the cursor to the beginning of the line requested and make that
+<dt><span class="guilabel">Go to <span class="accelerator">L</span>ine</span></dt><dd><p>Move the cursor to the beginning of the line requested and make that
 line visible.  A request past the end of the file goes to the end.
 Clear any selection and update the line and column status.</p>
 </dd>
-<dt>Show Completions</dt><dd><p>Open a scrollable list allowing selection of existing names. See
+<dt><span class="guilabel">S<span class="accelerator">h</span>ow Completions</span></dt><dd><p>Open a scrollable list allowing selection of existing names. See
 <a class="reference internal" href="#completions"><span class="std std-ref">Completions</span></a> in the Editing and Navigation section below.</p>
 </dd>
-<dt>Expand Word</dt><dd><p>Expand a prefix you have typed to match a full word in the same window;
+<dt><span class="guilabel">E<span class="accelerator">x</span>pand Word</span></dt><dd><p>Expand a prefix you have typed to match a full word in the same window;
 repeat to get a different expansion.</p>
 </dd>
-<dt>Show Call Tip</dt><dd><p>After an unclosed parenthesis for a function, open a small window with
+<dt><span class="guilabel">Show C<span class="accelerator">a</span>ll Tip</span></dt><dd><p>After an unclosed parenthesis for a function, open a small window with
 function parameter hints.  See <a class="reference internal" href="#calltips"><span class="std std-ref">Calltips</span></a> in the
 Editing and Navigation section below.</p>
 </dd>
-<dt>Show Surrounding Parens</dt><dd><p>Highlight the surrounding parenthesis.</p>
+<dt><span class="guilabel">Show Surrounding P<span class="accelerator">a</span>rens</span></dt><dd><p>Highlight the surrounding parenthesis.</p>
 </dd>
 </dl>
 </section>
 <section id="format-menu-editor-window-only">
 <span id="format-menu"></span><h3>Format menu (Editor window only)<a class="headerlink" href="#format-menu-editor-window-only" title="Link to this heading">¶</a></h3>
 <dl class="simple">
-<dt>Format Paragraph</dt><dd><p>Rewrap the text block containing the text insert cursor.
+<dt><span class="guilabel">F<span class="accelerator">o</span>rmat Paragraph</span></dt><dd><p>Rewrap the text block containing the text insert cursor.
 Avoid code lines.  See <a class="reference internal" href="#format-block"><span class="std std-ref">Format block</span></a> in the
 Editing and Navigation section below.</p>
 </dd>
-<dt>Indent Region</dt><dd><p>Shift selected lines right by the indent width (default 4 spaces).</p>
+<dt><span class="guilabel"><span class="accelerator">I</span>ndent Region</span></dt><dd><p>Shift selected lines right by the indent width (default 4 spaces).</p>
 </dd>
-<dt>Dedent Region</dt><dd><p>Shift selected lines left by the indent width (default 4 spaces).</p>
+<dt><span class="guilabel"><span class="accelerator">D</span>edent Region</span></dt><dd><p>Shift selected lines left by the indent width (default 4 spaces).</p>
 </dd>
-<dt>Comment Out Region</dt><dd><p>Insert ## in front of selected lines.</p>
+<dt><span class="guilabel">Comment <span class="accelerator">O</span>ut Region</span></dt><dd><p>Insert ## in front of selected lines.</p>
 </dd>
-<dt>Uncomment Region</dt><dd><p>Remove leading # or ## from selected lines.</p>
+<dt><span class="guilabel">U<span class="accelerator">n</span>comment Region</span></dt><dd><p>Remove leading # or ## from selected lines.</p>
 </dd>
-<dt>Tabify Region</dt><dd><p>Turn <em>leading</em> stretches of spaces into tabs. (Note: We recommend using
+<dt><span class="guilabel">Tabify Region</span></dt><dd><p>Turn <em>leading</em> stretches of spaces into tabs. (Note: We recommend using
 4 space blocks to indent Python code.)</p>
 </dd>
-<dt>Untabify Region</dt><dd><p>Turn <em>all</em> tabs into the correct number of spaces.</p>
+<dt><span class="guilabel">Untabify Region</span></dt><dd><p>Turn <em>all</em> tabs into the correct number of spaces.</p>
 </dd>
-<dt>Toggle Tabs</dt><dd><p>Open a dialog to switch between indenting with spaces and tabs.</p>
+<dt><span class="guilabel">Toggle Tabs</span></dt><dd><p>Open a dialog to switch between indenting with spaces and tabs.</p>
 </dd>
-<dt>New Indent Width</dt><dd><p>Open a dialog to change indent width. The accepted default by the Python
+<dt><span class="guilabel">New Indent Width</span></dt><dd><p>Open a dialog to change indent width. The accepted default by the Python
 community is 4 spaces.</p>
 </dd>
-<dt>Strip Trailing Whitespace</dt><dd><p>Remove trailing space and other whitespace characters after the last
+<dt><span class="guilabel">S<span class="accelerator">t</span>rip Trailing Whitespace</span></dt><dd><p>Remove trailing space and other whitespace characters after the last
 non-whitespace character of a line by applying <a class="reference internal" href="stdtypes.html#str.rstrip" title="str.rstrip"><code class="xref py py-meth docutils literal notranslate"><span class="pre">str.rstrip()</span></code></a> to each line,
 including lines within multiline strings.  Except for Shell windows,
 remove extra newlines at the end of the file.</p>
@@ -159,7 +160,7 @@ remove extra newlines at the end of the file.</p>
 <section id="run-menu-editor-window-only">
 <span id="index-2"></span><h3>Run menu (Editor window only)<a class="headerlink" href="#run-menu-editor-window-only" title="Link to this heading">¶</a></h3>
 <dl class="simple" id="run-module">
-<dt>Run Module</dt><dd><p>Do <a class="reference internal" href="#check-module"><span class="std std-ref">Check Module</span></a>.  If no error, restart the shell to clean the
+<dt><span class="guilabel">R<span class="accelerator">u</span>n Module</span></dt><dd><p>Do <a class="reference internal" href="#check-module"><span class="std std-ref">Check Module</span></a>.  If no error, restart the shell to clean the
 environment, then execute the module.  Output is displayed in the Shell
 window.  Note that output requires use of <code class="docutils literal notranslate"><span class="pre">print</span></code> or <code class="docutils literal notranslate"><span class="pre">write</span></code>.
 When execution is complete, the Shell retains focus and displays a prompt.
@@ -169,13 +170,13 @@ line.</p>
 </dd>
 </dl>
 <dl class="simple" id="run-custom">
-<dt>Run… Customized</dt><dd><p>Same as <a class="reference internal" href="#run-module"><span class="std std-ref">Run Module</span></a>, but run the module with customized
+<dt><span class="guilabel">Run… <span class="accelerator">C</span>ustomized</span></dt><dd><p>Same as <a class="reference internal" href="#run-module"><span class="std std-ref">Run Module</span></a>, but run the module with customized
 settings.  <em>Command Line Arguments</em> extend <a class="reference internal" href="sys.html#sys.argv" title="sys.argv"><code class="xref py py-data docutils literal notranslate"><span class="pre">sys.argv</span></code></a> as if passed
 on a command line. The module can be run in the Shell without restarting.</p>
 </dd>
 </dl>
 <dl class="simple" id="check-module">
-<dt>Check Module</dt><dd><p>Check the syntax of the module currently open in the Editor window. If the
+<dt><span class="guilabel">C<span class="accelerator">h</span>eck Module</span></dt><dd><p>Check the syntax of the module currently open in the Editor window. If the
 module has not been saved IDLE will either prompt the user to save or
 autosave, as selected in the General tab of the Idle Settings dialog.  If
 there is a syntax error, the approximate location is indicated in the
@@ -183,29 +184,29 @@ Editor window.</p>
 </dd>
 </dl>
 <dl class="simple" id="python-shell">
-<dt>Python Shell</dt><dd><p>Open or wake up the Python Shell window.</p>
+<dt><span class="guilabel">Python Shell</span></dt><dd><p>Open or wake up the Python Shell window.</p>
 </dd>
 </dl>
 </section>
 <section id="shell-menu-shell-window-only">
 <h3>Shell menu (Shell window only)<a class="headerlink" href="#shell-menu-shell-window-only" title="Link to this heading">¶</a></h3>
 <dl class="simple">
-<dt>View Last Restart</dt><dd><p>Scroll the shell window to the last Shell restart.</p>
+<dt><span class="guilabel"><span class="accelerator">V</span>iew Last Restart</span></dt><dd><p>Scroll the shell window to the last Shell restart.</p>
 </dd>
-<dt>Restart Shell</dt><dd><p>Restart the shell to clean the environment and reset display and exception handling.</p>
+<dt><span class="guilabel"><span class="accelerator">R</span>estart Shell</span></dt><dd><p>Restart the shell to clean the environment and reset display and exception handling.</p>
 </dd>
-<dt>Previous History</dt><dd><p>Cycle through earlier commands in history which match the current entry.</p>
+<dt><span class="guilabel"><span class="accelerator">P</span>revious History</span></dt><dd><p>Cycle through earlier commands in history which match the current entry.</p>
 </dd>
-<dt>Next History</dt><dd><p>Cycle through later commands in history which match the current entry.</p>
+<dt><span class="guilabel"><span class="accelerator">N</span>ext History</span></dt><dd><p>Cycle through later commands in history which match the current entry.</p>
 </dd>
-<dt>Interrupt Execution</dt><dd><p>Stop a running program.</p>
+<dt><span class="guilabel"><span class="accelerator">I</span>nterrupt Execution</span></dt><dd><p>Stop a running program.</p>
 </dd>
 </dl>
 </section>
 <section id="debug-menu-shell-window-only">
 <h3>Debug menu (Shell window only)<a class="headerlink" href="#debug-menu-shell-window-only" title="Link to this heading">¶</a></h3>
 <dl class="simple">
-<dt>Go to File/Line</dt><dd><p>Look on the current line. with the cursor, and the line above for a filename
+<dt><span class="guilabel"><span class="accelerator">G</span>o to File/Line</span></dt><dd><p>Look on the current line. with the cursor, and the line above for a filename
 and line number.  If found, open the file if not already open, and show the
 line.  Use this to view source lines referenced in an exception traceback
 and lines found by Find in Files. Also available in the context menu of
@@ -213,21 +214,21 @@ the Shell window and Output windows.</p>
 </dd>
 </dl>
 <dl class="simple" id="index-3">
-<dt>Debugger (toggle)</dt><dd><p>When activated, code entered in the Shell or run from an Editor will run
+<dt><span class="guilabel"><span class="accelerator">D</span>ebugger</span> (toggle)</dt><dd><p>When activated, code entered in the Shell or run from an Editor will run
 under the debugger.  In the Editor, breakpoints can be set with the context
 menu.  This feature is still incomplete and somewhat experimental.</p>
 </dd>
-<dt>Stack Viewer</dt><dd><p>Show the stack traceback of the last exception in a tree widget, with
+<dt><span class="guilabel"><span class="accelerator">S</span>tack Viewer</span></dt><dd><p>Show the stack traceback of the last exception in a tree widget, with
 access to locals and globals.</p>
 </dd>
-<dt>Auto-open Stack Viewer</dt><dd><p>Toggle automatically opening the stack viewer on an unhandled exception.</p>
+<dt><span class="guilabel"><span class="accelerator">A</span>uto-open Stack Viewer</span></dt><dd><p>Toggle automatically opening the stack viewer on an unhandled exception.</p>
 </dd>
 </dl>
 </section>
 <section id="options-menu-shell-and-editor">
 <h3>Options menu (Shell and Editor)<a class="headerlink" href="#options-menu-shell-and-editor" title="Link to this heading">¶</a></h3>
 <dl class="simple">
-<dt>Configure IDLE</dt><dd><p>Open a configuration dialog and change preferences for the following:
+<dt><span class="guilabel">Configure <span class="accelerator">I</span>DLE</span></dt><dd><p>Open a configuration dialog and change preferences for the following:
 fonts, indentation, keybindings, text color themes, startup windows and
 size, additional help sources, and extensions.  On macOS, open the
 configuration dialog by selecting Preferences in the application
@@ -238,16 +239,16 @@ menu. For more details, see
 <p>Most configuration options apply to all windows or all future windows.
 The option items below only apply to the active window.</p>
 <dl class="simple">
-<dt>Show/Hide Code Context (Editor Window only)</dt><dd><p>Open a pane at the top of the edit window which shows the block context
+<dt><span class="guilabel">Show/Hide <span class="accelerator">C</span>ode Context</span> (Editor Window only)</dt><dd><p>Open a pane at the top of the edit window which shows the block context
 of the code which has scrolled above the top of the window.  See
 <a class="reference internal" href="#code-context"><span class="std std-ref">Code Context</span></a> in the Editing and Navigation section
 below.</p>
 </dd>
-<dt>Show/Hide Line Numbers (Editor Window only)</dt><dd><p>Open a column to the left of the edit window which shows the number
+<dt><span class="guilabel">Show/Hide <span class="accelerator">L</span>ine Numbers</span> (Editor Window only)</dt><dd><p>Open a column to the left of the edit window which shows the number
 of each line of text.  The default is off, which may be changed in the
 preferences (see <a class="reference internal" href="#preferences"><span class="std std-ref">Setting preferences</span></a>).</p>
 </dd>
-<dt>Zoom/Restore Height</dt><dd><p>Toggles the window between normal size and maximum height. The initial size
+<dt><span class="guilabel"><span class="accelerator">Z</span>oom/Restore Height</span></dt><dd><p>Toggles the window between normal size and maximum height. The initial size
 defaults to 40 lines by 80 chars unless changed on the General tab of the
 Configure IDLE dialog.  The maximum height for a screen is determined by
 momentarily maximizing a window the first time one is zoomed on the screen.
@@ -264,15 +265,16 @@ no effect when a window is maximized.</p>
 <section id="help-menu-shell-and-editor">
 <h3>Help menu (Shell and Editor)<a class="headerlink" href="#help-menu-shell-and-editor" title="Link to this heading">¶</a></h3>
 <dl class="simple">
-<dt>About IDLE</dt><dd><p>Display version, copyright, license, credits, and more.</p>
+<dt><span class="guilabel"><span class="accelerator">A</span>bout IDLE</span></dt><dd><p>Display version, copyright, license, credits, and more.</p>
 </dd>
-<dt>IDLE Help</dt><dd><p>Display this IDLE document, detailing the menu options, basic editing and
+<dt><span class="guilabel"><span class="accelerator">I</span>DLE Help</span></dt><dd><p>Display this IDLE document, detailing the menu options, basic editing and
 navigation, and other tips.</p>
 </dd>
-<dt>Python Docs</dt><dd><p>Access local Python documentation, if installed, or start a web browser
-and open docs.python.org showing the latest Python documentation.</p>
+<dt><span class="guilabel">Python <span class="accelerator">D</span>ocs</span></dt><dd><p>Access local Python documentation, if installed, or start a web browser
+and open <a class="reference external" href="https://docs.python.org/3/">docs.python.org</a> showing the latest
+Python documentation.</p>
 </dd>
-<dt>Turtle Demo</dt><dd><p>Run the turtledemo module with example Python code and turtle drawings.</p>
+<dt><span class="guilabel">Turtle Demo</span></dt><dd><p>Run the turtledemo module with example Python code and turtle drawings.</p>
 </dd>
 </dl>
 <p>Additional help sources may be added here with the Configure IDLE dialog under
@@ -858,7 +860,7 @@ also used for testing.</p>
 <p>The Lib/idlelib package implements the IDLE application.  See the rest
 of this page for how to use IDLE.</p>
 <p>The files in idlelib are described in idlelib/README.txt.  Access it
-either in idlelib or click Help =&gt; About IDLE on the IDLE menu.  This
+either in idlelib or click <span class="menuselection"><span class="accelerator">H</span>elp ‣ <span class="accelerator">A</span>bout IDLE</span> on the IDLE menu.  This
 file also maps IDLE menu items to the code that implements the item.
 Except for files listed under ‘Startup’, the idlelib code is ‘private’ in
 sense that feature changes can be backported (see <span class="target" id="index-9"></span><a class="pep reference external" href="https://peps.python.org/pep-0434/"><strong>PEP 434</strong></a>).</p>
