@@ -1266,7 +1266,7 @@ write_thread_id(int fd, PyThreadState *tstate, int is_current)
 const char* _Py_NO_SANITIZE_THREAD
 _Py_DumpTracebackThreads(int fd, PyInterpreterState *interp,
                          PyThreadState *current_tstate,
-                         unsigned int max_threads)
+                         Py_ssize_t max_threads)
 {
     if (max_threads == 0) {
         max_threads = DEFAULT_MAX_NTHREADS;
@@ -1315,7 +1315,7 @@ _Py_DumpTracebackThreads(int fd, PyInterpreterState *interp,
         return "unable to get the thread head state";
 
     /* Dump the traceback of each thread */
-    unsigned int nthreads = 0;
+    Py_ssize_t nthreads = 0;
     _Py_BEGIN_SUPPRESS_IPH
     do
     {

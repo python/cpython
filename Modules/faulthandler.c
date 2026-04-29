@@ -186,7 +186,7 @@ get_thread_state(void)
 static void
 faulthandler_dump_traceback(int fd, int all_threads,
                             PyInterpreterState *interp,
-                            unsigned int max_threads)
+                            Py_ssize_t max_threads)
 {
     static volatile int reentrant = 0;
 
@@ -245,7 +245,7 @@ faulthandler.dump_traceback as faulthandler_dump_traceback_py
     file: object(py_default="sys.stderr") = NULL
     all_threads: bool = True
     *
-    max_threads: unsigned_int(bitwise=False) = 100
+    max_threads: Py_ssize_t = 100
 
 Dump the traceback of the current thread into file.
 
@@ -255,9 +255,8 @@ caps the number of threads dumped.
 
 static PyObject *
 faulthandler_dump_traceback_py_impl(PyObject *module, PyObject *file,
-                                    int all_threads,
-                                    unsigned int max_threads)
-/*[clinic end generated code: output=e2b1d5c6bb275cb5 input=3f84b644d7b226a6]*/
+                                    int all_threads, Py_ssize_t max_threads)
+/*[clinic end generated code: output=ee1bbc2668e56e77 input=38630eb40e641de6]*/
 {
     PyThreadState *tstate;
     const char *errmsg;
@@ -598,7 +597,7 @@ faulthandler.enable as faulthandler_py_enable
     all_threads: bool = True
     c_stack: bool = True
     *
-    max_threads: unsigned_int(bitwise=False) = 100
+    max_threads: Py_ssize_t = 100
 
 Enable the fault handler.
 [clinic start generated code]*/
@@ -606,8 +605,8 @@ Enable the fault handler.
 static PyObject *
 faulthandler_py_enable_impl(PyObject *module, PyObject *file,
                             int all_threads, int c_stack,
-                            unsigned int max_threads)
-/*[clinic end generated code: output=5050dceeeeda70a4 input=e2607dfbb2c7f4ac]*/
+                            Py_ssize_t max_threads)
+/*[clinic end generated code: output=7ee655332317c47a input=e64759714f27b466]*/
 {
     int fd;
     PyThreadState *tstate;
@@ -790,7 +789,7 @@ faulthandler.dump_traceback_later
     file: object(py_default="sys.stderr") = NULL
     exit: bool = False
     *
-    max_threads: unsigned_int(bitwise=False) = 100
+    max_threads: Py_ssize_t = 100
 
 Dump the traceback of all threads in timeout seconds.
 
@@ -803,8 +802,8 @@ static PyObject *
 faulthandler_dump_traceback_later_impl(PyObject *module,
                                        PyObject *timeout_obj, int repeat,
                                        PyObject *file, int exit,
-                                       unsigned int max_threads)
-/*[clinic end generated code: output=a0a1551011fe9f5f input=9aabfe7079a05dd3]*/
+                                       Py_ssize_t max_threads)
+/*[clinic end generated code: output=543a0f3807113394 input=6836555ee157ddb4]*/
 {
     PyTime_t timeout, timeout_us;
     int fd;

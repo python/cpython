@@ -57,7 +57,7 @@ struct _faulthandler_runtime_state {
         void *exc_handler;
 #endif
         int c_stack;
-        unsigned int max_threads;
+        Py_ssize_t max_threads;
     } fatal_error;
 
     struct {
@@ -69,7 +69,7 @@ struct _faulthandler_runtime_state {
         int exit;
         char *header;
         size_t header_len;
-        unsigned int max_threads;
+        Py_ssize_t max_threads;
         /* The main thread always holds this lock. It is only released when
            faulthandler_thread() is interrupted before this thread exits, or at
            Python exit. */

@@ -6,6 +6,7 @@ preserve
 #  include "pycore_gc.h"          // PyGC_Head
 #  include "pycore_runtime.h"     // _Py_ID()
 #endif
+#include "pycore_abstract.h"      // _PyNumber_Index()
 #include "pycore_long.h"          // _PyLong_UnsignedInt_Converter()
 #include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
 
@@ -24,8 +25,7 @@ PyDoc_STRVAR(faulthandler_dump_traceback_py__doc__,
 
 static PyObject *
 faulthandler_dump_traceback_py_impl(PyObject *module, PyObject *file,
-                                    int all_threads,
-                                    unsigned int max_threads);
+                                    int all_threads, Py_ssize_t max_threads);
 
 static PyObject *
 faulthandler_dump_traceback_py(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
@@ -62,7 +62,7 @@ faulthandler_dump_traceback_py(PyObject *module, PyObject *const *args, Py_ssize
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
     PyObject *file = NULL;
     int all_threads = 1;
-    unsigned int max_threads = 100;
+    Py_ssize_t max_threads = 100;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
             /*minpos*/ 0, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
@@ -91,8 +91,17 @@ skip_optional_pos:
     if (!noptargs) {
         goto skip_optional_kwonly;
     }
-    if (!_PyLong_UnsignedInt_Converter(args[2], &max_threads)) {
-        goto exit;
+    {
+        Py_ssize_t ival = -1;
+        PyObject *iobj = _PyNumber_Index(args[2]);
+        if (iobj != NULL) {
+            ival = PyLong_AsSsize_t(iobj);
+            Py_DECREF(iobj);
+        }
+        if (ival == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        max_threads = ival;
     }
 skip_optional_kwonly:
     return_value = faulthandler_dump_traceback_py_impl(module, file, all_threads, max_threads);
@@ -177,7 +186,7 @@ PyDoc_STRVAR(faulthandler_py_enable__doc__,
 static PyObject *
 faulthandler_py_enable_impl(PyObject *module, PyObject *file,
                             int all_threads, int c_stack,
-                            unsigned int max_threads);
+                            Py_ssize_t max_threads);
 
 static PyObject *
 faulthandler_py_enable(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
@@ -215,7 +224,7 @@ faulthandler_py_enable(PyObject *module, PyObject *const *args, Py_ssize_t nargs
     PyObject *file = NULL;
     int all_threads = 1;
     int c_stack = 1;
-    unsigned int max_threads = 100;
+    Py_ssize_t max_threads = 100;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
             /*minpos*/ 0, /*maxpos*/ 3, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
@@ -253,8 +262,17 @@ skip_optional_pos:
     if (!noptargs) {
         goto skip_optional_kwonly;
     }
-    if (!_PyLong_UnsignedInt_Converter(args[3], &max_threads)) {
-        goto exit;
+    {
+        Py_ssize_t ival = -1;
+        PyObject *iobj = _PyNumber_Index(args[3]);
+        if (iobj != NULL) {
+            ival = PyLong_AsSsize_t(iobj);
+            Py_DECREF(iobj);
+        }
+        if (ival == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        max_threads = ival;
     }
 skip_optional_kwonly:
     return_value = faulthandler_py_enable_impl(module, file, all_threads, c_stack, max_threads);
@@ -327,7 +345,7 @@ static PyObject *
 faulthandler_dump_traceback_later_impl(PyObject *module,
                                        PyObject *timeout_obj, int repeat,
                                        PyObject *file, int exit,
-                                       unsigned int max_threads);
+                                       Py_ssize_t max_threads);
 
 static PyObject *
 faulthandler_dump_traceback_later(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
@@ -366,7 +384,7 @@ faulthandler_dump_traceback_later(PyObject *module, PyObject *const *args, Py_ss
     int repeat = 0;
     PyObject *file = NULL;
     int exit = 0;
-    unsigned int max_threads = 100;
+    Py_ssize_t max_threads = 100;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
             /*minpos*/ 1, /*maxpos*/ 4, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
@@ -405,8 +423,17 @@ skip_optional_pos:
     if (!noptargs) {
         goto skip_optional_kwonly;
     }
-    if (!_PyLong_UnsignedInt_Converter(args[4], &max_threads)) {
-        goto exit;
+    {
+        Py_ssize_t ival = -1;
+        PyObject *iobj = _PyNumber_Index(args[4]);
+        if (iobj != NULL) {
+            ival = PyLong_AsSsize_t(iobj);
+            Py_DECREF(iobj);
+        }
+        if (ival == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        max_threads = ival;
     }
 skip_optional_kwonly:
     return_value = faulthandler_dump_traceback_later_impl(module, timeout_obj, repeat, file, exit, max_threads);
@@ -731,4 +758,4 @@ exit:
 #ifndef FAULTHANDLER__RAISE_EXCEPTION_METHODDEF
     #define FAULTHANDLER__RAISE_EXCEPTION_METHODDEF
 #endif /* !defined(FAULTHANDLER__RAISE_EXCEPTION_METHODDEF) */
-/*[clinic end generated code: output=c11f71a7f495ba96 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=ddd45864a02279e4 input=a9049054013a1b77]*/

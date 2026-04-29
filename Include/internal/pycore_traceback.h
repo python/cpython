@@ -62,7 +62,7 @@ extern const char* _Py_DumpTracebackThreads(
     int fd,
     PyInterpreterState *interp,
     PyThreadState *current_tstate,
-    unsigned int max_threads);
+    Py_ssize_t max_threads);
 
 /* Write a Unicode object into the file descriptor fd. Encode the string to
    ASCII using the backslashreplace error handler.
