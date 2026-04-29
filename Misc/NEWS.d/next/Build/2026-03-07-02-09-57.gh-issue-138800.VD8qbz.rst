@@ -1,0 +1,1 @@
+fix LIBPYTHON substitution in python3.pc on Android
