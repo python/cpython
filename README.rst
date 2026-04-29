@@ -33,9 +33,9 @@ Contributing to CPython
 -----------------------
 
 For more complete instructions on contributing to CPython development,
-see the `Developer Guide`_.
+see the `Developer's Guide`_.
 
-.. _Developer Guide: https://devguide.python.org/
+.. _Developer's Guide: https://devguide.python.org/
 
 Using Python
 ------------
@@ -66,7 +66,7 @@ additional third-party libraries, depending on your build platform and
 configure options.  Not all standard library modules are buildable or
 usable on all platforms.  Refer to the
 `Install dependencies <https://devguide.python.org/getting-started/setup-building.html#build-dependencies>`_
-section of the `Developer Guide`_ for current detailed information on
+section of the `Developer's Guide`_ for current detailed information on
 dependencies for various Linux distributions and macOS.
 
 On macOS, there are additional configure and build options related
@@ -143,7 +143,7 @@ accounting of changes can only be gleaned from the `commit history
 <https://github.com/python/cpython/commits/main>`_.
 
 If you want to install multiple versions of Python, see the section below
-entitled "Installing multiple versions".
+entitled "Installing Multiple Versions".
 
 
 Documentation
@@ -186,17 +186,17 @@ that command to show the issue.
 See `Running & Writing Tests <https://devguide.python.org/testing/run-write-tests.html>`_
 for more on running tests.
 
-Installing multiple versions
+Installing Multiple Versions
 ----------------------------
 
-On Unix and Mac systems if you intend to install multiple versions of Python
+On Unix and macOS systems, if you intend to install multiple versions of Python
 using the same installation prefix (``--prefix`` argument to the configure
-script) you must take care that your primary python executable is not
+script), you must take care that your primary python executable is not
 overwritten by the installation of a different version.  All files and
 directories installed using ``make altinstall`` contain the major and minor
 version and can thus live side-by-side.  ``make install`` also creates
-``${prefix}/bin/python3`` which refers to ``${prefix}/bin/python3.X``.  If you
-intend to install multiple versions using the same prefix you must decide which
+``${prefix}/bin/python3`` which refers to ``${prefix}/bin/python3.X``.
+If you intend to install multiple versions using the same prefix, you must decide which
 version (if any) is your "primary" version.  Install that version using
 ``make install``.  Install all other versions using ``make altinstall``.
 
