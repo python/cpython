@@ -14,7 +14,7 @@ Exceptions
 .. exception:: TimeoutError
 
    A deprecated alias of :exc:`TimeoutError`,
-   raised when the operation has exceeded the given deadline.
+   raised when the asyncio operation has exceeded the given deadline.
 
    .. versionchanged:: 3.11
 
@@ -23,7 +23,7 @@ Exceptions
 
 .. exception:: CancelledError
 
-   The operation has been cancelled.
+   The asyncio operation has been cancelled.
 
    This exception can be caught to perform custom operations
    when asyncio Tasks are cancelled.  In almost all situations the
@@ -52,7 +52,7 @@ Exceptions
 
 .. exception:: IncompleteReadError
 
-   The requested read operation did not complete fully.
+   The requested asyncio read operation did not complete fully.
 
    Raised by the :ref:`asyncio stream APIs<asyncio-streams>`.
 
