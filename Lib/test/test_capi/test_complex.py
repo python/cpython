@@ -7,9 +7,12 @@ from test.test_capi.test_getargs import (BadComplex, BadComplex2, Complex,
                                          FloatSubclass, Float, BadFloat,
                                          BadFloat2, ComplexSubclass)
 from test.support import import_helper
+from test.support.testcase import ComplexesAreIdenticalMixin
 
 
 _testcapi = import_helper.import_module('_testcapi')
+_testlimitedcapi = import_helper.import_module('_testlimitedcapi')
+_testinternalcapi = import_helper.import_module('_testinternalcapi')
 
 NULL = None
 INF = float("inf")
@@ -22,10 +25,10 @@ class BadComplex3:
         raise RuntimeError
 
 
-class CAPIComplexTest(unittest.TestCase):
+class CAPIComplexTest(ComplexesAreIdenticalMixin, unittest.TestCase):
     def test_check(self):
         # Test PyComplex_Check()
-        check = _testcapi.complex_check
+        check = _testlimitedcapi.complex_check
 
         self.assertTrue(check(1+2j))
         self.assertTrue(check(ComplexSubclass(1+2j)))
@@ -38,7 +41,7 @@ class CAPIComplexTest(unittest.TestCase):
 
     def test_checkexact(self):
         # PyComplex_CheckExact()
-        checkexact = _testcapi.complex_checkexact
+        checkexact = _testlimitedcapi.complex_checkexact
 
         self.assertTrue(checkexact(1+2j))
         self.assertFalse(checkexact(ComplexSubclass(1+2j)))
@@ -57,13 +60,13 @@ class CAPIComplexTest(unittest.TestCase):
 
     def test_fromdoubles(self):
         # Test PyComplex_FromDoubles()
-        fromdoubles = _testcapi.complex_fromdoubles
+        fromdoubles = _testlimitedcapi.complex_fromdoubles
 
         self.assertEqual(fromdoubles(1.0, 2.0), 1.0+2.0j)
 
     def test_realasdouble(self):
         # Test PyComplex_RealAsDouble()
-        realasdouble = _testcapi.complex_realasdouble
+        realasdouble = _testlimitedcapi.complex_realasdouble
 
         self.assertEqual(realasdouble(1+2j), 1.0)
         self.assertEqual(realasdouble(-1+0j), -1.0)
@@ -98,7 +101,7 @@ class CAPIComplexTest(unittest.TestCase):
 
     def test_imagasdouble(self):
         # Test PyComplex_ImagAsDouble()
-        imagasdouble = _testcapi.complex_imagasdouble
+        imagasdouble = _testlimitedcapi.complex_imagasdouble
 
         self.assertEqual(imagasdouble(1+2j), 2.0)
         self.assertEqual(imagasdouble(1-1j), -1.0)
@@ -170,11 +173,32 @@ class CAPIComplexTest(unittest.TestCase):
 
         self.assertEqual(_py_c_sum(1, 1j), (1+1j, 0))
 
+    def test_py_cr_sum(self):
+        # Test _Py_cr_sum()
+        _py_cr_sum = _testinternalcapi._py_cr_sum
+
+        self.assertComplexesAreIdentical(_py_cr_sum(-0j, -0.0)[0],
+                                         complex(-0.0, -0.0))
+
     def test_py_c_diff(self):
         # Test _Py_c_diff()
         _py_c_diff = _testcapi._py_c_diff
 
         self.assertEqual(_py_c_diff(1, 1j), (1-1j, 0))
+
+    def test_py_cr_diff(self):
+        # Test _Py_cr_diff()
+        _py_cr_diff = _testinternalcapi._py_cr_diff
+
+        self.assertComplexesAreIdentical(_py_cr_diff(-0j, 0.0)[0],
+                                         complex(-0.0, -0.0))
+
+    def test_py_rc_diff(self):
+        # Test _Py_rc_diff()
+        _py_rc_diff = _testinternalcapi._py_rc_diff
+
+        self.assertComplexesAreIdentical(_py_rc_diff(-0.0, 0j)[0],
+                                         complex(-0.0, -0.0))
 
     def test_py_c_neg(self):
         # Test _Py_c_neg()
@@ -187,6 +211,13 @@ class CAPIComplexTest(unittest.TestCase):
         _py_c_prod = _testcapi._py_c_prod
 
         self.assertEqual(_py_c_prod(2, 1j), (2j, 0))
+
+    def test_py_cr_prod(self):
+        # Test _Py_cr_prod()
+        _py_cr_prod = _testinternalcapi._py_cr_prod
+
+        self.assertComplexesAreIdentical(_py_cr_prod(complex('inf+1j'), INF)[0],
+                                                     complex('inf+infj'))
 
     def test_py_c_quot(self):
         # Test _Py_c_quot()
@@ -210,6 +241,20 @@ class CAPIComplexTest(unittest.TestCase):
 
         self.assertEqual(_py_c_quot(1, 0j)[1], errno.EDOM)
 
+    def test_py_cr_quot(self):
+        # Test _Py_cr_quot()
+        _py_cr_quot = _testinternalcapi._py_cr_quot
+
+        self.assertComplexesAreIdentical(_py_cr_quot(complex('inf+1j'), 2**1000)[0],
+                                         INF + 2**-1000*1j)
+
+    def test_py_rc_quot(self):
+        # Test _Py_rc_quot()
+        _py_rc_quot = _testinternalcapi._py_rc_quot
+
+        self.assertComplexesAreIdentical(_py_rc_quot(1.0, complex('nan-infj'))[0],
+                                         0j)
+
     def test_py_c_pow(self):
         # Test _Py_c_pow()
         _py_c_pow = _testcapi._py_c_pow
@@ -225,7 +270,11 @@ class CAPIComplexTest(unittest.TestCase):
 
         self.assertEqual(_py_c_pow(0j, -1)[1], errno.EDOM)
         self.assertEqual(_py_c_pow(0j, 1j)[1], errno.EDOM)
-        self.assertEqual(_py_c_pow(*[DBL_MAX+1j]*2)[0], complex(*[INF]*2))
+        max_num = DBL_MAX+1j
+        self.assertEqual(_py_c_pow(max_num, max_num),
+                         (complex(INF, INF), errno.ERANGE))
+        self.assertEqual(_py_c_pow(max_num, 2),
+                         (complex(INF, INF), errno.ERANGE))
 
 
     def test_py_c_abs(self):

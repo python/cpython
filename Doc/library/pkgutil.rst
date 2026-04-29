@@ -1,5 +1,5 @@
-:mod:`pkgutil` --- Package extension utility
-============================================
+:mod:`!pkgutil` --- Package extension utility
+=============================================
 
 .. module:: pkgutil
    :synopsis: Utilities for the import system.
@@ -26,7 +26,8 @@ support.
       __path__ = extend_path(__path__, __name__)
 
    For each directory on :data:`sys.path` that has a subdirectory that matches the
-   package name, add the subdirectory to the package's :attr:`__path__`.  This is useful
+   package name, add the subdirectory to the package's
+   :attr:`~module.__path__`. This is useful
    if one wants to distribute different parts of a single logical package as multiple
    directories.
 
@@ -34,9 +35,9 @@ support.
    *name* argument.  This feature is similar to :file:`\*.pth` files (see the
    :mod:`site` module for more information), except that it doesn't special-case
    lines starting with ``import``.  A :file:`\*.pkg` file is trusted at face
-   value: apart from checking for duplicates, all entries found in a
-   :file:`\*.pkg` file are added to the path, regardless of whether they exist
-   on the filesystem.  (This is a feature.)
+   value: apart from skipping blank lines and ignoring comments, all entries
+   found in a :file:`\*.pkg` file are added to the path, regardless of whether
+   they exist on the filesystem (this is a feature).
 
    If the input path is not a list (as is the case for frozen packages) it is
    returned unchanged.  The input path is not modified; an extended copy is
@@ -47,25 +48,6 @@ support.
    items on :data:`sys.path` that cause errors when used as filenames may cause
    this function to raise an exception (in line with :func:`os.path.isdir`
    behavior).
-
-.. function:: find_loader(fullname)
-
-   Retrieve a module :term:`loader` for the given *fullname*.
-
-   This is a backwards compatibility wrapper around
-   :func:`importlib.util.find_spec` that converts most failures to
-   :exc:`ImportError` and only returns the loader rather than the full
-   :class:`importlib.machinery.ModuleSpec`.
-
-   .. versionchanged:: 3.3
-      Updated to be based directly on :mod:`importlib` rather than relying
-      on the package internal :pep:`302` import emulation.
-
-   .. versionchanged:: 3.4
-      Updated to be based on :pep:`451`
-
-   .. deprecated-removed:: 3.12 3.14
-      Use :func:`importlib.util.find_spec` instead.
 
 
 .. function:: get_importer(path_item)
@@ -83,33 +65,12 @@ support.
       on the package internal :pep:`302` import emulation.
 
 
-.. function:: get_loader(module_or_name)
-
-   Get a :term:`loader` object for *module_or_name*.
-
-   If the module or package is accessible via the normal import mechanism, a
-   wrapper around the relevant part of that machinery is returned.  Returns
-   ``None`` if the module cannot be found or imported.  If the named module is
-   not already imported, its containing package (if any) is imported, in order
-   to establish the package ``__path__``.
-
-   .. versionchanged:: 3.3
-      Updated to be based directly on :mod:`importlib` rather than relying
-      on the package internal :pep:`302` import emulation.
-
-   .. versionchanged:: 3.4
-      Updated to be based on :pep:`451`
-
-   .. deprecated-removed:: 3.12 3.14
-      Use :func:`importlib.util.find_spec` instead.
-
-
 .. function:: iter_importers(fullname='')
 
    Yield :term:`finder` objects for the given module name.
 
-   If fullname contains a ``'.'``, the finders will be for the package
-   containing fullname, otherwise they will be all registered top level
+   If *fullname* contains a ``'.'``, the finders will be for the package
+   containing *fullname*, otherwise they will be all registered top level
    finders (i.e. those on both :data:`sys.meta_path` and :data:`sys.path_hooks`).
 
    If the named module is in a package, that package is imported as a side
@@ -190,11 +151,15 @@ support.
    :meth:`get_data <importlib.abc.ResourceLoader.get_data>` API.  The
    *package* argument should be the name of a package, in standard module format
    (``foo.bar``).  The *resource* argument should be in the form of a relative
-   filename, using ``/`` as the path separator.  The parent directory name
-   ``..`` is not allowed, and nor is a rooted name (starting with a ``/``).
+   filename, using ``/`` as the path separator.
 
    The function returns a binary string that is the contents of the specified
    resource.
+
+   This function uses the :term:`loader` method
+   :func:`~importlib.abc.FileLoader.get_data`
+   to support modules installed in the filesystem, but also in zip files,
+   databases, or elsewhere.
 
    For packages located in the filesystem, which have already been imported,
    this is the rough equivalent of::
@@ -202,12 +167,32 @@ support.
       d = os.path.dirname(sys.modules[package].__file__)
       data = open(os.path.join(d, resource), 'rb').read()
 
+   Like the :func:`open` function, :func:`!get_data` can follow parent
+   directories (``../``) and absolute paths (starting with ``/`` or ``C:/``,
+   for example).
+   It can open compilation/installation artifacts like ``.py`` and ``.pyc``
+   files or files with :func:`reserved filenames <os.path.isreserved>`.
+   To be compatible with non-filesystem loaders, avoid using these features.
+
+   .. warning::
+
+      This function is intended for trusted input.
+      It does not verify that *resource* "belongs" to *package*.
+
+   If you use a user-provided *resource* path, consider verifying it.
+   For example, require an alphanumeric filename with a known extension, or
+   install and check a list of known resources.
+
    If the package cannot be located or loaded, or it uses a :term:`loader`
    which does not support :meth:`get_data <importlib.abc.ResourceLoader.get_data>`,
    then ``None`` is returned.  In particular, the :term:`loader` for
    :term:`namespace packages <namespace package>` does not support
    :meth:`get_data <importlib.abc.ResourceLoader.get_data>`.
 
+   .. seealso::
+
+      The :mod:`importlib.resources` module provides structured access to
+      module resources.
 
 .. function:: resolve_name(name)
 

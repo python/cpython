@@ -1,3 +1,0 @@
-:ref:`launcher` can now detect Python 3.13 when installed from the Microsoft
-Store, and will install Python 3.12 by default when
-:envvar:`PYLAUNCHER_ALLOW_INSTALL` is set.

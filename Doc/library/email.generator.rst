@@ -1,5 +1,5 @@
-:mod:`email.generator`: Generating MIME documents
--------------------------------------------------
+:mod:`!email.generator`: Generating MIME documents
+--------------------------------------------------
 
 .. module:: email.generator
    :synopsis: Generate flat text email messages from a message structure.
@@ -232,7 +232,7 @@ a formatted string representation of a message object.  For more detail, see
 :mod:`email.message`.
 
 
-The :mod:`email.generator` module also provides a derived class,
+The :mod:`!email.generator` module also provides a derived class,
 :class:`DecodedGenerator`, which is like the :class:`Generator` base class,
 except that non-\ :mimetype:`text` parts are not serialized, but are instead
 represented in the output stream by a string derived from a template filled

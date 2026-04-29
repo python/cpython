@@ -1,5 +1,5 @@
-:mod:`glob` --- Unix style pathname pattern expansion
-=====================================================
+:mod:`!glob` --- Unix style pathname pattern expansion
+======================================================
 
 .. module:: glob
    :synopsis: Unix shell style pathname pattern expansion.
@@ -18,23 +18,27 @@
    single: - (minus); in glob-style wildcards
    single: . (dot); in glob-style wildcards
 
-The :mod:`glob` module finds all the pathnames matching a specified pattern
-according to the rules used by the Unix shell, although results are returned in
-arbitrary order.  No tilde expansion is done, but ``*``, ``?``, and character
+The :mod:`!glob` module finds pathnames
+using pattern matching rules similar to the Unix shell.
+No tilde expansion is done, but ``*``, ``?``, and character
 ranges expressed with ``[]`` will be correctly matched.  This is done by using
 the :func:`os.scandir` and :func:`fnmatch.fnmatch` functions in concert, and
 not by actually invoking a subshell.
 
-Note that files beginning with a dot (``.``) can only be matched by
+.. note::
+   The pathnames are returned in no particular order.  If you need a specific
+   order, sort the results.
+
+Files beginning with a dot (``.``) can only be matched by
 patterns that also start with a dot,
 unlike :func:`fnmatch.fnmatch` or :func:`pathlib.Path.glob`.
-(For tilde and shell variable expansion, use :func:`os.path.expanduser` and
-:func:`os.path.expandvars`.)
+For tilde and shell variable expansion, use :func:`os.path.expanduser` and
+:func:`os.path.expandvars`.
 
 For a literal match, wrap the meta-characters in brackets.
 For example, ``'[?]'`` matches the character ``'?'``.
 
-The :mod:`glob` module defines the following functions:
+The :mod:`!glob` module defines the following functions:
 
 
 .. function:: glob(pathname, *, root_dir=None, dir_fd=None, recursive=False, \
@@ -51,7 +55,7 @@ The :mod:`glob` module defines the following functions:
 
    If *root_dir* is not ``None``, it should be a :term:`path-like object`
    specifying the root directory for searching.  It has the same effect on
-   :func:`glob` as changing the current directory before calling it.  If
+   :func:`!glob` as changing the current directory before calling it.  If
    *pathname* is relative, the result will contain paths relative to
    *root_dir*.
 
@@ -75,6 +79,15 @@ The :mod:`glob` module defines the following functions:
       Using the "``**``" pattern in large directory trees may consume
       an inordinate amount of time.
 
+   .. note::
+      This function may return duplicate path names if *pathname*
+      contains multiple "``**``" patterns and *recursive* is true.
+
+   .. note::
+      Any :exc:`OSError` exceptions raised from scanning the filesystem are
+      suppressed. This includes :exc:`PermissionError` when accessing
+      directories without read permission.
+
    .. versionchanged:: 3.5
       Support for recursive globs using "``**``".
 
@@ -93,6 +106,15 @@ The :mod:`glob` module defines the following functions:
 
    .. audit-event:: glob.glob pathname,recursive glob.iglob
    .. audit-event:: glob.glob/2 pathname,recursive,root_dir,dir_fd glob.iglob
+
+   .. note::
+      This function may return duplicate path names if *pathname*
+      contains multiple "``**``" patterns and *recursive* is true.
+
+   .. note::
+      Any :exc:`OSError` exceptions raised from scanning the filesystem are
+      suppressed. This includes :exc:`PermissionError` when accessing
+      directories without read permission.
 
    .. versionchanged:: 3.5
       Support for recursive globs using "``**``".
@@ -118,7 +140,8 @@ The :mod:`glob` module defines the following functions:
 .. function:: translate(pathname, *, recursive=False, include_hidden=False, seps=None)
 
    Convert the given path specification to a regular expression for use with
-   :func:`re.match`. The path specification can contain shell-style wildcards.
+   :func:`re.prefixmatch`. The path specification can contain shell-style
+   wildcards.
 
    For example:
 
@@ -126,9 +149,9 @@ The :mod:`glob` module defines the following functions:
       >>>
       >>> regex = glob.translate('**/*.txt', recursive=True, include_hidden=True)
       >>> regex
-      '(?s:(?:.+/)?[^/]*\\.txt)\\Z'
+      '(?s:(?:.+/)?[^/]*\\.txt)\\z'
       >>> reobj = re.compile(regex)
-      >>> reobj.match('foo/bar/baz.txt')
+      >>> reobj.prefixmatch('foo/bar/baz.txt')
       <re.Match object; span=(0, 15), match='foo/bar/baz.txt'>
 
    Path separators and segments are meaningful to this function, unlike
@@ -136,8 +159,7 @@ The :mod:`glob` module defines the following functions:
    separators, and ``*`` pattern segments match precisely one path segment.
 
    If *recursive* is true, the pattern segment "``**``" will match any number
-   of path segments. If "``**``" occurs in any position other than a full
-   pattern segment, :exc:`ValueError` is raised.
+   of path segments.
 
    If *include_hidden* is true, wildcards can match path segments that start
    with a dot (``.``).

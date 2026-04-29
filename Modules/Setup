@@ -132,11 +132,13 @@ PYTHONPATH=$(COREPYTHONPATH)
 
 #_asyncio _asynciomodule.c
 #_bisect _bisectmodule.c
-#_contextvars _contextvarsmodule.c
 #_csv _csv.c
 #_datetime _datetimemodule.c
 #_decimal _decimal/_decimal.c
 #_heapq _heapqmodule.c
+#_interpchannels _interpchannelsmodule.c
+#_interpqueues _interpqueuesmodule.c
+#_interpreters _interpretersmodule.c
 #_json _json.c
 #_lsprof _lsprof.c rotatingtree.c
 #_multiprocessing -I$(srcdir)/Modules/_multiprocessing _multiprocessing/multiprocessing.c _multiprocessing/semaphore.c
@@ -147,12 +149,14 @@ PYTHONPATH=$(COREPYTHONPATH)
 #_socket socketmodule.c
 #_statistics _statisticsmodule.c
 #_struct _struct.c
+#_types _typesmodule.c
 #_typing _typingmodule.c
 #_zoneinfo _zoneinfo.c
 #array arraymodule.c
 #binascii binascii.c
 #cmath cmathmodule.c
 #math mathmodule.c
+#_math_integer mathintegermodule.c
 #mmap mmapmodule.c
 #select selectmodule.c
 #_sysconfig _sysconfig.c
@@ -162,11 +166,12 @@ PYTHONPATH=$(COREPYTHONPATH)
 #pyexpat pyexpat.c
 
 # hashing builtins
-#_blake2 _blake2/blake2module.c _blake2/blake2b_impl.c _blake2/blake2s_impl.c
-#_md5 md5module.c -I$(srcdir)/Modules/_hacl/include _hacl/Hacl_Hash_MD5.c -D_BSD_SOURCE -D_DEFAULT_SOURCE
-#_sha1 sha1module.c -I$(srcdir)/Modules/_hacl/include _hacl/Hacl_Hash_SHA1.c -D_BSD_SOURCE -D_DEFAULT_SOURCE
-#_sha2 sha2module.c -I$(srcdir)/Modules/_hacl/include Modules/_hacl/libHacl_Hash_SHA2.a
-#_sha3 sha3module.c -I$(srcdir)/Modules/_hacl/include _hacl/Hacl_Hash_SHA3.c -D_BSD_SOURCE -D_DEFAULT_SOURCE
+#_blake2 blake2module.c
+#_md5 md5module.c
+#_sha1 sha1module.c
+#_sha2 sha2module.c
+#_sha3 sha3module.c
+#_hmac hmacmodule.c
 
 # text encodings and unicode
 #_codecs_cn cjkcodecs/_codecs_cn.c
@@ -197,6 +202,7 @@ PYTHONPATH=$(COREPYTHONPATH)
 #_gdbm _gdbmmodule.c -lgdbm
 #_lzma _lzmamodule.c -llzma
 #_uuid _uuidmodule.c -luuid
+#_zstd _zstd/_zstdmodule.c -lzstd -I$(srcdir)/Modules/_zstd
 #zlib  zlibmodule.c -lz
 
 # The readline module also supports libeditline (-leditline).
@@ -271,9 +277,6 @@ PYTHONPATH=$(COREPYTHONPATH)
 
 # Testing
 
-#_xxsubinterpreters _xxsubinterpretersmodule.c
-#_xxinterpchannels _xxinterpchannelsmodule.c
-#_xxinterpqueues _xxinterpqueuesmodule.c
 #_xxtestfuzz _xxtestfuzz/_xxtestfuzz.c _xxtestfuzz/fuzzer.c
 #_testbuffer _testbuffer.c
 #_testinternalcapi _testinternalcapi.c
@@ -282,6 +285,7 @@ PYTHONPATH=$(COREPYTHONPATH)
 
 #*shared*
 #_ctypes_test _ctypes/_ctypes_test.c
+#_remote_debugging _remote_debugging/module.c _remote_debugging/object_reading.c _remote_debugging/code_objects.c _remote_debugging/frames.c _remote_debugging/threads.c _remote_debugging/asyncio.c
 #_testcapi _testcapimodule.c
 #_testimportmultiple _testimportmultiple.c
 #_testmultiphase _testmultiphase.c

@@ -13,9 +13,12 @@ import doctest
 import inspect
 import linecache
 import unittest
+import warnings
+from test import support
 from test.support import os_helper
 from test.support.script_helper import (spawn_python, kill_python, assert_python_ok,
                                         make_script, make_zip_script)
+from test.support import import_helper
 
 verbose = test.support.verbose
 
@@ -31,7 +34,7 @@ verbose = test.support.verbose
 # Retrieve some helpers from other test cases
 from test.test_doctest import (test_doctest,
                                sample_doctest, sample_doctest_no_doctests,
-                               sample_doctest_no_docstrings)
+                               sample_doctest_no_docstrings, sample_doctest_skip)
 
 
 def _run_object_doctest(obj, module):
@@ -110,7 +113,7 @@ class ZipSupportTests(unittest.TestCase):
         # The sample doctest files rewritten to include in the zipped version.
         sample_sources = {}
         for mod in [sample_doctest, sample_doctest_no_doctests,
-                    sample_doctest_no_docstrings]:
+                    sample_doctest_no_docstrings, sample_doctest_skip]:
             src = inspect.getsource(mod)
             src = src.replace("test.test_doctest.test_doctest", "test_zipped_doctest")
             # Rewrite the module name so that, for example,
@@ -235,6 +238,26 @@ class ZipSupportTests(unittest.TestCase):
             data = kill_python(p)
             # bdb/pdb applies normcase to its filename before displaying
             self.assertIn(os.path.normcase(run_name.encode('utf-8')), data)
+
+    def test_import_filter_syntax_warnings_by_module(self):
+        filename = support.findfile('test_import/data/syntax_warnings.py')
+        with (os_helper.temp_dir() as tmpdir,
+              import_helper.DirsOnSysPath()):
+            zip_name, _ = make_zip_script(tmpdir, "test_zip",
+                                          filename, 'test_pkg/test_mod.py')
+            sys.path.insert(0, zip_name)
+            import_helper.unload('test_pkg.test_mod')
+            with warnings.catch_warnings(record=True) as wlog:
+                warnings.simplefilter('error')
+                warnings.filterwarnings('always', module=r'test_pkg\.test_mod\z')
+                warnings.filterwarnings('error', module='test_mod')
+                import test_pkg.test_mod
+            self.assertEqual(sorted(wm.lineno for wm in wlog),
+                             sorted([4, 7, 10, 13, 14, 21]*2))
+            filename = test_pkg.test_mod.__file__
+            for wm in wlog:
+                self.assertEqual(wm.filename, filename)
+                self.assertIs(wm.category, SyntaxWarning)
 
 
 def tearDownModule():

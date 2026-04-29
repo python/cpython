@@ -28,6 +28,8 @@ _REPEATING_CODES = {
     POSSESSIVE_REPEAT: (POSSESSIVE_REPEAT, SUCCESS, POSSESSIVE_REPEAT_ONE),
 }
 
+_CHARSET_ALL = [(NEGATE, None)]
+
 def _combine_flags(flags, add_flags, del_flags,
                    TYPE_FLAGS=_parser.TYPE_FLAGS):
     if add_flags & TYPE_FLAGS:
@@ -84,17 +86,22 @@ def _compile(code, pattern, flags):
                     code[skip] = _len(code) - skip
         elif op is IN:
             charset, hascased = _optimize_charset(av, iscased, tolower, fixes)
-            if flags & SRE_FLAG_IGNORECASE and flags & SRE_FLAG_LOCALE:
-                emit(IN_LOC_IGNORE)
-            elif not hascased:
-                emit(IN)
-            elif not fixes:  # ascii
-                emit(IN_IGNORE)
+            if not charset:
+                emit(FAILURE)
+            elif charset == _CHARSET_ALL:
+                emit(ANY_ALL)
             else:
-                emit(IN_UNI_IGNORE)
-            skip = _len(code); emit(0)
-            _compile_charset(charset, flags, code)
-            code[skip] = _len(code) - skip
+                if flags & SRE_FLAG_IGNORECASE and flags & SRE_FLAG_LOCALE:
+                    emit(IN_LOC_IGNORE)
+                elif not hascased:
+                    emit(IN)
+                elif not fixes:  # ascii
+                    emit(IN_IGNORE)
+                else:
+                    emit(IN_UNI_IGNORE)
+                skip = _len(code); emit(0)
+                _compile_charset(charset, flags, code)
+                code[skip] = _len(code) - skip
         elif op is ANY:
             if flags & SRE_FLAG_DOTALL:
                 emit(ANY_ALL)
@@ -248,11 +255,11 @@ def _optimize_charset(charset, iscased=None, fixup=None, fixes=None):
         while True:
             try:
                 if op is LITERAL:
-                    if fixup:
-                        lo = fixup(av)
-                        charmap[lo] = 1
-                        if fixes and lo in fixes:
-                            for k in fixes[lo]:
+                    if fixup: # IGNORECASE and not LOCALE
+                        av = fixup(av)
+                        charmap[av] = 1
+                        if fixes and av in fixes:
+                            for k in fixes[av]:
                                 charmap[k] = 1
                         if not hascased and iscased(av):
                             hascased = True
@@ -260,7 +267,7 @@ def _optimize_charset(charset, iscased=None, fixup=None, fixes=None):
                         charmap[av] = 1
                 elif op is RANGE:
                     r = range(av[0], av[1]+1)
-                    if fixup:
+                    if fixup: # IGNORECASE and not LOCALE
                         if fixes:
                             for i in map(fixup, r):
                                 charmap[i] = 1
@@ -277,6 +284,10 @@ def _optimize_charset(charset, iscased=None, fixup=None, fixes=None):
                             charmap[i] = 1
                 elif op is NEGATE:
                     out.append((op, av))
+                elif op is CATEGORY and tail and (CATEGORY, CH_NEGATE[av]) in tail:
+                    # Optimize [\s\S] etc.
+                    out = [] if out else _CHARSET_ALL
+                    return out, False
                 else:
                     tail.append((op, av))
             except IndexError:
@@ -287,8 +298,7 @@ def _optimize_charset(charset, iscased=None, fixup=None, fixes=None):
                 # Character set contains non-BMP character codes.
                 # For range, all BMP characters in the range are already
                 # proceeded.
-                if fixup:
-                    hascased = True
+                if fixup: # IGNORECASE and not LOCALE
                     # For now, IN_UNI_IGNORE+LITERAL and
                     # IN_UNI_IGNORE+RANGE_UNI_IGNORE work for all non-BMP
                     # characters, because two characters (at least one of
@@ -299,7 +309,13 @@ def _optimize_charset(charset, iscased=None, fixup=None, fixes=None):
                     # Also, both c.lower() and c.lower().upper() are single
                     # characters for every non-BMP character.
                     if op is RANGE:
-                        op = RANGE_UNI_IGNORE
+                        if fixes: # not ASCII
+                            op = RANGE_UNI_IGNORE
+                        hascased = True
+                    else:
+                        assert op is LITERAL
+                        if not hascased and iscased(av):
+                            hascased = True
                 tail.append((op, av))
             break
 
@@ -359,7 +375,7 @@ def _optimize_charset(charset, iscased=None, fixup=None, fixes=None):
     # less significant byte is a bit index in the chunk (just like the
     # CHARSET matching).
 
-    charmap = bytes(charmap) # should be hashable
+    charmap = charmap.take_bytes() # should be hashable
     comps = {}
     mapping = bytearray(256)
     block = 0
@@ -519,13 +535,18 @@ def _compile_info(code, pattern, flags):
     # look for a literal prefix
     prefix = []
     prefix_skip = 0
-    charset = [] # not used
+    charset = None # not used
     if not (flags & SRE_FLAG_IGNORECASE and flags & SRE_FLAG_LOCALE):
         # look for literal prefix
         prefix, prefix_skip, got_all = _get_literal_prefix(pattern, flags)
         # if no prefix, look for charset prefix
         if not prefix:
             charset = _get_charset_prefix(pattern, flags)
+            if charset:
+                charset, hascased = _optimize_charset(charset)
+                assert not hascased
+                if charset == _CHARSET_ALL:
+                    charset = None
 ##     if prefix:
 ##         print("*** PREFIX", prefix, prefix_skip)
 ##     if charset:
@@ -560,8 +581,6 @@ def _compile_info(code, pattern, flags):
         # generate overlap table
         code.extend(_generate_overlap_table(prefix))
     elif charset:
-        charset, hascased = _optimize_charset(charset)
-        assert not hascased
         _compile_charset(charset, flags, code)
     code[skip] = len(code) - skip
 

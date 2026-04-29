@@ -1,0 +1,2 @@
+Add :class:`sentinel`, implementing :pep:`661`. PEP by Tal Einat; patch by
+Jelle Zijlstra.
