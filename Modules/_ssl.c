@@ -377,9 +377,9 @@ typedef struct {
     enum py_ssl_server_or_client socket_type;
     PyObject *owner; /* weakref to Python level "owner" passed to servername callback */
     PyObject *server_hostname;
-    // gh-148292: If non-zero, read(), sendfile() and write() methods raise
-    // SSLEOFError without calling the underlying OpenSSL function. Set to 1
-    // on PY_SSL_ERROR_EOF error.
+    // gh-148292: If non-zero, read(), sendfile(), write() and do_handshake()
+    // methods raise SSLEOFError without calling the underlying OpenSSL
+    // function. Set to 1 on PY_SSL_ERROR_EOF error.
     //
     // On OpenSSL 4, if SSL_read_ex() fails with
     // SSL_R_UNEXPECTED_EOF_WHILE_READING, the following SSL_read_ex() call
