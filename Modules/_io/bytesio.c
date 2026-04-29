@@ -513,26 +513,28 @@ _io_BytesIO_read1_impl(bytesio *self, Py_ssize_t size)
 /*[clinic input]
 @critical_section
 _io.BytesIO.peek
-    size: Py_ssize_t = 1
+    size: Py_ssize_t = 0
     /
 
 Return bytes from the stream without advancing the position.
 
-If the size argument is zero or negative, read until EOF is reached.
 Return an empty bytes object at EOF.
 [clinic start generated code]*/
 
 static PyObject *
 _io_BytesIO_peek_impl(bytesio *self, Py_ssize_t size)
-/*[clinic end generated code: output=fa4d8ce28b35db9b input=36dc9805d333fe24]*/
+/*[clinic end generated code: output=fa4d8ce28b35db9b input=2ce74234b10aec3e]*/
 {
     CHECK_CLOSED(self);
 
     /* adjust invalid sizes */
     Py_ssize_t n = self->string_size - self->pos;
+    if (n > DEFAULT_BUFFER_SIZE) {
+        n = DEFAULT_BUFFER_SIZE;
+    }
     if (size < 1 || size > n) {
         size = n;
-        /* size can be negative after truncate() or seek() */
+        /* n can be negative after truncate() or seek() */
         if (size < 0) {
             size = 0;
         }

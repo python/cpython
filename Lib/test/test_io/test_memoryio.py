@@ -572,7 +572,7 @@ class PyBytesIOTest(MemoryTestMixin, MemorySeekTestMixin, unittest.TestCase):
             self.assertEqual(memio.tell(), 0)
             self.assertEqual(memio.peek(1), buf[:1])
             self.assertEqual(memio.peek(1), buf[:1])
-            self.assertEqual(memio.peek(), buf[:1])
+            self.assertEqual(memio.peek(), buf)
             self.assertEqual(memio.peek(3), buf[:3])
             self.assertEqual(memio.peek(5), buf[:5])
             self.assertEqual(memio.peek(0), buf)
@@ -583,7 +583,7 @@ class PyBytesIOTest(MemoryTestMixin, MemorySeekTestMixin, unittest.TestCase):
             memio.read(1)
             self.assertEqual(memio.tell(), 1)
             self.assertEqual(memio.peek(1), buf[1:2])
-            self.assertEqual(memio.peek(), buf[1:2])
+            self.assertEqual(memio.peek(), buf[1:])
             self.assertEqual(memio.peek(3), buf[1:4])
             self.assertEqual(memio.peek(5), buf[1:6])
             self.assertEqual(memio.peek(0), buf[1:])
@@ -604,10 +604,16 @@ class PyBytesIOTest(MemoryTestMixin, MemorySeekTestMixin, unittest.TestCase):
             memio.write(abc)
             self.assertEqual(memio.peek(), self.EOF)
             memio.seek(len(buf))
-            self.assertEqual(memio.peek(), abc[:1])
+            self.assertEqual(memio.peek(), abc)
             self.assertEqual(memio.peek(-1), abc)
             self.assertEqual(memio.peek(len(abc) + 100), abc)
             self.assertEqual(memio.tell(), len(buf))
+
+        # Length of returned bytes object is capped to DEFAULT_BUFFER_SIZE
+        buf = self.buftype("a" * (io.DEFAULT_BUFFER_SIZE + 10))
+        with self.ioclass(buf) as memio:
+            self.assertEqual(len(memio.peek()), io.DEFAULT_BUFFER_SIZE)
+            self.assertEqual(len(memio.peek(io.DEFAULT_BUFFER_SIZE + 1)), io.DEFAULT_BUFFER_SIZE)
 
         with self.ioclass(buf) as memio:
             memio.seek(len(buf))
