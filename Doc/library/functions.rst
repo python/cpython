@@ -1839,6 +1839,8 @@ are always available.  They are listed here in alphabetical order.
    Sentinel objects are truthy and compare equal only to themselves.  They are
    intended to be compared with the :keyword:`is` operator.
 
+   ``sentinel`` does not support subclassing.
+
    Shallow and deep copies of a sentinel object return the object itself.
 
    Sentinels are conventionally assigned to a variable with a matching name.
