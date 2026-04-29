@@ -173,6 +173,8 @@ class OptimizerEmitter(Emitter):
             if token.kind == "SEMI":
                 break
 
+        output_identifier = input_identifiers.pop()
+
         if len(input_identifiers) == 0:
             raise analysis_error(
                 "To evaluate an operation as pure, it must have at least 1 input",
@@ -190,6 +192,7 @@ class OptimizerEmitter(Emitter):
         input_identifiers_as_str = {tkn.text for tkn in input_identifiers}
         used_stack_inputs = [inp for inp in uop.stack.inputs if inp.name in input_identifiers_as_str]
         assert len(used_stack_inputs) > 0
+        self.out.start_line()
         emitter = OptimizerConstantEmitter(self.out, {}, self.original_uop, self.stack.copy())
         emitter.emit("if (\n")
         for inp in used_stack_inputs[:-1]:
@@ -224,26 +227,64 @@ class OptimizerEmitter(Emitter):
         emitter.emit_tokens(self.original_uop, storage, inst=None, emit_braces=False)
         self.out.start_line()
         emitter.emit("/* End of uop copied from bytecodes for constant evaluation */\n")
-        # Finally, assign back the output stackrefs to symbolics.
         for outp in self.original_uop.stack.outputs:
-            # All new stackrefs are created from new references.
-            # That's how the stackref contract works.
-            if not outp.peek:
-                emitter.emit(f"{outp.name} = sym_new_const_steal(ctx, PyStackRef_AsPyObjectSteal({outp.name}_stackref));\n")
-            else:
-                emitter.emit(f"{outp.name} = sym_new_const(ctx, PyStackRef_AsPyObjectBorrow({outp.name}_stackref));\n")
+            if not outp.name == output_identifier.text:
+                emitter.emit(f"(void){outp.name}_stackref;\n")
 
-        if len(used_stack_inputs) == 2 and len(self.original_uop.stack.outputs) == 1:
-                outp = self.original_uop.stack.outputs[0]
-                if not outp.peek:
-                    emitter.emit(f"""
-                if (sym_is_const(ctx, {outp.name})) {{
-                    PyObject *result = sym_get_const(ctx, {outp.name});
-                    if (_Py_IsImmortal(result)) {{
-                        // Replace with _POP_TWO_LOAD_CONST_INLINE_BORROW since we have two inputs and an immortal result
-                        REPLACE_OP(this_instr, _POP_TWO_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)result);
-                    }}
-                }}""")
+        # Output stackref is created from new reference.
+        emitter.emit(f"{output_identifier.text} = sym_new_const_steal(ctx, PyStackRef_AsPyObjectSteal({output_identifier.text}_stackref));\n")
+
+        if self.original_uop.name.startswith('_'):
+            # Map input count to output index (from TOS) and the appropriate constant-loading uop
+            input_count_to_uop = {
+                1: {
+                    # (a -- res), usually for unary ops
+                    0: [("_POP_TOP", "0, 0"),
+                        ("_LOAD_CONST_INLINE_BORROW",
+                         "0, (uintptr_t)result")],
+                    # (left -- res, left)
+                    # usually for unary ops with passthrough references
+                    1: [("_LOAD_CONST_INLINE_BORROW",
+                         "0, (uintptr_t)result"),
+                        ("_SWAP", "2, 0")],
+                },
+                2: {
+                    # (a, b -- res), usually for binary ops
+                    0: [("_POP_TOP", "0, 0"),
+                        ("_POP_TOP", "0, 0"),
+                        ("_LOAD_CONST_INLINE_BORROW",
+                         "0, (uintptr_t)result")],
+                    # (left, right -- res, left, right)
+                    # usually for binary ops with passthrough references
+                    2: [("_LOAD_CONST_INLINE_BORROW",
+                         "0, (uintptr_t)result"),
+                        ("_SWAP", "3, 0"),
+                        ("_SWAP", "2, 0")],
+                },
+            }
+
+            output_index = -1
+            for idx, outp in enumerate(reversed(uop.stack.outputs)):
+                if outp.name == output_identifier.text:
+                    output_index =  idx
+                    break
+            else:
+                raise analysis_error(f"Could not find output {output_identifier.text} in uop.", output_identifier)
+            assert output_index >= 0
+            input_count = len(used_stack_inputs)
+            if input_count in input_count_to_uop and output_index in input_count_to_uop[input_count]:
+                ops = input_count_to_uop[input_count][output_index]
+                input_desc = "one input" if input_count == 1 else "two inputs"
+                ops_desc = " + ".join(op for op, _ in ops)
+
+                emitter.emit(f"if (sym_is_const(ctx, {output_identifier.text})) {{\n")
+                emitter.emit(f"PyObject *result = sym_get_const(ctx, {output_identifier.text});\n")
+                emitter.emit(f"if (_Py_IsImmortal(result)) {{\n")
+                emitter.emit(f"// Replace with {ops_desc} since we have {input_desc} and an immortal result\n")
+                for op, args in ops:
+                    emitter.emit(f"ADD_OP({op}, {args});\n")
+                emitter.emit("}\n")
+                emitter.emit("}\n")
 
         storage.flush(self.out)
         emitter.emit("break;\n")
@@ -371,6 +412,7 @@ def write_uop(
                     args.append(input.name)
             out.emit(f'DEBUG_PRINTF({", ".join(args)});\n')
         if override:
+            idx = 0
             for cache in uop.caches:
                 if cache.name != "unused":
                     if cache.size == 4:
@@ -378,7 +420,8 @@ def write_uop(
                     else:
                         type = f"uint{cache.size*16}_t "
                         cast = f"uint{cache.size*16}_t"
-                    out.emit(f"{type}{cache.name} = ({cast})this_instr->operand0;\n")
+                    out.emit(f"{type}{cache.name} = ({cast})this_instr->operand{idx};\n")
+                    idx += 1
         if override:
             emitter = OptimizerEmitter(out, {}, uop, stack.copy())
             # No reference management of inputs needed.
@@ -413,7 +456,7 @@ def generate_abstract_interpreter(
     for abstract_uop_name in abstract.uops:
         if abstract_uop_name not in base_uop_names:
             raise ValueError(f"All abstract uops should override base uops, "
-                                 "but {abstract_uop_name} is not.")
+                                 f"but {abstract_uop_name} is not.")
 
     for uop in base.uops.values():
         override: Uop | None = None
@@ -434,7 +477,7 @@ def generate_abstract_interpreter(
             declare_variables(override, out, skip_inputs=False)
         else:
             declare_variables(uop, out, skip_inputs=True)
-        stack = Stack()
+        stack = Stack(check_stack_bounds=True)
         write_uop(override, uop, out, stack, debug, skip_inputs=(override is None))
         out.start_line()
         out.emit("break;\n")

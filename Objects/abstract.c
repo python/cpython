@@ -224,6 +224,14 @@ PyMapping_GetOptionalItem(PyObject *obj, PyObject *key, PyObject **result)
     return 0;
 }
 
+PyObject*
+_PyMapping_GetOptionalItem2(PyObject *obj, PyObject *key, int *err)
+{
+    PyObject* result;
+    *err = PyMapping_GetOptionalItem(obj, key, &result);
+    return result;
+}
+
 int
 PyObject_SetItem(PyObject *o, PyObject *key, PyObject *value)
 {
@@ -616,7 +624,7 @@ done:
 }
 
 int
-PyBuffer_FromContiguous(const Py_buffer *view, const void *buf, Py_ssize_t len, char fort)
+PyBuffer_FromContiguous(const Py_buffer *view, const void *buf, Py_ssize_t len, char order)
 {
     int k;
     void (*addone)(int, Py_ssize_t *, const Py_ssize_t *);
@@ -628,7 +636,7 @@ PyBuffer_FromContiguous(const Py_buffer *view, const void *buf, Py_ssize_t len, 
         len = view->len;
     }
 
-    if (PyBuffer_IsContiguous(view, fort)) {
+    if (PyBuffer_IsContiguous(view, order)) {
         /* simplest copy is all that is needed */
         memcpy(view->buf, buf, len);
         return 0;
@@ -646,7 +654,7 @@ PyBuffer_FromContiguous(const Py_buffer *view, const void *buf, Py_ssize_t len, 
         indices[k] = 0;
     }
 
-    if (fort == 'F') {
+    if (order == 'F') {
         addone = _Py_add_one_to_index_F;
     }
     else {
@@ -741,13 +749,13 @@ int PyObject_CopyData(PyObject *dest, PyObject *src)
 void
 PyBuffer_FillContiguousStrides(int nd, Py_ssize_t *shape,
                                Py_ssize_t *strides, int itemsize,
-                               char fort)
+                               char order)
 {
     int k;
     Py_ssize_t sd;
 
     sd = itemsize;
-    if (fort == 'F') {
+    if (order == 'F') {
         for (k=0; k<nd; k++) {
             strides[k] = sd;
             sd *= shape[k];

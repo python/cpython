@@ -737,6 +737,7 @@ def uuid1(node=None, clock_seq=None):
             is_safe = SafeUUID(safely_generated)
         except ValueError:
             is_safe = SafeUUID.unknown
+        # The version field is assumed to be handled by _generate_time_safe().
         return UUID(bytes=uuid_time, is_safe=is_safe)
 
     global _last_timestamp
@@ -961,7 +962,7 @@ def main():
                         default="uuid4",
                         help="function to generate the UUID")
     parser.add_argument("-n", "--namespace",
-                        choices=["any UUID", *namespaces.keys()],
+                        metavar=f"{{any UUID,{','.join(namespaces)}}}",
                         help="uuid3/uuid5 only: "
                         "a UUID, or a well-known predefined UUID addressed "
                         "by namespace name")
@@ -983,7 +984,13 @@ def main():
                 f"{args.uuid} requires a namespace and a name. "
                 "Run 'python -m uuid -h' for more information."
             )
-        namespace = namespaces[namespace] if namespace in namespaces else UUID(namespace)
+        if namespace in namespaces:
+            namespace = namespaces[namespace]
+        else:
+            try:
+                namespace = UUID(namespace)
+            except ValueError as exc:
+                parser.error(f"{exc}: {args.namespace!r}")
         for _ in range(args.count):
             print(uuid_func(namespace, name))
     else:

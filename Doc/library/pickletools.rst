@@ -15,7 +15,7 @@ This module contains various constants relating to the intimate details of the
 few useful functions for analyzing pickled data.  The contents of this module
 are useful for Python core developers who are working on the :mod:`pickle`;
 ordinary users of the :mod:`pickle` module probably won't find the
-:mod:`pickletools` module relevant.
+:mod:`!pickletools` module relevant.
 
 .. _pickletools-cli:
 
@@ -79,6 +79,9 @@ Command-line options
 
    A pickle file to read, or ``-`` to indicate reading from standard input.
 
+.. versionadded:: next
+   Output is in color by default and can be
+   :ref:`controlled using environment variables <using-on-controlling-color>`.
 
 
 Programmatic interface
