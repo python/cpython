@@ -184,9 +184,19 @@ _Py_CheckPython3(void)
             if (hPython3 != NULL) {
                 return 1;
             }
+
+#ifdef ABI3T_DLLNAME
+            wcscpy(p + 1, ABI3T_DLLNAME);
+            hPython3 = LoadLibraryExW(py3path, NULL, LOAD_LIBRARY_SEARCH_DEFAULT_DIRS);
+            if (hPython3 != NULL) {
+                return 1;
+            }
+#endif
         }
     }
 
+    /* If we can locate python3.dll in our application dir,
+       use that DLL */
 #ifdef ABI3T_COMPAT_DLLNAME
     hPython3 = LoadLibraryExW(ABI3T_COMPAT_DLLNAME, NULL, LOAD_LIBRARY_SEARCH_APPLICATION_DIR);
     if (hPython3 != NULL) {
@@ -194,12 +204,17 @@ _Py_CheckPython3(void)
     }
 #endif
 
-    /* If we can locate python3.dll in our application dir,
-       use that DLL */
     hPython3 = LoadLibraryExW(PY3_DLLNAME, NULL, LOAD_LIBRARY_SEARCH_APPLICATION_DIR);
     if (hPython3 != NULL) {
         return 1;
     }
+
+#ifdef ABI3T_DLLNAME
+    hPython3 = LoadLibraryExW(ABI3T_DLLNAME, NULL, LOAD_LIBRARY_SEARCH_APPLICATION_DIR);
+    if (hPython3 != NULL) {
+        return 1;
+    }
+#endif
 
     /* For back-compat, also search {sys.prefix}\DLLs, though
        that has not been a normal install layout for a while */
