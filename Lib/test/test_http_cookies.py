@@ -1,11 +1,11 @@
 # Simple test suite for http/cookies.py
-import base64
 import copy
 import unittest
 import doctest
 from http import cookies
 import pickle
 from test import support
+import urllib.parse
 
 
 class CookieTests(unittest.TestCase):
@@ -175,19 +175,20 @@ class CookieTests(unittest.TestCase):
 
         self.assertEqual(C.output(['path']),
             'Set-Cookie: Customer="WILE_E_COYOTE"; Path=/acme')
-        cookie_encoded = base64.b64encode(b'Customer="WILE_E_COYOTE"; Path=/acme; Version=1').decode('ascii')
+        cookie_encoded = urllib.parse.quote('Customer="WILE_E_COYOTE"; Path=/acme; Version=1', safe='', encoding='utf-8')
+        self.assertNotIn('/', cookie_encoded)
         self.assertEqual(C.js_output(), fr"""
         <script type="text/javascript">
         <!-- begin hiding
-        document.cookie = atob("{cookie_encoded}");
+        document.cookie = decodeURIComponent("{cookie_encoded}");
         // end hiding -->
         </script>
         """)
-        cookie_encoded = base64.b64encode(b'Customer="WILE_E_COYOTE"; Path=/acme').decode('ascii')
+        cookie_encoded = urllib.parse.quote('Customer="WILE_E_COYOTE"; Path=/acme', safe='', encoding='utf-8')
         self.assertEqual(C.js_output(['path']), fr"""
         <script type="text/javascript">
         <!-- begin hiding
-        document.cookie = atob("{cookie_encoded}");
+        document.cookie = decodeURIComponent("{cookie_encoded}");
         // end hiding -->
         </script>
         """)
@@ -292,19 +293,19 @@ class CookieTests(unittest.TestCase):
 
         self.assertEqual(C.output(['path']),
                          'Set-Cookie: Customer="WILE_E_COYOTE"; Path=/acme')
-        expected_encoded_cookie = base64.b64encode(b'Customer=\"WILE_E_COYOTE\"; Path=/acme; Version=1').decode('ascii')
+        expected_encoded_cookie = urllib.parse.quote('Customer=\"WILE_E_COYOTE\"; Path=/acme; Version=1', safe='', encoding='utf-8')
         self.assertEqual(C.js_output(), fr"""
         <script type="text/javascript">
         <!-- begin hiding
-        document.cookie = atob("{expected_encoded_cookie}");
+        document.cookie = decodeURIComponent("{expected_encoded_cookie}");
         // end hiding -->
         </script>
         """)
-        expected_encoded_cookie = base64.b64encode(b'Customer=\"WILE_E_COYOTE\"; Path=/acme').decode('ascii')
+        expected_encoded_cookie = urllib.parse.quote('Customer=\"WILE_E_COYOTE\"; Path=/acme', safe='', encoding='utf-8')
         self.assertEqual(C.js_output(['path']), fr"""
         <script type="text/javascript">
         <!-- begin hiding
-        document.cookie = atob("{expected_encoded_cookie}");
+        document.cookie = decodeURIComponent("{expected_encoded_cookie}");
         // end hiding -->
         </script>
         """)
@@ -395,13 +396,14 @@ class MorselTests(unittest.TestCase):
             self.assertEqual(
                 M.output(),
                 "Set-Cookie: %s=%s; Path=/foo" % (i, "%s_coded_val" % i))
-            expected_encoded_cookie = base64.b64encode(
-                ("%s=%s; Path=/foo" % (i, "%s_coded_val" % i)).encode("ascii")
-            ).decode('ascii')
+            expected_encoded_cookie = urllib.parse.quote(
+                "%s=%s; Path=/foo" % (i, "%s_coded_val" % i),
+                safe='', encoding='utf-8',
+            )
             expected_js_output = """
         <script type="text/javascript">
         <!-- begin hiding
-        document.cookie = atob("%s");
+        document.cookie = decodeURIComponent("%s");
         // end hiding -->
         </script>
         """ % (expected_encoded_cookie,)

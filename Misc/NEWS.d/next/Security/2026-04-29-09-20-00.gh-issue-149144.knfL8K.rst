@@ -1,0 +1,3 @@
+Fixes an issue introduced by CVE-2026-6019 patch. atob() in JavaScript
+processes bytes as 'latin-1', switches the encoding algorithm from base64 to
+percent encoding and uses the decodeURIComponent() JavaScript API.
