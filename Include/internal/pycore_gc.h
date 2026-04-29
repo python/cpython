@@ -223,12 +223,14 @@ static inline void _PyObject_GC_TRACK(
                           "object is in generation which is garbage collected",
                           filename, lineno, __func__);
 
-    PyGC_Head *generation0 = _PyInterpreterState_GET()->gc.generation0;
+    struct _gc_runtime_state *gcstate = &_PyInterpreterState_GET()->gc;
+    PyGC_Head *generation0 = gcstate->generation0;
     PyGC_Head *last = (PyGC_Head*)(generation0->_gc_prev);
     _PyGCHead_SET_NEXT(last, gc);
     _PyGCHead_SET_PREV(gc, last);
     _PyGCHead_SET_NEXT(gc, generation0);
     generation0->_gc_prev = (uintptr_t)gc;
+    gcstate->heap_size++;
 #endif
 }
 
@@ -263,6 +265,8 @@ static inline void _PyObject_GC_UNTRACK(
     _PyGCHead_SET_PREV(next, prev);
     gc->_gc_next = 0;
     gc->_gc_prev &= _PyGC_PREV_MASK_FINALIZED;
+    struct _gc_runtime_state *gcstate = &_PyInterpreterState_GET()->gc;
+    gcstate->heap_size--;
 #endif
 }
 

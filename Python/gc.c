@@ -1981,6 +1981,8 @@ PyObject_GC_Del(void *op)
     PyGC_Head *g = AS_GC(op);
     if (_PyObject_GC_IS_TRACKED(op)) {
         gc_list_remove(g);
+        GCState *gcstate = get_gc_state();
+        gcstate->heap_size--;
 #ifdef Py_DEBUG
         PyObject *exc = PyErr_GetRaisedException();
         if (PyErr_WarnExplicitFormat(PyExc_ResourceWarning, "gc", 0,
