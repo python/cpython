@@ -403,12 +403,23 @@ following:
 
 .. index:: single: z; in string formatting
 
-The ``'z'`` option coerces negative zero floating-point values to positive
-zero after rounding to the format precision.  This option is only valid for
-floating-point presentation types.
+For floating-point presentation types the ``'z'`` option coerces negative zero
+floating-point values to positive zero after rounding to the format precision.
+
+For integer presentation types ``'b'``, ``'o'``, ``'x'``, and ``'X'`` formatted
+with precision, the ``'z'`` 'modulo-precision' option first reduces the integer
+into ``range(base ** precision)``. The result is a predictable two's complement
+style formatting with the number of digits *exactly* equal to the precision.
+This is especially useful for formatting negative numbers with known bounds
+in environments that deal with fixed widths integers, such as :mod:`struct`.
+
+For other presentation types ``z`` is an invalid specifier.
 
 .. versionchanged:: 3.11
    Added the ``'z'`` option (see also :pep:`682`).
+
+.. versionchanged:: next
+   Implemented the ``'z'`` specifier for integer fields (see also :pep:`786`).
 
 .. index:: single: # (hash); in string formatting
 
@@ -437,13 +448,30 @@ excluding :class:`complex`.  This is equivalent to a *fill* character of
    Preceding the *width* field by ``'0'`` no longer affects the default
    alignment for strings.
 
-The *precision* is a decimal integer indicating how many digits should be
-displayed after the decimal point for presentation types
-``'f'`` and ``'F'``, or before and after the decimal point for presentation
-types ``'g'`` or ``'G'``.  For string presentation types the field
-indicates the maximum field size - in other words, how many characters will be
-used from the field content.  The *precision* is not allowed for integer
-presentation types.
+.. index:: single: precision; in string formatting
+
+For floating point presentation types ``'f'`` and ``'F'`` the *precision*
+is a decimal integer indicating how many digits should be displayed after
+the decimal point. For presentation types ``'g'`` and ``'G'`` the precision
+is how many digits should be displayed in total before and after the
+decimal point.
+
+For string presentation types the precision indicates the maximum
+field size - in other words, how many characters will be used from the
+field content.
+
+For integer presentation types (excluding ``'c'``), the precision defines the
+minimum number of digits to be displayed, the result padded with leading
+zeros if the length of the digits is smaller than the precision specified.
+Precision differs from *width*, as only the digits of the number contribute
+to the precision count - this is useful when one combines multiple format
+specifiers together, and one desires a minimum number of digits, not a
+minimum overall string length. ``z`` can be combined with precision to
+format the number to **exactly** the precision number of digits, truncating
+the result as necessary.
+
+.. versionchanged:: next
+   Implemented the *precision* specifier for integer presentation types.
 
 The *grouping* option after *width* and *precision* fields specifies
 a digit group separator for the integral and fractional parts
@@ -792,6 +820,47 @@ Nesting arguments and more complex examples::
        9     9    11  1001
       10     A    12  1010
       11     B    13  1011
+
+Comparing the precision and width specifiers::
+
+   >>> x = 10
+   >>> f"{x:#02x}"
+   '0xa'
+   >>> # we really wanted 2 digits
+   >>> f"{x:#.2x}"
+   '0x0a'
+   >>> # that's better
+   >>>
+   >>> def hexdump(b: bytes) -> str:
+   ...     return " ".join(f"{c:#.2x}" for c in b)
+   >>>
+   >>> hexdump(b"GET /\r\n\r\n")
+   '0x47 0x45 0x54 0x20 0x2f 0x0d 0x0a 0x0d 0x0a'
+   >>> # observe the CR and LF bytes padded to precision 2
+   >>> # in this basic HTTP/0.9 request
+   >>>
+   >>> def unicode_dump(s: str) -> str:
+   ...     return " ".join(f"U+{ord(c):.4X}" for c in s)
+   >>>
+   >>> unicode_dump("USA 🦅")
+   'U+0055 U+0053 U+0041 U+0020 U+1F985'
+   >>> # observe the last character's Unicode codepoint has 5 digits;
+   >>> # precision is only the minimum number of digits
+
+Using the modulo-precision flag::
+
+   >>> import struct
+   >>> my_struct = b"\xff"
+   >>> (t,) = struct.unpack('b', my_struct) # signed char
+   >>> print(t, f"{t:#.2x}", f"{t:z#.2x}")
+   '-1 -0x01 0xff'
+   >>> (t,) = struct.unpack('B', my_struct) # unsigned char
+   >>> print(t, f"{t:#.2x}", f"{t:z#.2x}")
+   '255 0xff 0xff'
+
+Observe that in both the signed and unsigned unpacking the two's complement
+formatting mode (``z``) produces a predictable, consistent string, suitable
+for displaying byte-like output.
 
 
 
