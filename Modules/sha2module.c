@@ -9,32 +9,26 @@
    Greg Stein (gstein@lyra.org)
    Trevor Perrin (trevp@trevp.net)
    Jonathan Protzenko (jonathan@protzenko.fr)
+   Bénédikt Tran (10796600+picnixz@users.noreply.github.com)
 
    Copyright (C) 2005-2007   Gregory P. Smith (greg@krypto.org)
    Licensed to PSF under a Contributor Agreement.
 
 */
 
-/* SHA objects */
 #ifndef Py_BUILD_CORE_BUILTIN
 #  define Py_BUILD_CORE_MODULE 1
 #endif
 
 #include "Python.h"
-#include "pycore_bitutils.h"      // _Py_bswap32()
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
-#include "pycore_typeobject.h"    // _PyType_GetModuleState()
+#include "pycore_object.h"        // _PyObject_VisitType()
 #include "pycore_strhex.h"        // _Py_strhex()
+#include "pycore_typeobject.h"    // _PyType_GetModuleState()
 
 #include "hashlib.h"
 
-/*[clinic input]
-module _sha2
-class SHA256Type "SHA256object *" "&PyType_Type"
-class SHA512Type "SHA512object *" "&PyType_Type"
-[clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=b5315a7b611c9afc]*/
-
+#include "_hacl/Hacl_Hash_SHA2.h"
 
 /* The SHA block sizes and maximum message digest sizes, in bytes */
 
@@ -43,9 +37,7 @@ class SHA512Type "SHA512object *" "&PyType_Type"
 #define SHA512_BLOCKSIZE   128
 #define SHA512_DIGESTSIZE  64
 
-/* Our SHA2 implementations defer to the HACL* verified library. */
-
-#include "_hacl/Hacl_Hash_SHA2.h"
+// --- Module objects ---------------------------------------------------------
 
 // TODO: Get rid of int digestsize in favor of Hacl state info?
 
@@ -64,7 +56,7 @@ typedef struct {
 #define _SHA256object_CAST(op)  ((SHA256object *)(op))
 #define _SHA512object_CAST(op)  ((SHA512object *)(op))
 
-#include "clinic/sha2module.c.h"
+// --- Module state -----------------------------------------------------------
 
 /* We shall use run-time type information in the remainder of this module to
  * tell apart SHA2-224 and SHA2-256 */
@@ -82,6 +74,19 @@ sha2_get_state(PyObject *module)
     assert(state != NULL);
     return (sha2_state *)state;
 }
+
+// --- Module clinic configuration --------------------------------------------
+
+/*[clinic input]
+module _sha2
+class SHA256Type "SHA256object *" "&PyType_Type"
+class SHA512Type "SHA512object *" "&PyType_Type"
+[clinic start generated code]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=b5315a7b611c9afc]*/
+
+#include "clinic/sha2module.c.h"
+
+// --- SHA-2 object interface -------------------------------------------------
 
 static int
 SHA256copy(SHA256object *src, SHA256object *dest)
@@ -160,14 +165,6 @@ newSHA512object(sha2_state *state)
 }
 
 /* Internal methods for our hash objects. */
-
-static int
-SHA2_traverse(PyObject *ptr, visitproc visit, void *arg)
-{
-    Py_VISIT(Py_TYPE(ptr));
-    return 0;
-}
-
 static void
 SHA256_dealloc(PyObject *op)
 {
@@ -515,7 +512,7 @@ static PyType_Slot sha256_types_slots[] = {
     {Py_tp_dealloc, SHA256_dealloc},
     {Py_tp_methods, SHA256_methods},
     {Py_tp_getset, SHA256_getseters},
-    {Py_tp_traverse, SHA2_traverse},
+    {Py_tp_traverse, _PyObject_VisitType},
     {0,0}
 };
 
@@ -523,7 +520,7 @@ static PyType_Slot sha512_type_slots[] = {
     {Py_tp_dealloc, SHA512_dealloc},
     {Py_tp_methods, SHA512_methods},
     {Py_tp_getset, SHA512_getseters},
-    {Py_tp_traverse, SHA2_traverse},
+    {Py_tp_traverse, _PyObject_VisitType},
     {0,0}
 };
 
@@ -886,6 +883,7 @@ static int sha2_exec(PyObject *module)
 }
 
 static PyModuleDef_Slot _sha2_slots[] = {
+    _Py_ABI_SLOT,
     {Py_mod_exec, sha2_exec},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {Py_mod_gil, Py_MOD_GIL_NOT_USED},

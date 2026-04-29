@@ -330,17 +330,36 @@ def _mock_candidate_names(*names):
 class TestBadTempdir:
     def test_read_only_directory(self):
         with _inside_empty_temp_dir():
-            oldmode = mode = os.stat(tempfile.tempdir).st_mode
-            mode &= ~(stat.S_IWUSR | stat.S_IWGRP | stat.S_IWOTH)
-            os.chmod(tempfile.tempdir, mode)
+            probe = os.path.join(tempfile.tempdir, 'probe')
+            if os.name == 'nt':
+                cmd = ['icacls', tempfile.tempdir, '/deny', 'Everyone:(W)']
+                stdout = None if support.verbose > 1 else subprocess.DEVNULL
+                subprocess.run(cmd, check=True, stdout=stdout)
+            else:
+                oldmode = mode = os.stat(tempfile.tempdir).st_mode
+                mode &= ~(stat.S_IWUSR | stat.S_IWGRP | stat.S_IWOTH)
+                mode = stat.S_IREAD
+                os.chmod(tempfile.tempdir, mode)
             try:
-                if os.access(tempfile.tempdir, os.W_OK):
+                # Check that the directory is read-only.
+                try:
+                    os.mkdir(probe)
+                except PermissionError:
+                    pass
+                else:
+                    os.rmdir(probe)
                     self.skipTest("can't set the directory read-only")
+                # gh-66305: Now it takes a split second, but previously
+                # it took about 10 days on Windows.
                 with self.assertRaises(PermissionError):
                     self.make_temp()
-                self.assertEqual(os.listdir(tempfile.tempdir), [])
             finally:
-                os.chmod(tempfile.tempdir, oldmode)
+                if os.name == 'nt':
+                    cmd = ['icacls', tempfile.tempdir, '/grant:r', 'Everyone:(M)']
+                    subprocess.run(cmd, check=True, stdout=stdout)
+                else:
+                    os.chmod(tempfile.tempdir, oldmode)
+            self.assertEqual(os.listdir(tempfile.tempdir), [])
 
     def test_nonexisting_directory(self):
         with _inside_empty_temp_dir():
@@ -1386,7 +1405,7 @@ class TestSpooledTemporaryFile(BaseTestCase):
 
         f.write(b'x')
         self.assertTrue(f._rolled)
-        self.assertEqual(f.mode, 'rb+')
+        self.assertEqual(f.mode, 'wb+')
         self.assertIsNotNone(f.name)
         with self.assertRaises(AttributeError):
             f.newlines
