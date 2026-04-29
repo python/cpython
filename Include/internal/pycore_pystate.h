@@ -317,7 +317,7 @@ _Py_get_machine_stack_pointer(void) {
     uintptr_t result;
 #if defined(_M_ARM64)
     result = __getReg(31);
-#elif defined(_M_X64)
+#elif defined(_M_X64) || defined(_M_IX86)
     result = (uintptr_t)_AddressOfReturnAddress();
 #elif defined(__aarch64__)
     __asm__ ("mov %0, sp" : "=r" (result));
