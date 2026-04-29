@@ -408,8 +408,8 @@ added matters.  To illustrate::
       formatted in this way may be passed to SMTP servers that support
       the ``SMTPUTF8`` extension (:rfc:`6531`).
 
-      When ``False``, the generator will raise an
-      :exc:`~email.errors.HeaderWriteErrr` if any header includes non-ASCII
+      When ``False``, the generator will raise
+      :exc:`~email.errors.HeaderWriteError` if any header includes non-ASCII
       characters in a context where :rfc:`2047` does not permit encoded words.
       This particularly applies to mailboxes ("addr-spec") with non-ASCII
       characters, which can be created via :mod:~email.headerregistry.Address`.
@@ -418,7 +418,7 @@ added matters.  To illustrate::
       module or with :mod:`encodings.idna`. It is not possible to use a
       non-ASCII username ("local-part") in a mailbox when ``utf8=False``.
 
-      .. versionchanged:: 3.14
+      .. versionchanged:: 3.15
          Can trigger the raising of :exc:`~email.errors.HeaderWriteError`.
          (Earlier versions incorrectly applied :rfc:`2047` in certain contexts,
          mostly notably in addr-specs.)
