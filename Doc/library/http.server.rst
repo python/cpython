@@ -528,9 +528,9 @@ The following options are accepted:
 
 .. option:: --content-type <content_type>
 
-   Specifies the Content-Type HTTP header. By default, the server uses the
-   MIME type ``'application/octet-stream'`` for the ``Content-Type`` header
-   when the content type cannot be guessed from the URL's extension (if any):
+   Specifies the default Content-Type HTTP header used when the MIME type
+   cannot be guessed from the URL's file extension. By default, the server
+   uses ``'application/octet-stream'``:
 
    .. code-block:: bash
 
