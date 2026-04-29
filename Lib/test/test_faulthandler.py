@@ -895,6 +895,41 @@ class FaultHandlerTests(unittest.TestCase):
     def test_register_chain(self):
         self.check_register(chain=True)
 
+    @unittest.skipIf(not hasattr(faulthandler, "register"),
+                     "need faulthandler.register")
+    def test_register_max_threads(self):
+        # register(max_threads=N) caps the thread dump produced when
+        # the registered signal fires.
+        code = dedent("""
+            import faulthandler
+            import os
+            import signal
+            import threading
+
+            NTHREADS = 6
+            CAP = 3
+
+            ready = threading.Barrier(NTHREADS + 1)
+            stop = threading.Event()
+
+            def worker():
+                ready.wait()
+                stop.wait()
+
+            for _ in range(NTHREADS):
+                threading.Thread(target=worker, daemon=True).start()
+            ready.wait()
+            faulthandler.register(signal.SIGUSR1, all_threads=True,
+                                  max_threads=CAP)
+            os.kill(os.getpid(), signal.SIGUSR1)
+        """).strip()
+        proc = script_helper.assert_python_ok('-c', code)
+        output = proc.err
+        # Cap of 3 means the dump is truncated with "..." on its own line.
+        self.assertIn(b"\n...\n", output)
+        # Cap of 3 means exactly 3 thread headers in the dump.
+        self.assertEqual(output.count(b"Thread 0x"), 3)
+
     @contextmanager
     def check_stderr_none(self):
         stderr = sys.stderr
