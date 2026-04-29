@@ -54,6 +54,7 @@ OPENSSL_RECENT_VERSIONS = [
     "3.4.4",
     "3.5.5",
     "3.6.1",
+    "4.0.0",
     # See make_ssl_data.py for notes on adding a new version.
 ]
 
