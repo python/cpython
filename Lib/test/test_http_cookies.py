@@ -50,12 +50,12 @@ class CookieTests(unittest.TestCase):
                 ))
             },
 
-            # gh-92936: allow double quote in cookie values
+            # gh-149028: allow any characters in unquoted cookie values
             {
-                'data': 'cookie="{"key": "value"}"',
+                'data': 'cookie={"key": "value"}',
                 'dict': {'cookie': '{"key": "value"}'},
                 'repr': "<SimpleCookie: cookie='{\"key\": \"value\"}'>",
-                'output': 'Set-Cookie: cookie="{"key": "value"}"',
+                'output': 'Set-Cookie: cookie={"key": "value"}',
             },
             {
                 'data': 'key="some value; surrounded by quotes"',
@@ -64,11 +64,11 @@ class CookieTests(unittest.TestCase):
                 'output': 'Set-Cookie: key="some value; surrounded by quotes"',
             },
             {
-                'data': 'session="user123"; preferences="{"theme": "dark"}"',
+                'data': 'session="user123"; preferences={"theme": "dark"}',
                 'dict': {'session': 'user123', 'preferences': '{"theme": "dark"}'},
                 'repr': "<SimpleCookie: preferences='{\"theme\": \"dark\"}' session='user123'>",
                 'output': '\n'.join((
-                    'Set-Cookie: preferences="{"theme": "dark"}"',
+                    'Set-Cookie: preferences={"theme": "dark"}',
                     'Set-Cookie: session="user123"',
                 ))
             }
@@ -316,7 +316,7 @@ class CookieTests(unittest.TestCase):
                   'Set-Cookie: foo=bar', 'Set-Cookie: foo',
                   'foo=bar; baz', 'baz; foo=bar',
                   'secure;foo=bar', 'Version=1;foo=bar'):
-            C.load(s)
+            C.load(s, strict=True)
             self.assertEqual(dict(C), {})
             self.assertEqual(C.output(), '')
 

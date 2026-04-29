@@ -450,30 +450,37 @@ class Morsel(dict):
 # specifications.  I have since discovered that MSIE 3.0x doesn't
 # follow the character rules outlined in those specs.  As a
 # result, the parsing rules here are less strict.
-#
+# Currently, it is a hybrid of RFC 2109/2965 (for quoted strings)
+# and RFC 6265.
 
-_LegalKeyChars  = r"\w\d!#%&'~_`><@,:/\$\*\+\-\.\^\|\)\(\?\}\{\="
-_LegalValueChars = _LegalKeyChars + r'\[\]'
+# token, defined in RFC 2616, Section 2.2
+_token = r"[\w\d!#$%&'*+\-.^_`|~]+"
+# cookie-name, defined in RFC 6265, Section 4.1.1
+_StrictKeyPattern = re.compile(_token)
+# quoted-string, defined in RFC 2616, Section 2.2
+_quoted_string = fr'"(?:\\[\x00-\x7f]|[^"\x00-\x1f]|[\t\r\n])*+"'
+# value, defined in RFC 2965, Section 3.1
+_StrictRFC2965ValuePattern = re.compile(fr'{_token}|{_quoted_string}')
+# cookie-value, defined in RFC 6265, Section 4.1.1
+_cookie_octet = r"[\w\d!#$%&'()*+\-./:<=>?@\[\]^_`{|}~]"
+_StrictRFC6265ValuePattern = re.compile(fr'{_cookie_octet}*|"{_cookie_octet}*+"')
+# hybrid pattern
+_StrictValuePattern = re.compile(fr'{_cookie_octet}*|{_quoted_string}')
+
 _CookiePattern = re.compile(r"""
-    \s*                            # Optional whitespace at start of cookie
-    (?P<key>                       # Start of group 'key'
-    [""" + _LegalKeyChars + r"""]+?   # Any word of at least one letter
-    )                              # End of group 'key'
-    (                              # Optional group: there may not be a value.
-    \s*=\s*                          # Equal Sign
-    (?P<val>                         # Start of group 'val'
-    "(?:\\"|.)*?"                    # Any double-quoted string
-    |                                  # or
-    # Special case for "expires" attr
-    (\w{3,6}day|\w{3}),\s              # Day of the week or abbreviated day
-    [\w\d\s-]{9,11}\s[\d:]{8}\sGMT     # Date and time in specific format
-    |                                  # or
-    [""" + _LegalValueChars + r"""]*      # Any word or empty string
-    )                                # End of group 'val'
-    )?                             # End of optional value group
-    \s*                            # Any number of spaces.
-    (\s+|;|$)                      # Ending either at space, semicolon, or EOS.
-    """, re.ASCII | re.VERBOSE)    # re.ASCII may be removed if safe.
+    \s*+                # Optional whitespace at start of cookie
+    ([^=;]*+)           # Name: any characters except "=" and ";" (RFC 6265)
+    (?:                 # Optional group: there may not be a value.
+      \s*+=\s*+           # Equal Sign
+      (                   # Value:
+        "(?:\\.|[^"])*+"    # Any double-quoted string (RFC 2109/2965)
+        |                   # or
+        [^;]*+              # Any characters except ";" (RFC 6265)
+      )
+    )?+                 # End of optional value group
+    \s*+                # Any number of spaces.
+    (?:;|\z)            # Ending either at semicolon, or EOS.
+    """, re.ASCII | re.VERBOSE) # re.ASCII is needed for \s.
 
 
 # At long last, here is the cookie class.  Using this class is almost just like
@@ -547,21 +554,21 @@ class BaseCookie(dict):
             result.append(value.js_output(attrs))
         return _nulljoin(result)
 
-    def load(self, rawdata):
+    def load(self, rawdata, *, strict=False):
         """Load cookies from a string (presumably HTTP_COOKIE) or
         from a dictionary.  Loading cookies from a dictionary 'd'
         is equivalent to calling:
             map(Cookie.__setitem__, d.keys(), d.values())
         """
         if isinstance(rawdata, str):
-            self.__parse_string(rawdata)
+            self.__parse_string(rawdata, strict)
         else:
             # self.update() wouldn't call our custom __setitem__
             for key, value in rawdata.items():
                 self[key] = value
         return
 
-    def __parse_string(self, str, patt=_CookiePattern):
+    def __parse_string(self, str, strict):
         i = 0                 # Our starting point
         n = len(str)          # Length of string
         parsed_items = []     # Parsed (type, key, value) triples
@@ -575,13 +582,21 @@ class BaseCookie(dict):
         # attacks).
         while 0 <= i < n:
             # Start looking for a cookie
-            match = patt.match(str, i)
+            match = _CookiePattern.match(str, i)
             if not match:
                 # No more cookies
                 break
 
-            key, value = match.group("key"), match.group("val")
-            i = match.end(0)
+            key, value = match.groups()
+            key = key.rstrip(' \t\r\n')
+            if value:
+                value = value.rstrip(' \t\r\n')
+            if strict:
+                if not _StrictKeyPattern.fullmatch(key):
+                    break
+                if value and not _StrictValuePattern.fullmatch(value):
+                    break
+            i = match.end()
 
             if key[0] == "$":
                 if not morsel_seen:
