@@ -21,7 +21,7 @@ thread) and calling a function in that execution context.
 For concurrency, interpreters themselves (and this module) don't
 provide much more than isolation, which on its own isn't useful.
 Actual concurrency is available separately through
-:mod:`threads <threading>`  See `below <interp-concurrency_>`_
+:mod:`threads <threading>`.  See `below <interp-concurrency_>`_.
 
 .. seealso::
 
