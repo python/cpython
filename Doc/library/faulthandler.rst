@@ -189,11 +189,12 @@ Dumping the tracebacks after a timeout
 Dumping the traceback on a user signal
 --------------------------------------
 
-.. function:: register(signum, file=sys.stderr, all_threads=True, chain=False)
+.. function:: register(signum, file=sys.stderr, all_threads=True, chain=False, *, max_threads=100)
 
    Register a user signal: install a handler for the *signum* signal to dump
    the traceback of all threads, or of the current thread if *all_threads* is
    ``False``, into *file*. Call the previous handler if chain is ``True``.
+   *max_threads* caps the number of threads dumped.
 
    The *file* must be kept open until the signal is unregistered by
    :func:`unregister`: see :ref:`issue with file descriptors <faulthandler-fd>`.
@@ -202,6 +203,9 @@ Dumping the traceback on a user signal
 
    .. versionchanged:: 3.5
       Added support for passing file descriptor to this function.
+
+   .. versionchanged:: next
+      Added the *max_threads* keyword argument.
 
 .. function:: unregister(signum)
 

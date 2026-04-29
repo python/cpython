@@ -464,20 +464,22 @@ faulthandler_cancel_dump_traceback_later_py(PyObject *module, PyObject *Py_UNUSE
 
 PyDoc_STRVAR(faulthandler_register_py__doc__,
 "register($module, /, signum, file=sys.stderr, all_threads=True,\n"
-"         chain=False)\n"
+"         chain=False, *, max_threads=100)\n"
 "--\n"
 "\n"
 "Register a handler for the signal \'signum\'.\n"
 "\n"
 "Dump the traceback of the current thread, or of all threads if\n"
-"all_threads is True, into file.");
+"all_threads is True, into file. max_threads caps the number of threads\n"
+"dumped.");
 
 #define FAULTHANDLER_REGISTER_PY_METHODDEF    \
     {"register", _PyCFunction_CAST(faulthandler_register_py), METH_FASTCALL|METH_KEYWORDS, faulthandler_register_py__doc__},
 
 static PyObject *
 faulthandler_register_py_impl(PyObject *module, int signum, PyObject *file,
-                              int all_threads, int chain);
+                              int all_threads, int chain,
+                              Py_ssize_t max_threads);
 
 static PyObject *
 faulthandler_register_py(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
@@ -485,7 +487,7 @@ faulthandler_register_py(PyObject *module, PyObject *const *args, Py_ssize_t nar
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 
-    #define NUM_KEYWORDS 4
+    #define NUM_KEYWORDS 5
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
@@ -494,7 +496,7 @@ faulthandler_register_py(PyObject *module, PyObject *const *args, Py_ssize_t nar
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
         .ob_hash = -1,
-        .ob_item = { &_Py_ID(signum), &_Py_ID(file), &_Py_ID(all_threads), &_Py_ID(chain), },
+        .ob_item = { &_Py_ID(signum), &_Py_ID(file), &_Py_ID(all_threads), &_Py_ID(chain), &_Py_ID(max_threads), },
     };
     #undef NUM_KEYWORDS
     #define KWTUPLE (&_kwtuple.ob_base.ob_base)
@@ -503,19 +505,20 @@ faulthandler_register_py(PyObject *module, PyObject *const *args, Py_ssize_t nar
     #  define KWTUPLE NULL
     #endif  // !Py_BUILD_CORE
 
-    static const char * const _keywords[] = {"signum", "file", "all_threads", "chain", NULL};
+    static const char * const _keywords[] = {"signum", "file", "all_threads", "chain", "max_threads", NULL};
     static _PyArg_Parser _parser = {
         .keywords = _keywords,
         .fname = "register",
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[4];
+    PyObject *argsbuf[5];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     int signum;
     PyObject *file = NULL;
     int all_threads = 1;
     int chain = 0;
+    Py_ssize_t max_threads = 100;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
             /*minpos*/ 1, /*maxpos*/ 4, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
@@ -544,12 +547,33 @@ faulthandler_register_py(PyObject *module, PyObject *const *args, Py_ssize_t nar
             goto skip_optional_pos;
         }
     }
-    chain = PyObject_IsTrue(args[3]);
-    if (chain < 0) {
-        goto exit;
+    if (args[3]) {
+        chain = PyObject_IsTrue(args[3]);
+        if (chain < 0) {
+            goto exit;
+        }
+        if (!--noptargs) {
+            goto skip_optional_pos;
+        }
     }
 skip_optional_pos:
-    return_value = faulthandler_register_py_impl(module, signum, file, all_threads, chain);
+    if (!noptargs) {
+        goto skip_optional_kwonly;
+    }
+    {
+        Py_ssize_t ival = -1;
+        PyObject *iobj = _PyNumber_Index(args[4]);
+        if (iobj != NULL) {
+            ival = PyLong_AsSsize_t(iobj);
+            Py_DECREF(iobj);
+        }
+        if (ival == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        max_threads = ival;
+    }
+skip_optional_kwonly:
+    return_value = faulthandler_register_py_impl(module, signum, file, all_threads, chain, max_threads);
 
 exit:
     return return_value;
@@ -758,4 +782,4 @@ exit:
 #ifndef FAULTHANDLER__RAISE_EXCEPTION_METHODDEF
     #define FAULTHANDLER__RAISE_EXCEPTION_METHODDEF
 #endif /* !defined(FAULTHANDLER__RAISE_EXCEPTION_METHODDEF) */
-/*[clinic end generated code: output=ddd45864a02279e4 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=2452d767c85130a6 input=a9049054013a1b77]*/

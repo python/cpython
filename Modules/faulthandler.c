@@ -961,7 +961,8 @@ faulthandler_user(int signum)
     if (!user->enabled)
         return;
 
-    faulthandler_dump_traceback(user->fd, user->all_threads, user->interp, 0);
+    faulthandler_dump_traceback(user->fd, user->all_threads, user->interp,
+                                user->max_threads);
 
 #ifdef HAVE_SIGACTION
     if (user->chain) {
@@ -1011,17 +1012,21 @@ faulthandler.register as faulthandler_register_py
     file: object(py_default="sys.stderr") = NULL
     all_threads: bool = True
     chain: bool = False
+    *
+    max_threads: Py_ssize_t = 100
 
 Register a handler for the signal 'signum'.
 
 Dump the traceback of the current thread, or of all threads if
-all_threads is True, into file.
+all_threads is True, into file. max_threads caps the number of threads
+dumped.
 [clinic start generated code]*/
 
 static PyObject *
 faulthandler_register_py_impl(PyObject *module, int signum, PyObject *file,
-                              int all_threads, int chain)
-/*[clinic end generated code: output=1f770cee150a56cd input=ae9de829e850907b]*/
+                              int all_threads, int chain,
+                              Py_ssize_t max_threads)
+/*[clinic end generated code: output=d63a5b4f388dee5f input=c75096a20de502fe]*/
 {
     int fd;
     user_signal_t *user;
@@ -1072,6 +1077,7 @@ faulthandler_register_py_impl(PyObject *module, int signum, PyObject *file,
     user->all_threads = all_threads;
     user->chain = chain;
     user->interp = PyThreadState_GetInterpreter(tstate);
+    user->max_threads = max_threads;
     user->enabled = 1;
 
     Py_RETURN_NONE;
