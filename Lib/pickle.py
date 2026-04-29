@@ -1735,6 +1735,8 @@ class _Unpickler:
         stack = self.stack
         args = stack.pop()
         func = stack[-1]
+        if not isinstance(args, tuple):
+            raise TypeError("argument list must be a tuple")
         stack[-1] = func(*args)
     dispatch[REDUCE[0]] = load_reduce
 
