@@ -10,7 +10,7 @@ Glossary
 
    ``>>>``
       The default Python prompt of the :term:`interactive` shell.  Often
-      seen for code examples which can be executed interactively in the
+      seen in code examples that can be executed interactively in the
       interpreter.
 
    ``...``
