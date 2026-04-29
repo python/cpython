@@ -1459,6 +1459,8 @@ Glossary
       of :ref:`subscript notation <subscriptions>`, with colons inside square
       brackets, such as in ``variable_name[1:3:5]``.
 
+      See also :ref:`slice-objects`.
+
    soft deprecated
       A soft deprecated API should not be used in new code,
       but it is safe for already existing code to use it.
