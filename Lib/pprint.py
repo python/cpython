@@ -133,6 +133,11 @@ def _safe_tuple(t):
 
 def _colorize_output(text):
     """Apply syntax highlighting."""
+    if "\x1b[" in text:
+        # If the text already contains ANSI escape sequences
+        # (for example, from a custom __repr__),
+        # return as-is to avoid breaking their color.
+        return text
     colors = list(gen_colors(text))
     chars, _ = disp_str(text, colors=colors, force_color=True, escape=False)
     return "".join(chars)

@@ -245,6 +245,26 @@ class QueryTestCase(unittest.TestCase):
         stripped = re.sub(r"\x1b\[[0-9;]*m", "", color)
         self.assertEqual(stripped, plain)
 
+    def test_color_user_repr_with_ansi(self):
+        """If a __repr__ already contains ANSI escapes, don't add ours."""
+
+        class ColorObj:
+            def __repr__(self):
+                return "\x1b[31mred\x1b[0m"
+
+        obj = {"a": ColorObj(), "b": 42, "c": "hello"}
+
+        with unittest.mock.patch.dict(
+            "os.environ", {"FORCE_COLOR": "1", "NO_COLOR": ""}
+        ):
+            stream = io.StringIO()
+            pprint.pprint(obj, stream=stream, color=True)
+            result = stream.getvalue()
+
+        # pprint should not have added any extra color codes
+        expected = "{'a': \x1b[31mred\x1b[0m, 'b': 42, 'c': 'hello'}\n"
+        self.assertEqual(result, expected)
+
     def test_basic(self):
         # Verify .isrecursive() and .isreadable() w/o recursion
         pp = pprint.PrettyPrinter()
