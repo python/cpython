@@ -116,11 +116,14 @@ class TestPerfTrampoline(unittest.TestCase):
                 def foo():
                     pid = os.fork()
                     if pid == 0:
-                        print(os.getpid())
+                        print(os.getpid(), flush=True)
                         baz_fork()
+                        os._exit(0)
                     else:
                         _, status = os.waitpid(-1, 0)
-                        sys.exit(status)
+                        if os.WIFSIGNALED(status):
+                            sys.exit(1)
+                        sys.exit(os.WEXITSTATUS(status))
 
                 def bar():
                     foo()
