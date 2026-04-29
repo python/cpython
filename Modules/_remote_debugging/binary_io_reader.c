@@ -563,6 +563,14 @@ reader_get_or_create_thread_state(BinaryReader *reader, uint64_t thread_id,
         }
     }
 
+    if (reader->thread_state_count >= reader->thread_count) {
+        PyErr_Format(PyExc_ValueError,
+            "Invalid thread count: sample data contains more unique threads than declared in header "
+            "(declared %u, found at least %zu)",
+            reader->thread_count, reader->thread_state_count + 1);
+        return NULL;
+    }
+
     if (!reader->thread_states) {
         reader->thread_state_capacity = 16;
         reader->thread_states = PyMem_Calloc(reader->thread_state_capacity, sizeof(ReaderThreadState));
