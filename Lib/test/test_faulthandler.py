@@ -902,7 +902,6 @@ class FaultHandlerTests(unittest.TestCase):
         # the registered signal fires.
         code = dedent("""
             import faulthandler
-            import os
             import signal
             import threading
 
@@ -916,12 +915,18 @@ class FaultHandlerTests(unittest.TestCase):
                 ready.wait()
                 stop.wait()
 
-            for _ in range(NTHREADS):
-                threading.Thread(target=worker, daemon=True).start()
+            threads = [threading.Thread(target=worker) for _ in range(NTHREADS)]
+            for t in threads:
+                t.start()
             ready.wait()
-            faulthandler.register(signal.SIGUSR1, all_threads=True,
-                                  max_threads=CAP)
-            os.kill(os.getpid(), signal.SIGUSR1)
+            try:
+                faulthandler.register(signal.SIGUSR1, all_threads=True,
+                                      max_threads=CAP)
+                signal.raise_signal(signal.SIGUSR1)
+            finally:
+                stop.set()
+                for t in threads:
+                    t.join()
         """).strip()
         proc = script_helper.assert_python_ok('-c', code)
         output = proc.err
