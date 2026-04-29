@@ -2963,7 +2963,7 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
         self.assertNotIn("_CALL_LEN", uops)
-        self.assertEqual(count_ops(ex, "_SHUFFLE_3_LOAD_CONST_INLINE_BORROW"), 4)
+        self.assertGreaterEqual(count_ops(ex, "_LOAD_CONST_INLINE_BORROW"), 8)
 
     def test_call_len_known_length_small_int(self):
         # Make sure that len(t) is optimized for a tuple of length 5.
@@ -5881,6 +5881,19 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertNotIn("_LOAD_SUPER_ATTR_METHOD", uops)
         self.assertEqual(uops.count("_GUARD_NOS_TYPE_VERSION"), 2)
 
+    def test_settrace_then_polymorphic_call_does_not_crash(self):
+        script_helper.assert_python_ok("-c", textwrap.dedent("""
+            import sys
+            sys.settrace(lambda *_: None)
+            sys.settrace(None)
+
+            class C:
+                def __init__(self, x):
+                    pass
+
+            for i in 0, 1, 0, 1:
+                C(0) if i else str(0)
+        """))
 
 def global_identity(x):
     return x

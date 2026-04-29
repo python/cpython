@@ -360,6 +360,23 @@ LiveProfilerLight = LiveProfiler(
 
 
 @dataclass(frozen=True, kw_only=True)
+class Pickletools(ThemeSection):
+    annotation: str = ANSIColors.GREY
+    arg_number: str = ANSIColors.YELLOW
+    arg_string: str = ANSIColors.GREEN
+    mark: str = ANSIColors.GREY
+    op_call: str = ANSIColors.GREEN
+    op_container: str = ANSIColors.INTENSE_BLUE
+    op_memo: str = ANSIColors.MAGENTA
+    op_meta: str = ANSIColors.GREY
+    op_stack: str = ANSIColors.BOLD_RED
+    opcode_code: str = ANSIColors.CYAN
+    position: str = ANSIColors.GREY
+    proto: str = ANSIColors.YELLOW
+    reset: str = ANSIColors.RESET
+
+
+@dataclass(frozen=True, kw_only=True)
 class Syntax(ThemeSection):
     prompt: str = ANSIColors.BOLD_MAGENTA
     keyword: str = ANSIColors.BOLD_BLUE
@@ -429,6 +446,7 @@ class Theme:
     fancycompleter: FancyCompleter = field(default_factory=FancyCompleter)
     http_server: HttpServer = field(default_factory=HttpServer)
     live_profiler: LiveProfiler = field(default_factory=LiveProfiler)
+    pickletools: Pickletools = field(default_factory=Pickletools)
     syntax: Syntax = field(default_factory=Syntax)
     timeit: Timeit = field(default_factory=Timeit)
     tokenize: Tokenize = field(default_factory=Tokenize)
@@ -444,6 +462,7 @@ class Theme:
         fancycompleter: FancyCompleter | None = None,
         http_server: HttpServer | None = None,
         live_profiler: LiveProfiler | None = None,
+        pickletools: Pickletools | None = None,
         syntax: Syntax | None = None,
         timeit: Timeit | None = None,
         tokenize: Tokenize | None = None,
@@ -462,6 +481,7 @@ class Theme:
             fancycompleter=fancycompleter or self.fancycompleter,
             http_server=http_server or self.http_server,
             live_profiler=live_profiler or self.live_profiler,
+            pickletools=pickletools or self.pickletools,
             syntax=syntax or self.syntax,
             timeit=timeit or self.timeit,
             tokenize=tokenize or self.tokenize,
@@ -484,6 +504,7 @@ class Theme:
             fancycompleter=FancyCompleter.no_colors(),
             http_server=HttpServer.no_colors(),
             live_profiler=LiveProfiler.no_colors(),
+            pickletools=Pickletools.no_colors(),
             syntax=Syntax.no_colors(),
             timeit=Timeit.no_colors(),
             tokenize=Tokenize.no_colors(),

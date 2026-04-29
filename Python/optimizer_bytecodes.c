@@ -2332,7 +2332,10 @@ dummy_func(void) {
                 goto error;
             }
             if (_Py_IsImmortal(temp)) {
-                ADD_OP(_SHUFFLE_3_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)temp);
+                ADD_OP(_SWAP, 2, 0);
+                optimize_pop_top(ctx, this_instr, null);
+                ADD_OP(_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)temp);
+                ADD_OP(_SWAP, 3, 0);
             }
             res = sym_new_const(ctx, temp);
             Py_DECREF(temp);
