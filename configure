@@ -17557,6 +17557,30 @@ then :
   printf "%s\n" "#define HAVE_BIND_TEXTDOMAIN_CODESET 1" >>confdefs.h
 
 fi
+ac_fn_c_check_func "$LINENO" "cfgetispeed" "ac_cv_func_cfgetispeed"
+if test "x$ac_cv_func_cfgetispeed" = xyes
+then :
+  printf "%s\n" "#define HAVE_CFGETISPEED 1" >>confdefs.h
+
+fi
+ac_fn_c_check_func "$LINENO" "cfgetospeed" "ac_cv_func_cfgetospeed"
+if test "x$ac_cv_func_cfgetospeed" = xyes
+then :
+  printf "%s\n" "#define HAVE_CFGETOSPEED 1" >>confdefs.h
+
+fi
+ac_fn_c_check_func "$LINENO" "cfsetispeed" "ac_cv_func_cfsetispeed"
+if test "x$ac_cv_func_cfsetispeed" = xyes
+then :
+  printf "%s\n" "#define HAVE_CFSETISPEED 1" >>confdefs.h
+
+fi
+ac_fn_c_check_func "$LINENO" "cfsetospeed" "ac_cv_func_cfsetospeed"
+if test "x$ac_cv_func_cfsetospeed" = xyes
+then :
+  printf "%s\n" "#define HAVE_CFSETOSPEED 1" >>confdefs.h
+
+fi
 ac_fn_c_check_func "$LINENO" "chmod" "ac_cv_func_chmod"
 if test "x$ac_cv_func_chmod" = xyes
 then :
@@ -18493,10 +18517,34 @@ then :
   printf "%s\n" "#define HAVE_SYSTEM 1" >>confdefs.h
 
 fi
+ac_fn_c_check_func "$LINENO" "tcdrain" "ac_cv_func_tcdrain"
+if test "x$ac_cv_func_tcdrain" = xyes
+then :
+  printf "%s\n" "#define HAVE_TCDRAIN 1" >>confdefs.h
+
+fi
+ac_fn_c_check_func "$LINENO" "tcflow" "ac_cv_func_tcflow"
+if test "x$ac_cv_func_tcflow" = xyes
+then :
+  printf "%s\n" "#define HAVE_TCFLOW 1" >>confdefs.h
+
+fi
+ac_fn_c_check_func "$LINENO" "tcflush" "ac_cv_func_tcflush"
+if test "x$ac_cv_func_tcflush" = xyes
+then :
+  printf "%s\n" "#define HAVE_TCFLUSH 1" >>confdefs.h
+
+fi
 ac_fn_c_check_func "$LINENO" "tcgetpgrp" "ac_cv_func_tcgetpgrp"
 if test "x$ac_cv_func_tcgetpgrp" = xyes
 then :
   printf "%s\n" "#define HAVE_TCGETPGRP 1" >>confdefs.h
+
+fi
+ac_fn_c_check_func "$LINENO" "tcsendbreak" "ac_cv_func_tcsendbreak"
+if test "x$ac_cv_func_tcsendbreak" = xyes
+then :
+  printf "%s\n" "#define HAVE_TCSENDBREAK 1" >>confdefs.h
 
 fi
 ac_fn_c_check_func "$LINENO" "tcsetpgrp" "ac_cv_func_tcsetpgrp"

@@ -130,6 +130,18 @@
 /* Define to 1 if you have the <bzlib.h> header file. */
 #undef HAVE_BZLIB_H
 
+/* Define to 1 if you have the `cfgetispeed' function. */
+#undef HAVE_CFGETISPEED
+
+/* Define to 1 if you have the `cfgetospeed' function. */
+#undef HAVE_CFGETOSPEED
+
+/* Define to 1 if you have the `cfsetispeed' function. */
+#undef HAVE_CFSETISPEED
+
+/* Define to 1 if you have the `cfsetospeed' function. */
+#undef HAVE_CFSETOSPEED
+
 /* Define to 1 if you have the 'chflags' function. */
 #undef HAVE_CHFLAGS
 
@@ -1402,8 +1414,20 @@
 /* Define to 1 if you have the <sys/xattr.h> header file. */
 #undef HAVE_SYS_XATTR_H
 
+/* Define to 1 if you have the `tcdrain' function. */
+#undef HAVE_TCDRAIN
+
+/* Define to 1 if you have the `tcflow' function. */
+#undef HAVE_TCFLOW
+
+/* Define to 1 if you have the `tcflush' function. */
+#undef HAVE_TCFLUSH
+
 /* Define to 1 if you have the `tcgetpgrp' function. */
 #undef HAVE_TCGETPGRP
+
+/* Define to 1 if you have the `tcsendbreak' function. */
+#undef HAVE_TCSENDBREAK
 
 /* Define to 1 if you have the `tcsetpgrp' function. */
 #undef HAVE_TCSETPGRP
