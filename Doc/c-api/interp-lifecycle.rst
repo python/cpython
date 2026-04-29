@@ -608,7 +608,8 @@ it possible to avoid these issues by temporarily preventing finalization:
 
 .. seealso::
 
-   :pep:`788`
+   :pep:`788` explains the design, motivation and rationale
+   for these APIs.
 
 .. c:type:: PyInterpreterGuard
 
@@ -625,13 +626,18 @@ it possible to avoid these issues by temporarily preventing finalization:
    interpreter guard, the process will **permanently hang** during
    finalization!
 
+   Holding a guard for an interpreter is similar to holding a
+   :term:`strong reference` to a Python object, except finalization does not happen
+   automatically after all guards are released: it requires an explicit 
+   :c:func:`Py_EndInterpreter` call.
+
    .. versionadded:: next
 
 
 .. c:function:: PyInterpreterGuard *PyInterpreterGuard_FromCurrent(void)
 
    Create a finalization guard for the current interpreter. This will prevent
-   finalization from occuring until the guard is closed.
+   finalization until the guard is closed.
 
    For example:
 
@@ -764,8 +770,8 @@ deleted. This can be done using interpreter views.
    Failure indicates that the process is out of memory or that the main
    interpreter has finalized (or never existed).
 
-   Generally speaking, using this function is strongly discouraged, because
-   it typically compromises subinterpreter support for a program. It exists
+   Using this function in extension libraries is strongly discouraged, because
+   it typically compromises the library's subinterpreter support. It exists
    for exceptional cases where there is no other option (such as when a native
    threading library doesn't provide a ``void *arg`` parameter that could be
    used to store a ``PyInterpreterGuard`` or ``PyInterpreterView`` pointer).

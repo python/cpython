@@ -545,9 +545,10 @@ will hang the process during interpreter finalization (see
    :c:func:`PyGILState_GetThisThreadState`. If the caller has no attached thread
    state or it otherwise doesn't match, then this returns ``0``.
 
-   .. note::
-      If the current Python process has ever created a subinterpreter, this
-      function will *always* return ``1``.
+   If the current Python process has ever created a subinterpreter, this
+   function will *always* return ``1``.
+
+   This is mainly a helper/diagnostic function.
 
    .. versionadded:: 3.4
 

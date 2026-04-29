@@ -456,7 +456,7 @@ In the C API, :term:`interpreter finalization <interpreter shutdown>` can be
 problematic for many extensions, because :term:`attaching <attached thread
 state>` a thread state will permanently hang the thread, resulting in deadlocks
 and other spurious issues. Additionally, it has historically been impossible
-to atomically check whether an interpreter is alive, leading to crashes
+to safely check whether an interpreter is alive before using it, leading to crashes
 when a thread concurrently deletes an interpreter while another thread is
 trying to attach to it.
 
