@@ -678,7 +678,7 @@ mmap_flush_method(mmap_object *self, PyObject *args)
         return NULL;
     }
     Py_RETURN_NONE;
-#elif defined(UNIX)
+#elif defined(UNIX) && defined(HAVE_MSYNC)
     /* XXX flags for msync? */
     if (-1 == msync(self->data + offset, size, MS_SYNC)) {
         PyErr_SetFromErrno(PyExc_OSError);
