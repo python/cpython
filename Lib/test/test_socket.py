@@ -170,6 +170,22 @@ def _have_socket_vsock():
     return (cid is not None)
 
 
+def _have_socket_udplite():
+    """Check whether UDPLITE sockets are supported on this host."""
+    if not hasattr(socket, "IPPROTO_UDPLITE"):
+        return False
+    # Older Android versions block UDPLITE with SELinux.
+    if support.is_android and platform.android_ver().api_level < 29:
+        return False
+    try:
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDPLITE)
+    except (AttributeError, OSError):
+        return False
+    else:
+        s.close()
+    return True
+
+
 def _have_socket_bluetooth():
     """Check whether AF_BLUETOOTH sockets are supported on this host."""
     try:
@@ -247,10 +263,7 @@ HAVE_SOCKET_QIPCRTR = _have_socket_qipcrtr()
 
 HAVE_SOCKET_VSOCK = _have_socket_vsock()
 
-# Older Android versions block UDPLITE with SELinux.
-HAVE_SOCKET_UDPLITE = (
-    hasattr(socket, "IPPROTO_UDPLITE")
-    and not (support.is_android and platform.android_ver().api_level < 29))
+HAVE_SOCKET_UDPLITE = _have_socket_udplite()
 
 HAVE_SOCKET_BLUETOOTH = _have_socket_bluetooth()
 
