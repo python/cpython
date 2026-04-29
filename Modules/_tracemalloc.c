@@ -216,6 +216,11 @@ static struct PyModuleDef module_def = {
 PyMODINIT_FUNC
 PyInit__tracemalloc(void)
 {
+    PyABIInfo_VAR(abi_info);
+    if (PyABIInfo_Check(&abi_info, "_tracemalloc") < 0) {
+        return NULL;
+    }
+
     PyObject *mod = PyModule_Create(&module_def);
     if (mod == NULL) {
         return NULL;

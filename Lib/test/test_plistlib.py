@@ -792,6 +792,25 @@ class TestPlistlib(unittest.TestCase):
                 })
                 self.assertIsNot(pl2['first'], pl2['second'])
 
+    def test_frozendict(self):
+        pl = frozendict(
+            aString="Doodah",
+            anInt=728,
+            aDict=frozendict(
+                anotherString="hello",
+                aTrueValue=True,
+            ),
+            aList=["A", "B", 12],
+        )
+
+        for fmt in ALL_FORMATS:
+            with self.subTest(fmt=fmt):
+                data = plistlib.dumps(pl, fmt=fmt)
+                pl2 = plistlib.loads(data)
+                self.assertEqual(pl2, dict(pl))
+                self.assertIsInstance(pl2, dict)
+                self.assertIsInstance(pl2['aDict'], dict)
+
     def test_controlcharacters(self):
         for i in range(128):
             c = chr(i)

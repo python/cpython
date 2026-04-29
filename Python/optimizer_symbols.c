@@ -26,22 +26,23 @@ state represents no information, and the BOTTOM state represents contradictory
 information. Though symbols logically progress through all intermediate nodes,
 we often skip in-between states for convenience:
 
-   UNKNOWN-------------------+------+
-   |     |                   |      |
-NULL     |                   |   RECORDED_VALUE*
-|        |                   |      |            <- Anything below this level is an object.
-|        NON_NULL-+          |      |
-|          |      |          |      |            <- Anything below this level has a known type version.
-|    TYPE_VERSION |          |      |
-|    |            |          |      |            <- Anything below this level has a known type.
-|    KNOWN_CLASS  |          |      |
-|    |  |  |   |  |  PREDICATE   RECORDED_VALUE(known type)
-|    |  | INT* |  |          |      |
-|    |  |  |   |  |          |      |            <- Anything below this level has a known truthiness.
-| TUPLE |  |   |  TRUTHINESS |      |
-|    |  |  |   |  |          |      |            <- Anything below this level is a known constant.
-|    KNOWN_VALUE--+----------+------+
-|    |                                           <- Anything below this level is unreachable.
+   UNKNOWN---------------------+------+
+   |     |                     |      |
+NULL     |                     |      RECORDED_VALUE*
+|        |                     |      |            <- Anything below this level is an object.
+|        NON_NULL---------+    |      |
+|          |              |    |      |            <- Anything below this level has a known type version.
+|    TYPE_VERSION         |    |      |
+|    |                    |    |      |            <- Anything below this level has a known type.
+|    KNOWN_CLASS--+       |    |      |
+|    |  |  |              | PREDICATE RECORDED_VALUE(known type)
+|    |  | INT*            |    |      |
+|    |  |  |              |    |      |            <- Anything below this level has a known truthiness.
+|    |  |  |              |    |      |
+| TUPLE |  |        TRUTHINESS |      |
+|    |  |  |              |    |      |            <- Anything below this level is a known constant.
+|    KNOWN_VALUE--+-------+----+------+
+|    |                                             <- Anything below this level is unreachable.
 BOTTOM
 
 
@@ -277,6 +278,22 @@ _Py_uop_sym_is_safe_const(JitOptContext *ctx, JitOptRef sym)
     PyTypeObject *typ = Py_TYPE(const_val);
     return (typ == &PyUnicode_Type) ||
            (typ == &PyFloat_Type) ||
+           (typ == &_PyNone_Type) ||
+           (typ == &PyBool_Type) ||
+           (typ == &PyFrozenDict_Type) ||
+           (typ == &PyFrozenSet_Type);
+}
+
+bool
+_Py_uop_sym_is_not_container(JitOptRef sym)
+{
+    PyTypeObject *typ = _Py_uop_sym_get_type(sym);
+    if (typ == NULL) {
+        return false;
+    }
+    return (typ == &PyLong_Type) ||
+           (typ == &PyFloat_Type) ||
+           (typ == &PyUnicode_Type) ||
            (typ == &_PyNone_Type) ||
            (typ == &PyBool_Type);
 }
@@ -663,6 +680,7 @@ _Py_uop_sym_get_type(JitOptRef ref)
         case JIT_SYM_NON_NULL_TAG:
         case JIT_SYM_UNKNOWN_TAG:
         case JIT_SYM_RECORDED_TYPE_TAG:
+        case JIT_SYM_RECORDED_GEN_FUNC_TAG:
             return NULL;
         case JIT_SYM_RECORDED_VALUE_TAG:
             if (sym->recorded_value.known_type) {
@@ -682,8 +700,34 @@ _Py_uop_sym_get_type(JitOptRef ref)
             return &PyBool_Type;
         case JIT_SYM_COMPACT_INT:
             return &PyLong_Type;
+    }
+    Py_UNREACHABLE();
+}
+
+PyTypeObject *
+_Py_uop_sym_get_probable_type(JitOptRef ref)
+{
+    JitOptSymbol *sym = PyJitRef_Unwrap(ref);
+    JitSymType tag = sym->tag;
+    switch(tag) {
+        case JIT_SYM_NULL_TAG:
+        case JIT_SYM_BOTTOM_TAG:
+        case JIT_SYM_NON_NULL_TAG:
+        case JIT_SYM_UNKNOWN_TAG:
+        case JIT_SYM_TYPE_VERSION_TAG:
+        case JIT_SYM_TUPLE_TAG:
+        case JIT_SYM_PREDICATE_TAG:
+        case JIT_SYM_TRUTHINESS_TAG:
+        case JIT_SYM_COMPACT_INT:
+        case JIT_SYM_KNOWN_CLASS_TAG:
+        case JIT_SYM_KNOWN_VALUE_TAG:
+            return _Py_uop_sym_get_type(ref);
         case JIT_SYM_RECORDED_GEN_FUNC_TAG:
             return &PyGen_Type;
+        case JIT_SYM_RECORDED_VALUE_TAG:
+            return Py_TYPE(sym->recorded_value.value);
+        case JIT_SYM_RECORDED_TYPE_TAG:
+            return sym->recorded_type.type;
     }
     Py_UNREACHABLE();
 }
@@ -719,6 +763,7 @@ _Py_uop_sym_get_type_version(JitOptRef ref)
     }
     Py_UNREACHABLE();
 }
+
 
 bool
 _Py_uop_sym_has_type(JitOptRef sym)
@@ -1178,8 +1223,6 @@ _Py_uop_sym_set_recorded_gen_func(JitOptContext *ctx, JitOptRef ref, PyFunctionO
         case JIT_SYM_PREDICATE_TAG:
         case JIT_SYM_TRUTHINESS_TAG:
         case JIT_SYM_COMPACT_INT:
-            sym_set_bottom(ctx, sym);
-            return;
         case JIT_SYM_BOTTOM_TAG:
             return;
         case JIT_SYM_NON_NULL_TAG:
@@ -1284,7 +1327,6 @@ _Py_UOpsAbstractFrame *
 _Py_uop_frame_new_from_symbol(
     JitOptContext *ctx,
     JitOptRef callable,
-    int curr_stackentries,
     JitOptRef *args,
     int arg_len)
 {
@@ -1293,7 +1335,7 @@ _Py_uop_frame_new_from_symbol(
         ctx->done = true;
         return NULL;
     }
-    _Py_UOpsAbstractFrame *frame = _Py_uop_frame_new(ctx, co, curr_stackentries, args, arg_len);
+    _Py_UOpsAbstractFrame *frame = _Py_uop_frame_new(ctx, co, args, arg_len);
     if (frame == NULL) {
         return NULL;
     }
@@ -1303,6 +1345,7 @@ _Py_uop_frame_new_from_symbol(
         frame->func = func;
     }
     assert(frame->stack_pointer != NULL);
+    frame->callable = callable;
     return frame;
 }
 
@@ -1311,7 +1354,6 @@ _Py_UOpsAbstractFrame *
 _Py_uop_frame_new(
     JitOptContext *ctx,
     PyCodeObject *co,
-    int curr_stackentries,
     JitOptRef *args,
     int arg_len)
 {
@@ -1324,17 +1366,22 @@ _Py_uop_frame_new(
     }
     _Py_UOpsAbstractFrame *frame = &ctx->frames[ctx->curr_frame_depth];
     frame->code = co;
-    frame->stack_len = co->co_stacksize;
+
+    frame->locals = ctx->locals.used;
+    ctx->locals.used += co->co_nlocalsplus;
     frame->locals_len = co->co_nlocalsplus;
 
-    frame->locals = ctx->n_consumed;
-    frame->stack = frame->locals + co->co_nlocalsplus;
-    frame->stack_pointer = frame->stack + curr_stackentries;
+    frame->stack = ctx->stack.used;
+    ctx->stack.used += co->co_stacksize;
+    frame->stack_len = co->co_stacksize;
+
+    frame->stack_pointer = frame->stack;
     frame->globals_checked_version = 0;
     frame->globals_watched = false;
     frame->func = NULL;
-    ctx->n_consumed = ctx->n_consumed + (co->co_nlocalsplus + co->co_stacksize);
-    if (ctx->n_consumed >= ctx->limit) {
+    frame->caller = false;
+    frame->is_c_recursion_checked = false;
+    if (ctx->locals.used > ctx->locals.end || ctx->stack.used > ctx->stack.end) {
         ctx->done = true;
         ctx->out_of_space = true;
         return NULL;
@@ -1342,7 +1389,7 @@ _Py_uop_frame_new(
 
     // Initialize with the initial state of all local variables
     for (int i = 0; i < arg_len; i++) {
-        frame->locals[i] = args[i];
+        frame->locals[i] = PyJitRef_RemoveUnique(args[i]);
     }
 
     // If the args are known, then it's safe to just initialize
@@ -1354,15 +1401,46 @@ _Py_uop_frame_new(
         frame->locals[i] = local;
     }
 
-    // Initialize the stack as well
-    for (int i = 0; i < curr_stackentries; i++) {
-        JitOptRef stackvar = _Py_uop_sym_new_unknown(ctx);
-        frame->stack[i] = stackvar;
-    }
+    frame->callable = _Py_uop_sym_new_not_null(ctx);
+
+    /* Most optimizations rely on code objects being immutable (including sys._getframe modifications),
+     * and up to date for instrumentation. */
+    _Py_BloomFilter_Add(ctx->dependencies, co);
 
     assert(frame->locals != NULL);
     return frame;
 }
+
+JitOptRef *
+_Py_uop_sym_set_stack_depth(JitOptContext *ctx, int stack_depth, JitOptRef *current_sp) {
+    _Py_UOpsAbstractFrame *frame = ctx->frame;
+    assert(frame->stack != NULL);
+    JitOptRef *new_stack_pointer = frame->stack + stack_depth;
+    if (current_sp > new_stack_pointer) {
+        ctx->done = true;
+        ctx->contradiction = true;
+        return NULL;
+    }
+    if (new_stack_pointer > ctx->stack.end) {
+        ctx->done = true;
+        ctx->out_of_space = true;
+        return NULL;
+    }
+    int delta = (int)(new_stack_pointer - current_sp);
+    assert(delta >= 0);
+    if (delta) {
+        /* Shift existing stack elements up */
+        for (JitOptRef *p = current_sp-1; p >= frame->stack; p--) {
+            p[delta] = *p;
+        }
+        /* Fill rest of stack with unknowns */
+        for (int i = 0; i < delta; i++) {
+            frame->stack[i] = _Py_uop_sym_new_unknown(ctx);
+        }
+    }
+    return frame->stack_pointer = new_stack_pointer;
+}
+
 
 void
 _Py_uop_abstractcontext_fini(JitOptContext *ctx)
@@ -1380,15 +1458,24 @@ _Py_uop_abstractcontext_fini(JitOptContext *ctx)
     }
 }
 
+// Leave a bit of space to push values before checking that there is space for a new frame
+#define STACK_HEADROOM 2
+
 void
-_Py_uop_abstractcontext_init(JitOptContext *ctx)
+_Py_uop_abstractcontext_init(JitOptContext *ctx, _PyBloomFilter *dependencies)
 {
     static_assert(sizeof(JitOptSymbol) <= 3 * sizeof(uint64_t), "JitOptSymbol has grown");
-    ctx->limit = ctx->locals_and_stack + MAX_ABSTRACT_INTERP_SIZE;
-    ctx->n_consumed = ctx->locals_and_stack;
+
+    ctx->stack.used = ctx->stack_array;
+    ctx->stack.end = &ctx->stack_array[ABSTRACT_INTERP_STACK_SIZE-STACK_HEADROOM];
+    ctx->locals.used = ctx->locals_array;
+    ctx->locals.end = &ctx->locals_array[ABSTRACT_INTERP_LOCALS_SIZE-STACK_HEADROOM];
 #ifdef Py_DEBUG // Aids debugging a little. There should never be NULL in the abstract interpreter.
-    for (int i = 0 ; i < MAX_ABSTRACT_INTERP_SIZE; i++) {
-        ctx->locals_and_stack[i] = PyJitRef_NULL;
+    for (int i = 0 ; i < ABSTRACT_INTERP_STACK_SIZE; i++) {
+        ctx->stack_array[i] = PyJitRef_NULL;
+    }
+    for (int i = 0 ; i < ABSTRACT_INTERP_LOCALS_SIZE; i++) {
+        ctx->locals_array[i] = PyJitRef_NULL;
     }
 #endif
 
@@ -1406,13 +1493,15 @@ _Py_uop_abstractcontext_init(JitOptContext *ctx)
     ctx->out_of_space = false;
     ctx->contradiction = false;
     ctx->builtins_watched = false;
+    ctx->dependencies = dependencies;
 }
 
 int
-_Py_uop_frame_pop(JitOptContext *ctx, PyCodeObject *co, int curr_stackentries)
+_Py_uop_frame_pop(JitOptContext *ctx, PyCodeObject *co)
 {
     _Py_UOpsAbstractFrame *frame = ctx->frame;
-    ctx->n_consumed = frame->locals;
+    ctx->stack.used = frame->stack;
+    ctx->locals.used = frame->locals;
 
     ctx->curr_frame_depth--;
 
@@ -1436,9 +1525,7 @@ _Py_uop_frame_pop(JitOptContext *ctx, PyCodeObject *co, int curr_stackentries)
     // Else: trace stack underflow.
 
     // This handles swapping out frames.
-    assert(curr_stackentries >= 1);
-    // -1 to stackentries as we push to the stack our return value after this.
-    _Py_UOpsAbstractFrame *new_frame = _Py_uop_frame_new(ctx, co, curr_stackentries - 1, NULL, 0);
+    _Py_UOpsAbstractFrame *new_frame = _Py_uop_frame_new(ctx, co, NULL, 0);
     if (new_frame == NULL) {
         ctx->done = true;
         return 1;
@@ -1465,6 +1552,9 @@ static JitOptSymbol *
 make_bottom(JitOptContext *ctx)
 {
     JitOptSymbol *sym = sym_new(ctx);
+    if (sym == NULL) {
+        return out_of_space(ctx);
+    }
     sym->tag = JIT_SYM_BOTTOM_TAG;
     return sym;
 }
@@ -1474,7 +1564,7 @@ _Py_uop_symbols_test(PyObject *Py_UNUSED(self), PyObject *Py_UNUSED(ignored))
 {
     JitOptContext context;
     JitOptContext *ctx = &context;
-    _Py_uop_abstractcontext_init(ctx);
+    _Py_uop_abstractcontext_init(ctx, NULL);
     PyObject *val_42 = NULL;
     PyObject *val_43 = NULL;
     PyObject *val_big = NULL;
@@ -1963,7 +2053,8 @@ _Py_uop_symbols_test(PyObject *Py_UNUSED(self), PyObject *Py_UNUSED(ignored))
     /* Test that recorded type aren't treated as known values*/
     JitOptRef rg1 = _Py_uop_sym_new_unknown(ctx);
     _Py_uop_sym_set_recorded_gen_func(ctx, rg1, func);
-    TEST_PREDICATE(_Py_uop_sym_matches_type(rg1, &PyGen_Type), "recorded gen func not treated as generator");
+    TEST_PREDICATE(!_Py_uop_sym_matches_type(rg1, &PyGen_Type), "recorded gen func treated as generator");
+    TEST_PREDICATE(_Py_uop_sym_get_probable_type(rg1) == &PyGen_Type, "recorded gen func not treated as generator");
     TEST_PREDICATE(_Py_uop_sym_get_const(ctx, rg1) == NULL, "recorded gen func is treated as known value");
 
     /* Test that setting type narrows correctly */
@@ -1971,13 +2062,15 @@ _Py_uop_symbols_test(PyObject *Py_UNUSED(self), PyObject *Py_UNUSED(ignored))
     JitOptRef rg2 = _Py_uop_sym_new_unknown(ctx);
     _Py_uop_sym_set_recorded_gen_func(ctx, rg2, func);
     _Py_uop_sym_set_type(ctx, rg2, &PyGen_Type);
-    TEST_PREDICATE(_Py_uop_sym_matches_type(rg1, &PyGen_Type), "recorded gen func not treated as generator");
+    TEST_PREDICATE(!_Py_uop_sym_matches_type(rg2, &PyGen_Type), "recorded gen func treated as generator");
+    TEST_PREDICATE(_Py_uop_sym_get_probable_type(rg2) == &PyGen_Type, "recorded gen func not treated as generator");
     TEST_PREDICATE(_Py_uop_sym_get_const(ctx, rg2) == NULL, "known type is treated as known value");
 
     JitOptRef rg3 = _Py_uop_sym_new_unknown(ctx);
     _Py_uop_sym_set_recorded_gen_func(ctx, rg3, func);
     _Py_uop_sym_set_type_version(ctx, rg3, PyGen_Type.tp_version_tag);
-    TEST_PREDICATE(_Py_uop_sym_matches_type(rg1, &PyGen_Type), "recorded gen func not treated as generator");
+    TEST_PREDICATE(!_Py_uop_sym_matches_type(rg3, &PyGen_Type), "recorded gen func treated as generator");
+    TEST_PREDICATE(_Py_uop_sym_get_probable_type(rg3) == &PyGen_Type, "recorded gen func not treated as generator");
     TEST_PREDICATE(_Py_uop_sym_get_const(ctx, rg3) == NULL, "recorded value with type is treated as known");
 
     /* Test contradictions */

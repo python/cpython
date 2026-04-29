@@ -4,9 +4,6 @@
 .. module:: itertools
    :synopsis: Functions creating iterators for efficient looping.
 
-.. moduleauthor:: Raymond Hettinger <python@rcn.com>
-.. sectionauthor:: Raymond Hettinger <python@rcn.com>
-
 .. testsetup::
 
    from itertools import *
@@ -30,18 +27,7 @@ For instance, SML provides a tabulation tool: ``tabulate(f)`` which produces a
 sequence ``f(0), f(1), ...``.  The same effect can be achieved in Python
 by combining :func:`map` and :func:`count` to form ``map(f, count())``.
 
-
-**Infinite iterators:**
-
-==================  =================       =================================================               =========================================
-Iterator            Arguments               Results                                                         Example
-==================  =================       =================================================               =========================================
-:func:`count`       [start[, step]]         start, start+step, start+2*step, ...                            ``count(10) → 10 11 12 13 14 ...``
-:func:`cycle`       p                       p0, p1, ... plast, p0, p1, ...                                  ``cycle('ABCD') → A B C D A B C D ...``
-:func:`repeat`      elem [,n]               elem, elem, elem, ... endlessly or up to n times                ``repeat(10, 3) → 10 10 10``
-==================  =================       =================================================               =========================================
-
-**Iterators terminating on the shortest input sequence:**
+**General iterators:**
 
 ============================    ============================    =================================================   =============================================================
 Iterator                        Arguments                       Results                                             Example
@@ -51,11 +37,14 @@ Iterator                        Arguments                       Results         
 :func:`chain`                   p, q, ...                       p0, p1, ... plast, q0, q1, ...                      ``chain('ABC', 'DEF') → A B C D E F``
 :func:`chain.from_iterable`     iterable                        p0, p1, ... plast, q0, q1, ...                      ``chain.from_iterable(['ABC', 'DEF']) → A B C D E F``
 :func:`compress`                data, selectors                 (d[0] if s[0]), (d[1] if s[1]), ...                 ``compress('ABCDEF', [1,0,1,0,1,1]) → A C E F``
+:func:`count`                   [start[, step]]                 start, start+step, start+2*step, ...                ``count(10) → 10 11 12 13 14 ...``
+:func:`cycle`                   p                               p0, p1, ... plast, p0, p1, ...                      ``cycle('ABCD') → A B C D A B C D ...``
 :func:`dropwhile`               predicate, seq                  seq[n], seq[n+1], starting when predicate fails     ``dropwhile(lambda x: x<5, [1,4,6,3,8]) → 6 3 8``
 :func:`filterfalse`             predicate, seq                  elements of seq where predicate(elem) fails         ``filterfalse(lambda x: x<5, [1,4,6,3,8]) → 6 8``
 :func:`groupby`                 iterable[, key]                 sub-iterators grouped by value of key(v)            ``groupby(['A','B','DEF'], len) → (1, A B) (3, DEF)``
 :func:`islice`                  seq, [start,] stop [, step]     elements from seq[start:stop:step]                  ``islice('ABCDEFG', 2, None) → C D E F G``
 :func:`pairwise`                iterable                        (p[0], p[1]), (p[1], p[2])                          ``pairwise('ABCDEFG') → AB BC CD DE EF FG``
+:func:`repeat`                  elem [,n]                       elem, elem, elem, ... endlessly or up to n times    ``repeat(10, 3) → 10 10 10``
 :func:`starmap`                 func, seq                       func(\*seq[0]), func(\*seq[1]), ...                 ``starmap(pow, [(2,5), (3,2), (10,3)]) → 32 9 1000``
 :func:`takewhile`               predicate, seq                  seq[0], seq[1], until predicate fails               ``takewhile(lambda x: x<5, [1,4,6,3,8]) → 1 4``
 :func:`tee`                     it, n                           it1, it2, ... itn  splits one iterator into n       ``tee('ABC', 2) → A B C, A B C``
@@ -844,6 +833,7 @@ and :term:`generators <generator>` which incur interpreter overhead.
    from collections import Counter, deque
    from contextlib import suppress
    from functools import reduce
+   from heapq import heappush, heappushpop, heappush_max, heappushpop_max
    from math import comb, isqrt, prod, sumprod
    from operator import getitem, is_not, itemgetter, mul, neg, truediv
 
@@ -858,11 +848,6 @@ and :term:`generators <generator>` which incur interpreter overhead.
        "Prepend a single value in front of an iterable."
        # prepend(1, [2, 3, 4]) → 1 2 3 4
        return chain([value], iterable)
-
-   def running_mean(iterable):
-       "Yield the average of all values seen so far."
-       # running_mean([8.5, 9.5, 7.5, 6.5]) -> 8.5 9.0 8.5 8.0
-       return map(truediv, accumulate(iterable), count(1))
 
    def repeatfunc(function, times=None, *args):
        "Repeat calls to a function with specified arguments."
@@ -943,10 +928,10 @@ and :term:`generators <generator>` which incur interpreter overhead.
                    yield element
 
    def unique(iterable, key=None, reverse=False):
-      "Yield unique elements in sorted order. Supports unhashable inputs."
-      # unique([[1, 2], [3, 4], [1, 2]]) → [1, 2] [3, 4]
-      sequenced = sorted(iterable, key=key, reverse=reverse)
-      return unique_justseen(sequenced, key=key)
+       "Yield unique elements in sorted order. Supports unhashable inputs."
+       # unique([[1, 2], [3, 4], [1, 2]]) → [1, 2] [3, 4]
+       sequenced = sorted(iterable, key=key, reverse=reverse)
+       return unique_justseen(sequenced, key=key)
 
    def sliding_window(iterable, n):
        "Collect data into overlapping fixed-length chunks or blocks."
@@ -1161,6 +1146,49 @@ and :term:`generators <generator>` which incur interpreter overhead.
        return n
 
 
+   # ==== Running statistics ====
+
+   def running_mean(iterable):
+       "Average of values seen so far."
+       # running_mean([37, 33, 38, 28]) → 37 35 36 34
+       return map(truediv, accumulate(iterable), count(1))
+
+   def running_min(iterable):
+       "Smallest of values seen so far."
+       # running_min([37, 33, 38, 28]) → 37 33 33 28
+       return accumulate(iterable, func=min)
+
+   def running_max(iterable):
+       "Largest of values seen so far."
+       # running_max([37, 33, 38, 28]) → 37 37 38 38
+       return accumulate(iterable, func=max)
+
+   def running_median(iterable):
+       "Median of values seen so far."
+       # running_median([37, 33, 38, 28]) → 37 35 37 35
+       read = iter(iterable).__next__
+       lo = []  # max-heap
+       hi = []  # min-heap the same size as or one smaller than lo
+       with suppress(StopIteration):
+           while True:
+               heappush_max(lo, heappushpop(hi, read()))
+               yield lo[0]
+               heappush(hi, heappushpop_max(lo, read()))
+               yield (lo[0] + hi[0]) / 2
+
+   def running_statistics(iterable):
+       "Aggregate statistics for values seen so far."
+       # Generate tuples:  (size, minimum, median, maximum, mean)
+       t0, t1, t2, t3 = tee(iterable, 4)
+       return zip(
+           count(1),
+           running_min(t0),
+           running_median(t1),
+           running_max(t2),
+           running_mean(t3),
+       )
+
+
 .. doctest::
     :hide:
 
@@ -1235,10 +1263,6 @@ and :term:`generators <generator>` which incur interpreter overhead.
 
     >>> list(enumerate('abc'))
     [(0, 'a'), (1, 'b'), (2, 'c')]
-
-
-    >>> list(running_mean([8.5, 9.5, 7.5, 6.5]))
-    [8.5, 9.0, 8.5, 8.0]
 
 
     >>> for _ in loops(5):
@@ -1798,6 +1822,28 @@ and :term:`generators <generator>` which incur interpreter overhead.
     >>> word = 'coffee'
     >>> multinomial(*Counter(word).values()) == len(set(permutations(word)))
     True
+
+
+    >>> list(running_mean([8.5, 9.5, 7.5, 6.5]))
+    [8.5, 9.0, 8.5, 8.0]
+    >>> list(running_mean([37, 33, 38, 28]))
+    [37.0, 35.0, 36.0, 34.0]
+
+
+    >>> list(running_min([37, 33, 38, 28]))
+    [37, 33, 33, 28]
+
+
+    >>> list(running_max([37, 33, 38, 28]))
+    [37, 37, 38, 38]
+
+
+    >>> list(running_median([37, 33, 38, 28]))
+    [37, 35.0, 37, 35.0]
+
+
+    >>> list(running_statistics([37, 33, 38, 28]))
+    [(1, 37, 37, 37, 37.0), (2, 33, 35.0, 37, 35.0), (3, 33, 37, 38, 36.0), (4, 28, 35.0, 38, 34.0)]
 
 
 .. testcode::

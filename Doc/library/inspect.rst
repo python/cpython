@@ -9,9 +9,6 @@
 .. module:: inspect
    :synopsis: Extract information and source code from live objects.
 
-.. moduleauthor:: Ka-Ping Yee <ping@lfw.org>
-.. sectionauthor:: Ka-Ping Yee <ping@lfw.org>
-
 **Source code:** :source:`Lib/inspect.py`
 
 --------------
@@ -197,10 +194,6 @@ attributes (see :ref:`import-mod-attrs` for module attributes):
 |                 | co_flags          | bitmap of ``CO_*`` flags, |
 |                 |                   | read more :ref:`here      |
 |                 |                   | <inspect-module-co-flags>`|
-+-----------------+-------------------+---------------------------+
-|                 | co_lnotab         | encoded mapping of line   |
-|                 |                   | numbers to bytecode       |
-|                 |                   | indices                   |
 +-----------------+-------------------+---------------------------+
 |                 | co_freevars       | tuple of names of free    |
 |                 |                   | variables (referenced via |

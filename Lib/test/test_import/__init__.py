@@ -3499,12 +3499,20 @@ class ModexportTests(unittest.TestCase):
             pass
         self.assertEqual(_testcapi.pytype_getmodulebytoken(Sub, token), module)
 
-    @requires_gil_enabled("empty slots re-enable GIL")
     def test_from_modexport_empty_slots(self):
-        # Module to test that:
-        # - no slots are mandatory for PyModExport
-        # - the slots array is used as the default token
+        # Module to test that Py_mod_abi is mandatory for PyModExport
         modname = '_test_from_modexport_empty_slots'
+        filename = _testmultiphase.__file__
+        with self.assertRaises(SystemError):
+            import_extension_from_file(
+                modname, filename, put_in_sys_modules=False)
+
+    @requires_gil_enabled("this module re-enables GIL")
+    def test_from_modexport_minimal_slots(self):
+        # Module to test that:
+        # - no slots except Py_mod_abi is mandatory for PyModExport
+        # - the slots array is used as the default token
+        modname = '_test_from_modexport_minimal_slots'
         filename = _testmultiphase.__file__
         module = import_extension_from_file(
             modname, filename, put_in_sys_modules=False)
@@ -3516,7 +3524,7 @@ class ModexportTests(unittest.TestCase):
         smoke_mod = import_extension_from_file(
             '_test_from_modexport_smoke', filename, put_in_sys_modules=False)
         self.assertEqual(_testcapi.pymodule_get_token(module),
-                         smoke_mod.get_modexport_empty_slots())
+                         smoke_mod.get_modexport_minimal_slots())
 
 @cpython_only
 class TestMagicNumber(unittest.TestCase):

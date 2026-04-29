@@ -4,9 +4,6 @@
 .. module:: argparse
    :synopsis: Command-line option and argument parsing library.
 
-.. moduleauthor:: Steven Bethard <steven.bethard@gmail.com>
-.. sectionauthor:: Steven Bethard <steven.bethard@gmail.com>
-
 .. versionadded:: 3.2
 
 **Source code:** :source:`Lib/argparse.py`
@@ -605,18 +602,13 @@ choices (if specified) or subparser names, along with a "maybe you meant"
 suggestion if a close match is found. Note that this only applies for arguments
 when the choices specified are strings::
 
-   >>> parser = argparse.ArgumentParser(description='Process some integers.',
-                                        suggest_on_error=True)
-   >>> parser.add_argument('--action', choices=['sum', 'max'])
-   >>> parser.add_argument('integers', metavar='N', type=int, nargs='+',
-   ...                     help='an integer for the accumulator')
-   >>> parser.parse_args(['--action', 'sumn', 1, 2, 3])
-   tester.py: error: argument --action: invalid choice: 'sumn', maybe you meant 'sum'? (choose from 'sum', 'max')
+   >>> parser = argparse.ArgumentParser(suggest_on_error=True)
+   >>> parser.add_argument('--action', choices=['debug', 'dryrun'])
+   >>> parser.parse_args(['--action', 'debugg'])
+   usage: tester.py [-h] [--action {debug,dryrun}]
+   tester.py: error: argument --action: invalid choice: 'debugg', maybe you meant 'debug'? (choose from debug, dryrun)
 
-You can disable suggestions by setting ``suggest_on_error`` to ``False``::
-
-   >>> parser = argparse.ArgumentParser(description='Process some integers.',
-                                        suggest_on_error=False)
+You can disable suggestions by setting ``suggest_on_error`` to ``False``.
 
 .. versionadded:: 3.14
 .. versionchanged:: 3.15
@@ -706,6 +698,8 @@ The add_argument() method
 
    * deprecated_ - Whether or not use of the argument is deprecated.
 
+   The method returns an :class:`Action` object representing the argument.
+
 The following sections describe how each of these are used.
 
 
@@ -747,9 +741,9 @@ By default, :mod:`!argparse` automatically handles the internal naming and
 display names of arguments, simplifying the process without requiring
 additional configuration.
 As such, you do not need to specify the dest_ and metavar_ parameters.
-The dest_ parameter defaults to the argument name with underscores ``_``
-replacing hyphens ``-`` . The metavar_ parameter defaults to the
-upper-cased name. For example::
+For optional arguments, the dest_ parameter defaults to the argument name, with
+underscores ``_`` replacing hyphens ``-``. The metavar_ parameter defaults to
+the upper-cased name. For example::
 
    >>> parser = argparse.ArgumentParser(prog='PROG')
    >>> parser.add_argument('--foo-bar')
@@ -1124,7 +1118,15 @@ User defined functions can be used as well:
 
 The :func:`bool` function is not recommended as a type converter.  All it does
 is convert empty strings to ``False`` and non-empty strings to ``True``.
-This is usually not what is desired.
+This is usually not what is desired::
+
+   >>> parser = argparse.ArgumentParser()
+   >>> _ = parser.add_argument('--verbose', type=bool)
+   >>> parser.parse_args(['--verbose', 'False'])
+   Namespace(verbose=True)
+
+See :class:`BooleanOptionalAction` or ``action='store_true'`` for common
+alternatives.
 
 In general, the ``type`` keyword is a convenience that should only be used for
 simple conversions that can only raise one of the three supported exceptions.
@@ -1968,7 +1970,7 @@ FileType objects
       run and then use the :keyword:`with`-statement to manage the files.
 
    .. versionchanged:: 3.4
-      Added the *encodings* and *errors* parameters.
+      Added the *encoding* and *errors* parameters.
 
    .. deprecated:: 3.14
 
@@ -2029,6 +2031,9 @@ Argument groups
 
    Note that any arguments not in your user-defined groups will end up back
    in the usual "positional arguments" and "optional arguments" sections.
+
+   Within each argument group, arguments are displayed in help output in the
+   order in which they are added.
 
    .. deprecated-removed:: 3.11 3.14
       Calling :meth:`add_argument_group` on an argument group now raises an

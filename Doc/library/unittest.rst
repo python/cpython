@@ -4,11 +4,6 @@
 .. module:: unittest
    :synopsis: Unit testing framework for Python.
 
-.. moduleauthor:: Steve Purcell <stephen_purcell@yahoo.com>
-.. sectionauthor:: Steve Purcell <stephen_purcell@yahoo.com>
-.. sectionauthor:: Fred L. Drake, Jr. <fdrake@acm.org>
-.. sectionauthor:: Raymond Hettinger <python@rcn.com>
-
 **Source code:** :source:`Lib/unittest/__init__.py`
 
 --------------
@@ -1228,9 +1223,9 @@ Test cases
    | :meth:`assertNotRegex(s, r)           | ``not r.search(s)``            | 3.2          |
    | <TestCase.assertNotRegex>`            |                                |              |
    +---------------------------------------+--------------------------------+--------------+
-   | :meth:`assertCountEqual(a, b)         | *a* and *b* have the same      | 3.2          |
-   | <TestCase.assertCountEqual>`          | elements in the same number,   |              |
-   |                                       | regardless of their order.     |              |
+   | :meth:`assertCountEqual(a, b)         | *a* contains the same elements | 3.2          |
+   | <TestCase.assertCountEqual>`          | as *b*, regardless of their    |              |
+   |                                       | order.                         |              |
    +---------------------------------------+--------------------------------+--------------+
    | :meth:`assertStartsWith(a, b)         | ``a.startswith(b)``            | 3.14         |
    | <TestCase.assertStartsWith>`          |                                |              |
