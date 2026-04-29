@@ -367,6 +367,8 @@ class Server(events.AbstractServer):
         # Skip one loop iteration so that all 'loop.add_reader'
         # go through.
         await tasks.sleep(0)
+        # Proactor loop needs one loop iteration to start the serving loop first.
+        await tasks.sleep(0)
 
     async def serve_forever(self):
         if self._serving_forever_fut is not None:
@@ -1670,6 +1672,8 @@ class BaseEventLoop(events.AbstractEventLoop):
             server._start_serving()
             # Skip one loop iteration so that all 'loop.add_reader'
             # go through.
+            await tasks.sleep(0)
+            # Proactor loop needs one loop iteration to start the serving loop first.
             await tasks.sleep(0)
 
         if self._debug:
