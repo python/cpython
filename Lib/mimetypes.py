@@ -188,12 +188,12 @@ class MimeTypes:
         else:
             encoding = None
         ext = ext.lower()
-        types_map = self.types_map[True]
+        types_map = self.types_map[1]
         if ext in types_map:
             return types_map[ext], encoding
         elif strict:
             return None, encoding
-        types_map = self.types_map[False]
+        types_map = self.types_map[0]
         if ext in types_map:
             return types_map[ext], encoding
         else:
@@ -211,9 +211,9 @@ class MimeTypes:
         but non-standard types.
         """
         type = type.lower()
-        extensions = list(self.types_map_inv[True].get(type, []))
+        extensions = list(self.types_map_inv[1].get(type, []))
         if not strict:
-            for ext in self.types_map_inv[False].get(type, []):
+            for ext in self.types_map_inv[0].get(type, []):
                 if ext not in extensions:
                     extensions.append(ext)
         return extensions
