@@ -241,6 +241,8 @@ add_op(JitOptContext *ctx, _PyUOpInstruction *this_instr,
     ctx->out_buffer.next++;
 }
 
+#define sym_promote_to_constant_pool _Py_uop_promote_to_constant_pool
+
 /* Shortened forms for convenience, used in optimizer_bytecodes.c */
 #define sym_is_not_null _Py_uop_sym_is_not_null
 #define sym_is_const _Py_uop_sym_is_const
@@ -560,7 +562,8 @@ optimize_uops(
     int trace_len,
     int curr_stacklen,
     _PyUOpInstruction *output,
-    _PyBloomFilter *dependencies
+    _PyBloomFilter *dependencies,
+    PyObject **constant_pool_ptr
 )
 {
     assert(!PyErr_Occurred());
@@ -579,9 +582,15 @@ optimize_uops(
         interp->type_watchers[TYPE_WATCHER_ID] = type_watcher_callback;
     }
 
-    _Py_uop_abstractcontext_init(ctx, dependencies);
+    if (_Py_uop_abstractcontext_init(ctx, dependencies)) {
+        assert(PyErr_Occurred());
+        PyErr_Clear();
+        return 0;
+    }
+
     _Py_UOpsAbstractFrame *frame = _Py_uop_frame_new(ctx, (PyCodeObject *)func->func_code, NULL, 0);
     if (frame == NULL) {
+        _Py_uop_abstractcontext_fini(ctx);
         return 0;
     }
     frame->func = func;
@@ -655,6 +664,7 @@ optimize_uops(
 
     /* Either reached the end or cannot optimize further, but there
      * would be no benefit in retrying later */
+    *constant_pool_ptr = Py_NewRef(ctx->constant_pool);
     _Py_uop_abstractcontext_fini(ctx);
     // Check that the trace ends with a proper terminator
     if (uop_buffer_length(&ctx->out_buffer) > 0) {
@@ -791,13 +801,15 @@ _Py_uop_analyze_and_optimize(
     int length,
     int curr_stacklen,
     _PyUOpInstruction *output,
-    _PyBloomFilter *dependencies
+    _PyBloomFilter *dependencies,
+    PyObject **constant_pool_ptr
 )
 {
     OPT_STAT_INC(optimizer_attempts);
 
     length = optimize_uops(
-        tstate, buffer, length, curr_stacklen, output, dependencies);
+        tstate, buffer, length, curr_stacklen, output,
+        dependencies, constant_pool_ptr);
 
     if (length == 0) {
         return length;

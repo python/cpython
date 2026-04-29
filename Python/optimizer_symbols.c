@@ -1456,12 +1456,13 @@ _Py_uop_abstractcontext_fini(JitOptContext *ctx)
             Py_CLEAR(sym->value.value);
         }
     }
+    Py_CLEAR(ctx->constant_pool);
 }
 
 // Leave a bit of space to push values before checking that there is space for a new frame
 #define STACK_HEADROOM 2
 
-void
+int
 _Py_uop_abstractcontext_init(JitOptContext *ctx, _PyBloomFilter *dependencies)
 {
     static_assert(sizeof(JitOptSymbol) <= 3 * sizeof(uint64_t), "JitOptSymbol has grown");
@@ -1494,6 +1495,20 @@ _Py_uop_abstractcontext_init(JitOptContext *ctx, _PyBloomFilter *dependencies)
     ctx->contradiction = false;
     ctx->builtins_watched = false;
     ctx->dependencies = dependencies;
+
+    ctx->constant_pool = PyList_New(0);
+    if (ctx->constant_pool == NULL) {
+        return -1;
+    }
+
+    return 0;
+}
+
+// -1 if err, 0 if success
+int
+_Py_uop_promote_to_constant_pool(JitOptContext *ctx, PyObject *obj)
+{
+    return PyList_Append(ctx->constant_pool, obj);
 }
 
 int
@@ -1564,7 +1579,9 @@ _Py_uop_symbols_test(PyObject *Py_UNUSED(self), PyObject *Py_UNUSED(ignored))
 {
     JitOptContext context;
     JitOptContext *ctx = &context;
-    _Py_uop_abstractcontext_init(ctx, NULL);
+    if (_Py_uop_abstractcontext_init(ctx, NULL) < 0) {
+        return NULL;
+    }
     PyObject *val_42 = NULL;
     PyObject *val_43 = NULL;
     PyObject *val_big = NULL;

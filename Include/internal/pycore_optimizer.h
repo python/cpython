@@ -85,6 +85,9 @@ typedef struct _JitOptContext {
     // Arena for the symbolic types.
     ty_arena t_arena;
 
+    // Pool to store promoted constants to be used at runtime.
+    PyObject *constant_pool;
+
     /* To do -- We could make this more space efficient
      * by using a single array and growing the stack and
      * locals toward each other. */
@@ -193,6 +196,7 @@ typedef struct _PyExitData {
 typedef struct _PyExecutorObject {
     PyObject_VAR_HEAD
     const _PyUOpInstruction *trace;
+    PyObject *constant_pool;
     _PyVMData vm_data; /* Used by the VM, but opaque to the optimizer */
     uint32_t exit_count;
     uint32_t code_size;
@@ -309,7 +313,8 @@ PyAPI_FUNC(void) _Py_Executors_InvalidateCold(PyInterpreterState *interp);
 int _Py_uop_analyze_and_optimize(
     _PyThreadStateImpl *tstate,
     _PyUOpInstruction *input, int trace_len, int curr_stackentries,
-    _PyUOpInstruction *output, _PyBloomFilter *dependencies);
+    _PyUOpInstruction *output, _PyBloomFilter *dependencies,
+     PyObject **constant_pool_ptr);
 
 extern PyTypeObject _PyUOpExecutor_Type;
 
@@ -473,8 +478,9 @@ extern PyObject *_Py_uop_sym_get_probable_value(JitOptRef sym);
 extern PyTypeObject *_Py_uop_sym_get_probable_type(JitOptRef sym);
 extern JitOptRef *_Py_uop_sym_set_stack_depth(JitOptContext *ctx, int stack_depth, JitOptRef *current_sp);
 
-extern void _Py_uop_abstractcontext_init(JitOptContext *ctx, _PyBloomFilter *dependencies);
+extern int _Py_uop_abstractcontext_init(JitOptContext *ctx, _PyBloomFilter *dependencies);
 extern void _Py_uop_abstractcontext_fini(JitOptContext *ctx);
+extern int _Py_uop_promote_to_constant_pool(JitOptContext *ctx, PyObject *obj);
 
 extern _Py_UOpsAbstractFrame *_Py_uop_frame_new(
     JitOptContext *ctx,

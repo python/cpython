@@ -236,7 +236,7 @@
                 res = sym_new_const_steal(ctx, PyStackRef_AsPyObjectSteal(res_stackref));
                 if (sym_is_const(ctx, res)) {
                     PyObject *result = sym_get_const(ctx, res);
-                    if (_Py_IsImmortal(result)) {
+                    if (_Py_uop_promote_to_constant_pool(ctx, result) == 0) {
                         // Replace with _LOAD_CONST_INLINE_BORROW + _SWAP since we have one input and an immortal result
                         ADD_OP(_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)result);
                         ADD_OP(_SWAP, 2, 0);
@@ -305,7 +305,7 @@
                 res = sym_new_const_steal(ctx, PyStackRef_AsPyObjectSteal(res_stackref));
                 if (sym_is_const(ctx, res)) {
                     PyObject *result = sym_get_const(ctx, res);
-                    if (_Py_IsImmortal(result)) {
+                    if (_Py_uop_promote_to_constant_pool(ctx, result) == 0) {
                         // Replace with _POP_TOP + _LOAD_CONST_INLINE_BORROW since we have one input and an immortal result
                         ADD_OP(_POP_TOP, 0, 0);
                         ADD_OP(_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)result);
@@ -523,7 +523,7 @@
                     res = sym_new_const_steal(ctx, PyStackRef_AsPyObjectSteal(res_stackref));
                     if (sym_is_const(ctx, res)) {
                         PyObject *result = sym_get_const(ctx, res);
-                        if (_Py_IsImmortal(result)) {
+                        if (_Py_uop_promote_to_constant_pool(ctx, result) == 0) {
                             // Replace with _LOAD_CONST_INLINE_BORROW + _SWAP since we have one input and an immortal result
                             ADD_OP(_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)result);
                             ADD_OP(_SWAP, 2, 0);
@@ -637,7 +637,7 @@
                 res = sym_new_const_steal(ctx, PyStackRef_AsPyObjectSteal(res_stackref));
                 if (sym_is_const(ctx, res)) {
                     PyObject *result = sym_get_const(ctx, res);
-                    if (_Py_IsImmortal(result)) {
+                    if (_Py_uop_promote_to_constant_pool(ctx, result) == 0) {
                         // Replace with _LOAD_CONST_INLINE_BORROW + _SWAP + _SWAP since we have two inputs and an immortal result
                         ADD_OP(_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)result);
                         ADD_OP(_SWAP, 3, 0);
@@ -709,7 +709,7 @@
                 res = sym_new_const_steal(ctx, PyStackRef_AsPyObjectSteal(res_stackref));
                 if (sym_is_const(ctx, res)) {
                     PyObject *result = sym_get_const(ctx, res);
-                    if (_Py_IsImmortal(result)) {
+                    if (_Py_uop_promote_to_constant_pool(ctx, result) == 0) {
                         // Replace with _LOAD_CONST_INLINE_BORROW + _SWAP + _SWAP since we have two inputs and an immortal result
                         ADD_OP(_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)result);
                         ADD_OP(_SWAP, 3, 0);
@@ -781,7 +781,7 @@
                 res = sym_new_const_steal(ctx, PyStackRef_AsPyObjectSteal(res_stackref));
                 if (sym_is_const(ctx, res)) {
                     PyObject *result = sym_get_const(ctx, res);
-                    if (_Py_IsImmortal(result)) {
+                    if (_Py_uop_promote_to_constant_pool(ctx, result) == 0) {
                         // Replace with _LOAD_CONST_INLINE_BORROW + _SWAP + _SWAP since we have two inputs and an immortal result
                         ADD_OP(_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)result);
                         ADD_OP(_SWAP, 3, 0);
@@ -1604,7 +1604,7 @@
                     res = sym_new_const_steal(ctx, PyStackRef_AsPyObjectSteal(res_stackref));
                     if (sym_is_const(ctx, res)) {
                         PyObject *result = sym_get_const(ctx, res);
-                        if (_Py_IsImmortal(result)) {
+                        if (_Py_uop_promote_to_constant_pool(ctx, result) == 0) {
                             // Replace with _LOAD_CONST_INLINE_BORROW + _SWAP + _SWAP since we have two inputs and an immortal result
                             ADD_OP(_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)result);
                             ADD_OP(_SWAP, 3, 0);
@@ -2861,7 +2861,7 @@
                 res = sym_new_const_steal(ctx, PyStackRef_AsPyObjectSteal(res_stackref));
                 if (sym_is_const(ctx, res)) {
                     PyObject *result = sym_get_const(ctx, res);
-                    if (_Py_IsImmortal(result)) {
+                    if (_Py_uop_promote_to_constant_pool(ctx, result) == 0) {
                         // Replace with _POP_TOP + _POP_TOP + _LOAD_CONST_INLINE_BORROW since we have two inputs and an immortal result
                         ADD_OP(_POP_TOP, 0, 0);
                         ADD_OP(_POP_TOP, 0, 0);
@@ -2934,7 +2934,7 @@
                 res = sym_new_const_steal(ctx, PyStackRef_AsPyObjectSteal(res_stackref));
                 if (sym_is_const(ctx, res)) {
                     PyObject *result = sym_get_const(ctx, res);
-                    if (_Py_IsImmortal(result)) {
+                    if (_Py_uop_promote_to_constant_pool(ctx, result) == 0) {
                         // Replace with _LOAD_CONST_INLINE_BORROW + _SWAP + _SWAP since we have two inputs and an immortal result
                         ADD_OP(_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)result);
                         ADD_OP(_SWAP, 3, 0);
@@ -3009,7 +3009,7 @@
                 res = sym_new_const_steal(ctx, PyStackRef_AsPyObjectSteal(res_stackref));
                 if (sym_is_const(ctx, res)) {
                     PyObject *result = sym_get_const(ctx, res);
-                    if (_Py_IsImmortal(result)) {
+                    if (_Py_uop_promote_to_constant_pool(ctx, result) == 0) {
                         // Replace with _LOAD_CONST_INLINE_BORROW + _SWAP + _SWAP since we have two inputs and an immortal result
                         ADD_OP(_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)result);
                         ADD_OP(_SWAP, 3, 0);
@@ -3073,7 +3073,7 @@
                 res = sym_new_const_steal(ctx, PyStackRef_AsPyObjectSteal(res_stackref));
                 if (sym_is_const(ctx, res)) {
                     PyObject *result = sym_get_const(ctx, res);
-                    if (_Py_IsImmortal(result)) {
+                    if (_Py_uop_promote_to_constant_pool(ctx, result) == 0) {
                         // Replace with _LOAD_CONST_INLINE_BORROW + _SWAP + _SWAP since we have two inputs and an immortal result
                         ADD_OP(_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)result);
                         ADD_OP(_SWAP, 3, 0);
@@ -3155,7 +3155,7 @@
                 b = sym_new_const_steal(ctx, PyStackRef_AsPyObjectSteal(b_stackref));
                 if (sym_is_const(ctx, b)) {
                     PyObject *result = sym_get_const(ctx, b);
-                    if (_Py_IsImmortal(result)) {
+                    if (_Py_uop_promote_to_constant_pool(ctx, result) == 0) {
                         // Replace with _LOAD_CONST_INLINE_BORROW + _SWAP + _SWAP since we have two inputs and an immortal result
                         ADD_OP(_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)result);
                         ADD_OP(_SWAP, 3, 0);
@@ -3264,7 +3264,7 @@
                     b = sym_new_const_steal(ctx, PyStackRef_AsPyObjectSteal(b_stackref));
                     if (sym_is_const(ctx, b)) {
                         PyObject *result = sym_get_const(ctx, b);
-                        if (_Py_IsImmortal(result)) {
+                        if (_Py_uop_promote_to_constant_pool(ctx, result) == 0) {
                             // Replace with _LOAD_CONST_INLINE_BORROW + _SWAP + _SWAP since we have two inputs and an immortal result
                             ADD_OP(_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)result);
                             ADD_OP(_SWAP, 3, 0);
@@ -5219,7 +5219,7 @@
                 res = sym_new_const_steal(ctx, PyStackRef_AsPyObjectSteal(res_stackref));
                 if (sym_is_const(ctx, res)) {
                     PyObject *result = sym_get_const(ctx, res);
-                    if (_Py_IsImmortal(result)) {
+                    if (_Py_uop_promote_to_constant_pool(ctx, result) == 0) {
                         // Replace with _LOAD_CONST_INLINE_BORROW + _SWAP + _SWAP since we have two inputs and an immortal result
                         ADD_OP(_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)result);
                         ADD_OP(_SWAP, 3, 0);

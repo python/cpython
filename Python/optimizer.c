@@ -114,7 +114,8 @@ insert_executor(PyCodeObject *code, _Py_CODEUNIT *instr, int index, _PyExecutorO
 #endif // Py_GIL_DISABLED
 
 static _PyExecutorObject *
-make_executor_from_uops(_PyThreadStateImpl *tstate, _PyUOpInstruction *buffer, int length, const _PyBloomFilter *dependencies);
+make_executor_from_uops(_PyThreadStateImpl *tstate, _PyUOpInstruction *buffer,
+    int length, const _PyBloomFilter *dependencies, PyObject *constant_pool);
 
 static int
 uop_optimize(_PyInterpreterFrame *frame, PyThreadState *tstate,
@@ -440,6 +441,7 @@ static int
 executor_traverse(PyObject *o, visitproc visit, void *arg)
 {
     _PyExecutorObject *executor = _PyExecutorObject_CAST(o);
+    Py_VISIT(executor->constant_pool);
     for (uint32_t i = 0; i < executor->exit_count; i++) {
         Py_VISIT(executor->exits[i].executor);
     }
@@ -1438,13 +1440,15 @@ prepare_for_execution(_PyUOpInstruction *buffer, int length)
 /* Executor side exits */
 
 static _PyExecutorObject *
-allocate_executor(int exit_count, int length)
+allocate_executor(int exit_count, int length, PyObject *constant_pool)
 {
     int size = exit_count*sizeof(_PyExitData) + length*sizeof(_PyUOpInstruction);
     _PyExecutorObject *res = PyObject_GC_NewVar(_PyExecutorObject, &_PyUOpExecutor_Type, size);
     if (res == NULL) {
         return NULL;
     }
+    // Transfer ownership
+    res->constant_pool = constant_pool;
     res->trace = (_PyUOpInstruction *)(res->exits + exit_count);
     res->code_size = length;
     res->exit_count = exit_count;
@@ -1525,10 +1529,11 @@ sanity_check(_PyExecutorObject *executor)
  * and not a NOP.
  */
 static _PyExecutorObject *
-make_executor_from_uops(_PyThreadStateImpl *tstate, _PyUOpInstruction *buffer, int length, const _PyBloomFilter *dependencies)
+make_executor_from_uops(_PyThreadStateImpl *tstate, _PyUOpInstruction *buffer,
+    int length, const _PyBloomFilter *dependencies, PyObject *constant_pool)
 {
     int exit_count = count_exits(buffer, length);
-    _PyExecutorObject *executor = allocate_executor(exit_count, length);
+    _PyExecutorObject *executor = allocate_executor(exit_count, length, constant_pool);
     if (executor == NULL) {
         return NULL;
     }
@@ -1674,6 +1679,7 @@ uop_optimize(
     _PyExecutorObject **exec_ptr,
     bool progress_needed)
 {
+    PyObject *constant_pool = NULL;
     _PyThreadStateImpl *_tstate = (_PyThreadStateImpl *)tstate;
     assert(_tstate->jit_tracer_state != NULL);
     _PyUOpInstruction *buffer = _tstate->jit_tracer_state->code_buffer.start;
@@ -1694,7 +1700,7 @@ uop_optimize(
         _PyUOpInstruction *output = &_tstate->jit_tracer_state->uop_array[UOP_MAX_TRACE_LENGTH];
         length = _Py_uop_analyze_and_optimize(
             _tstate, buffer, length, curr_stackentries,
-            output, &dependencies);
+            output, &dependencies, &constant_pool);
 
         if (length <= 0) {
             return length;
@@ -1732,7 +1738,7 @@ uop_optimize(
     length = prepare_for_execution(buffer, length);
     assert(length <= UOP_MAX_TRACE_LENGTH);
     _PyExecutorObject *executor = make_executor_from_uops(
-        _tstate, buffer, length, &dependencies);
+        _tstate, buffer, length, &dependencies, constant_pool);
     if (executor == NULL) {
         return -1;
     }
@@ -1815,7 +1821,7 @@ _Py_ExecutorInit(_PyExecutorObject *executor, const _PyBloomFilter *dependency_s
 static _PyExecutorObject *
 make_cold_executor(uint16_t opcode)
 {
-    _PyExecutorObject *cold = allocate_executor(0, 1);
+    _PyExecutorObject *cold = allocate_executor(0, 1, NULL);
     if (cold == NULL) {
         Py_FatalError("Cannot allocate core JIT code");
     }
@@ -1904,6 +1910,7 @@ executor_invalidate(PyObject *op)
     }
     executor->vm_data.valid = 0;
     unlink_executor(executor);
+    Py_CLEAR(executor->constant_pool);
     executor_clear_exits(executor);
     _Py_ExecutorDetach(executor);
     _PyObject_GC_UNTRACK(op);
