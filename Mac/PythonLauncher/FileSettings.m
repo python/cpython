@@ -97,7 +97,7 @@
 
 - (id)initForFSDefaultFileType: (NSString *)filetype
 {
-    int i;
+    NSUInteger i;
     NSString *filename;
     NSDictionary *dict;
     static NSDictionary *factorySettings;
