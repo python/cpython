@@ -197,6 +197,7 @@ NANVIX_TEST_LIST: list[str] = [
     "test_tarfile", "test_gzip", "test_bz2", "test_zlib",
     "test_dbm_dumb", "test_shelve",
     "test_import", "test_pkgutil", "test_modulefinder",
+    "test_importlib",
 ]
 
 # Default batch size for regrtest VM invocations.

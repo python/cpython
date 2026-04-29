@@ -8,6 +8,7 @@ import tempfile
 import unittest
 import warnings
 
+from test.support import is_nanvix, is_nanvix_standalone
 from test.test_importlib import util
 
 # needed tests:
@@ -126,6 +127,9 @@ class SeparatedNamespacePackages(NamespacePackageTest):
 class SeparatedNamespacePackagesCreatedWhileRunning(NamespacePackageTest):
     paths = ['portion1']
 
+    # NSKIP012 https://github.com/nanvix/cpython/issues/480
+    @unittest.skipIf(is_nanvix and not is_nanvix_standalone,
+                     "NSKIP012: rmtree/rmdir cleanup failures on Nanvix (ENOSYS standalone, errno 88 hosted)")
     def test_invalidate_caches(self):
         with tempfile.TemporaryDirectory() as temp_dir:
             # we manipulate sys.path before anything is imported to avoid

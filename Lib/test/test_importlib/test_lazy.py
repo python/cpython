@@ -8,6 +8,7 @@ import types
 import unittest
 
 from test.support import threading_helper
+from test import support
 from test.test_importlib import util as test_util
 
 
@@ -148,6 +149,8 @@ class LazyLoaderTests(unittest.TestCase):
             module.__name__
 
     @threading_helper.requires_working_threading()
+    # NSKIP016 https://github.com/nanvix/cpython/issues/484
+    @unittest.skipIf(support.is_nanvix, "NSKIP016: exceeds Nanvix thread limit")
     def test_module_load_race(self):
         with test_util.uncache(TestingImporter.module_name):
             loader = TestingImporter()

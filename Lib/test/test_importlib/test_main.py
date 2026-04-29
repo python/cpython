@@ -6,6 +6,8 @@ import importlib.metadata
 import contextlib
 import itertools
 
+from test.support import is_nanvix, is_nanvix_standalone
+
 try:
     import pyfakefs.fake_filesystem_unittest as ffs
 except ImportError:
@@ -33,6 +35,9 @@ def suppress_known_deprecation():
         yield ctx
 
 
+# NSKIP012 https://github.com/nanvix/cpython/issues/480
+@unittest.skipIf(is_nanvix and not is_nanvix_standalone,
+                 "NSKIP012: rmtree/rmdir cleanup failures on Nanvix (ENOSYS standalone, errno 88 hosted)")
 class BasicTests(fixtures.DistInfoPkg, unittest.TestCase):
     version_pattern = r'\d+\.\d+(\.\d)?'
 
@@ -73,6 +78,9 @@ class BasicTests(fixtures.DistInfoPkg, unittest.TestCase):
             Distribution.from_name(name)
 
 
+# NSKIP012 https://github.com/nanvix/cpython/issues/480
+@unittest.skipIf(is_nanvix and not is_nanvix_standalone,
+                 "NSKIP012: rmtree/rmdir cleanup failures on Nanvix (ENOSYS standalone, errno 88 hosted)")
 class ImportTests(fixtures.DistInfoPkg, unittest.TestCase):
     def test_import_nonexistent_module(self):
         # Ensure that the MetadataPathFinder does not crash an import of a
@@ -97,6 +105,9 @@ class ImportTests(fixtures.DistInfoPkg, unittest.TestCase):
         assert ep.load() is importlib.metadata
 
 
+# NSKIP012 https://github.com/nanvix/cpython/issues/480
+@unittest.skipIf(is_nanvix and not is_nanvix_standalone,
+                 "NSKIP012: rmtree/rmdir cleanup failures on Nanvix (ENOSYS standalone, errno 88 hosted)")
 class NameNormalizationTests(fixtures.OnSysPath, fixtures.SiteDir, unittest.TestCase):
     @staticmethod
     def make_pkg(name):
@@ -144,6 +155,9 @@ class NameNormalizationTests(fixtures.OnSysPath, fixtures.SiteDir, unittest.Test
         assert len(after) == len(before)
 
 
+# NSKIP012 https://github.com/nanvix/cpython/issues/480
+@unittest.skipIf(is_nanvix and not is_nanvix_standalone,
+                 "NSKIP012: rmtree/rmdir cleanup failures on Nanvix (ENOSYS standalone, errno 88 hosted)")
 class NonASCIITests(fixtures.OnSysPath, fixtures.SiteDir, unittest.TestCase):
     @staticmethod
     def pkg_with_non_ascii_description(site_dir):
@@ -187,6 +201,9 @@ class NonASCIITests(fixtures.OnSysPath, fixtures.SiteDir, unittest.TestCase):
         assert meta['Description'] == 'pôrˈtend'
 
 
+# NSKIP012 https://github.com/nanvix/cpython/issues/480
+@unittest.skipIf(is_nanvix and not is_nanvix_standalone,
+                 "NSKIP012: rmtree/rmdir cleanup failures on Nanvix (ENOSYS standalone, errno 88 hosted)")
 class DiscoveryTests(
     fixtures.EggInfoPkg,
     fixtures.EggInfoPkgPipInstalledNoToplevel,
@@ -209,6 +226,9 @@ class DiscoveryTests(
             list(distributions(context='something', name='else'))
 
 
+# NSKIP012 https://github.com/nanvix/cpython/issues/480
+@unittest.skipIf(is_nanvix and not is_nanvix_standalone,
+                 "NSKIP012: rmtree/rmdir cleanup failures on Nanvix (ENOSYS standalone, errno 88 hosted)")
 class DirectoryTest(fixtures.OnSysPath, fixtures.SiteDir, unittest.TestCase):
     def test_egg_info(self):
         # make an `EGG-INFO` directory that's unrelated
@@ -304,6 +324,8 @@ class TestEntryPoints(unittest.TestCase):
 class FileSystem(
     fixtures.OnSysPath, fixtures.SiteDir, fixtures.FileBuilder, unittest.TestCase
 ):
+    # NSKIP008 https://github.com/nanvix/cpython/issues/476
+    @unittest.skipIf(is_nanvix, "NSKIP008: tempfile names garbled")
     def test_unicode_dir_on_sys_path(self):
         """
         Ensure a Unicode subdirectory of a directory on sys.path
@@ -330,6 +352,9 @@ class PackagesDistributionsPrebuiltTest(fixtures.ZipFixtures, unittest.TestCase)
         assert packages_distributions()['example2'] == ['example2']
 
 
+# NSKIP012 https://github.com/nanvix/cpython/issues/480
+@unittest.skipIf(is_nanvix and not is_nanvix_standalone,
+                 "NSKIP012: rmtree/rmdir cleanup failures on Nanvix (ENOSYS standalone, errno 88 hosted)")
 class PackagesDistributionsTest(
     fixtures.OnSysPath, fixtures.SiteDir, unittest.TestCase
 ):
@@ -390,6 +415,9 @@ class PackagesDistributionsTest(
         assert not any(name.endswith('.dist-info') for name in distributions)
 
 
+# NSKIP012 https://github.com/nanvix/cpython/issues/480
+@unittest.skipIf(is_nanvix and not is_nanvix_standalone,
+                 "NSKIP012: rmtree/rmdir cleanup failures on Nanvix (ENOSYS standalone, errno 88 hosted)")
 class PackagesDistributionsEggTest(
     fixtures.EggInfoPkg,
     fixtures.EggInfoPkgPipInstalledNoToplevel,

@@ -8,7 +8,7 @@ from . import data01
 from . import zipdata01, zipdata02
 from . import util
 from importlib import resources, import_module
-from test.support import import_helper, os_helper
+from test.support import import_helper, os_helper, is_nanvix, is_nanvix_standalone
 from test.support.os_helper import unlink
 
 
@@ -114,6 +114,9 @@ class ResourceFromZipsTest01(util.ZipSetupBase, unittest.TestCase):
             {'__init__.py', 'binary.file'},
         )
 
+    # NSKIP012 https://github.com/nanvix/cpython/issues/480
+    @unittest.skipIf(is_nanvix and not is_nanvix_standalone,
+                     "NSKIP012: rmtree/rmdir cleanup failures on Nanvix (ENOSYS standalone, errno 88 hosted)")
     def test_as_file_directory(self):
         with resources.as_file(resources.files('ziptestdata')) as data:
             assert data.name == 'ziptestdata'
@@ -192,6 +195,9 @@ class DeletingZipsTest(unittest.TestCase):
     def test_as_file_does_not_keep_open(self):  # pragma: no cover
         resources.as_file(resources.files('ziptestdata') / 'binary.file')
 
+    # NSKIP012 https://github.com/nanvix/cpython/issues/480
+    @unittest.skipIf(is_nanvix and not is_nanvix_standalone,
+                     "NSKIP012: rmtree/rmdir cleanup failures on Nanvix (ENOSYS standalone, errno 88 hosted)")
     def test_entered_path_does_not_keep_open(self):
         """
         Mimic what certifi does on import to make its bundle

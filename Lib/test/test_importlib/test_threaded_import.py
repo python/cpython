@@ -18,8 +18,13 @@ from test.support import verbose
 from test.support.import_helper import forget, mock_register_at_fork
 from test.support.os_helper import (TESTFN, unlink, rmtree)
 from test.support import script_helper, threading_helper
+from test import support
 
 threading_helper.requires_working_threading(module=True)
+
+# NSKIP016 https://github.com/nanvix/cpython/issues/484
+if support.is_nanvix:
+    raise unittest.SkipTest("NSKIP016: exceeds Nanvix thread limit")
 
 def task(N, done, done_tasks, errors):
     try:

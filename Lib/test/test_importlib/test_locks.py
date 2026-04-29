@@ -14,6 +14,10 @@ from test import lock_tests
 
 threading_helper.requires_working_threading(module=True)
 
+# NSKIP016 https://github.com/nanvix/cpython/issues/484
+if support.is_nanvix:
+    raise unittest.SkipTest("NSKIP016: exceeds Nanvix thread limit")
+
 
 class ModuleLockAsRLockTests:
     locktype = classmethod(lambda cls: cls.LockType("some_lock"))
