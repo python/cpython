@@ -83,6 +83,16 @@ def _warn(*args, **kwargs):
     warnings.warn(*args, **kwargs)
 
 
+def _warn_future_us(message, remove):
+    # Don't call warnings._deprecated() directly because we're lazily importing warnings and
+    # don't want to have to trigger an eager import if it's not necessary.  Start up time
+    # matters a lot here and warnings isn't cheap!  This inlines the check from
+    # warnings._py_warnings._deprecated().
+    _version = sys.version_info
+    if (_version[:2] > remove) or (_version[:2] == remove and _version[3] != "alpha"):
+        warnings._deprecated(message, remove=remove)
+
+
 def makepath(*paths):
     dir = os.path.join(*paths)
     try:
@@ -190,6 +200,10 @@ def _read_pthstart_file(sitedir, name, suffix):
         _trace(f"Cannot read {filename!r} as UTF-8.")
         # For .pth files only, and then only until Python 3.20, fallback to locale encoding for
         # backward compatibility.
+        _warn_future_us(
+            ".pth files decoded to locale encoding as a fallback",
+            remove=(3, 20)
+        )
         if suffix == ".pth":
             content = raw_content.decode(locale.getencoding())
             _trace(f"Using fallback encoding {locale.getencoding()!r}")
@@ -218,6 +232,14 @@ def _read_pth_file(sitedir, name, known_paths):
         # Python 3.20 and beyond, issue a warning when `import` lines in .pth
         # files are detected.
         if line.startswith("import ") or line.startswith("import\t"):
+            _warn_future_us(
+                "import lines in .pth files are silently ignored",
+                remove=(3, 18)
+            )
+            _warn_future_us(
+                "import lines in .pth files are noisily ignored",
+                remove=(3, 20)
+            )
             _pending_importexecs.setdefault(filename, []).append(line)
             continue
 
@@ -236,7 +258,7 @@ def _read_pth_file(sitedir, name, known_paths):
 
 
 def _read_start_file(sitedir, name):
-    """Parse a .start file and return a list of entry point strings."""
+    """Parse a .start file for a list of entry point strings."""
     lines, filename = _read_pthstart_file(sitedir, name, ".start")
     if lines is None:
         return
@@ -333,7 +355,6 @@ def _execute_start_entrypoints():
 def flush_pth_start():
     """Flush all pending sys.path and entry points."""
     _extend_syspath()
-    # Stop exec'ing `import` lines in Python 3.18.
     _exec_imports()
     _execute_start_entrypoints()
     _pending_syspaths.clear()
