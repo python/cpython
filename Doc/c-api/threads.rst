@@ -282,46 +282,19 @@ Attaching/detaching thread states
    Otherwise, if both of the above cases fail, a new thread state is created
    for *guard*. It is then attached and marked as owned by ``PyThreadState_Ensure``.
 
-   This function will return ``NULL`` to indicate a memory allocation failure, and
-   otherwise return a pointer to the thread state that was previously attached
-   (which might have been ``NULL``, in which case an non-``NULL`` sentinel value is
-   returned instead to differentiate between failure -- this means that this function
-   will sometimes return an invalid ``PyThreadState`` pointer).
+   The function's effect (if any) will be reversed by the matching call to
+   :c:func:`PyThreadState_Release`.
 
-   To visualize, this function is roughly equivalent to the following:
+   On error, this function returns ``NULL`` *without* an exception set.
+   Do not call :c:func:`!PyThreadState_Release` in this case.
 
-   .. code-block:: c
+   On success, this function returns a pointer to the :term:`thread state` that
+   was previously attached, or, if no state was previously attached, a value that
+   is not a valid :c:type:`!PyThreadState` pointer.
 
-      PyThreadState *
-      PyThreadState_Ensure(PyInterpreterGuard *guard)
-      {
-         assert(guard != NULL);
-         PyInterpreterState *interp = PyInterpreterGuard_GetInterpreter(guard);
-         assert(interp != NULL);
-
-         PyThreadState *current_tstate = PyThreadState_GetUnchecked();
-         if (current_tstate == NULL) {
-               PyThreadState *last_used = PyGILState_GetThisThreadState();
-               if (last_used != NULL) {
-                  ++last_used->ensure_counter;
-                  PyThreadState_Swap(last_used);
-                  return NO_TSTATE_SENTINEL;
-               }
-         } else if (current_tstate->interp == interp) {
-               ++current_tstate->ensure_counter;
-               return current_tstate;
-         }
-
-         PyThreadState *new_tstate = PyThreadState_New(interp);
-         if (new_tstate == NULL) {
-               return NULL;
-         }
-
-         ++new_tstate->ensure_counter;
-         new_tstate->owned_by_pythreadstate_ensure = true;
-         PyThreadState_Swap(new_tstate);
-         return current_tstate == NULL ? NO_TSTATE_SENTINEL : current_tstate;
-      }
+   The returned value must be passed to the matching call to :c:func:`!PyThreadState_Release`,
+   and must not be passed to any other C API functions
+   (unless it matches a known valid :c:type:`!PyThreadState` pointer).
 
    .. versionadded:: next
 
@@ -330,53 +303,17 @@ Attaching/detaching thread states
 
    Get an attached thread state for the interpreter referenced by *view*.
 
-   *view* must not be ``NULL``. If the interpreter referenced by *view* has been
-   finalized or is currently finalizing, then this function returns ``NULL`` without
-   setting an exception. This function may also return ``NULL`` on other errors,
-   such memory allocation failure.
-
-   The interpreter referenced by *view* will be implicitly guarded. The
-   guard will be released upon the corresponding :c:func:`PyThreadState_Release`
+   On success, the interpreter referenced by *view* will be implicitly guarded;
+   the guard will be released upon the corresponding :c:func:`PyThreadState_Release`
    call.
-
-   On success, this function will return the thread state that was previously attached.
-   If no thread state was previously attached, this returns a non-``NULL`` sentinel
-   value. The behavior of whether this function creates a thread state is
-   equivalent to that of :c:func:`PyThreadState_Ensure`.
-
-   To visualize, function is roughly equivalent to the following:
-
-   .. code-block:: c
-
-      PyThreadState *
-      PyThreadState_EnsureFromView(PyInterpreterView *view)
-      {
-            assert(view != NULL);
-            PyInterpreterGuard *guard = PyInterpreterGuard_FromView(view);
-            if (guard == NULL) {
-               return NULL;
-            }
-
-            PyThreadState *tstate = PyThreadState_Ensure(guard);
-            if (tstate == NULL) {
-               PyInterpreterGuard_Close(guard);
-               return NULL;
-            }
-
-            if (tstate->guard == NULL) {
-               tstate->guard = guard;
-            } else {
-               PyInterpreterGuard_Close(guard);
-            }
-
-            return tstate;
-      }
+   Otherwise, the behavior and return value are the same as for
+   :c:func:`PyThreadState_Ensure`.
 
 
 .. c:function:: void PyThreadState_Release(PyThreadState *tstate)
 
    Undo a :c:func:`PyThreadState_Ensure` call. This must be called exactly once
-   for each call to ``PyThreadState_Ensure``.
+   for each successful call to ``PyThreadState_Ensure``.
 
    This function will decrement an internal counter on the attached thread state. If
    this counter ever reaches below zero, this function emits a fatal error (via
@@ -390,47 +327,6 @@ Attaching/detaching thread states
    If *tstate* indicates that no prior thread state was attached, there will be
    no attached thread state upon returning.
 
-   To visualize, this function is roughly equivalent to the following:
-
-   .. code-block:: c
-
-      void
-      PyThreadState_Release(PyThreadState *old_tstate)
-      {
-            PyThreadState *current_tstate = PyThreadState_Get();
-            assert(old_tstate != NULL);
-            assert(current_tstate != NULL);
-            assert(current_tstate->ensure_counter > 0);
-            if (--current_tstate->ensure_counter > 0) {
-               // There are remaining PyThreadState_Ensure() calls
-               // for this thread state.
-               return;
-            }
-
-            assert(current_tstate->ensure_counter == 0);
-            if (old_tstate == NO_TSTATE_SENTINEL) {
-               // No thread state was attached prior the PyThreadState_Ensure()
-               // call. So, we can just destroy the current thread state and return.
-               assert(current_tstate->owned_by_pythreadstate_ensure);
-               PyThreadState_Clear(current_tstate);
-               PyThreadState_DeleteCurrent();
-               return;
-            }
-
-            if (tstate->guard != NULL) {
-               PyInterpreterGuard_Close(tstate->guard);
-               return;
-            }
-
-            if (tstate->owned_by_pythreadstate_ensure) {
-               // The attached thread state was created by the initial PyThreadState_Ensure()
-               // call. It's our job to destroy it.
-               PyThreadState_Clear(current_tstate);
-               PyThreadState_DeleteCurrent();
-            }
-
-            PyThreadState_Swap(old_tstate);
-      }
 
 .. _legacy-api:
 .. _gilstate:
