@@ -2645,6 +2645,7 @@ static PyTypeObject* static_types[_Py_NUM_MANAGED_PREINITIALIZED_TYPES] = {
 #ifdef _Py_TIER2
     &_PyUOpExecutor_Type,
 #else
+    // The array should have the same size on all builds; see gh-149139
     NULL,
 #endif
     &_PyWeakref_CallableProxyType,
