@@ -103,6 +103,7 @@ mi_decl_cache_align const mi_heap_t _mi_heap_empty = {
   NULL,             // next
   false,
   0,
+  0,
   0
 };
 

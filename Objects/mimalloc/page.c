@@ -360,6 +360,10 @@ void _mi_page_unfull(mi_page_t* page) {
   mi_assert_internal(mi_page_is_in_full(page));
   if (!mi_page_is_in_full(page)) return;
 
+#ifdef Py_GIL_DISABLED
+  _PyMem_mi_page_full_dec(page);
+#endif
+
   mi_heap_t* heap = mi_page_heap(page);
   mi_page_queue_t* pqfull = &heap->pages[MI_BIN_FULL];
   mi_page_set_in_full(page, false); // to get the right queue
@@ -374,6 +378,9 @@ static void mi_page_to_full(mi_page_t* page, mi_page_queue_t* pq) {
   mi_assert_internal(!mi_page_is_in_full(page));
 
   if (mi_page_is_in_full(page)) return;
+#ifdef Py_GIL_DISABLED
+  _PyMem_mi_page_full_inc(page);
+#endif
   mi_page_queue_enqueue_from(&mi_page_heap(page)->pages[MI_BIN_FULL], pq, page);
   _mi_page_free_collect(page,false);  // try to collect right away in case another thread freed just before MI_USE_DELAYED_FREE was set
 }
@@ -435,6 +442,13 @@ void _mi_page_free(mi_page_t* page, mi_page_queue_t* pq, bool force) {
 #ifdef Py_GIL_DISABLED
   mi_assert_internal(page->qsbr_goal == 0);
   mi_assert_internal(page->qsbr_node.next == NULL);
+  // Defensive: a full page whose last block is freed locally goes through
+  // _mi_page_retire -> _PyMem_mi_page_maybe_free -> _mi_page_free without
+  // ever calling _mi_page_unfull, so the per-thread full-page counter must
+  // be decremented here to maintain the invariant.
+  if (mi_page_is_in_full(page)) {
+    _PyMem_mi_page_full_dec(page);
+  }
 #endif
 
   // remove from the page list

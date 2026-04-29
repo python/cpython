@@ -516,6 +516,10 @@ typedef struct mi_abandoned_pool_s {
   // in order to prevent resetting/decommitting segment memory if it might
   // still be read.
   mi_decl_cache_align _Atomic(size_t)           abandoned_readers; // = 0
+
+  // Total bytes (block_size * capacity) of pages currently in MI_BIN_FULL
+  // state whose pool association is this pool.
+  mi_decl_cache_align _Atomic(intptr_t)         full_page_bytes; // = 0
 } mi_abandoned_pool_t;
 
 

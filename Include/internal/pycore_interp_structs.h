@@ -260,14 +260,15 @@ struct _gc_runtime_state {
     /* True if gc.freeze() has been used. */
     int freeze_active;
 
-    /* Sum of area->used*area->block_size across all mimalloc heaps after last
-       GC, in KB.  Updated under stop-the-world so the measurement is accurate
-       even when OS pages are being reused. */
-    Py_ssize_t last_gc_used;
+    /* Estimate of the number of bytes used by mimalloc after last GC. */
+    Py_ssize_t last_heap_bytes;
 
     /* This accumulates the new object count whenever collection is deferred
        due to memory usage not increasing enough.  Reset on collection. */
     Py_ssize_t deferred_count;
+
+    /* Mutex held for gc_should_collect_mem_usage(). */
+    PyMutex mutex;
 #endif
 };
 

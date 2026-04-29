@@ -17,7 +17,15 @@
 
 #include "pydtrace.h"
 
-#include "pycore_mimalloc.h"      // mi_heap_visit_blocks()
+// Minimum growth in mimalloc heap bytes (estimated from full pages) since the
+// last GC.
+#define GC_HEAP_BYTES_MIN_DELTA (512 * 1024)
+
+// Maximum number of "young" objects before we stop deferring collection due
+// to heap not growing enough.  With the default threshold, this is (40*2000)
+// net new objects.  This is set to 40x because older versions of Python would
+// do full collections after roughly every 70,000 new container objects.
+#define GC_MAX_DEFER_FACTOR 40
 
 // enable the "mark alive" pass of GC
 #define GC_ENABLE_MARK_ALIVE 1
@@ -1993,92 +2001,53 @@ cleanup_worklist(struct worklist *worklist)
     }
 }
 
-// Visitor for get_all_mimalloc_used_kb(): called once per heap area.
-struct count_used_area_args {
-    Py_ssize_t total_bytes;
-};
-
-static bool
-count_used_area_visitor(const mi_heap_t *heap, const mi_heap_area_t *area,
-                        void *block, size_t block_size, void *arg)
-{
-    if (block == NULL) {
-        // Called once per area when visit_all_blocks=false.
-        ((struct count_used_area_args *)arg)->total_bytes +=
-            (Py_ssize_t)(area->used * area->block_size);
-    }
-    return true;
-}
-
-// Return the total bytes in use across all mimalloc heaps for all threads, in
-// KB.  Requires the world to be stopped so heap structures are stable.
+// Return an estimate, in bytes, of how much memory is being used.
 static Py_ssize_t
-get_all_mimalloc_used_kb(PyInterpreterState *interp)
+gc_get_heap_bytes(PyInterpreterState *interp)
 {
-    assert(interp->stoptheworld.world_stopped);
-    struct count_used_area_args args = {0};
-    HEAD_LOCK(&_PyRuntime);
-    _Py_FOR_EACH_TSTATE_UNLOCKED(interp, p) {
-        struct _mimalloc_thread_state *m = &((_PyThreadStateImpl *)p)->mimalloc;
-        if (!_Py_atomic_load_int(&m->initialized)) {
-            continue;
-        }
-        for (int h = 0; h < _Py_MIMALLOC_HEAP_COUNT; h++) {
-            mi_heap_visit_blocks(&m->heaps[h], false,
-                                 count_used_area_visitor, &args);
-        }
-    }
-    mi_abandoned_pool_t *pool = &interp->mimalloc.abandoned_pool;
-    // Only GC page tags are supported by _mi_abandoned_pool_visit_blocks.
-    _mi_abandoned_pool_visit_blocks(pool, _Py_MIMALLOC_HEAP_GC, false,
-                                    count_used_area_visitor, &args);
-    _mi_abandoned_pool_visit_blocks(pool, _Py_MIMALLOC_HEAP_GC_PRE, false,
-                                    count_used_area_visitor, &args);
-    HEAD_UNLOCK(&_PyRuntime);
-    return args.total_bytes / 1024;
+    // Computed from mimalloc full-page byte counters maintained on each
+    // abandoned pool (see _PyMem_mi_page_full_inc/dec in Objects/obmalloc.c).
+    Py_ssize_t total = _Py_atomic_load_ssize_relaxed(
+        (Py_ssize_t *)&interp->mimalloc.abandoned_pool.full_page_bytes);
+    total += _Py_atomic_load_ssize_relaxed(
+        (Py_ssize_t *)&_mi_abandoned_default.full_page_bytes);
+    return total;
 }
 
 // Decide whether memory usage has grown enough to warrant a collection.
-// Stops the world to measure mimalloc heap usage accurately; OS-level RSS
-// is unreliable since mimalloc reuses pages without returning them.
 static bool
 gc_should_collect_mem_usage(PyThreadState *tstate)
 {
     PyInterpreterState *interp = tstate->interp;
     GCState *gcstate = &interp->gc;
     int threshold = gcstate->young.threshold;
-
-    if (gcstate->old[0].threshold == 0) {
-        // A few tests rely on immediate scheduling of the GC so we ignore the
-        // extra conditions if generations[1].threshold is set to zero.
-        return true;
-    }
-    if (gcstate->deferred_count > threshold * 40) {
+    Py_ssize_t deferred = _Py_atomic_load_ssize_relaxed(&gcstate->deferred_count);
+    if (deferred > threshold * GC_MAX_DEFER_FACTOR) {
         // Too many new container objects since last GC, even though memory
-        // use might not have increased much.  This avoids resource
-        // exhaustion if some objects consume resources but don't result in
-        // a memory usage increase.  We use 40x here because older versions
-        // of Python would do full collections after roughly every 70,000
-        // new container objects.
+        // use might not have increased much.  This avoids resource exhaustion
+        // if some objects consume resources but don't result in a memory
+        // usage increase.
         return true;
     }
-    _PyEval_StopTheWorld(interp);
-    Py_ssize_t used = get_all_mimalloc_used_kb(interp);
-    Py_ssize_t last = gcstate->last_gc_used;
-    Py_ssize_t mem_threshold = Py_MAX(last / 10, 128);
-    if ((used - last) > mem_threshold) {
-        // Heap usage has grown enough, collect.
-        _PyEval_StartTheWorld(interp);
+    Py_ssize_t cur = gc_get_heap_bytes(interp);
+    Py_ssize_t last = _Py_atomic_load_ssize_relaxed(&gcstate->last_heap_bytes);
+    // Require 20% increase in full mimalloc pages.
+    Py_ssize_t delta = Py_MAX(last / 5, GC_HEAP_BYTES_MIN_DELTA);
+    if ((cur - last) > delta) {
+        // Heap has grown enough, collect.
         return true;
     }
-    // Memory usage has not grown enough.  Defer the collection, rolling the
-    // young count into deferred_count so we don't keep checking on every
-    // call to gc_should_collect().
-    int young_count = gcstate->young.count;
-    gcstate->young.count = 0;
-    gcstate->deferred_count += young_count;
-    _PyEval_StartTheWorld(interp);
-    return false;
+    else {
+        // Memory usage has not grown enough.  Defer the collection, rolling the
+        // young count into deferred_count so we don't keep checking on every
+        // call to gc_should_collect().
+        PyMutex_Lock(&gcstate->mutex);
+        int young_count = _Py_atomic_exchange_int(&gcstate->young.count, 0);
+        _Py_atomic_store_ssize_relaxed(&gcstate->deferred_count,
+                                       gcstate->deferred_count + young_count);
+        PyMutex_Unlock(&gcstate->mutex);
+        return false;
+    }
 }
 
 static bool
@@ -2101,7 +2070,7 @@ gc_should_collect(PyThreadState *tstate)
         // objects.
         return false;
     }
-    return true;
+    return gc_should_collect_mem_usage(tstate);
 }
 
 static void
@@ -2266,11 +2235,9 @@ gc_collect_internal(PyInterpreterState *interp, struct collection_state *state, 
     // to be freed.
     delete_garbage(state);
 
-    // Record mimalloc heap usage as the baseline for the next collection's
-    // growth check.  Stop-the-world so the heap structures are stable.
-    _PyEval_StopTheWorld(interp);
-    state->gcstate->last_gc_used = get_all_mimalloc_used_kb(interp);
-    _PyEval_StartTheWorld(interp);
+    // Record the current heap bytes estimate as new baseline.
+    Py_ssize_t last_heap_bytes = gc_get_heap_bytes(interp);
+    _Py_atomic_store_ssize_relaxed(&state->gcstate->last_heap_bytes, last_heap_bytes);
 
     // Append objects with legacy finalizers to the "gc.garbage" list.
     handle_legacy_finalizers(state);
@@ -2313,10 +2280,6 @@ gc_collect_main(PyThreadState *tstate, int generation, _PyGC_Reason reason)
 
     if (reason == _Py_GC_REASON_HEAP && !gc_should_collect(tstate)) {
         // Don't collect if the threshold is not exceeded.
-        _Py_atomic_store_int(&gcstate->collecting, 0);
-        return 0;
-    }
-    if (reason == _Py_GC_REASON_HEAP && !gc_should_collect_mem_usage(tstate)) {
         _Py_atomic_store_int(&gcstate->collecting, 0);
         return 0;
     }
