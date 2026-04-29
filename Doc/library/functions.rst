@@ -1373,8 +1373,7 @@ are always available.  They are listed here in alphabetical order.
    already exists), ``'x'`` for exclusive creation, and ``'a'`` for appending
    (which on *some* Unix systems, means that *all* writes append to the end of
    the file regardless of the current seek position).  In text mode, if
-   *encoding* is not specified the encoding used is platform-dependent:
-   :func:`locale.getencoding` is called to get the current locale encoding.
+   *encoding* is not specified, UTF-8 is used.
    (For reading and writing raw bytes use binary mode and leave
    *encoding* unspecified.)  The available modes are:
 
@@ -1404,7 +1403,7 @@ are always available.  They are listed here in alphabetical order.
    argument) return contents as :class:`bytes` objects without any decoding.  In
    text mode (the default, or when ``'t'`` is included in the *mode* argument),
    the contents of the file are returned as :class:`str`, the bytes having been
-   first decoded using a platform-dependent encoding or using the specified
+   first decoded using UTF-8 or using the specified
    *encoding* if given.
 
    .. note::
@@ -1433,9 +1432,8 @@ are always available.  They are listed here in alphabetical order.
      described above for binary files.
 
    *encoding* is the name of the encoding used to decode or encode the file.
-   This should only be used in text mode.  The default encoding is platform
-   dependent (whatever :func:`locale.getencoding` returns), but any
-   :term:`text encoding` supported by Python can be used.
+   This should only be used in text mode.  The default encoding is UTF-8,
+   but any :term:`text encoding` supported by Python can be used.
    See the :mod:`codecs` module for the list of supported encodings.
 
    *errors* is an optional string that specifies how encoding and decoding
@@ -1548,6 +1546,9 @@ are always available.  They are listed here in alphabetical order.
       * Support added to accept objects implementing :class:`os.PathLike`.
       * On Windows, opening a console buffer may return a subclass of
         :class:`io.RawIOBase` other than :class:`io.FileIO`.
+
+   .. versionchanged:: 3.15
+      The default encoding is now UTF-8, rather than locale-dependent.
 
    .. versionchanged:: 3.11
       The ``'U'`` mode has been removed.
