@@ -31,10 +31,12 @@ class FutureTests:
     async def test_task_exc_handler_correct_context(self):
         # see https://github.com/python/cpython/issues/96704
         name = contextvars.ContextVar('name', default='foo')
+        name_val = name.get()
         exc_handler_called = False
 
         def exc_handler(*args):
-            self.assertEqual(name.get(), 'bar')
+            nonlocal name_val
+            name_val = name.get()
             nonlocal exc_handler_called
             exc_handler_called = True
 
@@ -47,6 +49,7 @@ class FutureTests:
         self.cls(task())
         await asyncio.sleep(0)
         self.assertTrue(exc_handler_called)
+        self.assertEqual(name_val, 'bar')
 
     async def test_handle_exc_handler_correct_context(self):
         # see https://github.com/python/cpython/issues/96704
