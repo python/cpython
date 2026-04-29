@@ -29,16 +29,17 @@ button = tkinter.Button(frame, text="Exit", command=tk.destroy)
 button.pack(side=BOTTOM)
 tk.mainloop()
 """
-
+import _tkinter # If this fails your Python may not be configured for Tk
+from tkinter.constants import *
 import collections
 import enum
 import sys
 import types
 
-import _tkinter # If this fails your Python may not be configured for Tk
+lazy import re
+lazy import traceback
+lazy import os
 TclError = _tkinter.TclError
-from tkinter.constants import *
-import re
 
 wantobjects = 1
 _debug = False  # set to True to print executed Tcl/Tk commands
@@ -50,22 +51,39 @@ READABLE = _tkinter.READABLE
 WRITABLE = _tkinter.WRITABLE
 EXCEPTION = _tkinter.EXCEPTION
 
+_magic_re = None
+_space_re = None
 
-_magic_re = re.compile(r'([\\{}])')
-_space_re = re.compile(r'([\s])', re.ASCII)
+def _get_magic_re():
+    """
+    Internal function that acts as a wrapper
+    for the re import to make it lazy.
+    """
+    global _magic_re
+    if _magic_re is None:
+        _magic_re = re.compile(r'([\\{}])')
+    return _magic_re
 
+def _get_space_re():
+    """
+    Internal function that acts as a wrapper
+    for the re import to make it lazy.
+    """
+    global _space_re
+    if _space_re is None:
+        _space_re = re.compile(r'([\s])', re.ASCII)
+    return _space_re
 
 def _join(value):
     """Internal function."""
     return ' '.join(map(_stringify, value))
-
 
 def _stringify(value):
     """Internal function."""
     if isinstance(value, (list, tuple)):
         if len(value) == 1:
             value = _stringify(value[0])
-            if _magic_re.search(value):
+            if _get_magic_re().search(value):
                 value = '{%s}' % value
         else:
             value = '{%s}' % _join(value)
@@ -76,14 +94,14 @@ def _stringify(value):
             value = str(value)
         if not value:
             value = '{}'
-        elif _magic_re.search(value):
+        elif _get_magic_re().search(value):
             # add '\' before special characters and spaces
-            value = _magic_re.sub(r'\\\1', value)
+            value = _get_magic_re().sub(r'\\\1', value)
             value = value.replace('\n', r'\n')
-            value = _space_re.sub(r'\\\1', value)
+            value = _get_space_re().sub(r'\\\1', value)
             if value[0] == '"':
                 value = '\\' + value
-        elif value[0] == '"' or _space_re.search(value):
+        elif value[0] == '"' or _get_space_re().search(value):
             value = '{%s}' % value
     return value
 
@@ -2526,7 +2544,6 @@ class Tk(Misc, Wm):
         # ensure that self.tk is always _something_.
         self.tk = None
         if baseName is None:
-            import os
             baseName = os.path.basename(sys.argv[0])
             baseName, ext = os.path.splitext(baseName)
             if ext not in ('.py', '.pyc'):
@@ -2586,7 +2603,6 @@ class Tk(Misc, Wm):
         """Internal function. It reads .BASENAME.tcl and .CLASSNAME.tcl into
         the Tcl Interpreter and calls exec on the contents of .BASENAME.py and
         .CLASSNAME.py if such a file exists in the home directory."""
-        import os
         if 'HOME' in os.environ: home = os.environ['HOME']
         else: home = os.curdir
         class_tcl = os.path.join(home, '.%s.tcl' % className)
@@ -2609,7 +2625,6 @@ class Tk(Misc, Wm):
 
         Applications may want to override this internal function, and
         should when sys.stderr is None."""
-        import traceback
         print("Exception in Tkinter callback", file=sys.stderr)
         sys.last_exc = val
         sys.last_type = exc
@@ -5094,6 +5109,7 @@ def _test():
 
 __all__ = [name for name, obj in globals().items()
            if not name.startswith('_') and not isinstance(obj, types.ModuleType)
+           and not isinstance(obj, types.LazyImportType)
            and name not in {'wantobjects'}]
 
 if __name__ == '__main__':

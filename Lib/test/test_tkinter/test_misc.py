@@ -11,6 +11,13 @@ from test.test_tkinter.support import (AbstractTkTest, AbstractDefaultRootTest,
 
 support.requires('gui')
 
+class TestTkImportTime(AbstractTkTest, unittest.TestCase):
+    @support.cpython_only
+    def test_lazy_imports(self):
+        support.import_helper.ensure_lazy_imports(
+            "tkinter", {"re", "os", "traceback"}
+        )
+
 class MiscTest(AbstractTkTest, unittest.TestCase):
 
     def test_all(self):
