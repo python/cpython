@@ -145,9 +145,9 @@ the remaining entry points.
 
 .. note::
 
-   Executable lines (i.e. ``import`` lines in a :file:`{name}.pth` file or
-   :file:`{name}.start` entry points) are always run at Python startup (unless
-   :option:`-S` is given to disable the ``site.py`` module entirely),
+   Executable lines (``import`` lines in :file:`{name}.pth` files and
+   :file:`{name}.start` file entry points) are always run at Python startup
+   (unless :option:`-S` is given to disable the ``site.py`` module entirely),
    regardless of whether a particular module is actually going to be used.
 
 .. note::
