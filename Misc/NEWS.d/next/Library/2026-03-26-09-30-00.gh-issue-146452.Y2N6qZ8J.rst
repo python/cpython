@@ -1,0 +1,4 @@
+Fix segfault in :mod:`pickle` when pickling a dictionary concurrently
+mutated by another thread in the free-threaded build. The dict iteration in
+``batch_dict_exact`` now holds a critical section to prevent borrowed
+references from being invalidated mid-iteration.
