@@ -1305,7 +1305,7 @@ early_exit:
 }
 #ifdef _Py_TIER2
 #ifdef _Py_JIT
-PyAPI_DATA(_PyJitEntryFuncPtr) _Py_jit_entry = _Py_LazyJitShim;
+PyAPI_DATA(_PyJitEntryFuncPtr) _Py_jit_entry = _PyJIT;
 #else
 PyAPI_DATA(_PyJitEntryFuncPtr) _Py_jit_entry = _PyTier2Interpreter;
 #endif
