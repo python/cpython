@@ -3364,10 +3364,12 @@ class TestFolding(TestEmailBase):
         self._test(token, expected, policy=policy)
 
     def test_encoded_word_with_undecodable_bytes(self):
-        self._test(parser.get_address_list(
-            ' =?utf-8?Q?=E5=AE=A2=E6=88=B6=E6=AD=A3=E8=A6=8F=E4=BA=A4=E7?='
+        self._test(
+            parser.get_address_list(
+                ' =?utf-8?Q?=E5=AE=A2=E6=88=B6=E6=AD=A3=E8=A6=8F=E4=BA=A4=E7?='
+                ' <xyz@abc.com>'
                 )[0],
-            ' =?unknown-8bit?b?5a6i5oi25q2j6KaP5Lqk5w==?=\n',
+            ' =?unknown-8bit?b?5a6i5oi25q2j6KaP5Lqk5w==?= <xyz@abc.com>\n',
             )
 
 
