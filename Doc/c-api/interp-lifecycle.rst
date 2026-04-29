@@ -628,7 +628,7 @@ it possible to avoid these issues by temporarily preventing finalization:
 
    Holding a guard for an interpreter is similar to holding a
    :term:`strong reference` to a Python object, except finalization does not happen
-   automatically after all guards are released: it requires an explicit 
+   automatically after all guards are released: it requires an explicit
    :c:func:`Py_EndInterpreter` call.
 
    .. versionadded:: next
