@@ -2671,7 +2671,10 @@ _PyTypes_InitTypes(PyInterpreterState *interp)
     // All other static types (unless initialized elsewhere)
     for (size_t i=0; i < Py_ARRAY_LENGTH(static_types); i++) {
         PyTypeObject *type = static_types[i];
-        if (type && _PyStaticType_InitBuiltin(interp, type) < 0) {
+        if (type == NULL) {
+            continue;
+        }
+        if (_PyStaticType_InitBuiltin(interp, type) < 0) {
             return _PyStatus_ERR("Can't initialize builtin type");
         }
         if (type == &PyType_Type) {
@@ -2711,9 +2714,10 @@ _PyTypes_FiniTypes(PyInterpreterState *interp)
     // their base classes.
     for (Py_ssize_t i=Py_ARRAY_LENGTH(static_types)-1; i>=0; i--) {
         PyTypeObject *type = static_types[i];
-        if (type) {
-            _PyStaticType_FiniBuiltin(interp, type);
+        if (type == NULL) {
+            continue;
         }
+        _PyStaticType_FiniBuiltin(interp, type);
     }
 }
 
