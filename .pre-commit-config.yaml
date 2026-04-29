@@ -85,6 +85,8 @@ repos:
         exclude: Lib/test/tokenizedata/coding20731.py
       - id: end-of-file-fixer
         files: '^\.github/CODEOWNERS$'
+      - id: file-contents-sorter
+        files: '^Misc/Brewfile$'
       - id: mixed-line-ending
         args: [--fix=auto]
         exclude: '^Lib/test/.*data/'
