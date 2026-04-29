@@ -1053,6 +1053,15 @@ pickle
   (Contributed by Zackery Spytz and Serhiy Storchaka in :gh:`77188`.)
 
 
+pickletools
+-----------
+
+* The output of the :mod:`pickletools` command-line interface is colored by
+  default. This can be controlled with
+  :ref:`environment variables <using-on-controlling-color>`.
+  (Contributed by Hugo van Kemenade in :gh:`149026`.)
+
+
 pprint
 ------
 
