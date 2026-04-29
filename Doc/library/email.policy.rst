@@ -412,11 +412,12 @@ added matters.  To illustrate::
       :exc:`~email.errors.HeaderWriteError` if any header includes non-ASCII
       characters in a context where :rfc:`2047` does not permit encoded words.
       This particularly applies to mailboxes ("addr-spec") with non-ASCII
-      characters, which can be created via :mod:~email.headerregistry.Address`.
-      To use a mailbox with non-ASCII domain name with ``utf8=False``, first
-      encode the domain using the third-party :pypi:`idna` or :pypi:`uts46`
-      module or with :mod:`encodings.idna`. It is not possible to use a
-      non-ASCII username ("local-part") in a mailbox when ``utf8=False``.
+      characters, which can be created via
+      :class:`~email.headerregistry.Address`. To use a mailbox with non-ASCII
+      domain name with ``utf8=False``, first encode the domain using the
+      third-party :pypi:`idna` or :pypi:`uts46` module or with
+      :mod:`encodings.idna`. It is not possible to use a non-ASCII username
+      ("local-part") in a mailbox when ``utf8=False``.
 
       .. versionchanged:: 3.15
          Can trigger the raising of :exc:`~email.errors.HeaderWriteError`.
