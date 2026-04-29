@@ -5066,9 +5066,8 @@ class ThreadedTests(unittest.TestCase):
                 sslobj.read(1024)
             if hasattr(sslobj, 'sendfile'):
                 with open(__file__, "rb") as fp:
-                    fd = fp.fileno()
                     with self.assertRaises(ssl.SSLEOFError):
-                        sslobj.sendfile(fd, 0, 1)
+                        sslobj.sendfile(fp.fileno(), 0, 1)
             with self.assertRaises(ssl.SSLEOFError):
                 sslobj.write(b'client2\n')
             with self.assertRaises(ssl.SSLEOFError):
