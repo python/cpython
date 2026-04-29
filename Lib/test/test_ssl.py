@@ -2854,6 +2854,7 @@ class TestEOFServer(threading.Thread):
         context.load_cert_chain(CERTFILE)
         server_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         with server_sock:
+            server_sock.settimeout(support.SHORT_TIMEOUT)
             server_sock.bind((HOST, 0))
             server_sock.listen(5)
 
@@ -2864,10 +2865,9 @@ class TestEOFServer(threading.Thread):
             sslconn = context.wrap_socket(sock, server_side=True)
             with sslconn:
                 request = b''
-                while True:
-                    chunk = sslconn.recv(1024)
+                while chunk := sslconn.recv(1024):
                     request += chunk
-                    if b'\n' in request:
+                    if b'\n' in chunk:
                         break
 
                 sslconn.sendall(b'server\n')
@@ -5039,6 +5039,7 @@ class ThreadedTests(unittest.TestCase):
         server.start()
         if not server.listening.wait(support.SHORT_TIMEOUT):
             raise RuntimeError("server took too long")
+        self.addCleanup(server.join)
 
         context = ssl.create_default_context(cafile=CERTFILE)
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -5082,8 +5083,6 @@ class ThreadedTests(unittest.TestCase):
                 # On Windows and on OpenSSL 1.1.1, shutdown() doesn't
                 # raise an error
                 pass
-
-        server.join()
 
 
 @unittest.skipUnless(has_tls_version('TLSv1_3') and ssl.HAS_PHA,
