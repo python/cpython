@@ -342,11 +342,13 @@
                 PyObject *right_o = PyStackRef_AsPyObjectBorrow(right);
                 _PyBinaryOpSpecializationDescr *d = (_PyBinaryOpSpecializationDescr*)descr;
                 assert(INLINE_CACHE_ENTRIES_BINARY_OP == 5);
-                assert(d && d->guard);
+                assert(d != NULL);
                 _PyFrame_SetStackPointer(frame, stack_pointer);
-                int res = d->guard(left_o, right_o);
+                int match = (d->guard != NULL)
+                ? d->guard(left_o, right_o)
+            : (Py_TYPE(left_o) == d->lhs_type && Py_TYPE(right_o) == d->rhs_type);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
-                if (!res) {
+                if (!match) {
                     UPDATE_MISS_STATS(BINARY_OP);
                     assert(_PyOpcode_Deopt[opcode] == (BINARY_OP));
                     JUMP_TO_PREDICTED(BINARY_OP);
@@ -367,6 +369,8 @@
                 if (res_o == NULL) {
                     JUMP_TO_LABEL(error);
                 }
+                assert(d->result_type == NULL || Py_TYPE(res_o) == d->result_type);
+                assert(!d->result_unique || Py_REFCNT(res_o) == 1 || _Py_IsImmortal(res_o));
                 assert(!PyFloat_CheckExact(res_o) || Py_REFCNT(res_o) == 1);
                 res = PyStackRef_FromPyObjectSteal(res_o);
                 l = left;
@@ -5909,7 +5913,7 @@
                 int og_oparg = (oparg & ~255) | executor->vm_data.oparg;
                 next_instr = this_instr;
                 if (_PyJit_EnterExecutorShouldStopTracing(og_opcode)) {
-                    if (_PyOpcode_Caches[_PyOpcode_Deopt[opcode]]) {
+                    if (_PyOpcode_Caches[_PyOpcode_Deopt[og_opcode]]) {
                         PAUSE_ADAPTIVE_COUNTER(this_instr[1].counter);
                     }
                     opcode = og_opcode;
@@ -6375,6 +6379,58 @@
             DISPATCH();
         }
 
+        TARGET(FOR_ITER_VIRTUAL) {
+            #if _Py_TAIL_CALL_INTERP
+            int opcode = FOR_ITER_VIRTUAL;
+            (void)(opcode);
+            #endif
+            _Py_CODEUNIT* const this_instr = next_instr;
+            (void)this_instr;
+            frame->instr_ptr = next_instr;
+            next_instr += 2;
+            INSTRUCTION_STATS(FOR_ITER_VIRTUAL);
+            static_assert(INLINE_CACHE_ENTRIES_FOR_ITER == 1, "incorrect cache size");
+            _PyStackRef iter;
+            _PyStackRef null_or_index;
+            _PyStackRef next;
+            /* Skip 1 cache entry */
+            // _GUARD_NOS_ITER_VIRTUAL
+            {
+                iter = stack_pointer[-2];
+                PyObject *iter_o = PyStackRef_AsPyObjectBorrow(iter);
+                if (Py_TYPE(iter_o)->_tp_iteritem == NULL) {
+                    UPDATE_MISS_STATS(FOR_ITER);
+                    assert(_PyOpcode_Deopt[opcode] == (FOR_ITER));
+                    JUMP_TO_PREDICTED(FOR_ITER);
+                }
+            }
+            // _FOR_ITER_VIRTUAL
+            {
+                null_or_index = stack_pointer[-1];
+                PyObject *iter_o = PyStackRef_AsPyObjectBorrow(iter);
+                Py_ssize_t index = PyStackRef_UntagInt(null_or_index);
+                _PyFrame_SetStackPointer(frame, stack_pointer);
+                _PyObjectIndexPair next_index = Py_TYPE(iter_o)->_tp_iteritem(iter_o, index);
+                stack_pointer = _PyFrame_GetStackPointer(frame);
+                PyObject *next_o = next_index.object;
+                index = next_index.index;
+                if (next_o == NULL) {
+                    if (index < 0) {
+                        JUMP_TO_LABEL(error);
+                    }
+                    JUMPBY(oparg + 1);
+                    DISPATCH();
+                }
+                null_or_index = PyStackRef_TagInt(index);
+                next = PyStackRef_FromPyObjectSteal(next_o);
+            }
+            stack_pointer[-1] = null_or_index;
+            stack_pointer[0] = next;
+            stack_pointer += 1;
+            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+            DISPATCH();
+        }
+
         TARGET(GET_AITER) {
             #if _Py_TAIL_CALL_INTERP
             int opcode = GET_AITER;
@@ -6495,24 +6551,113 @@
             (void)(opcode);
             #endif
             frame->instr_ptr = next_instr;
-            next_instr += 1;
+            next_instr += 2;
             INSTRUCTION_STATS(GET_ITER);
+            PREDICTED_GET_ITER:;
+            _Py_CODEUNIT* const this_instr = next_instr - 2;
+            (void)this_instr;
             _PyStackRef iterable;
             _PyStackRef iter;
             _PyStackRef index_or_null;
-            iterable = stack_pointer[-1];
-            #ifdef Py_STATS
-            _Py_GatherStats_GetIter(iterable);
-            #endif
-            _PyFrame_SetStackPointer(frame, stack_pointer);
-            _PyStackRef result = _PyEval_GetIter(iterable, &index_or_null, oparg);
-            stack_pointer = _PyFrame_GetStackPointer(frame);
-            if (PyStackRef_IsError(result)) {
-                JUMP_TO_LABEL(pop_1_error);
+            // _SPECIALIZE_GET_ITER
+            {
+                iterable = stack_pointer[-1];
+                uint16_t counter = read_u16(&this_instr[1].cache);
+                (void)counter;
+                #if ENABLE_SPECIALIZATION
+                if (ADAPTIVE_COUNTER_TRIGGERS(counter)) {
+                    next_instr = this_instr;
+                    _PyFrame_SetStackPointer(frame, stack_pointer);
+                    _Py_Specialize_GetIter(iterable, next_instr);
+                    stack_pointer = _PyFrame_GetStackPointer(frame);
+                    DISPATCH_SAME_OPARG();
+                }
+                OPCODE_DEFERRED_INC(GET_ITER);
+                ADVANCE_ADAPTIVE_COUNTER(this_instr[1].counter);
+                #endif  /* ENABLE_SPECIALIZATION */
             }
-            iter = result;
+            // _GET_ITER
+            {
+                _PyFrame_SetStackPointer(frame, stack_pointer);
+                _PyStackRef result = _PyEval_GetIter(iterable, &index_or_null, oparg);
+                stack_pointer = _PyFrame_GetStackPointer(frame);
+                if (PyStackRef_IsError(result)) {
+                    JUMP_TO_LABEL(pop_1_error);
+                }
+                iter = result;
+            }
             stack_pointer[-1] = iter;
             stack_pointer[0] = index_or_null;
+            stack_pointer += 1;
+            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+            DISPATCH();
+        }
+
+        TARGET(GET_ITER_SELF) {
+            #if _Py_TAIL_CALL_INTERP
+            int opcode = GET_ITER_SELF;
+            (void)(opcode);
+            #endif
+            _Py_CODEUNIT* const this_instr = next_instr;
+            (void)this_instr;
+            frame->instr_ptr = next_instr;
+            next_instr += 2;
+            INSTRUCTION_STATS(GET_ITER_SELF);
+            static_assert(INLINE_CACHE_ENTRIES_GET_ITER == 1, "incorrect cache size");
+            _PyStackRef iterable;
+            _PyStackRef res;
+            /* Skip 1 cache entry */
+            // _GUARD_ITERATOR
+            {
+                iterable = stack_pointer[-1];
+                PyTypeObject *tp = Py_TYPE(PyStackRef_AsPyObjectBorrow(iterable));
+                if (tp->tp_iter != PyObject_SelfIter) {
+                    UPDATE_MISS_STATS(GET_ITER);
+                    assert(_PyOpcode_Deopt[opcode] == (GET_ITER));
+                    JUMP_TO_PREDICTED(GET_ITER);
+                }
+                STAT_INC(GET_ITER, hit);
+            }
+            // _PUSH_NULL
+            {
+                res = PyStackRef_NULL;
+            }
+            stack_pointer[0] = res;
+            stack_pointer += 1;
+            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+            DISPATCH();
+        }
+
+        TARGET(GET_ITER_VIRTUAL) {
+            #if _Py_TAIL_CALL_INTERP
+            int opcode = GET_ITER_VIRTUAL;
+            (void)(opcode);
+            #endif
+            _Py_CODEUNIT* const this_instr = next_instr;
+            (void)this_instr;
+            frame->instr_ptr = next_instr;
+            next_instr += 2;
+            INSTRUCTION_STATS(GET_ITER_VIRTUAL);
+            static_assert(INLINE_CACHE_ENTRIES_GET_ITER == 1, "incorrect cache size");
+            _PyStackRef iterable;
+            _PyStackRef zero;
+            /* Skip 1 cache entry */
+            // _GUARD_ITER_VIRTUAL
+            {
+                iterable = stack_pointer[-1];
+                PyTypeObject *tp = Py_TYPE(PyStackRef_AsPyObjectBorrow(iterable));
+                if (tp->_tp_iteritem == NULL) {
+                    UPDATE_MISS_STATS(GET_ITER);
+                    assert(_PyOpcode_Deopt[opcode] == (GET_ITER));
+                    JUMP_TO_PREDICTED(GET_ITER);
+                }
+                STAT_INC(GET_ITER, hit);
+            }
+            // _PUSH_TAGGED_ZERO
+            {
+                zero = PyStackRef_TagInt(0);
+            }
+            stack_pointer[0] = zero;
             stack_pointer += 1;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
             DISPATCH();
@@ -12355,7 +12500,10 @@
             tracer->prev_state.instr_frame = frame;
             tracer->prev_state.instr_oparg = oparg;
             tracer->prev_state.instr_stacklevel = PyStackRef_IsNone(frame->f_executable) ? 2 : STACK_LEVEL();
-            if (_PyOpcode_Caches[_PyOpcode_Deopt[opcode]]) {
+            if (_PyOpcode_Caches[_PyOpcode_Deopt[opcode]]
+                // Branch opcodes use the cache for branch history, not
+                // specialization counters.  Don't reset it.
+                && !IS_CONDITIONAL_JUMP_OPCODE(opcode)) {
                 (&next_instr[1])->counter = trigger_backoff_counter();
             }
             const _PyOpcodeRecordEntry *record_entry = &_PyOpcode_RecordEntries[opcode];
