@@ -552,6 +552,7 @@ Other language changes
   :ref:`ast <whatsnew315-color-ast>`,
   :ref:`difflib <whatsnew315-color-difflib>`,
   :ref:`http.server <whatsnew315-color-http.server>`,
+  :ref:`pickletools <whatsnew315-color-pickletools>`,
   :ref:`PyREPL tab completion <whatsnew315-pyrepl-completion>`,
   :ref:`sqlite3 <whatsnew315-color-sqlite3>`,
   :ref:`timeit <whatsnew315-color-timeit>`,
@@ -1088,6 +1089,8 @@ pickle
 
 pickletools
 -----------
+
+  .. _whatsnew315-color-pickletools:
 
 * The output of the :mod:`pickletools` command-line interface is colored by
   default. This can be controlled with
