@@ -2,6 +2,7 @@
 
 import os
 import random
+import struct
 import tempfile
 import unittest
 from collections import defaultdict
@@ -804,6 +805,35 @@ class TestBinaryEdgeCases(BinaryFormatTestBase):
         with self.assertRaises((FileNotFoundError, OSError, ValueError)):
             with BinaryReader("/nonexistent/path/file.bin") as reader:
                 reader.replay_samples(RawCollector())
+
+
+class TestBinaryFormatValidation(BinaryFormatTestBase):
+    """Tests for malformed binary files."""
+
+    HDR_OFF_THREADS = 32
+
+    def test_replay_rejects_more_threads_than_declared(self):
+        """Replay rejects files with more unique threads than the header declares."""
+        threads = [
+            make_thread(1, [make_frame("t1.py", 10, "t1")]),
+            make_thread(2, [make_frame("t2.py", 20, "t2")]),
+        ]
+        samples = [[make_interpreter(0, threads)]]
+        filename = self.create_binary_file(samples, compression="none")
+
+        with open(filename, "r+b") as raw:
+            raw.seek(self.HDR_OFF_THREADS)
+            raw.write(struct.pack("=I", 1))
+
+        with BinaryReader(filename) as reader:
+            self.assertEqual(reader.get_info()["thread_count"], 1)
+            with self.assertRaises(ValueError) as cm:
+                reader.replay_samples(RawCollector())
+            self.assertEqual(
+                str(cm.exception),
+                "Invalid thread count: sample data contains more unique "
+                "threads than declared in header (declared 1, found at least 2)",
+            )
 
 
 class TestBinaryEncodings(BinaryFormatTestBase):
