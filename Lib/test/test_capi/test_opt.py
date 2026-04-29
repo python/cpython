@@ -3472,11 +3472,20 @@ class TestUopsOptimization(unittest.TestCase):
         class E(Exception):
             def m(self):
                 return 1
+        class F:
+            @classmethod
+            def class_method(cls):
+                return 1
+            @staticmethod
+            def static_method():
+                return 1
+
         def f(n):
             x = 0
             c = C()
             d = D()
             e = E()
+            f = F()
             for _ in range(n):
                 x += C.A  # _LOAD_ATTR_CLASS
                 x += c.A  # _LOAD_ATTR_NONDESCRIPTOR_WITH_VALUES
@@ -3484,12 +3493,15 @@ class TestUopsOptimization(unittest.TestCase):
                 x += c.m()  # _LOAD_ATTR_METHOD_WITH_VALUES
                 x += d.m()  # _LOAD_ATTR_METHOD_NO_DICT
                 x += e.m()  # _LOAD_ATTR_METHOD_LAZY_DICT
+                x += f.class_method()  # _LOAD_ATTR
+                x += f.static_method()  # _LOAD_ATTR
             return x
 
         res, ex = self._run_with_optimizer(f, TIER2_THRESHOLD)
-        self.assertEqual(res, 6 * TIER2_THRESHOLD)
+        self.assertEqual(res, 8 * TIER2_THRESHOLD)
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
+        self.assertNotIn("_LOAD_ATTR", uops)
         self.assertNotIn("_LOAD_ATTR_CLASS", uops)
         self.assertNotIn("_LOAD_ATTR_NONDESCRIPTOR_WITH_VALUES", uops)
         self.assertNotIn("_LOAD_ATTR_NONDESCRIPTOR_NO_DICT", uops)

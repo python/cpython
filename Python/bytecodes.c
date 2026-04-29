@@ -2801,6 +2801,7 @@ dummy_func(
 
         macro(LOAD_ATTR) =
             _SPECIALIZE_LOAD_ATTR +
+            _RECORD_TOS_TYPE +
             unused/8 +
             _LOAD_ATTR;
 
