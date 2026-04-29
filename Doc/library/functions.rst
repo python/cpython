@@ -138,9 +138,10 @@ are always available.  They are listed here in alphabetical order.
       >>> f'{14:#b}', f'{14:b}'
       ('0b1110', '1110')
 
-   See also :func:`enum.bin` to represent negative values as twos-complement.
+   See also :func:`format` for more information on binary representations.
 
-   See also :func:`format` for more information.
+   Negative integers are represented with a leading ``'-'`` sign rather than
+   using two's complement form.
 
 
 .. class:: bool(object=False, /)
