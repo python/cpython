@@ -237,6 +237,10 @@ _PyCode_Quicken(_Py_CODEUNIT *instructions, Py_ssize_t size, int enable_counters
 #define SPEC_FAIL_BINARY_OP_SUBSCR_BYTES                48
 #define SPEC_FAIL_BINARY_OP_SUBSCR_STRUCTTIME           49
 #define SPEC_FAIL_BINARY_OP_SUBSCR_RANGE                50
+#define SPEC_FAIL_BINARY_OP_LSHIFT_INT                  51
+#define SPEC_FAIL_BINARY_OP_LSHIFT_DIFFERENT_TYPES      52
+#define SPEC_FAIL_BINARY_OP_RSHIFT_INT                  53
+#define SPEC_FAIL_BINARY_OP_RSHIFT_DIFFERENT_TYPES      54
 
 /* Calls */
 
@@ -1949,6 +1953,12 @@ binary_op_fail_kind(int oparg, PyObject *lhs, PyObject *rhs)
             return SPEC_FAIL_BINARY_OP_FLOOR_DIVIDE;
         case NB_LSHIFT:
         case NB_INPLACE_LSHIFT:
+            if (!Py_IS_TYPE(lhs, Py_TYPE(rhs))) {
+                return SPEC_FAIL_BINARY_OP_LSHIFT_DIFFERENT_TYPES;
+            }
+            if (PyLong_CheckExact(lhs)) {
+                return SPEC_FAIL_BINARY_OP_LSHIFT_INT;
+            }
             return SPEC_FAIL_BINARY_OP_LSHIFT;
         case NB_MATRIX_MULTIPLY:
         case NB_INPLACE_MATRIX_MULTIPLY:
@@ -1976,6 +1986,12 @@ binary_op_fail_kind(int oparg, PyObject *lhs, PyObject *rhs)
             return SPEC_FAIL_BINARY_OP_REMAINDER;
         case NB_RSHIFT:
         case NB_INPLACE_RSHIFT:
+            if (!Py_IS_TYPE(lhs, Py_TYPE(rhs))) {
+                return SPEC_FAIL_BINARY_OP_RSHIFT_DIFFERENT_TYPES;
+            }
+            if (PyLong_CheckExact(lhs)) {
+                return SPEC_FAIL_BINARY_OP_RSHIFT_INT;
+            }
             return SPEC_FAIL_BINARY_OP_RSHIFT;
         case NB_SUBTRACT:
         case NB_INPLACE_SUBTRACT:
@@ -2122,6 +2138,13 @@ is_compactlong(PyObject *v)
            _PyLong_IsCompact((PyLongObject *)v);
 }
 
+static inline int
+is_compactnonnegativelong(PyObject *v)
+{
+    return PyLong_CheckExact(v) &&
+           _PyLong_IsNonNegativeCompact((PyLongObject *)v);
+}
+
 /* sequence * int helpers: bypass PyNumber_Multiply dispatch overhead
    by calling sq_repeat directly with PyLong_AsSsize_t. */
 
@@ -2178,6 +2201,25 @@ compactlongs_guard(PyObject *lhs, PyObject *rhs)
     return (is_compactlong(lhs) && is_compactlong(rhs));
 }
 
+static int
+shift_guard(PyObject *lhs, PyObject *rhs)
+{
+    // we could use _long_is_small_int here, which is slightly faster than is_compactnonnegativelong
+
+    // rshift with value larger the the number of bits is undefined in C
+    // for lshift we do not want to overflow, but we always have at least 16 bits available
+    return (is_compactlong(lhs) && is_compactnonnegativelong(rhs) && (_PyLong_CompactValue((PyLongObject *)rhs) <= 16) );
+}
+
+#define BITWISE_LONGS_ACTION_STWODIGITS(NAME, OP) \
+    static PyObject * \
+    (NAME)(PyObject *lhs, PyObject *rhs) \
+    { \
+        stwodigits rhs_val = (stwodigits)_PyLong_CompactValue((PyLongObject *)rhs); \
+        stwodigits lhs_val = (stwodigits) _PyLong_CompactValue((PyLongObject *)lhs); \
+        return PyLong_FromLongLong(lhs_val OP rhs_val); \
+    }
+
 #define BITWISE_LONGS_ACTION(NAME, OP) \
     static PyObject * \
     (NAME)(PyObject *lhs, PyObject *rhs) \
@@ -2189,6 +2231,9 @@ compactlongs_guard(PyObject *lhs, PyObject *rhs)
 BITWISE_LONGS_ACTION(compactlongs_or, |)
 BITWISE_LONGS_ACTION(compactlongs_and, &)
 BITWISE_LONGS_ACTION(compactlongs_xor, ^)
+BITWISE_LONGS_ACTION_STWODIGITS(compactlongs_lshift, <<)
+BITWISE_LONGS_ACTION(compactlongs_rshift, >>)
+#undef BITWISE_LONGS_ACTION_STWODIGITS
 #undef BITWISE_LONGS_ACTION
 
 /* float-long */
@@ -2270,6 +2315,13 @@ static _PyBinaryOpSpecializationDescr binaryop_extend_descrs[] = {
     {NB_INPLACE_OR, compactlongs_guard, compactlongs_or, &PyLong_Type, 1, NULL, NULL},
     {NB_INPLACE_AND, compactlongs_guard, compactlongs_and, &PyLong_Type, 1, NULL, NULL},
     {NB_INPLACE_XOR, compactlongs_guard, compactlongs_xor, &PyLong_Type, 1, NULL, NULL},
+
+    /* long-long shifts: guards also check rhs is non-negative and <= 16 to
+       avoid undefined behavior and overflow, so type alone is not sufficient. */
+    {NB_LSHIFT, shift_guard, compactlongs_lshift, &PyLong_Type, 1, NULL, NULL},
+    {NB_RSHIFT, shift_guard, compactlongs_rshift, &PyLong_Type, 1, NULL, NULL},
+    {NB_INPLACE_LSHIFT, shift_guard, compactlongs_lshift, &PyLong_Type, 1, NULL, NULL},
+    {NB_INPLACE_RSHIFT, shift_guard, compactlongs_rshift, &PyLong_Type, 1, NULL, NULL},
 
     /* float-long arithmetic: guards also check NaN and compactness. */
     {NB_ADD, float_compactlong_guard, float_compactlong_add, &PyFloat_Type, 1, NULL, NULL},
