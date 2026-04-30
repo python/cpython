@@ -538,6 +538,7 @@ patch_x86_64_32rx(unsigned char *location, uint64_t value)
 
 void patch_got_symbol(jit_state *state, int ordinal);
 void patch_aarch64_trampoline(unsigned char *location, int ordinal, jit_state *state);
+void patch_aarch64_trampoline_addr(unsigned char *location, int ordinal, uint64_t value, jit_state *state);
 void patch_x86_64_trampoline(unsigned char *location, int ordinal, jit_state *state);
 
 #include "jit_stencils.h"
@@ -569,14 +570,22 @@ patch_got_symbol(jit_state *state, int ordinal)
 void
 patch_aarch64_trampoline(unsigned char *location, int ordinal, jit_state *state)
 {
-
     uint64_t value = (uintptr_t)symbols_map[ordinal];
-    int64_t range = value - (uintptr_t)location;
+    patch_aarch64_trampoline_addr(location, ordinal, value, state);
+}
+
+// Generate and patch AArch64 trampolines for dynamic addresses (e.g. operands).
+// Unlike patch_aarch64_trampoline, the target address is passed directly rather
+// than looked up from symbols_map. The ordinal is used to allocate a trampoline slot.
+void
+patch_aarch64_trampoline_addr(unsigned char *location, int ordinal, uint64_t value, jit_state *state)
+{
+    int64_t range = (int64_t)value - (int64_t)(uintptr_t)location;
 
     // If we are in range of 28 signed bits, we patch the instruction with
     // the address of the symbol.
     if (range >= -(1 << 27) && range < (1 << 27)) {
-        patch_aarch64_26r(location, (uintptr_t)value);
+        patch_aarch64_26r(location, value);
         return;
     }
 
