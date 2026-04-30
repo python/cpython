@@ -1123,7 +1123,7 @@ class TestStrEnumChoices(TestCase):
         parser.add_argument('--color', choices=self.Color)
         self.assertRaisesRegex(
             argparse.ArgumentError,
-            r"invalid choice: 'yellow' \(choose from red, green, blue\)",
+            r"invalid choice: 'yellow' \(choose from 'red', 'green', 'blue'\)",
             parser.parse_args,
             ['--color', 'yellow'],
         )
@@ -2392,7 +2392,7 @@ class TestArgumentAndSubparserSuggestions(TestCase):
         with self.assertRaises(ArgumentParserError) as excinfo:
             parser.parse_args(('bazz',))
         self.assertIn(
-            "error: argument foo: invalid choice: 'bazz', maybe you meant 'baz'? (choose from bar, baz)",
+            "error: argument foo: invalid choice: 'bazz', maybe you meant 'baz'? (choose from 'bar', 'baz')",
             excinfo.exception.stderr
         )
 
@@ -2402,7 +2402,7 @@ class TestArgumentAndSubparserSuggestions(TestCase):
         with self.assertRaises(ArgumentParserError) as excinfo:
             parser.parse_args(('bazz',))
         self.assertIn(
-            "error: argument foo: invalid choice: 'bazz' (choose from bar, baz)",
+            "error: argument foo: invalid choice: 'bazz' (choose from 'bar', 'baz')",
             excinfo.exception.stderr,
         )
 
@@ -2415,7 +2415,7 @@ class TestArgumentAndSubparserSuggestions(TestCase):
             parser.parse_args(('baz',))
         self.assertIn(
             "error: argument {foo,bar}: invalid choice: 'baz', maybe you meant"
-             " 'bar'? (choose from foo, bar)",
+             " 'bar'? (choose from 'foo', 'bar')",
             excinfo.exception.stderr,
         )
 
@@ -2427,7 +2427,7 @@ class TestArgumentAndSubparserSuggestions(TestCase):
         with self.assertRaises(ArgumentParserError) as excinfo:
             parser.parse_args(('baz',))
         self.assertIn(
-            "error: argument {foo,bar}: invalid choice: 'baz' (choose from foo, bar)",
+            "error: argument {foo,bar}: invalid choice: 'baz' (choose from 'foo', 'bar')",
             excinfo.exception.stderr,
         )
 
@@ -2438,7 +2438,7 @@ class TestArgumentAndSubparserSuggestions(TestCase):
             parser.parse_args(('bazz',))
         self.assertIn(
             "error: argument foo: invalid choice: 'bazz', maybe you meant"
-             " 'baz'? (choose from bar, baz)",
+             " 'baz'? (choose from 'bar', 'baz')",
             excinfo.exception.stderr,
         )
 
@@ -2468,7 +2468,7 @@ class TestArgumentAndSubparserSuggestions(TestCase):
         with self.assertRaises(ArgumentParserError) as excinfo:
             parser.parse_args(('3',))
         self.assertIn(
-            "error: argument foo: invalid choice: '3' (choose from 1, 2)",
+            "error: argument foo: invalid choice: '3' (choose from 1, '2')",
             excinfo.exception.stderr,
         )
 
