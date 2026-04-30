@@ -1,7 +1,7 @@
 """Get useful information from live Python objects.
 
 This module encapsulates the interface provided by the internal special
-attributes (co_*, im_*, tb_*, etc.) in a friendlier fashion.
+attributes (co_*, tb_*, etc.) in a friendlier fashion.
 It also provides some help for examining source code and class layout.
 
 Here are some of the useful functions provided by this module:
