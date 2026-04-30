@@ -390,6 +390,14 @@ instantiation, of which this module provides three different variants:
       This will be ``"SimpleHTTP/" + __version__``, where ``__version__`` is
       defined at the module level.
 
+   .. attribute:: default_content_type
+
+      Specifies the Content-Type header value sent when the MIME type
+      cannot be guessed from the file extension of the requested URL.
+      By default, it is set to ``'application/octet-stream'``.
+
+      .. versionadded:: next
+
    .. attribute:: extensions_map
 
       A dictionary mapping suffixes into MIME types, contains custom overrides
@@ -527,6 +535,18 @@ The following options are accepted:
       python -m http.server --protocol HTTP/1.1
 
    .. versionadded:: 3.11
+
+.. option:: --content-type <content_type>
+
+   Specifies the default Content-Type HTTP header used when the MIME type
+   cannot be guessed from the URL's file extension. By default, the server
+   uses ``'application/octet-stream'``:
+
+   .. code-block:: bash
+
+      python -m http.server --content-type text/html
+
+   .. versionadded:: next
 
 .. option:: --tls-cert
 

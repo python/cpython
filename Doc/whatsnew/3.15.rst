@@ -955,6 +955,12 @@ http.server
   <using-on-controlling-color>`.
   (Contributed by Hugo van Kemenade in :gh:`146292`.)
 
+* Added :attr:`~http.server.SimpleHTTPRequestHandler.default_content_type`
+  and the :option:`--content-type <http.server --content-type>` command-line
+  option to allow customizing the default ``Content-Type`` header
+  for files with unknown extensions.
+  (Contributed by John Comeau and Hugo van Kemenade in :gh:`113471`.)
+
 
 inspect
 -------

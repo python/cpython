@@ -1379,6 +1379,7 @@ class CommandLineTestCase(unittest.TestCase):
         'protocol': default_protocol,
         'port': default_port,
         'bind': default_bind,
+        'content_type': 'application/octet-stream',
         'tls_cert': None,
         'tls_key': None,
         'tls_password': None,
@@ -1446,6 +1447,16 @@ class CommandLineTestCase(unittest.TestCase):
                     call_args = self.args | dict(protocol=protocol)
                     mock_func.assert_called_once_with(**call_args)
                     mock_func.reset_mock()
+
+    @mock.patch('http.server.test')
+    def test_content_type_flag(self, mock_func):
+        content_types = ['text/html', 'text/plain', 'application/json']
+        for content_type in content_types:
+            with self.subTest(content_type=content_type):
+                self.invoke_httpd('--content-type', content_type)
+                call_args = self.args | dict(content_type=content_type)
+                mock_func.assert_called_once_with(**call_args)
+                mock_func.reset_mock()
 
     @unittest.skipIf(ssl is None, "requires ssl")
     @mock.patch('http.server.test')
