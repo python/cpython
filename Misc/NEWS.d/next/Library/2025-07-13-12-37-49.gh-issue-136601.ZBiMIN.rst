@@ -1,0 +1,1 @@
+Always set ``TarInfo.size`` to the real file size for sparse files.
