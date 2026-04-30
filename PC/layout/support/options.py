@@ -39,6 +39,7 @@ OPTIONS = {
     "install-json": {"help": "a PyManager __install__.json file"},
     "install-embed-json": {"help": "a PyManager __install__.json file for embeddable distro"},
     "install-test-json": {"help": "a PyManager __install__.json for the test distro"},
+    "builddetails-json": {"help": "a PEP 739 build-details.json"},
 }
 
 
@@ -69,6 +70,7 @@ PRESETS = {
             "props",
             "nuspec",
             "alias",
+            "builddetails-json",
         ],
     },
     "iot": {"help": "Windows IoT Core", "options": ["alias", "stable", "pip"]},
@@ -85,6 +87,7 @@ PRESETS = {
             "symbols",
             "html-doc",
             "alias",
+            "builddetails-json",
         ],
     },
     "embed": {
@@ -96,6 +99,7 @@ PRESETS = {
             "flat-dlls",
             "underpth",
             "precompile",
+            "builddetails-json",
         ],
     },
     "pymanager": {
@@ -109,6 +113,7 @@ PRESETS = {
             "dev",
             "html-doc",
             "install-json",
+            "builddetails-json",
         ],
     },
     "pymanager-test": {
@@ -124,6 +129,7 @@ PRESETS = {
             "symbols",
             "tests",
             "install-test-json",
+            "builddetails-json",
         ],
     },
 }

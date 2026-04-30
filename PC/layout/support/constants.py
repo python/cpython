@@ -23,6 +23,14 @@ def _unpack_hexversion():
             return _read_patchlevel_version(pathlib.Path(os.getenv("PYTHONINCLUDE")))
         except OSError:
             pass
+    # Manual search for a '-s <source dir>` arument
+    try:
+        src = sys.argv[sys.argv.index("-s") + 1]
+        return _read_patchlevel_version(pathlib.Path(src) / "Include")
+    except (IndexError, ValueError):
+        pass
+    except OSError:
+        pass
     return struct.pack(">i", sys.hexversion)
 
 
