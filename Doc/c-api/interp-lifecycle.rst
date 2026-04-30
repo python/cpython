@@ -702,9 +702,6 @@ it possible to avoid these issues by temporarily preventing finalization:
    :c:func:`PyThreadState_Ensure`. Doing so will result in undefined
    behavior.
 
-   Currently, this function will deallocate *guard*, but this may change in
-   the future.
-
    This function cannot fail, and the caller doesn't need to hold an
    :term:`attached thread state`.
 
@@ -751,9 +748,6 @@ deleted. This can be done using interpreter views.
    If an interpreter view is never closed, the view's memory will never be
    freed, but there are no other consequences. (In contrast, forgetting to
    close a guard will infinitely hang the main thread during finalization.)
-
-   Currently, this function will deallocate *view*, but this may change in
-   the future.
 
    This function cannot fail, and the caller doesn't need to hold an
    :term:`attached thread state`.
