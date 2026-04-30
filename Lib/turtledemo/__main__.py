@@ -93,10 +93,6 @@ from idlelib.textview import view_text
 import turtle
 from turtledemo import __doc__ as about_turtledemo
 
-if sys.platform == 'win32':
-    from idlelib.util import fix_win_hidpi
-    fix_win_hidpi()
-
 demo_dir = os.path.dirname(os.path.abspath(__file__))
 darwin = sys.platform == 'darwin'
 STARTUP = 1
