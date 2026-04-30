@@ -3,7 +3,7 @@
 #include "Python.h"
 #include "pycore_abstract.h"      // _PyIndex_Check()
 #include "pycore_bytes_methods.h" // _Py_bytes_startswith()
-#include "pycore_bytesobject.h"   // _PyBytes_Find(), _PyBytes_Repeat()
+#include "pycore_bytesobject.h"   // _PyBytes_Find(), _PyBytes_RepeatBuffer()
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
 #include "pycore_ceval.h"         // _PyEval_GetBuiltin()
 #include "pycore_format.h"        // F_LJUST
@@ -1581,8 +1581,8 @@ _PyBytes_Concat(PyObject *a, PyObject *b)
     return result;
 }
 
-static PyObject *
-bytes_repeat(PyObject *self, Py_ssize_t n)
+PyObject *
+_PyBytes_Repeat(PyObject *self, Py_ssize_t n)
 {
     PyBytesObject *a = _PyBytes_CAST(self);
     if (n < 0)
@@ -1613,7 +1613,7 @@ bytes_repeat(PyObject *self, Py_ssize_t n)
     set_ob_shash(op, -1);
     op->ob_sval[size] = '\0';
 
-    _PyBytes_Repeat(op->ob_sval, size, a->ob_sval, Py_SIZE(a));
+    _PyBytes_RepeatBuffer(op->ob_sval, size, a->ob_sval, Py_SIZE(a));
 
     return (PyObject *) op;
 }
@@ -1805,7 +1805,7 @@ bytes_buffer_getbuffer(PyObject *op, Py_buffer *view, int flags)
 static PySequenceMethods bytes_as_sequence = {
     bytes_length,       /*sq_length*/
     _PyBytes_Concat,       /*sq_concat*/
-    bytes_repeat,       /*sq_repeat*/
+    _PyBytes_Repeat,    /*sq_repeat*/
     bytes_item,         /*sq_item*/
     0,                  /*sq_slice*/
     0,                  /*sq_ass_item*/
@@ -3555,7 +3555,7 @@ bytes_iter(PyObject *seq)
 
 
 void
-_PyBytes_Repeat(char* dest, Py_ssize_t len_dest,
+_PyBytes_RepeatBuffer(char* dest, Py_ssize_t len_dest,
     const char* src, Py_ssize_t len_src)
 {
     if (len_dest == 0) {

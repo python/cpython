@@ -402,7 +402,7 @@ bytearray_repeat_lock_held(PyObject *op, Py_ssize_t count)
     PyByteArrayObject* result = (PyByteArrayObject *)PyByteArray_FromStringAndSize(NULL, size);
     const char* buf = PyByteArray_AS_STRING(self);
     if (result != NULL && size != 0) {
-        _PyBytes_Repeat(result->ob_bytes, size, buf, mysize);
+        _PyBytes_RepeatBuffer(result->ob_bytes, size, buf, mysize);
     }
     return (PyObject *)result;
 }
@@ -439,7 +439,7 @@ bytearray_irepeat_lock_held(PyObject *op, Py_ssize_t count)
     }
 
     char* buf = PyByteArray_AS_STRING(self);
-    _PyBytes_Repeat(buf, size, buf, mysize);
+    _PyBytes_RepeatBuffer(buf, size, buf, mysize);
 
     return Py_NewRef(self);
 }
