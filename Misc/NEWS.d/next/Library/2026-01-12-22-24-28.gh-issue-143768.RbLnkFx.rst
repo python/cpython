@@ -1,0 +1,2 @@
+:mod:`venv`: Rebuild broken interpreter symlinks when upgrading a virtual
+environment. Fix by Clay Dugo.
