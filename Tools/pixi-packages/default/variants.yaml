@@ -1,6 +1,2 @@
 variant:
   - default
-abi_tag:
-  - cp315
-version:
-  - 3.15
