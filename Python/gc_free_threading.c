@@ -17,30 +17,7 @@
 
 #include "pydtrace.h"
 
-// Platform-specific includes for get_process_mem_usage().
-#ifdef _WIN32
-    #include <windows.h>
-    #include <psapi.h> // For GetProcessMemoryInfo
-#elif defined(__linux__)
-    #include <unistd.h> // For sysconf, getpid
-#elif defined(__APPLE__)
-    #include <mach/mach.h>
-    #include <mach/task.h> // Required for TASK_VM_INFO
-    #include <unistd.h> // For sysconf, getpid
-#elif defined(__FreeBSD__)
-    #include <sys/types.h>
-    #include <sys/sysctl.h>
-    #include <sys/user.h> // Requires sys/user.h for kinfo_proc definition
-    #include <kvm.h>
-    #include <unistd.h> // For sysconf, getpid
-    #include <fcntl.h> // For O_RDONLY
-    #include <limits.h> // For _POSIX2_LINE_MAX
-#elif defined(__OpenBSD__)
-    #include <sys/types.h>
-    #include <sys/sysctl.h>
-    #include <sys/user.h> // For kinfo_proc
-    #include <unistd.h> // For sysconf, getpid
-#endif
+#include "pycore_mimalloc.h"      // mi_heap_visit_blocks()
 
 // enable the "mark alive" pass of GC
 #define GC_ENABLE_MARK_ALIVE 1
@@ -2016,188 +1993,98 @@ cleanup_worklist(struct worklist *worklist)
     }
 }
 
-// Return the memory usage (typically RSS + swap) of the process, in units of
-// KB.  Returns -1 if this operation is not supported or on failure.
+// Visitor for get_all_mimalloc_used_kb(): called once per heap area.
+struct count_used_area_args {
+    Py_ssize_t total_bytes;
+};
+
+static bool
+count_used_area_visitor(const mi_heap_t *heap, const mi_heap_area_t *area,
+                        void *block, size_t block_size, void *arg)
+{
+    if (block == NULL) {
+        // Called once per area when visit_all_blocks=false.
+        ((struct count_used_area_args *)arg)->total_bytes +=
+            (Py_ssize_t)(area->used * area->block_size);
+    }
+    return true;
+}
+
+// Return the total bytes in use across all mimalloc heaps for all threads, in
+// KB.  Requires the world to be stopped so heap structures are stable.
 static Py_ssize_t
-get_process_mem_usage(void)
+get_all_mimalloc_used_kb(PyInterpreterState *interp)
 {
-#ifdef _WIN32
-    // Windows implementation using GetProcessMemoryInfo
-    // Returns WorkingSetSize + PagefileUsage
-    PROCESS_MEMORY_COUNTERS pmc;
-    HANDLE hProcess = GetCurrentProcess();
-    if (NULL == hProcess) {
-        // Should not happen for the current process
-        return -1;
-    }
-
-    // GetProcessMemoryInfo returns non-zero on success
-    if (GetProcessMemoryInfo(hProcess, &pmc, sizeof(pmc))) {
-        // Values are in bytes, convert to KB.
-        return (Py_ssize_t)((pmc.WorkingSetSize + pmc.PagefileUsage) / 1024);
-    }
-    else {
-        return -1;
-    }
-
-#elif __linux__
-    FILE* fp = fopen("/proc/self/status", "r");
-    if (fp == NULL) {
-        return -1;
-    }
-
-    char line_buffer[256];
-    long long rss_kb = -1;
-    long long swap_kb = -1;
-
-    while (fgets(line_buffer, sizeof(line_buffer), fp) != NULL) {
-        if (rss_kb == -1 && strncmp(line_buffer, "VmRSS:", 6) == 0) {
-            sscanf(line_buffer + 6, "%lld", &rss_kb);
+    assert(interp->stoptheworld.world_stopped);
+    struct count_used_area_args args = {0};
+    HEAD_LOCK(&_PyRuntime);
+    _Py_FOR_EACH_TSTATE_UNLOCKED(interp, p) {
+        struct _mimalloc_thread_state *m = &((_PyThreadStateImpl *)p)->mimalloc;
+        if (!_Py_atomic_load_int(&m->initialized)) {
+            continue;
         }
-        else if (swap_kb == -1 && strncmp(line_buffer, "VmSwap:", 7) == 0) {
-            sscanf(line_buffer + 7, "%lld", &swap_kb);
-        }
-        if (rss_kb != -1 && swap_kb != -1) {
-            break; // Found both
+        for (int h = 0; h < _Py_MIMALLOC_HEAP_COUNT; h++) {
+            mi_heap_visit_blocks(&m->heaps[h], false,
+                                 count_used_area_visitor, &args);
         }
     }
-    fclose(fp);
-
-    if (rss_kb != -1 && swap_kb != -1) {
-        return (Py_ssize_t)(rss_kb + swap_kb);
-    }
-    return -1;
-
-#elif defined(__APPLE__)
-    // --- MacOS (Darwin) ---
-    // Returns phys_footprint (RAM + compressed memory)
-    task_vm_info_data_t vm_info;
-    mach_msg_type_number_t count = TASK_VM_INFO_COUNT;
-    kern_return_t kerr;
-
-    kerr = task_info(mach_task_self(), TASK_VM_INFO, (task_info_t)&vm_info, &count);
-    if (kerr != KERN_SUCCESS) {
-        return -1;
-    }
-    // phys_footprint is in bytes. Convert to KB.
-    return (Py_ssize_t)(vm_info.phys_footprint / 1024);
-
-#elif defined(__FreeBSD__)
-    // NOTE: Returns RSS only. Per-process swap usage isn't readily available
-    long page_size_kb = sysconf(_SC_PAGESIZE) / 1024;
-    if (page_size_kb <= 0) {
-        return -1;
-    }
-
-    // Using /dev/null for vmcore avoids needing dump file.
-    // NULL for kernel file uses running kernel.
-    char errbuf[_POSIX2_LINE_MAX]; // For kvm error messages
-    kvm_t *kd = kvm_openfiles(NULL, "/dev/null", NULL, O_RDONLY, errbuf);
-    if (kd == NULL) {
-        return -1;
-    }
-
-    // KERN_PROC_PID filters for the specific process ID
-    // n_procs will contain the number of processes returned (should be 1 or 0)
-    pid_t pid = getpid();
-    int n_procs;
-    struct kinfo_proc *kp = kvm_getprocs(kd, KERN_PROC_PID, pid, &n_procs);
-    if (kp == NULL) {
-        kvm_close(kd);
-        return -1;
-    }
-
-    Py_ssize_t rss_kb = -1;
-    if (n_procs > 0) {
-        // kp[0] contains the info for our process
-        // ki_rssize is in pages. Convert to KB.
-        rss_kb = (Py_ssize_t)kp->ki_rssize * page_size_kb;
-    }
-    else {
-        // Process with PID not found, shouldn't happen for self.
-        rss_kb = -1;
-    }
-
-    kvm_close(kd);
-    return rss_kb;
-
-#elif defined(__OpenBSD__)
-    // NOTE: Returns RSS only. Per-process swap usage isn't readily available
-    long page_size_kb = sysconf(_SC_PAGESIZE) / 1024;
-    if (page_size_kb <= 0) {
-        return -1;
-    }
-
-    struct kinfo_proc kp;
-    pid_t pid = getpid();
-    int mib[6];
-    size_t len = sizeof(kp);
-
-    mib[0] = CTL_KERN;
-    mib[1] = KERN_PROC;
-    mib[2] = KERN_PROC_PID;
-    mib[3] = pid;
-    mib[4] = sizeof(struct kinfo_proc); // size of the structure we want
-    mib[5] = 1;                         // want 1 structure back
-    if (sysctl(mib, 6, &kp, &len, NULL, 0) == -1) {
-         return -1;
-    }
-
-    if (len > 0) {
-        // p_vm_rssize is in pages on OpenBSD. Convert to KB.
-        return (Py_ssize_t)kp.p_vm_rssize * page_size_kb;
-    }
-    else {
-        // Process info not returned
-        return -1;
-    }
-#else
-    // Unsupported platform
-    return -1;
-#endif
+    mi_abandoned_pool_t *pool = &interp->mimalloc.abandoned_pool;
+    // Only GC page tags are supported by _mi_abandoned_pool_visit_blocks.
+    _mi_abandoned_pool_visit_blocks(pool, _Py_MIMALLOC_HEAP_GC, false,
+                                    count_used_area_visitor, &args);
+    _mi_abandoned_pool_visit_blocks(pool, _Py_MIMALLOC_HEAP_GC_PRE, false,
+                                    count_used_area_visitor, &args);
+    HEAD_UNLOCK(&_PyRuntime);
+    return args.total_bytes / 1024;
 }
 
+// Decide whether memory usage has grown enough to warrant a collection.
+// Stops the world to measure mimalloc heap usage accurately; OS-level RSS
+// is unreliable since mimalloc reuses pages without returning them.
 static bool
-gc_should_collect_mem_usage(GCState *gcstate)
+gc_should_collect_mem_usage(PyThreadState *tstate)
 {
-    Py_ssize_t mem = get_process_mem_usage();
-    if (mem < 0) {
-        // Reading process memory usage is not support or failed.
-        return true;
-    }
+    PyInterpreterState *interp = tstate->interp;
+    GCState *gcstate = &interp->gc;
     int threshold = gcstate->young.threshold;
-    Py_ssize_t deferred = _Py_atomic_load_ssize_relaxed(&gcstate->deferred_count);
-    if (deferred > threshold * 40) {
-        // Too many new container objects since last GC, even though memory use
-        // might not have increased much.  This is intended to avoid resource
-        // exhaustion if some objects consume resources but don't result in a
-        // memory usage increase.  We use 40x as the factor here because older
-        // versions of Python would do full collections after roughly every
-        // 70,000 new container objects.
+
+    if (gcstate->old[0].threshold == 0) {
+        // A few tests rely on immediate scheduling of the GC so we ignore the
+        // extra conditions if generations[1].threshold is set to zero.
         return true;
     }
-    Py_ssize_t last_mem = _Py_atomic_load_ssize_relaxed(&gcstate->last_mem);
-    Py_ssize_t mem_threshold = Py_MAX(last_mem / 10, 128);
-    if ((mem - last_mem) > mem_threshold) {
-        // The process memory usage has increased too much, do a collection.
+    if (gcstate->deferred_count > threshold * 40) {
+        // Too many new container objects since last GC, even though memory
+        // use might not have increased much.  This avoids resource
+        // exhaustion if some objects consume resources but don't result in
+        // a memory usage increase.  We use 40x here because older versions
+        // of Python would do full collections after roughly every 70,000
+        // new container objects.
         return true;
     }
-    else {
-        // The memory usage has not increased enough, defer the collection and
-        // clear the young object count so we don't check memory usage again
-        // on the next call to gc_should_collect().
-        PyMutex_Lock(&gcstate->mutex);
-        int young_count = _Py_atomic_exchange_int(&gcstate->young.count, 0);
-        _Py_atomic_store_ssize_relaxed(&gcstate->deferred_count,
-                                       gcstate->deferred_count + young_count);
-        PyMutex_Unlock(&gcstate->mutex);
-        return false;
+    _PyEval_StopTheWorld(interp);
+    Py_ssize_t used = get_all_mimalloc_used_kb(interp);
+    Py_ssize_t last = gcstate->last_gc_used;
+    Py_ssize_t mem_threshold = Py_MAX(last / 10, 128);
+    if ((used - last) > mem_threshold) {
+        // Heap usage has grown enough, collect.
+        _PyEval_StartTheWorld(interp);
+        return true;
     }
+    // Memory usage has not grown enough.  Defer the collection, rolling the
+    // young count into deferred_count so we don't keep checking on every
+    // call to gc_should_collect().
+    int young_count = gcstate->young.count;
+    gcstate->young.count = 0;
+    gcstate->deferred_count += young_count;
+    _PyEval_StartTheWorld(interp);
+    return false;
 }
 
 static bool
-gc_should_collect(GCState *gcstate)
+gc_should_collect(PyThreadState *tstate)
 {
+    GCState *gcstate = &tstate->interp->gc;
     int count = _Py_atomic_load_int_relaxed(&gcstate->young.count);
     int threshold = gcstate->young.threshold;
     int gc_enabled = _Py_atomic_load_int_relaxed(&gcstate->enabled);
@@ -2214,7 +2101,7 @@ gc_should_collect(GCState *gcstate)
         // objects.
         return false;
     }
-    return gc_should_collect_mem_usage(gcstate);
+    return true;
 }
 
 static void
@@ -2231,7 +2118,7 @@ record_allocation(PyThreadState *tstate)
         _Py_atomic_add_int(&gcstate->young.count, (int)gc->alloc_count);
         gc->alloc_count = 0;
 
-        if (gc_should_collect(gcstate) &&
+        if (gc_should_collect(tstate) &&
             !_Py_atomic_load_int_relaxed(&gcstate->collecting))
         {
             _Py_ScheduleGC(tstate);
@@ -2379,10 +2266,11 @@ gc_collect_internal(PyInterpreterState *interp, struct collection_state *state, 
     // to be freed.
     delete_garbage(state);
 
-    // Store the current memory usage, can be smaller now if breaking cycles
-    // freed some memory.
-    Py_ssize_t last_mem = get_process_mem_usage();
-    _Py_atomic_store_ssize_relaxed(&state->gcstate->last_mem, last_mem);
+    // Record mimalloc heap usage as the baseline for the next collection's
+    // growth check.  Stop-the-world so the heap structures are stable.
+    _PyEval_StopTheWorld(interp);
+    state->gcstate->last_gc_used = get_all_mimalloc_used_kb(interp);
+    _PyEval_StartTheWorld(interp);
 
     // Append objects with legacy finalizers to the "gc.garbage" list.
     handle_legacy_finalizers(state);
@@ -2423,8 +2311,12 @@ gc_collect_main(PyThreadState *tstate, int generation, _PyGC_Reason reason)
         return 0;
     }
 
-    if (reason == _Py_GC_REASON_HEAP && !gc_should_collect(gcstate)) {
+    if (reason == _Py_GC_REASON_HEAP && !gc_should_collect(tstate)) {
         // Don't collect if the threshold is not exceeded.
+        _Py_atomic_store_int(&gcstate->collecting, 0);
+        return 0;
+    }
+    if (reason == _Py_GC_REASON_HEAP && !gc_should_collect_mem_usage(tstate)) {
         _Py_atomic_store_int(&gcstate->collecting, 0);
         return 0;
     }
