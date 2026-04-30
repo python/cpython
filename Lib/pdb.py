@@ -376,7 +376,7 @@ def get_default_backend():
 
 def _pyrepl_available():
     """return whether pdb should use _pyrepl for input"""
-    if not os.getenv("PYTHON_BASIC_REPL"):
+    if os.getenv("PYTHON_BASIC_REPL"):
         CAN_USE_PYREPL = False
     else:
         try:
