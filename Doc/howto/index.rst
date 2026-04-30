@@ -37,6 +37,7 @@ Python Library Reference.
    mro.rst
    free-threading-python.rst
    free-threading-extensions.rst
+   freethreading-stable-abi.rst
    remote_debugging.rst
 
 General:
@@ -60,6 +61,7 @@ Advanced development:
 * :ref:`curses-howto`
 * :ref:`freethreading-python-howto`
 * :ref:`freethreading-extensions-howto`
+* :ref:`freethreading-stable-abi-howto`
 * :ref:`isolating-extensions-howto`
 * :ref:`python_2.3_mro`
 * :ref:`socket-howto`
