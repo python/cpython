@@ -967,6 +967,25 @@ class CStringIOTest(PyStringIOTest):
         memio.close()
         self.assertRaises(ValueError, memio.__setstate__, ("closed", "", 0, None))
 
+    def test_write_str_subclass(self):
+        # Writing a str subclass should use the subclass's unicode data
+        # directly, not call __str__ on it (which may return a different
+        # value).  gh-149047
+        class MyStr(str):
+            def __str__(self):
+                return "WRONG"
+
+        s = MyStr("correct")
+        memio = self.ioclass()
+        memio.write(s)
+        self.assertEqual(memio.getvalue(), "correct")
+
+        # Also test the fast path where pos == string_size (STATE_ACCUMULATING)
+        memio2 = self.ioclass()
+        memio2.write(MyStr("hello "))
+        memio2.write(MyStr("world"))
+        self.assertEqual(memio2.getvalue(), "hello world")
+
 
 class CStringIOPickleTest(PyStringIOPickleTest):
     UnsupportedOperation = io.UnsupportedOperation
