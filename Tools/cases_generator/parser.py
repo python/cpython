@@ -42,7 +42,7 @@ END_MARKER = "// END BYTECODES //"
 def parse_files(filenames: list[str]) -> list[AstNode]:
     result: list[AstNode] = []
     for filename in filenames:
-        with open(filename) as file:
+        with open(filename, encoding="utf-8") as file:
             src = file.read()
 
         psr = Parser(src, filename=prettify_filename(filename))

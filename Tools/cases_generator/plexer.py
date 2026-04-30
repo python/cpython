@@ -110,7 +110,7 @@ if __name__ == "__main__":
             src = sys.argv[2]
             filename = "<string>"
         else:
-            with open(filename) as f:
+            with open(filename, encoding="utf-8") as f:
                 src = f.read()
     else:
         filename = "<default>"
