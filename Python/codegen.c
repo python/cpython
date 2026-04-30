@@ -3864,8 +3864,10 @@ maybe_optimize_function_call(compiler *c, expr_ty e, jump_target_label end)
     expr_ty generator_exp = asdl_seq_GET(args, 0);
     PySTEntryObject *generator_entry = _PySymtable_Lookup(SYMTABLE(c), (void *)generator_exp);
     if (generator_entry->ste_coroutine) {
+        Py_DECREF(generator_entry);
         return 0;
     }
+    Py_DECREF(generator_entry);
 
     location loc = LOC(func);
 
