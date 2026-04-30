@@ -6164,6 +6164,10 @@ class TestSignatureDefinitions(unittest.TestCase):
                 methods_no_signature, methods_unsupported_signature)
 
     def test_types_module_has_signatures(self):
+        no_signature = set()
+        # These need PEP 457 groups
+        needs_groups = {'lookup_special'}
+        no_signature |= needs_groups
         unsupported_signature = {'CellType'}
         methods_no_signature = {
             'AsyncGeneratorType': {'athrow'},
@@ -6171,7 +6175,7 @@ class TestSignatureDefinitions(unittest.TestCase):
             'GeneratorType': {'throw'},
             'FrameLocalsProxyType': {'setdefault', 'pop', 'get'},
         }
-        self._test_module_has_signatures(types,
+        self._test_module_has_signatures(types, no_signature,
                 unsupported_signature=unsupported_signature,
                 methods_no_signature=methods_no_signature)
 
