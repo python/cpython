@@ -1241,7 +1241,6 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/pytypedefs.h \
 		$(srcdir)/Include/rangeobject.h \
 		$(srcdir)/Include/refcount.h \
-		$(srcdir)/Include/sentinelobject.h \
 		$(srcdir)/Include/setobject.h \
 		$(srcdir)/Include/sliceobject.h \
 		$(srcdir)/Include/structmember.h \
@@ -1309,6 +1308,7 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/cpython/pystats.h \
 		$(srcdir)/Include/cpython/pythonrun.h \
 		$(srcdir)/Include/cpython/pythread.h \
+		$(srcdir)/Include/cpython/sentinelobject.h \
 		$(srcdir)/Include/cpython/setobject.h \
 		$(srcdir)/Include/cpython/sliceobject.h \
 		$(srcdir)/Include/cpython/structseq.h \
