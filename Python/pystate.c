@@ -68,6 +68,8 @@ to avoid the expense of doing their own locking).
    For each of these functions, the GIL must be held by the current thread.
  */
 
+static inline void
+ensure_tstate_is_valid(PyThreadState *tstate);
 
 /* The attached thread state for the current thread. */
 _Py_thread_local PyThreadState *_Py_tss_tstate = NULL;
@@ -89,7 +91,7 @@ current_fast_get(void)
 static inline void
 current_fast_set(_PyRuntimeState *Py_UNUSED(runtime), PyThreadState *tstate)
 {
-    assert(tstate != NULL);
+    ensure_tstate_is_valid(tstate);
     _Py_tss_tstate = tstate;
     assert(tstate->interp != NULL);
     _Py_tss_interp = tstate->interp;
@@ -133,7 +135,7 @@ gilstate_get(void)
 static inline void
 gilstate_set(PyThreadState *tstate)
 {
-    assert(tstate != NULL);
+    ensure_tstate_is_valid(tstate);
     _Py_tss_gilstate = tstate;
 }
 
@@ -162,7 +164,7 @@ static void tstate_mimalloc_bind(PyThreadState *);
 static void
 bind_tstate(PyThreadState *tstate)
 {
-    assert(tstate != NULL);
+    ensure_tstate_is_valid(tstate);
     assert(tstate_is_alive(tstate) && !tstate->_status.bound);
     assert(!tstate->_status.unbound);  // just in case
     assert(!tstate->_status.bound_gilstate);
@@ -194,7 +196,7 @@ bind_tstate(PyThreadState *tstate)
 static void
 unbind_tstate(PyThreadState *tstate)
 {
-    assert(tstate != NULL);
+    ensure_tstate_is_valid(tstate);
     assert(tstate_is_bound(tstate));
 #ifndef HAVE_PTHREAD_STUBS
     assert(tstate->thread_id > 0);
@@ -235,7 +237,7 @@ unbind_tstate(PyThreadState *tstate)
 static void
 bind_gilstate_tstate(PyThreadState *tstate)
 {
-    assert(tstate != NULL);
+    ensure_tstate_is_valid(tstate);
     assert(tstate_is_alive(tstate));
     assert(tstate_is_bound(tstate));
     // XXX assert(!tstate->_status.active);
@@ -254,7 +256,7 @@ bind_gilstate_tstate(PyThreadState *tstate)
 static void
 unbind_gilstate_tstate(PyThreadState *tstate)
 {
-    assert(tstate != NULL);
+    ensure_tstate_is_valid(tstate);
     // XXX assert(tstate_is_alive(tstate));
     assert(tstate_is_bound(tstate));
     // XXX assert(!tstate->_status.active);
@@ -282,7 +284,7 @@ holds_gil(PyThreadState *tstate)
 {
     // XXX Fall back to tstate->interp->runtime->ceval.gil.last_holder
     // (and tstate->interp->runtime->ceval.gil.locked).
-    assert(tstate != NULL);
+    ensure_tstate_is_valid(tstate);
     /* Must be the tstate for this thread */
     assert(tstate == gilstate_get());
     return tstate == current_fast_get();
@@ -781,7 +783,7 @@ static void
 interpreter_clear(PyInterpreterState *interp, PyThreadState *tstate)
 {
     assert(interp != NULL);
-    assert(tstate != NULL);
+    ensure_tstate_is_valid(tstate);
     _PyRuntimeState *runtime = interp->runtime;
 
     /* XXX Conditions we need to enforce:
@@ -2009,7 +2011,7 @@ PyThreadState_DeleteCurrent(void)
 PyThreadState *
 _PyThreadState_RemoveExcept(PyThreadState *tstate)
 {
-    assert(tstate != NULL);
+    ensure_tstate_is_valid(tstate);
     PyInterpreterState *interp = tstate->interp;
     _PyRuntimeState *runtime = interp->runtime;
 
@@ -2078,7 +2080,7 @@ _PyThreadState_DeleteList(PyThreadState *list, int is_after_fork)
 PyObject *
 _PyThreadState_GetDict(PyThreadState *tstate)
 {
-    assert(tstate != NULL);
+    ensure_tstate_is_valid(tstate);
     if (tstate->dict == NULL) {
         tstate->dict = PyDict_New();
         if (tstate->dict == NULL) {
@@ -2103,7 +2105,7 @@ PyThreadState_GetDict(void)
 PyInterpreterState *
 PyThreadState_GetInterpreter(PyThreadState *tstate)
 {
-    assert(tstate != NULL);
+    ensure_tstate_is_valid(tstate);
     return tstate->interp;
 }
 
@@ -2111,7 +2113,7 @@ PyThreadState_GetInterpreter(PyThreadState *tstate)
 PyFrameObject*
 PyThreadState_GetFrame(PyThreadState *tstate)
 {
-    assert(tstate != NULL);
+    ensure_tstate_is_valid(tstate);
     _PyInterpreterFrame *f = _PyThreadState_GetFrame(tstate);
     if (f == NULL) {
         return NULL;
@@ -2127,7 +2129,7 @@ PyThreadState_GetFrame(PyThreadState *tstate)
 uint64_t
 PyThreadState_GetID(PyThreadState *tstate)
 {
-    assert(tstate != NULL);
+    ensure_tstate_is_valid(tstate);
     return tstate->id;
 }
 
@@ -2135,7 +2137,7 @@ PyThreadState_GetID(PyThreadState *tstate)
 static inline void
 tstate_activate(PyThreadState *tstate)
 {
-    assert(tstate != NULL);
+    ensure_tstate_is_valid(tstate);
     // XXX assert(tstate_is_alive(tstate));
     assert(tstate_is_bound(tstate));
     assert(!tstate->_status.active);
@@ -2152,7 +2154,7 @@ tstate_activate(PyThreadState *tstate)
 static inline void
 tstate_deactivate(PyThreadState *tstate)
 {
-    assert(tstate != NULL);
+    ensure_tstate_is_valid(tstate);
     // XXX assert(tstate_is_alive(tstate));
     assert(tstate_is_bound(tstate));
     assert(tstate->_status.active);
@@ -2170,6 +2172,7 @@ tstate_deactivate(PyThreadState *tstate)
 static int
 tstate_try_attach(PyThreadState *tstate)
 {
+    ensure_tstate_is_valid(tstate);
 #ifdef Py_GIL_DISABLED
     int expected = _Py_THREAD_DETACHED;
     return _Py_atomic_compare_exchange_int(&tstate->state,
@@ -2185,6 +2188,7 @@ tstate_try_attach(PyThreadState *tstate)
 static void
 tstate_set_detached(PyThreadState *tstate, int detached_state)
 {
+    ensure_tstate_is_valid(tstate);
     assert(_Py_atomic_load_int_relaxed(&tstate->state) == _Py_THREAD_ATTACHED);
 #ifdef Py_GIL_DISABLED
     _Py_atomic_store_int(&tstate->state, detached_state);
@@ -2196,6 +2200,7 @@ tstate_set_detached(PyThreadState *tstate, int detached_state)
 static void
 tstate_wait_attach(PyThreadState *tstate)
 {
+    ensure_tstate_is_valid(tstate);
     do {
         int state = _Py_atomic_load_int_relaxed(&tstate->state);
         if (state == _Py_THREAD_SUSPENDED) {
@@ -2217,6 +2222,7 @@ tstate_wait_attach(PyThreadState *tstate)
 void
 _PyThreadState_Attach(PyThreadState *tstate)
 {
+    ensure_tstate_is_valid(tstate);
 #if defined(Py_DEBUG)
     // This is called from PyEval_RestoreThread(). Similar
     // to it, we need to ensure errno doesn't change.
@@ -2276,6 +2282,7 @@ _PyThreadState_Attach(PyThreadState *tstate)
 static void
 detach_thread(PyThreadState *tstate, int detached_state)
 {
+    ensure_tstate_is_valid(tstate);
     // XXX assert(tstate_is_alive(tstate) && tstate_is_bound(tstate));
     assert(_Py_atomic_load_int_relaxed(&tstate->state) == _Py_THREAD_ATTACHED);
     assert(tstate == current_fast_get());
@@ -2300,6 +2307,7 @@ _PyThreadState_Detach(PyThreadState *tstate)
 void
 _PyThreadState_Suspend(PyThreadState *tstate)
 {
+    ensure_tstate_is_valid(tstate);
     _PyRuntimeState *runtime = &_PyRuntime;
 
     assert(_Py_atomic_load_int_relaxed(&tstate->state) == _Py_THREAD_ATTACHED);
@@ -2587,6 +2595,7 @@ PyThreadState_Get(void)
 {
     PyThreadState *tstate = current_fast_get();
     _Py_EnsureTstateNotNULL(tstate);
+    ensure_tstate_is_valid(tstate);
     return tstate;
 }
 
@@ -2666,7 +2675,9 @@ PyInterpreterState_ThreadHead(PyInterpreterState *interp) {
 }
 
 PyThreadState *
-PyThreadState_Next(PyThreadState *tstate) {
+PyThreadState_Next(PyThreadState *tstate)
+{
+    ensure_tstate_is_valid(tstate);
     return tstate->next;
 }
 
@@ -2841,7 +2852,7 @@ void
 _PyGILState_SetTstate(PyThreadState *tstate)
 {
     /* must init with valid states */
-    assert(tstate != NULL);
+    ensure_tstate_is_valid(tstate);
     assert(tstate->interp != NULL);
 
     if (!_Py_IsMainInterpreter(tstate->interp)) {
@@ -3087,6 +3098,7 @@ _PyInterpreterState_HasFeature(PyInterpreterState *interp, unsigned long feature
 static PyObject **
 push_chunk(PyThreadState *tstate, int size)
 {
+    ensure_tstate_is_valid(tstate);
     int allocate_size = _PY_DATA_STACK_CHUNK_SIZE;
     while (allocate_size < (int)sizeof(PyObject*)*(size + MINIMUM_OVERHEAD)) {
         allocate_size *= 2;
@@ -3123,6 +3135,7 @@ push_chunk(PyThreadState *tstate, int size)
 _PyInterpreterFrame *
 _PyThreadState_PushFrame(PyThreadState *tstate, size_t size)
 {
+    ensure_tstate_is_valid(tstate);
     assert(size < INT_MAX/sizeof(PyObject *));
     if (_PyThreadState_HasStackSpace(tstate, (int)size)) {
         _PyInterpreterFrame *res = (_PyInterpreterFrame *)tstate->datastack_top;
@@ -3135,6 +3148,7 @@ _PyThreadState_PushFrame(PyThreadState *tstate, size_t size)
 void
 _PyThreadState_PopFrame(PyThreadState *tstate, _PyInterpreterFrame * frame)
 {
+    ensure_tstate_is_valid(tstate);
     assert(tstate->datastack_chunk);
     PyObject **base = (PyObject **)frame;
     if (base == &tstate->datastack_chunk->data[0]) {
@@ -3171,6 +3185,7 @@ _PyThreadState_PopFrame(PyThreadState *tstate, _PyInterpreterFrame * frame)
 int
 _PyThreadState_CheckConsistency(PyThreadState *tstate)
 {
+    ensure_tstate_is_valid(tstate);
     assert(!_PyMem_IsPtrFreed(tstate));
     assert(!_PyMem_IsPtrFreed(tstate->interp));
     return 1;
@@ -3189,6 +3204,7 @@ _PyThreadState_CheckConsistency(PyThreadState *tstate)
 int
 _PyThreadState_MustExit(PyThreadState *tstate)
 {
+    ensure_tstate_is_valid(tstate);
     int state = _Py_atomic_load_int_relaxed(&tstate->state);
     return state == _Py_THREAD_SHUTTING_DOWN;
 }
@@ -3196,6 +3212,7 @@ _PyThreadState_MustExit(PyThreadState *tstate)
 void
 _PyThreadState_HangThread(PyThreadState *tstate)
 {
+    ensure_tstate_is_valid(tstate);
     _PyThreadStateImpl *tstate_impl = (_PyThreadStateImpl *)tstate;
     decref_threadstate(tstate_impl);
     PyThread_hang_thread();
@@ -3209,6 +3226,7 @@ static void
 tstate_mimalloc_bind(PyThreadState *tstate)
 {
 #ifdef Py_GIL_DISABLED
+    ensure_tstate_is_valid(tstate);
     struct _mimalloc_thread_state *mts = &((_PyThreadStateImpl*)tstate)->mimalloc;
 
     // Initialize the mimalloc thread state. This must be called from the
@@ -3262,6 +3280,7 @@ void
 _PyThreadState_ClearMimallocHeaps(PyThreadState *tstate)
 {
 #ifdef Py_GIL_DISABLED
+    ensure_tstate_is_valid(tstate);
     if (!tstate->_status.bound) {
         // The mimalloc heaps are only initialized when the thread is bound.
         return;
@@ -3490,7 +3509,15 @@ PyInterpreterView_FromMain(void)
 // thread state was attached.
 // To do this, we just use the memory address of a global variable and
 // cast it to a PyThreadState *.
-static const int NO_TSTATE_SENTINEL = 0;
+static const PyThreadState _no_tstate_sentinel = {0};
+#define NO_TSTATE_SENTINEL ((PyThreadState *)&_no_tstate_sentinel)
+
+static inline void
+ensure_tstate_is_valid(PyThreadState *tstate)
+{
+    assert(tstate != NULL);
+    assert(tstate != NO_TSTATE_SENTINEL);
+}
 
 PyThreadState *
 PyThreadState_Ensure(PyInterpreterGuard *guard)
@@ -3502,7 +3529,7 @@ PyThreadState_Ensure(PyInterpreterGuard *guard)
     if (attached_tstate != NULL && attached_tstate->interp == interp) {
         /* Yay! We already have an attached thread state that matches. */
         ++attached_tstate->ensure.counter;
-        return (PyThreadState *)&NO_TSTATE_SENTINEL;
+        return NO_TSTATE_SENTINEL;
     }
 
     PyThreadState *detached_gilstate = gilstate_get();
@@ -3511,7 +3538,7 @@ PyThreadState_Ensure(PyInterpreterGuard *guard)
         assert(attached_tstate == NULL);
         ++detached_gilstate->ensure.counter;
         _PyThreadState_Attach(detached_gilstate);
-        return (PyThreadState *)&NO_TSTATE_SENTINEL;
+        return NO_TSTATE_SENTINEL;
     }
 
     PyThreadState *fresh_tstate = _PyThreadState_NewBound(interp,
@@ -3528,7 +3555,7 @@ PyThreadState_Ensure(PyInterpreterGuard *guard)
         _PyThreadState_Attach(fresh_tstate);
     }
 
-    return (PyThreadState *)&NO_TSTATE_SENTINEL;
+    return NO_TSTATE_SENTINEL;
 }
 
 PyThreadState *
@@ -3547,7 +3574,7 @@ PyThreadState_EnsureFromView(PyInterpreterView *view)
     }
 
     PyThreadState *tstate = current_fast_get();
-    assert(tstate != NULL);
+    ensure_tstate_is_valid(tstate);
 
     if (tstate->ensure.owned_guard != NULL) {
         assert(tstate->ensure.owned_guard->interp == guard->interp);
@@ -3575,7 +3602,7 @@ PyThreadState_Release(PyThreadState *old_tstate)
     }
 
     PyThreadState *to_restore;
-    if (old_tstate == (PyThreadState *)&NO_TSTATE_SENTINEL) {
+    if (old_tstate == NO_TSTATE_SENTINEL) {
         to_restore = NULL;
     }
     else {
