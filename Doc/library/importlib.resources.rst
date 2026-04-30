@@ -39,14 +39,6 @@ for example, a package and its resources can be imported from a zip file using
 
 .. note::
 
-   This module provides functionality similar to `pkg_resources
-   <https://setuptools.readthedocs.io/en/latest/pkg_resources.html>`_ `Basic
-   Resource Access
-   <https://setuptools.readthedocs.io/en/latest/pkg_resources.html#basic-resource-access>`_
-   without the performance overhead of that package.  This makes reading
-   resources included in packages easier, with more stable and consistent
-   semantics.
-
    The standalone backport of this module provides more information
    on `using importlib.resources
    <https://importlib-resources.readthedocs.io/en/latest/using.html>`_ and
