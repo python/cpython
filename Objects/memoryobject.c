@@ -1460,9 +1460,11 @@ memoryview_cast_impl(PyMemoryViewObject *self, PyObject *format,
     CHECK_RESTRICTED(self);
 
     if (!MV_C_CONTIGUOUS(self->flags)) {
-        PyErr_SetString(PyExc_TypeError,
-            "memoryview: casts are restricted to C-contiguous views");
-        return NULL;
+        if(shape || self->view.ndim == 1 || !MV_F_CONTIGUOUS(self->flags)) {
+            PyErr_SetString(PyExc_TypeError,
+                "memoryview: casts are restricted to C-contiguous views");
+            return NULL;
+        }
     }
     if ((shape || self->view.ndim != 1) && zero_in_shape(self)) {
         PyErr_SetString(PyExc_TypeError,
