@@ -933,8 +933,17 @@ label_exception_targets(basicblock *entryblock) {
                     todo++;
                 }
                 handler = push_except_block(except_stack, instr);
+                /* Exception coverage for this instruction must match the try
+                 * region it opens, so tracing and pending exceptions while
+                 * executing it are handled like the following protected
+                 * instructions. */
+                instr->i_except = handler;
             }
             else if (instr->i_opcode == POP_BLOCK) {
+                /* POP_BLOCK ends a protected region but must still be covered by
+                 * that region's handler until the pop completes (e.g. continue
+                 * inside try). */
+                instr->i_except = except_stack_top(except_stack);
                 handler = pop_except_block(except_stack);
                 INSTR_SET_OP0(instr, NOP);
             }
