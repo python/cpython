@@ -71,7 +71,7 @@ The :mod:`!bdb` module also defines two classes:
 
    .. method:: bpprint(out=None)
 
-      Print the output of :meth:`bpformat` to the file *out*, or if it is
+      Print the output of :meth:`bpformat` to the file *out*; if it is
       ``None``, to standard output.
 
    :class:`Breakpoint` instances have the following attributes:
@@ -463,7 +463,7 @@ Finally, the module defines the following functions:
    If it was set via line number, it checks if
    :attr:`b.line <bdb.Breakpoint.line>` is the same as the one in *frame*.
    If the breakpoint was set via
-   :attr:`function name <bdb.Breakpoint.funcname>`, we have to check we are in
+   :attr:`function name <bdb.Breakpoint.funcname>`, we have to check if we are in
    the right *frame* (the right function) and if we are on its first executable
    line.
 
