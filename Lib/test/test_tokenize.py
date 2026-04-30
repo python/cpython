@@ -3188,6 +3188,16 @@ async def f():
             with self.subTest(case=case):
                 self.assertRaises(tokenize.TokenError, get_tokens, case)
 
+    def test_tstring_multiline_bang_underflow(self):
+        # gh-149183: t-string with '!' across two lines used to raise
+        # MemoryError because last_expr_end > last_expr_size produced a
+        # negative length that was cast to a huge size_t.
+        self.assertRaises(
+            tokenize.TokenError,
+            list,
+            tokenize.tokenize(BytesIO(b't"{!\n!x').readline),
+        )
+
     @support.skip_wasi_stack_overflow()
     def test_max_indent(self):
         MAXINDENT = 100
