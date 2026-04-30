@@ -1,2 +1,0 @@
-:mod:`hmac`: fix a crash when the initialization of the underlying C
-extension module fails.

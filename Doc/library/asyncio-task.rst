@@ -2,7 +2,7 @@
 
 
 ====================
-Coroutines and Tasks
+Coroutines and tasks
 ====================
 
 This section outlines high-level asyncio APIs to work with coroutines
@@ -231,7 +231,7 @@ A good example of a low-level function that returns a Future object
 is :meth:`loop.run_in_executor`.
 
 
-Creating Tasks
+Creating tasks
 ==============
 
 **Source code:** :source:`Lib/asyncio/tasks.py`
@@ -300,7 +300,7 @@ Creating Tasks
       Added the *eager_start* parameter by passing on all *kwargs*.
 
 
-Task Cancellation
+Task cancellation
 =================
 
 Tasks can easily and safely be cancelled.
@@ -324,7 +324,7 @@ remove the cancellation state.
 
 .. _taskgroups:
 
-Task Groups
+Task groups
 ===========
 
 Task groups combine a task creation API with a convenient
@@ -355,6 +355,34 @@ and reliable way to wait for all tasks in the group to finish.
 
          Passes on all *kwargs* to :meth:`loop.create_task`
 
+   .. method:: cancel()
+
+      Cancel the task group.  This is a non-exceptional, early exit of the
+      task group's lifetime -- useful once the group's goal has been met or
+      its services no longer needed.
+
+      :meth:`~asyncio.Task.cancel` will be called on any tasks in the group that
+      aren't yet done, as well as the parent (body) of the group.  The task group
+      context manager will exit *without* :exc:`asyncio.CancelledError` being raised.
+
+      If :meth:`cancel` is called before entering the task group, the group will be
+      cancelled upon entry.  This is useful for patterns where one piece of
+      code passes an unused :class:`asyncio.TaskGroup` instance to another in order to have
+      the ability to cancel anything run within the group.
+
+      :meth:`cancel` is idempotent and may be called after the task group has
+      already exited.
+
+      Some ways to use :meth:`cancel`:
+
+      * call it from the task group body based on some condition or event
+      * pass the task group instance to child tasks via :meth:`create_task`, allowing a child
+        task to conditionally cancel the entire entire group
+      * pass the task group instance or bound :meth:`cancel` method to some other task *before*
+        opening the task group, allowing remote cancellation
+
+      .. versionadded:: next
+
 Example::
 
     async def main():
@@ -366,7 +394,8 @@ Example::
 The ``async with`` statement will wait for all tasks in the group to finish.
 While waiting, new tasks may still be added to the group
 (for example, by passing ``tg`` into one of the coroutines
-and calling ``tg.create_task()`` in that coroutine).
+and calling ``tg.create_task()`` in that coroutine).  There is also opportunity to
+request termination of the entire task group with ``tg.cancel()``, based on some condition.
 Once the last task has finished and the ``async with`` block is exited,
 no new tasks may be added to the group.
 
@@ -427,53 +456,6 @@ reported by :meth:`asyncio.Task.cancelling`.
    Improved handling of simultaneous internal and external cancellations
    and correct preservation of cancellation counts.
 
-Terminating a Task Group
-------------------------
-
-While terminating a task group is not natively supported by the standard
-library, termination can be achieved by adding an exception-raising task
-to the task group and ignoring the raised exception:
-
-.. code-block:: python
-
-   import asyncio
-   from asyncio import TaskGroup
-
-   class TerminateTaskGroup(Exception):
-       """Exception raised to terminate a task group."""
-
-   async def force_terminate_task_group():
-       """Used to force termination of a task group."""
-       raise TerminateTaskGroup()
-
-   async def job(task_id, sleep_time):
-       print(f'Task {task_id}: start')
-       await asyncio.sleep(sleep_time)
-       print(f'Task {task_id}: done')
-
-   async def main():
-       try:
-           async with TaskGroup() as group:
-               # spawn some tasks
-               group.create_task(job(1, 0.5))
-               group.create_task(job(2, 1.5))
-               # sleep for 1 second
-               await asyncio.sleep(1)
-               # add an exception-raising task to force the group to terminate
-               group.create_task(force_terminate_task_group())
-       except* TerminateTaskGroup:
-           pass
-
-   asyncio.run(main())
-
-Expected output:
-
-.. code-block:: text
-
-   Task 1: start
-   Task 2: start
-   Task 1: done
-
 Sleeping
 ========
 
@@ -498,13 +480,13 @@ Sleeping
    for 5 seconds::
 
     import asyncio
-    import datetime
+    import datetime as dt
 
     async def display_date():
         loop = asyncio.get_running_loop()
         end_time = loop.time() + 5.0
         while True:
-            print(datetime.datetime.now())
+            print(dt.datetime.now())
             if (loop.time() + 1.0) >= end_time:
                 break
             await asyncio.sleep(1)
@@ -519,7 +501,7 @@ Sleeping
       Raises :exc:`ValueError` if *delay* is :data:`~math.nan`.
 
 
-Running Tasks Concurrently
+Running tasks concurrently
 ==========================
 
 .. awaitablefunction:: gather(*aws, return_exceptions=False)
@@ -557,7 +539,7 @@ Running Tasks Concurrently
       provides stronger safety guarantees than *gather* for scheduling a nesting of subtasks:
       if a task (or a subtask, a task scheduled by a task)
       raises an exception, *TaskGroup* will, while *gather* will not,
-      cancel the remaining scheduled tasks).
+      cancel the remaining scheduled tasks.
 
    .. _asyncio_example_gather:
 
@@ -621,7 +603,7 @@ Running Tasks Concurrently
 
 .. _eager-task-factory:
 
-Eager Task Factory
+Eager task factory
 ==================
 
 .. function:: eager_task_factory(loop, coro, *, name=None, context=None)
@@ -664,7 +646,7 @@ Eager Task Factory
     .. versionadded:: 3.12
 
 
-Shielding From Cancellation
+Shielding from cancellation
 ===========================
 
 .. awaitablefunction:: shield(aw)
@@ -894,7 +876,7 @@ Timeouts
       Raises :exc:`TimeoutError` instead of :exc:`asyncio.TimeoutError`.
 
 
-Waiting Primitives
+Waiting primitives
 ==================
 
 .. function:: wait(aws, *, timeout=None, return_when=ALL_COMPLETED)
@@ -1014,7 +996,7 @@ Waiting Primitives
       or as a plain :term:`iterator` (previously it was only a plain iterator).
 
 
-Running in Threads
+Running in threads
 ==================
 
 .. function:: to_thread(func, /, *args, **kwargs)
@@ -1074,7 +1056,7 @@ Running in Threads
    .. versionadded:: 3.9
 
 
-Scheduling From Other Threads
+Scheduling from other threads
 =============================
 
 .. function:: run_coroutine_threadsafe(coro, loop)
@@ -1198,7 +1180,7 @@ Introspection
 
 .. _asyncio-task-obj:
 
-Task Object
+Task object
 ===========
 
 .. class:: Task(coro, *, loop=None, name=None, context=None, eager_start=False)

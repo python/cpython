@@ -1,5 +1,0 @@
-``os.listdir(-1)`` and ``os.scandir(-1)`` now fail with
-``OSError(errno.EBADF)`` rather than listing the current directory.
-``os.listxattr(-1)`` now fails with ``OSError(errno.EBADF)`` rather than
-listing extended attributes of the current directory. Patch by Victor
-Stinner.

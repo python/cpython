@@ -529,6 +529,8 @@ def register_readline():
                     import _pyrepl.unix_console
                     console_errors = _pyrepl.unix_console._error
                 from _pyrepl.main import CAN_USE_PYREPL
+            except ModuleNotFoundError:
+                CAN_USE_PYREPL = False
             finally:
                 sys.path = original_path
     except ImportError:

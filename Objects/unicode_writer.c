@@ -383,6 +383,10 @@ PyUnicodeWriter_WriteStr(PyUnicodeWriter *writer, PyObject *obj)
 int
 PyUnicodeWriter_WriteRepr(PyUnicodeWriter *writer, PyObject *obj)
 {
+    if (obj == NULL) {
+        return _PyUnicodeWriter_WriteASCIIString((_PyUnicodeWriter*)writer, "<NULL>", 6);
+    }
+
     if (Py_TYPE(obj) == &PyLong_Type) {
         return _PyLong_FormatWriter((_PyUnicodeWriter*)writer, obj, 10, 0);
     }
@@ -460,6 +464,10 @@ _PyUnicodeWriter_WriteASCIIString(_PyUnicodeWriter *writer,
 {
     if (len == -1)
         len = strlen(ascii);
+
+    if (len == 0) {
+        return 0;
+    }
 
     assert(ucs1lib_find_max_char((const Py_UCS1*)ascii, (const Py_UCS1*)ascii + len) < 128);
 

@@ -2458,8 +2458,8 @@ class TestSourcePositions(unittest.TestCase):
                 for i, pos in enumerate(positions):
                     with self.subTest(i=i, pos=pos):
                         start_line, end_line, start_col, end_col = pos
-                        if i == 0 and start_col == end_col == 0:
-                            # ignore the RESUME in the beginning
+                        if i <= 1:
+                            # ignore the RESUME and CACHE in the beginning
                             continue
                         self.assertEqual(start_line, 1)
                         self.assertEqual(end_line, 1)

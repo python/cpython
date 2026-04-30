@@ -716,7 +716,7 @@ Signal Handling
       This function may now execute a remote debugger script, if remote
       debugging is enabled.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.15
       The exception set by :c:func:`PyThreadState_SetAsyncExc` is now raised.
 
 
@@ -818,13 +818,15 @@ Exception Classes
 
 .. c:macro:: PyException_HEAD
 
-   This is a :term:`soft deprecated` macro including the base fields for an
+   This is a macro including the base fields for an
    exception object.
 
    This was included in Python's C API by mistake and is not designed for use
    in extensions. For creating custom exception objects, use
    :c:func:`PyErr_NewException` or otherwise create a class inheriting from
    :c:data:`PyExc_BaseException`.
+
+   .. soft-deprecated:: 3.15
 
 
 Exception Objects

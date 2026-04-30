@@ -61,6 +61,7 @@ extern "C" {
 #define HDR_SIZE_COMPRESSION 4
 #define FILE_HEADER_SIZE     (HDR_OFF_COMPRESSION + HDR_SIZE_COMPRESSION)
 #define FILE_HEADER_PLACEHOLDER_SIZE 64
+#define SAMPLE_HEADER_FIXED_SIZE (sizeof(uint64_t) + sizeof(uint32_t) + 1)
 
 static_assert(FILE_HEADER_SIZE <= FILE_HEADER_PLACEHOLDER_SIZE,
               "FILE_HEADER_SIZE exceeds FILE_HEADER_PLACEHOLDER_SIZE");
@@ -415,8 +416,8 @@ decode_varint_u32(const uint8_t *data, size_t *offset, size_t max_size)
 {
     size_t saved_offset = *offset;
     uint64_t value = decode_varint_u64(data, offset, max_size);
-    if (PyErr_Occurred()) {
-        return 0;
+    if (*offset == saved_offset) {
+        return 0;  /* decode_varint_u64 already set PyErr */
     }
     if (UNLIKELY(value > UINT32_MAX)) {
         *offset = saved_offset;
@@ -430,9 +431,10 @@ decode_varint_u32(const uint8_t *data, size_t *offset, size_t max_size)
 static inline int32_t
 decode_varint_i32(const uint8_t *data, size_t *offset, size_t max_size)
 {
+    size_t saved_offset = *offset;
     uint32_t zigzag = decode_varint_u32(data, offset, max_size);
-    if (PyErr_Occurred()) {
-        return 0;
+    if (*offset == saved_offset) {
+        return 0;  /* decode_varint_u32 already set PyErr */
     }
     return (int32_t)((zigzag >> 1) ^ -(int32_t)(zigzag & 1));
 }

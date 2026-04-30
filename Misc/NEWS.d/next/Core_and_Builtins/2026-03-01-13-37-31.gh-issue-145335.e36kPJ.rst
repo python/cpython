@@ -1,2 +1,0 @@
-Fix a crash in :func:`os.pathconf` when called with ``-1`` as the path
-argument.
