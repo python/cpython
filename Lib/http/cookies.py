@@ -453,20 +453,6 @@ class Morsel(dict):
 # Currently, it is a hybrid of RFC 2109/2965 (for quoted strings)
 # and RFC 6265.
 
-# token, defined in RFC 2616, Section 2.2
-_token = r"[\w\d!#$%&'*+\-.^_`|~]+"
-# cookie-name, defined in RFC 6265, Section 4.1.1
-_StrictKeyPattern = re.compile(_token)
-# quoted-string, defined in RFC 2616, Section 2.2
-_quoted_string = fr'"(?:\\[\x00-\x7f]|[^"\x00-\x1f]|[\t\r\n])*+"'
-# value, defined in RFC 2965, Section 3.1
-_StrictRFC2965ValuePattern = re.compile(fr'{_token}|{_quoted_string}')
-# cookie-value, defined in RFC 6265, Section 4.1.1
-_cookie_octet = r"[\w\d!#$%&'()*+\-./:<=>?@\[\]^_`{|}~]"
-_StrictRFC6265ValuePattern = re.compile(fr'{_cookie_octet}*|"{_cookie_octet}*+"')
-# hybrid pattern
-_StrictValuePattern = re.compile(fr'{_cookie_octet}*|{_quoted_string}')
-
 _CookiePattern = re.compile(r"""
     \s*+                # Optional whitespace at start of cookie
     ([^=;]*+)           # Name: any characters except "=" and ";" (RFC 6265)
@@ -554,21 +540,21 @@ class BaseCookie(dict):
             result.append(value.js_output(attrs))
         return _nulljoin(result)
 
-    def load(self, rawdata, *, strict=False):
+    def load(self, rawdata):
         """Load cookies from a string (presumably HTTP_COOKIE) or
         from a dictionary.  Loading cookies from a dictionary 'd'
         is equivalent to calling:
             map(Cookie.__setitem__, d.keys(), d.values())
         """
         if isinstance(rawdata, str):
-            self.__parse_string(rawdata, strict)
+            self.__parse_string(rawdata)
         else:
             # self.update() wouldn't call our custom __setitem__
             for key, value in rawdata.items():
                 self[key] = value
         return
 
-    def __parse_string(self, str, strict):
+    def __parse_string(self, str, patt=_CookiePattern):
         i = 0                 # Our starting point
         n = len(str)          # Length of string
         parsed_items = []     # Parsed (type, key, value) triples
@@ -582,7 +568,7 @@ class BaseCookie(dict):
         # attacks).
         while 0 <= i < n:
             # Start looking for a cookie
-            match = _CookiePattern.match(str, i)
+            match = patt.match(str, i)
             if not match:
                 # No more cookies
                 break
@@ -591,11 +577,10 @@ class BaseCookie(dict):
             key = key.rstrip(' \t\r\n')
             if value:
                 value = value.rstrip(' \t\r\n')
-            if strict:
-                if not _StrictKeyPattern.fullmatch(key):
-                    break
-                if value and not _StrictValuePattern.fullmatch(value):
-                    break
+            if not _is_legal_key(key):
+                break
+            if value and _has_control_character(value):
+                break
             i = match.end()
 
             if key[0] == "$":
