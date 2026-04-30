@@ -5005,6 +5005,26 @@ class SuggestionFormattingTestBase(SuggestionFormattingTestMixin):
         actual = self.get_suggestion(func)
         self.assertIn("forget to import '_io'", actual)
 
+    def test_import_builtin_module_typo_suggestion(self):
+        def func():
+            import itertool # noqa: F401
+
+        actual = self.get_suggestion(func)
+        self.assertIn("Did you mean: 'itertools'?", actual)
+
+    def test_import_file_module_typo_suggestion(self):
+        def func():
+            import abs # noqa: F401
+
+        actual = self.get_suggestion(func)
+        self.assertIn("Did you mean: 'abc'?", actual)
+
+    def test_import_submodule_typo_suggestion(self):
+        def func():
+            import multiprocessing.dumy # noqa: F401
+
+        actual = self.get_suggestion(func)
+        self.assertIn("Did you mean: 'multiprocessing.dummy'?", actual)
 
 
 class PurePythonSuggestionFormattingTests(
