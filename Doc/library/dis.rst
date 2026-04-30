@@ -1603,7 +1603,7 @@ iterations of the loop.
 
    .. versionchanged:: next
       ``argc`` is now the oparg shifted right by one. The low bit indicates
-      whether the call is interruptible.
+      that no interrupt check is made after the call
 
 
 .. opcode:: CALL_KW (argc)
