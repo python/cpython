@@ -25,13 +25,19 @@ def _frame_pointers_expected(machine):
         )
         if value
     )
+
     if "no-omit-frame-pointer" in cflags:
+        # For example, configure adds -fno-omit-frame-pointer if Python
+        # has perf trampoline (PY_HAVE_PERF_TRAMPOLINE) and Python is built
+        # in debug mode.
         return True
     if "omit-frame-pointer" in cflags:
         return False
+
     if sys.platform == "darwin":
         # macOS x86_64/ARM64 always have frame pointer by default.
         return True
+
     if sys.platform == "linux":
         if machine in {"aarch64", "arm64"}:
             # 32-bit Linux is not supported
@@ -39,7 +45,21 @@ def _frame_pointers_expected(machine):
                 return None
             return True
         if machine == "x86_64":
+            final_opt = ""
+            for opt in cflags.split():
+                if opt.startswith('-O'):
+                    final_opt = opt
+            if final_opt in ("-O0", "-Og", "-O1"):
+                # Unwinding works if the optimization level is low
+                return True
+
+            Py_ENABLE_SHARED = int(sysconfig.get_config_var('Py_ENABLE_SHARED') or '0')
+            if Py_ENABLE_SHARED:
+                # Unwinding does crash using gcc -O2 or gcc -O3
+                # when Python is built with --enable-shared
+                return "crash"
             return False
+
     if sys.platform == "win32":
         # MSVC ignores /Oy and /Oy- on x64/ARM64.
         if machine == "arm64":
@@ -153,10 +173,14 @@ class FramePointerUnwindTests(unittest.TestCase):
 
     def setUp(self):
         super().setUp()
+
         machine = platform.machine().lower()
         expected = _frame_pointers_expected(machine)
         if expected is None:
             self.skipTest(f"unsupported architecture for frame pointer check: {machine}")
+        if expected == "crash":
+            self.skipTest(f"test does crash on {machine}")
+
         try:
             _testinternalcapi.manual_frame_pointer_unwind()
         except RuntimeError as exc:

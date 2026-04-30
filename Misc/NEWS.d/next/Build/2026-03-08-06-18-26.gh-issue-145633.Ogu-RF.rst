@@ -1,3 +1,0 @@
-Remove support for ancient ARM platforms (ARMv4L and ARMv5L OABI boards),
-using mixed-endian representation
-for doubles.  Patch by Sergey B Kirpichev.

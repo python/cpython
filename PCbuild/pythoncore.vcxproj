@@ -115,6 +115,9 @@
     <Link>
       <AdditionalDependencies>version.lib;ws2_32.lib;pathcch.lib;bcrypt.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalDependencies Condition="$(IncludeExternals)">zlib-ng$(PyDebugExt).lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies Condition="'$(UseJIT)' == 'true' and $(Platform) == 'ARM64'">$(GeneratedJitStencilsDir)jit_shim-aarch64-pc-windows-msvc.o;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies Condition="'$(UseJIT)' == 'true' and $(Platform) == 'Win32'">$(GeneratedJitStencilsDir)jit_shim-i686-pc-windows-msvc.o;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies Condition="'$(UseJIT)' == 'true' and $(Platform) == 'x64'">$(GeneratedJitStencilsDir)jit_shim-x86_64-pc-windows-msvc.o;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -359,6 +362,7 @@
     <ClInclude Include="..\Include\osmodule.h" />
     <ClInclude Include="..\Include\patchlevel.h" />
     <ClInclude Include="..\Include\py_curses.h" />
+    <ClInclude Include="..\Include\pyabi.h" />
     <ClInclude Include="..\Include\pyatomic.h" />
     <ClInclude Include="..\Include\pybuffer.h" />
     <ClInclude Include="..\Include\pycapsule.h" />
@@ -380,6 +384,7 @@
     <ClInclude Include="..\Include\pytypedefs.h" />
     <ClInclude Include="..\Include\rangeobject.h" />
     <ClInclude Include="..\Include\refcount.h" />
+    <ClInclude Include="..\Include\sentinelobject.h" />
     <ClInclude Include="..\Include\setobject.h" />
     <ClInclude Include="..\Include\sliceobject.h" />
     <ClInclude Include="..\Include\structmember.h" />
@@ -557,6 +562,7 @@
     <ClCompile Include="..\Objects\odictobject.c" />
     <ClCompile Include="..\Objects\picklebufobject.c" />
     <ClCompile Include="..\Objects\rangeobject.c" />
+    <ClCompile Include="..\Objects\sentinelobject.c" />
     <ClCompile Include="..\Objects\setobject.c" />
     <ClCompile Include="..\Objects\sliceobject.c" />
     <ClCompile Include="..\Objects\structseq.c" />

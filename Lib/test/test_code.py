@@ -424,13 +424,6 @@ class CodeTest(unittest.TestCase):
         new_code = code = func.__code__.replace(co_linetable=b'')
         self.assertEqual(list(new_code.co_lines()), [])
 
-    def test_co_lnotab_is_deprecated(self):  # TODO: remove in 3.14
-        def func():
-            pass
-
-        with self.assertWarns(DeprecationWarning):
-            func.__code__.co_lnotab
-
     @unittest.skipIf(_testinternalcapi is None, '_testinternalcapi is missing')
     def test_returns_only_none(self):
         value = True
@@ -1164,6 +1157,18 @@ class CodeTest(unittest.TestCase):
                     with self.assertRaises(Exception):
                         _testinternalcapi.verify_stateless_code(func)
 
+    def test_code_richcompare_raise_exception(self):
+        class BadStr(str):
+            def __eq__(self, _):
+                raise RuntimeError("Poison!")
+
+            __hash__ = str.__hash__
+
+        c1 = compile("pass", "test", "exec")
+        c2 = c1.replace(co_name=BadStr("poison"))
+        c3 = compile("pass", "poison", "exec")
+        with self.assertRaises(RuntimeError):
+            c2 == c3
 
 def isinterned(s):
     return s is sys.intern(('_' + s + '_')[1:-1])
