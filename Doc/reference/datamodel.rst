@@ -597,6 +597,13 @@ Special read-only attributes
        A cell object has the attribute ``cell_contents``.
        This can be used to get the value of the cell, as well as set the value.
 
+       Only names that are actually referenced in the function body are
+       listed in :attr:`~codeobject.co_freevars` and therefore have
+       entries in ``function.__closure__``. Variables defined in an
+       enclosing scope but never referenced inside the function do not
+       appear in the closure.
+
+
 Special writable attributes
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
