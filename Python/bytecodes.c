@@ -613,16 +613,6 @@ dummy_func(
             PyStackRef_CLOSE(value);
         }
 
-        op(_GUARD_TOS_BYTES, (tos -- tos)) {
-            PyObject *o = PyStackRef_AsPyObjectBorrow(tos);
-            EXIT_IF(!PyBytes_CheckExact(o));
-        }
-
-        op(_GUARD_TOS_BYTEARRAY, (tos -- tos)) {
-            PyObject *o = PyStackRef_AsPyObjectBorrow(tos);
-            EXIT_IF(!PyByteArray_CheckExact(o));
-        }
-
         macro(UNARY_INVERT) = _UNARY_INVERT + POP_TOP;
 
         op(_UNARY_INVERT, (value -- res, v)) {
@@ -1322,6 +1312,16 @@ dummy_func(
         op(_GUARD_TOS_FROZENDICT, (tos -- tos)) {
             PyObject *o = PyStackRef_AsPyObjectBorrow(tos);
             EXIT_IF(!PyFrozenDict_CheckExact(o));
+        }
+
+        op(_GUARD_TOS_BYTES, (tos -- tos)) {
+            PyObject *o = PyStackRef_AsPyObjectBorrow(tos);
+            EXIT_IF(!PyBytes_CheckExact(o));
+        }
+
+        op(_GUARD_TOS_BYTEARRAY, (tos -- tos)) {
+            PyObject *o = PyStackRef_AsPyObjectBorrow(tos);
+            EXIT_IF(!PyByteArray_CheckExact(o));
         }
 
         macro(BINARY_OP_SUBSCR_DICT) =

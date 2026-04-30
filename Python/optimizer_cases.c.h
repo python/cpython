@@ -557,30 +557,6 @@
             break;
         }
 
-        case _GUARD_TOS_BYTES: {
-            JitOptRef tos;
-            tos = stack_pointer[-1];
-            if (sym_matches_type(tos, &PyBytes_Type)) {
-                ADD_OP(_NOP, 0, 0);
-            }
-            else {
-                sym_set_type(tos, &PyBytes_Type);
-            }
-            break;
-        }
-
-        case _GUARD_TOS_BYTEARRAY: {
-            JitOptRef tos;
-            tos = stack_pointer[-1];
-            if (sym_matches_type(tos, &PyByteArray_Type)) {
-                ADD_OP(_NOP, 0, 0);
-            }
-            else {
-                sym_set_type(tos, &PyByteArray_Type);
-            }
-            break;
-        }
-
         case _UNARY_INVERT: {
             JitOptRef value;
             JitOptRef res;
@@ -1621,6 +1597,30 @@
             }
             else {
                 sym_set_type(tos, &PyFrozenDict_Type);
+            }
+            break;
+        }
+
+        case _GUARD_TOS_BYTES: {
+            JitOptRef tos;
+            tos = stack_pointer[-1];
+            if (sym_matches_type(tos, &PyBytes_Type)) {
+                ADD_OP(_NOP, 0, 0);
+            }
+            else {
+                sym_set_type(tos, &PyBytes_Type);
+            }
+            break;
+        }
+
+        case _GUARD_TOS_BYTEARRAY: {
+            JitOptRef tos;
+            tos = stack_pointer[-1];
+            if (sym_matches_type(tos, &PyByteArray_Type)) {
+                ADD_OP(_NOP, 0, 0);
+            }
+            else {
+                sym_set_type(tos, &PyByteArray_Type);
             }
             break;
         }

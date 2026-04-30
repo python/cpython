@@ -101,8 +101,6 @@ const uint32_t _PyUop_Flags[MAX_UOP_ID+1] = {
     [_TO_BOOL_STR] = 0,
     [_REPLACE_WITH_TRUE] = 0,
     [_TO_BOOL_SIZED] = HAS_ESCAPES_FLAG,
-    [_GUARD_TOS_BYTES] = HAS_EXIT_FLAG,
-    [_GUARD_TOS_BYTEARRAY] = HAS_EXIT_FLAG,
     [_UNARY_INVERT] = HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG,
     [_GUARD_NOS_INT] = HAS_EXIT_FLAG,
     [_GUARD_TOS_INT] = HAS_EXIT_FLAG,
@@ -152,6 +150,8 @@ const uint32_t _PyUop_Flags[MAX_UOP_ID+1] = {
     [_GUARD_TOS_ANY_DICT] = HAS_EXIT_FLAG,
     [_GUARD_TOS_DICT] = HAS_EXIT_FLAG,
     [_GUARD_TOS_FROZENDICT] = HAS_EXIT_FLAG,
+    [_GUARD_TOS_BYTES] = HAS_EXIT_FLAG,
+    [_GUARD_TOS_BYTEARRAY] = HAS_EXIT_FLAG,
     [_BINARY_OP_SUBSCR_DICT_KNOWN_HASH] = HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG,
     [_BINARY_OP_SUBSCR_DICT] = HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG,
     [_BINARY_OP_SUBSCR_CHECK_FUNC] = HAS_EXIT_FLAG,
@@ -1038,24 +1038,6 @@ const _PyUopCachingInfo _PyUop_Caching[MAX_UOP_ID+1] = {
             { -1, -1, -1 },
         },
     },
-    [_GUARD_TOS_BYTES] = {
-        .best = { 0, 1, 2, 3 },
-        .entries = {
-            { 1, 0, _GUARD_TOS_BYTES_r01 },
-            { 1, 1, _GUARD_TOS_BYTES_r11 },
-            { 2, 2, _GUARD_TOS_BYTES_r22 },
-            { 3, 3, _GUARD_TOS_BYTES_r33 },
-        },
-    },
-    [_GUARD_TOS_BYTEARRAY] = {
-        .best = { 0, 1, 2, 3 },
-        .entries = {
-            { 1, 0, _GUARD_TOS_BYTEARRAY_r01 },
-            { 1, 1, _GUARD_TOS_BYTEARRAY_r11 },
-            { 2, 2, _GUARD_TOS_BYTEARRAY_r22 },
-            { 3, 3, _GUARD_TOS_BYTEARRAY_r33 },
-        },
-    },
     [_UNARY_INVERT] = {
         .best = { 1, 1, 1, 1 },
         .entries = {
@@ -1495,6 +1477,24 @@ const _PyUopCachingInfo _PyUop_Caching[MAX_UOP_ID+1] = {
             { 1, 1, _GUARD_TOS_FROZENDICT_r11 },
             { 2, 2, _GUARD_TOS_FROZENDICT_r22 },
             { 3, 3, _GUARD_TOS_FROZENDICT_r33 },
+        },
+    },
+    [_GUARD_TOS_BYTES] = {
+        .best = { 0, 1, 2, 3 },
+        .entries = {
+            { 1, 0, _GUARD_TOS_BYTES_r01 },
+            { 1, 1, _GUARD_TOS_BYTES_r11 },
+            { 2, 2, _GUARD_TOS_BYTES_r22 },
+            { 3, 3, _GUARD_TOS_BYTES_r33 },
+        },
+    },
+    [_GUARD_TOS_BYTEARRAY] = {
+        .best = { 0, 1, 2, 3 },
+        .entries = {
+            { 1, 0, _GUARD_TOS_BYTEARRAY_r01 },
+            { 1, 1, _GUARD_TOS_BYTEARRAY_r11 },
+            { 2, 2, _GUARD_TOS_BYTEARRAY_r22 },
+            { 3, 3, _GUARD_TOS_BYTEARRAY_r33 },
         },
     },
     [_BINARY_OP_SUBSCR_DICT_KNOWN_HASH] = {
@@ -4087,14 +4087,6 @@ const uint16_t _PyUop_Uncached[MAX_UOP_REGS_ID+1] = {
     [_REPLACE_WITH_TRUE_r12] = _REPLACE_WITH_TRUE,
     [_REPLACE_WITH_TRUE_r23] = _REPLACE_WITH_TRUE,
     [_TO_BOOL_SIZED_r11] = _TO_BOOL_SIZED,
-    [_GUARD_TOS_BYTES_r01] = _GUARD_TOS_BYTES,
-    [_GUARD_TOS_BYTES_r11] = _GUARD_TOS_BYTES,
-    [_GUARD_TOS_BYTES_r22] = _GUARD_TOS_BYTES,
-    [_GUARD_TOS_BYTES_r33] = _GUARD_TOS_BYTES,
-    [_GUARD_TOS_BYTEARRAY_r01] = _GUARD_TOS_BYTEARRAY,
-    [_GUARD_TOS_BYTEARRAY_r11] = _GUARD_TOS_BYTEARRAY,
-    [_GUARD_TOS_BYTEARRAY_r22] = _GUARD_TOS_BYTEARRAY,
-    [_GUARD_TOS_BYTEARRAY_r33] = _GUARD_TOS_BYTEARRAY,
     [_UNARY_INVERT_r12] = _UNARY_INVERT,
     [_GUARD_NOS_INT_r02] = _GUARD_NOS_INT,
     [_GUARD_NOS_INT_r12] = _GUARD_NOS_INT,
@@ -4236,6 +4228,14 @@ const uint16_t _PyUop_Uncached[MAX_UOP_REGS_ID+1] = {
     [_GUARD_TOS_FROZENDICT_r11] = _GUARD_TOS_FROZENDICT,
     [_GUARD_TOS_FROZENDICT_r22] = _GUARD_TOS_FROZENDICT,
     [_GUARD_TOS_FROZENDICT_r33] = _GUARD_TOS_FROZENDICT,
+    [_GUARD_TOS_BYTES_r01] = _GUARD_TOS_BYTES,
+    [_GUARD_TOS_BYTES_r11] = _GUARD_TOS_BYTES,
+    [_GUARD_TOS_BYTES_r22] = _GUARD_TOS_BYTES,
+    [_GUARD_TOS_BYTES_r33] = _GUARD_TOS_BYTES,
+    [_GUARD_TOS_BYTEARRAY_r01] = _GUARD_TOS_BYTEARRAY,
+    [_GUARD_TOS_BYTEARRAY_r11] = _GUARD_TOS_BYTEARRAY,
+    [_GUARD_TOS_BYTEARRAY_r22] = _GUARD_TOS_BYTEARRAY,
+    [_GUARD_TOS_BYTEARRAY_r33] = _GUARD_TOS_BYTEARRAY,
     [_BINARY_OP_SUBSCR_DICT_KNOWN_HASH_r23] = _BINARY_OP_SUBSCR_DICT_KNOWN_HASH,
     [_BINARY_OP_SUBSCR_DICT_r23] = _BINARY_OP_SUBSCR_DICT,
     [_BINARY_OP_SUBSCR_CHECK_FUNC_r23] = _BINARY_OP_SUBSCR_CHECK_FUNC,
@@ -6267,10 +6267,6 @@ int _PyUop_num_popped(int opcode, int oparg)
             return 1;
         case _TO_BOOL_SIZED:
             return 1;
-        case _GUARD_TOS_BYTES:
-            return 0;
-        case _GUARD_TOS_BYTEARRAY:
-            return 0;
         case _UNARY_INVERT:
             return 1;
         case _GUARD_NOS_INT:
@@ -6368,6 +6364,10 @@ int _PyUop_num_popped(int opcode, int oparg)
         case _GUARD_TOS_DICT:
             return 0;
         case _GUARD_TOS_FROZENDICT:
+            return 0;
+        case _GUARD_TOS_BYTES:
+            return 0;
+        case _GUARD_TOS_BYTEARRAY:
             return 0;
         case _BINARY_OP_SUBSCR_DICT_KNOWN_HASH:
             return 2;
