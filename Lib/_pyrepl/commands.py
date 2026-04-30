@@ -296,8 +296,10 @@ class down(MotionCommand):
                     r.select_item(r.historyi + 1)
                     r.pos = r.eol(0)
                     return
-                r.pos = len(b)
-                r.error("end of buffer")
+                if r.pos == len(b):
+                    r.error("end of buffer")
+                else:
+                    r.pos = len(b)
                 return
 
             if (

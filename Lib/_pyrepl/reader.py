@@ -288,6 +288,7 @@ class Reader:
     ps3: str = "|.. "
     ps4: str = R"\__ "
     kill_ring: list[list[str]] = field(default_factory=list)
+    error_prefix: str = "! "
     msg: str = ""
     arg: int | None = None
     finished: bool = False
@@ -875,9 +876,13 @@ class Reader:
         pass
 
     def error(self, msg: str = "none") -> None:
-        self.msg = "! " + msg + " "
-        self.invalidate_message()
+        error_prefix = self.error_prefix
+        if self.can_colorize:
+            t = THEME()
+            error_prefix = f"{t.error}{error_prefix}{t.reset}"
         self.console.beep()
+        self.msg = error_prefix + msg
+        self.invalidate_message()
 
     def update_screen(self) -> None:
         if self.invalidation.is_cursor_only:
