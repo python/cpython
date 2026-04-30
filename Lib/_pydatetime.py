@@ -1348,11 +1348,22 @@ class tzinfo:
         delta = dtoff - dtdst
         if delta:
             dt += delta
+            if not isinstance(dt, datetime):
+                raise TypeError(
+                    f"datetime arithmetic on a subclass returned non-datetime "
+                    f"(type {type(dt).__name__})"
+                )
             dtdst = dt.dst()
             if dtdst is None:
                 raise ValueError("fromutc(): dt.dst gave inconsistent "
                                  "results; cannot convert")
-        return dt + dtdst
+        result = dt + dtdst
+        if not isinstance(result, datetime):
+            raise TypeError(
+                f"datetime arithmetic on a subclass returned non-datetime "
+                f"(type {type(result).__name__})"
+            )
+        return result
 
     # Pickle support.
 
@@ -2063,6 +2074,11 @@ class datetime(date):
         offset = self.utcoffset()
         if offset:
             self -= offset
+            if not isinstance(self, datetime):
+                raise TypeError(
+                    f"datetime arithmetic on a subclass returned non-datetime "
+                    f"(type {type(self).__name__})"
+                )
         y, m, d = self.year, self.month, self.day
         hh, mm, ss = self.hour, self.minute, self.second
         return _build_struct_time(y, m, d, hh, mm, ss, 0)
