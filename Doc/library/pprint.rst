@@ -91,7 +91,7 @@ Functions
    >>> import pprint
    >>> stuff = ['spam', 'eggs', 'lumberjack', 'knights', 'ni']
    >>> stuff.insert(0, stuff)
-   >>> pprint.pp(stuff)
+   >>> pprint.pp(stuff, width=100)
    [<Recursion on list with id=...>, 'spam', 'eggs', 'lumberjack', 'knights', 'ni']
 
    .. versionadded:: 3.8
