@@ -1515,18 +1515,20 @@ fold_tuple_of_constants(basicblock *bb, int i, PyObject *consts,
     ...
     LOAD_CONST cN
     LIST_APPEND/SET_ADD 1
-    [CALL_INTRINSIC_1 INTRINSIC_LIST_TO_TUPLE]   <-- when intrinsic_at_i is true
+    [CALL_INTRINSIC_1 INTRINSIC_LIST_TO_TUPLE]   <-- when expected_append is true
    with:
     LOAD_CONST (c1, c2, ... cN)
-   When intrinsic_at_i is true, the instruction at `i` is the LIST_TO_TUPLE
-   intrinsic and only the BUILD_LIST/LIST_APPEND form is expected. Otherwise
-   the instruction at `i` is the trailing LIST_APPEND or SET_ADD itself, and
-   the matching BUILD_LIST/BUILD_SET start is selected from it; for sets the
-   result is wrapped in a frozenset.
+   When expected_append is true, the instruction at `i` is the LIST_TO_TUPLE
+   intrinsic (so the immediately preceding non-NOP instruction is expected
+   to be a LIST_APPEND), and only the BUILD_LIST/LIST_APPEND form is
+   considered. When expected_append is false, the instruction at `i` is the
+   trailing LIST_APPEND or SET_ADD itself, the matching BUILD_LIST/BUILD_SET
+   start is selected from its opcode, and for sets the result is wrapped in
+   a frozenset.
 */
 static int
 fold_constant_seq_into_load_const(basicblock *bb, int i,
-                                  bool intrinsic_at_i,
+                                  bool expected_append,
                                   PyObject *consts, PyObject *const_cache,
                                   _Py_hashtable_t *consts_index)
 {
@@ -1536,7 +1538,7 @@ fold_constant_seq_into_load_const(basicblock *bb, int i,
     assert(i < bb->b_iused);
 
     cfg_instr *target = &bb->b_instr[i];
-    int append_op = intrinsic_at_i ? LIST_APPEND : target->i_opcode;
+    int append_op = expected_append ? LIST_APPEND : target->i_opcode;
     assert(append_op == LIST_APPEND || append_op == SET_ADD);
     int build_op = append_op == LIST_APPEND ? BUILD_LIST : BUILD_SET;
     int consts_found = 0;
@@ -1544,7 +1546,7 @@ fold_constant_seq_into_load_const(basicblock *bb, int i,
        LOAD_CONST to alternate. If `i` is the trailing LIST_TO_TUPLE
        intrinsic, the next instruction back is an APPEND. If `i` is the
        trailing APPEND itself, the next instruction back is a LOAD_CONST. */
-    bool expect_append = intrinsic_at_i;
+    bool expect_append = expected_append;
 
     for (int pos = i - 1; pos >= 0; pos--) {
         cfg_instr *instr = &bb->b_instr[pos];
@@ -1567,7 +1569,7 @@ fold_constant_seq_into_load_const(basicblock *bb, int i,
                 return ERROR;
             }
 
-            int newpos_start = intrinsic_at_i ? i - 1 : i;
+            int newpos_start = expected_append ? i - 1 : i;
             for (int newpos = newpos_start; newpos >= pos; newpos--) {
                 instr = &bb->b_instr[newpos];
                 if (instr->i_opcode == NOP) {
@@ -2537,12 +2539,11 @@ optimize_basic_block(PyObject *const_cache, basicblock *bb, PyObject *consts,
                 break;
             case CALL_INTRINSIC_1:
                 if (oparg == INTRINSIC_LIST_TO_TUPLE) {
-                    RETURN_IF_ERROR(fold_constant_intrinsic_list_to_tuple(bb, i, consts, const_cache, consts_index));
-                    /* If folding didn't apply, the list-to-tuple conversion
-                       is unnecessary before GET_ITER since iterating a list
-                       and iterating a tuple are equivalent. */
-                    if (inst->i_opcode == CALL_INTRINSIC_1 && nextop == GET_ITER) {
+                    if (nextop == GET_ITER) {
                         INSTR_SET_OP0(inst, NOP);
+                    }
+                    else {
+                        RETURN_IF_ERROR(fold_constant_intrinsic_list_to_tuple(bb, i, consts, const_cache, consts_index));
                     }
                 }
                 else if (oparg == INTRINSIC_UNARY_POSITIVE) {
