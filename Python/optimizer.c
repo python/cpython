@@ -713,7 +713,7 @@ _PyJit_translate_single_bytecode_to_trace(
     char *python_lltrace = Py_GETENV("PYTHON_LLTRACE");
     int lltrace = 0;
     if (python_lltrace != NULL && *python_lltrace >= '0') {
-        lltrace = *python_lltrace - '0';  // TODO: Parse an int and all that
+        lltrace = atoi(python_lltrace);
     }
 #endif
     _PyThreadStateImpl *_tstate = (_PyThreadStateImpl *)tstate;
@@ -1169,7 +1169,7 @@ _PyJit_TryInitializeTracing(
     char *python_lltrace = Py_GETENV("PYTHON_LLTRACE");
     int lltrace = 0;
     if (python_lltrace != NULL && *python_lltrace >= '0') {
-        lltrace = *python_lltrace - '0';  // TODO: Parse an int and all that
+        lltrace = atoi(python_lltrace);
     }
     DPRINTF(2,
         "Tracing %s (%s:%d) at byte offset %d at chain depth %d\n",
@@ -1576,7 +1576,7 @@ make_executor_from_uops(_PyThreadStateImpl *tstate, _PyUOpInstruction *buffer, i
     char *python_lltrace = Py_GETENV("PYTHON_LLTRACE");
     int lltrace = 0;
     if (python_lltrace != NULL && *python_lltrace >= '0') {
-        lltrace = *python_lltrace - '0';  // TODO: Parse an int and all that
+        lltrace = atoi(python_lltrace);
     }
     if (lltrace >= 2) {
         printf("Optimized trace (length %d):\n", length);
