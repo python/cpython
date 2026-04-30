@@ -4753,6 +4753,16 @@ def bœr():
         stdout, stderr = self.run_pdb_script(script, commands)
         self.assertIn("The specified object 'C.foo' is not a function", stdout)
 
+    def test_pyrepl_available(self):
+        with patch.dict(os.environ, {"PYTHON_BASIC_REPL": "1"}):
+            self.assertFalse(pdb._pyrepl_available())
+
+        with patch.dict(os.environ, {}, clear=True):
+            mod = types.ModuleType("_pyrepl.main")
+            mod.CAN_USE_PYREPL = True
+            with patch.dict("sys.modules", {"_pyrepl.main": mod}):
+                self.assertTrue(pdb._pyrepl_available())
+
 
 class ChecklineTests(unittest.TestCase):
     def setUp(self):
