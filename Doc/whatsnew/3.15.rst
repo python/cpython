@@ -941,8 +941,10 @@ http.client
 http.cookies
 ------------
 
-* Allow '``"``' double quotes in cookie values.
-  (Contributed by Nick Burns and Senthil Kumaran in :gh:`92936`.)
+* Cookie parsing now allows any characters except semicolon (``';'``)
+  and control characters in non-quoted cookie values.
+  The ``';'`` separator is now mandatory between name-value pairs.
+  (Contributed by Serhiy Storchaka in :gh:`149028`.)
 
 
 http.server
