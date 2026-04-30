@@ -333,12 +333,12 @@ static inline bool
 _PyThreadState_HasStackSpace(PyThreadState *tstate, int size)
 {
     assert(
-        (tstate->datastack_top == NULL && tstate->datastack_limit == NULL)
+        (tstate->stack_top == NULL && tstate->stack_limit == NULL)
         ||
-        (tstate->datastack_top != NULL && tstate->datastack_limit != NULL)
+        (tstate->stack_top != NULL && tstate->stack_limit != NULL)
     );
-    return tstate->datastack_top != NULL &&
-        size < tstate->datastack_limit - tstate->datastack_top;
+    return tstate->stack_top != NULL &&
+        size < tstate->stack_limit - tstate->stack_top;
 }
 
 // Exported for external JIT support
@@ -356,9 +356,9 @@ _PyFrame_PushUnchecked(PyThreadState *tstate, _PyStackRef func, int null_locals_
     CALL_STAT_INC(frames_pushed);
     PyFunctionObject *func_obj = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(func);
     PyCodeObject *code = (PyCodeObject *)func_obj->func_code;
-    _PyInterpreterFrame *new_frame = (_PyInterpreterFrame *)tstate->datastack_top;
-    tstate->datastack_top += code->co_framesize;
-    assert(tstate->datastack_top < tstate->datastack_limit);
+    _PyInterpreterFrame *new_frame = (_PyInterpreterFrame *)tstate->stack_top;
+    tstate->stack_top += code->co_framesize;
+    assert(tstate->stack_top < tstate->stack_limit);
     _PyFrame_Initialize(tstate, new_frame, func, NULL, code, null_locals_from,
                         previous);
     return new_frame;
@@ -370,9 +370,9 @@ static inline _PyInterpreterFrame *
 _PyFrame_PushTrampolineUnchecked(PyThreadState *tstate, PyCodeObject *code, int stackdepth, _PyInterpreterFrame * previous)
 {
     CALL_STAT_INC(frames_pushed);
-    _PyInterpreterFrame *frame = (_PyInterpreterFrame *)tstate->datastack_top;
-    tstate->datastack_top += code->co_framesize;
-    assert(tstate->datastack_top < tstate->datastack_limit);
+    _PyInterpreterFrame *frame = (_PyInterpreterFrame *)tstate->stack_top;
+    tstate->stack_top += code->co_framesize;
+    assert(tstate->stack_top < tstate->stack_limit);
     frame->previous = previous;
     frame->f_funcobj = PyStackRef_None;
     frame->f_executable = PyStackRef_FromPyObjectNew(code);
@@ -407,6 +407,54 @@ _PyEvalFramePushAndInit(PyThreadState *tstate, _PyStackRef func,
 PyAPI_FUNC(_PyInterpreterFrame *)
 _PyEvalFramePushAndInit_Ex(PyThreadState *tstate, _PyStackRef func,
     PyObject *locals, Py_ssize_t nargs, PyObject *callargs, PyObject *kwargs, _PyInterpreterFrame *previous);
+
+static inline bool
+ptr_in_chunk(const char *ptr, const _PyStackChunk *chunk)
+{
+    assert(chunk != NULL);
+    const char *start = (char *)&chunk->data[0];
+    const intptr_t offset = ptr - start;
+    const intptr_t usable_size = (intptr_t)(chunk->size - _PY_STACK_CHUNK_OVERHEADS);
+    return offset >= 0 && offset < usable_size && start + offset == ptr;
+}
+
+static inline uintptr_t
+get_offset_in_chunk(const char *ptr, const _PyStackChunk *chunk)
+{
+    assert(chunk != NULL);
+    assert(chunk->data != NULL);
+    assert(ptr_in_chunk(ptr, chunk));
+
+    return ptr - (char *)chunk;
+}
+
+static inline uintptr_t
+get_offset_in_chunk_list(char *base, _PyStackChunk *stack_chunk_list)
+{
+    assert(stack_chunk_list != NULL);
+    assert(base != NULL);
+    _PyStackChunk *chunk = stack_chunk_list;
+    do {
+        if (ptr_in_chunk(base, chunk)) {
+            return get_offset_in_chunk(base, chunk);
+        }
+        chunk = chunk->previous;
+    } while (chunk);
+    assert(false);  // did not find correct chunk
+    Py_UNREACHABLE();
+}
+
+static inline void *
+_Py_ensure_frame_in_current_stack_chunk(PyThreadState *tstate, char *frame)
+{
+    assert(tstate != NULL);
+    assert(frame != NULL);
+    if (ptr_in_chunk(frame, tstate->stack_chunk_list)) {
+        return frame;
+    }
+    uintptr_t offset = get_offset_in_chunk_list(frame, tstate->stack_chunk_list->previous);
+    return ((char *)tstate->stack_chunk_list) + offset;
+}
 
 #ifdef __cplusplus
 }

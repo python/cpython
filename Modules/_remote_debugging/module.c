@@ -878,6 +878,7 @@ Returns:
         - frames_read_from_memory: Total frames read from remote memory
         - memory_reads: Total remote memory read operations
         - memory_bytes_read: Total bytes read from remote memory
+        - stack_chunks_copied: Total stack chunks copied from remote memory
         - code_object_cache_hits: Code object cache hits
         - code_object_cache_misses: Code object cache misses
         - stale_cache_invalidations: Times stale cache entries were cleared
@@ -922,6 +923,7 @@ _remote_debugging_RemoteUnwinder_get_stats_impl(RemoteUnwinderObject *self)
     ADD_STAT(frames_read_from_memory);
     ADD_STAT(memory_reads);
     ADD_STAT(memory_bytes_read);
+    ADD_STAT(stack_chunks_copied);
     ADD_STAT(code_object_cache_hits);
     ADD_STAT(code_object_cache_misses);
     ADD_STAT(stale_cache_invalidations);

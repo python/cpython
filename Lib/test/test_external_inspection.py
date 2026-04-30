@@ -3518,6 +3518,56 @@ recurse({depth})
         sys.platform == "linux" and not PROCESS_VM_READV_SUPPORTED,
         "Test only runs on Linux with process_vm_readv support",
     )
+    def test_deep_stack_uses_copied_stack_chunks(self):
+        """Test deep stacks do not fall back to one remote read per frame."""
+        depth = 1000
+        script_body = f"""\
+import sys
+sys.setrecursionlimit(2000)
+
+def recurse(n):
+    if n <= 0:
+        sock.sendall(b"ready")
+        sock.recv(16)
+        return
+    recurse(n - 1)
+
+recurse({depth})
+"""
+
+        with self._target_process(script_body) as (
+            p,
+            client_socket,
+            _,
+        ):
+            unwinder = RemoteUnwinder(
+                p.pid, all_threads=True, cache_frames=False, stats=True
+            )
+            frames = self._sample_frames(
+                client_socket,
+                unwinder,
+                b"ready",
+                b"done",
+                {"recurse"},
+                expected_frames=depth + 2,
+            )
+            stats = unwinder.get_stats()
+
+        self.assertIsNotNone(frames)
+
+        recurse_count = [f.funcname for f in frames].count("recurse")
+        self.assertGreaterEqual(recurse_count, depth)
+
+        # This stack spans multiple chunks. Copying only the current chunk
+        # forces older frames down the slow remote-read fallback path.
+        self.assertGreater(stats["stack_chunks_copied"], 1, stats)
+        self.assertLess(stats["memory_reads"], depth // 10, stats)
+
+    @skip_if_not_supported
+    @unittest.skipIf(
+        sys.platform == "linux" and not PROCESS_VM_READV_SUPPORTED,
+        "Test only runs on Linux with process_vm_readv support",
+    )
     def test_get_stats(self):
         """Test that get_stats() returns statistics when stats=True."""
         script_body = """\

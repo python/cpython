@@ -239,6 +239,7 @@ typedef struct {
     uint64_t frames_read_from_memory;        // Total frames read from remote memory
     uint64_t memory_reads;                   // Total remote memory read operations
     uint64_t memory_bytes_read;              // Total bytes read from remote memory
+    uint64_t stack_chunks_copied;            // Total stack chunks copied
     uint64_t code_object_cache_hits;         // Code object cache hits
     uint64_t code_object_cache_misses;       // Code object cache misses
     uint64_t stale_cache_invalidations;      // Times stale entries were cleared
