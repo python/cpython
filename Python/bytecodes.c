@@ -1116,7 +1116,8 @@ dummy_func(
 
         op(_STORE_SLICE, (v, container, start, stop -- )) {
             PyObject *slice = _PyBuildSlice_ConsumeRefs(PyStackRef_AsPyObjectSteal(start),
-                                                        PyStackRef_AsPyObjectSteal(stop));
+                                                        PyStackRef_AsPyObjectSteal(stop),
+                                                        Py_None);
             int err;
             if (slice == NULL) {
                 err = 1;
