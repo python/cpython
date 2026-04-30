@@ -193,6 +193,23 @@ class PrettyPrinter:
             self._recursive = True
             self._readable = False
             return
+
+        # If this is a subclass of PrettyPrinter, force all known
+        # container types through their pretty-printers so that any
+        # override of format() applies to their elements.
+        if type(self) is not PrettyPrinter:
+            fn = type(object).__repr__
+            # skip raw repr for str/bytes
+            if fn in self._dispatch and not isinstance(object, (str, bytes, bytearray)):
+                context[objid] = 1
+                self._dispatch[fn](
+                    self, object, stream,
+                    indent, allowance, context, level + 1
+                )
+                del context[objid]
+                return
+
+        # fallback to one-line repr + width
         rep = self._repr(object, context, level)
         max_width = self._width - indent - allowance
         if len(rep) > max_width:
@@ -215,6 +232,7 @@ class PrettyPrinter:
                 self._pprint_dataclass(object, stream, indent, allowance, context, level + 1)
                 del context[objid]
                 return
+
         stream.write(rep)
 
     def _format_block_start(self, start_str, indent):
