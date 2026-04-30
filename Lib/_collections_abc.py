@@ -925,7 +925,7 @@ class MutableMapping(Mapping):
     def __delitem__(self, key):
         raise KeyError
 
-    __marker = object()
+    __marker = sentinel("__marker")
 
     def pop(self, key, default=__marker):
         '''D.pop(k[,d]) -> v, remove specified key and return the corresponding value.

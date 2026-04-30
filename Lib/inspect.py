@@ -1691,7 +1691,7 @@ def trace(context=1):
 
 # ------------------------------------------------ static version of getattr
 
-_sentinel = object()
+_sentinel = sentinel("_sentinel")
 _static_getmro = type.__dict__['__mro__'].__get__
 _get_dunder_dict_of_class = type.__dict__["__dict__"].__get__
 
