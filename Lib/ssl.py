@@ -1037,6 +1037,7 @@ class SSLSocket(socket):
             self.server_hostname = context._encode_hostname(server_hostname)
             self.do_handshake_on_connect = do_handshake_on_connect
             self.suppress_ragged_eofs = suppress_ragged_eofs
+            self._got_eof = False
 
             # See if we are connected
             try:
@@ -1149,19 +1150,28 @@ class SSLSocket(socket):
         self._checkClosed()
         if self._sslobj is None:
             raise ValueError("Read on closed or unwrapped SSL socket.")
+        if self._got_eof:
+            # gh-148292: On OpenSSL 4, calling SSL_read_ex() again after
+            # SSL_ERROR_EOF fails with "A failure in the SSL library occurred"
+            if buffer is not None:
+                return 0
+            else:
+                return b''
+
         try:
             if buffer is not None:
                 return self._sslobj.read(len, buffer)
             else:
                 return self._sslobj.read(len)
         except SSLError as x:
-            if x.args[0] == SSL_ERROR_EOF and self.suppress_ragged_eofs:
-                if buffer is not None:
-                    return 0
-                else:
-                    return b''
-            else:
-                raise
+            if x.args[0] == SSL_ERROR_EOF:
+                self._got_eof = True
+                if self.suppress_ragged_eofs:
+                    if buffer is not None:
+                        return 0
+                    else:
+                        return b''
+            raise
 
     def write(self, data):
         """Write DATA to the underlying SSL channel.  Returns
