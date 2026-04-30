@@ -9,8 +9,8 @@ try:
 except SAXReaderNotAvailable:
     # don't try to test this module if we cannot create a parser
     raise unittest.SkipTest("no XML parsers available")
-from xml.sax.saxutils import (XMLGenerator, escape, unescape, quoteattr,
-                              XMLFilterBase, prepare_input_source)
+from xml.sax.saxutils import XMLGenerator, escape, unescape, quoteattr, \
+                             XMLFilterBase, prepare_input_source
 from xml.sax.expatreader import create_parser
 from xml.sax.handler import (feature_namespaces, feature_external_ges,
                              LexicalHandler)

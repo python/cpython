@@ -57,8 +57,6 @@ This module also defines utility functions.
    ..versionadded:: next
 
 
-   .. versionadded:: 3.2
-
 .. _xml-security:
 .. _xml-vulnerabilities:
 
