@@ -1478,7 +1478,7 @@ of the derived iterators.
 
    Example:
 
-   .. doctest::
+   .. code-block:: python
 
       import threading
 
@@ -1511,7 +1511,7 @@ of the derived iterators.
 
    Example:
 
-   .. doctest::
+   .. code-block:: python
 
       import threading
 
@@ -1560,7 +1560,7 @@ of the derived iterators.
 
    Example:
 
-   .. doctest::
+   .. code-block:: python
 
       import threading
 
