@@ -293,6 +293,7 @@ dummy_func(void) {
                            || oparg == NB_INPLACE_TRUE_DIVIDE);
         bool is_remainder = (oparg == NB_REMAINDER
                              || oparg == NB_INPLACE_REMAINDER);
+        int emit_op = _BINARY_OP;
         // Promote probable-float operands to known floats via speculative
         // guards. _RECORD_TOS_TYPE / _RECORD_NOS_TYPE in the BINARY_OP macro
         // record the observed operand type during tracing, which
@@ -318,17 +319,17 @@ dummy_func(void) {
         }
         if (is_truediv && lhs_float && rhs_float) {
             if (PyJitRef_IsUnique(lhs)) {
-                ADD_OP(_BINARY_OP_TRUEDIV_FLOAT_INPLACE, 0, 0);
+                emit_op = _BINARY_OP_TRUEDIV_FLOAT_INPLACE;
                 l = sym_new_null(ctx);
                 r = rhs;
             }
             else if (PyJitRef_IsUnique(rhs)) {
-                ADD_OP(_BINARY_OP_TRUEDIV_FLOAT_INPLACE_RIGHT, 0, 0);
+                emit_op = _BINARY_OP_TRUEDIV_FLOAT_INPLACE_RIGHT;
                 l = lhs;
                 r = sym_new_null(ctx);
             }
             else {
-                ADD_OP(_BINARY_OP_TRUEDIV_FLOAT, 0, 0);
+                emit_op = _BINARY_OP_TRUEDIV_FLOAT;
                 l = lhs;
                 r = rhs;
             }
@@ -382,6 +383,7 @@ dummy_func(void) {
         else {
             res = PyJitRef_MakeUnique(sym_new_type(ctx, &PyFloat_Type));
         }
+        ADD_OP(emit_op, oparg, 0);
     }
 
     op(_BINARY_OP_ADD_INT, (left, right -- res, l, r)) {
