@@ -67,21 +67,18 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{F749B822-B489-4CA5-A3AD-CE078F5F338A}</ProjectGuid>
-    <RootNamespace>xxlimited</RootNamespace>
+    <ProjectGuid>{947BB5F5-6025-4A4F-8182-1B175469F8D2}</ProjectGuid>
+    <RootNamespace>python3tdll</RootNamespace>
     <Keyword>Win32Proj</Keyword>
+    <SupportPGO>false</SupportPGO>
   </PropertyGroup>
   <Import Project="python.props" />
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Label="Configuration">
+    <TargetName>python3t</TargetName>
     <ConfigurationType>DynamicLibrary</ConfigurationType>
-    <CharacterSet>NotSet</CharacterSet>
-    <SupportPGO>false</SupportPGO>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
-  <PropertyGroup>
-    <TargetExt>$(PyStdlibPydExt)</TargetExt>
-  </PropertyGroup>
   <ImportGroup Label="ExtensionSettings">
   </ImportGroup>
   <ImportGroup Label="PropertySheets">
@@ -92,21 +89,23 @@
   <PropertyGroup>
     <_ProjectFileVersion>10.0.30319.1</_ProjectFileVersion>
   </PropertyGroup>
+  <PropertyGroup Condition="$(DisableGil) != 'true'">
+    <OutDir>$(BuildPath)abi3t-compat\</OutDir>
+  </PropertyGroup>
   <ItemDefinitionGroup>
+    <ClCompile>
+      <PreprocessorDefinitions>PYTHON_DLL_NAME="$(PyDllName)";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <BufferSecurityCheck>false</BufferSecurityCheck>
+    </ClCompile>
     <Link>
-      <AdditionalDependencies>wsock32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <NoEntryPoint>true</NoEntryPoint>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\Modules\xxlimited.c" />
+    <ClCompile Include="..\PC\python3dll.c" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="python3dll.vcxproj" Condition="$(DisableGil) != 'true'">
-      <Project>{885d4898-d08d-4091-9c40-c700cfe3fc5a}</Project>
-    </ProjectReference>
-    <ProjectReference Include="python3tdll.vcxproj"  Condition="$(DisableGil) == 'true'">
-      <Project>{947BB5F5-6025-4A4F-8182-1B175469F8D2}</Project>
-    </ProjectReference>
+    <ResourceCompile Include="..\PC\python_nt.rc" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

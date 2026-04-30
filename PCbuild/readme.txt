@@ -160,6 +160,10 @@ pyshellext
     pyshellext.dll, the shell extension deployed with the launcher
 python3dll
     python3.dll, the PEP 384 Stable ABI dll
+    (missing on free-threaded builds)
+python3tdll
+    python3t.dll, the PEP 803 free-threading Stable ABI dll
+    (built from the same source as python3.dll)
 xxlimited
     builds an example module that makes use of the PEP 384 Stable ABI,
     see Modules\xxlimited.c

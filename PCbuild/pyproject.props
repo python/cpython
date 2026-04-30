@@ -49,7 +49,9 @@
     <_PlatformPreprocessorDefinition>_WIN32;</_PlatformPreprocessorDefinition>
     <_PlatformPreprocessorDefinition Condition="$(Platform) == 'x64'">_WIN64;</_PlatformPreprocessorDefinition>
     <_PlatformPreprocessorDefinition Condition="$(Platform) == 'x64' and $(PlatformToolset) != 'ClangCL'">_M_X64;$(_PlatformPreprocessorDefinition)</_PlatformPreprocessorDefinition>
-    <_Py3NamePreprocessorDefinition>PY3_DLLNAME=L"$(Py3DllName)$(PyDebugExt)";</_Py3NamePreprocessorDefinition>
+    <_Py3NamePreprocessorDefinition>PY3_DLLNAME=L"python3$(PyDebugExt)";</_Py3NamePreprocessorDefinition>
+    <_Abi3tCompatDllNamePreprocessorDefinition Condition="$(DisableGil) != 'true'">ABI3T_COMPAT_DLLNAME=L"abi3t-compat\\python3t$(PyDebugExt)";</_Abi3tCompatDllNamePreprocessorDefinition>
+    <_Abi3tDllNamePreprocessorDefinition Condition="$(DisableGil) != 'true'">ABI3T_DLLNAME=L"python3t$(PyDebugExt)";</_Abi3tDllNamePreprocessorDefinition>
     <_FreeThreadedPreprocessorDefinition Condition="$(DisableGil) == 'true'">Py_GIL_DISABLED=1;</_FreeThreadedPreprocessorDefinition>
     <_PymallocHugepagesPreprocessorDefinition Condition="$(UsePymallocHugepages) == 'true'">PYMALLOC_USE_HUGEPAGES=1;</_PymallocHugepagesPreprocessorDefinition>
   </PropertyGroup>
@@ -58,6 +60,7 @@
       <AdditionalIncludeDirectories>$(PySourcePath)Include;$(PySourcePath)Include\internal;$(PySourcePath)Include\internal\mimalloc;$(PySourcePath)PC;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;$(_Py3NamePreprocessorDefinition)$(_PlatformPreprocessorDefinition)$(_DebugPreprocessorDefinition)$(_PyStatsPreprocessorDefinition)$(_PydPreprocessorDefinition)$(_FreeThreadedPreprocessorDefinition)$(_PymallocHugepagesPreprocessorDefinition)%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PreprocessorDefinitions Condition="'$(SupportPGO)' and ($(Configuration) == 'PGInstrument' or $(Configuration) == 'PGUpdate')">_Py_USING_PGO=1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="$(DisableGil) != 'true'">$(_Abi3tCompatDllNamePreprocessorDefinition)$(_Abi3tDllNamePreprocessorDefinition)%(PreprocessorDefinitions)</PreprocessorDefinitions>
 
       <Optimization>MaxSpeed</Optimization>
       <IntrinsicFunctions>true</IntrinsicFunctions>
