@@ -92,11 +92,9 @@ class JitBacktraceTests(DebuggerTests):
         #      py::jit:executor frame would mean the unwinder is
         #      materializing two native frames for a single logical JIT
         #      region, or failing to unwind out of the region entirely.
-        #   2. The unwinder must climb back out of the JIT region into
-        #      the eval loop. Some platforms materialize a real
-        #      _PyJIT_Entry frame between the synthetic executor frame
-        #      and _PyEval_*, while others unwind directly from the
-        #      executor into _PyEval_*. Accept both shapes.
+        #   2. The unwinder must climb directly back out of the JIT region
+        #      into the eval loop. _PyJIT_Entry only exists to establish the
+        #      physical frame; the synthetic executor FDE collapses it away.
         #   3. For tests that assert a specific entry PC, the JIT frame
         #      is also at #0.
         frames = self._extract_backtrace_frames(gdb_output)
@@ -132,24 +130,10 @@ class JitBacktraceTests(DebuggerTests):
             f"expected an eval frame after the JIT frame\n"
             f"backtrace:\n{backtrace}",
         )
-        between_jit_and_eval = frames_after_jit[:first_eval_offset]
-        jit_entry_frames = [
-            frame for frame in between_jit_and_eval
-            if JIT_ENTRY_SYMBOL in frame
-        ]
-        self.assertLessEqual(
-            len(jit_entry_frames), 1,
-            f"expected at most one {JIT_ENTRY_SYMBOL} frame between the "
-            f"executor and eval frames\nbacktrace:\n{backtrace}",
-        )
-        unexpected_between = [
-            frame for frame in between_jit_and_eval
-            if JIT_ENTRY_SYMBOL not in frame
-        ]
+        unexpected_between = frames_after_jit[:first_eval_offset]
         self.assertFalse(
             unexpected_between,
-            "expected only an optional _PyJIT_Entry frame between the "
-            "executor and eval frames\n"
+            "expected the executor frame to unwind directly into eval\n"
             f"backtrace:\n{backtrace}",
         )
         relevant_end = max(
@@ -157,7 +141,6 @@ class JitBacktraceTests(DebuggerTests):
             for i, frame in enumerate(frames)
             if (
                 JIT_EXECUTOR_FRAME in frame
-                or JIT_ENTRY_SYMBOL in frame
                 or re.search(EVAL_FRAME_RE, frame)
             )
         )

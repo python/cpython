@@ -9,6 +9,16 @@
 #include "pycore_jit_unwind.h"
 #include "pycore_lock.h"
 
+#if defined(_Py_JIT) && defined(__linux__) && defined(__ELF__)
+#  include "jit_unwind_info.h"
+#  if !JIT_UNWIND_INFO_SUPPORTED
+#    error "JIT unwind info was not generated for this target"
+#  endif
+#  define PY_HAVE_JIT_GDB_UNWIND 1
+#else
+#  define PY_HAVE_JIT_GDB_UNWIND 0
+#endif
+
 #if defined(PY_HAVE_PERF_TRAMPOLINE) || (defined(__linux__) && defined(__ELF__))
 
 #if defined(__linux__)
@@ -205,11 +215,17 @@ static void elfctx_append_uleb128(ELFObjectContext* ctx, uint32_t v) {
 // =============================================================================
 
 static void elf_init_ehframe_perf(ELFObjectContext* ctx);
+#if PY_HAVE_JIT_GDB_UNWIND
 static void elf_init_ehframe_gdb(ELFObjectContext* ctx);
+#endif
 
 static inline void elf_init_ehframe(ELFObjectContext* ctx, int absolute_addr) {
     if (absolute_addr) {
+#if PY_HAVE_JIT_GDB_UNWIND
         elf_init_ehframe_gdb(ctx);
+#else
+        Py_UNREACHABLE();
+#endif
     }
     else {
         elf_init_ehframe_perf(ctx);
@@ -614,21 +630,15 @@ static void elf_init_ehframe_perf(ELFObjectContext* ctx) {
 /*
  * Build .eh_frame data for the GDB JIT interface.
  *
- * The CIE's initial CFI hard-codes the steady-state frame layout for the
- * executor region:
- *
- *   x86_64:  CFA = %rbp + 16, return-to-_PyJIT_Entry PC at cfa-72
- *   AArch64: CFA = x29 + 96, caller x29 at cfa-96, caller x30 at cfa-88
- *
- * The executor runs inside the frame established by _PyJIT_Entry. On AArch64
- * we collapse that state into a single synthetic executor frame that unwinds
- * directly into _PyEval_*. On x86_64 the normal call into the executor leaves
- * a real return slot back into _PyJIT_Entry, so the executor FDE materializes
- * _PyJIT_Entry as the caller frame. Executor stencils never touch the frame
- * pointer — enforced by Tools/jit/_optimizers.py _validate() and
- * -mframe-pointer=reserved — so the steady-state rule is valid at every PC
- * and the FDE body is empty.
+ * The executor runs inside the frame established by _PyJIT_Entry, but the
+ * synthetic executor FDE collapses that state into a single logical JIT frame
+ * that unwinds directly into _PyEval_*. Executor stencils never touch the
+ * frame pointer - enforced by Tools/jit/_optimizers.py _validate() and
+ * -mframe-pointer=reserved - so the steady-state rule is valid at every PC
+ * and the FDE body is empty. Tools/jit/_targets.py derives the initial CFI
+ * rules from the row active at the executor call in the compiled shim object.
  */
+#if PY_HAVE_JIT_GDB_UNWIND
 static void elf_init_ehframe_gdb(ELFObjectContext* ctx) {
     int fde_ptr_enc = DWRF_EH_PE_absptr;
     uint8_t* p = ctx->p;
@@ -638,34 +648,20 @@ static void elf_init_ehframe_gdb(ELFObjectContext* ctx) {
         DWRF_U32(0);                          // CIE ID
         DWRF_U8(DWRF_CIE_VERSION);
         DWRF_STR("zR");                       // aug data length + FDE ptr encoding follow
-#ifdef __x86_64__
-        DWRF_UV(1);                           // x86_64: 1 byte per instruction
-#elif defined(__aarch64__) && defined(__AARCH64EL__) && !defined(__ILP32__)
-        DWRF_UV(4);                           // AArch64: 4 bytes per instruction
-#endif
-        DWRF_SV(-(int64_t)sizeof(uintptr_t));
-        DWRF_U8(DWRF_REG_RA);
+        DWRF_UV(JIT_UNWIND_CODE_ALIGNMENT_FACTOR);
+        DWRF_SV(JIT_UNWIND_DATA_ALIGNMENT_FACTOR);
+        DWRF_U8(JIT_UNWIND_RA_REG);
         DWRF_UV(1);                           // Augmentation data length
         DWRF_U8(fde_ptr_enc);                 // FDE pointer encoding
 
         /* Executor steady-state rule (our invariant, not the compiler's). */
-#ifdef __x86_64__
-        DWRF_U8(DWRF_CFA_def_cfa);            // CFA = %rbp + 16
-        DWRF_UV(DWRF_REG_BP);
-        DWRF_UV(16);
-        DWRF_U8(DWRF_CFA_offset | DWRF_REG_RA);
-        DWRF_UV(9);                           // return-to-_PyJIT_Entry at cfa-72
-#elif defined(__aarch64__) && defined(__AARCH64EL__) && !defined(__ILP32__)
-        DWRF_U8(DWRF_CFA_def_cfa);            // CFA = x29 + 96
-        DWRF_UV(DWRF_REG_FP);
-        DWRF_UV(96);
-        DWRF_U8(DWRF_CFA_offset | DWRF_REG_FP);
-        DWRF_UV(12);                          // caller x29 at cfa-96
-        DWRF_U8(DWRF_CFA_offset | DWRF_REG_RA);
-        DWRF_UV(11);                          // caller x30 at cfa-88
-#else
-#    error "Unsupported target architecture"
-#endif
+        DWRF_U8(DWRF_CFA_def_cfa);
+        DWRF_UV(JIT_UNWIND_CFA_REG);
+        DWRF_UV(JIT_UNWIND_CFA_OFFSET);
+        DWRF_U8(DWRF_CFA_offset | JIT_UNWIND_FP_REG);
+        DWRF_UV(JIT_UNWIND_FP_OFFSET);
+        DWRF_U8(DWRF_CFA_offset | JIT_UNWIND_RA_REG);
+        DWRF_UV(JIT_UNWIND_RA_OFFSET);
         DWRF_ALIGNNOP(sizeof(uintptr_t));
     )
 
@@ -679,6 +675,7 @@ static void elf_init_ehframe_gdb(ELFObjectContext* ctx) {
 
     ctx->p = p;
 }
+#endif
 
 #if defined(__linux__) && defined(__ELF__)
 enum {
