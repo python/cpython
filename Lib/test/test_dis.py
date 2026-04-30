@@ -542,7 +542,7 @@ def _with(c):
 dis_with = """\
 %4d           RESUME                   0
 
-%4d           LOAD_FAST_BORROW         0 (c)
+%4d           LOAD_FAST                0 (c)
                COPY                     1
                LOAD_SPECIAL             1 (__exit__)
                SWAP                     2
@@ -1922,7 +1922,7 @@ expected_opinfo_jumpy = [
   make_inst(opname='LOAD_SMALL_INT', arg=0, argval=0, argrepr='', offset=244, start_offset=244, starts_line=False, line_number=21),
   make_inst(opname='BINARY_OP', arg=11, argval=11, argrepr='/', offset=246, start_offset=246, starts_line=False, line_number=21, cache_info=[('counter', 1, b'\x00\x00'), ('descr', 4, b'\x00\x00\x00\x00\x00\x00\x00\x00')]),
   make_inst(opname='POP_TOP', arg=None, argval=None, argrepr='', offset=258, start_offset=258, starts_line=False, line_number=21),
-  make_inst(opname='LOAD_FAST_BORROW', arg=0, argval='i', argrepr='i', offset=260, start_offset=260, starts_line=True, line_number=25),
+  make_inst(opname='LOAD_FAST', arg=0, argval='i', argrepr='i', offset=260, start_offset=260, starts_line=True, line_number=25),
   make_inst(opname='COPY', arg=1, argval=1, argrepr='', offset=262, start_offset=262, starts_line=False, line_number=25),
   make_inst(opname='LOAD_SPECIAL', arg=1, argval=1, argrepr='__exit__', offset=264, start_offset=264, starts_line=False, line_number=25),
   make_inst(opname='SWAP', arg=2, argval=2, argrepr='', offset=266, start_offset=266, starts_line=False, line_number=25),
