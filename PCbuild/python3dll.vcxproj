@@ -89,6 +89,9 @@
   <PropertyGroup>
     <_ProjectFileVersion>10.0.30319.1</_ProjectFileVersion>
   </PropertyGroup>
+  <PropertyGroup Condition="$(DisableGil) == 'true'">
+    <OutDir>$(BuildPath)abi3t-compat\</OutDir>
+  </PropertyGroup>
   <ItemDefinitionGroup>
     <ClCompile>
       <PreprocessorDefinitions>PYTHON_DLL_NAME="$(PyDllName)";%(PreprocessorDefinitions)</PreprocessorDefinitions>

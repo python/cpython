@@ -192,11 +192,11 @@ def get_layout(ns):
             yield from in_build("pythonw_uwp.exe", new_name="idle{}".format(VER_DOT))
 
     if ns.include_stable:
-        if not ns.include_freethreaded:
-            # abi3 (GIL-enabled only)
+        if ns.include_freethreaded:
+            yield from in_build(FREETHREADED_PYTHON_STABLE_DLL_NAME)
+        else:
             yield from in_build(PYTHON_STABLE_DLL_NAME)
-        # abi3t (compatible with both builds)
-        yield from in_build(FREETHREADED_PYTHON_STABLE_DLL_NAME)
+            yield from in_build(f"abi3t-compat\\{FREETHREADED_PYTHON_STABLE_DLL_NAME}")
 
     found_any = False
     for dest, src in rglob(ns.build, "vcruntime*.dll"):
