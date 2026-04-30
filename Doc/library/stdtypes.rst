@@ -2168,8 +2168,25 @@ expression support in the :mod:`re` module).
    character, ``False`` otherwise.  Digits include decimal characters and digits that need
    special handling, such as the compatibility superscript digits.
    This covers digits which cannot be used to form numbers in base 10,
-   like the Kharosthi numbers.  Formally, a digit is a character that has the
+   like the `Kharosthi numbers <https://en.wikipedia.org/wiki/Kharosthi#Numerals>`__.
+   Formally, a digit is a character that has the
    property value Numeric_Type=Digit or Numeric_Type=Decimal.
+
+   For example:
+
+   .. doctest::
+
+      >>> '0123456789'.isdigit()
+      True
+      >>> '٠١٢٣٤٥٦٧٨٩'.isdigit()  # Arabic-indic digits zero to nine
+      True
+      >>> '⅕'.isdigit()  # Vulgar fraction one fifth
+      False
+      >>> '²'.isdecimal(), '²'.isdigit(),  '²'.isnumeric()
+      (False, True, True)
+
+   See also :meth:`isdecimal` and :meth:`isnumeric`. Digit characters are a
+   superset of decimal characters.
 
 
 .. method:: str.isidentifier()
@@ -2211,7 +2228,7 @@ expression support in the :mod:`re` module).
 
       >>> '0123456789'.isnumeric()
       True
-      >>> '٠١٢٣٤٥٦٧٨٩'.isnumeric()  # Arabic-indic digit zero to nine
+      >>> '٠١٢٣٤٥٦٧٨٩'.isnumeric()  # Arabic-indic digits zero to nine
       True
       >>> '⅕'.isnumeric()  # Vulgar fraction one fifth
       True
