@@ -468,7 +468,7 @@ The :mod:`!functools` module defines the following functions:
 
    Roughly equivalent to::
 
-      initial_missing = object()
+      initial_missing = sentinel('initial_missing')
 
       def reduce(function, iterable, /, initial=initial_missing):
           it = iter(iterable)
