@@ -234,8 +234,7 @@ add_op(JitOptContext *ctx, _PyUOpInstruction *this_instr,
     out->format = this_instr->format;
     out->oparg = (oparg);
     out->target = this_instr->target;
-    if (opcode == _LOAD_CONST_INLINE_BORROW ||
-        opcode == _SHUFFLE_3_LOAD_CONST_INLINE_BORROW) {
+    if (opcode == _LOAD_CONST_INLINE_BORROW) {
         out->operand0 = PyStackRef_TagBorrow((PyObject *)operand0);
     }
     else {
