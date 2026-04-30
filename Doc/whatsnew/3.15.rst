@@ -1859,6 +1859,14 @@ New deprecations
     (Contributed by Bénédikt Tran in :gh:`134978`.)
 
 
+* :mod:`http.cookies`:
+
+  * :meth:`BaseCookie.js_output <http.cookies.BaseCookie.js_output>` is deprecated
+    and will be removed in Python 3.19. Use :meth:`BaseCookie.output
+    <http.cookies.BaseCookie.output>` instead.
+    (Contributed by kishorhange111 in :gh:`148849`.)
+
+
 * :mod:`re`:
 
   * :func:`re.match` and :meth:`re.Pattern.match` are now

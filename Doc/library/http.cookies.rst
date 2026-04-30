@@ -109,6 +109,9 @@ Cookie Objects
 
    The meaning for *attrs* is the same as in :meth:`output`.
 
+   .. deprecated-removed:: next 3.19
+      Use :meth:`output` instead.
+
 
 .. method:: BaseCookie.load(rawdata)
 

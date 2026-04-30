@@ -132,6 +132,7 @@ Finis.
 import re
 import string
 import types
+lazy import warnings
 
 __all__ = ["CookieError", "BaseCookie", "SimpleCookie"]
 
@@ -540,6 +541,11 @@ class BaseCookie(dict):
         return '<%s: %s>' % (self.__class__.__name__, _spacejoin(l))
 
     def js_output(self, attrs=None):
+        warnings._deprecated(
+            "http.cookies.BaseCookie.js_output",
+            warnings._DEPRECATED_MSG + "; use output() instead",
+            remove=(3, 19),
+        )
         """Return a string suitable for JavaScript."""
         result = []
         items = sorted(self.items())

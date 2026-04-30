@@ -176,7 +176,8 @@ class CookieTests(unittest.TestCase):
         self.assertEqual(C.output(['path']),
             'Set-Cookie: Customer="WILE_E_COYOTE"; Path=/acme')
         cookie_encoded = base64.b64encode(b'Customer="WILE_E_COYOTE"; Path=/acme; Version=1').decode('ascii')
-        self.assertEqual(C.js_output(), fr"""
+        with self.assertWarnsRegex(DeprecationWarning, r"BaseCookie\.js_output"):
+            self.assertEqual(C.js_output(), fr"""
         <script type="text/javascript">
         <!-- begin hiding
         document.cookie = atob("{cookie_encoded}");
@@ -184,7 +185,8 @@ class CookieTests(unittest.TestCase):
         </script>
         """)
         cookie_encoded = base64.b64encode(b'Customer="WILE_E_COYOTE"; Path=/acme').decode('ascii')
-        self.assertEqual(C.js_output(['path']), fr"""
+        with self.assertWarnsRegex(DeprecationWarning, r"BaseCookie\.js_output"):
+            self.assertEqual(C.js_output(['path']), fr"""
         <script type="text/javascript">
         <!-- begin hiding
         document.cookie = atob("{cookie_encoded}");
@@ -293,7 +295,8 @@ class CookieTests(unittest.TestCase):
         self.assertEqual(C.output(['path']),
                          'Set-Cookie: Customer="WILE_E_COYOTE"; Path=/acme')
         expected_encoded_cookie = base64.b64encode(b'Customer=\"WILE_E_COYOTE\"; Path=/acme; Version=1').decode('ascii')
-        self.assertEqual(C.js_output(), fr"""
+        with self.assertWarnsRegex(DeprecationWarning, r"BaseCookie\.js_output"):
+            self.assertEqual(C.js_output(), fr"""
         <script type="text/javascript">
         <!-- begin hiding
         document.cookie = atob("{expected_encoded_cookie}");
@@ -301,7 +304,8 @@ class CookieTests(unittest.TestCase):
         </script>
         """)
         expected_encoded_cookie = base64.b64encode(b'Customer=\"WILE_E_COYOTE\"; Path=/acme').decode('ascii')
-        self.assertEqual(C.js_output(['path']), fr"""
+        with self.assertWarnsRegex(DeprecationWarning, r"BaseCookie\.js_output"):
+            self.assertEqual(C.js_output(['path']), fr"""
         <script type="text/javascript">
         <!-- begin hiding
         document.cookie = atob("{expected_encoded_cookie}");
@@ -673,7 +677,8 @@ class MorselTests(unittest.TestCase):
             cookie = cookies.SimpleCookie()
             cookie["cookie"] = morsel
             with self.assertRaises(cookies.CookieError):
-                cookie.js_output()
+                with self.assertWarnsRegex(DeprecationWarning, r"BaseCookie\.js_output"):
+                    cookie.js_output()
 
             morsel = cookies.Morsel()
             morsel.set("key", "value", "coded-value")
@@ -681,7 +686,9 @@ class MorselTests(unittest.TestCase):
             cookie = cookies.SimpleCookie()
             cookie["cookie"] = morsel
             with self.assertRaises(cookies.CookieError):
-                cookie.js_output()
+                with self.assertWarnsRegex(DeprecationWarning, r"BaseCookie\.js_output"):
+                    cookie.js_output()
+
 
 
 def load_tests(loader, tests, pattern):
