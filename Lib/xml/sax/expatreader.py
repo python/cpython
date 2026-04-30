@@ -89,6 +89,7 @@ class ExpatParser(xmlreader.IncrementalParser, xmlreader.Locator):
         self._entity_stack = []
         self._external_ges = 0
         self._interning = None
+        self._namespace_prefixes = 0
 
     # XMLReader methods
 
@@ -124,8 +125,9 @@ class ExpatParser(xmlreader.IncrementalParser, xmlreader.Locator):
             return self._namespaces
         elif name == feature_string_interning:
             return self._interning is not None
-        elif name in (feature_validation, feature_external_pes,
-                      feature_namespace_prefixes):
+        elif name == feature_namespace_prefixes:
+            return self._namespace_prefixes
+        elif name in (feature_validation, feature_external_pes):
             return 0
         elif name == feature_external_ges:
             return self._external_ges
@@ -154,9 +156,9 @@ class ExpatParser(xmlreader.IncrementalParser, xmlreader.Locator):
                 raise SAXNotSupportedException(
                     "expat does not read external parameter entities")
         elif name == feature_namespace_prefixes:
-            if state:
-                raise SAXNotSupportedException(
-                    "expat does not report namespace prefixes")
+            if state and not self._namespaces:
+                raise SAXException(f"{feature_namespace_prefixes} requires {feature_namespaces} to be enabled")
+            self._namespace_prefixes = state
         else:
             raise SAXNotRecognizedException(
                 "Feature '%s' not recognized" % name)
@@ -345,11 +347,14 @@ class ExpatParser(xmlreader.IncrementalParser, xmlreader.Locator):
         pair = name.split()
         if len(pair) == 1:
             # no namespace
+            elem_qname = name
             pair = (None, name)
         elif len(pair) == 3:
+            elem_qname = "%s:%s" % (pair[2], pair[1])
             pair = pair[0], pair[1]
         else:
             # default namespace
+            elem_qname = pair[1]
             pair = tuple(pair)
 
         newattrs = {}
@@ -372,7 +377,10 @@ class ExpatParser(xmlreader.IncrementalParser, xmlreader.Locator):
             newattrs[apair] = value
             qnames[apair] = qname
 
-        self._cont_handler.startElementNS(pair, None,
+        if not self._namespace_prefixes:
+            elem_qname = None
+
+        self._cont_handler.startElementNS(pair, elem_qname,
                                           AttributesNSImpl(newattrs, qnames))
 
     def end_element_ns(self, name):
