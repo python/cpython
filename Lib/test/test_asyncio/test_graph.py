@@ -1,5 +1,6 @@
 import asyncio
 import io
+import sys
 import unittest
 
 
@@ -145,6 +146,31 @@ class CallStackTestBase:
         self.assertIn(
             'async generator CallStackTestBase.test_stack_async_gen.<locals>.gen()',
             stack_for_gen_nested_call[1])
+
+    def test_ag_frame_used_for_async_generator(self):
+        # Regression test for gh-148736: the ag_await branch of
+        # _build_graph_for_future must read ag_frame, not cr_frame.
+        from asyncio.graph import _build_graph_for_future
+
+        sentinel_frame = sys._getframe()
+
+        class FakeAsyncGen:
+            ag_await = None
+            ag_frame = sentinel_frame
+
+        class FakeCoro:
+            cr_frame = sentinel_frame
+            cr_await = FakeAsyncGen()
+
+        loop = asyncio.new_event_loop()
+        try:
+            fut = loop.create_future()
+            fut.get_coro = lambda: FakeCoro()
+            result = _build_graph_for_future(fut)
+        finally:
+            loop.close()
+
+        self.assertEqual(len(result.call_stack), 2)
 
     async def test_stack_gather(self):
 
