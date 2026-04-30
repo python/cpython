@@ -418,7 +418,11 @@ class BytesGenerator(Generator):
     """
 
     def write(self, s):
-        self._fp.write(s.encode('ascii', 'surrogateescape'))
+        if getattr(self.policy, "utf8", False):
+            encoded = s.encode('utf-8', 'surrogateescape')
+        else:
+            encoded = s.encode('ascii', 'surrogateescape')
+        self._fp.write(encoded)
 
     def _new_buffer(self):
         return BytesIO()
