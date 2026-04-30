@@ -71,7 +71,7 @@ def _frame_pointers_expected(machine):
     return None
 
 
-def _build_stack_and_unwind():
+def _build_stack_and_unwind(unwinder):
     import operator
 
     def build_stack(n, unwinder, warming_up_caller=False):
@@ -90,7 +90,7 @@ def _build_stack_and_unwind():
             result = operator.call(build_stack, n - 1, unwinder, warming_up)
         return result
 
-    stack = build_stack(10, _testinternalcapi.manual_frame_pointer_unwind)
+    stack = build_stack(10, unwinder)
     return stack
 
 
@@ -113,8 +113,9 @@ def _classify_stack(stack, jit_enabled):
     return annotated, python_frames, jit_frames, other_frames
 
 
-def _annotate_unwind():
-    stack = _build_stack_and_unwind()
+def _annotate_unwind(unwinder_name="manual_frame_pointer_unwind"):
+    unwinder = getattr(_testinternalcapi, unwinder_name)
+    stack = _build_stack_and_unwind(unwinder)
     jit_enabled = hasattr(sys, "_jit") and sys._jit.is_enabled()
     jit_backend = _testinternalcapi.get_jit_backend()
     ranges = _testinternalcapi.get_jit_code_ranges() if jit_enabled else []
@@ -133,13 +134,14 @@ def _annotate_unwind():
         "jit_frames": jit_frames,
         "other_frames": other_frames,
         "jit_backend": jit_backend,
+        "unwinder": unwinder_name,
     })
 
 
-def _manual_unwind_length(**env):
+def _unwind_result(unwinder_name, **env):
     code = (
         "from test.test_frame_pointer_unwind import _annotate_unwind; "
-        "print(_annotate_unwind());"
+        f"print(_annotate_unwind({unwinder_name!r}));"
     )
     run_env = os.environ.copy()
     run_env.update(env)
@@ -198,7 +200,7 @@ class FramePointerUnwindTests(unittest.TestCase):
 
         for env, using_jit in envs:
             with self.subTest(env=env):
-                result = _manual_unwind_length(**env)
+                result = _unwind_result("manual_frame_pointer_unwind", **env)
                 jit_frames = result["jit_frames"]
                 python_frames = result.get("python_frames", 0)
                 jit_backend = result.get("jit_backend")
@@ -238,6 +240,52 @@ class FramePointerUnwindTests(unittest.TestCase):
                         jit_frames,
                         0,
                         f"unexpected JIT frames counted on {self.machine} with env {env}",
+                    )
+
+
+@support.requires_gil_enabled("test requires the GIL enabled")
+@unittest.skipIf(support.is_wasi, "test not supported on WASI")
+@unittest.skipUnless(sys.platform == "linux", "GNU backtrace unwinding test requires Linux")
+class GnuBacktraceUnwindTests(unittest.TestCase):
+
+    def setUp(self):
+        super().setUp()
+        try:
+            _testinternalcapi.gnu_backtrace_unwind()
+        except RuntimeError as exc:
+            if "not supported" in str(exc):
+                self.skipTest("gnu backtrace unwinding not supported on this platform")
+            raise
+
+    def test_gnu_backtrace_unwinds_through_jit_frames(self):
+        jit_available = hasattr(sys, "_jit") and sys._jit.is_available()
+        envs = [({"PYTHON_JIT": "0"}, False)]
+        if jit_available:
+            envs.append(({"PYTHON_JIT": "1"}, True))
+
+        for env, using_jit in envs:
+            with self.subTest(env=env):
+                result = _unwind_result("gnu_backtrace_unwind", **env)
+                python_frames = result.get("python_frames", 0)
+                jit_frames = result.get("jit_frames", 0)
+                jit_backend = result.get("jit_backend")
+
+                self.assertGreater(
+                    python_frames,
+                    0,
+                    f"expected to find Python frames in GNU backtrace with env {env}",
+                )
+                if using_jit and jit_backend == "jit":
+                    self.assertGreater(
+                        jit_frames,
+                        0,
+                        f"expected GNU backtrace to include JIT frames with env {env}",
+                    )
+                else:
+                    self.assertEqual(
+                        jit_frames,
+                        0,
+                        f"unexpected JIT frames counted in GNU backtrace with env {env}",
                     )
 
 

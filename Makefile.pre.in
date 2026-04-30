@@ -470,6 +470,7 @@ PYTHON_OBJS=	\
 		Python/instruction_sequence.o \
 		Python/intrinsics.o \
 		Python/jit.o \
+		Python/jit_publish.o \
 		$(JIT_OBJS) \
 		Python/legacy_tracing.o \
 		Python/lock.o \
@@ -514,6 +515,7 @@ PYTHON_OBJS=	\
 		Python/suggestions.o \
 		Python/perf_trampoline.o \
 		Python/perf_jit_trampoline.o \
+		Python/jit_unwind.o \
 		Python/remote_debugging.o \
 		Python/$(DYNLOADFILE) \
 		$(LIBOBJS) \

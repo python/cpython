@@ -69,7 +69,7 @@ struct code_arena_st;
 struct trampoline_api_st {
     void* (*init_state)(void);
     void (*write_state)(void* state, const void *code_addr,
-                        unsigned int code_size, PyCodeObject* code);
+                        size_t code_size, PyCodeObject* code);
     int (*free_state)(void* state);
     void *state;
     Py_ssize_t code_padding;
