@@ -1,0 +1,3 @@
+Fix a crash in :mod:`xml.etree.ElementTree` when
+:meth:`~xml.etree.ElementTree.Element.iter` fails with :exc:`MemoryError`
+while creating the C accelerator iterator.

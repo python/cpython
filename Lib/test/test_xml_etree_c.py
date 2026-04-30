@@ -2,7 +2,7 @@
 import io
 import struct
 from test import support
-from test.support.import_helper import import_fresh_module
+from test.support.import_helper import import_fresh_module, import_module
 import types
 import unittest
 
@@ -182,6 +182,24 @@ class MiscTests(unittest.TestCase):
         e = cET.Element("elem", {1: 2})
         r = e.get(X())
         self.assertIsNone(r)
+
+    @unittest.skipIf(support.Py_TRACE_REFS,
+                     'Py_TRACE_REFS conflicts with testcapi.set_nomemory')
+    def test_iter_oom_no_crash(self):
+        # gh-148731: OOM while creating an Element iterator should raise
+        # MemoryError without crashing while deallocating a partially
+        # initialized iterator object.
+        testcapi = import_module('_testcapi')
+        element = cET.Element('root')
+        raised = False
+        testcapi.set_nomemory(1, 2)
+        try:
+            element.iter()
+        except MemoryError:
+            raised = True
+        finally:
+            testcapi.remove_mem_hooks()
+        self.assertTrue(raised, "MemoryError not raised")
 
     @support.cpython_only
     def test_immutable_types(self):
