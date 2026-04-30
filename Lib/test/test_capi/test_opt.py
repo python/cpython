@@ -1437,7 +1437,7 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertNotIn("_MAKE_HEAP_SAFE", uops)
         self.assertIn("_YIELD_VALUE", uops)
 
-    def test_make_heap_safe_not_optimized_for_owned(self):
+    def test_make_heap_safe_optimized_owned(self):
         def returns_owned(x):
             return x + 1
         def testfunc(n):
@@ -1449,7 +1449,7 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertEqual(res, TIER2_THRESHOLD)
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
-        self.assertIn("_MAKE_HEAP_SAFE", uops)
+        self.assertNotIn("_MAKE_HEAP_SAFE", uops)
         self.assertIn("_RETURN_VALUE", uops)
 
     def test_for_iter(self):
