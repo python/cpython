@@ -77,7 +77,8 @@ def ToASCII(label):  # type: (str) -> bytes
         if len(label) == 0:
             raise UnicodeEncodeError("idna", label, 0, 1, "label empty")
         else:
-            raise UnicodeEncodeError("idna", label, 0, len(label), "label too long")
+            raise UnicodeEncodeError("idna", label, 0, len(label),
+                                     f"label too long: {label!r}")
 
     # Step 2: nameprep
     label = nameprep(label)
@@ -95,7 +96,8 @@ def ToASCII(label):  # type: (str) -> bytes
         if len(label) == 0:
             raise UnicodeEncodeError("idna", label, 0, 1, "label empty")
         else:
-            raise UnicodeEncodeError("idna", label, 0, len(label), "label too long")
+            raise UnicodeEncodeError("idna", label, 0, len(label),
+                                     f"label too long: {label!r}")
 
     # Step 5: Check ACE prefix
     if label.lower().startswith(sace_prefix):
@@ -112,7 +114,8 @@ def ToASCII(label):  # type: (str) -> bytes
     # do not check for empty as we prepend ace_prefix.
     if len(label_ascii) < 64:
         return label_ascii
-    raise UnicodeEncodeError("idna", label, 0, len(label), "label too long")
+    raise UnicodeEncodeError("idna", label, 0, len(label),
+                             f"label too long: {label!r}")
 
 def ToUnicode(label):
     if len(label) > 1024:
@@ -201,7 +204,7 @@ class Codec(codecs.Codec):
                 if len(label) >= 64:
                     offset = sum(len(l) for l in labels[:i]) + i
                     raise UnicodeEncodeError("idna", input, offset, offset+len(label),
-                                             "label too long")
+                                             f"label too long: {label.decode('ascii')!r}")
             return result, len(input)
 
         result = bytearray()

@@ -1640,6 +1640,29 @@ class IDNACodecTest(unittest.TestCase):
         with self.assertRaisesRegex(UnicodeDecodeError, "too long"):
             (b"xn--016c"+b"a"*70).decode("idna")
 
+    def test_error_message_label_too_long(self):
+        # gh-53891: "label too long" errors should include the offending label
+        long_label = "a" * 70
+        domain = f"{long_label}.com"
+        with self.assertRaises(UnicodeEncodeError) as cm:
+            domain.encode("idna")
+        self.assertIn(long_label, cm.exception.reason)
+        self.assertIn("label too long", cm.exception.reason)
+
+    def test_error_message_label_too_long_non_ascii(self):
+        # gh-53891: non-ASCII labels should also be included in the message
+        long_label = "\xe4" * 70
+        domain = f"{long_label}.com"
+        with self.assertRaises(UnicodeEncodeError) as cm:
+            domain.encode("idna")
+        self.assertIn("label too long", cm.exception.reason)
+
+    def test_error_message_label_empty(self):
+        # gh-53891: empty label errors should have a clear reason
+        with self.assertRaises(UnicodeEncodeError) as cm:
+            "a..com".encode("idna")
+        self.assertEqual(cm.exception.reason, "label empty")
+
     def test_stream(self):
         r = codecs.getreader("idna")(io.BytesIO(b"abc"))
         r.read(3)
