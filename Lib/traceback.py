@@ -8,6 +8,7 @@ import os
 import re
 import sys
 import textwrap
+import time
 import types
 import warnings
 import codeop
@@ -30,7 +31,7 @@ __all__ = ['extract_stack', 'extract_tb', 'format_exception',
            'format_tb', 'print_exc', 'format_exc', 'print_exception',
            'print_last', 'print_stack', 'print_tb', 'clear_frames',
            'FrameSummary', 'StackSummary', 'TracebackException',
-           'walk_stack', 'walk_tb', 'print_list']
+           'walk_stack', 'walk_tb', 'print_list', 'strip_exc_timestamps']
 
 #
 # Formatting and printing lists of traceback lines.
@@ -140,8 +141,9 @@ def print_exception(exc, /, value=_sentinel, tb=_sentinel, limit=None, \
     position of the error.
     """
     colorize = kwargs.get("colorize", False)
+    timestamps = kwargs.get("timestamps", None)
     value, tb = _parse_value_tb(exc, value, tb)
-    te = TracebackException(type(value), value, tb, limit=limit, compact=True)
+    te = TracebackException(type(value), value, tb, limit=limit, compact=True, timestamps=timestamps)
     te.print(file=file, chain=chain, colorize=colorize)
 
 
@@ -166,8 +168,9 @@ def format_exception(exc, /, value=_sentinel, tb=_sentinel, limit=None, \
     printed as does print_exception().
     """
     colorize = kwargs.get("colorize", False)
+    timestamps = kwargs.get("timestamps", None)
     value, tb = _parse_value_tb(exc, value, tb)
-    te = TracebackException(type(value), value, tb, limit=limit, compact=True)
+    te = TracebackException(type(value), value, tb, limit=limit, compact=True, timestamps=timestamps)
     return list(te.format(chain=chain, colorize=colorize))
 
 
@@ -187,25 +190,82 @@ def format_exception_only(exc, /, value=_sentinel, *, show_group=False, **kwargs
     well, recursively, with indentation relative to their nesting depth.
     """
     colorize = kwargs.get("colorize", False)
+    timestamps = kwargs.get("timestamps", None)
     if value is _sentinel:
         value = exc
-    te = TracebackException(type(value), value, None, compact=True)
+    te = TracebackException(type(value), value, None, compact=True, timestamps=timestamps)
     return list(te.format_exception_only(show_group=show_group, colorize=colorize))
+
+
+def _format_ns(ns):
+    # Integer divmod preserves all 9 fractional digits; float division
+    # would drop the last few since it cannot hold 19 significant figures.
+    secs, frac = divmod(ns, 1_000_000_000)
+    return f"<@{secs}.{frac:09d}>"
+
+def _format_iso(ns):
+    secs, frac = divmod(ns, 1_000_000_000)
+    timestr = time.strftime("%Y-%m-%dT%H:%M:%S", time.gmtime(secs))
+    return f"<@{timestr}.{frac // 1000:06d}Z>"
+
+# _timestamp_formatter is None when the feature is off; the C-level fallback
+# in pythonrun.c print_exception_message() relies on this (PyCallable_Check)
+# to suppress display.
+match _TIMESTAMP_FORMAT := getattr(sys.flags, "traceback_timestamps", ""):
+    case "" | "0":
+        _TIMESTAMP_FORMAT = ""
+        _timestamp_formatter = None
+    case "ns":
+        _timestamp_formatter = _format_ns
+    case "iso":
+        _timestamp_formatter = _format_iso
+    case _:
+        raise ValueError(f"Invalid sys.flags.traceback_timestamp={_TIMESTAMP_FORMAT!r}")
+
+
+# The regular expression to match timestamps as formatted in tracebacks.
+# Not compiled to avoid importing the re module by default.
+TIMESTAMP_AFTER_EXC_MSG_RE_GROUP = r"(?P<timestamp> <@[0-9:.T-]{11,26}Z?>)"
+
+
+def strip_exc_timestamps(output):
+   """Remove exception timestamps from output; for use by tests."""
+   import re
+   if isinstance(output, str):
+       pattern = TIMESTAMP_AFTER_EXC_MSG_RE_GROUP
+       empty = ""
+   else:
+       pattern = TIMESTAMP_AFTER_EXC_MSG_RE_GROUP.encode()
+       empty = b""
+   return re.sub(pattern, empty, output, flags=re.MULTILINE)
 
 
 # -- not official API but folk probably use these two functions.
 
-def _format_final_exc_line(etype, value, *, insert_final_newline=True, colorize=False):
+def _format_final_exc_line(etype, value, *, insert_final_newline=True, colorize=False, timestamp_ns=0):
     valuestr = _safe_string(value, 'exception')
-    end_char = "\n" if insert_final_newline else ""
+    try:
+        # _timestamp_formatter is None when no display format is configured;
+        # callers can still force display with timestamps=True, in which case
+        # the ns format is the fallback.
+        ts = (_timestamp_formatter or _format_ns)(timestamp_ns) if timestamp_ns else ""
+    except Exception:
+        ts = ""
+    end = f"\n" if insert_final_newline else ""
     if colorize:
         theme = _colorize.get_theme(force_color=True).traceback
+        end = f" {_colorize.ANSIColors.GREY}{ts}{theme.reset}{end}" if ts else end
+        if value is None or not valuestr:
+            line = f"{theme.type}{etype}{theme.reset}{end}"
+        else:
+            line = f"{theme.type}{etype}{theme.reset}: {theme.message}{valuestr}{theme.reset}{end}"
     else:
         theme = _colorize.get_theme(force_no_color=True).traceback
-    if value is None or not valuestr:
-        line = f"{theme.type}{etype}{theme.reset}{end_char}"
-    else:
-        line = f"{theme.type}{etype}{theme.reset}: {theme.message}{valuestr}{theme.reset}{end_char}"
+        end = f" {ts}{end}" if ts else end
+        if value is None or not valuestr:
+            line = f"{etype}{end}"
+        else:
+            line = f"{etype}: {valuestr}{end}"
     return line
 
 
@@ -1079,10 +1139,12 @@ class TracebackException:
 
     - :attr:`__cause__` A TracebackException of the original *__cause__*.
     - :attr:`__context__` A TracebackException of the original *__context__*.
+    - :attr:`__notes__` A reference to the original *__notes__* list.
     - :attr:`exceptions` For exception groups - a list of TracebackException
       instances for the nested *exceptions*.  ``None`` for other exceptions.
     - :attr:`__suppress_context__` The *__suppress_context__* value from the
       original exception.
+    - :attr:`_timestamp_ns` When the exception was created if enabled, or 0.
     - :attr:`stack` A `StackSummary` representing the traceback.
     - :attr:`exc_type` (deprecated) The class of the original traceback.
     - :attr:`exc_type_str` String display of exc_type
@@ -1103,7 +1165,8 @@ class TracebackException:
 
     def __init__(self, exc_type, exc_value, exc_traceback, *, limit=None,
             lookup_lines=True, capture_locals=False, compact=False,
-            max_group_width=15, max_group_depth=10, save_exc_type=True, _seen=None):
+            max_group_width=15, max_group_depth=10, save_exc_type=True,
+            timestamps=None, _seen=None):
         # NB: we need to accept exc_traceback, exc_value, exc_traceback to
         # permit backwards compat with the existing API, otherwise we
         # need stub thunk objects just to glue it together.
@@ -1137,9 +1200,12 @@ class TracebackException:
         if exc_type is not None:
             self.exc_type_qualname = exc_type.__qualname__
             self.exc_type_module = exc_type.__module__
+            show_ts = bool(_TIMESTAMP_FORMAT) if timestamps is None else timestamps
+            self._timestamp_ns = exc_value.__timestamp_ns__ if show_ts else 0
         else:
             self.exc_type_qualname = None
             self.exc_type_module = None
+            self._timestamp_ns = 0
 
         if exc_type and issubclass(exc_type, SyntaxError):
             # Handle SyntaxError's specially
@@ -1229,6 +1295,7 @@ class TracebackException:
                         capture_locals=capture_locals,
                         max_group_width=max_group_width,
                         max_group_depth=max_group_depth,
+                        timestamps=timestamps,
                         _seen=_seen)
                 else:
                     cause = None
@@ -1250,6 +1317,7 @@ class TracebackException:
                         capture_locals=capture_locals,
                         max_group_width=max_group_width,
                         max_group_depth=max_group_depth,
+                        timestamps=timestamps,
                         _seen=_seen)
                 else:
                     context = None
@@ -1266,6 +1334,7 @@ class TracebackException:
                             capture_locals=capture_locals,
                             max_group_width=max_group_width,
                             max_group_depth=max_group_depth,
+                            timestamps=timestamps,
                             _seen=_seen)
                         exceptions.append(texc)
                 else:
@@ -1311,7 +1380,20 @@ class TracebackException:
 
     def __eq__(self, other):
         if isinstance(other, TracebackException):
-            return self.__dict__ == other.__dict__
+            # It is unlikely anything would ever be equal when timestamp
+            # collection is enabled without this.  We avoid extra work when
+            # it is not enabled.
+            if self._timestamp_ns:
+                s_dict = self.__dict__.copy()
+                s_dict["_timestamp_ns"] = 0
+            else:
+                s_dict = self.__dict__
+            if other._timestamp_ns:
+                o_dict = other.__dict__.copy()
+                o_dict["_timestamp_ns"] = 0
+            else:
+                o_dict = other.__dict__
+            return s_dict == o_dict
         return NotImplemented
 
     def __str__(self):
@@ -1342,7 +1424,7 @@ class TracebackException:
 
         indent = 3 * _depth * ' '
         if not self._have_exc_type:
-            yield indent + _format_final_exc_line(None, self._str, colorize=colorize)
+            yield indent + _format_final_exc_line(None, self._str, colorize=colorize, timestamp_ns=self._timestamp_ns)
             return
 
         stype = self.exc_type_str
@@ -1350,14 +1432,14 @@ class TracebackException:
             if _depth > 0:
                 # Nested exceptions needs correct handling of multiline messages.
                 formatted = _format_final_exc_line(
-                    stype, self._str, insert_final_newline=False, colorize=colorize
+                    stype, self._str, insert_final_newline=False, colorize=colorize, timestamp_ns=self._timestamp_ns
                 ).split('\n')
                 yield from [
                     indent + l + '\n'
                     for l in formatted
                 ]
             else:
-                yield _format_final_exc_line(stype, self._str, colorize=colorize)
+                yield _format_final_exc_line(stype, self._str, colorize=colorize, timestamp_ns=self._timestamp_ns)
         else:
             yield from [indent + l for l in self._format_syntax_error(stype, colorize=colorize)]
 

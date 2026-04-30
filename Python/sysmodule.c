@@ -3503,6 +3503,7 @@ static PyStructSequence_Field flags_fields[] = {
     {"thread_inherit_context",  "-X thread_inherit_context"},
     {"context_aware_warnings",  "-X context_aware_warnings"},
     {"lazy_imports",            "-X lazy_imports"},
+    {"traceback_timestamps",    "-X traceback_timestamps"},
     {0}
 };
 
@@ -3608,6 +3609,19 @@ set_flags_from_config(PyInterpreterState *interp, PyObject *flags)
     SetFlag(config->thread_inherit_context);
     SetFlag(config->context_aware_warnings);
     SetFlag(config->lazy_imports);
+    PyObject *ts_str;
+    if (config->traceback_timestamps != NULL && config->traceback_timestamps[0] != L'\0') {
+        ts_str = PyUnicode_FromWideChar(config->traceback_timestamps, -1);
+        if (ts_str == NULL) {
+            return -1;
+        }
+    }
+    else {
+        ts_str = PyUnicode_FromString("");
+    }
+
+    /* Set the flag with our string value */
+    SetFlagObj(ts_str);
 #undef SetFlagObj
 #undef SetFlag
     return 0;

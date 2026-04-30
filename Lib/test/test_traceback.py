@@ -25,6 +25,8 @@ from test.support.os_helper import TESTFN, temp_dir, unlink
 from test.support.script_helper import assert_python_ok, assert_python_failure, make_script
 from test.support.import_helper import forget
 from test.support import force_not_colorized, force_not_colorized_test_class
+from test.support import force_no_traceback_timestamps
+from test.support import force_no_traceback_timestamps_test_class
 
 import json
 import textwrap
@@ -50,6 +52,7 @@ colors = {
 LEVENSHTEIN_DATA_FILE = Path(__file__).parent / 'levenshtein_examples.json'
 
 
+@force_no_traceback_timestamps_test_class
 class TracebackCases(unittest.TestCase):
     # For now, a very minimal set of tests.  I want to be sure that
     # formatting of SyntaxErrors works based on changes for 2.1.
@@ -519,7 +522,8 @@ class TracebackCases(unittest.TestCase):
             # when the module is unloaded
             obj = PrintExceptionAtExit()
         """)
-        rc, stdout, stderr = assert_python_ok('-c', code)
+        rc, stdout, stderr = assert_python_ok(
+            '-c', code, PYTHON_TRACEBACK_TIMESTAMPS="")
         expected = [b'Traceback (most recent call last):',
                     b'  File "<string>", line 8, in __init__',
                     b'    x = 1 / 0',
@@ -1331,6 +1335,7 @@ class TracebackErrorLocationCaretTestBase:
         result_lines = self.get_exception(f_with_subscript)
         self.assertEqual(result_lines, expected_error.splitlines())
 
+    @force_no_traceback_timestamps
     def test_caret_exception_group(self):
         # Notably, this covers whether indicators handle margin strings correctly.
         # (Exception groups use margin strings to display vertical indicators.)
@@ -2186,13 +2191,14 @@ class TracebackFormatMixin:
         self.assertEqual(actual, expected)
 
     @requires_debug_ranges()
+    @force_no_traceback_timestamps
     def test_recursive_traceback(self):
         if self.DEBUG_RANGES:
             self._check_recursive_traceback_display(traceback.print_exc)
         else:
             from _testcapi import exception_print
             def render_exc():
-                exception_print(sys.exception())
+                exception_print(sys.exception())  # PyErr_DisplayException
             self._check_recursive_traceback_display(render_exc)
 
     def test_format_stack(self):
@@ -3114,6 +3120,7 @@ class BaseExceptionReportingTests:
 
 
 @force_not_colorized_test_class
+@force_no_traceback_timestamps_test_class
 class PyExcReportingTests(BaseExceptionReportingTests, unittest.TestCase):
     #
     # This checks reporting through the 'traceback' module, with both
@@ -3131,6 +3138,7 @@ class PyExcReportingTests(BaseExceptionReportingTests, unittest.TestCase):
 
 
 @force_not_colorized_test_class
+@force_no_traceback_timestamps_test_class
 class CExcReportingTests(BaseExceptionReportingTests, unittest.TestCase):
     #
     # This checks built-in reporting by the interpreter.
@@ -3797,8 +3805,19 @@ class TestTracebackException(unittest.TestCase):
             except Exception as e:
                 excs.append(traceback.TracebackException.from_exception(e))
         self.assertEqual(excs[0], excs[1])
+
+    @force_no_traceback_timestamps
+    def test_comparison_equivalent_exceptions_render_equal_without_timestamps(self):
+        excs = []
+        for _ in range(2):
+            try:
+                1/0
+            except Exception as e:
+                excs.append(traceback.TracebackException.from_exception(e))
+        self.assertEqual(excs[0], excs[1])
         self.assertEqual(list(excs[0].format()), list(excs[1].format()))
 
+    @force_no_traceback_timestamps
     def test_unhashable(self):
         class UnhashableException(Exception):
             def __eq__(self, other):
@@ -3864,13 +3883,15 @@ class TestTracebackException(unittest.TestCase):
         exc = traceback.TracebackException(Exception, e, tb)
         self.assertEqual(exc.stack[0].locals, None)
 
+    @force_no_traceback_timestamps
     def test_traceback_header(self):
         # do not print a traceback header if exc_traceback is None
-        # see issue #24695
+        # see BPO-24695 aka GH-68883
         exc = traceback.TracebackException(Exception, Exception("haven"), None)
         self.assertEqual(list(exc.format()), ["Exception: haven\n"])
 
     @requires_debug_ranges()
+    @force_no_traceback_timestamps
     def test_print(self):
         def f():
             x = 12
@@ -3908,6 +3929,7 @@ class TestTracebackException(unittest.TestCase):
             self.assertIn(context_message, traceback.format_exception(e))
 
 
+@force_no_traceback_timestamps_test_class
 class TestTracebackException_ExceptionGroups(unittest.TestCase):
     def setUp(self):
         super().setUp()
@@ -5343,6 +5365,7 @@ class TestColorizedTraceback(unittest.TestCase):
             )
         self.assertIn(expected(**colors), actual)
 
+    @force_no_traceback_timestamps
     def test_colorized_traceback_is_the_default(self):
         def foo():
             1/0
@@ -5373,6 +5396,7 @@ class TestColorizedTraceback(unittest.TestCase):
             ]
         self.assertEqual(actual, expected(**colors))
 
+    @force_no_traceback_timestamps
     def test_colorized_traceback_from_exception_group(self):
         def foo():
             exceptions = []

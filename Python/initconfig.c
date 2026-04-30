@@ -138,6 +138,7 @@ static const PyConfigSpec PYCONFIG_SPEC[] = {
 #endif
     SPEC(buffered_stdio, BOOL, READ_ONLY, NO_SYS),
     SPEC(check_hash_pycs_mode, WSTR, READ_ONLY, NO_SYS),
+    SPEC(traceback_timestamps, WSTR_OPT, READ_ONLY, NO_SYS),
     SPEC(code_debug_ranges, BOOL, READ_ONLY, NO_SYS),
     SPEC(configure_c_stdio, BOOL, READ_ONLY, NO_SYS),
     SPEC(dev_mode, BOOL, READ_ONLY, NO_SYS),  // sys.flags.dev_mode
@@ -302,6 +303,7 @@ file   : program read from script file\n\
 arg ...: arguments passed to program in sys.argv[1:]\n\
 ";
 
+/* Please keep sorted by -X option name, ignoring -s and _s */
 static const char usage_xoptions[] = "\
 The following implementation-specific options are available:\n\
 -X context_aware_warnings=[0|1]: if true (1) then the warnings module will\n\
@@ -361,6 +363,10 @@ The following implementation-specific options are available:\n\
          PYTHON_TLBC\n"
 #endif
 "\
+-X traceback_timestamps=[ns|iso|0|1]: display timestamp in tracebacks when\n\
+         exception occurs; \"ns\" shows seconds since the epoch with\n\
+         nanosecond resolution; \"iso\" shows ISO-8601 format; \"0\" disables timestamps;\n\
+         \"1\" is equivalent to \"ns\"; also PYTHON_TRACEBACK_TIMESTAMPS\n\
 -X tracemalloc[=N]: trace Python memory allocations; N sets a traceback limit\n\
          of N frames (default: 1); also PYTHONTRACEMALLOC=N\n\
 -X utf8[=0|1]: enable (1) or disable (0) UTF-8 mode; also PYTHONUTF8\n\
@@ -369,6 +375,7 @@ The following implementation-specific options are available:\n\
 ";
 
 /* Envvars that don't have equivalent command-line options are listed first */
+/* Please keep sections sorted by environment variable name, ignoring _s */
 static const char usage_envvars[] =
 "Environment variables that change behavior:\n"
 "PYTHONASYNCIODEBUG: enable asyncio debug mode\n"
@@ -453,6 +460,8 @@ static const char usage_envvars[] =
 #ifdef Py_GIL_DISABLED
 "PYTHON_TLBC     : when set to 0, disables thread-local bytecode (-X tlbc)\n"
 #endif
+"PYTHON_TRACEBACK_TIMESTAMPS: collect and display timestamps in tracebacks\n"
+"                  (-X traceback_timestamps)\n"
 "PYTHONTRACEMALLOC: trace Python memory allocations (-X tracemalloc)\n"
 "PYTHONUNBUFFERED: disable stdout/stderr buffering (-u)\n"
 "PYTHONUTF8      : control the UTF-8 mode (-X utf8)\n"
@@ -942,6 +951,7 @@ config_check_consistency(const PyConfig *config)
     /* -c and -m options are exclusive */
     assert(!(config->run_command != NULL && config->run_module != NULL));
     assert(config->check_hash_pycs_mode != NULL);
+    assert(config->traceback_timestamps != NULL);
     assert(config->_install_importlib >= 0);
     assert(config->pathconfig_warnings >= 0);
     assert(config->_is_python_build >= 0);
@@ -1005,6 +1015,7 @@ PyConfig_Clear(PyConfig *config)
     CLEAR(config->run_module);
     CLEAR(config->run_filename);
     CLEAR(config->check_hash_pycs_mode);
+    CLEAR(config->traceback_timestamps);
 #ifdef Py_DEBUG
     CLEAR(config->run_presite);
 #endif
@@ -1047,6 +1058,7 @@ _PyConfig_InitCompatConfig(PyConfig *config)
     config->buffered_stdio = -1;
     config->_install_importlib = 1;
     config->check_hash_pycs_mode = NULL;
+    config->traceback_timestamps = NULL;
     config->pathconfig_warnings = -1;
     config->_init_main = 1;
 #ifdef MS_WINDOWS
@@ -2073,6 +2085,78 @@ config_init_tlbc(PyConfig *config)
 #endif
 }
 
+static inline int
+is_valid_timestamp_format(const wchar_t *value)
+{
+    return (wcscmp(value, L"ns") == 0 ||
+            wcscmp(value, L"iso") == 0 ||
+            wcscmp(value, L"0") == 0 ||
+            wcscmp(value, L"1") == 0);
+}
+
+static inline const wchar_t *
+normalize_timestamp_format(const wchar_t *value)
+{
+    if (wcscmp(value, L"1") == 0) {
+        return L"ns";
+    }
+    if (wcscmp(value, L"0") == 0) {
+        /* "0" means disable the feature. */
+        return L"";
+    }
+    return value;
+}
+
+static PyStatus
+config_init_traceback_timestamps(PyConfig *config)
+{
+    /* Handle environment variable first */
+    const char *env = config_get_env(config, "PYTHON_TRACEBACK_TIMESTAMPS");
+    if (env && env[0] != '\0') {
+        wchar_t *wenv = Py_DecodeLocale(env, NULL);
+        if (wenv == NULL) {
+            return _PyStatus_NO_MEMORY();
+        }
+
+        /* For environment variables, silently ignore invalid values */
+        if (is_valid_timestamp_format(wenv)) {
+            const wchar_t *normalized = normalize_timestamp_format(wenv);
+            PyStatus status = PyConfig_SetString(
+                config, &config->traceback_timestamps, normalized);
+            PyMem_RawFree(wenv);
+            if (_PyStatus_EXCEPTION(status)) {
+                return status;
+            }
+        } else {
+            PyMem_RawFree(wenv);
+        }
+    }
+
+    /* -X option overrides environment variable */
+    const wchar_t *xoption = config_get_xoption_value(
+        config, L"traceback_timestamps");
+    if (xoption != NULL) {
+        /* If just -X traceback_timestamps with no =, use "ns" as default */
+        const wchar_t *value = (*xoption != '\0') ? xoption : L"ns";
+
+        /* Validate command line option values, error out if invalid */
+        if (is_valid_timestamp_format(value)) {
+            const wchar_t *normalized = normalize_timestamp_format(value);
+            PyStatus status = PyConfig_SetString(
+                config, &config->traceback_timestamps, normalized);
+            if (_PyStatus_EXCEPTION(status)) {
+                return status;
+            }
+        } else {
+            return PyStatus_Error(
+                "Invalid -X traceback_timestamps=value option.  Valid "
+                "values are: ns, iso, 0, 1 or empty.");
+        }
+    }
+
+    return _PyStatus_OK();
+}
+
 static PyStatus
 config_init_perf_profiling(PyConfig *config)
 {
@@ -2396,6 +2480,14 @@ config_read_complex_options(PyConfig *config)
     }
 
     PyStatus status;
+
+    if (config->traceback_timestamps == NULL) {
+        status = config_init_traceback_timestamps(config);
+        if (_PyStatus_EXCEPTION(status)) {
+            return status;
+        }
+    }
+
     if (config->import_time < 0) {
         status = config_init_import_time(config);
         if (_PyStatus_EXCEPTION(status)) {
@@ -2841,6 +2933,13 @@ config_read(PyConfig *config, int compute_path_config)
     if (config->check_hash_pycs_mode == NULL) {
         status = PyConfig_SetString(config, &config->check_hash_pycs_mode,
                                     L"default");
+        if (_PyStatus_EXCEPTION(status)) {
+            return status;
+        }
+    }
+    if (config->traceback_timestamps == NULL) {
+        status = PyConfig_SetString(config, &config->traceback_timestamps,
+                                    L"");
         if (_PyStatus_EXCEPTION(status)) {
             return status;
         }

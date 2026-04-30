@@ -1,0 +1,5 @@
+Add optional timestamps to exception tracebacks (:pep:`830`). When enabled
+via :envvar:`PYTHON_TRACEBACK_TIMESTAMPS` or :option:`-X
+traceback_timestamps <-X>`, each exception records its instantiation time in
+``__timestamp_ns__`` and formatted tracebacks display the timestamp
+alongside the exception message.

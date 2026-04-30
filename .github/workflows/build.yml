@@ -259,6 +259,7 @@ jobs:
       bolt-optimizations: ${{ matrix.bolt }}
       free-threading: ${{ matrix.free-threading }}
       os: ${{ matrix.os }}
+      traceback_timestamps: ${{ matrix.os == 'ubuntu-24.04-arm' && matrix.bolt == false && 'ns' || '' }}
       test-opts: ${{ matrix.test-opts || '' }}
 
   build-ubuntu-ssltests:
@@ -726,3 +727,4 @@ jobs:
           ${{ !fromJSON(needs.build-context.outputs.run-emscripten) && 'build-emscripten,' || '' }}
           ${{ !fromJSON(needs.build-context.outputs.run-wasi) && 'build-wasi,' || '' }}
         jobs: ${{ toJSON(needs) }}
+        traceback_timestamps: 'iso'

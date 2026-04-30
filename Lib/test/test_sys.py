@@ -21,6 +21,7 @@ from test.support.socket_helper import find_unused_port
 from test.support import threading_helper
 from test.support import import_helper
 from test.support import force_not_colorized
+from test.support import force_no_traceback_timestamps
 from test.support import SHORT_TIMEOUT
 try:
     from concurrent import interpreters
@@ -164,6 +165,7 @@ class ActiveExceptionTests(unittest.TestCase):
 class ExceptHookTest(unittest.TestCase):
 
     @force_not_colorized
+    @force_no_traceback_timestamps
     def test_original_excepthook(self):
         try:
             raise ValueError(42)
@@ -871,6 +873,7 @@ class SysModuleTest(unittest.TestCase):
         for attr_idx, attr in enumerate(indexable_attrs):
             self.assertHasAttr(sys.flags, attr)
             attr_type = bool if attr in ("dev_mode", "safe_path") else int
+            attr_type = str if attr == "traceback_timestamps" else attr_type
             self.assertEqual(type(getattr(sys.flags, attr)), attr_type, attr)
             attr_value = getattr(sys.flags, attr)
             self.assertEqual(sys.flags[attr_idx], attr_value,
@@ -886,6 +889,7 @@ class SysModuleTest(unittest.TestCase):
         self.assertIsInstance(sys.flags.thread_inherit_context, int|type(None))
         self.assertIsInstance(sys.flags.context_aware_warnings, int|type(None))
         self.assertIsInstance(sys.flags.lazy_imports, int|type(None))
+        self.assertIsInstance(sys.flags.traceback_timestamps, str)
 
     def assert_raise_on_new_sys_type(self, sys_attr):
         # Users are intentionally prevented from creating new instances of
@@ -1240,6 +1244,7 @@ class SysModuleTest(unittest.TestCase):
         self.assertGreater(level, 0)
 
     @force_not_colorized
+    @force_no_traceback_timestamps
     @support.requires_subprocess()
     def test_sys_tracebacklimit(self):
         code = """if 1:
@@ -1660,13 +1665,13 @@ class SizeofTest(unittest.TestCase):
         class C(object): pass
         check(C.__dict__, size('P'))
         # BaseException
-        check(BaseException(), size('6Pb'))
+        check(BaseException(), size('6Pqb'))
         # UnicodeEncodeError
-        check(UnicodeEncodeError("", "", 0, 0, ""), size('6Pb 2P2nP'))
+        check(UnicodeEncodeError("", "", 0, 0, ""), size('6Pqb 2P2nP'))
         # UnicodeDecodeError
-        check(UnicodeDecodeError("", b"", 0, 0, ""), size('6Pb 2P2nP'))
+        check(UnicodeDecodeError("", b"", 0, 0, ""), size('6Pqb 2P2nP'))
         # UnicodeTranslateError
-        check(UnicodeTranslateError("", 0, 1, ""), size('6Pb 2P2nP'))
+        check(UnicodeTranslateError("", 0, 1, ""), size('6Pqb 2P2nP'))
         # ellipses
         check(Ellipsis, size(''))
         # EncodingMap
@@ -1924,10 +1929,11 @@ class SizeofTest(unittest.TestCase):
         # - 'thread_inherit_context'
         # - 'context_aware_warnings'
         # - 'lazy_imports'
+        # - 'traceback_timestamps'
         # Not needing to increment this every time we add a new field
         # per GH-122575 would be nice...
         # Q: What is the actual point of this sys.flags C size derived from PyStructSequence_Field array assertion?
-        non_sequence_fields = 4
+        non_sequence_fields = 5
         check(sys.flags, vsize('') + self.P + self.P * (non_sequence_fields + len(sys.flags)))
 
     def test_asyncgen_hooks(self):
