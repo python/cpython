@@ -664,6 +664,17 @@ class TestOptionalsNargs3(ParserTestCase):
         ('-x a b c', NS(x=['a', 'b', 'c'])),
     ]
 
+    def test_does_not_steal_required_positional(self):
+        # https://github.com/python/cpython/issues/53584
+        # Fixed integer nargs is never greedy: --foo takes exactly N args and
+        # leaves the remainder for positionals.
+        parser = ErrorRaisingArgumentParser()
+        parser.add_argument('--foo', nargs=2)
+        parser.add_argument('bar')
+        args = parser.parse_args(['--foo', 'a', 'b', 'c'])
+        self.assertEqual(args.foo, ['a', 'b'])
+        self.assertEqual(args.bar, 'c')
+
 
 class TestOptionalsNargsOptional(ParserTestCase):
     """Tests specifying an Optional arg for an Optional"""
@@ -687,6 +698,48 @@ class TestOptionalsNargsOptional(ParserTestCase):
         ('-z 2', NS(w=None, x=None, y='spam', z=2)),
     ]
 
+    def test_does_not_steal_required_positional(self):
+        # https://github.com/python/cpython/issues/53584
+        parser = ErrorRaisingArgumentParser()
+        parser.add_argument('--foo', nargs='?')
+        parser.add_argument('bar')
+        args = parser.parse_args(['--foo', 'abc'])
+        self.assertIsNone(args.foo)
+        self.assertEqual(args.bar, 'abc')
+
+    def test_does_not_steal_two_required_positionals(self):
+        # https://github.com/python/cpython/issues/53584
+        parser = ErrorRaisingArgumentParser()
+        parser.add_argument('--foo', nargs='?')
+        parser.add_argument('bar')
+        parser.add_argument('bax')
+        args = parser.parse_args(['--foo', 'a', 'b'])
+        self.assertIsNone(args.foo)
+        self.assertEqual(args.bar, 'a')
+        self.assertEqual(args.bax, 'b')
+
+    def test_does_not_steal_two_required_positional_interspersed(self):
+        # https://github.com/python/cpython/issues/53584
+        parser = ErrorRaisingArgumentParser()
+        parser.add_argument('--foo', nargs='?')
+        parser.add_argument('--bar', nargs='?')
+        parser.add_argument('baz')
+        parser.add_argument('bax')
+        args = parser.parse_args(['--foo', 'a', '--bar', 'b'])
+        self.assertEqual(args.baz, 'a')
+        self.assertEqual(args.bax, 'b')
+
+    def test_greedy_when_positional_also_optional(self):
+        # https://github.com/python/cpython/issues/53584
+        # When the following positional is also optional, --foo taking the arg
+        # is acceptable (both are optional, no unambiguous correct answer).
+        parser = ErrorRaisingArgumentParser()
+        parser.add_argument('--foo', nargs='?')
+        parser.add_argument('bar', nargs='?')
+        args = parser.parse_args(['--foo', 'abc'])
+        self.assertEqual(args.foo, 'abc')
+        self.assertIsNone(args.bar)
+
 
 class TestOptionalsNargsZeroOrMore(ParserTestCase):
     """Tests specifying args for an Optional that accepts zero or more"""
@@ -706,6 +759,15 @@ class TestOptionalsNargsZeroOrMore(ParserTestCase):
         ('-y a b', NS(x=None, y=['a', 'b'])),
     ]
 
+    def test_does_not_steal_required_positional(self):
+        # https://github.com/python/cpython/issues/53584
+        parser = ErrorRaisingArgumentParser()
+        parser.add_argument('--foo', nargs='*')
+        parser.add_argument('bar')
+        args = parser.parse_args(['--foo', 'abc'])
+        self.assertEqual(args.foo, [])
+        self.assertEqual(args.bar, 'abc')
+
 
 class TestOptionalsNargsOneOrMore(ParserTestCase):
     """Tests specifying args for an Optional that accepts one or more"""
@@ -723,6 +785,27 @@ class TestOptionalsNargsOneOrMore(ParserTestCase):
         ('-y a b', NS(x=None, y=['a', 'b'])),
     ]
 
+    def test_does_not_steal_required_positional(self):
+        # https://github.com/python/cpython/issues/53584
+        parser = ErrorRaisingArgumentParser()
+        parser.add_argument('--foo', nargs='+')
+        parser.add_argument('bar')
+        args = parser.parse_args(['--foo', 'a', 'b'])
+        self.assertEqual(args.foo, ['a'])
+        self.assertEqual(args.bar, 'b')
+
+    def test_does_not_steal_interspersed_required_positional(self):
+        # https://github.com/python/cpython/issues/53584
+        parser = ErrorRaisingArgumentParser()
+        parser.add_argument('--foo', nargs='+')
+        parser.add_argument('--bar', nargs='+')
+        parser.add_argument('baz')
+        parser.add_argument('bax')
+        args = parser.parse_args(['--foo', 'a', 'c', '--bar', 'b', 'd'])
+        self.assertEqual(args.foo, ['a'])
+        self.assertEqual(args.bar, ['b'])
+        self.assertEqual(args.baz, 'c')
+        self.assertEqual(args.bax, 'd')
 
 class TestOptionalsChoices(ParserTestCase):
     """Tests specifying the choices for an Optional"""
@@ -6759,6 +6842,24 @@ class TestIntermixedArgs(TestCase):
     def test_invalid_args(self):
         parser = ErrorRaisingArgumentParser(prog='PROG')
         self.assertRaises(ArgumentParserError, parser.parse_intermixed_args, ['a'])
+
+    def test_variable_nargs_option_before_positional(self):
+        # https://github.com/python/cpython/issues/53584
+        parser = ErrorRaisingArgumentParser()
+        parser.add_argument('--foo', nargs='?')
+        parser.add_argument('bar')
+        args = parser.parse_intermixed_args(['--foo', 'abc'])
+        self.assertIsNone(args.foo)
+        self.assertEqual(args.bar, 'abc')
+
+    def test_variable_nargs_option_after_positional(self):
+        # https://github.com/python/cpython/issues/53584
+        parser = ErrorRaisingArgumentParser()
+        parser.add_argument('--foo', nargs='?')
+        parser.add_argument('bar')
+        args = parser.parse_intermixed_args(['abc', '--foo', 'xyz'])
+        self.assertEqual(args.foo, 'xyz')
+        self.assertEqual(args.bar, 'abc')
 
 
 class TestIntermixedMessageContentError(TestCase):
