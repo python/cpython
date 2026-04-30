@@ -231,7 +231,7 @@ Tools/cases_generator/        @markshannon
 Python/assemble.c             @markshannon @iritkatriel
 Python/codegen.c              @markshannon @iritkatriel
 Python/compile.c              @markshannon @iritkatriel
-Python/flowgraph.c            @markshannon @iritkatriel
+Python/flowgraph.c            @markshannon @iritkatriel @eclips4
 Python/instruction_sequence.c @iritkatriel
 Python/symtable.c             @JelleZijlstra @carljm
 
