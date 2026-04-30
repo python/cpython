@@ -196,13 +196,10 @@ INSTRUMENTED_EVENTS = [
     (E.BRANCH, "branch"),
 ]
 
-EXCEPT_EVENTS = [
+SIMPLE_EVENTS = INSTRUMENTED_EVENTS + [
     (E.RAISE, "raise"),
-    (E.PY_UNWIND, "unwind"),
     (E.EXCEPTION_HANDLED, "exception_handled"),
-]
-
-SIMPLE_EVENTS = INSTRUMENTED_EVENTS + EXCEPT_EVENTS + [
+    (E.PY_UNWIND, "unwind"),
     (E.C_RAISE, "c_raise"),
     (E.C_RETURN, "c_return"),
 ]
@@ -738,18 +735,6 @@ class TestDisable(MonitoringTestBase, unittest.TestCase):
                 sys.monitoring.register_callback(TEST_TOOL, event, None)
 
 
-    def test_disable_illegal_events(self):
-        for event, name in EXCEPT_EVENTS:
-            try:
-                counter = CounterWithDisable()
-                counter.disable = True
-                sys.monitoring.register_callback(TEST_TOOL, event, counter)
-                sys.monitoring.set_events(TEST_TOOL, event)
-                with self.assertRaises(ValueError):
-                    self.raise_handle_reraise()
-            finally:
-                sys.monitoring.set_events(TEST_TOOL, 0)
-                sys.monitoring.register_callback(TEST_TOOL, event, None)
 
 
 class ExceptionRecorder:
@@ -1481,8 +1466,334 @@ class TestLocalEvents(MonitoringTestBase, unittest.TestCase):
             ('line', 'func3', 6)])
 
     def test_set_non_local_event(self):
+        # C_RETURN/C_RAISE are ancillary (derived) events — not settable as local
         with self.assertRaises(ValueError):
-            sys.monitoring.set_local_events(TEST_TOOL, just_call.__code__, E.RAISE)
+            sys.monitoring.set_local_events(TEST_TOOL, just_call.__code__, E.C_RETURN)
+
+    def test_local_reraise(self):
+        """RERAISE fires as a local event only for the instrumented code object."""
+
+        def foo():
+            try:
+                raise RuntimeError("test")
+            except RuntimeError:
+                raise
+
+        def bar():
+            try:
+                raise RuntimeError("test")
+            except RuntimeError:
+                raise
+
+        events = set()
+
+        def callback(code, offset, exc):
+            events.add(code.co_name)
+
+        try:
+            sys.monitoring.register_callback(TEST_TOOL, E.RERAISE, callback)
+            sys.monitoring.set_local_events(TEST_TOOL, foo.__code__, E.RERAISE)
+            try:
+                foo()
+            except RuntimeError:
+                pass
+            try:
+                bar()  # should NOT trigger the callback
+            except RuntimeError:
+                pass
+            self.assertEqual(events, {'foo'})
+        finally:
+            sys.monitoring.set_local_events(TEST_TOOL, foo.__code__, 0)
+            sys.monitoring.register_callback(TEST_TOOL, E.RERAISE, None)
+
+    def test_local_reraise_disable(self):
+        """Returning DISABLE from a RERAISE callback disables it for that code object."""
+
+        call_count = 0
+
+        def foo():
+            try:
+                raise RuntimeError("test")
+            except RuntimeError:
+                raise
+
+        def callback(code, offset, exc):
+            nonlocal call_count
+            call_count += 1
+            return sys.monitoring.DISABLE
+
+        try:
+            sys.monitoring.register_callback(TEST_TOOL, E.RERAISE, callback)
+            sys.monitoring.set_local_events(TEST_TOOL, foo.__code__, E.RERAISE)
+            try:
+                foo()
+            except RuntimeError:
+                pass
+            self.assertEqual(call_count, 1)
+            try:
+                foo()
+            except RuntimeError:
+                pass
+            self.assertEqual(call_count, 1)  # not fired again — disabled
+        finally:
+            sys.monitoring.set_local_events(TEST_TOOL, foo.__code__, 0)
+            sys.monitoring.register_callback(TEST_TOOL, E.RERAISE, None)
+
+    def test_local_py_throw(self):
+        """PY_THROW fires as a local event only for the instrumented code object."""
+
+        def gen_foo():
+            yield 1
+            yield 2
+
+        def gen_bar():
+            yield 1
+            yield 2
+
+        events = []
+
+        def callback(code, offset, exc):
+            events.append(code.co_name)
+
+        try:
+            sys.monitoring.register_callback(TEST_TOOL, E.PY_THROW, callback)
+            sys.monitoring.set_local_events(TEST_TOOL, gen_foo.__code__, E.PY_THROW)
+
+            g = gen_foo()
+            next(g)
+            try:
+                g.throw(RuntimeError("test"))
+            except RuntimeError:
+                pass
+
+            h = gen_bar()
+            next(h)
+            try:
+                h.throw(RuntimeError("test"))  # should NOT trigger the callback
+            except RuntimeError:
+                pass
+
+            self.assertEqual(events, ['gen_foo'])
+        finally:
+            sys.monitoring.set_local_events(TEST_TOOL, gen_foo.__code__, 0)
+            sys.monitoring.register_callback(TEST_TOOL, E.PY_THROW, None)
+
+    def test_local_py_throw_disable(self):
+        """Returning DISABLE from a PY_THROW callback disables it for that code object."""
+
+        call_count = 0
+
+        def gen_foo():
+            yield 1
+            yield 2
+
+        def callback(code, offset, exc):
+            nonlocal call_count
+            call_count += 1
+            return sys.monitoring.DISABLE
+
+        try:
+            sys.monitoring.register_callback(TEST_TOOL, E.PY_THROW, callback)
+            sys.monitoring.set_local_events(TEST_TOOL, gen_foo.__code__, E.PY_THROW)
+
+            g = gen_foo()
+            next(g)
+            try:
+                g.throw(RuntimeError("test"))
+            except RuntimeError:
+                pass
+            self.assertEqual(call_count, 1)
+
+            g2 = gen_foo()
+            next(g2)
+            try:
+                g2.throw(RuntimeError("test"))
+            except RuntimeError:
+                pass
+            self.assertEqual(call_count, 1)  # not fired again — disabled
+        finally:
+            sys.monitoring.set_local_events(TEST_TOOL, gen_foo.__code__, 0)
+            sys.monitoring.register_callback(TEST_TOOL, E.PY_THROW, None)
+
+    def test_local_raise(self):
+        """RAISE fires as a local event only for the instrumented code object."""
+
+        def foo():
+            try:
+                raise RuntimeError("test")
+            except RuntimeError:
+                pass
+
+        def bar():
+            try:
+                raise RuntimeError("test")
+            except RuntimeError:
+                pass
+
+        events = []
+
+        def callback(code, offset, exc):
+            events.append(code.co_name)
+
+        try:
+            sys.monitoring.register_callback(TEST_TOOL, E.RAISE, callback)
+            sys.monitoring.set_local_events(TEST_TOOL, foo.__code__, E.RAISE)
+            foo()
+            bar()  # should NOT trigger the callback
+            self.assertEqual(events, ['foo'])
+        finally:
+            sys.monitoring.set_local_events(TEST_TOOL, foo.__code__, 0)
+            sys.monitoring.register_callback(TEST_TOOL, E.RAISE, None)
+
+    def test_local_raise_disable(self):
+        """Returning DISABLE from a RAISE callback disables it for that code object."""
+
+        call_count = 0
+
+        def foo():
+            try:
+                raise RuntimeError("test")
+            except RuntimeError:
+                pass
+
+        def callback(code, offset, exc):
+            nonlocal call_count
+            call_count += 1
+            return sys.monitoring.DISABLE
+
+        try:
+            sys.monitoring.register_callback(TEST_TOOL, E.RAISE, callback)
+            sys.monitoring.set_local_events(TEST_TOOL, foo.__code__, E.RAISE)
+            foo()
+            self.assertEqual(call_count, 1)
+            foo()
+            self.assertEqual(call_count, 1)  # not fired again — disabled
+        finally:
+            sys.monitoring.set_local_events(TEST_TOOL, foo.__code__, 0)
+            sys.monitoring.register_callback(TEST_TOOL, E.RAISE, None)
+
+    def test_local_exception_handled(self):
+        """EXCEPTION_HANDLED fires as a local event only for the instrumented code object."""
+
+        def foo():
+            try:
+                raise RuntimeError("test")
+            except RuntimeError:
+                pass
+
+        def bar():
+            try:
+                raise RuntimeError("test")
+            except RuntimeError:
+                pass
+
+        events = []
+
+        def callback(code, offset, exc):
+            events.append(code.co_name)
+
+        try:
+            sys.monitoring.register_callback(TEST_TOOL, E.EXCEPTION_HANDLED, callback)
+            sys.monitoring.set_local_events(TEST_TOOL, foo.__code__, E.EXCEPTION_HANDLED)
+            foo()
+            bar()  # should NOT trigger the callback
+            self.assertEqual(events, ['foo'])
+        finally:
+            sys.monitoring.set_local_events(TEST_TOOL, foo.__code__, 0)
+            sys.monitoring.register_callback(TEST_TOOL, E.EXCEPTION_HANDLED, None)
+
+    def test_local_exception_handled_disable(self):
+        """Returning DISABLE from an EXCEPTION_HANDLED callback disables it for that code object."""
+
+        call_count = 0
+
+        def foo():
+            try:
+                raise RuntimeError("test")
+            except RuntimeError:
+                pass
+
+        def callback(code, offset, exc):
+            nonlocal call_count
+            call_count += 1
+            return sys.monitoring.DISABLE
+
+        try:
+            sys.monitoring.register_callback(TEST_TOOL, E.EXCEPTION_HANDLED, callback)
+            sys.monitoring.set_local_events(TEST_TOOL, foo.__code__, E.EXCEPTION_HANDLED)
+            foo()
+            self.assertEqual(call_count, 1)
+            foo()
+            self.assertEqual(call_count, 1)  # not fired again — disabled
+        finally:
+            sys.monitoring.set_local_events(TEST_TOOL, foo.__code__, 0)
+            sys.monitoring.register_callback(TEST_TOOL, E.EXCEPTION_HANDLED, None)
+
+    def test_local_py_unwind(self):
+        """PY_UNWIND fires as a local event only for the instrumented code object."""
+
+        def foo():
+            raise RuntimeError("test")
+
+        def bar():
+            raise RuntimeError("test")
+
+        events = []
+
+        def callback(code, offset, exc):
+            events.append(code.co_name)
+
+        try:
+            sys.monitoring.register_callback(TEST_TOOL, E.PY_UNWIND, callback)
+            sys.monitoring.set_local_events(TEST_TOOL, foo.__code__, E.PY_UNWIND)
+
+            try:
+                foo()
+            except RuntimeError:
+                pass
+
+            try:
+                bar()  # should NOT trigger the callback
+            except RuntimeError:
+                pass
+
+            self.assertEqual(events, ['foo'])
+        finally:
+            sys.monitoring.set_local_events(TEST_TOOL, foo.__code__, 0)
+            sys.monitoring.register_callback(TEST_TOOL, E.PY_UNWIND, None)
+
+    def test_local_py_unwind_disable(self):
+        """Returning DISABLE from a PY_UNWIND callback disables it for that code object."""
+
+        call_count = 0
+
+        def foo():
+            raise RuntimeError("test")
+
+        def callback(code, offset, exc):
+            nonlocal call_count
+            call_count += 1
+            return sys.monitoring.DISABLE
+
+        try:
+            sys.monitoring.register_callback(TEST_TOOL, E.PY_UNWIND, callback)
+            sys.monitoring.set_local_events(TEST_TOOL, foo.__code__, E.PY_UNWIND)
+
+            try:
+                foo()
+            except RuntimeError:
+                pass
+            self.assertEqual(call_count, 1)  # fired once
+
+            try:
+                foo()
+            except RuntimeError:
+                pass
+            self.assertEqual(call_count, 1)  # not fired again — disabled by DISABLE return
+
+        finally:
+            sys.monitoring.set_local_events(TEST_TOOL, foo.__code__, 0)
+            sys.monitoring.register_callback(TEST_TOOL, E.PY_UNWIND, None)
 
 def line_from_offset(code, offset):
     for start, end, line in code.co_lines():

@@ -4514,11 +4514,13 @@
 
         case _CALL_LEN: {
             JitOptRef arg;
+            JitOptRef null;
             JitOptRef callable;
             JitOptRef res;
             JitOptRef a;
             JitOptRef c;
             arg = stack_pointer[-1];
+            null = stack_pointer[-2];
             callable = stack_pointer[-3];
             res = sym_new_type(ctx, &PyLong_Type);
             Py_ssize_t length = sym_tuple_length(arg);
@@ -4544,7 +4546,10 @@
                     goto error;
                 }
                 if (_Py_IsImmortal(temp)) {
-                    ADD_OP(_SHUFFLE_3_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)temp);
+                    ADD_OP(_SWAP, 2, 0);
+                    optimize_pop_top(ctx, this_instr, null);
+                    ADD_OP(_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)temp);
+                    ADD_OP(_SWAP, 3, 0);
                 }
                 res = sym_new_const(ctx, temp);
                 CHECK_STACK_BOUNDS(-2);
@@ -5237,6 +5242,7 @@
                            || oparg == NB_INPLACE_TRUE_DIVIDE);
             bool is_remainder = (oparg == NB_REMAINDER
                              || oparg == NB_INPLACE_REMAINDER);
+            int emit_op = _BINARY_OP;
             if (is_truediv || is_remainder) {
                 if (!sym_has_type(rhs)
                     && sym_get_probable_type(rhs) == &PyFloat_Type) {
@@ -5253,17 +5259,17 @@
             }
             if (is_truediv && lhs_float && rhs_float) {
                 if (PyJitRef_IsUnique(lhs)) {
-                    ADD_OP(_BINARY_OP_TRUEDIV_FLOAT_INPLACE, 0, 0);
+                    emit_op = _BINARY_OP_TRUEDIV_FLOAT_INPLACE;
                     l = sym_new_null(ctx);
                     r = rhs;
                 }
                 else if (PyJitRef_IsUnique(rhs)) {
-                    ADD_OP(_BINARY_OP_TRUEDIV_FLOAT_INPLACE_RIGHT, 0, 0);
+                    emit_op = _BINARY_OP_TRUEDIV_FLOAT_INPLACE_RIGHT;
                     l = lhs;
                     r = sym_new_null(ctx);
                 }
                 else {
-                    ADD_OP(_BINARY_OP_TRUEDIV_FLOAT, 0, 0);
+                    emit_op = _BINARY_OP_TRUEDIV_FLOAT;
                     l = lhs;
                     r = rhs;
                 }
@@ -5299,6 +5305,7 @@
             else {
                 res = PyJitRef_MakeUnique(sym_new_type(ctx, &PyFloat_Type));
             }
+            ADD_OP(emit_op, oparg, 0);
             CHECK_STACK_BOUNDS(1);
             stack_pointer[-2] = res;
             stack_pointer[-1] = l;
@@ -5494,19 +5501,6 @@
             stack_pointer[0] = value;
             stack_pointer += 1;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
-            break;
-        }
-
-        case _SHUFFLE_3_LOAD_CONST_INLINE_BORROW: {
-            JitOptRef res;
-            JitOptRef a;
-            JitOptRef c;
-            res = sym_new_not_null(ctx);
-            a = sym_new_not_null(ctx);
-            c = sym_new_not_null(ctx);
-            stack_pointer[-3] = res;
-            stack_pointer[-2] = a;
-            stack_pointer[-1] = c;
             break;
         }
 
