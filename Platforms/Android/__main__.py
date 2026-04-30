@@ -217,7 +217,7 @@ def unpack_deps(host, prefix_dir, cache_dir):
     os.chdir(prefix_dir)
     deps_url = "https://github.com/beeware/cpython-android-source-deps/releases/download"
     for name_ver in ["bzip2-1.0.8-3", "libffi-3.4.4-3", "openssl-3.5.5-0",
-                     "sqlite-3.50.4-0", "xz-5.4.6-1", "zstd-1.5.7-2"]:
+                     "sqlite-3.53.0-0", "xz-5.4.6-1", "zstd-1.5.7-2"]:
         filename = f"{name_ver}-{host}.tar.gz"
         out_path = download(f"{deps_url}/{name_ver}/{filename}", cache_dir)
         shutil.unpack_archive(out_path)
