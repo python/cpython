@@ -1,0 +1,1 @@
+Use ``PyREPL`` as the default input console for :mod:`pdb`
