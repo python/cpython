@@ -1165,16 +1165,14 @@ class TracebackException:
                     self._str += f". Did you mean: '{suggestion}' ({suggestion!a})?"
         elif exc_type and issubclass(exc_type, ModuleNotFoundError):
             module_name = getattr(exc_value, "name", None)
+            analyse_sys_no_site = True
             if module_name in sys.stdlib_module_names:
                 message = _MISSING_STDLIB_MODULE_MESSAGES.get(
                     module_name,
                     f"Standard library module {module_name!r} was not found"
                 )
                 self._str = message
-            elif sys.flags.no_site:
-                self._str += (". Site initialization is disabled, did you forget to "
-                    + "add the site-packages directory to sys.path "
-                    + "or to enable your virtual environment?")
+                analyse_sys_no_site = False
             elif abi_tag := _find_incompatible_extension_module(module_name):
                 self._str += (
                     ". Although a module with this name was found for a "
@@ -1184,6 +1182,12 @@ class TracebackException:
                 suggestion = _compute_suggestion_error(exc_value, exc_traceback, module_name)
                 if suggestion:
                     self._str += f". Did you mean: '{suggestion}'?"
+            if analyse_sys_no_site and sys.flags.no_site:
+                if not self._str.endswith((".", "?")):
+                    self._str += "."
+                self._str += (" Site initialization is disabled, did you forget to "
+                    "add the site-packages directory to sys.path "
+                    "or to enable your virtual environment?")
         elif exc_type and issubclass(exc_type, AttributeError) and \
                 getattr(exc_value, "name", None) is not None:
             wrong_name = getattr(exc_value, "name", None)

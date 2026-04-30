@@ -5190,6 +5190,15 @@ class MiscTest(unittest.TestCase):
              b"or to enable your virtual environment?"), stderr
         )
 
+        code = """import abs"""
+        _, _, stderr = assert_python_failure('-S', '-c', code)
+        self.assertIn(b"Did you mean: 'abc'?", stderr)
+        self.assertIn(
+            (b"Site initialization is disabled, did you forget to "
+             b"add the site-packages directory to sys.path "
+             b"or to enable your virtual environment?"), stderr
+        )
+
     def test_missing_stdlib_module(self):
         code = """
             import sys
@@ -5267,9 +5276,17 @@ class MiscTest(unittest.TestCase):
                 sys.path.insert(0, {tmp!r})
                 import foo
             '''
-            _, _, stderr = assert_python_failure('-c', code, __cwd=tmp)
+            _, _, stderr1 = assert_python_failure('-c', code, __cwd=tmp)
+            # if used "-S", the message should contain two suggestions
+            _, _, stderr2 = assert_python_failure('-S', '-c', code, __cwd=tmp)
         hint = f'Although a module with this name was found for a different Python version ({incompatible_module}).'
-        self.assertIn(hint, stderr.decode())
+        self.assertIn(hint, stderr1.decode())
+        self.assertIn(hint, stderr2.decode())
+        self.assertIn(
+            (b"Site initialization is disabled, did you forget to "
+             b"add the site-packages directory to sys.path "
+             b"or to enable your virtual environment?"), stderr2
+        )
 
 
 class TestColorizedTraceback(unittest.TestCase):
