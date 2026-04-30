@@ -18,7 +18,7 @@ lots of shared  sub-objects.  The keys are ordinary strings.
 
 
 .. function:: open(filename, flag='c', protocol=None, writeback=False, *, \
-                   serializer=None, deserializer=None)
+                   mode=0o666, serializer=None, deserializer=None)
 
    Open a persistent dictionary.  The filename specified is the base filename for
    the underlying database.  As a side-effect, an extension may be added to the
@@ -41,6 +41,9 @@ lots of shared  sub-objects.  The keys are ordinary strings.
    very slow since all accessed entries are written back (there is no way to
    determine which accessed entries are mutable, nor which ones were actually
    mutated).
+
+   The optional *mode* parameter controls the file mode (permissions) when creating
+   a new shelf. It has the same interpretation as the *mode* parameter of :func:`dbm.open`.
 
    By default, :mod:`!shelve` uses :func:`pickle.dumps` and :func:`pickle.loads`
    for serializing and deserializing. This can be changed by supplying
@@ -66,7 +69,8 @@ lots of shared  sub-objects.  The keys are ordinary strings.
 
    .. versionchanged:: 3.15
       Accepts custom *serializer* and *deserializer* functions in place of
-      :func:`pickle.dumps` and :func:`pickle.loads`.
+      :func:`pickle.dumps` and :func:`pickle.loads`. Accepts *mode* to
+      control file mode, behavior is the same as in :func:`dbm.open`.
 
    .. note::
 
@@ -209,19 +213,19 @@ Restrictions
 
 
 .. class:: DbfilenameShelf(filename, flag='c', protocol=None, \
-                           writeback=False, *, serializer=None, \
+                           writeback=False, *, mode=0o666, serializer=None \
                            deserializer=None)
 
    A subclass of :class:`Shelf` which accepts a *filename* instead of a dict-like
    object.  The underlying file will be opened using :func:`dbm.open`.  By
    default, the file will be created and opened for both read and write.  The
    optional *flag* parameter has the same interpretation as for the
-   :func:`.open` function.  The optional *protocol*, *writeback*, *serializer*
+   :func:`.open` function.  The optional *mode*, *protocol*, *writeback*, *serializer*
    and *deserializer* parameters have the same interpretation as in
    :func:`~shelve.open`.
 
    .. versionchanged:: 3.15
-      Added the *serializer* and *deserializer* parameters.
+      Added the *mode*, *serializer* and *deserializer* parameters.
 
 
 .. _shelve-example:
