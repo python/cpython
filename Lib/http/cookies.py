@@ -450,30 +450,23 @@ class Morsel(dict):
 # specifications.  I have since discovered that MSIE 3.0x doesn't
 # follow the character rules outlined in those specs.  As a
 # result, the parsing rules here are less strict.
-#
+# Currently, it is a hybrid of RFC 2109/2965 (for quoted strings)
+# and RFC 6265.
 
-_LegalKeyChars  = r"\w\d!#%&'~_`><@,:/\$\*\+\-\.\^\|\)\(\?\}\{\="
-_LegalValueChars = _LegalKeyChars + r'\[\]'
 _CookiePattern = re.compile(r"""
-    \s*                            # Optional whitespace at start of cookie
-    (?P<key>                       # Start of group 'key'
-    [""" + _LegalKeyChars + r"""]+?   # Any word of at least one letter
-    )                              # End of group 'key'
-    (                              # Optional group: there may not be a value.
-    \s*=\s*                          # Equal Sign
-    (?P<val>                         # Start of group 'val'
-    "(?:\\"|.)*?"                    # Any double-quoted string
-    |                                  # or
-    # Special case for "expires" attr
-    (\w{3,6}day|\w{3}),\s              # Day of the week or abbreviated day
-    [\w\d\s-]{9,11}\s[\d:]{8}\sGMT     # Date and time in specific format
-    |                                  # or
-    [""" + _LegalValueChars + r"""]*      # Any word or empty string
-    )                                # End of group 'val'
-    )?                             # End of optional value group
-    \s*                            # Any number of spaces.
-    (\s+|;|$)                      # Ending either at space, semicolon, or EOS.
-    """, re.ASCII | re.VERBOSE)    # re.ASCII may be removed if safe.
+    \s*+                # Optional whitespace at start of cookie
+    ([^=;]*+)           # Name: any characters except "=" and ";" (RFC 6265)
+    (?:                 # Optional group: there may not be a value.
+      \s*+=\s*+           # Equal Sign
+      (                   # Value:
+        "(?:\\.|[^"])*+"    # Any double-quoted string (RFC 2109/2965)
+        |                   # or
+        [^;]*+              # Any characters except ";" (RFC 6265)
+      )
+    )?+                 # End of optional value group
+    \s*+                # Any number of spaces.
+    (?:;|\z)            # Ending either at semicolon, or EOS.
+    """, re.ASCII | re.VERBOSE) # re.ASCII is needed for \s.
 
 
 # At long last, here is the cookie class.  Using this class is almost just like
@@ -580,8 +573,15 @@ class BaseCookie(dict):
                 # No more cookies
                 break
 
-            key, value = match.group("key"), match.group("val")
-            i = match.end(0)
+            key, value = match.groups()
+            key = key.rstrip(' \t\r\n')
+            if value:
+                value = value.rstrip(' \t\r\n')
+            if not _is_legal_key(key):
+                break
+            if value and _has_control_character(value):
+                break
+            i = match.end()
 
             if key[0] == "$":
                 if not morsel_seen:

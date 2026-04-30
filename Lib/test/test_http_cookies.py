@@ -50,12 +50,12 @@ class CookieTests(unittest.TestCase):
                 ))
             },
 
-            # gh-92936: allow double quote in cookie values
+            # gh-149028: allow any characters in unquoted cookie values
             {
-                'data': 'cookie="{"key": "value"}"',
+                'data': 'cookie={"key": "value"}',
                 'dict': {'cookie': '{"key": "value"}'},
                 'repr': "<SimpleCookie: cookie='{\"key\": \"value\"}'>",
-                'output': 'Set-Cookie: cookie="{"key": "value"}"',
+                'output': 'Set-Cookie: cookie={"key": "value"}',
             },
             {
                 'data': 'key="some value; surrounded by quotes"',
@@ -64,11 +64,11 @@ class CookieTests(unittest.TestCase):
                 'output': 'Set-Cookie: key="some value; surrounded by quotes"',
             },
             {
-                'data': 'session="user123"; preferences="{"theme": "dark"}"',
+                'data': 'session="user123"; preferences={"theme": "dark"}',
                 'dict': {'session': 'user123', 'preferences': '{"theme": "dark"}'},
                 'repr': "<SimpleCookie: preferences='{\"theme\": \"dark\"}' session='user123'>",
                 'output': '\n'.join((
-                    'Set-Cookie: preferences="{"theme": "dark"}"',
+                    'Set-Cookie: preferences={"theme": "dark"}',
                     'Set-Cookie: session="user123"',
                 ))
             }
@@ -314,7 +314,7 @@ class CookieTests(unittest.TestCase):
         C = cookies.SimpleCookie()
         for s in (']foo=x', '[foo=x', 'blah]foo=x', 'blah[foo=x',
                   'Set-Cookie: foo=bar', 'Set-Cookie: foo',
-                  'foo=bar; baz', 'baz; foo=bar',
+                  'foo=bar; baz', 'baz; foo=bar', 'foo,bar=baz',
                   'secure;foo=bar', 'Version=1;foo=bar'):
             C.load(s)
             self.assertEqual(dict(C), {})
@@ -332,12 +332,6 @@ class CookieTests(unittest.TestCase):
             with self.subTest(proto=proto):
                 C1 = pickle.loads(pickle.dumps(C, protocol=proto))
                 self.assertEqual(C1.output(), expected_output)
-
-    def test_illegal_chars(self):
-        rawdata = "a=b; c,d=e"
-        C = cookies.SimpleCookie()
-        with self.assertRaises(cookies.CookieError):
-            C.load(rawdata)
 
     def test_comment_quoting(self):
         c = cookies.SimpleCookie()

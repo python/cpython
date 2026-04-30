@@ -27,9 +27,6 @@ in a cookie name (as :attr:`~Morsel.key`).
 .. versionchanged:: 3.3
    Allowed '``:``' as a valid cookie name character.
 
-.. versionchanged:: 3.15
-   Allowed '``"``' as a valid cookie value character.
-
 .. note::
 
    On encountering an invalid cookie, :exc:`CookieError` is raised, so if your
@@ -117,6 +114,11 @@ Cookie Objects
 
       for k, v in rawdata.items():
           cookie[k] = v
+
+   .. versionchanged:: next
+      Allowed any characters except semicolon (``';'``) and control
+      characters in non-quoted cookie values.
+      The ``';'`` separator is now mandatory between name-value pairs.
 
 
 .. _morsel-objects:
@@ -315,8 +317,8 @@ The following example demonstrates how to use the :mod:`!http.cookies` module.
    Set-Cookie: string=seven
    >>> import json
    >>> C = cookies.SimpleCookie()
-   >>> C.load(f'cookies=7; mixins="{json.dumps({"chips": "dark chocolate"})}"; state=gooey')
+   >>> C.load(f'cookies=7; mixins={json.dumps({"chips": "dark chocolate"})}; state=gooey')
    >>> print(C)
    Set-Cookie: cookies=7
-   Set-Cookie: mixins="{"chips": "dark chocolate"}"
+   Set-Cookie: mixins={"chips": "dark chocolate"}
    Set-Cookie: state=gooey
