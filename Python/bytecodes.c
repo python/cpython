@@ -2402,35 +2402,31 @@ dummy_func(
         }
 
         inst(BUILD_INTERPOLATION, (value, str, format[oparg & 1] -- interpolation)) {
-            PyObject *value_o = PyStackRef_AsPyObjectBorrow(value);
-            PyObject *str_o = PyStackRef_AsPyObjectBorrow(str);
+            PyObject *value_o = PyStackRef_AsPyObjectSteal(value);
+            DEAD(value);
+            PyObject *str_o = PyStackRef_AsPyObjectSteal(str);
+            DEAD(str);
             int conversion = oparg >> 2;
             PyObject *format_o;
             if (oparg & 1) {
-                format_o = PyStackRef_AsPyObjectBorrow(format[0]);
-            }
-            else {
-                format_o = &_Py_STR(empty);
-            }
-            PyObject *interpolation_o = _PyInterpolation_Build(value_o, str_o, conversion, format_o);
-            if (oparg & 1) {
-                PyStackRef_CLOSE(format[0]);
-            }
-            else {
+                format_o = PyStackRef_AsPyObjectSteal(format[0]);
                 DEAD(format);
             }
-            PyStackRef_CLOSE(str);
-            PyStackRef_CLOSE(value);
+            else {
+                format_o = Py_NewRef(&_Py_STR(empty));
+                DEAD(format);
+            }
+            PyObject *interpolation_o = _PyInterpolation_Build(value_o, str_o, conversion, format_o);
             ERROR_IF(interpolation_o == NULL);
             interpolation = PyStackRef_FromPyObjectSteal(interpolation_o);
         }
 
         inst(BUILD_TEMPLATE, (strings, interpolations -- template)) {
-            PyObject *strings_o = PyStackRef_AsPyObjectBorrow(strings);
-            PyObject *interpolations_o = PyStackRef_AsPyObjectBorrow(interpolations);
+            PyObject *strings_o = PyStackRef_AsPyObjectSteal(strings);
+            DEAD(strings);
+            PyObject *interpolations_o = PyStackRef_AsPyObjectSteal(interpolations);
+            DEAD(interpolations);
             PyObject *template_o = _PyTemplate_Build(strings_o, interpolations_o);
-            PyStackRef_CLOSE(interpolations);
-            PyStackRef_CLOSE(strings);
             ERROR_IF(template_o == NULL);
             template = PyStackRef_FromPyObjectSteal(template_o);
         }
