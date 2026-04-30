@@ -1,0 +1,4 @@
+Ensure that :func:`decimal.getcontext` returns a per-task copy of the
+:class:`decimal.Context` so that mutations are isolated between asyncio
+tasks and threads using :data:`sys.flags.thread_inherit_context`.  Added
+:meth:`contextvars.ContextVar.get_changed` to support this.

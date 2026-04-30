@@ -119,6 +119,41 @@ Context Variables
 
       The same *token* cannot be used twice.
 
+   .. method:: get_changed([default])
+
+      Like :meth:`ContextVar.get`, but returns a tuple ``(value, changed)``
+      where *changed* indicates whether the variable was changed in the
+      current context scope.
+
+      A variable is considered "changed" if :meth:`ContextVar.set` has been
+      called on it within the current :meth:`Context.run` call with a value
+      that is a different object than the inherited one.  Variables inherited
+      unchanged from a parent context scope are not considered "changed".
+      If no :meth:`Context.run` is active, all existing bindings are
+      considered "changed".  When the value comes from a default, *changed*
+      is always ``False``.
+
+      This is useful when a context variable holds a mutable object that
+      needs to be copied on first access in a new context scope to ensure
+      modifications are local to that scope::
+
+         _ctx_var = ContextVar('ctx_var')
+
+         def get_ctx():
+             try:
+                 ctx, changed = _ctx_var.get_changed()
+             except LookupError:
+                 ctx = default_context()
+                 _ctx_var.set(ctx)
+                 return ctx
+
+             if not changed:
+                 ctx = ctx.copy()
+                 _ctx_var.set(ctx)
+             return ctx
+
+      .. versionadded:: 3.15
+
 
 .. class:: Token
 

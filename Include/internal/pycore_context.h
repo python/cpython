@@ -24,6 +24,7 @@ struct _pycontextobject {
     PyObject_HEAD
     PyContext *ctx_prev;
     PyHamtObject *ctx_vars;
+    PyHamtObject *ctx_vars_origin;  /* snapshot of ctx_vars at Enter time */
     PyObject *ctx_weakreflist;
     int ctx_entered;
 };

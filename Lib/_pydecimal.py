@@ -361,11 +361,19 @@ def getcontext():
     New contexts are copies of DefaultContext.
     """
     try:
-        return _current_context_var.get()
+        context, changed = _current_context_var.get_changed()
     except LookupError:
         context = Context()
         _current_context_var.set(context)
         return context
+    if not changed:
+        # The context value was inherited from another task/thread.  Because
+        # the Context() instance is mutable, copy it to ensure that if it is
+        # changed, those changes are isolated from other tasks/threads.
+        context = context.copy()
+        _current_context_var.set(context)
+    return context
+
 
 def setcontext(context):
     """Set this thread's context to context."""
