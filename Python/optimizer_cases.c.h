@@ -327,6 +327,59 @@
             int already_bool = optimize_to_bool(this_instr, ctx, value, &res,
                 _POP_TOP, _NOP);
             if (!already_bool) {
+                PyTypeObject *tp = sym_get_type(value);
+                int emitted_guard = 0;
+                if (tp == NULL) {
+                    PyTypeObject *probable = sym_get_probable_type(value);
+                    int guard_op = 0;
+                    if (probable == &PyDict_Type) {
+                        guard_op = _GUARD_TOS_DICT;
+                    }
+                    else if (probable == &PyTuple_Type) {
+                        guard_op = _GUARD_TOS_TUPLE;
+                    }
+                    else if (probable == &PyBytes_Type) {
+                        guard_op = _GUARD_TOS_BYTES;
+                    }
+                    else if (probable == &PyByteArray_Type) {
+                        guard_op = _GUARD_TOS_BYTEARRAY;
+                    }
+                    else if (probable == &PySet_Type) {
+                        guard_op = _GUARD_TOS_SET;
+                    }
+                    else if (probable == &PyFrozenSet_Type) {
+                        guard_op = _GUARD_TOS_FROZENSET;
+                    }
+                    if (guard_op) {
+                        ADD_OP(guard_op, 0, 0);
+                        sym_set_type(value, probable);
+                        tp = probable;
+                        emitted_guard = 1;
+                    }
+                }
+                uintptr_t size_offset = 0;
+                if (tp == &PyDict_Type) {
+                    size_offset = offsetof(PyDictObject, ma_used);
+                }
+                else if (tp == &PyTuple_Type ||
+                     tp == &PyBytes_Type ||
+                     tp == &PyByteArray_Type) {
+                    size_offset = offsetof(PyVarObject, ob_size);
+                }
+                else if (tp == &PySet_Type || tp == &PyFrozenSet_Type) {
+                    size_offset = offsetof(PySetObject, used);
+                }
+                if (size_offset) {
+                    if (emitted_guard) {
+                        ADD_OP(_TO_BOOL_SIZED, 0, size_offset);
+                    }
+                    else {
+                        REPLACE_OP(this_instr, _TO_BOOL_SIZED, 0, size_offset);
+                    }
+                }
+                else if (emitted_guard) {
+                    ADD_OP(_TO_BOOL, 0, 0);
+                }
                 res = sym_new_truthiness(ctx, value, true);
             }
             stack_pointer[-1] = res;
@@ -494,6 +547,37 @@
             stack_pointer[0] = v;
             stack_pointer += 1;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+            break;
+        }
+
+        case _TO_BOOL_SIZED: {
+            JitOptRef res;
+            res = sym_new_not_null(ctx);
+            stack_pointer[-1] = res;
+            break;
+        }
+
+        case _GUARD_TOS_BYTES: {
+            JitOptRef tos;
+            tos = stack_pointer[-1];
+            if (sym_matches_type(tos, &PyBytes_Type)) {
+                ADD_OP(_NOP, 0, 0);
+            }
+            else {
+                sym_set_type(tos, &PyBytes_Type);
+            }
+            break;
+        }
+
+        case _GUARD_TOS_BYTEARRAY: {
+            JitOptRef tos;
+            tos = stack_pointer[-1];
+            if (sym_matches_type(tos, &PyByteArray_Type)) {
+                ADD_OP(_NOP, 0, 0);
+            }
+            else {
+                sym_set_type(tos, &PyByteArray_Type);
+            }
             break;
         }
 
