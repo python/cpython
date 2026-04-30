@@ -620,7 +620,7 @@ it possible to avoid these issues by temporarily preventing finalization:
    :c:func:`PyInterpreterGuard_Close`).
 
    When a guard is held, a thread attempting to finalize the interpreter will
-   have to wait until the guard is closed before threads can be blocked.
+   block until the guard is closed before starting finalization.
    After finalization has started, threads are forever unable to acquire
    guards for that interpreter. This means that if you forget to close an
    interpreter guard, the process will **permanently hang** during
