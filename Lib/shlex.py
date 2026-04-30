@@ -317,20 +317,22 @@ def join(split_command):
     return ' '.join(quote(arg) for arg in split_command)
 
 
+def _find_unsafe_lazy(s):
+    import re  # deferred import and compilation for performance
+
+    global _find_unsafe
+    _find_unsafe = re.compile(r'[^\w@%+=:,./-]', re.ASCII).search
+    return _find_unsafe(s)
+
+
+_find_unsafe = _find_unsafe_lazy
+
+
 def quote(s):
     """Return a shell-escaped version of the string *s*."""
     if not s:
         return "''"
-
-    if not isinstance(s, str):
-        raise TypeError(f"expected string object, got {type(s).__name__!r}")
-
-    # Use bytes.translate() for performance
-    safe_chars = (b'%+,-./0123456789:=@'
-                  b'ABCDEFGHIJKLMNOPQRSTUVWXYZ_'
-                  b'abcdefghijklmnopqrstuvwxyz')
-    # No quoting is needed if `s` is an ASCII string consisting only of `safe_chars`
-    if s.isascii() and not s.encode().translate(None, delete=safe_chars):
+    if _find_unsafe(s) is None:
         return s
 
     # use single quotes, and put single quotes into double quotes
