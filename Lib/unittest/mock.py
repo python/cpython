@@ -182,12 +182,12 @@ def _instance_callable(obj):
     return False
 
 
-def _set_signature(mock, original, instance=False):
+def _set_signature(mock, original, instance=False, skipfirst=False):
     # creates a function with signature (*args, **kwargs) that delegates to a
     # mock. It still does signature checking by calling a lambda with the same
     # signature as the original.
 
-    skipfirst = isinstance(original, type)
+    skipfirst = skipfirst or isinstance(original, type)
     result = _get_signature_object(original, instance, skipfirst)
     if result is None:
         return mock
@@ -200,7 +200,12 @@ def _set_signature(mock, original, instance=False):
     if not name.isidentifier():
         name = 'funcopy'
     context = {'_checksig_': checksig, 'mock': mock}
-    src = """def %s(*args, **kwargs):
+    if skipfirst:
+        src = """def %s(_mock_self, /, *args, **kwargs):
+    _checksig_(*args, **kwargs)
+    return mock(*args, **kwargs)""" % name
+    else:
+        src = """def %s(*args, **kwargs):
     _checksig_(*args, **kwargs)
     return mock(*args, **kwargs)""" % name
     exec (src, context)
@@ -208,20 +213,28 @@ def _set_signature(mock, original, instance=False):
     _setup_func(funcopy, mock, sig)
     return funcopy
 
-def _set_async_signature(mock, original, instance=False, is_async_mock=False):
+def _set_async_signature(mock, original, instance=False, is_async_mock=False, skipfirst=False):
     # creates an async function with signature (*args, **kwargs) that delegates to a
     # mock. It still does signature checking by calling a lambda with the same
     # signature as the original.
 
-    skipfirst = isinstance(original, type)
-    func, sig = _get_signature_object(original, instance, skipfirst)
+    skipfirst = skipfirst or isinstance(original, type)
+    result = _get_signature_object(original, instance, skipfirst)
+    if result is None:
+        return mock
+    func, sig = result
     def checksig(*args, **kwargs):
         sig.bind(*args, **kwargs)
     _copy_func_details(func, checksig)
 
     name = original.__name__
     context = {'_checksig_': checksig, 'mock': mock}
-    src = """async def %s(*args, **kwargs):
+    if skipfirst:
+        src = """async def %s(_mock_self, /, *args, **kwargs):
+    _checksig_(*args, **kwargs)
+    return await mock(*args, **kwargs)""" % name
+    else:
+        src = """async def %s(*args, **kwargs):
     _checksig_(*args, **kwargs)
     return await mock(*args, **kwargs)""" % name
     exec (src, context)
@@ -1508,6 +1521,7 @@ class _patch(object):
             raise TypeError("Can't provide explicit spec_set *and* spec or autospec")
 
         original, local = self.get_original()
+        _is_classmethod = _is_staticmethod = False
 
         if new is DEFAULT and autospec is None:
             inherit = False
@@ -1593,7 +1607,10 @@ class _patch(object):
                 raise TypeError("Can't use 'autospec' with create=True")
             spec_set = bool(spec_set)
             if autospec is True:
-                autospec = original
+                if isinstance(self.target, type):
+                    autospec = getattr(self.target, self.attribute, original)
+                else:
+                    autospec = original
 
             if _is_instance_mock(self.target):
                 raise InvalidSpecError(
@@ -1607,14 +1624,34 @@ class _patch(object):
                     f'{target_name!r} as it has already been mocked out. '
                     f'[target={self.target!r}, attr={autospec!r}]')
 
+            # For regular methods on classes, self is passed by the descriptor
+            # protocol but should not be recorded in mock call args.
+            _eat_self = _must_skip(
+                self.target, self.attribute, isinstance(self.target, type)
+            )
+
+            _is_classmethod = isinstance(original, classmethod)
+            _is_staticmethod = isinstance(original, staticmethod)
+            if _is_classmethod:
+                autospec = original.__func__
+                _eat_self = True
+
             new = create_autospec(autospec, spec_set=spec_set,
-                                  _name=self.attribute, **kwargs)
+                                  _name=self.attribute, _eat_self=_eat_self,
+                                  **kwargs)
         elif kwargs:
             # can't set keyword args when we aren't creating the mock
             # XXXX If new is a Mock we could call new.configure_mock(**kwargs)
             raise TypeError("Can't pass kwargs to a mock we aren't creating")
 
         new_attr = new
+        if isinstance(new_attr, FunctionTypes):
+            if _is_classmethod:
+                _check_signature(original.__func__, new.mock, skipfirst=True)
+                new_attr = classmethod(new)
+                new = new.mock
+            elif _is_staticmethod:
+                new_attr = staticmethod(new)
 
         self.temp_original = original
         self.is_local = local
@@ -2746,7 +2783,7 @@ call = _Call(from_kall=False)
 
 
 def create_autospec(spec, spec_set=False, instance=False, _parent=None,
-                    _name=None, *, unsafe=False, **kwargs):
+                    _name=None, *, unsafe=False, _eat_self=False, **kwargs):
     """Create a mock object using another object as a spec. Attributes on the
     mock will use the corresponding attribute on the `spec` object as their
     spec.
@@ -2823,7 +2860,7 @@ def create_autospec(spec, spec_set=False, instance=False, _parent=None,
         Klass = NonCallableMagicMock
 
     mock = Klass(parent=_parent, _new_parent=_parent, _new_name=_new_name,
-                 name=_name, **_kwargs)
+                 name=_name, _eat_self=_eat_self or None, **_kwargs)
     if is_dataclass_spec:
         mock._mock_extend_spec_methods(dataclass_spec_list)
 
@@ -2831,9 +2868,9 @@ def create_autospec(spec, spec_set=False, instance=False, _parent=None,
         # should only happen at the top level because we don't
         # recurse for functions
         if is_async_func:
-            mock = _set_async_signature(mock, spec)
+            mock = _set_async_signature(mock, spec, skipfirst=_eat_self)
         else:
-            mock = _set_signature(mock, spec)
+            mock = _set_signature(mock, spec, skipfirst=_eat_self)
     else:
         _check_signature(spec, mock, is_type, instance)
 
