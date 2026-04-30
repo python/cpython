@@ -1027,7 +1027,8 @@ class Popen:
         else:
             # POSIX
             if pass_fds and not close_fds:
-                warnings.warn("pass_fds overriding close_fds.", RuntimeWarning)
+                warnings.warn("pass_fds overriding close_fds.",
+                              RuntimeWarning, stacklevel=2)
                 close_fds = True
             if startupinfo is not None:
                 raise ValueError("startupinfo is only supported on Windows "
@@ -1674,7 +1675,8 @@ class Popen:
                 if handle_list:
                     if not close_fds:
                         warnings.warn("startupinfo.lpAttributeList['handle_list'] "
-                                      "overriding close_fds", RuntimeWarning)
+                                      "overriding close_fds", RuntimeWarning,
+                                      stacklevel=3)
 
                     # When using the handle_list we always request to inherit
                     # handles but the only handles that will be inherited are
