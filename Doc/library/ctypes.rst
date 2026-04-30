@@ -1524,6 +1524,17 @@ way is to instantiate :py:class:`CDLL` or one of its subclasses:
    copy, and the function :func:`ctypes.set_errno` changes the ctypes private copy
    to a new value and returns the former value.
 
+   .. note::
+
+      On some platforms (notably Linux), loading a library by absolute path (e.g.
+      ``CDLL('/lib/libc.so.6')``) may cause ``use_errno=True`` to malfunction.
+      If the absolute path resolves to a different :manpage:`dlopen(3)` instance
+      of the library than the one already linked into the process, the two
+      instances have *separate* :data:`errno` variables and ctypes will swap the
+      wrong one.  To avoid this, load the library by its unqualified name (e.g.
+      ``CDLL('libc.so.6')``) or use :func:`!find_library` to obtain a name that
+      the linker can resolve to the already-loaded instance.
+
    The *use_last_error* parameter, when set to true, enables the same mechanism for
    the Windows error code which is managed by the :func:`GetLastError` and
    :func:`!SetLastError` Windows API functions; :func:`ctypes.get_last_error` and
