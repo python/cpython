@@ -241,7 +241,11 @@ struct _typeobject {
      * Otherwise, limited to MAX_VERSIONS_PER_CLASS (defined elsewhere).
      */
     uint16_t tp_versions_used;
-    _Py_iteritemfunc _tp_iteritem; /* Virtual iterator next function */
+
+     /* Virtual iterator next function.
+      * This function must escape to any code that can result in
+      * the GC being run, such as Py_DECREF.  */
+    _Py_iteritemfunc _tp_iteritem;
 };
 
 #define _Py_ATTR_CACHE_UNUSED (30000)  // (see tp_versions_used)

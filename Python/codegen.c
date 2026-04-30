@@ -2156,7 +2156,7 @@ codegen_for(compiler *c, stmt_ty s)
     USE_LABEL(c, cleanup);
     /* It is important for instrumentation that the `END_FOR` comes first.
     * Iteration over a generator will jump to the first of these instructions,
-    * but a non-generator will jump to a later instruction.
+    * but a non-generator will jump to the second instruction.
     */
     ADDOP(c, NO_LOCATION, END_FOR);
     ADDOP(c, NO_LOCATION, POP_ITER);
