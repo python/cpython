@@ -17,6 +17,10 @@ Main API
 ========
 run(...): Runs a command, waits for it to complete, then returns a
           CompletedProcess instance.
+run_pipeline(...): Runs a pipeline of commands connected via pipes,
+          waits for all to complete, then returns a CompletedPipeline
+          instance.  Each command may be a bare argv sequence or a
+          PipelineCommand with per-command overrides.
 Popen(...): A class for flexibly executing a command in a new process
 
 Constants
@@ -62,7 +66,9 @@ except ImportError:
 
 __all__ = ["Popen", "PIPE", "STDOUT", "call", "check_call", "getstatusoutput",
            "getoutput", "check_output", "run", "CalledProcessError", "DEVNULL",
-           "SubprocessError", "TimeoutExpired", "CompletedProcess"]
+           "SubprocessError", "TimeoutExpired", "CompletedProcess",
+           "run_pipeline", "CompletedPipeline", "PipelineError",
+           "PipelineCommand"]
            # NOTE: We intentionally exclude list2cmdline as it is
            # considered an internal implementation detail.  issue10838.
 
@@ -194,6 +200,51 @@ class TimeoutExpired(SubprocessError):
         self.output = value
 
 
+class PipelineError(SubprocessError):
+    """Raised when run_pipeline() is called with check=True and one or more
+    commands in the pipeline return a non-zero exit status.
+
+    Attributes:
+        commands: Tuple of PipelineCommand instances for each command.
+        returncodes: Tuple of return codes corresponding to each command.
+        stdout: Standard output from the final command (if captured).
+        stderr: Standard error output (if captured).
+        failed: Tuple of (index, command, returncode) for each failed command.
+    """
+    def __init__(self, commands, returncodes, stdout=None, stderr=None):
+        commands = tuple(commands)
+        returncodes = tuple(returncodes)
+        assert len(commands) == len(returncodes), (
+            f"{len(commands)=} != {len(returncodes)=}")
+        super().__init__(commands, returncodes)
+        self.commands = commands
+        self.returncodes = returncodes
+        self.stdout = stdout
+        self.stderr = stderr
+        self.failed = tuple(
+            (i, cmd, rc)
+            for i, (cmd, rc) in enumerate(zip(commands, returncodes))
+            if rc != 0
+        )
+
+    def __str__(self):
+        parts = []
+        for i, cmd, rc in self.failed:
+            if rc and rc < 0:
+                try:
+                    detail = f"died with {signal.Signals(-rc)!r}"
+                except ValueError:
+                    detail = f"died with unknown signal {-rc}"
+            else:
+                detail = f"returned {rc}"
+            if isinstance(cmd, PipelineCommand) and not cmd._has_overrides():
+                cmd_display = cmd.args
+            else:
+                cmd_display = cmd
+            parts.append(f"{cmd_display!r} (commands[{i}]) {detail}")
+        return f"Pipeline failed: {'; '.join(parts)}"
+
+
 if _mswindows:
     class STARTUPINFO:
         def __init__(self, *, dwFlags=0, hStdInput=None, hStdOutput=None,
@@ -253,10 +304,11 @@ else:
     def _communicate_io_posix(selector, stdin, input_view, input_offset,
                               output_buffers, endtime, *, close_on_eof=False):
         """
-        Low-level POSIX I/O multiplexing loop used by Popen._communicate.
+        Low-level POSIX I/O multiplexing loop.
 
-        Handles the select loop for reading/writing but does not manage
-        stream lifecycle or raise timeout exceptions.
+        This is the common core used by both _communicate_streams() and
+        Popen._communicate(). It handles the select loop for reading/writing
+        but does not manage stream lifecycle or raise timeout exceptions.
 
         Args:
             selector: A _PopenSelector with streams already registered
@@ -402,6 +454,192 @@ def _translate_newlines(data, encoding, errors):
     """Decode bytes to str and translate newlines to \n."""
     data = data.decode(encoding, errors)
     return data.replace("\r\n", "\n").replace("\r", "\n")
+
+
+def _communicate_streams(stdin=None, input_data=None, read_streams=None,
+                         timeout=None, cmd_for_timeout=None,
+                         stdout_stream=None, stderr_stream=None):
+    """
+    Multiplex I/O: write input_data to stdin, read from read_streams.
+
+    All streams must be file objects (not raw file descriptors).
+    All I/O is done in binary mode; caller handles text encoding.
+
+    Args:
+        stdin: Writable binary file object for input, or None
+        input_data: Bytes to write to stdin, or None
+        read_streams: List of readable binary file objects to read from
+        timeout: Timeout in seconds, or None for no timeout
+        cmd_for_timeout: Value to use for TimeoutExpired.cmd
+        stdout_stream: File object in read_streams that holds stdout data,
+            or None.  Used only to populate TimeoutExpired.output on a
+            partial timeout.
+        stderr_stream: File object in read_streams that holds stderr data,
+            or None.  Used only to populate TimeoutExpired.stderr on a
+            partial timeout.
+
+    Returns:
+        Dict mapping each file object in read_streams to its bytes data.
+        All file objects in read_streams will be closed.
+
+    Raises:
+        TimeoutExpired: If timeout expires (with partial data)
+    """
+    if timeout is not None:
+        endtime = _time() + timeout
+    else:
+        endtime = None
+
+    read_streams = read_streams or []
+
+    if _mswindows:
+        return _communicate_streams_windows(
+            stdin, input_data, read_streams, endtime, timeout, cmd_for_timeout,
+            stdout_stream, stderr_stream)
+    else:
+        return _communicate_streams_posix(
+            stdin, input_data, read_streams, endtime, timeout, cmd_for_timeout,
+            stdout_stream, stderr_stream)
+
+
+if _mswindows:
+    def _reader_thread_func(fh, buffer):
+        """Thread function to read from a file handle into a buffer list."""
+        try:
+            buffer.append(fh.read())
+        except OSError:
+            buffer.append(b'')
+
+    def _writer_thread_func(fh, data, result):
+        """Thread function to write data to a file handle and close it."""
+        try:
+            if data:
+                fh.write(data)
+        except BrokenPipeError:
+            pass
+        except OSError as exc:
+            if exc.errno != errno.EINVAL:
+                result.append(exc)
+        try:
+            fh.close()
+        except BrokenPipeError:
+            pass
+        except OSError as exc:
+            if exc.errno != errno.EINVAL and not result:
+                result.append(exc)
+
+    def _communicate_streams_windows(stdin, input_data, read_streams,
+                                     endtime, orig_timeout, cmd_for_timeout,
+                                     stdout_stream=None, stderr_stream=None):
+        """Windows implementation using threads."""
+        threads = []
+        buffers = {}
+        writer_thread = None
+        writer_result = []
+
+        if stdin and input_data:
+            writer_thread = threading.Thread(
+                target=_writer_thread_func,
+                args=(stdin, input_data, writer_result))
+            writer_thread.daemon = True
+            writer_thread.start()
+        elif stdin:
+            try:
+                stdin.close()
+            except BrokenPipeError:
+                pass
+            except OSError as exc:
+                if exc.errno != errno.EINVAL:
+                    raise
+
+        for stream in read_streams:
+            buf = []
+            buffers[stream] = buf
+            t = threading.Thread(target=_reader_thread_func, args=(stream, buf))
+            t.daemon = True
+            t.start()
+            threads.append((stream, t))
+
+        def _raise_timeout():
+            results = {s: (b[0] if b else b'') for s, b in buffers.items()}
+            raise TimeoutExpired(
+                cmd_for_timeout, orig_timeout,
+                output=results.get(stdout_stream),
+                stderr=results.get(stderr_stream))
+
+        # Drain the writer before any reader so a stalled write surfaces as
+        # the timeout source, not a partial read.
+        if writer_thread is not None:
+            remaining = _deadline_remaining(endtime)
+            if remaining is not None and remaining < 0:
+                remaining = 0
+            writer_thread.join(remaining)
+            if writer_thread.is_alive():
+                _raise_timeout()
+            if writer_result:
+                raise writer_result[0]
+
+        for stream, t in threads:
+            remaining = _deadline_remaining(endtime)
+            if remaining is not None and remaining < 0:
+                remaining = 0
+            t.join(remaining)
+            if t.is_alive():
+                _raise_timeout()
+
+        results = {stream: (buf[0] if buf else b'')
+                   for stream, buf in buffers.items()}
+        for stream in read_streams:
+            try:
+                stream.close()
+            except OSError:
+                pass
+        return results
+
+else:
+    def _communicate_streams_posix(stdin, input_data, read_streams,
+                                   endtime, orig_timeout, cmd_for_timeout,
+                                   stdout_stream=None, stderr_stream=None):
+        """POSIX implementation using selectors."""
+        output_buffers = {stream: [] for stream in read_streams}
+
+        if stdin:
+            _flush_stdin(stdin)
+            if not input_data:
+                try:
+                    stdin.close()
+                except BrokenPipeError:
+                    pass
+                stdin = None  # don't register with selector
+
+        input_view = _make_input_view(input_data)
+
+        with _PopenSelector() as selector:
+            if stdin and input_data:
+                selector.register(stdin, selectors.EVENT_WRITE)
+            for stream in read_streams:
+                selector.register(stream, selectors.EVENT_READ)
+
+            _, completed = _communicate_io_posix(
+                selector, stdin, input_view, 0, output_buffers, endtime)
+
+        if not completed:
+            results = {stream: b''.join(chunks)
+                       for stream, chunks in output_buffers.items()}
+            raise TimeoutExpired(
+                cmd_for_timeout, orig_timeout,
+                output=results.get(stdout_stream),
+                stderr=results.get(stderr_stream))
+
+        results = {}
+        for stream, chunks in output_buffers.items():
+            results[stream] = b''.join(chunks)
+            try:
+                stream.close()
+            except OSError:
+                pass
+
+        return results
 
 
 # XXX This function is only used by multiprocessing and the test suite,
@@ -624,6 +862,103 @@ class CompletedProcess(object):
                                      self.stderr)
 
 
+class PipelineCommand:
+    """One command in a run_pipeline() pipeline.
+
+    run_pipeline() accepts each command either as a bare argv sequence or
+    as a PipelineCommand; bare sequences are wrapped on entry, so
+    CompletedPipeline.commands and PipelineError.commands always hold
+    PipelineCommand instances.
+
+    Construct one explicitly when a single command needs different stderr
+    handling, a shell, or its own env/cwd.  Any override left at its
+    default of None (or False for shell) means the corresponding
+    run_pipeline() keyword applies to this command as it would to a bare
+    argv sequence.
+    """
+
+    __slots__ = ("args", "stderr", "env", "cwd", "shell")
+
+    def __init__(self, args, /, *, stderr=None, env=None, cwd=None,
+                 shell=False):
+        if stderr not in (None, STDOUT, DEVNULL):
+            raise ValueError(
+                "PipelineCommand stderr must be None, STDOUT, or DEVNULL")
+        if shell:
+            if not isinstance(args, str):
+                raise TypeError(
+                    "PipelineCommand with shell=True requires a str command")
+        elif isinstance(args, str):
+            raise TypeError(
+                "PipelineCommand args must be a sequence of program "
+                "arguments, not a str (use shell=True for a shell command)")
+        self.args = args
+        self.stderr = stderr
+        self.env = env
+        self.cwd = cwd
+        self.shell = shell
+
+    def _has_overrides(self):
+        """True if any keyword override differs from its default."""
+        return (self.stderr is not None or self.env is not None
+                or self.cwd is not None or self.shell)
+
+    def __repr__(self):
+        parts = [f"{self.args!r}"]
+        if self.stderr is STDOUT:
+            parts.append("stderr=STDOUT")
+        elif self.stderr is DEVNULL:
+            parts.append("stderr=DEVNULL")
+        if self.env is not None:
+            # env is commonly large and may contain credentials; don't
+            # dump its contents into tracebacks via PipelineError.__str__.
+            try:
+                n = len(self.env)
+            except TypeError:
+                n = "?"
+            parts.append(f"env=<{n} entries>")
+        if self.cwd is not None:
+            parts.append(f"cwd={self.cwd!r}")
+        if self.shell:
+            parts.append("shell=True")
+        return f"{type(self).__name__}({', '.join(parts)})"
+
+
+class CompletedPipeline:
+    """A pipeline of processes that have finished running.
+
+    This is returned by run_pipeline().
+
+    Attributes:
+        commands: Tuple of PipelineCommand instances for each command.
+        returncodes: Tuple of return codes for each command in the pipeline.
+        stdout: The standard output of the final command (None if not captured).
+        stderr: The standard error output (None if not captured).
+    """
+    def __init__(self, commands, returncodes, stdout=None, stderr=None):
+        self.commands = tuple(commands)
+        self.returncodes = tuple(returncodes)
+        self.stdout = stdout
+        self.stderr = stderr
+
+    def __repr__(self):
+        args = [f"commands={self.commands!r}",
+                f"returncodes={self.returncodes!r}"]
+        if self.stdout is not None:
+            args.append(f"stdout={self.stdout!r}")
+        if self.stderr is not None:
+            args.append(f"stderr={self.stderr!r}")
+        return f"{type(self).__name__}({', '.join(args)})"
+
+    __class_getitem__ = classmethod(types.GenericAlias)
+
+    def check_returncodes(self):
+        """Raise PipelineError if any command's exit code is non-zero."""
+        if any(rc != 0 for rc in self.returncodes):
+            raise PipelineError(self.commands, self.returncodes,
+                                self.stdout, self.stderr)
+
+
 def run(*popenargs,
         input=None, capture_output=False, timeout=None, check=False, **kwargs):
     """Run command with arguments and return a CompletedProcess instance.
@@ -692,6 +1027,296 @@ def run(*popenargs,
             raise CalledProcessError(retcode, process.args,
                                      output=stdout, stderr=stderr)
     return CompletedProcess(process.args, retcode, stdout, stderr)
+
+
+def run_pipeline(*commands, input=None, capture_output=False, timeout=None,
+                 check=False, **kwargs):
+    """Run a pipeline of commands connected via pipes.
+
+    Each positional argument should be a command: either a sequence of
+    program arguments, or a PipelineCommand wrapping one with per-command
+    overrides.  Bare sequences are wrapped in a PipelineCommand on entry.
+    The stdout of each command is connected to the stdin of the next
+    command in the pipeline, similar to shell pipelines.
+
+    Returns a CompletedPipeline instance with attributes commands, returncodes,
+    stdout, and stderr. By default, stdout and stderr are not captured, and
+    those attributes will be None. Pass capture_output=True to capture both
+    the final command's stdout and stderr from all commands.
+
+    If check is True and any command's exit code is non-zero, it raises a
+    PipelineError. This is similar to shell "pipefail" behavior.
+
+    If timeout (seconds) is given and the pipeline takes too long, a
+    TimeoutExpired exception will be raised and all processes will be killed.
+
+    The optional "input" argument allows passing bytes or a string to the
+    first command's stdin. If you use this argument, you may not also specify
+    stdin in kwargs.
+
+    By default, all communication is in bytes. Use text=True, encoding, or
+    errors to enable text mode, which affects the input argument and stdout/
+    stderr outputs.
+
+    .. note::
+       When using text=True with capture_output=True or stderr=PIPE, be aware
+       that stderr output from multiple processes may be interleaved in ways
+       that produce invalid character sequences when decoded. For reliable
+       text decoding, avoid text=True when capturing stderr from pipelines,
+       or handle decoding errors appropriately.
+
+    Other keyword arguments are passed to each Popen call, except for stdin,
+    stdout, and stderr (when stderr=PIPE or capture_output=True), which are
+    managed by the pipeline.
+
+    Example:
+        # Equivalent to: cat file.txt | grep pattern | wc -l
+        result = run_pipeline(
+            ["cat", "file.txt"],
+            ["grep", "pattern"],
+            ["wc", "-l"],
+            capture_output=True, text=True
+        )
+        print(result.stdout)  # "42\\n"
+        print(result.returncodes)  # (0, 0, 0)
+    """
+    if len(commands) < 2:
+        raise ValueError("run_pipeline requires at least 2 commands")
+
+    if input is not None and kwargs.get("stdin") is not None:
+        raise ValueError("stdin and input arguments may not both be used.")
+    if kwargs.get("stdin") is PIPE:
+        raise ValueError("stdin=PIPE is not supported by run_pipeline; "
+                         "pass input= instead, or provide a file/fd")
+
+    if capture_output:
+        if kwargs.get("stdout") is not None or kwargs.get("stderr") is not None:
+            raise ValueError("stdout and stderr arguments may not be used "
+                             "with capture_output.")
+
+    if not kwargs.get("close_fds", True):
+        raise ValueError(
+            "close_fds=False is not supported by run_pipeline; "
+            "inherited pipe ends would prevent EOF signaling between commands")
+
+    if kwargs.get("shell"):
+        raise ValueError(
+            "shell=True is not supported by run_pipeline; the pipeline itself "
+            "replaces the shell.  Use PipelineCommand(cmd, shell=True) for a "
+            "single command that needs shell interpretation.")
+    if kwargs.get("executable") is not None:
+        raise ValueError(
+            "executable= is not supported by run_pipeline")
+
+    if kwargs.get("stderr") is STDOUT:
+        raise ValueError(
+            "stderr=STDOUT at the run_pipeline level would merge each "
+            "non-final command's stderr into the next command's stdin.  "
+            "Use PipelineCommand(cmd, stderr=STDOUT) for a single command, "
+            "or capture_output=True to capture stderr from every command.")
+
+    if kwargs.get("start_new_session") or kwargs.get("process_group") is not None:
+        # run_pipeline spawns each command as a sibling child of this
+        # process, so a per-command session/group does not give the shell
+        # "one process group per pipeline" semantic that callers passing
+        # these almost certainly want.  Reject for now; a feature that
+        # places every command in a single new group is a possible
+        # follow-on.
+        raise ValueError(
+            "start_new_session and process_group are not supported by "
+            "run_pipeline; each command is spawned as a sibling child, "
+            "so a per-command session or group does not yield a single "
+            "process group for the pipeline")
+
+    commands = tuple(c if isinstance(c, PipelineCommand) else PipelineCommand(c)
+                     for c in commands)
+
+    stderr_arg = kwargs.pop("stderr", None)
+    capture_stderr = capture_output or (stderr_arg is PIPE)
+
+    stdin_arg = kwargs.pop("stdin", None)
+    stdout_arg = kwargs.pop("stdout", None)
+
+    # Load-bearing: pop text=/universal_newlines=/encoding=/errors= so each
+    # Popen keeps its parent-side pipes binary. _communicate_streams_* relies
+    # on a bytes-in/bytes-out contract; leaving these in kwargs would wrap the
+    # pipes in TextIOWrapper and break the threaded Windows backend.
+    text = kwargs.pop("text", None)
+    universal_newlines = kwargs.pop("universal_newlines", None)
+    encoding = kwargs.pop("encoding", None)
+    errors_param = kwargs.pop("errors", None)
+    text_mode = bool(text or universal_newlines or encoding or errors_param)
+    if text_mode and encoding is None:
+        encoding = locale.getencoding()
+
+    processes = []
+    stderr_reader = None    # File object for reading shared stderr (for parent)
+    stderr_write_fd = None  # Write end of shared stderr pipe (for children)
+
+    try:
+        # One shared stderr pipe across all children: lets stderr from any
+        # command reach the parent through a single read end, which the
+        # I/O loop multiplexes alongside stdout.
+        if capture_stderr:
+            stderr_read_fd, stderr_write_fd = os.pipe()
+            stderr_reader = os.fdopen(stderr_read_fd, 'rb')
+
+        for i, cmd in enumerate(commands):
+            is_first = (i == 0)
+            is_last = (i == len(commands) - 1)
+
+            if is_first:
+                if input is not None:
+                    proc_stdin = PIPE
+                else:
+                    proc_stdin = stdin_arg  # may be None, PIPE, fd, or file
+            else:
+                proc_stdin = processes[-1].stdout
+
+            if is_last:
+                if capture_output:
+                    proc_stdout = PIPE
+                else:
+                    proc_stdout = stdout_arg  # may be None, PIPE, fd, or file
+            else:
+                proc_stdout = PIPE
+
+            if cmd.stderr is not None:
+                assert cmd.stderr in (STDOUT, DEVNULL), cmd.stderr
+                proc_stderr = cmd.stderr
+            elif capture_stderr:
+                proc_stderr = stderr_write_fd
+            else:
+                proc_stderr = stderr_arg
+
+            cmd_kwargs = kwargs
+            if cmd.env is not None or cmd.cwd is not None or cmd.shell:
+                cmd_kwargs = dict(kwargs)
+                if cmd.env is not None:
+                    cmd_kwargs["env"] = cmd.env
+                if cmd.cwd is not None:
+                    cmd_kwargs["cwd"] = cmd.cwd
+                if cmd.shell:
+                    cmd_kwargs["shell"] = True
+
+            try:
+                proc = Popen(cmd.args, stdin=proc_stdin, stdout=proc_stdout,
+                             stderr=proc_stderr, **cmd_kwargs)
+            except OSError as e:
+                e.add_note(
+                    f"raised while starting {cmd!r} "
+                    f"(run_pipeline commands[{i}])")
+                raise
+            processes.append(proc)
+
+            # Close the parent's copy of the previous process's stdout
+            # to allow the pipe to signal EOF when the previous process exits
+            if not is_first and processes[-2].stdout is not None:
+                processes[-2].stdout.close()
+
+        # The parent must drop its write end so children's writes are the
+        # only ones keeping the pipe open; otherwise the reader never
+        # sees EOF after all children exit.
+        if stderr_write_fd is not None:
+            os.close(stderr_write_fd)
+            stderr_write_fd = None
+
+        first_proc = processes[0]
+        last_proc = processes[-1]
+
+        if timeout is not None:
+            endtime = _time() + timeout
+        else:
+            endtime = None
+
+        input_data = input
+        if input_data is not None and text_mode:
+            input_data = input_data.encode(encoding, errors_param or "strict")
+
+        read_streams = []
+        if last_proc.stdout is not None:
+            read_streams.append(last_proc.stdout)
+        if stderr_reader is not None:
+            read_streams.append(stderr_reader)
+
+        # Drive stdin, stdout, and stderr concurrently: any one of them
+        # filling its kernel pipe buffer would otherwise block a child
+        # whose progress depends on another stream draining.
+        stdin_stream = first_proc.stdin if input is not None else None
+
+        try:
+            results = _communicate_streams(
+                stdin=stdin_stream,
+                input_data=input_data,
+                read_streams=read_streams,
+                timeout=_deadline_remaining(endtime),
+                cmd_for_timeout=commands,
+                stdout_stream=last_proc.stdout,
+                stderr_stream=stderr_reader,
+            )
+        except TimeoutExpired:
+            for p in processes:
+                if p.poll() is None:
+                    p.kill()
+            for p in processes:
+                p.wait()
+            raise
+
+        stdout = results.get(last_proc.stdout)
+        stderr = results.get(stderr_reader)
+
+        decode_errors = errors_param or "strict"
+        if text_mode and stdout is not None:
+            stdout = _translate_newlines(stdout, encoding, decode_errors)
+        if text_mode and stderr is not None:
+            stderr = _translate_newlines(stderr, encoding, decode_errors)
+
+        returncodes = []
+        for proc in processes:
+            try:
+                remaining = _deadline_remaining(endtime)
+                proc.wait(timeout=remaining)
+            except TimeoutExpired:
+                for p in processes:
+                    if p.poll() is None:
+                        p.kill()
+                for p in processes:
+                    p.wait()
+                raise TimeoutExpired(commands, timeout, stdout, stderr)
+            returncodes.append(proc.returncode)
+
+        result = CompletedPipeline(commands, returncodes, stdout, stderr)
+
+        if check and any(rc != 0 for rc in returncodes):
+            raise PipelineError(commands, returncodes, stdout, stderr)
+
+        return result
+
+    finally:
+        # Ensure all processes are cleaned up: kill all surviving children
+        # before waiting on any, so a hung wait() can't leave later
+        # children un-killed.
+        for proc in processes:
+            if proc.poll() is None:
+                proc.kill()
+        for proc in processes:
+            proc.wait()
+        for proc in processes:
+            if proc.stdin and not proc.stdin.closed:
+                proc.stdin.close()
+            if proc.stdout and not proc.stdout.closed:
+                proc.stdout.close()
+        # Close stderr pipe (reader is a file object, writer is a raw fd)
+        if stderr_reader is not None and not stderr_reader.closed:
+            try:
+                stderr_reader.close()
+            except OSError:
+                pass
+        if stderr_write_fd is not None:
+            try:
+                os.close(stderr_write_fd)
+            except OSError:
+                pass
 
 
 def list2cmdline(seq):
@@ -982,6 +1607,9 @@ class Popen:
     """
     _child_created = False  # Set here since __del__ checks it
 
+    # When adding a new keyword here, consider whether forwarding it to
+    # every command in run_pipeline() makes sense; if not, reject or
+    # special-case it there.
     def __init__(self, args, bufsize=-1, executable=None,
                  stdin=None, stdout=None, stderr=None,
                  preexec_fn=None, close_fds=True,

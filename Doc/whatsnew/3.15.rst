@@ -1187,6 +1187,20 @@ ssl
 subprocess
 ----------
 
+* Added :func:`subprocess.run_pipeline` for running a sequence of commands
+  connected stdout-to-stdin, similar to a shell ``a | b | c`` pipeline,
+  without invoking a shell.  It returns a
+  :class:`~subprocess.CompletedPipeline` carrying the return codes of every
+  command; passing ``check=True`` raises :exc:`~subprocess.PipelineError`
+  if any command fails (pipefail semantics).  Individual commands may be
+  wrapped in a :class:`~subprocess.PipelineCommand` to override *stderr*,
+  *env*, *cwd*, or *shell* for that command only.  This replaces the
+  manual
+  :class:`~subprocess.Popen`-chaining recipe and the
+  ``bash -c "set -o pipefail; ..."`` workaround previously needed to detect
+  failures in non-final commands.
+  (Contributed by Gregory P. Smith in :gh:`47798`.)
+
 * :meth:`subprocess.Popen.wait`: when ``timeout`` is not ``None`` and the
   platform supports it, an efficient event-driven mechanism is used to wait for
   process termination:
