@@ -212,7 +212,7 @@ of the new API.
    :rfc:`2231` header is not known by Python; it defaults to ``'us-ascii'``.
 
    For convenience, if the *value* passed to :func:`collapse_rfc2231_value` is not
-   a tuple, it should be a string and it is returned unquoted.
+   a 3-tuple, it should be a string and it is returned unquoted.
 
 
 .. function:: decode_params(params)

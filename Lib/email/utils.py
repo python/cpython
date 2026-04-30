@@ -449,6 +449,10 @@ def decode_params(params):
 def collapse_rfc2231_value(value, errors='replace',
                            fallback_charset='us-ascii'):
     if not isinstance(value, tuple) or len(value) != 3:
+        if not isinstance(value, str):
+            raise TypeError(
+                f"expected str or 3-tuple, got {type(value).__name__}"
+            )
         return unquote(value)
     # While value comes to us as a unicode string, we need it to be a bytes
     # object.  We do not want bytes() normal utf-8 decoder, we want a straight

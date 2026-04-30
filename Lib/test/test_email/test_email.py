@@ -5798,6 +5798,12 @@ Content-Transfer-Encoding: 8bit
             with self.subTest(m=m):
                 msg = email.message_from_string(m)
 
+    def test_collapse_rfc2231_value_non_3_tuple(self):
+        for val in [(), ('a',), ('a', 'b'), ('a', 'b', 'c', 'd'), 42, None]:
+            with self.subTest(val=val):
+                with self.assertRaises(TypeError):
+                    email.utils.collapse_rfc2231_value(val)
+
 
 # Tests to ensure that signed parts of an email are completely preserved, as
 # required by RFC1847 section 2.1.  Note that these are incomplete, because the
