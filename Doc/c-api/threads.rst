@@ -320,6 +320,8 @@ Attaching/detaching thread states
    be implicitly guarded. The guard will be released upon the corresponding
    :c:func:`PyThreadState_Release` call.
 
+   .. versionadded:: next
+
 
 .. c:function:: void PyThreadState_Release(PyThreadState *tstate)
 
@@ -342,6 +344,8 @@ Attaching/detaching thread states
       If the attached thread state is owned by ``PyThreadState_Ensure``, then the
       attached thread state will be deallocated and deleted upon the internal counter
       reaching zero. Otherwise, nothing happens when the counter reaches zero.
+
+   .. versionadded:: next
 
 
 .. _legacy-api:

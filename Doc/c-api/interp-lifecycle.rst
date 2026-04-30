@@ -752,6 +752,8 @@ deleted. This can be done using interpreter views.
    This function cannot fail, and the caller doesn't need to hold an
    :term:`attached thread state`.
 
+   .. versionadded:: next
+
 
 .. c:function:: PyInterpreterView *PyInterpreterView_FromMain()
 
@@ -771,6 +773,8 @@ deleted. This can be done using interpreter views.
    used to store a ``PyInterpreterGuard`` or ``PyInterpreterView`` pointer).
 
    The caller does not need to hold an :term:`attached thread state`.
+
+   .. versionadded:: next
 
 
 Process-wide parameters
