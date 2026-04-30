@@ -22,8 +22,10 @@ static bool _PyMem_mi_page_is_safe_to_free(mi_page_t *page);
 static bool _PyMem_mi_page_maybe_free(mi_page_t *page, mi_page_queue_t *pq, bool force);
 static void _PyMem_mi_page_reclaimed(mi_page_t *page);
 static void _PyMem_mi_heap_collect_qsbr(mi_heap_t *heap);
+#ifdef Py_GIL_DISABLED
 static void _PyMem_mi_page_full_inc(mi_page_t *page);
 static void _PyMem_mi_page_full_dec(mi_page_t *page);
+#endif
 #  include "pycore_mimalloc.h"
 #  include "mimalloc/static.c"
 #  include "mimalloc/internal.h"  // for stats
@@ -256,25 +258,21 @@ _PyMem_mi_page_pool_full_bytes(mi_page_t *page)
     return (Py_ssize_t *)
         &mi_page_heap(page)->tld->segments.abandoned->full_page_bytes;
 }
-#endif
 
 static void
 _PyMem_mi_page_full_inc(mi_page_t *page)
 {
-#ifdef Py_GIL_DISABLED
     _Py_atomic_add_ssize(_PyMem_mi_page_pool_full_bytes(page),
                          _PyMem_mi_page_size(page));
-#endif
 }
 
 static void
 _PyMem_mi_page_full_dec(mi_page_t *page)
 {
-#ifdef Py_GIL_DISABLED
     _Py_atomic_add_ssize(_PyMem_mi_page_pool_full_bytes(page),
                          -_PyMem_mi_page_size(page));
-#endif
 }
+#endif
 
 static void
 _PyMem_mi_heap_collect_qsbr(mi_heap_t *heap)
