@@ -168,7 +168,6 @@
 #define STOP_TRACING() ((void)(0));
 #endif
 
-
 /* PRE_DISPATCH_GOTO() does lltrace if enabled. Normally a no-op */
 #ifdef Py_DEBUG
 #define PRE_DISPATCH_GOTO() if (frame->lltrace >= 5) { \

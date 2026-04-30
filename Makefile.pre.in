@@ -514,6 +514,7 @@ PYTHON_OBJS=	\
 		Python/suggestions.o \
 		Python/perf_trampoline.o \
 		Python/perf_jit_trampoline.o \
+		Python/jit_unwind.o \
 		Python/remote_debugging.o \
 		Python/$(DYNLOADFILE) \
 		$(LIBOBJS) \
