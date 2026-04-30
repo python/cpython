@@ -92,6 +92,8 @@ import sys as _sys
 from gettext import gettext as _
 from gettext import ngettext
 
+lazy import _colorize
+
 SUPPRESS = '==SUPPRESS=='
 
 OPTIONAL = '?'
@@ -156,6 +158,15 @@ def _identity(value):
 # Formatting Help
 # ===============
 
+class _ColorlessTheme:
+    # A 'fake' theme for no colors
+    def __getattr__(self, name):
+        # _colorize's no_color themes are just all empty strings
+        # by directly using empty strings the import is avoided
+        return ""
+
+_colorless_theme = _ColorlessTheme()
+
 
 class HelpFormatter(object):
     """Formatter for generating usage messages and argument help strings.
@@ -196,14 +207,32 @@ class HelpFormatter(object):
         self._set_color(False)
 
     def _set_color(self, color, *, file=None):
-        from _colorize import can_colorize, decolor, get_theme
+        # Set a new color setting and file, clear caches for theme and decolor
+        self._theme_color = color
+        self._theme_file = file
+        self._cached_theme = None
+        self._cached_decolor = None
 
-        if color and can_colorize(file=file):
-            self._theme = get_theme(force_color=True).argparse
-            self._decolor = decolor
+    def _get_theme_and_decolor(self):
+        # If self._theme_color is false, this prevents _colorize from importing
+        if self._theme_color and _colorize.can_colorize(file=self._theme_file):
+            self._cached_theme = _colorize.get_theme(force_color=True).argparse
+            self._cached_decolor = _colorize.decolor
         else:
-            self._theme = get_theme(force_no_color=True).argparse
-            self._decolor = _identity
+            self._cached_theme = _colorless_theme
+            self._cached_decolor = _identity
+
+    @property
+    def _theme(self):
+        if self._cached_theme is None:
+            self._get_theme_and_decolor()
+        return self._cached_theme
+
+    @property
+    def _decolor(self):
+        if self._cached_decolor is None:
+            self._get_theme_and_decolor()
+        return self._cached_decolor
 
     # ===============================
     # Section and indentation methods
@@ -2856,12 +2885,11 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
                 pass
 
     def _get_theme(self, file=None):
-        from _colorize import can_colorize, get_theme
-
-        if self.color and can_colorize(file=file):
-            return get_theme(force_color=True).argparse
+        # If self.color is False, _colorize is not imported
+        if self.color and _colorize.can_colorize(file=file):
+            return _colorize.get_theme(force_color=True).argparse
         else:
-            return get_theme(force_no_color=True).argparse
+            return _colorless_theme
 
     # ===============
     # Exiting methods

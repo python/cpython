@@ -80,6 +80,49 @@ class StdStreamTest(unittest.TestCase):
                 self.assertRegex(mocked_stderr.getvalue(), r'usage:')
 
 
+class TestLazyImports(unittest.TestCase):
+    LAZY_IMPORTS = {
+        "_colorize",
+        "copy",
+        "difflib",
+        "shutil",
+        "textwrap",
+        "warnings",
+    }
+    def test_module_import(self):
+        import_helper.ensure_lazy_imports(
+            "argparse",
+            self.LAZY_IMPORTS,
+        )
+
+    def test_create_parser(self):
+        # Test imports are still unused after
+        # creating a parser
+        create_parser = "argparse.ArgumentParser()"
+        imported_modules = {"shutil"}
+
+        import_helper.ensure_lazy_imports(
+            "argparse",
+            self.LAZY_IMPORTS - imported_modules,
+            additional_code=create_parser,
+        )
+
+    def test_add_subparser(self):
+        add_subparser = textwrap.dedent(
+            f"""
+            parser = argparse.ArgumentParser()
+            parser.add_subparsers(dest='command', required=False)
+            """
+        )
+        imported_modules = {"shutil"}
+
+        import_helper.ensure_lazy_imports(
+            "argparse",
+            self.LAZY_IMPORTS - imported_modules,
+            additional_code=add_subparser,
+        )
+
+
 class TestArgumentParserPickleable(unittest.TestCase):
 
     @force_not_colorized
