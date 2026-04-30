@@ -608,11 +608,11 @@
       "checksums": [
         {
           "algorithm": "SHA1",
-          "checksumValue": "0a0b7f3714167ad45ddf5a6a48d76f525a119c9c"
+          "checksumValue": "67a029736da5efe96f1b2d41b92f00934b955253"
         },
         {
           "algorithm": "SHA256",
-          "checksumValue": "135d4afb4812468885c963c9c87a55ba5fae9181df4431af5fbad08588dda229"
+          "checksumValue": "0d80c2e3f5ff3b31ef0d435fc3196660df89ccf95bdcbb6545dc2f9df07bec9f"
         }
       ],
       "fileName": "Modules/_hacl/Lib_Memzero0.c"
@@ -916,11 +916,11 @@
       "checksums": [
         {
           "algorithm": "SHA1",
-          "checksumValue": "63e47cc290c4ec887dca708000876ac37ee75ba0"
+          "checksumValue": "8d6a23f4e932cace0c67896bdda46cb24bf5e0ea"
         },
         {
           "algorithm": "SHA256",
-          "checksumValue": "d09a6196d65c2645974100eb922002bd387d3ae13f2653780f82ed97a79af635"
+          "checksumValue": "25decbcadf1fef51f473daa4975a3754480fc903b03068bf95f149fb5349456e"
         }
       ],
       "fileName": "Modules/_hacl/libintvector.h"
@@ -1752,14 +1752,14 @@
       "checksums": [
         {
           "algorithm": "SHA256",
-          "checksumValue": "61e48893f37cb2280d106cefacf6fb5afe84edf625fec39572d0ee94e1018f26"
+          "checksumValue": "d6db56a5d061dcc0890eabdbb5f58a9fa6c606d9f2fbbe9d626925b870ffadfb"
         }
       ],
-      "downloadLocation": "https://github.com/hacl-star/hacl-star/archive/8ba599b2f6c9701b3dc961db895b0856a2210f76.zip",
+      "downloadLocation": "https://github.com/hacl-star/hacl-star/archive/504c2987452f87fe44bce9b9f12e19d6e051761f.zip",
       "externalRefs": [
         {
           "referenceCategory": "SECURITY",
-          "referenceLocator": "cpe:2.3:a:hacl-star:hacl-star:8ba599b2f6c9701b3dc961db895b0856a2210f76:*:*:*:*:*:*:*",
+          "referenceLocator": "cpe:2.3:a:hacl-star:hacl-star:504c2987452f87fe44bce9b9f12e19d6e051761f:*:*:*:*:*:*:*",
           "referenceType": "cpe23Type"
         }
       ],
@@ -1767,7 +1767,7 @@
       "name": "hacl-star",
       "originator": "Organization: HACL* Developers",
       "primaryPackagePurpose": "SOURCE",
-      "versionInfo": "8ba599b2f6c9701b3dc961db895b0856a2210f76"
+      "versionInfo": "504c2987452f87fe44bce9b9f12e19d6e051761f"
     },
     {
       "SPDXID": "SPDXRef-PACKAGE-macholib",
