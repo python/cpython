@@ -12,6 +12,7 @@ from ._css_utils import get_combined_css
 from .collector import Collector, extract_lineno
 from .opcode_utils import get_opcode_mapping
 from .string_table import StringTable
+from .module_utils import extract_module_name, get_python_path_info
 
 
 class StackTraceCollector(Collector):
@@ -72,6 +73,7 @@ class FlamegraphCollector(StackTraceCollector):
         self._sample_count = 0  # Track actual number of samples (not thread traces)
         self._func_intern = {}
         self._string_table = StringTable()
+        self._module_cache = {}
         self._all_threads = set()
 
         # Thread status statistics (similar to LiveStatsCollector)
@@ -182,6 +184,24 @@ class FlamegraphCollector(StackTraceCollector):
 
         return f"{funcname} ({filename}:{lineno})"
 
+    @staticmethod
+    @functools.lru_cache(maxsize=None)
+    def _format_module_name(func, module_name):
+        filename, lineno, funcname = func
+
+        # Special frames like <GC> and <native> should not show file:line
+        if filename == "~" and lineno == 0:
+            return funcname
+
+        return f"{funcname} ({module_name}:{lineno})"
+
+    def _get_module_name(self, filename, path_info):
+        module_name = self._module_cache.get(filename)
+        if module_name is None:
+            module_name, _ = extract_module_name(filename, path_info)
+            self._module_cache[filename] = module_name
+        return module_name
+
     def _convert_to_flamegraph_format(self):
         if self._total_samples == 0:
             return {
@@ -192,7 +212,7 @@ class FlamegraphCollector(StackTraceCollector):
                 "strings": self._string_table.get_strings()
             }
 
-        def convert_children(children, min_samples):
+        def convert_children(children, min_samples, path_info):
             out = []
             for func, node in children.items():
                 samples = node["samples"]
@@ -202,14 +222,20 @@ class FlamegraphCollector(StackTraceCollector):
                 # Intern all string components for maximum efficiency
                 filename_idx = self._string_table.intern(func[0])
                 funcname_idx = self._string_table.intern(func[2])
+                module_name = self._get_module_name(func[0], path_info)
+
+                module_idx = self._string_table.intern(module_name)
                 name_idx = self._string_table.intern(self._format_function_name(func))
+                label_idx = self._string_table.intern(self._format_module_name(func, module_name))
 
                 child_entry = {
                     "name": name_idx,
+                    "label": label_idx,
                     "value": samples,
                     "self": node.get("self", 0),
                     "children": [],
                     "filename": filename_idx,
+                    "module": module_idx,
                     "lineno": func[1],
                     "funcname": funcname_idx,
                     "threads": sorted(list(node.get("threads", set()))),
@@ -228,7 +254,7 @@ class FlamegraphCollector(StackTraceCollector):
 
                 # Recurse
                 child_entry["children"] = convert_children(
-                    node["children"], min_samples
+                    node["children"], min_samples, path_info
                 )
                 out.append(child_entry)
 
@@ -239,8 +265,9 @@ class FlamegraphCollector(StackTraceCollector):
         # Filter out very small functions (less than 0.1% of total samples)
         total_samples = self._total_samples
         min_samples = max(1, int(total_samples * 0.001))
+        path_info = get_python_path_info()
 
-        root_children = convert_children(self._root["children"], min_samples)
+        root_children = convert_children(self._root["children"], min_samples, path_info)
         if not root_children:
             return {
                 "name": self._string_table.intern("No significant data"),
@@ -282,10 +309,11 @@ class FlamegraphCollector(StackTraceCollector):
         # If we only have one root child, make it the root to avoid redundant level
         if len(root_children) == 1:
             main_child = root_children[0]
-            # Update the name to indicate it's the program root
+            # Update name and label to indicate it's the program root
             old_name = self._string_table.get_string(main_child["name"])
-            new_name = f"Program Root: {old_name}"
-            main_child["name"] = self._string_table.intern(new_name)
+            main_child["name"] = self._string_table.intern(f"Program Root: {old_name}")
+            old_label = self._string_table.get_string(main_child["label"])
+            main_child["label"] = self._string_table.intern(f"Program Root: {old_label}")
             main_child["stats"] = {
                 **self.stats,
                 "thread_stats": thread_stats,
@@ -296,8 +324,10 @@ class FlamegraphCollector(StackTraceCollector):
             main_child["opcode_mapping"] = opcode_mapping
             return main_child
 
+        program_root_idx = self._string_table.intern("Program Root")
         return {
-            "name": self._string_table.intern("Program Root"),
+            "name": program_root_idx,
+            "label": program_root_idx,
             "value": total_samples,
             "children": root_children,
             "stats": {

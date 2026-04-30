@@ -1046,11 +1046,27 @@ os.path
   (Contributed by Petr Viktorin for :cve:`2025-4517`.)
 
 
+pdb
+---
+
+* Use the new interactive shell as the default input shell for :mod:`pdb`.
+  (Contributed by Tian Gao in :gh:`145379`.)
+
+
 pickle
 ------
 
 * Add support for pickling private methods and nested classes.
   (Contributed by Zackery Spytz and Serhiy Storchaka in :gh:`77188`.)
+
+
+pickletools
+-----------
+
+* The output of the :mod:`pickletools` command-line interface is colored by
+  default. This can be controlled with
+  :ref:`environment variables <using-on-controlling-color>`.
+  (Contributed by Hugo van Kemenade in :gh:`149026`.)
 
 
 pprint

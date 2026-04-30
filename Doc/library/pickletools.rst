@@ -79,6 +79,9 @@ Command-line options
 
    A pickle file to read, or ``-`` to indicate reading from standard input.
 
+.. versionadded:: next
+   Output is in color by default and can be
+   :ref:`controlled using environment variables <using-on-controlling-color>`.
 
 
 Programmatic interface
