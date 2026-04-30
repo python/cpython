@@ -8364,7 +8364,6 @@
             dict_st = _stack_item_1;
             value = _stack_item_0;
             PyObject *dict = PyStackRef_AsPyObjectBorrow(dict_st);
-            assert(PyDict_Check(dict));
             assert(Py_TYPE(dict)->tp_as_mapping->mp_ass_subscript == _PyDict_StoreSubscript);
             STAT_INC(STORE_SUBSCR, hit);
             stack_pointer[0] = value;
@@ -8412,7 +8411,6 @@
             value = _stack_item_0;
             PyObject *hash = (PyObject *)CURRENT_OPERAND0_64();
             PyObject *dict = PyStackRef_AsPyObjectBorrow(dict_st);
-            assert(PyDict_Check(dict));
             assert(Py_TYPE(dict)->tp_as_mapping->mp_ass_subscript == _PyDict_StoreSubscript);
             STAT_INC(STORE_SUBSCR, hit);
             stack_pointer[0] = value;

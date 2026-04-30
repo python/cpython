@@ -2177,10 +2177,8 @@ dummy_func(void) {
             else {
                 ADD_OP(_GUARD_TYPE, 0, (uintptr_t)tp);
                 sym_set_type(nos, tp);
-                if ((tp->tp_flags & Py_TPFLAGS_IMMUTABLETYPE) == 0) {
-                    PyType_Watch(TYPE_WATCHER_ID, (PyObject *)tp);
-                    _Py_BloomFilter_Add(dependencies, tp);
-                }
+                PyType_Watch(TYPE_WATCHER_ID, (PyObject *)tp);
+                _Py_BloomFilter_Add(dependencies, tp);
             }
         }
     }
@@ -2200,10 +2198,8 @@ dummy_func(void) {
             else {
                 ADD_OP(_GUARD_TYPE, 0, (uintptr_t)tp);
                 sym_set_type(nos, tp);
-                if ((tp->tp_flags & Py_TPFLAGS_IMMUTABLETYPE) == 0) {
-                    PyType_Watch(TYPE_WATCHER_ID, (PyObject *)tp);
-                    _Py_BloomFilter_Add(dependencies, tp);
-                }
+                PyType_Watch(TYPE_WATCHER_ID, (PyObject *)tp);
+                _Py_BloomFilter_Add(dependencies, tp);
             }
         }
     }

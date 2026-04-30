@@ -12016,7 +12016,6 @@
                 dict_st = nos;
                 value = stack_pointer[-3];
                 PyObject *dict = PyStackRef_AsPyObjectBorrow(dict_st);
-                assert(PyDict_Check(dict));
                 assert(Py_TYPE(dict)->tp_as_mapping->mp_ass_subscript == _PyDict_StoreSubscript);
                 STAT_INC(STORE_SUBSCR, hit);
                 _PyFrame_SetStackPointer(frame, stack_pointer);
