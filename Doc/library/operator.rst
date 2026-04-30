@@ -122,7 +122,7 @@ The mathematical and bitwise operations are the most numerous:
 .. function:: index(a)
               __index__(a)
 
-   Return *a* converted to an integer.  Equivalent to ``a.__index__()``.
+   Return *a* converted to an integer.  Equivalent to ``int(type(a).__index__(a))``.
 
    .. versionchanged:: 3.10
       The result always has exact type :class:`int`.  Previously, the result

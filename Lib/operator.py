@@ -93,8 +93,11 @@ def floordiv(a, b):
     return a // b
 
 def index(a):
-    "Same as a.__index__()."
-    return a.__index__()
+    "Same as int(type(a).__index__(a))."
+    if hasattr(type(a), '__index__'):
+        return int(a)
+    raise TypeError(f"'{type(a).__name__}' object cannot be "
+                    "interpreted as an integer")
 
 def inv(a):
     "Same as ~a."
