@@ -7607,6 +7607,9 @@ enum posix_spawn_file_actions_identifier {
 #ifdef HAVE_POSIX_SPAWN_FILE_ACTIONS_ADDCLOSEFROM_NP
     ,POSIX_SPAWN_CLOSEFROM
 #endif
+#ifdef HAVE_POSIX_SPAWN_FILE_ACTIONS_ADDCHDIR_NP
+    ,POSIX_SPAWN_CHDIR
+#endif
 };
 
 #if defined(HAVE_SCHED_SETPARAM) || defined(HAVE_SCHED_SETSCHEDULER) || defined(POSIX_SPAWN_SETSCHEDULER) || defined(POSIX_SPAWN_SETSCHEDPARAM)
@@ -7758,7 +7761,7 @@ fail:
 static int
 parse_file_actions(PyObject *file_actions,
                    posix_spawn_file_actions_t *file_actionsp,
-                   PyObject *temp_buffer)
+                   PyObject *temp_buffer, PyObject* cwd_buffer)
 {
     PyObject *seq;
     PyObject *file_action = NULL;
@@ -7866,6 +7869,29 @@ parse_file_actions(PyObject *file_actions,
                 break;
             }
 #endif
+#ifdef HAVE_POSIX_SPAWN_FILE_ACTIONS_ADDCHDIR_NP
+            case POSIX_SPAWN_CHDIR: {
+                PyObject *path;
+                if (!PyArg_ParseTuple(file_action, "OO&"
+                        ";A chdir file_action tuple must have 2 elements",
+                        &tag_obj, PyUnicode_FSConverter, &path))
+                {
+                    goto fail;
+                }
+                errno = posix_spawn_file_actions_addchdir_np(file_actionsp,
+                        PyBytes_AS_STRING(path));
+                if (errno) {
+                    posix_error();
+                    Py_DECREF(path);
+                    goto fail;
+                }
+                if (PyList_Append(cwd_buffer, path)) {
+                    Py_DECREF(path);
+                    goto fail;
+                }
+                break;
+            }
+#endif
             default: {
                 PyErr_SetString(PyExc_TypeError,
                                 "Unknown file_actions identifier");
@@ -7902,6 +7928,7 @@ py_posix_spawn(int use_posix_spawnp, PyObject *module, path_t *path, PyObject *a
     Py_ssize_t argc, envc;
     PyObject *result = NULL;
     PyObject *temp_buffer = NULL;
+    PyObject *cwd_buffer = NULL;
     pid_t pid;
     int err_code;
 
@@ -7973,7 +8000,13 @@ py_posix_spawn(int use_posix_spawnp, PyObject *module, path_t *path, PyObject *a
         if (!temp_buffer) {
             goto exit;
         }
-        if (parse_file_actions(file_actions, &file_actions_buf, temp_buffer)) {
+        /* Use a list to capture all directories passed via POSIX_SPAWN_CHDIR
+         * action for potential exception creation below. */
+        cwd_buffer = PyList_New(0);
+        if (!cwd_buffer) {
+            goto exit;
+        }
+        if (parse_file_actions(file_actions, &file_actions_buf, temp_buffer, cwd_buffer)) {
             goto exit;
         }
         file_actionsp = &file_actions_buf;
@@ -8005,6 +8038,41 @@ py_posix_spawn(int use_posix_spawnp, PyObject *module, path_t *path, PyObject *a
 
     if (err_code) {
         errno = err_code;
+#ifdef HAVE_POSIX_SPAWN_FILE_ACTIONS_ADDCHDIR_NP
+        Py_ssize_t cwd_size;
+        if (errno == ENOENT && cwd_buffer && (cwd_size = PyList_GET_SIZE(cwd_buffer))) {
+            /* ENOENT can occur when either the path of the executable or any of
+             * the cwds given via file_actions doesn't exist. Since it's not
+             * possible to determine which of those paths caused the problem,
+             * we return an exception with all of those. */
+
+            if (cwd_size == 1) {
+                PyObject *cwd = PyList_GET_ITEM(cwd_buffer, 0);
+                PyErr_Format(PyExc_FileNotFoundError, "Either '%S' or '%s' doesn't exist.",
+                         path->object, PyBytes_AS_STRING(cwd));
+            } else {
+                /* Multiple POSIX_SPAWN_CHDIR actions were used in a single
+                 * spawn. In this case, we have to build the expection message
+                 * from all possibly missing paths. */
+                PyObject *separator = PyBytes_FromString(", ");
+                if (!separator) {
+                    goto exit;
+                }
+
+                PyObject *joined = PyBytes_Join(separator, cwd_buffer);
+                Py_DECREF(separator);
+                if (!joined) {
+                    goto exit;
+                }
+                PyErr_Format(PyExc_FileNotFoundError,
+                             "Either '%S' or one of (%s) doesn't exist.",
+                             path->object, PyBytes_AS_STRING(joined));
+
+                Py_DECREF(joined);
+            }
+            goto exit;
+        }
+#endif
         PyErr_SetFromErrnoWithFilenameObject(PyExc_OSError, path->object);
         goto exit;
     }
@@ -8026,6 +8094,7 @@ exit:
     if (argvlist) {
         free_string_array(argvlist, argc);
     }
+    Py_XDECREF(cwd_buffer);
     Py_XDECREF(temp_buffer);
     return result;
 }
@@ -18147,6 +18216,9 @@ all_ins(PyObject *m)
     if (PyModule_AddIntConstant(m, "POSIX_SPAWN_DUP2", POSIX_SPAWN_DUP2)) return -1;
 #ifdef HAVE_POSIX_SPAWN_FILE_ACTIONS_ADDCLOSEFROM_NP
     if (PyModule_AddIntMacro(m, POSIX_SPAWN_CLOSEFROM)) return -1;
+#endif
+#ifdef HAVE_POSIX_SPAWN_FILE_ACTIONS_ADDCHDIR_NP
+    if (PyModule_AddIntMacro(m, POSIX_SPAWN_CHDIR)) return -1;
 #endif
 #endif
 
