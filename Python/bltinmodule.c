@@ -13,6 +13,7 @@
 #include "pycore_long.h"          // _PyLong_CompactValue
 #include "pycore_modsupport.h"    // _PyArg_NoKwnames()
 #include "pycore_object.h"        // _Py_AddToAllObjects()
+#include "pycore_opcode_utils.h"  // _PyBuiltin_All, _PyBuiltin_Any, _PyCFunction_vectorcall_O
 #include "pycore_pyerrors.h"      // _PyErr_NoMemory()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_pythonrun.h"     // _Py_SourceAsString()
@@ -462,6 +463,32 @@ builtin_any(PyObject *module, PyObject *iterable)
     }
     Py_RETURN_FALSE;
 }
+
+static PyMethodDef _PyBuiltin_All_methoddef = {
+    "all", (PyCFunction)builtin_all, METH_O, builtin_all__doc__,
+};
+
+PyCFunctionObject _PyBuiltin_All = {
+    .ob_base = _PyObject_HEAD_INIT(&PyCFunction_Type),
+    .m_ml = &_PyBuiltin_All_methoddef,
+    .m_self = NULL,
+    .m_module = (PyObject *)&_Py_ID(builtins),
+    .m_weakreflist = NULL,
+    .vectorcall = _PyCFunction_vectorcall_O,
+};
+
+static PyMethodDef _PyBuiltin_Any_methoddef = {
+    "any", (PyCFunction)builtin_any, METH_O, builtin_any__doc__,
+};
+
+PyCFunctionObject _PyBuiltin_Any = {
+    .ob_base = _PyObject_HEAD_INIT(&PyCFunction_Type),
+    .m_ml = &_PyBuiltin_Any_methoddef,
+    .m_self = NULL,
+    .m_module = (PyObject *)&_Py_ID(builtins),
+    .m_weakreflist = NULL,
+    .vectorcall = _PyCFunction_vectorcall_O,
+};
 
 /*[clinic input]
 ascii as builtin_ascii
@@ -3430,8 +3457,6 @@ static PyMethodDef builtin_methods[] = {
     BUILTIN___IMPORT___METHODDEF
     BUILTIN___LAZY_IMPORT___METHODDEF
     BUILTIN_ABS_METHODDEF
-    BUILTIN_ALL_METHODDEF
-    BUILTIN_ANY_METHODDEF
     BUILTIN_ASCII_METHODDEF
     BUILTIN_BIN_METHODDEF
     {"breakpoint", _PyCFunction_CAST(builtin_breakpoint), METH_FASTCALL | METH_KEYWORDS, breakpoint_doc},

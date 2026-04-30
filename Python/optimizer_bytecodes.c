@@ -1,4 +1,6 @@
 #include "Python.h"
+#include "pycore_long.h"
+#include "pycore_opcode_utils.h"
 #include "pycore_optimizer.h"
 #include "pycore_uops.h"
 #include "pycore_uop_ids.h"
@@ -873,6 +875,7 @@ dummy_func(void) {
     op(_LOAD_COMMON_CONSTANT, (-- value)) {
         assert(oparg < NUM_COMMON_CONSTANTS);
         PyObject *val = _PyInterpreterState_GET()->common_consts[oparg];
+        assert(_Py_IsImmortal(val));
         ADD_OP(_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)val);
         value = PyJitRef_Borrow(sym_new_const(ctx, val));
     }
