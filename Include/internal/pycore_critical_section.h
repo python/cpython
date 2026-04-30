@@ -95,6 +95,9 @@ _PyCriticalSection2_BeginSlow(PyThreadState *tstate, PyCriticalSection2 *c, PyMu
 PyAPI_FUNC(void)
 _PyCriticalSection_SuspendAll(PyThreadState *tstate);
 
+int
+_PyCriticalSection_WarnIfNotHeld(PyObject *op, const char *message);
+
 #ifdef Py_GIL_DISABLED
 
 static inline int

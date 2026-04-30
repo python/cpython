@@ -1,0 +1,2 @@
+Restore the historical behavior of the :class:`~collections.defaultdict` class,
+while keeping it safe to use with :term:`free threading`.

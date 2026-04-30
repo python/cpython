@@ -730,7 +730,7 @@ stack manipulations such as ``dup``, ``drop``, ``swap``, ``over``, ``pick``,
            defaultdict(default_factory, iterable, /, **kwargs)
 
     Return a new dictionary-like object.  :class:`defaultdict` is a subclass of the
-    built-in :class:`dict` class.  It overrides one method and adds one writable
+    built-in :class:`dict` class.  It defines two methods and adds one writable
     instance variable.  The remaining functionality is the same as for the
     :class:`dict` class and is not documented here.
 
@@ -740,33 +740,39 @@ stack manipulations such as ``dup``, ``drop``, ``swap``, ``over``, ``pick``,
     arguments.
 
 
-    :class:`defaultdict` objects support the following method in addition to the
-    standard :class:`dict` operations:
+    :class:`defaultdict` defines the following methods:
+
+    .. method:: __getitem__(key, /)
+
+        Return ``self[key]``. If the item doesn't exist, the :meth:`__missing__`
+        method is called to create it.
+
+        When :term:`free threading` is enabled, the defaultdict is locked while
+        the key is being looked up and the :meth:`__missing__` method is being
+        called, thus ensuring that only one default value is generated and
+        inserted for each missing key.
 
     .. method:: __missing__(key, /)
 
-        If the :attr:`default_factory` attribute is ``None``, this raises a
-        :exc:`KeyError` exception with the *key* as argument.
+        Equivalent to::
 
-        If :attr:`default_factory` is not ``None``, it is called without arguments
-        to provide a default value for the given *key*, this value is inserted in
-        the dictionary for the *key*, and returned.
+            if self.default_factory is None:
+                raise KeyError(key)
+            self[key] = value = self.default_factory()
+            return value
 
-        If calling :attr:`default_factory` raises an exception this exception is
-        propagated unchanged.
-
-        This method is called by the :meth:`~object.__getitem__` method of the
-        :class:`dict` class when the requested key is not found; whatever it
-        returns or raises is then returned or raised by :meth:`~object.__getitem__`.
-
-        Note that :meth:`__missing__` is *not* called for any operations besides
-        :meth:`~object.__getitem__`. This means that :meth:`~dict.get` will, like
-        normal dictionaries, return ``None`` as a default rather than using
+        Keep in mind that this method is *not* called for any operations besides
+        ``dd[key]``. This means that ``dd.get(key)`` will, like normal
+        dictionaries, return ``None`` as a default rather than using
         :attr:`default_factory`.
+
+        A direct call to this method (meaning a call that isn't coming from
+        :meth:`__getitem__`) can create a :term:`race condition`. To reset an
+        item to a default value the next time it's accessed, use the
+        :meth:`~dict.pop` method to safely remove the current value.
 
 
     :class:`defaultdict` objects support the following instance variable:
-
 
     .. attribute:: default_factory
 
@@ -774,9 +780,14 @@ stack manipulations such as ``dup``, ``drop``, ``swap``, ``over``, ``pick``,
         it is initialized from the first argument to the constructor, if present,
         or to ``None``, if absent.
 
+
     .. versionchanged:: 3.9
-       Added merge (``|``) and update (``|=``) operators, specified in
-       :pep:`584`.
+        Added merge (``|``) and update (``|=``) operators, specified in
+        :pep:`584`.
+
+    .. versionchanged:: 3.15
+        Added the :meth:`__getitem__` method which is safe to use with
+        :term:`free threading` enabled.
 
 
 :class:`defaultdict` Examples
