@@ -1750,7 +1750,9 @@ Subcommands
    * help_ - help for sub-parser group in help output, by default ``None``
 
    * metavar_ - string presenting available subcommands in help; by default it
-     is ``None`` and presents subcommands in form {cmd1, cmd2, ..}
+     is ``None`` and presents subcommands in form {cmd1, cmd2, ..} in the usage line
+     and next to the subparsers group heading. It does not change how the
+     individual subcommands are listed below that heading
 
    Some example usage::
 
