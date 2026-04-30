@@ -321,7 +321,7 @@ Parenthesized forms
 A parenthesized form is an optional expression list enclosed in parentheses:
 
 .. productionlist:: python-grammar
-   parenth_form: "(" [`starred_expression`] ")"
+   parenth_form: "(" [`flexible_expression_list`] ")"
 
 A parenthesized expression list yields whatever that expression list yields: if
 the list contains at least one comma, it yields a tuple; otherwise, it yields
@@ -628,7 +628,7 @@ Yield expressions
 .. productionlist:: python-grammar
    yield_atom: "(" `yield_expression` ")"
    yield_from: "yield" "from" `expression`
-   yield_expression: "yield" `yield_list` | `yield_from`
+   yield_expression: "yield" [`yield_list` | `yield_from`]
 
 The yield expression is used when defining a :term:`generator` function
 or an :term:`asynchronous generator` function and
