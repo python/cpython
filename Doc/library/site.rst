@@ -17,7 +17,7 @@ import can be suppressed using the interpreter's :option:`-S` option.
 
 Importing this module normally appends site-specific paths to the module search path
 and adds :ref:`callables <site-consts>`, including :func:`help` to the built-in
-namespace. However, Python startup option :option:`-S` blocks this and this module
+namespace. However, Python startup option :option:`-S` blocks this, and this module
 can be safely imported with no automatic modifications to the module search path
 or additions to the builtins.  To explicitly trigger the usual site-specific
 additions, call the :func:`main` function.
@@ -71,40 +71,127 @@ the user site prefixes are also implicitly not searched for site-packages.
    single: # (hash); comment
    pair: statement; import
 
-A path configuration file is a file whose name has the form :file:`{name}.pth`
-and exists in one of the four directories mentioned above; its contents are
-additional items (one per line) to be added to ``sys.path``.  Non-existing items
-are never added to ``sys.path``, and no check is made that the item refers to a
-directory rather than a file.  No item is added to ``sys.path`` more than
-once.  Blank lines and lines beginning with ``#`` are skipped.  Lines starting
-with ``import`` (followed by space or tab) are executed.
+The :mod:`!site` module recognizes two startup configuration files of the form
+:file:`{name}.pth` for path configurations, and :file:`{name}.start` for
+pre-first-line code execution.  Both files can exist in one of the four
+directories mentioned above.  Within each directory, these files are sorted
+alphabetically by filename, then parsed in sorted order.
+
+.. _site-pth-files:
+
+Path extensions (:file:`.pth` files)
+------------------------------------
+
+:file:`{name}.pth` contains additional items (one per line) to be appended to
+``sys.path``.  Items that name non-existing directories are never added to
+``sys.path``, and no check is made that the item refers to a directory rather
+than a file.  No item is added to ``sys.path`` more than once.  Blank lines
+and lines beginning with ``#`` are skipped.
+
+For backward compatibility, lines starting with ``import`` (followed by space
+or tab) are executed with :func:`exec`.
+
+.. versionchanged:: 3.15
+
+   ``import`` lines in :file:`{name}.pth` are ignored when a :ref:`matching
+   <site-start-files>` :file:`{name}.start` file exists.
+
+.. deprecated-removed:: 3.15 3.20
+
+   ``import`` lines in :file:`{name}.pth` files are deprecated and will be
+   silently ignored in Python 3.18 and 3.19.  In Python 3.20 a warning will be
+   produced for ``import`` lines in :file:`{name}.pth` files.
+
+
+.. _site-start-files:
+
+Startup entry points (:file:`.start` files)
+-------------------------------------------
+
+.. versionadded:: 3.15
+
+A startup entry point file is a file whose name has the form
+:file:`{name}.start` and exists in one of the site-packages directories
+described above.  Each file specifies entry points to be called during
+interpreter startup, using the ``pkg.mod:callable`` syntax understood by
+:func:`pkgutil.resolve_name`.
+
+Each non-blank line that does not begin with ``#`` must contain an entry
+point reference in the form ``pkg.mod:callable``.  The colon and callable
+portion are mandatory.  Each callable is invoked with no arguments, and
+any return value is discarded.
+
+:file:`.start` files are processed after all :file:`.pth` path extensions
+have been applied to :data:`sys.path`, ensuring that paths are available
+before any startup code runs.
+
+Unlike :data:`sys.path` extensions from :file:`.pth` files, duplicate entry
+points are **not** de-duplicated --- if an entry point appears more than once,
+it will be called more than once.
+
+If an exception occurs during resolution or invocation of an entry point,
+a traceback is printed to :data:`sys.stderr` and processing continues with
+the remaining entry points.
+
+:file:`.start` files must be encoded in UTF-8.
+
+:pep:`829` defined the original specification for these features.
 
 .. note::
 
-   An executable line in a :file:`.pth` file is run at every Python startup,
+   If a :file:`{name}.start` file exists alongside a :file:`{name}.pth` file
+   with the same base name, any ``import`` lines in the :file:`.pth` file are
+   ignored in favor of the entry points in the :file:`.start` file.
+
+.. note::
+
+   Executable lines (``import`` lines in :file:`{name}.pth` files and
+   :file:`{name}.start` file entry points) are always run at Python startup
+   (unless :option:`-S` is given to disable the ``site.py`` module entirely),
    regardless of whether a particular module is actually going to be used.
-   Its impact should thus be kept to a minimum.
-   The primary intended purpose of executable lines is to make the
-   corresponding module(s) importable
-   (load 3rd-party import hooks, adjust :envvar:`PATH` etc).
-   Any other initialization is supposed to be done upon a module's
-   actual import, if and when it happens.
-   Limiting a code chunk to a single line is a deliberate measure
-   to discourage putting anything more complex here.
+
+.. note::
+
+   :file:`{name}.start` files invoke :func:`pkgutil.resolve_name` with
+   ``strict=True``, which requires the full ``pkg.mod:callable`` form.
 
 .. versionchanged:: 3.13
+
    The :file:`.pth` files are now decoded by UTF-8 at first and then by the
    :term:`locale encoding` if it fails.
+
+.. deprecated-removed:: 3.15 3.20
+
+   Decoding :file:`{name}.pth` files in any encoding other than ``utf-8-sig``
+   is deprecated in Python 3.15, and support for decoding from the locale
+   encoding will be removed in Python 3.20.
+
+.. versionchanged:: 3.15
+
+   :file:`.pth` file lines starting with ``import`` are deprecated.  During
+   the deprecation period, such lines are still executed, but a diagnostic
+   message is emitted when the :option:`-v` flag is given.  If a
+   :file:`{name}.start` file with the same base name exists, ``import`` lines
+   in :file:`{name}.pth` files are silently ignored.  See
+   :ref:`site-start-files` and :pep:`829`.
+
+   Errors on individual lines no longer abort processing of the rest of the
+   file.  Each error is reported and the remaining lines continue to be
+   processed.
 
 .. index::
    single: package
    triple: path; configuration; file
 
+
+Startup file examples
+---------------------
+
 For example, suppose ``sys.prefix`` and ``sys.exec_prefix`` are set to
 :file:`/usr/local`.  The Python X.Y library is then installed in
 :file:`/usr/local/lib/python{X.Y}`.  Suppose this has
 a subdirectory :file:`/usr/local/lib/python{X.Y}/site-packages` with three
-subsubdirectories, :file:`foo`, :file:`bar` and :file:`spam`, and two path
+sub-subdirectories, :file:`foo`, :file:`bar` and :file:`spam`, and two path
 configuration files, :file:`foo.pth` and :file:`bar.pth`.  Assume
 :file:`foo.pth` contains the following::
 
@@ -130,6 +217,45 @@ Note that :file:`bletch` is omitted because it doesn't exist; the :file:`bar`
 directory precedes the :file:`foo` directory because :file:`bar.pth` comes
 alphabetically before :file:`foo.pth`; and :file:`spam` is omitted because it is
 not mentioned in either path configuration file.
+
+Let's say that there is also a :file:`foo.start` file containing the
+following::
+
+    # foo package startup code
+
+    foo.submod:initialize()
+
+Now, after ``sys.path`` has been extended as above, and before Python turns
+control over to user code, the ``foo.submod`` module is imported and the
+``initialize()`` function from that module is called.
+
+
+.. _site-migration-guide:
+
+Migrating from ``import`` lines in ``.pth`` files to ``.start`` files
+---------------------------------------------------------------------
+
+If your package currently ships a :file:`{name}.pth` file, you can keep all
+``sys.path`` extension lines unchanged.  Only ``import`` lines need to be
+migrated.
+
+To migrate, create a callable (taking zero arguments) within an importable
+module in your package.  Reference it as a ``pkg.mod:callable`` entry point
+in a matching :file:`{name}.start` file.  Move everything on your ``import``
+line after the first semi-colon into the ``callable()`` function.
+
+If your package must straddle older Pythons that do not support :pep:`829`
+and newer Pythons that do, change the ``import`` lines in your
+:file:`{name}.pth` to use the following form:
+
+.. code-block:: python
+
+   import pkg.mod; pkg.mod.callable()
+
+Older Pythons will execute these ``import`` lines, while newer Pythons will
+ignore them in favor of the :file:`{name}.start` file.  After the straddling
+period, remove all ``import`` lines from your :file:`.pth` files.
+
 
 :mod:`!sitecustomize`
 ---------------------
@@ -238,8 +364,19 @@ Module contents
 
 .. function:: addsitedir(sitedir, known_paths=None)
 
-   Add a directory to sys.path and process its :file:`.pth` files.  Typically
-   used in :mod:`sitecustomize` or :mod:`usercustomize` (see above).
+   Add a directory to sys.path and process its :file:`.pth` and
+   :file:`.start` files.  Typically used in :mod:`sitecustomize` or
+   :mod:`usercustomize` (see above).
+
+   The *known_paths* argument is an optional set of case-normalized paths
+   used to prevent duplicate :data:`sys.path` entries.  When ``None`` (the
+   default), the set is built from the current :data:`sys.path`.
+
+   .. versionchanged:: 3.15
+      Also processes :file:`.start` files.  See :ref:`site-start-files`.
+      All :file:`.pth` and :file:`.start` files are now read and
+      accumulated before any path extensions, ``import`` line execution,
+      or entry point invocations take place.
 
 
 .. function:: getsitepackages()
@@ -308,5 +445,6 @@ value greater than 2 if there is an error.
 .. seealso::
 
    * :pep:`370` -- Per user site-packages directory
+   * :pep:`829` -- Startup entry points and the deprecation of import lines in ``.pth`` files
    * :ref:`sys-path-init` -- The initialization of :data:`sys.path`.
 

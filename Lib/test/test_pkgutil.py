@@ -322,6 +322,56 @@ class PkgutilTests(unittest.TestCase):
                 with self.assertRaises(exc):
                     pkgutil.resolve_name(s)
 
+    def test_name_resolution_strict(self):
+        # PEP 829: strict=True accepts only the pkg.mod:callable form
+        # (W(.W)*:W(.W)*) -- both the colon and the callable are required.
+        import logging
+        import logging.handlers
+
+        success_cases = (
+            ('os.path:pathsep', os.path.pathsep),
+            ('logging.handlers:SysLogHandler',
+                logging.handlers.SysLogHandler),
+            ('logging.handlers:SysLogHandler.LOG_ALERT',
+                logging.handlers.SysLogHandler.LOG_ALERT),
+            ('builtins:int', int),
+            ('builtins:int.from_bytes', int.from_bytes),
+            ('os:path', os.path),
+        )
+
+        # All of these are accepted under strict=False but must be
+        # rejected under strict=True.
+        failure_cases = (
+            'os',                       # no colon (non-strict form)
+            'os.path',                  # no colon
+            'logging:',                 # colon, empty callable
+            'os.foo:',                  # colon, empty callable
+            ':int',                     # empty package
+            'os.path:join:extra',       # extra colon
+            'os.path.9abc:join',        # invalid identifier in package
+            'os.path:9abc',             # invalid identifier in callable
+            '',                         # empty
+            '?abc:foo',                 # invalid character
+        )
+
+        for s, expected in success_cases:
+            with self.subTest(s=s):
+                self.assertEqual(
+                    pkgutil.resolve_name(s, strict=True), expected)
+
+        for s in failure_cases:
+            with self.subTest(s=s):
+                with self.assertRaises(ValueError):
+                    pkgutil.resolve_name(s, strict=True)
+
+        # Cache independence: a strict=True call must not poison
+        # strict=False (and vice versa).  Exercise both orderings.
+        self.assertEqual(
+            pkgutil.resolve_name('os:path', strict=True), os.path)
+        self.assertEqual(pkgutil.resolve_name('os.path'), os.path)
+        self.assertEqual(
+            pkgutil.resolve_name('os:path', strict=True), os.path)
+
     def test_name_resolution_import_rebinding(self):
         # The same data is also used for testing import in test_import and
         # mock.patch in test_unittest.

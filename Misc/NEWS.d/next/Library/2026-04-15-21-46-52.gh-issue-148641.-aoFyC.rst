@@ -1,0 +1,3 @@
+:pep:`829` (package startup configuration files) implements a new format
+``<name>.start`` parallel to ``<name>.pth`` files, to replace ``import``
+lines in the latter.

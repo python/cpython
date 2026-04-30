@@ -18,57 +18,25 @@ sys.prefix and sys.exec_prefix are set to that directory and
 it is also checked for site-packages (sys.base_prefix and
 sys.base_exec_prefix will always be the "real" prefixes of the Python
 installation). If "pyvenv.cfg" (a bootstrap configuration file) contains
-the key "include-system-site-packages" is set to  "true"
-(case-insensitive), the system-level prefixes will still also be
-searched for site-packages; otherwise they won't.  If the system-level
-prefixes are not included then the user site prefixes are also implicitly
-not searched for site-packages.
+the key "include-system-site-packages" set to "true" (case-insensitive),
+the system-level prefixes will still also be searched for site-packages;
+otherwise they won't.
 
-All of the resulting site-specific directories, if they exist, are
-appended to sys.path, and also inspected for path configuration
-files.
+Two kinds of configuration files are processed in each site-packages
+directory:
 
-A path configuration file is a file whose name has the form
-<package>.pth; its contents are additional directories (one per line)
-to be added to sys.path.  Non-existing directories (or
-non-directories) are never added to sys.path; no directory is added to
-sys.path more than once.  Blank lines and lines beginning with
-'#' are skipped. Lines starting with 'import' are executed.
+- <name>.pth files extend sys.path with additional directories (one per
+  line).  Lines starting with "import" are deprecated (see PEP 829).
 
-For example, suppose sys.prefix and sys.exec_prefix are set to
-/usr/local and there is a directory /usr/local/lib/python2.5/site-packages
-with three subdirectories, foo, bar and spam, and two path
-configuration files, foo.pth and bar.pth.  Assume foo.pth contains the
-following:
+- <name>.start files specify startup entry points using the pkg.mod:callable
+  syntax.  These are resolved via pkgutil.resolve_name() and called with no
+  arguments.
 
-  # foo package configuration
-  foo
-  bar
-  bletch
+All .pth path extensions are applied before any .start entry points are
+executed, ensuring that paths are available before startup code runs.
 
-and bar.pth contains:
-
-  # bar package configuration
-  bar
-
-Then the following directories are added to sys.path, in this order:
-
-  /usr/local/lib/python2.5/site-packages/bar
-  /usr/local/lib/python2.5/site-packages/foo
-
-Note that bletch is omitted because it doesn't exist; bar precedes foo
-because bar.pth comes alphabetically before foo.pth; and spam is
-omitted because it is not mentioned in either path configuration file.
-
-The readline module is also automatically configured to enable
-completion for systems that support it.  This can be overridden in
-sitecustomize, usercustomize or PYTHONSTARTUP.  Starting Python in
-isolated mode (-I) disables automatic readline configuration.
-
-After these operations, an attempt is made to import a module
-named sitecustomize, which can perform arbitrary additional
-site-specific customizations.  If this import fails with an
-ImportError exception, it is silently ignored.
+See the documentation for the site module for full details:
+https://docs.python.org/3/library/site.html
 """
 
 import sys
@@ -78,6 +46,11 @@ import _sitebuiltins
 import _io as io
 import stat
 import errno
+
+lazy import locale
+lazy import pkgutil
+lazy import traceback
+lazy import warnings
 
 # Prefixes for site-packages; add additional prefixes like /usr/local here
 PREFIXES = [sys.prefix, sys.exec_prefix]
@@ -92,15 +65,32 @@ USER_SITE = None
 USER_BASE = None
 
 
-def _trace(message):
+def _trace(message, exc=None):
     if sys.flags.verbose:
-        print(message, file=sys.stderr)
+        _print_error(message, exc)
+
+
+def _print_error(message, exc=None):
+    """Print an error message to stderr, optionally with a formatted traceback."""
+    print(message, file=sys.stderr)
+    if exc is not None:
+        for record in traceback.format_exception(exc):
+            for line in record.splitlines():
+                print('  ' + line, file=sys.stderr)
 
 
 def _warn(*args, **kwargs):
-    import warnings
-
     warnings.warn(*args, **kwargs)
+
+
+def _warn_future_us(message, remove):
+    # Don't call warnings._deprecated() directly because we're lazily importing warnings and
+    # don't want to have to trigger an eager import if it's not necessary.  Start up time
+    # matters a lot here and warnings isn't cheap!  This inlines the check from
+    # warnings._py_warnings._deprecated().
+    _version = sys.version_info
+    if (_version[:2] > remove) or (_version[:2] == remove and _version[3] != "alpha"):
+        warnings._deprecated(message, remove=remove)
 
 
 def makepath(*paths):
@@ -163,75 +153,232 @@ def _init_pathinfo():
     return d
 
 
-def addpackage(sitedir, name, known_paths):
-    """Process a .pth file within the site-packages directory:
-       For each line in the file, either combine it with sitedir to a path
-       and add that to known_paths, or execute it if it starts with 'import '.
+# Accumulated entry points from .start files across all site-packages
+# directories.  Execution is deferred until all paths in .pth files have been
+# appended to sys.path.  Map the .pth/.start file the data is found in to the
+# data.
+_pending_entrypoints = {}
+_pending_syspaths = {}
+_pending_importexecs = {}
+
+
+def _read_pthstart_file(sitedir, name, suffix):
+    """Parse a .start or .pth file and return (lines, filename).
+
+    On success, ``lines`` is a (possibly empty) list of the file's lines.
+    On failure (file missing, hidden, unreadable, or .start with bad
+    encoding), ``lines`` is ``None`` so callers can distinguish a
+    successfully-read empty file from one that could not be read.
     """
+    filename = os.path.join(sitedir, name)
+    _trace(f"Reading startup configuration file: {filename}")
+
+    try:
+        st = os.lstat(filename)
+    except OSError as exc:
+        _trace(f"Cannot stat {filename!r}", exc)
+        return None, filename
+
+    if ((getattr(st, 'st_flags', 0) & stat.UF_HIDDEN) or
+        (getattr(st, 'st_file_attributes', 0) & stat.FILE_ATTRIBUTE_HIDDEN)):
+        _trace(f"Skipping hidden {suffix} file: {filename!r}")
+        return None, filename
+
+    _trace(f"Processing {suffix} file: {filename!r}")
+    try:
+        with io.open_code(filename) as f:
+            raw_content = f.read()
+    except OSError as exc:
+        _trace(f"Cannot read {filename!r}", exc)
+        return None, filename
+
+    try:
+        # Accept BOM markers in .start and .pth files as we do in source files (Windows PowerShell
+        # 5.1 makes it hard to emit UTF-8 files without a BOM).
+        content = raw_content.decode("utf-8-sig")
+    except UnicodeDecodeError:
+        _trace(f"Cannot read {filename!r} as UTF-8.")
+        # For .pth files only, and then only until Python 3.20, fallback to locale encoding for
+        # backward compatibility.
+        _warn_future_us(
+            ".pth files decoded to locale encoding as a fallback",
+            remove=(3, 20)
+        )
+        if suffix == ".pth":
+            content = raw_content.decode(locale.getencoding())
+            _trace(f"Using fallback encoding {locale.getencoding()!r}")
+        else:
+            return None, filename
+
+    return content.splitlines(), filename
+
+
+def _read_pth_file(sitedir, name, known_paths):
+    """Parse a .pth file, accumulating sys.path extensions and import lines.
+
+    Errors on individual lines do not abort processing of the rest of the
+    file (PEP 829).
+    """
+    lines, filename = _read_pthstart_file(sitedir, name, ".pth")
+    if lines is None:
+        return
+
+    for n, line in enumerate(lines, 1):
+        line = line.strip()
+        if len(line) == 0 or line.startswith("#"):
+            continue
+
+        # In Python 3.18 and 3.19, `import` lines are silently ignored.  In
+        # Python 3.20 and beyond, issue a warning when `import` lines in .pth
+        # files are detected.
+        if line.startswith("import ") or line.startswith("import\t"):
+            _warn_future_us(
+                "import lines in .pth files are silently ignored",
+                remove=(3, 18)
+            )
+            _warn_future_us(
+                "import lines in .pth files are noisily ignored",
+                remove=(3, 20)
+            )
+            _pending_importexecs.setdefault(filename, []).append(line)
+            continue
+
+        try:
+            dir_, dircase = makepath(sitedir, line)
+        except Exception as exc:
+            _trace(f"Error in {filename!r}, line {n:d}: {line!r}", exc)
+            continue
+
+        if dircase in known_paths:
+            _trace(f"In {filename!r}, line {n:d}: "
+                   f"skipping duplicate sys.path entry: {dir_}")
+        else:
+            _pending_syspaths.setdefault(filename, []).append(dir_)
+            known_paths.add(dircase)
+
+
+def _read_start_file(sitedir, name):
+    """Parse a .start file for a list of entry point strings."""
+    lines, filename = _read_pthstart_file(sitedir, name, ".start")
+    if lines is None:
+        return
+
+    # PEP 829: the *presence* of a matching .start file disables `import`
+    # line processing in the matched .pth file, regardless of whether the
+    # .start file produced any entry points.  Register the filename as a
+    # key now so an empty (or comment-only) .start file still suppresses.
+    entrypoints = _pending_entrypoints.setdefault(filename, [])
+
+    for n, line in enumerate(lines, 1):
+        line = line.strip()
+        if len(line) == 0 or line.startswith("#"):
+            continue
+        # Syntax validation is deferred to entry-point execution time,
+        # where pkgutil.resolve_name(strict=True) enforces the
+        # pkg.mod:callable form.
+        entrypoints.append(line)
+
+
+def _extend_syspath():
+    # We've already filtered out duplicates, either in the existing sys.path
+    # or in all the .pth files we've seen.  We've also abspath/normpath'd all
+    # the entries, so all that's left to do is to ensure that the path exists.
+    for filename, dirs in _pending_syspaths.items():
+        for dir_ in dirs:
+            if os.path.exists(dir_):
+                _trace(f"Extending sys.path with {dir_} from {filename}")
+                sys.path.append(dir_)
+            else:
+                _print_error(
+                    f"In {filename}: {dir_} does not exist; "
+                    f"skipping sys.path append")
+
+
+def _exec_imports():
+    # For all the `import` lines we've seen in .pth files, exec() them in
+    # order.  However, if they come from a file with a matching .start, then
+    # we ignore these import lines.  For the ones we do process, print a
+    # warning but only when -v was given.
+    for filename, imports in _pending_importexecs.items():
+        name, dot, pth = filename.rpartition(".")
+        assert dot == "." and pth == "pth", f"Bad startup filename: {filename}"
+
+        if f"{name}.start" in _pending_entrypoints:
+            # Skip import lines in favor of entry points.
+            continue
+
+        _trace(
+            f"import lines in {filename} are deprecated, "
+            f"use entry points in a {name}.start file instead."
+        )
+
+        for line in imports:
+            try:
+                _trace(f"Exec'ing from {filename}: {line}")
+                exec(line)
+            except Exception as exc:
+                _print_error(
+                    f"Error in import line from {filename}: {line}", exc)
+
+
+def _execute_start_entrypoints():
+    """Execute all accumulated .start file entry points.
+
+    Called after all site-packages directories have been processed so that
+    sys.path is fully populated before any entry point code runs.  Uses
+    pkgutil.resolve_name(strict=True) which both validates the strict
+    pkg.mod:callable form and resolves the entry point in one step.
+    """
+    for filename, entrypoints in _pending_entrypoints.items():
+        for entrypoint in entrypoints:
+            try:
+                _trace(f"Executing entry point: {entrypoint} from {filename}")
+                callable_ = pkgutil.resolve_name(entrypoint, strict=True)
+            except ValueError as exc:
+                _print_error(
+                    f"Invalid entry point syntax in {filename}: "
+                    f"{entrypoint!r}", exc)
+                continue
+            except Exception as exc:
+                _print_error(
+                    f"Error resolving entry point {entrypoint} "
+                    f"from {filename}", exc)
+                continue
+            try:
+                callable_()
+            except Exception as exc:
+                _print_error(
+                    f"Error in entry point {entrypoint} from {filename}",
+                    exc)
+
+
+def flush_pth_start():
+    """Flush all pending sys.path and entry points."""
+    _extend_syspath()
+    _exec_imports()
+    _execute_start_entrypoints()
+    _pending_syspaths.clear()
+    _pending_importexecs.clear()
+    _pending_entrypoints.clear()
+
+
+def addpackage(sitedir, name, known_paths):
+    """Process a .pth file within the site-packages directory."""
     if known_paths is None:
         known_paths = _init_pathinfo()
         reset = True
     else:
         reset = False
-    fullname = os.path.join(sitedir, name)
-    try:
-        st = os.lstat(fullname)
-    except OSError:
-        return
-    if ((getattr(st, 'st_flags', 0) & stat.UF_HIDDEN) or
-        (getattr(st, 'st_file_attributes', 0) & stat.FILE_ATTRIBUTE_HIDDEN)):
-        _trace(f"Skipping hidden .pth file: {fullname!r}")
-        return
-    _trace(f"Processing .pth file: {fullname!r}")
-    try:
-        with io.open_code(fullname) as f:
-            pth_content = f.read()
-    except OSError:
-        return
-
-    try:
-        # Accept BOM markers in .pth files as we do in source files
-        # (Windows PowerShell 5.1 makes it hard to emit UTF-8 files without a BOM)
-        pth_content = pth_content.decode("utf-8-sig")
-    except UnicodeDecodeError:
-        # Fallback to locale encoding for backward compatibility.
-        # We will deprecate this fallback in the future.
-        import locale
-        pth_content = pth_content.decode(locale.getencoding())
-        _trace(f"Cannot read {fullname!r} as UTF-8. "
-               f"Using fallback encoding {locale.getencoding()!r}")
-
-    for n, line in enumerate(pth_content.splitlines(), 1):
-        if line.startswith("#"):
-            continue
-        if line.strip() == "":
-            continue
-        try:
-            if line.startswith(("import ", "import\t")):
-                exec(line)
-                continue
-            line = line.rstrip()
-            dir, dircase = makepath(sitedir, line)
-            if dircase not in known_paths and os.path.exists(dir):
-                sys.path.append(dir)
-                known_paths.add(dircase)
-        except Exception as exc:
-            print(f"Error processing line {n:d} of {fullname}:\n",
-                  file=sys.stderr)
-            import traceback
-            for record in traceback.format_exception(exc):
-                for line in record.splitlines():
-                    print('  '+line, file=sys.stderr)
-            print("\nRemainder of file ignored", file=sys.stderr)
-            break
+    _read_pth_file(sitedir, name, known_paths)
+    flush_pth_start()
     if reset:
         known_paths = None
     return known_paths
 
 
 def addsitedir(sitedir, known_paths=None):
-    """Add 'sitedir' argument to sys.path if missing and handle .pth files in
-    'sitedir'"""
+    """Add 'sitedir' argument to sys.path if missing and handle startup
+    files."""
     _trace(f"Adding directory: {sitedir!r}")
     if known_paths is None:
         known_paths = _init_pathinfo()
@@ -246,12 +393,32 @@ def addsitedir(sitedir, known_paths=None):
         names = os.listdir(sitedir)
     except OSError:
         return
-    names = [name for name in names
-             if name.endswith(".pth") and not name.startswith(".")]
-    for name in sorted(names):
-        addpackage(sitedir, name, known_paths)
+
+    # The following phases are defined by PEP 829.
+    # Phases 1-3: Read .pth files, accumulating paths and import lines.
+    pth_names = sorted(
+        name for name in names
+        if name.endswith(".pth") and not name.startswith(".")
+    )
+    for name in pth_names:
+        _read_pth_file(sitedir, name, known_paths)
+
+    # Phases 6-7: Discover .start files and accumulate their entry points.
+    # Import lines from .pth files with a matching .start file are discarded
+    # at flush time by _exec_imports().
+    start_names = sorted(
+        name for name in names
+        if name.endswith(".start") and not name.startswith(".")
+    )
+    for name in start_names:
+        _read_start_file(sitedir, name)
+
+    # If standalone call (not from main()), flush immediately
+    # so the caller sees the effect.
     if reset:
+        flush_pth_start()
         known_paths = None
+
     return known_paths
 
 
@@ -707,6 +874,13 @@ def main():
         ENABLE_USER_SITE = check_enableusersite()
     known_paths = addusersitepackages(known_paths)
     known_paths = addsitepackages(known_paths)
+    # PEP 829: flush accumulated data from all .pth and .start files.
+    # Paths are extended first, then deprecated import lines are exec'd,
+    # and finally .start entry points are executed — ensuring sys.path is
+    # fully populated before any startup code runs.  flush_pth_start()
+    # also clears the pending state so a later addsitedir() call does
+    # not re-apply already-processed data.
+    flush_pth_start()
     setquit()
     setcopyright()
     sethelper()
