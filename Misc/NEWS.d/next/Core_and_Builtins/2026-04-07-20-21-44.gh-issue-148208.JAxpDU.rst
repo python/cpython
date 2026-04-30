@@ -1,0 +1,1 @@
+Fix recursion depth leak in :c:func:`PyObject_Print`

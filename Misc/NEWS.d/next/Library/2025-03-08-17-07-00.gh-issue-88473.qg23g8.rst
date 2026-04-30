@@ -1,3 +1,0 @@
-Implement a fast path for :class:`datetime.date` objects in :func:`datetime.date.today`
-which results in a 5x performance gain while proper subclasses retain their
-previous performance.

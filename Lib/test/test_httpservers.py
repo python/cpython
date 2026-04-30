@@ -28,10 +28,12 @@ import datetime
 import threading
 from unittest import mock
 from io import BytesIO, StringIO
+from _colorize import get_theme
 
 import unittest
 from test import support
 from test.support import (
+    force_not_colorized,
     is_apple, import_helper, os_helper, threading_helper
 )
 from test.support.script_helper import kill_python, spawn_python
@@ -480,6 +482,7 @@ class RequestHandlerLoggingTestCase(BaseTestCase):
         def do_ERROR(self):
             self.send_error(HTTPStatus.NOT_FOUND, 'File not found')
 
+    @force_not_colorized
     def test_get(self):
         self.con = http.client.HTTPConnection(self.HOST, self.PORT)
         self.con.connect()
@@ -490,6 +493,7 @@ class RequestHandlerLoggingTestCase(BaseTestCase):
 
         self.assertEndsWith(err.getvalue(), '"GET / HTTP/1.1" 200 -\n')
 
+    @force_not_colorized
     def test_err(self):
         self.con = http.client.HTTPConnection(self.HOST, self.PORT)
         self.con.connect()
@@ -501,6 +505,39 @@ class RequestHandlerLoggingTestCase(BaseTestCase):
         lines = err.getvalue().split('\n')
         self.assertEndsWith(lines[0], 'code 404, message File not found')
         self.assertEndsWith(lines[1], '"ERROR / HTTP/1.1" 404 -')
+
+
+@support.force_colorized_test_class
+class RequestHandlerColorizedLoggingTestCase(RequestHandlerLoggingTestCase):
+
+    def test_get(self):
+        t = get_theme(force_color=True).http_server
+        self.con = http.client.HTTPConnection(self.HOST, self.PORT)
+        self.con.connect()
+
+        with support.captured_stderr() as err:
+            self.con.request("GET", "/")
+            self.con.getresponse()
+
+        output = err.getvalue()
+        self.assertIn(f"{t.path}/{t.reset}", output)
+        self.assertIn(f"{t.status_ok}200", output)
+        self.assertIn(t.reset, output)
+
+    def test_err(self):
+        t = get_theme(force_color=True).http_server
+        self.con = http.client.HTTPConnection(self.HOST, self.PORT)
+        self.con.connect()
+
+        with support.captured_stderr() as err:
+            self.con.request("ERROR", "/")
+            self.con.getresponse()
+
+        lines = err.getvalue().split("\n")
+        self.assertIn(
+            f"{t.error}code 404, message File not found{t.reset}", lines[0]
+        )
+        self.assertIn(f"{t.status_client_error}404", lines[1])
 
 
 class SimpleHTTPServerTestCase(BaseTestCase):
@@ -935,6 +972,7 @@ class BaseHTTPRequestHandlerTestCase(unittest.TestCase):
         match = self.HTTPResponseMatch.search(response)
         self.assertIsNotNone(match)
 
+    @force_not_colorized
     def test_unprintable_not_logged(self):
         # We call the method from the class directly as our Socketless
         # Handler subclass overrode it... nice for everything BUT this test.
@@ -1341,6 +1379,7 @@ class CommandLineTestCase(unittest.TestCase):
         'protocol': default_protocol,
         'port': default_port,
         'bind': default_bind,
+        'content_type': 'application/octet-stream',
         'tls_cert': None,
         'tls_key': None,
         'tls_password': None,
@@ -1408,6 +1447,16 @@ class CommandLineTestCase(unittest.TestCase):
                     call_args = self.args | dict(protocol=protocol)
                     mock_func.assert_called_once_with(**call_args)
                     mock_func.reset_mock()
+
+    @mock.patch('http.server.test')
+    def test_content_type_flag(self, mock_func):
+        content_types = ['text/html', 'text/plain', 'application/json']
+        for content_type in content_types:
+            with self.subTest(content_type=content_type):
+                self.invoke_httpd('--content-type', content_type)
+                call_args = self.args | dict(content_type=content_type)
+                mock_func.assert_called_once_with(**call_args)
+                mock_func.reset_mock()
 
     @unittest.skipIf(ssl is None, "requires ssl")
     @mock.patch('http.server.test')
@@ -1558,6 +1607,16 @@ class CommandLineRunTimeTestCase(unittest.TestCase):
         url = f'https://{bind}:{port}/{self.served_filename}'
         res = self.fetch_file(url, context=context)
         self.assertEqual(res, self.served_data)
+
+
+class TestModule(unittest.TestCase):
+    def test_deprecated__version__(self):
+        with self.assertWarnsRegex(
+            DeprecationWarning,
+            "'__version__' is deprecated and slated for removal in Python 3.20",
+        ) as cm:
+            getattr(http.server, "__version__")
+        self.assertEqual(cm.filename, __file__)
 
 
 def setUpModule():

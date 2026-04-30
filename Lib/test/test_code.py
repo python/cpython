@@ -210,7 +210,7 @@ except ImportError:
     ctypes = None
 from test.support import (cpython_only,
                           check_impl_detail, requires_debug_ranges,
-                          gc_collect, Py_GIL_DISABLED)
+                          gc_collect, Py_GIL_DISABLED, late_deletion)
 from test.support.script_helper import assert_python_ok
 from test.support import threading_helper, import_helper
 from test.support.bytecode_helper import instructions_with_positions
@@ -423,13 +423,6 @@ class CodeTest(unittest.TestCase):
             pass
         new_code = code = func.__code__.replace(co_linetable=b'')
         self.assertEqual(list(new_code.co_lines()), [])
-
-    def test_co_lnotab_is_deprecated(self):  # TODO: remove in 3.14
-        def func():
-            pass
-
-        with self.assertWarns(DeprecationWarning):
-            func.__code__.co_lnotab
 
     @unittest.skipIf(_testinternalcapi is None, '_testinternalcapi is missing')
     def test_returns_only_none(self):
@@ -1164,6 +1157,18 @@ class CodeTest(unittest.TestCase):
                     with self.assertRaises(Exception):
                         _testinternalcapi.verify_stateless_code(func)
 
+    def test_code_richcompare_raise_exception(self):
+        class BadStr(str):
+            def __eq__(self, _):
+                raise RuntimeError("Poison!")
+
+            __hash__ = str.__hash__
+
+        c1 = compile("pass", "test", "exec")
+        c2 = c1.replace(co_name=BadStr("poison"))
+        c3 = compile("pass", "poison", "exec")
+        with self.assertRaises(RuntimeError):
+            c2 == c3
 
 def isinterned(s):
     return s is sys.intern(('_' + s + '_')[1:-1])
@@ -1437,6 +1442,7 @@ class CodeLocationTest(unittest.TestCase):
             co_code=bytes(
                 [
                     dis.opmap["RESUME"], 0,
+                    dis.opmap["CACHE"], 0,
                     dis.opmap["LOAD_COMMON_CONSTANT"], 0,
                     dis.opmap["RAISE_VARARGS"], 1,
                 ]
@@ -1445,7 +1451,7 @@ class CodeLocationTest(unittest.TestCase):
                 [
                     (1 << 7)
                     | (PY_CODE_LOCATION_INFO_NO_COLUMNS << 3)
-                    | (3 - 1),
+                    | (4 - 1),
                     0,
                 ]
             ),
@@ -1453,7 +1459,7 @@ class CodeLocationTest(unittest.TestCase):
         self.assertRaises(AssertionError, f)
         self.assertEqual(
             list(f.__code__.co_positions()),
-            3 * [(42, 42, None, None)],
+            4 * [(42, 42, None, None)],
         )
 
     @cpython_only
@@ -1555,6 +1561,11 @@ if check_impl_detail(cpython=True) and ctypes is not None:
 
     FREE_FUNC = freefunc(myfree)
     FREE_INDEX = RequestCodeExtraIndex(FREE_FUNC)
+    # Make sure myfree sticks around at least as long as the interpreter,
+    # since we (currently) can't unregister the function and leaving a
+    # dangling pointer will cause a crash on deallocation of code objects if
+    # something else uses co_extras, like test_capi.test_misc.
+    late_deletion(myfree)
 
     class CoExtra(unittest.TestCase):
         def get_func(self):

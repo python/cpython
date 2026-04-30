@@ -18,7 +18,7 @@ it was last read.
 .. note::
 
    The :mod:`selectors` module allows high-level and efficient I/O
-   multiplexing, built upon the :mod:`select` module primitives. Users are
+   multiplexing, built upon the :mod:`!select` module primitives. Users are
    encouraged to use the :mod:`selectors` module instead, unless they want
    precise control over the OS-level primitives used.
 
@@ -62,7 +62,7 @@ The module defines the following:
 
    *sizehint* informs epoll about the expected number of events to be
    registered.  It must be positive, or ``-1`` to use the default. It is only
-   used on older systems where :c:func:`!epoll_create1` is not available;
+   used on older systems where :manpage:`epoll_create1(2)` is not available;
    otherwise it has no effect (though its value is still checked).
 
    *flags* is deprecated and completely ignored.  However, when supplied, its
@@ -88,6 +88,11 @@ The module defines the following:
    .. deprecated:: 3.4
       The *flags* parameter.  ``select.EPOLL_CLOEXEC`` is used by default now.
       Use :func:`os.set_inheritable` to make the file descriptor inheritable.
+
+   .. versionchanged:: 3.15
+
+      When CPython is built, this function may be disabled using
+      :option:`--disable-epoll`.
 
 
 .. function:: poll()
@@ -115,7 +120,7 @@ The module defines the following:
    :ref:`kevent-objects` below for the methods supported by kevent objects.
 
 
-.. function:: select(rlist, wlist, xlist[, timeout])
+.. function:: select(rlist, wlist, xlist, timeout=None)
 
    This is a straightforward interface to the Unix :c:func:`!select` system call.
    The first three arguments are iterables of 'waitable objects': either
@@ -131,7 +136,7 @@ The module defines the following:
    platform-dependent. (It is known to work on Unix but not on Windows.)  The
    optional *timeout* argument specifies a time-out in seconds; it may be
    a non-integer to specify fractions of seconds.
-   When the *timeout* argument is omitted the function blocks until
+   When the *timeout* argument is omitted or ``None``, the function blocks until
    at least one file descriptor is ready.  A time-out value of zero specifies a
    poll and never blocks.
 
@@ -165,7 +170,7 @@ The module defines the following:
       :pep:`475` for the rationale), instead of raising
       :exc:`InterruptedError`.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.15
       Accepts any real number as *timeout*, not only integer or float.
 
 
@@ -174,7 +179,7 @@ The module defines the following:
    The minimum number of bytes which can be written without blocking to a pipe
    when the pipe has been reported as ready for writing by :func:`~select.select`,
    :func:`!poll` or another interface in this module.  This doesn't apply
-   to other kind of file-like objects such as sockets.
+   to other kinds of file-like objects such as sockets.
 
    This value is guaranteed by POSIX to be at least 512.
 
@@ -226,7 +231,7 @@ object.
    implement :meth:`!fileno`, so they can also be used as the argument.
 
    *eventmask* is an optional bitmask describing the type of events you want to
-   check for. The constants are the same that with :c:func:`!poll`
+   check for. The constants are the same as with :c:func:`!poll`
    object. The default value is a combination of the constants :const:`POLLIN`,
    :const:`POLLPRI`, and :const:`POLLOUT`.
 
@@ -241,7 +246,7 @@ object.
 .. method:: devpoll.modify(fd[, eventmask])
 
    This method does an :meth:`unregister` followed by a
-   :meth:`register`. It is (a bit) more efficient that doing the same
+   :meth:`register`. It is (a bit) more efficient than doing the same
    explicitly.
 
 
@@ -274,7 +279,7 @@ object.
       :pep:`475` for the rationale), instead of raising
       :exc:`InterruptedError`.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.15
       Accepts any real number as *timeout*, not only integer or float.
 
 
@@ -385,7 +390,7 @@ Edge and Level Trigger Polling (epoll) Objects
       :pep:`475` for the rationale), instead of raising
       :exc:`InterruptedError`.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.15
       Accepts any real number as *timeout*, not only integer or float.
 
 
@@ -476,8 +481,10 @@ linearly scanned again. :c:func:`!select` is *O*\ (*highest file descriptor*), w
       :pep:`475` for the rationale), instead of raising
       :exc:`InterruptedError`.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.15
       Accepts any real number as *timeout*, not only integer or float.
+      If ``ppoll()`` function is available, *timeout* has a resolution
+      of ``1`` ns (``1e-6`` ms) instead of ``1`` ms.
 
 
 .. _kqueue-objects:
@@ -520,7 +527,7 @@ Kqueue Objects
       :pep:`475` for the rationale), instead of raising
       :exc:`InterruptedError`.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.15
       Accepts any real number as *timeout*, not only integer or float.
 
 
@@ -578,9 +585,9 @@ https://man.freebsd.org/cgi/man.cgi?query=kqueue&sektion=2
    +---------------------------+---------------------------------------------+
    | :const:`KQ_EV_DELETE`     | Removes an event from the queue             |
    +---------------------------+---------------------------------------------+
-   | :const:`KQ_EV_ENABLE`     | Permitscontrol() to returns the event       |
+   | :const:`KQ_EV_ENABLE`     | Permits control() to return the event       |
    +---------------------------+---------------------------------------------+
-   | :const:`KQ_EV_DISABLE`    | Disablesevent                               |
+   | :const:`KQ_EV_DISABLE`    | Disables event                              |
    +---------------------------+---------------------------------------------+
    | :const:`KQ_EV_ONESHOT`    | Removes event after first occurrence        |
    +---------------------------+---------------------------------------------+

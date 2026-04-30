@@ -1,3 +1,0 @@
-Functions that take timestamp or timeout arguments now accept any real
-numbers (such as :class:`~decimal.Decimal` and :class:`~fractions.Fraction`),
-not only integers or floats, although this does not improve precision.

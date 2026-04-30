@@ -48,7 +48,7 @@ static PyObject *
 _ssl__test_decode_cert(PyObject *module, PyObject *arg)
 {
     PyObject *return_value = NULL;
-    PyObject *path;
+    PyObject *path = NULL;
 
     if (!PyUnicode_FSConverter(arg, &path)) {
         goto exit;
@@ -56,6 +56,9 @@ _ssl__test_decode_cert(PyObject *module, PyObject *arg)
     return_value = _ssl__test_decode_cert_impl(module, path);
 
 exit:
+    /* Cleanup for path */
+    Py_XDECREF(path);
+
     return return_value;
 }
 
@@ -1826,9 +1829,7 @@ _ssl__SSLContext_load_cert_chain(PyObject *self, PyObject *const *args, Py_ssize
     }
     password = args[2];
 skip_optional_pos:
-    Py_BEGIN_CRITICAL_SECTION(self);
     return_value = _ssl__SSLContext_load_cert_chain_impl((PySSLContext *)self, certfile, keyfile, password);
-    Py_END_CRITICAL_SECTION();
 
 exit:
     return return_value;
@@ -3322,4 +3323,4 @@ exit:
 #ifndef _SSL_ENUM_CRLS_METHODDEF
     #define _SSL_ENUM_CRLS_METHODDEF
 #endif /* !defined(_SSL_ENUM_CRLS_METHODDEF) */
-/*[clinic end generated code: output=5a630a1e83927d47 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=e29d5ada294f97bb input=a9049054013a1b77]*/

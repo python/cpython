@@ -156,6 +156,7 @@ PYTHONPATH=$(COREPYTHONPATH)
 #binascii binascii.c
 #cmath cmathmodule.c
 #math mathmodule.c
+#_math_integer mathintegermodule.c
 #mmap mmapmodule.c
 #select selectmodule.c
 #_sysconfig _sysconfig.c
@@ -284,7 +285,7 @@ PYTHONPATH=$(COREPYTHONPATH)
 
 #*shared*
 #_ctypes_test _ctypes/_ctypes_test.c
-#_remote_debugging _remote_debugging_module.c
+#_remote_debugging _remote_debugging/module.c _remote_debugging/object_reading.c _remote_debugging/code_objects.c _remote_debugging/frames.c _remote_debugging/threads.c _remote_debugging/asyncio.c
 #_testcapi _testcapimodule.c
 #_testimportmultiple _testimportmultiple.c
 #_testmultiphase _testmultiphase.c

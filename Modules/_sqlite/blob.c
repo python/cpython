@@ -118,7 +118,9 @@ static void
 blob_seterror(pysqlite_Blob *self, int rc)
 {
     assert(self->connection != NULL);
-    set_error_from_db(self->connection->state, self->connection->db);
+    assert(rc != SQLITE_OK);
+    set_error_from_code(self->connection->state, rc);
+    assert(PyErr_Occurred());
 }
 
 static PyObject *
@@ -435,6 +437,10 @@ subscript_slice(pysqlite_Blob *self, PyObject *item)
     Py_ssize_t start, stop, step, len;
     if (get_slice_info(self, item, &start, &stop, &step, &len) < 0) {
         return NULL;
+    }
+
+    if (len == 0) {
+        return PyBytes_FromStringAndSize(NULL, 0);
     }
 
     if (step == 1) {

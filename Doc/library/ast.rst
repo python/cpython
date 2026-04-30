@@ -4,9 +4,6 @@
 .. module:: ast
    :synopsis: Abstract Syntax Tree classes and manipulation.
 
-.. sectionauthor:: Martin v. Löwis <martin@v.loewis.de>
-.. sectionauthor:: Georg Brandl <georg@python.org>
-
 .. testsetup::
 
     import ast
@@ -15,7 +12,7 @@
 
 --------------
 
-The :mod:`ast` module helps Python applications to process trees of the Python
+The :mod:`!ast` module helps Python applications to process trees of the Python
 abstract syntax grammar.  The abstract syntax itself might change with each
 Python release; this module helps to find out programmatically what the current
 grammar looks like.
@@ -38,6 +35,8 @@ The abstract grammar is currently defined as follows:
    :language: asdl
 
 
+.. _ast_nodes:
+
 Node classes
 ------------
 
@@ -46,7 +45,7 @@ Node classes
    This is the base of all AST node classes.  The actual node classes are
    derived from the :file:`Parser/Python.asdl` file, which is reproduced
    :ref:`above <abstract-grammar>`.  They are defined in the :mod:`!_ast` C
-   module and re-exported in :mod:`ast`.
+   module and re-exported in :mod:`!ast`.
 
    There is one class defined for each left-hand side symbol in the abstract
    grammar (for example, :class:`ast.stmt` or :class:`ast.expr`).  In addition,
@@ -134,17 +133,26 @@ Node classes
    Simple indices are represented by their value, extended slices are
    represented as tuples.
 
+.. versionchanged:: 3.13
+
+    AST node constructors were changed to provide sensible defaults for omitted
+    fields: optional fields now default to ``None``, list fields default to an
+    empty list, and fields of type :class:`!ast.expr_context` default to
+    :class:`Load() <ast.Load>`. Previously, omitted attributes would not exist on constructed
+    nodes (accessing them raised :exc:`AttributeError`).
+
 .. versionchanged:: 3.14
 
     The :meth:`~object.__repr__` output of :class:`~ast.AST` nodes includes
     the values of the node fields.
 
-.. deprecated:: 3.8
+.. deprecated-removed:: 3.8 3.14
 
-   Old classes :class:`!ast.Num`, :class:`!ast.Str`, :class:`!ast.Bytes`,
-   :class:`!ast.NameConstant` and :class:`!ast.Ellipsis` are still available,
-   but they will be removed in future Python releases.  In the meantime,
-   instantiating them will return an instance of a different class.
+   Previous versions of Python provided the AST classes :class:`!ast.Num`,
+   :class:`!ast.Str`, :class:`!ast.Bytes`, :class:`!ast.NameConstant` and
+   :class:`!ast.Ellipsis`, which were deprecated in Python 3.8. These classes
+   were removed in Python 3.14, and their functionality has been replaced with
+   :class:`ast.Constant`.
 
 .. deprecated:: 3.9
 
@@ -158,8 +166,7 @@ Node classes
    Previous versions of Python allowed the creation of AST nodes that were missing
    required fields. Similarly, AST node constructors allowed arbitrary keyword
    arguments that were set as attributes of the AST node, even if they did not
-   match any of the fields of the AST node. This behavior is deprecated and will
-   be removed in Python 3.15.
+   match any of the fields of the AST node. These cases now raise a :exc:`TypeError`.
 
 .. note::
     The descriptions of the specific node classes displayed here
@@ -363,6 +370,11 @@ Literals
      function call).
      This has the same meaning as ``FormattedValue.value``.
    * ``str`` is a constant containing the text of the interpolation expression.
+
+     If ``str`` is set to ``None``, then ``value`` is used to generate code
+     when calling :func:`ast.unparse`. This no longer guarantees that the
+     generated code is identical to the original and is intended for code
+     generation.
    * ``conversion`` is an integer:
 
      * -1: no conversion
@@ -1108,7 +1120,8 @@ Imports
                     names=[
                         alias(name='x'),
                         alias(name='y'),
-                        alias(name='z')])])
+                        alias(name='z')],
+                    is_lazy=0)])
 
 
 .. class:: ImportFrom(module, names, level)
@@ -1129,7 +1142,8 @@ Imports
                         alias(name='x'),
                         alias(name='y'),
                         alias(name='z')],
-                    level=0)])
+                    level=0,
+                    is_lazy=0)])
 
 
 .. class:: alias(name, asname)
@@ -1147,7 +1161,8 @@ Imports
                     names=[
                         alias(name='a', asname='b'),
                         alias(name='c')],
-                    level=2)])
+                    level=2,
+                    is_lazy=0)])
 
 Control flow
 ^^^^^^^^^^^^
@@ -2194,16 +2209,16 @@ Async and await
    occurrences of the same value (for example, :class:`ast.Add`).
 
 
-:mod:`ast` helpers
-------------------
+:mod:`!ast` helpers
+-------------------
 
-Apart from the node classes, the :mod:`ast` module defines these utility functions
+Apart from the node classes, the :mod:`!ast` module defines these utility functions
 and classes for traversing abstract syntax trees:
 
-.. function:: parse(source, filename='<unknown>', mode='exec', *, type_comments=False, feature_version=None, optimize=-1)
+.. function:: parse(source, filename='<unknown>', mode='exec', *, type_comments=False, feature_version=None, optimize=-1, module=None)
 
    Parse the source into an AST node.  Equivalent to ``compile(source,
-   filename, mode, flags=FLAGS_VALUE, optimize=optimize)``,
+   filename, mode, flags=FLAGS_VALUE, optimize=optimize, module=module)``,
    where ``FLAGS_VALUE`` is ``ast.PyCF_ONLY_AST`` if ``optimize <= 0``
    and ``ast.PyCF_OPTIMIZED_AST`` otherwise.
 
@@ -2255,6 +2270,9 @@ and classes for traversing abstract syntax trees:
    .. versionchanged:: 3.13
       The minimum supported version for ``feature_version`` is now ``(3, 7)``.
       The ``optimize`` argument was added.
+
+   .. versionadded:: 3.15
+      Added the *module* parameter.
 
 
 .. function:: unparse(ast_obj)
@@ -2411,12 +2429,12 @@ and classes for traversing abstract syntax trees:
    during traversal.  For this a special visitor exists
    (:class:`NodeTransformer`) that allows modifications.
 
-   .. deprecated:: 3.8
+   .. deprecated-removed:: 3.8 3.14
 
       Methods :meth:`!visit_Num`, :meth:`!visit_Str`, :meth:`!visit_Bytes`,
-      :meth:`!visit_NameConstant` and :meth:`!visit_Ellipsis` are deprecated
-      now and will not be called in future Python versions.  Add the
-      :meth:`visit_Constant` method to handle all constant nodes.
+      :meth:`!visit_NameConstant` and :meth:`!visit_Ellipsis` will not be called
+      in Python 3.14+.  Add the :meth:`visit_Constant` method instead to handle
+      all constant nodes.
 
 
 .. class:: NodeTransformer()
@@ -2463,7 +2481,7 @@ and classes for traversing abstract syntax trees:
       node = YourTransformer().visit(node)
 
 
-.. function:: dump(node, annotate_fields=True, include_attributes=False, *, indent=None, show_empty=False)
+.. function:: dump(node, annotate_fields=True, include_attributes=False, *, color=False, indent=None, show_empty=False)
 
    Return a formatted dump of the tree in *node*.  This is mainly useful for
    debugging purposes.  If *annotate_fields* is true (by default),
@@ -2472,6 +2490,10 @@ and classes for traversing abstract syntax trees:
    omitting unambiguous field names.  Attributes such as line
    numbers and column offsets are not dumped by default.  If this is wanted,
    *include_attributes* can be set to true.
+
+   If *color* is ``True``, the returned string is syntax highlighted using
+   ANSI escape sequences.
+   If ``False`` (the default), colored output is always disabled.
 
    If *indent* is a non-negative integer or string, then the tree will be
    pretty-printed with that indent level.  An indent level
@@ -2507,8 +2529,11 @@ and classes for traversing abstract syntax trees:
    .. versionchanged:: 3.13
       Added the *show_empty* option.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.15
       Omit optional ``Load()`` values by default.
+
+   .. versionchanged:: next
+      Added the *color* parameter.
 
 
 .. _ast-compiler-flags:
@@ -2567,7 +2592,11 @@ Command-line usage
 
 .. versionadded:: 3.9
 
-The :mod:`ast` module can be executed as a script from the command line.
+.. versionchanged:: next
+   The output is now syntax highlighted by default. This can be
+   :ref:`controlled using environment variables <using-on-controlling-color>`.
+
+The :mod:`!ast` module can be executed as a script from the command line.
 It is as simple as:
 
 .. code-block:: sh

@@ -801,6 +801,32 @@ class GCTests(unittest.TestCase):
             rc, out, err = assert_python_ok('-c', code)
             self.assertEqual(out.strip(), b'__del__ called')
 
+    @unittest.skipIf(Py_GIL_DISABLED, "requires GC generations or increments")
+    def test_gc_debug_stats(self):
+        # Checks that debug information is printed to stderr
+        # when DEBUG_STATS is set.
+        code = """if 1:
+            import gc
+            gc.set_debug(%s)
+            gc.collect()
+            """
+        _, _, err = assert_python_ok("-c", code % "gc.DEBUG_STATS")
+        self.assertRegex(err, b"gc: collecting generation [0-9]+")
+        self.assertRegex(
+            err,
+            b"gc: objects in each generation: [0-9]+ [0-9]+ [0-9]+",
+        )
+        self.assertRegex(
+            err, b"gc: objects in permanent generation: [0-9]+"
+        )
+        self.assertRegex(
+            err,
+            b"gc: done, .* unreachable, .* uncollectable, .* elapsed",
+        )
+
+        _, _, err = assert_python_ok("-c", code % "0")
+        self.assertNotIn(b"elapsed", err)
+
     def test_global_del_SystemExit(self):
         code = """if 1:
             class ClassWithDel:
@@ -820,11 +846,15 @@ class GCTests(unittest.TestCase):
         self.assertEqual(len(stats), 3)
         for st in stats:
             self.assertIsInstance(st, dict)
-            self.assertEqual(set(st),
-                             {"collected", "collections", "uncollectable"})
+            self.assertEqual(
+                set(st),
+                {"collected", "collections", "uncollectable", "candidates", "duration"}
+            )
             self.assertGreaterEqual(st["collected"], 0)
             self.assertGreaterEqual(st["collections"], 0)
             self.assertGreaterEqual(st["uncollectable"], 0)
+            self.assertGreaterEqual(st["candidates"], 0)
+            self.assertGreaterEqual(st["duration"], 0)
         # Check that collection counts are incremented correctly
         if gc.isenabled():
             self.addCleanup(gc.enable)
@@ -835,11 +865,25 @@ class GCTests(unittest.TestCase):
         self.assertEqual(new[0]["collections"], old[0]["collections"] + 1)
         self.assertEqual(new[1]["collections"], old[1]["collections"])
         self.assertEqual(new[2]["collections"], old[2]["collections"])
+        self.assertGreater(new[0]["duration"], old[0]["duration"])
+        self.assertEqual(new[1]["duration"], old[1]["duration"])
+        self.assertEqual(new[2]["duration"], old[2]["duration"])
+        for stat in ["collected", "uncollectable", "candidates"]:
+            self.assertGreaterEqual(new[0][stat], old[0][stat])
+            self.assertEqual(new[1][stat], old[1][stat])
+            self.assertEqual(new[2][stat], old[2][stat])
         gc.collect(2)
-        new = gc.get_stats()
-        self.assertEqual(new[0]["collections"], old[0]["collections"] + 1)
+        old, new = new, gc.get_stats()
+        self.assertEqual(new[0]["collections"], old[0]["collections"])
         self.assertEqual(new[1]["collections"], old[1]["collections"])
         self.assertEqual(new[2]["collections"], old[2]["collections"] + 1)
+        self.assertEqual(new[0]["duration"], old[0]["duration"])
+        self.assertEqual(new[1]["duration"], old[1]["duration"])
+        self.assertGreater(new[2]["duration"], old[2]["duration"])
+        for stat in ["collected", "uncollectable", "candidates"]:
+            self.assertEqual(new[0][stat], old[0][stat])
+            self.assertEqual(new[1][stat], old[1][stat])
+            self.assertGreaterEqual(new[2][stat], old[2][stat])
 
     def test_freeze(self):
         gc.freeze()
@@ -1187,6 +1231,24 @@ class GCTests(unittest.TestCase):
         assert_python_ok("-c", code_inside_function)
 
 
+    @unittest.skipUnless(Py_GIL_DISABLED, "requires free-threaded GC")
+    @unittest.skipIf(_testinternalcapi is None, "requires _testinternalcapi")
+    def test_tuple_untrack_counts(self):
+        # This ensures that the free-threaded GC is counting untracked tuples
+        # in the "long_lived_total" count.  This is required to avoid
+        # performance issues from running the GC too frequently.  See
+        # GH-142531 as an example.
+        gc.collect()
+        count = _testinternalcapi.get_long_lived_total()
+        n = 20_000
+        tuples = [(x,) for x in range(n)]
+        gc.collect()
+        new_count = _testinternalcapi.get_long_lived_total()
+        self.assertFalse(gc.is_tracked(tuples[0]))
+        # Use n // 2 just in case some other objects were collected.
+        self.assertTrue(new_count - count > (n // 2))
+
+
 class IncrementalGCTests(unittest.TestCase):
     @unittest.skipIf(_testinternalcapi is None, "requires _testinternalcapi")
     @requires_gil_enabled("Free threading does not support incremental GC")
@@ -1272,9 +1334,11 @@ class GCCallbackTests(unittest.TestCase):
         # Check that we got the right info dict for all callbacks
         for v in self.visit:
             info = v[2]
-            self.assertTrue("generation" in info)
-            self.assertTrue("collected" in info)
-            self.assertTrue("uncollectable" in info)
+            self.assertIn("generation", info)
+            self.assertIn("collected", info)
+            self.assertIn("uncollectable", info)
+            self.assertIn("candidates", info)
+            self.assertIn("duration", info)
 
     def test_collect_generation(self):
         self.preclean()
@@ -1447,10 +1511,11 @@ class GCTogglingTests(unittest.TestCase):
             # The free-threaded build doesn't have multiple generations, so
             # just trigger a GC manually.
             gc.collect()
+        assert not detector.gc_happened
         while not detector.gc_happened:
             i += 1
-            if i > 10000:
-                self.fail("gc didn't happen after 10000 iterations")
+            if i > 100000:
+                self.fail("gc didn't happen after 100000 iterations")
             self.assertEqual(len(ouch), 0)
             junk.append([])  # this will eventually trigger gc
 
@@ -1522,8 +1587,8 @@ class GCTogglingTests(unittest.TestCase):
             gc.collect()
         while not detector.gc_happened:
             i += 1
-            if i > 10000:
-                self.fail("gc didn't happen after 10000 iterations")
+            if i > 50000:
+                self.fail("gc didn't happen after 50000 iterations")
             self.assertEqual(len(ouch), 0)
             junk.append([])  # this will eventually trigger gc
 
@@ -1540,8 +1605,8 @@ class GCTogglingTests(unittest.TestCase):
         detector = GC_Detector()
         while not detector.gc_happened:
             i += 1
-            if i > 10000:
-                self.fail("gc didn't happen after 10000 iterations")
+            if i > 100000:
+                self.fail("gc didn't happen after 100000 iterations")
             junk.append([])  # this will eventually trigger gc
 
         try:
@@ -1551,13 +1616,27 @@ class GCTogglingTests(unittest.TestCase):
             detector = GC_Detector()
             while not detector.gc_happened:
                 i += 1
-                if i > 10000:
+                if i > 100000:
                     break
                 junk.append([])  # this may eventually trigger gc (if it is enabled)
 
-            self.assertEqual(i, 10001)
+            self.assertEqual(i, 100001)
         finally:
             gc.enable()
+
+    # Ensure that setting *threshold0* to zero disables collection.
+    @gc_threshold(0)
+    def test_threshold_zero(self):
+        junk = []
+        i = 0
+        detector = GC_Detector()
+        while not detector.gc_happened:
+            i += 1
+            if i > 50000:
+                break
+            junk.append([])  # this may eventually trigger gc (if it is enabled)
+
+        self.assertEqual(i, 50001)
 
 
 class PythonFinalizationTests(unittest.TestCase):

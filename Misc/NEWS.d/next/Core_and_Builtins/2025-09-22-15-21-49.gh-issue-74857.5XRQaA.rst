@@ -1,2 +1,0 @@
-:pep:`538`: Coerce the POSIX locale to a UTF-8 based locale. Patch by Victor
-Stinner.

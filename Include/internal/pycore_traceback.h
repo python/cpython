@@ -61,7 +61,8 @@ extern void _Py_DumpTraceback(
 extern const char* _Py_DumpTracebackThreads(
     int fd,
     PyInterpreterState *interp,
-    PyThreadState *current_tstate);
+    PyThreadState *current_tstate,
+    Py_ssize_t max_threads);
 
 /* Write a Unicode object into the file descriptor fd. Encode the string to
    ASCII using the backslashreplace error handler.
@@ -85,7 +86,8 @@ extern void _Py_DumpHexadecimal(
     uintptr_t value,
     Py_ssize_t width);
 
-extern PyObject* _PyTraceBack_FromFrame(
+// Exported for external JIT support
+PyAPI_FUNC(PyObject *) _PyTraceBack_FromFrame(
     PyObject *tb_next,
     PyFrameObject *frame);
 
@@ -102,6 +104,8 @@ extern int _Py_WriteIndent(int, PyObject *);
 // Export for the faulthandler module
 PyAPI_FUNC(void) _Py_InitDumpStack(void);
 PyAPI_FUNC(void) _Py_DumpStack(int fd);
+
+extern void _Py_DumpTraceback_Init(void);
 
 #ifdef __cplusplus
 }

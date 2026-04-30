@@ -12,6 +12,7 @@
 
 #include "multibytecodec.h"
 #include "clinic/multibytecodec.c.h"
+#include "pycore_tuple.h"         // _PyTuple_FromPairSteal
 
 #include <stddef.h>               // offsetof()
 
@@ -102,26 +103,17 @@ static PyObject *multibytecodec_encode(const MultibyteCodec *,
 static PyObject *
 make_tuple(PyObject *object, Py_ssize_t len)
 {
-    PyObject *v, *w;
-
-    if (object == NULL)
+    if (object == NULL) {
         return NULL;
+    }
 
-    v = PyTuple_New(2);
-    if (v == NULL) {
+    PyObject* len_obj = PyLong_FromSsize_t(len);
+    if (len_obj == NULL) {
         Py_DECREF(object);
         return NULL;
     }
-    PyTuple_SET_ITEM(v, 0, object);
 
-    w = PyLong_FromSsize_t(len);
-    if (w == NULL) {
-        Py_DECREF(v);
-        return NULL;
-    }
-    PyTuple_SET_ITEM(v, 1, w);
-
-    return v;
+    return _PyTuple_FromPairSteal(object, len_obj);
 }
 
 static PyObject *
@@ -2121,6 +2113,7 @@ static struct PyMethodDef _multibytecodec_methods[] = {
 };
 
 static PyModuleDef_Slot _multibytecodec_slots[] = {
+    _Py_ABI_SLOT,
     {Py_mod_exec, _multibytecodec_exec},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {Py_mod_gil, Py_MOD_GIL_NOT_USED},

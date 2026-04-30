@@ -4,9 +4,6 @@
 .. module:: fileinput
    :synopsis: Loop over standard input or a list of files.
 
-.. moduleauthor:: Guido van Rossum <guido@python.org>
-.. sectionauthor:: Fred L. Drake, Jr. <fdrake@acm.org>
-
 **Source code:** :source:`Lib/fileinput.py`
 
 --------------

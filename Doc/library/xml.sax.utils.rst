@@ -4,14 +4,11 @@
 .. module:: xml.sax.saxutils
    :synopsis: Convenience functions and classes for use with SAX.
 
-.. moduleauthor:: Lars Marius Garshol <larsga@garshol.priv.no>
-.. sectionauthor:: Martin v. Löwis <martin@v.loewis.de>
-
 **Source code:** :source:`Lib/xml/sax/saxutils.py`
 
 --------------
 
-The module :mod:`xml.sax.saxutils` contains a number of classes and functions
+The module :mod:`!xml.sax.saxutils` contains a number of classes and functions
 that are commonly useful when creating SAX applications, either in direct use,
 or as base classes.
 
@@ -37,7 +34,7 @@ or as base classes.
 
    You can unescape other strings of data by passing a dictionary as the optional
    *entities* parameter.  The keys and values must all be strings; each key will be
-   replaced with its corresponding value.  ``'&amp'``, ``'&lt;'``, and ``'&gt;'``
+   replaced with its corresponding value.  ``'&amp;'``, ``'&lt;'``, and ``'&gt;'``
    are always unescaped, even if *entities* is provided.
 
 
@@ -57,20 +54,6 @@ or as base classes.
 
    This function is useful when generating attribute values for HTML or any SGML
    using the reference concrete syntax.
-
-
-.. function:: is_valid_name(name)
-
-   Return ``True`` if the string is a valid element or attribute name,
-   ``False`` otherwise.
-
-   Almost all characters are permitted in names, except control characters and
-   those which either are or reasonably could be used as delimiters.
-   Characters like ":", "-", ".", "_", and "·" are permitted, but "<", "/",
-   "!", "?", and "=" are forbidden.
-   The name cannot start with a digit or a character like "-", ".", and "·".
-
-   ..versionadded:: next
 
 
 .. class:: XMLGenerator(out=None, encoding='iso-8859-1', short_empty_elements=False)

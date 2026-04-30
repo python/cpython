@@ -10,7 +10,6 @@ except SAXReaderNotAvailable:
     # don't try to test this module if we cannot create a parser
     raise unittest.SkipTest("no XML parsers available")
 from xml.sax.saxutils import (XMLGenerator, escape, unescape, quoteattr,
-                              is_valid_name,
                               XMLFilterBase, prepare_input_source)
 from xml.sax.expatreader import create_parser
 from xml.sax.handler import (feature_namespaces, feature_external_ges,
@@ -343,23 +342,6 @@ class SaxutilsTest(unittest.TestCase):
     def test_single_double_quoteattr(self):
         self.assertEqual(quoteattr("Includes 'single' and \"double\" quotes"),
                          "\"Includes 'single' and &quot;double&quot; quotes\"")
-
-    def test_is_valid_name(self):
-        self.assertFalse(is_valid_name(''))
-        self.assertTrue(is_valid_name('name'))
-        self.assertTrue(is_valid_name('NAME'))
-        self.assertTrue(is_valid_name('name0:-._·'))
-        self.assertTrue(is_valid_name('_'))
-        self.assertTrue(is_valid_name(':'))
-        self.assertTrue(is_valid_name('Ñàḿĕ'))
-        self.assertTrue(is_valid_name('\U000EFFFF'))
-        self.assertFalse(is_valid_name('0'))
-        self.assertFalse(is_valid_name('-'))
-        self.assertFalse(is_valid_name('.'))
-        self.assertFalse(is_valid_name('·'))
-        self.assertFalse(is_valid_name('na me'))
-        for c in '<>/!?=\x00\x01\x7f\ud800\udfff\ufffe\uffff\U000F0000':
-            self.assertFalse(is_valid_name('name' + c))
 
     # ===== make_parser
     def test_make_parser(self):
@@ -1589,6 +1571,18 @@ class TestModuleAll(unittest.TestCase):
             'SAXReaderNotAvailable',
         )
         check__all__(self, sax, extra=extra)
+
+
+class TestModule(unittest.TestCase):
+    def test_deprecated__version__and__date__(self):
+        for module in (sax.expatreader, sax.handler):
+            with self.subTest(module=module):
+                with self.assertWarnsRegex(
+                    DeprecationWarning,
+                    "'version' is deprecated and slated for removal in Python 3.20",
+                ) as cm:
+                    getattr(module, "version")
+                self.assertEqual(cm.filename, __file__)
 
 
 if __name__ == "__main__":

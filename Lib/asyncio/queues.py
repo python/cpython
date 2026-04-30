@@ -37,7 +37,7 @@ class Queue(mixins._LoopBoundMixin):
     is an integer greater than 0, then "await put()" will block when the
     queue reaches maxsize, until an item is removed by get().
 
-    Unlike the standard library Queue, you can reliably know this Queue's size
+    Unlike queue.Queue, you can reliably know this Queue's size
     with qsize(), since your single-threaded asyncio application won't be
     interrupted between calling qsize() and doing an operation on the Queue.
     """
