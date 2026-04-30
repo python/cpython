@@ -90,11 +90,7 @@ async def staggered_race(coro_fns, delay, *, loop=None):
             return
         unhandled_exceptions.append(exc)
 
-    async def run_one_coro(ok_to_start, previous_failed) -> None:
-        # in eager tasks this waits for the calling task to append this task
-        # to running_tasks, in regular tasks this wait is a no-op that does
-        # not yield a future. See gh-124309.
-        await ok_to_start.wait()
+    async def run_one_coro(previous_failed) -> None:
         # Wait for the previous task to finish, or for delay seconds
         if previous_failed is not None:
             with contextlib.suppress(exceptions_mod.TimeoutError):
@@ -110,14 +106,13 @@ async def staggered_race(coro_fns, delay, *, loop=None):
             return
         # Start task that will run the next coroutine
         this_failed = locks.Event()
-        next_ok_to_start = locks.Event()
-        next_task = loop.create_task(run_one_coro(next_ok_to_start, this_failed))
+        next_task = loop.create_task(
+            run_one_coro(this_failed),
+            eager_start=False,
+        )
         futures.future_add_to_awaited_by(next_task, parent_task)
         running_tasks.add(next_task)
         next_task.add_done_callback(task_done)
-        # next_task has been appended to running_tasks so next_task is ok to
-        # start.
-        next_ok_to_start.set()
         # Prepare place to put this coroutine's exceptions if not won
         exceptions.append(None)
         assert len(exceptions) == this_index + 1
@@ -149,13 +144,11 @@ async def staggered_race(coro_fns, delay, *, loop=None):
 
     propagate_cancellation_error = None
     try:
-        ok_to_start = locks.Event()
-        first_task = loop.create_task(run_one_coro(ok_to_start, None))
+        first_task = loop.create_task(run_one_coro(None), eager_start=False)
         futures.future_add_to_awaited_by(first_task, parent_task)
         running_tasks.add(first_task)
         first_task.add_done_callback(task_done)
         # first_task has been appended to running_tasks so first_task is ok to start.
-        ok_to_start.set()
         propagate_cancellation_error = None
         # Make sure no tasks are left running if we leave this function
         while running_tasks:
