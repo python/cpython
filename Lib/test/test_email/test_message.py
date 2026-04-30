@@ -1113,6 +1113,61 @@ class TestMIMEPart(TestEmailMessageBase, TestEmailBase):
         attachments = msg.iter_attachments()
         self.assertEqual(list(attachments), [])
 
+    def test_mime_parameter_folding_no_infinite_loop(self):
+        msg = self._make_message()
+        msg.add_attachment(
+            b"test content",
+            maintype="text",
+            subtype="plain",
+            filename="test.txt"
+        )
+        maxlen = 78
+        extra_chrome = "utf-8''"
+        section = 0
+
+        # Test with various parameter name and value lengths
+        test_cases = [
+            # (name_len, value_len)
+            (maxlen - 3 - len(str(section)) - 3 - len(extra_chrome), 100),
+            (50, 200),
+            (60, 150),
+            (70, 50),
+        ]
+
+        for name_len, value_len in test_cases:
+            with self.subTest(name_len=name_len, value_len=value_len):
+                msg_test = self._make_message()
+                msg_test.add_attachment(
+                    b"test content",
+                    maintype="text",
+                    subtype="plain",
+                    filename="test.txt"
+                )
+                param_name = "a" * name_len
+                param_value = "b" * value_len
+                msg_test.set_param(param_name, param_value)
+                result = msg_test.as_string()
+
+                # Check that the result is a valid string
+                self.assertIsInstance(result, str)
+
+                # Check that the parameter name appears in the result
+                self.assertIn(param_name, result)
+
+                # Check that the header is properly formatted:
+                # - Should have param_name*0*= followed by the first char of encoded value
+                lines = result.split('\n')
+                found_param = False
+                for line in lines:
+                    if param_name in line:
+                        found_param = True
+                        # Check that we have the expected format: param_name*N*=...
+                        self.assertRegex(line, rf'{param_name}\*\d+\*=')
+                        # Verify the line starts with proper continuation if not first
+                        if not line.startswith('Content-'):
+                            self.assertTrue(line.startswith(' '),
+                                          f"Continuation line should start with space: {line}")
+                self.assertTrue(found_param, f"Parameter {param_name} not found in output")
 
 if __name__ == '__main__':
     unittest.main()
