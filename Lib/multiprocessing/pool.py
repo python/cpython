@@ -77,6 +77,19 @@ def rebuild_exc(exc, tb):
 # Code run by worker processes
 #
 
+class MaybeDecodingError(Exception):
+    def __init__(self, exc):
+        self.exc = repr(exc)
+        self.__cause__ = exc
+        super(MaybeDecodingError, self).__init__(self.exc)
+
+    def __str__(self):
+        return "Error receiving result. Reason: '%s'" % (self.exc,
+                                                             self.exc)
+
+    def __repr__(self):
+        return "<%s: %s>" % (self.__class__.__name__, self)
+
 class MaybeEncodingError(Exception):
     """Wraps possible unpickleable errors, so they can be
     safely sent through the socket."""
@@ -157,6 +170,19 @@ class _PoolCache(dict):
     def __init__(self, /, *args, notifier=None, **kwds):
         self.notifier = notifier
         super().__init__(*args, **kwds)
+
+        self._cache_failed = False
+        self._cache_failed_reason = None
+
+    def _disable_cache(self, exec):
+        self._cache_failed = True
+        self._cache_failed_reason = exec
+
+    def __setitem__(self, key, value):
+        if self._cache_failed:
+            raise RuntimeError("Pool cache is disabled due to previous error") \
+                from self._cache_failed_reason
+        super().__setitem__(key, value)
 
     def __delitem__(self, item):
         super().__delitem__(item)
@@ -572,13 +598,26 @@ class Pool(object):
 
     @staticmethod
     def _handle_results(outqueue, get, cache):
+        def _handle_results_failure(cache, e):
+            exc = MaybeDecodingError(e)
+            cache._disable_cache(exc)
+            _cache = cache.copy()
+            for value in _cache.values():
+                if isinstance(value, ApplyResult):
+                    chunk_number_left = getattr(value, '_number_left', 1)
+                    for _ in range(chunk_number_left):
+                        value._set(None, (False, exc))
+                elif isinstance(value, IMapIterator):
+                    value._set_length(value._index + 1)
+                    value._set(value._index, (False, exc))
+
         thread = threading.current_thread()
 
         while 1:
             try:
                 task = get()
-            except (OSError, EOFError):
-                util.debug('result handler got EOFError/OSError -- exiting')
+            except Exception as e:
+                _handle_results_failure(cache, e)
                 return
 
             if thread._state != RUN:
@@ -600,8 +639,8 @@ class Pool(object):
         while cache and thread._state != TERMINATE:
             try:
                 task = get()
-            except (OSError, EOFError):
-                util.debug('result handler got EOFError/OSError -- exiting')
+            except Exception as e:
+                _handle_results_failure(cache, e)
                 return
 
             if task is None:
