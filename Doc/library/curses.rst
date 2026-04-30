@@ -86,8 +86,8 @@ The module :mod:`!curses` defines the following functions:
 .. function:: baudrate()
 
    Return the output speed of the terminal in bits per second.  On software
-   terminal emulators it will have a fixed high value. Included for historical
-   reasons; in former times, it was used to  write output loops for time delays and
+   terminal emulators, it will have a fixed high value. Included for historical
+   reasons; in former times, it was used to write output loops for time delays and
    occasionally to change interfaces depending on the line speed.
 
 
@@ -140,16 +140,16 @@ The module :mod:`!curses` defines the following functions:
 .. function:: def_prog_mode()
 
    Save the current terminal mode as the "program" mode, the mode when the running
-   program is using curses.  (Its counterpart is the "shell" mode, for when the
-   program is not in curses.)  Subsequent calls to :func:`reset_prog_mode` will
+   program is using curses (its counterpart is the "shell" mode, for when the
+   program is not in curses). Subsequent calls to :func:`reset_prog_mode` will
    restore this mode.
 
 
 .. function:: def_shell_mode()
 
    Save the current terminal mode as the "shell" mode, the mode when the running
-   program is not using curses.  (Its counterpart is the "program" mode, when the
-   program is using curses capabilities.) Subsequent calls to
+   program is not using curses (its counterpart is the "program" mode, when the
+   program is using curses capabilities). Subsequent calls to
    :func:`reset_shell_mode` will restore this mode.
 
 
@@ -161,14 +161,14 @@ The module :mod:`!curses` defines the following functions:
 .. function:: doupdate()
 
    Update the physical screen.  The curses library keeps two data structures, one
-   representing the current physical screen contents and a virtual screen
+   representing the current physical screen contents and the other, a virtual screen
    representing the desired next state.  The :func:`doupdate` ground updates the
    physical screen to match the virtual screen.
 
    The virtual screen may be updated by a :meth:`~window.noutrefresh` call after write
    operations such as :meth:`~window.addstr` have been performed on a window.  The normal
    :meth:`~window.refresh` call is simply :meth:`!noutrefresh` followed by :func:`!doupdate`;
-   if you have to update multiple windows, you can speed performance and perhaps
+   if you have to update multiple windows, you can speed up performance and perhaps
    reduce screen flicker by issuing :meth:`!noutrefresh` calls on all windows,
    followed by a single :func:`!doupdate`.
 
@@ -186,7 +186,7 @@ The module :mod:`!curses` defines the following functions:
 
 .. function:: erasechar()
 
-   Return the user's current erase character as a one-byte bytes object.  Under Unix operating systems this
+   Return the user's current erase character as a one-byte bytes object.  Under Unix operating systems, this
    is a property of the controlling tty of the curses program, and is not set by
    the curses library itself.
 
@@ -204,7 +204,7 @@ The module :mod:`!curses` defines the following functions:
 .. function:: flash()
 
    Flash the screen.  That is, change it to reverse-video and then change it back
-   in a short interval.  Some people prefer such as 'visible bell' to the audible
+   in a short interval.  Some people prefer 'visible bell' to the audible
    attention signal produced by :func:`beep`.
 
 
@@ -219,8 +219,8 @@ The module :mod:`!curses` defines the following functions:
    After :meth:`~window.getch` returns :const:`KEY_MOUSE` to signal a mouse event, this
    method should be called to retrieve the queued mouse event, represented as a
    5-tuple ``(id, x, y, z, bstate)``. *id* is an ID value used to distinguish
-   multiple devices, and *x*, *y*, *z* are the event's coordinates.  (*z* is
-   currently unused.)  *bstate* is an integer value whose bits will be set to
+   multiple devices, and *x*, *y*, *z* are the event's coordinates (*z* is
+   currently unused). *bstate* is an integer value whose bits will be set to
    indicate the type of event, and will be the bitwise OR of one or more of the
    following constants, where *n* is the button number from 1 to 5:
    :const:`BUTTONn_PRESSED`, :const:`BUTTONn_RELEASED`, :const:`BUTTONn_CLICKED`,
@@ -261,14 +261,14 @@ The module :mod:`!curses` defines the following functions:
 
 .. function:: has_ic()
 
-   Return ``True`` if the terminal has insert- and delete-character capabilities.
+   Return ``True`` if the terminal has insert-character and delete-character capabilities.
    This function is included for historical reasons only, as all modern software
    terminal emulators have such capabilities.
 
 
 .. function:: has_il()
 
-   Return ``True`` if the terminal has insert- and delete-line capabilities, or can
+   Return ``True`` if the terminal has insert-line and delete-line capabilities, or can
    simulate  them  using scrolling regions. This function is included for
    historical reasons only, as all modern software terminal emulators have such
    capabilities.
@@ -282,7 +282,7 @@ The module :mod:`!curses` defines the following functions:
 
 .. function:: halfdelay(tenths)
 
-   Used for half-delay mode, which is similar to cbreak mode in that characters
+   Used for half-delay mode, which is similar to cbreak mode where characters
    typed by the user are immediately available to the program. However, after
    blocking for *tenths* tenths of seconds, raise an exception if nothing has
    been typed.  The value of *tenths* must be a number between ``1`` and ``255``.  Use
@@ -350,7 +350,7 @@ The module :mod:`!curses` defines the following functions:
 
 .. function:: killchar()
 
-   Return the user's current line kill character as a one-byte bytes object. Under Unix operating systems
+   Return the user's current line kill character as a one-byte bytes object. Under Unix operating systems,
    this is a property of the controlling tty of the curses program, and is not set
    by the curses library itself.
 
@@ -379,7 +379,7 @@ The module :mod:`!curses` defines the following functions:
 
    Set the mouse events to be reported, and return a tuple ``(availmask,
    oldmask)``.   *availmask* indicates which of the specified mouse events can be
-   reported; on complete failure it returns ``0``.  *oldmask* is the previous value of
+   reported; on complete failure, it returns ``0``.  *oldmask* is the previous value of
    the given window's mouse event mask.  If this function is never called, no mouse
    events are ever reported.
 
@@ -402,7 +402,7 @@ The module :mod:`!curses` defines the following functions:
    methods of a pad require 6 arguments to specify the part of the pad to be
    displayed and the location on the screen to be used for the display. The
    arguments are *pminrow*, *pmincol*, *sminrow*, *smincol*, *smaxrow*, *smaxcol*; the *p*
-   arguments refer to the upper left corner of the pad region to be displayed and
+   arguments refer to the upper-left corner of the pad region to be displayed and
    the *s* arguments define a clipping box on the screen within which the pad region
    is to be displayed.
 
@@ -410,11 +410,11 @@ The module :mod:`!curses` defines the following functions:
 .. function:: newwin(nlines, ncols)
               newwin(nlines, ncols, begin_y, begin_x)
 
-   Return a new :ref:`window <curses-window-objects>`, whose left-upper corner
+   Return a new :ref:`window <curses-window-objects>`, whose upper-left corner
    is at  ``(begin_y, begin_x)``, and whose height/width is  *nlines*/*ncols*.
 
-   By default, the window will extend from the  specified position to the lower
-   right corner of the screen.
+   By default, the window will extend from the  specified position to the
+   lower-right corner of the screen.
 
 
 .. function:: nl()
@@ -707,7 +707,7 @@ The module :mod:`!curses` defines the following functions:
    the main window 'stdscr' as its first argument, followed by any other arguments
    passed to :func:`!wrapper`.  Before calling *func*, :func:`!wrapper` turns on
    cbreak mode, turns off echo, enables the terminal keypad, and initializes colors
-   if the terminal has color support.  On exit (whether normally or by exception)
+   if the terminal has color support.  On exit (whether normally or by exception),
    it restores cooked mode, turns on echo, and disables the terminal keypad.
 
 
@@ -732,7 +732,7 @@ Window Objects
    .. note::
 
       Writing outside the window, subwindow, or pad raises a :exc:`curses.error`.
-      Attempting to write to the lower right corner of a window, subwindow,
+      Attempting to write to the lower-right corner of a window, subwindow,
       or pad will cause an exception to be raised after the character is printed.
 
 
@@ -753,7 +753,7 @@ Window Objects
    .. note::
 
       * Writing outside the window, subwindow, or pad raises :exc:`curses.error`.
-        Attempting to write to the lower right corner of a window, subwindow,
+        Attempting to write to the lower-right corner of a window, subwindow,
         or pad will cause an exception to be raised after the string is printed.
 
       * A `bug in ncurses <https://bugs.python.org/issue35924>`_, the backend
@@ -1208,10 +1208,10 @@ Window Objects
 
    The 6 optional arguments can only be specified when the window is a pad created
    with :func:`newpad`.  The additional parameters are needed to indicate what part
-   of the pad and screen are involved. *pminrow* and *pmincol* specify the upper
-   left-hand corner of the rectangle to be displayed in the pad.  *sminrow*,
+   of the pad and screen are involved. *pminrow* and *pmincol* specify the
+   upper-left corner of the rectangle to be displayed in the pad.  *sminrow*,
    *smincol*, *smaxrow*, and *smaxcol* specify the edges of the rectangle to be
-   displayed on the screen.  The lower right-hand corner of the rectangle to be
+   displayed on the screen.  The lower-right corner of the rectangle to be
    displayed in the pad is calculated from the screen coordinates, since the
    rectangles must be the same size.  Both rectangles must be entirely contained
    within their respective structures.  Negative values of *pminrow*, *pmincol*,
@@ -1249,7 +1249,7 @@ Window Objects
 
 .. method:: window.standend()
 
-   Turn off the standout attribute.  On some terminals this has the side effect of
+   Turn off the standout attribute.  On some terminals, this has the side effect of
    turning off all attributes.
 
 
@@ -1271,8 +1271,8 @@ Window Objects
    Return a sub-window, whose upper-left corner is at ``(begin_y, begin_x)``, and
    whose width/height is *ncols*/*nlines*.
 
-   By default, the sub-window will extend from the specified position to the lower
-   right corner of the window.
+   By default, the sub-window will extend from the specified position to the
+   lower-right corner of the window.
 
 
 .. method:: window.syncdown()
@@ -1686,7 +1686,7 @@ falls back on a crude printable ASCII approximation.
 +------------------------+------------------------------------------+
 | ACS code               | Meaning                                  |
 +========================+==========================================+
-| .. data:: ACS_BBSS     | alternate name for upper right corner    |
+| .. data:: ACS_BBSS     | alternate name for upper-right corner    |
 +------------------------+------------------------------------------+
 | .. data:: ACS_BLOCK    | solid square block                       |
 +------------------------+------------------------------------------+
@@ -1694,7 +1694,7 @@ falls back on a crude printable ASCII approximation.
 +------------------------+------------------------------------------+
 | .. data:: ACS_BSBS     | alternate name for horizontal line       |
 +------------------------+------------------------------------------+
-| .. data:: ACS_BSSB     | alternate name for upper left corner     |
+| .. data:: ACS_BSSB     | alternate name for upper-left corner     |
 +------------------------+------------------------------------------+
 | .. data:: ACS_BSSS     | alternate name for top tee               |
 +------------------------+------------------------------------------+
@@ -1720,9 +1720,9 @@ falls back on a crude printable ASCII approximation.
 +------------------------+------------------------------------------+
 | .. data:: ACS_LEQUAL   | less-than-or-equal-to                    |
 +------------------------+------------------------------------------+
-| .. data:: ACS_LLCORNER | lower left-hand corner                   |
+| .. data:: ACS_LLCORNER | lower-left corner                        |
 +------------------------+------------------------------------------+
-| .. data:: ACS_LRCORNER | lower right-hand corner                  |
+| .. data:: ACS_LRCORNER | lower-right corner                       |
 +------------------------+------------------------------------------+
 | .. data:: ACS_LTEE     | left tee                                 |
 +------------------------+------------------------------------------+
@@ -1746,13 +1746,13 @@ falls back on a crude printable ASCII approximation.
 +------------------------+------------------------------------------+
 | .. data:: ACS_S9       | scan line 9                              |
 +------------------------+------------------------------------------+
-| .. data:: ACS_SBBS     | alternate name for lower right corner    |
+| .. data:: ACS_SBBS     | alternate name for lower-right corner    |
 +------------------------+------------------------------------------+
 | .. data:: ACS_SBSB     | alternate name for vertical line         |
 +------------------------+------------------------------------------+
 | .. data:: ACS_SBSS     | alternate name for right tee             |
 +------------------------+------------------------------------------+
-| .. data:: ACS_SSBB     | alternate name for lower left corner     |
+| .. data:: ACS_SSBB     | alternate name for lower-left corner     |
 +------------------------+------------------------------------------+
 | .. data:: ACS_SSBS     | alternate name for bottom tee            |
 +------------------------+------------------------------------------+
@@ -1766,9 +1766,9 @@ falls back on a crude printable ASCII approximation.
 +------------------------+------------------------------------------+
 | .. data:: ACS_UARROW   | up arrow                                 |
 +------------------------+------------------------------------------+
-| .. data:: ACS_ULCORNER | upper left corner                        |
+| .. data:: ACS_ULCORNER | upper-left corner                        |
 +------------------------+------------------------------------------+
-| .. data:: ACS_URCORNER | upper right corner                       |
+| .. data:: ACS_URCORNER | upper-right corner                       |
 +------------------------+------------------------------------------+
 | .. data:: ACS_VLINE    | vertical line                            |
 +------------------------+------------------------------------------+
@@ -1841,9 +1841,9 @@ The module :mod:`!curses.textpad` defines the following function:
 
    Draw a rectangle.  The first argument must be a window object; the remaining
    arguments are coordinates relative to that window.  The second and third
-   arguments are the y and x coordinates of the upper left hand corner of the
+   arguments are the y and x coordinates of the upper-left corner of the
    rectangle to be drawn; the fourth and fifth arguments are the y and x
-   coordinates of the lower right hand corner. The rectangle will be drawn using
+   coordinates of the lower-right corner. The rectangle will be drawn using
    VT100/IBM PC forms characters on terminals that make this possible (including
    xterm and most other software terminal emulators).  Otherwise it will be drawn
    with ASCII  dashes, vertical bars, and plus signs.
@@ -1862,7 +1862,7 @@ You can instantiate a :class:`Textbox` object as follows:
    Return a textbox widget object.  The *win* argument should be a curses
    :ref:`window <curses-window-objects>` object in which the textbox is to
    be contained. The edit cursor of the textbox is initially located at the
-   upper left hand corner of the containing window, with coordinates ``(0, 0)``.
+   upper-left corner of the containing window, with coordinates ``(0, 0)``.
    The instance's :attr:`stripspaces` flag is initially on.
 
    :class:`Textbox` objects have the following methods:
