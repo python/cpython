@@ -958,7 +958,7 @@ class AST_Tests(unittest.TestCase):
             ("None", b"N\xc2\xbane"),
         ]
         for constant in constants:
-            with self.assertRaisesRegex(ValueError,
+            with self.assertRaisesRegex(SyntaxError,
                 f"identifier field can't represent '{constant[0]}' constant"):
                 ast.parse(constant[1], mode="eval")
 
