@@ -11,7 +11,7 @@ from asyncio import base_subprocess
 from asyncio import subprocess
 from test.test_asyncio import utils as test_utils
 from test import support
-from test.support import os_helper, warnings_helper, gc_collect
+from test.support import os_helper, gc_collect
 
 if not support.has_subprocess_support:
     raise unittest.SkipTest("test module requires subprocess")
@@ -125,7 +125,7 @@ class SubprocessTransportTests(test_utils.TestCase):
 
         # Simulate a waiter registered via _wait() before the process exits.
         exit_waiter = self.loop.create_future()
-        transport._exit_waiters.append(exit_waiter)
+        transport._exit_waiters.add(exit_waiter)
 
         # _connect_pipes hasn't completed, so _pipes_connected is False.
         self.assertFalse(transport._pipes_connected)
@@ -910,7 +910,137 @@ class SubprocessMixin:
 
         self.loop.run_until_complete(main())
 
-    @warnings_helper.ignore_warnings(category=ResourceWarning)
+    def test_communicate_cancellation_kills_process(self):
+        async def run():
+            proc = await asyncio.create_subprocess_exec(
+                *PROGRAM_BLOCKED,
+                stdout=subprocess.PIPE,
+            )
+            with self.assertRaises(asyncio.TimeoutError):
+                await asyncio.wait_for(proc.communicate(), 0.1)
+
+            returncode = await asyncio.wait_for(proc.wait(), 5.0)
+            self.assertIsNotNone(returncode)
+
+        self.loop.run_until_complete(run())
+
+    def test_communicate_cancellation_closes_stdout_transport(self):
+        async def run():
+            proc = await asyncio.create_subprocess_exec(
+                *PROGRAM_BLOCKED,
+                stdout=subprocess.PIPE,
+            )
+            try:
+                with self.assertRaises(asyncio.TimeoutError):
+                    await asyncio.wait_for(proc.communicate(), 0.1)
+
+                await asyncio.sleep(0)
+
+                stdout_transport = proc._transport.get_pipe_transport(1)
+                self.assertTrue(
+                    stdout_transport is None or stdout_transport.is_closing(),
+                    "stdout pipe transport not closed after cancellation")
+            finally:
+                if proc.returncode is None:
+                    proc.kill()
+                    await proc.wait()
+
+        self.loop.run_until_complete(run())
+
+    def test_communicate_cancellation_closes_stdin(self):
+        async def run():
+            proc = await asyncio.create_subprocess_exec(
+                *PROGRAM_BLOCKED,
+                stdin=subprocess.PIPE,
+                stdout=subprocess.PIPE,
+            )
+            try:
+                large_input = b'x' * (1024 * 1024)
+                with self.assertRaises(asyncio.TimeoutError):
+                    await asyncio.wait_for(
+                        proc.communicate(large_input), 0.5)
+
+                await asyncio.sleep(0)
+
+                stdin_transport = proc._transport.get_pipe_transport(0)
+                self.assertTrue(
+                    stdin_transport is None or stdin_transport.is_closing(),
+                    "stdin pipe transport not closed after cancellation")
+            finally:
+                if proc.returncode is None:
+                    proc.kill()
+                    await proc.wait()
+
+        self.loop.run_until_complete(run())
+
+    def test_communicate_cancellation_closes_stderr_transport(self):
+        async def run():
+            proc = await asyncio.create_subprocess_exec(
+                *PROGRAM_BLOCKED,
+                stderr=subprocess.PIPE,
+            )
+            try:
+                with self.assertRaises(asyncio.TimeoutError):
+                    await asyncio.wait_for(proc.communicate(), 0.1)
+
+                await asyncio.sleep(0)
+
+                stderr_transport = proc._transport.get_pipe_transport(2)
+                self.assertTrue(
+                    stderr_transport is None or stderr_transport.is_closing(),
+                    "stderr pipe transport not closed after cancellation")
+            finally:
+                if proc.returncode is None:
+                    proc.kill()
+                    await proc.wait()
+
+        self.loop.run_until_complete(run())
+
+    def test_wait_cancellation_removes_exit_waiters(self):
+        async def run():
+            proc = await asyncio.create_subprocess_exec(*PROGRAM_BLOCKED)
+            try:
+                for _ in range(5):
+                    task = self.loop.create_task(proc.wait())
+                    self.loop.call_soon(task.cancel)
+                    try:
+                        await task
+                    except asyncio.CancelledError:
+                        pass
+
+                self.assertEqual(len(proc._transport._exit_waiters), 0)
+            finally:
+                proc.kill()
+                await proc.wait()
+
+        self.loop.run_until_complete(run())
+
+    def test_communicate_cancellation_all_pipes(self):
+        async def run():
+            proc = await asyncio.create_subprocess_exec(
+                *PROGRAM_BLOCKED,
+                stdin=subprocess.PIPE,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+            )
+            large_input = b'x' * (1024 * 1024)
+            with self.assertRaises(asyncio.TimeoutError):
+                await asyncio.wait_for(
+                    proc.communicate(large_input), 0.5)
+
+            await asyncio.sleep(0)
+
+            for fd, name in [(0, 'stdin'), (1, 'stdout'), (2, 'stderr')]:
+                transport = proc._transport.get_pipe_transport(fd)
+                self.assertTrue(
+                    transport is None or transport.is_closing(),
+                    f"{name} pipe transport not closed after cancellation")
+
+            returncode = await asyncio.wait_for(proc.wait(), 5.0)
+            self.assertIsNotNone(returncode)
+
+        self.loop.run_until_complete(run())
+
     def test_subprocess_read_pipe_cancelled(self):
         async def main():
             loop = asyncio.get_running_loop()
@@ -921,7 +1051,6 @@ class SubprocessMixin:
         asyncio.run(main())
         gc_collect()
 
-    @warnings_helper.ignore_warnings(category=ResourceWarning)
     def test_subprocess_write_pipe_cancelled(self):
         async def main():
             loop = asyncio.get_running_loop()
@@ -932,7 +1061,6 @@ class SubprocessMixin:
         asyncio.run(main())
         gc_collect()
 
-    @warnings_helper.ignore_warnings(category=ResourceWarning)
     def test_subprocess_read_write_pipe_cancelled(self):
         async def main():
             loop = asyncio.get_running_loop()
