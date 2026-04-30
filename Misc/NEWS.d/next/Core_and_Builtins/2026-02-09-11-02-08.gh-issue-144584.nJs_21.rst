@@ -1,0 +1,2 @@
+Remove support for returning non-:class:`int` objects in
+:meth:`~object.__index__` and :meth:`~object.__int__`.
