@@ -38,3 +38,9 @@ Pending removal in Python 3.20
   - :mod:`zlib`
 
   (Contributed by Hugo van Kemenade and Stan Ulbrych in :gh:`76007`.)
+
+* The ``__getformat__()`` class method of the :class:`float` is deprecated and
+  will be removed in Python 3.20.  On CPython, ``float.__getformat__()`` always
+  return a string, prefixed with ``"IEEE"``: to build CPython, you need support
+  for IEEE 754 floating-point numbers since Python 3.11.
+  (Contributed by Sergey B Kirpichev in :gh:`145633`.)

@@ -519,9 +519,42 @@ PIPE_MAX_SIZE = 4 * 1024 * 1024 + 1
 # for a discussion of this number.
 SOCK_MAX_SIZE = 16 * 1024 * 1024 + 1
 
+# This helper exists for alternative Python implementations, that use
+# the CPython test suite.
+def _have_ieee_doubles():
+    if sys.implementation.name == 'cpython':
+        return True
+    import math
+    import struct
+    # Check parameters for encoding of floats; a quick exit
+    # if they aren't same as for IEC 60559 doubles.  Check
+    # also that subnormals are present.
+    if (struct.calcsize('d') != 8
+            or sys.float_info.radix != 2
+            or sys.float_info.mant_dig != 53
+            or sys.float_info.dig != 15
+            or sys.float_info.min_exp != -1021
+            or sys.float_info.min_10_exp != -307
+            or sys.float_info.max_exp != 1024
+            or sys.float_info.max_10_exp != 308
+            or not math.issubnormal(math.nextafter(0, 1))):
+        return False
+    # We attempt to determine if this machine is using IEC
+    # floating-point formats by peering at the bits of some
+    # carefully chosen value.  Assume that integer and
+    # floating-point types have same endianness.
+    d = 9006104071832581.0
+    d_be_bytes = b"\x43\x3f\xff\x01\x02\x03\x04\x05"
+    d_packed = struct.pack('d', d)
+    if sys.byteorder == 'little':
+        return d_packed == bytes(reversed(d_be_bytes))
+    return d_packed == d_be_bytes
+
+HAVE_IEEE_754 = _have_ieee_doubles()
+
 # decorator for skipping tests on non-IEEE 754 platforms
 requires_IEEE_754 = unittest.skipUnless(
-    float.__getformat__("double").startswith("IEEE"),
+    HAVE_IEEE_754,
     "test requires IEEE 754 doubles")
 
 def requires_zlib(reason='requires zlib'):

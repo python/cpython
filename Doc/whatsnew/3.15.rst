@@ -1902,6 +1902,12 @@ New deprecations
     merely imported or accessed from the :mod:`!typing` module.
 
 
+* The ``__getformat__()`` class method of the :class:`float` is deprecated and
+  will be removed in Python 3.20.  On CPython, ``float.__getformat__()`` always
+  return a string, prefixed with ``"IEEE"``: to build CPython, you need support
+  for IEEE 754 floating-point numbers since Python 3.11.
+  (Contributed by Sergey B Kirpichev in :gh:`145633`.)
+
 * ``__version__``
 
   * The ``__version__``, ``version`` and ``VERSION`` attributes have been

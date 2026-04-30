@@ -195,11 +195,6 @@ def collect_locale(info_add):
     info_add('locale.getencoding', locale.getencoding())
 
 
-def collect_builtins(info_add):
-    info_add('builtins.float.float_format', float.__getformat__("float"))
-    info_add('builtins.float.double_format', float.__getformat__("double"))
-
-
 def collect_urandom(info_add):
     import os
 
@@ -1050,7 +1045,6 @@ def collect_info(info):
         # its state.
         collect_urandom,
 
-        collect_builtins,
         collect_cc,
         collect_curses,
         collect_datetime,
