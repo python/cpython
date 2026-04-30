@@ -1219,6 +1219,7 @@ basicblock_has_no_lineno(basicblock *b) {
 /* If this block ends with an unconditional jump to a small exit block or
  * a block that has no line numbers (and no fallthrough), then
  * remove the jump and extend this block with the target.
+ * Also handles the case where a block falls through to a small exit block.
  * Returns 1 if extended, 0 if no change, and -1 on error.
  */
 static int
@@ -1228,6 +1229,15 @@ basicblock_inline_small_or_no_lineno_blocks(basicblock *bb) {
         return 0;
     }
     if (!IS_UNCONDITIONAL_JUMP_OPCODE(last->i_opcode)) {
+        // If the block ends with a fallthrough to a small exit block, inline it.
+        if (BB_HAS_FALLTHROUGH(bb) && bb->b_next != NULL && !is_jump(last)) {
+            basicblock *next = bb->b_next;
+            if (basicblock_exits_scope(next) && next->b_iused <= MAX_COPY_SIZE) {
+                RETURN_IF_ERROR(basicblock_append_instructions(bb, next));
+                next->b_predecessors--;
+                return 1;
+            }
+        }
         return 0;
     }
     basicblock *target = last->i_target;
