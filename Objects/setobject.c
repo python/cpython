@@ -1464,85 +1464,76 @@ set_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     return make_new_set(type, NULL);
 }
 
-#ifdef Py_GIL_DISABLED
 static void
 copy_small_table(setentry *dest, setentry *src)
 {
+#ifdef Py_GIL_DISABLED
     for (Py_ssize_t i = 0; i < PySet_MINSIZE; i++) {
         _Py_atomic_store_ptr_release(&dest[i].key, src[i].key);
         _Py_atomic_store_ssize_relaxed(&dest[i].hash, src[i].hash);
     }
-}
+#else
+    memcpy(dest, src, PySet_MINSIZE * sizeof(setentry));
 #endif
+}
 
-/* set_swap_bodies() switches the contents of any two sets by moving their
-   internal data pointers and, if needed, copying the internal smalltables.
-   Semantically equivalent to:
+/* set_replace_body() replaces the contents of dst with those of src,
+   moving dst's old contents into src for proper cleanup on Py_DECREF.
 
-     t=set(a); a.clear(); a.update(b); b.clear(); b.update(t); del t
+   The caller guarantees that src is a uniquely-referenced temporary set
+   that will be discarded immediately afterward.  This allows us to skip
+   atomic operations and shared-marking on src's fields, and to skip the
+   frozenset hash swap (neither argument is ever a frozenset here).
 
    The function always succeeds and it leaves both objects in a stable state.
-   Useful for operations that update in-place (by allowing an intermediate
-   result to be swapped into one of the original inputs).
 */
 
 static void
-set_swap_bodies(PySetObject *a, PySetObject *b)
+set_replace_body(PySetObject *dst, PySetObject *src)
 {
     Py_ssize_t t;
     setentry *u;
     setentry tab[PySet_MINSIZE];
-    Py_hash_t h;
 
-    setentry *a_table = a->table;
-    setentry *b_table = b->table;
-    FT_ATOMIC_STORE_PTR_RELEASE(a->table, NULL);
-    FT_ATOMIC_STORE_PTR_RELEASE(b->table, NULL);
+    assert(PySet_Check((PyObject *)dst));
+    assert(PySet_Check((PyObject *)src));
+    assert(_PyObject_IsUniquelyReferenced((PyObject *)src));
 
-    t = a->fill;     a->fill   = b->fill;        b->fill  = t;
-    t = a->used;
-    FT_ATOMIC_STORE_SSIZE_RELAXED(a->used, b->used);
-    FT_ATOMIC_STORE_SSIZE_RELAXED(b->used, t);
-    t = a->mask;
-    FT_ATOMIC_STORE_SSIZE_RELEASE(a->mask, b->mask);
-    FT_ATOMIC_STORE_SSIZE_RELEASE(b->mask, t);
+    setentry *dst_table = dst->table;
+    setentry *src_table = src->table;
+    FT_ATOMIC_STORE_PTR_RELEASE(dst->table, NULL);
+    src->table = NULL;
 
-    u = a_table;
-    if (a_table == a->smalltable)
-        u = b->smalltable;
-    a_table  = b_table;
-    if (b_table == b->smalltable)
-        a_table = a->smalltable;
-    b_table = u;
+    t = dst->fill;     dst->fill = src->fill;       src->fill = t;
+    t = dst->used;
+    FT_ATOMIC_STORE_SSIZE_RELAXED(dst->used, src->used);
+    src->used = t;
+    t = dst->mask;
+    FT_ATOMIC_STORE_SSIZE_RELEASE(dst->mask, src->mask);
+    src->mask = t;
 
-    if (a_table == a->smalltable || b_table == b->smalltable) {
-        memcpy(tab, a->smalltable, sizeof(tab));
-#ifndef Py_GIL_DISABLED
-        memcpy(a->smalltable, b->smalltable, sizeof(tab));
-        memcpy(b->smalltable, tab, sizeof(tab));
-#else
-        copy_small_table(a->smalltable, b->smalltable);
-        copy_small_table(b->smalltable, tab);
-#endif
+    u = dst_table;
+    if (dst_table == dst->smalltable)
+        u = src->smalltable;
+    dst_table = src_table;
+    if (src_table == src->smalltable)
+        dst_table = dst->smalltable;
+    src_table = u;
+
+    if (dst_table == dst->smalltable || src_table == src->smalltable) {
+        memcpy(tab, dst->smalltable, sizeof(tab));
+        copy_small_table(dst->smalltable, src->smalltable);
+        memcpy(src->smalltable, tab, sizeof(tab));
     }
 
-    if (PyType_IsSubtype(Py_TYPE(a), &PyFrozenSet_Type)  &&
-        PyType_IsSubtype(Py_TYPE(b), &PyFrozenSet_Type)) {
-        h = FT_ATOMIC_LOAD_SSIZE_RELAXED(a->hash);
-        FT_ATOMIC_STORE_SSIZE_RELAXED(a->hash, FT_ATOMIC_LOAD_SSIZE_RELAXED(b->hash));
-        FT_ATOMIC_STORE_SSIZE_RELAXED(b->hash, h);
-    } else {
-        FT_ATOMIC_STORE_SSIZE_RELAXED(a->hash, -1);
-        FT_ATOMIC_STORE_SSIZE_RELAXED(b->hash, -1);
+    FT_ATOMIC_STORE_SSIZE_RELAXED(dst->hash, -1);
+
+    if (SET_IS_SHARED(dst)) {
+        SET_MARK_SHARED(src);
     }
-    if (!SET_IS_SHARED(b) && SET_IS_SHARED(a)) {
-        SET_MARK_SHARED(b);
-    }
-    if (!SET_IS_SHARED(a) && SET_IS_SHARED(b)) {
-        SET_MARK_SHARED(a);
-    }
-    FT_ATOMIC_STORE_PTR_RELEASE(a->table, a_table);
-    FT_ATOMIC_STORE_PTR_RELEASE(b->table, b_table);
+
+    FT_ATOMIC_STORE_PTR_RELEASE(dst->table, dst_table);
+    src->table = src_table;
 }
 
 /*[clinic input]
@@ -1797,7 +1788,7 @@ set_intersection_update(PySetObject *so, PyObject *other)
     tmp = set_intersection(so, other);
     if (tmp == NULL)
         return NULL;
-    set_swap_bodies(so, (PySetObject *)tmp);
+    set_replace_body(so, (PySetObject *)tmp);
     Py_DECREF(tmp);
     Py_RETURN_NONE;
 }
@@ -1821,7 +1812,7 @@ set_intersection_update_multi_impl(PySetObject *so, PyObject * const *others,
     if (tmp == NULL)
         return NULL;
     Py_BEGIN_CRITICAL_SECTION(so);
-    set_swap_bodies(so, (PySetObject *)tmp);
+    set_replace_body(so, (PySetObject *)tmp);
     Py_END_CRITICAL_SECTION();
     Py_DECREF(tmp);
     Py_RETURN_NONE;
