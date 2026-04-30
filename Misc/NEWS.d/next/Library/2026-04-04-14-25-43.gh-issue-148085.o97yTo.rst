@@ -1,0 +1,5 @@
+Cache ``time.time``, ``time.struct_time``, and ``time.strftime`` imports,
+speeding up :meth:`~datetime.date.timetuple` and
+:meth:`~datetime.date.strftime` by up to 2x. As such, patching :mod:`time`
+functions after importing :mod:`datetime` will no longer affect :mod:`datetime`
+behaviour. Patch by Maurycy Pawłowski-Wieroński.
