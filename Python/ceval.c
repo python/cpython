@@ -1305,9 +1305,9 @@ early_exit:
 }
 #ifdef _Py_TIER2
 #ifdef _Py_JIT
-_PyJitEntryFuncPtr _Py_jit_entry = _PyJIT;
+PyAPI_DATA(_PyJitEntryFuncPtr) _Py_jit_entry = _PyJIT;
 #else
-_PyJitEntryFuncPtr _Py_jit_entry = _PyTier2Interpreter;
+PyAPI_DATA(_PyJitEntryFuncPtr) _Py_jit_entry = _PyTier2Interpreter;
 #endif
 #endif
 

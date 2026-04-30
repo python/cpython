@@ -24,8 +24,6 @@ stop_tracing_and_jit(PyThreadState *tstate, _PyInterpreterFrame *frame)
 }
 #endif
 
-_PyJitEntryFuncPtr _Py_jit_entry;
-
 #if _Py_TAIL_CALL_INTERP
 #include "test_targets.h"
 #include "test_cases.c.h"
