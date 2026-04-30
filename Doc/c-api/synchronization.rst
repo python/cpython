@@ -24,6 +24,13 @@ The C-API provides a basic mutual exclusion lock.
       considered unstable.  The size may change in future Python releases
       without a deprecation period.
 
+   .. note::
+
+      A :c:type:`!PyMutex` is **not** re-entrant (recursive). If a thread
+      that already holds the lock attempts to acquire it again, the thread
+      will deadlock. Use :c:func:`Py_BEGIN_CRITICAL_SECTION` instead if
+      re-entrancy is required.
+
    .. versionadded:: 3.13
 
 .. c:function:: void PyMutex_Lock(PyMutex *m)
@@ -32,12 +39,20 @@ The C-API provides a basic mutual exclusion lock.
    thread will block until the mutex is unlocked.  While blocked, the thread
    will temporarily detach the :term:`thread state <attached thread state>` if one exists.
 
+   .. warning::
+
+      This function will deadlock if the calling thread already holds the lock.
+      :c:type:`!PyMutex` is not re-entrant. For re-entrant locking, use
+      :c:func:`Py_BEGIN_CRITICAL_SECTION` instead.
+
    .. versionadded:: 3.13
 
 .. c:function:: void PyMutex_Unlock(PyMutex *m)
 
-   Unlock mutex *m*. The mutex must be locked --- otherwise, the function will
-   issue a fatal error.
+   Unlock mutex *m*. The mutex must be locked by the calling thread ---
+   otherwise, the function will issue a fatal error. Unlocking a mutex from
+   a different thread than the one that locked it results in undefined
+   behavior.
 
    .. versionadded:: 3.13
 
