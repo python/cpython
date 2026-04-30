@@ -2526,6 +2526,44 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertNotIn("_GUARD_TOS_UNICODE", uops)
         self.assertIn("_BINARY_OP_ADD_UNICODE", uops)
 
+    def test_format_simple_narrows_to_str(self):
+        def testfunc(n):
+            x = []
+            for _ in range(n):
+                v = 42
+                s = f"{v}"
+                t = "hello" + s
+                x.append(t)
+            return x
+
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, ["hello42"] * TIER2_THRESHOLD)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+
+        self.assertIn("_FORMAT_SIMPLE", uops)
+        self.assertNotIn("_GUARD_TOS_UNICODE", uops)
+        self.assertIn("_BINARY_OP_ADD_UNICODE", uops)
+
+    def test_format_with_spec_narrows_to_str(self):
+        def testfunc(n):
+            x = []
+            for _ in range(n):
+                v = 3.14
+                s = f"{v:.2f}"
+                t = "pi=" + s
+                x.append(t)
+            return x
+
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, ["pi=3.14"] * TIER2_THRESHOLD)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+
+        self.assertIn("_FORMAT_WITH_SPEC", uops)
+        self.assertNotIn("_GUARD_TOS_UNICODE", uops)
+        self.assertIn("_BINARY_OP_ADD_UNICODE", uops)
+
     def test_binary_op_subscr_str_int(self):
         def testfunc(n):
             x = 0

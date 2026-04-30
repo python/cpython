@@ -244,6 +244,7 @@ add_op(JitOptContext *ctx, _PyUOpInstruction *this_instr,
 /* Shortened forms for convenience, used in optimizer_bytecodes.c */
 #define sym_is_not_null _Py_uop_sym_is_not_null
 #define sym_is_const _Py_uop_sym_is_const
+#define sym_is_safe_type _Py_uop_sym_is_safe_type
 #define sym_is_safe_const _Py_uop_sym_is_safe_const
 #define sym_is_not_container _Py_uop_sym_is_not_container
 #define sym_get_const _Py_uop_sym_get_const
