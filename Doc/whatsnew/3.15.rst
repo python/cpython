@@ -1439,6 +1439,9 @@ unittest
   to control how messages are formatted.
   (Contributed by Garry Cairns in :gh:`134567`.)
 
+* The new :meth:`.TextTestResult.getName` method allows customizing test names
+  in test results.
+
 
 urllib.parse
 ------------
