@@ -3099,6 +3099,16 @@ class BadElementTest(ElementTestCase, unittest.TestCase):
         self.assertEqual([c.tag for c in children[3:]],
                          [a.tag, b.tag, a.tag, b.tag])
 
+    def test_deeply_nested_deepcopy(self):
+        # This should raise a RecursionError and not crash.
+        # See https://github.com/python/cpython/issues/148801.
+        root = cur = ET.Element('s')
+        for _ in range(150_000):
+            cur = ET.SubElement(cur, 'u')
+        with support.infinite_recursion():
+            with self.assertRaises(RecursionError):
+                copy.deepcopy(root)
+
 
 class MutationDeleteElementPath(str):
     def __new__(cls, elem, *args):
