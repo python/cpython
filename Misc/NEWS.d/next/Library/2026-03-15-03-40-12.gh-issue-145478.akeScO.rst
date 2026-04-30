@@ -1,0 +1,1 @@
+Now :func:`functools.partial` stores keywords in a :class:`frozendict` and enforces that they are always strings.

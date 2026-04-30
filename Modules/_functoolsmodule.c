@@ -130,7 +130,7 @@ typedef struct {
     PyObject_HEAD
     PyObject *fn;
     PyObject *args;
-    PyObject *kw;
+    PyObject *kw;          /* frozendict */
     PyObject *dict;        /* __dict__ */
     PyObject *weakreflist; /* List of weak references */
     PyObject *placeholder; /* Placeholder for positional arguments */
@@ -195,6 +195,7 @@ partial_new(PyTypeObject *type, PyObject *args, PyObject *kw)
         PyObject *key, *val;
         Py_ssize_t pos = 0;
         while (PyDict_Next(kw, &pos, &key, &val)) {
+            assert(PyUnicode_CheckExact(key));
             if (val == phold) {
                 PyErr_SetString(PyExc_TypeError,
                                 "Placeholder cannot be passed as a keyword argument");
@@ -218,14 +219,15 @@ partial_new(PyTypeObject *type, PyObject *args, PyObject *kw)
             func = part->fn;
             pto_phcount = part->phcount;
             assert(PyTuple_Check(pto_args));
-            assert(PyDict_Check(pto_kw));
+            assert(PyFrozenDict_Check(pto_kw));
         }
     }
 
     /* create partialobject structure */
     pto = (partialobject *)type->tp_alloc(type, 0);
-    if (pto == NULL)
+    if (pto == NULL) {
         return NULL;
+    }
 
     pto->fn = Py_NewRef(func);
     pto->placeholder = phold;
@@ -293,25 +295,30 @@ partial_new(PyTypeObject *type, PyObject *args, PyObject *kw)
     }
 
     if (pto_kw == NULL || PyDict_GET_SIZE(pto_kw) == 0) {
-        if (kw == NULL) {
-            pto->kw = PyDict_New();
-        }
-        else if (_PyObject_IsUniquelyReferenced(kw)) {
-            pto->kw = Py_NewRef(kw);
-        }
-        else {
-            pto->kw = PyDict_Copy(kw);
-        }
+        pto->kw = PyFrozenDict_New(kw);
     }
     else {
-        pto->kw = PyDict_Copy(pto_kw);
-        if (kw != NULL && pto->kw != NULL) {
-            if (PyDict_Merge(pto->kw, kw, 1) != 0) {
+        if (kw == NULL) {
+            pto->kw = Py_NewRef(pto_kw);
+        }
+        else {
+            PyObject *tmp_dict = PyObject_CallOneArg((PyObject *)&PyDict_Type, pto_kw);
+            if (tmp_dict == NULL) {
                 Py_DECREF(pto);
                 return NULL;
             }
+
+            if (PyDict_Merge(tmp_dict, kw, 1) != 0) {
+                Py_DECREF(tmp_dict);
+                Py_DECREF(pto);
+                return NULL;
+            }
+
+            pto->kw = PyFrozenDict_New(tmp_dict);
+            Py_DECREF(tmp_dict);
         }
     }
+
     if (pto->kw == NULL) {
         Py_DECREF(pto);
         return NULL;
@@ -463,7 +470,7 @@ partial_vectorcall(PyObject *self, PyObject *const *args,
             }
             else if (contains == 1) {
                 if (pto_kw_merged == NULL) {
-                    pto_kw_merged = PyDict_Copy(pto->kw);
+                    pto_kw_merged = PyObject_CallOneArg((PyObject *)&PyDict_Type, pto->kw);
                     if (pto_kw_merged == NULL) {
                         goto error;
                     }
@@ -497,14 +504,12 @@ partial_vectorcall(PyObject *self, PyObject *const *args,
          * Note, tail is already coppied. */
         Py_ssize_t pos = 0, i = 0;
         PyObject *keyword_dict = n_merges ? pto_kw_merged : pto->kw;
-        Py_BEGIN_CRITICAL_SECTION(keyword_dict);
         while (PyDict_Next(keyword_dict, &pos, &key, &val)) {
             assert(i < pto_nkwds);
             PyTuple_SET_ITEM(tot_kwnames, i, Py_NewRef(key));
             stack[tot_nargs + i] = val;
             i++;
         }
-        Py_END_CRITICAL_SECTION();
         assert(i == pto_nkwds);
         Py_XDECREF(pto_kw_merged);
 
@@ -588,7 +593,7 @@ partial_call(PyObject *self, PyObject *args, PyObject *kwargs)
     partialobject *pto = partialobject_CAST(self);
     assert(PyCallable_Check(pto->fn));
     assert(PyTuple_Check(pto->args));
-    assert(PyDict_Check(pto->kw));
+    assert(PyFrozenDict_Check(pto->kw));
 
     Py_ssize_t nargs = PyTuple_GET_SIZE(args);
     Py_ssize_t pto_phcount = pto->phcount;
@@ -609,7 +614,7 @@ partial_call(PyObject *self, PyObject *args, PyObject *kwargs)
         /* bpo-27840, bpo-29318: dictionary of keyword parameters must be
            copied, because a function using "**kwargs" can modify the
            dictionary. */
-        tot_kw = PyDict_Copy(pto->kw);
+        tot_kw = PyObject_CallOneArg((PyObject*)&PyDict_Type, pto->kw);
         if (tot_kw == NULL) {
             return NULL;
         }
@@ -719,7 +724,7 @@ partial_repr(PyObject *self)
     PyObject *args = Py_NewRef(pto->args);
     PyObject *kw = Py_NewRef(pto->kw);
     assert(PyTuple_Check(args));
-    assert(PyDict_Check(kw));
+    assert(PyFrozenDict_Check(kw));
 
     arglist = Py_GetConstant(Py_CONSTANT_EMPTY_STR);
     if (arglist == NULL) {
@@ -736,19 +741,15 @@ partial_repr(PyObject *self)
     }
     /* Pack keyword arguments */
     int error = 0;
-    Py_BEGIN_CRITICAL_SECTION(kw);
     for (i = 0; PyDict_Next(kw, &i, &key, &value);) {
-        /* Prevent key.__str__ from deleting the value. */
-        Py_INCREF(value);
+        assert(PyUnicode_CheckExact(key));
         Py_SETREF(arglist, PyUnicode_FromFormat("%U, %S=%R", arglist,
                                                 key, value));
-        Py_DECREF(value);
         if (arglist == NULL) {
             error = 1;
             break;
         }
     }
-    Py_END_CRITICAL_SECTION();
     if (error) {
         goto done;
     }
@@ -786,9 +787,12 @@ static PyObject *
 partial_reduce(PyObject *self, PyObject *Py_UNUSED(args))
 {
     partialobject *pto = partialobject_CAST(self);
-    return Py_BuildValue("O(O)(OOOO)", Py_TYPE(pto), pto->fn, pto->fn,
-                         pto->args, pto->kw,
+    PyObject *keywords_dict = PyObject_CallOneArg((PyObject*)&PyDict_Type, pto->kw);
+    PyObject *result = Py_BuildValue("O(O)(OOOO)", Py_TYPE(pto), pto->fn, pto->fn,
+                         pto->args, keywords_dict,
                          pto->dict ? pto->dict : Py_None);
+    Py_DECREF(keywords_dict);
+    return result;
 }
 
 static PyObject *
@@ -804,10 +808,17 @@ partial_setstate(PyObject *self, PyObject *state)
     if (!PyArg_ParseTuple(state, "OOOO", &fn, &fnargs, &kw, &dict) ||
         !PyCallable_Check(fn) ||
         !PyTuple_Check(fnargs) ||
-        (kw != Py_None && !PyDict_Check(kw)) ||
         (dict != Py_None && !PyDict_Check(dict)))
     {
         PyErr_SetString(PyExc_TypeError, "invalid partial state");
+        return NULL;
+    }
+
+    if (kw != Py_None && !PyAnyDict_Check(kw))
+    {
+        PyErr_Format(PyExc_TypeError,
+                     "keywords must be an instance of dict or frozendict, not %.200s",
+                     _PyType_Name(Py_TYPE(kw)));
         return NULL;
     }
 
@@ -825,28 +836,44 @@ partial_setstate(PyObject *self, PyObject *state)
         }
     }
 
-    if(!PyTuple_CheckExact(fnargs))
+    if(!PyTuple_CheckExact(fnargs)) {
         fnargs = PySequence_Tuple(fnargs);
-    else
+    }
+    else {
         Py_INCREF(fnargs);
-    if (fnargs == NULL)
+    }
+    if (fnargs == NULL) {
         return NULL;
+    }
 
-    if (kw == Py_None)
-        kw = PyDict_New();
-    else if(!PyDict_CheckExact(kw))
-        kw = PyDict_Copy(kw);
-    else
-        Py_INCREF(kw);
+    if (kw == Py_None) {
+        kw = PyFrozenDict_New(NULL);
+    }
+    else {
+        PyObject *key, *val;
+        for (Py_ssize_t pos = 0; PyDict_Next(kw, &pos, &key, &val);) {
+            if (!PyUnicode_CheckExact(key)) {
+                PyErr_SetString(PyExc_TypeError,
+                                "keywords must be a string");
+                Py_DECREF(fnargs);
+                return NULL;
+            }
+        }
+        kw = PyFrozenDict_New(kw);
+    }
+
     if (kw == NULL) {
         Py_DECREF(fnargs);
         return NULL;
     }
 
-    if (dict == Py_None)
+    if (dict == Py_None) {
         dict = NULL;
-    else
+    }
+    else {
         Py_INCREF(dict);
+    }
+
     Py_SETREF(pto->fn, Py_NewRef(fn));
     Py_SETREF(pto->args, fnargs);
     Py_SETREF(pto->kw, kw);
@@ -856,9 +883,23 @@ partial_setstate(PyObject *self, PyObject *state)
     Py_RETURN_NONE;
 }
 
+static PyObject *
+partial_copy(PyObject *self, PyObject *Py_UNUSED(args))
+{
+    partialobject *pto = partialobject_CAST(self);
+    PyTypeObject *type = Py_TYPE(pto);
+    partialobject *new_pto = (partialobject *)type->tp_alloc(type, 0);
+    new_pto->fn = Py_NewRef(pto->fn);
+    new_pto->args = Py_NewRef(pto->args);
+    new_pto->kw = Py_NewRef(pto->kw);
+    new_pto->dict = Py_XNewRef(pto->dict);
+    return (PyObject *)new_pto;
+}
+
 static PyMethodDef partial_methods[] = {
     {"__reduce__", partial_reduce, METH_NOARGS},
     {"__setstate__", partial_setstate, METH_O},
+    {"__copy__", partial_copy, METH_NOARGS},
     {"__class_getitem__",    Py_GenericAlias,
     METH_O|METH_CLASS,       PyDoc_STR("See PEP 585")},
     {NULL,              NULL}           /* sentinel */
