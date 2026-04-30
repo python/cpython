@@ -1488,16 +1488,17 @@
                 definite = false;
             }
             if (tp && tp->tp_as_mapping &&
-                tp->tp_as_mapping->mp_subscript == _PyDict_Subscript)
-            {
-                if (definite){
+                tp->tp_as_mapping->mp_subscript == _PyDict_Subscript) {
+                if (definite) {
                     ADD_OP(_NOP, 0, 0);
                 }
                 else {
                     ADD_OP(_GUARD_TYPE, 0, (uintptr_t)tp);
-                    PyType_Watch(TYPE_WATCHER_ID, (PyObject *)tp);
-                    _Py_BloomFilter_Add(dependencies, tp);
                     sym_set_type(nos, tp);
+                    if ((tp->tp_flags & Py_TPFLAGS_IMMUTABLETYPE) == 0) {
+                        PyType_Watch(TYPE_WATCHER_ID, (PyObject *)tp);
+                        _Py_BloomFilter_Add(dependencies, tp);
+                    }
                 }
             }
             break;
@@ -1513,16 +1514,17 @@
                 definite = false;
             }
             if (tp && tp->tp_as_mapping &&
-                tp->tp_as_mapping->mp_ass_subscript == _PyDict_StoreSubscript)
-            {
+                tp->tp_as_mapping->mp_ass_subscript == _PyDict_StoreSubscript) {
                 if (definite) {
                     ADD_OP(_NOP, 0, 0);
                 }
                 else {
                     ADD_OP(_GUARD_TYPE, 0, (uintptr_t)tp);
-                    PyType_Watch(TYPE_WATCHER_ID, (PyObject *)tp);
-                    _Py_BloomFilter_Add(dependencies, tp);
                     sym_set_type(nos, tp);
+                    if ((tp->tp_flags & Py_TPFLAGS_IMMUTABLETYPE) == 0) {
+                        PyType_Watch(TYPE_WATCHER_ID, (PyObject *)tp);
+                        _Py_BloomFilter_Add(dependencies, tp);
+                    }
                 }
             }
             break;
