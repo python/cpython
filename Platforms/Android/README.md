@@ -161,6 +161,10 @@ configuring the execution of a third-party test suite:
   directory.
 * `--site-packages`: the directory to copy into the testbed app to use as site
   packages.
+* `--pull`: if specified, the testbed app will pull the file or folder from the device
+  back to the build machine after the test run. This is useful for retrieving coverage
+  data, for example. Can be used multiple times.
+* `--output-dir`: the directory on the build machine to which files will be pulled.
 
 Extra arguments on the `android.py test` command line will be passed through to
 Python – use `--` to separate them from `android.py`'s own options. You must include

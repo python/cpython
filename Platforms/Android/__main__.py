@@ -12,6 +12,7 @@ import signal
 import subprocess
 import sys
 import sysconfig
+import zipfile
 from asyncio import wait_for
 from contextlib import asynccontextmanager
 from datetime import datetime, timezone
@@ -629,6 +630,14 @@ def stop_app(serial):
     run([adb, "-s", serial, "shell", "am", "force-stop", APP_ID], log=False)
 
 
+def _extract_output_archives(output_dir):
+    """Extract all zip archives written by PythonSuite.kt and delete them."""
+    for zip_path in Path(output_dir).glob("*.zip"):
+        with zipfile.ZipFile(zip_path) as zf:
+            zf.extractall(output_dir)
+        zip_path.unlink()
+
+
 async def gradle_task(context):
     env = os.environ.copy()
     if context.managed:
@@ -664,8 +673,16 @@ async def gradle_task(context):
             ("python.sitePackages", context.site_packages),
             ("python.cwd", context.cwd),
             (
+                "python.outputDir",
+                context.output_dir
+            ),
+            (
                 "android.testInstrumentationRunnerArguments.pythonArgs",
                 json.dumps(context.args),
+            ),
+            (
+                "android.testInstrumentationRunnerArguments.pythonPull",
+                json.dumps(context.pull) if context.pull else None,
             ),
         ]
         if value
@@ -689,6 +706,8 @@ async def gradle_task(context):
 
             status = await wait_for(process.wait(), timeout=1)
             if status == 0:
+                if context.pull and context.output_dir:
+                    _extract_output_archives(Path(context.output_dir))
                 exit(0)
             else:
                 raise CalledProcessError(status, args)
@@ -699,6 +718,9 @@ async def gradle_task(context):
 
 
 async def run_testbed(context):
+    if context.pull and not context.output_dir:
+        sys.exit("--output-dir is required when --pull is used.")
+
     setup_ci()
     setup_sdk()
     setup_testbed()
@@ -969,6 +991,15 @@ def parse_args():
     test.add_argument(
         "--cwd", metavar="DIR", type=abspath,
         help="Directory to copy as the app's working directory.")
+    test.add_argument(
+        "--pull", metavar="PATH", action="append", default=[],
+        help="File or directory to copy from the app's working directory back "
+        "to the host after the test run. Paths are relative to --cwd on the "
+        "device. May be given multiple times.")
+    test.add_argument(
+        "--output-dir", metavar="DIR", type=abspath,
+        help="Local directory to write files pulled via --pull. "
+        "Required when --pull is used.")
     test.add_argument(
         "args", nargs="*", help=f"Python command-line arguments. "
         f"Separate them from {SCRIPT_NAME}'s own arguments with `--`. "

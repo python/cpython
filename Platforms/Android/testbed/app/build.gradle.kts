@@ -180,12 +180,18 @@ android {
                 }
             }
 
-            // If the previous test run succeeded and nothing has changed,
-            // Gradle thinks there's no need to run it again. Override that.
             afterEvaluate {
-                (localDevices.names + listOf("connected")).forEach {
-                    tasks.named("${it}DebugAndroidTest") {
+                (localDevices.names + listOf("connected")).forEach { deviceName ->
+                    val copyOutputTask = createCopyOutputTask(deviceName)
+                    tasks.named("${deviceName}DebugAndroidTest") {
+                        // If the previous test run succeeded and nothing has changed,
+                        // Gradle thinks there's no need to run it again. Override that.
                         outputs.upToDateWhen { false }
+
+                        // If python.outputDir is set, copy all files that are pulled
+                        // from the emulator to the host by the UTP to the given output
+                        // directory on the host.
+                        copyOutputTask?.let { finalizedBy(it) }
                     }
                 }
             }
@@ -330,6 +336,43 @@ abstract class CreateEmulatorTask : DefaultTask() {
         execOps.exec {
             commandLine(command)
         }
+    }
+}
+
+
+fun createCopyOutputTask(deviceName: String): TaskProvider<Copy>? {
+    val outputDir = findProperty("python.outputDir") as String?
+    if (outputDir.isNullOrEmpty()) return null
+
+    val additionalOutputPath = if (deviceName == "connected") {
+        "outputs/connected_android_test_additional_output"
+    } else {
+        "outputs/managed_device_android_test_additional_output"
+    }
+
+    // PythonSuite.kt packs all output files into a single zip archive,
+    // to avoid issues because the UTP copy skips dotfiles like ".coverage".
+    val archiveName = "org.python.testbed-output.zip"
+
+    return tasks.register<Copy>("${deviceName}CopyTestOutput") {
+        from(layout.buildDirectory.dir(additionalOutputPath))
+        // The subfolders of `connected_android_test_additional_output` contains
+        // names that are not equal to the serial of the device.
+        // The subfolders of `managed_device_android_test_additional_output` are
+        // also unpredictable, because e.g. the subfolder for the "maxVersion" emulator
+        // is named "minVersion".
+        // So we can't rely on the subfolder names and search for the archive in
+        // all subfolders. The archive should be in exactly one of the subfolders.
+        include("**/$archiveName")
+        into(outputDir)
+        // Flatten: drop any device-subfolder prefix, put the zip
+        // directly in outputDir.
+        eachFile { path = name }
+        includeEmptyDirs = false
+        // Each android.py invocation runs only one device at a time,
+        // so there should never be more than one archive. Fail loudly
+        // if that assumption is violated.
+        duplicatesStrategy = DuplicatesStrategy.FAIL
     }
 }
 
