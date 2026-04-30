@@ -863,5 +863,25 @@ class CAPI_TestCase(unittest.TestCase, HelperMixin):
             os_helper.unlink(os_helper.TESTFN)
 
 
+class SelfRefTupleTest(unittest.TestCase):
+    """Regression test for gh-148653: TYPE_TUPLE with FLAG_REF back-reference.
+
+    R_REF registered the tuple in p->refs before its slots were populated.
+    A TYPE_REF back-reference to the partial tuple could reach a hashing
+    site (PySet_Add) with NULL slots, crashing with SIGSEGV.
+
+    The fix uses the two-phase r_ref_reserve/r_ref_insert pattern so the
+    Py_None placeholder is detected by the TYPE_REF handler, raising
+    ValueError instead.
+    """
+
+    def test_self_ref_tuple(self):
+        # TYPE_TUPLE|FLAG_REF n=2; NONE; TYPE_SET n=1; TYPE_REF(0)
+        payload = (b'\xa8\x02\x00\x00\x00N'
+                   b'<\x01\x00\x00\x00r\x00\x00\x00\x00')
+        with self.assertRaises(ValueError):
+            marshal.loads(payload)
+
+
 if __name__ == "__main__":
     unittest.main()

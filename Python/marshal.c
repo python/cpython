@@ -1418,7 +1418,9 @@ r_object(RFILE *p)
         }
     _read_tuple:
         v = PyTuple_New(n);
-        R_REF(v);
+        idx = r_ref_reserve(flag, p);
+        if (idx < 0)
+            Py_CLEAR(v);
         if (v == NULL)
             break;
 
@@ -1433,6 +1435,7 @@ r_object(RFILE *p)
             }
             PyTuple_SET_ITEM(v, i, v2);
         }
+        v = r_ref_insert(v, idx, flag, p);
         retval = v;
         break;
 
