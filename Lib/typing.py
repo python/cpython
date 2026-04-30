@@ -2486,8 +2486,12 @@ def get_type_hints(obj, globalns=None, localns=None, include_extras=False,
         else:
             nsobj = obj
             # Find globalns for the unwrapped object.
+            seen = {id(nsobj)}
             while hasattr(nsobj, '__wrapped__'):
                 nsobj = nsobj.__wrapped__
+                if id(nsobj) in seen:
+                    raise ValueError(f'wrapper loop when unwrapping {obj!r}')
+                seen.add(id(nsobj))
             globalns = getattr(nsobj, '__globals__', {})
         if localns is None:
             localns = globalns
@@ -3146,31 +3150,7 @@ def _namedtuple_mro_entries(bases):
 NamedTuple.__mro_entries__ = _namedtuple_mro_entries
 
 
-class _SingletonMeta(type):
-    def __setattr__(cls, attr, value):
-        # TypeError is consistent with the behavior of NoneType
-        raise TypeError(
-                f"cannot set {attr!r} attribute of immutable type {cls.__name__!r}"
-                )
-
-
-class _NoExtraItemsType(metaclass=_SingletonMeta):
-    """The type of the NoExtraItems singleton."""
-
-    __slots__ = ()
-
-    def __new__(cls):
-        return globals().get("NoExtraItems") or object.__new__(cls)
-
-    def __repr__(self):
-        return 'typing.NoExtraItems'
-
-    def __reduce__(self):
-        return 'NoExtraItems'
-
-NoExtraItems = _NoExtraItemsType()
-del _NoExtraItemsType
-del _SingletonMeta
+NoExtraItems = sentinel("NoExtraItems")
 
 
 def _get_typeddict_qualifiers(annotation_type):

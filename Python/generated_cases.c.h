@@ -5913,7 +5913,7 @@
                 int og_oparg = (oparg & ~255) | executor->vm_data.oparg;
                 next_instr = this_instr;
                 if (_PyJit_EnterExecutorShouldStopTracing(og_opcode)) {
-                    if (_PyOpcode_Caches[_PyOpcode_Deopt[opcode]]) {
+                    if (_PyOpcode_Caches[_PyOpcode_Deopt[og_opcode]]) {
                         PAUSE_ADAPTIVE_COUNTER(this_instr[1].counter);
                     }
                     opcode = og_opcode;
@@ -12497,7 +12497,10 @@
             tracer->prev_state.instr_frame = frame;
             tracer->prev_state.instr_oparg = oparg;
             tracer->prev_state.instr_stacklevel = PyStackRef_IsNone(frame->f_executable) ? 2 : STACK_LEVEL();
-            if (_PyOpcode_Caches[_PyOpcode_Deopt[opcode]]) {
+            if (_PyOpcode_Caches[_PyOpcode_Deopt[opcode]]
+                // Branch opcodes use the cache for branch history, not
+                // specialization counters.  Don't reset it.
+                && !IS_CONDITIONAL_JUMP_OPCODE(opcode)) {
                 (&next_instr[1])->counter = trigger_backoff_counter();
             }
             const _PyOpcodeRecordEntry *record_entry = &_PyOpcode_RecordEntries[opcode];

@@ -8384,33 +8384,52 @@ PY_STDLIB_MOD([xxlimited_35], [test "$TEST_MODULES" = yes], [test "$ac_cv_func_d
 
 # Determine JIT stencils header files based on target platform
 JIT_STENCILS_H=""
-AS_VAR_IF([enable_experimental_jit], [no],
+JIT_SHIM_O=""
+JIT_SHIM_BUILD_O=""
+AS_VAR_IF([jit_flags],
   [],
-  [case "$host" in
-    aarch64-apple-darwin*)
-      JIT_STENCILS_H="jit_stencils-aarch64-apple-darwin.h"
-      ;;
-    x86_64-apple-darwin*)
-      JIT_STENCILS_H="jit_stencils-x86_64-apple-darwin.h"
-      ;;
-    aarch64-pc-windows-msvc)
-      JIT_STENCILS_H="jit_stencils-aarch64-pc-windows-msvc.h"
-      ;;
-    i686-pc-windows-msvc)
-      JIT_STENCILS_H="jit_stencils-i686-pc-windows-msvc.h"
-      ;;
-    x86_64-pc-windows-msvc)
-      JIT_STENCILS_H="jit_stencils-x86_64-pc-windows-msvc.h"
-      ;;
-    aarch64-*-linux-gnu)
-      JIT_STENCILS_H="jit_stencils-aarch64-unknown-linux-gnu.h"
-      ;;
-    x86_64-*-linux-gnu)
-      JIT_STENCILS_H="jit_stencils-x86_64-unknown-linux-gnu.h"
-      ;;
-  esac])
+  [],
+  [if test "${enable_universalsdk}" && test "$UNIVERSAL_ARCHS" = "universal2"; then
+     JIT_STENCILS_H="jit_stencils-aarch64-apple-darwin.h jit_stencils-x86_64-apple-darwin.h"
+     JIT_SHIM_O="jit_shim-universal2-apple-darwin.o"
+     JIT_SHIM_BUILD_O="jit_shim-aarch64-apple-darwin.o jit_shim-x86_64-apple-darwin.o"
+   else
+     case "$host" in
+       aarch64-apple-darwin*)
+         JIT_STENCILS_H="jit_stencils-aarch64-apple-darwin.h"
+         JIT_SHIM_O="jit_shim-aarch64-apple-darwin.o"
+         ;;
+       x86_64-apple-darwin*)
+         JIT_STENCILS_H="jit_stencils-x86_64-apple-darwin.h"
+         JIT_SHIM_O="jit_shim-x86_64-apple-darwin.o"
+         ;;
+       aarch64-pc-windows-msvc)
+         JIT_STENCILS_H="jit_stencils-aarch64-pc-windows-msvc.h"
+         JIT_SHIM_O="jit_shim-aarch64-pc-windows-msvc.o"
+         ;;
+       i686-pc-windows-msvc)
+         JIT_STENCILS_H="jit_stencils-i686-pc-windows-msvc.h"
+         JIT_SHIM_O="jit_shim-i686-pc-windows-msvc.o"
+         ;;
+       x86_64-pc-windows-msvc)
+         JIT_STENCILS_H="jit_stencils-x86_64-pc-windows-msvc.h"
+         JIT_SHIM_O="jit_shim-x86_64-pc-windows-msvc.o"
+         ;;
+       aarch64-*-linux-gnu)
+         JIT_STENCILS_H="jit_stencils-aarch64-unknown-linux-gnu.h"
+         JIT_SHIM_O="jit_shim-aarch64-unknown-linux-gnu.o"
+         ;;
+       x86_64-*-linux-gnu)
+         JIT_STENCILS_H="jit_stencils-x86_64-unknown-linux-gnu.h"
+         JIT_SHIM_O="jit_shim-x86_64-unknown-linux-gnu.o"
+         ;;
+     esac
+     JIT_SHIM_BUILD_O="$JIT_SHIM_O"
+   fi])
 
 AC_SUBST([JIT_STENCILS_H])
+AC_SUBST([JIT_SHIM_O])
+AC_SUBST([JIT_SHIM_BUILD_O])
 
 # substitute multiline block, must come after last PY_STDLIB_MOD()
 AC_SUBST([MODULE_BLOCK])
