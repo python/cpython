@@ -507,7 +507,7 @@ Additional Utility Classes and Functions
    .. versionchanged:: 3.13
       Added support for an optional positional argument.
 
-.. function:: DynamicClassAttribute(fget=None, fset=None, fdel=None, doc=None)
+.. class:: DynamicClassAttribute(fget=None, fset=None, fdel=None, doc=None)
 
    Route attribute access on a class to __getattr__.
 
