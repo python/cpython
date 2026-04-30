@@ -365,8 +365,26 @@ These two approaches both output::
      |--> Gunther
      |--> Commander Clement
 
+Serializing XML with Default Namespace
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-.. _elementtree-xpath:
+When serializing XML that contains a default namespace, ElementTree will by
+default add a generated prefix (such as ``ns0``) instead of preserving the
+default namespace. For example::
+
+   >>> root = ET.fromstring("<doc xmlns='http://example.com'><p>text</p></doc>")
+   >>> print(ET.tostring(root, encoding='unicode'))
+   <ns0:doc xmlns:ns0="http://example.com"><ns0:p>text</ns0:p></ns0:doc>
+
+To preserve the default namespace during serialization, use the
+*default_namespace* parameter with :func:`tostring` or :meth:`ElementTree.write`::
+
+   >>> root = ET.fromstring("<doc xmlns='http://example.com'><p>text</p></doc>")
+   >>> print(ET.tostring(root, encoding='unicode', default_namespace='http://example.com'))
+   <doc xmlns="http://example.com"><p>text</p></doc>
+
+.. versionadded:: 3.8
+   The *default_namespace* parameter.
 
 XPath support
 -------------
