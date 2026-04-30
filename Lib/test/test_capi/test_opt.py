@@ -2295,7 +2295,8 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertEqual(uops.count("_BINARY_OP_SUBSCR_DICT_KNOWN_HASH"), 1)
         self.assertEqual(uops.count("_STORE_SUBSCR_DICT_KNOWN_HASH"), 1)
         self.assertEqual(uops.count("_GUARD_NOS_DICT_SUBSCRIPT"), 0)
-        self.assertEqual(uops.count("_GUARD_NOS_DICT_STORE_SUBSCRIPT"), 1)
+        self.assertEqual(uops.count("_GUARD_NOS_DICT_STORE_SUBSCRIPT"), 0)
+        self.assertEqual(uops.count("_GUARD_TYPE"), 1)
 
     def test_dict_subclass_subscr_with_override(self):
         class MyDict(dict):
