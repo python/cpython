@@ -1,0 +1,12 @@
+Fix inaccurate description of the *include_hidden* parameter in
+:func:`glob.glob` and :func:`glob.iglob`. The parameter allows all wildcard
+patterns to match path components beginning with a dot, not just ``**``
+matching "hidden directories" as previously stated.
+
+#.. section: Tests #.. section: Build #.. section: Windows #.. section:
+macOS #.. section: IDLE #.. section: Tools/Demos #.. section: C API
+
+# Write your Misc/NEWS.d entry below.  It should be a simple ReST paragraph.
+# Don't start with "- Issue #<n>: " or "- gh-issue-<n>: " or that sort of
+stuff.
+###########################################################################
