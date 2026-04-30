@@ -402,10 +402,6 @@ class PdbPyReplInput:
                 completer_delims=frozenset(' \t\n`@#%^&*()=+[{]}\\|;:\'",<>?')
             )
         )
-        try:
-            self.readline_wrapper.read_history_file()
-        except (FileNotFoundError, PermissionError, OSError):
-            pass
 
     def readline(self):
 
@@ -432,11 +428,6 @@ class PdbPyReplInput:
                     '... ' + ' ' * (len(self.prompt) - 4)
                 ) + '\n'
             )
-            try:
-                self.readline_wrapper.append_history_file()
-            except (FileNotFoundError, PermissionError, OSError) as e:
-                import warnings
-                warnings.warn(f"failed to open the history file for writing: {e}")
             return multiline
         except EOFError:
             return 'EOF'
