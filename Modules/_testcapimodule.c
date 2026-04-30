@@ -2640,10 +2640,7 @@ test_interpreter_guards(PyObject *self, PyObject *unused)
 
     PyThreadState *isolated_interp_tstate;
     PyStatus status = Py_NewInterpreterFromConfig(&isolated_interp_tstate, &config);
-    if (PyStatus_Exception(status)) {
-        PyErr_SetString(PyExc_RuntimeError, "interpreter creation failed");
-        return NULL;
-    }
+    assert(!PyStatus_Exception(status));
 
     test_interp_guards_common();
     Py_EndInterpreter(isolated_interp_tstate);
@@ -2655,9 +2652,8 @@ static PyObject *
 test_thread_state_ensure_nested(PyObject *self, PyObject *unused)
 {
     PyInterpreterGuard *guard = PyInterpreterGuard_FromCurrent();
-    if (guard == NULL) {
-        return NULL;
-    }
+    assert(guard != NULL);
+
     PyThreadState *save_tstate = PyThreadState_Swap(NULL);
     assert(PyGILState_GetThisThreadState() == save_tstate);
     PyThreadState *thread_states[10];
@@ -2665,10 +2661,7 @@ test_thread_state_ensure_nested(PyObject *self, PyObject *unused)
     for (int i = 0; i < 10; ++i) {
         // Test reactivation of the detached tstate.
         thread_states[i] = PyThreadState_Ensure(guard);
-        if (thread_states[i] == 0) {
-            PyInterpreterGuard_Close(guard);
-            return PyErr_NoMemory();
-        }
+        assert(thread_states[i] != NULL);
 
         // No new thread state should've been created.
         assert(PyThreadState_Get() == save_tstate);
@@ -2682,17 +2675,11 @@ test_thread_state_ensure_nested(PyObject *self, PyObject *unused)
     // create a new thread state.
     for (int i = 0; i < 10; ++i) {
         thread_states[i] = PyThreadState_Ensure(guard);
-        if (thread_states[i] == 0) {
-            // This will technically leak other thread states, but it doesn't
-            // matter because this is a test.
-            PyInterpreterGuard_Close(guard);
-            return PyErr_NoMemory();
-        }
-
+        assert(thread_states[i] != NULL);
         assert(PyThreadState_Get() == save_tstate);
     }
 
-    for (int i = 0; i < 10; ++i) {
+    for (int i = 9; i >= 0; --i) {
         assert(PyThreadState_Get() == save_tstate);
         PyThreadState_Release(thread_states[i]);
     }
