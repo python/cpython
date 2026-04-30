@@ -6,6 +6,7 @@ from xml.sax.xmlreader import AttributesImpl
 from xml.sax.handler import feature_external_ges
 from xml.dom import pulldom
 
+from test import support
 from test.support import findfile
 
 
@@ -33,12 +34,43 @@ class PullDOMTestCase(unittest.TestCase):
 
         # Test with a filename:
         handler = pulldom.parse(tstfile)
-        self.addCleanup(handler.stream.close)
+        self.addCleanup(handler.close)
         list(handler)
 
         # Test with a file object:
         with open(tstfile, "rb") as fin:
             list(pulldom.parse(fin))
+
+    def test_context_manager_does_not_close_user_stream(self):
+        # gh-148428: context manager must not close user-provided streams
+        with open(tstfile, 'rb') as f:
+            events = pulldom.DOMEventStream(f, xml.sax.make_parser(), 16384)
+            for event, node in events:
+                pass
+            events.close()
+            self.assertFalse(f.closed)
+
+    def test_close_is_idempotent(self):
+        # gh-148428: calling close() multiple times should be safe
+        events = pulldom.parse(tstfile)
+        stream = events.stream
+        events.close()
+        self.assertTrue(stream.closed)
+        events.close()  # should not raise
+
+    def test_clear_closes_owned_stream(self):
+        # gh-148428: clear() should close the stream when parse() opened it
+        events = pulldom.parse(tstfile)
+        stream = events.stream
+        events.clear()
+        self.assertTrue(stream.closed)
+
+    def test_resource_warning_on_del(self):
+        # gh-148428: unclosed DOMEventStream should emit ResourceWarning
+        events = pulldom.parse(tstfile)
+        with self.assertWarns(ResourceWarning):
+            del events
+            support.gc_collect()
 
     def test_parse_semantics(self):
         """Test DOMEventStream parsing semantics."""
