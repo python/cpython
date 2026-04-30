@@ -1985,7 +1985,7 @@ Build changes
 
 * CPython is now built with frame pointers enabled by default
   (:pep:`831`). Pass :option:`--without-frame-pointers` to opt out.
-  (Contributed by Pablo Galindo Salgado and Savannah Ostrowski in :gh:`149202`.)
+  (Contributed by Pablo Galindo Salgado and Savannah Ostrowski in :gh:`149201`.)
 
 .. _whatsnew315-windows-tail-calling-interpreter:
 

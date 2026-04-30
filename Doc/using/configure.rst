@@ -782,7 +782,7 @@ also be used to improve performance.
 
 .. option:: --without-frame-pointers
 
-   Build without frame pointers (enabled by default, see :pep:`831`).
+   Disable frame pointers, which are enabled by default (see :pep:`831`).
 
    By default, the build appends ``-fno-omit-frame-pointer`` and
    ``-mno-omit-leaf-frame-pointer`` to ``BASECFLAGS`` so profilers,
