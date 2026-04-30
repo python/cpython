@@ -262,25 +262,8 @@ Attaching/detaching thread states
 
    It is OK to call this function if the thread already has an
    attached thread state, as long as there is a subsequent call to
-   :c:func:`PyThreadState_Release` that matches this one.
-
-   Nested calls to this function will only sometimes create a new
-   thread state.
-
-   First, this function checks if an attached thread state is present.
-   If there is, this function then checks if the interpreter of that
-   thread state matches the interpreter guarded by *guard*. If that is
-   the case, this function simply marks the thread state as being used
-   by a ``PyThreadState_Ensure`` call and returns.
-
-   If there is no attached thread state, then this function checks if any
-   thread state has been used by the current OS thread. (This is
-   returned by :c:func:`PyGILState_GetThisThreadState`.)
-   If there was, then this function checks if that thread state's interpreter
-   matches *guard*. If it does, it is re-attached and marked as used.
-
-   Otherwise, if both of the above cases fail, a new thread state is created
-   for *guard*. It is then attached and marked as owned by ``PyThreadState_Ensure``.
+   :c:func:`PyThreadState_Release` that matches this one (meaning that "nested"
+   calls to this function are permitted).
 
    The function's effect (if any) will be reversed by the matching call to
    :c:func:`PyThreadState_Release`.
@@ -295,6 +278,35 @@ Attaching/detaching thread states
    The returned value must be passed to the matching call to :c:func:`!PyThreadState_Release`,
    and must not be passed to any other C API functions
    (unless it matches a known valid :c:type:`!PyThreadState` pointer).
+
+   The conditions in which this function creates a new :term:`thread state` are
+   considered unstable and implementation-dependent. If you need to control the
+   exact lifetime of a thread state, consider using :c:func:`PyThreadState_New`.
+   However, do not avoid this function solely on the basis that the lifetime
+   of the thread state may be inconsistent across versions; changes to this
+   function will be done with caution and in a backwards-compatible manner.
+   In particular, the saving of thread-local variables and similar state will
+   be retained across Python versions.
+
+   .. impl-detail::
+
+      The exact behavior of whether this function creates a new thread state is
+      described below, but be aware that this may change in the future.
+
+      First, this function checks if an attached thread state is present.
+      If there is, this function then checks if the interpreter of that
+      thread state matches the interpreter guarded by *guard*. If that is
+      the case, this function simply marks the thread state as being used
+      by a ``PyThreadState_Ensure`` call and returns.
+
+      If there is no attached thread state, then this function checks if any
+      thread state has been used by the current OS thread. (This is
+      returned by :c:func:`PyGILState_GetThisThreadState`.)
+      If there was, then this function checks if that thread state's interpreter
+      matches *guard*. If it does, it is re-attached and marked as used.
+
+      Otherwise, if both of the above cases fail, a new thread state is created
+      for *guard*. It is then attached and marked as owned by ``PyThreadState_Ensure``.
 
    .. versionadded:: next
 
@@ -314,17 +326,22 @@ Attaching/detaching thread states
    Undo a :c:func:`PyThreadState_Ensure` call. This must be called exactly once
    for each successful call to ``PyThreadState_Ensure``.
 
-   This function will decrement an internal counter on the attached thread state. If
-   this counter ever reaches below zero, this function emits a fatal error (via
-   :c:func:`Py_FatalError`).
-
-   If the attached thread state is owned by ``PyThreadState_Ensure``, then the
-   attached thread state will be deallocated and deleted upon the internal counter
-   reaching zero. Otherwise, nothing happens when the counter reaches zero.
-
    If *tstate* is non-``NULL``, it will be attached upon returning.
    If *tstate* indicates that no prior thread state was attached, there will be
    no attached thread state upon returning.
+
+   The exact behavior of whether this function deletes a thread state is
+   considered unstable and implementation-dependent.
+
+   .. impl-detail::
+
+      Currently, this function will decrement an internal counter on the
+      attached thread state. If this counter ever reaches below zero, this
+      function emits a fatal error (via :c:func:`Py_FatalError`).
+
+      If the attached thread state is owned by ``PyThreadState_Ensure``, then the
+      attached thread state will be deallocated and deleted upon the internal counter
+      reaching zero. Otherwise, nothing happens when the counter reaches zero.
 
 
 .. _legacy-api:
