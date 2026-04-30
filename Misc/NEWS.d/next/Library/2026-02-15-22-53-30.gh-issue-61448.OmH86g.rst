@@ -1,0 +1,3 @@
+Fix :func:`inspect.formatargvalues` to handle deleted arguments gracefully
+instead of raising :exc:`KeyError`. When an argument is no longer bound in
+the frame locals (e.g. after ``del``), it is now shown as ``<deleted>``.
