@@ -5,6 +5,7 @@ import shlex
 import subprocess
 import sys
 import unittest
+import warnings
 import webbrowser
 from test import support
 from test.support import force_not_colorized_test_class
@@ -337,6 +338,83 @@ class MockPopenPipe:
 
 @unittest.skipUnless(sys.platform == "darwin", "macOS specific test")
 @requires_subprocess()
+class MacOSTest(unittest.TestCase):
+
+    def test_default(self):
+        browser = webbrowser.get()
+        self.assertIsInstance(browser, webbrowser.MacOS)
+        self.assertEqual(browser.name, 'default')
+
+    def test_default_http_open(self):
+        # http/https URLs use /usr/bin/open directly — no bundle ID needed.
+        browser = webbrowser.MacOS('default')
+        with mock.patch('subprocess.run') as mock_run:
+            mock_run.return_value = mock.Mock(returncode=0)
+            result = browser.open(URL)
+        mock_run.assert_called_once_with(
+            ['/usr/bin/open', URL],
+            stderr=subprocess.DEVNULL,
+        )
+        self.assertTrue(result)
+
+    def test_default_non_http_uses_bundle_id(self):
+        # Non-http(s) URLs (e.g. file://) must be routed through the browser
+        # via -b <bundle-id> to prevent OS file handler dispatch.
+        file_url = 'file:///tmp/test.html'
+        browser = webbrowser.MacOS('default')
+        with mock.patch('webbrowser._macos_default_browser_bundle_id',
+                        return_value='com.google.Chrome'), \
+             mock.patch('subprocess.run') as mock_run:
+            mock_run.return_value = mock.Mock(returncode=0)
+            result = browser.open(file_url)
+        mock_run.assert_called_once_with(
+            ['/usr/bin/open', '-b', 'com.google.Chrome', file_url],
+            stderr=subprocess.DEVNULL,
+        )
+        self.assertTrue(result)
+
+    def test_named_known_browser_uses_bundle_id(self):
+        # Named browsers with a known bundle ID use /usr/bin/open -b.
+        browser = webbrowser.MacOS('safari')
+        with mock.patch('subprocess.run') as mock_run:
+            mock_run.return_value = mock.Mock(returncode=0)
+            result = browser.open(URL)
+        mock_run.assert_called_once_with(
+            ['/usr/bin/open', '-b', 'com.apple.Safari', URL],
+            stderr=subprocess.DEVNULL,
+        )
+        self.assertTrue(result)
+
+    def test_named_unknown_browser_falls_back_to_dash_a(self):
+        # Named browsers not in the bundle ID map fall back to -a.
+        browser = webbrowser.MacOS('lynx')
+        with mock.patch('subprocess.run') as mock_run:
+            mock_run.return_value = mock.Mock(returncode=0)
+            browser.open(URL)
+        mock_run.assert_called_once_with(
+            ['/usr/bin/open', '-a', 'lynx', URL],
+            stderr=subprocess.DEVNULL,
+        )
+
+    def test_open_failure(self):
+        browser = webbrowser.MacOS('default')
+        with mock.patch('subprocess.run') as mock_run:
+            mock_run.return_value = mock.Mock(returncode=1)
+            result = browser.open(URL)
+        self.assertFalse(result)
+
+
+@unittest.skipUnless(sys.platform == "darwin", "macOS specific test")
+@requires_subprocess()
+class MacOSXOSAScriptDeprecationTest(unittest.TestCase):
+
+    def test_deprecation_warning(self):
+        with self.assertWarns(DeprecationWarning):
+            webbrowser.MacOSXOSAScript('default')
+
+
+@unittest.skipUnless(sys.platform == "darwin", "macOS specific test")
+@requires_subprocess()
 class MacOSXOSAScriptTest(unittest.TestCase):
     def setUp(self):
         # Ensure that 'BROWSER' is not set to 'open' or something else.
@@ -345,16 +423,13 @@ class MacOSXOSAScriptTest(unittest.TestCase):
         env.unset("BROWSER")
 
         support.patch(self, os, "popen", self.mock_popen)
+        self.enterContext(warnings.catch_warnings())
+        warnings.simplefilter("ignore", DeprecationWarning)
         self.browser = webbrowser.MacOSXOSAScript("default")
 
     def mock_popen(self, cmd, mode):
         self.popen_pipe = MockPopenPipe(cmd, mode)
         return self.popen_pipe
-
-    def test_default(self):
-        browser = webbrowser.get()
-        assert isinstance(browser, webbrowser.MacOSXOSAScript)
-        self.assertEqual(browser.name, "default")
 
     def test_default_open(self):
         url = "https://python.org"
@@ -381,7 +456,9 @@ class MacOSXOSAScriptTest(unittest.TestCase):
         self.assertIn(f'open location "{url}"', script)
 
     def test_explicit_browser(self):
-        browser = webbrowser.MacOSXOSAScript("safari")
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", DeprecationWarning)
+            browser = webbrowser.MacOSXOSAScript("safari")
         browser.open("https://python.org")
         script = self.popen_pipe.pipe.getvalue()
         self.assertIn('tell application "safari"', script)
