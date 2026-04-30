@@ -1,0 +1,1 @@
+Fix ``abc.register()`` so it invalidates type version tags for registered classes.
