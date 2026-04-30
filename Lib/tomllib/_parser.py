@@ -8,6 +8,8 @@ from __future__ import annotations
 # parse_value().
 __lazy_modules__ = ["tomllib._re"]
 
+import sys
+
 from ._re import (
     RE_DATETIME,
     RE_LOCALTIME,
