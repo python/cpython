@@ -5,8 +5,9 @@ import sys
 import threading
 import os
 import weakref
-from contextlib import contextmanager
+from contextlib import contextmanager, suppress
 from inspect import CO_GENERATOR, CO_COROUTINE, CO_ASYNC_GENERATOR
+from types import CodeType
 
 __all__ = ["BdbQuit", "Bdb", "Breakpoint"]
 
@@ -175,6 +176,21 @@ class _MonitoringTracer:
                 return last_lineno
             last_lineno = lineno
         return last_lineno
+
+
+def _get_executable_linenos(code):
+    linenos = set()
+    for _, _, lineno in code.co_lines():
+        if lineno is not None:
+            linenos.add(lineno)
+    for const in code.co_consts:
+        if isinstance(const, CodeType):
+            linenos |= _get_executable_linenos(const)
+    return linenos
+
+
+# filename: (source_lines, executable_linenos)
+_executable_linenos_cache = {}
 
 
 class Bdb:
@@ -668,9 +684,24 @@ class Bdb:
         """
         filename = self.canonic(filename)
         import linecache # Import as late as possible
+        linecache.checkcache(filename)
         line = linecache.getline(filename, lineno)
         if not line:
             return 'Line %s:%d does not exist' % (filename, lineno)
+        lines = linecache.getlines(filename)
+        cached = _executable_linenos_cache.get(filename)
+        if cached is not None and cached[0] is lines:
+            executable_lines = cached[1]
+        else:
+            executable_lines = None
+            source = ''.join(lines)
+            if source:
+                with suppress(SyntaxError):
+                    code = compile(source, filename, 'exec')
+                    executable_lines = _get_executable_linenos(code)
+                    _executable_linenos_cache[filename] = (lines, executable_lines)
+        if executable_lines and lineno not in executable_lines:
+            return 'Line %d has no code associated with it' % lineno
         self._add_to_breaks(filename, lineno)
         bp = Breakpoint(filename, lineno, temporary, cond, funcname)
         # After we set a new breakpoint, we need to search through all frames
