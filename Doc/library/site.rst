@@ -91,12 +91,12 @@ and lines beginning with ``#`` are skipped.
 For backward compatibility, lines starting with ``import`` (followed by space
 or tab) are executed with :func:`exec`.
 
-.. versionchanged:: 3.15
+.. versionchanged:: next
 
    ``import`` lines in :file:`{name}.pth` are ignored when a :ref:`matching
    <site-start-files>` :file:`{name}.start` file exists.
 
-.. deprecated-removed:: 3.15 3.20
+.. deprecated-removed:: next 3.20
 
    ``import`` lines in :file:`{name}.pth` files are deprecated and will be
    silently ignored in Python 3.18 and 3.19.  In Python 3.20 a warning will be
@@ -108,7 +108,7 @@ or tab) are executed with :func:`exec`.
 Startup entry points (:file:`.start` files)
 -------------------------------------------
 
-.. versionadded:: 3.15
+.. versionadded:: next
 
 A startup entry point file is a file whose name has the form
 :file:`{name}.start` and exists in one of the site-packages directories
@@ -160,13 +160,13 @@ the remaining entry points.
    The :file:`.pth` files are now decoded by UTF-8 at first and then by the
    :term:`locale encoding` if it fails.
 
-.. deprecated-removed:: 3.15 3.20
+.. deprecated-removed:: next 3.20
 
    Decoding :file:`{name}.pth` files in any encoding other than ``utf-8-sig``
    is deprecated in Python 3.15, and support for decoding from the locale
    encoding will be removed in Python 3.20.
 
-.. versionchanged:: 3.15
+.. versionchanged:: next
 
    :file:`.pth` file lines starting with ``import`` are deprecated.  During
    the deprecation period, such lines are still executed, but a diagnostic
@@ -372,7 +372,8 @@ Module contents
    used to prevent duplicate :data:`sys.path` entries.  When ``None`` (the
    default), the set is built from the current :data:`sys.path`.
 
-   .. versionchanged:: 3.15
+   .. versionchanged:: next
+
       Also processes :file:`.start` files.  See :ref:`site-start-files`.
       All :file:`.pth` and :file:`.start` files are now read and
       accumulated before any path extensions, ``import`` line execution,
