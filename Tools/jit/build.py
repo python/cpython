@@ -61,6 +61,7 @@ if __name__ == "__main__":
             comment=comment,
             force=args.force,
             jit_stencils=args.output_dir / f"jit_stencils-{target.triple}.h",
+            jit_shim_object=args.output_dir / f"jit_shim-{target.triple}.o",
         )
     jit_stencils_h = args.output_dir / "jit_stencils.h"
     lines = [f"// {comment}\n"]

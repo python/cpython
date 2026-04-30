@@ -136,7 +136,7 @@ import sys
 
 from fractions import Fraction
 from decimal import Decimal
-from itertools import count, groupby, repeat
+from itertools import compress, count, groupby, repeat
 from bisect import bisect_left, bisect_right
 from math import hypot, sqrt, fabs, exp, erfc, tau, log, fsum, sumprod
 from math import isfinite, isinf, pi, cos, sin, tan, cosh, asin, atan, acos
@@ -195,9 +195,9 @@ def fmean(data, weights=None):
             n = len(data)
         except TypeError:
             # Handle iterators that do not define __len__().
-            counter = count()
-            total = fsum(map(itemgetter(0), zip(data, counter)))
-            n = next(counter)
+            counter = count(1)
+            total = fsum(compress(data, counter))
+            n = next(counter) - 1
         else:
             total = fsum(data)
 

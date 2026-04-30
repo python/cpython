@@ -1305,7 +1305,7 @@ early_exit:
 }
 #ifdef _Py_TIER2
 #ifdef _Py_JIT
-_PyJitEntryFuncPtr _Py_jit_entry = _Py_LazyJitShim;
+_PyJitEntryFuncPtr _Py_jit_entry = _PyJIT;
 #else
 _PyJitEntryFuncPtr _Py_jit_entry = _PyTier2Interpreter;
 #endif
@@ -3409,7 +3409,7 @@ _PyEval_FormatKwargsError(PyThreadState *tstate, PyObject *func, PyObject *kwarg
         _PyErr_Format(
             tstate, PyExc_TypeError,
             "%V got multiple values for keyword argument '%S'",
-            funcstr, "finction", dupkey);
+            funcstr, "function", dupkey);
         Py_XDECREF(funcstr);
         return;
     }

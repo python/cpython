@@ -279,7 +279,57 @@ dummy_func(void) {
         bool rhs_int = sym_matches_type(rhs, &PyLong_Type);
         bool lhs_float = sym_matches_type(lhs, &PyFloat_Type);
         bool rhs_float = sym_matches_type(rhs, &PyFloat_Type);
-        if (!((lhs_int || lhs_float) && (rhs_int || rhs_float))) {
+        bool is_truediv = (oparg == NB_TRUE_DIVIDE
+                           || oparg == NB_INPLACE_TRUE_DIVIDE);
+        bool is_remainder = (oparg == NB_REMAINDER
+                             || oparg == NB_INPLACE_REMAINDER);
+        int emit_op = _BINARY_OP;
+        // Promote probable-float operands to known floats via speculative
+        // guards. _RECORD_TOS_TYPE / _RECORD_NOS_TYPE in the BINARY_OP macro
+        // record the observed operand type during tracing, which
+        // sym_get_probable_type reads here. Applied only to ops where
+        // narrowing unlocks a meaningful downstream win:
+        //   - NB_TRUE_DIVIDE: enables the specialized float path below.
+        //   - NB_REMAINDER: lets the float result type propagate.
+        // NB_POWER is excluded: speculative guards there regressed
+        // test_power_type_depends_on_input_values (GH-127844).
+        if (is_truediv || is_remainder) {
+            if (!sym_has_type(rhs)
+                    && sym_get_probable_type(rhs) == &PyFloat_Type) {
+                ADD_OP(_GUARD_TOS_FLOAT, 0, 0);
+                sym_set_type(rhs, &PyFloat_Type);
+                rhs_float = true;
+            }
+            if (!sym_has_type(lhs)
+                    && sym_get_probable_type(lhs) == &PyFloat_Type) {
+                ADD_OP(_GUARD_NOS_FLOAT, 0, 0);
+                sym_set_type(lhs, &PyFloat_Type);
+                lhs_float = true;
+            }
+        }
+        if (is_truediv && lhs_float && rhs_float) {
+            if (PyJitRef_IsUnique(lhs)) {
+                emit_op = _BINARY_OP_TRUEDIV_FLOAT_INPLACE;
+                l = sym_new_null(ctx);
+                r = rhs;
+            }
+            else if (PyJitRef_IsUnique(rhs)) {
+                emit_op = _BINARY_OP_TRUEDIV_FLOAT_INPLACE_RIGHT;
+                l = lhs;
+                r = sym_new_null(ctx);
+            }
+            else {
+                emit_op = _BINARY_OP_TRUEDIV_FLOAT;
+                l = lhs;
+                r = rhs;
+            }
+            res = PyJitRef_MakeUnique(sym_new_type(ctx, &PyFloat_Type));
+        }
+        else if (is_truediv
+                && (lhs_int || lhs_float) && (rhs_int || rhs_float)) {
+            res = PyJitRef_MakeUnique(sym_new_type(ctx, &PyFloat_Type));
+        }
+        else if (!((lhs_int || lhs_float) && (rhs_int || rhs_float))) {
             // There's something other than an int or float involved:
             res = sym_new_unknown(ctx);
         }
@@ -326,6 +376,7 @@ dummy_func(void) {
         else {
             res = sym_new_type(ctx, &PyFloat_Type);
         }
+        ADD_OP(emit_op, oparg, 0);
     }
 
     op(_BINARY_OP_ADD_INT, (left, right -- res, l, r)) {
@@ -2132,7 +2183,10 @@ dummy_func(void) {
                 goto error;
             }
             if (_Py_IsImmortal(temp)) {
-                ADD_OP(_SHUFFLE_3_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)temp);
+                ADD_OP(_SWAP, 2, 0);
+                optimize_pop_top(ctx, this_instr, null);
+                ADD_OP(_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)temp);
+                ADD_OP(_SWAP, 3, 0);
             }
             res = sym_new_const(ctx, temp);
             Py_DECREF(temp);
