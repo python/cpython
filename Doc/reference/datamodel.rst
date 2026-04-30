@@ -1551,6 +1551,11 @@ Special read-only attributes
    * - .. attribute:: codeobject.co_stacksize
      - The required stack size of the code object
 
+   * - .. attribute:: codeobject.co_exceptiontable
+     - A bytes object containing the exception handling table of the code object
+
+       .. versionadded:: 3.11
+
    * - .. attribute:: codeobject.co_flags
      - An :class:`integer <int>` encoding a number of flags for the
        interpreter.
