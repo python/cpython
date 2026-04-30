@@ -86,6 +86,7 @@ Summary -- Release highlights
 * :pep:`782`: :ref:`A new PyBytesWriter C API to create a Python bytes object
   <whatsnew315-pybyteswriter>`
 * :pep:`803`: :ref:`Stable ABI for Free-Threaded Builds <whatsnew315-abi3t>`
+* :pep:`820`: :ref:`PySlot: Unified slot system for the C API <whatsnew315-pyslot>`
 * :ref:`The JIT compiler has been significantly upgraded <whatsnew315-jit>`
 * :ref:`Improved error messages <whatsnew315-improved-error-messages>`
 * :ref:`The official Windows 64-bit binaries now use the tail-calling interpreter
@@ -2035,6 +2036,43 @@ New features
 * Add :c:func:`PyObject_Dump` to dump an object to ``stderr``.
   It should only be used for debugging.
   (Contributed by Victor Stinner in :gh:`141070`.)
+
+.. _whatsnew315-pyslot:
+
+* Implement :pep:`820`: ``PySlot`` -- Unified slot system for the C API.
+  See :ref:`capi-slots` for documentation.
+
+  This adds:
+
+  * The :c:type:`PySlot` struct;
+  * the :c:func:`PyType_FromSlots` function;
+  * new slot IDs: :c:macro:`Py_slot_end`, :c:macro:`Py_slot_invalid`;
+    :c:macro:`Py_slot_subslots`, :c:macro:`Py_tp_slots`
+    :c:macro:`Py_mod_slots`;
+    :c:macro:`Py_tp_name`, :c:macro:`Py_tp_basicsize`,
+    :c:macro:`Py_tp_extra_basicsize`, :c:macro:`Py_tp_itemsize`,
+    :c:macro:`Py_tp_flags`, :c:macro:`Py_tp_metaclass`,
+    :c:macro:`Py_tp_module`, :c:macro:`Py_tp_flags`;
+  * convenience macros: :c:macro:`PySlot_DATA`, :c:macro:`PySlot_FUNC`,
+    :c:macro:`PySlot_SIZE` :c:macro:`PySlot_INT64`, :c:macro:`PySlot_UINT64`,
+    :c:macro:`PySlot_STATIC_DATA`, :c:macro:`PySlot_END`,
+    :c:macro:`PySlot_PTR`, :c:macro:`PySlot_PTR_STATIC`.
+
+  The :c:func:`PyModule_FromSlotsAndSpec` function and
+  ``PyModExport`` :ref:`module export hook <extension-export-hook>` also
+  use the new :c:type:`!PySlot` struct.
+
+  These following functions are :term:`soft deprecated`:
+
+  * :c:func:`PyType_FromSpec`
+  * :c:func:`PyType_FromSpecWithBases`
+  * :c:func:`PyType_FromModuleAndSpec`
+  * :c:func:`PyType_FromMetaclass`
+  * :c:func:`PyModule_FromDefAndSpec`
+  * :c:func:`PyModule_FromDefAndSpec2`
+  * :c:func:`PyModule_ExecDef`
+
+  (Contributed by Petr Viktorin in :gh:`149044`.)
 
 * Add :c:func:`PyUnstable_ThreadState_SetStackProtection` and
   :c:func:`PyUnstable_ThreadState_ResetStackProtection` functions to set

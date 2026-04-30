@@ -37,6 +37,7 @@ int _PyTestLimitedCAPI_Init_List(PyObject *module);
 int _PyTestLimitedCAPI_Init_Long(PyObject *module);
 int _PyTestLimitedCAPI_Init_PyOS(PyObject *module);
 int _PyTestLimitedCAPI_Init_Set(PyObject *module);
+int _PyTestLimitedCAPI_Init_Slots(PyObject *module);
 int _PyTestLimitedCAPI_Init_Sys(PyObject *module);
 int _PyTestLimitedCAPI_Init_ThreadState(PyObject *module);
 int _PyTestLimitedCAPI_Init_Tuple(PyObject *module);

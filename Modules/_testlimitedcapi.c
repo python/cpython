@@ -74,6 +74,9 @@ PyInit__testlimitedcapi(void)
     if (_PyTestLimitedCAPI_Init_Set(mod) < 0) {
         return NULL;
     }
+    if (_PyTestLimitedCAPI_Init_Slots(mod) < 0) {
+        return NULL;
+    }
     if (_PyTestLimitedCAPI_Init_Sys(mod) < 0) {
         return NULL;
     }

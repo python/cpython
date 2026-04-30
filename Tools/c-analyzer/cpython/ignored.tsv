@@ -460,6 +460,7 @@ Modules/_testcapi/exceptions.c	-	PyRecursingInfinitelyError_Type	-
 Modules/_testcapi/heaptype.c	-	_testcapimodule	-
 Modules/_testcapi/mem.c	-	FmData	-
 Modules/_testcapi/mem.c	-	FmHook	-
+Modules/_testcapi/module.c	module_from_def_nonstatic_nested	subslots	-
 Modules/_testcapi/object.c	-	MyObject_dealloc_called	-
 Modules/_testcapi/object.c	-	MyType	-
 Modules/_testcapi/structmember.c	-	test_structmembersType_OldAPI	-
@@ -574,6 +575,7 @@ Modules/_testinternalcapi.c	-	Test_EvalFrame_Resumes	-
 Modules/_testinternalcapi.c	-	Test_EvalFrame_Loads	-
 Modules/_testinternalcapi/interpreter.c	-	Test_EvalFrame_Resumes	-
 Modules/_testinternalcapi/interpreter.c	-	Test_EvalFrame_Loads	-
+Modules/_testlimitedcapi/slots.c	-	TestMethods	-
 Modules/_testmultiphase.c	-	Example_Type_slots	-
 Modules/_testmultiphase.c	-	Example_Type_spec	-
 Modules/_testmultiphase.c	-	Example_methods	-
@@ -616,6 +618,13 @@ Modules/_testmultiphase.c	-	slots_exec_unreported_exception	-
 Modules/_testmultiphase.c	-	slots_nonmodule_with_exec_slots	-
 Modules/_testmultiphase.c	-	testexport_methods	-
 Modules/_testmultiphase.c	-	uninitialized_def	-
+Modules/_testmultiphase.c	PyModExport__test_from_modexport	slots	-
+Modules/_testmultiphase.c	PyModExport__test_from_modexport_gil_used	slots	-
+Modules/_testmultiphase.c	PyModExport__test_from_modexport_create_nonmodule	slots	-
+Modules/_testmultiphase.c	PyModExport__test_from_modexport_create_nonmodule_gil_used	slots	-
+Modules/_testmultiphase.c	PyModExport__test_from_modexport_smoke	slots	-
+Modules/_testmultiphase.c	-	modexport_empty_slots	-
+Modules/_testmultiphase.c	-	modexport_minimal_slots	-
 Modules/_testsinglephase.c	-	global_state	-
 Modules/_testsinglephase.c	-	static_module_circular	-
 Modules/_xxtestfuzz/_xxtestfuzz.c	-	_fuzzmodule	-

@@ -923,8 +923,8 @@ class CAPITest(unittest.TestCase):
 
     def test_tp_bases_slot_none(self):
         self.assertRaisesRegex(
-            SystemError,
-            "Py_tp_bases is not a tuple",
+            TypeError,
+            "metaclass conflict",
             _testcapi.create_heapctype_with_none_bases_slot
         )
 
@@ -1055,13 +1055,13 @@ class TestHeapTypeRelative(unittest.TestCase):
     def test_heaptype_relative_members_errors(self):
         with self.assertRaisesRegex(
                 SystemError,
-                r"With Py_RELATIVE_OFFSET, basicsize must be negative"):
+                r"With Py_RELATIVE_OFFSET, basicsize must be extended"):
             _testlimitedcapi.make_heaptype_with_member(0, 1234, 0, True)
         with self.assertRaisesRegex(
-                SystemError, r"Member offset out of range \(0\.\.-basicsize\)"):
+                SystemError, r"Member offset out of range \(0\.\.extra_basicsize\)"):
             _testlimitedcapi.make_heaptype_with_member(0, -8, 1234, True)
         with self.assertRaisesRegex(
-                SystemError, r"Member offset out of range \(0\.\.-basicsize\)"):
+                SystemError, r"Member offset must not be negative"):
             _testlimitedcapi.make_heaptype_with_member(0, -8, -1, True)
 
         Sub = _testlimitedcapi.make_heaptype_with_member(0, -8, 0, True)
@@ -1078,7 +1078,7 @@ class TestHeapTypeRelative(unittest.TestCase):
             with self.subTest(member_name=member_name):
                 with self.assertRaisesRegex(
                         SystemError,
-                        r"With Py_RELATIVE_OFFSET, basicsize must be negative."):
+                        r"With Py_RELATIVE_OFFSET, basicsize must be extended"):
                     _testlimitedcapi.make_heaptype_with_member(
                         basicsize=sys.getsizeof(object()) + 100,
                         add_relative_flag=True,
@@ -1089,12 +1089,23 @@ class TestHeapTypeRelative(unittest.TestCase):
                         )
                 with self.assertRaisesRegex(
                         SystemError,
-                        r"Member offset out of range \(0\.\.-basicsize\)"):
+                        r"Member offset must not be negative"):
                     _testlimitedcapi.make_heaptype_with_member(
                         basicsize=-8,
                         add_relative_flag=True,
                         member_name=member_name,
                         member_offset=-1,
+                        member_type=_testlimitedcapi.Py_T_PYSSIZET,
+                        member_flags=_testlimitedcapi.Py_READONLY,
+                        )
+                with self.assertRaisesRegex(
+                        SystemError,
+                        r"Member offset out of range \(0\.\.extra_basicsize\)"):
+                    _testlimitedcapi.make_heaptype_with_member(
+                        basicsize=-8,
+                        add_relative_flag=True,
+                        member_name=member_name,
+                        member_offset=1234,
                         member_type=_testlimitedcapi.Py_T_PYSSIZET,
                         member_flags=_testlimitedcapi.Py_READONLY,
                         )

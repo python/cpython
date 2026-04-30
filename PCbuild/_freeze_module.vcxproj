@@ -269,6 +269,8 @@
     <ClCompile Include="..\Python\pytime.c" />
     <ClCompile Include="..\Python\qsbr.c" />
     <ClCompile Include="..\Python\remote_debugging.c" />
+    <ClCompile Include="..\Python\slots.c" />
+    <ClCompile Include="..\Python\slots_generated.c" />
     <ClCompile Include="..\Python\specialize.c" />
     <ClCompile Include="..\Python\structmember.c" />
     <ClCompile Include="..\Python\suggestions.c" />

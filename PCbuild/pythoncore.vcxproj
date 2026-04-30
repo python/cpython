@@ -315,6 +315,8 @@
     <ClInclude Include="..\Include\internal\pycore_setobject.h" />
     <ClInclude Include="..\Include\internal\pycore_signal.h" />
     <ClInclude Include="..\Include\internal\pycore_sliceobject.h" />
+    <ClInclude Include="..\Include\internal\pycore_slots.h" />
+    <ClInclude Include="..\Include\internal\pycore_slots_generated.h" />
     <ClInclude Include="..\Include\internal\pycore_stackref.h" />
     <ClInclude Include="..\Include\internal\pycore_stats.h" />
     <ClInclude Include="..\Include\internal\pycore_strhex.h" />
@@ -387,6 +389,8 @@
     <ClInclude Include="..\Include\sentinelobject.h" />
     <ClInclude Include="..\Include\setobject.h" />
     <ClInclude Include="..\Include\sliceobject.h" />
+    <ClInclude Include="..\Include\slots.h" />
+    <ClInclude Include="..\Include\slots_generated.h" />
     <ClInclude Include="..\Include\structmember.h" />
     <ClInclude Include="..\Include\structseq.h" />
     <ClInclude Include="..\Include\sysmodule.h" />
@@ -682,6 +686,8 @@
     <ClCompile Include="..\Python\pythonrun.c" />
     <ClCompile Include="..\Python\specialize.c" />
     <ClCompile Include="..\Python\suggestions.c" />
+    <ClCompile Include="..\Python\slots.c" />
+    <ClCompile Include="..\Python\slots_generated.c" />
     <ClCompile Include="..\Python\structmember.c" />
     <ClCompile Include="..\Python\symtable.c" />
     <ClCompile Include="..\Python\sysmodule.c">

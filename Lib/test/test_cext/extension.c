@@ -121,13 +121,13 @@ _Py_COMP_DIAG_PUSH
 PyDoc_STRVAR(_testcext_doc, "C test extension.");
 PyABIInfo_VAR(abi_info);
 
-static PyModuleDef_Slot _testcext_slots[] = {
-    {Py_mod_abi, &abi_info},
-    {Py_mod_name, STR(MODULE_NAME)},
-    {Py_mod_doc, (void*)(char*)_testcext_doc},
-    {Py_mod_exec, (void*)_testcext_exec},
-    {Py_mod_methods, _testcext_methods},
-    {0, NULL}
+static PySlot _testcext_slots[] = {
+    PySlot_STATIC_DATA(Py_mod_abi, &abi_info),
+    PySlot_STATIC_DATA(Py_mod_name, STR(MODULE_NAME)),
+    PySlot_STATIC_DATA(Py_mod_doc, (void*)(char*)_testcext_doc),
+    PySlot_FUNC(Py_mod_exec, (void*)_testcext_exec),
+    PySlot_STATIC_DATA(Py_mod_methods, _testcext_methods),
+    PySlot_END,
 };
 
 _Py_COMP_DIAG_POP

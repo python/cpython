@@ -296,10 +296,12 @@
 [const.Py_sq_inplace_repeat]
     added = '3.2'
 [const.Py_mp_length]
+    # Note: value changed in 3.15 (old value is still accepted)
     added = '3.2'
 [const.Py_mp_subscript]
     added = '3.2'
 [const.Py_mp_ass_subscript]
+    # Note: value changed in 3.15 (old value is still accepted)
     added = '3.2'
 
 [typedef.Py_uintptr_t]
@@ -1914,8 +1916,10 @@
 [data.PyModuleDef_Type]
     added = '3.5'
 [const.Py_mod_create]
+    # Note: value changed in 3.15 (old value is still accepted)
     added = '3.5'
 [const.Py_mod_exec]
+    # Note: value changed in 3.15 (old value is still accepted)
     added = '3.5'
 [struct.PyModuleDef_Slot]
     added = '3.5'
@@ -2325,8 +2329,10 @@
 [function.PyMemoryView_FromBuffer]
     added = '3.11'
 [const.Py_bf_getbuffer]
+    # Note: value changed in 3.15 (old value is still accepted)
     added = '3.11'
 [const.Py_bf_releasebuffer]
+    # Note: value changed in 3.15 (old value is still accepted)
     added = '3.11'
 
 # Constants for Py_buffer API added to this list in Python 3.11.1 (https://github.com/python/cpython/issues/98680)
@@ -2463,6 +2469,7 @@
 [const.Py_TPFLAGS_ITEMS_AT_END]
     added = '3.12'
 [const.Py_mod_multiple_interpreters]
+    # Note: value changed in 3.15 (old value is still accepted)
     added = '3.12'
 
 [function.PyImport_AddModuleRef]
@@ -2544,6 +2551,7 @@
 [function.PyEval_GetFrameLocals]
     added = '3.13'
 [const.Py_mod_gil]
+    # Note: value changed in 3.15 (old value is still accepted)
     added = '3.13'
 
 [function.Py_TYPE]
@@ -2688,6 +2696,59 @@
 [function.PyType_GetModule_DuringGC]
     added = '3.15'
 [function.PyType_GetModuleByToken_DuringGC]
+    added = '3.15'
+[struct.PySlot]
+    added = '3.15'
+    struct_abi_kind = 'full-abi'
+[function.PyType_FromSlots]
+    added = '3.15'
+[const.PySlot_OPTIONAL]
+    added = '3.15'
+[const.PySlot_STATIC]
+    added = '3.15'
+[const.PySlot_INTPTR]
+    added = '3.15'
+[macro.PySlot_DATA]
+    added = '3.15'
+[macro.PySlot_FUNC]
+    added = '3.15'
+[macro.PySlot_SIZE]
+    added = '3.15'
+[macro.PySlot_INT64]
+    added = '3.15'
+[macro.PySlot_UINT64]
+    added = '3.15'
+[macro.PySlot_STATIC_DATA]
+    added = '3.15'
+[macro.PySlot_END]
+    added = '3.15'
+[macro.PySlot_PTR]
+    added = '3.15'
+[macro.PySlot_PTR_STATIC]
+    added = '3.15'
+[const.Py_slot_end]
+    added = '3.15'
+[const.Py_slot_invalid]
+    added = '3.15'
+[const.Py_slot_subslots]
+    added = '3.15'
+[const.Py_tp_slots]
+    added = '3.15'
+[const.Py_mod_slots]
+    added = '3.15'
+[const.Py_tp_name]
+    added = '3.15'
+[const.Py_tp_basicsize]
+    added = '3.15'
+[const.Py_tp_extra_basicsize]
+    added = '3.15'
+[const.Py_tp_itemsize]
+    added = '3.15'
+[const.Py_tp_flags]
+    added = '3.15'
+[const.Py_tp_metaclass]
+    added = '3.15'
+[const.Py_tp_module]
     added = '3.15'
 
 # PEP 757 import/export API.

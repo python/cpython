@@ -259,20 +259,24 @@ Rather than ``NULL``, the export hook should return the information needed to
 create a module.
 Let's start with the basics: the name and docstring.
 
-The information should be defined in a ``static`` array of
-:c:type:`PyModuleDef_Slot` entries, which are essentially key-value pairs.
+The information should be defined in an array of
+:c:type:`PySlot` entries, which are essentially key-value pairs.
 Define this array just before your export hook:
 
 .. code-block:: c
 
    PyABIInfo_VAR(abi_info);
 
-   static PyModuleDef_Slot spam_slots[] = {
-      {Py_mod_abi, &abi_info},
-      {Py_mod_name, "spam"},
-      {Py_mod_doc, "A wonderful module with an example function"},
-      {0, NULL}
+   static PySlot spam_slots[] = {
+      PySlot_STATIC_DATA(Py_mod_abi, &abi_info),
+      PySlot_STATIC_DATA(Py_mod_name, "spam"),
+      PySlot_STATIC_DATA(Py_mod_doc, "A wonderful module with an example function"),
+      PySlot_END
    };
+
+The :c:macro:`PySlot_STATIC_DATA` macro is used when the slot value
+(here: ``&abi_info``, ``"spam"``, and the docstring) is a pointer to constant,
+statically allocated data.
 
 The ``PyABIInfo_VAR(abi_info);`` macro and the :c:data:`Py_mod_abi` slot
 are a bit of boilerplate that helps prevent extensions compiled for
@@ -281,7 +285,8 @@ a different version of Python from crashing the interpreter.
 For both :c:data:`Py_mod_name` and :c:data:`Py_mod_doc`, the values are C
 strings -- that is, NUL-terminated, UTF-8 encoded byte arrays.
 
-Note the zero-filled sentinel entry at the end.
+Note ``PySlot_END`` sentinel entry at the end.
+This marks the end of the array.
 If you forget it, you'll trigger undefined behavior.
 
 The array is defined as ``static`` -- that is, not visible outside this ``.c`` file.

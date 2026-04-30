@@ -133,14 +133,16 @@ Module Objects
       unencodable filenames, use :c:func:`PyModule_GetFilenameObject` instead.
 
 
+.. _c_module_slots:
 .. _pymoduledef_slot:
 
 Module definition
 -----------------
 
 Modules created using the C API are typically defined using an
-array of :dfn:`slots`.
-The slots provide a "description" of how a module should be created.
+array of :c:type:`PySlot` structs, which provides a "description" of how a
+module should be created.
+See :ref:`capi-slots` for more information on slots in general.
 
 .. versionchanged:: 3.15
 
@@ -158,30 +160,12 @@ Unless specified otherwise, the same slot ID may not be repeated
 in an array of slots.
 
 
-.. c:type:: PyModuleDef_Slot
-
-   .. c:member:: int slot
-
-      A slot ID, chosen from the available ``Py_mod_*`` values explained below.
-
-      An ID of 0 marks the end of a :c:type:`!PyModuleDef_Slot` array.
-
-   .. c:member:: void* value
-
-      Value of the slot, whose meaning depends on the slot ID.
-
-      The value may not be NULL.
-      To leave a slot out, omit the :c:type:`PyModuleDef_Slot` entry entirely.
-
-   .. versionadded:: 3.5
-
-
 Metadata slots
 ..............
 
 .. c:macro:: Py_mod_name
 
-   :c:type:`Slot ID <PyModuleDef_Slot.slot>` for the name of the new module,
+   :c:member:`Slot ID <PySlot.sl_id>` for the name of the new module,
    as a NUL-terminated UTF8-encoded ``const char *``.
 
    Note that modules are typically created using a
@@ -196,7 +180,7 @@ Metadata slots
 
 .. c:macro:: Py_mod_doc
 
-   :c:type:`Slot ID <PyModuleDef_Slot.slot>` for the docstring of the new
+   :c:type:`Slot ID <PySlot.sl_id>` for the docstring of the new
    module, as a NUL-terminated UTF8-encoded ``const char *``.
 
    Usually it is set to a variable created with :c:macro:`PyDoc_STRVAR`.
@@ -211,7 +195,7 @@ Feature slots
 
 .. c:macro:: Py_mod_abi
 
-   :c:type:`Slot ID <PyModuleDef_Slot.slot>` whose value points to
+   :c:member:`Slot ID <PySlot.sl_id>` whose value points to
    a :c:struct:`PyABIInfo` structure describing the ABI that
    the extension is using.
 
@@ -222,8 +206,8 @@ Feature slots
 
       PyABIInfo_VAR(abi_info);
 
-      static PyModuleDef_Slot mymodule_slots[] = {
-         {Py_mod_abi, &abi_info},
+      static PySlot mymodule_slots[] = {
+         PySlot_DATA(Py_mod_abi, &abi_info),
          ...
       };
 
@@ -237,7 +221,7 @@ Feature slots
 
 .. c:macro:: Py_mod_multiple_interpreters
 
-   :c:type:`Slot ID <PyModuleDef_Slot.slot>` whose value is one of:
+   :c:member:`Slot ID <PySlot.sl_id>` whose value is one of:
 
    .. c:namespace:: NULL
 
@@ -267,7 +251,7 @@ Feature slots
 
 .. c:macro:: Py_mod_gil
 
-   :c:type:`Slot ID <PyModuleDef_Slot.slot>` whose value is one of:
+   :c:member:`Slot ID <PySlot.sl_id>` whose value is one of:
 
    .. c:namespace:: NULL
 
@@ -296,7 +280,7 @@ Creation and initialization slots
 
 .. c:macro:: Py_mod_create
 
-   :c:type:`Slot ID <PyModuleDef_Slot.slot>` for a function that creates
+   :c:member:`Slot ID <PySlot.sl_id>` for a function that creates
    the module object itself.
    The function must have the signature:
 
@@ -346,7 +330,7 @@ Creation and initialization slots
 
 .. c:macro:: Py_mod_exec
 
-   :c:type:`Slot ID <PyModuleDef_Slot.slot>` for a function that will
+   :c:member:`Slot ID <PySlot.sl_id>` for a function that will
    :dfn:`execute`, or initialize, the module.
    This function does the equivalent to executing the code of a Python module:
    typically, it adds classes and constants to the module.
@@ -375,7 +359,7 @@ Creation and initialization slots
 
 .. c:macro:: Py_mod_methods
 
-   :c:type:`Slot ID <PyModuleDef_Slot.slot>` for a table of module-level
+   :c:member:`Slot ID <PySlot.sl_id>` for a table of module-level
    functions, as an array of :c:type:`PyMethodDef` values suitable as the
    *functions* argument to :c:func:`PyModule_AddFunctions`.
 
@@ -446,12 +430,12 @@ To retrieve the state from a given module, use the following functions:
 Slots for defining module state
 ...............................
 
-The following :c:member:`PyModuleDef_Slot.slot` IDs are available for
+The following :c:member:`slot IDs <PySlot.sl_id>`  are available for
 defining the module state.
 
 .. c:macro:: Py_mod_state_size
 
-   :c:type:`Slot ID <PyModuleDef_Slot.slot>` for the size of the module state,
+   :c:member:`Slot ID <PySlot.sl_id>` for the size of the module state,
    in bytes.
 
    Setting the value to a non-negative value means that the module can be
@@ -468,7 +452,7 @@ defining the module state.
 
 .. c:macro:: Py_mod_state_traverse
 
-   :c:type:`Slot ID <PyModuleDef_Slot.slot>` for a traversal function to call
+   :c:member:`Slot ID <PySlot.sl_id>` for a traversal function to call
    during GC traversal of the module object.
 
    The signature of the function, and meanings of the arguments,
@@ -491,7 +475,7 @@ defining the module state.
 
 .. c:macro:: Py_mod_state_clear
 
-   :c:type:`Slot ID <PyModuleDef_Slot.slot>` for a clear function to call
+   :c:member:`Slot ID <PySlot.sl_id>` for a clear function to call
    during GC clearing of the module object.
 
    The signature of the function is:
@@ -519,7 +503,7 @@ defining the module state.
 
 .. c:macro:: Py_mod_state_free
 
-   :c:type:`Slot ID <PyModuleDef_Slot.slot>` for a function to call during
+   :c:member:`Slot ID <PySlot.sl_id>` for a function to call during
    deallocation of the module object.
 
    The signature of the function is:
@@ -578,7 +562,7 @@ A module's token -- and the *your_token* value to use in the above code -- is:
 
 .. c:macro:: Py_mod_token
 
-   :c:type:`Slot ID <PyModuleDef_Slot.slot>` for the module token.
+   :c:member:`Slot ID <PySlot.sl_id>` for the module token.
 
    If you use this slot to set the module token (rather than rely on the
    default), you must ensure that:
@@ -617,14 +601,14 @@ Creating extension modules dynamically
 The following functions may be used to create an extension module dynamically,
 rather than from an extension's :ref:`export hook <extension-export-hook>`.
 
-.. c:function:: PyObject *PyModule_FromSlotsAndSpec(const PyModuleDef_Slot *slots, PyObject *spec)
+.. c:function:: PyObject *PyModule_FromSlotsAndSpec(const PySlot *slots, PyObject *spec)
 
    Create a new module object, given an array of :ref:`slots <pymoduledef_slot>`
    and the :py:class:`~importlib.machinery.ModuleSpec` *spec*.
 
-   The *slots* argument must point to an array of :c:type:`PyModuleDef_Slot`
+   The *slots* argument must point to an array of :c:type:`PySlot`
    structures, terminated by an entry with slot ID of 0
-   (typically written as ``{0}`` or ``{0, NULL}`` in C).
+   (typically written as :c:macro:`PySlot_END`).
    The array must include a :c:data:`Py_mod_abi` entry.
 
    The *spec* argument may be any ``ModuleSpec``-like object, as described
@@ -639,10 +623,6 @@ rather than from an extension's :ref:`export hook <extension-export-hook>`.
    Both :c:func:`!PyModule_FromSlotsAndSpec` and :c:func:`PyModule_Exec`
    must be called to fully initialize a module.
    (See also :ref:`multi-phase-initialization`.)
-
-   The *slots* array only needs to be valid for the duration of the
-   :c:func:`!PyModule_FromSlotsAndSpec` call.
-   In particular, it may be heap-allocated.
 
    .. versionadded:: 3.15
 
@@ -738,6 +718,8 @@ remove it.
    .. c:member:: PyModuleDef_Slot* m_slots
 
       An array of additional slots, terminated by a ``{0, NULL}`` entry.
+      Note that the entries use the older :c:type:`PyModuleDef_Slot` structure,
+      rather than :c:type:`PySlot`.
 
       If the array contains slots corresponding to :c:type:`PyModuleDef`
       members, the values must match.
@@ -751,6 +733,39 @@ remove it.
          and was defined as:
 
            .. c:member:: inquiry m_reload
+
+      .. c:namespace:: NULL
+
+      .. c:type:: PyModuleDef_Slot
+
+         Older structure defining additional slots of a module.
+
+         Note that a :c:type:`!PyModuleDef_Slot` array may be included in a
+         :c:type:`!PySlot` array using :c:macro:`Py_mod_slots`,
+         and vice versa using :c:macro:`Py_slot_subslots`.
+
+         Each :c:type:`!PyModuleDef_Slot` structure ``modslot`` is interpreted
+         as the following :c:type:`PySlot` structure::
+
+            (PySlot){
+               .sl_id=modslot.slot,
+               .sl_flags=PySlot_INTPTR | sub_static,
+               .sl_ptr=modslot.value
+            }
+
+         where ``sub_static`` is ``PySlot_STATIC`` if the slot requires
+         the flag (such as for :c:macro:`Py_mod_methods`), or if this flag
+         is present on the "parent" :c:macro:`!Py_mod_slots` slot (if any).
+
+         .. c:member:: int slot
+
+            Corresponds to :c:member:`PySlot.sl_id`.
+
+         .. c:member:: void* value
+
+            Corresponds to :c:member:`PySlot.sl_ptr`.
+
+         .. versionadded:: 3.5
 
    .. c:member:: traverseproc m_traverse
                  inquiry m_clear
@@ -773,6 +788,14 @@ remove it.
 
    The type of ``PyModuleDef`` objects.
 
+
+.. c:macro:: Py_mod_slots
+
+   :c:member:`Slot ID <PySlot.sl_id>` that works like
+   :c:macro:`Py_slot_subslots`, except it specifies an array of
+   :c:type:`PyModuleDef_Slot` structures.
+
+   .. versionadded:: next
 
 .. _moduledef-dynamic:
 
@@ -813,6 +836,10 @@ struct:
 
    .. versionadded:: 3.5
 
+   .. soft-deprecated:: next
+
+      Prefer :c:func:`PyModule_FromSlotsAndSpec` in new code.
+
 .. c:function:: PyObject * PyModule_FromDefAndSpec2(PyModuleDef *def, PyObject *spec, int module_api_version)
 
    Create a new module object, given the definition in *def* and the
@@ -833,11 +860,21 @@ struct:
 
    .. versionadded:: 3.5
 
+   .. soft-deprecated:: next
+
+      Prefer :c:func:`PyModule_FromSlotsAndSpec` in new code.
+
 .. c:function:: int PyModule_ExecDef(PyObject *module, PyModuleDef *def)
 
    Process any execution slots (:c:data:`Py_mod_exec`) given in *def*.
 
    .. versionadded:: 3.5
+
+   .. soft-deprecated:: next
+
+      To run a module's own execution slots, prefer :c:func:`PyModule_Exec`,
+      which works on modules that were not created from a
+      :c:type:`PyModuleDef` structure.
 
 .. c:macro:: PYTHON_API_VERSION
              PYTHON_API_STRING

@@ -497,6 +497,8 @@ PYTHON_OBJS=	\
 		Python/qsbr.o \
 		Python/bootstrap_hash.o \
 		Python/specialize.o \
+		Python/slots.o \
+		Python/slots_generated.o \
 		Python/stackrefs.o \
 		Python/structmember.o \
 		Python/symtable.o \
@@ -1244,12 +1246,13 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/sentinelobject.h \
 		$(srcdir)/Include/setobject.h \
 		$(srcdir)/Include/sliceobject.h \
+		$(srcdir)/Include/slots.h \
+		$(srcdir)/Include/slots_generated.h \
 		$(srcdir)/Include/structmember.h \
 		$(srcdir)/Include/structseq.h \
 		$(srcdir)/Include/sysmodule.h \
 		$(srcdir)/Include/traceback.h \
 		$(srcdir)/Include/tupleobject.h \
-		$(srcdir)/Include/typeslots.h \
 		$(srcdir)/Include/unicodeobject.h \
 		$(srcdir)/Include/warnings.h \
 		$(srcdir)/Include/weakrefobject.h \
@@ -1431,6 +1434,8 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/internal/pycore_setobject.h \
 		$(srcdir)/Include/internal/pycore_signal.h \
 		$(srcdir)/Include/internal/pycore_sliceobject.h \
+		$(srcdir)/Include/internal/pycore_slots.h \
+		$(srcdir)/Include/internal/pycore_slots_generated.h \
 		$(srcdir)/Include/internal/pycore_stats.h \
 		$(srcdir)/Include/internal/pycore_strhex.h \
 		$(srcdir)/Include/internal/pycore_stackref.h \
@@ -1940,7 +1945,7 @@ regen-unicodedata:
 
 # "clinic" is regenerated implicitly via "regen-global-objects".
 .PHONY: regen-all
-regen-all: regen-cases regen-typeslots \
+regen-all: regen-cases regen-slots \
 	regen-token regen-ast regen-keyword regen-sre regen-frozen \
 	regen-pegen-metaparser regen-pegen regen-test-frozenmain \
 	regen-test-levenshtein regen-global-objects
@@ -2313,16 +2318,17 @@ Python/import.o: $(srcdir)/Include/pydtrace.h
 Python/pydtrace.o: $(srcdir)/Include/pydtrace.d $(DTRACE_DEPS)
 	CC="$(CC)" CFLAGS="$(CFLAGS)" $(DTRACE) $(DFLAGS) -o $@ -G -s $(srcdir)/Include/pydtrace.d $(DTRACE_DEPS)
 
-Objects/typeobject.o: Objects/typeslots.inc
-
 .PHONY: regen-typeslots
 regen-typeslots:
-	# Regenerate Objects/typeslots.inc from Include/typeslotsh
-	# using Objects/typeslots.py
-	$(PYTHON_FOR_REGEN) $(srcdir)/Objects/typeslots.py \
-		< $(srcdir)/Include/typeslots.h \
-		$(srcdir)/Objects/typeslots.inc.new
-	$(UPDATE_FILE) $(srcdir)/Objects/typeslots.inc $(srcdir)/Objects/typeslots.inc.new
+	echo 'NOTE: "regen-typeslots" was renamed to "regen-slots"'
+	$(MAKE) regen-slots
+
+.PHONY: regen-slots
+regen-slots: Python/slots.toml
+	# Regenerate {Python,Include}/slots_generated.{c,h}
+	# from Python/slots.toml using Tools/build/generate_slots.py
+	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/build/generate_slots.py \
+		--generate-all
 
 $(LIBRARY_OBJS) $(MODOBJS) Programs/python.o: $(PYTHON_HEADERS)
 

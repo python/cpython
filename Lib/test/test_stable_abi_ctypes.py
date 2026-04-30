@@ -738,6 +738,7 @@ SYMBOL_NAMES = (
     "PyType_Freeze",
     "PyType_FromMetaclass",
     "PyType_FromModuleAndSpec",
+    "PyType_FromSlots",
     "PyType_FromSpec",
     "PyType_FromSpecWithBases",
     "PyType_GenericAlloc",
