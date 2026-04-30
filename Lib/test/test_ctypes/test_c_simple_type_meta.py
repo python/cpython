@@ -221,6 +221,8 @@ class PyCSimpleTypeAsMetaclassTest(unittest.TestCase):
         if not MS_WINDOWS:
             expected_type_chars.remove('X')
         self.assertIn("'" + ''.join(expected_type_chars) + "'", message)
+        if hasattr(ctypes, 'c_float_complex'):
+            self.assertIn("'Zf', 'Zd', 'Zg'", message)
 
     def test_creating_pointer_in_dunder_init_3(self):
         """Check if interfcase subclasses properly creates according internal

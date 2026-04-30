@@ -719,7 +719,7 @@ array
 -----
 
 * Support the :c:expr:`float complex` and :c:expr:`double complex` C types:
-  formatting characters ``'F'`` and ``'D'`` respectively.
+  formatting characters ``'F'``/``'Zd'`` and ``'D'``/``'Zd'`` respectively.
   (Contributed by Sergey B Kirpichev in :gh:`146151`.)
 
 * Support half-floats (16-bit IEEE 754 binary interchange format): formatting

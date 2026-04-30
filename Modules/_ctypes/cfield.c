@@ -767,9 +767,9 @@ d_get(void *ptr, Py_ssize_t size)
    corresponding real type; the first element is equal to the real part, and
    the second element to the imaginary part, of the complex number." */
 
-/* D: double complex */
+/* Zd: double complex */
 static PyObject *
-D_set(void *ptr, PyObject *value, Py_ssize_t size)
+Zd_set(void *ptr, PyObject *value, Py_ssize_t size)
 {
     assert(NUM_BITS(size) || (size == 2*sizeof(double)));
     Py_complex c = PyComplex_AsCComplex(value);
@@ -783,7 +783,7 @@ D_set(void *ptr, PyObject *value, Py_ssize_t size)
 }
 
 static PyObject *
-D_get(void *ptr, Py_ssize_t size)
+Zd_get(void *ptr, Py_ssize_t size)
 {
     assert(NUM_BITS(size) || (size == 2*sizeof(double)));
     double x[2];
@@ -832,7 +832,7 @@ D_get_sw(void *ptr, Py_ssize_t size)
 
 /* F: float complex */
 static PyObject *
-F_set(void *ptr, PyObject *value, Py_ssize_t size)
+Zf_set(void *ptr, PyObject *value, Py_ssize_t size)
 {
     assert(NUM_BITS(size) || (size == 2*sizeof(float)));
     Py_complex c = PyComplex_AsCComplex(value);
@@ -846,7 +846,7 @@ F_set(void *ptr, PyObject *value, Py_ssize_t size)
 }
 
 static PyObject *
-F_get(void *ptr, Py_ssize_t size)
+Zf_get(void *ptr, Py_ssize_t size)
 {
     assert(NUM_BITS(size) || (size == 2*sizeof(float)));
     float x[2];
@@ -895,7 +895,7 @@ F_get_sw(void *ptr, Py_ssize_t size)
 
 /* G: long double complex */
 static PyObject *
-G_set(void *ptr, PyObject *value, Py_ssize_t size)
+Zg_set(void *ptr, PyObject *value, Py_ssize_t size)
 {
     assert(NUM_BITS(size) || (size == 2*sizeof(long double)));
     Py_complex c = PyComplex_AsCComplex(value);
@@ -909,13 +909,52 @@ G_set(void *ptr, PyObject *value, Py_ssize_t size)
 }
 
 static PyObject *
-G_get(void *ptr, Py_ssize_t size)
+Zg_get(void *ptr, Py_ssize_t size)
 {
     assert(NUM_BITS(size) || (size == 2*sizeof(long double)));
     long double x[2];
 
     memcpy(&x, ptr, sizeof(x));
     return PyComplex_FromDoubles((double)x[0], (double)x[1]);
+}
+
+/* D: double complex */
+static PyObject *
+D_set(void *ptr, PyObject *value, Py_ssize_t size)
+{
+    return Zd_set(ptr, value, size);
+}
+
+static PyObject *
+D_get(void *ptr, Py_ssize_t size)
+{
+    return Zd_get(ptr, size);
+}
+
+/* F: float complex */
+static PyObject *
+F_set(void *ptr, PyObject *value, Py_ssize_t size)
+{
+    return Zf_set(ptr, value, size);
+}
+
+static PyObject *
+F_get(void *ptr, Py_ssize_t size)
+{
+    return Zf_get(ptr, size);
+}
+
+/* G: long double complex */
+static PyObject *
+G_set(void *ptr, PyObject *value, Py_ssize_t size)
+{
+    return Zg_set(ptr, value, size);
+}
+
+static PyObject *
+G_get(void *ptr, Py_ssize_t size)
+{
+    return Zg_get(ptr, size);
 }
 #endif
 
@@ -1489,6 +1528,9 @@ for code in 'sbBcdFDGgfhHiIlLqQPzuUZXvO':
     struct fielddesc fmt_v;
     struct fielddesc fmt_O;
 /*[python end generated code: output=f5a07c066fedaca6 input=ffa5d46c29dfb07a]*/
+    struct fielddesc fmt_Zf;
+    struct fielddesc fmt_Zd;
+    struct fielddesc fmt_Zg;
 
     // bool has code '?':
     struct fielddesc fmt_bool;
@@ -1617,7 +1659,7 @@ for base_code, base_c_type in [
         (base_code.upper(), 'unsigned ' + base_c_type, 'u' + base_c_type),
     ]:
         print(f'    formattable.fmt_{code} = *FIXINT_FIELDDESC_FOR({c_type});')
-        print(f"    formattable.fmt_{code}.code = '{code}';")
+        print(f'    formattable.fmt_{code}.code = "{code}";')
         if base_code == 'q':
             # ffi doesn't have `long long`; keep use the fixint type
             pass
@@ -1625,34 +1667,34 @@ for base_code, base_c_type in [
             print(f'    formattable.fmt_{code}.pffi_type = &ffi_type_{ffi_type};')
 [python start generated code]*/
     formattable.fmt_b = *FIXINT_FIELDDESC_FOR(signed char);
-    formattable.fmt_b.code = 'b';
+    formattable.fmt_b.code = "b";
     formattable.fmt_b.pffi_type = &ffi_type_schar;
     formattable.fmt_B = *FIXINT_FIELDDESC_FOR(unsigned char);
-    formattable.fmt_B.code = 'B';
+    formattable.fmt_B.code = "B";
     formattable.fmt_B.pffi_type = &ffi_type_uchar;
     formattable.fmt_h = *FIXINT_FIELDDESC_FOR(signed short);
-    formattable.fmt_h.code = 'h';
+    formattable.fmt_h.code = "h";
     formattable.fmt_h.pffi_type = &ffi_type_sshort;
     formattable.fmt_H = *FIXINT_FIELDDESC_FOR(unsigned short);
-    formattable.fmt_H.code = 'H';
+    formattable.fmt_H.code = "H";
     formattable.fmt_H.pffi_type = &ffi_type_ushort;
     formattable.fmt_i = *FIXINT_FIELDDESC_FOR(signed int);
-    formattable.fmt_i.code = 'i';
+    formattable.fmt_i.code = "i";
     formattable.fmt_i.pffi_type = &ffi_type_sint;
     formattable.fmt_I = *FIXINT_FIELDDESC_FOR(unsigned int);
-    formattable.fmt_I.code = 'I';
+    formattable.fmt_I.code = "I";
     formattable.fmt_I.pffi_type = &ffi_type_uint;
     formattable.fmt_l = *FIXINT_FIELDDESC_FOR(signed long);
-    formattable.fmt_l.code = 'l';
+    formattable.fmt_l.code = "l";
     formattable.fmt_l.pffi_type = &ffi_type_slong;
     formattable.fmt_L = *FIXINT_FIELDDESC_FOR(unsigned long);
-    formattable.fmt_L.code = 'L';
+    formattable.fmt_L.code = "L";
     formattable.fmt_L.pffi_type = &ffi_type_ulong;
     formattable.fmt_q = *FIXINT_FIELDDESC_FOR(signed long long);
-    formattable.fmt_q.code = 'q';
+    formattable.fmt_q.code = "q";
     formattable.fmt_Q = *FIXINT_FIELDDESC_FOR(unsigned long long);
-    formattable.fmt_Q.code = 'Q';
-/*[python end generated code: output=873c87a2e6b5075a input=ee814ca263aac18e]*/
+    formattable.fmt_Q.code = "Q";
+/*[python end generated code: output=b91080b4b821a6da input=7356e281df4debd3]*/
 
 
     /* Other types have bespoke setters and getters named `@_set` and `@_get`,
@@ -1662,7 +1704,7 @@ for base_code, base_c_type in [
 
 #define _TABLE_ENTRY(SYMBOL, FFI_TYPE, ...)                                   \
     formattable.fmt_ ## SYMBOL =                                              \
-        (struct fielddesc){(#SYMBOL)[0], (FFI_TYPE), __VA_ARGS__};            \
+        (struct fielddesc){(#SYMBOL), (FFI_TYPE), __VA_ARGS__};            \
     ///////////////////////////////////////////////////////////////////////////
 
 #define TABLE_ENTRY(SYMBOL, FFI_TYPE)                                         \
@@ -1682,6 +1724,9 @@ for base_code, base_c_type in [
         TABLE_ENTRY(F, &ffi_type_complex_float);
         TABLE_ENTRY_SW(F, &ffi_type_complex_float);
         TABLE_ENTRY(G, &ffi_type_complex_longdouble);
+        TABLE_ENTRY(Zd, &ffi_type_complex_double);
+        TABLE_ENTRY(Zf, &ffi_type_complex_float);
+        TABLE_ENTRY(Zg, &ffi_type_complex_longdouble);
     }
 #endif
     TABLE_ENTRY(g, &ffi_type_longdouble);
@@ -1711,7 +1756,7 @@ for base_code, base_c_type in [
 
     // ctypes.c_bool is unsigned for FFI, even where C bool is signed.
     formattable.fmt_bool = *_ctypes_fixint_fielddesc(sizeof(bool), false);
-    formattable.fmt_bool.code = '?';
+    formattable.fmt_bool.code = "?";
     formattable.fmt_bool.setfunc = bool_set;
     formattable.fmt_bool.getfunc = bool_get;
 
@@ -1759,9 +1804,19 @@ print(f"    formattable.simple_type_chars[i] = 0;")
 #undef FIXINT_FIELDDESC_FOR
 _Py_COMP_DIAG_POP
 
-char *
+const char*
 _ctypes_get_simple_type_chars(void) {
     return formattable.simple_type_chars;
+}
+
+const char*
+_ctypes_get_complex_type_formats(void) {
+    if (Py_FFI_COMPLEX_AVAILABLE) {
+        return "'Zf', 'Zd', 'Zg'";
+    }
+    else {
+        return NULL;
+    }
 }
 
 struct fielddesc *
@@ -1770,7 +1825,7 @@ _ctypes_get_fielddesc(const char *fmt)
     struct fielddesc *result = NULL;
     switch(fmt[0]) {
 /*[python input]
-for code in 'sbBcdDFGgfhHiIlLqQPzuUZXvO':
+for code in 'sbBcdDFGgfhHiIlLqQPzuUXvO':
     print(f"        case '{code}': result = &formattable.fmt_{code}; break;")
 [python start generated code]*/
         case 's': result = &formattable.fmt_s; break;
@@ -1795,11 +1850,19 @@ for code in 'sbBcdDFGgfhHiIlLqQPzuUZXvO':
         case 'z': result = &formattable.fmt_z; break;
         case 'u': result = &formattable.fmt_u; break;
         case 'U': result = &formattable.fmt_U; break;
-        case 'Z': result = &formattable.fmt_Z; break;
         case 'X': result = &formattable.fmt_X; break;
         case 'v': result = &formattable.fmt_v; break;
         case 'O': result = &formattable.fmt_O; break;
-/*[python end generated code: output=6e5c91940732fde9 input=902223feffc2fe38]*/
+/*[python end generated code: output=cc0f8e26509698ba input=cc7a03e9915fce87]*/
+        case 'Z': {
+            switch(fmt[1]) {
+                case '\0': result = &formattable.fmt_Z; break;
+                case 'd': result = &formattable.fmt_Zd; break;
+                case 'f': result = &formattable.fmt_Zf; break;
+                case 'g': result = &formattable.fmt_Zg; break;
+            }
+            break;
+        }
         case '?': result = &formattable.fmt_bool; break;
     }
     if (!result || !result->code) {

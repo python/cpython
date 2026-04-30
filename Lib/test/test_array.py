@@ -42,7 +42,7 @@ class MiscTest(unittest.TestCase):
     def test_bad_constructor(self):
         self.assertRaises(TypeError, array.array)
         self.assertRaises(TypeError, array.array, spam=42)
-        self.assertRaises(TypeError, array.array, 'xx')
+        self.assertRaises(ValueError, array.array, 'xx')
         self.assertRaises(ValueError, array.array, 'x')
 
     @support.cpython_only

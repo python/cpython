@@ -45,7 +45,7 @@ static struct PyModuleDef _structmodule;
 
 /* The translation function for each format character is table driven */
 typedef struct _formatdef {
-    char format;
+    const char *format;
     Py_ssize_t size;
     Py_ssize_t alignment;
     PyObject* (*unpack)(_structmodulestate *, const char *,
@@ -327,13 +327,13 @@ _range_error(_structmodulestate *state, const formatdef *f, int is_unsigned)
     assert(f->size >= 1 && f->size <= SIZEOF_SIZE_T);
     if (is_unsigned)
         PyErr_Format(state->StructError,
-            "'%c' format requires 0 <= number <= %zu",
+            "'%s' format requires 0 <= number <= %zu",
             f->format,
             ulargest);
     else {
         const Py_ssize_t largest = (Py_ssize_t)(ulargest >> 1);
         PyErr_Format(state->StructError,
-            "'%c' format requires %zd <= number <= %zd",
+            "'%s' format requires %zd <= number <= %zd",
             f->format,
             ~ largest,
             largest);
@@ -708,7 +708,7 @@ np_longlong(_structmodulestate *state, char *p, PyObject *v, const formatdef *f)
     if (get_longlong(state, v, &x) < 0) {
         if (PyErr_ExceptionMatches(PyExc_OverflowError)) {
             PyErr_Format(state->StructError,
-                         "'%c' format requires %lld <= number <= %lld",
+                         "'%s' format requires %lld <= number <= %lld",
                          f->format,
                          LLONG_MIN,
                          LLONG_MAX);
@@ -726,7 +726,7 @@ np_ulonglong(_structmodulestate *state, char *p, PyObject *v, const formatdef *f
     if (get_ulonglong(state, v, &x) < 0) {
         if (PyErr_ExceptionMatches(PyExc_OverflowError)) {
             PyErr_Format(state->StructError,
-                         "'%c' format requires 0 <= number <= %llu",
+                         "'%s' format requires 0 <= number <= %llu",
                          f->format,
                          ULLONG_MAX);
         }
@@ -835,29 +835,31 @@ np_void_p(_structmodulestate *state, char *p, PyObject *v, const formatdef *f)
 }
 
 static const formatdef native_table[] = {
-    {'x',       sizeof(char),   0,              NULL},
-    {'b',       sizeof(char),   0,              nu_byte,        np_byte},
-    {'B',       sizeof(char),   0,              nu_ubyte,       np_ubyte},
-    {'c',       sizeof(char),   0,              nu_char,        np_char},
-    {'s',       sizeof(char),   0,              NULL},
-    {'p',       sizeof(char),   0,              NULL},
-    {'h',       sizeof(short),  _Alignof(short),    nu_short,       np_short},
-    {'H',       sizeof(short),  _Alignof(short),    nu_ushort,      np_ushort},
-    {'i',       sizeof(int),    _Alignof(int),      nu_int,         np_int},
-    {'I',       sizeof(int),    _Alignof(int),      nu_uint,        np_uint},
-    {'l',       sizeof(long),   _Alignof(long),     nu_long,        np_long},
-    {'L',       sizeof(long),   _Alignof(long),     nu_ulong,       np_ulong},
-    {'n',       sizeof(size_t), _Alignof(size_t),   nu_ssize_t,     np_ssize_t},
-    {'N',       sizeof(size_t), _Alignof(size_t),   nu_size_t,      np_size_t},
-    {'q',       sizeof(long long), _Alignof(long long), nu_longlong, np_longlong},
-    {'Q',       sizeof(long long), _Alignof(long long), nu_ulonglong,np_ulonglong},
-    {'?',       sizeof(_Bool),      _Alignof(_Bool),     nu_bool,        np_bool},
-    {'e',       sizeof(short),  _Alignof(short),    nu_halffloat,   np_halffloat},
-    {'f',       sizeof(float),  _Alignof(float),    nu_float,       np_float},
-    {'d',       sizeof(double), _Alignof(double),   nu_double,      np_double},
-    {'F',       2*sizeof(float), _Alignof(float), nu_float_complex, np_float_complex},
-    {'D',       2*sizeof(double), _Alignof(double), nu_double_complex, np_double_complex},
-    {'P',       sizeof(void *), _Alignof(void *),   nu_void_p,      np_void_p},
+    {"x",       sizeof(char),   0,              NULL},
+    {"b",       sizeof(char),   0,              nu_byte,        np_byte},
+    {"B",       sizeof(char),   0,              nu_ubyte,       np_ubyte},
+    {"c",       sizeof(char),   0,              nu_char,        np_char},
+    {"s",       sizeof(char),   0,              NULL},
+    {"p",       sizeof(char),   0,              NULL},
+    {"h",       sizeof(short),  _Alignof(short),    nu_short,       np_short},
+    {"H",       sizeof(short),  _Alignof(short),    nu_ushort,      np_ushort},
+    {"i",       sizeof(int),    _Alignof(int),      nu_int,         np_int},
+    {"I",       sizeof(int),    _Alignof(int),      nu_uint,        np_uint},
+    {"l",       sizeof(long),   _Alignof(long),     nu_long,        np_long},
+    {"L",       sizeof(long),   _Alignof(long),     nu_ulong,       np_ulong},
+    {"n",       sizeof(size_t), _Alignof(size_t),   nu_ssize_t,     np_ssize_t},
+    {"N",       sizeof(size_t), _Alignof(size_t),   nu_size_t,      np_size_t},
+    {"q",       sizeof(long long), _Alignof(long long), nu_longlong, np_longlong},
+    {"Q",       sizeof(long long), _Alignof(long long), nu_ulonglong,np_ulonglong},
+    {"?",       sizeof(_Bool),      _Alignof(_Bool),     nu_bool,        np_bool},
+    {"e",       sizeof(short),  _Alignof(short),    nu_halffloat,   np_halffloat},
+    {"f",       sizeof(float),  _Alignof(float),    nu_float,       np_float},
+    {"d",       sizeof(double), _Alignof(double),   nu_double,      np_double},
+    {"F",       2*sizeof(float), _Alignof(float), nu_float_complex, np_float_complex},
+    {"D",       2*sizeof(double), _Alignof(double), nu_double_complex, np_double_complex},
+    {"Zf",      2*sizeof(float), _Alignof(float), nu_float_complex, np_float_complex},
+    {"Zd",      2*sizeof(double), _Alignof(double), nu_double_complex, np_double_complex},
+    {"P",       sizeof(void *), _Alignof(void *),   nu_void_p,      np_void_p},
     {0}
 };
 
@@ -1063,7 +1065,7 @@ bp_longlong(_structmodulestate *state, char *p, PyObject *v, const formatdef *f)
     Py_DECREF(v);
     if (res < 0) {
         PyErr_Format(state->StructError,
-                     "'%c' format requires %lld <= number <= %lld",
+                     "'%s' format requires %lld <= number <= %lld",
                      f->format,
                      LLONG_MIN,
                      LLONG_MAX);
@@ -1088,7 +1090,7 @@ bp_ulonglong(_structmodulestate *state, char *p, PyObject *v, const formatdef *f
     Py_DECREF(v);
     if (res < 0) {
         PyErr_Format(state->StructError,
-                     "'%c' format requires 0 <= number <= %llu",
+                     "'%s' format requires 0 <= number <= %llu",
                      f->format,
                      ULLONG_MAX);
         return -1;
@@ -1168,26 +1170,28 @@ bp_bool(_structmodulestate *state, char *p, PyObject *v, const formatdef *f)
 }
 
 static formatdef bigendian_table[] = {
-    {'x',       1,              0,              NULL},
-    {'b',       1,              0,              nu_byte,        np_byte},
-    {'B',       1,              0,              nu_ubyte,       np_ubyte},
-    {'c',       1,              0,              nu_char,        np_char},
-    {'s',       1,              0,              NULL},
-    {'p',       1,              0,              NULL},
-    {'h',       2,              0,              bu_short,       bp_int},
-    {'H',       2,              0,              bu_uint,        bp_uint},
-    {'i',       4,              0,              bu_int,         bp_int},
-    {'I',       4,              0,              bu_uint,        bp_uint},
-    {'l',       4,              0,              bu_int,         bp_int},
-    {'L',       4,              0,              bu_uint,        bp_uint},
-    {'q',       8,              0,              bu_longlong,    bp_longlong},
-    {'Q',       8,              0,              bu_ulonglong,   bp_ulonglong},
-    {'?',       1,              0,              bu_bool,        bp_bool},
-    {'e',       2,              0,              bu_halffloat,   bp_halffloat},
-    {'f',       4,              0,              bu_float,       bp_float},
-    {'d',       8,              0,              bu_double,      bp_double},
-    {'F',       8,              0,              bu_float_complex, bp_float_complex},
-    {'D',       16,             0,              bu_double_complex, bp_double_complex},
+    {"x",       1,              0,              NULL},
+    {"b",       1,              0,              nu_byte,        np_byte},
+    {"B",       1,              0,              nu_ubyte,       np_ubyte},
+    {"c",       1,              0,              nu_char,        np_char},
+    {"s",       1,              0,              NULL},
+    {"p",       1,              0,              NULL},
+    {"h",       2,              0,              bu_short,       bp_int},
+    {"H",       2,              0,              bu_uint,        bp_uint},
+    {"i",       4,              0,              bu_int,         bp_int},
+    {"I",       4,              0,              bu_uint,        bp_uint},
+    {"l",       4,              0,              bu_int,         bp_int},
+    {"L",       4,              0,              bu_uint,        bp_uint},
+    {"q",       8,              0,              bu_longlong,    bp_longlong},
+    {"Q",       8,              0,              bu_ulonglong,   bp_ulonglong},
+    {"?",       1,              0,              bu_bool,        bp_bool},
+    {"e",       2,              0,              bu_halffloat,   bp_halffloat},
+    {"f",       4,              0,              bu_float,       bp_float},
+    {"d",       8,              0,              bu_double,      bp_double},
+    {"F",       8,              0,              bu_float_complex, bp_float_complex},
+    {"D",       16,             0,              bu_double_complex, bp_double_complex},
+    {"Zf",      8,              0,              bu_float_complex, bp_float_complex},
+    {"Zd",      16,             0,              bu_double_complex, bp_double_complex},
     {0}
 };
 
@@ -1387,7 +1391,7 @@ lp_longlong(_structmodulestate *state, char *p, PyObject *v, const formatdef *f)
     Py_DECREF(v);
     if (res < 0) {
         PyErr_Format(state->StructError,
-                     "'%c' format requires %lld <= number <= %lld",
+                     "'%s' format requires %lld <= number <= %lld",
                      f->format,
                      LLONG_MIN,
                      LLONG_MAX);
@@ -1412,7 +1416,7 @@ lp_ulonglong(_structmodulestate *state, char *p, PyObject *v, const formatdef *f
     Py_DECREF(v);
     if (res < 0) {
         PyErr_Format(state->StructError,
-                     "'%c' format requires 0 <= number <= %llu",
+                     "'%s' format requires 0 <= number <= %llu",
                      f->format,
                      ULLONG_MAX);
         return -1;
@@ -1482,27 +1486,29 @@ lp_double_complex(_structmodulestate *state, char *p, PyObject *v, const formatd
 }
 
 static formatdef lilendian_table[] = {
-    {'x',       1,              0,              NULL},
-    {'b',       1,              0,              nu_byte,        np_byte},
-    {'B',       1,              0,              nu_ubyte,       np_ubyte},
-    {'c',       1,              0,              nu_char,        np_char},
-    {'s',       1,              0,              NULL},
-    {'p',       1,              0,              NULL},
-    {'h',       2,              0,              lu_short,       lp_int},
-    {'H',       2,              0,              lu_uint,        lp_uint},
-    {'i',       4,              0,              lu_int,         lp_int},
-    {'I',       4,              0,              lu_uint,        lp_uint},
-    {'l',       4,              0,              lu_int,         lp_int},
-    {'L',       4,              0,              lu_uint,        lp_uint},
-    {'q',       8,              0,              lu_longlong,    lp_longlong},
-    {'Q',       8,              0,              lu_ulonglong,   lp_ulonglong},
-    {'?',       1,              0,              bu_bool,        bp_bool}, /* Std rep not endian dep,
+    {"x",       1,              0,              NULL},
+    {"b",       1,              0,              nu_byte,        np_byte},
+    {"B",       1,              0,              nu_ubyte,       np_ubyte},
+    {"c",       1,              0,              nu_char,        np_char},
+    {"s",       1,              0,              NULL},
+    {"p",       1,              0,              NULL},
+    {"h",       2,              0,              lu_short,       lp_int},
+    {"H",       2,              0,              lu_uint,        lp_uint},
+    {"i",       4,              0,              lu_int,         lp_int},
+    {"I",       4,              0,              lu_uint,        lp_uint},
+    {"l",       4,              0,              lu_int,         lp_int},
+    {"L",       4,              0,              lu_uint,        lp_uint},
+    {"q",       8,              0,              lu_longlong,    lp_longlong},
+    {"Q",       8,              0,              lu_ulonglong,   lp_ulonglong},
+    {"?",       1,              0,              bu_bool,        bp_bool}, /* Std rep not endian dep,
         but potentially different from native rep -- reuse bx_bool funcs. */
-    {'e',       2,              0,              lu_halffloat,   lp_halffloat},
-    {'f',       4,              0,              lu_float,       lp_float},
-    {'d',       8,              0,              lu_double,      lp_double},
-    {'F',       8,              0,              lu_float_complex, lp_float_complex},
-    {'D',       16,             0,              lu_double_complex, lp_double_complex},
+    {"e",       2,              0,              lu_halffloat,   lp_halffloat},
+    {"f",       4,              0,              lu_float,       lp_float},
+    {"d",       8,              0,              lu_double,      lp_double},
+    {"F",       8,              0,              lu_float_complex, lp_float_complex},
+    {"D",       16,             0,              lu_double_complex, lp_double_complex},
+    {"Zf",      8,              0,              lu_float_complex, lp_float_complex},
+    {"Zd",      16,             0,              lu_double_complex, lp_double_complex},
     {0}
 };
 
@@ -1523,10 +1529,10 @@ init_endian_tables(void *Py_UNUSED(arg))
         entry in the endian table and swap in the
         native implementations whenever possible
         (64-bit platforms may not have "standard" sizes) */
-    while (native->format != '\0' && other->format != '\0') {
+    while (native->format != NULL && other->format != NULL) {
         ptr = other;
-        while (ptr->format != '\0') {
-            if (ptr->format == native->format) {
+        while (ptr->format != NULL) {
+            if (strcmp(ptr->format, native->format) == 0) {
                 /* Match faster when formats are
                     listed in the same order */
                 if (ptr == other)
@@ -1536,8 +1542,9 @@ init_endian_tables(void *Py_UNUSED(arg))
                 if (ptr->size != native->size)
                     break;
                 /* Skip _Bool, semantics are different for standard size */
-                if (ptr->format == '?')
+                if (strcmp(ptr->format, "?") == 0) {
                     break;
+                }
                 ptr->pack = native->pack;
                 ptr->unpack = native->unpack;
                 break;
@@ -1576,13 +1583,28 @@ whichtable(const char **pfmt)
 }
 
 
+static int
+format_equal(const formatdef *e, const char *s)
+{
+    const char *format = e->format;
+    size_t i = 0;
+    while (format[i] == s[i]) {
+        i++;
+        if (format[i] == 0) {
+            return 1;
+        }
+    }
+    return 0;
+}
+
+
 /* Get the table entry for a format code */
 
 static const formatdef *
-getentry(_structmodulestate *state, int c, const formatdef *f)
+getentry(_structmodulestate *state, const char *s, const formatdef *f)
 {
-    for (; f->format != '\0'; f++) {
-        if (f->format == c) {
+    for (; f->format != NULL; f++) {
+        if (format_equal(f, s)) {
             return f;
         }
     }
@@ -1594,11 +1616,11 @@ getentry(_structmodulestate *state, int c, const formatdef *f)
 /* Align a size according to a format code.  Return -1 on overflow. */
 
 static Py_ssize_t
-align(Py_ssize_t size, char c, const formatdef *e)
+align(Py_ssize_t size, const char *s, const formatdef *e)
 {
     Py_ssize_t extra;
 
-    if (e->format == c) {
+    if (format_equal(e, s)) {
         if (e->alignment && size > 0) {
             extra = (e->alignment - 1) - (size - 1) % (e->alignment);
             if (extra > PY_SSIZE_T_MAX - size)
@@ -1670,7 +1692,8 @@ prepare_s(PyStructObject *self, PyObject *format)
         else
             num = 1;
 
-        e = getentry(state, c, f);
+        s--;
+        e = getentry(state, s, f);
         if (e == NULL)
             return -1;
 
@@ -1696,9 +1719,10 @@ prepare_s(PyStructObject *self, PyObject *format)
         }
 
         itemsize = e->size;
-        size = align(size, c, e);
+        size = align(size, s, e);
         if (size == -1)
             goto overflow;
+        s += strlen(e->format);
 
         /* if (size + num * itemsize > PY_SSIZE_T_MAX) { ... } */
         if (num > (PY_SSIZE_T_MAX - size) / itemsize)
@@ -1731,9 +1755,11 @@ prepare_s(PyStructObject *self, PyObject *format)
         else
             num = 1;
 
-        e = getentry(state, c, f);
+        s--;
+        e = getentry(state, s, f);
+        size = align(size, s, e);
+        s += strlen(e->format);
 
-        size = align(size, c, e);
         if (c == 's' || c == 'p') {
             codes->offset = size;
             codes->size = num;
@@ -2024,9 +2050,9 @@ s_unpack_internal(PyStructObject *soself, const char *startfrom,
         Py_ssize_t j = code->repeat;
         while (j--) {
             PyObject *v;
-            if (e->format == 's') {
+            if (strcmp(e->format, "s") == 0) {
                 v = PyBytes_FromStringAndSize(res, code->size);
-            } else if (e->format == 'p') {
+            } else if (strcmp(e->format, "p") == 0) {
                 Py_ssize_t n;
                 if (code->size == 0) {
                     n = 0;
@@ -2319,7 +2345,7 @@ s_pack_internal(PyStructObject *soself, PyObject *const *args,
         Py_ssize_t j = code->repeat;
         while (j--) {
             PyObject *v = args[i++];
-            if (e->format == 's') {
+            if (strcmp(e->format, "s") == 0) {
                 Py_ssize_t n;
                 int isstring;
                 const void *p;
@@ -2341,7 +2367,7 @@ s_pack_internal(PyStructObject *soself, PyObject *const *args,
                     n = code->size;
                 if (n > 0)
                     memcpy(res, p, n);
-            } else if (e->format == 'p') {
+            } else if (strcmp(e->format, "p") == 0) {
                 Py_ssize_t n;
                 int isstring;
                 const void *p;
