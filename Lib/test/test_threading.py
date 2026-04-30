@@ -2391,7 +2391,7 @@ class ThreadingIteratorToolsTests(BaseTestCase):
             with result_lock:
                 result += total
 
-        iterator = threading.serialize(producer(limit))
+        iterator = threading.serialize_iterator(producer(limit))
         workers = [
             threading.Thread(target=consumer, args=(iterator,))
             for _ in range(workers_count)
@@ -2415,7 +2415,7 @@ class ThreadingIteratorToolsTests(BaseTestCase):
             except ValueError:
                 yield "caught"
 
-        it = threading.serialize(echo())
+        it = threading.serialize_iterator(echo())
 
         # Test __next__
         self.assertEqual(next(it), "ready")
@@ -2435,7 +2435,7 @@ class ThreadingIteratorToolsTests(BaseTestCase):
     def test_serialize_methods_attribute_error(self):
         # A standard iterator that does not have send/throw/close
         # should raise AttributeError when called.
-        standard_it = threading.serialize([1, 2, 3])
+        standard_it = threading.serialize_iterator([1, 2, 3])
 
         with self.assertRaises(AttributeError):
             standard_it.send("foo")
@@ -2467,7 +2467,7 @@ class ThreadingIteratorToolsTests(BaseTestCase):
                     raise RuntimeError("Lock not held during close()")
 
         # Manually create the serialize object to inspect the lock
-        it = threading.serialize([])
+        it = threading.serialize_iterator([])
         mock_gen = LockCheckingGenerator(it._lock)
         it._iterator = mock_gen
 
@@ -2483,7 +2483,7 @@ class ThreadingIteratorToolsTests(BaseTestCase):
             raise RuntimeError
             yield None
 
-        g = threading.serialize(f())
+        g = threading.serialize_iterator(f())
         with self.assertRaises(RuntimeError):
             next(g)
 
@@ -2493,7 +2493,7 @@ class ThreadingIteratorToolsTests(BaseTestCase):
         limit = 100
         start = threading.Event()
 
-        @threading.synchronized
+        @threading.synchronized_iterator
         def atomic_counter():
             # The sleep widens the race window that would exist without
             # synchronization between yielding a value and advancing state.
@@ -2530,7 +2530,7 @@ class ThreadingIteratorToolsTests(BaseTestCase):
         def gen():
             yield 1
 
-        wrapped = threading.synchronized(gen)
+        wrapped = threading.synchronized_iterator(gen)
 
         self.assertEqual(wrapped.__name__, gen.__name__)
         self.assertIs(wrapped.__wrapped__, gen)

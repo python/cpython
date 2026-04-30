@@ -1448,7 +1448,7 @@ is called while the generator is already executing. The tools in this section
 allow reliable concurrency support to be added to ordinary iterators and
 iterator-producing callables.
 
-The :class:`serialize` wrapper lets multiple threads share a single iterator and
+The :class:`serialize_iterator` wrapper lets multiple threads share a single iterator and
 take turns consuming from it. While one thread is running ``__next__()``, the
 others block until the iterator becomes available. Each value produced by the
 underlying iterator is delivered to exactly one caller.
@@ -1458,7 +1458,7 @@ stream of values from one underlying iterator. It creates independent iterators
 that all draw from the same source. Values are buffered until consumed by all
 of the derived iterators.
 
-.. class:: serialize(iterable)
+.. class:: serialize_iterator(iterable)
 
    Return an iterator wrapper that serializes concurrent calls to
    :meth:`~iterator.__next__` using a lock.
@@ -1486,7 +1486,7 @@ of the derived iterators.
           for i in range(5):
               yield i
 
-      it = threading.serialize(count())
+      it = threading.serialize_iterator(count())
 
       def worker():
           for item in it:
@@ -1501,10 +1501,10 @@ of the derived iterators.
    In this example, each number is printed exactly once, but the work is shared
    between the two threads.
 
-.. function:: synchronized(func)
+.. function:: synchronized_iterator(func)
 
    Wrap an iterator-producing callable so that each iterator it returns is
-   automatically passed through :class:`serialize`.
+   automatically passed through :class:`serialize_iterator`.
 
    This is especially useful as a :term:`decorator` for generator functions,
    allowing their generator-iterators to be consumed from multiple threads.
@@ -1515,7 +1515,7 @@ of the derived iterators.
 
       import threading
 
-      @threading.synchronized
+      @threading.synchronized_iterator
       def counter():
           i = 0
           while True:

@@ -30,7 +30,7 @@ __all__ = ['get_ident', 'active_count', 'Condition', 'current_thread',
            'Barrier', 'BrokenBarrierError', 'Timer', 'ThreadError',
            'setprofile', 'settrace', 'local', 'stack_size',
            'excepthook', 'ExceptHookArgs', 'gettrace', 'getprofile',
-           'serialize', 'synchronized', 'concurrent_tee',
+           'serialize_iterator', 'synchronized_iterator', 'concurrent_tee',
            'setprofile_all_threads','settrace_all_threads']
 
 # Rename some stuff so "from threading import *" is safe
@@ -846,7 +846,7 @@ class BrokenBarrierError(RuntimeError):
 
 ## Synchronization tools for iterators #####################
 
-class serialize:
+class serialize_iterator:
     """Wrap a non-concurrent iterator with a lock to enforce sequential access.
 
     Applies a non-reentrant lock around calls to __next__.  If the
@@ -859,7 +859,7 @@ class serialize:
     For example, itertools.count does not make thread-safe instances,
     but that is easily fixed with:
 
-        atomic_counter = synchronized(itertools.count())
+        atomic_counter = serialize_iterator(itertools.count())
 
     """
 
@@ -901,7 +901,7 @@ class serialize:
             return self._iterator.close()
 
 
-def synchronized(func):
+def synchronized_iterator(func):
     """Wrap an iterator-returning callable to make its iterators thread-safe.
 
     Existing itertools and more-itertools can be wrapped so that their
@@ -910,14 +910,14 @@ def synchronized(func):
     For example, itertools.count does not make thread-safe instances,
     but that is easily fixed with:
 
-        atomic_counter = synchronized(itertools.count)
+        atomic_counter = synchronized_iterator(itertools.count)
 
     Can also be used as a decorator for generator functions definitions
     so that the generator instances are serialized::
 
         import time
 
-        @synchronized
+        @synchronized_iterator
         def enumerate_and_timestamp(iterable):
             for count, value in enumerate(iterable):
                 yield count, time.time_ns(), value
@@ -927,7 +927,7 @@ def synchronized(func):
     @wraps(func)
     def inner(*args, **kwargs):
         iterator = func(*args, **kwargs)
-        return serialize(iterator)
+        return serialize_iterator(iterator)
 
     return inner
 
