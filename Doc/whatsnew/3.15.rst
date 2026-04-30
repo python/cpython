@@ -981,7 +981,7 @@ locale
 * :func:`~locale.setlocale` now supports language codes with ``@``-modifiers.
   ``@``-modifiers are no longer silently removed in :func:`~locale.getlocale`,
   but included in the language code.
-  (Contributed by Serhiy Storchaka in :gh:`137729`.)
+  (Contributed by Serhiy Storchaka in :gh:`137729` and :gh:`148792`.)
 
 * Undeprecate the :func:`locale.getdefaultlocale` function.
   (Contributed by Victor Stinner in :gh:`130796`.)
