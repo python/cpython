@@ -25,12 +25,8 @@ For more info about Tk, including pointers to the source, see the
 `Tcl/Tk home page <https://www.tcl.tk>`_.  Tcl/Tk is fully portable to the
 macOS, Windows, and Unix platforms.
 
-Depending on what platform(s) you are aiming at, there are also several
-alternatives. A `list of cross-platform
-<https://wiki.python.org/moin/GuiProgramming#Cross-Platform_Frameworks>`_ and
-`platform-specific
-<https://wiki.python.org/moin/GuiProgramming#Platform-specific_Frameworks>`_ GUI
-frameworks can be found on the python wiki.
+Depending on what platform(s) you are aiming at, there are several
+alternatives.
 
 Tkinter questions
 =================

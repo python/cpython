@@ -10,9 +10,6 @@ It's used in some high schools and colleges as an introductory programming
 language because Python is easy to learn, but it's also used by professional
 software developers at places such as Google, NASA, and Lucasfilm Ltd.
 
-If you wish to learn more about Python, start with the `Beginner's Guide to
-Python <https://wiki.python.org/moin/BeginnersGuide>`_.
-
 
 Why is Python installed on my machine?
 --------------------------------------
