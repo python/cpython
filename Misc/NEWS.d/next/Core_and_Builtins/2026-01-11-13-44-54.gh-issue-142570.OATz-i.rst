@@ -1,0 +1,2 @@
+Improved the way Python processes the first line of script files.
+Contributed by Abdullah Alharbi.
