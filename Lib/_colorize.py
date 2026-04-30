@@ -421,6 +421,7 @@ class Traceback(ThemeSection):
     frame: str = ANSIColors.MAGENTA
     error_highlight: str = ANSIColors.BOLD_RED
     error_range: str = ANSIColors.RED
+    exception_target: str = ANSIColors.YELLOW
     reset: str = ANSIColors.RESET
 
 
