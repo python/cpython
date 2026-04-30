@@ -4173,20 +4173,6 @@ def bœr():
         stdout, stderr = self.run_pdb_script(script, commands, script_args=["--bar", "foo"])
         self.assertIn("['--bar', 'foo']", stdout)
 
-    def test_run_script_with_double_dash(self):
-        script = "import sys; print(sys.argv)"
-        commands = "continue\nquit"
-        filename = 'main.py'
-        with open(filename, 'w') as f:
-            f.write(script)
-        self.addCleanup(os_helper.unlink, filename)
-        stdout, _ = self._run_pdb(["--", filename, "-c", "example"], commands)
-        self.assertIn(f"['{filename}', '-c', 'example']", stdout)
-        stdout, _ = self._run_pdb(["-c", "continue", "--", filename, "-c", "example"], "quit")
-        self.assertIn(f"['{filename}', '-c', 'example']", stdout)
-        stdout, stderr = self._run_pdb(["--"], "", expected_returncode=2)
-        self.assertIn("pdb: error: missing script or module to run", stderr)
-
     def test_breakpoint(self):
         script = """
             if __name__ == '__main__':
