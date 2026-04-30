@@ -2883,6 +2883,57 @@ test_threadstate_set_stack_protection(PyObject *self, PyObject *Py_UNUSED(args))
     Py_RETURN_NONE;
 }
 
+#define NUM_GUARDS 100
+
+static PyObject *
+test_interp_guard_countdown(PyObject *self, PyObject *unused)
+{
+    PyInterpreterState *interp = PyInterpreterState_Get();
+    assert(_PyInterpreterState_GuardCountdown(interp) == 0);
+    PyInterpreterGuard *guards[NUM_GUARDS];
+    for (int i = 0; i < NUM_GUARDS; ++i) {
+        guards[i] = PyInterpreterGuard_FromCurrent();
+        assert(guards[i] != 0);
+        assert(_PyInterpreterState_GuardCountdown(interp) == i + 1);
+    }
+
+    for (int i = 0; i < NUM_GUARDS; ++i) {
+        PyInterpreterGuard_Close(guards[i]);
+        assert(_PyInterpreterState_GuardCountdown(interp) == (NUM_GUARDS - i - 1));
+    }
+
+    Py_RETURN_NONE;
+}
+
+static PyObject *
+test_interp_view_countdown(PyObject *self, PyObject *unused)
+{
+    PyInterpreterState *interp = PyInterpreterState_Get();
+    PyInterpreterView *view = PyInterpreterView_FromCurrent();
+    if (view == NULL) {
+        return NULL;
+    }
+    assert(_PyInterpreterState_GuardCountdown(interp) == 0);
+
+    PyInterpreterGuard *guards[NUM_GUARDS];
+
+    for (int i = 0; i < NUM_GUARDS; ++i) {
+        guards[i] = PyInterpreterGuard_FromView(view);
+        assert(guards[i] != 0);
+        assert(_PyInterpreterGuard_GetInterpreter(guards[i]) == interp);
+        assert(_PyInterpreterState_GuardCountdown(interp) == i + 1);
+    }
+
+    for (int i = 0; i < NUM_GUARDS; ++i) {
+        PyInterpreterGuard_Close(guards[i]);
+        assert(_PyInterpreterState_GuardCountdown(interp) == (NUM_GUARDS - i - 1));
+    }
+
+    PyInterpreterView_Close(view);
+    Py_RETURN_NONE;
+}
+
+#undef NUM_LOCKS
 
 static PyObject *
 _pyerr_setkeyerror(PyObject *self, PyObject *arg)
@@ -3021,6 +3072,8 @@ static PyMethodDef module_functions[] = {
     {"test_threadstate_set_stack_protection",
      test_threadstate_set_stack_protection, METH_NOARGS},
     {"_pyerr_setkeyerror", _pyerr_setkeyerror, METH_O},
+    {"test_interp_guard_countdown", test_interp_guard_countdown, METH_NOARGS},
+    {"test_interp_view_countdown", test_interp_view_countdown, METH_NOARGS},
     {NULL, NULL} /* sentinel */
 };
 

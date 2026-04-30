@@ -61,9 +61,9 @@ as in a :c:macro:`Py_BEGIN_ALLOW_THREADS` block or in a fresh thread, will the
 thread not have an attached thread state.
 If uncertain, check if :c:func:`PyThreadState_GetUnchecked` returns ``NULL``.
 
-If it turns out that you do need to create a thread state, call :c:func:`PyThreadState_New`
-followed by :c:func:`PyThreadState_Swap`, or use the dangerous
-:c:func:`PyGILState_Ensure` function.
+If it turns out that you do need to create a thread state, it is recommended to
+use :c:func:`PyThreadState_Ensure` or :c:func:`PyThreadState_EnsureFromView`,
+which will manage the thread state for you.
 
 
 .. _detaching-thread-state:
@@ -178,8 +178,12 @@ example usage in the Python source distribution.
    declaration.
 
 
-Non-Python created threads
---------------------------
+.. _non-python-created-threads:
+.. _c-api-foreign-threads:
+
+
+Using the C API from foreign threads
+------------------------------------
 
 When threads are created using the dedicated Python APIs (such as the
 :mod:`threading` module), a thread state is automatically associated with them,
@@ -192,70 +196,259 @@ of a callback API provided by the aforementioned third-party library),
 you must first register these threads with the interpreter by
 creating a new thread state and attaching it.
 
-The most robust way to do this is through :c:func:`PyThreadState_New` followed
-by :c:func:`PyThreadState_Swap`.
+The easiest way to do this is through :c:func:`PyThreadState_Ensure`
+or :c:func:`PyThreadState_EnsureFromView`.
 
 .. note::
-   ``PyThreadState_New`` requires an argument pointing to the desired
+   These functions require an argument pointing to the desired
    interpreter; such a pointer can be acquired via a call to
-   :c:func:`PyInterpreterState_Get` from the code where the thread was
-   created.
+   :c:func:`PyInterpreterGuard_FromCurrent` (for ``PyThreadState_Ensure``) or
+   :c:func:`PyInterpreterView_FromCurrent` (for ``PyThreadState_EnsureFromView``)
+   from the function that creates the thread. If no pointer is available (such
+   as when the given native thread library doesn't provide a data argument),
+   :c:func:`PyInterpreterView_FromMain` can be used to get a view for the main
+   interpreter, but note that this will make the code incompatible with
+   subinterpreters.
+
 
 For example::
 
-   /* The return value of PyInterpreterState_Get() from the
-      function that created this thread. */
-   PyInterpreterState *interp = thread_data->interp;
+   // The return value of PyInterpreterGuard_FromCurrent() from the
+   // function that created this thread.
+   PyInterpreterGuard *guard = thread_data->guard;
 
-   /* Create a new thread state for the interpreter. It does not start out
-      attached. */
-   PyThreadState *tstate = PyThreadState_New(interp);
+   // Create a new thread state for the interpreter.
+   PyThreadState *tstate = PyThreadState_Ensure(guard);
+   if (tstate == NULL) {
+      PyInterpreterGuard_Close(guard);
+      return;
+   }
 
-   /* Attach the thread state, which will acquire the GIL. */
-   PyThreadState_Swap(tstate);
-
-   /* Perform Python actions here. */
+   // We have a valid thread state -- perform Python actions here.
    result = CallSomeFunction();
-   /* evaluate result or handle exception */
+   // Evaluate result or handle exceptions.
 
-   /* Destroy the thread state. No Python API allowed beyond this point. */
-   PyThreadState_Clear(tstate);
-   PyThreadState_DeleteCurrent();
+   // Release the thread state. No calsl to the C API are allowed beyond this
+   // point.
+   PyThreadState_Release(tstate);
+   PyInterpreterGuard_Close(guard);
 
-.. warning::
 
-   If the interpreter finalized before ``PyThreadState_Swap`` was called, then
-   ``interp`` will be a dangling pointer!
+Some notes about this:
 
+1. In the above code, ``tstate`` is the *previously* attached thread state, not
+   the one that was just created! In some cases, ``PyThreadState_Ensure`` might
+   return an internal pointer, so it is **not** safe to treat ``tstate`` as a
+   valid thread state (that is, do not pass ``tstate`` to a function other than
+   ``PyThreadState_Release``).
+2. Calling ``PyThreadState_Ensure`` might not always create a new thread state,
+   and calling ``PyThreadState_Release`` might not always detach it. These
+   functions may reuse an existing attached thread state, or may re-attach a
+   thread state that was previously attached for the current thread.
+
+.. seealso::
+   :pep:`788`
+
+.. _c-api-attach-detach:
+
+Attaching/detaching thread states
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. c:function:: PyThreadState *PyThreadState_Ensure(PyInterpreterGuard *guard)
+
+   Ensure that the thread has an attached thread state for the
+   interpreter protected by *guard*, and thus can safely invoke that
+   interpreter.
+
+   It is OK to call this function if the thread already has an
+   attached thread state, as long as there is a subsequent call to
+   :c:func:`PyThreadState_Release` that matches this one.
+
+   Nested calls to this function will only sometimes create a new
+   thread state.
+
+   First, this function checks if an attached thread state is present.
+   If there is, this function then checks if the interpreter of that
+   thread state matches the interpreter guarded by *guard*. If that is
+   the case, this function simply marks the thread state as being used
+   by a ``PyThreadState_Ensure`` call and returns.
+
+   If there is no attached thread state, then this function checks if any
+   thread state has been used by the current OS thread. (This is
+   returned by :c:func:`PyGILState_GetThisThreadState`.)
+   If there was, then this function checks if that thread state's interpreter
+   matches *guard*. If it does, it is re-attached and marked as used.
+
+   Otherwise, if both of the above cases fail, a new thread state is created
+   for *guard*. It is then attached and marked as owned by ``PyThreadState_Ensure``.
+
+   The function's effect (if any) will be reversed by the matching call to
+   :c:func:`PyThreadState_Release`.
+
+   On error, this function returns ``NULL`` *without* an exception set.
+   Do not call :c:func:`!PyThreadState_Release` in this case.
+
+   On success, this function returns a pointer to the :term:`thread state` that
+   was previously attached, or, if no state was previously attached, a value that
+   is not a valid :c:type:`!PyThreadState` pointer.
+
+   The returned value must be passed to the matching call to :c:func:`!PyThreadState_Release`,
+   and must not be passed to any other C API functions
+   (unless it matches a known valid :c:type:`!PyThreadState` pointer).
+
+   .. versionadded:: next
+
+
+.. c:function:: PyThreadState *PyThreadState_EnsureFromView(PyInterpreterView *view)
+
+   Get an attached thread state for the interpreter referenced by *view*.
+
+   The behavior and return value are the same as for :c:func:`PyThreadState_Ensure`;
+   additionally, if the function succeeds, the interpreter referenced by *view* will
+   be implicitly guarded. The guard will be released upon the corresponding
+   :c:func:`PyThreadState_Release` call.
+
+
+.. c:function:: void PyThreadState_Release(PyThreadState *tstate)
+
+   Undo a :c:func:`PyThreadState_Ensure` call. This must be called exactly once
+   for each successful call to ``PyThreadState_Ensure``.
+
+   This function will decrement an internal counter on the attached thread state. If
+   this counter ever reaches below zero, this function emits a fatal error (via
+   :c:func:`Py_FatalError`).
+
+   If the attached thread state is owned by ``PyThreadState_Ensure``, then the
+   attached thread state will be deallocated and deleted upon the internal counter
+   reaching zero. Otherwise, nothing happens when the counter reaches zero.
+
+   If *tstate* is non-``NULL``, it will be attached upon returning.
+   If *tstate* indicates that no prior thread state was attached, there will be
+   no attached thread state upon returning.
+
+
+.. _legacy-api:
 .. _gilstate:
 
-Legacy API
-----------
+GIL-state APIs
+--------------
 
-Another common pattern to call Python code from a non-Python thread is to use
-:c:func:`PyGILState_Ensure` followed by a call to :c:func:`PyGILState_Release`.
+The following APIs are generally not compatible with subinterpreters and
+will hang the process during interpreter finalization (see
+:ref:`cautions-regarding-runtime-finalization`). As such, these APIs were
+:term:`soft deprecated` in Python 3.15 in favor of the :ref:`new APIs
+<c-api-foreign-threads>`.
 
-These functions do not work well when multiple interpreters exist in the Python
-process. If no Python interpreter has ever been used in the current thread (which
-is common for threads created outside Python), ``PyGILState_Ensure`` will create
-and attach a thread state for the "main" interpreter (the first interpreter in
-the Python process).
 
-Additionally, these functions have thread-safety issues during interpreter
-finalization. Using ``PyGILState_Ensure`` during finalization will likely
-crash the process.
+.. c:type:: PyGILState_STATE
 
-Usage of these functions look like such::
+   The type of the value returned by :c:func:`PyGILState_Ensure` and passed to
+   :c:func:`PyGILState_Release`.
 
-   PyGILState_STATE gstate;
-   gstate = PyGILState_Ensure();
+   .. c:enumerator:: PyGILState_LOCKED
 
-   /* Perform Python actions here. */
-   result = CallSomeFunction();
-   /* evaluate result or handle exception */
+      The GIL was already held when :c:func:`PyGILState_Ensure` was called.
 
-   /* Release the thread. No Python API allowed beyond this point. */
-   PyGILState_Release(gstate);
+   .. c:enumerator:: PyGILState_UNLOCKED
+
+      The GIL was not held when :c:func:`PyGILState_Ensure` was called.
+
+
+.. c:function:: PyGILState_STATE PyGILState_Ensure()
+
+   Ensure that the current thread is ready to call the Python C API regardless
+   of the current state of Python, or of the :term:`attached thread state`. This may
+   be called as many times as desired by a thread as long as each call is
+   matched with a call to :c:func:`PyGILState_Release`. In general, other
+   thread-related APIs may be used between :c:func:`PyGILState_Ensure` and
+   :c:func:`PyGILState_Release` calls as long as the thread state is restored to
+   its previous state before the Release().  For example, normal usage of the
+   :c:macro:`Py_BEGIN_ALLOW_THREADS` and :c:macro:`Py_END_ALLOW_THREADS` macros is
+   acceptable.
+
+   The return value is an opaque "handle" to the :term:`attached thread state` when
+   :c:func:`PyGILState_Ensure` was called, and must be passed to
+   :c:func:`PyGILState_Release` to ensure Python is left in the same state. Even
+   though recursive calls are allowed, these handles *cannot* be shared - each
+   unique call to :c:func:`PyGILState_Ensure` must save the handle for its call
+   to :c:func:`PyGILState_Release`.
+
+   When the function returns, there will be an :term:`attached thread state`
+   and the thread will be able to call arbitrary Python code.
+
+   This function has no way to return an error. As such, errors are either fatal
+   (that is, they send ``SIGABRT`` and crash the process; see
+   :c:func:`Py_FatalError`), or the thread will be permanently blocked (such as
+   during interpreter finalization).
+
+   .. warning::
+      Calling this function when the interpreter is finalizing will
+      infinitely hang the thread, which may cause deadlocks.
+      :ref:`cautions-regarding-runtime-finalization` for more details.
+
+      In addition, this function generally does not work with subinterpreters
+      when used from foreign threads, because this function has no way of
+      knowing which interpreter created the thread (and as such, will implicitly
+      pick the main interpreter).
+
+   .. versionchanged:: 3.14
+      Hangs the current thread, rather than terminating it, if called while the
+      interpreter is finalizing.
+
+   .. soft-deprecated:: 3.15
+      Use :c:func:`PyThreadState_Ensure` or
+      :c:func:`PyThreadState_EnsureFromView` instead.
+
+
+.. c:function:: void PyGILState_Release(PyGILState_STATE)
+
+   Release any resources previously acquired.  After this call, Python's state will
+   be the same as it was prior to the corresponding :c:func:`PyGILState_Ensure` call
+   (but generally this state will be unknown to the caller, hence the use of the
+   GIL-state API).
+
+   Every call to :c:func:`PyGILState_Ensure` must be matched by a call to
+   :c:func:`PyGILState_Release` on the same thread.
+
+   .. soft-deprecated:: 3.15
+      Use :c:func:`PyThreadState_Release` instead.
+
+
+.. c:function:: PyThreadState* PyGILState_GetThisThreadState()
+
+   Get the :term:`thread state` that was most recently :term:`attached
+   <attached thread state>` for this thread. (If the most recent thread state
+   has been deleted, this returns ``NULL``.)
+
+   If the caller has an attached thread state, it is returned.
+
+   In other terms, this function returns the thread state that will be used by
+   :c:func:`PyGILState_Ensure`. If this returns ``NULL``, then
+   ``PyGILState_Ensure`` will create a new thread state.
+
+   This function cannot fail.
+
+   .. soft-deprecated:: 3.15
+      Use :c:func:`PyThreadState_Get` or :c:func:`PyThreadState_GetUnchecked`
+      instead.
+
+
+.. c:function:: int PyGILState_Check()
+
+   Return ``1`` if the current thread has an :term:`attached thread state`
+   that matches the thread state returned by
+   :c:func:`PyGILState_GetThisThreadState`. If the caller has no attached thread
+   state or it otherwise doesn't match, then this returns ``0``.
+
+   If the current Python process has ever created a subinterpreter, this
+   function will *always* return ``1``.
+
+   This is mainly a helper/diagnostic function.
+
+   .. versionadded:: 3.4
+
+   .. soft-deprecated:: 3.15
+      Use ``PyThreadState_GetUnchecked() != NULL`` instead.
 
 
 .. _fork-and-threads:
@@ -396,101 +589,6 @@ C extensions.
    .. note::
       Similar to :c:func:`PyGILState_Ensure`, this function will hang the
       thread if the runtime is finalizing.
-
-
-GIL-state APIs
---------------
-
-The following functions use thread-local storage, and are not compatible
-with sub-interpreters:
-
-.. c:type:: PyGILState_STATE
-
-   The type of the value returned by :c:func:`PyGILState_Ensure` and passed to
-   :c:func:`PyGILState_Release`.
-
-   .. c:enumerator:: PyGILState_LOCKED
-
-      The GIL was already held when :c:func:`PyGILState_Ensure` was called.
-
-   .. c:enumerator:: PyGILState_UNLOCKED
-
-      The GIL was not held when :c:func:`PyGILState_Ensure` was called.
-
-.. c:function:: PyGILState_STATE PyGILState_Ensure()
-
-   Ensure that the current thread is ready to call the Python C API regardless
-   of the current state of Python, or of the :term:`attached thread state`. This may
-   be called as many times as desired by a thread as long as each call is
-   matched with a call to :c:func:`PyGILState_Release`. In general, other
-   thread-related APIs may be used between :c:func:`PyGILState_Ensure` and
-   :c:func:`PyGILState_Release` calls as long as the thread state is restored to
-   its previous state before the Release().  For example, normal usage of the
-   :c:macro:`Py_BEGIN_ALLOW_THREADS` and :c:macro:`Py_END_ALLOW_THREADS` macros is
-   acceptable.
-
-   The return value is an opaque "handle" to the :term:`attached thread state` when
-   :c:func:`PyGILState_Ensure` was called, and must be passed to
-   :c:func:`PyGILState_Release` to ensure Python is left in the same state. Even
-   though recursive calls are allowed, these handles *cannot* be shared - each
-   unique call to :c:func:`PyGILState_Ensure` must save the handle for its call
-   to :c:func:`PyGILState_Release`.
-
-   When the function returns, there will be an :term:`attached thread state`
-   and the thread will be able to call arbitrary Python code.  Failure is a fatal error.
-
-   .. warning::
-      Calling this function when the runtime is finalizing is unsafe. Doing
-      so will either hang the thread until the program ends, or fully crash
-      the interpreter in rare cases. Refer to
-      :ref:`cautions-regarding-runtime-finalization` for more details.
-
-   .. versionchanged:: 3.14
-      Hangs the current thread, rather than terminating it, if called while the
-      interpreter is finalizing.
-
-.. c:function:: void PyGILState_Release(PyGILState_STATE)
-
-   Release any resources previously acquired.  After this call, Python's state will
-   be the same as it was prior to the corresponding :c:func:`PyGILState_Ensure` call
-   (but generally this state will be unknown to the caller, hence the use of the
-   GILState API).
-
-   Every call to :c:func:`PyGILState_Ensure` must be matched by a call to
-   :c:func:`PyGILState_Release` on the same thread.
-
-.. c:function:: PyThreadState* PyGILState_GetThisThreadState()
-
-   Get the :term:`attached thread state` for this thread.  May return ``NULL`` if no
-   GILState API has been used on the current thread.  Note that the main thread
-   always has such a thread-state, even if no auto-thread-state call has been
-   made on the main thread.  This is mainly a helper/diagnostic function.
-
-   .. note::
-      This function may return non-``NULL`` even when the :term:`thread state`
-      is detached.
-      Prefer :c:func:`PyThreadState_Get` or :c:func:`PyThreadState_GetUnchecked`
-      for most cases.
-
-   .. seealso:: :c:func:`PyThreadState_Get`
-
-.. c:function:: int PyGILState_Check()
-
-   Return ``1`` if the current thread is holding the :term:`GIL` and ``0`` otherwise.
-   This function can be called from any thread at any time.
-   Only if it has had its :term:`thread state <attached thread state>` initialized
-   via :c:func:`PyGILState_Ensure` will it return ``1``.
-   This is mainly a helper/diagnostic function.  It can be useful
-   for example in callback contexts or memory allocation functions when
-   knowing that the :term:`GIL` is locked can allow the caller to perform sensitive
-   actions or otherwise behave differently.
-
-   .. note::
-      If the current Python process has ever created a subinterpreter, this
-      function will *always* return ``1``. Prefer :c:func:`PyThreadState_GetUnchecked`
-      for most cases.
-
-   .. versionadded:: 3.4
 
 
 Low-level APIs
@@ -704,7 +802,7 @@ pointer and a void pointer argument.
       possible.  If the main thread is busy executing a system call,
       *func* won't be called before the system call returns.  This
       function is generally **not** suitable for calling Python code from
-      arbitrary C threads.  Instead, use the :ref:`PyGILState API<gilstate>`.
+      arbitrary C threads.  Instead, use :c:func:`PyThreadState_EnsureFromView`.
 
    .. versionadded:: 3.1
 

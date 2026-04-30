@@ -338,6 +338,20 @@ _Py_RecursionLimit_GetMargin(PyThreadState *tstate)
 #endif
 }
 
+/* PEP 788 structures. */
+
+struct _PyInterpreterGuard {
+    PyInterpreterState *interp;
+};
+
+struct _PyInterpreterView {
+    int64_t id;
+};
+
+// Exports for '_testinternalcapi' shared extension
+PyAPI_FUNC(Py_ssize_t) _PyInterpreterState_GuardCountdown(PyInterpreterState *interp);
+PyAPI_FUNC(PyInterpreterState *) _PyInterpreterGuard_GetInterpreter(PyInterpreterGuard *guard);
+
 #ifdef __cplusplus
 }
 #endif

@@ -2670,6 +2670,135 @@ test_gilstate_after_finalization(void)
     return PyThread_detach_thread(handle);
 }
 
+
+const char *THREAD_CODE = \
+    "import time\n"
+    "time.sleep(0.2)\n"
+    "def fib(n):\n"
+    "  if n <= 1:\n"
+    "    return n\n"
+    "  else:\n"
+    "    return fib(n - 1) + fib(n - 2)\n"
+    "fib(10)";
+
+typedef struct {
+    void *argument;
+    int done;
+    PyEvent event;
+} ThreadData;
+
+static void
+do_tstate_ensure(void *arg)
+{
+    ThreadData *data = (ThreadData *)arg;
+    PyThreadState *tstates[4];
+    PyInterpreterGuard *guard = data->argument;
+    tstates[0] = PyThreadState_Ensure(guard);
+    tstates[1] = PyThreadState_Ensure(guard);
+    tstates[2] = PyThreadState_Ensure(guard);
+    PyGILState_STATE gstate = PyGILState_Ensure();
+    tstates[3] = PyThreadState_Ensure(guard);
+    assert(tstates[0] != NULL);
+    assert(tstates[1] != NULL);
+    assert(tstates[2] != NULL);
+    assert(tstates[3] != NULL);
+    int res = PyRun_SimpleString(THREAD_CODE);
+    assert(res == 0);
+    PyThreadState_Release(tstates[3]);
+    PyGILState_Release(gstate);
+    PyThreadState_Release(tstates[2]);
+    PyThreadState_Release(tstates[1]);
+    PyThreadState_Release(tstates[0]);
+    PyInterpreterGuard_Close(guard);
+    data->done = 1;
+}
+
+static int
+test_thread_state_ensure(void)
+{
+    _testembed_initialize();
+    PyThread_handle_t handle;
+    PyThread_ident_t ident;
+    PyInterpreterGuard *guard = PyInterpreterGuard_FromCurrent();
+    assert(guard != NULL);
+    ThreadData data = { guard };
+    if (PyThread_start_joinable_thread(do_tstate_ensure, &data,
+                                       &ident, &handle) < 0) {
+        PyInterpreterGuard_Close(guard);
+        return -1;
+    }
+    // We hold an interpreter guard, so we don't
+    // have to worry about the interpreter shutting down before
+    // we finalize.
+    Py_Finalize();
+    assert(data.done == 1);
+    return 0;
+}
+
+static int
+test_main_interpreter_view(void)
+{
+    PyInterpreterView *view = PyInterpreterView_FromMain();
+    assert(view != NULL);
+    // These should fail -- the main interpreter is not available yet.
+    assert(PyInterpreterGuard_FromView(view) == NULL);
+    assert(PyThreadState_EnsureFromView(view) == NULL);
+
+    _testembed_initialize();
+    // Main interpreter is initialized and ready at this point.
+
+    PyInterpreterGuard *guard = PyInterpreterGuard_FromView(view);
+    assert(guard != NULL);
+    PyInterpreterGuard_Close(guard);
+
+    Py_Finalize();
+
+    // We shouldn't be able to get locks for the interpreter now
+    guard = PyInterpreterGuard_FromView(view);
+    assert(guard == NULL);
+
+    PyInterpreterView_Close(view);
+
+    return 0;
+}
+
+static void
+do_tstate_ensure_from_view(void *arg)
+{
+    ThreadData *data = (ThreadData *)arg;
+    PyInterpreterView *view = data->argument;
+    assert(view != NULL);
+    PyThreadState *tstate = PyThreadState_EnsureFromView(view);
+    assert(tstate != NULL);
+    _PyEvent_Notify(&data->event);
+    int res = PyRun_SimpleString(THREAD_CODE);
+    assert(res == 0);
+    data->done = 1;
+    PyThreadState_Release(tstate);
+}
+
+static int
+test_thread_state_ensure_from_view(void)
+{
+    _testembed_initialize();
+    PyThread_handle_t handle;
+    PyThread_ident_t ident;
+    PyInterpreterView *view = PyInterpreterView_FromCurrent();
+    assert(view != NULL);
+
+    ThreadData data = { view };
+    if (PyThread_start_joinable_thread(do_tstate_ensure_from_view, &data,
+                                       &ident, &handle) < 0) {
+        PyInterpreterView_Close(view);
+        return -1;
+    }
+
+    PyEvent_Wait(&data.event);
+    Py_Finalize();
+    assert(data.done == 1);
+    return 0;
+}
+
 /* *********************************************************
  * List of test cases and the function that implements it.
  *
@@ -2764,6 +2893,9 @@ static struct TestCase TestCases[] = {
     {"test_create_module_from_initfunc", test_create_module_from_initfunc},
     {"test_inittab_submodule_multiphase", test_inittab_submodule_multiphase},
     {"test_inittab_submodule_singlephase", test_inittab_submodule_singlephase},
+    {"test_thread_state_ensure", test_thread_state_ensure},
+    {"test_main_interpreter_view", test_main_interpreter_view},
+    {"test_thread_state_ensure_from_view", test_thread_state_ensure_from_view},
     {NULL, NULL}
 };
 

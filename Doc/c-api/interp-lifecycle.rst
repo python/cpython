@@ -578,31 +578,205 @@ Initializing and finalizing the interpreter
 
 .. _cautions-regarding-runtime-finalization:
 
-Cautions regarding runtime finalization
----------------------------------------
+Cautions regarding interpreter finalization
+-------------------------------------------
 
 In the late stage of :term:`interpreter shutdown`, after attempting to wait for
 non-daemon threads to exit (though this can be interrupted by
 :class:`KeyboardInterrupt`) and running the :mod:`atexit` functions, the runtime
-is marked as *finalizing*: :c:func:`Py_IsFinalizing` and
-:func:`sys.is_finalizing` return true.  At this point, only the *finalization
-thread* that initiated finalization (typically the main thread) is allowed to
-acquire the :term:`GIL`.
+is marked as finalizing, meaning that :c:func:`Py_IsFinalizing` and
+:func:`sys.is_finalizing` return true.  At this point, only the finalization
+thread (the thread that initiated finalization; this is typically the main thread)
+is allowed to :term:`attach <attached thread state>` a thread state.
 
-If any thread, other than the finalization thread, attempts to attach a :term:`thread state`
-during finalization, either explicitly or
-implicitly, the thread enters **a permanently blocked state**
-where it remains until the program exits.  In most cases this is harmless, but this can result
-in deadlock if a later stage of finalization attempts to acquire a lock owned by the
-blocked thread, or otherwise waits on the blocked thread.
+Other threads that attempt to attach during finalization, either explicitly
+(such as via :c:func:`PyThreadState_Ensure` or :c:macro:`Py_END_ALLOW_THREADS`)
+or implicitly (such as in-between bytecode instructions), will enter a
+**permanently blocked state**. Generally, this is harmless, but this can
+result in deadlocks. For example, a thread may be permanently blocked while
+holding a lock, meaning that the finalization thread can never acquire that
+lock.
 
-Gross? Yes. This prevents random crashes and/or unexpectedly skipped C++
-finalizations further up the call stack when such threads were forcibly exited
-here in CPython 3.13 and earlier. The CPython runtime :term:`thread state` C APIs
-have never had any error reporting or handling expectations at :term:`thread state`
-attachment time that would've allowed for graceful exit from this situation. Changing that
-would require new stable C APIs and rewriting the majority of C code in the
-CPython ecosystem to use those with error handling.
+Prior to CPython 3.13, the thread would exit instead of hanging,
+which led to other issues (see the warning note at
+:c:func:`PyThread_exit_thread`).
+
+Gross? Yes. Starting in Python 3.15, there are a number of C APIs that make
+it possible to avoid these issues by temporarily preventing finalization:
+
+.. _interpreter-guards:
+
+.. seealso::
+
+   :pep:`788` explains the design, motivation and rationale
+   for these APIs.
+
+.. c:type:: PyInterpreterGuard
+
+   An opaque interpreter guard structure.
+
+   By holding an interpreter guard, the caller can ensure that the interpreter
+   will not finalize until the guard is closed (through
+   :c:func:`PyInterpreterGuard_Close`).
+
+   When a guard is held, a thread attempting to finalize the interpreter will
+   block until the guard is closed before starting finalization.
+   After finalization has started, threads are forever unable to acquire
+   guards for that interpreter. This means that if you forget to close an
+   interpreter guard, the process will **permanently hang** during
+   finalization!
+
+   Holding a guard for an interpreter is similar to holding a
+   :term:`strong reference` to a Python object, except finalization does not happen
+   automatically after all guards are released: it requires an explicit
+   :c:func:`Py_EndInterpreter` call.
+
+   .. versionadded:: next
+
+
+.. c:function:: PyInterpreterGuard *PyInterpreterGuard_FromCurrent(void)
+
+   Create a finalization guard for the current interpreter. This will prevent
+   finalization until the guard is closed.
+
+   For example:
+
+   .. code-block:: c
+
+      // Temporarily prevent finalization.
+      PyInterpreterGuard *guard = PyInterpreterGuard_FromCurrent();
+      if (guard == NULL) {
+         // Finalization has already started or we're out of memory.
+         return NULL;
+      }
+
+      Py_BEGIN_ALLOW_THREADS;
+      // Do some critical processing here. For example, we can safely acquire
+      // locks that might be acquired by the finalization thread.
+      Py_END_ALLOW_THREADS;
+
+      // Now that we're done with our critical processing, the interpreter is
+      // allowed to finalize again.
+      PyInterpreterGuard_Close(guard);
+
+   On success, this function returns a guard for the current interpreter;
+   on failure, it returns ``NULL`` with an exception set.
+
+   This function will fail only if the current interpreter has already started
+   finalizing, or if the process is out of memory.
+
+   The guard pointer returned by this function must be eventually closed
+   with :c:func:`PyInterpreterGuard_Close`; failing to do so will result in
+   the Python process infinitely hanging.
+
+   The caller must hold an :term:`attached thread state`.
+
+   .. versionadded:: next
+
+
+.. c:function:: PyInterpreterGuard *PyInterpreterGuard_FromView(PyInterpreterView *view)
+
+   Create a finalization guard for an interpreter through a view.
+
+   On success, this function returns a guard to the interpreter
+   represented by *view*. The view is still valid after calling this
+   function. The guard must eventually be closed with
+   :c:func:`PyInterpreterGuard_Close`.
+
+   If the interpreter no longer exists, is already finalizing, or out of memory,
+   then this function returns ``NULL`` without setting an exception.
+
+   The caller does not need to hold an :term:`attached thread state`.
+
+   .. versionadded:: next
+
+
+.. c:function:: void PyInterpreterGuard_Close(PyInterpreterGuard *guard)
+
+   Close an interpreter guard, allowing the interpreter to start
+   finalization if no other guards remain. If an interpreter guard
+   is never closed, the interpreter will infinitely wait when trying
+   to enter finalization!
+
+   After an interpreter guard is closed, it may not be used in
+   :c:func:`PyThreadState_Ensure`. Doing so will result in undefined
+   behavior.
+
+   Currently, this function will deallocate *guard*, but this may change in
+   the future.
+
+   This function cannot fail, and the caller doesn't need to hold an
+   :term:`attached thread state`.
+
+   .. versionadded:: next
+
+
+.. _interpreter-views:
+
+Interpreter views
+-----------------
+
+In some cases, it may be necessary to access an interpreter that may have been
+deleted. This can be done using interpreter views.
+
+.. c:type:: PyInterpreterView
+
+   An opaque view of an interpreter.
+
+   This is a thread-safe way to access an interpreter that may have be
+   finalizing or already destroyed.
+
+   .. versionadded:: next
+
+
+.. c:function:: PyInterpreterView *PyInterpreterView_FromCurrent(void)
+
+   Create a view to the current interpreter.
+
+   This function is generally meant to be used alongside
+   :c:func:`PyInterpreterGuard_FromView` or :c:func:`PyThreadState_EnsureFromView`.
+
+   On success, this function returns a view to the current interpreter; on
+   failure, it returns ``NULL`` with an exception set.
+
+   The caller must hold an :term:`attached thread state`.
+
+   .. versionadded:: next
+
+
+.. c:function:: void PyInterpreterView_Close(PyInterpreterView *view)
+
+   Close an interpreter view.
+
+   If an interpreter view is never closed, the view's memory will never be
+   freed, but there are no other consequences. (In contrast, forgetting to
+   close a guard will infinitely hang the main thread during finalization.)
+
+   Currently, this function will deallocate *view*, but this may change in
+   the future.
+
+   This function cannot fail, and the caller doesn't need to hold an
+   :term:`attached thread state`.
+
+
+.. c:function:: PyInterpreterView *PyInterpreterView_FromMain()
+
+   Create a view for the main interpreter (the first and default
+   interpreter in a Python process; see
+   :c:func:`PyInterpreterState_Main`).
+
+   On success, this function returns a view to the main
+   interpreter; on failure, it returns ``NULL`` without an exception set.
+   Failure indicates that the process is out of memory or that the main
+   interpreter has finalized (or never existed).
+
+   Using this function in extension libraries is strongly discouraged, because
+   it typically compromises the library's subinterpreter support. It exists
+   for exceptional cases where there is no other option (such as when a native
+   threading library doesn't provide a ``void *arg`` parameter that could be
+   used to store a ``PyInterpreterGuard`` or ``PyInterpreterView`` pointer).
+
+   The caller does not need to hold an :term:`attached thread state`.
 
 
 Process-wide parameters
