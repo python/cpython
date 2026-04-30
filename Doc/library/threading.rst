@@ -1553,7 +1553,7 @@ of the derived iterators.
    The returned iterators share the same underlying synchronization lock. Each
    individual derived iterator is intended to be consumed by one thread at a
    time. If a single derived iterator must itself be shared by multiple
-   threads, wrap it with :class:`serialize`.
+   threads, wrap it with :class:`serialize_iterator`.
 
    If *n* is ``0``, return an empty tuple. If *n* is negative, raise
    :exc:`ValueError`.
