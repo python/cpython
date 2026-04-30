@@ -5,7 +5,7 @@ Josip Dzolonga, and Michael Otteneder for the 2007/08 GHOP contest.
 """
 
 from http.server import BaseHTTPRequestHandler, HTTPServer, HTTPSServer, \
-     SimpleHTTPRequestHandler
+     SimpleHTTPRequestHandler, ThreadingHTTPServer
 from http import server, HTTPStatus
 
 import contextlib
@@ -953,6 +953,78 @@ class SimpleHTTPServerTestCase(BaseTestCase):
             self.assertNotEqual(response.getheader("Content-Type"), 'test/not_allowed')
             self.assertNotEqual(response.getheader("Server"), 'not_allowed')
             self.assertEqual(response.getheader("Set-Cookie"), 'test=allowed')
+
+    def test_multiple_requests_dont_duplicate_extra_response_headers(self):
+        with mock.patch.object(self.request_handler, 'extra_response_headers', [
+            ('x-test', 'test-value'),
+        ]):
+            response = self.request(self.base_url + '/')
+            self.assertEqual(response.status, 200)
+            self.assertEqual(response.getheader("x-test"), 'test-value')
+            response = self.request(self.base_url + '/')
+            self.assertEqual(response.status, 200)
+            self.assertEqual(response.getheader("x-test"), 'test-value')
+
+    def test_extra_response_headers_concurrent_requests(self):
+        N_THREADS = 8
+
+        with mock.patch.object(
+            self.request_handler,
+            "extra_response_headers",
+            [("x-test", "test-value")],
+        ):
+            threaded_server = ThreadingHTTPServer(
+                ("localhost", 0), self.request_handler
+            )
+            threaded_server.daemon_threads = True
+            host, port = threaded_server.socket.getsockname()
+            server_thread = threading.Thread(
+                target=threaded_server.serve_forever, args=(0.05,), daemon=True
+            )
+            server_thread.start()
+            results = []
+            lock = threading.Lock()
+
+            def make_request():
+                conn = http.client.HTTPConnection(host, port, timeout=15)
+                conn.request("GET", self.base_url + "/")
+                resp = conn.getresponse()
+                resp.read()
+                with lock:
+                    results.append((resp.status, resp.getheaders()))
+                conn.close()
+
+            try:
+                threads = [
+                    threading.Thread(target=make_request)
+                    for _ in range(N_THREADS)
+                ]
+                for t in threads:
+                    t.start()
+                for t in threads:
+                    t.join(timeout=15)
+            finally:
+                threaded_server.shutdown()
+                threaded_server.server_close()
+                server_thread.join()
+
+        self.assertEqual(len(results), N_THREADS)
+        for status, headers in results:
+            self.assertEqual(status, 200)
+            # Server, Date, Content-type, Content-Length, x-test
+            self.assertEqual(len(headers), 5)
+            header_map = {k.lower(): v for k, v in headers}
+            self.assertIn("server", header_map)
+            self.assertIn("date", header_map)
+            self.assertTrue(
+                header_map["content-type"].startswith("text/html")
+            )
+            self.assertGreater(int(header_map["content-length"]), 0)
+            # x-test must appear exactly once, not duplicated
+            x_test_values = [
+                v for k, v in headers if k.lower() == "x-test"
+            ]
+            self.assertEqual(x_test_values, ["test-value"])
 
 
 
