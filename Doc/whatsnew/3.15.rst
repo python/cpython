@@ -1983,6 +1983,10 @@ Build changes
   and :option:`-X dev <-X>` is passed to the Python or Python is built in :ref:`debug mode <debug-build>`.
   (Contributed by Donghee Na in :gh:`141770`.)
 
+* CPython is now built with frame pointers enabled by default
+  (:pep:`831`). Pass :option:`--without-frame-pointers` to opt out.
+  (Contributed by Pablo Galindo Salgado and Savannah Ostrowski in :gh:`149202`.)
+
 .. _whatsnew315-windows-tail-calling-interpreter:
 
 * 64-bit builds using Visual Studio 2026 (MSVC 18) may now use the new

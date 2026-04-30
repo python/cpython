@@ -1111,6 +1111,7 @@ enable_bolt
 with_strict_overflow
 enable_safety
 enable_slower_safety
+with_frame_pointers
 enable_experimental_jit
 with_dsymutil
 with_address_sanitizer
@@ -1904,6 +1905,8 @@ Optional Packages:
                           is no)
   --with-strict-overflow  if 'yes', add -fstrict-overflow to CFLAGS, else add
                           -fno-strict-overflow (default is no)
+  --without-frame-pointers
+                          build without frame pointers (default is yes)
   --with-dsymutil         link debug information into final executable with
                           dsymutil in macOS (default is no)
   --with-address-sanitizer
@@ -10155,10 +10158,25 @@ fi
 
 fi
 
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether to build with frame pointers" >&5
+printf %s "checking whether to build with frame pointers... " >&6; }
+
+# Check whether --with-frame-pointers was given.
+if test ${with_frame_pointers+y}
+then :
+  withval=$with_frame_pointers;
+else case e in #(
+  e) with_frame_pointers=yes ;;
+esac
+fi
+
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $with_frame_pointers" >&5
+printf "%s\n" "$with_frame_pointers" >&6; }
+
 if test "x$ac_cv_gcc_compat" = xyes
 then :
 
-            frame_pointer_cflags=
+                    frame_pointer_cflags=
     { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts -fno-omit-frame-pointer" >&5
 printf %s "checking whether C compiler accepts -fno-omit-frame-pointer... " >&6; }
 if test ${ax_cv_check_cflags__Werror__fno_omit_frame_pointer+y}
@@ -10245,8 +10263,8 @@ else case e in #(
 esac
 fi
 
-    if test -n "$frame_pointer_cflags"; then
-      CFLAGS_NODIST="$frame_pointer_cflags $CFLAGS_NODIST"
+    if test -n "$frame_pointer_cflags" && test "x$with_frame_pointers" != xno; then
+      BASECFLAGS="$frame_pointer_cflags $BASECFLAGS"
     fi
 
     CFLAGS_NODIST="$CFLAGS_NODIST -std=c11"
