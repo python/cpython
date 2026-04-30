@@ -3176,19 +3176,7 @@ class POSIXProcessTestCase(BaseTestCase):
                         ZERO_RETURN_CMD,
                         close_fds=False, pass_fds=(fd, )))
             self.assertIn('overriding close_fds', str(context.warning))
-
-    def test_pass_fds_overriding_close_fds_warning_location(self):
-        # Verify the warning points to the caller, not subprocess.py.
-        r, w = os.pipe()
-        self.addCleanup(os.close, r)
-        self.addCleanup(os.close, w)
-        os.set_inheritable(r, True)
-        with self.assertWarns(RuntimeWarning) as cm:
-            p = subprocess.Popen(
-                ZERO_RETURN_CMD,
-                close_fds=False, pass_fds=(r,))
-            p.wait()
-        self.assertEqual(cm.filename, __file__)
+            self.assertEqual(context.filename, __file__)
 
     def test_pass_fds_inheritable(self):
         script = support.findfile("fd_status.py", subdir="subprocessdata")
