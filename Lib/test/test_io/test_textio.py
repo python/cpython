@@ -11,7 +11,11 @@ import warnings
 import weakref
 from collections import UserList
 from test import support
-from test.support import os_helper, threading_helper
+from test.support import (
+    os_helper,
+    set_recursion_limit,
+    threading_helper
+)
 from test.support.script_helper import assert_python_ok
 from .utils import CTestCase, PyTestCase
 
@@ -1559,6 +1563,53 @@ class CTextIOWrapperTest(TextIOWrapperTest, CTestCase):
         raw = ReentrantRawIO()
         wrapper = self.TextIOWrapper(raw)
         wrapper.close()  # should not crash
+
+    def test_reentrant_detach_during_flush(self):
+        # gh-143008: Reentrant detach() during flush should not crash.
+        wrapper = None
+        wrapper_ref = lambda: None
+
+        class EvilBuffer(self.BufferedRandom):
+            detach_on_write = False
+
+            def flush(self):
+                wrapper = wrapper_ref()
+                if wrapper is not None and not self.detach_on_write:
+                    wrapper.detach()
+                return super().flush()
+
+            def write(self, b):
+                wrapper = wrapper_ref()
+                if wrapper is not None and self.detach_on_write:
+                    wrapper.detach()
+                return len(b)
+
+        # Many calls could result in the same null self->buffer crash.
+        tests = [
+            ('truncate', lambda: wrapper.truncate(0)),
+            ('close', lambda: wrapper.close()),
+            ('detach', lambda: wrapper.detach()),
+            ('seek', lambda: wrapper.seek(0)),
+            ('tell', lambda: wrapper.tell()),
+            ('reconfigure', lambda: wrapper.reconfigure(line_buffering=True)),
+        ]
+        for name, method in tests:
+            with self.subTest(name), set_recursion_limit(100):
+                wrapper = self.TextIOWrapper(EvilBuffer(self.MockRawIO()), encoding='utf-8')
+                wrapper_ref = weakref.ref(wrapper)
+                # Used to crash; now will run out of stack.
+                self.assertRaises(RecursionError, method)
+                wrapper_ref = lambda: None
+                del wrapper
+
+        with self.subTest('read via writeflush'):
+            EvilBuffer.detach_on_write = True
+            wrapper = self.TextIOWrapper(EvilBuffer(self.MockRawIO()), encoding='utf-8')
+            wrapper_ref = weakref.ref(wrapper)
+            wrapper.write('x')
+            self.assertRaisesRegex(ValueError, "detached", wrapper.read)
+            wrapper_ref = lambda: None
+            del wrapper
 
 
 class PyTextIOWrapperTest(TextIOWrapperTest, PyTestCase):
