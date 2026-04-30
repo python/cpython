@@ -1,0 +1,1 @@
+Fix a segmentation fault in :func:`unicodedata.iter_graphemes` when the iterator is deallocated after being cleared by the garbage collector.
