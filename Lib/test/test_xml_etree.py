@@ -2847,19 +2847,19 @@ class BadElementTest(ElementTestCase, unittest.TestCase):
     def test_remove_with_clear_assume_missing(self):
         # gh-126033: Check that a concurrent clear() for an assumed-to-be
         # missing element does not make the interpreter crash.
-        self.do_test_remove_with_clear(raises=True)
+        self.do_test_remove_with_clear(existing=False)
 
     def test_remove_with_clear_assume_existing(self):
         # gh-126033: Check that a concurrent clear() for an assumed-to-be
-        # existing element does not make the interpreter crash.
-        self.do_test_remove_with_clear(raises=False)
+        # existing element raises RuntimeError but does not crash.
+        self.do_test_remove_with_clear(existing=True)
 
-    def do_test_remove_with_clear(self, *, raises):
-
-        # Until the discrepency between "del root[:]" and "root.clear()" is
-        # resolved, we need to keep two tests. Previously, using "del root[:]"
-        # did not crash with the reproducer of gh-126033 while "root.clear()"
-        # did.
+    def do_test_remove_with_clear(self, *, existing):
+        # 'del root[:]' mutates the children list in-place, while
+        # 'root.clear()' replaces self._children with a new list.  When
+        # existing=True (element "found"), the in-place mutation is detected
+        # by list.remove and raises RuntimeError, whereas root.clear() is
+        # invisible to list.remove (the old list is unchanged).
 
         class E(ET.Element):
             """Local class to be able to mock E.__eq__ for introspection."""
@@ -2867,22 +2867,31 @@ class BadElementTest(ElementTestCase, unittest.TestCase):
         class X(E):
             def __eq__(self, o):
                 del root[:]
-                return not raises
+                return existing
 
         class Y(E):
             def __eq__(self, o):
                 root.clear()
-                return not raises
-
-        if raises:
-            get_checker_context = lambda: self.assertRaises(ValueError)
-        else:
-            get_checker_context = nullcontext
+                return existing
 
         self.assertIs(E.__eq__, object.__eq__)
 
+        get_checker_context = nullcontext
         for Z, side_effect in [(X, 'del root[:]'), (Y, 'root.clear()')]:
             self.enterContext(self.subTest(side_effect=side_effect))
+
+            # X uses 'del root[:]' which mutates the list in-place; this is
+            # detected by list.remove (pure Python implementation) when existing=False.
+            # The C implementation does not detect this mutation and silently
+            # returns None.
+            # Y uses 'root.clear()' which swaps out self._children; the old
+            # list that list.remove is iterating is untouched, so no error.
+            if not existing:
+                get_checker_context = lambda: self.assertRaises(ValueError)
+            elif Z is X and is_python_implementation():
+                get_checker_context = lambda: self.assertRaises(RuntimeError)
+            else:
+                get_checker_context = nullcontext
 
             # test removing R() from [U()]
             for R, U, description in [
@@ -2918,8 +2927,7 @@ class BadElementTest(ElementTestCase, unittest.TestCase):
                 g.assert_not_called()
 
             # Test removing root[1] (of type R) from [U(), R()].
-            is_special = is_python_implementation() and raises and Z is Y
-            if is_python_implementation() and raises and Z is Y:
+            if is_python_implementation() and not existing and Z is Y:
                 # In pure Python, using root.clear() sets the children
                 # list to [] without calling list.clear().
                 #
@@ -2944,24 +2952,31 @@ class BadElementTest(ElementTestCase, unittest.TestCase):
     def test_remove_with_mutate_root_assume_missing(self):
         # gh-126033: Check that a concurrent mutation for an assumed-to-be
         # missing element does not make the interpreter crash.
-        self.do_test_remove_with_mutate_root(raises=True)
+        self.do_test_remove_with_mutate_root(existing=False)
 
     def test_remove_with_mutate_root_assume_existing(self):
         # gh-126033: Check that a concurrent mutation for an assumed-to-be
-        # existing element does not make the interpreter crash.
-        self.do_test_remove_with_mutate_root(raises=False)
+        # existing element raises RuntimeError when using the pure Python
+        # implementation; the C implementation silently returns None).
+        self.do_test_remove_with_mutate_root(existing=True)
 
-    def do_test_remove_with_mutate_root(self, *, raises):
+    def do_test_remove_with_mutate_root(self, *, existing):
         E = ET.Element
 
         class Z(E):
             def __eq__(self, o):
                 del root[0]
-                return not raises
+                return existing
 
-        if raises:
+        if not existing:
             get_checker_context = lambda: self.assertRaises(ValueError)
+        elif is_python_implementation():
+            # The Python implementation is based on list.remove, which raises
+            # RuntimeError if the list is mutated during the __eq__ comparison.
+            get_checker_context = lambda: self.assertRaises(RuntimeError)
         else:
+            # The C implementation does not detect in-place mutations during
+            # remove and silently returns None.
             get_checker_context = nullcontext
 
         # test removing R() from [U(), V()]
