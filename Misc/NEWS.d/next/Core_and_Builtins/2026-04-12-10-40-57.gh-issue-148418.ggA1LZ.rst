@@ -1,0 +1,1 @@
+Fix a possible reference leak in a corrupted ``TYPE_CODE`` marshal stream.

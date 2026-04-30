@@ -1636,7 +1636,7 @@ r_object(RFILE *p)
                 goto code_error;
             firstlineno = (int)r_long(p);
             if (firstlineno == -1 && PyErr_Occurred())
-                break;
+                goto code_error;
             linetable = r_object(p);
             if (linetable == NULL)
                 goto code_error;
