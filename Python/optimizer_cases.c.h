@@ -1375,26 +1375,6 @@
             break;
         }
 
-        case _GUARD_NOS_DICT: {
-            JitOptRef nos;
-            nos = stack_pointer[-2];
-            if (sym_matches_type(nos, &PyDict_Type)) {
-                ADD_OP(_NOP, 0, 0);
-            }
-            sym_set_type(nos, &PyDict_Type);
-            break;
-        }
-
-        case _GUARD_NOS_ANY_DICT: {
-            JitOptRef nos;
-            nos = stack_pointer[-2];
-            PyTypeObject *tp = sym_get_type(nos);
-            if (tp == &PyDict_Type || tp == &PyFrozenDict_Type) {
-                ADD_OP(_NOP, 0, 0);
-            }
-            break;
-        }
-
         case _GUARD_NOS_DICT_SUBSCRIPT: {
             JitOptRef nos;
             nos = stack_pointer[-2];
@@ -1411,6 +1391,7 @@
                     ADD_OP(_NOP, 0, 0);
                 }
                 else {
+                    ADD_OP(_GUARD_TYPE, 0, (uintptr_t)tp);
                     PyType_Watch(TYPE_WATCHER_ID, (PyObject *)tp);
                     _Py_BloomFilter_Add(dependencies, tp);
                     sym_set_type(nos, tp);
@@ -1431,10 +1412,11 @@
             if (tp && tp->tp_as_mapping &&
                 tp->tp_as_mapping->mp_ass_subscript == _PyDict_StoreSubscript)
             {
-                if (definite){
+                if (definite) {
                     ADD_OP(_NOP, 0, 0);
                 }
                 else {
+                    ADD_OP(_GUARD_TYPE, 0, (uintptr_t)tp);
                     PyType_Watch(TYPE_WATCHER_ID, (PyObject *)tp);
                     _Py_BloomFilter_Add(dependencies, tp);
                     sym_set_type(nos, tp);

@@ -1725,20 +1725,6 @@ dummy_func(void) {
         }
     }
 
-    op(_GUARD_NOS_DICT, (nos, unused -- nos, unused)) {
-        if (sym_matches_type(nos, &PyDict_Type)) {
-            ADD_OP(_NOP, 0, 0);
-        }
-        sym_set_type(nos, &PyDict_Type);
-    }
-
-    op(_GUARD_NOS_ANY_DICT, (nos, unused -- nos, unused)) {
-        PyTypeObject *tp = sym_get_type(nos);
-        if (tp == &PyDict_Type || tp == &PyFrozenDict_Type) {
-            ADD_OP(_NOP, 0, 0);
-        }
-    }
-
     op(_GUARD_NOS_DICT_SUBSCRIPT, (nos, unused -- nos, unused)) {
         PyTypeObject *tp = sym_get_type(nos);
         bool definite = true;
@@ -1753,6 +1739,7 @@ dummy_func(void) {
                 ADD_OP(_NOP, 0, 0);
             }
             else {
+                ADD_OP(_GUARD_TYPE, 0, (uintptr_t)tp);
                 PyType_Watch(TYPE_WATCHER_ID, (PyObject *)tp);
                 _Py_BloomFilter_Add(dependencies, tp);
                 sym_set_type(nos, tp);
@@ -1770,10 +1757,11 @@ dummy_func(void) {
         if (tp && tp->tp_as_mapping &&
             tp->tp_as_mapping->mp_ass_subscript == _PyDict_StoreSubscript)
         {
-            if (definite){
+            if (definite) {
                 ADD_OP(_NOP, 0, 0);
             }
             else {
+                ADD_OP(_GUARD_TYPE, 0, (uintptr_t)tp);
                 PyType_Watch(TYPE_WATCHER_ID, (PyObject *)tp);
                 _Py_BloomFilter_Add(dependencies, tp);
                 sym_set_type(nos, tp);

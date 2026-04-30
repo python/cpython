@@ -1204,16 +1204,6 @@ dummy_func(
             INPUTS_DEAD();
         }
 
-        op(_GUARD_NOS_DICT, (nos, unused -- nos, unused)) {
-            PyObject *o = PyStackRef_AsPyObjectBorrow(nos);
-            EXIT_IF(!PyDict_CheckExact(o));
-        }
-
-        op(_GUARD_NOS_ANY_DICT, (nos, unused -- nos, unused)) {
-            PyObject *o = PyStackRef_AsPyObjectBorrow(nos);
-            EXIT_IF(!PyAnyDict_CheckExact(o));
-        }
-
         op(_GUARD_NOS_DICT_SUBSCRIPT, (nos, unused -- nos, unused)) {
             PyObject *o = PyStackRef_AsPyObjectBorrow(nos);
             DEOPT_IF(!Py_TYPE(o)->tp_as_mapping);
