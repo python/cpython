@@ -1595,7 +1595,9 @@ _Py_Specialize_StoreSubscr(_PyStackRef container_st, _PyStackRef sub_st, _Py_COD
             return;
         }
     }
-    if (container_type == &PyDict_Type) {
+    if (container_type->tp_as_mapping != NULL &&
+        container_type->tp_as_mapping->mp_ass_subscript == _PyDict_StoreSubscript)
+    {
         specialize(instr, STORE_SUBSCR_DICT);
         return;
     }
@@ -2429,7 +2431,9 @@ _Py_Specialize_BinaryOp(_PyStackRef lhs_st, _PyStackRef rhs_st, _Py_CODEUNIT *in
                     }
                 }
             }
-            if (PyAnyDict_CheckExact(lhs)) {
+            if (Py_TYPE(lhs)->tp_as_mapping != NULL &&
+                Py_TYPE(lhs)->tp_as_mapping->mp_subscript == _PyDict_Subscript)
+            {
                 specialize(instr, BINARY_OP_SUBSCR_DICT);
                 return;
             }

@@ -1277,14 +1277,16 @@ dummy_func(
             INPUTS_DEAD();
         }
 
-        op(_GUARD_NOS_DICT, (nos, unused -- nos, unused)) {
+        op(_GUARD_NOS_DICT_SUBSCRIPT, (nos, unused -- nos, unused)) {
             PyObject *o = PyStackRef_AsPyObjectBorrow(nos);
-            EXIT_IF(!PyDict_CheckExact(o));
+            DEOPT_IF(!Py_TYPE(o)->tp_as_mapping);
+            DEOPT_IF(Py_TYPE(o)->tp_as_mapping->mp_subscript != _PyDict_Subscript);
         }
 
-        op(_GUARD_NOS_ANY_DICT, (nos, unused -- nos, unused)) {
+        op(_GUARD_NOS_DICT_STORE_SUBSCRIPT, (unused, nos, unused -- unused, nos, unused)) {
             PyObject *o = PyStackRef_AsPyObjectBorrow(nos);
-            EXIT_IF(!PyAnyDict_CheckExact(o));
+            DEOPT_IF(!Py_TYPE(o)->tp_as_mapping);
+            DEOPT_IF(Py_TYPE(o)->tp_as_mapping->mp_ass_subscript != _PyDict_StoreSubscript);
         }
 
         op(_GUARD_TOS_ANY_DICT, (tos -- tos)) {
@@ -1303,20 +1305,17 @@ dummy_func(
         }
 
         macro(BINARY_OP_SUBSCR_DICT) =
-            _GUARD_NOS_ANY_DICT + unused/5 + _BINARY_OP_SUBSCR_DICT + POP_TOP + POP_TOP;
+            _RECORD_NOS_TYPE +
+            _GUARD_NOS_DICT_SUBSCRIPT + unused/5 + _BINARY_OP_SUBSCR_DICT + POP_TOP + POP_TOP;
 
         tier2 op(_BINARY_OP_SUBSCR_DICT_KNOWN_HASH, (dict_st, sub_st, hash/4 -- res, ds, ss)) {
             PyObject *sub = PyStackRef_AsPyObjectBorrow(sub_st);
             PyObject *dict = PyStackRef_AsPyObjectBorrow(dict_st);
-
-            assert(PyAnyDict_CheckExact(dict));
+            assert(PyAnyDict_Check(dict));
+            assert(Py_TYPE(dict)->tp_as_mapping->mp_subscript == _PyDict_Subscript);
             STAT_INC(BINARY_OP, hit);
-            PyObject *res_o;
-            int rc = _PyDict_GetItemRef_KnownHash((PyDictObject *)dict, sub, (Py_hash_t)hash, &res_o);
-            if (rc == 0) {
-                _PyErr_SetKeyError(sub);
-            }
-            if (rc <= 0) {
+            PyObject *res_o = _PyDict_SubscriptKnownHash(dict, sub, (Py_hash_t)hash);
+            if (res_o == NULL) {
                 ERROR_NO_POP();
             }
             res = PyStackRef_FromPyObjectSteal(res_o);
@@ -1328,15 +1327,11 @@ dummy_func(
         op(_BINARY_OP_SUBSCR_DICT, (dict_st, sub_st -- res, ds, ss)) {
             PyObject *sub = PyStackRef_AsPyObjectBorrow(sub_st);
             PyObject *dict = PyStackRef_AsPyObjectBorrow(dict_st);
-
-            assert(PyAnyDict_CheckExact(dict));
+            assert(PyAnyDict_Check(dict));
+            assert(Py_TYPE(dict)->tp_as_mapping->mp_subscript == _PyDict_Subscript);
             STAT_INC(BINARY_OP, hit);
-            PyObject *res_o;
-            int rc = PyDict_GetItemRef(dict, sub, &res_o);
-            if (rc == 0) {
-                _PyErr_SetKeyError(sub);
-            }
-            if (rc <= 0) {
+            PyObject *res_o = _PyDict_Subscript(dict, sub);
+            if (res_o == NULL) {
                 ERROR_NO_POP();
             }
             res = PyStackRef_FromPyObjectSteal(res_o);
@@ -1451,12 +1446,13 @@ dummy_func(
         }
 
         macro(STORE_SUBSCR_DICT) =
-            _GUARD_NOS_DICT + unused/1 + _STORE_SUBSCR_DICT + POP_TOP;
+            _RECORD_NOS_TYPE +
+            _GUARD_NOS_DICT_STORE_SUBSCRIPT + unused/1 + _STORE_SUBSCR_DICT + POP_TOP;
 
         op(_STORE_SUBSCR_DICT, (value, dict_st, sub -- st)) {
             PyObject *dict = PyStackRef_AsPyObjectBorrow(dict_st);
-
-            assert(PyDict_CheckExact(dict));
+            assert(PyDict_Check(dict));
+            assert(Py_TYPE(dict)->tp_as_mapping->mp_ass_subscript == _PyDict_StoreSubscript);
             STAT_INC(STORE_SUBSCR, hit);
             int err = _PyDict_SetItem_Take2((PyDictObject *)dict,
                                             PyStackRef_AsPyObjectSteal(sub),
@@ -1471,8 +1467,8 @@ dummy_func(
 
         tier2 op(_STORE_SUBSCR_DICT_KNOWN_HASH, (value, dict_st, sub, hash/4 -- st)) {
             PyObject *dict = PyStackRef_AsPyObjectBorrow(dict_st);
-
-            assert(PyDict_CheckExact(dict));
+            assert(PyDict_Check(dict));
+            assert(Py_TYPE(dict)->tp_as_mapping->mp_ass_subscript == _PyDict_StoreSubscript);
             STAT_INC(STORE_SUBSCR, hit);
             int err = _PyDict_SetItem_Take2_KnownHash((PyDictObject *)dict,
                                                 PyStackRef_AsPyObjectSteal(sub),
