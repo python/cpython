@@ -2322,6 +2322,9 @@ class PtyTests(unittest.TestCase):
             expected = terminal_input.decode(sys.stdin.encoding)  # what else?
         self.assertEqual(input_result, expected)
 
+    # NSKIP023 https://github.com/nanvix/cpython/issues/503
+    @unittest.skipIf(support.is_nanvix_standalone,
+                     "NSKIP023: os.pipe() ENOSYS in standalone mode")
     def test_input_tty(self):
         # Test input() functionality when wired to a tty (the code path
         # is different and invokes GNU readline if available).
@@ -2337,16 +2340,25 @@ class PtyTests(unittest.TestCase):
         if 'readline' in sys.modules:
             self.skipTest("the readline module is loaded")
 
+    # NSKIP023 https://github.com/nanvix/cpython/issues/503
+    @unittest.skipIf(support.is_nanvix_standalone,
+                     "NSKIP023: os.pipe() ENOSYS in standalone mode")
     def test_input_tty_non_ascii(self):
         self.skip_if_readline()
         # Check stdin/stdout encoding is used when invoking PyOS_Readline()
         self.check_input_tty("prompté", b"quux\xe9", "utf-8")
 
+    # NSKIP023 https://github.com/nanvix/cpython/issues/503
+    @unittest.skipIf(support.is_nanvix_standalone,
+                     "NSKIP023: os.pipe() ENOSYS in standalone mode")
     def test_input_tty_non_ascii_unicode_errors(self):
         self.skip_if_readline()
         # Check stdin/stdout error handler is used when invoking PyOS_Readline()
         self.check_input_tty("prompté", b"quux\xe9", "ascii")
 
+    # NSKIP023 https://github.com/nanvix/cpython/issues/503
+    @unittest.skipIf(support.is_nanvix_standalone,
+                     "NSKIP023: os.pipe() ENOSYS in standalone mode")
     def test_input_no_stdout_fileno(self):
         # Issue #24402: If stdin is the original terminal but stdout.fileno()
         # fails, do not use the original stdout file descriptor

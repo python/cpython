@@ -4898,7 +4898,9 @@ fi
 
 # checks for library functions
 AC_CHECK_FUNCS([ \
-  accept4 alarm bind_textdomain_codeset chmod chown clock close_range confstr \
+  accept4 alarm bind_textdomain_codeset \
+  cfgetispeed cfgetospeed cfsetispeed cfsetospeed \
+  chmod chown clock close_range confstr \
   copy_file_range ctermid dup dup3 execv explicit_bzero explicit_memset \
   faccessat fchmod fchmodat fchown fchownat fdopendir fdwalk fexecve \
   fork fork1 fpathconf fstatat ftime ftruncate futimens futimes futimesat \
@@ -4919,7 +4921,7 @@ AC_CHECK_FUNCS([ \
   setresuid setreuid setsid setuid setvbuf shutdown sigaction sigaltstack \
   sigfillset siginterrupt sigpending sigrelse sigtimedwait sigwait \
   sigwaitinfo snprintf splice strftime strlcpy strsignal symlinkat sync \
-  sysconf system tcgetpgrp tcsetpgrp tempnam timegm times tmpfile \
+  sysconf system tcdrain tcflow tcflush tcgetpgrp tcsendbreak tcsetpgrp tempnam timegm times tmpfile \
   tmpnam tmpnam_r truncate ttyname umask uname unlinkat utimensat utimes vfork \
   wait wait3 wait4 waitid waitpid wcscoll wcsftime wcsxfrm wmemcmp writev \
 ])
@@ -7277,7 +7279,6 @@ AS_CASE([$ac_sys_system],
       [pwd],
       [spwd],
       [syslog],
-      [termios],
       [_crypt],
       [nis],
       [_dbm],

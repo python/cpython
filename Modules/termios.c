@@ -93,8 +93,17 @@ termios_tcgetattr_impl(PyObject *module, int fd)
         return PyErr_SetFromErrno(state->TermiosError);
     }
 
-    speed_t ispeed = cfgetispeed(&mode);
-    speed_t ospeed = cfgetospeed(&mode);
+    speed_t ispeed, ospeed;
+#ifdef HAVE_CFGETISPEED
+    ispeed = cfgetispeed(&mode);
+#else
+    ispeed = 0;
+#endif
+#ifdef HAVE_CFGETOSPEED
+    ospeed = cfgetospeed(&mode);
+#else
+    ospeed = 0;
+#endif
 
     PyObject *cc = PyList_New(NCCS);
     if (cc == NULL) {
@@ -232,10 +241,18 @@ termios_tcsetattr_impl(PyObject *module, int fd, int when, PyObject *term)
                 }
     }
 
+#ifdef HAVE_CFSETISPEED
     if (cfsetispeed(&mode, (speed_t) ispeed) == -1)
         return PyErr_SetFromErrno(state->TermiosError);
+#else
+    (void)ispeed;
+#endif
+#ifdef HAVE_CFSETOSPEED
     if (cfsetospeed(&mode, (speed_t) ospeed) == -1)
         return PyErr_SetFromErrno(state->TermiosError);
+#else
+    (void)ospeed;
+#endif
 
     Py_BEGIN_ALLOW_THREADS
     r = tcsetattr(fd, when, &mode);
@@ -265,6 +282,7 @@ termios_tcsendbreak_impl(PyObject *module, int fd, int duration)
 /*[clinic end generated code: output=5945f589b5d3ac66 input=dc2f32417691f8ed]*/
 {
     termiosmodulestate *state = PyModule_GetState(module);
+#ifdef HAVE_TCSENDBREAK
     int r;
 
     Py_BEGIN_ALLOW_THREADS
@@ -276,6 +294,12 @@ termios_tcsendbreak_impl(PyObject *module, int fd, int duration)
     }
 
     Py_RETURN_NONE;
+#else
+    (void)fd;
+    (void)duration;
+    errno = ENOSYS;
+    return PyErr_SetFromErrno(state->TermiosError);
+#endif
 }
 
 /*[clinic input]
@@ -292,6 +316,7 @@ termios_tcdrain_impl(PyObject *module, int fd)
 /*[clinic end generated code: output=5fd86944c6255955 input=c99241b140b32447]*/
 {
     termiosmodulestate *state = PyModule_GetState(module);
+#ifdef HAVE_TCDRAIN
     int r;
 
     Py_BEGIN_ALLOW_THREADS
@@ -303,6 +328,11 @@ termios_tcdrain_impl(PyObject *module, int fd)
     }
 
     Py_RETURN_NONE;
+#else
+    (void)fd;
+    errno = ENOSYS;
+    return PyErr_SetFromErrno(state->TermiosError);
+#endif
 }
 
 /*[clinic input]
@@ -324,6 +354,7 @@ termios_tcflush_impl(PyObject *module, int fd, int queue)
 /*[clinic end generated code: output=2424f80312ec2f21 input=0f7d08122ddc07b5]*/
 {
     termiosmodulestate *state = PyModule_GetState(module);
+#ifdef HAVE_TCFLUSH
     int r;
 
     Py_BEGIN_ALLOW_THREADS
@@ -335,6 +366,12 @@ termios_tcflush_impl(PyObject *module, int fd, int queue)
     }
 
     Py_RETURN_NONE;
+#else
+    (void)fd;
+    (void)queue;
+    errno = ENOSYS;
+    return PyErr_SetFromErrno(state->TermiosError);
+#endif
 }
 
 /*[clinic input]
@@ -356,6 +393,7 @@ termios_tcflow_impl(PyObject *module, int fd, int action)
 /*[clinic end generated code: output=afd10928e6ea66eb input=c6aff0640b6efd9c]*/
 {
     termiosmodulestate *state = PyModule_GetState(module);
+#ifdef HAVE_TCFLOW
     int r;
 
     Py_BEGIN_ALLOW_THREADS
@@ -367,6 +405,12 @@ termios_tcflow_impl(PyObject *module, int fd, int action)
     }
 
     Py_RETURN_NONE;
+#else
+    (void)fd;
+    (void)action;
+    errno = ENOSYS;
+    return PyErr_SetFromErrno(state->TermiosError);
+#endif
 }
 
 /*[clinic input]
