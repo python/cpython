@@ -171,19 +171,10 @@ PyMember_SetOne(char *addr, PyMemberDef *l, PyObject *v)
         PyErr_SetString(PyExc_AttributeError, "readonly attribute");
         return -1;
     }
-    if (v == NULL) {
-        if (l->type == Py_T_OBJECT_EX) {
-            /* Check if the attribute is set. */
-            if (*(PyObject **)addr == NULL) {
-                PyErr_SetString(PyExc_AttributeError, l->name);
-                return -1;
-            }
-        }
-        else if (l->type != _Py_T_OBJECT) {
-            PyErr_SetString(PyExc_TypeError,
-                            "can't delete numeric/char attribute");
-            return -1;
-        }
+    if (v == NULL && l->type != Py_T_OBJECT_EX && l->type != _Py_T_OBJECT) {
+        PyErr_SetString(PyExc_TypeError,
+                        "can't delete numeric/char attribute");
+        return -1;
     }
     switch (l->type) {
     case Py_T_BOOL:{
@@ -334,6 +325,15 @@ PyMember_SetOne(char *addr, PyMemberDef *l, PyObject *v)
         oldv = *(PyObject **)addr;
         FT_ATOMIC_STORE_PTR_RELEASE(*(PyObject **)addr, Py_XNewRef(v));
         Py_END_CRITICAL_SECTION();
+        if (v == NULL && oldv == NULL && l->type == Py_T_OBJECT_EX) {
+            // Raise an exception when attempting to delete an already deleted
+            // attribute.
+            // Differently from Py_T_OBJECT_EX, _Py_T_OBJECT does not raise an
+            // exception here (PyMember_GetOne will return Py_None instead of
+            // NULL).
+            PyErr_SetString(PyExc_AttributeError, l->name);
+            return -1;
+        }
         Py_XDECREF(oldv);
         break;
     case Py_T_CHAR: {
