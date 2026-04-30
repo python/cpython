@@ -421,6 +421,11 @@ attributes (see :ref:`import-mod-attrs` for module attributes):
 
    Return ``True`` if the object is a bound method written in Python.
 
+   Note that accessing a method through the class (rather than an instance)
+   returns a plain :term:`function`, not a bound method, so :func:`ismethod`
+   will return ``False`` in that case.  See :ref:`instance-methods` in the
+   language reference for details.
+
 
 .. function:: ispackage(object)
 
