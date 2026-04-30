@@ -1326,6 +1326,8 @@ class FractionTest(unittest.TestCase):
             (F('1234567.123456'), '.5_e', '1.234_57e+06'),
             # z flag is legal, but never makes a difference to the output
             (F(-1, 7**100), 'z.6e', '-3.091690e-85'),
+            # fill and/or alignment with zero padding
+            (F(2, 3), '=010e', format(float(F(2, 3)), '=010e')),
         ]
         for fraction, spec, expected in testcases:
             with self.subTest(fraction=fraction, spec=spec):
@@ -1525,6 +1527,23 @@ class FractionTest(unittest.TestCase):
             (F(151, 1000), '.1f', '0.2'),
             (F(22, 7), '.02f', '3.14'),  # issue gh-130662
             (F(22, 7), '005.02f', '03.14'),
+            # fill and/or alignment with zero padding
+            (F(2, 3), 'X>010f', format(float(F(2, 3)), 'X>010f')),
+            (F(2, 3), 'X<010f', format(float(F(2, 3)), 'X<010f')),
+            (F(2, 3), 'X^010f', format(float(F(2, 3)), 'X^010f')),
+            (F(2, 3), 'X=010f', format(float(F(2, 3)), 'X=010f')),
+            (F(2, 3), '0>010f', format(float(F(2, 3)), '0>010f')),
+            (F(2, 3), '0<010f', format(float(F(2, 3)), '0<010f')),
+            (F(2, 3), '0^010f', format(float(F(2, 3)), '0^010f')),
+            (F(2, 3), '0=010f', format(float(F(2, 3)), '0=010f')),
+            (F(2, 3), '>010f', format(float(F(2, 3)), '>010f')),
+            (F(2, 3), '<010f', format(float(F(2, 3)), '<010f')),
+            (F(2, 3), '^010f', format(float(F(2, 3)), '^010f')),
+            (F(2, 3), '=010e', format(float(F(2, 3)), '=010e')),
+            (F(2, 3), '=010f', format(float(F(2, 3)), '=010f')),
+            (F(2, 3), '>00.2f', format(float(F(2, 3)), '>00.2f')),
+            (F(2, 3), '>00f', format(float(F(2, 3)), '>00f')),
+            (F(2, 3), '=010%', format(float(F(2, 3)), '=010%')),
         ]
         for fraction, spec, expected in testcases:
             with self.subTest(fraction=fraction, spec=spec):
@@ -1593,6 +1612,8 @@ class FractionTest(unittest.TestCase):
             (F(2**64), '_.25g', '18_446_744_073_709_551_616'),
             # As with 'e' format, z flag is legal, but has no effect
             (F(-1, 7**100), 'zg', '-3.09169e-85'),
+            # fill and/or alignment with zero padding
+            (F(2, 3), '=010g', format(float(F(2, 3)), '=010g')),
         ]
         for fraction, spec, expected in testcases:
             with self.subTest(fraction=fraction, spec=spec):
@@ -1605,24 +1626,6 @@ class FractionTest(unittest.TestCase):
 
         invalid_specs = [
             'Q6f',  # regression test
-            # illegal to use fill or alignment when zero padding
-            'X>010f',
-            'X<010f',
-            'X^010f',
-            'X=010f',
-            '0>010f',
-            '0<010f',
-            '0^010f',
-            '0=010f',
-            '>010f',
-            '<010f',
-            '^010f',
-            '=010e',
-            '=010f',
-            '=010g',
-            '=010%',
-            '>00.2f',
-            '>00f',
             # Missing precision
             '.e',
             '.f',

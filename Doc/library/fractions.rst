@@ -233,8 +233,7 @@ a single number, or from a string.
       :ref:`format specification mini-language <formatspec>`. The "alternate
       form" flag ``'#'`` is supported: if present, it forces the output string
       to always include an explicit denominator, even when the value being
-      formatted is an exact integer. The zero-fill flag ``'0'`` is not
-      supported.
+      formatted is an exact integer.
 
       If the ``format_spec`` format specification string ends with one of
       the presentation types ``'e'``, ``'E'``, ``'f'``, ``'F'``, ``'g'``,
