@@ -3564,6 +3564,9 @@ _testcapi_exec(PyObject *m)
     if (_PyTestCapi_Init_Frame(m) < 0) {
         return -1;
     }
+    if (_PyTestCapi_Init_Traceback(m) < 0) {
+        return -1;
+    }
     if (_PyTestCapi_Init_Type(m) < 0) {
         return -1;
     }
