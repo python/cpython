@@ -1,0 +1,4 @@
+:func:`sys.exit` and :exc:`SystemExit` now correctly handle empty and 1-item
+tuples arguments. Previously, such tuples were unpacked by :func:`!sys.exit`
+but not by :exc:`!SystemExit` and the process status code was incorrectly
+set. Patch by Bénédikt Tran.
