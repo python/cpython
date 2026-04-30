@@ -17,6 +17,9 @@ from ._re import (
     match_to_number,
 )
 
+if sys.version_info < (3, 15):
+    from types import MappingProxyType as frozendict
+
 TYPE_CHECKING = False
 if TYPE_CHECKING:
     from collections.abc import Iterable
@@ -44,7 +47,7 @@ BARE_KEY_CHARS: Final = frozenset(
 KEY_INITIAL_CHARS: Final = BARE_KEY_CHARS | frozenset("\"'")
 HEXDIGIT_CHARS: Final = frozenset("abcdef" "ABCDEF" "0123456789")
 
-BASIC_STR_ESCAPE_REPLACEMENTS: Final = frozendict( # type: ignore[name-defined]
+BASIC_STR_ESCAPE_REPLACEMENTS: Final = frozendict(
     {
         "\\b": "\u0008",  # backspace
         "\\t": "\u0009",  # tab
