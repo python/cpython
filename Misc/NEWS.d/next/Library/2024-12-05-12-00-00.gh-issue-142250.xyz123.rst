@@ -1,0 +1,4 @@
+Document the ``delta`` parameter for the :opcode:`!END_ASYNC_FOR` opcode in
+Python 3.14. Add :data:`~dis.hasjforward` and :data:`~dis.hasjback` opcode
+collections to distinguish between forward and backward jump instructions.
+Patch by Khanak.
