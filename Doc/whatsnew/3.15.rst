@@ -1879,6 +1879,14 @@ New deprecations
     Hugo van Kemenade in :gh:`148100`.)
 
 
+* :mod:`shlex`:
+
+  * Add keyword-only parameter *force* to :func:`shlex.quote` to force quoting
+    a string, even if it is already safe for a shell without being quoted.
+
+    (Contributed by Jay Berry in :gh:`148846`.)
+
+
 * :mod:`struct`:
 
   * Calling the ``Struct.__new__()`` without required argument now is
