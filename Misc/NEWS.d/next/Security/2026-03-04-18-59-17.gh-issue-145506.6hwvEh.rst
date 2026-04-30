@@ -1,0 +1,2 @@
+Fixes CVE-2026-2297 by ensuring that ``SourcelessFileLoader`` uses
+:func:`io.open_code` when opening ``.pyc`` files.
