@@ -963,6 +963,101 @@ Menu indexes (menu.invoke(), menu.entryconfig(), etc.)
      labelled ``last``, ``active``, or ``none`` may be interpreted as the above
      literals, instead.
 
+.. _tkinter-text-widget:
+
+Text
+^^^^
+
+The :class:`tkinter.Text` widget provides a multi-line text editing area
+with support for rich features such as text formatting, embedded widgets,
+and undo/redo functionality. It is one of the most flexible and powerful
+widgets available in Tkinter.
+
+Unlike simpler widgets such as :class:`Entry`, the :class:`tkinter.Text` widget
+supports multiple lines of text and allows fine-grained control over the
+content using indexes, tags, and marks.
+
+Basic usage::
+
+   import tkinter as tk
+
+   root = tk.Tk()
+   text = tk.Text(root)
+   text.pack()
+
+   text.insert("1.0", "Hello, world!")
+
+   root.mainloop()
+
+Indexes
+-------
+
+Text positions are specified using *index* values. The most common format
+is ``line.column``, where *line* and *column* are integers starting from
+1 and 0 respectively.
+
+Indexes can also include symbolic names.
+
+Examples:
+
+* ``"1.0"`` – the beginning of the text
+* ``"end"`` – the end of the text
+* ``"insert"`` – the current insertion cursor position
+
+Methods
+-------
+
+.. method:: insert(index, chars, *args)
+
+   Insert *chars* at the given *index*.
+
+.. method:: get(index1, index2=None)
+
+   Return the text between *index1* and *index2*. If *index2* is omitted,
+   returns the character at *index1*.
+
+.. method:: delete(index1, index2=None)
+
+   Delete text between *index1* and *index2*.
+
+Tags
+----
+
+Tags allow you to apply formatting and other attributes to ranges of text.
+
+Example::
+
+   text.tag_add("highlight", "1.0", "1.5")
+   text.tag_config("highlight", background="yellow")
+
+Tags can control styling such as fonts, colors, and spacing, and can also
+be used to bind events to specific text regions.
+
+Marks
+-----
+
+Marks represent named positions within the text. They move automatically
+as the text is modified.
+
+Example::
+
+   text.mark_set("my_mark", "1.0")
+
+Embedded widgets
+----------------
+
+The :class:`tkinter.Text` widget can contain other widgets, such as buttons or images,
+embedded directly within the text flow.
+
+Undo and redo
+-------------
+
+The widget optionally supports undo and redo operations when configured
+with the ``undo=True`` option.
+
+Example::
+
+   text = tk.Text(root, undo=True)
 
 Images
 ^^^^^^
