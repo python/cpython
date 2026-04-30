@@ -64,6 +64,12 @@ type PromptCellCacheKey = tuple[str, bool]
 # syntax classes
 SYNTAX_WHITESPACE, SYNTAX_WORD, SYNTAX_SYMBOL = range(3)
 
+def normalize_surrogates(s: str) -> str:
+    # Encode with surrogatepass, decode to normalize surrogate pairs
+    try:
+        return s.encode('utf-16', 'surrogatepass').decode('utf-16')
+    except UnicodeEncodeError:
+        return s  # fallback if encoding somehow fails
 
 def make_default_syntax_table() -> dict[str, int]:
     # XXX perhaps should use some unicodedata here?
@@ -1030,4 +1036,5 @@ class Reader:
 
     def get_unicode(self) -> str:
         """Return the current buffer as a unicode string."""
-        return "".join(self.buffer)
+        text = "".join(self.buffer)
+        return normalize_surrogates(text)
