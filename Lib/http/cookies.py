@@ -459,7 +459,7 @@ _CookiePattern = re.compile(r"""
     (?:                 # Optional group: there may not be a value.
       \s*+=\s*+           # Equal Sign
       (                   # Value:
-        "(?:\\.|[^"])*+"    # Any double-quoted string (RFC 2109/2965)
+        "(?:[^\\"]|\\.)*+"  # Any double-quoted string (RFC 2109/2965)
         |                   # or
         [^;]*+              # Any characters except ";" (RFC 6265)
       )

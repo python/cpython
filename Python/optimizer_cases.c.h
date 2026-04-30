@@ -5242,6 +5242,7 @@
                            || oparg == NB_INPLACE_TRUE_DIVIDE);
             bool is_remainder = (oparg == NB_REMAINDER
                              || oparg == NB_INPLACE_REMAINDER);
+            int emit_op = _BINARY_OP;
             if (is_truediv || is_remainder) {
                 if (!sym_has_type(rhs)
                     && sym_get_probable_type(rhs) == &PyFloat_Type) {
@@ -5258,17 +5259,17 @@
             }
             if (is_truediv && lhs_float && rhs_float) {
                 if (PyJitRef_IsUnique(lhs)) {
-                    ADD_OP(_BINARY_OP_TRUEDIV_FLOAT_INPLACE, 0, 0);
+                    emit_op = _BINARY_OP_TRUEDIV_FLOAT_INPLACE;
                     l = sym_new_null(ctx);
                     r = rhs;
                 }
                 else if (PyJitRef_IsUnique(rhs)) {
-                    ADD_OP(_BINARY_OP_TRUEDIV_FLOAT_INPLACE_RIGHT, 0, 0);
+                    emit_op = _BINARY_OP_TRUEDIV_FLOAT_INPLACE_RIGHT;
                     l = lhs;
                     r = sym_new_null(ctx);
                 }
                 else {
-                    ADD_OP(_BINARY_OP_TRUEDIV_FLOAT, 0, 0);
+                    emit_op = _BINARY_OP_TRUEDIV_FLOAT;
                     l = lhs;
                     r = rhs;
                 }
@@ -5304,6 +5305,7 @@
             else {
                 res = PyJitRef_MakeUnique(sym_new_type(ctx, &PyFloat_Type));
             }
+            ADD_OP(emit_op, oparg, 0);
             CHECK_STACK_BOUNDS(1);
             stack_pointer[-2] = res;
             stack_pointer[-1] = l;

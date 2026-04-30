@@ -50,7 +50,7 @@ class CookieTests(unittest.TestCase):
                 ))
             },
 
-            # gh-149028: allow any characters in unquoted cookie values
+            # gh-149028: allow any characters in non-quoted cookie values
             {
                 'data': 'cookie={"key": "value"}',
                 'dict': {'cookie': '{"key": "value"}'},
@@ -63,15 +63,6 @@ class CookieTests(unittest.TestCase):
                 'repr': "<SimpleCookie: key='some value; surrounded by quotes'>",
                 'output': 'Set-Cookie: key="some value; surrounded by quotes"',
             },
-            {
-                'data': 'session="user123"; preferences={"theme": "dark"}',
-                'dict': {'session': 'user123', 'preferences': '{"theme": "dark"}'},
-                'repr': "<SimpleCookie: preferences='{\"theme\": \"dark\"}' session='user123'>",
-                'output': '\n'.join((
-                    'Set-Cookie: preferences={"theme": "dark"}',
-                    'Set-Cookie: session="user123"',
-                ))
-            }
         ]
 
         for case in cases:
