@@ -8,6 +8,7 @@
 #include "_remote_debugging.h"
 #include "binary_io.h"
 #include "debug_offsets_validation.h"
+#include "gc_stats.h"
 
 /* Forward declarations for clinic-generated code */
 typedef struct {
@@ -1837,10 +1838,102 @@ _remote_debugging_is_python_process_impl(PyObject *module, int pid)
     Py_RETURN_TRUE;
 }
 
+/*[clinic input]
+_remote_debugging.get_gc_stats
+
+    pid: int
+    *
+    all_interpreters: bool = False
+        If True, return GC statistics from all interpreters.
+        If False, return only from main interpreter.
+
+Get garbage collector statistics from external Python process.
+
+Returns:
+    List of dicts.
+    dict: A dictionary containing:
+        - gen:
+        - iid:
+        - ts_start:
+        - ts_stop:
+        - heap_size:
+        - work_to_do:
+        - collections:
+        - object_visits:
+        - collected:
+        - uncollectable:
+        - candidates:
+        - objects_transitively_reachable:
+        - objects_not_transitively_reachable:
+        - duration:
+
+Raises:
+    RuntimeError:
+[clinic start generated code]*/
+
+static PyObject *
+_remote_debugging_get_gc_stats_impl(PyObject *module, int pid,
+                                    int all_interpreters)
+/*[clinic end generated code: output=d9dce5f7add149bb input=8f05aee4d4230428]*/
+{
+    RuntimeOffsets offsets;
+
+    PyObject *result = NULL;
+
+    if (_Py_RemoteDebug_InitProcHandle(&offsets.handle, pid) < 0) {
+        _set_debug_exception_cause(PyExc_RuntimeError, "Failed to initialize process handle");
+        return NULL;
+    }
+
+    offsets.runtime_start_address = _Py_RemoteDebug_GetPyRuntimeAddress(&offsets.handle);
+    if (offsets.runtime_start_address == 0) {
+        _set_debug_exception_cause(PyExc_RuntimeError, "Failed to get Python runtime address");
+        goto error;
+    }
+
+    if (_Py_RemoteDebug_ReadDebugOffsets(&offsets.handle,
+                                         &offsets.runtime_start_address,
+                                         &offsets.debug_offsets) < 0)
+    {
+        _set_debug_exception_cause(PyExc_RuntimeError, "Failed to read debug offsets");
+        goto error;
+    }
+
+    // Validate that the debug offsets are valid
+    if (validate_debug_offsets(&offsets.debug_offsets) == -1) {
+        _set_debug_exception_cause(PyExc_RuntimeError, "Invalid debug offsets found");
+        goto error;
+    }
+
+    result = PyList_New(0);
+    if (result == NULL) {
+        goto error;
+    }
+    ReadGCStatsContext ctx = {
+        .result = result,
+        .all_interpreters = all_interpreters,
+    };
+    if (0 > iterate_interpreters(&offsets, get_gc_stats_from_interpreter_state, &ctx)) {
+        goto error;
+    }
+
+    goto done;
+
+error:
+    Py_CLEAR(result);
+
+done:
+    _Py_RemoteDebug_ClearCache(&offsets.handle);
+    _Py_RemoteDebug_CleanupProcHandle(&offsets.handle);
+
+    return result;
+}
+
 static PyMethodDef remote_debugging_methods[] = {
     _REMOTE_DEBUGGING_ZSTD_AVAILABLE_METHODDEF
     _REMOTE_DEBUGGING_GET_CHILD_PIDS_METHODDEF
     _REMOTE_DEBUGGING_IS_PYTHON_PROCESS_METHODDEF
+    _REMOTE_DEBUGGING_GET_GC_STATS_METHODDEF
     {NULL, NULL, 0, NULL},
 };
 

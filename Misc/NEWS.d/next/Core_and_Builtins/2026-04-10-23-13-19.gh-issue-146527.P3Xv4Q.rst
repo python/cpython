@@ -1,0 +1,3 @@
+Add internal function ``get_gc_stats`` to the :mod:`!_remote_debugging`
+module to allow read GC statistics from an external Python process.
+Patch by Sergey Miryanov.
