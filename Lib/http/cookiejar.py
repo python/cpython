@@ -2078,6 +2078,8 @@ class MozillaCookieJar(FileCookieJar):
 
         except OSError:
             raise
+        except ValueError:
+            raise
         except Exception:
             _warn_unhandled_exception()
             raise LoadError("invalid Netscape format cookies file %r: %r" %
