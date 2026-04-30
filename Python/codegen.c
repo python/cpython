@@ -6302,6 +6302,9 @@ codegen_pattern_or(compiler *c, pattern_ty p, pattern_context *pc)
     NEW_JUMP_TARGET_LABEL(c, end);
     Py_ssize_t size = asdl_seq_LEN(p->v.MatchOr.patterns);
     assert(size > 1);
+    PyObject *mismatched_names = NULL;
+    Py_ssize_t mismatch_index = 0;
+    PyObject *str_nothing = NULL; // the string 'nothing'
     // We're going to be messing with pc. Keep the original info handy:
     pattern_context old_pc = *pc;
     Py_INCREF(pc->stores);
@@ -6336,6 +6339,8 @@ codegen_pattern_or(compiler *c, pattern_ty p, pattern_context *pc)
             control = Py_NewRef(pc->stores);
         }
         else if (nstores != PyList_GET_SIZE(control)) {
+            mismatch_index = i;
+            mismatched_names = Py_NewRef(pc->stores);
             goto diff;
         }
         else if (nstores) {
@@ -6346,6 +6351,8 @@ codegen_pattern_or(compiler *c, pattern_ty p, pattern_context *pc)
                 Py_ssize_t istores = PySequence_Index(pc->stores, name);
                 if (istores < 0) {
                     PyErr_Clear();
+                    mismatch_index = i;
+                    mismatched_names = Py_NewRef(pc->stores);
                     goto diff;
                 }
                 if (icontrol != istores) {
@@ -6437,10 +6444,31 @@ codegen_pattern_or(compiler *c, pattern_ty p, pattern_context *pc)
     // Pop the copy of the subject:
     ADDOP(c, LOC(p), POP_TOP);
     return SUCCESS;
-diff:
-    _PyCompile_Error(c, LOC(p), "alternative patterns bind different names");
+diff:;
+    int control_is_empty = PyList_GET_SIZE(control) == 0;
+    int pattern_is_empty = (
+        mismatched_names == NULL
+        || PyList_GET_SIZE(mismatched_names) == 0
+    );
+
+    if (control_is_empty || pattern_is_empty) {
+        str_nothing = PyUnicode_FromString("nothing");
+        if (str_nothing == NULL) {
+            goto error;
+        }
+    }
+    _PyCompile_Error(
+        c, LOC(p),
+        "alternative patterns bind different names "
+        "(pattern 1 binds %S, pattern %zd binds %S)",
+        control_is_empty ? str_nothing : control,
+        mismatch_index + 1,
+        pattern_is_empty ? str_nothing : mismatched_names
+    );
 error:
     PyMem_Free(old_pc.fail_pop);
+    Py_XDECREF(mismatched_names);
+    Py_XDECREF(str_nothing);
     Py_DECREF(old_pc.stores);
     Py_XDECREF(control);
     return ERROR;
