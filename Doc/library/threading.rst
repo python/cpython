@@ -1564,7 +1564,7 @@ of the derived iterators.
 
       import threading
 
-      source = range(5)
+      source = (x**2 for x in range(5))
       left, right = threading.concurrent_tee(source)
 
       def consume(name, iterable):
@@ -1578,4 +1578,5 @@ of the derived iterators.
       t1.join()
       t2.join()
 
-   In this example, both consumer threads see the full sequence ``0`` through ``4``.
+   In this example, both consumer threads see the full sequence of squares
+   from a single generator expression.
