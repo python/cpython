@@ -145,9 +145,12 @@ def distb(tb=None, *, file=None, show_caches=False, adaptive=False, show_offsets
                 tb = sys.last_exc.__traceback__
             else:
                 tb = sys.last_traceback
+
+            while tb.tb_next: tb = tb.tb_next
         except AttributeError:
             raise RuntimeError("no last traceback to disassemble") from None
-        while tb.tb_next: tb = tb.tb_next
+
+
     disassemble(tb.tb_frame.f_code, tb.tb_lasti, file=file, show_caches=show_caches, adaptive=adaptive, show_offsets=show_offsets, show_positions=show_positions)
 
 # The inspect module interrogates this dictionary to build its
