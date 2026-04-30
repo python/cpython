@@ -100,6 +100,49 @@ def _run_module_code(code, init_globals=None,
     # may be cleared when the temporary module goes away
     return mod_globals.copy()
 
+
+def _get_possible_name_list(wrong_name):
+    try:
+        if parent_name := wrong_name.rpartition('.')[0]:
+            parent = importlib.util.find_spec(parent_name)
+        else:
+            parent = None
+        d = []
+        for finder in sys.meta_path:
+            if discover := getattr(finder, 'discover', None):
+                try:
+                    d += [spec.name for spec in discover(parent) if _is_valid_spec(spec)]
+                except Exception:
+                    continue
+        return d
+    except Exception:
+        return None
+
+
+def _is_valid_spec(spec):
+    if spec is None:
+        return False
+    mod_name = spec.name
+    if spec.submodule_search_locations is not None:
+        if mod_name == "__main__" or mod_name.endswith(".__main__"):
+            return False
+        main_module = mod_name + ".__main__"
+        try:
+            main_spec = importlib.util.find_spec(main_module)
+            if main_spec is None:
+                return False
+            return main_spec.submodule_search_locations is None and _is_valid_spec(main_spec)
+        except Exception:
+            return False
+    loader = spec.loader
+    if loader is None:
+        return False
+    try:
+        return loader.get_code(mod_name) is not None
+    except ImportError:
+        return False
+
+
 # Helper to get the full name, spec and code for a module
 def _get_module_details(mod_name, error=ImportError):
     if mod_name.startswith("."):
@@ -138,7 +181,12 @@ def _get_module_details(mod_name, error=ImportError):
                     f"'{mod_name}' as the module name.")
         raise error(msg.format(mod_name, type(ex).__name__, ex)) from ex
     if spec is None:
-        raise error("No module named %s" % mod_name)
+        message = "No module named %r" % mod_name
+        if (d := _get_possible_name_list(mod_name)):
+            from traceback import _calculate_closed_name
+            if (suggestion := _calculate_closed_name(mod_name, d)):
+                message += ". Did you mean: %r?" % suggestion
+        raise error(message)
     if spec.submodule_search_locations is not None:
         if mod_name == "__main__" or mod_name.endswith(".__main__"):
             raise error("Cannot use package as __main__ module")
