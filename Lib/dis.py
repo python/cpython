@@ -46,6 +46,8 @@ LOAD_ATTR = opmap['LOAD_ATTR']
 LOAD_SUPER_ATTR = opmap['LOAD_SUPER_ATTR']
 CALL_INTRINSIC_1 = opmap['CALL_INTRINSIC_1']
 CALL_INTRINSIC_2 = opmap['CALL_INTRINSIC_2']
+CALL = opmap['CALL']
+INSTRUMENTED_CALL = opmap['INSTRUMENTED_CALL']
 LOAD_COMMON_CONSTANT = opmap['LOAD_COMMON_CONSTANT']
 LOAD_SPECIAL = opmap['LOAD_SPECIAL']
 LOAD_FAST_LOAD_FAST = opmap['LOAD_FAST_LOAD_FAST']
@@ -641,6 +643,12 @@ class ArgResolver:
                 argrepr = _intrinsic_1_descs[arg]
             elif deop == CALL_INTRINSIC_2:
                 argrepr = _intrinsic_2_descs[arg]
+            elif deop in (CALL, INSTRUMENTED_CALL):
+                argval = arg >> 1
+                if not (arg & 1):
+                    argrepr = f"{argval} + no_interrupt"
+                elif argval:
+                    argrepr = str(argval)
             elif deop == LOAD_COMMON_CONSTANT:
                 obj = _common_constants[arg]
                 if isinstance(obj, type):

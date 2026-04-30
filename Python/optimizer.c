@@ -1081,6 +1081,9 @@ _PyJit_translate_single_bytecode_to_trace(
                     record_idx++;
                     operand = (uintptr_t)recorded_value;
                 }
+                else if (uop == _CHECK_PERIODIC_IF_INTERRUPTIBLE) {
+                    target = orig_target + 1 + _PyOpcode_Caches[_PyOpcode_Deopt[opcode]];
+                }
                 // All other instructions
                 ADD_TO_TRACE(uop, oparg, operand, target);
             }

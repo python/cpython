@@ -895,8 +895,8 @@ dummy_func(void) {
         value = PyJitRef_Borrow(sym_new_const(ctx, ptr));
     }
 
-    op(_POP_TOP_OPARG, (args[oparg] --)) {
-        for (int i = oparg-1; i >= 0; i--) {
+    op(_POP_TOP_OPARG, (args[oparg >> 1] --)) {
+        for (int i = (oparg >> 1)-1; i >= 0; i--) {
             optimize_pop_top(ctx, this_instr, args[i]);
         }
     }
@@ -980,6 +980,15 @@ dummy_func(void) {
         if (oparg & 1) {
             ADD_OP(_PUSH_NULL, 0, 0);
             null[0] = sym_new_null(ctx);
+        }
+        else {
+            ADD_OP(_NOP, 0, 0);
+        }
+    }
+
+    op(_CHECK_PERIODIC_IF_INTERRUPTIBLE, (--)) {
+        if (oparg & 1) {
+            ADD_OP(_TIER2_RESUME_CHECK, 0, 0);
         }
         else {
             ADD_OP(_NOP, 0, 0);
@@ -1125,7 +1134,7 @@ dummy_func(void) {
         new_frame = PyJitRef_WrapInvalid(f);
     }
 
-    op(_INIT_CALL_BOUND_METHOD_EXACT_ARGS, (callable, self_or_null, unused[oparg] -- callable, self_or_null, unused[oparg])) {
+    op(_INIT_CALL_BOUND_METHOD_EXACT_ARGS, (callable, self_or_null, unused[oparg >> 1] -- callable, self_or_null, unused[oparg >> 1])) {
         PyObject *bound_method = sym_get_probable_value(callable);
         if (bound_method != NULL && Py_TYPE(bound_method) == &PyMethod_Type) {
             PyMethodObject *method = (PyMethodObject *)bound_method;
@@ -1140,7 +1149,7 @@ dummy_func(void) {
         }
     }
 
-    op(_CHECK_FUNCTION_VERSION, (func_version/2, callable, self_or_null, unused[oparg] -- callable, self_or_null, unused[oparg])) {
+    op(_CHECK_FUNCTION_VERSION, (func_version/2, callable, self_or_null, unused[oparg >> 1] -- callable, self_or_null, unused[oparg >> 1])) {
         PyObject *func = sym_get_probable_value(callable);
         if (func == NULL || !PyFunction_Check(func) || ((PyFunctionObject *)func)->func_version != func_version) {
             ctx->contradiction = true;
@@ -1164,7 +1173,7 @@ dummy_func(void) {
         _Py_BloomFilter_Add(dependencies, func);
     }
 
-    op(_CHECK_METHOD_VERSION, (func_version/2, callable, null, unused[oparg] -- callable, null, unused[oparg])) {
+    op(_CHECK_METHOD_VERSION, (func_version/2, callable, null, unused[oparg >> 1] -- callable, null, unused[oparg >> 1])) {
         if (sym_is_const(ctx, callable) && sym_matches_type(callable, &PyMethod_Type)) {
             PyMethodObject *method = (PyMethodObject *)sym_get_const(ctx, callable);
             assert(PyMethod_Check(method));
@@ -1210,26 +1219,26 @@ dummy_func(void) {
         sym_set_type(callable, &PyMethod_Type);
     }
 
-    op(_CHECK_FUNCTION_EXACT_ARGS, (callable, self_or_null, unused[oparg] -- callable, self_or_null, unused[oparg])) {
+    op(_CHECK_FUNCTION_EXACT_ARGS, (callable, self_or_null, unused[oparg >> 1] -- callable, self_or_null, unused[oparg >> 1])) {
         assert(sym_matches_type(callable, &PyFunction_Type));
         if (sym_is_const(ctx, callable)) {
             if (sym_is_null(self_or_null) || sym_is_not_null(self_or_null)) {
                 PyFunctionObject *func = (PyFunctionObject *)sym_get_const(ctx, callable);
                 PyCodeObject *co = (PyCodeObject *)func->func_code;
-                if (co->co_argcount == oparg + sym_is_not_null(self_or_null)) {
+                if (co->co_argcount == (oparg >> 1) + sym_is_not_null(self_or_null)) {
                     ADD_OP(_NOP, 0 ,0);
                 }
             }
         }
     }
 
-    op(_CHECK_CALL_BOUND_METHOD_EXACT_ARGS, (callable, null, unused[oparg] -- callable, null, unused[oparg])) {
+    op(_CHECK_CALL_BOUND_METHOD_EXACT_ARGS, (callable, null, unused[oparg >> 1] -- callable, null, unused[oparg >> 1])) {
         sym_set_null(null);
         sym_set_type(callable, &PyMethod_Type);
     }
 
-    op(_INIT_CALL_PY_EXACT_ARGS, (callable, self_or_null, args[oparg] -- new_frame)) {
-        int argcount = oparg;
+    op(_INIT_CALL_PY_EXACT_ARGS, (callable, self_or_null, args[oparg >> 1] -- new_frame)) {
+        int argcount = (oparg >> 1);
         assert(!PyJitRef_IsNull(self_or_null));
         assert(args != NULL);
         if (sym_is_not_null(self_or_null)) {
@@ -1245,7 +1254,7 @@ dummy_func(void) {
         }
     }
 
-    op(_EXPAND_METHOD, (callable, self_or_null, unused[oparg] -- callable, self_or_null, unused[oparg])) {
+    op(_EXPAND_METHOD, (callable, self_or_null, unused[oparg >> 1] -- callable, self_or_null, unused[oparg >> 1])) {
         if (sym_is_const(ctx, callable) && sym_matches_type(callable, &PyMethod_Type)) {
             PyMethodObject *method = (PyMethodObject *)sym_get_const(ctx, callable);
             callable = sym_new_const(ctx, method->im_func);
@@ -1269,13 +1278,13 @@ dummy_func(void) {
         }
     }
 
-    op(_MAYBE_EXPAND_METHOD, (callable, self_or_null, args[oparg] -- callable, self_or_null, args[oparg])) {
+    op(_MAYBE_EXPAND_METHOD, (callable, self_or_null, args[oparg >> 1] -- callable, self_or_null, args[oparg >> 1])) {
         (void)args;
         callable = sym_new_not_null(ctx);
         self_or_null = sym_new_not_null(ctx);
     }
 
-    op(_PY_FRAME_GENERAL, (callable, self_or_null, args[oparg] -- new_frame)) {
+    op(_PY_FRAME_GENERAL, (callable, self_or_null, args[oparg >> 1] -- new_frame)) {
         new_frame = PyJitRef_WrapInvalid(frame_new_from_symbol(ctx, callable, NULL, 0));
     }
 
@@ -1287,7 +1296,7 @@ dummy_func(void) {
         ex_frame = PyJitRef_WrapInvalid(frame_new_from_symbol(ctx, func_st, NULL, 0));
     }
 
-    op(_CHECK_OBJECT, (type_version/2, callable, self_or_null, unused[oparg] -- callable, self_or_null, unused[oparg])) {
+    op(_CHECK_OBJECT, (type_version/2, callable, self_or_null, unused[oparg >> 1] -- callable, self_or_null, unused[oparg >> 1])) {
         PyObject *probable_callable = sym_get_probable_value(callable);
         assert(probable_callable != NULL);
         PyObject *const_callable = sym_get_const(ctx, callable);
@@ -1319,12 +1328,12 @@ dummy_func(void) {
         }
     }
 
-    op(_ALLOCATE_OBJECT, (callable, self_or_null, unused[oparg] -- callable, self_or_null, unused[oparg])) {
+    op(_ALLOCATE_OBJECT, (callable, self_or_null, unused[oparg >> 1] -- callable, self_or_null, unused[oparg >> 1])) {
         self_or_null = sym_new_not_null(ctx);
     }
 
-    op(_CREATE_INIT_FRAME, (init, self, args[oparg] -- init_frame)) {
-        ctx->frame->stack_pointer = stack_pointer - oparg - 2;
+    op(_CREATE_INIT_FRAME, (init, self, args[oparg >> 1] -- init_frame)) {
+        ctx->frame->stack_pointer = stack_pointer - (oparg >> 1) - 2;
         _Py_UOpsAbstractFrame *shim = frame_new(ctx, (PyCodeObject *)&_Py_InitCleanup, NULL, 0);
         if (shim == NULL) {
             break;
@@ -1336,7 +1345,7 @@ dummy_func(void) {
         ctx->frame = shim;
         ctx->curr_frame_depth++;
         assert((this_instr + 1)->opcode == _PUSH_FRAME);
-        init_frame = PyJitRef_WrapInvalid(frame_new_from_symbol(ctx, init, args-1, oparg+1));
+        init_frame = PyJitRef_WrapInvalid(frame_new_from_symbol(ctx, init, args-1, (oparg >> 1)+1));
     }
 
     op(_RETURN_VALUE, (retval -- res)) {
@@ -1503,7 +1512,7 @@ dummy_func(void) {
         gen_frame = PyJitRef_WrapInvalid(new_frame);
     }
 
-    op(_CHECK_STACK_SPACE, (callable, unused, unused[oparg] -- callable, unused, unused[oparg])) {
+    op(_CHECK_STACK_SPACE, (callable, unused, unused[oparg >> 1] -- callable, unused, unused[oparg >> 1])) {
         PyCodeObject *co = sym_get_probable_func_code(callable);
         if (co == NULL) {
             ctx->done = true;
@@ -1516,7 +1525,7 @@ dummy_func(void) {
         (void)framesize;
     }
 
-    op(_CHECK_IS_NOT_PY_CALLABLE, (callable, unused, unused[oparg] -- callable, unused, unused[oparg])) {
+    op(_CHECK_IS_NOT_PY_CALLABLE, (callable, unused, unused[oparg >> 1] -- callable, unused, unused[oparg >> 1])) {
         PyTypeObject *type = sym_get_type(callable);
         if (type && type != &PyFunction_Type && type != &PyMethod_Type) {
             ADD_OP(_NOP, 0, 0);
@@ -1655,7 +1664,7 @@ dummy_func(void) {
         none = sym_new_const(ctx, Py_None);
     }
 
-    op(_GUARD_CALLABLE_BUILTIN_CLASS, (callable, unused, unused[oparg] -- callable, unused, unused[oparg])) {
+    op(_GUARD_CALLABLE_BUILTIN_CLASS, (callable, unused, unused[oparg >> 1] -- callable, unused, unused[oparg >> 1])) {
         PyObject *callable_o = sym_get_const(ctx, callable);
         if (callable_o && sym_matches_type(callable, &PyType_Type)) {
             PyTypeObject *tp = (PyTypeObject *)callable_o;
@@ -1668,11 +1677,11 @@ dummy_func(void) {
         }
     }
 
-    op(_GUARD_CALLABLE_BUILTIN_O, (callable, self_or_null, args[oparg] -- callable, self_or_null, args[oparg])) {
+    op(_GUARD_CALLABLE_BUILTIN_O, (callable, self_or_null, args[oparg >> 1] -- callable, self_or_null, args[oparg >> 1])) {
         PyObject *callable_o = sym_get_const(ctx, callable);
         if (callable_o && sym_matches_type(callable, &PyCFunction_Type) &&
             (sym_is_not_null(self_or_null) || sym_is_null(self_or_null))) {
-            int total_args = oparg;
+            int total_args = (oparg >> 1);
             if (sym_is_not_null(self_or_null)) {
                 total_args++;
             }
@@ -1685,7 +1694,7 @@ dummy_func(void) {
         }
     }
 
-    op(_GUARD_CALLABLE_BUILTIN_FAST, (callable, unused, unused[oparg] -- callable, unused, unused[oparg])) {
+    op(_GUARD_CALLABLE_BUILTIN_FAST, (callable, unused, unused[oparg >> 1] -- callable, unused, unused[oparg >> 1])) {
         PyObject *callable_o = sym_get_const(ctx, callable);
         if (callable_o && sym_matches_type(callable, &PyCFunction_Type)) {
             if (PyCFunction_GET_FLAGS(callable_o) == METH_FASTCALL) {
@@ -1697,7 +1706,7 @@ dummy_func(void) {
         }
     }
 
-    op(_GUARD_CALLABLE_BUILTIN_FAST_WITH_KEYWORDS, (callable, unused, unused[oparg] -- callable, unused, unused[oparg])) {
+    op(_GUARD_CALLABLE_BUILTIN_FAST_WITH_KEYWORDS, (callable, unused, unused[oparg >> 1] -- callable, unused, unused[oparg >> 1])) {
         PyObject *callable_o = sym_get_const(ctx, callable);
         if (callable_o && sym_matches_type(callable, &PyCFunction_Type)) {
             if (PyCFunction_GET_FLAGS(callable_o) == (METH_FASTCALL | METH_KEYWORDS)) {
@@ -1709,11 +1718,11 @@ dummy_func(void) {
         }
     }
 
-    op(_CALL_BUILTIN_FAST_WITH_KEYWORDS, (callable, self_or_null, args[oparg] -- callable, self_or_null, args[oparg])) {
+    op(_CALL_BUILTIN_FAST_WITH_KEYWORDS, (callable, self_or_null, args[oparg >> 1] -- callable, self_or_null, args[oparg >> 1])) {
         callable = sym_new_not_null(ctx);
     }
 
-    op(_CALL_BUILTIN_O, (callable, self_or_null, args[oparg] -- res, c, s)) {
+    op(_CALL_BUILTIN_O, (callable, self_or_null, args[oparg >> 1] -- res, c, s)) {
         res = sym_new_not_null(ctx);
         c = callable;
         if (sym_is_not_null(self_or_null)) {
@@ -1728,19 +1737,19 @@ dummy_func(void) {
         }
     }
 
-    op(_CALL_BUILTIN_FAST, (callable, self_or_null, args[oparg] -- callable, self_or_null, args[oparg])) {
+    op(_CALL_BUILTIN_FAST, (callable, self_or_null, args[oparg >> 1] -- callable, self_or_null, args[oparg >> 1])) {
         callable = sym_new_not_null(ctx);
     }
 
-    op(_CALL_BUILTIN_CLASS, (callable, self_or_null, args[oparg] -- callable, self_or_null, args[oparg])) {
+    op(_CALL_BUILTIN_CLASS, (callable, self_or_null, args[oparg >> 1] -- callable, self_or_null, args[oparg >> 1])) {
         callable = sym_new_not_null(ctx);
     }
 
-    op(_GUARD_CALLABLE_METHOD_DESCRIPTOR_O, (callable, self_or_null, args[oparg] -- callable, self_or_null, args[oparg])) {
+    op(_GUARD_CALLABLE_METHOD_DESCRIPTOR_O, (callable, self_or_null, args[oparg >> 1] -- callable, self_or_null, args[oparg >> 1])) {
         PyObject *callable_o = sym_get_const(ctx, callable);
         if (callable_o && sym_matches_type(callable, &PyMethodDescr_Type) &&
             (sym_is_not_null(self_or_null) || sym_is_null(self_or_null))) {
-            int total_args = oparg;
+            int total_args = (oparg >> 1);
             if (sym_is_not_null(self_or_null)) {
                 total_args++;
             }
@@ -1763,11 +1772,11 @@ dummy_func(void) {
         }
     }
 
-    op(_GUARD_CALLABLE_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS, (callable, self_or_null, args[oparg] -- callable, self_or_null, args[oparg])) {
+    op(_GUARD_CALLABLE_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS, (callable, self_or_null, args[oparg >> 1] -- callable, self_or_null, args[oparg >> 1])) {
         PyObject *callable_o = sym_get_const(ctx, callable);
         if (callable_o && sym_matches_type(callable, &PyMethodDescr_Type) &&
             (sym_is_not_null(self_or_null) || sym_is_null(self_or_null))) {
-            int total_args = oparg;
+            int total_args = (oparg >> 1);
             if (sym_is_not_null(self_or_null)) {
                 total_args++;
             }
@@ -1790,11 +1799,11 @@ dummy_func(void) {
         }
     }
 
-    op(_GUARD_CALLABLE_METHOD_DESCRIPTOR_NOARGS, (callable, self_or_null, args[oparg] -- callable, self_or_null, args[oparg])) {
+    op(_GUARD_CALLABLE_METHOD_DESCRIPTOR_NOARGS, (callable, self_or_null, args[oparg >> 1] -- callable, self_or_null, args[oparg >> 1])) {
         PyObject *callable_o = sym_get_const(ctx, callable);
         if (callable_o && sym_matches_type(callable, &PyMethodDescr_Type) &&
             (sym_is_not_null(self_or_null) || sym_is_null(self_or_null))) {
-            int total_args = oparg;
+            int total_args = (oparg >> 1);
             if (sym_is_not_null(self_or_null)) {
                 total_args++;
             }
@@ -1824,13 +1833,15 @@ dummy_func(void) {
         ctx->frame->is_c_recursion_checked = true;
     }
 
-    op(_CALL_METHOD_DESCRIPTOR_NOARGS, (callable, self_or_null, args[oparg] -- res, c, s)) {
+    op(_CALL_METHOD_DESCRIPTOR_NOARGS, (callable, self_or_null, args[oparg >> 1] -- res, c, s)) {
         PyObject *callable_o = sym_get_const(ctx, callable);
         if (callable_o && Py_IS_TYPE(callable_o, &PyMethodDescr_Type)
             && sym_is_not_null(self_or_null)) {
             PyMethodDescrObject *method = (PyMethodDescrObject *)callable_o;
             PyCFunction cfunc = method->d_method->ml_meth;
-            ADD_OP(_CALL_METHOD_DESCRIPTOR_NOARGS_INLINE, oparg + 1, (uintptr_t)cfunc);
+            int new_argcount = (oparg >> 1) + 1;
+            ADD_OP(_CALL_METHOD_DESCRIPTOR_NOARGS_INLINE,
+                   (new_argcount << 1) | 1, (uintptr_t)cfunc);
         }
         res = sym_new_not_null(ctx);
         c = callable;
@@ -1846,7 +1857,7 @@ dummy_func(void) {
         }
     }
 
-    op(_CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS, (callable, self_or_null, args[oparg] -- callable, self_or_null, args[oparg])) {
+    op(_CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS, (callable, self_or_null, args[oparg >> 1] -- callable, self_or_null, args[oparg >> 1])) {
         PyObject *callable_o = sym_get_const(ctx, callable);
         if (callable_o && Py_IS_TYPE(callable_o, &PyMethodDescr_Type)
             && sym_is_not_null(self_or_null)) {
@@ -1857,7 +1868,7 @@ dummy_func(void) {
         callable = sym_new_not_null(ctx);
     }
 
-    op(_CALL_METHOD_DESCRIPTOR_FAST, (callable, self_or_null, args[oparg] -- callable, self_or_null, args[oparg])) {
+    op(_CALL_METHOD_DESCRIPTOR_FAST, (callable, self_or_null, args[oparg >> 1] -- callable, self_or_null, args[oparg >> 1])) {
         PyObject *callable_o = sym_get_const(ctx, callable);
         if (callable_o && Py_IS_TYPE(callable_o, &PyMethodDescr_Type)
             && sym_is_not_null(self_or_null)) {
@@ -1868,11 +1879,11 @@ dummy_func(void) {
         callable = sym_new_not_null(ctx);
     }
 
-    op(_GUARD_CALLABLE_METHOD_DESCRIPTOR_FAST, (callable, self_or_null, args[oparg] -- callable, self_or_null, args[oparg])) {
+    op(_GUARD_CALLABLE_METHOD_DESCRIPTOR_FAST, (callable, self_or_null, args[oparg >> 1] -- callable, self_or_null, args[oparg >> 1])) {
         PyObject *callable_o = sym_get_const(ctx, callable);
         if (callable_o && sym_matches_type(callable, &PyMethodDescr_Type) &&
             (sym_is_not_null(self_or_null) || sym_is_null(self_or_null))) {
-            int total_args = oparg;
+            int total_args = (oparg >> 1);
             if (sym_is_not_null(self_or_null)) {
                 total_args++;
             }
@@ -1895,13 +1906,15 @@ dummy_func(void) {
         }
     }
 
-    op(_CALL_METHOD_DESCRIPTOR_O, (callable, self_or_null, args[oparg] -- res, c, s, a)) {
+    op(_CALL_METHOD_DESCRIPTOR_O, (callable, self_or_null, args[oparg >> 1] -- res, c, s, a)) {
         PyObject *callable_o = sym_get_const(ctx, callable);
         if (callable_o && Py_IS_TYPE(callable_o, &PyMethodDescr_Type)
             && sym_is_not_null(self_or_null)) {
             PyMethodDescrObject *method = (PyMethodDescrObject *)callable_o;
             PyCFunction cfunc = method->d_method->ml_meth;
-            ADD_OP(_CALL_METHOD_DESCRIPTOR_O_INLINE, oparg + 1, (uintptr_t)cfunc);
+            int new_argcount = (oparg >> 1) + 1;
+            ADD_OP(_CALL_METHOD_DESCRIPTOR_O_INLINE,
+                   (new_argcount << 1) | 1, (uintptr_t)cfunc);
         }
         res = sym_new_not_null(ctx);
         c = callable;
@@ -2551,7 +2564,7 @@ dummy_func(void) {
         sym_set_recorded_value(value, (PyObject *)this_instr->operand0);
     }
 
-    op(_RECORD_CALLABLE, (func, self, args[oparg] -- func, self, args[oparg])) {
+    op(_RECORD_CALLABLE, (func, self, args[oparg >> 1] -- func, self, args[oparg >> 1])) {
         sym_set_recorded_value(func, (PyObject *)this_instr->operand0);
     }
 
@@ -2559,7 +2572,7 @@ dummy_func(void) {
         sym_set_recorded_value(func, (PyObject *)this_instr->operand0);
     }
 
-    op(_RECORD_BOUND_METHOD, (callable, self, args[oparg] -- callable, self, args[oparg])) {
+    op(_RECORD_BOUND_METHOD, (callable, self, args[oparg >> 1] -- callable, self, args[oparg >> 1])) {
         sym_set_recorded_value(callable, (PyObject *)this_instr->operand0);
     }
 

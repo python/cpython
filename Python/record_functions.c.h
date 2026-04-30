@@ -71,7 +71,7 @@ void _PyOpcode_RecordFunction_4OS(_PyInterpreterFrame *frame, _PyStackRef *stack
 
 void _PyOpcode_RecordFunction_CALLABLE(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer, int oparg, PyObject **recorded_value) {
     _PyStackRef func;
-    func = stack_pointer[-2 - oparg];
+    func = stack_pointer[-2 - (oparg >> 1)];
     *recorded_value = (PyObject *)PyStackRef_AsPyObjectBorrow(func);
     Py_INCREF(*recorded_value);
 }
@@ -85,7 +85,7 @@ void _PyOpcode_RecordFunction_CALLABLE_KW(_PyInterpreterFrame *frame, _PyStackRe
 
 void _PyOpcode_RecordFunction_BOUND_METHOD(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer, int oparg, PyObject **recorded_value) {
     _PyStackRef callable;
-    callable = stack_pointer[-2 - oparg];
+    callable = stack_pointer[-2 - (oparg >> 1)];
     PyObject *callable_o = PyStackRef_AsPyObjectBorrow(callable);
     if (Py_TYPE(callable_o) == &PyMethod_Type) {
         *recorded_value = (PyObject *)callable_o;
