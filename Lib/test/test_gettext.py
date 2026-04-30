@@ -10,9 +10,6 @@ from test.support import cpython_only, os_helper
 from test.support.import_helper import ensure_lazy_imports
 
 
-# TODO:
-#  - Add new tests, for example for "dgettext"
-#  - Tests should have only one assert.
 
 GNU_MO_DATA = b'''\
 3hIElQAAAAAJAAAAHAAAAGQAAAAAAAAArAAAAAAAAACsAAAAFQAAAK0AAAAjAAAAwwAAAKEAAADn
@@ -278,6 +275,24 @@ class GettextTestCase2(GettextBaseTest):
 
     def test_textdomain(self):
         self.assertEqual(gettext.textdomain(), 'gettext')
+
+    def test_dgettext(self):
+        self.assertEqual(gettext.dgettext('gettext', 'nudge nudge'), 'wink wink')
+
+    def test_dpgettext(self):
+        self.assertEqual(gettext.dpgettext('gettext', 'my context', 'nudge nudge'), 'wink wink (in "my context")')
+
+    def test_dngettext_singular(self):
+        self.assertEqual(gettext.dngettext('gettext', 'There is %s file', 'There are %s files', 1), 'Hay %s fichero')
+
+    def test_dngettext_plural(self):
+        self.assertEqual(gettext.dngettext('gettext', 'There is %s file', 'There are %s files', 2), 'Hay %s ficheros')
+
+    def test_dnpgettext_singular(self):
+        self.assertEqual(gettext.dnpgettext('gettext', 'With context', 'There is %s file', 'There are %s files', 1), 'Hay %s fichero (context)')
+
+    def test_dnpgettext_plural(self):
+        self.assertEqual(gettext.dnpgettext('gettext', 'With context', 'There is %s file', 'There are %s files', 2), 'Hay %s ficheros (context)')
 
     def test_bad_magic_number(self):
         with open(MOFILE_BAD_MAGIC_NUMBER, 'rb') as fp:
