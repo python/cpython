@@ -2363,10 +2363,22 @@ _Py_Specialize_BinaryOp(_PyStackRef lhs_st, _PyStackRef rhs_st, _Py_CODEUNIT *in
                 break;
             }
             if (PyUnicode_CheckExact(lhs)) {
-                _Py_CODEUNIT next = instr[INLINE_CACHE_ENTRIES_BINARY_OP + 1];
+                int offset = INLINE_CACHE_ENTRIES_BINARY_OP + 1;
+                int locals_index = 0;
+                // Walk through EXTENDED_ARG instructions to compute full oparg
+                while (instr[offset].op.code == EXTENDED_ARG) {
+                    locals_index = (locals_index | instr[offset].op.arg) << 8;
+                    offset++;
+                }
+                _Py_CODEUNIT next = instr[offset];
                 bool to_store = (next.op.code == STORE_FAST);
-                if (to_store && PyStackRef_AsPyObjectBorrow(locals[next.op.arg]) == lhs) {
+                locals_index |= next.op.arg;
+                if (to_store && PyStackRef_AsPyObjectBorrow(locals[locals_index]) == lhs) {
                     specialize(instr, BINARY_OP_INPLACE_ADD_UNICODE);
+                    // Store local index in the last cache slot
+                    // so we don't need to peek at next_instr at runtime.
+                    instr[INLINE_CACHE_ENTRIES_BINARY_OP].cache =
+                        (uint16_t)locals_index;
                     return;
                 }
                 specialize(instr, BINARY_OP_ADD_UNICODE);

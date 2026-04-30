@@ -965,18 +965,12 @@ dummy_func(
         // This is a subtle one. We write NULL to the local
         // of the following STORE_FAST and leave the result for STORE_FAST
         // later to store.
-        op(_BINARY_OP_INPLACE_ADD_UNICODE, (left, right -- res)) {
+        op(_BINARY_OP_INPLACE_ADD_UNICODE, (next_oparg_idx/1, left, right -- res)) {
             PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);
             assert(PyUnicode_CheckExact(left_o));
             assert(PyUnicode_CheckExact(PyStackRef_AsPyObjectBorrow(right)));
 
-            int next_oparg;
-        #if TIER_ONE
-            assert(next_instr->op.code == STORE_FAST);
-            next_oparg = next_instr->op.arg;
-        #else
-            next_oparg = (int)CURRENT_OPERAND0_16();
-        #endif
+            int next_oparg = (int)next_oparg_idx;
             _PyStackRef *target_local = &GETLOCAL(next_oparg);
             assert(PyUnicode_CheckExact(left_o));
             EXIT_IF(PyStackRef_AsPyObjectBorrow(*target_local) != left_o);
@@ -1067,7 +1061,7 @@ dummy_func(
             unused/1 + _GUARD_BINARY_OP_EXTEND + rewind/-4 + _BINARY_OP_EXTEND + POP_TOP + POP_TOP;
 
         macro(BINARY_OP_INPLACE_ADD_UNICODE) =
-            _GUARD_TOS_UNICODE + _GUARD_NOS_UNICODE + unused/5 + _BINARY_OP_INPLACE_ADD_UNICODE;
+            _GUARD_TOS_UNICODE + _GUARD_NOS_UNICODE + unused/4 + _BINARY_OP_INPLACE_ADD_UNICODE;
 
         specializing op(_SPECIALIZE_BINARY_SLICE, (container, start, stop -- container, start, stop)) {
             // Placeholder until we implement BINARY_SLICE specialization

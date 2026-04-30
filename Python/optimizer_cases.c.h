@@ -1187,6 +1187,7 @@
             JitOptRef res;
             right = stack_pointer[-1];
             left = stack_pointer[-2];
+            uint16_t next_oparg_idx = (uint16_t)this_instr->operand0;
             if (sym_is_const(ctx, left) && sym_is_const(ctx, right)) {
                 assert(PyUnicode_CheckExact(sym_get_const(ctx, left)));
                 assert(PyUnicode_CheckExact(sym_get_const(ctx, right)));
@@ -1205,7 +1206,7 @@
                 res = sym_new_type(ctx, &PyUnicode_Type);
                 stack_pointer += -1;
             }
-            GETLOCAL(this_instr->operand0) = sym_new_null(ctx);
+            GETLOCAL(next_oparg_idx) = sym_new_null(ctx);
             stack_pointer[-1] = res;
             break;
         }

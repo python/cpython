@@ -540,7 +540,7 @@ dummy_func(void) {
         r = right;
     }
 
-    op(_BINARY_OP_INPLACE_ADD_UNICODE, (left, right -- res)) {
+    op(_BINARY_OP_INPLACE_ADD_UNICODE, (next_oparg_idx/1, left, right -- res)) {
         if (sym_is_const(ctx, left) && sym_is_const(ctx, right)) {
             assert(PyUnicode_CheckExact(sym_get_const(ctx, left)));
             assert(PyUnicode_CheckExact(sym_get_const(ctx, right)));
@@ -554,7 +554,7 @@ dummy_func(void) {
         else {
             res = sym_new_type(ctx, &PyUnicode_Type);
         }
-        GETLOCAL(this_instr->operand0) = sym_new_null(ctx);
+        GETLOCAL(next_oparg_idx) = sym_new_null(ctx);
     }
 
     op(_BINARY_OP_SUBSCR_CHECK_FUNC, (container, unused -- container, unused, getitem)) {
