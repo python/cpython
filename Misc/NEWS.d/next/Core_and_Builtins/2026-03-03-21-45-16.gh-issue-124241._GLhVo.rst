@@ -1,0 +1,2 @@
+On POSIX, we now try to read the symlink target from ``/proc/self/exe`` to
+determine :data:`sys.executable`.
