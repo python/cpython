@@ -2540,7 +2540,7 @@ codegen_try_except(compiler *c, stmt_ty s)
                   try:
                       # body
                   finally:
-                      name = None # in case body contains "del name"
+                      name = <NULL> # in case body contains "del name"
                       del name
             */
 
@@ -2555,26 +2555,22 @@ codegen_try_except(compiler *c, stmt_ty s)
             /* second # body */
             VISIT_SEQ(c, stmt, handler->v.ExceptHandler.body);
             _PyCompile_PopFBlock(c, COMPILE_FBLOCK_HANDLER_CLEANUP, cleanup_body);
-            /* name = None; del name; # Mark as artificial */
+            /* name = <NULL>; del name; # Mark as artificial */
             ADDOP(c, NO_LOCATION, POP_BLOCK);
             ADDOP(c, NO_LOCATION, POP_BLOCK);
             ADDOP(c, NO_LOCATION, POP_EXCEPT);
-            ADDOP_LOAD_CONST(c, NO_LOCATION, Py_None);
+            ADDOP(c, NO_LOCATION, PUSH_NULL);
             RETURN_IF_ERROR(
                 codegen_nameop(c, NO_LOCATION, handler->v.ExceptHandler.name, Store));
-            RETURN_IF_ERROR(
-                codegen_nameop(c, NO_LOCATION, handler->v.ExceptHandler.name, Del));
             ADDOP_JUMP(c, NO_LOCATION, JUMP_NO_INTERRUPT, end);
 
             /* except: */
             USE_LABEL(c, cleanup_end);
 
-            /* name = None; del name; # artificial */
-            ADDOP_LOAD_CONST(c, NO_LOCATION, Py_None);
+            /* name = <NULL>; del name; # artificial */
+            ADDOP(c, NO_LOCATION, PUSH_NULL);
             RETURN_IF_ERROR(
                 codegen_nameop(c, NO_LOCATION, handler->v.ExceptHandler.name, Store));
-            RETURN_IF_ERROR(
-                codegen_nameop(c, NO_LOCATION, handler->v.ExceptHandler.name, Del));
 
             ADDOP_I(c, NO_LOCATION, RERAISE, 1);
         }
@@ -2739,7 +2735,7 @@ codegen_try_star_except(compiler *c, stmt_ty s)
               try:
                   # body
               finally:
-                  name = None # in case body contains "del name"
+                  name = <NULL> # in case body contains "del name"
                   del name
         */
         /* second try: */
@@ -2753,27 +2749,23 @@ codegen_try_star_except(compiler *c, stmt_ty s)
         /* second # body */
         VISIT_SEQ(c, stmt, handler->v.ExceptHandler.body);
         _PyCompile_PopFBlock(c, COMPILE_FBLOCK_HANDLER_CLEANUP, cleanup_body);
-        /* name = None; del name; # artificial */
+        /* name = <NULL>; del name; # artificial */
         ADDOP(c, NO_LOCATION, POP_BLOCK);
         if (handler->v.ExceptHandler.name) {
-            ADDOP_LOAD_CONST(c, NO_LOCATION, Py_None);
+            ADDOP(c, NO_LOCATION, PUSH_NULL);
             RETURN_IF_ERROR(
                 codegen_nameop(c, NO_LOCATION, handler->v.ExceptHandler.name, Store));
-            RETURN_IF_ERROR(
-                codegen_nameop(c, NO_LOCATION, handler->v.ExceptHandler.name, Del));
         }
         ADDOP_JUMP(c, NO_LOCATION, JUMP_NO_INTERRUPT, except);
 
         /* except: */
         USE_LABEL(c, cleanup_end);
 
-        /* name = None; del name; # artificial */
+        /* name = <NULL>; del name; # artificial */
         if (handler->v.ExceptHandler.name) {
-            ADDOP_LOAD_CONST(c, NO_LOCATION, Py_None);
+            ADDOP(c, NO_LOCATION, PUSH_NULL);
             RETURN_IF_ERROR(
                 codegen_nameop(c, NO_LOCATION, handler->v.ExceptHandler.name, Store));
-            RETURN_IF_ERROR(
-                codegen_nameop(c, NO_LOCATION, handler->v.ExceptHandler.name, Del));
         }
 
         /* add exception raised to the res list */
