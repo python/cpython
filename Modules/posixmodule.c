@@ -253,6 +253,12 @@
 #  if defined(__CYGWIN__)
 #    define USE_XATTRS
 #    include <cygwin/limits.h>  // Needed for XATTR_SIZE_MAX and XATTR_LIST_MAX.
+#    ifndef XATTR_SIZE_MAX
+#      define XATTR_SIZE_MAX 65536
+#    endif
+#    ifndef XATTR_LIST_MAX
+#      define XATTR_LIST_MAX 65536
+#    endif
 #  endif
 #endif
 #ifdef USE_XATTRS
