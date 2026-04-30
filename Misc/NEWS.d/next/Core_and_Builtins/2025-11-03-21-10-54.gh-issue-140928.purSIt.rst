@@ -1,0 +1,1 @@
+Add a constant pool to all JIT executors and allow promotion of constants to the pool. Patch by Ken Jin. Implementation in CPython inspired by PyPy/RPython.

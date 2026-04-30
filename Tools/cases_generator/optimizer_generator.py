@@ -279,7 +279,7 @@ class OptimizerEmitter(Emitter):
 
                 emitter.emit(f"if (sym_is_const(ctx, {output_identifier.text})) {{\n")
                 emitter.emit(f"PyObject *result = sym_get_const(ctx, {output_identifier.text});\n")
-                emitter.emit(f"if (_Py_IsImmortal(result)) {{\n")
+                emitter.emit(f"if (_Py_uop_promote_to_constant_pool(ctx, result) == 0) {{\n")
                 emitter.emit(f"// Replace with {ops_desc} since we have {input_desc} and an immortal result\n")
                 for op, args in ops:
                     emitter.emit(f"ADD_OP({op}, {args});\n")
