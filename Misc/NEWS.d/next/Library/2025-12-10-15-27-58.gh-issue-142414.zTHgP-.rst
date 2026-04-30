@@ -1,0 +1,1 @@
+Fix spurious :exc:`KeyError` when :mod:`concurrent.interpreters` is reloaded after import.
