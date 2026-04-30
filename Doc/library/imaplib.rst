@@ -519,6 +519,12 @@ An :class:`IMAP4` instance has the following methods:
    (``EXISTS`` response).  The default *mailbox* is ``'INBOX'``.  If the *readonly*
    flag is set, modifications to the mailbox are not allowed.
 
+   .. note::
+
+      Mailbox names containing spaces must be quoted by the caller.
+      For example, to select a mailbox named ``my important mail``, use
+      ``M.select('"my important mail"')``.
+
 
 .. method:: IMAP4.send(data)
 
