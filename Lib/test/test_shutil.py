@@ -3571,7 +3571,8 @@ class PublicAPITests(unittest.TestCase):
         self.assertHasAttr(shutil, '__all__')
         target_api = ['copyfileobj', 'copyfile', 'copymode', 'copystat',
                       'copy', 'copy2', 'copytree', 'move', 'rmtree', 'Error',
-                      'SpecialFileError', 'make_archive',
+                      'SpecialFileError', 'ReadError', 'RegistryError',
+                      'make_archive',
                       'get_archive_formats', 'register_archive_format',
                       'unregister_archive_format', 'get_unpack_formats',
                       'register_unpack_format', 'unregister_unpack_format',

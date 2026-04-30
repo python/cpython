@@ -737,6 +737,8 @@ provided.  They rely on the :mod:`zipfile` and :mod:`tarfile` modules.
    registered for that extension.  In case none is found,
    a :exc:`ValueError` is raised.
 
+   If the archive file cannot be read, a :exc:`ReadError` is raised.
+
    The keyword-only *filter* argument is passed to the underlying unpacking
    function. For zip files, *filter* is not accepted.
    For tar files, it is recommended to use ``'data'`` (default since Python
@@ -764,6 +766,13 @@ provided.  They rely on the :mod:`zipfile` and :mod:`tarfile` modules.
    .. versionchanged:: 3.12
       Added the *filter* argument.
 
+.. exception:: ReadError
+
+   This exception is raised when an archive cannot be read or is not recognized
+   as a supported archive format.  It is raised by :func:`unpack_archive`.
+
+   .. versionadded:: 3.2
+
 .. function:: register_unpack_format(name, extensions, function[, extra_args[, description]])
 
    Registers an unpack format. *name* is the name of the format and
@@ -782,6 +791,17 @@ provided.  They rely on the :mod:`zipfile` and :mod:`tarfile` modules.
 
    *description* can be provided to describe the format, and will be returned
    by the :func:`get_unpack_formats` function.
+
+   Raises :exc:`RegistryError` if any of the given *extensions* are already
+   registered for another format.
+
+.. exception:: RegistryError
+
+   This exception is raised when a registry operation with the archiving
+   and unpacking registries fails, such as registering a duplicate archive
+   format extension.  It is raised by :func:`register_unpack_format`.
+
+   .. versionadded:: 3.2
 
 
 .. function:: unregister_unpack_format(name)
