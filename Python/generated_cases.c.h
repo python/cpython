@@ -7930,6 +7930,7 @@
                 #if TIER_ONE
                 assert(frame->instr_ptr->op.code == INSTRUMENTED_LINE ||
                   frame->instr_ptr->op.code == INSTRUMENTED_INSTRUCTION ||
+                  frame->instr_ptr->op.code == INSTRUMENTED_FOR_ITER ||
                   _PyOpcode_Deopt[frame->instr_ptr->op.code] == SEND ||
                   _PyOpcode_Deopt[frame->instr_ptr->op.code] == FOR_ITER ||
                   _PyOpcode_Deopt[frame->instr_ptr->op.code] == INTERPRETER_EXIT ||
@@ -12929,6 +12930,7 @@
                 #if TIER_ONE
                 assert(frame->instr_ptr->op.code == INSTRUMENTED_LINE ||
                   frame->instr_ptr->op.code == INSTRUMENTED_INSTRUCTION ||
+                  frame->instr_ptr->op.code == INSTRUMENTED_FOR_ITER ||
                   _PyOpcode_Deopt[frame->instr_ptr->op.code] == SEND ||
                   _PyOpcode_Deopt[frame->instr_ptr->op.code] == FOR_ITER ||
                   _PyOpcode_Deopt[frame->instr_ptr->op.code] == INTERPRETER_EXIT ||
