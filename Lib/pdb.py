@@ -318,12 +318,34 @@ class _ZipTarget(_ExecutableTarget):
 
 
 class _PdbInteractiveConsole(code.InteractiveConsole):
-    def __init__(self, ns, message):
+    def __init__(self, ns=None, message=None):
         self._message = message
         super().__init__(locals=ns, local_exit=True)
 
     def write(self, data):
-        self._message(data, end='')
+        if self._message is not None:
+            self._message(data, end='')
+        else:
+            super().write(data)
+
+    def more_lines(self, text):
+        # Generic Python multi-line completeness heuristic.
+        # Strips pyrepl's trailing auto-indent before compiling.
+        # This should be functionally identical to simple_interact._more_lines
+        src = text.rstrip(" \t")
+        n = len(src)
+        if n > 0 and text[n-1] == '\n':
+            text = src
+        try:
+            code_obj = self.compile(text, "<stdin>", "single")
+        except (OverflowError, SyntaxError, ValueError):
+            lines = text.splitlines(keepends=True)
+            if len(lines) == 1:
+                return False
+            last = lines[-1]
+            return ((last.startswith((" ", "\t")) or last.strip() != "")
+                    and not last.endswith("\n"))
+        return code_obj is None
 
 
 # Interaction prompt line will separate file and call info from code
@@ -355,10 +377,13 @@ def get_default_backend():
 def _pyrepl_available():
     """return whether pdb should use _pyrepl for input"""
     if not os.getenv("PYTHON_BASIC_REPL"):
-        from _pyrepl.main import CAN_USE_PYREPL
-
-        return CAN_USE_PYREPL
-    return False
+        CAN_USE_PYREPL = False
+    else:
+        try:
+            from _pyrepl.main import CAN_USE_PYREPL
+        except ModuleNotFoundError:
+            CAN_USE_PYREPL = False
+    return CAN_USE_PYREPL
 
 
 class PdbPyReplInput:
@@ -367,7 +392,7 @@ class PdbPyReplInput:
 
         self.pdb_instance = pdb_instance
         self.prompt = prompt
-        self.console = code.InteractiveConsole()
+        self.console = _PdbInteractiveConsole()
         if not (os.isatty(stdin.fileno())):
             raise ValueError("stdin is not a TTY")
         self.readline_wrapper = _pyrepl.readline._ReadlineWrapper(
@@ -377,9 +402,12 @@ class PdbPyReplInput:
                 completer_delims=frozenset(' \t\n`@#%^&*()=+[{]}\\|;:\'",<>?')
             )
         )
+        try:
+            self.readline_wrapper.read_history_file()
+        except (FileNotFoundError, PermissionError, OSError):
+            pass
 
     def readline(self):
-        from _pyrepl.simple_interact import _more_lines
 
         def more_lines(text):
             if text.strip() == "\x1a":
@@ -392,18 +420,24 @@ class PdbPyReplInput:
             func = getattr(self.pdb_instance, 'do_' + cmd, None)
             if func is not None:
                 return False
-            return _more_lines(self.console, text)
+            return self.console.more_lines(text)
 
         try:
             pyrepl_completer = self.readline_wrapper.get_completer()
             self.readline_wrapper.set_completer(self.complete)
-            return (
+            multiline = (
                 self.readline_wrapper.multiline_input(
                     more_lines,
                     self.prompt,
                     '... ' + ' ' * (len(self.prompt) - 4)
                 ) + '\n'
             )
+            try:
+                self.readline_wrapper.append_history_file()
+            except (FileNotFoundError, PermissionError, OSError) as e:
+                import warnings
+                warnings.warn(f"failed to open the history file for writing: {e}")
+            return multiline
         except EOFError:
             return 'EOF'
         finally:
@@ -421,7 +455,7 @@ class PdbPyReplInput:
             stripped = len(origline) - len(line)
             begidx = self.readline_wrapper.get_begidx() - stripped
             endidx = self.readline_wrapper.get_endidx() - stripped
-            if begidx>0:
+            if begidx > 0:
                 cmd, args, foo = self.pdb_instance.parseline(line)
                 if not cmd:
                     compfunc = self.pdb_instance.completedefault
@@ -2484,19 +2518,20 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         """
         ns = {**self.curframe.f_globals, **self.curframe.f_locals}
         console = _PdbInteractiveConsole(ns, message=self.message)
+        banner = "*pdb interact start*"
+        exitmsg = "*exit from pdb interact command*"
         if self.pyrepl_input is not None:
             from _pyrepl.simple_interact import run_multiline_interactive_console
-            self.message("*pdb interact start*")
+            self.message(banner)
             try:
                 run_multiline_interactive_console(console)
             except SystemExit:
                 pass
-            self.message("*exit from pdb interact command*")
+            self.message(exitmsg)
         else:
             with self._enable_rlcompleter(ns):
-                console = _PdbInteractiveConsole(ns, message=self.message)
-                console.interact(banner="*pdb interact start*",
-                                 exitmsg="*exit from pdb interact command*")
+                console.interact(banner=banner,
+                                 exitmsg=exitmsg)
 
     def do_alias(self, arg):
         """alias [name [command]]
