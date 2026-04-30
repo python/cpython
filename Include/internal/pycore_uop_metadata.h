@@ -417,8 +417,8 @@ const uint32_t _PyUop_Flags[MAX_UOP_ID+1] = {
     [_GUARD_IP_RETURN_GENERATOR] = HAS_EXIT_FLAG,
     [_RECORD_TOS] = HAS_RECORDS_VALUE_FLAG,
     [_RECORD_TOS_TYPE] = HAS_RECORDS_VALUE_FLAG,
-    [_RECORD_NOS_TYPE] = HAS_RECORDS_VALUE_FLAG,
     [_RECORD_NOS] = HAS_RECORDS_VALUE_FLAG,
+    [_RECORD_NOS_TYPE] = HAS_RECORDS_VALUE_FLAG,
     [_RECORD_NOS_GEN_FUNC] = HAS_RECORDS_VALUE_FLAG,
     [_RECORD_3OS_GEN_FUNC] = HAS_RECORDS_VALUE_FLAG,
     [_RECORD_4OS] = HAS_RECORDS_VALUE_FLAG,
@@ -6848,9 +6848,9 @@ int _PyUop_num_popped(int opcode, int oparg)
             return 0;
         case _RECORD_TOS_TYPE:
             return 0;
-        case _RECORD_NOS_TYPE:
-            return 0;
         case _RECORD_NOS:
+            return 0;
+        case _RECORD_NOS_TYPE:
             return 0;
         case _RECORD_NOS_GEN_FUNC:
             return 0;

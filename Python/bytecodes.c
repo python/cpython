@@ -6289,12 +6289,12 @@ dummy_func(
             RECORD_VALUE(Py_TYPE(PyStackRef_AsPyObjectBorrow(tos)));
         }
 
-        tier2 op(_RECORD_NOS_TYPE, (nos, tos -- nos, tos)) {
-            RECORD_VALUE(Py_TYPE(PyStackRef_AsPyObjectBorrow(nos)));
-        }
-
         tier2 op(_RECORD_NOS, (nos, tos -- nos, tos)) {
             RECORD_VALUE(PyStackRef_AsPyObjectBorrow(nos));
+        }
+
+        tier2 op(_RECORD_NOS_TYPE, (nos, tos -- nos, tos)) {
+            RECORD_VALUE(Py_TYPE(PyStackRef_AsPyObjectBorrow(nos)));
         }
 
         tier2 op(_RECORD_NOS_GEN_FUNC, (nos, tos -- nos, tos)) {

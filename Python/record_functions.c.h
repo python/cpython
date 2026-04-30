@@ -20,17 +20,17 @@ void _PyOpcode_RecordFunction_TOS_TYPE(_PyInterpreterFrame *frame, _PyStackRef *
     Py_INCREF(*recorded_value);
 }
 
-void _PyOpcode_RecordFunction_NOS_TYPE(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer, int oparg, PyObject **recorded_value) {
-    _PyStackRef nos;
-    nos = stack_pointer[-2];
-    *recorded_value = (PyObject *)Py_TYPE(PyStackRef_AsPyObjectBorrow(nos));
-    Py_INCREF(*recorded_value);
-}
-
 void _PyOpcode_RecordFunction_NOS(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer, int oparg, PyObject **recorded_value) {
     _PyStackRef nos;
     nos = stack_pointer[-2];
     *recorded_value = (PyObject *)PyStackRef_AsPyObjectBorrow(nos);
+    Py_INCREF(*recorded_value);
+}
+
+void _PyOpcode_RecordFunction_NOS_TYPE(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer, int oparg, PyObject **recorded_value) {
+    _PyStackRef nos;
+    nos = stack_pointer[-2];
+    *recorded_value = (PyObject *)Py_TYPE(PyStackRef_AsPyObjectBorrow(nos));
     Py_INCREF(*recorded_value);
 }
 

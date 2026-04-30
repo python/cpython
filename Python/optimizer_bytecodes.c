@@ -2568,13 +2568,13 @@ dummy_func(void) {
         sym_set_recorded_type(tos, tp);
     }
 
+    op(_RECORD_NOS, (nos, tos -- nos, tos)) {
+        sym_set_recorded_value(nos, (PyObject *)this_instr->operand0);
+    }
+
     op(_RECORD_NOS_TYPE, (nos, tos -- nos, tos)) {
         PyTypeObject *tp = (PyTypeObject *)this_instr->operand0;
         sym_set_recorded_type(nos, tp);
-    }
-
-    op(_RECORD_NOS, (nos, tos -- nos, tos)) {
-        sym_set_recorded_value(nos, (PyObject *)this_instr->operand0);
     }
 
     op(_RECORD_4OS, (value, _3os, nos, tos -- value, _3os, nos, tos)) {

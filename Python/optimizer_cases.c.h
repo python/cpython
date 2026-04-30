@@ -5674,18 +5674,18 @@
             break;
         }
 
+        case _RECORD_NOS: {
+            JitOptRef nos;
+            nos = stack_pointer[-2];
+            sym_set_recorded_value(nos, (PyObject *)this_instr->operand0);
+            break;
+        }
+
         case _RECORD_NOS_TYPE: {
             JitOptRef nos;
             nos = stack_pointer[-2];
             PyTypeObject *tp = (PyTypeObject *)this_instr->operand0;
             sym_set_recorded_type(nos, tp);
-            break;
-        }
-
-        case _RECORD_NOS: {
-            JitOptRef nos;
-            nos = stack_pointer[-2];
-            sym_set_recorded_value(nos, (PyObject *)this_instr->operand0);
             break;
         }
 

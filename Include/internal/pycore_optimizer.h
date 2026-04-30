@@ -451,7 +451,6 @@ extern unsigned int _Py_uop_sym_get_type_version(JitOptRef sym);
 extern void _Py_uop_sym_set_null(JitOptContext *ctx, JitOptRef sym);
 extern void _Py_uop_sym_set_non_null(JitOptContext *ctx, JitOptRef sym);
 extern void _Py_uop_sym_set_type(JitOptContext *ctx, JitOptRef sym, PyTypeObject *typ);
-extern unsigned int _Py_uop_sym_get_type_version(JitOptRef ref);
 extern bool _Py_uop_sym_set_type_version(JitOptContext *ctx, JitOptRef sym, unsigned int version);
 extern void _Py_uop_sym_set_const(JitOptContext *ctx, JitOptRef sym, PyObject *const_val);
 extern bool _Py_uop_sym_is_bottom(JitOptRef sym);
