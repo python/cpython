@@ -99,6 +99,7 @@ class SafeUUID:
 
 
 _UINT_128_MAX = (1 << 128) - 1
+
 # 128-bit mask to clear the variant and version bits of a UUID integral value
 _RFC_4122_CLEARFLAGS_MASK = ~((0xf000 << 64) | (0xc000 << 48))
 # RFC 4122 variant bits and version bits to activate on a UUID integral value.
@@ -109,6 +110,46 @@ _RFC_4122_VERSION_5_FLAGS = ((5 << 76) | (0x8000 << 48))
 _RFC_4122_VERSION_6_FLAGS = ((6 << 76) | (0x8000 << 48))
 _RFC_4122_VERSION_7_FLAGS = ((7 << 76) | (0x8000 << 48))
 _RFC_4122_VERSION_8_FLAGS = ((8 << 76) | (0x8000 << 48))
+
+_random_hook = None
+_time_hook = None
+
+
+def _gen_random(size):
+    if _random_hook is None:
+        return os.urandom(size)
+    else:
+        return _random_hook(size)
+
+
+def _gen_time():
+    if _time_hook is None:
+        return time.time_ns()
+    else:
+        return _time_hook()
+
+
+def _install_py_hooks(*, random_func, time_func):
+    global _random_hook
+    global _time_hook
+    global _last_timestamp_v7
+    _random_hook = random_func
+    _time_hook = time_func
+    # Reset _last_timestamp_v7 for repeatability of tests
+    _last_timestamp_v7 = None
+
+
+# Import optional C extension at toplevel, to help disabling it when testing
+try:
+    import _uuid
+    _generate_time_safe = getattr(_uuid, "generate_time_safe", None)
+    _has_stable_extractable_node = _uuid.has_stable_extractable_node
+    _UuidCreate = getattr(_uuid, "UuidCreate", None)
+except ImportError:
+    _uuid = None
+    _generate_time_safe = None
+    _has_stable_extractable_node = False
+    _UuidCreate = None
 
 
 class UUID:
@@ -219,6 +260,10 @@ class UUID:
                 raise ValueError('badly formed hexadecimal UUID string')
             int = int_(hex, 16)
         elif bytes_le is not None:
+            if not isinstance(bytes_le, bytes_):
+                raise TypeError(
+                    f'a bytes-like object is required, not {type(bytes_le).__name__!r}'
+                )
             if len(bytes_le) != 16:
                 raise ValueError('bytes_le is not a 16-char string')
             assert isinstance(bytes_le, bytes_), repr(bytes_le)
@@ -226,6 +271,10 @@ class UUID:
                      bytes_le[8-1:6-1:-1] + bytes_le[8:])
             int = int_.from_bytes(bytes)  # big endian
         elif bytes is not None:
+            if not isinstance(bytes, bytes_):
+                raise TypeError(
+                    f'a bytes-like object is required, not {type(bytes).__name__!r}'
+                )
             if len(bytes) != 16:
                 raise ValueError('bytes is not a 16-char string')
             assert isinstance(bytes, bytes_), repr(bytes)
@@ -234,7 +283,7 @@ class UUID:
             if len(fields) != 6:
                 raise ValueError('fields is not a 6-tuple')
             (time_low, time_mid, time_hi_version,
-             clock_seq_hi_variant, clock_seq_low, node) = fields
+            clock_seq_hi_variant, clock_seq_low, node) = fields
             if not 0 <= time_low < (1 << 32):
                 raise ValueError('field 1 out of range (need a 32-bit value)')
             if not 0 <= time_mid < (1 << 16):
@@ -249,7 +298,7 @@ class UUID:
                 raise ValueError('field 6 out of range (need a 48-bit value)')
             clock_seq = (clock_seq_hi_variant << 8) | clock_seq_low
             int = ((time_low << 96) | (time_mid << 80) |
-                   (time_hi_version << 64) | (clock_seq << 48) | node)
+                    (time_hi_version << 64) | (clock_seq << 48) | node)
         if not 0 <= int <= _UINT_128_MAX:
             raise ValueError('int is out of range (need a 128-bit value)')
         if version is not None:
@@ -629,19 +678,6 @@ def _netstat_getnode():
     return _find_mac_under_heading('netstat', '-ian', b'Address')
 
 
-# Import optional C extension at toplevel, to help disabling it when testing
-try:
-    import _uuid
-    _generate_time_safe = getattr(_uuid, "generate_time_safe", None)
-    _has_stable_extractable_node = _uuid.has_stable_extractable_node
-    _UuidCreate = getattr(_uuid, "UuidCreate", None)
-except ImportError:
-    _uuid = None
-    _generate_time_safe = None
-    _has_stable_extractable_node = False
-    _UuidCreate = None
-
-
 def _unix_getnode():
     """Get the hardware address on Unix using the _uuid extension module."""
     if _generate_time_safe and _has_stable_extractable_node:
@@ -774,7 +810,7 @@ def uuid3(namespace, name):
 
 def uuid4():
     """Generate a random UUID."""
-    int_uuid_4 = int.from_bytes(os.urandom(16))
+    int_uuid_4 = int.from_bytes(_gen_random(16))
     int_uuid_4 &= _RFC_4122_CLEARFLAGS_MASK
     int_uuid_4 |= _RFC_4122_VERSION_4_FLAGS
     return UUID._from_int(int_uuid_4)
@@ -834,7 +870,8 @@ _last_timestamp_v7 = None
 _last_counter_v7 = 0  # 42-bit counter
 
 def _uuid7_get_counter_and_tail():
-    rand = int.from_bytes(os.urandom(10))
+    rand = int.from_bytes(_gen_random(10), 'big')
+
     # 42-bit counter with MSB set to 0
     counter = (rand >> 32) & 0x1ff_ffff_ffff
     # 32-bit random data
@@ -863,7 +900,7 @@ def uuid7():
     global _last_timestamp_v7
     global _last_counter_v7
 
-    nanoseconds = time.time_ns()
+    nanoseconds = _gen_time()
     timestamp_ms = nanoseconds // 1_000_000
 
     if _last_timestamp_v7 is None or timestamp_ms > _last_timestamp_v7:
@@ -879,7 +916,7 @@ def uuid7():
             counter, tail = _uuid7_get_counter_and_tail()
         else:
             # 32-bit random data
-            tail = int.from_bytes(os.urandom(4))
+            tail = int.from_bytes(_gen_random(4))
 
     unix_ts_ms = timestamp_ms & 0xffff_ffff_ffff
     counter_msbs = counter >> 30
@@ -931,6 +968,21 @@ def uuid8(a=None, b=None, c=None):
     int_uuid_8 |= _RFC_4122_VERSION_8_FLAGS
     return UUID._from_int(int_uuid_8)
 
+
+_py_uuid4 = uuid4
+_py_uuid7 = uuid7
+_py_UUID = UUID
+try:
+    from _uuid import UUID, uuid4, uuid7
+    from _uuid import _install_c_hooks
+except ImportError:
+    _c_UUID = None
+    _c_uuid4 = None
+    _c_uuid7 = None
+else:
+    _c_UUID = UUID
+    _c_uuid4 = uuid4
+    _c_uuid7 = uuid7
 
 def main():
     """Run the uuid command line interface."""
