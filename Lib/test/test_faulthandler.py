@@ -719,6 +719,76 @@ class FaultHandlerTests(unittest.TestCase):
     def test_dump_traceback_later_twice(self):
         self.check_dump_traceback_later(loops=2)
 
+    def test_dump_traceback_max_threads(self):
+        # max_threads caps the dump and writes "...\n" when truncated.
+        # Spawn N worker threads, dump with cap < N, and verify the
+        # marker is present and exactly CAP thread headers are written.
+        code = dedent("""
+            import faulthandler
+            import sys
+            import threading
+
+            NTHREADS = 6
+            CAP = 3
+
+            ready = threading.Barrier(NTHREADS + 1)
+            stop = threading.Event()
+
+            def worker():
+                ready.wait()
+                stop.wait()
+
+            threads = [threading.Thread(target=worker) for _ in range(NTHREADS)]
+            for t in threads:
+                t.start()
+            ready.wait()
+            try:
+                faulthandler.dump_traceback(file=sys.stderr, max_threads=CAP)
+            finally:
+                stop.set()
+                for t in threads:
+                    t.join()
+        """).strip()
+        proc = script_helper.assert_python_ok('-c', code)
+        output = proc.err
+        # Truncation marker is written on its own line when the cap is hit.
+        self.assertIn(b"\n...\n", output)
+        # Cap of 3 means exactly 3 thread headers in the dump.
+        self.assertEqual(output.count(b"Thread 0x"), 3)
+
+    @skip_segfault_on_android
+    @unittest.skipIf(support.Py_GIL_DISABLED,
+                     "fatal-signal handler only dumps the current thread "
+                     "when the GIL is disabled")
+    def test_enable_max_threads(self):
+        # enable(max_threads=N) caps the thread dump produced when a
+        # fatal signal fires.
+        code = dedent("""
+            import faulthandler
+            import threading
+
+            NTHREADS = 6
+            CAP = 3
+
+            ready = threading.Barrier(NTHREADS + 1)
+            stop = threading.Event()
+
+            def worker():
+                ready.wait()
+                stop.wait()
+
+            for _ in range(NTHREADS):
+                threading.Thread(target=worker, daemon=True).start()
+            ready.wait()
+            faulthandler.enable(max_threads=CAP)
+            faulthandler._sigsegv()
+        """).strip()
+        output, exitcode = self.get_output(code)
+        output = '\n'.join(output)
+        # Cap of 3 means the dump is truncated with "..." on its own line.
+        self.assertIn("\n...\n", output)
+        self.assertNotEqual(exitcode, 0)
+
     @unittest.skipIf(not hasattr(faulthandler, "register"),
                      "need faulthandler.register")
     def check_register(self, filename=False, all_threads=False,
@@ -824,6 +894,46 @@ class FaultHandlerTests(unittest.TestCase):
     @support.skip_if_sanitizer("gh-129825: hangs under TSAN", thread=True)
     def test_register_chain(self):
         self.check_register(chain=True)
+
+    @unittest.skipIf(not hasattr(faulthandler, "register"),
+                     "need faulthandler.register")
+    def test_register_max_threads(self):
+        # register(max_threads=N) caps the thread dump produced when
+        # the registered signal fires.
+        code = dedent("""
+            import faulthandler
+            import signal
+            import threading
+
+            NTHREADS = 6
+            CAP = 3
+
+            ready = threading.Barrier(NTHREADS + 1)
+            stop = threading.Event()
+
+            def worker():
+                ready.wait()
+                stop.wait()
+
+            threads = [threading.Thread(target=worker) for _ in range(NTHREADS)]
+            for t in threads:
+                t.start()
+            ready.wait()
+            try:
+                faulthandler.register(signal.SIGUSR1, all_threads=True,
+                                      max_threads=CAP)
+                signal.raise_signal(signal.SIGUSR1)
+            finally:
+                stop.set()
+                for t in threads:
+                    t.join()
+        """).strip()
+        proc = script_helper.assert_python_ok('-c', code)
+        output = proc.err
+        # Cap of 3 means the dump is truncated with "..." on its own line.
+        self.assertIn(b"\n...\n", output)
+        # Cap of 3 means exactly 3 thread headers in the dump.
+        self.assertEqual(output.count(b"Thread 0x"), 3)
 
     @contextmanager
     def check_stderr_none(self):

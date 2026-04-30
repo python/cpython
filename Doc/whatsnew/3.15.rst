@@ -905,6 +905,15 @@ difflib
   (Contributed by Jiahao Li in :gh:`134580`.)
 
 
+faulthandler
+------------
+
+* Added the *max_threads* parameter in :func:`faulthandler.enable`,
+  :func:`faulthandler.dump_traceback`, :func:`faulthandler.dump_traceback_later`,
+  and :func:`faulthandler.register`.
+  (Contributed by Eric Froemling in :gh:`149085`.)
+
+
 functools
 ---------
 
