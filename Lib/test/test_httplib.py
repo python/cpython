@@ -2408,6 +2408,48 @@ class HTTPResponseTest(TestCase):
         header = self.resp.getheader('No-Such-Header',default=42)
         self.assertEqual(header, 42)
 
+class ReprTest(TestCase):
+
+    def test_http_connection_repr_default_port(self):
+        conn = client.HTTPConnection('example.com')
+        self.assertEqual(repr(conn), '<HTTPConnection example.com:80>')
+
+    def test_http_connection_repr_explicit_port(self):
+        conn = client.HTTPConnection('example.com', 8080)
+        self.assertEqual(repr(conn), '<HTTPConnection example.com:8080>')
+
+    @unittest.skipUnless(hasattr(client, 'HTTPSConnection'),
+                         'ssl support required')
+    def test_https_connection_repr(self):
+        conn = client.HTTPSConnection('example.com')
+        self.assertEqual(repr(conn), '<HTTPSConnection example.com:443>')
+
+    @unittest.skipUnless(hasattr(client, 'HTTPSConnection'),
+                         'ssl support required')
+    def test_https_connection_repr_explicit_port(self):
+        conn = client.HTTPSConnection('example.com', 8443)
+        self.assertEqual(repr(conn), '<HTTPSConnection example.com:8443>')
+
+    def test_http_response_repr_before_read(self):
+        sock = FakeSocket(b'HTTP/1.1 200 OK\r\n\r\n')
+        resp = client.HTTPResponse(sock)
+        self.assertEqual(repr(resp), '<HTTPResponse>')
+
+    def test_http_response_repr_after_read(self):
+        body = b'HTTP/1.1 200 OK\r\nContent-Length: 0\r\n\r\n'
+        sock = FakeSocket(body)
+        resp = client.HTTPResponse(sock)
+        resp.begin()
+        self.assertEqual(repr(resp), '<HTTPResponse [200 OK]>')
+
+    def test_http_response_repr_not_found(self):
+        body = b'HTTP/1.1 404 Not Found\r\nContent-Length: 0\r\n\r\n'
+        sock = FakeSocket(body)
+        resp = client.HTTPResponse(sock)
+        resp.begin()
+        self.assertEqual(repr(resp), '<HTTPResponse [404 Not Found]>')
+
+
 class TunnelTests(TestCase):
     def setUp(self):
         response_text = (
