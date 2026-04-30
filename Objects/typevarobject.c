@@ -1998,12 +1998,22 @@ typealias_module(PyObject *self, void *Py_UNUSED(closure))
     Py_RETURN_NONE;
 }
 
+static int
+typealias_set_module(PyObject *self, PyObject *value, void *Py_UNUSED(closure))
+{
+    typealiasobject *ta = typealiasobject_CAST(self);
+    PyObject *old_module = ta->module;
+    Py_XDECREF(old_module);
+    ta->module = Py_XNewRef(value);
+    return 0;
+}
+
 static PyGetSetDef typealias_getset[] = {
     {"__parameters__", typealias_parameters, NULL, NULL, NULL},
     {"__type_params__", typealias_type_params, NULL, NULL, NULL},
     {"__value__", typealias_value, NULL, NULL, NULL},
     {"evaluate_value", typealias_evaluate_value, NULL, NULL, NULL},
-    {"__module__", typealias_module, NULL, NULL, NULL},
+    {"__module__", typealias_module, typealias_set_module, NULL, NULL},
     {0}
 };
 
