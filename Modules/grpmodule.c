@@ -179,24 +179,29 @@ grp_getgrgid_impl(PyObject *module, PyObject *id)
     p = getgrgid(gid);
 #endif
     if (p == NULL) {
-#ifndef HAVE_GETGRGID_R
-        PyMutex_Unlock(&group_db_mutex);
-#endif
-        PyMem_RawFree(buf);
         if (nomem == 1) {
-            return PyErr_NoMemory();
+            retval = PyErr_NoMemory();
         }
-        PyObject *gid_obj = _PyLong_FromGid(gid);
-        if (gid_obj == NULL)
-            return NULL;
-        PyErr_Format(PyExc_KeyError, "getgrgid(): gid not found: %S", gid_obj);
-        Py_DECREF(gid_obj);
-        return NULL;
+        else if (errno == 0) {
+            PyObject *gid_obj = _PyLong_FromGid(gid);
+            if (gid_obj == NULL) {
+                retval = NULL;
+            }
+            else {
+                retval = PyErr_Format(PyExc_KeyError,
+                                      "getgrgid(): gid not found: %S", gid_obj);
+                Py_DECREF(gid_obj);
+            }
+        }
+        else {
+            retval = PyErr_SetFromErrno(PyExc_OSError);
+        }
     }
-    retval = mkgrent(module, p);
-#ifdef HAVE_GETGRGID_R
+    else {
+        retval = mkgrent(module, p);
+    }
     PyMem_RawFree(buf);
-#else
+#ifndef HAVE_GETGRGID_R
     PyMutex_Unlock(&group_db_mutex);
 #endif
     return retval;
@@ -268,18 +273,20 @@ grp_getgrnam_impl(PyObject *module, PyObject *name)
     p = getgrnam(name_chars);
 #endif
     if (p == NULL) {
-#ifndef HAVE_GETGRNAM_R
-        PyMutex_Unlock(&group_db_mutex);
-#endif
         if (nomem == 1) {
-            PyErr_NoMemory();
+            retval = PyErr_NoMemory();
+        }
+        else if (errno == 0) {
+            retval = PyErr_Format(PyExc_KeyError,
+                                  "getgrnam(): name not found: %R", name);
         }
         else {
-            PyErr_Format(PyExc_KeyError, "getgrnam(): name not found: %R", name);
+            retval = PyErr_SetFromErrno(PyExc_OSError);
         }
-        goto out;
     }
-    retval = mkgrent(module, p);
+    else {
+        retval = mkgrent(module, p);
+    }
 #ifndef HAVE_GETGRNAM_R
     PyMutex_Unlock(&group_db_mutex);
 #endif
