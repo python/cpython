@@ -2458,7 +2458,7 @@ class TarFile(object):
                     continue
                 dirpath = os.path.join(path, tarinfo.name)
                 try:
-                    lstat = os.lstat(dirpath)
+                    lstat = os.lstat(dirpath.replace(r'/', os.sep))
                 except FileNotFoundError:
                     self._log_no_directory_fixup(tarinfo, 'missing')
                     continue
