@@ -1,4 +1,4 @@
-# Copyright 2001-2021 by Vinay Sajip. All Rights Reserved.
+# Copyright 2001-2026 by Vinay Sajip. All Rights Reserved.
 #
 # Permission to use, copy, modify, and distribute this software and its
 # documentation for any purpose and without fee is hereby granted,
@@ -18,7 +18,7 @@
 Additional handlers for the logging package for Python. The core package is
 based on PEP 282 and comments thereto in comp.lang.python.
 
-Copyright (C) 2001-2021 Vinay Sajip. All Rights Reserved.
+Copyright (C) 2001-2026 Vinay Sajip. All Rights Reserved.
 
 To use, simply 'import logging.handlers' and log away!
 """
@@ -540,7 +540,10 @@ class WatchedFileHandler(logging.FileHandler):
         If underlying file has changed, reopen the file before emitting the
         record to it.
         """
-        self.reopenIfNeeded()
+        try:
+            self.reopenIfNeeded()
+        except Exception:
+            self.handleError(record)
         logging.FileHandler.emit(self, record)
 
 

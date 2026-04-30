@@ -1,4 +1,4 @@
-# Copyright 2001-2022 by Vinay Sajip. All Rights Reserved.
+# Copyright 2001-2026 by Vinay Sajip. All Rights Reserved.
 #
 # Permission to use, copy, modify, and distribute this software and its
 # documentation for any purpose and without fee is hereby granted,
@@ -16,7 +16,7 @@
 
 """Test harness for the logging module. Run all tests.
 
-Copyright (C) 2001-2022 Vinay Sajip. All Rights Reserved.
+Copyright (C) 2001-2026 Vinay Sajip. All Rights Reserved.
 """
 import logging
 import logging.handlers
@@ -814,6 +814,37 @@ class HandlerTest(BaseTest):
 
             support.wait_process(pid, exitcode=0)
 
+    @unittest.skipIf(support.is_wasi or support.MS_WINDOWS, "Platform does not support symlinks.")
+    def test_135683(self):
+        # See gh-135683
+
+        def tester():
+            with tempfile.TemporaryDirectory(prefix='test_logging_') as tmp:
+                tmp_dir = pathlib.Path(tmp)
+                dir_path = tmp_dir / 'dir'
+                link_path = tmp_dir / 'link'
+                dir_path.mkdir()
+                link_path.symlink_to(dir_path)
+                r = logging.makeLogRecord({'msg': 'Test'})
+                h = logging.handlers.WatchedFileHandler(link_path / 'file.log')
+                m = Mock()
+                h.handleError = m
+                try:
+                    h.handle(r)
+                    m.assert_not_called()
+                    shutil.rmtree(dir_path)
+                    h.handle(r)
+                    m.assert_called()
+                finally:
+                    h.close()
+
+        old_raiseExceptions = logging.raiseExceptions
+        try:
+            for test_value in (False, True):
+                logging.raiseExceptions = test_value
+                tester()
+        finally:
+            logging.raiseExceptions = old_raiseExceptions
 
 class BadStream(object):
     def write(self, data):
@@ -4453,7 +4484,6 @@ class QueueHandlerTest(BaseTest):
 
 if hasattr(logging.handlers, 'QueueListener'):
     import multiprocessing
-    from unittest.mock import patch
 
     @skip_if_tsan_fork
     @threading_helper.requires_working_threading()
