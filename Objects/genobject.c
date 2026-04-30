@@ -2672,6 +2672,49 @@ async_gen_yield_from_iternext(PyObject *op)
     return wrapped;
 }
 
+static PySendResult
+async_gen_yield_from_send(PyObject *op, PyObject *arg, PyObject **presult)
+{
+    assert(op != NULL);
+    _PyAsyncGenYieldFrom *self = _PyAsyncGenYieldFrom_CAST(op);
+    return PyIter_Send(self->agyf_iterator, arg, presult);
+}
+
+static PyAsyncMethods async_gen_yield_from_as_async = {
+    .am_send = async_gen_yield_from_send
+};
+
+#define AGYF_PROXY_METHOD(name, result_value)                                            \
+    static PyObject *                                                                   \
+    async_gen_yield_from_ ## name ## _method(PyObject *op, PyObject *args, PyObject *keywords)  \
+    {                                                                                   \
+        assert(op != NULL);                                                             \
+        _PyAsyncGenYieldFrom *self = _PyAsyncGenYieldFrom_CAST(op);                     \
+        PyObject *method = PyObject_GetAttr(self->agyf_iterator, &_Py_ID(name));        \
+        if (method == NULL) {                                                           \
+            return NULL;                                                                \
+        }                                                                               \
+        PyObject *result = PyObject_Call(method, args, keywords);                       \
+        Py_DECREF(method);                                                              \
+        if (result == NULL) { \
+            return NULL; \
+        } \
+        return result_value;                                                                  \
+    }
+
+
+
+AGYF_PROXY_METHOD(send, _PyAsyncGenValueWrapperNew(_PyThreadState_GET(), result))
+AGYF_PROXY_METHOD(throw, result)
+AGYF_PROXY_METHOD(close, result)
+
+static PyMethodDef async_gen_yield_from_methods[] = {
+    {"send", (PyCFunction)async_gen_yield_from_send_method, METH_VARARGS | METH_KEYWORDS},
+    {"throw", (PyCFunction)async_gen_yield_from_throw_method, METH_VARARGS | METH_KEYWORDS},
+    {"close", (PyCFunction)async_gen_yield_from_close_method, METH_VARARGS | METH_KEYWORDS},
+    {0}
+};
+
 PyTypeObject _PyAsyncGenYieldFrom_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     "async_generator_yield_from",               /* tp_name */
@@ -2682,7 +2725,7 @@ PyTypeObject _PyAsyncGenYieldFrom_Type = {
     0,                                          /* tp_vectorcall_offset */
     0,                                          /* tp_getattr */
     0,                                          /* tp_setattr */
-    0,                                          /* tp_as_async */
+    &async_gen_yield_from_as_async,             /* tp_as_async */
     0,                                          /* tp_repr */
     0,                                          /* tp_as_number */
     0,                                          /* tp_as_sequence */
@@ -2701,7 +2744,7 @@ PyTypeObject _PyAsyncGenYieldFrom_Type = {
     0,                                          /* tp_weaklistoffset */
     PyObject_SelfIter,                          /* tp_iter */
     async_gen_yield_from_iternext,              /* tp_iternext */
-    0,                                          /* tp_methods */
+    async_gen_yield_from_methods,               /* tp_methods */
     0,                                          /* tp_members */
     0,                                          /* tp_getset */
     0,                                          /* tp_base */
