@@ -781,13 +781,8 @@ than raw I/O does.
 
    .. method:: peek(size=0, /)
 
-      Return bytes from the current position onwards without advancing the position.
-      At least one byte of data is returned if not at EOF.
-      Return an empty :class:`bytes` object at EOF.
-      At most one single read on the underlying raw stream is done to satisfy the call.
-      The *size* argument is ignored.
-      The number of read bytes depends on the buffer size and the current position in the internal buffer.
-      If the underlying raw
+      Return bytes from the stream without advancing the position. The number of
+      bytes returned may be less or more than requested. If the underlying raw
       stream is non-blocking and the operation would block, returns empty bytes.
 
    .. method:: read(size=-1, /)
