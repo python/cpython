@@ -145,7 +145,7 @@ Convenience macros
    others set no flags.
 
    Note that these macros use *designated initializers*, a C language feature
-   that C++ added in the 2000 version of the standard.
+   that C++ added in the 2020 version of the standard.
    If your code needs to be compatible with C++11 or older,
    use :c:macro:`PySlot_PTR` instead.
 
@@ -186,7 +186,7 @@ Convenience macros
 
    Convenience macros for use in C++11-compatible code.
    This version of C++ does not allow setting arbitrary union members in
-   literals, these macros set the :c:macro:`PySlot_INTPTR` flag and cast
+   literals; instead, these macros set the :c:macro:`PySlot_INTPTR` flag and cast
    the value to ``(void*)``.
 
    Defined as::
