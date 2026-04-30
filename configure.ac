@@ -2255,7 +2255,7 @@ then
      -reorder-blocks=ext-tsp
      -reorder-functions=cdsort
      -split-functions
-     -icf=1
+     -icf=0
      -inline-all
      -split-eh
      -reorder-functions-use-hot-size
