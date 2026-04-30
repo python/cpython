@@ -303,11 +303,10 @@ Attaching/detaching thread states
 
    Get an attached thread state for the interpreter referenced by *view*.
 
-   On success, the interpreter referenced by *view* will be implicitly guarded;
-   the guard will be released upon the corresponding :c:func:`PyThreadState_Release`
-   call.
-   Otherwise, the behavior and return value are the same as for
-   :c:func:`PyThreadState_Ensure`.
+   The behavior and return value are the same as for :c:func:`PyThreadState_Ensure`;
+   additionally, if the function succeeds, the interpreter referenced by *view* will
+   be implicitly guarded. The guard will be released upon the corresponding
+   :c:func:`PyThreadState_Release` call.
 
 
 .. c:function:: void PyThreadState_Release(PyThreadState *tstate)
