@@ -17,7 +17,7 @@
 
 #include "osdefs.h"               // SEP
 #include "clinic/exceptions.c.h"
-
+#include "pycore_critical_section.h"
 
 /*[clinic input]
 class BaseException "PyBaseExceptionObject *" "&PyExc_BaseException"
@@ -243,6 +243,8 @@ BaseException___setstate___impl(PyBaseExceptionObject *self, PyObject *state)
             PyErr_SetString(PyExc_TypeError, "state is not a dictionary");
             return NULL;
         }
+        PyCriticalSection cs;
+        PyCriticalSection_Begin(&cs, state);
         while (PyDict_Next(state, &i, &d_key, &d_value)) {
             Py_INCREF(d_key);
             Py_INCREF(d_value);
@@ -250,9 +252,11 @@ BaseException___setstate___impl(PyBaseExceptionObject *self, PyObject *state)
             Py_DECREF(d_value);
             Py_DECREF(d_key);
             if (res < 0) {
+                PyCriticalSection_End(&cs);
                 return NULL;
             }
         }
+        PyCriticalSection_End(&cs);
     }
     Py_RETURN_NONE;
 }
