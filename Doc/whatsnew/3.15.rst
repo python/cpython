@@ -963,6 +963,14 @@ inspect
   for :func:`~inspect.getdoc`.
   (Contributed by Serhiy Storchaka in :gh:`132686`.)
 
+
+io
+--
+
+* Add :meth:`io.BytesIO.peek`.
+  (Contributed by Marcel Martin in :gh:`90533`.)
+
+
 json
 ----
 

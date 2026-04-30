@@ -420,8 +420,9 @@ _io_BytesIO_tell_impl(bytesio *self)
     return PyLong_FromSsize_t(self->pos);
 }
 
+// Read without advancing position
 static PyObject *
-read_bytes_lock_held(bytesio *self, Py_ssize_t size)
+peek_bytes_lock_held(bytesio *self, Py_ssize_t size)
 {
     _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(self);
 
@@ -432,7 +433,6 @@ read_bytes_lock_held(bytesio *self, Py_ssize_t size)
     if (size > 1 &&
         self->pos == 0 && size == PyBytes_GET_SIZE(self->buf) &&
         FT_ATOMIC_LOAD_SSIZE_RELAXED(self->exports) == 0) {
-        self->pos += size;
         return Py_NewRef(self->buf);
     }
 
@@ -444,8 +444,18 @@ read_bytes_lock_held(bytesio *self, Py_ssize_t size)
     }
 
     output = PyBytes_AS_STRING(self->buf) + self->pos;
-    self->pos += size;
     return PyBytes_FromStringAndSize(output, size);
+}
+
+static PyObject *
+read_bytes_lock_held(bytesio *self, Py_ssize_t size)
+{
+    PyObject *bytes = peek_bytes_lock_held(self, size);
+    if (bytes != NULL) {
+        assert(PyBytes_GET_SIZE(bytes) == size);
+        self->pos += size;
+    }
+    return bytes;
 }
 
 /*[clinic input]
@@ -498,6 +508,40 @@ _io_BytesIO_read1_impl(bytesio *self, Py_ssize_t size)
 {
     return _io_BytesIO_read_impl(self, size);
 }
+
+
+/*[clinic input]
+@critical_section
+_io.BytesIO.peek
+    size: Py_ssize_t = 0
+    /
+
+Return bytes from the stream without advancing the position.
+
+Return an empty bytes object at EOF.
+[clinic start generated code]*/
+
+static PyObject *
+_io_BytesIO_peek_impl(bytesio *self, Py_ssize_t size)
+/*[clinic end generated code: output=fa4d8ce28b35db9b input=2ce74234b10aec3e]*/
+{
+    CHECK_CLOSED(self);
+
+    /* adjust invalid sizes */
+    Py_ssize_t n = self->string_size - self->pos;
+    if (n > DEFAULT_BUFFER_SIZE) {
+        n = DEFAULT_BUFFER_SIZE;
+    }
+    if (size < 1 || size > n) {
+        size = n;
+        /* n can be negative after truncate() or seek() */
+        if (size < 0) {
+            size = 0;
+        }
+    }
+    return peek_bytes_lock_held(self, size);
+}
+
 
 /*[clinic input]
 @critical_section
@@ -1135,6 +1179,7 @@ static struct PyMethodDef bytesio_methods[] = {
     _IO_BYTESIO_READLINE_METHODDEF
     _IO_BYTESIO_READLINES_METHODDEF
     _IO_BYTESIO_READ_METHODDEF
+    _IO_BYTESIO_PEEK_METHODDEF
     _IO_BYTESIO_GETBUFFER_METHODDEF
     _IO_BYTESIO_GETVALUE_METHODDEF
     _IO_BYTESIO_SEEK_METHODDEF
