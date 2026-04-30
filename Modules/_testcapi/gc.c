@@ -228,7 +228,7 @@ static PyObject *
 obj_extra_data_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
     size_t extra_size = sizeof(PyObject *);
-    PyObject *obj = PyUnstable_Object_GC_NewWithExtraData(type, extra_size);
+    PyObject *obj = PyObject_GC_NewWithExtraData(type, extra_size);
     if (obj == NULL) {
         return PyErr_NoMemory();
     }
