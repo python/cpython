@@ -82,6 +82,7 @@
     <TestModules Include="_ctypes_test;_testbuffer;_testcapi;_testlimitedcapi;_testinternalcapi;_testembed;_testimportmultiple;_testmultiphase;_testsinglephase;_testconsole;_testclinic;_testclinic_limited" />
     <TestModules Include="xxlimited" Condition="'$(Configuration)' == 'Release'" />
     <TestModules Include="xxlimited_35" Condition="'$(Configuration)' == 'Release'" />
+    <TestModules Include="xxlimited_3_13" Condition="'$(Configuration)' == 'Release'" />
     <Projects Include="@(TestModules->'%(Identity).vcxproj')" Condition="$(IncludeTests)">
       <!-- Disable parallel build for test modules -->
       <BuildInParallel>false</BuildInParallel>
