@@ -25,6 +25,7 @@ import sys
 from urllib.error import URLError
 import urllib.request
 from test.support import os_helper
+from test import support
 from test.support import findfile, check__all__
 from test.support.os_helper import FakePath, TESTFN
 
@@ -1054,6 +1055,32 @@ class ExpatReaderTest(XmlTestBase):
 
         self.assertEqual(result.getvalue(), start +
                          b"<doc></doc>")
+
+    @support.subTests("exc_type", [KeyboardInterrupt, SystemExit, ValueError])
+    def test_external_entity_parser_with_exceptions(self, exc_type):
+        # gh-148427: BaseException subclasses must propagate, not be swallowed
+        def raise_on_entity(name, attrs):
+            if name == 'entity':
+                raise exc_type("test")
+
+        handler = mock.Mock()
+        handler.startElement = raise_on_entity
+
+        parser = create_parser()
+        parser.setFeature(feature_external_ges, True)
+        parser.setEntityResolver(self.TestEntityResolver())
+        parser.setContentHandler(handler)
+
+        parser.feed('<!DOCTYPE doc [\n')
+        parser.feed('  <!ENTITY test SYSTEM "whatever">\n')
+        parser.feed(']>\n')
+        trigger = '<doc>&test;</doc>'
+
+        if issubclass(exc_type, Exception):
+            self.assertRaises(SAXParseException, parser.feed, trigger)
+        else:
+            with self.assertRaisesRegex(exc_type, "test"):
+                parser.feed(trigger)
 
     # ===== Attributes support
 
