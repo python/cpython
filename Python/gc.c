@@ -1405,7 +1405,7 @@ add_stats(GCState *gcstate, int gen, struct gc_generation_stats *stats)
     memcpy(cur_stats, prev_stats, sizeof(struct gc_generation_stats));
 
     cur_stats->ts_start = stats->ts_start;
-    cur_stats->ts_stop = stats->ts_stop;
+    cur_stats->heap_size = stats->heap_size;
 
     cur_stats->collections += 1;
     cur_stats->collected += stats->collected;
@@ -1413,6 +1413,7 @@ add_stats(GCState *gcstate, int gen, struct gc_generation_stats *stats)
     cur_stats->candidates += stats->candidates;
 
     cur_stats->duration += stats->duration;
+    cur_stats->ts_stop = stats->ts_stop;
 }
 
 /* This is the main function.  Read this to understand how the
@@ -1465,6 +1466,7 @@ gc_collect_main(PyThreadState *tstate, int generation, _PyGC_Reason reason)
         invoke_gc_callback(tstate, "start", generation, &stats);
     }
 
+    stats.heap_size = gcstate->heap_size;
     // ignore error: don't interrupt the GC if reading the clock fails
     (void)PyTime_PerfCounterRaw(&stats.ts_start);
     if (gcstate->debug & _PyGC_DEBUG_STATS) {

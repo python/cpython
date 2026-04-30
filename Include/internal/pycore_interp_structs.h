@@ -181,6 +181,8 @@ struct gc_generation {
 struct gc_generation_stats {
     PyTime_t ts_start;
     PyTime_t ts_stop;
+    /* heap_size on the start of the collection */
+    Py_ssize_t heap_size;
     /* total number of collections */
     Py_ssize_t collections;
     /* total number of collected objects */
