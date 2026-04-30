@@ -1892,6 +1892,7 @@ class CodecsModuleTest(unittest.TestCase):
         self.assertIsNot(dup, orig)
         self.assertEqual(dup, orig)
         self.assertTrue(orig._is_text_encoding)
+        self.assertFalse(orig._is_single_byte)
         self.assertEqual(dup.encode, orig.encode)
         self.assertEqual(dup.name, orig.name)
         self.assertEqual(dup.incrementalencoder, orig.incrementalencoder)
@@ -1912,6 +1913,7 @@ class CodecsModuleTest(unittest.TestCase):
         self.assertIsNot(dup, orig)
         self.assertEqual(dup, orig)
         self.assertTrue(orig._is_text_encoding)
+        self.assertFalse(orig._is_single_byte)
         self.assertEqual(dup.encode, orig.encode)
         self.assertEqual(dup.name, orig.name)
         self.assertEqual(dup.incrementalencoder, orig.incrementalencoder)
@@ -1940,6 +1942,7 @@ class CodecsModuleTest(unittest.TestCase):
                      unpickled_codec_info.incrementalencoder
                 )
                 self.assertTrue(unpickled_codec_info._is_text_encoding)
+                self.assertFalse(unpickled_codec_info._is_single_byte)
 
         # Test a CodecInfo with _is_text_encoding equal to false.
         codec_info = codecs.lookup('base64')

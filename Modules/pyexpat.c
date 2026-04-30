@@ -4,6 +4,7 @@
 
 #include "Python.h"
 #include "pycore_ceval.h"         // _Py_EnterRecursiveCall()
+#include "pycore_codecs.h"        // _PyCodec_LookupTextEncoding()
 #include "pycore_import.h"        // _PyImport_SetModule()
 #include "pycore_pyhash.h"        // _Py_HashSecret
 #include "pycore_traceback.h"     // _PyTraceback_Add()
@@ -1464,6 +1465,31 @@ PyUnknownEncodingHandler(void *encodingHandlerData,
 
     if (PyErr_Occurred())
         return XML_STATUS_ERROR;
+
+    PyObject *codec = _PyCodec_LookupTextEncoding(name, NULL);
+    if (codec == NULL) {
+        return XML_STATUS_ERROR;
+    }
+    if (!PyTuple_CheckExact(codec)) {
+        PyObject *attr;
+        if (PyObject_GetOptionalAttrString(codec, "_is_single_byte", &attr) < 0) {
+            Py_DECREF(codec);
+            return XML_STATUS_ERROR;
+        }
+        if (attr != NULL) {
+            int is_single_byte = PyObject_IsTrue(attr);
+            Py_DECREF(attr);
+            if (is_single_byte <= 0) {
+                Py_DECREF(codec);
+                if (is_single_byte == 0) {
+                    PyErr_SetString(PyExc_ValueError,
+                                    "multi-byte encodings are not supported");
+                }
+                return XML_STATUS_ERROR;
+            }
+        }
+    }
+    Py_DECREF(codec);
 
     u = PyUnicode_Decode((const char*) template_buffer, 256, name, "replace");
     if (u == NULL) {

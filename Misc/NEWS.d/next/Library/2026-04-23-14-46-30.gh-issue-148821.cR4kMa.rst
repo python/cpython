@@ -1,0 +1,4 @@
+The :mod:`XML parser <xml.parsers.expat>` now raises :exc:`ValueError` for known
+unsupported multi-byte encodings such us "UTF8", "ISO-2022-JP" or
+"raw-unicode-escape" instead of failing later, when encounter non-ASCII
+data.

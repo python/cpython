@@ -93,7 +93,8 @@ class CodecInfo(tuple):
 
     def __new__(cls, encode, decode, streamreader=None, streamwriter=None,
         incrementalencoder=None, incrementaldecoder=None, name=None,
-        *, _is_text_encoding=None):
+        *, _is_text_encoding=None,
+        _is_single_byte=None):
         self = tuple.__new__(cls, (encode, decode, streamreader, streamwriter))
         self.name = name
         self.encode = encode
@@ -104,6 +105,8 @@ class CodecInfo(tuple):
         self.streamreader = streamreader
         if _is_text_encoding is not None:
             self._is_text_encoding = _is_text_encoding
+        if _is_single_byte is not None:
+            self._is_single_byte = _is_single_byte
         return self
 
     def __repr__(self):
