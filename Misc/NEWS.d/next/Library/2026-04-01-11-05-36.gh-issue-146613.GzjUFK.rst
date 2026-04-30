@@ -1,2 +1,0 @@
-:mod:`itertools`: Fix a crash in :func:`itertools.groupby` when
-the grouper iterator is concurrently mutated.

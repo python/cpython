@@ -69,6 +69,8 @@ Summary -- Release highlights
   <whatsnew315-lazy-imports>`
 * :pep:`814`: :ref:`Add frozendict built-in type
   <whatsnew315-frozendict>`
+* :pep:`661`: :ref:`Add sentinel built-in type
+  <whatsnew315-sentinel>`
 * :pep:`799`: :ref:`A dedicated profiling package for organizing Python
   profiling tools <whatsnew315-profiling-package>`
 * :pep:`799`: :ref:`Tachyon: High frequency statistical sampling profiler
@@ -80,8 +82,10 @@ Summary -- Release highlights
 * :pep:`728`: ``TypedDict`` with typed extra items
 * :pep:`747`: :ref:`Annotating type forms with TypeForm
   <whatsnew315-typeform>`
+* :pep:`800`: Disjoint bases in the type system
 * :pep:`782`: :ref:`A new PyBytesWriter C API to create a Python bytes object
   <whatsnew315-pybyteswriter>`
+* :pep:`803`: :ref:`Stable ABI for Free-Threaded Builds <whatsnew315-abi3t>`
 * :ref:`The JIT compiler has been significantly upgraded <whatsnew315-jit>`
 * :ref:`Improved error messages <whatsnew315-improved-error-messages>`
 * :ref:`The official Windows 64-bit binaries now use the tail-calling interpreter
@@ -140,7 +144,7 @@ In the case where loading a lazily imported module fails (for example, if
 the module does not exist), Python raises the exception at the point of
 first use rather than at import time. The associated traceback includes both
 the location where the name was accessed and the original import statement,
-making it straightforward to diagnose & debug the failure.
+making it straightforward to diagnose and debug the failure.
 
 For cases where you want to enable lazy loading globally without modifying
 source code, Python provides the :option:`-X lazy_imports <-X>` command-line
@@ -181,6 +185,18 @@ function, class body, or ``try``/``except``/``finally`` block raises a
 :exc:`SyntaxError`. Neither star imports nor future imports can be lazy
 (``lazy from module import *`` and ``lazy from __future__ import ...`` both
 raise :exc:`SyntaxError`).
+
+For code that cannot use the ``lazy`` keyword directly (for example, when
+supporting Python versions older than 3.15 while still using lazy
+imports on 3.15+), a module can define
+:attr:`~module.__lazy_modules__` as a container of fully qualified module
+name strings.  Regular ``import`` statements for those modules are then treated
+as lazy, with the same semantics as the ``lazy`` keyword::
+
+   __lazy_modules__ = ["json", "pathlib"]
+
+   import json     # lazy
+   import os       # still eager
 
 .. seealso:: :pep:`810` for the full specification and rationale.
 
@@ -233,6 +249,20 @@ to accept also other mapping types such as :class:`~types.MappingProxyType`.
 (Contributed by Victor Stinner and Donghee Na in :gh:`141510`.)
 
 
+.. _whatsnew315-sentinel:
+
+:pep:`661`: Add sentinel built-in type
+--------------------------------------
+
+A new :class:`sentinel` type is added to the :mod:`builtins` module for
+creating unique sentinel values with a concise representation.  Sentinel
+objects preserve identity when copied, support use in type expressions with
+the ``|`` operator, and can be pickled when they are importable by module and
+name.
+
+(PEP by Tal Einat; contributed by Jelle Zijlstra in :gh:`148829`.)
+
+
 .. _whatsnew315-profiling-package:
 
 :pep:`799`: A dedicated profiling package
@@ -258,7 +288,7 @@ The :mod:`profile` module is deprecated and will be removed in Python 3.17.
 Tachyon: High frequency statistical sampling profiler
 -----------------------------------------------------
 
-.. image:: ../library/tachyon-logo.png
+.. image:: ../../Lib/profiling/sampling/_assets/tachyon-logo.png
    :alt: Tachyon profiler logo
    :align: center
    :width: 200px
@@ -381,6 +411,41 @@ agen() for x in a)``.
 
 (Contributed by Adam Hartz in :gh:`143055`.)
 
+.. _whatsnew315-abi3t:
+
+:pep:`803`: ``abi3t`` -- Stable ABI for Free-Threaded Builds
+------------------------------------------------------------
+
+C extensions that target the :ref:`Stable ABI <stable-abi>` can now be
+compiled for the new *Stable ABI for Free-Threaded Builds* (also known
+as ``abi3t``), which makes them compatible with
+:term:`free-threaded builds <free-threaded build>` of CPython.
+This usually requires some non-trivial changes to the source code;
+specifically:
+
+- Switching to API introduced in :pep:`697` (Python 3.12), such as
+  negative :c:member:`~PyType_Spec.basicsize` and
+  :c:func:`PyObject_GetTypeData`, rather than making :c:type:`PyObject`
+  part of the instance struct; and
+- Switching from a ``PyInit_`` function to a new export hook,
+  :c:func:`PyModExport_* <PyModExport_modulename>`, introduced for this
+  purpose in :pep:`793`.
+
+Note that Stable ABI does not offer all the functionality that CPython
+has to offer.
+Extensions that cannot switch to ``abi3t`` should continue to build for
+the existing Stable ABI (``abi3``) and the version-specific ABI for
+free-threading (``cp315t``) separately.
+
+Stable ABI for Free-Threaded Builds should typically
+be selected in a build tool (such as, for example, Setuptools, meson-python,
+scikit-build-core, or Maturin).
+At the time of writing, these tools did **not** support ``abi3t``.
+If this is the case for your tool, compile for ``cp315t`` separately.
+If not using a build tool -- or when writing such a tool -- you can select
+``abi3t`` by setting the macro :c:macro:`!Py_TARGET_ABI3T` as discussed
+in :ref:`abi3-compiling`.
+
 
 .. _whatsnew315-improved-error-messages:
 
@@ -414,13 +479,35 @@ Improved error messages
 
   Running this code now produces a clearer suggestion:
 
-  .. code-block:: pycon
+  .. code-block:: pytb
 
      Traceback (most recent call last):
-     File "/home/pablogsal/github/python/main/lel.py", line 42, in <module>
-        print(container.area)
-              ^^^^^^^^^^^^^^
+       File "/home/pablogsal/github/python/main/lel.py", line 42, in <module>
+         print(container.area)
+               ^^^^^^^^^^^^^^
      AttributeError: 'Container' object has no attribute 'area'. Did you mean '.inner.area' instead of '.area'?
+
+* The interpreter now tries to provide a suggestion when
+  :func:`delattr` fails due to a missing attribute.
+  When an attribute name that closely resembles an existing attribute is used,
+  the interpreter will suggest the correct attribute name in the error message.
+  For example:
+
+  .. doctest::
+
+     >>> class A:
+     ...     pass
+     >>> a = A()
+     >>> a.abcde = 1
+     >>> del a.abcdf  # doctest: +ELLIPSIS
+     Traceback (most recent call last):
+     ...
+     AttributeError: 'A' object has no attribute 'abcdf'. Did you mean: 'abcde'?
+
+  (Contributed by Nikita Sobolev and Pranjal Prajapati in :gh:`136588`.)
+
+* Several error messages incorrectly using the term "argument" have been corrected.
+  (Contributed by Stan Ulbrych in :gh:`133382`.)
 
 
 Other language changes
@@ -452,28 +539,6 @@ Other language changes
   .. _Unicode: https://home.unicode.org/
 
   (Contributed by Adam Turner in :gh:`133711`; PEP 686 written by Inada Naoki.)
-
-* Several error messages incorrectly using the term "argument" have been corrected.
-  (Contributed by Stan Ulbrych in :gh:`133382`.)
-
-* The interpreter now tries to provide a suggestion when
-  :func:`delattr` fails due to a missing attribute.
-  When an attribute name that closely resembles an existing attribute is used,
-  the interpreter will suggest the correct attribute name in the error message.
-  For example:
-
-  .. doctest::
-
-     >>> class A:
-     ...     pass
-     >>> a = A()
-     >>> a.abcde = 1
-     >>> del a.abcdf  # doctest: +ELLIPSIS
-     Traceback (most recent call last):
-     ...
-     AttributeError: 'A' object has no attribute 'abcdf'. Did you mean: 'abcde'?
-
-  (Contributed by Nikita Sobolev and Pranjal Prajapati in :gh:`136588`.)
 
 * Unraisable exceptions are now highlighted with color by default. This can be
   controlled by :ref:`environment variables <using-on-controlling-color>`.
@@ -608,6 +673,17 @@ Other language changes
 * Allow the *count* argument of :meth:`bytes.replace` to be a keyword.
   (Contributed by Stan Ulbrych in :gh:`147856`.)
 
+* Unary plus is now accepted in :keyword:`match` literal patterns, mirroring
+  the existing support for unary minus.
+  (Contributed by Bartosz Sławecki in :gh:`145239`.)
+
+* The import system now acquires per-module locks in hierarchical order
+  (parent packages before their submodules). This fixes a long-standing
+  deadlock where one thread importing ``pkg.sub`` and another importing
+  ``pkg.sub.mod`` could each block the other when ``pkg/sub/__init__.py``
+  imports ``pkg.sub.mod``.
+  (Contributed by Gregory P. Smith in :gh:`83065`.)
+
 
 New modules
 ===========
@@ -651,6 +727,31 @@ array
   (Contributed by Sergey B Kirpichev in :gh:`146238`.)
 
 
+ast
+---
+
+* Add *color* parameter to :func:`~ast.dump`.
+  If ``True``, the returned string is syntax highlighted using ANSI escape
+  sequences.
+  If ``False`` (the default), colored output is always disabled.
+  (Contributed by Stan Ulbrych in :gh:`148981`.)
+
+* The :ref:`command-line <ast-cli>` output is now syntax highlighted by default.
+  This can be :ref:`controlled using environment variables <using-on-controlling-color>`.
+  (Contributed by Stan Ulbrych in :gh:`148981`.)
+
+
+asyncio
+-------
+
+* Added :meth:`TaskGroup.cancel <asyncio.TaskGroup.cancel>` to allow early
+  termination of a task group, for instance, when the goal of the tasks has
+  been achieved or their services are no longer needed.
+  Previously this would involve unintuitive boilerplate such as an extra task
+  raising a custom exception which is then suppressed as it exits the task group.
+  (Contributed by John Belmonte in :gh:`127214`.)
+
+
 base64
 ------
 
@@ -671,10 +772,19 @@ base64
   (Contributed by Serhiy Storchaka in :gh:`143214` and :gh:`146431`.)
 
 * Added the *ignorechars* parameter in :func:`~base64.b16decode`,
-  :func:`~base64.b32decode`,  :func:`~base64.b32hexdecode`,
+  :func:`~base64.b32decode`, :func:`~base64.b32hexdecode`,
   :func:`~base64.b64decode`, :func:`~base64.b85decode`, and
   :func:`~base64.z85decode`.
   (Contributed by Serhiy Storchaka in :gh:`144001` and :gh:`146431`.)
+
+* Added the *canonical* parameter in
+  :func:`~base64.b32decode`, :func:`~base64.b32hexdecode`,
+  :func:`~base64.b64decode`, :func:`~base64.urlsafe_b64decode`,
+  :func:`~base64.a85decode`, :func:`~base64.b85decode`, and
+  :func:`~base64.z85decode`,
+  to reject encodings with non-zero padding bits or other non-canonical
+  forms.
+  (Contributed by Gregory P. Smith in :gh:`146311`.)
 
 
 binascii
@@ -708,6 +818,10 @@ binascii
 * Added the *ignorechars* parameter in :func:`~binascii.a2b_hex`,
   :func:`~binascii.unhexlify`, and :func:`~binascii.a2b_base64`.
   (Contributed by Serhiy Storchaka in :gh:`144001` and :gh:`146431`.)
+
+* Added the *canonical* parameter in :func:`~binascii.a2b_base64`,
+  to reject encodings with non-zero padding bits.
+  (Contributed by Gregory P. Smith in :gh:`146311`.)
 
 
 calendar
@@ -749,6 +863,15 @@ contextlib
   :class:`~contextlib.ExitStack` and :class:`contextlib.AsyncExitStack`, for
   consistency with the :keyword:`with` and :keyword:`async with` statements.
   (Contributed by Serhiy Storchaka in :gh:`144386`.)
+
+* :class:`~contextlib.ContextDecorator` and
+  :class:`~contextlib.AsyncContextDecorator` (and therefore
+  :func:`~contextlib.contextmanager` and :func:`~contextlib.asynccontextmanager`
+  used as decorators) now detect generator functions, coroutine functions, and
+  asynchronous generator functions and keep the context manager open across
+  iteration or await.  Previously the context manager exited as soon as the
+  generator or coroutine object was created.
+  (Contributed by Alex Grönholm & Gregory P. Smith in :gh:`125862`.)
 
 
 dataclasses
@@ -822,6 +945,17 @@ http.cookies
   (Contributed by Nick Burns and Senthil Kumaran in :gh:`92936`.)
 
 
+http.server
+-----------
+
+* The logging of :mod:`~http.server.BaseHTTPRequestHandler`,
+  as used by the :ref:`command-line interface <http-server-cli>`,
+  is colored by default.
+  This can be controlled with :ref:`environment variables
+  <using-on-controlling-color>`.
+  (Contributed by Hugo van Kemenade in :gh:`146292`.)
+
+
 inspect
 -------
 
@@ -832,13 +966,13 @@ inspect
 json
 ----
 
-* Add the *array_hook* parameter to  :func:`~json.load` and
+* Add the *array_hook* parameter to :func:`~json.load` and
   :func:`~json.loads` functions:
   allow a callback for JSON literal array types to customize Python lists in
   the resulting decoded object. Passing combined :class:`frozendict` to
   *object_pairs_hook* param and :class:`tuple` to ``array_hook`` will yield a
   deeply nested immutable Python structure representing the JSON data.
-  (Contributed by Joao S. O. Bueno in :gh:`146440`)
+  (Contributed by Joao S. O. Bueno in :gh:`146440`.)
 
 
 locale
@@ -866,23 +1000,11 @@ math
 mimetypes
 ---------
 
-* Add ``application/dicom`` MIME type for ``.dcm`` extension.
-  (Contributed by Benedikt Johannes in :gh:`144217`.)
-* Add ``application/efi``. (Contributed by Charlie Lin in :gh:`145720`.)
-* Add ``application/node`` MIME type for ``.cjs`` extension.
-  (Contributed by John Franey in :gh:`140937`.)
-* Add ``application/toml``. (Contributed by Gil Forcada in :gh:`139959`.)
-* Add ``application/sql`` and ``application/vnd.sqlite3``.
-  (Contributed by Charlie Lin in :gh:`145698`.)
-* Add the following MIME types:
-
-  - ``application/vnd.ms-cab-compressed`` for ``.cab`` extension
-  - ``application/vnd.ms-htmlhelp`` for ``.chm`` extension
-  - ``application/vnd.ms-officetheme`` for ``.thmx`` extension
-
-  (Contributed by Charlie Lin in :gh:`145718`.)
-
-* Add ``image/jxl``. (Contributed by Foolbar in :gh:`144213`.)
+* Add more MIME types.
+  (Contributed by Benedikt Johannes, Charlie Lin, Foolbar, Gil Forcada and
+  John Franey
+  in :gh:`144217`, :gh:`145720`, :gh:`140937`, :gh:`139959`, :gh:`145698`,
+  :gh:`145718` and :gh:`144213`.)
 * Rename ``application/x-texinfo`` to ``application/texinfo``.
   (Contributed by Charlie Lin in :gh:`140165`.)
 * Changed the MIME type for ``.ai`` files to ``application/pdf``.
@@ -924,6 +1046,13 @@ os.path
   (Contributed by Petr Viktorin for :cve:`2025-4517`.)
 
 
+pdb
+---
+
+* Use the new interactive shell as the default input shell for :mod:`pdb`.
+  (Contributed by Tian Gao in :gh:`145379`.)
+
+
 pickle
 ------
 
@@ -931,12 +1060,36 @@ pickle
   (Contributed by Zackery Spytz and Serhiy Storchaka in :gh:`77188`.)
 
 
+pickletools
+-----------
+
+* The output of the :mod:`pickletools` command-line interface is colored by
+  default. This can be controlled with
+  :ref:`environment variables <using-on-controlling-color>`.
+  (Contributed by Hugo van Kemenade in :gh:`149026`.)
+
+
+pprint
+------
+
+* Add an *expand* keyword argument for :func:`pprint.pprint`,
+  :func:`pprint.pformat`, :func:`pprint.pp`. If true, the output will be
+  formatted similar to pretty-printed :func:`json.dumps` when
+  *indent* is supplied.
+  (Contributed by Stefan Todoran, Semyon Moroz and Hugo van Kemenade in
+  :gh:`112632`.)
+
+* Add t-string support to :mod:`pprint`.
+  (Contributed by Loïc Simon and Hugo van Kemenade in :gh:`134551`.)
+
+
 re
 --
 
-* :func:`re.prefixmatch` and a corresponding :meth:`~re.Pattern.prefixmatch`
-  have been added as alternate more explicit names for the existing
-  :func:`re.match` and :meth:`~re.Pattern.match` APIs. These are intended
+* :func:`re.prefixmatch` and a corresponding :meth:`re.Pattern.prefixmatch`
+  have been added as alternate, more explicit names for the existing
+  and now :term:`soft deprecated`
+  :func:`re.match` and :meth:`re.Pattern.match` APIs. These are intended
   to be used to alleviate confusion around what *match* means by following the
   Zen of Python's *"Explicit is better than implicit"* mantra. Most other
   language regular expression libraries use an API named *match* to mean what
@@ -1051,7 +1204,7 @@ subprocess
 
   If none of these mechanisms are available, the function falls back to the
   traditional busy loop (non-blocking call and short sleeps).
-  (Contributed by Giampaolo Rodola in :gh:`83069`).
+  (Contributed by Giampaolo Rodola in :gh:`83069`.)
 
 
 symtable
@@ -1066,6 +1219,19 @@ sys
 
 * Add :data:`sys.abi_info` namespace to improve access to ABI information.
   (Contributed by Klaus Zimmermann in :gh:`137476`.)
+
+
+sys.monitoring
+--------------
+
+* The :ref:`other events <monitoring-event-global>`
+  (:monitoring-event:`PY_THROW`, :monitoring-event:`PY_UNWIND`,
+  :monitoring-event:`RAISE`, :monitoring-event:`EXCEPTION_HANDLED`, and
+  :monitoring-event:`RERAISE`) can now be turned on and disabled on a per code
+  object basis. Returning :data:`~sys.monitoring.DISABLE` from a callback for
+  one of these events disables the event for the entire code object (for the
+  current tool), rather than raising :exc:`ValueError` as in prior versions.
+  (Contributed by Gabriele N. Tornetta in :gh:`146182`.)
 
 
 tarfile
@@ -1097,6 +1263,10 @@ tarfile
 timeit
 ------
 
+* The output of the :mod:`timeit` command-line interface is colored by default.
+  This can be controlled with
+  :ref:`environment variables <using-on-controlling-color>`.
+  (Contributed by Hugo van Kemenade in :gh:`146609`.)
 * The command-line interface now colorizes error tracebacks
   by default. This can be controlled with
   :ref:`environment variables <using-on-controlling-color>`.
@@ -1104,7 +1274,7 @@ timeit
 
 * Make the target time of :meth:`timeit.Timer.autorange` configurable
   and add ``--target-time`` option to the command-line interface.
-  (Contributed by Alessandro Cucci and Miikka Koskinen in :gh:`140283`.)
+  (Contributed by Alessandro Cucci and Miikka Koskinen in :gh:`80642`.)
 
 
 tkinter
@@ -1133,6 +1303,15 @@ tkinter
   (Contributed by Matthias Kievernagel and Serhiy Storchaka in :gh:`47655`.)
 
 
+tokenize
+--------
+
+* The output of the :mod:`tokenize` :ref:`command-line interface
+  <tokenize-cli>` is colored by default. This can be controlled with
+  :ref:`environment variables <using-on-controlling-color>`.
+  (Contributed by Hugo van Kemenade in :gh:`148991`.)
+
+
 .. _whatsnew315-tomllib-1-1-0:
 
 tomllib
@@ -1149,10 +1328,7 @@ tomllib
     Previously an inline table had to be on a single line and couldn't end
     with a trailing comma. This is now relaxed so that the following is valid:
 
-    .. syntax highlighting needs TOML 1.1.0 support in Pygments,
-       see https://github.com/pygments/pygments/issues/3026
-
-    .. code-block:: text
+    .. code-block:: toml
 
        tbl = {
           key      = "a string",
@@ -1164,7 +1340,7 @@ tomllib
   - Add ``\xHH`` notation to basic strings for codepoints under 255,
     and the ``\e`` escape for the escape character:
 
-    .. code-block:: text
+    .. code-block:: toml
 
        null = "null byte: \x00; letter a: \x61"
        csi = "\e["
@@ -1172,7 +1348,7 @@ tomllib
   - Seconds in datetime and time values are now optional.
     The following are now valid:
 
-    .. code-block:: text
+    .. code-block:: toml
 
        dt = 2010-02-03 14:15
        t  = 14:15
@@ -1223,6 +1399,18 @@ typing
   type parameters order: it is ``(T1, T2)``, not ``(T2, T1)``
   as it was incorrectly inferred in runtime before.
   (Contributed by Nikita Sobolev in :gh:`137191`.)
+
+* :pep:`800`: Add :deco:`typing.disjoint_base`, a new decorator marking a class
+  as a disjoint base. This is an advanced feature primarily intended to allow
+  type checkers to faithfully reflect the runtime semantics of types defined
+  as builtins or in compiled extensions. If a class ``C`` is a disjoint base, then
+  child classes of that class cannot inherit from other disjoint bases that are
+  not parent or child classes of ``C``. (Contributed by Jelle Zijlstra in :gh:`148639`.)
+
+* :class:`~typing.TypeVarTuple` now accepts ``bound``, ``covariant``,
+  ``contravariant``, and ``infer_variance`` keyword arguments, matching the
+  interface of :class:`~typing.TypeVar` and :class:`~typing.ParamSpec`.
+  ``bound`` semantics remain undefined in the specification.
 
 
 unicodedata
@@ -1294,6 +1482,25 @@ warnings
   (Contributed by Serhiy Storchaka in :gh:`135801`.)
 
 
+wave
+----
+
+* Added support for IEEE floating-point WAVE audio
+  (``WAVE_FORMAT_IEEE_FLOAT``) in :mod:`wave`.
+
+* Added :meth:`wave.Wave_read.getformat`, :meth:`wave.Wave_write.getformat`,
+  and :meth:`wave.Wave_write.setformat` for explicit frame format handling.
+
+* :meth:`wave.Wave_write.setparams` accepts both 7-item tuples including
+  ``format`` and 6-item tuples for backwards compatibility (defaulting to
+  ``WAVE_FORMAT_PCM``).
+
+* ``WAVE_FORMAT_IEEE_FLOAT`` output now includes a ``fact`` chunk,
+  as required for non-PCM WAVE formats.
+
+(Contributed by Lionel Koenig and Michiel W. Beijen in :gh:`60729`.)
+
+
 xml.parsers.expat
 -----------------
 
@@ -1328,7 +1535,7 @@ Optimizations
 =============
 
 * ``mimalloc`` is now used as the default allocator for
-  for raw memory allocations such as via :c:func:`PyMem_RawMalloc`
+  raw memory allocations such as via :c:func:`PyMem_RawMalloc`
   for better performance on :term:`free-threaded builds <free-threaded build>`.
   (Contributed by Kumar Aditya in :gh:`144914`.)
 
@@ -1347,7 +1554,7 @@ base64 & binascii
 
 * Implementation for Base32 has been rewritten in C.
   Encoding and decoding is now two orders of magnitude faster.
-  (Contributed by James Seo in :gh:`146192`)
+  (Contributed by James Seo in :gh:`146192`.)
 
 
 csv
@@ -1394,7 +1601,6 @@ end users running Python do not need LLVM installed. Instructions for
 installing LLVM can be found in the `JIT compiler documentation
 <https://github.com/python/cpython/blob/main/Tools/jit/README.md>`__
 for all supported platforms.
-
 (Contributed by Savannah Ostrowski in :gh:`140973`.)
 
 .. rubric:: A new tracing frontend
@@ -1406,7 +1612,6 @@ code. For example, simple Python object creation is now understood by the
 supported. This was made possible by an overhauled JIT tracing frontend
 that records actual execution paths through code, rather than estimating
 them as the previous implementation did.
-
 (Contributed by Ken Jin in :gh:`139109`. Support for Windows added by
 Mark Shannon in :gh:`141703`.)
 
@@ -1416,7 +1621,6 @@ A basic form of register allocation has been added to the JIT compiler's
 optimizer. This allows the JIT compiler to avoid certain stack operations
 altogether and instead operate on registers. This allows the JIT to produce
 more efficient traces by avoiding reads and writes to memory.
-
 (Contributed by Mark Shannon in :gh:`135379`.)
 
 .. rubric:: More JIT optimizations
@@ -1424,30 +1628,50 @@ more efficient traces by avoiding reads and writes to memory.
 More `constant-propagation <https://en.wikipedia.org/wiki/Constant_folding>`__
 is now performed. This means when the JIT compiler detects that certain user
 code results in constants, the code can be simplified by the JIT.
-
 (Contributed by Ken Jin and Savannah Ostrowski in :gh:`132732`.)
 
-The JIT avoids :term:`reference count`\ s where possible. This generally
+:term:`Reference count`\ s are avoided whenever it is safe to do so. This generally
 reduces the cost of most operations in Python.
-
 (Contributed by Ken Jin, Donghee Na, Zheao Li, Hai Zhu, Savannah Ostrowski,
 Reiden Ong, Noam Cohen, Tomas Roun, PuQing, Cajetan Rodrigues, and Sacul in :gh:`134584`.)
+
+By tracking unique references to objects, the JIT optimizer can now eliminate
+reference count updates and perform inplace operations on ints and floats.
+(Contributed by Reiden Ong, and Pieter Eendebak in :gh:`143414` and :gh:`146306`.)
+
+The JIT optimizer now supports significantly more operations than in 3.14.
+(Contributed by Kumar Aditya, Ken Jin, Jiahao Li, and Sacul in :gh:`131798`.)
 
 .. rubric:: Better machine code generation
 
 The JIT compiler's machine code generator now produces better machine code
 for x86-64 and AArch64 macOS and Linux targets. In general, users should
 experience lower memory usage for generated machine code and more efficient
-machine code versus the old JIT.
-
-(Contributed by Brandt Bucher in :gh:`136528` and :gh:`136528`.
+machine code versus 3.14.
+(Contributed by Brandt Bucher in :gh:`136528` and :gh:`135905`.
 Implementation for AArch64 contributed by Mark Shannon in :gh:`139855`.
 Additional optimizations for AArch64 contributed by Mark Shannon and
 Diego Russo in :gh:`140683` and :gh:`142305`.)
 
+.. rubric:: Maintainability
+
+The JIT optimizer's operations have been simplified.
+This was made possible by a refactoring of JIT data structures.
+(Contributed by Zhongtian Zheng in :gh:`148211` and Hai Zhu in :gh:`143421`.)
+
 
 Removed
 ========
+
+ast
+---
+
+* The constructors of :ref:`AST nodes <ast_nodes>` now raise a :exc:`TypeError`
+  when a required argument is omitted or when a keyword argument that does not
+  map to a field on the AST node is passed. These cases had previously raised a
+  :exc:`DeprecationWarning` since Python 3.13.
+  (Contributed by Brian Schubert and Jelle Zijlstra in :gh:`137600` and :gh:`105858`.)
+
 
 collections.abc
 ---------------
@@ -1463,6 +1687,15 @@ ctypes
 * Removed the undocumented function :func:`!ctypes.SetPointerType`,
   which has been deprecated since Python 3.13.
   (Contributed by Bénédikt Tran in :gh:`133866`.)
+
+
+datetime
+--------
+
+* :meth:`~datetime.datetime.strptime` now raises :exc:`ValueError` when the
+  format string contains ``%d`` (day of month) without a year directive.
+  This has been deprecated since Python 3.13.
+  (Contributed by Stan Ulbrych and Gregory P. Smith in :gh:`70647`.)
 
 
 glob
@@ -1507,16 +1740,6 @@ platform
   (Contributed by Alexey Makridenko in :gh:`133604`.)
 
 
-pprint
-------
-
-* Add an *expand* keyword argument for :func:`pprint.pprint`,
-  :func:`pprint.pformat`, :func:`pprint.pp`. If true, the output will be
-  formatted similar to pretty-printed :func:`json.dumps` when
-  *indent* is supplied.
-  (Contributed by Stefan Todoran and Semyon Moroz in :gh:`112632`.)
-
-
 sre_*
 -----
 
@@ -1540,6 +1763,14 @@ threading
   (Contributed by Bénédikt Tran in :gh:`134087`.)
 
 
+types
+-----
+
+* Removed deprecated in :pep:`626` since Python 3.12
+  :attr:`!codeobject.co_lnotab` from :class:`types.CodeType`.
+  (Contributed by Nikita Sobolev in :gh:`134690`.)
+
+
 typing
 ------
 
@@ -1559,24 +1790,12 @@ typing
   or ``TD = TypedDict("TD", {})`` instead.
   (Contributed by Bénédikt Tran in :gh:`133823`.)
 
+* Deprecated :func:`!typing.no_type_check_decorator` has been removed.
+  (Contributed by Nikita Sobolev in :gh:`133601`.)
+
 
 wave
 ----
-
-* Added support for IEEE floating-point WAVE audio
-  (``WAVE_FORMAT_IEEE_FLOAT``) in :mod:`wave`.
-
-* Added :meth:`wave.Wave_read.getformat`, :meth:`wave.Wave_write.getformat`,
-  and :meth:`wave.Wave_write.setformat` for explicit frame format handling.
-
-* :meth:`wave.Wave_write.setparams` accepts both 7-item tuples including
-  ``format`` and 6-item tuples for backwards compatibility (defaulting to
-  ``WAVE_FORMAT_PCM``).
-
-* ``WAVE_FORMAT_IEEE_FLOAT`` output now includes a ``fact`` chunk,
-  as required for non-PCM WAVE formats.
-
-(Contributed by Lionel Koenig and Michiel W. Beijen in :gh:`60729`.)
 
 * Removed the ``getmark()``, ``setmark()`` and ``getmarkers()`` methods
   of the :class:`~wave.Wave_read` and :class:`~wave.Wave_write` classes,
@@ -1646,6 +1865,27 @@ New deprecations
 
     (Contributed by Bénédikt Tran in :gh:`134978`.)
 
+
+* :mod:`re`:
+
+  * :func:`re.match` and :meth:`re.Pattern.match` are now
+    :term:`soft deprecated` in favor of the new :func:`re.prefixmatch` and
+    :meth:`re.Pattern.prefixmatch` APIs, which have been added as alternate,
+    more explicit names. These are intended to be used to alleviate confusion
+    around what *match* means by following the Zen of Python's *"Explicit is
+    better than implicit"* mantra. Most other language regular expression
+    libraries use an API named *match* to mean what Python has always called
+    *search*.
+
+    We **do not** plan to remove the older :func:`!match` name, as it has been
+    used in code for over 30 years. Code supporting older versions of Python
+    should continue to use :func:`!match`, while new code should prefer
+    :func:`!prefixmatch`. See :ref:`prefixmatch-vs-match`.
+
+    (Contributed by Gregory P. Smith in :gh:`86519` and
+    Hugo van Kemenade in :gh:`148100`.)
+
+
 * :mod:`struct`:
 
   * Calling the ``Struct.__new__()`` without required argument now is
@@ -1668,8 +1908,6 @@ New deprecations
     :func:`issubclass`, but warnings were not previously emitted if it was
     merely imported or accessed from the :mod:`!typing` module.
 
-  * Deprecated :func:`!typing.no_type_check_decorator` has been removed.
-    (Contributed by Nikita Sobolev in :gh:`133601`.)
 
 * ``__version__``
 
@@ -1717,6 +1955,8 @@ New deprecations
 .. include:: ../deprecations/pending-removal-in-3.20.rst
 
 .. include:: ../deprecations/pending-removal-in-future.rst
+
+.. include:: ../deprecations/soft-deprecations.rst
 
 
 C API changes
@@ -1780,6 +2020,17 @@ New features
 
 * Add :c:func:`PyTuple_FromArray` to create a :class:`tuple` from an array.
   (Contributed by Victor Stinner in :gh:`111489`.)
+
+* Add functions that are guaranteed to be safe for use in
+  :c:member:`~PyTypeObject.tp_traverse` handlers:
+  :c:func:`PyObject_GetTypeData_DuringGC`,
+  :c:func:`PyObject_GetItemData_DuringGC`,
+  :c:func:`PyType_GetModuleState_DuringGC`,
+  :c:func:`PyModule_GetState_DuringGC`, :c:func:`PyModule_GetToken_DuringGC`,
+  :c:func:`PyType_GetBaseByToken_DuringGC`,
+  :c:func:`PyType_GetModule_DuringGC`,
+  :c:func:`PyType_GetModuleByToken_DuringGC`.
+  (Contributed by Petr Viktorin in :gh:`145925`.)
 
 * Add :c:func:`PyObject_Dump` to dump an object to ``stderr``.
   It should only be used for debugging.
@@ -1943,8 +2194,8 @@ Deprecated C APIs
 
   - :c:macro:`Py_ALIGNED`: Prefer ``alignas`` instead.
   - :c:macro:`PY_FORMAT_SIZE_T`: Use ``"z"`` directly.
-  - :c:macro:`Py_LL` & :c:macro:`Py_ULL`:
-    Use standard suffixes, ``LL`` & ``ULL``.
+  - :c:macro:`Py_LL` and :c:macro:`Py_ULL`:
+    Use standard suffixes, ``LL`` and ``ULL``.
   - :c:macro:`PY_LONG_LONG`, :c:macro:`PY_LLONG_MIN`, :c:macro:`PY_LLONG_MAX`,
     :c:macro:`PY_ULLONG_MAX`, :c:macro:`PY_INT32_T`, :c:macro:`PY_UINT32_T`,
     :c:macro:`PY_INT64_T`, :c:macro:`PY_UINT64_T`, :c:macro:`PY_SIZE_MAX`:

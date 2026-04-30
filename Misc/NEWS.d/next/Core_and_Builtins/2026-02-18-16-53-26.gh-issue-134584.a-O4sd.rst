@@ -1,0 +1,1 @@
+Optimize and eliminate redundant ref-counting for  ``MAKE_FUNCTION`` in the JIT.

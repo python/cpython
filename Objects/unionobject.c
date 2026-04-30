@@ -245,6 +245,7 @@ is_unionable(PyObject *obj)
 {
     if (obj == Py_None ||
         PyType_Check(obj) ||
+        PySentinel_Check(obj) ||
         _PyGenericAlias_Check(obj) ||
         _PyUnion_Check(obj) ||
         Py_IS_TYPE(obj, &_PyTypeAlias_Type)) {

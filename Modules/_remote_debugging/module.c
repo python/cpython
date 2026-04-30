@@ -7,6 +7,7 @@
 
 #include "_remote_debugging.h"
 #include "binary_io.h"
+#include "debug_offsets_validation.h"
 
 /* Forward declarations for clinic-generated code */
 typedef struct {
@@ -240,7 +241,7 @@ validate_debug_offsets(struct _Py_DebugOffsets *debug_offsets)
         return -1;
     }
 
-    return 0;
+    return _PyRemoteDebug_ValidateDebugOffsetsLayout(debug_offsets);
 }
 
 /* ============================================================================
@@ -374,7 +375,11 @@ _remote_debugging_RemoteUnwinder___init___impl(RemoteUnwinderObject *self,
 
     // Try to read async debug offsets, but don't fail if they're not available
     self->async_debug_offsets_available = 1;
-    if (read_async_debug(self) < 0) {
+    int async_debug_result = read_async_debug(self);
+    if (async_debug_result == PY_REMOTE_DEBUG_INVALID_ASYNC_DEBUG_OFFSETS) {
+        return -1;
+    }
+    if (async_debug_result < 0) {
         PyErr_Clear();
         memset(&self->async_debug_offsets, 0, sizeof(self->async_debug_offsets));
         self->async_debug_offsets_available = 0;

@@ -1,6 +1,14 @@
 Pending removal in Python 3.17
 ------------------------------
 
+* :mod:`datetime`:
+
+  * :meth:`~datetime.datetime.strptime` calls using a format string containing
+    ``%e`` (day of month) without a year.
+    This has been deprecated since Python 3.15.
+    (Contributed by Stan Ulbrych in :gh:`70647`.)
+
+
 * :mod:`collections.abc`:
 
   - :class:`collections.abc.ByteString` is scheduled for removal in Python 3.17.
@@ -27,7 +35,7 @@ Pending removal in Python 3.17
 
   - Passing non-ascii *encoding* names to :func:`encodings.normalize_encoding`
     is deprecated and scheduled for removal in Python 3.17.
-    (Contributed by Stan Ulbrych in :gh:`136702`)
+    (Contributed by Stan Ulbrych in :gh:`136702`.)
 
 * :mod:`typing`:
 

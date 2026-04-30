@@ -1,0 +1,1 @@
+The unstable API _PyInterpreterState_SetEvalFrameFunc has a companion function _PyInterpreterState_SetEvalFrameAllowSpecialization to specify if specialization should be allowed. When this option is set to 1 the specializer will turn Python -> Python calls into specialized opcodes which the replacement interpreter loop can choose to respect and perform inlined dispatch.

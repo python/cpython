@@ -1,3 +1,0 @@
-Fix a bug which could cause constant values to be partially corrupted in
-AArch64 JIT code. This issue is theoretical, and hasn't actually been
-observed in unmodified Python interpreters.

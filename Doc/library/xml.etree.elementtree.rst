@@ -705,7 +705,7 @@ Functions
    .. versionchanged:: 3.15
       *attrib* can now be a :class:`frozendict`.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.15
       *parent* and *tag* are now positional-only parameters.
 
 
@@ -896,7 +896,7 @@ Element Objects
    .. versionchanged:: 3.15
       *attrib* can now be a :class:`frozendict`.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.15
       *tag* is now a positional-only parameter.
 
 

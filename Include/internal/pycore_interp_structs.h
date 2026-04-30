@@ -449,6 +449,9 @@ typedef struct _PyOptimizationConfig {
     uint16_t side_exit_initial_value;
     uint16_t side_exit_initial_backoff;
 
+    // Trace fitness thresholds
+    uint16_t fitness_initial;
+
     // Optimization flags
     bool specialization_enabled;
     bool uops_optimize_enabled;
@@ -528,7 +531,7 @@ struct _py_func_state {
 
 /* For now we hard-code this to a value for which we are confident
    all the static builtin types will fit (for all builds). */
-#define _Py_MAX_MANAGED_STATIC_BUILTIN_TYPES 202
+#define _Py_MAX_MANAGED_STATIC_BUILTIN_TYPES 203
 #define _Py_MAX_MANAGED_STATIC_EXT_TYPES 10
 #define _Py_MAX_MANAGED_STATIC_TYPES \
     (_Py_MAX_MANAGED_STATIC_BUILTIN_TYPES + _Py_MAX_MANAGED_STATIC_EXT_TYPES)
@@ -927,6 +930,7 @@ struct _is {
     PyObject *builtins_copy;
     // Initialized to _PyEval_EvalFrameDefault().
     _PyFrameEvalFunction eval_frame;
+    int eval_frame_allow_specialization;
 
     PyFunction_WatchCallback func_watchers[FUNC_MAX_WATCHERS];
     // One bit is set for each non-NULL entry in func_watchers

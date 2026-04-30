@@ -57,11 +57,12 @@ class HoleValue(enum.Enum):
 _PATCH_FUNCS = {
     # aarch64-apple-darwin:
     "ARM64_RELOC_BRANCH26": "patch_aarch64_26r",
-    "ARM64_RELOC_GOT_LOAD_PAGE21": "patch_aarch64_21r",
-    "ARM64_RELOC_GOT_LOAD_PAGEOFF12": "patch_aarch64_12",
+    "ARM64_RELOC_GOT_LOAD_PAGE21": "patch_aarch64_21rx",
+    "ARM64_RELOC_GOT_LOAD_PAGEOFF12": "patch_aarch64_12x",
     "ARM64_RELOC_PAGE21": "patch_aarch64_21r",
     "ARM64_RELOC_PAGEOFF12": "patch_aarch64_12",
     "ARM64_RELOC_UNSIGNED": "patch_64",
+    # custom aarch64, both darwin and linux:
     "CUSTOM_AARCH64_BRANCH19": "patch_aarch64_19r",
     "CUSTOM_AARCH64_CONST16a": "patch_aarch64_16a",
     "CUSTOM_AARCH64_CONST16b": "patch_aarch64_16b",
@@ -70,21 +71,21 @@ _PATCH_FUNCS = {
     # aarch64-pc-windows-msvc:
     "IMAGE_REL_ARM64_BRANCH19": "patch_aarch64_19r",
     "IMAGE_REL_ARM64_BRANCH26": "patch_aarch64_26r",
-    "IMAGE_REL_ARM64_PAGEBASE_REL21": "patch_aarch64_21r",
+    "IMAGE_REL_ARM64_PAGEBASE_REL21": "patch_aarch64_21rx",
     "IMAGE_REL_ARM64_PAGEOFFSET_12A": "patch_aarch64_12",
-    "IMAGE_REL_ARM64_PAGEOFFSET_12L": "patch_aarch64_12",
+    "IMAGE_REL_ARM64_PAGEOFFSET_12L": "patch_aarch64_12x",
     # i686-pc-windows-msvc:
     "IMAGE_REL_I386_DIR32": "patch_32",
     "IMAGE_REL_I386_REL32": "patch_x86_64_32rx",
     # aarch64-unknown-linux-gnu:
     "R_AARCH64_ABS64": "patch_64",
     "R_AARCH64_ADD_ABS_LO12_NC": "patch_aarch64_12",
-    "R_AARCH64_ADR_GOT_PAGE": "patch_aarch64_21r",
+    "R_AARCH64_ADR_GOT_PAGE": "patch_aarch64_21rx",
     "R_AARCH64_ADR_PREL_PG_HI21": "patch_aarch64_21r",
     "R_AARCH64_CALL26": "patch_aarch64_26r",
     "R_AARCH64_CONDBR19": "patch_aarch64_19r",
     "R_AARCH64_JUMP26": "patch_aarch64_26r",
-    "R_AARCH64_LD64_GOT_LO12_NC": "patch_aarch64_12",
+    "R_AARCH64_LD64_GOT_LO12_NC": "patch_aarch64_12x",
     "R_AARCH64_MOVW_UABS_G0_NC": "patch_aarch64_16a",
     "R_AARCH64_MOVW_UABS_G1_NC": "patch_aarch64_16b",
     "R_AARCH64_MOVW_UABS_G2_NC": "patch_aarch64_16c",
@@ -165,14 +166,30 @@ class Hole:
     custom_location: str = ""
     custom_value: str = ""
     func: str = dataclasses.field(init=False)
+    offset2: int = -1
+    void: bool = False
     # Convenience method:
     replace = dataclasses.replace
 
     def __post_init__(self) -> None:
         self.func = _PATCH_FUNCS[self.kind]
 
+    def fold(self, other: typing.Self) -> None:
+        """Combine two holes into a single hole."""
+        assert (
+            self.func == "patch_aarch64_12x" and other.func == "patch_aarch64_21rx"
+        ), (self.func, other.func)
+        assert self.value == other.value
+        assert self.symbol == other.symbol
+        assert self.addend == other.addend
+        self.func = "patch_aarch64_33rx"
+        self.offset2 = other.offset
+        other.void = True
+
     def as_c(self, where: str) -> str:
         """Dump this hole as a call to a patch_* function."""
+        if self.void:
+            return ""
         if self.custom_location:
             location = self.custom_location
         else:
@@ -194,6 +211,9 @@ class Hole:
                 value += f"{_signed(self.addend):#x}"
         if self.need_state:
             return f"{self.func}({location}, {value}, state);"
+        if self.offset2 >= 0:
+            first_location = f"{where} + {self.offset2:#x}"
+            return f"{self.func}({first_location}, {location}, {value});"
         return f"{self.func}({location}, {value});"
 
 
@@ -238,6 +258,10 @@ class StencilGroup:
     _got_entries: set[int] = dataclasses.field(default_factory=set, init=False)
 
     def convert_labels_to_relocations(self) -> None:
+        holes_by_offset: dict[int, Hole] = {}
+        first_in_pair: dict[str, Hole] = {}
+        for hole in self.code.holes:
+            holes_by_offset[hole.offset] = hole
         for name, hole_plus in self.symbols.items():
             if isinstance(name, str) and "_JIT_RELOCATION_" in name:
                 _, offset = hole_plus
@@ -247,6 +271,16 @@ class StencilGroup:
                     int(offset), typing.cast(_schema.HoleKind, reloc), value, symbol, 0
                 )
                 self.code.holes.append(hole)
+            elif isinstance(name, str) and "_JIT_PAIR_" in name:
+                _, offset = hole_plus
+                reloc, target, index = name.split("_JIT_PAIR_")
+                if offset in holes_by_offset:
+                    hole = holes_by_offset[offset]
+                    if "33a" in reloc:
+                        first_in_pair[index] = hole
+                    elif "33b" in reloc and index in first_in_pair:
+                        first = first_in_pair[index]
+                        hole.fold(first)
 
     def process_relocations(self, known_symbols: dict[str, int]) -> None:
         """Fix up all GOT and internal relocations for this stencil group."""

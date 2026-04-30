@@ -35,6 +35,7 @@ import sys
 from token import *
 from token import EXACT_TOKEN_TYPES
 import _tokenize
+lazy import _colorize
 
 cookie_re = re.compile(br'^[ \t\f]*#.*?coding[:=][ \t]*([-\w.]+)', re.ASCII)
 blank_re = re.compile(br'^[ \t\f]*(?:[#\r\n]|$)', re.ASCII)
@@ -505,6 +506,56 @@ def generate_tokens(readline):
     """
     return _generate_tokens_from_c_tokenizer(readline, extra_tokens=True)
 
+
+def _get_token_colors(syntax, tokenize):
+    """Map token type numbers to theme colors."""
+    return frozendict({
+        COMMENT: syntax.comment,
+        DEDENT: tokenize.whitespace,
+        ENCODING: tokenize.whitespace,
+        ENDMARKER: tokenize.whitespace,
+        ERRORTOKEN: tokenize.error,
+        FSTRING_START: syntax.string,
+        FSTRING_MIDDLE: syntax.string,
+        FSTRING_END: syntax.string,
+        INDENT: tokenize.whitespace,
+        NAME: syntax.reset,
+        NEWLINE: tokenize.whitespace,
+        NL: tokenize.whitespace,
+        NUMBER: syntax.number,
+        OP: syntax.op,
+        SOFT_KEYWORD: syntax.soft_keyword,
+        STRING: syntax.string,
+        TSTRING_START: syntax.string,
+        TSTRING_MIDDLE: syntax.string,
+        TSTRING_END: syntax.string,
+    })
+
+
+def _format_tokens(tokens, *, color=False, exact=False):
+    theme = _colorize.get_theme(force_no_color=not color)
+    s = theme.syntax
+    t = theme.tokenize
+    token_colors = _get_token_colors(s, t)
+    for token in tokens:
+        token_range = (
+            f"{t.position}{token.start[0]}"
+            f"{t.delimiter},{t.position}{token.start[1]}"
+            f"{t.delimiter}-"
+            f"{t.position}{token.end[0]}"
+            f"{t.delimiter},{t.position}{token.end[1]}"
+            f"{t.delimiter}:"
+        )
+        token_color = token_colors.get(token.type, s.reset)
+        token_name = tok_name[token.exact_type if exact else token.type]
+        visible_range = f"{token.start[0]},{token.start[1]}-{token.end[0]},{token.end[1]}:"
+        yield (
+            f"{token_range}{' ' * (20 - len(visible_range))}"
+            f"{token_color}{token_name:<15}"
+            f"{s.reset}{token.string!r:<15}"
+        )
+
+
 def _main(args=None):
     import argparse
 
@@ -524,7 +575,7 @@ def _main(args=None):
         sys.exit(1)
 
     # Parse the arguments and options
-    parser = argparse.ArgumentParser(color=True)
+    parser = argparse.ArgumentParser()
     parser.add_argument(dest='filename', nargs='?',
                         metavar='filename.py',
                         help='the file to tokenize; defaults to stdin')
@@ -545,13 +596,8 @@ def _main(args=None):
 
 
         # Output the tokenization
-        for token in tokens:
-            token_type = token.type
-            if args.exact:
-                token_type = token.exact_type
-            token_range = "%d,%d-%d,%d:" % (token.start + token.end)
-            print("%-20s%-15s%-15r" %
-                  (token_range, tok_name[token_type], token.string))
+        for line in _format_tokens(tokens, color=True, exact=args.exact):
+            print(line)
     except IndentationError as err:
         line, column = err.args[1][1:3]
         error(err.args[0], filename, (line, column))

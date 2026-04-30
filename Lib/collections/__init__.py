@@ -1253,6 +1253,20 @@ class UserDict(_collections_abc.MutableMapping):
         c.update(self)
         return c
 
+
+    # This method has a default implementation in MutableMapping, but dict's
+    # equivalent is last-in, first-out instead of first-in, first-out.
+    def popitem(self):
+        """Remove and return a (key, value) pair as a 2-tuple.
+
+        Removes pairs in the same order as the wrapped mapping's popitem()
+        method. For dict objects (the default), that order is last-in,
+        first-out (LIFO).
+        Raises KeyError if the UserDict is empty.
+        """
+        return self.data.popitem()
+
+
     @classmethod
     def fromkeys(cls, iterable, value=None):
         d = cls()

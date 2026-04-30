@@ -306,6 +306,11 @@ typedef Py_hash_t (*hashfunc)(PyObject *);
 typedef PyObject *(*richcmpfunc) (PyObject *, PyObject *, int);
 typedef PyObject *(*getiterfunc) (PyObject *);
 typedef PyObject *(*iternextfunc) (PyObject *);
+typedef struct {
+    PyObject *object;
+    Py_ssize_t index;
+} _PyObjectIndexPair;
+typedef _PyObjectIndexPair (*_Py_iteritemfunc) (PyObject *, Py_ssize_t index);
 typedef PyObject *(*descrgetfunc) (PyObject *, PyObject *, PyObject *);
 typedef int (*descrsetfunc) (PyObject *, PyObject *, PyObject *);
 typedef int (*initproc)(PyObject *, PyObject *, PyObject *);
@@ -779,6 +784,14 @@ PyAPI_FUNC(int) PyType_Freeze(PyTypeObject *type);
 #if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= _Py_PACK_VERSION(3, 15)
 PyAPI_FUNC(PyObject *) PyType_GetModuleByToken(PyTypeObject *type,
                                                const void *token);
+PyAPI_FUNC(void *) PyObject_GetTypeData_DuringGC(PyObject *obj,
+                                                 PyTypeObject *cls);
+PyAPI_FUNC(void *) PyType_GetModuleState_DuringGC(PyTypeObject *);
+PyAPI_FUNC(int) PyType_GetBaseByToken_DuringGC(PyTypeObject *,
+                                               void *, PyTypeObject **);
+PyAPI_FUNC(PyObject *) PyType_GetModule_DuringGC(PyTypeObject *);
+PyAPI_FUNC(PyObject *) PyType_GetModuleByToken_DuringGC(PyTypeObject *type,
+                                                        const void *token);
 #endif
 
 #ifdef __cplusplus

@@ -89,7 +89,7 @@ The module defines the following:
       The *flags* parameter.  ``select.EPOLL_CLOEXEC`` is used by default now.
       Use :func:`os.set_inheritable` to make the file descriptor inheritable.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.15
 
       When CPython is built, this function may be disabled using
       :option:`--disable-epoll`.

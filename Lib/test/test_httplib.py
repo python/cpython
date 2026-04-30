@@ -369,6 +369,51 @@ class HeaderTests(TestCase):
                 with self.assertRaisesRegex(ValueError, 'Invalid header'):
                     conn.putheader(name, value)
 
+    def test_invalid_tunnel_headers(self):
+        cases = (
+            ('Invalid\r\nName', 'ValidValue'),
+            ('Invalid\rName', 'ValidValue'),
+            ('Invalid\nName', 'ValidValue'),
+            ('\r\nInvalidName', 'ValidValue'),
+            ('\rInvalidName', 'ValidValue'),
+            ('\nInvalidName', 'ValidValue'),
+            (' InvalidName', 'ValidValue'),
+            ('\tInvalidName', 'ValidValue'),
+            ('Invalid:Name', 'ValidValue'),
+            (':InvalidName', 'ValidValue'),
+            ('ValidName', 'Invalid\r\nValue'),
+            ('ValidName', 'Invalid\rValue'),
+            ('ValidName', 'Invalid\nValue'),
+            ('ValidName', 'InvalidValue\r\n'),
+            ('ValidName', 'InvalidValue\r'),
+            ('ValidName', 'InvalidValue\n'),
+        )
+        for name, value in cases:
+            with self.subTest((name, value)):
+                conn = client.HTTPConnection('example.com')
+                conn.set_tunnel('tunnel', headers={
+                    name: value
+                })
+                conn.sock = FakeSocket('')
+                with self.assertRaisesRegex(ValueError, 'Invalid header'):
+                    conn._tunnel()  # Called in .connect()
+
+    def test_invalid_tunnel_host(self):
+        cases = (
+            'invalid\r.host',
+            '\ninvalid.host',
+            'invalid.host\r\n',
+            'invalid.host\x00',
+            'invalid host',
+        )
+        for tunnel_host in cases:
+            with self.subTest(tunnel_host):
+                conn = client.HTTPConnection('example.com')
+                conn.set_tunnel(tunnel_host)
+                conn.sock = FakeSocket('')
+                with self.assertRaisesRegex(ValueError, 'Tunnel host can\'t contain control characters'):
+                    conn._tunnel()  # Called in .connect()
+
     def test_headers_debuglevel(self):
         body = (
             b'HTTP/1.1 200 OK\r\n'

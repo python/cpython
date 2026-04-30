@@ -15,6 +15,8 @@ Deprecations
 
 .. include:: pending-removal-in-future.rst
 
+.. include:: soft-deprecations.rst
+
 C API deprecations
 ------------------
 

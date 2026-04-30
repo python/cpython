@@ -611,6 +611,8 @@ class Wave_write:
         try:
             if self._file:
                 self._ensure_header_written(0)
+                if self._datawritten & 1:
+                    self._file.write(b'\x00')
                 if self._datalength != self._datawritten:
                     self._patchheader()
                 self._file.flush()
@@ -651,7 +653,7 @@ class Wave_write:
         has_fact = self._needs_fact_chunk()
         header_overhead = 36 + (12 if has_fact else 0)
         self._file.write(struct.pack('<L4s4sLHHLLHH',
-            header_overhead + self._datalength, b'WAVE', b'fmt ', 16,
+            header_overhead + self._datalength + (self._datalength & 1), b'WAVE', b'fmt ', 16,
             self._format, self._nchannels, self._framerate,
             self._nchannels * self._framerate * self._sampwidth,
             self._nchannels * self._sampwidth,
@@ -677,7 +679,7 @@ class Wave_write:
         curpos = self._file.tell()
         header_overhead = 36 + (12 if self._needs_fact_chunk() else 0)
         self._file.seek(self._form_length_pos, 0)
-        self._file.write(struct.pack('<L', header_overhead + self._datawritten))
+        self._file.write(struct.pack('<L', header_overhead + self._datawritten + (self._datawritten & 1)))
         if self._fact_sample_count_pos is not None:
             self._file.seek(self._fact_sample_count_pos, 0)
             nframes = self._datawritten // (self._nchannels * self._sampwidth)

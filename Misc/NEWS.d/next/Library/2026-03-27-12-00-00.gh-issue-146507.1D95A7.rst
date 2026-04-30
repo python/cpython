@@ -1,3 +1,0 @@
-Make :meth:`asyncio.SelectorEventLoop` stream transport's
-:meth:`~asyncio.WriteTransport.get_write_buffer_size` O(1) by maintaining a
-running byte counter instead of iterating the buffer on every call.

@@ -45,6 +45,7 @@
 #ifndef Expat_INCLUDED
 #  define Expat_INCLUDED 1
 
+#  include <stdint.h> // for uint8_t
 #  include <stdlib.h>
 #  include "expat_external.h"
 
@@ -917,9 +918,20 @@ XML_SetParamEntityParsing(XML_Parser parser,
    function behavior. This must be called before parsing is started.
    Returns 1 if successful, 0 when called after parsing has started.
    Note: If parser == NULL, the function will do nothing and return 0.
+   DEPRECATED since Expat 2.8.0.
 */
 XMLPARSEAPI(int)
 XML_SetHashSalt(XML_Parser parser, unsigned long hash_salt);
+
+/* Sets the hash salt to use for internal hash calculations.
+   Helps in preventing DoS attacks based on predicting hash function behavior.
+   This must be called before parsing is started.
+   Returns XML_TRUE if successful, XML_FALSE when called after parsing has
+   started or when parser is NULL.
+   Added in Expat 2.8.0.
+*/
+XMLPARSEAPI(XML_Bool)
+XML_SetHashSalt16Bytes(XML_Parser parser, const uint8_t entropy[16]);
 
 /* If XML_Parse or XML_ParseBuffer have returned XML_STATUS_ERROR, then
    XML_GetErrorCode returns information about the error.
@@ -1081,8 +1093,8 @@ XML_SetReparseDeferralEnabled(XML_Parser parser, XML_Bool enabled);
    See https://semver.org
 */
 #  define XML_MAJOR_VERSION 2
-#  define XML_MINOR_VERSION 7
-#  define XML_MICRO_VERSION 5
+#  define XML_MINOR_VERSION 8
+#  define XML_MICRO_VERSION 0
 
 #  ifdef __cplusplus
 }

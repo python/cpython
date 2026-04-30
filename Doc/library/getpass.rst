@@ -55,7 +55,7 @@ The :mod:`!getpass` module provides two functions:
    .. versionchanged:: 3.14
       Added the *echo_char* parameter for keyboard feedback.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.15
       When using non-empty *echo_char* on Unix, keyboard shortcuts (including
       cursor movement and line editing) are now properly handled using the
       terminal's control character configuration.

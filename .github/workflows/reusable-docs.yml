@@ -4,7 +4,8 @@ on:
   workflow_call:
   workflow_dispatch:
 
-permissions: {}
+permissions:
+  contents: read
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
@@ -55,7 +56,7 @@ jobs:
       with:
         python-version: '3'
         cache: 'pip'
-        cache-dependency-path: 'Doc/requirements.txt'
+        cache-dependency-path: 'Doc/pylock.toml'
     - name: 'Install build dependencies'
       run: make -C Doc/ venv
 

@@ -547,8 +547,8 @@ PyTuple_GetSlice(PyObject *op, Py_ssize_t i, Py_ssize_t j)
     return tuple_slice((PyTupleObject *)op, i, j);
 }
 
-static PyObject *
-tuple_concat(PyObject *aa, PyObject *bb)
+PyObject *
+_PyTuple_Concat(PyObject *aa, PyObject *bb)
 {
     PyTupleObject *a = _PyTuple_CAST(aa);
     if (Py_SIZE(a) == 0 && PyTuple_CheckExact(bb)) {
@@ -864,7 +864,7 @@ tuple_subtype_new(PyTypeObject *type, PyObject *iterable)
 
 static PySequenceMethods tuple_as_sequence = {
     tuple_length,                               /* sq_length */
-    tuple_concat,                               /* sq_concat */
+    _PyTuple_Concat,                            /* sq_concat */
     tuple_repeat,                               /* sq_repeat */
     tuple_item,                                 /* sq_item */
     0,                                          /* sq_slice */
@@ -872,6 +872,17 @@ static PySequenceMethods tuple_as_sequence = {
     0,                                          /* sq_ass_slice */
     tuple_contains,                             /* sq_contains */
 };
+
+static _PyObjectIndexPair
+tuple_iteritem(PyObject *obj, Py_ssize_t index)
+{
+    if (index >= PyTuple_GET_SIZE(obj)) {
+        return (_PyObjectIndexPair) { .object = NULL, .index = index };
+    }
+    PyObject *result = PyTuple_GET_ITEM(obj, index);
+    Py_INCREF(result);
+    return (_PyObjectIndexPair) { .object = result, .index = index + 1 };
+}
 
 static PyObject*
 tuple_subscript(PyObject *op, PyObject* item)
@@ -1000,6 +1011,7 @@ PyTypeObject PyTuple_Type = {
     PyObject_GC_Del,                            /* tp_free */
     .tp_vectorcall = tuple_vectorcall,
     .tp_version_tag = _Py_TYPE_VERSION_TUPLE,
+    ._tp_iteritem = tuple_iteritem,
 };
 
 /* The following function breaks the notion that tuples are immutable:

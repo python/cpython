@@ -1,0 +1,2 @@
+:mod:`configparser`: prevent quadratic behavior when a :exc:`~configparser.ParsingError`
+is raised after a parser fails to parse multiple lines. Patch by Bénédikt Tran.

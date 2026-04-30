@@ -15,6 +15,50 @@ extern "C" {
 #include "pycore_optimizer_types.h"
 #include <stdbool.h>
 
+/* Fitness controls how long a trace can grow.
+ * Starts at FITNESS_INITIAL, then decreases from per-bytecode buffer usage
+ * plus branch/frame heuristics. The trace stops when fitness drops below the
+ * current exit_quality.
+ *
+ * Design targets for the constants below:
+ * 1. Reaching the abstract frame-depth limit should drop fitness below
+ *    EXIT_QUALITY_SPECIALIZABLE.
+ * 2. A backward edge should leave budget for roughly N_BACKWARD_SLACK more
+ *    bytecodes, assuming AVG_SLOTS_PER_INSTRUCTION.
+ * 3. Roughly seven balanced branches should reduce fitness to
+ *    EXIT_QUALITY_DEFAULT after per-slot costs.
+ * 4. A push followed by a matching return is net-zero on frame-specific
+ *    fitness, excluding per-slot costs.
+ */
+#define MAX_TARGET_LENGTH          (UOP_MAX_TRACE_LENGTH / 2)
+#define OPTIMIZER_EFFECTIVENESS    2
+#define FITNESS_INITIAL            (MAX_TARGET_LENGTH * OPTIMIZER_EFFECTIVENESS)
+
+/* Exit quality thresholds: trace stops when fitness < exit_quality.
+ * Higher = trace is more willing to stop here. */
+#define EXIT_QUALITY_CLOSE_LOOP      (FITNESS_INITIAL - AVG_SLOTS_PER_INSTRUCTION*4)
+#define EXIT_QUALITY_ENTER_EXECUTOR  (FITNESS_INITIAL * 1 / 8)
+#define EXIT_QUALITY_DEFAULT         (FITNESS_INITIAL / 40)
+#define EXIT_QUALITY_SPECIALIZABLE   (FITNESS_INITIAL / 80)
+
+/* Estimated buffer slots per bytecode, used only to derive heuristics.
+ * Runtime charging uses trace-buffer capacity consumed for each bytecode. */
+#define AVG_SLOTS_PER_INSTRUCTION  6
+
+/* Heuristic backward-edge exit quality: leave room for about 1 unroll and
+ * N_BACKWARD_SLACK more bytecodes before reaching EXIT_QUALITY_CLOSE_LOOP,
+ * based on AVG_SLOTS_PER_INSTRUCTION. */
+#define N_BACKWARD_SLACK           10
+#define EXIT_QUALITY_BACKWARD_EDGE (EXIT_QUALITY_CLOSE_LOOP / 2 - N_BACKWARD_SLACK * AVG_SLOTS_PER_INSTRUCTION)
+
+/* Penalty for a balanced branch.
+ * It is sized so repeated balanced branches can drive a trace toward
+ * EXIT_QUALITY_DEFAULT, while compute_branch_penalty() keeps any single branch
+ * from dominating the budget.
+ */
+#define FITNESS_BRANCH_BALANCED    ((FITNESS_INITIAL - EXIT_QUALITY_DEFAULT - \
+                                        (MAX_TARGET_LENGTH / 14 * AVG_SLOTS_PER_INSTRUCTION)) / (14))
+
 
 typedef struct _PyJitUopBuffer {
     _PyUOpInstruction *start;
@@ -91,17 +135,20 @@ typedef struct _PyJitTracerInitialState {
     _Py_CODEUNIT *jump_backward_instr;
 } _PyJitTracerInitialState;
 
+#define MAX_RECORDED_VALUES 3
 typedef struct _PyJitTracerPreviousState {
     int instr_oparg;
     int instr_stacklevel;
     _Py_CODEUNIT *instr;
     PyCodeObject *instr_code; // Strong
     struct _PyInterpreterFrame *instr_frame;
-    PyObject *recorded_value; // Strong, may be NULL
+    PyObject *recorded_values[MAX_RECORDED_VALUES]; // Strong, may be NULL
+    int recorded_count;
 } _PyJitTracerPreviousState;
 
 typedef struct _PyJitTracerTranslatorState {
-    int jump_backward_seen;
+    int32_t fitness;              // Current trace fitness, starts high, decrements
+    int frame_depth;              // Current inline depth (0 = root frame)
 } _PyJitTracerTranslatorState;
 
 typedef struct _PyJitTracerState {
@@ -400,6 +447,7 @@ extern JitOptRef _Py_uop_sym_new_null(JitOptContext *ctx);
 extern bool _Py_uop_sym_has_type(JitOptRef sym);
 extern bool _Py_uop_sym_matches_type(JitOptRef sym, PyTypeObject *typ);
 extern bool _Py_uop_sym_matches_type_version(JitOptRef sym, unsigned int version);
+extern unsigned int _Py_uop_sym_get_type_version(JitOptRef sym);
 extern void _Py_uop_sym_set_null(JitOptContext *ctx, JitOptRef sym);
 extern void _Py_uop_sym_set_non_null(JitOptContext *ctx, JitOptRef sym);
 extern void _Py_uop_sym_set_type(JitOptContext *ctx, JitOptRef sym, PyTypeObject *typ);
@@ -425,8 +473,6 @@ extern PyCodeObject *_Py_uop_sym_get_probable_func_code(JitOptRef sym);
 extern PyObject *_Py_uop_sym_get_probable_value(JitOptRef sym);
 extern PyTypeObject *_Py_uop_sym_get_probable_type(JitOptRef sym);
 extern JitOptRef *_Py_uop_sym_set_stack_depth(JitOptContext *ctx, int stack_depth, JitOptRef *current_sp);
-extern uint32_t _Py_uop_sym_get_func_version(JitOptRef ref);
-bool _Py_uop_sym_set_func_version(JitOptContext *ctx, JitOptRef ref, uint32_t version);
 
 extern void _Py_uop_abstractcontext_init(JitOptContext *ctx, _PyBloomFilter *dependencies);
 extern void _Py_uop_abstractcontext_fini(JitOptContext *ctx);
@@ -484,7 +530,26 @@ void _PyJit_TracerFree(_PyThreadStateImpl *_tstate);
 #ifdef _Py_TIER2
 typedef void (*_Py_RecordFuncPtr)(_PyInterpreterFrame *frame, _PyStackRef *stackpointer, int oparg, PyObject **recorded_value);
 PyAPI_DATA(const _Py_RecordFuncPtr) _PyOpcode_RecordFunctions[];
-PyAPI_DATA(const uint8_t) _PyOpcode_RecordFunctionIndices[256];
+
+typedef struct {
+    uint8_t count;
+    uint8_t indices[MAX_RECORDED_VALUES];
+} _PyOpcodeRecordEntry;
+
+typedef struct {
+    uint8_t count;
+    uint8_t transform_mask;
+    uint8_t slots[MAX_RECORDED_VALUES];
+} _PyOpcodeRecordSlotMap;
+
+PyAPI_DATA(const _PyOpcodeRecordEntry) _PyOpcode_RecordEntries[256];
+PyAPI_DATA(const _PyOpcodeRecordSlotMap) _PyOpcode_RecordSlotMaps[256];
+
+/* Convert a family-recorded value to the form a recorder uop expects.
+ * If no transform is needed, return the input value unchanged.
+ * Takes ownership of `value` and returns a new strong reference or NULL.
+ */
+PyAPI_FUNC(PyObject *) _PyOpcode_RecordTransformValue(int uop, PyObject *value);
 #endif
 
 #ifdef __cplusplus

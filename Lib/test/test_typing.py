@@ -14,7 +14,7 @@ import pickle
 import re
 import sys
 import warnings
-from unittest import TestCase, main, skip
+from unittest import TestCase, main
 from unittest.mock import patch
 from copy import copy, deepcopy
 
@@ -29,7 +29,7 @@ from typing import Generic, ClassVar, Final, final, Protocol
 from typing import assert_type, cast, runtime_checkable
 from typing import get_type_hints
 from typing import get_origin, get_args, get_protocol_members
-from typing import override
+from typing import override, disjoint_base
 from typing import is_typeddict, is_protocol
 from typing import reveal_type
 from typing import dataclass_transform
@@ -780,7 +780,7 @@ class TypeParameterDefaultsTests(BaseTestCase):
         self.assertIs(U_None.__default__, None)
         self.assertIs(U_None.has_default(), True)
 
-        class X[**Ts]: ...
+        class X[*Ts]: ...
         Ts, = X.__type_params__
         self.assertIs(Ts.__default__, NoDefault)
         self.assertIs(Ts.has_default(), False)
@@ -1288,6 +1288,57 @@ class TypeVarTupleTests(BaseTestCase):
         with self.assertRaises(TypeError):
             Ts()
 
+    def test_default_variance(self):
+        Ts = TypeVarTuple('Ts')
+        self.assertIs(Ts.__covariant__, False)
+        self.assertIs(Ts.__contravariant__, False)
+        self.assertIs(Ts.__infer_variance__, False)
+        self.assertIsNone(Ts.__bound__)
+
+    def test_covariant(self):
+        Ts_co = TypeVarTuple('Ts_co', covariant=True)
+        self.assertIs(Ts_co.__covariant__, True)
+        self.assertIs(Ts_co.__contravariant__, False)
+        self.assertIs(Ts_co.__infer_variance__, False)
+
+    def test_contravariant(self):
+        Ts_contra = TypeVarTuple('Ts_contra', contravariant=True)
+        self.assertIs(Ts_contra.__covariant__, False)
+        self.assertIs(Ts_contra.__contravariant__, True)
+        self.assertIs(Ts_contra.__infer_variance__, False)
+
+    def test_infer_variance(self):
+        Ts = TypeVarTuple('Ts', infer_variance=True)
+        self.assertIs(Ts.__covariant__, False)
+        self.assertIs(Ts.__contravariant__, False)
+        self.assertIs(Ts.__infer_variance__, True)
+
+    def test_bound(self):
+        Ts_bound = TypeVarTuple('Ts_bound', bound=int)
+        self.assertIs(Ts_bound.__bound__, int)
+        Ts_no_bound = TypeVarTuple('Ts_no_bound')
+        self.assertIsNone(Ts_no_bound.__bound__)
+
+    def test_no_bivariant(self):
+        with self.assertRaises(ValueError):
+            TypeVarTuple('Ts', covariant=True, contravariant=True)
+
+    def test_cannot_combine_explicit_and_infer(self):
+        with self.assertRaises(ValueError):
+            TypeVarTuple('Ts', covariant=True, infer_variance=True)
+        with self.assertRaises(ValueError):
+            TypeVarTuple('Ts', contravariant=True, infer_variance=True)
+
+    def test_repr_with_variance(self):
+        Ts = TypeVarTuple('Ts')
+        self.assertEqual(repr(Ts), '~Ts')
+        Ts_co = TypeVarTuple('Ts_co', covariant=True)
+        self.assertEqual(repr(Ts_co), '+Ts_co')
+        Ts_contra = TypeVarTuple('Ts_contra', contravariant=True)
+        self.assertEqual(repr(Ts_contra), '-Ts_contra')
+        Ts_infer = TypeVarTuple('Ts_infer', infer_variance=True)
+        self.assertEqual(repr(Ts_infer), 'Ts_infer')
+
     def test_unpacked_typevartuple_is_equal_to_itself(self):
         Ts = TypeVarTuple('Ts')
         self.assertEqual((*Ts,)[0], (*Ts,)[0])
@@ -1427,16 +1478,16 @@ class TypeVarTupleTests(BaseTestCase):
         class G1(Generic[*Ts]): pass
         class G2(Generic[Unpack[Ts]]): pass
 
-        self.assertEqual(repr(Ts), 'Ts')
+        self.assertEqual(repr(Ts), '~Ts')
 
-        self.assertEqual(repr((*Ts,)[0]), 'typing.Unpack[Ts]')
-        self.assertEqual(repr(Unpack[Ts]), 'typing.Unpack[Ts]')
+        self.assertEqual(repr((*Ts,)[0]), 'typing.Unpack[~Ts]')
+        self.assertEqual(repr(Unpack[Ts]), 'typing.Unpack[~Ts]')
 
-        self.assertEqual(repr(tuple[*Ts]), 'tuple[typing.Unpack[Ts]]')
-        self.assertEqual(repr(Tuple[Unpack[Ts]]), 'typing.Tuple[typing.Unpack[Ts]]')
+        self.assertEqual(repr(tuple[*Ts]), 'tuple[typing.Unpack[~Ts]]')
+        self.assertEqual(repr(Tuple[Unpack[Ts]]), 'typing.Tuple[typing.Unpack[~Ts]]')
 
-        self.assertEqual(repr(*tuple[*Ts]), '*tuple[typing.Unpack[Ts]]')
-        self.assertEqual(repr(Unpack[Tuple[Unpack[Ts]]]), 'typing.Unpack[typing.Tuple[typing.Unpack[Ts]]]')
+        self.assertEqual(repr(*tuple[*Ts]), '*tuple[typing.Unpack[~Ts]]')
+        self.assertEqual(repr(Unpack[Tuple[Unpack[Ts]]]), 'typing.Unpack[typing.Tuple[typing.Unpack[~Ts]]]')
 
     def test_variadic_class_repr_is_correct(self):
         Ts = TypeVarTuple('Ts')
@@ -1475,61 +1526,61 @@ class TypeVarTupleTests(BaseTestCase):
         class A(Generic[Unpack[Ts]]): pass
 
         B = A[*Ts]
-        self.assertEndsWith(repr(B), 'A[typing.Unpack[Ts]]')
+        self.assertEndsWith(repr(B), 'A[typing.Unpack[~Ts]]')
         self.assertEndsWith(repr(B[()]), 'A[()]')
         self.assertEndsWith(repr(B[float]), 'A[float]')
         self.assertEndsWith(repr(B[float, str]), 'A[float, str]')
 
         C = A[Unpack[Ts]]
-        self.assertEndsWith(repr(C), 'A[typing.Unpack[Ts]]')
+        self.assertEndsWith(repr(C), 'A[typing.Unpack[~Ts]]')
         self.assertEndsWith(repr(C[()]), 'A[()]')
         self.assertEndsWith(repr(C[float]), 'A[float]')
         self.assertEndsWith(repr(C[float, str]), 'A[float, str]')
 
         D = A[*Ts, int]
-        self.assertEndsWith(repr(D), 'A[typing.Unpack[Ts], int]')
+        self.assertEndsWith(repr(D), 'A[typing.Unpack[~Ts], int]')
         self.assertEndsWith(repr(D[()]), 'A[int]')
         self.assertEndsWith(repr(D[float]), 'A[float, int]')
         self.assertEndsWith(repr(D[float, str]), 'A[float, str, int]')
 
         E = A[Unpack[Ts], int]
-        self.assertEndsWith(repr(E), 'A[typing.Unpack[Ts], int]')
+        self.assertEndsWith(repr(E), 'A[typing.Unpack[~Ts], int]')
         self.assertEndsWith(repr(E[()]), 'A[int]')
         self.assertEndsWith(repr(E[float]), 'A[float, int]')
         self.assertEndsWith(repr(E[float, str]), 'A[float, str, int]')
 
         F = A[int, *Ts]
-        self.assertEndsWith(repr(F), 'A[int, typing.Unpack[Ts]]')
+        self.assertEndsWith(repr(F), 'A[int, typing.Unpack[~Ts]]')
         self.assertEndsWith(repr(F[()]), 'A[int]')
         self.assertEndsWith(repr(F[float]), 'A[int, float]')
         self.assertEndsWith(repr(F[float, str]), 'A[int, float, str]')
 
         G = A[int, Unpack[Ts]]
-        self.assertEndsWith(repr(G), 'A[int, typing.Unpack[Ts]]')
+        self.assertEndsWith(repr(G), 'A[int, typing.Unpack[~Ts]]')
         self.assertEndsWith(repr(G[()]), 'A[int]')
         self.assertEndsWith(repr(G[float]), 'A[int, float]')
         self.assertEndsWith(repr(G[float, str]), 'A[int, float, str]')
 
         H = A[int, *Ts, str]
-        self.assertEndsWith(repr(H), 'A[int, typing.Unpack[Ts], str]')
+        self.assertEndsWith(repr(H), 'A[int, typing.Unpack[~Ts], str]')
         self.assertEndsWith(repr(H[()]), 'A[int, str]')
         self.assertEndsWith(repr(H[float]), 'A[int, float, str]')
         self.assertEndsWith(repr(H[float, str]), 'A[int, float, str, str]')
 
         I = A[int, Unpack[Ts], str]
-        self.assertEndsWith(repr(I), 'A[int, typing.Unpack[Ts], str]')
+        self.assertEndsWith(repr(I), 'A[int, typing.Unpack[~Ts], str]')
         self.assertEndsWith(repr(I[()]), 'A[int, str]')
         self.assertEndsWith(repr(I[float]), 'A[int, float, str]')
         self.assertEndsWith(repr(I[float, str]), 'A[int, float, str, str]')
 
         J = A[*Ts, *tuple[str, ...]]
-        self.assertEndsWith(repr(J), 'A[typing.Unpack[Ts], *tuple[str, ...]]')
+        self.assertEndsWith(repr(J), 'A[typing.Unpack[~Ts], *tuple[str, ...]]')
         self.assertEndsWith(repr(J[()]), 'A[*tuple[str, ...]]')
         self.assertEndsWith(repr(J[float]), 'A[float, *tuple[str, ...]]')
         self.assertEndsWith(repr(J[float, str]), 'A[float, str, *tuple[str, ...]]')
 
         K = A[Unpack[Ts], Unpack[Tuple[str, ...]]]
-        self.assertEndsWith(repr(K), 'A[typing.Unpack[Ts], typing.Unpack[typing.Tuple[str, ...]]]')
+        self.assertEndsWith(repr(K), 'A[typing.Unpack[~Ts], typing.Unpack[typing.Tuple[str, ...]]]')
         self.assertEndsWith(repr(K[()]), 'A[typing.Unpack[typing.Tuple[str, ...]]]')
         self.assertEndsWith(repr(K[float]), 'A[float, typing.Unpack[typing.Tuple[str, ...]]]')
         self.assertEndsWith(repr(K[float, str]), 'A[float, str, typing.Unpack[typing.Tuple[str, ...]]]')
@@ -1550,9 +1601,9 @@ class TypeVarTupleTests(BaseTestCase):
         with self.assertRaisesRegex(TypeError,
                                     r'Cannot subclass typing\.Unpack'):
             class H(Unpack): pass
-        with self.assertRaisesRegex(TypeError, r'Cannot subclass typing.Unpack\[Ts\]'):
+        with self.assertRaisesRegex(TypeError, r'Cannot subclass typing.Unpack\[~Ts\]'):
             class I(*Ts): pass
-        with self.assertRaisesRegex(TypeError, r'Cannot subclass typing.Unpack\[Ts\]'):
+        with self.assertRaisesRegex(TypeError, r'Cannot subclass typing.Unpack\[~Ts\]'):
             class J(Unpack[Ts]): pass
 
     def test_variadic_class_args_are_correct(self):
@@ -5596,13 +5647,13 @@ class GenericTests(BaseTestCase):
             MyCallable[[int], bool]:                  "MyCallable[[int], bool]",
             MyCallable[[int, str], bool]:             "MyCallable[[int, str], bool]",
             MyCallable[[int, list[int]], bool]:       "MyCallable[[int, list[int]], bool]",
-            MyCallable[Concatenate[*Ts, P], T]:       "MyCallable[typing.Concatenate[typing.Unpack[Ts], ~P], ~T]",
+            MyCallable[Concatenate[*Ts, P], T]:       "MyCallable[typing.Concatenate[typing.Unpack[~Ts], ~P], ~T]",
 
             DoubleSpec[P2, P, T]:                     "DoubleSpec[~P2, ~P, ~T]",
             DoubleSpec[[int], [str], bool]:           "DoubleSpec[[int], [str], bool]",
             DoubleSpec[[int, int], [str, str], bool]: "DoubleSpec[[int, int], [str, str], bool]",
 
-            TsP[*Ts, P]:                              "TsP[typing.Unpack[Ts], ~P]",
+            TsP[*Ts, P]:                              "TsP[typing.Unpack[~Ts], ~P]",
             TsP[int, str, list[int], []]:             "TsP[int, str, list[int], []]",
             TsP[int, [str, list[int]]]:               "TsP[int, [str, list[int]]]",
 
@@ -6745,11 +6796,7 @@ class GetTypeHintsTests(BaseTestCase):
         self.assertEqual(gth(ann_module2), {})
         self.assertEqual(gth(ann_module3), {})
 
-    @skip("known bug")
     def test_get_type_hints_modules_forwardref(self):
-        # FIXME: This currently exposes a bug in typing. Cached forward references
-        # don't account for the case where there are multiple types of the same
-        # name coming from different modules in the same program.
         mgc_hints = {'default_a': Optional[mod_generics_cache.A],
                      'default_b': Optional[mod_generics_cache.B]}
         self.assertEqual(gth(mod_generics_cache), mgc_hints)
@@ -6836,6 +6883,24 @@ class GetTypeHintsTests(BaseTestCase):
         expects = {'self': ForRefExample}
         self.assertEqual(gth(ForRefExample.func), expects)
         self.assertEqual(gth(ForRefExample.nested), expects)
+
+    def test_get_type_hints_wrapped_cycle_self(self):
+        # gh-146553: __wrapped__ self-reference must raise ValueError,
+        # not loop forever.
+        def f(x: int) -> str: ...
+        f.__wrapped__ = f
+        with self.assertRaisesRegex(ValueError, 'wrapper loop'):
+            get_type_hints(f)
+
+    def test_get_type_hints_wrapped_cycle_mutual(self):
+        # gh-146553: mutual __wrapped__ cycle (a -> b -> a) must raise
+        # ValueError, not loop forever.
+        def a(): ...
+        def b(): ...
+        a.__wrapped__ = b
+        b.__wrapped__ = a
+        with self.assertRaisesRegex(ValueError, 'wrapper loop'):
+            get_type_hints(a)
 
     def test_get_type_hints_annotated(self):
         def foobar(x: List['X']): ...
@@ -7268,6 +7333,13 @@ class GetTypeHintsTests(BaseTestCase):
         TD = ns['TD']
         self.assertEqual(TD.__annotations__, {'a': EqualToForwardRef('UniqueT', owner=TD, module=TD.__module__)})
         self.assertEqual(get_type_hints(TD), {'a': TD.__type_params__[0]})
+
+    def test_get_type_hints_order(self):
+        """Ensure that the order of function annotations matches the order they're defined"""
+        def f(positional: int, /, normal: str, *args: bytes, kwarg: list, **kwargs: bool) -> tuple:
+            pass
+
+        self.assertEqual(list(gth(f)), ["positional", "normal", "args", "kwarg", "kwargs", "return"])
 
 
 class GetUtilitiesTestCase(TestCase):
@@ -10911,6 +10983,18 @@ class SpecialAttrsTests(BaseTestCase):
             with self.subTest(required_item=required_item):
                 self.assertIn(required_item, dir_items)
         self.assertNotIn('__magic__', dir_items)
+
+
+class DisjointBaseTests(BaseTestCase):
+    def test_disjoint_base_unmodified(self):
+        class C: ...
+        self.assertIs(C, disjoint_base(C))
+
+    def test_dunder_disjoint_base(self):
+        @disjoint_base
+        class C: ...
+
+        self.assertIs(C.__disjoint_base__, True)
 
 
 class RevealTypeTests(BaseTestCase):

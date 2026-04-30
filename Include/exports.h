@@ -36,7 +36,7 @@
         #define Py_LOCAL_SYMBOL
     #endif
     /* module init functions outside the core must be exported */
-    #if defined(Py_BUILD_CORE)
+    #if defined(_PyEXPORTS_CORE)
         #define _PyINIT_EXPORTED_SYMBOL Py_EXPORTED_SYMBOL
     #else
         #define _PyINIT_EXPORTED_SYMBOL __declspec(dllexport)
@@ -64,13 +64,13 @@
 /* only get special linkage if built as shared or platform is Cygwin */
 #if defined(Py_ENABLE_SHARED) || defined(__CYGWIN__)
 #       if defined(HAVE_DECLSPEC_DLL)
-#               if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+#               if defined(_PyEXPORTS_CORE) && !defined(_PyEXPORTS_CORE_MODULE)
         /* module init functions inside the core need no external linkage */
         /* except for Cygwin to handle embedding */
 #                       if !defined(__CYGWIN__)
 #                               define _PyINIT_FUNC_DECLSPEC
 #                       endif /* __CYGWIN__ */
-#               else /* Py_BUILD_CORE */
+#               else /* _PyEXPORTS_CORE */
         /* Building an extension module, or an embedded situation */
         /* public Python functions and data are imported */
         /* Under Cygwin, auto-import functions to prevent compilation */
@@ -80,7 +80,7 @@
 #                               define PyAPI_FUNC(RTYPE) Py_IMPORTED_SYMBOL RTYPE
 #                       endif /* !__CYGWIN__ */
 #                       define PyAPI_DATA(RTYPE) extern Py_IMPORTED_SYMBOL RTYPE
-#               endif /* Py_BUILD_CORE */
+#               endif /* _PyEXPORTS_CORE */
 #       endif /* HAVE_DECLSPEC_DLL */
 #endif /* Py_ENABLE_SHARED */
 

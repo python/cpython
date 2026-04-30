@@ -54,7 +54,8 @@ on:  # yamllint disable-line rule:truthy
         description: Whether to run the Windows tests
         value: ${{ jobs.compute-changes.outputs.run-windows-tests }}  # bool
 
-permissions: {}
+permissions:
+  contents: read
 
 jobs:
   compute-changes:

@@ -47,16 +47,21 @@ class TestStructSeq(unittest.TestCase):
                 self.check_structseq(type(obj))
 
 
-try:
-    unittest.main(
-        module=(
-            '__main__'
-            if __name__ == '__main__'
-            # Avoiding a circular import:
-            else sys.modules['test._test_embed_structseq']
+def main():
+    try:
+        unittest.main(
+            module=(
+                '__main__'
+                if __name__ == '__main__'
+                # Avoiding a circular import:
+                else sys.modules['test._test_embed_structseq']
+            )
         )
-    )
-except SystemExit as exc:
-    if exc.args[0] != 0:
-        raise
-print("Tests passed")
+    except SystemExit as exc:
+        if exc.args[0] != 0:
+            raise
+    print("Tests passed")
+
+
+if __name__ == "__main__":
+    main()

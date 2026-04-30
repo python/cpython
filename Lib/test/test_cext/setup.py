@@ -18,6 +18,11 @@ if not support.MS_WINDOWS:
         # The purpose of test_cext extension is to check that building a C
         # extension using the Python C API does not emit C compiler warnings.
         '-Werror',
+        # Enable extra checks for header files, which:
+        #  - need to be enabled somewhere inside Python headers (rather than
+        #    before including Python.h)
+        #  - should not be checked for user code
+        '-D_Py_IS_TESTCEXT',
     ]
 
     # C compiler flags for GCC and clang

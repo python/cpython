@@ -391,17 +391,21 @@ class Morsel(dict):
         return '<%s: %s>' % (self.__class__.__name__, self.OutputString())
 
     def js_output(self, attrs=None):
+        import base64
         # Print javascript
         output_string = self.OutputString(attrs)
         if _has_control_character(output_string):
             raise CookieError("Control characters are not allowed in cookies")
+        # Base64-encode value to avoid template
+        # injection in cookie values.
+        output_encoded = base64.b64encode(output_string.encode('utf-8')).decode("ascii")
         return """
         <script type="text/javascript">
         <!-- begin hiding
-        document.cookie = \"%s\";
+        document.cookie = atob(\"%s\");
         // end hiding -->
         </script>
-        """ % (output_string.replace('"', r'\"'))
+        """ % (output_encoded,)
 
     def OutputString(self, attrs=None):
         # Build up our result

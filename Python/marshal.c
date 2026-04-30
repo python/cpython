@@ -382,7 +382,6 @@ static int
 w_ref(PyObject *v, char *flag, WFILE *p)
 {
     _Py_hashtable_entry_t *entry;
-    int w;
 
     if (p->version < 3 || p->hashtable == NULL)
         return 0; /* not writing object references */
@@ -399,20 +398,28 @@ w_ref(PyObject *v, char *flag, WFILE *p)
     entry = _Py_hashtable_get_entry(p->hashtable, v);
     if (entry != NULL) {
         /* write the reference index to the stream */
-        w = (int)(uintptr_t)entry->value;
+        uintptr_t w = (uintptr_t)entry->value;
+        if (w & 0x80000000LU) {
+            PyErr_Format(PyExc_ValueError, "cannot marshal recursion %T objects", v);
+            goto err;
+        }
         /* we don't store "long" indices in the dict */
-        assert(0 <= w && w <= 0x7fffffff);
+        assert(w <= 0x7fffffff);
         w_byte(TYPE_REF, p);
-        w_long(w, p);
+        w_long((int)w, p);
         return 1;
     } else {
-        size_t s = p->hashtable->nentries;
+        size_t w = p->hashtable->nentries;
         /* we don't support long indices */
-        if (s >= 0x7fffffff) {
+        if (w >= 0x7fffffff) {
             PyErr_SetString(PyExc_ValueError, "too many objects");
             goto err;
         }
-        w = (int)s;
+        // Corresponding code should call w_complete() after
+        // writing the object.
+        if (PyCode_Check(v) || PySlice_Check(v) || PyFrozenDict_CheckExact(v)) {
+            w |= 0x80000000LU;
+        }
         if (_Py_hashtable_set(p->hashtable, Py_NewRef(v),
                               (void *)(uintptr_t)w) < 0) {
             Py_DECREF(v);
@@ -424,6 +431,27 @@ w_ref(PyObject *v, char *flag, WFILE *p)
 err:
     p->error = WFERR_UNMARSHALLABLE;
     return 1;
+}
+
+static void
+w_complete(PyObject *v, WFILE *p)
+{
+    if (p->version < 3 || p->hashtable == NULL) {
+        return;
+    }
+    if (_PyObject_IsUniquelyReferenced(v)) {
+        return;
+    }
+
+    _Py_hashtable_entry_t *entry = _Py_hashtable_get_entry(p->hashtable, v);
+    if (entry == NULL) {
+        return;
+    }
+    assert(entry != NULL);
+    uintptr_t w = (uintptr_t)entry->value;
+    assert(w & 0x80000000LU);
+    w &= ~0x80000000LU;
+    entry->value = (void *)(uintptr_t)w;
 }
 
 static void
@@ -599,6 +627,9 @@ w_complex_object(PyObject *v, char flag, WFILE *p)
             w_object(value, p);
         }
         w_object((PyObject *)NULL, p);
+        if (PyFrozenDict_CheckExact(v)) {
+            w_complete(v, p);
+        }
     }
     else if (PyAnySet_CheckExact(v)) {
         PyObject *value;
@@ -684,6 +715,7 @@ w_complex_object(PyObject *v, char flag, WFILE *p)
         w_object(co->co_linetable, p);
         w_object(co->co_exceptiontable, p);
         Py_DECREF(co_code);
+        w_complete(v, p);
     }
     else if (PyObject_CheckBuffer(v)) {
         /* Write unknown bytes-like objects as a bytes object */
@@ -709,6 +741,7 @@ w_complex_object(PyObject *v, char flag, WFILE *p)
         w_object(slice->start, p);
         w_object(slice->stop, p);
         w_object(slice->step, p);
+        w_complete(v, p);
     }
     else {
         W_TYPE(TYPE_UNKNOWN, p);
@@ -1433,9 +1466,19 @@ r_object(RFILE *p)
     case TYPE_DICT:
     case TYPE_FROZENDICT:
         v = PyDict_New();
-        R_REF(v);
-        if (v == NULL)
+        if (v == NULL) {
             break;
+        }
+        if (type == TYPE_DICT) {
+            R_REF(v);
+        }
+        else {
+            idx = r_ref_reserve(flag, p);
+            if (idx < 0) {
+                Py_CLEAR(v);
+                break;
+            }
+        }
         for (;;) {
             PyObject *key, *val;
             key = r_object(p);
@@ -1458,13 +1501,7 @@ r_object(RFILE *p)
             Py_CLEAR(v);
         }
         if (type == TYPE_FROZENDICT && v != NULL) {
-            PyObject *frozendict = PyFrozenDict_New(v);
-            if (frozendict != NULL) {
-                Py_SETREF(v, frozendict);
-            }
-            else {
-                Py_CLEAR(v);
-            }
+            Py_SETREF(v, PyFrozenDict_New(v));
         }
         retval = v;
         break;

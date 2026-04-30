@@ -1174,7 +1174,8 @@ These can be used as types in annotations. They all support subscription using
    or transforms parameters of another
    callable.  Usage is in the form
    ``Concatenate[Arg1Type, Arg2Type, ..., ParamSpecVariable]``. ``Concatenate``
-   is currently only valid when used as the first argument to a :ref:`Callable <annotating-callables>`.
+   is valid when used in :ref:`Callable <annotating-callables>` type hints
+   and when instantiating user-defined generic classes with :class:`ParamSpec` parameters.
    The last parameter to ``Concatenate`` must be a :class:`ParamSpec` or
    ellipsis (``...``).
 
@@ -1980,7 +1981,7 @@ without the dedicated syntax, as documented below.
 
 .. _typevartuple:
 
-.. class:: TypeVarTuple(name, *, default=typing.NoDefault)
+.. class:: TypeVarTuple(name, *, bound=None, covariant=False, contravariant=False, infer_variance=False, default=typing.NoDefault)
 
    Type variable tuple. A specialized form of :ref:`type variable <typevar>`
    that enables *variadic* generics.
@@ -2090,6 +2091,24 @@ without the dedicated syntax, as documented below.
 
       The name of the type variable tuple.
 
+   .. attribute:: __covariant__
+
+      Whether the type variable tuple has been explicitly marked as covariant.
+
+      .. versionadded:: 3.15
+
+   .. attribute:: __contravariant__
+
+      Whether the type variable tuple has been explicitly marked as contravariant.
+
+      .. versionadded:: 3.15
+
+   .. attribute:: __infer_variance__
+
+      Whether the type variable tuple's variance should be inferred by type checkers.
+
+      .. versionadded:: 3.15
+
    .. attribute:: __default__
 
       The default value of the type variable tuple, or :data:`typing.NoDefault` if it
@@ -2116,6 +2135,11 @@ without the dedicated syntax, as documented below.
 
       .. versionadded:: 3.13
 
+   Type variable tuples created with ``covariant=True`` or
+   ``contravariant=True`` can be used to declare covariant or contravariant
+   generic types.  The ``bound`` argument is also accepted, similar to
+   :class:`TypeVar`, but its actual semantics are yet to be decided.
+
    .. versionadded:: 3.11
 
    .. versionchanged:: 3.12
@@ -2126,6 +2150,11 @@ without the dedicated syntax, as documented below.
    .. versionchanged:: 3.13
 
       Support for default values was added.
+
+   .. versionchanged:: 3.15
+
+      Added support for the ``bound``, ``covariant``, ``contravariant``, and
+      ``infer_variance`` parameters.
 
 .. class:: ParamSpec(name, *, bound=None, covariant=False, contravariant=False, default=typing.NoDefault)
 
@@ -2195,6 +2224,20 @@ without the dedicated syntax, as documented below.
    .. attribute:: __name__
 
       The name of the parameter specification.
+
+   .. attribute:: __covariant__
+
+      Whether the parameter specification has been explicitly marked as covariant.
+
+   .. attribute:: __contravariant__
+
+      Whether the parameter specification has been explicitly marked as contravariant.
+
+   .. attribute:: __infer_variance__
+
+      Whether the parameter specification's variance should be inferred by type checkers.
+
+      .. versionadded:: 3.12
 
    .. attribute:: __default__
 
@@ -3358,6 +3401,36 @@ Functions and decorators
 
    .. versionadded:: 3.12
 
+.. decorator:: disjoint_base
+
+   Decorator to mark a class as a disjoint base.
+
+   Type checkers do not allow child classes of a disjoint base ``C`` to
+   inherit from other disjoint bases that are not parent or child classes of ``C``.
+
+   For example::
+
+       @disjoint_base
+       class Disjoint1: pass
+
+       @disjoint_base
+       class Disjoint2: pass
+
+       class Disjoint3(Disjoint1, Disjoint2): pass  # Type checker error
+
+   Type checkers can use knowledge of disjoint bases to detect unreachable code
+   and determine when two types can overlap.
+
+   The corresponding runtime concept is a solid base (see :ref:`multiple-inheritance`).
+   Classes that are solid bases at runtime can be marked with ``@disjoint_base`` in stub files.
+   Users may also mark other classes as disjoint bases to indicate to type checkers that
+   multiple inheritance with other disjoint bases should not be allowed.
+
+   Note that the concept of a solid base is a CPython implementation
+   detail, and the exact set of standard library classes that are
+   disjoint bases at runtime may change in future versions of Python.
+
+   .. versionadded:: next
 
 .. decorator:: type_check_only
 
@@ -3380,13 +3453,13 @@ Functions and decorators
 Introspection helpers
 ---------------------
 
-.. function:: get_type_hints(obj, globalns=None, localns=None, include_extras=False)
+.. function:: get_type_hints(obj, globalns=None, localns=None, include_extras=False, *, format=Format.VALUE)
 
    Return a dictionary containing type hints for a function, method, module,
    class object, or other callable object.
 
-   This is often the same as ``obj.__annotations__``, but this function makes
-   the following changes to the annotations dictionary:
+   This is often the same as :func:`annotationlib.get_annotations`, but this
+   function makes the following changes to the annotations dictionary:
 
    * Forward references encoded as string literals or :class:`ForwardRef`
      objects are handled by evaluating them in *globalns*, *localns*, and
@@ -3400,16 +3473,14 @@ Introspection helpers
      annotations from ``C``'s base classes with those on ``C`` directly. This
      is done by traversing :attr:`C.__mro__ <type.__mro__>` and iteratively
      combining
-     ``__annotations__`` dictionaries. Annotations on classes appearing
-     earlier in the :term:`method resolution order` always take precedence over
-     annotations on classes appearing later in the method resolution order.
+     :term:`annotations <variable annotation>` of each base class. Annotations
+     on classes appearing earlier in the :term:`method resolution order` always
+     take precedence over annotations on classes appearing later in the method
+     resolution order.
    * The function recursively replaces all occurrences of
      ``Annotated[T, ...]``, ``Required[T]``, ``NotRequired[T]``, and ``ReadOnly[T]``
      with ``T``, unless *include_extras* is set to ``True`` (see
      :class:`Annotated` for more information).
-
-   See also :func:`annotationlib.get_annotations`, a lower-level function that
-   returns annotations more directly.
 
    .. caution::
 
@@ -3418,11 +3489,12 @@ Introspection helpers
 
    .. note::
 
-      If any forward references in the annotations of *obj* are not resolvable
-      or are not valid Python code, this function will raise an exception
-      such as :exc:`NameError`. For example, this can happen with imported
-      :ref:`type aliases <type-aliases>` that include forward references,
-      or with names imported under :data:`if TYPE_CHECKING <TYPE_CHECKING>`.
+      If :attr:`Format.VALUE <annotationlib.Format.VALUE>` is used and any
+      forward references in the annotations of *obj* are not resolvable, a
+      :exc:`NameError` exception is raised. For example, this can happen
+      with names imported under :data:`if TYPE_CHECKING <TYPE_CHECKING>`.
+      More generally, any kind of exception can be raised if an annotation
+      contains invalid Python code.
 
    .. note::
 
@@ -3439,6 +3511,10 @@ Introspection helpers
       Previously, ``Optional[t]`` was added for function and method annotations
       if a default value equal to ``None`` was set.
       Now the annotation is returned unchanged.
+
+   .. versionchanged:: 3.14
+      Added the ``format`` parameter. See the documentation on
+      :func:`annotationlib.get_annotations` for more information.
 
    .. versionchanged:: 3.14
       Calling :func:`get_type_hints` on instances is no longer supported.
@@ -3797,7 +3873,7 @@ Aliases to other concrete types
            Match
 
    Deprecated aliases corresponding to the return types from
-   :func:`re.compile` and :func:`re.match`.
+   :func:`re.compile` and :func:`re.search`.
 
    These types (and the corresponding functions) are generic over
    :data:`AnyStr`. ``Pattern`` can be specialised as ``Pattern[str]`` or

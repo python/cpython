@@ -31,6 +31,7 @@
 #include "pycore_ceval.h"
 #include "pycore_floatobject.h"
 #include "pycore_setobject.h"
+#include "pycore_typeobject.h"
 
 #include <stdarg.h>
 #include <stdbool.h>
@@ -118,14 +119,15 @@ static int
 get_mutations(PyObject* dict) {
     assert(PyDict_CheckExact(dict));
     PyDictObject *d = (PyDictObject *)dict;
-    return (d->_ma_watcher_tag >> DICT_MAX_WATCHERS) & ((1 << DICT_WATCHED_MUTATION_BITS)-1);
+    uint64_t tag = FT_ATOMIC_LOAD_UINT64_RELAXED(d->_ma_watcher_tag);
+    return (tag >> DICT_MAX_WATCHERS) & ((1 << DICT_WATCHED_MUTATION_BITS) - 1);
 }
 
 static void
 increment_mutations(PyObject* dict) {
     assert(PyDict_CheckExact(dict));
     PyDictObject *d = (PyDictObject *)dict;
-    d->_ma_watcher_tag += (1 << DICT_MAX_WATCHERS);
+    FT_ATOMIC_ADD_UINT64(d->_ma_watcher_tag, (1 << DICT_MAX_WATCHERS));
 }
 
 /* The first two dict watcher IDs are reserved for CPython,
@@ -155,7 +157,7 @@ type_watcher_callback(PyTypeObject* type)
 }
 
 static PyObject *
-convert_global_to_const(_PyUOpInstruction *inst, PyObject *obj, bool pop, bool insert)
+convert_global_to_const(_PyUOpInstruction *inst, PyObject *obj)
 {
     assert(inst->opcode == _LOAD_GLOBAL_MODULE || inst->opcode == _LOAD_GLOBAL_BUILTINS || inst->opcode == _LOAD_ATTR_MODULE);
     assert(PyDict_CheckExact(obj));
@@ -175,22 +177,10 @@ convert_global_to_const(_PyUOpInstruction *inst, PyObject *obj, bool pop, bool i
     if (res == NULL) {
         return NULL;
     }
-    if (insert) {
-        if (_Py_IsImmortal(res)) {
-            inst->opcode = _INSERT_1_LOAD_CONST_INLINE_BORROW;
-        } else {
-            inst->opcode = _INSERT_1_LOAD_CONST_INLINE;
-        }
+    if (_Py_IsImmortal(res)) {
+        inst->opcode = _LOAD_CONST_INLINE_BORROW;
     } else {
-        if (_Py_IsImmortal(res)) {
-            inst->opcode = pop ? _POP_TOP_LOAD_CONST_INLINE_BORROW : _LOAD_CONST_INLINE_BORROW;
-        } else {
-            inst->opcode = pop ? _POP_TOP_LOAD_CONST_INLINE : _LOAD_CONST_INLINE;
-        }
-        if (inst->oparg & 1) {
-            assert(inst[1].opcode == _PUSH_NULL_CONDITIONAL);
-            assert(inst[1].oparg & 1);
-        }
+        inst->opcode = _LOAD_CONST_INLINE;
     }
     inst->operand0 = (uint64_t)res;
     return res;
@@ -245,6 +235,9 @@ add_op(JitOptContext *ctx, _PyUOpInstruction *this_instr,
     out->target = this_instr->target;
     out->operand0 = (operand0);
     out->operand1 = this_instr->operand1;
+#ifdef Py_STATS
+    out->fitness = this_instr->fitness;
+#endif
     ctx->out_buffer.next++;
 }
 
@@ -267,6 +260,7 @@ add_op(JitOptContext *ctx, _PyUOpInstruction *this_instr,
 #define sym_get_probable_type _Py_uop_sym_get_probable_type
 #define sym_matches_type _Py_uop_sym_matches_type
 #define sym_matches_type_version _Py_uop_sym_matches_type_version
+#define sym_get_type_version _Py_uop_sym_get_type_version
 #define sym_set_null(SYM) _Py_uop_sym_set_null(ctx, SYM)
 #define sym_set_non_null(SYM) _Py_uop_sym_set_non_null(ctx, SYM)
 #define sym_set_type(SYM, TYPE) _Py_uop_sym_set_type(ctx, SYM, TYPE)
@@ -293,8 +287,6 @@ add_op(JitOptContext *ctx, _PyUOpInstruction *this_instr,
 #define sym_get_probable_func_code _Py_uop_sym_get_probable_func_code
 #define sym_get_probable_value _Py_uop_sym_get_probable_value
 #define sym_set_stack_depth(DEPTH, SP) _Py_uop_sym_set_stack_depth(ctx, DEPTH, SP)
-#define sym_get_func_version _Py_uop_sym_get_func_version
-#define sym_set_func_version _Py_uop_sym_set_func_version
 
 /* Comparison oparg masks */
 #define COMPARE_LT_MASK 2
@@ -330,7 +322,7 @@ optimize_to_bool(
     JitOptContext *ctx,
     JitOptRef value,
     JitOptRef *result_ptr,
-    bool insert_mode)
+    uint16_t prefix, uint16_t suffix)
 {
     if (sym_matches_type(value, &PyBool_Type)) {
         ADD_OP(_NOP, 0, 0);
@@ -340,10 +332,13 @@ optimize_to_bool(
     int truthiness = sym_truthiness(ctx, value);
     if (truthiness >= 0) {
         PyObject *load = truthiness ? Py_True : Py_False;
-        int opcode = insert_mode ?
-            _INSERT_1_LOAD_CONST_INLINE_BORROW :
-            _POP_TOP_LOAD_CONST_INLINE_BORROW;
-        ADD_OP(opcode, 0, (uintptr_t)load);
+        if (prefix != _NOP) {
+            ADD_OP(prefix, 0, 0);
+        }
+        ADD_OP(_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)load);
+        if (suffix != _NOP) {
+            ADD_OP(suffix, 2, 0);
+        }
         *result_ptr = sym_new_const(ctx, load);
         return 1;
     }
@@ -389,25 +384,101 @@ eliminate_pop_guard(_PyUOpInstruction *this_instr, JitOptContext *ctx, bool exit
 
 static JitOptRef
 lookup_attr(JitOptContext *ctx, _PyBloomFilter *dependencies, _PyUOpInstruction *this_instr,
-            PyTypeObject *type, PyObject *name, uint16_t immortal,
-            uint16_t mortal)
+            PyTypeObject *type, PyObject *name,
+            uint16_t prefix, uint16_t suffix)
 {
     // The cached value may be dead, so we need to do the lookup again... :(
     if (type && PyType_Check(type)) {
         PyObject *lookup = _PyType_Lookup(type, name);
         if (lookup) {
-            int opcode = mortal;
-            // if the object is immortal or the type is immutable, borrowing is safe
-            if (_Py_IsImmortal(lookup) || (type->tp_flags & Py_TPFLAGS_IMMUTABLETYPE)) {
-                opcode = immortal;
+            bool immortal = _Py_IsImmortal(lookup) || (type->tp_flags & Py_TPFLAGS_IMMUTABLETYPE);
+            if (prefix != _NOP) {
+                ADD_OP(prefix, 0, 0);
             }
-            ADD_OP(opcode, 0, (uintptr_t)lookup);
-            PyType_Watch(TYPE_WATCHER_ID, (PyObject *)type);
-            _Py_BloomFilter_Add(dependencies, type);
+            ADD_OP(immortal ? _LOAD_CONST_INLINE_BORROW : _LOAD_CONST_INLINE,
+                   0, (uintptr_t)lookup);
+            if (suffix != _NOP) {
+                ADD_OP(suffix, 2, 0);
+            }
+            if ((type->tp_flags & Py_TPFLAGS_IMMUTABLETYPE) == 0) {
+                PyType_Watch(TYPE_WATCHER_ID, (PyObject *)type);
+                _Py_BloomFilter_Add(dependencies, type);
+            }
             return sym_new_const(ctx, lookup);
         }
     }
     return sym_new_not_null(ctx);
+}
+
+static void
+optimize_pop_top(JitOptContext *ctx, _PyUOpInstruction *this_instr, JitOptRef value)
+{
+    PyTypeObject *typ = sym_get_type(value);
+    if (PyJitRef_IsBorrowed(value) ||
+        sym_is_immortal(PyJitRef_Unwrap(value)) ||
+        sym_is_null(value)) {
+        ADD_OP(_POP_TOP_NOP, 0, 0);
+    }
+    else if (typ == &PyLong_Type) {
+        ADD_OP(_POP_TOP_INT, 0, 0);
+    }
+    else if (typ == &PyFloat_Type) {
+        ADD_OP(_POP_TOP_FLOAT, 0, 0);
+    }
+    else if (typ == &PyUnicode_Type) {
+        ADD_OP(_POP_TOP_UNICODE, 0, 0);
+    }
+    else {
+        ADD_OP(_POP_TOP, 0, 0);
+    }
+}
+
+/* Look up name via super (normal case from supercheck where
+   su_obj_type = Py_TYPE(obj)). */
+static JitOptRef
+lookup_super_attr(JitOptContext *ctx, _PyBloomFilter *dependencies,
+                  _PyUOpInstruction *this_instr,
+                  PyTypeObject *su_type, PyTypeObject *obj_type,
+                  PyObject *name,
+                  uint16_t immortal, uint16_t mortal, uint16_t suffix)
+{
+    if (su_type == NULL || obj_type == NULL) {
+        return sym_new_not_null(ctx);
+    }
+    /* Normal case: obj_type must be a subtype of su_type */
+    if (!PyType_IsSubtype(obj_type, su_type)) {
+        return sym_new_not_null(ctx);
+    }
+    PyObject *lookup = _PySuper_LookupDescr(su_type, obj_type, name);
+    if (lookup == NULL) {
+        if (PyErr_Occurred()) {
+            PyErr_Clear();
+        }
+        return sym_new_not_null(ctx);
+    }
+    if ((Py_TYPE(lookup)->tp_flags & Py_TPFLAGS_METHOD_DESCRIPTOR) == 0) {
+        Py_DECREF(lookup);
+        return sym_new_not_null(ctx);
+    }
+    int opcode = mortal;
+    if (_Py_IsImmortal(lookup) || (obj_type->tp_flags & Py_TPFLAGS_IMMUTABLETYPE)) {
+        opcode = immortal;
+    }
+    ADD_OP(_SWAP, 3, 0);
+    ADD_OP(_POP_TOP, 0, 0);
+    ADD_OP(_POP_TOP, 0, 0);
+    ADD_OP(opcode, 0, (uintptr_t)lookup);
+    if (suffix != _NOP) {
+        ADD_OP(suffix, 2, 0);
+    }
+    // if obj_type is immutable, then all its superclasses are immutable
+    if ((obj_type->tp_flags & Py_TPFLAGS_IMMUTABLETYPE) == 0) {
+        PyType_Watch(TYPE_WATCHER_ID, (PyObject *)su_type);
+        _Py_BloomFilter_Add(dependencies, su_type);
+        PyType_Watch(TYPE_WATCHER_ID, (PyObject *)obj_type);
+        _Py_BloomFilter_Add(dependencies, obj_type);
+    }
+    return sym_new_const_steal(ctx, lookup);
 }
 
 static
@@ -611,17 +682,10 @@ const uint16_t op_without_push[MAX_UOP_ID + 1] = {
     [_COPY] = _NOP,
     [_LOAD_CONST_INLINE] = _NOP,
     [_LOAD_CONST_INLINE_BORROW] = _NOP,
-    [_LOAD_CONST_UNDER_INLINE] = _POP_TOP_LOAD_CONST_INLINE,
-    [_LOAD_CONST_UNDER_INLINE_BORROW] = _POP_TOP_LOAD_CONST_INLINE_BORROW,
     [_LOAD_FAST] = _NOP,
     [_LOAD_FAST_BORROW] = _NOP,
     [_LOAD_SMALL_INT] = _NOP,
-    [_POP_TOP_LOAD_CONST_INLINE] = _POP_TOP,
-    [_POP_TOP_LOAD_CONST_INLINE_BORROW] = _POP_TOP,
-    [_POP_TWO_LOAD_CONST_INLINE_BORROW] = _POP_TWO,
-    [_POP_CALL_ONE_LOAD_CONST_INLINE_BORROW] = _POP_CALL_ONE,
-    [_POP_CALL_TWO_LOAD_CONST_INLINE_BORROW] = _POP_CALL_TWO,
-    [_SHUFFLE_2_LOAD_CONST_INLINE_BORROW] = _POP_CALL_ONE_LOAD_CONST_INLINE_BORROW,
+    [_PUSH_NULL] = _NOP,
 };
 
 const bool op_skip[MAX_UOP_ID + 1] = {
@@ -637,19 +701,6 @@ const uint16_t op_without_pop[MAX_UOP_ID + 1] = {
     [_POP_TOP_INT] = _NOP,
     [_POP_TOP_FLOAT] = _NOP,
     [_POP_TOP_UNICODE] = _NOP,
-    [_POP_TOP_LOAD_CONST_INLINE] = _LOAD_CONST_INLINE,
-    [_POP_TOP_LOAD_CONST_INLINE_BORROW] = _LOAD_CONST_INLINE_BORROW,
-    [_POP_TWO] = _POP_TOP,
-    [_POP_TWO_LOAD_CONST_INLINE_BORROW] = _POP_TOP_LOAD_CONST_INLINE_BORROW,
-    [_POP_CALL_TWO_LOAD_CONST_INLINE_BORROW] = _POP_CALL_ONE_LOAD_CONST_INLINE_BORROW,
-    [_POP_CALL_ONE_LOAD_CONST_INLINE_BORROW] = _POP_CALL_LOAD_CONST_INLINE_BORROW,
-    [_POP_CALL_TWO] = _POP_CALL_ONE,
-    [_POP_CALL_ONE] = _POP_CALL,
-};
-
-const uint16_t op_without_pop_null[MAX_UOP_ID + 1] = {
-    [_POP_CALL] = _POP_TOP,
-    [_POP_CALL_LOAD_CONST_INLINE_BORROW] = _POP_TOP_LOAD_CONST_INLINE_BORROW,
 };
 
 
@@ -684,10 +735,10 @@ remove_unneeded_uops(_PyUOpInstruction *buffer, int buffer_size)
             default:
             {
                 // Cancel out pushes and pops, repeatedly. So:
-                //     _LOAD_FAST + _POP_TWO_LOAD_CONST_INLINE_BORROW + _POP_TOP
+                //     _LOAD_FAST + _POP_TOP + _POP_TOP + _LOAD_CONST_INLINE_BORROW + _POP_TOP
                 // ...becomes:
-                //     _NOP + _POP_TOP + _NOP
-                while (op_without_pop[opcode] || op_without_pop_null[opcode]) {
+                //     _NOP + _NOP + _POP_TOP + _NOP + _NOP
+                while (op_without_pop[opcode]) {
                     _PyUOpInstruction *last = &buffer[pc - 1];
                     while (op_skip[last->opcode]) {
                         last--;
@@ -699,14 +750,6 @@ remove_unneeded_uops(_PyUOpInstruction *buffer, int buffer_size)
                             opcode = last->opcode;
                             pc = (int)(last - buffer);
                         }
-                    }
-                    else if (last->opcode == _PUSH_NULL) {
-                        // Handle _POP_CALL and _POP_CALL_LOAD_CONST_INLINE_BORROW separately.
-                        // This looks for a preceding _PUSH_NULL instruction and
-                        // simplifies to _POP_TOP(_LOAD_CONST_INLINE_BORROW).
-                        last->opcode = _NOP;
-                        opcode = buffer[pc].opcode = op_without_pop_null[opcode];
-                        assert(opcode);
                     }
                     else {
                         break;

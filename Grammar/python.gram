@@ -554,10 +554,12 @@ complex_number[expr_ty]:
 
 signed_number[expr_ty]:
     | NUMBER
+    | '+' number=NUMBER { number }
     | '-' number=NUMBER { _PyAST_UnaryOp(USub, number, EXTRA) }
 
 signed_real_number[expr_ty]:
     | real_number
+    | '+' real=real_number { real }
     | '-' real=real_number { _PyAST_UnaryOp(USub, real, EXTRA) }
 
 real_number[expr_ty]:
@@ -565,6 +567,7 @@ real_number[expr_ty]:
 
 imaginary_number[expr_ty]:
     | imag=NUMBER { _PyPegen_ensure_imaginary(p, imag) }
+    | '+' imag=NUMBER { _PyPegen_ensure_imaginary(p, imag) }
 
 capture_pattern[pattern_ty]:
     | target=pattern_capture_target { _PyAST_MatchAs(NULL, target->v.Name.id, EXTRA) }

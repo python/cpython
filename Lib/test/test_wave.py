@@ -430,6 +430,30 @@ class WaveLowLevelTest(unittest.TestCase):
             f.setframerate(arg)
             self.assertEqual(f.getframerate(), expected)
 
+    def test_write_odd_data_chunk_pads_and_updates_riff_size(self):
+        # gh-117716: odd-sized data chunks must be padded with one zero byte.
+        with io.BytesIO() as output:
+            with wave.open(output, mode='wb') as w:
+                w.setnchannels(1)
+                w.setsampwidth(1)
+                w.setframerate(48000)
+                w.writeframes(b'\x80')
+
+            value = output.getvalue()
+
+        self.assertEqual(value[-1], 0)
+        self.assertEqual(
+            int.from_bytes(value[4:8], byteorder='little'),
+            38,
+        )
+
+        with wave.open(io.BytesIO(value), mode='rb') as r:
+            self.assertEqual(r.getnchannels(), 1)
+            self.assertEqual(r.getsampwidth(), 1)
+            self.assertEqual(r.getframerate(), 48000)
+            self.assertEqual(r.getnframes(), 1)
+            self.assertEqual(r.readframes(-1), b'\x80')
+
 
 class WaveOpen(unittest.TestCase):
     def test_open_pathlike(self):

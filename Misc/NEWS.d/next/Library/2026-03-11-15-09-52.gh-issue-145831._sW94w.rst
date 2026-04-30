@@ -1,0 +1,2 @@
+Fix :func:`!email.quoprimime.decode` leaving a stray ``\r`` when
+``eol='\r\n'`` by stripping the full *eol* string instead of one character.

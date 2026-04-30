@@ -358,11 +358,11 @@ class TimeTestCase(unittest.TestCase):
         # Should be able to go round-trip from strftime to strptime without
         # raising an exception.
         tt = time.gmtime(self.t)
-        for directive in ('a', 'A', 'b', 'B', 'c', 'd', 'D', 'F', 'H', 'I',
+        for directive in ('a', 'A', 'b', 'B', 'c', 'd', 'D', 'e', 'F', 'H', 'I',
                           'j', 'm', 'M', 'n', 'p', 'S', 't', 'T',
                           'U', 'w', 'W', 'x', 'X', 'y', 'Y', 'Z', '%'):
             format = '%' + directive
-            if directive == 'd':
+            if directive in ('d', 'e'):
                 format += ',%Y'  # Avoid GH-70647.
             strf_output = time.strftime(format, tt)
             try:
@@ -387,10 +387,13 @@ class TimeTestCase(unittest.TestCase):
         self.assertTrue(e.exception.__suppress_context__)
 
     def test_strptime_leap_year(self):
-        # GH-70647: warns if parsing a format with a day and no year.
+        # GH-70647: %d errors if parsing a format with a day and no year.
+        with self.assertRaises(ValueError):
+            time.strptime('02-07 18:28', '%m-%d %H:%M')
+        # %e without a year is deprecated, scheduled for removal in 3.17.
         with self.assertWarnsRegex(DeprecationWarning,
                                    r'.*day of month without a year.*'):
-            time.strptime('02-07 18:28', '%m-%d %H:%M')
+            time.strptime('02-07 18:28', '%m-%e %H:%M')
 
     def test_asctime(self):
         time.asctime(time.gmtime(self.t))

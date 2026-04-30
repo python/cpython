@@ -2037,6 +2037,10 @@ PySeqIter_Check:PyObject *:op:0:
 PySeqIter_New:PyObject*::+1:
 PySeqIter_New:PyObject*:seq:0:
 
+PySentinel_New:PyObject*::+1:
+PySentinel_New:const char*:name::
+PySentinel_New:const char*:module_name::
+
 PySequence_Check:int:::
 PySequence_Check:PyObject*:o:0:
 
@@ -2430,9 +2434,16 @@ PyType_GetName:PyTypeObject*:type:0:
 PyType_GetModule:PyObject*::0:
 PyType_GetModule:PyTypeObject*:type:0:
 
+PyType_GetModule_DuringGC:PyObject*::0:
+PyType_GetModule_DuringGC:PyTypeObject*:type:0:
+
 PyType_GetModuleByToken:PyObject*::+1:
 PyType_GetModuleByToken:PyTypeObject*:type:0:
 PyType_GetModuleByToken:PyModuleDef*:def::
+
+PyType_GetModuleByToken_DuringGC:PyObject*::0:
+PyType_GetModuleByToken_DuringGC:PyTypeObject*:type:0:
+PyType_GetModuleByToken_DuringGC:PyModuleDef*:mod_token::
 
 PyType_GetModuleByDef:PyObject*::0:
 PyType_GetModuleByDef:PyTypeObject*:type:0:

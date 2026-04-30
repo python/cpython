@@ -1223,9 +1223,9 @@ Test cases
    | :meth:`assertNotRegex(s, r)           | ``not r.search(s)``            | 3.2          |
    | <TestCase.assertNotRegex>`            |                                |              |
    +---------------------------------------+--------------------------------+--------------+
-   | :meth:`assertCountEqual(a, b)         | *a* and *b* have the same      | 3.2          |
-   | <TestCase.assertCountEqual>`          | elements in the same number,   |              |
-   |                                       | regardless of their order.     |              |
+   | :meth:`assertCountEqual(a, b)         | *a* contains the same elements | 3.2          |
+   | <TestCase.assertCountEqual>`          | as *b*, regardless of their    |              |
+   |                                       | order.                         |              |
    +---------------------------------------+--------------------------------+--------------+
    | :meth:`assertStartsWith(a, b)         | ``a.startswith(b)``            | 3.14         |
    | <TestCase.assertStartsWith>`          |                                |              |

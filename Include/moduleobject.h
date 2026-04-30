@@ -125,6 +125,8 @@ PyAPI_FUNC(PyObject *) PyModule_FromSlotsAndSpec(const PyModuleDef_Slot *slots,
 PyAPI_FUNC(int) PyModule_Exec(PyObject *module);
 PyAPI_FUNC(int) PyModule_GetStateSize(PyObject *module, Py_ssize_t *result);
 PyAPI_FUNC(int) PyModule_GetToken(PyObject *module, void **result);
+PyAPI_FUNC(void*) PyModule_GetState_DuringGC(PyObject*);
+PyAPI_FUNC(int) PyModule_GetToken_DuringGC(PyObject *module, void **result);
 #endif
 
 #ifndef _Py_OPAQUE_PYOBJECT

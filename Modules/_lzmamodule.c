@@ -1100,6 +1100,7 @@ decompress(Decompressor *d, uint8_t *data, size_t len, Py_ssize_t max_length)
     return result;
 
 error:
+    lzs->next_in = NULL;
     Py_XDECREF(result);
     return NULL;
 }

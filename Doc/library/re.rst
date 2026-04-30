@@ -52,7 +52,7 @@ fine-tuning parameters.
 
 .. _re-syntax:
 
-Regular Expression Syntax
+Regular expression syntax
 -------------------------
 
 A regular expression (or RE) specifies a set of strings that matches it; the
@@ -205,7 +205,7 @@ The special characters are:
    *without* establishing any backtracking points.
    This is the possessive version of the quantifier above.
    For example, on the 6-character string ``'aaaaaa'``, ``a{3,5}+aa``
-   attempt to match 5 ``'a'`` characters, then, requiring 2 more ``'a'``\ s,
+   attempts to match 5 ``'a'`` characters, then, requiring 2 more ``'a'``\ s,
    will need more characters than available and thus fail, while
    ``a{3,5}aa`` will match with ``a{3,5}`` capturing 5, then 4 ``'a'``\ s
    by backtracking and then the final 2 ``'a'``\ s are matched by the final
@@ -717,7 +717,7 @@ three digits in length.
 
 .. _contents-of-module-re:
 
-Module Contents
+Module contents
 ---------------
 
 The module defines several functions, constants, and an exception. Some of the
@@ -833,8 +833,8 @@ Flags
    will be conditionally ORed with other flags.  Example of use as a default
    value::
 
-      def myfunc(text, flag=re.NOFLAG):
-          return re.search(text, flag)
+      def myfunc(pattern, text, flag=re.NOFLAG):
+          return re.search(pattern, text, flag)
 
    .. versionadded:: 3.11
 
@@ -931,7 +931,6 @@ Functions
 
 
 .. function:: prefixmatch(pattern, string, flags=0)
-.. function:: match(pattern, string, flags=0)
 
    If zero or more characters at the beginning of *string* match the regular
    expression *pattern*, return a corresponding :class:`~re.Match`.  Return
@@ -954,9 +953,14 @@ Functions
    :func:`~re.match`.  Use that name when you need to retain compatibility with
    older Python versions.
 
-   .. versionchanged:: 3.15
-      The alternate :func:`~re.prefixmatch` name of this API was added as a
-      more explicitly descriptive name than :func:`~re.match`. Use it to better
+   .. versionadded:: 3.15
+
+.. function:: match(pattern, string, flags=0)
+
+   .. soft-deprecated:: 3.15
+      :func:`~re.match` has been :term:`soft deprecated` in favor of
+      the alternate :func:`~re.prefixmatch` name of this API which is
+      more explicitly descriptive. Use it to better
       express intent. The norm in other languages and regular expression
       implementations is to use the term *match* to refer to the behavior of
       what Python has always called :func:`~re.search`.
@@ -1246,7 +1250,7 @@ Exceptions
 
 .. _re-objects:
 
-Regular Expression Objects
+Regular expression objects
 --------------------------
 
 .. class:: Pattern
@@ -1284,7 +1288,6 @@ Regular Expression Objects
 
 
 .. method:: Pattern.prefixmatch(string[, pos[, endpos]])
-.. method:: Pattern.match(string[, pos[, endpos]])
 
    If zero or more characters at the *beginning* of *string* match this regular
    expression, return a corresponding :class:`~re.Match`. Return ``None`` if the
@@ -1309,9 +1312,14 @@ Regular Expression Objects
    :meth:`~Pattern.match`.  Use that name when you need to retain compatibility
    with older Python versions.
 
-   .. versionchanged:: 3.15
-      The alternate :meth:`~Pattern.prefixmatch` name of this API was added as
-      a more explicitly descriptive name than :meth:`~Pattern.match`. Use it to
+   .. versionadded:: 3.15
+
+.. method:: Pattern.match(string[, pos[, endpos]])
+
+   .. soft-deprecated:: 3.15
+      :meth:`~Pattern.match` has been :term:`soft deprecated` in favor of
+      the alternate :meth:`~Pattern.prefixmatch` name of this API which is
+      more explicitly descriptive. Use it to
       better express intent. The norm in other languages and regular expression
       implementations is to use the term *match* to refer to the behavior of
       what Python has always called :meth:`~Pattern.search`.
@@ -1396,7 +1404,7 @@ Regular Expression Objects
 
 .. _match-objects:
 
-Match Objects
+Match objects
 -------------
 
 Match objects always have a boolean value of ``True``.
@@ -1615,11 +1623,11 @@ when there is no match, you can test whether there was a match with a simple
 
 .. _re-examples:
 
-Regular Expression Examples
+Regular expression examples
 ---------------------------
 
 
-Checking for a Pair
+Checking for a pair
 ^^^^^^^^^^^^^^^^^^^
 
 In this example, we'll use the following helper function to display match
@@ -1705,15 +1713,21 @@ expressions.
 | ``%x``, ``%X``                 | ``[-+]?(0[xX])?[\dA-Fa-f]+``                |
 +--------------------------------+---------------------------------------------+
 
-To extract the filename and numbers from a string like ::
+To extract the filename and numbers from a string like:
+
+.. code-block:: text
 
    /usr/sbin/sendmail - 0 errors, 4 warnings
 
-you would use a :c:func:`!scanf` format like ::
+you would use a :c:func:`!scanf` format like:
+
+.. code-block:: text
 
    %s - %d errors, %d warnings
 
-The equivalent regular expression would be ::
+The equivalent regular expression would be:
+
+.. code-block:: text
 
    (\S+) - (\d+) errors, (\d+) warnings
 
@@ -1772,18 +1786,24 @@ not familiar with the Python API's divergence from what otherwise become the
 industry norm.
 
 Quoting from the Zen Of Python (``python3 -m this``): *"Explicit is better than
-implicit"*. Anyone reading the name :func:`~re.prefixmatch` is likely to
-understand the intended semantics. When reading :func:`~re.match` there remains
+implicit"*. Anyone reading the name :func:`!prefixmatch` is likely to
+understand the intended semantics. When reading :func:`!match` there remains
 a seed of doubt about the intended behavior to anyone not already familiar with
 this old Python gotcha.
 
-We **do not** plan to deprecate and remove the older *match* name,
+We **do not** plan to remove the older :func:`!match` name,
 as it has been used in code for over 30 years.
-Code supporting older versions of Python should continue to use *match*.
+It has been :term:`soft deprecated`:
+code supporting older versions of Python should continue to use :func:`!match`,
+while new code should prefer :func:`!prefixmatch`.
 
 .. versionadded:: 3.15
+   :func:`!prefixmatch`
 
-Making a Phonebook
+.. soft-deprecated:: 3.15
+   :func:`!match`
+
+Making a phonebook
 ^^^^^^^^^^^^^^^^^^
 
 :func:`split` splits a string into a list delimited by the passed pattern.  The
@@ -1844,7 +1864,7 @@ house number from the street name:
    ['Heather', 'Albrecht', '548.326.4584', '919', 'Park Place']]
 
 
-Text Munging
+Text munging
 ^^^^^^^^^^^^
 
 :func:`sub` replaces every occurrence of a pattern with a string or the
@@ -1864,7 +1884,7 @@ in each word of a sentence except for the first and last characters::
    'Pofsroser Aodlambelk, plasee reoprt yuor asnebces potlmrpy.'
 
 
-Finding all Adverbs
+Finding all adverbs
 ^^^^^^^^^^^^^^^^^^^
 
 :func:`findall` matches *all* occurrences of a pattern, not just the first
@@ -1877,7 +1897,7 @@ the following manner::
    ['carefully', 'quickly']
 
 
-Finding all Adverbs and their Positions
+Finding all adverbs and their positions
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 If one wants more information about all matches of a pattern than the matched
@@ -1893,7 +1913,7 @@ to find all of the adverbs *and their positions* in some text, they would use
    40-47: quickly
 
 
-Raw String Notation
+Raw string notation
 ^^^^^^^^^^^^^^^^^^^
 
 Raw string notation (``r"text"``) keeps regular expressions sane.  Without it,
@@ -1917,7 +1937,7 @@ functionally identical::
    <re.Match object; span=(0, 1), match='\\'>
 
 
-Writing a Tokenizer
+Writing a tokenizer
 ^^^^^^^^^^^^^^^^^^^
 
 A `tokenizer or scanner <https://en.wikipedia.org/wiki/Lexical_analysis>`_
@@ -1933,7 +1953,7 @@ successive matches::
 
     class Token(NamedTuple):
         type: str
-        value: str
+        value: int | float | str
         line: int
         column: int
 

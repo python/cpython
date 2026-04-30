@@ -2,7 +2,7 @@
 
 .. _fileobjects:
 
-File Objects
+File objects
 ------------
 
 .. index:: pair: object; file
@@ -136,11 +136,12 @@ the :mod:`io` APIs instead.
    failure; the appropriate exception will be set.
 
 
-Deprecated API
-^^^^^^^^^^^^^^
+Soft-deprecated API
+^^^^^^^^^^^^^^^^^^^
 
+.. soft-deprecated:: 3.15
 
-These are :term:`soft deprecated` APIs that were included in Python's C API
+These are APIs that were included in Python's C API
 by mistake. They are documented solely for completeness; use other
 ``PyFile*`` APIs instead.
 

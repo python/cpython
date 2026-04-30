@@ -358,7 +358,7 @@ Basic Usage
       conversion length limitation <int_max_str_digits>` to help avoid denial
       of service attacks.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.15
       Added the optional *array_hook* parameter.
 
 .. function:: loads(s, *, cls=None, object_hook=None, parse_float=None, parse_int=None, parse_constant=None, object_pairs_hook=None, array_hook=None, **kw)
@@ -429,7 +429,7 @@ Encoders and Decoders
    *array_hook* will be used instead of the :class:`list`. This feature can be
    used to implement custom decoders.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.15
       Added support for *array_hook*.
 
    *parse_float* is an optional function that will be called with the string of
