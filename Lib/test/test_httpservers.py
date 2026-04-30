@@ -976,7 +976,6 @@ class SimpleHTTPServerTestCase(BaseTestCase):
             threaded_server = ThreadingHTTPServer(
                 ("localhost", 0), self.request_handler
             )
-            threaded_server.daemon_threads = True
             host, port = threaded_server.socket.getsockname()
             server_thread = threading.Thread(
                 target=threaded_server.serve_forever, args=(0.05,), daemon=True
