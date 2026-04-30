@@ -269,30 +269,7 @@ def reduce(function, sequence, initial=_initial_missing):
 ### partial() argument application
 ################################################################################
 
-
-class _PlaceholderType:
-    """The type of the Placeholder singleton.
-
-    Used as a placeholder for partial arguments.
-    """
-    __instance = None
-    __slots__ = ()
-
-    def __init_subclass__(cls, *args, **kwargs):
-        raise TypeError(f"type '{cls.__name__}' is not an acceptable base type")
-
-    def __new__(cls):
-        if cls.__instance is None:
-            cls.__instance = object.__new__(cls)
-        return cls.__instance
-
-    def __repr__(self):
-        return 'Placeholder'
-
-    def __reduce__(self):
-        return 'Placeholder'
-
-Placeholder = _PlaceholderType()
+Placeholder = sentinel('Placeholder')
 
 def _partial_prepare_merger(args):
     if not args:
@@ -435,7 +412,7 @@ class partial:
 
 
 try:
-    from _functools import partial, Placeholder, _PlaceholderType
+    from _functools import partial, Placeholder
 except ImportError:
     pass
 
