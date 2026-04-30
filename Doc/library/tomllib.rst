@@ -19,7 +19,7 @@ support writing TOML.
    Added TOML 1.1.0 support.
    See the :ref:`What's New <whatsnew315-tomllib-1-1-0>` for details.
 
-.. note::
+.. warning::
 
    Be cautious when parsing data from untrusted sources.
    A malicious TOML string may cause the decoder to consume considerable
