@@ -149,7 +149,9 @@ Module-Level Functions
    the same meaning as for :func:`print_tb`.  A "pre-processed" stack trace
    entry is a :class:`FrameSummary` object containing attributes
    :attr:`~FrameSummary.filename`, :attr:`~FrameSummary.lineno`,
-   :attr:`~FrameSummary.name`, and :attr:`~FrameSummary.line` representing the
+   :attr:`~FrameSummary.name`, :attr:`~FrameSummary.line`,
+   :attr:`~FrameSummary.end_lineno`, :attr:`~FrameSummary.colno`, and
+   :attr:`~FrameSummary.end_colno` representing the
    information that is usually printed for a stack trace.
 
 
@@ -181,7 +183,7 @@ Module-Level Functions
 .. function:: format_exception_only(exc, /[, value], *, show_group=False)
 
    Format the exception part of a traceback using an exception value such as
-   given by :data:`sys.last_value`.  The return value is a list of strings, each
+   given by :data:`sys.last_exc`.  The return value is a list of strings, each
    ending in a newline.  The list contains the exception's message, which is
    normally a single string; however, for :exc:`SyntaxError` exceptions, it
    contains several lines that (when printed) display detailed information
@@ -347,7 +349,7 @@ the module-level functions described above.
 
    .. attribute:: exc_type
 
-      The class of the original traceback.
+      The class of the original exception.
 
       .. deprecated:: 3.13
 
@@ -391,7 +393,7 @@ the module-level functions described above.
 
       For syntax errors - the compiler error message.
 
-   .. classmethod:: from_exception(exc, *, limit=None, lookup_lines=True, capture_locals=False)
+   .. classmethod:: from_exception(exc, *, limit=None, lookup_lines=True, capture_locals=False, compact=False, max_group_width=15, max_group_depth=10)
 
       Capture an exception for later rendering. *limit*, *lookup_lines* and
       *capture_locals* are as for the :class:`StackSummary` class.
