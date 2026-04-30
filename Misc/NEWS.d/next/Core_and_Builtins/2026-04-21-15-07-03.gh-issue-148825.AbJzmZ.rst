@@ -1,0 +1,1 @@
+Fix build error if specialization is disabled.
