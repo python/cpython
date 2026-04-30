@@ -1338,6 +1338,28 @@ get_co_framesize(PyObject *self, PyObject *arg)
 }
 
 static PyObject *
+get_datastack_cache_stats(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    PyThreadState *tstate = _PyThreadState_GET();
+    Py_ssize_t count = 0;
+    size_t total_size = 0;
+    for (_PyStackChunk *chunk = tstate->datastack_cached_chunk;
+         chunk != NULL;
+         chunk = chunk->previous)
+    {
+        count++;
+        total_size += chunk->size;
+    }
+
+    PyObject *size = PyLong_FromSize_t(total_size);
+    if (size == NULL) {
+        return NULL;
+    }
+    PyObject *res = Py_BuildValue("nN", count, size);
+    return res;
+}
+
+static PyObject *
 get_co_localskinds(PyObject *self, PyObject *arg)
 {
     if (!PyCode_Check(arg)) {
@@ -2938,6 +2960,7 @@ static PyMethodDef module_functions[] = {
     {"iframe_getlasti", iframe_getlasti, METH_O, NULL},
     {"code_returns_only_none", code_returns_only_none, METH_O, NULL},
     {"get_co_framesize", get_co_framesize, METH_O, NULL},
+    {"get_datastack_cache_stats", get_datastack_cache_stats, METH_NOARGS, NULL},
     {"get_co_localskinds", get_co_localskinds, METH_O, NULL},
     {"get_code_var_counts", _PyCFunction_CAST(get_code_var_counts),
      METH_VARARGS | METH_KEYWORDS, NULL},
