@@ -3455,7 +3455,10 @@ list_richcompare_impl(PyObject *v, PyObject *w, int op)
             Py_RETURN_TRUE;
     }
 
-    /* Search for the first index where items are different */
+    /* Search for the first index where items are different.
+     * We incref vitem/witem before calling PyObject_RichCompareBool, which may
+     * release the GIL and allow the list to be mutated in the meantime.
+     */
     for (i = 0; i < Py_SIZE(vl) && i < Py_SIZE(wl); i++) {
         PyObject *vitem = vl->ob_item[i];
         PyObject *witem = wl->ob_item[i];
@@ -3466,36 +3469,36 @@ list_richcompare_impl(PyObject *v, PyObject *w, int op)
         Py_INCREF(vitem);
         Py_INCREF(witem);
         int k = PyObject_RichCompareBool(vitem, witem, Py_EQ);
+        if (k < 0) {
+            Py_DECREF(vitem);
+            Py_DECREF(witem);
+            return NULL;
+        }
+        if (!k) {
+            /* We have a differing item -- shortcuts for EQ/NE */
+            if (op == Py_EQ) {
+                Py_DECREF(vitem);
+                Py_DECREF(witem);
+                Py_RETURN_FALSE;
+            }
+            if (op == Py_NE) {
+                Py_DECREF(vitem);
+                Py_DECREF(witem);
+                Py_RETURN_TRUE;
+            }
+            /* Compare the differing items using the proper operator */
+            PyObject *result = PyObject_RichCompare(vitem, witem, op);
+            Py_DECREF(vitem);
+            Py_DECREF(witem);
+            return result;
+        }
+
         Py_DECREF(vitem);
         Py_DECREF(witem);
-        if (k < 0)
-            return NULL;
-        if (!k)
-            break;
     }
 
-    if (i >= Py_SIZE(vl) || i >= Py_SIZE(wl)) {
-        /* No more items to compare -- compare sizes */
-        Py_RETURN_RICHCOMPARE(Py_SIZE(vl), Py_SIZE(wl), op);
-    }
-
-    /* We have an item that differs -- shortcuts for EQ/NE */
-    if (op == Py_EQ) {
-        Py_RETURN_FALSE;
-    }
-    if (op == Py_NE) {
-        Py_RETURN_TRUE;
-    }
-
-    /* Compare the final item again using the proper operator */
-    PyObject *vitem = vl->ob_item[i];
-    PyObject *witem = wl->ob_item[i];
-    Py_INCREF(vitem);
-    Py_INCREF(witem);
-    PyObject *result = PyObject_RichCompare(vl->ob_item[i], wl->ob_item[i], op);
-    Py_DECREF(vitem);
-    Py_DECREF(witem);
-    return result;
+    /* All compared elements were equal -- compare sizes */
+    Py_RETURN_RICHCOMPARE(Py_SIZE(vl), Py_SIZE(wl), op);
 }
 
 static PyObject *
