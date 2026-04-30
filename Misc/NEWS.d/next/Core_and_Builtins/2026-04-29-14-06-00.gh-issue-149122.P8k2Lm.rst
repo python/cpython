@@ -1,0 +1,4 @@
+Fix a crash in optimized calls to :func:`all`, :func:`any`, :func:`tuple`,
+:func:`list`, and :func:`set` with an async generator expression argument
+(for example, ``tuple(await x for x in y)``). These calls now correctly raise
+``TypeError`` instead of crashing.

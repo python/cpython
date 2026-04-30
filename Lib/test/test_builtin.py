@@ -308,6 +308,27 @@ class BuiltinTest(ComplexesAreIdenticalMixin, unittest.TestCase):
 
         self.assertEqual(overridden_outputs, ['all', 'any', 'tuple', 'list', 'set'])
 
+    def test_builtin_call_async_genexpr_no_crash(self):
+        async def f_all():
+            return all(await 2 for _ in [])
+
+        async def f_any():
+            return any(await 2 for _ in [])
+
+        async def f_tuple():
+            return tuple(await 2 for _ in [])
+
+        async def f_list():
+            return list(await 2 for _ in [])
+
+        async def f_set():
+            return set(await 2 for _ in [])
+
+        for f in (f_all, f_any, f_tuple, f_list, f_set):
+            with self.subTest(func=f.__name__):
+                with self.assertRaises(TypeError):
+                    run_yielding_async_fn(f)
+
     def test_ascii(self):
         self.assertEqual(ascii(''), '\'\'')
         self.assertEqual(ascii(0), '0')

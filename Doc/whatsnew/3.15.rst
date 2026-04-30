@@ -678,6 +678,13 @@ Other language changes
   the existing support for unary minus.
   (Contributed by Bartosz Sławecki in :gh:`145239`.)
 
+* The import system now acquires per-module locks in hierarchical order
+  (parent packages before their submodules). This fixes a long-standing
+  deadlock where one thread importing ``pkg.sub`` and another importing
+  ``pkg.sub.mod`` could each block the other when ``pkg/sub/__init__.py``
+  imports ``pkg.sub.mod``.
+  (Contributed by Gregory P. Smith in :gh:`83065`.)
+
 
 New modules
 ===========
@@ -733,6 +740,17 @@ ast
 * The :ref:`command-line <ast-cli>` output is now syntax highlighted by default.
   This can be :ref:`controlled using environment variables <using-on-controlling-color>`.
   (Contributed by Stan Ulbrych in :gh:`148981`.)
+
+
+asyncio
+-------
+
+* Added :meth:`TaskGroup.cancel <asyncio.TaskGroup.cancel>` to allow early
+  termination of a task group, for instance, when the goal of the tasks has
+  been achieved or their services are no longer needed.
+  Previously this would involve unintuitive boilerplate such as an extra task
+  raising a custom exception which is then suppressed as it exits the task group.
+  (Contributed by John Belmonte in :gh:`127214`.)
 
 
 base64
@@ -1029,11 +1047,27 @@ os.path
   (Contributed by Petr Viktorin for :cve:`2025-4517`.)
 
 
+pdb
+---
+
+* Use the new interactive shell as the default input shell for :mod:`pdb`.
+  (Contributed by Tian Gao in :gh:`145379`.)
+
+
 pickle
 ------
 
 * Add support for pickling private methods and nested classes.
   (Contributed by Zackery Spytz and Serhiy Storchaka in :gh:`77188`.)
+
+
+pickletools
+-----------
+
+* The output of the :mod:`pickletools` command-line interface is colored by
+  default. This can be controlled with
+  :ref:`environment variables <using-on-controlling-color>`.
+  (Contributed by Hugo van Kemenade in :gh:`149026`.)
 
 
 pprint

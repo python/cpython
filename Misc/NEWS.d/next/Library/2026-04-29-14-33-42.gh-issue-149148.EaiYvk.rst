@@ -1,0 +1,2 @@
+:mod:`ensurepip`: Upgrade bundled pip to 26.1. This version fixes
+the :cve:`2026-3219` vulnerability. Patch by Victor Stinner.
