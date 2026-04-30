@@ -1,1 +1,0 @@
-Constant-fold ``_CONTAINS_OP_SET`` for :class:`frozenset`. Patch by Donghee Na.

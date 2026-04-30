@@ -238,18 +238,28 @@ class OptimizerEmitter(Emitter):
             # Map input count to output index (from TOS) and the appropriate constant-loading uop
             input_count_to_uop = {
                 1: {
-                    # (a -- a), usually for unary ops
-                    0: "_POP_TOP_LOAD_CONST_INLINE_BORROW",
+                    # (a -- res), usually for unary ops
+                    0: [("_POP_TOP", "0, 0"),
+                        ("_LOAD_CONST_INLINE_BORROW",
+                         "0, (uintptr_t)result")],
                     # (left -- res, left)
                     # usually for unary ops with passthrough references
-                    1: "_INSERT_1_LOAD_CONST_INLINE_BORROW",
+                    1: [("_LOAD_CONST_INLINE_BORROW",
+                         "0, (uintptr_t)result"),
+                        ("_SWAP", "2, 0")],
                 },
                 2: {
-                    # (a. b -- res), usually for binary ops
-                    0: "_POP_TWO_LOAD_CONST_INLINE_BORROW",
+                    # (a, b -- res), usually for binary ops
+                    0: [("_POP_TOP", "0, 0"),
+                        ("_POP_TOP", "0, 0"),
+                        ("_LOAD_CONST_INLINE_BORROW",
+                         "0, (uintptr_t)result")],
                     # (left, right -- res, left, right)
                     # usually for binary ops with passthrough references
-                    2: "_INSERT_2_LOAD_CONST_INLINE_BORROW",
+                    2: [("_LOAD_CONST_INLINE_BORROW",
+                         "0, (uintptr_t)result"),
+                        ("_SWAP", "3, 0"),
+                        ("_SWAP", "2, 0")],
                 },
             }
 
@@ -263,14 +273,16 @@ class OptimizerEmitter(Emitter):
             assert output_index >= 0
             input_count = len(used_stack_inputs)
             if input_count in input_count_to_uop and output_index in input_count_to_uop[input_count]:
-                replacement_uop = input_count_to_uop[input_count][output_index]
+                ops = input_count_to_uop[input_count][output_index]
                 input_desc = "one input" if input_count == 1 else "two inputs"
+                ops_desc = " + ".join(op for op, _ in ops)
 
                 emitter.emit(f"if (sym_is_const(ctx, {output_identifier.text})) {{\n")
                 emitter.emit(f"PyObject *result = sym_get_const(ctx, {output_identifier.text});\n")
                 emitter.emit(f"if (_Py_IsImmortal(result)) {{\n")
-                emitter.emit(f"// Replace with {replacement_uop} since we have {input_desc} and an immortal result\n")
-                emitter.emit(f"ADD_OP({replacement_uop}, 0, (uintptr_t)result);\n")
+                emitter.emit(f"// Replace with {ops_desc} since we have {input_desc} and an immortal result\n")
+                for op, args in ops:
+                    emitter.emit(f"ADD_OP({op}, {args});\n")
                 emitter.emit("}\n")
                 emitter.emit("}\n")
 
@@ -400,6 +412,7 @@ def write_uop(
                     args.append(input.name)
             out.emit(f'DEBUG_PRINTF({", ".join(args)});\n')
         if override:
+            idx = 0
             for cache in uop.caches:
                 if cache.name != "unused":
                     if cache.size == 4:
@@ -407,7 +420,8 @@ def write_uop(
                     else:
                         type = f"uint{cache.size*16}_t "
                         cast = f"uint{cache.size*16}_t"
-                    out.emit(f"{type}{cache.name} = ({cast})this_instr->operand0;\n")
+                    out.emit(f"{type}{cache.name} = ({cast})this_instr->operand{idx};\n")
+                    idx += 1
         if override:
             emitter = OptimizerEmitter(out, {}, uop, stack.copy())
             # No reference management of inputs needed.

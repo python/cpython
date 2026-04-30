@@ -85,6 +85,8 @@ import urllib.parse
 
 from http import HTTPStatus
 
+lazy import _colorize
+
 
 # Default error message template
 DEFAULT_ERROR_MESSAGE = """\
@@ -574,6 +576,31 @@ class BaseHTTPRequestHandler(socketserver.StreamRequestHandler):
             self.wfile.write(b"".join(self._headers_buffer))
             self._headers_buffer = []
 
+    def _colorize_request(self, code, size, t):
+        try:
+            code_int = int(code)
+        except (TypeError, ValueError):
+            code_color = ""
+        else:
+            if code_int >= 500:
+                code_color = t.status_server_error
+            elif code_int >= 400:
+                code_color = t.status_client_error
+            elif code_int >= 300:
+                code_color = t.status_redirect
+            elif code_int >= 200:
+                code_color = t.status_ok
+            else:
+                code_color = t.status_informational
+
+        request_line = self.requestline.translate(self._control_char_table)
+        parts = request_line.split(None, 2)
+        if len(parts) == 3:
+            method, path, version = parts
+            request_line = f"{method} {t.path}{path}{t.reset} {version}"
+
+        return f'"{request_line}" {code_color}{code} {t.size}{size}{t.reset}'
+
     def log_request(self, code='-', size='-'):
         """Log an accepted request.
 
@@ -582,6 +609,7 @@ class BaseHTTPRequestHandler(socketserver.StreamRequestHandler):
         """
         if isinstance(code, HTTPStatus):
             code = code.value
+        self._log_request_info = (code, size)
         self.log_message('"%s" %s %s',
                          self.requestline, str(code), str(size))
 
@@ -596,7 +624,7 @@ class BaseHTTPRequestHandler(socketserver.StreamRequestHandler):
         XXX This should go to the separate error log.
 
         """
-
+        self._log_is_error = True
         self.log_message(format, *args)
 
     # https://en.wikipedia.org/wiki/List_of_Unicode_characters#Control_codes
@@ -623,12 +651,22 @@ class BaseHTTPRequestHandler(socketserver.StreamRequestHandler):
         before writing the output to stderr.
 
         """
+        message = (format % args).translate(self._control_char_table)
+        t = _colorize.get_theme(tty_file=sys.stderr).http_server
 
-        message = format % args
-        sys.stderr.write("%s - - [%s] %s\n" %
-                         (self.address_string(),
-                          self.log_date_time_string(),
-                          message.translate(self._control_char_table)))
+        info = getattr(self, "_log_request_info", None)
+        if info is not None:
+            self._log_request_info = None
+            message = self._colorize_request(*info, t)
+        elif getattr(self, "_log_is_error", False):
+            self._log_is_error = False
+            message = f"{t.error}{message}{t.reset}"
+
+        sys.stderr.write(
+            f"{t.timestamp}{self.address_string()} - - "
+            f"[{self.log_date_time_string()}]{t.reset} "
+            f"{message}\n"
+        )
 
     def version_string(self):
         """Return the server software version string."""
@@ -689,6 +727,7 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
     """
 
     server_version = "SimpleHTTP"
+    default_content_type = "application/octet-stream"
     index_pages = ("index.html", "index.htm")
     extensions_map = _encodings_map_default = {
         '.gz': 'application/gzip',
@@ -936,7 +975,7 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
         guess, _ = mimetypes.guess_file_type(path)
         if guess:
             return guess
-        return 'application/octet-stream'
+        return self.default_content_type
 
 
 nobody = None
@@ -972,9 +1011,10 @@ def _get_best_family(*address):
     return family, sockaddr
 
 
-def test(HandlerClass=BaseHTTPRequestHandler,
+def test(HandlerClass=SimpleHTTPRequestHandler,
          ServerClass=ThreadingHTTPServer,
          protocol="HTTP/1.0", port=8000, bind=None,
+         content_type=SimpleHTTPRequestHandler.default_content_type,
          tls_cert=None, tls_key=None, tls_password=None):
     """Test the HTTP request handler class.
 
@@ -983,6 +1023,7 @@ def test(HandlerClass=BaseHTTPRequestHandler,
     """
     ServerClass.address_family, addr = _get_best_family(bind, port)
     HandlerClass.protocol_version = protocol
+    HandlerClass.default_content_type = content_type
 
     if tls_cert:
         server = ServerClass(addr, HandlerClass, certfile=tls_cert,
@@ -994,9 +1035,11 @@ def test(HandlerClass=BaseHTTPRequestHandler,
         host, port = httpd.socket.getsockname()[:2]
         url_host = f'[{host}]' if ':' in host else host
         protocol = 'HTTPS' if tls_cert else 'HTTP'
+        t = _colorize.get_theme().http_server
+        url = f"{protocol.lower()}://{url_host}:{port}/"
         print(
-            f"Serving {protocol} on {host} port {port} "
-            f"({protocol.lower()}://{url_host}:{port}/) ..."
+            f"{t.serving}Serving {protocol} on {host} port {port}{t.reset} "
+            f"({t.url}{url}{t.reset}) ..."
         )
         try:
             httpd.serve_forever()
@@ -1019,6 +1062,10 @@ def _main(args=None):
     parser.add_argument('-p', '--protocol', metavar='VERSION',
                         default='HTTP/1.0',
                         help='conform to this HTTP version '
+                             '(default: %(default)s)')
+    parser.add_argument('--content-type',
+                        default=SimpleHTTPRequestHandler.default_content_type,
+                        help='default content type for unknown extensions '
                              '(default: %(default)s)')
     parser.add_argument('--tls-cert', metavar='PATH',
                         help='path to the TLS certificate chain file')
@@ -1072,6 +1119,7 @@ def _main(args=None):
         port=args.port,
         bind=args.bind,
         protocol=args.protocol,
+        content_type=args.content_type,
         tls_cert=args.tls_cert,
         tls_key=args.tls_key,
         tls_password=tls_key_password,

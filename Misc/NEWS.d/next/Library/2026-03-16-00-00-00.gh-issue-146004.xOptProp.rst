@@ -1,9 +1,0 @@
-All :option:`-X` options from the Python command line are now propagated to
-child processes spawned by :mod:`multiprocessing`, not just a hard-coded
-subset.  This makes the behavior consistent between default "spawn" and
-"forkserver" start methods and the old "fork" start method.  The options
-that were previously not propagated are: ``context_aware_warnings``,
-``cpu_count``, ``disable-remote-debug``, ``int_max_str_digits``,
-``lazy_imports``, ``no_debug_ranges``, ``pathconfig_warnings``, ``perf``,
-``perf_jit``, ``presite``, ``pycache_prefix``, ``thread_inherit_context``,
-and ``warn_default_encoding``.

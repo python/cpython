@@ -568,6 +568,48 @@ _PyObject_GetXIData(PyThreadState *tstate,
 
 /* pickle C-API */
 
+/* Per-interpreter cache for pickle.dumps and pickle.loads.
+ *
+ * Each interpreter has its own cache in _PyXI_state_t.pickle, preserving
+ * interpreter isolation.  The cache is populated lazily on first use and
+ * cleared during interpreter finalization in _Py_xi_state_fini().
+ *
+ * Note: the cached references are captured at first use and not invalidated
+ * on module reload.  This matches the caching pattern used elsewhere in
+ * CPython (e.g. arraymodule.c, _decimal.c). */
+
+static PyObject *
+_get_pickle_dumps(PyThreadState *tstate)
+{
+    _PyXI_state_t *state = _PyXI_GET_STATE(tstate->interp);
+    PyObject *dumps = state->pickle.dumps;
+    if (dumps != NULL) {
+        return dumps;
+    }
+    dumps = PyImport_ImportModuleAttrString("pickle", "dumps");
+    if (dumps == NULL) {
+        return NULL;
+    }
+    state->pickle.dumps = dumps;  // owns the reference
+    return dumps;
+}
+
+static PyObject *
+_get_pickle_loads(PyThreadState *tstate)
+{
+    _PyXI_state_t *state = _PyXI_GET_STATE(tstate->interp);
+    PyObject *loads = state->pickle.loads;
+    if (loads != NULL) {
+        return loads;
+    }
+    loads = PyImport_ImportModuleAttrString("pickle", "loads");
+    if (loads == NULL) {
+        return NULL;
+    }
+    state->pickle.loads = loads;  // owns the reference
+    return loads;
+}
+
 struct _pickle_context {
     PyThreadState *tstate;
 };
@@ -575,13 +617,12 @@ struct _pickle_context {
 static PyObject *
 _PyPickle_Dumps(struct _pickle_context *ctx, PyObject *obj)
 {
-    PyObject *dumps = PyImport_ImportModuleAttrString("pickle", "dumps");
+    PyObject *dumps = _get_pickle_dumps(ctx->tstate);
     if (dumps == NULL) {
         return NULL;
     }
-    PyObject *bytes = PyObject_CallOneArg(dumps, obj);
-    Py_DECREF(dumps);
-    return bytes;
+    // dumps is a borrowed reference from the cache.
+    return PyObject_CallOneArg(dumps, obj);
 }
 
 
@@ -636,7 +677,8 @@ _PyPickle_Loads(struct _unpickle_context *ctx, PyObject *pickled)
     PyThreadState *tstate = ctx->tstate;
 
     PyObject *exc = NULL;
-    PyObject *loads = PyImport_ImportModuleAttrString("pickle", "loads");
+    // loads is a borrowed reference from the per-interpreter cache.
+    PyObject *loads = _get_pickle_loads(tstate);
     if (loads == NULL) {
         return NULL;
     }
@@ -682,7 +724,6 @@ finally:
         // It might make sense to chain it (__context__).
         _PyErr_SetRaisedException(tstate, exc);
     }
-    Py_DECREF(loads);
     return obj;
 }
 
@@ -3094,6 +3135,10 @@ _Py_xi_state_init(_PyXI_state_t *state, PyInterpreterState *interp)
     assert(state != NULL);
     assert(interp == NULL || state == _PyXI_GET_STATE(interp));
 
+    // Initialize pickle function cache (before any fallible ops).
+    state->pickle.dumps = NULL;
+    state->pickle.loads = NULL;
+
     xid_lookup_init(&state->data_lookup);
 
     // Initialize exceptions.
@@ -3115,6 +3160,11 @@ _Py_xi_state_fini(_PyXI_state_t *state, PyInterpreterState *interp)
 {
     assert(state != NULL);
     assert(interp == NULL || state == _PyXI_GET_STATE(interp));
+
+    // Clear pickle function cache first: the cached functions may hold
+    // references to modules cleaned up by later finalization steps.
+    Py_CLEAR(state->pickle.dumps);
+    Py_CLEAR(state->pickle.loads);
 
     fini_heap_exctypes(&state->exceptions);
     if (interp != NULL) {
