@@ -1866,6 +1866,11 @@ FutureIter_am_send(PyObject *op,
                    PyObject **result)
 {
     futureiterobject *it = (futureiterobject*)op;
+    if (it->future == NULL) {
+        PyErr_SetNone(PyExc_StopIteration);
+        *result = NULL;
+        return PYGEN_ERROR;
+    }
     /* arg is unused, see the comment on FutureIter_send for clarification */
     PySendResult res;
     Py_BEGIN_CRITICAL_SECTION(it->future);
