@@ -616,6 +616,34 @@ class BaseUnicodeFunctionsTest:
         b = 'C\u0338' * 20  + '\xC7'
         self.assertEqual(self.db.normalize('NFC', a), b)
 
+    def test_long_combining_mark_run(self):
+        # GH-XXXXX: avoid quadratic canonical ordering.
+        payload = "a" + ("\u0300\u0327" * 32)
+        nfd = "a" + ("\u0327" * 32) + ("\u0300" * 32)
+        nfc = "\u00e0" + ("\u0327" * 32) + ("\u0300" * 31)
+
+        self.assertEqual(self.db.normalize("NFD", payload), nfd)
+        self.assertEqual(self.db.normalize("NFKD", payload), nfd)
+        self.assertEqual(self.db.normalize("NFC", payload), nfc)
+        self.assertEqual(self.db.normalize("NFKC", payload), nfc)
+
+    def test_combining_mark_run_fast_paths(self):
+        # GH-XXXXX: cover short runs and already-sorted long runs.
+        short_payload = "a" + ("\u0300\u0327" * 9) + "\u0300"
+        short_nfd = "a" + ("\u0327" * 9) + ("\u0300" * 10)
+        short_nfc = "\u00e0" + ("\u0327" * 9) + ("\u0300" * 9)
+        long_sorted = "a" + ("\u0327" * 30) + ("\u0300" * 30)
+        long_sorted_nfc = "\u00e0" + ("\u0327" * 30) + ("\u0300" * 29)
+
+        self.assertEqual(self.db.normalize("NFD", short_payload), short_nfd)
+        self.assertEqual(self.db.normalize("NFKD", short_payload), short_nfd)
+        self.assertEqual(self.db.normalize("NFC", short_payload), short_nfc)
+        self.assertEqual(self.db.normalize("NFKC", short_payload), short_nfc)
+        self.assertEqual(self.db.normalize("NFD", long_sorted), long_sorted)
+        self.assertEqual(self.db.normalize("NFKD", long_sorted), long_sorted)
+        self.assertEqual(self.db.normalize("NFC", long_sorted), long_sorted_nfc)
+        self.assertEqual(self.db.normalize("NFKC", long_sorted), long_sorted_nfc)
+
     def test_issue29456(self):
         # Fix #29456
         u1176_str_a = '\u1100\u1176\u11a8'

@@ -1,0 +1,5 @@
+Fix a potential denial of service in :func:`unicodedata.normalize`. The
+canonical ordering step of Unicode normalization used an O(n²) insertion
+sort for reordering combining characters, which could be exploited with
+crafted input containing many combining characters in non-canonical order.
+Replaced with a linear-time counting sort for long runs.
