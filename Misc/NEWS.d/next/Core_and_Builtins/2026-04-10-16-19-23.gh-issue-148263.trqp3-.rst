@@ -1,0 +1,1 @@
+Fix reference count leak in weakref proxy operations when a dead proxy is encountered as the second argument.

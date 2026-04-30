@@ -538,6 +538,55 @@ class ReferencesTestCase(TestBase):
         with self.assertRaises(TypeError):
             hash(weakref.proxy(obj))
 
+    def _assert_no_proxy_refcount_leak(self, make_class, do_op, op_name):
+        """Helper: verify a proxy operation doesn't leak."""
+        # Create dead proxy
+        o = make_class()
+        dead = weakref.proxy(o)
+        del o
+        gc.collect()
+
+        # Create live proxy
+        obj = make_class()
+        ref = weakref.ref(obj)
+        proxy = weakref.proxy(obj)
+
+        # run operation
+        try:
+            do_op(proxy, dead)
+        except ReferenceError:
+            pass
+        del proxy, obj, dead
+        gc.collect()
+
+        # verify
+        self.assertIsNone(ref(), f"Leaked object in '{op_name}' operation")
+
+    def test_proxy_unref_unary_refcount(self):
+        class C:
+            def __neg__(self): return 0
+        self._assert_no_proxy_refcount_leak(C,lambda p, d: operator.neg(d), "Unary")
+
+    def test_proxy_unref_binary_refcount(self):
+        class C:
+            def __add__(self, o): return NotImplemented
+        self._assert_no_proxy_refcount_leak(C, operator.add, "Binary")
+
+    def test_proxy_unref_ternary_refcount(self):
+        class C:
+            def __pow__(self, o, m=None): return NotImplemented
+        self._assert_no_proxy_refcount_leak(C, lambda p, d: pow(p, d, None), "Ternary")
+
+    def test_proxy_unref_richcompare_refcount(self):
+        class C:
+            def __eq__(self, o): return NotImplemented
+        self._assert_no_proxy_refcount_leak(C, lambda p, d: p == d, "Rich Compare")
+
+    def test_proxy_unref_wrapmethod_refcount(self):
+        class C:
+            def __repr__(self): return "C()"
+        self._assert_no_proxy_refcount_leak(C, lambda p, d: repr(d), "Wrap Method")
+
     def test_getweakrefcount(self):
         o = C()
         ref1 = weakref.ref(o)
