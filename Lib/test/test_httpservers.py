@@ -5,7 +5,7 @@ Josip Dzolonga, and Michael Otteneder for the 2007/08 GHOP contest.
 """
 
 from http.server import BaseHTTPRequestHandler, HTTPServer, HTTPSServer, \
-     SimpleHTTPRequestHandler
+     SimpleHTTPRequestHandler, ThreadingHTTPServer
 from http import server, HTTPStatus
 
 import contextlib
@@ -540,8 +540,16 @@ class RequestHandlerColorizedLoggingTestCase(RequestHandlerLoggingTestCase):
         self.assertIn(f"{t.status_client_error}404", lines[1])
 
 
+class CustomHeaderSimpleHTTPRequestHandler(SimpleHTTPRequestHandler):
+    extra_response_headers = None
+
+    def __init__(self, *args, **kwargs):
+        kwargs.setdefault('extra_response_headers', self.extra_response_headers)
+        super().__init__(*args, **kwargs)
+
+
 class SimpleHTTPServerTestCase(BaseTestCase):
-    class request_handler(NoLogRequestHandler, SimpleHTTPRequestHandler):
+    class request_handler(NoLogRequestHandler, CustomHeaderSimpleHTTPRequestHandler):
         pass
 
     def setUp(self):
@@ -897,6 +905,127 @@ class SimpleHTTPServerTestCase(BaseTestCase):
         self.check_status_and_reason(response, HTTPStatus.MOVED_PERMANENTLY)
         self.assertEqual(response.getheader("Location"),
                          self.tempdir_name + "/?hi=1")
+
+    def test_extra_response_headers_list_dir(self):
+        with mock.patch.object(self.request_handler, 'extra_response_headers', [
+            ('X-Test1', 'test1'),
+            ('X-Test2', 'test2'),
+        ]):
+            response = self.request(self.base_url + '/')
+            self.assertEqual(response.status, 200)
+            self.assertEqual(response.getheader("X-Test1"), 'test1')
+            self.assertEqual(response.getheader("X-Test2"), 'test2')
+
+    def test_extra_response_headers_get_file(self):
+        with mock.patch.object(self.request_handler, 'extra_response_headers', [
+            ('Set-Cookie', 'test1=value1'),
+            ('Set-Cookie', 'test2=value2'),
+            ('X-Test1', 'value3'),
+        ]):
+            data = b"Dummy index file\r\n"
+            with open(os.path.join(self.tempdir_name, 'index.html'), 'wb') as f:
+                f.write(data)
+            response = self.request(self.base_url + '/')
+            self.assertEqual(response.status, 200)
+            self.assertEqual(response.getheader("Set-Cookie"),
+                                                'test1=value1, test2=value2')
+            self.assertEqual(response.getheader("X-Test1"), 'value3')
+
+    def test_extra_response_headers_missing_on_404(self):
+        with mock.patch.object(self.request_handler, 'extra_response_headers', [
+            ('X-Test1', 'value'),
+        ]):
+            response = self.request(self.base_url + '/missing.html')
+            self.assertEqual(response.status, 404)
+            self.assertEqual(response.getheader("X-Test1"), None)
+
+    def test_extra_response_headers_dont_overwrite_default_headers(self):
+        with mock.patch.object(self.request_handler, 'extra_response_headers', [
+            ('Content-Type', 'test/not_allowed'),
+            ('Server', 'not_allowed'),
+            ('Set-Cookie', 'test=allowed'),
+        ]):
+            # The Content-Type header should not be overwritten by the extra_response_headers
+            # But cookies in the extra_allowed_duplicate_headers are allowed,
+            # including Set-Cookie
+            response = self.request(self.base_url + '/')
+            self.assertEqual(response.status, 200)
+            self.assertNotEqual(response.getheader("Content-Type"), 'test/not_allowed')
+            self.assertNotEqual(response.getheader("Server"), 'not_allowed')
+            self.assertEqual(response.getheader("Set-Cookie"), 'test=allowed')
+
+    def test_multiple_requests_dont_duplicate_extra_response_headers(self):
+        with mock.patch.object(self.request_handler, 'extra_response_headers', [
+            ('x-test', 'test-value'),
+        ]):
+            response = self.request(self.base_url + '/')
+            self.assertEqual(response.status, 200)
+            self.assertEqual(response.getheader("x-test"), 'test-value')
+            response = self.request(self.base_url + '/')
+            self.assertEqual(response.status, 200)
+            self.assertEqual(response.getheader("x-test"), 'test-value')
+
+    def test_extra_response_headers_concurrent_requests(self):
+        N_THREADS = 8
+
+        with mock.patch.object(
+            self.request_handler,
+            "extra_response_headers",
+            [("x-test", "test-value")],
+        ):
+            threaded_server = ThreadingHTTPServer(
+                ("localhost", 0), self.request_handler
+            )
+            threaded_server.daemon_threads = True
+            host, port = threaded_server.socket.getsockname()
+            server_thread = threading.Thread(
+                target=threaded_server.serve_forever, args=(0.05,), daemon=True
+            )
+            server_thread.start()
+            results = []
+            lock = threading.Lock()
+
+            def make_request():
+                conn = http.client.HTTPConnection(host, port, timeout=15)
+                conn.request("GET", self.base_url + "/")
+                resp = conn.getresponse()
+                resp.read()
+                with lock:
+                    results.append((resp.status, resp.getheaders()))
+                conn.close()
+
+            try:
+                threads = [
+                    threading.Thread(target=make_request)
+                    for _ in range(N_THREADS)
+                ]
+                for t in threads:
+                    t.start()
+                for t in threads:
+                    t.join(timeout=15)
+            finally:
+                threaded_server.shutdown()
+                threaded_server.server_close()
+                server_thread.join()
+
+        self.assertEqual(len(results), N_THREADS)
+        for status, headers in results:
+            self.assertEqual(status, 200)
+            # Server, Date, Content-type, Content-Length, x-test
+            self.assertEqual(len(headers), 5)
+            header_map = {k.lower(): v for k, v in headers}
+            self.assertIn("server", header_map)
+            self.assertIn("date", header_map)
+            self.assertTrue(
+                header_map["content-type"].startswith("text/html")
+            )
+            self.assertGreater(int(header_map["content-length"]), 0)
+            # x-test must appear exactly once, not duplicated
+            x_test_values = [
+                v for k, v in headers if k.lower() == "x-test"
+            ]
+            self.assertEqual(x_test_values, ["test-value"])
+
 
 
 class SocketlessRequestHandler(SimpleHTTPRequestHandler):
@@ -1447,6 +1576,21 @@ class CommandLineTestCase(unittest.TestCase):
                     mock_func.assert_called_once_with(**call_args)
                     mock_func.reset_mock()
 
+    @mock.patch('http.server.test')
+    def test_header_flag(self, mock_func):
+        call_args = self.args
+        self.invoke_httpd('--header', 'h1', 'v1', '-H', 'h2', 'v2')
+        mock_func.assert_called_once_with(**call_args)
+        mock_func.reset_mock()
+
+    def test_extra_header_flag_too_few_args(self):
+        with self.assertRaises(SystemExit):
+            self.invoke_httpd('--header', 'h1')
+
+    def test_extra_header_flag_too_many_args(self):
+        with self.assertRaises(SystemExit):
+            self.invoke_httpd('--header', 'h1', 'v1', 'h2')
+
     @unittest.skipIf(ssl is None, "requires ssl")
     @mock.patch('http.server.test')
     def test_tls_cert_and_key_flags(self, mock_func):
@@ -1529,6 +1673,36 @@ class CommandLineTestCase(unittest.TestCase):
             self.invoke_httpd('--unknown-flag', stdout=stdout, stderr=stderr)
         self.assertEqual(stdout.getvalue(), '')
         self.assertIn('error', stderr.getvalue())
+
+    @mock.patch('http.server._make_server', wraps=server._make_server)
+    @mock.patch.object(HTTPServer, 'serve_forever')
+    def test_extra_response_headers_arg(self, _, mock_make_server):
+        server._main(
+            ['-H', 'Set-Cookie', 'k=v', '-H', 'Set-Cookie', 'k2=v2:v3 v4', '8080']
+        )
+        # Get an instance of the server / RequestHandler by using
+        # the spied call args, then calling _make_server with them.
+        args, kwargs = mock_make_server.call_args
+        httpd = server._make_server(*args, **kwargs)
+        self.addCleanup(httpd.server_close)
+
+        # Ensure the RequestHandler class is passed the correct response
+        # headers
+        request_handler_class = httpd.RequestHandlerClass
+        with mock.patch.object(
+            request_handler_class, '__init__'
+        ) as mock_handler_init:
+            mock_handler_init.return_value = None
+            # finish_request instantiates a request handler class,
+            # ensure extra_response_headers are passed to it
+            httpd.finish_request(mock.Mock(), '127.0.0.1')
+            mock_handler_init.assert_called_once_with(
+                mock.ANY, mock.ANY, mock.ANY,
+                directory=mock.ANY,
+                extra_response_headers=[
+                    ['Set-Cookie', 'k=v'], ['Set-Cookie', 'k2=v2:v3 v4']
+                ]
+            )
 
 
 class CommandLineRunTimeTestCase(unittest.TestCase):
