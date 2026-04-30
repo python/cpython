@@ -227,6 +227,69 @@ For example::
    If the interpreter finalized before ``PyThreadState_Swap`` was called, then
    ``interp`` will be a dangling pointer!
 
+Reusing a thread state across repeated calls
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Creating and destroying a :c:type:`PyThreadState` is not free, and is
+more expensive on a :term:`free-threaded build`.  If a non-Python thread
+calls into the interpreter many times, creating a fresh thread state on
+every entry and destroying it on every exit is a performance
+anti-pattern.  Instead, create the thread state once (when the native
+thread starts, or lazily on its first call into Python), attach and
+detach it around each call, and destroy it when the native thread
+exits::
+
+   /* Thread startup: create the state once. */
+   PyThreadState *tstate = PyThreadState_New(interp);
+
+   /* Per-call: attach, run Python, detach. */
+   PyEval_RestoreThread(tstate);
+   result = CallSomeFunction();
+   PyEval_SaveThread();
+
+   /* ... many more calls ... */
+
+   /* Thread shutdown: destroy the state once. */
+   PyEval_RestoreThread(tstate);
+   PyThreadState_Clear(tstate);
+   PyThreadState_DeleteCurrent();
+
+The equivalent with the :ref:`PyGILState API <gilstate>` keeps an *outer*
+:c:func:`PyGILState_Ensure` outstanding for the thread's lifetime, so
+nested Ensure/Release pairs never drop the internal nesting counter to
+zero.
+
+In thread startup, pin the state and immediately detach so the thread
+does not hold the GIL while off doing non-Python work.  Stash ``outer``
+and ``saved`` somewhere that survives for the thread's lifetime (for
+example, in thread-local storage)::
+
+   PyGILState_STATE outer = PyGILState_Ensure();
+   PyThreadState *saved   = PyEval_SaveThread();
+
+Each subsequent call into Python from this thread reuses the pinned
+state; the inner Release decrements the nesting counter but does not
+destroy the thread state because the outer Ensure is still
+outstanding::
+
+   PyGILState_STATE inner = PyGILState_Ensure();
+   result = CallSomeFunction();
+   PyGILState_Release(inner);
+
+At thread shutdown, re-attach and drop the outer reference to destroy
+the thread state::
+
+   PyEval_RestoreThread(saved);
+   PyGILState_Release(outer);
+
+The embedding code must arrange for the shutdown sequence to run before
+the native thread exits, and before :c:func:`Py_FinalizeEx` is called.
+If interpreter finalization begins first, the shutdown
+:c:func:`PyEval_RestoreThread` call will hang the thread (see
+:c:func:`PyEval_RestoreThread` for details) rather than return.  If the
+native thread exits without running the shutdown sequence, the thread
+state is leaked for the remainder of the process.
+
 .. _gilstate:
 
 Legacy API
