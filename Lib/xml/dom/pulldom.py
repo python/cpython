@@ -249,6 +249,8 @@ class DOMEventStream:
             buf = self.stream.read(self.bufsize)
             if not buf:
                 self.parser.close()
+                if self.pulldom.firstEvent[1]:
+                    break
                 return None
             self.parser.feed(buf)
         rc = self.pulldom.firstEvent[1][0]
