@@ -4,7 +4,9 @@
 
 from __future__ import annotations
 
-from types import MappingProxyType
+# Defer loading regular expressions until we actually need them in
+# parse_value().
+__lazy_modules__ = ["tomllib._re"]
 
 from ._re import (
     RE_DATETIME,
@@ -42,7 +44,7 @@ BARE_KEY_CHARS: Final = frozenset(
 KEY_INITIAL_CHARS: Final = BARE_KEY_CHARS | frozenset("\"'")
 HEXDIGIT_CHARS: Final = frozenset("abcdef" "ABCDEF" "0123456789")
 
-BASIC_STR_ESCAPE_REPLACEMENTS: Final = MappingProxyType(
+BASIC_STR_ESCAPE_REPLACEMENTS: Final = frozendict( # type: ignore[name-defined]
     {
         "\\b": "\u0008",  # backspace
         "\\t": "\u0009",  # tab
