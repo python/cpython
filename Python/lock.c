@@ -314,6 +314,15 @@ _PyEvent_Notify(PyEvent *evt)
 }
 
 void
+_PyEvent_Reset(PyEvent *evt)
+{
+    assert(evt != NULL);
+    // It's not safe to reset an event with active waiters.
+    assert(_Py_atomic_load_uint8(&evt->v) != _Py_HAS_PARKED);
+    _Py_atomic_store_uint8(&evt->v, _Py_UNLOCKED);
+}
+
+void
 PyEvent_Wait(PyEvent *evt)
 {
     while (!PyEvent_WaitTimed(evt, -1, /*detach=*/1))

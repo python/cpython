@@ -87,6 +87,10 @@ PyAPI_FUNC(int) _PyEvent_IsSet(PyEvent *evt);
 // Export for '_testinternalcapi' shared extension
 PyAPI_FUNC(void) _PyEvent_Notify(PyEvent *evt);
 
+
+// Reset an event. There must be no active waiters.
+void _PyEvent_Reset(PyEvent *evt);
+
 // Wait for the event to be set. If the event is already set, then this returns
 // immediately.
 PyAPI_FUNC(void) PyEvent_Wait(PyEvent *evt);

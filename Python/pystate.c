@@ -3347,14 +3347,20 @@ try_acquire_interp_guard(PyInterpreterState *interp, PyInterpreterGuard *guard)
 
     Py_ssize_t old_value = _Py_atomic_add_ssize(&interp->finalization_guards.countdown, 1);
     if (old_value == 0) {
-        // Reset the event.
         // We first have to notify the finalization thread if it's waiting on us, but
-        // it will get trapped waiting on the RW lock. When it goes to check
-        // again after we release the lock, it will see that the countdown is
+        // it will get trapped waiting on the RW lock, so we don't have to worry about
+        // another active waiter while we reset the event.
+        _PyEvent_Notify(&interp->finalization_guards.done);
+        // Now, when the finalization thread goes to check the countdown
+        // after we release the lock, it will see that the countdown is
         // non-zero and begin waiting again (hence why we need to reset the
         // event).
-        _PyEvent_Notify(&interp->finalization_guards.done);
-        memset(&interp->finalization_guards.done, 0, sizeof(PyEvent));
+        // It is worth noting that this event is intentionally a non-atomic check
+        // for remaining finalization guards (that is, even if the event is set,
+        // it is not necessarily guaranteed that countdown is zero). We use it
+        // to simply prevent the finalization from constantly spinning and
+        // atomically reading the countdown.
+        _PyEvent_Reset(&interp->finalization_guards.done);
     }
     _PyRWMutex_RUnlock(&interp->finalization_guards.lock);
 
