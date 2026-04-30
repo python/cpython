@@ -532,7 +532,8 @@ def makeunicodetype(unicode, trace):
                 flags |= TITLE_MASK
             if "Uppercase" in properties:
                 flags |= UPPER_MASK
-            if char == ord(" ") or category[0] not in ("C", "Z"):
+            if ((char == ord(" ") or category[0] not in ("C", "Z"))
+                    and bidirectional not in ("R", "AL")):
                 flags |= PRINTABLE_MASK
             if "XID_Start" in properties:
                 flags |= XID_START_MASK

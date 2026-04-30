@@ -1,0 +1,5 @@
+The :meth:`~object.__repr__` of :class:`str` now hex-escapes strong
+right-to-left characters (bidirectional class R and AL). Previously,
+non-escaped right-to-left characters caused misleading output on
+Unicode-aware terminals and browsers. Correspondingly,
+:meth:`str.isprintable` now returns ``False`` for such characters.
