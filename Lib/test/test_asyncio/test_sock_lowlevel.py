@@ -15,7 +15,7 @@ if socket_helper.tcp_blackhole():
 
 
 def tearDownModule():
-    asyncio._set_event_loop_policy(None)
+    asyncio.events._set_event_loop_policy(None)
 
 
 class MyProto(asyncio.Protocol):
@@ -110,7 +110,7 @@ class BaseSockTestsMixin:
         self.loop.run_until_complete(
             self.loop.sock_recv(sock, 1024))
         sock.close()
-        self.assertTrue(data.startswith(b'HTTP/1.0 200 OK'))
+        self.assertStartsWith(data, b'HTTP/1.0 200 OK')
 
     def _basetest_sock_recv_into(self, httpd, sock):
         # same as _basetest_sock_client_ops, but using sock_recv_into
@@ -127,7 +127,7 @@ class BaseSockTestsMixin:
             self.loop.run_until_complete(
                 self.loop.sock_recv_into(sock, buf[nbytes:]))
         sock.close()
-        self.assertTrue(data.startswith(b'HTTP/1.0 200 OK'))
+        self.assertStartsWith(data, b'HTTP/1.0 200 OK')
 
     def test_sock_client_ops(self):
         with test_utils.run_test_server() as httpd:
@@ -150,7 +150,7 @@ class BaseSockTestsMixin:
         # consume data
         await self.loop.sock_recv(sock, 1024)
 
-        self.assertTrue(data.startswith(b'HTTP/1.0 200 OK'))
+        self.assertStartsWith(data, b'HTTP/1.0 200 OK')
 
     async def _basetest_sock_recv_into_racing(self, httpd, sock):
         sock.setblocking(False)
@@ -168,7 +168,7 @@ class BaseSockTestsMixin:
             nbytes = await self.loop.sock_recv_into(sock, buf[:1024])
             # consume data
             await self.loop.sock_recv_into(sock, buf[nbytes:])
-            self.assertTrue(data.startswith(b'HTTP/1.0 200 OK'))
+            self.assertStartsWith(data, b'HTTP/1.0 200 OK')
 
         await task
 
@@ -217,7 +217,7 @@ class BaseSockTestsMixin:
             sock.shutdown(socket.SHUT_WR)
             data = await task
             # ProactorEventLoop could deliver hello, so endswith is necessary
-            self.assertTrue(data.endswith(b'world'))
+            self.assertEndsWith(data, b'world')
 
     # After the first connect attempt before the listener is ready,
     # the socket needs time to "recover" to make the next connect call.
@@ -298,7 +298,7 @@ class BaseSockTestsMixin:
         data = await self.loop.sock_recv(sock, DATA_SIZE)
         # HTTP headers size is less than MTU,
         # they are sent by the first packet always
-        self.assertTrue(data.startswith(b'HTTP/1.0 200 OK'))
+        self.assertStartsWith(data, b'HTTP/1.0 200 OK')
         while data.find(b'\r\n\r\n') == -1:
             data += await self.loop.sock_recv(sock, DATA_SIZE)
         # Strip headers
@@ -351,7 +351,7 @@ class BaseSockTestsMixin:
         data = bytes(buf[:nbytes])
         # HTTP headers size is less than MTU,
         # they are sent by the first packet always
-        self.assertTrue(data.startswith(b'HTTP/1.0 200 OK'))
+        self.assertStartsWith(data, b'HTTP/1.0 200 OK')
         while data.find(b'\r\n\r\n') == -1:
             nbytes = await self.loop.sock_recv_into(sock, buf)
             data = bytes(buf[:nbytes])
@@ -426,6 +426,27 @@ class BaseSockTestsMixin:
         with test_utils.run_udp_echo_server() as server_address:
             self.loop.run_until_complete(
                 self._basetest_datagram_recvfrom_into(server_address))
+
+    async def _basetest_datagram_recvfrom_into_wrong_size(self, server_address):
+        # Call sock_sendto() with a size larger than the buffer
+        with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as sock:
+            sock.setblocking(False)
+
+            buf = bytearray(5000)
+            data = b'\x01' * 4096
+            wrong_size = len(buf) + 1
+            await self.loop.sock_sendto(sock, data, server_address)
+            with self.assertRaises(ValueError):
+                await self.loop.sock_recvfrom_into(
+                    sock, buf, wrong_size)
+
+            size, addr = await self.loop.sock_recvfrom_into(sock, buf)
+            self.assertEqual(buf[:size], data)
+
+    def test_recvfrom_into_wrong_size(self):
+        with test_utils.run_udp_echo_server() as server_address:
+            self.loop.run_until_complete(
+                self._basetest_datagram_recvfrom_into_wrong_size(server_address))
 
     async def _basetest_datagram_sendto_blocking(self, server_address):
         # Sad path, sock.sendto() raises BlockingIOError

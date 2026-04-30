@@ -4,14 +4,11 @@
 .. module:: tokenize
    :synopsis: Lexical scanner for Python source code.
 
-.. moduleauthor:: Ka Ping Yee
-.. sectionauthor:: Fred L. Drake, Jr. <fdrake@acm.org>
-
 **Source code:** :source:`Lib/tokenize.py`
 
 --------------
 
-The :mod:`tokenize` module provides a lexical scanner for Python source code,
+The :mod:`!tokenize` module provides a lexical scanner for Python source code,
 implemented in Python.  The scanner in this module returns comments as tokens
 as well, making it useful for implementing "pretty-printers", including
 colorizers for on-screen displays.
@@ -31,7 +28,7 @@ type can be determined by checking the ``exact_type`` property on the
    **undefined** when providing invalid Python code and it can change at any
    point.
 
-Tokenizing Input
+Tokenizing input
 ----------------
 
 The primary entry point is a :term:`generator`:
@@ -78,7 +75,7 @@ The primary entry point is a :term:`generator`:
    :func:`.tokenize`. It does not yield an :data:`~token.ENCODING` token.
 
 All constants from the :mod:`token` module are also exported from
-:mod:`tokenize`.
+:mod:`!tokenize`.
 
 Another function is provided to reverse the tokenization process. This is
 useful for creating tools that tokenize a script, modify the token stream, and
@@ -91,11 +88,10 @@ write back the modified script.
     sequences with at least two elements, the token type and the token string.
     Any additional sequence elements are ignored.
 
-    The reconstructed script is returned as a single string.  The result is
-    guaranteed to tokenize back to match the input so that the conversion is
-    lossless and round-trips are assured.  The guarantee applies only to the
-    token type and token string as the spacing between tokens (column
-    positions) may change.
+    The result is guaranteed to tokenize back to match the input so that the
+    conversion is lossless and round-trips are assured.  The guarantee applies
+    only to the token type and token string as the spacing between tokens
+    (column positions) may change.
 
     It returns bytes, encoded using the :data:`~token.ENCODING` token, which
     is the first token sequence output by :func:`.tokenize`. If there is no
@@ -150,12 +146,12 @@ function it uses to do this is available:
 
 .. _tokenize-cli:
 
-Command-Line Usage
+Command-line usage
 ------------------
 
 .. versionadded:: 3.3
 
-The :mod:`tokenize` module can be executed as a script from the command line.
+The :mod:`!tokenize` module can be executed as a script from the command line.
 It is as simple as:
 
 .. code-block:: sh
@@ -177,8 +173,12 @@ The following options are accepted:
 If :file:`filename.py` is specified its contents are tokenized to stdout.
 Otherwise, tokenization is performed on stdin.
 
+.. versionadded:: next
+   Output is in color by default and can be
+   :ref:`controlled using environment variables <using-on-controlling-color>`.
+
 Examples
-------------------
+--------
 
 Example of a script rewriter that transforms float literals into Decimal
 objects::
@@ -231,7 +231,7 @@ Example of tokenizing from the command line.  The script::
 
 will be tokenized to the following output where the first column is the range
 of the line/column coordinates where the token is found, the second column is
-the name of the token, and the final column is the value of the token (if any)
+the name of the token, and the final column is the value of the token (if any):
 
 .. code-block:: shell-session
 

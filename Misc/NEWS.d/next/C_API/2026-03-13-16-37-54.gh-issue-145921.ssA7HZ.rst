@@ -1,0 +1,9 @@
+Add functions that are guaranteed to be safe for use in
+:c:member:`~PyTypeObject.tp_traverse` handlers:
+:c:func:`PyObject_GetTypeData_DuringGC`,
+:c:func:`PyObject_GetItemData_DuringGC`,
+:c:func:`PyType_GetModuleState_DuringGC`,
+:c:func:`PyModule_GetState_DuringGC`, :c:func:`PyModule_GetToken_DuringGC`,
+:c:func:`PyType_GetBaseByToken_DuringGC`,
+:c:func:`PyType_GetModule_DuringGC`,
+:c:func:`PyType_GetModuleByToken_DuringGC`.

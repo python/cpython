@@ -74,7 +74,7 @@ class Runner:
                 loop.shutdown_default_executor(constants.THREAD_JOIN_TIMEOUT))
         finally:
             if self._set_event_loop:
-                events._set_event_loop(None)
+                events.set_event_loop(None)
             loop.close()
             self._loop = None
             self._state = _State.CLOSED
@@ -147,7 +147,7 @@ class Runner:
             if not self._set_event_loop:
                 # Call set_event_loop only once to avoid calling
                 # attach_loop multiple times on child watchers
-                events._set_event_loop(self._loop)
+                events.set_event_loop(self._loop)
                 self._set_event_loop = True
         else:
             self._loop = self._loop_factory()

@@ -8,8 +8,6 @@ import importlib.machinery
 import os
 import os.path
 import sys
-from types import ModuleType
-import warnings
 
 __all__ = [
     'get_importer', 'iter_importers',

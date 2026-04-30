@@ -1,2 +1,0 @@
-Expose error code :data:`~xml.parsers.expat.errors.XML_ERROR_NOT_STARTED`
-of Expat >=2.6.4 in :mod:`xml.parsers.expat.errors`.

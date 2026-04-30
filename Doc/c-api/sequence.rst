@@ -109,9 +109,8 @@ Sequence Protocol
 
    Alias for :c:func:`PySequence_Contains`.
 
-   .. deprecated:: 3.14
-      The function is :term:`soft deprecated` and should no longer be used to
-      write new code.
+   .. soft-deprecated:: 3.14
+      The function should no longer be used to write new code.
 
 
 .. c:function:: Py_ssize_t PySequence_Index(PyObject *o, PyObject *value)

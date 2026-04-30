@@ -1,0 +1,7 @@
+Add a *canonical* keyword-only parameter to the base16, base32, base64,
+base85, ascii85, and Z85 decoders in :mod:`base64` and :mod:`binascii`.
+When true, encodings with non-zero padding bits (base16/32/64) or
+non-canonical encodings (base85/ascii85) are rejected.  Single-character
+final groups in :func:`binascii.a2b_ascii85` and :func:`binascii.a2b_base85`
+are now always rejected as encoding violations, regardless of *canonical*;
+previously they were silently ignored and produced no output bytes.

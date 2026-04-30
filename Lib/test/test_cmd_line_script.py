@@ -44,7 +44,6 @@ from importlib.machinery import BuiltinImporter
 _loader = __loader__ if __loader__ is BuiltinImporter else type(__loader__)
 print('__loader__==%a' % _loader)
 print('__file__==%a' % __file__)
-print('__cached__==%a' % __cached__)
 print('__package__==%r' % __package__)
 # Check PEP 451 details
 import os.path
@@ -58,8 +57,6 @@ if __package__ is not None:
     assertEqual(__spec__.parent, __package__)
     assertIdentical(__spec__.submodule_search_locations, None)
     assertEqual(__spec__.origin, __file__)
-    if __spec__.cached is not None:
-        assertEqual(__spec__.cached, __cached__)
 # Check the sys module
 import sys
 assertIdentical(globals(), sys.modules[__name__].__dict__)
@@ -88,6 +85,8 @@ def _make_test_zip_pkg(zip_dir, zip_basename, pkg_name, script_basename,
     importlib.invalidate_caches()
     return to_return
 
+
+@support.force_not_colorized_test_class
 class CmdLineTest(unittest.TestCase):
     def _check_output(self, script_name, exit_code, data,
                              expected_file, expected_argv0,
@@ -241,9 +240,8 @@ class CmdLineTest(unittest.TestCase):
     def test_script_compiled(self):
         with os_helper.temp_dir() as script_dir:
             script_name = _make_test_script(script_dir, 'script')
-            py_compile.compile(script_name, doraise=True)
+            pyc_file = import_helper.make_legacy_pyc(script_name, allow_compile=True)
             os.remove(script_name)
-            pyc_file = import_helper.make_legacy_pyc(script_name)
             self._check_script(pyc_file, pyc_file,
                                pyc_file, script_dir, None,
                                importlib.machinery.SourcelessFileLoader)
@@ -258,9 +256,8 @@ class CmdLineTest(unittest.TestCase):
     def test_directory_compiled(self):
         with os_helper.temp_dir() as script_dir:
             script_name = _make_test_script(script_dir, '__main__')
-            py_compile.compile(script_name, doraise=True)
+            pyc_file = import_helper.make_legacy_pyc(script_name, allow_compile=True)
             os.remove(script_name)
-            pyc_file = import_helper.make_legacy_pyc(script_name)
             self._check_script(script_dir, pyc_file, script_dir,
                                script_dir, '',
                                importlib.machinery.SourcelessFileLoader)
@@ -280,8 +277,8 @@ class CmdLineTest(unittest.TestCase):
     def test_zipfile_compiled_timestamp(self):
         with os_helper.temp_dir() as script_dir:
             script_name = _make_test_script(script_dir, '__main__')
-            compiled_name = py_compile.compile(
-                script_name, doraise=True,
+            compiled_name = script_name + 'c'
+            py_compile.compile(script_name, compiled_name, doraise=True,
                 invalidation_mode=py_compile.PycInvalidationMode.TIMESTAMP)
             zip_name, run_name = make_zip_script(script_dir, 'test_zip', compiled_name)
             self._check_script(zip_name, run_name, zip_name, zip_name, '',
@@ -290,8 +287,8 @@ class CmdLineTest(unittest.TestCase):
     def test_zipfile_compiled_checked_hash(self):
         with os_helper.temp_dir() as script_dir:
             script_name = _make_test_script(script_dir, '__main__')
-            compiled_name = py_compile.compile(
-                script_name, doraise=True,
+            compiled_name = script_name + 'c'
+            py_compile.compile(script_name, compiled_name, doraise=True,
                 invalidation_mode=py_compile.PycInvalidationMode.CHECKED_HASH)
             zip_name, run_name = make_zip_script(script_dir, 'test_zip', compiled_name)
             self._check_script(zip_name, run_name, zip_name, zip_name, '',
@@ -300,8 +297,8 @@ class CmdLineTest(unittest.TestCase):
     def test_zipfile_compiled_unchecked_hash(self):
         with os_helper.temp_dir() as script_dir:
             script_name = _make_test_script(script_dir, '__main__')
-            compiled_name = py_compile.compile(
-                script_name, doraise=True,
+            compiled_name = script_name + 'c'
+            py_compile.compile(script_name, compiled_name, doraise=True,
                 invalidation_mode=py_compile.PycInvalidationMode.UNCHECKED_HASH)
             zip_name, run_name = make_zip_script(script_dir, 'test_zip', compiled_name)
             self._check_script(zip_name, run_name, zip_name, zip_name, '',
@@ -354,9 +351,8 @@ class CmdLineTest(unittest.TestCase):
             pkg_dir = os.path.join(script_dir, 'test_pkg')
             make_pkg(pkg_dir)
             script_name = _make_test_script(pkg_dir, '__main__')
-            compiled_name = py_compile.compile(script_name, doraise=True)
+            pyc_file = import_helper.make_legacy_pyc(script_name, allow_compile=True)
             os.remove(script_name)
-            pyc_file = import_helper.make_legacy_pyc(script_name)
             self._check_script(["-m", "test_pkg"], pyc_file,
                                pyc_file, script_dir, 'test_pkg',
                                importlib.machinery.SourcelessFileLoader,
@@ -551,9 +547,9 @@ class CmdLineTest(unittest.TestCase):
             exitcode, stdout, stderr = assert_python_failure(script_name)
             text = stderr.decode('ascii').split('\n')
             self.assertEqual(len(text), 5)
-            self.assertTrue(text[0].startswith('Traceback'))
-            self.assertTrue(text[1].startswith('  File '))
-            self.assertTrue(text[3].startswith('NameError'))
+            self.assertStartsWith(text[0], 'Traceback')
+            self.assertStartsWith(text[1], '  File ')
+            self.assertStartsWith(text[3], 'NameError')
 
     def test_non_ascii(self):
         # Apple platforms deny the creation of a file with an invalid UTF-8 name.
@@ -658,8 +654,9 @@ class CmdLineTest(unittest.TestCase):
             self.assertEqual(
                 stderr.splitlines()[-3:],
                 [   b'    foo = """\\q"""',
-                    b'          ^^^^^^^^',
-                    b'SyntaxError: invalid escape sequence \'\\q\''
+                    b'             ^^',
+                    b'SyntaxError: "\\q" is an invalid escape sequence. '
+                    b'Did you mean "\\\\q"? A raw string is also an option.'
                 ],
             )
 
@@ -705,9 +702,8 @@ class CmdLineTest(unittest.TestCase):
             exitcode, stdout, stderr = assert_python_failure(script_name)
             text = io.TextIOWrapper(io.BytesIO(stderr), 'ascii').read()
             # It used to crash in https://github.com/python/cpython/issues/111132
-            self.assertTrue(text.endswith(
-                'SyntaxError: nonlocal declaration not allowed at module level\n',
-            ), text)
+            self.assertEndsWith(text,
+                'SyntaxError: nonlocal declaration not allowed at module level\n')
 
     def test_consistent_sys_path_for_direct_execution(self):
         # This test case ensures that the following all give the same
@@ -808,6 +804,30 @@ class CmdLineTest(unittest.TestCase):
                 out, err = p.communicate()
                 self.assertEqual(out, b"12345678912345678912345\n")
 
+    def test_filter_syntax_warnings_by_module(self):
+        filename = support.findfile('test_import/data/syntax_warnings.py')
+        rc, out, err = assert_python_ok(
+            '-Werror',
+            '-Walways:::__main__',
+            '-Werror:::test.test_import.data.syntax_warnings',
+            '-Werror:::syntax_warnings',
+            filename)
+        self.assertEqual(err.count(b': SyntaxWarning: '), 6)
+
+    def test_zipfile_run_filter_syntax_warnings_by_module(self):
+        filename = support.findfile('test_import/data/syntax_warnings.py')
+        with open(filename, 'rb') as f:
+            source = f.read()
+        with os_helper.temp_dir() as script_dir:
+            zip_name, _ = make_zip_pkg(
+                script_dir, 'test_zip', 'test_pkg', '__main__', source)
+            rc, out, err = assert_python_ok(
+                '-Werror',
+                '-Walways:::__main__',
+                '-Werror:::test_pkg.__main__',
+                os.path.join(zip_name, 'test_pkg')
+            )
+            self.assertEqual(err.count(b': SyntaxWarning: '), 12)
 
 
 def tearDownModule():

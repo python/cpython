@@ -186,5 +186,38 @@ class TestDefaultDict(unittest.TestCase):
         with self.assertRaises(TypeError):
             i |= None
 
+    def test_factory_conflict_with_set_value(self):
+        key = "conflict_test"
+        count = 0
+
+        def default_factory():
+            nonlocal count
+            count += 1
+            local_count = count
+            if count == 1:
+                test_dict[key]
+            return local_count
+
+        test_dict = defaultdict(default_factory)
+
+        self.assertEqual(count, 0)
+        self.assertEqual(test_dict[key], 2)
+        self.assertEqual(count, 2)
+
+    def test_repr_recursive_factory(self):
+        # gh-145492: defaultdict.__repr__ should not cause infinite recursion
+        # when the factory's __repr__ calls repr() on the defaultdict.
+        class ProblematicFactory:
+            def __call__(self):
+                return {}
+            def __repr__(self):
+                repr(dd)
+                return f"ProblematicFactory for {dd}"
+
+        dd = defaultdict(ProblematicFactory())
+        # Should not raise RecursionError
+        r = repr(dd)
+        self.assertIn("ProblematicFactory for", r)
+
 if __name__ == "__main__":
     unittest.main()

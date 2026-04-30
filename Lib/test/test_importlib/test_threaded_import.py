@@ -135,10 +135,12 @@ class ThreadedImportTests(unittest.TestCase):
             if verbose:
                 print("OK.")
 
-    def test_parallel_module_init(self):
+    @support.bigmemtest(size=50, memuse=76*2**20, dry_run=False)
+    def test_parallel_module_init(self, size):
         self.check_parallel_module_init()
 
-    def test_parallel_meta_path(self):
+    @support.bigmemtest(size=50, memuse=76*2**20, dry_run=False)
+    def test_parallel_meta_path(self, size):
         finder = Finder()
         sys.meta_path.insert(0, finder)
         try:
@@ -148,7 +150,8 @@ class ThreadedImportTests(unittest.TestCase):
         finally:
             sys.meta_path.remove(finder)
 
-    def test_parallel_path_hooks(self):
+    @support.bigmemtest(size=50, memuse=76*2**20, dry_run=False)
+    def test_parallel_path_hooks(self, size):
         # Here the Finder instance is only used to check concurrent calls
         # to path_hook().
         finder = Finder()
@@ -242,17 +245,221 @@ class ThreadedImportTests(unittest.TestCase):
             __import__(TESTFN)
         del sys.modules[TESTFN]
 
-    def test_concurrent_futures_circular_import(self):
+    @support.bigmemtest(size=1, memuse=1.8*2**30, dry_run=False)
+    def test_concurrent_futures_circular_import(self, size):
         # Regression test for bpo-43515
         fn = os.path.join(os.path.dirname(__file__),
                           'partial', 'cfimport.py')
         script_helper.assert_python_ok(fn)
 
-    def test_multiprocessing_pool_circular_import(self):
+    @support.bigmemtest(size=1, memuse=1.8*2**30, dry_run=False)
+    def test_multiprocessing_pool_circular_import(self, size):
         # Regression test for bpo-41567
         fn = os.path.join(os.path.dirname(__file__),
                           'partial', 'pool_in_threads.py')
         script_helper.assert_python_ok(fn)
+
+    def test_import_failure_race_condition(self):
+        # Regression test for race condition where a thread could receive
+        # a partially-initialized module when another thread's import fails.
+        # The race occurs when:
+        # 1. Thread 1 starts importing, adds module to sys.modules
+        # 2. Thread 2 sees the module in sys.modules
+        # 3. Thread 1's import fails, removes module from sys.modules
+        # 4. Thread 2 should NOT return the stale module reference
+        os.mkdir(TESTFN)
+        self.addCleanup(shutil.rmtree, TESTFN)
+        sys.path.insert(0, TESTFN)
+        self.addCleanup(sys.path.remove, TESTFN)
+
+        # Create a module that partially initializes then fails
+        modname = 'failing_import_module'
+        with open(os.path.join(TESTFN, modname + '.py'), 'w') as f:
+            f.write('''
+import time
+PARTIAL_ATTR = 'initialized'
+time.sleep(0.05)  # Widen race window
+raise RuntimeError("Intentional import failure")
+''')
+        self.addCleanup(forget, modname)
+        importlib.invalidate_caches()
+
+        errors = []
+        results = []
+
+        def do_import(delay=0):
+            time.sleep(delay)
+            try:
+                mod = __import__(modname)
+                # If we got a module, verify it's in sys.modules
+                if modname not in sys.modules:
+                    errors.append(
+                        f"Got module {mod!r} but {modname!r} not in sys.modules"
+                    )
+                elif sys.modules[modname] is not mod:
+                    errors.append(
+                        f"Got different module than sys.modules[{modname!r}]"
+                    )
+                else:
+                    results.append(('success', mod))
+            except RuntimeError:
+                results.append(('RuntimeError',))
+            except Exception as e:
+                errors.append(f"Unexpected exception: {e}")
+
+        # Run multiple iterations to increase chance of hitting the race
+        for _ in range(10):
+            errors.clear()
+            results.clear()
+            if modname in sys.modules:
+                del sys.modules[modname]
+
+            t1 = threading.Thread(target=do_import, args=(0,))
+            t2 = threading.Thread(target=do_import, args=(0.01,))
+            t1.start()
+            t2.start()
+            t1.join()
+            t2.join()
+
+            # Neither thread should have errors about stale modules
+            self.assertEqual(errors, [], f"Race condition detected: {errors}")
+
+    def test_hierarchical_import_deadlock(self):
+        # Regression test for bpo-38884 / gh-83065
+        # Tests that concurrent imports at different hierarchy levels
+        # don't deadlock when parent imports child in __init__.py
+
+        # Create package structure:
+        # package/__init__.py: from package import subpackage
+        # package/subpackage/__init__.py: from package.subpackage.module import *
+        # package/subpackage/module.py: class SomeClass: pass
+
+        pkg_dir = os.path.join(TESTFN, 'hier_deadlock_pkg')
+        os.makedirs(pkg_dir)
+        self.addCleanup(shutil.rmtree, TESTFN)
+
+        subpkg_dir = os.path.join(pkg_dir, 'subpackage')
+        os.makedirs(subpkg_dir)
+
+        with open(os.path.join(pkg_dir, "__init__.py"), "w") as f:
+            f.write("from hier_deadlock_pkg import subpackage\n")
+
+        with open(os.path.join(subpkg_dir, "__init__.py"), "w") as f:
+            f.write("from hier_deadlock_pkg.subpackage.module import *\n")
+
+        with open(os.path.join(subpkg_dir, "module.py"), "w") as f:
+            f.write("class SomeClass:\n    pass\n")
+
+        sys.path.insert(0, TESTFN)
+        self.addCleanup(sys.path.remove, TESTFN)
+        self.addCleanup(forget, 'hier_deadlock_pkg')
+        self.addCleanup(forget, 'hier_deadlock_pkg.subpackage')
+        self.addCleanup(forget, 'hier_deadlock_pkg.subpackage.module')
+
+        importlib.invalidate_caches()
+
+        errors = []
+        results = []
+        barrier = threading.Barrier(2)
+
+        def t1():
+            barrier.wait()
+            try:
+                import hier_deadlock_pkg.subpackage
+                results.append('t1_success')
+            except Exception as e:
+                errors.append(('t1', type(e).__name__, str(e)))
+
+        def t2():
+            barrier.wait()
+            try:
+                import hier_deadlock_pkg.subpackage.module
+                results.append('t2_success')
+            except Exception as e:
+                errors.append(('t2', type(e).__name__, str(e)))
+
+        # Run multiple times to increase chance of hitting race condition
+        for i in range(10):
+            for mod in ['hier_deadlock_pkg', 'hier_deadlock_pkg.subpackage',
+                       'hier_deadlock_pkg.subpackage.module']:
+                sys.modules.pop(mod, None)
+
+            errors.clear()
+            results.clear()
+            barrier.reset()
+
+            thread1 = threading.Thread(target=t1)
+            thread2 = threading.Thread(target=t2)
+
+            thread1.start()
+            thread2.start()
+
+            thread1.join(timeout=5)
+            thread2.join(timeout=5)
+
+            if thread1.is_alive() or thread2.is_alive():
+                self.fail(f"Threads deadlocked on iteration {i}")
+
+            self.assertEqual(
+                errors, [],
+                f"Import(s) failed on iteration {i}: {errors}")
+            self.assertEqual(
+                sorted(results), ['t1_success', 't2_success'],
+                f"Not all imports succeeded on iteration {i}: {results}")
+
+    def test_cross_package_circular_import(self):
+        # Two packages whose __init__.py each import a submodule of the
+        # other. Concurrent imports of submodules of each must not raise
+        # _DeadlockError; the import system accepts a partially-initialised
+        # parent in this case (see _lock_unlock_module).
+        os.makedirs(os.path.join(TESTFN, "circ_a"))
+        os.makedirs(os.path.join(TESTFN, "circ_b"))
+        self.addCleanup(shutil.rmtree, TESTFN)
+        with open(os.path.join(TESTFN, "circ_a", "__init__.py"), "w") as f:
+            f.write("import time; time.sleep(0.03)\nimport circ_b.other\n")
+        with open(os.path.join(TESTFN, "circ_b", "__init__.py"), "w") as f:
+            f.write("import time; time.sleep(0.03)\nimport circ_a.other\n")
+        for pkg in ("circ_a", "circ_b"):
+            for mod in ("sub.py", "other.py"):
+                with open(os.path.join(TESTFN, pkg, mod), "w") as f:
+                    f.write("X = 1\n")
+
+        sys.path.insert(0, TESTFN)
+        self.addCleanup(sys.path.remove, TESTFN)
+        for mod in ("circ_a", "circ_a.sub", "circ_a.other",
+                    "circ_b", "circ_b.sub", "circ_b.other"):
+            self.addCleanup(forget, mod)
+        importlib.invalidate_caches()
+
+        errors = []
+        barrier = threading.Barrier(2)
+
+        def do_import(name):
+            barrier.wait()
+            try:
+                importlib.import_module(name)
+            except Exception as e:
+                errors.append((name, type(e).__name__, str(e)))
+
+        for i in range(10):
+            for mod in ("circ_a", "circ_a.sub", "circ_a.other",
+                        "circ_b", "circ_b.sub", "circ_b.other"):
+                sys.modules.pop(mod, None)
+            errors.clear()
+            barrier.reset()
+
+            thread1 = threading.Thread(target=do_import, args=("circ_a.sub",))
+            thread2 = threading.Thread(target=do_import, args=("circ_b.sub",))
+            thread1.start()
+            thread2.start()
+            thread1.join(timeout=5)
+            thread2.join(timeout=5)
+
+            if thread1.is_alive() or thread2.is_alive():
+                self.fail(f"Threads deadlocked on iteration {i}")
+            self.assertEqual(
+                errors, [],
+                f"Import(s) failed on iteration {i}: {errors}")
 
 
 def setUpModule():

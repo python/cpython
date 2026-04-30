@@ -310,7 +310,7 @@ same manner as :data:`sys.path` is configured in workers before executing
 work items.
 
 This bug caused some forkserver module preloading to silently fail to
-preload. This manifested as a performance degration in child processes when
+preload. This manifested as a performance degradation in child processes when
 the ``sys.path`` was required due to additional repeated work in every
 worker.
 
@@ -1253,7 +1253,7 @@ including SerenityOS.
 .. date: 2024-11-09-16-10-22
 .. gh-issue: 126066
 .. nonce: 9zs4m4
-.. section: Core and Builtins
+.. section: Library
 
 Fix :mod:`importlib` to not write an incomplete .pyc files when a ulimit or
 some other operating system mechanism is preventing the write to go through
@@ -1285,7 +1285,7 @@ its ``__iter__``.
 .. date: 2024-11-02-18-01-31
 .. gh-issue: 126209
 .. nonce: 2ZIhrS
-.. section: Core and Builtins
+.. section: Library
 
 Fix an issue with ``skip_file_prefixes`` parameter which resulted in an
 inconsistent behaviour between the C and Python implementations of
@@ -1400,7 +1400,7 @@ The :class:`memoryview` type now supports subscription, making it a
 .. nonce: KlCdgD
 .. section: Core and Builtins
 
-Adds :opcode:`LOAD_SMALL_INT` and :opcode:`LOAD_CONST_IMMORTAL`
+Adds :opcode:`LOAD_SMALL_INT` and :opcode:`!LOAD_CONST_IMMORTAL`
 instructions. ``LOAD_SMALL_INT`` pushes a small integer equal to the
 ``oparg`` to the stack. ``LOAD_CONST_IMMORTAL`` does the same as
 ``LOAD_CONST`` but is more efficient for immortal objects. Removes
@@ -1567,7 +1567,7 @@ Wannes Boeykens.
 .. date: 2024-05-12-03-10-36
 .. gh-issue: 118950
 .. nonce: 5Wc4vp
-.. section: Core and Builtins
+.. section: Library
 
 Fix bug where SSLProtocol.connection_lost wasn't getting called when OSError
 was thrown on writing to socket.
@@ -1577,7 +1577,7 @@ was thrown on writing to socket.
 .. date: 2023-12-30-00-21-45
 .. gh-issue: 113570
 .. nonce: _XQgsW
-.. section: Core and Builtins
+.. section: Library
 
 Fixed a bug in ``reprlib.repr`` where it incorrectly called the repr method
 on shadowed Python built-in types.

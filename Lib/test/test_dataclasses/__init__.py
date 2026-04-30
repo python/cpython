@@ -5,6 +5,7 @@
 from dataclasses import *
 
 import abc
+import annotationlib
 import io
 import pickle
 import inspect
@@ -12,6 +13,8 @@ import builtins
 import types
 import weakref
 import traceback
+import sys
+import textwrap
 import unittest
 from unittest.mock import Mock
 from typing import ClassVar, Any, List, Union, Tuple, Dict, Generic, TypeVar, Optional, Protocol, DefaultDict
@@ -24,9 +27,20 @@ import typing       # Needed for the string "typing.ClassVar[int]" to work as an
 import dataclasses  # Needed for the string "dataclasses.InitVar[int]" to work as an annotation.
 
 from test import support
+from test.support import cpython_only, import_helper
 
 # Just any custom exception we can catch.
 class CustomError(Exception): pass
+
+
+class TestImportTime(unittest.TestCase):
+
+    @cpython_only
+    def test_lazy_import(self):
+        import_helper.ensure_lazy_imports(
+            "dataclasses", {"inspect", "re", "copy"}
+        )
+
 
 class TestCase(unittest.TestCase):
     def test_no_fields(self):
@@ -67,7 +81,7 @@ class TestCase(unittest.TestCase):
         expected_output = "Field(name='id',type=None," \
                            f"default=1,default_factory={MISSING!r}," \
                            "init=True,repr=False,hash=None," \
-                           "compare=True,metadata=mappingproxy({})," \
+                           "compare=True,metadata=frozendict()," \
                            f"kw_only={MISSING!r}," \
                            "doc='Docstring'," \
                            "_field_type=None)"
@@ -116,7 +130,7 @@ class TestCase(unittest.TestCase):
         for param in inspect.signature(dataclass).parameters:
             if param == 'cls':
                 continue
-            self.assertTrue(hasattr(Some.__dataclass_params__, param), msg=param)
+            self.assertHasAttr(Some.__dataclass_params__, param)
 
     def test_named_init_params(self):
         @dataclass
@@ -667,7 +681,7 @@ class TestCase(unittest.TestCase):
 
         self.assertEqual(the_fields[0].name, 'x')
         self.assertEqual(the_fields[0].type, int)
-        self.assertFalse(hasattr(C, 'x'))
+        self.assertNotHasAttr(C, 'x')
         self.assertTrue (the_fields[0].init)
         self.assertTrue (the_fields[0].repr)
         self.assertEqual(the_fields[1].name, 'y')
@@ -677,7 +691,7 @@ class TestCase(unittest.TestCase):
         self.assertTrue (the_fields[1].repr)
         self.assertEqual(the_fields[2].name, 'z')
         self.assertEqual(the_fields[2].type, str)
-        self.assertFalse(hasattr(C, 'z'))
+        self.assertNotHasAttr(C, 'z')
         self.assertTrue (the_fields[2].init)
         self.assertFalse(the_fields[2].repr)
 
@@ -728,8 +742,8 @@ class TestCase(unittest.TestCase):
             z: object = default
             t: int = field(default=100)
 
-        self.assertFalse(hasattr(C, 'x'))
-        self.assertFalse(hasattr(C, 'y'))
+        self.assertNotHasAttr(C, 'x')
+        self.assertNotHasAttr(C, 'y')
         self.assertIs   (C.z, default)
         self.assertEqual(C.t, 100)
 
@@ -770,12 +784,12 @@ class TestCase(unittest.TestCase):
 
                 # Because this is a ClassVar, it can be mutable.
                 @dataclass
-                class C:
+                class UsesMutableClassVar:
                     z: ClassVar[typ] = typ()
 
                 # Because this is a ClassVar, it can be mutable.
                 @dataclass
-                class C:
+                class UsesMutableClassVarWithSubType:
                     x: ClassVar[typ] = Subclass()
 
     def test_deliberately_mutable_defaults(self):
@@ -923,6 +937,20 @@ class TestCase(unittest.TestCase):
 
         validate_class(C)
 
+    def test_incomplete_annotations(self):
+        # gh-142214
+        @dataclass
+        class C:
+            "doc"  # needed because otherwise we fetch the annotations at the wrong time
+            x: int
+
+        C.__annotate__ = lambda _: {}
+
+        self.assertEqual(
+            annotationlib.get_annotations(C.__init__),
+            {"return": None}
+        )
+
     def test_missing_default(self):
         # Test that MISSING works the same as a default not being
         #  specified.
@@ -967,7 +995,7 @@ class TestCase(unittest.TestCase):
         self.assertNotIn('x', D.__dict__)
 
     def test_missing_repr(self):
-        self.assertIn('MISSING_TYPE object', repr(MISSING))
+        self.assertEqual(repr(MISSING), 'MISSING')
 
     def test_dont_include_other_annotations(self):
         @dataclass
@@ -1675,17 +1703,24 @@ class TestCase(unittest.TestCase):
         class GroupDict:
             id: int
             users: Dict[str, User]
+        @dataclass
+        class GroupFrozenDict:
+            id: int
+            users: frozendict[str, User]
         a = User('Alice', 1)
         b = User('Bob', 2)
         gl = GroupList(0, [a, b])
         gt = GroupTuple(0, (a, b))
         gd = GroupDict(0, {'first': a, 'second': b})
+        gfd = GroupFrozenDict(0, frozendict({'first': a, 'second': b}))
         self.assertEqual(asdict(gl), {'id': 0, 'users': [{'name': 'Alice', 'id': 1},
                                                          {'name': 'Bob', 'id': 2}]})
         self.assertEqual(asdict(gt), {'id': 0, 'users': ({'name': 'Alice', 'id': 1},
                                                          {'name': 'Bob', 'id': 2})})
-        self.assertEqual(asdict(gd), {'id': 0, 'users': {'first': {'name': 'Alice', 'id': 1},
-                                                         'second': {'name': 'Bob', 'id': 2}}})
+        expected_dict = {'id': 0, 'users': {'first': {'name': 'Alice', 'id': 1},
+                                            'second': {'name': 'Bob', 'id': 2}}}
+        self.assertEqual(asdict(gd), expected_dict)
+        self.assertEqual(asdict(gfd), expected_dict)
 
     def test_helper_asdict_builtin_object_containers(self):
         @dataclass
@@ -1866,14 +1901,21 @@ class TestCase(unittest.TestCase):
         class GroupDict:
             id: int
             users: Dict[str, User]
+        @dataclass
+        class GroupFrozenDict:
+            id: int
+            users: frozendict[str, User]
         a = User('Alice', 1)
         b = User('Bob', 2)
         gl = GroupList(0, [a, b])
         gt = GroupTuple(0, (a, b))
         gd = GroupDict(0, {'first': a, 'second': b})
+        gfd = GroupFrozenDict(0, frozendict({'first': a, 'second': b}))
         self.assertEqual(astuple(gl), (0, [('Alice', 1), ('Bob', 2)]))
         self.assertEqual(astuple(gt), (0, (('Alice', 1), ('Bob', 2))))
-        self.assertEqual(astuple(gd), (0, {'first': ('Alice', 1), 'second': ('Bob', 2)}))
+        d = {'first': ('Alice', 1), 'second': ('Bob', 2)}
+        self.assertEqual(astuple(gd), (0, d))
+        self.assertEqual(astuple(gfd), (0, frozendict(d)))
 
     def test_helper_astuple_builtin_object_containers(self):
         @dataclass
@@ -2277,6 +2319,20 @@ class TestDocString(unittest.TestCase):
 
         self.assertDocStrEqual(C.__doc__, "C()")
 
+    def test_docstring_slotted(self):
+        @dataclass(slots=True)
+        class C:
+            x: int
+
+        self.assertDocStrEqual(C.__doc__, "C(x:int)")
+
+    def test_docstring_recursive(self):
+        @dataclass()
+        class C:
+            x: list[C]
+
+        self.assertDocStrEqual(C.__doc__, "C(x:list[test.test_dataclasses.TestDocString.test_docstring_recursive.<locals>.C])")
+
     def test_docstring_one_field(self):
         @dataclass
         class C:
@@ -2313,7 +2369,7 @@ class TestDocString(unittest.TestCase):
         class C:
             x: Union[int, type(None)] = None
 
-        self.assertDocStrEqual(C.__doc__, "C(x:Optional[int]=None)")
+        self.assertDocStrEqual(C.__doc__, "C(x:int|None=None)")
 
     def test_docstring_list_field(self):
         @dataclass
@@ -2342,6 +2398,31 @@ class TestDocString(unittest.TestCase):
             x: deque = field(default_factory=deque)
 
         self.assertDocStrEqual(C.__doc__, "C(x:collections.deque=<factory>)")
+
+    def test_docstring_undefined_name(self):
+        @dataclass
+        class C:
+            x: undef
+
+        self.assertDocStrEqual(C.__doc__, "C(x:undef)")
+
+    def test_docstring_with_unsolvable_forward_ref_in_init(self):
+        # See: https://github.com/python/cpython/issues/128184
+        ns = {}
+        exec(
+            textwrap.dedent(
+                """
+                from dataclasses import dataclass
+
+                @dataclass
+                class C:
+                    def __init__(self, x: X, num: int) -> None: ...
+                """,
+            ),
+            ns,
+        )
+
+        self.assertDocStrEqual(ns['C'].__doc__, "C(x:X,num:int)")
 
     def test_docstring_with_no_signature(self):
         # See https://github.com/python/cpython/issues/103449
@@ -2440,6 +2521,149 @@ class TestInit(unittest.TestCase):
                 self.a = a * 2
 
         self.assertEqual(D(5).a, 10)
+
+
+class TestInitAnnotate(unittest.TestCase):
+    # Tests for the generated __annotate__ function for __init__
+    # See: https://github.com/python/cpython/issues/137530
+
+    def test_annotate_function(self):
+        # No forward references
+        @dataclass
+        class A:
+            a: int
+
+        value_annos = annotationlib.get_annotations(A.__init__, format=annotationlib.Format.VALUE)
+        forwardref_annos = annotationlib.get_annotations(A.__init__, format=annotationlib.Format.FORWARDREF)
+        string_annos = annotationlib.get_annotations(A.__init__, format=annotationlib.Format.STRING)
+
+        self.assertEqual(value_annos, {'a': int, 'return': None})
+        self.assertEqual(forwardref_annos, {'a': int, 'return': None})
+        self.assertEqual(string_annos, {'a': 'int', 'return': 'None'})
+
+        self.assertTrue(getattr(A.__init__.__annotate__, "__generated_by_dataclasses__"))
+
+    def test_annotate_function_forwardref(self):
+        # With forward references
+        @dataclass
+        class B:
+            b: undefined
+
+        # VALUE annotations should raise while unresolvable
+        with self.assertRaises(NameError):
+            _ = annotationlib.get_annotations(B.__init__, format=annotationlib.Format.VALUE)
+
+        forwardref_annos = annotationlib.get_annotations(B.__init__, format=annotationlib.Format.FORWARDREF)
+        string_annos = annotationlib.get_annotations(B.__init__, format=annotationlib.Format.STRING)
+
+        self.assertEqual(forwardref_annos, {'b': support.EqualToForwardRef('undefined', owner=B, is_class=True), 'return': None})
+        self.assertEqual(string_annos, {'b': 'undefined', 'return': 'None'})
+
+        # Now VALUE and FORWARDREF should resolve, STRING should be unchanged
+        undefined = int
+
+        value_annos = annotationlib.get_annotations(B.__init__, format=annotationlib.Format.VALUE)
+        forwardref_annos = annotationlib.get_annotations(B.__init__, format=annotationlib.Format.FORWARDREF)
+        string_annos = annotationlib.get_annotations(B.__init__, format=annotationlib.Format.STRING)
+
+        self.assertEqual(value_annos, {'b': int, 'return': None})
+        self.assertEqual(forwardref_annos, {'b': int, 'return': None})
+        self.assertEqual(string_annos, {'b': 'undefined', 'return': 'None'})
+
+    def test_annotate_function_init_false(self):
+        # Check `init=False` attributes don't get into the annotations of the __init__ function
+        @dataclass
+        class C:
+            c: str = field(init=False)
+
+        self.assertEqual(annotationlib.get_annotations(C.__init__), {'return': None})
+
+    def test_annotate_function_contains_forwardref(self):
+        # Check string annotations on objects containing a ForwardRef
+        @dataclass
+        class D:
+            d: list[undefined]
+
+        with self.assertRaises(NameError):
+            annotationlib.get_annotations(D.__init__)
+
+        self.assertEqual(
+            annotationlib.get_annotations(D.__init__, format=annotationlib.Format.FORWARDREF),
+            {"d": list[support.EqualToForwardRef("undefined", is_class=True, owner=D)], "return": None}
+        )
+
+        self.assertEqual(
+            annotationlib.get_annotations(D.__init__, format=annotationlib.Format.STRING),
+            {"d": "list[undefined]", "return": "None"}
+        )
+
+        # Now test when it is defined
+        undefined = str
+
+        # VALUE should now resolve
+        self.assertEqual(
+            annotationlib.get_annotations(D.__init__),
+            {"d": list[str], "return": None}
+        )
+
+        self.assertEqual(
+            annotationlib.get_annotations(D.__init__, format=annotationlib.Format.FORWARDREF),
+            {"d": list[str], "return": None}
+        )
+
+        self.assertEqual(
+            annotationlib.get_annotations(D.__init__, format=annotationlib.Format.STRING),
+            {"d": "list[undefined]", "return": "None"}
+        )
+
+    def test_annotate_function_not_replaced(self):
+        # Check that __annotate__ is not replaced on non-generated __init__ functions
+        @dataclass(slots=True)
+        class E:
+            x: str
+            def __init__(self, x: int) -> None:
+                self.x = x
+
+        self.assertEqual(
+            annotationlib.get_annotations(E.__init__), {"x": int, "return": None}
+        )
+
+        self.assertFalse(hasattr(E.__init__.__annotate__, "__generated_by_dataclasses__"))
+
+    def test_slots_true_init_false(self):
+        # Test that slots=True and init=False work together and
+        #  that __annotate__ is not added to __init__.
+
+        @dataclass(slots=True, init=False)
+        class F:
+            x: int
+
+        f = F()
+        f.x = 10
+        self.assertEqual(f.x, 10)
+
+        self.assertFalse(hasattr(F.__init__, "__annotate__"))
+
+    def test_init_false_forwardref(self):
+        # Test forward references in fields not required for __init__ annotations.
+
+        # At the moment this raises a NameError for VALUE annotations even though the
+        # undefined annotation is not required for the __init__ annotations.
+        # Ideally this will be fixed but currently there is no good way to resolve this
+
+        @dataclass
+        class F:
+            not_in_init: list[undefined] = field(init=False, default=None)
+            in_init: int
+
+        annos = annotationlib.get_annotations(F.__init__, format=annotationlib.Format.FORWARDREF)
+        self.assertEqual(
+            annos,
+            {"in_init": int, "return": None},
+        )
+
+        with self.assertRaises(NameError):
+            annos = annotationlib.get_annotations(F.__init__)  # NameError on not_in_init
 
 
 class TestRepr(unittest.TestCase):
@@ -2866,29 +3090,41 @@ class TestHash(unittest.TestCase):
 
 
 class TestFrozen(unittest.TestCase):
-    def test_frozen(self):
-        @dataclass(frozen=True)
-        class C:
-            i: int
+    # Some tests have a subtest with a slotted dataclass.
+    # See https://github.com/python/cpython/issues/105936 for the reasons.
 
-        c = C(10)
-        self.assertEqual(c.i, 10)
-        with self.assertRaises(FrozenInstanceError):
-            c.i = 5
-        self.assertEqual(c.i, 10)
+    def test_frozen(self):
+        for slots in (False, True):
+            with self.subTest(slots=slots):
+
+                @dataclass(frozen=True, slots=slots)
+                class C:
+                    i: int
+
+                c = C(10)
+                self.assertEqual(c.i, 10)
+                with self.assertRaises(FrozenInstanceError):
+                    c.i = 5
+                self.assertEqual(c.i, 10)
+                with self.assertRaises(FrozenInstanceError):
+                    del c.i
+                self.assertEqual(c.i, 10)
 
     def test_frozen_empty(self):
-        @dataclass(frozen=True)
-        class C:
-            pass
+        for slots in (False, True):
+            with self.subTest(slots=slots):
 
-        c = C()
-        self.assertFalse(hasattr(c, 'i'))
-        with self.assertRaises(FrozenInstanceError):
-            c.i = 5
-        self.assertFalse(hasattr(c, 'i'))
-        with self.assertRaises(FrozenInstanceError):
-            del c.i
+                @dataclass(frozen=True, slots=slots)
+                class C:
+                    pass
+
+                c = C()
+                self.assertNotHasAttr(c, 'i')
+                with self.assertRaises(FrozenInstanceError):
+                    c.i = 5
+                self.assertNotHasAttr(c, 'i')
+                with self.assertRaises(FrozenInstanceError):
+                    del c.i
 
     def test_inherit(self):
         @dataclass(frozen=True)
@@ -3084,41 +3320,43 @@ class TestFrozen(unittest.TestCase):
                 d.i = 5
 
     def test_non_frozen_normal_derived(self):
-        # See bpo-32953.
+        # See bpo-32953 and https://github.com/python/cpython/issues/105936
+        for slots in (False, True):
+            with self.subTest(slots=slots):
 
-        @dataclass(frozen=True)
-        class D:
-            x: int
-            y: int = 10
+                @dataclass(frozen=True, slots=slots)
+                class D:
+                    x: int
+                    y: int = 10
 
-        class S(D):
-            pass
+                class S(D):
+                    pass
 
-        s = S(3)
-        self.assertEqual(s.x, 3)
-        self.assertEqual(s.y, 10)
-        s.cached = True
+                s = S(3)
+                self.assertEqual(s.x, 3)
+                self.assertEqual(s.y, 10)
+                s.cached = True
 
-        # But can't change the frozen attributes.
-        with self.assertRaises(FrozenInstanceError):
-            s.x = 5
-        with self.assertRaises(FrozenInstanceError):
-            s.y = 5
-        self.assertEqual(s.x, 3)
-        self.assertEqual(s.y, 10)
-        self.assertEqual(s.cached, True)
+                # But can't change the frozen attributes.
+                with self.assertRaises(FrozenInstanceError):
+                    s.x = 5
+                with self.assertRaises(FrozenInstanceError):
+                    s.y = 5
+                self.assertEqual(s.x, 3)
+                self.assertEqual(s.y, 10)
+                self.assertEqual(s.cached, True)
 
-        with self.assertRaises(FrozenInstanceError):
-            del s.x
-        self.assertEqual(s.x, 3)
-        with self.assertRaises(FrozenInstanceError):
-            del s.y
-        self.assertEqual(s.y, 10)
-        del s.cached
-        self.assertFalse(hasattr(s, 'cached'))
-        with self.assertRaises(AttributeError) as cm:
-            del s.cached
-        self.assertNotIsInstance(cm.exception, FrozenInstanceError)
+                with self.assertRaises(FrozenInstanceError):
+                    del s.x
+                self.assertEqual(s.x, 3)
+                with self.assertRaises(FrozenInstanceError):
+                    del s.y
+                self.assertEqual(s.y, 10)
+                del s.cached
+                self.assertNotHasAttr(s, 'cached')
+                with self.assertRaises(AttributeError) as cm:
+                    del s.cached
+                self.assertNotIsInstance(cm.exception, FrozenInstanceError)
 
     def test_non_frozen_normal_derived_from_empty_frozen(self):
         @dataclass(frozen=True)
@@ -3129,12 +3367,12 @@ class TestFrozen(unittest.TestCase):
             pass
 
         s = S()
-        self.assertFalse(hasattr(s, 'x'))
+        self.assertNotHasAttr(s, 'x')
         s.x = 5
         self.assertEqual(s.x, 5)
 
         del s.x
-        self.assertFalse(hasattr(s, 'x'))
+        self.assertNotHasAttr(s, 'x')
         with self.assertRaises(AttributeError) as cm:
             del s.x
         self.assertNotIsInstance(cm.exception, FrozenInstanceError)
@@ -3364,8 +3602,8 @@ class TestSlots(unittest.TestCase):
         B = dataclass(A, slots=True)
         self.assertIsNot(A, B)
 
-        self.assertFalse(hasattr(A, "__slots__"))
-        self.assertTrue(hasattr(B, "__slots__"))
+        self.assertNotHasAttr(A, "__slots__")
+        self.assertHasAttr(B, "__slots__")
 
     # Can't be local to test_frozen_pickle.
     @dataclass(frozen=True, slots=True)
@@ -3609,7 +3847,6 @@ class TestSlots(unittest.TestCase):
         a_ref = weakref.ref(a)
         self.assertIs(a.__weakref__, a_ref)
 
-
     def test_dataclass_derived_weakref_slot(self):
         class A:
             pass
@@ -3689,7 +3926,7 @@ class TestSlots(unittest.TestCase):
         self.assertTrue(F.__weakref__)
         F()
 
-    def test_dataclass_derived_generic_from_slotted_base(self):
+    def test_dataclass_derived_generic_from_slotted_base_with_weakref(self):
         T = typing.TypeVar('T')
 
         class WithWeakrefSlot:
@@ -3729,7 +3966,6 @@ class TestSlots(unittest.TestCase):
     @support.cpython_only
     def test_dataclass_slot_dict_ctype(self):
         # https://github.com/python/cpython/issues/123935
-        from test.support import import_helper
         # Skips test if `_testcapi` is not present:
         _testcapi = import_helper.import_module('_testcapi')
 
@@ -3776,6 +4012,57 @@ class TestSlots(unittest.TestCase):
         # and once for `WithCorrectSuper__slots__` new class
         # that we create internally.
         self.assertEqual(CorrectSuper.args, ["default", "default"])
+
+    def test_original_class_is_gced(self):
+        # gh-135228: Make sure when we replace the class with slots=True, the original class
+        # gets garbage collected.
+        def make_simple():
+            @dataclass(slots=True)
+            class SlotsTest:
+                pass
+
+            return SlotsTest
+
+        # See https://github.com/python/cpython/issues/135228#issuecomment-3755979059
+        def make_frozen():
+            @dataclass(frozen=True, slots=True)
+            class SlotsTest:
+                pass
+
+            return SlotsTest
+
+        def make_with_annotations():
+            @dataclass(slots=True)
+            class SlotsTest:
+                x: int
+
+            return SlotsTest
+
+        def make_with_annotations_and_method():
+            @dataclass(slots=True)
+            class SlotsTest:
+                x: int
+
+                def method(self) -> int:
+                    return self.x
+
+            return SlotsTest
+
+        def make_with_forwardref():
+            @dataclass(slots=True)
+            class SlotsTest:
+                x: undefined
+                y: list[undefined]
+
+            return SlotsTest
+
+        for make in (make_simple, make_frozen, make_with_annotations, make_with_annotations_and_method, make_with_forwardref):
+            with self.subTest(make=make):
+                C = make()
+                support.gc_collect()
+                candidates = [cls for cls in object.__subclasses__() if cls.__name__ == 'SlotsTest'
+                              and cls.__firstlineno__ == make.__code__.co_firstlineno + 1]
+                self.assertEqual(candidates, [C])
 
 
 class TestDescriptors(unittest.TestCase):
@@ -4221,16 +4508,56 @@ class TestMakeDataclass(unittest.TestCase):
         C = make_dataclass('Point', ['x', 'y', 'z'])
         c = C(1, 2, 3)
         self.assertEqual(vars(c), {'x': 1, 'y': 2, 'z': 3})
-        self.assertEqual(C.__annotations__, {'x': 'typing.Any',
-                                             'y': 'typing.Any',
-                                             'z': 'typing.Any'})
+        self.assertEqual(C.__annotations__, {'x': typing.Any,
+                                             'y': typing.Any,
+                                             'z': typing.Any})
 
         C = make_dataclass('Point', ['x', ('y', int), 'z'])
         c = C(1, 2, 3)
         self.assertEqual(vars(c), {'x': 1, 'y': 2, 'z': 3})
-        self.assertEqual(C.__annotations__, {'x': 'typing.Any',
+        self.assertEqual(C.__annotations__, {'x': typing.Any,
                                              'y': int,
-                                             'z': 'typing.Any'})
+                                             'z': typing.Any})
+
+    def test_no_types_get_annotations(self):
+        C = make_dataclass('C', ['x', ('y', int), 'z'])
+
+        self.assertEqual(
+            annotationlib.get_annotations(C, format=annotationlib.Format.VALUE),
+            {'x': typing.Any, 'y': int, 'z': typing.Any},
+        )
+        self.assertEqual(
+            annotationlib.get_annotations(
+                C, format=annotationlib.Format.FORWARDREF),
+            {'x': typing.Any, 'y': int, 'z': typing.Any},
+        )
+        self.assertEqual(
+            annotationlib.get_annotations(
+                C, format=annotationlib.Format.STRING),
+            {'x': 'typing.Any', 'y': 'int', 'z': 'typing.Any'},
+        )
+
+    def test_no_types_no_typing_import(self):
+        with import_helper.CleanImport('typing'):
+            self.assertNotIn('typing', sys.modules)
+            C = make_dataclass('C', ['x', ('y', int)])
+
+            self.assertNotIn('typing', sys.modules)
+            self.assertEqual(
+                C.__annotate__(annotationlib.Format.FORWARDREF),
+                {
+                    'x': annotationlib.ForwardRef('Any', module='typing'),
+                    'y': int,
+                },
+            )
+            self.assertNotIn('typing', sys.modules)
+
+            for field in fields(C):
+                if field.name == "x":
+                    self.assertEqual(field.type, annotationlib.ForwardRef('Any', module='typing'))
+                else:
+                    self.assertEqual(field.name, "y")
+                    self.assertIs(field.type, int)
 
     def test_module_attr(self):
         self.assertEqual(ByMakeDataClass.__module__, __name__)
@@ -4839,7 +5166,7 @@ class TestKeywordArgs(unittest.TestCase):
 
         # But this usage is okay, since it's not using KW_ONLY.
         @dataclass
-        class A:
+        class NoDuplicateKwOnlyAnnotation:
             a: int
             _: KW_ONLY
             b: int
@@ -4847,13 +5174,13 @@ class TestKeywordArgs(unittest.TestCase):
 
         # And if inheriting, it's okay.
         @dataclass
-        class A:
+        class BaseUsesKwOnly:
             a: int
             _: KW_ONLY
             b: int
             c: int
         @dataclass
-        class B(A):
+        class SubclassUsesKwOnly(BaseUsesKwOnly):
             _: KW_ONLY
             d: int
 
@@ -5071,6 +5398,52 @@ class TestZeroArgumentSuperWithSlots(unittest.TestCase):
         # in A.foo() to B.  This normally isn't a problem, because no
         # one will be keeping a reference to the underlying class A.
         self.assertIs(A().cls(), B)
+
+    def test_empty_class_cell(self):
+        # gh-148947: Make sure that we explicitly handle the empty class cell.
+        def maker():
+            if False:
+                __class__ = 42
+
+            def method(self):
+                return __class__
+            return method
+
+        from dataclasses import dataclass
+
+        @dataclass(slots=True)
+        class X:
+            a: int
+
+            meth = maker()
+
+        with self.assertRaisesRegex(NameError, '__class__'):
+            X(1).meth()
+
+    def test_class_cell_from_other_class(self):
+        # This test fails without the "is oldcls" check in
+        # _update_func_cell_for__class__.
+        class Base:
+            def meth(self):
+                return "Base"
+
+        class Child(Base):
+            def meth(self):
+                return super().meth() + " Child"
+
+        @dataclass(slots=True)
+        class DC(Child):
+            a: int
+
+            meth = Child.meth
+
+        closure = DC.meth.__closure__
+        self.assertEqual(len(closure), 1)
+        self.assertIs(closure[0].cell_contents, Child)
+
+        self.assertEqual(DC(1).meth(), "Base Child")
+
+
 
 if __name__ == '__main__':
     unittest.main()

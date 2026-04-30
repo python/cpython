@@ -740,8 +740,8 @@ fractions
 functools
 ---------
 
-* :func:`functools.singledispatch` now supports :data:`types.UnionType`
-  and :data:`typing.Union` as annotations to the dispatch argument.::
+* :func:`functools.singledispatch` now supports :class:`types.UnionType`
+  and :class:`typing.Union` as annotations to the dispatch argument.::
 
     >>> from functools import singledispatch
     >>> @singledispatch
@@ -2673,7 +2673,7 @@ Removed
 
   (Contributed by Victor Stinner in :issue:`45474`.)
 
-* Exclude :c:func:`PyWeakref_GET_OBJECT` from the limited C API. It never
+* Exclude :c:func:`!PyWeakref_GET_OBJECT` from the limited C API. It never
   worked since the :c:type:`!PyWeakReference` structure is opaque in the
   limited C API.
   (Contributed by Victor Stinner in :issue:`35134`.)

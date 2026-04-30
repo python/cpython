@@ -280,11 +280,6 @@ class DebuggerTests(unittest.TestCase):
 
         return out
 
-    def assertEndsWith(self, actual, exp_end):
-        '''Ensure that the given "actual" string ends with "exp_end"'''
-        self.assertTrue(actual.endswith(exp_end),
-                        msg='%r did not end with %r' % (actual, exp_end))
-
     def assertMultilineMatches(self, actual, pattern):
         m = re.match(pattern, actual, re.DOTALL)
         if not m:

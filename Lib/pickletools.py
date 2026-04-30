@@ -16,6 +16,8 @@ import pickle
 import re
 import sys
 
+lazy from _colorize import decolor, get_theme
+
 __all__ = ['dis', 'genops', 'optimize']
 
 bytes_types = pickle.bytes_types
@@ -348,7 +350,7 @@ def read_stringnl(f, decode=True, stripquotes=True, *, encoding='latin-1'):
         for q in (b'"', b"'"):
             if data.startswith(q):
                 if not data.endswith(q):
-                    raise ValueError("strinq quote %r not found at both "
+                    raise ValueError("string quote %r not found at both "
                                      "ends of %r" % (q, data))
                 data = data[1:-1]
                 break
@@ -2209,6 +2211,32 @@ for i, d in enumerate(opcodes):
     name2i[d.name] = i
     code2i[d.code] = i
 
+# Group opcode names into categories for colourised CLI output.
+_opcode_categories = frozendict(
+    op_call=frozenset({
+        "BUILD", "EXT1", "EXT2", "EXT4", "GLOBAL", "INST", "NEWOBJ",
+        "NEWOBJ_EX", "OBJ", "REDUCE", "STACK_GLOBAL",
+    }),
+    op_container=frozenset({
+        "ADDITEMS", "APPEND", "APPENDS", "DICT", "EMPTY_DICT", "EMPTY_LIST",
+        "EMPTY_SET", "EMPTY_TUPLE", "FROZENSET", "LIST", "SETITEM",
+        "SETITEMS", "TUPLE", "TUPLE1", "TUPLE2", "TUPLE3",
+    }),
+    op_memo=frozenset({
+        "BINGET", "BINPUT", "GET", "LONG_BINGET", "LONG_BINPUT", "MEMOIZE",
+        "PUT",
+    }),
+    op_meta=frozenset({"BINPERSID", "FRAME", "MARK", "PERSID", "PROTO"}),
+    op_stack=frozenset({"DUP", "POP", "POP_MARK", "STOP"}),
+)
+_opcode_color_attr = frozendict({
+    name: attr
+    for attr, names in _opcode_categories.items()
+    for name in names
+})
+assert _opcode_color_attr.keys() <= name2i.keys(), (
+    f"unknown opcodes: {_opcode_color_attr.keys() - name2i.keys()}"
+)
 del name2i, code2i, i, d
 
 ##############################################################################
@@ -2443,13 +2471,19 @@ def dis(pickle, out=None, memo=None, indentlevel=4, annotate=0):
     indentchunk = ' ' * indentlevel
     errormsg = None
     annocol = annotate  # column hint for annotations
+    t = get_theme(tty_file=out).pickletools
     for opcode, arg, pos in genops(pickle):
         if pos is not None:
-            print("%5d:" % pos, end=' ', file=out)
+            print(f"{t.position}{pos:5d}:{t.reset}", end=' ', file=out)
 
-        line = "%-4s %s%s" % (repr(opcode.code)[1:-1],
-                              indentchunk * len(markstack),
-                              opcode.name)
+        attr = _opcode_color_attr.get(opcode.name)
+        opcode_color = getattr(t, attr) if attr else ""
+        opcode_reset = t.reset if attr else ""
+        line = (
+            f"{t.opcode_code}{repr(opcode.code)[1:-1]:<4}{t.reset} "
+            f"{indentchunk * len(markstack)}"
+            f"{opcode_color}{opcode.name}{opcode_reset}"
+        )
 
         maxproto = max(maxproto, opcode.proto)
         before = opcode.stack_before    # don't mutate
@@ -2510,18 +2544,26 @@ def dis(pickle, out=None, memo=None, indentlevel=4, annotate=0):
             line += ' ' * (10 - len(opcode.name))
             if arg is not None:
                 if opcode.name in ("STRING", "BINSTRING", "SHORT_BINSTRING"):
-                    line += ' ' + ascii(arg)
+                    arg_text = ascii(arg)
                 else:
-                    line += ' ' + repr(arg)
+                    arg_text = repr(arg)
+                arg_color = (
+                    t.arg_number
+                    if isinstance(arg, (int, float))
+                    else t.arg_string
+                )
+                line += f" {arg_color}{arg_text}{t.reset}"
             if markmsg:
-                line += ' ' + markmsg
+                line += f" {t.mark}{markmsg}{t.reset}"
         if annotate:
-            line += ' ' * (annocol - len(line))
+            visible_len = len(decolor(line))
+            line += ' ' * (annocol - visible_len)
             # make a mild effort to align annotations
-            annocol = len(line)
+            annocol = max(visible_len, annocol)
             if annocol > 50:
                 annocol = annotate
-            line += ' ' + opcode.doc.split('\n', 1)[0]
+            doc = opcode.doc.split('\n', 1)[0]
+            line += f" {t.annotation}{doc}{t.reset}"
         print(line, file=out)
 
         if errormsg:
@@ -2541,7 +2583,11 @@ def dis(pickle, out=None, memo=None, indentlevel=4, annotate=0):
 
         stack.extend(after)
 
-    print("highest protocol among opcodes =", maxproto, file=out)
+    print(
+        "highest protocol among opcodes =",
+        f"{t.proto}{maxproto}{t.reset}",
+        file=out,
+    )
     if stack:
         raise ValueError("stack not empty after STOP: %r" % stack)
 
@@ -2838,17 +2884,13 @@ __test__ = {'disassembler_test': _dis_test,
             'disassembler_memo_test': _memo_test,
            }
 
-def _test():
-    import doctest
-    return doctest.testmod()
 
-if __name__ == "__main__":
+def _main(args=None):
     import argparse
-    parser = argparse.ArgumentParser(
-        description='disassemble one or more pickle files')
+    parser = argparse.ArgumentParser(description='disassemble one or more pickle files')
     parser.add_argument(
         'pickle_file',
-        nargs='*', help='the pickle file')
+        nargs='+', help='the pickle file')
     parser.add_argument(
         '-o', '--output',
         help='the file where the output should be written')
@@ -2865,36 +2907,28 @@ if __name__ == "__main__":
         '-p', '--preamble', default="==> {name} <==",
         help='if more than one pickle file is specified, print this before'
         ' each disassembly')
-    parser.add_argument(
-        '-t', '--test', action='store_true',
-        help='run self-test suite')
-    parser.add_argument(
-        '-v', action='store_true',
-        help='run verbosely; only affects self-test run')
-    args = parser.parse_args()
-    if args.test:
-        _test()
+    args = parser.parse_args(args)
+    annotate = 30 if args.annotate else 0
+    memo = {} if args.memo else None
+    if args.output is None:
+        output = sys.stdout
     else:
-        if not args.pickle_file:
-            parser.print_help()
-        else:
-            annotate = 30 if args.annotate else 0
-            memo = {} if args.memo else None
-            if args.output is None:
-                output = sys.stdout
+        output = open(args.output, 'w')
+    try:
+        for arg in args.pickle_file:
+            if len(args.pickle_file) > 1:
+                name = '<stdin>' if arg == '-' else arg
+                preamble = args.preamble.format(name=name)
+                output.write(preamble + '\n')
+            if arg == '-':
+                dis(sys.stdin.buffer, output, memo, args.indentlevel, annotate)
             else:
-                output = open(args.output, 'w')
-            try:
-                for arg in args.pickle_file:
-                    if len(args.pickle_file) > 1:
-                        name = '<stdin>' if arg == '-' else arg
-                        preamble = args.preamble.format(name=name)
-                        output.write(preamble + '\n')
-                    if arg == '-':
-                        dis(sys.stdin.buffer, output, memo, args.indentlevel, annotate)
-                    else:
-                        with open(arg, 'rb') as f:
-                            dis(f, output, memo, args.indentlevel, annotate)
-            finally:
-                if output is not sys.stdout:
-                    output.close()
+                with open(arg, 'rb') as f:
+                    dis(f, output, memo, args.indentlevel, annotate)
+    finally:
+        if output is not sys.stdout:
+            output.close()
+
+
+if __name__ == "__main__":
+    _main()

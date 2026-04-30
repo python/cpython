@@ -6,9 +6,9 @@
 #include "clinic/watchers.c.h"
 
 #define Py_BUILD_CORE
-#include "pycore_function.h"  // FUNC_MAX_WATCHERS
-#include "pycore_code.h"  // CODE_MAX_WATCHERS
-#include "pycore_context.h" // CONTEXT_MAX_WATCHERS
+#include "pycore_function.h"      // FUNC_MAX_WATCHERS
+#include "pycore_interp_structs.h" // CODE_MAX_WATCHERS
+#include "pycore_context.h"       // CONTEXT_MAX_WATCHERS
 
 /*[clinic input]
 module _testcapi
@@ -364,7 +364,7 @@ add_code_watcher(PyObject *self, PyObject *which_watcher)
         watcher_id = PyCode_AddWatcher(error_code_event_handler);
     }
     else {
-        PyErr_Format(PyExc_ValueError, "invalid watcher %d", which_l);
+        PyErr_Format(PyExc_ValueError, "invalid watcher %ld", which_l);
         return NULL;
     }
     if (watcher_id < 0) {
@@ -413,7 +413,7 @@ get_code_watcher_num_destroyed_events(PyObject *self, PyObject *watcher_id)
 }
 
 static PyObject *
-allocate_too_many_code_watchers(PyObject *self, PyObject *args)
+allocate_too_many_code_watchers(PyObject *self, PyObject *Py_UNUSED(args))
 {
     int watcher_ids[CODE_MAX_WATCHERS + 1];
     int num_watchers = 0;
@@ -428,7 +428,8 @@ allocate_too_many_code_watchers(PyObject *self, PyObject *args)
     PyObject *exc = PyErr_GetRaisedException();
     for (int i = 0; i < num_watchers; i++) {
         if (PyCode_ClearWatcher(watcher_ids[i]) < 0) {
-            PyErr_WriteUnraisable(Py_None);
+            PyErr_FormatUnraisable("Exception ignored while "
+                                   "clearing code watcher");
             break;
         }
     }
@@ -609,7 +610,8 @@ allocate_too_many_func_watchers(PyObject *self, PyObject *args)
     PyObject *exc = PyErr_GetRaisedException();
     for (int i = 0; i < num_watchers; i++) {
         if (PyFunction_ClearWatcher(watcher_ids[i]) < 0) {
-            PyErr_WriteUnraisable(Py_None);
+            PyErr_FormatUnraisable("Exception ignored while "
+                                   "clearing function watcher");
             break;
         }
     }
@@ -671,7 +673,7 @@ add_context_watcher(PyObject *self, PyObject *which_watcher)
     assert(PyLong_Check(which_watcher));
     long which_l = PyLong_AsLong(which_watcher);
     if (which_l < 0 || which_l >= (long)Py_ARRAY_LENGTH(callbacks)) {
-        PyErr_Format(PyExc_ValueError, "invalid watcher %d", which_l);
+        PyErr_Format(PyExc_ValueError, "invalid watcher %ld", which_l);
         return NULL;
     }
     int watcher_id = PyContext_AddWatcher(callbacks[which_l]);
@@ -740,7 +742,7 @@ get_context_switches(PyObject *Py_UNUSED(self), PyObject *watcher_id)
 }
 
 static PyObject *
-allocate_too_many_context_watchers(PyObject *self, PyObject *args)
+allocate_too_many_context_watchers(PyObject *self, PyObject *Py_UNUSED(args))
 {
     int watcher_ids[CONTEXT_MAX_WATCHERS + 1];
     int num_watchers = 0;
@@ -755,7 +757,8 @@ allocate_too_many_context_watchers(PyObject *self, PyObject *args)
     PyObject *exc = PyErr_GetRaisedException();
     for (int i = 0; i < num_watchers; i++) {
         if (PyContext_ClearWatcher(watcher_ids[i]) < 0) {
-            PyErr_WriteUnraisable(Py_None);
+            PyErr_FormatUnraisable("Exception ignored while "
+                                   "clearing context watcher");
             break;
         }
     }
@@ -808,8 +811,7 @@ static PyMethodDef test_methods[] = {
     {"clear_dict_watcher",       clear_dict_watcher,      METH_O,       NULL},
     _TESTCAPI_WATCH_DICT_METHODDEF
     _TESTCAPI_UNWATCH_DICT_METHODDEF
-    {"get_dict_watcher_events",
-     (PyCFunction) get_dict_watcher_events,               METH_NOARGS,  NULL},
+    {"get_dict_watcher_events",  get_dict_watcher_events, METH_NOARGS,  NULL},
 
     // Type watchers.
     {"add_type_watcher",         add_type_watcher,        METH_O,       NULL},
@@ -817,7 +819,7 @@ static PyMethodDef test_methods[] = {
     _TESTCAPI_WATCH_TYPE_METHODDEF
     _TESTCAPI_UNWATCH_TYPE_METHODDEF
     {"get_type_modified_events",
-     (PyCFunction) get_type_modified_events,              METH_NOARGS, NULL},
+     get_type_modified_events,                            METH_NOARGS, NULL},
 
     // Code object watchers.
     {"add_code_watcher",         add_code_watcher,        METH_O,       NULL},
@@ -827,7 +829,7 @@ static PyMethodDef test_methods[] = {
     {"get_code_watcher_num_destroyed_events",
      get_code_watcher_num_destroyed_events,               METH_O,       NULL},
     {"allocate_too_many_code_watchers",
-     (PyCFunction) allocate_too_many_code_watchers,       METH_NOARGS,  NULL},
+     allocate_too_many_code_watchers,                     METH_NOARGS,  NULL},
 
     // Function watchers.
     {"add_func_watcher",         add_func_watcher,        METH_O,       NULL},
@@ -843,7 +845,7 @@ static PyMethodDef test_methods[] = {
     {"clear_context_stack",      clear_context_stack,     METH_NOARGS,  NULL},
     {"get_context_switches",     get_context_switches,    METH_O,       NULL},
     {"allocate_too_many_context_watchers",
-     (PyCFunction) allocate_too_many_context_watchers,       METH_NOARGS,  NULL},
+     allocate_too_many_context_watchers,                  METH_NOARGS,  NULL},
     {NULL},
 };
 

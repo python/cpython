@@ -5,7 +5,7 @@
 #include "Python.h"
 #include "compile.h"
 #include "opcode.h"
-#include "pycore_ceval.h"
+#include "pycore_ceval.h"           // SPECIAL_MAX
 #include "pycore_code.h"
 #include "pycore_compile.h"
 #include "pycore_intrinsics.h"
@@ -274,6 +274,7 @@ _opcode_get_nb_ops_impl(PyObject *module)
     ADD_NB_OP(NB_INPLACE_SUBTRACT, "-=");
     ADD_NB_OP(NB_INPLACE_TRUE_DIVIDE, "/=");
     ADD_NB_OP(NB_INPLACE_XOR, "^=");
+    ADD_NB_OP(NB_SUBSCR, "[]");
 
 #undef ADD_NB_OP
 
@@ -422,13 +423,11 @@ _opcode_exec(PyObject *m) {
     if (PyModule_AddIntMacro(m, ENABLE_SPECIALIZATION) < 0) {
         return -1;
     }
-    if (PyModule_AddIntMacro(m, ENABLE_SPECIALIZATION_FT) < 0) {
-        return -1;
-    }
     return 0;
 }
 
 static PyModuleDef_Slot module_slots[] = {
+    _Py_ABI_SLOT,
     {Py_mod_exec, _opcode_exec},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {Py_mod_gil, Py_MOD_GIL_NOT_USED},

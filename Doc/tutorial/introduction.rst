@@ -13,10 +13,9 @@ end a multi-line command.
 
 .. only:: html
 
-   You can toggle the display of prompts and output by clicking on ``>>>``
-   in the upper-right corner of an example box.  If you hide the prompts
-   and output for an example, then you can easily copy and paste the input
-   lines into your interpreter.
+   You can use the "Copy" button (it appears in the upper-right corner
+   when hovering over or tapping a code example), which strips prompts
+   and omits output, to copy and paste the input lines into your interpreter.
 
 .. index:: single: # (hash); comment
 
@@ -50,7 +49,7 @@ primary prompt, ``>>>``.  (It shouldn't take long.)
 Numbers
 -------
 
-The interpreter acts as a simple calculator: you can type an expression at it
+The interpreter acts as a simple calculator: you can type an expression into it
 and it will write the value.  Expression syntax is straightforward: the
 operators ``+``, ``-``, ``*`` and ``/`` can be used to perform
 arithmetic; parentheses (``()``) can be used for grouping.
@@ -147,6 +146,8 @@ Python can manipulate text (represented by type :class:`str`, so-called
 "``Yay! :)``". They can be enclosed in single quotes (``'...'``) or double
 quotes (``"..."``) with the same result [#]_.
 
+.. code-block:: pycon
+
    >>> 'spam eggs'  # single quotes
    'spam eggs'
    >>> "Paris rabbit got your back :)! Yay!"  # double quotes
@@ -183,11 +184,11 @@ If you don't want characters prefaced by ``\`` to be interpreted as
 special characters, you can use *raw strings* by adding an ``r`` before
 the first quote::
 
-   >>> print('C:\some\name')  # here \n means newline!
-   C:\some
+   >>> print('C:\this\name')  # here \t means tab, \n means newline
+   C:      his
    ame
-   >>> print(r'C:\some\name')  # note the r before the quote
-   C:\some\name
+   >>> print(r'C:\this\name')  # note the r before the quote
+   C:\this\name
 
 There is one subtle aspect to raw strings: a raw string may not end in
 an odd number of ``\`` characters; see
@@ -195,7 +196,7 @@ an odd number of ``\`` characters; see
 and workarounds.
 
 String literals can span multiple lines.  One way is using triple-quotes:
-``"""..."""`` or ``'''...'''``.  End of lines are automatically
+``"""..."""`` or ``'''...'''``.  End-of-line characters are automatically
 included in the string, but it's possible to prevent this by adding a ``\`` at
 the end of the line.  In the following example, the initial newline is not
 included::
@@ -419,7 +420,7 @@ type, i.e. it is possible to change their content::
     [1, 8, 27, 64, 125]
 
 You can also add new items at the end of the list, by using
-the :meth:`!list.append` *method* (we will see more about methods later)::
+the :meth:`list.append` *method* (we will see more about methods later)::
 
    >>> cubes.append(216)  # add the cube of 6
    >>> cubes.append(7 ** 3)  # and the cube of 7

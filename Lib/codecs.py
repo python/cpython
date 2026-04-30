@@ -618,7 +618,7 @@ class StreamReader(Codec):
             method and are included in the list entries.
 
             sizehint, if given, is ignored since there is no efficient
-            way to finding the true end-of-line.
+            way of finding the true end-of-line.
 
         """
         data = self.read()
@@ -709,13 +709,13 @@ class StreamReaderWriter:
 
         return self.reader.read(size)
 
-    def readline(self, size=None):
+    def readline(self, size=None, keepends=True):
 
-        return self.reader.readline(size)
+        return self.reader.readline(size, keepends)
 
-    def readlines(self, sizehint=None):
+    def readlines(self, sizehint=None, keepends=True):
 
-        return self.reader.readlines(sizehint)
+        return self.reader.readlines(sizehint, keepends)
 
     def __next__(self):
 
@@ -884,7 +884,6 @@ class StreamRecoder:
 ### Shortcuts
 
 def open(filename, mode='r', encoding=None, errors='strict', buffering=-1):
-
     """ Open an encoded file using the given mode and return
         a wrapped version providing transparent encoding/decoding.
 
@@ -912,8 +911,11 @@ def open(filename, mode='r', encoding=None, errors='strict', buffering=-1):
         .encoding which allows querying the used encoding. This
         attribute is only available if an encoding was specified as
         parameter.
-
     """
+    import warnings
+    warnings.warn("codecs.open() is deprecated. Use open() instead.",
+                  DeprecationWarning, stacklevel=2)
+
     if encoding is not None and \
        'b' not in mode:
         # Force opening of the file in binary mode

@@ -227,6 +227,8 @@ class RunPyMixin:
             "PYLAUNCHER_LIMIT_TO_COMPANY": "",
             **{k.upper(): v for k, v in (env or {}).items()},
         }
+        if ini_dir := getattr(self, '_ini_dir', None):
+            env.setdefault("_PYLAUNCHER_INIDIR", ini_dir)
         if not argv:
             argv = [self.py_exe, *args]
         with subprocess.Popen(
@@ -262,16 +264,22 @@ class RunPyMixin:
         return data
 
     def py_ini(self, content):
-        local_appdata = os.environ.get("LOCALAPPDATA")
-        if not local_appdata:
-            raise unittest.SkipTest("LOCALAPPDATA environment variable is "
-                                    "missing or empty")
-        return PreservePyIni(Path(local_appdata) / "py.ini", content)
+        ini_dir = getattr(self, '_ini_dir', None)
+        if not ini_dir:
+            local_appdata = os.environ.get("LOCALAPPDATA")
+            if not local_appdata:
+                raise unittest.SkipTest("LOCALAPPDATA environment variable is "
+                                        "missing or empty")
+            ini_dir = local_appdata
+        return PreservePyIni(Path(ini_dir) / "py.ini", content)
 
     @contextlib.contextmanager
     def script(self, content, encoding="utf-8"):
         file = Path(tempfile.mktemp(dir=os.getcwd()) + ".py")
-        file.write_text(content, encoding=encoding)
+        if isinstance(content, bytes):
+            file.write_bytes(content)
+        else:
+            file.write_text(content, encoding=encoding)
         try:
             yield file
         finally:
@@ -299,6 +307,8 @@ class TestLauncher(unittest.TestCase, RunPyMixin):
             p = subprocess.check_output("reg query HKCU\\Software\\Python /s")
             #print(p.decode('mbcs'))
 
+        cls._ini_dir = tempfile.mkdtemp()
+        cls.addClassCleanup(shutil.rmtree, cls._ini_dir, ignore_errors=True)
 
     @classmethod
     def tearDownClass(cls):
@@ -440,7 +450,7 @@ class TestLauncher(unittest.TestCase, RunPyMixin):
         except subprocess.CalledProcessError:
             raise unittest.SkipTest("requires at least one Python 3.x install")
         self.assertEqual("PythonCore", data["env.company"])
-        self.assertTrue(data["env.tag"].startswith("3."), data["env.tag"])
+        self.assertStartsWith(data["env.tag"], "3.")
 
     def test_search_major_3_32(self):
         try:
@@ -450,8 +460,8 @@ class TestLauncher(unittest.TestCase, RunPyMixin):
                 raise unittest.SkipTest("requires at least one 32-bit Python 3.x install")
             raise
         self.assertEqual("PythonCore", data["env.company"])
-        self.assertTrue(data["env.tag"].startswith("3."), data["env.tag"])
-        self.assertTrue(data["env.tag"].endswith("-32"), data["env.tag"])
+        self.assertStartsWith(data["env.tag"], "3.")
+        self.assertEndsWith(data["env.tag"], "-32")
 
     def test_search_major_2(self):
         try:
@@ -460,7 +470,7 @@ class TestLauncher(unittest.TestCase, RunPyMixin):
             if not is_installed("2.7"):
                 raise unittest.SkipTest("requires at least one Python 2.x install")
         self.assertEqual("PythonCore", data["env.company"])
-        self.assertTrue(data["env.tag"].startswith("2."), data["env.tag"])
+        self.assertStartsWith(data["env.tag"], "2.")
 
     def test_py_default(self):
         with self.py_ini(TEST_PY_DEFAULTS):
@@ -623,6 +633,25 @@ class TestLauncher(unittest.TestCase, RunPyMixin):
         self.assertEqual("PythonTestSuite", data["SearchInfo.company"])
         self.assertEqual("3.100", data["SearchInfo.tag"])
         self.assertEqual(f'X.Y.exe -prearg "{script}" -postarg', data["stdout"].strip())
+
+    def test_py_shebang_valid_bom(self):
+        with self.py_ini(TEST_PY_DEFAULTS):
+            content = "#! /usr/bin/python -prearg".encode("utf-8")
+            with self.script(b"\xEF\xBB\xBF" + content) as script:
+                data = self.run_py([script, "-postarg"])
+        self.assertEqual("PythonTestSuite", data["SearchInfo.company"])
+        self.assertEqual("3.100", data["SearchInfo.tag"])
+        self.assertEqual(f"X.Y.exe -prearg {quote(script)} -postarg", data["stdout"].strip())
+
+    def test_py_shebang_invalid_bom(self):
+        with self.py_ini(TEST_PY_DEFAULTS):
+            content = "#! /usr/bin/python3 -prearg".encode("utf-8")
+            with self.script(b"\xEF\xAA\xBF" + content) as script:
+                data = self.run_py([script, "-postarg"])
+        self.assertIn("Invalid BOM", data["stderr"])
+        self.assertEqual("PythonTestSuite", data["SearchInfo.company"])
+        self.assertEqual("3.100", data["SearchInfo.tag"])
+        self.assertEqual(f"X.Y.exe {quote(script)} -postarg", data["stdout"].strip())
 
     def test_py_handle_64_in_ini(self):
         with self.py_ini("\n".join(["[defaults]", "python=3.999-64"])):

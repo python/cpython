@@ -1,6 +1,7 @@
 # Adapted with permission from the EdgeDB project;
 # license: PSFL.
 
+import weakref
 import sys
 import gc
 import asyncio
@@ -14,7 +15,7 @@ from test.test_asyncio.utils import await_without_task
 
 # To prevent a warning "test altered the execution environment"
 def tearDownModule():
-    asyncio._set_event_loop_policy(None)
+    asyncio.events._set_event_loop_policy(None)
 
 
 class MyExc(Exception):
@@ -38,7 +39,25 @@ def no_other_refs():
     return [coro]
 
 
-class TestTaskGroup(unittest.IsolatedAsyncioTestCase):
+def set_gc_state(enabled):
+    was_enabled = gc.isenabled()
+    if enabled:
+        gc.enable()
+    else:
+        gc.disable()
+    return was_enabled
+
+
+@contextlib.contextmanager
+def disable_gc():
+    was_enabled = set_gc_state(enabled=False)
+    try:
+        yield
+    finally:
+        set_gc_state(enabled=was_enabled)
+
+
+class BaseTestTaskGroup:
 
     async def test_taskgroup_01(self):
 
@@ -832,15 +851,15 @@ class TestTaskGroup(unittest.IsolatedAsyncioTestCase):
         with self.assertRaisesRegex(RuntimeError, "has not been entered"):
             tg.create_task(coro)
 
-    def test_coro_closed_when_tg_closed(self):
+    async def test_coro_closed_when_tg_closed(self):
         async def run_coro_after_tg_closes():
             async with taskgroups.TaskGroup() as tg:
                 pass
             coro = asyncio.sleep(0)
             with self.assertRaisesRegex(RuntimeError, "is finished"):
                 tg.create_task(coro)
-        loop = asyncio.get_event_loop()
-        loop.run_until_complete(run_coro_after_tg_closes())
+
+        await run_coro_after_tg_closes()
 
     async def test_cancelling_level_preserved(self):
         async def raise_after(t, e):
@@ -965,6 +984,30 @@ class TestTaskGroup(unittest.IsolatedAsyncioTestCase):
         self.assertIsInstance(exc, _Done)
         self.assertListEqual(gc.get_referrers(exc), no_other_refs())
 
+
+    async def test_exception_refcycles_parent_task_wr(self):
+        """Test that TaskGroup deletes self._parent_task and create_task() deletes task"""
+        tg = asyncio.TaskGroup()
+        exc = None
+
+        class _Done(Exception):
+            pass
+
+        async def coro_fn():
+            async with tg:
+                raise _Done
+
+        with disable_gc():
+            try:
+                async with asyncio.TaskGroup() as tg2:
+                    task_wr = weakref.ref(tg2.create_task(coro_fn()))
+            except* _Done as excs:
+                exc = excs.exceptions[0].exceptions[0]
+
+        self.assertIsNone(task_wr())
+        self.assertIsInstance(exc, _Done)
+        self.assertListEqual(gc.get_referrers(exc), no_other_refs())
+
     async def test_exception_refcycles_propagate_cancellation_error(self):
         """Test that TaskGroup deletes propagate_cancellation_error"""
         tg = asyncio.TaskGroup()
@@ -996,6 +1039,204 @@ class TestTaskGroup(unittest.IsolatedAsyncioTestCase):
 
         self.assertIsNotNone(exc)
         self.assertListEqual(gc.get_referrers(exc), no_other_refs())
+
+    async def test_name(self):
+        name = None
+
+        async def asyncfn():
+            nonlocal name
+            name = asyncio.current_task().get_name()
+
+        async with asyncio.TaskGroup() as tg:
+            tg.create_task(asyncfn(), name="example name")
+
+        self.assertEqual(name, "example name")
+
+
+    async def test_cancels_task_if_created_during_creation(self):
+        # regression test for gh-128550
+        ran = False
+        class MyError(Exception):
+            pass
+
+        exc = None
+        try:
+            async with asyncio.TaskGroup() as tg:
+                async def third_task():
+                    raise MyError("third task failed")
+
+                async def second_task():
+                    nonlocal ran
+                    tg.create_task(third_task())
+                    with self.assertRaises(asyncio.CancelledError):
+                        await asyncio.sleep(0)  # eager tasks cancel here
+                        await asyncio.sleep(0)  # lazy tasks cancel here
+                    ran = True
+
+                tg.create_task(second_task())
+        except* MyError as excs:
+            exc = excs.exceptions[0]
+
+        self.assertTrue(ran)
+        self.assertIsInstance(exc, MyError)
+
+
+    async def test_cancellation_does_not_leak_out_of_tg(self):
+        class MyError(Exception):
+            pass
+
+        async def throw_error():
+            raise MyError
+
+        try:
+            async with asyncio.TaskGroup() as tg:
+                tg.create_task(throw_error())
+        except* MyError:
+            pass
+        else:
+            self.fail("should have raised one MyError in group")
+
+        # if this test fails this current task will be cancelled
+        # outside the task group and inside unittest internals
+        # we yield to the event loop with sleep(0) so that
+        # cancellation happens here and error is more understandable
+        await asyncio.sleep(0)
+
+    async def test_taskgroup_cancel_children(self):
+        # (asserting that TimeoutError is not raised)
+        async with asyncio.timeout(1):
+            async with asyncio.TaskGroup() as tg:
+                tg.create_task(asyncio.sleep(10))
+                tg.create_task(asyncio.sleep(10))
+                await asyncio.sleep(0)
+                tg.cancel()
+
+    async def test_taskgroup_cancel_body(self):
+        count = 0
+        async with asyncio.TaskGroup() as tg:
+            tg.cancel()
+            count += 1
+            await asyncio.sleep(0)
+            count += 1
+        self.assertEqual(count, 1)
+
+    async def test_taskgroup_cancel_idempotent(self):
+        count = 0
+        async with asyncio.TaskGroup() as tg:
+            tg.cancel()
+            tg.cancel()
+            count += 1
+            await asyncio.sleep(0)
+            count += 1
+        self.assertEqual(count, 1)
+
+    async def test_taskgroup_cancel_after_exit(self):
+        async with asyncio.TaskGroup() as tg:
+            await asyncio.sleep(0)
+        # (asserting that exception is not raised)
+        tg.cancel()
+
+    async def test_taskgroup_cancel_before_enter(self):
+        tg = asyncio.TaskGroup()
+        tg.cancel()
+        count = 0
+        async with tg:
+            count += 1
+            await asyncio.sleep(0)
+            count += 1
+        self.assertEqual(count, 1)
+
+    async def test_taskgroup_cancel_before_create_task(self):
+        async with asyncio.TaskGroup() as tg:
+            tg.cancel()
+            # TODO: This behavior is not ideal.  We'd rather have no exception
+            #   raised, and the child task run until the first await.
+            with self.assertRaises(RuntimeError):
+                tg.create_task(asyncio.sleep(1))
+
+    async def test_taskgroup_cancel_before_exception(self):
+        async def raise_exc(parent_tg: asyncio.TaskGroup):
+            parent_tg.cancel()
+            raise RuntimeError
+
+        with self.assertRaises(ExceptionGroup):
+            async with asyncio.TaskGroup() as tg:
+                tg.create_task(raise_exc(tg))
+                await asyncio.sleep(1)
+
+    async def test_taskgroup_cancel_after_exception(self):
+        async def raise_exc(parent_tg: asyncio.TaskGroup):
+            try:
+                raise RuntimeError
+            finally:
+                parent_tg.cancel()
+
+        with self.assertRaises(ExceptionGroup):
+            async with asyncio.TaskGroup() as tg:
+                tg.create_task(raise_exc(tg))
+                await asyncio.sleep(1)
+
+    async def test_taskgroup_body_cancel_before_exception(self):
+        with self.assertRaises(ExceptionGroup):
+            async with asyncio.TaskGroup() as tg:
+                tg.cancel()
+                raise RuntimeError
+
+    async def test_taskgroup_body_cancel_after_exception(self):
+        with self.assertRaises(ExceptionGroup):
+            async with asyncio.TaskGroup() as tg:
+                try:
+                    raise RuntimeError
+                finally:
+                    tg.cancel()
+
+    async def test_taskgroup_cancel_one_winner(self):
+        async def race(*fns):
+            outcome = None
+            async def run(fn):
+                nonlocal outcome
+                outcome = await fn()
+                tg.cancel()
+
+            async with asyncio.TaskGroup() as tg:
+                for fn in fns:
+                    tg.create_task(run(fn))
+            return outcome
+
+        event = asyncio.Event()
+        record = []
+        async def fn_1():
+            record.append("1 started")
+            await event.wait()
+            record.append("1 finished")
+            return 1
+
+        async def fn_2():
+            record.append("2 started")
+            await event.wait()
+            record.append("2 finished")
+            return 2
+
+        async def fn_3():
+            record.append("3 started")
+            event.set()
+            await asyncio.sleep(10)
+            record.append("3 finished")
+            return 3
+
+        self.assertEqual(await race(fn_1, fn_2, fn_3), 1)
+        self.assertListEqual(record, ["1 started", "2 started", "3 started", "1 finished"])
+
+
+class TestTaskGroup(BaseTestTaskGroup, unittest.IsolatedAsyncioTestCase):
+    loop_factory = asyncio.EventLoop
+
+class TestEagerTaskTaskGroup(BaseTestTaskGroup, unittest.IsolatedAsyncioTestCase):
+    @staticmethod
+    def loop_factory():
+        loop = asyncio.EventLoop()
+        loop.set_task_factory(asyncio.eager_task_factory)
+        return loop
 
 
 if __name__ == "__main__":

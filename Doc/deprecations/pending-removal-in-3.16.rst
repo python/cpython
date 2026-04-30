@@ -32,7 +32,6 @@ Pending removal in Python 3.16
     * :class:`asyncio.WindowsProactorEventLoopPolicy`
     * :func:`asyncio.get_event_loop_policy`
     * :func:`asyncio.set_event_loop_policy`
-    * :func:`asyncio.set_event_loop`
 
     Users should use :func:`asyncio.run` or :class:`asyncio.Runner` with
     *loop_factory* to use the desired event loop implementation.
@@ -57,6 +56,25 @@ Pending removal in Python 3.16
     In the rare case that you need the bitwise inversion of
     the underlying integer, convert to ``int`` explicitly (``~int(x)``).
 
+* :mod:`functools`:
+
+  * Calling the Python implementation of :func:`functools.reduce` with *function*
+    or *sequence* as keyword arguments has been deprecated since Python 3.14.
+
+* :mod:`logging`:
+
+  * Support for custom logging handlers with the *strm* argument is deprecated
+    and scheduled for removal in Python 3.16. Define handlers with the *stream*
+    argument instead. (Contributed by Mariusz Felisiak in :gh:`115032`.)
+
+* :mod:`mimetypes`:
+
+  * Valid extensions start with a '.' or are empty for
+    :meth:`mimetypes.MimeTypes.add_type`.
+    Undotted extensions are deprecated and will
+    raise a :exc:`ValueError` in Python 3.16.
+    (Contributed by Hugo van Kemenade in :gh:`75223`.)
+
 * :mod:`shutil`:
 
   * The :class:`!ExecError` exception
@@ -75,12 +93,13 @@ Pending removal in Python 3.16
     has been deprecated since Python 3.13.
     Use the :envvar:`PYTHONLEGACYWINDOWSFSENCODING` environment variable instead.
 
+* :mod:`sysconfig`:
+
+  * The :func:`!sysconfig.expand_makefile_vars` function
+    has been deprecated since Python 3.14.
+    Use the ``vars`` argument of :func:`sysconfig.get_paths` instead.
+
 * :mod:`tarfile`:
 
   * The undocumented and unused :attr:`!TarFile.tarfile` attribute
     has been deprecated since Python 3.13.
-
-* :mod:`functools`:
-
-  * Calling the Python implementation of :func:`functools.reduce` with *function*
-    or *sequence* as keyword arguments has been deprecated since Python 3.14.

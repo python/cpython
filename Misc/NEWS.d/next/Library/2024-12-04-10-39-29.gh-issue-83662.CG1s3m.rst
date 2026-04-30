@@ -1,5 +1,0 @@
-Add missing ``__class_getitem__`` method to the Python implementation of
-:func:`functools.partial`, to make it compatible with the C version. This is
-mainly relevant for alternative Python implementations like PyPy and
-GraalPy, because CPython will usually use the C-implementation of that
-function.

@@ -1,0 +1,2 @@
+:mod:`json`: Fix serialization: no longer call ``str(obj)`` on :class:`str`
+subclasses. Patch by Victor Stinner.

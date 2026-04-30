@@ -12,6 +12,18 @@ class TestDump:
     def test_dumps(self):
         self.assertEqual(self.dumps({}), '{}')
 
+    def test_dumps_dict(self):
+        self.assertEqual(self.dumps({'x': 1, 'y': 2}),
+                         '{"x": 1, "y": 2}')
+        self.assertEqual(self.dumps(frozendict({'x': 1, 'y': 2})),
+                         '{"x": 1, "y": 2}')
+        lst = [{'x': 1}, frozendict(y=2)]
+        self.assertEqual(self.dumps(lst),
+                         '[{"x": 1}, {"y": 2}]')
+        data = {'x': dict(a=1), 'y': frozendict(b=2)}
+        self.assertEqual(self.dumps(data),
+                         '{"x": {"a": 1}, "y": {"b": 2}}')
+
     def test_dump_skipkeys(self):
         v = {b'invalid_key': False, 'valid_key': True}
         with self.assertRaises(TypeError):
@@ -21,6 +33,14 @@ class TestDump:
         o = self.json.loads(s)
         self.assertIn('valid_key', o)
         self.assertNotIn(b'invalid_key', o)
+
+    def test_dump_skipkeys_indent_empty(self):
+        v = {b'invalid_key': False}
+        self.assertEqual(self.json.dumps(v, skipkeys=True, indent=4), '{}')
+
+    def test_skipkeys_indent(self):
+        v = {b'invalid_key': False, 'valid_key': True}
+        self.assertEqual(self.json.dumps(v, skipkeys=True, indent=4), '{\n    "valid_key": true\n}')
 
     def test_encode_truefalse(self):
         self.assertEqual(self.dumps(
@@ -56,6 +76,59 @@ class TestDump:
         d = D()
         d[1337] = "true.dat"
         self.assertEqual(self.dumps(d, sort_keys=True), '{"1337": "true.dat"}')
+
+    # gh-145244: UAF on borrowed key when default callback mutates dict
+    def test_default_clears_dict_key_uaf(self):
+        class Evil:
+            pass
+
+        class AlsoEvil:
+            pass
+
+        # Use a non-interned string key so it can actually be freed
+        key = "A" * 100
+        target = {key: Evil()}
+        del key
+
+        def evil_default(obj):
+            if isinstance(obj, Evil):
+                target.clear()
+                return AlsoEvil()
+            raise TypeError("not serializable")
+
+        with self.assertRaises(TypeError):
+            self.json.dumps(target, default=evil_default,
+                            check_circular=False)
+
+    def test_dumps_str_subclass(self):
+        # Don't call obj.__str__() on str subclasses
+
+        # str subclass which returns a different string on str(obj)
+        class StrSubclass(str):
+            def __str__(self):
+                return "StrSubclass"
+
+        obj = StrSubclass('ascii')
+        self.assertEqual(self.dumps(obj), '"ascii"')
+        self.assertEqual(self.dumps([obj]), '["ascii"]')
+        self.assertEqual(self.dumps({'key': obj}), '{"key": "ascii"}')
+
+        obj = StrSubclass('escape\n')
+        self.assertEqual(self.dumps(obj), '"escape\\n"')
+        self.assertEqual(self.dumps([obj]), '["escape\\n"]')
+        self.assertEqual(self.dumps({'key': obj}), '{"key": "escape\\n"}')
+
+        obj = StrSubclass('nonascii:é')
+        self.assertEqual(self.dumps(obj, ensure_ascii=False),
+                         '"nonascii:é"')
+        self.assertEqual(self.dumps([obj], ensure_ascii=False),
+                         '["nonascii:é"]')
+        self.assertEqual(self.dumps({'key': obj}, ensure_ascii=False),
+                         '{"key": "nonascii:é"}')
+        self.assertEqual(self.dumps(obj), '"nonascii:\\u00e9"')
+        self.assertEqual(self.dumps([obj]), '["nonascii:\\u00e9"]')
+        self.assertEqual(self.dumps({'key': obj}),
+                         '{"key": "nonascii:\\u00e9"}')
 
 
 class TestPyDump(TestDump, PyTest): pass

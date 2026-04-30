@@ -19,22 +19,22 @@ msgstr ""
 msgid ""
 msgstr ""
 
-#: messages.py:19 messages.py:20
+#: messages.py:19 messages.py:20 messages.py:21
 msgid "parentheses"
 msgstr ""
 
-#: messages.py:23
+#: messages.py:24
 msgid "Hello, world!"
 msgstr ""
 
-#: messages.py:26
+#: messages.py:27
 msgid ""
 "Hello,\n"
 "    multiline!\n"
 msgstr ""
 
 #: messages.py:46 messages.py:89 messages.py:90 messages.py:93 messages.py:94
-#: messages.py:99
+#: messages.py:99 messages.py:100 messages.py:101
 msgid "foo"
 msgid_plural "foos"
 msgstr[0] ""
@@ -68,12 +68,16 @@ msgstr ""
 msgid "set"
 msgstr ""
 
-#: messages.py:63
+#: messages.py:62 messages.py:63
 msgid "nested string"
 msgstr ""
 
 #: messages.py:68
 msgid "baz"
+msgstr ""
+
+#: messages.py:71 messages.py:75
+msgid "default value"
 msgstr ""
 
 #: messages.py:91 messages.py:92 messages.py:95 messages.py:96
@@ -83,7 +87,13 @@ msgid_plural "foos"
 msgstr[0] ""
 msgstr[1] ""
 
-#: messages.py:100
+#: messages.py:102
 msgid "domain foo"
 msgstr ""
+
+#: messages.py:118 messages.py:119
+msgid "world"
+msgid_plural "worlds"
+msgstr[0] ""
+msgstr[1] ""
 

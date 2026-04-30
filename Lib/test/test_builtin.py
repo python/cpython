@@ -4,6 +4,7 @@ import ast
 import builtins
 import collections
 import contextlib
+import copy
 import decimal
 import fractions
 import gc
@@ -16,12 +17,12 @@ import platform
 import random
 import re
 import sys
-import textwrap
 import traceback
 import types
 import typing
 import unittest
 import warnings
+import weakref
 from contextlib import ExitStack
 from functools import partial
 from inspect import CO_COROUTINE
@@ -32,6 +33,7 @@ from operator import neg
 from test import support
 from test.support import cpython_only, swap_attr
 from test.support import async_yield, run_yielding_async_fn
+from test.support import warnings_helper
 from test.support.import_helper import import_module
 from test.support.os_helper import (EnvironmentVarGuard, TESTFN, unlink)
 from test.support.script_helper import assert_python_ok
@@ -52,6 +54,10 @@ HAVE_DOUBLE_ROUNDING = (x + y == 1e16 + 4)
 
 # used as proof of globals being used
 A_GLOBAL_VALUE = 123
+A_SENTINEL = sentinel("A_SENTINEL")
+
+class SentinelContainer:
+    CLASS_SENTINEL = sentinel("SentinelContainer.CLASS_SENTINEL")
 
 class Squares:
 
@@ -226,6 +232,8 @@ class BuiltinTest(ComplexesAreIdenticalMixin, unittest.TestCase):
         self.assertEqual(all(x > 42 for x in S), True)
         S = [50, 40, 60]
         self.assertEqual(all(x > 42 for x in S), False)
+        S = [50, 40, 60, TestFailingBool()]
+        self.assertEqual(all(x > 42 for x in S), False)
 
     def test_any(self):
         self.assertEqual(any([None, None, None]), False)
@@ -239,8 +247,87 @@ class BuiltinTest(ComplexesAreIdenticalMixin, unittest.TestCase):
         self.assertEqual(any([1, TestFailingBool()]), True) # Short-circuit
         S = [40, 60, 30]
         self.assertEqual(any(x > 42 for x in S), True)
+        S = [40, 60, 30, TestFailingBool()]
+        self.assertEqual(any(x > 42 for x in S), True)
         S = [10, 20, 30]
         self.assertEqual(any(x > 42 for x in S), False)
+
+    def test_all_any_tuple_list_set_optimization(self):
+        def f_all():
+            return all(x-2 for x in [1,2,3])
+
+        def f_any():
+            return any(x-1 for x in [1,2,3])
+
+        def f_tuple():
+            return tuple(2*x for x in [1,2,3])
+
+        def f_list():
+            return list(2*x for x in [1,2,3])
+
+        def f_set():
+            return set(2*x for x in [1,2,3])
+
+        funcs = [f_all, f_any, f_tuple, f_list, f_set]
+
+        for f in funcs:
+            # check that generator code object is not duplicated
+            code_objs = [c for c in f.__code__.co_consts if isinstance(c, type(f.__code__))]
+            self.assertEqual(len(code_objs), 1)
+
+
+        # check the overriding the builtins works
+
+        global all, any, tuple, list, set
+        saved = all, any, tuple, list, set
+        try:
+            all = lambda x : "all"
+            any = lambda x : "any"
+            tuple = lambda x : "tuple"
+            list = lambda x : "list"
+            set = lambda x : "set"
+
+            overridden_outputs = [f() for f in funcs]
+        finally:
+            all, any, tuple, list, set = saved
+
+        self.assertEqual(overridden_outputs, ['all', 'any', 'tuple', 'list', 'set'])
+        # Now repeat, overriding the builtins module as well
+        saved = all, any, tuple, list, set
+        try:
+            builtins.all = all = lambda x : "all"
+            builtins.any = any = lambda x : "any"
+            builtins.tuple = tuple = lambda x : "tuple"
+            builtins.list = list = lambda x : "list"
+            builtins.set = set = lambda x : "set"
+
+            overridden_outputs = [f() for f in funcs]
+        finally:
+            all, any, tuple, list, set = saved
+            builtins.all, builtins.any, builtins.tuple, builtins.list, builtins.set = saved
+
+        self.assertEqual(overridden_outputs, ['all', 'any', 'tuple', 'list', 'set'])
+
+    def test_builtin_call_async_genexpr_no_crash(self):
+        async def f_all():
+            return all(await 2 for _ in [])
+
+        async def f_any():
+            return any(await 2 for _ in [])
+
+        async def f_tuple():
+            return tuple(await 2 for _ in [])
+
+        async def f_list():
+            return list(await 2 for _ in [])
+
+        async def f_set():
+            return set(await 2 for _ in [])
+
+        for f in (f_all, f_any, f_tuple, f_list, f_set):
+            with self.subTest(func=f.__name__):
+                with self.assertRaises(TypeError):
+                    run_yielding_async_fn(f)
 
     def test_ascii(self):
         self.assertEqual(ascii(''), '\'\'')
@@ -342,7 +429,7 @@ class BuiltinTest(ComplexesAreIdenticalMixin, unittest.TestCase):
         self.assertRaises(ValueError, chr, -2**1000)
 
     def test_cmp(self):
-        self.assertTrue(not hasattr(builtins, "cmp"))
+        self.assertNotHasAttr(builtins, "cmp")
 
     def test_compile(self):
         compile('print(1)\n', '', 'exec')
@@ -385,7 +472,7 @@ class BuiltinTest(ComplexesAreIdenticalMixin, unittest.TestCase):
             # test both direct compilation and compilation via AST
                 codeobjs = []
                 codeobjs.append(compile(codestr, "<test>", "exec", optimize=optval))
-                tree = ast.parse(codestr)
+                tree = ast.parse(codestr, optimize=optval)
                 codeobjs.append(compile(tree, "<test>", "exec", optimize=optval))
                 for code in codeobjs:
                     ns = {}
@@ -555,7 +642,7 @@ class BuiltinTest(ComplexesAreIdenticalMixin, unittest.TestCase):
         self.assertEqual(type(glob['ticker']()), AsyncGeneratorType)
 
     def test_compile_ast(self):
-        args = ("a*(1+2)", "f.py", "exec")
+        args = ("a*__debug__", "f.py", "exec")
         raw = compile(*args, flags = ast.PyCF_ONLY_AST).body[0]
         opt1 = compile(*args, flags = ast.PyCF_OPTIMIZED_AST).body[0]
         opt2 = compile(ast.parse(args[0]), *args[1:], flags = ast.PyCF_OPTIMIZED_AST).body[0]
@@ -566,17 +653,14 @@ class BuiltinTest(ComplexesAreIdenticalMixin, unittest.TestCase):
             self.assertIsInstance(tree.value.left, ast.Name)
             self.assertEqual(tree.value.left.id, 'a')
 
-        raw_right = raw.value.right  # expect BinOp(1, '+', 2)
-        self.assertIsInstance(raw_right, ast.BinOp)
-        self.assertIsInstance(raw_right.left, ast.Constant)
-        self.assertEqual(raw_right.left.value, 1)
-        self.assertIsInstance(raw_right.right, ast.Constant)
-        self.assertEqual(raw_right.right.value, 2)
+        raw_right = raw.value.right
+        self.assertIsInstance(raw_right, ast.Name)
+        self.assertEqual(raw_right.id, "__debug__")
 
         for opt in [opt1, opt2]:
-            opt_right = opt.value.right  # expect Constant(3)
+            opt_right = opt.value.right
             self.assertIsInstance(opt_right, ast.Constant)
-            self.assertEqual(opt_right.value, 3)
+            self.assertEqual(opt_right.value, __debug__)
 
     def test_delattr(self):
         sys.spam = 1
@@ -727,6 +811,16 @@ class BuiltinTest(ComplexesAreIdenticalMixin, unittest.TestCase):
                 raise ValueError
         self.assertRaises(ValueError, eval, "foo", {}, X())
 
+    def test_eval_frozendict(self):
+        ns = frozendict(x=1, data=[], __builtins__=__builtins__)
+        eval("data.append(x)", ns, ns)
+        self.assertEqual(ns['data'], [1])
+
+        ns = frozendict()
+        errmsg = "cannot assign __builtins__ to frozendict globals"
+        with self.assertRaisesRegex(TypeError, errmsg):
+            eval("", ns, ns)
+
     def test_eval_kwargs(self):
         data = {"A_GLOBAL_VALUE": 456}
         self.assertEqual(eval("globals()['A_GLOBAL_VALUE']", globals=data), 456)
@@ -824,6 +918,21 @@ class BuiltinTest(ComplexesAreIdenticalMixin, unittest.TestCase):
         if '__builtins__' in l:
             del l['__builtins__']
         self.assertEqual((g, l), ({'a': 1}, {'b': 2}))
+
+    def test_exec_frozendict(self):
+        ns = frozendict(x=1, data=[], __builtins__=__builtins__)
+        exec("data.append(x)", ns, ns)
+        self.assertEqual(ns['data'], [1])
+
+        ns = frozendict(__builtins__=__builtins__)
+        errmsg = "'frozendict' object does not support item assignment"
+        with self.assertRaisesRegex(TypeError, errmsg):
+            exec("x = 1", ns, ns)
+
+        ns = frozendict()
+        errmsg = "cannot assign __builtins__ to frozendict globals"
+        with self.assertRaisesRegex(TypeError, errmsg):
+            exec("", ns, ns)
 
     def test_exec_kwargs(self):
         g = {}
@@ -1013,8 +1122,24 @@ class BuiltinTest(ComplexesAreIdenticalMixin, unittest.TestCase):
             three_freevars.__code__,
             three_freevars.__globals__,
             closure=my_closure)
+        my_closure = tuple(my_closure)
+
+        # should fail: anything passed to closure= isn't allowed
+        # when the source is a string
+        self.assertRaises(TypeError,
+            exec,
+            "pass",
+            closure=int)
+
+        # should fail: correct closure= argument isn't allowed
+        # when the source is a string
+        self.assertRaises(TypeError,
+            exec,
+            "pass",
+            closure=my_closure)
 
         # should fail: closure tuple with one non-cell-var
+        my_closure = list(my_closure)
         my_closure[0] = int
         my_closure = tuple(my_closure)
         self.assertRaises(TypeError,
@@ -1022,6 +1147,29 @@ class BuiltinTest(ComplexesAreIdenticalMixin, unittest.TestCase):
             three_freevars.__code__,
             three_freevars.__globals__,
             closure=my_closure)
+
+    def test_exec_filter_syntax_warnings_by_module(self):
+        filename = support.findfile('test_import/data/syntax_warnings.py')
+        with open(filename, 'rb') as f:
+            source = f.read()
+        with warnings.catch_warnings(record=True) as wlog:
+            warnings.simplefilter('error')
+            warnings.filterwarnings('always', module=r'<string>\z')
+            exec(source, {})
+        self.assertEqual(sorted(wm.lineno for wm in wlog), [4, 7, 10, 13, 14, 21])
+        for wm in wlog:
+            self.assertEqual(wm.filename, '<string>')
+            self.assertIs(wm.category, SyntaxWarning)
+
+        with warnings.catch_warnings(record=True) as wlog:
+            warnings.simplefilter('error')
+            warnings.filterwarnings('always', module=r'package.module\z')
+            warnings.filterwarnings('error', module=r'<string>')
+            exec(source, {'__name__': 'package.module', '__file__': filename})
+        self.assertEqual(sorted(wm.lineno for wm in wlog), [4, 7, 10, 13, 14, 21])
+        for wm in wlog:
+            self.assertEqual(wm.filename, '<string>')
+            self.assertIs(wm.category, SyntaxWarning)
 
 
     def test_filter(self):
@@ -1055,6 +1203,8 @@ class BuiltinTest(ComplexesAreIdenticalMixin, unittest.TestCase):
             f2 = filter(filter_char, "abcdeabcde")
             self.check_iter_pickle(f1, list(f2), proto)
 
+    @support.skip_wasi_stack_overflow()
+    @support.skip_emscripten_stack_overflow()
     @support.requires_resource('cpu')
     def test_filter_dealloc(self):
         # Tests recursive deallocation of nested filter objects using the
@@ -1116,6 +1266,16 @@ class BuiltinTest(ComplexesAreIdenticalMixin, unittest.TestCase):
             def __hash__(self):
                 return self
         self.assertEqual(hash(Z(42)), hash(42))
+
+    def test_invalid_hash_typeerror(self):
+        # GH-140406: The returned object from __hash__() would leak if it
+        # wasn't an integer.
+        class A:
+            def __hash__(self):
+                return 1.0
+
+        with self.assertRaises(TypeError):
+            hash(A())
 
     def test_hex(self):
         self.assertEqual(hex(16), '0x10')
@@ -1307,6 +1467,22 @@ class BuiltinTest(ComplexesAreIdenticalMixin, unittest.TestCase):
                           map(pack, (1, 2), 'abc', strict=True))
         self.assertRaises(ValueError, tuple,
                           map(pack, (1, 2), (1, 2), 'abc', strict=True))
+
+        # gh-140517: Testing refleaks with mortal objects.
+        t1 = (None, object())
+        t2 = (object(), object())
+        t3 = (object(),)
+
+        self.assertRaises(ValueError, tuple,
+                          map(pack, t1, 'a', strict=True))
+        self.assertRaises(ValueError, tuple,
+                          map(pack, t1, t2, 'a', strict=True))
+        self.assertRaises(ValueError, tuple,
+                          map(pack, t1, t2, t3, strict=True))
+        self.assertRaises(ValueError, tuple,
+                          map(pack, 'a', t1, strict=True))
+        self.assertRaises(ValueError, tuple,
+                          map(pack, 'a', t2, t3, strict=True))
 
     def test_map_strict_iterators(self):
         x = iter(range(5))
@@ -1567,14 +1743,11 @@ class BuiltinTest(ComplexesAreIdenticalMixin, unittest.TestCase):
 
     @unittest.skipIf(sys.flags.utf8_mode, "utf-8 mode is enabled")
     def test_open_default_encoding(self):
-        old_environ = dict(os.environ)
-        try:
+        with EnvironmentVarGuard() as env:
             # try to get a user preferred encoding different than the current
             # locale encoding to check that open() uses the current locale
             # encoding and not the user preferred encoding
-            for key in ('LC_ALL', 'LANG', 'LC_CTYPE'):
-                if key in os.environ:
-                    del os.environ[key]
+            env.unset('LC_ALL', 'LANG', 'LC_CTYPE')
 
             self.write_testfile()
             current_locale_encoding = locale.getencoding()
@@ -1583,9 +1756,6 @@ class BuiltinTest(ComplexesAreIdenticalMixin, unittest.TestCase):
                 fp = open(TESTFN, 'w')
             with fp:
                 self.assertEqual(fp.encoding, current_locale_encoding)
-        finally:
-            os.environ.clear()
-            os.environ.update(old_environ)
 
     @support.requires_subprocess()
     def test_open_non_inheritable(self):
@@ -1717,6 +1887,29 @@ class BuiltinTest(ComplexesAreIdenticalMixin, unittest.TestCase):
             sys.stdout = savestdout
             fp.close()
 
+    def test_input_gh130163(self):
+        class X(io.StringIO):
+            def __getattribute__(self, name):
+                nonlocal patch
+                if patch:
+                    patch = False
+                    sys.stdout = X()
+                    sys.stderr = X()
+                    sys.stdin = X('input\n')
+                    support.gc_collect()
+                return io.StringIO.__getattribute__(self, name)
+
+        with (support.swap_attr(sys, 'stdout', None),
+              support.swap_attr(sys, 'stderr', None),
+              support.swap_attr(sys, 'stdin', None)):
+            patch = False
+            # the only references:
+            sys.stdout = X()
+            sys.stderr = X()
+            sys.stdin = X('input\n')
+            patch = True
+            input()  # should not crash
+
     # test_int(): see test_int.py for tests of built-in function int().
 
     def test_repr(self):
@@ -1731,6 +1924,103 @@ class BuiltinTest(ComplexesAreIdenticalMixin, unittest.TestCase):
         a = {}
         a[0] = a
         self.assertEqual(repr(a), '{0: {...}}')
+
+    def test_repr_blocked(self):
+        class C:
+            __repr__ = None
+        self.assertRaises(TypeError, repr, C())
+
+    def test_sentinel(self):
+        missing = sentinel("MISSING")
+        other = sentinel("MISSING")
+
+        self.assertIsInstance(missing, sentinel)
+        self.assertIs(type(missing), sentinel)
+        self.assertEqual(missing.__name__, "MISSING")
+        self.assertEqual(missing.__module__, __name__)
+        self.assertIsNot(missing, other)
+        self.assertEqual(repr(missing), "MISSING")
+        self.assertTrue(missing)
+        self.assertIs(copy.copy(missing), missing)
+        self.assertIs(copy.deepcopy(missing), missing)
+        self.assertEqual(missing, missing)
+        self.assertNotEqual(missing, other)
+        self.assertRaises(TypeError, sentinel)
+        self.assertRaises(TypeError, sentinel, "MISSING", "EXTRA")
+        self.assertRaises(TypeError, sentinel, name="MISSING")
+        with self.assertRaisesRegex(TypeError, "must be str"):
+            sentinel(1)
+        self.assertTrue(sentinel.__flags__ & support._TPFLAGS_IMMUTABLETYPE)
+        self.assertTrue(sentinel.__flags__ & support._TPFLAGS_HAVE_GC)
+        self.assertFalse(sentinel.__flags__ & support._TPFLAGS_BASETYPE)
+        with self.assertRaises(TypeError):
+            class SubSentinel(sentinel):
+                pass
+        with self.assertRaises(TypeError):
+            sentinel.attribute = "value"
+        with self.assertRaises(AttributeError):
+            missing.__name__ = "CHANGED"
+        with self.assertRaises(AttributeError):
+            missing.__module__ = "changed"
+        with self.assertRaises(AttributeError):
+            del missing.__name__
+        with self.assertRaises(AttributeError):
+            del missing.__module__
+
+    def test_sentinel_pickle(self):
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            with self.subTest(protocol=proto):
+                self.assertIs(
+                    pickle.loads(pickle.dumps(A_SENTINEL, protocol=proto)),
+                    A_SENTINEL)
+                self.assertIs(
+                    pickle.loads(pickle.dumps(
+                        SentinelContainer.CLASS_SENTINEL, protocol=proto)),
+                    SentinelContainer.CLASS_SENTINEL)
+
+        missing = sentinel("MISSING")
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            with self.subTest(protocol=proto):
+                with self.assertRaises(pickle.PicklingError):
+                    pickle.dumps(missing, protocol=proto)
+
+    def test_sentinel_str_subclass_name_cycle(self):
+        class Name(str):
+            pass
+
+        name = Name("MISSING")
+        missing = sentinel(name)
+        self.assertIs(missing.__name__, name)
+        self.assertTrue(gc.is_tracked(missing))
+
+        name.missing = missing
+        ref = weakref.ref(name)
+        del name, missing
+        support.gc_collect()
+        self.assertIsNone(ref())
+
+    def test_sentinel_union(self):
+        missing = sentinel("MISSING")
+
+        self.assertIsInstance(missing | int, typing.Union)
+        self.assertEqual((missing | int).__args__, (missing, int))
+        self.assertIsInstance(int | missing, typing.Union)
+        self.assertEqual((int | missing).__args__, (int, missing))
+        self.assertIs(missing | missing, missing)
+        self.assertEqual(repr(int | missing), "int | MISSING")
+        self.assertIsInstance(missing | None, typing.Union)
+        self.assertEqual((missing | None).__args__, (missing, type(None)))
+        self.assertIsInstance(None | missing, typing.Union)
+        self.assertEqual((None | missing).__args__, (type(None), missing))
+        self.assertIsInstance(missing | list[int], typing.Union)
+        self.assertEqual((missing | list[int]).__args__, (missing, list[int]))
+        self.assertIsInstance(missing | (int | str), typing.Union)
+        self.assertEqual((missing | (int | str)).__args__, (missing, int, str))
+
+        with self.assertRaises(TypeError):
+            missing | 1
+        with self.assertRaises(TypeError):
+            1 | missing
 
     def test_round(self):
         self.assertEqual(round(0.0), 0.0)
@@ -1838,7 +2128,10 @@ class BuiltinTest(ComplexesAreIdenticalMixin, unittest.TestCase):
 
     def test_setattr(self):
         setattr(sys, 'spam', 1)
-        self.assertEqual(sys.spam, 1)
+        try:
+            self.assertEqual(sys.spam, 1)
+        finally:
+            del sys.spam
         self.assertRaises(TypeError, setattr)
         self.assertRaises(TypeError, setattr, sys)
         self.assertRaises(TypeError, setattr, sys, 'spam')
@@ -2213,7 +2506,7 @@ class BuiltinTest(ComplexesAreIdenticalMixin, unittest.TestCase):
         # tests for object.__format__ really belong elsewhere, but
         #  there's no good place to put them
         x = object().__format__('')
-        self.assertTrue(x.startswith('<object object at'))
+        self.assertStartsWith(x, '<object object at')
 
         # first argument to object.__format__ must be string
         self.assertRaises(TypeError, object().__format__, 3)
@@ -2454,6 +2747,7 @@ class PtyTests(unittest.TestCase):
         finally:
             signal.signal(signal.SIGHUP, old_sighup)
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     def _run_child(self, child, terminal_input):
         r, w = os.pipe()  # Pipe test results from child back to parent
         try:
@@ -2696,18 +2990,15 @@ class ShutdownTest(unittest.TestCase):
 class ImmortalTests(unittest.TestCase):
 
     if sys.maxsize < (1 << 32):
-        if support.Py_GIL_DISABLED:
-            IMMORTAL_REFCOUNT = 5 << 28
-        else:
-            IMMORTAL_REFCOUNT = 7 << 28
+        IMMORTAL_REFCOUNT_MINIMUM = 1 << 30
     else:
-        IMMORTAL_REFCOUNT = 3 << 30
+        IMMORTAL_REFCOUNT_MINIMUM = 1 << 31
 
     IMMORTALS = (None, True, False, Ellipsis, NotImplemented, *range(-5, 257))
 
     def assert_immortal(self, immortal):
         with self.subTest(immortal):
-            self.assertEqual(sys.getrefcount(immortal), self.IMMORTAL_REFCOUNT)
+            self.assertGreater(sys.getrefcount(immortal), self.IMMORTAL_REFCOUNT_MINIMUM)
 
     def test_immortals(self):
         for immortal in self.IMMORTALS:
@@ -2846,6 +3137,12 @@ class TestType(unittest.TestCase):
             A.__doc__ = doc
             self.assertEqual(A.__doc__, doc)
 
+    def test_type_frozendict(self):
+        A = type('A', (), frozendict({'x': 4, 'y': 2}))
+        self.assertEqual(A.x, 4)
+        self.assertEqual(A.y, 2)
+        self.assertEqual(A.__name__, 'A')
+
     def test_bad_args(self):
         with self.assertRaises(TypeError):
             type()
@@ -2903,7 +3200,8 @@ class TestType(unittest.TestCase):
 
 def load_tests(loader, tests, pattern):
     from doctest import DocTestSuite
-    tests.addTest(DocTestSuite(builtins))
+    if sys.float_repr_style == 'short':
+        tests.addTest(DocTestSuite(builtins))
     return tests
 
 if __name__ == "__main__":

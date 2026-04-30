@@ -1,8 +1,11 @@
 import unittest
 from test import audiotests
 from test import support
+from test.support.os_helper import FakePath, unlink
 import io
+import os
 import struct
+import tempfile
 import sys
 import wave
 
@@ -19,6 +22,7 @@ class WavePCM8Test(WaveTest, unittest.TestCase):
     sampwidth = 1
     framerate = 11025
     nframes = 48
+    format = wave.WAVE_FORMAT_PCM
     comptype = 'NONE'
     compname = 'not compressed'
     frames = bytes.fromhex("""\
@@ -36,6 +40,7 @@ class WavePCM16Test(WaveTest, unittest.TestCase):
     sampwidth = 2
     framerate = 11025
     nframes = 48
+    format = wave.WAVE_FORMAT_PCM
     comptype = 'NONE'
     compname = 'not compressed'
     frames = bytes.fromhex("""\
@@ -57,6 +62,7 @@ class WavePCM24Test(WaveTest, unittest.TestCase):
     sampwidth = 3
     framerate = 11025
     nframes = 48
+    format = wave.WAVE_FORMAT_PCM
     comptype = 'NONE'
     compname = 'not compressed'
     frames = bytes.fromhex("""\
@@ -84,6 +90,8 @@ class WavePCM24ExtTest(WaveTest, unittest.TestCase):
     sampwidth = 3
     framerate = 11025
     nframes = 48
+    format = wave.WAVE_FORMAT_EXTENSIBLE
+    readonly = True  # Writing EXTENSIBLE wave format is not supported.
     comptype = 'NONE'
     compname = 'not compressed'
     frames = bytes.fromhex("""\
@@ -111,6 +119,7 @@ class WavePCM32Test(WaveTest, unittest.TestCase):
     sampwidth = 4
     framerate = 11025
     nframes = 48
+    format = wave.WAVE_FORMAT_PCM
     comptype = 'NONE'
     compname = 'not compressed'
     frames = bytes.fromhex("""\
@@ -131,39 +140,141 @@ class WavePCM32Test(WaveTest, unittest.TestCase):
         frames = wave._byteswap(frames, 4)
 
 
+class WaveIeeeFloatingPointTest(WaveTest, unittest.TestCase):
+    sndfilename = 'pluck-float32.wav'
+    sndfilenframes = 3307
+    nchannels = 2
+    sampwidth = 4
+    framerate = 11025
+    nframes = 48
+    format = wave.WAVE_FORMAT_IEEE_FLOAT
+    comptype = 'NONE'
+    compname = 'not compressed'
+    frames = bytes.fromhex("""\
+      3C8B5960BA231400 3F16B41F3BFA5480 3EC44F0E3D1DC580 BF7E46533D843040 \
+      BED084FC3D564C30 3F1153303CFCBE40 BF002FB73C583EC0 3CDAFEE0BC425180 \
+      BF0F5154BD3826E0 BF169F56BDCAFD40 3EA660C0BE21A4EC 3E52E53CBE49332C \
+      BE102E0CBE5B7214 BEE76852BE6C3BDC 3DE05A98BE7A4980 BE06B6B4BE7EB6EC \
+      3F2EB1B0BE6C7CC8 BD195500BE3E0F4C 3E1BBDF8BE03DFEC BE9F4E92BD8D8D58 \
+      BF50E1D4BD111750 BDA079B0BCFBFB20 3D866358BD0C7640 BE833C0EBD17E240 \
+      3E0BFF04BD3978F0 3EFB9AE2BD14A780 BF0710B9BCD342E0 3F4DADB5BBA0CD80 \
+      BEC3B11A3D024EB0 3F063AD33D97A8C0 BEF912803DEC74E0 3F2241733E1515D4 \
+      BE0904D83E3AA604 BF7BF2003E3325BC 3F8000003E2229FC BF8000003E14A738 \
+      3F1338363DEB3B28 3F256E7C3DDBCA00 BE026A683DF5FD88 BEC70C923DFBE128 \
+      BE5A5B183DCEA2D8 3F4689513DA5A7C8 3D8C8FE83DA1FFF0 3EAEE61C3DB0A0E0 \
+      3F2290DF3DE44E18 BF6867373E09D82C BF1216283DEEB360 3F08262F3DA5B488 \
+      """)
+    if sys.byteorder != 'big':
+        frames = wave._byteswap(frames, 4)
+
 class MiscTestCase(unittest.TestCase):
     def test__all__(self):
-        not_exported = {'WAVE_FORMAT_PCM', 'WAVE_FORMAT_EXTENSIBLE', 'KSDATAFORMAT_SUBTYPE_PCM'}
+        not_exported = {'KSDATAFORMAT_SUBTYPE_PCM'}
         support.check__all__(self, wave, not_exported=not_exported)
-
-    def test_read_deprecations(self):
-        filename = support.findfile('pluck-pcm8.wav', subdir='audiodata')
-        with wave.open(filename) as reader:
-            with self.assertWarns(DeprecationWarning):
-                with self.assertRaises(wave.Error):
-                    reader.getmark('mark')
-            with self.assertWarns(DeprecationWarning):
-                self.assertIsNone(reader.getmarkers())
-
-    def test_write_deprecations(self):
-        with io.BytesIO(b'') as tmpfile:
-            with wave.open(tmpfile, 'wb') as writer:
-                writer.setnchannels(1)
-                writer.setsampwidth(1)
-                writer.setframerate(1)
-                writer.setcomptype('NONE', 'not compressed')
-
-                with self.assertWarns(DeprecationWarning):
-                    with self.assertRaises(wave.Error):
-                        writer.setmark(0, 0, 'mark')
-                with self.assertWarns(DeprecationWarning):
-                    with self.assertRaises(wave.Error):
-                        writer.getmark('mark')
-                with self.assertWarns(DeprecationWarning):
-                    self.assertIsNone(writer.getmarkers())
 
 
 class WaveLowLevelTest(unittest.TestCase):
+
+    def test_setparams_6_tuple_defaults_to_pcm(self):
+        with tempfile.NamedTemporaryFile(delete_on_close=False) as fp:
+            filename = fp.name
+        self.addCleanup(unlink, filename)
+
+        with wave.open(filename, 'wb') as w:
+            w.setformat(wave.WAVE_FORMAT_IEEE_FLOAT)
+            w.setparams((1, 2, 22050, 0, 'NONE', 'not compressed'))
+            self.assertEqual(w.getformat(), wave.WAVE_FORMAT_PCM)
+
+    def test_setparams_7_tuple_uses_format(self):
+        with tempfile.NamedTemporaryFile(delete_on_close=False) as fp:
+            filename = fp.name
+        self.addCleanup(unlink, filename)
+
+        with wave.open(filename, 'wb') as w:
+            w.setparams((1, 4, 22050, 0, 'NONE', 'not compressed',
+                         wave.WAVE_FORMAT_IEEE_FLOAT))
+            self.assertEqual(w.getformat(), wave.WAVE_FORMAT_IEEE_FLOAT)
+
+    def test_setparams_7_tuple_ieee_64bit_sampwidth(self):
+        with tempfile.NamedTemporaryFile(delete_on_close=False) as fp:
+            filename = fp.name
+        self.addCleanup(unlink, filename)
+
+        with wave.open(filename, 'wb') as w:
+            w.setparams((1, 8, 22050, 0, 'NONE', 'not compressed',
+                         wave.WAVE_FORMAT_IEEE_FLOAT))
+            self.assertEqual(w.getformat(), wave.WAVE_FORMAT_IEEE_FLOAT)
+            self.assertEqual(w.getsampwidth(), 8)
+
+    def test_getparams_backward_compatible_shape(self):
+        with tempfile.NamedTemporaryFile(delete_on_close=False) as fp:
+            filename = fp.name
+        self.addCleanup(unlink, filename)
+
+        with wave.open(filename, 'wb') as w:
+            w.setparams((1, 4, 22050, 0, 'NONE', 'not compressed',
+                         wave.WAVE_FORMAT_IEEE_FLOAT))
+            params = w.getparams()
+            self.assertEqual(params, (1, 4, 22050, 0, 'NONE', 'not compressed'))
+
+    def test_getformat_setformat(self):
+        with tempfile.NamedTemporaryFile(delete_on_close=False) as fp:
+            filename = fp.name
+        self.addCleanup(unlink, filename)
+
+        with wave.open(filename, 'wb') as w:
+            w.setnchannels(1)
+            w.setsampwidth(4)
+            w.setframerate(22050)
+            self.assertEqual(w.getformat(), wave.WAVE_FORMAT_PCM)
+            w.setformat(wave.WAVE_FORMAT_IEEE_FLOAT)
+            self.assertEqual(w.getformat(), wave.WAVE_FORMAT_IEEE_FLOAT)
+
+    def test_setformat_ieee_requires_32_or_64_bit_sampwidth(self):
+        with tempfile.NamedTemporaryFile(delete_on_close=False) as fp:
+            filename = fp.name
+        self.addCleanup(unlink, filename)
+
+        with wave.open(filename, 'wb') as w:
+            w.setnchannels(1)
+            w.setsampwidth(2)
+            w.setframerate(22050)
+            with self.assertRaisesRegex(wave.Error,
+                                        'unsupported sample width for IEEE float format'):
+                w.setformat(wave.WAVE_FORMAT_IEEE_FLOAT)
+
+    def test_setsampwidth_ieee_requires_32_or_64_bit(self):
+        with tempfile.NamedTemporaryFile(delete_on_close=False) as fp:
+            filename = fp.name
+        self.addCleanup(unlink, filename)
+
+        with wave.open(filename, 'wb') as w:
+            w.setnchannels(1)
+            w.setframerate(22050)
+            w.setformat(wave.WAVE_FORMAT_IEEE_FLOAT)
+            with self.assertRaisesRegex(wave.Error,
+                                        'unsupported sample width for IEEE float format'):
+                w.setsampwidth(2)
+            w.setsampwidth(4)
+
+    def test_setsampwidth_ieee_accepts_64_bit(self):
+        with tempfile.NamedTemporaryFile(delete_on_close=False) as fp:
+            filename = fp.name
+        self.addCleanup(unlink, filename)
+
+        with wave.open(filename, 'wb') as w:
+            w.setnchannels(1)
+            w.setframerate(22050)
+            w.setformat(wave.WAVE_FORMAT_IEEE_FLOAT)
+            w.setsampwidth(8)
+            self.assertEqual(w.getsampwidth(), 8)
+
+    def test_read_getformat(self):
+        b = b'RIFF' + struct.pack('<L', 36) + b'WAVE'
+        b += b'fmt ' + struct.pack('<LHHLLHH', 16, 1, 1, 11025, 11025, 1, 8)
+        b += b'data' + struct.pack('<L', 0)
+        with wave.open(io.BytesIO(b), 'rb') as r:
+            self.assertEqual(r.getformat(), wave.WAVE_FORMAT_PCM)
 
     def test_read_no_chunks(self):
         b = b'SPAM'
@@ -221,6 +332,147 @@ class WaveLowLevelTest(unittest.TestCase):
         b += b'data' + struct.pack('<L', 0)
         with self.assertRaisesRegex(wave.Error, 'bad sample width'):
             wave.open(io.BytesIO(b))
+
+    def test_open_in_write_raises(self):
+        # gh-136523: Wave_write.__del__ should not throw
+        with support.catch_unraisable_exception() as cm:
+            with self.assertRaises(OSError):
+                wave.open(os.curdir, "wb")
+            support.gc_collect()
+            self.assertIsNone(cm.unraisable)
+
+    def test_ieee_float_has_fact_chunk(self):
+        nframes = 100
+        with tempfile.NamedTemporaryFile(delete_on_close=False) as fp:
+            filename = fp.name
+        self.addCleanup(unlink, filename)
+
+        with wave.open(filename, 'wb') as w:
+            w.setnchannels(1)
+            w.setsampwidth(4)
+            w.setframerate(22050)
+            w.setformat(wave.WAVE_FORMAT_IEEE_FLOAT)
+            w.writeframes(b'\x00\x00\x00\x00' * nframes)
+
+        with open(filename, 'rb') as f:
+            f.read(12)
+            fact_found = False
+            fact_samples = None
+            while True:
+                chunk_id = f.read(4)
+                if len(chunk_id) < 4:
+                    break
+                chunk_size = struct.unpack('<L', f.read(4))[0]
+                if chunk_id == b'fact':
+                    fact_found = True
+                    fact_samples = struct.unpack('<L', f.read(4))[0]
+                    break
+                f.seek(chunk_size + (chunk_size & 1), 1)
+
+        self.assertTrue(fact_found)
+        self.assertEqual(fact_samples, nframes)
+
+    def test_pcm_has_no_fact_chunk(self):
+        with tempfile.NamedTemporaryFile(delete_on_close=False) as fp:
+            filename = fp.name
+        self.addCleanup(unlink, filename)
+
+        with wave.open(filename, 'wb') as w:
+            w.setnchannels(1)
+            w.setsampwidth(2)
+            w.setframerate(22050)
+            w.writeframes(b'\x00\x00' * 100)
+
+        with open(filename, 'rb') as f:
+            f.read(12)
+            while True:
+                chunk_id = f.read(4)
+                if len(chunk_id) < 4:
+                    break
+                chunk_size = struct.unpack('<L', f.read(4))[0]
+                self.assertNotEqual(chunk_id, b'fact')
+                f.seek(chunk_size + (chunk_size & 1), 1)
+
+    @support.subTests('arg', (
+        # rounds to 0, should raise:
+        0.5,
+        0.4,
+        # Negative values should still raise:
+        -1,
+        -0.5,
+        -0.4,
+        # 0 should raise:
+        0,
+    ))
+    def test_setframerate_validates_rounded_values(self, arg):
+        """Test that setframerate that round to 0 or negative are rejected"""
+        with wave.open(io.BytesIO(), 'wb') as f:
+            f.setnchannels(1)
+            f.setsampwidth(2)
+            with self.assertRaises(wave.Error):
+                f.setframerate(arg)
+            with self.assertRaises(wave.Error):
+                f.close()
+
+    @support.subTests(('arg', 'expected'), (
+        (1.4, 1),
+        (1.5, 2),
+        (1.6, 2),
+        (44100.4, 44100),
+        (44100.5, 44100),
+        (44100.6, 44101),
+    ))
+    def test_setframerate_rounds(self, arg, expected):
+        """Test that setframerate is rounded"""
+        with wave.open(io.BytesIO(), 'wb') as f:
+            f.setnchannels(1)
+            f.setsampwidth(2)
+            f.setframerate(arg)
+            self.assertEqual(f.getframerate(), expected)
+
+    def test_write_odd_data_chunk_pads_and_updates_riff_size(self):
+        # gh-117716: odd-sized data chunks must be padded with one zero byte.
+        with io.BytesIO() as output:
+            with wave.open(output, mode='wb') as w:
+                w.setnchannels(1)
+                w.setsampwidth(1)
+                w.setframerate(48000)
+                w.writeframes(b'\x80')
+
+            value = output.getvalue()
+
+        self.assertEqual(value[-1], 0)
+        self.assertEqual(
+            int.from_bytes(value[4:8], byteorder='little'),
+            38,
+        )
+
+        with wave.open(io.BytesIO(value), mode='rb') as r:
+            self.assertEqual(r.getnchannels(), 1)
+            self.assertEqual(r.getsampwidth(), 1)
+            self.assertEqual(r.getframerate(), 48000)
+            self.assertEqual(r.getnframes(), 1)
+            self.assertEqual(r.readframes(-1), b'\x80')
+
+
+class WaveOpen(unittest.TestCase):
+    def test_open_pathlike(self):
+        """It is possible to use `wave.read` and `wave.write` with a path-like object"""
+        with tempfile.NamedTemporaryFile(delete_on_close=False) as fp:
+            cases = (
+                FakePath(fp.name),
+                FakePath(os.fsencode(fp.name)),
+                os.fsencode(fp.name),
+                )
+            for fake_path in cases:
+                with self.subTest(fake_path):
+                    with wave.open(fake_path, 'wb') as f:
+                        f.setnchannels(1)
+                        f.setsampwidth(2)
+                        f.setframerate(44100)
+
+                    with wave.open(fake_path, 'rb') as f:
+                        pass
 
 
 if __name__ == '__main__':

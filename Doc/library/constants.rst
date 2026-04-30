@@ -46,11 +46,12 @@ A small number of constants live in the built-in namespace.  They are:
 
       See :ref:`implementing-the-arithmetic-operations` for examples.
 
-   .. note::
+   .. caution::
 
-      ``NotImplementedError`` and :data:`!NotImplemented` are not interchangeable,
-      even though they have similar names and purposes.
-      See :exc:`NotImplementedError` for details on when to use it.
+      :data:`!NotImplemented` and :exc:`!NotImplementedError` are not
+      interchangeable. This constant should only be used as described
+      above; see :exc:`NotImplementedError` for details on correct usage
+      of the exception.
 
    .. versionchanged:: 3.9
       Evaluating :data:`!NotImplemented` in a boolean context was deprecated.
@@ -64,8 +65,9 @@ A small number of constants live in the built-in namespace.  They are:
 .. index:: single: ...; ellipsis literal
 .. data:: Ellipsis
 
-   The same as the ellipsis literal "``...``". Special value used mostly in conjunction
-   with extended slicing syntax for user-defined container data types.
+   The same as the ellipsis literal "``...``", an object frequently used to
+   indicate that something is omitted. Assignment to ``Ellipsis`` is possible, but
+   assignment to  ``...`` raises a :exc:`SyntaxError`.
    ``Ellipsis`` is the sole instance of the :data:`types.EllipsisType` type.
 
 
@@ -96,15 +98,17 @@ should not be used in programs.
           exit(code=None)
 
    Objects that when printed, print a message like "Use quit() or Ctrl-D
-   (i.e. EOF) to exit", and when called, raise :exc:`SystemExit` with the
+   (i.e. EOF) to exit", and when accessed directly in the interactive
+   interpreter or called as functions, raise :exc:`SystemExit` with the
    specified exit code.
 
 .. data:: help
    :noindex:
 
    Object that when printed, prints the message "Type help() for interactive
-   help, or help(object) for help about object.", and when called,
-   acts as described :func:`elsewhere <help>`.
+   help, or help(object) for help about object.", and when accessed directly
+   in the interactive interpreter, invokes the built-in help system
+   (see :func:`help`).
 
 .. data:: copyright
           credits

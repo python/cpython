@@ -21,6 +21,8 @@
 
 from __future__ import annotations
 import os
+import time
+from typing import TYPE_CHECKING
 
 # Categories of actions:
 #  killing
@@ -31,9 +33,11 @@ import os
 #  finishing
 # [completion]
 
+from .render import RenderedScreen
+from .trace import trace
 
 # types
-if False:
+if TYPE_CHECKING:
     from .historical_reader import HistoricalReader
 
 
@@ -72,7 +76,7 @@ class KillCommand(Command):
         else:
             r.kill_ring.append(text)
         r.pos = start
-        r.dirty = True
+        r.invalidate_buffer(start)
 
 
 class YankCommand(Command):
@@ -123,24 +127,27 @@ class digit_arg(Command):
                     r.arg = 10 * r.arg - d
                 else:
                     r.arg = 10 * r.arg + d
-        r.dirty = True
+        r.invalidate_prompt()
 
 
 class clear_screen(Command):
     def do(self) -> None:
         r = self.reader
+        trace("command.clear_screen")
         r.console.clear()
-        r.dirty = True
+        r.invalidate_full()
 
 
 class refresh(Command):
     def do(self) -> None:
-        self.reader.dirty = True
+        trace("command.refresh")
+        self.reader.invalidate_full()
 
 
 class repaint(Command):
     def do(self) -> None:
-        self.reader.dirty = True
+        trace("command.repaint")
+        self.reader.invalidate_full()
         self.reader.console.repaint()
 
 
@@ -206,9 +213,10 @@ class yank_pop(YankCommand):
         repl = len(r.kill_ring[-1])
         r.kill_ring.insert(0, r.kill_ring.pop())
         t = r.kill_ring[-1]
+        start = r.pos - repl
         b[r.pos - repl : r.pos] = t
         r.pos = r.pos - repl + len(t)
-        r.dirty = True
+        r.invalidate_buffer(start)
 
 
 class interrupt(FinishCommand):
@@ -240,8 +248,9 @@ class suspend(Command):
         r.console.prepare()
         r.pos = p
         # r.posxy = 0, 0  # XXX this is invalid
-        r.dirty = True
-        r.console.screen = []
+        r.invalidate_full()
+        trace("command.suspend sync_rendered_screen")
+        r.console.sync_rendered_screen(RenderedScreen.empty(), r.console.posxy)
 
 
 class up(MotionCommand):
@@ -282,7 +291,7 @@ class down(MotionCommand):
             x, y = r.pos2xy()
             new_y = y + 1
 
-            if new_y > r.max_row():
+            if r.eol() == len(b):
                 if r.historyi < len(r.history):
                     r.select_item(r.historyi + 1)
                     r.pos = r.eol(0)
@@ -309,7 +318,7 @@ class down(MotionCommand):
 class left(MotionCommand):
     def do(self) -> None:
         r = self.reader
-        for i in range(r.get_arg()):
+        for _ in range(r.get_arg()):
             p = r.pos - 1
             if p >= 0:
                 r.pos = p
@@ -321,7 +330,7 @@ class right(MotionCommand):
     def do(self) -> None:
         r = self.reader
         b = r.buffer
-        for i in range(r.get_arg()):
+        for _ in range(r.get_arg()):
             p = r.pos + 1
             if p <= len(b):
                 r.pos = p
@@ -367,7 +376,15 @@ class self_insert(EditCommand):
     def do(self) -> None:
         r = self.reader
         text = self.event * r.get_arg()
+        start = r.pos
         r.insert(text)
+        if r.paste_mode:
+            data = ""
+            ev = r.console.getpending()
+            data += ev.data
+            if data:
+                r.insert(data)
+                r.invalidate_buffer(start)
 
 
 class insert_nl(EditCommand):
@@ -391,40 +408,49 @@ class transpose_characters(EditCommand):
             del b[s]
             b.insert(t, c)
             r.pos = t
-            r.dirty = True
+            r.invalidate_buffer(s)
 
 
 class backspace(EditCommand):
     def do(self) -> None:
         r = self.reader
         b = r.buffer
+        changed_from: int | None = None
         for i in range(r.get_arg()):
             if r.pos > 0:
                 r.pos -= 1
                 del b[r.pos]
-                r.dirty = True
+                changed_from = r.pos if changed_from is None else min(changed_from, r.pos)
             else:
                 self.reader.error("can't backspace at start")
+        if changed_from is not None:
+            r.invalidate_buffer(changed_from)
 
 
 class delete(EditCommand):
     def do(self) -> None:
         r = self.reader
         b = r.buffer
-        if (
-            r.pos == 0
-            and len(b) == 0  # this is something of a hack
-            and self.event[-1] == "\004"
-        ):
-            r.update_screen()
-            r.console.finish()
-            raise EOFError
+        if self.event[-1] == "\004":
+            if b and b[-1].endswith("\n"):
+                self.finish = True
+            elif (
+                r.pos == 0
+                and len(b) == 0  # this is something of a hack
+            ):
+                r.update_screen()
+                r.console.finish()
+                raise EOFError
+
+        changed_from: int | None = None
         for i in range(r.get_arg()):
             if r.pos != len(b):
                 del b[r.pos]
-                r.dirty = True
+                changed_from = r.pos if changed_from is None else min(changed_from, r.pos)
             else:
                 self.reader.error("end of buffer")
+        if changed_from is not None:
+            r.invalidate_buffer(changed_from)
 
 
 class accept(FinishCommand):
@@ -437,7 +463,8 @@ class help(Command):
         import _sitebuiltins
 
         with self.reader.suspend():
-            self.reader.msg = _sitebuiltins._Helper()()  # type: ignore[assignment, call-arg]
+            self.reader.msg = _sitebuiltins._Helper()()  # type: ignore[assignment]
+        self.reader.invalidate_prompt()
 
 
 class invalid_key(Command):
@@ -456,28 +483,39 @@ class invalid_command(Command):
 class show_history(Command):
     def do(self) -> None:
         from .pager import get_pager
-        from site import gethistoryfile  # type: ignore[attr-defined]
+        from site import gethistoryfile
+
+        # After the pager exits, the screen state is unknown (Unix may
+        # restore via alternate screen, Windows shows pager output).
+        # Clear and force a full redraw at the end for consistency.
+        self.reader.console.clear()
 
         history = os.linesep.join(self.reader.history[:])
-        with self.reader.suspend():
-            pager = get_pager()
-            pager(history, gethistoryfile())
+        self.reader.console.restore()
+        pager = get_pager()
+        pager(history, gethistoryfile())
+        self.reader.console.prepare()
+
+        self.reader.invalidate_full()
 
 
 class paste_mode(Command):
-
     def do(self) -> None:
         self.reader.paste_mode = not self.reader.paste_mode
-        self.reader.dirty = True
+        self.reader.invalidate_prompt()
 
 
-class enable_bracketed_paste(Command):
+class perform_bracketed_paste(Command):
     def do(self) -> None:
-        self.reader.paste_mode = True
-        self.reader.in_bracketed_paste = True
-
-class disable_bracketed_paste(Command):
-    def do(self) -> None:
-        self.reader.paste_mode = False
-        self.reader.in_bracketed_paste = False
-        self.reader.dirty = True
+        done = "\x1b[201~"
+        data = ""
+        start = time.time()
+        while done not in data:
+            ev = self.reader.console.getpending()
+            data += ev.data
+        trace(
+            "bracketed pasting of {l} chars done in {s:.2f}s",
+            l=len(data),
+            s=time.time() - start,
+        )
+        self.reader.insert(data.replace(done, ""))

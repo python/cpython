@@ -4,10 +4,6 @@
 .. module:: difflib
    :synopsis: Helpers for computing differences between objects.
 
-.. moduleauthor:: Tim Peters <tim_one@users.sourceforge.net>
-.. sectionauthor:: Tim Peters <tim_one@users.sourceforge.net>
-.. Markup by Fred L. Drake, Jr. <fdrake@acm.org>
-
 **Source code:** :source:`Lib/difflib.py`
 
 .. testsetup::
@@ -231,7 +227,7 @@ diffs. For comparing directories and files, see also, the :mod:`filecmp` module.
    *linejunk*: A function that accepts a single string argument, and returns
    true if the string is junk, or false if not. The default is ``None``. There
    is also a module-level function :func:`IS_LINE_JUNK`, which filters out lines
-   without visible characters, except for at most one pound character (``'#'``)
+   without visible characters, except for at most one hash character (``'#'``)
    -- however the underlying :class:`SequenceMatcher` class does a dynamic
    analysis of which lines are so frequent as to constitute noise, and this
    usually works better than using this function.
@@ -278,7 +274,7 @@ diffs. For comparing directories and files, see also, the :mod:`filecmp` module.
       emu
 
 
-.. function:: unified_diff(a, b, fromfile='', tofile='', fromfiledate='', tofiledate='', n=3, lineterm='\n')
+.. function:: unified_diff(a, b, fromfile='', tofile='', fromfiledate='', tofiledate='', n=3, lineterm='\n', *, color=False)
 
    Compare *a* and *b* (lists of strings); return a delta (a :term:`generator`
    generating the delta lines) in unified diff format.
@@ -296,6 +292,10 @@ diffs. For comparing directories and files, see also, the :mod:`filecmp` module.
 
    For inputs that do not have trailing newlines, set the *lineterm* argument to
    ``""`` so that the output will be uniformly newline free.
+
+   Set *color* to ``True`` to enable output in color, similar to
+   :program:`git diff --color`. Even if enabled, it can be
+   :ref:`controlled using environment variables <using-on-controlling-color>`.
 
    The unified diff format normally has a header for filenames and modification
    times.  Any or all of these may be specified using strings for *fromfile*,
@@ -318,6 +318,10 @@ diffs. For comparing directories and files, see also, the :mod:`filecmp` module.
        guido
 
    See :ref:`difflib-interface` for a more detailed example.
+
+   .. versionchanged:: 3.15
+      Added the *color* parameter.
+
 
 .. function:: diff_bytes(dfunc, a, b, fromfile=b'', tofile=b'', fromfiledate=b'', tofiledate=b'', n=3, lineterm=b'\n')
 
@@ -351,14 +355,14 @@ diffs. For comparing directories and files, see also, the :mod:`filecmp` module.
 
 .. seealso::
 
-   `Pattern Matching: The Gestalt Approach <https://www.drdobbs.com/database/pattern-matching-the-gestalt-approach/184407970>`_
+   `Pattern Matching: The Gestalt Approach <https://jacobfilipp.com/DrDobbs/articles/DDJ/1988/8807/8807c/8807c.htm>`_
       Discussion of a similar algorithm by John W. Ratcliff and D. E. Metzener. This
-      was published in `Dr. Dobb's Journal <https://www.drdobbs.com/>`_ in July, 1988.
+      was published in Dr. Dobb's Journal in July, 1988.
 
 
 .. _sequence-matcher:
 
-SequenceMatcher Objects
+SequenceMatcher objects
 -----------------------
 
 The :class:`SequenceMatcher` class has this constructor:
@@ -586,7 +590,7 @@ are always at least as large as :meth:`~SequenceMatcher.ratio`:
 
 .. _sequencematcher-examples:
 
-SequenceMatcher Examples
+SequenceMatcher examples
 ------------------------
 
 This example compares two strings, considering blanks to be "junk":
@@ -637,7 +641,7 @@ If you want to know how to change the first sequence into the second, use
 
 .. _differ-objects:
 
-Differ Objects
+Differ objects
 --------------
 
 Note that :class:`Differ`\ -generated deltas make no claim to be **minimal**
@@ -686,7 +690,7 @@ The :class:`Differ` class has this constructor:
 
 .. _differ-examples:
 
-Differ Example
+Differ example
 --------------
 
 This example compares two texts. First we set up the texts, sequences of

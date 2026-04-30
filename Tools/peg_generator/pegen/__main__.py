@@ -10,7 +10,6 @@ import sys
 import time
 import token
 import traceback
-from typing import Tuple
 
 from pegen.grammar import Grammar
 from pegen.parser import Parser
@@ -21,7 +20,7 @@ from pegen.validator import validate_grammar
 
 def generate_c_code(
     args: argparse.Namespace,
-) -> Tuple[Grammar, Parser, Tokenizer, ParserGenerator]:
+) -> tuple[Grammar, Parser, Tokenizer, ParserGenerator]:
     from pegen.build import build_c_parser_and_generator
 
     verbose = args.verbose
@@ -50,7 +49,7 @@ def generate_c_code(
 
 def generate_python_code(
     args: argparse.Namespace,
-) -> Tuple[Grammar, Parser, Tokenizer, ParserGenerator]:
+) -> tuple[Grammar, Parser, Tokenizer, ParserGenerator]:
     from pegen.build import build_python_parser_and_generator
 
     verbose = args.verbose
@@ -188,7 +187,7 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    if sys.version_info < (3, 8):
-        print("ERROR: using pegen requires at least Python 3.8!", file=sys.stderr)
+    if sys.version_info < (3, 10):  # noqa: UP036
+        print("ERROR: using pegen requires at least Python 3.10!", file=sys.stderr)
         sys.exit(1)
     main()

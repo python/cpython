@@ -19,7 +19,7 @@ This module defines classes for implementing HTTP servers.
 
 .. warning::
 
-    :mod:`http.server` is not recommended for production. It only implements
+    :mod:`!http.server` is not recommended for production. It only implements
     :ref:`basic security checks <http.server-security>`.
 
 .. include:: ../includes/wasm-notavail.rst
@@ -51,15 +51,55 @@ handler.  Code to create and run the server looks like this::
    .. versionadded:: 3.7
 
 
-The :class:`HTTPServer` and :class:`ThreadingHTTPServer` must be given
-a *RequestHandlerClass* on instantiation, of which this module
-provides three different variants:
+.. class:: HTTPSServer(server_address, RequestHandlerClass,\
+                       bind_and_activate=True, *, certfile, keyfile=None,\
+                       password=None, alpn_protocols=None)
+
+   Subclass of :class:`HTTPServer` with a wrapped socket using the :mod:`ssl` module.
+   If the :mod:`ssl` module is not available, instantiating a :class:`!HTTPSServer`
+   object fails with a :exc:`RuntimeError`.
+
+   The *certfile* argument is the path to the SSL certificate chain file,
+   and the *keyfile* is the path to file containing the private key.
+
+   A *password* can be specified for files protected and wrapped with PKCS#8,
+   but beware that this could possibly expose hardcoded passwords in clear.
+
+   .. seealso::
+
+      See :meth:`ssl.SSLContext.load_cert_chain` for additional
+      information on the accepted values for *certfile*, *keyfile*
+      and *password*.
+
+   When specified, the *alpn_protocols* argument must be a sequence of strings
+   specifying the "Application-Layer Protocol Negotiation" (ALPN) protocols
+   supported by the server. ALPN allows the server and the client to negotiate
+   the application protocol during the TLS handshake.
+
+   By default, it is set to ``["http/1.1"]``, meaning the server supports HTTP/1.1.
+
+   .. versionadded:: 3.14
+
+.. class:: ThreadingHTTPSServer(server_address, RequestHandlerClass,\
+                                bind_and_activate=True, *, certfile, keyfile=None,\
+                                password=None, alpn_protocols=None)
+
+   This class is identical to :class:`HTTPSServer` but uses threads to handle
+   requests by inheriting from :class:`~socketserver.ThreadingMixIn`. This is
+   analogous to :class:`ThreadingHTTPServer` only using :class:`HTTPSServer`.
+
+   .. versionadded:: 3.14
+
+
+The :class:`HTTPServer`, :class:`ThreadingHTTPServer`, :class:`HTTPSServer` and
+:class:`ThreadingHTTPSServer` must be given a *RequestHandlerClass* on
+instantiation, of which this module provides three different variants:
 
 .. class:: BaseHTTPRequestHandler(request, client_address, server)
 
    This class is used to handle the HTTP requests that arrive at the server.  By
    itself, it cannot respond to any actual HTTP requests; it must be subclassed
-   to handle each request method (e.g. GET or POST).
+   to handle each request method (for example, ``'GET'`` or ``'POST'``).
    :class:`BaseHTTPRequestHandler` provides a number of class and instance
    variables, and methods for use by subclasses.
 
@@ -114,7 +154,7 @@ provides three different variants:
       variable. This instance parses and manages the headers in the HTTP
       request. The :func:`~http.client.parse_headers` function from
       :mod:`http.client` is used to parse the headers and it requires that the
-      HTTP request provide a valid :rfc:`2822` style header.
+      HTTP request provide a valid :rfc:`5322` style header.
 
    .. attribute:: rfile
 
@@ -201,7 +241,7 @@ provides three different variants:
       request header it responds back with a ``100 Continue`` followed by ``200
       OK`` headers.
       This method can be overridden to raise an error if the server does not
-      want the client to continue.  For e.g. server can choose to send ``417
+      want the client to continue.  For example, the server can choose to send ``417
       Expectation Failed`` as a response header and ``return False``.
 
       .. versionadded:: 3.2
@@ -247,6 +287,8 @@ provides three different variants:
       specifying its value. Note that, after the send_header calls are done,
       :meth:`end_headers` MUST BE called in order to complete the operation.
 
+      This method does not reject input containing CRLF sequences.
+
       .. versionchanged:: 3.2
          Headers are stored in an internal buffer.
 
@@ -256,6 +298,8 @@ provides three different variants:
       Continue`` response is sent by the server to the client. The headers not
       buffered and sent directly the output stream.If the *message* is not
       specified, the HTTP message corresponding the response *code*  is sent.
+
+      This method does not reject *message* containing CRLF sequences.
 
       .. versionadded:: 3.2
 
@@ -389,8 +433,7 @@ provides three different variants:
       ``'Last-Modified:'`` header with the file's modification time.
 
       Then follows a blank line signifying the end of the headers, and then the
-      contents of the file are output. If the file's MIME type starts with
-      ``text/`` the file is opened in text mode; otherwise binary mode is used.
+      contents of the file are output.
 
       For example usage, see the implementation of the ``test`` function
       in :source:`Lib/http/server.py`.
@@ -418,117 +461,110 @@ the current directory::
 such as using different index file names by overriding the class attribute
 :attr:`index_pages`.
 
+
 .. _http-server-cli:
 
-:mod:`http.server` can also be invoked directly using the :option:`-m`
-switch of the interpreter.  Similar to
-the previous example, this serves files relative to the current directory::
+Command-line interface
+----------------------
 
-        python -m http.server
+:mod:`!http.server` can also be invoked directly using the :option:`-m`
+switch of the interpreter.  The following example illustrates how to serve
+files relative to the current directory:
 
-The server listens to port 8000 by default. The default can be overridden
-by passing the desired port number as an argument::
+.. code-block:: bash
 
-        python -m http.server 9000
+   python -m http.server [OPTIONS] [port]
 
-By default, the server binds itself to all interfaces.  The option ``-b/--bind``
-specifies a specific address to which it should bind. Both IPv4 and IPv6
-addresses are supported. For example, the following command causes the server
-to bind to localhost only::
+The following options are accepted:
 
-        python -m http.server --bind 127.0.0.1
+.. program:: http.server
 
-.. versionchanged:: 3.4
-   Added the ``--bind`` option.
+.. option:: port
 
-.. versionchanged:: 3.8
-   Support IPv6 in the ``--bind`` option.
+   The server listens to port 8000 by default. The default can be overridden
+   by passing the desired port number as an argument:
 
-By default, the server uses the current directory. The option ``-d/--directory``
-specifies a directory to which it should serve the files. For example,
-the following command uses a specific directory::
+   .. code-block:: bash
 
-        python -m http.server --directory /tmp/
+      python -m http.server 9000
 
-.. versionchanged:: 3.7
-   Added the ``--directory`` option.
+.. option:: -b, --bind <address>
 
-By default, the server is conformant to HTTP/1.0. The option ``-p/--protocol``
-specifies the HTTP version to which the server is conformant. For example, the
-following command runs an HTTP/1.1 conformant server::
+   Specifies a specific address to which it should bind. Both IPv4 and IPv6
+   addresses are supported. By default, the server binds itself to all
+   interfaces. For example, the following command causes the server to bind
+   to localhost only:
 
-        python -m http.server --protocol HTTP/1.1
+   .. code-block:: bash
 
-.. versionchanged:: 3.11
-   Added the ``--protocol`` option.
+      python -m http.server --bind 127.0.0.1
 
-.. class:: CGIHTTPRequestHandler(request, client_address, server)
+   .. versionadded:: 3.4
 
-   This class is used to serve either files or output of CGI scripts from the
-   current directory and below. Note that mapping HTTP hierarchic structure to
-   local directory structure is exactly as in :class:`SimpleHTTPRequestHandler`.
+   .. versionchanged:: 3.8
+      Support IPv6 in the ``--bind`` option.
 
-   .. note::
+.. option:: -d, --directory <dir>
 
-      CGI scripts run by the :class:`CGIHTTPRequestHandler` class cannot execute
-      redirects (HTTP code 302), because code 200 (script output follows) is
-      sent prior to execution of the CGI script.  This pre-empts the status
-      code.
+   Specifies a directory to which it should serve the files. By default,
+   the server uses the current directory. For example, the following command
+   uses a specific directory:
 
-   The class will however, run the CGI script, instead of serving it as a file,
-   if it guesses it to be a CGI script.  Only directory-based CGI are used ---
-   the other common server configuration is to treat special extensions as
-   denoting CGI scripts.
+   .. code-block:: bash
 
-   The :func:`do_GET` and :func:`do_HEAD` functions are modified to run CGI scripts
-   and serve the output, instead of serving files, if the request leads to
-   somewhere below the ``cgi_directories`` path.
+      python -m http.server --directory /tmp/
 
-   The :class:`CGIHTTPRequestHandler` defines the following data member:
+   .. versionadded:: 3.7
 
-   .. attribute:: cgi_directories
+.. option:: -p, --protocol <version>
 
-      This defaults to ``['/cgi-bin', '/htbin']`` and describes directories to
-      treat as containing CGI scripts.
+   Specifies the HTTP version to which the server is conformant. By default,
+   the server is conformant to HTTP/1.0. For example, the following command
+   runs an HTTP/1.1 conformant server:
 
-   The :class:`CGIHTTPRequestHandler` defines the following method:
+   .. code-block:: bash
 
-   .. method:: do_POST()
+      python -m http.server --protocol HTTP/1.1
 
-      This method serves the ``'POST'`` request type, only allowed for CGI
-      scripts.  Error 501, "Can only POST to CGI scripts", is output when trying
-      to POST to a non-CGI url.
+   .. versionadded:: 3.11
 
-   Note that CGI scripts will be run with UID of user nobody, for security
-   reasons.  Problems with the CGI script will be translated to error 403.
+.. option:: --tls-cert
 
-   .. deprecated-removed:: 3.13 3.15
+   Specifies a TLS certificate chain for HTTPS connections:
 
-      :class:`CGIHTTPRequestHandler` is being removed in 3.15.  CGI has not
-      been considered a good way to do things for well over a decade. This code
-      has been unmaintained for a while now and sees very little practical use.
-      Retaining it could lead to further :ref:`security considerations
-      <http.server-security>`.
+   .. code-block:: bash
 
-:class:`CGIHTTPRequestHandler` can be enabled in the command line by passing
-the ``--cgi`` option::
+      python -m http.server --tls-cert fullchain.pem
 
-        python -m http.server --cgi
+   .. versionadded:: 3.14
 
-.. deprecated-removed:: 3.13 3.15
+.. option:: --tls-key
 
-   :mod:`http.server` command line ``--cgi`` support is being removed
-   because :class:`CGIHTTPRequestHandler` is being removed.
+   Specifies a private key file for HTTPS connections.
 
-.. warning::
+   This option requires ``--tls-cert`` to be specified.
 
-   :class:`CGIHTTPRequestHandler` and the ``--cgi`` command line option
-   are not intended for use by untrusted clients and may be vulnerable
-   to exploitation. Always use within a secure environment.
+   .. versionadded:: 3.14
+
+.. option:: --tls-password-file
+
+   Specifies the password file for password-protected private keys:
+
+   .. code-block:: bash
+
+      python -m http.server \
+             --tls-cert cert.pem \
+             --tls-key key.pem \
+             --tls-password-file password.txt
+
+   This option requires ``--tls-cert`` to be specified.
+
+   .. versionadded:: 3.14
+
 
 .. _http.server-security:
 
-Security Considerations
+Security considerations
 -----------------------
 
 .. index:: pair: http.server; security
@@ -536,6 +572,11 @@ Security Considerations
 :class:`SimpleHTTPRequestHandler` will follow symbolic links when handling
 requests, this makes it possible for files outside of the specified directory
 to be served.
+
+Methods :meth:`BaseHTTPRequestHandler.send_header` and
+:meth:`BaseHTTPRequestHandler.send_response_only` assume sanitized input
+and do not perform input validation such as checking for the presence of CRLF
+sequences. Untrusted input may result in HTTP Header injection attacks.
 
 Earlier versions of Python did not scrub control characters from the
 log messages emitted to stderr from ``python -m http.server`` or the

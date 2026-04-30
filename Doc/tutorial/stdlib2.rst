@@ -1,7 +1,7 @@
 .. _tut-brieftourtwo:
 
 **********************************************
-Brief Tour of the Standard Library --- Part II
+Brief tour of the standard library --- part II
 **********************************************
 
 This second tour covers more advanced modules that support professional
@@ -10,7 +10,7 @@ programming needs.  These modules rarely occur in small scripts.
 
 .. _tut-output-formatting:
 
-Output Formatting
+Output formatting
 =================
 
 The :mod:`reprlib` module provides a version of :func:`repr` customized for
@@ -130,7 +130,7 @@ templates for XML files, plain text reports, and HTML web reports.
 
 .. _tut-binary-formats:
 
-Working with Binary Data Record Layouts
+Working with binary data record layouts
 =======================================
 
 The :mod:`struct` module provides :func:`~struct.pack` and
@@ -178,14 +178,13 @@ tasks in background while the main program continues to run::
 
    class AsyncZip(threading.Thread):
        def __init__(self, infile, outfile):
-           threading.Thread.__init__(self)
+           super().__init__()
            self.infile = infile
            self.outfile = outfile
 
        def run(self):
-           f = zipfile.ZipFile(self.outfile, 'w', zipfile.ZIP_DEFLATED)
-           f.write(self.infile)
-           f.close()
+           with zipfile.ZipFile(self.outfile, 'w', zipfile.ZIP_DEFLATED) as f:
+               f.write(self.infile)
            print('Finished background zip of:', self.infile)
 
    background = AsyncZip('mydata.txt', 'myarchive.zip')
@@ -245,7 +244,7 @@ application.
 
 .. _tut-weak-references:
 
-Weak References
+Weak references
 ===============
 
 Python does automatic memory management (reference counting for most objects and
@@ -279,14 +278,14 @@ applications include caching objects that are expensive to create::
    Traceback (most recent call last):
      File "<stdin>", line 1, in <module>
        d['primary']                # entry was automatically removed
-     File "C:/python314/lib/weakref.py", line 46, in __getitem__
+     File "C:/python315/lib/weakref.py", line 46, in __getitem__
        o = self.data[key]()
    KeyError: 'primary'
 
 
 .. _tut-list-tools:
 
-Tools for Working with Lists
+Tools for working with lists
 ============================
 
 Many data structure needs can be met with the built-in list type. However,
@@ -352,7 +351,7 @@ not want to run a full list sort::
 
 .. _tut-decimal-fp:
 
-Decimal Floating-Point Arithmetic
+Decimal floating-point arithmetic
 =================================
 
 The :mod:`decimal` module offers a :class:`~decimal.Decimal` datatype for

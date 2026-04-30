@@ -84,7 +84,8 @@ class TestBreakContinueReturnInExceptStarBlock(unittest.TestCase):
                     if i == 2:
                         break
                 finally:
-                    return 0
+                    pass
+                return 0
             """)
 
 
@@ -117,7 +118,8 @@ class TestBreakContinueReturnInExceptStarBlock(unittest.TestCase):
                     if i == 2:
                         continue
                 finally:
-                    return 0
+                    pass
+                return 0
             """)
 
     def test_return_in_except_star_block_invalid(self):

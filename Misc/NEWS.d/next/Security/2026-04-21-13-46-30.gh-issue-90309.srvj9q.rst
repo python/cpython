@@ -1,0 +1,3 @@
+Base64-encode values when embedding cookies to JavaScript using the
+:meth:`http.cookies.BaseCookie.js_output` method to avoid injection
+and escaping.

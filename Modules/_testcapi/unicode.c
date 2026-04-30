@@ -220,6 +220,12 @@ unicode_copycharacters(PyObject *self, PyObject *args)
     return Py_BuildValue("(Nn)", to_copy, copied);
 }
 
+static PyObject*
+unicode_GET_CACHED_HASH(PyObject *self, PyObject *arg)
+{
+    return PyLong_FromSsize_t(PyUnstable_Unicode_GET_CACHED_HASH(arg));
+}
+
 
 // --- PyUnicodeWriter type -------------------------------------------------
 
@@ -295,16 +301,12 @@ writer_write_char(PyObject *self_raw, PyObject *args)
         return NULL;
     }
 
-    PyObject *str;
-    if (!PyArg_ParseTuple(args, "U", &str)) {
+    unsigned int ch;
+    if (!PyArg_ParseTuple(args, "I", &ch)) {
         return NULL;
     }
-    if (PyUnicode_GET_LENGTH(str) != 1) {
-        PyErr_SetString(PyExc_ValueError, "expect a single character");
-    }
-    Py_UCS4 ch = PyUnicode_READ_CHAR(str, 0);
 
-    if (PyUnicodeWriter_WriteChar(self->writer, ch) < 0) {
+    if (PyUnicodeWriter_WriteChar(self->writer, (Py_UCS4)ch) < 0) {
         return NULL;
     }
     Py_RETURN_NONE;
@@ -319,13 +321,34 @@ writer_write_utf8(PyObject *self_raw, PyObject *args)
         return NULL;
     }
 
-    char *str;
-    Py_ssize_t size;
-    if (!PyArg_ParseTuple(args, "yn", &str, &size)) {
+    const char *str;
+    Py_ssize_t bsize, size;
+    if (!PyArg_ParseTuple(args, "z#n", &str, &bsize, &size)) {
         return NULL;
     }
 
     if (PyUnicodeWriter_WriteUTF8(self->writer, str, size) < 0) {
+        return NULL;
+    }
+    Py_RETURN_NONE;
+}
+
+
+static PyObject*
+writer_write_ascii(PyObject *self_raw, PyObject *args)
+{
+    WriterObject *self = (WriterObject *)self_raw;
+    if (writer_check(self) < 0) {
+        return NULL;
+    }
+
+    const char *str;
+    Py_ssize_t bsize, size;
+    if (!PyArg_ParseTuple(args, "z#n", &str, &bsize, &size)) {
+        return NULL;
+    }
+
+    if (PyUnicodeWriter_WriteASCII(self->writer, str, size) < 0) {
         return NULL;
     }
     Py_RETURN_NONE;
@@ -340,19 +363,23 @@ writer_write_widechar(PyObject *self_raw, PyObject *args)
         return NULL;
     }
 
-    PyObject *str;
-    if (!PyArg_ParseTuple(args, "U", &str)) {
+    const char *s;
+    Py_ssize_t bsize;
+    Py_ssize_t size = -100;
+
+    if (!PyArg_ParseTuple(args, "z#|n", &s, &bsize, &size)) {
         return NULL;
     }
-
-    Py_ssize_t size;
-    wchar_t *wstr = PyUnicode_AsWideCharString(str, &size);
-    if (wstr == NULL) {
-        return NULL;
+    if (size == -100) {
+        if (bsize % SIZEOF_WCHAR_T) {
+            PyErr_SetString(PyExc_AssertionError,
+                            "invalid size in writer.write_widechar()");
+            return NULL;
+        }
+        size = bsize / SIZEOF_WCHAR_T;
     }
 
-    int res = PyUnicodeWriter_WriteWideChar(self->writer, wstr, size);
-    PyMem_Free(wstr);
+    int res = PyUnicodeWriter_WriteWideChar(self->writer, (const wchar_t *)s, size);
     if (res < 0) {
         return NULL;
     }
@@ -368,21 +395,23 @@ writer_write_ucs4(PyObject *self_raw, PyObject *args)
         return NULL;
     }
 
-    PyObject *str;
-    Py_ssize_t size;
-    if (!PyArg_ParseTuple(args, "Un", &str, &size)) {
+    const char *s;
+    Py_ssize_t bsize;
+    Py_ssize_t size = -100;
+
+    if (!PyArg_ParseTuple(args, "z#|n", &s, &bsize, &size)) {
         return NULL;
     }
-    Py_ssize_t len = PyUnicode_GET_LENGTH(str);
-    size = Py_MIN(size, len);
-
-    Py_UCS4 *ucs4 = PyUnicode_AsUCS4Copy(str);
-    if (ucs4 == NULL) {
-        return NULL;
+    if (size == -100) {
+        if (bsize % sizeof(Py_UCS4)) {
+            PyErr_SetString(PyExc_AssertionError,
+                            "invalid size in writer.write_ucs4()");
+            return NULL;
+        }
+        size = bsize / sizeof(Py_UCS4);
     }
 
-    int res = PyUnicodeWriter_WriteUCS4(self->writer, ucs4, size);
-    PyMem_Free(ucs4);
+    int res = PyUnicodeWriter_WriteUCS4(self->writer, (const Py_UCS4 *)s, size);
     if (res < 0) {
         return NULL;
     }
@@ -391,18 +420,14 @@ writer_write_ucs4(PyObject *self_raw, PyObject *args)
 
 
 static PyObject*
-writer_write_str(PyObject *self_raw, PyObject *args)
+writer_write_str(PyObject *self_raw, PyObject *obj)
 {
     WriterObject *self = (WriterObject *)self_raw;
     if (writer_check(self) < 0) {
         return NULL;
     }
 
-    PyObject *obj;
-    if (!PyArg_ParseTuple(args, "O", &obj)) {
-        return NULL;
-    }
-
+    NULLABLE(obj);
     if (PyUnicodeWriter_WriteStr(self->writer, obj) < 0) {
         return NULL;
     }
@@ -411,18 +436,14 @@ writer_write_str(PyObject *self_raw, PyObject *args)
 
 
 static PyObject*
-writer_write_repr(PyObject *self_raw, PyObject *args)
+writer_write_repr(PyObject *self_raw, PyObject *obj)
 {
     WriterObject *self = (WriterObject *)self_raw;
     if (writer_check(self) < 0) {
         return NULL;
     }
 
-    PyObject *obj;
-    if (!PyArg_ParseTuple(args, "O", &obj)) {
-        return NULL;
-    }
-
+    NULLABLE(obj);
     if (PyUnicodeWriter_WriteRepr(self->writer, obj) < 0) {
         return NULL;
     }
@@ -440,9 +461,10 @@ writer_write_substring(PyObject *self_raw, PyObject *args)
 
     PyObject *str;
     Py_ssize_t start, end;
-    if (!PyArg_ParseTuple(args, "Unn", &str, &start, &end)) {
+    if (!PyArg_ParseTuple(args, "Onn", &str, &start, &end)) {
         return NULL;
     }
+    NULLABLE(str);
 
     if (PyUnicodeWriter_WriteSubstring(self->writer, str, start, end) < 0) {
         return NULL;
@@ -460,10 +482,10 @@ writer_decodeutf8stateful(PyObject *self_raw, PyObject *args)
     }
 
     const char *str;
-    Py_ssize_t len;
+    Py_ssize_t bsize, len;
     const char *errors;
     int use_consumed = 0;
-    if (!PyArg_ParseTuple(args, "yny|i", &str, &len, &errors, &use_consumed)) {
+    if (!PyArg_ParseTuple(args, "z#nz#|p", &str, &bsize, &len, &errors, &bsize, &use_consumed)) {
         return NULL;
     }
 
@@ -513,10 +535,11 @@ writer_finish(PyObject *self_raw, PyObject *Py_UNUSED(args))
 static PyMethodDef writer_methods[] = {
     {"write_char", _PyCFunction_CAST(writer_write_char), METH_VARARGS},
     {"write_utf8", _PyCFunction_CAST(writer_write_utf8), METH_VARARGS},
+    {"write_ascii", _PyCFunction_CAST(writer_write_ascii), METH_VARARGS},
     {"write_widechar", _PyCFunction_CAST(writer_write_widechar), METH_VARARGS},
     {"write_ucs4", _PyCFunction_CAST(writer_write_ucs4), METH_VARARGS},
-    {"write_str", _PyCFunction_CAST(writer_write_str), METH_VARARGS},
-    {"write_repr", _PyCFunction_CAST(writer_write_repr), METH_VARARGS},
+    {"write_str", _PyCFunction_CAST(writer_write_str), METH_O},
+    {"write_repr", _PyCFunction_CAST(writer_write_repr), METH_O},
     {"write_substring", _PyCFunction_CAST(writer_write_substring), METH_VARARGS},
     {"decodeutf8stateful", _PyCFunction_CAST(writer_decodeutf8stateful), METH_VARARGS},
     {"get_pointer", _PyCFunction_CAST(writer_get_pointer), METH_VARARGS},
@@ -548,6 +571,7 @@ static PyMethodDef TestMethods[] = {
     {"unicode_asucs4copy",       unicode_asucs4copy,             METH_VARARGS},
     {"unicode_asutf8",           unicode_asutf8,                 METH_VARARGS},
     {"unicode_copycharacters",   unicode_copycharacters,         METH_VARARGS},
+    {"unicode_GET_CACHED_HASH",  unicode_GET_CACHED_HASH,        METH_O},
     {NULL},
 };
 

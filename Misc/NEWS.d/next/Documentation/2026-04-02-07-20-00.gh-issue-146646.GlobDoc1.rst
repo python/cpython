@@ -1,0 +1,3 @@
+Document that :func:`glob.glob`, :func:`glob.iglob`,
+:meth:`pathlib.Path.glob`, and :meth:`pathlib.Path.rglob` silently suppress
+:exc:`OSError` exceptions raised from scanning the filesystem.

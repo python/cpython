@@ -557,8 +557,9 @@ tracemalloc_untrack(PyObject *self, PyObject *args)
 {
     unsigned int domain;
     PyObject *ptr_obj;
+    int release_gil = 0;
 
-    if (!PyArg_ParseTuple(args, "IO", &domain, &ptr_obj)) {
+    if (!PyArg_ParseTuple(args, "IO|i", &domain, &ptr_obj, &release_gil)) {
         return NULL;
     }
     void *ptr = PyLong_AsVoidPtr(ptr_obj);
@@ -566,7 +567,15 @@ tracemalloc_untrack(PyObject *self, PyObject *args)
         return NULL;
     }
 
-    int res = PyTraceMalloc_Untrack(domain, (uintptr_t)ptr);
+    int res;
+    if (release_gil) {
+        Py_BEGIN_ALLOW_THREADS
+        res = PyTraceMalloc_Untrack(domain, (uintptr_t)ptr);
+        Py_END_ALLOW_THREADS
+    }
+    else {
+        res = PyTraceMalloc_Untrack(domain, (uintptr_t)ptr);
+    }
     if (res < 0) {
         PyErr_SetString(PyExc_RuntimeError, "PyTraceMalloc_Untrack error");
         return NULL;
@@ -575,6 +584,106 @@ tracemalloc_untrack(PyObject *self, PyObject *args)
     Py_RETURN_NONE;
 }
 
+
+static void
+tracemalloc_track_race_thread(void *data)
+{
+    PyTraceMalloc_Track(123, 10, 1);
+    PyTraceMalloc_Untrack(123, 10);
+
+    PyThread_type_lock lock = (PyThread_type_lock)data;
+    PyThread_release_lock(lock);
+}
+
+// gh-128679: Test fix for tracemalloc.stop() race condition
+static PyObject *
+tracemalloc_track_race(PyObject *self, PyObject *args)
+{
+#define NTHREAD 50
+    PyObject *tracemalloc = NULL;
+    PyObject *stop = NULL;
+    PyThread_type_lock locks[NTHREAD];
+    memset(locks, 0, sizeof(locks));
+
+    // Call tracemalloc.start()
+    tracemalloc = PyImport_ImportModule("tracemalloc");
+    if (tracemalloc == NULL) {
+        goto error;
+    }
+    PyObject *start = PyObject_GetAttrString(tracemalloc, "start");
+    if (start == NULL) {
+        goto error;
+    }
+    PyObject *res = PyObject_CallNoArgs(start);
+    Py_DECREF(start);
+    if (res == NULL) {
+        goto error;
+    }
+    Py_DECREF(res);
+
+    stop = PyObject_GetAttrString(tracemalloc, "stop");
+    Py_CLEAR(tracemalloc);
+    if (stop == NULL) {
+        goto error;
+    }
+
+    // Start threads
+    for (size_t i = 0; i < NTHREAD; i++) {
+        PyThread_type_lock lock = PyThread_allocate_lock();
+        if (!lock) {
+            PyErr_NoMemory();
+            goto error;
+        }
+        locks[i] = lock;
+        PyThread_acquire_lock(lock, 1);
+
+        unsigned long thread;
+        thread = PyThread_start_new_thread(tracemalloc_track_race_thread,
+                                           (void*)lock);
+        if (thread == (unsigned long)-1) {
+            PyErr_SetString(PyExc_RuntimeError, "can't start new thread");
+            goto error;
+        }
+    }
+
+    // Call tracemalloc.stop() while threads are running
+    res = PyObject_CallNoArgs(stop);
+    Py_CLEAR(stop);
+    if (res == NULL) {
+        goto error;
+    }
+    Py_DECREF(res);
+
+    // Wait until threads complete with the GIL released
+    Py_BEGIN_ALLOW_THREADS
+    for (size_t i = 0; i < NTHREAD; i++) {
+        PyThread_type_lock lock = locks[i];
+        PyThread_acquire_lock(lock, 1);
+        PyThread_release_lock(lock);
+    }
+    Py_END_ALLOW_THREADS
+
+    // Free threads locks
+    for (size_t i=0; i < NTHREAD; i++) {
+        PyThread_type_lock lock = locks[i];
+        PyThread_free_lock(lock);
+    }
+    Py_RETURN_NONE;
+
+error:
+    Py_CLEAR(tracemalloc);
+    Py_CLEAR(stop);
+    for (size_t i=0; i < NTHREAD; i++) {
+        PyThread_type_lock lock = locks[i];
+        if (lock) {
+            PyThread_free_lock(lock);
+        }
+    }
+    return NULL;
+#undef NTHREAD
+}
+
+
 static PyMethodDef test_methods[] = {
     {"pymem_api_misuse",              pymem_api_misuse,              METH_NOARGS},
     {"pymem_buffer_overflow",         pymem_buffer_overflow,         METH_NOARGS},
@@ -582,7 +691,7 @@ static PyMethodDef test_methods[] = {
     {"pyobject_malloc_without_gil",   pyobject_malloc_without_gil,   METH_NOARGS},
     {"remove_mem_hooks",              remove_mem_hooks,              METH_NOARGS,
         PyDoc_STR("Remove memory hooks.")},
-    {"set_nomemory",                  (PyCFunction)set_nomemory,     METH_VARARGS,
+    {"set_nomemory",                  set_nomemory,                  METH_VARARGS,
         PyDoc_STR("set_nomemory(start:int, stop:int = 0)")},
     {"test_pymem_alloc0",             test_pymem_alloc0,             METH_NOARGS},
     {"test_pymem_setallocators",      test_pymem_setallocators,      METH_NOARGS},
@@ -593,6 +702,7 @@ static PyMethodDef test_methods[] = {
     // Tracemalloc tests
     {"tracemalloc_track",             tracemalloc_track,             METH_VARARGS},
     {"tracemalloc_untrack",           tracemalloc_untrack,           METH_VARARGS},
+    {"tracemalloc_track_race", tracemalloc_track_race, METH_NOARGS},
     {NULL},
 };
 

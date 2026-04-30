@@ -199,9 +199,11 @@ _imp_find_frozen(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyOb
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(withdata), },
     };
     #undef NUM_KEYWORDS
@@ -572,9 +574,11 @@ _imp_source_hash(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyOb
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(key), &_Py_ID(source), },
     };
     #undef NUM_KEYWORDS
@@ -618,6 +622,41 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(_imp__set_lazy_attributes__doc__,
+"_set_lazy_attributes($module, modobj, name, /)\n"
+"--\n"
+"\n"
+"Sets attributes to lazy submodules on the module, as side effects.");
+
+#define _IMP__SET_LAZY_ATTRIBUTES_METHODDEF    \
+    {"_set_lazy_attributes", _PyCFunction_CAST(_imp__set_lazy_attributes), METH_FASTCALL, _imp__set_lazy_attributes__doc__},
+
+static PyObject *
+_imp__set_lazy_attributes_impl(PyObject *module, PyObject *modobj,
+                               PyObject *name);
+
+static PyObject *
+_imp__set_lazy_attributes(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    PyObject *modobj;
+    PyObject *name;
+
+    if (!_PyArg_CheckPositional("_set_lazy_attributes", nargs, 2, 2)) {
+        goto exit;
+    }
+    modobj = args[0];
+    if (!PyUnicode_Check(args[1])) {
+        _PyArg_BadArgument("_set_lazy_attributes", "argument 2", "str", args[1]);
+        goto exit;
+    }
+    name = args[1];
+    return_value = _imp__set_lazy_attributes_impl(module, modobj, name);
+
+exit:
+    return return_value;
+}
+
 #ifndef _IMP_CREATE_DYNAMIC_METHODDEF
     #define _IMP_CREATE_DYNAMIC_METHODDEF
 #endif /* !defined(_IMP_CREATE_DYNAMIC_METHODDEF) */
@@ -625,4 +664,4 @@ exit:
 #ifndef _IMP_EXEC_DYNAMIC_METHODDEF
     #define _IMP_EXEC_DYNAMIC_METHODDEF
 #endif /* !defined(_IMP_EXEC_DYNAMIC_METHODDEF) */
-/*[clinic end generated code: output=d0e278351d6adbb1 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=5fa42f580441b3fa input=a9049054013a1b77]*/

@@ -1,0 +1,5 @@
+Fix vulnerability in :func:`shutil.unpack_archive` for ZIP files on Windows
+which allowed to write files outside of the destination tree if the patch in
+the archive contains a Windows drive prefix. Now such invalid paths will be
+skipped. Files containing ".." in the name (like "foo..bar") are no longer
+skipped.

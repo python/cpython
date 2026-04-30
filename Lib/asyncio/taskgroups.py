@@ -6,6 +6,7 @@ __all__ = ("TaskGroup",)
 
 from . import events
 from . import exceptions
+from . import futures
 from . import tasks
 
 
@@ -36,6 +37,7 @@ class TaskGroup:
         self._errors = []
         self._base_error = None
         self._on_completed_fut = None
+        self._cancel_on_enter = False
 
     def __repr__(self):
         info = ['']
@@ -62,6 +64,8 @@ class TaskGroup:
             raise RuntimeError(
                 f'TaskGroup {self!r} cannot determine the parent task')
         self._entered = True
+        if self._cancel_on_enter:
+            self.cancel()
 
         return self
 
@@ -177,8 +181,11 @@ class TaskGroup:
             finally:
                 exc = None
 
+        # Suppress any remaining exception (exceptions deserving to be raised
+        # were raised above).
+        return True
 
-    def create_task(self, coro, *, name=None, context=None):
+    def create_task(self, coro, **kwargs):
         """Create a new task in this group and return it.
 
         Similar to `asyncio.create_task`.
@@ -192,20 +199,22 @@ class TaskGroup:
         if self._aborting:
             coro.close()
             raise RuntimeError(f"TaskGroup {self!r} is shutting down")
-        if context is None:
-            task = self._loop.create_task(coro, name=name)
-        else:
-            task = self._loop.create_task(coro, name=name, context=context)
+        task = self._loop.create_task(coro, **kwargs)
 
-        # optimization: Immediately call the done callback if the task is
+        futures.future_add_to_awaited_by(task, self._parent_task)
+
+        # Always schedule the done callback even if the task is
         # already done (e.g. if the coro was able to complete eagerly),
-        # and skip scheduling a done callback
-        if task.done():
-            self._on_task_done(task)
-        else:
-            self._tasks.add(task)
-            task.add_done_callback(self._on_task_done)
-        return task
+        # otherwise if the task completes with an exception then it will cancel
+        # the current task too early. gh-128550, gh-128588
+        self._tasks.add(task)
+        task.add_done_callback(self._on_task_done)
+        try:
+            return task
+        finally:
+            # gh-128552: prevent a refcycle of
+            # task.exception().__traceback__->TaskGroup.create_task->task
+            del task
 
     # Since Python 3.8 Tasks propagate all exceptions correctly,
     # except for KeyboardInterrupt and SystemExit which are
@@ -224,6 +233,8 @@ class TaskGroup:
 
     def _on_task_done(self, task):
         self._tasks.discard(task)
+
+        futures.future_discard_from_awaited_by(task, self._parent_task)
 
         if self._on_completed_fut is not None and not self._tasks:
             if not self._on_completed_fut.done():
@@ -273,3 +284,30 @@ class TaskGroup:
             self._abort()
             self._parent_cancel_requested = True
             self._parent_task.cancel()
+
+    def cancel(self):
+        """Cancel the task group
+
+        `cancel()` will be called on any tasks in the group that aren't yet
+        done, as well as the parent (body) of the group.  This will cause the
+        task group context manager to exit *without* `asyncio.CancelledError`
+        being raised.
+
+        If `cancel()` is called before entering the task group, the group will be
+        cancelled upon entry.  This is useful for patterns where one piece of
+        code passes an unused TaskGroup instance to another in order to have
+        the ability to cancel anything run within the group.
+
+        `cancel()` is idempotent and may be called after the task group has
+        already exited.
+        """
+        if not self._entered:
+            self._cancel_on_enter = True
+            return
+        if self._exiting and not self._tasks:
+            return
+        if not self._aborting:
+            self._abort()
+            if self._parent_task and not self._parent_cancel_requested:
+                self._parent_cancel_requested = True
+                self._parent_task.cancel()

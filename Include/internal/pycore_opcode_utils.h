@@ -8,8 +8,6 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
-#include "opcode_ids.h"
-
 #define MAX_REAL_OPCODE 254
 
 #define IS_WITHIN_OPCODE_RANGE(opcode) \
@@ -56,6 +54,11 @@ extern "C" {
          (opcode) == RAISE_VARARGS || \
          (opcode) == RERAISE)
 
+#define IS_RETURN_OPCODE(opcode) \
+        (opcode == RETURN_VALUE)
+#define IS_RAISE_OPCODE(opcode) \
+        (opcode == RAISE_VARARGS || opcode == RERAISE)
+
 
 /* Flags used in the oparg for MAKE_FUNCTION */
 #define MAKE_FUNCTION_DEFAULTS    0x01
@@ -67,16 +70,26 @@ extern "C" {
 /* Values used as the oparg for LOAD_COMMON_CONSTANT */
 #define CONSTANT_ASSERTIONERROR 0
 #define CONSTANT_NOTIMPLEMENTEDERROR 1
-#define NUM_COMMON_CONSTANTS 2
+#define CONSTANT_BUILTIN_TUPLE 2
+#define CONSTANT_BUILTIN_ALL 3
+#define CONSTANT_BUILTIN_ANY 4
+#define CONSTANT_BUILTIN_LIST 5
+#define CONSTANT_BUILTIN_SET 6
+#define NUM_COMMON_CONSTANTS 7
 
 /* Values used in the oparg for RESUME */
 #define RESUME_AT_FUNC_START 0
 #define RESUME_AFTER_YIELD 1
 #define RESUME_AFTER_YIELD_FROM 2
 #define RESUME_AFTER_AWAIT 3
+#define RESUME_AT_GEN_EXPR_START 4
 
-#define RESUME_OPARG_LOCATION_MASK 0x3
-#define RESUME_OPARG_DEPTH1_MASK 0x4
+#define RESUME_OPARG_LOCATION_MASK 0x7
+#define RESUME_OPARG_DEPTH1_MASK 0x8
+
+#define GET_ITER_YIELD_FROM 1
+#define GET_ITER_YIELD_FROM_NO_CHECK 2
+#define GET_ITER_YIELD_FROM_CORO_CHECK 3
 
 #ifdef __cplusplus
 }

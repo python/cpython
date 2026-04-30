@@ -1,0 +1,2 @@
+Detect file if modified at local disk and prompt to ask refresh. Patch by
+Shixian Li.

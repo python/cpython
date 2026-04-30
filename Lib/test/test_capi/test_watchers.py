@@ -176,8 +176,9 @@ class TestDictWatchers(unittest.TestCase):
 
     def test_unwatch_non_dict(self):
         with self.watcher() as wid:
-            with self.assertRaisesRegex(ValueError, r"Cannot watch non-dictionary"):
-                self.unwatch(wid, 1)
+            for wrong_type in (frozendict(), 5, [123], object()):
+                with self.assertRaisesRegex(ValueError, r"Cannot watch non-dictionary"):
+                    self.unwatch(wid, wrong_type)
 
     def test_unwatch_out_of_range_watcher_id(self):
         d = {}
@@ -513,6 +514,10 @@ class TestFuncWatchers(unittest.TestCase):
             new_kwdefaults = {"self": 456}
             _testcapi.set_func_kwdefaults_via_capi(myfunc, new_kwdefaults)
             self.assertIn((_testcapi.PYFUNC_EVENT_MODIFY_KWDEFAULTS, myfunc, new_kwdefaults), events)
+
+            new_qualname = "foo.bar"
+            myfunc.__qualname__ = new_qualname
+            self.assertIn((_testcapi.PYFUNC_EVENT_MODIFY_QUALNAME, myfunc, new_qualname), events)
 
             # Clear events reference to func
             events = []

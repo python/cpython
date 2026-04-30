@@ -15,18 +15,18 @@ from .cmdline import _parse_args, Namespace
 from .findtests import findtests, split_test_packages, list_cases
 from .logger import Logger
 from .pgo import setup_pgo_tests
-from .result import State, TestResult
+from .result import TestResult
 from .results import TestResults, EXITCODE_INTERRUPTED
 from .runtests import RunTests, HuntRefleak
 from .setup import setup_process, setup_test_dir
 from .single import run_single_test, PROGRESS_MIN_TIME
-from .tsan import setup_tsan_tests
+from .tsan import setup_tsan_tests, setup_tsan_parallel_tests
 from .utils import (
     StrPath, StrJSON, TestName, TestList, TestTuple, TestFilter,
     strip_py_suffix, count, format_duration,
     printlist, get_temp_dir, get_work_dir, exit_timeout,
     display_header, cleanup_temp_dir, print_warning,
-    is_cross_compiled, get_host_runner,
+    is_cross_compiled, get_host_runner, display_title,
     EXIT_TIMEOUT)
 
 
@@ -60,6 +60,7 @@ class Regrtest:
         self.pgo: bool = ns.pgo
         self.pgo_extended: bool = ns.pgo_extended
         self.tsan: bool = ns.tsan
+        self.tsan_parallel: bool = ns.tsan_parallel
 
         # Test results
         self.results: TestResults = TestResults()
@@ -117,7 +118,7 @@ class Regrtest:
         self.junit_filename: StrPath | None = ns.xmlpath
         self.memory_limit: str | None = ns.memlimit
         self.gc_threshold: int | None = ns.threshold
-        self.use_resources: tuple[str, ...] = tuple(ns.use_resources)
+        self.use_resources: dict[str, str | None] = dict(ns.use_resources)
         if ns.python:
             self.python_cmd: tuple[str, ...] | None = tuple(ns.python)
         else:
@@ -125,6 +126,7 @@ class Regrtest:
         self.coverage: bool = ns.trace
         self.coverage_dir: StrPath | None = ns.coverdir
         self._tmp_dir: StrPath | None = ns.tempdir
+        self.pythoninfo: bool = ns.pythoninfo
 
         # Randomize
         self.randomize: bool = ns.randomize
@@ -141,6 +143,9 @@ class Regrtest:
             self.random_seed = random.getrandbits(32)
         else:
             self.random_seed = ns.random_seed
+        self.prioritize_tests: tuple[str, ...] = tuple(ns.prioritize)
+
+        self.parallel_threads = ns.parallel_threads
 
         # tests
         self.first_runtests: RunTests | None = None
@@ -186,6 +191,12 @@ class Regrtest:
 
         strip_py_suffix(tests)
 
+        exclude_tests = set()
+        if self.exclude:
+            for arg in self.cmdline_args:
+                exclude_tests.add(arg)
+            self.cmdline_args = []
+
         if self.pgo:
             # add default PGO tests if no tests are specified
             setup_pgo_tests(self.cmdline_args, self.pgo_extended)
@@ -193,17 +204,18 @@ class Regrtest:
         if self.tsan:
             setup_tsan_tests(self.cmdline_args)
 
-        exclude_tests = set()
-        if self.exclude:
-            for arg in self.cmdline_args:
-                exclude_tests.add(arg)
-            self.cmdline_args = []
+        if self.tsan_parallel:
+            setup_tsan_parallel_tests(self.cmdline_args)
 
         alltests = findtests(testdir=self.test_dir,
                              exclude=exclude_tests)
 
         if not self.fromfile:
             selected = tests or self.cmdline_args
+            if exclude_tests:
+                # Support "--pgo/--tsan -x test_xxx" command
+                selected = [name for name in selected
+                            if name not in exclude_tests]
             if selected:
                 selected = split_test_packages(selected)
             else:
@@ -230,6 +242,16 @@ class Regrtest:
         random.seed(self.random_seed)
         if self.randomize:
             random.shuffle(selected)
+
+        for priority_test in reversed(self.prioritize_tests):
+            try:
+                selected.remove(priority_test)
+            except ValueError:
+                print(f"warning: --prioritize={priority_test} used"
+                        f" but test not actually selected")
+                continue
+            else:
+                selected.insert(0, priority_test)
 
         return (tuple(selected), tests)
 
@@ -301,9 +323,7 @@ class Regrtest:
         title = f"Bisect {test}"
         if progress:
             title = f"{title} ({progress})"
-        print(title)
-        print("#" * len(title))
-        print()
+        display_title(title)
 
         cmd = runtests.create_python_cmd()
         cmd.extend([
@@ -324,9 +344,7 @@ class Regrtest:
         exitcode = proc.returncode
 
         title = f"{title}: exit code {exitcode}"
-        print(title)
-        print("#" * len(title))
-        print(flush=True)
+        display_title(title)
 
         if exitcode:
             print(f"Bisect failed with exit code {exitcode}")
@@ -393,15 +411,11 @@ class Regrtest:
             msg += " (timeout: %s)" % format_duration(runtests.timeout)
         self.log(msg)
 
-        previous_test = None
         tests_iter = runtests.iter_tests()
         for test_index, test_name in enumerate(tests_iter, 1):
             start_time = time.perf_counter()
 
-            text = test_name
-            if previous_test:
-                text = '%s -- %s' % (text, previous_test)
-            self.logger.display_progress(test_index, text)
+            self.logger.display_progress(test_index, test_name)
 
             result = self.run_test(test_name, runtests, tracer)
 
@@ -418,19 +432,14 @@ class Regrtest:
                 except (KeyError, AttributeError):
                     pass
 
-            if result.must_stop(self.fail_fast, self.fail_env_changed):
-                break
-
-            previous_test = str(result)
+            text = str(result)
             test_time = time.perf_counter() - start_time
             if test_time >= PROGRESS_MIN_TIME:
-                previous_test = "%s in %s" % (previous_test, format_duration(test_time))
-            elif result.state == State.PASSED:
-                # be quiet: say nothing if the test passed shortly
-                previous_test = None
+                text = f"{text} in {format_duration(test_time)}"
+            self.logger.display_progress(test_index, text)
 
-        if previous_test:
-            print(previous_test)
+            if result.must_stop(self.fail_fast, self.fail_env_changed):
+                break
 
     def get_state(self) -> str:
         state = self.results.get_state(self.fail_env_changed)
@@ -506,6 +515,7 @@ class Regrtest:
             python_cmd=self.python_cmd,
             randomize=self.randomize,
             random_seed=self.random_seed,
+            parallel_threads=self.parallel_threads,
         )
 
     def _run_tests(self, selected: TestTuple, tests: TestList | None) -> int:
@@ -533,8 +543,6 @@ class Regrtest:
         runtests = self.create_run_tests(selected)
         self.first_runtests = runtests
         self.logger.set_tests(runtests)
-
-        setup_process()
 
         if (runtests.hunt_refleak is not None) and (not self.num_workers):
             # gh-109739: WindowsLoadTracker thread interferes with refleak check
@@ -635,16 +643,24 @@ class Regrtest:
         return (environ, keep_environ)
 
     def _add_ci_python_opts(self, python_opts, keep_environ):
-        # --fast-ci and --slow-ci add options to Python:
-        # "-u -W default -bb -E"
+        # --fast-ci and --slow-ci add options to Python.
+        #
+        # Some platforms run tests in embedded mode and cannot change options
+        # after startup, so if this function changes, consider also updating:
+        #  * gradle_task in Android/android.py
 
-        # Unbuffered stdout and stderr
-        if not sys.stdout.write_through:
+        # Unbuffered stdout and stderr. This isn't helpful on Android, because
+        # it would cause lines to be split into multiple log messages.
+        if not sys.stdout.write_through and sys.platform != "android":
             python_opts.append('-u')
 
-        # Add warnings filter 'default'
-        if 'default' not in sys.warnoptions:
-            python_opts.extend(('-W', 'default'))
+        # Add warnings filter 'error', unless the user specified a different
+        # filter. Ignore BytesWarning since it's controlled by '-b' below.
+        if not [
+            opt for opt in sys.warnoptions
+            if not opt.endswith("::BytesWarning")
+        ]:
+            python_opts.extend(('-W', 'error'))
 
         # Error on bytes/str comparison
         if sys.flags.bytes_warning < 2:
@@ -662,8 +678,12 @@ class Regrtest:
 
         cmd_text = shlex.join(cmd)
         try:
-            print(f"+ {cmd_text}", flush=True)
+            # Android and iOS run tests in embedded mode. To update their
+            # Python options, see the comment in _add_ci_python_opts.
+            if not cmd[0]:
+                raise ValueError("No Python executable is present")
 
+            print(f"+ {cmd_text}", flush=True)
             if hasattr(os, 'execv') and not MS_WINDOWS:
                 os.execv(cmd[0], cmd)
                 # On success, execv() do no return.
@@ -712,10 +732,7 @@ class Regrtest:
         self._execute_python(cmd, environ)
 
     def _init(self):
-        # Set sys.stdout encoder error handler to backslashreplace,
-        # similar to sys.stderr error handler, to avoid UnicodeEncodeError
-        # when printing a traceback or any other non-encodable character.
-        sys.stdout.reconfigure(errors="backslashreplace")
+        setup_process()
 
         if self.junit_filename and not os.path.isabs(self.junit_filename):
             self.junit_filename = os.path.abspath(self.junit_filename)
@@ -732,6 +749,15 @@ class Regrtest:
             )
         return self._tmp_dir
 
+    def run_pythoninfo(self):
+        from test import pythoninfo
+        try:
+            pythoninfo.main()
+        except SystemExit:
+            # Ignore non-zero exit code on purpose
+            pass
+        print()
+
     def main(self, tests: TestList | None = None) -> NoReturn:
         if self.want_add_python_opts:
             self._add_python_opts()
@@ -744,6 +770,9 @@ class Regrtest:
 
         if self.want_wait:
             input("Press any key to continue...")
+
+        if self.pythoninfo:
+            self.run_pythoninfo()
 
         setup_test_dir(self.test_dir)
         selected, tests = self.find_tests(tests)
