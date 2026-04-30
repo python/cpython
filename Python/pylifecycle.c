@@ -2346,8 +2346,6 @@ make_pre_finalization_calls(PyThreadState *tstate, int subinterpreters)
         int has_subinterpreters = subinterpreters
                                     ? runtime_has_subinterpreters(interp->runtime)
                                     : 0;
-        // TODO: The interpreter guard countdown isn't very efficient. We should
-        // wait on an event or something like that.
         int should_continue = (interp_has_threads(interp)
                               || interp_has_atexit_callbacks(interp)
                               || interp_has_pending_calls(interp)
