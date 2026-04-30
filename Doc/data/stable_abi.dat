@@ -470,8 +470,8 @@ func,PyMemoryView_GetContiguous,3.2,,
 data,PyMemoryView_Type,3.2,,
 type,PyMethodDef,3.2,,full-abi
 data,PyMethodDescr_Type,3.2,,
-type,PyModuleDef,3.2,,full-abi
-type,PyModuleDef_Base,3.2,,full-abi
+type,PyModuleDef,3.2,,abi3t-opaque
+type,PyModuleDef_Base,3.2,,abi3t-opaque
 func,PyModuleDef_Init,3.5,,
 type,PyModuleDef_Slot,3.5,,full-abi
 data,PyModuleDef_Type,3.5,,

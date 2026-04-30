@@ -5878,7 +5878,13 @@ PyType_GetModuleByToken_DuringGC(PyTypeObject *type, const void *token)
 PyObject *
 PyType_GetModuleByToken(PyTypeObject *type, const void *token)
 {
-    PyObject *mod = PyType_GetModuleByToken_DuringGC(type, token);
+    return Py_XNewRef(PyType_GetModuleByDef(type, (PyModuleDef *)token));
+}
+
+PyObject *
+PyType_GetModuleByDef(PyTypeObject *type, PyModuleDef *def)
+{
+    PyObject *mod = PyType_GetModuleByToken_DuringGC(type, def);
     if (!mod) {
         PyErr_Format(
             PyExc_TypeError,
@@ -5886,14 +5892,6 @@ PyType_GetModuleByToken(PyTypeObject *type, const void *token)
             type->tp_name);
         return NULL;
     }
-    return Py_NewRef(mod);
-}
-
-PyObject *
-PyType_GetModuleByDef(PyTypeObject *type, PyModuleDef *def)
-{
-    PyObject *mod = PyType_GetModuleByToken(type, def);
-    Py_XDECREF(mod);  // return borrowed ref
     return mod;
 }
 
