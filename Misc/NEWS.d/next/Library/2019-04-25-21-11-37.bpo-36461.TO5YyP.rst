@@ -1,3 +1,0 @@
-Make the target time of :meth:`timeit.Timer.autorange` configurable
-and add ``--target-time`` option to the command-line interface of
-:mod:`timeit`.

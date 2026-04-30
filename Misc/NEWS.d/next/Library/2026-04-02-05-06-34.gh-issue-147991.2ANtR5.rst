@@ -1,0 +1,2 @@
+Improve :mod:`tomllib` import time (up to 10x faster). Patch by Victor
+Stinner.

@@ -1788,7 +1788,9 @@ always available. Unless explicitly noted otherwise, all variables are read-only
    Where:
 
    * *importing_module* is the name of the module doing the import
-   * *imported_module* is the name of the module being imported
+   * *imported_module* is the resolved name of the module being imported
+     (for example, ``lazy from .spam import eggs`` passes
+     ``package.spam``)
    * *fromlist* is the tuple of names being imported (for ``from ... import``
      statements), or ``None`` for regular imports
 

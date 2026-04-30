@@ -297,6 +297,19 @@ compiler_set_qualname(compiler *c)
                 base = Py_NewRef(parent->u_metadata.u_qualname);
             }
         }
+        if (u->u_ste->ste_function_name != NULL) {
+            PyObject *tmp = base;
+            base = PyUnicode_FromFormat("%U.%U",
+                base,
+                u->u_ste->ste_function_name);
+            Py_DECREF(tmp);
+            if (base == NULL) {
+                return ERROR;
+            }
+        }
+    }
+    else if (u->u_ste->ste_function_name != NULL) {
+        base = Py_NewRef(u->u_ste->ste_function_name);
     }
 
     if (base != NULL) {
@@ -1645,6 +1658,7 @@ _PyCompile_CodeGen(PyObject *ast, PyObject *filename, PyCompilerFlags *pflags,
 {
     PyObject *res = NULL;
     PyObject *metadata = NULL;
+    PyObject *consts_list = NULL;
 
     if (!PyAST_Check(ast)) {
         PyErr_SetString(PyExc_TypeError, "expected an AST");
@@ -1699,12 +1713,23 @@ _PyCompile_CodeGen(PyObject *ast, PyObject *filename, PyCompilerFlags *pflags,
     }
 
     if (_PyInstructionSequence_ApplyLabelMap(_PyCompile_InstrSequence(c)) < 0) {
-        return NULL;
+        goto finally;
     }
+
+    /* After AddReturnAtEnd: co_consts indices match the final instruction stream. */
+    consts_list = consts_dict_keys_inorder(umd->u_consts);
+    if (consts_list == NULL) {
+        goto finally;
+    }
+    if (PyDict_SetItemString(metadata, "consts", consts_list) < 0) {
+        goto finally;
+    }
+
     /* Allocate a copy of the instruction sequence on the heap */
     res = _PyTuple_FromPair((PyObject *)_PyCompile_InstrSequence(c), metadata);
 
 finally:
+    Py_XDECREF(consts_list);
     Py_XDECREF(metadata);
     _PyCompile_ExitScope(c);
     compiler_free(c);

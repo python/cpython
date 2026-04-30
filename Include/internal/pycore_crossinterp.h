@@ -265,6 +265,12 @@ typedef struct {
         // heap types
         PyObject *PyExc_NotShareableError;
     } exceptions;
+
+    // Cached references to pickle.dumps/loads (per-interpreter).
+    struct {
+        PyObject *dumps;
+        PyObject *loads;
+    } pickle;
 } _PyXI_state_t;
 
 #define _PyXI_GET_GLOBAL_STATE(interp) (&(interp)->runtime->xi)

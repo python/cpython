@@ -5,6 +5,7 @@ extern "C" {
 #endif
 
 
+#if !defined(_Py_OPAQUE_PYOBJECT)
 /*
 Immortalization:
 
@@ -90,14 +91,16 @@ check by comparing the reference count field to the minimum immortality refcount
 #  define _Py_REF_SHARED(refcnt, flags) \
               (((refcnt) << _Py_REF_SHARED_SHIFT) + (flags))
 #endif  // Py_GIL_DISABLED
-
+#endif  // _Py_OPAQUE_PYOBJECT
 
 // Py_REFCNT() implementation for the stable ABI
 PyAPI_FUNC(Py_ssize_t) Py_REFCNT(PyObject *ob);
 
 #if defined(Py_LIMITED_API) && Py_LIMITED_API+0 >= 0x030e0000
     // Stable ABI implements Py_REFCNT() as a function call
-    // on limited C API version 3.14 and newer.
+    // on limited C API version 3.14 and newer, and on abi3t.
+#elif defined(_Py_OPAQUE_PYOBJECT)
+    // Py_REFCNT() is also a function call in abi3t.
 #else
     static inline Py_ssize_t _Py_REFCNT(PyObject *ob) {
     #if !defined(Py_GIL_DISABLED)
@@ -150,9 +153,10 @@ PyAPI_FUNC(void) _Py_SetRefcnt(PyObject *ob, Py_ssize_t refcnt);
 
 static inline void Py_SET_REFCNT(PyObject *ob, Py_ssize_t refcnt) {
     assert(refcnt >= 0);
-#if defined(Py_LIMITED_API) && Py_LIMITED_API+0 >= 0x030d0000
+#if (defined(Py_LIMITED_API) && Py_LIMITED_API+0 >= 0x030d0000) \
+    || defined(_Py_OPAQUE_PYOBJECT)
     // Stable ABI implements Py_SET_REFCNT() as a function call
-    // on limited C API version 3.13 and newer.
+    // on limited C API version 3.13 and newer, and abi3t.
     _Py_SetRefcnt(ob, refcnt);
 #else
     // This immortal check is for code that is unaware of immortal objects.
@@ -191,7 +195,7 @@ static inline void Py_SET_REFCNT(PyObject *ob, Py_ssize_t refcnt) {
         ob->ob_ref_shared = _Py_REF_SHARED(refcnt, _Py_REF_MERGED);
     }
 #endif  // Py_GIL_DISABLED
-#endif  // Py_LIMITED_API+0 < 0x030d0000
+#endif  // Py_LIMITED_API
 }
 #if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 < 0x030b0000
 #  define Py_SET_REFCNT(ob, refcnt) Py_SET_REFCNT(_PyObject_CAST(ob), (refcnt))
@@ -250,10 +254,11 @@ PyAPI_FUNC(void) _Py_DecRef(PyObject *);
 
 static inline Py_ALWAYS_INLINE void Py_INCREF(PyObject *op)
 {
-#if defined(Py_LIMITED_API) && (Py_LIMITED_API+0 >= 0x030c0000 || defined(Py_REF_DEBUG))
+#if (defined(Py_LIMITED_API) && (Py_LIMITED_API+0 >= 0x030c0000 || defined(Py_REF_DEBUG))) \
+    || defined(_Py_OPAQUE_PYOBJECT)
     // Stable ABI implements Py_INCREF() as a function call on limited C API
-    // version 3.12 and newer, and on Python built in debug mode. _Py_IncRef()
-    // was added to Python 3.10.0a7, use Py_IncRef() on older Python versions.
+    // version 3.12 and newer, abi3t, and on Python built in debug mode.
+    // _Py_IncRef() was added to Python 3.10.0a7, use Py_IncRef() on older versions.
     // Py_IncRef() accepts NULL whereas _Py_IncRef() doesn't.
 #  if Py_LIMITED_API+0 >= 0x030a00A7
     _Py_IncRef(op);
@@ -305,8 +310,8 @@ static inline Py_ALWAYS_INLINE void Py_INCREF(PyObject *op)
 #  define Py_INCREF(op) Py_INCREF(_PyObject_CAST(op))
 #endif
 
-
-#if !defined(Py_LIMITED_API) && defined(Py_GIL_DISABLED)
+#if !defined(Py_LIMITED_API)
+#if defined(Py_GIL_DISABLED)
 // Implements Py_DECREF on objects not owned by the current thread.
 PyAPI_FUNC(void) _Py_DecRefShared(PyObject *);
 PyAPI_FUNC(void) _Py_DecRefSharedDebug(PyObject *, const char *, int);
@@ -316,12 +321,14 @@ PyAPI_FUNC(void) _Py_DecRefSharedDebug(PyObject *, const char *, int);
 // zero. Otherwise, the thread gives up ownership and merges the reference
 // count fields.
 PyAPI_FUNC(void) _Py_MergeZeroLocalRefcount(PyObject *);
-#endif
+#endif  // Py_GIL_DISABLED
+#endif  // Py_LIMITED_API
 
-#if defined(Py_LIMITED_API) && (Py_LIMITED_API+0 >= 0x030c0000 || defined(Py_REF_DEBUG))
+#if (defined(Py_LIMITED_API) && (Py_LIMITED_API+0 >= 0x030c0000 || defined(Py_REF_DEBUG))) \
+    || defined(_Py_OPAQUE_PYOBJECT)
 // Stable ABI implements Py_DECREF() as a function call on limited C API
-// version 3.12 and newer, and on Python built in debug mode. _Py_DecRef() was
-// added to Python 3.10.0a7, use Py_DecRef() on older Python versions.
+// version 3.12 and newer, abi3t, and on Python built in debug mode.
+// _Py_DecRef() was added to Python 3.10.0a7, use Py_DecRef() on older versions.
 // Py_DecRef() accepts NULL whereas _Py_DecRef() doesn't.
 static inline void Py_DECREF(PyObject *op) {
 #  if Py_LIMITED_API+0 >= 0x030a00A7

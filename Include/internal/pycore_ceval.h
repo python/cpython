@@ -121,17 +121,10 @@ _PyEval_EvalFrame(PyThreadState *tstate, _PyInterpreterFrame *frame, int throwfl
 }
 
 #ifdef _Py_TIER2
-#ifdef _Py_JIT
-_Py_CODEUNIT *_Py_LazyJitShim(
-    struct _PyExecutorObject *current_executor, _PyInterpreterFrame *frame,
-    _PyStackRef *stack_pointer, PyThreadState *tstate
-);
-#else
 _Py_CODEUNIT *_PyTier2Interpreter(
     struct _PyExecutorObject *current_executor, _PyInterpreterFrame *frame,
     _PyStackRef *stack_pointer, PyThreadState *tstate
 );
-#endif
 #endif
 
 extern _PyJitEntryFuncPtr _Py_jit_entry;
@@ -320,7 +313,7 @@ PyObject * _PyEval_ImportNameWithImport(
 PyAPI_FUNC(PyObject *)_PyEval_MatchClass(PyThreadState *tstate, PyObject *subject, PyObject *type, Py_ssize_t nargs, PyObject *kwargs);
 PyAPI_FUNC(PyObject *)_PyEval_MatchKeys(PyThreadState *tstate, PyObject *map, PyObject *keys);
 PyAPI_FUNC(void) _PyEval_MonitorRaise(PyThreadState *tstate, _PyInterpreterFrame *frame, _Py_CODEUNIT *instr);
-PyAPI_FUNC(bool) _PyEval_NoToolsForUnwind(PyThreadState *tstate);
+PyAPI_FUNC(bool) _PyEval_NoToolsForUnwind(PyThreadState *tstate, _PyInterpreterFrame *frame);
 PyAPI_FUNC(int) _PyEval_UnpackIterableStackRef(PyThreadState *tstate, PyObject *v, int argcnt, int argcntafter, _PyStackRef *sp);
 PyAPI_FUNC(void) _PyEval_FrameClearAndPop(PyThreadState *tstate, _PyInterpreterFrame *frame);
 PyAPI_FUNC(PyObject **) _PyObjectArray_FromStackRefArray(_PyStackRef *input, Py_ssize_t nargs, PyObject **scratch);
@@ -433,19 +426,19 @@ _Py_VectorCallInstrumentation_StackRefSteal(
     PyThreadState* tstate);
 
 PyAPI_FUNC(PyObject *)
-_Py_BuiltinCallFast_StackRefSteal(
+_Py_BuiltinCallFast_StackRef(
     _PyStackRef callable,
     _PyStackRef *arguments,
     int total_args);
 
 PyAPI_FUNC(PyObject *)
-_Py_BuiltinCallFastWithKeywords_StackRefSteal(
+_Py_BuiltinCallFastWithKeywords_StackRef(
     _PyStackRef callable,
     _PyStackRef *arguments,
     int total_args);
 
 PyAPI_FUNC(PyObject *)
-_PyCallMethodDescriptorFast_StackRefSteal(
+_PyCallMethodDescriptorFast_StackRef(
     _PyStackRef callable,
     PyCFunctionFast cfunc,
     PyObject *self,
@@ -453,7 +446,7 @@ _PyCallMethodDescriptorFast_StackRefSteal(
     int total_args);
 
 PyAPI_FUNC(PyObject *)
-_PyCallMethodDescriptorFastWithKeywords_StackRefSteal(
+_PyCallMethodDescriptorFastWithKeywords_StackRef(
     _PyStackRef callable,
     PyCFunctionFastWithKeywords cfunc,
     PyObject *self,
@@ -461,7 +454,7 @@ _PyCallMethodDescriptorFastWithKeywords_StackRefSteal(
     int total_args);
 
 PyAPI_FUNC(PyObject *)
-_Py_CallBuiltinClass_StackRefSteal(
+_Py_CallBuiltinClass_StackRef(
     _PyStackRef callable,
     _PyStackRef *arguments,
     int total_args);
