@@ -3006,7 +3006,7 @@ _pop_preserved(_PyXI_session *session,
         *p_xidata = NULL;
     }
     else {
-        _PyXI_namespace *xidata = _create_sharedns(session->_preserved);
+        xidata = _create_sharedns(session->_preserved);
         if (xidata == NULL) {
             failure.code = _PyXI_ERR_PRESERVE_FAILURE;
             goto error;
