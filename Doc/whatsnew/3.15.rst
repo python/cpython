@@ -1079,6 +1079,12 @@ pprint
   (Contributed by Stefan Todoran, Semyon Moroz and Hugo van Kemenade in
   :gh:`112632`.)
 
+* Add *color* parameter to :func:`~pprint.pp` and :func:`~pprint.pprint`.
+  If ``True`` (the default), output is highlighted in color, when the stream
+  and :ref:`environment variables <using-on-controlling-color>` permit.
+  If ``False``, colored output is always disabled.
+  (Contributed by Hugo van Kemenade in :gh:`145217`.)
+
 * Add t-string support to :mod:`pprint`.
   (Contributed by Loïc Simon and Hugo van Kemenade in :gh:`134551`.)
 

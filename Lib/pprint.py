@@ -38,19 +38,41 @@ import collections as _collections
 import sys as _sys
 import types as _types
 from io import StringIO as _StringIO
+lazy import _colorize
+lazy import re
+lazy from _pyrepl.utils import disp_str, gen_colors
+lazy from dataclasses import fields as dataclass_fields
+lazy from dataclasses import is_dataclass
 
 __all__ = ["pprint","pformat","isreadable","isrecursive","saferepr",
            "PrettyPrinter", "pp"]
 
 
-def pprint(object, stream=None, indent=1, width=80, depth=None, *,
-           compact=False, expand=False, sort_dicts=True,
-           underscore_numbers=False):
+def pprint(
+    object,
+    stream=None,
+    indent=1,
+    width=80,
+    depth=None,
+    *,
+    color=True,
+    compact=False,
+    expand=False,
+    sort_dicts=True,
+    underscore_numbers=False,
+):
     """Pretty-print a Python object to a stream [default is sys.stdout]."""
     printer = PrettyPrinter(
-        stream=stream, indent=indent, width=width, depth=depth,
-        compact=compact, expand=expand, sort_dicts=sort_dicts,
-        underscore_numbers=underscore_numbers)
+        stream=stream,
+        indent=indent,
+        width=width,
+        depth=depth,
+        color=color,
+        compact=compact,
+        expand=expand,
+        sort_dicts=sort_dicts,
+        underscore_numbers=underscore_numbers,
+    )
     printer.pprint(object)
 
 
@@ -111,10 +133,32 @@ def _safe_tuple(t):
     return _safe_key(t[0]), _safe_key(t[1])
 
 
+def _colorize_output(text):
+    """Apply syntax highlighting."""
+    if "\x1b[" in text:
+        # If the text already contains ANSI escape sequences
+        # (for example, from a custom __repr__),
+        # return as-is to avoid breaking their color.
+        return text
+    colors = list(gen_colors(text))
+    chars, _ = disp_str(text, colors=colors, force_color=True, escape=False)
+    return "".join(chars)
+
+
 class PrettyPrinter:
-    def __init__(self, indent=1, width=80, depth=None, stream=None, *,
-                 compact=False, expand=False, sort_dicts=True,
-                 underscore_numbers=False):
+    def __init__(
+        self,
+        indent=1,
+        width=80,
+        depth=None,
+        stream=None,
+        *,
+        color=True,
+        compact=False,
+        expand=False,
+        sort_dicts=True,
+        underscore_numbers=False,
+    ):
         """Handle pretty printing operations onto a stream using a set of
         configured parameters.
 
@@ -130,6 +174,11 @@ class PrettyPrinter:
         stream
             The desired output stream.  If omitted (or false), the standard
             output stream available at construction will be used.
+
+        color
+            If true (the default), syntax highlighting is enabled for pprint
+            when the stream and environment variables permit.
+            If false, colored output is always disabled.
 
         compact
             If true, several items will be combined in one line.
@@ -168,11 +217,30 @@ class PrettyPrinter:
         self._expand = bool(expand)
         self._sort_dicts = sort_dicts
         self._underscore_numbers = underscore_numbers
+        self._color = color
 
     def pprint(self, object):
-        if self._stream is not None:
+        if self._stream is None:
+            return
+
+        use_color = False
+        if self._color:
+            try:
+                if _colorize.can_colorize(file=self._stream):
+                    # Attempt to reify lazy imports, or ImportError
+                    gen_colors, disp_str
+                    use_color = True
+            except ImportError:
+                pass
+
+        if use_color:
+            sio = _StringIO()
+            self._format(object, sio, 0, 0, {}, 0)
+            self._stream.write(_colorize_output(sio.getvalue()))
+        else:
             self._format(object, self._stream, 0, 0, {}, 0)
-            self._stream.write("\n")
+
+        self._stream.write("\n")
 
     def pformat(self, object):
         sio = _StringIO()
@@ -197,9 +265,6 @@ class PrettyPrinter:
         max_width = self._width - indent - allowance
         if len(rep) > max_width:
             p = self._dispatch.get(type(object).__repr__, None)
-            # Lazy import to improve module import time
-            from dataclasses import is_dataclass
-
             if p is not None:
                 context[objid] = 1
                 p(self, object, stream, indent, allowance, context, level + 1)
@@ -240,9 +305,6 @@ class PrettyPrinter:
             write((self._indent_per_level - 1) * " ")
 
     def _pprint_dataclass(self, object, stream, indent, allowance, context, level):
-        # Lazy import to improve module import time
-        from dataclasses import fields as dataclass_fields
-
         cls_name = object.__class__.__name__
         if self._expand:
             indent += self._indent_per_level
@@ -422,9 +484,6 @@ class PrettyPrinter:
             if len(rep) <= max_width1:
                 chunks.append(rep)
             else:
-                # Lazy import to improve module import time
-                import re
-
                 # A list of alternating (non-space, space) strings
                 parts = re.findall(r'\S*\s*', line)
                 assert parts

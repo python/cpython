@@ -10,6 +10,7 @@ import random
 import re
 import types
 import unittest
+import unittest.mock
 from collections.abc import ItemsView, KeysView, Mapping, MappingView, ValuesView
 
 from test.support import cpython_only
@@ -165,6 +166,104 @@ class QueryTestCase(unittest.TestCase):
         self.assertRaises(ValueError, pprint.PrettyPrinter, depth=-1)
         self.assertRaises(ValueError, pprint.PrettyPrinter, width=0)
         self.assertRaises(ValueError, pprint.PrettyPrinter, compact=True, expand=True)
+
+    def test_color_pprint(self):
+        """Test pprint color parameter."""
+        obj = {"key": "value"}
+        stream = io.StringIO()
+
+        # color=False should produce no ANSI codes
+        pprint.pprint(obj, stream=stream, color=False)
+        result = stream.getvalue()
+        self.assertNotIn("\x1b[", result)
+
+        # Explicit color=False should override FORCE_COLOR
+        stream = io.StringIO()
+        with unittest.mock.patch.dict(
+            "os.environ", {"FORCE_COLOR": "1", "NO_COLOR": ""}
+        ):
+            pprint.pprint(obj, stream=stream, color=False)
+            result = stream.getvalue()
+            self.assertNotIn("\x1b[", result)
+
+        # color=True should produce no ANSI codes for streams
+        # that do not support color
+        stream = io.StringIO()
+        with unittest.mock.patch.dict(
+            "os.environ", {"FORCE_COLOR": "", "NO_COLOR": ""}
+        ):
+            pprint.pprint(obj, stream=stream, color=True)
+            result = stream.getvalue()
+            self.assertNotIn("\x1b[", result)
+
+    def test_color_prettyprinter(self):
+        """Test PrettyPrinter color parameter."""
+        obj = {"key": "value"}
+
+        # color=False should produce no ANSI codes in pprint
+        stream = io.StringIO()
+        pp = pprint.PrettyPrinter(stream=stream, color=False)
+        pp.pprint(obj)
+        self.assertNotIn("\x1b[", stream.getvalue())
+
+        # color=True with FORCE_COLOR should produce ANSI codes in pprint
+        with unittest.mock.patch.dict(
+            "os.environ", {"FORCE_COLOR": "1", "NO_COLOR": ""}
+        ):
+            stream = io.StringIO()
+            pp = pprint.PrettyPrinter(stream=stream, color=True)
+            pp.pprint(obj)
+            self.assertIn("\x1b[", stream.getvalue())
+
+        # Explicit color=False should override FORCE_COLOR
+        with unittest.mock.patch.dict(
+            "os.environ", {"FORCE_COLOR": "1", "NO_COLOR": ""}
+        ):
+            stream = io.StringIO()
+            pp = pprint.PrettyPrinter(stream=stream, color=False)
+            pp.pprint(obj)
+            self.assertNotIn("\x1b[", stream.getvalue())
+
+    def test_color_preserves_newlines(self):
+        """Color multiline output must use real newlines, not '^J'."""
+        obj = {"a": 1, "b": 2, "c": 3, "d": [10, 20, 30, 40, 50, 60, 70, 80]}
+
+        plain_stream = io.StringIO()
+        pprint.pprint(obj, stream=plain_stream, width=20, color=False)
+        plain = plain_stream.getvalue()
+        self.assertIn("\n", plain)
+
+        with unittest.mock.patch.dict(
+            "os.environ", {"FORCE_COLOR": "1", "NO_COLOR": ""}
+        ):
+            color_stream = io.StringIO()
+            pprint.pprint(obj, stream=color_stream, width=20, color=True)
+            color = color_stream.getvalue()
+
+        self.assertIn("\x1b[", color)  # has color
+        self.assertNotIn("^J", color)
+        stripped = re.sub(r"\x1b\[[0-9;]*m", "", color)
+        self.assertEqual(stripped, plain)
+
+    def test_color_user_repr_with_ansi(self):
+        """If a __repr__ already contains ANSI escapes, don't add ours."""
+
+        class ColorObj:
+            def __repr__(self):
+                return "\x1b[31mred\x1b[0m"
+
+        obj = {"a": ColorObj(), "b": 42, "c": "hello"}
+
+        with unittest.mock.patch.dict(
+            "os.environ", {"FORCE_COLOR": "1", "NO_COLOR": ""}
+        ):
+            stream = io.StringIO()
+            pprint.pprint(obj, stream=stream, color=True)
+            result = stream.getvalue()
+
+        # pprint should not have added any extra color codes
+        expected = "{'a': \x1b[31mred\x1b[0m, 'b': 42, 'c': 'hello'}\n"
+        self.assertEqual(result, expected)
 
     def test_basic(self):
         # Verify .isrecursive() and .isreadable() w/o recursion

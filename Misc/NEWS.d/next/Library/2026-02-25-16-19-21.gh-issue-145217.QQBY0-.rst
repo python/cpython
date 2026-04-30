@@ -1,0 +1,3 @@
+Add color parameter to :func:`pprint.pprint` and :func:`pprint.pp`, enabling
+syntax highlighting by default when the stream supports it. Patch by Hugo van
+Kemenade.
