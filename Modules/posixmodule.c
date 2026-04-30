@@ -152,8 +152,11 @@
 #ifdef HAVE_LINUX_RANDOM_H
 #  include <linux/random.h>       // GRND_RANDOM
 #endif
+#if defined(HAVE_SYS_RANDOM_H) && (defined(HAVE_GETRANDOM) || defined(HAVE_GETENTROPY))
+#  include <sys/random.h>         // getrandom(), GRND_NONBLOCK on FreeBSD and NetBSD
+#endif
 #ifdef HAVE_GETRANDOM_SYSCALL
-#  include <sys/syscall.h>        // syscall()
+#  include <sys/syscall.h>        // SYS_getrandom
 #endif
 
 #ifdef HAVE_POSIX_SPAWN
