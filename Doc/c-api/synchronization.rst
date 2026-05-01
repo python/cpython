@@ -220,6 +220,9 @@ are not available.
    To be used only as in the macro expansions
    listed :ref:`earlier in this section <critical-section-macros>`.
 
+   In non-:term:`free-threaded <free threading>` builds of CPython, these
+   functions do nothing.
+
    .. versionadded:: 3.13
 
 .. c:type:: PyCriticalSection
@@ -239,6 +242,9 @@ are not available.
 
    To be used only as in the macro expansions
    listed :ref:`earlier in this section <critical-section-macros>`.
+
+   In non-:term:`free-threaded <free threading>` builds of CPython, these
+   functions do nothing.
 
    .. versionadded:: 3.14
 
