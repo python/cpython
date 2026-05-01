@@ -30,6 +30,8 @@ jobs:
       zutil-version: "v0.7.26"
       platforms: '["microvm"]'
       memory-sizes: '["256mb"]'
+      matrix-exclude: '[{"platform":"hyperlight"}]'
+      windows-matrix-exclude: '[{"platform":"hyperlight"}]'
       skip-full-test-modes: '[]'
       caller-event-name: ${{ github.event_name }}
       windows-test: true
@@ -49,6 +51,8 @@ jobs:
       zutil-version: "v0.7.26"
       platforms: '["microvm"]'
       memory-sizes: '["256mb"]'
+      matrix-exclude: '[{"platform":"hyperlight"}]'
+      windows-matrix-exclude: '[{"platform":"hyperlight"}]'
       skip-full-test-modes: '[]'
       caller-event-name: 'schedule'
       windows-test: true
