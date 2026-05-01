@@ -153,16 +153,18 @@ static void _PySSLFixErrno(void) {
 
 /* Include generated data (error codes) */
 /* See Tools/ssl/make_ssl_data.py for notes on adding a new version. */
-#if (OPENSSL_VERSION_NUMBER >= 0x30401000L)
-#include "_ssl_data_36.h"
+#if (OPENSSL_VERSION_NUMBER >= 0x40000000L)
+#  include "_ssl_data_40.h"
+#elif (OPENSSL_VERSION_NUMBER >= 0x30401000L)
+#  include "_ssl_data_36.h"
 #elif (OPENSSL_VERSION_NUMBER >= 0x30100000L)
-#include "_ssl_data_340.h"
+#  include "_ssl_data_340.h"
 #elif (OPENSSL_VERSION_NUMBER >= 0x30000000L)
-#include "_ssl_data_300.h"
+#  include "_ssl_data_300.h"
 #elif (OPENSSL_VERSION_NUMBER >= 0x10101000L)
-#include "_ssl_data_111.h"
+#  include "_ssl_data_111.h"
 #else
-#error Unsupported OpenSSL version
+#  error Unsupported OpenSSL version
 #endif
 
 #if (OPENSSL_VERSION_NUMBER >= 0x40000000L)

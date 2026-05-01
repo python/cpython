@@ -5,6 +5,7 @@
 *.cover
 *.iml
 *.o
+*.o.tmp
 *.lto
 *.a
 *.so
