@@ -122,7 +122,7 @@ class CommonTestsBase(metaclass=abc.ABCMeta):
         bytes_data = io.BytesIO(b'Hello, world!')
         package = create_package(file=bytes_data, path=FileNotFoundError())
         self.execute(package, 'utf-8.file')
-        self.assertEqual(package.__loader__._path, 'utf-8.file')
+        assert package.__loader__._path == 'utf-8.file'
 
     def test_extant_path(self):
         # Attempting to open or read or request the path when the
@@ -133,7 +133,7 @@ class CommonTestsBase(metaclass=abc.ABCMeta):
         path = __file__
         package = create_package(file=bytes_data, path=path)
         self.execute(package, 'utf-8.file')
-        self.assertEqual(package.__loader__._path, 'utf-8.file')
+        assert package.__loader__._path == 'utf-8.file'
 
     def test_useless_loader(self):
         package = create_package(file=FileNotFoundError(), path=FileNotFoundError())
