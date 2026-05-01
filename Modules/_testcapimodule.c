@@ -2629,6 +2629,9 @@ test_interpreter_guards(PyObject *self, PyObject *unused)
     // Test a (legacy) subinterpreter
     PyThreadState *save_tstate = PyThreadState_Swap(NULL);
     PyThreadState *interp_tstate = Py_NewInterpreter();
+    // Note: For these tests, we don't bother adding error paths, because
+    // there's no realistic case where interpreter creation would fail here.
+    assert(interp_tstate != NULL);
     test_interp_guards_common();
     Py_EndInterpreter(interp_tstate);
 
