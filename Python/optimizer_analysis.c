@@ -234,12 +234,7 @@ add_op(JitOptContext *ctx, _PyUOpInstruction *this_instr,
     out->format = this_instr->format;
     out->oparg = (oparg);
     out->target = this_instr->target;
-    if (opcode == _LOAD_CONST_INLINE_BORROW) {
-        out->operand0 = PyStackRef_TagBorrow((PyObject *)operand0);
-    }
-    else {
-        out->operand0 = (operand0);
-    }
+    out->operand0 = _PyUop_PrepareOperand0(opcode, (uint64_t)operand0);
     out->operand1 = this_instr->operand1;
 #ifdef Py_STATS
     out->fitness = this_instr->fitness;

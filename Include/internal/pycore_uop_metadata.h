@@ -18,6 +18,7 @@ extern const ReplicationRange _PyUop_Replication[MAX_UOP_ID+1];
 extern const char * const _PyOpcode_uop_name[MAX_UOP_REGS_ID+1];
 
 extern int _PyUop_num_popped(int opcode, int oparg);
+extern uint64_t _PyUop_PrepareOperand0(int opcode, uint64_t operand0);
 
 typedef struct _pyuop_tos_cache_entry {
     /* input depth is implicit in position */
@@ -6868,6 +6869,16 @@ int _PyUop_num_popped(int opcode, int oparg)
             return 0;
         default:
             return -1;
+    }
+}
+
+uint64_t _PyUop_PrepareOperand0(int opcode, uint64_t operand0)
+{
+    switch(opcode) {
+        case _LOAD_CONST_INLINE_BORROW:
+            return PyStackRef_TagBorrow((PyObject *)operand0);
+        default:
+            return operand0;
     }
 }
 
