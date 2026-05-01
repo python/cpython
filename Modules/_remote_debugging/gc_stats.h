@@ -16,7 +16,7 @@ extern "C" {
 typedef struct {
     PyObject *result;
     bool all_interpreters;
-} ReadGCStatsContext;
+} GetGCStatsContext;
 
 static int
 read_gc_stats(struct gc_stats *stats, int64_t iid, PyObject *result)
@@ -125,7 +125,7 @@ get_gc_stats_from_interpreter_state(RuntimeOffsets *offsets,
                                     int64_t iid,
                                     void *context)
 {
-    ReadGCStatsContext *ctx = (ReadGCStatsContext *)context;
+    GetGCStatsContext *ctx = (GetGCStatsContext *)context;
     if (!ctx->all_interpreters && iid > 0) {
         return 0;
     }

@@ -495,6 +495,98 @@ _remote_debugging_RemoteUnwinder_resume_threads(PyObject *self, PyObject *Py_UNU
     return return_value;
 }
 
+PyDoc_STRVAR(_remote_debugging_RemoteUnwinder_get_gc_stats__doc__,
+"get_gc_stats($self, /, all_interpreters=False)\n"
+"--\n"
+"\n"
+"Get garbage collector statistics from external Python process.\n"
+"\n"
+"  all_interpreters\n"
+"    If True, return GC statistics from all interpreters.\n"
+"    If False, return only from main interpreter.\n"
+"\n"
+"Returns a list of dictionaries with GC statistics data.\n"
+"\n"
+"Returns:\n"
+"    List of dicts.\n"
+"    dict: A dictionary containing:\n"
+"        - gen:\n"
+"        - iid:\n"
+"        - ts_start:\n"
+"        - ts_stop:\n"
+"        - heap_size:\n"
+"        - collections:\n"
+"        - collected:\n"
+"        - uncollectable:\n"
+"        - candidates:\n"
+"        - duration:\n"
+"\n"
+"Raises:\n"
+"    RuntimeError:");
+
+#define _REMOTE_DEBUGGING_REMOTEUNWINDER_GET_GC_STATS_METHODDEF    \
+    {"get_gc_stats", _PyCFunction_CAST(_remote_debugging_RemoteUnwinder_get_gc_stats), METH_FASTCALL|METH_KEYWORDS, _remote_debugging_RemoteUnwinder_get_gc_stats__doc__},
+
+static PyObject *
+_remote_debugging_RemoteUnwinder_get_gc_stats_impl(RemoteUnwinderObject *self,
+                                                   int all_interpreters);
+
+static PyObject *
+_remote_debugging_RemoteUnwinder_get_gc_stats(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 1
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
+        .ob_item = { &_Py_ID(all_interpreters), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"all_interpreters", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "get_gc_stats",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[1];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
+    int all_interpreters = 0;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 0, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    if (!noptargs) {
+        goto skip_optional_pos;
+    }
+    all_interpreters = PyObject_IsTrue(args[0]);
+    if (all_interpreters < 0) {
+        goto exit;
+    }
+skip_optional_pos:
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _remote_debugging_RemoteUnwinder_get_gc_stats_impl((RemoteUnwinderObject *)self, all_interpreters);
+    Py_END_CRITICAL_SECTION();
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(_remote_debugging_BinaryWriter___init____doc__,
 "BinaryWriter(filename, sample_interval_us, start_time_us, *,\n"
 "             compression=0)\n"
@@ -1315,14 +1407,10 @@ PyDoc_STRVAR(_remote_debugging_get_gc_stats__doc__,
 "        - ts_start:\n"
 "        - ts_stop:\n"
 "        - heap_size:\n"
-"        - work_to_do:\n"
 "        - collections:\n"
-"        - object_visits:\n"
 "        - collected:\n"
 "        - uncollectable:\n"
 "        - candidates:\n"
-"        - objects_transitively_reachable:\n"
-"        - objects_not_transitively_reachable:\n"
 "        - duration:\n"
 "\n"
 "Raises:\n"
@@ -1393,4 +1481,4 @@ skip_optional_kwonly:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=bdd3092b9cbc4313 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=05cb518807f26bfe input=a9049054013a1b77]*/
