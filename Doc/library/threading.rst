@@ -1501,6 +1501,9 @@ of the derived iterators.
    In this example, each number is printed exactly once, but the work is shared
    between the two threads.
 
+   .. versionadded:: next
+
+
 .. function:: synchronized_iterator(func)
 
    Wrap an iterator-producing callable so that each iterator it returns is
@@ -1536,6 +1539,9 @@ of the derived iterators.
 
    The returned wrapper preserves the metadata of *func*, such as its name and
    wrapped function reference.
+
+   .. versionadded:: next
+
 
 .. function:: concurrent_tee(iterable, n=2)
 
@@ -1580,3 +1586,5 @@ of the derived iterators.
 
    In this example, both consumer threads see the full sequence of squares
    from a single generator expression.
+
+   .. versionadded:: next
