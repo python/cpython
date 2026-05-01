@@ -79,7 +79,7 @@ Summary -- Release highlights
   <whatsnew315-unpacking-in-comprehensions>`
 * :pep:`686`: :ref:`Python now uses UTF-8 as the default encoding
   <whatsnew315-utf8-default>`
-* :pep:`728`: ``TypedDict`` with typed extra items
+* :pep:`728`: :ref:`TypedDict with typed extra items <whatsnew315-pep728>`
 * :pep:`747`: :ref:`Annotating type forms with TypeForm
   <whatsnew315-typeform>`
 * :pep:`800`: Disjoint bases in the type system
@@ -1398,6 +1398,15 @@ typing
      def cast[T](typ: TypeForm[T], value: Any) -> T: ...
 
   (Contributed by Jelle Zijlstra in :gh:`145033`.)
+
+.. _whatsnew315-pep728:
+
+* :pep:`728`: Add support in :class:`~typing.TypedDict` for the *closed*
+  and *extra_items* class arguments. A closed :class:`~typing.TypedDict`
+  does not allow extra keys beyond those specified in the class body, while
+  a :class:`~typing.TypedDict` with ``extra_items`` allows arbitrary extra
+  items where the values are of the specified type. (Contributed by Angela
+  Liss in :gh:`137840`.)
 
 * Code like ``class ExtraTypeVars(P1[S], Protocol[T, T2]): ...`` now raises
   a :exc:`TypeError`, because ``S`` is not listed in ``Protocol`` parameters.
