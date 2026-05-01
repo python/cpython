@@ -1377,7 +1377,7 @@ Tracebacks
 
    .. versionadded:: next
 
-.. c:function:: const char* PyUnstable_DumpTracebackThreads(int fd, PyInterpreterState *interp, PyThreadState *current_tstate)
+.. c:function:: const char* PyUnstable_DumpTracebackThreads(int fd, PyInterpreterState *interp, PyThreadState *current_tstate, Py_ssize_t max_threads)
 
    Write the traces of all Python threads in *interp* into the file *fd*.
 
@@ -1395,8 +1395,9 @@ Tracebacks
 
    This function is meant to debug debug situations such as segfaults, fatal
    errors, and similar. It calls :c:func:`PyUnstable_DumpTraceback` for each
-   thread. It only writes the tracebacks of the first 100 threads, further
-   output is truncated with the line ``...``.
+   thread. It only writes the tracebacks of the first *max_threads* threads,
+   further output is truncated with the line ``...``. If *max_threads* is 0, the
+   function will use a default value of 100 for the argument.
 
    This function is intended for use in crash scenarios such as signal handlers
    for SIGSEGV, where the interpreter may be in an inconsistent state. Given
