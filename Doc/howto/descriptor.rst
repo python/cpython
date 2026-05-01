@@ -1640,7 +1640,7 @@ by member descriptors:
     class Member:
 
         def __init__(self, name, clsname, offset):
-            'Emulate PyMemberDef in Include/structmember.h'
+            'Emulate PyMemberDef in Include/descrobject.h'
             # Also see descr_new() in Objects/descrobject.c
             self.name = name
             self.clsname = clsname
