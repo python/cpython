@@ -2316,22 +2316,24 @@ make_pre_finalization_calls(PyThreadState *tstate, int subinterpreters)
          * atomic check is made below, when we hold the finalization guard lock.
          * Again, this is purely an optimization to avoid overloading the CPU.
          */
-        if (_Py_atomic_load_ssize_relaxed(&interp->finalization_guards.countdown) > 0) {
-            for (;;) {
-                PyTime_t wait_ns = 1000 * 1000;  // 1ms
-                if (PyEvent_WaitTimed(&interp->finalization_guards.done, wait_ns, /*detach=*/1)) {
-                    break;
-                }
+        for (;;) {
+            if (_Py_atomic_load_ssize_relaxed(&interp->finalization_guards.countdown) == 0) {
+                break;
+            }
 
-                // For debugging purposes, we emit a fatal error if someone
-                // CTRL^C'ed the process.
-                if (PyErr_CheckSignals()) {
-                    int fatal = PyErr_ExceptionMatches(PyExc_KeyboardInterrupt);
-                    PyErr_FormatUnraisable("Exception ignored while waiting on finalization guards");
+            PyTime_t wait_ns = 1000 * 1000;  // 1ms
+            if (PyEvent_WaitTimed(&interp->finalization_guards.done, wait_ns, /*detach=*/1)) {
+                break;
+            }
 
-                    if (fatal) {
-                        Py_FatalError("Interrupted while waiting on finalization guard");
-                    }
+            // For debugging purposes, we emit a fatal error if someone
+            // CTRL^C'ed the process.
+            if (PyErr_CheckSignals()) {
+                int fatal = PyErr_ExceptionMatches(PyExc_KeyboardInterrupt);
+                PyErr_FormatUnraisable("Exception ignored while waiting on finalization guards");
+
+                if (fatal) {
+                    Py_FatalError("Interrupted while waiting on finalization guard");
                 }
             }
         }
@@ -2366,6 +2368,7 @@ make_pre_finalization_calls(PyThreadState *tstate, int subinterpreters)
         _PyThreadState_Attach(tstate);
     }
     assert(PyMutex_IsLocked(&interp->ceval.pending.mutex));
+    assert(_Py_atomic_load_ssize(&interp->finalization_guards.countdown) == 0);
     ASSERT_WORLD_STOPPED(interp);
 }
 
