@@ -8,7 +8,15 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#if defined(PY_HAVE_PERF_TRAMPOLINE) || (defined(__linux__) && defined(__ELF__))
+#if defined(_Py_JIT) && defined(__linux__) && defined(__ELF__)
+#  define PY_HAVE_JIT_GDB_UNWIND
+#endif
+
+#if defined(PY_HAVE_PERF_TRAMPOLINE) || defined(PY_HAVE_JIT_GDB_UNWIND)
+
+#if defined(PY_HAVE_JIT_GDB_UNWIND)
+extern PyMutex _Py_jit_debug_mutex;
+#endif
 
 /* DWARF exception-handling pointer encodings shared by JIT unwind users. */
 enum {
@@ -55,6 +63,6 @@ void *_PyJitUnwind_GdbRegisterCode(const void *code_addr,
 
 void _PyJitUnwind_GdbUnregisterCode(void *handle);
 
-#endif  // defined(PY_HAVE_PERF_TRAMPOLINE) || (defined(__linux__) && defined(__ELF__))
+#endif  // defined(PY_HAVE_PERF_TRAMPOLINE) || defined(PY_HAVE_JIT_GDB_UNWIND)
 
 #endif  // Py_INTERNAL_JIT_UNWIND_H

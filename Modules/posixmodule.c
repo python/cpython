@@ -20,6 +20,7 @@
 #include "pycore_fileutils.h"     // _Py_closerange()
 #include "pycore_import.h"        // _PyImport_AcquireLock()
 #include "pycore_initconfig.h"    // _PyStatus_EXCEPTION()
+#include "pycore_jit_unwind.h"    // _Py_jit_debug_mutex
 #include "pycore_long.h"          // _PyLong_IsNegative()
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
 #include "pycore_object.h"        // _PyObject_LookupSpecial()
@@ -780,6 +781,12 @@ PyOS_AfterFork_Child(void)
         goto fatal_error;
     }
     assert(_PyThreadState_GET() == tstate);
+
+#if defined(PY_HAVE_JIT_GDB_UNWIND)
+    // The child can inherit this mutex locked if another thread held it at
+    // fork(), but the child itself cannot be inside gdb_jit_register_code().
+    _Py_jit_debug_mutex = (PyMutex){0};
+#endif
 
     status = _PyPerfTrampoline_AfterFork_Child();
     if (_PyStatus_EXCEPTION(status)) {

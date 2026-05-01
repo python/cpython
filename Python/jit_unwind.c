@@ -9,19 +9,16 @@
 #include "pycore_jit_unwind.h"
 #include "pycore_lock.h"
 
-#if defined(_Py_JIT) && defined(__linux__) && defined(__ELF__)
+#if defined(PY_HAVE_JIT_GDB_UNWIND)
 #  include "jit_unwind_info.h"
 #  if !JIT_UNWIND_INFO_SUPPORTED
 #    error "JIT unwind info was not generated for this target"
 #  endif
-#  define PY_HAVE_JIT_GDB_UNWIND 1
-#else
-#  define PY_HAVE_JIT_GDB_UNWIND 0
 #endif
 
-#if defined(PY_HAVE_PERF_TRAMPOLINE) || (defined(__linux__) && defined(__ELF__))
+#if defined(PY_HAVE_PERF_TRAMPOLINE) || defined(PY_HAVE_JIT_GDB_UNWIND)
 
-#if defined(__linux__)
+#if defined(PY_HAVE_JIT_GDB_UNWIND)
 #  include <elf.h>
 #endif
 #include <stdio.h>
@@ -215,13 +212,13 @@ static void elfctx_append_uleb128(ELFObjectContext* ctx, uint32_t v) {
 // =============================================================================
 
 static void elf_init_ehframe_perf(ELFObjectContext* ctx);
-#if PY_HAVE_JIT_GDB_UNWIND
+#if defined(PY_HAVE_JIT_GDB_UNWIND)
 static void elf_init_ehframe_gdb(ELFObjectContext* ctx);
 #endif
 
 static inline void elf_init_ehframe(ELFObjectContext* ctx, int absolute_addr) {
     if (absolute_addr) {
-#if PY_HAVE_JIT_GDB_UNWIND
+#if defined(PY_HAVE_JIT_GDB_UNWIND)
         elf_init_ehframe_gdb(ctx);
 #else
         Py_UNREACHABLE();
@@ -638,7 +635,7 @@ static void elf_init_ehframe_perf(ELFObjectContext* ctx) {
  * and the FDE body is empty. Tools/jit/_targets.py derives the initial CFI
  * rules from the row active at the executor call in the compiled shim object.
  */
-#if PY_HAVE_JIT_GDB_UNWIND
+#if defined(PY_HAVE_JIT_GDB_UNWIND)
 static void elf_init_ehframe_gdb(ELFObjectContext* ctx) {
     int fde_ptr_enc = DWRF_EH_PE_absptr;
     uint8_t* p = ctx->p;
@@ -677,7 +674,7 @@ static void elf_init_ehframe_gdb(ELFObjectContext* ctx) {
 }
 #endif
 
-#if defined(__linux__) && defined(__ELF__)
+#if defined(PY_HAVE_JIT_GDB_UNWIND)
 enum {
     JIT_NOACTION = 0,
     JIT_REGISTER_FN = 1,
@@ -699,7 +696,7 @@ struct jit_descriptor {
     struct jit_code_entry *first_entry;
 };
 
-static PyMutex jit_debug_mutex = {0};
+PyMutex _Py_jit_debug_mutex = {0};
 
 Py_EXPORTED_SYMBOL volatile struct jit_descriptor __jit_debug_descriptor = {
     1, JIT_NOACTION, NULL, NULL
@@ -892,7 +889,7 @@ gdb_jit_register_code(
     entry->symfile_size = total_size;
     entry->code_addr = code_addr;
 
-    PyMutex_Lock(&jit_debug_mutex);
+    PyMutex_Lock(&_Py_jit_debug_mutex);
     entry->prev = NULL;
     entry->next = __jit_debug_descriptor.first_entry;
     if (entry->next != NULL) {
@@ -904,10 +901,10 @@ gdb_jit_register_code(
     __jit_debug_register_code();
     __jit_debug_descriptor.action_flag = JIT_NOACTION;
     __jit_debug_descriptor.relevant_entry = NULL;
-    PyMutex_Unlock(&jit_debug_mutex);
+    PyMutex_Unlock(&_Py_jit_debug_mutex);
     return entry;
 }
-#endif  // __linux__ && __ELF__
+#endif  // defined(PY_HAVE_JIT_GDB_UNWIND)
 
 void *
 _PyJitUnwind_GdbRegisterCode(const void *code_addr,
@@ -915,7 +912,7 @@ _PyJitUnwind_GdbRegisterCode(const void *code_addr,
                              const char *entry,
                              const char *filename)
 {
-#if defined(__linux__) && defined(__ELF__)
+#if defined(PY_HAVE_JIT_GDB_UNWIND)
     /* GDB expects a stable symbol name and absolute addresses in .eh_frame. */
     if (entry == NULL) {
         entry = "";
@@ -954,13 +951,13 @@ _PyJitUnwind_GdbRegisterCode(const void *code_addr,
 void
 _PyJitUnwind_GdbUnregisterCode(void *handle)
 {
-#if defined(__linux__) && defined(__ELF__)
+#if defined(PY_HAVE_JIT_GDB_UNWIND)
     struct jit_code_entry *entry = (struct jit_code_entry *)handle;
     if (entry == NULL) {
         return;
     }
 
-    PyMutex_Lock(&jit_debug_mutex);
+    PyMutex_Lock(&_Py_jit_debug_mutex);
     if (entry->prev != NULL) {
         entry->prev->next = entry->next;
     }
@@ -977,7 +974,7 @@ _PyJitUnwind_GdbUnregisterCode(void *handle)
     __jit_debug_descriptor.action_flag = JIT_NOACTION;
     __jit_debug_descriptor.relevant_entry = NULL;
 
-    PyMutex_Unlock(&jit_debug_mutex);
+    PyMutex_Unlock(&_Py_jit_debug_mutex);
 
     PyMem_RawFree((void *)entry->symfile_addr);
     PyMem_RawFree(entry);
@@ -986,4 +983,4 @@ _PyJitUnwind_GdbUnregisterCode(void *handle)
 #endif
 }
 
-#endif  // defined(PY_HAVE_PERF_TRAMPOLINE) || (defined(__linux__) && defined(__ELF__))
+#endif  // defined(PY_HAVE_PERF_TRAMPOLINE) || defined(PY_HAVE_JIT_GDB_UNWIND)

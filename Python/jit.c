@@ -83,7 +83,7 @@ jit_record_code(const void *code_addr, size_t code_size,
     }
 #endif
 
-#if defined(__linux__) && defined(__ELF__)
+#if defined(PY_HAVE_JIT_GDB_UNWIND)
     return _PyJitUnwind_GdbRegisterCode(
         code_addr, code_size, entry, filename);
 #else
@@ -766,7 +766,7 @@ _PyJIT_Free(_PyExecutorObject *executor)
     if (memory) {
         executor->jit_code = NULL;
         executor->jit_size = 0;
-#if defined(__linux__) && defined(__ELF__)
+#if defined(PY_HAVE_JIT_GDB_UNWIND)
         if (executor->jit_gdb_handle != NULL) {
             _PyJitUnwind_GdbUnregisterCode(executor->jit_gdb_handle);
             executor->jit_gdb_handle = NULL;
