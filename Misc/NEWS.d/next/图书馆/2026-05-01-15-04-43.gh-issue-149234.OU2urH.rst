@@ -1,0 +1,1 @@
+Fix boolean values silently accepted as IP addresses in :func:`IPv4Address.__init__` and :func:`IPv6Address.__init__`, using an explicit `isinstance(address, bool)` check to raise :exc:`AddressValueError` instead of interpreting `True`/`False` (since `bool` is a subclass of `int`).
