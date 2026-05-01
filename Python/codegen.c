@@ -528,27 +528,39 @@ codegen_async_yield_from(compiler *c, location loc, expr_ty e)
     ADDOP(c, loc, PUSH_NULL);
     ADDOP_I(c, loc, CALL, 0);
 
-    // Stack: [aiterator]
+    ADDOP_LOAD_CONST(c, loc, Py_None);
+    // Stack: [aiterator, None]
 
     USE_LABEL(c, send);
     // Virtual try/except for the StopIteration; see above.
     ADDOP_JUMP(c, loc, SETUP_FINALLY, exit);
 
-    ADDOP_I(c, loc, COPY, 1);
-    // Stack: [aiterator, aiterator]
+    // Stack: [aiterator, asend_value]
+
+    ADDOP_I(c, loc, COPY, 2);
+    // Stack: [aiterator, asend_value, aiterator]
 
     ADDOP_NAME(c, loc, LOAD_ATTR, &_Py_ID(asend), names);
+    // Stack: [aiterator, asend_value, bound_method]
+
+    ADDOP_I(c, loc, SWAP, 2);
+    // Stack: [aiterator, bound_method, asend_value]
+
     ADDOP(c, loc, PUSH_NULL);
-    ADDOP_LOAD_CONST(c, loc, Py_None);
-    // Stack: [aiterator, aiterator.asend, NULL, None]
+    // Stack: [aiterator, bound_method, asend_value, NULL]
+
+    ADDOP_I(c, loc, SWAP, 2);
+    // Stack: [aiterator, bound_method, NULL, send_value]
+
     ADDOP_I(c, loc, CALL, 1);
-    // Stack: [aiterator, send_coro]
+    // Stack: [aiterator, coroutine]
 
     ADDOP(c, loc, PUSH_NULL);
     ADDOP_LOAD_CONST(c, loc, Py_None);
-    // Stack: [aiterator, send_coro, NULL, None]
+    // Stack: [aiterator, coroutine, NULL, None]
+
     ADD_YIELD_FROM(c, loc, 1);
-    // Stack: [aiterator, send_result]
+    // Stack: [aiterator, asend_result]
 
     ADDOP_I(c, loc, CALL_INTRINSIC_1, INTRINSIC_ASYNC_GEN_WRAP);
     // Stack: [aiterator, wrapped_result]
@@ -570,12 +582,18 @@ codegen_async_yield_from(compiler *c, location loc, expr_ty e)
 
     ADDOP(c, NO_LOCATION, POP_BLOCK);
     // Stack: [aiterator, resumed_value]
-    ADDOP(c, loc, POP_TOP);
-    // Stack: [aiterator]
+
     ADDOP_JUMP(c, loc, JUMP_NO_INTERRUPT, send);
 
     USE_LABEL(c, exit);
-    // Stack: [aiterator, exc_value] (from SETUP_FINALLY)
+    // Stack: [aiterator, send_value, exc_value] (from SETUP_FINALLY)
+
+    ADDOP_I(c, loc, SWAP, 2);
+    // Stack: [aiterator, exc_value, send_value]
+
+    ADDOP(c, loc, POP_TOP);
+    // Stack: [aiterator, exc_value]
+
     ADDOP(c, loc, CLEANUP_ASYNC_THROW);
     // Stack: [result]
 
