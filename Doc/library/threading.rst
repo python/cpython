@@ -1482,21 +1482,22 @@ of the derived iterators.
 
       import threading
 
-      def count():
-          for i in range(5):
-              yield i
+      def squares(n):
+          for x in range(n):
+              yield x * x
 
-      it = threading.serialize_iterator(count())
+      def consume(name, iterable):
+          for item in iterable:
+              print(name, item)
 
-      def worker():
-          for item in it:
-              print(threading.current_thread().name, item)
+      source = threading.serialize_iterator(squares(5))
 
-      threads = [threading.Thread(target=worker) for _ in range(2)]
-      for thread in threads:
-          thread.start()
-      for thread in threads:
-          thread.join()
+      t1 = threading.Thread(target=consume, args=("left", source))
+      t2 = threading.Thread(target=consume, args=("right", source))
+      t1.start()
+      t2.start()
+      t1.join()
+      t2.join()
 
    In this example, each number is printed exactly once, but the work is shared
    between the two threads.
@@ -1519,23 +1520,22 @@ of the derived iterators.
       import threading
 
       @threading.synchronized_iterator
-      def counter():
-          i = 0
-          while True:
-              yield i
-              i += 1
+      def squares(n):
+          for x in range(n):
+              yield x * x
 
-      it = counter()
+      def consume(name, iterable):
+          for item in iterable:
+              print(name, item)
 
-      def worker():
-          for _ in range(5):
-              print(next(it))
+      source = squares(5)
 
-      threads = [threading.Thread(target=worker) for _ in range(2)]
-      for thread in threads:
-          thread.start()
-      for thread in threads:
-          thread.join()
+      t1 = threading.Thread(target=consume, args=("left", source))
+      t2 = threading.Thread(target=consume, args=("right", source))
+      t1.start()
+      t2.start()
+      t1.join()
+      t2.join()
 
    The returned wrapper preserves the metadata of *func*, such as its name and
    wrapped function reference.
@@ -1570,12 +1570,16 @@ of the derived iterators.
 
       import threading
 
-      source = (x**2 for x in range(5))
-      left, right = threading.concurrent_tee(source)
+      def squares(n):
+          for x in range(n):
+              yield x * x
 
       def consume(name, iterable):
           for item in iterable:
               print(name, item)
+
+      source = squares(5)
+      left, right = threading.concurrent_tee(source)
 
       t1 = threading.Thread(target=consume, args=("left", left))
       t2 = threading.Thread(target=consume, args=("right", right))
