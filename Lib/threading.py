@@ -912,7 +912,7 @@ def synchronized_iterator(func):
 
         atomic_counter = synchronized_iterator(itertools.count)
 
-    Can also be used as a decorator for generator functions definitions
+    Can also be used as a decorator for generator function definitions
     so that the generator instances are serialized::
 
         import time
