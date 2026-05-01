@@ -167,8 +167,7 @@ def get_layout(ns):
         if not ns.include_alias:
             alias = []
             aliasw = []
-        # TODO: Update 0xA8 to 0xB0 before merging
-        if (VER_MAJOR, VER_MINOR, VER_MICRO, VER_FIELD4) < (3, 15, 0, 0xA8):
+        if (VER_MAJOR, VER_MINOR, VER_MICRO, VER_FIELD4) < (3, 15, 0, 0xB0):
             source = "python{}t.exe".format(VER_DOT)
             sourcew = "pythonw{}t.exe".format(VER_DOT)
         alias.extend([
@@ -201,8 +200,7 @@ def get_layout(ns):
             yield from in_build(FREETHREADED_PYTHON_STABLE_DLL_NAME)
         else:
             yield from in_build(PYTHON_STABLE_DLL_NAME)
-            # TODO: Update 0xA8 to 0xB0 before merging
-            if (VER_MAJOR, VER_MINOR, VER_MICRO, VER_FIELD4) >= (3, 15, 0, 0xA8):
+            if (VER_MAJOR, VER_MINOR, VER_MICRO, VER_FIELD4) >= (3, 15, 0, 0xB0):
                 yield from in_build(FREETHREADED_PYTHON_STABLE_DLL_NAME)
 
     found_any = False
