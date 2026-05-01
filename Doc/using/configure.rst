@@ -792,6 +792,10 @@ also be used to improve performance.
    extensions through :mod:`sysconfig`. On compilers that do not
    understand them, the build silently skips them.
 
+   Downstream packagers and authors of native libraries built with
+   custom build systems should set the same flags so the unwind chain
+   stays unbroken across all native frames.
+
    .. versionadded:: 3.15
 
 .. option:: --without-mimalloc

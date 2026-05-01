@@ -2257,6 +2257,10 @@ Build changes
 
 * CPython is now built with frame pointers enabled by default
   (:pep:`831`). Pass :option:`--without-frame-pointers` to opt out.
+  Authors of C extensions and native libraries built with custom build
+  systems should add ``-fno-omit-frame-pointer`` and
+  ``-mno-omit-leaf-frame-pointer`` to their own ``CFLAGS`` to keep the
+  unwind chain intact.
   (Contributed by Pablo Galindo Salgado and Savannah Ostrowski in :gh:`149201`.)
 
 .. _whatsnew315-windows-tail-calling-interpreter:

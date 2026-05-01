@@ -1914,7 +1914,7 @@ Optional Packages:
   --with-strict-overflow  if 'yes', add -fstrict-overflow to CFLAGS, else add
                           -fno-strict-overflow (default is no)
   --without-frame-pointers
-                          build without frame pointers (default is yes)
+                          build without frame pointers (default is no)
   --with-dsymutil         link debug information into final executable with
                           dsymutil in macOS (default is no)
   --with-address-sanitizer
