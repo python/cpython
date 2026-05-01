@@ -86,17 +86,13 @@ class TestGetGCStats(unittest.TestCase):
             '''
 
     def _collect_gc_stats(self, script:str, all_interpreters:bool):
-        get_gc_stats = _remote_debugging.get_gc_stats
-        with (
-            test_subprocess(script, wait_for_working=True) as subproc
-        ):
-            before_stats = get_gc_stats(subproc.process.pid,
-                                        all_interpreters=all_interpreters)
+        with (test_subprocess(script, wait_for_working=True) as subproc):
+            monitor = _remote_debugging.GCMonitor(subproc.process.pid, debug=True)
+            before_stats = monitor.get_gc_stats(all_interpreters=all_interpreters)
             before = get_last_item(before_stats, 2, self._main_iid)
             for _ in range(10):
                 time.sleep(0.5)
-                after_stats = get_gc_stats(subproc.process.pid,
-                                           all_interpreters=all_interpreters)
+                after_stats = monitor.get_gc_stats(all_interpreters=all_interpreters)
                 after = get_last_item(after_stats, 2, self._main_iid)
                 if after["ts_stop"] > before["ts_stop"]:
                     break
@@ -144,7 +140,8 @@ class TestGetGCStats(unittest.TestCase):
         keys = sorted(("gen", "iid", "ts_start", "ts_stop", #"heap_size",
                 "collections", "collected", "uncollectable", "candidates",
                 "duration"))
-        stats = _remote_debugging.get_gc_stats(os.getpid(), all_interpreters=False)
+        monitor = _remote_debugging.GCMonitor(os.getpid(), debug=True)
+        stats = monitor.get_gc_stats(all_interpreters=False)
         self.assertIsInstance(stats, list)
         for item in stats:
             self.assertIsInstance(item, dict)
