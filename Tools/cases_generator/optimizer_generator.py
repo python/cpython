@@ -415,7 +415,10 @@ def write_uop(
             idx = 0
             for cache in uop.caches:
                 if cache.name != "unused":
-                    if cache.size == 4:
+                    if cache.type_tag is not None:
+                        ctype, cast, _ = cache.TYPE_TAGS[cache.type_tag]
+                        type = f"{ctype} "
+                    elif cache.size == 4:
                         type = cast = "PyObject *"
                     else:
                         type = f"uint{cache.size*16}_t "

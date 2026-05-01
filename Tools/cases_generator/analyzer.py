@@ -3,7 +3,7 @@ import itertools
 import lexer
 import parser
 import re
-from typing import Optional, Callable, Iterator
+from typing import ClassVar, Optional, Callable, Iterator
 
 from parser import Stmt, SimpleStmt, BlockStmt, IfStmt, WhileStmt, ForStmt, MacroIfStmt
 
@@ -180,9 +180,47 @@ class StackEffect:
 class CacheEntry:
     name: str
     size: int
+    type_tag: str | None = None
+
+    # Maps DSL type tag (after ':') to (C type, C cast, implied cache size).
+    # The size is implied: writing ':tag' alone fixes the slot size; an
+    # explicit '/N' is rejected as redundant.
+    TYPE_TAGS: ClassVar[dict[str, tuple[str, str, int]]] = {
+        "pretagged": ("uintptr_t", "uintptr_t", 4),
+    }
+
+    @classmethod
+    def from_parsed(cls, effect: parser.CacheEffect) -> "CacheEntry":
+        cls._validate_type_tag(effect)
+        if effect.type_tag is not None:
+            _, _, size = cls.TYPE_TAGS[effect.type_tag]
+        else:
+            assert effect.size is not None  # parser guarantees one or the other
+            size = effect.size
+        return cls(effect.name, size, effect.type_tag)
+
+    @classmethod
+    def _validate_type_tag(cls, effect: parser.CacheEffect) -> None:
+        if effect.type_tag is None:
+            return
+        if effect.type_tag not in cls.TYPE_TAGS:
+            known = ", ".join(cls.TYPE_TAGS)
+            raise analysis_error(
+                f"Unknown cache type tag {effect.type_tag!r}. "
+                f"Known tags: {known}",
+                effect.tokens[0],
+            )
+        if effect.size is not None:
+            raise analysis_error(
+                f"':{effect.type_tag}' implies cache size; remove "
+                f"'/{effect.size}'",
+                effect.tokens[0],
+            )
 
     def __str__(self) -> str:
-        return f"{self.name}/{self.size}"
+        if self.type_tag is None:
+            return f"{self.name}/{self.size}"
+        return f"{self.name}:{self.type_tag}"
 
 
 @dataclass
@@ -433,7 +471,7 @@ def analyze_caches(inputs: list[parser.InputEffect]) -> list[CacheEntry]:
                 position = "First" if index == 0 else "Last"
                 msg = f"{position} cache entry in op is unused. Move to enclosing macro."
                 raise analysis_error(msg, cache.tokens[0])
-    return [CacheEntry(i.name, int(i.size)) for i in caches]
+    return [CacheEntry.from_parsed(i) for i in caches]
 
 
 def find_variable_stores(node: parser.InstDef) -> list[lexer.Token]:

@@ -5495,8 +5495,8 @@
 
         case _LOAD_CONST_INLINE_BORROW: {
             JitOptRef value;
-            PyObject *ptr = (PyObject *)this_instr->operand0;
-            value = PyJitRef_Borrow(sym_new_const(ctx, PyStackRef_UntagBorrow((uintptr_t)ptr)));
+            uintptr_t ptr = (uintptr_t)this_instr->operand0;
+            value = PyJitRef_Borrow(sym_new_const(ctx, PyStackRef_UntagBorrow(ptr)));
             CHECK_STACK_BOUNDS(1);
             stack_pointer[0] = value;
             stack_pointer += 1;

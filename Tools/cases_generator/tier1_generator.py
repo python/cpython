@@ -95,7 +95,11 @@ def write_uop(
 
     for cache in uop.caches:
         if cache.name != "unused":
-            if cache.size == 4:
+            if cache.type_tag is not None:
+                ctype, cast, _ = cache.TYPE_TAGS[cache.type_tag]
+                type = f"{ctype} "
+                reader = f"({cast})read_obj" if cache.size == 4 else f"({cast})read_u{cache.size*16}"
+            elif cache.size == 4:
                 type = "PyObject *"
                 reader = "read_obj"
             else:
