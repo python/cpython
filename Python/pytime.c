@@ -10,6 +10,7 @@
 #endif
 #ifdef MS_WINDOWS
 #  include <winsock2.h>           // struct timeval
+#  include <windows.h>            // time zone APIs
 #endif
 
 #if defined(__APPLE__)
@@ -355,8 +356,43 @@ _PyTime_windows_filetime(time_t timer, struct tm *tm, int is_local)
     // `time.gmtime` and `time.localtime` will return `struct_time` containing this
     tm->tm_yday = _PyTime_calc_yday(&st_result);
 
-    /* DST flag: -1 (unknown) for local time on historical dates, 0 for UTC */
-    tm->tm_isdst = is_local ? -1 : 0;
+    /* DST flag: -1 (unknown) for local time on historical dates, 0 for UTC.
+     * Detect DST by comparing standard time with local time (gh-148658). */
+    if (is_local) {
+        TIME_ZONE_INFORMATION tzi;
+        DWORD tz_result = GetTimeZoneInformation(&tzi);
+        if (tz_result == TIME_ZONE_ID_INVALID ||
+            tzi.DaylightDate.wMonth == 0) {
+            /* Timezone does not observe DST */
+            tm->tm_isdst = 0;
+        }
+        else {
+            /* Calculate standard time from UTC and compare with local time. */
+            ULONGLONG utc_ticks = ((ULONGLONG)timer + SECS_BETWEEN_EPOCHS) *
+                                   HUNDRED_NS_PER_SEC;
+            LONGLONG standard_offset_ticks = (LONGLONG)tzi.Bias * 60LL *
+                                              HUNDRED_NS_PER_SEC;
+            ULONGLONG standard_ticks = utc_ticks - standard_offset_ticks;
+            FILETIME ft_standard;
+            ft_standard.dwLowDateTime = (DWORD)(standard_ticks);
+            ft_standard.dwHighDateTime = (DWORD)(standard_ticks >> 32);
+            SYSTEMTIME st_standard;
+            if (!FileTimeToSystemTime(&ft_standard, &st_standard)) {
+                PyErr_SetFromWindowsErr(0);
+                return -1;
+            }
+            if (st_result.wHour == st_standard.wHour &&
+                st_result.wMinute == st_standard.wMinute) {
+                tm->tm_isdst = 0;
+            }
+            else {
+                tm->tm_isdst = 1;
+            }
+        }
+    }
+    else {
+        tm->tm_isdst = 0;
+    }
 
     return 0;
 }

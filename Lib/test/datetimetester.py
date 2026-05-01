@@ -5661,6 +5661,37 @@ class TestDateTimeTZ(TestDateTime, TZInfoBase, unittest.TestCase):
         s = t.astimezone()
         self.assertEqual(t.tzinfo, s.tzinfo)
 
+    @unittest.skipIf(sys.platform != "win32", "gh-148658 only affects Windows")
+    def test_astimezone_negative_timestamp_dst(self):
+        # gh-148658: astimezone() returned incorrect DST name for negative
+        # timestamps on Windows. Verify C layer returns correct tm_zone
+        # by checking astimezone() produces correct timezone names.
+        import time
+        winter_ts = -1  # 1969-12-31
+        summer_ts = -15897600  # 1969-07-01
+
+        # Get expected timezone names from time.localtime
+        winter_local = time.localtime(winter_ts)
+        summer_local = time.localtime(summer_ts)
+
+        dt_winter = self.theclass.fromtimestamp(winter_ts).astimezone()
+        dt_summer = self.theclass.fromtimestamp(summer_ts).astimezone()
+
+        # Verify astimezone() returns correct timezone names
+        self.assertEqual(dt_winter.tzname(), winter_local.tm_zone)
+        self.assertEqual(dt_summer.tzname(), summer_local.tm_zone)
+
+        # For DST timezones, winter and summer should have different names
+        # For non-DST timezones, names should be the same
+        if winter_local.tm_zone == summer_local.tm_zone:
+            # Non-DST timezone: both should be standard time
+            self.assertEqual(winter_local.tm_isdst, 0)
+            self.assertEqual(summer_local.tm_isdst, 0)
+        else:
+            # DST timezone: one should be standard, one DST
+            self.assertEqual(winter_local.tm_isdst, 0)
+            self.assertEqual(summer_local.tm_isdst, 1)
+
     def test_aware_subtract(self):
         cls = self.theclass
 
