@@ -223,7 +223,7 @@ following::
 
     # foo package startup code
 
-    foo.submod:initialize()
+    foo.submod:initialize
 
 Now, after ``sys.path`` has been extended as above, and before Python turns
 control over to user code, the ``foo.submod`` module is imported and the
