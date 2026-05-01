@@ -61,6 +61,14 @@ jit_error(const char *message)
     PyErr_Format(PyExc_RuntimeWarning, "JIT %s (%d)", message, hint);
 }
 
+/*
+ * Publish JIT code to optional tooling backends.
+ *
+ * The return value is a backend-specific deregistration handle, not a
+ * success/failure indicator. NULL means there is nothing to unregister later:
+ * perf does not need a handle, and GDB registration failures are intentionally
+ * non-fatal because tooling support must not make JIT compilation fail.
+ */
 static void *
 jit_record_code(const void *code_addr, size_t code_size,
                 const char *entry, const char *filename)
