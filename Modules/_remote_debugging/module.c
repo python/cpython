@@ -1050,49 +1050,6 @@ _remote_debugging_RemoteUnwinder_resume_threads_impl(RemoteUnwinderObject *self)
 #endif
 }
 
-/*[clinic input]
-@critical_section
-_remote_debugging.RemoteUnwinder.get_gc_stats
-
-    all_interpreters: bool = False
-        If True, return GC statistics from all interpreters.
-        If False, return only from main interpreter.
-
-Get garbage collector statistics from external Python process.
-
-Returns a list of dictionaries with GC statistics data.
-
-Returns:
-    List of dicts.
-    dict: A dictionary containing:
-        - gen:
-        - iid:
-        - ts_start:
-        - ts_stop:
-        - heap_size:
-        - collections:
-        - collected:
-        - uncollectable:
-        - candidates:
-        - duration:
-
-Raises:
-    RuntimeError:
-[clinic start generated code]*/
-
-static PyObject *
-_remote_debugging_RemoteUnwinder_get_gc_stats_impl(RemoteUnwinderObject *self,
-                                                   int all_interpreters)
-/*[clinic end generated code: output=ee2f7cb3e4ea7bc1 input=d471552ace480487]*/
-{
-    RuntimeOffsets offsets = {
-        .handle = self->handle,
-        .runtime_start_address = self->runtime_start_address,
-        .debug_offsets = self->debug_offsets,
-    };
-    return get_gc_stats(&offsets, all_interpreters);
-}
-
 static PyMethodDef RemoteUnwinder_methods[] = {
     _REMOTE_DEBUGGING_REMOTEUNWINDER_GET_STACK_TRACE_METHODDEF
     _REMOTE_DEBUGGING_REMOTEUNWINDER_GET_ALL_AWAITED_BY_METHODDEF
@@ -1100,7 +1057,6 @@ static PyMethodDef RemoteUnwinder_methods[] = {
     _REMOTE_DEBUGGING_REMOTEUNWINDER_GET_STATS_METHODDEF
     _REMOTE_DEBUGGING_REMOTEUNWINDER_PAUSE_THREADS_METHODDEF
     _REMOTE_DEBUGGING_REMOTEUNWINDER_RESUME_THREADS_METHODDEF
-    _REMOTE_DEBUGGING_REMOTEUNWINDER_GET_GC_STATS_METHODDEF
     {NULL, NULL}
 };
 
