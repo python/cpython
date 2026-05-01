@@ -212,11 +212,11 @@ struct _gc_runtime_state {
     /* linked lists of container objects */
 #ifndef Py_GIL_DISABLED
     struct gc_generation generations[NUM_GENERATIONS];
-    PyGC_Head *generation0;
 #else
     struct gc_generation young;
     struct gc_generation old[2];
 #endif
+
     /* a permanent generation which won't be collected */
     struct gc_generation permanent_generation;
     struct gc_generation_stats generation_stats[NUM_GENERATIONS];
@@ -229,6 +229,11 @@ struct _gc_runtime_state {
 
     /* The number of live objects. */
     Py_ssize_t heap_size;
+
+    /* dummy members to preserve other offsets */
+    Py_ssize_t dummy1; /* was work_to_do */
+    int dummy2; /* was visited_space */
+    int dummy3; /* was phase */
 
     /* This is the number of objects that survived the last full
        collection. It approximates the number of long lived objects
@@ -255,6 +260,8 @@ struct _gc_runtime_state {
 
     /* Mutex held for gc_should_collect_mem_usage(). */
     PyMutex mutex;
+#else
+    PyGC_Head *generation0;
 #endif
 };
 
