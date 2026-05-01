@@ -2133,11 +2133,11 @@ class _TestEvent(BaseTestCase):
     def test_repr(self) -> None:
         event = self.Event()
         if self.TYPE == 'processes':
-            self.assertRegex(repr(event), r"<Event at .* unset>")
+            self.assertIn("<Event(unset)>", repr(event))
             event.set()
-            self.assertRegex(repr(event), r"<Event at .* set>")
+            self.assertIn("<Event(set)>", repr(event))
             event.clear()
-            self.assertRegex(repr(event), r"<Event at .* unset>")
+            self.assertIn("<Event(unset)>", repr(event))
         elif self.TYPE == 'manager':
             self.assertRegex(repr(event), r"<EventProxy object, typeid 'Event' at .*")
             event.set()
@@ -2503,6 +2503,18 @@ class _TestBarrier(BaseTestCase):
         for i in range(passes):
             for j in range(self.N):
                 self.assertEqual(conn.recv(), i)
+
+    def test_repr(self):
+        b = self.barrier
+        if self.TYPE == 'process':
+            self.assertIn(f"waiters=0/{self.N}", repr(b))
+            b.abort()
+            self.assertIn("broken", repr(b))
+            self.assertNotIn("at", repr(b))
+        elif self.TYPE == 'manager':
+            self.assertRegex(repr(b), r"<BarrierProxy object, typeid 'Barrier' at .*")
+            b.abort()
+            self.assertRegex(repr(b), r"<BarrierProxy object, typeid 'Barrier' at .*")
 
 #
 #

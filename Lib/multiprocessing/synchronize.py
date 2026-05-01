@@ -369,7 +369,8 @@ class Event(object):
 
     def __repr__(self):
         set_status = 'set' if self.is_set() else 'unset'
-        return f"<{type(self).__qualname__} at {id(self):#x} {set_status}>"
+        return f"<{type(self).__qualname__}({set_status})>"
+
 #
 # Barrier
 #
@@ -409,3 +410,9 @@ class Barrier(threading.Barrier):
     @_count.setter
     def _count(self, value):
         self._array[1] = value
+
+    def __repr__(self):
+        name = self.__class__.__qualname__
+        if self.broken:
+            return f"<{name}(broken)>"
+        return (f"<{name}(waiters={self.n_waiting}/{self.parties})>")
