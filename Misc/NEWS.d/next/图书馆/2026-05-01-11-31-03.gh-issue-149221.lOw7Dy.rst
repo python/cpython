@@ -1,3 +1,2 @@
-Fix:
-Replace _log2(random()) with _log2(1.0 - random()). This matches the standard algorithm (1.0 - random() is never zero), produces the correct distribution, and eliminates the crash.
-Module: random
+Fix rare math domain error for :func:`random.binomialvariate`, using
+`1.0-random()` (with image `(0, 1]`) instead of `random()`.
