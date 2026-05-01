@@ -3785,6 +3785,7 @@ dummy_func(
         }
 
         tier2 op(_ITER_NEXT_INLINE, (iternext_fn/4, iter, null_or_index -- iter, null_or_index, next)) {
+            assert(sizeof(iternextfunc) == sizeof(uintptr_t));
             volatile iternextfunc iternext_v = (iternextfunc)iternext_fn;
             PyObject *item = iternext_v(PyStackRef_AsPyObjectBorrow(iter));
             if (item == NULL) {

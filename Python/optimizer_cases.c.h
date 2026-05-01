@@ -3630,14 +3630,15 @@
             JitOptRef iter;
             JitOptRef next;
             iter = stack_pointer[-2];
-            if (!sym_has_type(iter)) {
+            PyTypeObject *type = sym_get_type(iter);
+            if (type != NULL && type != &PyGen_Type && type->tp_iternext != NULL) {
+                ADD_OP(_ITER_NEXT_INLINE, 0, (uintptr_t)type->tp_iternext);
+            }
+            else if (!sym_has_type(iter)) {
                 PyTypeObject *probable = sym_get_probable_type(iter);
                 if (probable != NULL &&
-                    probable->tp_iternext != NULL &&
-                    probable != &PyList_Type &&
-                    probable != &PyTuple_Type &&
-                    probable != &PyRangeIter_Type &&
-                    probable != &PyGen_Type) {
+                    probable != &PyGen_Type &&
+                    probable->tp_iternext != NULL) {
                     PyType_Watch(TYPE_WATCHER_ID, (PyObject *)probable);
                     _Py_BloomFilter_Add(dependencies, probable);
                     sym_set_type(iter, probable);

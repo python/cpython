@@ -14130,6 +14130,7 @@
             _PyStackRef _stack_item_1 = _tos_cache1;
             iter = _stack_item_0;
             PyObject *iternext_fn = (PyObject *)CURRENT_OPERAND0_64();
+            assert(sizeof(iternextfunc) == sizeof(uintptr_t));
             volatile iternextfunc iternext_v = (iternextfunc)iternext_fn;
             stack_pointer[0] = iter;
             stack_pointer[1] = _stack_item_1;
