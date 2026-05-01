@@ -11,7 +11,8 @@ on:
     - 'main'
     - '3.*'
 
-permissions: {}
+permissions:
+  contents: read
 
 concurrency:
   # https://docs.github.com/en/actions/writing-workflows/workflow-syntax-for-github-actions#concurrency
@@ -353,7 +354,7 @@ jobs:
         with:
           persist-credentials: false
       - name: Build and test
-        run: ./Android/android.py ci --fast-ci ${{ matrix.arch }}-linux-android
+        run: python3 Platforms/Android ci --fast-ci ${{ matrix.arch }}-linux-android
 
   build-ios:
     name: iOS
@@ -612,6 +613,7 @@ jobs:
       needs.build-context.outputs.run-ci-fuzz == 'true'
       || needs.build-context.outputs.run-ci-fuzz-stdlib == 'true'
     permissions:
+      contents: read
       security-events: write
     strategy:
       fail-fast: false

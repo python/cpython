@@ -472,7 +472,7 @@ General Options
    :manpage:`epoll_create1 <epoll_create1(2)>` is available
    but incompatible with Linux semantics.
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
 
 C compiler options
@@ -1011,6 +1011,21 @@ Linker options
    (built and enabled by default).
 
    .. versionadded:: 3.10
+
+.. option:: --enable-static-libpython-for-interpreter
+
+   Do not link the Python interpreter binary (``python3``) against the
+   shared Python library; instead, statically link the interpreter
+   against ``libpython`` as if ``--enable-shared`` had not been used,
+   but continue to build the shared ``libpython`` (for use by other
+   programs).
+
+   This option does nothing if ``--enable-shared`` is not used.
+
+   The default (when ``-enable-shared`` is used) is to link the Python
+   interpreter against the built shared library.
+
+   .. versionadded:: next
 
 
 Libraries options
@@ -1573,6 +1588,12 @@ Compiler flags
    Strict or non-strict aliasing flags used to compile ``Python/dtoa.c``.
 
    .. versionadded:: 3.7
+
+.. envvar:: CFLAGS_CEVAL
+
+   Flags used to compile ``Python/ceval.c``.
+
+   .. versionadded:: 3.14.5
 
 .. envvar:: CCSHARED
 

@@ -55,7 +55,7 @@
 
 #define MAX_STRING_LENGTH 500
 #define MAX_FRAME_DEPTH 100
-#define MAX_NTHREADS 100
+#define DEFAULT_MAX_NTHREADS 100
 
 /* Function from Parser/tokenizer/file_tokenizer.c */
 extern char* _PyTokenizer_FindEncodingFilename(int, PyObject *);
@@ -1274,8 +1274,13 @@ dump_error(int fd, const char *msg)
    handlers if signals were received. */
 const char* _Py_NO_SANITIZE_THREAD
 PyUnstable_DumpTracebackThreads(int fd, PyInterpreterState *interp,
-                                PyThreadState *current_tstate)
+                                PyThreadState *current_tstate,
+                                Py_ssize_t max_threads)
 {
+    if (max_threads == 0) {
+        max_threads = DEFAULT_MAX_NTHREADS;
+    }
+
     if (current_tstate == NULL) {
         /* PyUnstable_DumpTracebackThreads() is called from signal handlers by
            faulthandler.
@@ -1319,13 +1324,13 @@ PyUnstable_DumpTracebackThreads(int fd, PyInterpreterState *interp,
         return dump_error(fd, "unable to get the thread head state");
 
     /* Dump the traceback of each thread */
-    unsigned int nthreads = 0;
+    Py_ssize_t nthreads = 0;
     _Py_BEGIN_SUPPRESS_IPH
     do
     {
         if (nthreads != 0)
             PUTS(fd, "\n");
-        if (nthreads >= MAX_NTHREADS) {
+        if (nthreads >= max_threads) {
             PUTS(fd, "...\n");
             break;
         }
