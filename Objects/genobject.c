@@ -2688,16 +2688,19 @@ static PyAsyncMethods async_gen_yield_from_as_async = {
     {                                                                                   \
         assert(op != NULL);                                                             \
         _PyAsyncGenYieldFrom *self = _PyAsyncGenYieldFrom_CAST(op);                     \
-        PyObject *method = PyObject_GetAttr(self->agyf_iterator, &_Py_ID(name));        \
-        if (method == NULL) {                                                           \
+        PyObject *method;                                                               \
+        if (PyObject_GetOptionalAttr(self->agyf_iterator, &_Py_ID(name), &method) < 0) { \
             return NULL;                                                                \
+        }                                                                               \
+        if (method == NULL) {                                                           \
+            Py_RETURN_NONE;                                                             \
         }                                                                               \
         PyObject *result = PyObject_Call(method, args, keywords);                       \
         Py_DECREF(method);                                                              \
-        if (result == NULL) { \
-            return NULL; \
-        } \
-        return result_value;                                                                  \
+        if (result == NULL) {                                                           \
+            return NULL;                                                                \
+        }                                                                               \
+        return result_value;                                                            \
     }
 
 
