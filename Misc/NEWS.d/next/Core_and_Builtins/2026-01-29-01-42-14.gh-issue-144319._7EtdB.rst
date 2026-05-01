@@ -1,1 +1,0 @@
-Add huge pages support for the pymalloc allocator. Patch by Pablo Galindo

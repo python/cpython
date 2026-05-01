@@ -8,7 +8,7 @@
 
 --------------
 
-The :mod:`bdb` module handles basic debugger functions, like setting breakpoints
+The :mod:`!bdb` module handles basic debugger functions, like setting breakpoints
 or managing execution via the debugger.
 
 The following exception is defined:
@@ -18,7 +18,7 @@ The following exception is defined:
    Exception raised by the :class:`Bdb` class for quitting the debugger.
 
 
-The :mod:`bdb` module also defines two classes:
+The :mod:`!bdb` module also defines two classes:
 
 .. class:: Breakpoint(self, file, line, temporary=False, cond=None, funcname=None)
 

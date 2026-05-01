@@ -191,6 +191,7 @@ typedef struct PyConfig {
     int enable_gil;
     int tlbc_enabled;
 #endif
+    int lazy_imports;
 
     /* --- Path configuration inputs ------------ */
     int pathconfig_warnings;

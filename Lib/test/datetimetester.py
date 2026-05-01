@@ -22,7 +22,7 @@ from operator import lt, le, gt, ge, eq, ne, truediv, floordiv, mod
 
 from test import support
 from test.support import is_resource_enabled, ALWAYS_EQ, LARGEST, SMALLEST
-from test.support import os_helper, script_helper, warnings_helper
+from test.support import os_helper, script_helper
 
 import datetime as datetime_module
 from datetime import MINYEAR, MAXYEAR
@@ -48,7 +48,11 @@ import _strptime
 try:
     import _pydatetime
 except ImportError:
-    pass
+    _pydatetime = None
+try:
+    import _datetime
+except ImportError:
+    _datetime = None
 #
 
 pickle_loads = {pickle.loads, pickle._loads}
@@ -1202,15 +1206,20 @@ class TestDateOnly(unittest.TestCase):
                 newdate = strptime(string, format)
                 self.assertEqual(newdate, target, msg=reason)
 
-    @warnings_helper.ignore_warnings(category=DeprecationWarning)
     def test_strptime_leap_year(self):
-        # GH-70647: warns if parsing a format with a day and no year.
+        # GH-70647: %d errors if parsing a format with a day and no year.
         with self.assertRaises(ValueError):
             # The existing behavior that GH-70647 seeks to change.
             date.strptime('02-29', '%m-%d')
+        # %e without a year is deprecated, scheduled for removal in 3.17.
+        _strptime._regex_cache.clear()
+        with self.assertWarnsRegex(DeprecationWarning,
+                                   r'.*day of month without a year.*'):
+            date.strptime('02-01', '%m-%e')
         with self._assertNotWarns(DeprecationWarning):
             date.strptime('20-03-14', '%y-%m-%d')
             date.strptime('02-29,2024', '%m-%d,%Y')
+            date.strptime('02-29,2024', '%m-%e,%Y')
 
 class SubclassDate(date):
     sub_var = 1
@@ -2193,6 +2202,34 @@ class TestDate(HarmlessMixedComparison, unittest.TestCase):
                 with self.assertRaises(TypeError):
                     self.theclass.fromisocalendar(*isocal)
 
+    def test_strptime_F_format(self):
+        test_date = "2025-10-26"
+        self.assertEqual(
+            self.theclass.strptime(test_date, "%F"),
+            self.theclass.strptime(test_date, "%Y-%m-%d")
+        )
+
+    def test_strptime_D_format(self):
+        test_date = "11/28/25"
+        self.assertEqual(
+            self.theclass.strptime(test_date, "%D"),
+            self.theclass.strptime(test_date, "%m/%d/%y")
+        )
+
+    def test_strptime_n_and_t_format(self):
+        format_directives = ('%n', '%t', '%n%t', '%t%n')
+        whitespaces = ('', ' ', '\t', '\r', '\v', '\n', '\f')
+        for fd in format_directives:
+            for ws in (*whitespaces, ''.join(whitespaces)):
+                with self.subTest(format_directive=fd, whitespace=ws):
+                    self.assertEqual(
+                        self.theclass.strptime(
+                            f"2026{ws}02{ws}03",
+                            f"%Y{fd}%m{fd}%d",
+                        ),
+                        self.theclass(2026, 2, 3),
+                    )
+
 
 #############################################################################
 # datetime tests
@@ -3087,19 +3124,24 @@ class TestDateTime(TestDate):
                 newdate = strptime(string, format)
                 self.assertEqual(newdate, target, msg=reason)
 
-    @warnings_helper.ignore_warnings(category=DeprecationWarning)
     def test_strptime_leap_year(self):
-        # GH-70647: warns if parsing a format with a day and no year.
+        # GH-70647: %d errors if parsing a format with a day and no year.
         with self.assertRaises(ValueError):
             # The existing behavior that GH-70647 seeks to change.
             self.theclass.strptime('02-29', '%m-%d')
+        with self.assertRaises(ValueError):
+            self.theclass.strptime('03-14.159265', '%m-%d.%f')
+        # %e without a year is deprecated, scheduled for removal in 3.17.
+        _strptime._regex_cache.clear()
         with self.assertWarnsRegex(DeprecationWarning,
                                    r'.*day of month without a year.*'):
-            self.theclass.strptime('03-14.159265', '%m-%d.%f')
+            self.theclass.strptime('03-14.159265', '%m-%e.%f')
         with self._assertNotWarns(DeprecationWarning):
             self.theclass.strptime('20-03-14.159265', '%y-%m-%d.%f')
         with self._assertNotWarns(DeprecationWarning):
             self.theclass.strptime('02-29,2024', '%m-%d,%Y')
+        with self._assertNotWarns(DeprecationWarning):
+            self.theclass.strptime('02-29,2024', '%m-%e,%Y')
 
     def test_strptime_z_empty(self):
         for directive in ('z', ':z'):
@@ -3779,6 +3821,13 @@ class TestDateTime(TestDate):
         self.assertEqual(repr(td), "SubclassDatetime(2010, 10, 10, 0, 0)")
         td = SubclassDatetime(2010, 10, 2, second=3)
         self.assertEqual(repr(td), "SubclassDatetime(2010, 10, 2, 0, 0, 3)")
+
+    def test_strptime_T_format(self):
+        test_time = "15:00:00"
+        self.assertEqual(
+            self.theclass.strptime(test_time, "%T"),
+            self.theclass.strptime(test_time, "%H:%M:%S")
+        )
 
 
 class TestSubclassDateTime(TestDateTime):

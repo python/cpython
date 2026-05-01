@@ -21,6 +21,7 @@ that work tightly with the python syntax (template engines for example).
 :license: Python License.
 """
 from _ast import *
+lazy from _colorize import can_colorize, get_theme
 
 
 def parse(source, filename='<unknown>', mode='exec', *,
@@ -117,21 +118,32 @@ def _convert_literal(node):
 def dump(
     node, annotate_fields=True, include_attributes=False,
     *,
-    indent=None, show_empty=False,
+    color=False, indent=None, show_empty=False,
 ):
     """
     Return a formatted dump of the tree in node.  This is mainly useful for
-    debugging purposes.  If annotate_fields is true (by default),
-    the returned string will show the names and the values for fields.
-    If annotate_fields is false, the result string will be more compact by
-    omitting unambiguous field names.  Attributes such as line
-    numbers and column offsets are not dumped by default.  If this is wanted,
-    include_attributes can be set to true.  If indent is a non-negative
-    integer or string, then the tree will be pretty-printed with that indent
-    level. None (the default) selects the single line representation.
+    debugging purposes.
+
+    If annotate_fields is true (by default), the returned string will show the
+    names and the values for fields. If annotate_fields is false, the result
+    string will be more compact by omitting unambiguous field names.
+
+    Attributes such as line numbers and column offsets are not dumped by default.
+    If this is wanted, include_attributes can be set to true.
+
+    If color is true, the returned string is syntax highlighted using ANSI
+    escape sequences. If color is false (the default), colored output is always
+    disabled.
+
+    If indent is a non-negative integer or string, then the tree will be
+    pretty-printed with that indent level. If indent is None (the default),
+    the tree is dumped on a single line.
+
     If show_empty is False, then empty lists and fields that are None
     will be omitted from the output for better readability.
     """
+    t = get_theme(force_color=color, force_no_color=not color).ast
+
     def _format(node, level=0):
         if indent is not None:
             level += 1
@@ -166,7 +178,9 @@ def dump(
                         field_type = cls._field_types.get(name, object)
                         if field_type is expr_context:
                             if not keywords:
-                                args_buffer.append(repr(value))
+                                args_buffer.append(
+                                    f'{t.node}{type(value).__name__}'
+                                    f'{t.reset}()')
                             continue
                     if not keywords:
                         args.extend(args_buffer)
@@ -174,7 +188,7 @@ def dump(
                 value, simple = _format(value, level)
                 allsimple = allsimple and simple
                 if keywords:
-                    args.append('%s=%s' % (name, value))
+                    args.append(f'{t.field}{name}{t.reset}={value}')
                 else:
                     args.append(value)
             if include_attributes and node._attributes:
@@ -187,14 +201,21 @@ def dump(
                         continue
                     value, simple = _format(value, level)
                     allsimple = allsimple and simple
-                    args.append('%s=%s' % (name, value))
+                    args.append(f'{t.attribute}{name}{t.reset}={value}')
+            cls_name = f'{t.node}{cls.__name__}{t.reset}'
             if allsimple and len(args) <= 3:
-                return '%s(%s)' % (node.__class__.__name__, ', '.join(args)), not args
-            return '%s(%s%s)' % (node.__class__.__name__, prefix, sep.join(args)), False
+                return f'{cls_name}({", ".join(args)})', not args
+            return f'{cls_name}({prefix}{sep.join(args)})', False
         elif isinstance(node, list):
             if not node:
                 return '[]', True
             return '[%s%s]' % (prefix, sep.join(_format(x, level)[0] for x in node)), False
+        if isinstance(node, bool) or node is None or node is Ellipsis:
+            return f'{t.keyword}{node!r}{t.reset}', True
+        if isinstance(node, (int, float, complex)):
+            return f'{t.number}{node!r}{t.reset}', True
+        if isinstance(node, (str, bytes)):
+            return f'{t.string}{node!r}{t.reset}', True
         return repr(node), True
 
     if not isinstance(node, AST):
@@ -642,7 +663,7 @@ def main(args=None):
     import argparse
     import sys
 
-    parser = argparse.ArgumentParser(color=True)
+    parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('infile', nargs='?', default='-',
                         help='the file to parse; defaults to stdin')
     parser.add_argument('-m', '--mode', default='exec',
@@ -661,7 +682,7 @@ def main(args=None):
                              '(for example, 3.10)')
     parser.add_argument('-O', '--optimize',
                         type=int, default=-1, metavar='LEVEL',
-                        help='optimization level for parser (default -1)')
+                        help='optimization level for parser')
     parser.add_argument('--show-empty', default=False, action='store_true',
                         help='show empty lists and fields in dump output')
     args = parser.parse_args(args)
@@ -688,6 +709,7 @@ def main(args=None):
     tree = parse(source, name, args.mode, type_comments=args.no_type_comments,
                  feature_version=feature_version, optimize=args.optimize)
     print(dump(tree, include_attributes=args.include_attributes,
+               color=can_colorize(file=sys.stdout),
                indent=args.indent, show_empty=args.show_empty))
 
 if __name__ == '__main__':

@@ -1,1 +1,0 @@
-Build Python with POSIX 2024, instead of POSIX 2008. Patch by Victor Stinner.

@@ -14,19 +14,21 @@ to modify the meaning of the API call itself.
 """
 
 import collections
+import contextvars
 import collections.abc
 import concurrent.futures
 import errno
 import heapq
 import itertools
+import math
 import os
 import socket
 import stat
 import subprocess
+import sys
 import threading
 import time
 import traceback
-import sys
 import warnings
 import weakref
 
@@ -289,6 +291,7 @@ class Server(events.AbstractServer):
         self._ssl_shutdown_timeout = ssl_shutdown_timeout
         self._serving = False
         self._serving_forever_fut = None
+        self._context = contextvars.copy_context()
 
     def __repr__(self):
         return f'<{self.__class__.__name__} sockets={self.sockets!r}>'
@@ -318,7 +321,7 @@ class Server(events.AbstractServer):
             self._loop._start_serving(
                 self._protocol_factory, sock, self._ssl_context,
                 self, self._backlog, self._ssl_handshake_timeout,
-                self._ssl_shutdown_timeout)
+                self._ssl_shutdown_timeout, context=self._context)
 
     def get_loop(self):
         return self._loop
@@ -380,6 +383,7 @@ class Server(events.AbstractServer):
         except exceptions.CancelledError:
             try:
                 self.close()
+                self.close_clients()
                 await self.wait_closed()
             finally:
                 raise
@@ -507,7 +511,8 @@ class BaseEventLoop(events.AbstractEventLoop):
             extra=None, server=None,
             ssl_handshake_timeout=None,
             ssl_shutdown_timeout=None,
-            call_connection_made=True):
+            call_connection_made=True,
+            context=None):
         """Create SSL transport."""
         raise NotImplementedError
 
@@ -1211,9 +1216,10 @@ class BaseEventLoop(events.AbstractEventLoop):
             self, sock, protocol_factory, ssl,
             server_hostname, server_side=False,
             ssl_handshake_timeout=None,
-            ssl_shutdown_timeout=None):
+            ssl_shutdown_timeout=None, context=None):
 
         sock.setblocking(False)
+        context = context if context is not None else contextvars.copy_context()
 
         protocol = protocol_factory()
         waiter = self.create_future()
@@ -1223,9 +1229,10 @@ class BaseEventLoop(events.AbstractEventLoop):
                 sock, protocol, sslcontext, waiter,
                 server_side=server_side, server_hostname=server_hostname,
                 ssl_handshake_timeout=ssl_handshake_timeout,
-                ssl_shutdown_timeout=ssl_shutdown_timeout)
+                ssl_shutdown_timeout=ssl_shutdown_timeout,
+                context=context)
         else:
-            transport = self._make_socket_transport(sock, protocol, waiter)
+            transport = self._make_socket_transport(sock, protocol, waiter, context=context)
 
         try:
             await waiter
@@ -1344,6 +1351,17 @@ class BaseEventLoop(events.AbstractEventLoop):
         # Pause early so that "ssl_protocol.data_received()" doesn't
         # have a chance to get called before "ssl_protocol.connection_made()".
         transport.pause_reading()
+
+        # gh-142352: move buffered StreamReader data to SSLProtocol
+        if server_side:
+            from .streams import StreamReaderProtocol
+            if isinstance(protocol, StreamReaderProtocol):
+                stream_reader = getattr(protocol, '_stream_reader', None)
+                if stream_reader is not None:
+                    buffer = stream_reader._buffer
+                    if buffer:
+                        ssl_protocol._incoming.write(buffer)
+                        buffer.clear()
 
         transport.set_protocol(ssl_protocol)
         conmade_cb = self.call_soon(ssl_protocol.connection_made, transport)
@@ -2011,7 +2029,10 @@ class BaseEventLoop(events.AbstractEventLoop):
         event_list = None
 
         # Handle 'later' callbacks that are ready.
-        end_time = self.time() + self._clock_resolution
+        now = self.time()
+        # Ensure that `end_time` is strictly increasing
+        # when the clock resolution is too small.
+        end_time = now + max(self._clock_resolution, math.ulp(now))
         while self._scheduled:
             handle = self._scheduled[0]
             if handle._when >= end_time:

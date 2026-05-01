@@ -618,6 +618,12 @@ _PyPerfTrampoline_AfterFork_Child(void)
         int was_active = _PyIsPerfTrampolineActive();
         _PyPerfTrampoline_Fini();
         if (was_active) {
+            // After fork, Fini may leave the old code watcher registered
+            // if trampolined code objects from the parent still exist
+            // (trampoline_refcount > 0). Clear it unconditionally before
+            // Init registers a new one, to prevent two watchers sharing
+            // the same globals and double-decrementing trampoline_refcount.
+            perf_trampoline_reset_state();
             _PyPerfTrampoline_Init(1);
         }
     }

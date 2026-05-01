@@ -1,1 +1,0 @@
-Implement :pep:`798` (Unpacking in Comprehensions).  Patch by Adam Hartz.

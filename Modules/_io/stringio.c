@@ -111,7 +111,7 @@ resize_buffer(stringio *self, size_t size)
         alloc = size + 1;
     }
 
-    if (alloc > PY_SIZE_MAX / sizeof(Py_UCS4))
+    if (alloc > SIZE_MAX / sizeof(Py_UCS4))
         goto overflow;
     new_buf = (Py_UCS4 *)PyMem_Realloc(self->buf, alloc * sizeof(Py_UCS4));
     if (new_buf == NULL) {

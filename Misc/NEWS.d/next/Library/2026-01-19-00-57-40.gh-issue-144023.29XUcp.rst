@@ -1,2 +1,0 @@
-Fixed validation of file descriptor 0 in posix functions when used with
-follow_symlinks parameter.

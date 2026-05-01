@@ -213,12 +213,21 @@ class BadBytecodeTest:
             del sys.modules['_temp']
         except KeyError:
             pass
-        py_compile.compile(mapping[name], invalidation_mode=invalidation_mode)
-        if not del_source:
-            bytecode_path = self.util.cache_from_source(mapping[name])
+        if sys.implementation.cache_tag is None:
+            if del_source:
+                bytecode_path = mapping[name] + 'c'
+                py_compile.compile(mapping[name], bytecode_path,
+                                   invalidation_mode=invalidation_mode)
+                os.unlink(mapping[name])
+            else:
+                raise unittest.SkipTest('requires sys.implementation.cache_tag')
         else:
-            os.unlink(mapping[name])
-            bytecode_path = make_legacy_pyc(mapping[name])
+            py_compile.compile(mapping[name], invalidation_mode=invalidation_mode)
+            if not del_source:
+                bytecode_path = self.util.cache_from_source(mapping[name])
+            else:
+                os.unlink(mapping[name])
+                bytecode_path = make_legacy_pyc(mapping[name])
         if manipulator:
             with open(bytecode_path, 'rb') as file:
                 bc = file.read()

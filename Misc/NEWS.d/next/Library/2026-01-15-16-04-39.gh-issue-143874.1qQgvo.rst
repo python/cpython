@@ -1,1 +1,0 @@
-Fixed a bug in :mod:`pdb` where expression results were not sent back to remote client.

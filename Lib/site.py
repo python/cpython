@@ -18,9 +18,11 @@ sys.prefix and sys.exec_prefix are set to that directory and
 it is also checked for site-packages (sys.base_prefix and
 sys.base_exec_prefix will always be the "real" prefixes of the Python
 installation). If "pyvenv.cfg" (a bootstrap configuration file) contains
-the key "include-system-site-packages" set to anything other than "false"
+the key "include-system-site-packages" is set to  "true"
 (case-insensitive), the system-level prefixes will still also be
-searched for site-packages; otherwise they won't.
+searched for site-packages; otherwise they won't.  If the system-level
+prefixes are not included then the user site prefixes are also implicitly
+not searched for site-packages.
 
 All of the resulting site-specific directories, if they exist, are
 appended to sys.path, and also inspected for path configuration
@@ -527,6 +529,8 @@ def register_readline():
                     import _pyrepl.unix_console
                     console_errors = _pyrepl.unix_console._error
                 from _pyrepl.main import CAN_USE_PYREPL
+            except ModuleNotFoundError:
+                CAN_USE_PYREPL = False
             finally:
                 sys.path = original_path
     except ImportError:

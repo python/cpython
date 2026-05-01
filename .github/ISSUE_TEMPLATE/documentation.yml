@@ -8,8 +8,9 @@ body:
         > [!NOTE]
         > Trivial changes (for example typos) don’t require an issue before opening a PR.
   - type: textarea
+    id: description
     attributes:
       label: "Documentation"
-      description: "A clear and concise description of the issue."
+      description: "A clear and concise description of the issue. Include a link to the page."
     validations:
       required: true

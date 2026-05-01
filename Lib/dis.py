@@ -35,6 +35,7 @@ SET_FUNCTION_ATTRIBUTE = opmap['SET_FUNCTION_ATTRIBUTE']
 FUNCTION_ATTR_FLAGS = ('defaults', 'kwdefaults', 'annotations', 'closure', 'annotate')
 
 ENTER_EXECUTOR = opmap['ENTER_EXECUTOR']
+IMPORT_NAME = opmap['IMPORT_NAME']
 LOAD_GLOBAL = opmap['LOAD_GLOBAL']
 LOAD_SMALL_INT = opmap['LOAD_SMALL_INT']
 BINARY_OP = opmap['BINARY_OP']
@@ -600,6 +601,12 @@ class ArgResolver:
                     argval, argrepr = _get_name_info(arg//4, get_name)
                     if (arg & 1) and argrepr:
                         argrepr = f"{argrepr} + NULL|self"
+                elif deop == IMPORT_NAME:
+                    argval, argrepr = _get_name_info(arg//4, get_name)
+                    if (arg & 1) and argrepr:
+                        argrepr = f"{argrepr} + lazy"
+                    elif (arg & 2) and argrepr:
+                        argrepr = f"{argrepr} + eager"
                 else:
                     argval, argrepr = _get_name_info(arg, get_name)
             elif deop in hasjump or deop in hasexc:
@@ -1012,7 +1019,9 @@ def _find_imports(co):
                 (level_op[0] in hasconst or level_op[0] == LOAD_SMALL_INT)):
                 level = _get_const_value(level_op[0], level_op[1], consts)
                 fromlist = _get_const_value(from_op[0], from_op[1], consts)
-                yield (names[oparg], level, fromlist)
+                # IMPORT_NAME encodes lazy/eager flags in bits 0-1,
+                # name index in bits 2+.
+                yield (names[oparg >> 2], level, fromlist)
 
 def _find_store_names(co):
     """Find names of variables which are written in the code

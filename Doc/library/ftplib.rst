@@ -23,7 +23,7 @@ The default encoding is UTF-8, following :rfc:`2640`.
 
 .. include:: ../includes/wasm-notavail.rst
 
-Here's a sample session using the :mod:`ftplib` module::
+Here's a sample session using the :mod:`!ftplib` module::
 
    >>> from ftplib import FTP
    >>> ftp = FTP('ftp.us.debian.org')  # connect to host, default port

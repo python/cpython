@@ -4,9 +4,6 @@
 .. module:: tomllib
    :synopsis: Parse TOML files.
 
-.. moduleauthor:: Taneli Hukkinen
-.. sectionauthor:: Taneli Hukkinen
-
 **Source code:** :source:`Lib/tomllib`
 
 --------------
@@ -18,10 +15,16 @@ support writing TOML.
 .. versionadded:: 3.11
    The module was added with support for TOML 1.0.0.
 
-.. versionchanged:: next
+.. versionchanged:: 3.15
    Added TOML 1.1.0 support.
    See the :ref:`What's New <whatsnew315-tomllib-1-1-0>` for details.
 
+.. warning::
+
+   Be cautious when parsing data from untrusted sources.
+   A malicious TOML string may cause the decoder to consume considerable
+   CPU and memory resources.
+   Limiting the size of data to be parsed is recommended.
 
 .. seealso::
 

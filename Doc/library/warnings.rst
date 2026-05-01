@@ -207,7 +207,7 @@ Describing Warning Filters
 The warnings filter is initialized by :option:`-W` options passed to the Python
 interpreter command line and the :envvar:`PYTHONWARNINGS` environment variable.
 The interpreter saves the arguments for all supplied entries without
-interpretation in :data:`sys.warnoptions`; the :mod:`warnings` module parses these
+interpretation in :data:`sys.warnoptions`; the :mod:`!warnings` module parses these
 when it is first imported (invalid options are ignored, after printing a
 message to :data:`sys.stderr`).
 
@@ -631,8 +631,8 @@ Available Context Managers
     :func:`showwarning`.
 
     The *module* argument takes a module that will be used instead of the
-    module returned when you import :mod:`warnings` whose filter will be
-    protected. This argument exists primarily for testing the :mod:`warnings`
+    module returned when you import :mod:`!warnings` whose filter will be
+    protected. This argument exists primarily for testing the :mod:`!warnings`
     module itself.
 
     If the *action* argument is not ``None``, the remaining arguments are
@@ -669,7 +669,7 @@ to true for free-threaded builds and false otherwise.
 
 If the :data:`~sys.flags.context_aware_warnings` flag is false, then
 :class:`catch_warnings` will modify the global attributes of the
-:mod:`warnings` module.  This is not safe if used within a concurrent program
+:mod:`!warnings` module.  This is not safe if used within a concurrent program
 (using multiple threads or using asyncio coroutines).  For example, if two
 or more threads use the :class:`catch_warnings` class at the same time, the
 behavior is undefined.

@@ -2,17 +2,13 @@
 ========================================================
 
 .. module:: winsound
-   :platform: Windows
    :synopsis: Access to the sound-playing machinery for Windows.
-
-.. moduleauthor:: Toby Dickenson <htrd90@zepler.org>
-.. sectionauthor:: Fred L. Drake, Jr. <fdrake@acm.org>
 
 **Source code:** :source:`PC/winsound.c`
 
 --------------
 
-The :mod:`winsound` module provides access to the basic sound-playing machinery
+The :mod:`!winsound` module provides access to the basic sound-playing machinery
 provided by Windows platforms.  It includes functions and several constants.
 
 .. availability:: Windows.

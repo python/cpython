@@ -828,6 +828,60 @@ object_vacall(PyThreadState *tstate, PyObject *base,
     return result;
 }
 
+PyObject *
+_PyObject_VectorcallPrepend(PyThreadState *tstate, PyObject *callable,
+                            PyObject *arg, PyObject *const *args,
+                            size_t nargsf, PyObject *kwnames)
+{
+    Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
+    assert(nargs == 0 || args[nargs-1]);
+
+    PyObject *result;
+    if (nargsf & PY_VECTORCALL_ARGUMENTS_OFFSET) {
+        /* PY_VECTORCALL_ARGUMENTS_OFFSET is set, so we are allowed to mutate the vector */
+        PyObject **newargs = (PyObject**)args - 1;
+        nargs += 1;
+        PyObject *tmp = newargs[0];
+        newargs[0] = arg;
+        assert(newargs[nargs-1]);
+        result = _PyObject_VectorcallTstate(tstate, callable, newargs,
+                                            nargs, kwnames);
+        newargs[0] = tmp;
+    }
+    else {
+        Py_ssize_t nkwargs = (kwnames == NULL) ? 0 : PyTuple_GET_SIZE(kwnames);
+        Py_ssize_t totalargs = nargs + nkwargs;
+        if (totalargs == 0) {
+            return _PyObject_VectorcallTstate(tstate, callable, &arg, 1, NULL);
+        }
+
+        PyObject *newargs_stack[_PY_FASTCALL_SMALL_STACK];
+        PyObject **newargs;
+        if (totalargs <= (Py_ssize_t)Py_ARRAY_LENGTH(newargs_stack) - 1) {
+            newargs = newargs_stack;
+        }
+        else {
+            newargs = PyMem_Malloc((totalargs+1) * sizeof(PyObject *));
+            if (newargs == NULL) {
+                _PyErr_NoMemory(tstate);
+                return NULL;
+            }
+        }
+        /* use borrowed references */
+        newargs[0] = arg;
+        /* bpo-37138: since totalargs > 0, it's impossible that args is NULL.
+         * We need this, since calling memcpy() with a NULL pointer is
+         * undefined behaviour. */
+        assert(args != NULL);
+        memcpy(newargs + 1, args, totalargs * sizeof(PyObject *));
+        result = _PyObject_VectorcallTstate(tstate, callable,
+                                            newargs, nargs+1, kwnames);
+        if (newargs != newargs_stack) {
+            PyMem_Free(newargs);
+        }
+    }
+    return result;
+}
 
 PyObject *
 PyObject_VectorcallMethod(PyObject *name, PyObject *const *args,
@@ -838,31 +892,44 @@ PyObject_VectorcallMethod(PyObject *name, PyObject *const *args,
     assert(PyVectorcall_NARGS(nargsf) >= 1);
 
     PyThreadState *tstate = _PyThreadState_GET();
-    _PyCStackRef method;
+    _PyCStackRef self, method;
+    _PyThreadState_PushCStackRef(tstate, &self);
     _PyThreadState_PushCStackRef(tstate, &method);
     /* Use args[0] as "self" argument */
-    int unbound = _PyObject_GetMethodStackRef(tstate, args[0], name, &method.ref);
-    if (PyStackRef_IsNull(method.ref)) {
+    self.ref = PyStackRef_FromPyObjectBorrow(args[0]);
+    int unbound = _PyObject_GetMethodStackRef(tstate, &self.ref, name, &method.ref);
+    if (unbound < 0) {
         _PyThreadState_PopCStackRef(tstate, &method);
+        _PyThreadState_PopCStackRef(tstate, &self);
         return NULL;
     }
-    PyObject *callable = PyStackRef_AsPyObjectBorrow(method.ref);
 
-    if (unbound) {
-        /* We must remove PY_VECTORCALL_ARGUMENTS_OFFSET since
-         * that would be interpreted as allowing to change args[-1] */
-        nargsf &= ~PY_VECTORCALL_ARGUMENTS_OFFSET;
-    }
-    else {
+    PyObject *callable = PyStackRef_AsPyObjectBorrow(method.ref);
+    PyObject *self_obj = PyStackRef_AsPyObjectBorrow(self.ref);
+    PyObject *result;
+
+    EVAL_CALL_STAT_INC_IF_FUNCTION(EVAL_CALL_METHOD, callable);
+    if (self_obj == NULL) {
         /* Skip "self". We can keep PY_VECTORCALL_ARGUMENTS_OFFSET since
          * args[-1] in the onward call is args[0] here. */
-        args++;
-        nargsf--;
+        result = _PyObject_VectorcallTstate(tstate, callable,
+                                            args + 1, nargsf - 1, kwnames);
     }
-    EVAL_CALL_STAT_INC_IF_FUNCTION(EVAL_CALL_METHOD, callable);
-    PyObject *result = _PyObject_VectorcallTstate(tstate, callable,
-                                                  args, nargsf, kwnames);
+    else if (self_obj == args[0]) {
+        /* We must remove PY_VECTORCALL_ARGUMENTS_OFFSET since
+         * that would be interpreted as allowing to change args[-1] */
+        result = _PyObject_VectorcallTstate(tstate, callable, args,
+                                            nargsf & ~PY_VECTORCALL_ARGUMENTS_OFFSET,
+                                            kwnames);
+    }
+    else {
+        /* classmethod: self_obj is the type, not args[0]. Replace
+         * args[0] with self_obj and call the underlying callable. */
+        result = _PyObject_VectorcallPrepend(tstate, callable, self_obj,
+                                             args + 1, nargsf - 1, kwnames);
+    }
     _PyThreadState_PopCStackRef(tstate, &method);
+    _PyThreadState_PopCStackRef(tstate, &self);
     return result;
 }
 
@@ -875,22 +942,26 @@ PyObject_CallMethodObjArgs(PyObject *obj, PyObject *name, ...)
         return null_error(tstate);
     }
 
-    _PyCStackRef method;
+    _PyCStackRef self, method;
+    _PyThreadState_PushCStackRef(tstate, &self);
     _PyThreadState_PushCStackRef(tstate, &method);
-    int is_method = _PyObject_GetMethodStackRef(tstate, obj, name, &method.ref);
-    if (PyStackRef_IsNull(method.ref)) {
+    self.ref = PyStackRef_FromPyObjectBorrow(obj);
+    int res = _PyObject_GetMethodStackRef(tstate, &self.ref, name, &method.ref);
+    if (res < 0) {
         _PyThreadState_PopCStackRef(tstate, &method);
+        _PyThreadState_PopCStackRef(tstate, &self);
         return NULL;
     }
     PyObject *callable = PyStackRef_AsPyObjectBorrow(method.ref);
-    obj = is_method ? obj : NULL;
+    PyObject *self_obj = PyStackRef_AsPyObjectBorrow(self.ref);
 
     va_list vargs;
     va_start(vargs, name);
-    PyObject *result = object_vacall(tstate, obj, callable, vargs);
+    PyObject *result = object_vacall(tstate, self_obj, callable, vargs);
     va_end(vargs);
 
     _PyThreadState_PopCStackRef(tstate, &method);
+    _PyThreadState_PopCStackRef(tstate, &self);
     return result;
 }
 

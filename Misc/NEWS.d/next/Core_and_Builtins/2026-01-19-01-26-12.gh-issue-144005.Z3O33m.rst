@@ -1,1 +1,0 @@
-Eliminate redundant refcounting from ``BINARY_OP_EXTEND``.

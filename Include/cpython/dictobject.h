@@ -32,6 +32,16 @@ typedef struct {
     PyDictValues *ma_values;
 } PyDictObject;
 
+// frozendict
+PyAPI_DATA(PyTypeObject) PyFrozenDict_Type;
+#define PyFrozenDict_Check(op) PyObject_TypeCheck((op), &PyFrozenDict_Type)
+#define PyFrozenDict_CheckExact(op) Py_IS_TYPE((op), &PyFrozenDict_Type)
+
+#define PyAnyDict_CheckExact(ob) \
+    (PyDict_CheckExact(ob) || PyFrozenDict_CheckExact(ob))
+#define PyAnyDict_Check(ob) \
+    (PyDict_Check(ob) || PyFrozenDict_Check(ob))
+
 PyAPI_FUNC(PyObject *) _PyDict_GetItem_KnownHash(PyObject *mp, PyObject *key,
                                                  Py_hash_t hash);
 // PyDict_GetItemStringRef() can be used instead
@@ -42,7 +52,7 @@ PyAPI_FUNC(PyObject *) PyDict_SetDefault(
 /* Get the number of items of a dictionary. */
 static inline Py_ssize_t PyDict_GET_SIZE(PyObject *op) {
     PyDictObject *mp;
-    assert(PyDict_Check(op));
+    assert(PyAnyDict_Check(op));
     mp = _Py_CAST(PyDictObject*, op);
 #ifdef Py_GIL_DISABLED
     return _Py_atomic_load_ssize_relaxed(&mp->ma_used);
@@ -93,3 +103,6 @@ PyAPI_FUNC(int) PyDict_ClearWatcher(int watcher_id);
 // Mark given dictionary as "watched" (callback will be called if it is modified)
 PyAPI_FUNC(int) PyDict_Watch(int watcher_id, PyObject* dict);
 PyAPI_FUNC(int) PyDict_Unwatch(int watcher_id, PyObject* dict);
+
+// Create a frozendict. Create an empty dictionary if iterable is NULL.
+PyAPI_FUNC(PyObject*) PyFrozenDict_New(PyObject *iterable);

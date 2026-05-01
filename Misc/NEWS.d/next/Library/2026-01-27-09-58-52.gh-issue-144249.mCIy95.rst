@@ -1,2 +1,0 @@
-Add filename context to :exc:`OSError` exceptions raised by
-:func:`ssl.SSLContext.load_cert_chain`, allowing users to have more context.

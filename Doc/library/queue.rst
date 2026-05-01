@@ -8,7 +8,7 @@
 
 --------------
 
-The :mod:`queue` module implements multi-producer, multi-consumer queues.
+The :mod:`!queue` module implements multi-producer, multi-consumer queues.
 It is especially useful in threaded programming when information must be
 exchanged safely between multiple threads.  The :class:`Queue` class in this
 module implements all the required locking semantics.
@@ -30,7 +30,7 @@ In addition, the module implements a "simple"
 specific implementation provides additional guarantees
 in exchange for the smaller functionality.
 
-The :mod:`queue` module defines the following classes and exceptions:
+The :mod:`!queue` module defines the following classes and exceptions:
 
 .. class:: Queue(maxsize=0)
 
