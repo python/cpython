@@ -124,8 +124,8 @@ PyAPI_FUNC(PyThreadState *) PyGILState_GetThisThreadState(void);
 
 #if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= _Py_PACK_VERSION(3, 15)
 
-typedef struct _PyInterpreterGuard PyInterpreterGuard;
-typedef struct _PyInterpreterView PyInterpreterView;
+typedef struct PyInterpreterGuard PyInterpreterGuard;
+typedef struct PyInterpreterView PyInterpreterView;
 
 PyAPI_FUNC(PyInterpreterGuard *) PyInterpreterGuard_FromCurrent(void);
 PyAPI_FUNC(void) PyInterpreterGuard_Close(PyInterpreterGuard *guard);

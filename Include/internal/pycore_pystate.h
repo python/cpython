@@ -340,11 +340,11 @@ _Py_RecursionLimit_GetMargin(PyThreadState *tstate)
 
 /* PEP 788 structures. */
 
-struct _PyInterpreterGuard {
+struct PyInterpreterGuard {
     PyInterpreterState *interp;
 };
 
-struct _PyInterpreterView {
+struct PyInterpreterView {
     int64_t id;
 };
 
