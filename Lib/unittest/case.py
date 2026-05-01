@@ -315,17 +315,17 @@ class _AssertWarnsContext(_AssertRaisesBaseContext):
             exc_name = str(self.expected)
         first_matching = None
         matched = False
-        not_matching_warnings = []
+        non_matching_warnings = []
         for m in self.warnings:
             w = m.message
             if not isinstance(w, self.expected):
-                not_matching_warnings.append(m)
+                non_matching_warnings.append(m)
                 continue
             if first_matching is None:
                 first_matching = w
             if (self.expected_regex is not None and
                 not self.expected_regex.search(str(w))):
-                not_matching_warnings.append(m)
+                non_matching_warnings.append(m)
                 continue
             if matched:
                 continue
@@ -334,7 +334,7 @@ class _AssertWarnsContext(_AssertRaisesBaseContext):
             self.warning = w
             self.filename = m.filename
             self.lineno = m.lineno
-        for m in not_matching_warnings:
+        for m in non_matching_warnings:
             warnings.warn_explicit(m.message, m.category, m.filename, m.lineno,
                                    source=m.source)
         if matched:
