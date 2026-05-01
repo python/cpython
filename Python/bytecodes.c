@@ -1731,18 +1731,6 @@ dummy_func(
             PyStackRef_CLOSE(v);
         }
 
-        inst(GET_ASEND, (receiver, v -- retval)) {
-            PyObject *receiver_o = PyStackRef_AsPyObjectBorrow(receiver);
-            PyObject *retval_o = PyObject_CallMethodOneArg(receiver_o,
-                                                           &_Py_ID(asend),
-                                                           PyStackRef_AsPyObjectBorrow(v));
-            INPUTS_DEAD();
-            if (retval_o == NULL) {
-                ERROR_NO_POP();
-            }
-            retval = PyStackRef_FromPyObjectSteal(retval_o);
-        }
-
         macro(SEND) = _SPECIALIZE_SEND + _SEND;
 
         op(_SEND_GEN_FRAME, (receiver, null, v -- receiver, null, gen_frame)) {
@@ -3752,24 +3740,6 @@ dummy_func(
             ERROR_IF(iter_o == NULL);
             iter = PyStackRef_FromPyObjectSteal(iter_o);
             index_or_null = PyStackRef_NULL;
-        }
-
-        inst(GET_ASYNC_YIELD_FROM_ITER, (iterable -- aiter)) {
-            /* before: [obj]; after [aiter(obj)] */
-            PyObject *iterable_o = PyStackRef_AsPyObjectBorrow(iterable);
-            if (PyCoro_CheckExact(iterable_o)) {
-                aiter = iterable;
-                DEAD(iterable);
-            }
-            else {
-                /* `iterable` is not a generator. */
-                PyObject *aiter_o = PyObject_GetAIter(iterable_o);
-                if (aiter_o == NULL) {
-                    ERROR_NO_POP();
-                }
-                aiter = PyStackRef_FromPyObjectSteal(aiter_o);
-                DECREF_INPUTS();
-            }
         }
 
         // Most members of this family are "secretly" super-instructions.

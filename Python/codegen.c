@@ -516,30 +516,55 @@ codegen_async_yield_from(compiler *c, location loc, expr_ty e)
     NEW_JUMP_TARGET_LABEL(c, send);
     NEW_JUMP_TARGET_LABEL(c, exit);
 
+
+    // ADDOP_NAME(c, loc, LOAD_ATTR, &_Py_ID(__aiter__), names);
+    // ADDOP(c, loc, PUSH_NULL);
+    // ADDOP_I(c, loc, CALL, 0);
     VISIT(c, expr, e->v.AsyncYieldFrom.value);
-    ADDOP(c, loc, GET_ASYNC_YIELD_FROM_ITER);
+    // Stack: [value]
+
+    // Call value.__aiter__()
+    ADDOP_NAME(c, loc, LOAD_ATTR, &_Py_ID(__aiter__), names);
+    ADDOP(c, loc, PUSH_NULL);
+    ADDOP_I(c, loc, CALL, 0);
+
+    // Stack: [aiterator]
 
     USE_LABEL(c, send);
-    ADDOP_JUMP(c, loc, SETUP_FINALLY, exit);
     // Virtual try/except for the StopIteration; see above.
+    ADDOP_JUMP(c, loc, SETUP_FINALLY, exit);
 
-    // Get the __asend__() and await it. We preserve the iterator
-    // on the top of the stack by copying it.
     ADDOP_I(c, loc, COPY, 1);
+    // Stack: [aiterator, aiterator]
+
+    ADDOP_NAME(c, loc, LOAD_ATTR, &_Py_ID(asend), names);
+    ADDOP(c, loc, PUSH_NULL);
     ADDOP_LOAD_CONST(c, loc, Py_None);
-    ADDOP(c, loc, GET_ASEND);
+    // Stack: [aiterator, aiterator.asend, NULL, None]
+    ADDOP_I(c, loc, CALL, 1);
+    // Stack: [aiterator, send_coro]
+
+    ADDOP(c, loc, PUSH_NULL);
     ADDOP_LOAD_CONST(c, loc, Py_None);
+    // Stack: [aiterator, send_coro, NULL, None]
     ADD_YIELD_FROM(c, loc, 1);
+    // Stack: [aiterator, send_result]
 
     ADDOP_I(c, loc, CALL_INTRINSIC_1, INTRINSIC_ASYNC_GEN_WRAP);
+    // Stack: [aiterator, wrapped_result]
     ADDOP_I(c, loc, YIELD_VALUE, 1);
+    // Stack: [aiterator, resumed_value]
 
     ADDOP(c, NO_LOCATION, POP_BLOCK);
+    // Stack: [aiterator, resumed_value]
     ADDOP(c, loc, POP_TOP);
+    // Stack: [aiterator]
     ADDOP_JUMP(c, loc, JUMP_NO_INTERRUPT, send);
 
     USE_LABEL(c, exit);
+    // Stack: [aiterator, exc_value] (from SETUP_FINALLY)
     ADDOP(c, loc, CLEANUP_ASYNC_THROW);
+    // Stack: [result]
 
     return SUCCESS;
 }
@@ -5483,7 +5508,6 @@ codegen_visit_expr(compiler *c, expr_ty e)
         }
 
         return codegen_async_yield_from(c, loc, e);
-        break;
     case Await_kind:
         VISIT(c, expr, e->v.Await.value);
         ADDOP_I(c, loc, GET_AWAITABLE, 0);
