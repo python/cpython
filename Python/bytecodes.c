@@ -6107,6 +6107,13 @@ dummy_func(
             value = PyStackRef_FromPyObjectBorrow(ptr);
         }
 
+        tier2 pure op(_RROT_3, (bottom, middle, top -- bottom, middle, top)) {
+            _PyStackRef temp = top;
+            top = middle;
+            middle = bottom;
+            bottom = temp;
+        }
+
         tier2 op(_START_EXECUTOR, (executor/4 --)) {
 #ifndef _Py_JIT
             assert(current_executor == (_PyExecutorObject*)executor);
