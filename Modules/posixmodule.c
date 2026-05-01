@@ -17195,6 +17195,8 @@ os_getrandom_impl(PyObject *module, Py_ssize_t size, int flags)
         goto error;
     }
 
+    _Py_MSAN_UNPOISON(data, size);
+
     return PyBytesWriter_FinishWithSize(writer, n);
 
 error:
