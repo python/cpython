@@ -1,0 +1,6 @@
+Speed up :opcode:`TO_BOOL` in the JIT by adding a new tier 2 ``_TO_BOOL_SIZED``
+uop covering :class:`dict`, :class:`tuple`, :class:`bytes`,
+:class:`bytearray`, :class:`set` and :class:`frozenset`, propagating type
+information for ``*args`` (always a tuple) and ``**kwargs`` (always a dict),
+and recording the runtime operand type so the optimizer can specialise
+``TO_BOOL`` even when the static type is unknown.
