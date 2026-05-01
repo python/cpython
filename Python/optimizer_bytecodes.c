@@ -714,11 +714,10 @@ dummy_func(void) {
                     REPLACE_OP(this_instr, _TO_BOOL_SIZED, 0, size_offset);
                 }
             }
-            else if (emitted_guard) {
-                // Defensive: we emitted a guard but didn't compute a
-                // size_offset (shouldn't happen with the table above).
-                // Ensure the original _TO_BOOL still reaches output.
-                ADD_OP(_TO_BOOL, 0, 0);
+            else {
+                // Every type that sets emitted_guard above is also in the
+                // size_offset table, so we never reach here with a guard.
+                assert(!emitted_guard);
             }
             res = sym_new_truthiness(ctx, value, true);
         }

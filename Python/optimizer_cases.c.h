@@ -377,8 +377,8 @@
                         REPLACE_OP(this_instr, _TO_BOOL_SIZED, 0, size_offset);
                     }
                 }
-                else if (emitted_guard) {
-                    ADD_OP(_TO_BOOL, 0, 0);
+                else {
+                    assert(!emitted_guard);
                 }
                 res = sym_new_truthiness(ctx, value, true);
             }

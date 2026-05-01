@@ -4819,6 +4819,46 @@ class TestUopsOptimization(unittest.TestCase):
         # Every element must be False: the set is empty after discard()
         self.assertTrue(all(r is False for r in res))
 
+    def _check_to_bool_recorded_type(self, inner, value, guard_op):
+        """Recorded-type path: a value whose static type is unknown but whose
+        runtime type is recorded should emit `guard_op` + _TO_BOOL_SIZED."""
+        self.assertEqual(inner(value), TIER2_THRESHOLD)
+        ex_inner = get_first_executor(inner)
+        self.assertIsNotNone(ex_inner)
+        uops = get_opnames(ex_inner)
+        self.assertIn(guard_op, uops)
+        self.assertIn("_TO_BOOL_SIZED", uops)
+        self.assertNotIn("_TO_BOOL", uops)
+
+    def test_to_bool_bytes(self):
+        def inner(v):
+            cnt = 0
+            for _ in range(TIER2_THRESHOLD):
+                if v:
+                    cnt += 1
+            return cnt
+        self._check_to_bool_recorded_type(inner, b"hello", "_GUARD_TOS_BYTES")
+
+    def test_to_bool_bytearray(self):
+        def inner(v):
+            cnt = 0
+            for _ in range(TIER2_THRESHOLD):
+                if v:
+                    cnt += 1
+            return cnt
+        self._check_to_bool_recorded_type(
+            inner, bytearray(b"hello"), "_GUARD_TOS_BYTEARRAY")
+
+    def test_to_bool_frozenset(self):
+        def inner(v):
+            cnt = 0
+            for _ in range(TIER2_THRESHOLD):
+                if v:
+                    cnt += 1
+            return cnt
+        self._check_to_bool_recorded_type(
+            inner, frozenset({1, 2, 3}), "_GUARD_TOS_FROZENSET")
+
     def test_attr_promotion_failure(self):
         # We're not testing for any specific uops here, just
         # testing it doesn't crash.
