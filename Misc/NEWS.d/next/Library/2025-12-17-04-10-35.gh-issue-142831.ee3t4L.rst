@@ -1,0 +1,2 @@
+Fix a crash in the :mod:`json` module where a use-after-free could occur if
+the object being encoded is modified during serialization.

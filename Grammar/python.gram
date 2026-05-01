@@ -554,10 +554,12 @@ complex_number[expr_ty]:
 
 signed_number[expr_ty]:
     | NUMBER
+    | '+' number=NUMBER { number }
     | '-' number=NUMBER { _PyAST_UnaryOp(USub, number, EXTRA) }
 
 signed_real_number[expr_ty]:
     | real_number
+    | '+' real=real_number { real }
     | '-' real=real_number { _PyAST_UnaryOp(USub, real, EXTRA) }
 
 real_number[expr_ty]:
@@ -565,6 +567,7 @@ real_number[expr_ty]:
 
 imaginary_number[expr_ty]:
     | imag=NUMBER { _PyPegen_ensure_imaginary(p, imag) }
+    | '+' imag=NUMBER { _PyPegen_ensure_imaginary(p, imag) }
 
 capture_pattern[pattern_ty]:
     | target=pattern_capture_target { _PyAST_MatchAs(NULL, target->v.Name.id, EXTRA) }
@@ -1447,6 +1450,8 @@ invalid_import_from_targets:
         RAISE_SYNTAX_ERROR_STARTING_FROM(token, "Expected one or more names after 'import'") }
 
 invalid_with_stmt:
+    | ['async'] 'with' ','.(expression ['as' star_target])+ trailing=',' ':' {
+        RAISE_SYNTAX_ERROR_KNOWN_LOCATION(trailing, "the last 'with' item has a trailing comma") }
     | ['async'] 'with' ','.(expression ['as' star_target])+ NEWLINE { RAISE_SYNTAX_ERROR("expected ':'") }
     | ['async'] 'with' '(' ','.(expressions ['as' star_target])+ ','? ')' NEWLINE { RAISE_SYNTAX_ERROR("expected ':'") }
 invalid_with_stmt_indent:

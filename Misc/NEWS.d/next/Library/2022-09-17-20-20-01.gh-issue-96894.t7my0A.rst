@@ -1,0 +1,2 @@
+Do not turn echo off for subsequent commands in batch activators
+(``activate.bat`` and ``deactivate.bat``) of :mod:`venv`.

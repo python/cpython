@@ -21,9 +21,9 @@ Functions and classes provided:
 .. class:: AbstractContextManager
 
    An :term:`abstract base class` for classes that implement
-   :meth:`object.__enter__` and :meth:`object.__exit__`. A default
-   implementation for :meth:`object.__enter__` is provided which returns
-   ``self`` while :meth:`object.__exit__` is an abstract method which by default
+   :meth:`~object.__enter__` and :meth:`~object.__exit__`. A default
+   implementation for :meth:`~object.__enter__` is provided which returns
+   ``self`` while :meth:`~object.__exit__` is an abstract method which by default
    returns ``None``. See also the definition of :ref:`typecontextmanager`.
 
    .. versionadded:: 3.6
@@ -32,9 +32,9 @@ Functions and classes provided:
 .. class:: AbstractAsyncContextManager
 
    An :term:`abstract base class` for classes that implement
-   :meth:`object.__aenter__` and :meth:`object.__aexit__`. A default
-   implementation for :meth:`object.__aenter__` is provided which returns
-   ``self`` while :meth:`object.__aexit__` is an abstract method which by default
+   :meth:`~object.__aenter__` and :meth:`~object.__aexit__`. A default
+   implementation for :meth:`~object.__aenter__` is provided which returns
+   ``self`` while :meth:`~object.__aexit__` is an abstract method which by default
    returns ``None``. See also the definition of
    :ref:`async-context-managers`.
 
@@ -228,7 +228,7 @@ Functions and classes provided:
 
 .. function:: nullcontext(enter_result=None)
 
-   Return a context manager that returns *enter_result* from ``__enter__``, but
+   Return a context manager that returns *enter_result* from :meth:`~object.__enter__`, but
    otherwise does nothing. It is intended to be used as a stand-in for an
    optional context manager, for example::
 
@@ -335,7 +335,7 @@ Functions and classes provided:
    For example, the output of :func:`help` normally is sent to *sys.stdout*.
    You can capture that output in a string by redirecting the output to an
    :class:`io.StringIO` object. The replacement stream is returned from the
-   ``__enter__`` method and so is available as the target of the
+   :meth:`~object.__enter__` method and so is available as the target of the
    :keyword:`with` statement::
 
         with redirect_stdout(io.StringIO()) as f:
@@ -396,7 +396,8 @@ Functions and classes provided:
    A base class that enables a context manager to also be used as a decorator.
 
    Context managers inheriting from ``ContextDecorator`` have to implement
-   ``__enter__`` and ``__exit__`` as normal. ``__exit__`` retains its optional
+   :meth:`~object.__enter__` and :meth:`~object.__exit__` as normal.
+   ``__exit__`` retains its optional
    exception handling even when used as a decorator.
 
    ``ContextDecorator`` is used by :func:`contextmanager`, so you get this
@@ -466,12 +467,40 @@ Functions and classes provided:
       statements. If this is not the case, then the original construct with the
       explicit :keyword:`!with` statement inside the function should be used.
 
+   When the decorated callable is a generator function, coroutine function, or
+   asynchronous generator function, the returned wrapper is of the same kind
+   and keeps the context manager open for the lifetime of the iteration or
+   await rather than only for the call that creates the generator or coroutine
+   object.  Wrapped generators and asynchronous generators are explicitly
+   closed when iteration ends, as if by :func:`closing` or :func:`aclosing`.
+
+   .. note::
+      For asynchronous generators the wrapper re-yields each value with
+      ``async for``; values sent with :meth:`~agen.asend` and exceptions
+      thrown with :meth:`~agen.athrow` are not forwarded to the wrapped
+      generator.
+
    .. versionadded:: 3.2
+
+   .. versionchanged:: next
+      Decorating a generator function, coroutine function, or asynchronous
+      generator function now keeps the context manager open across iteration
+      or await.  Previously the context manager exited as soon as the
+      generator or coroutine object was created.
 
 
 .. class:: AsyncContextDecorator
 
-   Similar to :class:`ContextDecorator` but only for asynchronous functions.
+   Similar to :class:`ContextDecorator`, but the context manager is entered
+   and exited with :keyword:`async with`.  Decorate coroutine functions and
+   asynchronous generator functions with this class; the returned wrapper is
+   of the same kind.
+
+   .. note::
+      Synchronous functions and generators are accepted, but the wrapper is
+      always asynchronous, so the decorated callable must then be awaited or
+      iterated with ``async for``.  If that change of calling convention is
+      not intended, use :class:`ContextDecorator` instead.
 
    Example of ``AsyncContextDecorator``::
 
@@ -508,6 +537,13 @@ Functions and classes provided:
       Finishing
 
    .. versionadded:: 3.10
+
+   .. versionchanged:: next
+      Decorating an asynchronous generator function now keeps the context
+      manager open across iteration.  Previously the context manager exited
+      as soon as the generator object was created.  Synchronous functions
+      and synchronous generator functions are also now accepted, with an
+      asynchronous wrapper returned.
 
 
 .. class:: ExitStack()
@@ -710,9 +746,9 @@ context management protocol.
 Catching exceptions from ``__enter__`` methods
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-It is occasionally desirable to catch exceptions from an ``__enter__``
+It is occasionally desirable to catch exceptions from an :meth:`~object.__enter__`
 method implementation, *without* inadvertently catching exceptions from
-the :keyword:`with` statement body or the context manager's ``__exit__``
+the :keyword:`with` statement body or the context manager's :meth:`~object.__exit__`
 method. By using :class:`ExitStack` the steps in the context management
 protocol can be separated slightly in order to allow this::
 

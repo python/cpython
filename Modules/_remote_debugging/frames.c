@@ -49,6 +49,8 @@ process_single_stack_chunk(
         // Size must be at least enough for the header and reasonably bounded
         if (actual_size <= offsetof(_PyStackChunk, data) || actual_size > MAX_STACK_CHUNK_SIZE) {
             PyMem_RawFree(this_chunk);
+            PyErr_Format(PyExc_RuntimeError,
+                "Invalid stack chunk size %zu (corrupted remote memory)", actual_size);
             set_exception_cause(unwinder, PyExc_RuntimeError,
                 "Invalid stack chunk size (corrupted remote memory)");
             return -1;
@@ -146,7 +148,9 @@ find_frame_in_chunks(StackChunkList *chunks, uintptr_t remote_ptr)
         uintptr_t base = chunks->chunks[i].remote_addr + offsetof(_PyStackChunk, data);
         size_t payload = chunks->chunks[i].size - offsetof(_PyStackChunk, data);
 
-        if (remote_ptr >= base && remote_ptr < base + payload) {
+        if (payload >= SIZEOF_INTERP_FRAME &&
+                remote_ptr >= base &&
+                remote_ptr <= base + payload - SIZEOF_INTERP_FRAME) {
             return (char *)chunks->chunks[i].local_copy + (remote_ptr - chunks->chunks[i].remote_addr);
         }
     }
@@ -244,6 +248,7 @@ parse_frame_from_chunks(
 ) {
     void *frame_ptr = find_frame_in_chunks(chunks, address);
     if (!frame_ptr) {
+        PyErr_Format(PyExc_RuntimeError, "Frame at address 0x%lx not found in stack chunks", address);
         set_exception_cause(unwinder, PyExc_RuntimeError, "Frame not found in stack chunks");
         return -1;
     }
@@ -345,10 +350,12 @@ process_frame_chain(
             PyObject *extra_frame_info = make_frame_info(
                 unwinder, _Py_LATIN1_CHR('~'), Py_None, extra_frame, Py_None);
             if (extra_frame_info == NULL) {
+                Py_XDECREF(frame);
                 return -1;
             }
             if (PyList_Append(ctx->frame_info, extra_frame_info) < 0) {
                 Py_DECREF(extra_frame_info);
+                Py_XDECREF(frame);
                 set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to append extra frame");
                 return -1;
             }

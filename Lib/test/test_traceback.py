@@ -9,15 +9,18 @@ import inspect
 import builtins
 import unittest
 import unittest.mock
+import os
 import re
 import tempfile
 import random
 import string
+import importlib.machinery
+import sysconfig
 from test import support
 import shutil
 from test.support import (Error, captured_output, cpython_only, ALWAYS_EQ,
                           requires_debug_ranges, has_no_debug_ranges,
-                          requires_subprocess)
+                          requires_subprocess, os_helper)
 from test.support.os_helper import TESTFN, temp_dir, unlink
 from test.support.script_helper import assert_python_ok, assert_python_failure, make_script
 from test.support.import_helper import forget
@@ -37,7 +40,7 @@ test_code.co_positions = lambda _: iter([(6, 6, 0, 0)])
 test_frame = namedtuple('frame', ['f_code', 'f_globals', 'f_locals'])
 test_tb = namedtuple('tb', ['tb_frame', 'tb_lineno', 'tb_next', 'tb_lasti'])
 
-color_overrides = {"reset": "z", "filename": "fn", "error_highlight": "E"}
+color_overrides = {"reset": "z", "filename": "fn", "error_highlight": "E", "note": "n"}
 colors = {
     color_overrides.get(k, k[0].lower()): v
     for k, v in _colorize.default_theme.traceback.items()
@@ -1786,6 +1789,7 @@ class TracebackErrorLocationCaretTestBase:
             "    ~^~"
         ]
         self.assertEqual(result_lines, expected)
+
 
 class TestKeywordTypoSuggestions(unittest.TestCase):
     TYPO_CASES = [
@@ -4210,6 +4214,27 @@ class BaseSuggestionTests(SuggestionFormattingTestMixin):
         self.assertIn("'._bluch'", self.get_suggestion(partial(B().method, '_luch')))
         self.assertIn("'._bluch'", self.get_suggestion(partial(B().method, 'bluch')))
 
+    def test_suggestions_with_custom___dir__(self):
+        class M(type):
+            def __dir__(cls):
+                return [None, "fox"]
+
+        class C0:
+            def __dir__(self):
+                return [..., "bluch"]
+
+        class C1(C0, metaclass=M):
+            pass
+
+        self.assertNotIn("'.bluch'", self.get_suggestion(C0, "blach"))
+        self.assertIn("'.bluch'", self.get_suggestion(C0(), "blach"))
+
+        self.assertIn("'.fox'", self.get_suggestion(C1, "foo"))
+        self.assertNotIn("'.fox'", self.get_suggestion(C1(), "foo"))
+
+        self.assertNotIn("'.bluch'", self.get_suggestion(C1, "blach"))
+        self.assertIn("'.bluch'", self.get_suggestion(C1(), "blach"))
+
 
     def test_do_not_trigger_for_long_attributes(self):
         class A:
@@ -4396,19 +4421,21 @@ class SuggestionFormattingTestBase(SuggestionFormattingTestMixin):
         self.assertNotIn("inner.foo", actual)
 
     def test_getattr_nested_with_property(self):
-        # Test that descriptors (including properties) are suggested in nested attributes
+        # Property suggestions should not execute the property getter.
         class Inner:
             @property
             def computed(self):
-                return 42
+                return missing_name
 
         class Outer:
             def __init__(self):
                 self.inner = Inner()
 
         actual = self.get_suggestion(Outer(), 'computed')
-        # Descriptors should not be suggested to avoid executing arbitrary code
-        self.assertIn("inner.computed", actual)
+        self.assertIn(
+            "Did you mean '.inner.computed' instead of '.computed'",
+            actual,
+        )
 
     def test_getattr_nested_no_suggestion_for_deep_nesting(self):
         # Test that deeply nested attributes (2+ levels) are not suggested
@@ -5194,6 +5221,56 @@ class MiscTest(unittest.TestCase):
         else:
             self.fail("ModuleNotFoundError was not raised")
 
+    @unittest.skipIf(not importlib.machinery.EXTENSION_SUFFIXES, 'Platform does not support extension modules')
+    def test_find_incompatible_extension_modules(self):
+        """_find_incompatible_extension_modules assumes the last extension in
+        importlib.machinery.EXTENSION_SUFFIXES (defined in Python/dynload_*.c)
+        is untagged (eg. .so, .pyd).
+
+        This test exists to make sure that assumption is correct.
+        """
+        last_extension_suffix = importlib.machinery.EXTENSION_SUFFIXES[-1]
+        if shlib_suffix := sysconfig.get_config_var('SHLIB_SUFFIX'):
+            self.assertEqual(last_extension_suffix, shlib_suffix)
+        else:
+            before_dot, *extensions = last_extension_suffix.split('.')
+            expected_prefixes = ['']
+            if os.name == 'nt':
+                # Windows puts the debug tag in the module file stem (eg. foo_d.pyd)
+                expected_prefixes.append('_d')
+            self.assertIn(before_dot, expected_prefixes, msg=(
+                f'Unexpected prefix {before_dot!r} in extension module '
+                f'suffix {last_extension_suffix!r}. '
+                'traceback._find_incompatible_extension_module needs to be '
+                'updated to take this into account!'
+            ))
+            # if SHLIB_SUFFIX is not define, we assume the native
+            # shared library suffix only contains one extension
+            # (eg. '.so', bad eg. '.cpython-315-x86_64-linux-gnu.so')
+            self.assertEqual(len(extensions), 1, msg=(
+                'The last suffix in importlib.machinery.EXTENSION_SUFFIXES '
+                'contains more than one extension, so it is probably different '
+                'than SHLIB_SUFFIX. It probably contains an ABI tag! '
+                'If this is a false positive, define SHLIB_SUFFIX in sysconfig.'
+            ))
+
+    @unittest.skipIf(not importlib.machinery.EXTENSION_SUFFIXES, 'Platform does not support extension modules')
+    def test_incompatible_extension_modules_hint(self):
+        untagged_suffix = importlib.machinery.EXTENSION_SUFFIXES[-1]
+        with os_helper.temp_dir() as tmp:
+            # create a module with a incompatible ABI tag
+            incompatible_module = f'foo.some-abi{untagged_suffix}'
+            open(os.path.join(tmp, incompatible_module), "wb").close()
+            # try importing it
+            code = f'''
+                import sys
+                sys.path.insert(0, {tmp!r})
+                import foo
+            '''
+            _, _, stderr = assert_python_failure('-c', code, __cwd=tmp)
+        hint = f'Although a module with this name was found for a different Python version ({incompatible_module}).'
+        self.assertIn(hint, stderr.decode())
+
 
 class TestColorizedTraceback(unittest.TestCase):
     maxDiff = None
@@ -5230,6 +5307,23 @@ class TestColorizedTraceback(unittest.TestCase):
         self.assertIn("return baz1(1,\n            2,3\n            ,4)", lines)
         self.assertIn(red + "bar" + reset + boldr + "()" + reset, lines)
 
+    def test_colorized_exception_notes(self):
+        def foo():
+            raise ValueError()
+
+        try:
+            foo()
+        except Exception as e:
+            e.add_note("First note")
+            e.add_note("Second note")
+            exc = traceback.TracebackException.from_exception(e)
+
+        lines = "".join(exc.format(colorize=True))
+        note = colors["n"]
+        reset = colors["z"]
+        self.assertIn(note + "First note" + reset, lines)
+        self.assertIn(note + "Second note" + reset, lines)
+
     def test_colorized_syntax_error(self):
         try:
             compile("a $ b", "<string>", "exec")
@@ -5238,7 +5332,7 @@ class TestColorizedTraceback(unittest.TestCase):
                 e, capture_locals=True
             )
         actual = "".join(exc.format(colorize=True))
-        def expected(t, m, fn, l, f, E, e, z):
+        def expected(t, m, fn, l, f, E, e, z, n):
             return "".join(
                 [
                     f'  File {fn}"<string>"{z}, line {l}1{z}\n',
@@ -5264,7 +5358,7 @@ class TestColorizedTraceback(unittest.TestCase):
             actual = tbstderr.getvalue().splitlines()
 
         lno_foo = foo.__code__.co_firstlineno
-        def expected(t, m, fn, l, f, E, e, z):
+        def expected(t, m, fn, l, f, E, e, z, n):
             return [
                 'Traceback (most recent call last):',
                 f'  File {fn}"{__file__}"{z}, '
@@ -5297,7 +5391,7 @@ class TestColorizedTraceback(unittest.TestCase):
 
         lno_foo = foo.__code__.co_firstlineno
         actual = "".join(exc.format(colorize=True)).splitlines()
-        def expected(t, m, fn, l, f, E, e, z):
+        def expected(t, m, fn, l, f, E, e, z, n):
             return [
                 f"  + Exception Group Traceback (most recent call last):",
                 f'  |   File {fn}"{__file__}"{z}, line {l}{lno_foo+9}{z}, in {f}test_colorized_traceback_from_exception_group{z}',
@@ -5321,6 +5415,92 @@ class TestColorizedTraceback(unittest.TestCase):
         ]
         self.assertEqual(actual, expected(**colors))
 
+    def test_colorized_traceback_unicode(self):
+        try:
+            啊哈=1; 啊哈/0####
+        except Exception as e:
+            exc = traceback.TracebackException.from_exception(e)
+
+        actual = "".join(exc.format(colorize=True)).splitlines()
+        def expected(t, m, fn, l, f, E, e, z, n):
+            return [
+                f"    啊哈=1; {e}啊哈{z}{E}/{z}{e}0{z}####",
+                f"            {e}~~~~{z}{E}^{z}{e}~{z}",
+            ]
+        self.assertEqual(actual[2:4], expected(**colors))
+
+        try:
+            ééééé/0
+        except Exception as e:
+            exc = traceback.TracebackException.from_exception(e)
+
+        actual = "".join(exc.format(colorize=True)).splitlines()
+        def expected(t, m, fn, l, f, E, e, z, n):
+            return [
+                f"    {E}ééééé{z}/0",
+                f"    {E}^^^^^{z}",
+            ]
+        self.assertEqual(actual[2:4], expected(**colors))
+
+    def test_colorized_syntax_error_ascii_display_width(self):
+        """Caret alignment for ASCII edge cases handled by _wlen.
+
+        The old ASCII fast track in _display_width returned the raw character
+        offset for ASCII strings, which is wrong for CTRL-Z (display width 2)
+        and ANSI escape sequences (display width 0).
+        """
+        E = colors["E"]
+        z = colors["z"]
+        t = colors["t"]
+        m = colors["m"]
+        fn = colors["fn"]
+        l = colors["l"]
+
+        def _make_syntax_error(text, offset, end_offset):
+            err = SyntaxError("invalid syntax")
+            err.filename = "<string>"
+            err.lineno = 1
+            err.end_lineno = 1
+            err.text = text
+            err.offset = offset
+            err.end_offset = end_offset
+            return err
+
+        # CTRL-Z (\x1a) is ASCII but displayed as ^Z (2 columns).
+        # Verify caret aligns when CTRL-Z precedes the error.
+        err = _make_syntax_error("a\x1a$\n", offset=3, end_offset=4)
+        exc = traceback.TracebackException.from_exception(err)
+        actual = "".join(exc.format(colorize=True))
+        # 'a' (1 col) + '\x1a' (2 cols) = 3 cols before '$'
+        self.assertIn(
+            f'  File {fn}"<string>"{z}, line {l}1{z}\n'
+            f'    a\x1a{E}${z}\n'
+            f'    {" " * 3}{E}^{z}\n'
+            f'{t}SyntaxError{z}: {m}invalid syntax{z}\n',
+            actual,
+        )
+
+        # CTRL-Z in the highlighted (error) region counts as 2 columns.
+        err = _make_syntax_error("$\x1a\n", offset=1, end_offset=3)
+        exc = traceback.TracebackException.from_exception(err)
+        actual = "".join(exc.format(colorize=True))
+        # '$' (1 col) + '\x1a' (2 cols) = 3 columns of carets
+        self.assertIn(
+            f'    {E}$\x1a{z}\n'
+            f'    {E}{"^" * 3}{z}\n',
+            actual,
+        )
+
+        # ANSI escape sequences are ASCII but take 0 display columns.
+        err = _make_syntax_error("a\x1b[1mb$\n", offset=7, end_offset=8)
+        exc = traceback.TracebackException.from_exception(err)
+        actual = "".join(exc.format(colorize=True))
+        # 'a' (1 col) + '\x1b[1m' (0 cols) + 'b' (1 col) = 2 before '$'
+        self.assertIn(
+            f'    a\x1b[1mb{E}${z}\n'
+            f'    {" " * 2}{E}^{z}\n',
+            actual,
+        )
 
 class TestLazyImportSuggestions(unittest.TestCase):
     """Test that lazy imports are not reified when computing AttributeError suggestions."""
@@ -5330,8 +5510,8 @@ class TestLazyImportSuggestions(unittest.TestCase):
         # pkg.bar prints "BAR_MODULE_LOADED" when imported.
         # If lazy import is reified during suggestion computation, we'll see it.
         code = textwrap.dedent("""
-            lazy import test.test_import.data.lazy_imports.pkg.bar
-            test.test_import.data.lazy_imports.pkg.nonexistent
+            lazy import test.test_lazy_import.data.pkg.bar
+            test.test_lazy_import.data.pkg.nonexistent
         """)
         rc, stdout, stderr = assert_python_failure('-c', code)
         self.assertNotIn(b"BAR_MODULE_LOADED", stdout)
@@ -5340,9 +5520,9 @@ class TestLazyImportSuggestions(unittest.TestCase):
         """Formatting a traceback should not trigger lazy import reification."""
         code = textwrap.dedent("""
             import traceback
-            lazy import test.test_import.data.lazy_imports.pkg.bar
+            lazy import test.test_lazy_import.data.pkg.bar
             try:
-                test.test_import.data.lazy_imports.pkg.nonexistent
+                test.test_lazy_import.data.pkg.nonexistent
             except AttributeError:
                 traceback.format_exc()
             print("OK")
@@ -5354,9 +5534,9 @@ class TestLazyImportSuggestions(unittest.TestCase):
     def test_suggestion_still_works_for_non_lazy_attributes(self):
         """Suggestions should still work for non-lazy module attributes."""
         code = textwrap.dedent("""
-            lazy import test.test_import.data.lazy_imports.pkg.bar
+            lazy import test.test_lazy_import.data.pkg.bar
             # Typo for __name__
-            test.test_import.data.lazy_imports.pkg.__nme__
+            test.test_lazy_import.data.pkg.__nme__
         """)
         rc, stdout, stderr = assert_python_failure('-c', code)
         self.assertIn(b"__name__", stderr)

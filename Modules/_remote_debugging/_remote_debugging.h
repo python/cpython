@@ -29,6 +29,7 @@ extern "C" {
 #include "internal/pycore_interpframe.h"    // FRAME_OWNED_BY_INTERPRETER
 #include "internal/pycore_llist.h"          // struct llist_node
 #include "internal/pycore_long.h"           // _PyLong_GetZero
+#include "internal/pycore_pyerrors.h"       // _PyErr_FormatFromCause
 #include "internal/pycore_stackref.h"       // Py_TAG_BITS
 #include "../../Python/remote_debug.h"
 
@@ -119,9 +120,10 @@ typedef enum _WIN32_THREADSTATE {
  * MACROS AND CONSTANTS
  * ============================================================================ */
 
-#define GET_MEMBER(type, obj, offset) (*(type*)((char*)(obj) + (offset)))
+#define GET_MEMBER(type, obj, offset) \
+    (*(const type *)memcpy(&(type){0}, (const char *)(obj) + (offset), sizeof(type)))
 #define CLEAR_PTR_TAG(ptr) (((uintptr_t)(ptr) & ~Py_TAG_BITS))
-#define GET_MEMBER_NO_TAG(type, obj, offset) (type)(CLEAR_PTR_TAG(*(type*)((char*)(obj) + (offset))))
+#define GET_MEMBER_NO_TAG(type, obj, offset) (type)(CLEAR_PTR_TAG(GET_MEMBER(type, obj, offset)))
 
 /* Size macros for opaque buffers */
 #define SIZEOF_BYTES_OBJ sizeof(PyBytesObject)
@@ -171,12 +173,16 @@ typedef enum _WIN32_THREADSTATE {
 #define THREAD_STATUS_UNKNOWN             (1 << 2)
 #define THREAD_STATUS_GIL_REQUESTED       (1 << 3)
 #define THREAD_STATUS_HAS_EXCEPTION       (1 << 4)
+#define THREAD_STATUS_MAIN_THREAD         (1 << 5)
 
 /* Exception cause macro */
-#define set_exception_cause(unwinder, exc_type, message) \
-    if (unwinder->debug) { \
-        _set_debug_exception_cause(exc_type, message); \
-    }
+#define set_exception_cause(unwinder, exc_type, message)                              \
+    do {                                                                              \
+        assert(PyErr_Occurred() && "function returned -1 without setting exception"); \
+        if (unwinder->debug) {                                                        \
+            _set_debug_exception_cause(exc_type, message);                            \
+        }                                                                             \
+    } while (0)
 
 /* ============================================================================
  * TYPE DEFINITIONS
@@ -303,6 +309,7 @@ typedef struct {
 #endif
 #ifdef __APPLE__
     uint64_t thread_id_offset;
+    int thread_id_offset_initialized;
 #endif
 #ifdef MS_WINDOWS
     PVOID win_process_buffer;
@@ -411,6 +418,7 @@ extern void cached_code_metadata_destroy(void *ptr);
 /* Validation */
 extern int is_prerelease_version(uint64_t version);
 extern int validate_debug_offsets(struct _Py_DebugOffsets *debug_offsets);
+#define PY_REMOTE_DEBUG_INVALID_ASYNC_DEBUG_OFFSETS (-2)
 
 /* ============================================================================
  * MEMORY READING FUNCTION DECLARATIONS
@@ -571,7 +579,8 @@ extern PyObject* unwind_stack_for_thread(
     RemoteUnwinderObject *unwinder,
     uintptr_t *current_tstate,
     uintptr_t gil_holder_tstate,
-    uintptr_t gc_frame
+    uintptr_t gc_frame,
+    uintptr_t main_thread_tstate
 );
 
 /* Thread stopping functions (for blocking mode) */

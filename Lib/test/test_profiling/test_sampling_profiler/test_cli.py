@@ -1,8 +1,10 @@
 """Tests for sampling profiler CLI argument parsing and functionality."""
 
 import io
+import os
 import subprocess
 import sys
+import tempfile
 import unittest
 from unittest import mock
 
@@ -722,3 +724,38 @@ class TestSampleProfilerCLI(unittest.TestCase):
                 main()
 
             self.assertIn(fake_pid, str(cm.exception))
+
+    def test_cli_replay_rejects_non_binary_profile(self):
+        with tempfile.TemporaryDirectory() as tempdir:
+            profile = os.path.join(tempdir, "output.prof")
+            with open(profile, "wb") as file:
+                file.write(b"not a binary sampling profile")
+
+            with mock.patch("sys.argv", ["profiling.sampling.cli", "replay", profile]):
+                with self.assertRaises(SystemExit) as cm:
+                    main()
+
+        error = str(cm.exception)
+        self.assertIn("not a binary sampling profile", error)
+        self.assertIn("--binary", error)
+
+    def test_cli_replay_reader_errors_exit_cleanly(self):
+        with tempfile.TemporaryDirectory() as tempdir:
+            profile = os.path.join(tempdir, "output.bin")
+            with open(profile, "wb") as file:
+                file.write(b"HCAT" + (b"\0" * 60))
+
+            with (
+                mock.patch("sys.argv", ["profiling.sampling.cli", "replay", profile]),
+                mock.patch(
+                    "profiling.sampling.cli.BinaryReader",
+                    side_effect=ValueError("Unsupported format version 2"),
+                ),
+            ):
+                with self.assertRaises(SystemExit) as cm:
+                    main()
+
+        self.assertEqual(
+            str(cm.exception),
+            "Error: Unsupported format version 2",
+        )

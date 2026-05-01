@@ -165,6 +165,7 @@ RingBuf_Put(RingBuf *buf, PyObject *item)
         // Buffer is full, grow it.
         if (resize_ringbuf(buf, buf->items_cap * 2) < 0) {
             PyErr_NoMemory();
+            Py_DECREF(item);
             return -1;
         }
     }
@@ -616,6 +617,7 @@ queuemodule_exec(PyObject *module)
 }
 
 static PyModuleDef_Slot queuemodule_slots[] = {
+    _Py_ABI_SLOT,
     {Py_mod_exec, queuemodule_exec},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {Py_mod_gil, Py_MOD_GIL_NOT_USED},

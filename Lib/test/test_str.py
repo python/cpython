@@ -454,6 +454,13 @@ class StrTest(string_tests.StringLikeTest,
         self.assertEqual("[a\xe9]".translate(str.maketrans({'a': '<\u20ac>'})),
                          "[<\u20ac>\xe9]")
 
+        # with frozendict
+        tbl = self.type2test.maketrans(frozendict({'s': 'S', 'T': 't'}))
+        self.assertEqual(tbl, {ord('s'): 'S', ord('T'): 't'})
+        self.assertEqual('sTan'.translate(tbl), 'Stan')
+        tbl = self.type2test.maketrans(frozendict({'a': None, 'b': '<i>'}))
+        self.checkequalnofix('<i><i><i>c', 'abababc', 'translate', tbl)
+
         # invalid Unicode characters
         invalid_char = 0x10ffff+1
         for before in "a\xe9\u20ac\U0010ffff":

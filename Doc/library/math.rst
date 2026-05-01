@@ -781,9 +781,8 @@ the following functions from the :mod:`math.integer` module:
    Floats with integral values (like ``5.0``) are no longer accepted in the
    :func:`factorial` function.
 
-.. deprecated:: 3.15
-   These aliases are :term:`soft deprecated` in favor of the
-   :mod:`math.integer` functions.
+.. soft-deprecated:: 3.15
+   Use the :mod:`math.integer` functions instead of these aliases.
 
 
 Constants

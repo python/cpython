@@ -454,7 +454,7 @@ on x86-64 and AArch64 architectures.
 However, a future release of GCC is expected to support this as well.
 
 This feature is opt-in for now. Enabling profile-guided optimization is highly
-recommendeded when using the new interpreter as it is the only configuration
+recommended when using the new interpreter as it is the only configuration
 that has been tested and validated for improved performance.
 For further information, see :option:`--with-tail-call-interp`.
 
@@ -897,8 +897,7 @@ Command line and environment
   (Contributed by Noah Kim and Adam Turner in :gh:`118655`.)
 
 * The command-line option :option:`-c` now automatically dedents its code
-  argument before execution. The auto-dedentation behavior mirrors
-  :func:`textwrap.dedent`.
+  argument before execution.
   (Contributed by Jon Crall and Steven Sun in :gh:`103998`.)
 
 * :option:`!-J` is no longer a reserved flag for Jython_,

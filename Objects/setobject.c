@@ -3023,14 +3023,14 @@ PySet_Contains(PyObject *anyset, PyObject *key)
         PyErr_BadInternalCall();
         return -1;
     }
-    if (PyFrozenSet_CheckExact(anyset)) {
-        return set_contains_key((PySetObject *)anyset, key);
+
+    PySetObject *so = (PySetObject *)anyset;
+    Py_hash_t hash = _PyObject_HashFast(key);
+    if (hash == -1) {
+        set_unhashable_type(key);
+        return -1;
     }
-    int rv;
-    Py_BEGIN_CRITICAL_SECTION(anyset);
-    rv = set_contains_key((PySetObject *)anyset, key);
-    Py_END_CRITICAL_SECTION();
-    return rv;
+    return set_contains_entry(so, key, hash);
 }
 
 int
