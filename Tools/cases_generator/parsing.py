@@ -265,7 +265,7 @@ class Expression(Node):
 @dataclass
 class CacheEffect(Node):
     name: str
-    size: int | None
+    size: int
     type_tag: str | None = None
 
 
@@ -450,23 +450,19 @@ class Parser(PLexer):
 
     @contextual
     def cache_effect(self) -> CacheEffect | None:
-        # IDENTIFIER ('/' NUMBER)? (':' IDENTIFIER)?
-        # Either '/' or ':' must follow; otherwise this is a stack effect.
+        # IDENTIFIER '/' NUMBER (':' IDENTIFIER)?
         if tkn := self.expect(lx.IDENTIFIER):
-            size: int | None = None
             if self.expect(lx.DIVIDE):
                 num = self.require(lx.NUMBER).text
                 try:
                     size = int(num)
                 except ValueError:
                     raise self.make_syntax_error(f"Expected integer, got {num!r}")
-            type_tag: str | None = None
-            if self.expect(lx.COLON):
-                tag_tkn = self.require(lx.IDENTIFIER)
-                type_tag = tag_tkn.text
-            if size is None and type_tag is None:
-                return None
-            return CacheEffect(tkn.text, size, type_tag)
+                type_tag: str | None = None
+                if self.expect(lx.COLON):
+                    tag_tkn = self.require(lx.IDENTIFIER)
+                    type_tag = tag_tkn.text
+                return CacheEffect(tkn.text, size, type_tag)
         return None
 
     @contextual

@@ -182,9 +182,9 @@ class CacheEntry:
     size: int
     type_tag: str | None = None
 
-    # Maps DSL type tag (after ':') to (C type, C cast, implied cache size).
-    # The size is implied: writing ':tag' alone fixes the slot size; an
-    # explicit '/N' is rejected as redundant.
+    # Maps DSL type tag (after ':') to (C type, C cast, expected slot size
+    # in code units). The size constraint is enforced against the explicit
+    # '/N' written alongside the tag.
     TYPE_TAGS: ClassVar[dict[str, tuple[str, str, int]]] = {
         "pretagged": ("uintptr_t", "uintptr_t", 4),
     }
@@ -192,12 +192,7 @@ class CacheEntry:
     @classmethod
     def from_parsed(cls, effect: parser.CacheEffect) -> "CacheEntry":
         cls._validate_type_tag(effect)
-        if effect.type_tag is not None:
-            _, _, size = cls.TYPE_TAGS[effect.type_tag]
-        else:
-            assert effect.size is not None  # parser guarantees one or the other
-            size = effect.size
-        return cls(effect.name, size, effect.type_tag)
+        return cls(effect.name, effect.size, effect.type_tag)
 
     @classmethod
     def _validate_type_tag(cls, effect: parser.CacheEffect) -> None:
@@ -210,17 +205,18 @@ class CacheEntry:
                 f"Known tags: {known}",
                 effect.tokens[0],
             )
-        if effect.size is not None:
+        _, _, expected_size = cls.TYPE_TAGS[effect.type_tag]
+        if effect.size != expected_size:
             raise analysis_error(
-                f"':{effect.type_tag}' implies cache size; remove "
-                f"'/{effect.size}'",
+                f"':{effect.type_tag}' requires size /{expected_size}, "
+                f"got /{effect.size}",
                 effect.tokens[0],
             )
 
     def __str__(self) -> str:
         if self.type_tag is None:
             return f"{self.name}/{self.size}"
-        return f"{self.name}:{self.type_tag}"
+        return f"{self.name}/{self.size}:{self.type_tag}"
 
 
 @dataclass
@@ -1150,6 +1146,11 @@ def desugar_inst(
     # Move unused cache entries to the Instruction, removing them from the Uop.
     for input in inst.inputs:
         if isinstance(input, parser.CacheEffect) and input.name == "unused":
+            if input.type_tag is not None:
+                raise analysis_error(
+                    "'unused' cache slot cannot carry a type tag",
+                    input.tokens[0],
+                )
             parts.append(Skip(input.size))
         else:
             op_inputs.append(input)
