@@ -202,7 +202,7 @@ def get_layout(ns):
         else:
             yield from in_build(PYTHON_STABLE_DLL_NAME)
             # TODO: Update 0xA8 to 0xB0 before merging
-            if (VER_MAJOR, VER_MINOR) >= (3, 15, 0, 0xA8):
+            if (VER_MAJOR, VER_MINOR, VER_MICRO, VER_FIELD4) >= (3, 15, 0, 0xA8):
                 yield from in_build(FREETHREADED_PYTHON_STABLE_DLL_NAME)
 
     found_any = False
