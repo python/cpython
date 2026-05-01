@@ -560,6 +560,34 @@ class TestGeneratedCases(unittest.TestCase):
     """
         self.run_cases_test(input, output)
 
+    def test_pretagged_cache_effect(self):
+        input = """
+        inst(OP, (ptr/4^, value --)) {
+            DEAD(value);
+        }
+    """
+        output = """
+        TARGET(OP) {
+            #if _Py_TAIL_CALL_INTERP
+            int opcode = OP;
+            (void)(opcode);
+            #endif
+            _Py_CODEUNIT* const this_instr = next_instr;
+            (void)this_instr;
+            frame->instr_ptr = next_instr;
+            next_instr += 5;
+            INSTRUCTION_STATS(OP);
+            _PyStackRef value;
+            value = stack_pointer[-1];
+            uintptr_t ptr = read_u64(&this_instr[1].cache);
+            (void)ptr;
+            stack_pointer += -1;
+            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+            DISPATCH();
+        }
+    """
+        self.run_cases_test(input, output)
+
     def test_suppress_dispatch(self):
         input = """
         label(somewhere) {
