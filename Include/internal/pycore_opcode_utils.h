@@ -82,13 +82,6 @@ extern "C" {
 #define CONSTANT_MINUS_ONE 11
 #define NUM_COMMON_CONSTANTS 12
 
-PyAPI_DATA(PyCFunctionObject) _PyBuiltin_All;
-PyAPI_DATA(PyCFunctionObject) _PyBuiltin_Any;
-
-/* Non-static: used by static _PyBuiltin_All/_Any in bltinmodule.c. */
-extern PyObject *_PyCFunction_vectorcall_O(
-    PyObject *func, PyObject *const *args, size_t nargsf, PyObject *kwnames);
-
 /* Values used in the oparg for RESUME */
 #define RESUME_AT_FUNC_START 0
 #define RESUME_AFTER_YIELD 1
