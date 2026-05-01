@@ -263,6 +263,10 @@
     <PyDllName Condition="$(DisableGil) == 'true'">python$(MajorVersionNumber)$(MinorVersionNumber)t$(PyDebugExt)</PyDllName>
     <PyDllName Condition="$(PyDllName) == ''">python$(MajorVersionNumber)$(MinorVersionNumber)$(PyDebugExt)</PyDllName>
 
+    <!-- The name of the resulting pythonX.dll (without the extension) -->
+    <Py3DllName Condition="$(Py3DllName) == ''">python3</Py3DllName>
+    <Abi3tDllName Condition="$(Abi3tDllName) == ''">python3t</Abi3tDllName>
+
     <!-- The version and platform tag to include in .pyd filenames -->
     <PydTag Condition="$(ArchName) == 'win32'">.cp$(MajorVersionNumber)$(MinorVersionNumber)-win32</PydTag>
     <PydTag Condition="$(ArchName) == 'arm32'">.cp$(MajorVersionNumber)$(MinorVersionNumber)-win_arm32</PydTag>

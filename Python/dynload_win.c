@@ -156,6 +156,9 @@ extern HMODULE PyWin_DLLhModule;
 static int
 _Py_CheckPython3(void)
 {
+#ifndef PY3_DLLNAME
+    return 1;
+#else
     static int python3_checked = 0;
     static HANDLE hPython3;
     #define MAXPATHLEN 512
@@ -199,6 +202,7 @@ _Py_CheckPython3(void)
     }
     return hPython3 != NULL;
     #undef MAXPATHLEN
+#endif /* PY3_DLLNAME */
 }
 
 /* To support extensions that can load with both abi3 and abi3t, we also need to

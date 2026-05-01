@@ -167,6 +167,7 @@ def get_layout(ns):
         if not ns.include_alias:
             alias = []
             aliasw = []
+        # TODO: Update 0xA8 to 0xB0 before merging
         if (VER_MAJOR, VER_MINOR, VER_MICRO, VER_FIELD4) < (3, 15, 0, 0xA8):
             source = "python{}t.exe".format(VER_DOT)
             sourcew = "pythonw{}t.exe".format(VER_DOT)
@@ -200,7 +201,8 @@ def get_layout(ns):
             yield from in_build(FREETHREADED_PYTHON_STABLE_DLL_NAME)
         else:
             yield from in_build(PYTHON_STABLE_DLL_NAME)
-            if (VER_MAJOR, VER_MINOR) >= (3, 15):
+            # TODO: Update 0xA8 to 0xB0 before merging
+            if (VER_MAJOR, VER_MINOR) >= (3, 15, 0, 0xB0):
                 yield from in_build(FREETHREADED_PYTHON_STABLE_DLL_NAME)
 
     found_any = False
@@ -674,6 +676,10 @@ def main():
     if not ns.arch:
         from .support.arch import calculate_from_build_dir
         ns.arch = calculate_from_build_dir(ns.build)
+
+    if ns.arch.endswith("t"):
+        ns.arch = ns.arch[:-1]
+        ns.include_freethreaded = True
 
     expect = f"{VER_MAJOR}.{VER_MINOR}.{VER_MICRO}{VER_SUFFIX}"
     actual = check_patchlevel_version(ns.source)
