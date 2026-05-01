@@ -143,6 +143,12 @@ typedef struct {
 
 typedef struct {
     _Py_BackoffCounter counter;
+} _PyGetIterCache;
+
+#define INLINE_CACHE_ENTRIES_GET_ITER CACHE_ENTRIES(_PyGetIterCache)
+
+typedef struct {
+    _Py_BackoffCounter counter;
 } _PySendCache;
 
 #define INLINE_CACHE_ENTRIES_SEND CACHE_ENTRIES(_PySendCache)
@@ -324,6 +330,7 @@ PyAPI_FUNC(void) _Py_Specialize_ContainsOp(_PyStackRef value, _Py_CODEUNIT *inst
 PyAPI_FUNC(void) _Py_GatherStats_GetIter(_PyStackRef iterable);
 PyAPI_FUNC(void) _Py_Specialize_CallFunctionEx(_PyStackRef func_st, _Py_CODEUNIT *instr);
 PyAPI_FUNC(void) _Py_Specialize_Resume(_Py_CODEUNIT *instr, PyThreadState *tstate, _PyInterpreterFrame *frame);
+PyAPI_FUNC(void) _Py_Specialize_GetIter(_PyStackRef iterable, _Py_CODEUNIT *instr);
 
 // Utility functions for reading/writing 32/64-bit values in the inline caches.
 // Great care should be taken to ensure that these functions remain correct and
@@ -503,6 +510,11 @@ typedef struct {
        aliased to either operand). Used by the tier 2 optimizer to enable
        inplace follow-up ops. */
     int result_unique;
+    /* Expected types of the left and right operands. Used by the tier 2
+       optimizer to eliminate _GUARD_BINARY_OP_EXTEND when the operand
+       types are already known. NULL means unknown/don't eliminate. */
+    PyTypeObject *lhs_type;
+    PyTypeObject *rhs_type;
 } _PyBinaryOpSpecializationDescr;
 
 /* Comparison bit masks. */

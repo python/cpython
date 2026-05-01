@@ -37,7 +37,7 @@ class FilesTests:
     def test_joinpath_with_multiple_args(self):
         files = resources.files(self.data)
         binfile = files.joinpath('subdirectory', 'binary.file')
-        self.assertTrue(binfile.is_file())
+        assert binfile.is_file()
 
 
 class OpenDiskTests(FilesTests, util.DiskSetup, unittest.TestCase):

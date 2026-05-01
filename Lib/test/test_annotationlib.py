@@ -1961,6 +1961,15 @@ class TestForwardRefClass(unittest.TestCase):
             "typing.List[ForwardRef('int', owner='class')]",
         )
 
+    def test_forward_repr_extra_names(self):
+        def f(a: undefined | str): ...
+
+        annos = get_annotations(f, format=Format.FORWARDREF)
+
+        self.assertRegex(
+            repr(annos['a']), r"ForwardRef\('undefined \| str'.*\)"
+        )
+
     def test_forward_recursion_actually(self):
         def namespace1():
             a = ForwardRef("A")
@@ -2036,6 +2045,17 @@ class TestForwardRefClass(unittest.TestCase):
     def test_evaluate_string_format(self):
         fr = ForwardRef("set[Any]")
         self.assertEqual(fr.evaluate(format=Format.STRING), "set[Any]")
+
+    def test_evaluate_string_format_extra_names(self):
+        # Test that internal extra_names are replaced when evaluating as strings
+        def f(a: unknown | str | int | list[str] | tuple[int, ...]): ...
+
+        fr = get_annotations(f, format=Format.FORWARDREF)['a']
+        # Test the cache is not populated before access
+        self.assertIsNone(fr.__resolved_str_cache__)
+
+        self.assertEqual(fr.evaluate(format=Format.STRING), "unknown | str | int | list[str] | tuple[int, ...]")
+        self.assertEqual(fr.__resolved_str_cache__, "unknown | str | int | list[str] | tuple[int, ...]")
 
     def test_evaluate_forwardref_format(self):
         fr = ForwardRef("undef")

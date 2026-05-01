@@ -436,6 +436,8 @@ class TestSampleProfilerComponents(unittest.TestCase):
         name = resolve_name(data, strings)
         self.assertTrue(name.startswith("Program Root: "))
         self.assertIn("func2 (file.py:20)", name)
+        label = strings[data["label"]]
+        self.assertTrue(label.startswith("Program Root: "))
         self.assertEqual(data["self"], 0)  # non-leaf: no self time
         children = data.get("children", [])
         self.assertEqual(len(children), 1)

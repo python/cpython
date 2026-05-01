@@ -314,19 +314,6 @@ unwind_stack_for_thread(
 
     long tid = GET_MEMBER(long, ts, unwinder->debug_offsets.thread_state.native_thread_id);
 
-    // Read GC collecting state from the interpreter (before any skip checks)
-    uintptr_t interp_addr = GET_MEMBER(uintptr_t, ts, unwinder->debug_offsets.thread_state.interp);
-
-    // Read the GC runtime state from the interpreter state
-    uintptr_t gc_addr = interp_addr + unwinder->debug_offsets.interpreter_state.gc;
-    char gc_state[SIZEOF_GC_RUNTIME_STATE];
-    if (_Py_RemoteDebug_PagedReadRemoteMemory(&unwinder->handle, gc_addr, unwinder->debug_offsets.gc.size, gc_state) < 0) {
-        set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to read GC state");
-        goto error;
-    }
-    STATS_INC(unwinder, memory_reads);
-    STATS_ADD(unwinder, memory_bytes_read, unwinder->debug_offsets.gc.size);
-
     // Calculate thread status using flags (always)
     int status_flags = 0;
 
