@@ -108,6 +108,7 @@ Other Iterator Objects
 .. c:var:: PyTypeObject PyDictRevIterValue_Type
 .. c:var:: PyTypeObject PyDictIterItem_Type
 .. c:var:: PyTypeObject PyDictRevIterItem_Type
+.. c:var:: PyTypeObject PyODictIter_Type
 
    Type objects for iterators of various built-in objects.
 

@@ -344,7 +344,7 @@ PyOS_StdioReadline(FILE *sys_stdin, FILE *sys_stdout, const char *prompt)
             break;
         }
         n += strlen(p + n);
-    } while (p[n-1] != '\n');
+    } while (n == 0 || p[n-1] != '\n');
 
     pr = (char *)PyMem_RawRealloc(p, n+1);
     if (pr == NULL) {

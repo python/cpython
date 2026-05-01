@@ -1,10 +1,10 @@
-:mod:`math.integer` --- integer-specific mathematics functions
-==============================================================
+:mod:`!math.integer` --- integer-specific mathematics functions
+===============================================================
 
 .. module:: math.integer
    :synopsis: Integer-specific mathematics functions.
 
-.. versionadded:: next
+.. versionadded:: 3.15
 
 --------------
 

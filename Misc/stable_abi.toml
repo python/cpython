@@ -1,4 +1,4 @@
-# This file lists the contents of the Limited API and Stable ABI.
+# This file lists the contents of Limited API and Stable ABI.
 # Please append new items at the end.
 
 # The syntax of this file is not fixed.
@@ -41,18 +41,29 @@
 #   - 'full-abi': All of the struct is part of the ABI, including the size
 #     (users may define arrays of these structs).
 #     Typically used for initialization, rather than at runtime.
+#     Any members whose names start with an underscore are not part of the
+#     limited API; they're for CPython's use only.
 #   - 'opaque': No members are part of the ABI, nor is the size. The Limited
 #     API only handles these via pointers. The C definition should be
 #     incomplete (opaque).
-#   - 'members': Only specific members are part of the stable ABI.
-#     The struct's size may change, so it can't be used in arrays.
+#   - 'abi3t-opaque': 'full-abi' in abi3; 'opaque' in abi3t.
+#     For docs, the generated annotation refers to details that need to
+#     be added to the ReST file manually.
+#   - 'members':
+#     - 'opaque' in abi3t.
+#     - In abi3, only specific members are part of the stable ABI.
+#       The struct's size may change, so it can't be used in arrays.
 #     Do not add new structs of this kind without an extremely good reason.
+#     For docs, the generated annotation refers to details that need to
+#     be added to the ReST file manually.
 # - members: For `struct` with struct_abi_kind = 'members', a list of the
 #   exposed members.
 # - doc: for `feature_macro`, the blurb added in documentation
 # - windows: for `feature_macro`, this macro is defined on Windows.
 #   (This info is used to generate the DLL manifest and needs to be available
 #   on all platforms.)
+# - abi3t_opaque: In abi3t, this struct is opaque (as if `struct_abi_kind`
+#   was 'opaque' and `members` was missing).
 
 # Removing items from this file is generally not allowed, and additions should
 # be considered with that in mind. See the devguide for exact rules:
@@ -105,10 +116,10 @@
     struct_abi_kind = 'full-abi'
 [struct.PyModuleDef_Base]
     added = '3.2'
-    struct_abi_kind = 'full-abi'
+    struct_abi_kind = 'abi3t-opaque'
 [struct.PyModuleDef]
     added = '3.2'
-    struct_abi_kind = 'full-abi'
+    struct_abi_kind = 'abi3t-opaque'
 [struct.PyStructSequence_Field]
     added = '3.2'
     struct_abi_kind = 'full-abi'
@@ -1902,6 +1913,13 @@
     added = '3.5'
 [data.PyModuleDef_Type]
     added = '3.5'
+[const.Py_mod_create]
+    added = '3.5'
+[const.Py_mod_exec]
+    added = '3.5'
+[struct.PyModuleDef_Slot]
+    added = '3.5'
+    struct_abi_kind = 'full-abi'
 
 # New slots in 3.5:
 # d51374ed78a3e3145911a16cdf3b9b84b3ba7d15 - Matrix multiplication (PEP 465)
@@ -2444,6 +2462,9 @@
     added = '3.12'
 [const.Py_TPFLAGS_ITEMS_AT_END]
     added = '3.12'
+[const.Py_mod_multiple_interpreters]
+    added = '3.12'
+
 [function.PyImport_AddModuleRef]
     added = '3.13'
 [function.PyWeakref_GetRef]
@@ -2522,10 +2543,14 @@
     added = '3.13'
 [function.PyEval_GetFrameLocals]
     added = '3.13'
+[const.Py_mod_gil]
+    added = '3.13'
 
 [function.Py_TYPE]
+    # Before 3.14, this was a macro that accessed the PyObject member
     added = '3.14'
 [function.Py_REFCNT]
+    # Before 3.14, this was a macro that accessed the PyObject member
     added = '3.14'
 [function.PyIter_NextItem]
     added = '3.14'
@@ -2639,3 +2664,54 @@
     added = '3.15'
 [const.Py_mod_token]
     added = '3.15'
+[function.PyDict_SetDefaultRef]
+    added = '3.15'
+[function.Py_SIZE]
+    # Before 3.15, this was a macro that accessed the PyObject member
+    added = '3.15'
+[function.Py_IS_TYPE]
+    # Before 3.15, this was a macro that accessed the PyObject member
+    added = '3.15'
+[function.Py_SET_SIZE]
+    # Before 3.15, this was a macro that accessed the PyObject member
+    added = '3.15'
+[function.PyObject_GetTypeData_DuringGC]
+    added = '3.15'
+[function.PyType_GetModuleState_DuringGC]
+    added = '3.15'
+[function.PyModule_GetState_DuringGC]
+    added = '3.15'
+[function.PyModule_GetToken_DuringGC]
+    added = '3.15'
+[function.PyType_GetBaseByToken_DuringGC]
+    added = '3.15'
+[function.PyType_GetModule_DuringGC]
+    added = '3.15'
+[function.PyType_GetModuleByToken_DuringGC]
+    added = '3.15'
+
+# PEP 757 import/export API.
+
+[function.PyLong_GetNativeLayout]
+    added = '3.15'
+[function.PyLong_Export]
+    added = '3.15'
+[function.PyLong_FreeExport]
+    added = '3.15'
+[function.PyLongWriter_Create]
+    added = '3.15'
+[function.PyLongWriter_Finish]
+    added = '3.15'
+[function.PyLongWriter_Discard]
+    added = '3.15'
+[struct.PyLongWriter]
+    added = '3.15'
+    struct_abi_kind = 'opaque'
+[struct.PyLongLayout]
+    added = '3.15'
+    struct_abi_kind = 'full-abi'
+[struct.PyLongExport]
+    added = '3.15'
+    # Note: The `_reserved` member of this struct is for interal use only.
+    # (The definition of 'full-abi' was clarified when this entry was added.)
+    struct_abi_kind = 'full-abi'

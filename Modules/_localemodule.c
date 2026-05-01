@@ -555,19 +555,7 @@ _locale__getdefaultlocale_impl(PyObject *module)
             return Py_BuildValue("ss", locale, encoding);
     }
 
-    /* If we end up here, this windows version didn't know about
-       ISO639/ISO3166 names (it's probably Windows 95).  Return the
-       Windows language identifier instead (a hexadecimal number) */
-
-    locale[0] = '0';
-    locale[1] = 'x';
-    if (GetLocaleInfoA(LOCALE_USER_DEFAULT, LOCALE_IDEFAULTLANGUAGE,
-                      locale+2, sizeof(locale)-2)) {
-        return Py_BuildValue("ss", locale, encoding);
-    }
-
     /* cannot determine the language code (very unlikely) */
-    Py_INCREF(Py_None);
     return Py_BuildValue("Os", Py_None, encoding);
 }
 #endif
@@ -1064,6 +1052,7 @@ _locale_exec(PyObject *module)
 }
 
 static struct PyModuleDef_Slot _locale_slots[] = {
+    _Py_ABI_SLOT,
     {Py_mod_exec, _locale_exec},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {Py_mod_gil, Py_MOD_GIL_NOT_USED},

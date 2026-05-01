@@ -143,6 +143,12 @@ typedef struct {
 
 typedef struct {
     _Py_BackoffCounter counter;
+} _PyGetIterCache;
+
+#define INLINE_CACHE_ENTRIES_GET_ITER CACHE_ENTRIES(_PyGetIterCache)
+
+typedef struct {
+    _Py_BackoffCounter counter;
 } _PySendCache;
 
 #define INLINE_CACHE_ENTRIES_SEND CACHE_ENTRIES(_PySendCache)
@@ -159,6 +165,12 @@ typedef struct {
 } _PyContainsOpCache;
 
 #define INLINE_CACHE_ENTRIES_CONTAINS_OP CACHE_ENTRIES(_PyContainsOpCache)
+
+typedef struct {
+    _Py_BackoffCounter counter;
+} _PyCallFunctionExCache;
+
+#define INLINE_CACHE_ENTRIES_CALL_FUNCTION_EX CACHE_ENTRIES(_PyCallFunctionExCache)
 
 /* "Locals plus" for a code object is the set of locals + cell vars +
  * free vars.  This relates to variable names as well as offsets into
@@ -286,17 +298,7 @@ extern int _PyCode_SafeAddr2Line(PyCodeObject *co, int addr);
 extern void _PyCode_Clear_Executors(PyCodeObject *code);
 
 
-#ifdef Py_GIL_DISABLED
-// gh-115999 tracks progress on addressing this.
-#define ENABLE_SPECIALIZATION 0
-// Use this to enable specialization families once they are thread-safe. All
-// uses will be replaced with ENABLE_SPECIALIZATION once all families are
-// thread-safe.
-#define ENABLE_SPECIALIZATION_FT 1
-#else
 #define ENABLE_SPECIALIZATION 1
-#define ENABLE_SPECIALIZATION_FT ENABLE_SPECIALIZATION
-#endif
 
 /* Specialization functions, these are exported only for other re-generated
  * interpreters to call */
@@ -311,8 +313,8 @@ PyAPI_FUNC(void) _Py_Specialize_LoadGlobal(PyObject *globals, PyObject *builtins
                                       _Py_CODEUNIT *instr, PyObject *name);
 PyAPI_FUNC(void) _Py_Specialize_StoreSubscr(_PyStackRef container, _PyStackRef sub,
                                        _Py_CODEUNIT *instr);
-PyAPI_FUNC(void) _Py_Specialize_Call(_PyStackRef callable, _Py_CODEUNIT *instr,
-                                int nargs);
+PyAPI_FUNC(void) _Py_Specialize_Call(_PyStackRef callable, _PyStackRef self_or_null,
+                                _Py_CODEUNIT *instr, int nargs);
 PyAPI_FUNC(void) _Py_Specialize_CallKw(_PyStackRef callable, _Py_CODEUNIT *instr,
                                   int nargs);
 PyAPI_FUNC(void) _Py_Specialize_BinaryOp(_PyStackRef lhs, _PyStackRef rhs, _Py_CODEUNIT *instr,
@@ -326,6 +328,9 @@ PyAPI_FUNC(void) _Py_Specialize_Send(_PyStackRef receiver, _Py_CODEUNIT *instr);
 PyAPI_FUNC(void) _Py_Specialize_ToBool(_PyStackRef value, _Py_CODEUNIT *instr);
 PyAPI_FUNC(void) _Py_Specialize_ContainsOp(_PyStackRef value, _Py_CODEUNIT *instr);
 PyAPI_FUNC(void) _Py_GatherStats_GetIter(_PyStackRef iterable);
+PyAPI_FUNC(void) _Py_Specialize_CallFunctionEx(_PyStackRef func_st, _Py_CODEUNIT *instr);
+PyAPI_FUNC(void) _Py_Specialize_Resume(_Py_CODEUNIT *instr, PyThreadState *tstate, _PyInterpreterFrame *frame);
+PyAPI_FUNC(void) _Py_Specialize_GetIter(_PyStackRef iterable, _Py_CODEUNIT *instr);
 
 // Utility functions for reading/writing 32/64-bit values in the inline caches.
 // Great care should be taken to ensure that these functions remain correct and
@@ -498,6 +503,18 @@ typedef struct {
     int oparg;
     binaryopguardfunc guard;
     binaryopactionfunc action;
+    /* Static type of the result, or NULL if unknown. Used by the tier 2
+       optimizer to propagate type information through _BINARY_OP_EXTEND. */
+    PyTypeObject *result_type;
+    /* Nonzero iff `action` always returns a freshly allocated object (not
+       aliased to either operand). Used by the tier 2 optimizer to enable
+       inplace follow-up ops. */
+    int result_unique;
+    /* Expected types of the left and right operands. Used by the tier 2
+       optimizer to eliminate _GUARD_BINARY_OP_EXTEND when the operand
+       types are already known. NULL means unknown/don't eliminate. */
+    PyTypeObject *lhs_type;
+    PyTypeObject *rhs_type;
 } _PyBinaryOpSpecializationDescr;
 
 /* Comparison bit masks. */
@@ -556,7 +573,7 @@ _PyCode_GetTLBCFast(PyThreadState *tstate, PyCodeObject *co)
 
 // Return a pointer to the thread-local bytecode for the current thread,
 // creating it if necessary.
-extern _Py_CODEUNIT *_PyCode_GetTLBC(PyCodeObject *co);
+PyAPI_FUNC(_Py_CODEUNIT *) _PyCode_GetTLBC(PyCodeObject *co);
 
 // Reserve an index for the current thread into thread-local bytecode
 // arrays

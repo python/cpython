@@ -1829,9 +1829,7 @@ _ssl__SSLContext_load_cert_chain(PyObject *self, PyObject *const *args, Py_ssize
     }
     password = args[2];
 skip_optional_pos:
-    Py_BEGIN_CRITICAL_SECTION(self);
     return_value = _ssl__SSLContext_load_cert_chain_impl((PySSLContext *)self, certfile, keyfile, password);
-    Py_END_CRITICAL_SECTION();
 
 exit:
     return return_value;
@@ -3325,4 +3323,4 @@ exit:
 #ifndef _SSL_ENUM_CRLS_METHODDEF
     #define _SSL_ENUM_CRLS_METHODDEF
 #endif /* !defined(_SSL_ENUM_CRLS_METHODDEF) */
-/*[clinic end generated code: output=3b6c9cbfc4660ecb input=a9049054013a1b77]*/
+/*[clinic end generated code: output=e29d5ada294f97bb input=a9049054013a1b77]*/

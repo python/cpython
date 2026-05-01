@@ -7,6 +7,7 @@ import subprocess
 import shutil
 import json
 import textwrap
+from unittest.mock import patch
 from copy import copy
 
 from test import support
@@ -20,7 +21,7 @@ from test.support import (
 )
 from test.support.import_helper import import_module
 from test.support.os_helper import (TESTFN, unlink, skip_unless_symlink,
-                                    change_cwd)
+                                    change_cwd, EnvironmentVarGuard)
 from test.support.venv import VirtualEnvironmentMixin
 
 import sysconfig
@@ -247,19 +248,15 @@ class TestSysConfig(unittest.TestCase, VirtualEnvironmentMixin):
         self.assertIsInstance(actual_platform, str)
         self.assertTrue(actual_platform)
 
-        # windows XP, 32bits
+        # Windows
         os.name = 'nt'
-        sys.version = ('2.4.4 (#71, Oct 18 2006, 08:34:43) '
-                       '[MSC v.1310 32 bit (Intel)]')
-        sys.platform = 'win32'
-        self.assertEqual(get_platform(), 'win32')
-
-        # windows XP, amd64
-        os.name = 'nt'
-        sys.version = ('2.4.4 (#71, Oct 18 2006, 08:34:43) '
-                       '[MSC v.1310 32 bit (Amd64)]')
-        sys.platform = 'win32'
-        self.assertEqual(get_platform(), 'win-amd64')
+        with patch('_sysconfig.get_platform', create=True, return_value='win32'):
+            self.assertEqual(get_platform(), 'win32')
+        with patch('_sysconfig.get_platform', create=True, return_value='win-amd64'):
+            self.assertEqual(get_platform(), 'win-amd64')
+        sys.platform = 'test-plaform'
+        with patch('_sysconfig.get_platform', create=True, return_value=None):
+            self.assertEqual(get_platform(), 'test-plaform')
 
         # macbook
         os.name = 'posix'
@@ -374,10 +371,12 @@ class TestSysConfig(unittest.TestCase, VirtualEnvironmentMixin):
         sys.platform = 'android'
         get_config_vars()['ANDROID_API_LEVEL'] = 9
         for machine, abi in {
-            'x86_64': 'x86_64',
-            'i686': 'x86',
             'aarch64': 'arm64_v8a',
+            'arm': 'armeabi_v7a',
             'armv7l': 'armeabi_v7a',
+            'armv8l': 'armeabi_v7a',
+            'i686': 'x86',
+            'x86_64': 'x86_64',
         }.items():
             with self.subTest(machine):
                 self._set_uname(('Linux', 'localhost', '3.18.91+',
@@ -582,10 +581,12 @@ class TestSysConfig(unittest.TestCase, VirtualEnvironmentMixin):
         machine = platform.machine()
         suffix = sysconfig.get_config_var('EXT_SUFFIX')
         expected_triplet = {
-            "x86_64": "x86_64-linux-android",
-            "i686": "i686-linux-android",
             "aarch64": "aarch64-linux-android",
+            "arm": "arm-linux-androideabi",
             "armv7l": "arm-linux-androideabi",
+            "armv8l": "arm-linux-androideabi",
+            "i686": "i686-linux-android",
+            "x86_64": "x86_64-linux-android",
         }[machine]
         self.assertEndsWith(suffix, f"-{expected_triplet}.so")
 
@@ -807,7 +808,9 @@ class MakefileTests(unittest.TestCase):
             print("PY_LDFLAGS=-lm", file=makefile)
             print("var2=$(LDFLAGS)", file=makefile)
             print("var3=$(CPPFLAGS)", file=makefile)
-        vars = _parse_makefile(TESTFN)
+        with EnvironmentVarGuard() as env:
+            env.clear()
+            vars = _parse_makefile(TESTFN)
         self.assertEqual(vars, {
             'var1': '-Wall',
             'CFLAGS': '-Wall',

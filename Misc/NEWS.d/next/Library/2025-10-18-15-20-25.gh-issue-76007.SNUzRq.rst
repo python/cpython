@@ -1,2 +1,0 @@
-:mod:`decimal`: Deprecate ``__version__`` and replace with
-:data:`decimal.SPEC_VERSION`.

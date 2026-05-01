@@ -113,16 +113,20 @@ struct PyModuleDef_Slot {
 #  define Py_MOD_GIL_NOT_USED ((void *)1)
 #endif
 
-#if !defined(Py_LIMITED_API) && defined(Py_GIL_DISABLED)
+#if !defined(Py_LIMITED_API)
+#  if defined(Py_GIL_DISABLED)
 PyAPI_FUNC(int) PyUnstable_Module_SetGIL(PyObject *module, void *gil);
+#  endif
 #endif
 
 #if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= _Py_PACK_VERSION(3, 15)
-PyAPI_FUNC(PyObject *) PyModule_FromSlotsAndSpec(const PyModuleDef_Slot *,
+PyAPI_FUNC(PyObject *) PyModule_FromSlotsAndSpec(const PyModuleDef_Slot *slots,
                                                  PyObject *spec);
-PyAPI_FUNC(int) PyModule_Exec(PyObject *mod);
-PyAPI_FUNC(int) PyModule_GetStateSize(PyObject *mod, Py_ssize_t *result);
-PyAPI_FUNC(int) PyModule_GetToken(PyObject *, void **result);
+PyAPI_FUNC(int) PyModule_Exec(PyObject *module);
+PyAPI_FUNC(int) PyModule_GetStateSize(PyObject *module, Py_ssize_t *result);
+PyAPI_FUNC(int) PyModule_GetToken(PyObject *module, void **result);
+PyAPI_FUNC(void*) PyModule_GetState_DuringGC(PyObject*);
+PyAPI_FUNC(int) PyModule_GetToken_DuringGC(PyObject *module, void **result);
 #endif
 
 #ifndef _Py_OPAQUE_PYOBJECT
