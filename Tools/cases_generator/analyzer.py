@@ -3,7 +3,7 @@ import itertools
 import lexer
 import parser
 import re
-from typing import ClassVar, Optional, Callable, Iterator
+from typing import Optional, Callable, Iterator
 
 from parser import Stmt, SimpleStmt, BlockStmt, IfStmt, WhileStmt, ForStmt, MacroIfStmt
 
@@ -180,43 +180,21 @@ class StackEffect:
 class CacheEntry:
     name: str
     size: int
-    type_tag: str | None = None
-
-    # Maps DSL type tag (after ':') to (C type, C cast, expected slot size
-    # in code units). The size constraint is enforced against the explicit
-    # '/N' written alongside the tag.
-    TYPE_TAGS: ClassVar[dict[str, tuple[str, str, int]]] = {
-        "pretagged": ("uintptr_t", "uintptr_t", 4),
-    }
+    pretagged: bool = False
 
     @classmethod
     def from_parsed(cls, effect: parser.CacheEffect) -> "CacheEntry":
-        cls._validate_type_tag(effect)
-        return cls(effect.name, effect.size, effect.type_tag)
-
-    @classmethod
-    def _validate_type_tag(cls, effect: parser.CacheEffect) -> None:
-        if effect.type_tag is None:
-            return
-        if effect.type_tag not in cls.TYPE_TAGS:
-            known = ", ".join(cls.TYPE_TAGS)
+        if effect.pretagged and effect.size != 4:
             raise analysis_error(
-                f"Unknown cache type tag {effect.type_tag!r}. "
-                f"Known tags: {known}",
-                effect.tokens[0],
-            )
-        _, _, expected_size = cls.TYPE_TAGS[effect.type_tag]
-        if effect.size != expected_size:
-            raise analysis_error(
-                f"':{effect.type_tag}' requires size /{expected_size}, "
+                f"'^' (pretagged) marker requires size /4, "
                 f"got /{effect.size}",
                 effect.tokens[0],
             )
+        return cls(effect.name, effect.size, effect.pretagged)
 
     def __str__(self) -> str:
-        if self.type_tag is None:
-            return f"{self.name}/{self.size}"
-        return f"{self.name}/{self.size}:{self.type_tag}"
+        suffix = "^" if self.pretagged else ""
+        return f"{self.name}/{self.size}{suffix}"
 
 
 @dataclass
@@ -1146,9 +1124,9 @@ def desugar_inst(
     # Move unused cache entries to the Instruction, removing them from the Uop.
     for input in inst.inputs:
         if isinstance(input, parser.CacheEffect) and input.name == "unused":
-            if input.type_tag is not None:
+            if input.pretagged:
                 raise analysis_error(
-                    "'unused' cache slot cannot carry a type tag",
+                    "'unused' cache slot cannot carry a '^' marker",
                     input.tokens[0],
                 )
             parts.append(Skip(input.size))

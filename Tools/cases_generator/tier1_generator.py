@@ -95,10 +95,11 @@ def write_uop(
 
     for cache in uop.caches:
         if cache.name != "unused":
-            if cache.type_tag is not None:
-                ctype, cast, _ = cache.TYPE_TAGS[cache.type_tag]
-                type = f"{ctype} "
-                reader = f"({cast})read_obj" if cache.size == 4 else f"({cast})read_u{cache.size*16}"
+            if cache.pretagged:
+                # Read raw bits; read_obj would falsely declare PyObject* for
+                # what is actually a tagged uintptr_t.
+                type = "uintptr_t "
+                reader = "read_u64"
             elif cache.size == 4:
                 type = "PyObject *"
                 reader = "read_obj"

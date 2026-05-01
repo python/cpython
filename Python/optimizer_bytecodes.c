@@ -891,7 +891,7 @@ dummy_func(void) {
         value = sym_new_const(ctx, ptr);
     }
 
-    op(_LOAD_CONST_INLINE_BORROW, (ptr/4:pretagged -- value)) {
+    op(_LOAD_CONST_INLINE_BORROW, (ptr/4^ -- value)) {
         value = PyJitRef_Borrow(sym_new_const(ctx, PyStackRef_UntagBorrow(ptr)));
     }
 
