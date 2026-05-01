@@ -29,7 +29,6 @@ from dataclasses import dataclass, field, fields, replace
 from typing import Self
 
 from . import commands, console, input
-
 from .content import (
     ContentFragment,
     ContentLine,
