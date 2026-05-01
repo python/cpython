@@ -185,7 +185,8 @@ get_thread_state(void)
 
 static void
 faulthandler_dump_traceback(int fd, int all_threads,
-                            PyInterpreterState *interp)
+                            PyInterpreterState *interp,
+                            Py_ssize_t max_threads)
 {
     static volatile int reentrant = 0;
 
@@ -205,7 +206,7 @@ faulthandler_dump_traceback(int fd, int all_threads,
     PyThreadState *tstate = PyGILState_GetThisThreadState();
 
     if (all_threads == 1) {
-        (void)_Py_DumpTracebackThreads(fd, NULL, tstate);
+        (void)_Py_DumpTracebackThreads(fd, NULL, tstate, max_threads);
     }
     else {
         if (all_threads == FT_IGNORE_ALL_THREADS) {
@@ -243,16 +244,19 @@ faulthandler.dump_traceback as faulthandler_dump_traceback_py
 
     file: object(py_default="sys.stderr") = NULL
     all_threads: bool = True
+    *
+    max_threads: Py_ssize_t = 100
 
 Dump the traceback of the current thread into file.
 
-Dump the traceback of all threads if all_threads is true.
+Dump the traceback of all threads if all_threads is true. max_threads
+caps the number of threads dumped.
 [clinic start generated code]*/
 
 static PyObject *
 faulthandler_dump_traceback_py_impl(PyObject *module, PyObject *file,
-                                    int all_threads)
-/*[clinic end generated code: output=34efece0ca18314f input=b832ec55e27a7898]*/
+                                    int all_threads, Py_ssize_t max_threads)
+/*[clinic end generated code: output=ee1bbc2668e56e77 input=38630eb40e641de6]*/
 {
     PyThreadState *tstate;
     const char *errmsg;
@@ -273,7 +277,7 @@ faulthandler_dump_traceback_py_impl(PyObject *module, PyObject *file,
         /* gh-128400: Accessing other thread states while they're running
          * isn't safe if those threads are running. */
         _PyEval_StopTheWorld(interp);
-        errmsg = _Py_DumpTracebackThreads(fd, NULL, tstate);
+        errmsg = _Py_DumpTracebackThreads(fd, NULL, tstate, max_threads);
         _PyEval_StartTheWorld(interp);
         if (errmsg != NULL) {
             PyErr_SetString(PyExc_RuntimeError, errmsg);
@@ -409,7 +413,8 @@ faulthandler_fatal_error(int signum)
     }
 
     faulthandler_dump_traceback(fd, deduce_all_threads(),
-                                fatal_error.interp);
+                                fatal_error.interp,
+                                fatal_error.max_threads);
     faulthandler_dump_c_stack(fd);
 
     _Py_DumpExtensionModules(fd, fatal_error.interp);
@@ -485,7 +490,8 @@ faulthandler_exc_handler(struct _EXCEPTION_POINTERS *exc_info)
     }
 
     faulthandler_dump_traceback(fd, deduce_all_threads(),
-                                fatal_error.interp);
+                                fatal_error.interp,
+                                fatal_error.max_threads);
     faulthandler_dump_c_stack(fd);
 
     /* call the next exception handler */
@@ -590,14 +596,17 @@ faulthandler.enable as faulthandler_py_enable
     file: object(py_default="sys.stderr") = NULL
     all_threads: bool = True
     c_stack: bool = True
+    *
+    max_threads: Py_ssize_t = 100
 
 Enable the fault handler.
 [clinic start generated code]*/
 
 static PyObject *
 faulthandler_py_enable_impl(PyObject *module, PyObject *file,
-                            int all_threads, int c_stack)
-/*[clinic end generated code: output=580d89b5eb62f1cb input=77277746a88b25ca]*/
+                            int all_threads, int c_stack,
+                            Py_ssize_t max_threads)
+/*[clinic end generated code: output=7ee655332317c47a input=e64759714f27b466]*/
 {
     int fd;
     PyThreadState *tstate;
@@ -617,6 +626,7 @@ faulthandler_py_enable_impl(PyObject *module, PyObject *file,
     fatal_error.all_threads = all_threads;
     fatal_error.interp = PyThreadState_GetInterpreter(tstate);
     fatal_error.c_stack = c_stack;
+    fatal_error.max_threads = max_threads;
 
     if (faulthandler_enable() < 0) {
         return NULL;
@@ -703,7 +713,8 @@ faulthandler_thread(void *unused)
 
         (void)_Py_write_noraise(thread.fd, thread.header, (int)thread.header_len);
 
-        errmsg = _Py_DumpTracebackThreads(thread.fd, thread.interp, NULL);
+        errmsg = _Py_DumpTracebackThreads(thread.fd, thread.interp, NULL,
+                                          thread.max_threads);
         ok = (errmsg == NULL);
 
         if (thread.exit)
@@ -777,18 +788,22 @@ faulthandler.dump_traceback_later
     repeat: bool = False
     file: object(py_default="sys.stderr") = NULL
     exit: bool = False
+    *
+    max_threads: Py_ssize_t = 100
 
 Dump the traceback of all threads in timeout seconds.
 
 If repeat is true, the tracebacks of all threads are dumped every timeout
-seconds. If exit is true, call _exit(1) which is not safe.
+seconds. If exit is true, call _exit(1) which is not safe. max_threads
+caps the number of threads dumped.
 [clinic start generated code]*/
 
 static PyObject *
 faulthandler_dump_traceback_later_impl(PyObject *module,
                                        PyObject *timeout_obj, int repeat,
-                                       PyObject *file, int exit)
-/*[clinic end generated code: output=a24d80d694d25ba2 input=fd005625ecc2ba9a]*/
+                                       PyObject *file, int exit,
+                                       Py_ssize_t max_threads)
+/*[clinic end generated code: output=543a0f3807113394 input=6836555ee157ddb4]*/
 {
     PyTime_t timeout, timeout_us;
     int fd;
@@ -861,6 +876,7 @@ faulthandler_dump_traceback_later_impl(PyObject *module,
     thread.exit = exit;
     thread.header = header;
     thread.header_len = header_len;
+    thread.max_threads = max_threads;
 
     /* Arm these locks to serve as events when released */
     PyThread_acquire_lock(thread.running, 1);
@@ -945,7 +961,8 @@ faulthandler_user(int signum)
     if (!user->enabled)
         return;
 
-    faulthandler_dump_traceback(user->fd, user->all_threads, user->interp);
+    faulthandler_dump_traceback(user->fd, user->all_threads, user->interp,
+                                user->max_threads);
 
 #ifdef HAVE_SIGACTION
     if (user->chain) {
@@ -995,17 +1012,21 @@ faulthandler.register as faulthandler_register_py
     file: object(py_default="sys.stderr") = NULL
     all_threads: bool = True
     chain: bool = False
+    *
+    max_threads: Py_ssize_t = 100
 
 Register a handler for the signal 'signum'.
 
 Dump the traceback of the current thread, or of all threads if
-all_threads is True, into file.
+all_threads is True, into file. max_threads caps the number of threads
+dumped.
 [clinic start generated code]*/
 
 static PyObject *
 faulthandler_register_py_impl(PyObject *module, int signum, PyObject *file,
-                              int all_threads, int chain)
-/*[clinic end generated code: output=1f770cee150a56cd input=ae9de829e850907b]*/
+                              int all_threads, int chain,
+                              Py_ssize_t max_threads)
+/*[clinic end generated code: output=d63a5b4f388dee5f input=c75096a20de502fe]*/
 {
     int fd;
     user_signal_t *user;
@@ -1056,6 +1077,7 @@ faulthandler_register_py_impl(PyObject *module, int signum, PyObject *file,
     user->all_threads = all_threads;
     user->chain = chain;
     user->interp = PyThreadState_GetInterpreter(tstate);
+    user->max_threads = max_threads;
     user->enabled = 1;
 
     Py_RETURN_NONE;
