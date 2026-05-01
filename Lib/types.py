@@ -80,7 +80,7 @@ except ImportError:
     # without overriding the filter, so there is no fallback.
 
     def enclose_lookup_special():
-        _sentinel = object()
+        _sentinel = sentinel("_sentinel")
 
         def lookup_special(object, name, default=_sentinel, /):
             """Lookup method name `name` on `object` skipping the instance
