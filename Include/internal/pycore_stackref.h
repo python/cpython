@@ -236,7 +236,7 @@ _PyStackRef_FromPreTagged(uintptr_t tagged, const char *filename, int linenumber
     PyObject *obj = (PyObject *)(tagged & ~Py_TAG_BITS);
     return _Py_stackref_create(obj, Py_TAG_REFCNT, filename, linenumber);
 }
-#define PyStackRef_FromPreTagged(tagged) _PyStackRef_FromPreTagged((uintptr_t)(tagged), __FILE__, __LINE__)
+#define PyStackRef_FromPreTagged(tagged) _PyStackRef_FromPreTagged((tagged), __FILE__, __LINE__)
 
 static inline void
 _PyStackRef_CLOSE(_PyStackRef ref, const char *filename, int linenumber)

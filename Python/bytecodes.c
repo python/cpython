@@ -6104,7 +6104,7 @@ dummy_func(
         }
 
         tier2 pure op(_LOAD_CONST_INLINE_BORROW, (ptr/4 -- value)) {
-            value = PyStackRef_FromPreTagged(ptr);
+            value = PyStackRef_FromPreTagged((uintptr_t)ptr);
         }
 
         tier2 op(_START_EXECUTOR, (executor/4 --)) {
