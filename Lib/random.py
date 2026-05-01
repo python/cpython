@@ -836,10 +836,11 @@ class Random(_random.Random):
             if not c:
                 return x
             while True:
-                y += _floor(_log2(1.0-random()) / c) + 1
-                if y > n:
-                    return x
-                x += 1
+                try:
+                    y += _floor(_log2(random()) / c) + 1
+                except ValueError:
+                    # Handle rare case of log(0.0)
+                    continue
 
         # BTRS: Transformed rejection with squeeze method by Wolfgang Hörmann
         # https://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.47.8407&rep=rep1&type=pdf
