@@ -21059,13 +21059,13 @@
         <var-decl name='callbacks' type-id='type-id-6' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='228' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='1792'>
-        <var-decl name='heap_size' type-id='type-id-7' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='231' column='1'/>
-      </data-member>
-      <data-member access='public' layout-offset-in-bits='1856'>
         <var-decl name='long_lived_total' type-id='type-id-7' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='239' column='1'/>
       </data-member>
-      <data-member access='public' layout-offset-in-bits='1920'>
+      <data-member access='public' layout-offset-in-bits='1856'>
         <var-decl name='long_lived_pending' type-id='type-id-7' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='243' column='1'/>
+      </data-member>
+      <data-member access='public' layout-offset-in-bits='1920'>
+        <var-decl name='heap_size' type-id='type-id-7' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='231' column='1'/>
       </data-member>
     </class-decl>
     <class-decl name='_import_runtime_state' size-in-bits='320' is-struct='yes' visibility='default' filepath='./Include/internal/pycore_interp_structs.h' line='282' column='1' id='type-id-1256'>
