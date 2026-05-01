@@ -1579,7 +1579,7 @@ Upgraded JIT compiler
 
 Results from the `pyperformance <https://github.com/python/pyperformance>`__
 benchmark suite report
-`8-9% <hhttps://www.doesjitgobrrr.com/run/2026-04-29>`__
+`8-9% <https://www.doesjitgobrrr.com/run/2026-04-29>`__
 geometric mean performance improvement for the JIT over the standard CPython
 interpreter built with all optimizations enabled on x86-64 Linux. On AArch64
 macOS, the JIT has a
