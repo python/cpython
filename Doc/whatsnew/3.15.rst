@@ -905,6 +905,15 @@ difflib
   (Contributed by Jiahao Li in :gh:`134580`.)
 
 
+faulthandler
+------------
+
+* Added the *max_threads* parameter in :func:`faulthandler.enable`,
+  :func:`faulthandler.dump_traceback`, :func:`faulthandler.dump_traceback_later`,
+  and :func:`faulthandler.register`.
+  (Contributed by Eric Froemling in :gh:`149085`.)
+
+
 functools
 ---------
 
@@ -938,13 +947,6 @@ http.client
   (Contributed by Alexander Enrique Urieles Nieto in :gh:`131724`.)
 
 
-http.cookies
-------------
-
-* Allow '``"``' double quotes in cookie values.
-  (Contributed by Nick Burns and Senthil Kumaran in :gh:`92936`.)
-
-
 http.server
 -----------
 
@@ -954,6 +956,12 @@ http.server
   This can be controlled with :ref:`environment variables
   <using-on-controlling-color>`.
   (Contributed by Hugo van Kemenade in :gh:`146292`.)
+
+* Added :attr:`~http.server.SimpleHTTPRequestHandler.default_content_type`
+  and the :option:`--content-type <http.server --content-type>` command-line
+  option to allow customizing the default ``Content-Type`` header
+  for files with unknown extensions.
+  (Contributed by John Comeau and Hugo van Kemenade in :gh:`113471`.)
 
 
 inspect
@@ -1046,11 +1054,27 @@ os.path
   (Contributed by Petr Viktorin for :cve:`2025-4517`.)
 
 
+pdb
+---
+
+* Use the new interactive shell as the default input shell for :mod:`pdb`.
+  (Contributed by Tian Gao in :gh:`145379`.)
+
+
 pickle
 ------
 
 * Add support for pickling private methods and nested classes.
   (Contributed by Zackery Spytz and Serhiy Storchaka in :gh:`77188`.)
+
+
+pickletools
+-----------
+
+* The output of the :mod:`pickletools` command-line interface is colored by
+  default. This can be controlled with
+  :ref:`environment variables <using-on-controlling-color>`.
+  (Contributed by Hugo van Kemenade in :gh:`149026`.)
 
 
 pprint

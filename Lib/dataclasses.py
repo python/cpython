@@ -178,17 +178,12 @@ class _HAS_DEFAULT_FACTORY_CLASS:
         return '<factory>'
 _HAS_DEFAULT_FACTORY = _HAS_DEFAULT_FACTORY_CLASS()
 
-# A sentinel object to detect if a parameter is supplied or not.  Use
-# a class to give it a better repr.
-class _MISSING_TYPE:
-    pass
-MISSING = _MISSING_TYPE()
+# A sentinel object to detect if a parameter is supplied or not.
+MISSING = sentinel("MISSING")
 
 # A sentinel object to indicate that following fields are keyword-only by
-# default.  Use a class to give it a better repr.
-class _KW_ONLY_TYPE:
-    pass
-KW_ONLY = _KW_ONLY_TYPE()
+# default.
+KW_ONLY = sentinel("KW_ONLY")
 
 # Since most per-field metadata will be unused, create an empty
 # read-only dictionary that can be shared among all fields.
