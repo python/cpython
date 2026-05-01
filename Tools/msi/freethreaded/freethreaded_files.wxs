@@ -61,11 +61,15 @@
             <Component Id="freethreaded_python_dll.pdb" Directory="InstallDirectory" Guid="*">
                 <File Name="python$(var.MajorVersionNumber)$(var.MinorVersionNumber)t.pdb" Source="!(bindpath.build_t)\python$(var.MajorVersionNumber)$(var.MinorVersionNumber)t.pdb" KeyPath="yes" />
             </Component>
+            <!--
+            Renaming the PDB like this will break automatic connection by debuggers,
+            but short of making people stop using this installer there's no real option.
+            -->
             <Component Id="freethreaded_python.pdb" Directory="InstallDirectory" Guid="*">
-                <File Name="python$(var.ShortVersion)t.pdb" Source="!(bindpath.build_t)\python$(var.ShortVersion)t.pdb" />
+                <File Name="python$(var.ShortVersion)t.pdb" Source="!(bindpath.build_t)\python.pdb" />
             </Component>
             <Component Id="freethreaded_pythonw.pdb" Directory="InstallDirectory" Guid="*">
-                <File Name="pythonw$(var.ShortVersion)t.pdb" Source="!(bindpath.build_t)\pythonw$(var.ShortVersion)t.pdb" />
+                <File Name="pythonw$(var.ShortVersion)t.pdb" Source="!(bindpath.build_t)\pythonw.pdb" />
             </Component>
         </ComponentGroup>
     </Fragment>
