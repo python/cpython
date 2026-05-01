@@ -914,6 +914,16 @@ faulthandler
   (Contributed by Eric Froemling in :gh:`149085`.)
 
 
+email
+-----
+
+* Email generators now raise an error when an :class:`.EmailMessage` cannot be
+  accurately flattened due to a non-ASCII email address (mailbox) in an address
+  header. Options for supporting Email Address Internationalization (EAI) are
+  discussed in :attr:`.EmailPolicy.utf8`.
+  (Contributed by R David Murray and Mike Edmunds in :gh:`122540`.)
+
+
 functools
 ---------
 
