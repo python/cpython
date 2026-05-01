@@ -577,6 +577,14 @@ static void perf_map_jit_write_entry_with_name(
         PyMem_RawFree(perf_map_entry);
         return;
     }
+
+    /*
+     * A logical jitdump entry is written as multiple records and also consumes
+     * a process-global code_id. Serialize the whole sequence so concurrent JIT
+     * compilation cannot interleave records or reuse an ID.
+     */
+    PyThread_acquire_lock(perf_jit_map_state.map_lock, 1);
+
     /*
      * Write Code Unwinding Information Event
      *
@@ -691,6 +699,7 @@ static void perf_map_jit_write_entry_with_name(
     }
 
     /* Clean up allocated memory */
+    PyThread_release_lock(perf_jit_map_state.map_lock);
     PyMem_RawFree(perf_map_entry);
 }
 
