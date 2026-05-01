@@ -277,7 +277,7 @@ class maybe_accept(commands.Command):
     def do(self) -> None:
         r: ReadlineAlikeReader
         r = self.reader  # type: ignore[assignment]
-        r.dirty = True  # this is needed to hide the completion menu, if visible
+        r.invalidate_overlay()  # hide completion menu, if visible
 
         # if there are already several lines and the cursor
         # is not on the last one, always insert a new \n.
@@ -337,7 +337,7 @@ class backspace_dedent(commands.Command):
                             break
             r.pos -= repeat
             del b[r.pos : r.pos + repeat]
-            r.dirty = True
+            r.invalidate_buffer(r.pos)
         else:
             self.reader.error("can't backspace at start")
 
@@ -413,8 +413,12 @@ class _ReadlineWrapper:
     def get_completer_delims(self) -> str:
         return "".join(sorted(self.config.completer_delims))
 
-    def _histline(self, line: str) -> str:
+    def _histline(self, line: str, *, sanitize_nuls: bool = False) -> str:
         line = line.rstrip("\n")
+        if "\0" in line:
+            if not sanitize_nuls:
+                raise ValueError("embedded null character")
+            line = line.replace("\0", "")
         return line
 
     def get_history_length(self) -> int:
@@ -447,9 +451,12 @@ class _ReadlineWrapper:
                 if line.endswith("\r"):
                     buffer.append(line+'\n')
                 else:
-                    line = self._histline(line)
+                    line = self._histline(line, sanitize_nuls=True)
                     if buffer:
-                        line = self._histline("".join(buffer).replace("\r", "") + line)
+                        line = self._histline(
+                            "".join(buffer).replace("\r", "") + line,
+                            sanitize_nuls=True,
+                        )
                         del buffer[:]
                     if line:
                         history.append(line)

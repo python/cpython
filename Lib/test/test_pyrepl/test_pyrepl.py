@@ -11,6 +11,7 @@ import select
 import subprocess
 import sys
 import tempfile
+from functools import partial
 from pkgutil import ModuleInfo
 from unittest import TestCase, skipUnless, skipIf, SkipTest
 from unittest.mock import Mock, patch
@@ -771,6 +772,64 @@ class TestPyReplOutput(ScreenEqualMixin, TestCase):
         self.assert_screen_equal(reader, expected, clean=True)
         self.assertEqual(output, expected)
 
+    def test_up_arrow_stays_within_recalled_multiline_entry(self):
+        code = (
+            "def fo():\n"
+            "...\n"
+            "...\n"
+            "a = 1\n"
+            "b = 2\n"
+            "x = 1\n"
+            "\n"
+            "def fo():\n"
+            "...\n"
+            "...\n"
+            "a = 1\n"
+            "b = 2\n"
+            "x = 1\n"
+            "z = 2\n"
+            "\n"
+        )
+        events = list(itertools.chain(
+            code_to_events(code),
+            [
+                Event(evt="key", data="up", raw=bytearray(b"\x1bOA")),
+                Event(evt="key", data="up", raw=bytearray(b"\x1bOA")),
+            ]
+        ))
+
+        reader = self.prepare_reader(events)
+        multiline_input(reader)
+        multiline_input(reader)
+
+        expected = (
+            "def fo():\n"
+            "    ...\n"
+            "    ...\n"
+            "    a = 1\n"
+            "    b = 2\n"
+            "    x = 1\n"
+            "    z = 2"
+        )
+        reader.more_lines = partial(more_lines, namespace=None)
+        reader.ps1 = reader.ps2 = ">>> "
+        reader.ps3 = reader.ps4 = "... "
+        try:
+            reader.prepare()
+            reader.refresh()
+
+            reader.handle1()
+            self.assertEqual(reader.historyi, 1)
+            self.assertEqual(reader.get_unicode(), expected)
+            first_cxy = reader.cxy
+
+            reader.handle1()
+            self.assertEqual(reader.historyi, 1)
+            self.assertEqual(reader.get_unicode(), expected)
+            self.assertLess(reader.cxy[1], first_cxy[1])
+        finally:
+            reader.restore()
+
 
     def test_history_navigation_with_down_arrow(self):
         events = itertools.chain(
@@ -816,12 +875,28 @@ class TestPyReplOutput(ScreenEqualMixin, TestCase):
         self.assertEqual(output, "1+1")
         self.assert_screen_equal(reader, "1+1", clean=True)
 
+    def test_history_file_embedded_nuls_are_sanitized(self):
+        reader = self.prepare_reader([])
+        wrapper = _ReadlineWrapper(reader=reader, f_in=0, f_out=1)
+        with tempfile.NamedTemporaryFile("wb", delete=False) as history_file:
+            history_file.write(b"good\n")
+            history_file.write(b"ba\0d\n")
+            history_file.write(b"line1\r\nline2\0\n")
+            filename = history_file.name
+
+        try:
+            wrapper.read_history_file(filename)
+        finally:
+            unlink(filename)
+
+        self.assertEqual(reader.history, ["good", "bad", "line1\nline2"])
+
     def test_control_character(self):
         events = code_to_events("c\x1d\n")
         reader = self.prepare_reader(events)
         output = multiline_input(reader)
         self.assertEqual(output, "c\x1d")
-        self.assert_screen_equal(reader, "c\x1d", clean=True)
+        self.assert_screen_equal(reader, "c^]", clean=True)
 
     def test_history_search_backward(self):
         # Test <page up> history search backward with "imp" input
@@ -2464,12 +2539,13 @@ class TestPyReplCtrlD(TestCase):
 class TestWindowsConsoleEolWrap(TestCase):
     def _make_mock_console(self, width=80):
         from _pyrepl import windows_console as wc
+        from _pyrepl.render import RenderedScreen
 
         console = object.__new__(wc.WindowsConsole)
 
         console.width = width
         console.posxy = (0, 0)
-        console.screen = [""]
+        console._rendered_screen = RenderedScreen.from_screen_lines([""], (0, 0))
 
         console._hide_cursor = Mock()
         console._show_cursor = Mock()
@@ -2480,25 +2556,29 @@ class TestWindowsConsoleEolWrap(TestCase):
 
         return console, wc
 
+    def _apply_changed_line(self, console, wc, y, old_line, new_line, px=0):
+        from _pyrepl.render import RenderLine
+
+        old_render = RenderLine.from_rendered_text(old_line)
+        new_render = RenderLine.from_rendered_text(new_line)
+        update = wc.WindowsConsole._WindowsConsole__plan_changed_line(
+            console, y, old_render, new_render, px
+        )
+        if update is not None:
+            wc.WindowsConsole._WindowsConsole__apply_line_update(
+                console, update
+            )
+
     def test_short_line_sets_posxy_normally(self):
         width = 10
         y = 3
         console, wc = self._make_mock_console(width=width)
-        old_line = ""
-        new_line = "a" * 3
-        wc.WindowsConsole._WindowsConsole__write_changed_line(
-            console, y, old_line, new_line, 0
-        )
+        self._apply_changed_line(console, wc, y, "", "a" * 3)
         self.assertEqual(console.posxy, (3, y))
 
     def test_exact_width_line_does_not_wrap(self):
         width = 10
         y = 3
         console, wc = self._make_mock_console(width=width)
-        old_line = ""
-        new_line = "a" * width
-
-        wc.WindowsConsole._WindowsConsole__write_changed_line(
-            console, y, old_line, new_line, 0
-        )
+        self._apply_changed_line(console, wc, y, "", "a" * width)
         self.assertEqual(console.posxy, (width - 1, y))

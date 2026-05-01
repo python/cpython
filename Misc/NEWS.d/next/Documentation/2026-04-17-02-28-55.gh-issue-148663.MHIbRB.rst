@@ -1,0 +1,2 @@
+Document that :class:`calendar.IllegalMonthError` is a subclass of both
+:exc:`ValueError` and :exc:`IndexError` since Python 3.12.
