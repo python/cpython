@@ -1468,7 +1468,7 @@ of the derived iterators.
    are serialized as well.
 
    This makes it possible to share a single iterator, including a generator
-   iterator, between multiple threads. A lock assures that calls are handled
+   iterator, between multiple threads. A lock ensures that calls are handled
    one at a time. No values are duplicated or skipped by the wrapper itself.
    Each item from the underlying iterator is given to exactly one caller.
 
