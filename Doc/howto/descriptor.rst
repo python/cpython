@@ -592,10 +592,9 @@ a pure Python equivalent:
                 return vars(base)[name]
         return default
 
-    null = sentinel('null')
-
     def object_getattribute(obj, name):
         "Emulate PyObject_GenericGetAttr() in Objects/object.c"
+        null = sentinel('null')
         objtype = type(obj)
         cls_var = find_name_in_mro(objtype, name, null)
         descr_get = getattr(type(cls_var), '__get__', null)
