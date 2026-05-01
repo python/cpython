@@ -264,15 +264,18 @@ _Py_uop_sym_get_const_as_stackref(JitOptContext *ctx, JitOptRef sym)
     return PyStackRef_FromPyObjectBorrow(const_val);
 }
 
+/*
+ An atomic built-in type is not a container, so its values evaluate
+ without side effects and common functions on them are pure.
+ */
 static bool
-is_safe_builtin_type(PyTypeObject *typ)
+is_atomic_builtin_type(PyTypeObject *typ)
 {
     return (typ == &PyUnicode_Type) ||
            (typ == &PyFloat_Type) ||
            (typ == &_PyNone_Type) ||
            (typ == &PyBool_Type) ||
-           (typ == &PyFrozenDict_Type) ||
-           (typ == &PyFrozenSet_Type);
+           (typ == &PyBytes_Type);
 }
 
 /*
@@ -286,7 +289,7 @@ _Py_uop_sym_is_safe_type(JitOptRef sym)
     if (typ == NULL) {
         return false;
     }
-    return (typ == &PyLong_Type) || is_safe_builtin_type(typ);
+    return is_atomic_builtin_type(typ) || typ == &PyLong_Type;
 }
 
 /*
@@ -304,7 +307,9 @@ _Py_uop_sym_is_safe_const(JitOptContext *ctx, JitOptRef sym)
         return true;
     }
     PyTypeObject *typ = Py_TYPE(const_val);
-    return is_safe_builtin_type(typ);
+    return is_atomic_builtin_type(typ) ||
+           typ == &PyFrozenDict_Type ||
+           typ == &PyFrozenSet_Type;
 }
 
 bool
