@@ -3472,3 +3472,17 @@ Changes in the C API
   functions on Python 3.13 and older.
 
 .. _pythoncapi-compat project: https://github.com/python/pythoncapi-compat/
+
+
+Notable changes in 3.14.5
+=========================
+
+gc
+--
+
+* The incremental garbage collector shipped in Python 3.14.0-3.14.4 has been
+  reverted back to the generational garbage collector from 3.13,
+  due to a number of `reports
+  <https://github.com/python/cpython/issues/142516>`__
+  of significant memory pressure in production environments.
+  See :ref:`whatsnew314-incremental-gc` for details.
