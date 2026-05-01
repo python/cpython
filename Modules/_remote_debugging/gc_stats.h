@@ -87,15 +87,11 @@ read_gc_stats(struct gc_stats *stats, int64_t iid, PyObject *result)
 
             ADD_STATS_INT64(ts_start);
             ADD_STATS_INT64(ts_stop);
-            ADD_STATS_SSIZE(heap_size);
-            ADD_STATS_SSIZE(work_to_do);
+            // ADD_STATS_SSIZE(heap_size);
             ADD_STATS_SSIZE(collections);
-            ADD_STATS_SSIZE(object_visits);
             ADD_STATS_SSIZE(collected);
             ADD_STATS_SSIZE(uncollectable);
             ADD_STATS_SSIZE(candidates);
-            ADD_STATS_SSIZE(objects_transitively_reachable);
-            ADD_STATS_SSIZE(objects_not_transitively_reachable);
 
             ADD_STATS_DOUBLE(duration);
             val = NULL;

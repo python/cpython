@@ -112,20 +112,11 @@ class TestGetGCStats(unittest.TestCase):
         self.assertGreater(after["ts_stop"], before["ts_stop"], (before, after))
         self.assertGreater(after["duration"], before["duration"], (before, after))
 
-        self.assertGreater(after["object_visits"], before["object_visits"], (before, after))
         self.assertGreater(after["candidates"], before["candidates"], (before, after))
 
         # may not grow
         self.assertGreaterEqual(after["collected"], before["collected"], (before, after))
         self.assertGreaterEqual(after["uncollectable"], before["uncollectable"], (before, after))
-
-        if before["gen"] == 1:
-            self.assertGreaterEqual(after["objects_transitively_reachable"],
-                                    before["objects_transitively_reachable"],
-                                    (before, after))
-            self.assertGreaterEqual(after["objects_not_transitively_reachable"],
-                                    before["objects_not_transitively_reachable"],
-                                    (before, after))
 
     def _check_interpreter_gc_stats(self, before_stats, after_stats):
         before_iids = get_interpreter_identifiers(before_stats)
@@ -150,11 +141,8 @@ class TestGetGCStats(unittest.TestCase):
                     self._check_gc_stats(before, after)
 
     def test_get_gc_stats_fields(self):
-        keys = sorted(("gen", "iid", "ts_start", "ts_stop", "heap_size",
-                "work_to_do", "collections", "object_visits",
-                "collected", "uncollectable", "candidates",
-                "objects_transitively_reachable",
-                "objects_not_transitively_reachable",
+        keys = sorted(("gen", "iid", "ts_start", "ts_stop", #"heap_size",
+                "collections", "collected", "uncollectable", "candidates",
                 "duration"))
         stats = _remote_debugging.get_gc_stats(os.getpid(), all_interpreters=False)
         self.assertIsInstance(stats, list)
