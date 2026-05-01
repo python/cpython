@@ -7,7 +7,7 @@
 
 set -euo pipefail
 
-PINNED_VERSION="0.7.26"
+PINNED_VERSION="0.7.27"
 RAW_ZUTIL_VERSION="${NANVIX_ZUTIL_VERSION:-$PINNED_VERSION}"
 ZUTIL_VERSION="${RAW_ZUTIL_VERSION#v}"
 REPO_ROOT="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd -P)"
@@ -72,4 +72,39 @@ else
     fi
 fi
 
-exec "$BIN" "$@"
+# Extract --with-nanvix PATH before forwarding to nanvix-zutil.
+# The nanvix-zutil CLI inspects positional args to find the subcommand;
+# --with-nanvix's PATH argument would be mistaken for a subcommand.
+# Pass the value via env var so z.py can pick it up.
+_resolve_nanvix_path() {
+    local raw="$1"
+    if ! WITH_NANVIX="$(cd -- "$raw" 2>/dev/null && pwd -P)"; then
+        echo "ERROR: --with-nanvix path does not exist or is not a directory: $raw" >&2
+        exit 1
+    fi
+    export WITH_NANVIX
+}
+
+ARGS=()
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --with-nanvix=*)
+            _resolve_nanvix_path "${1#--with-nanvix=}"
+            shift
+            ;;
+        --with-nanvix)
+            if [[ $# -lt 2 ]]; then
+                echo "ERROR: --with-nanvix requires a path argument" >&2
+                exit 1
+            fi
+            _resolve_nanvix_path "$2"
+            shift 2
+            ;;
+        *)
+            ARGS+=("$1")
+            shift
+            ;;
+    esac
+done
+
+exec "$BIN" "${ARGS[@]}"

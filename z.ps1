@@ -15,7 +15,7 @@ $zutilVersion = if ($env:NANVIX_ZUTIL_VERSION) {
     $env:NANVIX_ZUTIL_VERSION
 }
 else {
-    "0.7.26"
+    "0.7.27"
 }
 $zutilVersion = $zutilVersion -replace "^v", ""
 
@@ -28,8 +28,10 @@ $venvZutil = Join-Path $venvDir "Scripts\nanvix-zutil.exe"
 
 # Windows compatibility shim: nanvix-zutil references os.getuid/os.getgid
 # which are unavailable on Windows.  Stub them before importing the package.
+# NOTE: Use single quotes inside the Python code so that PowerShell does not
+# strip the quotes when passing the string to python.exe -c.
 $ShimCode = @'
-import os,sys;os.getuid=getattr(os,"getuid",lambda:0);os.getgid=getattr(os,"getgid",lambda:0);from nanvix_zutil.__main__ import main;sys.exit(main())
+import os,sys;os.getuid=getattr(os,'getuid',lambda:0);os.getgid=getattr(os,'getgid',lambda:0);from nanvix_zutil.__main__ import main;sys.exit(main())
 '@
 
 $zutilGlobalVersion = try {
@@ -116,10 +118,41 @@ else {
     }
 }
 
+# Extract --with-nanvix PATH before forwarding to nanvix-zutil.
+$filteredArgs = [System.Collections.Generic.List[string]]::new()
+$i = 0
+while ($i -lt $ZArgs.Count) {
+    if ($ZArgs[$i] -eq '--with-nanvix') {
+        if ($i + 1 -ge $ZArgs.Count) {
+            throw "ERROR: --with-nanvix requires a path argument"
+        }
+        $item = Get-Item -LiteralPath $ZArgs[$i + 1] -ErrorAction Stop
+        if (-not $item.PSIsContainer) {
+            throw "ERROR: --with-nanvix path is not a directory: $($ZArgs[$i + 1])"
+        }
+        $env:WITH_NANVIX = $item.FullName
+        $i += 2
+    }
+    elseif ($ZArgs[$i] -match '^--with-nanvix=(.+)$') {
+        $item = Get-Item -LiteralPath $Matches[1] -ErrorAction Stop
+        if (-not $item.PSIsContainer) {
+            throw "ERROR: --with-nanvix path is not a directory: $($Matches[1])"
+        }
+        $env:WITH_NANVIX = $item.FullName
+        $i++
+    }
+    else {
+        $filteredArgs.Add($ZArgs[$i])
+        $i++
+    }
+}
+
+$filteredArray = $filteredArgs.ToArray()
+
 if ($bin -eq $venvZutil) {
-    & $venvPython -c $ShimCode @ZArgs
+    & $venvPython -c $ShimCode @filteredArray
 }
 else {
-    & $bin @ZArgs
+    & $bin @filteredArray
 }
 exit $LASTEXITCODE
