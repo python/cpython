@@ -1330,7 +1330,7 @@ get_const_value(int opcode, int oparg, PyObject *co_consts)
     }
     if (opcode == LOAD_COMMON_CONSTANT) {
         assert(oparg < NUM_COMMON_CONSTANTS);
-        return _PyInterpreterState_GET()->common_consts[oparg];
+        return Py_NewRef(_PyInterpreterState_GET()->common_consts[oparg]);
     }
 
     if (constant == NULL) {
