@@ -785,7 +785,8 @@ gdb_jit_register_code(
     offset += shstrtab_size;
     const size_t str_off = offset;
     offset += strtab_size;
-    offset = _Py_SIZE_ROUND_UP(offset, sizeof(Elf64_Sym));
+    /* Elf64_Sym requires 8-byte alignment for st_value/st_size. */
+    offset = _Py_SIZE_ROUND_UP(offset, 8);
     const size_t sym_off = offset;
     offset += symtab_size;
     offset = _Py_SIZE_ROUND_UP(offset, sizeof(Elf64_Shdr));
