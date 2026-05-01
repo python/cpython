@@ -941,7 +941,7 @@ def concurrent_tee(iterable, n=2):
 
     The new iterators are only thread-safe if consumed within a single thread.
     To share just one of the new iterators across multiple threads, wrap it
-    with threading.serialize().
+    with threading.serialize_iterator().
     """
 
     if n < 0:
