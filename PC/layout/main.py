@@ -677,10 +677,6 @@ def main():
         from .support.arch import calculate_from_build_dir
         ns.arch = calculate_from_build_dir(ns.build)
 
-    if ns.arch.endswith("t"):
-        ns.arch = ns.arch[:-1]
-        ns.include_freethreaded = True
-
     expect = f"{VER_MAJOR}.{VER_MINOR}.{VER_MICRO}{VER_SUFFIX}"
     actual = check_patchlevel_version(ns.source)
     if actual and actual != expect:
