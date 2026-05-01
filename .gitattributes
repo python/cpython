@@ -34,6 +34,9 @@ Lib/test/xmltestdata/*                     noeol
 Lib/venv/scripts/common/activate text eol=lf
 Lib/venv/scripts/posix/* text eol=lf
 
+# Prevent GitHub's web conflict editor from converting LF to CRLF
+*.rst text eol=lf
+
 # CRLF files
 [attr]dos text eol=crlf
 

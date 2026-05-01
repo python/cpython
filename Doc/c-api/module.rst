@@ -965,9 +965,7 @@ or code that creates modules dynamically.
         // PyModule_AddObject() stole a reference to obj:
         // Py_XDECREF(obj) is not needed here.
 
-   .. deprecated:: 3.13
-
-      :c:func:`PyModule_AddObject` is :term:`soft deprecated`.
+   .. soft-deprecated:: 3.13
 
 
 .. c:function:: int PyModule_AddIntConstant(PyObject *module, const char *name, long value)

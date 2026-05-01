@@ -22343,23 +22343,22 @@
             break;
         }
 
-        case _SHUFFLE_3_LOAD_CONST_INLINE_BORROW_r03: {
+        case _RROT_3_r03: {
             CHECK_CURRENT_CACHED_VALUES(0);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
-            _PyStackRef arg;
-            _PyStackRef callable;
-            _PyStackRef res;
-            _PyStackRef a;
-            _PyStackRef c;
-            arg = stack_pointer[-1];
-            callable = stack_pointer[-3];
-            PyObject *ptr = (PyObject *)CURRENT_OPERAND0_64();
-            res = PyStackRef_FromPyObjectBorrow(ptr);
-            a = arg;
-            c = callable;
-            _tos_cache2 = c;
-            _tos_cache1 = a;
-            _tos_cache0 = res;
+            _PyStackRef top;
+            _PyStackRef middle;
+            _PyStackRef bottom;
+            top = stack_pointer[-1];
+            middle = stack_pointer[-2];
+            bottom = stack_pointer[-3];
+            _PyStackRef temp = top;
+            top = middle;
+            middle = bottom;
+            bottom = temp;
+            _tos_cache2 = top;
+            _tos_cache1 = middle;
+            _tos_cache0 = bottom;
             SET_CURRENT_CACHED_VALUES(3);
             stack_pointer += -3;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -22367,25 +22366,24 @@
             break;
         }
 
-        case _SHUFFLE_3_LOAD_CONST_INLINE_BORROW_r13: {
+        case _RROT_3_r13: {
             CHECK_CURRENT_CACHED_VALUES(1);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
-            _PyStackRef arg;
-            _PyStackRef callable;
-            _PyStackRef res;
-            _PyStackRef a;
-            _PyStackRef c;
+            _PyStackRef top;
+            _PyStackRef middle;
+            _PyStackRef bottom;
             Py_GCC_ATTRIBUTE((unused))
             _PyStackRef _stack_item_0 = _tos_cache0;
-            arg = _stack_item_0;
-            callable = stack_pointer[-2];
-            PyObject *ptr = (PyObject *)CURRENT_OPERAND0_64();
-            res = PyStackRef_FromPyObjectBorrow(ptr);
-            a = arg;
-            c = callable;
-            _tos_cache2 = c;
-            _tos_cache1 = a;
-            _tos_cache0 = res;
+            top = _stack_item_0;
+            middle = stack_pointer[-1];
+            bottom = stack_pointer[-2];
+            _PyStackRef temp = top;
+            top = middle;
+            middle = bottom;
+            bottom = temp;
+            _tos_cache2 = top;
+            _tos_cache1 = middle;
+            _tos_cache0 = bottom;
             SET_CURRENT_CACHED_VALUES(3);
             stack_pointer += -2;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -22393,27 +22391,26 @@
             break;
         }
 
-        case _SHUFFLE_3_LOAD_CONST_INLINE_BORROW_r23: {
+        case _RROT_3_r23: {
             CHECK_CURRENT_CACHED_VALUES(2);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
-            _PyStackRef arg;
-            _PyStackRef callable;
-            _PyStackRef res;
-            _PyStackRef a;
-            _PyStackRef c;
+            _PyStackRef top;
+            _PyStackRef middle;
+            _PyStackRef bottom;
             Py_GCC_ATTRIBUTE((unused))
             _PyStackRef _stack_item_0 = _tos_cache0;
             Py_GCC_ATTRIBUTE((unused))
             _PyStackRef _stack_item_1 = _tos_cache1;
-            arg = _stack_item_1;
-            callable = stack_pointer[-1];
-            PyObject *ptr = (PyObject *)CURRENT_OPERAND0_64();
-            res = PyStackRef_FromPyObjectBorrow(ptr);
-            a = arg;
-            c = callable;
-            _tos_cache2 = c;
-            _tos_cache1 = a;
-            _tos_cache0 = res;
+            top = _stack_item_1;
+            middle = _stack_item_0;
+            bottom = stack_pointer[-1];
+            _PyStackRef temp = top;
+            top = middle;
+            middle = bottom;
+            bottom = temp;
+            _tos_cache2 = top;
+            _tos_cache1 = middle;
+            _tos_cache0 = bottom;
             SET_CURRENT_CACHED_VALUES(3);
             stack_pointer += -1;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -22421,29 +22418,28 @@
             break;
         }
 
-        case _SHUFFLE_3_LOAD_CONST_INLINE_BORROW_r33: {
+        case _RROT_3_r33: {
             CHECK_CURRENT_CACHED_VALUES(3);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
-            _PyStackRef arg;
-            _PyStackRef callable;
-            _PyStackRef res;
-            _PyStackRef a;
-            _PyStackRef c;
+            _PyStackRef top;
+            _PyStackRef middle;
+            _PyStackRef bottom;
             Py_GCC_ATTRIBUTE((unused))
             _PyStackRef _stack_item_0 = _tos_cache0;
             Py_GCC_ATTRIBUTE((unused))
             _PyStackRef _stack_item_1 = _tos_cache1;
             Py_GCC_ATTRIBUTE((unused))
             _PyStackRef _stack_item_2 = _tos_cache2;
-            arg = _stack_item_2;
-            callable = _stack_item_0;
-            PyObject *ptr = (PyObject *)CURRENT_OPERAND0_64();
-            res = PyStackRef_FromPyObjectBorrow(ptr);
-            a = arg;
-            c = callable;
-            _tos_cache2 = c;
-            _tos_cache1 = a;
-            _tos_cache0 = res;
+            top = _stack_item_2;
+            middle = _stack_item_1;
+            bottom = _stack_item_0;
+            _PyStackRef temp = top;
+            top = middle;
+            middle = bottom;
+            bottom = temp;
+            _tos_cache2 = top;
+            _tos_cache1 = middle;
+            _tos_cache0 = bottom;
             SET_CURRENT_CACHED_VALUES(3);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
