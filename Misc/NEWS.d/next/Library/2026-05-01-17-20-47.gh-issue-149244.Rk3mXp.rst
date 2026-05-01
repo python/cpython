@@ -1,0 +1,3 @@
+:func:`statistics.covariance`, :func:`statistics.correlation`, and
+:func:`statistics.linear_regression` now accept any iterable input,
+consistent with other functions in the :mod:`statistics` module.

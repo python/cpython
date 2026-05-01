@@ -673,6 +673,8 @@ def covariance(x, y, /):
 
     """
     # https://en.wikipedia.org/wiki/Covariance
+    x = list(x)
+    y = list(y)
     n = len(x)
     if len(y) != n:
         raise StatisticsError('covariance requires that both inputs have same number of data points')
@@ -710,6 +712,8 @@ def correlation(x, y, /, *, method='linear'):
     """
     # https://en.wikipedia.org/wiki/Pearson_correlation_coefficient
     # https://en.wikipedia.org/wiki/Spearman%27s_rank_correlation_coefficient
+    x = list(x)
+    y = list(y)
     n = len(x)
     if len(y) != n:
         raise StatisticsError('correlation requires that both inputs have same number of data points')
@@ -781,6 +785,8 @@ def linear_regression(x, y, /, *, proportional=False):
 
     """
     # https://en.wikipedia.org/wiki/Simple_linear_regression
+    x = list(x)
+    y = list(y)
     n = len(x)
     if len(y) != n:
         raise StatisticsError('linear regression requires that both inputs have same number of data points')

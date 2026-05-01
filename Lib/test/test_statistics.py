@@ -2842,6 +2842,32 @@ class TestCorrelationAndCovariance(unittest.TestCase):
         with self.assertRaises(ValueError):
             statistics.correlation(reading, mathematics, method='bad_method')
 
+    def test_iterator_inputs(self):
+        x = [1, 2, 3, 4, 5, 6, 7, 8, 9]
+        y = [1, 2, 3, 1, 2, 3, 1, 2, 3]
+        expected_cov = statistics.covariance(x, y)
+        expected_cor = statistics.correlation(x, y)
+        # iter() inputs should give same results as list inputs
+        self.assertAlmostEqual(statistics.covariance(iter(x), iter(y)), expected_cov)
+        self.assertAlmostEqual(statistics.correlation(iter(x), iter(y)), expected_cor)
+        # generator expressions should also work
+        self.assertAlmostEqual(
+            statistics.covariance((v for v in x), (v for v in y)), expected_cov
+        )
+        self.assertAlmostEqual(
+            statistics.correlation((v for v in x), (v for v in y)), expected_cor
+        )
+        # ranked method should also accept iterators
+        expected_ranked = statistics.correlation(x, y, method='ranked')
+        self.assertAlmostEqual(
+            statistics.correlation(iter(x), iter(y), method='ranked'), expected_ranked
+        )
+        # mismatched lengths should still raise StatisticsError
+        with self.assertRaises(statistics.StatisticsError):
+            statistics.covariance(iter([1, 2, 3]), iter([1, 2]))
+        with self.assertRaises(statistics.StatisticsError):
+            statistics.correlation(iter([1, 2, 3]), iter([1, 2]))
+
 class TestLinearRegression(unittest.TestCase):
 
     def test_constant_input_error(self):
@@ -2880,6 +2906,26 @@ class TestLinearRegression(unittest.TestCase):
         slope, intercept = statistics.linear_regression(x, y, proportional=True)
         self.assertTrue(isinstance(slope, float))
         self.assertTrue(isinstance(intercept, float))
+
+    def test_iterator_inputs(self):
+        x = [1, 2, 3, 4, 5]
+        y = [2, 4, 6, 8, 10]
+        expected = statistics.linear_regression(x, y)
+        # iter() inputs should give same results as list inputs
+        result = statistics.linear_regression(iter(x), iter(y))
+        self.assertAlmostEqual(result.slope, expected.slope)
+        self.assertAlmostEqual(result.intercept, expected.intercept)
+        # generator expressions should also work
+        result = statistics.linear_regression((v for v in x), (v for v in y))
+        self.assertAlmostEqual(result.slope, expected.slope)
+        self.assertAlmostEqual(result.intercept, expected.intercept)
+        # proportional=True should also accept iterators
+        expected_prop = statistics.linear_regression(x, y, proportional=True)
+        result_prop = statistics.linear_regression(
+            iter(x), iter(y), proportional=True
+        )
+        self.assertAlmostEqual(result_prop.slope, expected_prop.slope)
+        self.assertEqual(result_prop.intercept, 0.0)
 
 class TestNormalDist:
 

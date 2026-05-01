@@ -716,8 +716,8 @@ However, for reading convenience, most of the examples show sorted sequences.
    Return the sample covariance of two inputs *x* and *y*. Covariance
    is a measure of the joint variability of two inputs.
 
-   Both inputs must be of the same length (no less than two), otherwise
-   :exc:`StatisticsError` is raised.
+   Both inputs must be sequences or iterables of the same length (no less
+   than two), otherwise :exc:`StatisticsError` is raised.
 
    Examples:
 
@@ -753,8 +753,9 @@ However, for reading convenience, most of the examples show sorted sequences.
    continuous data that doesn't meet the linear proportion requirement for
    Pearson's correlation coefficient.
 
-   Both inputs must be of the same length (no less than two), and need
-   not to be constant, otherwise :exc:`StatisticsError` is raised.
+   Both inputs must be sequences or iterables of the same length (no less
+   than two), and need not to be constant, otherwise :exc:`StatisticsError`
+   is raised.
 
    Example with `Kepler's laws of planetary motion
    <https://en.wikipedia.org/wiki/Kepler's_laws_of_planetary_motion>`_:
@@ -802,8 +803,8 @@ However, for reading convenience, most of the examples show sorted sequences.
    (it is equal to the difference between predicted and actual values
    of the dependent variable).
 
-   Both inputs must be of the same length (no less than two), and
-   the independent variable *x* cannot be constant;
+   Both inputs must be sequences or iterables of the same length (no less
+   than two), and the independent variable *x* cannot be constant;
    otherwise a :exc:`StatisticsError` is raised.
 
    For example, we can use the `release dates of the Monty
