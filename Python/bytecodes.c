@@ -6106,11 +6106,11 @@ dummy_func(
             value = PyStackRef_FromPyObjectBorrow(ptr);
         }
 
-        tier2 op(_SHUFFLE_3_LOAD_CONST_INLINE_BORROW, (ptr/4, callable, null, arg -- res, a, c)) {
-            res = PyStackRef_FromPyObjectBorrow(ptr);
-            a = arg;
-            c = callable;
-            INPUTS_DEAD();
+        tier2 pure op(_RROT_3, (bottom, middle, top -- bottom, middle, top)) {
+            _PyStackRef temp = top;
+            top = middle;
+            middle = bottom;
+            bottom = temp;
         }
 
         tier2 op(_START_EXECUTOR, (executor/4 --)) {
