@@ -552,7 +552,20 @@ codegen_async_yield_from(compiler *c, location loc, expr_ty e)
 
     ADDOP_I(c, loc, CALL_INTRINSIC_1, INTRINSIC_ASYNC_GEN_WRAP);
     // Stack: [aiterator, wrapped_result]
+
+    // Generators expect the iterable at stack_top[-2], so we have to make an
+    // extra copy.
+    ADDOP_I(c, loc, COPY, 2);
+    // Stack: [aiterator, wrapped_result, aiterator]
+    ADDOP_I(c, loc, SWAP, 2);
+    // Stack: [aiterator, aiterator, wrapped_result]
+
     ADDOP_I(c, loc, YIELD_VALUE, 1);
+    // Stack: [aiterator, aiterator, resumed_value]
+
+    ADDOP_I(c, loc, SWAP, 2);
+    // Stack: [aiterator, resumed_value, aiterator]
+    ADDOP(c, loc, POP_TOP);
     // Stack: [aiterator, resumed_value]
 
     ADDOP(c, NO_LOCATION, POP_BLOCK);
