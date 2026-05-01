@@ -638,10 +638,9 @@
                 if (sym_is_const(ctx, res)) {
                     PyObject *result = sym_get_const(ctx, res);
                     if (_Py_IsImmortal(result)) {
-                        // Replace with _LOAD_CONST_INLINE_BORROW + _SWAP + _SWAP since we have two inputs and an immortal result
+                        // Replace with _LOAD_CONST_INLINE_BORROW + _RROT_3 since we have two inputs and an immortal result
                         ADD_OP(_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)result);
-                        ADD_OP(_SWAP, 3, 0);
-                        ADD_OP(_SWAP, 2, 0);
+                        ADD_OP(_RROT_3, 0, 0);
                     }
                 }
                 CHECK_STACK_BOUNDS(1);
@@ -710,10 +709,9 @@
                 if (sym_is_const(ctx, res)) {
                     PyObject *result = sym_get_const(ctx, res);
                     if (_Py_IsImmortal(result)) {
-                        // Replace with _LOAD_CONST_INLINE_BORROW + _SWAP + _SWAP since we have two inputs and an immortal result
+                        // Replace with _LOAD_CONST_INLINE_BORROW + _RROT_3 since we have two inputs and an immortal result
                         ADD_OP(_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)result);
-                        ADD_OP(_SWAP, 3, 0);
-                        ADD_OP(_SWAP, 2, 0);
+                        ADD_OP(_RROT_3, 0, 0);
                     }
                 }
                 CHECK_STACK_BOUNDS(1);
@@ -782,10 +780,9 @@
                 if (sym_is_const(ctx, res)) {
                     PyObject *result = sym_get_const(ctx, res);
                     if (_Py_IsImmortal(result)) {
-                        // Replace with _LOAD_CONST_INLINE_BORROW + _SWAP + _SWAP since we have two inputs and an immortal result
+                        // Replace with _LOAD_CONST_INLINE_BORROW + _RROT_3 since we have two inputs and an immortal result
                         ADD_OP(_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)result);
-                        ADD_OP(_SWAP, 3, 0);
-                        ADD_OP(_SWAP, 2, 0);
+                        ADD_OP(_RROT_3, 0, 0);
                     }
                 }
                 CHECK_STACK_BOUNDS(1);
@@ -1629,10 +1626,9 @@
                     if (sym_is_const(ctx, res)) {
                         PyObject *result = sym_get_const(ctx, res);
                         if (_Py_IsImmortal(result)) {
-                            // Replace with _LOAD_CONST_INLINE_BORROW + _SWAP + _SWAP since we have two inputs and an immortal result
+                            // Replace with _LOAD_CONST_INLINE_BORROW + _RROT_3 since we have two inputs and an immortal result
                             ADD_OP(_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)result);
-                            ADD_OP(_SWAP, 3, 0);
-                            ADD_OP(_SWAP, 2, 0);
+                            ADD_OP(_RROT_3, 0, 0);
                         }
                     }
                     CHECK_STACK_BOUNDS(1);
@@ -2959,10 +2955,9 @@
                 if (sym_is_const(ctx, res)) {
                     PyObject *result = sym_get_const(ctx, res);
                     if (_Py_IsImmortal(result)) {
-                        // Replace with _LOAD_CONST_INLINE_BORROW + _SWAP + _SWAP since we have two inputs and an immortal result
+                        // Replace with _LOAD_CONST_INLINE_BORROW + _RROT_3 since we have two inputs and an immortal result
                         ADD_OP(_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)result);
-                        ADD_OP(_SWAP, 3, 0);
-                        ADD_OP(_SWAP, 2, 0);
+                        ADD_OP(_RROT_3, 0, 0);
                     }
                 }
                 CHECK_STACK_BOUNDS(1);
@@ -3034,10 +3029,9 @@
                 if (sym_is_const(ctx, res)) {
                     PyObject *result = sym_get_const(ctx, res);
                     if (_Py_IsImmortal(result)) {
-                        // Replace with _LOAD_CONST_INLINE_BORROW + _SWAP + _SWAP since we have two inputs and an immortal result
+                        // Replace with _LOAD_CONST_INLINE_BORROW + _RROT_3 since we have two inputs and an immortal result
                         ADD_OP(_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)result);
-                        ADD_OP(_SWAP, 3, 0);
-                        ADD_OP(_SWAP, 2, 0);
+                        ADD_OP(_RROT_3, 0, 0);
                     }
                 }
                 CHECK_STACK_BOUNDS(1);
@@ -3098,10 +3092,9 @@
                 if (sym_is_const(ctx, res)) {
                     PyObject *result = sym_get_const(ctx, res);
                     if (_Py_IsImmortal(result)) {
-                        // Replace with _LOAD_CONST_INLINE_BORROW + _SWAP + _SWAP since we have two inputs and an immortal result
+                        // Replace with _LOAD_CONST_INLINE_BORROW + _RROT_3 since we have two inputs and an immortal result
                         ADD_OP(_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)result);
-                        ADD_OP(_SWAP, 3, 0);
-                        ADD_OP(_SWAP, 2, 0);
+                        ADD_OP(_RROT_3, 0, 0);
                     }
                 }
                 CHECK_STACK_BOUNDS(1);
@@ -3180,10 +3173,9 @@
                 if (sym_is_const(ctx, b)) {
                     PyObject *result = sym_get_const(ctx, b);
                     if (_Py_IsImmortal(result)) {
-                        // Replace with _LOAD_CONST_INLINE_BORROW + _SWAP + _SWAP since we have two inputs and an immortal result
+                        // Replace with _LOAD_CONST_INLINE_BORROW + _RROT_3 since we have two inputs and an immortal result
                         ADD_OP(_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)result);
-                        ADD_OP(_SWAP, 3, 0);
-                        ADD_OP(_SWAP, 2, 0);
+                        ADD_OP(_RROT_3, 0, 0);
                     }
                 }
                 CHECK_STACK_BOUNDS(1);
@@ -3289,10 +3281,9 @@
                     if (sym_is_const(ctx, b)) {
                         PyObject *result = sym_get_const(ctx, b);
                         if (_Py_IsImmortal(result)) {
-                            // Replace with _LOAD_CONST_INLINE_BORROW + _SWAP + _SWAP since we have two inputs and an immortal result
+                            // Replace with _LOAD_CONST_INLINE_BORROW + _RROT_3 since we have two inputs and an immortal result
                             ADD_OP(_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)result);
-                            ADD_OP(_SWAP, 3, 0);
-                            ADD_OP(_SWAP, 2, 0);
+                            ADD_OP(_RROT_3, 0, 0);
                         }
                     }
                     CHECK_STACK_BOUNDS(1);
@@ -3356,10 +3347,9 @@
                     if (sym_is_const(ctx, b)) {
                         PyObject *result = sym_get_const(ctx, b);
                         if (_Py_IsImmortal(result)) {
-                            // Replace with _LOAD_CONST_INLINE_BORROW + _SWAP + _SWAP since we have two inputs and an immortal result
+                            // Replace with _LOAD_CONST_INLINE_BORROW + _RROT_3 since we have two inputs and an immortal result
                             ADD_OP(_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)result);
-                            ADD_OP(_SWAP, 3, 0);
-                            ADD_OP(_SWAP, 2, 0);
+                            ADD_OP(_RROT_3, 0, 0);
                         }
                     }
                     CHECK_STACK_BOUNDS(1);
@@ -5244,10 +5234,9 @@
                 if (sym_is_const(ctx, res)) {
                     PyObject *result = sym_get_const(ctx, res);
                     if (_Py_IsImmortal(result)) {
-                        // Replace with _LOAD_CONST_INLINE_BORROW + _SWAP + _SWAP since we have two inputs and an immortal result
+                        // Replace with _LOAD_CONST_INLINE_BORROW + _RROT_3 since we have two inputs and an immortal result
                         ADD_OP(_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)result);
-                        ADD_OP(_SWAP, 3, 0);
-                        ADD_OP(_SWAP, 2, 0);
+                        ADD_OP(_RROT_3, 0, 0);
                     }
                 }
                 CHECK_STACK_BOUNDS(1);
@@ -5525,6 +5514,23 @@
             stack_pointer[0] = value;
             stack_pointer += 1;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+            break;
+        }
+
+        case _RROT_3: {
+            JitOptRef top;
+            JitOptRef middle;
+            JitOptRef bottom;
+            top = stack_pointer[-1];
+            middle = stack_pointer[-2];
+            bottom = stack_pointer[-3];
+            JitOptRef temp = top;
+            top = middle;
+            middle = bottom;
+            bottom = temp;
+            stack_pointer[-3] = bottom;
+            stack_pointer[-2] = middle;
+            stack_pointer[-1] = top;
             break;
         }
 

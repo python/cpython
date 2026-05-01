@@ -936,6 +936,13 @@ dummy_func(void) {
         assert(oparg >= 2);
     }
 
+    op(_RROT_3, (bottom, middle, top -- bottom, middle, top)) {
+        JitOptRef temp = top;
+        top = middle;
+        middle = bottom;
+        bottom = temp;
+    }
+
     op(_LOAD_ATTR_INSTANCE_VALUE, (offset/1, owner -- attr, o)) {
         attr = sym_new_not_null(ctx);
         (void)offset;
