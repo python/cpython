@@ -1653,6 +1653,8 @@ test case
             warnings.simplefilter("default", RuntimeWarning)
             with self.assertRaises(self.failureException):
                 self.assertWarns(DeprecationWarning, _runtime_warn)
+        self.assertEqual(len(log), 1, log)
+        self.assertIsInstance(log[0].message, RuntimeWarning)
         # Filters for other warnings are not modified
         with warnings.catch_warnings():
             warnings.simplefilter("error", RuntimeWarning)
