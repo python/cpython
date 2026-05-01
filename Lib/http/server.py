@@ -727,6 +727,7 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
     """
 
     server_version = "SimpleHTTP"
+    default_content_type = "application/octet-stream"
     index_pages = ("index.html", "index.htm")
     extensions_map = _encodings_map_default = {
         '.gz': 'application/gzip',
@@ -974,7 +975,7 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
         guess, _ = mimetypes.guess_file_type(path)
         if guess:
             return guess
-        return 'application/octet-stream'
+        return self.default_content_type
 
 
 nobody = None
@@ -1010,9 +1011,10 @@ def _get_best_family(*address):
     return family, sockaddr
 
 
-def test(HandlerClass=BaseHTTPRequestHandler,
+def test(HandlerClass=SimpleHTTPRequestHandler,
          ServerClass=ThreadingHTTPServer,
          protocol="HTTP/1.0", port=8000, bind=None,
+         content_type=SimpleHTTPRequestHandler.default_content_type,
          tls_cert=None, tls_key=None, tls_password=None):
     """Test the HTTP request handler class.
 
@@ -1021,6 +1023,7 @@ def test(HandlerClass=BaseHTTPRequestHandler,
     """
     ServerClass.address_family, addr = _get_best_family(bind, port)
     HandlerClass.protocol_version = protocol
+    HandlerClass.default_content_type = content_type
 
     if tls_cert:
         server = ServerClass(addr, HandlerClass, certfile=tls_cert,
@@ -1059,6 +1062,10 @@ def _main(args=None):
     parser.add_argument('-p', '--protocol', metavar='VERSION',
                         default='HTTP/1.0',
                         help='conform to this HTTP version '
+                             '(default: %(default)s)')
+    parser.add_argument('--content-type',
+                        default=SimpleHTTPRequestHandler.default_content_type,
+                        help='default content type for unknown extensions '
                              '(default: %(default)s)')
     parser.add_argument('--tls-cert', metavar='PATH',
                         help='path to the TLS certificate chain file')
@@ -1112,6 +1119,7 @@ def _main(args=None):
         port=args.port,
         bind=args.bind,
         protocol=args.protocol,
+        content_type=args.content_type,
         tls_cert=args.tls_cert,
         tls_key=args.tls_key,
         tls_password=tls_key_password,

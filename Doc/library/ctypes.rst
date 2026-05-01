@@ -1735,7 +1735,7 @@ If wrapping a shared library with :mod:`!ctypes`, consider determining the
 shared library name at development time, and hardcoding it into the wrapper
 module instead of using :func:`!find_library` to locate the library
 at runtime.
-Also consider addding a configuration option or environment variable to let
+Also consider adding a configuration option or environment variable to let
 users select a library to use, and then perhaps use :func:`!find_library`
 as a default or fallback.
 
@@ -3190,8 +3190,8 @@ Arrays and pointers
    Equivalent to ``type * length``, where *type* is a
    :mod:`!ctypes` data type and *length* an integer.
 
-   This function is :term:`soft deprecated` in favor of multiplication.
-   There are no plans to remove it.
+   .. soft-deprecated:: 3.14
+      In favor of multiplication.
 
 
 .. class:: _Pointer
