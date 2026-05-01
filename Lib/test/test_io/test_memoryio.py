@@ -619,6 +619,17 @@ class PyBytesIOTest(MemoryTestMixin, MemorySeekTestMixin, unittest.TestCase):
             memio.seek(len(buf))
             self.assertEqual(memio.peek(), self.EOF)
 
+        # Current position beyond buffer end
+        with self.ioclass(buf) as memio:
+            memio.seek(len(buf) + 100)
+            self.assertEqual(memio.peek(), self.EOF)
+        with self.ioclass(buf) as memio:
+            memio.read()
+            memio.truncate(0)
+            self.assertEqual(memio.tell(), len(buf))
+            self.assertEqual(memio.peek(), self.EOF)
+
+
         self.assertRaises(ValueError, memio.peek)
 
     def test_unicode(self):
