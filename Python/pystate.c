@@ -3510,7 +3510,14 @@ PyInterpreterView_FromMain(void)
 // thread state was attached.
 // To do this, we just use the memory address of a global variable and
 // cast it to a PyThreadState *.
+#ifdef Py_DEBUG
+// For debugging, use a null thread state. Since thread states are large, we
+// don't want to do this on release builds.
 static const PyThreadState _no_tstate_sentinel = {0};
+#else
+static const uint8_t _no_tstate_sentinel = 0;
+#endif
+
 #define NO_TSTATE_SENTINEL ((PyThreadState *)&_no_tstate_sentinel)
 
 static inline void
