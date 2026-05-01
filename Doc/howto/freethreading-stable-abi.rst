@@ -127,7 +127,7 @@ Platform-specific considerations
 
 On some platforms, Python will look for and load shared library files named
 with the ``abi3`` or ``abi3t`` tag (for example, ``mymodule.abi3t.so``).
-:term:`Free-threaded <free-threaded build>` interpreters prefer ``abi3t``, 
+:term:`Free-threaded <free-threaded build>` interpreters prefer ``abi3t``,
 but can fall back to ``abi3``.
 Thus, extensions compatible with both ABIs should use the ``abi3t`` tag.
 
@@ -143,7 +143,7 @@ If you use
 `setuptools <https://setuptools.pypa.io/en/latest/setuptools.html>`_ to build
 your extension, a future version of ``setuptools`` will allow ``py_limited_api=True``
 to be set to allow targeting limited API when building with the free-threaded build.
-``uv`` supports targeting PEP 803 as of 0.11.3: `https://github.com/astral-sh/uv/releases/tag/0.11.3`.
+``uv`` supports targeting PEP 803 as of 0.11.3: ``https://github.com/astral-sh/uv/releases/tag/0.11.3``.
 
 `Other build tools will support this ABI as well <https://packaging.python.org/en/latest/guides/tool-recommendations/#build-backends-for-extension-modules>`_.
 
