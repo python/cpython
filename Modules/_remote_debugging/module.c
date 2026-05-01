@@ -245,6 +245,25 @@ validate_debug_offsets(struct _Py_DebugOffsets *debug_offsets)
     return _PyRemoteDebug_ValidateDebugOffsetsLayout(debug_offsets);
 }
 
+static PyObject *
+get_gc_stats(RuntimeOffsets *offsets, bool all_interpreters)
+{
+    PyObject *result = PyList_New(0);
+    if (result == NULL) {
+        return NULL;
+    }
+    GetGCStatsContext ctx = {
+        .result = result,
+        .all_interpreters = all_interpreters,
+    };
+    if (0 > iterate_interpreters(offsets, get_gc_stats_from_interpreter_state, &ctx)) {
+        Py_CLEAR(result);
+        return NULL;
+    }
+
+    return result;
+}
+
 /* ============================================================================
  * REMOTEUNWINDER CLASS IMPLEMENTATION
  * ============================================================================ */
@@ -1031,25 +1050,6 @@ _remote_debugging_RemoteUnwinder_resume_threads_impl(RemoteUnwinderObject *self)
 #endif
 }
 
-static PyObject *
-get_gc_stats(RuntimeOffsets *offsets, bool all_interpreters)
-{
-    PyObject *result = PyList_New(0);
-    if (result == NULL) {
-        return NULL;
-    }
-    GetGCStatsContext ctx = {
-        .result = result,
-        .all_interpreters = all_interpreters,
-    };
-    if (0 > iterate_interpreters(offsets, get_gc_stats_from_interpreter_state, &ctx)) {
-        Py_CLEAR(result);
-        return NULL;
-    }
-
-    return result;
-}
-
 /*[clinic input]
 @critical_section
 _remote_debugging.RemoteUnwinder.get_gc_stats
@@ -1164,6 +1164,153 @@ static PyType_Spec RemoteUnwinder_spec = {
     .slots = RemoteUnwinder_slots,
 };
 
+/* ============================================================================
+ * GCMONITOR CLASS IMPLEMENTATION
+ * ============================================================================ */
+
+/*[clinic input]
+class _remote_debugging.GCMonitor "GCMonitorObject *" "&GCMonitor_Type"
+[clinic start generated code]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=ebc229325a5e5154]*/
+
+/*[clinic input]
+@permit_long_summary
+@permit_long_docstring_body
+_remote_debugging.GCMonitor.__init__
+    pid: int
+    *
+    debug: bool = False
+
+Initialize a new GCMonitor object for monitoring GC events from remote process.
+
+Args:
+    pid: Process ID of the target Python process to monitor
+    debug: If True, chain exceptions to explain the sequence of events that
+           lead to the exception.
+
+The GCMonitor provides functionality to read GC statistics from a running
+Python process.
+
+Raises:
+    PermissionError: If access to the target process is denied
+    OSError: If unable to attach to the target process or access its memory
+    RuntimeError: If unable to read debug information from the target process
+[clinic start generated code]*/
+
+static int
+_remote_debugging_GCMonitor___init___impl(GCMonitorObject *self, int pid,
+                                          int debug)
+/*[clinic end generated code: output=2cdf351c2f6335db input=1185a48535b808be]*/
+{
+    self->debug = debug;
+    if (_Py_RemoteDebug_InitProcHandle(&self->handle, pid) < 0) {
+        set_exception_cause(self, PyExc_RuntimeError, "Failed to initialize process handle");
+        return -1;
+    }
+
+    self->runtime_start_address = _Py_RemoteDebug_GetPyRuntimeAddress(&self->handle);
+    if (self->runtime_start_address == 0) {
+        set_exception_cause(self, PyExc_RuntimeError, "Failed to get Python runtime address");
+        return -1;
+    }
+
+    if (_Py_RemoteDebug_ReadDebugOffsets(&self->handle,
+                                         &self->runtime_start_address,
+                                         &self->debug_offsets) < 0)
+    {
+        set_exception_cause(self, PyExc_RuntimeError, "Failed to read debug offsets");
+        return -1;
+    }
+
+    // Validate that the debug offsets are valid
+    if (validate_debug_offsets(&self->debug_offsets) == -1) {
+        set_exception_cause(self, PyExc_RuntimeError, "Invalid debug offsets found");
+        return -1;
+    }
+
+    return 0;
+}
+
+/*[clinic input]
+@critical_section
+_remote_debugging.GCMonitor.get_gc_stats
+
+    all_interpreters: bool = False
+        If True, return GC statistics from all interpreters.
+        If False, return only from main interpreter.
+
+Get garbage collector statistics from external Python process.
+
+Returns a list of dictionaries with GC statistics data.
+
+Returns:
+    List of dicts.
+    dict: A dictionary containing:
+        - gen:
+        - iid:
+        - ts_start:
+        - ts_stop:
+        - heap_size:
+        - collections:
+        - collected:
+        - uncollectable:
+        - candidates:
+        - duration:
+
+Raises:
+    RuntimeError:
+[clinic start generated code]*/
+
+static PyObject *
+_remote_debugging_GCMonitor_get_gc_stats_impl(GCMonitorObject *self,
+                                              int all_interpreters)
+/*[clinic end generated code: output=f73f365725224f7a input=f41cda6c30299fee]*/
+{
+    RuntimeOffsets offsets = {
+        .handle = self->handle,
+        .runtime_start_address = self->runtime_start_address,
+        .debug_offsets = self->debug_offsets,
+    };
+    return get_gc_stats(&offsets, all_interpreters);
+}
+
+static PyMethodDef GCMonitor_methods[] = {
+    _REMOTE_DEBUGGING_GCMONITOR_GET_GC_STATS_METHODDEF
+    {NULL, NULL}
+};
+
+static void
+GCMonitor_dealloc(PyObject *op)
+{
+    GCMonitorObject *self = GCMonitor_CAST(op);
+    PyTypeObject *tp = Py_TYPE(self);
+
+    if (self->handle.pid != 0) {
+        _Py_RemoteDebug_ClearCache(&self->handle);
+        _Py_RemoteDebug_CleanupProcHandle(&self->handle);
+    }
+    PyObject_Del(self);
+    Py_DECREF(tp);
+}
+
+static PyType_Slot GCMonitor_slots[] = {
+    {Py_tp_doc, (void *)"GCMonitor(pid): Monitor GC events of a remote Python process."},
+    {Py_tp_methods, GCMonitor_methods},
+    {Py_tp_init, _remote_debugging_GCMonitor___init__},
+    {Py_tp_dealloc, GCMonitor_dealloc},
+    {0, NULL}
+};
+
+static PyType_Spec GCMonitor_spec = {
+    .name = "_remote_debugging.GCMonitor",
+    .basicsize = sizeof(GCMonitorObject),
+    .flags = (
+        Py_TPFLAGS_DEFAULT
+        | Py_TPFLAGS_IMMUTABLETYPE
+    ),
+    .slots = GCMonitor_slots,
+};
+
 /* Forward declarations for type specs defined later */
 static PyType_Spec BinaryWriter_spec;
 static PyType_Spec BinaryReader_spec;
@@ -1187,6 +1334,11 @@ _remote_debugging_exec(PyObject *m)
     CREATE_TYPE(m, st->RemoteDebugging_Type, &RemoteUnwinder_spec);
 
     if (PyModule_AddType(m, st->RemoteDebugging_Type) < 0) {
+        return -1;
+    }
+
+    CREATE_TYPE(m, st->GCMonitor_Type, &GCMonitor_spec);
+    if (PyModule_AddType(m, st->GCMonitor_Type) < 0) {
         return -1;
     }
 
@@ -1306,6 +1458,7 @@ remote_debugging_traverse(PyObject *mod, visitproc visit, void *arg)
     Py_VISIT(state->AwaitedInfo_Type);
     Py_VISIT(state->BinaryWriter_Type);
     Py_VISIT(state->BinaryReader_Type);
+    Py_VISIT(state->GCMonitor_Type);
     return 0;
 }
 
@@ -1323,6 +1476,7 @@ remote_debugging_clear(PyObject *mod)
     Py_CLEAR(state->AwaitedInfo_Type);
     Py_CLEAR(state->BinaryWriter_Type);
     Py_CLEAR(state->BinaryReader_Type);
+    Py_CLEAR(state->GCMonitor_Type);
     return 0;
 }
 

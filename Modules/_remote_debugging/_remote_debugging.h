@@ -262,6 +262,7 @@ typedef struct {
     PyTypeObject *AwaitedInfo_Type;
     PyTypeObject *BinaryWriter_Type;
     PyTypeObject *BinaryReader_Type;
+    PyTypeObject *GCMonitor_Type;
 } RemoteDebuggingState;
 
 enum _ThreadState {
@@ -381,6 +382,16 @@ typedef struct {
     uintptr_t instruction_pointer;  // Current instruction pointer
     int32_t tlbc_index;             // Thread-local bytecode index (free-threading)
 } CodeObjectContext;
+
+typedef struct {
+    PyObject_HEAD
+    proc_handle_t handle;
+    uintptr_t runtime_start_address;
+    struct _Py_DebugOffsets debug_offsets;
+    int debug;
+} GCMonitorObject;
+
+#define GCMonitor_CAST(op) ((GCMonitorObject *)(op))
 
 /* Function pointer types for iteration callbacks */
 typedef int (*thread_processor_func)(
