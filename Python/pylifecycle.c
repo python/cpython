@@ -37,9 +37,6 @@
 #include "pycore_uniqueid.h"      // _PyObject_FinalizeUniqueIdPool()
 #include "pycore_warnings.h"      // _PyWarnings_InitState()
 #include "pycore_weakref.h"       // _PyWeakref_GET_REF()
-#ifdef _Py_JIT
-#include "pycore_jit.h"           // _PyJIT_Fini()
-#endif
 
 #if defined(PYMALLOC_USE_HUGEPAGES) && defined(MS_WINDOWS)
 #include <Windows.h>
@@ -2531,11 +2528,6 @@ _Py_Finalize(_PyRuntimeState *runtime)
 
     finalize_interp_clear(tstate);
 
-#ifdef _Py_JIT
-    /* Free JIT shim memory */
-    _PyJIT_Fini();
-#endif
-
 #ifdef Py_TRACE_REFS
     /* Display addresses (& refcnts) of all objects still alive.
      * An address can be used to find the repr of the object, printed
@@ -3350,7 +3342,7 @@ _Py_FatalError_DumpTracebacks(int fd, PyInterpreterState *interp,
 
     /* display the current Python stack */
 #ifndef Py_GIL_DISABLED
-    _Py_DumpTracebackThreads(fd, interp, tstate);
+    _Py_DumpTracebackThreads(fd, interp, tstate, 0);
 #else
     _Py_DumpTraceback(fd, tstate);
 #endif
