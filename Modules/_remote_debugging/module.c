@@ -1051,7 +1051,6 @@ get_gc_stats(RuntimeOffsets *offsets, bool all_interpreters)
 }
 
 /*[clinic input]
-@permit_long_docstring_body
 @critical_section
 _remote_debugging.RemoteUnwinder.get_gc_stats
 
@@ -1084,7 +1083,7 @@ Raises:
 static PyObject *
 _remote_debugging_RemoteUnwinder_get_gc_stats_impl(RemoteUnwinderObject *self,
                                                    int all_interpreters)
-/*[clinic end generated code: output=ee2f7cb3e4ea7bc1 input=c025864b40478df2]*/
+/*[clinic end generated code: output=ee2f7cb3e4ea7bc1 input=d471552ace480487]*/
 {
     RuntimeOffsets offsets = {
         .handle = self->handle,
