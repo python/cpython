@@ -982,16 +982,22 @@ class SimpleHTTPServerTestCase(BaseTestCase):
             )
             server_thread.start()
             results = []
+            errors = []
             lock = threading.Lock()
 
             def make_request():
-                conn = http.client.HTTPConnection(host, port, timeout=15)
-                conn.request("GET", self.base_url + "/")
-                resp = conn.getresponse()
-                resp.read()
-                with lock:
-                    results.append((resp.status, resp.getheaders()))
-                conn.close()
+                try:
+                    conn = http.client.HTTPConnection(host, port, timeout=15)
+                    conn.request("GET", self.base_url + "/")
+                    resp = conn.getresponse()
+                    resp.read()
+                    with lock:
+                        results.append((resp.status, resp.getheaders()))
+                    conn.close()
+                except Exception as e:
+                    # Catch exceptions in child threads and save them.
+                    with lock:
+                        errors.append(e)
 
             try:
                 threads = [
@@ -1006,6 +1012,10 @@ class SimpleHTTPServerTestCase(BaseTestCase):
                 threaded_server.shutdown()
                 threaded_server.server_close()
                 server_thread.join()
+
+        # Only raise errors in the main thread, just the first one.
+        if errors:
+            raise errors[0]
 
         self.assertEqual(len(results), N_THREADS)
         for status, headers in results:
