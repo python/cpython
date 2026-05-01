@@ -191,10 +191,10 @@ the :c:data:`Py_mod_multiple_interpreters` slot.
 ``PyInit`` function
 ...................
 
-.. deprecated:: 3.15
+.. soft-deprecated:: 3.15
 
-   This functionality is :term:`soft deprecated`.
-   It will not get new features, but there are no plans to remove it.
+   This functionality will not get new features,
+   but there are no plans to remove it.
 
 Instead of :c:func:`PyModExport_modulename`, an extension module can define
 an older-style :dfn:`initialization function` with the signature:
@@ -272,10 +272,9 @@ For example, a module called ``spam`` would be defined like this::
 Legacy single-phase initialization
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-.. deprecated:: 3.15
+.. soft-deprecated:: 3.15
 
-   Single-phase initialization is :term:`soft deprecated`.
-   It is a legacy mechanism to initialize extension
+   Single-phase initialization is a legacy mechanism to initialize extension
    modules, with known drawbacks and design flaws. Extension module authors
    are encouraged to use multi-phase initialization instead.
 

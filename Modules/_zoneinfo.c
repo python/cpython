@@ -1075,7 +1075,7 @@ load_data(zoneinfo_state *state, PyZoneInfo_ZoneInfo *self, PyObject *file_obj)
         }
 
         trans_idx[i] = (size_t)cur_trans_idx;
-        if (trans_idx[i] > self->num_ttinfos) {
+        if (trans_idx[i] >= self->num_ttinfos) {
             PyErr_Format(
                 PyExc_ValueError,
                 "Invalid transition index found while reading TZif: %zd",
@@ -2081,7 +2081,7 @@ utcoff_to_dstoff(size_t *trans_idx, long *utcoffs, long *dstoffs,
             dstoff = utcoff - utcoffs[comp_idx];
         }
 
-        if (!dstoff && idx < (num_ttinfos - 1)) {
+        if (!dstoff && idx < (num_ttinfos - 1) && i + 1 < num_transitions) {
             comp_idx = trans_idx[i + 1];
 
             // If the following transition is also DST and we couldn't find

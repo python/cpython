@@ -36,9 +36,8 @@ Each package definition is contained in a subdirectory, but they share the build
 
 - More package variants (such as UBSan)
 - Support for Windows
-- Using a single `pixi.toml` and `recipe.yaml` for all package variants is blocked on
-  [pixi#5364](https://github.com/prefix-dev/pixi/pull/5364)
-  and [pixi#5248](https://github.com/prefix-dev/pixi/issues/5248)
+- Using a single `pixi.toml` for all package variants is blocked on
+  [pixi#5248](https://github.com/prefix-dev/pixi/issues/5248)
 
 ## Troubleshooting
 
@@ -48,7 +47,7 @@ FATAL: ThreadSanitizer: unexpected memory mapping 0x7977bd072000-0x7977bd500000
 ```
 To fix it, try reducing `mmap_rnd_bits`:
 
-```bash
+```console
 $ sudo sysctl vm.mmap_rnd_bits
 vm.mmap_rnd_bits = 32  # too high for TSan
 $ sudo sysctl vm.mmap_rnd_bits=28  # reduce it

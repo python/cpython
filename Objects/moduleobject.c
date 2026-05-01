@@ -911,6 +911,17 @@ PyModule_GetStateSize(PyObject *m, Py_ssize_t *size_p)
 }
 
 int
+PyModule_GetToken_DuringGC(PyObject *m, void **token_p)
+{
+    *token_p = NULL;
+    if (!PyModule_Check(m)) {
+        return -1;
+    }
+    *token_p = _PyModule_GetToken(m);
+    return 0;
+}
+
+int
 PyModule_GetToken(PyObject *m, void **token_p)
 {
     *token_p = NULL;
@@ -1063,6 +1074,15 @@ PyModule_GetDef(PyObject* m)
         return NULL;
     }
     return _PyModule_GetDefOrNull(m);
+}
+
+void*
+PyModule_GetState_DuringGC(PyObject* m)
+{
+    if (!PyModule_Check(m)) {
+        return NULL;
+    }
+    return _PyModule_GetState(m);
 }
 
 void*

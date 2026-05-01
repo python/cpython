@@ -158,7 +158,7 @@ The module defines three convenience functions and a public class:
 
       .. versionadded:: 3.6
 
-      .. versionchanged:: next
+      .. versionchanged:: 3.15
          The optional *target_time* parameter was added.
 
 
@@ -247,7 +247,7 @@ Where the following options are understood:
    if :option:`--number` is 0, the code will run until it takes at
    least this many seconds (default: 0.2)
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
 .. option:: -v, --verbose
 

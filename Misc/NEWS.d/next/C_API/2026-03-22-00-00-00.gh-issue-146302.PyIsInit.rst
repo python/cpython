@@ -1,0 +1,3 @@
+:c:func:`Py_IsInitialized` no longer returns true until initialization has
+fully completed, including import of the :mod:`site` module.  The underlying
+runtime flags now use atomic operations.
