@@ -2326,8 +2326,12 @@ make_pre_finalization_calls(PyThreadState *tstate, int subinterpreters)
                 // For debugging purposes, we emit a fatal error if someone
                 // CTRL^C'ed the process.
                 if (PyErr_CheckSignals()) {
+                    int fatal = PyErr_ExceptionMatches(PyExc_KeyboardInterrupt);
                     PyErr_FormatUnraisable("Exception ignored while waiting on finalization guards");
-                    Py_FatalError("Interrupted while waiting on finalization guard");
+
+                    if (fatal) {
+                        Py_FatalError("Interrupted while waiting on finalization guard");
+                    }
                 }
             }
         }
