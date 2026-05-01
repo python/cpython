@@ -2532,7 +2532,7 @@ fi
 AC_MSG_CHECKING([whether to build with frame pointers])
 AC_ARG_WITH([frame-pointers],
   [AS_HELP_STRING([--without-frame-pointers],
-                  [build without frame pointers (default is yes)])],
+                  [build without frame pointers (default is no)])],
   [],
   [with_frame_pointers=yes])
 AC_MSG_RESULT([$with_frame_pointers])
