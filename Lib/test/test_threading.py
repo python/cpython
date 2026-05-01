@@ -2399,6 +2399,10 @@ class ThreadingIteratorToolsTests(BaseTestCase):
         with threading_helper.wait_threads_exit():
             for worker in workers:
                 worker.start()
+            for worker in workers:
+                # Wait for the worker thread to actually start.
+                while worker.ident is None:
+                    time.sleep(0.1)
             start.set()
             for worker in workers:
                 worker.join()
