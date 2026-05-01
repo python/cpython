@@ -177,13 +177,8 @@ convert_global_to_const(_PyUOpInstruction *inst, PyObject *obj)
     if (res == NULL) {
         return NULL;
     }
-    bool borrow = _Py_IsImmortal(res);
-    if (borrow) {
-        inst->opcode = _LOAD_CONST_INLINE_BORROW;
-    } else {
-        inst->opcode = _LOAD_CONST_INLINE;
-    }
-    inst->operand0 = borrow ? PyStackRef_TagBorrow(res) : (uint64_t)res;
+    inst->opcode = _Py_IsImmortal(res) ? _LOAD_CONST_INLINE_BORROW : _LOAD_CONST_INLINE;
+    inst->operand0 = _PyUop_PrepareOperand0(inst->opcode, (uint64_t)res);
     return res;
 }
 
