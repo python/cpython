@@ -1283,6 +1283,9 @@ class IPv4Address(_BaseV4, _BaseAddress):
 
         """
         # Efficient constructor from integer.
+        if isinstance(address, bool):
+            raise AddressValueError( f"This Value {address} isn't a valid IPv4 address")
+            return
         if isinstance(address, int):
             self._check_int_address(address)
             self._ip = address
@@ -1943,6 +1946,11 @@ class IPv6Address(_BaseV6, _BaseAddress):
             self._check_packed_address(address, 16)
             self._ip = int.from_bytes(address, 'big')
             self._scope_id = None
+            return
+
+        
+        if isinstance(address, bool):
+            raise AddressValueError(f"This Value {address} isn't a vaild IPv6 address")
             return
 
         # Assume input argument to be string or any object representation
