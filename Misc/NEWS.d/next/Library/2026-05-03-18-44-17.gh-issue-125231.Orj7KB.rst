@@ -1,0 +1,4 @@
+``register_standard_browsers`` in :mod:`webbrowser` registers firefox
+channels (e.g. firefox-dev, firefox-aurora, firefox-beta, firefox-nightly,
+etc.) as Mozilla controllers when BROWSER environment variable is set to
+``"firefox-*"``.
