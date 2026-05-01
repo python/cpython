@@ -1868,6 +1868,7 @@ PyThreadState_Clear(PyThreadState *tstate)
 #endif
 
     tstate->_status.cleared = 1;
+    tstate->ensure.owned_guard = NULL;
 
     // XXX Call _PyThreadStateSwap(runtime, NULL) here if "current".
     // XXX Do it as early in the function as possible.
@@ -3609,18 +3610,18 @@ PyThreadState_Release(PyThreadState *old_tstate)
         to_restore = old_tstate;
     }
 
+    PyInterpreterGuard *owned_guard = tstate->ensure.owned_guard;
     assert(tstate->ensure.delete_on_release == 1 || tstate->ensure.delete_on_release == 0);
     if (tstate->ensure.delete_on_release) {
         PyThreadState_Clear(tstate);
-    } else {
-        PyThreadState_Swap(to_restore);
     }
 
-    PyThreadState_Swap(to_restore);
+    PyThreadState *check_tstate = PyThreadState_Swap(to_restore);
+    (void)check_tstate;
+    assert(check_tstate == tstate);
 
-    if (tstate->ensure.owned_guard != NULL) {
-        PyInterpreterGuard_Close(tstate->ensure.owned_guard);
-        tstate->ensure.owned_guard = NULL;
+    if (owned_guard != NULL) {
+        PyInterpreterGuard_Close(owned_guard);
     }
 
     if (tstate->ensure.delete_on_release) {
