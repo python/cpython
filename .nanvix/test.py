@@ -22,6 +22,7 @@ import tarfile
 import time
 import urllib.request
 from pathlib import Path
+from typing import Any
 
 import sys as _sys
 _sys.path.insert(0, str(Path(__file__).resolve().parent))
@@ -90,6 +91,7 @@ def _download_release_as_cache(
     # Download.
     dl_dir = repo_root / ".nanvix" / "cache"
     dl_dir.mkdir(parents=True, exist_ok=True)
+    assert asset_name is not None
     tarball = dl_dir / asset_name
     if not tarball.is_file():
         print(f"  Downloading {asset_name}...")
@@ -163,7 +165,7 @@ def stage(
     memory_size: str = config.DEFAULT_MEMORY_SIZE,
     install_prefix: str = config.DEFAULT_INSTALL_PREFIX,
     release: bool = False,
-    run_fn=None,
+    run_fn: Any = None,
     docker: bool = False,
 ) -> Path:
     """Build, install, and stage CPython for testing.
@@ -391,7 +393,7 @@ def run_hello(
     use direct host-filesystem access (no ramfs).
     """
     sysroot = staging / "sysroot"
-    nanvixd_extra = nanvixd_extra or config.PLATFORM_NANVIXD_ARGS.get(platform, [])
+    resolved_extra: list[str] = nanvixd_extra if nanvixd_extra is not None else config.PLATFORM_NANVIXD_ARGS.get(platform, [])
     # On Windows, CreateProcess searches for the executable relative to the
     # *parent's* CWD, not the child's cwd. Use an absolute path to avoid this.
     nanvixd = str((sysroot / "bin" / config.nanvixd_binary()).resolve())
@@ -416,7 +418,7 @@ def run_hello(
         cmd = [
             nanvixd,
             "-bin-dir", "./bin", "-ramfs", str(ramfs_img),
-            *nanvixd_extra,
+            *resolved_extra,
             "--", python_bin,
             f"-B ./test_hello.py;PYTHONHOME=/ PYTHONDONTWRITEBYTECODE=1"
             f" _PYTHON_SYSCONFIGDATA_NAME={config.SYSCONFIGDATA_NAME}",
@@ -425,7 +427,7 @@ def run_hello(
         # Direct mode: guest accesses host filesystem, no ramfs.
         cmd = [
             nanvixd,
-            *nanvixd_extra,
+            *resolved_extra,
             "--", python_bin,
             "./test_hello.py",
         ]
@@ -493,9 +495,9 @@ def run_regrtest(
         return
 
     if test_list is None:
-        test_list = config.NANVIX_TEST_LIST
+        test_list = list(config.NANVIX_TEST_LIST)
 
-    nanvixd_extra = nanvixd_extra or config.PLATFORM_NANVIXD_ARGS.get(platform, [])
+    resolved_nanvixd_extra: list[str] = nanvixd_extra if nanvixd_extra is not None else config.PLATFORM_NANVIXD_ARGS.get(platform, [])
     standalone = process_mode == "standalone"
 
     sysroot = staging / "sysroot"
@@ -510,16 +512,16 @@ def run_regrtest(
         if ramfs_img is None:
             ramfs_img = repo_root / ".nanvix" / "cpython-rootfs.img"
         extra_str = f"-bin-dir ./bin -ramfs {ramfs_img}"
-        if nanvixd_extra:
-            extra_str += " " + " ".join(nanvixd_extra)
+        if resolved_nanvixd_extra:
+            extra_str += " " + " ".join(resolved_nanvixd_extra)
         env["NANVIXD_EXTRA_ARGS"] = extra_str
         env["NANVIX_STANDALONE"] = "1"
         exclude_set = set(config.STANDALONE_EXCLUDE)
         test_list = [m for m in test_list if m not in exclude_set]
     else:
         # Direct mode: host filesystem, no ramfs.
-        if nanvixd_extra:
-            env["NANVIXD_EXTRA_ARGS"] = " ".join(nanvixd_extra)
+        if resolved_nanvixd_extra:
+            env["NANVIXD_EXTRA_ARGS"] = " ".join(resolved_nanvixd_extra)
         else:
             env.pop("NANVIXD_EXTRA_ARGS", None)
         env.pop("NANVIX_STANDALONE", None)
@@ -576,7 +578,7 @@ def run_all(
     release: bool = False,
     test_list: list[str] | None = None,
     batch_size: int = config.DEFAULT_TEST_BATCH_SIZE,
-    run_fn=None,
+    run_fn: Any = None,
     docker: bool = False,
 ) -> None:
     """Run the complete test pipeline: stage → hello → regrtest → cleanup."""

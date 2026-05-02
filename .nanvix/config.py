@@ -9,8 +9,6 @@ across defaults.mk, common.mk, and the various test-*.mk files.
 
 from __future__ import annotations
 
-import os
-import platform
 import sys
 from pathlib import Path
 

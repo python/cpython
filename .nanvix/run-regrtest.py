@@ -60,12 +60,14 @@ def main() -> int:
 
     # -- Run -------------------------------------------------------------------
     sys.argv[1:] = args
-    from test.libregrtest.main import main as regrtest_main
+    from test.libregrtest.main import main as regrtest_main  # type: ignore[import-not-found]
 
     try:
         regrtest_main()
     except SystemExit as e:
-        return e.code
+        if e.code is None:
+            return 0
+        return e.code if isinstance(e.code, int) else 1
     return 0
 
 

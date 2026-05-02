@@ -128,7 +128,7 @@ def main() -> int:
         posix=(sys.platform != "win32"),
     )
 
-    batches = []
+    batches: list[list[str]] = []
     for i in range(0, len(modules), BATCH_SIZE):
         batches.append(modules[i : i + BATCH_SIZE])
 
