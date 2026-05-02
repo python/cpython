@@ -42,11 +42,32 @@ def get_last_item(gc_stats: tuple[dict[str, str|int|float]],
 
 
 @requires_remote_subprocess_debugging()
-class TestGetGCStats(unittest.TestCase):
+class TestGCStats(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
         cls._main_iid = 0 # main interpreter ID
+        cls._main_interpreter_script = '''
+            import gc
+            import time
+
+            gc.collect(0)
+            gc.collect(1)
+            gc.collect(2)
+
+            _test_sock.sendall(b"working")
+            objects = []
+            while True:
+                if len(objects) > 100:
+                    objects = []
+
+                objects.append([])
+
+                time.sleep(0.1)
+                gc.collect(0)
+                gc.collect(1)
+                gc.collect(2)
+            '''
         cls._script = '''
             import concurrent.interpreters as interpreters
             import gc
@@ -85,17 +106,36 @@ class TestGetGCStats(unittest.TestCase):
                 gc.collect(2)
             '''
 
-    def _collect_gc_stats(self, script:str, all_interpreters:bool):
+    def _gc_stats_advanced(self, before_stats, after_stats, generations):
+        for generation in generations:
+            before = get_last_item(before_stats, generation, self._main_iid)
+            after = get_last_item(after_stats, generation, self._main_iid)
+            if after is None or before is None:
+                return False
+            if after["ts_stop"] <= before["ts_stop"]:
+                return False
+        return True
+
+    def _collect_gc_stats(self, script: str, all_interpreters: bool,
+                          generations=(2,)):
         with (test_subprocess(script, wait_for_working=True) as subproc):
             monitor = _remote_debugging.GCMonitor(subproc.process.pid, debug=True)
             before_stats = monitor.get_gc_stats(all_interpreters=all_interpreters)
-            before = get_last_item(before_stats, 2, self._main_iid)
+            for generation in generations:
+                before = get_last_item(before_stats, generation, self._main_iid)
+                self.assertIsNotNone(before)
+
+            after_stats = before_stats
             for _ in range(10):
                 time.sleep(0.5)
                 after_stats = monitor.get_gc_stats(all_interpreters=all_interpreters)
-                after = get_last_item(after_stats, 2, self._main_iid)
-                if after["ts_stop"] > before["ts_stop"]:
+                if self._gc_stats_advanced(before_stats, after_stats, generations):
                     break
+            else:
+                self.fail(
+                    f"GC stats for generations {generations!r} did not "
+                    f"advance: {before_stats!r} -> {after_stats!r}"
+                )
 
         return before_stats, after_stats
 
@@ -136,7 +176,7 @@ class TestGetGCStats(unittest.TestCase):
                 for before, after in zip(before_last_items, after_last_items):
                     self._check_gc_stats(before, after)
 
-    def test_get_gc_stats_fields(self):
+    def test_gc_stats_fields(self):
         keys = sorted(("gen", "iid", "ts_start", "ts_stop", #"heap_size",
                 "collections", "collected", "uncollectable", "candidates",
                 "duration"))
@@ -147,22 +187,44 @@ class TestGetGCStats(unittest.TestCase):
             self.assertIsInstance(item, dict)
             self.assertEqual(sorted(item.keys()), keys)
 
+    def test_gc_stats_timestamps_for_main_interpreter(self):
+        script = textwrap.dedent(self._main_interpreter_script)
+        before_stats, after_stats = self._collect_gc_stats(
+            script, False, generations=(0, 1, 2))
+
+        for generation in range(3):
+            with self.subTest(generation=generation):
+                before = get_last_item(before_stats, generation, self._main_iid)
+                after = get_last_item(after_stats, generation, self._main_iid)
+
+                self.assertIsNotNone(before)
+                self.assertIsNotNone(after)
+                self.assertGreater(
+                    after["collections"], before["collections"],
+                    (before, after))
+                self.assertGreater(
+                    after["ts_start"], before["ts_start"],
+                    (before, after))
+                self.assertGreater(
+                    after["ts_stop"], before["ts_stop"],
+                    (before, after))
+
     @requires_gil_enabled()
-    def test_get_gc_stats_for_main_interpreter(self):
+    def test_gc_stats_for_main_interpreter(self):
         script = textwrap.dedent(self._script.format(False))
         before_stats, after_stats = self._collect_gc_stats(script, False)
 
-        self._check_interpreter_gc_stats(before_stats,after_stats)
+        self._check_interpreter_gc_stats(before_stats, after_stats)
 
     @requires_gil_enabled()
-    def test_get_gc_stats_for_main_interpreter_if_subinterpreter_exists(self):
+    def test_gc_stats_for_main_interpreter_if_subinterpreter_exists(self):
         script = textwrap.dedent(self._script.format(True))
         before_stats, after_stats = self._collect_gc_stats(script, False)
 
         self._check_interpreter_gc_stats(before_stats, after_stats)
 
     @requires_gil_enabled()
-    def test_get_gc_stats_for_all_interpreters(self):
+    def test_gc_stats_for_all_interpreters(self):
         script = textwrap.dedent(self._script.format(True))
         before_stats, after_stats = self._collect_gc_stats(script, True)
 
