@@ -1,2 +1,0 @@
-Fix rare math domain error for :func:`random.binomialvariate`, using
-`1.0-random()` (with image `(0, 1]`) instead of `random()`.
