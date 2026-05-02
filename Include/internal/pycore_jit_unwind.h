@@ -10,7 +10,9 @@
 
 #if defined(_Py_JIT) && defined(__linux__) && defined(__ELF__)
 #  define PY_HAVE_JIT_GDB_UNWIND
-#  define PY_HAVE_JIT_GNU_BACKTRACE_UNWIND
+#  if defined(HAVE_EXECINFO_H) && defined(HAVE_BACKTRACE)
+#    define PY_HAVE_JIT_GNU_BACKTRACE_UNWIND
+#  endif
 #endif
 
 #if defined(PY_HAVE_PERF_TRAMPOLINE) \

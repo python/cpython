@@ -6,10 +6,17 @@
 
 #ifdef _Py_JIT
 
+#if defined(PY_HAVE_JIT_GDB_UNWIND) \
+    || defined(PY_HAVE_JIT_GNU_BACKTRACE_UNWIND)
 struct _PyJitCodeRegistration {
+#  if defined(PY_HAVE_JIT_GDB_UNWIND)
     void *gdb_handle;
+#  endif
+#  if defined(PY_HAVE_JIT_GNU_BACKTRACE_UNWIND)
     void *gnu_backtrace_handle;
+#  endif
 };
+#endif
 
 static void
 jit_register_perf_code(const void *code_addr, size_t code_size,
@@ -30,63 +37,45 @@ jit_register_perf_code(const void *code_addr, size_t code_size,
 #endif
 }
 
+#if defined(PY_HAVE_JIT_GDB_UNWIND)
 static void
 jit_register_gdb_code(_PyJitCodeRegistration *registration,
                       const void *code_addr, size_t code_size,
                       const char *entry, const char *filename)
 {
-#if defined(PY_HAVE_JIT_GDB_UNWIND)
     registration->gdb_handle = _PyJitUnwind_GdbRegisterCode(
         code_addr, code_size, entry, filename);
-#else
-    (void)registration;
-    (void)code_addr;
-    (void)code_size;
-    (void)entry;
-    (void)filename;
-#endif
 }
 
 static void
 jit_unregister_gdb_code(_PyJitCodeRegistration *registration)
 {
-#if defined(PY_HAVE_JIT_GDB_UNWIND)
     if (registration->gdb_handle != NULL) {
         _PyJitUnwind_GdbUnregisterCode(registration->gdb_handle);
         registration->gdb_handle = NULL;
     }
-#else
-    (void)registration;
-#endif
 }
+#endif
 
+#if defined(PY_HAVE_JIT_GNU_BACKTRACE_UNWIND)
 static void
 jit_register_gnu_backtrace_code(_PyJitCodeRegistration *registration,
                                 const void *code_addr, size_t code_size)
 {
-#if defined(PY_HAVE_JIT_GNU_BACKTRACE_UNWIND)
     registration->gnu_backtrace_handle =
         _PyJitUnwind_GnuBacktraceRegisterCode(code_addr, code_size);
-#else
-    (void)registration;
-    (void)code_addr;
-    (void)code_size;
-#endif
 }
 
 static void
 jit_unregister_gnu_backtrace_code(_PyJitCodeRegistration *registration)
 {
-#if defined(PY_HAVE_JIT_GNU_BACKTRACE_UNWIND)
     if (registration->gnu_backtrace_handle != NULL) {
         _PyJitUnwind_GnuBacktraceUnregisterCode(
             registration->gnu_backtrace_handle);
         registration->gnu_backtrace_handle = NULL;
     }
-#else
-    (void)registration;
-#endif
 }
+#endif
 
 _PyJitCodeRegistration *
 _PyJit_RegisterCode(const void *code_addr, size_t code_size,
@@ -94,35 +83,55 @@ _PyJit_RegisterCode(const void *code_addr, size_t code_size,
 {
     jit_register_perf_code(code_addr, code_size, entry, filename);
 
+#if !defined(PY_HAVE_JIT_GDB_UNWIND) \
+    && !defined(PY_HAVE_JIT_GNU_BACKTRACE_UNWIND)
+    return NULL;
+#else
     _PyJitCodeRegistration *registration = PyMem_RawCalloc(
         1, sizeof(*registration));
     if (registration == NULL) {
         return NULL;
     }
 
+    int registered = 0;
+#  if defined(PY_HAVE_JIT_GDB_UNWIND)
     jit_register_gdb_code(
         registration, code_addr, code_size, entry, filename);
+    registered |= registration->gdb_handle != NULL;
+#  endif
+#  if defined(PY_HAVE_JIT_GNU_BACKTRACE_UNWIND)
     jit_register_gnu_backtrace_code(
         registration, code_addr, code_size);
-    if (registration->gdb_handle == NULL &&
-        registration->gnu_backtrace_handle == NULL)
-    {
+    registered |= registration->gnu_backtrace_handle != NULL;
+#  endif
+    if (!registered) {
         PyMem_RawFree(registration);
         return NULL;
     }
     return registration;
+#endif
 }
 
 void
 _PyJit_UnregisterCode(_PyJitCodeRegistration *registration)
 {
+#if !defined(PY_HAVE_JIT_GDB_UNWIND) \
+    && !defined(PY_HAVE_JIT_GNU_BACKTRACE_UNWIND)
+    assert(registration == NULL);
+    (void)registration;
+#else
     if (registration == NULL) {
         return;
     }
 
+#  if defined(PY_HAVE_JIT_GNU_BACKTRACE_UNWIND)
     jit_unregister_gnu_backtrace_code(registration);
+#  endif
+#  if defined(PY_HAVE_JIT_GDB_UNWIND)
     jit_unregister_gdb_code(registration);
+#  endif
     PyMem_RawFree(registration);
+#endif
 }
 
 #endif  // _Py_JIT
