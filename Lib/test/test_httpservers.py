@@ -980,6 +980,11 @@ class SimpleHTTPServerTestCase(BaseTestCase):
             server_thread = threading.Thread(
                 target=threaded_server.serve_forever, args=(0.05,), daemon=True
             )
+            # Clean up the server thread and server resources after the test,
+            # with a timeout to prevent hanging, even if the finally block fails.
+            self.addCleanup(server_thread.join, support.SHORT_TIMEOUT)
+            self.addCleanup(threaded_server.server_close)
+            self.addCleanup(threaded_server.shutdown)
             server_thread.start()
             results = []
             errors = []
@@ -1011,7 +1016,7 @@ class SimpleHTTPServerTestCase(BaseTestCase):
             finally:
                 threaded_server.shutdown()
                 threaded_server.server_close()
-                server_thread.join()
+                server_thread.join(timeout=support.SHORT_TIMEOUT)
 
         # Only raise errors in the main thread, just the first one.
         if errors:
