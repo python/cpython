@@ -1948,7 +1948,6 @@ class IPv6Address(_BaseV6, _BaseAddress):
             self._scope_id = None
             return
 
-        
         if isinstance(address, bool):
             raise AddressValueError(f"This Value {address} isn't a vaild IPv6 address")
             return
