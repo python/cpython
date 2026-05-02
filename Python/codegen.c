@@ -515,7 +515,8 @@ codegen_async_yield_from(compiler *c, location loc, expr_ty e)
 {
     NEW_JUMP_TARGET_LABEL(c, send);
     NEW_JUMP_TARGET_LABEL(c, exit);
-
+    NEW_JUMP_TARGET_LABEL(c, use_anext);
+    NEW_JUMP_TARGET_LABEL(c, got_coroutine);
 
     // ADDOP_NAME(c, loc, LOAD_ATTR, &_Py_ID(__aiter__), names);
     // ADDOP(c, loc, PUSH_NULL);
@@ -523,19 +524,27 @@ codegen_async_yield_from(compiler *c, location loc, expr_ty e)
     VISIT(c, expr, e->v.AsyncYieldFrom.value);
     // Stack: [value]
 
-    // Call value.__aiter__()
     ADDOP_NAME(c, loc, LOAD_ATTR, &_Py_ID(__aiter__), names);
     ADDOP(c, loc, PUSH_NULL);
     ADDOP_I(c, loc, CALL, 0);
+    // Stack: [aiterator]
 
     ADDOP_LOAD_CONST(c, loc, Py_None);
     // Stack: [aiterator, None]
 
     USE_LABEL(c, send);
-    // Virtual try/except for the StopIteration; see above.
-    ADDOP_JUMP(c, loc, SETUP_FINALLY, exit);
 
     // Stack: [aiterator, asend_value]
+    ADDOP_I(c, loc, COPY, 1);
+    // Stack: [aiterator, asend_value, asend_value]
+
+    ADDOP_LOAD_CONST(c, loc, Py_None);
+    // Stack: [aiterator, asend_value, asend_value, None]
+
+    ADDOP_I(c, loc, IS_OP, 0);
+    // Stack: [aiterator, asend_value, bool]
+
+    ADDOP_JUMP(c, loc, POP_JUMP_IF_TRUE, use_anext);
 
     ADDOP_I(c, loc, COPY, 2);
     // Stack: [aiterator, asend_value, aiterator]
@@ -554,6 +563,28 @@ codegen_async_yield_from(compiler *c, location loc, expr_ty e)
 
     ADDOP_I(c, loc, CALL, 1);
     // Stack: [aiterator, coroutine]
+
+    ADDOP_JUMP(c, loc, JUMP_NO_INTERRUPT, got_coroutine);
+
+    USE_LABEL(c, use_anext);
+    // Stack: [aiterator, asend_value]
+
+    ADDOP(c, loc, POP_TOP);
+    // Stack: [aiterator]
+
+    ADDOP_I(c, loc, COPY, 1);
+    // Stack: [aiterator, aiterator]
+
+    ADDOP_NAME(c, loc, LOAD_ATTR, &_Py_ID(__anext__), names);
+    ADDOP(c, loc, PUSH_NULL);
+    ADDOP_I(c, loc, CALL, 0);
+    // Stack: [aiterator, coroutine]
+
+    USE_LABEL(c, got_coroutine);
+    // Stack: [aiterator, coroutine]
+
+    // Virtual try/except for the StopAsyncIteration
+    ADDOP_JUMP(c, loc, SETUP_FINALLY, exit);
 
     ADDOP(c, loc, PUSH_NULL);
     ADDOP_LOAD_CONST(c, loc, Py_None);
@@ -575,12 +606,11 @@ codegen_async_yield_from(compiler *c, location loc, expr_ty e)
     ADDOP_I(c, loc, YIELD_VALUE, 1);
     // Stack: [aiterator, aiterator, resumed_value]
 
+    ADDOP(c, NO_LOCATION, POP_BLOCK);
+
     ADDOP_I(c, loc, SWAP, 2);
     // Stack: [aiterator, resumed_value, aiterator]
     ADDOP(c, loc, POP_TOP);
-    // Stack: [aiterator, resumed_value]
-
-    ADDOP(c, NO_LOCATION, POP_BLOCK);
     // Stack: [aiterator, resumed_value]
 
     ADDOP_JUMP(c, loc, JUMP_NO_INTERRUPT, send);

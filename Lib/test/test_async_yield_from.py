@@ -976,23 +976,23 @@ class TestPEP828Operation(unittest.TestCase):
             self.assertEqual(res, [0, 1, 2, 3])
             raise
 
-    # @_async_test
-    # async def test_delegating_generators_claim_to_be_running_with_aclose(self):
-    #     # Check with close
-    #     class MyIt:
-    #         def __aiter__(self):
-    #             return self
-    #         async def __anext__(self):
-    #             return 42
-    #         async def aclose(self_):
-    #             self.assertTrue(g1.gi_running)
-    #             with self.assertRaises(RuntimeError):
-    #                 await anext(g1)
-    #     async def one():
-    #         async yield from MyIt()
-    #     g1 = one()
-    #     await anext(g1)
-    #     await g1.aclose()
+    @_async_test
+    async def test_delegating_generators_claim_to_be_running_with_aclose(self):
+        # Check with close
+        class MyIt:
+            def __aiter__(self):
+                return self
+            async def __anext__(self):
+                return 42
+            async def aclose(self_):
+                self.assertTrue(g1.gi_running)
+                with self.assertRaises(RuntimeError):
+                    await anext(g1)
+        async def one():
+            async yield from MyIt()
+        g1 = one()
+        await anext(g1)
+        await g1.aclose()
 
     @_async_test
     async def test_delegator_is_visible_to_debugger(self):
@@ -1016,20 +1016,20 @@ class TestPEP828Operation(unittest.TestCase):
         async for stack in spam(eggs(gen())):
             self.assertTrue('spam' in stack and 'eggs' in stack)
 
-    # @_async_test
-    # async def test_custom_iterator_return(self):
-    #     # See issue #15568
-    #     class MyIter:
-    #         def __aiter__(self):
-    #             return self
-    #         async def __anext__(self):
-    #             raise StopAsyncIteration(42)
-    #     async def gen():
-    #         nonlocal ret
-    #         ret = async yield from MyIter()
-    #     ret = None
-    #     [e async for e in gen()]
-    #     self.assertEqual(ret, 42)
+    @_async_test
+    async def test_custom_iterator_return(self):
+        # See issue #15568
+        class MyIter:
+            def __aiter__(self):
+                return self
+            async def __anext__(self):
+                raise StopAsyncIteration(42)
+        async def gen():
+            nonlocal ret
+            ret = async yield from MyIter()
+        ret = None
+        [e async for e in gen()]
+        self.assertEqual(ret, 42)
 
     @_async_test
     async def test_close_with_cleared_frame(self):
