@@ -27,7 +27,7 @@ jobs:
     if: github.event_name != 'schedule' && github.event_name != 'workflow_dispatch'
     uses: nanvix/workflows/.github/workflows/nanvix-ci.yml@v1.13.0
     with:
-      zutil-version: "v0.7.27"
+      zutil-version: "v0.7.28"
       platforms: '["microvm"]'
       memory-sizes: '["256mb"]'
       matrix-exclude: '[{"platform":"hyperlight"}]'
@@ -48,7 +48,7 @@ jobs:
       pull-requests: write
     uses: nanvix/workflows/.github/workflows/nanvix-ci.yml@v1.13.0
     with:
-      zutil-version: "v0.7.27"
+      zutil-version: "v0.7.28"
       platforms: '["microvm"]'
       memory-sizes: '["256mb"]'
       matrix-exclude: '[{"platform":"hyperlight"}]'
