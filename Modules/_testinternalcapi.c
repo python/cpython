@@ -2636,6 +2636,12 @@ get_long_lived_total(PyObject *self, PyObject *Py_UNUSED(ignored))
     return PyLong_FromInt64(PyInterpreterState_Get()->gc.long_lived_total);
 }
 
+static PyObject *
+get_gc_heap_bytes(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    return PyLong_FromSsize_t(_PyGC_GetHeapBytes(PyInterpreterState_Get()));
+}
+
 #endif
 
 static PyObject *
@@ -3001,6 +3007,7 @@ static PyMethodDef module_functions[] = {
     {"get_tlbc", get_tlbc, METH_O, NULL},
     {"get_tlbc_id", get_tlbc_id, METH_O, NULL},
     {"get_long_lived_total", get_long_lived_total, METH_NOARGS},
+    {"get_gc_heap_bytes", get_gc_heap_bytes, METH_NOARGS},
 #endif
 #ifdef _Py_TIER2
     {"uop_symbols_test", _Py_uop_symbols_test, METH_NOARGS},

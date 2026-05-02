@@ -337,6 +337,8 @@ extern int _PyGC_VisitStackRef(union _PyStackRef *ref, visitproc visit, void *ar
 #ifdef Py_GIL_DISABLED
 extern void _PyGC_VisitObjectsWorldStopped(PyInterpreterState *interp,
                                            gcvisitobjects_t callback, void *arg);
+// Estimate of bytes allocated by mimalloc.
+PyAPI_FUNC(Py_ssize_t) _PyGC_GetHeapBytes(PyInterpreterState *interp);
 #endif
 
 #ifdef __cplusplus

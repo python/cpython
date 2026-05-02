@@ -17,6 +17,10 @@
 
 #include "pydtrace.h"
 
+// Declared in mimalloc/internal.h only at function scope; we read its
+// full_page_bytes counter from _PyGC_GetHeapBytes().
+extern mi_heap_t _mi_heap_main;
+
 // Minimum growth in mimalloc heap bytes (estimated from full pages) since the
 // last GC.
 #define GC_HEAP_BYTES_MIN_DELTA (512 * 1024)
@@ -2002,16 +2006,45 @@ cleanup_worklist(struct worklist *worklist)
 }
 
 // Return an estimate, in bytes, of how much memory is being used.
-static Py_ssize_t
-gc_get_heap_bytes(PyInterpreterState *interp)
+//
+// Computed from mimalloc full-page byte counters: each mi_heap_t and
+// mi_abandoned_pool_t carries a `full_page_bytes` field maintained by the
+// page-state helpers in Objects/mimalloc/page.c.  We sum:
+//   - per-tstate heaps for this interpreter (live full pages)
+//   - the interpreter's abandoned pool (full pages between abandon and reclaim)
+//   - _mi_heap_main (default heap on the main thread, used pre-tstate and
+//     for non-Python threads)
+//   - _mi_abandoned_default (full pages abandoned from default heaps)
+// Per-thread auto-default heaps used by non-Python threads are not
+// enumerated; their bytes show up in _mi_abandoned_default once the OS
+// thread exits.  This is acceptable because almost all FT-Python allocation
+// routes through tstate-bound heaps.
+Py_ssize_t
+_PyGC_GetHeapBytes(PyInterpreterState *interp)
 {
-    // Computed from mimalloc full-page byte counters maintained on each
-    // abandoned pool (see _PyMem_mi_page_full_inc/dec in Objects/obmalloc.c).
-    Py_ssize_t total = _Py_atomic_load_ssize_relaxed(
-        (Py_ssize_t *)&interp->mimalloc.abandoned_pool.full_page_bytes);
-    total += _Py_atomic_load_ssize_relaxed(
-        (Py_ssize_t *)&_mi_abandoned_default.full_page_bytes);
-    return total;
+    // `full_page_bytes` is `_Atomic(intptr_t)`; cast to `intptr_t *` to
+    // strip the qualifier for the CPython atomic helpers.  The mimalloc-side
+    // writes use `mi_atomic_addi` directly on the `_Atomic(intptr_t)` field;
+    // the cast is only needed for the read side.
+    intptr_t total = _Py_atomic_load_intptr_relaxed(
+        (intptr_t *)&interp->mimalloc.abandoned_pool.full_page_bytes);
+    total += _Py_atomic_load_intptr_relaxed(
+        (intptr_t *)&_mi_abandoned_default.full_page_bytes);
+    total += _Py_atomic_load_intptr_relaxed(
+        (intptr_t *)&_mi_heap_main.full_page_bytes);
+    HEAD_LOCK(&_PyRuntime);
+    _Py_FOR_EACH_TSTATE_UNLOCKED(interp, p) {
+        _PyThreadStateImpl *t = (_PyThreadStateImpl *)p;
+        if (!_Py_atomic_load_int(&t->mimalloc.initialized)) {
+            continue;
+        }
+        for (int h = 0; h < _Py_MIMALLOC_HEAP_COUNT; h++) {
+            total += _Py_atomic_load_intptr_relaxed(
+                (intptr_t *)&t->mimalloc.heaps[h].full_page_bytes);
+        }
+    }
+    HEAD_UNLOCK(&_PyRuntime);
+    return (Py_ssize_t)total;
 }
 
 // Decide whether memory usage has grown enough to warrant a collection.
@@ -2029,7 +2062,7 @@ gc_should_collect_mem_usage(PyThreadState *tstate)
         // usage increase.
         return true;
     }
-    Py_ssize_t cur = gc_get_heap_bytes(interp);
+    Py_ssize_t cur = _PyGC_GetHeapBytes(interp);
     Py_ssize_t last = _Py_atomic_load_ssize_relaxed(&gcstate->last_heap_bytes);
     // Require 20% increase in full mimalloc pages.
     Py_ssize_t delta = Py_MAX(last / 5, GC_HEAP_BYTES_MIN_DELTA);
@@ -2236,7 +2269,7 @@ gc_collect_internal(PyInterpreterState *interp, struct collection_state *state, 
     delete_garbage(state);
 
     // Record the current heap bytes estimate as new baseline.
-    Py_ssize_t last_heap_bytes = gc_get_heap_bytes(interp);
+    Py_ssize_t last_heap_bytes = _PyGC_GetHeapBytes(interp);
     _Py_atomic_store_ssize_relaxed(&state->gcstate->last_heap_bytes, last_heap_bytes);
 
     // Append objects with legacy finalizers to the "gc.garbage" list.

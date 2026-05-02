@@ -22,10 +22,6 @@ static bool _PyMem_mi_page_is_safe_to_free(mi_page_t *page);
 static bool _PyMem_mi_page_maybe_free(mi_page_t *page, mi_page_queue_t *pq, bool force);
 static void _PyMem_mi_page_reclaimed(mi_page_t *page);
 static void _PyMem_mi_heap_collect_qsbr(mi_heap_t *heap);
-#ifdef Py_GIL_DISABLED
-static void _PyMem_mi_page_full_inc(mi_page_t *page);
-static void _PyMem_mi_page_full_dec(mi_page_t *page);
-#endif
 #  include "pycore_mimalloc.h"
 #  include "mimalloc/static.c"
 #  include "mimalloc/internal.h"  // for stats
@@ -226,53 +222,6 @@ _PyMem_mi_page_reclaimed(mi_page_t *page)
     }
 #endif
 }
-
-// Hooks called from mimalloc page-state transitions to maintain
-// mi_abandoned_pool_t::full_page_bytes -- bytes (block_size * capacity) of
-// pages currently in MI_BIN_FULL state whose pool association is that pool.
-// Page weight uses the same formula as should_advance_qsbr_for_page above;
-// capacity is stable while a page is in the full queue (extend_free is only
-// called on non-full queues), so inc and dec see the same value.
-//
-// The pool a page counts toward is heap->tld->segments.abandoned, which for a
-// Python tstate-bound heap is &interp->mimalloc.abandoned_pool, and for
-// mimalloc's auto-created default heap is _mi_abandoned_default.  Pages do
-// not cross pools (mimalloc reclaim only pulls from the reclaiming heap's
-// own pool), so the counter stays valid across abandon/reclaim without any
-// hand-off -- abandon and reclaim therefore have no hooks of their own.
-//
-// The hooks fire only on slow paths: mi_page_to_full / _mi_page_unfull /
-// in-full _mi_page_free. gc_get_heap_bytes() in gc_free_threading.c reads the
-// per-interp pool plus _mi_abandoned_default to get a stop-the-world-free
-// memory-pressure proxy.
-#ifdef Py_GIL_DISABLED
-static inline Py_ssize_t
-_PyMem_mi_page_size(mi_page_t *page)
-{
-    return (Py_ssize_t)(mi_page_block_size(page) * (size_t)page->capacity);
-}
-
-static inline Py_ssize_t *
-_PyMem_mi_page_pool_full_bytes(mi_page_t *page)
-{
-    return (Py_ssize_t *)
-        &mi_page_heap(page)->tld->segments.abandoned->full_page_bytes;
-}
-
-static void
-_PyMem_mi_page_full_inc(mi_page_t *page)
-{
-    _Py_atomic_add_ssize(_PyMem_mi_page_pool_full_bytes(page),
-                         _PyMem_mi_page_size(page));
-}
-
-static void
-_PyMem_mi_page_full_dec(mi_page_t *page)
-{
-    _Py_atomic_add_ssize(_PyMem_mi_page_pool_full_bytes(page),
-                         -_PyMem_mi_page_size(page));
-}
-#endif
 
 static void
 _PyMem_mi_heap_collect_qsbr(mi_heap_t *heap)

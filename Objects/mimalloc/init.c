@@ -104,7 +104,10 @@ mi_decl_cache_align const mi_heap_t _mi_heap_empty = {
   false,
   0,
   0,
-  0
+  0,
+#if MI_FULL_PAGE_BYTES
+  MI_ATOMIC_VAR_INIT(0),  // full_page_bytes
+#endif
 };
 
 #define tld_empty_stats  ((mi_stats_t*)((uint8_t*)&tld_empty + offsetof(mi_tld_t,stats)))

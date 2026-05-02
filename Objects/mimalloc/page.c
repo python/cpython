@@ -255,6 +255,78 @@ void _mi_page_free_collect(mi_page_t* page, bool force) {
   mi_assert_internal(!force || page->local_free == NULL);
 }
 
+/* -----------------------------------------------------------
+  Full-page byte accounting (MI_FULL_PAGE_BYTES)
+
+  Maintain `mi_heap_t.full_page_bytes` (bytes of MI_BIN_FULL pages owned by
+  the heap) and `mi_abandoned_pool_t.full_page_bytes` (bytes of MI_BIN_FULL
+  pages currently abandoned to that pool).  Page weight is
+  `mi_page_block_size(page) * page->capacity`.  Capacity is stable while a
+  page is in the full queue (`mi_page_extend_free` only runs on non-full
+  queues), so inc and dec see the same value.
+
+  State machine:
+    to-full        : heap += size
+    from-full      : heap -= size
+    abandon a full : heap -= size; pool += size
+    reclaim a full : pool -= size; heap += size
+    free a full    : heap -= size
+
+  The in_full bit is unconditionally cleared by `mi_page_queue_remove`, so
+  `_mi_page_abandon` re-sets it after queue_remove to preserve the "this
+  page's bytes were transferred to the pool" marker through abandonment.
+  `_mi_page_reclaim` then routes such pages straight to MI_BIN_FULL, so
+  `mi_page_queue_push` keeps the bit set; subsequent unfull/free fires the
+  matching dec.
+
+  Large/huge pages (block_size > MI_MEDIUM_OBJ_SIZE_MAX) are 1-block pages
+  in MI_BIN_HUGE; mimalloc never walks that queue on a subsequent alloc, so
+  it would never call `mi_page_to_full` on them.  `_mi_malloc_generic`
+  therefore eagerly calls `mi_page_to_full` on a freshly-filled huge page
+  (see the MI_FULL_PAGE_BYTES block at the bottom of that function).
+  Inc/dec then proceed identically to small/medium pages.
+
+  Known minor leak: if a page abandoned-while-full later becomes empty and
+  then freed, the +size we added on abandon is never subtracted.
+----------------------------------------------------------- */
+
+#if MI_FULL_PAGE_BYTES
+static inline intptr_t mi_page_full_size(mi_page_t* page) {
+  return (intptr_t)(mi_page_block_size(page) * (size_t)page->capacity);
+}
+
+static void mi_page_full_inc(mi_page_t* page) {
+  mi_atomic_addi(&mi_page_heap(page)->full_page_bytes, mi_page_full_size(page));
+}
+
+static void mi_page_full_dec(mi_page_t* page) {
+  mi_atomic_addi(&mi_page_heap(page)->full_page_bytes, -mi_page_full_size(page));
+}
+
+// Called from `_mi_page_abandon` *before* the page's heap pointer is cleared.
+// Transfers the page's bytes from its heap to the pool that will own the
+// abandoned page.  No-op if the page is not currently in MI_BIN_FULL.
+static void mi_page_full_abandon(mi_page_t* page) {
+  if (!mi_page_is_in_full(page)) return;
+  intptr_t bytes = mi_page_full_size(page);
+  mi_heap_t* heap = mi_page_heap(page);
+  mi_atomic_addi(&heap->full_page_bytes, -bytes);
+  mi_atomic_addi(&heap->tld->segments.abandoned->full_page_bytes, bytes);
+}
+
+// Called from `_mi_page_reclaim` when a page abandoned-while-full is
+// returning to a heap.  in_full=true here means "this page's bytes are
+// currently in the pool counter from abandon".  Transfer them: pool -= size,
+// new-heap += size.  The caller routes the page directly into MI_BIN_FULL,
+// so the in_full bit (and matching dec hook on free/unfull) survives.
+static void mi_page_full_reclaim(mi_page_t* page) {
+  if (!mi_page_is_in_full(page)) return;
+  intptr_t bytes = mi_page_full_size(page);
+  mi_heap_t* heap = mi_page_heap(page);
+  mi_atomic_addi(&heap->tld->segments.abandoned->full_page_bytes, -bytes);
+  mi_atomic_addi(&heap->full_page_bytes, bytes);
+}
+#endif // MI_FULL_PAGE_BYTES
 
 
 /* -----------------------------------------------------------
@@ -271,8 +343,24 @@ void _mi_page_reclaim(mi_heap_t* heap, mi_page_t* page) {
   mi_assert_internal(_mi_page_segment(page)->kind != MI_SEGMENT_HUGE);
   #endif
 
-  // TODO: push on full queue immediately if it is full?
-  mi_page_queue_t* pq = mi_page_queue(heap, mi_page_block_size(page));
+  mi_page_queue_t* pq;
+#if MI_FULL_PAGE_BYTES
+  // If the page was abandoned full (in_full preserved as marker), route
+  // it directly to MI_BIN_FULL.  Pushing to the size-bucket queue would
+  // rely on a later alloc walking that queue to promote it via
+  // mi_page_to_full -- which happens for small/medium bins but never for
+  // MI_BIN_HUGE, so a reclaimed full huge page would otherwise leave the
+  // pool counter without re-crediting any heap.  mi_page_full_reclaim
+  // does the pool-to-heap transfer.
+  if (mi_page_is_in_full(page)) {
+    pq = &heap->pages[MI_BIN_FULL];
+  } else {
+    pq = mi_page_queue(heap, mi_page_block_size(page));
+  }
+  mi_page_full_reclaim(page);
+#else
+  pq = mi_page_queue(heap, mi_page_block_size(page));
+#endif
   mi_page_queue_push(heap, pq, page);
   _PyMem_mi_page_reclaimed(page);
   mi_assert_expensive(_mi_page_is_valid(page));
@@ -360,8 +448,8 @@ void _mi_page_unfull(mi_page_t* page) {
   mi_assert_internal(mi_page_is_in_full(page));
   if (!mi_page_is_in_full(page)) return;
 
-#ifdef Py_GIL_DISABLED
-  _PyMem_mi_page_full_dec(page);
+#if MI_FULL_PAGE_BYTES
+  mi_page_full_dec(page);
 #endif
 
   mi_heap_t* heap = mi_page_heap(page);
@@ -378,8 +466,8 @@ static void mi_page_to_full(mi_page_t* page, mi_page_queue_t* pq) {
   mi_assert_internal(!mi_page_is_in_full(page));
 
   if (mi_page_is_in_full(page)) return;
-#ifdef Py_GIL_DISABLED
-  _PyMem_mi_page_full_inc(page);
+#if MI_FULL_PAGE_BYTES
+  mi_page_full_inc(page);
 #endif
   mi_page_queue_enqueue_from(&mi_page_heap(page)->pages[MI_BIN_FULL], pq, page);
   _mi_page_free_collect(page,false);  // try to collect right away in case another thread freed just before MI_USE_DELAYED_FREE was set
@@ -398,6 +486,13 @@ void _mi_page_abandon(mi_page_t* page, mi_page_queue_t* pq) {
 
   mi_heap_t* pheap = mi_page_heap(page);
 
+#if MI_FULL_PAGE_BYTES
+  // Capture in_full while the heap pointer is still valid; transfer the
+  // bytes from heap counter to pool counter.  Must run before
+  // mi_page_queue_remove, which clears the in_full bit unconditionally.
+  bool was_in_full = mi_page_is_in_full(page);
+  mi_page_full_abandon(page);
+#endif
 #ifdef Py_GIL_DISABLED
   if (page->qsbr_node.next != NULL) {
     // remove from QSBR queue, but keep the goal
@@ -412,6 +507,15 @@ void _mi_page_abandon(mi_page_t* page, mi_page_queue_t* pq) {
   // page is no longer associated with our heap
   mi_assert_internal(mi_page_thread_free_flag(page)==MI_NEVER_DELAYED_FREE);
   mi_page_set_heap(page, NULL);
+
+#if MI_FULL_PAGE_BYTES
+  // Preserve the in_full marker through abandonment so `_mi_page_reclaim`'s
+  // `mi_page_full_reclaim` call can transfer the bytes back to the
+  // reclaiming heap.  Nothing reads in_full on a heap-less page.
+  if (was_in_full) {
+    mi_page_set_in_full(page, true);
+  }
+#endif
 
 #if (MI_DEBUG>1) && !MI_TRACK_ENABLED
   // check there are no references left..
@@ -442,12 +546,16 @@ void _mi_page_free(mi_page_t* page, mi_page_queue_t* pq, bool force) {
 #ifdef Py_GIL_DISABLED
   mi_assert_internal(page->qsbr_goal == 0);
   mi_assert_internal(page->qsbr_node.next == NULL);
-  // Defensive: a full page whose last block is freed locally goes through
+#endif
+#if MI_FULL_PAGE_BYTES
+  // A full page whose last block is freed locally goes through
   // _mi_page_retire -> _PyMem_mi_page_maybe_free -> _mi_page_free without
-  // ever calling _mi_page_unfull, so the per-thread full-page counter must
-  // be decremented here to maintain the invariant.
+  // ever calling _mi_page_unfull, so the heap's full_page_bytes counter
+  // must be decremented here to maintain the invariant.  `heap` is non-NULL
+  // for any page reaching _mi_page_free (abandoned pages take the
+  // segment-level cleanup path instead).
   if (mi_page_is_in_full(page)) {
-    _PyMem_mi_page_full_dec(page);
+    mi_page_full_dec(page);
   }
 #endif
 
@@ -977,14 +1085,28 @@ void* _mi_malloc_generic(mi_heap_t* heap, size_t size, bool zero, size_t huge_al
   mi_assert_internal(mi_page_block_size(page) >= size);
 
   // and try again, this time succeeding! (i.e. this should never recurse through _mi_page_malloc)
+  void* p;
   if mi_unlikely(zero && page->xblock_size == 0) {
     // note: we cannot call _mi_page_malloc with zeroing for huge blocks; we zero it afterwards in that case.
-    void* p = _mi_page_malloc(heap, page, size, false);
+    p = _mi_page_malloc(heap, page, size, false);
     mi_assert_internal(p != NULL);
     _mi_memzero_aligned(p, mi_page_usable_block_size(page));
-    return p;
   }
   else {
-    return _mi_page_malloc(heap, page, size, zero);
+    p = _mi_page_malloc(heap, page, size, zero);
   }
+
+#if MI_FULL_PAGE_BYTES
+  // Eagerly promote a freshly-filled huge page (1 block per page, in
+  // MI_BIN_HUGE) to MI_BIN_FULL so its bytes get counted.  See the
+  // "Full-page byte accounting" comment block above.
+  if (p != NULL && !mi_page_immediate_available(page)) {
+    mi_page_queue_t* page_pq = mi_page_queue_of(page);
+    if (mi_page_queue_is_huge(page_pq) && !mi_page_is_in_full(page)) {
+      mi_page_to_full(page, page_pq);
+    }
+  }
+#endif
+
+  return p;
 }

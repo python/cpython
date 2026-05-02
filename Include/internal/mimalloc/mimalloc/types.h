@@ -517,9 +517,11 @@ typedef struct mi_abandoned_pool_s {
   // still be read.
   mi_decl_cache_align _Atomic(size_t)           abandoned_readers; // = 0
 
-  // Total bytes (block_size * capacity) of pages currently in MI_BIN_FULL
-  // state whose pool association is this pool.
+#if MI_FULL_PAGE_BYTES
+  // Bytes (block_size * capacity) of full pages currently abandoned to this
+  // pool.
   mi_decl_cache_align _Atomic(intptr_t)         full_page_bytes; // = 0
+#endif
 } mi_abandoned_pool_t;
 
 
@@ -592,6 +594,11 @@ struct mi_heap_s {
   uint8_t               tag;                                 // custom identifier for this heap
   uint8_t               debug_offset;                        // number of bytes to preserve when filling freed or uninitialized memory
   bool                  page_use_qsbr;                       // should freeing pages be delayed using QSBR
+#if MI_FULL_PAGE_BYTES
+  // Bytes (block_size * capacity) of pages currently in MI_BIN_FULL state
+  // owned by this heap.
+  _Atomic(intptr_t)     full_page_bytes;
+#endif
 };
 
 

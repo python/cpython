@@ -270,6 +270,11 @@ static void mi_heap_reset_pages(mi_heap_t* heap) {
   _mi_memcpy_aligned(&heap->pages, &_mi_heap_empty.pages, sizeof(heap->pages));
   heap->thread_delayed_free = NULL;
   heap->page_count = 0;
+#if MI_FULL_PAGE_BYTES
+  // All pages have been removed (destroyed, or transferred via
+  // mi_heap_absorb which already moved the bytes to the destination heap).
+  mi_atomic_store_relaxed(&heap->full_page_bytes, (intptr_t)0);
+#endif
 }
 
 // called from `mi_heap_destroy` and `mi_heap_delete` to free the internal heap resources.
@@ -426,6 +431,14 @@ static void mi_heap_absorb(mi_heap_t* heap, mi_heap_t* from) {
     from->page_count -= pcount;
   }
   mi_assert_internal(from->page_count == 0);
+
+#if MI_FULL_PAGE_BYTES
+  // The page-state hooks didn't fire for these transfers, so move the
+  // full_page_bytes accounting in bulk.  mi_heap_reset_pages(from) below
+  // will zero `from->full_page_bytes`.
+  intptr_t bytes = mi_atomic_load_relaxed(&from->full_page_bytes);
+  mi_atomic_addi(&heap->full_page_bytes, bytes);
+#endif
 
   // and do outstanding delayed frees in the `from` heap
   // note: be careful here as the `heap` field in all those pages no longer point to `from`,
