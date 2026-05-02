@@ -65,7 +65,9 @@ def main() -> int:
     try:
         regrtest_main()
     except SystemExit as e:
-        return int(e.code) if e.code is not None else 0
+        if e.code is None:
+            return 0
+        return e.code if isinstance(e.code, int) else 1
     return 0
 
 
