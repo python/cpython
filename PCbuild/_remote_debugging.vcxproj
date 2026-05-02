@@ -99,6 +99,7 @@
 </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\Modules\_remote_debugging\module.c" />
+    <ClCompile Include="..\Modules\_remote_debugging\gc_stats.c" />
     <ClCompile Include="..\Modules\_remote_debugging\object_reading.c" />
     <ClCompile Include="..\Modules\_remote_debugging\code_objects.c" />
     <ClCompile Include="..\Modules\_remote_debugging\frames.c" />

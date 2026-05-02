@@ -245,25 +245,6 @@ validate_debug_offsets(struct _Py_DebugOffsets *debug_offsets)
     return _PyRemoteDebug_ValidateDebugOffsetsLayout(debug_offsets);
 }
 
-static PyObject *
-get_gc_stats(RuntimeOffsets *offsets, bool all_interpreters)
-{
-    PyObject *result = PyList_New(0);
-    if (result == NULL) {
-        return NULL;
-    }
-    GetGCStatsContext ctx = {
-        .result = result,
-        .all_interpreters = all_interpreters,
-    };
-    if (0 > iterate_interpreters(offsets, get_gc_stats_from_interpreter_state, &ctx)) {
-        Py_CLEAR(result);
-        return NULL;
-    }
-
-    return result;
-}
-
 /* ============================================================================
  * REMOTEUNWINDER CLASS IMPLEMENTATION
  * ============================================================================ */
