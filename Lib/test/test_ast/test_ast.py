@@ -1177,8 +1177,9 @@ class CopyTests(unittest.TestCase):
         def do(cls):
             if cls.__module__ != 'ast':
                 return
-            if cls is ast.Index:
-                return
+            with warnings.catch_warnings(action="ignore", category=DeprecationWarning):
+                if cls is ast.Index:
+                    return
             # Don't attempt to create instances of abstract AST nodes
             if _ast._is_abstract(cls):
                 return
