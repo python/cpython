@@ -62,10 +62,11 @@ extern "C" {
 #define HDR_SIZE_COMPRESSION 4
 #define FILE_HEADER_SIZE     (HDR_OFF_COMPRESSION + HDR_SIZE_COMPRESSION)
 #define FILE_HEADER_PLACEHOLDER_SIZE 64
-#define SAMPLE_HEADER_FIXED_SIZE (sizeof(uint64_t) + sizeof(uint32_t) + 1)
 
 static_assert(FILE_HEADER_SIZE <= FILE_HEADER_PLACEHOLDER_SIZE,
               "FILE_HEADER_SIZE exceeds FILE_HEADER_PLACEHOLDER_SIZE");
+
+#define SAMPLE_HEADER_FIXED_SIZE (sizeof(uint64_t) + sizeof(uint32_t) + 1)
 
 /* Footer field offsets and sizes */
 #define FTR_OFF_STRINGS 0
