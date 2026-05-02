@@ -598,7 +598,6 @@ PyDoc_STRVAR(_remote_debugging_GCMonitor_get_gc_stats__doc__,
 "        - iid:\n"
 "        - ts_start:\n"
 "        - ts_stop:\n"
-"        - heap_size:\n"
 "        - collections:\n"
 "        - collected:\n"
 "        - uncollectable:\n"
@@ -1490,7 +1489,6 @@ PyDoc_STRVAR(_remote_debugging_get_gc_stats__doc__,
 "        - iid:\n"
 "        - ts_start:\n"
 "        - ts_stop:\n"
-"        - heap_size:\n"
 "        - collections:\n"
 "        - collected:\n"
 "        - uncollectable:\n"
@@ -1565,4 +1563,4 @@ skip_optional_kwonly:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=63dc4f85d8a7eb55 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=30908391f0cdd473 input=a9049054013a1b77]*/

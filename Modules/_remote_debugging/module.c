@@ -1206,7 +1206,6 @@ Returns:
         - iid:
         - ts_start:
         - ts_stop:
-        - heap_size:
         - collections:
         - collected:
         - uncollectable:
@@ -1220,7 +1219,7 @@ Raises:
 static PyObject *
 _remote_debugging_GCMonitor_get_gc_stats_impl(GCMonitorObject *self,
                                               int all_interpreters)
-/*[clinic end generated code: output=f73f365725224f7a input=f41cda6c30299fee]*/
+/*[clinic end generated code: output=f73f365725224f7a input=d425f677ede9d2c5]*/
 {
     RuntimeOffsets offsets = {
         .handle = self->handle,
@@ -2029,7 +2028,6 @@ Returns:
         - iid:
         - ts_start:
         - ts_stop:
-        - heap_size:
         - collections:
         - collected:
         - uncollectable:
@@ -2043,7 +2041,7 @@ Raises:
 static PyObject *
 _remote_debugging_get_gc_stats_impl(PyObject *module, int pid,
                                     int all_interpreters)
-/*[clinic end generated code: output=d9dce5f7add149bb input=6a2afe531da4cfda]*/
+/*[clinic end generated code: output=d9dce5f7add149bb input=8f58d6f27950cb0d]*/
 {
     RuntimeOffsets offsets;
 
