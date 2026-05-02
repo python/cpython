@@ -1908,7 +1908,7 @@ class SizeofTest(unittest.TestCase):
         check = self.check_sizeof
         # _ast.AST
         import _ast
-        check(_ast.AST(), size('P'))
+        check(_ast.Module(), size('3P'))
         try:
             raise TypeError
         except TypeError as e:

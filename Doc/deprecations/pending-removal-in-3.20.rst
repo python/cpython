@@ -48,3 +48,8 @@ Pending removal in Python 3.20
     default.  They **MUST** be encoded in ``utf-8-sig``.
 
   (Contributed by Barry Warsaw in :gh:`148641`.)
+
+* :mod:`ast`:
+
+  * Creating instances of abstract AST nodes (such as :class:`ast.AST`
+    or :class:`!ast.expr`) is deprecated and will raise an error in Python 3.20.

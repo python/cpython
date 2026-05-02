@@ -2984,6 +2984,7 @@ dummy_func(
 
         macro(LOAD_ATTR_CLASS) =
             unused/1 +
+            _RECORD_TOS +
             _CHECK_ATTR_CLASS +
             unused/2 +
             _LOAD_ATTR_CLASS +
@@ -2991,7 +2992,7 @@ dummy_func(
 
         macro(LOAD_ATTR_CLASS_WITH_METACLASS_CHECK) =
             unused/1 +
-            _RECORD_TOS_TYPE +
+            _RECORD_TOS +
             _GUARD_TYPE_VERSION +
             _CHECK_ATTR_CLASS +
             _LOAD_ATTR_CLASS +
