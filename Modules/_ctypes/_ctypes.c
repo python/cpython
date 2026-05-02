@@ -2415,9 +2415,15 @@ PyCSimpleType_init(PyObject *self, PyObject *args, PyObject *kwds)
             ml = c_char_p_methods;
             stginfo->flags |= TYPEFLAG_ISPOINTER;
             break;
-        case 'Z': /* c_wchar_p */
-            ml = c_wchar_p_methods;
-            stginfo->flags |= TYPEFLAG_ISPOINTER;
+        case 'Z':
+            if (proto_str[1] == '\0') {
+                /* "Z": c_wchar_p */
+                ml = c_wchar_p_methods;
+                stginfo->flags |= TYPEFLAG_ISPOINTER;
+            }
+            else {
+                ml = NULL;
+            }
             break;
         case 'P': /* c_void_p */
             ml = c_void_p_methods;
