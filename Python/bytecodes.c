@@ -2991,6 +2991,7 @@ dummy_func(
 
         macro(LOAD_ATTR_CLASS) =
             unused/1 +
+            _RECORD_TOS +
             _CHECK_ATTR_CLASS +
             unused/2 +
             _LOAD_ATTR_CLASS +
@@ -2998,7 +2999,7 @@ dummy_func(
 
         macro(LOAD_ATTR_CLASS_WITH_METACLASS_CHECK) =
             unused/1 +
-            _RECORD_TOS_TYPE +
+            _RECORD_TOS +
             _GUARD_TYPE_VERSION +
             _CHECK_ATTR_CLASS +
             _LOAD_ATTR_CLASS +
@@ -6112,6 +6113,13 @@ dummy_func(
 
         tier2 pure op(_LOAD_CONST_INLINE_BORROW, (ptr/4 -- value)) {
             value = PyStackRef_FromPyObjectBorrow(ptr);
+        }
+
+        tier2 pure op(_RROT_3, (bottom, middle, top -- bottom, middle, top)) {
+            _PyStackRef temp = top;
+            top = middle;
+            middle = bottom;
+            bottom = temp;
         }
 
         tier2 op(_START_EXECUTOR, (executor/4 --)) {

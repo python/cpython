@@ -2492,6 +2492,8 @@ gc_collect_main(PyThreadState *tstate, int generation, _PyGC_Reason reason)
 
     /* Update stats */
     struct gc_generation_stats *stats = get_stats(gcstate, generation);
+    stats->ts_start = start;
+    stats->ts_stop = stop;
     stats->collections++;
     stats->collected += m;
     stats->uncollectable += n;

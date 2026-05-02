@@ -1451,6 +1451,7 @@ allocate_executor(int exit_count, int length)
     res->trace = (_PyUOpInstruction *)(res->exits + exit_count);
     res->code_size = length;
     res->exit_count = exit_count;
+    res->jit_gdb_handle = NULL;
     return res;
 }
 
