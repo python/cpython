@@ -841,8 +841,8 @@ class Random(_random.Random):
                 except ValueError:
                 # fix random() rethrn 0.0 option
                 continue
-                if y > n: 
-                    return x
+                   if y > n:
+                       return x
                 x += 1
 
         # BTRS: Transformed rejection with squeeze method by Wolfgang Hörmann
