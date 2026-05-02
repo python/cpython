@@ -687,7 +687,7 @@ array
   character ``'e'``.
   (Contributed by Sergey B Kirpichev in :gh:`146238`.)
 
-* The :data:`array.typecodes` type changed from :str:`str` to :class:`tuple`
+* The :data:`array.typecodes` type changed from :class:`str` to :class:`tuple`
   to support type codes longer than 1 character (``Zf`` and ``Zd``).
   (Contributed by Victor Stinner in :gh:`148675`.)
 
