@@ -25,10 +25,9 @@ Pending removal in Python 3.19
 
 * :mod:`http.cookies`:
 
+  * :meth:`http.cookies.Morsel.js_output` is deprecated and will be
+    removed in Python 3.19.
+
   * :meth:`http.cookies.BaseCookie.js_output` is deprecated and will be
     removed in Python 3.19.
 
-    This method generates a JavaScript snippet to set cookies in the browser,
-    which is no longer considered a standard or recommended approach.
-    Use :meth:`~http.cookies.BaseCookie.output` instead to generate HTTP
-    headers.

@@ -1799,9 +1799,11 @@ New deprecations
 
 * :mod:`http.cookies`:
 
-  * :meth:`BaseCookie.js_output <http.cookies.BaseCookie.js_output>` is deprecated
-    and will be removed in Python 3.19. Use :meth:`BaseCookie.output
-    <http.cookies.BaseCookie.output>` instead.
+  * :meth:`Morsel.js_output <http.cookies.Morsel.js_output>` and
+    :meth:`BaseCookie.js_output <http.cookies.BaseCookie.js_output>` are
+    deprecated and will be removed in Python 3.19. Use
+    :meth:`Morsel.output <http.cookies.Morsel.output>` or
+    :meth:`BaseCookie.output <http.cookies.BaseCookie.output>` instead.
     (Contributed by kishorhange111 in :gh:`148849`.)
 
 

@@ -392,6 +392,11 @@ class Morsel(dict):
         return '<%s: %s>' % (self.__class__.__name__, self.OutputString())
 
     def js_output(self, attrs=None):
+        warnings._deprecated(
+            "http.cookies.Morsel.js_output",
+            message=warnings._DEPRECATED_MSG + "; use output() instead",
+            remove=(3, 19),
+        )
         import base64
         # Print javascript
         output_string = self.OutputString(attrs)
@@ -541,11 +546,6 @@ class BaseCookie(dict):
         return '<%s: %s>' % (self.__class__.__name__, _spacejoin(l))
 
     def js_output(self, attrs=None):
-        warnings._deprecated(
-            "http.cookies.BaseCookie.js_output",
-            warnings._DEPRECATED_MSG + "; use output() instead",
-            remove=(3, 19),
-        )
         """Return a string suitable for JavaScript."""
         result = []
         items = sorted(self.items())
