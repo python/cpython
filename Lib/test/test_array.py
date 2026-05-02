@@ -31,7 +31,10 @@ class ArraySubclassWithKwargs(array.array):
     def __init__(self, typecode, newarg=None):
         array.array.__init__(self)
 
-typecodes = 'uwbBhHiIlLfdqQFDe'
+typecodes = (
+    'u', 'w', 'b', 'B', 'h', 'H', 'i', 'I', 'l', 'L',
+    'f', 'd', 'q', 'Q', 'F', 'D', 'e', 'Zf', 'Zd')
+
 
 class MiscTest(unittest.TestCase):
 
@@ -44,6 +47,7 @@ class MiscTest(unittest.TestCase):
         self.assertRaises(TypeError, array.array, spam=42)
         self.assertRaises(ValueError, array.array, 'xx')
         self.assertRaises(ValueError, array.array, 'x')
+        self.assertRaises(ValueError, array.array, 'Z')
 
     @support.cpython_only
     def test_disallow_instantiation(self):
@@ -213,6 +217,14 @@ class ArrayReconstructorTest(unittest.TestCase):
             (['D'], IEEE_754_DOUBLE_COMPLEX_LE, '<DDDD',
              [9006104071832581.0j, float('inf'), complex('1-infj'), -0.0]),
             (['D'], IEEE_754_DOUBLE_COMPLEX_BE, '>DDDD',
+             [9006104071832581.0j, float('inf'), complex('1-infj'), -0.0]),
+            (['Zf'], IEEE_754_FLOAT_COMPLEX_LE, '<ZfZfZfZf',
+             [16711938.0j, float('inf'), complex('1-infj'), -0.0]),
+            (['Zf'], IEEE_754_FLOAT_COMPLEX_BE, '>ZfZfZfZf',
+             [16711938.0j, float('inf'), complex('1-infj'), -0.0]),
+            (['Zd'], IEEE_754_DOUBLE_COMPLEX_LE, '<ZdZdZdZd',
+             [9006104071832581.0j, float('inf'), complex('1-infj'), -0.0]),
+            (['Zd'], IEEE_754_DOUBLE_COMPLEX_BE, '>ZdZdZdZd',
              [9006104071832581.0j, float('inf'), complex('1-infj'), -0.0]),
         )
         for testcase in testcases:
@@ -1638,6 +1650,14 @@ class ComplexFloatTest(CFPTest, unittest.TestCase):
 
 class ComplexDoubleTest(CFPTest, unittest.TestCase):
     typecode = 'D'
+    minitemsize = 16
+
+class ComplexZfFloatTest(CFPTest, unittest.TestCase):
+    typecode = 'Zf'
+    minitemsize = 8
+
+class ComplexZdDoubleTest(CFPTest, unittest.TestCase):
+    typecode = 'Zd'
     minitemsize = 16
 
 
