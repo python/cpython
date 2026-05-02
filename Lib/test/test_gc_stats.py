@@ -61,7 +61,9 @@ class TestGCStats(unittest.TestCase):
                 if len(objects) > 100:
                     objects = []
 
-                objects.append([])
+                obj = []
+                obj.append(obj)
+                objects.append(obj)
 
                 time.sleep(0.1)
                 gc.collect(0)
@@ -75,6 +77,15 @@ class TestGCStats(unittest.TestCase):
 
             source = """if True:
                 import gc
+
+                if "objects" not in globals():
+                    objects = []
+                if len(objects) > 100:
+                    objects = []
+
+                obj = []
+                obj.append(obj)
+                objects.append(obj)
 
                 gc.collect(0)
                 gc.collect(1)
@@ -95,8 +106,9 @@ class TestGCStats(unittest.TestCase):
                 if len(objects) > 100:
                     objects = []
 
-                # objects that GC will visit should increase
-                objects.append(object())
+                obj = []
+                obj.append(obj)
+                objects.append(obj)
 
                 time.sleep(0.1)
                 if {0}:
