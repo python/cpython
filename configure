@@ -14424,6 +14424,52 @@ fi
 
 done
 
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for libgcc frame registration functions" >&5
+printf %s "checking for libgcc frame registration functions... " >&6; }
+if test ${ac_cv_have_libgcc_eh_frame_registration+y}
+then :
+  printf %s "(cached) " >&6
+else case e in #(
+  e) cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+void __register_frame(const void *);
+void __deregister_frame(const void *);
+
+int
+main (void)
+{
+
+__register_frame(0);
+__deregister_frame(0);
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"
+then :
+  ac_cv_have_libgcc_eh_frame_registration=yes
+else case e in #(
+  e) ac_cv_have_libgcc_eh_frame_registration=no ;;
+esac
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam \
+    conftest$ac_exeext conftest.$ac_ext
+   ;;
+esac
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_have_libgcc_eh_frame_registration" >&5
+printf "%s\n" "$ac_cv_have_libgcc_eh_frame_registration" >&6; }
+if test "x$ac_cv_have_libgcc_eh_frame_registration" = xyes
+then :
+
+
+printf "%s\n" "#define HAVE_LIBGCC_EH_FRAME_REGISTRATION 1" >>confdefs.h
+
+
+fi
+
 if test "x$ac_cv_require_ldl" = xyes
 then :
 

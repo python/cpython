@@ -3828,6 +3828,24 @@ AC_CHECK_HEADERS([execinfo.h link.h dlfcn.h], [
   ])
 ])
 
+dnl for JIT GNU backtrace unwind registration
+AC_CACHE_CHECK([for libgcc frame registration functions],
+  [ac_cv_have_libgcc_eh_frame_registration],
+  [AC_LINK_IFELSE([AC_LANG_PROGRAM([[
+void __register_frame(const void *);
+void __deregister_frame(const void *);
+]], [[
+__register_frame(0);
+__deregister_frame(0);
+]])],
+    [ac_cv_have_libgcc_eh_frame_registration=yes],
+    [ac_cv_have_libgcc_eh_frame_registration=no])
+  ])
+AS_VAR_IF([ac_cv_have_libgcc_eh_frame_registration], [yes], [
+  AC_DEFINE([HAVE_LIBGCC_EH_FRAME_REGISTRATION], [1],
+    [Define to 1 if libgcc __register_frame and __deregister_frame are linkable.])
+])
+
 dnl only add -ldl to LDFLAGS if it isn't already part of LIBS (GH-133081)
 AS_VAR_IF([ac_cv_require_ldl], [yes], [
   AS_VAR_IF([ac_cv_lib_dl_dlopen], [yes], [], [
