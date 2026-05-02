@@ -16,9 +16,38 @@ import tokenize
 import io
 import importlib.util
 import pathlib
-import _colorize
+lazy import _colorize
 
 from contextlib import suppress
+
+
+class _ShutdownTheme:
+    """Empty stand-in if `_colorize` cannot be imported during late shutdown."""
+    def __getattr__(self, _): return self
+    def __getitem__(self, _): return ""
+    def __format__(self, _): return ""
+    def __str__(self): return ""
+    def __add__(self, other): return other
+    __radd__ = __add__
+
+
+_shutdown_theme = _ShutdownTheme()
+
+
+def _safe_get_theme(*, force_color=False, force_no_color=False):
+    try:
+        return _colorize.get_theme(
+            force_color=force_color, force_no_color=force_no_color
+        )
+    except ImportError:
+        return _shutdown_theme
+
+
+def _safe_can_colorize(*, file=None):
+    try:
+        return _colorize.can_colorize(file=file)
+    except ImportError:
+        return False
 
 try:
     from _missing_stdlib_info import _MISSING_STDLIB_MODULE_MESSAGES
@@ -151,7 +180,7 @@ BUILTIN_EXCEPTION_LIMIT = object()
 def _print_exception_bltin(exc, file=None, /):
     if file is None:
         file = sys.stderr if sys.stderr is not None else sys.__stderr__
-    colorize = _colorize.can_colorize(file=file)
+    colorize = _safe_can_colorize(file=file)
     return print_exception(exc, limit=BUILTIN_EXCEPTION_LIMIT, file=file, colorize=colorize)
 
 
@@ -199,9 +228,9 @@ def _format_final_exc_line(etype, value, *, insert_final_newline=True, colorize=
     valuestr = _safe_string(value, 'exception')
     end_char = "\n" if insert_final_newline else ""
     if colorize:
-        theme = _colorize.get_theme(force_color=True).traceback
+        theme = _safe_get_theme(force_color=True).traceback
     else:
-        theme = _colorize.get_theme(force_no_color=True).traceback
+        theme = _safe_get_theme(force_no_color=True).traceback
     if value is None or not valuestr:
         line = f"{theme.type}{etype}{theme.reset}{end_char}"
     else:
@@ -555,9 +584,9 @@ class StackSummary(list):
         if frame_summary.filename.startswith("<stdin-") and frame_summary.filename.endswith('>'):
             filename = "<stdin>"
         if colorize:
-            theme = _colorize.get_theme(force_color=True).traceback
+            theme = _safe_get_theme(force_color=True).traceback
         else:
-            theme = _colorize.get_theme(force_no_color=True).traceback
+            theme = _safe_get_theme(force_no_color=True).traceback
         row.append(
             '  File {}"{}"{}, line {}{}{}, in {}{}{}\n'.format(
                 theme.filename,
@@ -1336,9 +1365,9 @@ class TracebackException:
         """
         colorize = kwargs.get("colorize", False)
         if colorize:
-            theme = _colorize.get_theme(force_color=True).traceback
+            theme = _safe_get_theme(force_color=True).traceback
         else:
-            theme = _colorize.get_theme(force_no_color=True).traceback
+            theme = _safe_get_theme(force_no_color=True).traceback
 
         indent = 3 * _depth * ' '
         if not self._have_exc_type:
@@ -1486,9 +1515,9 @@ class TracebackException:
         # Show exactly where the problem was found.
         colorize = kwargs.get("colorize", False)
         if colorize:
-            theme = _colorize.get_theme(force_color=True).traceback
+            theme = _safe_get_theme(force_color=True).traceback
         else:
-            theme = _colorize.get_theme(force_no_color=True).traceback
+            theme = _safe_get_theme(force_no_color=True).traceback
         filename_suffix = ''
         if self.lineno is not None:
             yield '  File {}"{}"{}, line {}{}{}\n'.format(
