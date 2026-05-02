@@ -23,7 +23,6 @@
  * ============================================================================ */
 
 /* File structure sizes */
-#define FILE_FOOTER_SIZE 32
 #define MIN_DECOMPRESS_BUFFER_SIZE (64 * 1024)  /* Minimum decompression buffer */
 
 /* Progress callback frequency */

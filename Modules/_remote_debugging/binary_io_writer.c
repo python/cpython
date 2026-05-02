@@ -29,9 +29,6 @@
 /* Frame buffer: depth varint (max 2 bytes for 256) + 256 frames * 5 bytes/varint + margin */
 #define MAX_FRAME_BUFFER_SIZE ((MAX_STACK_DEPTH * MAX_VARINT_SIZE_U32) + MAX_VARINT_SIZE_U32 + 16)
 
-/* File structure sizes */
-#define FILE_FOOTER_SIZE 32
-
 /* Helper macro: convert PyLong to int32, using default_val if conversion fails */
 #define PYLONG_TO_INT32_OR_DEFAULT(obj, var, default_val) \
     do { \
