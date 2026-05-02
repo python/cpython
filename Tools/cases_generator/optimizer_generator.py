@@ -258,8 +258,7 @@ class OptimizerEmitter(Emitter):
                     # usually for binary ops with passthrough references
                     2: [("_LOAD_CONST_INLINE_BORROW",
                          "0, (uintptr_t)result"),
-                        ("_SWAP", "3, 0"),
-                        ("_SWAP", "2, 0")],
+                        ("_RROT_3", "0, 0")],
                 },
             }
 
