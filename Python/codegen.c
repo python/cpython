@@ -518,9 +518,6 @@ codegen_async_yield_from(compiler *c, location loc, expr_ty e)
     NEW_JUMP_TARGET_LABEL(c, use_anext);
     NEW_JUMP_TARGET_LABEL(c, got_coroutine);
 
-    // ADDOP_NAME(c, loc, LOAD_ATTR, &_Py_ID(__aiter__), names);
-    // ADDOP(c, loc, PUSH_NULL);
-    // ADDOP_I(c, loc, CALL, 0);
     VISIT(c, expr, e->v.AsyncYieldFrom.value);
     // Stack: [value]
 
