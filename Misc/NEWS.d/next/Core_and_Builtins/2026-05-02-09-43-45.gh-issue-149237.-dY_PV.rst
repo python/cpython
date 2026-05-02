@@ -1,0 +1,1 @@
+Fix `input` assuming the last character being a '\n' and removing it
