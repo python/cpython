@@ -133,6 +133,27 @@ PyStructSequence_Desc AwaitedInfo_desc = {
     2
 };
 
+// GCStatsInfo structseq type
+static PyStructSequence_Field GCStatsInfo_fields[] = {
+    {"gen", "GC generation number"},
+    {"iid", "Interpreter ID"},
+    {"ts_start", "Raw timestamp at collection start"},
+    {"ts_stop", "Raw timestamp at collection stop"},
+    {"collections", "Total number of collections"},
+    {"collected", "Total number of collected objects"},
+    {"uncollectable", "Total number of uncollectable objects"},
+    {"candidates", "Total objects considered and traversed"},
+    {"duration", "Total collection time, in seconds"},
+    {NULL}
+};
+
+PyStructSequence_Desc GCStatsInfo_desc = {
+    "_remote_debugging.GCStatsInfo",
+    "Information about a garbage collector stats sample",
+    GCStatsInfo_fields,
+    9
+};
+
 /* ============================================================================
  * UTILITY FUNCTIONS
  * ============================================================================ */
@@ -1178,10 +1199,10 @@ _remote_debugging.GCMonitor.get_gc_stats
 
 Get garbage collector statistics from external Python process.
 
-Returns a list of dictionaries with GC statistics data.
+Returns a list of GCStatsInfo objects with GC statistics data.
 
 Returns:
-    list of dict: A list of dictionaries containing:
+    list of GCStatsInfo: A list of stats samples containing:
         - gen: GC generation number.
         - iid: Interpreter ID.
         - ts_start: Raw timestamp at collection start.
@@ -1200,14 +1221,15 @@ Raises:
 static PyObject *
 _remote_debugging_GCMonitor_get_gc_stats_impl(GCMonitorObject *self,
                                               int all_interpreters)
-/*[clinic end generated code: output=f73f365725224f7a input=42087618bb6f18c2]*/
+/*[clinic end generated code: output=f73f365725224f7a input=09e647719c65f9e4]*/
 {
     RuntimeOffsets offsets = {
         .handle = self->handle,
         .runtime_start_address = self->runtime_start_address,
         .debug_offsets = self->debug_offsets,
     };
-    return get_gc_stats(&offsets, all_interpreters);
+    RemoteDebuggingState *st = RemoteDebugging_GetStateFromType(Py_TYPE(self));
+    return get_gc_stats(&offsets, all_interpreters, st->GCStatsInfo_Type);
 }
 
 static PyMethodDef GCMonitor_methods[] = {
@@ -1335,6 +1357,14 @@ _remote_debugging_exec(PyObject *m)
         return -1;
     }
 
+    st->GCStatsInfo_Type = PyStructSequence_NewType(&GCStatsInfo_desc);
+    if (st->GCStatsInfo_Type == NULL) {
+        return -1;
+    }
+    if (PyModule_AddType(m, st->GCStatsInfo_Type) < 0) {
+        return -1;
+    }
+
     // Create BinaryWriter and BinaryReader types
     CREATE_TYPE(m, st->BinaryWriter_Type, &BinaryWriter_spec);
     if (PyModule_AddType(m, st->BinaryWriter_Type) < 0) {
@@ -1392,6 +1422,7 @@ remote_debugging_traverse(PyObject *mod, visitproc visit, void *arg)
     Py_VISIT(state->ThreadInfo_Type);
     Py_VISIT(state->InterpreterInfo_Type);
     Py_VISIT(state->AwaitedInfo_Type);
+    Py_VISIT(state->GCStatsInfo_Type);
     Py_VISIT(state->BinaryWriter_Type);
     Py_VISIT(state->BinaryReader_Type);
     Py_VISIT(state->GCMonitor_Type);
@@ -1410,6 +1441,7 @@ remote_debugging_clear(PyObject *mod)
     Py_CLEAR(state->ThreadInfo_Type);
     Py_CLEAR(state->InterpreterInfo_Type);
     Py_CLEAR(state->AwaitedInfo_Type);
+    Py_CLEAR(state->GCStatsInfo_Type);
     Py_CLEAR(state->BinaryWriter_Type);
     Py_CLEAR(state->BinaryReader_Type);
     Py_CLEAR(state->GCMonitor_Type);
@@ -2003,7 +2035,7 @@ _remote_debugging.get_gc_stats
 Get garbage collector statistics from external Python process.
 
 Returns:
-    list of dict: A list of dictionaries containing:
+    list of GCStatsInfo: A list of stats samples containing:
         - gen: GC generation number.
         - iid: Interpreter ID.
         - ts_start: Raw timestamp at collection start.
@@ -2022,7 +2054,7 @@ Raises:
 static PyObject *
 _remote_debugging_get_gc_stats_impl(PyObject *module, int pid,
                                     int all_interpreters)
-/*[clinic end generated code: output=d9dce5f7add149bb input=a08496935ccb3661]*/
+/*[clinic end generated code: output=d9dce5f7add149bb input=a2a08a45a8f0b119]*/
 {
     RuntimeOffsets offsets;
 
@@ -2053,7 +2085,8 @@ _remote_debugging_get_gc_stats_impl(PyObject *module, int pid,
         goto error;
     }
 
-    result = get_gc_stats(&offsets, all_interpreters);
+    RemoteDebuggingState *st = RemoteDebugging_GetState(module);
+    result = get_gc_stats(&offsets, all_interpreters, st->GCStatsInfo_Type);
     if (result != NULL) {
         goto done;
     }

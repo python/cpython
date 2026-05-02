@@ -589,10 +589,10 @@ PyDoc_STRVAR(_remote_debugging_GCMonitor_get_gc_stats__doc__,
 "    If True, return GC statistics from all interpreters.\n"
 "    If False, return only from main interpreter.\n"
 "\n"
-"Returns a list of dictionaries with GC statistics data.\n"
+"Returns a list of GCStatsInfo objects with GC statistics data.\n"
 "\n"
 "Returns:\n"
-"    list of dict: A list of dictionaries containing:\n"
+"    list of GCStatsInfo: A list of stats samples containing:\n"
 "        - gen: GC generation number.\n"
 "        - iid: Interpreter ID.\n"
 "        - ts_start: Raw timestamp at collection start.\n"
@@ -1483,7 +1483,7 @@ PyDoc_STRVAR(_remote_debugging_get_gc_stats__doc__,
 "    If False, return only from main interpreter.\n"
 "\n"
 "Returns:\n"
-"    list of dict: A list of dictionaries containing:\n"
+"    list of GCStatsInfo: A list of stats samples containing:\n"
 "        - gen: GC generation number.\n"
 "        - iid: Interpreter ID.\n"
 "        - ts_start: Raw timestamp at collection start.\n"
@@ -1563,4 +1563,4 @@ skip_optional_kwonly:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=40702bb43b518e58 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=1151e58683dab9f4 input=a9049054013a1b77]*/

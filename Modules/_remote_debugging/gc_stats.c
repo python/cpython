@@ -8,70 +8,52 @@
 
 typedef struct {
     PyObject *result;
+    PyTypeObject *gc_stats_info_type;
     bool all_interpreters;
 } GetGCStatsContext;
 
 static int
-read_gc_stats(struct gc_stats *stats, int64_t iid, PyObject *result)
+read_gc_stats(struct gc_stats *stats, int64_t iid, PyObject *result,
+              PyTypeObject *gc_stats_info_type)
 {
-#define ADD_LOCAL_ULONG(name) do { \
+#define SET_FIELD_ULONG(name) do { \
     PyObject *value = PyLong_FromUnsignedLong(name); \
     if (value == NULL) { \
         goto error; \
     } \
-    int rc = PyDict_SetItemString(item, #name, value); \
-    Py_DECREF(value); \
-    if (rc < 0) { \
-        goto error; \
-    } \
+    PyStructSequence_SetItem(item, field++, value); \
 } while (0)
 
-#define ADD_LOCAL_INT64(name) do { \
+#define SET_FIELD_INT64(name) do { \
     PyObject *value = PyLong_FromInt64(name); \
     if (value == NULL) { \
         goto error; \
     } \
-    int rc = PyDict_SetItemString(item, #name, value); \
-    Py_DECREF(value); \
-    if (rc < 0) { \
-        goto error; \
-    } \
+    PyStructSequence_SetItem(item, field++, value); \
 } while (0)
 
-#define ADD_STATS_SSIZE(name) do { \
+#define SET_FIELD_STATS_SSIZE(name) do { \
     PyObject *value = PyLong_FromSsize_t(stats_item->name); \
     if (value == NULL) { \
         goto error; \
     } \
-    int rc = PyDict_SetItemString(item, #name, value); \
-    Py_DECREF(value); \
-    if (rc < 0) { \
-        goto error; \
-    } \
+    PyStructSequence_SetItem(item, field++, value); \
 } while (0)
 
-#define ADD_STATS_INT64(name) do { \
+#define SET_FIELD_STATS_INT64(name) do { \
     PyObject *value = PyLong_FromInt64(stats_item->name); \
     if (value == NULL) { \
         goto error; \
     } \
-    int rc = PyDict_SetItemString(item, #name, value); \
-    Py_DECREF(value); \
-    if (rc < 0) { \
-        goto error; \
-    } \
+    PyStructSequence_SetItem(item, field++, value); \
 } while (0)
 
-#define ADD_STATS_DOUBLE(name) do { \
+#define SET_FIELD_STATS_DOUBLE(name) do { \
     PyObject *value = PyFloat_FromDouble(stats_item->name); \
     if (value == NULL) { \
         goto error; \
     } \
-    int rc = PyDict_SetItemString(item, #name, value); \
-    Py_DECREF(value); \
-    if (rc < 0) { \
-        goto error; \
-    } \
+    PyStructSequence_SetItem(item, field++, value); \
 } while (0)
 
     PyObject *item = NULL;
@@ -89,22 +71,23 @@ read_gc_stats(struct gc_stats *stats, int64_t iid, PyObject *result)
         }
         for (int i = 0; i < size; i++, items++) {
             struct gc_generation_stats *stats_item = items;
-            item = PyDict_New();
+            item = PyStructSequence_New(gc_stats_info_type);
             if (item == NULL) {
                 goto error;
             }
+            Py_ssize_t field = 0;
 
-            ADD_LOCAL_ULONG(gen);
-            ADD_LOCAL_INT64(iid);
+            SET_FIELD_ULONG(gen);
+            SET_FIELD_INT64(iid);
 
-            ADD_STATS_INT64(ts_start);
-            ADD_STATS_INT64(ts_stop);
-            ADD_STATS_SSIZE(collections);
-            ADD_STATS_SSIZE(collected);
-            ADD_STATS_SSIZE(uncollectable);
-            ADD_STATS_SSIZE(candidates);
+            SET_FIELD_STATS_INT64(ts_start);
+            SET_FIELD_STATS_INT64(ts_stop);
+            SET_FIELD_STATS_SSIZE(collections);
+            SET_FIELD_STATS_SSIZE(collected);
+            SET_FIELD_STATS_SSIZE(uncollectable);
+            SET_FIELD_STATS_SSIZE(candidates);
 
-            ADD_STATS_DOUBLE(duration);
+            SET_FIELD_STATS_DOUBLE(duration);
 
             int rc = PyList_Append(result, item);
             Py_CLEAR(item);
@@ -114,11 +97,11 @@ read_gc_stats(struct gc_stats *stats, int64_t iid, PyObject *result)
         }
     }
 
-#undef ADD_LOCAL_ULONG
-#undef ADD_LOCAL_INT64
-#undef ADD_STATS_SSIZE
-#undef ADD_STATS_INT64
-#undef ADD_STATS_DOUBLE
+#undef SET_FIELD_ULONG
+#undef SET_FIELD_INT64
+#undef SET_FIELD_STATS_SSIZE
+#undef SET_FIELD_STATS_INT64
+#undef SET_FIELD_STATS_DOUBLE
 
     return 0;
 
@@ -172,7 +155,8 @@ get_gc_stats_from_interpreter_state(RuntimeOffsets *offsets,
         return -1;
     }
 
-    if (read_gc_stats(&stats, iid, ctx->result) < 0) {
+    if (read_gc_stats(&stats, iid, ctx->result,
+                      ctx->gc_stats_info_type) < 0) {
         return -1;
     }
 
@@ -180,7 +164,8 @@ get_gc_stats_from_interpreter_state(RuntimeOffsets *offsets,
 }
 
 PyObject *
-get_gc_stats(RuntimeOffsets *offsets, bool all_interpreters)
+get_gc_stats(RuntimeOffsets *offsets, bool all_interpreters,
+             PyTypeObject *gc_stats_info_type)
 {
     PyObject *result = PyList_New(0);
     if (result == NULL) {
@@ -188,6 +173,7 @@ get_gc_stats(RuntimeOffsets *offsets, bool all_interpreters)
     }
     GetGCStatsContext ctx = {
         .result = result,
+        .gc_stats_info_type = gc_stats_info_type,
         .all_interpreters = all_interpreters,
     };
     if (iterate_interpreters(offsets, get_gc_stats_from_interpreter_state,

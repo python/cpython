@@ -17,25 +17,28 @@ except ImportError:
     )
 
 
-def get_interpreter_identifiers(gc_stats: tuple[dict[str, str|int|float]]) -> tuple[str,...]:
-    return tuple(sorted({s["iid"] for s in gc_stats}))
+GC_STATS_FIELDS = (
+    "gen", "iid", "ts_start", "ts_stop", "collections", "collected",
+    "uncollectable", "candidates", "duration")
 
 
-def get_generations(gc_stats: tuple[dict[str, str|int|float]]) -> tuple[int,int,int]:
+def get_interpreter_identifiers(gc_stats) -> tuple[int,...]:
+    return tuple(sorted({s.iid for s in gc_stats}))
+
+
+def get_generations(gc_stats) -> tuple[int,int,int]:
     generations = set()
     for s in gc_stats:
-        generations.add(s["gen"])
+        generations.add(s.gen)
 
     return tuple(sorted(generations))
 
 
-def get_last_item(gc_stats: tuple[dict[str, str|int|float]],
-                  generation:int,
-                  iid:int) -> dict[str, str|int|float] | None:
+def get_last_item(gc_stats, generation: int, iid: int):
     item = None
     for s in gc_stats:
-        if s["gen"] == generation and s["iid"] == iid:
-            if item is None or item["ts_start"] < s["ts_start"]:
+        if s.gen == generation and s.iid == iid:
+            if item is None or item.ts_start < s.ts_start:
                 item = s
 
     return item
@@ -124,7 +127,7 @@ class TestGCStats(unittest.TestCase):
             after = get_last_item(after_stats, generation, self._main_iid)
             if after is None or before is None:
                 return False
-            if after["ts_stop"] <= before["ts_stop"]:
+            if after.ts_stop <= before.ts_stop:
                 return False
         return True
 
@@ -155,16 +158,16 @@ class TestGCStats(unittest.TestCase):
         self.assertIsNotNone(before)
         self.assertIsNotNone(after)
 
-        self.assertGreater(after["collections"], before["collections"], (before, after))
-        self.assertGreater(after["ts_start"], before["ts_start"], (before, after))
-        self.assertGreater(after["ts_stop"], before["ts_stop"], (before, after))
-        self.assertGreater(after["duration"], before["duration"], (before, after))
+        self.assertGreater(after.collections, before.collections, (before, after))
+        self.assertGreater(after.ts_start, before.ts_start, (before, after))
+        self.assertGreater(after.ts_stop, before.ts_stop, (before, after))
+        self.assertGreater(after.duration, before.duration, (before, after))
 
-        self.assertGreater(after["candidates"], before["candidates"], (before, after))
+        self.assertGreater(after.candidates, before.candidates, (before, after))
 
         # may not grow
-        self.assertGreaterEqual(after["collected"], before["collected"], (before, after))
-        self.assertGreaterEqual(after["uncollectable"], before["uncollectable"], (before, after))
+        self.assertGreaterEqual(after.collected, before.collected, (before, after))
+        self.assertGreaterEqual(after.uncollectable, before.uncollectable, (before, after))
 
     def _check_interpreter_gc_stats(self, before_stats, after_stats):
         before_iids = get_interpreter_identifiers(before_stats)
@@ -189,15 +192,13 @@ class TestGCStats(unittest.TestCase):
                     self._check_gc_stats(before, after)
 
     def test_gc_stats_fields(self):
-        keys = sorted(("gen", "iid", "ts_start", "ts_stop", #"heap_size",
-                "collections", "collected", "uncollectable", "candidates",
-                "duration"))
         monitor = _remote_debugging.GCMonitor(os.getpid(), debug=True)
         stats = monitor.get_gc_stats(all_interpreters=False)
         self.assertIsInstance(stats, list)
         for item in stats:
-            self.assertIsInstance(item, dict)
-            self.assertEqual(sorted(item.keys()), keys)
+            self.assertIsInstance(item, _remote_debugging.GCStatsInfo)
+            self.assertEqual(type(item).__match_args__, GC_STATS_FIELDS)
+            self.assertEqual(len(item), len(GC_STATS_FIELDS))
 
     def test_gc_stats_timestamps_for_main_interpreter(self):
         script = textwrap.dedent(self._main_interpreter_script)
@@ -212,13 +213,13 @@ class TestGCStats(unittest.TestCase):
                 self.assertIsNotNone(before)
                 self.assertIsNotNone(after)
                 self.assertGreater(
-                    after["collections"], before["collections"],
+                    after.collections, before.collections,
                     (before, after))
                 self.assertGreater(
-                    after["ts_start"], before["ts_start"],
+                    after.ts_start, before.ts_start,
                     (before, after))
                 self.assertGreater(
-                    after["ts_stop"], before["ts_stop"],
+                    after.ts_stop, before.ts_stop,
                     (before, after))
 
     @requires_gil_enabled()

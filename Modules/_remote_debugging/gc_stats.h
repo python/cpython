@@ -14,7 +14,8 @@ extern "C" {
 #include "_remote_debugging.h"
 
 PyObject *
-get_gc_stats(RuntimeOffsets *offsets, bool all_interpreters);
+get_gc_stats(RuntimeOffsets *offsets, bool all_interpreters,
+             PyTypeObject *gc_stats_info_type);
 
 #ifdef __cplusplus
 }

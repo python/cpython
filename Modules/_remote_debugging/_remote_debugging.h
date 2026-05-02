@@ -260,6 +260,7 @@ typedef struct {
     PyTypeObject *ThreadInfo_Type;
     PyTypeObject *InterpreterInfo_Type;
     PyTypeObject *AwaitedInfo_Type;
+    PyTypeObject *GCStatsInfo_Type;
     PyTypeObject *BinaryWriter_Type;
     PyTypeObject *BinaryReader_Type;
     PyTypeObject *GCMonitor_Type;
@@ -426,6 +427,7 @@ extern PyStructSequence_Desc CoroInfo_desc;
 extern PyStructSequence_Desc ThreadInfo_desc;
 extern PyStructSequence_Desc InterpreterInfo_desc;
 extern PyStructSequence_Desc AwaitedInfo_desc;
+extern PyStructSequence_Desc GCStatsInfo_desc;
 
 /* ============================================================================
  * UTILITY FUNCTION DECLARATIONS
