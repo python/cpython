@@ -222,8 +222,7 @@ PrettyPrinter objects
 
    .. versionchanged:: next
       Changed default *indent* from 1 to 4,
-      default *width* from 80 to 88,
-      and default *expand* from ``False`` to ``True``.
+      and default *width* from 80 to 88.
 
 
 :class:`PrettyPrinter` instances have the following methods:
