@@ -130,7 +130,7 @@ get_gc_stats_from_interpreter_state(RuntimeOffsets *offsets,
         return 0;
     }
 
-    uintptr_t gc_stats_addr;
+    uintptr_t gc_stats_addr = 0;
     uintptr_t gc_stats_pointer_address = interpreter_state_addr
         + offsets->debug_offsets.interpreter_state.gc
         + offsets->debug_offsets.gc.generation_stats;
@@ -139,6 +139,10 @@ get_gc_stats_from_interpreter_state(RuntimeOffsets *offsets,
                                          sizeof(gc_stats_addr),
                                          &gc_stats_addr) < 0) {
         PyErr_SetString(PyExc_RuntimeError, "Failed to read GC state address");
+        return -1;
+    }
+    if (gc_stats_addr == 0) {
+        PyErr_SetString(PyExc_RuntimeError, "GC state address is NULL");
         return -1;
     }
 
