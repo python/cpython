@@ -248,7 +248,7 @@ def geometric_mean(data):
             elif x == 0.0:
                 found_zero = True
             else:
-                raise StatisticsError('No negative inputs allowed', x)
+                raise StatisticsError(f'No negative inputs allowed: {x!r}')
 
     total = fsum(map(log, count_positive(data)))
 
