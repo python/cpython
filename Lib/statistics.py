@@ -453,9 +453,16 @@ def median_grouped(data, interval=1.0):
     # Coerce to floats, raising a TypeError if not possible
     try:
         interval = float(interval)
+    except ValueError as exc:
+        raise TypeError(
+            f'interval must be a real number, got {interval!r}'
+        ) from exc
+    try:
         x = float(x)
-    except ValueError:
-        raise TypeError(f'Value cannot be converted to a float')
+    except ValueError as exc:
+        raise TypeError(
+            f'data sequence must contain real numbers, found {x!r}'
+        ) from exc
 
     # Interpolate the median using the formula found at:
     # https://www.cuemath.com/data/median-of-grouped-data/

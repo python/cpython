@@ -1799,6 +1799,25 @@ class TestMedianGrouped(TestMedian):
         interval = b""
         self.assertRaises(TypeError, self.func, data, interval)
 
+    def test_exception_chaining_and_messages(self):
+        # TypeError raised for bad interval should chain the original ValueError
+        # and identify the problematic parameter.
+        data = [1, 2, 3]
+        with self.assertRaises(TypeError) as cm:
+            self.func(data, interval="bad")
+        exc = cm.exception
+        self.assertIsInstance(exc.__cause__, ValueError)
+        self.assertIn("interval", str(exc))
+
+        # TypeError raised for non-numeric data should chain the original ValueError
+        # and identify that the data is the problem.
+        data = ["a", "b", "c"]
+        with self.assertRaises(TypeError) as cm:
+            self.func(data)
+        exc = cm.exception
+        self.assertIsInstance(exc.__cause__, ValueError)
+        self.assertIn("data", str(exc))
+
 
 class TestMode(NumericTestCase, AverageMixin, UnivariateTypeMixin):
     # Test cases for the discrete version of mode.

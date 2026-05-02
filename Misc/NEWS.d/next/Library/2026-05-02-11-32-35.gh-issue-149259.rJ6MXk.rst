@@ -1,0 +1,3 @@
+Fix :func:`statistics.median_grouped` to chain the original :exc:`ValueError`
+when coercing *interval* or the median data value to ``float`` fails, and
+improve the error message to identify which parameter caused the failure.
