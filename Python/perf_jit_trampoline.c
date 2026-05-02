@@ -280,7 +280,7 @@ _Static_assert(sizeof(EhFrameHeader) == 20, "EhFrameHeader layout mismatch");
  */
 typedef struct {
     FILE* perf_map;          // File handle for the jitdump file
-    PyThread_type_lock map_lock;  // Thread synchronization lock
+    PyMutex map_lock;        // Thread synchronization lock
     void* mapped_buffer;     // Memory-mapped region (signals perf we're active)
     size_t mapped_size;      // Size of the mapped region
     uint32_t code_id;        // Counter for unique code region identifiers
@@ -413,6 +413,12 @@ static void perf_map_jit_write_header(int pid, FILE* out_file) {
  * Returns: Pointer to initialized state, or NULL on failure
  */
 static void* perf_map_jit_init(void) {
+    PyMutex_Lock(&perf_jit_map_state.map_lock);
+    if (perf_jit_map_state.perf_map != NULL) {
+        PyMutex_Unlock(&perf_jit_map_state.map_lock);
+        return &perf_jit_map_state;
+    }
+
     char filename[100];
     int pid = getpid();
 
@@ -422,6 +428,7 @@ static void* perf_map_jit_init(void) {
     /* Create/open the jitdump file with appropriate permissions */
     const int fd = open(filename, O_CREAT | O_TRUNC | O_RDWR, 0666);
     if (fd == -1) {
+        PyMutex_Unlock(&perf_jit_map_state.map_lock);
         return NULL;  // Failed to create file
     }
 
@@ -429,6 +436,7 @@ static void* perf_map_jit_init(void) {
     const long page_size = sysconf(_SC_PAGESIZE);
     if (page_size == -1) {
         close(fd);
+        PyMutex_Unlock(&perf_jit_map_state.map_lock);
         return NULL;  // Failed to get page size
     }
 
@@ -457,6 +465,7 @@ static void* perf_map_jit_init(void) {
     if (perf_jit_map_state.mapped_buffer == MAP_FAILED) {
         perf_jit_map_state.mapped_buffer = NULL;
         close(fd);
+        PyMutex_Unlock(&perf_jit_map_state.map_lock);
         return NULL;  // Memory mapping failed
     }
     (void)_PyAnnotateMemoryMap(perf_jit_map_state.mapped_buffer, page_size,
@@ -469,6 +478,7 @@ static void* perf_map_jit_init(void) {
     perf_jit_map_state.perf_map = fdopen(fd, "w+");
     if (perf_jit_map_state.perf_map == NULL) {
         close(fd);
+        PyMutex_Unlock(&perf_jit_map_state.map_lock);
         return NULL;  // Failed to create FILE*
     }
 
@@ -484,19 +494,6 @@ static void* perf_map_jit_init(void) {
     /* Write the jitdump file header */
     perf_map_jit_write_header(pid, perf_jit_map_state.perf_map);
 
-    /*
-     * Initialize thread synchronization lock
-     *
-     * Multiple threads may attempt to write to the jitdump file
-     * simultaneously. This lock ensures thread-safe access to the
-     * global jitdump state.
-     */
-    perf_jit_map_state.map_lock = PyThread_allocate_lock();
-    if (perf_jit_map_state.map_lock == NULL) {
-        fclose(perf_jit_map_state.perf_map);
-        return NULL;  // Failed to create lock
-    }
-
     /* Initialize code ID counter */
     perf_jit_map_state.code_id = 0;
     perf_jit_map_state.build_id_salt =
@@ -508,6 +505,7 @@ static void* perf_map_jit_init(void) {
     trampoline_api.code_padding = _Py_SIZE_ROUND_UP(unwind_data_size, 16);
     trampoline_api.code_alignment = 32;
 
+    PyMutex_Unlock(&perf_jit_map_state.map_lock);
     return &perf_jit_map_state;
 }
 
@@ -531,11 +529,9 @@ static void perf_map_jit_write_entry_with_name(
 )
 {
     /* Initialize jitdump system on first use */
-    if (perf_jit_map_state.perf_map == NULL) {
-        void* ret = perf_map_jit_init();
-        if(ret == NULL){
-            return;  // Initialization failed, silently abort
-        }
+    void* ret = perf_map_jit_init();
+    if (ret == NULL) {
+        return;  // Initialization failed, silently abort
     }
 
     if (entry == NULL) {
@@ -583,7 +579,7 @@ static void perf_map_jit_write_entry_with_name(
      * a process-global code_id. Serialize the whole sequence so concurrent JIT
      * compilation cannot interleave records or reuse an ID.
      */
-    PyThread_acquire_lock(perf_jit_map_state.map_lock, 1);
+    PyMutex_Lock(&perf_jit_map_state.map_lock);
 
     /*
      * Write Code Unwinding Information Event
@@ -699,7 +695,7 @@ static void perf_map_jit_write_entry_with_name(
     }
 
     /* Clean up allocated memory */
-    PyThread_release_lock(perf_jit_map_state.map_lock);
+    PyMutex_Unlock(&perf_jit_map_state.map_lock);
     PyMem_RawFree(perf_map_entry);
 }
 
@@ -778,15 +774,12 @@ static int perf_map_jit_fini(void* state) {
      * writing to the file when we close it. This prevents corruption
      * and ensures all data is properly flushed.
      */
+    PyMutex_Lock(&perf_jit_map_state.map_lock);
     if (perf_jit_map_state.perf_map != NULL) {
-        PyThread_acquire_lock(perf_jit_map_state.map_lock, 1);
         fclose(perf_jit_map_state.perf_map);  // This also flushes buffers
-        PyThread_release_lock(perf_jit_map_state.map_lock);
-
-        /* Clean up synchronization primitive */
-        PyThread_free_lock(perf_jit_map_state.map_lock);
         perf_jit_map_state.perf_map = NULL;
     }
+    PyMutex_Unlock(&perf_jit_map_state.map_lock);
 
     /*
      * Unmap the memory region
