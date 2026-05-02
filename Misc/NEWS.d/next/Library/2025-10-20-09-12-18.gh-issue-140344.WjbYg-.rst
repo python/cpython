@@ -1,4 +1,4 @@
-The classes ``ast.slice``, ``ast.Index``, ``ast.Suite``, ``ast.AugLoad``,
+The classes ``ast.slice``, ``ast.ExtSlice``, ``ast.Index``, ``ast.Suite``, ``ast.AugLoad``,
 ``ast.AugStore``, and ``ast.Param``, deprecated since Python 3.9, now issue
 deprecation warnings on use. They are now scheduled for removal in Python 3.20.
 
