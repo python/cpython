@@ -11967,6 +11967,15 @@
             _PyStackRef _stack_item_0 = _tos_cache0;
             owner = _stack_item_0;
             PyObject *descr = (PyObject *)CURRENT_OPERAND0_64();
+            PyTypeObject *descr_type = Py_TYPE(descr);
+            PyObject *owner_o = PyStackRef_AsPyObjectBorrow(owner);
+            if ((descr_type->tp_flags & Py_TPFLAGS_IMMUTABLETYPE) == 0
+                    && descr_type != (PyTypeObject *)owner_o) {
+                UOP_STAT_INC(uopcode, miss);
+                _tos_cache0 = owner;
+                SET_CURRENT_CACHED_VALUES(1);
+                JUMP_TO_JUMP_TARGET();
+            }
             STAT_INC(LOAD_ATTR, hit);
             assert(descr != NULL);
             attr = PyStackRef_FromPyObjectNew(descr);

@@ -1,4 +1,5 @@
 import contextlib
+import enum
 import itertools
 import sys
 import textwrap
@@ -3510,6 +3511,50 @@ class TestUopsOptimization(unittest.TestCase):
         uops = get_opnames(ex)
         self.assertNotIn("_LOAD_ATTR_METHOD_NO_DICT", uops)
         self.assertIn("_LOAD_CONST_INLINE_BORROW", uops)
+
+    def test_load_attr_class_with_metaclass_check(self):
+        # LOAD_ATTR_CLASS_WITH_METACLASS_CHECK must check
+        # for `__class__` writes, see gh-149239
+        class ColorMeta(enum.EnumType):
+            pass
+
+        class Color(enum.IntEnum, metaclass=ColorMeta):
+            RED = 1
+
+        red = Color.RED
+
+        def f1(n):
+            for _ in range(n):
+                assert Color.RED == 1
+            return n
+
+        res, ex = self._run_with_optimizer(f1, TIER2_THRESHOLD)
+        self.assertIsNotNone(ex)
+        self.assertEqual(res, TIER2_THRESHOLD)
+        uops = get_opnames(ex)
+        self.assertIn("_CHECK_ATTR_CLASS", uops)
+        self.assertIn("_GUARD_TYPE_VERSION", uops)
+
+        # Reassign the `__class__` attr to deopt:
+        class Descriptor(enum.IntEnum):
+            RED = 1
+
+            def __get__(self, obj, owner):
+                return "descr"
+
+        red.__class__ = Descriptor
+
+        def f2(n):
+            for _ in range(n):
+                assert Color.RED == 'descr'
+            return n
+
+        res, ex = self._run_with_optimizer(f2, TIER2_THRESHOLD)
+        self.assertIsNotNone(ex)
+        self.assertEqual(res, TIER2_THRESHOLD)
+        uops = get_opnames(ex)
+        self.assertNotIn("_CHECK_ATTR_CLASS", uops)
+        self.assertNotIn("_GUARD_TYPE_VERSION", uops)
 
     def test_cached_load_special(self):
         class CM:

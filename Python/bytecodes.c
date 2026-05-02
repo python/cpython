@@ -2976,6 +2976,11 @@ dummy_func(
         }
 
         op(_LOAD_ATTR_CLASS, (descr/4, owner -- attr)) {
+            PyTypeObject *descr_type = Py_TYPE(descr);
+            PyObject *owner_o = PyStackRef_AsPyObjectBorrow(owner);
+            EXIT_IF((descr_type->tp_flags & Py_TPFLAGS_IMMUTABLETYPE) == 0
+                && descr_type != (PyTypeObject *)owner_o);
+
             STAT_INC(LOAD_ATTR, hit);
             assert(descr != NULL);
             attr = PyStackRef_FromPyObjectNew(descr);

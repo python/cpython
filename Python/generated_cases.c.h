@@ -8351,6 +8351,14 @@
             // _LOAD_ATTR_CLASS
             {
                 PyObject *descr = read_obj(&this_instr[6].cache);
+                PyTypeObject *descr_type = Py_TYPE(descr);
+                PyObject *owner_o = PyStackRef_AsPyObjectBorrow(owner);
+                if ((descr_type->tp_flags & Py_TPFLAGS_IMMUTABLETYPE) == 0
+                    && descr_type != (PyTypeObject *)owner_o) {
+                    UPDATE_MISS_STATS(LOAD_ATTR);
+                    assert(_PyOpcode_Deopt[opcode] == (LOAD_ATTR));
+                    JUMP_TO_PREDICTED(LOAD_ATTR);
+                }
                 STAT_INC(LOAD_ATTR, hit);
                 assert(descr != NULL);
                 attr = PyStackRef_FromPyObjectNew(descr);
@@ -8419,6 +8427,14 @@
             // _LOAD_ATTR_CLASS
             {
                 PyObject *descr = read_obj(&this_instr[6].cache);
+                PyTypeObject *descr_type = Py_TYPE(descr);
+                PyObject *owner_o = PyStackRef_AsPyObjectBorrow(owner);
+                if ((descr_type->tp_flags & Py_TPFLAGS_IMMUTABLETYPE) == 0
+                    && descr_type != (PyTypeObject *)owner_o) {
+                    UPDATE_MISS_STATS(LOAD_ATTR);
+                    assert(_PyOpcode_Deopt[opcode] == (LOAD_ATTR));
+                    JUMP_TO_PREDICTED(LOAD_ATTR);
+                }
                 STAT_INC(LOAD_ATTR, hit);
                 assert(descr != NULL);
                 attr = PyStackRef_FromPyObjectNew(descr);
