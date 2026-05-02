@@ -352,9 +352,21 @@ Again, the implementation details can be revealed with a cast to
         builtin 'len' = <built-in function len>
         (gdb) py-print scarlet_pimpernel
         'scarlet_pimpernel' not found
+        (gdb) py-print nested_dict
+        local 'nested_dict' = {'a': {'b': {'c': {'d': 1, 'e': 2, 'f': 3}, 'g': {'h': 4, 'i': 5}}, 'j': 6, 'k': {'l': 7, 'm': {'n': 8, 'o': 9}}}, 'p': {'q': {'r': 10, 's': {'t': 11, 'u': {'v': 12, 'w': 13, 'x': 14}}}}, 'y': {'z': 15}}
+        (gdb) set py-verbose-print on
+        (gdb) py-print nested_dict
+        local 'nested_dict' = \
+         {'a': {'b': {'c': {'d': 1, 'e': 2, 'f': 3}, 'g': {'h': 4, 'i': 5}},
+               'j': 6,
+               'k': {'l': 7, 'm': {'n': 8, 'o': 9}}},
+         'p': {'q': {'r': 10, 's': {'t': 11, 'u': {'v': 12, 'w': 13, 'x': 14}}}},
+         'y': {'z': 15}}
 
    If the current C frame corresponds to multiple Python frames, ``py-print``
    only considers the first one.
+   Setting the parameter ``py-verbose-print`` to ``on`` enables Python object pretty printing
+   and allow Python objects to be printed completely instead of being truncated at some limit.
 
 ``py-locals``
 -------------
