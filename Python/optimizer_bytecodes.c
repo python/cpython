@@ -289,7 +289,57 @@ dummy_func(void) {
         bool rhs_int = sym_matches_type(rhs, &PyLong_Type);
         bool lhs_float = sym_matches_type(lhs, &PyFloat_Type);
         bool rhs_float = sym_matches_type(rhs, &PyFloat_Type);
-        if (!((lhs_int || lhs_float) && (rhs_int || rhs_float))) {
+        bool is_truediv = (oparg == NB_TRUE_DIVIDE
+                           || oparg == NB_INPLACE_TRUE_DIVIDE);
+        bool is_remainder = (oparg == NB_REMAINDER
+                             || oparg == NB_INPLACE_REMAINDER);
+        int emit_op = _BINARY_OP;
+        // Promote probable-float operands to known floats via speculative
+        // guards. _RECORD_TOS_TYPE / _RECORD_NOS_TYPE in the BINARY_OP macro
+        // record the observed operand type during tracing, which
+        // sym_get_probable_type reads here. Applied only to ops where
+        // narrowing unlocks a meaningful downstream win:
+        //   - NB_TRUE_DIVIDE: enables the specialized float path below.
+        //   - NB_REMAINDER: lets the float result type propagate.
+        // NB_POWER is excluded: speculative guards there regressed
+        // test_power_type_depends_on_input_values (GH-127844).
+        if (is_truediv || is_remainder) {
+            if (!sym_has_type(rhs)
+                    && sym_get_probable_type(rhs) == &PyFloat_Type) {
+                ADD_OP(_GUARD_TOS_FLOAT, 0, 0);
+                sym_set_type(rhs, &PyFloat_Type);
+                rhs_float = true;
+            }
+            if (!sym_has_type(lhs)
+                    && sym_get_probable_type(lhs) == &PyFloat_Type) {
+                ADD_OP(_GUARD_NOS_FLOAT, 0, 0);
+                sym_set_type(lhs, &PyFloat_Type);
+                lhs_float = true;
+            }
+        }
+        if (is_truediv && lhs_float && rhs_float) {
+            if (PyJitRef_IsUnique(lhs)) {
+                emit_op = _BINARY_OP_TRUEDIV_FLOAT_INPLACE;
+                l = sym_new_null(ctx);
+                r = rhs;
+            }
+            else if (PyJitRef_IsUnique(rhs)) {
+                emit_op = _BINARY_OP_TRUEDIV_FLOAT_INPLACE_RIGHT;
+                l = lhs;
+                r = sym_new_null(ctx);
+            }
+            else {
+                emit_op = _BINARY_OP_TRUEDIV_FLOAT;
+                l = lhs;
+                r = rhs;
+            }
+            res = PyJitRef_MakeUnique(sym_new_type(ctx, &PyFloat_Type));
+        }
+        else if (is_truediv
+                && (lhs_int || lhs_float) && (rhs_int || rhs_float)) {
+            res = PyJitRef_MakeUnique(sym_new_type(ctx, &PyFloat_Type));
+        }
+        else if (!((lhs_int || lhs_float) && (rhs_int || rhs_float))) {
             // There's something other than an int or float involved:
             res = sym_new_unknown(ctx);
         }
@@ -312,7 +362,7 @@ dummy_func(void) {
             }
             else if (lhs_float) {
                 // Case C:
-                res = sym_new_type(ctx, &PyFloat_Type);
+                res = PyJitRef_MakeUnique(sym_new_type(ctx, &PyFloat_Type));
             }
             else if (!sym_is_const(ctx, rhs)) {
                 // Case A or B... can't know without the sign of the RHS:
@@ -320,22 +370,20 @@ dummy_func(void) {
             }
             else if (_PyLong_IsNegative((PyLongObject *)sym_get_const(ctx, rhs))) {
                 // Case B:
-                res = sym_new_type(ctx, &PyFloat_Type);
+                res = PyJitRef_MakeUnique(sym_new_type(ctx, &PyFloat_Type));
             }
             else {
                 // Case A:
                 res = sym_new_type(ctx, &PyLong_Type);
             }
         }
-        else if (oparg == NB_TRUE_DIVIDE || oparg == NB_INPLACE_TRUE_DIVIDE) {
-            res = sym_new_type(ctx, &PyFloat_Type);
-        }
         else if (lhs_int && rhs_int) {
             res = sym_new_type(ctx, &PyLong_Type);
         }
         else {
-            res = sym_new_type(ctx, &PyFloat_Type);
+            res = PyJitRef_MakeUnique(sym_new_type(ctx, &PyFloat_Type));
         }
+        ADD_OP(emit_op, oparg, 0);
     }
 
     op(_BINARY_OP_ADD_INT, (left, right -- res, l, r)) {
@@ -437,6 +485,46 @@ dummy_func(void) {
         res = sym_new_type(ctx, &PyUnicode_Type);
         l = left;
         r = right;
+    }
+
+    op(_GUARD_BINARY_OP_EXTEND_LHS, (descr/4, left, right -- left, right)) {
+        _PyBinaryOpSpecializationDescr *d = (_PyBinaryOpSpecializationDescr *)descr;
+        assert(d != NULL && d->guard == NULL && d->lhs_type != NULL);
+        if (sym_matches_type(left, d->lhs_type)) {
+            ADD_OP(_NOP, 0, 0);
+        }
+        sym_set_type(left, d->lhs_type);
+    }
+
+    op(_GUARD_BINARY_OP_EXTEND_RHS, (descr/4, left, right -- left, right)) {
+        _PyBinaryOpSpecializationDescr *d = (_PyBinaryOpSpecializationDescr *)descr;
+        assert(d != NULL && d->guard == NULL && d->rhs_type != NULL);
+        if (sym_matches_type(right, d->rhs_type)) {
+            ADD_OP(_NOP, 0, 0);
+        }
+        sym_set_type(right, d->rhs_type);
+    }
+
+    op(_GUARD_BINARY_OP_EXTEND, (descr/4, left, right -- left, right)) {
+        _PyBinaryOpSpecializationDescr *d = (_PyBinaryOpSpecializationDescr *)descr;
+        if (d != NULL && d->guard == NULL) {
+            /* guard == NULL means the check is purely a type test against
+               lhs_type/rhs_type, so eliminate it when types are already known. */
+            assert(d->lhs_type != NULL && d->rhs_type != NULL);
+            bool lhs_known = sym_matches_type(left, d->lhs_type);
+            bool rhs_known = sym_matches_type(right, d->rhs_type);
+            if (lhs_known && rhs_known) {
+                ADD_OP(_NOP, 0, 0);
+            }
+            else if (lhs_known) {
+                ADD_OP(_GUARD_BINARY_OP_EXTEND_RHS, 0, (uintptr_t)d);
+                sym_set_type(right, d->rhs_type);
+            }
+            else if (rhs_known) {
+                ADD_OP(_GUARD_BINARY_OP_EXTEND_LHS, 0, (uintptr_t)d);
+                sym_set_type(left, d->lhs_type);
+            }
+        }
     }
 
     op(_BINARY_OP_EXTEND, (descr/4, left, right -- res, l, r)) {
@@ -846,6 +934,13 @@ dummy_func(void) {
         bottom = top;
         top = temp;
         assert(oparg >= 2);
+    }
+
+    op(_RROT_3, (bottom, middle, top -- bottom, middle, top)) {
+        JitOptRef temp = top;
+        top = middle;
+        middle = bottom;
+        bottom = temp;
     }
 
     op(_LOAD_ATTR_INSTANCE_VALUE, (offset/1, owner -- attr, o)) {
@@ -1310,13 +1405,86 @@ dummy_func(void) {
     }
 
     op(_GET_ITER, (iterable -- iter, index_or_null)) {
-        if (sym_matches_type(iterable, &PyTuple_Type) || sym_matches_type(iterable, &PyList_Type)) {
+        bool is_coro = false;
+        bool is_trad = false; // has `tp_iter` slot
+        bool definite = true;
+        PyTypeObject *tp = sym_get_type(iterable);
+        if (tp == NULL) {
+            definite = false;
+            tp = sym_get_probable_type(iterable);
+        }
+        if (oparg == GET_ITER_YIELD_FROM_NO_CHECK) {
+            if (tp == &PyCoro_Type) {
+                if (!definite) {
+                    ADD_OP(_GUARD_TYPE, 0, (uintptr_t)tp);
+                    sym_set_type(iterable, tp);
+                }
+                ADD_OP(_PUSH_NULL, 0, 0);
+                is_coro = true;
+            }
+        }
+        if (tp != NULL &&
+            tp->_tp_iteritem == NULL &&
+            tp->tp_iter != NULL &&
+            tp->tp_iter != PyObject_SelfIter &&
+            tp->tp_flags & Py_TPFLAGS_IMMUTABLETYPE
+        ) {
+            assert(tp != &PyCoro_Type);
+            is_trad = true;
+            if (!definite) {
+                ADD_OP(_GUARD_TYPE, 0, (uintptr_t)tp);
+                sym_set_type(iterable, tp);
+            }
+            ADD_OP(_GET_ITER_TRAD, 0, 0);
+        }
+        if (is_coro) {
+            assert(!is_trad);
             iter = iterable;
-            index_or_null = sym_new_not_null(ctx);
+            index_or_null = sym_new_null(ctx);
+        }
+        else if (is_trad) {
+            iter = sym_new_not_null(ctx);
+            index_or_null = sym_new_null(ctx);
         }
         else {
             iter = sym_new_not_null(ctx);
             index_or_null = sym_new_unknown(ctx);
+        }
+    }
+
+    op(_GUARD_ITERATOR, (iterable -- iterable)) {
+        bool definite = true;
+        PyTypeObject *tp = sym_get_type(iterable);
+        if (tp == NULL) {
+            definite = false;
+            tp = sym_get_probable_type(iterable);
+        }
+        if (tp != NULL && tp->tp_iter == PyObject_SelfIter) {
+            if (definite) {
+                ADD_OP(_NOP, 0, 0);
+            }
+            else {
+                ADD_OP(_GUARD_TYPE, 0, (uintptr_t)tp);
+                sym_set_type(iterable, tp);
+            }
+        }
+    }
+
+    op(_GUARD_ITER_VIRTUAL, (iterable -- iterable)) {
+        bool definite = true;
+        PyTypeObject *tp = sym_get_type(iterable);
+        if (tp == NULL) {
+            definite = false;
+            tp = sym_get_probable_type(iterable);
+        }
+        if (tp != NULL && tp->_tp_iteritem != NULL) {
+            if (definite) {
+                ADD_OP(_NOP, 0, 0);
+            }
+            else {
+                ADD_OP(_GUARD_TYPE, 0, (uintptr_t)tp);
+                sym_set_type(iterable, tp);
+            }
         }
     }
 
@@ -1422,11 +1590,11 @@ dummy_func(void) {
     }
 
     op(_ITER_CHECK_RANGE, (iter, null_or_index -- iter, null_or_index)) {
-        if (sym_matches_type(iter, &PyRange_Type)) {
+        if (sym_matches_type(iter, &PyRangeIter_Type)) {
             ADD_OP(_NOP, 0, 0);
         }
         else {
-            sym_set_type(iter, &PyRange_Type);
+            sym_set_type(iter, &PyRangeIter_Type);
         }
     }
 
@@ -1434,13 +1602,13 @@ dummy_func(void) {
        next = sym_new_type(ctx, &PyLong_Type);
     }
 
-    op(_CALL_TYPE_1, (unused, unused, arg -- res, a)) {
+    op(_CALL_TYPE_1, (callable, null, arg -- res, a)) {
         PyObject* type = (PyObject *)sym_get_type(arg);
         if (type) {
             res = sym_new_const(ctx, type);
             ADD_OP(_SWAP, 3, 0);
-            ADD_OP(_POP_TOP, 0, 0);
-            ADD_OP(_POP_TOP, 0, 0);
+            optimize_pop_top(ctx, this_instr, callable);
+            optimize_pop_top(ctx, this_instr, null);
             ADD_OP(_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)type);
             ADD_OP(_SWAP, 2, 0);
         }
@@ -1463,7 +1631,7 @@ dummy_func(void) {
         a = arg;
     }
 
-    op(_CALL_ISINSTANCE, (unused, unused, instance, cls -- res)) {
+    op(_CALL_ISINSTANCE, (callable, null, instance, cls -- res)) {
         // the result is always a bool, but sometimes we can
         // narrow it down to True or False
         res = sym_new_type(ctx, &PyBool_Type);
@@ -1479,10 +1647,10 @@ dummy_func(void) {
                 out = Py_True;
             }
             sym_set_const(res, out);
-            ADD_OP(_POP_TOP, 0, 0);
-            ADD_OP(_POP_TOP, 0, 0);
-            ADD_OP(_POP_TOP_NOP, 0, 0);
-            ADD_OP(_POP_TOP, 0, 0);
+            optimize_pop_top(ctx, this_instr, cls);
+            optimize_pop_top(ctx, this_instr, instance);
+            optimize_pop_top(ctx, this_instr, null);
+            optimize_pop_top(ctx, this_instr, callable);
             ADD_OP(_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)out);
         }
     }
@@ -1856,7 +2024,7 @@ dummy_func(void) {
                 ADD_OP(immortal ? _LOAD_CONST_INLINE_BORROW : _LOAD_CONST_INLINE,
                        0, (uintptr_t)descr);
                 ADD_OP(_SWAP, 3, 0);
-                ADD_OP(_POP_TOP, 0, 0);
+                optimize_pop_top(ctx, this_instr, method_and_self[0]);
                 if ((type->tp_flags & Py_TPFLAGS_IMMUTABLETYPE) == 0) {
                     PyType_Watch(TYPE_WATCHER_ID, (PyObject *)type);
                     _Py_BloomFilter_Add(dependencies, type);
@@ -2171,7 +2339,10 @@ dummy_func(void) {
                 goto error;
             }
             if (_Py_IsImmortal(temp)) {
-                ADD_OP(_SHUFFLE_3_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)temp);
+                ADD_OP(_SWAP, 2, 0);
+                optimize_pop_top(ctx, this_instr, null);
+                ADD_OP(_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)temp);
+                ADD_OP(_SWAP, 3, 0);
             }
             res = sym_new_const(ctx, temp);
             Py_DECREF(temp);
@@ -2376,6 +2547,11 @@ dummy_func(void) {
 
     op(_RECORD_NOS, (nos, tos -- nos, tos)) {
         sym_set_recorded_value(nos, (PyObject *)this_instr->operand0);
+    }
+
+    op(_RECORD_NOS_TYPE, (nos, tos -- nos, tos)) {
+        PyTypeObject *tp = (PyTypeObject *)this_instr->operand0;
+        sym_set_recorded_type(nos, tp);
     }
 
     op(_RECORD_4OS, (value, _3os, nos, tos -- value, _3os, nos, tos)) {

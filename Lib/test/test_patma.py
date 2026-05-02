@@ -2762,6 +2762,96 @@ class TestPatma(unittest.TestCase):
         self.assertEqual(y, 1)
         self.assertIs(z, x)
 
+    def test_patma_256(self):
+        x = 0
+        match x:
+            case +0:
+                y = 0
+        self.assertEqual(x, 0)
+        self.assertEqual(y, 0)
+
+    def test_patma_257(self):
+        x = 0
+        match x:
+            case +0.0:
+                y = 0
+        self.assertEqual(x, 0)
+        self.assertEqual(y, 0)
+
+    def test_patma_258(self):
+        x = 0
+        match x:
+            case +0j:
+                y = 0
+        self.assertEqual(x, 0)
+        self.assertEqual(y, 0)
+
+    def test_patma_259(self):
+        x = 0
+        match x:
+            case +0.0j:
+                y = 0
+        self.assertEqual(x, 0)
+        self.assertEqual(y, 0)
+
+    def test_patma_260(self):
+        x = 1
+        match x:
+            case +1:
+                y = 0
+        self.assertEqual(x, 1)
+        self.assertEqual(y, 0)
+
+    def test_patma_261(self):
+        x = 1.5
+        match x:
+            case +1.5:
+                y = 0
+        self.assertEqual(x, 1.5)
+        self.assertEqual(y, 0)
+
+    def test_patma_262(self):
+        x = 1j
+        match x:
+            case +1j:
+                y = 0
+        self.assertEqual(x, 1j)
+        self.assertEqual(y, 0)
+
+    def test_patma_263(self):
+        x = 1.5j
+        match x:
+            case +1.5j:
+                y = 0
+        self.assertEqual(x, 1.5j)
+        self.assertEqual(y, 0)
+
+    def test_patma_264(self):
+        x = 0.25 + 1.75j
+        match x:
+            case +0.25 + 1.75j:
+                y = 0
+        self.assertEqual(x, 0.25 + 1.75j)
+        self.assertEqual(y, 0)
+
+    def test_patma_265(self):
+        x = 0.25 - 1.75j
+        match x:
+            case 0.25 - +1.75j:
+                y = 0
+        self.assertEqual(x, 0.25 - 1.75j)
+        self.assertEqual(y, 0)
+
+    def test_patma_266(self):
+        x = 0
+        match x:
+            case +1e1000:
+                y = 0
+            case 0:
+                y = 1
+        self.assertEqual(x, 0)
+        self.assertEqual(y, 1)
+
     def test_patma_runtime_checkable_protocol(self):
         # Runtime-checkable protocol
         from typing import Protocol, runtime_checkable

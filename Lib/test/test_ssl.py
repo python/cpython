@@ -4674,7 +4674,9 @@ class ThreadedTests(unittest.TestCase):
                                            sni_name='supermessage')
 
             # Allow for flexible libssl error messages.
-            regex = "(SSLV3_ALERT_HANDSHAKE_FAILURE|NO_PRIVATE_VALUE)"
+            regex = ("(TLS_ALERT_HANDSHAKE_FAILURE"
+                     "|SSLV3_ALERT_HANDSHAKE_FAILURE"
+                     "|NO_PRIVATE_VALUE)")
             self.assertRegex(cm.exception.reason, regex)
             self.assertEqual(catch.unraisable.exc_type, ZeroDivisionError)
 

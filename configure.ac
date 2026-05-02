@@ -2105,10 +2105,32 @@ case "$ac_cv_cc_name" in
     fi
     ;;
   gcc)
-    AX_CHECK_COMPILE_FLAG(
-        [-fprofile-update=atomic],
-        [PGO_PROF_GEN_FLAG="-fprofile-generate -fprofile-update=atomic"],
-        [PGO_PROF_GEN_FLAG="-fprofile-generate"])
+    # Check for 32-bit x86 ISA
+    AC_CACHE_CHECK([for i686], [ac_cv_i686], [
+        AC_COMPILE_IFELSE([
+            AC_LANG_PROGRAM([
+                #ifdef __i386__
+                #  error "i386"
+                #endif
+            ], [])
+        ],[ac_cv_i686=no],[ac_cv_i686=yes])
+    ])
+
+    PGO_PROF_GEN_FLAG="-fprofile-generate"
+
+    # Use -fprofile-update=atomic to fix a random GCC internal error on PGO
+    # build (gh-145801) caused by corruption of profile data (.gcda files).
+    #
+    # gh-148535: On i686, using -fprofile-update=atomic makes the PGO build
+    # way slower (up to 47x slower). So far, the GCC internal error on PGO
+    # build was not seen on i686, so don't use this flag on i686.
+    AS_VAR_IF([ac_cv_i686], [no], [
+        AX_CHECK_COMPILE_FLAG(
+            [-fprofile-update=atomic],
+            [PGO_PROF_GEN_FLAG="$PGO_PROF_GEN_FLAG -fprofile-update=atomic"],
+            [])
+    ])
+
     PGO_PROF_USE_FLAG="-fprofile-use -fprofile-correction"
     LLVM_PROF_MERGER="true"
     LLVM_PROF_FILE=""
@@ -2507,7 +2529,30 @@ then
   AX_CHECK_COMPILE_FLAG([-D_FORTIFY_SOURCE=3], [CFLAGS_NODIST="$CFLAGS_NODIST -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=3"], [AC_MSG_WARN([-D_FORTIFY_SOURCE=3 not supported])], [-Werror])
 fi
 
+AC_MSG_CHECKING([whether to build with frame pointers])
+AC_ARG_WITH([frame-pointers],
+  [AS_HELP_STRING([--without-frame-pointers],
+                  [build without frame pointers (default is no)])],
+  [],
+  [with_frame_pointers=yes])
+AC_MSG_RESULT([$with_frame_pointers])
+
 AS_VAR_IF([ac_cv_gcc_compat], [yes], [
+    dnl Keep frame pointers in CPython, stdlib objects, and third-party
+    dnl extensions built against this Python (BASECFLAGS propagates via
+    dnl sysconfig) so native profilers can unwind interpreter frames and
+    dnl generated trampolines without DWARF.
+    frame_pointer_cflags=
+    AX_CHECK_COMPILE_FLAG([-fno-omit-frame-pointer], [
+      frame_pointer_cflags="-fno-omit-frame-pointer"
+      AX_CHECK_COMPILE_FLAG([-mno-omit-leaf-frame-pointer], [
+        frame_pointer_cflags="$frame_pointer_cflags -mno-omit-leaf-frame-pointer"
+      ], [], [-Werror])
+    ], [], [-Werror])
+    if test -n "$frame_pointer_cflags" && test "x$with_frame_pointers" != xno; then
+      BASECFLAGS="$frame_pointer_cflags $BASECFLAGS"
+    fi
+
     CFLAGS_NODIST="$CFLAGS_NODIST -std=c11"
 
     PY_CHECK_CC_WARNING([enable], [extra], [if we can add -Wextra])
@@ -2828,7 +2873,7 @@ AS_VAR_IF([jit_flags],
           [],
           [AS_VAR_APPEND([CFLAGS_NODIST], [" $jit_flags"])
            AS_VAR_SET([REGEN_JIT_COMMAND],
-                      ["\$(PYTHON_FOR_REGEN) \$(srcdir)/Tools/jit/build.py ${ARCH_TRIPLES:-$host} --output-dir . --pyconfig-dir . --cflags=\"$CFLAGS_JIT\" --llvm-version=\"$LLVM_VERSION\""])
+                      ["\$(PYTHON_FOR_REGEN) \$(srcdir)/Tools/jit/build.py ${ARCH_TRIPLES:-$host} --output-dir . --pyconfig-dir . --cflags=\"$CFLAGS_JIT\" --llvm-version=\"$LLVM_VERSION\" --llvm-tools-install-dir=\"$LLVM_TOOLS_INSTALL_DIR\""])
            AS_VAR_IF([Py_DEBUG],
                      [true],
                      [AS_VAR_APPEND([REGEN_JIT_COMMAND], [" --debug"])],
@@ -3766,11 +3811,6 @@ AC_MSG_RESULT([$perf_trampoline])
 AS_VAR_IF([perf_trampoline], [yes], [
   AC_DEFINE([PY_HAVE_PERF_TRAMPOLINE], [1], [Define to 1 if you have the perf trampoline.])
   PERF_TRAMPOLINE_OBJ=Python/asm_trampoline.o
-
-  dnl perf needs frame pointers for unwinding, include compiler option in debug builds
-  AS_VAR_IF([Py_DEBUG], [true], [
-    AS_VAR_APPEND([BASECFLAGS], [" -fno-omit-frame-pointer -mno-omit-leaf-frame-pointer"])
-  ])
 ])
 AC_SUBST([PERF_TRAMPOLINE_OBJ])
 
@@ -8362,33 +8402,52 @@ PY_STDLIB_MOD([xxlimited_35], [test "$TEST_MODULES" = yes], [test "$ac_cv_func_d
 
 # Determine JIT stencils header files based on target platform
 JIT_STENCILS_H=""
-AS_VAR_IF([enable_experimental_jit], [no],
+JIT_SHIM_O=""
+JIT_SHIM_BUILD_O=""
+AS_VAR_IF([jit_flags],
   [],
-  [case "$host" in
-    aarch64-apple-darwin*)
-      JIT_STENCILS_H="jit_stencils-aarch64-apple-darwin.h"
-      ;;
-    x86_64-apple-darwin*)
-      JIT_STENCILS_H="jit_stencils-x86_64-apple-darwin.h"
-      ;;
-    aarch64-pc-windows-msvc)
-      JIT_STENCILS_H="jit_stencils-aarch64-pc-windows-msvc.h"
-      ;;
-    i686-pc-windows-msvc)
-      JIT_STENCILS_H="jit_stencils-i686-pc-windows-msvc.h"
-      ;;
-    x86_64-pc-windows-msvc)
-      JIT_STENCILS_H="jit_stencils-x86_64-pc-windows-msvc.h"
-      ;;
-    aarch64-*-linux-gnu)
-      JIT_STENCILS_H="jit_stencils-aarch64-unknown-linux-gnu.h"
-      ;;
-    x86_64-*-linux-gnu)
-      JIT_STENCILS_H="jit_stencils-x86_64-unknown-linux-gnu.h"
-      ;;
-  esac])
+  [],
+  [if test "${enable_universalsdk}" && test "$UNIVERSAL_ARCHS" = "universal2"; then
+     JIT_STENCILS_H="jit_stencils-aarch64-apple-darwin.h jit_stencils-x86_64-apple-darwin.h"
+     JIT_SHIM_O="jit_shim-universal2-apple-darwin.o"
+     JIT_SHIM_BUILD_O="jit_shim-aarch64-apple-darwin.o jit_shim-x86_64-apple-darwin.o"
+   else
+     case "$host" in
+       aarch64-apple-darwin*)
+         JIT_STENCILS_H="jit_stencils-aarch64-apple-darwin.h"
+         JIT_SHIM_O="jit_shim-aarch64-apple-darwin.o"
+         ;;
+       x86_64-apple-darwin*)
+         JIT_STENCILS_H="jit_stencils-x86_64-apple-darwin.h"
+         JIT_SHIM_O="jit_shim-x86_64-apple-darwin.o"
+         ;;
+       aarch64-pc-windows-msvc)
+         JIT_STENCILS_H="jit_stencils-aarch64-pc-windows-msvc.h"
+         JIT_SHIM_O="jit_shim-aarch64-pc-windows-msvc.o"
+         ;;
+       i686-pc-windows-msvc)
+         JIT_STENCILS_H="jit_stencils-i686-pc-windows-msvc.h"
+         JIT_SHIM_O="jit_shim-i686-pc-windows-msvc.o"
+         ;;
+       x86_64-pc-windows-msvc)
+         JIT_STENCILS_H="jit_stencils-x86_64-pc-windows-msvc.h"
+         JIT_SHIM_O="jit_shim-x86_64-pc-windows-msvc.o"
+         ;;
+       aarch64-*-linux-gnu)
+         JIT_STENCILS_H="jit_stencils-aarch64-unknown-linux-gnu.h"
+         JIT_SHIM_O="jit_shim-aarch64-unknown-linux-gnu.o"
+         ;;
+       x86_64-*-linux-gnu)
+         JIT_STENCILS_H="jit_stencils-x86_64-unknown-linux-gnu.h"
+         JIT_SHIM_O="jit_shim-x86_64-unknown-linux-gnu.o"
+         ;;
+     esac
+     JIT_SHIM_BUILD_O="$JIT_SHIM_O"
+   fi])
 
 AC_SUBST([JIT_STENCILS_H])
+AC_SUBST([JIT_SHIM_O])
+AC_SUBST([JIT_SHIM_BUILD_O])
 
 # substitute multiline block, must come after last PY_STDLIB_MOD()
 AC_SUBST([MODULE_BLOCK])

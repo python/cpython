@@ -227,32 +227,32 @@ platform-dependent.
 +--------+--------------------------+--------------------+----------------+------------+
 | ``c``  | :c:expr:`char`           | bytes of length 1  | 1              |            |
 +--------+--------------------------+--------------------+----------------+------------+
-| ``b``  | :c:expr:`signed char`    | integer            | 1              | \(1), \(2) |
+| ``b``  | :c:expr:`signed char`    | int                | 1              | \(2)       |
 +--------+--------------------------+--------------------+----------------+------------+
-| ``B``  | :c:expr:`unsigned char`  | integer            | 1              | \(2)       |
+| ``B``  | :c:expr:`unsigned char`  | int                | 1              | \(2)       |
 +--------+--------------------------+--------------------+----------------+------------+
 | ``?``  | :c:expr:`_Bool`          | bool               | 1              | \(1)       |
 +--------+--------------------------+--------------------+----------------+------------+
-| ``h``  | :c:expr:`short`          | integer            | 2              | \(2)       |
+| ``h``  | :c:expr:`short`          | int                | 2              | \(2)       |
 +--------+--------------------------+--------------------+----------------+------------+
-| ``H``  | :c:expr:`unsigned short` | integer            | 2              | \(2)       |
+| ``H``  | :c:expr:`unsigned short` | int                | 2              | \(2)       |
 +--------+--------------------------+--------------------+----------------+------------+
-| ``i``  | :c:expr:`int`            | integer            | 4              | \(2)       |
+| ``i``  | :c:expr:`int`            | int                | 4              | \(2)       |
 +--------+--------------------------+--------------------+----------------+------------+
-| ``I``  | :c:expr:`unsigned int`   | integer            | 4              | \(2)       |
+| ``I``  | :c:expr:`unsigned int`   | int                | 4              | \(2)       |
 +--------+--------------------------+--------------------+----------------+------------+
-| ``l``  | :c:expr:`long`           | integer            | 4              | \(2)       |
+| ``l``  | :c:expr:`long`           | int                | 4              | \(2)       |
 +--------+--------------------------+--------------------+----------------+------------+
-| ``L``  | :c:expr:`unsigned long`  | integer            | 4              | \(2)       |
+| ``L``  | :c:expr:`unsigned long`  | int                | 4              | \(2)       |
 +--------+--------------------------+--------------------+----------------+------------+
-| ``q``  | :c:expr:`long long`      | integer            | 8              | \(2)       |
+| ``q``  | :c:expr:`long long`      | int                | 8              | \(2)       |
 +--------+--------------------------+--------------------+----------------+------------+
-| ``Q``  | :c:expr:`unsigned long   | integer            | 8              | \(2)       |
+| ``Q``  | :c:expr:`unsigned long   | int                | 8              | \(2)       |
 |        | long`                    |                    |                |            |
 +--------+--------------------------+--------------------+----------------+------------+
-| ``n``  | :c:type:`ssize_t`        | integer            |                | \(3)       |
+| ``n``  | :c:type:`ssize_t`        | int                |                | \(2), \(3) |
 +--------+--------------------------+--------------------+----------------+------------+
-| ``N``  | :c:type:`size_t`         | integer            |                | \(3)       |
+| ``N``  | :c:type:`size_t`         | int                |                | \(2), \(3) |
 +--------+--------------------------+--------------------+----------------+------------+
 | ``e``  | :c:expr:`_Float16`       | float              | 2              | \(4), \(6) |
 +--------+--------------------------+--------------------+----------------+------------+
@@ -268,7 +268,7 @@ platform-dependent.
 +--------+--------------------------+--------------------+----------------+------------+
 | ``p``  | :c:expr:`char[]`         | bytes              |                | \(8)       |
 +--------+--------------------------+--------------------+----------------+------------+
-| ``P``  | :c:expr:`void \*`        | integer            |                | \(5)       |
+| ``P``  | :c:expr:`void \*`        | int                |                | \(2), \(5) |
 +--------+--------------------------+--------------------+----------------+------------+
 
 .. versionchanged:: 3.3
@@ -342,27 +342,31 @@ Notes:
    The ``'p'`` format character encodes a "Pascal string", meaning a short
    variable-length string stored in a *fixed number of bytes*, given by the count.
    The first byte stored is the length of the string, or 255, whichever is
-   smaller.  The bytes of the string follow.  If the string passed in to
+   smaller.  The bytes of the string follow.  If the byte string passed in to
    :func:`pack` is too long (longer than the count minus 1), only the leading
-   ``count-1`` bytes of the string are stored.  If the string is shorter than
+   ``count-1`` bytes of the string are stored.  If the byte string is shorter than
    ``count-1``, it is padded with null bytes so that exactly count bytes in all
    are used.  Note that for :func:`unpack`, the ``'p'`` format character consumes
-   ``count`` bytes, but that the string returned can never contain more than 255
+   ``count`` bytes, but that the :class:`!bytes` object returned can never contain more than 255
    bytes.
+   When packing, arguments of types :class:`bytes` and :class:`bytearray`
+   are accepted.
 
 (9)
    For the ``'s'`` format character, the count is interpreted as the length of the
-   bytes, not a repeat count like for the other format characters; for example,
+   byte string, not a repeat count like for the other format characters; for example,
    ``'10s'`` means a single 10-byte string mapping to or from a single
    Python byte string, while ``'10c'`` means 10
    separate one byte character elements (e.g., ``cccccccccc``) mapping
    to or from ten different Python byte objects. (See :ref:`struct-examples`
    for a concrete demonstration of the difference.)
-   If a count is not given, it defaults to 1.  For packing, the string is
+   If a count is not given, it defaults to 1.  For packing, the byte string is
    truncated or padded with null bytes as appropriate to make it fit. For
-   unpacking, the resulting bytes object always has exactly the specified number
-   of bytes.  As a special case, ``'0s'`` means a single, empty string (while
+   unpacking, the resulting :class:`!bytes` object always has exactly the specified number
+   of bytes.  As a special case, ``'0s'`` means a single, empty byte string (while
    ``'0c'`` means 0 characters).
+   When packing, arguments of types :class:`bytes` and :class:`bytearray`
+   are accepted.
 
 (10)
    For the ``'F'`` and ``'D'`` format characters, the packed representation uses
