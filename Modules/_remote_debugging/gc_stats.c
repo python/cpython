@@ -38,7 +38,6 @@ read_gc_stats(struct gc_stats *stats, int64_t iid, PyObject *result,
             size = GC_OLD_STATS_SIZE;
         }
         for (int i = 0; i < size; i++, items++) {
-            struct gc_generation_stats *stats_item = items;
             item = PyStructSequence_New(gc_stats_info_type);
             if (item == NULL) {
                 goto error;
@@ -48,14 +47,14 @@ read_gc_stats(struct gc_stats *stats, int64_t iid, PyObject *result,
             SET_FIELD(PyLong_FromUnsignedLong, gen);
             SET_FIELD(PyLong_FromInt64, iid);
 
-            SET_FIELD(PyLong_FromInt64, stats_item->ts_start);
-            SET_FIELD(PyLong_FromInt64, stats_item->ts_stop);
-            SET_FIELD(PyLong_FromSsize_t, stats_item->collections);
-            SET_FIELD(PyLong_FromSsize_t, stats_item->collected);
-            SET_FIELD(PyLong_FromSsize_t, stats_item->uncollectable);
-            SET_FIELD(PyLong_FromSsize_t, stats_item->candidates);
+            SET_FIELD(PyLong_FromInt64, items->ts_start);
+            SET_FIELD(PyLong_FromInt64, items->ts_stop);
+            SET_FIELD(PyLong_FromSsize_t, items->collections);
+            SET_FIELD(PyLong_FromSsize_t, items->collected);
+            SET_FIELD(PyLong_FromSsize_t, items->uncollectable);
+            SET_FIELD(PyLong_FromSsize_t, items->candidates);
 
-            SET_FIELD(PyFloat_FromDouble, stats_item->duration);
+            SET_FIELD(PyFloat_FromDouble, items->duration);
 
             int rc = PyList_Append(result, item);
             Py_CLEAR(item);
@@ -99,23 +98,13 @@ get_gc_stats_from_interpreter_state(RuntimeOffsets *offsets,
     }
     if (gc_stats_addr == 0) {
         PyErr_SetString(PyExc_RuntimeError, "GC state address is NULL");
-        set_exception_cause(offsets, PyExc_RuntimeError, "GC state address is NULL");
         return -1;
     }
 
     struct gc_stats stats;
-    uint64_t gc_stats_size = offsets->debug_offsets.gc.generation_stats_size;
-    if (gc_stats_size != sizeof(stats)) {
-        PyErr_Format(PyExc_RuntimeError,
-                     "Remote gc_stats size (%llu) does not match "
-                     "local size (%zu)",
-                     (unsigned long long)gc_stats_size, sizeof(stats));
-        set_exception_cause(offsets, PyExc_RuntimeError, "Remote gc_stats size mismatch");
-        return -1;
-    }
     if (_Py_RemoteDebug_ReadRemoteMemory(&offsets->handle,
                                          gc_stats_addr,
-                                         gc_stats_size,
+                                         sizeof(stats),
                                          &stats) < 0) {
         set_exception_cause(offsets, PyExc_RuntimeError, "Failed to read GC state");
         return -1;
@@ -134,6 +123,17 @@ PyObject *
 get_gc_stats(RuntimeOffsets *offsets, bool all_interpreters,
              PyTypeObject *gc_stats_info_type)
 {
+    uint64_t gc_stats_size = offsets->debug_offsets.gc.generation_stats_size;
+    if (gc_stats_size != sizeof(struct gc_stats)) {
+        PyErr_Format(PyExc_RuntimeError,
+                     "Remote gc_stats size (%llu) does not match "
+                     "local size (%zu)",
+                     (unsigned long long)gc_stats_size,
+                     sizeof(struct gc_stats));
+        set_exception_cause(offsets, PyExc_RuntimeError, "Remote gc_stats size mismatch");
+        return NULL;
+    }
+
     PyObject *result = PyList_New(0);
     if (result == NULL) {
         return NULL;

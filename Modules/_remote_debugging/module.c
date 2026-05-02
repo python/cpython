@@ -1126,6 +1126,15 @@ static PyType_Spec RemoteUnwinder_spec = {
  * GCMONITOR CLASS IMPLEMENTATION
  * ============================================================================ */
 
+static void
+cleanup_runtime_offsets(RuntimeOffsets *offsets)
+{
+    if (offsets->handle.pid != 0) {
+        _Py_RemoteDebug_ClearCache(&offsets->handle);
+        _Py_RemoteDebug_CleanupProcHandle(&offsets->handle);
+    }
+}
+
 static int
 init_runtime_offsets(RuntimeOffsets *offsets, int pid, int debug)
 {
@@ -1153,8 +1162,7 @@ init_runtime_offsets(RuntimeOffsets *offsets, int pid, int debug)
     return 0;
 
 error:
-    _Py_RemoteDebug_ClearCache(&offsets->handle);
-    _Py_RemoteDebug_CleanupProcHandle(&offsets->handle);
+    cleanup_runtime_offsets(offsets);
     return -1;
 }
 
@@ -1244,10 +1252,7 @@ GCMonitor_dealloc(PyObject *op)
     GCMonitorObject *self = GCMonitor_CAST(op);
     PyTypeObject *tp = Py_TYPE(self);
 
-    if (self->offsets.handle.pid != 0) {
-        _Py_RemoteDebug_ClearCache(&self->offsets.handle);
-        _Py_RemoteDebug_CleanupProcHandle(&self->offsets.handle);
-    }
+    cleanup_runtime_offsets(&self->offsets);
     PyObject_Del(self);
     Py_DECREF(tp);
 }
@@ -2066,8 +2071,7 @@ _remote_debugging_get_gc_stats_impl(PyObject *module, int pid,
     PyObject *result = get_gc_stats(&offsets, all_interpreters,
                                     st->GCStatsInfo_Type);
 
-    _Py_RemoteDebug_ClearCache(&offsets.handle);
-    _Py_RemoteDebug_CleanupProcHandle(&offsets.handle);
+    cleanup_runtime_offsets(&offsets);
     return result;
 }
 

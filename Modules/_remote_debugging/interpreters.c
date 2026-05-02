@@ -12,10 +12,9 @@ iterate_interpreters(
     interpreter_processor_func processor,
     void *context
 ) {
-    uintptr_t interpreter_state_list_head =
-        (uintptr_t)offsets->debug_offsets.runtime_state.interpreters_head;
-    uintptr_t interpreter_state_offset =
-        offsets->runtime_start_address + interpreter_state_list_head;
+    uintptr_t interpreters_head_addr =
+        offsets->runtime_start_address
+        + (uintptr_t)offsets->debug_offsets.runtime_state.interpreters_head;
     uintptr_t interpreter_id_offset =
         (uintptr_t)offsets->debug_offsets.interpreter_state.id;
     uintptr_t interpreter_next_offset =
@@ -23,7 +22,7 @@ iterate_interpreters(
 
     uintptr_t interpreter_state_addr;
     if (_Py_RemoteDebug_ReadRemoteMemory(&offsets->handle,
-                                         interpreter_state_offset,
+                                         interpreters_head_addr,
                                          sizeof(void*),
                                          &interpreter_state_addr) < 0) {
         set_exception_cause(offsets, PyExc_RuntimeError, "Failed to read interpreter state address");
@@ -32,7 +31,6 @@ iterate_interpreters(
 
     if (interpreter_state_addr == 0) {
         PyErr_SetString(PyExc_RuntimeError, "No interpreter state found");
-        set_exception_cause(offsets, PyExc_RuntimeError, "No interpreter state found");
         return -1;
     }
 
