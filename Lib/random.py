@@ -838,12 +838,13 @@ class Random(_random.Random):
             while True:
                 try:
                     y += _floor(_log2(random()) / c) + 1
+                # The random() function can return 0.0, which causes log2(0.0) to raise a ValueError.
+                # See https://github.com/python/cpython/issue/149221
                 except ValueError:
-                # fix random() rethrn 0.0 option
                     continue
-                       if y > n:
-                           return x
-                        x += 1
+                if y > n:
+                    return x
+                x += 1
 
         # BTRS: Transformed rejection with squeeze method by Wolfgang Hörmann
         # https://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.47.8407&rep=rep1&type=pdf
