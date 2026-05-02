@@ -836,9 +836,9 @@ class Random(_random.Random):
             if not c:
                 return x
             while True:
-                    y += _floor(_log2(random()) / c) + 1
-                    if y > n: 
-                        return x
+                y += _floor(_log2(random()) / c) + 1
+                if y > n: 
+                    return x
                     x += 1
 
         # BTRS: Transformed rejection with squeeze method by Wolfgang Hörmann
