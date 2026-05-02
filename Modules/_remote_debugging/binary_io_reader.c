@@ -980,11 +980,11 @@ binary_reader_replay(BinaryReader *reader, PyObject *collector, PyObject *progre
         /* Use memcpy to avoid strict aliasing violations, then byte-swap if needed */
         uint64_t thread_id_raw;
         uint32_t interpreter_id_raw;
-        memcpy(&thread_id_raw, &reader->sample_data[offset], sizeof(thread_id_raw));
-        offset += 8;
+        memcpy(&thread_id_raw, &reader->sample_data[offset], SMP_SIZE_THREAD_ID);
+        offset += SMP_SIZE_THREAD_ID;
 
-        memcpy(&interpreter_id_raw, &reader->sample_data[offset], sizeof(interpreter_id_raw));
-        offset += 4;
+        memcpy(&interpreter_id_raw, &reader->sample_data[offset], SMP_SIZE_INTERPRETER_ID);
+        offset += SMP_SIZE_INTERPRETER_ID;
 
         uint64_t thread_id = SWAP64_IF(reader->needs_swap, thread_id_raw);
         uint32_t interpreter_id = SWAP32_IF(reader->needs_swap, interpreter_id_raw);

@@ -65,7 +65,17 @@ extern "C" {
 static_assert(FILE_HEADER_SIZE <= FILE_HEADER_PLACEHOLDER_SIZE,
               "FILE_HEADER_SIZE exceeds FILE_HEADER_PLACEHOLDER_SIZE");
 
-#define SAMPLE_HEADER_FIXED_SIZE (sizeof(uint64_t) + sizeof(uint32_t) + 1)
+/* Sample header field offsets and sizes */
+#define SMP_OFF_THREAD_ID        0
+#define SMP_SIZE_THREAD_ID       sizeof(uint64_t)
+#define SMP_OFF_INTERPRETER_ID   (SMP_OFF_THREAD_ID + SMP_SIZE_THREAD_ID)
+#define SMP_SIZE_INTERPRETER_ID  sizeof(uint32_t)
+#define SMP_OFF_ENCODING         (SMP_OFF_INTERPRETER_ID + SMP_SIZE_INTERPRETER_ID)
+#define SMP_SIZE_ENCODING        sizeof(uint8_t)
+#define SAMPLE_HEADER_FIXED_SIZE (SMP_OFF_ENCODING + SMP_SIZE_ENCODING)
+
+static_assert(SAMPLE_HEADER_FIXED_SIZE == 13,
+             "SAMPLE_HEADER_FIXED_SIZE must remain 13");
 
 /* Footer field offsets and sizes */
 #define FTR_OFF_STRINGS       0

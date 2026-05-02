@@ -585,9 +585,9 @@ static inline int
 write_sample_header(BinaryWriter *writer, ThreadEntry *entry, uint8_t encoding)
 {
     uint8_t header[SAMPLE_HEADER_FIXED_SIZE];
-    memcpy(header, &entry->thread_id, 8);
-    memcpy(header + 8, &entry->interpreter_id, 4);
-    header[12] = encoding;
+    memcpy(header + SMP_OFF_THREAD_ID, &entry->thread_id, SMP_SIZE_THREAD_ID);
+    memcpy(header + SMP_OFF_INTERPRETER_ID, &entry->interpreter_id, SMP_SIZE_INTERPRETER_ID);
+    header[SMP_OFF_ENCODING] = encoding;
     return writer_write_bytes(writer, header, SAMPLE_HEADER_FIXED_SIZE);
 }
 
@@ -646,9 +646,9 @@ write_sample_with_encoding(BinaryWriter *writer, ThreadEntry *entry,
 {
     /* Header: thread_id(8) + interpreter_id(4) + encoding(1) + delta(varint) + status(1) */
     uint8_t header_buf[SAMPLE_HEADER_MAX_SIZE];
-    memcpy(header_buf, &entry->thread_id, 8);
-    memcpy(header_buf + 8, &entry->interpreter_id, 4);
-    header_buf[12] = (uint8_t)encoding_type;
+    memcpy(header_buf + SMP_OFF_THREAD_ID, &entry->thread_id, SMP_SIZE_THREAD_ID);
+    memcpy(header_buf + SMP_OFF_INTERPRETER_ID, &entry->interpreter_id, SMP_SIZE_INTERPRETER_ID);
+    header_buf[SMP_OFF_ENCODING] = (uint8_t)encoding_type;
     size_t varint_len = encode_varint_u64(
         header_buf + SAMPLE_HEADER_FIXED_SIZE,
         timestamp_delta);
