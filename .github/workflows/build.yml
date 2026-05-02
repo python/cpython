@@ -43,6 +43,10 @@ jobs:
     #
     uses: ./.github/workflows/reusable-context.yml
 
+  lint:
+    name: lint
+    uses: ./.github/workflows/reusable-lint.yml
+
   check-docs:
     name: Docs
     needs: build-context
@@ -655,6 +659,7 @@ jobs:
     timeout-minutes: 5
     needs:
     - build-context  # Transitive dependency, needed to access `run-tests` value
+    - lint
     - check-docs
     - check-autoconf-regen
     - check-generated-files
