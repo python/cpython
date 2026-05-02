@@ -839,7 +839,7 @@ class Random(_random.Random):
                 y += _floor(_log2(random()) / c) + 1
                 if y > n: 
                     return x
-                    x += 1
+                x += 1
 
         # BTRS: Transformed rejection with squeeze method by Wolfgang Hörmann
         # https://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.47.8407&rep=rep1&type=pdf
