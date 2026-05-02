@@ -343,7 +343,7 @@ def main(args=None, *, _wrap_timer=None):
                 print(
                     f"{number} loop{s} "
                     f"{theme.punctuation}-> "
-                    f"{theme.timing}{time_taken:.{precision}g} secs{reset}"
+                    f"{theme.timing}{time_taken:.{precision}g} sec{reset}"
                 )
 
         try:

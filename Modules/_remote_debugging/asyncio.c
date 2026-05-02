@@ -6,6 +6,7 @@
  ******************************************************************************/
 
 #include "_remote_debugging.h"
+#include "debug_offsets_validation.h"
 
 /* ============================================================================
  * ASYNCIO DEBUG ADDRESS FUNCTIONS
@@ -71,8 +72,13 @@ read_async_debug(RemoteUnwinderObject *unwinder)
     int result = _Py_RemoteDebug_PagedReadRemoteMemory(&unwinder->handle, async_debug_addr, size, &unwinder->async_debug_offsets);
     if (result < 0) {
         set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to read AsyncioDebug offsets");
+        return result;
     }
-    return result;
+    if (_PyRemoteDebug_ValidateAsyncDebugOffsets(&unwinder->async_debug_offsets) < 0) {
+        set_exception_cause(unwinder, PyExc_RuntimeError, "Invalid AsyncioDebug offsets");
+        return PY_REMOTE_DEBUG_INVALID_ASYNC_DEBUG_OFFSETS;
+    }
+    return 0;
 }
 
 int
@@ -85,7 +91,11 @@ ensure_async_debug_offsets(RemoteUnwinderObject *unwinder)
 
     // Try to load async debug offsets (the target process may have
     // loaded asyncio since we last checked)
-    if (read_async_debug(unwinder) < 0) {
+    int result = read_async_debug(unwinder);
+    if (result == PY_REMOTE_DEBUG_INVALID_ASYNC_DEBUG_OFFSETS) {
+        return -1;
+    }
+    if (result < 0) {
         PyErr_Clear();
         PyErr_SetString(PyExc_RuntimeError, "AsyncioDebug section not available");
         set_exception_cause(unwinder, PyExc_RuntimeError,

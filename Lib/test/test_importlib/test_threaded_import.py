@@ -324,6 +324,143 @@ raise RuntimeError("Intentional import failure")
             # Neither thread should have errors about stale modules
             self.assertEqual(errors, [], f"Race condition detected: {errors}")
 
+    def test_hierarchical_import_deadlock(self):
+        # Regression test for bpo-38884 / gh-83065
+        # Tests that concurrent imports at different hierarchy levels
+        # don't deadlock when parent imports child in __init__.py
+
+        # Create package structure:
+        # package/__init__.py: from package import subpackage
+        # package/subpackage/__init__.py: from package.subpackage.module import *
+        # package/subpackage/module.py: class SomeClass: pass
+
+        pkg_dir = os.path.join(TESTFN, 'hier_deadlock_pkg')
+        os.makedirs(pkg_dir)
+        self.addCleanup(shutil.rmtree, TESTFN)
+
+        subpkg_dir = os.path.join(pkg_dir, 'subpackage')
+        os.makedirs(subpkg_dir)
+
+        with open(os.path.join(pkg_dir, "__init__.py"), "w") as f:
+            f.write("from hier_deadlock_pkg import subpackage\n")
+
+        with open(os.path.join(subpkg_dir, "__init__.py"), "w") as f:
+            f.write("from hier_deadlock_pkg.subpackage.module import *\n")
+
+        with open(os.path.join(subpkg_dir, "module.py"), "w") as f:
+            f.write("class SomeClass:\n    pass\n")
+
+        sys.path.insert(0, TESTFN)
+        self.addCleanup(sys.path.remove, TESTFN)
+        self.addCleanup(forget, 'hier_deadlock_pkg')
+        self.addCleanup(forget, 'hier_deadlock_pkg.subpackage')
+        self.addCleanup(forget, 'hier_deadlock_pkg.subpackage.module')
+
+        importlib.invalidate_caches()
+
+        errors = []
+        results = []
+        barrier = threading.Barrier(2)
+
+        def t1():
+            barrier.wait()
+            try:
+                import hier_deadlock_pkg.subpackage
+                results.append('t1_success')
+            except Exception as e:
+                errors.append(('t1', type(e).__name__, str(e)))
+
+        def t2():
+            barrier.wait()
+            try:
+                import hier_deadlock_pkg.subpackage.module
+                results.append('t2_success')
+            except Exception as e:
+                errors.append(('t2', type(e).__name__, str(e)))
+
+        # Run multiple times to increase chance of hitting race condition
+        for i in range(10):
+            for mod in ['hier_deadlock_pkg', 'hier_deadlock_pkg.subpackage',
+                       'hier_deadlock_pkg.subpackage.module']:
+                sys.modules.pop(mod, None)
+
+            errors.clear()
+            results.clear()
+            barrier.reset()
+
+            thread1 = threading.Thread(target=t1)
+            thread2 = threading.Thread(target=t2)
+
+            thread1.start()
+            thread2.start()
+
+            thread1.join(timeout=5)
+            thread2.join(timeout=5)
+
+            if thread1.is_alive() or thread2.is_alive():
+                self.fail(f"Threads deadlocked on iteration {i}")
+
+            self.assertEqual(
+                errors, [],
+                f"Import(s) failed on iteration {i}: {errors}")
+            self.assertEqual(
+                sorted(results), ['t1_success', 't2_success'],
+                f"Not all imports succeeded on iteration {i}: {results}")
+
+    def test_cross_package_circular_import(self):
+        # Two packages whose __init__.py each import a submodule of the
+        # other. Concurrent imports of submodules of each must not raise
+        # _DeadlockError; the import system accepts a partially-initialised
+        # parent in this case (see _lock_unlock_module).
+        os.makedirs(os.path.join(TESTFN, "circ_a"))
+        os.makedirs(os.path.join(TESTFN, "circ_b"))
+        self.addCleanup(shutil.rmtree, TESTFN)
+        with open(os.path.join(TESTFN, "circ_a", "__init__.py"), "w") as f:
+            f.write("import time; time.sleep(0.03)\nimport circ_b.other\n")
+        with open(os.path.join(TESTFN, "circ_b", "__init__.py"), "w") as f:
+            f.write("import time; time.sleep(0.03)\nimport circ_a.other\n")
+        for pkg in ("circ_a", "circ_b"):
+            for mod in ("sub.py", "other.py"):
+                with open(os.path.join(TESTFN, pkg, mod), "w") as f:
+                    f.write("X = 1\n")
+
+        sys.path.insert(0, TESTFN)
+        self.addCleanup(sys.path.remove, TESTFN)
+        for mod in ("circ_a", "circ_a.sub", "circ_a.other",
+                    "circ_b", "circ_b.sub", "circ_b.other"):
+            self.addCleanup(forget, mod)
+        importlib.invalidate_caches()
+
+        errors = []
+        barrier = threading.Barrier(2)
+
+        def do_import(name):
+            barrier.wait()
+            try:
+                importlib.import_module(name)
+            except Exception as e:
+                errors.append((name, type(e).__name__, str(e)))
+
+        for i in range(10):
+            for mod in ("circ_a", "circ_a.sub", "circ_a.other",
+                        "circ_b", "circ_b.sub", "circ_b.other"):
+                sys.modules.pop(mod, None)
+            errors.clear()
+            barrier.reset()
+
+            thread1 = threading.Thread(target=do_import, args=("circ_a.sub",))
+            thread2 = threading.Thread(target=do_import, args=("circ_b.sub",))
+            thread1.start()
+            thread2.start()
+            thread1.join(timeout=5)
+            thread2.join(timeout=5)
+
+            if thread1.is_alive() or thread2.is_alive():
+                self.fail(f"Threads deadlocked on iteration {i}")
+            self.assertEqual(
+                errors, [],
+                f"Import(s) failed on iteration {i}: {errors}")
+
 
 def setUpModule():
     thread_info = threading_helper.threading_setup()

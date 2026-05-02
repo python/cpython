@@ -5878,7 +5878,13 @@ PyType_GetModuleByToken_DuringGC(PyTypeObject *type, const void *token)
 PyObject *
 PyType_GetModuleByToken(PyTypeObject *type, const void *token)
 {
-    PyObject *mod = PyType_GetModuleByToken_DuringGC(type, token);
+    return Py_XNewRef(PyType_GetModuleByDef(type, (PyModuleDef *)token));
+}
+
+PyObject *
+PyType_GetModuleByDef(PyTypeObject *type, PyModuleDef *def)
+{
+    PyObject *mod = PyType_GetModuleByToken_DuringGC(type, def);
     if (!mod) {
         PyErr_Format(
             PyExc_TypeError,
@@ -5886,14 +5892,6 @@ PyType_GetModuleByToken(PyTypeObject *type, const void *token)
             type->tp_name);
         return NULL;
     }
-    return Py_NewRef(mod);
-}
-
-PyObject *
-PyType_GetModuleByDef(PyTypeObject *type, PyModuleDef *def)
-{
-    PyObject *mod = PyType_GetModuleByToken(type, def);
-    Py_XDECREF(mod);  // return borrowed ref
     return mod;
 }
 
@@ -12446,8 +12444,8 @@ super_repr(PyObject *self)
 on the super object itself.
 
 May return NULL with or without an exception set, like PyDict_GetItemWithError. */
-static PyObject *
-_super_lookup_descr(PyTypeObject *su_type, PyTypeObject *su_obj_type, PyObject *name)
+PyObject *
+_PySuper_LookupDescr(PyTypeObject *su_type, PyTypeObject *su_obj_type, PyObject *name)
 {
     PyObject *mro, *res;
     Py_ssize_t i, n;
@@ -12506,7 +12504,7 @@ do_super_lookup(superobject *su, PyTypeObject *su_type, PyObject *su_obj,
         goto skip;
     }
 
-    res = _super_lookup_descr(su_type, su_obj_type, name);
+    res = _PySuper_LookupDescr(su_type, su_obj_type, name);
     if (res != NULL) {
         if (method && _PyType_HasFeature(Py_TYPE(res), Py_TPFLAGS_METHOD_DESCRIPTOR)) {
             *method = 1;

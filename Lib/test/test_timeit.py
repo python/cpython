@@ -309,7 +309,7 @@ class TestTimeit(unittest.TestCase):
     def test_main_verbose(self):
         s = self.run_main(switches=['-v'])
         self.assertEqual(s, dedent("""\
-                1 loop -> 1 secs
+                1 loop -> 1 sec
 
                 raw times: 1 sec, 1 sec, 1 sec, 1 sec, 1 sec
 
@@ -319,19 +319,19 @@ class TestTimeit(unittest.TestCase):
     def test_main_very_verbose(self):
         s = self.run_main(seconds_per_increment=0.000_030, switches=['-vv'])
         self.assertEqual(s, dedent("""\
-                1 loop -> 3e-05 secs
-                2 loops -> 6e-05 secs
-                5 loops -> 0.00015 secs
-                10 loops -> 0.0003 secs
-                20 loops -> 0.0006 secs
-                50 loops -> 0.0015 secs
-                100 loops -> 0.003 secs
-                200 loops -> 0.006 secs
-                500 loops -> 0.015 secs
-                1000 loops -> 0.03 secs
-                2000 loops -> 0.06 secs
-                5000 loops -> 0.15 secs
-                10000 loops -> 0.3 secs
+                1 loop -> 3e-05 sec
+                2 loops -> 6e-05 sec
+                5 loops -> 0.00015 sec
+                10 loops -> 0.0003 sec
+                20 loops -> 0.0006 sec
+                50 loops -> 0.0015 sec
+                100 loops -> 0.003 sec
+                200 loops -> 0.006 sec
+                500 loops -> 0.015 sec
+                1000 loops -> 0.03 sec
+                2000 loops -> 0.06 sec
+                5000 loops -> 0.15 sec
+                10000 loops -> 0.3 sec
 
                 raw times: 300 msec, 300 msec, 300 msec, 300 msec, 300 msec
 
@@ -429,7 +429,7 @@ class TestTimeitColor(unittest.TestCase):
         s = self.run_main(switches=["-v"])
         self.assertEqual(
             s,
-            f"1 loop {t.punctuation}-> {t.timing}1 secs{t.reset}\n\n"
+            f"1 loop {t.punctuation}-> {t.timing}1 sec{t.reset}\n\n"
             "raw times: "
             f"{t.timing}1 sec{t.punctuation}, "
             f"{t.timing}1 sec{t.punctuation}, "

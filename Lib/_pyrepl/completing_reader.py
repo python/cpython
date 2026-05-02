@@ -21,17 +21,18 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from typing import TYPE_CHECKING
 
 import re
 from . import commands, console, reader
+from .render import RenderLine, ScreenOverlay
 from .reader import Reader
 
 
 # types
 Command = commands.Command
-TYPE_CHECKING = False
 if TYPE_CHECKING:
-    from .types import KeySpec, CommandName, CompletionAction
+    from .types import CommandName, CompletionAction, Keymap, KeySpec
 
 
 def prefix(wordlist: list[str], j: int = 0) -> str:
@@ -175,6 +176,8 @@ class complete(commands.Command):
                 r.cmpltn_action = None  # consumed
                 if msg:
                     r.msg = msg
+                    r.cmpltn_message_visible = True
+                    r.invalidate_message()
             else:  # other input since last tab: cancel action
                 r.cmpltn_action = None
 
@@ -192,7 +195,8 @@ class complete(commands.Command):
             completion = stripcolor(completions[0])
             if completions_unchangable and len(completion) == len(stem):
                 r.msg = "[ sole completion ]"
-                r.dirty = True
+                r.cmpltn_message_visible = True
+                r.invalidate_message()
             r.insert(completion[len(stem):])
         else:
             clean_completions = [stripcolor(word) for word in completions]
@@ -201,19 +205,23 @@ class complete(commands.Command):
                 r.insert(p)
             if last_is_completer:
                 r.cmpltn_menu_visible = True
-                r.cmpltn_message_visible = False
                 r.cmpltn_menu, r.cmpltn_menu_end = build_menu(
                     r.console, completions, r.cmpltn_menu_end,
                     r.use_brackets, r.sort_in_column)
-                r.dirty = True
+                if r.msg:
+                    r.msg = ""
+                    r.cmpltn_message_visible = False
+                    r.invalidate_message()
+                r.invalidate_overlay()
             elif not r.cmpltn_menu_visible:
-                r.cmpltn_message_visible = True
                 if stem + p in clean_completions:
                     r.msg = "[ complete but not unique ]"
-                    r.dirty = True
+                    r.cmpltn_message_visible = True
+                    r.invalidate_message()
                 else:
                     r.msg = "[ not unique ]"
-                    r.dirty = True
+                    r.cmpltn_message_visible = True
+                    r.invalidate_message()
 
         if r.cmpltn_action:
             if r.msg and r.cmpltn_message_visible:
@@ -223,7 +231,7 @@ class complete(commands.Command):
             else:
                 r.msg = r.cmpltn_action[0]
                 r.cmpltn_message_visible = True
-                r.dirty = True
+                r.invalidate_message()
 
 
 class self_insert(commands.self_insert):
@@ -243,6 +251,7 @@ class self_insert(commands.self_insert):
                     r.cmpltn_menu, r.cmpltn_menu_end = build_menu(
                         r.console, completions, 0,
                         r.use_brackets, r.sort_in_column)
+                    r.invalidate_overlay()
                 else:
                     r.cmpltn_reset()
 
@@ -272,7 +281,7 @@ class CompletingReader(Reader):
             self.commands[c.__name__] = c
             self.commands[c.__name__.replace('_', '-')] = c
 
-    def collect_keymap(self) -> tuple[tuple[KeySpec, CommandName], ...]:
+    def collect_keymap(self) -> Keymap:
         return super().collect_keymap() + (
             (r'\t', 'complete'),)
 
@@ -281,25 +290,24 @@ class CompletingReader(Reader):
         if not isinstance(cmd, (complete, self_insert)):
             self.cmpltn_reset()
 
-    def calc_screen(self) -> list[str]:
-        screen = super().calc_screen()
-        if self.cmpltn_menu_visible:
-            # We display the completions menu below the current prompt
-            ly = self.lxy[1] + 1
-            screen[ly:ly] = self.cmpltn_menu
-            # If we're not in the middle of multiline edit, don't append to screeninfo
-            # since that screws up the position calculation in pos2xy function.
-            # This is a hack to prevent the cursor jumping
-            # into the completions menu when pressing left or down arrow.
-            if self.pos != len(self.buffer):
-                self.screeninfo[ly:ly] = [(0, [])]*len(self.cmpltn_menu)
-        return screen
+    def get_screen_overlays(self) -> tuple[ScreenOverlay, ...]:
+        if not self.cmpltn_menu_visible:
+            return ()
+        return (
+            ScreenOverlay(
+                self.lxy[1] + 1,
+                tuple(RenderLine.from_rendered_text(line) for line in self.cmpltn_menu),
+                insert=True,
+            ),
+        )
 
     def finish(self) -> None:
         super().finish()
         self.cmpltn_reset()
 
     def cmpltn_reset(self) -> None:
+        if getattr(self, "cmpltn_menu_visible", False):
+            self.invalidate_overlay()
         self.cmpltn_menu = []
         self.cmpltn_menu_visible = False
         self.cmpltn_message_visible = False

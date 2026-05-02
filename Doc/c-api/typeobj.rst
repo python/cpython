@@ -1391,8 +1391,8 @@ and :c:data:`PyType_Type` effectively act as defaults.)
 
       .. versionchanged:: 3.9
 
-      Renamed to the current name, without the leading underscore.
-      The old provisional name is :term:`soft deprecated`.
+         Renamed to the current name, without the leading underscore.
+         The old provisional name is :term:`soft deprecated`.
 
       .. versionchanged:: 3.12
 
@@ -1501,10 +1501,12 @@ and :c:data:`PyType_Type` effectively act as defaults.)
 
    .. c:macro:: Py_TPFLAGS_HAVE_VERSION_TAG
 
-      This is a :term:`soft deprecated` macro that does nothing.
+      This macro does nothing.
       Historically, this would indicate that the
       :c:member:`~PyTypeObject.tp_version_tag` field was available and
       initialized.
+
+      .. soft-deprecated:: 3.13
 
 
    .. c:macro:: Py_TPFLAGS_INLINE_VALUES

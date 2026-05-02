@@ -23,7 +23,6 @@
  * ============================================================================ */
 
 /* Sample header sizes */
-#define SAMPLE_HEADER_FIXED_SIZE 13      /* thread_id(8) + interpreter_id(4) + encoding(1) */
 #define SAMPLE_HEADER_MAX_SIZE 26        /* fixed + max_varint(10) + status(1) + margin */
 #define MAX_VARINT_SIZE 10               /* Maximum bytes for a varint64 */
 #define MAX_VARINT_SIZE_U32 5            /* Maximum bytes for a varint32 */
@@ -653,10 +652,13 @@ write_sample_with_encoding(BinaryWriter *writer, ThreadEntry *entry,
     memcpy(header_buf, &entry->thread_id, 8);
     memcpy(header_buf + 8, &entry->interpreter_id, 4);
     header_buf[12] = (uint8_t)encoding_type;
-    size_t varint_len = encode_varint_u64(header_buf + 13, timestamp_delta);
-    header_buf[13 + varint_len] = status;
+    size_t varint_len = encode_varint_u64(
+        header_buf + SAMPLE_HEADER_FIXED_SIZE,
+        timestamp_delta);
+    header_buf[SAMPLE_HEADER_FIXED_SIZE + varint_len] = status;
 
-    if (writer_write_bytes(writer, header_buf, 14 + varint_len) < 0) {
+    if (writer_write_bytes(writer, header_buf,
+                           SAMPLE_HEADER_FIXED_SIZE + varint_len + 1) < 0) {
         return -1;
     }
 
