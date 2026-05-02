@@ -153,9 +153,9 @@ import importlib.machinery
 import itertools
 import linecache
 import os
-import re
+lazy import re
 import sys
-import tokenize
+lazy import tokenize
 import token
 import types
 import functools
@@ -163,9 +163,9 @@ import builtins
 from keyword import iskeyword
 from operator import attrgetter
 from collections import namedtuple, OrderedDict
-from weakref import ref as make_weakref
+from _weakref import ref as make_weakref
 
-# Create constants for the compiler flags in Include/code.h
+# Create constants for the compiler flags in Include/cpython/code.h
 # We try to get them from dis to avoid duplication
 mod_dict = globals()
 for k, v in dis.COMPILER_FLAG_NAMES.items():
@@ -416,7 +416,6 @@ def iscode(object):
         co_freevars         tuple of names of free variables
         co_posonlyargcount  number of positional only arguments
         co_kwonlyargcount   number of keyword only arguments (not including ** arg)
-        co_lnotab           encoded mapping of line numbers to bytecode indices
         co_name             name with which this code object was defined
         co_names            tuple of names other than arguments and function locals
         co_nlocals          number of local variables
@@ -1634,7 +1633,6 @@ def getframeinfo(frame, context=1):
 
 def getlineno(frame):
     """Get the line number from a frame object, allowing for optimization."""
-    # FrameType.f_lineno is now a descriptor that grovels co_lnotab
     return frame.f_lineno
 
 _FrameInfo = namedtuple('_FrameInfo', ('frame',) + Traceback._fields)

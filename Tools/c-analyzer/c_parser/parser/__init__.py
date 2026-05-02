@@ -219,7 +219,7 @@ def _iter_source(lines, *, maxtext=11_000, maxlines=200, showtext=False):
         msg = f'''
             too much text, try to increase MAX_SIZES[MAXTEXT] in cpython/_parser.py
             {filename} starting at line {lno_from} to {lno_to}
-            has code with length {len(text)} greater than {maxtext}:
+            has code with length {len(srcinfo.text)} greater than {maxtext}:
             {text}
         '''
         raise RuntimeError(textwrap.dedent(msg))

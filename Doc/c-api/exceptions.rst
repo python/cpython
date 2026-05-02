@@ -699,6 +699,8 @@ Signal Handling
 
    - Executing a pending :ref:`remote debugger <remote-debugging>` script.
 
+   - Raise the exception set by :c:func:`PyThreadState_SetAsyncExc`.
+
    If any handler raises an exception, immediately return ``-1`` with that
    exception set.
    Any remaining interruptions are left to be processed on the next
@@ -713,6 +715,9 @@ Signal Handling
    .. versionchanged:: 3.14
       This function may now execute a remote debugger script, if remote
       debugging is enabled.
+
+   .. versionchanged:: 3.15
+      The exception set by :c:func:`PyThreadState_SetAsyncExc` is now raised.
 
 
 .. c:function:: void PyErr_SetInterrupt()
@@ -813,13 +818,15 @@ Exception Classes
 
 .. c:macro:: PyException_HEAD
 
-   This is a :term:`soft deprecated` macro including the base fields for an
+   This is a macro including the base fields for an
    exception object.
 
    This was included in Python's C API by mistake and is not designed for use
    in extensions. For creating custom exception objects, use
    :c:func:`PyErr_NewException` or otherwise create a class inheriting from
    :c:data:`PyExc_BaseException`.
+
+   .. soft-deprecated:: 3.15
 
 
 Exception Objects

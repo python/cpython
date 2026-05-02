@@ -1,0 +1,2 @@
+Forbid :mod:`marshalling <marshal>` recursive code objects, :class:`slice`
+and :class:`frozendict` objects which cannot be correctly unmarshalled.

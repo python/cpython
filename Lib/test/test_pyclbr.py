@@ -252,7 +252,8 @@ class PyclbrTest(TestCase):
                 ignore=('Union', '_ModuleTarget', '_ScriptTarget', '_ZipTarget', 'curframe_locals',
                         '_InteractState', 'rlcompleter'),
             )
-        cm('pydoc', ignore=('input', 'output',))  # properties
+        cm('pydoc', ignore=('input', 'output',  # properties
+                            'getpager', 'plainpager', )) # aliases
 
         # Tests for modules inside packages
         cm('email.parser')

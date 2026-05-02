@@ -1,0 +1,3 @@
+The threading module added tooling to support concurrent iterator access:
+:class:`threading.serialize_iterator`, :func:`threading.synchronized_iterator`,
+and :func:`threading.concurrent_tee`.

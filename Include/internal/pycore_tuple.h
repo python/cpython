@@ -21,10 +21,17 @@ extern PyStatus _PyTuple_InitGlobalObjects(PyInterpreterState *);
 
 /* other API */
 
+PyAPI_FUNC(void) _PyStolenTuple_Free(PyObject *self);
+
 #define _PyTuple_ITEMS(op) _Py_RVALUE(_PyTuple_CAST(op)->ob_item)
 
 PyAPI_FUNC(PyObject *)_PyTuple_FromStackRefStealOnSuccess(const union _PyStackRef *, Py_ssize_t);
 PyAPI_FUNC(PyObject *)_PyTuple_FromArraySteal(PyObject *const *, Py_ssize_t);
+PyAPI_FUNC(PyObject *) _PyTuple_BinarySlice(PyObject *, PyObject *, PyObject *);
+PyAPI_FUNC(PyObject *) _PyTuple_Concat(PyObject *, PyObject *);
+
+PyAPI_FUNC(PyObject *) _PyTuple_FromPair(PyObject *, PyObject *);
+PyAPI_FUNC(PyObject *) _PyTuple_FromPairSteal(PyObject *, PyObject *);
 
 typedef struct {
     PyObject_HEAD

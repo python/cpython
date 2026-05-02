@@ -37,6 +37,7 @@ try:
         THREAD_STATUS_UNKNOWN,
         THREAD_STATUS_GIL_REQUESTED,
         THREAD_STATUS_HAS_EXCEPTION,
+        THREAD_STATUS_MAIN_THREAD,
     )
 except ImportError:
     # Fallback for tests or when module is not available
@@ -45,3 +46,4 @@ except ImportError:
     THREAD_STATUS_UNKNOWN = (1 << 2)
     THREAD_STATUS_GIL_REQUESTED = (1 << 3)
     THREAD_STATUS_HAS_EXCEPTION = (1 << 4)
+    THREAD_STATUS_MAIN_THREAD = (1 << 5)
