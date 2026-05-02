@@ -87,6 +87,7 @@ Summary -- Release highlights
   <whatsnew315-pybyteswriter>`
 * :pep:`803`: :ref:`Stable ABI for Free-Threaded Builds <whatsnew315-abi3t>`
 * :pep:`831`: :ref:`Frame pointers everywhere <whatsnew315-frame-pointers>`
+* :pep:`828`: :ref:`'yield from' in async generators <whatsnew315-async-yield-from>`
 * :ref:`The JIT compiler has been significantly upgraded <whatsnew315-jit>`
 * :ref:`Improved error messages <whatsnew315-improved-error-messages>`
 * :ref:`The official Windows 64-bit binaries now use the tail-calling interpreter
@@ -447,6 +448,54 @@ If not using a build tool -- or when writing such a tool -- you can select
 ``abi3t`` by setting the macro :c:macro:`!Py_TARGET_ABI3T` as discussed
 in :ref:`abi3-compiling`.
 
+.. _whatsnew315-async-yield-from:
+
+:pep:`828`: Supporting ``yield from`` in asynchronous generators
+----------------------------------------------------------------
+
+Use of the :keyword:`yield from <yield>` construct and the :keyword:`return`
+statement with a non-``None`` value is now allowed in an
+:term:`asynchronous generator function <asynchronous generator>`. For example,
+the following code would previously raise a :class:`SyntaxError`:
+
+.. code-block:: python
+
+   async def agenerator():
+      yield 1
+      yield from range(2, 5)  # Now allowed!
+      return 5  # Now allowed!
+
+Additionally, there is a new ``async yield from`` statement to delegate to an
+asynchronous generator:
+
+.. code-block:: python
+
+   async def sleepy_range(start, stop):
+      for number in range(start, stop):
+         await asyncio.sleep(1)
+         yield number
+
+   async def agenerator():
+      yield 1
+      async yield from sleepy_range(2, 5)
+      yield 5
+
+
+Similar to ``yield from``, ``async yield from`` may also be used as an expression,
+in which case the ``return`` of the async generator is used.
+
+For example:
+
+.. code-block:: python
+
+   async def asubgenerator():
+      yield 1
+      yield 2
+      return 3
+
+   async def agenerator():
+      value = async yield from asubgenerator()
+      print(value)  # 3
 
 .. _whatsnew315-improved-error-messages:
 
