@@ -1,7 +1,7 @@
 [package]
 name = "cpython"
 version = "3.12.3"
-nanvix-version = "0.12.491"
+nanvix-version = "0.12.493"
 
 [builds]
 [builds.matrix]
