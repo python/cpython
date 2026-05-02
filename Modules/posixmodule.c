@@ -759,6 +759,13 @@ PyOS_AfterFork_Child(void)
         goto fatal_error;
     }
 
+#if defined(PY_HAVE_JIT_GDB_UNWIND)
+    // The child can inherit this mutex locked if another thread held it at
+    // fork(), but the child itself cannot be inside gdb_jit_register_code().
+    // Reinitialize it before any executor cleanup can unregister JIT code.
+    _Py_jit_debug_mutex = (PyMutex){0};
+#endif
+
     reset_remotedebug_data(tstate);
 
     reset_asyncio_state((_PyThreadStateImpl *)tstate);
@@ -781,12 +788,6 @@ PyOS_AfterFork_Child(void)
         goto fatal_error;
     }
     assert(_PyThreadState_GET() == tstate);
-
-#if defined(PY_HAVE_JIT_GDB_UNWIND)
-    // The child can inherit this mutex locked if another thread held it at
-    // fork(), but the child itself cannot be inside gdb_jit_register_code().
-    _Py_jit_debug_mutex = (PyMutex){0};
-#endif
 
     status = _PyPerfTrampoline_AfterFork_Child();
     if (_PyStatus_EXCEPTION(status)) {
