@@ -375,5 +375,15 @@ class TestDefectRaising(TestDefectsBase, TestEmailBase):
         return obj.defects
 
 
+class TestDefectDeprecation(TestEmailBase):
+
+    def test_non_ascii_defect_deprecated(self):
+        with self.assertWarnsRegex(
+                DeprecationWarning,
+                rf'(?i)(?=.*NonASCIILocalPartDefect)(?=.*is deprecated)',
+            ):
+            errors.NonASCIILocalPartDefect
+
+
 if __name__ == '__main__':
     unittest.main()

@@ -2,6 +2,15 @@
 # Author: Barry Warsaw
 # Contact: email-sig@python.org
 
+def __getattr__(name):
+    if name == "NonASCIILocalPartDefect":
+        import warnings
+        warnings._deprecated(
+            "email.errors.NonASCIILocalPartDefect",
+            remove=(3, 17),
+            )
+        return _NonASCIILocalPartDefect
+
 """email package exception classes."""
 
 
@@ -108,7 +117,7 @@ class NonPrintableDefect(HeaderDefect):
 class ObsoleteHeaderDefect(HeaderDefect):
     """Header uses syntax declared obsolete by RFC 5322"""
 
-class NonASCIILocalPartDefect(HeaderDefect):
+class _NonASCIILocalPartDefect(HeaderDefect):
     """Unused. Note: this error is deprecated and may be removed in the future."""
     # RFC 6532 permits a non-ASCII local-part. _header_value_parser previously
     # treated this as a parse-time defect (when parsing Unicode, but not bytes).
