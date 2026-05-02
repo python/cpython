@@ -1095,6 +1095,7 @@ pprint
   :gh:`112632`.)
 
 * :mod:`pprint` now uses modern defaults: ``indent=4, width=88, expand=True``.
+  Use ``indent=1, width=80, expand=False`` to retain old output.
   (Contributed by Hugo van Kemenade in :gh:`149189`.)
 
 * Add t-string support to :mod:`pprint`.
