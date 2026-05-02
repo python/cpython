@@ -84,9 +84,9 @@ def _warn(*args, **kwargs):
 
 
 def _warn_future_us(message, remove):
-    # Don't call warnings._deprecated() directly because we're lazily importing warnings and
-    # don't want to have to trigger an eager import if it's not necessary.  Start up time
-    # matters a lot here and warnings isn't cheap!  This inlines the check from
+    # Don't call warnings._deprecated() directly because we're lazily importing warnings and don't
+    # want to have to trigger an eager import if it's not necessary.  Startup time matters a lot
+    # here and warnings isn't cheap!  This inlines the check from
     # warnings._py_warnings._deprecated().
     _version = sys.version_info
     if (_version[:2] > remove) or (_version[:2] == remove and _version[3] != "alpha"):
@@ -225,13 +225,13 @@ def _read_pth_file(sitedir, name, known_paths):
 
     for n, line in enumerate(lines, 1):
         line = line.strip()
-        if len(line) == 0 or line.startswith("#"):
+        if not line or line.startswith("#"):
             continue
 
         # In Python 3.18 and 3.19, `import` lines are silently ignored.  In
         # Python 3.20 and beyond, issue a warning when `import` lines in .pth
         # files are detected.
-        if line.startswith("import ") or line.startswith("import\t"):
+        if line.startswith(("import ", "import\t")):
             _warn_future_us(
                 "import lines in .pth files are silently ignored",
                 remove=(3, 18)
@@ -271,7 +271,7 @@ def _read_start_file(sitedir, name):
 
     for n, line in enumerate(lines, 1):
         line = line.strip()
-        if len(line) == 0 or line.startswith("#"):
+        if not line or line.startswith("#"):
             continue
         # Syntax validation is deferred to entry-point execution time,
         # where pkgutil.resolve_name(strict=True) enforces the

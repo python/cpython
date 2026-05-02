@@ -1,3 +1,5 @@
+import logging
+import logging.handlers
 from pathlib import Path
 from test.support.import_helper import unload
 from test.support.warnings_helper import check_warnings
@@ -232,9 +234,6 @@ class PkgutilTests(unittest.TestCase):
             list(pkgutil.walk_packages(bytes_input))
 
     def test_name_resolution(self):
-        import logging
-        import logging.handlers
-
         success_cases = (
             ('os', os),
             ('os.path', os.path),
@@ -325,9 +324,6 @@ class PkgutilTests(unittest.TestCase):
     def test_name_resolution_strict(self):
         # PEP 829: strict=True accepts only the pkg.mod:callable form
         # (W(.W)*:W(.W)*) -- both the colon and the callable are required.
-        import logging
-        import logging.handlers
-
         success_cases = (
             ('os.path:pathsep', os.path.pathsep),
             ('logging.handlers:SysLogHandler',

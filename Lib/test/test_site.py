@@ -151,9 +151,6 @@ class HelperFunctionsTests(unittest.TestCase):
         self.assertRegex(err_out.getvalue(), "line 1")
         self.assertRegex(err_out.getvalue(),
             re.escape(os.path.join(pth_dir, pth_fn)))
-        # XXX: the previous two should be independent checks so that the
-        # order doesn't matter.  The next three could be a single check
-        # but my regex foo isn't good enough to write it.
         self.assertRegex(err_out.getvalue(), 'Traceback')
         self.assertRegex(err_out.getvalue(), r'import bad-syntax')
         self.assertRegex(err_out.getvalue(), 'SyntaxError')
@@ -165,7 +162,6 @@ class HelperFunctionsTests(unittest.TestCase):
             site.addpackage(pth_dir, pth_fn, set())
         self.assertRegex(err_out.getvalue(),
             re.escape(os.path.join(pth_dir, pth_fn)))
-        # XXX: ditto previous XXX comment.
         self.assertRegex(err_out.getvalue(), 'Traceback')
         self.assertRegex(err_out.getvalue(), 'ModuleNotFoundError')
 
@@ -186,8 +182,7 @@ class HelperFunctionsTests(unittest.TestCase):
         # addsitedir() reads .pth files and, when called standalone
         # (known_paths=None), flushes paths and import lines immediately.
         pth_file = PthFile()
-        pth_file.cleanup(prep=True) # Make sure that nothing is pre-existing
-                                    # that is tested for
+        pth_file.cleanup(prep=True)
         try:
             pth_file.create()
             site.addsitedir(pth_file.base_dir)
