@@ -1081,13 +1081,17 @@ _testinternalcapi.compiler_codegen -> object
   compile_mode: int = 0
 
 Apply compiler code generation to an AST.
+
+Return (instruction_sequence, metadata).  metadata maps "argcount",
+"posonlyargcount", "kwonlyargcount" to ints and "consts" to the list of
+constants in LOAD_CONST index order (for use with optimize_cfg).
 [clinic start generated code]*/
 
 static PyObject *
 _testinternalcapi_compiler_codegen_impl(PyObject *module, PyObject *ast,
                                         PyObject *filename, int optimize,
                                         int compile_mode)
-/*[clinic end generated code: output=40a68f6e13951cc8 input=a0e00784f1517cd7]*/
+/*[clinic end generated code: output=40a68f6e13951cc8 input=e0c65e5c80efe30e]*/
 {
     PyCompilerFlags *flags = NULL;
     return _PyCompile_CodeGen(ast, filename, flags, optimize, compile_mode);
@@ -1103,12 +1107,15 @@ _testinternalcapi.optimize_cfg -> object
   nlocals: int
 
 Apply compiler optimizations to an instruction list.
+
+consts must be a list aligned with LOAD_CONST opargs (the "consts" entry
+from the metadata dict returned by compiler_codegen for the same unit).
 [clinic start generated code]*/
 
 static PyObject *
 _testinternalcapi_optimize_cfg_impl(PyObject *module, PyObject *instructions,
                                     PyObject *consts, int nlocals)
-/*[clinic end generated code: output=57c53c3a3dfd1df0 input=6a96d1926d58d7e5]*/
+/*[clinic end generated code: output=57c53c3a3dfd1df0 input=905c3d935e063b27]*/
 {
     return _PyCompile_OptimizeCfg(instructions, consts, nlocals);
 }
@@ -1249,13 +1256,19 @@ write_perf_map_entry(PyObject *self, PyObject *args)
 {
     PyObject *code_addr_v;
     const void *code_addr;
-    unsigned int code_size;
+    PyObject *code_size_s;
+    size_t code_size;
     const char *entry_name;
 
-    if (!PyArg_ParseTuple(args, "OIs", &code_addr_v, &code_size, &entry_name))
+    if (!PyArg_ParseTuple(args, "OOs", &code_addr_v, &code_size_s, &entry_name))
         return NULL;
     code_addr = PyLong_AsVoidPtr(code_addr_v);
     if (code_addr == NULL) {
+        return NULL;
+    }
+
+    code_size = PyLong_AsSize_t(code_size_s);
+    if (code_size == (size_t)-1 && PyErr_Occurred()) {
         return NULL;
     }
 
@@ -2718,7 +2731,8 @@ has_deferred_refcount(PyObject *self, PyObject *op)
 static PyObject *
 get_tracked_heap_size(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return PyLong_FromInt64(PyInterpreterState_Get()->gc.heap_size);
+    // Generational GC doesn't track heap_size, return -1.
+    return PyLong_FromInt64(-1);
 }
 
 static PyObject *

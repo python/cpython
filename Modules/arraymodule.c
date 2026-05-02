@@ -3075,8 +3075,10 @@ array_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
                 len = 0;
 
             a = newarrayobject(type, len, descr);
-            if (a == NULL)
+            if (a == NULL) {
+                Py_XDECREF(it);
                 return NULL;
+            }
 
             if (len > 0 && !array_Check(initial, state)) {
                 Py_ssize_t i;
@@ -3085,11 +3087,13 @@ array_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
                         PySequence_GetItem(initial, i);
                     if (v == NULL) {
                         Py_DECREF(a);
+                        Py_XDECREF(it);
                         return NULL;
                     }
                     if (setarrayitem(a, i, v) != 0) {
                         Py_DECREF(v);
                         Py_DECREF(a);
+                        Py_XDECREF(it);
                         return NULL;
                     }
                     Py_DECREF(v);
@@ -3101,6 +3105,7 @@ array_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
                 v = array_array_frombytes((PyObject *)a, initial);
                 if (v == NULL) {
                     Py_DECREF(a);
+                    Py_XDECREF(it);
                     return NULL;
                 }
                 Py_DECREF(v);
@@ -3111,6 +3116,7 @@ array_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
                     wchar_t *ustr = PyUnicode_AsWideCharString(initial, &n);
                     if (ustr == NULL) {
                         Py_DECREF(a);
+                        Py_XDECREF(it);
                         return NULL;
                     }
 
@@ -3131,6 +3137,7 @@ array_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
                     Py_UCS4 *ustr = PyUnicode_AsUCS4Copy(initial);
                     if (ustr == NULL) {
                         Py_DECREF(a);
+                        Py_XDECREF(it);
                         return NULL;
                     }
 
@@ -3158,6 +3165,7 @@ array_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
             return a;
         }
     }
+    Py_XDECREF(it);
     PyErr_SetString(PyExc_ValueError,
         "bad typecode (must be b, B, u, w, h, H, i, I, l, L, q, Q, f, d, F, D, Zd or Zf)");
     return NULL;
