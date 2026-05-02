@@ -21,9 +21,10 @@ from __future__ import annotations
 
 import importlib.util
 from pathlib import Path
+from typing import Any
 
 
-def load_sibling(name: str, caller_file: str) -> object:
+def load_sibling(name: str, caller_file: str) -> Any:
     """Load a sibling module from the same directory as *caller_file*.
 
     Args:

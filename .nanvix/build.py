@@ -10,11 +10,10 @@ build/install/clean targets from common.mk. Constructs and executes
 
 from __future__ import annotations
 
-import os
 import shutil
 import subprocess
-import sys
 from pathlib import Path
+from typing import Any
 
 import sys as _sys
 _sys.path.insert(0, str(Path(__file__).resolve().parent))
@@ -67,7 +66,7 @@ def run_make(
     *,
     cwd: Path | None = None,
     kvm: bool = False,
-    run_fn=None,
+    run_fn: Any = None,
 ) -> None:
     """Execute a make command.
 
@@ -94,7 +93,7 @@ def build(
     memory_size: str = config.DEFAULT_MEMORY_SIZE,
     install_prefix: str = config.DEFAULT_INSTALL_PREFIX,
     release: bool = False,
-    run_fn=None,
+    run_fn: Any = None,
     docker: bool = False,
 ) -> None:
     """Cross-compile python.elf for Nanvix."""
@@ -136,7 +135,7 @@ def install(
     memory_size: str = config.DEFAULT_MEMORY_SIZE,
     install_prefix: str = config.DEFAULT_INSTALL_PREFIX,
     release: bool = False,
-    run_fn=None,
+    run_fn: Any = None,
     extra_make_flags: list[str] | None = None,
     docker: bool = False,
 ) -> None:

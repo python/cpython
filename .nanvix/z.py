@@ -26,8 +26,8 @@ import shutil
 import sys
 import tarfile
 import tempfile
+import urllib.error
 import urllib.request
-import zipfile
 from pathlib import Path
 
 from nanvix_zutil import (
@@ -218,9 +218,9 @@ class CPythonBuild(ZScript):
                 hint="Run `./z setup` first to download the sysroot.",
             )
         toolchain = self.config.get(CFG_TOOLCHAIN, config.TOOLCHAIN_DEFAULT_PATH)
-        return sysroot, toolchain
+        return sysroot, toolchain or config.TOOLCHAIN_DEFAULT_PATH
 
-    def _build_kwargs(self, release: bool = False) -> dict:
+    def _build_kwargs(self, release: bool = False) -> dict[str, object]:
         """Return common keyword arguments for build/test/package modules."""
         return {
             "platform": self.config.machine,
@@ -316,7 +316,7 @@ class CPythonBuild(ZScript):
         build_mod.build(
             sysroot, toolchain, self.repo_root,
             **self._build_kwargs(release=release),
-            run_fn=lambda *args, **kw: self.run(*args, **kw),
+            run_fn=lambda *args: self.run(*args),  # type: ignore[arg-type]
             docker=self.docker is not None,
         )
 
@@ -329,7 +329,7 @@ class CPythonBuild(ZScript):
         test_mod.run_all(
             sysroot, toolchain, self.repo_root,
             **kwargs,
-            run_fn=lambda *args, **kw: self.run(*args, **kw),
+            run_fn=lambda *args: self.run(*args),  # type: ignore[arg-type]
             docker=self.docker is not None,
         )
 
@@ -342,7 +342,7 @@ class CPythonBuild(ZScript):
         package_mod.package(
             sysroot, toolchain, self.repo_root,
             **kwargs,
-            run_fn=lambda *args, **kw: self.run(*args, **kw),
+            run_fn=lambda *args: self.run(*args),  # type: ignore[arg-type]
             docker=self.docker is not None,
         )
         package_mod.verify(
@@ -419,7 +419,7 @@ class CPythonBuild(ZScript):
         lib_dir = buildroot / "lib"
 
         sysroot_tag = self.manifest.sysroot_ref.value
-        nanvix_version = sysroot_tag.removeprefix("v") if sysroot_tag else ""
+        nanvix_version = str(sysroot_tag).removeprefix("v") if sysroot_tag else ""
 
         for dep in self.manifest.dependencies:
             expected = _DEP_EXPECTED_LIBS.get(dep.name, [])
@@ -429,7 +429,7 @@ class CPythonBuild(ZScript):
                 continue
             resolved = suffix_dep(dep, nanvix_version) if nanvix_version else dep
             self._download_dep_fallback(
-                resolved.name, resolved.repo, resolved.ref.value, buildroot
+                resolved.name, resolved.repo, str(resolved.ref.value), buildroot
             )
 
     def _download_dep_fallback(

@@ -11,12 +11,8 @@ invocation for configure/build/install only.
 from __future__ import annotations
 
 import hashlib
-import io
 import os
-import shutil
 import subprocess
-import tarfile
-import tempfile
 from pathlib import Path
 
 import sys as _sys
@@ -44,8 +40,8 @@ def _docker_run_base(
 ) -> list[str]:
     """Build the common ``docker run`` prefix."""
     volume = _volume_name(workspace)
-    uid = os.getuid() if hasattr(os, "getuid") else 1000
-    gid = os.getgid() if hasattr(os, "getgid") else 1000
+    uid = getattr(os, "getuid", lambda: 1000)()
+    gid = getattr(os, "getgid", lambda: 1000)()
     return [
         "docker", "run", "--rm",
         "--user", f"{uid}:{gid}",
@@ -302,7 +298,7 @@ def _inner_make_cmd(
 
 def _copy_outputs_cmd(workspace: Path) -> str:
     """Build shell command to copy build outputs back to host workspace."""
-    copies = []
+    copies: list[str] = []
     for f in config.DOCKER_OUTPUT_FILES:
         copies.append(
             f'[ -f {config.DOCKER_WORKSPACE_PATH}/{f} ] && '

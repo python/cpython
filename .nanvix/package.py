@@ -9,12 +9,10 @@ tarball creation, ramfs image inclusion, and tarball verification.
 
 from __future__ import annotations
 
-import os
 import shutil
-import subprocess
-import sys
 import tarfile
 from pathlib import Path
+from typing import Any
 
 import sys as _sys
 _sys.path.insert(0, str(Path(__file__).resolve().parent))
@@ -44,7 +42,7 @@ def package(
     memory_size: str = config.DEFAULT_MEMORY_SIZE,
     install_prefix: str = config.DEFAULT_INSTALL_PREFIX,
     release: bool = True,
-    run_fn=None,
+    run_fn: Any = None,
     nanvix_home: str | Path | None = None,
     docker: bool = False,
 ) -> None:
