@@ -1200,26 +1200,26 @@ Get garbage collector statistics from external Python process.
 Returns a list of dictionaries with GC statistics data.
 
 Returns:
-    List of dicts.
-    dict: A dictionary containing:
-        - gen:
-        - iid:
-        - ts_start:
-        - ts_stop:
-        - collections:
-        - collected:
-        - uncollectable:
-        - candidates:
-        - duration:
+    list of dict: A list of dictionaries containing:
+        - gen: GC generation number.
+        - iid: Interpreter ID.
+        - ts_start: Raw timestamp at collection start.
+        - ts_stop: Raw timestamp at collection stop.
+        - collections: Total number of collections.
+        - collected: Total number of collected objects.
+        - uncollectable: Total number of uncollectable objects.
+        - candidates: Total objects considered and traversed.
+        - duration: Total collection time, in seconds.
 
 Raises:
-    RuntimeError:
+    RuntimeError: If the target process cannot be inspected or if its
+        debug offsets or GC stats layout are incompatible.
 [clinic start generated code]*/
 
 static PyObject *
 _remote_debugging_GCMonitor_get_gc_stats_impl(GCMonitorObject *self,
                                               int all_interpreters)
-/*[clinic end generated code: output=f73f365725224f7a input=d425f677ede9d2c5]*/
+/*[clinic end generated code: output=f73f365725224f7a input=42087618bb6f18c2]*/
 {
     RuntimeOffsets offsets = {
         .handle = self->handle,
@@ -2022,26 +2022,26 @@ _remote_debugging.get_gc_stats
 Get garbage collector statistics from external Python process.
 
 Returns:
-    List of dicts.
-    dict: A dictionary containing:
-        - gen:
-        - iid:
-        - ts_start:
-        - ts_stop:
-        - collections:
-        - collected:
-        - uncollectable:
-        - candidates:
-        - duration:
+    list of dict: A list of dictionaries containing:
+        - gen: GC generation number.
+        - iid: Interpreter ID.
+        - ts_start: Raw timestamp at collection start.
+        - ts_stop: Raw timestamp at collection stop.
+        - collections: Total number of collections.
+        - collected: Total number of collected objects.
+        - uncollectable: Total number of uncollectable objects.
+        - candidates: Total objects considered and traversed.
+        - duration: Total collection time, in seconds.
 
 Raises:
-    RuntimeError:
+    RuntimeError: If the target process cannot be inspected or if its
+        debug offsets or GC stats layout are incompatible.
 [clinic start generated code]*/
 
 static PyObject *
 _remote_debugging_get_gc_stats_impl(PyObject *module, int pid,
                                     int all_interpreters)
-/*[clinic end generated code: output=d9dce5f7add149bb input=8f58d6f27950cb0d]*/
+/*[clinic end generated code: output=d9dce5f7add149bb input=a08496935ccb3661]*/
 {
     RuntimeOffsets offsets;
 

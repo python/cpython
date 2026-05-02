@@ -592,20 +592,20 @@ PyDoc_STRVAR(_remote_debugging_GCMonitor_get_gc_stats__doc__,
 "Returns a list of dictionaries with GC statistics data.\n"
 "\n"
 "Returns:\n"
-"    List of dicts.\n"
-"    dict: A dictionary containing:\n"
-"        - gen:\n"
-"        - iid:\n"
-"        - ts_start:\n"
-"        - ts_stop:\n"
-"        - collections:\n"
-"        - collected:\n"
-"        - uncollectable:\n"
-"        - candidates:\n"
-"        - duration:\n"
+"    list of dict: A list of dictionaries containing:\n"
+"        - gen: GC generation number.\n"
+"        - iid: Interpreter ID.\n"
+"        - ts_start: Raw timestamp at collection start.\n"
+"        - ts_stop: Raw timestamp at collection stop.\n"
+"        - collections: Total number of collections.\n"
+"        - collected: Total number of collected objects.\n"
+"        - uncollectable: Total number of uncollectable objects.\n"
+"        - candidates: Total objects considered and traversed.\n"
+"        - duration: Total collection time, in seconds.\n"
 "\n"
 "Raises:\n"
-"    RuntimeError:");
+"    RuntimeError: If the target process cannot be inspected or if its\n"
+"        debug offsets or GC stats layout are incompatible.");
 
 #define _REMOTE_DEBUGGING_GCMONITOR_GET_GC_STATS_METHODDEF    \
     {"get_gc_stats", _PyCFunction_CAST(_remote_debugging_GCMonitor_get_gc_stats), METH_FASTCALL|METH_KEYWORDS, _remote_debugging_GCMonitor_get_gc_stats__doc__},
@@ -1483,20 +1483,20 @@ PyDoc_STRVAR(_remote_debugging_get_gc_stats__doc__,
 "    If False, return only from main interpreter.\n"
 "\n"
 "Returns:\n"
-"    List of dicts.\n"
-"    dict: A dictionary containing:\n"
-"        - gen:\n"
-"        - iid:\n"
-"        - ts_start:\n"
-"        - ts_stop:\n"
-"        - collections:\n"
-"        - collected:\n"
-"        - uncollectable:\n"
-"        - candidates:\n"
-"        - duration:\n"
+"    list of dict: A list of dictionaries containing:\n"
+"        - gen: GC generation number.\n"
+"        - iid: Interpreter ID.\n"
+"        - ts_start: Raw timestamp at collection start.\n"
+"        - ts_stop: Raw timestamp at collection stop.\n"
+"        - collections: Total number of collections.\n"
+"        - collected: Total number of collected objects.\n"
+"        - uncollectable: Total number of uncollectable objects.\n"
+"        - candidates: Total objects considered and traversed.\n"
+"        - duration: Total collection time, in seconds.\n"
 "\n"
 "Raises:\n"
-"    RuntimeError:");
+"    RuntimeError: If the target process cannot be inspected or if its\n"
+"        debug offsets or GC stats layout are incompatible.");
 
 #define _REMOTE_DEBUGGING_GET_GC_STATS_METHODDEF    \
     {"get_gc_stats", _PyCFunction_CAST(_remote_debugging_get_gc_stats), METH_FASTCALL|METH_KEYWORDS, _remote_debugging_get_gc_stats__doc__},
@@ -1563,4 +1563,4 @@ skip_optional_kwonly:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=30908391f0cdd473 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=40702bb43b518e58 input=a9049054013a1b77]*/
