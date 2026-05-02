@@ -132,7 +132,10 @@ class NumberTestCase(unittest.TestCase, ComplexesAreIdenticalMixin):
             self.assertEqual(t(ComplexLike()).value, 1+1j)
 
             prefix = '>' if sys.byteorder == 'big' else '<'
-            self.assertEqual(memoryview(t(1.0)).format, prefix + format)
+            num = t(1.0)
+            self.assertEqual(memoryview(num).format, prefix + format)
+            array = (t * 3)()
+            self.assertEqual(memoryview(array).format, prefix + format)
 
     @unittest.skipUnless(hasattr(ctypes, "c_double_complex"),
                          "requires C11 complex type")
