@@ -223,11 +223,36 @@ make -f Makefile.nanvix CONFIG_NANVIX=y NANVIX_HOME=/path/to/nanvix test
 
 ### Running Interactively
 
-To run Python interactively on Nanvix:
+To start an interactive CPython session on Nanvix (standalone/microvm):
 
 ```bash
 cd .nanvix/_test_staging/sysroot && \
-  echo "print('Hello, Nanvix!')" | ./bin/nanvixd.elf -- ./bin/python3.12
+  ./bin/nanvixd.elf -bin-dir ./bin -ramfs ../../cpython-rootfs.img \
+    -- ./bin/python3.12 \
+    "-i;PYTHONHOME=/ PYTHONDONTWRITEBYTECODE=1 _PYTHON_SYSCONFIGDATA_NAME=_sysconfigdata__nanvix_"
+```
+
+This launches `nanvixd` in standalone interactive mode with the CPython ramfs image
+and drops you into the Python REPL:
+
+```
+Python 3.12.3 (...) [GCC 12.4.0] on nanvix
+Type "help", "copyright", "credits" or "license" for more information.
+>>> print(2 + 2)
+4
+```
+
+> **Note:** The `-i` flag is part of the semicolon-delimited argument string passed to
+> the guest binary. Environment variables (`PYTHONHOME`, `_PYTHON_SYSCONFIGDATA_NAME`)
+> follow after the semicolon.
+
+To run a one-shot script instead of the REPL:
+
+```bash
+cd .nanvix/_test_staging/sysroot && \
+  ./bin/nanvixd.elf -bin-dir ./bin -ramfs ../../cpython-rootfs.img \
+    -- ./bin/python3.12 \
+    "-B ./test_hello.py;PYTHONHOME=/ PYTHONDONTWRITEBYTECODE=1 _PYTHON_SYSCONFIGDATA_NAME=_sysconfigdata__nanvix_"
 ```
 
 ### Running Individual Modules
@@ -236,7 +261,9 @@ To run a single test module inside the Nanvix VM:
 
 ```bash
 cd .nanvix/_test_staging/sysroot && \
-  ./bin/nanvixd.elf -- ./bin/python3.12 -m test --verbose test_int
+  ./bin/nanvixd.elf -bin-dir ./bin -ramfs ../../cpython-rootfs.img \
+    -- ./bin/python3.12 \
+    "-B -m test --verbose test_int;PYTHONHOME=/ PYTHONDONTWRITEBYTECODE=1 _PYTHON_SYSCONFIGDATA_NAME=_sysconfigdata__nanvix_"
 ```
 
 ### Test Suite Status
