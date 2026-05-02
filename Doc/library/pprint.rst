@@ -166,7 +166,7 @@ PrettyPrinter objects
    >>> import pprint
    >>> stuff = ['spam', 'eggs', 'lumberjack', 'knights', 'ni']
    >>> stuff.insert(0, stuff[:])
-   >>> pp = pprint.PrettyPrinter(indent=4)
+   >>> pp = pprint.PrettyPrinter()
    >>> pp.pprint(stuff)
    [
        ['spam', 'eggs', 'lumberjack', 'knights', 'ni'],
@@ -176,12 +176,12 @@ PrettyPrinter objects
        'knights',
        'ni',
    ]
-   >>> pp = pprint.PrettyPrinter(width=41, compact=True, expand=False)
+   >>> pp = pprint.PrettyPrinter(indent=1, width=41, compact=True, expand=False)
    >>> pp.pprint(stuff)
-   [   [   'spam', 'eggs', 'lumberjack',
-           'knights', 'ni'],
-       'spam', 'eggs', 'lumberjack',
-       'knights', 'ni']
+   [['spam', 'eggs', 'lumberjack',
+     'knights', 'ni'],
+    'spam', 'eggs', 'lumberjack', 'knights',
+    'ni']
    >>> pp = pprint.PrettyPrinter(width=41, indent=3)
    >>> pp.pprint(stuff)
    [
