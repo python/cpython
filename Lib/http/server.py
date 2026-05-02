@@ -768,7 +768,7 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
             for header, value in self.extra_response_headers:
                 # Don't send the header if it's already sent
                 # as part of the default response headers
-                if header not in default_headers:
+                if header.lower() not in default_headers:
                     self.send_header(header, value, _is_extra=True)
 
     def send_head(self):
