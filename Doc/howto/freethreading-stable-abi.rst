@@ -106,21 +106,21 @@ Critical Sections
 
 Replacements:
 
-+------------------------------------------+---------------------------------------+
-| Macro functions                          | C API functions                       |
-+==========================================+=======================================+
-|:c:func:`Py_BEGIN_CRITICAL_SECTION`       |:c:func:`PyCriticalSection_Begin`      |
-|:c:func:`Py_END_CRITICAL_SECTION`         |:c:func:`PyCriticalSection_End`        |
-+------------------------------------------+---------------------------------------+
-|:c:func:`Py_BEGIN_CRITICAL_SECTION2`      |:c:func:`PyCriticalSection2_Begin`     |
-|:c:func:`Py_END_CRITICAL_SECTION2`        |:c:func:`PyCriticalSection2_End`       |
-+------------------------------------------+---------------------------------------+
-|:c:func:`Py_BEGIN_CRITICAL_SECTION_MUTEX` |:c:func:`PyCriticalSection_BeginMutex` |
-|:c:func:`Py_END_CRITICAL_SECTION`         |:c:func:`PyCriticalSection_End`        |
-+------------------------------------------+---------------------------------------+
-|:c:func:`Py_BEGIN_CRITICAL_SECTION2_MUTEX`|:c:func:`PyCriticalSection2_BeginMutex`|
-|:c:func:`Py_END_CRITICAL_SECTION2`        |:c:func:`PyCriticalSection2_End`       |
-+------------------------------------------+---------------------------------------+
++-------------------------------------------+---------------------------------------+
+| Macro functions                           | C API functions                       |
++===========================================+=======================================+
+|:c:macro:`Py_BEGIN_CRITICAL_SECTION`       |``PyCriticalSection_Begin``            |
+|:c:macro:`Py_END_CRITICAL_SECTION`         |``PyCriticalSection_End``              |
++-------------------------------------------+---------------------------------------+
+|:c:macro:`Py_BEGIN_CRITICAL_SECTION2`      |``PyCriticalSection2_Begin``           |
+|:c:macro:`Py_END_CRITICAL_SECTION2`        |``PyCriticalSection2_End``             |
++-------------------------------------------+---------------------------------------+
+|:c:macro:`Py_BEGIN_CRITICAL_SECTION_MUTEX` |``PyCriticalSection_BeginMutex``       |
+|:c:macro:`Py_END_CRITICAL_SECTION`         |``PyCriticalSection_End``              |
++-------------------------------------------+---------------------------------------+
+|:c:macro:`Py_BEGIN_CRITICAL_SECTION2_MUTEX`|``PyCriticalSection2_BeginMutex``      |
+|:c:macro:`Py_END_CRITICAL_SECTION2`        |``PyCriticalSection2_End``             |
++-------------------------------------------+---------------------------------------+
 
 Platform-specific considerations
 ................................
