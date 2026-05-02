@@ -267,41 +267,40 @@ _PyDict_GetItemProxy(PyObject *dict, PyObject *key, PyObject **presult)
   later on.
  */
 static char *
-_ctypes_alloc_format_string_for_type(char code, int big_endian)
+_ctypes_alloc_format_string_for_type(const char *code, int big_endian)
 {
-    char *result;
-    char pep_code = '\0';
+    const char *pep_code = NULL;
 
-    switch (code) {
+    switch (code[0]) {
 #if SIZEOF_INT == 2
-    case 'i': pep_code = 'h'; break;
-    case 'I': pep_code = 'H'; break;
+    case 'i': pep_code = "h"; break;
+    case 'I': pep_code = "H"; break;
 #elif SIZEOF_INT == 4
-    case 'i': pep_code = 'i'; break;
-    case 'I': pep_code = 'I'; break;
+    case 'i': pep_code = "i"; break;
+    case 'I': pep_code = "I"; break;
 #elif SIZEOF_INT == 8
-    case 'i': pep_code = 'q'; break;
-    case 'I': pep_code = 'Q'; break;
+    case 'i': pep_code = "q"; break;
+    case 'I': pep_code = "Q"; break;
 #else
 # error SIZEOF_INT has an unexpected value
 #endif /* SIZEOF_INT */
 #if SIZEOF_LONG == 4
-    case 'l': pep_code = 'l'; break;
-    case 'L': pep_code = 'L'; break;
+    case 'l': pep_code = "l"; break;
+    case 'L': pep_code = "L"; break;
 #elif SIZEOF_LONG == 8
-    case 'l': pep_code = 'q'; break;
-    case 'L': pep_code = 'Q'; break;
+    case 'l': pep_code = "q"; break;
+    case 'L': pep_code = "Q"; break;
 #else
 # error SIZEOF_LONG has an unexpected value
 #endif /* SIZEOF_LONG */
 #if SIZEOF__BOOL == 1
-    case '?': pep_code = '?'; break;
+    case '?': pep_code = "?"; break;
 #elif SIZEOF__BOOL == 2
-    case '?': pep_code = 'H'; break;
+    case '?': pep_code = "H"; break;
 #elif SIZEOF__BOOL == 4
-    case '?': pep_code = 'L'; break;
+    case '?': pep_code = "L"; break;
 #elif SIZEOF__BOOL == 8
-    case '?': pep_code = 'Q'; break;
+    case '?': pep_code = "Q"; break;
 #else
 # error SIZEOF__BOOL has an unexpected value
 #endif /* SIZEOF__BOOL */
@@ -311,15 +310,14 @@ _ctypes_alloc_format_string_for_type(char code, int big_endian)
         break;
     }
 
-    result = PyMem_Malloc(3);
+    char *result = PyMem_Malloc(1 + strlen(pep_code) + 1);
     if (result == NULL) {
         PyErr_NoMemory();
         return NULL;
     }
 
     result[0] = big_endian ? '>' : '<';
-    result[1] = pep_code;
-    result[2] = '\0';
+    strcpy(result + 1, pep_code);
     return result;
 }
 
@@ -2408,9 +2406,9 @@ PyCSimpleType_init(PyObject *self, PyObject *args, PyObject *kwds)
     stginfo->setfunc = fmt->setfunc;
     stginfo->getfunc = fmt->getfunc;
 #ifdef WORDS_BIGENDIAN
-    stginfo->format = _ctypes_alloc_format_string_for_type(proto_str[0], 1);
+    stginfo->format = _ctypes_alloc_format_string_for_type(proto_str, 1);
 #else
-    stginfo->format = _ctypes_alloc_format_string_for_type(proto_str[0], 0);
+    stginfo->format = _ctypes_alloc_format_string_for_type(proto_str, 0);
 #endif
     if (stginfo->format == NULL) {
         Py_DECREF(proto);
