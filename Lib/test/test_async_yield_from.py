@@ -8,7 +8,7 @@ import unittest
 import inspect
 from functools import partial
 
-from test.support import captured_stderr, disable_gc, gc_collect, run_yielding_async_fn
+from test.support import captured_stderr, disable_gc, gc_collect, run_yielding_async_fn, catch_unraisable_exception
 
 _async_test = partial(partial, run_yielding_async_fn)
 
@@ -554,38 +554,38 @@ class TestPEP828Operation(unittest.TestCase):
             "finishing g",
         ])
 
-    # @_async_test
-    # async def test_broken_getattr_handling(self):
-    #     """
-    #     Test subiterator with a broken getattr implementation
-    #     """
-    #     class Broken:
-    #         def __aiter__(self):
-    #             return self
-    #         async def __anext__(self):
-    #             return 1
-    #         async def __getattr__(self, attr):
-    #             1/0
+    @_async_test
+    async def test_broken_getattr_handling(self):
+        """
+        Test subiterator with a broken getattr implementation
+        """
+        class Broken:
+            def __aiter__(self):
+                return self
+            async def __anext__(self):
+                return 1
+            def __getattr__(self, attr):
+                1/0
 
-    #     async def g():
-    #         async yield from Broken()
+        async def g():
+            async yield from Broken()
 
-    #     with self.assertRaises(ZeroDivisionError):
-    #         gi = g()
-    #         self.assertEqual(await anext(gi), 1)
-    #         await gi.asend(1)
+        with self.assertRaises(ZeroDivisionError):
+            gi = g()
+            self.assertEqual(await anext(gi), 1)
+            await gi.asend(1)
 
-    #     with self.assertRaises(ZeroDivisionError):
-    #         gi = g()
-    #         self.assertEqual(await anext(gi), 1)
-    #         await gi.athrow(AttributeError)
+        with self.assertRaises(ZeroDivisionError):
+            gi = g()
+            self.assertEqual(await anext(gi), 1)
+            await gi.athrow(AttributeError)
 
-    #     with support.catch_unraisable_exception() as cm:
-    #         gi = g()
-    #         self.assertEqual(await anext(gi), 1)
-    #         await gi.aclose()
+        with catch_unraisable_exception() as cm:
+            gi = g()
+            self.assertEqual(await anext(gi), 1)
+            await gi.aclose()
 
-    #         self.assertEqual(ZeroDivisionError, cm.unraisable.exc_type)
+            self.assertEqual(ZeroDivisionError, cm.unraisable.exc_type)
 
     @_async_test
     async def test_exception_in_initial_next_call(self):
