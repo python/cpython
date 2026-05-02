@@ -1,0 +1,2 @@
+Add *keep_handlers* parameter to :meth:`unittest.TestCase.assertLogs` to
+  optionally preserve existing logger handlers during assertion.

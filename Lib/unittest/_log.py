@@ -30,7 +30,7 @@ class _AssertLogsContext(_BaseTestCaseContext):
 
     LOGGING_FORMAT = "%(levelname)s:%(name)s:%(message)s"
 
-    def __init__(self, test_case, logger_name, level, no_logs, formatter=None):
+    def __init__(self, test_case, logger_name, level, no_logs, formatter=None, keep_handlers=False):
         _BaseTestCaseContext.__init__(self, test_case)
         self.logger_name = logger_name
         if level:
@@ -40,6 +40,7 @@ class _AssertLogsContext(_BaseTestCaseContext):
         self.msg = None
         self.no_logs = no_logs
         self.formatter = formatter
+        self.keep_handlers = keep_handlers
 
     def __enter__(self):
         if isinstance(self.logger_name, logging.Logger):
@@ -54,9 +55,13 @@ class _AssertLogsContext(_BaseTestCaseContext):
         self.old_handlers = logger.handlers[:]
         self.old_level = logger.level
         self.old_propagate = logger.propagate
-        logger.handlers = [handler]
+        if self.keep_handlers:
+            logger.addHandler(handler)
+        else:
+            logger.handlers = [handler]
+            logger.propagate = False
         logger.setLevel(self.level)
-        logger.propagate = False
+
         if self.no_logs:
             return
         return handler.watcher
