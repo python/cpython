@@ -46,6 +46,7 @@ def package(
     release: bool = True,
     run_fn=None,
     nanvix_home: str | Path | None = None,
+    docker: bool = False,
 ) -> None:
     """Package CPython release tarballs.
 
@@ -55,10 +56,7 @@ def package(
 
     Args:
         nanvix_home: Host-side path to the Nanvix sysroot for local
-            file operations (mkramfs, etc.).  When Docker is active
-            *sysroot* is a container-internal path; *nanvix_home*
-            should be the original host path so that
-            ``subprocess.run`` and ``Path.is_file`` work correctly.
+            file operations (mkramfs, etc.).  Defaults to *sysroot*.
     """
     nanvix_home = Path(nanvix_home) if nanvix_home else Path(sysroot)
     release_staging = repo_root / ".nanvix" / "release"
@@ -80,6 +78,7 @@ def package(
         install_prefix=install_prefix,
         release=True,
         run_fn=run_fn,
+        docker=docker,
     )
 
     # Install into staging.
@@ -91,6 +90,7 @@ def package(
         install_prefix=install_prefix,
         release=True,
         run_fn=run_fn,
+        docker=docker,
     )
 
     sysroot_installed = release_staging / "sysroot"

@@ -208,8 +208,8 @@ class CPythonBuild(ZScript):
 
     # ---- Common helpers --------------------------------------------------
 
-    def _get_paths(self) -> tuple[str, str]:
-        """Return (sysroot, toolchain) paths from config."""
+    def _get_host_paths(self) -> tuple[str, str]:
+        """Return (sysroot, toolchain) raw host paths from config."""
         sysroot = self.config.get(CFG_SYSROOT, "")
         if not sysroot:
             log.fatal(
@@ -218,9 +218,7 @@ class CPythonBuild(ZScript):
                 hint="Run `./z setup` first to download the sysroot.",
             )
         toolchain = self.config.get(CFG_TOOLCHAIN, config.TOOLCHAIN_DEFAULT_PATH)
-        sysroot_p = str(self.translate_path(Path(sysroot)))
-        toolchain_p = str(self.translate_path(Path(toolchain)))
-        return sysroot_p, toolchain_p
+        return sysroot, toolchain
 
     def _build_kwargs(self, release: bool = False) -> dict:
         """Return common keyword arguments for build/test/package modules."""
@@ -250,11 +248,13 @@ class CPythonBuild(ZScript):
 
     def _make_args(self, *targets: str) -> list[str]:
         """Build the make argument list for configure/build/install."""
-        sysroot, toolchain = self._get_paths()
+        sysroot, toolchain = self._get_host_paths()
         release = os.environ.get(_MAKE_VAR_RELEASE, "no")
 
         return build_mod.make_args(
-            sysroot, toolchain, *targets,
+            str(self.translate_path(Path(sysroot))),
+            str(self.translate_path(Path(toolchain))),
+            *targets,
             platform=self.config.machine,
             process_mode=self.config.deployment_mode,
             memory_size=self.config.memory_size,
@@ -311,43 +311,39 @@ class CPythonBuild(ZScript):
     def build(self) -> None:
         """Cross-compile python.elf and libpython.a for Nanvix."""
         self._overlay_local_nanvix()
-        sysroot, toolchain = self._get_paths()
+        sysroot, toolchain = self._get_host_paths()
         release = os.environ.get(_MAKE_VAR_RELEASE, "no") == "yes"
         build_mod.build(
             sysroot, toolchain, self.repo_root,
             **self._build_kwargs(release=release),
             run_fn=lambda *args, **kw: self.run(*args, **kw),
+            docker=self.docker is not None,
         )
 
     def test(self) -> None:
         """Run the CPython test suite (hello + regrtest)."""
         self._overlay_local_nanvix()
-        sysroot, toolchain = self._get_paths()
+        sysroot, toolchain = self._get_host_paths()
         kwargs = self._build_kwargs()
 
         test_mod.run_all(
             sysroot, toolchain, self.repo_root,
             **kwargs,
             run_fn=lambda *args, **kw: self.run(*args, **kw),
+            docker=self.docker is not None,
         )
 
     def release(self) -> None:
         """Package the CPython release tarballs and verify them."""
         self._overlay_local_nanvix()
-        sysroot, toolchain = self._get_paths()
+        sysroot, toolchain = self._get_host_paths()
         kwargs = self._build_kwargs(release=True)
-
-        # Pass raw host sysroot path for local file operations (mkramfs,
-        # etc.).  _get_paths() translates to Docker-internal paths when
-        # Docker is active, but package.py needs host paths for
-        # subprocess.run() and Path.is_file() calls.
-        sysroot_host = self.config.get(CFG_SYSROOT, "")
 
         package_mod.package(
             sysroot, toolchain, self.repo_root,
             **kwargs,
             run_fn=lambda *args, **kw: self.run(*args, **kw),
-            nanvix_home=sysroot_host,
+            docker=self.docker is not None,
         )
         package_mod.verify(
             self.repo_root,

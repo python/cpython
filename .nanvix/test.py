@@ -164,6 +164,7 @@ def stage(
     install_prefix: str = config.DEFAULT_INSTALL_PREFIX,
     release: bool = False,
     run_fn=None,
+    docker: bool = False,
 ) -> Path:
     """Build, install, and stage CPython for testing.
 
@@ -232,6 +233,7 @@ def stage(
                 release=release,
                 run_fn=run_fn,
                 extra_make_flags=["-o", "build", "PYTHON_FOR_BUILD=:"],
+                docker=docker,
             )
         else:
             build_mod.build(
@@ -242,6 +244,7 @@ def stage(
                 install_prefix=install_prefix,
                 release=release,
                 run_fn=run_fn,
+                docker=docker,
             )
 
             build_mod.install(
@@ -252,6 +255,7 @@ def stage(
                 install_prefix=install_prefix,
                 release=release,
                 run_fn=run_fn,
+                docker=docker,
             )
 
     sysroot_dir = staging / "sysroot"
@@ -573,6 +577,7 @@ def run_all(
     test_list: list[str] | None = None,
     batch_size: int = config.DEFAULT_TEST_BATCH_SIZE,
     run_fn=None,
+    docker: bool = False,
 ) -> None:
     """Run the complete test pipeline: stage → hello → regrtest → cleanup."""
     nanvix_home = Path(sysroot)
@@ -587,6 +592,7 @@ def run_all(
         install_prefix=install_prefix,
         release=release,
         run_fn=run_fn,
+        docker=docker,
     )
 
     # Ramfs — only needed for standalone mode.  Multi-process and

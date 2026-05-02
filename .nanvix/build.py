@@ -95,6 +95,7 @@ def build(
     install_prefix: str = config.DEFAULT_INSTALL_PREFIX,
     release: bool = False,
     run_fn=None,
+    docker: bool = False,
 ) -> None:
     """Cross-compile python.elf for Nanvix."""
     if config.IS_WINDOWS:
@@ -111,8 +112,10 @@ def build(
             install_destdir=install_cache,
         )
         return
+    effective_sysroot = config.DOCKER_SYSROOT_PATH if docker else sysroot
+    effective_toolchain = config.DOCKER_TOOLCHAIN_PATH if docker else toolchain
     args = make_args(
-        sysroot, toolchain, "build",
+        effective_sysroot, effective_toolchain, "build",
         platform=platform,
         process_mode=process_mode,
         memory_size=memory_size,
@@ -135,6 +138,7 @@ def install(
     release: bool = False,
     run_fn=None,
     extra_make_flags: list[str] | None = None,
+    docker: bool = False,
 ) -> None:
     """Install CPython into a staging directory."""
     if config.IS_WINDOWS:
@@ -147,6 +151,8 @@ def install(
             release=release,
         )
         return
+    effective_sysroot = config.DOCKER_SYSROOT_PATH if docker else sysroot
+    effective_toolchain = config.DOCKER_TOOLCHAIN_PATH if docker else toolchain
     # When running inside Docker, repo_root maps to /mnt/workspace.
     # Use a relative DESTDIR so it resolves correctly inside the container.
     try:
@@ -154,7 +160,7 @@ def install(
     except ValueError:
         rel_destdir = destdir
     args = make_args(
-        sysroot, toolchain,
+        effective_sysroot, effective_toolchain,
         *(extra_make_flags or []),
         "install", f"DESTDIR={rel_destdir}",
         platform=platform,
