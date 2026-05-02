@@ -1597,7 +1597,7 @@ class CFPTest(NumberTest):
     def test_byteswap(self):
         a = array.array(self.typecode, self.example)
         self.assertRaises(TypeError, a.byteswap, 42)
-        if a.itemsize in (1, 2, 4, 8):
+        if a.itemsize in (1, 2, 4, 8, 16):
             b = array.array(self.typecode, self.example)
             b.byteswap()
             if a.itemsize == 1:

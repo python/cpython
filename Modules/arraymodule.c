@@ -1612,7 +1612,9 @@ array_array_byteswap_impl(arrayobject *self)
         }
         break;
     case 8:
-        if (strcmp(self->ob_descr->typecode, "F") != 0) {
+        if (strcmp(self->ob_descr->typecode, "F") != 0
+            && strcmp(self->ob_descr->typecode, "Zf") != 0)
+        {
             for (p = self->ob_item, i = Py_SIZE(self); --i >= 0; p += 8) {
                 char p0 = p[0];
                 char p1 = p[1];
@@ -1646,7 +1648,8 @@ array_array_byteswap_impl(arrayobject *self)
         }
         break;
     case 16:
-        assert(strcmp(self->ob_descr->typecode, "D") == 0);
+        assert(strcmp(self->ob_descr->typecode, "D") == 0
+               || strcmp(self->ob_descr->typecode, "Zd") == 0);
         for (p = self->ob_item, i = Py_SIZE(self); --i >= 0; p += 8) {
             char t0 = p[0];
             char t1 = p[1];
