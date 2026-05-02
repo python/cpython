@@ -2518,7 +2518,7 @@
             owner = stack_pointer[-1];
             uint32_t type_version = (uint32_t)this_instr->operand0;
             assert(type_version);
-            assert(this_instr[-1].opcode == _RECORD_TOS_TYPE);
+            assert(this_instr[-1].opcode == _RECORD_TOS_TYPE || this_instr[-1].opcode == _RECORD_TOS);
             if (sym_matches_type_version(owner, type_version)) {
                 ADD_OP(_NOP, 0, 0);
             }
@@ -2676,8 +2676,8 @@
             JitOptRef owner;
             owner = stack_pointer[-1];
             uint32_t type_version = (uint32_t)this_instr->operand0;
-            PyObject *type = (PyObject *)_PyType_LookupByVersion(type_version);
-            if (type) {
+            PyObject *type = sym_get_probable_value(owner);
+            if (type != NULL && ((PyTypeObject *)type)->tp_version_tag == type_version) {
                 if (type == sym_get_const(ctx, owner)) {
                     ADD_OP(_NOP, 0, 0);
                 }
