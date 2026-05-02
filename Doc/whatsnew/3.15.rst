@@ -1279,6 +1279,16 @@ tarfile
   (Contributed by Christoph Walcher in :gh:`57911`.)
 
 
+threading
+---------
+
+* Added :class:`~threading.serialize_iterator`,
+  :func:`~threading.synchronized_iterator`,
+  and :func:`~threading.concurrent_tee` to support concurrent access to
+  generators and iterators.
+  (Contributed by Raymond Hettinger in :gh:`124397`.)
+
+
 timeit
 ------
 
