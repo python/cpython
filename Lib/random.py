@@ -837,9 +837,9 @@ class Random(_random.Random):
                 return x
             while True:
                 try: 
-                    y += _floor(_log2(random()) / c) + 1 
-                    # The random() function can return 0.0, which causes log2(0.0) to raise a ValueError. 
-                    # See https://github.com/python/cpython/issue/149221 
+                    y += _floor(_log2(random()) / c) + 1
+                # The random() function can return 0.0, which causes log2(0.0) to raise a ValueError. 
+                # See https://github.com/python/cpython/issue/149221 
                 except ValueError:
                   continue
                 if y > n:
