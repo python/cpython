@@ -68,7 +68,7 @@ static_assert(FILE_HEADER_SIZE <= FILE_HEADER_PLACEHOLDER_SIZE,
 #define SAMPLE_HEADER_FIXED_SIZE (sizeof(uint64_t) + sizeof(uint32_t) + 1)
 
 /* Footer field offsets and sizes */
-#define FTR_OFF_STRINGS 0
+#define FTR_OFF_STRINGS       0
 #define FTR_SIZE_STRINGS      sizeof(uint32_t)
 #define FTR_OFF_FRAMES        (FTR_OFF_STRINGS + FTR_SIZE_STRINGS)
 #define FTR_SIZE_FRAMES       sizeof(uint32_t)
