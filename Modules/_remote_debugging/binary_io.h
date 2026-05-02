@@ -8,7 +8,6 @@
 #ifndef Py_BINARY_IO_H
 #define Py_BINARY_IO_H
 
-#include <assert.h>
 #ifdef __cplusplus
 extern "C" {
 #endif
