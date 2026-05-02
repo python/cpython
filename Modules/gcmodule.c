@@ -158,6 +158,15 @@ gc_set_threshold_impl(PyObject *module, int threshold0, int group_right_1,
 {
     GCState *gcstate = get_gc_state();
 
+#ifndef Py_GIL_DISABLED
+    gcstate->generations[0].threshold = threshold0;
+    if (group_right_1) {
+        gcstate->generations[1].threshold = threshold1;
+    }
+    if (group_right_2) {
+        gcstate->generations[2].threshold = threshold2;
+    }
+#else
     gcstate->young.threshold = threshold0;
     if (group_right_1) {
         gcstate->old[0].threshold = threshold1;
@@ -165,6 +174,7 @@ gc_set_threshold_impl(PyObject *module, int threshold0, int group_right_1,
     if (group_right_2) {
         gcstate->old[1].threshold = threshold2;
     }
+#endif
     Py_RETURN_NONE;
 }
 
@@ -179,10 +189,17 @@ gc_get_threshold_impl(PyObject *module)
 /*[clinic end generated code: output=7902bc9f41ecbbd8 input=286d79918034d6e6]*/
 {
     GCState *gcstate = get_gc_state();
+#ifndef Py_GIL_DISABLED
+    return Py_BuildValue("(iii)",
+                         gcstate->generations[0].threshold,
+                         gcstate->generations[1].threshold,
+                         gcstate->generations[2].threshold);
+#else
     return Py_BuildValue("(iii)",
                          gcstate->young.threshold,
                          gcstate->old[0].threshold,
-                         0);
+                         gcstate->old[1].threshold);
+#endif
 }
 
 /*[clinic input]
@@ -206,10 +223,17 @@ gc_get_count_impl(PyObject *module)
     gc->alloc_count = 0;
 #endif
 
+#ifndef Py_GIL_DISABLED
+    return Py_BuildValue("(iii)",
+                         gcstate->generations[0].count,
+                         gcstate->generations[1].count,
+                         gcstate->generations[2].count);
+#else
     return Py_BuildValue("(iii)",
                          gcstate->young.count,
-                         gcstate->old[gcstate->visited_space].count,
-                         gcstate->old[gcstate->visited_space^1].count);
+                         gcstate->old[0].count,
+                         gcstate->old[1].count);
+#endif
 }
 
 /*[clinic input]

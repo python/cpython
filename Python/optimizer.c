@@ -660,6 +660,44 @@ is_terminator(const _PyUOpInstruction *uop)
     );
 }
 
+static PyObject *
+record_trace_transform_to_type(PyObject *value)
+{
+    PyObject *tp = Py_NewRef((PyObject *)Py_TYPE(value));
+    Py_DECREF(value);
+    return tp;
+}
+
+/* _RECORD_NOS_GEN_FUNC and _RECORD_3OS_GEN_FUNC record the raw receiver.
+ * If it is a generator, return its function object; otherwise return NULL.
+ */
+static PyObject *
+record_trace_transform_gen_func(PyObject *value)
+{
+    PyObject *func = NULL;
+    if (PyGen_Check(value)) {
+        _PyStackRef f = ((PyGenObject *)value)->gi_iframe.f_funcobj;
+        if (!PyStackRef_IsNull(f)) {
+            func = Py_NewRef(PyStackRef_AsPyObjectBorrow(f));
+        }
+    }
+    Py_DECREF(value);
+    return func;
+}
+
+/* _RECORD_BOUND_METHOD records the raw callable.
+ * Keep it only for bound methods; otherwise return NULL.
+ */
+static PyObject *
+record_trace_transform_bound_method(PyObject *value)
+{
+    if (Py_TYPE(value) == &PyMethod_Type) {
+        return value;
+    }
+    Py_DECREF(value);
+    return NULL;
+}
+
 /* Returns 1 on success (added to trace), 0 on trace end.
  */
 // gh-142543: inlining this function causes stack overflows
@@ -832,6 +870,8 @@ _PyJit_translate_single_bytecode_to_trace(
 
     // One for possible _DEOPT, one because _CHECK_VALIDITY itself might _DEOPT
     trace->end -= 2;
+
+    const _PyOpcodeRecordSlotMap *record_slot_map = &_PyOpcode_RecordSlotMaps[opcode];
 
     assert(opcode != ENTER_EXECUTOR && opcode != EXTENDED_ARG);
     assert(!_PyErr_Occurred(tstate));
@@ -1029,8 +1069,15 @@ _PyJit_translate_single_bytecode_to_trace(
                     }
                 }
                 else if (_PyUop_Flags[uop] & HAS_RECORDS_VALUE_FLAG) {
-                    PyObject *recorded_value = tracer->prev_state.recorded_values[record_idx];
-                    tracer->prev_state.recorded_values[record_idx] = NULL;
+                    assert(record_idx < record_slot_map->count);
+                    uint8_t record_slot = record_slot_map->slots[record_idx];
+                    assert(record_slot < tracer->prev_state.recorded_count);
+                    PyObject *recorded_value = tracer->prev_state.recorded_values[record_slot];
+                    tracer->prev_state.recorded_values[record_slot] = NULL;
+                    if ((record_slot_map->transform_mask & (1u << record_idx)) &&
+                        recorded_value != NULL) {
+                        recorded_value = _PyOpcode_RecordTransformValue(uop, recorded_value);
+                    }
                     record_idx++;
                     operand = (uintptr_t)recorded_value;
                 }
