@@ -1,3 +1,0 @@
-Fix use-after-free in :meth:`dict.clear` when the dictionary values are
-embedded in an object and a destructor causes re-entrant mutation of the
-dictionary.

@@ -2,8 +2,9 @@
 
 import os as _os
 import sys as _sys
-import sysconfig as _sysconfig
 import types as _types
+
+lazy import sysconfig as _sysconfig
 
 from _ctypes import Union, Structure, Array
 from _ctypes import _Pointer

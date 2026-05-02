@@ -1,1 +1,0 @@
-Fix :class:`ctypes.CDLL` to honor the ``handle`` parameter on POSIX systems.

@@ -751,6 +751,10 @@ def collect_test_socket(info_add):
                   if name.startswith('HAVE_')]
     copy_attributes(info_add, test_socket, 'test_socket.%s', attributes)
 
+    # Get IOCTL_VM_SOCKETS_GET_LOCAL_CID of /dev/vsock
+    cid = test_socket.get_cid()
+    info_add('test_socket.get_cid', cid)
+
 
 def collect_support(info_add):
     try:
@@ -1099,9 +1103,9 @@ def collect_info(info):
 
 
 def dump_info(info, file=None):
-    title = "Python debug information"
+    title = "Python build information"
     print(title)
-    print("=" * len(title))
+    print("#" * len(title))
     print()
 
     infos = info.get_infos()

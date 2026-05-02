@@ -1,3 +1,4 @@
+import contextlib
 import unittest
 from collections import OrderedDict, UserDict
 from types import MappingProxyType
@@ -97,17 +98,13 @@ class CAPITest(unittest.TestCase):
     def test_dict_copy(self):
         # Test PyDict_Copy()
         copy = _testlimitedcapi.dict_copy
-        for dict_type in ANYDICT_TYPES:
-            if issubclass(dict_type, frozendict):
-                expected_type = frozendict
-            else:
-                expected_type = dict
+        for dict_type in DICT_TYPES:
             dct = dict_type({1: 2})
             dct_copy = copy(dct)
-            self.assertIs(type(dct_copy), expected_type)
+            self.assertIs(type(dct_copy), dict)
             self.assertEqual(dct_copy, dct)
 
-        for test_type in NOT_ANYDICT_TYPES + OTHER_TYPES:
+        for test_type in NOT_DICT_TYPES + OTHER_TYPES:
             self.assertRaises(SystemError, copy, test_type())
         self.assertRaises(SystemError, copy, NULL)
 
@@ -262,6 +259,12 @@ class CAPITest(unittest.TestCase):
         # CRASHES contains({}, NULL)
         # CRASHES contains(NULL, b'a')
 
+    @contextlib.contextmanager
+    def frozendict_does_not_support(self, what):
+        errmsg = f'frozendict object does not support item {what}'
+        with self.assertRaisesRegex(TypeError, errmsg):
+            yield
+
     def test_dict_setitem(self):
         # Test PyDict_SetItem()
         setitem = _testlimitedcapi.dict_setitem
@@ -273,7 +276,10 @@ class CAPITest(unittest.TestCase):
             self.assertEqual(dct, {'a': 5, '\U0001f40d': 8})
 
         self.assertRaises(TypeError, setitem, {}, [], 5)  # unhashable
-        for test_type in NOT_DICT_TYPES + OTHER_TYPES:
+        for test_type in FROZENDICT_TYPES:
+            with self.frozendict_does_not_support('assignment'):
+                setitem(test_type(), 'a', 5)
+        for test_type in MAPPING_TYPES + OTHER_TYPES:
             self.assertRaises(SystemError, setitem, test_type(), 'a', 5)
         # CRASHES setitem({}, NULL, 5)
         # CRASHES setitem({}, 'a', NULL)
@@ -290,7 +296,10 @@ class CAPITest(unittest.TestCase):
             self.assertEqual(dct, {'a': 5, '\U0001f40d': 8})
 
         self.assertRaises(UnicodeDecodeError, setitemstring, {}, INVALID_UTF8, 5)
-        for test_type in NOT_DICT_TYPES + OTHER_TYPES:
+        for test_type in FROZENDICT_TYPES:
+            with self.frozendict_does_not_support('assignment'):
+                setitemstring(test_type(), b'a', 5)
+        for test_type in MAPPING_TYPES + OTHER_TYPES:
             self.assertRaises(SystemError, setitemstring, test_type(), b'a', 5)
         # CRASHES setitemstring({}, NULL, 5)
         # CRASHES setitemstring({}, b'a', NULL)
@@ -308,7 +317,10 @@ class CAPITest(unittest.TestCase):
             self.assertEqual(dct, {'c': 2})
 
         self.assertRaises(TypeError, delitem, {}, [])  # unhashable
-        for test_type in NOT_DICT_TYPES:
+        for test_type in FROZENDICT_TYPES:
+            with self.frozendict_does_not_support('deletion'):
+                delitem(test_type({'a': 1}), 'a')
+        for test_type in MAPPING_TYPES:
             self.assertRaises(SystemError, delitem, test_type({'a': 1}), 'a')
         for test_type in OTHER_TYPES:
             self.assertRaises(SystemError, delitem, test_type(), 'a')
@@ -327,7 +339,10 @@ class CAPITest(unittest.TestCase):
             self.assertEqual(dct, {'c': 2})
 
         self.assertRaises(UnicodeDecodeError, delitemstring, {}, INVALID_UTF8)
-        for test_type in NOT_DICT_TYPES:
+        for test_type in FROZENDICT_TYPES:
+            with self.frozendict_does_not_support('deletion'):
+                delitemstring(test_type({'a': 1}), b'a')
+        for test_type in MAPPING_TYPES:
             self.assertRaises(SystemError, delitemstring, test_type({'a': 1}), b'a')
         for test_type in OTHER_TYPES:
             self.assertRaises(SystemError, delitemstring, test_type(), b'a')
@@ -345,7 +360,10 @@ class CAPITest(unittest.TestCase):
             self.assertEqual(dct, {'a': 5})
 
         self.assertRaises(TypeError, setdefault, {}, [], 5)  # unhashable
-        for test_type in NOT_DICT_TYPES + OTHER_TYPES:
+        for test_type in FROZENDICT_TYPES:
+            with self.frozendict_does_not_support('assignment'):
+                setdefault(test_type(), 'a', 5)
+        for test_type in MAPPING_TYPES + OTHER_TYPES:
             self.assertRaises(SystemError, setdefault, test_type(), 'a', 5)
         # CRASHES setdefault({}, NULL, 5)
         # CRASHES setdefault({}, 'a', NULL)
@@ -362,7 +380,10 @@ class CAPITest(unittest.TestCase):
             self.assertEqual(dct, {'a': 5})
 
         self.assertRaises(TypeError, setdefault, {}, [], 5)  # unhashable
-        for test_type in NOT_DICT_TYPES + OTHER_TYPES:
+        for test_type in FROZENDICT_TYPES:
+            with self.frozendict_does_not_support('assignment'):
+                setdefault(test_type(), 'a', 5)
+        for test_type in MAPPING_TYPES + OTHER_TYPES:
             self.assertRaises(SystemError, setdefault, test_type(), 'a', 5)
         # CRASHES setdefault({}, NULL, 5)
         # CRASHES setdefault({}, 'a', NULL)
@@ -428,7 +449,10 @@ class CAPITest(unittest.TestCase):
 
         self.assertRaises(AttributeError, update, {}, [])
         self.assertRaises(AttributeError, update, {}, 42)
-        for test_type in NOT_DICT_TYPES + OTHER_TYPES:
+        for test_type in FROZENDICT_TYPES:
+            with self.frozendict_does_not_support('assignment'):
+                update(test_type(), {})
+        for test_type in MAPPING_TYPES + OTHER_TYPES:
             self.assertRaises(SystemError, update, test_type(), {})
         self.assertRaises(SystemError, update, {}, NULL)
         self.assertRaises(SystemError, update, NULL, {})
@@ -447,7 +471,10 @@ class CAPITest(unittest.TestCase):
 
         self.assertRaises(AttributeError, merge, {}, [], 0)
         self.assertRaises(AttributeError, merge, {}, 42, 0)
-        for test_type in NOT_DICT_TYPES + OTHER_TYPES:
+        for test_type in FROZENDICT_TYPES:
+            with self.frozendict_does_not_support('assignment'):
+                merge(test_type(), {}, 0)
+        for test_type in MAPPING_TYPES + OTHER_TYPES:
             self.assertRaises(SystemError, merge, test_type(), {}, 0)
         self.assertRaises(SystemError, merge, {}, NULL, 0)
         self.assertRaises(SystemError, merge, NULL, {}, 0)
@@ -468,7 +495,10 @@ class CAPITest(unittest.TestCase):
         self.assertRaises(ValueError, mergefromseq2, {}, [(1, 2, 3)], 0)
         self.assertRaises(TypeError, mergefromseq2, {}, [1], 0)
         self.assertRaises(TypeError, mergefromseq2, {}, 42, 0)
-        for test_type in NOT_DICT_TYPES + OTHER_TYPES:
+        for test_type in FROZENDICT_TYPES:
+            with self.frozendict_does_not_support('assignment'):
+                mergefromseq2(test_type(), [], 0)
+        for test_type in MAPPING_TYPES + OTHER_TYPES:
             self.assertRaises(SystemError, mergefromseq2, test_type(), [], 0)
         # CRASHES mergefromseq2({}, NULL, 0)
         # CRASHES mergefromseq2(NULL, {}, 0)
@@ -515,7 +545,10 @@ class CAPITest(unittest.TestCase):
                 dict_pop(mydict, not_hashable_key)
 
         # wrong dict type
-        for test_type in NOT_DICT_TYPES + OTHER_TYPES:
+        for test_type in FROZENDICT_TYPES:
+            with self.frozendict_does_not_support('deletion'):
+                dict_pop(test_type(), "key")
+        for test_type in MAPPING_TYPES + OTHER_TYPES:
             not_dict = test_type()
             self.assertRaises(SystemError, dict_pop, not_dict, "key")
             self.assertRaises(SystemError, dict_pop_null, not_dict, "key")
@@ -564,7 +597,10 @@ class CAPITest(unittest.TestCase):
             self.assertRaises(UnicodeDecodeError, dict_popstring_null, mydict, INVALID_UTF8)
 
         # wrong dict type
-        for test_type in NOT_DICT_TYPES + OTHER_TYPES:
+        for test_type in FROZENDICT_TYPES:
+            with self.frozendict_does_not_support('deletion'):
+                dict_popstring(test_type(), "key")
+        for test_type in MAPPING_TYPES + OTHER_TYPES:
             not_dict = test_type()
             self.assertRaises(SystemError, dict_popstring, not_dict, "key")
             self.assertRaises(SystemError, dict_popstring_null, not_dict, "key")
@@ -622,6 +658,16 @@ class CAPITest(unittest.TestCase):
         dct = frozendict_new([('x', 1), ('y', 2)])
         self.assertEqual(dct, frozendict(x=1, y=2))
         self.assertIs(type(dct), frozendict)
+
+        # PyFrozenDict_New(frozendict) returns the same object unmodified
+        fd = frozendict(a=1, b=2, c=3)
+        fd2 = frozendict_new(fd)
+        self.assertIs(fd2, fd)
+
+        fd = FrozenDictSubclass(a=1, b=2, c=3)
+        fd2 = frozendict_new(fd)
+        self.assertIsNot(fd2, fd)
+        self.assertEqual(fd2, fd)
 
         # PyFrozenDict_New(NULL) creates an empty dictionary
         dct = frozendict_new(NULL)
