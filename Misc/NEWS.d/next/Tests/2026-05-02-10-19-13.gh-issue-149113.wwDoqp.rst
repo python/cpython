@@ -1,0 +1,1 @@
+The Android testbed can now copy files back from the emulator to the build machine.
