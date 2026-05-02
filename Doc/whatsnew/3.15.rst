@@ -680,11 +680,16 @@ array
 
 * Support the :c:expr:`float complex` and :c:expr:`double complex` C types:
   formatting characters ``'F'``/``'Zd'`` and ``'D'``/``'Zd'`` respectively.
-  (Contributed by Sergey B Kirpichev in :gh:`146151`.)
+  (Contributed by Sergey B Kirpichev and Victor Stinner in :gh:`146151`
+  and :gh:`148675`.)
 
 * Support half-floats (16-bit IEEE 754 binary interchange format): formatting
   character ``'e'``.
   (Contributed by Sergey B Kirpichev in :gh:`146238`.)
+
+* The :data:`array.typecodes` type changed from :str:`str` to :class:`tuple`
+  to support type codes longer than 1 character (``Zf`` and ``Zd``).
+  (Contributed by Victor Stinner in :gh:`148675`.)
 
 
 base64

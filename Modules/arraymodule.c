@@ -3493,7 +3493,6 @@ static int
 array_modexec(PyObject *m)
 {
     array_state *state = get_array_state(m);
-    char buffer[Py_ARRAY_LENGTH(descriptors)*2], *p;
     PyObject *typecodes;
     const struct arraydescr *descr;
 
@@ -3532,13 +3531,29 @@ array_modexec(PyObject *m)
         return -1;
     }
 
-    p = buffer;
-    for (descr = descriptors; descr->typecode != NULL; descr++) {
-        strcpy(p, descr->typecode);
-        p += strlen(descr->typecode);
+    typecodes = PyList_New(0);
+    if (typecodes == NULL) {
+        return -1;
     }
-    typecodes = PyUnicode_DecodeASCII(buffer, p - buffer, NULL);
-    if (PyModule_Add(m, "typecodes", typecodes) < 0) {
+    for (descr = descriptors; descr->typecode != NULL; descr++) {
+        PyObject *typecode = PyUnicode_DecodeASCII(descr->typecode, strlen(descr->typecode), NULL);
+        if (typecode == NULL) {
+            Py_DECREF(typecodes);
+            return -1;
+        }
+        int res = PyList_Append(typecodes, typecode);
+        Py_DECREF(typecode);
+        if (res < 0) {
+            Py_DECREF(typecodes);
+            return -1;
+        }
+    }
+    PyObject *tuple = PyList_AsTuple(typecodes);
+    Py_DECREF(typecodes);
+    if (tuple == NULL) {
+        return -1;
+    }
+    if (PyModule_Add(m, "typecodes", tuple) < 0) {
         return -1;
     }
 

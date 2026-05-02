@@ -85,6 +85,12 @@ class MiscTest(unittest.TestCase):
                 with self.assertRaises(TypeError):
                     a.fromlist(lst)
 
+    def test_typecodes(self):
+        self.assertIsInstance(array.typecodes, tuple)
+        for typecode in array.typecodes:
+            self.assertIsInstance(typecode, str)
+            self.assertGreaterEqual(len(typecode), 1)
+
 
 # Machine format codes.
 #
@@ -1236,6 +1242,9 @@ class BaseTest:
                                            (self.typecode,))
         support.check_free_after_iterating(self, reversed, array.array,
                                            (self.typecode,))
+
+    def test_known_typecode(self):
+        self.assertIn(self.typecode, array.typecodes)
 
 class StringTest(BaseTest):
 

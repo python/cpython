@@ -109,7 +109,10 @@ The module defines the following item:
 
 .. data:: typecodes
 
-   A string with all available type codes.
+   A tuple with all available type codes.
+
+   .. versionchanged:: next
+      The type changed from :str:`str` to :class:`tuple`.
 
 
 The module defines the following type:
