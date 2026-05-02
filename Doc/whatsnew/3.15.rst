@@ -1722,10 +1722,10 @@ ctypes
   which has been deprecated since Python 3.13.
   (Contributed by Bénédikt Tran in :gh:`133866`.)
 
-* Change the :py:attr:`~_SimpleCData._type_` of :class:`c_float_complex`,
-  :class:`c_double_complex` and :class:`c_longdouble_complex`
-  from ``F``, ``D`` and ``G`` to ``Zf``, ``Zd`` and ``Zg``
-  for compatibility with numpy.
+* Change the :py:attr:`~_SimpleCData._type_` of
+  :class:`~ctypes.c_float_complex`, :class:`~ctypes.c_double_complex` and
+  :class:`~ctypes.c_longdouble_complex` from ``F``, ``D`` and ``G`` to ``Zf``,
+  ``Zd`` and ``Zg`` for compatibility with numpy.
   (Contributed by Victor Stinner in :gh:`148675`.)
 
 
