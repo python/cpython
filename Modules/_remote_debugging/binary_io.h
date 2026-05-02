@@ -8,6 +8,7 @@
 #ifndef Py_BINARY_IO_H
 #define Py_BINARY_IO_H
 
+#include <assert.h>
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -62,10 +63,23 @@ extern "C" {
 #define FILE_HEADER_SIZE     (HDR_OFF_COMPRESSION + HDR_SIZE_COMPRESSION)
 #define FILE_HEADER_PLACEHOLDER_SIZE 64
 #define SAMPLE_HEADER_FIXED_SIZE (sizeof(uint64_t) + sizeof(uint32_t) + 1)
-#define FILE_FOOTER_SIZE      32
 
 static_assert(FILE_HEADER_SIZE <= FILE_HEADER_PLACEHOLDER_SIZE,
               "FILE_HEADER_SIZE exceeds FILE_HEADER_PLACEHOLDER_SIZE");
+
+/* Footer field offsets and sizes */
+#define FTR_OFF_STRINGS 0
+#define FTR_SIZE_STRINGS      sizeof(uint32_t)
+#define FTR_OFF_FRAMES        (FTR_OFF_STRINGS + FTR_SIZE_STRINGS)
+#define FTR_SIZE_FRAMES       sizeof(uint32_t)
+#define FTR_OFF_FILE_SIZE     (FTR_OFF_FRAMES + FTR_SIZE_FRAMES)
+#define FTR_SIZE_FILE_SIZE    sizeof(uint64_t)
+#define FTR_OFF_CHECKSUM      (FTR_OFF_FILE_SIZE + FTR_SIZE_FILE_SIZE)
+#define FTR_SIZE_CHECKSUM     (2 * sizeof(uint64_t))
+#define FILE_FOOTER_SIZE      (FTR_SIZE_STRINGS + FTR_SIZE_FRAMES + FTR_SIZE_FILE_SIZE + FTR_SIZE_CHECKSUM)
+
+static_assert(FILE_FOOTER_SIZE == 32,
+             "FILE_FOOTER_SIZE must remain 32");
 
 /* Buffer sizes: 512KB balances syscall amortization against memory use,
  * and aligns well with filesystem block sizes and zstd dictionary windows */

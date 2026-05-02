@@ -1142,17 +1142,17 @@ binary_writer_finalize(BinaryWriter *writer)
         PyErr_SetFromErrno(PyExc_IOError);
         return -1;
     }
-    uint64_t file_size = (uint64_t)footer_offset + 32;
-    uint8_t footer[32] = {0};
+    uint64_t file_size = (uint64_t)footer_offset + FILE_FOOTER_SIZE;
+    uint8_t footer[FILE_FOOTER_SIZE] = {0};
     /* Cast size_t to uint32_t before memcpy to ensure correct bytes are copied
      * on both little-endian and big-endian systems (size_t is 8 bytes on 64-bit) */
     uint32_t string_count_u32 = (uint32_t)writer->string_count;
     uint32_t frame_count_u32 = (uint32_t)writer->frame_count;
-    memcpy(footer + 0, &string_count_u32, 4);
-    memcpy(footer + 4, &frame_count_u32, 4);
-    memcpy(footer + 8, &file_size, 8);
-    /* bytes 16-31: checksum placeholder (zeros) */
-    if (fwrite_checked_allow_threads(footer, 32, writer->fp) < 0) {
+    memcpy(footer + FTR_OFF_STRINGS, &string_count_u32, FTR_SIZE_STRINGS);
+    memcpy(footer + FTR_OFF_FRAMES, &frame_count_u32, FTR_SIZE_FRAMES);
+    memcpy(footer + FTR_OFF_FILE_SIZE, &file_size, FTR_SIZE_FILE_SIZE);
+    /* checksum (FTR_OFF_CHECKSUM..FILE_FOOTER_SIZE-1): placeholder zeros */
+    if (fwrite_checked_allow_threads(footer, FILE_FOOTER_SIZE, writer->fp) < 0) {
         return -1;
     }
 

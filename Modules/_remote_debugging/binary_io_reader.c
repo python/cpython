@@ -43,8 +43,8 @@ reader_parse_header(BinaryReader *reader, const uint8_t *data, size_t file_size)
     /* Use memcpy to avoid strict aliasing violations and unaligned access */
     uint32_t magic;
     uint32_t version;
-    memcpy(&magic, &data[0], sizeof(magic));
-    memcpy(&version, &data[4], sizeof(version));
+    memcpy(&magic, &data[HDR_OFF_MAGIC], HDR_SIZE_MAGIC);
+    memcpy(&version, &data[HDR_OFF_VERSION], HDR_SIZE_VERSION);
 
     /* Detect endianness from magic number */
     if (magic == BINARY_FORMAT_MAGIC) {
@@ -115,8 +115,8 @@ reader_parse_footer(BinaryReader *reader, const uint8_t *data, size_t file_size)
     const uint8_t *footer = data + file_size - FILE_FOOTER_SIZE;
     /* Use memcpy to avoid strict aliasing violations */
     uint32_t strings_count, frames_count;
-    memcpy(&strings_count, &footer[0], sizeof(strings_count));
-    memcpy(&frames_count, &footer[4], sizeof(frames_count));
+    memcpy(&strings_count, &footer[FTR_OFF_STRINGS], FTR_SIZE_STRINGS);
+    memcpy(&frames_count, &footer[FTR_OFF_FRAMES], FTR_SIZE_FRAMES);
 
     reader->strings_count = SWAP32_IF(reader->needs_swap, strings_count);
     reader->frames_count = SWAP32_IF(reader->needs_swap, frames_count);
