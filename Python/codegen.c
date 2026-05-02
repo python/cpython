@@ -597,6 +597,7 @@ codegen_async_yield_from(compiler *c, location loc, expr_ty e)
     // extra copy.
     ADDOP_I(c, loc, COPY, 2);
     // Stack: [aiterator, wrapped_result, aiterator]
+
     ADDOP_I(c, loc, SWAP, 2);
     // Stack: [aiterator, aiterator, wrapped_result]
 
@@ -607,6 +608,7 @@ codegen_async_yield_from(compiler *c, location loc, expr_ty e)
 
     ADDOP_I(c, loc, SWAP, 2);
     // Stack: [aiterator, resumed_value, aiterator]
+
     ADDOP(c, loc, POP_TOP);
     // Stack: [aiterator, resumed_value]
 
