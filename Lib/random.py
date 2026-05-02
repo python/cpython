@@ -838,10 +838,9 @@ class Random(_random.Random):
             while True:
                 try:
                     y += _floor(_log2(random()) / c) + 1
-                # The random() function can return 0.0, which causes log2(0.0) to raise a ValueError.
-                # See https://github.com/python/cpython/issue/149221
                 except ValueError:
-                  continue
+                    # Reject case where random() returned 0.0
+                    continue
                 if y > n:
                     return x
                 x += 1
@@ -849,8 +848,8 @@ class Random(_random.Random):
         # BTRS: Transformed rejection with squeeze method by Wolfgang Hörmann
         # https://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.47.8407&rep=rep1&type=pdf
         assert n*p >= 10.0 and p <= 0.5
-        setup_complete = False
 
+        setup_complete = False
         spq = _sqrt(n * p * (1.0 - p))  # Standard deviation of the distribution
         b = 1.15 + 2.53 * spq
         a = -0.0873 + 0.0248 * b + 0.01 * p
@@ -865,22 +864,23 @@ class Random(_random.Random):
             k = _floor((2.0 * a / us + b) * u + c)
             if k < 0 or k > n:
                 continue
+            v = random()
 
             # The early-out "squeeze" test substantially reduces
             # the number of acceptance condition evaluations.
-            v = random()
             if us >= 0.07 and v <= vr:
                 return k
 
-            # Acceptance-rejection test.
-            # Note, the original paper erroneously omits the call to log(v)
-            # when comparing to the log of the rescaled binomial distribution.
             if not setup_complete:
                 alpha = (2.83 + 5.1 / b) * spq
                 lpq = _log(p / (1.0 - p))
                 m = _floor((n + 1) * p)         # Mode of the distribution
                 h = _lgamma(m + 1) + _lgamma(n - m + 1)
                 setup_complete = True           # Only needs to be done once
+
+            # Acceptance-rejection test.
+            # Note, the original paper erroneously omits the call to log(v)
+            # when comparing to the log of the rescaled binomial distribution.
             v *= alpha / (a / (us * us) + b)
             if _log(v) <= h - _lgamma(k + 1) - _lgamma(n - k + 1) + (k - m) * lpq:
                 return k
