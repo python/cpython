@@ -2682,39 +2682,13 @@ static PyAsyncMethods async_gen_yield_from_as_async = {
     .am_send = async_gen_yield_from_send
 };
 
-#define AGYF_PROXY_METHOD(name, result_value)                                            \
-    static PyObject *                                                                   \
-    async_gen_yield_from_ ## name ## _method(PyObject *op, PyObject *args, PyObject *keywords)  \
-    {                                                                                   \
-        assert(op != NULL);                                                             \
-        _PyAsyncGenYieldFrom *self = _PyAsyncGenYieldFrom_CAST(op);                     \
-        PyObject *method;                                                               \
-        if (PyObject_GetOptionalAttr(self->agyf_iterator, &_Py_ID(name), &method) < 0) { \
-            return NULL;                                                                \
-        }                                                                               \
-        if (method == NULL) {                                                           \
-            Py_RETURN_NONE;                                                             \
-        }                                                                               \
-        PyObject *result = PyObject_Call(method, args, keywords);                       \
-        Py_DECREF(method);                                                              \
-        if (result == NULL) {                                                           \
-            return NULL;                                                                \
-        }                                                                               \
-        return result_value;                                                            \
-    }
-
-
-
-AGYF_PROXY_METHOD(send, _PyAsyncGenValueWrapperNew(_PyThreadState_GET(), result))
-AGYF_PROXY_METHOD(throw, result)
-AGYF_PROXY_METHOD(close, result)
-
-static PyMethodDef async_gen_yield_from_methods[] = {
-    {"send", (PyCFunction)async_gen_yield_from_send_method, METH_VARARGS | METH_KEYWORDS},
-    {"throw", (PyCFunction)async_gen_yield_from_throw_method, METH_VARARGS | METH_KEYWORDS},
-    {"close", (PyCFunction)async_gen_yield_from_close_method, METH_VARARGS | METH_KEYWORDS},
-    {0}
-};
+static PyObject *
+async_gen_yield_from_get_attr(PyObject *op, PyObject *attribute)
+{
+    assert(op != NULL);
+    _PyAsyncGenYieldFrom *self = _PyAsyncGenYieldFrom_CAST(op);
+    return PyObject_GenericGetAttr(self->agyf_iterator, attribute);
+}
 
 PyTypeObject _PyAsyncGenYieldFrom_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
@@ -2734,7 +2708,7 @@ PyTypeObject _PyAsyncGenYieldFrom_Type = {
     0,                                          /* tp_hash */
     0,                                          /* tp_call */
     0,                                          /* tp_str */
-    PyObject_GenericGetAttr,                    /* tp_getattro */
+    async_gen_yield_from_get_attr,              /* tp_getattro */
     0,                                          /* tp_setattro */
     0,                                          /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,    /* tp_flags */
@@ -2745,7 +2719,7 @@ PyTypeObject _PyAsyncGenYieldFrom_Type = {
     0,                                          /* tp_weaklistoffset */
     PyObject_SelfIter,                          /* tp_iter */
     async_gen_yield_from_iternext,              /* tp_iternext */
-    async_gen_yield_from_methods,               /* tp_methods */
+    0,                                          /* tp_methods */
     0,                                          /* tp_members */
     0,                                          /* tp_getset */
     0,                                          /* tp_base */
