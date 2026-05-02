@@ -168,17 +168,17 @@ missing_dot_in_local_part_defect = (
 
 trailing_dot_in_local_part_defect = (
     errors.InvalidHeaderDefect,
-    "invalid trailing '.' in local part",
+    "invalid trailing '.' in local-part",
     )
 
 leading_dot_in_local_part_defect = (
     errors.InvalidHeaderDefect,
-    "invalid leading '.' in local part",
+    "invalid leading '.' in local-part",
     )
 
 repeated_dot_in_local_part_defect = (
     errors.InvalidHeaderDefect,
-    "invalid repeated '.'",
+    "invalid repeated '.' in local-part",
     )
 
 misplaced_backslash_defect = (
@@ -3960,7 +3960,7 @@ class TestParser(TestParserMixin, TestEmailBase):
     # not what it does with non-obs syntax.  Anything else is "don't care".
     # The 'local_part' specs are checked by the get_local_part tests, since the
     # token list returned by get_obs_local_part doesn't have that attribute.
-    params_test_get_obs_local_part = old_api_only(
+    params_test_get_obs_local_part = for_each_api(
 
         simple_obsolete = C(
             'Fred. A.Johnson@python.org',
@@ -4119,8 +4119,7 @@ class TestParser(TestParserMixin, TestEmailBase):
                 missing_dot_in_local_part_defect,
                 ew_inside_quoted_string_defect,
                 ],
-            # XXX XXX second index will change during refactor
-            ew_indexes=[0, 1],
+            ew_indexes=[0, 17],
             ),
 
         less_invalid_ew_atoms = C(
@@ -4129,8 +4128,7 @@ class TestParser(TestParserMixin, TestEmailBase):
             value="foo  .  bar .bird",
             local_part="foo . bar.bird",
             comments=['test'],
-            # XXX XXX the indexes will change during refactor
-            ew_indexes=[0, 2, 20],
+            ew_indexes=[0, 20, 38],
             ),
 
         )

@@ -2013,39 +2013,54 @@ def get_phrase(value, start):
             " raise an error in the future."
         )
 
-def get_obs_local_part(value):
+@_deprecate_old_api
+def get_obs_local_part(value, start):
     """ obs-local-part = word *("." word)
+
+    Return an ObsLocalPart containing a list of words and DOTs containing
+    all of the characters up to the next character not allowed in a phrase or
+    the end of the value, and a pointer to the SPECIAL or the len of value.
+
+    Decode any encoded words, registering a defect if any are found.
+    Missing whitespace defects may also be registered.
+
+    Register defects if there are any non-printable or invalid characters in
+    the non-whitespace tokens.
+
     """
     obs_local_part = ObsLocalPart()
+    vlen = len(value)
     last_non_ws_was_dot = False
-    while value and (value[0]=='\\' or value[0] not in PHRASE_ENDS):
-        if value[0] == '.':
+    while start < vlen and ((c := value[start]) == '\\' or c not in PHRASE_ENDS):
+        if c == '.':
             if last_non_ws_was_dot:
                 obs_local_part.defects.append(errors.InvalidHeaderDefect(
-                    "invalid repeated '.'"))
+                    "invalid repeated '.' in local-part")
+                    )
             obs_local_part.append(DOT)
             last_non_ws_was_dot = True
-            value = value[1:]
+            start += 1
             continue
-        elif value[0]=='\\':
+        elif c == '\\':
             # RFC 5322 doesn't allow \, but the old email code parsed it.
-            obs_local_part.append(ValueTerminal(value[0],
-                                                'misplaced-special'))
-            value = value[1:]
+            obs_local_part.append(ValueTerminal(c,'misplaced-special'))
+            start += 1
             obs_local_part.defects.append(errors.InvalidHeaderDefect(
                 "'\\' character outside of quoted-string/ccontent"))
             last_non_ws_was_dot = False
             continue
         if obs_local_part and obs_local_part[-1].token_type != 'dot':
-            obs_local_part.defects.append(errors.InvalidHeaderDefect(
-                "missing '.' between words"))
+            obs_local_part.defects.append(
+                errors.InvalidHeaderDefect("missing '.' between words"),
+                )
         try:
-            token, value = get_word(value)
+            token, start = get_word(value, start)
             last_non_ws_was_dot = False
         except errors.HeaderParseError:
-            if value[0] not in CFWS_LEADER:
+            if value[start] not in CFWS_LEADER:
                 raise
-            token, value = get_cfws(value)
+            # There will be a 'dot' defect; no need for no-word defect here.
+            token, start = get_cfws(value, start)
         obs_local_part.append(token)
     if not obs_local_part:
         raise errors.HeaderParseError(
@@ -2055,16 +2070,16 @@ def get_obs_local_part(value):
             len(obs_local_part) > 1 and
             obs_local_part[1].token_type=='dot'):
         obs_local_part.defects.append(errors.InvalidHeaderDefect(
-            "Invalid leading '.' in local part"))
+            "Invalid leading '.' in local-part"))
     if (obs_local_part[-1].token_type == 'dot' or
             obs_local_part[-1].token_type=='cfws' and
             len(obs_local_part) > 1 and
             obs_local_part[-2].token_type=='dot'):
         obs_local_part.defects.append(errors.InvalidHeaderDefect(
-            "Invalid trailing '.' in local part"))
+            "Invalid trailing '.' in local-part"))
     if obs_local_part.defects:
         obs_local_part.token_type = 'invalid-obs-local-part'
-    return obs_local_part, value
+    return obs_local_part, start
 
 def get_local_part(value):
     """ local-part = dot-atom / quoted-string / obs-local-part
