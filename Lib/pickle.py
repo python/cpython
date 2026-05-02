@@ -904,17 +904,11 @@ class _Pickler:
                     # Write data in-band
                     # XXX The C implementation avoids a copy here
                     buf = m.tobytes()
-                    in_memo = id(buf) in self.memo
                     if m.readonly:
-                        if in_memo:
-                            self._save_bytes_no_memo(buf)
-                        else:
-                            self.save_bytes(buf)
+                        self._save_bytes_no_memo(buf)
                     else:
-                        if in_memo:
-                            self._save_bytearray_no_memo(buf)
-                        else:
-                            self.save_bytearray(buf)
+                        self._save_bytearray_no_memo(buf)
+                    self.memoize(obj)
                 else:
                     # Write data out-of-band
                     self.write(NEXT_BUFFER)
