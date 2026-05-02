@@ -836,7 +836,11 @@ class Random(_random.Random):
             if not c:
                 return x
             while True:
+                try:
                 y += _floor(_log2(random()) / c) + 1
+                except ValueError:
+                # fix random() rethrn 0.0 option
+                continue
                 if y > n: 
                     return x
                 x += 1
