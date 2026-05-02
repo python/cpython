@@ -144,9 +144,9 @@ get_gc_stats_from_interpreter_state(RuntimeOffsets *offsets,
 
     struct gc_stats stats;
     uint64_t gc_stats_size = offsets->debug_offsets.gc.generation_stats_size;
-    if (gc_stats_size > sizeof(stats)) {
+    if (gc_stats_size != sizeof(stats)) {
         PyErr_Format(PyExc_RuntimeError,
-                     "Remote gc_stats size (%llu) exceeds local size (%zu)",
+                     "Remote gc_stats size (%llu) does not match local size (%zu)",
                      (unsigned long long)gc_stats_size, sizeof(stats));
         return -1;
     }
