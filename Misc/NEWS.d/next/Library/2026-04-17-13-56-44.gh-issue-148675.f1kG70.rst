@@ -1,3 +1,2 @@
-:mod:`array`, :mod:`ctypes`, :mod:`struct`: Add support for ``Zd`` and ``Zf``
-format for double complex and float complex. Add also support for ``Zg``
-format for long double complex to :mod:`ctypes`. Patch by Victor Stinner.
+:mod:`array`, :mod:`struct`: Add support for ``Zd`` and ``Zf`` formats for
+double complex and float complex. Patch by Victor Stinner.
