@@ -466,7 +466,6 @@ class BaseHTTPRequestHandler(socketserver.StreamRequestHandler):
     def handle(self):
         """Handle multiple requests if necessary."""
         self.close_connection = True
-        self._default_response_headers = []
 
         self.handle_one_request()
         while not self.close_connection:
@@ -559,7 +558,9 @@ class BaseHTTPRequestHandler(socketserver.StreamRequestHandler):
                 self._headers_buffer = []
             self._headers_buffer.append(
                 ("%s: %s\r\n" % (keyword, value)).encode('latin-1', 'strict'))
-            if not _is_extra and hasattr(self, '_default_response_headers'):
+            if not hasattr(self, '_default_response_headers'):
+                self._default_response_headers = []
+            if not _is_extra:
                 self._default_response_headers.append((keyword, value))
 
         if keyword.lower() == 'connection':
@@ -578,6 +579,8 @@ class BaseHTTPRequestHandler(socketserver.StreamRequestHandler):
         if hasattr(self, '_headers_buffer'):
             self.wfile.write(b"".join(self._headers_buffer))
             self._headers_buffer = []
+        if hasattr(self, '_default_response_headers'):
+            self._default_response_headers = []
 
     def _colorize_request(self, code, size, t):
         try:
