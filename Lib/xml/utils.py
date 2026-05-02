@@ -1,4 +1,4 @@
-import re
+lazy import re
 
 
 def is_valid_name(name):
