@@ -1,9 +1,12 @@
+import gc
 import os
 import textwrap
 import time
 import unittest
 
 from test.support import (
+    Py_GIL_DISABLED,
+    import_helper,
     requires_gil_enabled,
     requires_remote_subprocess_debugging,
 )
@@ -42,6 +45,111 @@ def get_last_item(gc_stats, generation: int, iid: int):
                 item = s
 
     return item
+
+
+def has_local_process_debugging():
+    try:
+        return _remote_debugging.is_python_process(os.getpid())
+    except Exception:
+        return False
+
+
+def check_gc_stats_fields(testcase, stats):
+    testcase.assertIsInstance(stats, list)
+    testcase.assertGreater(len(stats), 0)
+    for item in stats:
+        testcase.assertIsInstance(item, _remote_debugging.GCStatsInfo)
+        testcase.assertEqual(type(item).__match_args__, GC_STATS_FIELDS)
+        testcase.assertEqual(len(item), len(GC_STATS_FIELDS))
+
+
+def gc_stats_counters_advanced(before_stats, after_stats, generations, iid):
+    for generation in generations:
+        before = get_last_item(before_stats, generation, iid)
+        after = get_last_item(after_stats, generation, iid)
+        if after is None or before is None:
+            return False
+        if after.duration <= before.duration:
+            return False
+        if after.candidates <= before.candidates:
+            return False
+    return True
+
+
+@unittest.skipUnless(
+    has_local_process_debugging(), "requires local process debugging")
+class TestLocalGCStats(unittest.TestCase):
+
+    _main_iid = 0  # main interpreter ID
+
+    def test_gc_stats_fields(self):
+        monitor = _remote_debugging.GCMonitor(os.getpid(), debug=True)
+        stats = monitor.get_gc_stats(all_interpreters=False)
+        check_gc_stats_fields(self, stats)
+
+    def test_module_get_gc_stats_fields(self):
+        stats = _remote_debugging.get_gc_stats(
+            os.getpid(), all_interpreters=False)
+        check_gc_stats_fields(self, stats)
+
+    def test_all_interpreters_filter_for_local_process(self):
+        interpreters = import_helper.import_module("concurrent.interpreters")
+        source = """
+            import gc
+            objects = []
+            obj = []
+            obj.append(obj)
+            objects.append(obj)
+            gc.collect(0)
+            gc.collect(1)
+            gc.collect(2)
+        """
+        interp = interpreters.create()
+        try:
+            interp.exec(textwrap.dedent(source))
+            for generation in range(3):
+                gc.collect(generation)
+
+            main_stats = _remote_debugging.get_gc_stats(
+                os.getpid(), all_interpreters=False)
+            all_stats = _remote_debugging.get_gc_stats(
+                os.getpid(), all_interpreters=True)
+        finally:
+            interp.close()
+
+        self.assertEqual(get_interpreter_identifiers(main_stats), (0,))
+        self.assertIn(0, get_interpreter_identifiers(all_stats))
+        self.assertGreater(len(get_interpreter_identifiers(all_stats)), 1)
+        self.assertEqual(get_generations(main_stats), (0, 1, 2))
+        self.assertEqual(get_generations(all_stats), (0, 1, 2))
+        for iid in get_interpreter_identifiers(all_stats):
+            for generation in range(3):
+                self.assertIsNotNone(get_last_item(all_stats, generation, iid))
+
+    @unittest.skipUnless(Py_GIL_DISABLED, "requires free-threaded GC")
+    def test_gc_stats_counters_for_main_interpreter_free_threaded(self):
+        generations = (0, 1, 2)
+        before_stats = _remote_debugging.get_gc_stats(
+            os.getpid(), all_interpreters=False)
+        for generation in generations:
+            self.assertIsNotNone(
+                get_last_item(before_stats, generation, self._main_iid))
+
+        objects = []
+        for _ in range(1000):
+            obj = []
+            obj.append(obj)
+            objects.append(obj)
+        for generation in generations:
+            gc.collect(generation)
+
+        after_stats = _remote_debugging.get_gc_stats(
+            os.getpid(), all_interpreters=False)
+        self.assertTrue(
+            gc_stats_counters_advanced(
+                before_stats, after_stats, generations, self._main_iid),
+            (before_stats, after_stats)
+        )
 
 
 @requires_remote_subprocess_debugging()
@@ -190,15 +298,6 @@ class TestGCStats(unittest.TestCase):
 
                 for before, after in zip(before_last_items, after_last_items):
                     self._check_gc_stats(before, after)
-
-    def test_gc_stats_fields(self):
-        monitor = _remote_debugging.GCMonitor(os.getpid(), debug=True)
-        stats = monitor.get_gc_stats(all_interpreters=False)
-        self.assertIsInstance(stats, list)
-        for item in stats:
-            self.assertIsInstance(item, _remote_debugging.GCStatsInfo)
-            self.assertEqual(type(item).__match_args__, GC_STATS_FIELDS)
-            self.assertEqual(len(item), len(GC_STATS_FIELDS))
 
     def test_gc_stats_timestamps_for_main_interpreter(self):
         script = textwrap.dedent(self._main_interpreter_script)
