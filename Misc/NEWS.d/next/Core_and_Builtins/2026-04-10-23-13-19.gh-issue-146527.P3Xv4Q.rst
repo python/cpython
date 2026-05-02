@@ -1,5 +1,5 @@
-Add a ``get_gc_stats`` method to the ``RemoteUnwinder`` class
-module to allow reading GC statistics from an external Python process.
-Add a ``GCMonitor`` class to the :mod:`!_remote_debugging` module
-for cases where the full ``RemoteUnwinder`` functionality is not required.
+Add a ``GCMonitor`` class with a ``get_gc_stats`` method to the
+:mod:`!_remote_debugging` module to allow reading GC statistics from an
+external Python process without requiring the full ``RemoteUnwinder``
+functionality.
 Patch by Sergey Miryanov.
