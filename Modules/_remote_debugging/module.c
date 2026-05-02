@@ -1126,6 +1126,38 @@ static PyType_Spec RemoteUnwinder_spec = {
  * GCMONITOR CLASS IMPLEMENTATION
  * ============================================================================ */
 
+static int
+init_runtime_offsets(RuntimeOffsets *offsets, int pid, int debug)
+{
+    offsets->debug = debug;
+    if (_Py_RemoteDebug_InitProcHandle(&offsets->handle, pid) < 0) {
+        set_exception_cause(offsets, PyExc_RuntimeError, "Failed to initialize process handle");
+        return -1;
+    }
+    offsets->runtime_start_address = _Py_RemoteDebug_GetPyRuntimeAddress(&offsets->handle);
+    if (offsets->runtime_start_address == 0) {
+        set_exception_cause(offsets, PyExc_RuntimeError, "Failed to get Python runtime address");
+        goto error;
+    }
+    if (_Py_RemoteDebug_ReadDebugOffsets(&offsets->handle,
+                                         &offsets->runtime_start_address,
+                                         &offsets->debug_offsets) < 0)
+    {
+        set_exception_cause(offsets, PyExc_RuntimeError, "Failed to read debug offsets");
+        goto error;
+    }
+    if (validate_debug_offsets(&offsets->debug_offsets) == -1) {
+        set_exception_cause(offsets, PyExc_RuntimeError, "Invalid debug offsets found");
+        goto error;
+    }
+    return 0;
+
+error:
+    _Py_RemoteDebug_ClearCache(&offsets->handle);
+    _Py_RemoteDebug_CleanupProcHandle(&offsets->handle);
+    return -1;
+}
+
 /*[clinic input]
 class _remote_debugging.GCMonitor "GCMonitorObject *" "&GCMonitor_Type"
 [clinic start generated code]*/
@@ -1160,33 +1192,7 @@ _remote_debugging_GCMonitor___init___impl(GCMonitorObject *self, int pid,
                                           int debug)
 /*[clinic end generated code: output=2cdf351c2f6335db input=1185a48535b808be]*/
 {
-    self->debug = debug;
-    if (_Py_RemoteDebug_InitProcHandle(&self->handle, pid) < 0) {
-        set_exception_cause(self, PyExc_RuntimeError, "Failed to initialize process handle");
-        return -1;
-    }
-
-    self->runtime_start_address = _Py_RemoteDebug_GetPyRuntimeAddress(&self->handle);
-    if (self->runtime_start_address == 0) {
-        set_exception_cause(self, PyExc_RuntimeError, "Failed to get Python runtime address");
-        return -1;
-    }
-
-    if (_Py_RemoteDebug_ReadDebugOffsets(&self->handle,
-                                         &self->runtime_start_address,
-                                         &self->debug_offsets) < 0)
-    {
-        set_exception_cause(self, PyExc_RuntimeError, "Failed to read debug offsets");
-        return -1;
-    }
-
-    // Validate that the debug offsets are valid
-    if (validate_debug_offsets(&self->debug_offsets) == -1) {
-        set_exception_cause(self, PyExc_RuntimeError, "Invalid debug offsets found");
-        return -1;
-    }
-
-    return 0;
+    return init_runtime_offsets(&self->offsets, pid, debug);
 }
 
 /*[clinic input]
@@ -1223,13 +1229,8 @@ _remote_debugging_GCMonitor_get_gc_stats_impl(GCMonitorObject *self,
                                               int all_interpreters)
 /*[clinic end generated code: output=f73f365725224f7a input=09e647719c65f9e4]*/
 {
-    RuntimeOffsets offsets = {
-        .handle = self->handle,
-        .runtime_start_address = self->runtime_start_address,
-        .debug_offsets = self->debug_offsets,
-    };
     RemoteDebuggingState *st = RemoteDebugging_GetStateFromType(Py_TYPE(self));
-    return get_gc_stats(&offsets, all_interpreters, st->GCStatsInfo_Type);
+    return get_gc_stats(&self->offsets, all_interpreters, st->GCStatsInfo_Type);
 }
 
 static PyMethodDef GCMonitor_methods[] = {
@@ -1243,9 +1244,9 @@ GCMonitor_dealloc(PyObject *op)
     GCMonitorObject *self = GCMonitor_CAST(op);
     PyTypeObject *tp = Py_TYPE(self);
 
-    if (self->handle.pid != 0) {
-        _Py_RemoteDebug_ClearCache(&self->handle);
-        _Py_RemoteDebug_CleanupProcHandle(&self->handle);
+    if (self->offsets.handle.pid != 0) {
+        _Py_RemoteDebug_ClearCache(&self->offsets.handle);
+        _Py_RemoteDebug_CleanupProcHandle(&self->offsets.handle);
     }
     PyObject_Del(self);
     Py_DECREF(tp);
@@ -2057,47 +2058,16 @@ _remote_debugging_get_gc_stats_impl(PyObject *module, int pid,
 /*[clinic end generated code: output=d9dce5f7add149bb input=a2a08a45a8f0b119]*/
 {
     RuntimeOffsets offsets;
-
-    PyObject *result = NULL;
-
-    if (_Py_RemoteDebug_InitProcHandle(&offsets.handle, pid) < 0) {
-        _set_debug_exception_cause(PyExc_RuntimeError, "Failed to initialize process handle");
+    if (init_runtime_offsets(&offsets, pid, /*debug=*/1) < 0) {
         return NULL;
     }
 
-    offsets.runtime_start_address = _Py_RemoteDebug_GetPyRuntimeAddress(&offsets.handle);
-    if (offsets.runtime_start_address == 0) {
-        _set_debug_exception_cause(PyExc_RuntimeError, "Failed to get Python runtime address");
-        goto error;
-    }
-
-    if (_Py_RemoteDebug_ReadDebugOffsets(&offsets.handle,
-                                         &offsets.runtime_start_address,
-                                         &offsets.debug_offsets) < 0)
-    {
-        _set_debug_exception_cause(PyExc_RuntimeError, "Failed to read debug offsets");
-        goto error;
-    }
-
-    // Validate that the debug offsets are valid
-    if (validate_debug_offsets(&offsets.debug_offsets) == -1) {
-        _set_debug_exception_cause(PyExc_RuntimeError, "Invalid debug offsets found");
-        goto error;
-    }
-
     RemoteDebuggingState *st = RemoteDebugging_GetState(module);
-    result = get_gc_stats(&offsets, all_interpreters, st->GCStatsInfo_Type);
-    if (result != NULL) {
-        goto done;
-    }
+    PyObject *result = get_gc_stats(&offsets, all_interpreters,
+                                    st->GCStatsInfo_Type);
 
-error:
-    Py_CLEAR(result);
-
-done:
     _Py_RemoteDebug_ClearCache(&offsets.handle);
     _Py_RemoteDebug_CleanupProcHandle(&offsets.handle);
-
     return result;
 }
 

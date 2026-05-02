@@ -16,40 +16,8 @@ static int
 read_gc_stats(struct gc_stats *stats, int64_t iid, PyObject *result,
               PyTypeObject *gc_stats_info_type)
 {
-#define SET_FIELD_ULONG(name) do { \
-    PyObject *value = PyLong_FromUnsignedLong(name); \
-    if (value == NULL) { \
-        goto error; \
-    } \
-    PyStructSequence_SetItem(item, field++, value); \
-} while (0)
-
-#define SET_FIELD_INT64(name) do { \
-    PyObject *value = PyLong_FromInt64(name); \
-    if (value == NULL) { \
-        goto error; \
-    } \
-    PyStructSequence_SetItem(item, field++, value); \
-} while (0)
-
-#define SET_FIELD_STATS_SSIZE(name) do { \
-    PyObject *value = PyLong_FromSsize_t(stats_item->name); \
-    if (value == NULL) { \
-        goto error; \
-    } \
-    PyStructSequence_SetItem(item, field++, value); \
-} while (0)
-
-#define SET_FIELD_STATS_INT64(name) do { \
-    PyObject *value = PyLong_FromInt64(stats_item->name); \
-    if (value == NULL) { \
-        goto error; \
-    } \
-    PyStructSequence_SetItem(item, field++, value); \
-} while (0)
-
-#define SET_FIELD_STATS_DOUBLE(name) do { \
-    PyObject *value = PyFloat_FromDouble(stats_item->name); \
+#define SET_FIELD(converter, expr) do { \
+    PyObject *value = converter(expr); \
     if (value == NULL) { \
         goto error; \
     } \
@@ -77,17 +45,17 @@ read_gc_stats(struct gc_stats *stats, int64_t iid, PyObject *result,
             }
             Py_ssize_t field = 0;
 
-            SET_FIELD_ULONG(gen);
-            SET_FIELD_INT64(iid);
+            SET_FIELD(PyLong_FromUnsignedLong, gen);
+            SET_FIELD(PyLong_FromInt64, iid);
 
-            SET_FIELD_STATS_INT64(ts_start);
-            SET_FIELD_STATS_INT64(ts_stop);
-            SET_FIELD_STATS_SSIZE(collections);
-            SET_FIELD_STATS_SSIZE(collected);
-            SET_FIELD_STATS_SSIZE(uncollectable);
-            SET_FIELD_STATS_SSIZE(candidates);
+            SET_FIELD(PyLong_FromInt64, stats_item->ts_start);
+            SET_FIELD(PyLong_FromInt64, stats_item->ts_stop);
+            SET_FIELD(PyLong_FromSsize_t, stats_item->collections);
+            SET_FIELD(PyLong_FromSsize_t, stats_item->collected);
+            SET_FIELD(PyLong_FromSsize_t, stats_item->uncollectable);
+            SET_FIELD(PyLong_FromSsize_t, stats_item->candidates);
 
-            SET_FIELD_STATS_DOUBLE(duration);
+            SET_FIELD(PyFloat_FromDouble, stats_item->duration);
 
             int rc = PyList_Append(result, item);
             Py_CLEAR(item);
@@ -97,11 +65,7 @@ read_gc_stats(struct gc_stats *stats, int64_t iid, PyObject *result,
         }
     }
 
-#undef SET_FIELD_ULONG
-#undef SET_FIELD_INT64
-#undef SET_FIELD_STATS_SSIZE
-#undef SET_FIELD_STATS_INT64
-#undef SET_FIELD_STATS_DOUBLE
+#undef SET_FIELD
 
     return 0;
 
@@ -130,11 +94,12 @@ get_gc_stats_from_interpreter_state(RuntimeOffsets *offsets,
                                          gc_stats_pointer_address,
                                          sizeof(gc_stats_addr),
                                          &gc_stats_addr) < 0) {
-        PyErr_SetString(PyExc_RuntimeError, "Failed to read GC state address");
+        set_exception_cause(offsets, PyExc_RuntimeError, "Failed to read GC state address");
         return -1;
     }
     if (gc_stats_addr == 0) {
         PyErr_SetString(PyExc_RuntimeError, "GC state address is NULL");
+        set_exception_cause(offsets, PyExc_RuntimeError, "GC state address is NULL");
         return -1;
     }
 
@@ -145,18 +110,20 @@ get_gc_stats_from_interpreter_state(RuntimeOffsets *offsets,
                      "Remote gc_stats size (%llu) does not match "
                      "local size (%zu)",
                      (unsigned long long)gc_stats_size, sizeof(stats));
+        set_exception_cause(offsets, PyExc_RuntimeError, "Remote gc_stats size mismatch");
         return -1;
     }
     if (_Py_RemoteDebug_ReadRemoteMemory(&offsets->handle,
                                          gc_stats_addr,
                                          gc_stats_size,
                                          &stats) < 0) {
-        PyErr_SetString(PyExc_RuntimeError, "Failed to read GC state");
+        set_exception_cause(offsets, PyExc_RuntimeError, "Failed to read GC state");
         return -1;
     }
 
     if (read_gc_stats(&stats, iid, ctx->result,
                       ctx->gc_stats_info_type) < 0) {
+        set_exception_cause(offsets, PyExc_RuntimeError, "Failed to populate GC stats result");
         return -1;
     }
 

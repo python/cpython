@@ -352,6 +352,7 @@ typedef struct {
     proc_handle_t handle;
     uintptr_t runtime_start_address;
     struct _Py_DebugOffsets debug_offsets;
+    int debug;
 } RuntimeOffsets;
 
 /*
@@ -386,10 +387,7 @@ typedef struct {
 
 typedef struct {
     PyObject_HEAD
-    proc_handle_t handle;
-    uintptr_t runtime_start_address;
-    struct _Py_DebugOffsets debug_offsets;
-    int debug;
+    RuntimeOffsets offsets;
 } GCMonitorObject;
 
 #define GCMonitor_CAST(op) ((GCMonitorObject *)(op))
