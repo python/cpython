@@ -316,7 +316,7 @@ class CPythonBuild(ZScript):
         build_mod.build(
             sysroot, toolchain, self.repo_root,
             **self._build_kwargs(release=release),
-            run_fn=lambda *args: self.run(*args),  # type: ignore[arg-type]
+            run_fn=lambda *args, **kw: self.run(*args, **kw),  # type: ignore[arg-type]
             docker=self.docker is not None,
         )
 
@@ -329,7 +329,7 @@ class CPythonBuild(ZScript):
         test_mod.run_all(
             sysroot, toolchain, self.repo_root,
             **kwargs,
-            run_fn=lambda *args: self.run(*args),  # type: ignore[arg-type]
+            run_fn=lambda *args, **kw: self.run(*args, **kw),  # type: ignore[arg-type]
             docker=self.docker is not None,
         )
 
@@ -342,7 +342,7 @@ class CPythonBuild(ZScript):
         package_mod.package(
             sysroot, toolchain, self.repo_root,
             **kwargs,
-            run_fn=lambda *args: self.run(*args),  # type: ignore[arg-type]
+            run_fn=lambda *args, **kw: self.run(*args, **kw),  # type: ignore[arg-type]
             docker=self.docker is not None,
         )
         package_mod.verify(
