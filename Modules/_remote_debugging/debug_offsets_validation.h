@@ -370,11 +370,25 @@ _PyRemoteDebug_ValidateDebugOffsetsLayout(struct _Py_DebugOffsets *debug_offsets
         sizeof(uintptr_t),
         _Alignof(uintptr_t),
         SIZEOF_GC_RUNTIME_STATE);
+    PY_REMOTE_DEBUG_VALIDATE_FIELD(
+        gc,
+        generation_stats,
+        sizeof(uintptr_t),
+        _Alignof(uintptr_t),
+        SIZEOF_GC_RUNTIME_STATE);
     PY_REMOTE_DEBUG_VALIDATE_NESTED_FIELD(
         interpreter_state,
         gc,
         gc,
         frame,
+        sizeof(uintptr_t),
+        _Alignof(uintptr_t),
+        INTERP_STATE_BUFFER_SIZE);
+    PY_REMOTE_DEBUG_VALIDATE_NESTED_FIELD(
+        interpreter_state,
+        gc,
+        gc,
+        generation_stats,
         sizeof(uintptr_t),
         _Alignof(uintptr_t),
         INTERP_STATE_BUFFER_SIZE);
