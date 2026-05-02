@@ -242,9 +242,10 @@ Type "help", "copyright", "credits" or "license" for more information.
 4
 ```
 
-> **Note:** The `-i` flag is part of the semicolon-delimited argument string passed to
-> the guest binary. Environment variables (`PYTHONHOME`, `_PYTHON_SYSCONFIGDATA_NAME`)
-> follow after the semicolon.
+> **Note:** The quoted string after `--` uses the format `<guest-args>;<ENV1=val ENV2=val ...>`.
+> Everything before the semicolon is passed as command-line arguments to the guest binary
+> (e.g., `-i`, `-B ./script.py`). Everything after the semicolon is a space-separated list
+> of environment variables injected into the guest.
 
 To run a one-shot script instead of the REPL:
 
@@ -263,7 +264,7 @@ To run a single test module inside the Nanvix VM:
 cd .nanvix/_test_staging/sysroot && \
   ./bin/nanvixd.elf -bin-dir ./bin -ramfs ../../cpython-rootfs.img \
     -- ./bin/python3.12 \
-    "-B -m test --verbose test_int;PYTHONHOME=/ PYTHONDONTWRITEBYTECODE=1 _PYTHON_SYSCONFIGDATA_NAME=_sysconfigdata__nanvix_"
+    "-B -m test --verbose test_int;PYTHONHOME=/ PYTHONDONTWRITEBYTECODE=1 NANVIX_STANDALONE=1 _PYTHON_SYSCONFIGDATA_NAME=_sysconfigdata__nanvix_"
 ```
 
 ### Test Suite Status
