@@ -274,18 +274,25 @@ Root nodes
 Literals
 ^^^^^^^^
 
-.. class:: Constant(value)
+.. class:: Constant(value, kind)
 
    A constant value. The ``value`` attribute of the ``Constant`` literal contains the
    Python object it represents. The values represented can be instances of :class:`str`,
    :class:`bytes`, :class:`int`, :class:`float`, :class:`complex`, and :class:`bool`,
    and the constants :data:`None` and :data:`Ellipsis`.
 
+   The ``kind`` attribute is an optional string. For string literals with a
+   ``u`` prefix, ``kind`` is set to ``'u'``. For all other
+   constants, ``kind`` is ``None``.
+
    .. doctest::
 
         >>> print(ast.dump(ast.parse('123', mode='eval'), indent=4))
         Expression(
             body=Constant(value=123))
+        >>> print(ast.dump(ast.parse("u'hello'", mode='eval'), indent=4))
+        Expression(
+            body=Constant(value='hello', kind='u'))
 
 
 .. class:: FormattedValue(value, conversion, format_spec)
