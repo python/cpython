@@ -176,7 +176,7 @@ class CookieTests(unittest.TestCase):
         self.assertEqual(C.output(['path']),
             'Set-Cookie: Customer="WILE_E_COYOTE"; Path=/acme')
         cookie_encoded = base64.b64encode(b'Customer="WILE_E_COYOTE"; Path=/acme; Version=1').decode('ascii')
-        with self.assertWarnsRegex(DeprecationWarning, r"Morsel\.js_output"):
+        with self.assertWarnsRegex(DeprecationWarning, r"BaseCookie\.js_output"):
             self.assertEqual(C.js_output(), fr"""
         <script type="text/javascript">
         <!-- begin hiding
@@ -185,7 +185,7 @@ class CookieTests(unittest.TestCase):
         </script>
         """)
         cookie_encoded = base64.b64encode(b'Customer="WILE_E_COYOTE"; Path=/acme').decode('ascii')
-        with self.assertWarnsRegex(DeprecationWarning, r"Morsel\.js_output"):
+        with self.assertWarnsRegex(DeprecationWarning, r"BaseCookie\.js_output"):
             self.assertEqual(C.js_output(['path']), fr"""
         <script type="text/javascript">
         <!-- begin hiding
@@ -295,7 +295,7 @@ class CookieTests(unittest.TestCase):
         self.assertEqual(C.output(['path']),
                          'Set-Cookie: Customer="WILE_E_COYOTE"; Path=/acme')
         expected_encoded_cookie = base64.b64encode(b'Customer=\"WILE_E_COYOTE\"; Path=/acme; Version=1').decode('ascii')
-        with self.assertWarnsRegex(DeprecationWarning, r"Morsel\.js_output"):
+        with self.assertWarnsRegex(DeprecationWarning, r"BaseCookie\.js_output"):
             self.assertEqual(C.js_output(), fr"""
         <script type="text/javascript">
         <!-- begin hiding
@@ -304,7 +304,7 @@ class CookieTests(unittest.TestCase):
         </script>
         """)
         expected_encoded_cookie = base64.b64encode(b'Customer=\"WILE_E_COYOTE\"; Path=/acme').decode('ascii')
-        with self.assertWarnsRegex(DeprecationWarning, r"Morsel\.js_output"):
+        with self.assertWarnsRegex(DeprecationWarning, r"BaseCookie\.js_output"):
             self.assertEqual(C.js_output(['path']), fr"""
         <script type="text/javascript">
         <!-- begin hiding
@@ -693,21 +693,23 @@ class MorselTests(unittest.TestCase):
     def test_morsel_js_output_deprecated(self):
         morsel = cookies.Morsel()
         morsel.set("key", "value", "value")
-        with self.assertWarnsRegex(DeprecationWarning, r"Morsel\.js_output"):
+        with self.assertWarnsRegex(DeprecationWarning, r"Morsel\.js_output") as cm:
             result = morsel.js_output()
+        self.assertEqual(cm.filename, __file__)
         self.assertIn("document.cookie", result)
+
 
     def test_basecookie_js_output_warns_once(self):
         C = cookies.SimpleCookie()
         C["key"] = "value"
         with self.assertWarns(DeprecationWarning) as cm:
             C.js_output()
-        # Should only be one warning even though BaseCookie iterates Morsels
         deprecation_warnings = [
             w for w in cm.warnings if issubclass(w.category, DeprecationWarning)
         ]
         self.assertEqual(len(deprecation_warnings), 1)
-        self.assertRegex(str(deprecation_warnings[0].message), r"Morsel\.js_output")
+        self.assertRegex(str(deprecation_warnings[0].message), r"BaseCookie\.js_output")
+        self.assertEqual(cm.filename, __file__)
 
 def load_tests(loader, tests, pattern):
     tests.addTest(doctest.DocTestSuite(cookies))
