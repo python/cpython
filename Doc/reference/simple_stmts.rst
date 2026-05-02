@@ -534,11 +534,13 @@ statement. For example, the yield statements ::
 
   yield <expr>
   yield from <expr>
+  async yield from <expr>
 
 are equivalent to the yield expression statements ::
 
   (yield <expr>)
   (yield from <expr>)
+  (async yield from <expr>)
 
 Yield expressions and statements are only used when defining a :term:`generator`
 function, and are only used in the body of the generator function.  Using :keyword:`yield`

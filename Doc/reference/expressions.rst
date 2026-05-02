@@ -629,6 +629,7 @@ Yield expressions
    yield_atom: "(" `yield_expression` ")"
    yield_from: "yield" "from" `expression`
    yield_expression: "yield" `yield_list` | `yield_from`
+   async_yield_from: "async" "yield" "from" `expression`
 
 The yield expression is used when defining a :term:`generator` function
 or an :term:`asynchronous generator` function and
@@ -708,6 +709,10 @@ the yield expression. It can be either set explicitly when raising
 .. versionchanged:: 3.3
    Added ``yield from <expr>`` to delegate control flow to a subiterator.
 
+.. versionchanged:: next
+   ``yield from`` is now allowed to be used in an async generator.
+   Previously, it would raise a :class:`SyntaxError`.
+
 The parentheses may be omitted when the yield expression is the sole expression
 on the right hand side of an assignment statement.
 
@@ -727,6 +732,10 @@ on the right hand side of an assignment statement.
    :pep:`525` - Asynchronous Generators
       The proposal that expanded on :pep:`492` by adding generator capabilities to
       coroutine functions.
+
+   :pep:`828` - Supporting ``yield from`` in asynchronous generators
+      The proposal that expanded on :pep:`380` by adding subgenerator delegation
+      to asynchronous generators.
 
 .. index:: pair: object; generator
 .. _generator-methods:
@@ -913,7 +922,89 @@ registered *finalizer* to be called upon finalization. For a reference example
 of a *finalizer* method see the implementation of
 ``asyncio.Loop.shutdown_asyncgens`` in :source:`Lib/asyncio/base_events.py`.
 
-The expression ``yield from <expr>`` is a syntax error when used in an
+.. _async-yield-from:
+
+Asynchronous ``yield from``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Conceptually, ``async yield from`` is very similar to ``yield from``, but
+operates solely on asynchronous constructs rather than synchronous ones.
+In particular:
+
+.. list-table::
+   :widths: auto
+   :header-rows: 1
+
+   * * ``yield from`` construct
+     * ``async yield from`` construct
+   * * :meth:`~object.__iter__`
+     * :meth:`~object.__aiter__`
+   * * :meth:`~generator.__next__`
+     * :meth:`~agen.__anext__`
+   * * :meth:`~generator.send`
+     * :meth:`~agen.asend`
+   * * :class:`StopIteration`
+     * :class:`StopAsyncIteration`
+
+To describe the above:
+
+* The object being delegated to must be asynchronously iterable (that is, it
+  must implement ``__aiter__`` instead of ``__iter__``).
+* When ``anext`` is called on the parent generator (the one that contains
+  ``async yield from``), ``__anext__`` will be invoked on the subgenerator.
+  In contrast, a synchronous ``yield from`` would invoke ``__next__`` instead.
+  (Note that calling ``asend`` with a ``None`` value is equivalent to calling
+  ``anext()``, and thus applies here.)
+* All calls to ``asend``, ``athrow``, and ``aclose`` are delegated to the
+  subgenerator (the object returned by ``__aiter__`` in this case). This means
+  that a call to ``parent_generator.asend(x)`` is semantically equivalent to
+  ``sub_generator.asend(x)``, where ``parent_generator`` is currently executing
+  an ``async yield from`` on ``sub_generator``.
+* The result of the expression is retrieved through
+  :attr:`StopAsyncIteration.value` instead of :attr:`StopIteration.value`.
+
+An example of usage for ``async yield from``:
+
+.. code-block:: pycon
+
+   >>> import asyncio
+   >>> async def sleepy_count(number):
+   ...     for num in range(number):
+   ...         await asyncio.sleep(1)
+   ...         result = yield num
+   ...         print(f"Got result: {result}")
+   ...
+   >>> async def counter():
+   ...     final_number = async yield from sleepy_count(5)
+   ...     yield final_number
+   ...
+   >>> await anext(ag)
+   0
+   >>> await anext(ag)
+   Got result: None
+   1
+   >>> await ag.asend(42)
+   Got result: 42
+   2
+   >>> await ag.athrow(ValueError("Nobody expects the Spanish Inquisition"))
+   Traceback (most recent call last):
+   File "/home/python/cpython/Lib/concurrent/futures/_base.py", line 450, in result
+      return self.__get_result()
+            ~~~~~~~~~~~~~~~~~^^
+   File "/home/python/cpython/Lib/concurrent/futures/_base.py", line 395, in __get_result
+      raise self._exception
+   File "<python-input-4>", line 1, in <module>
+      await ag.athrow(ValueError("Nobody expects the Spanish Inquisition"))
+   File "<python-input-0>", line 8, in counter
+      final_number = async yield from sleepy_count(4)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   File "<python-input-0>", line 3, in sleepy_count
+      result = yield num
+               ^^^^^^^^^
+   ValueError: Nobody expects the Spanish Inquisition
+
+
+``async yield from`` is a :class:`SyntaxError` when used outside of an
 asynchronous generator function.
 
 .. index:: pair: object; asynchronous-generator

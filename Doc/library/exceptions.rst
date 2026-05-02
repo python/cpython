@@ -524,7 +524,18 @@ The following exceptions are the exceptions that are usually raised.
    Must be raised by :meth:`~object.__anext__` method of an
    :term:`asynchronous iterator` object to stop the iteration.
 
+   .. attribute:: StopAsyncIteration.value
+
+      This is given as an argument when constructing the exception, and
+      defaults to :const:`None`. This is used for the result of
+      ``async yield from`` expressions (see :ref:`async-yield-from`).
+
+      .. versionadded: next
+
    .. versionadded:: 3.5
+
+   .. versionchanged:: next
+      Added the ``value`` attribute.
 
 .. exception:: SyntaxError(message, details)
 
