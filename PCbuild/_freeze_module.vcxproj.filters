@@ -265,6 +265,9 @@
     <ClCompile Include="..\Python\jit.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\Objects\lazyimportobject.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="..\Objects\listobject.c">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -367,6 +370,9 @@
     <ClCompile Include="..\Python\pystate.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\Python\pystats.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="..\Python\pystrcmp.c">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -392,6 +398,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\Objects\rangeobject.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Objects\sentinelobject.c">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\Objects\setobject.c">
@@ -490,6 +499,9 @@
     <ClCompile Include="..\Objects\unicode_formatter.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\Objects\unicode_writer.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="..\Objects\unicodeobject.c">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -528,6 +540,18 @@
     <None Include="..\Lib\codecs.py">
       <Filter>Python Files</Filter>
     </None>
+    <None Include="..\Lib\encodings\__init__.py">
+      <Filter>Python Files</Filter>
+    </None>
+    <None Include="..\Lib\encodings\aliases.py">
+      <Filter>Python Files</Filter>
+    </None>
+    <None Include="..\Lib\encodings\utf_8.py">
+      <Filter>Python Files</Filter>
+    </None>
+    <None Include="..\Lib\encodings\_win_cp_codecs.py">
+      <Filter>Python Files</Filter>
+    </None>
     <None Include="..\Lib\io.py">
       <Filter>Python Files</Filter>
     </None>
@@ -553,6 +577,9 @@
       <Filter>Python Files</Filter>
     </None>
     <None Include="..\Lib\stat.py">
+      <Filter>Python Files</Filter>
+    </None>
+    <None Include="..\Lib\linecache.py">
       <Filter>Python Files</Filter>
     </None>
     <None Include="..\Lib\importlib\util.py">

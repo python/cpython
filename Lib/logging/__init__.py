@@ -622,6 +622,9 @@ class Formatter(object):
         self._fmt = self._style._fmt
         self.datefmt = datefmt
 
+    def __repr__(self):
+        return '<%s (%s)>' % (self.__class__.__name__, self._fmt)
+
     default_time_format = '%Y-%m-%d %H:%M:%S'
     default_msec_format = '%s,%03d'
 
@@ -793,6 +796,9 @@ class Filter(object):
         """
         self.name = name
         self.nlen = len(name)
+
+    def __repr__(self):
+        return '<%s (%s)>' % (self.__class__.__name__, self.name)
 
     def filter(self, record):
         """
@@ -1849,9 +1855,9 @@ class LoggerAdapter(object):
 
     def __init__(self, logger, extra=None, merge_extra=False):
         """
-        Initialize the adapter with a logger and a dict-like object which
-        provides contextual information. This constructor signature allows
-        easy stacking of LoggerAdapters, if so desired.
+        Initialize the adapter with a logger and an optional dict-like object
+        which provides contextual information. This constructor signature
+        allows easy stacking of LoggerAdapters, if so desired.
 
         You can effectively pass keyword arguments as shown in the
         following example:
@@ -1882,8 +1888,9 @@ class LoggerAdapter(object):
         Normally, you'll only need to override this one method in a
         LoggerAdapter subclass for your specific needs.
         """
-        if self.merge_extra and "extra" in kwargs:
-            kwargs["extra"] = {**self.extra, **kwargs["extra"]}
+        if self.merge_extra and kwargs.get("extra") is not None:
+            if self.extra is not None:
+                kwargs["extra"] = {**self.extra, **kwargs["extra"]}
         else:
             kwargs["extra"] = self.extra
         return msg, kwargs

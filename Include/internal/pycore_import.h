@@ -17,7 +17,8 @@ extern int _PyImport_IsInitialized(PyInterpreterState *);
 // Export for 'pyexpat' shared extension
 PyAPI_FUNC(int) _PyImport_SetModule(PyObject *name, PyObject *module);
 
-extern int _PyImport_SetModuleString(const char *name, PyObject* module);
+// Export for 'math' shared extension
+PyAPI_FUNC(int) _PyImport_SetModuleString(const char *name, PyObject* module);
 
 extern void _PyImport_AcquireLock(PyInterpreterState *interp);
 extern void _PyImport_ReleaseLock(PyInterpreterState *interp);
@@ -30,6 +31,18 @@ extern int _PyImport_FixupBuiltin(
     const char *name,            /* UTF-8 encoded string */
     PyObject *modules
     );
+
+extern PyObject * _PyImport_ResolveName(
+    PyThreadState *tstate, PyObject *name, PyObject *globals, int level);
+extern PyObject * _PyImport_GetAbsName(
+    PyThreadState *tstate, PyObject *name, PyObject *globals, int level);
+// Symbol is exported for the JIT on Windows builds.
+PyAPI_FUNC(PyObject *) _PyImport_LoadLazyImportTstate(
+    PyThreadState *tstate, PyObject *lazy_import);
+extern PyObject * _PyImport_LazyImportModuleLevelObject(
+    PyThreadState *tstate, PyObject *name, PyObject *builtins,
+    PyObject *globals, PyObject *locals, PyObject *fromlist, int level);
+
 
 #ifdef HAVE_DLOPEN
 #  include <dlfcn.h>              // RTLD_NOW, RTLD_LAZY
@@ -68,8 +81,16 @@ extern void _PyImport_ClearModules(PyInterpreterState *interp);
 
 extern void _PyImport_ClearModulesByIndex(PyInterpreterState *interp);
 
+extern PyObject * _PyImport_InitLazyModules(
+    PyInterpreterState *interp);
+extern void _PyImport_ClearLazyModules(PyInterpreterState *interp);
+
 extern int _PyImport_InitDefaultImportFunc(PyInterpreterState *interp);
 extern int _PyImport_IsDefaultImportFunc(
+        PyInterpreterState *interp,
+        PyObject *func);
+
+extern int _PyImport_IsDefaultLazyImportFunc(
         PyInterpreterState *interp,
         PyObject *func);
 
@@ -127,11 +148,18 @@ PyAPI_FUNC(int) _PyImport_ClearExtension(PyObject *name, PyObject *filename);
 // state of the module argument:
 // - If module is NULL or a PyModuleObject with md_gil == Py_MOD_GIL_NOT_USED,
 //   call _PyEval_DisableGIL().
-// - Otherwise, call _PyEval_EnableGILPermanent(). If the GIL was not already
-//   enabled permanently, issue a warning referencing the module's name.
+// - Otherwise, call _PyImport_EnableGILAndWarn
 //
 // This function may raise an exception.
 extern int _PyImport_CheckGILForModule(PyObject *module, PyObject *module_name);
+// Assuming that the GIL is enabled from a call to
+// _PyEval_EnableGILTransient(), call _PyEval_EnableGILPermanent().
+// If the GIL was not already enabled permanently, issue a warning referencing
+// the module's name.
+// Leave a message in verbose mode.
+//
+// This function may raise an exception.
+extern int _PyImport_EnableGILAndWarn(PyThreadState *, PyObject *module_name);
 #endif
 
 #ifdef __cplusplus

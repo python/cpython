@@ -1,0 +1,25 @@
+# libabigail suppression file for CPython ABI checks
+#
+# Suppress types defined directly in internal headers (pycore_*.h)
+# Regex matches filenames NOT starting with "pycore_", so pycore_* types are suppressed.
+[suppress_type]
+  source_location_not_regexp = ^([^p]|p[^y]|py[^c]|pyc[^o]|pyco[^r]|pycor[^e]|pycore[^_])
+  accessed_through = pointer
+
+# Suppress public typedefs that alias internal structs.
+# These are public names but their underlying struct layout is internal.
+[suppress_type]
+  name = PyInterpreterState
+  accessed_through = pointer
+
+[suppress_type]
+  name = _PyRuntimeState
+  accessed_through = pointer
+
+[suppress_type]
+  name = PyThreadState
+  accessed_through = pointer
+
+[suppress_variable]
+  name = _PyRuntime
+  type_name = _PyRuntimeState

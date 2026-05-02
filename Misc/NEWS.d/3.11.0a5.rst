@@ -204,7 +204,7 @@ platform when dividing an int by a value smaller than ``2**30``.
 .. bpo: 46383
 .. date: 2022-01-14-20-55-34
 .. nonce: v8MTl4
-.. section: Core and Builtins
+.. section: Library
 
 Fix invalid signature of ``_zoneinfo``'s ``module_free`` function to resolve
 a crash on wasm32-emscripten platform.
@@ -255,7 +255,7 @@ that are ended by line continuation characters. Patch by Pablo Galindo
 .. bpo: 30512
 .. date: 2021-12-12-00-49-19
 .. nonce: nU9E9V
-.. section: Core and Builtins
+.. section: Library
 
 Add CAN Socket support for NetBSD.
 
@@ -264,7 +264,7 @@ Add CAN Socket support for NetBSD.
 .. bpo: 46045
 .. date: 2021-12-11-11-36-48
 .. nonce: sfThay
-.. section: Core and Builtins
+.. section: Build
 
 Do not use POSIX semaphores on NetBSD
 

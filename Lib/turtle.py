@@ -565,7 +565,7 @@ class TurtleScreenBase(object):
         """Check if the string color is a legal Tkinter color string.
         """
         try:
-            rgb = self.cv.winfo_rgb(color)
+            self.cv.winfo_rgb(color)
             ok = True
         except TK.TclError:
             ok = False
@@ -3747,7 +3747,7 @@ class RawTurtle(TPen, TNavigator):
         if action == "rot":
             angle, degPAU = data
             self._rotate(-angle*degPAU/self._degreesPerAU)
-            dummy = self.undobuffer.pop()
+            self.undobuffer.pop()
         elif action == "stamp":
             stitem = data[0]
             self.clearstamp(stitem)

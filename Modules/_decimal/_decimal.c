@@ -32,6 +32,7 @@
 #include <Python.h>
 #include "pycore_object.h"        // _PyObject_VisitType()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
+#include "pycore_tuple.h"         // _PyTuple_FromPair
 #include "pycore_typeobject.h"
 
 #include <mpdecimal.h>
@@ -57,6 +58,9 @@
 #endif
 
 #include "clinic/_decimal.c.h"
+
+#define MPD_SPEC_VERSION "1.70"  // Highest version of the spec this complies with
+                                 // See https://speleotrove.com/decimal/decarith.html
 
 /*[clinic input]
 module _decimal
@@ -549,7 +553,7 @@ dict_as_flags(decimal_state *state, PyObject *val)
     uint32_t flags = 0;
     int x;
 
-    if (!PyDict_Check(val)) {
+    if (!PyAnyDict_Check(val)) {
         PyErr_SetString(PyExc_TypeError,
             "argument must be a signal dict");
         return DEC_INVALID_SIGNALS;
@@ -799,7 +803,7 @@ signaldict_richcompare(PyObject *v, PyObject *w, int op)
         if (PyDecSignalDict_Check(state, w)) {
             res = (SdFlags(v)==SdFlags(w)) ^ (op==Py_NE) ? Py_True : Py_False;
         }
-        else if (PyDict_Check(w)) {
+        else if (PyAnyDict_Check(w)) {
             uint32_t flags = dict_as_flags(state, w);
             if (flags & DEC_ERRORS) {
                 if (flags & DEC_INVALID_SIGNALS) {
@@ -3761,7 +3765,8 @@ _decimal_Decimal___format___impl(PyObject *dec, PyTypeObject *cls,
 
     if (size > 0 && fmt[size-1] == 'N') {
         if (PyErr_WarnEx(PyExc_DeprecationWarning,
-                         "Format specifier 'N' is deprecated", 1) < 0) {
+                         "Format specifier 'N' is deprecated and "
+                         "slated for removal in Python 3.18", 1) < 0) {
             return NULL;
         }
     }
@@ -3971,7 +3976,6 @@ _decimal_Decimal_as_integer_ratio_impl(PyObject *self, PyTypeObject *cls)
     PyObject *numerator = NULL;
     PyObject *denominator = NULL;
     PyObject *exponent = NULL;
-    PyObject *result = NULL;
     PyObject *tmp;
     mpd_ssize_t exp;
     PyObject *context;
@@ -4031,6 +4035,7 @@ _decimal_Decimal_as_integer_ratio_impl(PyObject *self, PyTypeObject *cls)
 
     if (exp >= 0) {
         Py_SETREF(numerator, state->_py_long_multiply(numerator, exponent));
+        Py_CLEAR(exponent);
         if (numerator == NULL) {
             goto error;
         }
@@ -4057,15 +4062,13 @@ _decimal_Decimal_as_integer_ratio_impl(PyObject *self, PyTypeObject *cls)
             goto error;
         }
     }
-
-    result = PyTuple_Pack(2, numerator, denominator);
-
+    return _PyTuple_FromPairSteal(numerator, denominator);
 
 error:
     Py_XDECREF(exponent);
     Py_XDECREF(denominator);
     Py_XDECREF(numerator);
-    return result;
+    return NULL;
 }
 
 /*[clinic input]
@@ -4609,7 +4612,6 @@ nm_mpd_qdivmod(PyObject *v, PyObject *w)
     PyObject *q, *r;
     PyObject *context;
     uint32_t status = 0;
-    PyObject *ret;
 
     decimal_state *state = find_state_left_or_right(v, w);
     CURRENT_CONTEXT(state, context);
@@ -4638,10 +4640,7 @@ nm_mpd_qdivmod(PyObject *v, PyObject *w)
         return NULL;
     }
 
-    ret = PyTuple_Pack(2, q, r);
-    Py_DECREF(r);
-    Py_DECREF(q);
-    return ret;
+    return _PyTuple_FromPairSteal(q, r);
 }
 
 static PyObject *
@@ -5796,7 +5795,7 @@ _decimal_Decimal___floor___impl(PyObject *self, PyTypeObject *cls)
 static Py_hash_t
 _dec_hash(PyDecObject *v)
 {
-#if defined(CONFIG_64) && _PyHASH_BITS == 61
+#if defined(CONFIG_64) && PyHASH_BITS == 61
     /* 2**61 - 1 */
     mpd_uint_t p_data[1] = {2305843009213693951ULL};
     mpd_t p = {MPD_POS|MPD_STATIC|MPD_CONST_DATA, 0, 19, 1, 1, p_data};
@@ -5804,7 +5803,7 @@ _dec_hash(PyDecObject *v)
     mpd_uint_t inv10_p_data[1] = {2075258708292324556ULL};
     mpd_t inv10_p = {MPD_POS|MPD_STATIC|MPD_CONST_DATA,
                      0, 19, 1, 1, inv10_p_data};
-#elif defined(CONFIG_32) && _PyHASH_BITS == 31
+#elif defined(CONFIG_32) && PyHASH_BITS == 31
     /* 2**31 - 1 */
     mpd_uint_t p_data[2] = {147483647UL, 2};
     mpd_t p = {MPD_POS|MPD_STATIC|MPD_CONST_DATA, 0, 10, 2, 2, p_data};
@@ -5813,7 +5812,7 @@ _dec_hash(PyDecObject *v)
     mpd_t inv10_p = {MPD_POS|MPD_STATIC|MPD_CONST_DATA,
                      0, 10, 2, 2, inv10_p_data};
 #else
-    #error "No valid combination of CONFIG_64, CONFIG_32 and _PyHASH_BITS"
+    #error "No valid combination of CONFIG_64, CONFIG_32 and PyHASH_BITS"
 #endif
     const Py_hash_t py_hash_inf = 314159;
     mpd_uint_t ten_data[1] = {10};
@@ -6670,7 +6669,6 @@ _decimal_Context_divmod_impl(PyObject *context, PyObject *x, PyObject *y)
     PyObject *a, *b;
     PyObject *q, *r;
     uint32_t status = 0;
-    PyObject *ret;
 
     CONVERT_BINOP_RAISE(&a, &b, x, y, context);
     decimal_state *state = get_module_state_from_ctx(context);
@@ -6697,10 +6695,7 @@ _decimal_Context_divmod_impl(PyObject *context, PyObject *x, PyObject *y)
         return NULL;
     }
 
-    ret = PyTuple_Pack(2, q, r);
-    Py_DECREF(r);
-    Py_DECREF(q);
-    return ret;
+    return _PyTuple_FromPairSteal(q, r);
 }
 
 /* Binary or ternary arithmetic functions */
@@ -6987,7 +6982,7 @@ _decimal_Context_apply_impl(PyObject *context, PyTypeObject *cls,
                             PyObject *x)
 /*[clinic end generated code: output=f8a7142d47ad4ff3 input=388e66ca82733516]*/
 {
-    return _decimal_Context__apply(context, v);
+    return _decimal_Context__apply(context, x);
 }
 #endif
 
@@ -7566,12 +7561,35 @@ static PyType_Spec context_spec = {
 };
 
 
+static PyObject *
+decimal_getattr(PyObject *self, PyObject *args)
+{
+    PyObject *name;
+    if (!PyArg_UnpackTuple(args, "__getattr__", 1, 1, &name)) {
+        return NULL;
+    }
+
+    if (PyUnicode_Check(name) && PyUnicode_EqualToUTF8(name, "__version__")) {
+        if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                         "'__version__' is deprecated and slated for removal in Python 3.20",
+                         1) < 0) {
+            return NULL;
+        }
+        return PyUnicode_FromString(MPD_SPEC_VERSION);
+    }
+
+    PyErr_Format(PyExc_AttributeError, "module 'decimal' has no attribute %R", name);
+    return NULL;
+}
+
+
 static PyMethodDef _decimal_methods [] =
 {
   _DECIMAL_GETCONTEXT_METHODDEF
   _DECIMAL_SETCONTEXT_METHODDEF
   _DECIMAL_LOCALCONTEXT_METHODDEF
   _DECIMAL_IEEECONTEXT_METHODDEF
+  {"__getattr__", decimal_getattr, METH_VARARGS, "Module __getattr__"},
   { NULL, NULL, 1, NULL }
 };
 
@@ -7727,10 +7745,15 @@ _decimal_exec(PyObject *m)
 
     /* DecimalTuple */
     ASSIGN_PTR(collections, PyImport_ImportModule("collections"));
-    ASSIGN_PTR(state->DecimalTuple, (PyTypeObject *)PyObject_CallMethod(collections,
-                                 "namedtuple", "(ss)", "DecimalTuple",
-                                 "sign digits exponent"));
-
+    ASSIGN_PTR(obj, PyObject_CallMethod(collections, "namedtuple", "(ss)",
+                                        "DecimalTuple",
+                                        "sign digits exponent"));
+    if (!PyType_Check(obj)) {
+        PyErr_SetString(PyExc_TypeError,
+                        "type is expected from namedtuple call");
+        goto error;
+    }
+    ASSIGN_PTR(state->DecimalTuple, (PyTypeObject *)obj);
     ASSIGN_PTR(obj, PyUnicode_FromString("decimal"));
     CHECK_INT(PyDict_SetItemString(state->DecimalTuple->tp_dict, "__module__", obj));
     Py_CLEAR(obj);
@@ -7778,15 +7801,15 @@ _decimal_exec(PyObject *m)
 
         switch (cm->flag) {
         case MPD_Float_operation:
-            base = PyTuple_Pack(2, state->DecimalException, PyExc_TypeError);
+            base = _PyTuple_FromPair(state->DecimalException, PyExc_TypeError);
             break;
         case MPD_Division_by_zero:
-            base = PyTuple_Pack(2, state->DecimalException,
-                                PyExc_ZeroDivisionError);
+            base = _PyTuple_FromPair(state->DecimalException,
+                                     PyExc_ZeroDivisionError);
             break;
         case MPD_Overflow:
-            base = PyTuple_Pack(2, state->signal_map[INEXACT].ex,
-                                   state->signal_map[ROUNDED].ex);
+            base = _PyTuple_FromPair(state->signal_map[INEXACT].ex,
+                                     state->signal_map[ROUNDED].ex);
             break;
         case MPD_Underflow:
             base = PyTuple_Pack(3, state->signal_map[INEXACT].ex,
@@ -7825,7 +7848,7 @@ _decimal_exec(PyObject *m)
     for (cm = state->cond_map+1; cm->name != NULL; cm++) {
         PyObject *base;
         if (cm->flag == MPD_Division_undefined) {
-            base = PyTuple_Pack(2, state->signal_map[0].ex, PyExc_ZeroDivisionError);
+            base = _PyTuple_FromPair(state->signal_map[0].ex, PyExc_ZeroDivisionError);
         }
         else {
             base = PyTuple_Pack(1, state->signal_map[0].ex);
@@ -7891,7 +7914,7 @@ _decimal_exec(PyObject *m)
     }
 
     /* Add specification version number */
-    CHECK_INT(PyModule_AddStringConstant(m, "__version__", "1.70"));
+    CHECK_INT(PyModule_AddStringConstant(m, "SPEC_VERSION", MPD_SPEC_VERSION));
     CHECK_INT(PyModule_AddStringConstant(m, "__libmpdec_version__", mpd_version()));
 
     return 0;
@@ -7997,6 +8020,7 @@ decimal_free(void *module)
 }
 
 static struct PyModuleDef_Slot _decimal_slots[] = {
+    _Py_ABI_SLOT,
     {Py_mod_exec, _decimal_exec},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {Py_mod_gil, Py_MOD_GIL_NOT_USED},

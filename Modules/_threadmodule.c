@@ -11,6 +11,7 @@
 #include "pycore_pylifecycle.h"
 #include "pycore_pystate.h"       // _PyThreadState_SetCurrent()
 #include "pycore_time.h"          // _PyTime_FromSeconds()
+#include "pycore_tuple.h"         // _PyTuple_FromPairSteal
 #include "pycore_weakref.h"       // _PyWeakref_GET_REF()
 
 #include <stddef.h>               // offsetof()
@@ -1480,13 +1481,11 @@ create_sentinel_wr(localobject *self)
         return NULL;
     }
 
-    PyObject *args = PyTuple_New(2);
+    PyObject *args = _PyTuple_FromPairSteal(self_wr,
+                                            Py_NewRef(tstate->threading_local_key));
     if (args == NULL) {
-        Py_DECREF(self_wr);
         return NULL;
     }
-    PyTuple_SET_ITEM(args, 0, self_wr);
-    PyTuple_SET_ITEM(args, 1, Py_NewRef(tstate->threading_local_key));
 
     PyObject *cb = PyCFunction_New(&wr_callback_def, args);
     Py_DECREF(args);
@@ -2200,9 +2199,10 @@ thread_stack_size(PyObject *self, PyObject *args)
     if (!PyArg_ParseTuple(args, "|n:stack_size", &new_size))
         return NULL;
 
-    if (new_size < 0) {
-        PyErr_SetString(PyExc_ValueError,
-                        "size must be 0 or a positive value");
+    Py_ssize_t min_size = _PyOS_MIN_STACK_SIZE + SYSTEM_PAGE_SIZE;
+    if (new_size != 0 && new_size < min_size) {
+        PyErr_Format(PyExc_ValueError,
+                     "size must be at least %zi bytes", min_size);
         return NULL;
     }
 
@@ -2856,6 +2856,7 @@ PyDoc_STRVAR(thread_doc,
 The 'threading' module provides a more convenient interface.");
 
 static PyModuleDef_Slot thread_module_slots[] = {
+    _Py_ABI_SLOT,
     {Py_mod_exec, thread_module_exec},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {Py_mod_gil, Py_MOD_GIL_NOT_USED},

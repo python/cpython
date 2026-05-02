@@ -33,6 +33,10 @@ from test.test_py_compile import SourceDateEpochTestMeta
 from test.support.os_helper import FakePath
 
 
+if sys.implementation.cache_tag is None:
+    raise unittest.SkipTest('requires sys.implementation.cache_tag is not None')
+
+
 def get_pyc(script, opt):
     if not opt:
         # Replace None and 0 with ''

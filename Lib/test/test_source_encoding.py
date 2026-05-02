@@ -65,6 +65,23 @@ class MiscSourceEncodingTest(unittest.TestCase):
         # two bytes in common with the UTF-8 BOM
         self.assertRaises(SyntaxError, eval, b'\xef\xbb\x20')
 
+    def test_truncated_utf8_at_eof(self):
+        # Regression test for https://issues.oss-fuzz.com/issues/451112368
+        # Truncated multi-byte UTF-8 sequences at end of input caused an
+        # out-of-bounds read in Parser/tokenizer/helpers.c:valid_utf8().
+        truncated = [
+            b'\xc2',              # 2-byte lead, missing 1 continuation
+            b'\xdf',              # 2-byte lead, missing 1 continuation
+            b'\xe0',              # 3-byte lead, missing 2 continuations
+            b'\xe0\xa0',          # 3-byte lead, missing 1 continuation
+            b'\xf0\x90',          # 4-byte lead, missing 2 continuations
+            b'\xf0\x90\x80',      # 4-byte lead, missing 1 continuation
+            b'\xf3',              # 4-byte lead, missing 3 (the oss-fuzz reproducer)
+        ]
+        for seq in truncated:
+            with self.subTest(seq=seq):
+                self.assertRaises(SyntaxError, compile, seq, '<test>', 'exec')
+
     @support.requires_subprocess()
     def test_20731(self):
         sub = subprocess.Popen([sys.executable,

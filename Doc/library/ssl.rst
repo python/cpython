@@ -4,9 +4,6 @@
 .. module:: ssl
    :synopsis: TLS/SSL wrapper for socket objects
 
-.. moduleauthor:: Bill Janssen <bill.janssen@gmail.com>
-.. sectionauthor::  Bill Janssen <bill.janssen@gmail.com>
-
 **Source code:** :source:`Lib/ssl.py`
 
 .. index:: single: OpenSSL; (use in module ssl)
@@ -18,8 +15,9 @@
 This module provides access to Transport Layer Security (often known as "Secure
 Sockets Layer") encryption and peer authentication facilities for network
 sockets, both client-side and server-side.  This module uses the OpenSSL
-library. It is available on all modern Unix systems, Windows, macOS, and
-probably additional platforms, as long as OpenSSL is installed on that platform.
+library.
+
+.. include:: ../includes/optional-module.rst
 
 .. note::
 
@@ -69,7 +67,7 @@ by SSL sockets created through the :meth:`SSLContext.wrap_socket` method.
    Use of deprecated constants and functions result in deprecation warnings.
 
 
-Functions, Constants, and Exceptions
+Functions, constants, and exceptions
 ------------------------------------
 
 
@@ -129,7 +127,7 @@ purposes.
                                      cafile=None, capath=None, cadata=None)
 
    Return a new :class:`SSLContext` object with default settings for
-   the given *purpose*.  The settings are chosen by the :mod:`ssl` module,
+   the given *purpose*.  The settings are chosen by the :mod:`!ssl` module,
    and usually represent a higher security level than when calling the
    :class:`SSLContext` constructor directly.
 
@@ -376,7 +374,7 @@ Certificate handling
 
 .. function:: cert_time_to_seconds(cert_time)
 
-   Return the time in seconds since the Epoch, given the ``cert_time``
+   Return the time in seconds since the epoch, given the ``cert_time``
    string representing the "notBefore" or "notAfter" date from a
    certificate in ``"%b %d %H:%M:%S %Y %Z"`` strptime format (C
    locale).
@@ -386,12 +384,12 @@ Certificate handling
    .. doctest:: newcontext
 
       >>> import ssl
+      >>> import datetime as dt
       >>> timestamp = ssl.cert_time_to_seconds("Jan  5 09:34:43 2018 GMT")
       >>> timestamp  # doctest: +SKIP
       1515144883
-      >>> from datetime import datetime
-      >>> print(datetime.utcfromtimestamp(timestamp))  # doctest: +SKIP
-      2018-01-05 09:34:43
+      >>> print(dt.datetime.fromtimestamp(timestamp, dt.UTC))  # doctest: +SKIP
+      2018-01-05 09:34:43+00:00
 
    "notBefore" or "notAfter" dates must use GMT (:rfc:`5280`).
 
@@ -1074,7 +1072,7 @@ Constants
       :attr:`TLSVersion.TLSv1_3` are deprecated.
 
 
-SSL Sockets
+SSL sockets
 -----------
 
 .. class:: SSLSocket(socket.socket)
@@ -1464,7 +1462,7 @@ SSL sockets also have the following additional methods and attributes:
    .. versionadded:: 3.6
 
 
-SSL Contexts
+SSL contexts
 ------------
 
 .. versionadded:: 3.2
@@ -1509,7 +1507,7 @@ to speed up repeated connections from the same clients.
       TLS 1.3.
 
    .. seealso::
-      :func:`create_default_context` lets the :mod:`ssl` module choose
+      :func:`create_default_context` lets the :mod:`!ssl` module choose
       security settings for a given purpose.
 
    .. versionchanged:: 3.6
@@ -2655,7 +2653,7 @@ thus several things you need to be aware of:
    as well.
 
 
-Memory BIO Support
+Memory BIO support
 ------------------
 
 .. versionadded:: 3.5
@@ -2958,16 +2956,16 @@ of TLS/SSL. Some new TLS 1.3 features are not yet available.
        Steve Kent
 
    :rfc:`RFC 4086: Randomness Requirements for Security <4086>`
-       Donald E., Jeffrey I. Schiller
+       Donald E. Eastlake, Jeffrey I. Schiller, Steve Crocker
 
    :rfc:`RFC 5280: Internet X.509 Public Key Infrastructure Certificate and Certificate Revocation List (CRL) Profile <5280>`
-       D. Cooper
+       David Cooper et al.
 
    :rfc:`RFC 5246: The Transport Layer Security (TLS) Protocol Version 1.2 <5246>`
-       T. Dierks et. al.
+       Tim Dierks and Eric Rescorla.
 
    :rfc:`RFC 6066: Transport Layer Security (TLS) Extensions <6066>`
-       D. Eastlake
+       Donald E. Eastlake
 
    `IANA TLS: Transport Layer Security (TLS) Parameters <https://www.iana.org/assignments/tls-parameters/tls-parameters.xml>`_
        IANA

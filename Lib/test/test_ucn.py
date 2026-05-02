@@ -88,6 +88,9 @@ class UnicodeNamesTest(unittest.TestCase):
         self.checkletter("HANGUL SYLLABLE HWEOK", "\ud6f8")
         self.checkletter("HANGUL SYLLABLE HIH", "\ud7a3")
 
+        self.checkletter("haNGul SYllABle WAe", '\uc65c')
+        self.checkletter("HAngUL syLLabLE waE", '\uc65c')
+
         self.assertRaises(ValueError, unicodedata.name, "\ud7a4")
 
     def test_cjk_unified_ideographs(self):
@@ -102,6 +105,35 @@ class UnicodeNamesTest(unittest.TestCase):
         self.checkletter("CJK UNIFIED IDEOGRAPH-2B740", "\U0002B740")
         self.checkletter("CJK UNIFIED IDEOGRAPH-2B81D", "\U0002B81D")
         self.checkletter("CJK UNIFIED IDEOGRAPH-3134A", "\U0003134A")
+
+        self.checkletter("cjK UniFIeD idEogRAph-3aBc", "\u3abc")
+        self.checkletter("CJk uNIfiEd IDeOGraPH-3AbC", "\u3abc")
+        self.checkletter("cjK UniFIeD idEogRAph-2aBcD", "\U0002abcd")
+        self.checkletter("CJk uNIfiEd IDeOGraPH-2AbCd", "\U0002abcd")
+
+    def test_tangut_ideographs(self):
+        self.checkletter("TANGUT IDEOGRAPH-17000", "\U00017000")
+        self.checkletter("TANGUT IDEOGRAPH-187FF", "\U000187ff")
+        self.checkletter("TANGUT IDEOGRAPH-18D00", "\U00018D00")
+        self.checkletter("TANGUT IDEOGRAPH-18D1E", "\U00018d1e")
+        self.checkletter("tangut ideograph-18d1e", "\U00018d1e")
+
+    def test_egyptian_hieroglyphs(self):
+        self.checkletter("EGYPTIAN HIEROGLYPH-13460", "\U00013460")
+        self.checkletter("EGYPTIAN HIEROGLYPH-143FA", "\U000143fa")
+        self.checkletter("egyptian hieroglyph-143fa", "\U000143fa")
+
+    def test_khitan_small_script_characters(self):
+        self.checkletter("KHITAN SMALL SCRIPT CHARACTER-18B00", "\U00018b00")
+        self.checkletter("KHITAN SMALL SCRIPT CHARACTER-18CD5", "\U00018cd5")
+        self.checkletter("KHITAN SMALL SCRIPT CHARACTER-18CFF", "\U00018cff")
+        self.checkletter("KHITAN SMALL SCRIPT CHARACTER-18CFF", "\U00018cff")
+        self.checkletter("khitan small script character-18cff", "\U00018cff")
+
+    def test_nushu_characters(self):
+        self.checkletter("NUSHU CHARACTER-1B170", "\U0001b170")
+        self.checkletter("NUSHU CHARACTER-1B2FB", "\U0001b2fb")
+        self.checkletter("nushu character-1b2fb", "\U0001b2fb")
 
     def test_bmp_characters(self):
         for code in range(0x10000):

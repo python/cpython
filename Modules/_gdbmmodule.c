@@ -690,7 +690,11 @@ gdbm__enter__(PyObject *self, PyObject *args)
 static PyObject *
 gdbm__exit__(PyObject *self, PyObject *args)
 {
-    return _gdbm_gdbm_close_impl((gdbmobject *)self);
+    PyObject *result;
+    Py_BEGIN_CRITICAL_SECTION(self);
+    result = _gdbm_gdbm_close_impl((gdbmobject *)self);
+    Py_END_CRITICAL_SECTION();
+    return result;
 }
 
 static PyMethodDef gdbm_methods[] = {
@@ -908,6 +912,7 @@ _gdbm_module_free(void *module)
 }
 
 static PyModuleDef_Slot _gdbm_module_slots[] = {
+    _Py_ABI_SLOT,
     {Py_mod_exec, _gdbm_exec},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {Py_mod_gil, Py_MOD_GIL_NOT_USED},

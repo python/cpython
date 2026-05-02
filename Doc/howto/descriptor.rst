@@ -594,7 +594,7 @@ a pure Python equivalent:
 
     def object_getattribute(obj, name):
         "Emulate PyObject_GenericGetAttr() in Objects/object.c"
-        null = object()
+        null = sentinel('null')
         objtype = type(obj)
         cls_var = find_name_in_mro(objtype, name, null)
         descr_get = getattr(type(cls_var), '__get__', null)
@@ -1635,12 +1635,12 @@ by member descriptors:
 
 .. testcode::
 
-    null = object()
+    null = sentinel('null')
 
     class Member:
 
         def __init__(self, name, clsname, offset):
-            'Emulate PyMemberDef in Include/structmember.h'
+            'Emulate PyMemberDef in Include/descrobject.h'
             # Also see descr_new() in Objects/descrobject.c
             self.name = name
             self.clsname = clsname

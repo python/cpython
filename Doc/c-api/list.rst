@@ -74,10 +74,24 @@ List Objects
    Like :c:func:`PyList_GetItemRef`, but returns a
    :term:`borrowed reference` instead of a :term:`strong reference`.
 
+   .. note::
+
+      In the :term:`free-threaded build`, the returned
+      :term:`borrowed reference` may become invalid if another thread modifies
+      the list concurrently. Prefer :c:func:`PyList_GetItemRef`, which returns
+      a :term:`strong reference`.
+
 
 .. c:function:: PyObject* PyList_GET_ITEM(PyObject *list, Py_ssize_t i)
 
    Similar to :c:func:`PyList_GetItem`, but without error checking.
+
+   .. note::
+
+      In the :term:`free-threaded build`, the returned
+      :term:`borrowed reference` may become invalid if another thread modifies
+      the list concurrently. Prefer :c:func:`PyList_GetItemRef`, which returns
+      a :term:`strong reference`.
 
 
 .. c:function:: int PyList_SetItem(PyObject *list, Py_ssize_t index, PyObject *item)
@@ -107,6 +121,14 @@ List Objects
       :c:func:`PyList_SetItem`, does *not* discard a reference to any item that
       is being replaced; any reference in *list* at position *i* will be
       leaked.
+
+   .. note::
+
+      In the :term:`free-threaded build`, this macro has no internal
+      synchronization. It is normally only used to fill in new lists where no
+      other thread has a reference to the list. If the list may be shared,
+      use :c:func:`PyList_SetItem` instead, which uses a :term:`per-object
+      lock`.
 
 
 .. c:function:: int PyList_Insert(PyObject *list, Py_ssize_t index, PyObject *item)
@@ -138,6 +160,12 @@ List Objects
    Return ``0`` on success, ``-1`` on failure.  Indexing from the end of the
    list is not supported.
 
+   .. note::
+
+      In the :term:`free-threaded build`, when *itemlist* is a :class:`list`,
+      both *list* and *itemlist* are locked for the duration of the operation.
+      For other iterables (or ``NULL``), only *list* is locked.
+
 
 .. c:function:: int PyList_Extend(PyObject *list, PyObject *iterable)
 
@@ -149,6 +177,14 @@ List Objects
    object. Return 0 on success.
 
    .. versionadded:: 3.13
+
+   .. note::
+
+      In the :term:`free-threaded build`, when *iterable* is a :class:`list`,
+      :class:`set`, :class:`dict`, or dict view, both *list* and *iterable*
+      (or its underlying dict) are locked for the duration of the operation.
+      For other iterables, only *list* is locked; *iterable* may be
+      concurrently modified by another thread.
 
 
 .. c:function:: int PyList_Clear(PyObject *list)
@@ -167,6 +203,14 @@ List Objects
 
    Sort the items of *list* in place.  Return ``0`` on success, ``-1`` on
    failure.  This is equivalent to ``list.sort()``.
+
+   .. note::
+
+      In the :term:`free-threaded build`, element comparison via
+      :meth:`~object.__lt__` can execute arbitrary Python code, during which
+      the :term:`per-object lock` may be temporarily released. For built-in
+      types (:class:`str`, :class:`int`, :class:`float`), the lock is not
+      released during comparison.
 
 
 .. c:function:: int PyList_Reverse(PyObject *list)
