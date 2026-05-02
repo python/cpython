@@ -841,45 +841,6 @@ Zg_get(void *ptr, Py_ssize_t size)
     memcpy(&x, ptr, sizeof(x));
     return PyComplex_FromDoubles((double)x[0], (double)x[1]);
 }
-
-/* D: double complex */
-static PyObject *
-D_set(void *ptr, PyObject *value, Py_ssize_t size)
-{
-    return Zd_set(ptr, value, size);
-}
-
-static PyObject *
-D_get(void *ptr, Py_ssize_t size)
-{
-    return Zd_get(ptr, size);
-}
-
-/* F: float complex */
-static PyObject *
-F_set(void *ptr, PyObject *value, Py_ssize_t size)
-{
-    return Zf_set(ptr, value, size);
-}
-
-static PyObject *
-F_get(void *ptr, Py_ssize_t size)
-{
-    return Zf_get(ptr, size);
-}
-
-/* G: long double complex */
-static PyObject *
-G_set(void *ptr, PyObject *value, Py_ssize_t size)
-{
-    return Zg_set(ptr, value, size);
-}
-
-static PyObject *
-G_get(void *ptr, Py_ssize_t size)
-{
-    return Zg_get(ptr, size);
-}
 #endif
 
 /* d: double */
@@ -1414,7 +1375,7 @@ struct formattable {
 for nbytes in 8, 16, 32, 64:
     for sgn in 'i', 'u':
         print(f'    struct fielddesc fmt_{sgn}{nbytes};')
-for code in 'sbBcdFDGgfhHiIlLqQPzuUZXvO':
+for code in 'sbBcdgfhHiIlLqQPzuUZXvO':
     print(f'    struct fielddesc fmt_{code};')
 [python start generated code]*/
     struct fielddesc fmt_i8;
@@ -1430,9 +1391,6 @@ for code in 'sbBcdFDGgfhHiIlLqQPzuUZXvO':
     struct fielddesc fmt_B;
     struct fielddesc fmt_c;
     struct fielddesc fmt_d;
-    struct fielddesc fmt_F;
-    struct fielddesc fmt_D;
-    struct fielddesc fmt_G;
     struct fielddesc fmt_g;
     struct fielddesc fmt_f;
     struct fielddesc fmt_h;
@@ -1451,7 +1409,7 @@ for code in 'sbBcdFDGgfhHiIlLqQPzuUZXvO':
     struct fielddesc fmt_X;
     struct fielddesc fmt_v;
     struct fielddesc fmt_O;
-/*[python end generated code: output=f5a07c066fedaca6 input=ffa5d46c29dfb07a]*/
+/*[python end generated code: output=266ae6d30b6286a1 input=a1b7a263c7cf681f]*/
     struct fielddesc fmt_Zf;
     struct fielddesc fmt_Zd;
     struct fielddesc fmt_Zg;
@@ -1464,7 +1422,7 @@ for code in 'sbBcdFDGgfhHiIlLqQPzuUZXvO':
 
     // Result of _ctypes_get_simple_type_chars. Initialized just after
     // the rest of formattable, so we stash it here.
-    char simple_type_chars[26];
+    char simple_type_chars[23];
 };
 
 static struct formattable formattable;
@@ -1643,9 +1601,6 @@ for base_code, base_c_type in [
     TABLE_ENTRY_SW(d, &ffi_type_double);
 #if defined(_Py_FFI_SUPPORT_C_COMPLEX)
     if (Py_FFI_COMPLEX_AVAILABLE) {
-        TABLE_ENTRY(D, &ffi_type_complex_double);
-        TABLE_ENTRY(F, &ffi_type_complex_float);
-        TABLE_ENTRY(G, &ffi_type_complex_longdouble);
         TABLE_ENTRY(Zd, &ffi_type_complex_double);
         TABLE_ENTRY(Zf, &ffi_type_complex_float);
         TABLE_ENTRY(Zg, &ffi_type_complex_longdouble);
@@ -1683,7 +1638,7 @@ for base_code, base_c_type in [
     formattable.fmt_bool.getfunc = bool_get;
 
 /*[python input]
-all_chars = "cbBhHiIlLdDFGfuzZqQPXOv?g"
+all_chars = "cbBhHiIlLdfuzZqQPXOv?g"
 print(f'    assert(sizeof(formattable.simple_type_chars) == {len(all_chars)+1});')
 print(f'    int i = 0;')
 for char in all_chars:
@@ -1692,7 +1647,7 @@ for char in all_chars:
           + f"formattable.simple_type_chars[i++] = '{char}';")
 print(f"    formattable.simple_type_chars[i] = 0;")
 [python start generated code]*/
-    assert(sizeof(formattable.simple_type_chars) == 26);
+    assert(sizeof(formattable.simple_type_chars) == 23);
     int i = 0;
     if (formattable.fmt_c.code) formattable.simple_type_chars[i++] = 'c';
     if (formattable.fmt_b.code) formattable.simple_type_chars[i++] = 'b';
@@ -1704,9 +1659,6 @@ print(f"    formattable.simple_type_chars[i] = 0;")
     if (formattable.fmt_l.code) formattable.simple_type_chars[i++] = 'l';
     if (formattable.fmt_L.code) formattable.simple_type_chars[i++] = 'L';
     if (formattable.fmt_d.code) formattable.simple_type_chars[i++] = 'd';
-    if (formattable.fmt_D.code) formattable.simple_type_chars[i++] = 'D';
-    if (formattable.fmt_F.code) formattable.simple_type_chars[i++] = 'F';
-    if (formattable.fmt_G.code) formattable.simple_type_chars[i++] = 'G';
     if (formattable.fmt_f.code) formattable.simple_type_chars[i++] = 'f';
     if (formattable.fmt_u.code) formattable.simple_type_chars[i++] = 'u';
     if (formattable.fmt_z.code) formattable.simple_type_chars[i++] = 'z';
@@ -1720,7 +1672,7 @@ print(f"    formattable.simple_type_chars[i] = 0;")
     if (formattable.fmt_bool.code) formattable.simple_type_chars[i++] = '?';
     if (formattable.fmt_g.code) formattable.simple_type_chars[i++] = 'g';
     formattable.simple_type_chars[i] = 0;
-/*[python end generated code: output=2aa52670d1570f18 input=cff3e7cb95adac61]*/
+/*[python end generated code: output=b78c8b7eed73d45a input=30ddc50637dd8ee4]*/
 
 }
 #undef FIXINT_FIELDDESC_FOR
@@ -1747,7 +1699,7 @@ _ctypes_get_fielddesc(const char *fmt)
     struct fielddesc *result = NULL;
     switch(fmt[0]) {
 /*[python input]
-for code in 'sbBcdDFGgfhHiIlLqQPzuUXvO':
+for code in 'sbBcdgfhHiIlLqQPzuUXvO':
     print(f"        case '{code}': result = &formattable.fmt_{code}; break;")
 [python start generated code]*/
         case 's': result = &formattable.fmt_s; break;
@@ -1755,9 +1707,6 @@ for code in 'sbBcdDFGgfhHiIlLqQPzuUXvO':
         case 'B': result = &formattable.fmt_B; break;
         case 'c': result = &formattable.fmt_c; break;
         case 'd': result = &formattable.fmt_d; break;
-        case 'D': result = &formattable.fmt_D; break;
-        case 'F': result = &formattable.fmt_F; break;
-        case 'G': result = &formattable.fmt_G; break;
         case 'g': result = &formattable.fmt_g; break;
         case 'f': result = &formattable.fmt_f; break;
         case 'h': result = &formattable.fmt_h; break;
@@ -1775,7 +1724,7 @@ for code in 'sbBcdDFGgfhHiIlLqQPzuUXvO':
         case 'X': result = &formattable.fmt_X; break;
         case 'v': result = &formattable.fmt_v; break;
         case 'O': result = &formattable.fmt_O; break;
-/*[python end generated code: output=cc0f8e26509698ba input=cc7a03e9915fce87]*/
+/*[python end generated code: output=8e95bd0d49efb1c8 input=82d4ee1538b9b282]*/
         case 'Z': {
             switch(fmt[1]) {
                 case '\0': result = &formattable.fmt_Z; break;
