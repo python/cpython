@@ -191,12 +191,15 @@ This module defines the following functions:
    Its value may be used to uniquely identify this particular thread system-wide
    (until the thread terminates, after which the value may be recycled by the OS).
 
-   .. availability:: Windows, FreeBSD, Linux, macOS, OpenBSD, NetBSD, AIX, DragonFlyBSD, GNU/kFreeBSD.
+   .. availability:: Windows, FreeBSD, Linux, macOS, OpenBSD, NetBSD, AIX, DragonFlyBSD, GNU/kFreeBSD, Solaris.
 
    .. versionadded:: 3.8
 
    .. versionchanged:: 3.13
       Added support for GNU/kFreeBSD.
+
+   .. versionchanged:: 3.15
+      Added support for Solaris.
 
 
 .. function:: enumerate()
@@ -605,7 +608,7 @@ since it is impossible to detect the termination of alien threads.
       timeout occurs.
 
       When the *timeout* argument is present and not ``None``, it should be a
-      floating-point number specifying a timeout for the operation in seconds
+      real number specifying a timeout for the operation in seconds
       (or fractions thereof). As :meth:`~Thread.join` always returns ``None``,
       you must call :meth:`~Thread.is_alive` after :meth:`~Thread.join` to
       decide whether a timeout happened -- if the thread is still alive, the
@@ -621,13 +624,16 @@ since it is impossible to detect the termination of alien threads.
       an error to :meth:`~Thread.join` a thread before it has been started
       and attempts to do so raise the same exception.
 
-      If an attempt is made to join a running daemonic thread in in late stages
+      If an attempt is made to join a running daemonic thread in late stages
       of :term:`Python finalization <interpreter shutdown>` :meth:`!join`
       raises a :exc:`PythonFinalizationError`.
 
       .. versionchanged:: 3.14
 
          May raise :exc:`PythonFinalizationError`.
+
+      .. versionchanged:: 3.15
+         Accepts any real number as *timeout*, not only integer or float.
 
    .. attribute:: name
 
@@ -761,7 +767,7 @@ All methods are executed atomically.
       If a call with *blocking* set to ``True`` would block, return ``False``
       immediately; otherwise, set the lock to locked and return ``True``.
 
-      When invoked with the floating-point *timeout* argument set to a positive
+      When invoked with the *timeout* argument set to a positive
       value, block for at most the number of seconds specified by *timeout*
       and as long as the lock cannot be acquired.  A *timeout* argument of ``-1``
       specifies an unbounded wait.  It is forbidden to specify a *timeout*
@@ -779,6 +785,9 @@ All methods are executed atomically.
 
       .. versionchanged:: 3.14
          Lock acquisition can now be interrupted by signals on Windows.
+
+      .. versionchanged:: 3.15
+         Accepts any real number as *timeout*, not only integer or float.
 
 
    .. method:: release()
@@ -860,7 +869,7 @@ call release as many times the lock has been acquired can lead to deadlock.
          * If no thread owns the lock, acquire the lock and return immediately.
 
          * If another thread owns the lock, block until we are able to acquire
-           lock, or *timeout*, if set to a positive float value.
+           lock, or *timeout*, if set to a positive value.
 
          * If the same thread owns the lock, acquire the lock again, and
            return immediately. This is the difference between :class:`Lock` and
@@ -886,6 +895,9 @@ call release as many times the lock has been acquired can lead to deadlock.
 
       .. versionchanged:: 3.2
          The *timeout* parameter is new.
+
+      .. versionchanged:: 3.15
+         Accepts any real number as *timeout*, not only integer or float.
 
 
    .. method:: release()
@@ -1020,7 +1032,7 @@ item to the buffer only needs to wake up one consumer thread.
       occurs.  Once awakened or timed out, it re-acquires the lock and returns.
 
       When the *timeout* argument is present and not ``None``, it should be a
-      floating-point number specifying a timeout for the operation in seconds
+      real number specifying a timeout for the operation in seconds
       (or fractions thereof).
 
       When the underlying lock is an :class:`RLock`, it is not released using
@@ -1147,6 +1159,9 @@ Semaphores also support the :ref:`context management protocol <with-locks>`.
       .. versionchanged:: 3.2
          The *timeout* parameter is new.
 
+      .. versionchanged:: 3.15
+         Accepts any real number as *timeout*, not only integer or float.
+
    .. method:: release(n=1)
 
       Release a semaphore, incrementing the internal counter by *n*.  When it
@@ -1247,7 +1262,7 @@ method.  The :meth:`~Event.wait` method blocks until the flag is true.
       the internal flag did not become true within the given wait time.
 
       When the timeout argument is present and not ``None``, it should be a
-      floating-point number specifying a timeout for the operation in seconds,
+      real number specifying a timeout for the operation in seconds,
       or fractions thereof.
 
       .. versionchanged:: 3.1
@@ -1421,3 +1436,159 @@ is equivalent to::
 Currently, :class:`Lock`, :class:`RLock`, :class:`Condition`,
 :class:`Semaphore`, and :class:`BoundedSemaphore` objects may be used as
 :keyword:`with` statement context managers.
+
+
+Iterator synchronization
+------------------------
+
+By default, Python iterators do not support concurrent access. Most iterators make
+no guarantees when accessed simultaneously from multiple threads. Generator
+iterators, for example, raise :exc:`ValueError` if one of their iterator methods
+is called while the generator is already executing. The tools in this section
+allow reliable concurrency support to be added to ordinary iterators and
+iterator-producing callables.
+
+The :class:`serialize_iterator` wrapper lets multiple threads share a single iterator and
+take turns consuming from it. While one thread is running ``__next__()``, the
+others block until the iterator becomes available. Each value produced by the
+underlying iterator is delivered to exactly one caller.
+
+The :func:`concurrent_tee` function lets multiple threads each receive the full
+stream of values from one underlying iterator. It creates independent iterators
+that all draw from the same source. Values are buffered until consumed by all
+of the derived iterators.
+
+.. class:: serialize_iterator(iterable)
+
+   Return an iterator wrapper that serializes concurrent calls to
+   :meth:`~iterator.__next__` using a lock.
+
+   If the wrapped iterator also defines :meth:`~generator.send`,
+   :meth:`~generator.throw`, or :meth:`~generator.close`, those calls
+   are serialized as well.
+
+   This makes it possible to share a single iterator, including a generator
+   iterator, between multiple threads. A lock ensures that calls are handled
+   one at a time. No values are duplicated or skipped by the wrapper itself.
+   Each item from the underlying iterator is given to exactly one caller.
+
+   This wrapper does not copy or buffer values. Threads that call
+   :func:`next` while another thread is already advancing the iterator will
+   block until the active call completes.
+
+   Example:
+
+   .. code-block:: python
+
+      import threading
+
+      def squares(n):
+          for x in range(n):
+              yield x * x
+
+      def consume(name, iterable):
+          for item in iterable:
+              print(name, item)
+
+      source = threading.serialize_iterator(squares(5))
+
+      t1 = threading.Thread(target=consume, args=("left", source))
+      t2 = threading.Thread(target=consume, args=("right", source))
+      t1.start()
+      t2.start()
+      t1.join()
+      t2.join()
+
+   In this example, each number is printed exactly once, but the work is shared
+   between the two threads.
+
+   .. versionadded:: next
+
+
+.. function:: synchronized_iterator(func)
+
+   Wrap an iterator-producing callable so that each iterator it returns is
+   automatically passed through :class:`serialize_iterator`.
+
+   This is especially useful as a :term:`decorator` for generator functions,
+   allowing their generator-iterators to be consumed from multiple threads.
+
+   Example:
+
+   .. code-block:: python
+
+      import threading
+
+      @threading.synchronized_iterator
+      def squares(n):
+          for x in range(n):
+              yield x * x
+
+      def consume(name, iterable):
+          for item in iterable:
+              print(name, item)
+
+      source = squares(5)
+
+      t1 = threading.Thread(target=consume, args=("left", source))
+      t2 = threading.Thread(target=consume, args=("right", source))
+      t1.start()
+      t2.start()
+      t1.join()
+      t2.join()
+
+   The returned wrapper preserves the metadata of *func*, such as its name and
+   wrapped function reference.
+
+   .. versionadded:: next
+
+
+.. function:: concurrent_tee(iterable, n=2)
+
+   Return *n* independent iterators from a single input *iterable*, with
+   guaranteed behavior when the derived iterators are consumed concurrently.
+
+   This function is similar to :func:`itertools.tee`, but is intended for cases
+   where the source iterator may feed consumers running in different threads.
+   Each returned iterator yields every value from the underlying iterable, in
+   the same order.
+
+   Internally, values are buffered until every derived iterator has consumed
+   them.
+
+   The returned iterators share the same underlying synchronization lock. Each
+   individual derived iterator is intended to be consumed by one thread at a
+   time. If a single derived iterator must itself be shared by multiple
+   threads, wrap it with :class:`serialize_iterator`.
+
+   If *n* is ``0``, return an empty tuple. If *n* is negative, raise
+   :exc:`ValueError`.
+
+   Example:
+
+   .. code-block:: python
+
+      import threading
+
+      def squares(n):
+          for x in range(n):
+              yield x * x
+
+      def consume(name, iterable):
+          for item in iterable:
+              print(name, item)
+
+      source = squares(5)
+      left, right = threading.concurrent_tee(source)
+
+      t1 = threading.Thread(target=consume, args=("left", left))
+      t2 = threading.Thread(target=consume, args=("right", right))
+      t1.start()
+      t2.start()
+      t1.join()
+      t2.join()
+
+   In this example, both consumer threads see the full sequence of squares
+   from a single generator expression.
+
+   .. versionadded:: next

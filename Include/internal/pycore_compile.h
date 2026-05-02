@@ -32,7 +32,8 @@ PyAPI_FUNC(PyCodeObject*) _PyAST_Compile(
     PyObject *filename,
     PyCompilerFlags *flags,
     int optimize,
-    struct _arena *arena);
+    struct _arena *arena,
+    PyObject *module);
 
 /* AST preprocessing */
 extern int _PyCompile_AstPreprocess(
@@ -41,7 +42,8 @@ extern int _PyCompile_AstPreprocess(
     PyCompilerFlags *flags,
     int optimize,
     struct _arena *arena,
-    int syntax_check_only);
+    int syntax_check_only,
+    PyObject *module);
 
 extern int _PyAST_Preprocess(
     struct _mod *,
@@ -49,7 +51,9 @@ extern int _PyAST_Preprocess(
     PyObject *filename,
     int optimize,
     int ff_features,
-    int syntax_check_only);
+    int syntax_check_only,
+    int enable_warnings,
+    PyObject *module);
 
 
 typedef struct {
@@ -127,6 +131,7 @@ int _PyCompile_PushFBlock(struct _PyCompiler *c, _Py_SourceLocation loc,
 void _PyCompile_PopFBlock(struct _PyCompiler *c, enum _PyCompile_FBlockType t,
                           _PyJumpTargetLabel block_label);
 _PyCompile_FBlockInfo *_PyCompile_TopFBlock(struct _PyCompiler *c);
+bool _PyCompile_InExceptionHandler(struct _PyCompiler *c);
 
 int _PyCompile_EnterScope(struct _PyCompiler *c, identifier name, int scope_type,
                           void *key, int lineno, PyObject *private,

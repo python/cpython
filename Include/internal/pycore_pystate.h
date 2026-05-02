@@ -8,6 +8,7 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
+#include "pycore_pythonrun.h"     // _PyOS_STACK_MARGIN_SHIFT
 #include "pycore_typedefs.h"      // _PyRuntimeState
 #include "pycore_tstate.h"
 
@@ -88,8 +89,9 @@ _Py_ThreadCanHandleSignals(PyInterpreterState *interp)
 /* Variable and static inline functions for in-line access to current thread
    and interpreter state */
 
-#if defined(HAVE_THREAD_LOCAL) && !defined(Py_BUILD_CORE_MODULE)
+#if !defined(Py_BUILD_CORE_MODULE)
 extern _Py_thread_local PyThreadState *_Py_tss_tstate;
+extern _Py_thread_local PyInterpreterState *_Py_tss_interp;
 #endif
 
 #ifndef NDEBUG
@@ -113,7 +115,7 @@ PyAPI_FUNC(PyThreadState *) _PyThreadState_GetCurrent(void);
 static inline PyThreadState*
 _PyThreadState_GET(void)
 {
-#if defined(HAVE_THREAD_LOCAL) && !defined(Py_BUILD_CORE_MODULE)
+#if !defined(Py_BUILD_CORE_MODULE)
     return _Py_tss_tstate;
 #else
     return _PyThreadState_GetCurrent();
@@ -203,11 +205,15 @@ _Py_EnsureFuncTstateNotNULL(const char *func, PyThreadState *tstate)
    See also PyInterpreterState_Get()
    and _PyGILState_GetInterpreterStateUnsafe(). */
 static inline PyInterpreterState* _PyInterpreterState_GET(void) {
-    PyThreadState *tstate = _PyThreadState_GET();
 #ifdef Py_DEBUG
+    PyThreadState *tstate = _PyThreadState_GET();
     _Py_EnsureTstateNotNULL(tstate);
 #endif
-    return tstate->interp;
+#if !defined(Py_BUILD_CORE_MODULE)
+    return _Py_tss_interp;
+#else
+    return _PyThreadState_GET()->interp;
+#endif
 }
 
 
@@ -325,7 +331,11 @@ _Py_RecursionLimit_GetMargin(PyThreadState *tstate)
     _PyThreadStateImpl *_tstate = (_PyThreadStateImpl *)tstate;
     assert(_tstate->c_stack_hard_limit != 0);
     intptr_t here_addr = _Py_get_machine_stack_pointer();
-    return Py_ARITHMETIC_RIGHT_SHIFT(intptr_t, here_addr - (intptr_t)_tstate->c_stack_soft_limit, PYOS_STACK_MARGIN_SHIFT);
+#if _Py_STACK_GROWS_DOWN
+    return Py_ARITHMETIC_RIGHT_SHIFT(intptr_t, here_addr - (intptr_t)_tstate->c_stack_soft_limit, _PyOS_STACK_MARGIN_SHIFT);
+#else
+    return Py_ARITHMETIC_RIGHT_SHIFT(intptr_t, (intptr_t)_tstate->c_stack_soft_limit - here_addr, _PyOS_STACK_MARGIN_SHIFT);
+#endif
 }
 
 #ifdef __cplusplus

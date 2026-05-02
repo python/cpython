@@ -2,7 +2,6 @@
 =====================================
 
 .. module:: pwd
-   :platform: Unix
    :synopsis: The password database (getpwnam() and friends).
 
 --------------

@@ -1,0 +1,3 @@
+:term:`Soft deprecate <soft deprecated>` :func:`re.match` and
+:meth:`re.Pattern.match` in favour of :func:`re.prefixmatch` and
+:meth:`re.Pattern.prefixmatch`. Patch by Hugo van Kemenade.

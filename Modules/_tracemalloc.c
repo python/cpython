@@ -168,6 +168,7 @@ _tracemalloc_get_traced_memory_impl(PyObject *module)
 }
 
 /*[clinic input]
+@permit_long_summary
 _tracemalloc.reset_peak
 
 Set the peak size of memory blocks traced by tracemalloc to the current size.
@@ -178,7 +179,7 @@ Do nothing if the tracemalloc module is not tracing memory allocations.
 
 static PyObject *
 _tracemalloc_reset_peak_impl(PyObject *module)
-/*[clinic end generated code: output=140c2870f691dbb2 input=18afd0635066e9ce]*/
+/*[clinic end generated code: output=140c2870f691dbb2 input=4103319210f46286]*/
 {
     _PyTraceMalloc_ResetPeak();
     Py_RETURN_NONE;
@@ -215,6 +216,11 @@ static struct PyModuleDef module_def = {
 PyMODINIT_FUNC
 PyInit__tracemalloc(void)
 {
+    PyABIInfo_VAR(abi_info);
+    if (PyABIInfo_Check(&abi_info, "_tracemalloc") < 0) {
+        return NULL;
+    }
+
     PyObject *mod = PyModule_Create(&module_def);
     if (mod == NULL) {
         return NULL;

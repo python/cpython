@@ -167,6 +167,19 @@ class Function:
             flags.append('METH_COEXIST')
         return '|'.join(flags)
 
+    @property
+    def docstring_line_width(self) -> int:
+        """Return the maximum line width for docstring lines.
+
+        Pydoc adds indentation when displaying functions and methods.
+        To keep the total width of within 80 characters, we use a
+        maximum of 76 characters for global functions and classes,
+        and 72 characters for methods.
+        """
+        if self.cls is not None and not self.kind.new_or_init:
+            return 72
+        return 76
+
     def __repr__(self) -> str:
         return f'<clinic.Function {self.name!r}>'
 
@@ -207,8 +220,17 @@ class Parameter:
     def is_positional_only(self) -> bool:
         return self.kind == inspect.Parameter.POSITIONAL_ONLY
 
+    def is_positional_or_keyword(self) -> bool:
+        return self.kind == inspect.Parameter.POSITIONAL_OR_KEYWORD
+
     def is_vararg(self) -> bool:
         return self.kind == inspect.Parameter.VAR_POSITIONAL
+
+    def is_var_keyword(self) -> bool:
+        return self.kind == inspect.Parameter.VAR_KEYWORD
+
+    def is_variable_length(self) -> bool:
+        return self.is_vararg() or self.is_var_keyword()
 
     def is_optional(self) -> bool:
         return not self.is_vararg() and (self.default is not unspecified)

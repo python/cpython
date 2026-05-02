@@ -13,6 +13,7 @@ typedef struct {
 } _PyNamespaceObject;
 
 #define _PyNamespace_CAST(op) _Py_CAST(_PyNamespaceObject*, (op))
+#define _PyNamespace_Check(op) PyObject_TypeCheck((op), &_PyNamespace_Type)
 
 
 static PyMemberDef namespace_members[] = {
@@ -124,9 +125,10 @@ namespace_repr(PyObject *ns)
         if (PyUnicode_Check(key) && PyUnicode_GET_LENGTH(key) > 0) {
             PyObject *value, *item;
 
-            value = PyDict_GetItemWithError(d, key);
-            if (value != NULL) {
+            int has_key = PyDict_GetItemRef(d, key, &value);
+            if (has_key == 1) {
                 item = PyUnicode_FromFormat("%U=%R", key, value);
+                Py_DECREF(value);
                 if (item == NULL) {
                     loop_error = 1;
                 }
@@ -135,7 +137,7 @@ namespace_repr(PyObject *ns)
                     Py_DECREF(item);
                 }
             }
-            else if (PyErr_Occurred()) {
+            else if (has_key < 0) {
                 loop_error = 1;
             }
         }
@@ -193,10 +195,14 @@ namespace_clear(PyObject *op)
 static PyObject *
 namespace_richcompare(PyObject *self, PyObject *other, int op)
 {
-    if (PyObject_TypeCheck(self, &_PyNamespace_Type) &&
-        PyObject_TypeCheck(other, &_PyNamespace_Type))
+    if (
+        (op == Py_EQ || op == Py_NE) &&
+        PyObject_TypeCheck(self, &_PyNamespace_Type) &&
+        PyObject_TypeCheck(other, &_PyNamespace_Type)
+    ) {
         return PyObject_RichCompare(((_PyNamespaceObject *)self)->ns_dict,
                                    ((_PyNamespaceObject *)other)->ns_dict, op);
+    }
     Py_RETURN_NOTIMPLEMENTED;
 }
 
@@ -229,6 +235,14 @@ namespace_replace(PyObject *self, PyObject *args, PyObject *kwargs)
     if (!result) {
         return NULL;
     }
+    if (!_PyNamespace_Check(result)) {
+        PyErr_Format(PyExc_TypeError,
+                     "expect %N type, but %T() returned '%T' object",
+                     &_PyNamespace_Type, self, result);
+        Py_DECREF(result);
+        return NULL;
+    }
+
     if (PyDict_Update(((_PyNamespaceObject*)result)->ns_dict,
                       ((_PyNamespaceObject*)self)->ns_dict) < 0)
     {

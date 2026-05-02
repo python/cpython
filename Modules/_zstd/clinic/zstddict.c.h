@@ -198,7 +198,7 @@ PyDoc_STRVAR(_zstd_ZstdDict_as_prefix__doc__,
 "1. Prefix is compatible with long distance matching, while dictionary is not.\n"
 "2. It only works for the first frame, then the compressor/decompressor will\n"
 "   return to no prefix state.\n"
-"3. When decompressing, must use the same prefix as when compressing.\"");
+"3. When decompressing, must use the same prefix as when compressing.");
 #if defined(_zstd_ZstdDict_as_prefix_DOCSTR)
 #   undef _zstd_ZstdDict_as_prefix_DOCSTR
 #endif
@@ -222,4 +222,4 @@ _zstd_ZstdDict_as_prefix_get(PyObject *self, void *Py_UNUSED(context))
 {
     return _zstd_ZstdDict_as_prefix_get_impl((ZstdDict *)self);
 }
-/*[clinic end generated code: output=4696cbc722e5fdfc input=a9049054013a1b77]*/
+/*[clinic end generated code: output=f41d9e2e2cc2928f input=a9049054013a1b77]*/

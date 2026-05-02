@@ -154,6 +154,13 @@ _PyInstructionSequence_InsertInstruction(instr_sequence *seq, int pos,
     return SUCCESS;
 }
 
+_PyInstruction
+_PyInstructionSequence_GetInstruction(instr_sequence *seq, int pos)
+{
+    assert(pos >= 0 && pos < seq->s_used);
+    return seq->s_instrs[pos];
+}
+
 int
 _PyInstructionSequence_SetAnnotationsCode(instr_sequence *seq,
                                           instr_sequence *annotations)

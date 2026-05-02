@@ -2,6 +2,7 @@
 # to ensure the Queue locks remain stable.
 import itertools
 import random
+import struct
 import threading
 import time
 import unittest
@@ -9,6 +10,7 @@ import weakref
 from test.support import gc_collect, bigmemtest
 from test.support import import_helper
 from test.support import threading_helper
+from test import support
 
 # queue module depends on threading primitives
 threading_helper.requires_working_threading(module=True)
@@ -1030,6 +1032,14 @@ class CSimpleQueueTest(BaseSimpleQueueTest, unittest.TestCase):
     def test_is_default(self):
         self.assertIs(self.type2test, self.queue.SimpleQueue)
         self.assertIs(self.type2test, self.queue.SimpleQueue)
+
+    def test_simplequeue_sizeof(self):
+        q = self.type2test()
+        basesize = support.calcobjsize('?nnPnnP')
+        support.check_sizeof(self, q, basesize + struct.calcsize(8 * 'P'))
+        for _ in range(1000):
+            q.put(object())
+        support.check_sizeof(self, q, basesize + struct.calcsize(1024 * 'P'))
 
     def test_reentrancy(self):
         # bpo-14976: put() may be called reentrantly in an asynchronous

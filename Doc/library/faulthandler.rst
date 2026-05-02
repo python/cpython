@@ -31,7 +31,8 @@ tracebacks:
 * Each string is limited to 500 characters.
 * Only the filename, the function name and the line number are
   displayed. (no source code)
-* It is limited to 100 frames and 100 threads.
+* It is limited to 100 frames per thread, and 100 threads
+  (configurable via *max_threads*).
 * The order is reversed: the most recent call is shown first.
 
 By default, the Python traceback is written to :data:`sys.stderr`. To see
@@ -55,15 +56,19 @@ at Python startup.
 Dumping the traceback
 ---------------------
 
-.. function:: dump_traceback(file=sys.stderr, all_threads=True)
+.. function:: dump_traceback(file=sys.stderr, all_threads=True, *, max_threads=100)
 
    Dump the tracebacks of all threads into *file*. If *all_threads* is
-   ``False``, dump only the current thread.
+   ``False``, dump only the current thread. *max_threads* caps the number
+   of threads dumped.
 
    .. seealso:: :func:`traceback.print_tb`, which can be used to print a traceback object.
 
    .. versionchanged:: 3.5
       Added support for passing file descriptor to this function.
+
+   .. versionchanged:: next
+      Added the *max_threads* keyword argument.
 
 
 Dumping the C stack
@@ -90,7 +95,7 @@ An error will be printed instead of the stack.
 
 Additionally, some compilers do not support :term:`CPython's <CPython>`
 implementation of C stack dumps. As a result, a different error may be printed
-instead of the stack, even if the the operating system supports dumping stacks.
+instead of the stack, even if the operating system supports dumping stacks.
 
 .. note::
 
@@ -100,7 +105,7 @@ instead of the stack, even if the the operating system supports dumping stacks.
 Fault handler state
 -------------------
 
-.. function:: enable(file=sys.stderr, all_threads=True, c_stack=True)
+.. function:: enable(file=sys.stderr, all_threads=True, c_stack=True, *, max_threads=100)
 
    Enable the fault handler: install handlers for the :const:`~signal.SIGSEGV`,
    :const:`~signal.SIGFPE`, :const:`~signal.SIGABRT`, :const:`~signal.SIGBUS`
@@ -115,6 +120,8 @@ Fault handler state
    If *c_stack* is ``True``, then the C stack trace is printed after the Python
    traceback, unless the system does not support it. See :func:`dump_c_stack` for
    more information on compatibility.
+
+   *max_threads* caps the number of threads dumped when a fatal signal fires.
 
    .. versionchanged:: 3.5
       Added support for passing file descriptor to this function.
@@ -133,6 +140,9 @@ Fault handler state
    .. versionchanged:: 3.14
       The dump now displays the C stack trace if *c_stack* is true.
 
+   .. versionchanged:: next
+      Added the *max_threads* keyword argument.
+
 .. function:: disable()
 
    Disable the fault handler: uninstall the signal handlers installed by
@@ -146,7 +156,7 @@ Fault handler state
 Dumping the tracebacks after a timeout
 --------------------------------------
 
-.. function:: dump_traceback_later(timeout, repeat=False, file=sys.stderr, exit=False)
+.. function:: dump_traceback_later(timeout, repeat=False, file=sys.stderr, exit=False, *, max_threads=100)
 
    Dump the tracebacks of all threads, after a timeout of *timeout* seconds, or
    every *timeout* seconds if *repeat* is ``True``.  If *exit* is ``True``, call
@@ -154,7 +164,7 @@ Dumping the tracebacks after a timeout
    :c:func:`!_exit` exits the process immediately, which means it doesn't do any
    cleanup like flushing file buffers.) If the function is called twice, the new
    call replaces previous parameters and resets the timeout. The timer has a
-   sub-second resolution.
+   sub-second resolution. *max_threads* caps the number of threads dumped.
 
    The *file* must be kept open until the traceback is dumped or
    :func:`cancel_dump_traceback_later` is called: see :ref:`issue with file
@@ -168,6 +178,9 @@ Dumping the tracebacks after a timeout
    .. versionchanged:: 3.7
       This function is now always available.
 
+   .. versionchanged:: next
+      Added the *max_threads* keyword argument.
+
 .. function:: cancel_dump_traceback_later()
 
    Cancel the last call to :func:`dump_traceback_later`.
@@ -176,11 +189,12 @@ Dumping the tracebacks after a timeout
 Dumping the traceback on a user signal
 --------------------------------------
 
-.. function:: register(signum, file=sys.stderr, all_threads=True, chain=False)
+.. function:: register(signum, file=sys.stderr, all_threads=True, chain=False, *, max_threads=100)
 
    Register a user signal: install a handler for the *signum* signal to dump
    the traceback of all threads, or of the current thread if *all_threads* is
    ``False``, into *file*. Call the previous handler if chain is ``True``.
+   *max_threads* caps the number of threads dumped.
 
    The *file* must be kept open until the signal is unregistered by
    :func:`unregister`: see :ref:`issue with file descriptors <faulthandler-fd>`.
@@ -189,6 +203,9 @@ Dumping the traceback on a user signal
 
    .. versionchanged:: 3.5
       Added support for passing file descriptor to this function.
+
+   .. versionchanged:: next
+      Added the *max_threads* keyword argument.
 
 .. function:: unregister(signum)
 
@@ -228,6 +245,41 @@ handler:
     Fatal Python error: Segmentation fault
 
     Current thread 0x00007fb899f39700 (most recent call first):
-      File "/home/python/cpython/Lib/ctypes/__init__.py", line 486 in string_at
+      File "/opt/python/Lib/ctypes/__init__.py", line 486 in string_at
       File "<stdin>", line 1 in <module>
+
+    Current thread's C stack trace (most recent call first):
+      Binary file "/opt/python/python", at _Py_DumpStack+0x42 [0x5b27f7d7147e]
+      Binary file "/opt/python/python", at +0x32dcbd [0x5b27f7d85cbd]
+      Binary file "/opt/python/python", at +0x32df8a [0x5b27f7d85f8a]
+      Binary file "/usr/lib/libc.so.6", at +0x3def0 [0x77b73226bef0]
+      Binary file "/usr/lib/libc.so.6", at +0x17ef9c [0x77b7323acf9c]
+      Binary file "/opt/python/build/lib.linux-x86_64-3.15/_ctypes.cpython-315d-x86_64-linux-gnu.so", at +0xcdf6 [0x77b7315dddf6]
+      Binary file "/usr/lib/libffi.so.8", at +0x7976 [0x77b73158f976]
+      Binary file "/usr/lib/libffi.so.8", at +0x413c [0x77b73158c13c]
+      Binary file "/usr/lib/libffi.so.8", at ffi_call+0x12e [0x77b73158ef0e]
+      Binary file "/opt/python/build/lib.linux-x86_64-3.15/_ctypes.cpython-315d-x86_64-linux-gnu.so", at +0x15a33 [0x77b7315e6a33]
+      Binary file "/opt/python/build/lib.linux-x86_64-3.15/_ctypes.cpython-315d-x86_64-linux-gnu.so", at +0x164fa [0x77b7315e74fa]
+      Binary file "/opt/python/build/lib.linux-x86_64-3.15/_ctypes.cpython-315d-x86_64-linux-gnu.so", at +0xc624 [0x77b7315dd624]
+      Binary file "/opt/python/python", at _PyObject_MakeTpCall+0xce [0x5b27f7b73883]
+      Binary file "/opt/python/python", at +0x11bab6 [0x5b27f7b73ab6]
+      Binary file "/opt/python/python", at PyObject_Vectorcall+0x23 [0x5b27f7b73b04]
+      Binary file "/opt/python/python", at _PyEval_EvalFrameDefault+0x490c [0x5b27f7cbb302]
+      Binary file "/opt/python/python", at +0x2818e6 [0x5b27f7cd98e6]
+      Binary file "/opt/python/python", at +0x281aab [0x5b27f7cd9aab]
+      Binary file "/opt/python/python", at PyEval_EvalCode+0xc5 [0x5b27f7cd9ba3]
+      Binary file "/opt/python/python", at +0x255957 [0x5b27f7cad957]
+      Binary file "/opt/python/python", at +0x255ab4 [0x5b27f7cadab4]
+      Binary file "/opt/python/python", at _PyEval_EvalFrameDefault+0x6c3e [0x5b27f7cbd634]
+      Binary file "/opt/python/python", at +0x2818e6 [0x5b27f7cd98e6]
+      Binary file "/opt/python/python", at +0x281aab [0x5b27f7cd9aab]
+      Binary file "/opt/python/python", at +0x11b6e1 [0x5b27f7b736e1]
+      Binary file "/opt/python/python", at +0x11d348 [0x5b27f7b75348]
+      Binary file "/opt/python/python", at +0x11d626 [0x5b27f7b75626]
+      Binary file "/opt/python/python", at PyObject_Call+0x20 [0x5b27f7b7565e]
+      Binary file "/opt/python/python", at +0x32a67a [0x5b27f7d8267a]
+      Binary file "/opt/python/python", at +0x32a7f8 [0x5b27f7d827f8]
+      Binary file "/opt/python/python", at +0x32ac1b [0x5b27f7d82c1b]
+      Binary file "/opt/python/python", at Py_RunMain+0x31 [0x5b27f7d82ebe]
+      <truncated rest of calls>
     Segmentation fault

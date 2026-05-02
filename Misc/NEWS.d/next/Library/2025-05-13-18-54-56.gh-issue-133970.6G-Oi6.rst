@@ -1,2 +1,0 @@
-Make :class:`!string.templatelib.Template` and
-:class:`!string.templatelib.Interpolation` generic.
