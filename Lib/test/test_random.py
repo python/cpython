@@ -1076,9 +1076,9 @@ class TestDistributions(unittest.TestCase):
             self.assertAlmostEqual(s2/(N-1), sigmasqrd, places=2,
                                    msg='%s%r' % (variate.__name__, args))
                                       
-    @unittest.mock.patch.object(random.Random, 'random', return_value=0.0)
-    def test_binomialvariate_log_zero(self, mock_random):
-        # Test for gh-149222: binomialvariate should not crash when random()
+    def test_binomialvariate_log_zero(self):
+    # gh-149222: Variety random() return 0.0 no input Error
+    with unittest.mock.patch.object(random.Random, 'random', return_value=0.0):
         result = random.binomialvariate(10, 0.5)
         self.assertIsInstance(result, int)
         self.assertIn(result, range(11))
