@@ -215,6 +215,7 @@ typedef struct _Py_DebugOffsets {
         uint64_t state;
         uint64_t length;
         uint64_t asciiobject_size;
+        uint64_t compactunicodeobject_size;
     } unicode_object;
 
     // GC runtime state offset;
@@ -370,6 +371,7 @@ typedef struct _Py_DebugOffsets {
         .state = offsetof(PyUnicodeObject, _base._base.state), \
         .length = offsetof(PyUnicodeObject, _base._base.length), \
         .asciiobject_size = sizeof(PyASCIIObject), \
+        .compactunicodeobject_size = sizeof(PyCompactUnicodeObject), \
     }, \
     .gc = { \
         .size = sizeof(struct _gc_runtime_state), \

@@ -86,6 +86,7 @@ Summary -- Release highlights
 * :pep:`782`: :ref:`A new PyBytesWriter C API to create a Python bytes object
   <whatsnew315-pybyteswriter>`
 * :pep:`803`: :ref:`Stable ABI for Free-Threaded Builds <whatsnew315-abi3t>`
+* :pep:`831`: :ref:`Frame pointers everywhere <whatsnew315-frame-pointers>`
 * :ref:`The JIT compiler has been significantly upgraded <whatsnew315-jit>`
 * :ref:`Improved error messages <whatsnew315-improved-error-messages>`
 * :ref:`The official Windows 64-bit binaries now use the tail-calling interpreter
@@ -914,6 +915,16 @@ faulthandler
   (Contributed by Eric Froemling in :gh:`149085`.)
 
 
+email
+-----
+
+* Email generators now raise an error when an :class:`.EmailMessage` cannot be
+  accurately flattened due to a non-ASCII email address (mailbox) in an address
+  header. Options for supporting Email Address Internationalization (EAI) are
+  discussed in :attr:`.EmailPolicy.utf8`.
+  (Contributed by R David Murray and Mike Edmunds in :gh:`122540`.)
+
+
 functools
 ---------
 
@@ -1268,6 +1279,16 @@ tarfile
   (Contributed by Christoph Walcher in :gh:`57911`.)
 
 
+threading
+---------
+
+* Added :class:`~threading.serialize_iterator`,
+  :func:`~threading.synchronized_iterator`,
+  and :func:`~threading.concurrent_tee` to support concurrent access to
+  generators and iterators.
+  (Contributed by Raymond Hettinger in :gh:`124397`.)
+
+
 timeit
 ------
 
@@ -1579,11 +1600,11 @@ Upgraded JIT compiler
 
 Results from the `pyperformance <https://github.com/python/pyperformance>`__
 benchmark suite report
-`6-7% <https://www.doesjitgobrrr.com/run/2026-04-01>`__
+`8-9% <https://www.doesjitgobrrr.com/run/2026-04-29>`__
 geometric mean performance improvement for the JIT over the standard CPython
 interpreter built with all optimizations enabled on x86-64 Linux. On AArch64
 macOS, the JIT has a
-`12-13% <https://www.doesjitgobrrr.com/run/2026-04-01>`__
+`12-13% <https://www.doesjitgobrrr.com/run/2026-04-29>`__
 speedup over the :ref:`tail calling interpreter <whatsnew314-tail-call-interpreter>`
 with all optimizations enabled. The speedups for JIT
 builds versus no JIT builds range from roughly 15% slowdown to over
@@ -1824,6 +1845,13 @@ Deprecated
 
 New deprecations
 ----------------
+
+* :mod:`ast`
+
+  * Creating instances of abstract AST nodes (such as :class:`ast.AST`
+    or :class:`!ast.expr`) is deprecated and will raise an error in Python 3.20.
+
+    (Contributed by Brian Schubert in :gh:`116021`.)
 
 * :mod:`base64`:
 
@@ -2251,6 +2279,16 @@ Build changes
   Annotations are visible in ``/proc/<pid>/maps`` if the kernel supports the feature
   and :option:`-X dev <-X>` is passed to the Python or Python is built in :ref:`debug mode <debug-build>`.
   (Contributed by Donghee Na in :gh:`141770`.)
+
+.. _whatsnew315-frame-pointers:
+
+* CPython is now built with frame pointers enabled by default
+  (:pep:`831`). Pass :option:`--without-frame-pointers` to opt out.
+  Authors of C extensions and native libraries built with custom build
+  systems should add ``-fno-omit-frame-pointer`` and
+  ``-mno-omit-leaf-frame-pointer`` to their own ``CFLAGS`` to keep the
+  unwind chain intact.
+  (Contributed by Pablo Galindo Salgado and Savannah Ostrowski in :gh:`149201`.)
 
 .. _whatsnew315-windows-tail-calling-interpreter:
 
