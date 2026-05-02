@@ -700,6 +700,16 @@ arguments (:pep:`791`).
 Improved modules
 ================
 
+_remote_debugging
+-----------------
+
+* Added :class:`!GCMonitor` and :func:`!get_gc_stats` to the
+  :mod:`!_remote_debugging` module to read garbage collection statistics
+  from a running Python process without constructing a :class:`!RemoteUnwinder`.
+  Results are returned as :class:`!GCStatsInfo` objects.
+  (Contributed by Sergey Miryanov and Pablo Galindo in :gh:`146527`.)
+
+
 argparse
 --------
 
