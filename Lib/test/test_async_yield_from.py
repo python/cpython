@@ -143,211 +143,211 @@ class TestPEP828Operation(unittest.TestCase):
             "Finishing g1",
         ])
 
-    # @_async_test
-    # async def test_delegation_of_asend(self):
-    #     """
-    #     Test delegation of send()
-    #     """
-    #     trace = []
-    #     async def g1():
-    #         trace.append("Starting g1")
-    #         x = yield "g1 ham"
-    #         trace.append("g1 received %s" % (x,))
-    #         async yield from g2()
-    #         x = yield "g1 eggs"
-    #         trace.append("g1 received %s" % (x,))
-    #         trace.append("Finishing g1")
-    #     async def g2():
-    #         trace.append("Starting g2")
-    #         x = yield "g2 spam"
-    #         trace.append("g2 received %s" % (x,))
-    #         x = yield "g2 more spam"
-    #         trace.append("g2 received %s" % (x,))
-    #         trace.append("Finishing g2")
-    #     g = g1()
-    #     y = await anext(g)
-    #     x = 1
-    #     try:
-    #         while 1:
-    #             y = await g.asend(x)
-    #             trace.append("Yielded %s" % (y,))
-    #             x += 1
-    #     except StopAsyncIteration:
-    #         pass
-    #     self.assertEqual(trace,[
-    #         "Starting g1",
-    #         "g1 received 1",
-    #         "Starting g2",
-    #         "Yielded g2 spam",
-    #         "g2 received 2",
-    #         "Yielded g2 more spam",
-    #         "g2 received 3",
-    #         "Finishing g2",
-    #         "Yielded g1 eggs",
-    #         "g1 received 4",
-    #         "Finishing g1",
-    #     ])
+    @_async_test
+    async def test_delegation_of_asend(self):
+         """
+         Test delegation of send()
+         """
+         trace = []
+         async def g1():
+             trace.append("Starting g1")
+             x = yield "g1 ham"
+             trace.append("g1 received %s" % (x,))
+             async yield from g2()
+             x = yield "g1 eggs"
+             trace.append("g1 received %s" % (x,))
+             trace.append("Finishing g1")
+         async def g2():
+             trace.append("Starting g2")
+             x = yield "g2 spam"
+             trace.append("g2 received %s" % (x,))
+             x = yield "g2 more spam"
+             trace.append("g2 received %s" % (x,))
+             trace.append("Finishing g2")
+         g = g1()
+         y = await anext(g)
+         x = 1
+         try:
+             while 1:
+                 y = await g.asend(x)
+                 trace.append("Yielded %s" % (y,))
+                 x += 1
+         except StopAsyncIteration:
+             pass
+         self.assertEqual(trace,[
+             "Starting g1",
+             "g1 received 1",
+             "Starting g2",
+             "Yielded g2 spam",
+             "g2 received 2",
+             "Yielded g2 more spam",
+             "g2 received 3",
+             "Finishing g2",
+             "Yielded g1 eggs",
+             "g1 received 4",
+             "Finishing g1",
+         ])
 
-    # @_async_test
-    # async def test_handling_exception_while_delegating_send(self):
-    #     """
-    #     Test handling exception while delegating 'send'
-    #     """
-    #     trace = []
-    #     async def g1():
-    #         trace.append("Starting g1")
-    #         x = yield "g1 ham"
-    #         trace.append("g1 received %s" % (x,))
-    #         async yield from g2()
-    #         x = yield "g1 eggs"
-    #         trace.append("g1 received %s" % (x,))
-    #         trace.append("Finishing g1")
-    #     async def g2():
-    #         trace.append("Starting g2")
-    #         x = yield "g2 spam"
-    #         trace.append("g2 received %s" % (x,))
-    #         raise ValueError("hovercraft is full of eels")
-    #         x = yield "g2 more spam"
-    #         trace.append("g2 received %s" % (x,))
-    #         trace.append("Finishing g2")
-    #     async def run():
-    #         g = g1()
-    #         y = await anext(g)
-    #         x = 1
-    #         try:
-    #             while 1:
-    #                 y = await g.asend(x)
-    #                 trace.append("Yielded %s" % (y,))
-    #                 x += 1
-    #         except StopAsyncIteration:
-    #             trace.append("StopAsyncIteration")
-    #     with self.assertRaises(ValueError):
-    #         await run()
-    #     self.assertEqual(trace,[
-    #         "Starting g1",
-    #         "g1 received 1",
-    #         "Starting g2",
-    #         "Yielded g2 spam",
-    #         "g2 received 2",
-    #     ])
+    @_async_test
+    async def test_handling_exception_while_delegating_send(self):
+        """
+        Test handling exception while delegating 'send'
+        """
+        trace = []
+        async def g1():
+            trace.append("Starting g1")
+            x = yield "g1 ham"
+            trace.append("g1 received %s" % (x,))
+            async yield from g2()
+            x = yield "g1 eggs"
+            trace.append("g1 received %s" % (x,))
+            trace.append("Finishing g1")
+        async def g2():
+            trace.append("Starting g2")
+            x = yield "g2 spam"
+            trace.append("g2 received %s" % (x,))
+            raise ValueError("hovercraft is full of eels")
+            x = yield "g2 more spam"
+            trace.append("g2 received %s" % (x,))
+            trace.append("Finishing g2")
+        async def run():
+            g = g1()
+            y = await anext(g)
+            x = 1
+            try:
+                while 1:
+                    y = await g.asend(x)
+                    trace.append("Yielded %s" % (y,))
+                    x += 1
+            except StopAsyncIteration:
+                trace.append("StopAsyncIteration")
+        with self.assertRaises(ValueError):
+            await run()
+        self.assertEqual(trace,[
+            "Starting g1",
+            "g1 received 1",
+            "Starting g2",
+            "Yielded g2 spam",
+            "g2 received 2",
+        ])
 
-    # @_async_test
-    # async def test_delegating_aclose(self):
-    #     """
-    #     Test delegating 'aclose'
-    #     """
-    #     trace = []
-    #     async def g1():
-    #         try:
-    #             trace.append("Starting g1")
-    #             yield "g1 ham"
-    #             async yield from g2()
-    #             yield "g1 eggs"
-    #         finally:
-    #             trace.append("Finishing g1")
-    #     async def g2():
-    #         try:
-    #             trace.append("Starting g2")
-    #             yield "g2 spam"
-    #             yield "g2 more spam"
-    #         finally:
-    #             trace.append("Finishing g2")
-    #     g = g1()
-    #     for i in range(2):
-    #         x = await anext(g)
-    #         trace.append("Yielded %s" % (x,))
-    #     await g.aclose()
-    #     self.assertEqual(trace,[
-    #         "Starting g1",
-    #         "Yielded g1 ham",
-    #         "Starting g2",
-    #         "Yielded g2 spam",
-    #         "Finishing g2",
-    #         "Finishing g1"
-    #     ])
+    @_async_test
+    async def test_delegating_aclose(self):
+        """
+        Test delegating 'aclose'
+        """
+        trace = []
+        async def g1():
+            try:
+                trace.append("Starting g1")
+                yield "g1 ham"
+                async yield from g2()
+                yield "g1 eggs"
+            finally:
+                trace.append("Finishing g1")
+        async def g2():
+            try:
+                trace.append("Starting g2")
+                yield "g2 spam"
+                yield "g2 more spam"
+            finally:
+                trace.append("Finishing g2")
+        g = g1()
+        for i in range(2):
+            x = await anext(g)
+            trace.append("Yielded %s" % (x,))
+        await g.aclose()
+        self.assertEqual(trace,[
+            "Starting g1",
+            "Yielded g1 ham",
+            "Starting g2",
+            "Yielded g2 spam",
+            "Finishing g2",
+            "Finishing g1"
+        ])
 
-    # @_async_test
-    # async def test_handing_exception_while_delegating_close(self):
-    #     """
-    #     Test handling exception while delegating 'close'
-    #     """
-    #     trace = []
-    #     async def g1():
-    #         try:
-    #             trace.append("Starting g1")
-    #             yield "g1 ham"
-    #             async yield from g2()
-    #             yield "g1 eggs"
-    #         finally:
-    #             trace.append("Finishing g1")
-    #     async def g2():
-    #         try:
-    #             trace.append("Starting g2")
-    #             yield "g2 spam"
-    #             yield "g2 more spam"
-    #         finally:
-    #             trace.append("Finishing g2")
-    #             raise ValueError("nybbles have exploded with delight")
-    #     try:
-    #         g = g1()
-    #         for i in range(2):
-    #             x = await anext(g)
-    #             trace.append("Yielded %s" % (x,))
-    #         await g.aclose()
-    #     except ValueError as e:
-    #         self.assertEqual(e.args[0], "nybbles have exploded with delight")
-    #         self.assertIsInstance(e.__context__, GeneratorExit)
-    #     else:
-    #         self.fail("subgenerator failed to raise ValueError")
-    #     self.assertEqual(trace,[
-    #         "Starting g1",
-    #         "Yielded g1 ham",
-    #         "Starting g2",
-    #         "Yielded g2 spam",
-    #         "Finishing g2",
-    #         "Finishing g1",
-    #     ])
+    @_async_test
+    async def test_handing_exception_while_delegating_close(self):
+        """
+        Test handling exception while delegating 'close'
+        """
+        trace = []
+        async def g1():
+            try:
+                trace.append("Starting g1")
+                yield "g1 ham"
+                async yield from g2()
+                yield "g1 eggs"
+            finally:
+                trace.append("Finishing g1")
+        async def g2():
+            try:
+                trace.append("Starting g2")
+                yield "g2 spam"
+                yield "g2 more spam"
+            finally:
+                trace.append("Finishing g2")
+                raise ValueError("nybbles have exploded with delight")
+        try:
+            g = g1()
+            for i in range(2):
+                x = await anext(g)
+                trace.append("Yielded %s" % (x,))
+            await g.aclose()
+        except ValueError as e:
+            self.assertEqual(e.args[0], "nybbles have exploded with delight")
+            self.assertIsInstance(e.__context__, GeneratorExit)
+        else:
+            self.fail("subgenerator failed to raise ValueError")
+        self.assertEqual(trace,[
+            "Starting g1",
+            "Yielded g1 ham",
+            "Starting g2",
+            "Yielded g2 spam",
+            "Finishing g2",
+            "Finishing g1",
+        ])
 
-    # @_async_test
-    # async def test_delegating_throw(self):
-    #     """
-    #     Test delegating 'throw'
-    #     """
-    #     trace = []
-    #     async def g1():
-    #         try:
-    #             trace.append("Starting g1")
-    #             yield "g1 ham"
-    #             async yield from g2()
-    #             yield "g1 eggs"
-    #         finally:
-    #             trace.append("Finishing g1")
-    #     async def g2():
-    #         try:
-    #             trace.append("Starting g2")
-    #             yield "g2 spam"
-    #             yield "g2 more spam"
-    #         finally:
-    #             trace.append("Finishing g2")
-    #     try:
-    #         g = g1()
-    #         for i in range(2):
-    #             x = await anext(g)
-    #             trace.append("Yielded %s" % (x,))
-    #         e = ValueError("tomato ejected")
-    #         await g.athrow(e)
-    #     except ValueError as e:
-    #         self.assertEqual(e.args[0], "tomato ejected")
-    #     else:
-    #         self.fail("subgenerator failed to raise ValueError")
-    #     self.assertEqual(trace,[
-    #         "Starting g1",
-    #         "Yielded g1 ham",
-    #         "Starting g2",
-    #         "Yielded g2 spam",
-    #         "Finishing g2",
-    #         "Finishing g1",
-    #     ])
+    @_async_test
+    async def test_delegating_throw(self):
+        """
+        Test delegating 'throw'
+        """
+        trace = []
+        async def g1():
+            try:
+                trace.append("Starting g1")
+                yield "g1 ham"
+                async yield from g2()
+                yield "g1 eggs"
+            finally:
+                trace.append("Finishing g1")
+        async def g2():
+            try:
+                trace.append("Starting g2")
+                yield "g2 spam"
+                yield "g2 more spam"
+            finally:
+                trace.append("Finishing g2")
+        try:
+            g = g1()
+            for i in range(2):
+                x = await anext(g)
+                trace.append("Yielded %s" % (x,))
+            e = ValueError("tomato ejected")
+            await g.athrow(e)
+        except ValueError as e:
+            self.assertEqual(e.args[0], "tomato ejected")
+        else:
+            self.fail("subgenerator failed to raise ValueError")
+        self.assertEqual(trace,[
+            "Starting g1",
+            "Yielded g1 ham",
+            "Starting g2",
+            "Yielded g2 spam",
+            "Finishing g2",
+            "Finishing g1",
+        ])
 
     @_async_test
     async def test_value_attribute_of_StopAsyncIteration_exception(self):
@@ -644,170 +644,170 @@ class TestPEP828Operation(unittest.TestCase):
             "g2: about to yield from g1",
         ])
 
-    # @_async_test
-    # async def test_returning_value_from_delegated_throw(self):
-    #     """
-    #     Test returning value from delegated 'throw'
-    #     """
-    #     trace = []
-    #     async def g1():
-    #         try:
-    #             trace.append("Starting g1")
-    #             yield "g1 ham"
-    #             async yield from g2()
-    #             yield "g1 eggs"
-    #         finally:
-    #             trace.append("Finishing g1")
-    #     async def g2():
-    #         try:
-    #             trace.append("Starting g2")
-    #             yield "g2 spam"
-    #             yield "g2 more spam"
-    #         except LunchError:
-    #             trace.append("Caught LunchError in g2")
-    #             yield "g2 lunch saved"
-    #             yield "g2 yet more spam"
-    #     class LunchError(Exception):
-    #         pass
-    #     g = g1()
-    #     for i in range(2):
-    #         x = await anext(g)
-    #         trace.append("Yielded %s" % (x,))
-    #     e = LunchError("tomato ejected")
-    #     await g.athrow(e)
-    #     async for x in g:
-    #         trace.append("Yielded %s" % (x,))
-    #     self.assertEqual(trace,[
-    #         "Starting g1",
-    #         "Yielded g1 ham",
-    #         "Starting g2",
-    #         "Yielded g2 spam",
-    #         "Caught LunchError in g2",
-    #         "Yielded g2 yet more spam",
-    #         "Yielded g1 eggs",
-    #         "Finishing g1",
-    #     ])
+    @_async_test
+    async def test_returning_value_from_delegated_throw(self):
+        """
+        Test returning value from delegated 'throw'
+        """
+        trace = []
+        async def g1():
+            try:
+                trace.append("Starting g1")
+                yield "g1 ham"
+                async yield from g2()
+                yield "g1 eggs"
+            finally:
+                trace.append("Finishing g1")
+        async def g2():
+            try:
+                trace.append("Starting g2")
+                yield "g2 spam"
+                yield "g2 more spam"
+            except LunchError:
+                trace.append("Caught LunchError in g2")
+                yield "g2 lunch saved"
+                yield "g2 yet more spam"
+        class LunchError(Exception):
+            pass
+        g = g1()
+        for i in range(2):
+            x = await anext(g)
+            trace.append("Yielded %s" % (x,))
+        e = LunchError("tomato ejected")
+        await g.athrow(e)
+        async for x in g:
+            trace.append("Yielded %s" % (x,))
+        self.assertEqual(trace,[
+            "Starting g1",
+            "Yielded g1 ham",
+            "Starting g2",
+            "Yielded g2 spam",
+            "Caught LunchError in g2",
+            "Yielded g2 yet more spam",
+            "Yielded g1 eggs",
+            "Finishing g1",
+        ])
 
-    # @_async_test
-    # async def test_anext_and_return_with_value(self):
-    #     """
-    #     Test next and return with value
-    #     """
-    #     trace = []
-    #     async def f(r):
-    #         gi = g(r)
-    #         await anext(gi)
-    #         try:
-    #             trace.append("f resuming g")
-    #             await anext(gi)
-    #             trace.append("f SHOULD NOT BE HERE")
-    #         except StopAsyncIteration as e:
-    #             trace.append("f caught %r" % (e,))
-    #     async def g(r):
-    #         trace.append("g starting")
-    #         yield
-    #         trace.append("g returning %r" % (r,))
-    #         return r
-    #     await f(None)
-    #     await f(1)
-    #     await f((2,))
-    #     await f(StopAsyncIteration(3))
-    #     self.assertEqual(trace,[
-    #         "g starting",
-    #         "f resuming g",
-    #         "g returning None",
-    #         "f caught StopAsyncIteration()",
-    #         "g starting",
-    #         "f resuming g",
-    #         "g returning 1",
-    #         "f caught StopAsyncIteration(1)",
-    #         "g starting",
-    #         "f resuming g",
-    #         "g returning (2,)",
-    #         "f caught StopAsyncIteration((2,))",
-    #         "g starting",
-    #         "f resuming g",
-    #         "g returning StopAsyncIteration(3)",
-    #         "f caught StopAsyncIteration(StopAsyncIteration(3))",
-    #     ])
+    @_async_test
+    async def test_anext_and_return_with_value(self):
+        """
+        Test next and return with value
+        """
+        trace = []
+        async def f(r):
+            gi = g(r)
+            await anext(gi)
+            try:
+                trace.append("f resuming g")
+                await anext(gi)
+                trace.append("f SHOULD NOT BE HERE")
+            except StopAsyncIteration as e:
+                trace.append("f caught %r" % (e,))
+        async def g(r):
+            trace.append("g starting")
+            yield
+            trace.append("g returning %r" % (r,))
+            return r
+        await f(None)
+        await f(1)
+        await f((2,))
+        await f(StopAsyncIteration(3))
+        self.assertEqual(trace,[
+            "g starting",
+            "f resuming g",
+            "g returning None",
+            "f caught StopAsyncIteration()",
+            "g starting",
+            "f resuming g",
+            "g returning 1",
+            "f caught StopAsyncIteration(1)",
+            "g starting",
+            "f resuming g",
+            "g returning (2,)",
+            "f caught StopAsyncIteration((2,))",
+            "g starting",
+            "f resuming g",
+            "g returning StopAsyncIteration(3)",
+            "f caught StopAsyncIteration(StopAsyncIteration(3))",
+        ])
 
-    # @_async_test
-    # async def test_send_and_return_with_value(self):
-    #     """
-    #     Test send and return with value
-    #     """
-    #     trace = []
-    #     async def f(r):
-    #         gi = g(r)
-    #         await anext(gi)
-    #         try:
-    #             trace.append("f sending spam to g")
-    #             await gi.asend("spam")
-    #             trace.append("f SHOULD NOT BE HERE")
-    #         except StopAsyncIteration as e:
-    #             trace.append("f caught %r" % (e,))
-    #     async def g(r):
-    #         trace.append("g starting")
-    #         x = yield
-    #         trace.append("g received %r" % (x,))
-    #         trace.append("g returning %r" % (r,))
-    #         return r
-    #     await f(None)
-    #     await f(1)
-    #     await f((2,))
-    #     await f(StopAsyncIteration(3))
-    #     self.assertEqual(trace, [
-    #         "g starting",
-    #         "f sending spam to g",
-    #         "g received 'spam'",
-    #         "g returning None",
-    #         "f caught StopAsyncIteration()",
-    #         "g starting",
-    #         "f sending spam to g",
-    #         "g received 'spam'",
-    #         "g returning 1",
-    #         'f caught StopAsyncIteration(1)',
-    #         'g starting',
-    #         'f sending spam to g',
-    #         "g received 'spam'",
-    #         'g returning (2,)',
-    #         'f caught StopAsyncIteration((2,))',
-    #         'g starting',
-    #         'f sending spam to g',
-    #         "g received 'spam'",
-    #         'g returning StopAsyncIteration(3)',
-    #         'f caught StopAsyncIteration(StopAsyncIteration(3))'
-    #     ])
+    @_async_test
+    async def test_send_and_return_with_value(self):
+        """
+        Test send and return with value
+        """
+        trace = []
+        async def f(r):
+            gi = g(r)
+            await anext(gi)
+            try:
+                trace.append("f sending spam to g")
+                await gi.asend("spam")
+                trace.append("f SHOULD NOT BE HERE")
+            except StopAsyncIteration as e:
+                trace.append("f caught %r" % (e,))
+        async def g(r):
+            trace.append("g starting")
+            x = yield
+            trace.append("g received %r" % (x,))
+            trace.append("g returning %r" % (r,))
+            return r
+        await f(None)
+        await f(1)
+        await f((2,))
+        await f(StopAsyncIteration(3))
+        self.assertEqual(trace, [
+            "g starting",
+            "f sending spam to g",
+            "g received 'spam'",
+            "g returning None",
+            "f caught StopAsyncIteration(None)",
+            "g starting",
+            "f sending spam to g",
+            "g received 'spam'",
+            "g returning 1",
+            'f caught StopAsyncIteration(1)',
+            'g starting',
+            'f sending spam to g',
+            "g received 'spam'",
+            'g returning (2,)',
+            'f caught StopAsyncIteration((2,))',
+            'g starting',
+            'f sending spam to g',
+            "g received 'spam'",
+            'g returning StopAsyncIteration(3)',
+            'f caught StopAsyncIteration(StopAsyncIteration(3))'
+        ])
 
-    # @_async_test
-    # async def test_catching_exception_from_subgen_and_returning(self):
-    #     """
-    #     Test catching an exception thrown into a
-    #     subgenerator and returning a value
-    #     """
-    #     async def inner():
-    #         try:
-    #             yield 1
-    #         except ValueError:
-    #             trace.append("inner caught ValueError")
-    #         return value
+    @_async_test
+    async def test_catching_exception_from_subgen_and_returning(self):
+        """
+        Test catching an exception thrown into a
+        subgenerator and returning a value
+        """
+        async def inner():
+            try:
+                yield 1
+            except ValueError:
+                trace.append("inner caught ValueError")
+            return value
 
-    #     async def outer():
-    #         v = async yield from inner()
-    #         trace.append("inner returned %r to outer" % (v,))
-    #         yield v
+        async def outer():
+            v = async yield from inner()
+            trace.append("inner returned %r to outer" % (v,))
+            yield v
 
-    #     for value in 2, (2,), StopAsyncIteration(2):
-    #         trace = []
-    #         g = outer()
-    #         trace.append(await anext(g))
-    #         trace.append(repr(await g.athrow(ValueError)))
-    #         self.assertEqual(trace, [
-    #             1,
-    #             "inner caught ValueError",
-    #             "inner returned %r to outer" % (value,),
-    #             repr(value),
-    #         ])
+        for value in 2, (2,), StopAsyncIteration(2):
+            trace = []
+            g = outer()
+            trace.append(await anext(g))
+            trace.append(repr(await g.athrow(ValueError)))
+            self.assertEqual(trace, [
+                1,
+                "inner caught ValueError",
+                "inner returned %r to outer" % (value,),
+                repr(value),
+            ])
 
     # FIXME: This is broken now
     @_async_test
@@ -872,37 +872,37 @@ class TestPEP828Operation(unittest.TestCase):
     #         "Enter f",
     #     ])
 
-    # @_async_test
-    # async def test_throwing_GeneratorExit_into_subgen_that_raises(self):
-    #     """
-    #     Test throwing GeneratorExit into a subgenerator that
-    #     catches it and raises a different exception.
-    #     """
-    #     trace = []
-    #     async def f():
-    #         try:
-    #             trace.append("Enter f")
-    #             yield
-    #             trace.append("Exit f")
-    #         except GeneratorExit:
-    #             raise ValueError("Vorpal bunny encountered")
-    #     async def g():
-    #         trace.append("Enter g")
-    #         async yield from f()
-    #         trace.append("Exit g")
-    #     try:
-    #         gi = g()
-    #         await anext(gi)
-    #         await gi.athrow(GeneratorExit)
-    #     except ValueError as e:
-    #         self.assertEqual(e.args[0], "Vorpal bunny encountered")
-    #         self.assertIsInstance(e.__context__, GeneratorExit)
-    #     else:
-    #         self.fail("subgenerator failed to raise ValueError")
-    #     self.assertEqual(trace,[
-    #         "Enter g",
-    #         "Enter f",
-    #     ])
+    @_async_test
+    async def test_throwing_GeneratorExit_into_subgen_that_raises(self):
+        """
+        Test throwing GeneratorExit into a subgenerator that
+        catches it and raises a different exception.
+        """
+        trace = []
+        async def f():
+            try:
+                trace.append("Enter f")
+                yield
+                trace.append("Exit f")
+            except GeneratorExit:
+                raise ValueError("Vorpal bunny encountered")
+        async def g():
+            trace.append("Enter g")
+            async yield from f()
+            trace.append("Exit g")
+        try:
+            gi = g()
+            await anext(gi)
+            await gi.athrow(GeneratorExit)
+        except ValueError as e:
+            self.assertEqual(e.args[0], "Vorpal bunny encountered")
+            self.assertIsInstance(e.__context__, GeneratorExit)
+        else:
+            self.fail("subgenerator failed to raise ValueError")
+        self.assertEqual(trace,[
+            "Enter g",
+            "Enter f",
+        ])
 
     @_async_test
     async def test_yield_from_empty(self):
@@ -938,44 +938,44 @@ class TestPEP828Operation(unittest.TestCase):
             pass
         self.assertEqual(res, [0, 1, 2, 3])
 
-    # @_async_test
-    # async def test_delegating_generators_claim_to_be_running_with_throw(self):
-    #     # Check with throw
-    #     class MyErr(Exception):
-    #         pass
-    #     async def one():
-    #         try:
-    #             yield 0
-    #         except MyErr:
-    #             pass
-    #         async yield from two()
-    #         try:
-    #             yield 3
-    #         except MyErr:
-    #             pass
-    #     async def two():
-    #         try:
-    #             yield 1
-    #         except MyErr:
-    #             pass
-    #         try:
-    #             async yield from g1
-    #         except RuntimeError:
-    #             pass
-    #         try:
-    #             yield 2
-    #         except MyErr:
-    #             pass
-    #     g1 = one()
-    #     res = [await anext(g1)]
-    #     try:
-    #         while True:
-    #             res.append(await g1.athrow(MyErr))
-    #     except StopAsyncIteration:
-    #         pass
-    #     except:
-    #         self.assertEqual(res, [0, 1, 2, 3])
-    #         raise
+    @_async_test
+    async def test_delegating_generators_claim_to_be_running_with_throw(self):
+        # Check with throw
+        class MyErr(Exception):
+            pass
+        async def one():
+            try:
+                yield 0
+            except MyErr:
+                pass
+            async yield from two()
+            try:
+                yield 3
+            except MyErr:
+                pass
+        async def two():
+            try:
+                yield 1
+            except MyErr:
+                pass
+            try:
+                async yield from g1
+            except RuntimeError:
+                pass
+            try:
+                yield 2
+            except MyErr:
+                pass
+        g1 = one()
+        res = [await anext(g1)]
+        try:
+            while True:
+                res.append(await g1.athrow(MyErr))
+        except StopAsyncIteration:
+            pass
+        except:
+            self.assertEqual(res, [0, 1, 2, 3])
+            raise
 
     # @_async_test
     # async def test_delegating_generators_claim_to_be_running_with_aclose(self):
@@ -1072,25 +1072,25 @@ class TestPEP828Operation(unittest.TestCase):
             del inner_gen
             gc_collect()
 
-    # @_async_test
-    # async def test_send_tuple_with_custom_generator(self):
-    #     # See issue #21209.
-    #     class MyGen:
-    #         def __aiter__(self):
-    #             return self
-    #         async def __anext__(self):
-    #             return 42
-    #         async def asend(self, what):
-    #             nonlocal v
-    #             v = what
-    #             return None
-    #     async def outer():
-    #         v = async yield from MyGen()
-    #     g = outer()
-    #     await anext(g)
-    #     v = None
-    #     await g.asend((1, 2, 3, 4))
-    #     self.assertEqual(v, (1, 2, 3, 4))
+    @_async_test
+    async def test_send_tuple_with_custom_generator(self):
+        # See issue #21209.
+        class MyGen:
+            def __aiter__(self):
+                return self
+            async def __anext__(self):
+                return 42
+            async def asend(self, what):
+                nonlocal v
+                v = what
+                return None
+        async def outer():
+            v = async yield from MyGen()
+        g = outer()
+        await anext(g)
+        v = None
+        await g.asend((1, 2, 3, 4))
+        self.assertEqual(v, (1, 2, 3, 4))
 
 class TestInterestingEdgeCases(unittest.TestCase):
 
