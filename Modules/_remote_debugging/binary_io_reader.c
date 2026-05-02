@@ -29,9 +29,6 @@
 /* Progress callback frequency */
 #define PROGRESS_CALLBACK_INTERVAL 1000
 
-/* Maximum decompression size limit (1GB) */
-#define MAX_DECOMPRESS_SIZE (1ULL << 30)
-
 /* ============================================================================
  * BINARY READER IMPLEMENTATION
  * ============================================================================ */
