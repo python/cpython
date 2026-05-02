@@ -62,6 +62,7 @@
 #include "pycore_frame.h"
 #include "pycore_interp.h"
 #include "pycore_mmap.h"          // _PyAnnotateMemoryMap()
+#include "pycore_jit_unwind.h"
 #include "pycore_runtime.h"       // _PyRuntime
 
 #ifdef PY_HAVE_PERF_TRAMPOLINE
@@ -73,6 +74,7 @@
 #include <fcntl.h>                // File control operations
 #include <stdio.h>                // Standard I/O operations
 #include <stdlib.h>               // Standard library functions
+#include <string.h>               // memcpy, strlen
 #include <sys/mman.h>             // Memory mapping functions (mmap)
 #include <sys/types.h>            // System data types
 #include <unistd.h>               // System calls (sysconf, getpid)
@@ -246,6 +248,25 @@ typedef struct {
      */
 } CodeUnwindingInfoEvent;
 
+/*
+ * EH Frame Header structure for DWARF unwinding
+ *
+ * This header provides metadata about the .eh_frame data that follows.
+ * It uses PC-relative and data-relative encodings to keep the synthesized
+ * DSO self-contained when perf injects it.
+ */
+typedef struct __attribute__((packed)) {
+    uint8_t version;
+    uint8_t eh_frame_ptr_enc;
+    uint8_t fde_count_enc;
+    uint8_t table_enc;
+    int32_t eh_frame_ptr;
+    uint32_t eh_fde_count;
+    int32_t from;
+    int32_t to;
+} EhFrameHeader;
+_Static_assert(sizeof(EhFrameHeader) == 20, "EhFrameHeader layout mismatch");
+
 // =============================================================================
 //                              GLOBAL STATE MANAGEMENT
 // =============================================================================
@@ -259,10 +280,11 @@ typedef struct {
  */
 typedef struct {
     FILE* perf_map;          // File handle for the jitdump file
-    PyThread_type_lock map_lock;  // Thread synchronization lock
+    PyMutex map_lock;        // Thread synchronization lock
     void* mapped_buffer;     // Memory-mapped region (signals perf we're active)
     size_t mapped_size;      // Size of the mapped region
-    int code_id;             // Counter for unique code region identifiers
+    uint32_t code_id;        // Counter for unique code region identifiers
+    uint64_t build_id_salt;  // Per-process salt for unique synthetic DSOs
 } PerfMapJitState;
 
 /* Global singleton instance */
@@ -314,40 +336,6 @@ static int64_t get_current_time_microseconds(void) {
         return 0;
     }
     return ((int64_t)(tv.tv_sec) * 1000000) + tv.tv_usec;
-}
-
-// =============================================================================
-//                              UTILITY FUNCTIONS
-// =============================================================================
-
-/*
- * Round up a value to the next multiple of a given number
- *
- * This is essential for maintaining proper alignment requirements in the
- * jitdump format. Many structures need to be aligned to specific boundaries
- * (typically 8 or 16 bytes) for efficient processing by perf.
- *
- * Args:
- *   value: The value to round up
- *   multiple: The multiple to round up to
- *
- * Returns: The smallest value >= input that is a multiple of 'multiple'
- */
-static size_t round_up(int64_t value, int64_t multiple) {
-    if (multiple == 0) {
-        return value;  // Avoid division by zero
-    }
-
-    int64_t remainder = value % multiple;
-    if (remainder == 0) {
-        return value;  // Already aligned
-    }
-
-    /* Calculate how much to add to reach the next multiple */
-    int64_t difference = multiple - remainder;
-    int64_t rounded_up_value = value + difference;
-
-    return rounded_up_value;
 }
 
 // =============================================================================
@@ -407,623 +395,6 @@ static void perf_map_jit_write_header(int pid, FILE* out_file) {
 }
 
 // =============================================================================
-//                              DWARF CONSTANTS AND UTILITIES
-// =============================================================================
-
-/*
- * DWARF (Debug With Arbitrary Record Formats) constants
- *
- * DWARF is a debugging data format used to provide stack unwinding information.
- * These constants define the various encoding types and opcodes used in
- * DWARF Call Frame Information (CFI) records.
- */
-
-/* DWARF Call Frame Information version */
-#define DWRF_CIE_VERSION 1
-
-/* DWARF CFA (Call Frame Address) opcodes */
-enum {
-    DWRF_CFA_nop = 0x0,                    // No operation
-    DWRF_CFA_offset_extended = 0x5,        // Extended offset instruction
-    DWRF_CFA_def_cfa = 0xc,               // Define CFA rule
-    DWRF_CFA_def_cfa_register = 0xd,      // Define CFA register
-    DWRF_CFA_def_cfa_offset = 0xe,        // Define CFA offset
-    DWRF_CFA_offset_extended_sf = 0x11,   // Extended signed offset
-    DWRF_CFA_advance_loc = 0x40,          // Advance location counter
-    DWRF_CFA_offset = 0x80,               // Simple offset instruction
-    DWRF_CFA_restore = 0xc0               // Restore register
-};
-
-/* DWARF Exception Handling pointer encodings */
-enum {
-    DWRF_EH_PE_absptr = 0x00,             // Absolute pointer
-    DWRF_EH_PE_omit = 0xff,               // Omitted value
-
-    /* Data type encodings */
-    DWRF_EH_PE_uleb128 = 0x01,            // Unsigned LEB128
-    DWRF_EH_PE_udata2 = 0x02,             // Unsigned 2-byte
-    DWRF_EH_PE_udata4 = 0x03,             // Unsigned 4-byte
-    DWRF_EH_PE_udata8 = 0x04,             // Unsigned 8-byte
-    DWRF_EH_PE_sleb128 = 0x09,            // Signed LEB128
-    DWRF_EH_PE_sdata2 = 0x0a,             // Signed 2-byte
-    DWRF_EH_PE_sdata4 = 0x0b,             // Signed 4-byte
-    DWRF_EH_PE_sdata8 = 0x0c,             // Signed 8-byte
-    DWRF_EH_PE_signed = 0x08,             // Signed flag
-
-    /* Reference type encodings */
-    DWRF_EH_PE_pcrel = 0x10,              // PC-relative
-    DWRF_EH_PE_textrel = 0x20,            // Text-relative
-    DWRF_EH_PE_datarel = 0x30,            // Data-relative
-    DWRF_EH_PE_funcrel = 0x40,            // Function-relative
-    DWRF_EH_PE_aligned = 0x50,            // Aligned
-    DWRF_EH_PE_indirect = 0x80            // Indirect
-};
-
-/* Additional DWARF constants for debug information */
-enum { DWRF_TAG_compile_unit = 0x11 };
-enum { DWRF_children_no = 0, DWRF_children_yes = 1 };
-enum {
-    DWRF_AT_name = 0x03,         // Name attribute
-    DWRF_AT_stmt_list = 0x10,    // Statement list
-    DWRF_AT_low_pc = 0x11,       // Low PC address
-    DWRF_AT_high_pc = 0x12       // High PC address
-};
-enum {
-    DWRF_FORM_addr = 0x01,       // Address form
-    DWRF_FORM_data4 = 0x06,      // 4-byte data
-    DWRF_FORM_string = 0x08      // String form
-};
-
-/* Line number program opcodes */
-enum {
-    DWRF_LNS_extended_op = 0,    // Extended opcode
-    DWRF_LNS_copy = 1,           // Copy operation
-    DWRF_LNS_advance_pc = 2,     // Advance program counter
-    DWRF_LNS_advance_line = 3    // Advance line number
-};
-
-/* Line number extended opcodes */
-enum {
-    DWRF_LNE_end_sequence = 1,   // End of sequence
-    DWRF_LNE_set_address = 2     // Set address
-};
-
-/*
- * Architecture-specific DWARF register numbers
- *
- * These constants define the register numbering scheme used by DWARF
- * for each supported architecture. The numbers must match the ABI
- * specification for proper stack unwinding.
- */
-enum {
-#ifdef __x86_64__
-    /* x86_64 register numbering (note: order is defined by x86_64 ABI) */
-    DWRF_REG_AX,    // RAX
-    DWRF_REG_DX,    // RDX
-    DWRF_REG_CX,    // RCX
-    DWRF_REG_BX,    // RBX
-    DWRF_REG_SI,    // RSI
-    DWRF_REG_DI,    // RDI
-    DWRF_REG_BP,    // RBP
-    DWRF_REG_SP,    // RSP
-    DWRF_REG_8,     // R8
-    DWRF_REG_9,     // R9
-    DWRF_REG_10,    // R10
-    DWRF_REG_11,    // R11
-    DWRF_REG_12,    // R12
-    DWRF_REG_13,    // R13
-    DWRF_REG_14,    // R14
-    DWRF_REG_15,    // R15
-    DWRF_REG_RA,    // Return address (RIP)
-#elif defined(__aarch64__) && defined(__AARCH64EL__) && !defined(__ILP32__)
-    /* AArch64 register numbering */
-    DWRF_REG_FP = 29,  // Frame Pointer
-    DWRF_REG_RA = 30,  // Link register (return address)
-    DWRF_REG_SP = 31,  // Stack pointer
-#else
-#    error "Unsupported target architecture"
-#endif
-};
-
-/* DWARF encoding constants used in EH frame headers */
-static const uint8_t DwarfUData4 = 0x03;     // Unsigned 4-byte data
-static const uint8_t DwarfSData4 = 0x0b;     // Signed 4-byte data
-static const uint8_t DwarfPcRel = 0x10;      // PC-relative encoding
-static const uint8_t DwarfDataRel = 0x30;    // Data-relative encoding
-
-// =============================================================================
-//                              ELF OBJECT CONTEXT
-// =============================================================================
-
-/*
- * Context for building ELF/DWARF structures
- *
- * This structure maintains state while constructing DWARF unwind information.
- * It acts as a simple buffer manager with pointers to track current position
- * and important landmarks within the buffer.
- */
-typedef struct ELFObjectContext {
-    uint8_t* p;            // Current write position in buffer
-    uint8_t* startp;       // Start of buffer (for offset calculations)
-    uint8_t* eh_frame_p;   // Start of EH frame data (for relative offsets)
-    uint8_t* fde_p;        // Start of FDE data (for PC-relative calculations)
-    uint32_t code_size;    // Size of the code being described
-} ELFObjectContext;
-
-/*
- * EH Frame Header structure for DWARF unwinding
- *
- * This structure provides metadata about the DWARF unwinding information
- * that follows. It's required by the perf jitdump format to enable proper
- * stack unwinding during profiling.
- */
-typedef struct {
-    unsigned char version;           // EH frame version (always 1)
-    unsigned char eh_frame_ptr_enc;  // Encoding of EH frame pointer
-    unsigned char fde_count_enc;     // Encoding of FDE count
-    unsigned char table_enc;         // Encoding of table entries
-    int32_t eh_frame_ptr;           // Pointer to EH frame data
-    int32_t eh_fde_count;           // Number of FDEs (Frame Description Entries)
-    int32_t from;                   // Start address of code range
-    int32_t to;                     // End address of code range
-} EhFrameHeader;
-
-// =============================================================================
-//                              DWARF GENERATION UTILITIES
-// =============================================================================
-
-/*
- * Append a null-terminated string to the ELF context buffer
- *
- * Args:
- *   ctx: ELF object context
- *   str: String to append (must be null-terminated)
- *
- * Returns: Offset from start of buffer where string was written
- */
-static uint32_t elfctx_append_string(ELFObjectContext* ctx, const char* str) {
-    uint8_t* p = ctx->p;
-    uint32_t ofs = (uint32_t)(p - ctx->startp);
-
-    /* Copy string including null terminator */
-    do {
-        *p++ = (uint8_t)*str;
-    } while (*str++);
-
-    ctx->p = p;
-    return ofs;
-}
-
-/*
- * Append a SLEB128 (Signed Little Endian Base 128) value
- *
- * SLEB128 is a variable-length encoding used extensively in DWARF.
- * It efficiently encodes small numbers in fewer bytes.
- *
- * Args:
- *   ctx: ELF object context
- *   v: Signed value to encode
- */
-static void elfctx_append_sleb128(ELFObjectContext* ctx, int32_t v) {
-    uint8_t* p = ctx->p;
-
-    /* Encode 7 bits at a time, with continuation bit in MSB */
-    for (; (uint32_t)(v + 0x40) >= 0x80; v >>= 7) {
-        *p++ = (uint8_t)((v & 0x7f) | 0x80);  // Set continuation bit
-    }
-    *p++ = (uint8_t)(v & 0x7f);  // Final byte without continuation bit
-
-    ctx->p = p;
-}
-
-/*
- * Append a ULEB128 (Unsigned Little Endian Base 128) value
- *
- * Similar to SLEB128 but for unsigned values.
- *
- * Args:
- *   ctx: ELF object context
- *   v: Unsigned value to encode
- */
-static void elfctx_append_uleb128(ELFObjectContext* ctx, uint32_t v) {
-    uint8_t* p = ctx->p;
-
-    /* Encode 7 bits at a time, with continuation bit in MSB */
-    for (; v >= 0x80; v >>= 7) {
-        *p++ = (char)((v & 0x7f) | 0x80);  // Set continuation bit
-    }
-    *p++ = (char)v;  // Final byte without continuation bit
-
-    ctx->p = p;
-}
-
-/*
- * Macros for generating DWARF structures
- *
- * These macros provide a convenient way to write various data types
- * to the DWARF buffer while automatically advancing the pointer.
- */
-#define DWRF_U8(x) (*p++ = (x))                                    // Write unsigned 8-bit
-#define DWRF_I8(x) (*(int8_t*)p = (x), p++)                       // Write signed 8-bit
-#define DWRF_U16(x) (*(uint16_t*)p = (x), p += 2)                 // Write unsigned 16-bit
-#define DWRF_U32(x) (*(uint32_t*)p = (x), p += 4)                 // Write unsigned 32-bit
-#define DWRF_ADDR(x) (*(uintptr_t*)p = (x), p += sizeof(uintptr_t)) // Write address
-#define DWRF_UV(x) (ctx->p = p, elfctx_append_uleb128(ctx, (x)), p = ctx->p) // Write ULEB128
-#define DWRF_SV(x) (ctx->p = p, elfctx_append_sleb128(ctx, (x)), p = ctx->p) // Write SLEB128
-#define DWRF_STR(str) (ctx->p = p, elfctx_append_string(ctx, (str)), p = ctx->p) // Write string
-
-/* Align to specified boundary with NOP instructions */
-#define DWRF_ALIGNNOP(s)                                          \
-    while ((uintptr_t)p & ((s)-1)) {                              \
-        *p++ = DWRF_CFA_nop;                                       \
-    }
-
-/* Write a DWARF section with automatic size calculation */
-#define DWRF_SECTION(name, stmt)                                  \
-    {                                                             \
-        uint32_t* szp_##name = (uint32_t*)p;                      \
-        p += 4;                                                   \
-        stmt;                                                     \
-        *szp_##name = (uint32_t)((p - (uint8_t*)szp_##name) - 4); \
-    }
-
-// =============================================================================
-//                              DWARF EH FRAME GENERATION
-// =============================================================================
-
-static void elf_init_ehframe(ELFObjectContext* ctx);
-
-/*
- * Initialize DWARF .eh_frame section for a code region
- *
- * The .eh_frame section contains Call Frame Information (CFI) that describes
- * how to unwind the stack at any point in the code. This is essential for
- * proper profiling as it allows perf to generate accurate call graphs.
- *
- * The function generates two main components:
- * 1. CIE (Common Information Entry) - describes calling conventions
- * 2. FDE (Frame Description Entry) - describes specific function unwinding
- *
- * Args:
- *   ctx: ELF object context containing code size and buffer pointers
- */
-static size_t calculate_eh_frame_size(void) {
-    /* Calculate the EH frame size for the trampoline function */
-    extern void *_Py_trampoline_func_start;
-    extern void *_Py_trampoline_func_end;
-
-    size_t code_size = (char*)&_Py_trampoline_func_end - (char*)&_Py_trampoline_func_start;
-
-    ELFObjectContext ctx;
-    char buffer[1024];  // Buffer for DWARF data (1KB should be sufficient)
-    ctx.code_size = code_size;
-    ctx.startp = ctx.p = (uint8_t*)buffer;
-    ctx.fde_p = NULL;
-
-    elf_init_ehframe(&ctx);
-    return ctx.p - ctx.startp;
-}
-
-static void elf_init_ehframe(ELFObjectContext* ctx) {
-    uint8_t* p = ctx->p;
-    uint8_t* framep = p;  // Remember start of frame data
-
-    /*
-    * DWARF Unwind Table for Trampoline Function
-    *
-    * This section defines DWARF Call Frame Information (CFI) using encoded macros
-    * like `DWRF_U8`, `DWRF_UV`, and `DWRF_SECTION` to describe how the trampoline function
-    * preserves and restores registers. This is used by profiling tools (e.g., `perf`)
-    * and debuggers for stack unwinding in JIT-compiled code.
-    *
-    * -------------------------------------------------
-    * TO REGENERATE THIS TABLE FROM GCC OBJECTS:
-    * -------------------------------------------------
-    *
-    * 1. Create a trampoline source file (e.g., `trampoline.c`):
-    *
-    *      #include <Python.h>
-    *      typedef PyObject* (*py_evaluator)(void*, void*, int);
-    *      PyObject* trampoline(void *ts, void *f, int throwflag, py_evaluator evaluator) {
-    *          return evaluator(ts, f, throwflag);
-    *      }
-    *
-    * 2. Compile to an object file with frame pointer preservation:
-    *
-    *      gcc trampoline.c -I. -I./Include -O2 -fno-omit-frame-pointer -mno-omit-leaf-frame-pointer -c
-    *
-    * 3. Extract DWARF unwind info from the object file:
-    *
-    *      readelf -w trampoline.o
-    *
-    *    Example output from `.eh_frame`:
-    *
-    *      00000000 CIE
-    *        Version:               1
-    *        Augmentation:          "zR"
-    *        Code alignment factor: 4
-    *        Data alignment factor: -8
-    *        Return address column: 30
-    *        DW_CFA_def_cfa: r31 (sp) ofs 0
-    *
-    *      00000014 FDE cie=00000000 pc=0..14
-    *        DW_CFA_advance_loc: 4
-    *        DW_CFA_def_cfa_offset: 16
-    *        DW_CFA_offset: r29 at cfa-16
-    *        DW_CFA_offset: r30 at cfa-8
-    *        DW_CFA_advance_loc: 12
-    *        DW_CFA_restore: r30
-    *        DW_CFA_restore: r29
-    *        DW_CFA_def_cfa_offset: 0
-    *
-    * -- These values can be verified by comparing with `readelf -w` or `llvm-dwarfdump --eh-frame`.
-    *
-    * ----------------------------------
-    * HOW TO TRANSLATE TO DWRF_* MACROS:
-    * ----------------------------------
-    *
-    * After compiling your trampoline with:
-    *
-    *     gcc trampoline.c -I. -I./Include -O2 -fno-omit-frame-pointer -mno-omit-leaf-frame-pointer -c
-    *
-    * run:
-    *
-    *     readelf -w trampoline.o
-    *
-    * to inspect the generated `.eh_frame` data. You will see two main components:
-    *
-    *     1. A CIE (Common Information Entry): shared configuration used by all FDEs.
-    *     2. An FDE (Frame Description Entry): function-specific unwind instructions.
-    *
-    * ---------------------
-    * Translating the CIE:
-    * ---------------------
-    * From `readelf -w`, you might see:
-    *
-    *   00000000 0000000000000010 00000000 CIE
-    *     Version:               1
-    *     Augmentation:          "zR"
-    *     Code alignment factor: 4
-    *     Data alignment factor: -8
-    *     Return address column: 30
-    *     Augmentation data:     1b
-    *     DW_CFA_def_cfa: r31 (sp) ofs 0
-    *
-    * Map this to:
-    *
-    *     DWRF_SECTION(CIE,
-    *         DWRF_U32(0);                             // CIE ID (always 0 for CIEs)
-    *         DWRF_U8(DWRF_CIE_VERSION);              // Version: 1
-    *         DWRF_STR("zR");                         // Augmentation string "zR"
-    *         DWRF_UV(4);                             // Code alignment factor = 4
-    *         DWRF_SV(-8);                            // Data alignment factor = -8
-    *         DWRF_U8(DWRF_REG_RA);                   // Return address register (e.g., x30 = 30)
-    *         DWRF_UV(1);                             // Augmentation data length = 1
-    *         DWRF_U8(DWRF_EH_PE_pcrel | DWRF_EH_PE_sdata4); // Encoding for FDE pointers
-    *
-    *         DWRF_U8(DWRF_CFA_def_cfa);              // DW_CFA_def_cfa
-    *         DWRF_UV(DWRF_REG_SP);                   // Register: SP (r31)
-    *         DWRF_UV(0);                             // Offset = 0
-    *
-    *         DWRF_ALIGNNOP(sizeof(uintptr_t));       // Align to pointer size boundary
-    *     )
-    *
-    * Notes:
-    *   - Use `DWRF_UV` for unsigned LEB128, `DWRF_SV` for signed LEB128.
-    *   - `DWRF_REG_RA` and `DWRF_REG_SP` are architecture-defined constants.
-    *
-    * ---------------------
-    * Translating the FDE:
-    * ---------------------
-    * From `readelf -w`:
-    *
-    *   00000014 0000000000000020 00000018 FDE cie=00000000 pc=0000000000000000..0000000000000014
-    *     DW_CFA_advance_loc: 4
-    *     DW_CFA_def_cfa_offset: 16
-    *     DW_CFA_offset: r29 at cfa-16
-    *     DW_CFA_offset: r30 at cfa-8
-    *     DW_CFA_advance_loc: 12
-    *     DW_CFA_restore: r30
-    *     DW_CFA_restore: r29
-    *     DW_CFA_def_cfa_offset: 0
-    *
-    * Map the FDE header and instructions to:
-    *
-    *     DWRF_SECTION(FDE,
-    *         DWRF_U32((uint32_t)(p - framep));       // Offset to CIE (relative from here)
-    *         DWRF_U32(pc_relative_offset);           // PC-relative location of the code (calculated dynamically)
-    *         DWRF_U32(ctx->code_size);               // Code range covered by this FDE
-    *         DWRF_U8(0);                             // Augmentation data length (none)
-    *
-    *         DWRF_U8(DWRF_CFA_advance_loc | 1);      // Advance location by 1 unit (1 * 4 = 4 bytes)
-    *         DWRF_U8(DWRF_CFA_def_cfa_offset);       // CFA = SP + 16
-    *         DWRF_UV(16);
-    *
-    *         DWRF_U8(DWRF_CFA_offset | DWRF_REG_FP); // Save x29 (frame pointer)
-    *         DWRF_UV(2);                             // At offset 2 * 8 = 16 bytes
-    *
-    *         DWRF_U8(DWRF_CFA_offset | DWRF_REG_RA); // Save x30 (return address)
-    *         DWRF_UV(1);                             // At offset 1 * 8 = 8 bytes
-    *
-    *         DWRF_U8(DWRF_CFA_advance_loc | 3);      // Advance location by 3 units (3 * 4 = 12 bytes)
-    *
-    *         DWRF_U8(DWRF_CFA_offset | DWRF_REG_RA); // Restore x30
-    *         DWRF_U8(DWRF_CFA_offset | DWRF_REG_FP); // Restore x29
-    *
-    *         DWRF_U8(DWRF_CFA_def_cfa_offset);       // CFA = SP
-    *         DWRF_UV(0);
-    *     )
-    *
-    * To regenerate:
-    *   1. Get the `code alignment factor`, `data alignment factor`, and `RA column` from the CIE.
-    *   2. Note the range of the function from the FDE's `pc=...` line and map it to the JIT code as
-    *      the code is in a different address space every time.
-    *   3. For each `DW_CFA_*` entry, use the corresponding `DWRF_*` macro:
-    *        - `DW_CFA_def_cfa_offset`     → DWRF_U8(DWRF_CFA_def_cfa_offset), DWRF_UV(value)
-    *        - `DW_CFA_offset: rX`         → DWRF_U8(DWRF_CFA_offset | reg), DWRF_UV(offset)
-    *        - `DW_CFA_restore: rX`        → DWRF_U8(DWRF_CFA_offset | reg) // restore is same as reusing offset
-    *        - `DW_CFA_advance_loc: N`     → DWRF_U8(DWRF_CFA_advance_loc | (N / code_alignment_factor))
-    *   4. Use `DWRF_REG_FP`, `DWRF_REG_RA`, etc., for register numbers.
-    *   5. Use `sizeof(uintptr_t)` (typically 8) for pointer size calculations and alignment.
-    */
-
-    /*
-     * Emit DWARF EH CIE (Common Information Entry)
-     *
-     * The CIE describes the calling conventions and basic unwinding rules
-     * that apply to all functions in this compilation unit.
-     */
-    DWRF_SECTION(CIE,
-        DWRF_U32(0);                           // CIE ID (0 indicates this is a CIE)
-        DWRF_U8(DWRF_CIE_VERSION);            // CIE version (1)
-        DWRF_STR("zR");                       // Augmentation string ("zR" = has LSDA)
-#ifdef __x86_64__
-        DWRF_UV(1);                           // Code alignment factor (x86_64: 1 byte)
-#elif defined(__aarch64__) && defined(__AARCH64EL__) && !defined(__ILP32__)
-        DWRF_UV(4);                           // Code alignment factor (AArch64: 4 bytes per instruction)
-#endif
-        DWRF_SV(-(int64_t)sizeof(uintptr_t)); // Data alignment factor (negative)
-        DWRF_U8(DWRF_REG_RA);                 // Return address register number
-        DWRF_UV(1);                           // Augmentation data length
-        DWRF_U8(DWRF_EH_PE_pcrel | DWRF_EH_PE_sdata4); // FDE pointer encoding
-
-        /* Initial CFI instructions - describe default calling convention */
-#ifdef __x86_64__
-        /* x86_64 initial CFI state */
-        DWRF_U8(DWRF_CFA_def_cfa);            // Define CFA (Call Frame Address)
-        DWRF_UV(DWRF_REG_SP);                 // CFA = SP register
-        DWRF_UV(sizeof(uintptr_t));           // CFA = SP + pointer_size
-        DWRF_U8(DWRF_CFA_offset|DWRF_REG_RA); // Return address is saved
-        DWRF_UV(1);                           // At offset 1 from CFA
-#elif defined(__aarch64__) && defined(__AARCH64EL__) && !defined(__ILP32__)
-        /* AArch64 initial CFI state */
-        DWRF_U8(DWRF_CFA_def_cfa);            // Define CFA (Call Frame Address)
-        DWRF_UV(DWRF_REG_SP);                 // CFA = SP register
-        DWRF_UV(0);                           // CFA = SP + 0 (AArch64 starts with offset 0)
-        // No initial register saves in AArch64 CIE
-#endif
-        DWRF_ALIGNNOP(sizeof(uintptr_t));     // Align to pointer boundary
-    )
-
-    ctx->eh_frame_p = p;  // Remember start of FDE data
-
-    /*
-     * Emit DWARF EH FDE (Frame Description Entry)
-     *
-     * The FDE describes unwinding information specific to this function.
-     * It references the CIE and provides function-specific CFI instructions.
-     *
-     * The PC-relative offset is calculated after the entire EH frame is built
-     * to ensure accurate positioning relative to the synthesized DSO layout.
-     */
-    DWRF_SECTION(FDE,
-        DWRF_U32((uint32_t)(p - framep));     // Offset to CIE (backwards reference)
-        ctx->fde_p = p;                        // Remember where PC offset field is located for later calculation
-        DWRF_U32(0);                           // Placeholder for PC-relative offset (calculated at end of elf_init_ehframe)
-        DWRF_U32(ctx->code_size);             // Address range covered by this FDE (code length)
-        DWRF_U8(0);                           // Augmentation data length (none)
-
-        /*
-         * Architecture-specific CFI instructions
-         *
-         * These instructions describe how registers are saved and restored
-         * during function calls. Each architecture has different calling
-         * conventions and register usage patterns.
-         */
-#ifdef __x86_64__
-        /* x86_64 calling convention unwinding rules with frame pointer */
-#  if defined(__CET__) && (__CET__ & 1)
-        DWRF_U8(DWRF_CFA_advance_loc | 4);    // Advance past endbr64 (4 bytes)
-#  endif
-        DWRF_U8(DWRF_CFA_advance_loc | 1);    // Advance past push %rbp (1 byte)
-        DWRF_U8(DWRF_CFA_def_cfa_offset);     // def_cfa_offset 16
-        DWRF_UV(16);                          // New offset: SP + 16
-        DWRF_U8(DWRF_CFA_offset | DWRF_REG_BP); // offset r6 at cfa-16
-        DWRF_UV(2);                           // Offset factor: 2 * 8 = 16 bytes
-        DWRF_U8(DWRF_CFA_advance_loc | 3);    // Advance past mov %rsp,%rbp (3 bytes)
-        DWRF_U8(DWRF_CFA_def_cfa_register);   // def_cfa_register r6
-        DWRF_UV(DWRF_REG_BP);                 // Use base pointer register
-        DWRF_U8(DWRF_CFA_advance_loc | 3);    // Advance past call *%rcx (2 bytes) + pop %rbp (1 byte) = 3
-        DWRF_U8(DWRF_CFA_def_cfa);            // def_cfa r7 ofs 8
-        DWRF_UV(DWRF_REG_SP);                 // Use stack pointer register
-        DWRF_UV(8);                           // New offset: SP + 8
-#elif defined(__aarch64__) && defined(__AARCH64EL__) && !defined(__ILP32__)
-        /* AArch64 calling convention unwinding rules */
-        DWRF_U8(DWRF_CFA_advance_loc | 1);        // Advance by 1 instruction (4 bytes)
-        DWRF_U8(DWRF_CFA_def_cfa_offset);         // CFA = SP + 16
-        DWRF_UV(16);                              // Stack pointer moved by 16 bytes
-        DWRF_U8(DWRF_CFA_offset | DWRF_REG_FP);   // x29 (frame pointer) saved
-        DWRF_UV(2);                               // At CFA-16 (2 * 8 = 16 bytes from CFA)
-        DWRF_U8(DWRF_CFA_offset | DWRF_REG_RA);   // x30 (link register) saved
-        DWRF_UV(1);                               // At CFA-8 (1 * 8 = 8 bytes from CFA)
-        DWRF_U8(DWRF_CFA_advance_loc | 3);        // Advance by 3 instructions (12 bytes)
-        DWRF_U8(DWRF_CFA_restore | DWRF_REG_RA);  // Restore x30 - NO DWRF_UV() after this!
-        DWRF_U8(DWRF_CFA_restore | DWRF_REG_FP);  // Restore x29 - NO DWRF_UV() after this!
-        DWRF_U8(DWRF_CFA_def_cfa_offset);         // CFA = SP + 0 (stack restored)
-        DWRF_UV(0);                               // Back to original stack position
-#else
-#    error "Unsupported target architecture"
-#endif
-
-        DWRF_ALIGNNOP(sizeof(uintptr_t));     // Align to pointer boundary
-    )
-
-    ctx->p = p;  // Update context pointer to end of generated data
-
-    /* Calculate and update the PC-relative offset in the FDE
-     *
-     * When perf processes the jitdump, it creates a synthesized DSO with this layout:
-     *
-     *     Synthesized DSO Memory Layout:
-     *     ┌─────────────────────────────────────────────────────────────┐ < code_start
-     *     │                        Code Section                         │
-     *     │                    (round_up(code_size, 8) bytes)           │
-     *     ├─────────────────────────────────────────────────────────────┤ < start of EH frame data
-     *     │                      EH Frame Data                          │
-     *     │  ┌─────────────────────────────────────────────────────┐    │
-     *     │  │                 CIE data                            │    │
-     *     │  └─────────────────────────────────────────────────────┘    │
-     *     │  ┌─────────────────────────────────────────────────────┐    │
-     *     │  │ FDE Header:                                         │    │
-     *     │  │   - CIE offset (4 bytes)                            │    │
-     *     │  │   - PC offset (4 bytes) <─ fde_offset_in_frame ─────┼────┼─> points to code_start
-     *     │  │   - address range (4 bytes)                         │    │   (this specific field)
-     *     │  │ CFI Instructions...                                 │    │
-     *     │  └─────────────────────────────────────────────────────┘    │
-     *     ├─────────────────────────────────────────────────────────────┤ < reference_point
-     *     │                    EhFrameHeader                            │
-     *     │                 (navigation metadata)                       │
-     *     └─────────────────────────────────────────────────────────────┘
-     *
-     * The PC offset field in the FDE must contain the distance from itself to code_start:
-     *
-     *   distance = code_start - fde_pc_field
-     *
-     * Where:
-     *   fde_pc_field_location = reference_point - eh_frame_size + fde_offset_in_frame
-     *   code_start_location = reference_point - eh_frame_size - round_up(code_size, 8)
-     *
-     * Therefore:
-     *   distance = code_start_location - fde_pc_field_location
-     *            = (ref - eh_frame_size - rounded_code_size) - (ref - eh_frame_size + fde_offset_in_frame)
-     *            = -rounded_code_size - fde_offset_in_frame
-     *            = -(round_up(code_size, 8) + fde_offset_in_frame)
-     *
-     * Note: fde_offset_in_frame is the offset from EH frame start to the PC offset field,
-     *
-     */
-    if (ctx->fde_p != NULL) {
-        int32_t fde_offset_in_frame = (ctx->fde_p - ctx->startp);
-        int32_t rounded_code_size = round_up(ctx->code_size, 8);
-        int32_t pc_relative_offset = -(rounded_code_size + fde_offset_in_frame);
-
-
-        // Update the PC-relative offset in the FDE
-        *(int32_t*)ctx->fde_p = pc_relative_offset;
-    }
-}
-
-// =============================================================================
 //                              JITDUMP INITIALIZATION
 // =============================================================================
 
@@ -1042,6 +413,12 @@ static void elf_init_ehframe(ELFObjectContext* ctx) {
  * Returns: Pointer to initialized state, or NULL on failure
  */
 static void* perf_map_jit_init(void) {
+    PyMutex_Lock(&perf_jit_map_state.map_lock);
+    if (perf_jit_map_state.perf_map != NULL) {
+        PyMutex_Unlock(&perf_jit_map_state.map_lock);
+        return &perf_jit_map_state;
+    }
+
     char filename[100];
     int pid = getpid();
 
@@ -1051,6 +428,7 @@ static void* perf_map_jit_init(void) {
     /* Create/open the jitdump file with appropriate permissions */
     const int fd = open(filename, O_CREAT | O_TRUNC | O_RDWR, 0666);
     if (fd == -1) {
+        PyMutex_Unlock(&perf_jit_map_state.map_lock);
         return NULL;  // Failed to create file
     }
 
@@ -1058,6 +436,7 @@ static void* perf_map_jit_init(void) {
     const long page_size = sysconf(_SC_PAGESIZE);
     if (page_size == -1) {
         close(fd);
+        PyMutex_Unlock(&perf_jit_map_state.map_lock);
         return NULL;  // Failed to get page size
     }
 
@@ -1086,6 +465,7 @@ static void* perf_map_jit_init(void) {
     if (perf_jit_map_state.mapped_buffer == MAP_FAILED) {
         perf_jit_map_state.mapped_buffer = NULL;
         close(fd);
+        PyMutex_Unlock(&perf_jit_map_state.map_lock);
         return NULL;  // Memory mapping failed
     }
     (void)_PyAnnotateMemoryMap(perf_jit_map_state.mapped_buffer, page_size,
@@ -1098,6 +478,7 @@ static void* perf_map_jit_init(void) {
     perf_jit_map_state.perf_map = fdopen(fd, "w+");
     if (perf_jit_map_state.perf_map == NULL) {
         close(fd);
+        PyMutex_Unlock(&perf_jit_map_state.map_lock);
         return NULL;  // Failed to create FILE*
     }
 
@@ -1113,28 +494,18 @@ static void* perf_map_jit_init(void) {
     /* Write the jitdump file header */
     perf_map_jit_write_header(pid, perf_jit_map_state.perf_map);
 
-    /*
-     * Initialize thread synchronization lock
-     *
-     * Multiple threads may attempt to write to the jitdump file
-     * simultaneously. This lock ensures thread-safe access to the
-     * global jitdump state.
-     */
-    perf_jit_map_state.map_lock = PyThread_allocate_lock();
-    if (perf_jit_map_state.map_lock == NULL) {
-        fclose(perf_jit_map_state.perf_map);
-        return NULL;  // Failed to create lock
-    }
-
     /* Initialize code ID counter */
     perf_jit_map_state.code_id = 0;
+    perf_jit_map_state.build_id_salt =
+        ((uint64_t)pid << 32) ^ (uint64_t)get_current_monotonic_ticks();
 
     /* Calculate padding size based on actual unwind info requirements */
-    size_t eh_frame_size = calculate_eh_frame_size();
+    size_t eh_frame_size = _PyJitUnwind_EhFrameSize(0);
     size_t unwind_data_size = sizeof(EhFrameHeader) + eh_frame_size;
-    trampoline_api.code_padding = round_up(unwind_data_size, 16);
+    trampoline_api.code_padding = _Py_SIZE_ROUND_UP(unwind_data_size, 16);
     trampoline_api.code_alignment = 32;
 
+    PyMutex_Unlock(&perf_jit_map_state.map_lock);
     return &perf_jit_map_state;
 }
 
@@ -1143,54 +514,31 @@ static void* perf_map_jit_init(void) {
 // =============================================================================
 
 /*
- * Write a complete jitdump entry for a Python function
+ * Write a complete jitdump entry for a code region with a provided name.
  *
- * This is the main function called by Python's trampoline system whenever
- * a new piece of JIT-compiled code needs to be recorded. It writes both
- * the unwinding information and the code load event to the jitdump file.
- *
- * The function performs these steps:
- * 1. Initialize jitdump system if not already done
- * 2. Extract function name and filename from Python code object
- * 3. Generate DWARF unwinding information
- * 4. Write unwinding info event to jitdump file
- * 5. Write code load event to jitdump file
- *
- * Args:
- *   state: Jitdump state (currently unused, uses global state)
- *   code_addr: Address where the compiled code resides
- *   code_size: Size of the compiled code in bytes
- *   co: Python code object containing metadata
- *
- * IMPORTANT: This function signature is part of Python's internal API
- * and must not be changed without coordinating with core Python development.
+ * This shares the same implementation as the trampoline callback, but
+ * allows callers that don't have a PyCodeObject to reuse the jitdump
+ * infrastructure.
  */
-static void perf_map_jit_write_entry(void *state, const void *code_addr,
-                                    unsigned int code_size, PyCodeObject *co)
+static void perf_map_jit_write_entry_with_name(
+    void *state,
+    const void *code_addr,
+    size_t code_size,
+    const char *entry,
+    const char *filename
+)
 {
     /* Initialize jitdump system on first use */
-    if (perf_jit_map_state.perf_map == NULL) {
-        void* ret = perf_map_jit_init();
-        if(ret == NULL){
-            return;  // Initialization failed, silently abort
-        }
+    void* ret = perf_map_jit_init();
+    if (ret == NULL) {
+        return;  // Initialization failed, silently abort
     }
 
-    /*
-     * Extract function information from Python code object
-     *
-     * We create a human-readable function name by combining the qualified
-     * name (includes class/module context) with the filename. This helps
-     * developers identify functions in perf reports.
-     */
-    const char *entry = "";
-    if (co->co_qualname != NULL) {
-        entry = PyUnicode_AsUTF8(co->co_qualname);
+    if (entry == NULL) {
+        entry = "";
     }
-
-    const char *filename = "";
-    if (co->co_filename != NULL) {
-        filename = PyUnicode_AsUTF8(co->co_filename);
+    if (filename == NULL) {
+        filename = "";
     }
 
     /*
@@ -1218,15 +566,20 @@ static void perf_map_jit_write_entry(void *state, const void *code_addr,
      * Without it, perf cannot generate accurate call graphs, especially
      * in optimized code where frame pointers may be omitted.
      */
-    ELFObjectContext ctx;
-    char buffer[1024];  // Buffer for DWARF data (1KB should be sufficient)
-    ctx.code_size = code_size;
-    ctx.startp = ctx.p = (uint8_t*)buffer;
-    ctx.fde_p = NULL;  // Initialize to NULL, will be set when FDE is written
+    uint8_t buffer[1024];  // Buffer for DWARF data (1KB should be sufficient)
+    size_t eh_frame_size = _PyJitUnwind_BuildEhFrame(
+        buffer, sizeof(buffer), code_addr, code_size, 0);
+    if (eh_frame_size == 0) {
+        PyMem_RawFree(perf_map_entry);
+        return;
+    }
 
-    /* Generate EH frame (Exception Handling frame) data */
-    elf_init_ehframe(&ctx);
-    int eh_frame_size = ctx.p - ctx.startp;
+    /*
+     * A logical jitdump entry is written as multiple records and also consumes
+     * a process-global code_id. Serialize the whole sequence so concurrent JIT
+     * compilation cannot interleave records or reuse an ID.
+     */
+    PyMutex_Lock(&perf_jit_map_state.map_lock);
 
     /*
      * Write Code Unwinding Information Event
@@ -1244,12 +597,12 @@ static void perf_map_jit_write_entry(void *state, const void *code_addr,
     assert(ev2.unwind_data_size <= (uint64_t)trampoline_api.code_padding);
 
     ev2.eh_frame_hdr_size = sizeof(EhFrameHeader);
-    ev2.mapped_size = round_up(ev2.unwind_data_size, 16);  // 16-byte alignment
+    ev2.mapped_size = _Py_SIZE_ROUND_UP(ev2.unwind_data_size, 16);  // 16-byte alignment
 
     /* Calculate total event size with padding */
-    int content_size = sizeof(ev2) + sizeof(EhFrameHeader) + eh_frame_size;
-    int padding_size = round_up(content_size, 8) - content_size;  // 8-byte align
-    ev2.base.size = content_size + padding_size;
+    int content_size = (int)(sizeof(ev2) + sizeof(EhFrameHeader) + eh_frame_size);
+    int padding_size = (int)_Py_SIZE_ROUND_UP((size_t)content_size, 8) - content_size;  // 8-byte align
+    ev2.base.size = (uint32_t)(content_size + padding_size);
 
     /* Write the unwinding info event header */
     perf_map_jit_write_fully(&ev2, sizeof(ev2));
@@ -1263,20 +616,21 @@ static void perf_map_jit_write_entry(void *state, const void *code_addr,
      */
     EhFrameHeader f;
     f.version = 1;
-    f.eh_frame_ptr_enc = DwarfSData4 | DwarfPcRel;  // PC-relative signed 4-byte
-    f.fde_count_enc = DwarfUData4;                  // Unsigned 4-byte count
-    f.table_enc = DwarfSData4 | DwarfDataRel;       // Data-relative signed 4-byte
+    f.eh_frame_ptr_enc = DWRF_EH_PE_sdata4 | DWRF_EH_PE_pcrel;
+    f.fde_count_enc = DWRF_EH_PE_udata4;
+    f.table_enc = DWRF_EH_PE_sdata4 | DWRF_EH_PE_datarel;
 
     /* Calculate relative offsets for EH frame navigation */
-    f.eh_frame_ptr = -(eh_frame_size + 4 * sizeof(unsigned char));
+    f.eh_frame_ptr = -(int32_t)(eh_frame_size + 4 * sizeof(unsigned char));
     f.eh_fde_count = 1;  // We generate exactly one FDE per function
-    f.from = -(round_up(code_size, 8) + eh_frame_size);
-
-    int cie_size = ctx.eh_frame_p - ctx.startp;
-    f.to = -(eh_frame_size - cie_size);
+    f.from = -(int32_t)(_Py_SIZE_ROUND_UP(code_size, 8) + eh_frame_size);
+    uint32_t cie_payload_size;
+    memcpy(&cie_payload_size, buffer, sizeof(cie_payload_size));
+    int cie_size = (int)(sizeof(cie_payload_size) + cie_payload_size);
+    f.to = -(int32_t)(eh_frame_size - cie_size);
 
     /* Write EH frame data and header */
-    perf_map_jit_write_fully(ctx.startp, eh_frame_size);
+    perf_map_jit_write_fully(buffer, eh_frame_size);
     perf_map_jit_write_fully(&f, sizeof(f));
 
     /* Write padding to maintain alignment */
@@ -1313,10 +667,84 @@ static void perf_map_jit_write_entry(void *state, const void *code_addr,
     /* Write code load event and associated data */
     perf_map_jit_write_fully(&ev, sizeof(ev));
     perf_map_jit_write_fully(perf_map_entry, name_length+1);  // Include null terminator
-    perf_map_jit_write_fully((void*)(base), size);           // Copy actual machine code
+    /*
+     * Ensure each synthetic DSO has unique .text bytes.
+     *
+     * perf merges DSOs that share a build-id. Since trampolines can share
+     * identical code and unwind bytes, perf may resolve all JIT frames to
+     * the first symbol it saw (including entries from previous runs when
+     * build-id caching is enabled). Patch a small marker in the emitted
+     * bytes to make the build-id depend on a per-process salt and code id
+     * without modifying the live code.
+     */
+    uint64_t marker = perf_jit_map_state.build_id_salt ^
+        ((uint64_t)perf_jit_map_state.code_id << 32) ^
+        (uint64_t)code_size;
+    if (size >= sizeof(marker)) {
+        size_t prefix = size - sizeof(marker);
+        perf_map_jit_write_fully((void *)(base), prefix);
+        perf_map_jit_write_fully(&marker, sizeof(marker));
+    }
+    else if (size > 0) {
+        uint8_t tmp[sizeof(marker)];
+        memcpy(tmp, (void *)(base), size);
+        for (size_t i = 0; i < size; i++) {
+            tmp[i] ^= (uint8_t)(marker >> (i * 8));
+        }
+        perf_map_jit_write_fully(tmp, size);
+    }
 
     /* Clean up allocated memory */
+    PyMutex_Unlock(&perf_jit_map_state.map_lock);
     PyMem_RawFree(perf_map_entry);
+}
+
+/*
+ * Write a complete jitdump entry for a Python function
+ *
+ * This is the main function called by Python's trampoline system whenever
+ * a new piece of JIT-compiled code needs to be recorded. It writes both
+ * the unwinding information and the code load event to the jitdump file.
+ *
+ * The function performs these steps:
+ * 1. Initialize jitdump system if not already done
+ * 2. Extract function name and filename from Python code object
+ * 3. Generate DWARF unwinding information
+ * 4. Write unwinding info event to jitdump file
+ * 5. Write code load event to jitdump file
+ *
+ * Args:
+ *   state: Jitdump state (currently unused, uses global state)
+ *   code_addr: Address where the compiled code resides
+ *   code_size: Size of the compiled code in bytes
+ *   co: Python code object containing metadata
+ *
+ * IMPORTANT: This function signature is part of Python's internal API
+ * and must not be changed without coordinating with core Python development.
+ */
+static void perf_map_jit_write_entry(void *state, const void *code_addr,
+                                     size_t code_size, PyCodeObject *co)
+{
+    const char *entry = "";
+    const char *filename = "";
+    if (co != NULL) {
+        if (co->co_qualname != NULL) {
+            entry = PyUnicode_AsUTF8(co->co_qualname);
+        }
+        if (co->co_filename != NULL) {
+            filename = PyUnicode_AsUTF8(co->co_filename);
+        }
+    }
+    perf_map_jit_write_entry_with_name(state, code_addr, code_size,
+                                       entry, filename);
+}
+
+void
+_PyPerfJit_WriteNamedCode(const void *code_addr, size_t code_size,
+                          const char *entry, const char *filename)
+{
+    perf_map_jit_write_entry_with_name(
+        NULL, code_addr, code_size, entry, filename);
 }
 
 // =============================================================================
@@ -1346,15 +774,12 @@ static int perf_map_jit_fini(void* state) {
      * writing to the file when we close it. This prevents corruption
      * and ensures all data is properly flushed.
      */
+    PyMutex_Lock(&perf_jit_map_state.map_lock);
     if (perf_jit_map_state.perf_map != NULL) {
-        PyThread_acquire_lock(perf_jit_map_state.map_lock, 1);
         fclose(perf_jit_map_state.perf_map);  // This also flushes buffers
-        PyThread_release_lock(perf_jit_map_state.map_lock);
-
-        /* Clean up synchronization primitive */
-        PyThread_free_lock(perf_jit_map_state.map_lock);
         perf_jit_map_state.perf_map = NULL;
     }
+    PyMutex_Unlock(&perf_jit_map_state.map_lock);
 
     /*
      * Unmap the memory region
