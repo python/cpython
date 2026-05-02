@@ -514,6 +514,7 @@ PYTHON_OBJS=	\
 		Python/suggestions.o \
 		Python/perf_trampoline.o \
 		Python/perf_jit_trampoline.o \
+		Python/jit_unwind.o \
 		Python/remote_debugging.o \
 		Python/$(DYNLOADFILE) \
 		$(LIBOBJS) \
@@ -3209,7 +3210,8 @@ Python/emscripten_trampoline_wasm.c: Python/emscripten_trampoline_inner.wasm
 	$(PYTHON_FOR_REGEN) $(srcdir)/Platforms/emscripten/prepare_external_wasm.py $< $@ getWasmTrampolineModule
 
 JIT_SHIM_BUILD_OBJS=	@JIT_SHIM_BUILD_O@
-JIT_BUILD_TARGETS=	jit_stencils.h @JIT_STENCILS_H@ $(JIT_SHIM_BUILD_OBJS)
+JIT_UNWIND_INFO_H=	$(if $(JIT_OBJS),jit_unwind_info.h $(patsubst jit_stencils-%.h,jit_unwind_info-%.h,@JIT_STENCILS_H@))
+JIT_BUILD_TARGETS=	jit_stencils.h @JIT_STENCILS_H@ $(JIT_UNWIND_INFO_H) $(JIT_SHIM_BUILD_OBJS)
 JIT_TARGETS=	$(JIT_BUILD_TARGETS) $(filter-out $(JIT_SHIM_BUILD_OBJS),$(JIT_OBJS))
 JIT_GENERATED_STAMP=	.jit-stamp
 
@@ -3235,6 +3237,9 @@ jit_shim-universal2-apple-darwin.o: jit_shim-aarch64-apple-darwin.o jit_shim-x86
 	lipo -create -output $@ jit_shim-aarch64-apple-darwin.o jit_shim-x86_64-apple-darwin.o
 
 Python/jit.o: $(srcdir)/Python/jit.c @JIT_STENCILS_H@
+	$(CC) -c $(PY_CORE_CFLAGS) -o $@ $<
+
+Python/jit_unwind.o: $(srcdir)/Python/jit_unwind.c $(JIT_UNWIND_INFO_H)
 	$(CC) -c $(PY_CORE_CFLAGS) -o $@ $<
 
 .PHONY: regen-jit
@@ -3362,7 +3367,7 @@ clean-profile: clean-retain-profile clean-bolt
 # gh-141808: The JIT stencils are deliberately kept in clean-profile
 .PHONY: clean-jit-stencils
 clean-jit-stencils:
-	-rm -f $(JIT_TARGETS) $(JIT_GENERATED_STAMP) jit_stencils*.h jit_shim*.o
+	-rm -f $(JIT_TARGETS) $(JIT_GENERATED_STAMP) jit_stencils*.h jit_unwind_info*.h jit_shim*.o
 
 .PHONY: clean
 clean: clean-profile clean-jit-stencils
