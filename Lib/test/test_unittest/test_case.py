@@ -1652,7 +1652,8 @@ test case
             # Force default filter (in case tests are run with -We)
             warnings.simplefilter("default", RuntimeWarning)
             with self.assertRaises(self.failureException):
-                self.assertWarns(DeprecationWarning, _runtime_warn)
+                self.assertWarns(DeprecationWarning, _runtime_warn,
+                                 (RuntimeWarning, RuntimeWarning))
         self.assertEqual(len(log), 1, log)
         self.assertIsInstance(log[0].message, RuntimeWarning)
         # Filters for other warnings are not modified
@@ -1712,6 +1713,18 @@ test case
             with self.assertRaises(self.failureException):
                 with self.assertWarns(DeprecationWarning):
                     _runtime_warn()
+                    _runtime_warn()
+        self.assertEqual(len(log), 1, log)
+        self.assertIsInstance(log[0].message, RuntimeWarning)
+        with warnings.catch_warnings(record=True) as log:
+            # Force default filter (in case tests are run with -We)
+            warnings.simplefilter("error", RuntimeWarning)
+            warnings.filterwarnings("default", category=RuntimeWarning,
+                                    module=__name__)
+            with self.assertRaises(self.failureException):
+                with self.assertWarns(DeprecationWarning):
+                    _runtime_warn()
+                    _runtime_warn()
         self.assertEqual(len(log), 1, log)
         self.assertIsInstance(log[0].message, RuntimeWarning)
         # Filters for other warnings are not modified
@@ -1733,6 +1746,19 @@ test case
             with self.assertWarns(DeprecationWarning):
                 _runtime_warn(DeprecationWarning)
                 _runtime_warn()
+        # Filters by module name work for other warnings.
+        with warnings.catch_warnings(record=True) as log:
+            warnings.filterwarnings("error", category=RuntimeWarning)
+            warnings.filterwarnings("default", category=RuntimeWarning,
+                                    module=re.escape(__name__))
+            warnings.filterwarnings("error", category=RuntimeWarning,
+                                    module='test_case')
+            with self.assertWarns(DeprecationWarning):
+                _runtime_warn(DeprecationWarning)
+                _runtime_warn()
+                _runtime_warn()
+        self.assertEqual(len(log), 1, log)
+        self.assertIsInstance(log[0].message, RuntimeWarning)
 
     def testAssertWarnsNoExceptionType(self):
         with self.assertRaises(TypeError):
@@ -1767,7 +1793,7 @@ test case
             warnings.simplefilter("default", RuntimeWarning)
             with self.assertRaises(self.failureException):
                 self.assertWarnsRegex(DeprecationWarning, "o+",
-                                      _runtime_warn, "foox")
+                                      _runtime_warn, "foox", "foox")
         self.assertEqual(len(log), 1, log)
         self.assertIsInstance(log[0].message, RuntimeWarning)
         # Failure when message doesn't match.
@@ -1822,6 +1848,7 @@ test case
             with self.assertRaises(self.failureException):
                 with self.assertWarnsRegex(DeprecationWarning, "o+"):
                     _runtime_warn("foox")
+                    _runtime_warn("foox")
         self.assertEqual(len(log), 1, log)
         self.assertIsInstance(log[0].message, RuntimeWarning)
         # Failure when message doesn't match.
@@ -1847,6 +1874,19 @@ test case
             with self.assertRaises((RuntimeWarning, self.failureException)):
                 with self.assertWarnsRegex(RuntimeWarning, "o+"):
                     _runtime_warn("barz")
+        # Filters by module name work for warnings with other message.
+        with warnings.catch_warnings(record=True) as log:
+            warnings.filterwarnings("error", category=RuntimeWarning)
+            warnings.filterwarnings("default", category=RuntimeWarning,
+                                    module=re.escape(__name__))
+            warnings.filterwarnings("error", category=RuntimeWarning,
+                                    module='test_case')
+            with self.assertWarnsRegex(RuntimeWarning, "ar"):
+                _runtime_warn("bar")
+                _runtime_warn("foox")
+                _runtime_warn("foox")
+        self.assertEqual(len(log), 1, log)
+        self.assertIsInstance(log[0].message, RuntimeWarning)
 
     def testAssertWarnsRegexNoExceptionType(self):
         with self.assertRaises(TypeError):

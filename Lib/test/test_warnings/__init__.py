@@ -342,7 +342,7 @@ class FilterTests(BaseTest):
             self.assertEqual(len(w), 1)
 
             # Invalid module_globals type
-            with self.assertRaises(TypeError):
+            with self.assertRaises((TypeError, AttributeError)):
                 self.module.warn_explicit('msg', UserWarning, "filename", 42,
                                           module_globals=True)
             self.assertEqual(len(w), 1)

@@ -335,7 +335,21 @@ class _AssertWarnsContext(_AssertRaisesBaseContext):
             self.filename = m.filename
             self.lineno = m.lineno
         for m in non_matching_warnings:
+            module = m.module
+            module_globals = None
+            registry = None
+            if module is not None:
+                try:
+                    module_globals = vars(sys.modules[module])
+                except (KeyError, TypeError):
+                    # module == "<string>" or sys.modules[module] is None
+                    pass
+                else:
+                    registry = module_globals.setdefault("__warningregistry__", {})
             warnings.warn_explicit(m.message, m.category, m.filename, m.lineno,
+                                   module=module,
+                                   registry=registry,
+                                   module_globals=module_globals,
                                    source=m.source)
         if matched:
             return
