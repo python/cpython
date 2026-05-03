@@ -20,7 +20,6 @@
 from __future__ import annotations
 
 import os
-lazy import _colorize
 
 from abc import ABC, abstractmethod
 import ast
@@ -30,6 +29,7 @@ from dataclasses import dataclass
 import re
 import sys
 from typing import TYPE_CHECKING
+lazy import _colorize
 
 from .render import RenderedScreen
 from .trace import trace

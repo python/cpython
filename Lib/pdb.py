@@ -96,11 +96,11 @@ import traceback
 import linecache
 import selectors
 import threading
-lazy import _colorize
 
 from contextlib import ExitStack, closing, contextmanager
 from types import CodeType
 from warnings import deprecated
+lazy import _colorize
 
 try:
     import _pyrepl.utils

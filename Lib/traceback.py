@@ -16,9 +16,9 @@ import tokenize
 import io
 import importlib.util
 import pathlib
-lazy import _colorize
 
 from contextlib import suppress
+lazy import _colorize
 
 
 class _ShutdownTheme:

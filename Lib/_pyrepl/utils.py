@@ -6,13 +6,13 @@ import re
 import token as T
 import tokenize
 import unicodedata
-lazy import _colorize
 
 from collections import deque
 from dataclasses import dataclass
 from io import StringIO
 from tokenize import TokenInfo as TI
 from typing import Iterable, Iterator, Match, NamedTuple, Self
+lazy import _colorize
 
 from .types import CharBuffer, CharWidths
 from .trace import trace

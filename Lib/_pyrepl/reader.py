@@ -22,11 +22,11 @@
 from __future__ import annotations
 
 import sys
-lazy import _colorize
 
 from contextlib import contextmanager
 from dataclasses import dataclass, field, fields, replace
 from typing import Self
+lazy import _colorize
 
 from . import commands, console, input
 from .content import (
