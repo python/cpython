@@ -6,7 +6,7 @@ import sys
 import sysconfig
 import time
 from collections import deque
-from _colorize import ANSIColors
+lazy from _colorize import ANSIColors
 
 from .pstats_collector import PstatsCollector
 from .stack_collector import CollapsedStackCollector, FlamegraphCollector

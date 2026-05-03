@@ -10,7 +10,7 @@ import sys
 from argparse import ArgumentParser
 from code import InteractiveConsole
 from textwrap import dedent
-from _colorize import get_theme, theme_no_color
+lazy from _colorize import get_theme, theme_no_color
 
 from ._completer import completer
 

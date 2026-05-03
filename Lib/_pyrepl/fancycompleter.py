@@ -3,7 +3,7 @@
 #
 #                        All Rights Reserved
 """Colorful tab completion for Python prompt"""
-from _colorize import ANSIColors, get_colors, get_theme
+lazy from _colorize import ANSIColors, get_colors, get_theme
 import rlcompleter
 import keyword
 import types

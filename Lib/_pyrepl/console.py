@@ -20,7 +20,7 @@
 from __future__ import annotations
 
 import os
-import _colorize
+lazy import _colorize
 
 from abc import ABC, abstractmethod
 import ast

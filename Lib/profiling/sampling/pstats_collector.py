@@ -2,7 +2,7 @@ import collections
 import marshal
 import pstats
 
-from _colorize import ANSIColors
+lazy from _colorize import ANSIColors
 from .collector import Collector, extract_lineno
 from .constants import MICROSECONDS_PER_SECOND, PROFILING_MODE_CPU
 

@@ -6,7 +6,7 @@ import re
 import token as T
 import tokenize
 import unicodedata
-import _colorize
+lazy import _colorize
 
 from collections import deque
 from dataclasses import dataclass

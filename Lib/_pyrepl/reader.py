@@ -22,7 +22,7 @@
 from __future__ import annotations
 
 import sys
-import _colorize
+lazy import _colorize
 
 from contextlib import contextmanager
 from dataclasses import dataclass, field, fields, replace

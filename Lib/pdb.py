@@ -96,7 +96,7 @@ import traceback
 import linecache
 import selectors
 import threading
-import _colorize
+lazy import _colorize
 
 from contextlib import ExitStack, closing, contextmanager
 from types import CodeType

@@ -7,7 +7,7 @@ import argparse
 import json
 import re
 import sys
-from _colorize import get_theme, can_colorize
+lazy from _colorize import get_theme, can_colorize
 
 
 # The string we are colorizing is valid JSON,
