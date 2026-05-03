@@ -16,6 +16,7 @@ from test.support.os_helper import TESTFN, EnvironmentVarGuard
 from test.support.script_helper import spawn_python, kill_python
 import ast
 import builtins
+import contextlib
 import glob
 import io
 import os
@@ -126,12 +127,9 @@ class HelperFunctionsTests(unittest.TestCase):
         pth_file = PthFile()
         pth_file.cleanup(prep=True)  # to make sure that nothing is
                                       # pre-existing that shouldn't be
-        try:
-            pth_file.create()
+        with pth_file.create():
             site.addpackage(pth_file.base_dir, pth_file.filename, set())
             self.pth_file_tests(pth_file)
-        finally:
-            pth_file.cleanup()
 
     def make_pth(self, contents, pth_dir='.', pth_name=TESTFN):
         # Create a .pth file and return its (abspath, basename).
@@ -183,12 +181,9 @@ class HelperFunctionsTests(unittest.TestCase):
         # (known_paths=None), flushes paths and import lines immediately.
         pth_file = PthFile()
         pth_file.cleanup(prep=True)
-        try:
-            pth_file.create()
+        with pth_file.create():
             site.addsitedir(pth_file.base_dir)
             self.pth_file_tests(pth_file)
-        finally:
-            pth_file.cleanup()
 
     def test_addsitedir_explicit_flush(self):
         # addsitedir() reads .pth files and, with
@@ -198,55 +193,43 @@ class HelperFunctionsTests(unittest.TestCase):
         pth_file = PthFile()
         # Ensure we have a clean slate.
         pth_file.cleanup(prep=True)
-        try:
-            pth_file.create()
+        with pth_file.create():
             # Pass defer_processing_start_files=True to prevent flushing.
             site.addsitedir(pth_file.base_dir, set(),
                             defer_processing_start_files=True)
             self.assertNotIn(pth_file.imported, sys.modules)
             site.process_startup_files()
             self.pth_file_tests(pth_file)
-        finally:
-            pth_file.cleanup()
 
     def test_addsitedir_dotfile(self):
         pth_file = PthFile('.dotfile')
         pth_file.cleanup(prep=True)
-        try:
-            pth_file.create()
+        with pth_file.create():
             site.addsitedir(pth_file.base_dir)
             self.assertNotIn(site.makepath(pth_file.good_dir_path)[0], sys.path)
             self.assertIn(pth_file.base_dir, sys.path)
-        finally:
-            pth_file.cleanup()
 
     @unittest.skipUnless(hasattr(os, 'chflags'), 'test needs os.chflags()')
     def test_addsitedir_hidden_flags(self):
         pth_file = PthFile()
         pth_file.cleanup(prep=True)
-        try:
-            pth_file.create()
+        with pth_file.create():
             st = os.stat(pth_file.file_path)
             os.chflags(pth_file.file_path, st.st_flags | stat.UF_HIDDEN)
             site.addsitedir(pth_file.base_dir)
             self.assertNotIn(site.makepath(pth_file.good_dir_path)[0], sys.path)
             self.assertIn(pth_file.base_dir, sys.path)
-        finally:
-            pth_file.cleanup()
 
     @unittest.skipUnless(sys.platform == 'win32', 'test needs Windows')
     @support.requires_subprocess()
     def test_addsitedir_hidden_file_attribute(self):
         pth_file = PthFile()
         pth_file.cleanup(prep=True)
-        try:
-            pth_file.create()
+        with pth_file.create():
             subprocess.check_call(['attrib', '+H', pth_file.file_path])
             site.addsitedir(pth_file.base_dir)
             self.assertNotIn(site.makepath(pth_file.good_dir_path)[0], sys.path)
             self.assertIn(pth_file.base_dir, sys.path)
-        finally:
-            pth_file.cleanup()
 
     # This tests _getuserbase, hence the double underline
     # to distinguish from a test for getuserbase
@@ -425,6 +408,7 @@ class PthFile:
         self.good_dir_path = os.path.join(self.base_dir, self.good_dirname)
         self.bad_dir_path = os.path.join(self.base_dir, self.bad_dirname)
 
+    @contextlib.contextmanager
     def create(self):
         """Create a .pth file with a comment, blank lines, an ``import
         <self.imported>``, a line with self.good_dirname, and a line with
@@ -433,8 +417,7 @@ class PthFile:
         Creation of the directory for self.good_dir_path (based off of
         self.good_dirname) is also performed.
 
-        Make sure to call self.cleanup() to undo anything done by this method.
-
+        Used as a context manager: self.cleanup() is called on exit.
         """
         FILE = open(self.file_path, 'w')
         try:
@@ -446,6 +429,10 @@ class PthFile:
         finally:
             FILE.close()
         os.mkdir(self.good_dir_path)
+        try:
+            yield self
+        finally:
+            self.cleanup()
 
     def cleanup(self, prep=False):
         """Make sure that the .pth file is deleted, self.imported is not in
