@@ -1405,14 +1405,15 @@ add_stats(GCState *gcstate, int gen, struct gc_generation_stats *stats)
     memcpy(cur_stats, prev_stats, sizeof(struct gc_generation_stats));
 
     cur_stats->ts_start = stats->ts_start;
-    cur_stats->heap_size = stats->heap_size;
-
     cur_stats->collections += 1;
     cur_stats->collected += stats->collected;
     cur_stats->uncollectable += stats->uncollectable;
     cur_stats->candidates += stats->candidates;
 
     cur_stats->duration += stats->duration;
+    cur_stats->heap_size = stats->heap_size;
+    /* Publish ts_stop last so remote readers do not select a partially
+       updated stats record as the latest collection. */
     cur_stats->ts_stop = stats->ts_stop;
 }
 
@@ -1455,10 +1456,14 @@ gc_collect_main(PyThreadState *tstate, int generation, _PyGC_Reason reason)
     assert(generation >= 0 && generation < NUM_GENERATIONS);
 
 #ifdef Py_STATS
-    if (_Py_stats) {
-        _Py_stats->object_stats.object_visits = 0;
+    {
+        PyStats *s = _PyStats_GET();
+        if (s) {
+            s->object_stats.object_visits = 0;
+        }
     }
 #endif
+
     GC_STAT_ADD(generation, collections, 1);
 
     struct gc_generation_stats stats = { 0 };
@@ -1617,12 +1622,16 @@ gc_collect_main(PyThreadState *tstate, int generation, _PyGC_Reason reason)
 
     /* Update stats */
     add_stats(gcstate, generation, &stats);
-    GC_STAT_ADD(generation, objects_collected, m);
+    GC_STAT_ADD(generation, objects_collected, stats.collected);
+
 #ifdef Py_STATS
-    if (_Py_stats) {
-        GC_STAT_ADD(generation, object_visits,
-            _Py_stats->object_stats.object_visits);
-        _Py_stats->object_stats.object_visits = 0;
+    {
+        PyStats *s = _PyStats_GET();
+        if (s) {
+            GC_STAT_ADD(generation, object_visits,
+                s->object_stats.object_visits);
+            s->object_stats.object_visits = 0;
+        }
     }
 #endif
 

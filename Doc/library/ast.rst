@@ -42,7 +42,7 @@ Node classes
 
 .. class:: AST
 
-   This is the base of all AST node classes.  The actual node classes are
+   This is the abstract base of all AST node classes.  The actual node classes are
    derived from the :file:`Parser/Python.asdl` file, which is reproduced
    :ref:`above <abstract-grammar>`.  They are defined in the :mod:`!_ast` C
    module and re-exported in :mod:`!ast`.
@@ -168,6 +168,15 @@ Node classes
    arguments that were set as attributes of the AST node, even if they did not
    match any of the fields of the AST node. These cases now raise a :exc:`TypeError`.
 
+.. deprecated-removed:: next 3.20
+
+    In the :ref:`grammar above <abstract-grammar>`, the AST node classes that
+    correspond to production rules with variants (aka "sums") are abstract
+    classes. Previous versions of Python allowed for the creation of direct
+    instances of these abstract node classes. This behavior is deprecated and
+    will be removed in Python 3.20.
+
+
 .. note::
     The descriptions of the specific node classes displayed here
     were initially adapted from the fantastic `Green Tree
@@ -271,18 +280,25 @@ Root nodes
 Literals
 ^^^^^^^^
 
-.. class:: Constant(value)
+.. class:: Constant(value, kind)
 
    A constant value. The ``value`` attribute of the ``Constant`` literal contains the
    Python object it represents. The values represented can be instances of :class:`str`,
    :class:`bytes`, :class:`int`, :class:`float`, :class:`complex`, and :class:`bool`,
    and the constants :data:`None` and :data:`Ellipsis`.
 
+   The ``kind`` attribute is an optional string. For string literals with a
+   ``u`` prefix, ``kind`` is set to ``'u'``. For all other
+   constants, ``kind`` is ``None``.
+
    .. doctest::
 
         >>> print(ast.dump(ast.parse('123', mode='eval'), indent=4))
         Expression(
             body=Constant(value=123))
+        >>> print(ast.dump(ast.parse("u'hello'", mode='eval'), indent=4))
+        Expression(
+            body=Constant(value='hello', kind='u'))
 
 
 .. class:: FormattedValue(value, conversion, format_spec)
@@ -2536,6 +2552,20 @@ and classes for traversing abstract syntax trees:
       Added the *color* parameter.
 
 
+.. function:: compare(a, b, /, *, compare_attributes=False)
+
+   Recursively compares two ASTs.
+
+   *compare_attributes* affects whether AST attributes are considered
+   in the comparison. If *compare_attributes* is ``False`` (default), then
+   attributes are ignored. Otherwise they must all be equal. This
+   option is useful to check whether the ASTs are structurally equal but
+   differ in whitespace or similar details. Attributes include line numbers
+   and column offsets.
+
+   .. versionadded:: 3.14
+
+
 .. _ast-compiler-flags:
 
 Compiler flags
@@ -2569,20 +2599,6 @@ effects on the compilation of a program:
    (``# type: <type>``, ``# type: ignore <stuff>``).
 
    .. versionadded:: 3.8
-
-
-.. function:: compare(a, b, /, *, compare_attributes=False)
-
-   Recursively compares two ASTs.
-
-   *compare_attributes* affects whether AST attributes are considered
-   in the comparison. If *compare_attributes* is ``False`` (default), then
-   attributes are ignored. Otherwise they must all be equal. This
-   option is useful to check whether the ASTs are structurally equal but
-   differ in whitespace or similar details. Attributes include line numbers
-   and column offsets.
-
-   .. versionadded:: 3.14
 
 
 .. _ast-cli:
