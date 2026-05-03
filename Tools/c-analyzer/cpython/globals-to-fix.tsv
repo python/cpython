@@ -53,6 +53,7 @@ Objects/genobject.c	-	PyCoro_Type	-
 Objects/genobject.c	-	PyGen_Type	-
 Objects/genobject.c	-	_PyAsyncGenASend_Type	-
 Objects/genobject.c	-	_PyAsyncGenAThrow_Type	-
+Objects/genobject.c	-	_PyAsyncGenYieldFrom_Type	-
 Objects/genobject.c	-	_PyAsyncGenWrappedValue_Type	-
 Objects/genobject.c	-	_PyCoroWrapper_Type	-
 Objects/interpolationobject.c	-	_PyInterpolation_Type	-
