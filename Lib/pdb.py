@@ -3713,18 +3713,18 @@ def help():
     pydoc.pager(__doc__)
 
 _usage = """\
-Debug the Python program given by pyfile. Alternatively,
+Debug the Python program given by `pyfile`. Alternatively,
 an executable module or package to debug can be specified using
-the -m switch. You can also attach to a running Python process
-using the -p option with its PID.
+the `-m` switch. You can also attach to a running Python process
+using the `-p` option with its PID.
 
-Initial commands are read from .pdbrc files in your home directory
+Initial commands are read from `.pdbrc` files in your home directory
 and in the current directory, if they exist.  Commands supplied with
--c are executed after commands from .pdbrc files.
+`-c` are executed after commands from `.pdbrc` files.
 
-To let the script run until an exception occurs, use "-c continue".
+To let the script run until an exception occurs, use `-c continue`.
 To let the script run up to a given line X in the debugged file, use
-"-c 'until X'"."""
+`-c 'until X'`."""
 
 
 def exit_with_permission_help_text():
