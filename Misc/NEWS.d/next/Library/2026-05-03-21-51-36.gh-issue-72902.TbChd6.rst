@@ -1,1 +1,1 @@
-Improve performance of construction of :class:`Fraction` from a string.
+Improve performance of construction of :class:`fractions.Fraction` from a string.
