@@ -147,9 +147,7 @@ dummy_func(void) {
                 // Promote the probable type version to a known one.
                 sym_set_type(owner, probable_type);
                 sym_set_type_version(owner, type_version);
-                if ((probable_type->tp_flags & Py_TPFLAGS_IMMUTABLETYPE) == 0) {
-                    watch_type(probable_type, dependencies);
-                }
+                watch_type(probable_type, dependencies);
             }
             else {
                 ctx->contradiction = true;
@@ -235,9 +233,7 @@ dummy_func(void) {
             }
             else {
                 sym_set_const(owner, type);
-                if ((((PyTypeObject *)type)->tp_flags & Py_TPFLAGS_IMMUTABLETYPE) == 0) {
-                    watch_type((PyTypeObject *)type, dependencies);
-                }
+                watch_type((PyTypeObject *)type, dependencies);
             }
         }
     }
@@ -2021,9 +2017,7 @@ dummy_func(void) {
                        0, (uintptr_t)descr);
                 ADD_OP(_SWAP, 3, 0);
                 optimize_pop_top(ctx, this_instr, method_and_self[0]);
-                if ((type->tp_flags & Py_TPFLAGS_IMMUTABLETYPE) == 0) {
-                    watch_type(type, dependencies);
-                }
+                watch_type(type, dependencies);
                 method_and_self[0] = sym_new_const(ctx, descr);
                 optimized = true;
             }
