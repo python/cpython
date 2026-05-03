@@ -1322,6 +1322,8 @@ class _SubParsersAction(Action):
         if kwargs.get('prog') is None:
             kwargs['prog'] = '%s %s' % (self._prog_prefix, name)
 
+        subnamespace_name = kwargs.pop('subnamespace', None)
+
         # set color
         if kwargs.get('color') is None:
             kwargs['color'] = self._color
@@ -1347,6 +1349,11 @@ class _SubParsersAction(Action):
         if choice_action is not None:
             parser._check_help(choice_action)
         self._name_parser_map[name] = parser
+
+        # add the subnamespace attribute to the parser if specified
+        # for nested namespaces
+        if subnamespace_name is not None:
+            setattr(parser, 'subnamespace', subnamespace_name)
 
         # make parser available under aliases also
         for alias in aliases:
@@ -1390,8 +1397,17 @@ class _SubParsersAction(Action):
         # in a new namespace object and then update the original
         # namespace for the relevant parts.
         subnamespace, arg_strings = subparser.parse_known_args(arg_strings, None)
-        for key, value in vars(subnamespace).items():
-            setattr(namespace, key, value)
+
+        # If a subnamespace name has been specified for the subparser
+        # then store the subparser's namespace within the parent namespace
+        # using that name. Otherwise update the parent namespace with the
+        # values from the subnamespace.
+        subnamespace_name = getattr(subparser, 'subnamespace', None)
+        if subnamespace_name is not None:
+            setattr(namespace, subnamespace_name, subnamespace)
+        else:
+            for key, value in vars(subnamespace).items():
+                setattr(namespace, key, value)
 
         if arg_strings:
             if not hasattr(namespace, _UNRECOGNIZED_ARGS_ATTR):
