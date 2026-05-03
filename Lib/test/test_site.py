@@ -207,14 +207,11 @@ class HelperFunctionsTests(unittest.TestCase):
         pth_file = PthFile()
         pth_file.cleanup(prep=True)
 
-        try:
-            pth_file.create()
+        with pth_file.create():
             dirs = set()
             dirs = site.addsitedir(pth_file.base_dir, dirs)
             dirs = site.addsitedir(pth_file.base_dir, dirs)
             self.pth_file_tests(pth_file)
-        finally:
-            pth_file.cleanup()
 
     def test_addsitedir_dotfile(self):
         pth_file = PthFile('.dotfile')
