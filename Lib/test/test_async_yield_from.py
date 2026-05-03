@@ -1,8 +1,9 @@
 """
-Test suite for PEP 828 implementation.
+Test suite for PEP 828 (`async yield from`)
 
-The tests below were adapted from the 'yield from' tests.
-For more context on any particular test, try searching for an analogue in `test_yield_from`.
+Adapted from `test_yield_from`. Each adapted test mirrors its PEP 380
+counterpart by name with an `_ayf` suffix; `TestParityWithPEP380` enforces
+the 1:1 mapping. Tests with no PEP 380 analogue go in `TestPEP828Extras`.
 """
 
 import unittest
