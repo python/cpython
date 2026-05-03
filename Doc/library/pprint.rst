@@ -70,13 +70,13 @@ Functions
       each item of a sequence will be formatted on a separate line,
       otherwise as many items as will fit within the *width*
       will be formatted on each output line.
-      Incompatible with *expand*.
+      Takes precedence over *expand*.
 
    :param bool expand:
-      If ``True``,
+      If ``True`` (the default),
       opening parentheses and brackets will be followed by a newline and the
       following content will be indented by one level, similar to
-      pretty-printed JSON. Incompatible with *compact*.
+      pretty-printed JSON. Has no effect when *compact* is also ``True``.
 
    :param bool sort_dicts:
       If ``True``, dictionaries will be formatted with
@@ -222,7 +222,9 @@ PrettyPrinter objects
 
    .. versionchanged:: next
       Changed default *indent* from 1 to 4,
-      and default *width* from 80 to 88.
+      default *width* from 80 to 88,
+      and default *expand* from ``False`` to ``True``.
+      *compact* takes precedence over *expand* when both are ``True``.
 
 
 :class:`PrettyPrinter` instances have the following methods:

@@ -169,7 +169,6 @@ class QueryTestCase(unittest.TestCase):
         self.assertRaises(ValueError, pprint.PrettyPrinter, depth=0)
         self.assertRaises(ValueError, pprint.PrettyPrinter, depth=-1)
         self.assertRaises(ValueError, pprint.PrettyPrinter, width=0)
-        self.assertRaises(ValueError, pprint.PrettyPrinter, compact=True, expand=True)
 
     def test_basic(self):
         # Verify .isrecursive() and .isreadable() w/o recursion
@@ -1163,6 +1162,14 @@ frozenset2({0,
  [], [0], [0, 1], [0, 1, 2], [0, 1, 2, 3],
  [0, 1, 2, 3, 4]]"""
         self.assertEqual(_pformat(o, width=47, compact=True), expected)
+
+    def test_compact_without_explicit_expand(self):
+        # Passing compact=True alone should not require also passing
+        # expand=False, even though expand defaults to True.
+        self.assertEqual(
+            pprint.pformat([1, 2, 3, 4, 5], width=10, compact=True),
+            "[   1, 2,\n    3, 4,\n    5]",
+        )
 
     def test_compact_width(self):
         levels = 20

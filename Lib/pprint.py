@@ -159,12 +159,12 @@ class PrettyPrinter:
 
         compact
             If true, several items will be combined in one line.
-            Incompatible with expand mode.
+            Takes precedence over expand mode.
 
         expand
             If true, the output will be formatted similar to
             pretty-printed json.dumps() when ``indent`` is supplied.
-            Incompatible with compact mode.
+            Has no effect if compact mode is also enabled.
 
         sort_dicts
             If true, dict keys are sorted.
@@ -181,8 +181,6 @@ class PrettyPrinter:
             raise ValueError('depth must be > 0')
         if not width:
             raise ValueError('width must be != 0')
-        if compact and expand:
-            raise ValueError('compact and expand are incompatible')
         self._depth = depth
         self._indent_per_level = indent
         self._width = width
@@ -191,7 +189,7 @@ class PrettyPrinter:
         else:
             self._stream = _sys.stdout
         self._compact = bool(compact)
-        self._expand = bool(expand)
+        self._expand = bool(expand) and not self._compact
         self._sort_dicts = sort_dicts
         self._underscore_numbers = underscore_numbers
 
