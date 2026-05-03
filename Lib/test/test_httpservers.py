@@ -576,12 +576,12 @@ class SimpleHTTPServerTestCase(BaseTestCase):
     def tearDown(self):
         try:
             os.chdir(self.cwd)
-            try:
-                shutil.rmtree(self.tempdir)
-            except:
-                pass
         finally:
             super().tearDown()
+        try:
+            shutil.rmtree(self.tempdir)
+        except:
+            pass
 
     def check_status_and_reason(self, response, status, data=None):
         def close_conn():
