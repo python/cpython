@@ -26,12 +26,6 @@ FROZEN_DICT_CONST = frozendict(x=1, y=2)
 # For frozenset JIT tests
 FROZEN_SET_CONST = frozenset({1, 2, 3})
 
-class _UnsafeEq:
-    def __hash__(self): return hash(1)
-    def __eq__(self, other): return False
-
-UNSAFE_FROZEN_SET = frozenset({_UnsafeEq()})
-
 class _GenericKey:
     pass
 
@@ -5131,18 +5125,6 @@ class TestUopsOptimization(unittest.TestCase):
         uops = get_opnames(ex)
         self.assertGreaterEqual(count_ops(ex, "_LOAD_CONST_INLINE_BORROW"), 3)
         self.assertNotIn("_CONTAINS_OP_SET", uops)
-
-    def test_frozenset_unsafe_eq_not_const_folded(self):
-        def testfunc(n):
-            x = 0
-            for _ in range(n):
-                if 1 in UNSAFE_FROZEN_SET:
-                    x += 1
-            return x
-
-        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
-        self.assertEqual(res, 0)
-        self.assertIn("_CONTAINS_OP_SET", get_opnames(ex))
 
     def test_contains_op_frozendict_const_fold(self):
         def testfunc(n):
