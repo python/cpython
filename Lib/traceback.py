@@ -20,6 +20,18 @@ import pathlib
 from contextlib import suppress
 lazy import _colorize
 
+try:
+    from _missing_stdlib_info import _MISSING_STDLIB_MODULE_MESSAGES
+except ImportError:
+    _MISSING_STDLIB_MODULE_MESSAGES = {}
+
+__all__ = ['extract_stack', 'extract_tb', 'format_exception',
+           'format_exception_only', 'format_list', 'format_stack',
+           'format_tb', 'print_exc', 'format_exc', 'print_exception',
+           'print_last', 'print_stack', 'print_tb', 'clear_frames',
+           'FrameSummary', 'StackSummary', 'TracebackException',
+           'walk_stack', 'walk_tb', 'print_list']
+
 
 class _ShutdownTheme:
     """Empty stand-in if `_colorize` cannot be imported during late shutdown."""
@@ -49,17 +61,6 @@ def _safe_can_colorize(*, file=None):
     except ImportError:
         return False
 
-try:
-    from _missing_stdlib_info import _MISSING_STDLIB_MODULE_MESSAGES
-except ImportError:
-    _MISSING_STDLIB_MODULE_MESSAGES = {}
-
-__all__ = ['extract_stack', 'extract_tb', 'format_exception',
-           'format_exception_only', 'format_list', 'format_stack',
-           'format_tb', 'print_exc', 'format_exc', 'print_exception',
-           'print_last', 'print_stack', 'print_tb', 'clear_frames',
-           'FrameSummary', 'StackSummary', 'TracebackException',
-           'walk_stack', 'walk_tb', 'print_list']
 
 #
 # Formatting and printing lists of traceback lines.
