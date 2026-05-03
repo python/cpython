@@ -477,11 +477,11 @@ class PdbPyReplInput:
                 Span(leading_spaces, leading_spaces + len(leading_text) - 1),
                 "soft_keyword"
             )
+            # Redact the command text with spaces so there will be no duplicated
+            # color span generated for it later.
             redact_length = leading_spaces + len(leading_text)
-        else:
-            redact_length = 0
+            buffer = ' ' * redact_length + buffer[redact_length:]
 
-        buffer = ' ' * redact_length + buffer[redact_length:]
         yield from _pyrepl.utils.gen_colors(buffer)
 
 
