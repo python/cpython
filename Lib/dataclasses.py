@@ -6,7 +6,6 @@ import annotationlib
 import abc
 from reprlib import recursive_repr
 lazy import copy
-lazy import inspect
 lazy import re
 
 
@@ -992,6 +991,7 @@ class _AutoDocstring:
         try:
             # In some cases fetching a signature is not possible.
             # But, we surely should not fail in this case.
+            import inspect
             text_sig = str(inspect.signature(
                  cls,
                  annotation_format=annotationlib.Format.FORWARDREF,
@@ -1401,6 +1401,7 @@ def _add_slots(cls, is_frozen, weakref_slot, defined_fields):
 
         # If this is a wrapped function, unwrap it.
         if not isinstance(member, type) and hasattr(member, '__wrapped__'):
+            import inspect
             member = inspect.unwrap(member)
 
         if isinstance(member, types.FunctionType):
