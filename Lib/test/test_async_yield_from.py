@@ -1090,9 +1090,9 @@ class TestInterestingEdgeCases(unittest.TestCase):
     @_async_test
     async def test_close_and_throw_work_ayf(self):
 
-        yielded_first = object()
-        yielded_second = object()
-        returned = object()
+        yielded_first = sentinel("yielded_first")
+        yielded_second = sentinel("yielded_second")
+        returned = sentinel("returned")
 
         async def inner():
             yield yielded_first
@@ -1151,9 +1151,9 @@ class TestInterestingEdgeCases(unittest.TestCase):
     @_async_test
     async def test_close_and_throw_raise_generator_exit_ayf(self):
 
-        yielded_first = object()
-        yielded_second = object()
-        returned = object()
+        yielded_first = sentinel("yielded_first")
+        yielded_second = sentinel("yielded_second")
+        returned = sentinel("returned")
 
         async def inner():
             try:
@@ -1228,9 +1228,9 @@ class TestInterestingEdgeCases(unittest.TestCase):
     @_async_test
     async def test_close_and_throw_raise_stop_iteration_ayf(self):
 
-        yielded_first = object()
-        yielded_second = object()
-        returned = object()
+        yielded_first = sentinel("yielded_first")
+        yielded_second = sentinel("yielded_second")
+        returned = sentinel("returned")
 
         async def inner():
             try:
@@ -1312,9 +1312,9 @@ class TestInterestingEdgeCases(unittest.TestCase):
     @_async_test
     async def test_close_and_throw_raise_base_exception_ayf(self):
 
-        yielded_first = object()
-        yielded_second = object()
-        returned = object()
+        yielded_first = sentinel("yielded_first")
+        yielded_second = sentinel("yielded_second")
+        returned = sentinel("returned")
 
         async def inner():
             try:
@@ -1391,9 +1391,9 @@ class TestInterestingEdgeCases(unittest.TestCase):
     @_async_test
     async def test_close_and_throw_raise_exception_ayf(self):
 
-        yielded_first = object()
-        yielded_second = object()
-        returned = object()
+        yielded_first = sentinel("yielded_first")
+        yielded_second = sentinel("yielded_second")
+        returned = sentinel("returned")
 
         async def inner():
             try:
@@ -1470,9 +1470,9 @@ class TestInterestingEdgeCases(unittest.TestCase):
     @_async_test
     async def test_close_and_throw_yield_ayf(self):
 
-        yielded_first = object()
-        yielded_second = object()
-        returned = object()
+        yielded_first = sentinel("yielded_first")
+        yielded_second = sentinel("yielded_second")
+        returned = sentinel("returned")
 
         async def inner():
             try:
@@ -1541,9 +1541,9 @@ class TestInterestingEdgeCases(unittest.TestCase):
 
     @_async_test
     async def test_close_and_throw_return_ayf(self):
-        yielded_first = object()
-        yielded_second = object()
-        returned = object()
+        yielded_first = sentinel("yielded_first")
+        yielded_second = sentinel("yielded_second")
+        returned = sentinel("returned")
 
         async def inner():
             try:
@@ -1680,9 +1680,9 @@ class TestPEP828Extras(unittest.TestCase):
 
     @_async_test
     async def test_delegate_exception(self):
-        yielded_first = object()
-        yielded_second = object()
-        returned = object()
+        yielded_first = sentinel("yielded_first")
+        yielded_second = sentinel("yielded_second")
+        returned = sentinel("returned")
 
         async def inner():
             try:
