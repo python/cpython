@@ -6,7 +6,7 @@ Test suite for PEP 380 implementation
 adapted from original tests written by Greg Ewing
 see <http://www.cosc.canterbury.ac.nz/greg.ewing/python/yield-from/YieldFrom-Python3.1.2-rev5.zip>
 
-See also `test_async_yield_from'. Where applicable, consider keeping the two test suites in sync.
+See also `test_async_yield_from'.
 """
 
 import unittest
