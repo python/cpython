@@ -1169,7 +1169,7 @@ class TestInterestingEdgeCases(unittest.TestCase):
             g = outer()
             self.assertIs(await anext(g), yielded_first)
             raised = GeneratorExit()
-            # GeneratorExit is suppressed. This is consistent with PEP 342:
+            # GeneratorExit is suppressed. This is analogous to PEP 342:
             # https://peps.python.org/pep-0342/#new-generator-method-close
             await g.aclose()
             await self.assert_stop_iteration(g)
@@ -1182,7 +1182,7 @@ class TestInterestingEdgeCases(unittest.TestCase):
             with self.assertRaises(GeneratorExit) as caught:
                 await g.athrow(thrown)
             # The raised GeneratorExit is suppressed, but the thrown one
-            # propagates. This is consistent with PEP 380:
+            # propagates. This is analogous to PEP 380:
             # https://peps.python.org/pep-0380/#proposal
             self.assertIs(caught.exception, thrown)
             self.assertIsNone(caught.exception.__context__)
@@ -1486,7 +1486,7 @@ class TestInterestingEdgeCases(unittest.TestCase):
         with self.subTest("close"):
             g = outer()
             self.assertIs(await anext(g), yielded_first)
-            # No chaining happens. This is consistent with PEP 342:
+            # No chaining happens. This is analogous to PEP 342:
             # https://peps.python.org/pep-0342/#new-generator-method-close
             with self.assert_generator_ignored_generator_exit() as caught:
                 await g.aclose()
@@ -1497,7 +1497,7 @@ class TestInterestingEdgeCases(unittest.TestCase):
             g = outer()
             self.assertIs(await anext(g), yielded_first)
             thrown = GeneratorExit()
-            # No chaining happens. This is consistent with PEP 342:
+            # No chaining happens. This is analogous to PEP 342:
             # https://peps.python.org/pep-0342/#new-generator-method-close
             with self.assert_generator_ignored_generator_exit() as caught:
                 await g.athrow(thrown)
@@ -1558,7 +1558,7 @@ class TestInterestingEdgeCases(unittest.TestCase):
         with self.subTest("close"):
             g = outer()
             self.assertIs(await anext(g), yielded_first)
-            # StopAsyncIteration is suppressed. This is consistent with PEP 342:
+            # StopAsyncIteration is suppressed. This is analogous to PEP 342:
             # https://peps.python.org/pep-0342/#new-generator-method-close
             await g.aclose()
             await self.assert_stop_iteration(g)
@@ -1567,7 +1567,7 @@ class TestInterestingEdgeCases(unittest.TestCase):
             g = outer()
             self.assertIs(await anext(g), yielded_first)
             thrown = GeneratorExit()
-            # StopAsyncIteration is suppressed. This is consistent with PEP 342:
+            # StopAsyncIteration is suppressed. This is analogous to PEP 342:
             # https://peps.python.org/pep-0342/#new-generator-method-close
             with self.assertRaises(GeneratorExit) as caught:
                 await g.athrow(thrown)
