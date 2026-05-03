@@ -1631,8 +1631,7 @@ class TestParityWithPEP380(unittest.TestCase):
         tests belong in a separate TestCase class.
         """
         def test_methods(cls):
-            return {n for n in dir(cls)
-                    if n.startswith("test_") and callable(getattr(cls, n))}
+            return {n for n in dir(cls) if n.startswith("test_")}
 
         expected = {n + suffix for n in test_methods(base_class)}
         actual = test_methods(variant_class)
