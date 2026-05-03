@@ -49,6 +49,20 @@ _Py_ReachedRecursionLimitWithMargin(PyThreadState *tstate, int margin_count)
 #endif
 }
 
+void
+_Py_EnterRecursiveCallUnchecked(PyThreadState *tstate)
+{
+    uintptr_t here_addr = _Py_get_machine_stack_pointer();
+    _PyThreadStateImpl *_tstate = (_PyThreadStateImpl *)tstate;
+#if _Py_STACK_GROWS_DOWN
+    if (here_addr < _tstate->c_stack_hard_limit) {
+#else
+    if (here_addr > _tstate->c_stack_hard_limit) {
+#endif
+        Py_FatalError("Unchecked stack overflow.");
+    }
+}
+
 #if defined(__s390x__)
 #  define Py_C_STACK_SIZE 320000
 #elif defined(_WIN32)
@@ -264,7 +278,7 @@ PyUnstable_ThreadState_ResetStackProtection(PyThreadState *tstate)
 
 
 /* The function _Py_EnterRecursiveCallTstate() only calls _Py_CheckRecursiveCall()
-   if the stack pointer is beyond c_stack_soft_limit. */
+   if the stack pointer is between the stack base and c_stack_hard_limit. */
 int
 _Py_CheckRecursiveCall(PyThreadState *tstate, const char *where)
 {
@@ -273,21 +287,16 @@ _Py_CheckRecursiveCall(PyThreadState *tstate, const char *where)
     assert(_tstate->c_stack_soft_limit != 0);
     assert(_tstate->c_stack_hard_limit != 0);
 #if _Py_STACK_GROWS_DOWN
+    assert(here_addr >= _tstate->c_stack_hard_limit - _PyOS_STACK_MARGIN_BYTES);
     if (here_addr < _tstate->c_stack_hard_limit) {
-        if (here_addr < _tstate->c_stack_hard_limit - _PyOS_STACK_MARGIN_BYTES) {
-            // Far out of bounds -- Assume stack switching has occurred
-            return 0;
-        }
+        /* Overflowing while handling an overflow. Give up. */
         int kbytes_used = (int)(_tstate->c_stack_top - here_addr)/1024;
 #else
+    assert(here_addr <= _tstate->c_stack_hard_limit + _PyOS_STACK_MARGIN_BYTES);
     if (here_addr > _tstate->c_stack_hard_limit) {
-        if (here_addr > _tstate->c_stack_hard_limit + _PyOS_STACK_MARGIN_BYTES) {
-            // Far out of bounds -- Assume stack switching has occurred
-            return 0;
-        }
+        /* Overflowing while handling an overflow. Give up. */
         int kbytes_used = (int)(here_addr - _tstate->c_stack_top)/1024;
 #endif
-        /* Too much stack used to safely raise an exception. Give up. */
         char buffer[80];
         snprintf(buffer, 80, "Unrecoverable stack overflow (used %d kB)%s", kbytes_used, where);
         Py_FatalError(buffer);
@@ -800,7 +809,7 @@ cleanup:
 }
 
 PyObject *
-_Py_BuiltinCallFast_StackRefSteal(
+_Py_BuiltinCallFast_StackRef(
     _PyStackRef callable,
     _PyStackRef *arguments,
     int total_args)
@@ -808,8 +817,7 @@ _Py_BuiltinCallFast_StackRefSteal(
     PyObject *res;
     STACKREFS_TO_PYOBJECTS(arguments, total_args, args_o);
     if (CONVERSION_FAILED(args_o)) {
-        res = NULL;
-        goto cleanup;
+        return NULL;
     }
     PyObject *callable_o = PyStackRef_AsPyObjectBorrow(callable);
     PyCFunction cfunc = PyCFunction_GET_FUNCTION(callable_o);
@@ -820,20 +828,11 @@ _Py_BuiltinCallFast_StackRefSteal(
     );
     STACKREFS_TO_PYOBJECTS_CLEANUP(args_o);
     assert((res != NULL) ^ (PyErr_Occurred() != NULL));
-cleanup:
-    // arguments is a pointer into the GC visible stack,
-    // so we must NULL out values as we clear them.
-    for (int i = total_args-1; i >= 0; i--) {
-        _PyStackRef tmp = arguments[i];
-        arguments[i] = PyStackRef_NULL;
-        PyStackRef_CLOSE(tmp);
-    }
-    PyStackRef_CLOSE(callable);
     return res;
 }
 
 PyObject *
-_Py_BuiltinCallFastWithKeywords_StackRefSteal(
+_Py_BuiltinCallFastWithKeywords_StackRef(
     _PyStackRef callable,
     _PyStackRef *arguments,
     int total_args)
@@ -841,8 +840,7 @@ _Py_BuiltinCallFastWithKeywords_StackRefSteal(
     PyObject *res;
     STACKREFS_TO_PYOBJECTS(arguments, total_args, args_o);
     if (CONVERSION_FAILED(args_o)) {
-        res = NULL;
-        goto cleanup;
+        return NULL;
     }
     PyObject *callable_o = PyStackRef_AsPyObjectBorrow(callable);
     PyCFunctionFastWithKeywords cfunc =
@@ -850,22 +848,13 @@ _Py_BuiltinCallFastWithKeywords_StackRefSteal(
     res = cfunc(PyCFunction_GET_SELF(callable_o), args_o, total_args, NULL);
     STACKREFS_TO_PYOBJECTS_CLEANUP(args_o);
     assert((res != NULL) ^ (PyErr_Occurred() != NULL));
-cleanup:
-    // arguments is a pointer into the GC visible stack,
-    // so we must NULL out values as we clear them.
-    for (int i = total_args-1; i >= 0; i--) {
-        _PyStackRef tmp = arguments[i];
-        arguments[i] = PyStackRef_NULL;
-        PyStackRef_CLOSE(tmp);
-    }
-    PyStackRef_CLOSE(callable);
     return res;
 }
 
 PyObject *
-_PyCallMethodDescriptorFast_StackRefSteal(
+_PyCallMethodDescriptorFast_StackRef(
     _PyStackRef callable,
-    PyMethodDef *meth,
+    PyCFunctionFast cfunc,
     PyObject *self,
     _PyStackRef *arguments,
     int total_args)
@@ -873,32 +862,20 @@ _PyCallMethodDescriptorFast_StackRefSteal(
     PyObject *res;
     STACKREFS_TO_PYOBJECTS(arguments, total_args, args_o);
     if (CONVERSION_FAILED(args_o)) {
-        res = NULL;
-        goto cleanup;
+        return NULL;
     }
-    assert(((PyMethodDescrObject *)PyStackRef_AsPyObjectBorrow(callable))->d_method == meth);
     assert(self == PyStackRef_AsPyObjectBorrow(arguments[0]));
 
-    PyCFunctionFast cfunc = _PyCFunctionFast_CAST(meth->ml_meth);
     res = cfunc(self, (args_o + 1), total_args - 1);
     STACKREFS_TO_PYOBJECTS_CLEANUP(args_o);
     assert((res != NULL) ^ (PyErr_Occurred() != NULL));
-cleanup:
-    // arguments is a pointer into the GC visible stack,
-    // so we must NULL out values as we clear them.
-    for (int i = total_args-1; i >= 0; i--) {
-        _PyStackRef tmp = arguments[i];
-        arguments[i] = PyStackRef_NULL;
-        PyStackRef_CLOSE(tmp);
-    }
-    PyStackRef_CLOSE(callable);
     return res;
 }
 
 PyObject *
-_PyCallMethodDescriptorFastWithKeywords_StackRefSteal(
+_PyCallMethodDescriptorFastWithKeywords_StackRef(
     _PyStackRef callable,
-    PyMethodDef *meth,
+    PyCFunctionFastWithKeywords cfunc,
     PyObject *self,
     _PyStackRef *arguments,
     int total_args)
@@ -906,31 +883,18 @@ _PyCallMethodDescriptorFastWithKeywords_StackRefSteal(
     PyObject *res;
     STACKREFS_TO_PYOBJECTS(arguments, total_args, args_o);
     if (CONVERSION_FAILED(args_o)) {
-        res = NULL;
-        goto cleanup;
+        return NULL;
     }
-    assert(((PyMethodDescrObject *)PyStackRef_AsPyObjectBorrow(callable))->d_method == meth);
     assert(self == PyStackRef_AsPyObjectBorrow(arguments[0]));
 
-    PyCFunctionFastWithKeywords cfunc =
-        _PyCFunctionFastWithKeywords_CAST(meth->ml_meth);
     res = cfunc(self, (args_o + 1), total_args-1, NULL);
     STACKREFS_TO_PYOBJECTS_CLEANUP(args_o);
     assert((res != NULL) ^ (PyErr_Occurred() != NULL));
-cleanup:
-    // arguments is a pointer into the GC visible stack,
-    // so we must NULL out values as we clear them.
-    for (int i = total_args-1; i >= 0; i--) {
-        _PyStackRef tmp = arguments[i];
-        arguments[i] = PyStackRef_NULL;
-        PyStackRef_CLOSE(tmp);
-    }
-    PyStackRef_CLOSE(callable);
     return res;
 }
 
 PyObject *
-_Py_CallBuiltinClass_StackRefSteal(
+_Py_CallBuiltinClass_StackRef(
     _PyStackRef callable,
     _PyStackRef *arguments,
     int total_args)
@@ -938,22 +902,12 @@ _Py_CallBuiltinClass_StackRefSteal(
     PyObject *res;
     STACKREFS_TO_PYOBJECTS(arguments, total_args, args_o);
     if (CONVERSION_FAILED(args_o)) {
-        res = NULL;
-        goto cleanup;
+        return NULL;
     }
     PyTypeObject *tp = (PyTypeObject *)PyStackRef_AsPyObjectBorrow(callable);
     res = tp->tp_vectorcall((PyObject *)tp, args_o, total_args | PY_VECTORCALL_ARGUMENTS_OFFSET, NULL);
     STACKREFS_TO_PYOBJECTS_CLEANUP(args_o);
     assert((res != NULL) ^ (PyErr_Occurred() != NULL));
-cleanup:
-    // arguments is a pointer into the GC visible stack,
-    // so we must NULL out values as we clear them.
-    for (int i = total_args-1; i >= 0; i--) {
-        _PyStackRef tmp = arguments[i];
-        arguments[i] = PyStackRef_NULL;
-        PyStackRef_CLOSE(tmp);
-    }
-    PyStackRef_CLOSE(callable);
     return res;
 }
 
@@ -1161,7 +1115,7 @@ _PyStackRef
 _PyEval_GetIter(_PyStackRef iterable, _PyStackRef *index_or_null, int yield_from)
 {
     PyTypeObject *tp = PyStackRef_TYPE(iterable);
-    if (tp == &PyTuple_Type || tp == &PyList_Type) {
+    if (tp->_tp_iteritem != NULL) {
         /* Leave iterable on stack and pushed tagged 0 */
         *index_or_null = PyStackRef_TagInt(0);
         return iterable;
@@ -1191,6 +1145,19 @@ _PyEval_GetIter(_PyStackRef iterable, _PyStackRef *index_or_null, int yield_from
     }
     return PyStackRef_FromPyObjectSteal(iter_o);
 }
+
+Py_NO_INLINE int
+_Py_ReachedRecursionLimit(PyThreadState *tstate)  {
+    uintptr_t here_addr = _Py_get_machine_stack_pointer();
+    _PyThreadStateImpl *_tstate = (_PyThreadStateImpl *)tstate;
+    assert(_tstate->c_stack_hard_limit != 0);
+#if _Py_STACK_GROWS_DOWN
+    return here_addr <= _tstate->c_stack_soft_limit;
+#else
+    return here_addr >= _tstate->c_stack_soft_limit;
+#endif
+}
+
 
 #if (defined(__GNUC__) && __GNUC__ >= 10 && !defined(__clang__)) && defined(__x86_64__)
 /*
@@ -1338,7 +1305,7 @@ early_exit:
 }
 #ifdef _Py_TIER2
 #ifdef _Py_JIT
-_PyJitEntryFuncPtr _Py_jit_entry = _Py_LazyJitShim;
+_PyJitEntryFuncPtr _Py_jit_entry = _PyJIT_Entry;
 #else
 _PyJitEntryFuncPtr _Py_jit_entry = _PyTier2Interpreter;
 #endif
@@ -2439,15 +2406,16 @@ void
 _PyEval_MonitorRaise(PyThreadState *tstate, _PyInterpreterFrame *frame,
               _Py_CODEUNIT *instr)
 {
-    if (no_tools_for_global_event(tstate, PY_MONITORING_EVENT_RAISE)) {
+    if (no_tools_for_local_event(tstate, frame, PY_MONITORING_EVENT_RAISE)) {
         return;
     }
     do_monitor_exc(tstate, frame, instr, PY_MONITORING_EVENT_RAISE);
 }
 
 bool
-_PyEval_NoToolsForUnwind(PyThreadState *tstate) {
-    return no_tools_for_global_event(tstate, PY_MONITORING_EVENT_PY_UNWIND);
+_PyEval_NoToolsForUnwind(PyThreadState *tstate, _PyInterpreterFrame *frame)
+{
+    return no_tools_for_local_event(tstate, frame, PY_MONITORING_EVENT_PY_UNWIND);
 }
 
 
@@ -3441,7 +3409,7 @@ _PyEval_FormatKwargsError(PyThreadState *tstate, PyObject *func, PyObject *kwarg
         _PyErr_Format(
             tstate, PyExc_TypeError,
             "%V got multiple values for keyword argument '%S'",
-            funcstr, "finction", dupkey);
+            funcstr, "function", dupkey);
         Py_XDECREF(funcstr);
         return;
     }
@@ -3730,36 +3698,24 @@ _PyEval_LoadName(PyThreadState *tstate, _PyInterpreterFrame *frame, PyObject *na
     return value;
 }
 
-static _PyStackRef
-foriter_next(PyObject *seq, _PyStackRef index)
-{
-    assert(PyStackRef_IsTaggedInt(index));
-    assert(PyTuple_CheckExact(seq) || PyList_CheckExact(seq));
-    intptr_t i = PyStackRef_UntagInt(index);
-    if (PyTuple_CheckExact(seq)) {
-        size_t size = PyTuple_GET_SIZE(seq);
-        if ((size_t)i >= size) {
-            return PyStackRef_NULL;
-        }
-        return PyStackRef_FromPyObjectNew(PyTuple_GET_ITEM(seq, i));
-    }
-    PyObject *item = _PyList_GetItemRef((PyListObject *)seq, i);
-    if (item == NULL) {
-        return PyStackRef_NULL;
-    }
-    return PyStackRef_FromPyObjectSteal(item);
-}
-
 _PyStackRef _PyForIter_VirtualIteratorNext(PyThreadState* tstate, _PyInterpreterFrame* frame, _PyStackRef iter, _PyStackRef* index_ptr)
 {
     PyObject *iter_o = PyStackRef_AsPyObjectBorrow(iter);
     _PyStackRef index = *index_ptr;
     if (PyStackRef_IsTaggedInt(index)) {
-        *index_ptr = PyStackRef_IncrementTaggedIntNoOverflow(index);
-        return foriter_next(iter_o, index);
+        intptr_t i = PyStackRef_UntagInt(index);
+        assert(i >= 0);
+        _PyObjectIndexPair next_index = Py_TYPE(iter_o)->_tp_iteritem(iter_o, i);
+        i = next_index.index;
+        PyObject *next = next_index.object;
+        if (next == NULL) {
+            return i < 0 ? PyStackRef_ERROR : PyStackRef_NULL;
+        }
+        *index_ptr = PyStackRef_TagInt(i);
+        return PyStackRef_FromPyObjectSteal(next);
     }
-    PyObject *next_o = (*Py_TYPE(iter_o)->tp_iternext)(iter_o);
-    if (next_o == NULL) {
+    PyObject *next = (*Py_TYPE(iter_o)->tp_iternext)(iter_o);
+    if (next == NULL) {
         if (_PyErr_Occurred(tstate)) {
             if (_PyErr_ExceptionMatches(tstate, PyExc_StopIteration)) {
                 _PyEval_MonitorRaise(tstate, frame, frame->instr_ptr);
@@ -3771,7 +3727,7 @@ _PyStackRef _PyForIter_VirtualIteratorNext(PyThreadState* tstate, _PyInterpreter
         }
         return PyStackRef_NULL;
     }
-    return PyStackRef_FromPyObjectSteal(next_o);
+    return PyStackRef_FromPyObjectSteal(next);
 }
 
 /* Check if a 'cls' provides the given special method. */

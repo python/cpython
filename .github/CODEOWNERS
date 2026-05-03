@@ -100,12 +100,12 @@ Lib/test/test_build_details.py          @FFY00
 InternalDocs/                 @AA-Turner
 
 # Tools, Configuration, etc
-Doc/Makefile                  @AA-Turner @hugovk
-Doc/_static/                  @AA-Turner @hugovk
-Doc/conf.py                   @AA-Turner @hugovk
-Doc/make.bat                  @AA-Turner @hugovk
-Doc/requirements.txt          @AA-Turner @hugovk
-Doc/tools/                    @AA-Turner @hugovk
+Doc/Makefile                  @AA-Turner @hugovk @StanFromIreland
+Doc/_static/                  @AA-Turner @hugovk @StanFromIreland
+Doc/conf.py                   @AA-Turner @hugovk @StanFromIreland
+Doc/make.bat                  @AA-Turner @hugovk @StanFromIreland
+Doc/requirements.txt          @AA-Turner @hugovk @StanFromIreland
+Doc/tools/                    @AA-Turner @hugovk @StanFromIreland
 
 # PR Previews
 .readthedocs.yml              @AA-Turner

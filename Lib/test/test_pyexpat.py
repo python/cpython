@@ -510,6 +510,34 @@ class HandlerExceptionTest(unittest.TestCase):
             self.assertIn('call_with_frame("StartElement"',
                           entries[1].line)
 
+    def test_invalid_NotStandalone(self):
+        parser = expat.ParserCreate()
+        parser.NotStandaloneHandler = mock.Mock(return_value="bad value")
+        parser.ElementDeclHandler = lambda _1, _2: None
+
+        payload = b"""\
+<!DOCTYPE quotations SYSTEM "quotations.dtd" [<!ELEMENT root ANY>]><root/>
+"""
+        with self.assertRaises(TypeError) as cm:
+            parser.Parse(payload, True)
+        parser.NotStandaloneHandler.assert_called_once()
+
+        notes = ["invalid 'NotStandalone' event handler return value"]
+        self.assertEqual(cm.exception.__notes__, notes)
+
+    def test_invalid_ExternalEntityRefHandler(self):
+        parser = expat.ParserCreate()
+        parser.UseForeignDTD()
+        parser.SetParamEntityParsing(expat.XML_PARAM_ENTITY_PARSING_ALWAYS)
+        parser.ExternalEntityRefHandler = mock.Mock(return_value=None)
+
+        with self.assertRaises(TypeError) as cm:
+            parser.Parse(b"<?xml version='1.0'?><element/>", True)
+        parser.ExternalEntityRefHandler.assert_called_once()
+
+        notes = ["invalid 'ExternalEntityRef' event handler return value"]
+        self.assertEqual(cm.exception.__notes__, notes)
+
 
 # Test Current* members:
 class PositionTest(unittest.TestCase):
@@ -707,7 +735,7 @@ class ElementDeclHandlerTest(unittest.TestCase):
     def test_deeply_nested_content_model(self):
         # This should raise a RecursionError and not crash.
         # See https://github.com/python/cpython/issues/145986.
-        N = 800_000
+        N = 500_000
         data = (
             b'<!DOCTYPE root [\n<!ELEMENT root '
             + b'(a, ' * N + b'a' + b')' * N

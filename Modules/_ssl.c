@@ -30,6 +30,7 @@
 #include "pycore_long.h"          // _PyLong_UnsignedLongLong_Converter()
 #include "pycore_pyerrors.h"      // _PyErr_ChainExceptions1()
 #include "pycore_time.h"          // _PyDeadline_Init()
+#include "pycore_tuple.h"         // _PyTuple_FromPair
 
 /* Include symbols from _socket module */
 #include "socketmodule.h"
@@ -152,16 +153,18 @@ static void _PySSLFixErrno(void) {
 
 /* Include generated data (error codes) */
 /* See Tools/ssl/make_ssl_data.py for notes on adding a new version. */
-#if (OPENSSL_VERSION_NUMBER >= 0x30401000L)
-#include "_ssl_data_36.h"
+#if (OPENSSL_VERSION_NUMBER >= 0x40000000L)
+#  include "_ssl_data_40.h"
+#elif (OPENSSL_VERSION_NUMBER >= 0x30401000L)
+#  include "_ssl_data_36.h"
 #elif (OPENSSL_VERSION_NUMBER >= 0x30100000L)
-#include "_ssl_data_340.h"
+#  include "_ssl_data_340.h"
 #elif (OPENSSL_VERSION_NUMBER >= 0x30000000L)
-#include "_ssl_data_300.h"
+#  include "_ssl_data_300.h"
 #elif (OPENSSL_VERSION_NUMBER >= 0x10101000L)
-#include "_ssl_data_111.h"
+#  include "_ssl_data_111.h"
 #else
-#error Unsupported OpenSSL version
+#  error Unsupported OpenSSL version
 #endif
 
 #if (OPENSSL_VERSION_NUMBER >= 0x40000000L)
@@ -6796,7 +6799,7 @@ do {                                                                        \
     }
 
     /* ssl.CertificateError used to be a subclass of ValueError */
-    bases = PyTuple_Pack(2, state->PySSLErrorObject, PyExc_ValueError);
+    bases = _PyTuple_FromPair(state->PySSLErrorObject, PyExc_ValueError);
     if (bases == NULL) {
         goto error;
     }

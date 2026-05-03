@@ -25,9 +25,13 @@ def def_and_token(mod):
     )
 
 class TestModFromSlotsAndSpec(unittest.TestCase):
-    @requires_gil_enabled("empty slots re-enable GIL")
     def test_empty(self):
-        mod = _testcapi.module_from_slots_empty(FakeSpec())
+        with self.assertRaises(SystemError):
+            _testcapi.module_from_slots_empty(FakeSpec())
+
+    @requires_gil_enabled("minimal slots re-enable GIL")
+    def test_minimal(self):
+        mod = _testcapi.module_from_slots_minimal(FakeSpec())
         self.assertIsInstance(mod, types.ModuleType)
         self.assertEqual(def_and_token(mod), (0, 0))
         self.assertEqual(mod.__name__, 'testmod')
@@ -158,6 +162,16 @@ class TestModFromSlotsAndSpec(unittest.TestCase):
                     _testcapi.module_from_slots_null_slot(spec)
                 self.assertIn(name, str(cm.exception))
                 self.assertIn("NULL", str(cm.exception))
+
+    def test_bad_abiinfo(self):
+        """Slots that incompatible ABI is rejected"""
+        with self.assertRaises(ImportError) as cm:
+            _testcapi.module_from_bad_abiinfo(FakeSpec())
+
+    def test_multiple_abiinfo(self):
+        """Slots that Py_mod_abiinfo can be repeated"""
+        mod = _testcapi.module_from_multiple_abiinfo(FakeSpec())
+        self.assertEqual(mod.__name__, 'testmod')
 
     def test_def_multiple_exec(self):
         """PyModule_Exec runs all exec slots of PyModuleDef-defined module"""

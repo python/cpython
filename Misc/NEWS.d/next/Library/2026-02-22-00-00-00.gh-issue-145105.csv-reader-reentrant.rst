@@ -1,0 +1,2 @@
+Fix crash in :mod:`csv` reader when iterating with a re-entrant iterator
+that calls :func:`next` on the same reader from within ``__next__``.

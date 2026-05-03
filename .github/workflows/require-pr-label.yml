@@ -4,6 +4,9 @@ on:
   pull_request:
     types: [opened, reopened, labeled, unlabeled, synchronize]
 
+permissions:
+  contents: read
+
 jobs:
   label-dnm:
     name: DO-NOT-MERGE

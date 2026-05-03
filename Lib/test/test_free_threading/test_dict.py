@@ -245,6 +245,29 @@ class TestDict(TestCase):
         with threading_helper.start_threads([t1, t2]):
             pass
 
+    @unittest.skipIf(_testcapi is None, "requires _testcapi")
+    def test_racing_watch_unwatch_dict(self):
+        # gh-148393: race between PyDict_Watch / PyDict_Unwatch
+        # and concurrent dict mutation reading _ma_watcher_tag.
+        wid = _testcapi.add_dict_watcher(0)
+        try:
+            d = {}
+            ITERS = 1000
+
+            def writer():
+                for i in range(ITERS):
+                    d[i] = i
+                    del d[i]
+
+            def watcher():
+                for _ in range(ITERS):
+                    _testcapi.watch_dict(wid, d)
+                    _testcapi.unwatch_dict(wid, d)
+
+            threading_helper.run_concurrently([writer, watcher])
+        finally:
+            _testcapi.clear_dict_watcher(wid)
+
     def test_racing_dict_update_and_method_lookup(self):
         # gh-144295: test race between dict modifications and method lookups.
         # Uses BytesIO because the race requires a type without Py_TPFLAGS_INLINE_VALUES

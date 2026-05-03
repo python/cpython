@@ -13,6 +13,7 @@
 #include "pycore_long.h"          // _PyLong_GetOne()
 #include "pycore_object.h"        // _PyObject_Init()
 #include "pycore_time.h"          // _PyTime_ObjectToTime_t()
+#include "pycore_tuple.h"         // _PyTuple_FromPair
 #include "pycore_unicodeobject.h" // _PyUnicode_Copy()
 #include "pycore_initconfig.h"    // _PyStatus_OK()
 #include "pycore_pyatomic_ft_wrappers.h"
@@ -2692,7 +2693,7 @@ delta_divmod(PyObject *left, PyObject *right)
         Py_DECREF(divmod);
         return NULL;
     }
-    result = PyTuple_Pack(2, PyTuple_GET_ITEM(divmod, 0), delta);
+    result = _PyTuple_FromPair(PyTuple_GET_ITEM(divmod, 0), delta);
     Py_DECREF(delta);
     Py_DECREF(divmod);
     return result;
@@ -4496,7 +4497,7 @@ timezone_getinitargs(PyObject *op, PyObject *Py_UNUSED(dummy))
     PyDateTime_TimeZone *self = PyTimeZone_CAST(op);
     if (self->name == NULL)
         return PyTuple_Pack(1, self->offset);
-    return PyTuple_Pack(2, self->offset, self->name);
+    return _PyTuple_FromPair(self->offset, self->name);
 }
 
 static PyMethodDef timezone_methods[] = {
@@ -5247,7 +5248,7 @@ time_getstate(PyDateTime_Time *self, int proto)
         if (! HASTZINFO(self) || self->tzinfo == Py_None)
             result = PyTuple_Pack(1, basestate);
         else
-            result = PyTuple_Pack(2, basestate, self->tzinfo);
+            result = _PyTuple_FromPair(basestate, self->tzinfo);
         Py_DECREF(basestate);
     }
     return result;
@@ -7169,7 +7170,7 @@ datetime_getstate(PyDateTime_DateTime *self, int proto)
         if (! HASTZINFO(self) || self->tzinfo == Py_None)
             result = PyTuple_Pack(1, basestate);
         else
-            result = PyTuple_Pack(2, basestate, self->tzinfo);
+            result = _PyTuple_FromPair(basestate, self->tzinfo);
         Py_DECREF(basestate);
     }
     return result;

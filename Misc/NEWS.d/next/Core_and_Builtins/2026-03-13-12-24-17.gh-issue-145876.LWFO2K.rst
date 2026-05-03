@@ -1,3 +1,0 @@
-:exc:`AttributeError`\ s and :exc:`KeyError`\ s raised in :meth:`!keys` or :meth:`!__getitem__`
-during dictionary unpacking (``{**mymapping}`` or ``func(**mymapping)``) are
-no longer masked by :exc:`TypeError`.

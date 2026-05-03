@@ -4674,7 +4674,9 @@ class ThreadedTests(unittest.TestCase):
                                            sni_name='supermessage')
 
             # Allow for flexible libssl error messages.
-            regex = "(SSLV3_ALERT_HANDSHAKE_FAILURE|NO_PRIVATE_VALUE)"
+            regex = ("(TLS_ALERT_HANDSHAKE_FAILURE"
+                     "|SSLV3_ALERT_HANDSHAKE_FAILURE"
+                     "|NO_PRIVATE_VALUE)")
             self.assertRegex(cm.exception.reason, regex)
             self.assertEqual(catch.unraisable.exc_type, ZeroDivisionError)
 
@@ -5566,15 +5568,20 @@ class TestPreHandshakeClose(unittest.TestCase):
             return  # Expect the full test setup to always work on Linux.
         if (isinstance(err, ConnectionResetError) or
             (isinstance(err, OSError) and err.errno == errno.EINVAL) or
-            re.search('wrong.version.number', str(getattr(err, "reason", "")), re.I)):
+            re.search('wrong.version.number', str(getattr(err, "reason", "")), re.I) or
+            re.search('record.layer.failure', str(getattr(err, "reason", "")), re.I)
+        ):
             # On Windows the TCP RST leads to a ConnectionResetError
             # (ECONNRESET) which Linux doesn't appear to surface to userspace.
             # If wrap_socket() winds up on the "if connected:" path and doing
-            # the actual wrapping... we get an SSLError from OpenSSL. Typically
-            # WRONG_VERSION_NUMBER. While appropriate, neither is the scenario
-            # we're specifically trying to test. The way this test is written
-            # is known to work on Linux. We'll skip it anywhere else that it
-            # does not present as doing so.
+            # the actual wrapping... we get an SSLError from OpenSSL. This is
+            # typically WRONG_VERSION_NUMBER. The same happens on iOS, but
+            # RECORD_LAYER_FAILURE is the error.
+            #
+            # While appropriate, neither is the scenario we're specifically
+            # trying to test. The way this test is written is known to work on
+            # Linux. We'll skip it anywhere else that it does not present as
+            # doing so.
             try:
                 self.skipTest(f"Could not recreate conditions on {sys.platform}:"
                               f" {err=}")
