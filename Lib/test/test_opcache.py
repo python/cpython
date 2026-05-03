@@ -1,3 +1,4 @@
+import enum
 import copy
 import pickle
 import dis
@@ -2113,6 +2114,45 @@ class TestSpecializer(TestBase):
         load_enum_member()
         self.assert_specialized(load_enum_member,
                                 "LOAD_ATTR_CLASS_WITH_METACLASS_CHECK")
+
+    @cpython_only
+    @requires_specialization
+    def test_load_attr_class_with_metaclass_check_149239(self):
+        # LOAD_ATTR_CLASS_WITH_METACLASS_CHECK must check
+        # for `__class__` writes, see gh-149239
+        class ColorMeta(enum.EnumType):
+            pass
+
+        class Color(enum.IntEnum, metaclass=ColorMeta):
+            RED = 1
+
+        red = Color.RED
+
+        def f1():
+            for _ in range(_testinternalcapi.SPECIALIZATION_THRESHOLD):
+                assert Color.RED == 1
+
+        f1()
+        self.assert_specialized(f1,
+                                "LOAD_ATTR_CLASS_WITH_METACLASS_CHECK")
+
+        # Reassign the `__class__` attr to deopt:
+        class Descriptor(enum.IntEnum):
+            RED = 1
+
+            def __get__(self, obj, owner):
+                return "descr"
+
+        red.__class__ = Descriptor
+
+        def f2():
+            for _ in range(_testinternalcapi.SPECIALIZATION_THRESHOLD):
+                assert Color.RED == 'descr'
+
+        f2()
+        self.assert_no_opcode(f2,
+                              "LOAD_ATTR_CLASS_WITH_METACLASS_CHECK")
+
 
 
 if __name__ == "__main__":
