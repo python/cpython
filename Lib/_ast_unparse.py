@@ -16,7 +16,7 @@ class _Precedence:
 
     NAMED_EXPR = auto()      # <target> := <expr1>
     TUPLE = auto()           # <expr1>, <expr2>
-    YIELD = auto()           # 'yield', 'yield from'
+    YIELD = auto()           # 'yield', 'yield from', 'async yield from'
     TEST = auto()            # 'if'-'else', 'lambda'
     OR = auto()              # 'or'
     AND = auto()             # 'and'
@@ -329,6 +329,14 @@ class Unparser(NodeVisitor):
     def visit_YieldFrom(self, node):
         with self.require_parens(_Precedence.YIELD, node):
             self.write("yield from ")
+            if not node.value:
+                raise ValueError("Node can't be used without a value attribute.")
+            self.set_precedence(_Precedence.ATOM, node.value)
+            self.traverse(node.value)
+
+    def visit_AsyncYieldFrom(self, node):
+        with self.require_parens(_Precedence.YIELD, node):
+            self.write("async yield from ")
             if not node.value:
                 raise ValueError("Node can't be used without a value attribute.")
             self.set_precedence(_Precedence.ATOM, node.value)
