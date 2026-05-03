@@ -1150,7 +1150,7 @@ _MissingWhitespaceAfterEWDefect = errors.InvalidHeaderDefect(
     )
 
 _deprecated__wsp_splitter = re.compile(r'([{}]+)'.format(''.join(WSP))).split
-_non_atom_end_matcher = re.compile(r"[^{}]+".format(
+_deprecated__non_atom_end_matcher = re.compile(r"[^{}]+".format(
     re.escape(''.join(ATOM_ENDS)))).match
 _non_token_end_matcher = re.compile(r"[^{}]+".format(
     re.escape(''.join(TOKEN_ENDS)))).match
@@ -1605,14 +1605,14 @@ def get_atext_sequence(value, start):
             )
     return atext, end
 
-@_deprecate('get_atext_sequence')
-def get_atext(value):
+@_replaced_with('get_atext_sequence')
+def _deprecated_get_atext(value):
     """atext = <matches _atext_matcher>
 
     We allow any non-ATOM_ENDS in atext, but add an InvalidATextDefect to
     the token's defects list if we find non-atext characters.
     """
-    m = _non_atom_end_matcher(value)
+    m = _deprecated__non_atom_end_matcher(value)
     if not m:
         raise errors.HeaderParseError(
             "expected atext but found '{}'".format(value))
