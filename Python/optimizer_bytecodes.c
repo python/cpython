@@ -1453,24 +1453,23 @@ dummy_func(void) {
     }
 
     op(_FOR_ITER_TIER_TWO, (iter, null_or_index -- iter, null_or_index, next)) {
+        bool definite = true;
         PyTypeObject *type = sym_get_type(iter);
-        if (type != NULL && type != &PyGen_Type && type->tp_iternext != NULL) {
-            ADD_OP(_ITER_NEXT_INLINE, 0, (uintptr_t)type->tp_iternext);
+        if (type == NULL) {
+            type = sym_get_probable_type(iter);
+            definite = false;
         }
-        else if (!sym_has_type(iter)) {
-            PyTypeObject *probable = sym_get_probable_type(iter);
-            if (probable != NULL &&
-                probable != &PyGen_Type &&
-                probable->tp_iternext != NULL) {
-                PyType_Watch(TYPE_WATCHER_ID, (PyObject *)probable);
-                _Py_BloomFilter_Add(dependencies, probable);
-                sym_set_type(iter, probable);
+        if (type != NULL && type != &PyGen_Type && type->tp_iternext != NULL) {
+            PyType_Watch(TYPE_WATCHER_ID, (PyObject *)type);
+            _Py_BloomFilter_Add(dependencies, type);
+            if (!definite) {
+                sym_set_type(iter, type);
                 assert((this_instr - 1)->opcode == _RECORD_NOS_TYPE);
                 int32_t orig_target = (this_instr - 1)->target;
-                ADD_OP(_GUARD_TYPE_ITER, 0, (uintptr_t)probable);
+                ADD_OP(_GUARD_TYPE_ITER, 0, (uintptr_t)type);
                 uop_buffer_last(&ctx->out_buffer)->target = orig_target;
-                ADD_OP(_ITER_NEXT_INLINE, 0, (uintptr_t)probable->tp_iternext);
             }
+            ADD_OP(_ITER_NEXT_INLINE, 0, (uintptr_t)type->tp_iternext);
         }
         next = sym_new_not_null(ctx);
     }
