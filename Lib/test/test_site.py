@@ -214,7 +214,7 @@ class HelperFunctionsTests(unittest.TestCase):
         pth_file.cleanup(prep=True)
         try:
             pth_file.create()
-            site.addsitedir(pth_file.base_dir, set())
+            site.addsitedir(pth_file.base_dir)
             self.assertNotIn(site.makepath(pth_file.good_dir_path)[0], sys.path)
             self.assertIn(pth_file.base_dir, sys.path)
         finally:
@@ -228,7 +228,7 @@ class HelperFunctionsTests(unittest.TestCase):
             pth_file.create()
             st = os.stat(pth_file.file_path)
             os.chflags(pth_file.file_path, st.st_flags | stat.UF_HIDDEN)
-            site.addsitedir(pth_file.base_dir, set())
+            site.addsitedir(pth_file.base_dir)
             self.assertNotIn(site.makepath(pth_file.good_dir_path)[0], sys.path)
             self.assertIn(pth_file.base_dir, sys.path)
         finally:
@@ -242,7 +242,7 @@ class HelperFunctionsTests(unittest.TestCase):
         try:
             pth_file.create()
             subprocess.check_call(['attrib', '+H', pth_file.file_path])
-            site.addsitedir(pth_file.base_dir, set())
+            site.addsitedir(pth_file.base_dir)
             self.assertNotIn(site.makepath(pth_file.good_dir_path)[0], sys.path)
             self.assertIn(pth_file.base_dir, sys.path)
         finally:
@@ -1328,7 +1328,8 @@ def startup():
     def test_addsitedir_discovers_start_files(self):
         # addsitedir() should discover .start files and accumulate entries.
         self._make_start("os.path:join\n", name='foo')
-        site.addsitedir(self.sitedir, set())
+        site.addsitedir(self.sitedir, set(),
+                        defer_processing_start_files=True)
         fullname = os.path.join(self.sitedir, 'foo.start')
         self.assertIn('os.path:join', site._pending_entrypoints[fullname])
 
@@ -1337,7 +1338,8 @@ def startup():
         # at flush time by _exec_imports().
         self._make_start("os.path:join\n", name='foo')
         self._make_pth("import sys\n", name='foo')
-        site.addsitedir(self.sitedir, set())
+        site.addsitedir(self.sitedir, set(),
+                        defer_processing_start_files=True)
         pth_fullname = os.path.join(self.sitedir, 'foo.pth')
         start_fullname = os.path.join(self.sitedir, 'foo.start')
         # Import line was collected...
@@ -1352,7 +1354,8 @@ def startup():
         os.mkdir(subdir)
         self._make_start("os.path:join\n", name='foo')
         self._make_pth("mylib\n", name='foo')
-        site.addsitedir(self.sitedir, set())
+        site.addsitedir(self.sitedir, set(),
+                        defer_processing_start_files=True)
         fullname = os.path.join(self.sitedir, 'foo.pth')
         self.assertIn(subdir, site._pending_syspaths.get(fullname, []))
 
@@ -1360,7 +1363,8 @@ def startup():
         # Multiple .start files are discovered alphabetically.
         self._make_start("os.path:join\n", name='zzz')
         self._make_start("os.path:exists\n", name='aaa')
-        site.addsitedir(self.sitedir, set())
+        site.addsitedir(self.sitedir, set(),
+                        defer_processing_start_files=True)
         all_entries = self._all_entrypoints()
         entries = [entry for _, entry in all_entries]
         idx_a = entries.index('os.path:exists')
@@ -1375,7 +1379,8 @@ def startup():
         os.mkdir(subdir)
         self._make_pth("mylib\n", name='foo')
         self._make_start("os.path:join\n", name='foo')
-        site.addsitedir(self.sitedir, set())
+        site.addsitedir(self.sitedir, set(),
+                        defer_processing_start_files=True)
         # Both should be collected.
         pth_fullname = os.path.join(self.sitedir, 'foo.pth')
         start_fullname = os.path.join(self.sitedir, 'foo.start')
@@ -1384,9 +1389,13 @@ def startup():
                       site._pending_entrypoints.get(start_fullname, []))
 
     def test_addsitedir_dotfile_start_ignored(self):
-        # .start files starting with '.' are skipped.
+        # .start files starting with '.' are skipped.  Defer flushing so
+        # the assertion against _pending_entrypoints is meaningful;
+        # otherwise process_startup_files() would clear the dict
+        # regardless of whether the dotfile was picked up.
         self._make_start("os.path:join\n", name='.hidden')
-        site.addsitedir(self.sitedir, set())
+        site.addsitedir(self.sitedir, set(),
+                        defer_processing_start_files=True)
         self.assertEqual(site._pending_entrypoints, {})
 
     def test_addsitedir_standalone_flushes(self):
@@ -1400,13 +1409,15 @@ def startup():
         # Pending dicts should be cleared after flush.
         self.assertEqual(site._pending_syspaths, {})
 
-    def test_addsitedir_internal_does_not_flush(self):
-        # When called with a known_paths set, addsitedir accumulates
-        # but does not flush.
+    def test_addsitedir_defer_does_not_flush(self):
+        # With defer_processing_start_files=True, addsitedir accumulates
+        # pending state but does not flush; sys.path is updated only when
+        # process_startup_files() is called explicitly.
         subdir = os.path.join(self.sitedir, 'acclib')
         os.mkdir(subdir)
         self._make_pth("acclib\n", name='foo')
-        site.addsitedir(self.sitedir, set())
+        site.addsitedir(self.sitedir, set(),
+                        defer_processing_start_files=True)
         # Path is pending, not yet on sys.path.
         self.assertNotIn(subdir, sys.path)
         fullname = os.path.join(self.sitedir, 'foo.pth')

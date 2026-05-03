@@ -414,8 +414,10 @@ def addsitedir(sitedir, known_paths=None, *, defer_processing_start_files=False)
     for name in start_names:
         _read_start_file(sitedir, name)
 
-    # If standalone call (not from main()), flush immediately
-    # so the caller sees the effect.
+    # Generally, when addsitedir() is called explicitly, we'll want to process
+    # all the startup file data immediately.  However, when called through
+    # main(), we'll want to batch up all the startup file processing.  main()
+    # will set this flag to True to defer processing.
     if not defer_processing_start_files:
         process_startup_files()
 
