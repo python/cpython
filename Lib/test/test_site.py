@@ -125,8 +125,8 @@ class HelperFunctionsTests(unittest.TestCase):
         # comment or import that is a valid directory name for where the .pth
         # file resides; invalid directories are not added
         pth_file = PthFile()
-        pth_file.cleanup(prep=True)  # to make sure that nothing is
-                                      # pre-existing that shouldn't be
+        # Ensure we have a clean slate.
+        pth_file.cleanup(prep=True)
         with pth_file.create():
             site.addpackage(pth_file.base_dir, pth_file.filename, set())
             self.pth_file_tests(pth_file)
@@ -180,6 +180,7 @@ class HelperFunctionsTests(unittest.TestCase):
         # addsitedir() reads .pth files and, when called standalone
         # (known_paths=None), flushes paths and import lines immediately.
         pth_file = PthFile()
+        # Ensure we have a clean slate.
         pth_file.cleanup(prep=True)
         with pth_file.create():
             site.addsitedir(pth_file.base_dir)
@@ -203,6 +204,7 @@ class HelperFunctionsTests(unittest.TestCase):
 
     def test_addsitedir_dotfile(self):
         pth_file = PthFile('.dotfile')
+        # Ensure we have a clean slate.
         pth_file.cleanup(prep=True)
         with pth_file.create():
             site.addsitedir(pth_file.base_dir)
@@ -212,6 +214,7 @@ class HelperFunctionsTests(unittest.TestCase):
     @unittest.skipUnless(hasattr(os, 'chflags'), 'test needs os.chflags()')
     def test_addsitedir_hidden_flags(self):
         pth_file = PthFile()
+        # Ensure we have a clean slate.
         pth_file.cleanup(prep=True)
         with pth_file.create():
             st = os.stat(pth_file.file_path)
@@ -224,6 +227,7 @@ class HelperFunctionsTests(unittest.TestCase):
     @support.requires_subprocess()
     def test_addsitedir_hidden_file_attribute(self):
         pth_file = PthFile()
+        # Ensure we have a clean slate.
         pth_file.cleanup(prep=True)
         with pth_file.create():
             subprocess.check_call(['attrib', '+H', pth_file.file_path])
