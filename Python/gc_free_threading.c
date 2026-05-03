@@ -17,10 +17,6 @@
 
 #include "pydtrace.h"
 
-// Declared in mimalloc/internal.h only at function scope; we read its
-// full_page_bytes counter from _PyGC_GetHeapBytes().
-extern mi_heap_t _mi_heap_main;
-
 // Minimum growth in mimalloc heap bytes (estimated from full pages) since the
 // last GC.
 #define GC_HEAP_BYTES_MIN_DELTA (512 * 1024)
@@ -2006,32 +2002,27 @@ cleanup_worklist(struct worklist *worklist)
 }
 
 // Return an estimate, in bytes, of how much memory is being used.
-//
-// Computed from mimalloc full-page byte counters: each mi_heap_t and
-// mi_abandoned_pool_t carries a `full_page_bytes` field maintained by the
-// page-state helpers in Objects/mimalloc/page.c.  We sum:
-//   - per-tstate heaps for this interpreter (live full pages)
-//   - the interpreter's abandoned pool (full pages between abandon and reclaim)
-//   - _mi_heap_main (default heap on the main thread, used pre-tstate and
-//     for non-Python threads)
-//   - _mi_abandoned_default (full pages abandoned from default heaps)
-// Per-thread auto-default heaps used by non-Python threads are not
-// enumerated; their bytes show up in _mi_abandoned_default once the OS
-// thread exits.  This is acceptable because almost all FT-Python allocation
-// routes through tstate-bound heaps.
 Py_ssize_t
 _PyGC_GetHeapBytes(PyInterpreterState *interp)
 {
-    // `full_page_bytes` is `_Atomic(intptr_t)`; cast to `intptr_t *` to
-    // strip the qualifier for the CPython atomic helpers.  The mimalloc-side
-    // writes use `mi_atomic_addi` directly on the `_Atomic(intptr_t)` field;
-    // the cast is only needed for the read side.
+    // Computed from mimalloc full-page byte counters: each mi_heap_t and
+    // mi_abandoned_pool_t carries a `full_page_bytes` field.
+    // Sum:
+    //   - per-tstate heaps for this interpreter (live full pages)
+    //   - the interpreter's abandoned pool (full pages between abandon and reclaim)
+    //   - _mi_heap_main (default heap on the main thread, used pre-tstate and
+    //     for non-Python threads)
+    //   - _mi_abandoned_default (full pages abandoned from default heaps)
+    // Per-thread auto-default heaps used by non-Python threads are not
+    // enumerated; their bytes show up in _mi_abandoned_default once the OS
+    // thread exits. This should be acceptable because almost all Python
+    // allocation is done by tstate-bound heaps.
     intptr_t total = _Py_atomic_load_intptr_relaxed(
         (intptr_t *)&interp->mimalloc.abandoned_pool.full_page_bytes);
     total += _Py_atomic_load_intptr_relaxed(
         (intptr_t *)&_mi_abandoned_default.full_page_bytes);
     total += _Py_atomic_load_intptr_relaxed(
-        (intptr_t *)&_mi_heap_main.full_page_bytes);
+        (intptr_t *)&_mi_heap_main_get()->full_page_bytes);
     HEAD_LOCK(&_PyRuntime);
     _Py_FOR_EACH_TSTATE_UNLOCKED(interp, p) {
         _PyThreadStateImpl *t = (_PyThreadStateImpl *)p;
