@@ -249,6 +249,7 @@ class TestDeprecations(TestEmailBase):
         '_InvalidEwError',
         'rfc2047_matcher',
         '_wsp_splitter',
+        '_non_atom_end_matcher',
         ))
     def test_deprecated_names(self, name):
         with check_all_warnings((
@@ -261,6 +262,7 @@ class TestDeprecations(TestEmailBase):
         # XXX XXX make sure this is completely filled in with all the names
         # we've replaced.
         get_qp_ctext='get_ccontent_sequence',
+        get_atext='get_atext_sequence',
         ))
     def test_replaced_names(self, oldname, newname):
         with check_all_warnings((
@@ -2260,14 +2262,11 @@ class TestParser(TestParserMixin, TestEmailBase):
 
     @params
     def test_get_atext(self, s, *args, **kw):
-        warnings = [(DeprecationWarning, '.*deprecated.*get_atext_sequence')]
-        if 'exception' not in kw:
-            warnings.append((DeprecationWarning, '.*deprecated'))
         atext = self._test_parse(
-            parser.get_atext,
+            parser._deprecated_get_atext,
             C(s),
             *args,
-            warnings=warnings,
+            warnings=...,
             test_start=False,
             **kw,
             )
