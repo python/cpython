@@ -649,6 +649,7 @@ static asdl_type_param_seq* type_params_rule(Parser *p);
 static asdl_type_param_seq* type_param_seq_rule(Parser *p);
 static type_param_ty type_param_rule(Parser *p);
 static expr_ty type_param_bound_rule(Parser *p);
+static expr_ty type_param_starred_bound_rule(Parser *p);
 static expr_ty type_param_default_rule(Parser *p);
 static expr_ty type_param_starred_default_rule(Parser *p);
 static expr_ty expressions_rule(Parser *p);
@@ -11202,7 +11203,7 @@ type_param_rule(Parser *p)
         D(fprintf(stderr, "%*c%s type_param[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "invalid_type_param"));
     }
-    { // '*' NAME type_param_starred_default?
+    { // '*' NAME type_param_starred_bound? type_param_starred_default?
         if (p->error_indicator) {
             p->level--;
             return NULL;
@@ -11211,12 +11212,15 @@ type_param_rule(Parser *p)
         Token * _literal;
         expr_ty a;
         void *b;
+        void *c;
         if (
             (_literal = _PyPegen_expect_token(p, 16))  // token='*'
             &&
             (a = _PyPegen_name_token(p))  // NAME
             &&
-            (b = type_param_starred_default_rule(p), !p->error_indicator)  // type_param_starred_default?
+            (b = type_param_starred_bound_rule(p), !p->error_indicator)  // type_param_bound?
+            &&
+            (c = type_param_starred_default_rule(p), !p->error_indicator)  // type_param_starred_default?
         )
         {
             D(fprintf(stderr, "%*c+ type_param[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'*' NAME type_param_starred_default?"));
@@ -11229,7 +11233,7 @@ type_param_rule(Parser *p)
             UNUSED(_end_lineno); // Only used by EXTRA macro
             int _end_col_offset = _token->end_col_offset;
             UNUSED(_end_col_offset); // Only used by EXTRA macro
-            _res = _PyAST_TypeVarTuple ( a -> v . Name . id , b , EXTRA );
+            _res = _PyAST_TypeVarTuple ( a -> v . Name . id , b , c , EXTRA );
             if ((_res == NULL || p->error_indicator) && PyErr_Occurred()) {
                 p->error_indicator = 1;
                 p->level--;
@@ -11241,7 +11245,7 @@ type_param_rule(Parser *p)
         D(fprintf(stderr, "%*c%s type_param[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "'*' NAME type_param_starred_default?"));
     }
-    { // '**' NAME type_param_default?
+    { // '**' NAME type_param_bound? type_param_default?
         if (p->error_indicator) {
             p->level--;
             return NULL;
@@ -11250,12 +11254,15 @@ type_param_rule(Parser *p)
         Token * _literal;
         expr_ty a;
         void *b;
+        void *c;
         if (
             (_literal = _PyPegen_expect_token(p, 35))  // token='**'
             &&
             (a = _PyPegen_name_token(p))  // NAME
             &&
-            (b = type_param_default_rule(p), !p->error_indicator)  // type_param_default?
+            (b = type_param_bound_rule(p), !p->error_indicator)  // type_param_bound?
+            &&
+            (c = type_param_default_rule(p), !p->error_indicator)  // type_param_default?
         )
         {
             D(fprintf(stderr, "%*c+ type_param[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'**' NAME type_param_default?"));
@@ -11268,7 +11275,7 @@ type_param_rule(Parser *p)
             UNUSED(_end_lineno); // Only used by EXTRA macro
             int _end_col_offset = _token->end_col_offset;
             UNUSED(_end_col_offset); // Only used by EXTRA macro
-            _res = _PyAST_ParamSpec ( a -> v . Name . id , b , EXTRA );
+            _res = _PyAST_ParamSpec ( a -> v . Name . id , b , c , EXTRA );
             if ((_res == NULL || p->error_indicator) && PyErr_Occurred()) {
                 p->error_indicator = 1;
                 p->level--;
@@ -11331,6 +11338,52 @@ type_param_bound_rule(Parser *p)
   done:
     p->level--;
     return _res;
+}
+
+// type_param_starred_bound: ':' star_expression
+static expr_ty
+type_param_starred_bound_rule(Parser *p)
+{
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
+        _Pypegen_stack_overflow(p);
+    }
+    if (p->error_indicator) {
+        p->level--;
+        return NULL;
+    }
+    expr_ty _res = NULL;
+    int _mark = p->mark;
+    { // ':' star_expression
+        if (p->error_indicator) {
+            p->level--;
+            return NULL;
+        }
+        D(fprintf(stderr, "%*c> type_param_starred_bound[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "':' star_expression"));
+        Token * _literal;
+        expr_ty e;
+        if (
+            (_literal = _PyPegen_expect_token(p, 11))  // token=':'
+            &&
+            (e = star_expression_rule(p))  // star_expression
+        )
+        {
+            D(fprintf(stderr, "%*c+ type_param_starred_bound[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "':' star_expression"));
+            _res = CHECK_VERSION ( expr_ty , 13 , "Type parameter bounds are" , e );
+            if ((_res == NULL || p->error_indicator) && PyErr_Occurred()) {
+                p->error_indicator = 1;
+                p->level--;
+                return NULL;
+            }
+            goto done;
+        }
+        p->mark = _mark;
+        D(fprintf(stderr, "%*c%s type_param_starred_bound[%d-%d]: %s failed!\n", p->level, ' ',
+        p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "':' star_expression"));
+    }
+    _res = NULL;
+    done:
+        p->level--;
+        return _res;
 }
 
 // type_param_default: '=' expression

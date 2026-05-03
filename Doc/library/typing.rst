@@ -2135,11 +2135,6 @@ without the dedicated syntax, as documented below.
 
       .. versionadded:: 3.13
 
-   Type variable tuples created with ``covariant=True`` or
-   ``contravariant=True`` can be used to declare covariant or contravariant
-   generic types.  The ``bound`` argument is also accepted, similar to
-   :class:`TypeVar`, but its actual semantics are yet to be decided.
-
    .. versionadded:: 3.11
 
    .. versionchanged:: 3.12
@@ -2155,6 +2150,10 @@ without the dedicated syntax, as documented below.
 
       Added support for the ``bound``, ``covariant``, ``contravariant``, and
       ``infer_variance`` parameters.
+
+   .. versionchanged:: 3.16
+
+      Syntax and semantics for bounds were added.
 
 .. class:: ParamSpec(name, *, bound=None, covariant=False, contravariant=False, default=typing.NoDefault)
 
@@ -2281,6 +2280,10 @@ without the dedicated syntax, as documented below.
    .. versionchanged:: 3.13
 
       Support for default values was added.
+
+   .. versionchanged:: 3.16
+
+      Syntax and semantics for bounds were added.
 
    .. note::
       Only parameter specification variables defined in global scope can
