@@ -159,11 +159,12 @@ class PrettyPrinter:
 
         compact
             If true, several items will be combined in one line.
-            Takes precedence over expand mode.
+            Takes precedence over expand mode. The default (false) no longer
+            disables expand mode on its own; pass ``expand=False`` for that.
 
         expand
-            If true, the output will be formatted similar to
-            pretty-printed json.dumps() when ``indent`` is supplied.
+            If true (the default), the output will be formatted similar
+            to pretty-printed json.dumps() when ``indent`` is supplied.
             Has no effect if compact mode is also enabled.
 
         sort_dicts

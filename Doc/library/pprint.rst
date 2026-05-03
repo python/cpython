@@ -66,10 +66,13 @@ Functions
 
    :param bool compact:
       Control the way long :term:`sequences <sequence>` are formatted.
-      If ``False`` (the default),
-      each item of a sequence will be formatted on a separate line,
-      otherwise as many items as will fit within the *width*
+      If ``True``, as many items as will fit within the *width*
       will be formatted on each output line.
+      If ``False`` (the default), each item of a sequence
+      will be formatted on a separate line,
+      *unless* *expand* mode is also active (which is now the default);
+      to opt out of *expand* mode, pass ``expand=False`` rather than
+      relying on ``compact=False``.
       Takes precedence over *expand*.
 
    :param bool expand:
@@ -77,6 +80,8 @@ Functions
       opening parentheses and brackets will be followed by a newline and the
       following content will be indented by one level, similar to
       pretty-printed JSON. Has no effect when *compact* is also ``True``.
+      Pass ``expand=False`` to restore the pre-3.15 layout where each
+      item appears on its own line without the extra indentation.
 
    :param bool sort_dicts:
       If ``True``, dictionaries will be formatted with
