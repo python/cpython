@@ -9,6 +9,13 @@ from test.support import os_helper
 
 from .utils import print_warning
 
+# Import termios to save and restore terminal echo.  This is only available on
+# Unix, and it's fine if the module can't be found.
+try:
+    import termios                                # noqa: F401
+except ModuleNotFoundError:
+    pass
+
 
 class SkipTestEnvironment(Exception):
     pass
@@ -65,6 +72,7 @@ class saved_test_environment:
                  'shutil_archive_formats', 'shutil_unpack_formats',
                  'asyncio.events._event_loop_policy',
                  'urllib.requests._url_tempfiles', 'urllib.requests._opener',
+                 'stty_echo',
                 )
 
     def get_module(self, name):
@@ -291,6 +299,24 @@ class saved_test_environment:
     def restore_warnings_showwarning(self, fxn):
         warnings = self.get_module('warnings')
         warnings.showwarning = fxn
+
+    def get_stty_echo(self):
+        termios = self.try_get_module('termios')
+        if not os.isatty(fd := sys.__stdin__.fileno()):
+            return None
+        attrs = termios.tcgetattr(fd)
+        lflags = attrs[3]
+        return bool(lflags & termios.ECHO)
+    def restore_stty_echo(self, echo):
+        termios = self.get_module('termios')
+        attrs = termios.tcgetattr(fd := sys.__stdin__.fileno())
+        if echo:
+            # Turn echo on.
+            attrs[3] |= termios.ECHO
+        else:
+            # Turn echo off.
+            attrs[3] &= ~termios.ECHO
+        termios.tcsetattr(fd, termios.TCSADRAIN, attrs)
 
     def resource_info(self):
         for name in self.resources:

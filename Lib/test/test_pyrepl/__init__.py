@@ -1,14 +1,13 @@
 import os
-from test.support import load_package_tests
-import unittest
+import sys
+from test.support import import_helper, load_package_tests
 
 
-try:
-    import termios
-except ImportError:
-    raise unittest.SkipTest("termios required")
-else:
-    del termios
+import_helper.import_module("_pyrepl")
+
+
+if sys.platform != "win32":
+    import_helper.import_module("termios")
 
 
 def load_tests(*args):

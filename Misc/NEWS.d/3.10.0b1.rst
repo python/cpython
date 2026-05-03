@@ -202,7 +202,7 @@ line number tables more robust in some circumstances.
 .. bpo: 43908
 .. date: 2021-04-26-21-20-41
 .. nonce: 2L51nO
-.. section: Core and Builtins
+.. section: Library
 
 Make :mod:`re` types immutable. Patch by Erlend E. Aasland.
 
@@ -211,7 +211,7 @@ Make :mod:`re` types immutable. Patch by Erlend E. Aasland.
 .. bpo: 43908
 .. date: 2021-04-26-20-59-17
 .. nonce: -COW4-
-.. section: Core and Builtins
+.. section: Library
 
 Make the :class:`array.array` type immutable. Patch by Erlend E. Aasland.
 
@@ -402,8 +402,8 @@ the heap. Should speed up dispatch in the interpreter.
 .. nonce: eUn4p5
 .. section: Core and Builtins
 
-Static methods (:func:`@staticmethod <staticmethod>`) and class methods
-(:func:`@classmethod <classmethod>`) now inherit the method attributes
+Static methods (:deco:`staticmethod`) and class methods
+(:deco:`classmethod`) now inherit the method attributes
 (``__module__``, ``__name__``, ``__qualname__``, ``__doc__``,
 ``__annotations__``) and have a new ``__wrapped__`` attribute. Patch by
 Victor Stinner.
@@ -442,7 +442,7 @@ coroutine.
 .. bpo: 43105
 .. date: 2021-03-31-20-35-11
 .. nonce: PBVmHm
-.. section: Core and Builtins
+.. section: Library
 
 Importlib now resolves relative paths when creating module spec objects from
 file locations.
@@ -454,7 +454,7 @@ file locations.
 .. nonce: VSF3vg
 .. section: Core and Builtins
 
-Static methods (:func:`@staticmethod <staticmethod>`) are now callable as
+Static methods (:deco:`staticmethod`) are now callable as
 regular functions. Patch by Victor Stinner.
 
 ..

@@ -10,6 +10,7 @@ extern "C" {
 
 #include "pycore_interp_structs.h" // managed_static_type_state
 #include "pycore_moduleobject.h"  // PyModuleObject
+#include "pycore_structs.h"       // _PyStackRef
 
 
 /* state */
@@ -25,6 +26,7 @@ extern "C" {
 #define _Py_TYPE_VERSION_BYTEARRAY 9
 #define _Py_TYPE_VERSION_BYTES 10
 #define _Py_TYPE_VERSION_COMPLEX 11
+#define _Py_TYPE_VERSION_FROZENDICT 12
 
 #define _Py_TYPE_VERSION_NEXT 16
 
@@ -58,7 +60,8 @@ extern void _PyStaticType_FiniBuiltin(
 extern void _PyStaticType_ClearWeakRefs(
     PyInterpreterState *interp,
     PyTypeObject *type);
-extern managed_static_type_state * _PyStaticType_GetState(
+// Exported for external JIT support
+PyAPI_FUNC(managed_static_type_state *) _PyStaticType_GetState(
     PyInterpreterState *interp,
     PyTypeObject *type);
 
@@ -90,8 +93,10 @@ _PyType_GetModuleState(PyTypeObject *type)
 // function
 PyAPI_FUNC(PyObject *) _PyType_GetDict(PyTypeObject *);
 
+PyAPI_FUNC(PyObject *) _PyType_LookupSubclasses(PyTypeObject *);
+PyAPI_FUNC(PyObject *) _PyType_InitSubclasses(PyTypeObject *);
+
 extern PyObject * _PyType_GetBases(PyTypeObject *type);
-extern PyObject * _PyType_GetMRO(PyTypeObject *type);
 extern PyObject* _PyType_GetSubclasses(PyTypeObject *);
 extern int _PyType_HasSubclasses(PyTypeObject *);
 
@@ -109,6 +114,8 @@ _PyType_IsReady(PyTypeObject *type)
 extern PyObject* _Py_type_getattro_impl(PyTypeObject *type, PyObject *name,
                                         int *suppress_missing_attribute);
 extern PyObject* _Py_type_getattro(PyObject *type, PyObject *name);
+extern _PyStackRef _Py_type_getattro_stackref(PyTypeObject *type, PyObject *name,
+                                              int *suppress_missing_attribute);
 
 extern PyObject* _Py_BaseObject_RichCompare(PyObject* self, PyObject* other, int op);
 
@@ -119,6 +126,10 @@ extern PyTypeObject _PyBufferWrapper_Type;
 
 PyAPI_FUNC(PyObject*) _PySuper_Lookup(PyTypeObject *su_type, PyObject *su_obj,
                                  PyObject *name, int *meth_found);
+
+extern PyObject *_PySuper_LookupDescr(PyTypeObject *su_type,
+                                     PyTypeObject *su_obj_type,
+                                     PyObject *name);
 
 extern PyObject* _PyType_GetFullyQualifiedName(PyTypeObject *type, char sep);
 
@@ -146,8 +157,17 @@ typedef int (*_py_validate_type)(PyTypeObject *);
 // It will verify the ``ty`` through user-defined validation function ``validate``,
 // and if the validation is passed, it will set the ``tp_version`` as valid
 // tp_version_tag from the ``ty``.
-extern int _PyType_Validate(PyTypeObject *ty, _py_validate_type validate, unsigned int *tp_version);
-extern int _PyType_CacheGetItemForSpecialization(PyHeapTypeObject *ht, PyObject *descriptor, uint32_t tp_version);
+// Exported for external JIT support
+int _PyType_Validate(PyTypeObject *ty, _py_validate_type validate, unsigned int *tp_version);
+int _PyType_CacheGetItemForSpecialization(PyHeapTypeObject *ht, PyObject *descriptor, uint32_t tp_version);
+
+// Precalculates count of non-unique slots and fills wrapperbase.name_count.
+extern int _PyType_InitSlotDefs(PyInterpreterState *interp);
+
+// Like PyType_GetBaseByToken, but does not modify refcounts.
+// Cannot fail; arguments must be valid.
+PyAPI_FUNC(int)
+_PyType_GetBaseByToken_Borrow(PyTypeObject *type, void *token, PyTypeObject **result);
 
 #ifdef __cplusplus
 }

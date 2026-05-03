@@ -21,6 +21,7 @@
 
 #include "Python.h"
 #include "hashlib.h"
+#include "pycore_object.h"        // _PyObject_VisitType()
 #include "pycore_strhex.h"        // _Py_strhex()
 #include "pycore_typeobject.h"    // _PyType_GetModuleState()
 
@@ -368,6 +369,7 @@ _sha1_exec(PyObject *module)
 /* Initialize this module. */
 
 static PyModuleDef_Slot _sha1_slots[] = {
+    _Py_ABI_SLOT,
     {Py_mod_exec, _sha1_exec},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {Py_mod_gil, Py_MOD_GIL_NOT_USED},

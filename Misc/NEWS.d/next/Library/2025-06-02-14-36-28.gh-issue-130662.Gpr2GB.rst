@@ -1,3 +1,0 @@
-+Accept leading zeros in precision and width fields for
-+:class:`~decimal.Decimal` formatting, for example ``format(Decimal(1.25),
-'.016f')``.

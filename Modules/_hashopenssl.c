@@ -268,7 +268,7 @@ py_hashentry_table_new(void) {
 
         if (h->py_alias != NULL) {
             if (_Py_hashtable_set(ht, (const void*)entry->py_alias, (void*)entry) < 0) {
-                PyMem_Free(entry);
+                /* entry is already in ht, will be freed by _Py_hashtable_destroy() */
                 goto error;
             }
             entry->refcnt++;
@@ -606,9 +606,14 @@ get_asn1_utf8name_by_nid(int nid)
 {
     const char *name = OBJ_nid2ln(nid);
     if (name == NULL) {
-        // In OpenSSL 3.0 and later, OBJ_nid*() are thread-safe and may raise.
-        assert(ERR_peek_last_error() != 0);
-        if (ERR_GET_REASON(ERR_peek_last_error()) != OBJ_R_UNKNOWN_NID) {
+        /* In OpenSSL 3.0 and later, OBJ_nid*() are thread-safe and may raise.
+         * However, not all versions of OpenSSL set a last error, so we simply
+         * ignore the last error if none exists.
+         *
+         * See https://github.com/python/cpython/issues/142451.
+         */
+        unsigned long errcode = ERR_peek_last_error();
+        if (errcode && ERR_GET_REASON(errcode) != OBJ_R_UNKNOWN_NID) {
             goto error;
         }
         // fallback to short name and unconditionally propagate errors
@@ -1001,6 +1006,7 @@ _hashlib_HASH_get_blocksize(PyObject *op, void *Py_UNUSED(closure))
 {
     HASHobject *self = HASHobject_CAST(op);
     long block_size = EVP_MD_CTX_block_size(self->ctx);
+    assert(block_size > 0);
     return PyLong_FromLong(block_size);
 }
 
@@ -1009,6 +1015,7 @@ _hashlib_HASH_get_digestsize(PyObject *op, void *Py_UNUSED(closure))
 {
     HASHobject *self = HASHobject_CAST(op);
     long size = EVP_MD_CTX_size(self->ctx);
+    assert(size > 0);
     return PyLong_FromLong(size);
 }
 
@@ -1101,20 +1108,19 @@ _hashlib_HASHXOF_digest_impl(HASHobject *self, Py_ssize_t length)
 /*[clinic end generated code: output=dcb09335dd2fe908 input=224d047da2c12a42]*/
 {
     EVP_MD_CTX *temp_ctx;
-    PyObject *retval;
 
     if (length == 0) {
         return Py_GetConstant(Py_CONSTANT_EMPTY_BYTES);
     }
 
-    retval = PyBytes_FromStringAndSize(NULL, length);
-    if (retval == NULL) {
+    PyBytesWriter *writer = PyBytesWriter_Create(length);
+    if (writer == NULL) {
         return NULL;
     }
 
     temp_ctx = py_wrapper_EVP_MD_CTX_new();
     if (temp_ctx == NULL) {
-        Py_DECREF(retval);
+        PyBytesWriter_Discard(writer);
         return NULL;
     }
 
@@ -1122,7 +1128,7 @@ _hashlib_HASHXOF_digest_impl(HASHobject *self, Py_ssize_t length)
         goto error;
     }
     if (!EVP_DigestFinalXOF(temp_ctx,
-                            (unsigned char*)PyBytes_AS_STRING(retval),
+                            (unsigned char*)PyBytesWriter_GetData(writer),
                             length))
     {
         notify_ssl_error_occurred_in(Py_STRINGIFY(EVP_DigestFinalXOF));
@@ -1130,10 +1136,10 @@ _hashlib_HASHXOF_digest_impl(HASHobject *self, Py_ssize_t length)
     }
 
     EVP_MD_CTX_free(temp_ctx);
-    return retval;
+    return PyBytesWriter_Finish(writer);
 
 error:
-    Py_DECREF(retval);
+    PyBytesWriter_Discard(writer);
     EVP_MD_CTX_free(temp_ctx);
     return NULL;
 }
@@ -1630,7 +1636,6 @@ pbkdf2_hmac_impl(PyObject *module, const char *hash_name,
 {
     _hashlibstate *state = get_hashlib_state(module);
     PyObject *key_obj = NULL;
-    char *key;
     long dklen;
     int retval;
 
@@ -1683,24 +1688,24 @@ pbkdf2_hmac_impl(PyObject *module, const char *hash_name,
         goto end;
     }
 
-    key_obj = PyBytes_FromStringAndSize(NULL, dklen);
-    if (key_obj == NULL) {
+    PyBytesWriter *writer = PyBytesWriter_Create(dklen);
+    if (writer == NULL) {
         goto end;
     }
-    key = PyBytes_AS_STRING(key_obj);
 
     Py_BEGIN_ALLOW_THREADS
     retval = PKCS5_PBKDF2_HMAC((const char *)password->buf, (int)password->len,
                                (const unsigned char *)salt->buf, (int)salt->len,
                                iterations, digest, dklen,
-                               (unsigned char *)key);
+                               (unsigned char *)PyBytesWriter_GetData(writer));
     Py_END_ALLOW_THREADS
 
     if (!retval) {
-        Py_CLEAR(key_obj);
+        PyBytesWriter_Discard(writer);
         notify_ssl_error_occurred_in(Py_STRINGIFY(PKCS5_PBKDF2_HMAC));
         goto end;
     }
+    key_obj = PyBytesWriter_Finish(writer);
 
 end:
     if (digest != NULL) {
@@ -1750,7 +1755,6 @@ _hashlib_scrypt_impl(PyObject *module, Py_buffer *password, Py_buffer *salt,
                      long maxmem, long dklen)
 /*[clinic end generated code: output=d424bc3e8c6b9654 input=bdeac9628d07f7a1]*/
 {
-    PyObject *key = NULL;
     int retval;
 
     if (password->len > INT_MAX) {
@@ -1791,8 +1795,8 @@ _hashlib_scrypt_impl(PyObject *module, Py_buffer *password, Py_buffer *salt,
         return NULL;
    }
 
-    key = PyBytes_FromStringAndSize(NULL, dklen);
-    if (key == NULL) {
+    PyBytesWriter *writer = PyBytesWriter_Create(dklen);
+    if (writer == NULL) {
         return NULL;
     }
 
@@ -1801,16 +1805,16 @@ _hashlib_scrypt_impl(PyObject *module, Py_buffer *password, Py_buffer *salt,
         (const char *)password->buf, (size_t)password->len,
         (const unsigned char *)salt->buf, (size_t)salt->len,
         (uint64_t)n, (uint64_t)r, (uint64_t)p, (uint64_t)maxmem,
-        (unsigned char *)PyBytes_AS_STRING(key), (size_t)dklen
+        (unsigned char *)PyBytesWriter_GetData(writer), (size_t)dklen
     );
     Py_END_ALLOW_THREADS
 
     if (!retval) {
-        Py_DECREF(key);
+        PyBytesWriter_Discard(writer);
         notify_ssl_error_occurred_in(Py_STRINGIFY(EVP_PBE_scrypt));
         return NULL;
     }
-    return key;
+    return PyBytesWriter_Finish(writer);
 }
 
 #undef HASHLIB_SCRYPT_MAX_DKLEN
@@ -2101,6 +2105,7 @@ hashlib_HMAC_CTX_new_from_digestmod(_hashlibstate *state,
     PY_EVP_MD_free(md);
 #endif
     if (r == 0) {
+        hashlib_openssl_HMAC_CTX_free(ctx);
         if (is_xof) {
             /* use a better default error message if an XOF is used */
             raise_unsupported_algorithm_error(state, digestmod);
@@ -2197,7 +2202,7 @@ error:
  *
  * On error, set an exception and return BAD_DIGEST_SIZE.
  */
-static unsigned int
+static int
 _hashlib_hmac_digest_size(HMACobject *self)
 {
     assert(EVP_MAX_MD_SIZE < INT_MAX);
@@ -2212,15 +2217,18 @@ _hashlib_hmac_digest_size(HMACobject *self)
     }
     int digest_size = EVP_MD_size(md);
     /* digest_size < 0 iff EVP_MD context is NULL (which is impossible here) */
-    assert(digest_size >= 0);
     assert(digest_size <= (int)EVP_MAX_MD_SIZE);
+    if (digest_size < 0) {
+        raise_ssl_error(PyExc_SystemError, "invalid digest size");
+        return BAD_DIGEST_SIZE;
+    }
 #endif
     /* digest_size == 0 means that the context is not entirely initialized */
     if (digest_size == 0) {
-        raise_ssl_error(PyExc_ValueError, "missing digest size");
+        raise_ssl_error(PyExc_SystemError, "missing digest size");
         return BAD_DIGEST_SIZE;
     }
-    return (unsigned int)digest_size;
+    return (int)digest_size;
 }
 
 static int
@@ -2258,6 +2266,9 @@ _hashlib_HMAC_copy_impl(HMACobject *self)
         return NULL;
     }
     retval->ctx = ctx;
+#ifdef Py_HAS_OPENSSL3_SUPPORT
+    retval->evp_md_nid = self->evp_md_nid;
+#endif
     HASHLIB_INIT_MUTEX(retval);
     return (PyObject *)retval;
 }
@@ -2315,7 +2326,7 @@ _hashlib_HMAC_update_impl(HMACobject *self, PyObject *msg)
 static Py_ssize_t
 _hmac_digest(HMACobject *self, unsigned char *buf)
 {
-    unsigned int digest_size = _hashlib_hmac_digest_size(self);
+    int digest_size = _hashlib_hmac_digest_size(self);
     assert(digest_size <= EVP_MAX_MD_SIZE);
     if (digest_size == BAD_DIGEST_SIZE) {
         assert(PyErr_Occurred());
@@ -2380,7 +2391,7 @@ static PyObject *
 _hashlib_hmac_get_digest_size(PyObject *op, void *Py_UNUSED(closure))
 {
     HMACobject *self = HMACobject_CAST(op);
-    unsigned int size = _hashlib_hmac_digest_size(self);
+    int size = _hashlib_hmac_digest_size(self);
     return size == BAD_DIGEST_SIZE ? NULL : PyLong_FromLong(size);
 }
 
@@ -2894,6 +2905,7 @@ hashlib_constants(PyObject *module)
 }
 
 static PyModuleDef_Slot hashlib_slots[] = {
+    _Py_ABI_SLOT,
     {Py_mod_exec, hashlib_init_hashtable},
     {Py_mod_exec, hashlib_init_HASH_type},
     {Py_mod_exec, hashlib_init_HASHXOF_type},

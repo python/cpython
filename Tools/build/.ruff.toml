@@ -29,7 +29,6 @@ ignore = [
     "F541",    # f-string without any placeholders
     "PYI024",  # Use `typing.NamedTuple` instead of `collections.namedtuple`
     "PYI025",  # Use `from collections.abc import Set as AbstractSet`
-    "UP038",   # Use `X | Y` in `isinstance` call instead of `(X, Y)`
 ]
 
 [lint.per-file-ignores]

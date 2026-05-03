@@ -1,0 +1,351 @@
+.. date: 2025-12-17-02-02-57
+.. gh-issue: 142836
+.. nonce: mR-fvK
+.. release date: 2026-01-13
+.. section: Tests
+
+Accommodated Solaris in ``test_pdb.test_script_target_anonymous_pipe``.
+
+..
+
+.. date: 2025-12-22-22-36-21
+.. gh-issue: 122431
+.. nonce: 9E3085
+.. section: Library
+
+Corrected the error message in :func:`readline.append_history_file` to state
+that ``nelements`` must be non-negative instead of positive.
+
+..
+
+.. date: 2025-12-21-17-44-28
+.. gh-issue: 143046
+.. nonce: GBa5Ip
+.. section: Library
+
+The :mod:`asyncio` REPL no longer prints copyright and version messages in
+the quiet mode (:option:`-q`). Patch by Bartosz Sławecki.
+
+..
+
+.. date: 2025-12-20-16-35-42
+.. gh-issue: 80744
+.. nonce: X4pZ2N
+.. section: Library
+
+Fix issue where ``pdb`` would read a ``.pdbrc`` twice if launched from the
+home directory
+
+..
+
+.. date: 2025-12-20-02-33-05
+.. gh-issue: 138122
+.. nonce: m3EF9E
+.. section: Library
+
+Add blocking mode to Tachyon for accurate stack traces in applications with
+many generators or fast-changing call stacks. Patch by Pablo Galindo.
+
+..
+
+.. date: 2025-12-20-01-49-02
+.. gh-issue: 143010
+.. nonce: _-SWX0
+.. section: Library
+
+Fixed a bug in :mod:`mailbox` where the precise timing of an external event
+could result in the library opening an existing file instead of a file it
+expected to create.
+
+..
+
+.. date: 2025-12-17-14-41-09
+.. gh-issue: 112127
+.. nonce: 13OHQk
+.. section: Library
+
+Fix possible use-after-free in :func:`atexit.unregister` when the callback
+is unregistered during comparison.
+
+..
+
+.. date: 2025-12-17-03-03-12
+.. gh-issue: 138122
+.. nonce: m3EF9E
+.. section: Library
+
+Fix incomplete stack traces in the Tachyon profiler's frame cache when
+profiling code with deeply nested generators. The frame cache now validates
+that stack traces reach the base frame before caching, preventing broken
+flamegraphs. Patch by Pablo Galindo.
+
+..
+
+.. date: 2025-12-16-15-32-41
+.. gh-issue: 142834
+.. nonce: g7mHw_
+.. section: Library
+
+Change the :mod:`pdb` ``commands`` command to use the last available
+breakpoint instead of failing when the most recently created breakpoint was
+deleted.
+
+..
+
+.. date: 2025-12-16-14-49-19
+.. gh-issue: 142783
+.. nonce: VPV1ig
+.. section: Library
+
+Fix zoneinfo use-after-free with descriptor _weak_cache. a descriptor as
+_weak_cache could cause crashes during object creation. The fix ensures
+proper reference counting for descriptor-provided objects.
+
+..
+
+.. date: 2025-12-16-14-21-20
+.. gh-issue: 76007
+.. nonce: O4AmYl
+.. section: Library
+
+Deprecate ``VERSION`` from :mod:`xml.etree.ElementTree` and ``version`` from
+:mod:`!xml.sax.expatreader` and :mod:`xml.sax.handler`. Patch by Hugo van
+Kemenade.
+
+..
+
+.. date: 2025-12-16-04-39-27
+.. gh-issue: 142784
+.. nonce: HBGJag
+.. section: Library
+
+The :mod:`asyncio` REPL now properly closes the loop upon the end of
+interactive session. Previously, it could cause surprising warnings.
+Contributed by Bartosz Sławecki.
+
+..
+
+.. date: 2025-12-15-02-00-31
+.. gh-issue: 138122
+.. nonce: m3EF9E
+.. section: Library
+
+Add binary output format to :mod:`profiling.sampling` for compact storage of
+profiling data. The new ``--binary`` option captures samples to a file that
+can be converted to other formats using the ``replay`` command. Patch by
+Pablo Galindo
+
+..
+
+.. date: 2025-12-13-23-26-42
+.. gh-issue: 142495
+.. nonce: I88Uv_
+.. section: Library
+
+:class:`collections.defaultdict` now prioritizes :meth:`~object.__setitem__`
+when inserting default values from ``default_factory``. This prevents race
+conditions where a default value would overwrite a value set before
+``default_factory`` returns.
+
+..
+
+.. date: 2025-12-13-10-34-59
+.. gh-issue: 142654
+.. nonce: fmm974
+.. section: Library
+
+Show the clearer error message when using ``profiling.sampling`` on an
+unknown PID.
+
+..
+
+.. date: 2025-12-11-22-59-33
+.. gh-issue: 142560
+.. nonce: GkJrkk
+.. section: Library
+
+Fix use-after-free in :class:`bytearray` search-like methods
+(:meth:`~bytearray.find`, :meth:`~bytearray.count`,
+:meth:`~bytearray.index`, :meth:`~bytearray.rindex`, and
+:meth:`~bytearray.rfind`) by marking the storage as exported which causes
+reallocation attempts to raise :exc:`BufferError`. For
+:func:`~operator.contains`, :meth:`~bytearray.split`, and
+:meth:`~bytearray.rsplit` the :ref:`buffer protocol <bufferobjects>` is used
+for this.
+
+..
+
+.. date: 2025-12-10-02-31-43
+.. gh-issue: 142419
+.. nonce: C8_LES
+.. section: Library
+
+:meth:`mmap.mmap.set_name` method added to annotate an anonymous memory map
+if Linux kernel supports ``PR_SET_VMA_ANON_NAME`` (Linux 5.17 or newer).
+Patch by Donghee Na.
+
+..
+
+.. date: 2025-10-12-12-05-52
+.. gh-issue: 139971
+.. nonce: UdoStU
+.. section: Library
+
+:mod:`pydoc`: Ensure that the link to the online documentation of a
+:term:`stdlib` module is correct.
+
+..
+
+.. date: 2025-07-20-15-39-54
+.. gh-issue: 124098
+.. nonce: znFPIp
+.. section: Library
+
+Fix issue where methods in handlers that lacked the protocol name but
+matched a valid base handler method (e.g., ``_open()`` or ``error()``) were
+incorrectly added to :class:`urllib.request.OpenerDirector`'s handlers.
+Contributed by Andrea Mattei.
+
+..
+
+.. date: 2025-07-05-08-30-07
+.. gh-issue: 136282
+.. nonce: K3JKyD
+.. section: Library
+
+Add support for :const:`~configparser.UNNAMED_SECTION` when creating a
+section via the mapping protocol access
+
+..
+
+.. date: 2025-12-22-12-03-09
+.. gh-issue: 143057
+.. nonce: Majsre
+.. section: Core and Builtins
+
+Avoid locking in :c:func:`PyTraceMalloc_Track` and
+:c:func:`PyTraceMalloc_Untrack` when :mod:`tracemalloc` is not enabled.
+
+..
+
+.. date: 2025-12-21-00-25-26
+.. gh-issue: 139109
+.. nonce: gwSsOL
+.. section: Core and Builtins
+
+Add missing terminator in certain cases when tracing in the new JIT
+compiler.
+
+..
+
+.. date: 2025-12-19-00-59-29
+.. gh-issue: 142961
+.. nonce: q8WRSq
+.. section: Core and Builtins
+
+Fix a segfault in the JIT when constant folding ``len(tuple)``.
+
+..
+
+.. date: 2025-12-18-01-00-14
+.. gh-issue: 142776
+.. nonce: ACaoeP
+.. section: Core and Builtins
+
+Fix a file descriptor leak in import.c
+
+..
+
+.. date: 2025-12-17-20-31-09
+.. gh-issue: 139757
+.. nonce: 6DWxeQ
+.. section: Core and Builtins
+
+Fix building JIT stencils on free-threaded builds.
+
+..
+
+.. date: 2025-12-17-10-49-03
+.. gh-issue: 129068
+.. nonce: GlYnrO
+.. section: Core and Builtins
+
+Make concurrent iteration over the same range iterator thread-safe in the
+free threading build.
+
+..
+
+.. date: 2025-12-16-23-26-41
+.. gh-issue: 142543
+.. nonce: wJKjBs
+.. section: Core and Builtins
+
+Fix a stack overflow on Clang JIT build configurations with full LTO.
+
+..
+
+.. date: 2025-12-16-20-38-17
+.. gh-issue: 142448
+.. nonce: mAFqwL
+.. section: Core and Builtins
+
+Fix a bug when using monitoring with the JIT.
+
+..
+
+.. date: 2025-12-16-11-56-20
+.. gh-issue: 142766
+.. nonce: Uy2HTm
+.. section: Core and Builtins
+
+Clear the frame of a generator when :meth:`generator.close` is called.
+
+..
+
+.. date: 2025-12-16-05-52-37
+.. gh-issue: 134584
+.. nonce: VsfOQR
+.. section: Core and Builtins
+
+Eliminate redundant refcounting from ``_LOAD_ATTR_INSTANCE_VALUE``.
+
+..
+
+.. date: 2025-12-16-05-24-24
+.. gh-issue: 134584
+.. nonce: tJ1usH
+.. section: Core and Builtins
+
+Eliminate redundant refcounting from ``_STORE_ATTR_WITH_HINT``.
+
+..
+
+.. date: 2025-12-13-01-11-03
+.. gh-issue: 142476
+.. nonce: 44Sp4N
+.. section: Core and Builtins
+
+Fix a memory leak in the experimental Tier 2 optimizer when creating
+executors. Patched by Shamil Abdulaev.
+
+..
+
+.. date: 2025-11-06-05-21-25
+.. gh-issue: 100964
+.. nonce: TxPf1b
+.. section: Core and Builtins
+
+Fix reference cycle in exhausted generator frames. Patch by Savannah
+Ostrowski.
+
+..
+
+.. date: 2025-10-11-17-01-21
+.. gh-issue: 139922
+.. nonce: RUkXyd
+.. section: Core and Builtins
+
+Allow building CPython with the tail calling interpreter on Visual Studio
+2026 MSVC. This provides a performance gain over the prior interpreter for
+MSVC. Patch by Ken Jin, Brandt Bucher, and Chris Eibl. With help from the
+MSVC team including Hulon Jenkins.

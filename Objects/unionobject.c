@@ -61,7 +61,7 @@ union_hash(PyObject *self)
         }
         // The unhashable values somehow became hashable again. Still raise
         // an error.
-        PyErr_Format(PyExc_TypeError, "union contains %d unhashable elements", n);
+        PyErr_Format(PyExc_TypeError, "union contains %zd unhashable elements", n);
         return -1;
     }
     return PyObject_Hash(alias->hashable_args);
@@ -245,6 +245,7 @@ is_unionable(PyObject *obj)
 {
     if (obj == Py_None ||
         PyType_Check(obj) ||
+        PySentinel_Check(obj) ||
         _PyGenericAlias_Check(obj) ||
         _PyUnion_Check(obj) ||
         Py_IS_TYPE(obj, &_PyTypeAlias_Type)) {
@@ -393,8 +394,23 @@ static PyGetSetDef union_properties[] = {
     {0}
 };
 
+static PyObject *
+union_nb_or(PyObject *a, PyObject *b)
+{
+    unionbuilder ub;
+    if (!unionbuilder_init(&ub, true)) {
+        return NULL;
+    }
+    if (!unionbuilder_add_single(&ub, a) ||
+        !unionbuilder_add_single(&ub, b)) {
+        unionbuilder_finalize(&ub);
+        return NULL;
+    }
+    return make_union(&ub);
+}
+
 static PyNumberMethods union_as_number = {
-        .nb_or = _Py_union_type_or, // Add __or__ function
+        .nb_or = union_nb_or, // Add __or__ function
 };
 
 static const char* const cls_attrs[] = {
@@ -474,11 +490,13 @@ _Py_union_from_tuple(PyObject *args)
     }
     if (PyTuple_CheckExact(args)) {
         if (!unionbuilder_add_tuple(&ub, args)) {
+            unionbuilder_finalize(&ub);
             return NULL;
         }
     }
     else {
         if (!unionbuilder_add_single(&ub, args)) {
+            unionbuilder_finalize(&ub);
             return NULL;
         }
     }

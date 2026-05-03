@@ -136,7 +136,7 @@ threads to be interrupted.
 .. date: 2024-02-08-16-01-18
 .. gh-issue: 115154
 .. nonce: ji96FV
-.. section: Core and Builtins
+.. section: Library
 
 Fix a bug that was causing the :func:`tokenize.untokenize` function to
 handle unicode named literals incorrectly. Patch by Pablo Galindo
@@ -156,7 +156,7 @@ Add ability to force alignment of :mod:`ctypes.Structure` by way of the new
 .. date: 2023-07-16-15-02-47
 .. gh-issue: 104090
 .. nonce: oMjNa9
-.. section: Core and Builtins
+.. section: Library
 
 The multiprocessing resource tracker now exits with non-zero status code if
 a resource leak was detected. It still exits with status code 0 otherwise.

@@ -51,6 +51,123 @@ _decimal_Context_Etop(PyObject *self, PyObject *Py_UNUSED(ignored))
     return _decimal_Context_Etop_impl(self);
 }
 
+#if defined(CONFIG_32)
+
+PyDoc_STRVAR(_decimal_Context__unsafe_setprec__doc__,
+"_unsafe_setprec($self, x, /)\n"
+"--\n"
+"\n");
+
+#define _DECIMAL_CONTEXT__UNSAFE_SETPREC_METHODDEF    \
+    {"_unsafe_setprec", (PyCFunction)_decimal_Context__unsafe_setprec, METH_O, _decimal_Context__unsafe_setprec__doc__},
+
+static PyObject *
+_decimal_Context__unsafe_setprec_impl(PyObject *self, Py_ssize_t x);
+
+static PyObject *
+_decimal_Context__unsafe_setprec(PyObject *self, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+    Py_ssize_t x;
+
+    {
+        Py_ssize_t ival = -1;
+        PyObject *iobj = _PyNumber_Index(arg);
+        if (iobj != NULL) {
+            ival = PyLong_AsSsize_t(iobj);
+            Py_DECREF(iobj);
+        }
+        if (ival == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        x = ival;
+    }
+    return_value = _decimal_Context__unsafe_setprec_impl(self, x);
+
+exit:
+    return return_value;
+}
+
+#endif /* defined(CONFIG_32) */
+
+#if defined(CONFIG_32)
+
+PyDoc_STRVAR(_decimal_Context__unsafe_setemin__doc__,
+"_unsafe_setemin($self, x, /)\n"
+"--\n"
+"\n");
+
+#define _DECIMAL_CONTEXT__UNSAFE_SETEMIN_METHODDEF    \
+    {"_unsafe_setemin", (PyCFunction)_decimal_Context__unsafe_setemin, METH_O, _decimal_Context__unsafe_setemin__doc__},
+
+static PyObject *
+_decimal_Context__unsafe_setemin_impl(PyObject *self, Py_ssize_t x);
+
+static PyObject *
+_decimal_Context__unsafe_setemin(PyObject *self, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+    Py_ssize_t x;
+
+    {
+        Py_ssize_t ival = -1;
+        PyObject *iobj = _PyNumber_Index(arg);
+        if (iobj != NULL) {
+            ival = PyLong_AsSsize_t(iobj);
+            Py_DECREF(iobj);
+        }
+        if (ival == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        x = ival;
+    }
+    return_value = _decimal_Context__unsafe_setemin_impl(self, x);
+
+exit:
+    return return_value;
+}
+
+#endif /* defined(CONFIG_32) */
+
+#if defined(CONFIG_32)
+
+PyDoc_STRVAR(_decimal_Context__unsafe_setemax__doc__,
+"_unsafe_setemax($self, x, /)\n"
+"--\n"
+"\n");
+
+#define _DECIMAL_CONTEXT__UNSAFE_SETEMAX_METHODDEF    \
+    {"_unsafe_setemax", (PyCFunction)_decimal_Context__unsafe_setemax, METH_O, _decimal_Context__unsafe_setemax__doc__},
+
+static PyObject *
+_decimal_Context__unsafe_setemax_impl(PyObject *self, Py_ssize_t x);
+
+static PyObject *
+_decimal_Context__unsafe_setemax(PyObject *self, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+    Py_ssize_t x;
+
+    {
+        Py_ssize_t ival = -1;
+        PyObject *iobj = _PyNumber_Index(arg);
+        if (iobj != NULL) {
+            ival = PyLong_AsSsize_t(iobj);
+            Py_DECREF(iobj);
+        }
+        if (ival == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        x = ival;
+    }
+    return_value = _decimal_Context__unsafe_setemax_impl(self, x);
+
+exit:
+    return return_value;
+}
+
+#endif /* defined(CONFIG_32) */
+
 PyDoc_STRVAR(_decimal_Context_clear_traps__doc__,
 "clear_traps($self, /)\n"
 "--\n"
@@ -257,15 +374,61 @@ PyDoc_STRVAR(_decimal_Context_copy__doc__,
 "Return a duplicate of the context with all flags cleared.");
 
 #define _DECIMAL_CONTEXT_COPY_METHODDEF    \
-    {"copy", (PyCFunction)_decimal_Context_copy, METH_NOARGS, _decimal_Context_copy__doc__},
+    {"copy", _PyCFunction_CAST(_decimal_Context_copy), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _decimal_Context_copy__doc__},
 
 static PyObject *
-_decimal_Context_copy_impl(PyObject *self);
+_decimal_Context_copy_impl(PyObject *self, PyTypeObject *cls);
 
 static PyObject *
-_decimal_Context_copy(PyObject *self, PyObject *Py_UNUSED(ignored))
+_decimal_Context_copy(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
-    return _decimal_Context_copy_impl(self);
+    if (nargs || (kwnames && PyTuple_GET_SIZE(kwnames))) {
+        PyErr_SetString(PyExc_TypeError, "copy() takes no arguments");
+        return NULL;
+    }
+    return _decimal_Context_copy_impl(self, cls);
+}
+
+PyDoc_STRVAR(_decimal_Context___copy____doc__,
+"__copy__($self, /)\n"
+"--\n"
+"\n");
+
+#define _DECIMAL_CONTEXT___COPY___METHODDEF    \
+    {"__copy__", _PyCFunction_CAST(_decimal_Context___copy__), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _decimal_Context___copy____doc__},
+
+static PyObject *
+_decimal_Context___copy___impl(PyObject *self, PyTypeObject *cls);
+
+static PyObject *
+_decimal_Context___copy__(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    if (nargs || (kwnames && PyTuple_GET_SIZE(kwnames))) {
+        PyErr_SetString(PyExc_TypeError, "__copy__() takes no arguments");
+        return NULL;
+    }
+    return _decimal_Context___copy___impl(self, cls);
+}
+
+PyDoc_STRVAR(_decimal_Context___reduce____doc__,
+"__reduce__($self, /)\n"
+"--\n"
+"\n");
+
+#define _DECIMAL_CONTEXT___REDUCE___METHODDEF    \
+    {"__reduce__", _PyCFunction_CAST(_decimal_Context___reduce__), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _decimal_Context___reduce____doc__},
+
+static PyObject *
+_decimal_Context___reduce___impl(PyObject *self, PyTypeObject *cls);
+
+static PyObject *
+_decimal_Context___reduce__(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    if (nargs || (kwnames && PyTuple_GET_SIZE(kwnames))) {
+        PyErr_SetString(PyExc_TypeError, "__reduce__() takes no arguments");
+        return NULL;
+    }
+    return _decimal_Context___reduce___impl(self, cls);
 }
 
 PyDoc_STRVAR(_decimal_getcontext__doc__,
@@ -445,18 +608,41 @@ PyDoc_STRVAR(_decimal_Decimal_from_float__doc__,
 "    Decimal(\'-Infinity\')");
 
 #define _DECIMAL_DECIMAL_FROM_FLOAT_METHODDEF    \
-    {"from_float", (PyCFunction)_decimal_Decimal_from_float, METH_O|METH_CLASS, _decimal_Decimal_from_float__doc__},
+    {"from_float", _PyCFunction_CAST(_decimal_Decimal_from_float), METH_METHOD|METH_FASTCALL|METH_KEYWORDS|METH_CLASS, _decimal_Decimal_from_float__doc__},
 
 static PyObject *
-_decimal_Decimal_from_float_impl(PyTypeObject *type, PyObject *pyfloat);
+_decimal_Decimal_from_float_impl(PyTypeObject *type, PyTypeObject *cls,
+                                 PyObject *pyfloat);
 
 static PyObject *
-_decimal_Decimal_from_float(PyObject *type, PyObject *pyfloat)
+_decimal_Decimal_from_float(PyObject *type, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
+    #else
+    #  define KWTUPLE NULL
+    #endif
 
-    return_value = _decimal_Decimal_from_float_impl((PyTypeObject *)type, pyfloat);
+    static const char * const _keywords[] = {"", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "from_float",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[1];
+    PyObject *pyfloat;
 
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    pyfloat = args[0];
+    return_value = _decimal_Decimal_from_float_impl((PyTypeObject *)type, cls, pyfloat);
+
+exit:
     return return_value;
 }
 
@@ -474,18 +660,41 @@ PyDoc_STRVAR(_decimal_Decimal_from_number__doc__,
 "    Decimal(\'3.14\')");
 
 #define _DECIMAL_DECIMAL_FROM_NUMBER_METHODDEF    \
-    {"from_number", (PyCFunction)_decimal_Decimal_from_number, METH_O|METH_CLASS, _decimal_Decimal_from_number__doc__},
+    {"from_number", _PyCFunction_CAST(_decimal_Decimal_from_number), METH_METHOD|METH_FASTCALL|METH_KEYWORDS|METH_CLASS, _decimal_Decimal_from_number__doc__},
 
 static PyObject *
-_decimal_Decimal_from_number_impl(PyTypeObject *type, PyObject *number);
+_decimal_Decimal_from_number_impl(PyTypeObject *type, PyTypeObject *cls,
+                                  PyObject *number);
 
 static PyObject *
-_decimal_Decimal_from_number(PyObject *type, PyObject *number)
+_decimal_Decimal_from_number(PyObject *type, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
+    #else
+    #  define KWTUPLE NULL
+    #endif
 
-    return_value = _decimal_Decimal_from_number_impl((PyTypeObject *)type, number);
+    static const char * const _keywords[] = {"", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "from_number",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[1];
+    PyObject *number;
 
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    number = args[0];
+    return_value = _decimal_Decimal_from_number_impl((PyTypeObject *)type, cls, number);
+
+exit:
     return return_value;
 }
 
@@ -499,7 +708,44 @@ PyDoc_STRVAR(_decimal_Context_create_decimal_from_float__doc__,
 "the context limits.");
 
 #define _DECIMAL_CONTEXT_CREATE_DECIMAL_FROM_FLOAT_METHODDEF    \
-    {"create_decimal_from_float", (PyCFunction)_decimal_Context_create_decimal_from_float, METH_O, _decimal_Context_create_decimal_from_float__doc__},
+    {"create_decimal_from_float", _PyCFunction_CAST(_decimal_Context_create_decimal_from_float), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _decimal_Context_create_decimal_from_float__doc__},
+
+static PyObject *
+_decimal_Context_create_decimal_from_float_impl(PyObject *context,
+                                                PyTypeObject *cls,
+                                                PyObject *f);
+
+static PyObject *
+_decimal_Context_create_decimal_from_float(PyObject *context, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
+    #else
+    #  define KWTUPLE NULL
+    #endif
+
+    static const char * const _keywords[] = {"", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "create_decimal_from_float",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[1];
+    PyObject *f;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    f = args[0];
+    return_value = _decimal_Context_create_decimal_from_float_impl(context, cls, f);
+
+exit:
+    return return_value;
+}
 
 PyDoc_STRVAR(dec_new__doc__,
 "Decimal(value=\'0\', context=None)\n"
@@ -617,20 +863,36 @@ PyDoc_STRVAR(_decimal_Decimal___format____doc__,
 "Formats the Decimal according to format_spec.");
 
 #define _DECIMAL_DECIMAL___FORMAT___METHODDEF    \
-    {"__format__", _PyCFunction_CAST(_decimal_Decimal___format__), METH_FASTCALL, _decimal_Decimal___format____doc__},
+    {"__format__", _PyCFunction_CAST(_decimal_Decimal___format__), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _decimal_Decimal___format____doc__},
 
 static PyObject *
-_decimal_Decimal___format___impl(PyObject *dec, PyObject *fmtarg,
-                                 PyObject *override);
+_decimal_Decimal___format___impl(PyObject *dec, PyTypeObject *cls,
+                                 PyObject *fmtarg, PyObject *override);
 
 static PyObject *
-_decimal_Decimal___format__(PyObject *dec, PyObject *const *args, Py_ssize_t nargs)
+_decimal_Decimal___format__(PyObject *dec, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
+    #else
+    #  define KWTUPLE NULL
+    #endif
+
+    static const char * const _keywords[] = {"", "", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "__format__",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[2];
     PyObject *fmtarg;
     PyObject *override = NULL;
 
-    if (!_PyArg_CheckPositional("__format__", nargs, 1, 2)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 1, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    if (!args) {
         goto exit;
     }
     if (!PyUnicode_Check(args[0])) {
@@ -639,11 +901,11 @@ _decimal_Decimal___format__(PyObject *dec, PyObject *const *args, Py_ssize_t nar
     }
     fmtarg = args[0];
     if (nargs < 2) {
-        goto skip_optional;
+        goto skip_optional_posonly;
     }
     override = args[1];
-skip_optional:
-    return_value = _decimal_Decimal___format___impl(dec, fmtarg, override);
+skip_optional_posonly:
+    return_value = _decimal_Decimal___format___impl(dec, cls, fmtarg, override);
 
 exit:
     return return_value;
@@ -659,15 +921,19 @@ PyDoc_STRVAR(_decimal_Decimal_as_integer_ratio__doc__,
 "Raise OverflowError on infinities and a ValueError on NaNs.");
 
 #define _DECIMAL_DECIMAL_AS_INTEGER_RATIO_METHODDEF    \
-    {"as_integer_ratio", (PyCFunction)_decimal_Decimal_as_integer_ratio, METH_NOARGS, _decimal_Decimal_as_integer_ratio__doc__},
+    {"as_integer_ratio", _PyCFunction_CAST(_decimal_Decimal_as_integer_ratio), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _decimal_Decimal_as_integer_ratio__doc__},
 
 static PyObject *
-_decimal_Decimal_as_integer_ratio_impl(PyObject *self);
+_decimal_Decimal_as_integer_ratio_impl(PyObject *self, PyTypeObject *cls);
 
 static PyObject *
-_decimal_Decimal_as_integer_ratio(PyObject *self, PyObject *Py_UNUSED(ignored))
+_decimal_Decimal_as_integer_ratio(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
-    return _decimal_Decimal_as_integer_ratio_impl(self);
+    if (nargs || (kwnames && PyTuple_GET_SIZE(kwnames))) {
+        PyErr_SetString(PyExc_TypeError, "as_integer_ratio() takes no arguments");
+        return NULL;
+    }
+    return _decimal_Decimal_as_integer_ratio_impl(self, cls);
 }
 
 PyDoc_STRVAR(_decimal_Decimal_to_integral_value__doc__,
@@ -681,14 +947,15 @@ PyDoc_STRVAR(_decimal_Decimal_to_integral_value__doc__,
 "rounding mode of the current default context is used.");
 
 #define _DECIMAL_DECIMAL_TO_INTEGRAL_VALUE_METHODDEF    \
-    {"to_integral_value", _PyCFunction_CAST(_decimal_Decimal_to_integral_value), METH_FASTCALL|METH_KEYWORDS, _decimal_Decimal_to_integral_value__doc__},
+    {"to_integral_value", _PyCFunction_CAST(_decimal_Decimal_to_integral_value), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _decimal_Decimal_to_integral_value__doc__},
 
 static PyObject *
-_decimal_Decimal_to_integral_value_impl(PyObject *self, PyObject *rounding,
+_decimal_Decimal_to_integral_value_impl(PyObject *self, PyTypeObject *cls,
+                                        PyObject *rounding,
                                         PyObject *context);
 
 static PyObject *
-_decimal_Decimal_to_integral_value(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+_decimal_Decimal_to_integral_value(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -739,7 +1006,7 @@ _decimal_Decimal_to_integral_value(PyObject *self, PyObject *const *args, Py_ssi
     }
     context = args[1];
 skip_optional_pos:
-    return_value = _decimal_Decimal_to_integral_value_impl(self, rounding, context);
+    return_value = _decimal_Decimal_to_integral_value_impl(self, cls, rounding, context);
 
 exit:
     return return_value;
@@ -755,14 +1022,14 @@ PyDoc_STRVAR(_decimal_Decimal_to_integral__doc__,
 "versions.");
 
 #define _DECIMAL_DECIMAL_TO_INTEGRAL_METHODDEF    \
-    {"to_integral", _PyCFunction_CAST(_decimal_Decimal_to_integral), METH_FASTCALL|METH_KEYWORDS, _decimal_Decimal_to_integral__doc__},
+    {"to_integral", _PyCFunction_CAST(_decimal_Decimal_to_integral), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _decimal_Decimal_to_integral__doc__},
 
 static PyObject *
-_decimal_Decimal_to_integral_impl(PyObject *self, PyObject *rounding,
-                                  PyObject *context);
+_decimal_Decimal_to_integral_impl(PyObject *self, PyTypeObject *cls,
+                                  PyObject *rounding, PyObject *context);
 
 static PyObject *
-_decimal_Decimal_to_integral(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+_decimal_Decimal_to_integral(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -813,7 +1080,7 @@ _decimal_Decimal_to_integral(PyObject *self, PyObject *const *args, Py_ssize_t n
     }
     context = args[1];
 skip_optional_pos:
-    return_value = _decimal_Decimal_to_integral_impl(self, rounding, context);
+    return_value = _decimal_Decimal_to_integral_impl(self, cls, rounding, context);
 
 exit:
     return return_value;
@@ -831,14 +1098,15 @@ PyDoc_STRVAR(_decimal_Decimal_to_integral_exact__doc__,
 "given, then the rounding mode of the current default context is used.");
 
 #define _DECIMAL_DECIMAL_TO_INTEGRAL_EXACT_METHODDEF    \
-    {"to_integral_exact", _PyCFunction_CAST(_decimal_Decimal_to_integral_exact), METH_FASTCALL|METH_KEYWORDS, _decimal_Decimal_to_integral_exact__doc__},
+    {"to_integral_exact", _PyCFunction_CAST(_decimal_Decimal_to_integral_exact), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _decimal_Decimal_to_integral_exact__doc__},
 
 static PyObject *
-_decimal_Decimal_to_integral_exact_impl(PyObject *self, PyObject *rounding,
+_decimal_Decimal_to_integral_exact_impl(PyObject *self, PyTypeObject *cls,
+                                        PyObject *rounding,
                                         PyObject *context);
 
 static PyObject *
-_decimal_Decimal_to_integral_exact(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+_decimal_Decimal_to_integral_exact(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -889,7 +1157,7 @@ _decimal_Decimal_to_integral_exact(PyObject *self, PyObject *const *args, Py_ssi
     }
     context = args[1];
 skip_optional_pos:
-    return_value = _decimal_Decimal_to_integral_exact_impl(self, rounding, context);
+    return_value = _decimal_Decimal_to_integral_exact_impl(self, cls, rounding, context);
 
 exit:
     return return_value;
@@ -902,26 +1170,43 @@ PyDoc_STRVAR(_decimal_Decimal___round____doc__,
 "Return the Integral closest to self, rounding half toward even.");
 
 #define _DECIMAL_DECIMAL___ROUND___METHODDEF    \
-    {"__round__", _PyCFunction_CAST(_decimal_Decimal___round__), METH_FASTCALL, _decimal_Decimal___round____doc__},
+    {"__round__", _PyCFunction_CAST(_decimal_Decimal___round__), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _decimal_Decimal___round____doc__},
 
 static PyObject *
-_decimal_Decimal___round___impl(PyObject *self, PyObject *ndigits);
+_decimal_Decimal___round___impl(PyObject *self, PyTypeObject *cls,
+                                PyObject *ndigits);
 
 static PyObject *
-_decimal_Decimal___round__(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
+_decimal_Decimal___round__(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
+    #else
+    #  define KWTUPLE NULL
+    #endif
+
+    static const char * const _keywords[] = {"", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "__round__",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[1];
     PyObject *ndigits = NULL;
 
-    if (!_PyArg_CheckPositional("__round__", nargs, 0, 1)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 0, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    if (!args) {
         goto exit;
     }
     if (nargs < 1) {
-        goto skip_optional;
+        goto skip_optional_posonly;
     }
     ndigits = args[0];
-skip_optional:
-    return_value = _decimal_Decimal___round___impl(self, ndigits);
+skip_optional_posonly:
+    return_value = _decimal_Decimal___round___impl(self, cls, ndigits);
 
 exit:
     return return_value;
@@ -934,15 +1219,19 @@ PyDoc_STRVAR(_decimal_Decimal_as_tuple__doc__,
 "Return a tuple representation of the number.");
 
 #define _DECIMAL_DECIMAL_AS_TUPLE_METHODDEF    \
-    {"as_tuple", (PyCFunction)_decimal_Decimal_as_tuple, METH_NOARGS, _decimal_Decimal_as_tuple__doc__},
+    {"as_tuple", _PyCFunction_CAST(_decimal_Decimal_as_tuple), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _decimal_Decimal_as_tuple__doc__},
 
 static PyObject *
-_decimal_Decimal_as_tuple_impl(PyObject *self);
+_decimal_Decimal_as_tuple_impl(PyObject *self, PyTypeObject *cls);
 
 static PyObject *
-_decimal_Decimal_as_tuple(PyObject *self, PyObject *Py_UNUSED(ignored))
+_decimal_Decimal_as_tuple(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
-    return _decimal_Decimal_as_tuple_impl(self);
+    if (nargs || (kwnames && PyTuple_GET_SIZE(kwnames))) {
+        PyErr_SetString(PyExc_TypeError, "as_tuple() takes no arguments");
+        return NULL;
+    }
+    return _decimal_Decimal_as_tuple_impl(self, cls);
 }
 
 PyDoc_STRVAR(_decimal_Decimal_exp__doc__,
@@ -955,13 +1244,14 @@ PyDoc_STRVAR(_decimal_Decimal_exp__doc__,
 "correctly rounded.");
 
 #define _DECIMAL_DECIMAL_EXP_METHODDEF    \
-    {"exp", _PyCFunction_CAST(_decimal_Decimal_exp), METH_FASTCALL|METH_KEYWORDS, _decimal_Decimal_exp__doc__},
+    {"exp", _PyCFunction_CAST(_decimal_Decimal_exp), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _decimal_Decimal_exp__doc__},
 
 static PyObject *
-_decimal_Decimal_exp_impl(PyObject *self, PyObject *context);
+_decimal_Decimal_exp_impl(PyObject *self, PyTypeObject *cls,
+                          PyObject *context);
 
 static PyObject *
-_decimal_Decimal_exp(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+_decimal_Decimal_exp(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -1005,7 +1295,7 @@ _decimal_Decimal_exp(PyObject *self, PyObject *const *args, Py_ssize_t nargs, Py
     }
     context = args[0];
 skip_optional_pos:
-    return_value = _decimal_Decimal_exp_impl(self, context);
+    return_value = _decimal_Decimal_exp_impl(self, cls, context);
 
 exit:
     return return_value;
@@ -1021,13 +1311,14 @@ PyDoc_STRVAR(_decimal_Decimal_ln__doc__,
 "correctly rounded.");
 
 #define _DECIMAL_DECIMAL_LN_METHODDEF    \
-    {"ln", _PyCFunction_CAST(_decimal_Decimal_ln), METH_FASTCALL|METH_KEYWORDS, _decimal_Decimal_ln__doc__},
+    {"ln", _PyCFunction_CAST(_decimal_Decimal_ln), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _decimal_Decimal_ln__doc__},
 
 static PyObject *
-_decimal_Decimal_ln_impl(PyObject *self, PyObject *context);
+_decimal_Decimal_ln_impl(PyObject *self, PyTypeObject *cls,
+                         PyObject *context);
 
 static PyObject *
-_decimal_Decimal_ln(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+_decimal_Decimal_ln(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -1071,7 +1362,7 @@ _decimal_Decimal_ln(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyO
     }
     context = args[0];
 skip_optional_pos:
-    return_value = _decimal_Decimal_ln_impl(self, context);
+    return_value = _decimal_Decimal_ln_impl(self, cls, context);
 
 exit:
     return return_value;
@@ -1087,13 +1378,14 @@ PyDoc_STRVAR(_decimal_Decimal_log10__doc__,
 "correctly rounded.");
 
 #define _DECIMAL_DECIMAL_LOG10_METHODDEF    \
-    {"log10", _PyCFunction_CAST(_decimal_Decimal_log10), METH_FASTCALL|METH_KEYWORDS, _decimal_Decimal_log10__doc__},
+    {"log10", _PyCFunction_CAST(_decimal_Decimal_log10), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _decimal_Decimal_log10__doc__},
 
 static PyObject *
-_decimal_Decimal_log10_impl(PyObject *self, PyObject *context);
+_decimal_Decimal_log10_impl(PyObject *self, PyTypeObject *cls,
+                            PyObject *context);
 
 static PyObject *
-_decimal_Decimal_log10(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+_decimal_Decimal_log10(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -1137,7 +1429,7 @@ _decimal_Decimal_log10(PyObject *self, PyObject *const *args, Py_ssize_t nargs, 
     }
     context = args[0];
 skip_optional_pos:
-    return_value = _decimal_Decimal_log10_impl(self, context);
+    return_value = _decimal_Decimal_log10_impl(self, cls, context);
 
 exit:
     return return_value;
@@ -1150,13 +1442,14 @@ PyDoc_STRVAR(_decimal_Decimal_next_minus__doc__,
 "Returns the largest representable number smaller than itself.");
 
 #define _DECIMAL_DECIMAL_NEXT_MINUS_METHODDEF    \
-    {"next_minus", _PyCFunction_CAST(_decimal_Decimal_next_minus), METH_FASTCALL|METH_KEYWORDS, _decimal_Decimal_next_minus__doc__},
+    {"next_minus", _PyCFunction_CAST(_decimal_Decimal_next_minus), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _decimal_Decimal_next_minus__doc__},
 
 static PyObject *
-_decimal_Decimal_next_minus_impl(PyObject *self, PyObject *context);
+_decimal_Decimal_next_minus_impl(PyObject *self, PyTypeObject *cls,
+                                 PyObject *context);
 
 static PyObject *
-_decimal_Decimal_next_minus(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+_decimal_Decimal_next_minus(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -1200,7 +1493,7 @@ _decimal_Decimal_next_minus(PyObject *self, PyObject *const *args, Py_ssize_t na
     }
     context = args[0];
 skip_optional_pos:
-    return_value = _decimal_Decimal_next_minus_impl(self, context);
+    return_value = _decimal_Decimal_next_minus_impl(self, cls, context);
 
 exit:
     return return_value;
@@ -1213,13 +1506,14 @@ PyDoc_STRVAR(_decimal_Decimal_next_plus__doc__,
 "Returns the smallest representable number larger than itself.");
 
 #define _DECIMAL_DECIMAL_NEXT_PLUS_METHODDEF    \
-    {"next_plus", _PyCFunction_CAST(_decimal_Decimal_next_plus), METH_FASTCALL|METH_KEYWORDS, _decimal_Decimal_next_plus__doc__},
+    {"next_plus", _PyCFunction_CAST(_decimal_Decimal_next_plus), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _decimal_Decimal_next_plus__doc__},
 
 static PyObject *
-_decimal_Decimal_next_plus_impl(PyObject *self, PyObject *context);
+_decimal_Decimal_next_plus_impl(PyObject *self, PyTypeObject *cls,
+                                PyObject *context);
 
 static PyObject *
-_decimal_Decimal_next_plus(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+_decimal_Decimal_next_plus(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -1263,7 +1557,7 @@ _decimal_Decimal_next_plus(PyObject *self, PyObject *const *args, Py_ssize_t nar
     }
     context = args[0];
 skip_optional_pos:
-    return_value = _decimal_Decimal_next_plus_impl(self, context);
+    return_value = _decimal_Decimal_next_plus_impl(self, cls, context);
 
 exit:
     return return_value;
@@ -1281,13 +1575,14 @@ PyDoc_STRVAR(_decimal_Decimal_normalize__doc__,
 "the equivalent value Decimal(\'32.1\').");
 
 #define _DECIMAL_DECIMAL_NORMALIZE_METHODDEF    \
-    {"normalize", _PyCFunction_CAST(_decimal_Decimal_normalize), METH_FASTCALL|METH_KEYWORDS, _decimal_Decimal_normalize__doc__},
+    {"normalize", _PyCFunction_CAST(_decimal_Decimal_normalize), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _decimal_Decimal_normalize__doc__},
 
 static PyObject *
-_decimal_Decimal_normalize_impl(PyObject *self, PyObject *context);
+_decimal_Decimal_normalize_impl(PyObject *self, PyTypeObject *cls,
+                                PyObject *context);
 
 static PyObject *
-_decimal_Decimal_normalize(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+_decimal_Decimal_normalize(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -1331,7 +1626,7 @@ _decimal_Decimal_normalize(PyObject *self, PyObject *const *args, Py_ssize_t nar
     }
     context = args[0];
 skip_optional_pos:
-    return_value = _decimal_Decimal_normalize_impl(self, context);
+    return_value = _decimal_Decimal_normalize_impl(self, cls, context);
 
 exit:
     return return_value;
@@ -1346,13 +1641,14 @@ PyDoc_STRVAR(_decimal_Decimal_sqrt__doc__,
 "The result is correctly rounded using the ROUND_HALF_EVEN rounding mode.");
 
 #define _DECIMAL_DECIMAL_SQRT_METHODDEF    \
-    {"sqrt", _PyCFunction_CAST(_decimal_Decimal_sqrt), METH_FASTCALL|METH_KEYWORDS, _decimal_Decimal_sqrt__doc__},
+    {"sqrt", _PyCFunction_CAST(_decimal_Decimal_sqrt), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _decimal_Decimal_sqrt__doc__},
 
 static PyObject *
-_decimal_Decimal_sqrt_impl(PyObject *self, PyObject *context);
+_decimal_Decimal_sqrt_impl(PyObject *self, PyTypeObject *cls,
+                           PyObject *context);
 
 static PyObject *
-_decimal_Decimal_sqrt(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+_decimal_Decimal_sqrt(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -1396,7 +1692,7 @@ _decimal_Decimal_sqrt(PyObject *self, PyObject *const *args, Py_ssize_t nargs, P
     }
     context = args[0];
 skip_optional_pos:
-    return_value = _decimal_Decimal_sqrt_impl(self, context);
+    return_value = _decimal_Decimal_sqrt_impl(self, cls, context);
 
 exit:
     return return_value;
@@ -1416,14 +1712,14 @@ PyDoc_STRVAR(_decimal_Decimal_compare__doc__,
 "    a > b           ==> Decimal(\'1\')");
 
 #define _DECIMAL_DECIMAL_COMPARE_METHODDEF    \
-    {"compare", _PyCFunction_CAST(_decimal_Decimal_compare), METH_FASTCALL|METH_KEYWORDS, _decimal_Decimal_compare__doc__},
+    {"compare", _PyCFunction_CAST(_decimal_Decimal_compare), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _decimal_Decimal_compare__doc__},
 
 static PyObject *
-_decimal_Decimal_compare_impl(PyObject *self, PyObject *other,
-                              PyObject *context);
+_decimal_Decimal_compare_impl(PyObject *self, PyTypeObject *cls,
+                              PyObject *other, PyObject *context);
 
 static PyObject *
-_decimal_Decimal_compare(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+_decimal_Decimal_compare(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -1469,7 +1765,7 @@ _decimal_Decimal_compare(PyObject *self, PyObject *const *args, Py_ssize_t nargs
     }
     context = args[1];
 skip_optional_pos:
-    return_value = _decimal_Decimal_compare_impl(self, other, context);
+    return_value = _decimal_Decimal_compare_impl(self, cls, other, context);
 
 exit:
     return return_value;
@@ -1482,14 +1778,14 @@ PyDoc_STRVAR(_decimal_Decimal_compare_signal__doc__,
 "Identical to compare, except that all NaNs signal.");
 
 #define _DECIMAL_DECIMAL_COMPARE_SIGNAL_METHODDEF    \
-    {"compare_signal", _PyCFunction_CAST(_decimal_Decimal_compare_signal), METH_FASTCALL|METH_KEYWORDS, _decimal_Decimal_compare_signal__doc__},
+    {"compare_signal", _PyCFunction_CAST(_decimal_Decimal_compare_signal), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _decimal_Decimal_compare_signal__doc__},
 
 static PyObject *
-_decimal_Decimal_compare_signal_impl(PyObject *self, PyObject *other,
-                                     PyObject *context);
+_decimal_Decimal_compare_signal_impl(PyObject *self, PyTypeObject *cls,
+                                     PyObject *other, PyObject *context);
 
 static PyObject *
-_decimal_Decimal_compare_signal(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+_decimal_Decimal_compare_signal(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -1535,7 +1831,7 @@ _decimal_Decimal_compare_signal(PyObject *self, PyObject *const *args, Py_ssize_
     }
     context = args[1];
 skip_optional_pos:
-    return_value = _decimal_Decimal_compare_signal_impl(self, other, context);
+    return_value = _decimal_Decimal_compare_signal_impl(self, cls, other, context);
 
 exit:
     return return_value;
@@ -1551,13 +1847,14 @@ PyDoc_STRVAR(_decimal_Decimal_max__doc__,
 "operand is returned.");
 
 #define _DECIMAL_DECIMAL_MAX_METHODDEF    \
-    {"max", _PyCFunction_CAST(_decimal_Decimal_max), METH_FASTCALL|METH_KEYWORDS, _decimal_Decimal_max__doc__},
+    {"max", _PyCFunction_CAST(_decimal_Decimal_max), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _decimal_Decimal_max__doc__},
 
 static PyObject *
-_decimal_Decimal_max_impl(PyObject *self, PyObject *other, PyObject *context);
+_decimal_Decimal_max_impl(PyObject *self, PyTypeObject *cls, PyObject *other,
+                          PyObject *context);
 
 static PyObject *
-_decimal_Decimal_max(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+_decimal_Decimal_max(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -1603,7 +1900,7 @@ _decimal_Decimal_max(PyObject *self, PyObject *const *args, Py_ssize_t nargs, Py
     }
     context = args[1];
 skip_optional_pos:
-    return_value = _decimal_Decimal_max_impl(self, other, context);
+    return_value = _decimal_Decimal_max_impl(self, cls, other, context);
 
 exit:
     return return_value;
@@ -1616,14 +1913,14 @@ PyDoc_STRVAR(_decimal_Decimal_max_mag__doc__,
 "As the max() method, but compares the absolute values of the operands.");
 
 #define _DECIMAL_DECIMAL_MAX_MAG_METHODDEF    \
-    {"max_mag", _PyCFunction_CAST(_decimal_Decimal_max_mag), METH_FASTCALL|METH_KEYWORDS, _decimal_Decimal_max_mag__doc__},
+    {"max_mag", _PyCFunction_CAST(_decimal_Decimal_max_mag), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _decimal_Decimal_max_mag__doc__},
 
 static PyObject *
-_decimal_Decimal_max_mag_impl(PyObject *self, PyObject *other,
-                              PyObject *context);
+_decimal_Decimal_max_mag_impl(PyObject *self, PyTypeObject *cls,
+                              PyObject *other, PyObject *context);
 
 static PyObject *
-_decimal_Decimal_max_mag(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+_decimal_Decimal_max_mag(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -1669,7 +1966,7 @@ _decimal_Decimal_max_mag(PyObject *self, PyObject *const *args, Py_ssize_t nargs
     }
     context = args[1];
 skip_optional_pos:
-    return_value = _decimal_Decimal_max_mag_impl(self, other, context);
+    return_value = _decimal_Decimal_max_mag_impl(self, cls, other, context);
 
 exit:
     return return_value;
@@ -1685,13 +1982,14 @@ PyDoc_STRVAR(_decimal_Decimal_min__doc__,
 "operand is returned.");
 
 #define _DECIMAL_DECIMAL_MIN_METHODDEF    \
-    {"min", _PyCFunction_CAST(_decimal_Decimal_min), METH_FASTCALL|METH_KEYWORDS, _decimal_Decimal_min__doc__},
+    {"min", _PyCFunction_CAST(_decimal_Decimal_min), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _decimal_Decimal_min__doc__},
 
 static PyObject *
-_decimal_Decimal_min_impl(PyObject *self, PyObject *other, PyObject *context);
+_decimal_Decimal_min_impl(PyObject *self, PyTypeObject *cls, PyObject *other,
+                          PyObject *context);
 
 static PyObject *
-_decimal_Decimal_min(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+_decimal_Decimal_min(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -1737,7 +2035,7 @@ _decimal_Decimal_min(PyObject *self, PyObject *const *args, Py_ssize_t nargs, Py
     }
     context = args[1];
 skip_optional_pos:
-    return_value = _decimal_Decimal_min_impl(self, other, context);
+    return_value = _decimal_Decimal_min_impl(self, cls, other, context);
 
 exit:
     return return_value;
@@ -1750,14 +2048,14 @@ PyDoc_STRVAR(_decimal_Decimal_min_mag__doc__,
 "As the min() method, but compares the absolute values of the operands.");
 
 #define _DECIMAL_DECIMAL_MIN_MAG_METHODDEF    \
-    {"min_mag", _PyCFunction_CAST(_decimal_Decimal_min_mag), METH_FASTCALL|METH_KEYWORDS, _decimal_Decimal_min_mag__doc__},
+    {"min_mag", _PyCFunction_CAST(_decimal_Decimal_min_mag), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _decimal_Decimal_min_mag__doc__},
 
 static PyObject *
-_decimal_Decimal_min_mag_impl(PyObject *self, PyObject *other,
-                              PyObject *context);
+_decimal_Decimal_min_mag_impl(PyObject *self, PyTypeObject *cls,
+                              PyObject *other, PyObject *context);
 
 static PyObject *
-_decimal_Decimal_min_mag(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+_decimal_Decimal_min_mag(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -1803,7 +2101,7 @@ _decimal_Decimal_min_mag(PyObject *self, PyObject *const *args, Py_ssize_t nargs
     }
     context = args[1];
 skip_optional_pos:
-    return_value = _decimal_Decimal_min_mag_impl(self, other, context);
+    return_value = _decimal_Decimal_min_mag_impl(self, cls, other, context);
 
 exit:
     return return_value;
@@ -1821,14 +2119,14 @@ PyDoc_STRVAR(_decimal_Decimal_next_toward__doc__,
 "to be the same as the sign of the second operand.");
 
 #define _DECIMAL_DECIMAL_NEXT_TOWARD_METHODDEF    \
-    {"next_toward", _PyCFunction_CAST(_decimal_Decimal_next_toward), METH_FASTCALL|METH_KEYWORDS, _decimal_Decimal_next_toward__doc__},
+    {"next_toward", _PyCFunction_CAST(_decimal_Decimal_next_toward), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _decimal_Decimal_next_toward__doc__},
 
 static PyObject *
-_decimal_Decimal_next_toward_impl(PyObject *self, PyObject *other,
-                                  PyObject *context);
+_decimal_Decimal_next_toward_impl(PyObject *self, PyTypeObject *cls,
+                                  PyObject *other, PyObject *context);
 
 static PyObject *
-_decimal_Decimal_next_toward(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+_decimal_Decimal_next_toward(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -1874,7 +2172,7 @@ _decimal_Decimal_next_toward(PyObject *self, PyObject *const *args, Py_ssize_t n
     }
     context = args[1];
 skip_optional_pos:
-    return_value = _decimal_Decimal_next_toward_impl(self, other, context);
+    return_value = _decimal_Decimal_next_toward_impl(self, cls, other, context);
 
 exit:
     return return_value;
@@ -1895,14 +2193,14 @@ PyDoc_STRVAR(_decimal_Decimal_remainder_near__doc__,
 "If the result is zero then its sign will be the sign of self.");
 
 #define _DECIMAL_DECIMAL_REMAINDER_NEAR_METHODDEF    \
-    {"remainder_near", _PyCFunction_CAST(_decimal_Decimal_remainder_near), METH_FASTCALL|METH_KEYWORDS, _decimal_Decimal_remainder_near__doc__},
+    {"remainder_near", _PyCFunction_CAST(_decimal_Decimal_remainder_near), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _decimal_Decimal_remainder_near__doc__},
 
 static PyObject *
-_decimal_Decimal_remainder_near_impl(PyObject *self, PyObject *other,
-                                     PyObject *context);
+_decimal_Decimal_remainder_near_impl(PyObject *self, PyTypeObject *cls,
+                                     PyObject *other, PyObject *context);
 
 static PyObject *
-_decimal_Decimal_remainder_near(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+_decimal_Decimal_remainder_near(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -1948,7 +2246,7 @@ _decimal_Decimal_remainder_near(PyObject *self, PyObject *const *args, Py_ssize_
     }
     context = args[1];
 skip_optional_pos:
-    return_value = _decimal_Decimal_remainder_near_impl(self, other, context);
+    return_value = _decimal_Decimal_remainder_near_impl(self, cls, other, context);
 
 exit:
     return return_value;
@@ -1967,14 +2265,14 @@ PyDoc_STRVAR(_decimal_Decimal_fma__doc__,
 "    Decimal(\'11\')");
 
 #define _DECIMAL_DECIMAL_FMA_METHODDEF    \
-    {"fma", _PyCFunction_CAST(_decimal_Decimal_fma), METH_FASTCALL|METH_KEYWORDS, _decimal_Decimal_fma__doc__},
+    {"fma", _PyCFunction_CAST(_decimal_Decimal_fma), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _decimal_Decimal_fma__doc__},
 
 static PyObject *
-_decimal_Decimal_fma_impl(PyObject *self, PyObject *other, PyObject *third,
-                          PyObject *context);
+_decimal_Decimal_fma_impl(PyObject *self, PyTypeObject *cls, PyObject *other,
+                          PyObject *third, PyObject *context);
 
 static PyObject *
-_decimal_Decimal_fma(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+_decimal_Decimal_fma(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -2022,7 +2320,7 @@ _decimal_Decimal_fma(PyObject *self, PyObject *const *args, Py_ssize_t nargs, Py
     }
     context = args[2];
 skip_optional_pos:
-    return_value = _decimal_Decimal_fma_impl(self, other, third, context);
+    return_value = _decimal_Decimal_fma_impl(self, cls, other, third, context);
 
 exit:
     return return_value;
@@ -2186,13 +2484,14 @@ PyDoc_STRVAR(_decimal_Decimal_is_normal__doc__,
 "Normal number is a finite nonzero number, which is not subnormal.");
 
 #define _DECIMAL_DECIMAL_IS_NORMAL_METHODDEF    \
-    {"is_normal", _PyCFunction_CAST(_decimal_Decimal_is_normal), METH_FASTCALL|METH_KEYWORDS, _decimal_Decimal_is_normal__doc__},
+    {"is_normal", _PyCFunction_CAST(_decimal_Decimal_is_normal), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _decimal_Decimal_is_normal__doc__},
 
 static PyObject *
-_decimal_Decimal_is_normal_impl(PyObject *self, PyObject *context);
+_decimal_Decimal_is_normal_impl(PyObject *self, PyTypeObject *cls,
+                                PyObject *context);
 
 static PyObject *
-_decimal_Decimal_is_normal(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+_decimal_Decimal_is_normal(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -2236,7 +2535,7 @@ _decimal_Decimal_is_normal(PyObject *self, PyObject *const *args, Py_ssize_t nar
     }
     context = args[0];
 skip_optional_pos:
-    return_value = _decimal_Decimal_is_normal_impl(self, context);
+    return_value = _decimal_Decimal_is_normal_impl(self, cls, context);
 
 exit:
     return return_value;
@@ -2252,13 +2551,14 @@ PyDoc_STRVAR(_decimal_Decimal_is_subnormal__doc__,
 "exponent less than Emin.");
 
 #define _DECIMAL_DECIMAL_IS_SUBNORMAL_METHODDEF    \
-    {"is_subnormal", _PyCFunction_CAST(_decimal_Decimal_is_subnormal), METH_FASTCALL|METH_KEYWORDS, _decimal_Decimal_is_subnormal__doc__},
+    {"is_subnormal", _PyCFunction_CAST(_decimal_Decimal_is_subnormal), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _decimal_Decimal_is_subnormal__doc__},
 
 static PyObject *
-_decimal_Decimal_is_subnormal_impl(PyObject *self, PyObject *context);
+_decimal_Decimal_is_subnormal_impl(PyObject *self, PyTypeObject *cls,
+                                   PyObject *context);
 
 static PyObject *
-_decimal_Decimal_is_subnormal(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+_decimal_Decimal_is_subnormal(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -2302,7 +2602,7 @@ _decimal_Decimal_is_subnormal(PyObject *self, PyObject *const *args, Py_ssize_t 
     }
     context = args[0];
 skip_optional_pos:
-    return_value = _decimal_Decimal_is_subnormal_impl(self, context);
+    return_value = _decimal_Decimal_is_subnormal_impl(self, cls, context);
 
 exit:
     return return_value;
@@ -2375,15 +2675,19 @@ PyDoc_STRVAR(_decimal_Decimal_radix__doc__,
 "all its arithmetic. Included for compatibility with the specification.");
 
 #define _DECIMAL_DECIMAL_RADIX_METHODDEF    \
-    {"radix", (PyCFunction)_decimal_Decimal_radix, METH_NOARGS, _decimal_Decimal_radix__doc__},
+    {"radix", _PyCFunction_CAST(_decimal_Decimal_radix), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _decimal_Decimal_radix__doc__},
 
 static PyObject *
-_decimal_Decimal_radix_impl(PyObject *self);
+_decimal_Decimal_radix_impl(PyObject *self, PyTypeObject *cls);
 
 static PyObject *
-_decimal_Decimal_radix(PyObject *self, PyObject *Py_UNUSED(ignored))
+_decimal_Decimal_radix(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
-    return _decimal_Decimal_radix_impl(self);
+    if (nargs || (kwnames && PyTuple_GET_SIZE(kwnames))) {
+        PyErr_SetString(PyExc_TypeError, "radix() takes no arguments");
+        return NULL;
+    }
+    return _decimal_Decimal_radix_impl(self, cls);
 }
 
 PyDoc_STRVAR(_decimal_Decimal_copy_abs__doc__,
@@ -2396,15 +2700,19 @@ PyDoc_STRVAR(_decimal_Decimal_copy_abs__doc__,
 "changed and no rounding is performed.");
 
 #define _DECIMAL_DECIMAL_COPY_ABS_METHODDEF    \
-    {"copy_abs", (PyCFunction)_decimal_Decimal_copy_abs, METH_NOARGS, _decimal_Decimal_copy_abs__doc__},
+    {"copy_abs", _PyCFunction_CAST(_decimal_Decimal_copy_abs), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _decimal_Decimal_copy_abs__doc__},
 
 static PyObject *
-_decimal_Decimal_copy_abs_impl(PyObject *self);
+_decimal_Decimal_copy_abs_impl(PyObject *self, PyTypeObject *cls);
 
 static PyObject *
-_decimal_Decimal_copy_abs(PyObject *self, PyObject *Py_UNUSED(ignored))
+_decimal_Decimal_copy_abs(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
-    return _decimal_Decimal_copy_abs_impl(self);
+    if (nargs || (kwnames && PyTuple_GET_SIZE(kwnames))) {
+        PyErr_SetString(PyExc_TypeError, "copy_abs() takes no arguments");
+        return NULL;
+    }
+    return _decimal_Decimal_copy_abs_impl(self, cls);
 }
 
 PyDoc_STRVAR(_decimal_Decimal_copy_negate__doc__,
@@ -2417,31 +2725,38 @@ PyDoc_STRVAR(_decimal_Decimal_copy_negate__doc__,
 "changed and no rounding is performed.");
 
 #define _DECIMAL_DECIMAL_COPY_NEGATE_METHODDEF    \
-    {"copy_negate", (PyCFunction)_decimal_Decimal_copy_negate, METH_NOARGS, _decimal_Decimal_copy_negate__doc__},
+    {"copy_negate", _PyCFunction_CAST(_decimal_Decimal_copy_negate), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _decimal_Decimal_copy_negate__doc__},
 
 static PyObject *
-_decimal_Decimal_copy_negate_impl(PyObject *self);
+_decimal_Decimal_copy_negate_impl(PyObject *self, PyTypeObject *cls);
 
 static PyObject *
-_decimal_Decimal_copy_negate(PyObject *self, PyObject *Py_UNUSED(ignored))
+_decimal_Decimal_copy_negate(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
-    return _decimal_Decimal_copy_negate_impl(self);
+    if (nargs || (kwnames && PyTuple_GET_SIZE(kwnames))) {
+        PyErr_SetString(PyExc_TypeError, "copy_negate() takes no arguments");
+        return NULL;
+    }
+    return _decimal_Decimal_copy_negate_impl(self, cls);
 }
 
 PyDoc_STRVAR(_decimal_Decimal_logical_invert__doc__,
 "logical_invert($self, /, context=None)\n"
 "--\n"
 "\n"
-"Return the digit-wise inversion of the (logical) operand.");
+"Invert all its digits.\n"
+"\n"
+"The self must be logical number.");
 
 #define _DECIMAL_DECIMAL_LOGICAL_INVERT_METHODDEF    \
-    {"logical_invert", _PyCFunction_CAST(_decimal_Decimal_logical_invert), METH_FASTCALL|METH_KEYWORDS, _decimal_Decimal_logical_invert__doc__},
+    {"logical_invert", _PyCFunction_CAST(_decimal_Decimal_logical_invert), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _decimal_Decimal_logical_invert__doc__},
 
 static PyObject *
-_decimal_Decimal_logical_invert_impl(PyObject *self, PyObject *context);
+_decimal_Decimal_logical_invert_impl(PyObject *self, PyTypeObject *cls,
+                                     PyObject *context);
 
 static PyObject *
-_decimal_Decimal_logical_invert(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+_decimal_Decimal_logical_invert(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -2485,7 +2800,7 @@ _decimal_Decimal_logical_invert(PyObject *self, PyObject *const *args, Py_ssize_
     }
     context = args[0];
 skip_optional_pos:
-    return_value = _decimal_Decimal_logical_invert_impl(self, context);
+    return_value = _decimal_Decimal_logical_invert_impl(self, cls, context);
 
 exit:
     return return_value;
@@ -2502,13 +2817,14 @@ PyDoc_STRVAR(_decimal_Decimal_logb__doc__,
 "Decimal(\'Infinity\') is returned.");
 
 #define _DECIMAL_DECIMAL_LOGB_METHODDEF    \
-    {"logb", _PyCFunction_CAST(_decimal_Decimal_logb), METH_FASTCALL|METH_KEYWORDS, _decimal_Decimal_logb__doc__},
+    {"logb", _PyCFunction_CAST(_decimal_Decimal_logb), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _decimal_Decimal_logb__doc__},
 
 static PyObject *
-_decimal_Decimal_logb_impl(PyObject *self, PyObject *context);
+_decimal_Decimal_logb_impl(PyObject *self, PyTypeObject *cls,
+                           PyObject *context);
 
 static PyObject *
-_decimal_Decimal_logb(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+_decimal_Decimal_logb(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -2552,7 +2868,7 @@ _decimal_Decimal_logb(PyObject *self, PyObject *const *args, Py_ssize_t nargs, P
     }
     context = args[0];
 skip_optional_pos:
-    return_value = _decimal_Decimal_logb_impl(self, context);
+    return_value = _decimal_Decimal_logb_impl(self, cls, context);
 
 exit:
     return return_value;
@@ -2582,13 +2898,14 @@ PyDoc_STRVAR(_decimal_Decimal_number_class__doc__,
 "    * \'sNaN\', indicating that the operand is a signaling NaN.");
 
 #define _DECIMAL_DECIMAL_NUMBER_CLASS_METHODDEF    \
-    {"number_class", _PyCFunction_CAST(_decimal_Decimal_number_class), METH_FASTCALL|METH_KEYWORDS, _decimal_Decimal_number_class__doc__},
+    {"number_class", _PyCFunction_CAST(_decimal_Decimal_number_class), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _decimal_Decimal_number_class__doc__},
 
 static PyObject *
-_decimal_Decimal_number_class_impl(PyObject *self, PyObject *context);
+_decimal_Decimal_number_class_impl(PyObject *self, PyTypeObject *cls,
+                                   PyObject *context);
 
 static PyObject *
-_decimal_Decimal_number_class(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+_decimal_Decimal_number_class(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -2632,7 +2949,7 @@ _decimal_Decimal_number_class(PyObject *self, PyObject *const *args, Py_ssize_t 
     }
     context = args[0];
 skip_optional_pos:
-    return_value = _decimal_Decimal_number_class_impl(self, context);
+    return_value = _decimal_Decimal_number_class_impl(self, cls, context);
 
 exit:
     return return_value;
@@ -2653,13 +2970,14 @@ PyDoc_STRVAR(_decimal_Decimal_to_eng_string__doc__,
 "operation.");
 
 #define _DECIMAL_DECIMAL_TO_ENG_STRING_METHODDEF    \
-    {"to_eng_string", _PyCFunction_CAST(_decimal_Decimal_to_eng_string), METH_FASTCALL|METH_KEYWORDS, _decimal_Decimal_to_eng_string__doc__},
+    {"to_eng_string", _PyCFunction_CAST(_decimal_Decimal_to_eng_string), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _decimal_Decimal_to_eng_string__doc__},
 
 static PyObject *
-_decimal_Decimal_to_eng_string_impl(PyObject *self, PyObject *context);
+_decimal_Decimal_to_eng_string_impl(PyObject *self, PyTypeObject *cls,
+                                    PyObject *context);
 
 static PyObject *
-_decimal_Decimal_to_eng_string(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+_decimal_Decimal_to_eng_string(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -2703,7 +3021,7 @@ _decimal_Decimal_to_eng_string(PyObject *self, PyObject *const *args, Py_ssize_t
     }
     context = args[0];
 skip_optional_pos:
-    return_value = _decimal_Decimal_to_eng_string_impl(self, context);
+    return_value = _decimal_Decimal_to_eng_string_impl(self, cls, context);
 
 exit:
     return return_value;
@@ -2736,14 +3054,14 @@ PyDoc_STRVAR(_decimal_Decimal_compare_total__doc__,
 "exactly.");
 
 #define _DECIMAL_DECIMAL_COMPARE_TOTAL_METHODDEF    \
-    {"compare_total", _PyCFunction_CAST(_decimal_Decimal_compare_total), METH_FASTCALL|METH_KEYWORDS, _decimal_Decimal_compare_total__doc__},
+    {"compare_total", _PyCFunction_CAST(_decimal_Decimal_compare_total), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _decimal_Decimal_compare_total__doc__},
 
 static PyObject *
-_decimal_Decimal_compare_total_impl(PyObject *self, PyObject *other,
-                                    PyObject *context);
+_decimal_Decimal_compare_total_impl(PyObject *self, PyTypeObject *cls,
+                                    PyObject *other, PyObject *context);
 
 static PyObject *
-_decimal_Decimal_compare_total(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+_decimal_Decimal_compare_total(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -2789,7 +3107,7 @@ _decimal_Decimal_compare_total(PyObject *self, PyObject *const *args, Py_ssize_t
     }
     context = args[1];
 skip_optional_pos:
-    return_value = _decimal_Decimal_compare_total_impl(self, other, context);
+    return_value = _decimal_Decimal_compare_total_impl(self, cls, other, context);
 
 exit:
     return return_value;
@@ -2810,14 +3128,14 @@ PyDoc_STRVAR(_decimal_Decimal_compare_total_mag__doc__,
 "exactly.");
 
 #define _DECIMAL_DECIMAL_COMPARE_TOTAL_MAG_METHODDEF    \
-    {"compare_total_mag", _PyCFunction_CAST(_decimal_Decimal_compare_total_mag), METH_FASTCALL|METH_KEYWORDS, _decimal_Decimal_compare_total_mag__doc__},
+    {"compare_total_mag", _PyCFunction_CAST(_decimal_Decimal_compare_total_mag), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _decimal_Decimal_compare_total_mag__doc__},
 
 static PyObject *
-_decimal_Decimal_compare_total_mag_impl(PyObject *self, PyObject *other,
-                                        PyObject *context);
+_decimal_Decimal_compare_total_mag_impl(PyObject *self, PyTypeObject *cls,
+                                        PyObject *other, PyObject *context);
 
 static PyObject *
-_decimal_Decimal_compare_total_mag(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+_decimal_Decimal_compare_total_mag(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -2863,7 +3181,7 @@ _decimal_Decimal_compare_total_mag(PyObject *self, PyObject *const *args, Py_ssi
     }
     context = args[1];
 skip_optional_pos:
-    return_value = _decimal_Decimal_compare_total_mag_impl(self, other, context);
+    return_value = _decimal_Decimal_compare_total_mag_impl(self, cls, other, context);
 
 exit:
     return return_value;
@@ -2886,14 +3204,14 @@ PyDoc_STRVAR(_decimal_Decimal_copy_sign__doc__,
 "exactly.");
 
 #define _DECIMAL_DECIMAL_COPY_SIGN_METHODDEF    \
-    {"copy_sign", _PyCFunction_CAST(_decimal_Decimal_copy_sign), METH_FASTCALL|METH_KEYWORDS, _decimal_Decimal_copy_sign__doc__},
+    {"copy_sign", _PyCFunction_CAST(_decimal_Decimal_copy_sign), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _decimal_Decimal_copy_sign__doc__},
 
 static PyObject *
-_decimal_Decimal_copy_sign_impl(PyObject *self, PyObject *other,
-                                PyObject *context);
+_decimal_Decimal_copy_sign_impl(PyObject *self, PyTypeObject *cls,
+                                PyObject *other, PyObject *context);
 
 static PyObject *
-_decimal_Decimal_copy_sign(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+_decimal_Decimal_copy_sign(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -2939,7 +3257,7 @@ _decimal_Decimal_copy_sign(PyObject *self, PyObject *const *args, Py_ssize_t nar
     }
     context = args[1];
 skip_optional_pos:
-    return_value = _decimal_Decimal_copy_sign_impl(self, other, context);
+    return_value = _decimal_Decimal_copy_sign_impl(self, cls, other, context);
 
 exit:
     return return_value;
@@ -2957,14 +3275,14 @@ PyDoc_STRVAR(_decimal_Decimal_same_quantum__doc__,
 "exactly.");
 
 #define _DECIMAL_DECIMAL_SAME_QUANTUM_METHODDEF    \
-    {"same_quantum", _PyCFunction_CAST(_decimal_Decimal_same_quantum), METH_FASTCALL|METH_KEYWORDS, _decimal_Decimal_same_quantum__doc__},
+    {"same_quantum", _PyCFunction_CAST(_decimal_Decimal_same_quantum), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _decimal_Decimal_same_quantum__doc__},
 
 static PyObject *
-_decimal_Decimal_same_quantum_impl(PyObject *self, PyObject *other,
-                                   PyObject *context);
+_decimal_Decimal_same_quantum_impl(PyObject *self, PyTypeObject *cls,
+                                   PyObject *other, PyObject *context);
 
 static PyObject *
-_decimal_Decimal_same_quantum(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+_decimal_Decimal_same_quantum(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -3010,7 +3328,7 @@ _decimal_Decimal_same_quantum(PyObject *self, PyObject *const *args, Py_ssize_t 
     }
     context = args[1];
 skip_optional_pos:
-    return_value = _decimal_Decimal_same_quantum_impl(self, other, context);
+    return_value = _decimal_Decimal_same_quantum_impl(self, cls, other, context);
 
 exit:
     return return_value;
@@ -3020,17 +3338,19 @@ PyDoc_STRVAR(_decimal_Decimal_logical_and__doc__,
 "logical_and($self, /, other, context=None)\n"
 "--\n"
 "\n"
-"Return the digit-wise \'and\' of the two (logical) operands.");
+"Applies an \'and\' operation between self and other\'s digits.\n"
+"\n"
+"Both self and other must be logical numbers.");
 
 #define _DECIMAL_DECIMAL_LOGICAL_AND_METHODDEF    \
-    {"logical_and", _PyCFunction_CAST(_decimal_Decimal_logical_and), METH_FASTCALL|METH_KEYWORDS, _decimal_Decimal_logical_and__doc__},
+    {"logical_and", _PyCFunction_CAST(_decimal_Decimal_logical_and), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _decimal_Decimal_logical_and__doc__},
 
 static PyObject *
-_decimal_Decimal_logical_and_impl(PyObject *self, PyObject *other,
-                                  PyObject *context);
+_decimal_Decimal_logical_and_impl(PyObject *self, PyTypeObject *cls,
+                                  PyObject *other, PyObject *context);
 
 static PyObject *
-_decimal_Decimal_logical_and(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+_decimal_Decimal_logical_and(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -3076,7 +3396,7 @@ _decimal_Decimal_logical_and(PyObject *self, PyObject *const *args, Py_ssize_t n
     }
     context = args[1];
 skip_optional_pos:
-    return_value = _decimal_Decimal_logical_and_impl(self, other, context);
+    return_value = _decimal_Decimal_logical_and_impl(self, cls, other, context);
 
 exit:
     return return_value;
@@ -3086,17 +3406,19 @@ PyDoc_STRVAR(_decimal_Decimal_logical_or__doc__,
 "logical_or($self, /, other, context=None)\n"
 "--\n"
 "\n"
-"Return the digit-wise \'or\' of the two (logical) operands.");
+"Applies an \'or\' operation between self and other\'s digits.\n"
+"\n"
+"Both self and other must be logical numbers.");
 
 #define _DECIMAL_DECIMAL_LOGICAL_OR_METHODDEF    \
-    {"logical_or", _PyCFunction_CAST(_decimal_Decimal_logical_or), METH_FASTCALL|METH_KEYWORDS, _decimal_Decimal_logical_or__doc__},
+    {"logical_or", _PyCFunction_CAST(_decimal_Decimal_logical_or), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _decimal_Decimal_logical_or__doc__},
 
 static PyObject *
-_decimal_Decimal_logical_or_impl(PyObject *self, PyObject *other,
-                                 PyObject *context);
+_decimal_Decimal_logical_or_impl(PyObject *self, PyTypeObject *cls,
+                                 PyObject *other, PyObject *context);
 
 static PyObject *
-_decimal_Decimal_logical_or(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+_decimal_Decimal_logical_or(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -3142,7 +3464,7 @@ _decimal_Decimal_logical_or(PyObject *self, PyObject *const *args, Py_ssize_t na
     }
     context = args[1];
 skip_optional_pos:
-    return_value = _decimal_Decimal_logical_or_impl(self, other, context);
+    return_value = _decimal_Decimal_logical_or_impl(self, cls, other, context);
 
 exit:
     return return_value;
@@ -3152,17 +3474,19 @@ PyDoc_STRVAR(_decimal_Decimal_logical_xor__doc__,
 "logical_xor($self, /, other, context=None)\n"
 "--\n"
 "\n"
-"Return the digit-wise \'xor\' of the two (logical) operands.");
+"Applies an \'xor\' operation between self and other\'s digits.\n"
+"\n"
+"Both self and other must be logical numbers.");
 
 #define _DECIMAL_DECIMAL_LOGICAL_XOR_METHODDEF    \
-    {"logical_xor", _PyCFunction_CAST(_decimal_Decimal_logical_xor), METH_FASTCALL|METH_KEYWORDS, _decimal_Decimal_logical_xor__doc__},
+    {"logical_xor", _PyCFunction_CAST(_decimal_Decimal_logical_xor), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _decimal_Decimal_logical_xor__doc__},
 
 static PyObject *
-_decimal_Decimal_logical_xor_impl(PyObject *self, PyObject *other,
-                                  PyObject *context);
+_decimal_Decimal_logical_xor_impl(PyObject *self, PyTypeObject *cls,
+                                  PyObject *other, PyObject *context);
 
 static PyObject *
-_decimal_Decimal_logical_xor(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+_decimal_Decimal_logical_xor(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -3208,7 +3532,7 @@ _decimal_Decimal_logical_xor(PyObject *self, PyObject *const *args, Py_ssize_t n
     }
     context = args[1];
 skip_optional_pos:
-    return_value = _decimal_Decimal_logical_xor_impl(self, other, context);
+    return_value = _decimal_Decimal_logical_xor_impl(self, cls, other, context);
 
 exit:
     return return_value;
@@ -3228,14 +3552,14 @@ PyDoc_STRVAR(_decimal_Decimal_rotate__doc__,
 "necessary. The sign and exponent of the first operand are unchanged.");
 
 #define _DECIMAL_DECIMAL_ROTATE_METHODDEF    \
-    {"rotate", _PyCFunction_CAST(_decimal_Decimal_rotate), METH_FASTCALL|METH_KEYWORDS, _decimal_Decimal_rotate__doc__},
+    {"rotate", _PyCFunction_CAST(_decimal_Decimal_rotate), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _decimal_Decimal_rotate__doc__},
 
 static PyObject *
-_decimal_Decimal_rotate_impl(PyObject *self, PyObject *other,
-                             PyObject *context);
+_decimal_Decimal_rotate_impl(PyObject *self, PyTypeObject *cls,
+                             PyObject *other, PyObject *context);
 
 static PyObject *
-_decimal_Decimal_rotate(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+_decimal_Decimal_rotate(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -3281,7 +3605,7 @@ _decimal_Decimal_rotate(PyObject *self, PyObject *const *args, Py_ssize_t nargs,
     }
     context = args[1];
 skip_optional_pos:
-    return_value = _decimal_Decimal_rotate_impl(self, other, context);
+    return_value = _decimal_Decimal_rotate_impl(self, cls, other, context);
 
 exit:
     return return_value;
@@ -3297,14 +3621,14 @@ PyDoc_STRVAR(_decimal_Decimal_scaleb__doc__,
 "second operand must be an integer.");
 
 #define _DECIMAL_DECIMAL_SCALEB_METHODDEF    \
-    {"scaleb", _PyCFunction_CAST(_decimal_Decimal_scaleb), METH_FASTCALL|METH_KEYWORDS, _decimal_Decimal_scaleb__doc__},
+    {"scaleb", _PyCFunction_CAST(_decimal_Decimal_scaleb), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _decimal_Decimal_scaleb__doc__},
 
 static PyObject *
-_decimal_Decimal_scaleb_impl(PyObject *self, PyObject *other,
-                             PyObject *context);
+_decimal_Decimal_scaleb_impl(PyObject *self, PyTypeObject *cls,
+                             PyObject *other, PyObject *context);
 
 static PyObject *
-_decimal_Decimal_scaleb(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+_decimal_Decimal_scaleb(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -3350,7 +3674,7 @@ _decimal_Decimal_scaleb(PyObject *self, PyObject *const *args, Py_ssize_t nargs,
     }
     context = args[1];
 skip_optional_pos:
-    return_value = _decimal_Decimal_scaleb_impl(self, other, context);
+    return_value = _decimal_Decimal_scaleb_impl(self, cls, other, context);
 
 exit:
     return return_value;
@@ -3370,14 +3694,14 @@ PyDoc_STRVAR(_decimal_Decimal_shift__doc__,
 "operand are unchanged.");
 
 #define _DECIMAL_DECIMAL_SHIFT_METHODDEF    \
-    {"shift", _PyCFunction_CAST(_decimal_Decimal_shift), METH_FASTCALL|METH_KEYWORDS, _decimal_Decimal_shift__doc__},
+    {"shift", _PyCFunction_CAST(_decimal_Decimal_shift), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _decimal_Decimal_shift__doc__},
 
 static PyObject *
-_decimal_Decimal_shift_impl(PyObject *self, PyObject *other,
-                            PyObject *context);
+_decimal_Decimal_shift_impl(PyObject *self, PyTypeObject *cls,
+                            PyObject *other, PyObject *context);
 
 static PyObject *
-_decimal_Decimal_shift(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+_decimal_Decimal_shift(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -3423,7 +3747,7 @@ _decimal_Decimal_shift(PyObject *self, PyObject *const *args, Py_ssize_t nargs, 
     }
     context = args[1];
 skip_optional_pos:
-    return_value = _decimal_Decimal_shift_impl(self, other, context);
+    return_value = _decimal_Decimal_shift_impl(self, cls, other, context);
 
 exit:
     return return_value;
@@ -3457,14 +3781,15 @@ PyDoc_STRVAR(_decimal_Decimal_quantize__doc__,
 "current thread\'s context is used.");
 
 #define _DECIMAL_DECIMAL_QUANTIZE_METHODDEF    \
-    {"quantize", _PyCFunction_CAST(_decimal_Decimal_quantize), METH_FASTCALL|METH_KEYWORDS, _decimal_Decimal_quantize__doc__},
+    {"quantize", _PyCFunction_CAST(_decimal_Decimal_quantize), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _decimal_Decimal_quantize__doc__},
 
 static PyObject *
-_decimal_Decimal_quantize_impl(PyObject *self, PyObject *w,
-                               PyObject *rounding, PyObject *context);
+_decimal_Decimal_quantize_impl(PyObject *self, PyTypeObject *cls,
+                               PyObject *w, PyObject *rounding,
+                               PyObject *context);
 
 static PyObject *
-_decimal_Decimal_quantize(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+_decimal_Decimal_quantize(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -3517,7 +3842,7 @@ _decimal_Decimal_quantize(PyObject *self, PyObject *const *args, Py_ssize_t narg
     }
     context = args[2];
 skip_optional_pos:
-    return_value = _decimal_Decimal_quantize_impl(self, w, rounding, context);
+    return_value = _decimal_Decimal_quantize_impl(self, cls, w, rounding, context);
 
 exit:
     return return_value;
@@ -3530,15 +3855,19 @@ PyDoc_STRVAR(_decimal_Decimal___ceil____doc__,
 "Return the ceiling as an Integral.");
 
 #define _DECIMAL_DECIMAL___CEIL___METHODDEF    \
-    {"__ceil__", (PyCFunction)_decimal_Decimal___ceil__, METH_NOARGS, _decimal_Decimal___ceil____doc__},
+    {"__ceil__", _PyCFunction_CAST(_decimal_Decimal___ceil__), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _decimal_Decimal___ceil____doc__},
 
 static PyObject *
-_decimal_Decimal___ceil___impl(PyObject *self);
+_decimal_Decimal___ceil___impl(PyObject *self, PyTypeObject *cls);
 
 static PyObject *
-_decimal_Decimal___ceil__(PyObject *self, PyObject *Py_UNUSED(ignored))
+_decimal_Decimal___ceil__(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
-    return _decimal_Decimal___ceil___impl(self);
+    if (nargs || (kwnames && PyTuple_GET_SIZE(kwnames))) {
+        PyErr_SetString(PyExc_TypeError, "__ceil__() takes no arguments");
+        return NULL;
+    }
+    return _decimal_Decimal___ceil___impl(self, cls);
 }
 
 PyDoc_STRVAR(_decimal_Decimal___complex____doc__,
@@ -3591,15 +3920,19 @@ PyDoc_STRVAR(_decimal_Decimal___floor____doc__,
 "Return the floor as an Integral.");
 
 #define _DECIMAL_DECIMAL___FLOOR___METHODDEF    \
-    {"__floor__", (PyCFunction)_decimal_Decimal___floor__, METH_NOARGS, _decimal_Decimal___floor____doc__},
+    {"__floor__", _PyCFunction_CAST(_decimal_Decimal___floor__), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _decimal_Decimal___floor____doc__},
 
 static PyObject *
-_decimal_Decimal___floor___impl(PyObject *self);
+_decimal_Decimal___floor___impl(PyObject *self, PyTypeObject *cls);
 
 static PyObject *
-_decimal_Decimal___floor__(PyObject *self, PyObject *Py_UNUSED(ignored))
+_decimal_Decimal___floor__(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
-    return _decimal_Decimal___floor___impl(self);
+    if (nargs || (kwnames && PyTuple_GET_SIZE(kwnames))) {
+        PyErr_SetString(PyExc_TypeError, "__floor__() takes no arguments");
+        return NULL;
+    }
+    return _decimal_Decimal___floor___impl(self, cls);
 }
 
 PyDoc_STRVAR(_decimal_Decimal___reduce____doc__,
@@ -3645,15 +3978,19 @@ PyDoc_STRVAR(_decimal_Decimal___trunc____doc__,
 "Return the Integral closest to x between 0 and x.");
 
 #define _DECIMAL_DECIMAL___TRUNC___METHODDEF    \
-    {"__trunc__", (PyCFunction)_decimal_Decimal___trunc__, METH_NOARGS, _decimal_Decimal___trunc____doc__},
+    {"__trunc__", _PyCFunction_CAST(_decimal_Decimal___trunc__), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _decimal_Decimal___trunc____doc__},
 
 static PyObject *
-_decimal_Decimal___trunc___impl(PyObject *self);
+_decimal_Decimal___trunc___impl(PyObject *self, PyTypeObject *cls);
 
 static PyObject *
-_decimal_Decimal___trunc__(PyObject *self, PyObject *Py_UNUSED(ignored))
+_decimal_Decimal___trunc__(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
-    return _decimal_Decimal___trunc___impl(self);
+    if (nargs || (kwnames && PyTuple_GET_SIZE(kwnames))) {
+        PyErr_SetString(PyExc_TypeError, "__trunc__() takes no arguments");
+        return NULL;
+    }
+    return _decimal_Decimal___trunc___impl(self, cls);
 }
 
 PyDoc_STRVAR(_decimal_Context_abs__doc__,
@@ -3663,7 +4000,42 @@ PyDoc_STRVAR(_decimal_Context_abs__doc__,
 "Return the absolute value of x.");
 
 #define _DECIMAL_CONTEXT_ABS_METHODDEF    \
-    {"abs", (PyCFunction)_decimal_Context_abs, METH_O, _decimal_Context_abs__doc__},
+    {"abs", _PyCFunction_CAST(_decimal_Context_abs), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _decimal_Context_abs__doc__},
+
+static PyObject *
+_decimal_Context_abs_impl(PyObject *context, PyTypeObject *cls, PyObject *x);
+
+static PyObject *
+_decimal_Context_abs(PyObject *context, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
+    #else
+    #  define KWTUPLE NULL
+    #endif
+
+    static const char * const _keywords[] = {"", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "abs",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[1];
+    PyObject *x;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    x = args[0];
+    return_value = _decimal_Context_abs_impl(context, cls, x);
+
+exit:
+    return return_value;
+}
 
 PyDoc_STRVAR(_decimal_Context_exp__doc__,
 "exp($self, x, /)\n"
@@ -3672,7 +4044,42 @@ PyDoc_STRVAR(_decimal_Context_exp__doc__,
 "Return e ** x.");
 
 #define _DECIMAL_CONTEXT_EXP_METHODDEF    \
-    {"exp", (PyCFunction)_decimal_Context_exp, METH_O, _decimal_Context_exp__doc__},
+    {"exp", _PyCFunction_CAST(_decimal_Context_exp), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _decimal_Context_exp__doc__},
+
+static PyObject *
+_decimal_Context_exp_impl(PyObject *context, PyTypeObject *cls, PyObject *x);
+
+static PyObject *
+_decimal_Context_exp(PyObject *context, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
+    #else
+    #  define KWTUPLE NULL
+    #endif
+
+    static const char * const _keywords[] = {"", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "exp",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[1];
+    PyObject *x;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    x = args[0];
+    return_value = _decimal_Context_exp_impl(context, cls, x);
+
+exit:
+    return return_value;
+}
 
 PyDoc_STRVAR(_decimal_Context_ln__doc__,
 "ln($self, x, /)\n"
@@ -3681,7 +4088,42 @@ PyDoc_STRVAR(_decimal_Context_ln__doc__,
 "Return the natural (base e) logarithm of x.");
 
 #define _DECIMAL_CONTEXT_LN_METHODDEF    \
-    {"ln", (PyCFunction)_decimal_Context_ln, METH_O, _decimal_Context_ln__doc__},
+    {"ln", _PyCFunction_CAST(_decimal_Context_ln), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _decimal_Context_ln__doc__},
+
+static PyObject *
+_decimal_Context_ln_impl(PyObject *context, PyTypeObject *cls, PyObject *x);
+
+static PyObject *
+_decimal_Context_ln(PyObject *context, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
+    #else
+    #  define KWTUPLE NULL
+    #endif
+
+    static const char * const _keywords[] = {"", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "ln",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[1];
+    PyObject *x;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    x = args[0];
+    return_value = _decimal_Context_ln_impl(context, cls, x);
+
+exit:
+    return return_value;
+}
 
 PyDoc_STRVAR(_decimal_Context_log10__doc__,
 "log10($self, x, /)\n"
@@ -3690,7 +4132,43 @@ PyDoc_STRVAR(_decimal_Context_log10__doc__,
 "Return the base 10 logarithm of x.");
 
 #define _DECIMAL_CONTEXT_LOG10_METHODDEF    \
-    {"log10", (PyCFunction)_decimal_Context_log10, METH_O, _decimal_Context_log10__doc__},
+    {"log10", _PyCFunction_CAST(_decimal_Context_log10), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _decimal_Context_log10__doc__},
+
+static PyObject *
+_decimal_Context_log10_impl(PyObject *context, PyTypeObject *cls,
+                            PyObject *x);
+
+static PyObject *
+_decimal_Context_log10(PyObject *context, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
+    #else
+    #  define KWTUPLE NULL
+    #endif
+
+    static const char * const _keywords[] = {"", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "log10",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[1];
+    PyObject *x;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    x = args[0];
+    return_value = _decimal_Context_log10_impl(context, cls, x);
+
+exit:
+    return return_value;
+}
 
 PyDoc_STRVAR(_decimal_Context_minus__doc__,
 "minus($self, x, /)\n"
@@ -3701,7 +4179,43 @@ PyDoc_STRVAR(_decimal_Context_minus__doc__,
 "This operation applies the context to the result.");
 
 #define _DECIMAL_CONTEXT_MINUS_METHODDEF    \
-    {"minus", (PyCFunction)_decimal_Context_minus, METH_O, _decimal_Context_minus__doc__},
+    {"minus", _PyCFunction_CAST(_decimal_Context_minus), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _decimal_Context_minus__doc__},
+
+static PyObject *
+_decimal_Context_minus_impl(PyObject *context, PyTypeObject *cls,
+                            PyObject *x);
+
+static PyObject *
+_decimal_Context_minus(PyObject *context, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
+    #else
+    #  define KWTUPLE NULL
+    #endif
+
+    static const char * const _keywords[] = {"", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "minus",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[1];
+    PyObject *x;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    x = args[0];
+    return_value = _decimal_Context_minus_impl(context, cls, x);
+
+exit:
+    return return_value;
+}
 
 PyDoc_STRVAR(_decimal_Context_next_minus__doc__,
 "next_minus($self, x, /)\n"
@@ -3710,7 +4224,43 @@ PyDoc_STRVAR(_decimal_Context_next_minus__doc__,
 "Return the largest representable number smaller than x.");
 
 #define _DECIMAL_CONTEXT_NEXT_MINUS_METHODDEF    \
-    {"next_minus", (PyCFunction)_decimal_Context_next_minus, METH_O, _decimal_Context_next_minus__doc__},
+    {"next_minus", _PyCFunction_CAST(_decimal_Context_next_minus), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _decimal_Context_next_minus__doc__},
+
+static PyObject *
+_decimal_Context_next_minus_impl(PyObject *context, PyTypeObject *cls,
+                                 PyObject *x);
+
+static PyObject *
+_decimal_Context_next_minus(PyObject *context, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
+    #else
+    #  define KWTUPLE NULL
+    #endif
+
+    static const char * const _keywords[] = {"", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "next_minus",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[1];
+    PyObject *x;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    x = args[0];
+    return_value = _decimal_Context_next_minus_impl(context, cls, x);
+
+exit:
+    return return_value;
+}
 
 PyDoc_STRVAR(_decimal_Context_next_plus__doc__,
 "next_plus($self, x, /)\n"
@@ -3719,7 +4269,43 @@ PyDoc_STRVAR(_decimal_Context_next_plus__doc__,
 "Return the smallest representable number larger than x.");
 
 #define _DECIMAL_CONTEXT_NEXT_PLUS_METHODDEF    \
-    {"next_plus", (PyCFunction)_decimal_Context_next_plus, METH_O, _decimal_Context_next_plus__doc__},
+    {"next_plus", _PyCFunction_CAST(_decimal_Context_next_plus), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _decimal_Context_next_plus__doc__},
+
+static PyObject *
+_decimal_Context_next_plus_impl(PyObject *context, PyTypeObject *cls,
+                                PyObject *x);
+
+static PyObject *
+_decimal_Context_next_plus(PyObject *context, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
+    #else
+    #  define KWTUPLE NULL
+    #endif
+
+    static const char * const _keywords[] = {"", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "next_plus",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[1];
+    PyObject *x;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    x = args[0];
+    return_value = _decimal_Context_next_plus_impl(context, cls, x);
+
+exit:
+    return return_value;
+}
 
 PyDoc_STRVAR(_decimal_Context_normalize__doc__,
 "normalize($self, x, /)\n"
@@ -3728,7 +4314,43 @@ PyDoc_STRVAR(_decimal_Context_normalize__doc__,
 "Reduce x to its simplest form. Alias for reduce(x).");
 
 #define _DECIMAL_CONTEXT_NORMALIZE_METHODDEF    \
-    {"normalize", (PyCFunction)_decimal_Context_normalize, METH_O, _decimal_Context_normalize__doc__},
+    {"normalize", _PyCFunction_CAST(_decimal_Context_normalize), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _decimal_Context_normalize__doc__},
+
+static PyObject *
+_decimal_Context_normalize_impl(PyObject *context, PyTypeObject *cls,
+                                PyObject *x);
+
+static PyObject *
+_decimal_Context_normalize(PyObject *context, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
+    #else
+    #  define KWTUPLE NULL
+    #endif
+
+    static const char * const _keywords[] = {"", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "normalize",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[1];
+    PyObject *x;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    x = args[0];
+    return_value = _decimal_Context_normalize_impl(context, cls, x);
+
+exit:
+    return return_value;
+}
 
 PyDoc_STRVAR(_decimal_Context_plus__doc__,
 "plus($self, x, /)\n"
@@ -3739,7 +4361,42 @@ PyDoc_STRVAR(_decimal_Context_plus__doc__,
 "This operation applies the context to the result.");
 
 #define _DECIMAL_CONTEXT_PLUS_METHODDEF    \
-    {"plus", (PyCFunction)_decimal_Context_plus, METH_O, _decimal_Context_plus__doc__},
+    {"plus", _PyCFunction_CAST(_decimal_Context_plus), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _decimal_Context_plus__doc__},
+
+static PyObject *
+_decimal_Context_plus_impl(PyObject *context, PyTypeObject *cls, PyObject *x);
+
+static PyObject *
+_decimal_Context_plus(PyObject *context, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
+    #else
+    #  define KWTUPLE NULL
+    #endif
+
+    static const char * const _keywords[] = {"", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "plus",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[1];
+    PyObject *x;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    x = args[0];
+    return_value = _decimal_Context_plus_impl(context, cls, x);
+
+exit:
+    return return_value;
+}
 
 PyDoc_STRVAR(_decimal_Context_to_integral_value__doc__,
 "to_integral_value($self, x, /)\n"
@@ -3748,7 +4405,43 @@ PyDoc_STRVAR(_decimal_Context_to_integral_value__doc__,
 "Round to an integer.");
 
 #define _DECIMAL_CONTEXT_TO_INTEGRAL_VALUE_METHODDEF    \
-    {"to_integral_value", (PyCFunction)_decimal_Context_to_integral_value, METH_O, _decimal_Context_to_integral_value__doc__},
+    {"to_integral_value", _PyCFunction_CAST(_decimal_Context_to_integral_value), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _decimal_Context_to_integral_value__doc__},
+
+static PyObject *
+_decimal_Context_to_integral_value_impl(PyObject *context, PyTypeObject *cls,
+                                        PyObject *x);
+
+static PyObject *
+_decimal_Context_to_integral_value(PyObject *context, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
+    #else
+    #  define KWTUPLE NULL
+    #endif
+
+    static const char * const _keywords[] = {"", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "to_integral_value",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[1];
+    PyObject *x;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    x = args[0];
+    return_value = _decimal_Context_to_integral_value_impl(context, cls, x);
+
+exit:
+    return return_value;
+}
 
 PyDoc_STRVAR(_decimal_Context_to_integral_exact__doc__,
 "to_integral_exact($self, x, /)\n"
@@ -3757,7 +4450,43 @@ PyDoc_STRVAR(_decimal_Context_to_integral_exact__doc__,
 "Round to an integer. Signal if the result is rounded or inexact.");
 
 #define _DECIMAL_CONTEXT_TO_INTEGRAL_EXACT_METHODDEF    \
-    {"to_integral_exact", (PyCFunction)_decimal_Context_to_integral_exact, METH_O, _decimal_Context_to_integral_exact__doc__},
+    {"to_integral_exact", _PyCFunction_CAST(_decimal_Context_to_integral_exact), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _decimal_Context_to_integral_exact__doc__},
+
+static PyObject *
+_decimal_Context_to_integral_exact_impl(PyObject *context, PyTypeObject *cls,
+                                        PyObject *x);
+
+static PyObject *
+_decimal_Context_to_integral_exact(PyObject *context, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
+    #else
+    #  define KWTUPLE NULL
+    #endif
+
+    static const char * const _keywords[] = {"", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "to_integral_exact",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[1];
+    PyObject *x;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    x = args[0];
+    return_value = _decimal_Context_to_integral_exact_impl(context, cls, x);
+
+exit:
+    return return_value;
+}
 
 PyDoc_STRVAR(_decimal_Context_to_integral__doc__,
 "to_integral($self, x, /)\n"
@@ -3766,7 +4495,43 @@ PyDoc_STRVAR(_decimal_Context_to_integral__doc__,
 "Identical to to_integral_value(x).");
 
 #define _DECIMAL_CONTEXT_TO_INTEGRAL_METHODDEF    \
-    {"to_integral", (PyCFunction)_decimal_Context_to_integral, METH_O, _decimal_Context_to_integral__doc__},
+    {"to_integral", _PyCFunction_CAST(_decimal_Context_to_integral), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _decimal_Context_to_integral__doc__},
+
+static PyObject *
+_decimal_Context_to_integral_impl(PyObject *context, PyTypeObject *cls,
+                                  PyObject *x);
+
+static PyObject *
+_decimal_Context_to_integral(PyObject *context, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
+    #else
+    #  define KWTUPLE NULL
+    #endif
+
+    static const char * const _keywords[] = {"", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "to_integral",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[1];
+    PyObject *x;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    x = args[0];
+    return_value = _decimal_Context_to_integral_impl(context, cls, x);
+
+exit:
+    return return_value;
+}
 
 PyDoc_STRVAR(_decimal_Context_sqrt__doc__,
 "sqrt($self, x, /)\n"
@@ -3775,7 +4540,42 @@ PyDoc_STRVAR(_decimal_Context_sqrt__doc__,
 "Square root of a non-negative number to context precision.");
 
 #define _DECIMAL_CONTEXT_SQRT_METHODDEF    \
-    {"sqrt", (PyCFunction)_decimal_Context_sqrt, METH_O, _decimal_Context_sqrt__doc__},
+    {"sqrt", _PyCFunction_CAST(_decimal_Context_sqrt), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _decimal_Context_sqrt__doc__},
+
+static PyObject *
+_decimal_Context_sqrt_impl(PyObject *context, PyTypeObject *cls, PyObject *x);
+
+static PyObject *
+_decimal_Context_sqrt(PyObject *context, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
+    #else
+    #  define KWTUPLE NULL
+    #endif
+
+    static const char * const _keywords[] = {"", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "sqrt",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[1];
+    PyObject *x;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    x = args[0];
+    return_value = _decimal_Context_sqrt_impl(context, cls, x);
+
+exit:
+    return return_value;
+}
 
 PyDoc_STRVAR(_decimal_Context_add__doc__,
 "add($self, x, y, /)\n"
@@ -3784,24 +4584,41 @@ PyDoc_STRVAR(_decimal_Context_add__doc__,
 "Return the sum of x and y.");
 
 #define _DECIMAL_CONTEXT_ADD_METHODDEF    \
-    {"add", _PyCFunction_CAST(_decimal_Context_add), METH_FASTCALL, _decimal_Context_add__doc__},
+    {"add", _PyCFunction_CAST(_decimal_Context_add), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _decimal_Context_add__doc__},
 
 static PyObject *
-_decimal_Context_add_impl(PyObject *context, PyObject *x, PyObject *y);
+_decimal_Context_add_impl(PyObject *context, PyTypeObject *cls, PyObject *x,
+                          PyObject *y);
 
 static PyObject *
-_decimal_Context_add(PyObject *context, PyObject *const *args, Py_ssize_t nargs)
+_decimal_Context_add(PyObject *context, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
+    #else
+    #  define KWTUPLE NULL
+    #endif
+
+    static const char * const _keywords[] = {"", "", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "add",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[2];
     PyObject *x;
     PyObject *y;
 
-    if (!_PyArg_CheckPositional("add", nargs, 2, 2)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 2, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    if (!args) {
         goto exit;
     }
     x = args[0];
     y = args[1];
-    return_value = _decimal_Context_add_impl(context, x, y);
+    return_value = _decimal_Context_add_impl(context, cls, x, y);
 
 exit:
     return return_value;
@@ -3814,24 +4631,41 @@ PyDoc_STRVAR(_decimal_Context_compare__doc__,
 "Compare x and y numerically.");
 
 #define _DECIMAL_CONTEXT_COMPARE_METHODDEF    \
-    {"compare", _PyCFunction_CAST(_decimal_Context_compare), METH_FASTCALL, _decimal_Context_compare__doc__},
+    {"compare", _PyCFunction_CAST(_decimal_Context_compare), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _decimal_Context_compare__doc__},
 
 static PyObject *
-_decimal_Context_compare_impl(PyObject *context, PyObject *x, PyObject *y);
+_decimal_Context_compare_impl(PyObject *context, PyTypeObject *cls,
+                              PyObject *x, PyObject *y);
 
 static PyObject *
-_decimal_Context_compare(PyObject *context, PyObject *const *args, Py_ssize_t nargs)
+_decimal_Context_compare(PyObject *context, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
+    #else
+    #  define KWTUPLE NULL
+    #endif
+
+    static const char * const _keywords[] = {"", "", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "compare",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[2];
     PyObject *x;
     PyObject *y;
 
-    if (!_PyArg_CheckPositional("compare", nargs, 2, 2)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 2, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    if (!args) {
         goto exit;
     }
     x = args[0];
     y = args[1];
-    return_value = _decimal_Context_compare_impl(context, x, y);
+    return_value = _decimal_Context_compare_impl(context, cls, x, y);
 
 exit:
     return return_value;
@@ -3844,25 +4678,41 @@ PyDoc_STRVAR(_decimal_Context_compare_signal__doc__,
 "Compare x and y numerically.  All NaNs signal.");
 
 #define _DECIMAL_CONTEXT_COMPARE_SIGNAL_METHODDEF    \
-    {"compare_signal", _PyCFunction_CAST(_decimal_Context_compare_signal), METH_FASTCALL, _decimal_Context_compare_signal__doc__},
+    {"compare_signal", _PyCFunction_CAST(_decimal_Context_compare_signal), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _decimal_Context_compare_signal__doc__},
 
 static PyObject *
-_decimal_Context_compare_signal_impl(PyObject *context, PyObject *x,
-                                     PyObject *y);
+_decimal_Context_compare_signal_impl(PyObject *context, PyTypeObject *cls,
+                                     PyObject *x, PyObject *y);
 
 static PyObject *
-_decimal_Context_compare_signal(PyObject *context, PyObject *const *args, Py_ssize_t nargs)
+_decimal_Context_compare_signal(PyObject *context, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
+    #else
+    #  define KWTUPLE NULL
+    #endif
+
+    static const char * const _keywords[] = {"", "", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "compare_signal",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[2];
     PyObject *x;
     PyObject *y;
 
-    if (!_PyArg_CheckPositional("compare_signal", nargs, 2, 2)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 2, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    if (!args) {
         goto exit;
     }
     x = args[0];
     y = args[1];
-    return_value = _decimal_Context_compare_signal_impl(context, x, y);
+    return_value = _decimal_Context_compare_signal_impl(context, cls, x, y);
 
 exit:
     return return_value;
@@ -3875,24 +4725,41 @@ PyDoc_STRVAR(_decimal_Context_divide__doc__,
 "Return x divided by y.");
 
 #define _DECIMAL_CONTEXT_DIVIDE_METHODDEF    \
-    {"divide", _PyCFunction_CAST(_decimal_Context_divide), METH_FASTCALL, _decimal_Context_divide__doc__},
+    {"divide", _PyCFunction_CAST(_decimal_Context_divide), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _decimal_Context_divide__doc__},
 
 static PyObject *
-_decimal_Context_divide_impl(PyObject *context, PyObject *x, PyObject *y);
+_decimal_Context_divide_impl(PyObject *context, PyTypeObject *cls,
+                             PyObject *x, PyObject *y);
 
 static PyObject *
-_decimal_Context_divide(PyObject *context, PyObject *const *args, Py_ssize_t nargs)
+_decimal_Context_divide(PyObject *context, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
+    #else
+    #  define KWTUPLE NULL
+    #endif
+
+    static const char * const _keywords[] = {"", "", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "divide",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[2];
     PyObject *x;
     PyObject *y;
 
-    if (!_PyArg_CheckPositional("divide", nargs, 2, 2)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 2, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    if (!args) {
         goto exit;
     }
     x = args[0];
     y = args[1];
-    return_value = _decimal_Context_divide_impl(context, x, y);
+    return_value = _decimal_Context_divide_impl(context, cls, x, y);
 
 exit:
     return return_value;
@@ -3905,24 +4772,41 @@ PyDoc_STRVAR(_decimal_Context_divide_int__doc__,
 "Return x divided by y, truncated to an integer.");
 
 #define _DECIMAL_CONTEXT_DIVIDE_INT_METHODDEF    \
-    {"divide_int", _PyCFunction_CAST(_decimal_Context_divide_int), METH_FASTCALL, _decimal_Context_divide_int__doc__},
+    {"divide_int", _PyCFunction_CAST(_decimal_Context_divide_int), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _decimal_Context_divide_int__doc__},
 
 static PyObject *
-_decimal_Context_divide_int_impl(PyObject *context, PyObject *x, PyObject *y);
+_decimal_Context_divide_int_impl(PyObject *context, PyTypeObject *cls,
+                                 PyObject *x, PyObject *y);
 
 static PyObject *
-_decimal_Context_divide_int(PyObject *context, PyObject *const *args, Py_ssize_t nargs)
+_decimal_Context_divide_int(PyObject *context, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
+    #else
+    #  define KWTUPLE NULL
+    #endif
+
+    static const char * const _keywords[] = {"", "", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "divide_int",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[2];
     PyObject *x;
     PyObject *y;
 
-    if (!_PyArg_CheckPositional("divide_int", nargs, 2, 2)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 2, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    if (!args) {
         goto exit;
     }
     x = args[0];
     y = args[1];
-    return_value = _decimal_Context_divide_int_impl(context, x, y);
+    return_value = _decimal_Context_divide_int_impl(context, cls, x, y);
 
 exit:
     return return_value;
@@ -3935,24 +4819,41 @@ PyDoc_STRVAR(_decimal_Context_max__doc__,
 "Compare the values numerically and return the maximum.");
 
 #define _DECIMAL_CONTEXT_MAX_METHODDEF    \
-    {"max", _PyCFunction_CAST(_decimal_Context_max), METH_FASTCALL, _decimal_Context_max__doc__},
+    {"max", _PyCFunction_CAST(_decimal_Context_max), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _decimal_Context_max__doc__},
 
 static PyObject *
-_decimal_Context_max_impl(PyObject *context, PyObject *x, PyObject *y);
+_decimal_Context_max_impl(PyObject *context, PyTypeObject *cls, PyObject *x,
+                          PyObject *y);
 
 static PyObject *
-_decimal_Context_max(PyObject *context, PyObject *const *args, Py_ssize_t nargs)
+_decimal_Context_max(PyObject *context, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
+    #else
+    #  define KWTUPLE NULL
+    #endif
+
+    static const char * const _keywords[] = {"", "", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "max",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[2];
     PyObject *x;
     PyObject *y;
 
-    if (!_PyArg_CheckPositional("max", nargs, 2, 2)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 2, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    if (!args) {
         goto exit;
     }
     x = args[0];
     y = args[1];
-    return_value = _decimal_Context_max_impl(context, x, y);
+    return_value = _decimal_Context_max_impl(context, cls, x, y);
 
 exit:
     return return_value;
@@ -3965,24 +4866,41 @@ PyDoc_STRVAR(_decimal_Context_max_mag__doc__,
 "Compare the values numerically with their sign ignored.");
 
 #define _DECIMAL_CONTEXT_MAX_MAG_METHODDEF    \
-    {"max_mag", _PyCFunction_CAST(_decimal_Context_max_mag), METH_FASTCALL, _decimal_Context_max_mag__doc__},
+    {"max_mag", _PyCFunction_CAST(_decimal_Context_max_mag), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _decimal_Context_max_mag__doc__},
 
 static PyObject *
-_decimal_Context_max_mag_impl(PyObject *context, PyObject *x, PyObject *y);
+_decimal_Context_max_mag_impl(PyObject *context, PyTypeObject *cls,
+                              PyObject *x, PyObject *y);
 
 static PyObject *
-_decimal_Context_max_mag(PyObject *context, PyObject *const *args, Py_ssize_t nargs)
+_decimal_Context_max_mag(PyObject *context, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
+    #else
+    #  define KWTUPLE NULL
+    #endif
+
+    static const char * const _keywords[] = {"", "", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "max_mag",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[2];
     PyObject *x;
     PyObject *y;
 
-    if (!_PyArg_CheckPositional("max_mag", nargs, 2, 2)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 2, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    if (!args) {
         goto exit;
     }
     x = args[0];
     y = args[1];
-    return_value = _decimal_Context_max_mag_impl(context, x, y);
+    return_value = _decimal_Context_max_mag_impl(context, cls, x, y);
 
 exit:
     return return_value;
@@ -3995,24 +4913,41 @@ PyDoc_STRVAR(_decimal_Context_min__doc__,
 "Compare the values numerically and return the minimum.");
 
 #define _DECIMAL_CONTEXT_MIN_METHODDEF    \
-    {"min", _PyCFunction_CAST(_decimal_Context_min), METH_FASTCALL, _decimal_Context_min__doc__},
+    {"min", _PyCFunction_CAST(_decimal_Context_min), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _decimal_Context_min__doc__},
 
 static PyObject *
-_decimal_Context_min_impl(PyObject *context, PyObject *x, PyObject *y);
+_decimal_Context_min_impl(PyObject *context, PyTypeObject *cls, PyObject *x,
+                          PyObject *y);
 
 static PyObject *
-_decimal_Context_min(PyObject *context, PyObject *const *args, Py_ssize_t nargs)
+_decimal_Context_min(PyObject *context, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
+    #else
+    #  define KWTUPLE NULL
+    #endif
+
+    static const char * const _keywords[] = {"", "", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "min",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[2];
     PyObject *x;
     PyObject *y;
 
-    if (!_PyArg_CheckPositional("min", nargs, 2, 2)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 2, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    if (!args) {
         goto exit;
     }
     x = args[0];
     y = args[1];
-    return_value = _decimal_Context_min_impl(context, x, y);
+    return_value = _decimal_Context_min_impl(context, cls, x, y);
 
 exit:
     return return_value;
@@ -4025,24 +4960,41 @@ PyDoc_STRVAR(_decimal_Context_min_mag__doc__,
 "Compare the values numerically with their sign ignored.");
 
 #define _DECIMAL_CONTEXT_MIN_MAG_METHODDEF    \
-    {"min_mag", _PyCFunction_CAST(_decimal_Context_min_mag), METH_FASTCALL, _decimal_Context_min_mag__doc__},
+    {"min_mag", _PyCFunction_CAST(_decimal_Context_min_mag), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _decimal_Context_min_mag__doc__},
 
 static PyObject *
-_decimal_Context_min_mag_impl(PyObject *context, PyObject *x, PyObject *y);
+_decimal_Context_min_mag_impl(PyObject *context, PyTypeObject *cls,
+                              PyObject *x, PyObject *y);
 
 static PyObject *
-_decimal_Context_min_mag(PyObject *context, PyObject *const *args, Py_ssize_t nargs)
+_decimal_Context_min_mag(PyObject *context, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
+    #else
+    #  define KWTUPLE NULL
+    #endif
+
+    static const char * const _keywords[] = {"", "", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "min_mag",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[2];
     PyObject *x;
     PyObject *y;
 
-    if (!_PyArg_CheckPositional("min_mag", nargs, 2, 2)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 2, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    if (!args) {
         goto exit;
     }
     x = args[0];
     y = args[1];
-    return_value = _decimal_Context_min_mag_impl(context, x, y);
+    return_value = _decimal_Context_min_mag_impl(context, cls, x, y);
 
 exit:
     return return_value;
@@ -4055,24 +5007,41 @@ PyDoc_STRVAR(_decimal_Context_multiply__doc__,
 "Return the product of x and y.");
 
 #define _DECIMAL_CONTEXT_MULTIPLY_METHODDEF    \
-    {"multiply", _PyCFunction_CAST(_decimal_Context_multiply), METH_FASTCALL, _decimal_Context_multiply__doc__},
+    {"multiply", _PyCFunction_CAST(_decimal_Context_multiply), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _decimal_Context_multiply__doc__},
 
 static PyObject *
-_decimal_Context_multiply_impl(PyObject *context, PyObject *x, PyObject *y);
+_decimal_Context_multiply_impl(PyObject *context, PyTypeObject *cls,
+                               PyObject *x, PyObject *y);
 
 static PyObject *
-_decimal_Context_multiply(PyObject *context, PyObject *const *args, Py_ssize_t nargs)
+_decimal_Context_multiply(PyObject *context, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
+    #else
+    #  define KWTUPLE NULL
+    #endif
+
+    static const char * const _keywords[] = {"", "", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "multiply",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[2];
     PyObject *x;
     PyObject *y;
 
-    if (!_PyArg_CheckPositional("multiply", nargs, 2, 2)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 2, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    if (!args) {
         goto exit;
     }
     x = args[0];
     y = args[1];
-    return_value = _decimal_Context_multiply_impl(context, x, y);
+    return_value = _decimal_Context_multiply_impl(context, cls, x, y);
 
 exit:
     return return_value;
@@ -4085,25 +5054,41 @@ PyDoc_STRVAR(_decimal_Context_next_toward__doc__,
 "Return the number closest to x, in the direction towards y.");
 
 #define _DECIMAL_CONTEXT_NEXT_TOWARD_METHODDEF    \
-    {"next_toward", _PyCFunction_CAST(_decimal_Context_next_toward), METH_FASTCALL, _decimal_Context_next_toward__doc__},
+    {"next_toward", _PyCFunction_CAST(_decimal_Context_next_toward), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _decimal_Context_next_toward__doc__},
 
 static PyObject *
-_decimal_Context_next_toward_impl(PyObject *context, PyObject *x,
-                                  PyObject *y);
+_decimal_Context_next_toward_impl(PyObject *context, PyTypeObject *cls,
+                                  PyObject *x, PyObject *y);
 
 static PyObject *
-_decimal_Context_next_toward(PyObject *context, PyObject *const *args, Py_ssize_t nargs)
+_decimal_Context_next_toward(PyObject *context, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
+    #else
+    #  define KWTUPLE NULL
+    #endif
+
+    static const char * const _keywords[] = {"", "", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "next_toward",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[2];
     PyObject *x;
     PyObject *y;
 
-    if (!_PyArg_CheckPositional("next_toward", nargs, 2, 2)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 2, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    if (!args) {
         goto exit;
     }
     x = args[0];
     y = args[1];
-    return_value = _decimal_Context_next_toward_impl(context, x, y);
+    return_value = _decimal_Context_next_toward_impl(context, cls, x, y);
 
 exit:
     return return_value;
@@ -4116,24 +5101,41 @@ PyDoc_STRVAR(_decimal_Context_quantize__doc__,
 "Return a value equal to x (rounded), having the exponent of y.");
 
 #define _DECIMAL_CONTEXT_QUANTIZE_METHODDEF    \
-    {"quantize", _PyCFunction_CAST(_decimal_Context_quantize), METH_FASTCALL, _decimal_Context_quantize__doc__},
+    {"quantize", _PyCFunction_CAST(_decimal_Context_quantize), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _decimal_Context_quantize__doc__},
 
 static PyObject *
-_decimal_Context_quantize_impl(PyObject *context, PyObject *x, PyObject *y);
+_decimal_Context_quantize_impl(PyObject *context, PyTypeObject *cls,
+                               PyObject *x, PyObject *y);
 
 static PyObject *
-_decimal_Context_quantize(PyObject *context, PyObject *const *args, Py_ssize_t nargs)
+_decimal_Context_quantize(PyObject *context, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
+    #else
+    #  define KWTUPLE NULL
+    #endif
+
+    static const char * const _keywords[] = {"", "", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "quantize",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[2];
     PyObject *x;
     PyObject *y;
 
-    if (!_PyArg_CheckPositional("quantize", nargs, 2, 2)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 2, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    if (!args) {
         goto exit;
     }
     x = args[0];
     y = args[1];
-    return_value = _decimal_Context_quantize_impl(context, x, y);
+    return_value = _decimal_Context_quantize_impl(context, cls, x, y);
 
 exit:
     return return_value;
@@ -4149,24 +5151,41 @@ PyDoc_STRVAR(_decimal_Context_remainder__doc__,
 "original dividend.");
 
 #define _DECIMAL_CONTEXT_REMAINDER_METHODDEF    \
-    {"remainder", _PyCFunction_CAST(_decimal_Context_remainder), METH_FASTCALL, _decimal_Context_remainder__doc__},
+    {"remainder", _PyCFunction_CAST(_decimal_Context_remainder), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _decimal_Context_remainder__doc__},
 
 static PyObject *
-_decimal_Context_remainder_impl(PyObject *context, PyObject *x, PyObject *y);
+_decimal_Context_remainder_impl(PyObject *context, PyTypeObject *cls,
+                                PyObject *x, PyObject *y);
 
 static PyObject *
-_decimal_Context_remainder(PyObject *context, PyObject *const *args, Py_ssize_t nargs)
+_decimal_Context_remainder(PyObject *context, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
+    #else
+    #  define KWTUPLE NULL
+    #endif
+
+    static const char * const _keywords[] = {"", "", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "remainder",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[2];
     PyObject *x;
     PyObject *y;
 
-    if (!_PyArg_CheckPositional("remainder", nargs, 2, 2)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 2, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    if (!args) {
         goto exit;
     }
     x = args[0];
     y = args[1];
-    return_value = _decimal_Context_remainder_impl(context, x, y);
+    return_value = _decimal_Context_remainder_impl(context, cls, x, y);
 
 exit:
     return return_value;
@@ -4182,25 +5201,41 @@ PyDoc_STRVAR(_decimal_Context_remainder_near__doc__,
 "is 0 then its sign will be the sign of x).");
 
 #define _DECIMAL_CONTEXT_REMAINDER_NEAR_METHODDEF    \
-    {"remainder_near", _PyCFunction_CAST(_decimal_Context_remainder_near), METH_FASTCALL, _decimal_Context_remainder_near__doc__},
+    {"remainder_near", _PyCFunction_CAST(_decimal_Context_remainder_near), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _decimal_Context_remainder_near__doc__},
 
 static PyObject *
-_decimal_Context_remainder_near_impl(PyObject *context, PyObject *x,
-                                     PyObject *y);
+_decimal_Context_remainder_near_impl(PyObject *context, PyTypeObject *cls,
+                                     PyObject *x, PyObject *y);
 
 static PyObject *
-_decimal_Context_remainder_near(PyObject *context, PyObject *const *args, Py_ssize_t nargs)
+_decimal_Context_remainder_near(PyObject *context, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
+    #else
+    #  define KWTUPLE NULL
+    #endif
+
+    static const char * const _keywords[] = {"", "", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "remainder_near",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[2];
     PyObject *x;
     PyObject *y;
 
-    if (!_PyArg_CheckPositional("remainder_near", nargs, 2, 2)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 2, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    if (!args) {
         goto exit;
     }
     x = args[0];
     y = args[1];
-    return_value = _decimal_Context_remainder_near_impl(context, x, y);
+    return_value = _decimal_Context_remainder_near_impl(context, cls, x, y);
 
 exit:
     return return_value;
@@ -4213,24 +5248,41 @@ PyDoc_STRVAR(_decimal_Context_subtract__doc__,
 "Return the difference between x and y.");
 
 #define _DECIMAL_CONTEXT_SUBTRACT_METHODDEF    \
-    {"subtract", _PyCFunction_CAST(_decimal_Context_subtract), METH_FASTCALL, _decimal_Context_subtract__doc__},
+    {"subtract", _PyCFunction_CAST(_decimal_Context_subtract), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _decimal_Context_subtract__doc__},
 
 static PyObject *
-_decimal_Context_subtract_impl(PyObject *context, PyObject *x, PyObject *y);
+_decimal_Context_subtract_impl(PyObject *context, PyTypeObject *cls,
+                               PyObject *x, PyObject *y);
 
 static PyObject *
-_decimal_Context_subtract(PyObject *context, PyObject *const *args, Py_ssize_t nargs)
+_decimal_Context_subtract(PyObject *context, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
+    #else
+    #  define KWTUPLE NULL
+    #endif
+
+    static const char * const _keywords[] = {"", "", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "subtract",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[2];
     PyObject *x;
     PyObject *y;
 
-    if (!_PyArg_CheckPositional("subtract", nargs, 2, 2)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 2, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    if (!args) {
         goto exit;
     }
     x = args[0];
     y = args[1];
-    return_value = _decimal_Context_subtract_impl(context, x, y);
+    return_value = _decimal_Context_subtract_impl(context, cls, x, y);
 
 exit:
     return return_value;
@@ -4287,14 +5339,14 @@ PyDoc_STRVAR(_decimal_Context_power__doc__,
 "    * modulo must be nonzero and less than 10**prec in absolute value");
 
 #define _DECIMAL_CONTEXT_POWER_METHODDEF    \
-    {"power", _PyCFunction_CAST(_decimal_Context_power), METH_FASTCALL|METH_KEYWORDS, _decimal_Context_power__doc__},
+    {"power", _PyCFunction_CAST(_decimal_Context_power), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _decimal_Context_power__doc__},
 
 static PyObject *
-_decimal_Context_power_impl(PyObject *context, PyObject *base, PyObject *exp,
-                            PyObject *mod);
+_decimal_Context_power_impl(PyObject *context, PyTypeObject *cls,
+                            PyObject *base, PyObject *exp, PyObject *mod);
 
 static PyObject *
-_decimal_Context_power(PyObject *context, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+_decimal_Context_power(PyObject *context, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -4342,7 +5394,7 @@ _decimal_Context_power(PyObject *context, PyObject *const *args, Py_ssize_t narg
     }
     mod = args[2];
 skip_optional_pos:
-    return_value = _decimal_Context_power_impl(context, base, exp, mod);
+    return_value = _decimal_Context_power_impl(context, cls, base, exp, mod);
 
 exit:
     return return_value;
@@ -4355,27 +5407,43 @@ PyDoc_STRVAR(_decimal_Context_fma__doc__,
 "Return x multiplied by y, plus z.");
 
 #define _DECIMAL_CONTEXT_FMA_METHODDEF    \
-    {"fma", _PyCFunction_CAST(_decimal_Context_fma), METH_FASTCALL, _decimal_Context_fma__doc__},
+    {"fma", _PyCFunction_CAST(_decimal_Context_fma), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _decimal_Context_fma__doc__},
 
 static PyObject *
-_decimal_Context_fma_impl(PyObject *context, PyObject *x, PyObject *y,
-                          PyObject *z);
+_decimal_Context_fma_impl(PyObject *context, PyTypeObject *cls, PyObject *x,
+                          PyObject *y, PyObject *z);
 
 static PyObject *
-_decimal_Context_fma(PyObject *context, PyObject *const *args, Py_ssize_t nargs)
+_decimal_Context_fma(PyObject *context, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
+    #else
+    #  define KWTUPLE NULL
+    #endif
+
+    static const char * const _keywords[] = {"", "", "", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "fma",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[3];
     PyObject *x;
     PyObject *y;
     PyObject *z;
 
-    if (!_PyArg_CheckPositional("fma", nargs, 3, 3)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 3, /*maxpos*/ 3, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    if (!args) {
         goto exit;
     }
     x = args[0];
     y = args[1];
     z = args[2];
-    return_value = _decimal_Context_fma_impl(context, x, y, z);
+    return_value = _decimal_Context_fma_impl(context, cls, x, y, z);
 
 exit:
     return return_value;
@@ -4388,15 +5456,19 @@ PyDoc_STRVAR(_decimal_Context_radix__doc__,
 "Return 10.");
 
 #define _DECIMAL_CONTEXT_RADIX_METHODDEF    \
-    {"radix", (PyCFunction)_decimal_Context_radix, METH_NOARGS, _decimal_Context_radix__doc__},
+    {"radix", _PyCFunction_CAST(_decimal_Context_radix), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _decimal_Context_radix__doc__},
 
 static PyObject *
-_decimal_Context_radix_impl(PyObject *context);
+_decimal_Context_radix_impl(PyObject *context, PyTypeObject *cls);
 
 static PyObject *
-_decimal_Context_radix(PyObject *context, PyObject *Py_UNUSED(ignored))
+_decimal_Context_radix(PyObject *context, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
-    return _decimal_Context_radix_impl(context);
+    if (nargs || (kwnames && PyTuple_GET_SIZE(kwnames))) {
+        PyErr_SetString(PyExc_TypeError, "radix() takes no arguments");
+        return NULL;
+    }
+    return _decimal_Context_radix_impl(context, cls);
 }
 
 PyDoc_STRVAR(_decimal_Context_is_normal__doc__,
@@ -4406,7 +5478,43 @@ PyDoc_STRVAR(_decimal_Context_is_normal__doc__,
 "Return True if x is a normal number, False otherwise.");
 
 #define _DECIMAL_CONTEXT_IS_NORMAL_METHODDEF    \
-    {"is_normal", (PyCFunction)_decimal_Context_is_normal, METH_O, _decimal_Context_is_normal__doc__},
+    {"is_normal", _PyCFunction_CAST(_decimal_Context_is_normal), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _decimal_Context_is_normal__doc__},
+
+static PyObject *
+_decimal_Context_is_normal_impl(PyObject *context, PyTypeObject *cls,
+                                PyObject *x);
+
+static PyObject *
+_decimal_Context_is_normal(PyObject *context, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
+    #else
+    #  define KWTUPLE NULL
+    #endif
+
+    static const char * const _keywords[] = {"", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "is_normal",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[1];
+    PyObject *x;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    x = args[0];
+    return_value = _decimal_Context_is_normal_impl(context, cls, x);
+
+exit:
+    return return_value;
+}
 
 PyDoc_STRVAR(_decimal_Context_is_subnormal__doc__,
 "is_subnormal($self, x, /)\n"
@@ -4415,7 +5523,43 @@ PyDoc_STRVAR(_decimal_Context_is_subnormal__doc__,
 "Return True if x is subnormal, False otherwise.");
 
 #define _DECIMAL_CONTEXT_IS_SUBNORMAL_METHODDEF    \
-    {"is_subnormal", (PyCFunction)_decimal_Context_is_subnormal, METH_O, _decimal_Context_is_subnormal__doc__},
+    {"is_subnormal", _PyCFunction_CAST(_decimal_Context_is_subnormal), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _decimal_Context_is_subnormal__doc__},
+
+static PyObject *
+_decimal_Context_is_subnormal_impl(PyObject *context, PyTypeObject *cls,
+                                   PyObject *x);
+
+static PyObject *
+_decimal_Context_is_subnormal(PyObject *context, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
+    #else
+    #  define KWTUPLE NULL
+    #endif
+
+    static const char * const _keywords[] = {"", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "is_subnormal",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[1];
+    PyObject *x;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    x = args[0];
+    return_value = _decimal_Context_is_subnormal_impl(context, cls, x);
+
+exit:
+    return return_value;
+}
 
 PyDoc_STRVAR(_decimal_Context_is_finite__doc__,
 "is_finite($self, x, /)\n"
@@ -4424,7 +5568,43 @@ PyDoc_STRVAR(_decimal_Context_is_finite__doc__,
 "Return True if x is finite, False otherwise.");
 
 #define _DECIMAL_CONTEXT_IS_FINITE_METHODDEF    \
-    {"is_finite", (PyCFunction)_decimal_Context_is_finite, METH_O, _decimal_Context_is_finite__doc__},
+    {"is_finite", _PyCFunction_CAST(_decimal_Context_is_finite), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _decimal_Context_is_finite__doc__},
+
+static PyObject *
+_decimal_Context_is_finite_impl(PyObject *context, PyTypeObject *cls,
+                                PyObject *x);
+
+static PyObject *
+_decimal_Context_is_finite(PyObject *context, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
+    #else
+    #  define KWTUPLE NULL
+    #endif
+
+    static const char * const _keywords[] = {"", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "is_finite",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[1];
+    PyObject *x;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    x = args[0];
+    return_value = _decimal_Context_is_finite_impl(context, cls, x);
+
+exit:
+    return return_value;
+}
 
 PyDoc_STRVAR(_decimal_Context_is_infinite__doc__,
 "is_infinite($self, x, /)\n"
@@ -4433,7 +5613,43 @@ PyDoc_STRVAR(_decimal_Context_is_infinite__doc__,
 "Return True if x is infinite, False otherwise.");
 
 #define _DECIMAL_CONTEXT_IS_INFINITE_METHODDEF    \
-    {"is_infinite", (PyCFunction)_decimal_Context_is_infinite, METH_O, _decimal_Context_is_infinite__doc__},
+    {"is_infinite", _PyCFunction_CAST(_decimal_Context_is_infinite), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _decimal_Context_is_infinite__doc__},
+
+static PyObject *
+_decimal_Context_is_infinite_impl(PyObject *context, PyTypeObject *cls,
+                                  PyObject *x);
+
+static PyObject *
+_decimal_Context_is_infinite(PyObject *context, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
+    #else
+    #  define KWTUPLE NULL
+    #endif
+
+    static const char * const _keywords[] = {"", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "is_infinite",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[1];
+    PyObject *x;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    x = args[0];
+    return_value = _decimal_Context_is_infinite_impl(context, cls, x);
+
+exit:
+    return return_value;
+}
 
 PyDoc_STRVAR(_decimal_Context_is_nan__doc__,
 "is_nan($self, x, /)\n"
@@ -4442,7 +5658,43 @@ PyDoc_STRVAR(_decimal_Context_is_nan__doc__,
 "Return True if x is a qNaN or sNaN, False otherwise.");
 
 #define _DECIMAL_CONTEXT_IS_NAN_METHODDEF    \
-    {"is_nan", (PyCFunction)_decimal_Context_is_nan, METH_O, _decimal_Context_is_nan__doc__},
+    {"is_nan", _PyCFunction_CAST(_decimal_Context_is_nan), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _decimal_Context_is_nan__doc__},
+
+static PyObject *
+_decimal_Context_is_nan_impl(PyObject *context, PyTypeObject *cls,
+                             PyObject *x);
+
+static PyObject *
+_decimal_Context_is_nan(PyObject *context, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
+    #else
+    #  define KWTUPLE NULL
+    #endif
+
+    static const char * const _keywords[] = {"", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "is_nan",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[1];
+    PyObject *x;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    x = args[0];
+    return_value = _decimal_Context_is_nan_impl(context, cls, x);
+
+exit:
+    return return_value;
+}
 
 PyDoc_STRVAR(_decimal_Context_is_qnan__doc__,
 "is_qnan($self, x, /)\n"
@@ -4451,7 +5703,43 @@ PyDoc_STRVAR(_decimal_Context_is_qnan__doc__,
 "Return True if x is a quiet NaN, False otherwise.");
 
 #define _DECIMAL_CONTEXT_IS_QNAN_METHODDEF    \
-    {"is_qnan", (PyCFunction)_decimal_Context_is_qnan, METH_O, _decimal_Context_is_qnan__doc__},
+    {"is_qnan", _PyCFunction_CAST(_decimal_Context_is_qnan), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _decimal_Context_is_qnan__doc__},
+
+static PyObject *
+_decimal_Context_is_qnan_impl(PyObject *context, PyTypeObject *cls,
+                              PyObject *x);
+
+static PyObject *
+_decimal_Context_is_qnan(PyObject *context, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
+    #else
+    #  define KWTUPLE NULL
+    #endif
+
+    static const char * const _keywords[] = {"", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "is_qnan",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[1];
+    PyObject *x;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    x = args[0];
+    return_value = _decimal_Context_is_qnan_impl(context, cls, x);
+
+exit:
+    return return_value;
+}
 
 PyDoc_STRVAR(_decimal_Context_is_snan__doc__,
 "is_snan($self, x, /)\n"
@@ -4460,7 +5748,43 @@ PyDoc_STRVAR(_decimal_Context_is_snan__doc__,
 "Return True if x is a signaling NaN, False otherwise.");
 
 #define _DECIMAL_CONTEXT_IS_SNAN_METHODDEF    \
-    {"is_snan", (PyCFunction)_decimal_Context_is_snan, METH_O, _decimal_Context_is_snan__doc__},
+    {"is_snan", _PyCFunction_CAST(_decimal_Context_is_snan), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _decimal_Context_is_snan__doc__},
+
+static PyObject *
+_decimal_Context_is_snan_impl(PyObject *context, PyTypeObject *cls,
+                              PyObject *x);
+
+static PyObject *
+_decimal_Context_is_snan(PyObject *context, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
+    #else
+    #  define KWTUPLE NULL
+    #endif
+
+    static const char * const _keywords[] = {"", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "is_snan",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[1];
+    PyObject *x;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    x = args[0];
+    return_value = _decimal_Context_is_snan_impl(context, cls, x);
+
+exit:
+    return return_value;
+}
 
 PyDoc_STRVAR(_decimal_Context_is_signed__doc__,
 "is_signed($self, x, /)\n"
@@ -4469,7 +5793,43 @@ PyDoc_STRVAR(_decimal_Context_is_signed__doc__,
 "Return True if x is negative, False otherwise.");
 
 #define _DECIMAL_CONTEXT_IS_SIGNED_METHODDEF    \
-    {"is_signed", (PyCFunction)_decimal_Context_is_signed, METH_O, _decimal_Context_is_signed__doc__},
+    {"is_signed", _PyCFunction_CAST(_decimal_Context_is_signed), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _decimal_Context_is_signed__doc__},
+
+static PyObject *
+_decimal_Context_is_signed_impl(PyObject *context, PyTypeObject *cls,
+                                PyObject *x);
+
+static PyObject *
+_decimal_Context_is_signed(PyObject *context, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
+    #else
+    #  define KWTUPLE NULL
+    #endif
+
+    static const char * const _keywords[] = {"", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "is_signed",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[1];
+    PyObject *x;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    x = args[0];
+    return_value = _decimal_Context_is_signed_impl(context, cls, x);
+
+exit:
+    return return_value;
+}
 
 PyDoc_STRVAR(_decimal_Context_is_zero__doc__,
 "is_zero($self, x, /)\n"
@@ -4478,7 +5838,43 @@ PyDoc_STRVAR(_decimal_Context_is_zero__doc__,
 "Return True if x is a zero, False otherwise.");
 
 #define _DECIMAL_CONTEXT_IS_ZERO_METHODDEF    \
-    {"is_zero", (PyCFunction)_decimal_Context_is_zero, METH_O, _decimal_Context_is_zero__doc__},
+    {"is_zero", _PyCFunction_CAST(_decimal_Context_is_zero), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _decimal_Context_is_zero__doc__},
+
+static PyObject *
+_decimal_Context_is_zero_impl(PyObject *context, PyTypeObject *cls,
+                              PyObject *x);
+
+static PyObject *
+_decimal_Context_is_zero(PyObject *context, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
+    #else
+    #  define KWTUPLE NULL
+    #endif
+
+    static const char * const _keywords[] = {"", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "is_zero",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[1];
+    PyObject *x;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    x = args[0];
+    return_value = _decimal_Context_is_zero_impl(context, cls, x);
+
+exit:
+    return return_value;
+}
 
 PyDoc_STRVAR(_decimal_Context_is_canonical__doc__,
 "is_canonical($self, x, /)\n"
@@ -4487,7 +5883,43 @@ PyDoc_STRVAR(_decimal_Context_is_canonical__doc__,
 "Return True if x is canonical, False otherwise.");
 
 #define _DECIMAL_CONTEXT_IS_CANONICAL_METHODDEF    \
-    {"is_canonical", (PyCFunction)_decimal_Context_is_canonical, METH_O, _decimal_Context_is_canonical__doc__},
+    {"is_canonical", _PyCFunction_CAST(_decimal_Context_is_canonical), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _decimal_Context_is_canonical__doc__},
+
+static PyObject *
+_decimal_Context_is_canonical_impl(PyObject *context, PyTypeObject *cls,
+                                   PyObject *x);
+
+static PyObject *
+_decimal_Context_is_canonical(PyObject *context, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
+    #else
+    #  define KWTUPLE NULL
+    #endif
+
+    static const char * const _keywords[] = {"", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "is_canonical",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[1];
+    PyObject *x;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    x = args[0];
+    return_value = _decimal_Context_is_canonical_impl(context, cls, x);
+
+exit:
+    return return_value;
+}
 
 PyDoc_STRVAR(_decimal_Context__apply__doc__,
 "_apply($self, x, /)\n"
@@ -4496,7 +5928,43 @@ PyDoc_STRVAR(_decimal_Context__apply__doc__,
 "Apply self to Decimal x.");
 
 #define _DECIMAL_CONTEXT__APPLY_METHODDEF    \
-    {"_apply", (PyCFunction)_decimal_Context__apply, METH_O, _decimal_Context__apply__doc__},
+    {"_apply", _PyCFunction_CAST(_decimal_Context__apply), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _decimal_Context__apply__doc__},
+
+static PyObject *
+_decimal_Context__apply_impl(PyObject *context, PyTypeObject *cls,
+                             PyObject *x);
+
+static PyObject *
+_decimal_Context__apply(PyObject *context, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
+    #else
+    #  define KWTUPLE NULL
+    #endif
+
+    static const char * const _keywords[] = {"", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "_apply",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[1];
+    PyObject *x;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    x = args[0];
+    return_value = _decimal_Context__apply_impl(context, cls, x);
+
+exit:
+    return return_value;
+}
 
 #if defined(EXTRA_FUNCTIONALITY)
 
@@ -4507,7 +5975,43 @@ PyDoc_STRVAR(_decimal_Context_apply__doc__,
 "Apply self to Decimal x.");
 
 #define _DECIMAL_CONTEXT_APPLY_METHODDEF    \
-    {"apply", (PyCFunction)_decimal_Context_apply, METH_O, _decimal_Context_apply__doc__},
+    {"apply", _PyCFunction_CAST(_decimal_Context_apply), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _decimal_Context_apply__doc__},
+
+static PyObject *
+_decimal_Context_apply_impl(PyObject *context, PyTypeObject *cls,
+                            PyObject *x);
+
+static PyObject *
+_decimal_Context_apply(PyObject *context, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
+    #else
+    #  define KWTUPLE NULL
+    #endif
+
+    static const char * const _keywords[] = {"", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "apply",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[1];
+    PyObject *x;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    x = args[0];
+    return_value = _decimal_Context_apply_impl(context, cls, x);
+
+exit:
+    return return_value;
+}
 
 #endif /* defined(EXTRA_FUNCTIONALITY) */
 
@@ -4518,7 +6022,43 @@ PyDoc_STRVAR(_decimal_Context_canonical__doc__,
 "Return a new instance of x.");
 
 #define _DECIMAL_CONTEXT_CANONICAL_METHODDEF    \
-    {"canonical", (PyCFunction)_decimal_Context_canonical, METH_O, _decimal_Context_canonical__doc__},
+    {"canonical", _PyCFunction_CAST(_decimal_Context_canonical), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _decimal_Context_canonical__doc__},
+
+static PyObject *
+_decimal_Context_canonical_impl(PyObject *context, PyTypeObject *cls,
+                                PyObject *x);
+
+static PyObject *
+_decimal_Context_canonical(PyObject *context, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
+    #else
+    #  define KWTUPLE NULL
+    #endif
+
+    static const char * const _keywords[] = {"", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "canonical",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[1];
+    PyObject *x;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    x = args[0];
+    return_value = _decimal_Context_canonical_impl(context, cls, x);
+
+exit:
+    return return_value;
+}
 
 PyDoc_STRVAR(_decimal_Context_copy_abs__doc__,
 "copy_abs($self, x, /)\n"
@@ -4527,7 +6067,43 @@ PyDoc_STRVAR(_decimal_Context_copy_abs__doc__,
 "Return a copy of x with the sign set to 0.");
 
 #define _DECIMAL_CONTEXT_COPY_ABS_METHODDEF    \
-    {"copy_abs", (PyCFunction)_decimal_Context_copy_abs, METH_O, _decimal_Context_copy_abs__doc__},
+    {"copy_abs", _PyCFunction_CAST(_decimal_Context_copy_abs), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _decimal_Context_copy_abs__doc__},
+
+static PyObject *
+_decimal_Context_copy_abs_impl(PyObject *context, PyTypeObject *cls,
+                               PyObject *x);
+
+static PyObject *
+_decimal_Context_copy_abs(PyObject *context, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
+    #else
+    #  define KWTUPLE NULL
+    #endif
+
+    static const char * const _keywords[] = {"", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "copy_abs",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[1];
+    PyObject *x;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    x = args[0];
+    return_value = _decimal_Context_copy_abs_impl(context, cls, x);
+
+exit:
+    return return_value;
+}
 
 PyDoc_STRVAR(_decimal_Context_copy_decimal__doc__,
 "copy_decimal($self, x, /)\n"
@@ -4536,7 +6112,43 @@ PyDoc_STRVAR(_decimal_Context_copy_decimal__doc__,
 "Return a copy of Decimal x.");
 
 #define _DECIMAL_CONTEXT_COPY_DECIMAL_METHODDEF    \
-    {"copy_decimal", (PyCFunction)_decimal_Context_copy_decimal, METH_O, _decimal_Context_copy_decimal__doc__},
+    {"copy_decimal", _PyCFunction_CAST(_decimal_Context_copy_decimal), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _decimal_Context_copy_decimal__doc__},
+
+static PyObject *
+_decimal_Context_copy_decimal_impl(PyObject *context, PyTypeObject *cls,
+                                   PyObject *x);
+
+static PyObject *
+_decimal_Context_copy_decimal(PyObject *context, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
+    #else
+    #  define KWTUPLE NULL
+    #endif
+
+    static const char * const _keywords[] = {"", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "copy_decimal",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[1];
+    PyObject *x;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    x = args[0];
+    return_value = _decimal_Context_copy_decimal_impl(context, cls, x);
+
+exit:
+    return return_value;
+}
 
 PyDoc_STRVAR(_decimal_Context_copy_negate__doc__,
 "copy_negate($self, x, /)\n"
@@ -4545,7 +6157,43 @@ PyDoc_STRVAR(_decimal_Context_copy_negate__doc__,
 "Return a copy of x with the sign inverted.");
 
 #define _DECIMAL_CONTEXT_COPY_NEGATE_METHODDEF    \
-    {"copy_negate", (PyCFunction)_decimal_Context_copy_negate, METH_O, _decimal_Context_copy_negate__doc__},
+    {"copy_negate", _PyCFunction_CAST(_decimal_Context_copy_negate), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _decimal_Context_copy_negate__doc__},
+
+static PyObject *
+_decimal_Context_copy_negate_impl(PyObject *context, PyTypeObject *cls,
+                                  PyObject *x);
+
+static PyObject *
+_decimal_Context_copy_negate(PyObject *context, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
+    #else
+    #  define KWTUPLE NULL
+    #endif
+
+    static const char * const _keywords[] = {"", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "copy_negate",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[1];
+    PyObject *x;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    x = args[0];
+    return_value = _decimal_Context_copy_negate_impl(context, cls, x);
+
+exit:
+    return return_value;
+}
 
 PyDoc_STRVAR(_decimal_Context_logb__doc__,
 "logb($self, x, /)\n"
@@ -4554,16 +6202,100 @@ PyDoc_STRVAR(_decimal_Context_logb__doc__,
 "Return the exponent of the magnitude of the operand\'s MSD.");
 
 #define _DECIMAL_CONTEXT_LOGB_METHODDEF    \
-    {"logb", (PyCFunction)_decimal_Context_logb, METH_O, _decimal_Context_logb__doc__},
+    {"logb", _PyCFunction_CAST(_decimal_Context_logb), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _decimal_Context_logb__doc__},
+
+static PyObject *
+_decimal_Context_logb_impl(PyObject *context, PyTypeObject *cls, PyObject *x);
+
+static PyObject *
+_decimal_Context_logb(PyObject *context, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
+    #else
+    #  define KWTUPLE NULL
+    #endif
+
+    static const char * const _keywords[] = {"", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "logb",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[1];
+    PyObject *x;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    x = args[0];
+    return_value = _decimal_Context_logb_impl(context, cls, x);
+
+exit:
+    return return_value;
+}
 
 PyDoc_STRVAR(_decimal_Context_logical_invert__doc__,
 "logical_invert($self, x, /)\n"
 "--\n"
 "\n"
-"Invert all digits of x.");
+"Invert all the digits in the operand.\n"
+"\n"
+"The operand must be a logical number.\n"
+"\n"
+"    >>> ExtendedContext.logical_invert(Decimal(\'0\'))\n"
+"    Decimal(\'111111111\')\n"
+"    >>> ExtendedContext.logical_invert(Decimal(\'1\'))\n"
+"    Decimal(\'111111110\')\n"
+"    >>> ExtendedContext.logical_invert(Decimal(\'111111111\'))\n"
+"    Decimal(\'0\')\n"
+"    >>> ExtendedContext.logical_invert(Decimal(\'101010101\'))\n"
+"    Decimal(\'10101010\')\n"
+"    >>> ExtendedContext.logical_invert(1101)\n"
+"    Decimal(\'111110010\')");
 
 #define _DECIMAL_CONTEXT_LOGICAL_INVERT_METHODDEF    \
-    {"logical_invert", (PyCFunction)_decimal_Context_logical_invert, METH_O, _decimal_Context_logical_invert__doc__},
+    {"logical_invert", _PyCFunction_CAST(_decimal_Context_logical_invert), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _decimal_Context_logical_invert__doc__},
+
+static PyObject *
+_decimal_Context_logical_invert_impl(PyObject *context, PyTypeObject *cls,
+                                     PyObject *x);
+
+static PyObject *
+_decimal_Context_logical_invert(PyObject *context, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
+    #else
+    #  define KWTUPLE NULL
+    #endif
+
+    static const char * const _keywords[] = {"", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "logical_invert",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[1];
+    PyObject *x;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    x = args[0];
+    return_value = _decimal_Context_logical_invert_impl(context, cls, x);
+
+exit:
+    return return_value;
+}
 
 PyDoc_STRVAR(_decimal_Context_number_class__doc__,
 "number_class($self, x, /)\n"
@@ -4572,7 +6304,43 @@ PyDoc_STRVAR(_decimal_Context_number_class__doc__,
 "Return an indication of the class of x.");
 
 #define _DECIMAL_CONTEXT_NUMBER_CLASS_METHODDEF    \
-    {"number_class", (PyCFunction)_decimal_Context_number_class, METH_O, _decimal_Context_number_class__doc__},
+    {"number_class", _PyCFunction_CAST(_decimal_Context_number_class), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _decimal_Context_number_class__doc__},
+
+static PyObject *
+_decimal_Context_number_class_impl(PyObject *context, PyTypeObject *cls,
+                                   PyObject *x);
+
+static PyObject *
+_decimal_Context_number_class(PyObject *context, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
+    #else
+    #  define KWTUPLE NULL
+    #endif
+
+    static const char * const _keywords[] = {"", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "number_class",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[1];
+    PyObject *x;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    x = args[0];
+    return_value = _decimal_Context_number_class_impl(context, cls, x);
+
+exit:
+    return return_value;
+}
 
 PyDoc_STRVAR(_decimal_Context_to_sci_string__doc__,
 "to_sci_string($self, x, /)\n"
@@ -4581,7 +6349,43 @@ PyDoc_STRVAR(_decimal_Context_to_sci_string__doc__,
 "Convert a number to a string using scientific notation.");
 
 #define _DECIMAL_CONTEXT_TO_SCI_STRING_METHODDEF    \
-    {"to_sci_string", (PyCFunction)_decimal_Context_to_sci_string, METH_O, _decimal_Context_to_sci_string__doc__},
+    {"to_sci_string", _PyCFunction_CAST(_decimal_Context_to_sci_string), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _decimal_Context_to_sci_string__doc__},
+
+static PyObject *
+_decimal_Context_to_sci_string_impl(PyObject *context, PyTypeObject *cls,
+                                    PyObject *x);
+
+static PyObject *
+_decimal_Context_to_sci_string(PyObject *context, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
+    #else
+    #  define KWTUPLE NULL
+    #endif
+
+    static const char * const _keywords[] = {"", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "to_sci_string",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[1];
+    PyObject *x;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    x = args[0];
+    return_value = _decimal_Context_to_sci_string_impl(context, cls, x);
+
+exit:
+    return return_value;
+}
 
 PyDoc_STRVAR(_decimal_Context_to_eng_string__doc__,
 "to_eng_string($self, x, /)\n"
@@ -4590,7 +6394,43 @@ PyDoc_STRVAR(_decimal_Context_to_eng_string__doc__,
 "Convert a number to a string, using engineering notation.");
 
 #define _DECIMAL_CONTEXT_TO_ENG_STRING_METHODDEF    \
-    {"to_eng_string", (PyCFunction)_decimal_Context_to_eng_string, METH_O, _decimal_Context_to_eng_string__doc__},
+    {"to_eng_string", _PyCFunction_CAST(_decimal_Context_to_eng_string), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _decimal_Context_to_eng_string__doc__},
+
+static PyObject *
+_decimal_Context_to_eng_string_impl(PyObject *context, PyTypeObject *cls,
+                                    PyObject *x);
+
+static PyObject *
+_decimal_Context_to_eng_string(PyObject *context, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
+    #else
+    #  define KWTUPLE NULL
+    #endif
+
+    static const char * const _keywords[] = {"", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "to_eng_string",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[1];
+    PyObject *x;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    x = args[0];
+    return_value = _decimal_Context_to_eng_string_impl(context, cls, x);
+
+exit:
+    return return_value;
+}
 
 PyDoc_STRVAR(_decimal_Context_compare_total__doc__,
 "compare_total($self, x, y, /)\n"
@@ -4599,25 +6439,41 @@ PyDoc_STRVAR(_decimal_Context_compare_total__doc__,
 "Compare x and y using their abstract representation.");
 
 #define _DECIMAL_CONTEXT_COMPARE_TOTAL_METHODDEF    \
-    {"compare_total", _PyCFunction_CAST(_decimal_Context_compare_total), METH_FASTCALL, _decimal_Context_compare_total__doc__},
+    {"compare_total", _PyCFunction_CAST(_decimal_Context_compare_total), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _decimal_Context_compare_total__doc__},
 
 static PyObject *
-_decimal_Context_compare_total_impl(PyObject *context, PyObject *x,
-                                    PyObject *y);
+_decimal_Context_compare_total_impl(PyObject *context, PyTypeObject *cls,
+                                    PyObject *x, PyObject *y);
 
 static PyObject *
-_decimal_Context_compare_total(PyObject *context, PyObject *const *args, Py_ssize_t nargs)
+_decimal_Context_compare_total(PyObject *context, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
+    #else
+    #  define KWTUPLE NULL
+    #endif
+
+    static const char * const _keywords[] = {"", "", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "compare_total",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[2];
     PyObject *x;
     PyObject *y;
 
-    if (!_PyArg_CheckPositional("compare_total", nargs, 2, 2)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 2, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    if (!args) {
         goto exit;
     }
     x = args[0];
     y = args[1];
-    return_value = _decimal_Context_compare_total_impl(context, x, y);
+    return_value = _decimal_Context_compare_total_impl(context, cls, x, y);
 
 exit:
     return return_value;
@@ -4630,25 +6486,41 @@ PyDoc_STRVAR(_decimal_Context_compare_total_mag__doc__,
 "Compare x and y using their abstract representation, ignoring sign.");
 
 #define _DECIMAL_CONTEXT_COMPARE_TOTAL_MAG_METHODDEF    \
-    {"compare_total_mag", _PyCFunction_CAST(_decimal_Context_compare_total_mag), METH_FASTCALL, _decimal_Context_compare_total_mag__doc__},
+    {"compare_total_mag", _PyCFunction_CAST(_decimal_Context_compare_total_mag), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _decimal_Context_compare_total_mag__doc__},
 
 static PyObject *
-_decimal_Context_compare_total_mag_impl(PyObject *context, PyObject *x,
-                                        PyObject *y);
+_decimal_Context_compare_total_mag_impl(PyObject *context, PyTypeObject *cls,
+                                        PyObject *x, PyObject *y);
 
 static PyObject *
-_decimal_Context_compare_total_mag(PyObject *context, PyObject *const *args, Py_ssize_t nargs)
+_decimal_Context_compare_total_mag(PyObject *context, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
+    #else
+    #  define KWTUPLE NULL
+    #endif
+
+    static const char * const _keywords[] = {"", "", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "compare_total_mag",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[2];
     PyObject *x;
     PyObject *y;
 
-    if (!_PyArg_CheckPositional("compare_total_mag", nargs, 2, 2)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 2, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    if (!args) {
         goto exit;
     }
     x = args[0];
     y = args[1];
-    return_value = _decimal_Context_compare_total_mag_impl(context, x, y);
+    return_value = _decimal_Context_compare_total_mag_impl(context, cls, x, y);
 
 exit:
     return return_value;
@@ -4661,24 +6533,41 @@ PyDoc_STRVAR(_decimal_Context_copy_sign__doc__,
 "Copy the sign from y to x.");
 
 #define _DECIMAL_CONTEXT_COPY_SIGN_METHODDEF    \
-    {"copy_sign", _PyCFunction_CAST(_decimal_Context_copy_sign), METH_FASTCALL, _decimal_Context_copy_sign__doc__},
+    {"copy_sign", _PyCFunction_CAST(_decimal_Context_copy_sign), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _decimal_Context_copy_sign__doc__},
 
 static PyObject *
-_decimal_Context_copy_sign_impl(PyObject *context, PyObject *x, PyObject *y);
+_decimal_Context_copy_sign_impl(PyObject *context, PyTypeObject *cls,
+                                PyObject *x, PyObject *y);
 
 static PyObject *
-_decimal_Context_copy_sign(PyObject *context, PyObject *const *args, Py_ssize_t nargs)
+_decimal_Context_copy_sign(PyObject *context, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
+    #else
+    #  define KWTUPLE NULL
+    #endif
+
+    static const char * const _keywords[] = {"", "", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "copy_sign",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[2];
     PyObject *x;
     PyObject *y;
 
-    if (!_PyArg_CheckPositional("copy_sign", nargs, 2, 2)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 2, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    if (!args) {
         goto exit;
     }
     x = args[0];
     y = args[1];
-    return_value = _decimal_Context_copy_sign_impl(context, x, y);
+    return_value = _decimal_Context_copy_sign_impl(context, cls, x, y);
 
 exit:
     return return_value;
@@ -4688,28 +6577,65 @@ PyDoc_STRVAR(_decimal_Context_logical_and__doc__,
 "logical_and($self, x, y, /)\n"
 "--\n"
 "\n"
-"Digit-wise and of x and y.");
+"Applies the logical operation \'and\' between each operand\'s digits.\n"
+"\n"
+"The operands must be both logical numbers.\n"
+"\n"
+"    >>> ExtendedContext.logical_and(Decimal(\'0\'), Decimal(\'0\'))\n"
+"    Decimal(\'0\')\n"
+"    >>> ExtendedContext.logical_and(Decimal(\'0\'), Decimal(\'1\'))\n"
+"    Decimal(\'0\')\n"
+"    >>> ExtendedContext.logical_and(Decimal(\'1\'), Decimal(\'0\'))\n"
+"    Decimal(\'0\')\n"
+"    >>> ExtendedContext.logical_and(Decimal(\'1\'), Decimal(\'1\'))\n"
+"    Decimal(\'1\')\n"
+"    >>> ExtendedContext.logical_and(Decimal(\'1100\'), Decimal(\'1010\'))\n"
+"    Decimal(\'1000\')\n"
+"    >>> ExtendedContext.logical_and(Decimal(\'1111\'), Decimal(\'10\'))\n"
+"    Decimal(\'10\')\n"
+"    >>> ExtendedContext.logical_and(110, 1101)\n"
+"    Decimal(\'100\')\n"
+"    >>> ExtendedContext.logical_and(Decimal(110), 1101)\n"
+"    Decimal(\'100\')\n"
+"    >>> ExtendedContext.logical_and(110, Decimal(1101))\n"
+"    Decimal(\'100\')");
 
 #define _DECIMAL_CONTEXT_LOGICAL_AND_METHODDEF    \
-    {"logical_and", _PyCFunction_CAST(_decimal_Context_logical_and), METH_FASTCALL, _decimal_Context_logical_and__doc__},
+    {"logical_and", _PyCFunction_CAST(_decimal_Context_logical_and), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _decimal_Context_logical_and__doc__},
 
 static PyObject *
-_decimal_Context_logical_and_impl(PyObject *context, PyObject *x,
-                                  PyObject *y);
+_decimal_Context_logical_and_impl(PyObject *context, PyTypeObject *cls,
+                                  PyObject *x, PyObject *y);
 
 static PyObject *
-_decimal_Context_logical_and(PyObject *context, PyObject *const *args, Py_ssize_t nargs)
+_decimal_Context_logical_and(PyObject *context, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
+    #else
+    #  define KWTUPLE NULL
+    #endif
+
+    static const char * const _keywords[] = {"", "", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "logical_and",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[2];
     PyObject *x;
     PyObject *y;
 
-    if (!_PyArg_CheckPositional("logical_and", nargs, 2, 2)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 2, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    if (!args) {
         goto exit;
     }
     x = args[0];
     y = args[1];
-    return_value = _decimal_Context_logical_and_impl(context, x, y);
+    return_value = _decimal_Context_logical_and_impl(context, cls, x, y);
 
 exit:
     return return_value;
@@ -4719,27 +6645,65 @@ PyDoc_STRVAR(_decimal_Context_logical_or__doc__,
 "logical_or($self, x, y, /)\n"
 "--\n"
 "\n"
-"Digit-wise or of x and y.");
+"Applies the logical operation \'or\' between each operand\'s digits.\n"
+"\n"
+"The operands must be both logical numbers.\n"
+"\n"
+"    >>> ExtendedContext.logical_or(Decimal(\'0\'), Decimal(\'0\'))\n"
+"    Decimal(\'0\')\n"
+"    >>> ExtendedContext.logical_or(Decimal(\'0\'), Decimal(\'1\'))\n"
+"    Decimal(\'1\')\n"
+"    >>> ExtendedContext.logical_or(Decimal(\'1\'), Decimal(\'0\'))\n"
+"    Decimal(\'1\')\n"
+"    >>> ExtendedContext.logical_or(Decimal(\'1\'), Decimal(\'1\'))\n"
+"    Decimal(\'1\')\n"
+"    >>> ExtendedContext.logical_or(Decimal(\'1100\'), Decimal(\'1010\'))\n"
+"    Decimal(\'1110\')\n"
+"    >>> ExtendedContext.logical_or(Decimal(\'1110\'), Decimal(\'10\'))\n"
+"    Decimal(\'1110\')\n"
+"    >>> ExtendedContext.logical_or(110, 1101)\n"
+"    Decimal(\'1111\')\n"
+"    >>> ExtendedContext.logical_or(Decimal(110), 1101)\n"
+"    Decimal(\'1111\')\n"
+"    >>> ExtendedContext.logical_or(110, Decimal(1101))\n"
+"    Decimal(\'1111\')");
 
 #define _DECIMAL_CONTEXT_LOGICAL_OR_METHODDEF    \
-    {"logical_or", _PyCFunction_CAST(_decimal_Context_logical_or), METH_FASTCALL, _decimal_Context_logical_or__doc__},
+    {"logical_or", _PyCFunction_CAST(_decimal_Context_logical_or), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _decimal_Context_logical_or__doc__},
 
 static PyObject *
-_decimal_Context_logical_or_impl(PyObject *context, PyObject *x, PyObject *y);
+_decimal_Context_logical_or_impl(PyObject *context, PyTypeObject *cls,
+                                 PyObject *x, PyObject *y);
 
 static PyObject *
-_decimal_Context_logical_or(PyObject *context, PyObject *const *args, Py_ssize_t nargs)
+_decimal_Context_logical_or(PyObject *context, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
+    #else
+    #  define KWTUPLE NULL
+    #endif
+
+    static const char * const _keywords[] = {"", "", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "logical_or",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[2];
     PyObject *x;
     PyObject *y;
 
-    if (!_PyArg_CheckPositional("logical_or", nargs, 2, 2)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 2, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    if (!args) {
         goto exit;
     }
     x = args[0];
     y = args[1];
-    return_value = _decimal_Context_logical_or_impl(context, x, y);
+    return_value = _decimal_Context_logical_or_impl(context, cls, x, y);
 
 exit:
     return return_value;
@@ -4749,28 +6713,65 @@ PyDoc_STRVAR(_decimal_Context_logical_xor__doc__,
 "logical_xor($self, x, y, /)\n"
 "--\n"
 "\n"
-"Digit-wise xor of x and y.");
+"Applies the logical operation \'xor\' between each operand\'s digits.\n"
+"\n"
+"The operands must be both logical numbers.\n"
+"\n"
+"    >>> ExtendedContext.logical_xor(Decimal(\'0\'), Decimal(\'0\'))\n"
+"    Decimal(\'0\')\n"
+"    >>> ExtendedContext.logical_xor(Decimal(\'0\'), Decimal(\'1\'))\n"
+"    Decimal(\'1\')\n"
+"    >>> ExtendedContext.logical_xor(Decimal(\'1\'), Decimal(\'0\'))\n"
+"    Decimal(\'1\')\n"
+"    >>> ExtendedContext.logical_xor(Decimal(\'1\'), Decimal(\'1\'))\n"
+"    Decimal(\'0\')\n"
+"    >>> ExtendedContext.logical_xor(Decimal(\'1100\'), Decimal(\'1010\'))\n"
+"    Decimal(\'110\')\n"
+"    >>> ExtendedContext.logical_xor(Decimal(\'1111\'), Decimal(\'10\'))\n"
+"    Decimal(\'1101\')\n"
+"    >>> ExtendedContext.logical_xor(110, 1101)\n"
+"    Decimal(\'1011\')\n"
+"    >>> ExtendedContext.logical_xor(Decimal(110), 1101)\n"
+"    Decimal(\'1011\')\n"
+"    >>> ExtendedContext.logical_xor(110, Decimal(1101))\n"
+"    Decimal(\'1011\')");
 
 #define _DECIMAL_CONTEXT_LOGICAL_XOR_METHODDEF    \
-    {"logical_xor", _PyCFunction_CAST(_decimal_Context_logical_xor), METH_FASTCALL, _decimal_Context_logical_xor__doc__},
+    {"logical_xor", _PyCFunction_CAST(_decimal_Context_logical_xor), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _decimal_Context_logical_xor__doc__},
 
 static PyObject *
-_decimal_Context_logical_xor_impl(PyObject *context, PyObject *x,
-                                  PyObject *y);
+_decimal_Context_logical_xor_impl(PyObject *context, PyTypeObject *cls,
+                                  PyObject *x, PyObject *y);
 
 static PyObject *
-_decimal_Context_logical_xor(PyObject *context, PyObject *const *args, Py_ssize_t nargs)
+_decimal_Context_logical_xor(PyObject *context, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
+    #else
+    #  define KWTUPLE NULL
+    #endif
+
+    static const char * const _keywords[] = {"", "", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "logical_xor",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[2];
     PyObject *x;
     PyObject *y;
 
-    if (!_PyArg_CheckPositional("logical_xor", nargs, 2, 2)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 2, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    if (!args) {
         goto exit;
     }
     x = args[0];
     y = args[1];
-    return_value = _decimal_Context_logical_xor_impl(context, x, y);
+    return_value = _decimal_Context_logical_xor_impl(context, cls, x, y);
 
 exit:
     return return_value;
@@ -4783,24 +6784,41 @@ PyDoc_STRVAR(_decimal_Context_rotate__doc__,
 "Return a copy of x, rotated by y places.");
 
 #define _DECIMAL_CONTEXT_ROTATE_METHODDEF    \
-    {"rotate", _PyCFunction_CAST(_decimal_Context_rotate), METH_FASTCALL, _decimal_Context_rotate__doc__},
+    {"rotate", _PyCFunction_CAST(_decimal_Context_rotate), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _decimal_Context_rotate__doc__},
 
 static PyObject *
-_decimal_Context_rotate_impl(PyObject *context, PyObject *x, PyObject *y);
+_decimal_Context_rotate_impl(PyObject *context, PyTypeObject *cls,
+                             PyObject *x, PyObject *y);
 
 static PyObject *
-_decimal_Context_rotate(PyObject *context, PyObject *const *args, Py_ssize_t nargs)
+_decimal_Context_rotate(PyObject *context, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
+    #else
+    #  define KWTUPLE NULL
+    #endif
+
+    static const char * const _keywords[] = {"", "", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "rotate",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[2];
     PyObject *x;
     PyObject *y;
 
-    if (!_PyArg_CheckPositional("rotate", nargs, 2, 2)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 2, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    if (!args) {
         goto exit;
     }
     x = args[0];
     y = args[1];
-    return_value = _decimal_Context_rotate_impl(context, x, y);
+    return_value = _decimal_Context_rotate_impl(context, cls, x, y);
 
 exit:
     return return_value;
@@ -4813,24 +6831,41 @@ PyDoc_STRVAR(_decimal_Context_scaleb__doc__,
 "Return the first operand after adding the second value to its exp.");
 
 #define _DECIMAL_CONTEXT_SCALEB_METHODDEF    \
-    {"scaleb", _PyCFunction_CAST(_decimal_Context_scaleb), METH_FASTCALL, _decimal_Context_scaleb__doc__},
+    {"scaleb", _PyCFunction_CAST(_decimal_Context_scaleb), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _decimal_Context_scaleb__doc__},
 
 static PyObject *
-_decimal_Context_scaleb_impl(PyObject *context, PyObject *x, PyObject *y);
+_decimal_Context_scaleb_impl(PyObject *context, PyTypeObject *cls,
+                             PyObject *x, PyObject *y);
 
 static PyObject *
-_decimal_Context_scaleb(PyObject *context, PyObject *const *args, Py_ssize_t nargs)
+_decimal_Context_scaleb(PyObject *context, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
+    #else
+    #  define KWTUPLE NULL
+    #endif
+
+    static const char * const _keywords[] = {"", "", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "scaleb",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[2];
     PyObject *x;
     PyObject *y;
 
-    if (!_PyArg_CheckPositional("scaleb", nargs, 2, 2)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 2, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    if (!args) {
         goto exit;
     }
     x = args[0];
     y = args[1];
-    return_value = _decimal_Context_scaleb_impl(context, x, y);
+    return_value = _decimal_Context_scaleb_impl(context, cls, x, y);
 
 exit:
     return return_value;
@@ -4843,24 +6878,41 @@ PyDoc_STRVAR(_decimal_Context_shift__doc__,
 "Return a copy of x, shifted by y places.");
 
 #define _DECIMAL_CONTEXT_SHIFT_METHODDEF    \
-    {"shift", _PyCFunction_CAST(_decimal_Context_shift), METH_FASTCALL, _decimal_Context_shift__doc__},
+    {"shift", _PyCFunction_CAST(_decimal_Context_shift), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _decimal_Context_shift__doc__},
 
 static PyObject *
-_decimal_Context_shift_impl(PyObject *context, PyObject *x, PyObject *y);
+_decimal_Context_shift_impl(PyObject *context, PyTypeObject *cls,
+                            PyObject *x, PyObject *y);
 
 static PyObject *
-_decimal_Context_shift(PyObject *context, PyObject *const *args, Py_ssize_t nargs)
+_decimal_Context_shift(PyObject *context, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
+    #else
+    #  define KWTUPLE NULL
+    #endif
+
+    static const char * const _keywords[] = {"", "", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "shift",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[2];
     PyObject *x;
     PyObject *y;
 
-    if (!_PyArg_CheckPositional("shift", nargs, 2, 2)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 2, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    if (!args) {
         goto exit;
     }
     x = args[0];
     y = args[1];
-    return_value = _decimal_Context_shift_impl(context, x, y);
+    return_value = _decimal_Context_shift_impl(context, cls, x, y);
 
 exit:
     return return_value;
@@ -4873,31 +6925,59 @@ PyDoc_STRVAR(_decimal_Context_same_quantum__doc__,
 "Return True if the two operands have the same exponent.");
 
 #define _DECIMAL_CONTEXT_SAME_QUANTUM_METHODDEF    \
-    {"same_quantum", _PyCFunction_CAST(_decimal_Context_same_quantum), METH_FASTCALL, _decimal_Context_same_quantum__doc__},
+    {"same_quantum", _PyCFunction_CAST(_decimal_Context_same_quantum), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _decimal_Context_same_quantum__doc__},
 
 static PyObject *
-_decimal_Context_same_quantum_impl(PyObject *context, PyObject *x,
-                                   PyObject *y);
+_decimal_Context_same_quantum_impl(PyObject *context, PyTypeObject *cls,
+                                   PyObject *x, PyObject *y);
 
 static PyObject *
-_decimal_Context_same_quantum(PyObject *context, PyObject *const *args, Py_ssize_t nargs)
+_decimal_Context_same_quantum(PyObject *context, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
+    #else
+    #  define KWTUPLE NULL
+    #endif
+
+    static const char * const _keywords[] = {"", "", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "same_quantum",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[2];
     PyObject *x;
     PyObject *y;
 
-    if (!_PyArg_CheckPositional("same_quantum", nargs, 2, 2)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 2, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    if (!args) {
         goto exit;
     }
     x = args[0];
     y = args[1];
-    return_value = _decimal_Context_same_quantum_impl(context, x, y);
+    return_value = _decimal_Context_same_quantum_impl(context, cls, x, y);
 
 exit:
     return return_value;
 }
 
+#ifndef _DECIMAL_CONTEXT__UNSAFE_SETPREC_METHODDEF
+    #define _DECIMAL_CONTEXT__UNSAFE_SETPREC_METHODDEF
+#endif /* !defined(_DECIMAL_CONTEXT__UNSAFE_SETPREC_METHODDEF) */
+
+#ifndef _DECIMAL_CONTEXT__UNSAFE_SETEMIN_METHODDEF
+    #define _DECIMAL_CONTEXT__UNSAFE_SETEMIN_METHODDEF
+#endif /* !defined(_DECIMAL_CONTEXT__UNSAFE_SETEMIN_METHODDEF) */
+
+#ifndef _DECIMAL_CONTEXT__UNSAFE_SETEMAX_METHODDEF
+    #define _DECIMAL_CONTEXT__UNSAFE_SETEMAX_METHODDEF
+#endif /* !defined(_DECIMAL_CONTEXT__UNSAFE_SETEMAX_METHODDEF) */
+
 #ifndef _DECIMAL_CONTEXT_APPLY_METHODDEF
     #define _DECIMAL_CONTEXT_APPLY_METHODDEF
 #endif /* !defined(_DECIMAL_CONTEXT_APPLY_METHODDEF) */
-/*[clinic end generated code: output=1e10ddd6610e17dc input=a9049054013a1b77]*/
+/*[clinic end generated code: output=b288181c82fdc9f1 input=a9049054013a1b77]*/

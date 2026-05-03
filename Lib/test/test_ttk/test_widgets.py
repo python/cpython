@@ -5,6 +5,7 @@ from test.support import requires, gc_collect
 import sys
 
 from test.test_ttk_textonly import MockTclObj
+from test.test_tkinter.support import setUpModule  # noqa: F401
 from test.test_tkinter.support import (
     AbstractTkTest, requires_tk, tk_version, get_tk_patchlevel,
     simulate_mouse_click, AbstractDefaultRootTest)
@@ -182,7 +183,7 @@ class AbstractLabelTest(AbstractWidgetTest):
                         expected=('image1', 'active', 'image2'))
         self.checkParam(widget, name, 'image1 active image2',
                         expected=('image1', 'active', 'image2'))
-        if tk_version < (9, 0):
+        if tk_version < (8, 7):
             errmsg = 'image "spam" doesn\'t exist'
         else:
             errmsg = 'image "spam" does not exist'
@@ -1191,7 +1192,7 @@ class NotebookTest(AbstractWidgetTest, unittest.TestCase):
         elif sys.platform == 'win32':
             focus_identify_as = 'focus'
         else:
-            focus_identify_as = 'focus' if tk_version < (9,0) else 'padding'
+            focus_identify_as = 'focus' if tk_version < (8, 7) else 'padding'
         self.assertEqual(self.nb.identify(5, 5), focus_identify_as)
         simulate_mouse_click(self.nb, 5, 5)
         self.nb.focus_force()

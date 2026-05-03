@@ -14,7 +14,7 @@ extern "C" {
 #include "pycore_structs.h"       // PyHamtObject
 #include "pycore_tstate.h"        // _PyThreadStateImpl
 #include "pycore_typedefs.h"      // _PyRuntimeState
-
+#include "pycore_uop.h"           // _PyBloomFilter
 
 #define CODE_MAX_WATCHERS 8
 #define CONTEXT_MAX_WATCHERS 8
@@ -69,7 +69,7 @@ struct code_arena_st;
 struct trampoline_api_st {
     void* (*init_state)(void);
     void (*write_state)(void* state, const void *code_addr,
-                        unsigned int code_size, PyCodeObject* code);
+                        size_t code_size, PyCodeObject* code);
     int (*free_state)(void* state);
     void *state;
     Py_ssize_t code_padding;
@@ -88,7 +88,9 @@ struct _ceval_runtime_state {
         struct trampoline_api_st trampoline_api;
         FILE *map_file;
         Py_ssize_t persist_after_fork;
-       _PyFrameEvalFunction prev_eval_frame;
+        _PyFrameEvalFunction prev_eval_frame;
+        Py_ssize_t trampoline_refcount;
+        int code_watcher_id;
 #else
         int _not_used;
 #endif
@@ -175,62 +177,73 @@ struct gc_generation {
                   generations */
 };
 
-struct gc_collection_stats {
-    /* number of collected objects */
-    Py_ssize_t collected;
-    /* total number of uncollectable objects (put into gc.garbage) */
-    Py_ssize_t uncollectable;
-};
-
 /* Running stats per generation */
 struct gc_generation_stats {
+    PyTime_t ts_start;
+    PyTime_t ts_stop;
     /* total number of collections */
     Py_ssize_t collections;
     /* total number of collected objects */
     Py_ssize_t collected;
     /* total number of uncollectable objects (put into gc.garbage) */
     Py_ssize_t uncollectable;
+    // Total number of objects considered for collection and traversed:
+    Py_ssize_t candidates;
+    // Total duration of the collection in seconds:
+    double duration;
 };
 
-enum _GCPhase {
-    GC_PHASE_MARK = 0,
-    GC_PHASE_COLLECT = 1
+#ifdef Py_GIL_DISABLED
+#define GC_YOUNG_STATS_SIZE 1
+#define GC_OLD_STATS_SIZE 1
+#else
+#define GC_YOUNG_STATS_SIZE 11
+#define GC_OLD_STATS_SIZE 3
+#endif
+struct gc_young_stats_buffer {
+    struct gc_generation_stats items[GC_YOUNG_STATS_SIZE];
+    int8_t index;
+};
+
+struct gc_old_stats_buffer {
+    struct gc_generation_stats items[GC_OLD_STATS_SIZE];
+    int8_t index;
 };
 
 /* If we change this, we need to change the default value in the
-   signature of gc.collect. */
+   signature of gc.collect and change the size of PyStats.gc_stats */
 #define NUM_GENERATIONS 3
 
-struct _gc_runtime_state {
-    /* List of objects that still need to be cleaned up, singly linked
-     * via their gc headers' gc_prev pointers.  */
-    PyObject *trash_delete_later;
-    /* Current call-stack depth of tp_dealloc calls. */
-    int trash_delete_nesting;
+struct gc_stats {
+    struct gc_young_stats_buffer young;
+    struct gc_old_stats_buffer old[2];
+};
 
+struct _gc_runtime_state {
     /* Is automatic collection enabled? */
     int enabled;
     int debug;
     /* linked lists of container objects */
+#ifndef Py_GIL_DISABLED
+    struct gc_generation generations[NUM_GENERATIONS];
+    PyGC_Head *generation0;
+#else
     struct gc_generation young;
     struct gc_generation old[2];
+#endif
     /* a permanent generation which won't be collected */
     struct gc_generation permanent_generation;
-    struct gc_generation_stats generation_stats[NUM_GENERATIONS];
+    struct gc_stats *generation_stats;
     /* true if we are currently running the collector */
     int collecting;
+    // The frame that started the current collection. It might be NULL even when
+    // collecting (if no Python frame is running):
+    _PyInterpreterFrame *frame;
     /* list of uncollectable objects */
     PyObject *garbage;
     /* a list of callbacks to be invoked when collection is performed */
     PyObject *callbacks;
 
-    Py_ssize_t heap_size;
-    Py_ssize_t work_to_do;
-    /* Which of the old spaces is the visited space */
-    int visited_space;
-    int phase;
-
-#ifdef Py_GIL_DISABLED
     /* This is the number of objects that survived the last full
        collection. It approximates the number of long lived objects
        tracked by the GC.
@@ -243,6 +256,7 @@ struct _gc_runtime_state {
        the first time. */
     Py_ssize_t long_lived_pending;
 
+#ifdef Py_GIL_DISABLED
     /* True if gc.freeze() has been used. */
     int freeze_active;
 
@@ -257,6 +271,22 @@ struct _gc_runtime_state {
     PyMutex mutex;
 #endif
 };
+
+#ifndef Py_GIL_DISABLED
+#define GC_GENERATION_INIT \
+    .generations = { \
+        { .threshold = 2000, }, \
+        { .threshold = 10, }, \
+        { .threshold = 10, }, \
+    },
+#else
+#define GC_GENERATION_INIT \
+    .young = { .threshold = 2000, }, \
+    .old = { \
+        { .threshold = 10, }, \
+        { .threshold = 10, }, \
+    },
+#endif
 
 #include "pycore_gil.h"           // struct _gil_runtime_state
 
@@ -318,6 +348,14 @@ struct _import_state {
     int dlopenflags;
 #endif
     PyObject *import_func;
+    PyObject *lazy_import_func;
+    int lazy_imports_mode;
+    PyObject *lazy_imports_filter;
+    PyObject *lazy_importing_modules;
+    PyObject *lazy_modules;
+#ifdef Py_GIL_DISABLED
+    PyMutex lazy_mutex;
+#endif
     /* The global import lock. */
     _PyRecursiveMutex lock;
     /* diagnostic info in PyImport_ImportModuleLevelObject() */
@@ -392,6 +430,28 @@ typedef struct _rare_events {
     uint8_t func_modification;
 } _rare_events;
 
+// Optimization configuration for the interpreter.
+// This groups all thresholds and optimization flags for both JIT and interpreter.
+typedef struct _PyOptimizationConfig {
+    // Interpreter optimization thresholds
+    uint16_t jump_backward_initial_value;
+    uint16_t jump_backward_initial_backoff;
+
+    uint16_t resume_initial_value;
+    uint16_t resume_initial_backoff;
+
+    // JIT optimization thresholds
+    uint16_t side_exit_initial_value;
+    uint16_t side_exit_initial_backoff;
+
+    // Trace fitness thresholds
+    uint16_t fitness_initial;
+
+    // Optimization flags
+    bool specialization_enabled;
+    bool uops_optimize_enabled;
+} _PyOptimizationConfig;
+
 struct
 Bigint {
     struct Bigint *next;
@@ -465,8 +525,13 @@ struct _py_func_state {
 /****** type state *********/
 
 /* For now we hard-code this to a value for which we are confident
-   all the static builtin types will fit (for all builds). */
-#define _Py_MAX_MANAGED_STATIC_BUILTIN_TYPES 200
+   all the static builtin types will fit (for all builds).
+   If you add a new static type to the standard library, you may have to
+   update one of these numbers.
+   */
+#define _Py_NUM_MANAGED_PREINITIALIZED_TYPES 120
+#define _Py_MAX_MANAGED_STATIC_BUILTIN_TYPES \
+    (_Py_NUM_MANAGED_PREINITIALIZED_TYPES + 83)
 #define _Py_MAX_MANAGED_STATIC_EXT_TYPES 10
 #define _Py_MAX_MANAGED_STATIC_TYPES \
     (_Py_MAX_MANAGED_STATIC_BUILTIN_TYPES + _Py_MAX_MANAGED_STATIC_EXT_TYPES)
@@ -677,11 +742,6 @@ struct _Py_interp_cached_objects {
 
     /* object.__reduce__ */
     PyObject *objreduce;
-#ifndef Py_GIL_DISABLED
-    /* resolve_slotdups() */
-    PyObject *type_slots_pname;
-    pytype_slotdef *type_slots_ptrs[MAX_EQUIV];
-#endif
 
     /* TypeVar and related types */
     PyTypeObject *generic_type;
@@ -779,12 +839,6 @@ struct _is {
      * and should be placed at the beginning. */
     struct _ceval_state ceval;
 
-    /* This structure is carefully allocated so that it's correctly aligned
-     * to avoid undefined behaviors during LOAD and STORE. The '_malloced'
-     * field stores the allocated pointer address that will later be freed.
-     */
-    void *_malloced;
-
     PyInterpreterState *next;
 
     int64_t id;
@@ -876,6 +930,7 @@ struct _is {
     PyObject *builtins_copy;
     // Initialized to _PyEval_EvalFrameDefault().
     _PyFrameEvalFunction eval_frame;
+    int eval_frame_allow_specialization;
 
     PyFunction_WatchCallback func_watchers[FUNC_MAX_WATCHERS];
     // One bit is set for each non-NULL entry in func_watchers
@@ -949,11 +1004,18 @@ struct _is {
     struct callable_cache callable_cache;
     PyObject *common_consts[NUM_COMMON_CONSTANTS];
     bool jit;
-    struct _PyExecutorObject *executor_list_head;
+    bool compiling;
+
+    // Optimization configuration (thresholds and flags for JIT and interpreter)
+    _PyOptimizationConfig opt_config;
+    _PyBloomFilter *executor_blooms;             // Contiguous bloom filter array
+    struct _PyExecutorObject **executor_ptrs;    // Corresponding executor pointer array
+    size_t executor_count;                       // Number of valid executors
+    size_t executor_capacity;                    // Array capacity
     struct _PyExecutorObject *executor_deletion_list_head;
     struct _PyExecutorObject *cold_executor;
-    int executor_deletion_list_remaining_capacity;
-    size_t trace_run_counter;
+    struct _PyExecutorObject *cold_dynamic_executor;
+    size_t executor_creation_counter;
     _rare_events rare_events;
     PyDict_WatchCallback builtins_dict_watcher;
 
@@ -977,6 +1039,18 @@ struct _is {
 #  ifdef Py_STACKREF_CLOSE_DEBUG
     _Py_hashtable_t *closed_stackrefs_table;
 #  endif
+#endif
+
+#ifdef Py_STATS
+    // true if recording of pystats is on, this is used when new threads
+    // are created to decide if recording should be on for them
+    int pystats_enabled;
+    // allocated when (and if) stats are first enabled
+    PyStats *pystats_struct;
+#ifdef Py_GIL_DISABLED
+    // held when pystats related interpreter state is being updated
+    PyMutex pystats_mutex;
+#endif
 #endif
 
     /* the initial PyInterpreterState.threads.head */

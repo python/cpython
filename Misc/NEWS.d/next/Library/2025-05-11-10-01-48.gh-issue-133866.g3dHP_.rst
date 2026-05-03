@@ -1,3 +1,0 @@
-Remove the undocumented function :func:`!ctypes.SetPointerType`,
-which has been deprecated since Python 3.13.
-Patch by Bénédikt Tran.
