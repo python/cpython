@@ -10,6 +10,7 @@
 
 #include "pycore_opcode_utils.h"
 #include "pycore_opcode_metadata.h" // OPCODE_HAS_ARG, etc
+#include "pycore_pystate.h"         // _PyInterpreterState_GET()
 
 #include <stdbool.h>
 
@@ -1125,6 +1126,8 @@ remove_redundant_nops(cfg_builder *g) {
     return changes;
 }
 
+static int loads_const(int opcode);
+
 static int
 remove_redundant_nops_and_pairs(basicblock *entryblock)
 {
@@ -1148,7 +1151,7 @@ remove_redundant_nops_and_pairs(basicblock *entryblock)
                 int opcode = instr->i_opcode;
                 bool is_redundant_pair = false;
                 if (opcode == POP_TOP) {
-                   if (prev_opcode == LOAD_CONST || prev_opcode == LOAD_SMALL_INT) {
+                   if (loads_const(prev_opcode)) {
                        is_redundant_pair = true;
                    }
                    else if (prev_opcode == COPY && prev_oparg == 1) {
@@ -1300,7 +1303,9 @@ jump_thread(basicblock *bb, cfg_instr *inst, cfg_instr *target, int opcode)
 static int
 loads_const(int opcode)
 {
-    return OPCODE_HAS_CONST(opcode) || opcode == LOAD_SMALL_INT;
+    return OPCODE_HAS_CONST(opcode)
+        || opcode == LOAD_SMALL_INT
+        || opcode == LOAD_COMMON_CONSTANT;
 }
 
 /* Returns new reference */
@@ -1322,6 +1327,10 @@ get_const_value(int opcode, int oparg, PyObject *co_consts)
     }
     if (opcode == LOAD_SMALL_INT) {
         return PyLong_FromLong(oparg);
+    }
+    if (opcode == LOAD_COMMON_CONSTANT) {
+        assert(oparg < NUM_COMMON_CONSTANTS);
+        return Py_NewRef(_PyInterpreterState_GET()->common_consts[oparg]);
     }
 
     if (constant == NULL) {
@@ -1437,6 +1446,46 @@ maybe_instr_make_load_smallint(cfg_instr *instr, PyObject *newconst,
     return 0;
 }
 
+/* Does not steal reference to "newconst".
+   Return 1 if changed instruction to LOAD_COMMON_CONSTANT.
+   Return 0 if could not change instruction to LOAD_COMMON_CONSTANT.
+   Return -1 on error.
+*/
+static int
+maybe_instr_make_load_common_const(cfg_instr *instr, PyObject *newconst)
+{
+    int oparg;
+    if (newconst == Py_None) {
+        oparg = CONSTANT_NONE;
+    }
+    else if (newconst == Py_True) {
+        oparg = CONSTANT_TRUE;
+    }
+    else if (newconst == Py_False) {
+        oparg = CONSTANT_FALSE;
+    }
+    else if (PyUnicode_CheckExact(newconst)
+             && PyUnicode_GET_LENGTH(newconst) == 0) {
+        oparg = CONSTANT_EMPTY_STR;
+    }
+    else if (PyLong_CheckExact(newconst)) {
+        int overflow;
+        long val = PyLong_AsLongAndOverflow(newconst, &overflow);
+        if (val == -1 && PyErr_Occurred()) {
+            return -1;
+        }
+        if (overflow || val != -1) {
+            return 0;
+        }
+        oparg = CONSTANT_MINUS_ONE;
+    }
+    else {
+        return 0;
+    }
+    assert(_Py_IsImmortal(newconst));
+    INSTR_SET_OP1(instr, LOAD_COMMON_CONSTANT, oparg);
+    return 1;
+}
 
 /* Steals reference to "newconst" */
 static int
@@ -1445,6 +1494,14 @@ instr_make_load_const(cfg_instr *instr, PyObject *newconst,
                       _Py_hashtable_t *consts_index)
 {
     int res = maybe_instr_make_load_smallint(instr, newconst, consts, const_cache);
+    if (res < 0) {
+        Py_DECREF(newconst);
+        return ERROR;
+    }
+    if (res > 0) {
+        return SUCCESS;
+    }
+    res = maybe_instr_make_load_common_const(instr, newconst);
     if (res < 0) {
         Py_DECREF(newconst);
         return ERROR;
@@ -2208,7 +2265,7 @@ basicblock_optimize_load_const(PyObject *const_cache, basicblock *bb,
             oparg = inst->i_oparg;
         }
         assert(!IS_ASSEMBLER_OPCODE(opcode));
-        if (opcode != LOAD_CONST && opcode != LOAD_SMALL_INT) {
+        if (!loads_const(opcode)) {
             continue;
         }
         int nextop = i+1 < bb->b_iused ? bb->b_instr[i+1].i_opcode : 0;
@@ -2306,6 +2363,17 @@ basicblock_optimize_load_const(PyObject *const_cache, basicblock *bb,
                 INSTR_SET_OP0(inst, NOP);
                 INSTR_SET_OP1(&bb->b_instr[i + 1], LOAD_CONST, index);
                 break;
+            }
+        }
+        if (inst->i_opcode == LOAD_CONST) {
+            PyObject *constant = get_const_value(inst->i_opcode, inst->i_oparg, consts);
+            if (constant == NULL) {
+                return ERROR;
+            }
+            int res = maybe_instr_make_load_common_const(inst, constant);
+            Py_DECREF(constant);
+            if (res < 0) {
+                return ERROR;
             }
         }
     }

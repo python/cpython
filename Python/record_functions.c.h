@@ -102,10 +102,11 @@ void _PyOpcode_RecordFunction_CODE(_PyInterpreterFrame *frame, _PyStackRef *stac
 #define _RECORD_NOS_INDEX 2
 #define _RECORD_NOS_TYPE_INDEX 3
 #define _RECORD_3OS_GEN_FUNC_INDEX 4
-#define _RECORD_NOS_GEN_FUNC_INDEX 5
-#define _RECORD_CALLABLE_INDEX 6
-#define _RECORD_CALLABLE_KW_INDEX 7
-#define _RECORD_4OS_INDEX 8
+#define _RECORD_TOS_INDEX 5
+#define _RECORD_NOS_GEN_FUNC_INDEX 6
+#define _RECORD_CALLABLE_INDEX 7
+#define _RECORD_CALLABLE_KW_INDEX 8
+#define _RECORD_4OS_INDEX 9
 
 const _PyOpcodeRecordEntry _PyOpcode_RecordEntries[256] = {
         [TO_BOOL_BOOL] = {1, {_RECORD_TOS_TYPE_INDEX}},
@@ -140,15 +141,15 @@ const _PyOpcodeRecordEntry _PyOpcode_RecordEntries[256] = {
         [STORE_ATTR] = {1, {_RECORD_TOS_TYPE_INDEX}},
         [LOAD_SUPER_ATTR] = {1, {_RECORD_NOS_INDEX}},
         [LOAD_SUPER_ATTR_METHOD] = {1, {_RECORD_NOS_INDEX}},
-        [LOAD_ATTR] = {1, {_RECORD_TOS_TYPE_INDEX}},
-        [LOAD_ATTR_INSTANCE_VALUE] = {1, {_RECORD_TOS_TYPE_INDEX}},
-        [LOAD_ATTR_MODULE] = {1, {_RECORD_TOS_TYPE_INDEX}},
-        [LOAD_ATTR_WITH_HINT] = {1, {_RECORD_TOS_TYPE_INDEX}},
-        [LOAD_ATTR_SLOT] = {1, {_RECORD_TOS_TYPE_INDEX}},
-        [LOAD_ATTR_CLASS] = {1, {_RECORD_TOS_TYPE_INDEX}},
-        [LOAD_ATTR_CLASS_WITH_METACLASS_CHECK] = {1, {_RECORD_TOS_TYPE_INDEX}},
-        [LOAD_ATTR_PROPERTY] = {1, {_RECORD_TOS_TYPE_INDEX}},
-        [LOAD_ATTR_GETATTRIBUTE_OVERRIDDEN] = {1, {_RECORD_TOS_TYPE_INDEX}},
+        [LOAD_ATTR] = {1, {_RECORD_TOS_INDEX}},
+        [LOAD_ATTR_INSTANCE_VALUE] = {1, {_RECORD_TOS_INDEX}},
+        [LOAD_ATTR_MODULE] = {1, {_RECORD_TOS_INDEX}},
+        [LOAD_ATTR_WITH_HINT] = {1, {_RECORD_TOS_INDEX}},
+        [LOAD_ATTR_SLOT] = {1, {_RECORD_TOS_INDEX}},
+        [LOAD_ATTR_CLASS] = {1, {_RECORD_TOS_INDEX}},
+        [LOAD_ATTR_CLASS_WITH_METACLASS_CHECK] = {1, {_RECORD_TOS_INDEX}},
+        [LOAD_ATTR_PROPERTY] = {1, {_RECORD_TOS_INDEX}},
+        [LOAD_ATTR_GETATTRIBUTE_OVERRIDDEN] = {1, {_RECORD_TOS_INDEX}},
         [STORE_ATTR_INSTANCE_VALUE] = {1, {_RECORD_TOS_TYPE_INDEX}},
         [STORE_ATTR_WITH_HINT] = {1, {_RECORD_TOS_TYPE_INDEX}},
         [STORE_ATTR_SLOT] = {1, {_RECORD_TOS_TYPE_INDEX}},
@@ -162,11 +163,11 @@ const _PyOpcodeRecordEntry _PyOpcode_RecordEntries[256] = {
         [FOR_ITER_RANGE] = {1, {_RECORD_NOS_GEN_FUNC_INDEX}},
         [FOR_ITER_GEN] = {1, {_RECORD_NOS_GEN_FUNC_INDEX}},
         [LOAD_SPECIAL] = {1, {_RECORD_TOS_TYPE_INDEX}},
-        [LOAD_ATTR_METHOD_WITH_VALUES] = {1, {_RECORD_TOS_TYPE_INDEX}},
-        [LOAD_ATTR_METHOD_NO_DICT] = {1, {_RECORD_TOS_TYPE_INDEX}},
-        [LOAD_ATTR_NONDESCRIPTOR_WITH_VALUES] = {1, {_RECORD_TOS_TYPE_INDEX}},
-        [LOAD_ATTR_NONDESCRIPTOR_NO_DICT] = {1, {_RECORD_TOS_TYPE_INDEX}},
-        [LOAD_ATTR_METHOD_LAZY_DICT] = {1, {_RECORD_TOS_TYPE_INDEX}},
+        [LOAD_ATTR_METHOD_WITH_VALUES] = {1, {_RECORD_TOS_INDEX}},
+        [LOAD_ATTR_METHOD_NO_DICT] = {1, {_RECORD_TOS_INDEX}},
+        [LOAD_ATTR_NONDESCRIPTOR_WITH_VALUES] = {1, {_RECORD_TOS_INDEX}},
+        [LOAD_ATTR_NONDESCRIPTOR_NO_DICT] = {1, {_RECORD_TOS_INDEX}},
+        [LOAD_ATTR_METHOD_LAZY_DICT] = {1, {_RECORD_TOS_INDEX}},
         [CALL] = {1, {_RECORD_CALLABLE_INDEX}},
         [CALL_PY_GENERAL] = {1, {_RECORD_CALLABLE_INDEX}},
         [CALL_BOUND_METHOD_GENERAL] = {1, {_RECORD_CALLABLE_INDEX}},
@@ -205,12 +206,13 @@ const _PyOpcodeRecordSlotMap _PyOpcode_RecordSlotMaps[256] = {
         [STORE_SUBSCR_DICT] = {1, 0, {0}},
         [SEND_GEN] = {1, 0, {0}},
         [LOAD_SUPER_ATTR_METHOD] = {1, 0, {0}},
-        [LOAD_ATTR_INSTANCE_VALUE] = {1, 0, {0}},
-        [LOAD_ATTR_WITH_HINT] = {1, 0, {0}},
-        [LOAD_ATTR_SLOT] = {1, 0, {0}},
+        [LOAD_ATTR_INSTANCE_VALUE] = {1, 1, {0}},
+        [LOAD_ATTR_WITH_HINT] = {1, 1, {0}},
+        [LOAD_ATTR_SLOT] = {1, 1, {0}},
+        [LOAD_ATTR_CLASS] = {1, 0, {0}},
         [LOAD_ATTR_CLASS_WITH_METACLASS_CHECK] = {1, 0, {0}},
-        [LOAD_ATTR_PROPERTY] = {1, 0, {0}},
-        [LOAD_ATTR_GETATTRIBUTE_OVERRIDDEN] = {1, 0, {0}},
+        [LOAD_ATTR_PROPERTY] = {1, 1, {0}},
+        [LOAD_ATTR_GETATTRIBUTE_OVERRIDDEN] = {1, 1, {0}},
         [STORE_ATTR_INSTANCE_VALUE] = {1, 0, {0}},
         [STORE_ATTR_WITH_HINT] = {1, 0, {0}},
         [STORE_ATTR_SLOT] = {1, 0, {0}},
@@ -219,11 +221,11 @@ const _PyOpcodeRecordSlotMap _PyOpcode_RecordSlotMaps[256] = {
         [GET_ITER_VIRTUAL] = {1, 0, {0}},
         [FOR_ITER_GEN] = {1, 0, {0}},
         [LOAD_SPECIAL] = {1, 0, {0}},
-        [LOAD_ATTR_METHOD_WITH_VALUES] = {1, 0, {0}},
-        [LOAD_ATTR_METHOD_NO_DICT] = {1, 0, {0}},
-        [LOAD_ATTR_NONDESCRIPTOR_WITH_VALUES] = {1, 0, {0}},
-        [LOAD_ATTR_NONDESCRIPTOR_NO_DICT] = {1, 0, {0}},
-        [LOAD_ATTR_METHOD_LAZY_DICT] = {1, 0, {0}},
+        [LOAD_ATTR_METHOD_WITH_VALUES] = {1, 1, {0}},
+        [LOAD_ATTR_METHOD_NO_DICT] = {1, 1, {0}},
+        [LOAD_ATTR_NONDESCRIPTOR_WITH_VALUES] = {1, 1, {0}},
+        [LOAD_ATTR_NONDESCRIPTOR_NO_DICT] = {1, 1, {0}},
+        [LOAD_ATTR_METHOD_LAZY_DICT] = {1, 1, {0}},
         [CALL_PY_GENERAL] = {1, 0, {0}},
         [CALL_BOUND_METHOD_GENERAL] = {1, 1, {0}},
         [CALL_NON_PY_GENERAL] = {1, 0, {0}},
@@ -243,12 +245,13 @@ const _PyOpcodeRecordSlotMap _PyOpcode_RecordSlotMaps[256] = {
         [BINARY_OP] = {2, 2, {1, 0}},
 };
 
-const _Py_RecordFuncPtr _PyOpcode_RecordFunctions[9] = {
+const _Py_RecordFuncPtr _PyOpcode_RecordFunctions[10] = {
         [0] = NULL,
         [_RECORD_TOS_TYPE_INDEX] = _PyOpcode_RecordFunction_TOS_TYPE,
         [_RECORD_NOS_INDEX] = _PyOpcode_RecordFunction_NOS,
         [_RECORD_NOS_TYPE_INDEX] = _PyOpcode_RecordFunction_NOS_TYPE,
         [_RECORD_3OS_GEN_FUNC_INDEX] = _PyOpcode_RecordFunction_3OS_GEN_FUNC,
+        [_RECORD_TOS_INDEX] = _PyOpcode_RecordFunction_TOS,
         [_RECORD_NOS_GEN_FUNC_INDEX] = _PyOpcode_RecordFunction_NOS_GEN_FUNC,
         [_RECORD_CALLABLE_INDEX] = _PyOpcode_RecordFunction_CALLABLE,
         [_RECORD_CALLABLE_KW_INDEX] = _PyOpcode_RecordFunction_CALLABLE_KW,
