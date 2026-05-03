@@ -1,0 +1,2 @@
+Add ``TextTestResult.getName()`` method to allow customizing test names.
+Patch by Mariusz Felisiak.
