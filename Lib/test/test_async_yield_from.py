@@ -1633,19 +1633,22 @@ class TestParityWithPEP380(unittest.TestCase):
         def test_methods(cls):
             return {n for n in dir(cls) if n.startswith("test_")}
 
+        def fqn(cls):
+            return f"{cls.__module__}.{cls.__qualname__}"
+
         expected = {n + suffix for n in test_methods(base_class)}
         actual = test_methods(variant_class)
         missing = sorted(expected - actual)
         extra = sorted(actual - expected)
         if missing or extra:
             lines = [
-                f"{variant_class.__name__} is not a 1:1 mirror of "
-                f"{base_class.__name__} (suffix {suffix!r}):"
+                f"{fqn(variant_class)} is not a 1:1 mirror of "
+                f"{fqn(base_class)} (suffix {suffix!r}):"
             ]
             for name in missing:
-                lines.append(f"    missing in {variant_class.__name__}: {name}")
+                lines.append(f"    missing in {fqn(variant_class)}: {name}")
             for name in extra:
-                lines.append(f"    no counterpart in {base_class.__name__}: {name}")
+                lines.append(f"    no counterpart in {fqn(base_class)}: {name}")
             self.fail("\n".join(lines))
 
     def test_TestPEP828Operation(self):
