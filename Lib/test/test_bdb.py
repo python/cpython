@@ -1237,6 +1237,15 @@ class TestRegressions(unittest.TestCase):
         self.assertIn('Warning: lineno is None',
                       Bdb().format_stack_entry((sys._getframe(), None)))
 
+    def test_bdb_quit_base_exception(self):
+        # gh-149309
+        try:
+            raise _bdb.BdbQuit()
+        except Exception:
+            self.fail(f'BdbQuit should not be caught by Exception')
+        except BaseException:
+            pass
+
 
 if __name__ == "__main__":
     unittest.main()

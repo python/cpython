@@ -13,7 +13,7 @@ __all__ = ["BdbQuit", "Bdb", "Breakpoint"]
 GENERATOR_AND_COROUTINE_FLAGS = CO_GENERATOR | CO_COROUTINE | CO_ASYNC_GENERATOR
 
 
-class BdbQuit(Exception):
+class BdbQuit(BaseException):
     """Exception to give up completely."""
 
 
