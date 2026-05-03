@@ -99,6 +99,7 @@
 </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\Modules\_remote_debugging\module.c" />
+    <ClCompile Include="..\Modules\_remote_debugging\gc_stats.c" />
     <ClCompile Include="..\Modules\_remote_debugging\object_reading.c" />
     <ClCompile Include="..\Modules\_remote_debugging\code_objects.c" />
     <ClCompile Include="..\Modules\_remote_debugging\frames.c" />
@@ -108,10 +109,12 @@
     <ClCompile Include="..\Modules\_remote_debugging\binary_io_writer.c" />
     <ClCompile Include="..\Modules\_remote_debugging\binary_io_reader.c" />
     <ClCompile Include="..\Modules\_remote_debugging\subprocess.c" />
+    <ClCompile Include="..\Modules\_remote_debugging\interpreters.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\Modules\_remote_debugging\_remote_debugging.h" />
     <ClInclude Include="..\Modules\_remote_debugging\binary_io.h" />
+    <ClInclude Include="..\Modules\_remote_debugging\gc_stats.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="..\PC\python_nt.rc" />
