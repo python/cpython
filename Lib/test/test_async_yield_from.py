@@ -9,6 +9,7 @@ import unittest
 import inspect
 from functools import partial
 
+lazy from test import test_yield_from
 from test.support import captured_stderr, disable_gc, gc_collect, run_yielding_async_fn, catch_unraisable_exception
 
 _async_test = partial(partial, run_yielding_async_fn)
@@ -20,7 +21,7 @@ class TestPEP828Operation(unittest.TestCase):
     """
 
     @_async_test
-    async def test_delegation_of_initial_anext_to_subgenerator(self):
+    async def test_delegation_of_initial_next_to_subgenerator_ayf(self):
         """
         Test delegation of initial anext() call to subgenerator
         """
@@ -44,7 +45,7 @@ class TestPEP828Operation(unittest.TestCase):
         ])
 
     @_async_test
-    async def test_raising_exception_in_initial_anext_call(self):
+    async def test_raising_exception_in_initial_next_call_ayf(self):
         """
         Test raising exception in initial anext() call
         """
@@ -77,7 +78,7 @@ class TestPEP828Operation(unittest.TestCase):
         ])
 
     @_async_test
-    async def test_delegation_of_anext_call_to_subgenerator(self):
+    async def test_delegation_of_next_call_to_subgenerator_ayf(self):
         """
         Test delegation of anext() call to subgenerator
         """
@@ -107,7 +108,7 @@ class TestPEP828Operation(unittest.TestCase):
         ])
 
     @_async_test
-    async def test_raising_exception_in_delegated_anext_call(self):
+    async def test_raising_exception_in_delegated_next_call_ayf(self):
         """
         Test raising exception in delegated anext() call
         """
@@ -145,7 +146,7 @@ class TestPEP828Operation(unittest.TestCase):
         ])
 
     @_async_test
-    async def test_delegation_of_asend(self):
+    async def test_delegation_of_send_ayf(self):
          """
          Test delegation of send()
          """
@@ -190,7 +191,7 @@ class TestPEP828Operation(unittest.TestCase):
          ])
 
     @_async_test
-    async def test_handling_exception_while_delegating_send(self):
+    async def test_handling_exception_while_delegating_send_ayf(self):
         """
         Test handling exception while delegating 'send'
         """
@@ -233,7 +234,7 @@ class TestPEP828Operation(unittest.TestCase):
         ])
 
     @_async_test
-    async def test_delegating_aclose(self):
+    async def test_delegating_close_ayf(self):
         """
         Test delegating 'aclose'
         """
@@ -268,7 +269,7 @@ class TestPEP828Operation(unittest.TestCase):
         ])
 
     @_async_test
-    async def test_handing_exception_while_delegating_close(self):
+    async def test_handing_exception_while_delegating_close_ayf(self):
         """
         Test handling exception while delegating 'close'
         """
@@ -310,7 +311,7 @@ class TestPEP828Operation(unittest.TestCase):
         ])
 
     @_async_test
-    async def test_delegating_throw(self):
+    async def test_delegating_throw_ayf(self):
         """
         Test delegating 'throw'
         """
@@ -351,7 +352,7 @@ class TestPEP828Operation(unittest.TestCase):
         ])
 
     @_async_test
-    async def test_value_attribute_of_StopAsyncIteration_exception(self):
+    async def test_value_attribute_of_StopIteration_exception_ayf(self):
         """
         Test 'value' attribute of StopAsyncIteration exception
         """
@@ -375,7 +376,7 @@ class TestPEP828Operation(unittest.TestCase):
         ])
 
     @_async_test
-    async def test_exception_value_crash(self):
+    async def test_exception_value_crash_ayf(self):
         # There used to be a refcount error when the return value
         # stored in the StopAsyncIteration has a refcount of 1.
         async def g1():
@@ -386,7 +387,7 @@ class TestPEP828Operation(unittest.TestCase):
         self.assertEqual([x async for x in g1()], ["g2"])
 
     @_async_test
-    async def test_generator_return_value(self):
+    async def test_generator_return_value_ayf(self):
         """
         Test generator return value
         """
@@ -438,7 +439,7 @@ class TestPEP828Operation(unittest.TestCase):
         ])
 
     @_async_test
-    async def test_delegation_of_anext_to_non_generator(self):
+    async def test_delegation_of_next_to_non_generator_ayf(self):
         """
         Test delegation of anext() to non-generator
         """
@@ -454,7 +455,7 @@ class TestPEP828Operation(unittest.TestCase):
         ])
 
     @_async_test
-    async def test_conversion_of_asendNone_to_next(self):
+    async def test_conversion_of_sendNone_to_next_ayf(self):
         """
         Test conversion of asend(None) to next()
         """
@@ -472,7 +473,7 @@ class TestPEP828Operation(unittest.TestCase):
         ])
 
     @_async_test
-    async def test_delegation_of_close_to_non_generator(self):
+    async def test_delegation_of_close_to_non_generator_ayf(self):
         """
         Test delegation of close() to non-generator
         """
@@ -495,7 +496,7 @@ class TestPEP828Operation(unittest.TestCase):
         ])
 
     @_async_test
-    async def test_delegating_throw_to_non_generator(self):
+    async def test_delegating_throw_to_non_generator_ayf(self):
         """
         Test delegating 'throw' to non-generator
         """
@@ -528,7 +529,7 @@ class TestPEP828Operation(unittest.TestCase):
         ])
 
     @_async_test
-    async def test_attempting_to_send_to_non_generator(self):
+    async def test_attempting_to_send_to_non_generator_ayf(self):
         """
         Test attempting to send to non-generator
         """
@@ -556,7 +557,7 @@ class TestPEP828Operation(unittest.TestCase):
         ])
 
     @_async_test
-    async def test_broken_getattr_handling(self):
+    async def test_broken_getattr_handling_ayf(self):
         """
         Test subiterator with a broken getattr implementation
         """
@@ -589,7 +590,7 @@ class TestPEP828Operation(unittest.TestCase):
             self.assertEqual(ZeroDivisionError, cm.unraisable.exc_type)
 
     @_async_test
-    async def test_exception_in_initial_next_call(self):
+    async def test_exception_in_initial_next_call_ayf(self):
         """
         Test exception in initial next() call
         """
@@ -610,7 +611,7 @@ class TestPEP828Operation(unittest.TestCase):
         ])
 
     @_async_test
-    async def test_attempted_async_yield_from_loop(self):
+    async def test_attempted_yield_from_loop_ayf(self):
         """
         Test attempted yield-from loop
         """
@@ -646,7 +647,7 @@ class TestPEP828Operation(unittest.TestCase):
         ])
 
     @_async_test
-    async def test_returning_value_from_delegated_throw(self):
+    async def test_returning_value_from_delegated_throw_ayf(self):
         """
         Test returning value from delegated 'throw'
         """
@@ -690,7 +691,7 @@ class TestPEP828Operation(unittest.TestCase):
         ])
 
     @_async_test
-    async def test_anext_and_return_with_value(self):
+    async def test_next_and_return_with_value_ayf(self):
         """
         Test next and return with value
         """
@@ -733,7 +734,7 @@ class TestPEP828Operation(unittest.TestCase):
         ])
 
     @_async_test
-    async def test_send_and_return_with_value(self):
+    async def test_send_and_return_with_value_ayf(self):
         """
         Test send and return with value
         """
@@ -781,7 +782,7 @@ class TestPEP828Operation(unittest.TestCase):
         ])
 
     @_async_test
-    async def test_catching_exception_from_subgen_and_returning(self):
+    async def test_catching_exception_from_subgen_and_returning_ayf(self):
         """
         Test catching an exception thrown into a
         subgenerator and returning a value
@@ -811,7 +812,7 @@ class TestPEP828Operation(unittest.TestCase):
             ])
 
     @_async_test
-    async def test_throwing_GeneratorExit_into_subgen_that_returns(self):
+    async def test_throwing_GeneratorExit_into_subgen_that_returns_ayf(self):
         """
         Test throwing GeneratorExit into a subgenerator that
         catches it and returns normally.
@@ -842,7 +843,7 @@ class TestPEP828Operation(unittest.TestCase):
         ])
 
     @_async_test
-    async def test_throwing_GeneratorExit_into_subgenerator_that_yields(self):
+    async def test_throwing_GeneratorExit_into_subgenerator_that_yields_ayf(self):
         """
         Test throwing GeneratorExit into a subgenerator that
         catches it and yields.
@@ -873,7 +874,7 @@ class TestPEP828Operation(unittest.TestCase):
         ])
 
     @_async_test
-    async def test_throwing_GeneratorExit_into_subgen_that_raises(self):
+    async def test_throwing_GeneratorExit_into_subgen_that_raises_ayf(self):
         """
         Test throwing GeneratorExit into a subgenerator that
         catches it and raises a different exception.
@@ -905,14 +906,14 @@ class TestPEP828Operation(unittest.TestCase):
         ])
 
     @_async_test
-    async def test_yield_from_empty(self):
+    async def test_yield_from_empty_ayf(self):
         async def g():
             yield from ()
         with self.assertRaises(StopAsyncIteration):
             await anext(g())
 
     @_async_test
-    async def test_delegating_generators_claim_to_be_running(self):
+    async def test_delegating_generators_claim_to_be_running_ayf(self):
         # Check with basic iteration
         async def one():
             yield 0
@@ -939,7 +940,7 @@ class TestPEP828Operation(unittest.TestCase):
         self.assertEqual(res, [0, 1, 2, 3])
 
     @_async_test
-    async def test_delegating_generators_claim_to_be_running_with_throw(self):
+    async def test_delegating_generators_claim_to_be_running_with_throw_ayf(self):
         # Check with throw
         class MyErr(Exception):
             pass
@@ -978,7 +979,7 @@ class TestPEP828Operation(unittest.TestCase):
             raise
 
     @_async_test
-    async def test_delegating_generators_claim_to_be_running_with_aclose(self):
+    async def test_delegating_generators_claim_to_be_running_with_close_ayf(self):
         # Check with close
         class MyIt:
             def __aiter__(self):
@@ -996,7 +997,7 @@ class TestPEP828Operation(unittest.TestCase):
         await g1.aclose()
 
     @_async_test
-    async def test_delegator_is_visible_to_debugger(self):
+    async def test_delegator_is_visible_to_debugger_ayf(self):
         async def call_stack():
             return [f[3] for f in inspect.stack()]
 
@@ -1018,7 +1019,7 @@ class TestPEP828Operation(unittest.TestCase):
             self.assertTrue('spam' in stack and 'eggs' in stack)
 
     @_async_test
-    async def test_custom_iterator_return(self):
+    async def test_custom_iterator_return_ayf(self):
         class MyIter:
             def __aiter__(self):
                 return self
@@ -1032,7 +1033,7 @@ class TestPEP828Operation(unittest.TestCase):
         self.assertEqual(ret, 42)
 
     @_async_test
-    async def test_close_with_cleared_frame(self):
+    async def test_close_with_cleared_frame_ayf(self):
         async def innermost():
             yield
         async def inner():
@@ -1054,7 +1055,7 @@ class TestPEP828Operation(unittest.TestCase):
             gc_collect()
 
     @_async_test
-    async def test_send_tuple_with_custom_generator(self):
+    async def test_send_tuple_with_custom_generator_ayf(self):
         class MyGen:
             def __aiter__(self):
                 return self
@@ -1087,7 +1088,7 @@ class TestInterestingEdgeCases(unittest.TestCase):
         return self.assertRaisesRegex(RuntimeError, r"^async generator ignored GeneratorExit$")
 
     @_async_test
-    async def test_close_and_throw_work(self):
+    async def test_close_and_throw_work_ayf(self):
 
         yielded_first = object()
         yielded_second = object()
@@ -1148,7 +1149,7 @@ class TestInterestingEdgeCases(unittest.TestCase):
             await self.assert_stop_iteration(g)
 
     @_async_test
-    async def test_close_and_throw_raise_generator_exit(self):
+    async def test_close_and_throw_raise_generator_exit_ayf(self):
 
         yielded_first = object()
         yielded_second = object()
@@ -1225,7 +1226,7 @@ class TestInterestingEdgeCases(unittest.TestCase):
             await self.assert_stop_iteration(g)
 
     @_async_test
-    async def test_close_and_throw_raise_stop_iteration(self):
+    async def test_close_and_throw_raise_stop_iteration_ayf(self):
 
         yielded_first = object()
         yielded_second = object()
@@ -1309,7 +1310,7 @@ class TestInterestingEdgeCases(unittest.TestCase):
             await self.assert_stop_iteration(g)
 
     @_async_test
-    async def test_close_and_throw_raise_base_exception(self):
+    async def test_close_and_throw_raise_base_exception_ayf(self):
 
         yielded_first = object()
         yielded_second = object()
@@ -1388,7 +1389,7 @@ class TestInterestingEdgeCases(unittest.TestCase):
             await self.assert_stop_iteration(g)
 
     @_async_test
-    async def test_close_and_throw_raise_exception(self):
+    async def test_close_and_throw_raise_exception_ayf(self):
 
         yielded_first = object()
         yielded_second = object()
@@ -1467,7 +1468,7 @@ class TestInterestingEdgeCases(unittest.TestCase):
             await self.assert_stop_iteration(g)
 
     @_async_test
-    async def test_close_and_throw_yield(self):
+    async def test_close_and_throw_yield_ayf(self):
 
         yielded_first = object()
         yielded_second = object()
@@ -1539,7 +1540,7 @@ class TestInterestingEdgeCases(unittest.TestCase):
             await self.assert_stop_iteration(g)
 
     @_async_test
-    async def test_close_and_throw_return(self):
+    async def test_close_and_throw_return_ayf(self):
         yielded_first = object()
         yielded_second = object()
         returned = object()
@@ -1606,7 +1607,7 @@ class TestInterestingEdgeCases(unittest.TestCase):
             await self.assert_stop_iteration(g)
 
     @_async_test
-    async def test_throws_in_iter(self):
+    async def test_throws_in_iter_ayf(self):
         class Silly:
             async def __aiter__(self):
                 yield from ()
@@ -1617,6 +1618,65 @@ class TestInterestingEdgeCases(unittest.TestCase):
 
         with self.assertRaisesRegex(RuntimeError, "nobody expects the spanish inquisition"):
             await anext(my_generator())
+
+
+class TestParityWithPEP380(unittest.TestCase):
+    """Enforce PEP 828 tests cover every PEP 380 test."""
+
+    def assert_parity(self, base_class, variant_class, *, suffix):
+        """Assert variant_class is in 1:1 parity with base_class via ``suffix``.
+
+        Every method ``test_xxx`` on ``base_class`` must have a counterpart
+        ``test_xxx<suffix>`` on ``variant_class`` and vice versa. Variant-only
+        tests belong in a separate TestCase class.
+        """
+        base_tests = {
+            n for n in dir(base_class)
+            if n.startswith("test_") and callable(getattr(base_class, n))
+        }
+        variant_tests = {
+            n for n in dir(variant_class)
+            if n.startswith("test_") and callable(getattr(variant_class, n))
+        }
+        expected = {n + suffix for n in base_tests}
+        missing = sorted(expected - variant_tests)
+        extra = sorted(variant_tests - expected)
+        problems = []
+        if missing:
+            problems.append(
+                f"{variant_class.__name__} missing variants of "
+                f"{base_class.__name__} tests (suffix {suffix!r}): {missing}"
+            )
+        if extra:
+            problems.append(
+                f"{variant_class.__name__} has tests with no counterpart in "
+                f"{base_class.__name__} (suffix {suffix!r}): {extra}"
+            )
+        self.assertEqual(problems, [], "\n".join(problems))
+
+    def test_TestPEP828Operation(self):
+        self.assert_parity(
+            test_yield_from.TestPEP380Operation,
+            TestPEP828Operation,
+            suffix="_ayf",
+        )
+
+    def test_TestInterestingEdgeCases(self):
+        self.assert_parity(
+            test_yield_from.TestInterestingEdgeCases,
+            TestInterestingEdgeCases,
+            suffix="_ayf",
+        )
+
+
+class TestPEP828Extras(unittest.TestCase):
+    """Tests with no PEP 380 counterpart.
+
+    Anything added here describes behaviour specific to ``async yield from``.
+    Tests that have a logical equivalent in plain ``yield from`` belong in
+    ``TestPEP828Operation`` or ``TestInterestingEdgeCases`` and are
+    parity-checked against ``test_yield_from``.
+    """
 
     @_async_test
     async def test_delegate_exception(self):
