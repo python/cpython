@@ -22337,6 +22337,102 @@
             break;
         }
 
+        case _RROT_3_r03: {
+            CHECK_CURRENT_CACHED_VALUES(0);
+            assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
+            _PyStackRef top;
+            _PyStackRef middle;
+            _PyStackRef bottom;
+            top = stack_pointer[-1];
+            middle = stack_pointer[-2];
+            bottom = stack_pointer[-3];
+            _PyStackRef temp = top;
+            top = middle;
+            middle = bottom;
+            bottom = temp;
+            _tos_cache2 = top;
+            _tos_cache1 = middle;
+            _tos_cache0 = bottom;
+            SET_CURRENT_CACHED_VALUES(3);
+            stack_pointer += -3;
+            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+            assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
+            break;
+        }
+
+        case _RROT_3_r13: {
+            CHECK_CURRENT_CACHED_VALUES(1);
+            assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
+            _PyStackRef top;
+            _PyStackRef middle;
+            _PyStackRef bottom;
+            _PyStackRef _stack_item_0 = _tos_cache0;
+            top = _stack_item_0;
+            middle = stack_pointer[-1];
+            bottom = stack_pointer[-2];
+            _PyStackRef temp = top;
+            top = middle;
+            middle = bottom;
+            bottom = temp;
+            _tos_cache2 = top;
+            _tos_cache1 = middle;
+            _tos_cache0 = bottom;
+            SET_CURRENT_CACHED_VALUES(3);
+            stack_pointer += -2;
+            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+            assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
+            break;
+        }
+
+        case _RROT_3_r23: {
+            CHECK_CURRENT_CACHED_VALUES(2);
+            assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
+            _PyStackRef top;
+            _PyStackRef middle;
+            _PyStackRef bottom;
+            _PyStackRef _stack_item_0 = _tos_cache0;
+            _PyStackRef _stack_item_1 = _tos_cache1;
+            top = _stack_item_1;
+            middle = _stack_item_0;
+            bottom = stack_pointer[-1];
+            _PyStackRef temp = top;
+            top = middle;
+            middle = bottom;
+            bottom = temp;
+            _tos_cache2 = top;
+            _tos_cache1 = middle;
+            _tos_cache0 = bottom;
+            SET_CURRENT_CACHED_VALUES(3);
+            stack_pointer += -1;
+            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+            assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
+            break;
+        }
+
+        case _RROT_3_r33: {
+            CHECK_CURRENT_CACHED_VALUES(3);
+            assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
+            _PyStackRef top;
+            _PyStackRef middle;
+            _PyStackRef bottom;
+            _PyStackRef _stack_item_0 = _tos_cache0;
+            _PyStackRef _stack_item_1 = _tos_cache1;
+            _PyStackRef _stack_item_2 = _tos_cache2;
+            top = _stack_item_2;
+            middle = _stack_item_1;
+            bottom = _stack_item_0;
+            _PyStackRef temp = top;
+            top = middle;
+            middle = bottom;
+            bottom = temp;
+            _tos_cache2 = top;
+            _tos_cache1 = middle;
+            _tos_cache0 = bottom;
+            SET_CURRENT_CACHED_VALUES(3);
+            assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
+            break;
+        }
+
         case _START_EXECUTOR_r00: {
             CHECK_CURRENT_CACHED_VALUES(0);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());

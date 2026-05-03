@@ -398,6 +398,7 @@ const uint32_t _PyUop_Flags[MAX_UOP_ID+1] = {
     [_CHECK_VALIDITY] = HAS_DEOPT_FLAG,
     [_LOAD_CONST_INLINE] = HAS_PURE_FLAG,
     [_LOAD_CONST_INLINE_BORROW] = HAS_PURE_FLAG,
+    [_RROT_3] = HAS_PURE_FLAG,
     [_START_EXECUTOR] = HAS_DEOPT_FLAG,
     [_MAKE_WARM] = 0,
     [_FATAL_ERROR] = 0,
@@ -3700,6 +3701,15 @@ const _PyUopCachingInfo _PyUop_Caching[MAX_UOP_ID+1] = {
             { -1, -1, -1 },
         },
     },
+    [_RROT_3] = {
+        .best = { 0, 1, 2, 3 },
+        .entries = {
+            { 3, 0, _RROT_3_r03 },
+            { 3, 1, _RROT_3_r13 },
+            { 3, 2, _RROT_3_r23 },
+            { 3, 3, _RROT_3_r33 },
+        },
+    },
     [_START_EXECUTOR] = {
         .best = { 0, 0, 0, 0 },
         .entries = {
@@ -4696,6 +4706,10 @@ const uint16_t _PyUop_Uncached[MAX_UOP_REGS_ID+1] = {
     [_LOAD_CONST_INLINE_BORROW_r01] = _LOAD_CONST_INLINE_BORROW,
     [_LOAD_CONST_INLINE_BORROW_r12] = _LOAD_CONST_INLINE_BORROW,
     [_LOAD_CONST_INLINE_BORROW_r23] = _LOAD_CONST_INLINE_BORROW,
+    [_RROT_3_r03] = _RROT_3,
+    [_RROT_3_r13] = _RROT_3,
+    [_RROT_3_r23] = _RROT_3,
+    [_RROT_3_r33] = _RROT_3,
     [_START_EXECUTOR_r00] = _START_EXECUTOR,
     [_MAKE_WARM_r00] = _MAKE_WARM,
     [_MAKE_WARM_r11] = _MAKE_WARM,
@@ -5897,6 +5911,11 @@ const char *const _PyOpcode_uop_name[MAX_UOP_REGS_ID+1] = {
     [_RETURN_GENERATOR_r01] = "_RETURN_GENERATOR_r01",
     [_RETURN_VALUE] = "_RETURN_VALUE",
     [_RETURN_VALUE_r11] = "_RETURN_VALUE_r11",
+    [_RROT_3] = "_RROT_3",
+    [_RROT_3_r03] = "_RROT_3_r03",
+    [_RROT_3_r13] = "_RROT_3_r13",
+    [_RROT_3_r23] = "_RROT_3_r23",
+    [_RROT_3_r33] = "_RROT_3_r33",
     [_SAVE_RETURN_OFFSET] = "_SAVE_RETURN_OFFSET",
     [_SAVE_RETURN_OFFSET_r00] = "_SAVE_RETURN_OFFSET_r00",
     [_SAVE_RETURN_OFFSET_r11] = "_SAVE_RETURN_OFFSET_r11",
@@ -6808,6 +6827,8 @@ int _PyUop_num_popped(int opcode, int oparg)
         case _LOAD_CONST_INLINE:
             return 0;
         case _LOAD_CONST_INLINE_BORROW:
+            return 0;
+        case _RROT_3:
             return 0;
         case _START_EXECUTOR:
             return 0;
