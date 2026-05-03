@@ -4,6 +4,7 @@ from test import support
 from test.support.os_helper import FakePath, unlink
 import io
 import os
+import re
 import struct
 import tempfile
 import sys
@@ -323,14 +324,14 @@ class WaveLowLevelTest(unittest.TestCase):
         b = b'RIFF' + struct.pack('<L', 36) + b'WAVE'
         b += b'fmt ' + struct.pack('<LHHLLHH', 16, 1, 0, 11025, 11025, 1, 8)
         b += b'data' + struct.pack('<L', 0)
-        with self.assertRaisesRegex(wave.Error, 'bad # of channels'):
+        with self.assertRaisesRegex(wave.Error, 'bad # of channels: 0'):
             wave.open(io.BytesIO(b))
 
     def test_read_wrong_sample_width(self):
         b = b'RIFF' + struct.pack('<L', 36) + b'WAVE'
         b += b'fmt ' + struct.pack('<LHHLLHH', 16, 1, 1, 11025, 11025, 1, 0)
         b += b'data' + struct.pack('<L', 0)
-        with self.assertRaisesRegex(wave.Error, 'bad sample width'):
+        with self.assertRaisesRegex(wave.Error, 'bad sample width: 0'):
             wave.open(io.BytesIO(b))
 
     def test_open_in_write_raises(self):
@@ -429,6 +430,36 @@ class WaveLowLevelTest(unittest.TestCase):
             f.setsampwidth(2)
             f.setframerate(arg)
             self.assertEqual(f.getframerate(), expected)
+
+    @support.subTests('nchannels', (0, -1))
+    def test_setnchannels_error_includes_value(self, nchannels):
+        with wave.open(io.BytesIO(), 'wb') as f:
+            with self.assertRaisesRegex(wave.Error,
+                                        re.escape(f'bad # of channels: {nchannels!r}')):
+                f.setnchannels(nchannels)
+            with self.assertRaises(wave.Error):
+                f.close()
+
+    @support.subTests('sampwidth', (0, 5))
+    def test_setsampwidth_error_includes_value(self, sampwidth):
+        with wave.open(io.BytesIO(), 'wb') as f:
+            f.setnchannels(1)
+            with self.assertRaisesRegex(wave.Error,
+                                        re.escape(f'bad sample width: {sampwidth!r}')):
+                f.setsampwidth(sampwidth)
+            with self.assertRaises(wave.Error):
+                f.close()
+
+    @support.subTests('arg', (-1, 0, 0.4))
+    def test_setframerate_error_includes_value(self, arg):
+        with wave.open(io.BytesIO(), 'wb') as f:
+            f.setnchannels(1)
+            f.setsampwidth(2)
+            with self.assertRaisesRegex(wave.Error,
+                                        re.escape(f'bad frame rate: {arg!r}')):
+                f.setframerate(arg)
+            with self.assertRaises(wave.Error):
+                f.close()
 
     def test_write_odd_data_chunk_pads_and_updates_riff_size(self):
         # gh-117716: odd-sized data chunks must be padded with one zero byte.

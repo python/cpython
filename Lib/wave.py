@@ -388,7 +388,7 @@ class Wave_read:
 
     def _read_fmt_chunk(self, chunk):
         try:
-            self._format, self._nchannels, self._framerate, dwAvgBytesPerSec, wBlockAlign = struct.unpack_from('<HHLLH', chunk.read(14))
+            self._format, nchannels, self._framerate, dwAvgBytesPerSec, wBlockAlign = struct.unpack_from('<HHLLH', chunk.read(14))
         except struct.error:
             raise EOFError from None
         if self._format not in (WAVE_FORMAT_PCM, WAVE_FORMAT_IEEE_FLOAT, WAVE_FORMAT_EXTENSIBLE):
@@ -415,9 +415,10 @@ class Wave_read:
                 raise Error(subformat_msg)
         self._sampwidth = (sampwidth + 7) // 8
         if not self._sampwidth:
-            raise Error('bad sample width')
-        if not self._nchannels:
-            raise Error('bad # of channels')
+            raise Error(f'bad sample width: {sampwidth!r}')
+        if not nchannels:
+            raise Error(f'bad # of channels: {nchannels!r}')
+        self._nchannels = nchannels
         self._framesize = self._nchannels * self._sampwidth
         self._comptype = 'NONE'
         self._compname = 'not compressed'
@@ -495,7 +496,7 @@ class Wave_write:
         if self._datawritten:
             raise Error('cannot change parameters after starting to write')
         if nchannels < 1:
-            raise Error('bad # of channels')
+            raise Error(f'bad # of channels: {nchannels!r}')
         self._nchannels = nchannels
 
     def getnchannels(self):
@@ -510,7 +511,7 @@ class Wave_write:
             if sampwidth not in (4, 8):
                 raise Error('unsupported sample width for IEEE float format')
         elif sampwidth < 1 or sampwidth > 4:
-            raise Error('bad sample width')
+            raise Error(f'bad sample width: {sampwidth!r}')
         self._sampwidth = sampwidth
 
     def getsampwidth(self):
@@ -521,10 +522,10 @@ class Wave_write:
     def setframerate(self, framerate):
         if self._datawritten:
             raise Error('cannot change parameters after starting to write')
-        framerate = int(round(framerate))
-        if framerate <= 0:
-            raise Error('bad frame rate')
-        self._framerate = framerate
+        rounded = int(round(framerate))
+        if rounded <= 0:
+            raise Error(f'bad frame rate: {framerate!r}')
+        self._framerate = rounded
 
     def getframerate(self):
         if not self._framerate:
