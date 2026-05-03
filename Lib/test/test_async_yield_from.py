@@ -1630,29 +1630,24 @@ class TestParityWithPEP380(unittest.TestCase):
         ``test_xxx<suffix>`` on ``variant_class`` and vice versa. Variant-only
         tests belong in a separate TestCase class.
         """
-        base_tests = {
-            n for n in dir(base_class)
-            if n.startswith("test_") and callable(getattr(base_class, n))
-        }
-        variant_tests = {
-            n for n in dir(variant_class)
-            if n.startswith("test_") and callable(getattr(variant_class, n))
-        }
-        expected = {n + suffix for n in base_tests}
-        missing = sorted(expected - variant_tests)
-        extra = sorted(variant_tests - expected)
-        problems = []
-        if missing:
-            problems.append(
-                f"{variant_class.__name__} missing variants of "
-                f"{base_class.__name__} tests (suffix {suffix!r}): {missing}"
-            )
-        if extra:
-            problems.append(
-                f"{variant_class.__name__} has tests with no counterpart in "
-                f"{base_class.__name__} (suffix {suffix!r}): {extra}"
-            )
-        self.assertEqual(problems, [], "\n".join(problems))
+        def test_methods(cls):
+            return {n for n in dir(cls)
+                    if n.startswith("test_") and callable(getattr(cls, n))}
+
+        expected = {n + suffix for n in test_methods(base_class)}
+        actual = test_methods(variant_class)
+        missing = sorted(expected - actual)
+        extra = sorted(actual - expected)
+        if missing or extra:
+            lines = [
+                f"{variant_class.__name__} is not a 1:1 mirror of "
+                f"{base_class.__name__} (suffix {suffix!r}):"
+            ]
+            for name in missing:
+                lines.append(f"    missing in {variant_class.__name__}: {name}")
+            for name in extra:
+                lines.append(f"    no counterpart in {base_class.__name__}: {name}")
+            self.fail("\n".join(lines))
 
     def test_TestPEP828Operation(self):
         self.assert_parity(
