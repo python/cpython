@@ -601,6 +601,7 @@ PyDoc_STRVAR(_remote_debugging_GCMonitor_get_gc_stats__doc__,
 "        - collected: Total number of collected objects.\n"
 "        - uncollectable: Total number of uncollectable objects.\n"
 "        - candidates: Total objects considered and traversed.\n"
+"        - heap_size: number of live objects.\n"
 "        - duration: Total collection time, in seconds.\n"
 "\n"
 "Raises:\n"
@@ -1563,4 +1564,4 @@ skip_optional_kwonly:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=1151e58683dab9f4 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=36674f4cb8a653f3 input=a9049054013a1b77]*/

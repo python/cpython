@@ -1237,7 +1237,7 @@ Raises:
 static PyObject *
 _remote_debugging_GCMonitor_get_gc_stats_impl(GCMonitorObject *self,
                                               int all_interpreters)
-/*[clinic end generated code: output=f73f365725224f7a input=09e647719c65f9e4]*/
+/*[clinic end generated code: output=f73f365725224f7a input=12f7c1a288cf2741]*/
 {
     RemoteDebuggingState *st = RemoteDebugging_GetStateFromType(Py_TYPE(self));
     return get_gc_stats(&self->offsets, all_interpreters, st->GCStatsInfo_Type);
