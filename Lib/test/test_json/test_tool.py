@@ -8,6 +8,7 @@ import subprocess
 
 from test import support
 from test.support import force_colorized, force_not_colorized, os_helper
+from test.support.import_helper import ensure_lazy_imports
 from test.support.script_helper import assert_python_ok
 
 from _colorize import get_theme
@@ -332,6 +333,12 @@ class TestMain(unittest.TestCase):
 @support.skip_if_pgo_task
 class TestTool(TestMain):
     module = 'json.tool'
+
+
+class LazyImportTest(unittest.TestCase):
+    @support.cpython_only
+    def test_lazy_import(self):
+        ensure_lazy_imports("json.tool", {"_colorize"})
 
 
 if __name__ == "__main__":

@@ -22,7 +22,7 @@ from contextlib import ExitStack, redirect_stdout
 from io import StringIO
 from test import support
 from test.support import has_socket_support, os_helper
-from test.support.import_helper import import_module
+from test.support.import_helper import ensure_lazy_imports, import_module
 from test.support.pty_helper import run_pty, FakeInput
 from test.support.script_helper import kill_python
 from unittest.mock import patch
@@ -5304,6 +5304,12 @@ def load_tests(loader, tests, pattern):
         )
     )
     return tests
+
+
+class LazyImportTest(unittest.TestCase):
+    @support.cpython_only
+    def test_lazy_import(self):
+        ensure_lazy_imports("pdb", {"_colorize"})
 
 
 if __name__ == '__main__':

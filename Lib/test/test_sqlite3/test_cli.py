@@ -7,13 +7,14 @@ import unittest.mock
 import os
 
 from sqlite3.__main__ import main as cli
-from test.support.import_helper import import_module
+from test.support.import_helper import ensure_lazy_imports, import_module
 from test.support.os_helper import TESTFN, unlink
 from test.support.pty_helper import run_pty
 from test.support import (
     captured_stdout,
     captured_stderr,
     captured_stdin,
+    cpython_only,
     force_not_colorized_test_class,
     requires_subprocess,
     verbose,
@@ -436,6 +437,11 @@ class Completion(unittest.TestCase):
                 print(' end PTY output '.center(30, '-'))
             raise
 
+
+class LazyImportTest(unittest.TestCase):
+    @cpython_only
+    def test_lazy_import(self):
+        ensure_lazy_imports("sqlite3.__main__", {"_colorize"})
 
 
 if __name__ == "__main__":
