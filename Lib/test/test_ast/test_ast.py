@@ -2685,11 +2685,12 @@ class ConstantTests(unittest.TestCase):
 
     def get_load_const(self, tree):
         # Compile to bytecode, disassemble and get parameter of LOAD_CONST
-        # instructions
+        # and LOAD_COMMON_CONSTANT instructions
         co = compile(tree, '<string>', 'exec')
         consts = []
         for instr in dis.get_instructions(co):
-            if instr.opcode in dis.hasconst:
+            if instr.opcode in dis.hasconst or \
+                    instr.opname == 'LOAD_COMMON_CONSTANT':
                 consts.append(instr.argval)
         return consts
 
