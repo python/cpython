@@ -1,6 +1,13 @@
 Pending removal in Python 3.20
 ------------------------------
 
+* Calling the ``__new__()`` method of :class:`struct.Struct` without the
+  *format* argument is deprecated and will be removed in Python 3.20.  Calling
+  :meth:`~object.__init__` method on initialized :class:`~struct.Struct`
+  objects is deprecated and will be removed in Python 3.20.
+
+  (Contributed by Sergey B Kirpichev and Serhiy Storchaka in :gh:`143715`.)
+
 * The ``__version__``, ``version`` and ``VERSION`` attributes have been
   deprecated in these standard library modules and will be removed in
   Python 3.20. Use :py:data:`sys.version_info` instead.
@@ -31,3 +38,18 @@ Pending removal in Python 3.20
   - :mod:`zlib`
 
   (Contributed by Hugo van Kemenade and Stan Ulbrych in :gh:`76007`.)
+
+* Deprecations defined by :pep:`829`:
+
+  * Warnings are produced for ``import`` lines found in :file:`{name}.pth`
+    files.
+
+  * :file:`{name}.pth` files are no longer decoded in the locale encoding by
+    default.  They **MUST** be encoded in ``utf-8-sig``.
+
+  (Contributed by Barry Warsaw in :gh:`148641`.)
+
+* :mod:`ast`:
+
+  * Creating instances of abstract AST nodes (such as :class:`ast.AST`
+    or :class:`!ast.expr`) is deprecated and will raise an error in Python 3.20.

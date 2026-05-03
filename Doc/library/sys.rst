@@ -924,7 +924,7 @@ always available. Unless explicitly noted otherwise, all variables are read-only
 
    See also :func:`set_lazy_imports` and :pep:`810`.
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
 
 .. function:: get_lazy_imports_filter()
@@ -937,7 +937,7 @@ always available. Unless explicitly noted otherwise, all variables are read-only
    :func:`set_lazy_imports_filter` for details on the filter function
    signature.
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
 
 .. function:: getrefcount(object)
@@ -1770,7 +1770,7 @@ always available. Unless explicitly noted otherwise, all variables are read-only
 
    See also :func:`get_lazy_imports` and :pep:`810`.
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
 
 .. function:: set_lazy_imports_filter(filter)
@@ -1788,7 +1788,9 @@ always available. Unless explicitly noted otherwise, all variables are read-only
    Where:
 
    * *importing_module* is the name of the module doing the import
-   * *imported_module* is the name of the module being imported
+   * *imported_module* is the resolved name of the module being imported
+     (for example, ``lazy from .spam import eggs`` passes
+     ``package.spam``)
    * *fromlist* is the tuple of names being imported (for ``from ... import``
      statements), or ``None`` for regular imports
 
@@ -1800,7 +1802,7 @@ always available. Unless explicitly noted otherwise, all variables are read-only
 
    See also :func:`get_lazy_imports_filter` and :pep:`810`.
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
 
 .. function:: setprofile(profilefunc)

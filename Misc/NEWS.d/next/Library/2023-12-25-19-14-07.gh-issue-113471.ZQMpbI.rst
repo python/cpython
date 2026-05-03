@@ -1,0 +1,2 @@
+Allow :mod:`http.server` to set a default content-type when serving
+files with an unknown or missing extension.

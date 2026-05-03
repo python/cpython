@@ -310,7 +310,7 @@ pairwise_new_impl(PyTypeObject *type, PyObject *iterable)
     }
     po->it = it;
     po->old = NULL;
-    po->result = PyTuple_Pack(2, Py_None, Py_None);
+    po->result = _PyTuple_FromPairSteal(Py_None, Py_None);
     if (po->result == NULL) {
         Py_DECREF(po);
         return NULL;
@@ -389,11 +389,7 @@ pairwise_next(PyObject *op)
         _PyTuple_Recycle(result);
     }
     else {
-        result = PyTuple_New(2);
-        if (result != NULL) {
-            PyTuple_SET_ITEM(result, 0, Py_NewRef(old));
-            PyTuple_SET_ITEM(result, 1, Py_NewRef(new));
-        }
+        result = _PyTuple_FromPair(old, new);
     }
 
     Py_XSETREF(po->old, new);
@@ -533,7 +529,7 @@ groupby_step(groupbyobject *gbo)
 static PyObject *
 groupby_next(PyObject *op)
 {
-    PyObject *r, *grouper;
+    PyObject *grouper;
     groupbyobject *gbo = groupbyobject_CAST(op);
 
     gbo->currgrouper = NULL;
@@ -573,9 +569,7 @@ groupby_next(PyObject *op)
     if (grouper == NULL)
         return NULL;
 
-    r = PyTuple_Pack(2, gbo->currkey, grouper);
-    Py_DECREF(grouper);
-    return r;
+    return _PyTuple_FromPairSteal(Py_NewRef(gbo->currkey), grouper);
 }
 
 static PyType_Slot groupby_slots[] = {
@@ -678,7 +672,16 @@ _grouper_next(PyObject *op)
     }
 
     assert(gbo->currkey != NULL);
-    rcmp = PyObject_RichCompareBool(igo->tgtkey, gbo->currkey, Py_EQ);
+    /* A user-defined __eq__ can re-enter the grouper and advance the iterator,
+       mutating gbo->currkey while we are comparing them.
+       Take local snapshots and hold strong references so INCREF/DECREF
+       apply to the same objects even under re-entrancy. */
+    PyObject *tgtkey = Py_NewRef(igo->tgtkey);
+    PyObject *currkey = Py_NewRef(gbo->currkey);
+    rcmp = PyObject_RichCompareBool(tgtkey, currkey, Py_EQ);
+    Py_DECREF(tgtkey);
+    Py_DECREF(currkey);
+
     if (rcmp <= 0)
         /* got any error or current group is end */
         return NULL;
@@ -3073,7 +3076,7 @@ accumulate_traverse(PyObject *op, visitproc visit, void *arg)
 }
 
 static PyObject *
-accumulate_next(PyObject *op)
+accumulate_next_lock_held(PyObject *op)
 {
     accumulateobject *lz = accumulateobject_CAST(op);
     PyObject *val, *newtotal;
@@ -3103,6 +3106,16 @@ accumulate_next(PyObject *op)
     Py_INCREF(newtotal);
     Py_SETREF(lz->total, newtotal);
     return newtotal;
+}
+
+static PyObject *
+accumulate_next(PyObject *op)
+{
+    PyObject *result;
+    Py_BEGIN_CRITICAL_SECTION(op);
+    result = accumulate_next_lock_held(op);
+    Py_END_CRITICAL_SECTION()
+    return result;
 }
 
 static PyType_Slot accumulate_slots[] = {
@@ -3531,23 +3544,26 @@ count_traverse(PyObject *op, visitproc visit, void *arg)
 static PyObject *
 count_nextlong(countobject *lz)
 {
-    PyObject *long_cnt;
-    PyObject *stepped_up;
-
-    long_cnt = lz->long_cnt;
-    if (long_cnt == NULL) {
+    if (lz->long_cnt == NULL) {
         /* Switch to slow_mode */
-        long_cnt = PyLong_FromSsize_t(PY_SSIZE_T_MAX);
-        if (long_cnt == NULL)
+        lz->long_cnt = PyLong_FromSsize_t(PY_SSIZE_T_MAX);
+        if (lz->long_cnt == NULL) {
             return NULL;
+        }
     }
-    assert(lz->cnt == PY_SSIZE_T_MAX && long_cnt != NULL);
+    assert(lz->cnt == PY_SSIZE_T_MAX && lz->long_cnt != NULL);
 
-    stepped_up = PyNumber_Add(long_cnt, lz->long_step);
-    if (stepped_up == NULL)
+    // We hold one reference to "result" (a.k.a. the old value of
+    // lz->long_cnt); we'll either return it or keep it in lz->long_cnt.
+    PyObject *result = lz->long_cnt;
+
+    PyObject *stepped_up = PyNumber_Add(result, lz->long_step);
+    if (stepped_up == NULL) {
         return NULL;
+    }
     lz->long_cnt = stepped_up;
-    return long_cnt;
+
+    return result;
 }
 
 static PyObject *
@@ -3863,7 +3879,7 @@ zip_longest_traverse(PyObject *op, visitproc visit, void *arg)
 }
 
 static PyObject *
-zip_longest_next(PyObject *op)
+zip_longest_next_lock_held(PyObject *op)
 {
     ziplongestobject *lz = ziplongestobject_CAST(op);
     Py_ssize_t i;
@@ -3931,6 +3947,16 @@ zip_longest_next(PyObject *op)
             PyTuple_SET_ITEM(result, i, item);
         }
     }
+    return result;
+}
+
+static PyObject *
+zip_longest_next(PyObject *op)
+{
+    PyObject *result;
+    Py_BEGIN_CRITICAL_SECTION(op);
+    result = zip_longest_next_lock_held(op);
+    Py_END_CRITICAL_SECTION()
     return result;
 }
 
@@ -4108,6 +4134,7 @@ itertoolsmodule_exec(PyObject *mod)
 }
 
 static struct PyModuleDef_Slot itertoolsmodule_slots[] = {
+    _Py_ABI_SLOT,
     {Py_mod_exec, itertoolsmodule_exec},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {Py_mod_gil, Py_MOD_GIL_NOT_USED},

@@ -6,6 +6,7 @@
  ******************************************************************************/
 
 #include "_remote_debugging.h"
+#include "debug_offsets_validation.h"
 
 /* ============================================================================
  * ASYNCIO DEBUG ADDRESS FUNCTIONS
@@ -71,8 +72,13 @@ read_async_debug(RemoteUnwinderObject *unwinder)
     int result = _Py_RemoteDebug_PagedReadRemoteMemory(&unwinder->handle, async_debug_addr, size, &unwinder->async_debug_offsets);
     if (result < 0) {
         set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to read AsyncioDebug offsets");
+        return result;
     }
-    return result;
+    if (_PyRemoteDebug_ValidateAsyncDebugOffsets(&unwinder->async_debug_offsets) < 0) {
+        set_exception_cause(unwinder, PyExc_RuntimeError, "Invalid AsyncioDebug offsets");
+        return PY_REMOTE_DEBUG_INVALID_ASYNC_DEBUG_OFFSETS;
+    }
+    return 0;
 }
 
 int
@@ -85,7 +91,11 @@ ensure_async_debug_offsets(RemoteUnwinderObject *unwinder)
 
     // Try to load async debug offsets (the target process may have
     // loaded asyncio since we last checked)
-    if (read_async_debug(unwinder) < 0) {
+    int result = read_async_debug(unwinder);
+    if (result == PY_REMOTE_DEBUG_INVALID_ASYNC_DEBUG_OFFSETS) {
+        return -1;
+    }
+    if (result < 0) {
         PyErr_Clear();
         PyErr_SetString(PyExc_RuntimeError, "AsyncioDebug section not available");
         set_exception_cause(unwinder, PyExc_RuntimeError,
@@ -212,7 +222,7 @@ parse_task_name(
             set_exception_cause(unwinder, PyExc_RuntimeError, "Task name PyLong parsing failed");
             return NULL;
         }
-        return PyUnicode_FromFormat("Task-%d", res);
+        return PyUnicode_FromFormat("Task-%ld", res);
     }
 
     if(!(GET_MEMBER(unsigned long, type_obj, unwinder->debug_offsets.type_object.tp_flags) & Py_TPFLAGS_UNICODE_SUBCLASS)) {
@@ -265,7 +275,7 @@ handle_yield_from_frame(
         uintptr_t gi_await_addr;
         err = read_py_ptr(
             unwinder,
-            stackpointer_addr - sizeof(void*),
+            stackpointer_addr - sizeof(void*) * 2,
             &gi_await_addr);
         if (err) {
             set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to read gi_await address");
@@ -940,6 +950,9 @@ process_running_task_chain(
     PyObject *coro_chain = PyStructSequence_GET_ITEM(task_info, 2);
     assert(coro_chain != NULL);
     if (PyList_GET_SIZE(coro_chain) != 1) {
+        PyErr_Format(PyExc_RuntimeError,
+            "Expected single-item coro chain, got %zd items",
+            PyList_GET_SIZE(coro_chain));
         set_exception_cause(unwinder, PyExc_RuntimeError, "Coro chain is not a single item");
         return -1;
     }

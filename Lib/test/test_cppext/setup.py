@@ -86,6 +86,10 @@ def main():
     if internal:
         cppflags.append('-DTEST_INTERNAL_C_API=1')
 
+    extra_cflags = os.environ.get("CPYTHON_TEST_EXTRA_CFLAGS", "")
+    if extra_cflags:
+        cppflags.extend(shlex.split(extra_cflags))
+
     # On Windows, add PCbuild\amd64\ to include and library directories
     include_dirs = []
     library_dirs = []
