@@ -249,10 +249,7 @@ GIL, has exception, or idle):
        result = expensive_call(req)
 
 When the target's source files are readable, ``dump`` prints the source
-line for each frame and highlights the executing expression. If a source
-file's modification time is newer than the target process's start time,
-``dump`` replaces the line with ``[source file changed after process
-started]`` to avoid showing misleading code.
+line for each frame and highlights the executing expression.
 
 Like ``attach``, ``dump`` requires permission to read the target process's
 memory. See :ref:`profiling-permissions`.

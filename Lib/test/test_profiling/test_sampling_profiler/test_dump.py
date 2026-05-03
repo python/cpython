@@ -5,7 +5,6 @@ import os
 import opcode
 import tempfile
 import unittest
-from unittest import mock
 
 import _colorize
 
@@ -29,6 +28,11 @@ from .mocks import (
     MockThreadInfo,
 )
 
+try:
+    import _remote_debugging  # noqa: F401
+except ImportError:
+    _remote_debugging = None
+
 
 StructseqInterpreterInfo = namedtuple(
     "StructseqInterpreterInfo",
@@ -45,13 +49,6 @@ StructseqFrameInfo = namedtuple(
 
 
 class TestStackDumpFormatting(unittest.TestCase):
-    @staticmethod
-    def _patch_start_time(value=None):
-        return mock.patch(
-            "profiling.sampling.dump._target_process_start_time",
-            return_value=value,
-        )
-
     def test_format_stack_dump_single_thread(self):
         frames = [
             MockFrameInfo("leaf.py", 10, "leaf"),
@@ -74,8 +71,7 @@ class TestStackDumpFormatting(unittest.TestCase):
             )
         ]
 
-        with self._patch_start_time():
-            output = format_stack_dump(stack_frames, pid=42, colorize=False)
+        output = format_stack_dump(stack_frames, pid=42, colorize=False)
 
         self.assertIn(
             "Stack dump for PID 42, thread 123 "
@@ -112,8 +108,7 @@ class TestStackDumpFormatting(unittest.TestCase):
             )
         ]
 
-        with self._patch_start_time():
-            output = format_stack_dump(stack_frames, pid=42, colorize=False)
+        output = format_stack_dump(stack_frames, pid=42, colorize=False)
 
         self.assertIn(
             "Stack dump for PID 42, thread 123 "
@@ -324,6 +319,7 @@ class TestStackDumpFormatting(unittest.TestCase):
         self.assertIn('  File "user.py", line 10, in user', output)
         self.assertNotIn("_sync_coordinator.py", output)
 
+    @unittest.skipIf(_remote_debugging is None, "requires _remote_debugging")
     def test_format_stack_dump_async_task(self):
         task = MockTaskInfo(
             task_id=1,
@@ -366,8 +362,7 @@ class TestStackDumpFormatting(unittest.TestCase):
             )
         ]
 
-        with self._patch_start_time():
-            output = format_stack_dump(stack_frames, pid=42, colorize=False)
+        output = format_stack_dump(stack_frames, pid=42, colorize=False)
 
         self.assertIn('  File "', output)
         self.assertIn('", line 1, in <module>', output)
@@ -395,8 +390,7 @@ class TestStackDumpFormatting(unittest.TestCase):
         ]
         theme = _colorize.get_theme(force_color=True).profiler_dump
 
-        with self._patch_start_time():
-            output = format_stack_dump(stack_frames, pid=42, colorize=True)
+        output = format_stack_dump(stack_frames, pid=42, colorize=True)
 
         self.assertIn(
             f"{theme.source_highlight}\"\"\"{theme.reset}",
@@ -429,44 +423,11 @@ class TestStackDumpFormatting(unittest.TestCase):
             ]
             theme = _colorize.get_theme(force_color=True).profiler_dump
 
-            with self._patch_start_time():
-                output = format_stack_dump(stack_frames, pid=42, colorize=True)
+            output = format_stack_dump(stack_frames, pid=42, colorize=True)
 
         self.assertIn(f"{theme.source_highlight}call{theme.reset}", output)
         self.assertIn("\n    result = call(arg)\n", _colorize.decolor(output))
         self.assertNotIn("\n        result = call(arg)\n", _colorize.decolor(output))
-
-    def test_format_stack_dump_warns_about_changed_source(self):
-        with tempfile.TemporaryDirectory() as tmp_dir:
-            filename = os.path.join(tmp_dir, "target.py")
-            with open(filename, "w", encoding="utf-8") as file:
-                file.write("time.sleep(SLEEP_SECONDS)\n")
-            os.utime(filename, (200, 200))
-
-            stack_frames = [
-                MockInterpreterInfo(
-                    0,
-                    [
-                        MockThreadInfo(
-                            123,
-                            [
-                                StructseqFrameInfo(
-                                    filename,
-                                    StructseqLocationInfo(1, 1, 0, 4),
-                                    "<module>",
-                                    None,
-                                )
-                            ],
-                        )
-                    ],
-                )
-            ]
-
-            with self._patch_start_time(value=100):
-                output = format_stack_dump(stack_frames, pid=42, colorize=False)
-
-        self.assertIn("[source file changed after process started]", output)
-        self.assertNotIn("time.sleep", output)
 
     def test_format_stack_dump_empty(self):
         output = format_stack_dump([], pid=42, colorize=False)

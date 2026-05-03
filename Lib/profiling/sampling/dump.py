@@ -120,7 +120,7 @@ def _display_filename(filename):
     return filename
 
 
-def _format_frame(frame, theme, process_start_time, changed_cache):
+def _format_frame(frame, theme):
     filename, location, qualname, opcode = _frame_fields(frame)
     source_filename = filename
     lineno = extract_lineno(location)
@@ -144,9 +144,7 @@ def _format_frame(frame, theme, process_start_time, changed_cache):
         line = f"{line}  {_color(f'opcode={format_opcode(opcode)}', theme.opcode, theme)}"
 
     lines = [line]
-    source = _source_line(
-        source_filename, location, lineno, theme, process_start_time, changed_cache
-    )
+    source = _source_line(source_filename, location, lineno, theme)
     if source:
         lines.append(f"    {source}")
     return lines
@@ -197,28 +195,9 @@ def _highlight_source_line(line, offsets, theme):
     return "".join(parts)
 
 
-def _source_file_changed(filename, process_start_time, cache):
-    if process_start_time is None or not filename or filename.startswith("<"):
-        return False
-    if filename in cache:
-        return cache[filename]
-    try:
-        changed = os.path.getmtime(filename) > process_start_time
-    except OSError:
-        changed = False
-    cache[filename] = changed
-    return changed
-
-
-def _source_line(filename, location, lineno, theme, process_start_time, changed_cache):
+def _source_line(filename, location, lineno, theme):
     if not filename or filename == "~" or lineno <= 0:
         return None
-    if _source_file_changed(filename, process_start_time, changed_cache):
-        return _color(
-            "[source file changed after process started]",
-            theme.warning,
-            theme,
-        )
     line = linecache.getline(filename, lineno).removesuffix("\n")
     if not line:
         return None
@@ -263,39 +242,12 @@ def _section_header(
     return _color(f"{subject} ({suffix}):", theme.header, theme)
 
 
-def _target_process_start_time(pid):
-    if pid is None or not sys.platform.startswith("linux"):
-        return None
-    try:
-        with open(f"/proc/{pid}/stat", encoding="utf-8") as stat_file:
-            stat = stat_file.read()
-        _pid, _sep, fields_text = stat.rpartition(") ")
-        fields = fields_text.split()
-        start_ticks = int(fields[19])
-        clock_ticks = os.sysconf("SC_CLK_TCK")
-
-        boot_time = None
-        with open("/proc/stat", encoding="utf-8") as stat_file:
-            for line in stat_file:
-                if line.startswith("btime "):
-                    boot_time = int(line.split()[1])
-                    break
-        if boot_time is None:
-            return None
-    except (IndexError, OSError, ValueError):
-        return None
-
-    return boot_time + start_ticks / clock_ticks
-
-
 def format_stack_dump(stack_frames, *, pid=None, file=None, colorize=None):
     """Return a formatted one-shot stack dump."""
     if file is None:
         file = sys.stdout
 
     theme = _theme_for(file, colorize)
-    process_start_time = _target_process_start_time(pid)
-    changed_cache = {}
     lines = []
     sections = list(_iter_dump_sections(stack_frames))
     if not sections:
@@ -331,7 +283,7 @@ def format_stack_dump(stack_frames, *, pid=None, file=None, colorize=None):
             continue
 
         for frame in reversed(frames):
-            lines.extend(_format_frame(frame, theme, process_start_time, changed_cache))
+            lines.extend(_format_frame(frame, theme))
 
     return "\n".join(lines) + "\n"
 
