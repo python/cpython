@@ -15,7 +15,7 @@ $zutilVersion = if ($env:NANVIX_ZUTIL_VERSION) {
     $env:NANVIX_ZUTIL_VERSION
 }
 else {
-    "0.7.35"
+    "0.7.36"
 }
 $zutilVersion = $zutilVersion -replace "^v", ""
 
@@ -70,7 +70,7 @@ function Bootstrap {
     if ($LASTEXITCODE -and $LASTEXITCODE -ne 0) {
         throw "venv creation failed (exit code $LASTEXITCODE)"
     }
-    & $venvPython -m pip install --quiet $wheelUrl
+    & $venvPython -m pip install --quiet "$($wheelUrl)[lint]"
     if ($LASTEXITCODE -and $LASTEXITCODE -ne 0) {
         throw "pip install failed (exit code $LASTEXITCODE)"
     }
