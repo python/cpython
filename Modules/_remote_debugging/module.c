@@ -143,6 +143,7 @@ static PyStructSequence_Field GCStatsInfo_fields[] = {
     {"collected", "Total number of collected objects"},
     {"uncollectable", "Total number of uncollectable objects"},
     {"candidates", "Total objects considered and traversed"},
+    {"heap_size", "Number of live objects"},
     {"duration", "Total collection time, in seconds"},
     {NULL}
 };
@@ -151,7 +152,7 @@ PyStructSequence_Desc GCStatsInfo_desc = {
     "_remote_debugging.GCStatsInfo",
     "Information about a garbage collector stats sample",
     GCStatsInfo_fields,
-    9
+    10
 };
 
 /* ============================================================================
@@ -1225,6 +1226,7 @@ Returns:
         - collected: Total number of collected objects.
         - uncollectable: Total number of uncollectable objects.
         - candidates: Total objects considered and traversed.
+        - heap_size: number of live objects.
         - duration: Total collection time, in seconds.
 
 Raises:
