@@ -433,30 +433,30 @@ class WaveLowLevelTest(unittest.TestCase):
 
     @support.subTests('nchannels', (0, -1))
     def test_setnchannels_error_includes_value(self, nchannels):
+        msg = re.escape(f'bad # of channels: {nchannels!r}')
         with wave.open(io.BytesIO(), 'wb') as f:
-            with self.assertRaisesRegex(wave.Error,
-                                        re.escape(f'bad # of channels: {nchannels!r}')):
+            with self.assertRaisesRegex(wave.Error, msg):
                 f.setnchannels(nchannels)
             with self.assertRaises(wave.Error):
                 f.close()
 
     @support.subTests('sampwidth', (0, 5))
     def test_setsampwidth_error_includes_value(self, sampwidth):
+        msg = re.escape(f'bad sample width: {sampwidth!r}')
         with wave.open(io.BytesIO(), 'wb') as f:
             f.setnchannels(1)
-            with self.assertRaisesRegex(wave.Error,
-                                        re.escape(f'bad sample width: {sampwidth!r}')):
+            with self.assertRaisesRegex(wave.Error, msg):
                 f.setsampwidth(sampwidth)
             with self.assertRaises(wave.Error):
                 f.close()
 
     @support.subTests('arg', (-1, 0, 0.4))
     def test_setframerate_error_includes_value(self, arg):
+        msg = re.escape(f'bad frame rate: {arg!r}')
         with wave.open(io.BytesIO(), 'wb') as f:
             f.setnchannels(1)
             f.setsampwidth(2)
-            with self.assertRaisesRegex(wave.Error,
-                                        re.escape(f'bad frame rate: {arg!r}')):
+            with self.assertRaisesRegex(wave.Error, msg):
                 f.setframerate(arg)
             with self.assertRaises(wave.Error):
                 f.close()

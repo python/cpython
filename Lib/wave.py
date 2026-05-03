@@ -388,7 +388,7 @@ class Wave_read:
 
     def _read_fmt_chunk(self, chunk):
         try:
-            self._format, nchannels, self._framerate, dwAvgBytesPerSec, wBlockAlign = struct.unpack_from('<HHLLH', chunk.read(14))
+            self._format, self._nchannels, self._framerate, dwAvgBytesPerSec, wBlockAlign = struct.unpack_from('<HHLLH', chunk.read(14))
         except struct.error:
             raise EOFError from None
         if self._format not in (WAVE_FORMAT_PCM, WAVE_FORMAT_IEEE_FLOAT, WAVE_FORMAT_EXTENSIBLE):
@@ -416,9 +416,8 @@ class Wave_read:
         self._sampwidth = (sampwidth + 7) // 8
         if not self._sampwidth:
             raise Error(f'bad sample width: {sampwidth!r}')
-        if not nchannels:
-            raise Error(f'bad # of channels: {nchannels!r}')
-        self._nchannels = nchannels
+        if not self._nchannels:
+            raise Error(f'bad # of channels: {self._nchannels!r}')
         self._framesize = self._nchannels * self._sampwidth
         self._comptype = 'NONE'
         self._compname = 'not compressed'
@@ -522,10 +521,10 @@ class Wave_write:
     def setframerate(self, framerate):
         if self._datawritten:
             raise Error('cannot change parameters after starting to write')
-        rounded = int(round(framerate))
-        if rounded <= 0:
+        rounded_framerate = int(round(framerate))
+        if rounded_framerate <= 0:
             raise Error(f'bad frame rate: {framerate!r}')
-        self._framerate = rounded
+        self._framerate = rounded_framerate
 
     def getframerate(self):
         if not self._framerate:
