@@ -232,7 +232,7 @@ class CPythonBuild(ZScript):
 
     # ---- Make invocation (for build/install only) ------------------------
 
-    def _run_make(self, make_args: list[str], *, kvm: bool = False) -> None:
+    def _run_make(self, make_args: list[str]) -> None:
         """Execute a make command directly (Linux/macOS only).
 
         On Windows, callers should use ``build_mod.build()`` or
@@ -244,7 +244,7 @@ class CPythonBuild(ZScript):
                 "_run_make() is not supported on Windows. "
                 "Use build_mod.build() / build_mod.install() instead."
             )
-        self.run(*make_args, cwd=self.repo_root, docker=False, kvm=kvm)
+        self.run(*make_args, cwd=self.repo_root, docker=False)
 
     def _make_args(self, *targets: str) -> list[str]:
         """Build the make argument list for configure/build/install."""
