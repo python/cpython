@@ -1623,35 +1623,29 @@ class CommandLineTestCase(unittest.TestCase):
         self.assertEqual(stdout.getvalue(), '')
         self.assertIn('error', stderr.getvalue())
 
-    @mock.patch('http.server._make_server', wraps=server._make_server)
-    @mock.patch.object(HTTPServer, 'serve_forever')
-    def test_extra_response_headers_arg(self, _, mock_make_server):
+    @mock.patch('http.server.test')
+    def test_extra_response_headers_arg(self, mock_test):
+        # Call the main function with extra response headers cli args
         server._main(
             ['-H', 'Set-Cookie', 'k=v', '-H', 'Set-Cookie', 'k2=v2:v3 v4', '8080']
         )
-        # Get an instance of the server / RequestHandler by using
-        # the spied call args, then calling _make_server with them.
-        args, kwargs = mock_make_server.call_args
-        httpd = server._make_server(*args, **kwargs)
-        self.addCleanup(httpd.server_close)
+        # Get the ServerClass (DualStackServerMixin subclass) that _main()
+        # passed to test(), and verify its finish_request passes
+        # extra_response_headers to the handler.
+        _, kwargs = mock_test.call_args
+        server_class = kwargs['ServerClass']
 
-        # Ensure the RequestHandler class is passed the correct response
-        # headers
-        request_handler_class = httpd.RequestHandlerClass
-        with mock.patch.object(
-            request_handler_class, '__init__'
-        ) as mock_handler_init:
-            mock_handler_init.return_value = None
-            # finish_request instantiates a request handler class,
-            # ensure extra_response_headers are passed to it
-            httpd.finish_request(mock.Mock(), '127.0.0.1')
-            mock_handler_init.assert_called_once_with(
-                mock.ANY, mock.ANY, mock.ANY,
-                directory=mock.ANY,
-                extra_response_headers=[
-                    ['Set-Cookie', 'k=v'], ['Set-Cookie', 'k2=v2:v3 v4']
-                ]
-            )
+        mock_handler_class = mock.MagicMock()
+        mock_server = mock.Mock()
+        mock_server.RequestHandlerClass = mock_handler_class
+        server_class.finish_request(mock_server, mock.Mock(), '127.0.0.1')
+        mock_handler_class.assert_called_once_with(
+            mock.ANY, mock.ANY, mock_server,
+            directory=mock.ANY,
+            extra_response_headers=[
+                ['Set-Cookie', 'k=v'], ['Set-Cookie', 'k2=v2:v3 v4']
+            ]
+        )
 
 
 class CommandLineRunTimeTestCase(unittest.TestCase):
