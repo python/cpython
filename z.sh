@@ -7,7 +7,7 @@
 
 set -euo pipefail
 
-PINNED_VERSION="0.7.36"
+PINNED_VERSION="0.7.37"
 RAW_ZUTIL_VERSION="${NANVIX_ZUTIL_VERSION:-$PINNED_VERSION}"
 ZUTIL_VERSION="${RAW_ZUTIL_VERSION#v}"
 REPO_ROOT="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd -P)"
@@ -46,7 +46,7 @@ function bootstrap() {
     fi
     # Re-resolve paths now that the venv exists (Scripts/ vs bin/).
     _resolve_venv_paths
-    "$VENV_PYTHON" -m pip install --quiet "${WHEEL_URL}[lint]"
+    "$VENV_PYTHON" -m pip install --quiet "nanvix-zutil[lint] @ ${WHEEL_URL}"
 }
 
 # Prefer the venv copy if it exists; otherwise use the global install.
