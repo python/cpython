@@ -1626,9 +1626,14 @@ Copying, moving and deleting
 .. method:: Path.rename(target)
 
    Rename this file or directory to the given *target*, and return a new
-   :class:`!Path` instance pointing to *target*.  On Unix, if *target* exists
-   and is a file, it will be replaced silently if the user has permission.
-   On Windows, if *target* exists, :exc:`FileExistsError` will be raised.
+   :class:`!Path` instance pointing to *target*.  This method is implemented
+   in terms of :func:`os.rename`, and gives the same guarantees.
+
+   On Unix, if *target* exists and is a file, it will be replaced silently if
+   the user has permission. On Windows, if *target* exists,
+   :exc:`FileExistsError` will be raised. If you want to replace the target
+   consistently across platforms, use :meth:`Path.replace`.
+
    *target* can be either a string or another path object::
 
       >>> p = Path('foo')
@@ -1644,8 +1649,6 @@ Copying, moving and deleting
    relative to the current working directory, *not* the directory of the
    :class:`!Path` object.
 
-   It is implemented in terms of :func:`os.rename` and gives the same guarantees.
-
    .. versionchanged:: 3.8
       Added return value, return the new :class:`!Path` instance.
 
@@ -1653,8 +1656,13 @@ Copying, moving and deleting
 .. method:: Path.replace(target)
 
    Rename this file or directory to the given *target*, and return a new
-   :class:`!Path` instance pointing to *target*.  If *target* points to an
-   existing file or empty directory, it will be unconditionally replaced.
+   :class:`!Path` instance pointing to *target*. Unlike :meth:`Path.rename`,
+   if *target* points to an existing file or empty directory, it will be
+   unconditionally replaced.
+
+   This method is implemented in terms of :func:`os.replace`; use it when you
+   want consistent cross-platform replacement semantics for an existing file or
+   empty directory.
 
    The target path may be absolute or relative. Relative paths are interpreted
    relative to the current working directory, *not* the directory of the
