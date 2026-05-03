@@ -4737,6 +4737,7 @@ dummy_func(
             unused/1 +
             _CHECK_PEP_523 +
             _CHECK_OBJECT +
+            _CHECK_RECURSION_REMAINING +
             _ALLOCATE_OBJECT +
             _CREATE_INIT_FRAME +
             _PUSH_FRAME;
