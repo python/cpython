@@ -11,9 +11,13 @@ typedef struct _PyJitCodeRegistration _PyJitCodeRegistration;
 
 #ifdef _Py_JIT
 
-/* Return a teardown handle when any backend stores registration state.
- * A NULL result is valid when publication succeeded only through backends
- * with no unregister step, such as perf map output.
+/* Publish JIT code to optional tooling backends.
+ *
+ * The return value is a backend-specific deregistration handle, not a
+ * success/failure indicator. NULL means there is nothing to unregister later:
+ * perf does not need a handle, and GDB/GNU backtrace registration failures
+ * are intentionally non-fatal because tooling support must not make JIT
+ * compilation fail.
  */
 _PyJitCodeRegistration *_PyJit_RegisterCode(const void *code_addr,
                                             size_t code_size,

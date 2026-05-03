@@ -82,6 +82,8 @@ _PyJit_RegisterCode(const void *code_addr, size_t code_size,
                     const char *entry, const char *filename)
 {
     jit_register_perf_code(code_addr, code_size, entry, filename);
+    // Perf publication has no teardown handle, so it is intentionally
+    // not counted below.
 
 #if !defined(PY_HAVE_JIT_GDB_UNWIND) \
     && !defined(PY_HAVE_JIT_GNU_BACKTRACE_UNWIND)
@@ -93,18 +95,20 @@ _PyJit_RegisterCode(const void *code_addr, size_t code_size,
         return NULL;
     }
 
-    int registered = 0;
+    // Partial failures are non-fatal: the JIT code can still execute, but
+    // unavailable tooling may not be able to unwind it.
+    int any_registered = 0;
 #  if defined(PY_HAVE_JIT_GDB_UNWIND)
     jit_register_gdb_code(
         registration, code_addr, code_size, entry, filename);
-    registered |= registration->gdb_handle != NULL;
+    any_registered |= registration->gdb_handle != NULL;
 #  endif
 #  if defined(PY_HAVE_JIT_GNU_BACKTRACE_UNWIND)
     jit_register_gnu_backtrace_code(
         registration, code_addr, code_size);
-    registered |= registration->gnu_backtrace_handle != NULL;
+    any_registered |= registration->gnu_backtrace_handle != NULL;
 #  endif
-    if (!registered) {
+    if (!any_registered) {
         PyMem_RawFree(registration);
         return NULL;
     }
