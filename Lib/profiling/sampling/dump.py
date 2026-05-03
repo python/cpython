@@ -105,7 +105,7 @@ def _iter_dump_sections(stack_frames):
                 interpreter_id,
                 getattr(thread_info, "thread_id", None),
                 getattr(thread_info, "status", None),
-                frames or [],
+                frames,
                 None,
             )
 
