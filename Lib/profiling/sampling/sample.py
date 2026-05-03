@@ -58,6 +58,10 @@ class SampleProfiler:
         try:
             self.unwinder = self._new_unwinder(native, gc, opcodes, skip_non_matching_threads)
         except RuntimeError as err:
+            if os.name == "nt" and sys.executable.endswith("python.exe"):
+                raise SystemExit(
+                    "Running profiling.sampling from virtualenv on Windows platform is not supported"
+                ) from err
             raise SystemExit(err) from err
         # Track sample intervals and total sample count
         self.sample_intervals = deque(maxlen=100)
