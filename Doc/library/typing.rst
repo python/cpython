@@ -2361,6 +2361,12 @@ without the dedicated syntax, as documented below.
          >>> Alias.__module__
          '__main__'
 
+      This attribute is writable.
+
+      .. versionchanged:: 3.15
+
+         The attribute is now writable.
+
    .. attribute:: __type_params__
 
       The type parameters of the type alias, or an empty tuple if the alias is
