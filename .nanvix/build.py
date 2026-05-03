@@ -65,7 +65,6 @@ def run_make(
     args: list[str],
     *,
     cwd: Path | None = None,
-    kvm: bool = False,
     run_fn: Any = None,
 ) -> None:
     """Execute a make command.
@@ -73,12 +72,11 @@ def run_make(
     Args:
         args: Full make argument list (from :func:`make_args`).
         cwd: Working directory.
-        kvm: Passed through to the run function (for VM execution).
         run_fn: Callable to execute the command. Defaults to
             ``subprocess.run`` with check=True.
     """
     if run_fn:
-        run_fn(*args, cwd=cwd, kvm=kvm)
+        run_fn(*args, cwd=cwd)
     else:
         subprocess.run(args, cwd=cwd, check=True)
 
