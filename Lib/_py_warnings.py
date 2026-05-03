@@ -643,9 +643,10 @@ class WarningMessage(object):
         self._category_name = category.__name__ if category else None
 
     def __str__(self):
-        return ("{message : %r, category : %r, module : %r, filename : %r, lineno : %s, "
-                    "line : %r}" % (self.message, self._category_name,
-                                    self.module, self.filename, self.lineno, self.line))
+        return ("{message : %r, category : %r, module : %r, "
+                "filename : %r, lineno : %s, line : %r}" % (
+                    self.message, self._category_name, self.module,
+                    self.filename, self.lineno, self.line))
 
     def __repr__(self):
         return f'<{type(self).__qualname__} {self}>'
