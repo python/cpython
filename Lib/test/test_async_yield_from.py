@@ -1,7 +1,8 @@
 """
-Test suite for PEP 828 implementation
+Test suite for PEP 828 implementation.
 
-Adapted from the 'yield from' tests.
+The tests below were adapted from the 'yield from' tests.
+For more context on any particular test, try searching for an analogue in `test_yield_from`.
 """
 
 import unittest
@@ -1018,7 +1019,6 @@ class TestPEP828Operation(unittest.TestCase):
 
     @_async_test
     async def test_custom_iterator_return(self):
-        # See issue #15568
         class MyIter:
             def __aiter__(self):
                 return self
@@ -1033,24 +1033,6 @@ class TestPEP828Operation(unittest.TestCase):
 
     @_async_test
     async def test_close_with_cleared_frame(self):
-        # See issue #17669.
-        #
-        # Create a stack of generators: outer() delegating to inner()
-        # delegating to innermost(). The key point is that the instance of
-        # inner is created first: this ensures that its frame appears before
-        # the instance of outer in the GC linked list.
-        #
-        # At the gc.collect call:
-        #   - frame_clear is called on the inner_gen frame.
-        #   - gen_dealloc is called on the outer_gen generator (the only
-        #     reference is in the frame's locals).
-        #   - gen_close is called on the outer_gen generator.
-        #   - gen_close_iter is called to close the inner_gen generator, which
-        #     in turn calls gen_close, and gen_yf.
-        #
-        # Previously, gen_yf would crash since inner_gen's frame had been
-        # cleared (and in particular f_stacktop was NULL).
-
         async def innermost():
             yield
         async def inner():
@@ -1073,7 +1055,6 @@ class TestPEP828Operation(unittest.TestCase):
 
     @_async_test
     async def test_send_tuple_with_custom_generator(self):
-        # See issue #21209.
         class MyGen:
             def __aiter__(self):
                 return self
@@ -1626,8 +1607,6 @@ class TestInterestingEdgeCases(unittest.TestCase):
 
     @_async_test
     async def test_throws_in_iter(self):
-        # See GH-126366: NULL pointer dereference if __iter__
-        # threw an exception.
         class Silly:
             async def __aiter__(self):
                 yield from ()
