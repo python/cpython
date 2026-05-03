@@ -32,8 +32,9 @@ directory:
   syntax.  These are resolved via pkgutil.resolve_name() and called with no
   arguments.
 
-All .pth path extensions are applied before any .start entry points are
-executed, ensuring that paths are available before startup code runs.
+When called from main(), all .pth path extensions are applied before any
+.start entry points are executed, ensuring that paths are available before
+startup code runs.
 
 See the documentation for the site module for full details:
 https://docs.python.org/3/library/site.html
@@ -352,7 +353,7 @@ def _execute_start_entrypoints():
                     exc)
 
 
-def flush_pth_start():
+def process_startup_files():
     """Flush all pending sys.path and entry points."""
     _extend_syspath()
     _exec_imports()
@@ -370,13 +371,13 @@ def addpackage(sitedir, name, known_paths):
     else:
         reset = False
     _read_pth_file(sitedir, name, known_paths)
-    flush_pth_start()
+    process_startup_files()
     if reset:
         known_paths = None
     return known_paths
 
 
-def addsitedir(sitedir, known_paths=None):
+def addsitedir(sitedir, known_paths=None, *, defer_processing_start_files=False):
     """Add 'sitedir' argument to sys.path if missing and handle startup
     files."""
     _trace(f"Adding directory: {sitedir!r}")
@@ -415,8 +416,10 @@ def addsitedir(sitedir, known_paths=None):
 
     # If standalone call (not from main()), flush immediately
     # so the caller sees the effect.
+    if not defer_processing_start_files:
+        process_startup_files()
+
     if reset:
-        flush_pth_start()
         known_paths = None
 
     return known_paths
@@ -531,7 +534,7 @@ def getusersitepackages():
 
     return USER_SITE
 
-def addusersitepackages(known_paths):
+def addusersitepackages(known_paths, *, defer_processing_start_files=False):
     """Add a per user site-package to sys.path
 
     Each user has its own python directory with site-packages in the
@@ -543,7 +546,7 @@ def addusersitepackages(known_paths):
     user_site = getusersitepackages()
 
     if ENABLE_USER_SITE and os.path.isdir(user_site):
-        addsitedir(user_site, known_paths)
+        addsitedir(user_site, known_paths, defer_processing_start_files=defer_processing_start_files)
     return known_paths
 
 def getsitepackages(prefixes=None):
@@ -585,12 +588,12 @@ def getsitepackages(prefixes=None):
             sitepackages.append(os.path.join(prefix, "Lib", "site-packages"))
     return sitepackages
 
-def addsitepackages(known_paths, prefixes=None):
+def addsitepackages(known_paths, prefixes=None, *, defer_processing_start_files=False):
     """Add site-packages to sys.path"""
     _trace("Processing global site-packages")
     for sitedir in getsitepackages(prefixes):
         if os.path.isdir(sitedir):
-            addsitedir(sitedir, known_paths)
+            addsitedir(sitedir, known_paths, defer_processing_start_files=defer_processing_start_files)
 
     return known_paths
 
@@ -872,15 +875,15 @@ def main():
     known_paths = venv(known_paths)
     if ENABLE_USER_SITE is None:
         ENABLE_USER_SITE = check_enableusersite()
-    known_paths = addusersitepackages(known_paths)
-    known_paths = addsitepackages(known_paths)
+    known_paths = addusersitepackages(known_paths, defer_processing_start_files=True)
+    known_paths = addsitepackages(known_paths, defer_processing_start_files=True)
     # PEP 829: flush accumulated data from all .pth and .start files.
     # Paths are extended first, then deprecated import lines are exec'd,
     # and finally .start entry points are executed — ensuring sys.path is
-    # fully populated before any startup code runs.  flush_pth_start()
+    # fully populated before any startup code runs.  process_startup_files()
     # also clears the pending state so a later addsitedir() call does
     # not re-apply already-processed data.
-    flush_pth_start()
+    process_startup_files()
     setquit()
     setcopyright()
     sethelper()

@@ -191,17 +191,20 @@ class HelperFunctionsTests(unittest.TestCase):
             pth_file.cleanup()
 
     def test_addsitedir_explicit_flush(self):
-        # addsitedir() reads .pth files and, when called standalone
-        # (known_paths=None).  Flushes paths and import lines explicitly.
+        # addsitedir() reads .pth files and, with
+        # defer_processing_start_files=True, accumulates pending state
+        # without flushing.  A subsequent process_startup_files() call
+        # then applies the paths and runs the import lines.
         pth_file = PthFile()
-        pth_file.cleanup(prep=True) # Make sure that nothing is pre-existing
-                                    # that is tested for
+        # Ensure we have a clean slate.
+        pth_file.cleanup(prep=True)
         try:
             pth_file.create()
-            # Providing known_paths=set() prevents flushing.
-            site.addsitedir(pth_file.base_dir, set())
+            # Pass defer_processing_start_files=True to prevent flushing.
+            site.addsitedir(pth_file.base_dir, set(),
+                            defer_processing_start_files=True)
             self.assertNotIn(pth_file.imported, sys.modules)
-            site.flush_pth_start()
+            site.process_startup_files()
             self.pth_file_tests(pth_file)
         finally:
             pth_file.cleanup()

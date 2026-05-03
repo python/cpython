@@ -91,12 +91,30 @@ and lines beginning with ``#`` are skipped.
 For backward compatibility, lines starting with ``import`` (followed by space
 or tab) are executed with :func:`exec`.
 
+.. versionchanged:: 3.13
+
+   The :file:`.pth` files are now decoded by UTF-8 at first and then by the
+   :term:`locale encoding` if it fails.
+
 .. versionchanged:: next
 
-   ``import`` lines in :file:`{name}.pth` are ignored when a :ref:`matching
-   <site-start-files>` :file:`{name}.start` file exists.
+   :file:`.pth` file lines starting with ``import`` are deprecated.  During
+   the deprecation period, such lines are still executed (except in the case
+   below), but a diagnostic message is emitted only when the :option:`-v` flag
+   is given.
+
+   ``import`` lines in :file:`{name}.pth` are silently ignored when a
+   :ref:`matching <site-start-files>` :file:`{name}.start` file exists.
+
+   Errors on individual lines no longer abort processing of the rest of the
+   file.  Each error is reported and the remaining lines continue to be
+   processed.
 
 .. deprecated-removed:: next 3.20
+
+   Decoding :file:`{name}.pth` files in any encoding other than ``utf-8-sig``
+   is deprecated in Python 3.15, and support for decoding from the locale
+   encoding will be removed in Python 3.20.
 
    ``import`` lines in :file:`{name}.pth` files are deprecated and will be
    silently ignored in Python 3.18 and 3.19.  In Python 3.20 a warning will be
@@ -154,30 +172,6 @@ the remaining entry points.
 
    :file:`{name}.start` files invoke :func:`pkgutil.resolve_name` with
    ``strict=True``, which requires the full ``pkg.mod:callable`` form.
-
-.. versionchanged:: 3.13
-
-   The :file:`.pth` files are now decoded by UTF-8 at first and then by the
-   :term:`locale encoding` if it fails.
-
-.. deprecated-removed:: next 3.20
-
-   Decoding :file:`{name}.pth` files in any encoding other than ``utf-8-sig``
-   is deprecated in Python 3.15, and support for decoding from the locale
-   encoding will be removed in Python 3.20.
-
-.. versionchanged:: next
-
-   :file:`.pth` file lines starting with ``import`` are deprecated.  During
-   the deprecation period, such lines are still executed, but a diagnostic
-   message is emitted when the :option:`-v` flag is given.  If a
-   :file:`{name}.start` file with the same base name exists, ``import`` lines
-   in :file:`{name}.pth` files are silently ignored.  See
-   :ref:`site-start-files` and :pep:`829`.
-
-   Errors on individual lines no longer abort processing of the rest of the
-   file.  Each error is reported and the remaining lines continue to be
-   processed.
 
 .. index::
    single: package
@@ -362,15 +356,20 @@ Module contents
       This function used to be called unconditionally.
 
 
-.. function:: addsitedir(sitedir, known_paths=None)
+.. function:: addsitedir(sitedir, known_paths=None, *, defer_processing_start_files=False)
 
-   Add a directory to sys.path and process its :file:`.pth` and
-   :file:`.start` files.  Typically used in :mod:`sitecustomize` or
+   Add a directory to sys.path and parse the :file:`.pth` and :file:`.start`
+   files found in that directory.  Typically used in :mod:`sitecustomize` or
    :mod:`usercustomize` (see above).
 
    The *known_paths* argument is an optional set of case-normalized paths
    used to prevent duplicate :data:`sys.path` entries.  When ``None`` (the
    default), the set is built from the current :data:`sys.path`.
+
+   While :file:`.pth` and :file:`.start` files are always parsed, set
+   *defer_processing_start_files* to ``True`` to prevent processing the
+   startup data found in those files, so that you can process them explicitly
+   (this is typically used by the :func:`main` function).
 
    .. versionchanged:: next
 
