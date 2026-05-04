@@ -2225,9 +2225,6 @@ class TestRecorderTableGeneration(unittest.TestCase):
         family(OP, INLINE_CACHE_ENTRIES_OP) = { OP_SPECIALIZED };
         """
         output = self.generate_tables(input)
-        # Head and member disagree on the slot, so the family records the raw
-        # _RECORD_CALLABLE form. The head consumes it directly (no transform);
-        # the member transforms it into _RECORD_BOUND_METHOD.
         self.assert_slot_map_lines(
             output,
             "[OP] = {1, 0, {0}}",
@@ -2280,9 +2277,6 @@ class TestRecorderTableGeneration(unittest.TestCase):
             ),
             ["_RECORD_TOS_TYPE"],
         )
-        # Members disagree on the slot's recorder, so the family records the
-        # raw _RECORD_TOS form. The head's _RECORD_TOS consumer matches it
-        # directly; the specialized member transforms to _RECORD_TOS_TYPE.
         self.assertIn("[OP] = {1, {_RECORD_TOS_INDEX}}", output)
         self.assertIn("[OP_SPECIALIZED] = {1, {_RECORD_TOS_INDEX}}", output)
         self.assert_slot_map_lines(
