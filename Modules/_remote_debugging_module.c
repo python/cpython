@@ -20,6 +20,7 @@
 #include <internal/pycore_interpframe.h>    // FRAME_OWNED_BY_CSTACK
 #include <internal/pycore_llist.h>          // struct llist_node
 #include <internal/pycore_stackref.h>       // Py_TAG_BITS
+#include <internal/pycore_tstate.h>         // _PyThreadStateImpl
 #include "../Python/remote_debug.h"
 
 // gh-141784: Python.h header must be included first, before system headers.
@@ -41,9 +42,11 @@
  * TYPE DEFINITIONS AND STRUCTURES
  * ============================================================================ */
 
-#define GET_MEMBER(type, obj, offset) (*(type*)((char*)(obj) + (offset)))
+#define GET_MEMBER(type, obj, offset) \
+    (*(type *)memcpy(&(type){0}, (const char *)(obj) + (offset), sizeof(type)))
 #define CLEAR_PTR_TAG(ptr) (((uintptr_t)(ptr) & ~Py_TAG_BITS))
-#define GET_MEMBER_NO_TAG(type, obj, offset) (type)(CLEAR_PTR_TAG(*(type*)((char*)(obj) + (offset))))
+#define GET_MEMBER_NO_TAG(type, obj, offset) \
+    (type)(CLEAR_PTR_TAG(GET_MEMBER(type, obj, offset)))
 
 /* Size macros for opaque buffers */
 #define SIZEOF_BYTES_OBJ sizeof(PyBytesObject)
@@ -106,6 +109,486 @@ struct _Py_AsyncioModuleDebugOffsets {
         uint64_t asyncio_tasks_head;
     } asyncio_thread_state;
 };
+
+/* Treat the remote debug tables as untrusted input and validate every
+ * size/offset we later dereference against a fixed local buffer or object
+ * layout before the unwinder starts using them. */
+#define FIELD_SIZE(type, member) sizeof(((type *)0)->member)
+#define PY_REMOTE_DEBUG_INVALID_ASYNC_DEBUG_OFFSETS (-2)
+
+static inline int
+validate_section_size(const char *section_name, uint64_t size)
+{
+    if (size == 0) {
+        PyErr_Format(
+            PyExc_RuntimeError,
+            "Invalid debug offsets: %s.size must be greater than zero",
+            section_name);
+        return -1;
+    }
+    return 0;
+}
+
+static inline int
+validate_read_size(const char *section_name, uint64_t size, size_t buffer_size)
+{
+    if (validate_section_size(section_name, size) < 0) {
+        return -1;
+    }
+    if (size > buffer_size) {
+        PyErr_Format(
+            PyExc_RuntimeError,
+            "Invalid debug offsets: %s.size=%llu exceeds local buffer size %zu",
+            section_name,
+            (unsigned long long)size,
+            buffer_size);
+        return -1;
+    }
+    return 0;
+}
+
+static inline int
+validate_span(
+    const char *field_name,
+    uint64_t offset,
+    size_t width,
+    uint64_t limit,
+    const char *limit_name)
+{
+    uint64_t span = (uint64_t)width;
+    if (span > limit || offset > limit - span) {
+        PyErr_Format(
+            PyExc_RuntimeError,
+            "Invalid debug offsets: %s=%llu with width %zu exceeds %s %llu",
+            field_name,
+            (unsigned long long)offset,
+            width,
+            limit_name,
+            (unsigned long long)limit);
+        return -1;
+    }
+    return 0;
+}
+
+static inline int
+validate_alignment(
+    const char *field_name,
+    uint64_t offset,
+    size_t alignment)
+{
+    if (alignment > 1 && offset % alignment != 0) {
+        PyErr_Format(
+            PyExc_RuntimeError,
+            "Invalid debug offsets: %s=%llu is not aligned to %zu bytes",
+            field_name,
+            (unsigned long long)offset,
+            alignment);
+        return -1;
+    }
+    return 0;
+}
+
+static inline int
+validate_field(
+    const char *field_name,
+    uint64_t offset,
+    uint64_t reported_size,
+    size_t width,
+    size_t alignment,
+    size_t buffer_size)
+{
+    if (validate_alignment(field_name, offset, alignment) < 0) {
+        return -1;
+    }
+    if (validate_span(field_name, offset, width, reported_size, "reported size") < 0) {
+        return -1;
+    }
+    return validate_span(field_name, offset, width, buffer_size, "local buffer size");
+}
+
+static inline int
+validate_fixed_field(
+    const char *field_name,
+    uint64_t offset,
+    size_t width,
+    size_t alignment,
+    size_t buffer_size)
+{
+    if (validate_alignment(field_name, offset, alignment) < 0) {
+        return -1;
+    }
+    return validate_span(field_name, offset, width, buffer_size, "local buffer size");
+}
+
+#define PY_REMOTE_DEBUG_VALIDATE_SECTION(section) \
+    do { \
+        if (validate_section_size(#section, debug_offsets->section.size) < 0) { \
+            return -1; \
+        } \
+    } while (0)
+
+#define PY_REMOTE_DEBUG_VALIDATE_READ_SECTION(section, buffer_size) \
+    do { \
+        if (validate_read_size(#section, debug_offsets->section.size, buffer_size) < 0) { \
+            return -1; \
+        } \
+    } while (0)
+
+#define PY_REMOTE_DEBUG_VALIDATE_FIELD(section, field, field_size, field_alignment, buffer_size) \
+    do { \
+        if (validate_field( \
+                #section "." #field, \
+                debug_offsets->section.field, \
+                debug_offsets->section.size, \
+                field_size, \
+                field_alignment, \
+                buffer_size) < 0) { \
+            return -1; \
+        } \
+    } while (0)
+
+#define PY_REMOTE_DEBUG_VALIDATE_FIXED_FIELD(section, field, field_size, field_alignment, buffer_size) \
+    do { \
+        if (validate_fixed_field( \
+                #section "." #field, \
+                debug_offsets->section.field, \
+                field_size, \
+                field_alignment, \
+                buffer_size) < 0) { \
+            return -1; \
+        } \
+    } while (0)
+
+static inline int
+validate_debug_offsets_layout(struct _Py_DebugOffsets *debug_offsets)
+{
+    PY_REMOTE_DEBUG_VALIDATE_SECTION(runtime_state);
+    PY_REMOTE_DEBUG_VALIDATE_FIELD(
+        runtime_state,
+        interpreters_head,
+        sizeof(uintptr_t),
+        _Alignof(uintptr_t),
+        sizeof(_PyRuntimeState));
+
+    PY_REMOTE_DEBUG_VALIDATE_SECTION(interpreter_state);
+    PY_REMOTE_DEBUG_VALIDATE_FIELD(
+        interpreter_state,
+        threads_head,
+        sizeof(uintptr_t),
+        _Alignof(uintptr_t),
+        INTERP_STATE_BUFFER_SIZE);
+    PY_REMOTE_DEBUG_VALIDATE_FIELD(
+        interpreter_state,
+        threads_main,
+        sizeof(uintptr_t),
+        _Alignof(uintptr_t),
+        INTERP_STATE_BUFFER_SIZE);
+    PY_REMOTE_DEBUG_VALIDATE_FIELD(
+        interpreter_state,
+        gil_runtime_state_locked,
+        sizeof(int),
+        _Alignof(int),
+        INTERP_STATE_BUFFER_SIZE);
+    PY_REMOTE_DEBUG_VALIDATE_FIELD(
+        interpreter_state,
+        gil_runtime_state_holder,
+        sizeof(PyThreadState *),
+        _Alignof(PyThreadState *),
+        INTERP_STATE_BUFFER_SIZE);
+    PY_REMOTE_DEBUG_VALIDATE_FIELD(
+        interpreter_state,
+        code_object_generation,
+        sizeof(uint64_t),
+        _Alignof(uint64_t),
+        INTERP_STATE_BUFFER_SIZE);
+    PY_REMOTE_DEBUG_VALIDATE_FIELD(
+        interpreter_state,
+        tlbc_generation,
+        sizeof(uint32_t),
+        _Alignof(uint32_t),
+        INTERP_STATE_BUFFER_SIZE);
+
+    PY_REMOTE_DEBUG_VALIDATE_READ_SECTION(thread_state, SIZEOF_THREAD_STATE);
+    PY_REMOTE_DEBUG_VALIDATE_FIELD(
+        thread_state,
+        next,
+        sizeof(uintptr_t),
+        _Alignof(uintptr_t),
+        SIZEOF_THREAD_STATE);
+    PY_REMOTE_DEBUG_VALIDATE_FIELD(
+        thread_state,
+        current_frame,
+        sizeof(uintptr_t),
+        _Alignof(uintptr_t),
+        SIZEOF_THREAD_STATE);
+    PY_REMOTE_DEBUG_VALIDATE_FIELD(
+        thread_state,
+        native_thread_id,
+        sizeof(unsigned long),
+        _Alignof(unsigned long),
+        SIZEOF_THREAD_STATE);
+    PY_REMOTE_DEBUG_VALIDATE_FIELD(
+        thread_state,
+        datastack_chunk,
+        sizeof(uintptr_t),
+        _Alignof(uintptr_t),
+        SIZEOF_THREAD_STATE);
+
+    PY_REMOTE_DEBUG_VALIDATE_SECTION(interpreter_frame);
+    PY_REMOTE_DEBUG_VALIDATE_FIELD(
+        interpreter_frame,
+        previous,
+        sizeof(uintptr_t),
+        _Alignof(uintptr_t),
+        SIZEOF_INTERP_FRAME);
+    PY_REMOTE_DEBUG_VALIDATE_FIELD(
+        interpreter_frame,
+        executable,
+        sizeof(uintptr_t),
+        _Alignof(uintptr_t),
+        SIZEOF_INTERP_FRAME);
+    PY_REMOTE_DEBUG_VALIDATE_FIELD(
+        interpreter_frame,
+        instr_ptr,
+        sizeof(uintptr_t),
+        _Alignof(uintptr_t),
+        SIZEOF_INTERP_FRAME);
+    PY_REMOTE_DEBUG_VALIDATE_FIELD(
+        interpreter_frame,
+        owner,
+        sizeof(char),
+        _Alignof(char),
+        SIZEOF_INTERP_FRAME);
+    PY_REMOTE_DEBUG_VALIDATE_FIELD(
+        interpreter_frame,
+        stackpointer,
+        sizeof(uintptr_t),
+        _Alignof(uintptr_t),
+        SIZEOF_INTERP_FRAME);
+    PY_REMOTE_DEBUG_VALIDATE_FIELD(
+        interpreter_frame,
+        tlbc_index,
+        sizeof(int32_t),
+        _Alignof(int32_t),
+        SIZEOF_INTERP_FRAME);
+
+    PY_REMOTE_DEBUG_VALIDATE_SECTION(code_object);
+    PY_REMOTE_DEBUG_VALIDATE_FIELD(
+        code_object,
+        qualname,
+        sizeof(uintptr_t),
+        _Alignof(uintptr_t),
+        SIZEOF_CODE_OBJ);
+    PY_REMOTE_DEBUG_VALIDATE_FIELD(
+        code_object,
+        filename,
+        sizeof(uintptr_t),
+        _Alignof(uintptr_t),
+        SIZEOF_CODE_OBJ);
+    PY_REMOTE_DEBUG_VALIDATE_FIELD(
+        code_object,
+        linetable,
+        sizeof(uintptr_t),
+        _Alignof(uintptr_t),
+        SIZEOF_CODE_OBJ);
+    PY_REMOTE_DEBUG_VALIDATE_FIELD(
+        code_object,
+        firstlineno,
+        sizeof(int),
+        _Alignof(int),
+        SIZEOF_CODE_OBJ);
+    PY_REMOTE_DEBUG_VALIDATE_FIELD(
+        code_object,
+        co_code_adaptive,
+        sizeof(char),
+        _Alignof(char),
+        SIZEOF_CODE_OBJ);
+    PY_REMOTE_DEBUG_VALIDATE_FIELD(
+        code_object,
+        co_tlbc,
+        sizeof(uintptr_t),
+        _Alignof(uintptr_t),
+        SIZEOF_CODE_OBJ);
+
+    PY_REMOTE_DEBUG_VALIDATE_SECTION(pyobject);
+    PY_REMOTE_DEBUG_VALIDATE_FIELD(
+        pyobject,
+        ob_type,
+        sizeof(uintptr_t),
+        _Alignof(uintptr_t),
+        SIZEOF_PYOBJECT);
+
+    PY_REMOTE_DEBUG_VALIDATE_SECTION(type_object);
+    PY_REMOTE_DEBUG_VALIDATE_FIELD(
+        type_object,
+        tp_flags,
+        sizeof(unsigned long),
+        _Alignof(unsigned long),
+        SIZEOF_TYPE_OBJ);
+
+    PY_REMOTE_DEBUG_VALIDATE_SECTION(set_object);
+    PY_REMOTE_DEBUG_VALIDATE_FIELD(
+        set_object,
+        used,
+        sizeof(Py_ssize_t),
+        _Alignof(Py_ssize_t),
+        SIZEOF_SET_OBJ);
+    PY_REMOTE_DEBUG_VALIDATE_FIELD(
+        set_object,
+        mask,
+        sizeof(Py_ssize_t),
+        _Alignof(Py_ssize_t),
+        SIZEOF_SET_OBJ);
+    PY_REMOTE_DEBUG_VALIDATE_FIELD(
+        set_object,
+        table,
+        sizeof(uintptr_t),
+        _Alignof(uintptr_t),
+        SIZEOF_SET_OBJ);
+
+    PY_REMOTE_DEBUG_VALIDATE_READ_SECTION(long_object, SIZEOF_LONG_OBJ);
+    PY_REMOTE_DEBUG_VALIDATE_FIELD(
+        long_object,
+        lv_tag,
+        sizeof(uintptr_t),
+        _Alignof(uintptr_t),
+        SIZEOF_LONG_OBJ);
+    PY_REMOTE_DEBUG_VALIDATE_FIELD(
+        long_object,
+        ob_digit,
+        sizeof(digit),
+        _Alignof(digit),
+        SIZEOF_LONG_OBJ);
+
+    PY_REMOTE_DEBUG_VALIDATE_SECTION(bytes_object);
+    PY_REMOTE_DEBUG_VALIDATE_FIELD(
+        bytes_object,
+        ob_size,
+        sizeof(Py_ssize_t),
+        _Alignof(Py_ssize_t),
+        SIZEOF_BYTES_OBJ);
+    PY_REMOTE_DEBUG_VALIDATE_FIELD(
+        bytes_object,
+        ob_sval,
+        sizeof(char),
+        _Alignof(char),
+        SIZEOF_BYTES_OBJ);
+
+    PY_REMOTE_DEBUG_VALIDATE_SECTION(unicode_object);
+    PY_REMOTE_DEBUG_VALIDATE_FIELD(
+        unicode_object,
+        length,
+        sizeof(Py_ssize_t),
+        _Alignof(Py_ssize_t),
+        SIZEOF_UNICODE_OBJ);
+    PY_REMOTE_DEBUG_VALIDATE_FIELD(
+        unicode_object,
+        asciiobject_size,
+        sizeof(char),
+        _Alignof(char),
+        SIZEOF_UNICODE_OBJ);
+
+    PY_REMOTE_DEBUG_VALIDATE_SECTION(gen_object);
+    PY_REMOTE_DEBUG_VALIDATE_FIELD(
+        gen_object,
+        gi_frame_state,
+        sizeof(int8_t),
+        _Alignof(int8_t),
+        SIZEOF_GEN_OBJ);
+    PY_REMOTE_DEBUG_VALIDATE_FIELD(
+        gen_object,
+        gi_iframe,
+        FIELD_SIZE(PyGenObject, gi_iframe),
+        _Alignof(_PyInterpreterFrame),
+        SIZEOF_GEN_OBJ);
+
+    PY_REMOTE_DEBUG_VALIDATE_FIXED_FIELD(
+        llist_node,
+        next,
+        sizeof(uintptr_t),
+        _Alignof(uintptr_t),
+        SIZEOF_LLIST_NODE);
+
+    return 0;
+}
+
+static inline int
+validate_async_debug_offsets_layout(struct _Py_AsyncioModuleDebugOffsets *debug_offsets)
+{
+    PY_REMOTE_DEBUG_VALIDATE_READ_SECTION(asyncio_task_object, SIZEOF_TASK_OBJ);
+    PY_REMOTE_DEBUG_VALIDATE_FIELD(
+        asyncio_task_object,
+        task_name,
+        sizeof(uintptr_t),
+        _Alignof(uintptr_t),
+        SIZEOF_TASK_OBJ);
+    PY_REMOTE_DEBUG_VALIDATE_FIELD(
+        asyncio_task_object,
+        task_awaited_by,
+        sizeof(uintptr_t),
+        _Alignof(uintptr_t),
+        SIZEOF_TASK_OBJ);
+    PY_REMOTE_DEBUG_VALIDATE_FIELD(
+        asyncio_task_object,
+        task_is_task,
+        sizeof(char),
+        _Alignof(char),
+        SIZEOF_TASK_OBJ);
+    PY_REMOTE_DEBUG_VALIDATE_FIELD(
+        asyncio_task_object,
+        task_awaited_by_is_set,
+        sizeof(char),
+        _Alignof(char),
+        SIZEOF_TASK_OBJ);
+    PY_REMOTE_DEBUG_VALIDATE_FIELD(
+        asyncio_task_object,
+        task_coro,
+        sizeof(uintptr_t),
+        _Alignof(uintptr_t),
+        SIZEOF_TASK_OBJ);
+    PY_REMOTE_DEBUG_VALIDATE_FIELD(
+        asyncio_task_object,
+        task_node,
+        SIZEOF_LLIST_NODE,
+        _Alignof(struct llist_node),
+        SIZEOF_TASK_OBJ);
+
+    PY_REMOTE_DEBUG_VALIDATE_SECTION(asyncio_interpreter_state);
+    PY_REMOTE_DEBUG_VALIDATE_FIELD(
+        asyncio_interpreter_state,
+        asyncio_tasks_head,
+        SIZEOF_LLIST_NODE,
+        _Alignof(struct llist_node),
+        sizeof(PyInterpreterState));
+
+    PY_REMOTE_DEBUG_VALIDATE_SECTION(asyncio_thread_state);
+    PY_REMOTE_DEBUG_VALIDATE_FIELD(
+        asyncio_thread_state,
+        asyncio_running_loop,
+        sizeof(uintptr_t),
+        _Alignof(uintptr_t),
+        sizeof(_PyThreadStateImpl));
+    PY_REMOTE_DEBUG_VALIDATE_FIELD(
+        asyncio_thread_state,
+        asyncio_running_task,
+        sizeof(uintptr_t),
+        _Alignof(uintptr_t),
+        sizeof(_PyThreadStateImpl));
+    PY_REMOTE_DEBUG_VALIDATE_FIELD(
+        asyncio_thread_state,
+        asyncio_tasks_head,
+        SIZEOF_LLIST_NODE,
+        _Alignof(struct llist_node),
+        sizeof(_PyThreadStateImpl));
+
+    return 0;
+}
+
+#undef PY_REMOTE_DEBUG_VALIDATE_SECTION
+#undef PY_REMOTE_DEBUG_VALIDATE_READ_SECTION
+#undef PY_REMOTE_DEBUG_VALIDATE_FIELD
+#undef PY_REMOTE_DEBUG_VALIDATE_FIXED_FIELD
+#undef FIELD_SIZE
 
 /* ============================================================================
  * STRUCTSEQ TYPE DEFINITIONS
@@ -434,7 +917,7 @@ validate_debug_offsets(struct _Py_DebugOffsets *debug_offsets)
         return -1;
     }
 
-    return 0;
+    return validate_debug_offsets_layout(debug_offsets);
 }
 
 // Generic function to iterate through all threads
@@ -877,8 +1360,13 @@ read_async_debug(
     int result = _Py_RemoteDebug_PagedReadRemoteMemory(&unwinder->handle, async_debug_addr, size, &unwinder->async_debug_offsets);
     if (result < 0) {
         set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to read AsyncioDebug offsets");
+        return result;
     }
-    return result;
+    if (validate_async_debug_offsets_layout(&unwinder->async_debug_offsets) < 0) {
+        set_exception_cause(unwinder, PyExc_RuntimeError, "Invalid AsyncioDebug offsets");
+        return PY_REMOTE_DEBUG_INVALID_ASYNC_DEBUG_OFFSETS;
+    }
+    return 0;
 }
 
 /* ============================================================================
@@ -2054,10 +2542,15 @@ static void *
 find_frame_in_chunks(StackChunkList *chunks, uintptr_t remote_ptr)
 {
     for (size_t i = 0; i < chunks->count; ++i) {
+        if (chunks->chunks[i].size <= offsetof(_PyStackChunk, data)) {
+            continue;
+        }
         uintptr_t base = chunks->chunks[i].remote_addr + offsetof(_PyStackChunk, data);
         size_t payload = chunks->chunks[i].size - offsetof(_PyStackChunk, data);
 
-        if (remote_ptr >= base && remote_ptr < base + payload) {
+        if (payload >= SIZEOF_INTERP_FRAME &&
+                remote_ptr >= base &&
+                remote_ptr <= base + payload - SIZEOF_INTERP_FRAME) {
             return (char *)chunks->chunks[i].local_copy + (remote_ptr - chunks->chunks[i].remote_addr);
         }
     }
@@ -2624,7 +3117,11 @@ _remote_debugging_RemoteUnwinder___init___impl(RemoteUnwinderObject *self,
 
     // Try to read async debug offsets, but don't fail if they're not available
     self->async_debug_offsets_available = 1;
-    if (read_async_debug(self) < 0) {
+    int async_debug_result = read_async_debug(self);
+    if (async_debug_result == PY_REMOTE_DEBUG_INVALID_ASYNC_DEBUG_OFFSETS) {
+        return -1;
+    }
+    if (async_debug_result < 0) {
         PyErr_Clear();
         memset(&self->async_debug_offsets, 0, sizeof(self->async_debug_offsets));
         self->async_debug_offsets_available = 0;
