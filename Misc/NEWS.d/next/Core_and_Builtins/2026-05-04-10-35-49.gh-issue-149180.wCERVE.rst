@@ -1,0 +1,5 @@
+Ensure :c:member:`~PyTypeObject.tp_as_number`,
+:c:member:`~PyTypeObject.tp_as_sequence`, and
+:c:member:`~PyTypeObject.tp_as_mapping` are never ``NULL`` after
+:c:func:`PyType_Ready` by assigning shared empty structs as fallbacks.
+Remove redundant ``NULL`` checks at callsites.
