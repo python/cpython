@@ -3226,7 +3226,9 @@ $(JIT_GENERATED_STAMP): $(JIT_DEPS)
 	@REGEN_JIT_COMMAND@
 	@touch $@
 
-$(JIT_BUILD_TARGETS): $(JIT_GENERATED_STAMP)
+# The stamp regenerates all JIT outputs as a group. Keep it order-only so its
+# newer timestamp does not make each generated artifact look stale.
+$(JIT_BUILD_TARGETS): | $(JIT_GENERATED_STAMP)
 	@if test ! -f "$@"; then \
 		rm -f $(JIT_GENERATED_STAMP); \
 		$(MAKE) $(JIT_GENERATED_STAMP); \
